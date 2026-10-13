@@ -5,17 +5,24 @@ import '../../../addons.css';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Breadcrumb, PageWrapper, useToast } from '@rentalshop/ui';
+import { Breadcrumb, Dialog, DialogContent, DialogHeader, DialogTitle, PageWrapper, useToast } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
 import { addonPricesApi, formatInShopZone } from '@rentalshop/utils';
 import type { AddonPriceRow, AddonQuoteData, MerchantAddonItem, MerchantAddonsData, LimitKind } from '@rentalshop/utils';
 import { useAuth, useApiError } from '@rentalshop/hooks';
-import { KINDS, KIND_UNIT, formatVnd, plusLabel } from '../../../components/addon-labels';
+import { FEATURE_LABEL, KINDS, KIND_UNIT, formatVnd, isFeatureKind, plusLabel } from '../../../components/addon-labels';
+
+/** Dialog surface of the admin forms (#802): full screen on a phone. */
+const PHONE_DIALOG = 'ar-dialog md:max-w-lg max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:overflow-y-auto max-md:content-start';
+const PHONE_FOOTER = 'ar-dialog-footer flex justify-end gap-2 flex-wrap';
+const grouped = (n: number) => new Intl.NumberFormat('vi-VN').format(Math.round(n));
+type PayMethod = 'TRANSFER' | 'CASH';
 
 const dayVn = (v: string | null | undefined) => formatInShopZone(v, 'vi', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const limitText = (n: number | undefined) => (n === undefined || n === null ? '—' : n === -1 ? 'Không giới hạn' : new Intl.NumberFormat('vi-VN').format(n));
 
 function itemLabel(item: MerchantAddonItem): string {
+  if (isFeatureKind(item.limitKind)) return item.name || FEATURE_LABEL[item.featureKey || '']?.name || 'Tính năng';
   if (item.legacy) return `Add-on cũ: ${plusLabel(item.limitKind, item.packSize ?? 0)}`;
   return `${item.name} × ${item.packs} (${plusLabel(item.limitKind, (item.packSize || 0) * (item.packs || 1))})`;
 }
@@ -44,6 +51,12 @@ export default function MerchantAddonsPage() {
   const [quote, setQuote] = useState<AddonQuoteData | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // #943: every purchase is confirmed in a dialog showing the charge, how it is paid and the transaction id
+  const [confirming, setConfirming] = useState(false);
+  const [method, setMethod] = useState<PayMethod>('TRANSFER');
+  const [transactionId, setTransactionId] = useState('');
+  // #943: "Tắt từ kỳ sau" of a feature asks first
+  const [turningOff, setTurningOff] = useState<MerchantAddonItem | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,16 +74,31 @@ export default function MerchantAddonsPage() {
     load();
   }, [load]);
 
-  // Only rows on sale; an outlets row only for a multi-branch plan (#826)
-  const sellable = useMemo(
-    () => prices.filter((p) => p.isActive && (p.limitKind !== 'outlets' || data?.multiBranchPlan)),
-    [prices, data?.multiBranchPlan]
+  // Only rows on sale; an outlets row only for a multi-branch plan (#826); a feature the shop already has is not offered (#943)
+  const ownedFeatures = useMemo(
+    () => new Set((data?.addons || []).filter((a) => isFeatureKind(a.limitKind) && a.featureKey).map((a) => a.featureKey as string)),
+    [data?.addons]
   );
+  const sellable = useMemo(
+    () =>
+      prices.filter(
+        (p) =>
+          p.isActive &&
+          (p.limitKind !== 'outlets' || data?.multiBranchPlan) &&
+          !(isFeatureKind(p.limitKind) && p.featureKey && ownedFeatures.has(p.featureKey))
+      ),
+    [prices, data?.multiBranchPlan, ownedFeatures]
+  );
+  useEffect(() => {
+    if (priceId !== null && sellable.length && !sellable.some((p) => p.id === priceId)) setPriceId(sellable[0].id);
+  }, [sellable, priceId]);
   useEffect(() => {
     if (priceId === null && sellable.length) setPriceId(sellable[0].id);
   }, [sellable, priceId]);
 
-  const packCount = Number(packs);
+  const selectedRow = sellable.find((p) => p.id === priceId) || null;
+  const selectedFeature = isFeatureKind(selectedRow?.limitKind);
+  const packCount = selectedFeature ? 1 : Number(packs);
   useEffect(() => {
     if (!priceId || !(packCount >= 1)) {
       setQuote(null);
@@ -105,10 +133,17 @@ export default function MerchantAddonsPage() {
     if (!priceId || !(packCount >= 1)) return;
     setBusy(true);
     try {
-      const res = await addonPricesApi.addToMerchant(merchantId, { addonPriceId: priceId, packs: packCount, method: 'TRANSFER' });
+      const res = await addonPricesApi.addToMerchant(merchantId, {
+        addonPriceId: priceId,
+        packs: packCount,
+        method,
+        ...(transactionId.trim() ? { transactionId: transactionId.trim() } : {}),
+      });
       if (res.success) {
         toastSuccess('Đã thêm add-on');
         setPacks('1');
+        setConfirming(false);
+        setTransactionId('');
         await load();
       } else toastError(translateError(res));
     } finally {
@@ -121,7 +156,9 @@ export default function MerchantAddonsPage() {
     try {
       const res = await addonPricesApi.setRemoveAtPeriodEnd(merchantId, item.id, remove);
       if (res.success) {
-        toastSuccess(remove ? 'Sẽ gỡ cuối kỳ' : 'Đã hoàn tác');
+        const feature = isFeatureKind(item.limitKind);
+        toastSuccess(remove ? (feature ? 'Sẽ tắt từ kỳ sau' : 'Sẽ gỡ cuối kỳ') : 'Đã hoàn tác');
+        setTurningOff(null);
         await load();
       } else toastError(translateError(res));
     } finally {
@@ -130,7 +167,14 @@ export default function MerchantAddonsPage() {
   };
 
   const sub = data?.subscription;
-  const selected = sellable.find((p) => p.id === priceId) || null;
+  const selected = selectedRow;
+  const legacyOn = (data?.legacyModules || []).filter((m) => m.active);
+  const formula =
+    quote && quote.reason === 'prorated'
+      ? selectedFeature
+        ? `${grouped(quote.discountedMonthlyPrice)} ÷ 30 × ${quote.remainingDays} ngày`
+        : `${grouped(quote.discountedMonthlyPrice)} ÷ 30 × ${quote.packs} × ${quote.remainingDays} ngày`
+      : null;
   const breadcrumb: BreadcrumbItem[] = [
     { label: 'Merchants', href: '/merchants' },
     { label: data?.merchant.name || 'Merchant', href: `/merchants/${merchantId}` },
@@ -172,6 +216,7 @@ export default function MerchantAddonsPage() {
                       </select>
                     </div>
                   </div>
+                  {!selectedFeature && (
                   <div className="field">
                     <label htmlFor="ad-qty">Số gói</label>
                     <div className="input">
@@ -179,6 +224,8 @@ export default function MerchantAddonsPage() {
                       {selected && <span>gói = {plusLabel(selected.limitKind, selected.packSize)}</span>}
                     </div>
                   </div>
+                  )}
+                  {selectedFeature && <div className="muted">Tính năng bật/tắt cho cả shop, không có số gói.</div>}
                   {quoteError && <div className="muted">{quoteError}</div>}
                   {quote && (
                     <div className="kv" data-testid="addon-quote">
@@ -190,9 +237,7 @@ export default function MerchantAddonsPage() {
                       </span>
                       {quote.reason === 'prorated' && (
                         <>
-                          <span>
-                            {`${new Intl.NumberFormat('vi-VN').format(Math.round(quote.discountedMonthlyPrice))} ÷ 30 × ${quote.packs} × ${quote.remainingDays} ngày`}
-                          </span>
+                          <span>{formula}</span>
                           <span className="num">{formatVnd(quote.amountDue)}</span>
                         </>
                       )}
@@ -214,8 +259,8 @@ export default function MerchantAddonsPage() {
                   )}
                   {canEdit && (
                     <div className="row">
-                      <button className="btn pri" type="button" onClick={add} disabled={busy || !quote}>
-                        Thêm add-on · {formatVnd(quote?.amountDue ?? 0)}
+                      <button className="btn pri" type="button" onClick={() => setConfirming(true)} disabled={busy || !quote}>
+                        + Thêm add-on · {formatVnd(quote?.amountDue ?? 0)}
                       </button>
                     </div>
                   )}
@@ -225,6 +270,14 @@ export default function MerchantAddonsPage() {
 
             <div className="card pad" data-testid="addon-shop-card">
               <div className="card-title">Add-on của shop</div>
+              {legacyOn.length > 0 && (
+                <div className="muted" data-testid="addon-legacy-modules">
+                  {legacyOn
+                    .map((m) => `${FEATURE_LABEL[m.key]?.name ?? m.key} đang bật kiểu cũ (Module, không tính tiền${m.endDate ? `, đến ${m.endDate.split('-').reverse().join('/')}` : ''})`)
+                    .join('; ')}
+                  . Thêm add-on để chuyển sang tính tiền; kiểu cũ tự tắt khi thêm.
+                </div>
+              )}
               {data && data.addons.length === 0 && <div className="muted">Chưa có add-on.</div>}
               <div className="items">
                 {data?.addons.map((item) => (
@@ -232,7 +285,10 @@ export default function MerchantAddonsPage() {
                     <span>
                       {itemLabel(item)}{' '}
                       {item.removeAtPeriodEnd ? (
-                        <span className="pill warn">Gỡ cuối kỳ{item.endsAt ? ` (${dayVn(item.endsAt)})` : ''}</span>
+                        <span className="pill warn">
+                          {isFeatureKind(item.limitKind) ? 'Dùng đến' : 'Gỡ cuối kỳ'}
+                          {item.endsAt ? ` (${dayVn(item.endsAt)})` : ''}
+                        </span>
                       ) : item.legacy ? (
                         <span className="pill off">Miễn phí</span>
                       ) : (
@@ -243,7 +299,7 @@ export default function MerchantAddonsPage() {
                     {item.nextPacks != null && !item.removeAtPeriodEnd && (
                       <span className="muted">Từ kỳ sau: {item.nextPacks} gói</span>
                     )}
-                    {canEdit && !item.legacy && !item.removeAtPeriodEnd && (
+                    {canEdit && !item.legacy && !item.removeAtPeriodEnd && !isFeatureKind(item.limitKind) && (
                       <PacksEditor merchantId={merchantId} item={item} busy={busy} onSaved={load} />
                     )}
                     {canEdit && (
@@ -251,6 +307,10 @@ export default function MerchantAddonsPage() {
                         {item.removeAtPeriodEnd ? (
                           <button className="btn" type="button" disabled={busy} onClick={() => mark(item, false)}>
                             Hoàn tác
+                          </button>
+                        ) : isFeatureKind(item.limitKind) ? (
+                          <button className="btn" type="button" disabled={busy} onClick={() => setTurningOff(item)}>
+                            Tắt từ kỳ sau
                           </button>
                         ) : (
                           <button className="btn" type="button" disabled={busy} onClick={() => mark(item, true)}>
@@ -272,8 +332,14 @@ export default function MerchantAddonsPage() {
                     {data.addons.map((item) => (
                       <React.Fragment key={item.id}>
                         <span>
-                          {item.legacy ? itemLabel(item) : `${item.name} × ${item.packs}`}
-                          {item.removeAtPeriodEnd ? ' (gỡ cuối kỳ)' : !item.renews ? ' (đã tạm tắt)' : ''}
+                          {item.legacy || isFeatureKind(item.limitKind) ? itemLabel(item) : `${item.name} × ${item.packs}`}
+                          {item.removeAtPeriodEnd
+                            ? isFeatureKind(item.limitKind)
+                              ? ' (tắt từ kỳ sau)'
+                              : ' (gỡ cuối kỳ)'
+                            : !item.renews
+                              ? ' (đã tạm tắt)'
+                              : ''}
                         </span>
                         <span className="num">{formatVnd(item.renewMonthlyAmount)}</span>
                       </React.Fragment>
@@ -315,6 +381,92 @@ export default function MerchantAddonsPage() {
             </table>
           </div>
         )}
+
+        <Dialog open={confirming} onOpenChange={(v) => !v && setConfirming(false)}>
+          <DialogContent className={PHONE_DIALOG}>
+            <DialogHeader>
+              <DialogTitle>Thêm add-on · {data?.merchant.name}</DialogTitle>
+            </DialogHeader>
+            {selected && quote && sub && (
+              <div className="ar-addons" style={{ gap: 14 }} data-testid="addon-confirm">
+                <div className="kv">
+                  <span>Add-on</span>
+                  <span className="num">
+                    <b>{selectedFeature ? selected.name : `${selected.name} × ${quote.packs}`}</b> · {formatVnd(selected.monthlyPrice)}/tháng
+                  </span>
+                  <span>Kỳ hiện tại đến</span>
+                  <span className="num">
+                    {dayVn(sub.currentPeriodEnd)}, còn {quote.remainingDays} ngày
+                  </span>
+                  {quote.reason === 'prorated' && (
+                    <>
+                      <span>Thu ngay</span>
+                      <span className="num">
+                        {formula} = <b>{formatVnd(quote.amountDue)}</b>
+                      </span>
+                    </>
+                  )}
+                  {quote.reason !== 'prorated' && (
+                    <>
+                      <span>Thu ngay</span>
+                      <span className="num">
+                        <b>0 ₫</b> ({quote.reason === 'trial' ? 'shop đang dùng thử' : 'kỳ đã hết'}, tính từ lần gia hạn)
+                      </span>
+                    </>
+                  )}
+                  <span>Kỳ sau gia hạn cùng gói</span>
+                  <span className="num">+{formatVnd(quote.monthlyAmount)}/tháng</span>
+                </div>
+                <div className="field">
+                  <label htmlFor="ad-method">Cách thu</label>
+                  <div className="input">
+                    <select id="ad-method" value={method} onChange={(e) => setMethod(e.target.value as PayMethod)}>
+                      <option value="TRANSFER">Chuyển khoản</option>
+                      <option value="CASH">Tiền mặt</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="field">
+                  <label htmlFor="ad-ref">Mã giao dịch (tuỳ chọn)</label>
+                  <div className="input">
+                    <input id="ad-ref" value={transactionId} maxLength={200} onChange={(e) => setTransactionId(e.target.value)} />
+                  </div>
+                </div>
+                <div className="ar-addons-note">{selectedFeature ? 'Dùng ngay sau khi lưu.' : 'Giới hạn tăng ngay sau khi lưu.'}</div>
+                <div className={PHONE_FOOTER}>
+                  <button className="btn" type="button" onClick={() => setConfirming(false)} disabled={busy}>
+                    Huỷ
+                  </button>
+                  <button className="btn pri" type="button" onClick={add} disabled={busy}>
+                    {busy ? 'Đang lưu…' : `Thêm · thu ${formatVnd(quote.amountDue)}`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!turningOff} onOpenChange={(v) => !v && setTurningOff(null)}>
+          <DialogContent className={PHONE_DIALOG}>
+            <DialogHeader>
+              <DialogTitle>Tắt {turningOff ? itemLabel(turningOff) : ''} từ kỳ sau?</DialogTitle>
+            </DialogHeader>
+            <div className="ar-addons" style={{ gap: 14 }} data-testid="addon-turn-off">
+              <div className="ar-addons-note">
+                Shop vẫn dùng đến hết <b>{sub ? dayVn(sub.currentPeriodEnd) : '—'}</b>. Từ kỳ sau shop không dùng và không xem được;
+                dữ liệu giữ nguyên, bật lại là thấy. Không hoàn tiền.
+              </div>
+              <div className={PHONE_FOOTER}>
+                <button className="btn" type="button" onClick={() => setTurningOff(null)} disabled={busy}>
+                  Huỷ
+                </button>
+                <button className="btn pri" type="button" onClick={() => turningOff && mark(turningOff, true)} disabled={busy}>
+                  Tắt từ kỳ sau
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div className="note">
           <b>Giá lấy từ trang Add-on prices.</b> Admin chỉ chọn gói và số gói, không gõ giá ở đây. Giá được ghi lại lúc mua và

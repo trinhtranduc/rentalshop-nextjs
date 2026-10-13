@@ -669,6 +669,8 @@ model PlanLimitAddon {
   removeAtPeriodEnd Boolean     @default(false)
   endsAt            DateTime?
   endedAt           DateTime?
+  /// #943 feature add-on: module key from @rentalshop/constants MODULES (e.g. "attendance"); NULL = limit add-on
+  featureKey        String?
   merchant          Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   addonPrice        AddonPrice? @relation(fields: [addonPriceId], references: [id], onDelete: SetNull)
 
@@ -677,6 +679,7 @@ model PlanLimitAddon {
   @@index([merchantId, isActive])
   @@index([createdAt])
   @@index([addonPriceId])
+  @@index([merchantId, featureKey])
 }
 
 /// #850 Add-on price list (admin: Plans → Add-on prices). One row = one limit kind + pack size + VND price per pack
@@ -684,8 +687,10 @@ model PlanLimitAddon {
 model AddonPrice {
   id              Int              @id @default(autoincrement())
   name            String
-  /// outlets | users | products | customers | orders
+  /// outlets | users | products | customers | orders | feature (#943: on/off module, packSize 1)
   limitKind       String
+  /// #943 module key of a feature row (e.g. "attendance"); NULL for a limit row
+  featureKey      String?
   /// Units one pack adds ("mỗi gói cộng thêm N")
   packSize        Int
   /// VND per pack per month

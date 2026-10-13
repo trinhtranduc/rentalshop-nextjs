@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { calculateAddonQuote, isMultiBranchPlan, ResponseBuilder } from '@rentalshop/utils';
+import { calculateAddonQuote, isFeatureAddon, isMultiBranchPlan, ResponseBuilder } from '@rentalshop/utils';
 import type { AddonQuote } from '@rentalshop/utils';
 
 /**
@@ -30,6 +30,8 @@ export interface AddonPriceRowLike {
   packSize: number;
   monthlyPrice: number;
   isActive: boolean;
+  /** #943: module key of a feature row */
+  featureKey?: string | null;
 }
 export interface ShopAddonItem {
   id: number;
@@ -44,6 +46,8 @@ export interface ShopAddonItem {
   isActive: boolean;
   removeAtPeriodEnd: boolean;
   endsAt: Date | null;
+  /** #943: module key of a feature item */
+  featureKey?: string | null;
   outlets: number;
   users: number;
   products: number;
@@ -57,7 +61,7 @@ export async function findShop(merchantId: number): Promise<ShopMerchant | null>
 }
 
 export type AddonPurchaseCheck =
-  | { ok: true; merchant: ShopMerchant; subscription: ShopSubscription; addonPrice: AddonPriceRowLike; quote: AddonQuote }
+  | { ok: true; merchant: ShopMerchant; subscription: ShopSubscription; addonPrice: AddonPriceRowLike; quote: AddonQuote; packs: number }
   | { ok: false; response: NextResponse };
 
 const fail = (code: string, status: number): AddonPurchaseCheck => ({
@@ -76,9 +80,16 @@ export async function checkAddonPurchase(merchantId: number, addonPriceId: numbe
     return fail('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN', 422);
   }
   if (!subscription) return fail('SUBSCRIPTION_NOT_FOUND', 404);
+  // #943: a feature (attendance…) is on/off: packs are always 1, and a shop holds at most one un-ended item of it
+  // (a turned-off one is undone, not bought again)
+  const feature = isFeatureAddon(addonPrice);
+  const effectivePacks = feature ? 1 : packs;
+  if (feature && addonPrice.featureKey && (await db.merchantAddons.findActiveFeature(merchantId, addonPrice.featureKey))) {
+    return fail('ADDON_FEATURE_ALREADY_ON', 422);
+  }
   const quote = calculateAddonQuote({
     monthlyPrice: addonPrice.monthlyPrice,
-    packs,
+    packs: effectivePacks,
     periodStart: subscription.currentPeriodStart,
     periodEnd: subscription.currentPeriodEnd,
     interval: subscription.interval,
@@ -86,7 +97,7 @@ export async function checkAddonPurchase(merchantId: number, addonPriceId: numbe
     status: subscription.status,
     now,
   });
-  return { ok: true, merchant, subscription, addonPrice, quote };
+  return { ok: true, merchant, subscription, addonPrice, quote, packs: effectivePacks };
 }
 
 /** Numeric id from a route segment, or null. */

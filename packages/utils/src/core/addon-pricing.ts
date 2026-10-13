@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MODULES } from '@rentalshop/constants';
 import { civilDaysBetween } from './billing-dates';
 import { storedBillingInterval } from './billing-interval';
 import { calculateSubscriptionPrice } from './pricing-calculator';
@@ -15,13 +16,24 @@ export const LIMIT_KINDS = ['outlets', 'users', 'products', 'customers', 'orders
 export type LimitKind = (typeof LIMIT_KINDS)[number];
 export type AddonColumns = Record<LimitKind, number>;
 
+/** #943: a feature add-on (on/off module, no packs) is a price-list row of this kind with a `featureKey`. */
+export const FEATURE_KIND = 'feature' as const;
+export const ADDON_KINDS = [...LIMIT_KINDS, FEATURE_KIND] as const;
+export type AddonKind = (typeof ADDON_KINDS)[number];
+
 const emptyColumns = (): AddonColumns => ({ outlets: 0, users: 0, products: 0, customers: 0, orders: 0 });
 
-/** The five limit columns of an item: `packSize × packs` in its kind, 0 elsewhere. */
-export function addonColumnsFor(limitKind: LimitKind, packSize: number, packs: number): AddonColumns {
+/** The five limit columns of an item: `packSize × packs` in its kind, 0 elsewhere (all 0 for a feature, #943). */
+export function addonColumnsFor(limitKind: LimitKind | AddonKind, packSize: number, packs: number): AddonColumns {
   const cols = emptyColumns();
-  cols[limitKind] = Math.max(0, Math.floor(packSize)) * Math.max(0, Math.floor(packs));
+  if (!(LIMIT_KINDS as readonly string[]).includes(limitKind)) return cols;
+  cols[limitKind as LimitKind] = Math.max(0, Math.floor(packSize)) * Math.max(0, Math.floor(packs));
   return cols;
+}
+
+/** #943: a feature row / item (attendance…): kind `feature`, one per shop, packs fixed at 1. */
+export function isFeatureAddon(item: { limitKind?: string | null; featureKey?: string | null } | null | undefined): boolean {
+  return !!item && item.limitKind === FEATURE_KIND;
 }
 
 export interface AddonItemLike {
@@ -191,17 +203,39 @@ export function addonRenewalLines(
 // ============================================================================
 
 const vnd = z.coerce.number().int().min(0).max(1_000_000_000);
+const MODULE_KEYS = MODULES.map((m) => m.key);
 
-export const addonPriceCreateSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  limitKind: z.enum(LIMIT_KINDS),
-  packSize: z.coerce.number().int().min(1).max(1_000_000),
-  monthlyPrice: vnd,
-  isActive: z.boolean().optional(),
-  sortOrder: z.coerce.number().int().optional(),
-});
+/**
+ * A limit row: one of the five kinds + pack size. #943 a feature row: kind `feature` + a module `featureKey`;
+ * its pack size is always 1 (whatever is sent).
+ */
+export const addonPriceCreateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    limitKind: z.enum(ADDON_KINDS),
+    featureKey: z.string().trim().max(50).nullable().optional(),
+    packSize: z.coerce.number().int().min(1).max(1_000_000).optional(),
+    monthlyPrice: vnd,
+    isActive: z.boolean().optional(),
+    sortOrder: z.coerce.number().int().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.limitKind === FEATURE_KIND) {
+      if (!d.featureKey || !MODULE_KEYS.includes(d.featureKey)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['featureKey'], message: 'unknown featureKey' });
+      }
+    } else {
+      if (d.featureKey) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['featureKey'], message: 'only for a feature row' });
+      if (d.packSize === undefined) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['packSize'], message: 'required' });
+    }
+  })
+  .transform((d) =>
+    d.limitKind === FEATURE_KIND
+      ? { ...d, packSize: 1, featureKey: d.featureKey as string }
+      : { ...d, packSize: d.packSize as number, featureKey: null }
+  );
 
-/** `limitKind` is not editable: it is dropped from the body. */
+/** `limitKind` and `featureKey` are not editable: they are dropped from the body. */
 export const addonPriceUpdateSchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
@@ -217,7 +251,8 @@ export const merchantAddonCreateSchema = z
   .object({
     addonPriceId: z.coerce.number().int().positive(),
     packs: z.coerce.number().int().min(1).max(1000),
-    method: z.enum(['TRANSFER', 'STRIPE']).optional(),
+    /** #943: cash as in the mockup ("Tiền mặt"); recorded PENDING like a transfer */
+    method: z.enum(['TRANSFER', 'STRIPE', 'CASH']).optional(),
     transactionId: z.string().trim().max(200).optional(),
     reference: z.string().trim().max(200).optional(),
   })
@@ -240,6 +275,6 @@ export const addonQuoteQuerySchema = z.object({
   packs: z.coerce.number().int().min(1).max(1000),
 });
 
-export type AddonPriceCreateInput = z.infer<typeof addonPriceCreateSchema>;
+export type AddonPriceCreateInput = z.output<typeof addonPriceCreateSchema>;
 export type AddonPriceUpdateInput = z.infer<typeof addonPriceUpdateSchema>;
 export type MerchantAddonCreateInput = z.infer<typeof merchantAddonCreateSchema>;

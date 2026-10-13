@@ -7,7 +7,7 @@ import { checkAddonPurchase, routeId } from '../../../../../../lib/merchant-addo
 /**
  * GET /api/merchants/[id]/addons/quote?addonPriceId&packs — what buying now would charge (#850). Nothing is written.
  * Charge = price × packs × days left ÷ days of the period (Vietnam days; the cycle price for 3/6/12-month periods),
- * whole VND; 0 for a trial shop or an ended period. ADMIN and OPS.
+ * whole VND; 0 for a trial shop or an ended period. ADMIN and OPS. #943: a feature row quotes 1 pack.
  */
 export async function GET(
   request: NextRequest,
@@ -28,8 +28,15 @@ export async function GET(
       return NextResponse.json(
         ResponseBuilder.success('ADDON_QUOTE_READY', {
           ...quote,
-          packs: parsed.data.packs,
-          addonPrice: { id: addonPrice.id, name: addonPrice.name, limitKind: addonPrice.limitKind, packSize: addonPrice.packSize, monthlyPrice: addonPrice.monthlyPrice },
+          packs: check.packs,
+          addonPrice: {
+            id: addonPrice.id,
+            name: addonPrice.name,
+            limitKind: addonPrice.limitKind,
+            packSize: addonPrice.packSize,
+            monthlyPrice: addonPrice.monthlyPrice,
+            featureKey: addonPrice.featureKey ?? null,
+          },
         })
       );
     } catch (error) {
