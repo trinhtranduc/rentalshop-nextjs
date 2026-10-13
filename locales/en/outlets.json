@@ -108,6 +108,7 @@
     "loadFailed": "Could not load branches.",
     "retry": "Retry",
     "noSession": "Your session has ended. Please sign in again.",
+    "noAccess": "Only the shop owner can view and edit branches.",
     "form": {
       "addTitle": "Add branch",
       "editTitle": "Edit branch",

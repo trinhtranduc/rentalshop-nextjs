@@ -4,7 +4,8 @@
     "timesheet": "Timesheet",
     "person": "By person",
     "shifts": "Shifts",
-    "templates": "Shift templates"
+    "templates": "Shift templates",
+    "locations": "QR & location"
   },
   "weekday": {
     "1": "Mon",
@@ -317,14 +318,24 @@
     "saved": "Template deleted"
   },
   "outlets": {
-    "col": "Attendance",
     "qrDaily": "QR code · changes daily",
     "qrFixed": "QR code · fixed",
     "noQr": "No code yet",
     "open": "Open ›"
   },
+  "locations": {
+    "title": "Attendance QR & location",
+    "subtitle": "Each branch has its own QR code, location and list of people who clock in.",
+    "col": {
+      "outlet": "Branch",
+      "address": "Address",
+      "qr": "QR code",
+      "radius": "Radius"
+    },
+    "radius": "{radius} m",
+    "back": "‹ QR & location"
+  },
   "outlet": {
-    "back": "‹ Outlets",
     "notFound": "Could not open this outlet.",
     "section": "⏱ Attendance",
     "location": "Attendance location",

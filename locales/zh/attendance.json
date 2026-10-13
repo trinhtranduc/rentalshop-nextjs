@@ -4,7 +4,8 @@
     "timesheet": "考勤表",
     "person": "按员工",
     "shifts": "排班",
-    "templates": "班次模板"
+    "templates": "班次模板",
+    "locations": "二维码与位置"
   },
   "weekday": {
     "1": "周一",
@@ -317,14 +318,24 @@
     "saved": "已删除模板"
   },
   "outlets": {
-    "col": "考勤",
     "qrDaily": "有二维码 · 每天更换",
     "qrFixed": "有二维码 · 固定",
     "noQr": "未生成",
     "open": "打开 ›"
   },
+  "locations": {
+    "title": "考勤二维码与位置",
+    "subtitle": "每个门店有自己的二维码、位置和需要打卡的人员名单。",
+    "col": {
+      "outlet": "门店",
+      "address": "地址",
+      "qr": "二维码",
+      "radius": "半径"
+    },
+    "radius": "{radius} m",
+    "back": "‹ 二维码与位置"
+  },
   "outlet": {
-    "back": "‹ 门店",
     "notFound": "无法打开该门店。",
     "section": "⏱ 考勤",
     "location": "考勤位置",

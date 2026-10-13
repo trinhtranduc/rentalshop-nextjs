@@ -108,6 +108,7 @@
     "loadFailed": "Không tải được danh sách chi nhánh.",
     "retry": "Thử lại",
     "noSession": "Phiên đăng nhập đã hết. Vui lòng đăng nhập lại.",
+    "noAccess": "Chỉ chủ shop xem và sửa danh sách chi nhánh.",
     "form": {
       "addTitle": "Thêm chi nhánh",
       "editTitle": "Sửa chi nhánh",
