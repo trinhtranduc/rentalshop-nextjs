@@ -2,7 +2,7 @@
  * #682 Nhân viên kho on the shop web: staff menu and pages, a role card only behind the API flag.
  */
 import { describe, expect, it } from '@jest/globals';
-import { SHELL_MAIN_NAV, SHELL_MANAGE_NAV, filterNavForRole } from '../apps/client/app/components/shell/nav';
+import { SHELL_NAV_ITEMS, filterNavForRole } from '../apps/client/app/components/shell/nav';
 import { roleChoices, formFromUser, validateStaffForm, EMPTY_STAFF_FORM } from '../apps/client/app/users/staff-form-model';
 import { canSeeStaffPage, roleTone } from '../apps/client/app/users/users-model';
 import { defaultTab, tabsForRole } from '../apps/client/app/settings/settings-model';
@@ -11,12 +11,12 @@ const keys = (items: { key: string }[]) => items.map((i) => i.key);
 
 describe('#682 Nhân viên kho — web', () => {
   it('sees the staff menu: no Nhân viên, no Chi nhánh; Sản phẩm and Danh mục stay', () => {
-    const manage = keys(filterNavForRole(SHELL_MANAGE_NAV, 'OUTLET_INVENTORY'));
-    expect(manage).toEqual(keys(filterNavForRole(SHELL_MANAGE_NAV, 'OUTLET_STAFF')));
+    const manage = keys(filterNavForRole(SHELL_NAV_ITEMS, 'OUTLET_INVENTORY'));
+    expect(manage).toEqual(keys(filterNavForRole(SHELL_NAV_ITEMS, 'OUTLET_STAFF')));
     expect(manage).toContain('categories');
     expect(manage).not.toContain('staff');
     expect(manage).not.toContain('outlets');
-    expect(keys(filterNavForRole(SHELL_MAIN_NAV, 'OUTLET_INVENTORY'))).toContain('products');
+    expect(keys(filterNavForRole(SHELL_NAV_ITEMS, 'OUTLET_INVENTORY'))).toContain('products');
   });
 
   it('cannot open the staff page; its tag has its own tone', () => {

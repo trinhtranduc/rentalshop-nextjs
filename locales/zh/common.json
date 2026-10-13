@@ -201,9 +201,14 @@
       "outlets": "门店",
       "categories": "分类",
       "loyalty": "会员",
-      "settings": "店铺设置"
+      "settings": "店铺设置",
+      "attendanceSub": {
+        "timesheet": "考勤表",
+        "shifts": "排班",
+        "templates": "班次模板",
+        "locations": "二维码与位置"
+      }
     },
-    "manage": "管理",
     "createOrder": "新建订单",
     "allOutlets": "全部门店",
     "mainMenu": "主菜单",
@@ -236,6 +241,32 @@
       "unreadCount": "{count} 条未读"
     },
     "allOutletsCount": "全部门店 ({count})",
-    "someOutlets": "{count} 家门店"
+    "someOutlets": "{count} 家门店",
+    "groups": {
+      "sales": "销售与租赁",
+      "goods": "商品",
+      "customers": "客户",
+      "people": "人事",
+      "shop": "店铺"
+    },
+    "crumbs": {
+      "create": "新建",
+      "add": "添加",
+      "edit": "编辑",
+      "import": "导入",
+      "labels": "打印标签",
+      "orders": "订单",
+      "permissions": "权限",
+      "rolePermissions": "按角色权限",
+      "related": "相关订单",
+      "bankAccounts": "银行账户",
+      "attendance": "考勤",
+      "notifications": "通知",
+      "subscription": "订阅",
+      "plans": "套餐",
+      "person": "按员工"
+    },
+    "breadcrumb": "当前位置",
+    "searchOpen": "打开搜索"
   }
 }

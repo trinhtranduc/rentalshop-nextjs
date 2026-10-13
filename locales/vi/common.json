@@ -229,9 +229,14 @@
       "outlets": "Chi nhánh",
       "categories": "Danh mục",
       "loyalty": "Khách thân thiết",
-      "settings": "Cài đặt cửa hàng"
+      "settings": "Cài đặt cửa hàng",
+      "attendanceSub": {
+        "timesheet": "Bảng công",
+        "shifts": "Xếp ca",
+        "templates": "Mẫu ca",
+        "locations": "Mã QR & vị trí"
+      }
     },
-    "manage": "Quản lý",
     "createOrder": "Tạo đơn",
     "allOutlets": "Tất cả chi nhánh",
     "mainMenu": "Menu chính",
@@ -264,7 +269,33 @@
       "unreadCount": "{count} chưa đọc"
     },
     "allOutletsCount": "Tất cả chi nhánh ({count})",
-    "someOutlets": "{count} chi nhánh"
+    "someOutlets": "{count} chi nhánh",
+    "groups": {
+      "sales": "Bán & cho thuê",
+      "goods": "Hàng hoá",
+      "customers": "Khách hàng",
+      "people": "Nhân sự",
+      "shop": "Cửa hàng"
+    },
+    "crumbs": {
+      "create": "Tạo mới",
+      "add": "Thêm mới",
+      "edit": "Sửa",
+      "import": "Nhập từ file",
+      "labels": "In tem",
+      "orders": "Đơn hàng",
+      "permissions": "Phân quyền",
+      "rolePermissions": "Quyền theo vai trò",
+      "related": "Đơn liên quan",
+      "bankAccounts": "Tài khoản ngân hàng",
+      "attendance": "Chấm công",
+      "notifications": "Thông báo",
+      "subscription": "Gói dịch vụ",
+      "plans": "Bảng giá",
+      "person": "Chi tiết theo người"
+    },
+    "breadcrumb": "Bạn đang ở",
+    "searchOpen": "Mở tìm kiếm"
   },
   "dateRange": {
     "title": "Chọn khoảng ngày",

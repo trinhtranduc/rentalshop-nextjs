@@ -17,7 +17,6 @@ import { canUseAttendanceWeb, dayOf, shortDate, shortDayLabel, todayKey } from '
 import {
   Dialog,
   DialogFooter,
-  AttendanceTabs,
   Note,
   cardClass,
   container,
@@ -25,6 +24,7 @@ import {
   must,
   outlineBtn,
   primaryBtn,
+  Select,
   useAttendanceAccess,
   useBusy,
   useLoad,
@@ -178,7 +178,6 @@ export default function OutletAttendancePage() {
 
   return (
     <div className={container}>
-      <AttendanceTabs access={access} />
       <Link href={LOCATIONS_HREF} className="text-[13px] font-semibold text-ar-primary no-underline">
         {t('locations.back')}
       </Link>
@@ -257,10 +256,10 @@ export default function OutletAttendancePage() {
               <span className="font-semibold">{t('outlet.qrTitle', { name })}</span>
               <label className="flex flex-col gap-1.5 text-sm font-semibold text-ar-ink-2">
                 {t('outlet.qrMode')}
-                <select className={inputClass} value={s.qrMode} disabled={busy} onChange={(e) => setMode(e.target.value as AttendanceQrMode)}>
+                <Select wrapClassName="w-full" className="font-normal" value={s.qrMode} disabled={busy} onChange={(e) => setMode(e.target.value as AttendanceQrMode)}>
                   <option value="DAILY">{t('outlet.daily')}</option>
                   <option value="FIXED">{t('outlet.fixed')}</option>
-                </select>
+                </Select>
                 <small className="font-normal text-ar-muted">{s.qrMode === 'DAILY' ? t('outlet.dailyHint') : t('outlet.fixedHint')}</small>
               </label>
               {s.qr?.generated && s.qr.code ? (
