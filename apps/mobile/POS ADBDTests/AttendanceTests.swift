@@ -105,6 +105,30 @@ final class AttendanceTests: XCTestCase {
         }
     }
 
+    // #949 wrong outlet: the API names the code's outlet and the person's outlets in `data`
+    func testWrongOutletDataIsDecoded() throws {
+        let full = try decode(AttendanceFailureData.self,
+                              #"{"qrOutlet":{"id":3,"name":"CN Hai"},"allowedOutlets":[{"id":1,"name":"CN Một"},{"id":2,"name":"CN Ba"}]}"#)
+        XCTAssertEqual(full.qrOutletName, "CN Hai")
+        XCTAssertEqual(full.allowedOutletNames, ["CN Một", "CN Ba"])
+        let other = try decode(AttendanceFailureData.self, #"{"qrOutlet":null,"allowedOutlets":[{"id":1,"name":"CN Một"}]}"#)
+        XCTAssertNil(other.qrOutletName)
+        let numbers = try decode(AttendanceFailureData.self, #"{"distanceM":350,"radiusM":100}"#)
+        XCTAssertEqual(numbers.distanceM, 350)
+        XCTAssertEqual(numbers.allowedOutletNames, [])
+    }
+
+    func testWrongOutletMessageNamesBothOutlets() {
+        let failure = AttendanceFailure(code: "QR_WRONG_OUTLET", qrOutletName: "CN Hai", allowedOutletNames: ["CN Một"])
+        let copy = AttendanceLogic.errorCopy(failure, outletName: "CN Một")
+        XCTAssertEqual(copy.message, String(format: "attendance.error.wrongOutlet.messageDetail".localized(), "CN Hai", "CN Một"))
+        XCTAssertTrue(copy.message.contains("CN Hai"))
+        XCTAssertFalse(copy.message.hasPrefix("attendance."))
+        // no outlet name in data (older API or another shop's code) → the current text
+        let old = AttendanceLogic.errorCopy(AttendanceFailure(code: "QR_WRONG_OUTLET", allowedOutletNames: ["CN Một"]), outletName: "CN Một")
+        XCTAssertEqual(old.message, String(format: "attendance.error.wrongOutlet.message".localized(), "CN Một"))
+    }
+
     func testPunchParameters() {
         let params = AttendanceService.punchParameters(code: " a1.1.1.D.2026-10-12.x \n", latitude: 10.77, longitude: 106.7, accuracy: 5, isMock: false)
         XCTAssertEqual(params["code"] as? String, "a1.1.1.D.2026-10-12.x")

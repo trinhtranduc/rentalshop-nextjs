@@ -354,6 +354,22 @@ describe('timesheet and person month (#907 rules 26-28, 33)', () => {
     expect(pick((r) => r.recordId === 99).dateKey).toBe('2026-10-01');
   });
 
+  it('#949 a wrong-outlet scan stored under this outlet shows the code\'s outlet (qrOutlet)', async () => {
+    setCaller('OUTLET_ADMIN', { id: 8 });
+    mockDb.attendance.listScans.mockResolvedValue([
+      { id: 9, at: new Date('2026-10-12T01:00:00Z'), action: 'IN', result: 'QR_WRONG_OUTLET', latitude: 10.78, longitude: 106.71, accuracy: 9, distanceM: null, recordId: null, outletId: 1, qrOutletId: 2 },
+      { id: 10, at: new Date('2026-10-12T01:05:00Z'), action: 'IN', result: 'MOCK_LOCATION', latitude: 10.78, longitude: 106.71, accuracy: 9, distanceM: null, recordId: null, outletId: 1, qrOutletId: null },
+    ]);
+    const res: any = await personMonth(req('/api/attendance/people/7/month?outletId=1&month=2026-10'), params({ userId: '7' }));
+    expect(res.status).toBe(200);
+    const [wrong, mock] = res.body.data.rows;
+    expect(wrong).toEqual(
+      expect.objectContaining({ result: 'REJECTED', errorCode: 'QR_WRONG_OUTLET', latitude: 10.78, longitude: 106.71, qrOutlet: { id: 2, name: 'CN 2' } })
+    );
+    expect(mock.errorCode).toBe('MOCK_LOCATION');
+    expect(mock).not.toHaveProperty('qrOutlet');
+  });
+
   it('a user of another merchant → 404', async () => {
     setCaller('MERCHANT');
     const res: any = await personMonth(req('/api/attendance/people/99/month?outletId=1&month=2026-10'), params({ userId: '99' }));
