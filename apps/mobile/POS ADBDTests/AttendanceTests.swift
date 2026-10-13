@@ -193,4 +193,35 @@ final class AttendanceTests: XCTestCase {
         XCTAssertTrue(result[1].worked.contains("4"), result[1].worked)
         XCTAssertTrue(result[2].worked.hasPrefix("00:30–04:30 · "), result[2].worked)
     }
+
+    /// #923 A record added by hand has no shift in the month rows; the server counts the break of the shift it linked
+    /// (the day's shift whose window [start − 3 h, end] holds the check-in). A record's own snapshot wins, and the
+    /// API's `hours` wins over both.
+    func testWeekRowHoursMatchTheServer() throws {
+        let month = try decode(AttendanceMonth.self, """
+        {"summary":{"hours":21.33,"days":2},"rows":[
+          {"at":"2026-10-12T10:05:00Z","kind":"IN","result":"ACCEPTED","recordId":2,"dateKey":"2026-10-12",
+           "shift":{"name":"Tối","start":"17:00","end":"23:30","breakMinutes":30}},
+          {"at":"2026-10-12T12:00:00Z","kind":"EDIT","result":"EDITED","recordId":5,"dateKey":"2026-10-12","before":null,
+           "after":{"checkInAt":"2026-10-12T01:03:00.000Z","checkOutAt":"2026-10-12T09:58:00.000Z","status":"DONE",
+                    "dateKey":"2026-10-12","id":5}},
+          {"at":"2026-10-12T16:30:00Z","kind":"OUT","result":"ACCEPTED","recordId":2,"dateKey":"2026-10-12"},
+          {"at":"2026-10-13T12:00:00Z","kind":"EDIT","result":"EDITED","recordId":6,"dateKey":"2026-10-13","before":null,
+           "after":{"checkInAt":"2026-10-13T01:00:00.000Z","checkOutAt":"2026-10-13T09:00:00.000Z","status":"DONE",
+                    "hours":7.5,"id":6}}
+        ]}
+        """)
+        let pairs = AttendanceLogic.pairs(month.rows)
+        let schedule = ["2026-10-12": [AttendanceShift(name: "Sáng", start: "08:00", end: "17:00", breakMinutes: 60),
+                                       AttendanceShift(name: "Tối", start: "17:00", end: "23:30", breakMinutes: 0)]]
+        let week = AttendanceLogic.weekDayKeys(containing: at("2026-10-14T03:00:00Z"), timeZone: vn)
+        let result = AttendanceLogic.weekRows(dayKeys: week, schedule: schedule, pairs: pairs)
+        guard result.count == 2 else { return XCTFail("\(result)") }
+        func short(_ value: Double) -> String {
+            String(format: "attendance.mine.hoursShort".localized(), AttendanceLogic.hours(value))
+        }
+        // 8 h 55′ − 60′ of "Sáng" (manual) = 7,9; 6 h 25′ − its own 30′ snapshot (scans) = 5,9
+        XCTAssertEqual(result[0].worked, "08:03–16:58 · \(short(7 + 55.0 / 60))\n17:05–23:30 · \(short(5 + 55.0 / 60))")
+        XCTAssertEqual(result[1].worked, "08:00–16:00 · \(short(7.5))")
+    }
 }

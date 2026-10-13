@@ -163,4 +163,45 @@ class AttendanceLogicTest {
         assertEquals(4.0, AttendanceLogic.pairHours(rows[2].pairs), 0.001)
         assertEquals("00:30–04:30", AttendanceLogic.pairTimes(rows[3].pairs))
     }
+
+    /**
+     * #923 A record added by hand has no shift in the month rows; the server counts the break of the shift it linked
+     * (the day's shift whose window [start − 3 h, end] holds the check-in). The API's own `hours` wins when present.
+     * Each record is its own line, as on iOS.
+     */
+    @Test
+    fun my_week_hours_match_the_server_and_one_line_per_record() {
+        val schedule = AttendanceLogic.scheduleFor(
+            JSONArray("""[{"userId":7,"date":"2026-10-12","shifts":[
+              {"name":"Sáng","start":"08:00","end":"17:00","breakMinutes":60},
+              {"name":"Tối","start":"17:00","end":"23:30","breakMinutes":0}]}]"""),
+            userId = 7,
+        )
+        val pairs = AttendanceLogic.pairs(JSONArray("""[
+            {"at":"2026-10-12T10:05:00Z","kind":"IN","result":"ACCEPTED","recordId":2,"dateKey":"2026-10-12",
+             "shift":{"name":"Tối","start":"17:00","end":"23:30","breakMinutes":30}},
+            {"at":"2026-10-12T16:30:00Z","kind":"OUT","result":"ACCEPTED","recordId":2,"dateKey":"2026-10-12"},
+            {"at":"2026-10-12T12:00:00Z","kind":"EDIT","result":"EDITED","recordId":5,"dateKey":"2026-10-12","before":null,
+             "after":{"checkInAt":"2026-10-12T01:03:00.000Z","checkOutAt":"2026-10-12T09:58:00.000Z","status":"DONE","dateKey":"2026-10-12","id":5}},
+            {"at":"2026-10-13T12:00:00Z","kind":"EDIT","result":"EDITED","recordId":6,"dateKey":"2026-10-13","before":null,
+             "after":{"checkInAt":"2026-10-13T01:00:00.000Z","checkOutAt":"2026-10-13T09:00:00.000Z","status":"DONE","hours":7.5,"id":6}}
+        ]"""))
+        val rows = AttendanceLogic.weekRows(AttendanceLogic.week(LocalDate.parse("2026-10-12")), schedule, pairs)
+        assertEquals(listOf("2026-10-12", "2026-10-13"), rows.map { it.date.toString() })
+        val monday = AttendanceLogic.weekLines(rows[0])
+        assertEquals(listOf("08:03–16:58", "17:05–23:30"), monday.map { it.times })
+        // 8 h 55′ − 60′ break of "Sáng" (manual) and 6 h 25′ − its own 30′ snapshot (scans)
+        assertEquals(7.9167, monday[0].hours!!, 0.001)
+        assertEquals(5.9167, monday[1].hours!!, 0.001)
+        assertEquals(13.83, AttendanceLogic.pairHours(rows[0].pairs), 0.01)
+        // The API's hours win
+        assertEquals(7.5, AttendanceLogic.weekLines(rows[1]).single().hours!!, 0.0)
+    }
+
+    /** #923 Settings row as on iOS: "Ca sáng 08:00–12:00 · chưa vào ca", and "Chưa vào ca" when there is no shift */
+    @Test
+    fun settings_line_capitalises_the_status_alone() {
+        assertEquals("Chưa vào ca", AttendanceLogic.settingsLine(null, "chưa vào ca"))
+        assertEquals("Ca sáng 08:00–12:00 · chưa vào ca", AttendanceLogic.settingsLine(AttendanceShift("Ca sáng", "08:00", "12:00"), "chưa vào ca"))
+    }
 }

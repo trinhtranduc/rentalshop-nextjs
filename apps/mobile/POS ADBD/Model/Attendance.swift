@@ -415,7 +415,10 @@ struct AttendancePair: Equatable {
     let checkInAt: Date
     let checkOutAt: Date?
     let lateMinutes: Int
-    let breakMinutes: Int
+    /// Break of the record's own shift snapshot (any scan / auto-close row); nil = none in the rows (manual add)
+    let breakMinutes: Int?
+    /// The API's hours of the record when a row carries them (#923)
+    var hours: Double? = nil
 }
 
 enum AttendanceLogic {
@@ -640,11 +643,13 @@ enum AttendanceLogic {
         var outs: [Int: AttendanceMonthRow] = [:]
         var edits: [Int: AttendanceRecord] = [:]
         var dayKeys: [Int: String] = [:]
+        var snapshots: [Int: Int] = [:]
         var order: [Int] = []
         for row in rows {
             guard let id = row.recordId, row.at != nil else { continue }
             let result = (row.result ?? "").uppercased()
             let kind = (row.kind ?? "").uppercased()
+            if let minutes = row.shift?.breakMinutes, kind != "EDIT" { snapshots[id] = minutes }
             if kind == "EDIT" {
                 guard let after = row.after, after.checkInAt != nil else { continue }
                 if ins[id] == nil && edits[id] == nil { order.append(id) }
@@ -670,8 +675,41 @@ enum AttendanceLogic {
             guard let checkIn = edit?.checkInAt ?? inRow?.at else { return nil }
             let checkOut = edit != nil ? edit?.checkOutAt : outs[id]?.at
             return AttendancePair(dayKey: dayKeys[id] ?? dayKey(checkIn), checkInAt: checkIn, checkOutAt: checkOut,
-                                  lateMinutes: inRow?.lateMinutes ?? 0, breakMinutes: inRow?.shift?.breakMinutes ?? 0)
+                                  lateMinutes: inRow?.lateMinutes ?? 0, breakMinutes: snapshots[id], hours: edit?.hours)
         }.sorted { $0.checkInAt < $1.checkInAt }
+    }
+
+    /// Hours of one closed pair as the server counts them (#923): the API's `hours`, else (OUT − IN) − break, floor 0.
+    /// Break: the record's own snapshot, else (a record added by hand) the break of the day's shift the server linked
+    /// it to, else 0.
+    static func pairHours(_ pair: AttendancePair, shifts: [AttendanceShift]) -> Double? {
+        if let hours = pair.hours { return hours }
+        guard let out = pair.checkOutAt else { return nil }
+        let breakMinutes = pair.breakMinutes ?? linkedShift(pair.checkInAt, dayKey: pair.dayKey, shifts: shifts)?.breakMinutes ?? 0
+        return max(0, out.timeIntervalSince(pair.checkInAt) / 60 - Double(breakMinutes)) / 60
+    }
+
+    /// The server's `matchShiftForInstant` on one day: a shift whose window [start − 3 h, end] holds the check-in
+    /// (an end at or before the start is the next day); the closest start wins
+    static func linkedShift(_ checkIn: Date, dayKey: String, shifts: [AttendanceShift]) -> AttendanceShift? {
+        var best: (shift: AttendanceShift, gap: TimeInterval)?
+        for shift in shifts {
+            guard let start = instant(dayKey: dayKey, clock: shift.start),
+                  var end = instant(dayKey: dayKey, clock: shift.end) else { continue }
+            if end <= start { end = end.addingTimeInterval(24 * 3600) }
+            guard checkIn >= start.addingTimeInterval(-3 * 3600), checkIn <= end else { continue }
+            let gap = abs(checkIn.timeIntervalSince(start))
+            if best == nil || gap < best!.gap { best = (shift, gap) }
+        }
+        return best?.shift
+    }
+
+    /// Shop-zone instant of "HH:mm" on a day key
+    static func instant(dayKey: String, clock: String?) -> Date? {
+        let day = dayKey.split(separator: "-").compactMap { Int($0) }
+        let time = (clock ?? "").split(separator: ":").compactMap { Int($0) }
+        guard day.count == 3, time.count >= 2 else { return nil }
+        return calendar().date(from: DateComponents(year: day[0], month: day[1], day: day[2], hour: time[0], minute: time[1]))
     }
 
     /// Mon–Sun days that have a shift or a pair
@@ -691,9 +729,8 @@ enum AttendanceLogic {
                     if pair.lateMinutes > 0 {
                         return "\(span) · \(String(format: "attendance.mine.late".localized(), pair.lateMinutes))"
                     }
-                    guard let out = pair.checkOutAt else { return span }
-                    let minutes = max(0, out.timeIntervalSince(pair.checkInAt) / 60 - Double(pair.breakMinutes))
-                    return "\(span) · \(String(format: "attendance.mine.hoursShort".localized(), hours(minutes / 60)))"
+                    guard let worked = pairHours(pair, shifts: shifts) else { return span }
+                    return "\(span) · \(String(format: "attendance.mine.hoursShort".localized(), hours(worked)))"
                 }.joined(separator: "\n")
             }
             return AttendanceWeekRow(dayKey: key, day: dayLabel(key), shift: shiftText, worked: worked, isLate: late > 0)

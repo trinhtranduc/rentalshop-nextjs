@@ -16,8 +16,8 @@ import java.util.Locale
 /** Key of the attendance module in `merchant.modules` (#907) */
 const val ATTENDANCE_MODULE = "attendance"
 
-/** One shift of a day: "Ca sáng" 08:00–12:00 (times are the shop's HH:mm) */
-data class AttendanceShift(val name: String?, val start: String?, val end: String?)
+/** One shift of a day: "Ca sáng" 08:00–12:00 (times are the shop's HH:mm), break in minutes when the API sends it */
+data class AttendanceShift(val name: String?, val start: String?, val end: String?, val breakMinutes: Int? = null)
 
 /** A clock-in record (#907 `AttendanceRecord`); every field may be missing */
 data class AttendanceRecord(
@@ -78,8 +78,17 @@ data class PunchRejection(
     val message: String? = null,
 )
 
-/** One day of "Ca và công của tôi": the shifts and the worked pairs */
-data class WorkedPair(val inAt: Instant, val outAt: Instant?, val missingOut: Boolean, val lateMinutes: Int?, val breakMinutes: Int? = null)
+/**
+ * One record of "Ca và công của tôi". [breakMinutes]: the record's shift snapshot (for a record added by hand, the
+ * break of the shift the server linked, #923); [hours]: the API's own hours when a row carries them.
+ */
+data class WorkedPair(
+    val inAt: Instant, val outAt: Instant?, val missingOut: Boolean, val lateMinutes: Int?, val breakMinutes: Int? = null,
+    val hours: Double? = null,
+)
+
+/** One line of a week row, one per record as on iOS: "08:03–16:58" + hours (closed) or late minutes */
+data class WorkedLine(val times: String, val hours: Double?, val lateMinutes: Int)
 
 data class MyShiftDay(val date: LocalDate, val shifts: List<AttendanceShift>, val pairs: List<WorkedPair>) {
     val lateMinutes: Int get() = pairs.sumOf { it.lateMinutes ?: 0 }
@@ -117,6 +126,7 @@ object AttendanceLogic {
             name = o.str("name", "shiftName"),
             start = o.str("start", "startTime", "shiftStart"),
             end = o.str("end", "endTime", "shiftEnd"),
+            breakMinutes = o.int("breakMinutes", "shiftBreakMinutes"),
         )
         return s.takeIf { it.name != null || it.start != null }
     }
@@ -276,7 +286,7 @@ object AttendanceLogic {
         data class Acc(
             var inAt: Instant? = null, var outAt: Instant? = null, var late: Int? = null, var missing: Boolean = false,
             var brk: Int? = null, var edited: Boolean = false, var editIn: Instant? = null, var editOut: Instant? = null,
-            var day: LocalDate? = null,
+            var day: LocalDate? = null, var hours: Double? = null,
         )
         fun day(value: Any?): LocalDate? = (value as? String)?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
         val byRecord = linkedMapOf<Int, Acc>()
@@ -293,18 +303,20 @@ object AttendanceLogic {
                 acc.edited = true
                 acc.editIn = editIn
                 acc.editOut = instant(after.opt("checkOutAt"))
+                acc.hours = after.dbl("hours")
                 (day(row.opt("dateKey")) ?: day(after.opt("dateKey")))?.let { acc.day = it }
                 continue
             }
             val acc = byRecord.getOrPut(recordId) { Acc() }
             day(row.opt("dateKey"))?.let { acc.day = it }
+            // Every scan / auto-close row of a record carries its shift snapshot
+            row.optJSONObject("shift")?.int("breakMinutes")?.let { acc.brk = it }
             when {
                 result == "AUTO_CLOSED" -> acc.missing = true
                 result != "ACCEPTED" -> Unit
                 kind == "IN" -> {
                     acc.inAt = at
                     acc.late = (row.opt("lateMinutes") as? Number)?.toInt()?.takeIf { it > 0 }
-                    acc.brk = (row.optJSONObject("shift")?.opt("breakMinutes") as? Number)?.toInt()
                 }
                 kind == "OUT" -> acc.outAt = at
             }
@@ -312,7 +324,7 @@ object AttendanceLogic {
         return byRecord.values.mapNotNull { a ->
             val inAt = (if (a.edited) a.editIn else a.inAt) ?: return@mapNotNull null
             val outAt = if (a.edited) a.editOut else a.outAt
-            (a.day ?: inAt.atZone(zone).toLocalDate()) to WorkedPair(inAt, outAt, a.missing && outAt == null, a.late, a.brk)
+            (a.day ?: inAt.atZone(zone).toLocalDate()) to WorkedPair(inAt, outAt, a.missing && outAt == null, a.late, a.brk, a.hours)
         }
             .sortedBy { it.second.inAt }
             .groupBy({ it.first }, { it.second })
@@ -323,13 +335,47 @@ object AttendanceLogic {
         return MonthSummary(hours = s?.dbl("hours", "totalHours"), days = s?.int("days", "dayCredits", "workedDays"))
     }
 
-    /** Rows of "TUẦN NÀY": days with a shift or a worked pair, in order */
-    fun weekRows(week: List<LocalDate>, schedule: Map<LocalDate, List<AttendanceShift>>, pairs: Map<LocalDate, List<WorkedPair>>): List<MyShiftDay> =
+    /**
+     * Rows of "TUẦN NÀY": days with a shift or a worked pair, in order. A record with no shift snapshot in the rows
+     * (added by hand) takes the break of the day's shift the server linked it to (#923), so hours match the server.
+     */
+    fun weekRows(
+        week: List<LocalDate>, schedule: Map<LocalDate, List<AttendanceShift>>, pairs: Map<LocalDate, List<WorkedPair>>,
+        zone: ZoneId = ShopTime.zone,
+    ): List<MyShiftDay> =
         week.mapNotNull { d ->
             val shifts = schedule[d].orEmpty()
-            val worked = pairs[d].orEmpty()
+            val worked = pairs[d].orEmpty().map { p ->
+                if (p.breakMinutes != null || p.hours != null) p
+                else p.copy(breakMinutes = linkedShift(p.inAt, d, shifts, zone)?.breakMinutes)
+            }
             if (shifts.isEmpty() && worked.isEmpty()) null else MyShiftDay(d, shifts, worked)
         }
+
+    /**
+     * The server's `matchShiftForInstant` on one day: a shift whose window [start − 3 h, end] holds the check-in (an end
+     * at or before the start is the next day); the closest start wins
+     */
+    fun linkedShift(inAt: Instant, date: LocalDate, shifts: List<AttendanceShift>, zone: ZoneId = ShopTime.zone): AttendanceShift? {
+        fun clock(t: String?): java.time.LocalTime? = t?.let { runCatching { java.time.LocalTime.parse(it.take(5)) }.getOrNull() }
+        return shifts.mapNotNull { shift ->
+            val startTime = clock(shift.start) ?: return@mapNotNull null
+            val endTime = clock(shift.end) ?: return@mapNotNull null
+            val start = date.atTime(startTime).atZone(zone).toInstant()
+            val end = (if (endTime <= startTime) date.plusDays(1) else date).atTime(endTime).atZone(zone).toInstant()
+            if (inAt < start.minus(Duration.ofHours(3)) || inAt > end) null
+            else shift to Duration.between(start, inAt).abs()
+        }.minByOrNull { it.second }?.first
+    }
+
+    /** One line per record, as on iOS */
+    fun weekLines(day: MyShiftDay, zone: ZoneId = ShopTime.zone): List<WorkedLine> = day.pairs.map { p ->
+        WorkedLine(pairTimes(listOf(p), zone), if (p.outAt != null) pairHours(listOf(p)) else null, p.lateMinutes ?: 0)
+    }
+
+    /** Second line of the Cài đặt row as on iOS: "Ca sáng 08:00–12:00 · chưa vào ca", or "Chưa vào ca" alone */
+    fun settingsLine(shift: AttendanceShift?, status: String): String =
+        shift?.let { "${shiftLine(it)} · $status" } ?: status.replaceFirstChar { it.titlecase() }
 
     /** "07:58–12:01" per pair (open = "07:58–…", missing out = "07:58–?") joined by ", " */
     fun pairTimes(pairs: List<WorkedPair>, zone: ZoneId = ShopTime.zone): String = pairs.joinToString(", ") { p ->
@@ -341,8 +387,9 @@ object AttendanceLogic {
         "${hhmm(p.inAt, zone)}–$out"
     }
 
-    /** Hours of the closed pairs of a day, each minus its shift break (floor 0), as the API counts them */
+    /** Hours of the closed pairs of a day as the API counts them: its own `hours`, else each minus its break (floor 0) */
     fun pairHours(pairs: List<WorkedPair>): Double =
-        pairs.filter { it.outAt != null }
-            .sumOf { (Duration.between(it.inAt, it.outAt).toMinutes() - (it.breakMinutes ?: 0)).coerceAtLeast(0) } / 60.0
+        pairs.filter { it.outAt != null }.sumOf { p ->
+            p.hours ?: ((Duration.between(p.inAt, p.outAt).toMinutes() - (p.breakMinutes ?: 0)).coerceAtLeast(0) / 60.0)
+        }
 }

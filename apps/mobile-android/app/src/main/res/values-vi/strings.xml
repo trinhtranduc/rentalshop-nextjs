@@ -409,7 +409,7 @@
     <string name="close">Đóng</string>
     <string name="role_merchant">Chủ cửa hàng</string>
     <string name="role_outlet_admin">Quản trị chi nhánh</string>
-    <string name="role_outlet_staff">Nhân viên chi nhánh</string>
+    <string name="role_outlet_staff">Nhân viên cửa hàng</string>
     <string name="role_outlet_inventory">Nhân viên kho</string>
     <string name="role_select">Chọn quyền</string>
     <string name="role_required">Chọn quyền cho người dùng</string>
@@ -1634,7 +1634,7 @@
     <string name="attendance_status_in">đang trong ca</string>
     <string name="attendance_status_done">đã xong</string>
     <string name="attendance_today">Hôm nay · %1$s</string>
-    <string name="attendance_no_shift">Hôm nay không có ca</string>
+    <string name="attendance_no_shift">Không có ca hôm nay</string>
     <string name="attendance_clock_in">Vào ca</string>
     <string name="attendance_clock_out">Ra ca</string>
     <string name="attendance_hint_scan">Bấm để quét mã QR ở quầy. Cần bật vị trí.</string>
@@ -1658,7 +1658,7 @@
     <string name="attendance_err_qr_expired_msg">Quét mã đang dán / hiện ở quầy hôm nay.</string>
     <string name="attendance_err_wrong_outlet">Mã QR của chi nhánh khác</string>
     <string name="attendance_err_wrong_outlet_msg">Bạn thuộc %1$s.</string>
-    <string name="attendance_err_wrong_outlet_msg_plain">Quét mã của chi nhánh bạn làm.</string>
+    <string name="attendance_err_wrong_outlet_msg_plain">Quét mã của chi nhánh bạn làm việc.</string>
     <string name="attendance_err_gps">Chưa định vị chính xác</string>
     <string name="attendance_err_gps_msg">GPS ±%1$d m. Ra gần cửa rồi thử lại.</string>
     <string name="attendance_err_gps_msg_plain">Ra gần cửa rồi thử lại.</string>
@@ -1668,13 +1668,13 @@
     <string name="attendance_err_module_off_msg">Liên hệ chủ shop để bật Chấm công.</string>
     <string name="attendance_err_no_location">Chưa định vị chính xác</string>
     <string name="attendance_err_no_location_msg">Không lấy được vị trí. Ra gần cửa rồi thử lại.</string>
-    <string name="attendance_err_other">Chưa chấm công được</string>
+    <string name="attendance_err_other">Không chấm công được</string>
     <string name="attendance_perm_title">Cần camera và vị trí</string>
     <string name="attendance_perm_message">AnyRent dùng camera để quét mã QR ở quầy và vị trí chính xác để xác nhận bạn đang ở chi nhánh.</string>
     <string name="attendance_perm_continue">Tiếp tục</string>
     <string name="attendance_perm_denied_title">Chưa cho phép</string>
     <string name="attendance_perm_denied_message">Để chấm công, vào Cài đặt cho AnyRent dùng Camera và Vị trí chính xác.</string>
-    <string name="attendance_open_settings">Mở cài đặt</string>
+    <string name="attendance_open_settings">Mở Cài đặt</string>
     <string name="attendance_week">TUẦN NÀY</string>
     <string name="attendance_month_title">THÁNG %1$s</string>
     <string name="attendance_total_hours">Tổng giờ</string>
@@ -1682,6 +1682,6 @@
     <string name="attendance_hours_short">%1$s g</string>
     <string name="attendance_late">muộn %1$d′</string>
     <string name="attendance_days_worked">Ngày đi làm</string>
-    <string name="attendance_week_empty">Tuần này chưa có ca.</string>
+    <string name="attendance_week_empty">Chưa có ca tuần này</string>
     <string name="attendance_load_failed">Không tải được. Thử lại.</string>
 </resources>

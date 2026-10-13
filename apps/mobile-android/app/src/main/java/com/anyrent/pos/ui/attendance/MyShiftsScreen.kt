@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
@@ -89,24 +90,33 @@ private fun SectionLabel(text: String) {
     Text(text, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = AttendanceColors.Faint, letterSpacing = 0.5.sp)
 }
 
-/** "T2 12/10" + "Sáng 08–12" ……… "07:58–12:01 · 4,0 g" (amber "· muộn 7′" when late, "—" not worked) */
+/**
+ * "T2 12/10" + "Sáng 08–12" ……… one line per record, as on iOS (#923): "07:58–12:01 · 4,0 g", amber
+ * "08:07–12:00 · muộn 7′" when late, "—" not worked. The day and its shifts stay on one line each; the times wrap.
+ */
 @Composable
 private fun WeekRow(day: MyShiftDay) {
     Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column(Modifier.weight(1f)) {
-            Text(AttendanceLogic.dayShort(day.date), fontSize = DS.TextSize.Secondary, color = DS.Colors.Text)
+        Column {
+            Text(AttendanceLogic.dayShort(day.date), fontSize = DS.TextSize.Secondary, color = DS.Colors.Text, maxLines = 1, softWrap = false)
             if (day.shifts.isNotEmpty()) {
-                Text(day.shifts.joinToString(", ") { AttendanceLogic.shortShift(it) }, fontSize = DS.TextSize.Pill, color = AttendanceColors.Faint)
+                Text(day.shifts.joinToString(", ") { AttendanceLogic.shortShift(it) }, fontSize = DS.TextSize.Pill, color = AttendanceColors.Faint,
+                    maxLines = 1, softWrap = false)
             }
         }
-        val right = when {
-            day.pairs.isEmpty() -> "—"
-            day.lateMinutes > 0 -> "${AttendanceLogic.pairTimes(day.pairs)} · ${stringResource(R.string.attendance_late, day.lateMinutes)}"
-            day.pairs.any { it.outAt != null } ->
-                "${AttendanceLogic.pairTimes(day.pairs)} · ${stringResource(R.string.attendance_hours_short, AttendanceLogic.oneDecimal(AttendanceLogic.pairHours(day.pairs)))}"
-            else -> AttendanceLogic.pairTimes(day.pairs)
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            val lines = AttendanceLogic.weekLines(day)
+            if (lines.isEmpty()) Text("—", fontSize = DS.TextSize.Secondary, color = DS.Colors.Text)
+            lines.forEach { line ->
+                val text = when {
+                    line.lateMinutes > 0 -> "${line.times} · ${stringResource(R.string.attendance_late, line.lateMinutes)}"
+                    line.hours != null -> "${line.times} · ${stringResource(R.string.attendance_hours_short, AttendanceLogic.oneDecimal(line.hours))}"
+                    else -> line.times
+                }
+                Text(text, fontSize = DS.TextSize.Secondary, color = if (line.lateMinutes > 0) AttendanceColors.Late else DS.Colors.Text,
+                    textAlign = TextAlign.End)
+            }
         }
-        Text(right, fontSize = DS.TextSize.Secondary, color = if (day.lateMinutes > 0) AttendanceColors.Late else DS.Colors.Text)
     }
     HorizontalDivider(color = DS.Colors.Divider, thickness = 1.dp)
 }
