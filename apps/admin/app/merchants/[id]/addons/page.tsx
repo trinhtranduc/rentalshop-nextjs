@@ -210,7 +210,7 @@ export default function MerchantAddonsPage() {
                       <select id="ad-pack" value={priceId ?? ''} onChange={(e) => setPriceId(Number(e.target.value))} disabled={!canEdit}>
                         {sellable.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.name} ({plusLabel(p.limitKind, p.packSize)} · {formatVnd(p.monthlyPrice)})
+                            {p.name} ({isFeatureKind(p.limitKind) ? 'tính năng' : plusLabel(p.limitKind, p.packSize)} · {formatVnd(p.monthlyPrice)})
                           </option>
                         ))}
                       </select>
@@ -230,7 +230,7 @@ export default function MerchantAddonsPage() {
                   {quote && (
                     <div className="kv" data-testid="addon-quote">
                       <span>Giá (lấy từ Add-on prices)</span>
-                      <span className="num">{formatVnd(quote.addonPrice.monthlyPrice)} / gói / tháng</span>
+                      <span className="num">{formatVnd(quote.addonPrice.monthlyPrice)} {selectedFeature ? '/ tháng' : '/ gói / tháng'}</span>
                       <span>Kỳ này còn</span>
                       <span className="num">
                         {quote.remainingDays} ngày
