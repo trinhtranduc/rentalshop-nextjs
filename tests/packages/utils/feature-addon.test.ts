@@ -84,8 +84,8 @@ describe('feature add-on: money (#943)', () => {
     expect(q).toMatchObject({ amountDue: 0, reason: 'trial' });
   });
 
-  it('quarterly cycle: the 5% cycle discount applies before ÷ 30 (94.050 ÷ 30 × 18 = 56.430)', () => {
-    const q = calculateAddonQuote({ monthlyPrice: 99000, packs: 1, periodStart: start, periodEnd: end, interval: 'month', intervalCount: 3, status: 'ACTIVE', now });
+  it('6-month cycle: the 5% cycle discount applies before ÷ 30 (94.050 ÷ 30 × 18 = 56.430)', () => {
+    const q = calculateAddonQuote({ monthlyPrice: 99000, packs: 1, periodStart: start, periodEnd: end, interval: 'month', intervalCount: 6, status: 'ACTIVE', now });
     expect(q.amountDue).toBe(56430);
   });
 
