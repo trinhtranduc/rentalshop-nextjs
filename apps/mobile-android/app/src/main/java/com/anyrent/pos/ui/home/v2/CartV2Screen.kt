@@ -195,10 +195,10 @@ fun CartV2Screen(
     // #677: the ⋯ menu and its "Xoá giỏ hàng" confirm
     var moreOpen by remember { mutableStateOf(false) }
     var confirmClearCart by remember { mutableStateOf(false) }
-    // #482: product id of the line whose "Cách tính giá" sheet is open
-    var pricingLineId by remember { mutableStateOf<Int?>(null) }
+    // #482: the line whose "Cách tính giá" sheet is open (#951: its line id; a product may be on several lines)
+    var pricingLineId by remember { mutableStateOf<String?>(null) }
     // #684: the line whose "Ghi chú món" sheet is open
-    var noteLineId by remember { mutableStateOf<Int?>(null) }
+    var noteLineId by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     // iOS `Cart.validate()` copy, all problems in one alert (#448)
     val needPriceText = stringResource(R.string.v2_cart_need_price)
@@ -210,7 +210,9 @@ fun CartV2Screen(
     )
 
     // Batch availability for the dates (rent) or today (sale), same call as the old cart's check
-    val availabilityKey = lines.map { it.product.id to it.quantity } to listOf(isSale, pickup, ret, datesChosen, editingOrderId)
+    // #951: a product may be on several lines; availability is asked for the units of all its lines
+    val productQuantities = CartV2Logic.quantitiesByProduct(lines)
+    val availabilityKey = productQuantities to listOf(isSale, pickup, ret, datesChosen, editingOrderId)
     LaunchedEffect(availabilityKey) {
         // iOS checks a rental only once dates are picked
         if (lines.isEmpty() || (!isSale && !datesChosen)) {
@@ -221,7 +223,7 @@ fun CartV2Screen(
         val today = ShopTime.today()
         val result = runCatching {
             app.container.availabilityRepository.checkBatchAvailability(
-                requests = lines.map { AvailabilityRequest(it.product.id, it.quantity) },
+                requests = productQuantities.map { (productId, quantity) -> AvailabilityRequest(productId, quantity) },
                 startDate = if (isSale) today else pickup,
                 endDate = if (isSale) today else ret,
                 // #634: an edited order does not count against itself (iOS `excludeOrderId: cart.orderId`)
@@ -239,8 +241,8 @@ fun CartV2Screen(
     val overlapConflicts = if (isSale || !datesChosen) {
         emptyList<OverlapWarnings.LineConflict>()
     } else {
-        lines.mapNotNull { line ->
-            OverlapWarnings.conflict(line.product.id, line.product.name, line.quantity, availability[line.product.id], pickup, ret)
+        lines.distinctBy { it.product.id }.mapNotNull { line ->
+            OverlapWarnings.conflict(line.product.id, line.product.name, productQuantities[line.product.id] ?: line.quantity, availability[line.product.id], pickup, ret)
         }
     }
     val overlapTexts = OverlapWarnings.Texts(
@@ -256,7 +258,7 @@ fun CartV2Screen(
     // restored from disk, or loaded from an edited order): reload that product once per screen and let the line take
     // its prices. A product with one price stays without the toggle.
     val pricingChecked = remember { mutableSetOf<Int>() }
-    val staleIds = if (isSale) emptyList() else lines.filterNot { CartV2Logic.offersBothModes(it.product) }.map { it.product.id }
+    val staleIds = if (isSale) emptyList() else lines.filterNot { CartV2Logic.offersBothModes(it.product) }.map { it.product.id }.distinct()
     LaunchedEffect(staleIds) {
         staleIds.filter { it > 0 && pricingChecked.add(it) }.forEach { productId ->
             withContext(Dispatchers.IO) { ApiClient.get().getProduct(productId) }
@@ -481,20 +483,21 @@ fun CartV2Screen(
             }
             lines.forEach { line ->
               // #893 (owner): swipe end-to-start reveals a red "Xoá"; a full swipe removes the line
-              key(line.product.id) {
-               SwipeToDeleteLine(onDelete = { CartStore.remove(line.product.id) }) {
+              key(line.lineId) {
+               SwipeToDeleteLine(onDelete = { CartStore.remove(line.lineId) }) {
                 ItemRow(
                     line = line,
                     isSale = isSale,
                     available = available[line.product.id],
+                    productQuantity = productQuantities[line.product.id] ?: line.quantity,
                     cost = CartCostLogic.lineCost(line, showsPrices),
                     overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
                     onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
                         { onOpenCalendar(c.productId, c.from.toString()) }
                     },
-                    onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.product.id, q) },
-                    onOpenPricing = { pricingLineId = line.product.id },
-                    onOpenNote = { noteLineId = line.product.id },
+                    onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.lineId, q) },
+                    onOpenPricing = { pricingLineId = line.lineId },
+                    onOpenNote = { noteLineId = line.lineId },
                 )
                }
               }
@@ -680,7 +683,7 @@ fun CartV2Screen(
         )
     }
     pricingLineId?.let { id ->
-        val line = lines.firstOrNull { it.product.id == id }
+        val line = lines.firstOrNull { it.lineId == id }
         if (line == null) {
             pricingLineId = null
         } else {
@@ -698,7 +701,7 @@ fun CartV2Screen(
         }
     }
     noteLineId?.let { id ->
-        val line = lines.firstOrNull { it.product.id == id }
+        val line = lines.firstOrNull { it.lineId == id }
         if (line == null) {
             noteLineId = null
         } else {
@@ -711,10 +714,10 @@ fun CartV2Screen(
         }
     }
     numericEditor?.let { editor ->
-        val priceProductId = editor.removePrefix("PRICE:").takeIf { editor.startsWith("PRICE:") }?.toIntOrNull()
+        val priceProductId = editor.removePrefix("PRICE:").takeIf { editor.startsWith("PRICE:") && it.isNotBlank() }
         AppNumericPadSheet(
             title = when {
-                priceProductId != null -> lines.firstOrNull { it.product.id == priceProductId }?.product?.name
+                priceProductId != null -> lines.firstOrNull { it.lineId == priceProductId }?.product?.name
                     ?: stringResource(R.string.v2_cart_edit_price)
                 editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
                 else -> stringResource(R.string.enter_discount)
@@ -808,7 +811,7 @@ fun CartV2Screen(
             destructive = true,
             onDismiss = { removeLine = null },
             onConfirm = {
-                CartStore.remove(line.product.id)
+                CartStore.remove(line.lineId)
                 removeLine = null
             },
         )
@@ -885,6 +888,8 @@ private fun ItemRow(
     line: CartLine,
     isSale: Boolean,
     available: Int?,
+    /** #951: units of this product across all its cart lines (the shortage compares them with [available]) */
+    productQuantity: Int = line.quantity,
     /** #888 "Giá vốn" of the line (cost × quantity); null hides the row */
     cost: Double? = null,
     /** #518 / #684 "Hết hàng từ 03/10 → 05/10"; replaces the shortage chip */
@@ -906,7 +911,7 @@ private fun ItemRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    val shortText = overlapText ?: CartV2Logic.shortage(available, line.quantity)?.let { left ->
+                    val shortText = overlapText ?: CartV2Logic.shortage(available, productQuantity)?.let { left ->
                         stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
                     }
                     shortText?.let { text ->
@@ -963,7 +968,8 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
     ) {
         // #684 (owner): price first — "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày"; "Nhập giá / theo lần"
         Text(
-            if (line.unitPrice > 0) formatMoneyVnd(line.unitPrice) else stringResource(R.string.v2_pricing_enter_price),
+            // #951: 0đ is a price; only a rent line without any price shows "Nhập giá"
+            CartV2Logic.chipPrice(line, isSale)?.let { formatMoneyVnd(it) } ?: stringResource(R.string.v2_pricing_enter_price),
             fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary, maxLines = 1,
         )
         Text(
@@ -1020,14 +1026,16 @@ private fun CartPricingSheet(
     isSale: Boolean,
     days: Int,
     onDismiss: () -> Unit,
-    onApply: (String?, Double) -> Unit,
+    onApply: (String?, Double?) -> Unit,
 ) {
-    val choices = remember(line.product.id) { if (isSale) emptyList() else CartV2Logic.pricingChoices(line) }
-    var type by remember(line.product.id) { mutableStateOf(line.pricingType.uppercase()) }
-    var digits by remember(line.product.id) {
-        mutableStateOf(CartV2Logic.startPrice(line, line.pricingType).toLong().takeIf { it > 0 }?.toString().orEmpty())
+    val choices = remember(line.lineId) { if (isSale) emptyList() else CartV2Logic.pricingChoices(line) }
+    var type by remember(line.lineId) { mutableStateOf(line.pricingType.uppercase()) }
+    // #951: "0" is a price (a free line) and shows as 0; an empty box is no typed price
+    var digits by remember(line.lineId) {
+        mutableStateOf(CartV2Logic.sheetStartPrice(line, line.pricingType)?.toLong()?.toString().orEmpty())
     }
-    val price = digits.toDoubleOrNull() ?: 0.0
+    val typed = digits.toDoubleOrNull()
+    val price = typed ?: 0.0
     val daily = !isSale && type == "DAILY"
     val preview = CartV2Logic.pricePreview(type, price, days, line.quantity, isSale)
     androidx.compose.material3.ModalBottomSheet(
@@ -1057,7 +1065,7 @@ private fun CartPricingSheet(
                                 .background(if (selected) Color(0xFFEFF6FF) else DS.Colors.Surface)
                                 .clickable(role = Role.RadioButton) {
                                     type = choice.type
-                                    digits = CartV2Logic.startPrice(line, choice.type).toLong().takeIf { it > 0 }?.toString().orEmpty()
+                                    digits = CartV2Logic.sheetStartPrice(line, choice.type)?.toLong()?.toString().orEmpty()
                                 }
                                 .padding(horizontal = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -1084,7 +1092,7 @@ private fun CartPricingSheet(
                 Text(stringResource(R.string.v2_pricing_price_field), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                 OutlinedTextField(
                     value = if (digits.isEmpty()) "" else formatMoneyVnd(price),
-                    onValueChange = { text -> digits = text.filter { it.isDigit() }.take(12).trimStart('0') },
+                    onValueChange = { text -> digits = CartV2Logic.priceDigits(text) },
                     placeholder = { Text("0") },
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text),
@@ -1110,7 +1118,7 @@ private fun CartPricingSheet(
             }
             AppPrimaryButton(
                 stringResource(R.string.v2_pricing_apply),
-                onClick = { onApply(if (isSale) null else type, price) },
+                onClick = { onApply(if (isSale) null else type, typed) },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
             )
         }

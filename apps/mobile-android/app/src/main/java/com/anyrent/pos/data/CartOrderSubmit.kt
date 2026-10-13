@@ -22,8 +22,9 @@ object CartOrderSubmit {
         excludeOrderId: Int? = CartStore.editingOrderId.value,
     ): List<BlockedRentalProduct> =
         validate(
-            lines = CartStore.lines.value.map {
-                RentalCartLine(productId = it.product.id, productName = it.product.name, quantity = it.quantity)
+            // #951: a product may be on several lines; it is checked once with their units added up
+            lines = CartStore.lines.value.groupBy { it.product.id }.map { (productId, group) ->
+                RentalCartLine(productId = productId, productName = group.first().product.name, quantity = group.sumOf { it.quantity })
             },
             pickupDate = CartStore.pickupDate.value,
             returnDate = CartStore.returnDate.value,
@@ -58,6 +59,7 @@ object CartOrderSubmit {
             pricingTypesByProduct = lines.associate { it.product.id to it.pricingType },
             rentalDaysByProduct = lines.associate { it.product.id to it.rentalDays },
             notesByProduct = lines.mapNotNull { line -> line.note?.let { line.product.id to it } }.toMap(),
+            lineExtras = lineExtras(lines),
             idempotencyKey = idempotencyKey,
             noteImages = noteImages,
         )
@@ -119,8 +121,13 @@ object CartOrderSubmit {
             pricingTypesByProduct = lines.associate { it.product.id to it.pricingType },
             rentalDaysByProduct = lines.associate { it.product.id to it.rentalDays },
             notesByProduct = lines.mapNotNull { line -> line.note?.let { line.product.id to it } }.toMap(),
+            lineExtras = lineExtras(lines),
         )
     }
+
+    /** #951: each line's own mode, days, deposit and note, in line order (a product may be on several lines) */
+    fun lineExtras(lines: List<com.anyrent.pos.data.model.CartLine>): List<OrderLineExtra> =
+        lines.map { OrderLineExtra(it.pricingType, it.rentalDays, it.product.deposit, it.note) }
 
     /** The review screen's message for a failed save: the API message, else [fallback] */
     fun errorMessage(error: Throwable, fallback: String): String =

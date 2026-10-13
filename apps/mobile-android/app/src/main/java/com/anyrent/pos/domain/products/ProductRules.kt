@@ -101,7 +101,8 @@ object ProductPricing {
             if (product.pricingType.equals("DAILY", ignoreCase = true)) return null
             return product.rentPrice.takeIf { it > 0 }
         }
-        return product.pricingOptions.firstOrNull { it.type.equals("FIXED", ignoreCase = true) }?.price?.takeIf { it > 0 }
+        // #951: an option of 0 is a 0đ price; a product without options and rentPrice 0 has no price
+        return product.pricingOptions.firstOrNull { it.type.equals("FIXED", ignoreCase = true) }?.price?.takeIf { it >= 0 }
     }
 
     fun perDay(product: Product): Double? {
@@ -109,7 +110,7 @@ object ProductPricing {
             if (!product.pricingType.equals("DAILY", ignoreCase = true)) return null
             return product.rentPrice.takeIf { it > 0 }
         }
-        return product.pricingOptions.firstOrNull { it.type.equals("DAILY", ignoreCase = true) }?.price?.takeIf { it > 0 }
+        return product.pricingOptions.firstOrNull { it.type.equals("DAILY", ignoreCase = true) }?.price?.takeIf { it >= 0 }
     }
 
     fun sale(product: Product): Double? = product.salePrice?.takeIf { it > 0 }
@@ -121,10 +122,10 @@ object ProductPricing {
         return if (type.equals("DAILY", ignoreCase = true)) PricingMode.PER_DAY else PricingMode.PER_RENTAL
     }
 
-    /** Options sent on save; a default without a price falls back to the mode that has one */
+    /** Options sent on save (#951: 0 is a 0đ price, empty = none); a default without a price falls back to the mode that has one */
     fun options(perRental: Double?, perDay: Double?, defaultMode: PricingMode): List<PricingOptionInput> {
-        val fixed = perRental?.takeIf { it > 0 }
-        val daily = perDay?.takeIf { it > 0 }
+        val fixed = perRental?.takeIf { it >= 0 }
+        val daily = perDay?.takeIf { it >= 0 }
         var mode = defaultMode
         if (mode == PricingMode.PER_DAY && daily == null) mode = PricingMode.PER_RENTAL
         if (mode == PricingMode.PER_RENTAL && fixed == null && daily != null) mode = PricingMode.PER_DAY
@@ -296,7 +297,8 @@ object ProductFormValidator {
         val amounts = listOf(input.deposit) +
             if (input.showsPrices) listOf(input.perRental, input.perDay, input.salePrice) else emptyList()
         if (amounts.any { (it ?: 0.0) < 0 }) issues += ProductFormIssue.NegativeAmount
-        if (input.showsPrices && input.defaultMode == PricingMode.PER_DAY && (input.perDay ?: 0.0) <= 0) {
+        // #951: a per-day default needs a per-day price; 0đ is one
+        if (input.showsPrices && input.defaultMode == PricingMode.PER_DAY && (input.perDay == null || input.perDay < 0)) {
             issues += ProductFormIssue.PerDayDefaultNeedsPrice
         }
         when {
@@ -425,8 +427,22 @@ object CartV2Logic {
     /** "Theo lần / Theo ngày" on every rent line, whatever prices the product has (owner, 2026-10-05) */
     fun showsPricingToggle(isSale: Boolean): Boolean = !isSale
 
-    /** A rent line with no price yet (a mode the product has no price for): the cart asks for one */
-    fun needsPrice(line: CartLine, isSale: Boolean): Boolean = !isSale && line.unitPrice <= 0
+    /**
+     * #951: the line has a price for its mode: one typed for this order (0 included, a saved order's price too), else
+     * the product's option of that mode (0đ included), else the legacy rent price of its own type when > 0.
+     */
+    fun hasPrice(line: CartLine): Boolean =
+        line.isSale || line.unitPriceOverride != null || catalogPrice(line.product, line.pricingType) != null
+
+    /** A rent line with no price yet (a mode the product has no price for): the cart asks for one. 0đ is a price (#951) */
+    fun needsPrice(line: CartLine, isSale: Boolean): Boolean = !isSale && !hasPrice(line)
+
+    /** #951: the price on the line's chip; null shows "Nhập giá" (rent lines without a price only) */
+    fun chipPrice(line: CartLine, isSale: Boolean): Double? = if (needsPrice(line, isSale)) null else line.unitPrice
+
+    /** #951: units of each product across its lines (availability, overbooking, "+" counts) */
+    fun quantitiesByProduct(lines: List<CartLine>): Map<Int, Int> =
+        lines.groupBy { it.product.id }.mapValues { (_, group) -> group.sumOf { it.quantity } }
 
     /** Names of the rent lines without a price; each becomes "Nhập giá cho …" in the error alert before Tạo đơn */
     fun missingPrices(lines: List<CartLine>, isSale: Boolean): List<String> =
@@ -445,9 +461,12 @@ object CartV2Logic {
 
     // --- Pricing sheet (#482, board Gio-hang-chon-gia; iOS CartV2Logic) ---
 
-    /** The product's price for a pricing type: an option with a price, else the legacy rent price of its own type */
+    /**
+     * The product's price for a pricing type: its option (#951: 0đ included), else the legacy rent price of its own
+     * type when > 0 (a product without options and rentPrice 0 has no price)
+     */
     fun catalogPrice(product: Product, type: String): Double? =
-        product.pricingOptions.firstOrNull { it.type.equals(type, ignoreCase = true) && it.price > 0 }?.price
+        product.pricingOptions.firstOrNull { it.type.equals(type, ignoreCase = true) && it.price >= 0 }?.price
             ?: product.rentPrice.takeIf { product.pricingType.equals(type, ignoreCase = true) && it > 0 }
 
     /** Theo lần and Theo ngày always, then every other option type of the product, each with its catalog price */
@@ -461,8 +480,21 @@ object CartV2Logic {
     }
 
     /** Price the field shows for a row: the line's price for its own mode, else the catalog price, else 0 */
-    fun startPrice(line: CartLine, type: String): Double =
-        if (type.equals(line.pricingType, ignoreCase = true)) line.unitPrice else catalogPrice(line.product, type) ?: 0.0
+    fun startPrice(line: CartLine, type: String): Double = sheetStartPrice(line, type) ?: 0.0
+
+    /**
+     * #951: what the sheet's price box starts with; null = empty (no price yet). The line's own mode shows its price
+     * (0 shows "0"); another mode its catalog price.
+     */
+    fun sheetStartPrice(line: CartLine, type: String): Double? =
+        if (type.equals(line.pricingType, ignoreCase = true) || line.isSale) line.unitPrice.takeIf { hasPrice(line) }
+        else catalogPrice(line.product, type)
+
+    /** #951: digits typed in the price box; a lone 0 stays (a free line), leading zeros go */
+    fun priceDigits(text: String): String {
+        val digits = text.filter { it.isDigit() }.take(12)
+        return if (digits.isEmpty()) "" else digits.trimStart('0').ifEmpty { "0" }
+    }
 
     fun pricePreview(type: String, price: Double, days: Int, quantity: Int, isSale: Boolean): CartPricePreview =
         if (!isSale && type.equals("DAILY", ignoreCase = true)) {
@@ -476,8 +508,9 @@ object CartV2Logic {
      * "Áp dụng": the line's pricing type (rent) and its price for this order only; the product is never changed. The
      * catalog price of that type clears the override, so a later switch to SALE still uses the sale price (#373).
      */
-    fun applyPricing(line: CartLine, type: String?, price: Double, rentalDays: Int): CartLine {
-        val safe = price.coerceAtLeast(0.0)
+    fun applyPricing(line: CartLine, type: String?, price: Double?, rentalDays: Int): CartLine {
+        // #951: 0 is a price (a free line); an empty box (null) removes the typed price
+        val safe = price?.coerceAtLeast(0.0)
         if (line.isSale || type == null) return line.copy(unitPriceOverride = safe)
         val normalized = type.uppercase()
         val catalog = catalogPrice(line.product, normalized)

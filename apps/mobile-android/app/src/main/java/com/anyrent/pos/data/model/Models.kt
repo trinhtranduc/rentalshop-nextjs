@@ -238,6 +238,11 @@ data class CartLine(
     val unitPriceOverride: Double? = null,
     /** #684: this line's note, sent as `orderItems[].notes` (iOS `CartItem.note`) */
     val note: String? = null,
+    /**
+     * #951: the line's own id. Every add is a new line (a product may sit on several lines, e.g. one paid, one free),
+     * so per-line actions (quantity, price, note, days, remove) target this id, never the product id.
+     */
+    val lineId: String = java.util.UUID.randomUUID().toString(),
 ) {
     val unitPrice: Double
         get() = unitPriceOverride ?: if (isSale) {

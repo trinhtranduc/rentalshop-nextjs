@@ -216,20 +216,16 @@ object CartStore {
         }
     }
 
+    /**
+     * #951 (owner 2026-10-13): every add is a new line, even for a product already in the cart, so one unit can be
+     * paid and another free. Earlier lines of the product still take its fresh prices (#473).
+     */
     fun addProduct(product: Product, quantity: Int = 1) {
         val sale = _orderType.value == "SALE"
         val days = rentalDaysInclusive()
         _lines.update { current ->
-            val existing = current.indexOfFirst { it.product.id == product.id }
-            if (existing >= 0) {
-                current.toMutableList().also {
-                    val line = it[existing]
-                    // A stale line takes the product's prices (#473)
-                    it[existing] = CartV2Logic.withFreshPricing(line.copy(quantity = line.quantity + quantity), product)
-                }
-            } else {
-                current + CartLine(product = product, quantity = quantity, rentalDays = days, isSale = sale)
-            }
+            current.map { if (it.product.id == product.id) CartV2Logic.withFreshPricing(it, product) else it } +
+                CartLine(product = product, quantity = quantity, rentalDays = days, isSale = sale)
         }
         refreshAutoDeposit()
         persist()
@@ -244,80 +240,81 @@ object CartStore {
         persist()
     }
 
-    fun updateQuantity(productId: Int, quantity: Int) {
+    fun updateQuantity(lineId: String, quantity: Int) {
         if (quantity <= 0) {
-            remove(productId)
+            remove(lineId)
             return
         }
         _lines.update { list ->
-            list.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
+            list.map { if (it.lineId == lineId) it.copy(quantity = quantity) else it }
         }
         refreshAutoDeposit()
         persist()
     }
 
-    fun updateUnitPrice(productId: Int, price: Double) {
+    fun updateUnitPrice(lineId: String, price: Double) {
         _lines.update { list ->
             list.map {
-                if (it.product.id == productId) it.copy(unitPriceOverride = price.coerceAtLeast(0.0)) else it
+                if (it.lineId == lineId) it.copy(unitPriceOverride = price.coerceAtLeast(0.0)) else it
             }
         }
         persist()
     }
 
     /** #684: the line's note from the "Ghi chú món" sheet; blank clears it */
-    fun updateNote(productId: Int, note: String?) {
+    fun updateNote(lineId: String, note: String?) {
         val clean = com.anyrent.pos.domain.products.CartV2Logic.noteText(note)
-        _lines.update { list -> list.map { if (it.product.id == productId) it.copy(note = clean) else it } }
+        _lines.update { list -> list.map { if (it.lineId == lineId) it.copy(note = clean) else it } }
         persist()
     }
 
-    fun updateRentalDays(productId: Int, days: Int) {
+    fun updateRentalDays(lineId: String, days: Int) {
         val safe = days.coerceAtLeast(1)
         _lines.update { list ->
-            list.map { if (it.product.id == productId) it.copy(rentalDays = safe) else it }
+            list.map { if (it.lineId == lineId) it.copy(rentalDays = safe) else it }
         }
         persist()
     }
 
-    /** #482 "Áp dụng" of the pricing sheet: pricing type (rent) and the line price for this order only */
-    fun applyLinePricing(productId: Int, type: String?, price: Double) {
+    /**
+     * #482 "Áp dụng" of the pricing sheet: pricing type (rent) and the line price for this order only.
+     * #951: 0 is a price (a free line); null (empty box) drops the typed price.
+     */
+    fun applyLinePricing(lineId: String, type: String?, price: Double?) {
         _lines.update { list ->
             list.map { line ->
-                if (line.product.id != productId) line
+                if (line.lineId != lineId) line
                 else com.anyrent.pos.domain.products.CartV2Logic.applyPricing(line, type, price, rentalDaysInclusive())
             }
         }
         persist()
     }
 
-    fun setPricingType(productId: Int, type: String) {
+    fun setPricingType(lineId: String, type: String) {
         val normalized = if (type.equals("DAILY", ignoreCase = true)) "DAILY" else "FIXED"
         _lines.update { list ->
             list.map { line ->
-                if (line.product.id != productId) return@map line
+                if (line.lineId != lineId) return@map line
                 // iOS CartItem.applyPricingOption: switching FIXED/DAILY also moves the
                 // unit price to that option's catalog price so totals refresh.
                 // When the catalog has that price, drop the override instead of pinning it:
                 // CartLine.unitPrice then gives the same rent price, and a later switch to
                 // SALE uses the sale price instead of this rent price (#373).
-                // A mode the product has no price for starts at 0 and the cart asks for the price
-                // (#473, owner 2026-10-05; iOS `selectPricingType` does the same).
-                val hasCatalogPrice = line.product.pricingOptions.any {
-                    it.type.equals(normalized, ignoreCase = true)
-                } || line.product.pricingType.equals(normalized, ignoreCase = true)
+                // A mode the product has no price for has no price: the cart asks for one (#473, owner 2026-10-05;
+                // iOS `selectPricingType`). #951: no 0 marker any more (0 is a price), the override is dropped and
+                // CartV2Logic.hasPrice reads the catalog.
                 line.copy(
                     pricingType = normalized,
                     rentalDays = rentalDaysInclusive(),
-                    unitPriceOverride = if (hasCatalogPrice) null else 0.0,
+                    unitPriceOverride = null,
                 )
             }
         }
         persist()
     }
 
-    fun remove(productId: Int) {
-        _lines.update { it.filterNot { line -> line.product.id == productId } }
+    fun remove(lineId: String) {
+        _lines.update { it.filterNot { line -> line.lineId == lineId } }
         refreshAutoDeposit()
         persist()
     }
@@ -534,6 +531,7 @@ object CartStore {
                 .put("pricingOptions", options)
             linesJson.put(
                 JSONObject()
+                    .put("lineId", line.lineId)
                     .put("itemNote", line.note ?: JSONObject.NULL)
                     .put("quantity", line.quantity)
                     .put("rentalDays", line.rentalDays)
@@ -621,8 +619,12 @@ object CartStore {
                 costPrice = if (!productJson.has("costPrice") || productJson.isNull("costPrice")) null else productJson.optDouble("costPrice"),
                 note = productJson.optString("note").takeIf { it.isNotBlank() && it != "null" },
             )
-            val override = if (line.isNull("unitPriceOverride")) null else line.optDouble("unitPriceOverride")
+            // #951: a draft saved before line ids used an override of 0 as "ask for a price"; 0 is a price now
+            val savedLineId = line.optString("lineId").takeIf { line.has("lineId") && it.isNotBlank() && it != "null" }
+            val override = (if (line.isNull("unitPriceOverride")) null else line.optDouble("unitPriceOverride"))
+                ?.takeUnless { savedLineId == null && _editingOrderId.value == null && it == 0.0 }
             CartLine(
+                lineId = savedLineId ?: java.util.UUID.randomUUID().toString(),
                 product = product,
                 quantity = line.optInt("quantity", 1).coerceAtLeast(1),
                 rentalDays = line.optInt("rentalDays", 1).coerceAtLeast(1),

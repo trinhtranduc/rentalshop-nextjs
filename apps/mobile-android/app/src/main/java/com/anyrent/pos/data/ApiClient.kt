@@ -471,6 +471,11 @@ class ApiClient(
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
         /** #684: each line's note (`orderItems[].notes`) */
         notesByProduct: Map<Int, String> = emptyMap(),
+        /**
+         * #951: per line (same order as [lines]) mode, days, deposit and note. A product may be on several lines (one
+         * paid, one free), so the by-product maps cannot tell them apart; when given, these win.
+         */
+        lineExtras: List<OrderLineExtra>? = null,
         /** #341: one value per checkout, reused on retry, so the API never creates the order twice. */
         idempotencyKey: String? = null,
         /** #480: cart note photos (JPEG ~180KB); empty = the same JSON request as before */
@@ -479,9 +484,10 @@ class ApiClient(
         outletId: Int? = CurrentOutlet.merchantFilterId,
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
-        lines.forEach { (productId, qty, unitPrice) ->
-            val pricingType = PricingTypes.normalize(pricingTypesByProduct[productId])
-            val itemRentalDays = rentalDaysByProduct[productId] ?: rentalDays
+        lines.forEachIndexed { index, (productId, qty, unitPrice) ->
+            val extra = lineExtras?.getOrNull(index)
+            val pricingType = PricingTypes.normalize(extra?.pricingType ?: pricingTypesByProduct[productId])
+            val itemRentalDays = extra?.rentalDays ?: rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
             items.put(
@@ -491,8 +497,8 @@ class ApiClient(
                     .put("unitPrice", unitPrice)
                     .put("totalPrice", lineTotal)
                     .apply {
-                        depositsByProduct[productId]?.let { put("deposit", it) }
-                        notesByProduct[productId]?.let { put("notes", it) }
+                        (if (extra != null) extra.deposit else depositsByProduct[productId])?.let { put("deposit", it) }
+                        (if (extra != null) extra.note else notesByProduct[productId])?.let { put("notes", it) }
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
                             put("pricingType", pricingType)
@@ -562,11 +568,17 @@ class ApiClient(
         rentalDaysByProduct: Map<Int, Int> = emptyMap(),
         /** #684: each line's note (`orderItems[].notes`) */
         notesByProduct: Map<Int, String> = emptyMap(),
+        /**
+         * #951: per line (same order as [lines]) mode, days, deposit and note. A product may be on several lines (one
+         * paid, one free), so the by-product maps cannot tell them apart; when given, these win.
+         */
+        lineExtras: List<OrderLineExtra>? = null,
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
-        lines.forEach { (productId, qty, unitPrice) ->
-            val pricingType = PricingTypes.normalize(pricingTypesByProduct[productId])
-            val itemRentalDays = rentalDaysByProduct[productId] ?: rentalDays
+        lines.forEachIndexed { index, (productId, qty, unitPrice) ->
+            val extra = lineExtras?.getOrNull(index)
+            val pricingType = PricingTypes.normalize(extra?.pricingType ?: pricingTypesByProduct[productId])
+            val itemRentalDays = extra?.rentalDays ?: rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
             items.put(
@@ -576,8 +588,8 @@ class ApiClient(
                     .put("unitPrice", unitPrice)
                     .put("totalPrice", lineTotal)
                     .apply {
-                        depositsByProduct[productId]?.let { put("deposit", it) }
-                        notesByProduct[productId]?.let { put("notes", it) }
+                        (if (extra != null) extra.deposit else depositsByProduct[productId])?.let { put("deposit", it) }
+                        (if (extra != null) extra.note else notesByProduct[productId])?.let { put("notes", it) }
                         if (orderType == "RENT") {
                             put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
                             put("pricingType", pricingType)
@@ -1718,3 +1730,11 @@ class ApiClient(
         }
     }
 }
+
+/** #951: one order line's own mode, days, deposit (per unit) and note, sent with its product id, quantity and price */
+data class OrderLineExtra(
+    val pricingType: String,
+    val rentalDays: Int,
+    val deposit: Double?,
+    val note: String?,
+)
