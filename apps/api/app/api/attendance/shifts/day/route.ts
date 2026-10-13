@@ -4,6 +4,7 @@ import { ATTENDANCE_MANAGER_ROLES, attendanceRoute, resolveOutlet, resolveOutlet
 import { attendanceOk, validationFailed } from '../../../../../lib/attendance/http';
 import { assertDayOpen, pickableTemplate, todayAndWorked, withScheduleNotice } from '../../../../../lib/attendance/schedule-ops';
 import { bodyOf, dateKeySchema, hhmmSchema, idSchema, queryIdSchema, queryOf } from '../../../../../lib/attendance/schemas';
+import { assertAllRequired } from '../../../../../lib/attendance/members';
 
 const putSchema = z
   .object({
@@ -23,13 +24,15 @@ const putSchema = z
  * PUT /api/attendance/shifts/day — #907 rules 21-22. MERCHANT, OUTLET_ADMIN (own outlet).
  * Replaces one user's shifts on one day ("Đổi ca", "Giờ riêng", "Xoá ca ngày này").
  * A past or worked day → 409 SHIFT_LOCKED. The user gets SHIFT_CHANGED when the day is in the coming 14.
+ * #927 a shift or custom hours for a user the shop did not choose → 409 ATTENDANCE_NOT_REQUIRED; `off` is allowed.
  */
 export const PUT = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { user }) => {
   const parsed = putSchema.safeParse(await bodyOf(request));
   if (!parsed.success) return validationFailed(parsed.error);
   const body = parsed.data;
   const outlet = await resolveOutlet(user, body.outletId);
-  await resolveOutletUser(user, body.userId, outlet.id);
+  const target = await resolveOutletUser(user, body.userId, outlet.id);
+  if (body.off !== true) assertAllRequired([target]);
   const { today, worked } = await todayAndWorked([body.userId]);
   await assertDayOpen(body.date, today, [body.userId], worked, user.merchantId);
   if (body.templateId !== undefined) await pickableTemplate(user.merchantId, outlet.id, body.templateId);

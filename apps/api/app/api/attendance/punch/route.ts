@@ -15,6 +15,7 @@ import {
 } from '../../../../lib/attendance/rules';
 import { effectiveShiftsForDay } from '../../../../lib/attendance/schedule';
 import { bodyOf } from '../../../../lib/attendance/schemas';
+import { isRequired } from '../../../../lib/attendance/members';
 import { recordView, shiftOfRecord } from '../../../../lib/attendance/views';
 
 const punchSchema = z.object({
@@ -31,6 +32,8 @@ const punchSchema = z.object({
  * AttendanceScan): module, mock location, QR (signature / version / mode / VN day), outlet, configured,
  * GPS accuracy ≤ 100 m, distance ≤ radius. Then one transaction (row lock on the user) decides IN or OUT.
  * Indexed: AttendanceRecord(userId, status), AttendanceScan(userId, at).
+ * #927 an IN by a person the shop did not choose → 403 ATTENDANCE_NOT_REQUIRED (no scan row); an OUT of an
+ * open record always goes through.
  */
 export const POST = attendanceRoute(ATTENDANCE_ROLES, async (request, { user }) => {
   const parsed = punchSchema.safeParse(await bodyOf(request));
@@ -41,6 +44,10 @@ export const POST = attendanceRoute(ATTENDANCE_ROLES, async (request, { user }) 
   await db.attendance.autoCloseOverdue({ userId: user.id }, now);
   const open = await db.attendance.findOpenRecord(user.id);
   const intended: 'IN' | 'OUT' = open ? 'OUT' : 'IN';
+  if (intended === 'IN') {
+    const self = await db.attendance.getUserInMerchant(user.id, user.merchantId);
+    if (!isRequired(self ?? { role: user.role })) return attendanceError('ATTENDANCE_NOT_REQUIRED', 403);
+  }
 
   const qr = parseAttendanceQrCode(body.code);
   const setting = qr ? await db.attendance.getSetting(qr.outletId) : null;

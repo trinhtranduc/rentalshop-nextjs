@@ -72,15 +72,54 @@ export async function findAttendanceSettingByKioskToken(token: string) {
 export async function listAttendanceOutletUsers(outletId: number) {
   return prisma.user.findMany({
     where: { outletId, isActive: true, deletedAt: null, role: { in: [...OUTLET_ROLES] } },
-    select: { id: true, firstName: true, lastName: true, role: true, outletId: true },
+    select: { id: true, firstName: true, lastName: true, role: true, outletId: true, attendanceRequired: true },
     orderBy: { id: 'asc' },
+  });
+}
+
+/**
+ * #927 People of an outlet who can be asked to clock in: its active outlet users plus the shop's active
+ * owners (MERCHANT, outletId null, they punch at any outlet). Order: staff / inventory, outlet admin, owner, id.
+ */
+export async function listAttendanceMembers(outletId: number, merchantId: number) {
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      OR: [
+        { outletId, merchantId, role: { in: [...OUTLET_ROLES] } },
+        { merchantId, role: 'MERCHANT' },
+      ],
+    },
+    select: { id: true, firstName: true, lastName: true, role: true, outletId: true, attendanceRequired: true },
+    orderBy: { id: 'asc' },
+  });
+  const rank = (role: string) => (role === 'OUTLET_ADMIN' ? 1 : role === 'MERCHANT' ? 2 : 0);
+  return users.sort((a, b) => rank(a.role) - rank(b.role) || a.id - b.id);
+}
+
+/** #927 Who must clock in: true / false, or null to follow the role default. */
+export async function setAttendanceRequired(userId: number, value: boolean | null) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { attendanceRequired: value },
+    select: { id: true, firstName: true, lastName: true, role: true, outletId: true, attendanceRequired: true },
   });
 }
 
 export async function getAttendanceUserInMerchant(userId: number, merchantId: number) {
   return prisma.user.findFirst({
     where: { id: userId, merchantId, deletedAt: null },
-    select: { id: true, firstName: true, lastName: true, role: true, outletId: true, merchantId: true, isActive: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      outletId: true,
+      merchantId: true,
+      isActive: true,
+      attendanceRequired: true,
+    },
   });
 }
 
@@ -88,6 +127,6 @@ export async function findUsersByIds(userIds: number[]) {
   if (userIds.length === 0) return [];
   return prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, firstName: true, lastName: true, role: true, outletId: true },
+    select: { id: true, firstName: true, lastName: true, role: true, outletId: true, attendanceRequired: true },
   });
 }

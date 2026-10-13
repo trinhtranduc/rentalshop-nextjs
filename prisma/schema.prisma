@@ -28,6 +28,8 @@ model User {
   merchantId             Int?
   outletId               Int?
   deletedAt              DateTime?
+  /// #927 must clock in (attendance module). null = role default: OUTLET_STAFF, OUTLET_INVENTORY yes; others no
+  attendanceRequired     Boolean?
   auditLogs              AuditLog[]
   requestLogs            RequestLog[]           @relation("RequestLogs")
   /// Google account id (sub) when user signed up or linked Google OAuth

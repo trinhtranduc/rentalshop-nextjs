@@ -13,6 +13,7 @@ import {
 } from '../../../../../lib/attendance/schedule-ops';
 import { bodyOf, dateKeySchema, idSchema, paramId, weekdaysSchema } from '../../../../../lib/attendance/schemas';
 import { ruleView } from '../../../../../lib/attendance/templates';
+import { assertAllRequired } from '../../../../../lib/attendance/members';
 
 type Params = { params: Promise<{ id: string }> | { id: string } };
 
@@ -33,6 +34,7 @@ const putSchema = z.object({
 /**
  * PUT /api/attendance/shift-rules/[id] — #907 rule 20. Ends the old rule the day before `effectiveFrom`
  * and starts a new rule from it (history kept). effectiveFrom ≥ today (VN) else 409 SHIFT_LOCKED.
+ * #927 the user is not chosen to clock in → 409 ATTENDANCE_NOT_REQUIRED (stop / delete stay allowed).
  */
 export async function PUT(request: NextRequest, { params }: Params) {
   return attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (req, { user }) => {
@@ -41,6 +43,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
     if (!parsed.success) return validationFailed(parsed.error);
     const body = parsed.data;
     if (rule.endDate && body.effectiveFrom > rule.endDate) return attendanceError('INVALID_PAYLOAD', 400);
+    const target = await db.attendance.getUserInMerchant(rule.userId, user.merchantId);
+    if (target) assertAllRequired([target]);
 
     const { today, worked } = await todayAndWorked([rule.userId]);
     await assertDayOpen(body.effectiveFrom, today, [rule.userId], worked, user.merchantId);

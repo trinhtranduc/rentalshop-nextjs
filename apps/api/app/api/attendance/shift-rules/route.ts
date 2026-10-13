@@ -16,6 +16,7 @@ import {
 } from '../../../../lib/attendance/schedule-ops';
 import { bodyOf, dateKeySchema, idSchema, queryIdSchema, queryOf, weekdaysSchema } from '../../../../lib/attendance/schemas';
 import { ruleView } from '../../../../lib/attendance/templates';
+import { assertAllRequired } from '../../../../lib/attendance/members';
 
 /**
  * GET /api/attendance/shift-rules?outletId= — #907 rule 20. MERCHANT, OUTLET_ADMIN (own outlet).
@@ -41,6 +42,7 @@ const createSchema = z.object({
 /**
  * POST /api/attendance/shift-rules — #907 rule 20. One rule row per user, repeating weekly.
  * startDate ≥ today (VN) else 409 SHIFT_LOCKED; overlap with another rule of a user → 409 SHIFT_OVERLAP.
+ * #927 a user the shop did not choose to clock in → 409 ATTENDANCE_NOT_REQUIRED (data.users names them).
  */
 export const POST = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { user }) => {
   const parsed = createSchema.safeParse(await bodyOf(request));
@@ -51,7 +53,9 @@ export const POST = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { 
 
   const outlet = await resolveOutlet(user, body.outletId);
   const userIds = [...new Set(body.userIds)];
-  for (const id of userIds) await resolveOutletUser(user, id, outlet.id);
+  const targets = [];
+  for (const id of userIds) targets.push(await resolveOutletUser(user, id, outlet.id));
+  assertAllRequired(targets);
   const template = await pickableTemplate(user.merchantId, outlet.id, body.templateId);
 
   const { today, worked } = await todayAndWorked(userIds);

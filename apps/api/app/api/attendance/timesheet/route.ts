@@ -13,7 +13,7 @@ export const GET = attendanceRoute(ATTENDANCE_MANAGER_ROLES, async (request, { u
   const parsed = z.object({ outletId: queryIdSchema, month: monthSchema }).safeParse(queryOf(request.url));
   if (!parsed.success) return validationFailed(parsed.error);
   const outlet = await resolveOutlet(user, parsed.data.outletId);
-  const sheet = await loadTimesheet(outlet.id, parsed.data.month);
+  const sheet = await loadTimesheet(outlet.id, parsed.data.month, user.merchantId);
   return attendanceOk('ATTENDANCE_TIMESHEET_SUCCESS', {
     outletId: sheet.outletId,
     month: sheet.month,

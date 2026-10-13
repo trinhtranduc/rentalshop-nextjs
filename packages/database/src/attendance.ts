@@ -9,7 +9,9 @@ import {
   getAttendanceSetting,
   getAttendanceUserInMerchant,
   listAttendanceOutletUsers,
+  listAttendanceMembers,
   listAttendanceOutlets,
+  setAttendanceRequired,
   listAttendanceSettings,
   setAttendanceKioskToken,
   upsertAttendanceSetting,
@@ -63,6 +65,8 @@ export const attendance = {
   setKioskToken: setAttendanceKioskToken,
   findSettingByKioskToken: findAttendanceSettingByKioskToken,
   listOutletUsers: listAttendanceOutletUsers,
+  listMembers: listAttendanceMembers,
+  setRequired: setAttendanceRequired,
   getUserInMerchant: getAttendanceUserInMerchant,
   findUsersByIds,
   // schedule

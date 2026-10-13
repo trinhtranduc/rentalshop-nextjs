@@ -533,6 +533,8 @@
   "SHIFT_OVERLAP": "Ca này trùng giờ với ca khác của nhân viên.",
   "SHIFT_LOCKED": "Không đổi được ngày đã qua hoặc ngày đã chấm công.",
   "SHIFT_LOCKED_NAMED": "{names} đã chấm công hôm nay nên không đổi ca hôm nay được. Chọn ngày bắt đầu từ ngày mai.",
+  "ATTENDANCE_NOT_REQUIRED": "Người này chưa được chọn chấm công. Bật ở Chi nhánh › Chấm công › Ai cần chấm công.",
+  "ATTENDANCE_NOT_REQUIRED_NAMED": "{names} chưa được chọn chấm công. Bật ở Chi nhánh › Chấm công › Ai cần chấm công trước.",
   "SHIFT_TEMPLATE_IN_USE": "Ca này đang được dùng. Hãy ẩn thay vì xoá.",
   "MONTH_LOCKED": "Tháng này đã khoá. Nhờ chủ shop mở khoá."
 }
