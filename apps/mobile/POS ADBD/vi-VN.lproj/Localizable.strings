@@ -2568,3 +2568,7 @@
 "overview.related.collateralHeld" = "Đang giữ thế chân";
 /* #949 QR of another outlet: %1$@ = the code's outlet, %2$@ = the person's outlets */
 "attendance.error.wrongOutlet.messageDetail" = "Mã này của %1$@. Bạn chấm công ở %2$@.";
+
+/* #951: 0đ is a price */
+"Rent price must be greater than or equal to 0" = "Giá thuê phải lớn hơn hoặc bằng 0";
+"Daily price must be greater than or equal to 0" = "Giá thuê theo ngày phải lớn hơn hoặc bằng 0";

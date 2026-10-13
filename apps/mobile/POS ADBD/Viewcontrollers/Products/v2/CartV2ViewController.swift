@@ -279,7 +279,8 @@ final class CartV2ViewController: BaseViewControler {
         for (index, item) in cart.items.enumerated() {
             // #893 (owner): swipe right-to-left reveals a red "Xoá"; a full swipe removes the line
             let swipe = SwipeDeleteRow(content: itemRow(item, index: index))
-            swipe.onDelete = { CartStore.shared.removeItem(at: index) }
+            let lineId = item.lineId
+            swipe.onDelete = { CartStore.shared.removeItem(line: lineId) }
             content.addArrangedSubview(swipe)
         }
 
@@ -528,7 +529,7 @@ final class CartV2ViewController: BaseViewControler {
             tag.setContentCompressionResistancePriority(.required, for: .horizontal)
             nameRow.addArrangedSubview(tag)
         }
-        let shortageText: String? = CartV2Logic.shortage(item).map { left in
+        let shortageText: String? = CartV2Logic.shortage(item, in: cart.items).map { left in
             String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left)
         }
         if !(isRent && conflicts[item.productId] != nil), let text = shortageText {
@@ -627,7 +628,8 @@ final class CartV2ViewController: BaseViewControler {
         guard index < cart.items.count else { return }
         let item = cart.items[index]
         let sheet = CartItemNoteSheet(productName: item.productName ?? "", note: item.note)
-        sheet.onSave = { note in CartStore.shared.updateNote(at: index, note: CartV2Logic.noteText(note)) }
+        let lineId = item.lineId
+        sheet.onSave = { note in CartStore.shared.updateNote(line: lineId, note: CartV2Logic.noteText(note)) }
         present(sheet, animated: true)
     }
 
@@ -806,8 +808,9 @@ final class CartV2ViewController: BaseViewControler {
         let index = sender.tag
         guard index < cart.items.count, presentedViewController == nil else { return }
         let sheet = CartPricingSheetViewController(item: cart.items[index], orderType: cart.orderType, days: rentalDays)
+        let lineId = cart.items[index].lineId
         sheet.onApply = { type, price in
-            CartStore.shared.applyLinePricing(at: index, type: type, price: price)
+            CartStore.shared.applyLinePricing(line: lineId, type: type, price: price)
         }
         if let presentation = sheet.sheetPresentationController {
             presentation.detents = [.large()]
@@ -827,9 +830,10 @@ final class CartV2ViewController: BaseViewControler {
         guard index < cart.items.count else { return }
         if quantity <= 0 {
             let name = cart.items[index].productName ?? ""
+            let lineId = cart.items[index].lineId
             UIAlertController.alert(parent: self, title: "products.cart.removeTitle".localized(), message: name,
                                     okTitle: "products.cart.remove".localized(), cancelTitle: "Cancel".localized(),
-                                    okAction: { _ in CartStore.shared.removeItem(at: index) },
+                                    okAction: { _ in CartStore.shared.removeItem(line: lineId) },
                                     cancelAction: { [weak self] _ in self?.render() })
             return
         }
@@ -1154,8 +1158,8 @@ private extension UIView {
 /// Bottom sheet of one cart line: the pricing options as radio rows, the price for this order, a live preview and
 /// "Áp dụng". Only the cart line changes, never the product's price.
 final class CartPricingSheetViewController: UIViewController, UITextFieldDelegate {
-    /// pricing type (nil on a sale line) and the unit price for this order
-    var onApply: ((String?, Double) -> Void)?
+    /// pricing type (nil on a sale line) and the unit price for this order (#951: nil = the box left empty, 0 = free)
+    var onApply: ((String?, Double?) -> Void)?
 
     private let item: CartItem
     private let orderType: OrderType
@@ -1265,7 +1269,7 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
             make.bottom.equalToSuperview().offset(-20)
         }
 
-        setPrice(CartV2Logic.startPrice(item, type: selectedType))
+        setPrice(orderType == .sale ? item.price : CartV2Logic.startPrice(item, type: selectedType))
     }
 
     // MARK: Rows
@@ -1318,12 +1322,13 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
 
     // MARK: Price
 
-    private var price: Double {
-        Double(String((priceField.text ?? "").filter { $0.isNumber })) ?? 0
+    /// #951: nil while the box is empty; "0" is a price (a free line)
+    private var price: Double? {
+        Double(String((priceField.text ?? "").filter { $0.isNumber }))
     }
 
-    private func setPrice(_ value: Double) {
-        priceField.text = value > 0 ? MoneyFormatter.format(value) : ""
+    private func setPrice(_ value: Double?) {
+        priceField.text = value.map { MoneyFormatter.format($0) } ?? ""
         priceField.placeholder = "0"
         let daily = orderType == .rent && selectedType == ProductPricingMode.perDay.rawValue
         unitLabel.text = (daily ? "products.cart.pricing.unitDaily" : "products.cart.pricing.unit").localized()
@@ -1337,7 +1342,7 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     }
 
     private func updatePreview() {
-        let preview = CartV2Logic.pricePreview(type: selectedType, price: price, days: days, quantity: item.quantity, orderType: orderType)
+        let preview = CartV2Logic.pricePreview(type: selectedType, price: price ?? 0, days: days, quantity: item.quantity, orderType: orderType)
         previewText.text = preview.text
         previewTotal.text = CartV2Logic.money(preview.total)
     }

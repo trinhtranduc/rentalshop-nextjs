@@ -105,8 +105,9 @@ enum ProductPricing {
             let price = product.rentPrice ?? product.rent
             return price > 0 ? price : nil
         }
+        // #951: an option priced 0 is a 0đ price; only a legacy rentPrice of 0 means "no price"
         guard let price = options.first(where: { $0.type.uppercased() == ProductPricingMode.perRental.rawValue })?.price,
-              price > 0 else { return nil }
+              price >= 0 else { return nil }
         return price
     }
 
@@ -119,7 +120,7 @@ enum ProductPricing {
             return price > 0 ? price : nil
         }
         guard let price = options.first(where: { $0.type.uppercased() == ProductPricingMode.perDay.rawValue })?.price,
-              price > 0 else { return nil }
+              price >= 0 else { return nil }
         return price
     }
 
@@ -136,8 +137,9 @@ enum ProductPricing {
     /// Options sent on save. The API keeps one default and copies its price into `rentPrice`.
     /// A default without a price falls back to the mode that has one.
     static func options(perRental: Double?, perDay: Double?, defaultMode: ProductPricingMode) -> [PricingOptionRequest] {
-        let fixed = (perRental ?? 0) > 0 ? perRental : nil
-        let daily = (perDay ?? 0) > 0 ? perDay : nil
+        // #951: an empty box (nil) is no price; 0 is a 0đ price
+        let fixed = (perRental ?? -1) >= 0 ? perRental : nil
+        let daily = (perDay ?? -1) >= 0 ? perDay : nil
         var mode = defaultMode
         if mode == .perDay && daily == nil { mode = .perRental }
         if mode == .perRental && fixed == nil && daily != nil { mode = .perDay }
@@ -365,7 +367,7 @@ enum ProductFormValidator {
         if amounts.contains(where: { ($0 ?? 0) < 0 }) {
             issues.append(.negativeAmount)
         }
-        if input.showsPrices && input.defaultMode == .perDay && (input.perDay ?? 0) <= 0 {
+        if input.showsPrices && input.defaultMode == .perDay && input.perDay == nil {
             issues.append(.perDayDefaultNeedsPrice)
         }
         if input.quantity < 0 {
@@ -449,7 +451,7 @@ enum CartV2Logic {
 
     /// "Theo lần / Theo ngày" only when the product has a price for both
     static func offersBothModes(_ item: CartItem) -> Bool {
-        let options = (item.pricingOptions ?? []).filter { $0.isActive != false && $0.price > 0 }
+        let options = (item.pricingOptions ?? []).filter { $0.isActive != false && $0.price >= 0 }
         let types = Set(options.map { $0.type.uppercased() })
         return types.contains(ProductPricingMode.perRental.rawValue) && types.contains(ProductPricingMode.perDay.rawValue)
     }
@@ -459,9 +461,10 @@ enum CartV2Logic {
         orderType == .rent
     }
 
-    /// A rent line with no price yet (a mode the product has no price for): the cart asks for one
+    /// A rent line with no price yet (a mode the product has no price for): the cart asks for one.
+    /// #951: 0 is a price (a 0đ product, a line given free); a sale line never asks.
     static func needsPrice(_ item: CartItem, orderType: OrderType) -> Bool {
-        orderType == .rent && item.price <= 0
+        orderType == .rent && item.priceMissing
     }
 
     // MARK: Pricing sheet (#482, board Gio-hang-chon-gia)
@@ -491,7 +494,7 @@ enum CartV2Logic {
             types.append(option.type.uppercased())
         }
         return types.map { type in
-            let price = options.first { $0.type.uppercased() == type && $0.price > 0 }?.price
+            let price = options.first { $0.type.uppercased() == type && $0.price >= 0 }?.price
             return CartPricingChoice(type: type, catalogPrice: price)
         }
     }
@@ -502,23 +505,28 @@ enum CartV2Logic {
     }
 
     /// Price the field shows for a row: the line's price for its own mode, a price typed earlier for that mode, the
-    /// catalog price, else 0
-    static func startPrice(_ item: CartItem, type: String) -> Double {
+    /// catalog price; nil (an empty field) when there is none. #951: a 0đ price shows "0".
+    static func startPrice(_ item: CartItem, type: String) -> Double? {
         let type = type.uppercased()
-        if type == currentType(item) { return item.price }
+        if type == currentType(item) { return item.priceMissing ? nil : item.price }
         let catalog = pricingChoices(item).first { $0.type == type }?.catalogPrice
         switch type {
-        case ProductPricingMode.perDay.rawValue: return item.customDailyPrice ?? catalog ?? 0
-        case ProductPricingMode.perRental.rawValue: return item.customFixedPrice ?? catalog ?? 0
-        default: return catalog ?? 0
+        case ProductPricingMode.perDay.rawValue: return item.customDailyPrice ?? catalog
+        case ProductPricingMode.perRental.rawValue: return item.customFixedPrice ?? catalog
+        default: return catalog
         }
+    }
+
+    /// #951: whether the line shows its price ("0đ" included) or "Nhập giá"
+    static func showsPrice(_ item: CartItem, orderType: OrderType) -> Bool {
+        orderType == .sale || !item.priceMissing
     }
 
     /// The chip of a line: "Theo ngày" + "150.000đ/ngày × 2 ngày" ("Giá bán" on a sale); price nil = "Nhập giá".
     /// #684 (Dòng gọn): the chip carries the line's numbers, so a daily price over several days shows the days too
     static func chip(_ item: CartItem, orderType: OrderType) -> (label: String, price: String?) {
         let label = orderType == .sale ? "products.cart.pricing.sale".localized() : pricingLabel(currentType(item))
-        guard item.price > 0 else { return (label, nil) }
+        guard showsPrice(item, orderType: orderType) else { return (label, nil) }
         var price = priceText(item.price, type: currentType(item), orderType: orderType)
         if orderType == .rent, item.isDailyPricing, item.rentalDays > 1 {
             price += " × " + PluralText.format("products.cart.days", count: item.rentalDays, item.rentalDays)
@@ -529,7 +537,7 @@ enum CartV2Logic {
     /// #684 (owner): the cart line's blue link reads price first — "200.000đ / theo lần", "400.000đ / theo ngày × 3 ngày",
     /// "900.000đ / giá bán"; `amount` nil = no price yet ("Nhập giá / theo lần")
     static func link(_ item: CartItem, orderType: OrderType) -> (amount: String?, unit: String) {
-        (item.price > 0 ? money(item.price) : nil,
+        (showsPrice(item, orderType: orderType) ? money(item.price) : nil,
          pricingUnit(type: currentType(item), days: item.rentalDays, orderType: orderType))
     }
 
@@ -594,7 +602,13 @@ enum CartV2Logic {
 
     /// Units free for the chosen dates (rent) or in stock today (sale), from batch availability; nil = not loaded
     static func shortage(_ item: CartItem) -> Int? {
-        guard let status = item.availabilityStatus, status.available < item.quantity else { return nil }
+        shortage(item, in: [item])
+    }
+
+    /// #951: a product may sit on several lines; the units asked are those of every line of the product
+    static func shortage(_ item: CartItem, in items: [CartItem]) -> Int? {
+        let asked = items.filter { $0.productId == item.productId }.reduce(0) { $0 + $1.quantity }
+        guard let status = item.availabilityStatus, status.available < max(asked, item.quantity) else { return nil }
         return max(0, status.available)
     }
 

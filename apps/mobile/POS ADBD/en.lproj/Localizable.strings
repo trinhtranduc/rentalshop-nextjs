@@ -2570,3 +2570,7 @@
 "overview.related.collateralHeld" = "Collateral held now";
 /* #949 QR of another outlet: %1$@ = the code's outlet, %2$@ = the person's outlets */
 "attendance.error.wrongOutlet.messageDetail" = "This code is for %1$@. You clock in at %2$@.";
+
+/* #951: 0đ is a price */
+"Rent price must be greater than or equal to 0" = "Rental price must be greater than or equal to 0";
+"Daily price must be greater than or equal to 0" = "Daily price must be greater than or equal to 0";

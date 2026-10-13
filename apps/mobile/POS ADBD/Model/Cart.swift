@@ -94,32 +94,23 @@ class Cart {
     
     /// Add a product to cart
     func addItem(product: Product, quantity: Int, price: Double) {
-        // Check if product already exists in cart
-        let productId = product.product_id != 0 ? product.product_id : (product.id ?? 0)
-        if let index = items.firstIndex(where: { $0.productId == productId }) {
-            // Update existing item quantity; a stale line takes the product's prices (#473)
-            items[index].quantity += quantity
-            items[index].refreshPricing(from: product)
-        } else {
-            // Add new item
-            let item = CartItem(from: product, quantity: quantity, price: price)
-            items.append(item)
-        }
+        // #951 (owner): every add is a new line, so one unit can be paid and another free. Earlier lines of the
+        // product take its current prices (#473).
+        refreshPricing(from: product)
+        items.append(CartItem(from: product, quantity: quantity, price: price))
         // Auto-update deposit from items (only if not manually overridden)
         updateDepositFromItems()
     }
 
     /// Add CartItem directly to cart
     func addItem(_ cartItem: CartItem) {
-        // Check if product already exists in cart
-        if let index = items.firstIndex(where: { $0.productId == cartItem.productId }) {
-            // Update existing item quantity; a stale line takes the added line's prices (#473)
-            items[index].quantity += cartItem.quantity
+        // #951 (owner): every add is a new line; earlier lines of the product take the added line's prices (#473)
+        for index in items.indices where items[index].productId == cartItem.productId {
             items[index].adoptPricingOptions(cartItem.pricingOptions)
-        } else {
-            // Add new item
-            items.append(cartItem)
         }
+        var line = cartItem
+        if items.contains(where: { $0.lineId == line.lineId }) { line.lineId = UUID() }
+        items.append(line)
         // Auto-update deposit from items (only if not manually overridden)
         updateDepositFromItems()
     }
@@ -130,6 +121,11 @@ class Cart {
         for index in items.indices where items[index].productId == productId {
             items[index].refreshPricing(from: product)
         }
+    }
+
+    /// #951: the index of a line by its id (nil when it is gone)
+    func index(ofLine lineId: UUID) -> Int? {
+        items.firstIndex { $0.lineId == lineId }
     }
 
     /// Remove item at specific index
@@ -167,6 +163,18 @@ class Cart {
         // Auto-update deposit from items (only if not manually overridden)
         // Note: Price doesn't affect deposit calculation, but we update anyway to ensure consistency
         updateDepositFromItems()
+    }
+
+    /// #951: the line's price box left empty: drop the price typed for this order (rent: back to the product's price
+    /// for the line's mode, or "Nhập giá" when it has none; sale: back to the sale price)
+    func clearPrice(at index: Int) {
+        guard index >= 0 && index < items.count else { return }
+        if orderType == .rent {
+            items[index].clearCustomRentalPrice()
+        } else {
+            items[index].customSalePrice = nil
+            items[index].price = items[index].originalSalePrice
+        }
     }
 
     /// Sync the displayed price for every item to the current order type without changing custom price state.
