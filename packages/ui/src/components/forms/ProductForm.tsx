@@ -23,9 +23,10 @@ import { formatCurrency } from '../../lib';
 import {
   uploadImage,
   getAuthToken,
-  buildProductPricingOptions,
+  buildProductFormPricing,
   getProductDefaultPricingMode,
   getProductRentalPrices,
+  readPriceBox,
   validateProductPricing,
   type UploadProgress,
   type ProductPricingMode,
@@ -70,7 +71,8 @@ interface ProductFormData {
   barcode: string;
   categoryId: number;
   rentPrice: number;
-  salePrice: number;
+  /** #952: null = empty box (no sale price sent), 0 = 0đ */
+  salePrice: number | null;
   costPrice: number;
   deposit: number;
   totalStock: number;
@@ -89,20 +91,62 @@ interface ProductFormData {
   } | null;
   // Saved pricing options (read on edit to seed the two prices and the default)
   pricingOptions?: PricingOption[];
-  // Rental prices as typed (0 = empty) and the default for new orders (#460, same as iOS)
-  perRentalPrice: number;
-  perDayPrice: number;
+  // Rental prices as typed and the default for new orders (#460, same as iOS). #952: null = empty box, 0 = 0đ
+  perRentalPrice: number | null;
+  perDayPrice: number | null;
   pricingDefault: ProductPricingMode;
 }
 
-/** The two rental prices and the default mode from saved product data (#460). */
+/**
+ * The two rental prices, the default mode and the sale price from saved product data (#460).
+ * #952: a saved 0đ price stays 0đ (shown "0"); a missing price is an empty box. Saving untouched keeps both.
+ */
 const seedRentalPricing = (data: Partial<ProductFormData>) => {
   const { perRental, perDay } = getProductRentalPrices(data);
+  const sale = data.salePrice == null ? null : Number(data.salePrice);
   return {
-    perRentalPrice: perRental ?? 0,
-    perDayPrice: perDay ?? 0,
+    perRentalPrice: perRental,
+    perDayPrice: perDay,
     pricingDefault: getProductDefaultPricingMode(data),
+    salePrice: sale != null && Number.isFinite(sale) && sale >= 0 ? sale : null,
   };
+};
+
+/**
+ * #952: a price box where empty and 0 differ: '' = no price (null), "0" = 0đ. NumericInput turns '' into 0 and
+ * shows 0 as empty, so it cannot hold a 0đ price.
+ */
+const PriceBox: React.FC<{
+  label: string;
+  value: number | null;
+  onChange: (value: number | null) => void;
+  error?: boolean;
+}> = ({ label, value, onChange, error }) => {
+  const show = (v: number | null) => (v == null ? '' : v.toLocaleString('en-US', { maximumFractionDigits: 2 }));
+  const [text, setText] = useState(show(value));
+  // Follow a new value from outside (form re-initialised), not the one just typed
+  useEffect(() => {
+    if (readPriceBox(text) !== value) setText(show(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-text-primary">{label}</label>
+      <Input
+        type="text"
+        inputMode="decimal"
+        aria-label={label}
+        value={text}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^\d.,]/g, '');
+          setText(raw);
+          onChange(readPriceBox(raw));
+        }}
+        onBlur={() => setText(show(readPriceBox(text)))}
+        className={error ? 'border-red-500 focus:border-red-500' : undefined}
+      />
+    </div>
+  );
 };
 
 interface ProductFormProps {
@@ -158,7 +202,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     barcode: '',
     categoryId: 0,
     rentPrice: 0,
-    salePrice: 0,
     costPrice: 0,
     deposit: 0,
     totalStock: 0,
@@ -242,7 +285,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         barcode: '',
         categoryId: 0,
         rentPrice: 0,
-        salePrice: 0,
         costPrice: 0,
         deposit: 0,
         totalStock: 0,
@@ -381,7 +423,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       Object.assign(newErrors, rentalPricingErrors());
     }
 
-    if (canEditPricing && formData.salePrice <= 0) {
+    // #952: the sale price is optional (a rent-only product), 0 is 0đ; only a negative one is refused
+    if (canEditPricing && (formData.salePrice ?? 0) < 0) {
       newErrors.salePrice = tv('fields.salePrice.required');
     }
 
@@ -483,7 +526,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         Object.assign(newErrors, rentalPricingErrors());
       }
 
-      if (canEditPricing && formData.salePrice <= 0) {
+      if (canEditPricing && (formData.salePrice ?? 0) < 0) {
         newErrors.salePrice = tv('fields.salePrice.required');
       }
 
@@ -520,8 +563,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     // Same payload as the mobile apps (#460): priced options only, one default; the API copies the
     // default's price into rentPrice and its type into pricingType. No pricingType is sent (a DAILY
     // pricingType on create would require durationConfig). [] on edit clears both prices.
-    const pricingOptions = buildProductPricingOptions(formData.perRentalPrice, formData.perDayPrice, formData.pricingDefault);
-    const defaultOption = pricingOptions.find(o => o.isDefault);
+    // #952: an empty box is no price, 0 is 0đ (same rule as the shop web form, #951)
+    const pricing = buildProductFormPricing({
+      perRental: formData.perRentalPrice,
+      perDay: formData.perDayPrice,
+      defaultMode: formData.pricingDefault,
+      salePrice: formData.salePrice,
+    });
 
     // rentPrice is left out for users without price rights (the API keeps the saved price / defaults to 0)
     const productData: Omit<ProductInput, 'rentPrice'> & {
@@ -538,9 +586,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       // Prices only for users who see the price fields (iOS sends none otherwise)
       ...(canEditPricing
         ? {
-            rentPrice: defaultOption?.price ?? 0,
-            salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
-            pricingOptions,
+            rentPrice: pricing.rentPrice,
+            salePrice: pricing.salePrice,
+            pricingOptions: pricing.pricingOptions,
           }
         : {}),
       // Only include costPrice if user has products.manage permission
@@ -561,7 +609,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   // ---- Rental pricing: per-rental and per-day, both optional, plus the default (#460) ----
   const updateRentalPricing = (
     field: 'perRentalPrice' | 'perDayPrice' | 'pricingDefault',
-    value: number | ProductPricingMode
+    value: number | null | ProductPricingMode
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors.rentPrice || errors.pricingDefault) {
@@ -979,26 +1027,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <NumericInput
+                  <PriceBox
                     label={t('pricing.pricePerRental')}
                     value={formData.perRentalPrice}
                     onChange={(value) => updateRentalPricing('perRentalPrice', value)}
-                    placeholder="0"
                     error={!!errors.rentPrice}
-                    allowDecimals={true}
-                    maxDecimalPlaces={2}
                   />
                   {errors.rentPrice && <p className="text-sm text-red-500">{errors.rentPrice}</p>}
                 </div>
 
                 <div>
-                  <NumericInput
+                  <PriceBox
                     label={t('pricing.pricePerDay')}
                     value={formData.perDayPrice}
                     onChange={(value) => updateRentalPricing('perDayPrice', value)}
-                    placeholder="0"
-                    allowDecimals={true}
-                    maxDecimalPlaces={2}
                   />
                 </div>
               </div>
@@ -1055,14 +1097,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
                 {canEditPricing && (
                 <div>
-                  <NumericInput
+                  <PriceBox
                     label={t('fields.salePrice')}
                     value={formData.salePrice}
-                    onChange={(value) => handleInputChange('salePrice', value)}
-                    placeholder="0"
+                    onChange={(value) => {
+                      setFormData(prev => ({ ...prev, salePrice: value }));
+                      if (errors.salePrice) setValidationErrors(prev => ({ ...prev, salePrice: undefined }));
+                    }}
                     error={!!errors.salePrice}
-                    allowDecimals={true}
-                    maxDecimalPlaces={2}
                   />
                   {errors.salePrice && <p className="text-sm text-red-500">{errors.salePrice}</p>}
                 </div>

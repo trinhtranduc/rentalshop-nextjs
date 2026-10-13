@@ -74,8 +74,8 @@ export function CreateConfirmDialog({
           <dt className="text-ar-muted">{t('editor.confirm.items')}</dt>
           <dd className="m-0">
             <ul className="m-0 flex list-none flex-col gap-1 p-0">
-              {view.items.map((item) => (
-                <li key={item.productId} className="flex items-baseline justify-between gap-3">
+              {view.items.map((item, i) => (
+                <li key={`${i}-${item.productId}`} className="flex items-baseline justify-between gap-3">
                   <span className="min-w-0 text-ar-ink">
                     {item.name}
                     <span className="whitespace-nowrap tabular-nums text-ar-muted">

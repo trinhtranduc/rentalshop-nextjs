@@ -30,6 +30,7 @@ import {
   lineModes,
   lineTotal,
   needsPrice,
+  productQuantity,
   selectMode,
   setLinePrice,
   setLineNote,
@@ -67,14 +68,14 @@ describe('lines', () => {
     expect(lineFromProduct(VEST, 'SALE').unitPrice).toBe(300_000);
   });
 
-  it('adds, counts up, sets and removes', () => {
+  it('adds, sets and removes (#952: every add is a new line)', () => {
     let lines = addProduct([], AO_DAI, 'RENT');
     lines = addProduct(lines, AO_DAI, 'RENT');
     lines = addProduct(lines, VEST, 'RENT');
-    expect(lines.map((l) => [l.productId, l.quantity])).toEqual([[11, 2], [12, 1]]);
+    expect(lines.map((l) => [l.productId, l.quantity])).toEqual([[11, 1], [11, 1], [12, 1]]);
     lines = setQuantity(lines, 12, 0);
-    expect(lines).toHaveLength(1);
-    expect(setQuantity(lines, 11, 3)[0].quantity).toBe(3);
+    expect(lines).toHaveLength(2);
+    expect(setQuantity(lines, lines[0].key, 3).map((l) => l.quantity)).toEqual([3, 1]);
   });
 
   it('switches option and reprices on Thuê ↔ Bán', () => {
@@ -591,5 +592,92 @@ describe('two lines of one product (#951)', () => {
     next = setQuantity(next, a.key, 0);
     expect(next).toHaveLength(1);
     expect(next[0].key).toBe(b.key);
+  });
+});
+
+// #952: like the mobile apps after #951, every add of a product is a new cart line (owner: no merging)
+describe('every add makes a new line (#952)', () => {
+  it('adding the same product twice gives two lines, each with its own key, rent or sale', () => {
+    for (const type of ['RENT', 'SALE'] as const) {
+      const lines = addProduct(addProduct([], AO_DAI, type), AO_DAI, type);
+      expect(lines).toHaveLength(2);
+      expect(lines.map((l) => [l.productId, l.quantity])).toEqual([[11, 1], [11, 1]]);
+      expect(lines[0].key).not.toBe(lines[1].key);
+    }
+  });
+
+  it('a new line never changes the lines already in the cart', () => {
+    let lines = addProduct([], AO_DAI, 'RENT');
+    lines = setQuantity(lines, lines[0].key, 2);
+    lines = setLinePrice(lines, lines[0].key, 99_000);
+    const first = lines[0];
+    lines = addProduct(lines, AO_DAI, 'RENT');
+    expect(lines[0]).toEqual(first);
+    expect(lines[1]).toMatchObject({ quantity: 1, unitPrice: 150_000, pricingType: 'DAILY' });
+  });
+
+  it('quantity, price (0đ too), note and remove act on the line, not on the product', () => {
+    let lines = addProduct(addProduct([], AO_DAI, 'RENT'), AO_DAI, 'RENT');
+    const [a, b] = lines;
+    lines = setLinePrice(lines, b.key, 0);
+    expect(lines.map((l) => l.unitPrice)).toEqual([150_000, 0]);
+    expect(needsPrice(lines[1], 'RENT')).toBe(false);
+    lines = setQuantity(lines, a.key, 3);
+    expect(lines.map((l) => l.quantity)).toEqual([3, 1]);
+    lines = setLineNote(lines, b.key, 'Tặng');
+    expect(lines.map((l) => l.notes)).toEqual(['', 'Tặng']);
+    lines = setQuantity(lines, a.key, 0);
+    expect(lines.map((l) => l.key)).toEqual([b.key]);
+  });
+
+  it('stock and availability count every line of a product', () => {
+    let lines = addProduct(addProduct(addProduct([], AO_DAI, 'RENT'), AO_DAI, 'RENT'), VEST, 'RENT');
+    lines = setQuantity(lines, lines[1].key, 2);
+    expect(productQuantity(lines, 11)).toBe(3);
+    expect(productQuantity(lines, 12)).toBe(1);
+    expect(productQuantity(lines, 99)).toBe(0);
+  });
+
+  it('the payload sends one order item per line, the same product on two items', () => {
+    let lines = addProduct(addProduct([], AO_DAI, 'SALE'), AO_DAI, 'SALE');
+    lines = setLinePrice(lines, lines[1].key, 0, 'SALE');
+    const p = buildPayload({
+      mode: 'create',
+      orderType: 'SALE',
+      customerId: 7,
+      outletId: 1,
+      pickup: '',
+      ret: '',
+      lines,
+      discountType: 'amount',
+      discountValue: 0,
+      depositAmount: null,
+      securityDeposit: 0,
+      notes: '',
+    });
+    expect(p.orderItems.map((i: { productId: number; unitPrice: number }) => [i.productId, i.unitPrice])).toEqual([
+      [11, 900_000],
+      [11, 0],
+    ]);
+  });
+
+  it('editing an order keeps one line per saved item', () => {
+    const d = draftFromOrder(
+      {
+        orderType: 'RENT',
+        orderItems: [
+          { productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 1, unitPrice: 150_000, pricingType: 'FIXED' },
+          { productId: 12, product: { id: 12, name: 'Vest' }, quantity: 1, unitPrice: 80_000, pricingType: 'FIXED' },
+          { productId: 11, product: { id: 11, name: 'Áo dài đỏ' }, quantity: 1, unitPrice: 0, pricingType: 'FIXED' },
+        ],
+      },
+      getLocalDateKey,
+    );
+    expect(d.lines.map((l) => [l.productId, l.unitPrice])).toEqual([
+      [11, 150_000],
+      [12, 80_000],
+      [11, 0],
+    ]);
+    expect(new Set(d.lines.map((l) => l.key)).size).toBe(3);
   });
 });

@@ -77,13 +77,15 @@ describe('product form prices (#460)', () => {
     ]);
     // A default without a price falls back to the mode that has one
     expect(buildProductPricingOptions(null, 100_000, 'FIXED')).toEqual([{ type: 'DAILY', price: 100_000, isDefault: true }]);
-    expect(buildProductPricingOptions(150_000, 0, 'DAILY')).toEqual([{ type: 'FIXED', price: 150_000, isDefault: true }]);
+    // #952: 0 is a 0đ price (see admin-product-zero-price.test.ts); an empty price falls back
+    expect(buildProductPricingOptions(150_000, null, 'DAILY')).toEqual([{ type: 'FIXED', price: 150_000, isDefault: true }]);
     expect(buildProductPricingOptions(null, null, 'FIXED')).toEqual([]);
   });
 
   it('blocks a per-day default without a per-day price', () => {
     expect(validateProductPricing({ perRental: 150_000, perDay: null, defaultMode: 'DAILY' })).toEqual(['perDayDefaultNeedsPrice']);
-    expect(validateProductPricing({ perRental: 150_000, perDay: 0, defaultMode: 'DAILY' })).toEqual(['perDayDefaultNeedsPrice']);
+    // #952: a 0đ per-day price is a price
+    expect(validateProductPricing({ perRental: 150_000, perDay: 0, defaultMode: 'DAILY' })).toEqual([]);
   });
 
   it('accepts both prices empty, one price, or a per-day default with a per-day price', () => {
