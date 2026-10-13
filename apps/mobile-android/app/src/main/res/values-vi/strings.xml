@@ -1684,4 +1684,11 @@
     <string name="attendance_days_worked">Ngày đi làm</string>
     <string name="attendance_week_empty">Chưa có ca tuần này</string>
     <string name="attendance_load_failed">Không tải được. Thử lại.</string>
+    <string name="attendance_card_in_since">Đang trong ca · vào %1$s</string>
+    <string name="attendance_card_until">%1$s đến %2$s</string>
+    <string name="attendance_card_today">Hôm nay · %1$s</string>
+    <string name="attendance_card_distance">Cách %1$d m</string>
+    <string name="attendance_my_shifts_link">Ca và công của tôi ›</string>
+    <string name="attendance_err_not_required">Bạn không cần chấm công</string>
+    <string name="attendance_err_not_required_msg">Shop chưa chọn bạn chấm công ở chi nhánh này.</string>
 </resources>

@@ -4,7 +4,6 @@ import android.content.Context
 import com.anyrent.pos.R
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.attendance.AttendanceLogic
-import com.anyrent.pos.domain.attendance.AttendanceMe
 import com.anyrent.pos.domain.attendance.AttendanceStatus
 import com.anyrent.pos.domain.attendance.PunchRejection
 import com.anyrent.pos.domain.attendance.PunchRejectionKind
@@ -20,10 +19,6 @@ object AttendanceTexts {
             AttendanceStatus.DONE -> R.string.attendance_status_done
         },
     )
-
-    /** Second line of the Cài đặt row: "Ca sáng 08:00–12:00 · chưa vào ca", "Chưa vào ca" with no shift (as iOS) */
-    fun settingsSubtitle(context: Context, me: AttendanceMe): String =
-        AttendanceLogic.settingsLine(me.todayShifts.firstOrNull(), status(context, me.status()))
 
     /** Title and message of the one red card */
     fun rejection(context: Context, r: PunchRejection): Pair<String, String> = when (r.kind) {
@@ -41,8 +36,26 @@ object AttendanceTexts {
             context.getString(R.string.attendance_err_not_configured_msg)
         PunchRejectionKind.MODULE_OFF -> context.getString(R.string.attendance_err_module_off) to context.getString(R.string.attendance_err_module_off_msg)
         PunchRejectionKind.NO_LOCATION -> context.getString(R.string.attendance_err_no_location) to context.getString(R.string.attendance_err_no_location_msg)
+        PunchRejectionKind.NOT_REQUIRED -> context.getString(R.string.attendance_err_not_required) to
+            context.getString(R.string.attendance_err_not_required_msg)
         PunchRejectionKind.OTHER -> context.getString(R.string.attendance_err_other) to
             ApiErrorMessages.resolve(context, null, r.message.orEmpty())
+    }
+
+    /** #927 one line in the clock card: "✓ Đã vào ca 07:58 · Cách 11 m" / "✓ Đã ra ca 17:05 · 4,1 giờ" (as iOS) */
+    fun cardSuccess(context: Context, p: PunchResult): String {
+        val record = p.record
+        val title = if (p.isIn) {
+            context.getString(R.string.attendance_done_in, AttendanceLogic.hhmm(record?.checkInAt))
+        } else {
+            context.getString(R.string.attendance_done_out, AttendanceLogic.hhmm(record?.checkOutAt))
+        }
+        val detail = if (p.isIn) {
+            p.distanceM?.let { context.getString(R.string.attendance_card_distance, it) }
+        } else {
+            AttendanceLogic.hours(record)?.let { context.getString(R.string.attendance_hours_value, AttendanceLogic.oneDecimal(it)) }
+        }
+        return listOfNotNull(title, detail).joinToString(" · ")
     }
 
     /** Title and detail of the green card */
