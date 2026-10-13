@@ -143,6 +143,11 @@ export function isOutletOwnerRole(role: string | null | undefined): boolean {
   return role === 'MERCHANT' || role === 'ADMIN';
 }
 
+/** #945: Chi nhánh is branch info for the shop owner only (attendance moved to Chấm công → Mã QR & vị trí). */
+export function canSeeOutletsPage(role: string | null | undefined): boolean {
+  return isOutletOwnerRole(String(role || '').trim().toUpperCase());
+}
+
 /**
  * Row menu: the default outlet can never be paused (as before).
  * `canManage` = outlet.manage (edit the info); `canChangeStatus` = owner only (#824: OUTLET_ADMIN edits, no pause).

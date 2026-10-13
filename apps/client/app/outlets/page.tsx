@@ -24,6 +24,7 @@ import {
   EMPTY_OUTLET_FORM,
   formatOutletDate,
   nextSort,
+  canSeeOutletsPage,
   isOutletOwnerRole,
   outletActions,
   outletAddress,
@@ -89,6 +90,8 @@ export default function OutletsPage() {
   const { canManageOutlets } = usePermissions();
   // #824: only the shop owner adds, pauses or reopens an outlet; OUTLET_ADMIN edits its own outlet
   const isOwner = isOutletOwnerRole(user?.role);
+  // #945: owner-only page; an outlet admin opening /outlets directly gets the no-access card
+  const allowed = canSeeOutletsPage(user?.role);
   // #745: "Thêm chi nhánh" also needs NEXT_PUBLIC_ENABLE_ADD_OUTLET
   const canAdd = isAddOutletEnabled() && isOwner;
   const { toastSuccess } = useToast();
@@ -96,8 +99,8 @@ export default function OutletsPage() {
   const merchantId = user?.merchant?.id || user?.merchantId;
 
   const filters: OutletFilters | null = useMemo(
-    () => (merchantId ? { q: q || undefined, merchantId: Number(merchantId), page, limit, sortBy, sortOrder } : null),
-    [q, merchantId, page, limit, sortBy, sortOrder],
+    () => (merchantId && allowed ? { q: q || undefined, merchantId: Number(merchantId), page, limit, sortBy, sortOrder } : null),
+    [q, merchantId, allowed, page, limit, sortBy, sortOrder],
   );
   const { data, loading, error, refetch } = useOutletList(filters);
 
@@ -252,6 +255,15 @@ export default function OutletsPage() {
       <div className={container}>
         <h1 className="m-0 text-2xl font-bold">{t('title')}</h1>
         <p className={`${cardClass} m-0 px-5 py-6 text-[15px] text-ar-muted`}>{t('noSession')}</p>
+      </div>
+    );
+  }
+
+  if (user && !allowed) {
+    return (
+      <div className={container}>
+        <h1 className="m-0 text-2xl font-bold">{t('title')}</h1>
+        <p className={`${cardClass} m-0 px-5 py-6 text-[15px] text-ar-muted`}>{t('noAccess')}</p>
       </div>
     );
   }

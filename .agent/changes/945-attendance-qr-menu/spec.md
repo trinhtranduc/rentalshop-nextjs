@@ -12,11 +12,12 @@ Status: done
    with the Chấm công tab strip.
 4. `/outlets/{id}/attendance` → server redirect to `/attendance/locations/{id}`.
 5. `/outlets`: no "Chấm công" column / tag and no "Mở ›" button; no attendance API call.
-6. Sidebar nav unchanged (decision log).
+6. Chi nhánh is owner-only again: no sidebar item for OUTLET_ADMIN (the #908 `alsoWithModule` exception is
+   removed), and `/outlets` opened directly by a non-owner shows the no-access card (same pattern as Nhân viên).
+   Strings `outlets.web.noAccess` in vi/en (ja/ko/zh load the en outlets file).
 
 ## Decision log
-- Outlet admin keeps the sidebar "Chi nhánh" entry while the module is on (#908 `alsoWithModule`): the issue
-  says permissions stay the same, and the outlet admin can still edit its own branch info there (#824).
-- The list shows active branches (same `useOutlets` as the other Chấm công tabs).
+- Owner (13/10/26, after review): outlet admins no longer see "Chi nhánh"; the page is guarded too.
+- The list shows active branches (same `useOutlets` as the other Chấm công tabs); owner confirmed.
 - Error hints `ATTENDANCE_NOT_REQUIRED(_NAMED)` pointed at "Chi nhánh › Chấm công › Ai cần chấm công"; the web
   locale text now says "Chấm công › Mã QR & vị trí › Ai cần chấm công" (code unchanged; web locales only).

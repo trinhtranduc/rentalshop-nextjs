@@ -13,3 +13,5 @@ Status: done
 6. i18n (`i18n-keys`): `attendance.tabs.locations`, `attendance.locations.*` in en/vi/ja/ko/zh.
 7. Verify: tests, tsc client vs origin/dev, lint changed files, client build, headed Chrome as MERCHANT and
    OUTLET_ADMIN against a local API on DB `anyrent_945`.
+8. (Owner follow-up) Tests first: outlet admin has no Chi nhánh nav item; `canSeeOutletsPage`; `/outlets` guard.
+   Then drop `alsoWithModule`, add the guard and `outlets.web.noAccess`.
