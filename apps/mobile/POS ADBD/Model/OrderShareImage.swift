@@ -2,7 +2,7 @@
 //  OrderShareImage.swift
 //  POS ADBD
 //
-//  #640: what the order share image says (spec .agent/changes/640-share-image/spec.md, behaviors 1–9), as plain
+//  #640 (#930): what the order share image says (spec .agent/changes/640-share-image/spec.md, behaviors 1–9), as plain
 //  text, built from an order detail, an order or the cart (draft). Pure: no UIKit, no network. The drawing is
 //  `OrderShareRenderer`. Same rules as the Android `OrderShareModel`.
 //
@@ -34,6 +34,8 @@ struct OrderShareSource {
         let name: String
         let quantity: Int
         let total: Double
+        /// #930: the item's own note (the order's general note is never on the image)
+        var note: String? = nil
     }
 
     var orderType: OrderType
@@ -58,18 +60,17 @@ struct OrderShareSource {
     var deposit: Double
     var collateralPapers: String?
     var collateralMoney: Double
-    /// "Còn phải trả" and the VietQR amount (`OrderShareSource.amountDue`)
-    var amountDue: Double
 }
 
 struct OrderShareModel: Equatable {
-    enum PillTone: Equatable { case accent, paid, cancelled, draft }
-    enum Highlight: Equatable { case due, total, draft }
+    enum Highlight: Equatable { case rent, total, draft }
 
     struct Line: Equatable {
         let name: String
         let detail: String
         let amount: String
+        /// #930: the item's note, under the price line
+        let note: String?
     }
 
     struct Row: Equatable {
@@ -80,7 +81,8 @@ struct OrderShareModel: Equatable {
     struct Strip: Equatable {
         let pickupLabel: String
         let pickupDay: String
-        let days: String
+        /// "10 ngày" on a draft; nil on an order (#930: an arrow is drawn)
+        let days: String?
         let returnLabel: String
         let returnDay: String
     }
@@ -99,8 +101,9 @@ struct OrderShareModel: Equatable {
     let outletLine: String
     let kindLine: String
     let title: String
+    /// "Chưa chốt" on a draft only (#930: no status on an order)
     let pill: String?
-    let pillTone: PillTone
+    let isDraft: Bool
     let customerLabel: String
     let customerName: String
     let customerPhone: String?
@@ -150,26 +153,10 @@ struct OrderShareModel: Equatable {
         let isRent = source.orderType == .rent
 
         let kind = t.text(isRent ? "share.kind.rent" : "share.kind.sale")
-        let kindLine: String
-        if source.isDraft {
-            kindLine = t.text("share.kind.draft", kind, day(now))
-        } else if isRent {
-            kindLine = kind
-        } else {
-            kindLine = "\(kind) · \(day(source.createdAt))"
-        }
-
-        let pill: String?
-        let tone: PillTone
-        switch (source.isDraft, source.status) {
-        case (true, _): pill = t.text("share.status.draft"); tone = .draft
-        case (_, .reserved): pill = t.text("share.status.reserved"); tone = .accent
-        case (_, .pickuped): pill = t.text("share.status.pickuped"); tone = .accent
-        case (_, .returned): pill = t.text("share.status.returned"); tone = .accent
-        case (_, .completed): pill = t.text("share.status.completed"); tone = .paid
-        case (_, .cancelled): pill = t.text("share.status.cancelled"); tone = .cancelled
-        default: pill = nil; tone = .accent
-        }
+        // #930: "Đơn thuê · tạo 05/10/26 14:30" (Vietnam time)
+        let kindLine = source.isDraft
+            ? t.text("share.kind.draft", kind, day(now))
+            : t.text("share.kind.created", kind, createdText(source.createdAt))
 
         let name = source.customerName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hasCustomer = !name.isEmpty
@@ -178,13 +165,14 @@ struct OrderShareModel: Equatable {
         if isRent, let pickup = source.pickup, let back = source.returnDate {
             let days = source.rentalDays ?? OrderDetailLogic.rentalDays(pickup: pickup, return: back) ?? 1
             strip = Strip(pickupLabel: t.text("share.pickup"), pickupDay: day(pickup),
-                          days: t.text(days == 1 ? "share.days.one" : "share.days", days),
+                          days: source.isDraft ? t.text(days == 1 ? "share.days.one" : "share.days", days) : nil,
                           returnLabel: t.text("share.return"), returnDay: day(back))
         }
 
         let lines = source.items.map { item -> Line in
             let unit = item.quantity > 0 ? item.total / Double(item.quantity) : item.total
-            return Line(name: item.name, detail: "\(item.quantity) × \(money(unit))", amount: money(item.total))
+            return Line(name: item.name, detail: "\(item.quantity) × \(money(unit))", amount: money(item.total),
+                        note: CartV2Logic.noteText(item.note))
         }
         // "3 món" counts lines, as the mockups (2 crowns are one line)
         let count = source.items.count
@@ -205,13 +193,13 @@ struct OrderShareModel: Equatable {
             highlightValue = money(source.total)
             highlight = .draft
         } else if isRent {
-            rows.append(Row(label: t.text("share.rent.total"), value: money(subtotal)))
+            // #930: no "Còn phải trả" (it changes with the status); the rent total is the highlight
             if source.discount > 0 { rows.append(Row(label: t.text("share.discount"), value: minus(source.discount))) }
-            if source.deposit > 0 { rows.append(Row(label: t.text("share.deposit.paid"), value: minus(source.deposit))) }
+            if source.deposit > 0 { rows.append(Row(label: t.text("share.deposit.paid"), value: money(source.deposit))) }
             if let collateral { rows.append(Row(label: t.text("share.collateral"), value: collateral)) }
-            highlightLabel = t.text("share.amountDue")
-            highlightValue = money(source.amountDue)
-            highlight = .due
+            highlightLabel = t.text("share.rent.total")
+            highlightValue = money(source.total)
+            highlight = .rent
         } else {
             rows.append(Row(label: t.text("share.subtotal"), value: money(subtotal)))
             if source.discount > 0 { rows.append(Row(label: t.text("share.discount"), value: minus(source.discount))) }
@@ -223,7 +211,8 @@ struct OrderShareModel: Equatable {
         var qr: QR?
         if !source.isDraft, qrSwitchOn, let account = bankAccount {
             let content = "DH" + source.orderNumber
-            if let payload = VietQR.payload(for: account, amount: max(0, source.amountDue), content: content) {
+            // #930: no amount; the customer types it
+            if let payload = VietQR.payload(for: account, amount: 0, content: content) {
                 qr = QR(title: t.text("share.qr.title"), payload: payload, bankName: account.bankName,
                         accountNumber: account.accountNumber, holder: account.accountHolderName.uppercased(),
                         content: t.text("share.qr.content", content))
@@ -242,8 +231,8 @@ struct OrderShareModel: Equatable {
             outletLine: outletLine,
             kindLine: kindLine,
             title: source.isDraft ? t.text("share.draft.title") : "#\(source.orderNumber)",
-            pill: pill,
-            pillTone: tone,
+            pill: source.isDraft ? t.text("share.status.draft") : nil,
+            isDraft: source.isDraft,
             customerLabel: t.text("share.customer"),
             customerName: hasCustomer ? name : t.text("share.walkIn"),
             customerPhone: hasCustomer ? phone(source.customerPhone) : nil,
@@ -274,6 +263,15 @@ struct OrderShareModel: Equatable {
         }
     }
 
+    /// `05/10/26 14:30` in shop time
+    static func createdText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = Date.shopTimeZone
+        formatter.dateFormat = "dd/MM/yy HH:mm"
+        return formatter.string(from: date)
+    }
+
     /// `Order_482113.jpg` / `Draft_20261007-1430.jpg` (shop time)
     static func fileName(_ source: OrderShareSource, now: Date) -> String {
         guard source.isDraft else {
@@ -291,31 +289,14 @@ struct OrderShareModel: Equatable {
 // MARK: - Sources
 
 extension OrderShareSource {
-    /// Owner decision (#640), same rule as Android: a rental's "Còn phải trả" = total − deposit paid − COMPLETED
-    /// hand-over (PICKUP) payments, never below 0 (pending and RETURN_ADJUSTMENT payments ignored); 0 once
-    /// RETURNED or CANCELLED. The collateral money is never in it (own row "Thế chân khi nhận đồ"). A sale keeps
-    /// its total. The VietQR amount is this figure.
-    static func amountDue(orderType: OrderType, status: OrderStatus, total: Double, deposit: Double,
-                          payments: [OrderPaymentLine]) -> Double {
-        switch (orderType, status) {
-        case (.sale, _):
-            return total
-        case (.rent, .returned), (.rent, .cancelled):
-            return 0
-        case (.rent, _):
-            return max(0, total - deposit - OrderDetailLogic.paid(payments, purpose: "PICKUP"))
-        }
-    }
-
-    /// The order detail screen's order (payments included, so the amount due is the screen's)
     /// Civil days pickup → return, both ends counted (as Android and the detail header): 10/10 → 12/10 is 3 days
     /// even when the order stores a billing `rentalDuration` of 2. The stored value only fills in without dates.
     static func rentalDays(pickup: Date?, return returnDate: Date?, stored: Int?) -> Int? {
         OrderDetailLogic.rentalDays(pickup: pickup, return: returnDate) ?? stored
     }
 
+    /// The order detail screen's order
     init(detail: OrderDetail) {
-        let payments = detail.payments.map { OrderPaymentLine(amount: $0.amount, status: $0.status, notes: $0.notes) }
         let customer = [detail.customer.firstName, detail.customer.lastName]
             .compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " ")
         self.init(
@@ -326,15 +307,13 @@ extension OrderShareSource {
             pickup: detail.pickupPlanAt, returnDate: detail.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt, stored: detail.rentalDuration),
             createdAt: detail.createdAt,
-            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice) },
+            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes) },
             discount: detail.discountAmount, total: detail.totalAmount, deposit: detail.depositAmount,
-            collateralPapers: detail.collateralDetails, collateralMoney: detail.securityDeposit,
-            amountDue: Self.amountDue(orderType: detail.orderType, status: detail.status, total: detail.totalAmount,
-                                      deposit: detail.depositAmount, payments: payments)
+            collateralPapers: detail.collateralDetails, collateralMoney: detail.securityDeposit
         )
     }
 
-    /// An order without its payments (old preview screen when the detail cannot load): the same rule without payments
+    /// An order (old preview screen when the detail cannot load)
     init(order: Order, shop: ShareShop) {
         self.init(
             orderType: order.orderType, isDraft: false, status: order.status, orderNumber: order.orderNumber,
@@ -344,11 +323,9 @@ extension OrderShareSource {
             pickup: order.pickupPlanAt, returnDate: order.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: order.pickupPlanAt, return: order.returnPlanAt, stored: order.rentalDuration),
             createdAt: order.createdAt,
-            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice) },
+            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes) },
             discount: order.discountAmount, total: order.totalAmount, deposit: order.depositAmount,
-            collateralPapers: order.collateralDetails, collateralMoney: order.securityDeposit,
-            amountDue: Self.amountDue(orderType: order.orderType, status: order.status, total: order.totalAmount,
-                                      deposit: order.depositAmount, payments: [])
+            collateralPapers: order.collateralDetails, collateralMoney: order.securityDeposit
         )
     }
 
@@ -369,8 +346,7 @@ extension OrderShareSource {
             discount: cart.discountAmount, total: cart.totalAmount,
             deposit: cart.orderType == .rent ? cart.depositAmount : 0,
             collateralPapers: cart.orderType == .rent ? cart.collateralDetails : nil,
-            collateralMoney: cart.orderType == .rent ? (cart.manualSecurityDeposit ?? 0) : 0,
-            amountDue: cart.totalAmount
+            collateralMoney: cart.orderType == .rent ? (cart.manualSecurityDeposit ?? 0) : 0
         )
     }
 }

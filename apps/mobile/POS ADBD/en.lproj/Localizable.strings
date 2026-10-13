@@ -2558,3 +2558,6 @@
 "attendance.weekday.5" = "Fri";
 "attendance.weekday.6" = "Sat";
 "attendance.weekday.7" = "Sun";
+
+/* #930 share image: kind and created time */
+"share.kind.created" = "%@ · created %@";
