@@ -161,7 +161,11 @@ class ProductRulesTest {
         assertEquals(listOf("DAILY"), both.filter { it.isDefault }.map { it.type })
         val onlyFixed = ProductPricing.options(300_000.0, null, PricingMode.PER_DAY)
         assertEquals(listOf(PricingOptionInput("FIXED", 300_000.0, true)), onlyFixed)
-        assertTrue(ProductPricing.options(0.0, null, PricingMode.PER_RENTAL).isEmpty())
+        assertTrue(ProductPricing.options(null, null, PricingMode.PER_RENTAL).isEmpty())
+        // #951: 0đ is a price; a negative one is not sent
+        assertEquals(listOf(PricingOptionInput("FIXED", 0.0, true)), ProductPricing.options(0.0, null, PricingMode.PER_RENTAL))
+        assertEquals(listOf(PricingOptionInput("DAILY", 0.0, true)), ProductPricing.options(null, 0.0, PricingMode.PER_DAY))
+        assertTrue(ProductPricing.options(-1.0, null, PricingMode.PER_RENTAL).isEmpty())
     }
 
     @Test
@@ -196,6 +200,10 @@ class ProductRulesTest {
         assertEquals(emptyList<ProductFormIssue>(), ProductFormValidator.validate(input()))
         assertEquals(listOf(ProductFormIssue.NameRequired), ProductFormValidator.validate(input(name = "  ")))
         assertEquals(listOf(ProductFormIssue.PerDayDefaultNeedsPrice), ProductFormValidator.validate(input(mode = PricingMode.PER_DAY)))
+        // #951: 0đ prices are accepted, a per-day default at 0đ too; negatives are refused
+        assertEquals(emptyList<ProductFormIssue>(), ProductFormValidator.validate(input(perRental = 0.0)))
+        assertEquals(emptyList<ProductFormIssue>(), ProductFormValidator.validate(input(perDay = 0.0, mode = PricingMode.PER_DAY)))
+        assertEquals(listOf(ProductFormIssue.NegativeAmount), ProductFormValidator.validate(input(perRental = -1.0)))
         assertEquals(emptyList<ProductFormIssue>(), ProductFormValidator.validate(input(perDay = 50_000.0, mode = PricingMode.PER_DAY)))
         assertEquals(listOf(ProductFormIssue.NegativeAmount), ProductFormValidator.validate(input(deposit = -1.0)))
         assertEquals(listOf(ProductFormIssue.NegativeQuantity), ProductFormValidator.validate(input(quantity = -1)))
@@ -211,6 +219,9 @@ class ProductRulesTest {
         assertNull(MoneyInput.parse(""))
         assertEquals("1.250.000", MoneyInput.display(1_250_000.0))
         assertEquals("", MoneyInput.display(null))
+        // #951: "0" is a price, shown as "0"
+        assertEquals(0.0, MoneyInput.parse("0")!!, 0.0)
+        assertEquals("0", MoneyInput.display(0.0))
     }
 
     /** #461 — the form re-formats on each key ("300" in a Maestro run came from a tap on the covered save button) */
@@ -265,9 +276,10 @@ class ProductRulesTest {
         CartStore.clear(persistToDisk = false)
         val p = product(id = 77)
         CartStore.addProduct(p)
-        CartStore.setPricingType(77, "DAILY")
+        val lineId = CartStore.lines.value.single().lineId
+        CartStore.setPricingType(lineId, "DAILY")
         assertEquals(120_000.0, CartStore.lines.value.single().unitPrice, 0.0)
-        CartStore.setPricingType(77, "FIXED")
+        CartStore.setPricingType(lineId, "FIXED")
         assertEquals(300_000.0, CartStore.lines.value.single().unitPrice, 0.0)
         CartStore.setOrderType("SALE")
         assertEquals(1_800_000.0, CartStore.lines.value.single().unitPrice, 0.0)

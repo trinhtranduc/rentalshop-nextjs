@@ -68,9 +68,9 @@ class CartPricingToggleTest {
         CartStore.addProduct(onePrice)
         CartStore.addProduct(onePrice)
         CartStore.refreshPricing(onePrice)
-        val line = CartStore.lines.value.single()
-        assertEquals(2, line.quantity)
-        assertFalse(CartV2Logic.offersBothModes(line.product))
+        // #951: each add is its own line
+        assertEquals(listOf(1, 1), CartStore.lines.value.map { it.quantity })
+        CartStore.lines.value.forEach { assertFalse(CartV2Logic.offersBothModes(it.product)) }
     }
 
     @Test
@@ -80,14 +80,18 @@ class CartPricingToggleTest {
         assertFalse(CartV2Logic.offersBothModes(CartStore.lines.value.single().product))
 
         CartStore.addProduct(homeRow(bothOptions))
-        val line = CartStore.lines.value.single()
-        assertEquals(2, line.quantity)
-        assertTrue(CartV2Logic.offersBothModes(line.product))
-        assertEquals("FIXED", line.pricingType)
-        assertEquals(150_000.0, line.unitPrice, 0.0)
+        // #951: the second add is a new line; the earlier line of the product takes the fresh prices too
+        assertEquals(2, CartStore.lines.value.size)
+        CartStore.lines.value.forEach { line ->
+            assertEquals(1, line.quantity)
+            assertTrue(CartV2Logic.offersBothModes(line.product))
+            assertEquals("FIXED", line.pricingType)
+            assertEquals(150_000.0, line.unitPrice, 0.0)
+        }
 
-        CartStore.setPricingType(301, "DAILY")
-        assertEquals(50_000.0, CartStore.lines.value.single().unitPrice, 0.0)
+        CartStore.setPricingType(lineIdOf(301), "DAILY")
+        assertEquals(50_000.0, CartStore.lines.value[0].unitPrice, 0.0)
+        assertEquals("the other line keeps its mode", 150_000.0, CartStore.lines.value[1].unitPrice, 0.0)
     }
 
     @Test
@@ -142,13 +146,13 @@ class CartPricingToggleTest {
         CartStore.addProduct(homeRow("[]"))
         assertTrue(CartV2Logic.missingPrices(CartStore.lines.value, isSale = false).isEmpty())
 
-        CartStore.setPricingType(301, "DAILY")
+        CartStore.setPricingType(lineIdOf(301), "DAILY")
         val line = CartStore.lines.value.single()
         assertEquals(0.0, line.unitPrice, 0.0)
         assertTrue("the cart opens the price editor", CartV2Logic.needsPrice(line, isSale = false))
         assertEquals(listOf("Cart toggle probe both prices"), CartV2Logic.missingPrices(CartStore.lines.value, isSale = false))
 
-        CartStore.setPricingType(301, "FIXED")
+        CartStore.setPricingType(lineIdOf(301), "FIXED")
         assertEquals(150_000.0, CartStore.lines.value.single().unitPrice, 0.0)
         assertTrue(CartV2Logic.missingPrices(CartStore.lines.value, isSale = false).isEmpty())
     }
@@ -157,7 +161,7 @@ class CartPricingToggleTest {
     fun `a line that already has a product price can be edited for this order only`() {
         val product = homeRow("[]")
         CartStore.addProduct(product, quantity = 2)
-        CartStore.updateUnitPrice(301, 120_000.0)
+        CartStore.updateUnitPrice(lineIdOf(301), 120_000.0)
         val line = CartStore.lines.value.single()
         assertEquals(120_000.0, line.unitPrice, 0.0)
         assertEquals(240_000.0, line.lineTotal, 0.0)
@@ -167,8 +171,8 @@ class CartPricingToggleTest {
     @Test
     fun `the edited per-day price is used in totals and the create request`() {
         CartStore.addProduct(homeRow("[]"), quantity = 2)
-        CartStore.setPricingType(301, "DAILY")
-        CartStore.updateUnitPrice(301, 60_000.0)
+        CartStore.setPricingType(lineIdOf(301), "DAILY")
+        CartStore.updateUnitPrice(lineIdOf(301), 60_000.0)
         val line = CartStore.lines.value.single()
         val days = line.rentalDays
         assertEquals(60_000.0 * 2 * days, line.lineTotal, 0.0)
