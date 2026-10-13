@@ -29,12 +29,19 @@ object AttendanceCard {
     fun visible(modules: Set<String>, me: AttendanceMe?): Boolean =
         AttendanceLogic.hasAttendance(modules) && me?.required == true
 
-    fun state(me: AttendanceMe, todayPairs: List<WorkedPair>, now: Instant, locale: Locale = Locale.getDefault(), zone: ZoneId = ShopTime.zone): ClockCard {
+    /**
+     * [fallbackHours]: hours of the last Ra ca of this session, shown as the day total while today's records could not
+     * be read (as iOS)
+     */
+    fun state(
+        me: AttendanceMe, todayPairs: List<WorkedPair>, now: Instant, locale: Locale = Locale.getDefault(),
+        zone: ZoneId = ShopTime.zone, fallbackHours: Double? = null,
+    ): ClockCard {
         val status = me.status(now, zone)
         val inAt = me.openRecord?.checkInAt
         if (status == AttendanceStatus.IN_SHIFT && inAt != null) {
             val day = inAt.atZone(zone).toLocalDate()
-            val shift = AttendanceLogic.linkedShift(inAt, day, me.todayShifts, zone) ?: me.todayShifts.firstOrNull()
+            val shift = me.openRecord.shift ?: AttendanceLogic.linkedShift(inAt, day, me.todayShifts, zone)
             return ClockCard(
                 ClockCardKind.IN_SHIFT, status, elapsed(inAt, now), me.todayShifts,
                 checkIn = AttendanceLogic.hhmm(inAt, zone), shift = shift,
@@ -46,6 +53,9 @@ object AttendanceCard {
                 ClockCardKind.DONE, status, AttendanceLogic.oneDecimal(AttendanceLogic.pairHours(closed), locale), me.todayShifts,
                 pairs = AttendanceLogic.pairTimes(todayPairs, zone),
             )
+        }
+        if (status == AttendanceStatus.DONE && fallbackHours != null) {
+            return ClockCard(ClockCardKind.DONE, status, AttendanceLogic.oneDecimal(fallbackHours, locale), me.todayShifts)
         }
         return ClockCard(ClockCardKind.IDLE, status, AttendanceLogic.hhmm(now, zone), me.todayShifts)
     }

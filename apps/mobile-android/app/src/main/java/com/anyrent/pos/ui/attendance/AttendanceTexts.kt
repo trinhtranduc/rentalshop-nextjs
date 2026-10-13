@@ -42,6 +42,22 @@ object AttendanceTexts {
             ApiErrorMessages.resolve(context, null, r.message.orEmpty())
     }
 
+    /** #927 one line in the clock card: "✓ Đã vào ca 07:58 · Cách 11 m" / "✓ Đã ra ca 17:05 · 4,1 giờ" (as iOS) */
+    fun cardSuccess(context: Context, p: PunchResult): String {
+        val record = p.record
+        val title = if (p.isIn) {
+            context.getString(R.string.attendance_done_in, AttendanceLogic.hhmm(record?.checkInAt))
+        } else {
+            context.getString(R.string.attendance_done_out, AttendanceLogic.hhmm(record?.checkOutAt))
+        }
+        val detail = if (p.isIn) {
+            p.distanceM?.let { context.getString(R.string.attendance_card_distance, it) }
+        } else {
+            AttendanceLogic.hours(record)?.let { context.getString(R.string.attendance_hours_value, AttendanceLogic.oneDecimal(it)) }
+        }
+        return listOfNotNull(title, detail).joinToString(" · ")
+    }
+
     /** Title and detail of the green card */
     fun success(context: Context, p: PunchResult): Pair<String, String?> {
         val record = p.record

@@ -123,6 +123,26 @@ class AttendanceCardTest {
     }
 
     @Test
+    fun in_shift_prefers_the_record_snapshot_shift() {
+        val me = AttendanceLogic.me(JSONObject("""{"openRecord":{"id":9,"checkInAt":"2026-10-13T00:58:00Z","status":"OPEN",
+            "shift":{"name":"Ca hành chính","start":"08:00","end":"17:00","breakMinutes":60}},
+            "today":{"status":"IN_SHIFT","shifts":[{"name":"Ca sáng","start":"08:00","end":"12:00"}]}}"""))
+        val card = AttendanceCard.state(me, emptyList(), Instant.parse("2026-10-13T03:42:30Z"), vi)
+        assertEquals("Ca hành chính", card.shift?.name)
+        assertEquals("17:00", card.shift?.end)
+    }
+
+    @Test
+    fun done_without_today_records_uses_the_last_punch_hours() {
+        val now = Instant.parse("2026-10-13T10:10:00Z")
+        val me = AttendanceMe(null, emptyList(), "OUT", Instant.parse("2026-10-13T10:05:00Z"), apiStatus = "DONE")
+        val card = AttendanceCard.state(me, emptyList(), now, vi, fallbackHours = 4.05)
+        assertEquals(ClockCardKind.DONE, card.kind)
+        assertEquals("4,1", card.big)
+        assertNull(card.pairs)
+    }
+
+    @Test
     fun not_required_refusal_is_its_own_kind() {
         assertEquals(PunchRejectionKind.NOT_REQUIRED, AttendanceLogic.rejection("ATTENDANCE_NOT_REQUIRED", null, "x").kind)
     }

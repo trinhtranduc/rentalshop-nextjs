@@ -142,7 +142,7 @@ fun AttendanceClockCard(onScan: () -> Unit, onOpenMyShifts: () -> Unit, horizont
         if (hasPermissions(context)) onScan() else askRationale = true
     }
 
-    val card = AttendanceCard.state(me, snapshot.todayPairs, now)
+    val card = AttendanceCard.state(me, snapshot.todayPairs, now, fallbackHours = AttendanceCardStore.lastOutHours(scan))
     val inShift = card.kind == ClockCardKind.IN_SHIFT
     val shape = RoundedCornerShape(18.dp)
     Column(Modifier.padding(start = horizontalPadding, end = horizontalPadding, top = 4.dp, bottom = 12.dp)) {
@@ -163,9 +163,7 @@ fun AttendanceClockCard(onScan: () -> Unit, onOpenMyShifts: () -> Unit, horizont
                 modifier = Modifier.padding(top = 4.dp, bottom = 10.dp).testTag("attendance-card-line"),
             )
             (scan?.outcome as? PunchOutcome.Done)?.let { done ->
-                val (title, _) = AttendanceTexts.success(context, done.result)
-                val line = listOfNotNull(title, done.result.distanceM?.let { context.getString(R.string.attendance_card_distance, it) })
-                    .joinToString(" · ")
+                val line = AttendanceTexts.cardSuccess(context, done.result)
                 Text(
                     line, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = AttendanceColors.OkText,
                     textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 10.dp).testTag("attendance-ok"),
@@ -261,7 +259,7 @@ private fun cardLine(context: Context, card: ClockCard): String = when (card.kin
             shift.end?.let { context.getString(R.string.attendance_card_until, name, it) } ?: name
         },
     ).joinToString(" · ")
-    ClockCardKind.DONE -> context.getString(R.string.attendance_card_today, card.pairs.orEmpty())
+    ClockCardKind.DONE -> context.getString(R.string.attendance_card_today, card.pairs ?: AttendanceLogic.dayShort(ShopTime.today()))
     ClockCardKind.IDLE -> AttendanceCard.idleLine(
         AttendanceLogic.dayShort(ShopTime.today()),
         card.shifts,

@@ -27,6 +27,8 @@ data class AttendanceRecord(
     val status: String?,
     val hours: Double?,
     val breakMinutes: Int?,
+    /** The record's shift snapshot (`record.shift`), #927 */
+    val shift: AttendanceShift? = null,
 )
 
 enum class AttendanceStatus { NOT_IN, IN_SHIFT, DONE }
@@ -148,6 +150,7 @@ object AttendanceLogic {
             status = o.str("status"),
             hours = o.dbl("hours"),
             breakMinutes = o.int("shiftBreakMinutes", "breakMinutes") ?: snapshot?.int("breakMinutes"),
+            shift = shift(snapshot),
         )
     }
 

@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.attendance
 import com.anyrent.pos.data.AttendanceApi
 import com.anyrent.pos.data.PunchOutcome
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.attendance.AttendanceLogic
 import com.anyrent.pos.domain.attendance.AttendanceMe
 import com.anyrent.pos.domain.attendance.AttendanceStatus
 import com.anyrent.pos.domain.attendance.WorkedPair
@@ -67,6 +68,10 @@ object AttendanceCardStore {
         val scan = _scan.value ?: return
         _scan.value = if (scan.seen) null else scan.copy(seen = true)
     }
+
+    /** Hours of the record a Ra ca of this scan closed (the card's day total while today's records cannot be read) */
+    fun lastOutHours(scan: LastScan?): Double? =
+        (scan?.outcome as? PunchOutcome.Done)?.result?.takeIf { !it.isIn }?.let { AttendanceLogic.hours(it.record) }
 
     fun clearScan() {
         _scan.value = null
