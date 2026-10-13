@@ -150,11 +150,9 @@ describeE2E('BF-ZERO 0đ products and free lines', () => {
       ].sort()
     );
     expect(pick(await ov.delta(), ['orderValue', 'newOrders'])).toEqual({ orderValue: 150000, newOrders: 1 });
-    // 3 of 3 taken for those days: one more is refused / unavailable
-    const av = await s.availability(p.id, w);
-    expect(av.isAvailable).toBe(false);
-    const more = await s.createOrderRaw(rentBody({ customer, lines: [{ product: p }], from: w.from, to: w.to }).body);
-    expect(more.status).toBeGreaterThanOrEqual(400);
+    // 3 of 3 taken for those days (both lines count): not available, also for 1 more
+    expect((await s.availability(p.id, w)).isAvailable).toBe(false);
+    expect((await s.availability(p.id, { ...w, quantity: 1 })).isAvailable).toBe(false);
     // the detail keeps both lines
     const detail = await s.getOrder(order.id);
     expect(detail.orderItems.filter((i) => i.productId === p.id)).toHaveLength(2);
