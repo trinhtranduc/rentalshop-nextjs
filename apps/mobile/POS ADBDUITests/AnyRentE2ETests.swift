@@ -2168,14 +2168,23 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot(shot)
     }
 
-    /// The bell on Trang chủ → Thông báo (#482): the list renders and long titles wrap instead of ending in "…"
+    /// Cài đặt → Thông báo (#482, #937: the Home bell became the cart button): the list renders and long titles wrap
     func test7iNotifications() throws {
-        try e2e.requireFlag("newProducts")
+        try e2e.requireFlag("newSettings")
         try e2e.start()
-        e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        let bell = e2e.button(["Notifications", "Thông báo"])
-        XCTAssertTrue(bell.waitForExistence(timeout: 8), "bell on Trang chủ")
-        bell.tap()
+        if e2e.features.contains("newProducts") {
+            e2e.tapTab(["Home", "Trang chủ"], index: 0)
+            let cart = e2e.button(["Cart", "Giỏ hàng"])
+            XCTAssertTrue(cart.waitForExistence(timeout: 8), "#937: cart button on Trang chủ")
+            XCTAssertFalse(e2e.button(["Notifications", "Thông báo"]).exists, "#937: no bell on Trang chủ")
+            e2e.shot("16a-home-cart-button")
+        }
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(2)
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Notifications", "Thông báo"])).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "#937: Thông báo row in Cài đặt")
+        e2e.shot("16b-settings-notifications-row")
+        row.tap()
         sleep(3)
         let title = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Notifications", "Thông báo"])).firstMatch
         XCTAssertTrue(title.waitForExistence(timeout: 8), "Thông báo opens")

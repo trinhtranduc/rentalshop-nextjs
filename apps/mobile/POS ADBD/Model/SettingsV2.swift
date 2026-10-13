@@ -9,6 +9,8 @@
 import Foundation
 
 enum SettingsV2Item: Equatable {
+    /// #937: the inbox, moved here from the Home bell
+    case notifications
     case storeInfo, receiptNote, printer, bankAccounts
     case categories, customers, users, export
     case plan, language, password, appInfo, deleteAccount
@@ -36,8 +38,9 @@ enum SettingsV2Logic {
     /// - plan: shown once `subscriptions/status` answered
     /// - bankAccounts (#622): MERCHANT and OUTLET_ADMIN (the API rejects writes from OUTLET_STAFF)
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
+    /// - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
-        var storeItems: [SettingsV2Item] = [.storeInfo, .receiptNote, .printer]
+        var storeItems: [SettingsV2Item] = [.notifications, .storeInfo, .receiptNote, .printer]
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
         let store = SettingsV2Section(group: .store, items: storeItems)
 
@@ -61,6 +64,11 @@ enum SettingsV2Logic {
         return [store, SettingsV2Section(group: .management, items: management),
                 SettingsV2Section(group: .account, items: account)]
             .filter { !$0.items.isEmpty }
+    }
+
+    /// #937: badge on the "Thông báo" row: the unread count, capped at 99, none at 0
+    static func unreadBadge(_ count: Int) -> String? {
+        count > 0 ? "\(min(count, 99))" : nil
     }
 
     /// Bank accounts screen (#622): owners and outlet admins; staff only print the account

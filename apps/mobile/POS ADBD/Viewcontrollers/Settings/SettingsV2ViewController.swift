@@ -28,6 +28,9 @@ final class SettingsV2ViewController: BaseViewControler {
     private var counts: [SettingsV2Item: Int] = [:]
     /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
     private var lastFetchedAt: Date?
+    /// #937: unread count on the "Thông báo" row (moved from the Home bell); follows `.inboxUnreadCountDidChange`
+    private var unreadCount = 0
+    private var unreadLoadedAt: Date?
     /// #927 card L: `/me`, today's pairs (done state), the last punch's day hours, its result, the ticking timer
     private var attendanceMe: AttendanceMe?
     private var attendancePairs: [AttendancePair] = []
@@ -42,6 +45,7 @@ final class SettingsV2ViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -50,6 +54,10 @@ final class SettingsV2ViewController: BaseViewControler {
         rebuild()
         refreshAttendance()
         startAttendanceTimer()
+        // #674/#937: the server is asked on first show and when 10 min old; the inbox signal keeps it current
+        if RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: unreadLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) {
+            refreshUnreadCount()
+        }
         guard RefreshPolicy.shouldReload(dirty: false, lastLoadedAt: lastFetchedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
         lastFetchedAt = Date()
         loadPlan()
@@ -128,6 +136,35 @@ final class SettingsV2ViewController: BaseViewControler {
                 }
             }
         }
+    }
+
+    // MARK: - Thông báo (#937)
+
+    private func refreshUnreadCount() {
+        guard User.account() != nil else { return }
+        NotificationService.shared.getUnreadCount { [weak self] count, _ in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if count != nil { self.unreadLoadedAt = Date() }
+                self.applyUnread(count ?? self.unreadCount)
+            }
+        }
+    }
+
+    @objc private func inboxCountChanged(_ note: Notification) {
+        if let count = note.userInfo?["count"] as? Int {
+            unreadLoadedAt = Date()
+            applyUnread(count)
+        } else {
+            refreshUnreadCount()
+        }
+    }
+
+    private func applyUnread(_ count: Int) {
+        guard count != unreadCount else { return }
+        unreadCount = count
+        guard isViewLoaded else { return }
+        listView.reloadData()
     }
 
     // MARK: - Chấm công (#909, card L #927)
@@ -310,6 +347,7 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func title(of item: SettingsV2Item) -> String {
         switch item {
+        case .notifications: return "Notifications".localized()
         case .storeInfo: return "Store Information".localized()
         case .receiptNote: return "settings.v2.receiptNote".localized()
         case .printer: return "settings.v2.printer".localized()
@@ -349,6 +387,10 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func open(_ item: SettingsV2Item) {
         switch item {
+        case .notifications:
+            let inbox = NotificationsViewController()
+            inbox.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(inbox, animated: true)
         // #459: detail pages in the new style
         case .storeInfo:
             let page = AccountViewController()
@@ -504,7 +546,8 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
             cell.configureProfile(name: name.isEmpty ? (user?.email ?? "—") : name, subtitle: subtitle,
                                   initials: SettingsV2Logic.initials(name))
         case .item(let item):
-            cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan)
+            cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan,
+                           badge: item == .notifications ? SettingsV2Logic.unreadBadge(unreadCount) : nil)
         case .logout:
             cell.configureLogout("Logout".localized())
         case .overlapSwitch, .attendance:
@@ -583,6 +626,19 @@ final class SettingsV2Cell: UITableViewCell {
     private let titleLabel = V2.label(size: DS.TextSize.body)
     private let subtitleLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let valueLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
+    /// #937: unread count on "Thông báo" (red pill, mockup cartbell)
+    let badgeLabel: InsetLabel = {
+        let label = InsetLabel()
+        label.insets = UIEdgeInsets(top: 1, left: 7, bottom: 1, right: 7)
+        label.font = Utils.boldFont(size: DS.TextSize.pill)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.backgroundColor = UIColor(hexString: "EF4444")
+        label.layer.cornerRadius = 9
+        label.layer.masksToBounds = true
+        label.isHidden = true
+        return label
+    }()
     private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
     private let line = V2.divider()
 
@@ -604,7 +660,12 @@ final class SettingsV2Cell: UITableViewCell {
 
         let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
         texts.axis = .vertical
-        let row = UIStackView(arrangedSubviews: [avatar, texts, valueLabel, chevron])
+        badgeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        badgeLabel.snp.makeConstraints { make in
+            make.height.equalTo(18)
+            make.width.greaterThanOrEqualTo(18)
+        }
+        let row = UIStackView(arrangedSubviews: [avatar, texts, valueLabel, badgeLabel, chevron])
         row.spacing = DS.Spacing.md
         row.alignment = .center
         contentView.addSubview(row)
@@ -632,13 +693,15 @@ final class SettingsV2Cell: UITableViewCell {
         subtitleLabel.text = subtitle
         subtitleLabel.isHidden = subtitle.isEmpty
         valueLabel.isHidden = true
+        badgeLabel.isHidden = true
+        accessibilityValue = nil
         chevron.isHidden = true
         line.isHidden = true
         selectionStyle = .none
         accessibilityTraits = UIAccessibilityTraitStaticText
     }
 
-    func configure(title: String, value: String?, showsChevron: Bool) {
+    func configure(title: String, value: String?, showsChevron: Bool, badge: String? = nil) {
         avatar.isHidden = true
         titleLabel.text = title
         titleLabel.font = Utils.regularFont(size: DS.TextSize.body)
@@ -646,6 +709,9 @@ final class SettingsV2Cell: UITableViewCell {
         subtitleLabel.isHidden = true
         valueLabel.text = value
         valueLabel.isHidden = (value ?? "").isEmpty
+        badgeLabel.text = badge
+        badgeLabel.isHidden = badge == nil
+        accessibilityValue = badge
         chevron.isHidden = !showsChevron
         line.isHidden = false
         selectionStyle = showsChevron ? .default : .none
@@ -659,6 +725,8 @@ final class SettingsV2Cell: UITableViewCell {
         titleLabel.textColor = V2.danger
         subtitleLabel.isHidden = true
         valueLabel.isHidden = true
+        badgeLabel.isHidden = true
+        accessibilityValue = nil
         chevron.isHidden = true
         line.isHidden = true
         selectionStyle = .default
