@@ -147,10 +147,14 @@ struct AttendanceMe: Decodable {
     var lastAction: String?
     var lastActionAt: Date?
     var outletName: String?
+    /// #927 the shop picked this person to clock in; older APIs leave it out (= true)
+    var required: Bool
 
     init(enabled: Bool = true, openRecord: AttendanceRecord? = nil, todayShifts: [AttendanceShift] = [],
-         todayStatus: String? = nil, lastAction: String? = nil, lastActionAt: Date? = nil, outletName: String? = nil) {
+         todayStatus: String? = nil, lastAction: String? = nil, lastActionAt: Date? = nil, outletName: String? = nil,
+         required: Bool = true) {
         self.enabled = enabled
+        self.required = required
         self.openRecord = openRecord
         self.todayShifts = todayShifts
         self.todayStatus = todayStatus
@@ -200,6 +204,7 @@ struct AttendanceMe: Decodable {
             lastAction = c.string("lastAction")
         }
         outletName = c.object(Named.self, "outlet")?.name ?? c.string("outletName")
+        required = c.bool("required") ?? true
     }
 }
 
@@ -579,13 +584,10 @@ enum AttendanceLogic {
         }
     }
 
-    /// Settings row: "Ca sáng 08:00–12:00 · chưa vào ca"
-    static func settingsSubtitle(_ me: AttendanceMe?, now: Date = Date()) -> String {
-        let status = statusText(state(me, now: now))
-        guard let shift = me?.todayShifts.first else { return status.capitalizedFirst }
+    /// "Ca sáng 08:00–12:00"
+    static func shiftCompact(_ shift: AttendanceShift) -> String {
         let times = [shift.start, shift.end].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "–")
-        let head = [shift.name ?? "", times].filter { !$0.isEmpty }.joined(separator: " ")
-        return head.isEmpty ? status.capitalizedFirst : "\(head) · \(status)"
+        return [shift.name ?? "", times].filter { !$0.isEmpty }.joined(separator: " ")
     }
 
     /// Hours of a record: OUT − IN − break of the snapshot, floor 0, or the API's own value
@@ -624,6 +626,9 @@ enum AttendanceLogic {
         case "ATTENDANCE_NOT_CONFIGURED":
             return AttendanceErrorCopy(title: "attendance.error.notConfigured.title".localized(),
                                        message: "attendance.error.notConfigured.message".localized())
+        case "ATTENDANCE_NOT_REQUIRED":
+            return AttendanceErrorCopy(title: "attendance.error.notRequired.title".localized(),
+                                       message: "attendance.error.notRequired.message".localized())
         case "MODULE_NOT_ENABLED":
             return AttendanceErrorCopy(title: "attendance.error.module.title".localized(),
                                        message: "attendance.error.module.message".localized())
@@ -735,6 +740,100 @@ enum AttendanceLogic {
             }
             return AttendanceWeekRow(dayKey: key, day: dayLabel(key), shift: shiftText, worked: worked, isLate: late > 0)
         }
+    }
+}
+
+// MARK: - #927 Card L in Settings
+
+/// What the card shows: the big number, the line under it, the button, green while on shift
+struct AttendanceCardModel: Equatable {
+    let state: AttendanceState
+    let big: String
+    let line: String
+    let button: String
+    let isGreen: Bool
+}
+
+enum AttendanceCardLogic {
+    /// Module on and `/me` answered `required` (missing = true)
+    static func shows(merchant: Merchant?, me: AttendanceMe?) -> Bool {
+        guard AttendanceModule.isOn(merchant), let me else { return false }
+        return me.required
+    }
+
+    /// "2:44" (hours:minutes, floor)
+    static func elapsed(_ seconds: TimeInterval) -> String {
+        let minutes = max(0, Int(seconds / 60))
+        return String(format: "%d:%02d", minutes / 60, minutes % 60)
+    }
+
+    /// Pairs of the shop day of `now`
+    static func todayPairs(_ rows: [AttendanceMonthRow], now: Date) -> [AttendancePair] {
+        let today = AttendanceLogic.dayKey(now)
+        return AttendanceLogic.pairs(rows).filter { $0.dayKey == today }
+    }
+
+    /// Sum of the closed pairs (server rule, #923); nil when none is closed
+    static func dayHours(_ pairs: [AttendancePair], shifts: [AttendanceShift]) -> Double? {
+        let hours = pairs.compactMap { AttendanceLogic.pairHours($0, shifts: shifts) }
+        return hours.isEmpty ? nil : hours.reduce(0, +)
+    }
+
+    static func model(me: AttendanceMe?, todayPairs: [AttendancePair], outletName: String?, now: Date = Date(),
+                      fallbackHours: Double? = nil) -> AttendanceCardModel {
+        let state = AttendanceLogic.state(me, now: now)
+        let shifts = me?.todayShifts ?? []
+        switch state {
+        case .notIn:
+            let shiftText = shifts.map(AttendanceLogic.shiftCompact).filter { !$0.isEmpty }.joined(separator: ", ")
+            let line = [AttendanceLogic.dayLabel(AttendanceLogic.dayKey(now)), shiftText, outletName ?? "",
+                        AttendanceLogic.statusText(.notIn)].filter { !$0.isEmpty }.joined(separator: " · ")
+            return AttendanceCardModel(state: state, big: AttendanceLogic.clock(now), line: line,
+                                       button: "attendance.clockIn".localized(), isGreen: false)
+        case .inShift:
+            let checkIn = me?.openRecord?.checkInAt
+                ?? ((me?.lastAction ?? "").uppercased() == "IN" ? me?.lastActionAt : nil)
+            var parts: [String] = []
+            if let checkIn {
+                parts.append(String(format: "attendance.card.inShift".localized(), AttendanceLogic.clock(checkIn)))
+                let shift = me?.openRecord?.shift
+                    ?? AttendanceLogic.linkedShift(checkIn, dayKey: AttendanceLogic.dayKey(checkIn), shifts: shifts)
+                if let shift, let name = shift.name, !name.isEmpty, let end = shift.end, !end.isEmpty {
+                    parts.append(String(format: "attendance.card.shiftUntil".localized(), name, end))
+                }
+            } else {
+                parts.append(AttendanceLogic.statusText(.inShift).capitalizedFirst)
+            }
+            return AttendanceCardModel(state: state, big: checkIn.map { elapsed(now.timeIntervalSince($0)) } ?? "—",
+                                       line: parts.joined(separator: " · "), button: "attendance.clockOut".localized(), isGreen: true)
+        case .done:
+            let spans = todayPairs.map { "\(AttendanceLogic.clock($0.checkInAt))–\($0.checkOutAt.map { AttendanceLogic.clock($0) } ?? "…")" }
+            let line = String(format: "attendance.today".localized(),
+                              spans.isEmpty ? AttendanceLogic.dayLabel(AttendanceLogic.dayKey(now)) : spans.joined(separator: ", "))
+            let big = (dayHours(todayPairs, shifts: shifts) ?? fallbackHours)
+                .map { String(format: "attendance.mine.hoursValue".localized(), AttendanceLogic.hours($0)) }
+                ?? AttendanceLogic.statusText(.done).capitalizedFirst
+            return AttendanceCardModel(state: state, big: big, line: line, button: "attendance.clockIn".localized(), isGreen: false)
+        }
+    }
+
+    /// "✓ Đã vào ca 07:58 · Cách 11 m", "✓ Đã ra ca 17:05 · 8,1 giờ"
+    static func successLine(_ result: AttendancePunchResult) -> String {
+        let record = result.record
+        if result.isOut {
+            let at = record?.checkOutAt.map { AttendanceLogic.clock($0) } ?? ""
+            var text = "✓ " + String(format: "attendance.done.out".localized(), at)
+            if let hours = result.todayHours ?? record.flatMap(AttendanceLogic.recordHours) {
+                text += " · " + String(format: "attendance.mine.hoursValue".localized(), AttendanceLogic.hours(hours))
+            }
+            return text
+        }
+        let at = record?.checkInAt.map { AttendanceLogic.clock($0) } ?? ""
+        var text = "✓ " + String(format: "attendance.done.in".localized(), at)
+        if let distance = result.distanceM {
+            text += " · " + String(format: "attendance.card.distance".localized(), AttendanceLogic.meters(distance))
+        }
+        return text
     }
 }
 
