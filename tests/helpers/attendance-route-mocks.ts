@@ -154,6 +154,10 @@ export function resetAttendanceMocks() {
   a.getOutlet.mockImplementation(async (outletId: number, merchantId: number) =>
     merchantId === 2 && [1, 2].includes(outletId) ? { id: outletId, name: `CN ${outletId}`, merchantId: 2 } : null
   );
+  // #949 merchant 2 has outlets 1 and 2
+  a.listOutlets.mockImplementation(async (merchantId: number, outletId?: number | null) =>
+    merchantId === 2 ? [1, 2].filter((id) => !outletId || id === outletId).map((id) => ({ id, name: `CN ${id}` })) : []
+  );
   a.autoCloseOverdue.mockResolvedValue(0);
   a.findOpenRecord.mockResolvedValue(null);
   a.createScan.mockResolvedValue({ id: 1 });

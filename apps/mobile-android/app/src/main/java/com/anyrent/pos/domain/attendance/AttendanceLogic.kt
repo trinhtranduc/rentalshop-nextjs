@@ -82,6 +82,10 @@ data class PunchRejection(
     val accuracyM: Int? = null,
     /** API text for [PunchRejectionKind.OTHER] */
     val message: String? = null,
+    /** #949 QR_WRONG_OUTLET: outlet of the scanned code (null for another shop's code or an older API) */
+    val qrOutletName: String? = null,
+    /** #949 QR_WRONG_OUTLET: the outlets the person may clock in at */
+    val allowedOutletNames: List<String> = emptyList(),
 )
 
 /**
@@ -182,7 +186,13 @@ object AttendanceLogic {
         "OUT_OF_RANGE" -> PunchRejection(PunchRejectionKind.OUT_OF_RANGE, distanceM = data?.int("distanceM"), radiusM = data?.int("radiusM"))
         "MOCK_LOCATION" -> PunchRejection(PunchRejectionKind.MOCK_LOCATION)
         "QR_EXPIRED" -> PunchRejection(PunchRejectionKind.QR_EXPIRED)
-        "QR_WRONG_OUTLET" -> PunchRejection(PunchRejectionKind.QR_WRONG_OUTLET)
+        "QR_WRONG_OUTLET" -> PunchRejection(
+            PunchRejectionKind.QR_WRONG_OUTLET,
+            qrOutletName = data?.optJSONObject("qrOutlet")?.str("name")?.takeIf { it.isNotBlank() },
+            allowedOutletNames = data?.optJSONArray("allowedOutlets")?.let { list ->
+                (0 until list.length()).mapNotNull { list.optJSONObject(it)?.str("name")?.takeIf { name -> name.isNotBlank() } }
+            } ?: emptyList(),
+        )
         "GPS_INACCURATE" -> PunchRejection(PunchRejectionKind.GPS_INACCURATE, accuracyM = data?.int("accuracyM"))
         "ATTENDANCE_NOT_CONFIGURED" -> PunchRejection(PunchRejectionKind.NOT_CONFIGURED)
         "MODULE_NOT_ENABLED" -> PunchRejection(PunchRejectionKind.MODULE_OFF)

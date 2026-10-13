@@ -17,6 +17,8 @@ export interface AttendanceScanInput {
   accuracy: number;
   distanceM: number | null;
   recordId?: number | null;
+  /** #949 QR_WRONG_OUTLET: the outlet of the scanned code (this merchant only); `outletId` is the scanner's */
+  qrOutletId?: number | null;
 }
 
 export async function createAttendanceScan(data: AttendanceScanInput) {

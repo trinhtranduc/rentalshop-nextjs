@@ -1661,6 +1661,7 @@
     <string name="attendance_err_wrong_outlet">Mã QR của chi nhánh khác</string>
     <string name="attendance_err_wrong_outlet_msg">Bạn thuộc %1$s.</string>
     <string name="attendance_err_wrong_outlet_msg_plain">Quét mã của chi nhánh bạn làm việc.</string>
+    <string name="attendance_err_wrong_outlet_msg_detail">Mã này của %1$s. Bạn chấm công ở %2$s.</string>
     <string name="attendance_err_gps">Chưa định vị chính xác</string>
     <string name="attendance_err_gps_msg">GPS ±%1$d m. Ra gần cửa rồi thử lại.</string>
     <string name="attendance_err_gps_msg_plain">Ra gần cửa rồi thử lại.</string>

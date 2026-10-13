@@ -16,6 +16,7 @@ import {
 import { effectiveShiftsForDay } from '../../../../lib/attendance/schedule';
 import { bodyOf } from '../../../../lib/attendance/schemas';
 import { isRequired } from '../../../../lib/attendance/members';
+import { allowedOutletsOf } from '../../../../lib/attendance/outlets';
 import { recordView, shiftOfRecord } from '../../../../lib/attendance/views';
 
 const punchSchema = z.object({
@@ -34,6 +35,8 @@ const punchSchema = z.object({
  * Indexed: AttendanceRecord(userId, status), AttendanceScan(userId, at).
  * #927 an IN by a person the shop did not choose → 403 ATTENDANCE_NOT_REQUIRED (no scan row); an OUT of an
  * open record always goes through.
+ * #949 outlet check = `allowedOutletsOf(user)`; QR_WRONG_OUTLET adds `data: { qrOutlet: {id,name} | null,
+ * allowedOutlets: [{id,name}] }` and its scan row is stored under the scanner's outlet (`qrOutletId` = the code's).
  */
 export const POST = attendanceRoute(ATTENDANCE_ROLES, async (request, { user }) => {
   const parsed = punchSchema.safeParse(await bodyOf(request));
@@ -53,10 +56,16 @@ export const POST = attendanceRoute(ATTENDANCE_ROLES, async (request, { user }) 
   const setting = qr ? await db.attendance.getSetting(qr.outletId) : null;
   const ownSetting = setting && setting.merchantId === user.merchantId ? setting : null;
 
-  const reject = async (code: string, data?: Record<string, number>, distanceM: number | null = null) => {
+  const reject = async (
+    code: string,
+    data?: Record<string, unknown>,
+    distanceM: number | null = null,
+    where: { outletId: number | null; qrOutletId: number | null } = { outletId: ownSetting ? ownSetting.outletId : null, qrOutletId: null }
+  ) => {
     await db.attendance.createScan({
       merchantId: user.merchantId,
-      outletId: ownSetting ? ownSetting.outletId : null,
+      outletId: where.outletId,
+      qrOutletId: where.qrOutletId,
       userId: user.id,
       at: now,
       action: intended,
@@ -71,7 +80,18 @@ export const POST = attendanceRoute(ATTENDANCE_ROLES, async (request, { user }) 
 
   if (body.isMock) return reject('MOCK_LOCATION');
   if (!qr || !verifyAttendanceQrCode(body.code, setting, now, attendanceQrSecret())) return reject('QR_EXPIRED');
-  if (!ownSetting || (!isOwner(user) && user.outletId !== ownSetting.outletId)) return reject('QR_WRONG_OUTLET');
+  // #949 a code of an outlet the person does not belong to: refused, stored under the scanner's own outlet (so its
+  // managers see it) with the code's outlet noted; the error names both. Another shop's outlet is never named.
+  const allowedOutlets = await allowedOutletsOf(user);
+  if (!ownSetting || !allowedOutlets.some((o) => o.id === ownSetting.outletId)) {
+    const qrOutlet = ownSetting ? await db.attendance.getOutlet(ownSetting.outletId, user.merchantId) : null;
+    return reject(
+      'QR_WRONG_OUTLET',
+      { qrOutlet: qrOutlet ? { id: qrOutlet.id, name: qrOutlet.name } : null, allowedOutlets },
+      null,
+      { outletId: isOwner(user) ? null : user.outletId, qrOutletId: qrOutlet ? qrOutlet.id : null }
+    );
+  }
   if (ownSetting.latitude == null || ownSetting.longitude == null) return reject('ATTENDANCE_NOT_CONFIGURED');
   const accuracyM = Math.round(body.accuracy);
   if (body.accuracy > MAX_ACCURACY_M) return reject('GPS_INACCURATE', { accuracyM });

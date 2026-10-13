@@ -78,6 +78,20 @@ class AttendanceLogicTest {
         assertEquals("timeout", other.message)
     }
 
+    /** #949 wrong outlet: `data.qrOutlet` and `data.allowedOutlets` name both outlets; missing → empty */
+    @Test
+    fun wrong_outlet_reads_both_outlet_names() {
+        val json = JSONObject("""{"qrOutlet":{"id":3,"name":"CN Hai"},"allowedOutlets":[{"id":1,"name":"CN Một"},{"id":2,"name":"CN Ba"}]}""")
+        val wrong = AttendanceLogic.rejection("QR_WRONG_OUTLET", json, null)
+        assertEquals(PunchRejectionKind.QR_WRONG_OUTLET, wrong.kind)
+        assertEquals("CN Hai", wrong.qrOutletName)
+        assertEquals(listOf("CN Một", "CN Ba"), wrong.allowedOutletNames)
+        val foreign = AttendanceLogic.rejection("QR_WRONG_OUTLET", JSONObject("""{"qrOutlet":null,"allowedOutlets":[]}"""), null)
+        assertEquals(null, foreign.qrOutletName)
+        assertEquals(emptyList<String>(), foreign.allowedOutletNames)
+        assertEquals(null, AttendanceLogic.rejection("QR_WRONG_OUTLET", null, null).qrOutletName)
+    }
+
     @Test
     fun is_mock_uses_location_is_mock_from_api_31() {
         assertTrue(AttendanceLogic.isMock(31, { true }, { false }))

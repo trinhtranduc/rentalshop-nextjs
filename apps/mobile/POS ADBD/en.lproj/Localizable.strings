@@ -2568,3 +2568,5 @@
 "attendance.error.notRequired.message" = "The shop has not picked you to clock in at this branch. Ask the shop owner if needed.";
 /* #938 Thế chân related list: an order whose collateral is held now */
 "overview.related.collateralHeld" = "Collateral held now";
+/* #949 QR of another outlet: %1$@ = the code's outlet, %2$@ = the person's outlets */
+"attendance.error.wrongOutlet.messageDetail" = "This code is for %1$@. You clock in at %2$@.";

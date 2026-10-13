@@ -24,6 +24,7 @@ type Params = { params: Promise<{ userId: string }> | { userId: string } };
  * #918: every row has `dateKey` (YYYY-MM-DD), the work day it belongs to: the record's day for its scans, its
  * auto-close and its edits (an edit's `at` stays the edit time); other scans use the VN day of `at`.
  * #924: EDIT rows add `editorName` (who edited, the shop owner too; null when the user no longer exists).
+ * #949: a QR_WRONG_OUTLET row adds `qrOutlet: { id, name }` (the outlet of the scanned code).
  */
 export async function GET(request: NextRequest, { params }: Params) {
   return attendanceRoute(ATTENDANCE_ROLES, async (req, { user }) => {
@@ -46,6 +47,10 @@ export async function GET(request: NextRequest, { params }: Params) {
     const edits = await db.attendance.listEdits(records.map((r: RecordRow) => r.id));
     const byId = new Map<number, RecordRow>(records.map((r: RecordRow) => [r.id, r]));
     const editors = await editorNames(edits, new Map([[target.id, fullName(target)]]));
+    // #949 a QR_WRONG_OUTLET scan is stored under the scanner's outlet; name the outlet of the scanned code
+    const qrOutletNames = scans.some((s: { qrOutletId?: number | null }) => s.qrOutletId)
+      ? new Map<number, string>((await db.attendance.listOutlets(user.merchantId)).map((o: { id: number; name: string }) => [o.id, o.name]))
+      : new Map<number, string>();
 
     const rows: Array<Record<string, unknown> & { at: Date }> = [];
     for (const s of scans) {
@@ -64,6 +69,7 @@ export async function GET(request: NextRequest, { params }: Params) {
         latitude: s.latitude,
         longitude: s.longitude,
         recordId: s.recordId ?? null,
+        ...(s.qrOutletId && qrOutletNames.has(s.qrOutletId) ? { qrOutlet: { id: s.qrOutletId, name: qrOutletNames.get(s.qrOutletId) } } : {}),
         ...(rec
           ? {
               shift: shiftOfRecord(rec),

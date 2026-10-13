@@ -11,6 +11,7 @@ import { mockDb, req, resetAttendanceMocks, setCaller } from '../helpers/attenda
 import { buildAttendanceQrCode } from '../../apps/api/lib/attendance/qr-code';
 import { POST as punch } from '../../apps/api/app/api/attendance/punch/route';
 import { GET as kioskQr } from '../../apps/api/app/api/attendance/kiosk/qr/route';
+import { allowedOutletsOf } from '../../apps/api/lib/attendance/outlets';
 
 const SHOP = { latitude: 10.7769, longitude: 106.7009 };
 const setting = (over: any = {}) => ({
@@ -105,6 +106,60 @@ describe('POST /api/attendance/punch: order of checks (#907 rule 13)', () => {
     mockDb.attendance.getSetting.mockImplementation(async (outletId: number) => setting({ outletId, merchantId: 99 }));
     const res: any = await punch(req('/api/attendance/punch', body({ code: codeFor(55) })));
     expect(res.body.code).toBe('QR_WRONG_OUTLET');
+  });
+
+  it('#949 wrong outlet: data names the code\'s outlet and the scanner\'s allowed outlets (additive)', async () => {
+    const res: any = await punch(req('/api/attendance/punch', body({ code: codeFor(2) })));
+    expect(res.status).toBe(422);
+    expect(res.body.code).toBe('QR_WRONG_OUTLET');
+    expect(res.body.message).toBe('QR_WRONG_OUTLET');
+    expect(res.body.data).toEqual({ qrOutlet: { id: 2, name: 'CN 2' }, allowedOutlets: [{ id: 1, name: 'CN 1' }] });
+  });
+
+  it('#949 the refused scan is stored under the scanner\'s outlet, coordinates kept, the code\'s outlet noted', async () => {
+    await punch(req('/api/attendance/punch', body({ code: codeFor(2), latitude: 10.7771, longitude: 106.7011 })));
+    expect(lastScan()).toEqual(
+      expect.objectContaining({
+        result: 'QR_WRONG_OUTLET',
+        userId: 7,
+        merchantId: 2,
+        outletId: 1,
+        qrOutletId: 2,
+        latitude: 10.7771,
+        longitude: 106.7011,
+        accuracy: 12,
+      })
+    );
+  });
+
+  it.each(['OUTLET_ADMIN', 'OUTLET_INVENTORY'])('#949 %s is refused at another outlet of the shop too', async (role) => {
+    setCaller(role, { id: 8 });
+    const res: any = await punch(req('/api/attendance/punch', body({ code: codeFor(2) })));
+    expect(res.body.code).toBe('QR_WRONG_OUTLET');
+    expect(res.body.data.allowedOutlets).toEqual([{ id: 1, name: 'CN 1' }]);
+    expect(lastScan()).toEqual(expect.objectContaining({ outletId: 1, qrOutletId: 2 }));
+  });
+
+  it('#949 another merchant\'s code: no outlet name leaks; scan under the scanner\'s outlet, no qrOutletId', async () => {
+    mockDb.attendance.getSetting.mockImplementation(async (outletId: number) => setting({ outletId, merchantId: 99 }));
+    const res: any = await punch(req('/api/attendance/punch', body({ code: codeFor(55) })));
+    expect(res.body.data).toEqual({ qrOutlet: null, allowedOutlets: [{ id: 1, name: 'CN 1' }] });
+    expect(lastScan()).toEqual(expect.objectContaining({ outletId: 1, qrOutletId: null }));
+  });
+
+  it('#949 owner: every outlet of the shop is allowed; another merchant\'s code is refused with the full list', async () => {
+    setCaller('MERCHANT', { id: 10 });
+    mockDb.attendance.getSetting.mockImplementation(async (outletId: number) => setting({ outletId, merchantId: 99 }));
+    const res: any = await punch(req('/api/attendance/punch', body({ code: codeFor(55) })));
+    expect(res.body.code).toBe('QR_WRONG_OUTLET');
+    expect(res.body.data).toEqual({ qrOutlet: null, allowedOutlets: [{ id: 1, name: 'CN 1' }, { id: 2, name: 'CN 2' }] });
+    expect(lastScan()).toEqual(expect.objectContaining({ outletId: null, qrOutletId: null }));
+  });
+
+  it('#949 other refusals keep the code\'s outlet as the scan outlet and no qrOutletId', async () => {
+    await punch(req('/api/attendance/punch', body({ accuracy: 180 })));
+    expect(lastScan()).toEqual(expect.objectContaining({ result: 'GPS_INACCURATE', outletId: 1 }));
+    expect(lastScan().qrOutletId ?? null).toBeNull();
   });
 
   it('5. outlet without coordinates → 422 ATTENDANCE_NOT_CONFIGURED', async () => {
@@ -207,6 +262,22 @@ describe('POST /api/attendance/punch: order of checks (#907 rule 13)', () => {
     setCaller(role, { merchantId: null });
     const res: any = await punch(req('/api/attendance/punch', body()));
     expect(res.status).toBe(403);
+  });
+});
+
+describe('#949 allowedOutletsOf: the outlets a user may clock in at', () => {
+  beforeEach(() => resetAttendanceMocks());
+  const u = (role: string, outletId: number | null) => ({ id: 1, role, merchantId: 2, outletId });
+
+  it('owner: every outlet of the shop', async () => {
+    expect(await allowedOutletsOf(u('MERCHANT', null))).toEqual([{ id: 1, name: 'CN 1' }, { id: 2, name: 'CN 2' }]);
+  });
+  it.each(['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'])('%s: their own outlet only', async (role) => {
+    expect(await allowedOutletsOf(u(role, 2))).toEqual([{ id: 2, name: 'CN 2' }]);
+  });
+  it('an outlet role without an outlet, or an outlet of another merchant: none', async () => {
+    expect(await allowedOutletsOf(u('OUTLET_STAFF', null))).toEqual([]);
+    expect(await allowedOutletsOf({ ...u('OUTLET_STAFF', 1), merchantId: 99 })).toEqual([]);
   });
 });
 

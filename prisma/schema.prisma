@@ -1314,6 +1314,8 @@ model AttendanceScan {
   accuracy   Float
   distanceM  Int?
   recordId   Int?
+  /// #949 QR_WRONG_OUTLET: outlet of the scanned code (same merchant); outletId is then the scanner's outlet
+  qrOutletId Int?
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, at])

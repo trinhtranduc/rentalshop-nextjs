@@ -221,6 +221,17 @@ describe('suspected fake (#907 rule 16)', () => {
   it('same coordinates as the previous accepted scan', () => {
     expect(suspectReasons({ ...prev, accuracy: 8, at: at('2026-10-12T05:00:00Z') }, prev)).toEqual(['SAME_COORDS']);
   });
+  it('#949 same coordinates at full GPS precision: equal after rounding to 6 decimals (~0.1 m)', () => {
+    const full = { latitude: 21.028712345678912, longitude: 105.85431234567891, accuracy: 9, at: at('2026-10-12T01:00:00Z') };
+    // the stored copy differs in the last digits
+    const stored = { ...full, latitude: 21.02871234567891, longitude: 105.8543123456789 };
+    expect(suspectReasons({ ...full, at: at('2026-10-12T01:00:30Z') }, stored)).toEqual(['SAME_COORDS']);
+    expect(suspectReasons({ ...full, latitude: 21.0287123, at: at('2026-10-12T01:00:30Z') }, { ...stored, latitude: 21.0287121 })).toEqual([
+      'SAME_COORDS',
+    ]);
+    // 0.000002° (~0.2 m) apart is another place
+    expect(suspectReasons({ ...full, latitude: 21.028714, at: at('2026-10-12T01:00:30Z') }, { ...full, latitude: 21.028712 })).toEqual([]);
+  });
   it('speed > 50 m/s only when the distance exceeds both accuracies', () => {
     // ~1.1 km in 10 s
     expect(

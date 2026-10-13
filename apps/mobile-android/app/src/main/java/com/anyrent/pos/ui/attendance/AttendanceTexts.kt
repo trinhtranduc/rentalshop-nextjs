@@ -28,7 +28,10 @@ object AttendanceTexts {
         PunchRejectionKind.MOCK_LOCATION -> context.getString(R.string.attendance_err_mock) to context.getString(R.string.attendance_err_mock_msg)
         PunchRejectionKind.QR_EXPIRED -> context.getString(R.string.attendance_err_qr_expired) to context.getString(R.string.attendance_err_qr_expired_msg)
         PunchRejectionKind.QR_WRONG_OUTLET -> context.getString(R.string.attendance_err_wrong_outlet) to
-            (SessionStore.outletName?.takeIf { it.isNotBlank() }?.let { context.getString(R.string.attendance_err_wrong_outlet_msg, it) }
+            // #949 the API names the code's outlet and the person's outlets; else the text by the session outlet
+            (r.qrOutletName?.takeIf { r.allowedOutletNames.isNotEmpty() }
+                ?.let { context.getString(R.string.attendance_err_wrong_outlet_msg_detail, it, r.allowedOutletNames.joinToString(", ")) }
+                ?: SessionStore.outletName?.takeIf { it.isNotBlank() }?.let { context.getString(R.string.attendance_err_wrong_outlet_msg, it) }
                 ?: context.getString(R.string.attendance_err_wrong_outlet_msg_plain))
         PunchRejectionKind.GPS_INACCURATE -> context.getString(R.string.attendance_err_gps) to
             (r.accuracyM?.let { context.getString(R.string.attendance_err_gps_msg, it) } ?: context.getString(R.string.attendance_err_gps_msg_plain))
