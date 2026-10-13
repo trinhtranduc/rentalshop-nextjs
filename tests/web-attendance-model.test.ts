@@ -17,6 +17,7 @@ import {
   editButtonRecords,
   workedUserIds,
   canEditPerson,
+  canEditMember,
   canUseAttendanceWeb,
   cellKind,
   formatHours,
@@ -297,5 +298,17 @@ describe('#918 rows by work day, edit any record, assign / lock, default outlet'
     expect(defaultOutlet(outlets, 99)?.id).toBe(1);
     expect(defaultOutlet([{ id: 5, name: 'A' }, { id: 6, name: 'B' }], 0)?.id).toBe(5);
     expect(defaultOutlet([], 1)).toBeNull();
+  });
+});
+
+describe('#927 who must clock in: who can change a row', () => {
+  it('the owner changes every row; an outlet admin every row but the owner; others none', () => {
+    for (const r of ['OUTLET_STAFF', 'OUTLET_INVENTORY', 'OUTLET_ADMIN', 'MERCHANT']) expect(canEditMember('MERCHANT', r)).toBe(true);
+    expect(canEditMember('OUTLET_ADMIN', 'OUTLET_STAFF')).toBe(true);
+    expect(canEditMember('OUTLET_ADMIN', 'OUTLET_ADMIN')).toBe(true);
+    expect(canEditMember('outlet_admin', 'OUTLET_INVENTORY')).toBe(true);
+    expect(canEditMember('OUTLET_ADMIN', 'MERCHANT')).toBe(false);
+    expect(canEditMember('OUTLET_STAFF', 'OUTLET_STAFF')).toBe(false);
+    expect(canEditMember(null, 'OUTLET_STAFF')).toBe(false);
   });
 });
