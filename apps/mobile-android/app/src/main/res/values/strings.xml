@@ -1688,6 +1688,7 @@
     <string name="attendance_err_wrong_outlet">QR code of another branch</string>
     <string name="attendance_err_wrong_outlet_msg">You belong to %1$s.</string>
     <string name="attendance_err_wrong_outlet_msg_plain">Scan the code of the outlet you work at.</string>
+    <string name="attendance_err_wrong_outlet_msg_detail">This code is for %1$s. You clock in at %2$s.</string>
     <string name="attendance_err_gps">Location not precise yet</string>
     <string name="attendance_err_gps_msg">GPS ±%1$d m. Move near the door and try again.</string>
     <string name="attendance_err_gps_msg_plain">Move near the door and try again.</string>

@@ -25,19 +25,7 @@ final class AttendanceService: BaseService {
         let code: String?
         let message: String?
         let data: T?
-        let numbers: Numbers?
-
-        struct Numbers: Decodable {
-            let distanceM: Double?
-            let radiusM: Double?
-            let accuracyM: Double?
-            init(from decoder: Decoder) throws {
-                let c = try decoder.container(keyedBy: AttendanceKey.self)
-                distanceM = c.double("distanceM", "distance")
-                radiusM = c.double("radiusM", "radius")
-                accuracyM = c.double("accuracyM", "accuracy")
-            }
-        }
+        let numbers: AttendanceFailureData?
 
         init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: AttendanceKey.self)
@@ -45,7 +33,7 @@ final class AttendanceService: BaseService {
             code = c.string("code")
             message = c.string("message", "error")
             data = success ? c.object(T.self, "data") : nil
-            numbers = success ? nil : c.object(Numbers.self, "data", "details", "meta")
+            numbers = success ? nil : c.object(AttendanceFailureData.self, "data", "details", "meta")
         }
     }
 
@@ -70,7 +58,9 @@ final class AttendanceService: BaseService {
                             result = .failure(AttendanceFailure(code: envelope.code, message: message,
                                                                 distanceM: envelope.numbers?.distanceM,
                                                                 radiusM: envelope.numbers?.radiusM,
-                                                                accuracyM: envelope.numbers?.accuracyM))
+                                                                accuracyM: envelope.numbers?.accuracyM,
+                                                                qrOutletName: envelope.numbers?.qrOutletName,
+                                                                allowedOutletNames: envelope.numbers?.allowedOutletNames ?? []))
                         }
                     } else {
                         result = .failure(AttendanceFailure(code: nil, message: "attendance.error.other.message".localized()))

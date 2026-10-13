@@ -2566,3 +2566,5 @@
 "attendance.error.notRequired.message" = "Shop chưa chọn bạn chấm công ở chi nhánh này. Hỏi chủ shop nếu cần.";
 /* #938 Thế chân related list: an order whose collateral is held now */
 "overview.related.collateralHeld" = "Đang giữ thế chân";
+/* #949 QR of another outlet: %1$@ = the code's outlet, %2$@ = the person's outlets */
+"attendance.error.wrongOutlet.messageDetail" = "Mã này của %1$@. Bạn chấm công ở %2$@.";

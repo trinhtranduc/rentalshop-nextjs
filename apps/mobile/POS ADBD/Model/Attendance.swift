@@ -247,6 +247,35 @@ struct AttendanceFailure: Error, Equatable {
     var distanceM: Double?
     var radiusM: Double?
     var accuracyM: Double?
+    /// #949 QR_WRONG_OUTLET: outlet of the scanned code (nil for another shop's code or an older API)
+    var qrOutletName: String? = nil
+    /// #949 QR_WRONG_OUTLET: the outlets the person may clock in at
+    var allowedOutletNames: [String] = []
+}
+
+/// `data` of a refused call: the numbers, and for QR_WRONG_OUTLET (#949) `qrOutlet` / `allowedOutlets` `{ id, name }`
+struct AttendanceFailureData: Decodable {
+    var distanceM: Double?
+    var radiusM: Double?
+    var accuracyM: Double?
+    var qrOutletName: String?
+    var allowedOutletNames: [String]
+
+    private struct OutletRef: Decodable {
+        let name: String?
+        init(from decoder: Decoder) throws {
+            name = try decoder.container(keyedBy: AttendanceKey.self).string("name")
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: AttendanceKey.self)
+        distanceM = c.double("distanceM", "distance")
+        radiusM = c.double("radiusM", "radius")
+        accuracyM = c.double("accuracyM", "accuracy")
+        qrOutletName = c.object(OutletRef.self, "qrOutlet")?.name.flatMap { $0.isEmpty ? nil : $0 }
+        allowedOutletNames = (c.object([OutletRef].self, "allowedOutlets") ?? []).compactMap(\.name).filter { !$0.isEmpty }
+    }
 }
 
 /// One day of GET /api/attendance/shifts for one user
@@ -624,8 +653,15 @@ enum AttendanceLogic {
             return AttendanceErrorCopy(title: "attendance.error.qrExpired.title".localized(),
                                        message: "attendance.error.qrExpired.message".localized())
         case "QR_WRONG_OUTLET":
-            let message = (outletName ?? "").isEmpty ? "attendance.error.wrongOutlet.messageNoName".localized()
-                : String(format: "attendance.error.wrongOutlet.message".localized(), outletName ?? "")
+            // #949 the API names the code's outlet and the person's outlets; else the text by the session outlet
+            let message: String
+            if let qrOutlet = failure.qrOutletName, !failure.allowedOutletNames.isEmpty {
+                message = String(format: "attendance.error.wrongOutlet.messageDetail".localized(),
+                                 qrOutlet, failure.allowedOutletNames.joined(separator: ", "))
+            } else {
+                message = (outletName ?? "").isEmpty ? "attendance.error.wrongOutlet.messageNoName".localized()
+                    : String(format: "attendance.error.wrongOutlet.message".localized(), outletName ?? "")
+            }
             return AttendanceErrorCopy(title: "attendance.error.wrongOutlet.title".localized(), message: message)
         case "GPS_INACCURATE":
             return AttendanceErrorCopy(title: "attendance.error.gps.title".localized(),
