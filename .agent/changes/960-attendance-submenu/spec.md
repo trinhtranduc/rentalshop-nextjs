@@ -1,27 +1,34 @@
 # #960 Spec
 
-## Sidebar sub-menu
-- `ShellNavItem.children` (new, optional): `{ key, href, exact? }`. The attendance item gets five children:
-  `/attendance` (exact), `/attendance/person`, `/attendance/shifts`, `/attendance/templates`,
-  `/attendance/locations` (+ children such as `/attendance/locations/12`).
-- Children show only when the parent shows (`filterNavForRole` unchanged: module + MERCHANT / OUTLET_ADMIN).
-- `activeNavChild(item, pathname)` picks the active child. The group opens itself when a child is active and
-  can be collapsed / expanded with its header button (`aria-expanded`).
-- Switching between sub-items keeps `?outletId` / `?month`, as the old tab strip did.
+## Side menu (owner option A, mockup 9b56KwErJWiGpiyFEfyEY4#sidenav)
+- `SHELL_NAV_GROUPS`: Tổng quan (no header) · BÁN & CHO THUÊ (Đơn hàng, Lịch giao trả, Kiểm tra còn hàng) ·
+  HÀNG HOÁ (Sản phẩm, Danh mục) · KHÁCH HÀNG (Khách hàng, Khách thân thiết) · NHÂN SỰ (Nhân viên, Chấm công) ·
+  CỬA HÀNG (Chi nhánh, Cài đặt cửa hàng). Header label `shell.groups.<key>`.
+- Visibility per item is unchanged (`filterNavForRole`). `filterNavGroups` drops a group whose items are all
+  hidden, so its header disappears (staff: no NHÂN SỰ).
+- One highlighted row: `navItemTone` — hover uses a lighter background than the active row (the old hover
+  colour was nearly the active one, so two rows looked selected).
+
+## Sub-menu (generic)
+- `ShellNavItem.children` (optional): `{ key, href, exact?, also? }`; `keepQuery` lists query keys a sub-item
+  link carries over. Any item can have children; only Chấm công has them now:
+  Bảng công `/attendance` (exact, also `/attendance/person`), Xếp ca, Mẫu ca, Mã QR & vị trí (+ `/…/{id}`).
+- Chi tiết theo người is not a menu row: it opens from Bảng công; while on it Bảng công is highlighted.
+- `activeNavChild` picks the active sub-item. The group opens itself on its pages and the header toggles it.
 - Same component in the desktop sidebar and the mobile drawer.
 
 ## Attendance pages
-- `AttendanceTabs` and the tab model are removed; every attendance page loses the strip. Back links stay.
+- The top tab strip is removed everywhere; the back links stay.
+- Every attendance dropdown uses `Select` (appearance-none, own chevron, `pr-9`).
 
 ## Top bar
-- Left: breadcrumb from `buildBreadcrumb(pathname)`: top nav label, then the active child (attendance), then
-  the rest of the path: known words (`create`, `edit`, `add`, `import`, ...) get a label, anything else is an
-  id shown as `#id`. Every crumb links except the last; an id under `/outlets` has no page, so no link.
-  Unknown routes give no crumbs.
-- Narrow screens: middle crumbs hide, the last crumb stays and truncates.
-- Right: search icon button + theme + bell. The icon or "/" (not while typing, no modifier) opens a popover
-  with the same search form (submit → `/orders?q=`); Escape or a click outside closes it.
+- Left: breadcrumb `buildBreadcrumb(pathname, tail?)`: menu item › active sub-item › rest of the path (known
+  words get `shell.crumbs.*`, anything else `#id`). Every crumb links except the last; `/outlets/{id}` has no
+  page, so no link. A page can name the last crumb (`useBreadcrumbTail`): Chi tiết theo người →
+  "Chấm công › Bảng công › <tên người>". Narrow screens hide middle crumbs; the last one truncates.
+- Right: search icon (+ theme, bell). Icon or "/" (not while typing, no modifier) opens a popover with the same
+  form (submit → `/orders?q=`); Escape or a click outside closes it.
 
 ## i18n
-`common.shell.nav.attendanceSub.*`, `common.shell.crumbs.*`, `common.shell.breadcrumb`,
-`common.shell.searchOpen` in en / vi / ja / ko / zh.
+`common.shell.nav.attendanceSub.*`, `shell.groups.*`, `shell.crumbs.*`, `shell.breadcrumb`, `shell.searchOpen`
+in en / vi / ja / ko / zh. Removed unused `shell.manage` and `attendance.tabs`.

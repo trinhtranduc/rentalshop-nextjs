@@ -1,6 +1,6 @@
 # #960 Plan
 
-Status: in progress
+Status: done
 
 1. Tests first: `tests/web-shell-nav.test.ts` (children per role / module, active child, keep query),
    `tests/web-shell-breadcrumb.test.ts` (routes → crumbs, ids, links, search shortcut);
