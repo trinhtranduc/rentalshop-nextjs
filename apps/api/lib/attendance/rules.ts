@@ -138,12 +138,20 @@ export interface ScanPoint {
   at: Date;
 }
 
+/** #949 Coordinates compare at 6 decimals (~0.1 m): phones send 17 digits and the stored copy may differ in the last ones. */
+export const COORD_DECIMALS = 6;
+const coordKey = (value: number) => Math.round(value * 10 ** COORD_DECIMALS);
+
+export function sameCoordinates(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }): boolean {
+  return coordKey(a.latitude) === coordKey(b.latitude) && coordKey(a.longitude) === coordKey(b.longitude);
+}
+
 /** Suspected-fake reasons (stored, never blocking). */
 export function suspectReasons(current: ScanPoint, previous: ScanPoint | null): string[] {
   const reasons: string[] = [];
   if (current.accuracy === 0) reasons.push('ZERO_ACCURACY');
   if (previous) {
-    if (current.latitude === previous.latitude && current.longitude === previous.longitude) {
+    if (sameCoordinates(current, previous)) {
       reasons.push('SAME_COORDS');
     } else {
       const distance = haversineMeters(previous.latitude, previous.longitude, current.latitude, current.longitude);
