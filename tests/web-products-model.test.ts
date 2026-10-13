@@ -290,3 +290,12 @@ describe('batch delete: branches that still hold products (#825)', () => {
     expect(heldElsewhereParams(undefined)).toBeNull();
   });
 });
+
+// #951: a 0đ option is shown as a price; a legacy rentPrice 0 without options is still "no price"
+describe('0đ prices in the list and detail (#951)', () => {
+  it('shows a 0đ option, not a missing one', () => {
+    expect(productPrices({ id: 1, name: 'Túi quà', rentPrice: 0, pricingOptions: [{ type: 'FIXED', price: 0, isDefault: true }] } as never)).toMatchObject({ once: 0, day: null });
+    expect(productPrices({ id: 1, name: 'Túi quà', rentPrice: 0, pricingOptions: [{ type: 'DAILY', price: 0 }] } as never)).toMatchObject({ once: null, day: 0 });
+    expect(productPrices({ id: 2, name: 'Chưa có giá', rentPrice: 0, pricingOptions: [] } as never)).toMatchObject({ once: null, day: null });
+  });
+});

@@ -280,17 +280,17 @@ describe('photos', () => {
 });
 
 describe('default price for new orders (#547 owner feedback: no either/or toggle)', () => {
-  it('is a choice only when both prices are set', () => {
+  it('is a choice only when both prices are set (an empty box is null, #951)', () => {
     expect(hasDefaultChoice(50000, 20000)).toBe(true);
-    expect(hasDefaultChoice(50000, 0)).toBe(false);
-    expect(hasDefaultChoice(0, 20000)).toBe(false);
+    expect(hasDefaultChoice(50000, null)).toBe(false);
+    expect(hasDefaultChoice(null, 20000)).toBe(false);
   });
 
   it('falls back to the price that exists', () => {
-    expect(effectiveDefaultMode(50000, 0, 'DAILY')).toBe('FIXED');
-    expect(effectiveDefaultMode(0, 20000, 'FIXED')).toBe('DAILY');
+    expect(effectiveDefaultMode(50000, null, 'DAILY')).toBe('FIXED');
+    expect(effectiveDefaultMode(null, 20000, 'FIXED')).toBe('DAILY');
     expect(effectiveDefaultMode(50000, 20000, 'DAILY')).toBe('DAILY');
-    expect(effectiveDefaultMode(0, 0, 'FIXED')).toBe('FIXED');
+    expect(effectiveDefaultMode(null, null, 'FIXED')).toBe('FIXED');
   });
 });
 
