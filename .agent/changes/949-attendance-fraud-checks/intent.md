@@ -1,6 +1,6 @@
 # #949 Attendance: same-coordinates check at GPS precision; wrong-branch scans refused and visible to managers
 
-Status: in progress
+Status: done (PR #950)
 
 ## What
 1. `SAME_COORDS` also catches a repeat scan when the phone sends full-precision GPS numbers (17 digits).
