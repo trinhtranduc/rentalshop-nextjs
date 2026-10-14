@@ -131,7 +131,7 @@ export default function AddonPricesPage() {
         <div className="head">
           <div>
             <h1>Add-on prices</h1>
-            <p>Giá mỗi gói mỗi tháng (VND). Shop mua giữa kỳ thì trả theo số ngày còn lại. Tính năng (Chấm công) bật/tắt, không số gói.</p>
+            <p>Giá mỗi gói mỗi tháng (VND). Shop mua giữa kỳ thì trả theo số ngày còn lại. Tính năng (Chấm công, Khách thân thiết) bật/tắt, không số gói.</p>
           </div>
           {canEdit && (
             <button className="btn pri" type="button" onClick={openCreate}>
@@ -210,7 +210,7 @@ export default function AddonPricesPage() {
         <ul className="rules">
           <li>Đổi giá chỉ áp dụng từ lần mua hoặc gia hạn sau. Kỳ shop đã trả giữ nguyên giá cũ.</li>
           <li>Chỉ ADMIN sửa được giá. OPS chỉ xem.</li>
-          <li>Tính năng (Chấm công): bật cho cả shop, thu giữa kỳ theo số ngày còn lại, gia hạn cùng gói. Tắt có hiệu lực từ kỳ sau, không hoàn tiền, dữ liệu giữ nguyên.</li>
+          <li>Tính năng (Chấm công, Khách thân thiết): bật cho cả shop, thu giữa kỳ theo số ngày còn lại, gia hạn cùng gói. Tắt có hiệu lực từ kỳ sau, không hoàn tiền, dữ liệu giữ nguyên.</li>
         </ul>
 
         <Dialog open={open} onOpenChange={(v) => !v && close()}>
@@ -270,7 +270,7 @@ export default function AddonPricesPage() {
                       ))}
                     </select>
                   </div>
-                  <span className="muted">Shop có add-on này thì thấy menu và thẻ chấm công. Không có số gói.</span>
+                  <span className="muted">{draft.featureKey === 'loyalty' ? 'Shop có add-on này thì dùng được Khách thân thiết (shop có sẵn trong gói thì không cần). Không có số gói.' : 'Shop có add-on này thì thấy menu và thẻ chấm công. Không có số gói.'}</span>
                 </div>
               )}
               {!draftFeature && (
