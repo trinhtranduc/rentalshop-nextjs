@@ -27,6 +27,18 @@ final class AttendanceTests: XCTestCase {
         XCTAssertFalse(AttendanceModule.isOn(nil))
     }
 
+    /// #967 Khách thân thiết: on through the plan features or `merchant.modules` (loyalty add-on)
+    func testLoyaltyFromModulesOrPlan() throws {
+        let user = User()
+        XCTAssertFalse(user.hasLoyaltyFeature)
+        user.merchant = try decode(Merchant.self, #"{"id":1,"name":"Shop","modules":["attendance"]}"#)
+        XCTAssertFalse(user.hasLoyaltyFeature)
+        user.merchant = try decode(Merchant.self, #"{"id":1,"name":"Shop","modules":["loyalty"]}"#)
+        XCTAssertTrue(user.hasLoyaltyFeature)
+        user.merchant = try decode(Merchant.self, #"{"id":1,"name":"Shop"}"#)
+        XCTAssertFalse(user.hasLoyaltyFeature)
+    }
+
     // MARK: Decoding
 
     func testMeDecodesWithMissingAndOddFields() throws {
