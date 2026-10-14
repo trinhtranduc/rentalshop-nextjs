@@ -48,8 +48,19 @@ object ThermalPrinter {
 
     sealed class Result {
         data object Success : Result()
-        data class Failure(val message: String) : Result()
+        data class Failure(val message: String) : Result() {
+            /** #970: why it failed; kept out of equals so a failure still compares by its message */
+            var reason: FailureReason = FailureReason.OTHER
+                private set
+
+            constructor(message: String, reason: FailureReason) : this(message) {
+                this.reason = reason
+            }
+        }
     }
+
+    /** #970: why a print failed, so the screen can say "printer not set up" or what to check */
+    enum class FailureReason { NOT_CONFIGURED, CONNECT, OTHER }
 
     const val DEFAULT_PRINTER_NOTE = "*** Vui lòng mang theo CMND/BLX khi lấy đồ"
 
@@ -75,7 +86,7 @@ object ThermalPrinter {
     fun testPrint(config: Config): Result = runCatching {
         send(config, buildTestReceipt(config))
         Result.Success
-    }.getOrElse { Result.Failure(it.message ?: "Print failed") }
+    }.getOrElse(::failure)
 
     /**
      * Blocking (run on Dispatchers.IO). With the bank QR switch on, the order's outlet account is loaded first;
@@ -89,7 +100,20 @@ object ThermalPrinter {
         val account = if (config.printBankQr) lookupBankAccount(order, bankLookup) else null
         send(config, buildOrderReceipt(config, order, account))
         Result.Success
-    }.getOrElse { Result.Failure(it.message ?: "Print failed") }
+    }.getOrElse(::failure)
+
+    /** #970: no printer IP saved; [send] throws it before opening a socket */
+    private class NotConfigured : IllegalArgumentException("Printer IP required")
+
+    /** Blank IP → not set up; socket errors (refused, unreachable, timed out, unknown host) → connection */
+    private fun failure(error: Throwable) = Result.Failure(
+        error.message ?: "Print failed",
+        when (error) {
+            is NotConfigured -> FailureReason.NOT_CONFIGURED
+            is java.io.IOException -> FailureReason.CONNECT
+            else -> FailureReason.OTHER
+        },
+    )
 
     /** The bill's account of [order]'s outlet, 5 s at most; also the share image's (#640) */
     internal fun lookupBankAccount(
@@ -110,7 +134,7 @@ object ThermalPrinter {
         buildOrderReceipt(config, order, if (config.printBankQr) account else null)
 
     private fun send(config: Config, payload: ByteArray) {
-        require(config.ip.isNotBlank()) { "Printer IP required" }
+        if (config.ip.isBlank()) throw NotConfigured()
         Socket().use { socket ->
             socket.connect(InetSocketAddress(config.ip, config.port), 5_000)
             socket.soTimeout = 8_000

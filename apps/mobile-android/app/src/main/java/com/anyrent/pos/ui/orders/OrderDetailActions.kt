@@ -29,6 +29,7 @@ import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.model.OrderDetail
+import com.anyrent.pos.print.PrintFeedback
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.domain.payment.PaymentPolicy
 import com.anyrent.pos.ui.common.formatMoney
@@ -255,7 +256,7 @@ fun OrderActionPanel(
                     }
                     message = when (result) {
                         is ThermalPrinter.Result.Success -> "Printed"
-                        is ThermalPrinter.Result.Failure -> result.message
+                        is ThermalPrinter.Result.Failure -> PrintFeedback.message(context, result, config) // #970
                     }
                 }
             },

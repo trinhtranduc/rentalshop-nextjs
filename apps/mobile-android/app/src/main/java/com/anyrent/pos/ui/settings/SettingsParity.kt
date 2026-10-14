@@ -59,6 +59,7 @@ import com.anyrent.pos.data.UserFormRoles
 import com.anyrent.pos.data.repository.SessionStoreAppConfigCache
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
+import com.anyrent.pos.print.PrintFeedback
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppCard
@@ -375,7 +376,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
             val result = withContext(Dispatchers.IO) { ThermalPrinter.testPrint(config) }
             message = when (result) {
                 is ThermalPrinter.Result.Success -> context.getString(R.string.test_print_ok)
-                is ThermalPrinter.Result.Failure -> result.message
+                is ThermalPrinter.Result.Failure -> PrintFeedback.message(context, result, config) // #970
             }
         }
     }

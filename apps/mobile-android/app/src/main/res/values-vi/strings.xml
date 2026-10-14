@@ -135,6 +135,8 @@
     <string name="saved">Đã lưu</string>
     <string name="printer_note">Ghi chú hóa đơn (cuối bill thuê)</string>
     <string name="test_print_ok">Đã gửi lệnh in thử</string>
+    <string name="printer_not_configured">Chưa cấu hình máy in. Vào Cài đặt → Máy in, nhập IP máy in rồi bấm In thử.</string>
+    <string name="printer_connect_failed">Không kết nối được máy in %1$s. Kiểm tra:\n1. Máy in đã bật\n2. Địa chỉ IP đúng\n3. Máy này cùng mạng với máy in</string>
     <string name="offline_cache">Đang xem dữ liệu đã lưu (offline)</string>
     <string name="register_store">Đăng ký cửa hàng</string>
     <string name="register">Đăng ký</string>
