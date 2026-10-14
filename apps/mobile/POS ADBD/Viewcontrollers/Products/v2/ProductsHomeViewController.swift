@@ -33,6 +33,7 @@ final class ProductsHomeViewController: BaseViewControler {
         table.estimatedRowHeight = DS.Gap.productRowMinHeight
         table.keyboardDismissMode = .onDrag
         table.register(ProductRowV2Cell.self, forCellReuseIdentifier: ProductRowV2Cell.reuseId)
+        table.register(ProductGridRowCell.self, forCellReuseIdentifier: ProductGridRowCell.reuseId)
         table.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         return table
     }()
@@ -48,6 +49,18 @@ final class ProductsHomeViewController: BaseViewControler {
         }
         return QRCodeReaderViewController(builder: builder)
     }()
+
+    /// #973: products per row; 1 (the list) on iPhone, 2–4 on iPad by the list's width
+    private var gridColumns = 1
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let columns = PadLayout.isPad ? HomeGrid.columns(width: list.bounds.width) : 1
+        if columns != gridColumns {
+            gridColumns = columns
+            list.reloadData()
+        }
+    }
 
     // MARK: - Lifecycle
 
@@ -169,7 +182,7 @@ final class ProductsHomeViewController: BaseViewControler {
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.leading.trailing.equalToSuperview()
         }
         column.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
@@ -185,8 +198,7 @@ final class ProductsHomeViewController: BaseViewControler {
         view.addSubview(list)
         list.snp.makeConstraints { make in
             make.top.equalTo(header.snp.bottom)
-            make.leading.trailing.equalTo(view.readableColumn())
-            make.bottom.equalToSuperview()
+            make.leading.trailing.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: list)
         emptyLabel.textAlignment = .center
@@ -400,10 +412,11 @@ enum ProductsCartBridge {
 
 extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        viewModel.products.count
+        gridColumns > 1 ? HomeGrid.rows(count: viewModel.products.count, columns: gridColumns) : viewModel.products.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if gridColumns > 1 { return gridCell(tableView, row: indexPath.row) }
         let cell = tableView.dequeueReusableCell(withIdentifier: ProductRowV2Cell.reuseId, for: indexPath) as! ProductRowV2Cell
         let product = viewModel.products[indexPath.row]
         let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
@@ -423,11 +436,38 @@ extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        guard gridColumns == 1 else { return } // grid tiles open their own product
         openDetail(viewModel.products[indexPath.row])
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if indexPath.row >= viewModel.products.count - 4 { viewModel.loadMore() }
+        let shown = gridColumns > 1 ? HomeGrid.indices(row: indexPath.row, columns: gridColumns, count: viewModel.products.count).upperBound : indexPath.row
+        if shown >= viewModel.products.count - 4 { viewModel.loadMore() }
+    }
+
+    /// #973 iPad: one grid row of up to `gridColumns` product tiles (the list row's design)
+    private func gridCell(_ tableView: UITableView, row: Int) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: ProductGridRowCell.reuseId) as! ProductGridRowCell
+        cell.selectionStyle = .none
+        let products = HomeGrid.indices(row: row, columns: gridColumns, count: viewModel.products.count).map { viewModel.products[$0] }
+        cell.configure(columns: gridColumns, count: products.count) { [weak self] tile, index in
+            guard let self else { return }
+            let product = products[index]
+            let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
+            tile.bind(product, inCart: inCart)
+            tile.onAdd = { [weak self] in self?.addToCart(product) }
+            tile.onImage = { [weak self] in
+                guard let self else { return }
+                if let request = ProductImages.thumbnailTap(product) {
+                    self.present(ImageViewerViewController(request: request), animated: true)
+                } else {
+                    self.openDetail(product)
+                }
+            }
+        } onOpen: { [weak self] index in
+            self?.openDetail(products[index])
+        }
+        return cell
     }
 }
 
@@ -593,6 +633,75 @@ final class ProductRowV2Cell: UITableViewCell {
 
     @objc private func photoTapped() {
         onImage?()
+    }
+}
+
+/// #973 iPad: a row of product tiles. Each tile is the list row (`ProductRowV2Cell`) so it looks and acts the same:
+/// + adds, the photo opens the photo, a tap elsewhere opens the product.
+final class ProductGridRowCell: UITableViewCell {
+    static let reuseId = "ProductGridRowCell"
+    private let stack = UIStackView()
+    private var tiles: [ProductRowV2Cell] = []
+    private var onOpen: ((Int) -> Void)?
+    private let tapFilter = TileTapFilter()
+
+    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.alignment = .fill
+        contentView.addSubview(stack)
+        stack.snp.makeConstraints { make in make.edges.equalToSuperview() }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func configure(columns: Int, count: Int, bind: (ProductRowV2Cell, Int) -> Void, onOpen: @escaping (Int) -> Void) {
+        self.onOpen = onOpen
+        if tiles.count != columns {
+            tiles.forEach { $0.removeFromSuperview() }
+            tiles = (0..<columns).map { index in
+                let tile = ProductRowV2Cell(style: .default, reuseIdentifier: nil)
+                tile.selectionStyle = .none
+                tile.tag = index
+                // The tile is used as a view: its content decides its height
+                tile.contentView.translatesAutoresizingMaskIntoConstraints = false
+                tile.contentView.snp.makeConstraints { make in make.edges.equalToSuperview() }
+                let tap = UITapGestureRecognizer(target: self, action: #selector(tileTapped(_:)))
+                tap.delegate = tapFilter
+                tile.addGestureRecognizer(tap)
+                stack.addArrangedSubview(tile)
+                return tile
+            }
+        }
+        for (index, tile) in tiles.enumerated() {
+            let used = index < count
+            tile.alpha = used ? 1 : 0
+            tile.isUserInteractionEnabled = used
+            tile.accessibilityElementsHidden = !used
+            if used { bind(tile, index) }
+        }
+    }
+
+    @objc private func tileTapped(_ gesture: UITapGestureRecognizer) {
+        guard let index = gesture.view?.tag else { return }
+        onOpen?(index)
+    }
+
+}
+
+/// The + button and a photo with its own tap keep their touches (#973 grid tiles)
+private final class TileTapFilter: NSObject, UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var view = touch.view
+        while let current = view, current !== gestureRecognizer.view {
+            if current is UIControl { return false }
+            if current.gestureRecognizers?.contains(where: { $0 !== gestureRecognizer && $0.isEnabled && $0 is UITapGestureRecognizer }) == true {
+                return false
+            }
+            view = current.superview
+        }
+        return true
     }
 }
 

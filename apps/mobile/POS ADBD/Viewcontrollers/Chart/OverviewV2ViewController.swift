@@ -130,7 +130,8 @@ final class OverviewV2ViewController: BaseViewControler {
         scrollView.addSubview(contentStack)
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
         }
         contentStack.snp.makeConstraints { make in
             make.top.equalTo(scrollView.contentLayoutGuide).offset(DS.Spacing.lg)
@@ -553,7 +554,7 @@ final class OverviewV2ViewController: BaseViewControler {
     @objc private func openOrdersTab() {
         guard let tabs = tabBarController ?? (appDelegate.window?.rootViewController as? UITabBarController) else { return }
         let index = tabs.viewControllers?.firstIndex { controller in
-            let root = (controller as? UINavigationController)?.viewControllers.first ?? controller
+            let root = PadSplit.unwrap(controller) ?? controller // #973: the iPad tab may hold the list in a pane
             return root is OrdersViewController || root is SaleViewController
         }
         guard let index else { return }

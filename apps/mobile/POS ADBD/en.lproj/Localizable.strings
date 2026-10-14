@@ -2584,3 +2584,6 @@
 "printer.notConfigured.open" = "Printer settings";
 "printer.error.macHint" = "On a Mac: the Mac must be on the printer's network, and in System Settings → Privacy & Security → Local Network, turn on AnyRent.";
 "settings.v2.printer.none" = "Not set up";
+/* #973 iPad: empty right pane */
+"ipad.split.orders.empty" = "Pick an order on the left to see it here";
+"ipad.split.settings.empty" = "Pick a setting on the left";

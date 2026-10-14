@@ -41,6 +41,13 @@ enum PadLayout {
         Swift.min(width * 0.62, heroMaxHeight)
     }
 
+    /// Width a list row can count on before it is laid out: the screen on iPhone; on iPad the narrowest place the
+    /// row is shown (the list pane beside a detail). Too small only wraps chips earlier.
+    static var rowWidthEstimate: CGFloat {
+        let screen = UIScreen.main.bounds.width
+        return isPad ? PadSplit.primaryWidth(total: screen) : screen
+    }
+
     /// True on iPad (also in a narrow window): only used to pick a presentation style
     static var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 }

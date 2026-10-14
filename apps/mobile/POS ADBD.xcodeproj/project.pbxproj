@@ -14,6 +14,7 @@
 		A909B000000000000000000A /* MyShiftsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000009 /* MyShiftsViewController.swift */; };
 		A909B000000000000000000C /* AttendanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F000000000000000000B /* AttendanceTests.swift */; };
 		A973B0000000000000000001 /* PadLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A973F0000000000000000001 /* PadLayout.swift */; };
+		A973B0000000000000000003 /* PadSplit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A973F0000000000000000003 /* PadSplit.swift */; };
 		A973B0000000000000000002 /* PadLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A973F0000000000000000002 /* PadLayoutTests.swift */; };
 		A828B0000000000000000001 /* CurrentOutlet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000001 /* CurrentOutlet.swift */; };
 		A828B0000000000000000002 /* OutletHeaderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000002 /* OutletHeaderButton.swift */; };
@@ -410,6 +411,7 @@
 		A909F0000000000000000009 /* MyShiftsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyShiftsViewController.swift; sourceTree = "<group>"; };
 		A909F000000000000000000B /* AttendanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceTests.swift; sourceTree = "<group>"; };
 		A973F0000000000000000001 /* PadLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLayout.swift; sourceTree = "<group>"; };
+		A973F0000000000000000003 /* PadSplit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadSplit.swift; sourceTree = "<group>"; };
 		A973F0000000000000000002 /* PadLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLayoutTests.swift; sourceTree = "<group>"; };
 		A828F0000000000000000001 /* CurrentOutlet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentOutlet.swift; sourceTree = "<group>"; };
 		A828F0000000000000000002 /* OutletHeaderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletHeaderButton.swift; sourceTree = "<group>"; };
@@ -1409,6 +1411,7 @@
 				88E4149D21A99E9D00BAF4A1 /* RCError.swift */,
 				88E4149B21A99E9900BAF4A1 /* RCExtentions.swift */,
 				A973F0000000000000000001 /* PadLayout.swift */,
+				A973F0000000000000000003 /* PadSplit.swift */,
 				88E4149921A99E9100BAF4A1 /* Utils.swift */,
 				889A0E3821C00A52008013FD /* AppShared.swift */,
 				523D3F3572CE0AF99EEB4F12 /* FeatureFlags.swift */,
@@ -1960,6 +1963,7 @@
 				04FBE0C42EDBDF0A0057EDF8 /* PreviewCompactCells.swift in Sources */,
 				88E4149C21A99E9900BAF4A1 /* RCExtentions.swift in Sources */,
 				A973B0000000000000000001 /* PadLayout.swift in Sources */,
+				A973B0000000000000000003 /* PadSplit.swift in Sources */,
 				0488393F2D79F9FF00069256 /* SaleCell.swift in Sources */,
 				C914E01923A4907A008B3EDF /* UIView+Additions.swift in Sources */,
 				048839412D79FEBD00069256 /* SaleHeaderView.swift in Sources */,

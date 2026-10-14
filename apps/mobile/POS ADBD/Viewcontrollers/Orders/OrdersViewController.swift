@@ -391,6 +391,8 @@ final class OrdersViewController: BaseViewControler {
     // MARK: - Actions
 
     @objc private func modeTapped() {
+        // #973 iPad: the order on the right belongs to the other list
+        (navigationController as? PadPrimaryNavigationController)?.split?.clearDetail()
         if isSaleMode {
             viewModel.select(viewModel.todayAvailable ? rentSegment : .rent)
         } else {
