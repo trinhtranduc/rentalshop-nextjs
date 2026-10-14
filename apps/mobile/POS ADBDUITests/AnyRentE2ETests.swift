@@ -125,6 +125,10 @@ final class AnyRentE2ETests: XCTestCase {
                 sleep(1)
             }
             back()
+            // #973: Home grid with the cart beside it (the cart has an item now)
+            sleep(2)
+            e2e.shot("ipad-09b-home-cart-panel")
+            XCTAssertTrue(app.buttons["cart.more"].waitForExistence(timeout: 5), "iPad: the cart panel beside the grid")
         } else {
             e2e.soft(false, "iPad: cart with one item")
         }
@@ -133,12 +137,14 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(e2e.tapTab(["My Order", "Đơn hàng"], index: 1), "Orders tab")
         sleep(3)
         e2e.shot("ipad-10-orders-todo")
+        e2e.soft(app.descendants(matching: .any)["ipad.split.empty"].exists, "iPad: Orders shows the empty right pane")
         e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 3)
         sleep(2)
         e2e.shot("ipad-11-orders-all")
         if e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) {
             sleep(2)
             e2e.shot("ipad-13-order-detail")
+            e2e.soft(e2e.button(["All orders", "Tất cả đơn"]).exists, "iPad: the list stays beside the order")
             if e2e.openOrderSheet() {
                 sleep(1)
                 e2e.shot("ipad-14-order-more-sheet")

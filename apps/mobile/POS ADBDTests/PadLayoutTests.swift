@@ -128,4 +128,89 @@ final class PadLayoutTests: XCTestCase {
         XCTAssertFalse(phone.contains { $0.contains("Landscape") }, "iPhone stays portrait")
         XCTAssertEqual(info["UIRequiresFullScreen"] as? Bool, true, "landscape only needs full screen (no Split View)")
     }
+
+    // MARK: Two panes (Orders, Settings) and Home grid + cart panel
+
+    func testListPaneWidth() {
+        XCTAssertEqual(PadSplit.primaryWidth(total: 1376), 440, "iPad Pro 13\"")
+        XCTAssertEqual(PadSplit.primaryWidth(total: 1133), 1133 * 0.36, accuracy: 0.5, "iPad mini")
+        XCTAssertEqual(PadSplit.primaryWidth(total: 900), 360, "never narrower than 360")
+    }
+
+    func testCartPanelWidth() {
+        XCTAssertEqual(PadSplit.cartPanelWidth(total: 1376), 420)
+        XCTAssertEqual(PadSplit.cartPanelWidth(total: 1133), 1133 * 0.32, accuracy: 0.5)
+        XCTAssertEqual(PadSplit.cartPanelWidth(total: 1000), 360)
+    }
+
+    func testCartPanelShowsOnlyWithItems() {
+        XCTAssertFalse(PadSplit.showsCartPanel(itemCount: 0))
+        XCTAssertTrue(PadSplit.showsCartPanel(itemCount: 1))
+    }
+
+    func testGridColumnsByWidth() {
+        XCTAssertEqual(HomeGrid.columns(width: 390), 1, "iPhone: the list")
+        XCTAssertEqual(HomeGrid.columns(width: 599), 1)
+        XCTAssertEqual(HomeGrid.columns(width: 1376), 4, "iPad Pro 13\" without the cart")
+        XCTAssertEqual(HomeGrid.columns(width: 1376 - 420), 3, "with the cart panel")
+        XCTAssertEqual(HomeGrid.columns(width: 1133), 3, "iPad mini")
+        XCTAssertEqual(HomeGrid.columns(width: 1133 - 362), 2, "iPad mini with the cart panel")
+        XCTAssertEqual(HomeGrid.columns(width: 3000), 4, "at most 4")
+    }
+
+    func testGridRowsAndIndices() {
+        XCTAssertEqual(HomeGrid.rows(count: 0, columns: 3), 0)
+        XCTAssertEqual(HomeGrid.rows(count: 7, columns: 3), 3)
+        XCTAssertEqual(HomeGrid.rows(count: 6, columns: 3), 2)
+        XCTAssertEqual(HomeGrid.indices(row: 0, columns: 3, count: 7), 0..<3)
+        XCTAssertEqual(HomeGrid.indices(row: 2, columns: 3, count: 7), 6..<7)
+        XCTAssertEqual(HomeGrid.indices(row: 5, columns: 3, count: 7), 7..<7)
+        XCTAssertEqual(HomeGrid.rows(count: 5, columns: 1), 5, "one column = one product per row")
+    }
+
+    func testPushFromListOpensInTheDetailPane() {
+        let list = UIViewController()
+        let split = PadSplitViewController(primary: list, emptyText: "pick one", symbol: "doc.text")
+        split.loadViewIfNeeded()
+        XCTAssertNil(split.detail, "empty state first")
+        let detail = UIViewController()
+        detail.hidesBottomBarWhenPushed = true
+        list.navigationController?.pushViewController(detail, animated: false)
+        XCTAssertTrue(split.detail === detail, "shown on the right")
+        XCTAssertEqual(list.navigationController?.viewControllers.count, 1, "the list stays")
+        XCTAssertFalse(detail.hidesBottomBarWhenPushed, "the tabs stay on iPad")
+        let next = UIViewController()
+        list.navigationController?.pushViewController(next, animated: false)
+        XCTAssertTrue(split.detail === next, "a new pick replaces the detail")
+        XCTAssertEqual(split.secondaryNav.viewControllers.count, 2, "empty state + one detail")
+        // A screen opened from the detail stacks inside the detail pane
+        let deeper = UIViewController()
+        next.navigationController?.pushViewController(deeper, animated: false)
+        XCTAssertTrue(split.detail === deeper)
+        XCTAssertEqual(split.secondaryNav.viewControllers.count, 3)
+        split.clearDetail()
+        XCTAssertNil(split.detail)
+    }
+
+    func testRowWidthEstimate() {
+        let screen = UIScreen.main.bounds.width
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            XCTAssertEqual(PadLayout.rowWidthEstimate, PadSplit.primaryWidth(total: screen), "the Orders list pane")
+        } else {
+            XCTAssertEqual(PadLayout.rowWidthEstimate, screen, "iPhone: unchanged")
+        }
+    }
+
+    func testUnwrapFindsTheScreenInsideAPane() {
+        let list = UIViewController()
+        let split = PadSplitViewController(primary: list, emptyText: "x", symbol: "doc.text")
+        let nav = UINavigationController(rootViewController: split)
+        XCTAssertTrue(PadSplit.unwrap(nav) === list)
+        XCTAssertTrue(PadSplit.unwrap(split) === list)
+        let plain = UIViewController()
+        XCTAssertTrue(PadSplit.unwrap(UINavigationController(rootViewController: plain)) === plain, "iPhone: unchanged")
+        XCTAssertTrue(PadSplit.unwrap(plain) === plain)
+        XCTAssertNil(PadSplit.unwrap(nil))
+    }
 }
+
