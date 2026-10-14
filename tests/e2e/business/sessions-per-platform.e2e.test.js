@@ -1,10 +1,13 @@
 /**
  * BF-SES: one phone session and one web session per account (#660), with #661 (a password change logs out the rest).
  *
- * Uses its own OUTLET_STAFF user (created by the merchant, deleted at the end) so the cached seed tokens
- * of the other test files are never replaced.
+ * Uses its own merchant world (S.createWorld, staff user inserted in the local database) so the cached seed tokens
+ * of the other test files are never replaced, and no plan's user limit is touched.
  */
-const { Session, describeE2E, request, must } = require('../helpers/api');
+const { describeE2E, request, must } = require('../helpers/api');
+const S = require('../helpers/subscription');
+
+const describeDb = S.hasDb ? describeE2E : describe.skip;
 
 const PHONE = { 'X-Client-Platform': 'mobile', 'X-Device-Type': 'ios', 'User-Agent': 'AnyRent-iOS/1.0.0' };
 const WEB = {
@@ -13,10 +16,9 @@ const WEB = {
 };
 const UNKNOWN = { 'User-Agent': 'curl/8.4.0' };
 
-describeE2E('BF-SES one phone and one web session per account (#660)', () => {
-  let merchant;
+describeDb('BF-SES one phone and one web session per account (#660)', () => {
   let user;
-  let password = 'secret123';
+  let password;
 
   async function phoneLogin() {
     const d = await must(
@@ -41,19 +43,10 @@ describeE2E('BF-SES one phone and one web session per account (#660)', () => {
     return `${r.status} ${r.body?.code}`;
   }
 
-  beforeAll(async () => {
-    merchant = await Session.login('merchant');
-    const outletId = await merchant.defaultOutletId();
-    const email = `bf-ses-${Date.now()}@example.com`;
-    const created = await must(
-      merchant.post('/api/users', { email, password, firstName: 'Phien', lastName: 'E2E', role: 'OUTLET_STAFF', outletId }),
-      'create user'
-    );
-    user = { id: created.id, email };
-  });
-
-  afterAll(async () => {
-    if (user?.id) await request(merchant.token, 'DELETE', `/api/users/${user.id}`);
+  beforeAll(() => {
+    const world = S.createWorld('sessions');
+    user = { email: world.staff.email };
+    password = world.staff.password;
   });
 
   test('BF-SES-01 web and phone both stay logged in', async () => {
@@ -105,7 +98,8 @@ describeE2E('BF-SES one phone and one web session per account (#660)', () => {
     expect(r.status).toBe(200);
     password = next;
 
-    expect(await codeOf(phone)).toBe('401 SESSION_EXPIRED');
+    // the old access token is refused (issued before the change: TOKEN_INVALIDATED, else SESSION_EXPIRED)
+    expect(['401 TOKEN_INVALIDATED', '401 SESSION_EXPIRED']).toContain(await codeOf(phone));
     const refreshed = await request(null, 'POST', '/api/auth/refresh', { json: { refreshToken: phone.refreshToken } });
     expect(refreshed.status).toBe(401);
     // the old password no longer works, the new one does, on both kinds
