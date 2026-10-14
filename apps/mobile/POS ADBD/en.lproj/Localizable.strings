@@ -2577,3 +2577,10 @@
 
 /* #952 edit a customer from the cart picker */
 "customers.v2.saved" = "Customer saved";
+
+/* #970 printing */
+"printer.notConfigured.title" = "Printer not set up";
+"printer.notConfigured.message" = "Go to Settings → Printer, enter the printer's IP and tap Test print.";
+"printer.notConfigured.open" = "Printer settings";
+"printer.error.macHint" = "On a Mac: the Mac must be on the printer's network, and in System Settings → Privacy & Security → Local Network, turn on AnyRent.";
+"settings.v2.printer.none" = "Not set up";

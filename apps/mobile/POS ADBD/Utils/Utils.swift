@@ -138,7 +138,8 @@ class Utils: NSObject {
         UserDefaults.standard.set(ip, forKey: "IpBillPrinter")
     }
     class func loadBillPrinter() -> String{
-        return UserDefaults.standard.string(forKey: "IpBillPrinter") ?? "192.168.1.199"
+        // #970: no fake default; "" until a printer IP is saved (the old 192.168.1.199 fallback counts as none)
+        return PrinterSetup.savedIP ?? ""
     }
     
     class func saveSyncTime(date: Date?){

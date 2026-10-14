@@ -2,16 +2,23 @@ import UIKit
 import Network
 // import CoreBluetooth  // Bluetooth disabled
 
-enum PrinterError: Error {
+enum PrinterError: LocalizedError {
     case connectionFailed
     case writeFailed
     case invalidData
     case printerNotFound
     case disconnected
     case timeout
+    /// #970: no printer IP saved in Settings → Máy in
+    case notConfigured
+    
+    /// #970: alerts read `error.localizedDescription` through `Error`, which only sees `errorDescription`
+    var errorDescription: String? { localizedDescription }
     
     var localizedDescription: String {
         switch self {
+        case .notConfigured:
+            return "printer.notConfigured.title".localized()
         case .connectionFailed:
             return "Failed to connect to printer"
         case .writeFailed:
@@ -490,9 +497,8 @@ class PrinterManager: NSObject {
     
     /// Print bill using connection-per-request pattern (RECOMMENDED for multiple devices)
     func printBill(data: NSMutableData, completion: @escaping (Result<Void, PrinterError>) -> Void) {
-        let printerIP = Utils.loadBillPrinter()
-        guard !printerIP.isEmpty else {
-            completion(.failure(.printerNotFound))
+        guard let printerIP = PrinterSetup.savedIP else {
+            completion(.failure(.notConfigured))
             return
         }
         // Use connection-per-request for better multi-device support
@@ -537,13 +543,9 @@ class PrinterManager: NSObject {
     }
     
     private func printOrderNetwork(_ order: Order, completion: @escaping (Result<Void, PrinterError>) -> Void) {
-        // Get printer IP from settings
-        let printerIP = Utils.loadBillPrinter()
-        
-        // Validate printer IP
-        guard !printerIP.isEmpty else {
-            Swift.print("Error: No printer IP configured")
-            completion(.failure(.printerNotFound))
+        // #970: no saved IP (or the old 192.168.1.199 fallback) → "not set up" at once, nothing is sent
+        guard let printerIP = PrinterSetup.savedIP else {
+            completion(.failure(.notConfigured))
             return
         }
         
@@ -997,11 +999,11 @@ class PrinterManager: NSObject {
 enum CreatedOrderAutoPrint {
     /// A printer counts as set up only when an IP was saved in Settings (the 192.168.1.199 fallback was never chosen)
     static func shouldPrint(savedPrinterIP: String?) -> Bool {
-        !(savedPrinterIP ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+        PrinterSetup.configuredIP(saved: savedPrinterIP) != nil
     }
 
     static func run(orderId: Int) {
-        guard shouldPrint(savedPrinterIP: UserDefaults.standard.string(forKey: "IpBillPrinter")) else { return }
+        guard shouldPrint(savedPrinterIP: UserDefaults.standard.string(forKey: PrinterSetup.ipKey)) else { return }
         // The bill needs the full order (customer, outlet, items), as "In hoá đơn" on the detail prints it
         OrderService.shared.loadOrderDetail(orderId: orderId) { detail, _ in
             guard let detail else { return }
@@ -1012,3 +1014,72 @@ enum CreatedOrderAutoPrint {
     }
 }
 
+
+/// #970: is a bill printer set up, and what a failed print tells the user
+enum PrinterSetup {
+    static let ipKey = "IpBillPrinter"
+    /// The fallback older builds showed (and sometimes saved) when no printer was chosen; it is not a printer
+    static let legacyDefaultIP = "192.168.1.199"
+
+    /// The saved printer IP, or nil when none was chosen (nothing, blank, or the old fallback)
+    static func configuredIP(saved: String?) -> String? {
+        let ip = (saved ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return ip.isEmpty || ip == legacyDefaultIP ? nil : ip
+    }
+
+    static var savedIP: String? { configuredIP(saved: UserDefaults.standard.string(forKey: ipKey)) }
+
+    /// The iPhone/iPad app running on a Mac ("Designed for iPad")
+    static var runsOnMac: Bool { ProcessInfo.processInfo.isiOSAppOnMac }
+
+    /// What to check after a failed print; on a Mac one more line about its network and Local Network access
+    static func failureMessage(_ error: PrinterError, ip: String, onMac: Bool = runsOnMac) -> String {
+        let message: String
+        switch error {
+        case .notConfigured:
+            return "printer.notConfigured.message".localized()
+        case .connectionFailed:
+            message = String(format: "Failed to connect to printer. Please check:\n1. IP address: %@\n2. Printer is on the same network\n3. Port 9100 is open".localized(), ip)
+        case .timeout:
+            message = "Connection timeout. Please check:\n1. Printer is turned on\n2. Network connection is stable".localized()
+        case .disconnected:
+            message = "Printer disconnected. Please check:\n1. Printer is turned on\n2. IP address is correct\n3. Printer is on the same network".localized()
+        case .writeFailed, .invalidData, .printerNotFound:
+            message = error.localizedDescription
+        }
+        return onMac ? message + "\n\n" + "printer.error.macHint".localized() : message
+    }
+}
+
+/// #970: one way every print button reports a failure
+enum PrintFeedback {
+    /// "Chưa cấu hình máy in" with a button to Printer Configuration, or the error with what to check
+    static func showFailure(_ error: Error, from viewController: UIViewController?) {
+        guard let viewController else { return }
+        let alert: UIAlertController
+        if case PrinterError.notConfigured = error {
+            alert = UIAlertController(title: "printer.notConfigured.title".localized(),
+                                      message: "printer.notConfigured.message".localized(), preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+            alert.addAction(UIAlertAction(title: "printer.notConfigured.open".localized(), style: .default) { [weak viewController] _ in
+                openPrinterSettings(from: viewController)
+            })
+        } else {
+            let message = (error as? PrinterError).map { PrinterSetup.failureMessage($0, ip: Utils.loadBillPrinter()) }
+                ?? error.localizedDescription
+            alert = UIAlertController(title: "Print Error".localized(), message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK".localized(), style: .default))
+        }
+        viewController.present(alert, animated: true)
+    }
+
+    static func openPrinterSettings(from viewController: UIViewController?) {
+        let printer = PrinterConfigurationViewController()
+        printer.hidesBottomBarWhenPushed = true
+        if let navigation = viewController?.navigationController {
+            navigation.pushViewController(printer, animated: true)
+        } else {
+            viewController?.present(UINavigationController(rootViewController: printer), animated: true)
+        }
+    }
+}

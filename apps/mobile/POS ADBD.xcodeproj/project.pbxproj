@@ -325,6 +325,7 @@
 		C9BB81CC22E8C80600F03F0E /* beep-07.wav in Resources */ = {isa = PBXBuildFile; fileRef = C9BB81CB22E8C80600F03F0E /* beep-07.wav */; };
 		C9D2ABAF24B0D4570028EAAC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88E4147921A99B3B00BAF4A1 /* AppDelegate.swift */; };
 		C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D2ABB424B0D53C0028EAAC /* Localizable.strings */; };
+		9700A0032E9F000100970001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9700A0042E9F000100970001 /* InfoPlist.strings */; };
 		C9EFF5B1237BF75E00A6CB57 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EFF5B0237BF75E00A6CB57 /* Customer.swift */; };
 		CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E19ED151DD6F782E5777FB /* OrdersViewController.swift */; };
 		CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */; };
@@ -722,6 +723,8 @@
 		C9BB81CB22E8C80600F03F0E /* beep-07.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "beep-07.wav"; sourceTree = "<group>"; };
 		C9D2ABB324B0D53C0028EAAC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C9D2ABB524B0D5410028EAAC /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		9700A0052E9F000100970001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		9700A0062E9F000100970001 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C9ECAD4624AC813C0090FAC4 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
 		C9EFF5B0237BF75E00A6CB57 /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
 		D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmailSentV2ViewController.swift; sourceTree = "<group>"; };
@@ -1306,6 +1309,7 @@
 				88E4148521A99B3E00BAF4A1 /* Info.plist */,
 				04F1A0052F1B0001000A0005 /* POS ADBD.entitlements */,
 				C9D2ABB424B0D53C0028EAAC /* Localizable.strings */,
+				9700A0042E9F000100970001 /* InfoPlist.strings */,
 				88FF337F2F2DB19600FD0A26 /* POSADBD-Bridging-Header.h */,
 			);
 			path = "POS ADBD";
@@ -1752,6 +1756,7 @@
 				0465CA502EE3478600629F03 /* anyrent.icon in Resources */,
 				88E4148421A99B3E00BAF4A1 /* LaunchScreen.storyboard in Resources */,
 				C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */,
+				9700A0032E9F000100970001 /* InfoPlist.strings in Resources */,
 				88E4148121A99B3E00BAF4A1 /* Assets.xcassets in Resources */,
 				C9BB81CC22E8C80600F03F0E /* beep-07.wav in Resources */,
 				887244EA2BB009FA00F15EDD /* GoogleService-Info.plist in Resources */,
@@ -2241,6 +2246,15 @@
 				C9D2ABB524B0D5410028EAAC /* vi-VN */,
 			);
 			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		9700A0042E9F000100970001 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9700A0052E9F000100970001 /* en */,
+				9700A0062E9F000100970001 /* vi-VN */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
