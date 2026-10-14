@@ -36,3 +36,12 @@ Issue: #660 · Status: in progress · Spec: ./spec.md
 ## Rollback
 
 Revert the PR. The nullable column can stay; old code ignores it.
+
+## Rebase onto dev (2026-10-14)
+
+- Cherry-picked onto origin/dev after #661 (password change / reset logs out other sessions). `sessions.ts` merged
+  cleanly: #661 added `invalidateUserSessionsExcept`, #660 changes only `createUserSession` and `getSessionStatus`.
+  A password change still logs out every other session of both platforms and revokes their refresh tokens.
+- Migration folder renamed `20261008120000_…` → `20261019090000_user_session_platform` so it sorts after
+  `20261018090000_attendance_templates_seeded` (never applied on dev or main-real).
+- Tests added: #661 interplay in `sessions-per-platform.test.ts`; business e2e `tests/e2e/business/sessions-per-platform.e2e.test.js`.
