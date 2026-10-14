@@ -76,6 +76,8 @@ class ImageSearchViewController: BaseViewControler {
     private var captureSession: AVCaptureSession?
     private var videoOutput: AVCaptureVideoDataOutput?
     private var previewLayer: AVCaptureVideoPreviewLayer?
+    /// #973 screen orientation, read on the main thread for the frame queue
+    private var frameOrientation: UIInterfaceOrientation = .portrait
     private var currentFrame: CVPixelBuffer?
     private var isCameraSetup = false
 
@@ -144,6 +146,9 @@ class ImageSearchViewController: BaseViewControler {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         previewLayer?.frame = cameraPreviewView.bounds
+        // #973: iPad runs in landscape; the preview and the captured frame follow the screen
+        frameOrientation = CameraOrientation.interfaceOrientation(of: view)
+        CameraOrientation.apply(to: previewLayer?.connection, interface: frameOrientation)
     }
 
     @objc private func cancelTapped() {
@@ -242,7 +247,7 @@ class ImageSearchViewController: BaseViewControler {
             return
         }
 
-        let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+        let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: CameraOrientation.imageOrientation(for: frameOrientation))
         let fixedImage = image.fixImageOrientation()
 
         capturedImageView.image = fixedImage
@@ -396,7 +401,7 @@ extension ImageSearchViewController: AVCaptureVideoDataOutputSampleBufferDelegat
             return
         }
 
-        let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+        let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: CameraOrientation.imageOrientation(for: frameOrientation))
         let fixedImage = image.fixImageOrientation()
 
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in

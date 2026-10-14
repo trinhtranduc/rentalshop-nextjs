@@ -13,6 +13,8 @@
 		A909B0000000000000000008 /* AttendanceScanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000007 /* AttendanceScanViewController.swift */; };
 		A909B000000000000000000A /* MyShiftsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000009 /* MyShiftsViewController.swift */; };
 		A909B000000000000000000C /* AttendanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F000000000000000000B /* AttendanceTests.swift */; };
+		A973B0000000000000000001 /* PadLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A973F0000000000000000001 /* PadLayout.swift */; };
+		A973B0000000000000000002 /* PadLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A973F0000000000000000002 /* PadLayoutTests.swift */; };
 		A828B0000000000000000001 /* CurrentOutlet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000001 /* CurrentOutlet.swift */; };
 		A828B0000000000000000002 /* OutletHeaderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000002 /* OutletHeaderButton.swift */; };
 		A828B0000000000000000003 /* OutletPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000003 /* OutletPickerSheet.swift */; };
@@ -405,6 +407,8 @@
 		A909F0000000000000000007 /* AttendanceScanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceScanViewController.swift; sourceTree = "<group>"; };
 		A909F0000000000000000009 /* MyShiftsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyShiftsViewController.swift; sourceTree = "<group>"; };
 		A909F000000000000000000B /* AttendanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceTests.swift; sourceTree = "<group>"; };
+		A973F0000000000000000001 /* PadLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLayout.swift; sourceTree = "<group>"; };
+		A973F0000000000000000002 /* PadLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadLayoutTests.swift; sourceTree = "<group>"; };
 		A828F0000000000000000001 /* CurrentOutlet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentOutlet.swift; sourceTree = "<group>"; };
 		A828F0000000000000000002 /* OutletHeaderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletHeaderButton.swift; sourceTree = "<group>"; };
 		A828F0000000000000000003 /* OutletPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletPickerSheet.swift; sourceTree = "<group>"; };
@@ -1059,6 +1063,7 @@
 				A640F0000000000000000003 /* OrderShareImageTests.swift */,
 				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
 				A909F000000000000000000B /* AttendanceTests.swift */,
+				A973F0000000000000000002 /* PadLayoutTests.swift */,
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				A674F0000000000000000002 /* RefreshPolicyTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
@@ -1396,6 +1401,7 @@
 				88E4149F21A99EA200BAF4A1 /* UIAlertController+RC.swift */,
 				88E4149D21A99E9D00BAF4A1 /* RCError.swift */,
 				88E4149B21A99E9900BAF4A1 /* RCExtentions.swift */,
+				A973F0000000000000000001 /* PadLayout.swift */,
 				88E4149921A99E9100BAF4A1 /* Utils.swift */,
 				889A0E3821C00A52008013FD /* AppShared.swift */,
 				523D3F3572CE0AF99EEB4F12 /* FeatureFlags.swift */,
@@ -1883,6 +1889,7 @@
 				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
 				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
 				A909B000000000000000000C /* AttendanceTests.swift in Sources */,
+				A973B0000000000000000002 /* PadLayoutTests.swift in Sources */,
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				A674B0000000000000000002 /* RefreshPolicyTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
@@ -1943,6 +1950,7 @@
 				04A82A772EE7CA3900E55F9C /* OutletService.swift in Sources */,
 				04FBE0C42EDBDF0A0057EDF8 /* PreviewCompactCells.swift in Sources */,
 				88E4149C21A99E9900BAF4A1 /* RCExtentions.swift in Sources */,
+				A973B0000000000000000001 /* PadLayout.swift in Sources */,
 				0488393F2D79F9FF00069256 /* SaleCell.swift in Sources */,
 				C914E01923A4907A008B3EDF /* UIView+Additions.swift in Sources */,
 				048839412D79FEBD00069256 /* SaleHeaderView.swift in Sources */,
