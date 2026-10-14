@@ -142,7 +142,7 @@ final class CartV2ViewController: BaseViewControler {
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
             make.height.equalTo(60)
         }
         back.snp.makeConstraints { make in
@@ -185,7 +185,10 @@ final class CartV2ViewController: BaseViewControler {
         blockedNotice.isHidden = true
         [line, bottomColumn].forEach(bottom.addSubview)
         view.addSubview(bottom)
-        bottom.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        bottom.snp.makeConstraints { make in
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
+        }
         line.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
         bottomColumn.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
@@ -204,7 +207,7 @@ final class CartV2ViewController: BaseViewControler {
         view.addSubview(scroll)
         scroll.snp.makeConstraints { make in
             make.top.equalTo(header.snp.bottom)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
             make.bottom.equalTo(bottom.snp.top)
         }
         content.axis = .vertical

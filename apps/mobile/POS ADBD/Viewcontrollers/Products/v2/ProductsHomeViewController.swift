@@ -169,7 +169,7 @@ final class ProductsHomeViewController: BaseViewControler {
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
         }
         column.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
@@ -185,7 +185,8 @@ final class ProductsHomeViewController: BaseViewControler {
         view.addSubview(list)
         list.snp.makeConstraints { make in
             make.top.equalTo(header.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: list)
         emptyLabel.textAlignment = .center

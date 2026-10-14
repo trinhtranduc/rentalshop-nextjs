@@ -108,7 +108,10 @@ final class ProductCalendarViewController: BaseViewControler {
         bottomStack.spacing = 10
         [topLine, bottomStack].forEach(bottom.addSubview)
         view.addSubview(bottom)
-        bottom.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        bottom.snp.makeConstraints { make in
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
+        }
         topLine.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
         bottomStack.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
@@ -119,7 +122,7 @@ final class ProductCalendarViewController: BaseViewControler {
         view.addSubview(scroll)
         scroll.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
             make.bottom.equalTo(bottom.snp.top)
         }
         content.axis = .vertical

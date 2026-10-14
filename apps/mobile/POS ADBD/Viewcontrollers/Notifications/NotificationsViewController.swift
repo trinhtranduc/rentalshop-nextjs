@@ -187,11 +187,11 @@ final class NotificationsViewController: BaseViewControler {
         [chips, chipsLine].forEach(view.addSubview)
         chips.snp.makeConstraints { make in
             make.top.equalTo(headerLine.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
         }
         chipsLine.snp.makeConstraints { make in
             make.top.equalTo(chips.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
         }
 
         notificationsTableView.backgroundColor = .white
@@ -202,7 +202,8 @@ final class NotificationsViewController: BaseViewControler {
         view.addSubview(notificationsTableView)
         notificationsTableView.snp.makeConstraints { make in
             make.top.equalTo(chipsLine.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: notificationsTableView)
 

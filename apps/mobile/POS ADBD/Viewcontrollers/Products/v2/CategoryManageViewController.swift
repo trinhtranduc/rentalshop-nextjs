@@ -53,7 +53,7 @@ final class CategoryManageViewController: BaseViewControler {
         view.addSubview(search)
         search.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview().inset(8)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(8)
         }
 
         table.dataSource = self
@@ -66,7 +66,8 @@ final class CategoryManageViewController: BaseViewControler {
         view.addSubview(table)
         table.snp.makeConstraints { make in
             make.top.equalTo(search.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
         }
         emptyLabel.textAlignment = .center
         emptyLabel.isHidden = true

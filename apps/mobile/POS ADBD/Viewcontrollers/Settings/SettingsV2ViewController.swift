@@ -82,7 +82,7 @@ final class SettingsV2ViewController: BaseViewControler {
         view.addSubview(title)
         title.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
         }
         listView.backgroundColor = DS.Color.surface
         listView.separatorStyle = .none
@@ -100,7 +100,8 @@ final class SettingsV2ViewController: BaseViewControler {
         view.addSubview(listView)
         listView.snp.makeConstraints { make in
             make.top.equalTo(title.snp.bottom).offset(DS.Spacing.md)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
         }
     }
 

@@ -269,7 +269,7 @@ class ExportViewController: BaseViewControler {
         view.addSubview(exportTableView)
         exportTableView.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
             make.bottom.equalTo(bar.snp.top)
         }
     }

@@ -167,7 +167,7 @@ class UserManagementViewController: BaseViewControler {
         view.addSubview(search)
         search.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg)
         }
 
         userTableView.backgroundColor = .white
@@ -179,7 +179,8 @@ class UserManagementViewController: BaseViewControler {
         configPullToRefresh(tableview: userTableView)
         userTableView.snp.makeConstraints { make in
             make.top.equalTo(search.snp.bottom).offset(8)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
         }
     }
 

@@ -98,11 +98,12 @@ final class OrderDetailViewController: BaseViewControler {
             } else {
                 make.top.equalTo(view.safeAreaLayoutGuide)
             }
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
             make.bottom.equalTo(bottomBar.snp.top)
         }
         bottomBar.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
         }
         stateView.snp.makeConstraints { make in make.edges.equalTo(scrollView) }
         stateView.onRetry = { [weak self] in self?.load() }
