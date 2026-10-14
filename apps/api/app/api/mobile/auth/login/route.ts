@@ -20,7 +20,7 @@ const deviceSchema = z.object({ deviceId: z.string().max(255).optional() }).pass
  * /api/mobile/auth/login:
  *   post:
  *     summary: Mobile user login
- *     description: Authenticate mobile user with email and password. Same checks and session as /api/auth/login (a newer login signs out older devices). Returns a 1-hour access token and a refresh token (30d, rotated) bound to the session.
+ *     description: Authenticate mobile user with email and password. Same checks and session as /api/auth/login (a newer phone login signs out the older phone; a web session stays, #660). Returns a 1-hour access token and a refresh token (30d, rotated) bound to the session.
  *     tags: [Mobile, Authentication]
  *     requestBody:
  *       required: true

@@ -71,7 +71,7 @@ describe('mobile login with refresh token (#344)', () => {
       { issueRefreshToken: { deviceId: 'device-1' } }
     );
 
-    expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'AnyRent-iOS/2.0', 30, { absoluteDays: 90 });
+    expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'AnyRent-iOS/2.0', 30, { absoluteDays: 90, platform: 'mobile' });
     expect(mockDb.refreshTokens.create).toHaveBeenCalledWith(
       1,
       expect.objectContaining({ sessionId: 'session-new', deviceId: 'device-1' })
@@ -88,7 +88,7 @@ describe('mobile login with refresh token (#344)', () => {
 
   it('issues a refresh-capable session even if the platform header is missing', async () => {
     await buildAuthLoginSuccessResponse(request({ 'User-Agent': 'curl/8' }), user, {}, { issueRefreshToken: {} });
-    expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'curl/8', 30, { absoluteDays: 90 });
+    expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'curl/8', 30, { absoluteDays: 90, platform: 'mobile' });
   });
 
   it('store builds on /api/auth/login keep the 90-day token and get no refresh token', async () => {
@@ -100,8 +100,39 @@ describe('mobile login with refresh token (#344)', () => {
 
   it('web login is unchanged', async () => {
     const res: any = await buildAuthLoginSuccessResponse(request({ 'User-Agent': 'Mozilla/5.0 (Macintosh)' }), user, {});
-    expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'Mozilla/5.0 (Macintosh)', 7);
+    expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'Mozilla/5.0 (Macintosh)', 7, { platform: 'web' });
     expect(res.body.data.token).toBe('web-7d');
     expect(res.body.data.refreshToken).toBeUndefined();
+  });
+
+  describe('session platform (#660)', () => {
+    it('web client (X-Client-Platform: web) opens a web session', async () => {
+      await buildAuthLoginSuccessResponse(request({ 'X-Client-Platform': 'web', 'User-Agent': 'Mozilla/5.0' }), user, {});
+      expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'Mozilla/5.0', 7, { platform: 'web' });
+    });
+
+    it('old Android build on /api/auth/login with only the okhttp User-Agent opens a phone session', async () => {
+      const res: any = await buildAuthLoginSuccessResponse(request({ 'User-Agent': 'okhttp/4.12.0' }), user, {});
+      expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'okhttp/4.12.0', 30, {
+        absoluteDays: 90,
+        platform: 'mobile',
+      });
+      expect(res.body.data.token).toBe('mobile-90d');
+    });
+
+    it('X-Client-Platform: ios counts as a phone: mobile session and 90-day token on /api/auth/login', async () => {
+      const res: any = await buildAuthLoginSuccessResponse(request({ 'X-Client-Platform': 'ios' }), user, {});
+      expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, undefined, 30, {
+        absoluteDays: 90,
+        platform: 'mobile',
+      });
+      expect(res.body.data.token).toBe('mobile-90d');
+    });
+
+    it('unknown client keeps today: web token and a session with no platform (replaces every session)', async () => {
+      const res: any = await buildAuthLoginSuccessResponse(request({ 'User-Agent': 'curl/8' }), user, {});
+      expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'curl/8', 7, { platform: null });
+      expect(res.body.data.token).toBe('web-7d');
+    });
   });
 });

@@ -15,9 +15,22 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export type SessionStatus = 'active' | 'replaced' | 'expired';
 
 /**
- * Create a new session for a user and invalidate all previous sessions
- * This implements "single session" behavior - only the latest login is valid.
- * Every older refresh token of the user is revoked too, so only the new device can refresh.
+ * Kind of client a session belongs to (#660). An account keeps one session per platform:
+ * one phone session and one web session. NULL = unknown client or a row from before #660.
+ */
+export type SessionPlatform = 'web' | 'mobile';
+
+export const SESSION_PLATFORMS: readonly SessionPlatform[] = ['web', 'mobile'];
+
+/**
+ * Create a new session for a user and invalidate the sessions it replaces.
+ *
+ * - `platform` set (#660): replaces the active sessions of the same platform and the ones with no
+ *   platform. Active sessions of the other platform stay, with their refresh tokens.
+ * - `platform` missing / null: replaces every session of the user (the behavior before #660).
+ *
+ * Every other unrevoked refresh token of the user is revoked, so a replaced device cannot refresh
+ * into a new session.
  *
  * With `absoluteDays`, the session slides: each use moves expiresAt to now + expiryDays,
  * never past now + absoluteDays from login (see getSessionStatus).
@@ -27,7 +40,7 @@ export async function createUserSession(
   ipAddress?: string,
   userAgent?: string,
   expiryDays: number = 7,
-  options?: { absoluteDays?: number }
+  options?: { absoluteDays?: number; platform?: SessionPlatform | null }
 ) {
   const sessionId = generateSessionId();
   // One timestamp for both writes: an older session whose invalidatedAt equals a newer
@@ -36,27 +49,47 @@ export async function createUserSession(
   const now = loginAt.getTime();
   const expiresAt = new Date(now + expiryDays * DAY_MS);
   const sliding = options?.absoluteDays !== undefined;
+  const platform =
+    options?.platform && SESSION_PLATFORMS.includes(options.platform) ? options.platform : null;
 
   // Start a transaction to ensure atomicity
   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    // 1. Invalidate ALL previous sessions for this user
+    // Sessions of the other platform(s) that this login keeps (none for an unknown platform)
+    const keptSessionIds: string[] = platform
+      ? (
+          await tx.userSession.findMany({
+            where: {
+              userId,
+              isActive: true,
+              platform: { in: SESSION_PLATFORMS.filter((p) => p !== platform) },
+            },
+            select: { sessionId: true },
+          })
+        ).map((s: { sessionId: string }) => s.sessionId)
+      : [];
+
+    // 1. Invalidate the replaced sessions: same platform + no platform, or all when unknown
     await tx.userSession.updateMany({
-      where: {
-        userId,
-        isActive: true,
-      },
+      where: platform
+        ? { userId, isActive: true, OR: [{ platform }, { platform: null }] }
+        : { userId, isActive: true },
       data: {
         isActive: false,
         invalidatedAt: loginAt,
       },
     });
 
-    // 2. Revoke ALL refresh tokens so an older device cannot refresh into a new session
+    // 2. Revoke refresh tokens so a replaced device cannot refresh into a new session.
+    // Tokens are bound to sessions by RefreshToken.sessionId; only those of kept sessions survive.
     await tx.refreshToken.updateMany({
-      where: {
-        userId,
-        isRevoked: false,
-      },
+      where:
+        keptSessionIds.length > 0
+          ? {
+              userId,
+              isRevoked: false,
+              OR: [{ sessionId: null }, { sessionId: { notIn: keptSessionIds } }],
+            }
+          : { userId, isRevoked: false },
       data: {
         isRevoked: true,
         revokedAt: new Date(),
@@ -74,6 +107,7 @@ export async function createUserSession(
         expiresAt,
         absoluteExpiresAt: sliding ? new Date(now + options!.absoluteDays! * DAY_MS) : null,
         idleTimeoutDays: sliding ? expiryDays : null,
+        platform,
         isActive: true,
       },
     });
@@ -105,12 +139,14 @@ export async function getSessionStatus(sessionId: string): Promise<SessionStatus
     if (!session.invalidatedAt) {
       return 'expired';
     }
-    // createUserSession stamps replaced sessions with the new session's createdAt
+    // createUserSession stamps replaced sessions with the new session's createdAt.
+    // A session with a platform can only be replaced by a login of that platform or an unknown one (#660).
     const newerLogin = await prisma.userSession.findFirst({
       where: {
         userId: session.userId,
         id: { not: session.id },
         createdAt: session.invalidatedAt,
+        ...(session.platform ? { OR: [{ platform: session.platform }, { platform: null }] } : {}),
       },
       select: { id: true, createdAt: true },
     });
