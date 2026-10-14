@@ -6,6 +6,14 @@ import { getApiBaseUrl } from '../config/api';
 
 const API = CONSTANTS.API;
 
+/** Language chosen in the app (`NEXT_LOCALE`). Missing cookie → Vietnamese, the product language. */
+function appAcceptLanguage(): string {
+  if (typeof document === 'undefined') return 'vi';
+  const match = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]*)/);
+  const value = match?.[1] ? decodeURIComponent(match[1]).trim() : '';
+  return value || 'vi';
+}
+
 // formatCurrency is now exported from ./currency.ts for centralized currency management
 
 // String utilities are now exported from ./string-utils.ts
@@ -73,6 +81,8 @@ export const publicFetch = async (
     'X-Client-Platform': 'web',
     'X-App-Version': '1.0.0',
     'X-Device-Type': 'browser',
+    // In-app language (NEXT_LOCALE), not the browser's Accept-Language
+    'Accept-Language': appAcceptLanguage(),
   };
 
   // Create full URL
@@ -101,6 +111,7 @@ export const publicFetch = async (
     ...optionsHeaders,
     // Force Content-Type to be application/json for JSON body
     [API.HEADERS.CONTENT_TYPE]: API.CONTENT_TYPES.JSON,
+    'Accept-Language': appAcceptLanguage(),
   };
 
   const requestOptions: RequestInit = {
@@ -247,6 +258,7 @@ export const authenticatedFetch = async (
     'X-App-Version': '1.0.0',
     'X-Device-Type': 'browser',
     ...optionsHeaders,  // User-provided headers (merged before Authorization)
+    'Accept-Language': appAcceptLanguage(),
   };
   
   // Set Authorization header

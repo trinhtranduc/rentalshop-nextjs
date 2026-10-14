@@ -21,7 +21,7 @@
   "INVALID_INPUT": "Invalid input provided",
   "MISSING_REQUIRED_FIELD": "Required field is missing",
   
-  "DATABASE_ERROR": "Database operation failed",
+  "DATABASE_ERROR": "Could not save your changes. Please try again.",
   "DUPLICATE_ENTRY": "Record already exists",
   "FOREIGN_KEY_CONSTRAINT": "Invalid reference",
   "NOT_FOUND": "Resource not found",
@@ -71,10 +71,10 @@
   "SESSION_NOT_FOUND": "Session not found",
   "SOME_USERS_NOT_FOUND": "Some users were not found",
   
-  "INTERNAL_SERVER_ERROR": "Internal server error",
+  "INTERNAL_SERVER_ERROR": "Something went wrong. Please try again.",
   "SERVICE_UNAVAILABLE": "Service temporarily unavailable",
   "NETWORK_ERROR": "Network error occurred",
-  "GATEWAY_ERROR": "Gateway error. The server is temporarily unavailable.",
+  "GATEWAY_ERROR": "The service is busy right now. Please try again in a few minutes.",
   "TIMEOUT_ERROR": "Request timeout. Please try again.",
   "PASSWORD_HASH_FAILED": "Failed to hash password",
   "PASSWORD_UPDATE_FAILED": "Failed to update password",
@@ -381,7 +381,7 @@
   "TEST_API_WORKING": "Test API working",
   "TEST_POST_WORKING": "Test POST working",
   "API_KEYS_WORKING": "API Keys endpoint is working!",
-  "AWS_S3_TEST_FAILED": "AWS S3 test failed",
+  "AWS_S3_TEST_FAILED": "Could not check file storage. Please try again.",
   "PRODUCT_HAS_OPEN_ORDERS": "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.",
   "SEARCH_FAILED": "We couldn't search by image right now. Please try again in a moment, or use text search.",
   "SEARCH_TIMEOUT": "The image search took too long. Please try again in a few minutes.",
@@ -538,5 +538,16 @@
   "ATTENDANCE_NOT_REQUIRED": "This person is not set to clock in. Turn it on in Attendance › QR & location › Who must clock in.",
   "ATTENDANCE_NOT_REQUIRED_NAMED": "{names}: not set to clock in. Turn it on in Attendance › QR & location › Who must clock in first.",
   "SHIFT_TEMPLATE_IN_USE": "This shift is in use. Hide it instead of deleting it.",
-  "MONTH_LOCKED": "This month is locked. Ask the shop owner to unlock it."
+  "MONTH_LOCKED": "This month is locked. Ask the shop owner to unlock it.",
+  "RATING_REQUEST_SHOWN": "The rating prompt was shown.",
+  "RATING_ALREADY_REQUESTED": "A rating prompt was already sent.",
+  "RATING_REQUEST_FAILED": "Could not show the rating prompt. Please try again.",
+  "DEPOSIT_AMOUNT_UPDATED": "Deposit amount updated.",
+  "DEPOSIT_AMOUNT_REQUIRED": "Enter a deposit amount.",
+  "INVALID_DEPOSIT_AMOUNT": "The deposit must be zero or more.",
+  "DEPOSIT_MANUALLY_OVERRIDDEN": "The deposit was entered by hand.",
+  "DEPOSIT_AUTO_CALCULATED": "The deposit was calculated from the products.",
+  "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "The deposit cannot be changed after the order is created.",
+  "DEPOSIT_EDIT_SUCCESS": "Deposit saved.",
+  "DEPOSIT_EDIT_FAILED": "Could not save the deposit. Please try again."
 }

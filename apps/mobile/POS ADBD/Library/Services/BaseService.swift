@@ -15,7 +15,8 @@ class BaseService {
             "X-Client-Platform": "mobile",
             "X-Device-Type": "ios",
             "X-App-Version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
-            "User-Agent": "AnyRent-iOS/1.0.0"
+            "User-Agent": "AnyRent-iOS/1.0.0",
+            "Accept-Language": appAcceptLanguage()
         ]
         
         // Add Authorization header using Bearer token format
@@ -25,6 +26,13 @@ class BaseService {
         
         return header
     }
+
+    /// Language of this app's strings (`en` or `vi`), not the phone language when they differ.
+    static func appAcceptLanguage() -> String {
+        let code = (Bundle.main.preferredLocalizations.first ?? "vi").lowercased()
+        if code == "en" || code.hasPrefix("en-") { return "en" }
+        return "vi"
+    }
     
     static var formHeader: HTTPHeaders {
         var header: HTTPHeaders = [
@@ -32,7 +40,8 @@ class BaseService {
             "X-Client-Platform": "mobile",
             "X-Device-Type": "ios",
             "X-App-Version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
-            "User-Agent": "AnyRent-iOS/1.0.0"
+            "User-Agent": "AnyRent-iOS/1.0.0",
+            "Accept-Language": appAcceptLanguage()
         ]
         
         // Add Authorization header using Bearer token format

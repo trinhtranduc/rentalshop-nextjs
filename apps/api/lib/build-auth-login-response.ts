@@ -236,7 +236,7 @@ export async function buildAuthLoginSuccessResponse(
   const result = {
     success: true,
     code: 'LOGIN_SUCCESS',
-    message: 'Login successful',
+    message: ResponseBuilder.success('LOGIN_SUCCESS').message,
     data: {
       user: {
         id: user.id,
