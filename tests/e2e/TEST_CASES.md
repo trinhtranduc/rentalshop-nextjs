@@ -780,7 +780,7 @@ Loyalty bật = gói có `loyalty` HOẶC add-on `loyalty` còn hiệu lực. Ch
 | ID | Tình huống | Bước | Kỳ vọng |
 |---|---|---|---|
 | BF-LOYADD-01 | Dòng "Khách thân thiết · Tính năng" | ADMIN `POST /api/addon-prices` `featureKey: loyalty`, 79.000 | 201, `packSize` 1 |
-| BF-LOYADD-02 | Gói không có loyalty + add-on | hồ sơ + `/api/loyalty/program` trước; mua; tạo chương trình; bán 250.000; bán tiếp dùng 10 điểm | trước: `modules` [], 403 `PLAN_UPGRADE_REQUIRED`; thu round(79.000 ÷ 30 × ngày còn); sau: `modules` [loyalty], `featureSources` loyalty theo add-on; 25 điểm; sau đổi: 25 − 10 + 24 = 39 |
+| BF-LOYADD-02 | Gói không có loyalty + add-on | hồ sơ + `/api/loyalty/program` trước; mua; tạo chương trình; bán 250.000; bán tiếp 2 cái dùng 10 điểm | trước: `modules` [], 403 `PLAN_UPGRADE_REQUIRED`; thu round(79.000 ÷ 30 × ngày còn); sau: `modules` [loyalty], `featureSources` loyalty theo add-on; 25 điểm; bán tiếp 2 cái (500.000) dùng 10 điểm: giảm 10.000, còn 25 − 10 + 49 = 64 |
 | BF-LOYADD-03 | Tắt từ kỳ sau, hết kỳ | 10 điểm; `PATCH removeAtPeriodEnd`; cho hết kỳ; bán tiếp | đến cuối kỳ vẫn bật, gia hạn chỉ còn giá gói; hết kỳ: `modules` [], 403, không cộng điểm; chương trình và 10 điểm giữ nguyên |
 | BF-LOYADD-04 | Gói có loyalty | không mua add-on; bán 120.000; báo giá / mua add-on | `modules` [loyalty], 12 điểm; 422 `ADDON_FEATURE_IN_PLAN`; `featureSources` loyalty theo gói |
 

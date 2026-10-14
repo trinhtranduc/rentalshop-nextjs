@@ -87,6 +87,12 @@ async function merchantSession(world) {
   return { m, modules: r.body.data.merchant.modules };
 }
 
+/** The owner saves the program; AnyRent switches it on (isActive is Super Admin only, as before). */
+async function startProgram(m, world) {
+  expect((await m.put('/api/loyalty/program', PROGRAM)).status).toBe(200);
+  S.sql(`UPDATE "LoyaltyProgram" SET "isActive" = true WHERE "merchantId" = ${world.merchantId}`);
+}
+
 async function saleProduct(m, world, price) {
   const r = await m.postForm('/api/products', {
     name: uniqueName('SP SALE'), rentPrice: 0, salePrice: price, deposit: 0, totalStock: 10, outletStock: [{ outletId: world.outletId, stock: 10 }],
@@ -107,8 +113,8 @@ const points = async (m, customerId) => {
   return r.body.data.points;
 };
 
-async function sell(m, product, cust, extra = {}) {
-  const { body } = saleBody({ customer: cust, lines: [{ product }] });
+async function sell(m, product, cust, extra = {}, quantity = 1) {
+  const { body } = saleBody({ customer: cust, lines: [{ product, quantity }] });
   const r = await m.post('/api/orders', { ...body, ...extra });
   expect(created(r)).toBe(true);
   return r.body.data.order || r.body.data;
@@ -142,7 +148,7 @@ describeLoy('BF-LOYADD loyalty as a feature add-on (#967)', () => {
     expect((await (await admin()).get(`/api/merchants/${world.merchantId}/addons`)).body.data.featureSources).toEqual(
       expect.arrayContaining([{ key: 'loyalty', active: true, plan: false, addon: true, legacy: false }])
     );
-    expect((await m.put('/api/loyalty/program', PROGRAM)).status).toBe(200);
+    await startProgram(m, world);
 
     // earn: a 250.000 ₫ sale → floor(250.000 / 10.000) × 1 = 25 points
     const product = await saleProduct(m, world, 250000);
@@ -150,10 +156,11 @@ describeLoy('BF-LOYADD loyalty as a feature add-on (#967)', () => {
     await sell(m, product, cust);
     expect(await points(m, cust.id)).toBe(25);
 
-    // redeem 10 points (10.000 ₫) on the next sale; that sale earns on the paid 240.000 → 24 points
-    const order = await sell(m, product, cust, { loyaltyRedeem: { points: 10 } });
-    expect(Number(order.loyaltyDiscount ?? 10000)).toBe(10000);
-    expect(await points(m, cust.id)).toBe(25 - 10 + 24);
+    // redeem 10 points (10.000 ₫) on a 2-unit sale (500.000; a different order, so the 60 s duplicate guard does not
+    // replay the first one); it earns on the paid 490.000 → 49 points
+    const order = await sell(m, product, cust, { loyaltyRedeem: { points: 10 } }, 2);
+    expect(Number(order.loyaltyDiscount)).toBe(10000);
+    expect(await points(m, cust.id)).toBe(25 - 10 + 49);
   });
 
   test('BF-LOYADD-03 add-on turned off: on until the period end, then gone (403, no earn); program and points kept', async () => {
@@ -161,7 +168,7 @@ describeLoy('BF-LOYADD loyalty as a feature add-on (#967)', () => {
     const { end } = setPeriod(world.merchantId);
     const item = (await buy(world.merchantId)).body.data.addon;
     const { m } = await merchantSession(world);
-    expect((await m.put('/api/loyalty/program', PROGRAM)).status).toBe(200);
+    await startProgram(m, world);
     const product = await saleProduct(m, world, 100000);
     const cust = await customer(m);
     await sell(m, product, cust);
@@ -191,7 +198,7 @@ describeLoy('BF-LOYADD loyalty as a feature add-on (#967)', () => {
     setPeriod(world.merchantId);
     const { m, modules } = await merchantSession(world);
     expect(modules).toEqual(['loyalty']);
-    expect((await m.put('/api/loyalty/program', PROGRAM)).status).toBe(200);
+    await startProgram(m, world);
     const product = await saleProduct(m, world, 120000);
     const cust = await customer(m);
     await sell(m, product, cust);
