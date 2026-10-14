@@ -26,9 +26,11 @@ const nextConfig = {
   output: process.env.RAILWAY_ENVIRONMENT ? 'standalone' : undefined,
   
   // CRITICAL: Tell Next.js NOT to bundle native modules (Prisma, Sharp)
-    experimental: {
-      // Point to monorepo root for file tracing
-      outputFileTracingRoot: path.join(__dirname, '../../'),
+  experimental: {
+    // Loads apps/api/instrumentation.ts, which binds Accept-Language to the Node request (#986).
+    instrumentationHook: true,
+    // Point to monorepo root for file tracing
+    outputFileTracingRoot: path.join(__dirname, '../../'),
       serverComponentsExternalPackages: [
         '@prisma/client',
         '@prisma/engines',

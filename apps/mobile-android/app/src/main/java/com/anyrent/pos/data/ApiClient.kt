@@ -1286,11 +1286,19 @@ class ApiClient(
         header("X-Client-Platform", "mobile")
         header("X-Device-Type", "android")
         header("X-App-Version", appVersion)
+        header("Accept-Language", appAcceptLanguage())
         if (authed) {
             val token = tokenProvider()
             if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
         }
         return this
+    }
+
+    /** App UI language. Vietnamese strings when the configuration is `vi`, otherwise English (the default `values/`). */
+    private fun appAcceptLanguage(): String {
+        val locales = AnyRentApp.instance?.resources?.configuration?.locales
+        val lang = if (locales != null && !locales.isEmpty) locales[0].language.lowercase() else null
+        return if (lang == "vi") "vi" else "en"
     }
 
     private fun parseUserProfile(user: JSONObject): UserProfile {

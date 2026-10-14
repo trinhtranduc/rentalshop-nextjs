@@ -57,5 +57,20 @@
   "ATTENDANCE_NOT_REQUIRED": "此人未被设为需要打卡。请在 考勤 › 二维码与位置 › 需要打卡的人 中开启。",
   "ATTENDANCE_NOT_REQUIRED_NAMED": "{names} 未被设为需要打卡。请先在 考勤 › 二维码与位置 › 需要打卡的人 中开启。",
   "SHIFT_TEMPLATE_IN_USE": "该班次正在使用中，请隐藏而不是删除。",
-  "MONTH_LOCKED": "本月已锁定，请让店主解锁。"
+  "MONTH_LOCKED": "本月已锁定，请让店主解锁。",
+  "DATABASE_ERROR": "无法保存。请重试。",
+  "INTERNAL_SERVER_ERROR": "出了点问题。请重试。",
+  "GATEWAY_ERROR": "服务正忙。请几分钟后再试。",
+  "RATING_REQUEST_SHOWN": "已显示评价邀请。",
+  "RATING_ALREADY_REQUESTED": "评价邀请已经发送过。",
+  "RATING_REQUEST_FAILED": "无法显示评价邀请。请重试。",
+  "DEPOSIT_AMOUNT_UPDATED": "已更新押金金额。",
+  "DEPOSIT_AMOUNT_REQUIRED": "请输入押金金额。",
+  "INVALID_DEPOSIT_AMOUNT": "押金必须大于或等于 0。",
+  "DEPOSIT_MANUALLY_OVERRIDDEN": "押金已手动填写。",
+  "DEPOSIT_AUTO_CALCULATED": "押金已根据商品计算。",
+  "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "订单创建后无法修改押金。",
+  "DEPOSIT_EDIT_SUCCESS": "已保存押金。",
+  "DEPOSIT_EDIT_FAILED": "无法保存押金。请重试。",
+  "AWS_S3_TEST_FAILED": "无法检查文件存储。请重试。"
 }

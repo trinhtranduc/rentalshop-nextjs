@@ -12,6 +12,9 @@
  * - @rentalshop/database (database operations)
  */
 
+// Accept-Language binding for API message text (#986) - SERVER ONLY
+export { installApiMessageLocale, withApiMessageRequest } from './api-message-binding';
+
 // File logger utilities (Pino) - SERVER ONLY
 export * from './core/logger';
 

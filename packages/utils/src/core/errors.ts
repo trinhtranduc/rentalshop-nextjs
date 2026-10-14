@@ -712,11 +712,11 @@ export function handleApiError(error: any): {
   // Use ResponseBuilder to get default message from translation system
   // This ensures consistent format and allows frontend to translate
   const response = ResponseBuilder.error(errorCode);
-  
-  // If there are details (like dynamic values), include them in error field for debugging
-  // But keep message as translated version from ResponseBuilder
-  if (apiError.details && typeof apiError.details === 'string') {
-    response.error = apiError.details;
+
+  // Exception text, Zod paths and Prisma details stay in the log above.
+  // message and error are the catalog sentence for errorCode.
+  if (apiError.details) {
+    console.error('API error detail (not sent to client):', apiError.details);
   }
 
   return {

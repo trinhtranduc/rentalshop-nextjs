@@ -29,7 +29,14 @@ async function main() {
   const submitLogin = async (page, email, password) => {
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
+    const responsePromise = page.waitForResponse(
+      (r) => r.url().includes('/api/auth/login') && r.request().method() === 'POST',
+      { timeout: 20000 }
+    );
     await page.getByRole('button', { name: /^(Đăng nhập|Sign in|Login|Log in)$/i }).click();
+    const response = await responsePromise;
+    const body = await response.json();
+    return { response, body, request: response.request() };
   };
   /** The flag button opens a menu with one button per language ("🇻🇳 VI", "🇺🇸 EN") */
   const switchLang = async (page, code) => {
@@ -66,10 +73,13 @@ async function main() {
       // ---- AUTH-03 wrong password (vi)
       await H.runCase('WEB-UI-AUTH-03', 'wrong password: vi message', async () => {
         await open(page, '/login');
-        await submitLogin(page, CFG.email, 'WrongPass123');
+        const login = await submitLogin(page, CFG.email, 'WrongPass123');
         await page.getByText('Email hoặc mật khẩu không đúng').waitFor({ timeout: 15000 });
         const t = await H.bodyText(page);
         check('AUTH-03 message "Email hoặc mật khẩu không đúng"', true);
+        check('AUTH-03 API code INVALID_CREDENTIALS and status 401', login.response.status() === 401 && login.body.code === 'INVALID_CREDENTIALS', `${login.response.status()} ${login.body.code}`);
+        check('AUTH-03 API message and error are the Vietnamese catalog sentence', login.body.message === 'Email hoặc mật khẩu không đúng' && login.body.error === login.body.message, login.body.message);
+        check('AUTH-03 request Accept-Language is vi', (login.request.headers()['accept-language'] || '').toLowerCase().startsWith('vi'), login.request.headers()['accept-language']);
         check('AUTH-03 no raw key (errors.INVALID_CREDENTIALS)', H.rawKeys(t).length === 0, H.rawKeys(t).join());
         check('AUTH-03 stays on /login, no token', new URL(page.url()).pathname === '/login' && !(await stored(page)), page.url());
         // typing clears the message
@@ -80,7 +90,8 @@ async function main() {
       // ---- AUTH-04 unknown email gives the same message (no account enumeration)
       await H.runCase('WEB-UI-AUTH-04', 'unknown email shows the same message', async () => {
         await open(page, '/login');
-        await submitLogin(page, 'nobody-e2e@example.com', 'WrongPass123');
+        const unknown = await submitLogin(page, 'nobody-e2e@example.com', 'WrongPass123');
+        check('AUTH-04 API message matches the wrong-password sentence', unknown.body.message === 'Email hoặc mật khẩu không đúng' && unknown.body.code === 'INVALID_CREDENTIALS', unknown.body.message);
         await page.getByText('Email hoặc mật khẩu không đúng').waitFor({ timeout: 15000 });
         check('AUTH-04 same message as a wrong password', true);
       }, sp(page));
@@ -93,9 +104,11 @@ async function main() {
       await H.runCase('WEB-UI-AUTH-05', 'wrong password: en message', async () => {
         await open(page, '/login');
         check('AUTH-05 en labels', /Email Address|Email/.test(await H.bodyText(page)) && /Forgot password\?/i.test(await H.bodyText(page)), (await H.bodyText(page)).slice(0, 300));
-        await submitLogin(page, CFG.email, 'WrongPass123');
+        const login = await submitLogin(page, CFG.email, 'WrongPass123');
         await page.getByText('Invalid email or password').waitFor({ timeout: 15000 });
         check('AUTH-05 message "Invalid email or password"', true);
+        check('AUTH-05 API message and error are the English catalog sentence', login.body.message === 'Invalid email or password' && login.body.error === login.body.message && login.body.code === 'INVALID_CREDENTIALS', login.body.message);
+        check('AUTH-05 request Accept-Language is en', (login.request.headers()['accept-language'] || '').toLowerCase().startsWith('en'), login.request.headers()['accept-language']);
         check('AUTH-05 no raw key', H.rawKeys(await H.bodyText(page)).length === 0);
       }, sp(page));
       await ctx.close();
@@ -125,7 +138,8 @@ async function main() {
       const { ctx, page, st } = await fresh();
       await H.runCase('WEB-UI-AUTH-07', 'login with the right password opens the dashboard', async () => {
         await open(page, '/login');
-        await submitLogin(page, CFG.email, CFG.password);
+        const login = await submitLogin(page, CFG.email, CFG.password);
+        check('AUTH-07 API login message is Vietnamese', login.body.code === 'LOGIN_SUCCESS' && login.body.message === 'Đăng nhập thành công', `${login.body.code} ${login.body.message}`);
         await page.waitForURL(/\/dashboard/, { timeout: 60000 });
         await H.settle(page);
         const a = JSON.parse((await stored(page)) || '{}');
