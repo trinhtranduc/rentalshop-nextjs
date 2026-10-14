@@ -14,6 +14,8 @@ const mockPrisma = {
   $transaction: jest.fn(async (fn: any) => fn(tx)),
   merchantModule: { findMany: jest.fn() },
   planLimitAddon: { findMany: jest.fn(), findFirst: jest.fn() },
+  // #967: the plan is a module source too (no plan here)
+  merchant: { findUnique: jest.fn(async () => null) },
 };
 jest.mock('../../../packages/database/src/client', () => ({ prisma: mockPrisma }));
 jest.mock('@rentalshop/utils', () => jest.requireActual('../../../packages/utils/src/core/addon-pricing'));
