@@ -335,7 +335,7 @@ object ThermalPrinter {
 
     private class EscPosBuilder(private val charsPerLine: Int) {
         private val out = ArrayList<Byte>()
-        // UTF-8: Vietnamese on most modern ESC/POS printers; falls back poorly on very old ones.
+        // Text is accent-free first (PrintText, #970); UTF-8 only matters for other symbols, as iOS sends them
         private val charset: Charset = Charset.forName("UTF-8")
 
         fun init() {
@@ -364,7 +364,8 @@ object ThermalPrinter {
                 out += 0x0A
                 return
             }
-            var remaining = value
+            // #970: no Vietnamese accents on the paper, as iOS (thermal printers print UTF-8 accents as boxes)
+            var remaining = PrintText.plain(value)
             while (remaining.isNotEmpty()) {
                 val chunk = if (remaining.length <= charsPerLine) {
                     remaining
