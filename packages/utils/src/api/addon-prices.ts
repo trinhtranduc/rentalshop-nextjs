@@ -76,6 +76,8 @@ export interface MerchantAddonsData {
   renewal: null | { addonMonthlyTotal: number; addonPaidMonthlyTotal?: number; monthly: RenewalCalculation };
   /** #943: modules still switched on the old way (#907), until the admin adds the feature add-on */
   legacyModules?: Array<{ key: string; enabled: boolean; endDate: string | null; active: boolean }>;
+  /** #967: per module, on or off and where from (plan / feature add-on / legacy switch) */
+  featureSources?: Array<{ key: string; active: boolean; plan: boolean; addon: boolean; legacy: boolean }>;
 }
 
 export type AddonQuoteData = AddonQuote & {

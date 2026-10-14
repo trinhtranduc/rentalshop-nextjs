@@ -40,6 +40,7 @@ export async function GET(
       const { lines, monthlyTotal: renewalAddonMonthly, paidMonthlyTotal } = addonRenewalLines(items, catalog, now);
       const lineById = new Map(lines.map((l) => [l.id, l]));
       const legacyModules = await legacyModuleSwitches(merchantId, now);
+      const featureSources = await moduleSources(merchantId, now);
 
       const addons = items.map((item) => {
         const line = lineById.get(item.id);
@@ -102,6 +103,7 @@ export async function GET(
           limits,
           renewal,
           legacyModules,
+          featureSources,
         })
       );
     } catch (error) {
@@ -119,6 +121,19 @@ async function legacyModuleSwitches(merchantId: number, now: Date) {
   try {
     const rows = await db.merchantModules.listForMerchant(merchantId);
     return moduleCatalogView(rows, now).filter((m) => m.enabled);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * #967: per module, on or off and where from (plan / feature add-on / legacy switch), so admin can show "theo gói" or
+ * "theo add-on". Informational: any error → [] so the add-on page still loads.
+ */
+async function moduleSources(merchantId: number, now: Date) {
+  try {
+    const list = await db.merchantModules.sources(merchantId, now);
+    return Array.isArray(list) ? list : [];
   } catch {
     return [];
   }

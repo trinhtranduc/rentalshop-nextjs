@@ -103,14 +103,14 @@ describe('buy the loyalty add-on (#967)', () => {
 
   it('trial shop: 0 now', async () => {
     mockMerchants.findById.mockResolvedValue(shop('[]', 'TRIAL'));
-    const res = await add({ addonPriceId: 6 });
+    const res = await add({ addonPriceId: 6, packs: 1 });
     expect(res.status).toBe(201);
     expect(mockMerchantAddons.add.mock.calls[0][0].quote).toMatchObject({ amountDue: 0, reason: 'trial' });
   });
 
   it('plan already includes loyalty → 422 ADDON_FEATURE_IN_PLAN, nothing written (no double charge)', async () => {
     mockMerchants.findById.mockResolvedValue(shop(JSON.stringify(['loyalty'])));
-    const res = await add({ addonPriceId: 6 });
+    const res = await add({ addonPriceId: 6, packs: 1 });
     expect(res.status).toBe(422);
     expect(res.body.code).toBe('ADDON_FEATURE_IN_PLAN');
     expect(mockMerchantAddons.add).not.toHaveBeenCalled();
@@ -122,12 +122,12 @@ describe('buy the loyalty add-on (#967)', () => {
   it('an attendance row is not blocked by a loyalty plan', async () => {
     mockMerchants.findById.mockResolvedValue(shop(JSON.stringify(['loyalty'])));
     mockAddonPrices.findById.mockResolvedValue({ ...loyaltyRow, id: 5, name: 'Chấm công', featureKey: 'attendance', monthlyPrice: 99000 });
-    expect((await add({ addonPriceId: 5 })).status).toBe(201);
+    expect((await add({ addonPriceId: 5, packs: 1 })).status).toBe(201);
   });
 
   it('already has the loyalty add-on → 422 ADDON_FEATURE_ALREADY_ON (unchanged #943 rule)', async () => {
     mockMerchantAddons.findActiveFeature.mockResolvedValue(loyaltyItem);
-    const res = await add({ addonPriceId: 6 });
+    const res = await add({ addonPriceId: 6, packs: 1 });
     expect(res.status).toBe(422);
     expect(res.body.code).toBe('ADDON_FEATURE_ALREADY_ON');
   });

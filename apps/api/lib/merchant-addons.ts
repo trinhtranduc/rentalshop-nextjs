@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { planModuleKeys } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
 import { calculateAddonQuote, isFeatureAddon, isMultiBranchPlan, ResponseBuilder } from '@rentalshop/utils';
 import type { AddonQuote } from '@rentalshop/utils';
@@ -16,7 +17,7 @@ export interface ShopSubscription {
   currentPeriodEnd: Date | string;
   interval?: string | null;
   intervalCount?: number | null;
-  plan?: { id: number; name: string; basePrice: number; limits: unknown } | null;
+  plan?: { id: number; name: string; basePrice: number; limits: unknown; features?: unknown } | null;
 }
 export interface ShopMerchant {
   id: number;
@@ -84,6 +85,10 @@ export async function checkAddonPurchase(merchantId: number, addonPriceId: numbe
   // (a turned-off one is undone, not bought again)
   const feature = isFeatureAddon(addonPrice);
   const effectivePacks = feature ? 1 : packs;
+  // #967: a feature the plan already includes (loyalty) is not sold on top of it (no double charge)
+  if (feature && addonPrice.featureKey && planModuleKeys(subscription.plan?.features).includes(addonPrice.featureKey)) {
+    return fail('ADDON_FEATURE_IN_PLAN', 422);
+  }
   if (feature && addonPrice.featureKey && (await db.merchantAddons.findActiveFeature(merchantId, addonPrice.featureKey))) {
     return fail('ADDON_FEATURE_ALREADY_ON', 422);
   }

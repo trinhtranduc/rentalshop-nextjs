@@ -5,9 +5,15 @@ import { formatDateKeyInTimeZone } from '../../../packages/utils/src/core/date-r
 
 const VN = 'Asia/Ho_Chi_Minh';
 
+/**
+ * #967: modules the old #907 switch may turn on (admin routes `/api/merchants/[id]/modules*`). Loyalty is not one of
+ * them: it comes from the plan or a paid feature add-on only.
+ */
+export const LEGACY_SWITCH_MODULE_KEYS: string[] = ['attendance'];
+
 export function moduleCatalogView(rows: Array<{ key: string; enabled: boolean; endsAt: Date | string | null }>, now = new Date()) {
   const active = new Set(resolveActiveModules(rows, now));
-  return MODULES.map((m) => {
+  return MODULES.filter((m) => LEGACY_SWITCH_MODULE_KEYS.includes(m.key)).map((m) => {
     const row = rows.find((r) => r.key === m.key);
     return {
       key: m.key,
