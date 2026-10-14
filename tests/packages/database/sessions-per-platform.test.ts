@@ -92,6 +92,7 @@ import {
   createUserSession,
   getSessionStatus,
   invalidateAllUserSessions,
+  invalidateUserSessionsExcept,
 } from '../../../packages/database/src/sessions';
 import { createRefreshToken, rotateRefreshToken, hashToken } from '../../../packages/database/src/refresh-tokens';
 
@@ -220,6 +221,45 @@ describe('one phone and one web session per account (#660)', () => {
 
     await expect(getSessionStatus(web.sessionId)).resolves.toBe('expired');
     await expect(getSessionStatus(mobile.sessionId)).resolves.toBe('expired');
+  });
+
+  it('a password change on the web (#661) logs out the phone and revokes its refresh token', async () => {
+    const mobile = await mobileLogin();
+    const refresh = await createRefreshToken(1, { sessionId: mobile.sessionId });
+    tick();
+    const web = await webLogin();
+    tick();
+    await invalidateUserSessionsExcept(1, web.sessionId, new Date(clock));
+
+    await expect(getSessionStatus(web.sessionId)).resolves.toBe('active');
+    await expect(getSessionStatus(mobile.sessionId)).resolves.toBe('expired');
+    expect(tokenRow(refresh).isRevoked).toBe(true);
+  });
+
+  it('a password change on the phone (#661) logs out the web and keeps the phone refresh token', async () => {
+    const web = await webLogin();
+    tick();
+    const mobile = await mobileLogin();
+    const refresh = await createRefreshToken(1, { sessionId: mobile.sessionId });
+    tick();
+    await invalidateUserSessionsExcept(1, mobile.sessionId, new Date(clock));
+
+    await expect(getSessionStatus(web.sessionId)).resolves.toBe('expired');
+    await expect(getSessionStatus(mobile.sessionId)).resolves.toBe('active');
+    expect(tokenRow(refresh).isRevoked).toBe(false);
+  });
+
+  it('a password reset with no session (#661) logs out web and phone', async () => {
+    const web = await webLogin();
+    tick();
+    const mobile = await mobileLogin();
+    const refresh = await createRefreshToken(1, { sessionId: mobile.sessionId });
+    tick();
+    await invalidateUserSessionsExcept(1, null, new Date(clock));
+
+    await expect(getSessionStatus(web.sessionId)).resolves.toBe('expired');
+    await expect(getSessionStatus(mobile.sessionId)).resolves.toBe('expired');
+    expect(tokenRow(refresh).isRevoked).toBe(true);
   });
 
   it('a phone logout at the same moment as a web login is not reported as replaced', async () => {
