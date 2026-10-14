@@ -10,7 +10,7 @@ import type { BreadcrumbItem } from '@rentalshop/ui';
 import { addonPricesApi, formatInShopZone } from '@rentalshop/utils';
 import type { AddonPriceRow, AddonQuoteData, MerchantAddonItem, MerchantAddonsData, LimitKind } from '@rentalshop/utils';
 import { useAuth, useApiError } from '@rentalshop/hooks';
-import { FEATURE_LABEL, KINDS, KIND_UNIT, formatVnd, isFeatureKind, plusLabel } from '../../../components/addon-labels';
+import { FEATURE_LABEL, KINDS, KIND_UNIT, featureSourceLabel, formatVnd, isFeatureKind, plusLabel } from '../../../components/addon-labels';
 
 /** Dialog surface of the admin forms (#802): full screen on a phone. */
 const PHONE_DIALOG = 'ar-dialog md:max-w-lg max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:overflow-y-auto max-md:content-start';
@@ -79,15 +79,20 @@ export default function MerchantAddonsPage() {
     () => new Set((data?.addons || []).filter((a) => isFeatureKind(a.limitKind) && a.featureKey).map((a) => a.featureKey as string)),
     [data?.addons]
   );
+  // #967: a feature the plan already includes (loyalty) is not offered either
+  const planFeatures = useMemo(
+    () => new Set((data?.featureSources || []).filter((f) => f.plan).map((f) => f.key)),
+    [data?.featureSources]
+  );
   const sellable = useMemo(
     () =>
       prices.filter(
         (p) =>
           p.isActive &&
           (p.limitKind !== 'outlets' || data?.multiBranchPlan) &&
-          !(isFeatureKind(p.limitKind) && p.featureKey && ownedFeatures.has(p.featureKey))
+          !(isFeatureKind(p.limitKind) && p.featureKey && (ownedFeatures.has(p.featureKey) || planFeatures.has(p.featureKey)))
       ),
-    [prices, data?.multiBranchPlan, ownedFeatures]
+    [prices, data?.multiBranchPlan, ownedFeatures, planFeatures]
   );
   useEffect(() => {
     if (priceId !== null && sellable.length && !sellable.some((p) => p.id === priceId)) setPriceId(sellable[0].id);
@@ -169,6 +174,10 @@ export default function MerchantAddonsPage() {
   const sub = data?.subscription;
   const selected = selectedRow;
   const legacyOn = (data?.legacyModules || []).filter((m) => m.active);
+  // #967: features that are on, and where from ("Khách thân thiết: theo gói")
+  const featuresOn = (data?.featureSources || [])
+    .map((f) => ({ key: f.key, label: featureSourceLabel(f) }))
+    .filter((f): f is { key: string; label: string } => !!f.label);
   const formula =
     quote && quote.reason === 'prorated'
       ? selectedFeature
@@ -270,6 +279,18 @@ export default function MerchantAddonsPage() {
 
             <div className="card pad" data-testid="addon-shop-card">
               <div className="card-title">Add-on của shop</div>
+              {featuresOn.length > 0 && (
+                <div className="kv" data-testid="addon-feature-sources">
+                  {featuresOn.map((f) => (
+                    <React.Fragment key={f.key}>
+                      <span>{FEATURE_LABEL[f.key]?.name ?? f.key}</span>
+                      <span className="pill on" data-testid={`feature-source-${f.key}`}>
+                        {f.label}
+                      </span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
               {legacyOn.length > 0 && (
                 <div className="muted" data-testid="addon-legacy-modules">
                   {legacyOn
