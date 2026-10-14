@@ -148,6 +148,28 @@ final class PadLayoutTests: XCTestCase {
         XCTAssertTrue(PadSplit.showsCartPanel(itemCount: 1))
     }
 
+    /// "Tạo đơn" in the cart panel: the cart is not the top of the stack there, the Home split is (#973 bug)
+    func testCartPanelIsInFrontWhenItsHomeSplitIsTop() {
+        let cart = CartV2ViewController()
+        cart.isPanel = true
+        let split = HomeCartSplitViewController(home: ProductsHomeViewController())
+        split.addChildViewController(cart)
+        let nav = UINavigationController(rootViewController: split)
+        XCTAssertTrue(PadSplit.cartIsInFront(cart, top: nav.topViewController))
+        nav.pushViewController(UIViewController(), animated: false)
+        XCTAssertFalse(PadSplit.cartIsInFront(cart, top: nav.topViewController), "a screen pushed over Home")
+    }
+
+    func testFullCartIsInFrontOnlyWhenTop() {
+        let cart = CartV2ViewController()
+        let nav = UINavigationController(rootViewController: UIViewController())
+        nav.pushViewController(cart, animated: false)
+        XCTAssertTrue(PadSplit.cartIsInFront(cart, top: nav.topViewController), "iPhone and the full cart: as before")
+        nav.pushViewController(UIViewController(), animated: false)
+        XCTAssertFalse(PadSplit.cartIsInFront(cart, top: nav.topViewController))
+        XCTAssertFalse(PadSplit.cartIsInFront(cart, top: nil))
+    }
+
     func testGridColumnsByWidth() {
         XCTAssertEqual(HomeGrid.columns(width: 390), 1, "iPhone: the list")
         XCTAssertEqual(HomeGrid.columns(width: 599), 1)
