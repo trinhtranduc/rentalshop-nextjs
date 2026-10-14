@@ -183,9 +183,14 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("ipad-18-settings")
         let openRow = { (labels: [String], name: String) in
-            let row = self.app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
-            if !(row.exists && row.isHittable) { self.app.swipeDown(); self.app.swipeDown(); sleep(1) }
-            guard self.e2e.scrollTo(row) else { return self.e2e.note("iPad: no row \(labels)") }
+            // On iPad the Settings list is the left pane: scroll that list, not the middle of the screen
+            let list = self.app.tables.firstMatch
+            let row = list.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+            let height = self.app.windows.firstMatch.frame.height
+            let visible = { row.exists && row.isHittable && row.frame.minY > 200 && row.frame.maxY < height - 40 }
+            for _ in 0..<3 where !visible() { list.swipeDown() }
+            for _ in 0..<8 where !visible() { list.swipeUp(); sleep(1) }
+            guard visible() else { return self.e2e.note("iPad: no row \(labels)") }
             row.tap()
             sleep(3)
             self.e2e.shot(name)
@@ -213,6 +218,20 @@ final class AnyRentE2ETests: XCTestCase {
             sleep(3)
             e2e.shot("ipad-24-attendance-scan")
             close()
+        }
+    }
+
+    /// #973: iPad with the new-screen flags off (API MOBILE_FEATURES=none): each tab of the old design opens
+    /// (centered column) without a crash. Run: ios-e2e.sh --fresh --only testIPadOldScreensSmoke
+    func testIPadOldScreensSmoke() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad only") }
+        try e2e.start()
+        for (index, names) in [["Home", "Trang chủ"], ["My Order", "Đơn hàng"], ["Calendar", "Lịch Thuê", "Lịch"],
+                               ["Reports", "Báo cáo", "Overview", "Tổng quan"], ["Settings", "Cài đặt", "Setting"]].enumerated() {
+            XCTAssertTrue(e2e.tapTab(names, index: index == 4 ? nil : index), "tab \(names[0])")
+            sleep(3)
+            e2e.shot("ipad-old-\(index)-\(names[0].lowercased().replacingOccurrences(of: " ", with: "-"))")
+            XCTAssertEqual(app.state, .runningForeground, "still running after \(names[0])")
         }
     }
 
