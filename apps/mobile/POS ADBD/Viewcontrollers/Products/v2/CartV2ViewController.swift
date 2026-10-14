@@ -914,7 +914,7 @@ final class CartV2ViewController: BaseViewControler {
 
     @objc private func ctaTapped() {
         // A double tap must not open two previews or sheets (#341)
-        guard navigationController?.topViewController === self, presentedViewController == nil else { return }
+        guard PadSplit.cartIsInFront(self, top: navigationController?.topViewController), presentedViewController == nil else { return }
         // #518 OFF: blocked until the dates, quantities or lines change (the button is disabled too)
         guard ctaState != .blocked else { return }
         HapticFeedback.medium()
@@ -1089,6 +1089,29 @@ final class CartV2ViewController: BaseViewControler {
             OrderListViewModel.shared.setNeedsRefresh()
         }
         OrdersChangeSignal.post() // #674
+        // #973 iPad panel: the empty cart closes its panel, so Home (still on screen) shows "Đã tạo đơn"
+        if isPanel, let home = parent, let navigationController {
+            CartStore.shared.resetCart()
+            ProductAvailabilityCache.shared.clearAll()
+            HapticFeedback.success()
+            if let orderId = order?.id { CreatedOrderAutoPrint.run(orderId: orderId) }
+            let created = OrderCreatedSheet(summary: CreateOrderSheetLogic.created(orderNumber: order?.orderNumber ?? "", confirm: confirm))
+            created.onNewOrder = { [weak home] in
+                if let home { RatingManager.shared.requestRatingIfNeeded(from: home) }
+            }
+            created.onViewOrder = { [weak home, weak navigationController] in
+                if let home { RatingManager.shared.requestRatingIfNeeded(from: home) }
+                guard let order else { return }
+                navigationController?.pushViewController(OrderDetailRouter.detailController(for: order, delegate: nil), animated: true)
+            }
+            let show: () -> Void = { [weak home] in home?.present(created, animated: true) }
+            if let sheet, sheet.presentingViewController != nil {
+                sheet.dismiss(animated: true, completion: show)
+            } else {
+                show()
+            }
+            return
+        }
         CartStore.shared.resetCart()
         ProductAvailabilityCache.shared.clearAll()
         HapticFeedback.success()

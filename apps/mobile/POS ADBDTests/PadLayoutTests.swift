@@ -153,7 +153,7 @@ final class PadLayoutTests: XCTestCase {
         let cart = CartV2ViewController()
         cart.isPanel = true
         let split = HomeCartSplitViewController(home: ProductsHomeViewController())
-        split.addChildViewController(cart)
+        split.addChild(cart)
         let nav = UINavigationController(rootViewController: split)
         XCTAssertTrue(PadSplit.cartIsInFront(cart, top: nav.topViewController))
         nav.pushViewController(UIViewController(), animated: false)
