@@ -185,6 +185,7 @@
 		04FBE0D02EDE8DF90057EDF8 /* RCSimpleTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0CE2EDE8DF90057EDF8 /* RCSimpleTextField.swift */; };
 		04FBE0D22EDED09E0057EDF8 /* RCCustomNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FBE0D12EDED09E0057EDF8 /* RCCustomNavigationBar.swift */; };
 		0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */; };
+		9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9700A0022E9F000100970001 /* PrinterSetupTests.swift */; };
 		A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */; };
 		A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A1 /* CartNotePhotosTests.swift */; };
 		16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA71945D1F2C820062603E /* DesignTokens.swift */; };
@@ -324,6 +325,7 @@
 		C9BB81CC22E8C80600F03F0E /* beep-07.wav in Resources */ = {isa = PBXBuildFile; fileRef = C9BB81CB22E8C80600F03F0E /* beep-07.wav */; };
 		C9D2ABAF24B0D4570028EAAC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88E4147921A99B3B00BAF4A1 /* AppDelegate.swift */; };
 		C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D2ABB424B0D53C0028EAAC /* Localizable.strings */; };
+		9700A0032E9F000100970001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9700A0042E9F000100970001 /* InfoPlist.strings */; };
 		C9EFF5B1237BF75E00A6CB57 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EFF5B0237BF75E00A6CB57 /* Customer.swift */; };
 		CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E19ED151DD6F782E5777FB /* OrdersViewController.swift */; };
 		CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */; };
@@ -598,6 +600,7 @@
 		57C5D087CF0239ACED85B43F /* CustomerDetailV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomerDetailV2ViewController.swift; sourceTree = "<group>"; };
 		5C3B485A16BC12C51615217C /* Pods_POS_ADBDTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBDTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderDetailLogicTests.swift; sourceTree = "<group>"; };
+		9700A0022E9F000100970001 /* PrinterSetupTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrinterSetupTests.swift; sourceTree = "<group>"; };
 		A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsNotesV2Tests.swift; sourceTree = "<group>"; };
 		A4800480F0000000000000A1 /* CartNotePhotosTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartNotePhotosTests.swift; sourceTree = "<group>"; };
 		628848789A17EEF1ECD704C3 /* AppConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigService.swift; sourceTree = "<group>"; };
@@ -720,6 +723,8 @@
 		C9BB81CB22E8C80600F03F0E /* beep-07.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "beep-07.wav"; sourceTree = "<group>"; };
 		C9D2ABB324B0D53C0028EAAC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C9D2ABB524B0D5410028EAAC /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		9700A0052E9F000100970001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		9700A0062E9F000100970001 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C9ECAD4624AC813C0090FAC4 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
 		C9EFF5B0237BF75E00A6CB57 /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
 		D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmailSentV2ViewController.swift; sourceTree = "<group>"; };
@@ -1062,6 +1067,7 @@
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				A674F0000000000000000002 /* RefreshPolicyTests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
+				9700A0022E9F000100970001 /* PrinterSetupTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
 				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
@@ -1303,6 +1309,7 @@
 				88E4148521A99B3E00BAF4A1 /* Info.plist */,
 				04F1A0052F1B0001000A0005 /* POS ADBD.entitlements */,
 				C9D2ABB424B0D53C0028EAAC /* Localizable.strings */,
+				9700A0042E9F000100970001 /* InfoPlist.strings */,
 				88FF337F2F2DB19600FD0A26 /* POSADBD-Bridging-Header.h */,
 			);
 			path = "POS ADBD";
@@ -1749,6 +1756,7 @@
 				0465CA502EE3478600629F03 /* anyrent.icon in Resources */,
 				88E4148421A99B3E00BAF4A1 /* LaunchScreen.storyboard in Resources */,
 				C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */,
+				9700A0032E9F000100970001 /* InfoPlist.strings in Resources */,
 				88E4148121A99B3E00BAF4A1 /* Assets.xcassets in Resources */,
 				C9BB81CC22E8C80600F03F0E /* beep-07.wav in Resources */,
 				887244EA2BB009FA00F15EDD /* GoogleService-Info.plist in Resources */,
@@ -1886,6 +1894,7 @@
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				A674B0000000000000000002 /* RefreshPolicyTests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
+				9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
 				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
@@ -2237,6 +2246,15 @@
 				C9D2ABB524B0D5410028EAAC /* vi-VN */,
 			);
 			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		9700A0042E9F000100970001 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9700A0052E9F000100970001 /* en */,
+				9700A0062E9F000100970001 /* vi-VN */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

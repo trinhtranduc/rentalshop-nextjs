@@ -134,6 +134,7 @@ import com.anyrent.pos.ui.common.MAX_NOTE_IMAGES
 import com.anyrent.pos.ui.common.nextOrderStatuses
 import com.anyrent.pos.ui.common.orderLinePricingText
 import com.anyrent.pos.ui.navigation.MainTabRouter
+import com.anyrent.pos.print.PrintFeedback
 import com.anyrent.pos.print.ThermalPrinter
 
 import kotlinx.coroutines.Dispatchers
@@ -1109,7 +1110,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                                 }
                                 actionMessage = when (result) {
                                     is ThermalPrinter.Result.Success -> "Printed"
-                                    is ThermalPrinter.Result.Failure -> result.message
+                                    is ThermalPrinter.Result.Failure -> PrintFeedback.message(context, result, config) // #970
                                 }
                             }
                         },

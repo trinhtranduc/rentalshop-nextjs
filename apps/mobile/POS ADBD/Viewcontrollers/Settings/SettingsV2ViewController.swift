@@ -369,7 +369,8 @@ final class SettingsV2ViewController: BaseViewControler {
         case .receiptNote:
             return Utils.loadNotePrinter().replacingOccurrences(of: "\n", with: " ")
         case .printer:
-            return Utils.loadBillPrinter()
+            let ip = Utils.loadBillPrinter()
+            return ip.isEmpty ? "settings.v2.printer.none".localized() : ip
         case .customers, .users:
             return counts[item].map(String.init)
         case .plan:

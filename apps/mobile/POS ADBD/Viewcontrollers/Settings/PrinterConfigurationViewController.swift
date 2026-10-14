@@ -363,25 +363,19 @@ class PrinterConfigurationViewController: BaseViewControler {
             return
         }
 
-        showAlert(message: "Connecting to printer and sending test print...".localized(), isError: false)
-
+        // #970: a progress HUD while sending (an alert here hid the result alert), then one result alert
+        testButton.isEnabled = false
+        showProgressText(text: "Connecting to printer and sending test print...".localized())
         PrinterManager.shared.testPrintWithConnection(ip: ipAddress, port: 9100) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self else { return }
+                self.hideProgress()
+                self.testButton.isEnabled = true
                 switch result {
                 case .success:
                     self.showAlert(message: "Test print sent successfully! Check your printer.".localized(), isError: false)
                 case .failure(let error):
-                    var errorMessage = error.localizedDescription
-                    if case PrinterError.disconnected = error {
-                        errorMessage = "Printer disconnected. Please check:\n1. Printer is turned on\n2. IP address is correct\n3. Printer is on the same network".localized()
-                    } else if case PrinterError.connectionFailed = error {
-                        let formatString = "Failed to connect to printer. Please check:\n1. IP address: %@\n2. Printer is on the same network\n3. Port 9100 is open".localized()
-                        errorMessage = String(format: formatString, ipAddress)
-                    } else if case PrinterError.timeout = error {
-                        errorMessage = "Connection timeout. Please check:\n1. Printer is turned on\n2. Network connection is stable".localized()
-                    }
-                    self.showAlert(message: errorMessage)
+                    self.showAlert(message: PrinterSetup.failureMessage(error, ip: ipAddress))
                 }
             }
         }
