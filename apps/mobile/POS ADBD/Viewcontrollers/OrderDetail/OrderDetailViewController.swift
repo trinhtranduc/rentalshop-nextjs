@@ -798,7 +798,7 @@ final class OrderDetailViewController: BaseViewControler {
         orderViewModel?.printOrder { [weak self] result in
             DispatchQueue.main.async {
                 if case .failure(let error) = result {
-                    UIAlertController.errorAlert(parent: self, error: error)
+                    PrintFeedback.showFailure(error, from: self)
                 }
             }
         }

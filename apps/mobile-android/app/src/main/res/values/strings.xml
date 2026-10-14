@@ -136,6 +136,8 @@
     <string name="saved">Saved</string>
     <string name="printer_note">Receipt note (RENT footer)</string>
     <string name="test_print_ok">Test print sent</string>
+    <string name="printer_not_configured">Printer not set up: Settings → Printer.</string>
+    <string name="printer_connect_failed">Cannot connect to printer %1$s. Check it is on, the IP is right and it is on this network.</string>
     <string name="offline_cache">Showing cached data (offline)</string>
     <string name="register_store">Register store</string>
     <string name="register">Register</string>

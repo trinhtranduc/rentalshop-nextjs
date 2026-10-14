@@ -526,22 +526,14 @@ class SaleViewController : BaseViewControler{
     }
     
     private func printOrderViaNetwork(_ order: Order) {
-        let ipAddress = Utils.loadBillPrinter()
-        
-        if ipAddress.isEmpty || ipAddress == "192.168.1.199" {
-            // No network printer configured or using default IP
-            showNetworkPrinterNotConfiguredAlert()
-            return
-        }
-        
-        // Use PrinterManager for network printing
+        // #970: no saved printer → "Chưa cấu hình máy in" (PrinterManager fails before sending anything)
         PrinterManager.shared.printOrder(order) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success:
                     self.showPrintSuccessAlert()
                 case .failure(let error):
-                    self.showPrintErrorAlert(error: error)
+                    PrintFeedback.showFailure(error, from: self)
                 }
             }
         }
@@ -571,19 +563,6 @@ class SaleViewController : BaseViewControler{
         let alert = UIAlertController(
             title: "Bluetooth Printer Not Configured".localized(),
             message: "Please configure a Bluetooth printer in Settings > Printer Configuration".localized(),
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        alert.addAction(UIAlertAction(title: "Configure Now".localized(), style: .default) { _ in
-            self.navigateToPrinterConfiguration()
-        })
-        present(alert, animated: true)
-    }
-    
-    private func showNetworkPrinterNotConfiguredAlert() {
-        let alert = UIAlertController(
-            title: "Network Printer Not Configured".localized(),
-            message: "Please configure a network printer IP address in Settings > Printer Configuration".localized(),
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))

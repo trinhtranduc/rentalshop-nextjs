@@ -2501,6 +2501,88 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
+    /// #970: no printer → "Chưa cấu hình máy in" from order detail; In thử shows its result (wrong IP: what to check;
+    /// the virtual printer, scripts/virtual-printer: success). Runs only with E2E_PRINTER_IP (TEST_RUNNER_E2E_PRINTER_IP).
+    func test7nPrinting() throws {
+        guard let printerIP = ProcessInfo.processInfo.environment["E2E_PRINTER_IP"], !printerIP.isEmpty else {
+            throw XCTSkip("E2E_PRINTER_IP not set (start scripts/virtual-printer first)")
+        }
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.start()
+        func openPrinterPage() {
+            e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+            let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 8), "Printer row")
+            row.tap()
+            sleep(1)
+        }
+        let ipField = app.textFields.firstMatch
+        func setIP(_ ip: String) {
+            XCTAssertTrue(ipField.waitForExistence(timeout: 5), "printer IP field")
+            // The text is right-aligned: tap its end so every character is deleted
+            ipField.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5)).tap()
+            let old = (ipField.value as? String) ?? ""
+            ipField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count + 2) + ip)
+            e2e.hideKeyboard()
+        }
+        func testPrint(_ shot: String) -> String {
+            e2e.button(["Test Printer", "Kiểm tra máy in"]).tap()
+            sleep(1)
+            e2e.shot("\(shot)-sending")
+            let alert = app.alerts.firstMatch
+            XCTAssertTrue(alert.waitForExistence(timeout: 12), "In thử shows a result")
+            let text = alert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " | ")
+            Swift.print("E2E_NOTE: 970 \(shot): \(text)")
+            e2e.shot(shot)
+            alert.buttons.firstMatch.tap()
+            return text
+        }
+
+        // 1. No printer saved: the field is empty (no 192.168.1.199)
+        openPrinterPage()
+        setIP("")
+        e2e.button(["Save", "Lưu"]).tap()
+        sleep(1)
+        e2e.dismissAlerts()
+        e2e.shot("7n-1-printer-empty")
+        e2e.goBackOnce()
+
+        // 2. Order detail → In: "Chưa cấu hình máy in" with a button to the printer page
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(2)
+        let row = app.cells.firstMatch
+        guard row.waitForExistence(timeout: 8) else { return XCTFail("No order to print") }
+        e2e.tapRow(row)
+        let printButton = e2e.button(["Print", "In"])
+        XCTAssertTrue(printButton.waitForExistence(timeout: 10), "In on order detail")
+        printButton.tap()
+        let notSetUp = app.alerts.matching(NSPredicate(format: "label IN %@", ["Printer not set up", "Chưa cấu hình máy in"])).firstMatch
+        XCTAssertTrue(notSetUp.waitForExistence(timeout: 3), "no printer: 'Chưa cấu hình máy in' at once")
+        e2e.shot("7n-2-detail-not-configured")
+        notSetUp.buttons.matching(NSPredicate(format: "label IN %@", ["Printer settings", "Cài đặt máy in"])).firstMatch.tap()
+        sleep(2)
+
+        // 3. Wrong IP: In thử ends with an error and what to check
+        setIP("10.255.255.1")
+        let wrong = testPrint("7n-3-test-print-wrong-ip")
+        XCTAssertTrue(wrong.contains("10.255.255.1") || wrong.contains("timeout") || wrong.contains("Hết thời gian"), wrong)
+
+        // 4. The virtual printer: In thử succeeds
+        setIP(printerIP)
+        let ok = testPrint("7n-4-test-print-ok")
+        XCTAssertTrue(ok.contains("successfully") || ok.contains("thành công"), ok)
+
+        // 5. Back on the order: In sends the bill (no alert)
+        e2e.goBackOnce()
+        XCTAssertTrue(printButton.waitForExistence(timeout: 5))
+        printButton.tap()
+        sleep(4)
+        e2e.soft(!app.alerts.firstMatch.exists, "printing to the virtual printer shows no error")
+        e2e.shot("7n-5-detail-printed")
+    }
+
     // MARK: - #727 expired / out-of-plan accounts (run with ios-e2e.sh --scenario <slug> --role owner|staff|kho)
 
     /// MOB-SUB: login and every tab of an account whose subscription is expired, cancelled, paused or past due.

@@ -2062,7 +2062,7 @@ class PreviewViewController: BaseViewControler {
                 // Print successful
                 break
             case .failure(let error):
-                UIAlertController.errorAlert(parent: self, error: error)
+                DispatchQueue.main.async { PrintFeedback.showFailure(error, from: self) }
             }
         }
     }

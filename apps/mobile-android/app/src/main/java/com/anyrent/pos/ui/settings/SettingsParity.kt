@@ -59,6 +59,7 @@ import com.anyrent.pos.data.UserFormRoles
 import com.anyrent.pos.data.repository.SessionStoreAppConfigCache
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
+import com.anyrent.pos.print.PrintFeedback
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppCard
@@ -375,7 +376,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
             val result = withContext(Dispatchers.IO) { ThermalPrinter.testPrint(config) }
             message = when (result) {
                 is ThermalPrinter.Result.Success -> context.getString(R.string.test_print_ok)
-                is ThermalPrinter.Result.Failure -> result.message
+                is ThermalPrinter.Result.Failure -> PrintFeedback.message(context, result, config) // #970
             }
         }
     }
@@ -391,6 +392,8 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
             title = stringResource(R.string.printer_config),
             onBack = onBack,
             bottomBar = {
+                // #970: the result above the buttons, always in view (at the end of the form it was under the fold)
+                message?.let { SettingsDetailNote(it, DS.Colors.Primary) }
                 SettingsDetailSecondaryButton(text = stringResource(R.string.test_print), onClick = ::testPrint)
                 SettingsDetailPrimaryButton(text = stringResource(R.string.save), onClick = ::save)
             },
@@ -420,7 +423,6 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                     singleLine = false, minLines = 4,
                 )
                 PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
-                message?.let { SettingsDetailNote(it, DS.Colors.Primary) }
             }
         }
     } else {
@@ -453,6 +455,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    message?.let { Text(it, color = MaterialTheme.colorScheme.primary) } // #970: in view, above the buttons
                     AppSecondaryButton(
                         text = stringResource(R.string.test_print),
                         onClick = ::testPrint,
@@ -519,7 +522,6 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                         PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
                     }
                 }
-                message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
             }
         }
     }

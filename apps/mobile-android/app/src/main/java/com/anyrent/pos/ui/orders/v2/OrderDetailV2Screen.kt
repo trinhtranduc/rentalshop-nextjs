@@ -87,6 +87,7 @@ import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.ui.history.changeHistoryTexts
 import com.anyrent.pos.domain.orders.RentalExtension
+import com.anyrent.pos.print.PrintFeedback
 import com.anyrent.pos.print.ThermalPrinter
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
@@ -173,12 +174,11 @@ fun OrderDetailV2Screen(
 
     fun print(detail: OrderDetail) {
         scope.launch {
-            val result = withContext(Dispatchers.IO) {
-                ThermalPrinter.printOrder(ThermalPrinter.configFromPrefs(printerPrefs, context.getString(R.string.bill_bank_qr_title), context.getString(R.string.bill_bank_qr_account)), detail)
-            }
+            val config = ThermalPrinter.configFromPrefs(printerPrefs, context.getString(R.string.bill_bank_qr_title), context.getString(R.string.bill_bank_qr_account))
+            val result = withContext(Dispatchers.IO) { ThermalPrinter.printOrder(config, detail) }
             when (result) {
                 is ThermalPrinter.Result.Success -> Unit
-                is ThermalPrinter.Result.Failure -> toast(result.message)
+                is ThermalPrinter.Result.Failure -> toast(PrintFeedback.message(context, result, config)) // #970
             }
         }
     }
