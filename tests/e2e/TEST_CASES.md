@@ -773,6 +773,17 @@ Mỗi ca tự tạo merchant và gói 399.000 ₫/tháng; kỳ 1 tháng còn kho
 | BF-FEAT-05 | Tắt từ kỳ sau | `PATCH removeAtPeriodEnd`; xem trước; `PATCH packs`; cho hết kỳ | `endsAt` = cuối kỳ, không thu/hoàn; vẫn bật; gia hạn chỉ 399.000; packs 400 `INVALID_INPUT`; hết kỳ: `modules` [], dòng vẫn còn |
 | BF-FEAT-06 | Bật kiểu cũ (#907) | `PUT /modules/attendance` bật; mua add-on | bật kiểu cũ vẫn tính; `legacyModules` có attendance; sau khi mua: dòng `MerchantModule` `enabled` false (không xoá), module vẫn bật |
 
+## BF-LOYADD — Khách thân thiết bán như add-on tính năng (`loyalty-addon.e2e.test.js`, #967; chủ shop chốt 2026-10-14)
+
+Loyalty bật = gói có `loyalty` HOẶC add-on `loyalty` còn hiệu lực. Chương trình: 1 điểm / 10.000 ₫ bán, 1 điểm = 1.000 ₫.
+
+| ID | Tình huống | Bước | Kỳ vọng |
+|---|---|---|---|
+| BF-LOYADD-01 | Dòng "Khách thân thiết · Tính năng" | ADMIN `POST /api/addon-prices` `featureKey: loyalty`, 79.000 | 201, `packSize` 1 |
+| BF-LOYADD-02 | Gói không có loyalty + add-on | hồ sơ + `/api/loyalty/program` trước; mua; tạo chương trình; bán 250.000; bán tiếp dùng 10 điểm | trước: `modules` [], 403 `PLAN_UPGRADE_REQUIRED`; thu round(79.000 ÷ 30 × ngày còn); sau: `modules` [loyalty], `featureSources` loyalty theo add-on; 25 điểm; sau đổi: 25 − 10 + 24 = 39 |
+| BF-LOYADD-03 | Tắt từ kỳ sau, hết kỳ | 10 điểm; `PATCH removeAtPeriodEnd`; cho hết kỳ; bán tiếp | đến cuối kỳ vẫn bật, gia hạn chỉ còn giá gói; hết kỳ: `modules` [], 403, không cộng điểm; chương trình và 10 điểm giữ nguyên |
+| BF-LOYADD-04 | Gói có loyalty | không mua add-on; bán 120.000; báo giá / mua add-on | `modules` [loyalty], 12 điểm; 422 `ADDON_FEATURE_IN_PLAN`; `featureSources` loyalty theo gói |
+
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
 
 Chạy: cần API cục bộ và client chạy từ thư mục `.next` RIÊNG (hai `next dev` trong cùng `apps/client` ghi đè bundle của nhau).
