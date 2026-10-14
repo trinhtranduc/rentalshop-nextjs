@@ -25,6 +25,14 @@ enum PadSplit {
         itemCount > 0
     }
 
+    /// The cart takes taps while it is the screen in front: the top of the stack, or the panel beside the Home grid
+    /// while that Home is the top
+    static func cartIsInFront(_ cart: UIViewController, top: UIViewController?) -> Bool {
+        guard let top else { return false }
+        if top === cart { return true }
+        return cart.parent is HomeCartSplitViewController && top === cart.parent
+    }
+
     /// The screen a tab shows: inside its navigation controller, a pane container or the centered column.
     /// On iPhone a tab is a navigation controller around the screen itself.
     static func unwrap(_ controller: UIViewController?) -> UIViewController? {
