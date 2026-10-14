@@ -318,7 +318,7 @@ export {
 } from './device-tokens';
 
 // #907 feature modules and attendance
-export { merchantModules, getActiveMerchantModuleKeys, isMerchantModuleActive } from './merchant-module';
+export { merchantModules, getActiveMerchantModuleKeys, getMerchantModuleSources, isMerchantModuleActive } from './merchant-module';
 export { attendance } from './attendance';
 export type { AttendanceScanInput, PunchInput, PunchPlanIn, AttendanceEditInput, ShiftRuleInput } from './attendance';
 export type { DevicePlatform, UpsertDeviceTokenInput } from './device-tokens';

@@ -44,7 +44,7 @@ final class OverviewTopAllViewController: BaseViewControler {
         view.addSubview(period)
         period.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(16)
         }
 
         stack.axis = .vertical
@@ -53,7 +53,8 @@ final class OverviewTopAllViewController: BaseViewControler {
         view.addSubview(scroll)
         scroll.snp.makeConstraints { make in
             make.top.equalTo(period.snp.bottom).offset(8)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
         }
         let box = UIView()
         box.backgroundColor = OVColor.surface
@@ -64,7 +65,7 @@ final class OverviewTopAllViewController: BaseViewControler {
         box.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(4)
             make.bottom.equalToSuperview().inset(24)
-            make.leading.trailing.equalTo(view).inset(16)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(16) // #973 centered column on iPad
         }
         box.addSubview(stack)
         stack.snp.makeConstraints { make in make.edges.equalToSuperview().inset(14) }

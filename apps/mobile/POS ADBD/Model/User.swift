@@ -173,7 +173,10 @@ class User: NSObject, Codable {
         return subscription?.plan?.features ?? merchant?.subscription?.plan?.features
     }
 
+    /// #967: loyalty is on through the plan (`features`) or a loyalty add-on (`merchant.modules` has "loyalty";
+    /// the API also lists plan loyalty there). Old cached logins without `modules` keep the plan rule.
     var hasLoyaltyFeature: Bool {
+        if merchant?.modules?.contains("loyalty") == true { return true }
         guard let features = planFeatures?.lowercased() else { return false }
         return features.contains("loyalty")
     }

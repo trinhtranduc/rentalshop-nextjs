@@ -106,6 +106,8 @@ final class AttendanceScanViewController: UIViewController, AVCaptureMetadataOut
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         previewLayer?.frame = view.bounds
+        // #973: iPad runs in landscape; the preview was turned 90° there
+        CameraOrientation.apply(to: previewLayer?.connection, interface: CameraOrientation.interfaceOrientation(of: view))
         let path = UIBezierPath(rect: view.bounds)
         path.append(UIBezierPath(roundedRect: frameView.frame, cornerRadius: 22))
         dimLayer.path = path.cgPath

@@ -59,9 +59,9 @@ class BankQrReceiptTest {
             val bytes = ThermalPrinter.billBytes(on, order(type), vcb)
             val qr = bytes.indexOf(ThermalPrinter.escPosQr(vcbPayload))
             assertTrue(type, qr > 0)
-            assertTrue(type, bytes.indexOf("CHUYỂN KHOẢN".toByteArray()) in 0 until qr)
+            assertTrue(type, bytes.indexOf("CHUYEN KHOAN".toByteArray()) in 0 until qr)
             assertTrue(type, bytes.indexOf("STK: 0123456789".toByteArray()) in 0 until qr)
-            assertTrue("holder in capitals", bytes.indexOf("NGUYỄN VĂN A".toByteArray()) in 0 until qr)
+            assertTrue("holder in capitals, no accents (#970)", bytes.indexOf("NGUYEN VAN A".toByteArray()) in 0 until qr)
             assertTrue("QR before the thank-you line", qr < bytes.indexOf("THANK YOU FOR SHOPPING".toByteArray()))
         }
     }

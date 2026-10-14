@@ -63,7 +63,7 @@ final class MyShiftsViewController: BaseViewControler {
         scroll.addSubview(content)
         content.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(DS.Spacing.lg)
-            make.leading.trailing.equalTo(view).inset(DS.Spacing.lg)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
             make.bottom.equalToSuperview().offset(-DS.Spacing.lg)
         }
         spinner.hidesWhenStopped = true

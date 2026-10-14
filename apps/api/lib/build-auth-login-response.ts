@@ -5,6 +5,7 @@ import { generateToken, generateMobileToken, generateRefreshableToken, getUserPe
 import { ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { detectPlatform } from './platform-detector';
+import { detectClientPlatform } from './client-platform';
 import { merchantTimeZoneField } from './shop-timezone';
 import { activeModuleKeysSafe } from './merchant-modules';
 
@@ -149,11 +150,17 @@ export async function buildAuthLoginSuccessResponse(
   const platformInfo = detectPlatform(request);
   const issueRefreshToken = options.issueRefreshToken !== undefined;
   const isMobile = issueRefreshToken || platformInfo.platform === 'mobile';
+  // One phone session + one web session per account (#660): a login replaces only its own kind.
+  // The mobile login route is always a phone; unknown clients (null) replace every session.
+  const sessionPlatform = issueRefreshToken ? 'mobile' : detectClientPlatform(request.headers);
   // Mobile sessions slide: 30 days idle, 90 days absolute (= mobile JWT lifetime).
   // Web sessions keep a fixed 7 days.
   const session = isMobile
-    ? await db.sessions.createUserSession(user.id, ipAddress, userAgent, 30, { absoluteDays: 90 })
-    : await db.sessions.createUserSession(user.id, ipAddress, userAgent, 7);
+    ? await db.sessions.createUserSession(user.id, ipAddress, userAgent, 30, {
+        absoluteDays: 90,
+        platform: sessionPlatform,
+      })
+    : await db.sessions.createUserSession(user.id, ipAddress, userAgent, 7, { platform: sessionPlatform });
 
   const passwordChangedAt = (user as any).passwordChangedAt
     ? Math.floor((user as any).passwordChangedAt.getTime() / 1000)
@@ -208,7 +215,7 @@ export async function buildAuthLoginSuccessResponse(
     return generateToken(tokenPayload);
   })();
 
-  // Created after createUserSession, which revokes every older refresh token of the user
+  // Created after createUserSession, which revokes the refresh tokens of the sessions it replaced
   const refreshToken = issueRefreshToken
     ? await db.refreshTokens.create(user.id, {
         deviceId: options.issueRefreshToken?.deviceId,

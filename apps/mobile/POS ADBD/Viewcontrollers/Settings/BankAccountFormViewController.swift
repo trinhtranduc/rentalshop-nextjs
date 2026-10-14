@@ -383,7 +383,7 @@ class BankAccountFormViewController: BaseViewControler {
         scrollView.addSubview(form)
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
             make.bottom.equalTo(bar.snp.top)
         }
         form.snp.makeConstraints { make in

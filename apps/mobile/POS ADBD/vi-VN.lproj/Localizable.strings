@@ -2575,3 +2575,13 @@
 
 /* #952 edit a customer from the cart picker */
 "customers.v2.saved" = "Đã lưu khách hàng";
+
+/* #970 printing */
+"printer.notConfigured.title" = "Chưa cấu hình máy in";
+"printer.notConfigured.message" = "Vào Cài đặt → Máy in, nhập IP máy in rồi bấm In thử.";
+"printer.notConfigured.open" = "Cài đặt máy in";
+"printer.error.macHint" = "Trên Mac: Mac phải cùng mạng với máy in, và vào System Settings → Privacy & Security → Local Network → bật AnyRent.";
+"settings.v2.printer.none" = "Chưa cài";
+/* #973 iPad: khung phải trống */
+"ipad.split.orders.empty" = "Chọn một đơn bên trái để xem ở đây";
+"ipad.split.settings.empty" = "Chọn một mục cài đặt bên trái";

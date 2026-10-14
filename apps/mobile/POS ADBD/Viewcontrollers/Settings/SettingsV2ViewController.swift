@@ -82,7 +82,7 @@ final class SettingsV2ViewController: BaseViewControler {
         view.addSubview(title)
         title.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
         }
         listView.backgroundColor = DS.Color.surface
         listView.separatorStyle = .none
@@ -100,7 +100,8 @@ final class SettingsV2ViewController: BaseViewControler {
         view.addSubview(listView)
         listView.snp.makeConstraints { make in
             make.top.equalTo(title.snp.bottom).offset(DS.Spacing.md)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
         }
     }
 
@@ -369,7 +370,8 @@ final class SettingsV2ViewController: BaseViewControler {
         case .receiptNote:
             return Utils.loadNotePrinter().replacingOccurrences(of: "\n", with: " ")
         case .printer:
-            return Utils.loadBillPrinter()
+            let ip = Utils.loadBillPrinter()
+            return ip.isEmpty ? "settings.v2.printer.none".localized() : ip
         case .customers, .users:
             return counts[item].map(String.init)
         case .plan:

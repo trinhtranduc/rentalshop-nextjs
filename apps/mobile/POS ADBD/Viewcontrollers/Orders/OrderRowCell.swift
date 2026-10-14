@@ -415,7 +415,7 @@ final class OrderRowCell: UITableViewCell {
         let totalText = MoneyFormatter.format(work.totalAmount)
         let totalWidth = (totalText as NSString).size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
         let dueWidth = (dueText as NSString?)?.size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary)]).width ?? 0
-        let available = UIScreen.main.bounds.width - 2 * DS.Gap.rowHorizontal - max(totalWidth, dueWidth) - DS.Spacing.sm
+        let available = PadLayout.rowWidthEstimate - 2 * DS.Gap.rowHorizontal - max(totalWidth, dueWidth) - DS.Spacing.sm
         setWorkChips(OrdersHomeLogic.workChips(work, kind: kind), width: available)
         setTotal(work.totalAmount, struck: false)
         workDueLabel.text = dueText

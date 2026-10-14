@@ -110,9 +110,13 @@ model UserSession {
   absoluteExpiresAt DateTime?
   idleTimeoutDays   Int?
   invalidatedAt     DateTime?
+  // #660: "web" | "mobile". A login replaces only active sessions of its own platform (and NULL ones).
+  // NULL = unknown client or a row created before #660; such a login replaces every session.
+  platform          String?
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isActive])
+  @@index([userId, isActive, platform])
   @@index([sessionId])
   @@index([expiresAt])
 }

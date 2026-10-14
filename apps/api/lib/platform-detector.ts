@@ -21,12 +21,13 @@ export function detectPlatform(request: Request): PlatformInfo {
   // If custom platform header exists, use it
   if (platformHeader) {
     let platform: ClientPlatform = 'unknown';
-    if (platformHeader === 'mobile') platform = 'mobile';
+    // 'ios' / 'android' also mean a phone (#660)
+    if (platformHeader === 'mobile' || platformHeader === 'ios' || platformHeader === 'android') platform = 'mobile';
     else if (platformHeader === 'web') platform = 'web';
 
     let deviceType: DeviceType = 'unknown';
-    if (deviceHeader === 'ios') deviceType = 'ios';
-    else if (deviceHeader === 'android') deviceType = 'android';
+    if (deviceHeader === 'ios' || (!deviceHeader && platformHeader === 'ios')) deviceType = 'ios';
+    else if (deviceHeader === 'android' || (!deviceHeader && platformHeader === 'android')) deviceType = 'android';
     else if (deviceHeader === 'browser') deviceType = 'browser';
 
     return {
