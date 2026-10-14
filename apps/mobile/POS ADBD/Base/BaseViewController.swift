@@ -260,7 +260,7 @@ class BaseViewControler : UIViewController{
             } else {
                 make.top.equalToSuperview()
             }
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
         }
     }
     

@@ -127,12 +127,16 @@ class TabbarViewController: UITabBarController {
             selectedImage: UIImage(systemName: "gearshape.fill")?.withConfiguration(symbolConfig)
         )
         
+        // #973 iPad (landscape): Orders and Settings in two panes, Home grid + cart panel, old screens centered.
+        // iPhone: each tab is the screen itself, as before.
+        let root: (UIViewController) -> UIViewController = { PadLayout.isPad ? PadSplit.tabRoot(for: $0) : $0 }
+
         // Create navigation controllers
-        let nav_0 = BaseNavigationController(rootViewController: child_0)
-        let nav_1 = BaseNavigationController(rootViewController: child_1)
-        let nav_2 = BaseNavigationController(rootViewController: child_2)
-        let nav_3 = BaseNavigationController(rootViewController: child_3)
-        let nav_5 = BaseNavigationController(rootViewController: child_5)
+        let nav_0 = BaseNavigationController(rootViewController: root(child_0))
+        let nav_1 = BaseNavigationController(rootViewController: root(child_1))
+        let nav_2 = BaseNavigationController(rootViewController: root(child_2))
+        let nav_3 = BaseNavigationController(rootViewController: root(child_3))
+        let nav_5 = BaseNavigationController(rootViewController: root(child_5))
         
         // Set view controllers based on permissions
         // Overview tab is shown if user can view daily report (orders.view) or analytics (analytics.view)

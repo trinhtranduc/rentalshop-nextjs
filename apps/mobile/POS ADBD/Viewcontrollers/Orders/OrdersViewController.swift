@@ -114,11 +114,12 @@ final class OrdersViewController: BaseViewControler {
         view.addSubview(listView)
         column.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
         }
         listView.snp.makeConstraints { make in
             make.top.equalTo(column.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: listView)
         updateHeader()
@@ -390,6 +391,8 @@ final class OrdersViewController: BaseViewControler {
     // MARK: - Actions
 
     @objc private func modeTapped() {
+        // #973 iPad: the order on the right belongs to the other list
+        (navigationController as? PadPrimaryNavigationController)?.split?.clearDetail()
         if isSaleMode {
             viewModel.select(viewModel.todayAvailable ? rentSegment : .rent)
         } else {

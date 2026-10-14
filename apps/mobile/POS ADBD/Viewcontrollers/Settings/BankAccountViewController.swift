@@ -113,7 +113,8 @@ class BankAccountViewController: BaseViewControler {
         view.addSubview(bankAccountsTableView)
         bankAccountsTableView.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
         }
         addEmptyLabel()
     }
@@ -174,10 +175,8 @@ class BankAccountViewController: BaseViewControler {
             sheet.addAction(action)
         }
         sheet.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        if let popover = sheet.popoverPresentationController, let source = source {
-            popover.sourceView = source
-            popover.sourceRect = source.bounds
-        }
+        // #973: a nil source used to leave the iPad popover without an anchor (crash)
+        sheet.popoverPresentationController?.anchor(to: source, fallback: view)
         present(sheet, animated: true)
     }
 

@@ -12,6 +12,8 @@ import UIKit
 import SnapKit
 
 final class CartV2ViewController: BaseViewControler {
+    /// #973: shown beside the Home grid on iPad (no back button)
+    var isPanel = false
     /// #888: cost lines only for roles that may see prices (products.manage, never OUTLET_STAFF)
     private var showsPrices: Bool {
         ProductAccess.showsPriceFields(role: ProductAccess.currentRole, permissions: ProductAccess.currentPermissions)
@@ -124,6 +126,7 @@ final class CartV2ViewController: BaseViewControler {
         back.tintColor = DS.Color.text
         back.accessibilityLabel = "products.cart.back".localized()
         back.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        back.isHidden = isPanel
         titleLabel.adjustsFontSizeToFitWidth = true
         titleLabel.minimumScaleFactor = 0.8
         let title = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
@@ -142,7 +145,7 @@ final class CartV2ViewController: BaseViewControler {
         view.addSubview(header)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
             make.height.equalTo(60)
         }
         back.snp.makeConstraints { make in
@@ -185,7 +188,10 @@ final class CartV2ViewController: BaseViewControler {
         blockedNotice.isHidden = true
         [line, bottomColumn].forEach(bottom.addSubview)
         view.addSubview(bottom)
-        bottom.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
+        bottom.snp.makeConstraints { make in
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
+        }
         line.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
         bottomColumn.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
@@ -204,7 +210,7 @@ final class CartV2ViewController: BaseViewControler {
         view.addSubview(scroll)
         scroll.snp.makeConstraints { make in
             make.top.equalTo(header.snp.bottom)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
             make.bottom.equalTo(bottom.snp.top)
         }
         content.axis = .vertical
@@ -795,7 +801,7 @@ final class CartV2ViewController: BaseViewControler {
     @objc private func addMoreTapped() {
         let stack = navigationController?.viewControllers ?? []
         let previous = stack.count >= 2 ? stack[stack.count - 2] : nil
-        switch CartV2Logic.addMoreRoute(previousIsProductsHome: previous is ProductsHomeViewController) {
+        switch CartV2Logic.addMoreRoute(previousIsProductsHome: PadSplit.unwrap(previous) is ProductsHomeViewController) {
         case .pop:
             navigationController?.popViewController(animated: true)
         case .openHomeTab:

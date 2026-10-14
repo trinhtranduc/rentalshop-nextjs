@@ -162,7 +162,8 @@ final class CalendarV2ViewController: BaseViewControler {
         view.addSubview(listView)
         listView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: listView)
         renderMonth()
@@ -578,7 +579,7 @@ final class CalendarDayRowCell: UITableViewCell {
         let amountWidth = ((MoneyFormatter.format(order.totalAmount)) as NSString)
             .size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
         OrderRowCell.fillChipLines(chipLines, chips: OrdersHomeLogic.calendarChips(row),
-                                   width: UIScreen.main.bounds.width - 2 * DS.Spacing.lg - max(amountWidth, 110) - DS.Spacing.md)
+                                   width: min(UIScreen.main.bounds.width, PadLayout.readableWidth) - 2 * DS.Spacing.lg - max(amountWidth, 110) - DS.Spacing.md)
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
         // Board Lich: late days (+ stored fee) only; no còn thu / refund note (#893)

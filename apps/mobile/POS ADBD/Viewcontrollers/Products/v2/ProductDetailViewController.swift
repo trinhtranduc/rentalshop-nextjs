@@ -81,7 +81,8 @@ final class ProductDetailViewController: BaseViewControler {
         bottom.addSubview(buttons)
         view.addSubview(bottom)
         bottom.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
+            make.bottom.equalToSuperview()
         }
         line.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
         buttons.snp.makeConstraints { make in
@@ -93,7 +94,8 @@ final class ProductDetailViewController: BaseViewControler {
         view.addSubview(scroll)
         scroll.contentInsetAdjustmentBehavior = .never
         scroll.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+            make.top.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
             make.bottom.equalTo(bottom.snp.top)
         }
         content.axis = .vertical
@@ -165,7 +167,9 @@ final class ProductDetailViewController: BaseViewControler {
             make.width.greaterThanOrEqualTo(36)
         }
         photoBox.snp.makeConstraints { make in
-            make.height.equalTo(view.snp.width).multipliedBy(0.62)
+            // #973: capped on iPad, where 62% of the landscape width pushed the details off screen
+            make.height.equalTo(scroll.snp.width).multipliedBy(0.62).priority(.high)
+            make.height.lessThanOrEqualTo(PadLayout.heroMaxHeight)
         }
 
         // Name, meta, prices, stock
@@ -304,7 +308,8 @@ final class ProductDetailViewController: BaseViewControler {
         }
         for url in urls {
             let image = UIImageView()
-            image.contentMode = .scaleAspectFill
+            // #973: the iPad photo box is wider than tall: show the whole photo instead of cropping it
+            image.contentMode = PadLayout.isPad ? .scaleAspectFit : .scaleAspectFill
             image.clipsToBounds = true
             image.isAccessibilityElement = true
             image.accessibilityLabel = product.name
@@ -540,10 +545,8 @@ final class ProductDetailViewController: BaseViewControler {
             self?.performDelete()
         })
         sheet.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        if let popover = sheet.popoverPresentationController, let source = deleteButton {
-            popover.sourceView = source
-            popover.sourceRect = source.bounds
-        }
+        // #973: a nil deleteButton used to leave the iPad popover without an anchor (crash)
+        sheet.popoverPresentationController?.anchor(to: deleteButton, fallback: view)
         present(sheet, animated: true)
     }
 

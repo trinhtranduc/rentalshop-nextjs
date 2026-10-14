@@ -2582,3 +2582,6 @@
 "printer.notConfigured.open" = "Cài đặt máy in";
 "printer.error.macHint" = "Trên Mac: Mac phải cùng mạng với máy in, và vào System Settings → Privacy & Security → Local Network → bật AnyRent.";
 "settings.v2.printer.none" = "Chưa cài";
+/* #973 iPad: khung phải trống */
+"ipad.split.orders.empty" = "Chọn một đơn bên trái để xem ở đây";
+"ipad.split.settings.empty" = "Chọn một mục cài đặt bên trái";

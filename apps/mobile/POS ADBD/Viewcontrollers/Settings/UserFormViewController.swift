@@ -405,7 +405,7 @@ class UserFormViewController: BaseViewControler {
         scrollView.addSubview(form)
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn()) // #973 centered column on iPad
             make.bottom.equalTo(bar.snp.top)
         }
         form.snp.makeConstraints { make in
@@ -576,6 +576,8 @@ class UserFormViewController: BaseViewControler {
                 }
             }
         }
+        // #973: no row found above -> UIKit raises on iPad without an anchor
+        alert.popoverPresentationController?.anchor(to: nil, fallback: view)
         
         present(alert, animated: true)
     }

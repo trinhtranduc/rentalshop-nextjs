@@ -113,10 +113,19 @@ enum V2 {
 
     /// Full-screen form over the current screen. `.overFullScreen` keeps the presenter in place, so a pushed
     /// screen's hidden tab bar does not come back after the form closes.
+    /// #973: on iPad a centered form sheet instead (the form stretched across the landscape screen). It cannot be
+    /// swiped or tapped away, so typed values are not lost: the form's own close button closes it.
     static func presentForm(_ controller: UIViewController, from presenter: UIViewController) {
         let nav = UINavigationController(rootViewController: controller)
         nav.setNavigationBarHidden(true, animated: false)
-        nav.modalPresentationStyle = .overFullScreen
+        if PadLayout.isPad {
+            nav.modalPresentationStyle = .formSheet
+            let window = presenter.view.window?.bounds.size ?? UIScreen.main.bounds.size
+            nav.preferredContentSize = PadLayout.formSheetSize(in: window)
+            nav.isModalInPresentation = true
+        } else {
+            nav.modalPresentationStyle = .overFullScreen
+        }
         presenter.present(nav, animated: true)
     }
 }

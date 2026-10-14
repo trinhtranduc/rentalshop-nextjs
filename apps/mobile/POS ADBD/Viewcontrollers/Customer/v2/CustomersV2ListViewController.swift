@@ -88,20 +88,20 @@ final class CustomersV2ListViewController: BaseViewControler {
         [header, search, listView].forEach(view.addSubview)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(mode == .pick ? 12 : 8)
-            make.leading.equalToSuperview().offset(8)
-            make.trailing.equalToSuperview().offset(-8)
+            make.leading.equalTo(view.readableColumn()).offset(8) // #973 centered column on iPad
+            make.trailing.equalTo(view.readableColumn()).offset(-8)
             make.height.equalTo(DS.touchTarget)
         }
         search.snp.makeConstraints { make in
             make.top.equalTo(header.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg)
         }
         let line = V2.divider()
         line.backgroundColor = mode == .browse ? DS.Color.border : .clear
         view.addSubview(line)
         line.snp.makeConstraints { make in
             make.top.equalTo(search.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
         }
 
         listView.backgroundColor = .white
@@ -117,7 +117,8 @@ final class CustomersV2ListViewController: BaseViewControler {
         listView.register(CustomersV2SectionLabel.self, forHeaderFooterViewReuseIdentifier: CustomersV2SectionLabel.reuseId)
         listView.snp.makeConstraints { make in
             make.top.equalTo(line.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
+            make.bottom.equalToSuperview()
         }
 
         emptyLabel.textAlignment = .center

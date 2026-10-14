@@ -29,15 +29,16 @@ enum SettingsDetailV2 {
         let line = V2.divider()
         line.backgroundColor = DS.Color.border
         [header, line].forEach(view.addSubview)
+        // #973: centered column on iPad, like the content under it
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
-            make.leading.equalToSuperview().offset(8)
-            make.trailing.equalToSuperview().offset(-8)
+            make.leading.equalTo(view.readableColumn()).offset(8)
+            make.trailing.equalTo(view.readableColumn()).offset(-8)
             make.height.equalTo(DS.touchTarget)
         }
         line.snp.makeConstraints { make in
             make.top.equalTo(header.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview()
+            make.leading.trailing.equalTo(view.readableColumn())
         }
         return line
     }
@@ -60,7 +61,7 @@ enum SettingsDetailV2 {
         line.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
         stack.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered on iPad
             make.bottom.equalToSuperview().offset(-12)
         }
         return bar
