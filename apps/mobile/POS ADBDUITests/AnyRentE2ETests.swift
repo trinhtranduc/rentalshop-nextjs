@@ -35,6 +35,181 @@ final class AnyRentE2ETests: XCTestCase {
 
     // MARK: - Flows
 
+    /// #973: iPad in landscape. Walks the main screens and saves one screenshot per screen (ipad-NN-*.png) for the
+    /// layout review; it checks only that each screen opens. Run with: ios-e2e.sh --only testIPadLandscapeTour
+    /// on an iPad simulator. It does not create or change orders.
+    func testIPadLandscapeTour() throws {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad only") }
+        e2e.rotateIfPad()
+        app.launch()
+        if app.secureTextFields.firstMatch.waitForExistence(timeout: 8) {
+            e2e.shot("ipad-00-login")
+        }
+        try e2e.start()
+        let landscape = app.windows.firstMatch.frame
+        XCTAssertGreaterThan(landscape.width, landscape.height, "iPad runs in landscape")
+        let back = { self.e2e.goBack(); sleep(1) }
+        // A sheet: its close button, else tap the dimmed area beside it (iPad sheets do not cover the screen)
+        let close = {
+            let button = self.e2e.button(["Close", "Đóng", "Cancel", "Hủy", "Huỷ", "Done", "Xong"])
+            if button.waitForExistence(timeout: 2) && button.isHittable {
+                button.tap()
+            } else if self.app.otherElements["PopoverDismissRegion"].firstMatch.exists {
+                self.app.otherElements["PopoverDismissRegion"].firstMatch.tap()
+            } else {
+                self.app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.6)).tap()
+            }
+            sleep(1)
+        }
+
+        // Trang chủ
+        XCTAssertTrue(e2e.tapTab(["Home", "Trang chủ"], index: 0), "Home tab")
+        XCTAssertTrue(app.tables.cells.firstMatch.waitForExistence(timeout: 15), "Product list")
+        sleep(1)
+        e2e.shot("ipad-01-home")
+        e2e.tapRow(app.tables.cells.element(boundBy: 0))
+        sleep(3)
+        e2e.shot("ipad-02-product-detail")
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        if edit.waitForExistence(timeout: 3) {
+            edit.tap()
+            sleep(2)
+            e2e.shot("ipad-03-product-edit")
+            let first = app.textFields.firstMatch
+            if first.waitForExistence(timeout: 3) { first.tap(); sleep(1); e2e.shot("ipad-03b-product-edit-keyboard") }
+            e2e.hideKeyboard()
+            close()
+        }
+        back()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        if add.waitForExistence(timeout: 3) {
+            add.tap()
+            sleep(2)
+            e2e.shot("ipad-04-product-new")
+            close()
+            back()
+        }
+
+        // Giỏ
+        if e2e.openCartWithOneItem() {
+            sleep(1)
+            e2e.shot("ipad-05-cart")
+            let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
+            if dates.waitForExistence(timeout: 3) {
+                dates.tap()
+                sleep(2)
+                e2e.shot("ipad-06-cart-dates-sheet")
+                close()
+            }
+            let customer = e2e.element(labelBeginsWith: ["Choose customer", "Chọn khách hàng"])
+            if customer.waitForExistence(timeout: 3) {
+                customer.tap()
+                sleep(2)
+                e2e.shot("ipad-07-cart-customer-picker")
+                close()
+            }
+            let pricing = e2e.element(labelBeginsWith: ["Change pricing for", "Đổi cách tính giá"], type: .button)
+            if pricing.waitForExistence(timeout: 3) {
+                pricing.tap()
+                sleep(2)
+                e2e.shot("ipad-08-cart-pricing-sheet")
+                close()
+            }
+            let more = app.buttons["cart.more"]
+            if more.waitForExistence(timeout: 2) {
+                more.tap()
+                sleep(1)
+                e2e.shot("ipad-09-cart-more")
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)).tap()
+                sleep(1)
+            }
+            back()
+        } else {
+            e2e.soft(false, "iPad: cart with one item")
+        }
+
+        // Đơn hàng
+        XCTAssertTrue(e2e.tapTab(["My Order", "Đơn hàng"], index: 1), "Orders tab")
+        sleep(3)
+        e2e.shot("ipad-10-orders-todo")
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 3)
+        sleep(2)
+        e2e.shot("ipad-11-orders-all")
+        if e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) {
+            sleep(2)
+            e2e.shot("ipad-13-order-detail")
+            if e2e.openOrderSheet() {
+                sleep(1)
+                e2e.shot("ipad-14-order-more-sheet")
+                let share = e2e.button(["Share order", "Chia sẻ đơn"])
+                if share.exists {
+                    share.tap()
+                    sleep(6)
+                    e2e.shot("ipad-15-order-share")
+                    e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+                    if app.otherElements["PopoverDismissRegion"].firstMatch.exists { app.otherElements["PopoverDismissRegion"].firstMatch.tap() }
+                    sleep(1)
+                } else {
+                    close()
+                }
+            }
+            back()
+        }
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        e2e.tapIfExists(e2e.saleModeButton, timeout: 3)
+        sleep(2)
+        e2e.shot("ipad-12-orders-sales")
+        e2e.tapIfExists(e2e.button(["Rentals", "Đơn thuê"]), timeout: 3) // back to rentals for the next run
+
+        // Lịch, Báo cáo
+        if e2e.tapTab(["Calendar", "Lịch Thuê", "Lịch"], index: 2) {
+            sleep(3)
+            e2e.shot("ipad-16-calendar")
+        }
+        if e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) {
+            sleep(4)
+            e2e.shot("ipad-17-overview")
+        }
+
+        // Cài đặt
+        XCTAssertTrue(e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil), "Settings tab")
+        sleep(2)
+        e2e.shot("ipad-18-settings")
+        let openRow = { (labels: [String], name: String) in
+            let row = self.app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+            if !(row.exists && row.isHittable) { self.app.swipeDown(); self.app.swipeDown(); sleep(1) }
+            guard self.e2e.scrollTo(row) else { return self.e2e.note("iPad: no row \(labels)") }
+            row.tap()
+            sleep(3)
+            self.e2e.shot(name)
+            back()
+            self.e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+            sleep(1)
+        }
+        openRow(["Customers", "Khách hàng"], "ipad-19-customers")
+        openRow(["Notifications", "Thông báo"], "ipad-20-notifications")
+        openRow(["Printer", "Máy in"], "ipad-21-printer")
+        let mine = app.descendants(matching: .any)["attendance.mine"]
+        if mine.exists {
+            app.swipeDown()
+            sleep(1)
+            e2e.shot("ipad-22-attendance-card")
+            mine.tap()
+            sleep(3)
+            e2e.shot("ipad-23-my-shifts")
+            back()
+        }
+        let punch = app.buttons["attendance.punch"]
+        if punch.exists {
+            e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+            punch.tap()
+            sleep(3)
+            e2e.shot("ipad-24-attendance-scan")
+            close()
+        }
+    }
+
     /// #681: the stock line of each Home row, logged for comparison with the database (see the e2e report).
     /// Seeded edge orders make some products out today or down to one; the run prints every line it reads.
     func test1bHomeStockLines() throws {
@@ -3166,6 +3341,48 @@ private final class E2E {
         app.launchArguments += extra
     }
 
+    // MARK: iPad (#973)
+
+    /// iPadOS 18+ floats the tabs at the top as plain buttons: there is no tabBar element.
+    let isPad = UIDevice.current.userInterfaceIdiom == .pad
+    static let tabLabels = ["Home", "Trang chủ", "My Order", "Đơn hàng", "Calendar", "Lịch Thuê", "Lịch",
+                            "Reports", "Báo cáo", "Overview", "Tổng quan", "Settings", "Cài đặt", "Setting"]
+
+    /// The main tab bar on iPhone; on iPad the first top tab button (exists / isHittable mean the same thing)
+    var tabBar: XCUIElement {
+        let bar = app.tabBars.firstMatch
+        if !isPad || bar.exists { return bar }
+        return padTabButtons.firstMatch
+    }
+
+    private var padTabButtons: XCUIElementQuery {
+        app.buttons.matching(NSPredicate(format: "label IN %@", E2E.tabLabels))
+    }
+
+    /// The app only runs in landscape on iPad (Info.plist); a portrait simulator letterboxes it.
+    func rotateIfPad() {
+        if isPad { XCUIDevice.shared.orientation = .landscapeLeft }
+    }
+
+    private func tapPadTab(_ names: [String], index: Int?) -> Bool {
+        guard padTabButtons.firstMatch.waitForExistence(timeout: 10) else { return false }
+        for name in names {
+            let tab = app.buttons.matching(NSPredicate(format: "label == %@", name)).firstMatch
+            if tab.exists && tab.isHittable { tab.tap(); return true }
+        }
+        // The top strip lists each tab once (nested duplicates share a frame): order them by x
+        var seen: [CGFloat] = []
+        let tabs = padTabButtons.allElementsBoundByIndex.filter { button in
+            guard button.frame.minY < 120, !seen.contains(button.frame.minX) else { return false }
+            seen.append(button.frame.minX)
+            return true
+        }.sorted { $0.frame.minX < $1.frame.minX }
+        let target = index.map { $0 < tabs.count ? tabs[$0] : nil } ?? tabs.last
+        guard let target else { return false }
+        target.tap()
+        return true
+    }
+
     // MARK: Gates
 
     func requireFlag(_ flag: String) throws {
@@ -3190,6 +3407,7 @@ private final class E2E {
 
     /// Launch and log in without requiring the tab bar: an expired account may land on an alert or an empty shell.
     func startLoose() {
+        rotateIfPad()
         app.launch()
         if isLoginScreen(timeout: 8) {
             for attempt in 1...3 {
@@ -3233,6 +3451,7 @@ private final class E2E {
     /// Launch, log in when needed, get past the notification prompt and onboarding, and relaunch once so
     /// app-config flags apply.
     func start() throws {
+        rotateIfPad()
         app.launch()
         if isLoginScreen(timeout: 8) {
             // The secure field sometimes drops the typed password (keyboard switch after the email field),
@@ -3254,7 +3473,7 @@ private final class E2E {
             }
         }
         settle(seconds: 6)
-        guard app.tabBars.firstMatch.waitForExistence(timeout: 30) else {
+        guard tabBar.waitForExistence(timeout: 30) else {
             shot("00-no-main-shell")
             XCTFail("Main tab bar did not appear after login")
             throw XCTSkip("not logged in")
@@ -3265,7 +3484,7 @@ private final class E2E {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if app.secureTextFields.firstMatch.exists { return true }
-            if app.tabBars.firstMatch.exists && !app.alerts.firstMatch.exists { return false }
+            if tabBar.exists && !app.alerts.firstMatch.exists { return false }
             dismissSystemAlert()
             // "Signed in on another device" (single-session API) shows an app alert, then the login form.
             if app.alerts.firstMatch.exists { dismissAlerts() }
@@ -3313,7 +3532,7 @@ private final class E2E {
                 skip.tap()
                 acted = true
             }
-            if !acted && app.tabBars.firstMatch.exists {
+            if !acted && tabBar.exists {
                 quiet += 1
                 if quiet >= 3 { return }
             } else {
@@ -3572,6 +3791,7 @@ private final class E2E {
 
     @discardableResult
     func tapTab(_ names: [String], index: Int?) -> Bool {
+        if isPad && !app.tabBars.firstMatch.exists { return tapPadTab(names, index: index) }
         let tabBar = app.tabBars.firstMatch
         guard tabBar.waitForExistence(timeout: 10) else { return false }
         for name in names where tabBar.buttons[name].exists {
@@ -3604,7 +3824,7 @@ private final class E2E {
     /// Leave a pushed screen. Order and calendar details hide the tab bar and use an unlabeled arrow, so
     /// when the tab bar is hidden keep trying (labeled back, nav bar, top-left arrow, edge swipe) until it shows.
     func goBack() {
-        let tabBar = app.tabBars.firstMatch
+        let tabBar = self.tabBar
         let tabBarWasVisible = tabBar.exists && tabBar.isHittable
         let back = app.buttons.matching(NSPredicate(format: "label IN %@",
             ["Back", "Quay lại", "Back to products", "Quay lại chọn sản phẩm"])).firstMatch
@@ -3853,7 +4073,7 @@ private final class E2E {
     @discardableResult
     func setOverlapAllowed(_ allowed: Bool) -> Bool? {
         // From a pushed screen (cart, detail) the tab bar is hidden: go back to it first
-        if !(app.tabBars.firstMatch.exists && app.tabBars.firstMatch.isHittable) { goBack() }
+        if !(tabBar.exists && tabBar.isHittable) { goBack() }
         tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         sleep(2)
         let toggle = app.switches.matching(NSPredicate(format: "label IN %@",
