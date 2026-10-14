@@ -20,8 +20,8 @@ const hrefs = (role?: string) =>
 const SALES = ['/dashboard', '/orders', '/calendar', '/availability', '/products', '/categories', '/customers'];
 
 describe('filterNavForRole', () => {
-  it('MERCHANT sees everything, including loyalty and outlets', () => {
-    expect(hrefs('MERCHANT')).toEqual([...SALES, '/loyalty', '/users', '/outlets', '/settings']);
+  it('MERCHANT sees everything but module items, including outlets', () => {
+    expect(hrefs('MERCHANT')).toEqual([...SALES, '/users', '/outlets', '/settings']);
   });
 
   it('OUTLET_ADMIN sees users but not outlets or loyalty', () => {
@@ -41,6 +41,23 @@ describe('filterNavForRole', () => {
   });
 });
 
+describe('loyalty module (#967): Khách thân thiết needs merchant.modules to have loyalty (plan or add-on)', () => {
+  const withModules = (role: string | undefined, modules: string[]) =>
+    filterNavForRole(SHELL_NAV_ITEMS, role, modules).map((i) => i.href);
+
+  it('off: no Khách thân thiết even for the owner', () => {
+    expect(withModules('MERCHANT', [])).not.toContain('/loyalty');
+    expect(withModules('MERCHANT', ['attendance'])).not.toContain('/loyalty');
+  });
+
+  it('on: the owner sees it, other roles still do not', () => {
+    expect(withModules('MERCHANT', ['loyalty'])).toEqual([...SALES, '/loyalty', '/users', '/outlets', '/settings']);
+    for (const role of ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY']) {
+      expect(withModules(role, ['loyalty'])).not.toContain('/loyalty');
+    }
+  });
+});
+
 describe('attendance module (#908)', () => {
   const withModules = (role: string | undefined, modules: string[]) =>
     filterNavForRole(SHELL_NAV_ITEMS, role, modules).map((i) => i.href);
@@ -52,7 +69,7 @@ describe('attendance module (#908)', () => {
   });
 
   it('module on: owner and outlet admin see Chấm công; Chi nhánh stays owner-only (#945)', () => {
-    expect(withModules('MERCHANT', ['attendance'])).toEqual([...SALES, '/loyalty', '/users', '/attendance', '/outlets', '/settings']);
+    expect(withModules('MERCHANT', ['attendance', 'loyalty'])).toEqual([...SALES, '/loyalty', '/users', '/attendance', '/outlets', '/settings']);
     expect(withModules('OUTLET_ADMIN', ['attendance'])).toEqual([...SALES, '/users', '/attendance', '/settings']);
   });
 
@@ -149,7 +166,7 @@ describe('menu groups (#960, option A)', () => {
     filterNavGroups(role, modules).map((g) => `${g.key ?? '-'}: ${g.items.map((i) => i.key).join(',')}`);
 
   it('MERCHANT with the module: every group, Chấm công under Nhân sự', () => {
-    expect(groups('MERCHANT', ['attendance'])).toEqual([
+    expect(groups('MERCHANT', ['attendance', 'loyalty'])).toEqual([
       '-: overview',
       'sales: orders,calendar,availability',
       'goods: products,categories',

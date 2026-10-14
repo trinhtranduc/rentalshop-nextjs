@@ -56,7 +56,8 @@ describeE2E('BF-ATT attendance module (#907)', () => {
       expect(brief(r)).toEqual({ status: 403, code: 'MODULE_NOT_ENABLED' });
     }
     const profile = await must(staff.get('/api/users/profile'), 'profile');
-    expect(profile.merchant.modules).toEqual([]);
+    // #967: the seed plan has loyalty, so `modules` may list 'loyalty' too; attendance is what this case checks
+    expect(profile.merchant.modules).not.toContain('attendance');
   });
 
   test('BF-ATT-02 only ADMIN switches it; OPS-like roles and the merchant cannot; profile lists it', async () => {
@@ -68,7 +69,7 @@ describeE2E('BF-ATT attendance module (#907)', () => {
     const listed = await must(admin.get(`/api/merchants/${merchantId}/modules`), 'modules');
     expect(listed).toEqual([{ key: 'attendance', enabled: true, endDate: addDays(today, 30), active: true }]);
     const profile = await must(staff.get('/api/users/profile'), 'profile');
-    expect(profile.merchant.modules).toEqual(['attendance']);
+    expect(profile.merchant.modules).toContain('attendance');
     // an end date in the past switches it off
     await setModule(true, addDays(today, -1));
     expect((await staff.get('/api/attendance/me')).status).toBe(403);

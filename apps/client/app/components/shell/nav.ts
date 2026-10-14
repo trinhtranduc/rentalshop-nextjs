@@ -51,7 +51,8 @@ const NAV: Record<ShellNavKey, ShellNavItem> = {
   products: { key: 'products', href: '/products', icon: 'M8 3l4 3 4-3 4 4-3 3v11H7V10L4 7z' },
   categories: { key: 'categories', href: '/categories', icon: 'M3 12l9-9h7a2 2 0 0 1 2 2v7l-9 9zM16 8h.01' },
   customers: { key: 'customers', href: '/customers', icon: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 5.1a3 3 0 0 1 0 5.8' },
-  loyalty: { key: 'loyalty', href: '/loyalty', icon: 'M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H8a2.5 2.5 0 0 1 0-5c3 0 4 5 4 5zM12 7h4a2.5 2.5 0 0 0 0-5c-3 0-4 5-4 5z', roles: ['MERCHANT'] },
+  // #967: only when loyalty is on (plan or add-on → `merchant.modules` has 'loyalty')
+  loyalty: { key: 'loyalty', href: '/loyalty', icon: 'M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H8a2.5 2.5 0 0 1 0-5c3 0 4 5 4 5zM12 7h4a2.5 2.5 0 0 0 0-5c-3 0-4 5-4 5z', roles: ['MERCHANT'], module: 'loyalty' },
   staff: { key: 'staff', href: '/users', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', hiddenFor: ['OUTLET_STAFF', 'OUTLET_INVENTORY'] },
   attendance: {
     key: 'attendance',

@@ -33,7 +33,16 @@ export function plusLabel(kind: string | null | undefined, units: number | null 
 /** #943: modules sold as a feature add-on (on/off, no packs). Tính lương comes later and needs Chấm công. */
 export const FEATURE_LABEL: Record<string, { name: string; hint: string }> = {
   attendance: { name: 'Chấm công', hint: 'QR + GPS, ca, bảng công' },
+  // #967: on through the plan or this add-on
+  loyalty: { name: 'Khách thân thiết', hint: 'Tích điểm, hạng, đổi điểm' },
 };
+
+/** #967 where a shop's feature comes from: "theo gói", "theo add-on", "theo gói + add-on"; null when off. */
+export function featureSourceLabel(s: { active: boolean; plan: boolean; addon: boolean; legacy?: boolean }): string | null {
+  if (!s.active) return null;
+  const parts = [s.plan && 'gói', s.addon && 'add-on', s.legacy && 'Module cũ'].filter(Boolean);
+  return parts.length ? `theo ${parts.join(' + ')}` : null;
+}
 export const FEATURE_KEYS = Object.keys(FEATURE_LABEL);
 
 export const isFeatureKind = (kind: string | null | undefined) => kind === 'feature';

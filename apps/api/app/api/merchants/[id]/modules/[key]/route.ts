@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { MODULES } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { endOfVnDay } from '../../../../../../lib/attendance/rules';
 import { dateKeySchema } from '../../../../../../lib/attendance/schemas';
-import { moduleCatalogView } from '../../../../../../lib/merchant-modules';
+import { LEGACY_SWITCH_MODULE_KEYS, moduleCatalogView } from '../../../../../../lib/merchant-modules';
 
 type Params = { params: Promise<{ id: string; key: string }> | { id: string; key: string } };
 
@@ -36,7 +35,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       if (!parsed.success) {
         return NextResponse.json(ResponseBuilder.validationError(parsed.error.flatten()), { status: 400 });
       }
-      if (!MODULES.some((m) => m.key === key)) return NextResponse.json(ResponseBuilder.error('NOT_FOUND'), { status: 404 });
+      if (!LEGACY_SWITCH_MODULE_KEYS.includes(key)) return NextResponse.json(ResponseBuilder.error('NOT_FOUND'), { status: 404 });
       const merchant = await db.merchants.findById(merchantId);
       if (!merchant) return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: 404 });
 
