@@ -293,13 +293,13 @@ export function selectMode(lines: CartLine[], ref: LineRef, mode: string): CartL
   });
 }
 
-/** The product's own price for a rent mode: its option (0đ included, #951), else a legacy rentPrice > 0 of that type. */
+/** The product's own price for a rent mode: its option (0đ included, #951), else its rent price of that type, 0 included (#996). */
 function catalogRentPrice(line: CartLine, mode: string): number | null {
   const option = optionOf(line, mode);
   if (option) return num(option.price);
   if (line.product.pricingOptions.length > 0) return null;
   const legacyType = (line.product.pricingType || 'FIXED').toUpperCase();
-  return legacyType === mode && line.product.rentPrice > 0 ? line.product.rentPrice : null;
+  return legacyType === mode && line.product.rentPrice >= 0 ? line.product.rentPrice : null;
 }
 
 /**
