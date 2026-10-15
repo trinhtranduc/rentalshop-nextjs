@@ -317,6 +317,7 @@
     "open": "開く ›"
   },
   "locations": {
+    "locationSet": "位置設定済み",
     "title": "勤怠のQRと位置",
     "subtitle": "店舗ごとにQRコード、位置、打刻する人の一覧があります。",
     "col": {

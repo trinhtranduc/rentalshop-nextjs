@@ -317,6 +317,7 @@
     "open": "打开 ›"
   },
   "locations": {
+    "locationSet": "已设置位置",
     "title": "考勤二维码与位置",
     "subtitle": "每个门店有自己的二维码、位置和需要打卡的人员名单。",
     "col": {

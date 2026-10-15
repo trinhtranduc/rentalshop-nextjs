@@ -317,6 +317,7 @@
     "open": "Mở ›"
   },
   "locations": {
+    "locationSet": "Đã đặt vị trí",
     "title": "Mã QR & vị trí chấm công",
     "subtitle": "Mỗi chi nhánh một mã QR, vị trí và danh sách người cần chấm công.",
     "col": {

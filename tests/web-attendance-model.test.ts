@@ -21,6 +21,7 @@ import {
   canUseAttendanceWeb,
   cellKind,
   formatHours,
+  filterRows,
   groupRowsByDay,
   hasAttendance,
   lockDisplay,
@@ -205,7 +206,7 @@ describe('record times in the shop zone', () => {
     expect(timeOf('2026-10-12T16:59:59Z')).toBe('23:59');
   });
 
-  it('groups rows by VN day; an edit sits under its record day', () => {
+  it('shows newest VN work days and event times first; an edit stays under its record day', () => {
     const rows = [
       { at: '2026-10-15T06:00:05Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 7 },
       { at: '2026-10-15T16:59:59Z', kind: 'OUT' as const, result: 'AUTO_CLOSED' as const, recordId: 7 },
@@ -213,8 +214,9 @@ describe('record times in the shop zone', () => {
       { at: '2026-10-12T17:30:00Z', kind: 'IN' as const, result: 'REJECTED' as const },
     ];
     const groups = groupRowsByDay(rows);
-    expect(groups.map((g) => g.day)).toEqual(['2026-10-13', '2026-10-15']);
-    expect(groups[1].rows.map((r) => r.kind)).toEqual(['IN', 'OUT', 'EDIT']);
+    expect(groups.map((g) => g.day)).toEqual(['2026-10-15', '2026-10-13']);
+    expect(groups[0].rows.map((r) => r.kind)).toEqual(['EDIT', 'OUT', 'IN']);
+    expect(rows.map((r) => r.kind)).toEqual(['IN', 'OUT', 'EDIT', 'IN']);
     expect(recordTimes(rows, 7)).toEqual({ day: '2026-10-15', checkIn: '13:00', checkOut: '' });
   });
 
@@ -227,9 +229,10 @@ describe('record times in the shop zone', () => {
     ];
     const groups = groupRowsByDay(rows);
     expect(groups.map((g) => [g.day, g.rows.length])).toEqual([
-      ['2026-10-20', 2],
       ['2026-10-21', 2],
+      ['2026-10-20', 2],
     ]);
+    expect(groups[1].rows.map((r) => r.kind)).toEqual(['OUT', 'IN']);
     expect(recordTimes(rows, 9)).toEqual({ day: '2026-10-20', checkIn: '22:00', checkOut: '02:00' });
   });
 });
@@ -310,5 +313,34 @@ describe('#927 who must clock in: who can change a row', () => {
     expect(canEditMember('OUTLET_ADMIN', 'MERCHANT')).toBe(false);
     expect(canEditMember('OUTLET_STAFF', 'OUTLET_STAFF')).toBe(false);
     expect(canEditMember(null, 'OUTLET_STAFF')).toBe(false);
+  });
+});
+
+
+describe('#991 recorded person events', () => {
+  const rows = [
+    { at: '2026-10-15T01:00:00Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 7 },
+    { at: '2026-10-15T10:00:00Z', kind: 'OUT' as const, result: 'ACCEPTED' as const, recordId: 7, suspectReasons: ['SAME_COORDS'] },
+    ...['ATTENDANCE_NOT_CONFIGURED', 'QR_EXPIRED', 'GPS_INACCURATE', 'OUT_OF_RANGE', 'QR_WRONG_OUTLET', 'MOCK_LOCATION'].map((errorCode) =>
+      ({ at: '2026-10-15T00:55:00Z', kind: 'IN' as const, result: 'REJECTED' as const, errorCode, suspectReasons: ['ZERO_ACCURACY'] })),
+    { at: '2026-10-16T02:00:00Z', kind: 'EDIT' as const, result: 'EDITED' as const, recordId: 7, dateKey: '2026-10-15', after: { checkInAt: '2026-10-15T00:45:00Z', checkOutAt: '2026-10-15T11:00:00Z', status: 'DONE' } },
+    { at: '2026-10-15T16:59:59Z', kind: 'OUT' as const, result: 'AUTO_CLOSED' as const, recordId: 8 },
+  ];
+
+  it('hides failed scans while preserving recorded work, edits and missing-out events', () => {
+    expect(filterRows(rows, 'all')).toEqual([rows[0], rows[1], rows[8], rows[9]]);
+    expect(groupRowsByDay(filterRows(rows, 'all'))[0].rows.map((r) => r.result)).toEqual(['EDITED', 'AUTO_CLOSED', 'ACCEPTED', 'ACCEPTED']);
+  });
+
+  it('suspected only includes successful events and raw edits still determine record times', () => {
+    expect(filterRows(rows, 'suspected')).toEqual([rows[1]]);
+    expect(recordTimes(rows, 7)).toEqual({ day: '2026-10-15', checkIn: '07:45', checkOut: '18:00' });
+    expect(rows).toHaveLength(10);
+    expect(rows[8].result).toBe('EDITED');
+  });
+
+  it('error-only and empty histories have no visible events', () => {
+    expect(filterRows(rows.filter((r) => r.result === 'REJECTED'), 'all')).toEqual([]);
+    expect(filterRows([], 'all')).toEqual([]);
   });
 });
