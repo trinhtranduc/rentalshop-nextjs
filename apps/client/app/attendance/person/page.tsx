@@ -308,7 +308,7 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
         </Select>
         <MonthNav month={month} onChange={(d) => set({ month: addMonths(month, d), day: null })} />
         <Select aria-label={t('person.filter.label')} value={filter} onChange={(e) => setFilter(e.target.value as RowFilter)} className="border-ar-line">
-          {(['all', 'rejected', 'suspected'] as RowFilter[]).map((f) => (
+          {(['all', 'suspected'] as RowFilter[]).map((f) => (
             <option key={f} value={f}>
               {t(`person.filter.${f}`)}
             </option>

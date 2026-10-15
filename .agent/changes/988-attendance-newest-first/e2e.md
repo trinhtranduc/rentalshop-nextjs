@@ -1,5 +1,7 @@
 # Web E2E — attendance newest-first and location badges
 
+**Historical run before #991:** the rejected-filter expectations below are superseded by ../991-attendance-recorded-events/e2e.md.
+
 Date: 2026-10-15. Result: **10/10 manual UI E2E checks passed**.
 
 Actual Next.js client at http://127.0.0.1:3374 and real API at http://127.0.0.1:3286 against dedicated local PostgreSQL database `anyrent_att0850_20261015`. UI actions used the visible Cốc Cốc browser. No API mocks or static UI fixtures in this run. Source hashes of the model, locations page and person page match worktree commit `bd1f6b8a0`.

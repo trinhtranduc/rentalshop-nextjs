@@ -406,12 +406,13 @@ export function dayOf(iso: string | null | undefined): string {
 // Person month rows
 // ---------------------------------------------------------------------------
 
-export type RowFilter = 'all' | 'rejected' | 'suspected';
+export type RowFilter = 'all' | 'suspected';
 
+/** Failed scan attempts belong to the internal audit, not the work-history list. Keep edits and missing-out records. */
 export function filterRows(rows: AttendancePersonRow[], filter: RowFilter): AttendancePersonRow[] {
-  if (filter === 'rejected') return rows.filter((r) => r.result === 'REJECTED');
-  if (filter === 'suspected') return rows.filter((r) => (r.suspectReasons || []).length > 0);
-  return rows;
+  const recorded = rows.filter((r) => r.result !== 'REJECTED');
+  if (filter === 'suspected') return recorded.filter((r) => (r.suspectReasons || []).length > 0);
+  return recorded;
 }
 
 /**
