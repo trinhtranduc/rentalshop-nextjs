@@ -1,6 +1,6 @@
 /**
  * #946 landing page `/` on a phone opens the App Store (iPhone/iPad) or Google Play (Android).
- * Pure helpers: used by `middleware.ts` (edge) and the landing page (iPadOS desktop-mode fallback).
+ * Pure helpers: used by the landing page after document load (#992), including desktop-mode iPadOS.
  * Desktop, crawlers and link-preview bots keep the page. `?web=1` keeps it and is remembered in a cookie.
  */
 
