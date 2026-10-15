@@ -1,3 +1,5 @@
+import { getApiMessage, type ApiMessageValues } from '../api-messages';
+
 /**
  * API Response Builder
  * Chuẩn hóa response format với error codes để client có thể translate
@@ -293,8 +295,8 @@ const SUCCESS_MESSAGES: Record<string, string> = {
 /**
  * Get default message for error/success code
  */
-function getDefaultMessage(code: string): string {
-  return ERROR_MESSAGES[code] || SUCCESS_MESSAGES[code] || code;
+function getDefaultMessage(code: string, values?: ApiMessageValues): string {
+  return getApiMessage(code, values ?? {}, undefined, { ...ERROR_MESSAGES, ...SUCCESS_MESSAGES });
 }
 
 /**
@@ -422,17 +424,17 @@ export class ResponseBuilder {
       });
     }
     
-    // Return validation error with field-level details in error field
-    // Message comes from translation system via error code
-    const errorString = errorMessages.length > 0 
-      ? errorMessages.join('; ') 
-      : 'Input validation failed';
-    
+    // Field paths stay in the server log. The client sees the catalog sentence only.
+    if (errorMessages.length > 0) {
+      console.error('Validation error (not sent to client):', errorMessages.join('; '));
+    }
+    const sentence = getDefaultMessage('VALIDATION_ERROR');
+
     return {
       success: false,
       code: 'VALIDATION_ERROR',
-      message: getDefaultMessage('VALIDATION_ERROR'),
-      error: errorString // Keep detailed validation errors for debugging
+      message: sentence,
+      error: sentence,
     };
   }
 
