@@ -105,7 +105,7 @@ enum ProductPricing {
             let price = product.rentPrice ?? product.rent
             return price > 0 ? price : nil
         }
-        // #951: an option priced 0 is a 0đ price; only a legacy rentPrice of 0 means "no price"
+        // #951: an option priced 0 is a 0đ price. A bare rentPrice of 0 is not a list price. #996 prices it in the cart.
         guard let price = options.first(where: { $0.type.uppercased() == ProductPricingMode.perRental.rawValue })?.price,
               price >= 0 else { return nil }
         return price

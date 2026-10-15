@@ -1374,8 +1374,9 @@ extension ProductsV2Tests {
         XCTAssertEqual(ProductRowLogic.price(free), ProductRowPrice(main: 0, mainMode: .perRental, second: nil, secondMode: nil))
         let daily0 = try product(#"{"id":3,"name":"A","rentPrice":0,"pricingOptions":[{"id":1,"type":"DAILY","price":0,"isDefault":true}]}"#)
         XCTAssertEqual(ProductPricing.perDay(daily0), 0)
-        XCTAssertNil(ProductPricing.perRental(try product(noRentPrice)))
-        XCTAssertNil(ProductRowLogic.price(try product(noRentPrice)))
+        let zero = try product(noRentPrice)
+        XCTAssertNil(ProductPricing.perRental(zero), "a bare rentPrice of 0 is not a list price; the cart still accepts it (#996)")
+        XCTAssertNil(ProductRowLogic.price(zero))
         // salePrice 0 still reads "not for sale" (the apps save 0 for an empty box)
         XCTAssertNil(ProductPricing.sale(free))
     }
@@ -1410,21 +1411,23 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartV2Logic.startPrice(line, type: "FIXED"), 0)
     }
 
-    func testAProductWithoutARentPriceStillAsks() throws {
+    /// #996: a product stored at rent price 0 creates at 0đ. Theo ngày still asks when the product has no daily price.
+    func testAZeroRentPriceCreatesWithoutAsking() throws {
         let cart = Cart()
         cart.orderType = .rent
         cart.addItem(CartItem(from: try product(noRentPrice), quantity: 1, price: 0))
-        XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
-        XCTAssertNil(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "Nhập giá")
-        XCTAssertNil(CartV2Logic.pricingChoices(cart.items[0]).first?.catalogPrice)
-        XCTAssertNil(CartV2Logic.startPrice(cart.items[0], type: "FIXED"), "the field starts empty")
-        XCTAssertFalse(CartV2Logic.missingPrices(cart).isEmpty)
-        // typing 0 gives it a price
-        cart.updatePrice(at: 0, price: 0)
+        XCTAssertEqual(cart.items[0].price, 0)
         XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "0đ")
+        XCTAssertEqual(CartV2Logic.pricingChoices(cart.items[0]).first?.catalogPrice, 0)
+        XCTAssertEqual(CartV2Logic.startPrice(cart.items[0], type: "FIXED"), 0)
         XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
-        // clearing the typed price asks again
+        XCTAssertEqual(cart.toCreateOrderRequest().orderItems.first?.unitPrice, 0)
+        cart.updatePrice(at: 0, price: 50_000)
         cart.clearPrice(at: 0)
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        cart.selectPricingType(at: 0, type: "DAILY")
         XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
     }
 

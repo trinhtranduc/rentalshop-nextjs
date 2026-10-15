@@ -101,7 +101,7 @@ object ProductPricing {
             if (product.pricingType.equals("DAILY", ignoreCase = true)) return null
             return product.rentPrice.takeIf { it > 0 }
         }
-        // #951: an option of 0 is a 0đ price; a product without options and rentPrice 0 has no price
+        // #951: an option of 0 is a 0đ price. A bare rentPrice of 0 is not a list price (a sale-only product). #996 prices it in the cart.
         return product.pricingOptions.firstOrNull { it.type.equals("FIXED", ignoreCase = true) }?.price?.takeIf { it >= 0 }
     }
 
@@ -441,7 +441,7 @@ object CartV2Logic {
 
     /**
      * #951: the line has a price for its mode: one typed for this order (0 included, a saved order's price too), else
-     * the product's option of that mode (0đ included), else the legacy rent price of its own type when > 0.
+     * the product's option of that mode (0đ included), else the legacy rent price of its own type, 0 included (#996).
      */
     fun hasPrice(line: CartLine): Boolean =
         line.isSale || line.unitPriceOverride != null || catalogPrice(line.product, line.pricingType) != null
@@ -475,11 +475,11 @@ object CartV2Logic {
 
     /**
      * The product's price for a pricing type: its option (#951: 0đ included), else the legacy rent price of its own
-     * type when > 0 (a product without options and rentPrice 0 has no price)
+     * type, 0 included (#996). A mode the product does not price is null ("Nhập giá").
      */
     fun catalogPrice(product: Product, type: String): Double? =
         product.pricingOptions.firstOrNull { it.type.equals(type, ignoreCase = true) && it.price >= 0 }?.price
-            ?: product.rentPrice.takeIf { product.pricingType.equals(type, ignoreCase = true) && it > 0 }
+            ?: product.rentPrice.takeIf { product.pricingType.equals(type, ignoreCase = true) && it >= 0 }
 
     /** Theo lần and Theo ngày always, then every other option type of the product, each with its catalog price */
     fun pricingChoices(line: CartLine): List<CartPricingChoice> {

@@ -491,10 +491,15 @@ describe('0đ products and free lines (#951)', () => {
     expect(lineFromProduct(FREE, 'SALE').unitPrice).toBe(0);
   });
 
-  it('a product without a rent price still asks for one', () => {
+  it('a product priced 0 creates at 0đ without asking (#996)', () => {
     const line = lineFromProduct(NO_PRICE, 'RENT');
-    expect(needsPrice(line, 'RENT')).toBe(true);
-    expect(firstMissing({ ...base, lines: [line] })).toBe('price');
+    expect(line.unitPrice).toBe(0);
+    expect(needsPrice(line, 'RENT')).toBe(false);
+    expect(lineTotal(line, 'RENT', 3)).toBe(0);
+    expect(firstMissing({ ...base, lines: [line] })).toBeNull();
+    const daily = selectMode([line], 22, 'DAILY');
+    expect(needsPrice(daily[0], 'RENT')).toBe(true);
+    expect(firstMissing({ ...base, lines: daily })).toBe('price');
   });
 
   it('a priced line can be given free: typed 0 is a price, not "Nhập giá"', () => {
@@ -512,8 +517,9 @@ describe('0đ products and free lines (#951)', () => {
     let lines = setLinePrice(setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 0), 11, null);
     expect(lines[0].unitPrice).toBe(150_000);
     expect(needsPrice(lines[0], 'RENT')).toBe(false);
-    lines = setLinePrice(setLinePrice([lineFromProduct(NO_PRICE, 'RENT')], 22, 0), 22, null);
-    expect(needsPrice(lines[0], 'RENT')).toBe(true);
+    lines = setLinePrice(setLinePrice([lineFromProduct(NO_PRICE, 'RENT')], 22, 50_000), 22, null);
+    expect(lines[0].unitPrice).toBe(0);
+    expect(needsPrice(lines[0], 'RENT')).toBe(false);
   });
 
   it('a free line keeps 0 through Thuê → Bán → Thuê and in the saved order', () => {
