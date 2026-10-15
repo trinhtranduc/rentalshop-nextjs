@@ -1574,6 +1574,7 @@
 "products.form.noCategory" = "None";
 "products.form.barcode" = "Barcode";
 "products.form.barcodePlaceholder" = "Scan or type";
+"products.form.regenerateBarcode" = "New barcode";
 "products.form.barcodeUsed" = "Barcode already used by %@";
 "products.form.prices" = "Prices";
 "products.form.perRental" = "Rent per rental";

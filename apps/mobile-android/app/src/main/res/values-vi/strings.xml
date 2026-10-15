@@ -616,6 +616,7 @@
     <string name="v2_form_no_category">Không chọn</string>
     <string name="v2_form_barcode">Mã vạch</string>
     <string name="v2_form_barcode_placeholder">Quét hoặc nhập</string>
+    <string name="v2_form_regenerate_barcode">Tạo mã mới</string>
     <string name="v2_form_barcode_used">Mã vạch đã dùng cho %1$s</string>
     <string name="v2_form_prices">Giá</string>
     <string name="v2_form_per_rental">Thuê theo lần</string>

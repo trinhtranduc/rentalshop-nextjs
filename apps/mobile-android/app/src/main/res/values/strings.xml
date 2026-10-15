@@ -617,6 +617,7 @@
     <string name="v2_form_no_category">None</string>
     <string name="v2_form_barcode">Barcode</string>
     <string name="v2_form_barcode_placeholder">Scan or type</string>
+    <string name="v2_form_regenerate_barcode">New barcode</string>
     <string name="v2_form_barcode_used">Barcode already used by %1$s</string>
     <string name="v2_form_prices">Prices</string>
     <string name="v2_form_per_rental">Rent per rental</string>

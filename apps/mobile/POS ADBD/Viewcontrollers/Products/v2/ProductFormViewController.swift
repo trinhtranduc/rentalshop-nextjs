@@ -198,13 +198,22 @@ final class ProductFormViewController: BaseViewControler {
         configure(barcodeField, placeholder: "products.form.barcodePlaceholder".localized(), numeric: false)
         barcodeField.autocapitalizationType = .allCharacters
         barcodeField.addTarget(self, action: #selector(barcodeEdited), for: .editingChanged)
+        let regenerate = UIButton(type: .system)
+        regenerate.setImage(DS.symbol("arrow.clockwise", DS.Icon.md), for: .normal)
+        regenerate.tintColor = DS.Color.text
+        regenerate.accessibilityLabel = "products.form.regenerateBarcode".localized()
+        regenerate.addTarget(self, action: #selector(regenerateBarcode), for: .touchUpInside)
+        regenerate.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
         let scan = UIButton(type: .system)
         scan.setImage(DS.symbol("barcode.viewfinder", DS.Icon.md), for: .normal)
         scan.tintColor = DS.Color.text
         scan.accessibilityLabel = "common.action.scanBarcode".localized()
         scan.addTarget(self, action: #selector(scanBarcode), for: .touchUpInside)
         scan.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
-        form.addArrangedSubview(field(title: "products.form.barcode".localized(), required: false, input: barcodeField, accessory: scan))
+        let tools = UIStackView(arrangedSubviews: [regenerate, scan])
+        tools.axis = .horizontal
+        tools.alignment = .center
+        form.addArrangedSubview(field(title: "products.form.barcode".localized(), required: false, input: barcodeField, accessory: tools))
         barcodeWarning.isHidden = true
         form.addArrangedSubview(padded(barcodeWarning, top: 0, bottom: 4))
 
@@ -308,6 +317,7 @@ final class ProductFormViewController: BaseViewControler {
 
     private func fill() {
         guard let product else {
+            barcodeField.text = ProductBarcode.generate()
             quantityStepper.value = 1
             stockNote.isHidden = true
             renderPhotos()
@@ -505,6 +515,11 @@ final class ProductFormViewController: BaseViewControler {
         } else {
             presentWithHiddenNavigationBar(screen, fullScreen: true)
         }
+    }
+
+    @objc private func regenerateBarcode() {
+        barcodeField.text = ProductBarcode.generate()
+        barcodeWarning.isHidden = true
     }
 
     @objc private func scanBarcode() {

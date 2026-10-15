@@ -1572,6 +1572,7 @@
 "products.form.noCategory" = "Không chọn";
 "products.form.barcode" = "Mã vạch";
 "products.form.barcodePlaceholder" = "Quét hoặc nhập";
+"products.form.regenerateBarcode" = "Tạo mã mới";
 "products.form.barcodeUsed" = "Mã vạch đã dùng cho %@";
 "products.form.prices" = "Giá";
 "products.form.perRental" = "Thuê theo lần";

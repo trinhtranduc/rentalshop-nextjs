@@ -672,8 +672,14 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                   onChange={(e) => patch({ barcode: e.target.value })}
                   className={`${inputClass} min-w-0 flex-1 font-mono tabular-nums`}
                 />
-                <button type="button" onClick={() => patch({ barcode: generateBarcode() })} className={`${outlineBtn} h-11 rounded-xl`}>
-                  {t('form.generate')}
+                <button
+                  type="button"
+                  onClick={() => patch({ barcode: generateBarcode() })}
+                  className={`${outlineBtn} h-11 w-11 shrink-0 rounded-xl px-0`}
+                  aria-label={t('form.generate')}
+                  title={t('form.generate')}
+                >
+                  <ShellIcon d={REFRESH_ICON} size={18} />
                 </button>
               </div>
             </Field>
