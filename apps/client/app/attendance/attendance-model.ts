@@ -51,10 +51,10 @@ export function isOwnerRole(role: string | null | undefined): boolean {
 }
 
 /** One row of Mã QR & vị trí; null settings (not loaded / failed) = unknown. */
-export function locationRow(settings: AttendanceSettings | null | undefined): { qr: 'daily' | 'fixed' | 'none' | null; radiusM: number | null } {
-  if (!settings) return { qr: null, radiusM: null };
+export function locationRow(settings: AttendanceSettings | null | undefined): { qr: 'daily' | 'fixed' | 'none' | null; radiusM: number | null; locationConfigured: boolean | null } {
+  if (!settings) return { qr: null, radiusM: null, locationConfigured: null };
   const qr = !settings.qr?.generated ? 'none' : settings.qrMode === 'FIXED' ? 'fixed' : 'daily';
-  return { qr, radiusM: settings.radiusM ?? null };
+  return { qr, radiusM: settings.radiusM ?? null, locationConfigured: settings.latitude != null && settings.longitude != null };
 }
 
 /** Month lock buttons and record edits (#907 rules 29, 30). */
@@ -415,7 +415,7 @@ export function filterRows(rows: AttendancePersonRow[], filter: RowFilter): Atte
 }
 
 /**
- * Rows grouped by day in time order. A row of a record (its OUT, auto-close or edit) sits under the day of the
+ * Rows grouped by work day, newest day and event first. A row of a record (its OUT, auto-close or edit) sits under the day of the
  * record's IN, so a cross-midnight OUT or a later edit stays with its shift; other rows use their own VN day.
  */
 export function groupRowsByDay(rows: AttendancePersonRow[]): Array<{ day: string; rows: AttendancePersonRow[] }> {
@@ -424,14 +424,14 @@ export function groupRowsByDay(rows: AttendancePersonRow[]): Array<{ day: string
     if (r.recordId != null && r.kind === 'IN' && r.result === 'ACCEPTED' && !recordDay.has(r.recordId)) recordDay.set(r.recordId, r.dateKey || dayOf(r.at));
   }
   const groups = new Map<string, AttendancePersonRow[]>();
-  const sorted = [...rows].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  const sorted = [...rows].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   for (const r of sorted) {
     const day = r.dateKey || (r.recordId != null && recordDay.get(r.recordId)) || dayOf(r.at);
     if (!groups.has(day)) groups.set(day, []);
     groups.get(day)!.push(r);
   }
   return Array.from(groups.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => b.localeCompare(a))
     .map(([day, list]) => ({ day, rows: list }));
 }
 

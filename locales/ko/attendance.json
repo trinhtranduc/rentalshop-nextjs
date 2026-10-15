@@ -317,6 +317,7 @@
     "open": "열기 ›"
   },
   "locations": {
+    "locationSet": "위치 설정됨",
     "title": "출퇴근 QR 및 위치",
     "subtitle": "지점마다 QR 코드, 위치, 출퇴근 기록 대상자 목록이 있습니다.",
     "col": {

@@ -205,7 +205,7 @@ describe('record times in the shop zone', () => {
     expect(timeOf('2026-10-12T16:59:59Z')).toBe('23:59');
   });
 
-  it('groups rows by VN day; an edit sits under its record day', () => {
+  it('shows newest VN work days and event times first; an edit stays under its record day', () => {
     const rows = [
       { at: '2026-10-15T06:00:05Z', kind: 'IN' as const, result: 'ACCEPTED' as const, recordId: 7 },
       { at: '2026-10-15T16:59:59Z', kind: 'OUT' as const, result: 'AUTO_CLOSED' as const, recordId: 7 },
@@ -213,8 +213,9 @@ describe('record times in the shop zone', () => {
       { at: '2026-10-12T17:30:00Z', kind: 'IN' as const, result: 'REJECTED' as const },
     ];
     const groups = groupRowsByDay(rows);
-    expect(groups.map((g) => g.day)).toEqual(['2026-10-13', '2026-10-15']);
-    expect(groups[1].rows.map((r) => r.kind)).toEqual(['IN', 'OUT', 'EDIT']);
+    expect(groups.map((g) => g.day)).toEqual(['2026-10-15', '2026-10-13']);
+    expect(groups[0].rows.map((r) => r.kind)).toEqual(['EDIT', 'OUT', 'IN']);
+    expect(rows.map((r) => r.kind)).toEqual(['IN', 'OUT', 'EDIT', 'IN']);
     expect(recordTimes(rows, 7)).toEqual({ day: '2026-10-15', checkIn: '13:00', checkOut: '' });
   });
 
@@ -227,9 +228,10 @@ describe('record times in the shop zone', () => {
     ];
     const groups = groupRowsByDay(rows);
     expect(groups.map((g) => [g.day, g.rows.length])).toEqual([
-      ['2026-10-20', 2],
       ['2026-10-21', 2],
+      ['2026-10-20', 2],
     ]);
+    expect(groups[1].rows.map((r) => r.kind)).toEqual(['OUT', 'IN']);
     expect(recordTimes(rows, 9)).toEqual({ day: '2026-10-20', checkIn: '22:00', checkOut: '02:00' });
   });
 });
