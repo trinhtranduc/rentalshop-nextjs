@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -82,6 +83,7 @@ import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BarcodeMatch
+import com.anyrent.pos.domain.products.ProductBarcode
 import com.anyrent.pos.domain.products.CategoryRules
 import com.anyrent.pos.domain.products.MoneyInput
 import com.anyrent.pos.domain.products.ProductCostPrice
@@ -136,7 +138,9 @@ fun ProductFormV2Screen(
     }
     val showsPrices = ProductAccess.showsPriceFields(PermissionManager.role)
     var name by remember { mutableStateOf(initial?.name.orEmpty()) }
-    var barcode by remember { mutableStateOf(initial?.barcodeText.orEmpty()) }
+    var barcode by remember {
+        mutableStateOf(if (initial == null) ProductBarcode.generate() else initial.barcodeText.orEmpty())
+    }
     var barcodeWarning by remember { mutableStateOf<String?>(null) }
     var categoryId by remember { mutableStateOf(initial?.categoryId) }
     var categoryName by remember { mutableStateOf(initial?.categoryName) }
@@ -338,8 +342,20 @@ fun ProductFormV2Screen(
                 placeholder = stringResource(R.string.v2_form_barcode_placeholder),
                 onDone = { checkBarcode(barcode.trim()) },
                 trailing = {
-                    IconButton(onClick = { showScan = true }) {
-                        Icon(AppIcons.Barcode, contentDescription = stringResource(R.string.camera_scan), modifier = Modifier.size(DS.Icon.Md))
+                    Row {
+                        IconButton(onClick = {
+                            barcode = ProductBarcode.generate()
+                            barcodeWarning = null
+                        }) {
+                            Icon(
+                                Icons.Filled.Refresh,
+                                contentDescription = stringResource(R.string.v2_form_regenerate_barcode),
+                                modifier = Modifier.size(DS.Icon.Md),
+                            )
+                        }
+                        IconButton(onClick = { showScan = true }) {
+                            Icon(AppIcons.Barcode, contentDescription = stringResource(R.string.camera_scan), modifier = Modifier.size(DS.Icon.Md))
+                        }
                     }
                 },
             )

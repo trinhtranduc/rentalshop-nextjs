@@ -304,6 +304,17 @@ enum ProductImages {
 
 // MARK: - Barcode
 
+/// Code for a new product: last 8 digits of the clock + 3 random digits. Same rule as the web form
+/// `generateBarcode` (#994). An edit keeps the saved code; the form only calls this on create and on regenerate.
+enum ProductBarcode {
+    static func generate(now: Int64 = Int64(Date().timeIntervalSince1970 * 1000), random: Int = Int.random(in: 0...999)) -> String {
+        let clock = String(now)
+        let suffix = clock.count >= 8 ? String(clock.suffix(8)) : String(repeating: "0", count: 8 - clock.count) + clock
+        let tail = String(format: "%03d", min(max(random, 0), 999))
+        return suffix + tail
+    }
+}
+
 enum BarcodeMatch {
     /// The product whose barcode equals the scanned code (trimmed, case-insensitive). The search API also matches
     /// names, so a scan keeps only an exact barcode.

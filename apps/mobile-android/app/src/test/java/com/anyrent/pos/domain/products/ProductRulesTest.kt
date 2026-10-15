@@ -295,6 +295,14 @@ class ProductRulesTest {
         assertEquals(0, ApiErrorMessages.stringId("SOMETHING_ELSE"))
     }
 
+    /** #994: last 8 clock digits + 3 random digits, same as the web form */
+    @Test
+    fun `generated barcode is eight clock digits plus three random`() {
+        assertEquals("00123456042", ProductBarcode.generate(1_759_000_123_456, 42))
+        assertEquals("00123456999", ProductBarcode.generate(1_759_000_123_456, 999))
+        assertEquals("00000042007", ProductBarcode.generate(42, 7))
+    }
+
     @Test
     fun `barcode keeps only an exact match`() {
         val byName = product(id = 1, barcode = "XYZ").copy(name = "AD-0123 áo")

@@ -468,6 +468,13 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(response.toNSError().localizedDescription, response.localizedMessage)
     }
 
+    /// #994: last 8 clock digits + 3 random digits, same as the web form
+    func testGeneratedBarcodeIsEightClockDigitsPlusThreeRandom() {
+        XCTAssertEqual(ProductBarcode.generate(now: 1_759_000_123_456, random: 42), "00123456042")
+        XCTAssertEqual(ProductBarcode.generate(now: 1_759_000_123_456, random: 999), "00123456999")
+        XCTAssertEqual(ProductBarcode.generate(now: 42, random: 7), "00000042007")
+    }
+
     func testBarcodeKeepsOnlyAnExactMatch() throws {
         let byName = try product(#"{"id":1,"name":"AD-0123 áo","barcode":"XYZ"}"#)
         let exact = try product(#"{"id":2,"name":"Áo dài","barcode":" ad-012 "}"#)
@@ -662,6 +669,21 @@ final class ProductFormKeyboardTests: XCTestCase {
     }
 
     /// #952 (owner): no "Xong" bar on the number pads; a tap outside a field or a drag of the form closes the keyboard
+    /// #994: create starts with an 11-digit code and a button that replaces it
+    func testNewProductStartsWithAGeneratedBarcode() throws {
+        let form = try merchantForm()
+        let barcode = try XCTUnwrap(fields(form.view).first { $0.accessibilityLabel == "products.form.barcode".localized() })
+        let first = try XCTUnwrap(barcode.text)
+        XCTAssertEqual(first.count, 11)
+        XCTAssertTrue(first.allSatisfy(\.isNumber))
+        let regenerate = try XCTUnwrap(allViews(form.view).compactMap { $0 as? UIButton }
+            .first { $0.accessibilityLabel == "products.form.regenerateBarcode".localized() })
+        regenerate.sendActions(for: .touchUpInside)
+        let second = try XCTUnwrap(barcode.text)
+        XCTAssertEqual(second.count, 11)
+        XCTAssertTrue(second.allSatisfy(\.isNumber))
+    }
+
     func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
         let form = try merchantForm()
         let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }

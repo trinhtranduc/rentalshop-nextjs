@@ -252,6 +252,18 @@ object ProductImages {
     }
 }
 
+/**
+ * Code for a new product: last 8 digits of the clock + 3 random digits.
+ * Same rule as the web form `generateBarcode` (#994). An edit keeps the saved code.
+ */
+object ProductBarcode {
+    fun generate(now: Long = System.currentTimeMillis(), random: Int = (0..999).random()): String {
+        val clock = now.toString().let { if (it.length >= 8) it.takeLast(8) else it.padStart(8, '0') }
+        val tail = random.coerceIn(0, 999).toString().padStart(3, '0')
+        return clock + tail
+    }
+}
+
 object BarcodeMatch {
     /** The product whose barcode equals [code] (trimmed, case-insensitive); the search API also matches names */
     fun exact(code: String, products: List<Product>): Product? {
