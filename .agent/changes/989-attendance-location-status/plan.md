@@ -26,3 +26,6 @@ Revert the location column, model property, new locale key and related assertion
 - Full Jest run fails in unrelated revenue/availability suites and terminates in railway-deployment.test.js calling process.exit(1); no full-suite green claim.
 - git diff --check passed. VN civil-day eval reviewed; no day-key conversion changes.
 - No production deployment or deployed-account E2E performed. Local browser fixture is not a full authenticated app E2E.
+
+## Full local UI E2E follow-up — 2026-10-15
+10/10 manual UI checks passed against the actual Next.js client, real API and isolated local PostgreSQL database. Includes login, missing/configured badges, saving position, descending day/time order, filters, empty state and editing the correct record. See ../988-attendance-newest-first/e2e.md. Earlier static-fixture limitations are superseded for these checked flows; no production or installed mobile app was exercised.
