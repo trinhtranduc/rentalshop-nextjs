@@ -35,8 +35,8 @@ export default async function LocalizedPosts({ params, searchParams }: Props) {
       {searchParams.untranslated === '1' && <p role="status" className={styles.notice}>{t.translationUnavailable}</p>}
     </div>
     <section className={styles.section}>
-      {!result?.success ? <div role="alert"><p>{t.loadError}</p><Link href={pageUrl(page)}>{t.retry}</Link></div>
-        : posts.length ? <PostCards posts={posts} locale={locale} /> : <p role="status">{t.empty}</p>}
+      {!result?.success ? <div role="alert" className={styles.notice}><p>{t.loadError}</p><Link href={pageUrl(page)}>{t.retry}</Link></div>
+        : posts.length ? <PostCards posts={posts} locale={locale} /> : <p role="status" className={styles.notice}>{t.empty}</p>}
       {result?.success && <nav className={styles.pagination} aria-label={t.page}>
         {page > 1 && <Link href={pageUrl(page - 1)}>{t.previous}</Link>}
         <span>{t.page} {page}</span>{result.data?.hasMore && <Link href={pageUrl(page + 1)}>{t.next}</Link>}
