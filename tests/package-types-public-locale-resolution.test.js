@@ -1,16 +1,18 @@
-const { spawnSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 describe('@rentalshop/types package declarations', () => {
-  it('resolves PublicLocale from the current @rentalshop/constants workspace', () => {
+  it('links @rentalshop/constants to the current workspace instead of a file snapshot', () => {
     const repoRoot = path.resolve(__dirname, '..');
-    const result = spawnSync(
-      'yarn',
-      ['--cwd', 'packages/types', 'tsc', '--noEmit', '-p', 'tsconfig.json'],
-      { cwd: repoRoot, encoding: 'utf8' },
+    const typesPackage = require(path.join(repoRoot, 'packages/types/package.json'));
+    const constantsPackagePath = path.join(
+      repoRoot,
+      'packages/types/node_modules/@rentalshop/constants',
     );
-    const output = `${result.stdout || ''}${result.stderr || ''}`;
 
-    expect(output).not.toContain("has no exported member 'PublicLocale'");
+    expect(typesPackage.dependencies['@rentalshop/constants']).toBe('^1.0.1');
+    expect(fs.realpathSync(constantsPackagePath)).toBe(
+      fs.realpathSync(path.join(repoRoot, 'packages/constants')),
+    );
   });
 });

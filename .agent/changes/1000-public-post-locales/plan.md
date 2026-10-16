@@ -14,3 +14,4 @@ Issue: #1000 · Status: review-ready (release blocked)
 Verification: yarn install --frozen-lockfile; yarn db:generate; focused Jest (public-post-locales/posts routes and existing public route/SEO tests); yarn lint; yarn type-check; SKIP_ENV_VALIDATION=true yarn build; locale JSON duplicate eval and API tracking eval. Full Jest when feasible; classify known Railway/vitest failures rather than claiming green.
 
 9. Capture the repeated agent workdir mistake in an eval and AGENTS.md, as required by the existing same-mistake-twice rule.
+10. Follow-up to Vercel #1001 build failure: reproduce TS2614 in the real package type-check; replace the copied `file:` dependency with the matching Yarn workspace range; verify the generated package declarations and the Vercel-filtered Turbo build where the local runner permits it.
