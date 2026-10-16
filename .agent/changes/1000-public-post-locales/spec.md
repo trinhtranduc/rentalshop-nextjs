@@ -15,5 +15,7 @@ Issue: #1000 · Status: in-progress (release blocked)
 11. On `/`, a saved `NEXT_PUBLIC_LOCALE` preference wins. If absent, choose the best supported locale from `Accept-Language` once, save it, and redirect to its public URL (Vietnamese remains prefix-free). Unsupported/missing browser languages resolve to vi. Explicit locale URLs always win, and public preference never reads or writes the POS `NEXT_LOCALE` cookie.
 12. Public post listing and detail pages use the current landing brandmark and consistent landing visual language on desktop and mobile; public navigation/language selection remains locale-aware.
 13. A post is listed only for its own published locale edition. Cross-language fallback is not allowed; translated editions must be explicitly created and published.
+14. Public locale switching preserves the current page type. Article detail uses the published sibling edition's locale-specific slug; if no sibling is published yet, it opens that locale's post list.
+15. The owner-requested public AnyRent introduction post (ID 29) has published editions for the supported public locales, with translated title, excerpt, body, SEO fields, and matching illustrations. The original Vietnamese edition remains unchanged.
 
 Out of scope: native POS language expansion; translation of arbitrary existing articles; publishing the marketing demo; payments/orders/attendance behavior; production release.

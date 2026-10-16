@@ -57,11 +57,26 @@ interface LanguageSwitcherProps {
   variant?: 'default' | 'compact';
   /** Uses URL-based public content locales without changing the merchant POS locale cookie. */
   publicLocale?: PublicLocale;
+  /** Optional published-edition destinations for article pages with locale-specific slugs. */
+  publicLocalePaths?: Partial<Record<PublicLocale, string>>;
+}
+
+function publicPathForLocale(pathname: string, currentLocale: PublicLocale, nextLocale: PublicLocale) {
+  let path = pathname || '/';
+  const currentPrefix = `/${currentLocale}`;
+  if (currentLocale !== 'vi') {
+    if (path === currentPrefix) path = '/';
+    else if (path.startsWith(`${currentPrefix}/`)) path = path.slice(currentPrefix.length) || '/';
+  }
+
+  if (nextLocale === 'vi') return path;
+  return `/${nextLocale}${path === '/' ? '' : path}`;
 }
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ 
   variant = 'default',
   publicLocale,
+  publicLocalePaths,
 }) => {
   const currentLocale = useLocale() as SupportedLocale;
   const router = useRouter();
@@ -101,7 +116,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     if (publicLocale) {
       if (newLocale === publicLocale) return;
       document.cookie = `NEXT_PUBLIC_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
-      window.location.assign(newLocale === 'vi' ? '/' : `/${newLocale}`);
+      const path = publicLocalePaths?.[newLocale] ?? publicPathForLocale(pathname, publicLocale, newLocale);
+      window.location.assign(`${path}${window.location.search}`);
       return;
     }
 

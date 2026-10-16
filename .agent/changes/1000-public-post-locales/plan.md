@@ -21,3 +21,5 @@ Verification: yarn install --frozen-lockfile; yarn db:generate; focused Jest (pu
 14. Add `.agent/evals/cases/public-post-layout-matches-landing.md` so future public-page changes preserve the shared brand and layout.
 15. Add missing `landing.blog.title` and `landing.blog.subtitle` translations for the existing Chinese, Korean, and Japanese landing dictionaries; verify all five core public landing locales expose both keys.
 16. Force a document navigation when the public locale changes so the root Next.js layout and its server-provided message dictionary are rebuilt for the destination locale; verify with a regression test.
+17. Preserve the current public route when switching locale. Derive localized landing/list routes from the current path and pass published translated-edition paths to the switcher for article details; test edition-slug overrides and untranslated fallback.
+18. Translate public AnyRent introduction post ID 29 into all remaining supported public locales, retaining media nodes and localizing SEO metadata; create and publish sibling editions through the authorized CMS workflow, then verify public API visibility and language links.

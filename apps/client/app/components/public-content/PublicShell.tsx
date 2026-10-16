@@ -25,10 +25,17 @@ export function LanguageLinks({ locale, kind = 'home', translations = [] }: {
   </details>;
 }
 
-export function PublicShell({ locale, children, kind = 'home' }: {
+export function PublicShell({ locale, children, kind = 'home', translations = [] }: {
   locale: PublicLocale; children: React.ReactNode; kind?: 'home' | 'list' | 'post'; translations?: PostTranslation[];
 }) {
   const t = publicMessages(locale);
+  const localePaths = Object.fromEntries(PUBLIC_LOCALES.map(code => {
+    if (kind === 'home') return [code, publicHomePath(code)];
+    if (kind === 'list') return [code, publicPostPath(code)];
+    const edition = translations.find(post => post.locale === code && post.status === 'PUBLISHED');
+    return [code, edition ? publicPostPath(code, edition.slug) : publicPostPath(code)];
+  })) as Partial<Record<PublicLocale, string>>;
+
   return <div className={styles.page} lang={locale}>
     <header className={styles.header} role="banner">
       <div className={styles.headerInner}>
@@ -38,7 +45,7 @@ export function PublicShell({ locale, children, kind = 'home' }: {
         <nav aria-label={t.home} className={styles.nav}>
           <Link href={publicHomePath(locale)}>{t.home}</Link>
           <Link href={publicPostPath(locale)} aria-current={kind !== 'home' ? 'page' : undefined}>{t.posts}</Link>
-          <LanguageSwitcher variant="compact" publicLocale={locale} />
+          <LanguageSwitcher variant="compact" publicLocale={locale} publicLocalePaths={localePaths} />
           <Link href="/register" className={styles.button}>{t.tryApp}</Link>
         </nav>
       </div>
