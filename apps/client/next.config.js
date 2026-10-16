@@ -94,6 +94,8 @@ const nextConfig = {
 
   async redirects() {
     return [
+      { source: '/vi', destination: '/', permanent: true },
+      { source: '/vi/post/:path*', destination: '/post/:path*', permanent: true },
       {
         source: '/ai-search',
         destination: '/tim-san-pham-bang-hinh-anh',

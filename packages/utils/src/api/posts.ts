@@ -2,6 +2,7 @@
 // POSTS API CLIENT
 // ============================================================================
 
+import type { PublicLocale } from '@rentalshop/constants';
 import { authenticatedFetch, parseApiResponse, type ApiResponse } from '../core';
 import { apiUrls } from '../config/api';
 import type { Post, PostCreateInput, PostUpdateInput, PostSearchFilter, PostCategory, PostTag, PostCategoryUpdateInput, PostTagUpdateInput } from '@rentalshop/types';
@@ -39,6 +40,7 @@ export const postsApi = {
     const params = new URLSearchParams();
     
     if (filters.status) params.append('status', filters.status);
+    if (filters.locale) params.append('locale', filters.locale);
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
     if (filters.tagId) params.append('tagId', filters.tagId.toString());
     if (filters.authorId) params.append('authorId', filters.authorId.toString());
@@ -67,7 +69,7 @@ export const postsApi = {
   /**
    * Get post by slug (public - no authentication required)
    */
-  async getPostBySlug(slug: string, locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'): Promise<ApiResponse<Post>> {
+  async getPostBySlug(slug: string, locale?: PublicLocale): Promise<ApiResponse<Post>> {
     const url = locale 
       ? `${apiUrls.posts.getBySlug(slug)}?locale=${locale}`
       : apiUrls.posts.getBySlug(slug);

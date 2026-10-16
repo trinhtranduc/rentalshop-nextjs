@@ -130,3 +130,4 @@ Domain (`.claude/skills/`):
 - Changing an API without checking the installed apps on `main-real` (`api-compat-review`), or without a row in `.agent/api-changes/LOG.md`.
 - Filling or redefining an existing response field for a new screen (e.g. daily `futureIncome`, which old Android adds to revenue). Add a new field.
 - Two PRs that both append keys to `locales/*/errors.json` can merge into invalid JSON or a key listed twice (the last, older text wins). After merging `dev`, run `cd tests && npx jest locales-valid-json`.
+- Keep tool workdirs explicit. From the repository root, use `yarn --cwd tests test ...`; do not mix root-relative edits with a `tests/` workdir in the same command.

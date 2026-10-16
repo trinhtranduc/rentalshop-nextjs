@@ -1,0 +1,16 @@
+# Public landing and multilingual posts
+
+Issue: #1000 · Status: review-ready (release blocked) · Created: 2026-10-16
+
+## Outcome
+Owner authorized implementing landing/post localization first, with public `/{locale}/post` URLs and admin selection, creation and independent editing per language. Supported public locales: vi, en, ja, ko, zh, ru, zh-TW, fr, de, th, id, es. POS operational languages stay unchanged. Existing posts remain user-editable and are never automatically published or translated.
+
+## Constraints
+Use isolated worktree; preserve original dirty workspace. Keep API fields/status/default locale and role checks compatible. Owner subsequently authorized publishing the demo to production CMS (post 29, verified public), and requested a PR targeting main-real for language review. This isolated branch starts from main-real to avoid bundling the unrelated dev release #999. Push and PR authorized; merge/deploy remain human-owned. Additive nullable translation grouping only; migrations generated locally. Credentials stored only in ignored local env by explicit owner request, never in git or output.
+
+## Decisions
+- Owner clarification: Vietnamese is the default without a prefix: /, /post, /post/{slug}. Other languages use /{locale}, /{locale}/post, /{locale}/post/{slug}. /vi aliases permanently redirect, preserving query strings.
+- Link translated editions with optional translation key and optional source post ID; each edition may have its own slug and status.
+- Unknown/unpublished translation returns 404; language switch offers available published editions and a listing for untranslated locales.
+- Public copy is isolated from existing shop locale providers, so new marketing languages do not imply translated POS.
+- Root and legacy /blog URLs remain functional.

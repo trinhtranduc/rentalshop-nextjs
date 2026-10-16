@@ -1,3 +1,10 @@
+import zhPublic from '../../../locales/zh/public.json';
+import koPublic from '../../../locales/ko/public.json';
+import jaPublic from '../../../locales/ja/public.json';
+import viPublic from '../../../locales/vi/public.json';
+import enPublic from '../../../locales/en/public.json';
+import { headers } from 'next/headers';
+import { isPublicLocale } from '@rentalshop/constants';
 import type { Metadata } from 'next'
 import { Inter, Be_Vietnam_Pro } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
@@ -637,6 +644,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const messages = {
   en: {
     common: enCommon,
+    public: enPublic,
     auth: enAuth,
     dashboard: enDashboard,
     orders: enOrders,
@@ -660,6 +668,7 @@ const messages = {
   },
   vi: {
     common: viCommon,
+    public: viPublic,
     auth: viAuth,
     dashboard: viDashboard,
     orders: viOrders,
@@ -684,6 +693,7 @@ const messages = {
   // Chinese (Simplified) - Landing page only
   zh: {
     common: zhCommon,
+    public: zhPublic,
     auth: zhAuth,
     landing: zhLanding,
     plans: zhPlans,
@@ -708,6 +718,7 @@ const messages = {
   // Korean - Landing page only
   ko: {
     common: koCommon,
+    public: koPublic,
     auth: koAuth,
     landing: koLanding,
     plans: koPlans,
@@ -732,6 +743,7 @@ const messages = {
   // Japanese - Landing page only
   ja: {
     common: jaCommon,
+    public: jaPublic,
     auth: jaAuth,
     landing: jaLanding,
     plans: jaPlans,
@@ -777,8 +789,11 @@ export default async function RootLayout({
     console.log('Using default locale: vi');
   }
 
+  const publicLanguage = headers().get('x-anyrent-public-locale');
+  const documentLocale = isPublicLocale(publicLanguage) ? publicLanguage : locale;
+
   return (
-    <html lang={locale} className="overflow-x-hidden" suppressHydrationWarning>
+    <html lang={documentLocale} className="overflow-x-hidden" suppressHydrationWarning>
       <head>
         {isThemeSwitchEnabled() && <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
