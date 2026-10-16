@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Globe } from 'lucide-react';
 
 type SupportedLocale = 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+type PublicLocale = SupportedLocale | 'ru' | 'zh-TW' | 'fr' | 'de' | 'th' | 'id' | 'es';
 
 // All languages (for landing page)
 const allLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = [
@@ -35,6 +36,17 @@ const allLanguages: Array<{ code: SupportedLocale; label: string; flag: string }
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
 ];
 
+const publicLanguages: Array<{ code: PublicLocale; label: string; flag: string }> = [
+  ...allLanguages,
+  { code: 'ru', label: 'RU', flag: '🇷🇺' },
+  { code: 'zh-TW', label: '繁體中文', flag: '🇹🇼' },
+  { code: 'fr', label: 'FR', flag: '🇫🇷' },
+  { code: 'de', label: 'DE', flag: '🇩🇪' },
+  { code: 'th', label: 'TH', flag: '🇹🇭' },
+  { code: 'id', label: 'ID', flag: '🇮🇩' },
+  { code: 'es', label: 'ES', flag: '🇪🇸' },
+];
+
 // Basic languages (for other pages)
 const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = [
   { code: 'vi', label: 'VI', flag: '🇻🇳' },
@@ -43,10 +55,13 @@ const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string
 
 interface LanguageSwitcherProps {
   variant?: 'default' | 'compact';
+  /** Uses URL-based public content locales without changing the merchant POS locale cookie. */
+  publicLocale?: PublicLocale;
 }
 
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ 
-  variant = 'default' 
+  variant = 'default',
+  publicLocale,
 }) => {
   const currentLocale = useLocale() as SupportedLocale;
   const router = useRouter();
@@ -60,15 +75,17 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 
   // Get available languages based on page
   const availableLanguages = useMemo(() => {
+    if (publicLocale) return publicLanguages;
     if (isLandingPage) {
       return allLanguages;
     }
     // For non-landing pages, only show vi and en
     return basicLanguages;
-  }, [isLandingPage]);
+  }, [isLandingPage, publicLocale]);
 
   // Auto-fallback to vi/en if on non-landing page with zh/ko/ja locale
   useEffect(() => {
+    if (publicLocale) return;
     if (!isLandingPage && ['zh', 'ko', 'ja'].includes(currentLocale)) {
       // Auto-switch to Vietnamese (default) when on non-landing page
       const fallbackLocale: SupportedLocale = 'vi';
@@ -78,9 +95,18 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       }
       router.refresh();
     }
-  }, [isLandingPage, currentLocale, router]);
+  }, [isLandingPage, currentLocale, router, publicLocale]);
 
-  const handleLanguageChange = (newLocale: SupportedLocale) => {
+  const handleLanguageChange = (newLocale: SupportedLocale | PublicLocale) => {
+    if (publicLocale) {
+      if (newLocale === publicLocale) return;
+      document.cookie = `NEXT_PUBLIC_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+      startTransition(() => {
+        router.push(newLocale === 'vi' ? '/' : `/${newLocale}`);
+      });
+      return;
+    }
+
     if (newLocale === currentLocale) return; // Already selected
 
     // If switching to zh/ko/ja on non-landing page, redirect to landing page
@@ -110,14 +136,15 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   };
 
   // Get current language display
-  const currentLanguage = availableLanguages.find(lang => lang.code === currentLocale) || availableLanguages[0];
+  const selectedLocale = publicLocale || currentLocale;
+  const currentLanguage = availableLanguages.find(lang => lang.code === selectedLocale) || availableLanguages[0];
 
   return (
     <div className="flex items-center gap-2">
       {variant !== 'compact' && <Globe className="w-4 h-4 text-text-tertiary" />}
       <Select
-        value={currentLocale}
-        onValueChange={(value) => handleLanguageChange(value as SupportedLocale)}
+        value={selectedLocale}
+        onValueChange={(value) => handleLanguageChange(value as SupportedLocale | PublicLocale)}
         disabled={isPending}
       >
         <SelectTrigger 
@@ -147,4 +174,4 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       )}
     </div>
   );
-}; 
+};
