@@ -68,7 +68,7 @@ export default function EditPostPage() {
       const response = await postsApi.updatePost(postId, data);
       if (response.success) {
         toastSuccess('Post updated successfully');
-        router.push('/posts');
+        router.push(`/posts?locale=${data.locale ?? post?.locale ?? 'vi'}`);
       } else {
         toastError('Failed to update post');
       }
@@ -80,7 +80,7 @@ export default function EditPostPage() {
   };
 
   const handleCancel = () => {
-    router.push('/posts');
+    router.push(`/posts?locale=${post?.locale ?? 'vi'}`);
   };
 
   if (loading) {
@@ -111,6 +111,7 @@ export default function EditPostPage() {
       </PageHeader>
       <PageContent>
         <PostForm
+          key={post.id}
           initialData={{
             title: post.title,
             slug: post.slug,

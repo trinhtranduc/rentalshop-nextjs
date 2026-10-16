@@ -268,5 +268,15 @@
     },
     "breadcrumb": "当前位置",
     "searchOpen": "打开搜索"
+  },
+  "posts": {
+    "language": "文章语言",
+    "allLanguages": "所有语言",
+    "translations": "语言版本",
+    "newTranslation": "创建译文",
+    "translationSource": "原文",
+    "translationHelp": "请输入所选语言的内容，原文保持不变。",
+    "publicPost": "查看已发布文章",
+    "languageHelp": "选择文章内容的语言，与管理界面语言独立。"
   }
 }

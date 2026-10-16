@@ -45,7 +45,7 @@ export async function GET(
       }
 
       return NextResponse.json(
-        ResponseBuilder.success('POST_RETRIEVED_SUCCESS', post)
+        ResponseBuilder.success('POST_RETRIEVED_SUCCESS', { ...post, translations: await db.posts.translationsOf(post, !canManagePosts) })
       );
     } catch (error) {
       console.error('Error fetching post:', error);

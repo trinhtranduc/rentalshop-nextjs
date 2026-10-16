@@ -312,5 +312,15 @@
     "apply": "Áp dụng",
     "cancel": "Huỷ",
     "close": "Đóng"
+  },
+  "posts": {
+    "language": "Ngôn ngữ bài viết",
+    "allLanguages": "Tất cả ngôn ngữ",
+    "translations": "Các bản ngôn ngữ",
+    "newTranslation": "Tạo bản dịch",
+    "translationSource": "Bản dịch của",
+    "translationHelp": "Nhập nội dung cho ngôn ngữ đã chọn. Bản nguồn được giữ nguyên.",
+    "publicPost": "Xem bài công khai",
+    "languageHelp": "Chọn ngôn ngữ của nội dung bài viết, độc lập với ngôn ngữ quản trị."
   }
 }
