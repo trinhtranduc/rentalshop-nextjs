@@ -11,5 +11,7 @@ Issue: #1000 · Status: review-ready (release blocked)
 7. Published edition metadata has its canonical localized URL and alternates only for published equivalents; list and landing equivalents exist for all supported locales. Sitemap lists published editions at their own URLs.
 8. Existing /blog routes keep working; all older required response fields, permissions, default values and native callers remain unchanged. New metadata/request inputs optional.
 9. Local tests cover locale/query/schema, DB grouping & independence, public visibility, path auth boundaries, no locale fallback, and translated message parity. Visible browser checks cover public pages, selectors, and admin create/edit with an isolated test API/data when possible.
+10. Every public landing locale renders the existing `LandingPageClient` composition. Localization changes its copy, metadata, language selector, and locale-aware article links only; the replacement `PublicShell` landing layout is not used for landing routes.
+11. On `/`, a saved `NEXT_PUBLIC_LOCALE` preference wins. If absent, choose the best supported locale from `Accept-Language` once, save it, and redirect to its public URL (Vietnamese remains prefix-free). Unsupported/missing browser languages resolve to vi. Explicit locale URLs always win, and public preference never reads or writes the POS `NEXT_LOCALE` cookie.
 
 Out of scope: native POS language expansion; translation of arbitrary existing articles; publishing the marketing demo; payments/orders/attendance behavior; production release.

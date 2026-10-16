@@ -3,8 +3,15 @@ import koPublic from '../../../locales/ko/public.json';
 import jaPublic from '../../../locales/ja/public.json';
 import viPublic from '../../../locales/vi/public.json';
 import enPublic from '../../../locales/en/public.json';
+import ruPublic from '../../../locales/ru/public.json';
+import zhTwPublic from '../../../locales/zh-TW/public.json';
+import frPublic from '../../../locales/fr/public.json';
+import dePublic from '../../../locales/de/public.json';
+import thPublic from '../../../locales/th/public.json';
+import idPublic from '../../../locales/id/public.json';
+import esPublic from '../../../locales/es/public.json';
 import { headers } from 'next/headers';
-import { isPublicLocale } from '@rentalshop/constants';
+import { isPublicLocale, type PublicLocale } from '@rentalshop/constants';
 import type { Metadata } from 'next'
 import { Inter, Be_Vietnam_Pro } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
@@ -767,6 +774,57 @@ const messages = {
   },
 };
 
+const publicCopyByLocale: Partial<Record<PublicLocale, Record<string, string>>> = {
+  en: enPublic,
+  vi: viPublic,
+  ja: jaPublic,
+  ko: koPublic,
+  zh: zhPublic,
+  ru: ruPublic,
+  'zh-TW': zhTwPublic,
+  fr: frPublic,
+  de: dePublic,
+  th: thPublic,
+  id: idPublic,
+  es: esPublic,
+};
+
+function getPublicContentMessages(locale: PublicLocale) {
+  if (locale === 'vi' || locale === 'en' || locale === 'ja' || locale === 'ko' || locale === 'zh') {
+    return messages[locale];
+  }
+
+  const copy = publicCopyByLocale[locale] || enPublic;
+  return {
+    ...messages.en,
+    public: copy,
+    landing: {
+      ...enLanding,
+      hero: {
+        ...enLanding.hero,
+        title: copy.heroTitle,
+        description: copy.heroDescription,
+        downloadApp: copy.tryApp,
+      },
+      features: {
+        ...enLanding.features,
+        title: copy.ordersTitle,
+        description: copy.ordersDescription,
+      },
+      aiSearch: {
+        ...enLanding.aiSearch,
+        title: copy.imageTitle,
+        description: copy.imageDescription,
+      },
+      blog: {
+        ...enLanding.blog,
+        title: copy.blogTitle,
+        subtitle: copy.blogDescription,
+      },
+    },
+  };
+}
+
 export default async function RootLayout({
   children,
 }: {
@@ -790,7 +848,10 @@ export default async function RootLayout({
   }
 
   const publicLanguage = headers().get('x-anyrent-public-locale');
-  const documentLocale = isPublicLocale(publicLanguage) ? publicLanguage : locale;
+  const publicLocale = isPublicLocale(publicLanguage) ? publicLanguage : null;
+  const documentLocale = publicLocale || locale;
+  const providerLocale = publicLocale || locale;
+  const providerMessages = publicLocale ? getPublicContentMessages(publicLocale) : messages[locale];
 
   return (
     <html lang={documentLocale} className="overflow-x-hidden" suppressHydrationWarning>
@@ -835,7 +896,7 @@ export default async function RootLayout({
           `}
         </Script>
         
-        <NextIntlClientProvider locale={locale} messages={messages[locale]}>
+        <NextIntlClientProvider locale={providerLocale} messages={providerMessages}>
           <ToastProvider>
             <ClientLayout>
               {children}
