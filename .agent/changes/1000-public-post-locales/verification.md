@@ -21,6 +21,7 @@ Review date: 2026-10-16. Base: origin/main-real f890aef9e; latest customer relea
 - Direct API build: cannot resolve prebuilt `@rentalshop/utils` artifacts, identical failure on main-real; API build not certified green.
 - Full Jest under UTC and Vietnam timezone: both baseline and head fail the revenue-calculator / availability suites and terminate from railway-deployment.test.js process.exit(1); no full-suite pass claimed. Focused tests above complete independently.
 - Eval controls checked: locale JSON duplicate/parse suite green; issue and API compatibility log included (#606); explicit test workdir eval included after repeated agent command error.
+- Follow-up for Vercel build failure: reproduced TS2614 in `packages/types` against its stale copied `@rentalshop/constants`; changed that dependency from `file:../constants` to the matching workspace range `^1.0.1` and updated its lock entry. The targeted regression test passes, and direct `@rentalshop/constants` plus `@rentalshop/types` declaration builds pass. The exact filtered Turbo command still cannot start locally because Turborepo's API client cannot access a system keychain; the original Vercel build failure is fixed at package resolution, but a new Vercel deployment is needed to validate the remote build end-to-end.
 
 ## Visible browser / HTTP checks
 
