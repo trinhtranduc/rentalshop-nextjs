@@ -101,9 +101,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     if (publicLocale) {
       if (newLocale === publicLocale) return;
       document.cookie = `NEXT_PUBLIC_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
-      startTransition(() => {
-        router.push(newLocale === 'vi' ? '/' : `/${newLocale}`);
-      });
+      window.location.assign(newLocale === 'vi' ? '/' : `/${newLocale}`);
       return;
     }
 
