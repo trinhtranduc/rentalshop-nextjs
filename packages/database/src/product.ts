@@ -12,6 +12,7 @@ import { Prisma } from '@prisma/client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { splitSearchWords, buildSearchWordTerm, projectSearchColumnSql } from './product-search-words';
 
 /**
  * #742: a blank barcode means "no barcode". Store NULL, never '', because the unique index
@@ -29,6 +30,8 @@ export function normalizeBarcode<T>(barcode: T): T | null {
 // Matches the order-search rules (see packages/database/src/order.ts):
 //   1. Word-prefix matching: a term must start the whole value OR start any word
 //      inside it. "dai" matches "Áo dài" (word start) but "ai" does not (mid-word).
+//      A word also starts after punctuation: "xanh" matches "Mẫu (Xanh Ngọc)" (#1009).
+//      Rules and the SQL projection live in ./product-search-words.ts.
 //   2. Conditional accent, driven by whether the QUERY carries diacritics:
 //        - query WITHOUT diacritics ("ao")  → accent-INSENSITIVE, also matches "Áo".
 //        - query WITH diacritics ("áo")     → exact accented match only.
@@ -41,30 +44,15 @@ export function normalizeBarcode<T>(barcode: T): T | null {
  * caller can fall back to the legacy Prisma `contains` matching without regressing.
  */
 async function findMatchingProductIds(searchInput: string, merchantId?: number): Promise<number[] | null> {
-  const words = searchInput.trim().split(/\s+/).filter((w: string) => w.length > 0);
+  const words = splitSearchWords(searchInput);
   if (words.length === 0) return [];
 
   try {
     const perWord = words.map((word: string) => {
-      const nfc = word.normalize('NFC');
-      const stripped = removeVietnameseDiacritics(word);
-      const hasDiacritics = nfc.toLowerCase() !== stripped.toLowerCase();
-      const term = (hasDiacritics ? nfc : stripped).toLowerCase();
-      const startPattern = `${term}%`;
-      const wordPattern = `% ${term}%`;
-      return hasDiacritics
-        ? Prisma.sql`(
-            lower(normalize("name", NFC)) LIKE ${startPattern}
-            OR lower(normalize("name", NFC)) LIKE ${wordPattern}
-            OR lower(normalize(COALESCE("description", ''), NFC)) LIKE ${startPattern}
-            OR lower(normalize(COALESCE("description", ''), NFC)) LIKE ${wordPattern}
-          )`
-        : Prisma.sql`(
-            unaccent(lower("name")) LIKE ${startPattern}
-            OR unaccent(lower("name")) LIKE ${wordPattern}
-            OR unaccent(lower(COALESCE("description", ''))) LIKE ${startPattern}
-            OR unaccent(lower(COALESCE("description", ''))) LIKE ${wordPattern}
-          )`;
+      const { hasDiacritics, pattern } = buildSearchWordTerm(word);
+      const nameSql = projectSearchColumnSql('name', hasDiacritics);
+      const descriptionSql = projectSearchColumnSql('description', hasDiacritics);
+      return Prisma.sql`(${nameSql} LIKE ${pattern} OR ${descriptionSql} LIKE ${pattern})`;
     });
     // ALL words must match (AND). Scope to merchant so the LIMIT budget isn't consumed
     // by other tenants (a broad term like "ao" can match a lot).
@@ -99,7 +87,9 @@ async function buildProductSearchOr(
 
   if (ids === null) {
     // Fallback: legacy word-by-word contains (accent-insensitive on the term only).
-    const words = searchTerm.split(/\s+/).filter((w: string) => w.length > 0);
+    // Same words as the SQL path (#1009): punctuation splits words, empty pieces are dropped.
+    const words = splitSearchWords(searchTerm);
+    if (words.length === 0) return [barcodeCondition];
     const andConditions = words.map((word: string) => {
       const originalWord = word.toLowerCase();
       const normalizedWord = removeVietnameseDiacritics(originalWord);
