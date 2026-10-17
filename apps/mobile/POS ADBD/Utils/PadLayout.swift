@@ -61,7 +61,9 @@ extension UIView {
         guide.identifier = PadLayout.columnIdentifier
         addLayoutGuide(guide)
         let fullWidth = guide.widthAnchor.constraint(equalTo: widthAnchor)
-        fullWidth.priority = .defaultHigh
+        // #1033: above any content hugging. At 750 it tied with spinners stretched across a card (they hug at 750),
+        // and the column came out as narrow as the loading content (Tổng quan drawn narrow, then widening).
+        fullWidth.priority = .required - 1
         NSLayoutConstraint.activate([
             guide.topAnchor.constraint(equalTo: topAnchor),
             guide.bottomAnchor.constraint(equalTo: bottomAnchor),
