@@ -73,5 +73,7 @@
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "订单创建后无法修改押金。",
   "DEPOSIT_EDIT_SUCCESS": "已保存押金。",
   "DEPOSIT_EDIT_FAILED": "无法保存押金。请重试。",
-  "AWS_S3_TEST_FAILED": "无法检查文件存储。请重试。"
+  "AWS_S3_TEST_FAILED": "无法检查文件存储。请重试。",
+  "DAILY_INCOME_SUCCESS": "已获取每日收入",
+  "INCOME_ORDERS_SUCCESS": "已获取收入订单列表"
 }

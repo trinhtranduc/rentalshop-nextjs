@@ -550,5 +550,7 @@
   "DEPOSIT_AUTO_CALCULATED": "The deposit was calculated from the products.",
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "The deposit cannot be changed after the order is created.",
   "DEPOSIT_EDIT_SUCCESS": "Deposit saved.",
-  "DEPOSIT_EDIT_FAILED": "Could not save the deposit. Please try again."
+  "DEPOSIT_EDIT_FAILED": "Could not save the deposit. Please try again.",
+  "DAILY_INCOME_SUCCESS": "Daily income retrieved successfully",
+  "INCOME_ORDERS_SUCCESS": "Income orders retrieved successfully"
 }

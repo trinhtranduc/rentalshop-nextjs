@@ -337,13 +337,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     var ip by remember { mutableStateOf(prefs.getString("printerIp", "").orEmpty()) }
     var port by remember { mutableStateOf(prefs.getString("printerPort", "9100").orEmpty()) }
     var paper by remember { mutableStateOf(prefs.getString("paperWidth", "80").orEmpty()) }
-    var note by remember {
-        mutableStateOf(
-            prefs.getString("printerNote", ThermalPrinter.DEFAULT_PRINTER_NOTE)
-                .orEmpty()
-                .ifBlank { ThermalPrinter.DEFAULT_PRINTER_NOTE },
-        )
-    }
+    var note by remember { mutableStateOf(ThermalPrinter.savedNote(prefs)) } // #1011: a cleared note stays cleared
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     // #622: saved as soon as it changes, like iOS
@@ -356,7 +350,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     fun persist() {
         prefs.edit()
             .putString("printerName", name)
-            .putString("printerIp", ip)
+            .putString("printerIp", ip.trim()) // #1011: as iOS
             .putString("printerPort", port)
             .putString("paperWidth", paper)
             .putString("printerNote", note)
@@ -366,7 +360,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     fun testPrint() {
         persist()
         val config = ThermalPrinter.Config(
-            ip = ip,
+            ip = ip.trim(),
             port = port.toIntOrNull() ?: 9100,
             paperWidthMm = paper.toIntOrNull() ?: 80,
             name = name,

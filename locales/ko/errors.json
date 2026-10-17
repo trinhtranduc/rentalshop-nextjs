@@ -73,5 +73,7 @@
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "주문을 만든 뒤에는 보증금을 바꿀 수 없습니다.",
   "DEPOSIT_EDIT_SUCCESS": "보증금을 저장했습니다.",
   "DEPOSIT_EDIT_FAILED": "보증금을 저장하지 못했습니다. 다시 시도해 주세요.",
-  "AWS_S3_TEST_FAILED": "파일 저장소를 확인하지 못했습니다. 다시 시도해 주세요."
+  "AWS_S3_TEST_FAILED": "파일 저장소를 확인하지 못했습니다. 다시 시도해 주세요.",
+  "DAILY_INCOME_SUCCESS": "일별 수입을 조회했습니다",
+  "INCOME_ORDERS_SUCCESS": "수입 주문 목록을 조회했습니다"
 }

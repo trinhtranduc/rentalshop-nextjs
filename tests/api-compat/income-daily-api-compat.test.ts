@@ -12,13 +12,26 @@
  *   from a RangeError while logging). Old apps only send `yyyy-MM-dd`.
  * - #484 (PR #485) the return event counts the late fee (`lateFee`), like the damage fee.
  * - Added fields: none. (#355 also added the optional `timeZone` query param; old apps do not send it.)
+ * - Text only, listed in `TEXT_CHANGED` (status, `code`, `success`, data unchanged; checked against the catalog):
+ *   #986/#987 `message`/`error` of `dailyMissingDate` and `dailyStartAfterEnd` are the Vietnamese catalog
+ *   sentence (was the raw code), as listed as intended in the PR #999 review; #1013 a success `message` is the
+ *   catalog sentence of `DAILY_INCOME_SUCCESS` (main-real sent the raw code, dev wrongly the error sentence).
  *
  * Runs the same under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import golden from './golden/income-daily-main-real.json';
 import { NOW, runDailyScenarios, EDGE_LATE_FEES } from './income-scenarios';
 import { freezeClock } from './load-route';
-import { entriesOf, notOnlyNow, oldEntriesMovedToVietnamDays, onlyNow, paths, withoutAdded } from './income-compat';
+import {
+  entriesOf,
+  expectCatalogTexts,
+  notOnlyNow,
+  oldEntriesMovedToVietnamDays,
+  onlyNow,
+  paths,
+  withMainRealTexts,
+  withoutAdded,
+} from './income-compat';
 
 /** Field paths (array indexes as []) added since main-real; nothing else may appear or disappear */
 const ADDED_FIELDS: RegExp[] = [];
@@ -26,6 +39,18 @@ const isAdded = (path: string) => ADDED_FIELDS.some((re) => re.test(path));
 
 /** Scenarios whose answer changes on purpose; checked one by one below */
 const INTENDED = ['dailyBadDate', 'edgeDailyWeek'];
+
+/** Scenarios whose `message` / `error` text alone changes on purpose (see header); every other field still equal */
+const TEXT_CHANGED: Record<string, string> = {
+  dailyWeek: '#1013',
+  dailyWeekPlan: '#1013',
+  dailyWeekOutletAdmin: '#1013',
+  dailyWeekAdminAllShops: '#1013',
+  dailyOneDay: '#1013',
+  dailyNoOrders: '#1013',
+  dailyMissingDate: '#986',
+  dailyStartAfterEnd: '#986',
+};
 
 let now: Record<string, any>;
 const before = golden as Record<string, any>;
@@ -43,7 +68,8 @@ describe('every field an installed app reads is unchanged', () => {
   });
 
   it.each(unchanged)('%s: same status, fields, values and types as main-real', (scenario) => {
-    expect(withoutAdded(now[scenario], isAdded, scenario)).toEqual(before[scenario]);
+    const current = withoutAdded(now[scenario], isAdded, scenario);
+    expect(scenario in TEXT_CHANGED ? withMainRealTexts(current, before[scenario]) : current).toEqual(before[scenario]);
   });
 
   it.each(Object.keys(golden))('%s: no field removed or renamed', (scenario) => {
@@ -56,6 +82,14 @@ describe('every field an installed app reads is unchanged', () => {
 });
 
 describe('intended changes', () => {
+  it.each(Object.entries(TEXT_CHANGED))('%s (%s): message / error is the catalog sentence of its code', (scenario) => {
+    expectCatalogTexts(now[scenario]);
+  });
+
+  it('#1013: a successful answer never says it failed (edge shop too)', () => {
+    expectCatalogTexts(now.edgeDailyWeek);
+  });
+
   it('#355: an unparseable date is a 400 INVALID_DATE_FORMAT with the same error body shape', () => {
     expect(before.dailyBadDate.status).toBe(422);
     expect(now.dailyBadDate.status).toBe(400);

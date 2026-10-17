@@ -60,7 +60,10 @@ object OrderRowDates {
     enum class ChipKind { PICKUP, RETURN }
 
     /** #891 (option C): one light date chip of an order row; [bold] = the date the list is sorted by */
-    data class DateChip(val kind: ChipKind, val label: String, val date: String, val bold: Boolean)
+    data class DateChip(val kind: ChipKind, val label: String, val date: String, val bold: Boolean) {
+        /** #1008: what TalkBack reads, "Lấy 14/10/26" (the chip shows only the icon and the date; iOS accessibilityText) */
+        val accessibilityText: String get() = "$label $date"
+    }
 
     /** #891 (option C): the pickup and return chips; a missing day is left out */
     fun chips(

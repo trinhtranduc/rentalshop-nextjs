@@ -11,18 +11,24 @@
  *   response, 200) instead of inserting a second one. main-real inserted a second order.
  * - #361 (PR #364) a SALE stores no `depositAmount` / `securityDeposit`, whatever the client sends.
  * - Added fields: none. (#341 also reads the optional `Idempotency-Key` header; old apps do not send it.)
+ * - #986/#987 text only, listed in `TEXT_CHANGED`, as listed as intended in the PR #999 review: `message` /
+ *   `error` of `noItems` and `unknownCustomer` are the Vietnamese catalog sentence of the code (e.g. "Customer
+ *   not found" → "Không tìm thấy khách hàng"; the raw zod detail is no longer sent). Status, `code`, `success`
+ *   and the order count are unchanged.
  *
  * Runs the same under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import golden from './golden/order-create-main-real.json';
 import { NOW, runOrderCreateScenarios } from './order-create-scenarios';
 import { freezeClock } from './load-route';
-import { paths } from './income-compat';
+import { expectCatalogTexts, paths, withMainRealTexts } from './income-compat';
 
 /** #341 replays: the second request returns the first order (scenario → index of the replayed request) */
 const REPLAYED: Record<string, number> = { sameOrderTwiceNoKey: 1, walkInTwiceNoKey: 1, sameKeyTwice: 1 };
 /** #361: deposits a SALE no longer stores */
 const SALE_DEPOSIT_DROPPED = ['saleWithDeposit'];
+/** #986/#987: only the `message` / `error` text of these error answers changes (see header) */
+const TEXT_CHANGED = ['noItems', 'unknownCustomer'];
 
 let now: Record<string, any>;
 const before = golden as Record<string, any>;
@@ -46,7 +52,17 @@ describe('every field an installed app reads is unchanged', () => {
   });
 
   it.each(unchanged)('%s: same responses and same number of orders as main-real', (scenario) => {
-    expect(now[scenario]).toEqual(before[scenario]);
+    const current = TEXT_CHANGED.includes(scenario)
+      ? {
+          ...now[scenario],
+          responses: now[scenario].responses.map((r: any, i: number) => withMainRealTexts(r, before[scenario].responses[i])),
+        }
+      : now[scenario];
+    expect(current).toEqual(before[scenario]);
+  });
+
+  it.each(TEXT_CHANGED)('%s: #986 message / error is the catalog sentence of its code', (scenario) => {
+    for (const response of now[scenario].responses) expectCatalogTexts(response);
   });
 
   it.each(Object.keys(golden))('%s: no field removed, renamed or added', (scenario) => {
