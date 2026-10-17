@@ -887,6 +887,85 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
     }
 
+    // MARK: #1025 — a product's orders sort like Tất cả đơn
+
+    func testProductOrdersDefaultSortIsPickupNearestFirst() {
+        let sort = EntityOrdersLogic.defaultProductSort
+        XCTAssertEqual(sort.sortDate, .pickup)
+        XCTAssertEqual(sort.direction, .nearestFirst)
+        let query = EntityOrdersLogic.productOrdersQuery(sort)
+        XCTAssertEqual(query.sortBy, "pickupPlanAt")
+        XCTAssertEqual(query.sortOrder, "desc", "nearest first means desc, as on Tất cả đơn (#888)")
+        XCTAssertEqual(OrdersHomeLogic.sortBarText(sort), OrdersHomeLogic.sortBarText(RentOrdersFilter()))
+    }
+
+    func testProductOrdersQueryPerChoice() {
+        let expected: [(RentOrdersFilter.SortDate, RentOrdersFilter.Direction, String, String)] = [
+            (.pickup, .nearestFirst, "pickupPlanAt", "desc"), (.pickup, .farthestFirst, "pickupPlanAt", "asc"),
+            (.returnDate, .nearestFirst, "returnPlanAt", "desc"), (.returnDate, .farthestFirst, "returnPlanAt", "asc"),
+            (.created, .nearestFirst, "createdAt", "desc"), (.created, .farthestFirst, "createdAt", "asc"),
+        ]
+        for (date, direction, sortBy, sortOrder) in expected {
+            var sort = RentOrdersFilter()
+            sort.sortDate = date
+            sort.direction = direction
+            let query = EntityOrdersLogic.productOrdersQuery(sort)
+            XCTAssertEqual(query.sortBy, sortBy, "\(date) \(direction)")
+            XCTAssertEqual(query.sortOrder, sortOrder, "\(date) \(direction)")
+        }
+    }
+
+    func testOnlyProductOrdersGetTheSortControl() {
+        XCTAssertTrue(OverviewRankingOrdersFilter.product(id: 1, name: "Áo").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.customer(id: 1, name: "An").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.rentedOut(title: "x").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.lateReturns(title: "x").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.snapshot(.pickup, title: "x").hasSortControl)
+        var sort = RentOrdersFilter()
+        sort.sortDate = .returnDate
+        if case .sortedList(let date) = EntityOrdersLogic.rowContext(.product(id: 1, name: "Áo"), sort: sort) {
+            XCTAssertEqual(date, .returnDate)
+        } else {
+            XCTFail("product rows carry the sort date")
+        }
+        if case .list = EntityOrdersLogic.rowContext(.customer(id: 1, name: "An"), sort: sort) {} else {
+            XCTFail("the customer list keeps the plain list row")
+        }
+    }
+
+    /// #1025: the product list row bolds the sorted date (rule #891/#893)
+    func testProductOrdersRowBoldsSortedDate() throws {
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        func labels(_ view: UIView) -> [UILabel] { (view as? UILabel).map { [$0] } ?? [] + view.subviews.flatMap(labels) }
+        func dateFont(_ cell: OrderRowCell, prefix: String) -> UIFont? {
+            guard let label = views(cell.contentView).compactMap({ $0 as? InsetLabel })
+                .first(where: { $0.accessibilityLabel?.hasPrefix(prefix) == true }),
+                  let text = label.attributedText else { return nil }
+            return text.attribute(.font, at: text.length - 1, effectiveRange: nil) as? UIFont
+        }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let order = try listOrder(1, status: "RESERVED", balances: "")
+        let pickup = "orders.chip.pickup".localized(), back = "orders.chip.return".localized()
+        let product = OverviewRankingOrdersFilter.product(id: 1, name: "Áo")
+        // Default sort: the pickup chip is bold
+        cell.configure(.order(order, lateDays: 0), context: EntityOrdersLogic.rowContext(product, sort: EntityOrdersLogic.defaultProductSort),
+                       hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .sortedList(sortedBy: .returnDate), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.boldFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .sortedList(sortedBy: .created), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }?.font, Utils.boldFont(size: 13),
+                       "sorted by created: the created day is bold")
+        // The plain list row (customer orders) bolds nothing
+        cell.configure(.order(order, lateDays: 0), context: .list, hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+    }
+
     // MARK: #1008 — date chips show an icon in place of "Lấy" / "Trả"
 
     func testDateChipIconsAndSpokenText() {

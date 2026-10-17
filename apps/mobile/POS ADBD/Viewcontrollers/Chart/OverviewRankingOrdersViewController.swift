@@ -93,6 +93,20 @@ enum EntityOrdersLogic {
         ]
     }
 
+    /// #1025 (owner): a product's orders start sorted by pickup day, nearest first (the Tất cả đơn default)
+    static let defaultProductSort = RentOrdersFilter()
+
+    /// #1025: `GET /api/orders` sort of a product's orders, same fields and meaning as Tất cả đơn (#888):
+    /// pickupPlanAt / returnPlanAt / createdAt, nearest first = `desc`
+    static func productOrdersQuery(_ sort: RentOrdersFilter) -> (sortBy: String, sortOrder: String) {
+        (sort.sortBy, sort.sortOrder)
+    }
+
+    /// #1025: product rows bold the date they are sorted by; the customer list keeps the plain list row
+    static func rowContext(_ filter: OverviewRankingOrdersFilter, sort: RentOrdersFilter) -> OrderRowContext {
+        filter.hasSortControl ? .sortedList(sortedBy: sort.sortDate) : .list
+    }
+
     /// "VS-004 · Còn 1 hôm nay"; the free part only when something is free
     static func productSubtitle(code: String?, freeToday: Int?) -> String {
         let free = freeToday.flatMap { $0 > 0 ? String(format: "orders.entity.free".localized(), $0) : nil }
@@ -140,6 +154,12 @@ enum OverviewRankingOrdersFilter {
         case .customer, .product: return true
         default: return false
         }
+    }
+
+    /// #1025: only a product's orders get the "Xếp theo" control; the other lists keep their order
+    var hasSortControl: Bool {
+        if case .product = self { return true }
+        return false
     }
 }
 
@@ -201,6 +221,12 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
     private var product: Product?
     private var renting: Int?
     private var phone: String?
+    /// #1025: "Xếp theo …" of a product's orders (the Tất cả đơn sort bar and sheet)
+    private var sort = EntityOrdersLogic.defaultProductSort
+    private let sortBar = UIStackView()
+    private let sortButton = UIButton(type: .system)
+    /// Bumped by a sort change so a page of the previous sort is dropped
+    private var loadToken = 0
 
     private let headerCard = UIView()
     private let entityLabel = UILabel()
@@ -404,8 +430,18 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
                 make.top.equalTo(entityHeader.snp.bottom)
                 make.leading.trailing.equalToSuperview()
             }
+            var listTop = ordersBand.snp.bottom
+            if filter.hasSortControl {
+                buildSortBar()
+                view.addSubview(sortBar)
+                sortBar.snp.makeConstraints { make in
+                    make.top.equalTo(ordersBand.snp.bottom)
+                    make.leading.trailing.equalToSuperview()
+                }
+                listTop = sortBar.snp.bottom
+            }
             ordersTableView.snp.makeConstraints { make in
-                make.top.equalTo(ordersBand.snp.bottom)
+                make.top.equalTo(listTop)
                 make.leading.trailing.bottom.equalToSuperview()
             }
             emptyStateLabel.snp.makeConstraints { make in
@@ -532,6 +568,47 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
         bandLine.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
 
         renderEntityHeader()
+    }
+
+    /// #1025: the Tất cả đơn sort bar (#888): "Xếp theo ngày lấy · gần nhất trước ▾", then a divider
+    private func buildSortBar() {
+        sortButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
+        sortButton.setTitleColor(DS.Color.primary, for: .normal)
+        sortButton.tintColor = DS.Color.primary
+        sortButton.setImage(DS.symbol("chevron.down", 14, weight: .semibold), for: .normal)
+        sortButton.semanticContentAttribute = .forceRightToLeft
+        sortButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: -4)
+        sortButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 4)
+        sortButton.addTarget(self, action: #selector(sortTapped), for: .touchUpInside)
+        sortButton.snp.makeConstraints { make in make.height.equalTo(36) }
+        sortButton.setTitle(OrdersHomeLogic.sortBarText(sort), for: .normal)
+        let row = UIStackView(arrangedSubviews: [sortButton, UIView()])
+        row.alignment = .center
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 6, left: DS.Spacing.lg, bottom: 6, right: DS.Spacing.lg)
+        let divider = UIView()
+        divider.backgroundColor = DS.Color.divider
+        divider.snp.makeConstraints { make in make.height.equalTo(1) }
+        sortBar.axis = .vertical
+        sortBar.backgroundColor = DS.Color.surface
+        [row, divider].forEach { sortBar.addArrangedSubview($0) }
+    }
+
+    /// #1025: the "Lọc & sắp xếp" sheet of Tất cả đơn, sort only
+    @objc private func sortTapped() {
+        let sheet = OrdersFilterSheet(filter: sort, showsRange: false)
+        sheet.onApply = { [weak self] chosen in
+            guard let self, chosen != self.sort else { return }
+            self.sort = chosen
+            self.sortButton.setTitle(OrdersHomeLogic.sortBarText(chosen), for: .normal)
+            // A page of the previous sort may still be on its way: drop it and start over
+            self.loadToken += 1
+            self.isLoading = false
+            self.loadOrders(reset: true)
+        }
+        // The sort does not change how many orders there are
+        sheet.countProvider = { [weak self] _, done in done(self?.totalOrderCount) }
+        present(sheet, animated: true)
     }
 
     private func renderEntityHeader() {
@@ -735,6 +812,9 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
                 self?.handleOrdersResponse(response, error: error, reset: reset)
             }
         case .product(let id, _):
+            // #1025: the chosen "Xếp theo" (default: pickup day, nearest first)
+            let query = EntityOrdersLogic.productOrdersQuery(sort)
+            let token = loadToken
             OrderService.shared.loadOrders(
                 productIds: nil,
                 productId: id,
@@ -745,11 +825,14 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
                 page: currentPage,
                 limit: 20,
                 orderType: nil,
-                sortBy: "createdAt",
-                sortOrder: "desc",
+                sortBy: query.sortBy,
+                sortOrder: query.sortOrder,
                 status: nil
             ) { [weak self] response, error in
-                self?.handleOrdersResponse(response, error: error, reset: reset)
+                DispatchQueue.main.async {
+                    guard let self, token == self.loadToken else { return }
+                    self.handleOrdersResponse(response, error: error, reset: reset)
+                }
             }
         case .rentedOut, .lateReturns:
             let lateOnly: Bool
@@ -928,7 +1011,9 @@ extension OverviewRankingOrdersViewController: UITableViewDataSource, UITableVie
             let rowCell = tableView.dequeueReusableCell(withIdentifier: OrderRowCell.reuseId, for: indexPath) as! OrderRowCell
             let row = OrdersHomeLogic.orderRows([orders[indexPath.row]])[0]
             // #482: product / customer lists use the Orders tab "Tất cả" row
-            rowCell.configure(row, context: filter.hasEntityHeader ? .list : .search, hidesMoney: hidesMoney)
+            // #1025: product rows bold the date they are sorted by
+            rowCell.configure(row, context: filter.hasEntityHeader ? EntityOrdersLogic.rowContext(filter, sort: sort) : .search,
+                              hidesMoney: hidesMoney)
             return rowCell
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: "SaleDetailCell", for: indexPath) as! SaleDetailCell_Option5

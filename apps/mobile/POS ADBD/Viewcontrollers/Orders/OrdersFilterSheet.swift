@@ -22,6 +22,8 @@ final class OrdersFilterSheet: UIViewController {
     private static let trackFill = UIColor(hexString: "F1F5F9")
 
     private var filter: RentOrdersFilter
+    /// #1025: the orders of one product only sort (the screen has its own period), so no range part
+    private let showsRange: Bool
     private let dates = RentOrdersFilter.SortDate.allCases
     private let directions = RentOrdersFilter.Direction.allCases
     private let presets: [RentOrdersFilter.DateRange] = [.any, .today, .next7Days, .thisMonth]
@@ -34,8 +36,9 @@ final class OrdersFilterSheet: UIViewController {
     private let applyButton = V2.primaryButton("")
     private let contentStack = UIStackView()
 
-    init(filter: RentOrdersFilter) {
+    init(filter: RentOrdersFilter, showsRange: Bool = true) {
         self.filter = filter
+        self.showsRange = showsRange
         super.init(nibName: nil, bundle: nil)
         if let sheet = sheetPresentationController {
             sheet.detents = [.large()]
@@ -100,6 +103,7 @@ final class OrdersFilterSheet: UIViewController {
         let orderSection = section(sectionLabel("orders.v2.filter.order".localized()), track(directionButtons))
         let rangeSection = section(rangeLabel, presetLines)
         rangeSection.addArrangedSubview(sameDateHint)
+        rangeSection.isHidden = !showsRange
 
         let stack = contentStack
         [titleRow, sortSection, orderSection, rangeSection, applyButton].forEach { stack.addArrangedSubview($0) }
