@@ -164,17 +164,19 @@ object OrdersBoardLogic {
     /** #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" is bold dark text (no background) */
     fun metaIsBold(sortedBy: SortDate?): Boolean = sortedBy == SortDate.CREATED
 
-    /** #1008 (owner): the icon in place of the word: arrow going out (pickup), arrow coming back (return); iOS symbolName */
+    /** #1008 (owner): the icon in place of the word: arrow going out (pickup, #1026 sale), arrow coming back (return); iOS symbolName */
     fun chipIcon(kind: OrderRowDates.ChipKind): androidx.compose.ui.graphics.vector.ImageVector = when (kind) {
-        OrderRowDates.ChipKind.PICKUP -> androidx.compose.material.icons.Icons.Outlined.ArrowOutward
+        OrderRowDates.ChipKind.PICKUP, OrderRowDates.ChipKind.SALE -> androidx.compose.material.icons.Icons.Outlined.ArrowOutward
         OrderRowDates.ChipKind.RETURN -> androidx.compose.material.icons.Icons.AutoMirrored.Outlined.Undo
     }
 
-    /** #891 (option C): light blue "Lấy", light purple "Trả" (iOS DateChip.Kind.colors) */
-    fun chipColors(kind: OrderRowDates.ChipKind): com.anyrent.pos.ui.theme.DS.Pill = when (kind) {
-        OrderRowDates.ChipKind.PICKUP -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF1E40AF), androidx.compose.ui.graphics.Color(0xFFEFF6FF))
-        OrderRowDates.ChipKind.RETURN -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF5B21B6), androidx.compose.ui.graphics.Color(0xFFF5F3FF))
-    }
+    /** #1026 (owner): only the status badge keeps colour; every date chip is dark text on no fill (iOS DateChip.Kind.colors) */
+    @Suppress("UNUSED_PARAMETER")
+    fun chipColors(kind: OrderRowDates.ChipKind): com.anyrent.pos.ui.theme.DS.Pill =
+        com.anyrent.pos.ui.theme.DS.Pill(com.anyrent.pos.ui.theme.DS.Colors.Text, androidx.compose.ui.graphics.Color.Transparent)
+
+    /** #1026 (owner, mockup "Mọi màn đơn hàng: bớt màu"): the grey icon of every date chip (iOS DateChip.iconColor) */
+    val chipIconTint = androidx.compose.ui.graphics.Color(0xFF64748B)
 
     /** #888 line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was) */
     fun rentRowMeta(order: OrderSummary, texts: OrderRowDates.Texts = OrderRowDates.Texts()): String =

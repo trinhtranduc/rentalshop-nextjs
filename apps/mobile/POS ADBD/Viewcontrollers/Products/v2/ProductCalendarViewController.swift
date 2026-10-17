@@ -326,6 +326,16 @@ final class ProductCalendarViewController: BaseViewControler {
         for order in rows { ordersStack.addArrangedSubview(orderRow(order)) }
     }
 
+    /// #1026: "↗ T2 05/10   ↩ T4 07/10" (icons from the order row date chips)
+    static func iconDates(pickup: String, ret: String, font: UIFont, color: UIColor) -> NSAttributedString {
+        let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
+        let text = NSMutableAttributedString(attributedString: DateChipIcon.text(.pickup, font: font))
+        text.append(NSAttributedString(string: " " + pickup + "   ", attributes: attributes))
+        text.append(DateChipIcon.text(.return, font: font))
+        text.append(NSAttributedString(string: " " + ret, attributes: attributes))
+        return text
+    }
+
     private func orderRow(_ order: Order) -> UIView {
         let row = UIControl()
         let name = NSMutableAttributedString(string: order.customerName + " ",
@@ -336,8 +346,10 @@ final class ProductCalendarViewController: BaseViewControler {
         nameLabel.attributedText = name
         let pickup = order.pickupPlanAt.map { OrdersHomeLogic.rowDay($0) } ?? "–"
         let ret = order.returnPlanAt.map { OrdersHomeLogic.rowDay($0) } ?? "–"
-        let days = V2.label(String(format: "products.calendar.orderDays".localized(), pickup, ret),
-                            size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let spoken = String(format: "products.calendar.orderDays".localized(), pickup, ret)
+        let days = V2.label(spoken, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        // #1026 (owner): the grey ↗ / ↩ icons in place of "Lấy" / "trả"; VoiceOver still reads the words
+        days.attributedText = ProductCalendarViewController.iconDates(pickup: pickup, ret: ret, font: days.font, color: days.textColor)
         let texts = UIStackView(arrangedSubviews: [nameLabel, days])
         texts.axis = .vertical
         texts.spacing = 2
@@ -358,7 +370,7 @@ final class ProductCalendarViewController: BaseViewControler {
         }
         row.isAccessibilityElement = true
         row.accessibilityTraits = UIAccessibilityTraitButton
-        row.accessibilityLabel = [order.customerName, "#\(order.orderNumber)", days.text, qty.text].compactMap { $0 }.joined(separator: ", ")
+        row.accessibilityLabel = [order.customerName, "#\(order.orderNumber)", spoken, qty.text].compactMap { $0 }.joined(separator: ", ")
         let id = order.id
         row.addAction(UIAction { [weak self] _ in self?.openOrder(id) }, for: .touchUpInside)
         return row

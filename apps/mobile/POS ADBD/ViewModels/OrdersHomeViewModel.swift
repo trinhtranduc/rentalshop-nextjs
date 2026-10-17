@@ -82,27 +82,32 @@ struct RowDatePart: Equatable {
     let marked: Bool
 }
 
-/// #891 (owner, option C): a light date chip of an order row, "Lấy 14/10/26" (blue) / "Trả 16/10/26" (purple).
-/// The date the list is sorted by is only bolder text; the chip keeps its light background.
+/// #891 (owner, option C): the date chip of an order row, "Lấy 14/10/26" / "Trả 16/10/26" / "Bán 15/10/26".
+/// #1026 (owner): no colour; a grey icon then the date in dark text, no background. The date the list is
+/// sorted by is only bolder text.
 struct DateChip: Equatable {
     enum Kind: Equatable {
         case pickup, `return`
+        /// #1026: the day of a sale ("Bán dd/mm/yy"), with the pickup icon
+        case sale
 
-        var colors: DS.Pill {
-            switch self {
-            case .pickup: return DS.Pill(text: UIColor(hexString: "1E40AF"), fill: UIColor(hexString: "EFF6FF"))
-            case .return: return DS.Pill(text: UIColor(hexString: "5B21B6"), fill: UIColor(hexString: "F5F3FF"))
-            }
-        }
+        /// #1026 (owner): only the status badge keeps colour; every date chip is dark text on no fill
+        var colors: DS.Pill { DS.Pill(text: DS.Color.text, fill: .clear) }
 
-        /// #1008 (owner): the SF Symbol shown in place of the word "Lấy" / "Trả"
+        /// #1026 (owner): the icon is grey
+        var iconColor: UIColor { DateChip.iconColor }
+
+        /// #1008 (owner): the SF Symbol shown in place of the word "Lấy" / "Trả" (#1026: "Bán" uses ↗)
         var symbolName: String {
             switch self {
-            case .pickup: return "arrow.up.forward"
+            case .pickup, .sale: return "arrow.up.forward"
             case .return: return "arrow.uturn.backward"
             }
         }
     }
+
+    /// #1026 (owner, mockup "Mọi màn đơn hàng: bớt màu"): the icon colour of every date chip
+    static let iconColor = UIColor(hexString: "64748B")
 
     let kind: Kind
     let label: String
@@ -435,6 +440,15 @@ enum OrdersHomeLogic {
          returnPlanAt.map { DateChip(kind: .return, label: "orders.chip.return".localized(),
                                      date: DayFormatter.dmy($0, timeZone: timeZone), bold: sortedBy == .returnDate) }]
             .compactMap { $0 }
+    }
+
+    /// #1026 (owner): a sale row (not cancelled) shows "↗ dd/mm/yy" (its created day) in place of "Bán dd/mm/yy";
+    /// VoiceOver still reads "Bán dd/mm/yy". Nil for a rent order, a cancelled sale ("Huỷ …" stays) or no date.
+    static func saleChip(orderType: OrderType, status: OrderStatus, createdAt: Date?,
+                         timeZone: TimeZone = Date.shopTimeZone) -> DateChip? {
+        guard orderType == .sale, status != .cancelled, let createdAt else { return nil }
+        return DateChip(kind: .sale, label: "orders.chip.sale".localized(),
+                        date: DayFormatter.dmy(createdAt, timeZone: timeZone), bold: false)
     }
 
     /// #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" on line 2 is bold dark text (no background)
