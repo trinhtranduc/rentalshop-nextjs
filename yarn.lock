@@ -2799,7 +2799,7 @@
 "@rentalshop/types@file:packages/types":
   version "1.0.0"
   dependencies:
-    "@rentalshop/constants" "file:../../../../../var/folders/8r/ts3szj_d067f3vp98jwbwq640000gn/T/cursor-sandbox-cache/cf828efed4ac1b89fef7e0dafa3e0b95/yarn/v6/npm-@rentalshop-types-1.0.0-432ed24c-a107-482d-aa0f-68cb8b1a1b07-1785169808437/node_modules/@rentalshop/constants"
+    "@rentalshop/constants" "^1.0.1"
 
 "@rentalshop/ui@file:packages/ui":
   version "1.0.0"

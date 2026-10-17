@@ -7,6 +7,8 @@
 // - Return: includes id (number)
 
 import { prisma } from './client';
+import { randomUUID } from 'node:crypto';
+import type { PublicLocale } from '@rentalshop/constants';
 
 // ============================================================================
 // POST LOOKUP FUNCTIONS
@@ -104,7 +106,7 @@ export const findBySlug = async (slug: string, locale: string = 'vi') => {
  */
 export const search = async (filters: {
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+  locale?: PublicLocale;
   categoryId?: number;
   tagId?: number;
   authorId?: number;
@@ -232,8 +234,9 @@ export const search = async (filters: {
 export const create = async (data: {
   title: string;
   slug: string;
-  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+  locale?: PublicLocale;
   content: string;
+  translationSourceId?: number;
   excerpt?: string;
   seoTitle?: string;
   seoDescription?: string;
@@ -247,6 +250,7 @@ export const create = async (data: {
   const {
     title,
     slug,
+    translationSourceId,
     locale = 'vi',
     content,
     excerpt,
@@ -314,7 +318,16 @@ export const create = async (data: {
   }
 
   // Create post with relations
-  const post = await prisma.post.create({
+  const post = await prisma.$transaction(async (tx) => {
+    if (translationSourceId !== undefined) {
+      await tx.$queryRaw`SELECT id FROM "Post" WHERE id = ${translationSourceId} FOR UPDATE`;
+      const source = await tx.post.findUnique({ where: { id: translationSourceId } });
+      if (!source) throw new Error('POST_NOT_FOUND');
+      const key = source.translationKey ?? randomUUID();
+      if (!source.translationKey) await tx.post.update({ where: { id: source.id }, data: { translationKey: key } });
+      createData.translationKey = key;
+    }
+    return tx.post.create({
     data: createData,
     include: {
       author: {
@@ -350,6 +363,8 @@ export const create = async (data: {
     },
   });
 
+  });
+
   return post;
 };
 
@@ -365,7 +380,7 @@ export const update = async (
   data: {
     title?: string;
     slug?: string;
-    locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+    locale?: PublicLocale;
     content?: string;
     excerpt?: string;
     seoTitle?: string;
@@ -395,16 +410,16 @@ export const update = async (
   // Get current post to check locale if slug is being updated
   const currentPost = await prisma.post.findUnique({
     where: { id },
-    select: { locale: true },
+    select: { locale: true, slug: true },
   });
 
   const targetLocale = locale || currentPost?.locale || 'vi';
 
   // Check if slug already exists for this locale (for different post)
-  if (slug) {
+  if (slug !== undefined || locale !== undefined) {
     const existingPost = await prisma.post.findFirst({
       where: {
-        slug,
+        slug: slug ?? currentPost?.slug,
         locale: targetLocale,
         id: { not: id },
       },
@@ -541,11 +556,24 @@ export const unpublish = async (id: number) => {
   });
 };
 
+/** Authorized CMS can inspect drafts; public readers receive published editions only. */
+export async function translationsOf(post: { id: number; slug: string; translationKey?: string | null }, publishedOnly = true) {
+  return prisma.post.findMany({
+    where: {
+      ...(post.translationKey ? { translationKey: post.translationKey } : { slug: post.slug, translationKey: null }),
+      ...(publishedOnly ? { status: 'PUBLISHED' } : {}),
+    },
+    select: { id: true, locale: true, slug: true, title: true, status: true },
+    orderBy: { locale: 'asc' },
+  });
+}
+
 // ============================================================================
 // SIMPLIFIED API EXPORT
 // ============================================================================
 
 export const simplifiedPosts = {
+  translationsOf,
   findById,
   findBySlug,
   search,

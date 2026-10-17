@@ -9,6 +9,7 @@ import { Button, LanguageSwitcher, Card, CardContent, Badge, Dialog, DialogConte
 import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
 import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
+import type { PublicLocale } from '@rentalshop/constants'
 import { scheduleLandingStoreNavigation } from '../lib/landing-store-navigation'
 import { createSchemas, createFAQSchema } from './lib/schemas'
 import { getAnyRentLogoUrl } from '../lib/brand'
@@ -66,7 +67,7 @@ import {
   Phone
 } from 'lucide-react'
 
-const LandingPage = () => {
+const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => {
   const t = useTranslations('landing')
   const router = useRouter()
   const { user } = useAuth()
@@ -335,7 +336,7 @@ const LandingPage = () => {
                 <Link href="/pricing" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</Link>
                 <a href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
                 <a href="#contact" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
-                <LanguageSwitcher variant="compact" />
+                <LanguageSwitcher variant="compact" publicLocale={publicLocale} />
                 {user ? (
                   <Button
                     onClick={() => router.push('/dashboard')}
@@ -358,7 +359,7 @@ const LandingPage = () => {
                 )}
               </div>
               <div className="md:hidden flex items-center space-x-3">
-                <LanguageSwitcher variant="compact" />
+                <LanguageSwitcher variant="compact" publicLocale={publicLocale} />
                 {user ? (
                   <Button
                     onClick={() => router.push('/dashboard')}
@@ -940,6 +941,7 @@ const LandingPage = () => {
       <BlogSection 
         title={t('blog.title') || 'Latest Blog Posts'}
         subtitle={t('blog.subtitle') || 'Discover insights and tips for your rental business'}
+        publicLocale={publicLocale}
       />
 
       {/* Pricing Section - Below the fold, heavy component with API calls */}

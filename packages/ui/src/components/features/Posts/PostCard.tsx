@@ -1,5 +1,7 @@
 'use client';
 
+import { publicPostPath } from '@rentalshop/constants';
+
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Badge } from '../../ui';
 import { PostContent } from './PostContent';
@@ -49,7 +51,7 @@ export function PostCard({ post, showFullContent = false }: PostCardProps) {
       </div>
       <CardHeader>
         <CardTitle>
-          <Link href={`/blog/${post.slug}`} className="hover:text-action-primary">
+          <Link href={publicPostPath(post.locale, post.slug)} className="hover:text-action-primary">
             {post.title}
           </Link>
         </CardTitle>
@@ -105,7 +107,7 @@ export function PostCard({ post, showFullContent = false }: PostCardProps) {
 
         {!showFullContent && (
           <Link
-            href={`/blog/${post.slug}`}
+            href={publicPostPath(post.locale, post.slug)}
             className="text-action-primary hover:underline mt-4 inline-block"
           >
             Read more →

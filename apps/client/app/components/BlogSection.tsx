@@ -2,24 +2,31 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { PostCard, Button, Badge } from '@rentalshop/ui';
 import { postsApi } from '@rentalshop/utils';
 import { ArrowRight, FileText } from 'lucide-react';
 import type { Post } from '@rentalshop/types';
+import type { PublicLocale } from '@rentalshop/constants';
+import { publicPostPath } from '@rentalshop/constants';
 
 interface BlogSectionProps {
   title?: string;
   subtitle?: string;
+  publicLocale?: PublicLocale;
 }
 
 export default function BlogSection({ 
   title = 'Latest Blog Posts',
-  subtitle = 'Discover insights and tips for your rental business'
+  subtitle = 'Discover insights and tips for your rental business',
+  publicLocale,
 }: BlogSectionProps) {
-  const locale = useLocale() as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
+  const currentLocale = useLocale();
+  const locale = (publicLocale || currentLocale) as PublicLocale;
+  const tPublic = useTranslations('public');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const fetchLatestPosts = async () => {
@@ -35,9 +42,12 @@ export default function BlogSection({
 
         if (response.success && response.data) {
           setPosts(response.data.data || []);
+        } else {
+          setLoadError(true);
         }
       } catch (error) {
         console.error('Error fetching latest posts:', error);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -67,10 +77,6 @@ export default function BlogSection({
     );
   }
 
-  if (posts.length === 0) {
-    return null; // Don't show section if no posts
-  }
-
   return (
     <section className="relative overflow-hidden py-24 bg-white" aria-label="Blog section">
       <div className="pointer-events-none absolute bottom-0 left-[-80px] h-[280px] w-[280px] rounded-full bg-[#D7E8F8]/50 blur-3xl" aria-hidden="true" />
@@ -89,18 +95,22 @@ export default function BlogSection({
       {/* Posts Grid - Full width */}
       <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 max-w-7xl mx-auto">
-          {posts.map((post) => (
+          {posts.length > 0 ? posts.map((post) => (
             <PostCard key={post.id} post={post} />
-          ))}
+          )) : (
+            <p className="col-span-full rounded-2xl border border-sky-100 bg-[#F4F8FC] px-6 py-10 text-center text-slate-600">
+              {loadError ? tPublic('loadError') : tPublic('empty')}
+            </p>
+          )}
         </div>
       </div>
 
       {/* View All Button - Centered */}
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-7xl mx-auto">
-          <Link href="/blog">
+          <Link href={publicPostPath(locale)}>
             <Button variant="default" size="lg" className="inline-flex items-center rounded-xl px-8 py-3 text-base font-medium">
-              View All Posts
+              {tPublic('posts')}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>

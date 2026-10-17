@@ -1,3 +1,5 @@
+import viPublic from '../../locales/vi/public.json';
+import enPublic from '../../locales/en/public.json';
 /**
  * i18n Configuration for next-intl
  * 
@@ -54,6 +56,7 @@ import viSubscription from '../../locales/vi/subscription.json';
 const messages = {
   en: {
     common: enCommon,
+    public: enPublic,
     auth: enAuth,
     dashboard: enDashboard,
     orders: enOrders,
@@ -71,6 +74,7 @@ const messages = {
   },
   vi: {
     common: viCommon,
+    public: viPublic,
     auth: viAuth,
     dashboard: viDashboard,
     orders: viOrders,

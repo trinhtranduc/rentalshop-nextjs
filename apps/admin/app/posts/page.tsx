@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { PUBLIC_LOCALES, PUBLIC_LOCALE_NAMES, isPublicLocale } from '@rentalshop/constants';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   PageWrapper,
@@ -19,6 +21,7 @@ import type { Post } from '@rentalshop/types';
 
 export default function PostsPage() {
   const router = useRouter();
+  const t = useTranslations('common.posts');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -36,6 +39,8 @@ export default function PostsPage() {
   } | null>(null);
 
   // URL params
+  const localeParam = searchParams.get('locale');
+  const locale = isPublicLocale(localeParam) ? localeParam : undefined;
   const search = searchParams.get('search') || '';
   const status = searchParams.get('status') || undefined;
   const page = parseInt(searchParams.get('page') || '1');
@@ -48,6 +53,7 @@ export default function PostsPage() {
       try {
         const response = await postsApi.searchPosts({
           search,
+          locale,
           status: status as any,
           page,
           limit,
@@ -56,7 +62,7 @@ export default function PostsPage() {
           setPosts(response.data.data || []);
           // Set pagination data
           const total = response.data.total || 0;
-          const totalPages = response.data.totalPages || Math.ceil(total / limit) || 1;
+          const totalPages = Math.ceil(total / limit) || 1;
           setPagination({
             currentPage: page,
             totalPages,
@@ -73,7 +79,7 @@ export default function PostsPage() {
 
     fetchPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, status, page, limit]);
+  }, [search, status, page, limit, locale]);
 
   const updateURL = useCallback((updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -85,7 +91,7 @@ export default function PostsPage() {
       }
     });
     // Reset to page 1 when filters change
-    if (updates.search !== undefined || updates.status !== undefined) {
+    if (updates.search !== undefined || updates.status !== undefined || updates.locale !== undefined) {
       params.set('page', '1');
     }
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -100,7 +106,7 @@ export default function PostsPage() {
   }, [updateURL]);
 
   const handleCreate = () => {
-    router.push('/posts/create');
+    router.push(`/posts/create${locale ? `?locale=${locale}` : ''}`);
   };
 
   const handleView = (post: Post) => {
@@ -171,6 +177,7 @@ export default function PostsPage() {
         // Refresh posts
         const response = await postsApi.searchPosts({
           search,
+          locale,
           status: status as any,
           page,
           limit,
@@ -196,6 +203,7 @@ export default function PostsPage() {
         // Refresh posts
         const response = await postsApi.searchPosts({
           search,
+          locale,
           status: status as any,
           page,
           limit,
@@ -223,6 +231,7 @@ export default function PostsPage() {
         // Refresh posts
         const response = await postsApi.searchPosts({
           search,
+          locale,
           status: status as any,
           page,
           limit,
@@ -242,6 +251,13 @@ export default function PostsPage() {
         <PageTitle>Blog Posts</PageTitle>
       </PageHeader>
       <PageContent>
+        <label className="mb-5 flex flex-wrap items-center gap-3 text-sm">
+          {t('language')}
+          <select aria-label={t('language')} value={locale ?? 'all'} onChange={e => updateURL({ locale: e.target.value, page: '1' })} className="rounded-lg border border-border bg-bg-primary px-3 py-2">
+            <option value="all">{t('allLanguages')}</option>
+            {PUBLIC_LOCALES.map(code => <option key={code} value={code}>{PUBLIC_LOCALE_NAMES[code]}</option>)}
+          </select>
+        </label>
         <PostList
           posts={posts}
           loading={loading}

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { PUBLIC_LOCALES, PUBLIC_LOCALE_NAMES, type PublicLocale } from '@rentalshop/constants';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Button,
@@ -46,10 +48,12 @@ export function PostForm({
   mode = 'create',
 }: PostFormProps) {
   const { toastError } = useToast();
+  const t = useTranslations('common.posts');
   const [formData, setFormData] = useState({
+    translationSourceId: initialData.translationSourceId,
     title: initialData.title || '',
     slug: initialData.slug || '',
-    locale: (initialData.locale || 'vi') as 'en' | 'vi' | 'zh' | 'ko' | 'ja',
+    locale: (initialData.locale || 'vi') as PublicLocale,
     content: initialData.content || '',
     excerpt: initialData.excerpt || '',
     seoTitle: initialData.seoTitle || '',
@@ -165,26 +169,22 @@ export function PostForm({
 
           {/* Locale */}
           <div>
-            <label className="block text-sm font-medium mb-2">Language *</label>
+            <label className="block text-sm font-medium mb-2">{t('language')} *</label>
             <Select
               value={formData.locale}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, locale: value as 'en' | 'vi' | 'zh' | 'ko' | 'ja' }))
+                setFormData((prev) => ({ ...prev, locale: value as PublicLocale }))
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="vi">Tiếng Việt</SelectItem>
-                <SelectItem value="zh">中文</SelectItem>
-                <SelectItem value="ko">한국어</SelectItem>
-                <SelectItem value="ja">日本語</SelectItem>
+                {PUBLIC_LOCALES.map(locale => <SelectItem key={locale} value={locale}>{PUBLIC_LOCALE_NAMES[locale]}</SelectItem>)}
               </SelectContent>
             </Select>
             <p className="text-xs text-text-tertiary mt-1">
-              Select the language for this post. The same slug can be used for different languages.
+              {t('languageHelp')}
             </p>
           </div>
 
