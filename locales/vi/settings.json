@@ -743,5 +743,36 @@
       "bankQrAddAccount": "Thêm tài khoản ngân hàng",
       "bankQrReadOnly": "Chỉ chủ cửa hàng hoặc quản lý chi nhánh được đổi cài đặt này."
     }
+  },
+  "embeddingBackfill": {
+    "title": "Tìm bằng ảnh: sản phẩm thiếu embedding",
+    "description": "Sản phẩm có ảnh cần embedding thì mới tìm được bằng ảnh. Kiểm tra tất cả cửa hàng, rồi tạo phần còn thiếu.",
+    "withImages": "Sản phẩm có ảnh",
+    "missingEmbedding": "Thiếu embedding",
+    "withEmbedding": "Đã tìm được bằng ảnh",
+    "jobs": "Tác vụ",
+    "jobPending": "Đang chờ",
+    "jobRunning": "Đang chạy",
+    "jobCompleted": "Xong",
+    "jobFailed": "Lỗi",
+    "topMerchants": "Cửa hàng thiếu nhiều nhất",
+    "includeFailed": "Thử lại cả sản phẩm có tác vụ gần nhất bị lỗi",
+    "check": "Kiểm tra",
+    "run": "Quét và tạo embedding",
+    "refresh": "Tải lại",
+    "confirmTitle": "Tạo embedding cho {count} sản phẩm?",
+    "confirmBody": "Tác vụ chạy nền. Nếu máy chủ chưa đặt cron embedding, lúc này chỉ chạy được vài sản phẩm.",
+    "confirm": "Đồng ý",
+    "cancel": "Huỷ",
+    "resultDryRun": "Kết quả kiểm tra (chưa tạo gì)",
+    "resultQueued": "Đã đưa vào hàng chờ",
+    "resultMerchants": "Cửa hàng",
+    "resultProducts": "Sản phẩm thiếu embedding",
+    "resultQueuedCount": "Đã đưa vào hàng chờ",
+    "resultWouldQueue": "Sẽ đưa vào hàng chờ",
+    "resultSkippedQueued": "Đã có trong hàng chờ",
+    "resultSkippedFailed": "Bỏ qua (tác vụ gần nhất lỗi)",
+    "loadFailed": "Không tải được trạng thái tìm bằng ảnh",
+    "runFailed": "Không tạo được embedding"
   }
 }
