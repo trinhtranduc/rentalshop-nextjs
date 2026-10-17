@@ -268,5 +268,15 @@
     },
     "breadcrumb": "現在の場所",
     "searchOpen": "検索を開く"
+  },
+  "posts": {
+    "language": "記事の言語",
+    "allLanguages": "すべての言語",
+    "translations": "言語別の記事",
+    "newTranslation": "翻訳を作成",
+    "translationSource": "翻訳元",
+    "translationHelp": "選択した言語で内容を入力してください。元の記事は変更されません。",
+    "publicPost": "公開記事を表示",
+    "languageHelp": "管理画面とは別に記事の言語を選択します。"
   }
 }

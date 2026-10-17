@@ -1,3 +1,4 @@
+import { publicLocaleFromPath } from '@rentalshop/constants';
 /**
  * Route Configuration
  * 
@@ -54,6 +55,7 @@ export const PUBLIC_INFO_ROUTES = [
  * Check if a pathname is a public route
  */
 export function isPublicRoute(pathname: string): boolean {
+  if (publicLocaleFromPath(pathname)) return true;
   // Check exact matches
   if (PUBLIC_ROUTES.includes(pathname as any)) {
     return true;

@@ -1,12 +1,13 @@
 import { MetadataRoute } from 'next'
+import { PUBLIC_LOCALES, isPublicLocale, publicPostPath, publicHomePath } from '@rentalshop/constants'
 import { postsApi } from '@rentalshop/utils'
 import { sitemapLanguageAlternates } from '../lib/seo'
 
 /** Refresh sitemap periodically so new blog posts appear without redeploying. */
 export const revalidate = 3600
 
-async function fetchPublishedBlogSlugs(): Promise<{ slug: string; lastModified: Date }[]> {
-  const slugToTime = new Map<string, number>()
+async function fetchPublishedBlogSlugs(): Promise<{ slug: string; locale: string; translationKey?: string | null; lastModified: Date }[]> {
+  const editions = new Map<string, { slug: string; locale: string; translationKey?: string | null; lastModified: Date }>()
   try {
     let page = 1
     const limit = 100
@@ -24,9 +25,10 @@ async function fetchPublishedBlogSlugs(): Promise<{ slug: string; lastModified: 
 
       for (const post of res.data.data) {
         if (!post.slug) continue
-        const t = new Date(post.updatedAt).getTime()
-        const prev = slugToTime.get(post.slug)
-        if (prev === undefined || t > prev) slugToTime.set(post.slug, t)
+        if (!isPublicLocale(post.locale) || post.status !== 'PUBLISHED') continue
+        const t = new Date(post.updatedAt)
+        if (!Number.isFinite(t.getTime())) continue
+        editions.set(`${post.locale}:${post.slug}`, { slug: post.slug, locale: post.locale, translationKey: post.translationKey, lastModified: t })
       }
 
       hasMore = Boolean(res.data.hasMore)
@@ -36,15 +38,12 @@ async function fetchPublishedBlogSlugs(): Promise<{ slug: string; lastModified: 
     // API unreachable (offline build, misconfigured URL): omit dynamic blog URLs
   }
 
-  return [...slugToTime.entries()].map(([slug, ts]) => ({
-    slug,
-    lastModified: new Date(ts),
-  }))
+  return [...editions.values()]
 }
 
 /**
  * Public marketing URLs only.
- * Cookie-based i18n → one URL per path (no /vi|/en prefixes).
+ * Vietnamese has no prefix; other public content languages have a locale prefix.
  * Auth pages (/login, /register) intentionally omitted.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -55,7 +54,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
     priority: number
   }> = [
-    { path: '', changeFrequency: 'weekly', priority: 1.0 },
     { path: '/features', changeFrequency: 'weekly', priority: 0.9 },
     { path: '/pricing', changeFrequency: 'weekly', priority: 0.9 },
     { path: '/download', changeFrequency: 'weekly', priority: 0.9 },
@@ -82,18 +80,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   })
 
+  for (const locale of PUBLIC_LOCALES) {
+    for (const path of [publicHomePath(locale), publicPostPath(locale)]) {
+      const isList = path.endsWith('/post')
+      sitemapEntries.push({ url: `${baseUrl}${path}`, changeFrequency: isList ? 'daily' : 'weekly', priority: isList ? 0.8 : 0.9,
+        alternates: { languages: Object.fromEntries(PUBLIC_LOCALES.map(code => [code, `${baseUrl}${isList ? publicPostPath(code) : publicHomePath(code)}`])) },
+      })
+    }
+  }
   const blogPosts = await fetchPublishedBlogSlugs()
-  for (const { slug, lastModified } of blogPosts) {
-    const path = `/blog/${encodeURIComponent(slug)}`
-    const url = `${baseUrl}${path}`
+  for (const post of blogPosts) {
+    if (!isPublicLocale(post.locale)) continue
+    const siblings = blogPosts.filter(p => post.translationKey ? p.translationKey === post.translationKey : !p.translationKey && p.slug === post.slug)
     sitemapEntries.push({
-      url,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 0.65,
-      alternates: {
-        languages: sitemapLanguageAlternates(baseUrl, path),
-      },
+      url: `${baseUrl}${publicPostPath(post.locale, post.slug)}`, lastModified: post.lastModified, changeFrequency: 'weekly', priority: 0.65,
+      alternates: { languages: Object.fromEntries(siblings.filter(p => isPublicLocale(p.locale)).map(p => [p.locale, `${baseUrl}${publicPostPath(p.locale as typeof post.locale, p.slug)}`])) },
     })
   }
 

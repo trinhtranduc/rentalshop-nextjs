@@ -1,3 +1,8 @@
+import zhPublic from '../../locales/zh/public.json';
+import koPublic from '../../locales/ko/public.json';
+import jaPublic from '../../locales/ja/public.json';
+import viPublic from '../../locales/vi/public.json';
+import enPublic from '../../locales/en/public.json';
 /**
  * i18n Configuration for next-intl
  * 
@@ -79,6 +84,7 @@ import jaAttendance from '../../locales/ja/attendance.json';
 const messages = {
   en: {
     common: enCommon,
+    public: enPublic,
     auth: enAuth,
     landing: enLanding,
     dashboard: enDashboard,
@@ -100,6 +106,7 @@ const messages = {
   },
   vi: {
     common: viCommon,
+    public: viPublic,
     auth: viAuth,
     landing: viLanding,
     dashboard: viDashboard,
@@ -122,6 +129,7 @@ const messages = {
   // Chinese (Simplified) - Landing page only
   zh: {
     common: zhCommon,
+    public: zhPublic,
     auth: zhAuth,
     landing: zhLanding,
     plans: zhPlans,
@@ -145,6 +153,7 @@ const messages = {
   // Korean - Landing page only
   ko: {
     common: koCommon,
+    public: koPublic,
     auth: koAuth,
     landing: koLanding,
     plans: koPlans,
@@ -168,6 +177,7 @@ const messages = {
   // Japanese - Landing page only
   ja: {
     common: jaCommon,
+    public: jaPublic,
     auth: jaAuth,
     landing: jaLanding,
     plans: jaPlans,

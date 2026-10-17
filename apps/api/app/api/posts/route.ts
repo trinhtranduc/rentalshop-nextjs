@@ -97,6 +97,12 @@ export const POST = withPermissions(['posts.manage'])(async (request, { user, us
       errorMeta: error?.meta,
     });
     
+    if (error?.message === 'POST_NOT_FOUND') {
+      return NextResponse.json(ResponseBuilder.error('POST_NOT_FOUND'), { status: 404 });
+    }
+    if (error?.code === 'P2002') {
+      return NextResponse.json(ResponseBuilder.error('POST_SLUG_EXISTS'), { status: 409 });
+    }
     // Handle specific database errors
     if (error?.message?.includes('slug') || error?.code === 'P2002') {
       const target = error?.meta?.target;

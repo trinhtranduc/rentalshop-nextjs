@@ -1,6 +1,11 @@
 import type { Metadata } from 'next';
 import LandingPageClient from './LandingPageClient';
 import { getAnyRentLogoUrl } from '../lib/brand';
+import { generateMetadata as localizedLandingMetadata } from './[tenantKey]/(public-content)/page';
+
+export function generateMetadata(): Metadata {
+  return localizedLandingMetadata({ params: { tenantKey: 'vi' } });
+}
 
 /**
  * Server Component wrapper for the Landing Page
@@ -144,7 +149,7 @@ export default function Page() {
       />
       
       {/* Client-side landing page with full interactivity */}
-      <LandingPageClient />
+      <LandingPageClient publicLocale="vi" />
     </>
   );
 }

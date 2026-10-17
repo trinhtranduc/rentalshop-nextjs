@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { PUBLIC_LOCALES, PUBLIC_LOCALE_NAMES, publicPostPath, type PublicLocale } from '@rentalshop/constants';
 import React, { useState, useEffect } from 'react';
 import {
   PageWrapper,
@@ -24,6 +26,8 @@ import type { Post } from '@rentalshop/types';
 
 export default function PostDetailPage() {
   const router = useRouter();
+  const t = useTranslations('common.posts');
+  const [translationLocale, setTranslationLocale] = useState<PublicLocale>('ru');
   const params = useParams();
   const { user } = useAuth();
   const { toastError } = useToast();
@@ -128,6 +132,23 @@ export default function PostDetailPage() {
       </PageHeader>
       <PageContent>
         <div className="space-y-6">
+          <Card><CardHeader><CardTitle>{t('translations')}</CardTitle></CardHeader><CardContent>
+            <div className="mb-4 flex flex-wrap gap-3">
+              {(post.translations ?? [post]).map(edition => <Button key={edition.id} variant="outline" onClick={() => router.push(`/posts/${edition.id}/edit`)}>
+                {PUBLIC_LOCALE_NAMES[edition.locale]} · {edition.status}
+              </Button>)}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <select value={translationLocale} aria-label={t('language')} onChange={e => setTranslationLocale(e.target.value as PublicLocale)} className="rounded-lg border border-border bg-bg-primary px-3 py-2">
+                {PUBLIC_LOCALES.map(code => <option key={code} value={code}>{PUBLIC_LOCALE_NAMES[code]}</option>)}
+              </select>
+              <Button onClick={() => {
+                const edition = (post.translations ?? [post]).find(p => p.locale === translationLocale);
+                router.push(edition ? `/posts/${edition.id}/edit` : `/posts/create?translationOf=${post.id}&locale=${translationLocale}`);
+              }}>{t('newTranslation')}</Button>
+              {post.status === 'PUBLISHED' && <a target="_blank" rel="noopener noreferrer" className="text-blue-700 underline" href={`${process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop'}${publicPostPath(post.locale, post.slug)}`}>{t('publicPost')}</a>}
+            </div>
+          </CardContent></Card>
           {/* Post Meta Information */}
           <Card>
             <CardHeader>

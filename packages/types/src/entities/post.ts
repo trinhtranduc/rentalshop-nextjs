@@ -1,3 +1,13 @@
+import type { PublicLocale } from '@rentalshop/constants';
+
+export interface PostTranslation {
+  id: number;
+  locale: PublicLocale;
+  slug: string;
+  title: string;
+  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+}
+
 // ============================================================================
 // POST ENTITY TYPES
 // ============================================================================
@@ -30,7 +40,9 @@ export interface Post {
   id: number;
   title: string;
   slug: string;
-  locale: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Language code
+  locale: PublicLocale; // Language code
+  translationKey?: string | null;
+  translations?: PostTranslation[];
   content: string; // JSON string (TipTap format)
   excerpt?: string;
   seoTitle?: string;
@@ -54,7 +66,8 @@ export interface Post {
 export interface PostCreateInput {
   title: string;
   slug: string;
-  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Language code, defaults to 'vi'
+  locale?: PublicLocale; // Language code, defaults to 'vi'
+  translationSourceId?: number;
   content: string; // JSON string (TipTap format)
   excerpt?: string;
   seoTitle?: string;
@@ -69,7 +82,7 @@ export interface PostCreateInput {
 export interface PostUpdateInput {
   title?: string;
   slug?: string;
-  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Language code
+  locale?: PublicLocale; // Language code
   content?: string; // JSON string (TipTap format)
   excerpt?: string;
   seoTitle?: string;
@@ -83,7 +96,7 @@ export interface PostUpdateInput {
 
 export interface PostSearchFilter {
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-  locale?: 'en' | 'vi' | 'zh' | 'ko' | 'ja'; // Filter by language
+  locale?: PublicLocale; // Filter by language
   categoryId?: number;
   tagId?: number;
   authorId?: number;

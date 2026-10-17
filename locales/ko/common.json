@@ -268,5 +268,15 @@
     },
     "breadcrumb": "현재 위치",
     "searchOpen": "검색 열기"
+  },
+  "posts": {
+    "language": "게시글 언어",
+    "allLanguages": "모든 언어",
+    "translations": "언어별 게시글",
+    "newTranslation": "번역 만들기",
+    "translationSource": "원본 게시글",
+    "translationHelp": "선택한 언어로 내용을 입력하세요. 원본은 변경되지 않습니다.",
+    "publicPost": "게시된 글 보기",
+    "languageHelp": "관리 화면과 별도로 게시글 언어를 선택하세요."
   }
 }

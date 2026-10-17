@@ -312,5 +312,15 @@
     "apply": "Apply",
     "cancel": "Cancel",
     "close": "Close"
+  },
+  "posts": {
+    "language": "Article language",
+    "allLanguages": "All languages",
+    "translations": "Language editions",
+    "newTranslation": "Create translation",
+    "translationSource": "Translation of",
+    "translationHelp": "Enter content in the selected language. The source remains unchanged.",
+    "publicPost": "View published article",
+    "languageHelp": "Choose the article language independently of the admin interface."
   }
 }

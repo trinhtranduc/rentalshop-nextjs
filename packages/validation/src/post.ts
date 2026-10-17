@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { PUBLIC_LOCALES } from '@rentalshop/constants';
+
+export const postLocaleSchema = z.enum(PUBLIC_LOCALES);
 
 // Helper function to generate slug from string
 export const slugRegex = /^[a-z0-9-]+$/;
@@ -6,7 +9,8 @@ export const slugRegex = /^[a-z0-9-]+$/;
 export const postCreateSchema = z.object({
   title: z.string().min(1).max(255),
   slug: z.string().min(1).max(255).regex(slugRegex, 'Slug must contain only lowercase letters, numbers, and hyphens'),
-  locale: z.enum(['en', 'vi', 'zh', 'ko', 'ja']).default('vi'), // Supported languages
+  locale: postLocaleSchema.default('vi'),
+  translationSourceId: z.number().int().positive().optional(),
   content: z.string().min(1, 'Content is required'),
   excerpt: z.string().max(1000).optional(), // Increased from 500 to 1000 for longer excerpts
   seoTitle: z.string().max(60).optional(),
@@ -32,7 +36,7 @@ export const postCreateSchema = z.object({
     .optional(),
 });
 
-export const postUpdateSchema = postCreateSchema.partial().extend({
+export const postUpdateSchema = postCreateSchema.omit({ translationSourceId: true }).partial().extend({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
 });
 
@@ -54,7 +58,7 @@ export const postTagUpdateSchema = postTagCreateSchema.partial();
 
 export const postSearchSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
-  locale: z.enum(['en', 'vi', 'zh', 'ko', 'ja']).optional(), // Filter by language
+  locale: postLocaleSchema.optional(),
   categoryId: z.coerce.number().int().positive().optional(),
   tagId: z.coerce.number().int().positive().optional(),
   authorId: z.coerce.number().int().positive().optional(),
