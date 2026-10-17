@@ -2607,6 +2607,31 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("7n-5-detail-printed")
     }
 
+    /// #1028: Máy in → the IP field's software keyboard has "." (Vietnamese `.decimalPad` showed only ","),
+    /// and 192.168.1.50 can be typed key by key. Needs the software keyboard (not the Mac one).
+    func test7oPrinterIPKeyboard() throws {
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "Printer row")
+        row.tap()
+        let ipField = app.textFields.firstMatch
+        XCTAssertTrue(ipField.waitForExistence(timeout: 5), "printer IP field")
+        ipField.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.5)).tap()
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5), "software keyboard shown")
+        let old = (ipField.value as? String) ?? ""
+        if !old.isEmpty { ipField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count + 2)) }
+        XCTAssertTrue(keyboard.keys["."].exists, "the IP keyboard has a \".\" key")
+        for character in "192.168.1.50" { keyboard.keys[String(character)].tap() }
+        e2e.shot("7o-printer-ip-keyboard")
+        XCTAssertEqual(ipField.value as? String, "192.168.1.50")
+        e2e.hideKeyboard()
+        e2e.button(["Save", "Lưu"]).tap()
+        sleep(1)
+        e2e.dismissAlerts()
+    }
+
     // MARK: - #727 expired / out-of-plan accounts (run with ios-e2e.sh --scenario <slug> --role owner|staff|kho)
 
     /// MOB-SUB: login and every tab of an account whose subscription is expired, cancelled, paused or past due.
