@@ -117,6 +117,23 @@ final class AttendanceTests: XCTestCase {
         }
     }
 
+    // #1014 outlet without a location: its own setup error naming the outlet, apart from distance and "not set up"
+    func testLocationNotSetIsItsOwnError() throws {
+        let data = try decode(AttendanceFailureData.self, #"{"outlet":{"id":1,"name":"CN Một"}}"#)
+        XCTAssertEqual(data.outletName, "CN Một")
+        let named = AttendanceLogic.errorCopy(AttendanceFailure(code: "ATTENDANCE_LOCATION_NOT_SET", outletName: "CN Một"), outletName: nil)
+        XCTAssertEqual(named.title, String(format: "attendance.error.locationNotSet.titleNamed".localized(), "CN Một"))
+        XCTAssertEqual(named.message, "attendance.error.locationNotSet.message".localized())
+        let plain = AttendanceLogic.errorCopy(AttendanceFailure(code: "ATTENDANCE_LOCATION_NOT_SET"), outletName: nil)
+        XCTAssertEqual(plain.title, "attendance.error.locationNotSet.title".localized())
+        XCTAssertFalse(plain.title.hasPrefix("attendance."))
+        let notConfigured = AttendanceLogic.errorCopy(AttendanceFailure(code: "ATTENDANCE_NOT_CONFIGURED"), outletName: nil)
+        let far = AttendanceLogic.errorCopy(AttendanceFailure(code: "OUT_OF_RANGE", distanceM: 900, radiusM: 100), outletName: nil)
+        XCTAssertNotEqual(plain.title, notConfigured.title)
+        XCTAssertNotEqual(plain.title, far.title)
+        XCTAssertNotEqual(far.title, notConfigured.title)
+    }
+
     // #949 wrong outlet: the API names the code's outlet and the person's outlets in `data`
     func testWrongOutletDataIsDecoded() throws {
         let full = try decode(AttendanceFailureData.self,
