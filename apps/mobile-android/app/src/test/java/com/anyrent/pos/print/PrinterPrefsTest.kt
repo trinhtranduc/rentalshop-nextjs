@@ -1,6 +1,7 @@
 package com.anyrent.pos.print
 
 import android.content.SharedPreferences
+import androidx.compose.ui.text.input.KeyboardType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -30,6 +31,29 @@ class PrinterPrefsTest {
     fun savedIpIsTrimmed() {
         val prefs = MemoryPrefs(mapOf("printerIp" to " 192.168.1.50 \n"))
         assertEquals("192.168.1.50", ThermalPrinter.configFromPrefs(prefs).ip)
+    }
+
+    /** #1028: a "," from a Vietnamese keyboard becomes ".", spaces go (iOS `PrinterSetup.normalizedIP`) */
+    @Test
+    fun normalizeIpTurnsCommasIntoDotsAndDropsSpaces() {
+        assertEquals("192.168.1.50", ThermalPrinter.normalizeIp("192,168,1,50"))
+        assertEquals("192.168.1.50", ThermalPrinter.normalizeIp(" 192.168.1.50 \n"))
+        assertEquals("192.168.1.50", ThermalPrinter.normalizeIp("192. 168 ,1.50"))
+        assertEquals("10.0.0.7", ThermalPrinter.normalizeIp("10.0.0.7"))
+        assertEquals("", ThermalPrinter.normalizeIp(""))
+    }
+
+    /** #1028: an IP saved with commas still prints */
+    @Test
+    fun savedIpWithCommasIsRead() {
+        val prefs = MemoryPrefs(mapOf("printerIp" to "192,168,1,50"))
+        assertEquals("192.168.1.50", ThermalPrinter.configFromPrefs(prefs).ip)
+    }
+
+    /** #1028: `KeyboardType.Decimal` can show the locale "," and no "."; the IP field uses a keyboard with "." */
+    @Test
+    fun ipKeyboardHasADot() {
+        assertEquals(KeyboardType.Uri, com.anyrent.pos.ui.settings.PrinterIpKeyboardOptions.keyboardType)
     }
 
     /** Read-only in-memory SharedPreferences for JVM tests */
