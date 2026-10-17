@@ -259,7 +259,7 @@ final class CustomerDetailV2ViewController: BaseViewControler {
         let control = UIControl()
         control.tag = index
         control.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
-        let cell = OrderRowCell(style: .default, reuseIdentifier: nil)
+        let cell = OrderRowCell.standalone()
         cell.configure(customerOrder: row, hidesMoney: hidesMoney)
         cell.isUserInteractionEnabled = false
         control.addSubview(cell)

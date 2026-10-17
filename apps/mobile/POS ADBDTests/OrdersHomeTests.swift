@@ -791,6 +791,33 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertTrue(paidTexts.contains(MoneyFormatter.format(300000)))
     }
 
+    /// #1037: product / customer detail put the row in a stack view, not a table view: it must get its content height
+    func testStandaloneRowHasItsContentHeightInAStackView() throws {
+        let order = try listOrder(1, status: "RESERVED")
+        func stackedHeight(_ cell: OrderRowCell) -> CGFloat {
+            cell.configure(.order(order, lateDays: 0), context: .productOrders(quantity: 1), hidesMoney: false)
+            let control = UIControl()
+            control.addSubview(cell)
+            cell.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                cell.topAnchor.constraint(equalTo: control.topAnchor), cell.bottomAnchor.constraint(equalTo: control.bottomAnchor),
+                cell.leadingAnchor.constraint(equalTo: control.leadingAnchor), cell.trailingAnchor.constraint(equalTo: control.trailingAnchor),
+            ])
+            let stack = UIStackView(arrangedSubviews: [control])
+            stack.axis = .vertical
+            let host = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            host.addSubview(stack)
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                stack.topAnchor.constraint(equalTo: host.topAnchor), stack.leadingAnchor.constraint(equalTo: host.leadingAnchor),
+                stack.trailingAnchor.constraint(equalTo: host.trailingAnchor),
+            ])
+            host.layoutIfNeeded()
+            return control.frame.height
+        }
+        XCTAssertGreaterThanOrEqual(stackedHeight(OrderRowCell.standalone()), 44, "the row shows its lines")
+    }
+
     /// #888 (owner): Tất cả đơn rows have no "Trễ N ngày" chip; other lists keep it; the name stays on one line
     func testRentListRowHasNoLateChip() throws {
         let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
