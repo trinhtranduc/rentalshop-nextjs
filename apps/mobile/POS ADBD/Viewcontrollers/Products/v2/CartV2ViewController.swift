@@ -267,9 +267,15 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(datesRow())
         }
 
+        // #1024 (option A): plus-circle icon + "Thêm"; VoiceOver reads "Thêm món"
         let add = UIButton(type: .system)
-        add.setTitle("+ " + "products.cart.addMore".localized(), for: .normal)
+        add.setTitle("products.cart.addMore".localized(), for: .normal)
         add.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        add.setImage(DS.symbol(CartV2Icon.addItem.rawValue, 18, weight: .semibold), for: .normal)
+        add.tintColor = DS.Color.primary
+        add.imageEdgeInsets = UIEdgeInsets(top: 0, left: -5, bottom: 0, right: 5)
+        add.contentEdgeInsets = UIEdgeInsets(top: 0, left: 5, bottom: 0, right: 0)
+        add.accessibilityLabel = "products.cart.addItem.accessibility".localized()
         add.addTarget(self, action: #selector(addMoreTapped), for: .touchUpInside)
         add.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
         content.addArrangedSubview(V2.sectionHeader(String(format: "products.cart.items".localized(), cart.itemCount), trailing: add))
@@ -320,7 +326,7 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(V2.divider())
         }
 
-        let note = V2ValueRow(title: "products.cart.note".localized())
+        let note = V2ValueRow(title: "products.cart.note".localized(), icon: CartV2Icon.orderNote.rawValue) // #1024
         let noteText = (cart.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         note.valueLabel.text = noteText.isEmpty ? "products.cart.addNote".localized() : noteText
         note.valueLabel.textColor = noteText.isEmpty ? DS.Color.primary : DS.Color.textMuted
@@ -545,7 +551,7 @@ final class CartV2ViewController: BaseViewControler {
         bottom.spacing = 8
         column.setCustomSpacing(10, after: column.arrangedSubviews.last ?? link)
         column.addArrangedSubview(bottom)
-        // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens the "Ghi chú món" sheet.
+        // #684 (canvas N1), #1024: pencil + "Ghi chú", or pencil + the line's note; either opens the "Ghi chú món" sheet.
         // #891 (owner): the note is the last line of the item
         column.setCustomSpacing(8, after: bottom)
         column.addArrangedSubview(UIStackView(arrangedSubviews: [itemNoteButton(item, index: index), UIView()]))
@@ -568,37 +574,32 @@ final class CartV2ViewController: BaseViewControler {
         return row
     }
 
-    /// #684 (canvas N1): "+ Ghi chú" when the line has no note, else "Ghi chú · <note> Sửa" in a light box (2 lines)
+    /// #684 (canvas N1), #1024 (option A): pencil + "Ghi chú" (grey) when the line has no note, else pencil + the
+    /// note on one line, cut with "…", in a light box
     private func itemNoteButton(_ item: CartItem, index: Int) -> UIButton {
         let button = UIButton(type: .system)
         button.contentHorizontalAlignment = .leading
-        button.titleLabel?.numberOfLines = 2
-        if let note = CartV2Logic.noteText(item.note) {
-            let title = NSMutableAttributedString(string: "cart.itemNote.label".localized(), attributes: [
-                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
-                NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
-            ])
-            title.append(NSAttributedString(string: " · " + note + " ", attributes: [
-                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
-                NSAttributedString.Key.foregroundColor: UIColor(hexString: "334155"),
-            ]))
-            title.append(NSAttributedString(string: "cart.itemNote.edit".localized(), attributes: [
-                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
-                NSAttributedString.Key.foregroundColor: DS.Color.primary,
-            ]))
-            button.setAttributedTitle(title, for: .normal)
-            button.titleLabel?.lineBreakMode = .byTruncatingMiddle
+        button.titleLabel?.numberOfLines = 1
+        button.titleLabel?.lineBreakMode = .byTruncatingTail
+        button.setImage(DS.symbol(CartV2Icon.itemNote.rawValue, 15, weight: .medium), for: .normal)
+        button.tintColor = UIColor(hexString: "64748B")
+        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -3, bottom: 0, right: 3)
+        if let note = CartV2Logic.itemNoteLine(item.note) {
+            button.setTitle(note, for: .normal)
+            button.titleLabel?.font = Utils.regularFont(size: DS.TextSize.secondary)
+            button.setTitleColor(UIColor(hexString: "334155"), for: .normal)
             button.backgroundColor = UIColor(hexString: "F8FAFC")
-            button.layer.cornerRadius = 10
-            button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+            button.layer.cornerRadius = 8
+            button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 8)
         } else {
-            button.setTitle("cart.itemNote.add".localized(), for: .normal)
+            button.setTitle("cart.itemNote.label".localized(), for: .normal)
             button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
-            button.setTitleColor(UIColor(hexString: "475569"), for: .normal)
-            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 8)
+            button.setTitleColor(UIColor(hexString: "64748B"), for: .normal)
+            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 3, bottom: 4, right: 8)
         }
-        button.accessibilityLabel = String(format: "cart.itemNote.accessibility".localized(), item.productName ?? "")
-        button.accessibilityValue = CartV2Logic.noteText(item.note)
+        let spoken = CartV2Logic.itemNoteSpoken(productName: item.productName, note: item.note)
+        button.accessibilityLabel = spoken.label
+        button.accessibilityValue = spoken.value
         button.addAction(UIAction { [weak self] _ in self?.openItemNote(index: index) }, for: .touchUpInside)
         button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
         return button

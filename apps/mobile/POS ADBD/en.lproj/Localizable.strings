@@ -2730,3 +2730,6 @@
 "attendance.error.locationNotSet.title" = "This outlet has no location yet";
 "attendance.error.locationNotSet.titleNamed" = "%@ has no location yet";
 "attendance.error.locationNotSet.message" = "The distance cannot be checked. Ask the shop owner to set it in Attendance › QR & location.";
+
+/* #1024: VoiceOver on the cart MÓN header "Thêm" */
+"products.cart.addItem.accessibility" = "Add item";
