@@ -300,9 +300,16 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f),
             ) {
                 CalendarLogic.rowChips(row).forEach { chip ->
+                    // #1008 (owner): the date chip shows its icon then the date (the shared order-row chip)
                     val (text, colors) = when (chip.kind) {
-                        CalendarLogic.RowChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
-                        CalendarLogic.RowChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
+                        CalendarLogic.RowChipKind.PICKUP -> {
+                            com.anyrent.pos.ui.orders.v2.DateChip(OrderRowDates.ChipKind.PICKUP, chip.date.orEmpty(), "$pickupLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                            return@forEach
+                        }
+                        CalendarLogic.RowChipKind.RETURN -> {
+                            com.anyrent.pos.ui.orders.v2.DateChip(OrderRowDates.ChipKind.RETURN, chip.date.orEmpty(), "$returnLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                            return@forEach
+                        }
                         CalendarLogic.RowChipKind.READY -> ready to DS.Status.Done
                         CalendarLogic.RowChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
                     }

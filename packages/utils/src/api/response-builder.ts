@@ -1,4 +1,4 @@
-import { getApiMessage, type ApiMessageValues } from '../api-messages';
+import { getApiMessage, getApiSuccessMessage, type ApiMessageValues } from '../api-messages';
 
 /**
  * API Response Builder
@@ -302,6 +302,11 @@ function getDefaultMessage(code: string, values?: ApiMessageValues): string {
   return getApiMessage(code, values ?? {}, undefined, { ...ERROR_MESSAGES, ...SUCCESS_MESSAGES });
 }
 
+/** #1013: message of a success response; a code without a sentence never gets the error fallback */
+function getSuccessMessage(code: string): string {
+  return getApiSuccessMessage(code, {}, undefined, { ...ERROR_MESSAGES, ...SUCCESS_MESSAGES });
+}
+
 /**
  * Maps raw upstream errors (Python, Railway, Qdrant) to a single safe user-facing string.
  * Use in native clients or anywhere the API still returns a noisy `message`.
@@ -345,7 +350,7 @@ export class ResponseBuilder {
     return {
       success: true,
       code,
-      message: getDefaultMessage(code),
+      message: getSuccessMessage(code),
       data,
       meta
     };
@@ -387,7 +392,7 @@ export class ResponseBuilder {
     return {
       success: true,
       code,
-      message: getDefaultMessage(code),
+      message: getSuccessMessage(code),
       data,
       meta: {
         page: pagination.page,

@@ -3,6 +3,35 @@
  * and the event-by-event mapping of the intended changes (#355 Vietnam days, #484 late fee).
  */
 import { EDGE_LATE_FEES, EDGE_ONLY_BEFORE, EDGE_ONLY_NOW, EDGE_ORDERS } from './income-scenarios';
+import viCatalog from '../../locales/vi/errors.json';
+
+/** Generic error sentence (#986): never the text of a success, never an approved replacement text */
+export const GENERIC_ERROR_SENTENCE = 'Đã có lỗi. Vui lòng thử lại.';
+
+/**
+ * Approved text-only changes (#986 / #987 localized messages, #1013 success messages): `message` and `error`
+ * of one response may differ from main-real, nothing else. Puts main-real's two texts back so the rest of the
+ * response is still compared field for field.
+ */
+export function withMainRealTexts(now: { status: number; body: any }, before: { status: number; body: any }) {
+  const body = { ...now.body };
+  for (const key of ['message', 'error'] as const) {
+    if (key in body && key in before.body) body[key] = before.body[key];
+  }
+  return { ...now, body };
+}
+
+/**
+ * The new texts of an approved change: exactly the Vietnamese catalog sentence of the response `code`
+ * (the tests run outside a request, so in Vietnamese), and not the generic error sentence.
+ */
+export function expectCatalogTexts(response: { body: any }) {
+  const sentence = (viCatalog as Record<string, string>)[response.body.code];
+  expect(sentence).toEqual(expect.any(String));
+  expect(sentence).not.toBe(GENERIC_ERROR_SENTENCE);
+  expect(response.body.message).toBe(sentence);
+  if ('error' in response.body) expect(response.body.error).toBe(sentence);
+}
 
 export function paths(value: any, prefix = ''): string[] {
   if (value === null || typeof value !== 'object') return [prefix];

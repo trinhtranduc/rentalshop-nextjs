@@ -204,9 +204,8 @@ fun SettingsV2Screen(
             }
             items(section.items, key = { it.name }) { item ->
                 val value = when (item) {
-                    SettingsItem.RECEIPT_NOTE -> prefs.getString("printerNote", ThermalPrinter.DEFAULT_PRINTER_NOTE).orEmpty()
-                        .ifBlank { ThermalPrinter.DEFAULT_PRINTER_NOTE }.replace('\n', ' ')
-                    SettingsItem.PRINTER -> prefs.getString("printerIp", "").orEmpty().ifBlank { stringResource(R.string.settings_v2_printer_none) }
+                    SettingsItem.RECEIPT_NOTE -> ThermalPrinter.savedNote(prefs).replace('\n', ' ') // #1011
+                    SettingsItem.PRINTER -> prefs.getString("printerIp", "").orEmpty().trim().ifBlank { stringResource(R.string.settings_v2_printer_none) }
                     SettingsItem.CUSTOMERS, SettingsItem.USERS -> counts[item]?.toString()
                     SettingsItem.PLAN -> plan?.let { planText(it) }
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }

@@ -47,19 +47,38 @@ final class DateChipStack: UIStackView {
             label.backgroundColor = chip.kind.colors.fill
             // #893 (owner on device): medium vs bold read the same; the sorted chip is bold (label and date),
             // the other one regular
-            let text = NSMutableAttributedString(string: chip.label + " ", attributes: [
-                NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary),
+            // #1008 (owner): an icon in place of the word "Lấy" / "Trả"; VoiceOver still reads "Lấy 14/10/26"
+            let labelFont = chip.bold ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
+            let text = NSMutableAttributedString(attributedString: DateChipIcon.text(chip.kind, font: labelFont))
+            text.append(NSAttributedString(string: " ", attributes: [
+                NSAttributedString.Key.font: labelFont,
                 NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
-            ])
+            ]))
             text.append(NSAttributedString(string: chip.date, attributes: [
                 NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body),
                 NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
             ]))
             label.attributedText = text
+            label.accessibilityLabel = chip.accessibilityText
             label.setContentCompressionResistancePriority(.required, for: .horizontal)
             addArrangedSubview(label)
         }
         isHidden = chips.isEmpty
+    }
+}
+
+/// #1008 (owner): the date chip icon (`arrow.up.forward` pickup, `arrow.uturn.backward` return) as text,
+/// in the chip's text colour, as big as `font` and centred on the text
+enum DateChipIcon {
+    static func text(_ kind: DateChip.Kind, font: UIFont) -> NSAttributedString {
+        let config = UIImage.SymbolConfiguration(font: font)
+        guard let image = UIImage(systemName: kind.symbolName, withConfiguration: config)?
+            .withTintColor(kind.colors.text, renderingMode: .alwaysOriginal) else { return NSAttributedString() }
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        attachment.bounds = CGRect(x: 0, y: (font.capHeight - image.size.height) / 2,
+                                   width: image.size.width, height: image.size.height)
+        return NSAttributedString(attachment: attachment)
     }
 }
 
@@ -346,6 +365,17 @@ final class OrderRowCell: UITableViewCell {
             label.font = Utils.mediumFont(size: DS.TextSize.secondary)
             label.text = chip.text
             label.textColor = chip.colors.text
+            if let kind = chip.dateKind, let date = chip.date {
+                // #1008 (owner): the date chip shows its icon then the date; VoiceOver reads `text` ("Lấy 14/10/26")
+                let font = Utils.mediumFont(size: DS.TextSize.secondary)
+                let text = NSMutableAttributedString(attributedString: DateChipIcon.text(kind, font: font))
+                text.append(NSAttributedString(string: " " + date, attributes: [
+                    NSAttributedString.Key.font: font,
+                    NSAttributedString.Key.foregroundColor: chip.colors.text,
+                ]))
+                label.attributedText = text
+                label.accessibilityLabel = chip.text
+            }
             label.backgroundColor = chip.colors.fill
             label.layer.cornerRadius = 8
             label.layer.masksToBounds = true
