@@ -12,6 +12,7 @@ import { Prisma } from '@prisma/client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
 import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { splitSearchWords, buildSearchWordTerm, projectSearchColumnSql } from './product-search-words';
 
 /**
  * #742: a blank barcode means "no barcode". Store NULL, never '', because the unique index
@@ -41,30 +42,15 @@ export function normalizeBarcode<T>(barcode: T): T | null {
  * caller can fall back to the legacy Prisma `contains` matching without regressing.
  */
 async function findMatchingProductIds(searchInput: string, merchantId?: number): Promise<number[] | null> {
-  const words = searchInput.trim().split(/\s+/).filter((w: string) => w.length > 0);
+  const words = splitSearchWords(searchInput);
   if (words.length === 0) return [];
 
   try {
     const perWord = words.map((word: string) => {
-      const nfc = word.normalize('NFC');
-      const stripped = removeVietnameseDiacritics(word);
-      const hasDiacritics = nfc.toLowerCase() !== stripped.toLowerCase();
-      const term = (hasDiacritics ? nfc : stripped).toLowerCase();
-      const startPattern = `${term}%`;
-      const wordPattern = `% ${term}%`;
-      return hasDiacritics
-        ? Prisma.sql`(
-            lower(normalize("name", NFC)) LIKE ${startPattern}
-            OR lower(normalize("name", NFC)) LIKE ${wordPattern}
-            OR lower(normalize(COALESCE("description", ''), NFC)) LIKE ${startPattern}
-            OR lower(normalize(COALESCE("description", ''), NFC)) LIKE ${wordPattern}
-          )`
-        : Prisma.sql`(
-            unaccent(lower("name")) LIKE ${startPattern}
-            OR unaccent(lower("name")) LIKE ${wordPattern}
-            OR unaccent(lower(COALESCE("description", ''))) LIKE ${startPattern}
-            OR unaccent(lower(COALESCE("description", ''))) LIKE ${wordPattern}
-          )`;
+      const { hasDiacritics, pattern } = buildSearchWordTerm(word);
+      const nameSql = projectSearchColumnSql(Prisma.sql`"name"`, hasDiacritics);
+      const descriptionSql = projectSearchColumnSql(Prisma.sql`"description"`, hasDiacritics);
+      return Prisma.sql`(${nameSql} LIKE ${pattern} OR ${descriptionSql} LIKE ${pattern})`;
     });
     // ALL words must match (AND). Scope to merchant so the LIMIT budget isn't consumed
     // by other tenants (a broad term like "ao" can match a lot).
