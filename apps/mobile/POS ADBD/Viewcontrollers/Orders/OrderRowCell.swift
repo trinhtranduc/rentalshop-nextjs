@@ -14,6 +14,8 @@ import SnapKit
 enum OrderRowContext {
     case work(isLate: Bool)
     case list
+    /// #1025 orders of one product: the `.list` row with the sorted date bold (as on Tất cả đơn)
+    case sortedList(sortedBy: RentOrdersFilter.SortDate)
     /// #888 "Tất cả đơn": "#code", then "↗ dd/mm/yy  ↩ dd/mm/yy" with the sorted date marked
     case rentList(sortedBy: RentOrdersFilter.SortDate)
     case sale
@@ -473,6 +475,7 @@ final class OrderRowCell: UITableViewCell {
             // makes "tạo …" bold dark text
             var sortedBy: RentOrdersFilter.SortDate?
             if case .rentList(let date) = context { sortedBy = date }
+            if case .sortedList(let date) = context { sortedBy = date }
             metaLabel.text = OrdersHomeLogic.rentRowMeta(order)
             if OrdersHomeLogic.metaIsBold(sortedBy: sortedBy) {
                 metaLabel.font = Utils.boldFont(size: 13)

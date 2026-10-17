@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,8 +26,10 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -113,12 +116,16 @@ fun EntityOrdersScreen(
     var customerPhone by remember { mutableStateOf<String?>(null) }
     var spent by remember { mutableStateOf<Double?>(null) }
     var renting by remember { mutableStateOf<Int?>(null) }
+    // #1025: "Xếp theo …" of a product's orders (default pickup day, nearest first)
+    var sort by remember { mutableStateOf(ProductOrdersSort.DEFAULT) }
+    var showSort by remember { mutableStateOf(false) }
 
     suspend fun fetch(pageNumber: Int): Result<ApiClient.PageResult<OrderSummary>> = withContext(Dispatchers.IO) {
         if (isProduct) {
+            val (sortBy, sortOrder) = ProductOrdersSort.query(sort)
             ApiClient.get().searchOrders(
                 page = pageNumber, productId = entityId, startDate = startDate, endDate = endDate,
-                sortBy = "createdAt", sortOrder = "desc",
+                sortBy = sortBy, sortOrder = sortOrder,
             )
         } else {
             CustomersV2Api.ordersPage(entityId, pageNumber, 20, startDate, endDate).map { (rows, summary) ->
@@ -134,8 +141,11 @@ fun EntityOrdersScreen(
         }
     }
 
-    LaunchedEffect(isProduct, entityId, startDate, endDate) {
+    LaunchedEffect(isProduct, entityId, startDate, endDate, sort) {
         loading = true
+        // #1025: a new sort starts the list over
+        orders = emptyList()
+        hasMore = false
         val side = if (isProduct) {
             async(Dispatchers.IO) { ApiClient.get().getProduct(entityId).getOrNull()?.let { product = it } }
         } else {
@@ -159,8 +169,11 @@ fun EntityOrdersScreen(
         }.distinctUntilChanged().collect { nearEnd ->
             if (!nearEnd || !hasMore || loadingMore) return@collect
             loadingMore = true
+            val sortAtStart = sort
             scope.launch {
                 fetch(page + 1).onSuccess {
+                    // A page of the previous sort is dropped
+                    if (sortAtStart != sort) return@onSuccess
                     orders = orders + it.items
                     hasMore = it.hasMore
                     page += 1
@@ -279,6 +292,23 @@ fun EntityOrdersScreen(
             modifier = Modifier.fillMaxWidth().background(Color(0xFFF8FAFC)).padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp),
         )
         HorizontalDivider(color = DS.Colors.Divider, thickness = 1.dp)
+        if (isProduct) {
+            // #1025: the Tất cả đơn sort bar (#888): "Xếp theo ngày lấy · gần nhất trước ▾"
+            Row(
+                Modifier.fillMaxWidth().background(DS.Colors.Surface).padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    Modifier.defaultMinSize(minHeight = 36.dp).clickable { showSort = true },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(sortBarText(sort), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                    Spacer(Modifier.size(4.dp))
+                    Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(14.dp))
+                }
+            }
+            HorizontalDivider(color = DS.Colors.Divider)
+        }
         when {
             loading && orders.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.dp)
@@ -291,7 +321,7 @@ fun EntityOrdersScreen(
             }
             else -> LazyColumn(Modifier.fillMaxWidth().weight(1f), state = listState) {
                 items(OrdersHomeLogic.orderRows(orders).filterIsInstance<OrdersRow.Order>(), key = { it.key }) { row ->
-                    OrderListRow(row, onClick = { onOpenOrder(row.orderId) })
+                    OrderListRow(row, sortedBy = ProductOrdersSort.boldDate(isProduct, sort), onClick = { onOpenOrder(row.orderId) })
                 }
                 if (loadingMore) {
                     item {
@@ -302,5 +332,18 @@ fun EntityOrdersScreen(
                 }
             }
         }
+    }
+    if (showSort) {
+        // #1025: the "Lọc & sắp xếp" sheet of Tất cả đơn, sort only; the sort does not change the count
+        FilterSheet(
+            initial = sort,
+            count = { total },
+            onApply = {
+                sort = it
+                showSort = false
+            },
+            onDismiss = { showSort = false },
+            showsRange = false,
+        )
     }
 }
