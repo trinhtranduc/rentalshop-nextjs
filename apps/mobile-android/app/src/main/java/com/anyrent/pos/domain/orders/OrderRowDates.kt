@@ -56,8 +56,8 @@ object OrderRowDates {
     /** #888 "05/10/26": dd/mm/yy of the Vietnam civil day, whatever the device zone */
     fun dmy(instant: Instant, zone: ZoneId = shopZone): String = com.anyrent.pos.domain.DayText.dmy(instant, zone)
 
-    /** #891 (option C): which chip — "Lấy" (light blue) or "Trả" (light purple) */
-    enum class ChipKind { PICKUP, RETURN }
+    /** #891 (option C): which chip — "Lấy", "Trả"; #1026: "Bán" (the day of a sale). No colour since #1026. */
+    enum class ChipKind { PICKUP, RETURN, SALE }
 
     /** #891 (option C): one light date chip of an order row; [bold] = the date the list is sorted by */
     data class DateChip(val kind: ChipKind, val label: String, val date: String, val bold: Boolean) {
@@ -73,6 +73,15 @@ object OrderRowDates {
         pickupPlanAt?.let { DateChip(ChipKind.PICKUP, pickupLabel, dmy(it, zone), boldPickup) },
         returnPlanAt?.let { DateChip(ChipKind.RETURN, returnLabel, dmy(it, zone), boldReturn) },
     )
+
+    /**
+     * #1026 (owner): a sale row (not cancelled) shows "↗ dd/mm/yy" (its created day) in place of "Bán dd/mm/yy";
+     * TalkBack still reads "Bán dd/mm/yy". Null for a rent order, a cancelled sale ("Huỷ …" stays) or no date (iOS saleChip).
+     */
+    fun saleChip(orderType: String?, status: String?, createdAt: Instant?, saleLabel: String = "Bán", zone: ZoneId = shopZone): DateChip? {
+        if (orderType.equals("RENT", ignoreCase = true) || status.equals("CANCELLED", ignoreCase = true)) return null
+        return createdAt?.let { DateChip(ChipKind.SALE, saleLabel, dmy(it, zone), bold = false) }
+    }
 
     /** #888 one date of a "Tất cả đơn" row, [marked] when the list is sorted by it */
     data class Part(val text: String, val marked: Boolean)

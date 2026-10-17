@@ -42,6 +42,7 @@ import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -409,20 +410,51 @@ class OrdersHomeTest {
         assertEquals(PayLine.Due(120000.0), OrdersBoardLogic.rowPayLine(due, rentList = false))
     }
 
-    /** #1008 (owner): an icon in place of "Lấy" / "Trả"; TalkBack still reads the word and the date; colours unchanged */
+    /** #1008 (owner): an icon in place of "Lấy" / "Trả"; TalkBack still reads the word and the date; #1026: no colour */
     @Test
     fun `date chips show an icon and speak the word`() {
         assertEquals("Outlined.ArrowOutward", OrdersBoardLogic.chipIcon(OrderRowDates.ChipKind.PICKUP).name)
         assertEquals("AutoMirrored.Outlined.Undo", OrdersBoardLogic.chipIcon(OrderRowDates.ChipKind.RETURN).name)
         val order = listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z")
         assertEquals(listOf("Lấy 14/10/26", "Trả 16/10/26"), OrdersBoardLogic.dateChips(order, SortDate.PICKUP).map { it.accessibilityText })
-        assertEquals(androidx.compose.ui.graphics.Color(0xFF1E40AF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).text)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFFEFF6FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).fill)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFF5B21B6), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).text)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFFF5F3FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).fill)
     }
 
-    /** #891 (option C): light Lấy / Trả chips; the sorted date only bolder; a created-date sort makes "tạo …" bold (iOS) */
+    /**
+     * #1026 (owner, intentional change from the #891 blue / purple chips): only the status badge keeps colour.
+     * Every date chip (pickup, return, sale) is dark text on no fill with a grey icon; "Trễ N ngày", "Chưa soạn đồ"
+     * and the status badge keep theirs; TalkBack text unchanged.
+     */
+    @Test
+    fun `date chips have no fill and a grey icon, the badge keeps its colour`() {
+        OrderRowDates.ChipKind.entries.forEach { kind ->
+            assertEquals(androidx.compose.ui.graphics.Color.Transparent, OrdersBoardLogic.chipColors(kind).fill)
+            assertEquals(androidx.compose.ui.graphics.Color(0xFF0F172A), OrdersBoardLogic.chipColors(kind).text)
+        }
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF64748B), OrdersBoardLogic.chipIconTint)
+        assertEquals("Outlined.ArrowOutward", OrdersBoardLogic.chipIcon(OrderRowDates.ChipKind.SALE).name)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFEF4444), com.anyrent.pos.ui.orders.v2.OrderStatusTag.colors("RESERVED").fill)
+        assertEquals(androidx.compose.ui.graphics.Color.White, com.anyrent.pos.ui.orders.v2.OrderStatusTag.colors("RESERVED").text)
+        assertNotEquals(androidx.compose.ui.graphics.Color.Transparent, com.anyrent.pos.ui.theme.DS.Status.Late.fill)
+        assertNotEquals(androidx.compose.ui.graphics.Color.Transparent, com.anyrent.pos.ui.theme.DS.Status.Waiting.fill)
+        val order = listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z")
+        assertEquals(listOf("Lấy 14/10/26", "Trả 16/10/26"), OrdersBoardLogic.dateChips(order, null).map { it.accessibilityText })
+    }
+
+    /** #1026 (owner): a sale row shows "↗ dd/mm/yy" (created day) in place of "Bán dd/mm/yy"; TalkBack reads "Bán dd/mm/yy" */
+    @Test
+    fun `sale rows show the sale date chip`() {
+        val created = java.time.Instant.parse("2026-10-14T18:00:00Z") // 15/10 in Vietnam
+        val chip = OrderRowDates.saleChip("SALE", "COMPLETED", created)
+        assertEquals(OrderRowDates.DateChip(OrderRowDates.ChipKind.SALE, "Bán", "15/10/26", bold = false), chip)
+        assertEquals("Bán 15/10/26", chip?.accessibilityText)
+        assertEquals(OrderRowDates.Texts().sold.format("15/10/26"), chip?.accessibilityText)
+        assertEquals("any sale not cancelled", "Bán 15/10/26", OrderRowDates.saleChip("SALE", "RESERVED", created)?.accessibilityText)
+        assertNull("a cancelled sale keeps Huỷ", OrderRowDates.saleChip("SALE", "CANCELLED", created))
+        assertNull(OrderRowDates.saleChip("RENT", "RESERVED", created))
+        assertNull(OrderRowDates.saleChip("SALE", "COMPLETED", null))
+    }
+
+    /** #891 (option C): Lấy / Trả chips (#1026: no colour); the sorted date only bolder; a created-date sort makes "tạo …" bold (iOS) */
     @Test
     fun `date chips emphasise only the sorted date`() {
         val order = listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z")
@@ -436,10 +468,6 @@ class OrdersHomeTest {
         assertEquals(true, OrdersBoardLogic.metaIsBold(SortDate.CREATED))
         assertEquals(false, OrdersBoardLogic.metaIsBold(SortDate.PICKUP))
         assertEquals(false, OrdersBoardLogic.metaIsBold(null))
-        assertEquals(androidx.compose.ui.graphics.Color(0xFFEFF6FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).fill)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFF1E40AF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).text)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFFF5F3FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).fill)
-        assertEquals(androidx.compose.ui.graphics.Color(0xFF5B21B6), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).text)
     }
 
     /** #893 (owner on device): the sorted chip reads clearly bold, the other regular; Home cart bar blue, no add toast (iOS) */

@@ -14,7 +14,7 @@ import SnapKit
 enum OrderRowContext {
     case work(isLate: Bool)
     case list
-    /// #888 "Tất cả đơn": "#code", then "Lấy dd/mm/yy  Trả dd/mm/yy" with the sorted date marked
+    /// #888 "Tất cả đơn": "#code", then "↗ dd/mm/yy  ↩ dd/mm/yy" with the sorted date marked
     case rentList(sortedBy: RentOrdersFilter.SortDate)
     case sale
     case search
@@ -24,8 +24,12 @@ enum OrderRowContext {
     case productOrders(quantity: Int)
 }
 
-/// #891 (option C): the "Lấy dd/mm/yy" (blue) and "Trả dd/mm/yy" (purple) chips; order rows and the calendar day rows
+/// #891 (option C): the pickup / return / sale date chips of an order row.
+/// #1026 (owner): no fill; a grey icon then the date in dark text (only the status badge keeps colour)
 final class DateChipStack: UIStackView {
+    /// #1026: no fill, so no left padding; the right padding keeps the gap to the next chip
+    static let chipInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 4)
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         spacing = DS.Spacing.sm
@@ -42,8 +46,7 @@ final class DateChipStack: UIStackView {
         arrangedSubviews.forEach { $0.removeFromSuperview() }
         for chip in chips {
             let label = InsetLabel()
-            label.layer.cornerRadius = 8
-            label.layer.masksToBounds = true
+            label.insets = Self.chipInsets
             label.backgroundColor = chip.kind.colors.fill
             // #893 (owner on device): medium vs bold read the same; the sorted chip is bold (label and date),
             // the other one regular
@@ -67,13 +70,13 @@ final class DateChipStack: UIStackView {
     }
 }
 
-/// #1008 (owner): the date chip icon (`arrow.up.forward` pickup, `arrow.uturn.backward` return) as text,
-/// in the chip's text colour, as big as `font` and centred on the text
+/// #1008 (owner): the date chip icon (`arrow.up.forward` pickup and sale, `arrow.uturn.backward` return) as text,
+/// as big as `font` and centred on the text; #1026: grey (`DateChip.iconColor`)
 enum DateChipIcon {
     static func text(_ kind: DateChip.Kind, font: UIFont) -> NSAttributedString {
         let config = UIImage.SymbolConfiguration(font: font)
         guard let image = UIImage(systemName: kind.symbolName, withConfiguration: config)?
-            .withTintColor(kind.colors.text, renderingMode: .alwaysOriginal) else { return NSAttributedString() }
+            .withTintColor(kind.iconColor, renderingMode: .alwaysOriginal) else { return NSAttributedString() }
         let attachment = NSTextAttachment()
         attachment.image = image
         attachment.bounds = CGRect(x: 0, y: (font.capHeight - image.size.height) / 2,
@@ -171,7 +174,7 @@ final class OrderRowCell: UITableViewCell {
     private let nameLabel = UILabel()
     private let metaLabel = UILabel()
     private let taskLabel = UILabel()
-    /// #891 (option C): "Lấy 14/10/26" (blue) and "Trả 16/10/26" (purple) chips on line 3
+    /// #891 (option C): "↗ 14/10/26" and "↩ 16/10/26" chips on line 3 (#1026: no colour; a sale "↗ 15/10/26")
     private let chipStack = DateChipStack()
     private let qtyLabel = InsetLabel()
     private let pillStack = UIStackView()
@@ -375,6 +378,8 @@ final class OrderRowCell: UITableViewCell {
                 ]))
                 label.attributedText = text
                 label.accessibilityLabel = chip.text
+                // #1026 (owner): the date chip has no fill, so no left padding
+                label.insets = DateChipStack.chipInsets
             }
             label.backgroundColor = chip.colors.fill
             label.layer.cornerRadius = 8
@@ -412,6 +417,8 @@ final class OrderRowCell: UITableViewCell {
                                                  status: row.status, createdAt: row.createdAt, pickupPlanAt: nil,
                                                  returnPlanAt: nil, returnedAt: nil, updatedAt: row.createdAt, isLate: false)
             setLines(lines)
+            // #1026 (owner): "Bán dd/mm/yy" → "↗ dd/mm/yy"
+            setChips(OrdersHomeLogic.saleChip(orderType: .sale, status: row.status, createdAt: row.createdAt).map { [$0] } ?? [])
         }
         setTotal(row.totalAmount, struck: row.status == .cancelled)
         setPay(nil)
@@ -472,6 +479,9 @@ final class OrderRowCell: UITableViewCell {
                 metaLabel.textColor = DS.Color.text
             }
             setChips(OrdersHomeLogic.dateChips(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy))
+        } else if let sale = OrdersHomeLogic.saleChip(orderType: order.orderType, status: order.status, createdAt: order.createdAt) {
+            // #1026 (owner): "Bán dd/mm/yy" → "↗ dd/mm/yy"; VoiceOver still reads "Bán dd/mm/yy"
+            setChips([sale])
         }
         if case .productOrders(let quantity) = context {
             qtyLabel.text = "× \(quantity)"

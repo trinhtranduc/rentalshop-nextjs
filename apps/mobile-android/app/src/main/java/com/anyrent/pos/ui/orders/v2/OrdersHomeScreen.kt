@@ -759,7 +759,12 @@ internal fun CustomerOrderListRow(row: com.anyrent.pos.domain.customers.Customer
         name = com.anyrent.pos.domain.customers.CustomerRules.itemsTitle(row)
             ?: pluralStringResource(R.plurals.customers_v2_items, row.itemCount, row.itemCount),
         lines = lines,
-        chips = if (isRent) chipLabels().let { (p, r) -> OrderRowDates.chips(row.pickupPlanAt, row.returnPlanAt, false, false, p, r) } else null,
+        chips = if (isRent) {
+            chipLabels().let { (p, r) -> OrderRowDates.chips(row.pickupPlanAt, row.returnPlanAt, false, false, p, r) }
+        } else {
+            // #1026 (owner): "Bán dd/mm/yy" → "↗ dd/mm/yy"
+            OrderRowDates.saleChip(row.orderType, row.status, row.createdAt, saleChipLabel())?.let { listOf(it) }
+        },
         pills = emptyList(),
         total = formatMoneyVnd(row.totalAmount),
         struck = row.status.equals("CANCELLED", ignoreCase = true),
@@ -824,7 +829,12 @@ private fun OrderRow(
         name = order.customerName,
         // #496: no product line; #891 (option C): a rent order shows the Lấy / Trả chips in place of the task line
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
-        chips = if (isSale) null else chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, rentSortedBy, p, r) },
+        // #1026 (owner): a sale shows "↗ dd/mm/yy" in place of "Bán dd/mm/yy"
+        chips = if (isSale) {
+            OrderRowDates.saleChip(order.orderType, order.status, OrdersHomeLogic.parseInstant(order.createdAt), saleChipLabel())?.let { listOf(it) }
+        } else {
+            chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, rentSortedBy, p, r) }
+        },
         metaBold = OrdersBoardLogic.metaIsBold(rentSortedBy),
         qty = qty,
         // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
@@ -951,7 +961,7 @@ internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
     lines.task?.let { Text(it, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
 
-/** #891 (option C): light "Lấy dd/mm/yy" (blue) and "Trả dd/mm/yy" (purple) chips; the sorted date only bolder (iOS DateChipStack) */
+/** #891 (option C): the "↗ dd/mm/yy" / "↩ dd/mm/yy" (#1026 sale "↗ dd/mm/yy") chips, no colour; the sorted date only bolder (iOS DateChipStack) */
 @Composable
 internal fun DateChipsRow(chips: List<OrderRowDates.DateChip>) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -964,8 +974,9 @@ internal fun DateChipsRow(chips: List<OrderRowDates.DateChip>) {
 }
 
 /**
- * #1008 (owner): one date chip: the pickup / return icon (chip text colour, as big as the 14sp label it replaces)
+ * #1008 (owner): one date chip: the pickup / return / sale icon (as big as the 14sp label it replaces)
  * then the date; TalkBack reads [spoken] ("Lấy 14/10/26"). Order rows, Việc cần làm and the calendar day rows.
+ * #1026 (owner): no fill (so no start padding), a grey icon, dark text; only the status badge keeps colour.
  */
 @Composable
 internal fun DateChip(kind: OrderRowDates.ChipKind, date: String, spoken: String, dateSize: TextUnit, weight: FontWeight) {
@@ -974,10 +985,10 @@ internal fun DateChip(kind: OrderRowDates.ChipKind, date: String, spoken: String
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp)
+        modifier = Modifier.background(colors.fill).padding(start = 0.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
             .clearAndSetSemantics { contentDescription = spoken },
     ) {
-        Icon(OrdersBoardLogic.chipIcon(kind), contentDescription = null, tint = colors.text, modifier = Modifier.size(iconSize))
+        Icon(OrdersBoardLogic.chipIcon(kind), contentDescription = null, tint = OrdersBoardLogic.chipIconTint, modifier = Modifier.size(iconSize))
         Text(date, fontSize = dateSize, fontWeight = weight, color = colors.text, maxLines = 1)
     }
 }
@@ -991,6 +1002,10 @@ internal object DateChipText {
 /** Chip labels in the app language */
 @Composable
 internal fun chipLabels(): Pair<String, String> = stringResource(R.string.orders_chip_pickup) to stringResource(R.string.orders_chip_return)
+
+/** #1026: the spoken word of a sale date chip ("Bán") */
+@Composable
+internal fun saleChipLabel(): String = stringResource(R.string.orders_chip_sale)
 
 
 /** #496 line 1 of an order row */
