@@ -549,5 +549,8 @@
   "DEPOSIT_AUTO_CALCULATED": "Tiền cọc được tính từ các sản phẩm.",
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "Không đổi được tiền cọc sau khi đã tạo đơn.",
   "DEPOSIT_EDIT_SUCCESS": "Đã lưu tiền cọc.",
-  "DEPOSIT_EDIT_FAILED": "Không lưu được tiền cọc. Vui lòng thử lại."
+  "DEPOSIT_EDIT_FAILED": "Không lưu được tiền cọc. Vui lòng thử lại.",
+  "EMBEDDING_BACKFILL_STATUS": "Đã tải trạng thái tìm bằng ảnh.",
+  "EMBEDDING_BACKFILL_DRY_RUN": "Đã kiểm tra xong. Chưa tạo gì.",
+  "EMBEDDING_BACKFILL_QUEUED": "Đã đưa sản phẩm vào hàng chờ tìm bằng ảnh."
 }

@@ -549,5 +549,8 @@
   "DEPOSIT_AUTO_CALCULATED": "The deposit was calculated from the products.",
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "The deposit cannot be changed after the order is created.",
   "DEPOSIT_EDIT_SUCCESS": "Deposit saved.",
-  "DEPOSIT_EDIT_FAILED": "Could not save the deposit. Please try again."
+  "DEPOSIT_EDIT_FAILED": "Could not save the deposit. Please try again.",
+  "EMBEDDING_BACKFILL_STATUS": "Image search status loaded.",
+  "EMBEDDING_BACKFILL_DRY_RUN": "Check finished. Nothing was queued.",
+  "EMBEDDING_BACKFILL_QUEUED": "Products queued for image search."
 }

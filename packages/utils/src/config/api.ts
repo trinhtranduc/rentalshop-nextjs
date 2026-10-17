@@ -311,6 +311,7 @@ export interface ApiUrls {
     health: string;
     logs: string;
     deletedRecords: string;
+    embeddingBackfill: string;
   };
   notifications: {
     list: string;
@@ -884,6 +885,7 @@ function createApiUrls(): ApiUrls {
     health: `${base}/api/system/health`,
     logs: `${base}/api/system/logs`,
     deletedRecords: `${base}/api/deleted-records`,
+    embeddingBackfill: `${base}/api/admin/embedding-backfill`,
   },
     notifications: {
       list: `${base}/api/notifications`,

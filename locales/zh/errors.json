@@ -72,5 +72,8 @@
   "CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED": "订单创建后无法修改押金。",
   "DEPOSIT_EDIT_SUCCESS": "已保存押金。",
   "DEPOSIT_EDIT_FAILED": "无法保存押金。请重试。",
-  "AWS_S3_TEST_FAILED": "无法检查文件存储。请重试。"
+  "AWS_S3_TEST_FAILED": "无法检查文件存储。请重试。",
+  "EMBEDDING_BACKFILL_STATUS": "已加载图片搜索状态。",
+  "EMBEDDING_BACKFILL_DRY_RUN": "检查完成，未加入队列。",
+  "EMBEDDING_BACKFILL_QUEUED": "商品已加入图片搜索队列。"
 }
