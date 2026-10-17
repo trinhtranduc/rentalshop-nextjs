@@ -79,7 +79,30 @@ export function getApiMessage(
   legacy?: Readonly<Record<string, string>>,
 ): string {
   const lang = locale ?? currentRequestApiLocale();
-  const template = catalogs[lang][code] ?? legacy?.[code] ?? friendlyFallback[lang];
+  return fillTemplate(catalogs[lang][code] ?? legacy?.[code] ?? friendlyFallback[lang], values);
+}
+
+/** #1013: neutral sentence for a success code without its own sentence. Never the error fallback. */
+const successFallback: Record<ApiMessageLocale, string> = {
+  en: 'Success',
+  vi: 'Thành công',
+};
+
+/**
+ * Like `getApiMessage`, for a success response: catalog sentence, else the legacy sentence, else a neutral
+ * success sentence. A success must never say "Something went wrong".
+ */
+export function getApiSuccessMessage(
+  code: string,
+  values: ApiMessageValues = {},
+  locale?: ApiMessageLocale,
+  legacy?: Readonly<Record<string, string>>,
+): string {
+  const lang = locale ?? currentRequestApiLocale();
+  return fillTemplate(catalogs[lang][code] ?? legacy?.[code] ?? successFallback[lang], values);
+}
+
+function fillTemplate(template: string, values: ApiMessageValues): string {
   return template.replace(/\{([a-zA-Z]+)\}/g, (placeholder, name: string) => {
     if (!Object.prototype.hasOwnProperty.call(values, name)) return placeholder;
     const value = values[name];
