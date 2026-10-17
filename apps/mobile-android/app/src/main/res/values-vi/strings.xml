@@ -1668,6 +1668,9 @@
     <string name="attendance_err_gps_msg_plain">Ra gần cửa rồi thử lại.</string>
     <string name="attendance_err_not_configured">Chi nhánh chưa cài chấm công</string>
     <string name="attendance_err_not_configured_msg">Nhờ chủ shop cài vị trí và mã QR cho chi nhánh.</string>
+    <string name="attendance_err_location_not_set">Chi nhánh chưa đặt vị trí</string>
+    <string name="attendance_err_location_not_set_named">%1$s chưa đặt vị trí</string>
+    <string name="attendance_err_location_not_set_msg">Chưa đo được khoảng cách. Nhờ chủ shop đặt vị trí ở Chấm công › Mã QR &amp; vị trí.</string>
     <string name="attendance_err_module_off">Shop chưa bật Chấm công</string>
     <string name="attendance_err_module_off_msg">Liên hệ chủ shop để bật Chấm công.</string>
     <string name="attendance_err_no_location">Chưa định vị chính xác</string>

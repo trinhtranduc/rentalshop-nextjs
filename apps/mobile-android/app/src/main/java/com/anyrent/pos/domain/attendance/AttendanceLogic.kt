@@ -71,6 +71,8 @@ data class PunchResult(
 enum class PunchRejectionKind {
     OUT_OF_RANGE, MOCK_LOCATION, QR_EXPIRED, QR_WRONG_OUTLET, GPS_INACCURATE,
     NOT_CONFIGURED, MODULE_OFF, NO_LOCATION,
+    /** #1014 the outlet has a QR but no location: setup error, the distance cannot be measured */
+    LOCATION_NOT_SET,
     /** #927: the shop did not pick this person to clock in */
     NOT_REQUIRED, OTHER,
 }
@@ -86,6 +88,8 @@ data class PunchRejection(
     val qrOutletName: String? = null,
     /** #949 QR_WRONG_OUTLET: the outlets the person may clock in at */
     val allowedOutletNames: List<String> = emptyList(),
+    /** #1014 LOCATION_NOT_SET: the outlet without a location (null on an older API) */
+    val outletName: String? = null,
 )
 
 /**
@@ -194,6 +198,10 @@ object AttendanceLogic {
             } ?: emptyList(),
         )
         "GPS_INACCURATE" -> PunchRejection(PunchRejectionKind.GPS_INACCURATE, accuracyM = data?.int("accuracyM"))
+        "ATTENDANCE_LOCATION_NOT_SET" -> PunchRejection(
+            PunchRejectionKind.LOCATION_NOT_SET,
+            outletName = data?.optJSONObject("outlet")?.str("name")?.takeIf { it.isNotBlank() },
+        )
         "ATTENDANCE_NOT_CONFIGURED" -> PunchRejection(PunchRejectionKind.NOT_CONFIGURED)
         "MODULE_NOT_ENABLED" -> PunchRejection(PunchRejectionKind.MODULE_OFF)
         "ATTENDANCE_NOT_REQUIRED" -> PunchRejection(PunchRejectionKind.NOT_REQUIRED)
