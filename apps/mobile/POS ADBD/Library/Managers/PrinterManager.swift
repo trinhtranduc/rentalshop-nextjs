@@ -1003,7 +1003,8 @@ enum CreatedOrderAutoPrint {
     }
 
     static func run(orderId: Int) {
-        guard shouldPrint(savedPrinterIP: UserDefaults.standard.string(forKey: PrinterSetup.ipKey)) else { return }
+        // #1011: PrinterSetup.savedIP also keeps a 192.168.1.199 the user saved in Máy in
+        guard PrinterSetup.savedIP != nil else { return }
         // The bill needs the full order (customer, outlet, items), as "In hoá đơn" on the detail prints it
         OrderService.shared.loadOrderDetail(orderId: orderId) { detail, _ in
             guard let detail else { return }
@@ -1018,16 +1019,21 @@ enum CreatedOrderAutoPrint {
 /// #970: is a bill printer set up, and what a failed print tells the user
 enum PrinterSetup {
     static let ipKey = "IpBillPrinter"
+    /// #1011: true once an IP was saved from Máy in (`Utils.saveBillPrinter`); older builds wrote the fallback without it
+    static let chosenKey = "IpBillPrinterChosen"
     /// The fallback older builds showed (and sometimes saved) when no printer was chosen; it is not a printer
     static let legacyDefaultIP = "192.168.1.199"
 
-    /// The saved printer IP, or nil when none was chosen (nothing, blank, or the old fallback)
-    static func configuredIP(saved: String?) -> String? {
+    /// The saved printer IP, or nil when none was chosen (nothing, blank, or the old fallback the user never saved).
+    /// #1011: a shop whose printer really sits at 192.168.1.199 saves it in Máy in (`chosen`), and it is kept.
+    static func configuredIP(saved: String?, chosen: Bool = false) -> String? {
         let ip = (saved ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        return ip.isEmpty || ip == legacyDefaultIP ? nil : ip
+        return ip.isEmpty || (ip == legacyDefaultIP && !chosen) ? nil : ip
     }
 
-    static var savedIP: String? { configuredIP(saved: UserDefaults.standard.string(forKey: ipKey)) }
+    static var savedIP: String? {
+        configuredIP(saved: UserDefaults.standard.string(forKey: ipKey), chosen: UserDefaults.standard.bool(forKey: chosenKey))
+    }
 
     /// The iPhone/iPad app running on a Mac ("Designed for iPad")
     static var runsOnMac: Bool { ProcessInfo.processInfo.isiOSAppOnMac }
