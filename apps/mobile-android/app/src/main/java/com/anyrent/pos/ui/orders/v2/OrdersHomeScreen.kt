@@ -72,6 +72,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -677,9 +679,16 @@ private fun WorkRow(
                         modifier = Modifier.weight(1f),
                     ) {
                         OrdersBoardLogic.workChips(work, kind).forEach { chip ->
+                            // #1008 (owner): the date chip shows its icon then the date
                             val (text, colors) = when (chip.kind) {
-                                OrdersBoardLogic.WorkChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
-                                OrdersBoardLogic.WorkChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
+                                OrdersBoardLogic.WorkChipKind.PICKUP -> {
+                                    DateChip(OrderRowDates.ChipKind.PICKUP, chip.date.orEmpty(), "$pickupLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                                    return@forEach
+                                }
+                                OrdersBoardLogic.WorkChipKind.RETURN -> {
+                                    DateChip(OrderRowDates.ChipKind.RETURN, chip.date.orEmpty(), "$returnLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                                    return@forEach
+                                }
                                 OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to DS.Status.Late
                                 OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
                             }
@@ -947,20 +956,29 @@ internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
 internal fun DateChipsRow(chips: List<OrderRowDates.DateChip>) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         chips.forEach { chip ->
-            val colors = OrdersBoardLogic.chipColors(chip.kind)
-            // #893 (owner on device): the sorted chip is bold (label and date), the other regular
+            // #893 (owner on device): the sorted chip is bold (icon and date), the other regular
             val weight = if (chip.bold) DateChipText.sortedWeight else DateChipText.otherWeight
-            Text(
-                buildAnnotatedString {
-                    append(chip.label + " ")
-                    pushStyle(SpanStyle(fontSize = DS.TextSize.Body, fontWeight = weight))
-                    append(chip.date)
-                    pop()
-                },
-                fontSize = DS.TextSize.Secondary, fontWeight = weight, color = colors.text, maxLines = 1,
-                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
-            )
+            DateChip(chip.kind, chip.date, chip.accessibilityText, DS.TextSize.Body, weight)
         }
+    }
+}
+
+/**
+ * #1008 (owner): one date chip: the pickup / return icon (chip text colour, as big as the 14sp label it replaces)
+ * then the date; TalkBack reads [spoken] ("Lấy 14/10/26"). Order rows, Việc cần làm and the calendar day rows.
+ */
+@Composable
+internal fun DateChip(kind: OrderRowDates.ChipKind, date: String, spoken: String, dateSize: TextUnit, weight: FontWeight) {
+    val colors = OrdersBoardLogic.chipColors(kind)
+    val iconSize = with(LocalDensity.current) { DS.TextSize.Secondary.toDp() }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp)
+            .clearAndSetSemantics { contentDescription = spoken },
+    ) {
+        Icon(OrdersBoardLogic.chipIcon(kind), contentDescription = null, tint = colors.text, modifier = Modifier.size(iconSize))
+        Text(date, fontSize = dateSize, fontWeight = weight, color = colors.text, maxLines = 1)
     }
 }
 
