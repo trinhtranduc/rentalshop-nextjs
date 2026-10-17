@@ -409,6 +409,19 @@ class OrdersHomeTest {
         assertEquals(PayLine.Due(120000.0), OrdersBoardLogic.rowPayLine(due, rentList = false))
     }
 
+    /** #1008 (owner): an icon in place of "Lấy" / "Trả"; TalkBack still reads the word and the date; colours unchanged */
+    @Test
+    fun `date chips show an icon and speak the word`() {
+        assertEquals("Outlined.ArrowOutward", OrdersBoardLogic.chipIcon(OrderRowDates.ChipKind.PICKUP).name)
+        assertEquals("AutoMirrored.Outlined.Undo", OrdersBoardLogic.chipIcon(OrderRowDates.ChipKind.RETURN).name)
+        val order = listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z")
+        assertEquals(listOf("Lấy 14/10/26", "Trả 16/10/26"), OrdersBoardLogic.dateChips(order, SortDate.PICKUP).map { it.accessibilityText })
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF1E40AF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).text)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFEFF6FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP).fill)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF5B21B6), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).text)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFF5F3FF), OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN).fill)
+    }
+
     /** #891 (option C): light Lấy / Trả chips; the sorted date only bolder; a created-date sort makes "tạo …" bold (iOS) */
     @Test
     fun `date chips emphasise only the sorted date`() {

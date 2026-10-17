@@ -1,5 +1,7 @@
 package com.anyrent.pos.ui.orders.v2
 
+import androidx.compose.material.icons.automirrored.outlined.Undo
+import androidx.compose.material.icons.outlined.ArrowOutward
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.orders.OrderRowDates
@@ -161,6 +163,12 @@ object OrdersBoardLogic {
 
     /** #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" is bold dark text (no background) */
     fun metaIsBold(sortedBy: SortDate?): Boolean = sortedBy == SortDate.CREATED
+
+    /** #1008 (owner): the icon in place of the word: arrow going out (pickup), arrow coming back (return); iOS symbolName */
+    fun chipIcon(kind: OrderRowDates.ChipKind): androidx.compose.ui.graphics.vector.ImageVector = when (kind) {
+        OrderRowDates.ChipKind.PICKUP -> androidx.compose.material.icons.Icons.Outlined.ArrowOutward
+        OrderRowDates.ChipKind.RETURN -> androidx.compose.material.icons.Icons.AutoMirrored.Outlined.Undo
+    }
 
     /** #891 (option C): light blue "Lấy", light purple "Trả" (iOS DateChip.Kind.colors) */
     fun chipColors(kind: OrderRowDates.ChipKind): com.anyrent.pos.ui.theme.DS.Pill = when (kind) {
