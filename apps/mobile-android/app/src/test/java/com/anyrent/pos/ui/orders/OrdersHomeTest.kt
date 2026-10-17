@@ -421,8 +421,9 @@ class OrdersHomeTest {
 
     /**
      * #1026 (owner, intentional change from the #891 blue / purple chips): only the status badge keeps colour.
-     * Every date chip (pickup, return, sale) is dark text on no fill with a grey icon; "Trễ N ngày", "Chưa soạn đồ"
-     * and the status badge keep theirs; TalkBack text unchanged.
+     * Every date chip (pickup, return, sale) is dark text on no fill with a grey icon; the status badge keeps its
+     * colour; TalkBack text unchanged. #1032: "Trễ N ngày" / "Chưa soạn đồ" lost their box too (see the #1032 test);
+     * the DS tokens keep their fills for the other screens.
      */
     @Test
     fun `date chips have no fill and a grey icon, the badge keeps its colour`() {
@@ -438,6 +439,50 @@ class OrdersHomeTest {
         assertNotEquals(androidx.compose.ui.graphics.Color.Transparent, com.anyrent.pos.ui.theme.DS.Status.Waiting.fill)
         val order = listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z")
         assertEquals(listOf("Lấy 14/10/26", "Trả 16/10/26"), OrdersBoardLogic.dateChips(order, null).map { it.accessibilityText })
+    }
+
+    /**
+     * #1032 (owner, mockup "Mọi màn đơn hàng: cảnh báo gọn"; intentional change from the pink / orange boxes):
+     * "Trễ N ngày" (red, clock) and "Chưa soạn đồ" (orange, box) are 12sp medium coloured text, no fill; the work
+     * chips keep their kinds (spoken text unchanged); the status badge stays solid. iOS `RowWarning`.
+     */
+    @Test
+    fun `row warnings have no box, a coloured icon and text`() {
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFB91C1C), com.anyrent.pos.ui.orders.v2.RowWarning.LATE.color)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF9A3412), com.anyrent.pos.ui.orders.v2.RowWarning.NOT_PREPARED.color)
+        com.anyrent.pos.ui.orders.v2.RowWarning.entries.forEach {
+            assertEquals(androidx.compose.ui.graphics.Color.Transparent, it.fill)
+        }
+        assertEquals("Outlined.Schedule", com.anyrent.pos.ui.orders.v2.RowWarning.LATE.icon.name)
+        assertEquals("Outlined.Inventory2", com.anyrent.pos.ui.orders.v2.RowWarning.NOT_PREPARED.icon.name)
+        assertEquals(12.sp, com.anyrent.pos.ui.orders.v2.RowWarning.fontSize)
+        assertEquals(FontWeight.Medium, com.anyrent.pos.ui.orders.v2.RowWarning.weight)
+        // Việc cần làm: the date chip is not a warning; late and not prepared are
+        val work = TodayWorkRow(id = 1, orderNumber = "1", pickupPlanAt = java.time.Instant.parse("2026-10-13T17:30:00Z"), isReadyToDeliver = false, lateDays = 2)
+        val chips = OrdersBoardLogic.workChips(work, WorkKind.HAND_OVER)
+        assertEquals(
+            listOf(OrdersBoardLogic.WorkChipKind.PICKUP, OrdersBoardLogic.WorkChipKind.LATE, OrdersBoardLogic.WorkChipKind.NOT_PREPARED),
+            chips.map { it.kind },
+        )
+        assertEquals(listOf(null, com.anyrent.pos.ui.orders.v2.RowWarning.LATE, com.anyrent.pos.ui.orders.v2.RowWarning.NOT_PREPARED),
+            chips.map { OrdersBoardLogic.warning(it.kind) })
+        assertEquals(2, chips[1].days)
+        // The status badge stays solid; the DS tokens other screens use keep their fills
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFEF4444), com.anyrent.pos.ui.orders.v2.OrderStatusTag.colors("RESERVED").fill)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFFEE2E2), com.anyrent.pos.ui.theme.DS.Status.Late.fill)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFFFEDD5), com.anyrent.pos.ui.theme.DS.Status.Waiting.fill)
+    }
+
+    /**
+     * #1032 (owner, mockup "Lịch › đơn trễ: icon"): the calendar late note uses the late warning, then " · phí N"
+     * in grey regular; TalkBack reads "Trễ N ngày · phí N" as before.
+     */
+    @Test
+    fun `calendar late note keeps its spoken text and greys the fee`() {
+        assertEquals(" · phí 50.000", com.anyrent.pos.ui.orders.v2.RowWarning.feeSuffix("phí 50.000"))
+        assertEquals("Trễ 2 ngày · phí 50.000", "Trễ 2 ngày" + com.anyrent.pos.ui.orders.v2.RowWarning.feeSuffix("phí 50.000"))
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF64748B), com.anyrent.pos.ui.orders.v2.RowWarning.feeColor)
+        assertEquals(FontWeight.Normal, com.anyrent.pos.ui.orders.v2.RowWarning.feeWeight)
     }
 
     /** #1026 (owner): a sale row shows "↗ dd/mm/yy" (created day) in place of "Bán dd/mm/yy"; TalkBack reads "Bán dd/mm/yy" */

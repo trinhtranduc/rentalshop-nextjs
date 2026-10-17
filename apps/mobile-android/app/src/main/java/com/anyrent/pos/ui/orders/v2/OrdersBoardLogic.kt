@@ -2,6 +2,8 @@ package com.anyrent.pos.ui.orders.v2
 
 import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material.icons.outlined.ArrowOutward
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Schedule
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.orders.OrderRowDates
@@ -67,6 +69,33 @@ enum class RowTag { HAND_OVER, TAKE_BACK, RESERVED, RENTING, RETURNED, COMPLETED
 enum class DayWord { TODAY, TOMORROW, YESTERDAY, NONE }
 
 /** Pure texts and counts of the boards Main, VL-tat-ca, VL-ban, VL-tim, Loc (#401); unit tested */
+/**
+ * #1032 (owner, mockup "Mọi màn đơn hàng: cảnh báo gọn"): a warning on an order row ("Trễ N ngày", "Quá N ngày",
+ * "Chưa soạn đồ") is small coloured text with a small icon in front and no box, so the status badge stays the
+ * strongest colour (iOS `RowWarning`). Only order rows use it; `DS.Status.Late` / `Waiting` keep their fills.
+ */
+enum class RowWarning(val color: androidx.compose.ui.graphics.Color, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    LATE(androidx.compose.ui.graphics.Color(0xFFB91C1C), androidx.compose.material.icons.Icons.Outlined.Schedule),
+    NOT_PREPARED(androidx.compose.ui.graphics.Color(0xFF9A3412), androidx.compose.material.icons.Icons.Outlined.Inventory2),
+    ;
+
+    /** No fill */
+    val fill: androidx.compose.ui.graphics.Color get() = androidx.compose.ui.graphics.Color.Transparent
+
+    companion object {
+        /** Pill size (12sp), medium weight (iOS `RowWarning.font`) */
+        val fontSize: androidx.compose.ui.unit.TextUnit = com.anyrent.pos.ui.theme.DS.TextSize.Pill
+        val weight: androidx.compose.ui.text.font.FontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+
+        /** #1032 (owner, mockup "Lịch › đơn trễ: icon"): the grey "· phí N" after the calendar late warning */
+        val feeColor = androidx.compose.ui.graphics.Color(0xFF64748B)
+        val feeWeight: androidx.compose.ui.text.font.FontWeight = androidx.compose.ui.text.font.FontWeight.Normal
+
+        /** " · phí N" after "Trễ N ngày": the spoken note stays "Trễ N ngày · phí N" as before */
+        fun feeSuffix(feeText: String): String = " · $feeText"
+    }
+}
+
 object OrdersBoardLogic {
     /** "0053" of "ORD-1-0053"; numbers without a dash stay whole */
     fun shortNumber(orderNumber: String): String =
@@ -135,6 +164,13 @@ object OrdersBoardLogic {
 
     /** #893: one chip; [date] for PICKUP / RETURN, [days] for LATE */
     data class WorkChip(val kind: WorkChipKind, val date: String? = null, val days: Int = 0)
+
+    /** #1032 (owner): "Trễ N ngày" / "Chưa soạn đồ" are soft row warnings (icon + text, no box); dates are not */
+    fun warning(kind: WorkChipKind): RowWarning? = when (kind) {
+        WorkChipKind.LATE -> RowWarning.LATE
+        WorkChipKind.NOT_PREPARED -> RowWarning.NOT_PREPARED
+        WorkChipKind.PICKUP, WorkChipKind.RETURN -> null
+    }
 
 
     /** #893 (owner): the task's own date (Lấy for a hand-over, Trả for a take-back), "Trễ N ngày", "Chưa soạn đồ" */
