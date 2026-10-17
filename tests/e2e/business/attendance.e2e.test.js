@@ -347,7 +347,8 @@ const signQr = (payload) => {
     await must(setModule(true, null), 'on');
   });
 
-  test('BF-ATT-X03 not configured: kiosk 422 before a QR / location; punch without coordinates → ATTENDANCE_NOT_CONFIGURED', async () => {
+  // #1014: a QR but no outlet location → the punch names that outlet (ATTENDANCE_LOCATION_NOT_SET); the kiosk keeps ATTENDANCE_NOT_CONFIGURED
+  test('BF-ATT-X03 not configured: kiosk 422 before a QR / location; punch without coordinates → ATTENDANCE_LOCATION_NOT_SET', async () => {
     const list = await must(m.get('/api/attendance/settings'), 'list');
     expect(list.find((x) => x.outletId === world.outletId)).toMatchObject({ configured: false, generated: false, qrMode: 'DAILY' });
     const fresh = await must(m.get(`/api/attendance/settings?outletId=${world.outletId}`), 'settings');
@@ -359,7 +360,9 @@ const signQr = (payload) => {
     expect(brief(await punch(st, { code: signQr(`a1.${world.outletId}.0.D.${today}`) }))).toEqual({ status: 422, code: 'QR_EXPIRED' });
     code = (await must(m.post('/api/attendance/settings/qr', { outletId: world.outletId }), 'qr')).qr.code;
     expect(brief(await kioskGet(kiosk1))).toEqual({ status: 422, code: 'ATTENDANCE_NOT_CONFIGURED' });
-    expect(brief(await punch(st))).toEqual({ status: 422, code: 'ATTENDANCE_NOT_CONFIGURED' });
+    const noLocation = await punch(st);
+    expect(brief(noLocation)).toEqual({ status: 422, code: 'ATTENDANCE_LOCATION_NOT_SET' });
+    expect(noLocation.body.data.outlet).toMatchObject({ id: world.outletId });
     await must(m.put('/api/attendance/settings', { outletId: world.outletId, ...SHOP, radiusM: 100 }), 'location');
     expect((await kioskGet(kiosk1)).status).toBe(200);
   });
