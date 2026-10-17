@@ -740,6 +740,9 @@ final class OrdersHomeTests: XCTestCase {
     }
 
     /// Texts of the labels a user can see in the cell (the label and every parent up to the cell are shown)
+    /// #1008: a date chip as shown: the icon (a text attachment) then the date
+    private func iconChip(_ date: String) -> String { "\u{FFFC} " + date }
+
     private func visibleTexts(_ cell: UITableViewCell) -> [String] {
         func isShown(_ view: UIView) -> Bool {
             var current: UIView? = view
@@ -849,7 +852,7 @@ final class OrdersHomeTests: XCTestCase {
         let order = try listOrder(1, status: "RESERVED", balances: "")
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .created), hidesMoney: false)
         let texts = visibleTexts(cell)
-        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 01/10/26"), "\(texts)")
+        XCTAssertTrue(texts.contains(iconChip("01/10/26")), "#1008: icon then date: \(texts)")
         let meta = labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }
         XCTAssertEqual(meta?.font, Utils.boldFont(size: 13), "sorted by created: the created day is bold")
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
@@ -865,7 +868,7 @@ final class OrdersHomeTests: XCTestCase {
         func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
         func dateFont(_ cell: OrderRowCell, prefix: String) -> UIFont? {
             guard let label = views(cell.contentView).compactMap({ $0 as? InsetLabel })
-                .first(where: { $0.attributedText?.string.hasPrefix(prefix) == true }),
+                .first(where: { $0.accessibilityLabel?.hasPrefix(prefix) == true }), // #1008: the word is spoken, not shown
                   let text = label.attributedText else { return nil }
             return text.attribute(.font, at: text.length - 1, effectiveRange: nil) as? UIFont
         }
@@ -964,7 +967,7 @@ final class OrdersHomeTests: XCTestCase {
         let texts = visibleTexts(cell)
         XCTAssertFalse(texts.contains { $0.hasPrefix("#") }, "no #code · tạo line: \(texts)")
         XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
-        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"))
+        XCTAssertTrue(texts.contains(iconChip("14/10/26")))
         XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200_000))))
         XCTAssertTrue(texts.contains(MoneyFormatter.format(300_000)), "the total always shows (owner)")
     }
@@ -979,7 +982,7 @@ final class OrdersHomeTests: XCTestCase {
         let texts = visibleTexts(cell)
         XCTAssertTrue(texts.contains("Vest đen slim fit"), "\(texts)")
         XCTAssertTrue(texts.contains("#0062 · " + String(format: "orders.row.created".localized(), "02/10/26 09:12")))
-        XCTAssertTrue(texts.contains("orders.chip.return".localized() + " 15/10/26"))
+        XCTAssertTrue(texts.contains(iconChip("15/10/26")))
         XCTAssertTrue(texts.contains(MoneyFormatter.format(380000)))
         XCTAssertTrue(texts.contains(OrdersHomeLogic.statusTag(.reserved).text))
     }
@@ -991,7 +994,7 @@ final class OrdersHomeTests: XCTestCase {
         let cell = CalendarDayRowCell(style: .default, reuseIdentifier: nil)
         cell.configure(CalendarDayRow(kind: .handOver, order: order, lateDays: 0), hidesMoney: false)
         let texts = visibleTexts(cell)
-        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"), "\(texts)")
+        XCTAssertTrue(texts.contains(iconChip("14/10/26")), "\(texts)")
         XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "#893 lean row: only the task's own date")
     }
 
