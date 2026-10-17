@@ -51,6 +51,7 @@
   "GPS_INACCURATE": "定位不够精确，请到门口或窗边后重试。",
   "MOCK_LOCATION": "检测到虚拟定位，请关闭虚拟定位应用后重试。",
   "ATTENDANCE_NOT_CONFIGURED": "该分店尚未设置考勤（缺少位置或二维码）。",
+  "ATTENDANCE_LOCATION_NOT_SET": "该分店尚未设置考勤位置，无法核对距离。请店主在 考勤 › 二维码与位置 中设置。",
   "SHIFT_OVERLAP": "该班次与该员工的其他班次时间重叠。",
   "SHIFT_LOCKED": "已过去或已打卡的日期不能修改。",
   "SHIFT_LOCKED_NAMED": "{names} 今天已打卡，今天的班次不能修改。请从明天开始。",
