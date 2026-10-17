@@ -81,8 +81,8 @@ export const POST = withAdminOnly(async (request: NextRequest) => {
 
     if (!result.dryRun && result.queued > 0) {
       // Same kick as sync-embeddings: do not block the request; the cron drains the rest.
-      void db.embeddingJobs.processPending({ batchSize: 3 }).catch((error: any) => {
-        console.error('[Embedding backfill] processPending failed:', error?.message || error);
+      void db.embeddingJobs.processPending({ batchSize: 3 }).catch((error: unknown) => {
+        console.error('[Embedding backfill] processPending failed:', error instanceof Error ? error.message : error);
       });
     }
 

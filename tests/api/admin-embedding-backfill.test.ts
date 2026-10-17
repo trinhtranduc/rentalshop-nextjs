@@ -46,15 +46,12 @@ const mockPrisma = {
       for (const row of data) store.jobs.push({ id: ++store.seq, createdAt: store.seq, ...row });
       return { count: data.length };
     }),
-    groupBy: jest.fn(async ({ where }: any) => {
+    count: jest.fn(async ({ where }: any) => {
       const merchantId = where?.product?.merchantId;
-      const counts = new Map<string, number>();
-      for (const j of store.jobs) {
+      return store.jobs.filter((j) => {
         const p = store.products.find((x) => x.id === j.productId);
-        if (merchantId && p?.merchantId !== merchantId) continue;
-        counts.set(j.status, (counts.get(j.status) ?? 0) + 1);
-      }
-      return [...counts.entries()].map(([status, n]) => ({ status, _count: { _all: n } }));
+        return j.status === where.status && (!merchantId || p?.merchantId === merchantId);
+      }).length;
     }),
   },
   merchant: {

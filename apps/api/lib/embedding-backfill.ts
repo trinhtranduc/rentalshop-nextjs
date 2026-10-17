@@ -8,8 +8,6 @@
 import { prisma } from '@rentalshop/database';
 import { parseProductImages } from '@rentalshop/utils';
 
-const prismaAny = prisma as any;
-
 const SCAN_BATCH = 1000;
 const WRITE_BATCH = 500;
 const TOP_MERCHANTS = 10;
@@ -26,7 +24,7 @@ async function scanCandidates(merchantId?: number): Promise<Candidate[]> {
   let cursor: number | undefined;
   for (;;) {
     const rows: Array<{ id: number; merchantId: number; images: unknown; embeddingGeneratedAt: Date | null }> =
-      await prismaAny.product.findMany({
+      await prisma.product.findMany({
         where: {
           isActive: true,
           deletedAt: null,
@@ -57,19 +55,18 @@ export async function getEmbeddingBackfillStatus(merchantId?: number) {
   const candidates = await scanCandidates(merchantId);
   const missing = candidates.filter((c) => !c.hasEmbedding);
 
-  const grouped: Array<{ status: string; _count: { _all: number } }> = await prismaAny.embeddingJob.groupBy({
-    by: ['status'],
-    where: merchantId ? { product: { merchantId } } : {},
-    _count: { _all: true },
-  });
-  const jobs: Record<string, number> = Object.fromEntries(JOB_STATUSES.map((s) => [s, 0]));
-  for (const row of grouped) jobs[row.status] = row._count?._all ?? 0;
+  const jobs: Record<string, number> = {};
+  for (const status of JOB_STATUSES) {
+    jobs[status] = await prisma.embeddingJob.count({
+      where: { status, ...(merchantId ? { product: { merchantId } } : {}) },
+    });
+  }
 
   const perMerchant = new Map<number, number>();
   for (const c of missing) perMerchant.set(c.merchantId, (perMerchant.get(c.merchantId) ?? 0) + 1);
   const top = [...perMerchant.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_MERCHANTS);
   const names: Array<{ id: number; name: string }> = top.length
-    ? await prismaAny.merchant.findMany({ where: { id: { in: top.map(([id]) => id) } }, select: { id: true, name: true } })
+    ? await prisma.merchant.findMany({ where: { id: { in: top.map(([id]) => id) } }, select: { id: true, name: true } })
     : [];
   const nameById = new Map(names.map((m) => [m.id, m.name]));
 
@@ -98,7 +95,7 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
   for (const batch of chunks(missing, WRITE_BATCH)) {
     const ids = batch.map((c) => c.id);
     // Latest job first per product: decides "already queued" and "last job failed".
-    const jobs: Array<{ productId: number; status: string }> = await prismaAny.embeddingJob.findMany({
+    const jobs: Array<{ productId: number; status: string }> = await prisma.embeddingJob.findMany({
       where: { productId: { in: ids } },
       select: { productId: true, status: true },
       orderBy: [{ productId: 'asc' }, { createdAt: 'desc' }],
@@ -118,7 +115,7 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
 
   if (!dryRun) {
     for (const batch of chunks(toQueue, WRITE_BATCH)) {
-      await prismaAny.embeddingJob.createMany({
+      await prisma.embeddingJob.createMany({
         data: batch.map((c) => ({
           productId: c.id,
           source: BACKFILL_SOURCE,
