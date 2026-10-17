@@ -94,12 +94,23 @@ struct DateChip: Equatable {
             case .return: return DS.Pill(text: UIColor(hexString: "5B21B6"), fill: UIColor(hexString: "F5F3FF"))
             }
         }
+
+        /// #1008 (owner): the SF Symbol shown in place of the word "Lấy" / "Trả"
+        var symbolName: String {
+            switch self {
+            case .pickup: return "arrow.up.forward"
+            case .return: return "arrow.uturn.backward"
+            }
+        }
     }
 
     let kind: Kind
     let label: String
     let date: String
     let bold: Bool
+
+    /// #1008: what VoiceOver reads, "Lấy 14/10/26" (the chip shows only the icon and the date)
+    var accessibilityText: String { label + " " + date }
 
     static func == (lhs: DateChip, rhs: DateChip) -> Bool {
         lhs.kind == rhs.kind && lhs.label == rhs.label && lhs.date == rhs.date && lhs.bold == rhs.bold
@@ -357,8 +368,12 @@ enum OrdersHomeLogic {
 
     /// #893 (owner): one chip on line 2 of a lean Việc cần làm row
     struct WorkChip: Equatable {
+        /// The full text ("Lấy 14/10/26"); for a date chip it is what VoiceOver reads
         let text: String
         let colors: DS.Pill
+        /// #1008: a date chip shows the `dateKind` icon then `date` in place of `text`
+        var dateKind: DateChip.Kind? = nil
+        var date: String? = nil
         static func == (lhs: WorkChip, rhs: WorkChip) -> Bool { lhs.text == rhs.text }
     }
 
@@ -371,7 +386,8 @@ enum OrdersHomeLogic {
         let chipKind: DateChip.Kind = kind == .handOver ? .pickup : .return
         if let date {
             let label = (kind == .handOver ? "orders.chip.pickup" : "orders.chip.return").localized()
-            chips.append(WorkChip(text: label + " " + DayFormatter.dmy(date, timeZone: timeZone), colors: chipKind.colors))
+            let day = DayFormatter.dmy(date, timeZone: timeZone)
+            chips.append(WorkChip(text: label + " " + day, colors: chipKind.colors, dateKind: chipKind, date: day))
         }
         if work.lateDays > 0 { chips.append(WorkChip(text: LateText.days(work.lateDays), colors: DS.Status.late)) }
         if notPreparedApplies(kind: kind, isReadyToDeliver: work.isReadyToDeliver) {
@@ -387,8 +403,9 @@ enum OrdersHomeLogic {
         let handOver = row.kind == .handOver
         if let date = handOver ? row.order.pickupPlanAt : row.order.returnPlanAt {
             let label = (handOver ? "orders.chip.pickup" : "orders.chip.return").localized()
-            chips.append(WorkChip(text: label + " " + DayFormatter.dmy(date, timeZone: timeZone),
-                                  colors: (handOver ? DateChip.Kind.pickup : DateChip.Kind.return).colors))
+            let chipKind: DateChip.Kind = handOver ? .pickup : .return
+            let day = DayFormatter.dmy(date, timeZone: timeZone)
+            chips.append(WorkChip(text: label + " " + day, colors: chipKind.colors, dateKind: chipKind, date: day))
         }
         if handOver {
             if row.order.isReadyToDeliver == true {

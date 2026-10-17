@@ -883,6 +883,51 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
     }
 
+    // MARK: #1008 — date chips show an icon in place of "Lấy" / "Trả"
+
+    func testDateChipIconsAndSpokenText() {
+        XCTAssertEqual(DateChip.Kind.pickup.symbolName, "arrow.up.forward")
+        XCTAssertEqual(DateChip.Kind.return.symbolName, "arrow.uturn.backward")
+        XCTAssertNotNil(UIImage(systemName: DateChip.Kind.pickup.symbolName))
+        XCTAssertNotNil(UIImage(systemName: DateChip.Kind.return.symbolName))
+        let pickup = iso.date(from: "2026-10-13T17:30:00Z")! // 14/10 in Vietnam
+        let back = iso.date(from: "2026-10-16T02:00:00Z")!
+        let chips = OrdersHomeLogic.dateChips(pickupPlanAt: pickup, returnPlanAt: back, sortedBy: .pickup, timeZone: vietnam)
+        XCTAssertEqual(chips.map(\.accessibilityText), ["orders.chip.pickup".localized() + " 14/10/26",
+                                                        "orders.chip.return".localized() + " 16/10/26"])
+
+        // The chip view: icon + " " + date, no word; VoiceOver reads the word and the date; colours unchanged
+        let stack = DateChipStack()
+        stack.show(chips)
+        let labels = stack.arrangedSubviews.compactMap { $0 as? InsetLabel }
+        XCTAssertEqual(labels.count, 2)
+        XCTAssertEqual(labels.map(\.accessibilityLabel), chips.map(\.accessibilityText))
+        for (label, chip) in zip(labels, chips) {
+            let text = label.attributedText!
+            XCTAssertFalse(text.string.contains(chip.label), "the word is gone")
+            XCTAssertTrue(text.string.hasSuffix(" " + chip.date))
+            XCTAssertNotNil(text.attribute(.attachment, at: 0, effectiveRange: nil) as? NSTextAttachment, "icon first")
+            XCTAssertEqual(hex(label.backgroundColor!), hex(chip.kind.colors.fill))
+        }
+        XCTAssertEqual(hex(DateChip.Kind.pickup.colors.text), "1E40AF")
+        XCTAssertEqual(hex(DateChip.Kind.return.colors.text), "5B21B6")
+
+        // Việc cần làm / calendar date chips carry the icon kind and the date; their text stays the spoken text
+        let work = TodayWorkRow(id: 1, orderNumber: "1", pickupPlanAt: pickup, returnPlanAt: back,
+                                isReadyToDeliver: false, totalAmount: 0, amountDue: 0, lateDays: 1)
+        let workChips = OrdersHomeLogic.workChips(work, kind: .handOver, timeZone: vietnam)
+        XCTAssertEqual(workChips.map(\.dateKind), [.pickup, nil, nil], "only the date chip gets an icon")
+        XCTAssertEqual(workChips[0].date, "14/10/26")
+        XCTAssertEqual(OrdersHomeLogic.workChips(work, kind: .takeBack, timeZone: vietnam).first?.dateKind, .return)
+        let lines = UIStackView()
+        OrderRowCell.fillChipLines(lines, chips: workChips, width: 1000)
+        let shown = lines.arrangedSubviews.flatMap { ($0 as? UIStackView)?.arrangedSubviews ?? [] }.compactMap { $0 as? InsetLabel }
+        XCTAssertEqual(shown.first?.accessibilityLabel, "orders.chip.pickup".localized() + " 14/10/26")
+        XCTAssertEqual(shown.first?.attributedText?.string.hasSuffix(" 14/10/26"), true)
+        XCTAssertFalse(shown.first?.attributedText?.string.contains("orders.chip.pickup".localized()) ?? true)
+        XCTAssertEqual(shown[1].text, LateText.days(1), "other chips keep their text")
+    }
+
     // MARK: #893 — lean Việc cần làm rows
 
     /// Line 2 of a Việc cần làm row: the task's own date chip, then "Trễ N ngày", then "Chưa soạn đồ"
