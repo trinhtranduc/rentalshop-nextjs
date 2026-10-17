@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import POS_ADBD
 
@@ -256,6 +257,30 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(OrdersHomeLogic.hidesMoney(role: .outletInventory, hideForStaff: false))
         XCTAssertTrue(ChangeHistoryLogic.isStaff("OUTLET_INVENTORY"))
         XCTAssertFalse(ChangeHistoryLogic.canView("OUTLET_INVENTORY"))
+    }
+
+    /// #1024 (option A): the cart's icons, the item note on one line, and what VoiceOver reads
+    func testCartIconsAndItemNoteLine() throws {
+        XCTAssertEqual(CartV2Icon.addItem.rawValue, "plus.circle")
+        XCTAssertEqual(CartV2Icon.itemNote.rawValue, "square.and.pencil")
+        XCTAssertEqual(CartV2Icon.orderNote.rawValue, "note.text")
+        for icon in [CartV2Icon.addItem, .itemNote, .orderNote] {
+            XCTAssertNotNil(UIImage(systemName: icon.rawValue), "\(icon) is an SF Symbol")
+        }
+        // nil = the entry shows "Ghi chú"; a note is one line (the button cuts it with "…")
+        XCTAssertNil(CartV2Logic.itemNoteLine(nil))
+        XCTAssertNil(CartV2Logic.itemNoteLine(" \n\t "))
+        XCTAssertEqual(CartV2Logic.itemNoteLine("  Sửa eo 2cm "), "Sửa eo 2cm")
+        XCTAssertEqual(CartV2Logic.itemNoteLine("Tặng kèm\n size M\r\n\ngiao trước 9h\n"), "Tặng kèm size M giao trước 9h")
+        let long = String(repeating: "Giao trước 9h ", count: 20)
+        XCTAssertEqual(CartV2Logic.itemNoteLine(long), long.trimmingCharacters(in: .whitespaces), "the text is whole; the button truncates it")
+        // VoiceOver: "Ghi chú cho <product>" and the note, as before the icon
+        let empty = CartV2Logic.itemNoteSpoken(productName: "Áo dài", note: "  ")
+        XCTAssertEqual(empty.label, String(format: "cart.itemNote.accessibility".localized(), "Áo dài"))
+        XCTAssertTrue(empty.label.contains("Áo dài"))
+        XCTAssertNil(empty.value)
+        XCTAssertEqual(CartV2Logic.itemNoteSpoken(productName: "Áo dài", note: " Size M ").value, "Size M")
+        XCTAssertNotEqual("products.cart.addItem.accessibility".localized(), "products.cart.addItem.accessibility", "Thêm món is localized")
     }
 
     func testInventoryRoleIsPickedOnlyWhenTheApiAllowsIt() throws {

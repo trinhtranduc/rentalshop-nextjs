@@ -651,6 +651,7 @@
     </plurals>
     <string name="v2_cart_items">Món · %1$d</string>
     <string name="v2_cart_add_more">Thêm</string>
+    <string name="v2_cart_add_item_accessibility">Thêm món</string>
     <string name="v2_cart_empty">Giỏ hàng trống. Thêm sản phẩm từ danh sách.</string>
     <string name="v2_calc_per_rental">%1$s/lần × %2$d</string>
     <plurals name="v2_calc_per_day">

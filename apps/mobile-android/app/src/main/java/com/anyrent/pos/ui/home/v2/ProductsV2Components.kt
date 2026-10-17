@@ -180,6 +180,8 @@ internal fun V2ValueRow(
     onClick: (() -> Unit)? = null,
     valueColor: Color = DS.Colors.TextMuted,
     bold: Boolean = false,
+    /** #1024: an icon before the title (the cart's order note), grey, read by nobody; null = none as before */
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
 ) {
     Row(
         Modifier
@@ -190,6 +192,9 @@ internal fun V2ValueRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+        }
         Text(title, fontSize = if (bold) DS.TextSize.Name else DS.TextSize.Body, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, color = DS.Colors.Text, modifier = Modifier.weight(1f))
         Text(
             value,

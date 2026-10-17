@@ -1,0 +1,40 @@
+package com.anyrent.pos.domain.products
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+/** #1024 (option A, icon + word): the cart's icons, the item note on one line, and what TalkBack reads (iOS ProductsV2Tests) */
+class CartNoteIconsTest {
+    @Test
+    fun iconsMatchIos() {
+        assertEquals("AddCircleOutline", CartV2Icon.ADD_ITEM.material)
+        assertEquals("plus.circle", CartV2Icon.ADD_ITEM.ios)
+        assertEquals("Edit", CartV2Icon.ITEM_NOTE.material)
+        assertEquals("square.and.pencil", CartV2Icon.ITEM_NOTE.ios)
+        assertEquals("Description", CartV2Icon.ORDER_NOTE.material)
+        assertEquals("note.text", CartV2Icon.ORDER_NOTE.ios)
+    }
+
+    @Test
+    fun itemNoteIsOneLine() {
+        // null = the entry shows "Ghi chú"
+        assertNull(CartV2Logic.itemNoteLine(null))
+        assertNull(CartV2Logic.itemNoteLine(" \n\t "))
+        assertEquals("Sửa eo 2cm", CartV2Logic.itemNoteLine("  Sửa eo 2cm "))
+        assertEquals("Tặng kèm size M giao trước 9h", CartV2Logic.itemNoteLine("Tặng kèm\n size M\r\n\ngiao trước 9h\n"))
+        // the text stays whole; the entry cuts it with "…" (maxLines 1, Ellipsis)
+        val long = "Giao trước 9h ".repeat(20)
+        assertEquals(long.trim(), CartV2Logic.itemNoteLine(long))
+    }
+
+    @Test
+    fun talkBackReadsNoteAndProduct() {
+        val empty = CartV2Logic.itemNoteSpoken("Áo dài", "  ", noteLabel = "Ghi chú", accessibilityFormat = "Ghi chú cho %1\$s")
+        assertEquals("Ghi chú", empty.text)
+        assertEquals("Ghi chú cho Áo dài", empty.actionLabel)
+        val has = CartV2Logic.itemNoteSpoken("Áo dài", " Size M ", noteLabel = "Ghi chú", accessibilityFormat = "Ghi chú cho %1\$s")
+        assertEquals("Size M", has.text)
+        assertEquals("Ghi chú cho Áo dài", has.actionLabel)
+    }
+}
