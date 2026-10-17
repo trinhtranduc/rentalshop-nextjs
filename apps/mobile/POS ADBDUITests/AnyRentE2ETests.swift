@@ -572,8 +572,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
-    /// #888: cart lines show "Giá vốn" and the money part "Tổng giá vốn" (rent and sale) and "Lãi dự kiến" (sale) for
-    /// roles that may see prices; staff never see them. Product 1 and Product 2 have a cost in the e2e DB.
+    /// #1007 (owner 2026-10-17): the cart never shows "Giá vốn", "Tổng giá vốn" or "Lãi dự kiến" for any role (#888
+    /// showed them); the cart is shown to the customer. Product 1 and Product 2 have a cost in the e2e DB.
     func test8fCartCost() throws {
         try e2e.requireFlag("newProducts")
         try e2e.start()
@@ -584,19 +584,18 @@ final class AnyRentE2ETests: XCTestCase {
         guard openCart() else { return XCTFail("cart did not open") }
         e2e.cartRentToday() // the dates row reads dd/mm/yy → dd/mm/yy
         sleep(1)
-        let seesCost = e2e.role != "staff"
         let cost = e2e.element(labelBeginsWith: ["Cost", "Giá vốn"])
-        e2e.soft(cost.waitForExistence(timeout: 3) == seesCost, "Giá vốn on the line (\(e2e.role))")
+        e2e.soft(!cost.waitForExistence(timeout: 3), "no Giá vốn on the line (\(e2e.role))")
         e2e.shot("8f-10-cart-rent")
         _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["Note", "Ghi chú"]))
-        e2e.soft(e2e.element(labelBeginsWith: ["Total cost", "Tổng giá vốn"]).exists == seesCost, "Tổng giá vốn (\(e2e.role))")
+        e2e.soft(!e2e.element(labelBeginsWith: ["Total cost", "Tổng giá vốn"]).exists, "no Tổng giá vốn (\(e2e.role))")
         e2e.shot("8f-11-cart-rent-money")
         e2e.tapIfExists(e2e.button(["Sale", "Bán"]))
         sleep(1)
         app.swipeDown()
         e2e.shot("8f-20-cart-sale")
         _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["Note", "Ghi chú"]))
-        e2e.soft(e2e.element(labelBeginsWith: ["Expected profit", "Lãi dự kiến"]).exists == seesCost, "Lãi dự kiến (\(e2e.role))")
+        e2e.soft(!e2e.element(labelBeginsWith: ["Expected profit", "Lãi dự kiến"]).exists, "no Lãi dự kiến (\(e2e.role))")
         e2e.shot("8f-21-cart-sale-money")
         e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))
         e2e.goBackOnce()

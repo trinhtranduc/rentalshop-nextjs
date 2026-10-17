@@ -136,13 +136,7 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(ProductDetailV2Logic.quantity(of: 99, in: order), 1, "list without the item: 1")
     }
 
-    // MARK: - Cart cost (#888)
-
-    private func costLine(_ cost: Double?, qty: Int = 1, price: Double = 300_000) -> CartItem {
-        var line = item(price: price, qty: qty)
-        line.costPrice = cost
-        return line
-    }
+    // MARK: - Cart cost (#888, hidden in the cart since #1007)
 
     /// #888: a cart line carries the product's cost; a cart saved before #888 (no key) still decodes
     func testCartLineTakesTheProductCost() throws {
@@ -157,26 +151,12 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNil(old.costPrice)
     }
 
-    /// #888: "Giá vốn" per line = cost × quantity, only when > 0 and the role may see prices
-    func testCartLineCost() {
-        XCTAssertEqual(CartCostLogic.lineCost(costLine(180_000, qty: 2), showsPrices: true), 360_000)
-        XCTAssertNil(CartCostLogic.lineCost(costLine(180_000, qty: 2), showsPrices: false), "staff never")
-        XCTAssertNil(CartCostLogic.lineCost(costLine(0), showsPrices: true))
-        XCTAssertNil(CartCostLogic.lineCost(costLine(nil), showsPrices: true))
-    }
-
-    /// #888: "Tổng giá vốn" in both carts; the sale cart adds "Lãi dự kiến" = total − total cost
-    func testCartCostSummary() {
-        let lines = [costLine(800_000), costLine(180_000, qty: 2), costLine(nil)]
-        XCTAssertEqual(CartCostLogic.summary(lines, total: 2_440_000, orderType: .sale, showsPrices: true),
-                       CartCostSummary(totalCost: 1_160_000, profit: 1_280_000))
-        XCTAssertEqual(CartCostLogic.summary(lines, total: 750_000, orderType: .rent, showsPrices: true),
-                       CartCostSummary(totalCost: 1_160_000, profit: nil))
-        XCTAssertEqual(CartCostLogic.summary([costLine(900_000)], total: 500_000, orderType: .sale, showsPrices: true)?.profit,
-                       -400_000, "a loss shows as negative")
-        XCTAssertNil(CartCostLogic.summary(lines, total: 2_440_000, orderType: .sale, showsPrices: false))
-        XCTAssertNil(CartCostLogic.summary([costLine(nil), costLine(0)], total: 600_000, orderType: .sale, showsPrices: true),
-                     "no line with a cost: no cost rows")
+    /// #1007 (owner 2026-10-17): the cart never shows cost price ("Giá vốn", "Tổng giá vốn", "Lãi dự kiến") for any
+    /// role, because the cart is shown to the customer. The cart strings are gone; the line still carries `costPrice`.
+    func testCartShowsNoCostPrice() {
+        for key in ["products.cart.cost", "products.cart.totalCost", "products.cart.profit"] {
+            XCTAssertEqual(Bundle.main.localizedString(forKey: key, value: nil, table: nil), key, "\(key) should be removed")
+        }
     }
 
     /// #887: the form sends the typed cost; an empty field sends 0 only when the product had a cost (the user cleared

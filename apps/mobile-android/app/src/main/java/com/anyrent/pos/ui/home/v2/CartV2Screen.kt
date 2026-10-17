@@ -76,12 +76,9 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
 import com.anyrent.pos.domain.orders.EditOrderSheet
-import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.domain.customers.CustomerPickerEdit
-import com.anyrent.pos.domain.products.CartCostLogic
 import com.anyrent.pos.domain.products.CartDateRow
 import com.anyrent.pos.domain.products.CartLineCalc
-import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.ui.common.AppAlertConfirm
@@ -154,8 +151,6 @@ fun CartV2Screen(
     val editOriginal by CartStore.editOriginal.collectAsState()
     val isSale = orderType == "SALE"
     val app = LocalContext.current.applicationContext as AnyRentApp
-    // #888: cost lines only for roles that may see prices (never OUTLET_STAFF)
-    val showsPrices = ProductAccess.showsPriceFields(PermissionManager.role)
 
     // Same money as the old cart: computed from the collected lines so every change redraws
     val subtotal = lines.sumOf { it.lineTotal }
@@ -501,7 +496,6 @@ fun CartV2Screen(
                     isSale = isSale,
                     available = available[line.product.id],
                     productQuantity = productQuantities[line.product.id] ?: line.quantity,
-                    cost = CartCostLogic.lineCost(line, showsPrices),
                     overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
                     onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
                         { onOpenCalendar(c.productId, c.from.toString()) }
@@ -526,18 +520,6 @@ fun CartV2Screen(
             ThinDivider()
             V2ValueRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(total), valueColor = DS.Colors.Text, bold = true)
             ThinDivider()
-            // #888: "Tổng giá vốn", and "Lãi dự kiến" in a sale cart; only for roles that may see prices
-            CartCostLogic.summary(lines, total, isSale, showsPrices)?.let { costs ->
-                V2ValueRow(stringResource(R.string.v2_cart_total_cost), formatMoneyVnd(costs.totalCost), valueColor = DS.Colors.Text)
-                ThinDivider()
-                costs.profit?.let { profit ->
-                    V2ValueRow(
-                        stringResource(R.string.v2_cart_profit), formatMoneyVnd(profit),
-                        valueColor = if (profit < 0) Color(0xFFB91C1C) else V2Colors.Ok, bold = true,
-                    )
-                    ThinDivider()
-                }
-            }
             if (!isSale) {
                 V2ValueRow(
                     stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
@@ -905,8 +887,6 @@ private fun ItemRow(
     available: Int?,
     /** #951: units of this product across all its cart lines (the shortage compares them with [available]) */
     productQuantity: Int = line.quantity,
-    /** #888 "Giá vốn" of the line (cost × quantity); null hides the row */
-    cost: Double? = null,
     /** #518 / #684 "Hết hàng từ 03/10 → 05/10"; replaces the shortage chip */
     overlapText: String? = null,
     /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
@@ -944,12 +924,6 @@ private fun ItemRow(
                 PricingChip(line, isSale, onOpenPricing)
                 if (isSale && available != null) {
                     Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                }
-                cost?.let {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.v2_cart_cost), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
-                        Text(formatMoneyVnd(it), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = Color(0xFF334155), maxLines = 1)
-                    }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))

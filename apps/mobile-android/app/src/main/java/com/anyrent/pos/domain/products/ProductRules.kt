@@ -358,27 +358,6 @@ data class CartPricingChoice(val type: String, val catalogPrice: Double?)
 /** Live preview of the sheet: "130.000đ × 3 ngày × 1" ([days] only for a daily rent price) and its total */
 data class CartPricePreview(val unitPrice: Double, val days: Int?, val quantity: Int, val total: Double)
 
-/** "Tổng giá vốn" and, in a sale cart, "Lãi dự kiến" (#888, iOS `CartCostSummary`) */
-data class CartCostSummary(
-    val totalCost: Double,
-    /** Sale cart only: total (after discount) − total cost; negative is a loss */
-    val profit: Double?,
-)
-
-/** Cost lines of the cart (#888, iOS `CartCostLogic`): only for roles that may see prices, only lines with a cost */
-object CartCostLogic {
-    /** "Giá vốn" of a line: cost × quantity; null when hidden or the product has no cost */
-    fun lineCost(line: CartLine, showsPrices: Boolean): Double? =
-        line.product.costPrice?.takeIf { showsPrices && it > 0 }?.let { it * line.quantity }
-
-    /** Null when hidden or no line has a cost */
-    fun summary(lines: List<CartLine>, total: Double, isSale: Boolean, showsPrices: Boolean): CartCostSummary? {
-        val costs = lines.mapNotNull { lineCost(it, showsPrices) }
-        if (costs.isEmpty()) return null
-        val totalCost = costs.sum()
-        return CartCostSummary(totalCost, if (isSale) total - totalCost else null)
-    }
-}
 
 /** What one cart line costs: "150.000đ/ngày × 3 ngày", "300.000đ/lần × 2", "Giá bán 850.000đ × 1" */
 data class CartLineCalc(

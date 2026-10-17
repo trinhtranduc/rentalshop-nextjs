@@ -2491,9 +2491,6 @@
 "orders.v2.filter.order" = "Thứ tự";
 "orders.v2.filter.rangeOf" = "Khoảng %@";
 "orders.v2.filter.sameDate" = "Sắp xếp và khoảng ngày cùng tính theo %@.";
-"products.cart.cost" = "Giá vốn";
-"products.cart.totalCost" = "Tổng giá vốn";
-"products.cart.profit" = "Lãi dự kiến";
 "order.detail.createdBy" = "Người tạo: %@";
 "orders.chip.pickup" = "Lấy";
 "orders.chip.return" = "Trả";
