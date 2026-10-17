@@ -583,11 +583,17 @@ final class CalendarDayRowCell: UITableViewCell {
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)
         totalLabel.isHidden = hidesMoney
         // Board Lich: late days (+ stored fee) only; no còn thu / refund note (#893)
+        // #1032: a reused late row had an attributed note; the refund / due note keeps its 14pt bold
+        noteLabel.attributedText = nil
+        noteLabel.font = Self.noteFont
+        noteLabel.accessibilityLabel = nil
         switch CalendarV2Logic.note(row, hidesMoney: hidesMoney) {
         case .late(let days, let fee):
-            let late = LateText.days(days)
-            noteLabel.text = fee.map { late + " · " + String(format: "calendar.v2.fee".localized(), MoneyFormatter.format($0)) } ?? late
-            noteLabel.textColor = V2.danger
+            // #1032 (owner, mockup "Lịch › đơn trễ: icon"): the order-row late warning (clock + small red text, no
+            // box), then the fee in grey; VoiceOver reads "Trễ N ngày · phí …" as before
+            let note = Self.lateNote(days: days, fee: fee)
+            noteLabel.attributedText = note.text
+            noteLabel.accessibilityLabel = note.spoken
         case .refund(let amount):
             noteLabel.text = String(format: "orders.v2.pay.refund".localized(), MoneyFormatter.format(amount))
             noteLabel.textColor = DS.Status.returning.text
@@ -598,6 +604,26 @@ final class CalendarDayRowCell: UITableViewCell {
             noteLabel.text = nil
         }
         noteLabel.isHidden = noteLabel.text == nil
+    }
+
+    /// The refund / due note: 14pt bold
+    private static var noteFont: UIFont { Utils.boldFont(size: DS.TextSize.secondary) }
+
+    /// #1032 (owner): grey "· phí N" after the late warning
+    static let feeColor = UIColor(hexString: "64748B")
+
+    /// #1032 (owner): the late note of a calendar day row: clock + "Trễ N ngày" (`RowWarning.late`), then
+    /// " · phí N" in grey regular on the same line; `spoken` is the text VoiceOver read before
+    static func lateNote(days: Int, fee: Double?) -> (text: NSAttributedString, spoken: String) {
+        let late = LateText.days(days)
+        let text = NSMutableAttributedString(attributedString: RowWarningLabel.text(late, .late))
+        guard let fee else { return (text, late) }
+        let feeText = " · " + String(format: "calendar.v2.fee".localized(), MoneyFormatter.format(fee))
+        text.append(NSAttributedString(string: feeText, attributes: [
+            NSAttributedString.Key.font: Utils.regularFont(size: RowWarning.fontSize),
+            NSAttributedString.Key.foregroundColor: feeColor,
+        ]))
+        return (text, late + feeText)
     }
 }
 

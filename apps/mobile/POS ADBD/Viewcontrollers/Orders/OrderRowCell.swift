@@ -85,6 +85,44 @@ enum DateChipIcon {
     }
 }
 
+/// #1032 (owner): an order row warning ("Trễ N ngày", "Chưa soạn đồ"): the icon then the text in the warning
+/// colour, no fill and no left padding; VoiceOver reads only the text, as before
+enum RowWarningLabel {
+    /// No fill, so no left padding; the right padding keeps the gap to the next chip (as the date chips)
+    static let insets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 4)
+
+    /// The icon, a space, then the text, all in the warning colour
+    static func text(_ text: String, _ warning: RowWarning, font: UIFont = RowWarning.font) -> NSAttributedString {
+        let config = UIImage.SymbolConfiguration(font: font)
+        let result = NSMutableAttributedString()
+        if let image = UIImage(systemName: warning.symbolName, withConfiguration: config)?
+            .withTintColor(warning.color, renderingMode: .alwaysOriginal) {
+            let attachment = NSTextAttachment()
+            attachment.image = image
+            attachment.bounds = CGRect(x: 0, y: (font.capHeight - image.size.height) / 2,
+                                       width: image.size.width, height: image.size.height)
+            result.append(NSAttributedString(attachment: attachment))
+            result.append(NSAttributedString(string: " ", attributes: [NSAttributedString.Key.font: font]))
+        }
+        result.append(NSAttributedString(string: text, attributes: [
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: warning.color,
+        ]))
+        return result
+    }
+
+    static func make(_ text: String, _ warning: RowWarning) -> InsetLabel {
+        let label = InsetLabel()
+        label.insets = insets
+        label.backgroundColor = .clear
+        label.attributedText = Self.text(text, warning)
+        label.accessibilityLabel = text
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        return label
+    }
+}
+
 /// A label with padding and a rounded fill (#891 date chips and the "× qty" box)
 final class InsetLabel: UILabel {
     var insets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
@@ -363,27 +401,33 @@ final class OrderRowCell: UITableViewCell {
         var line = UIStackView()
         var used: CGFloat = 0
         for chip in chips {
-            let label = InsetLabel()
-            label.insets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
-            label.font = Utils.mediumFont(size: DS.TextSize.secondary)
-            label.text = chip.text
-            label.textColor = chip.colors.text
-            if let kind = chip.dateKind, let date = chip.date {
-                // #1008 (owner): the date chip shows its icon then the date; VoiceOver reads `text` ("Lấy 14/10/26")
-                let font = Utils.mediumFont(size: DS.TextSize.secondary)
-                let text = NSMutableAttributedString(attributedString: DateChipIcon.text(kind, font: font))
-                text.append(NSAttributedString(string: " " + date, attributes: [
-                    NSAttributedString.Key.font: font,
-                    NSAttributedString.Key.foregroundColor: chip.colors.text,
-                ]))
-                label.attributedText = text
-                label.accessibilityLabel = chip.text
-                // #1026 (owner): the date chip has no fill, so no left padding
-                label.insets = DateChipStack.chipInsets
+            let label: InsetLabel
+            if let warning = chip.warning {
+                // #1032 (owner): "Trễ N ngày" / "Chưa soạn đồ": icon + coloured text, no box
+                label = RowWarningLabel.make(chip.text, warning)
+            } else {
+                label = InsetLabel()
+                label.insets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+                label.font = Utils.mediumFont(size: DS.TextSize.secondary)
+                label.text = chip.text
+                label.textColor = chip.colors.text
+                if let kind = chip.dateKind, let date = chip.date {
+                    // #1008 (owner): the date chip shows its icon then the date; VoiceOver reads `text` ("Lấy 14/10/26")
+                    let font = Utils.mediumFont(size: DS.TextSize.secondary)
+                    let text = NSMutableAttributedString(attributedString: DateChipIcon.text(kind, font: font))
+                    text.append(NSAttributedString(string: " " + date, attributes: [
+                        NSAttributedString.Key.font: font,
+                        NSAttributedString.Key.foregroundColor: chip.colors.text,
+                    ]))
+                    label.attributedText = text
+                    label.accessibilityLabel = chip.text
+                    // #1026 (owner): the date chip has no fill, so no left padding
+                    label.insets = DateChipStack.chipInsets
+                }
+                label.backgroundColor = chip.colors.fill
+                label.layer.cornerRadius = 8
+                label.layer.masksToBounds = true
             }
-            label.backgroundColor = chip.colors.fill
-            label.layer.cornerRadius = 8
-            label.layer.masksToBounds = true
             let size = label.intrinsicContentSize.width
             if used > 0 && used + 6 + size > width {
                 stack.addArrangedSubview(line)
@@ -490,7 +534,7 @@ final class OrderRowCell: UITableViewCell {
         setTotal(order.totalAmount, struck: order.status == .cancelled)
         if case .notPickedUp = context {
             if lateDays > 0 {
-                addPill(PluralText.format("notPickedUp.chip", count: lateDays, lateDays), DS.Status.late)
+                addWarning(PluralText.format("notPickedUp.chip", count: lateDays, lateDays), .late)
             }
             // Only what is still to collect, in the Còn phải thu colour
             if let due = order.listAmountDue, due > 0 {
@@ -504,7 +548,7 @@ final class OrderRowCell: UITableViewCell {
             let isRentList: Bool = { if case .rentList = context { return true }; return false }()
             let isProducts: Bool = { if case .productOrders = context { return true }; return false }()
             if lateDays > 0 && !isRentList && !isProducts {
-                addPill(LateText.days(lateDays), DS.Status.late)
+                addWarning(LateText.days(lateDays), .late)
             }
             // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
             // #891 (owner): Tất cả đơn and product order rows show no pay line; the other lists keep it
@@ -561,10 +605,9 @@ final class OrderRowCell: UITableViewCell {
         }
     }
 
-    private func addPill(_ text: String, _ colors: DS.Pill) {
-        let pill = RowTagLabel(style: .note)
-        pill.apply(text, colors)
-        pillStack.addArrangedSubview(pill)
+    /// #1032 (owner): "Trễ N ngày" / "Quá N ngày" on line 4: icon + red text, no box
+    private func addWarning(_ text: String, _ warning: RowWarning) {
+        pillStack.addArrangedSubview(RowWarningLabel.make(text, warning))
     }
 }
 
