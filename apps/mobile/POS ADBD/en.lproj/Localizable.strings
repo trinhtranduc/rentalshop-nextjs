@@ -2493,9 +2493,6 @@
 "orders.v2.filter.order" = "Order";
 "orders.v2.filter.rangeOf" = "%@ range";
 "orders.v2.filter.sameDate" = "Sorting and the date range both use the %@.";
-"products.cart.cost" = "Cost";
-"products.cart.totalCost" = "Total cost";
-"products.cart.profit" = "Expected profit";
 "order.detail.createdBy" = "Created by: %@";
 "orders.chip.pickup" = "Pickup";
 "orders.chip.return" = "Return";

@@ -1652,9 +1652,6 @@
     <string name="orders_v2_filter_order">Order</string>
     <string name="orders_v2_filter_range_of">%1$s range</string>
     <string name="orders_v2_filter_same_date">Sorting and the date range both use the %1$s.</string>
-    <string name="v2_cart_cost">Cost</string>
-    <string name="v2_cart_total_cost">Total cost</string>
-    <string name="v2_cart_profit">Expected profit</string>
     <string name="detail_created_by">Created by: %1$s</string>
     <string name="orders_chip_pickup">Pickup</string>
     <string name="orders_chip_return">Return</string>

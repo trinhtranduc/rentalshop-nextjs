@@ -107,29 +107,6 @@ class ProductRulesTest {
         assertNull(ProductCostPrice.shown(product(), showsPrices = true))
     }
 
-    private fun costLine(cost: Double?, qty: Int = 1, isSale: Boolean = false) =
-        CartLine(product().copy(costPrice = cost), qty, isSale = isSale)
-
-    /** #888: "Giá vốn" per cart line = cost × quantity, only when > 0 and the role may see prices (iOS `CartCostLogic`) */
-    @Test
-    fun `cart line cost`() {
-        assertEquals(360_000.0, CartCostLogic.lineCost(costLine(180_000.0, qty = 2), showsPrices = true))
-        assertNull("staff never", CartCostLogic.lineCost(costLine(180_000.0, qty = 2), showsPrices = false))
-        assertNull(CartCostLogic.lineCost(costLine(0.0), showsPrices = true))
-        assertNull(CartCostLogic.lineCost(costLine(null), showsPrices = true))
-    }
-
-    /** #888: "Tổng giá vốn" in both carts; the sale cart adds "Lãi dự kiến" = total − total cost */
-    @Test
-    fun `cart cost summary`() {
-        val lines = listOf(costLine(800_000.0), costLine(180_000.0, qty = 2), costLine(null))
-        assertEquals(CartCostSummary(1_160_000.0, 1_280_000.0), CartCostLogic.summary(lines, 2_440_000.0, isSale = true, showsPrices = true))
-        assertEquals(CartCostSummary(1_160_000.0, null), CartCostLogic.summary(lines, 750_000.0, isSale = false, showsPrices = true))
-        assertEquals(-400_000.0, CartCostLogic.summary(listOf(costLine(900_000.0)), 500_000.0, isSale = true, showsPrices = true)?.profit)
-        assertNull(CartCostLogic.summary(lines, 2_440_000.0, isSale = true, showsPrices = false))
-        assertNull(CartCostLogic.summary(listOf(costLine(null), costLine(0.0)), 600_000.0, isSale = true, showsPrices = true))
-    }
-
     /** #887: an empty cost field sends 0 only when the product had a cost, so an unknown cost is never wiped */
     @Test
     fun `cost price sent on save never wipes an unknown cost`() {
