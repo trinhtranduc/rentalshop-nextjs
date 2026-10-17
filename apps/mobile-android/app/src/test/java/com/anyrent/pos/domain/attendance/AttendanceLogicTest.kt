@@ -78,6 +78,19 @@ class AttendanceLogicTest {
         assertEquals("timeout", other.message)
     }
 
+    /** #1014 outlet without a location: its own setup kind naming the outlet, apart from distance and "not set up" */
+    @Test
+    fun location_not_set_is_its_own_rejection() {
+        val named = AttendanceLogic.rejection("ATTENDANCE_LOCATION_NOT_SET", JSONObject("""{"outlet":{"id":1,"name":"CN Một"}}"""), "x")
+        assertEquals(PunchRejectionKind.LOCATION_NOT_SET, named.kind)
+        assertEquals("CN Một", named.outletName)
+        val plain = AttendanceLogic.rejection("ATTENDANCE_LOCATION_NOT_SET", JSONObject("""{"outlet":null}"""), null)
+        assertEquals(PunchRejectionKind.LOCATION_NOT_SET, plain.kind)
+        assertNull(plain.outletName)
+        assertEquals(PunchRejectionKind.NOT_CONFIGURED, AttendanceLogic.rejection("ATTENDANCE_NOT_CONFIGURED", null, null).kind)
+        assertEquals(PunchRejectionKind.OUT_OF_RANGE, AttendanceLogic.rejection("OUT_OF_RANGE", null, null).kind)
+    }
+
     /** #949 wrong outlet: `data.qrOutlet` and `data.allowedOutlets` name both outlets; missing → empty */
     @Test
     fun wrong_outlet_reads_both_outlet_names() {

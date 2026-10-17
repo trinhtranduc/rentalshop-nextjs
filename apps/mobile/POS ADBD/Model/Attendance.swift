@@ -251,6 +251,8 @@ struct AttendanceFailure: Error, Equatable {
     var qrOutletName: String? = nil
     /// #949 QR_WRONG_OUTLET: the outlets the person may clock in at
     var allowedOutletNames: [String] = []
+    /// #1014 ATTENDANCE_LOCATION_NOT_SET: the outlet that has no location (nil on an older API)
+    var outletName: String? = nil
 }
 
 /// `data` of a refused call: the numbers, and for QR_WRONG_OUTLET (#949) `qrOutlet` / `allowedOutlets` `{ id, name }`
@@ -260,6 +262,8 @@ struct AttendanceFailureData: Decodable {
     var accuracyM: Double?
     var qrOutletName: String?
     var allowedOutletNames: [String]
+    /// #1014 ATTENDANCE_LOCATION_NOT_SET `data.outlet`
+    var outletName: String?
 
     private struct OutletRef: Decodable {
         let name: String?
@@ -275,6 +279,7 @@ struct AttendanceFailureData: Decodable {
         accuracyM = c.double("accuracyM", "accuracy")
         qrOutletName = c.object(OutletRef.self, "qrOutlet")?.name.flatMap { $0.isEmpty ? nil : $0 }
         allowedOutletNames = (c.object([OutletRef].self, "allowedOutlets") ?? []).compactMap(\.name).filter { !$0.isEmpty }
+        outletName = c.object(OutletRef.self, "outlet")?.name.flatMap { $0.isEmpty ? nil : $0 }
     }
 }
 
@@ -669,6 +674,11 @@ enum AttendanceLogic {
         case "NO_LOCATION":
             return AttendanceErrorCopy(title: "attendance.error.gps.title".localized(),
                                        message: "attendance.error.noLocation.message".localized())
+        case "ATTENDANCE_LOCATION_NOT_SET":
+            // #1014 setup error of the outlet (no location, so no distance), not "too far" and not "not set up"
+            let title = (failure.outletName ?? "").isEmpty ? "attendance.error.locationNotSet.title".localized()
+                : String(format: "attendance.error.locationNotSet.titleNamed".localized(), failure.outletName ?? "")
+            return AttendanceErrorCopy(title: title, message: "attendance.error.locationNotSet.message".localized())
         case "ATTENDANCE_NOT_CONFIGURED":
             return AttendanceErrorCopy(title: "attendance.error.notConfigured.title".localized(),
                                        message: "attendance.error.notConfigured.message".localized())

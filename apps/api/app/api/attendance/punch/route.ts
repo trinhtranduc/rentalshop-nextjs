@@ -30,8 +30,9 @@ const punchSchema = z.object({
 /**
  * POST /api/attendance/punch — #907 rules 13-17. MERCHANT and every outlet role.
  * Server time only. Checks in order (first failure answers, every one after the module gate is logged as an
- * AttendanceScan): module, mock location, QR (signature / version / mode / VN day), outlet, configured,
- * GPS accuracy ≤ 100 m, distance ≤ radius. Then one transaction (row lock on the user) decides IN or OUT.
+ * AttendanceScan): module, mock location, QR (signature / version / mode / VN day), outlet, outlet location set
+ * (#1014 ATTENDANCE_LOCATION_NOT_SET + `data.outlet`), GPS accuracy ≤ 100 m, distance ≤ radius. Then one
+ * transaction (row lock on the user) decides IN or OUT.
  * Indexed: AttendanceRecord(userId, status), AttendanceScan(userId, at).
  * #927 an IN by a person the shop did not choose → 403 ATTENDANCE_NOT_REQUIRED (no scan row); an OUT of an
  * open record always goes through.
@@ -92,7 +93,12 @@ export const POST = attendanceRoute(ATTENDANCE_ROLES, async (request, { user }) 
       { outletId: isOwner(user) ? null : user.outletId, qrOutletId: qrOutlet ? qrOutlet.id : null }
     );
   }
-  if (ownSetting.latitude == null || ownSetting.longitude == null) return reject('ATTENDANCE_NOT_CONFIGURED');
+  // #1014 no outlet location = the distance cannot be measured: a setup error of that outlet (named), never the
+  // generic ATTENDANCE_NOT_CONFIGURED that a far-away scanner read as "attendance is not set up"
+  if (ownSetting.latitude == null || ownSetting.longitude == null) {
+    const outlet = await db.attendance.getOutlet(ownSetting.outletId, user.merchantId);
+    return reject('ATTENDANCE_LOCATION_NOT_SET', { outlet: outlet ? { id: outlet.id, name: outlet.name } : null });
+  }
   const accuracyM = Math.round(body.accuracy);
   if (body.accuracy > MAX_ACCURACY_M) return reject('GPS_INACCURATE', { accuracyM });
   const distanceM = Math.round(haversineMeters(ownSetting.latitude, ownSetting.longitude, body.latitude, body.longitude));

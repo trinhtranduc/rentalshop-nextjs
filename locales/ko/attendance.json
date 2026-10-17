@@ -140,6 +140,7 @@
       "QR_EXPIRED": "QR 코드 만료",
       "QR_WRONG_OUTLET": "다른 지점의 QR 코드",
       "ATTENDANCE_NOT_CONFIGURED": "지점 위치 미설정",
+      "ATTENDANCE_LOCATION_NOT_SET": "지점 위치 미설정(거리 미확인)",
       "other": "거부됨"
     },
     "editIn": "출근 {time}",

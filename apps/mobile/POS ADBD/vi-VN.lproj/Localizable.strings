@@ -2722,3 +2722,8 @@
 "VALIDATION_ERROR" = "Xác thực dữ liệu thất bại";
 "VALID_USER_ID_REQUIRED" = "ID người dùng hợp lệ là bắt buộc";
 "VERIFICATION_EMAIL_SENT" = "Email xác thực đã được gửi";
+
+/* #1014 outlet without an attendance location (setup error, not distance) */
+"attendance.error.locationNotSet.title" = "Chi nhánh chưa đặt vị trí";
+"attendance.error.locationNotSet.titleNamed" = "%@ chưa đặt vị trí";
+"attendance.error.locationNotSet.message" = "Chưa đo được khoảng cách. Nhờ chủ shop đặt vị trí ở Chấm công › Mã QR & vị trí.";

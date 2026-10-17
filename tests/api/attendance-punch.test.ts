@@ -162,11 +162,39 @@ describe('POST /api/attendance/punch: order of checks (#907 rule 13)', () => {
     expect(lastScan().qrOutletId ?? null).toBeNull();
   });
 
-  it('5. outlet without coordinates → 422 ATTENDANCE_NOT_CONFIGURED', async () => {
+  it('5. outlet without coordinates → 422 ATTENDANCE_LOCATION_NOT_SET naming the outlet (#1014)', async () => {
     mockDb.attendance.getSetting.mockResolvedValue(setting({ latitude: null, longitude: null }));
     const res: any = await punch(req('/api/attendance/punch', body()));
     expect(res.status).toBe(422);
-    expect(res.body.code).toBe('ATTENDANCE_NOT_CONFIGURED');
+    expect(res.body.code).toBe('ATTENDANCE_LOCATION_NOT_SET');
+    expect(res.body.data).toEqual({ outlet: { id: 1, name: 'CN 1' } });
+    expect(lastScan()).toEqual(expect.objectContaining({ result: 'ATTENDANCE_LOCATION_NOT_SET', outletId: 1, distanceM: null }));
+  });
+
+  it('#1014 a far scan at an outlet without a location is a setup error, never the generic "not set up"', async () => {
+    mockDb.attendance.getSetting.mockResolvedValue(setting({ latitude: null, longitude: null }));
+    const res: any = await punch(req('/api/attendance/punch', body({ latitude: SHOP.latitude + 0.05 })));
+    expect(res.body.code).toBe('ATTENDANCE_LOCATION_NOT_SET');
+    expect(res.body.code).not.toBe('ATTENDANCE_NOT_CONFIGURED');
+  });
+
+  it('#1014 a far scan at an outlet with a location is OUT_OF_RANGE, also at coordinates 0, 0 (0 is a location, not a missing one)', async () => {
+    const far: any = await punch(req('/api/attendance/punch', body({ latitude: SHOP.latitude + 0.05 })));
+    expect(far.body.code).toBe('OUT_OF_RANGE');
+    mockDb.attendance.getSetting.mockResolvedValue(setting({ latitude: 0, longitude: 0 }));
+    const zero: any = await punch(req('/api/attendance/punch', body()));
+    expect(zero.body.code).toBe('OUT_OF_RANGE');
+  });
+
+  it('#1014 the new code has a sentence in the five locales and in the API defaults', async () => {
+    const fs = require('fs');
+    const path = require('path');
+    const builder = fs.readFileSync(path.join(__dirname, '../../packages/utils/src/api/response-builder.ts'), 'utf8');
+    for (const lang of ['en', 'vi', 'ja', 'ko', 'zh']) {
+      const errors = JSON.parse(fs.readFileSync(path.join(__dirname, `../../locales/${lang}/errors.json`), 'utf8'));
+      expect(typeof errors.ATTENDANCE_LOCATION_NOT_SET).toBe('string');
+    }
+    expect(builder).toContain("'ATTENDANCE_LOCATION_NOT_SET':");
   });
 
   it('6. accuracy > 100 m → 422 GPS_INACCURATE with data.accuracyM', async () => {

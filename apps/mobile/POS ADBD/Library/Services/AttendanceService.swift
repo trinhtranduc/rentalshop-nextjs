@@ -60,7 +60,8 @@ final class AttendanceService: BaseService {
                                                                 radiusM: envelope.numbers?.radiusM,
                                                                 accuracyM: envelope.numbers?.accuracyM,
                                                                 qrOutletName: envelope.numbers?.qrOutletName,
-                                                                allowedOutletNames: envelope.numbers?.allowedOutletNames ?? []))
+                                                                allowedOutletNames: envelope.numbers?.allowedOutletNames ?? [],
+                                                                outletName: envelope.numbers?.outletName))
                         }
                     } else {
                         result = .failure(AttendanceFailure(code: nil, message: "attendance.error.other.message".localized()))

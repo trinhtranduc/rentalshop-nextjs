@@ -2724,3 +2724,8 @@
 "VALIDATION_ERROR" = "Input validation failed";
 "VALID_USER_ID_REQUIRED" = "Valid user ID is required";
 "VERIFICATION_EMAIL_SENT" = "Verification email has been sent";
+
+/* #1014 outlet without an attendance location (setup error, not distance) */
+"attendance.error.locationNotSet.title" = "This outlet has no location yet";
+"attendance.error.locationNotSet.titleNamed" = "%@ has no location yet";
+"attendance.error.locationNotSet.message" = "The distance cannot be checked. Ask the shop owner to set it in Attendance › QR & location.";

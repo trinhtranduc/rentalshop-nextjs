@@ -70,6 +70,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'GPS_INACCURATE': 'Your location is not accurate enough. Move near a door or window and try again.',
   'MOCK_LOCATION': 'A fake location was detected. Turn off the location spoofing app and try again.',
   'ATTENDANCE_NOT_CONFIGURED': 'Attendance is not set up for this branch yet (location or QR code missing).',
+  'ATTENDANCE_LOCATION_NOT_SET': 'This branch has no attendance location yet, so the distance cannot be checked. Ask the shop owner to set it in Attendance › QR & location.',
   'SHIFT_OVERLAP': 'This shift overlaps another shift of the same employee.',
   'SHIFT_LOCKED': 'Past days and days already worked cannot be changed.',
   'SHIFT_TEMPLATE_IN_USE': 'This shift is in use. Hide it instead of deleting it.',
