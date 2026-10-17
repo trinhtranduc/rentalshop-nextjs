@@ -75,5 +75,8 @@
   "DEPOSIT_EDIT_FAILED": "保証金を保存できませんでした。もう一度お試しください。",
   "AWS_S3_TEST_FAILED": "ファイルの保存先を確認できませんでした。もう一度お試しください。",
   "DAILY_INCOME_SUCCESS": "日別の収入を取得しました",
-  "INCOME_ORDERS_SUCCESS": "収入の注文一覧を取得しました"
+  "INCOME_ORDERS_SUCCESS": "収入の注文一覧を取得しました",
+  "EMBEDDING_BACKFILL_STATUS": "画像検索の状態を読み込みました。",
+  "EMBEDDING_BACKFILL_DRY_RUN": "確認が完了しました。キューには追加されていません。",
+  "EMBEDDING_BACKFILL_QUEUED": "商品を画像検索のキューに追加しました。"
 }

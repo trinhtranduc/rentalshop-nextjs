@@ -1,0 +1,162 @@
+'use client';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { Button, Card, CardContent, CardHeader, CardTitle, useToast } from '@rentalshop/ui';
+import { useSettingsTranslations } from '@rentalshop/hooks';
+import { systemApi } from '@rentalshop/utils';
+import type { EmbeddingBackfillResult, EmbeddingBackfillStatus } from '@rentalshop/utils';
+
+/**
+ * #1017: Settings → Admin Info card. Shows how many products with photos have no image-search embedding,
+ * runs a dry-run check, then (after a confirm inside the card) queues the missing embedding jobs.
+ */
+export function EmbeddingBackfillCard() {
+  const t = useSettingsTranslations();
+  const { toastError } = useToast();
+  const [status, setStatus] = useState<EmbeddingBackfillStatus | null>(null);
+  const [result, setResult] = useState<EmbeddingBackfillResult | null>(null);
+  const [includeFailed, setIncludeFailed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      const res = await systemApi.getEmbeddingBackfillStatus();
+      if (res.success && res.data) setStatus(res.data);
+      else toastError(t('embeddingBackfill.loadFailed'), res.message || '');
+    } catch (err) {
+      toastError(t('embeddingBackfill.loadFailed'), (err as Error)?.message || '');
+    }
+  }, [t, toastError]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  const run = async (dryRun: boolean) => {
+    setBusy(true);
+    try {
+      const res = await systemApi.runEmbeddingBackfill({ dryRun, includeFailed });
+      if (res.success && res.data) {
+        setResult(res.data);
+        if (!dryRun) await loadStatus();
+      } else {
+        toastError(t('embeddingBackfill.runFailed'), res.message || '');
+      }
+    } catch (err) {
+      toastError(t('embeddingBackfill.runFailed'), (err as Error)?.message || '');
+    } finally {
+      setBusy(false);
+      setConfirming(false);
+    }
+  };
+
+  const confirmCount = result?.dryRun ? result.queued : (status?.products.missingEmbedding ?? 0);
+
+  const stats: [string, number | undefined][] = [
+    [t('embeddingBackfill.withImages'), status?.products.withImages],
+    [t('embeddingBackfill.missingEmbedding'), status?.products.missingEmbedding],
+    [t('embeddingBackfill.withEmbedding'), status?.products.withEmbedding],
+  ];
+  const jobs: [string, number | undefined][] = [
+    [t('embeddingBackfill.jobPending'), status?.jobs.PENDING],
+    [t('embeddingBackfill.jobRunning'), status?.jobs.RUNNING],
+    [t('embeddingBackfill.jobCompleted'), status?.jobs.COMPLETED],
+    [t('embeddingBackfill.jobFailed'), status?.jobs.FAILED],
+  ];
+
+  return (
+    <Card className="max-w-xl">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>{t('embeddingBackfill.title')}</CardTitle>
+        <Button variant="outline" size="sm" onClick={loadStatus} disabled={busy}>
+          {t('embeddingBackfill.refresh')}
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">{t('embeddingBackfill.description')}</p>
+
+        <div className="grid grid-cols-3 gap-3">
+          {stats.map(([label, value]) => (
+            <div key={label} className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="text-xl font-semibold">{value ?? '-'}</p>
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <p className="text-sm font-medium">{t('embeddingBackfill.jobs')}</p>
+          <p className="text-sm text-muted-foreground">
+            {jobs.map(([label, value]) => `${label}: ${value ?? '-'}`).join(' · ')}
+          </p>
+        </div>
+
+        {status && status.topMerchants.length > 0 && (
+          <div>
+            <p className="text-sm font-medium">{t('embeddingBackfill.topMerchants')}</p>
+            <ul className="text-sm text-muted-foreground">
+              {status.topMerchants.map((m) => (
+                <li key={m.id}>
+                  #{m.id} {m.name}: {m.missingEmbedding}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={includeFailed}
+            onChange={(e) => {
+              setIncludeFailed(e.target.checked);
+              setResult(null);
+            }}
+          />
+          {t('embeddingBackfill.includeFailed')}
+        </label>
+
+        {confirming ? (
+          <div className="rounded-lg border p-3 space-y-2">
+            <p className="font-medium">{t('embeddingBackfill.confirmTitle', { count: confirmCount })}</p>
+            <p className="text-sm text-muted-foreground">{t('embeddingBackfill.confirmBody')}</p>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => run(false)} disabled={busy}>
+                {t('embeddingBackfill.confirm')}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setConfirming(false)} disabled={busy}>
+                {t('embeddingBackfill.cancel')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => run(true)} disabled={busy}>
+              {t('embeddingBackfill.check')}
+            </Button>
+            <Button onClick={() => setConfirming(true)} disabled={busy}>
+              {t('embeddingBackfill.run')}
+            </Button>
+          </div>
+        )}
+
+        {result && (
+          <div className="rounded-lg border p-3 text-sm space-y-1">
+            <p className="font-medium">
+              {result.dryRun ? t('embeddingBackfill.resultDryRun') : t('embeddingBackfill.resultQueued')}
+            </p>
+            <p>{t('embeddingBackfill.resultMerchants')}: {result.merchants}</p>
+            <p>{t('embeddingBackfill.resultProducts')}: {result.products}</p>
+            <p>
+              {result.dryRun ? t('embeddingBackfill.resultWouldQueue') : t('embeddingBackfill.resultQueuedCount')}:{' '}
+              {result.queued}
+            </p>
+            <p>{t('embeddingBackfill.resultSkippedQueued')}: {result.skippedAlreadyQueued}</p>
+            <p>{t('embeddingBackfill.resultSkippedFailed')}: {result.skippedFailed}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
