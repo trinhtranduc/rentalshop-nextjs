@@ -9,6 +9,8 @@ import type { EmbeddingBackfillResult, EmbeddingBackfillStatus } from '@rentalsh
 /**
  * #1017: Settings → Admin Info card. Shows how many products with photos have no image-search embedding,
  * runs a dry-run check, then (after a confirm inside the card) queues the missing embedding jobs.
+ * #1029: the confirm count comes from a fresh dry run with the same includeFailed, so it is what POST would
+ * queue now (products already PENDING/RUNNING, or last FAILED when not retried, are not counted).
  */
 export function EmbeddingBackfillCard() {
   const t = useSettingsTranslations();
@@ -17,6 +19,8 @@ export function EmbeddingBackfillCard() {
   const [result, setResult] = useState<EmbeddingBackfillResult | null>(null);
   const [includeFailed, setIncludeFailed] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  /** Dry-run `queued` behind the open confirm; null while that dry run is loading. */
+  const [confirmCount, setConfirmCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
   const loadStatus = useCallback(async () => {
@@ -48,10 +52,36 @@ export function EmbeddingBackfillCard() {
     } finally {
       setBusy(false);
       setConfirming(false);
+      setConfirmCount(null);
     }
   };
 
-  const confirmCount = result?.dryRun ? result.queued : (status?.products.missingEmbedding ?? 0);
+  /** Opens the confirm with what POST would queue now: a dry run with the same includeFailed. */
+  const openConfirm = async () => {
+    setConfirming(true);
+    setConfirmCount(null);
+    setBusy(true);
+    try {
+      const res = await systemApi.runEmbeddingBackfill({ dryRun: true, includeFailed });
+      if (res.success && res.data) {
+        setResult(res.data);
+        setConfirmCount(res.data.queued);
+      } else {
+        toastError(t('embeddingBackfill.runFailed'), res.message || '');
+        setConfirming(false);
+      }
+    } catch (err) {
+      toastError(t('embeddingBackfill.runFailed'), (err as Error)?.message || '');
+      setConfirming(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const closeConfirm = () => {
+    setConfirming(false);
+    setConfirmCount(null);
+  };
 
   const stats: [string, number | undefined][] = [
     [t('embeddingBackfill.withImages'), status?.products.withImages],
@@ -112,6 +142,7 @@ export function EmbeddingBackfillCard() {
             onChange={(e) => {
               setIncludeFailed(e.target.checked);
               setResult(null);
+              closeConfirm();
             }}
           />
           {t('embeddingBackfill.includeFailed')}
@@ -119,14 +150,24 @@ export function EmbeddingBackfillCard() {
 
         {confirming ? (
           <div className="rounded-lg border p-3 space-y-2">
-            <p className="font-medium">{t('embeddingBackfill.confirmTitle', { count: confirmCount })}</p>
-            <p className="text-sm text-muted-foreground">{t('embeddingBackfill.confirmBody')}</p>
+            {confirmCount === null ? (
+              <p className="text-sm text-muted-foreground">{t('embeddingBackfill.checking')}</p>
+            ) : confirmCount === 0 ? (
+              <p className="font-medium">{t('embeddingBackfill.nothingToQueue')}</p>
+            ) : (
+              <>
+                <p className="font-medium">{t('embeddingBackfill.confirmTitle', { count: confirmCount })}</p>
+                <p className="text-sm text-muted-foreground">{t('embeddingBackfill.confirmBody')}</p>
+              </>
+            )}
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => run(false)} disabled={busy}>
-                {t('embeddingBackfill.confirm')}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setConfirming(false)} disabled={busy}>
-                {t('embeddingBackfill.cancel')}
+              {confirmCount !== null && confirmCount > 0 && (
+                <Button size="sm" onClick={() => run(false)} disabled={busy}>
+                  {t('embeddingBackfill.confirm')}
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={closeConfirm} disabled={busy}>
+                {confirmCount === 0 ? t('embeddingBackfill.close') : t('embeddingBackfill.cancel')}
               </Button>
             </div>
           </div>
@@ -135,7 +176,7 @@ export function EmbeddingBackfillCard() {
             <Button variant="outline" onClick={() => run(true)} disabled={busy}>
               {t('embeddingBackfill.check')}
             </Button>
-            <Button onClick={() => setConfirming(true)} disabled={busy}>
+            <Button onClick={openConfirm} disabled={busy}>
               {t('embeddingBackfill.run')}
             </Button>
           </div>

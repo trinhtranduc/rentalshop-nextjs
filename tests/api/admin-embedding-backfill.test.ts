@@ -182,6 +182,26 @@ describe('POST backfill', () => {
     expect(retry.body.data).toMatchObject({ queued: 4, skippedFailed: 0 });
   });
 
+  // #1029: the admin confirm count is the dry run, not GET missingEmbedding (which still counts queued products)
+  it('after a run, GET still counts them missing but the dry run the confirm uses says 0 to queue', async () => {
+    await POST(req('ADMIN', {}));
+    const status: any = await GET(req('ADMIN'));
+    expect(status.body.data.products.missingEmbedding).toBe(4);
+    expect(status.body.data.jobs.PENDING).toBe(4);
+    const check: any = await POST(req('ADMIN', { dryRun: true }));
+    expect(check.body.data).toMatchObject({ dryRun: true, products: 4, queued: 0, skippedAlreadyQueued: 4 });
+    expect(store.jobs).toHaveLength(4);
+  });
+
+  it.each([false, true])('dry run queued equals what the real run queues (includeFailed %s)', async (includeFailed) => {
+    store.jobs.push({ id: 70, productId: 1, status: 'RUNNING', createdAt: 0 });
+    store.jobs.push({ id: 71, productId: 2, status: 'FAILED', createdAt: 1 });
+    const check: any = await POST(req('ADMIN', { dryRun: true, includeFailed }));
+    const real: any = await POST(req('ADMIN', { includeFailed }));
+    expect(check.body.data.queued).toBe(includeFailed ? 3 : 2);
+    expect(real.body.data.queued).toBe(check.body.data.queued);
+  });
+
   it('rejects a bad body and an unknown merchant', async () => {
     expect((await POST(req('ADMIN', { dryRun: 'yes' }))).status).toBe(400);
     expect((await POST(req('ADMIN', { merchantId: 999 }))).status).toBe(404);
