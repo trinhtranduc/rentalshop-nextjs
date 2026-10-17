@@ -471,7 +471,11 @@ describeSub('BF-SUB plan limits per entity', () => {
     S.deleteAddons(mid());
   });
 
-  const PLAN_LIMIT_BODY = { success: false, code: 'PLAN_LIMIT_EXCEEDED', error: 'Plan limit exceeded' };
+  const PLAN_LIMIT_BODY = { success: false, code: 'PLAN_LIMIT_EXCEEDED' };
+  // #986: the sentence follows Accept-Language (vi by default, en on request); code and status stay the contract
+  const PLAN_LIMIT_SENTENCES = ['vi', 'en'].map(
+    (lang) => require(`../../../locales/${lang}/errors.json`).PLAN_LIMIT_EXCEEDED
+  );
 
   /**
    * Fill an entity up to its limit with the given creators (one call each), then prove: the one after is 422 with
@@ -488,6 +492,8 @@ describeSub('BF-SUB plan limits per entity', () => {
     for (const create of creators) {
       const r = await create();
       expect({ status: r.status, ...r.body }).toMatchObject({ status: 422, ...PLAN_LIMIT_BODY });
+      expect(PLAN_LIMIT_SENTENCES).toContain(r.body.error);
+      expect(r.body.message).toBe(r.body.error);
     }
     expect(S.rawCounts(mid())).toEqual(raw);
     return limit;
