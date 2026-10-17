@@ -111,4 +111,27 @@ final class PrinterSetupTests: XCTestCase {
     func testNotConfiguredMessageHasNoNetworkHint() {
         XCTAssertEqual(PrinterSetup.failureMessage(.notConfigured, ip: "", onMac: true), "printer.notConfigured.message".localized())
     }
+
+    // MARK: #1028 the IP can be typed with the phone in Vietnamese
+
+    /// `.decimalPad` shows the locale decimal key ("," in vi) and no "."
+    func testIPKeyboardHasADot() {
+        XCTAssertEqual(PrinterSetup.ipKeyboardType, .numbersAndPunctuation)
+    }
+
+    /// A "," from a Vietnamese keyboard becomes ".", spaces go (the #1018 trim stays)
+    func testNormalizedIPTurnsCommasIntoDotsAndDropsSpaces() {
+        XCTAssertEqual(PrinterSetup.normalizedIP("192,168,1,50"), "192.168.1.50")
+        XCTAssertEqual(PrinterSetup.normalizedIP(" 192.168.1.50 \n"), "192.168.1.50")
+        XCTAssertEqual(PrinterSetup.normalizedIP("192. 168 ,1.50"), "192.168.1.50")
+        XCTAssertEqual(PrinterSetup.normalizedIP("10.0.0.7"), "10.0.0.7")
+        XCTAssertEqual(PrinterSetup.normalizedIP(""), "")
+    }
+
+    /// An IP saved with commas by an older build still prints
+    func testSavedIPWithCommasIsRead() {
+        UserDefaults.standard.set("192,168,1,50", forKey: key)
+        UserDefaults.standard.set(true, forKey: chosenKey)
+        XCTAssertEqual(PrinterSetup.savedIP, "192.168.1.50")
+    }
 }

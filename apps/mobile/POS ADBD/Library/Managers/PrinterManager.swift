@@ -1027,8 +1027,17 @@ enum PrinterSetup {
     /// The saved printer IP, or nil when none was chosen (nothing, blank, or the old fallback the user never saved).
     /// #1011: a shop whose printer really sits at 192.168.1.199 saves it in Máy in (`chosen`), and it is kept.
     static func configuredIP(saved: String?, chosen: Bool = false) -> String? {
-        let ip = (saved ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let ip = normalizedIP(saved ?? "")
         return ip.isEmpty || (ip == legacyDefaultIP && !chosen) ? nil : ip
+    }
+
+    /// #1028: `.decimalPad` shows the locale decimal key ("," in Vietnamese) and no "."; this layout has "." everywhere
+    static let ipKeyboardType: UIKeyboardType = .numbersAndPunctuation
+
+    /// #1028: the IP as typed, with "," (a Vietnamese decimal key) turned into "." and spaces removed (keeps the #1011 trim)
+    static func normalizedIP(_ text: String) -> String {
+        String(text.replacingOccurrences(of: ",", with: ".").unicodeScalars
+            .filter { !CharacterSet.whitespacesAndNewlines.contains($0) }.map(Character.init))
     }
 
     static var savedIP: String? {
