@@ -8,7 +8,6 @@
  * findMatchingProductIds in product.ts). The SQL twin is checked for the same separators.
  */
 import { describe, expect, it, jest } from '@jest/globals';
-import { Prisma } from '@prisma/client';
 
 // The utils barrel pulls browser/API config; the search rules only need the diacritics helper.
 jest.mock('@rentalshop/utils', () => jest.requireActual('../packages/utils/src/core/string-utils'));
@@ -17,6 +16,7 @@ import {
   buildSearchWordTerm,
   productTextMatches,
   projectSearchColumnSql,
+  SEARCH_SEPARATOR_SQL_REGEX,
   splitSearchWords,
 } from '../packages/database/src/product-search-words';
 
@@ -67,10 +67,13 @@ describe('#1009 product search: a word after punctuation is a word start', () =>
   });
 
   it('SQL projection turns separators into spaces with the same list', () => {
-    const sql = projectSearchColumnSql(Prisma.sql`"name"`, false);
+    // Column given by name: tests/ has its own @prisma/client without a generated client.
+    const sql = projectSearchColumnSql('name', false);
     expect(sql.sql).toContain('regexp_replace');
-    const sqlAccent = projectSearchColumnSql(Prisma.sql`"name"`, true);
+    expect(sql.values).toContain(SEARCH_SEPARATOR_SQL_REGEX);
+    const sqlAccent = projectSearchColumnSql('description', true);
     expect(sqlAccent.sql).toContain('regexp_replace');
+    expect(sqlAccent.values).toContain(SEARCH_SEPARATOR_SQL_REGEX);
   });
 });
 
