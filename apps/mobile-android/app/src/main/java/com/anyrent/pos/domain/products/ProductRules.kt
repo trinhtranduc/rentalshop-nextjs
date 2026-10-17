@@ -376,9 +376,39 @@ data class CartLineCalc(
 /** Why the new cart cannot open the review yet (iOS `Cart.validate()`, same order) */
 enum class CartProblem { EMPTY, NO_CUSTOMER, NO_PICKUP, NO_RETURN }
 
+/**
+ * #1024 (option A, icon + word): the cart's icons; the UI maps each to its Material icon
+ * (`Icons.Outlined.<material>`). [ios] is the SF Symbol of iOS `CartV2Icon`.
+ */
+enum class CartV2Icon(val material: String, val ios: String) {
+    /** MÓN header "Thêm" */
+    ADD_ITEM("AddCircleOutline", "plus.circle"),
+    /** a line's "Ghi chú" / its note */
+    ITEM_NOTE("Edit", "square.and.pencil"),
+    /** the order's "Ghi chú" row in TIỀN */
+    ORDER_NOTE("Description", "note.text"),
+}
+
 object CartV2Logic {
     /** #684: a line's note as shown and sent: trimmed; null when blank (an empty sheet clears it), iOS `noteText` */
     fun noteText(note: String?): String? = note?.trim()?.takeIf { it.isNotEmpty() }
+
+    /**
+     * #1024 (iOS `itemNoteLine`): a line's note on one line (line breaks become spaces) for the pencil entry, which
+     * cuts it with "…"; null = the entry shows "Ghi chú"
+     */
+    fun itemNoteLine(note: String?): String? =
+        noteText(note)?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }?.joinToString(" ")
+
+    /**
+     * #1024 (iOS `itemNoteSpoken`): what TalkBack reads on the pencil entry, as before the icon: the visible text
+     * ("Ghi chú" or the note) and the action label "Ghi chú cho <product>". [noteLabel] is "Ghi chú",
+     * [accessibilityFormat] "Ghi chú cho %1$s".
+     */
+    data class ItemNoteSpoken(val text: String, val actionLabel: String)
+
+    fun itemNoteSpoken(productName: String, note: String?, noteLabel: String, accessibilityFormat: String): ItemNoteSpoken =
+        ItemNoteSpoken(text = noteText(note) ?: noteLabel, actionLabel = String.format(accessibilityFormat, productName))
 
     /** #677: the cart header's ⋯ menu ("Chia sẻ báo giá", "Xoá giỏ hàng") */
     data class MoreMenu(val shareEnabled: Boolean, val clearEnabled: Boolean)

@@ -111,9 +111,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.withStyle
+import androidx.compose.material.icons.outlined.AddCircleOutline
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import com.anyrent.pos.domain.products.CartV2Icon
 
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
@@ -478,11 +481,18 @@ fun CartV2Screen(
             }
 
             SectionBand(stringResource(R.string.v2_cart_items, lines.sumOf { it.quantity })) {
-                Text(
-                    "+ " + stringResource(R.string.v2_cart_add_more),
-                    fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
-                    modifier = Modifier.clickable(onClick = onAddItems).padding(vertical = 8.dp).semantics { role = Role.Button },
-                )
+                // #1024 (option A, iOS): plus-circle icon + "Thêm"; TalkBack reads "Thêm món"
+                val addLabel = stringResource(R.string.v2_cart_add_item_accessibility)
+                Row(
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onAddItems)
+                        .padding(vertical = 8.dp, horizontal = 2.dp)
+                        .semantics(mergeDescendants = true) { role = Role.Button; contentDescription = addLabel },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(cartIcon(CartV2Icon.ADD_ITEM), contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
+                    Text(stringResource(R.string.v2_cart_add_more), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                }
             }
             if (lines.isEmpty()) {
                 Text(stringResource(R.string.v2_cart_empty), color = DS.Colors.TextMuted, modifier = Modifier.padding(16.dp))
@@ -533,6 +543,7 @@ fun CartV2Screen(
                 notes.ifBlank { stringResource(R.string.v2_cart_add_note) },
                 onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
                 valueColor = if (notes.isBlank()) DS.Colors.Primary else DS.Colors.TextMuted,
+                icon = cartIcon(CartV2Icon.ORDER_NOTE), // #1024
             )
             Spacer(Modifier.height(24.dp))
         }
@@ -1114,30 +1125,41 @@ private fun CartPricingSheet(
     }
 }
 
-/** #684 (canvas N1, iOS itemNoteButton): "+ Ghi chú" when the line has no note, else "Ghi chú · <note> Sửa" (2 lines) */
+/** #1024: the Material icon of each cart icon (iOS SF Symbols in `CartV2Icon`) */
+internal fun cartIcon(icon: CartV2Icon): ImageVector = when (icon) {
+    CartV2Icon.ADD_ITEM -> Icons.Outlined.AddCircleOutline
+    CartV2Icon.ITEM_NOTE -> Icons.Outlined.Edit
+    CartV2Icon.ORDER_NOTE -> Icons.Outlined.Description
+}
+
+/**
+ * #684 (canvas N1), #1024 (option A, iOS itemNoteButton): pencil + "Ghi chú" (grey) when the line has no note, else
+ * pencil + the note on one line, cut with "…", in a light box. TalkBack reads the text and "Ghi chú cho <product>".
+ */
 @Composable
 private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Unit) {
-    val label = stringResource(R.string.v2_item_note_accessibility, productName)
-    val text = CartV2Logic.noteText(note)
-    if (text == null) {
+    val spoken = CartV2Logic.itemNoteSpoken(
+        productName, note,
+        noteLabel = stringResource(R.string.v2_item_note_label),
+        accessibilityFormat = stringResource(R.string.v2_item_note_accessibility),
+    )
+    val line = CartV2Logic.itemNoteLine(note)
+    val boxed = if (line != null) Modifier.background(Color(0xFFF8FAFC)) else Modifier
+    Row(
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)).then(boxed)
+            .clickable(onClickLabel = spoken.actionLabel, role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = spoken.text }
+            .padding(horizontal = if (line != null) 8.dp else 2.dp, vertical = if (line != null) 5.dp else 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(cartIcon(CartV2Icon.ITEM_NOTE), contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
         Text(
-            stringResource(R.string.v2_item_note_add),
-            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569),
-            modifier = Modifier.clip(RoundedCornerShape(6.dp))
-                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
-                .padding(vertical = 4.dp, horizontal = 2.dp),
-        )
-    } else {
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))) { append(stringResource(R.string.v2_item_note_label)) }
-                withStyle(SpanStyle(color = Color(0xFF334155))) { append(" · $text ") }
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)) { append(stringResource(R.string.v2_item_note_edit)) }
-            },
-            fontSize = DS.TextSize.Secondary, maxLines = 2, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFFF8FAFC))
-                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+            line ?: spoken.text,
+            fontSize = DS.TextSize.Secondary,
+            fontWeight = if (line != null) FontWeight.Normal else FontWeight.SemiBold,
+            color = if (line != null) Color(0xFF334155) else Color(0xFF64748B),
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
     }
 }
