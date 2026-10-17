@@ -31,11 +31,13 @@ class PrinterConfigurationViewController: BaseViewControler {
             placeholder: "Enter printer IP address".localized()
         )
         field.titleLabel.isHidden = true
-        field.textField.keyboardType = .decimalPad
+        field.textField.keyboardType = PrinterSetup.ipKeyboardType // #1028: has "." in Vietnamese
         field.textField.returnKeyType = .done
         field.textField.delegate = self
         field.textField.autocorrectionType = .no
         field.textField.autocapitalizationType = .none
+        field.textField.spellCheckingType = .no
+        field.textField.addTarget(self, action: #selector(ipChanged), for: .editingChanged)
         return field
     }()
 
@@ -342,15 +344,22 @@ class PrinterConfigurationViewController: BaseViewControler {
         showAlert(message: "Configuration saved successfully".localized(), isError: false)
     }
 
+    /// #1028: "," → ".", no spaces, as it is typed
+    @objc private func ipChanged() {
+        let text = ipField.textField.text ?? ""
+        let normalized = PrinterSetup.normalizedIP(text)
+        if normalized != text { ipField.textField.text = normalized }
+    }
+
     private func persistConfig() {
-        Utils.saveBillPrinter(ip: ipField.textField.text?.trim() ?? "")
+        Utils.saveBillPrinter(ip: PrinterSetup.normalizedIP(ipField.textField.text ?? ""))
         Utils.saveNotePrinter(note: noteTextView.text ?? "")
         Utils.savePrintMethod(method: "network")
     }
 
     @objc private func testPrinter() {
         persistConfig()
-        let ipAddress = ipField.textField.text?.trim() ?? ""
+        let ipAddress = PrinterSetup.normalizedIP(ipField.textField.text ?? "")
         guard !ipAddress.isEmpty else {
             showAlert(message: "Please enter printer IP address".localized())
             return
