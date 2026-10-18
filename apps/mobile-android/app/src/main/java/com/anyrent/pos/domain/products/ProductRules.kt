@@ -553,6 +553,12 @@ object CartV2Logic {
     fun shortage(available: Int?, quantity: Int): Int? =
         available?.takeIf { it < quantity }?.coerceAtLeast(0)
 
+    /** #1054: how strong the shortage warning is: LOW = some units free (fewer than asked), NONE = nothing free */
+    enum class ShortageTone { LOW, NONE }
+
+    /** #1054 (owner, iOS `shortageTone`): "Chỉ còn 1 trống…" in red read as out of stock; red only when nothing is free */
+    fun shortageTone(left: Int): ShortageTone = if (left >= 1) ShortageTone.LOW else ShortageTone.NONE
+
     /** Paid now: the prepaid deposit for a rental, the order total for a sale */
     fun collectNow(isSale: Boolean, total: Double, deposit: Double): Double = if (isSale) total else deposit
 
