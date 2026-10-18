@@ -1112,6 +1112,35 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertTrue(visibleTexts(cell).contains(iconChip("15/10/26")), "\(visibleTexts(cell))")
     }
 
+    /// #1025: in the sorted product list a sale row shows the day the list is sorted by (pickup sort → pickup day,
+    /// created sort → created day; return sort keeps the created day). Other lists keep the created day.
+    func testSortedProductListSaleRowShowsTheSortedDay() throws {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        // created 02/10/26, pickup 04/10/26 (Vietnam)
+        let sale = try order(status: "COMPLETED", type: "SALE")
+        func shows(_ context: OrderRowContext, _ date: String, _ other: String, file: StaticString = #filePath, line: UInt = #line) {
+            cell.configure(.order(sale, lateDays: 0), context: context, hidesMoney: false)
+            let texts = visibleTexts(cell)
+            XCTAssertTrue(texts.contains(iconChip(date)), "\(context): \(texts)", file: file, line: line)
+            XCTAssertFalse(texts.contains(iconChip(other)), "\(context): \(texts)", file: file, line: line)
+        }
+        shows(.sortedList(sortedBy: .pickup), "04/10/26", "02/10/26")
+        shows(.sortedList(sortedBy: .created), "02/10/26", "04/10/26")
+        shows(.sortedList(sortedBy: .returnDate), "02/10/26", "04/10/26")
+        shows(.list, "02/10/26", "04/10/26")
+
+        // No pickup day on the sale: falls back to the created day
+        let json = #"{"id":2,"orderNumber":"ORD-1-0063","orderType":"SALE","status":"COMPLETED","createdAt":"2026-10-02T03:00:00.000Z","updatedAt":"2026-10-02T03:00:00.000Z","customerName":"Tâm","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":1,"orderItems":[]}"#
+        let noPickup = try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+        cell.configure(.order(noPickup, lateDays: 0), context: .sortedList(sortedBy: .pickup), hidesMoney: false)
+        XCTAssertTrue(visibleTexts(cell).contains(iconChip("02/10/26")), "\(visibleTexts(cell))")
+
+        // VoiceOver reads the shown day ("Bán 04/10/26")
+        cell.configure(.order(sale, lateDays: 0), context: .sortedList(sortedBy: .pickup), hidesMoney: false)
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        XCTAssertTrue(views(cell.contentView).contains { $0.accessibilityLabel == String(format: "orders.row.sold".localized(), "04/10/26") })
+    }
+
     // MARK: #1032 — late and not-prepared warnings without a box
 
     /// "Trễ N ngày" (red, clock) and "Chưa soạn đồ" (orange, box): icon then text, no fill; spoken text unchanged;

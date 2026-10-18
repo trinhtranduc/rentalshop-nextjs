@@ -211,6 +211,16 @@ object OrdersBoardLogic {
             pickupLabel = pickupLabel, returnLabel = returnLabel,
         )
 
+    /**
+     * #1041: the "↗ dd/mm/yy" chip of a sale row; in a product's sorted list ([sortedBy]) the pickup day when sorted
+     * by pickup, else the created day (return sort keeps it); the created day when the pickup day is missing (iOS)
+     */
+    fun saleChip(order: OrderSummary, sortedBy: SortDate?, saleLabel: String = "Bán"): OrderRowDates.DateChip? {
+        val created = OrdersHomeLogic.parseInstant(order.createdAt)
+        val date = if (sortedBy == SortDate.PICKUP) OrdersHomeLogic.parseInstant(order.pickupPlanAt) ?: created else created
+        return OrderRowDates.saleChip(order.orderType, order.status, date, saleLabel)
+    }
+
     /** #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" is bold dark text (no background) */
     fun metaIsBold(sortedBy: SortDate?): Boolean = sortedBy == SortDate.CREATED
 

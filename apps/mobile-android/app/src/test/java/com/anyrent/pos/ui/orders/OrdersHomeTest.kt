@@ -764,4 +764,20 @@ class OrdersHomeTest {
         assertEquals(true, OrdersBoardLogic.metaIsBold(byCreated))
         assertEquals(null, ProductOrdersSort.boldDate(isProduct = false, RentOrdersFilter(sortDate = SortDate.RETURN)))
     }
+
+    /**
+     * #1025: in a product's sorted orders a sale row shows the day the list is sorted by (pickup sort → pickup day,
+     * created sort → created day; return sort keeps the created day); no sort (other lists) keeps the created day (iOS)
+     */
+    @Test
+    fun `sorted product list sale row shows the sorted day`() {
+        val sale = listOrder("COMPLETED", type = "SALE") // created 02/10/26, pickup 04/10/26 (Vietnam)
+        assertEquals("04/10/26", OrdersBoardLogic.saleChip(sale, SortDate.PICKUP)?.date)
+        assertEquals("02/10/26", OrdersBoardLogic.saleChip(sale, SortDate.CREATED)?.date)
+        assertEquals("02/10/26", OrdersBoardLogic.saleChip(sale, SortDate.RETURN)?.date)
+        assertEquals("02/10/26", OrdersBoardLogic.saleChip(sale, null)?.date)
+        assertEquals(OrderRowDates.DateChip(OrderRowDates.ChipKind.SALE, "Bán", "04/10/26", bold = false), OrdersBoardLogic.saleChip(sale, SortDate.PICKUP))
+        assertEquals("no pickup day: the created day", "02/10/26", OrdersBoardLogic.saleChip(sale.copy(pickupPlanAt = null), SortDate.PICKUP)?.date)
+        assertNull("a cancelled sale keeps Huỷ", OrdersBoardLogic.saleChip(listOrder("CANCELLED", type = "SALE"), SortDate.PICKUP))
+    }
 }

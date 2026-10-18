@@ -536,7 +536,11 @@ final class OrderRowCell: UITableViewCell {
                 metaLabel.textColor = DS.Color.text
             }
             setChips(OrdersHomeLogic.dateChips(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy))
-        } else if let sale = OrdersHomeLogic.saleChip(orderType: order.orderType, status: order.status, createdAt: order.createdAt) {
+        } else if let sale = OrdersHomeLogic.saleChip(orderType: order.orderType, status: order.status, createdAt: {
+            // #1041: a product's sorted list shows the day it is sorted by; every other list the created day
+            guard case .sortedList(let date) = context else { return order.createdAt }
+            return OrdersHomeLogic.saleChipDate(createdAt: order.createdAt, pickupPlanAt: order.pickupPlanAt, sortedBy: date)
+        }()) {
             // #1026 (owner): "Bán dd/mm/yy" → "↗ dd/mm/yy"; VoiceOver still reads "Bán dd/mm/yy"
             setChips([sale])
         }
