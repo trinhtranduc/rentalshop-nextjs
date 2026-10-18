@@ -55,6 +55,18 @@ no change.
   `v2_cart_note` / `v2_cart_add_note` / `edit` (Android). No new keys.
 - Row order, sheets, the bottom bar, and edit-order mode are unchanged. The shortage-warning block is untouched.
 
+## 4. Notes wrap; one note sheet (owner: "note cần xuống dòng và style present note view nên giống nhau")
+
+- Item note under a cart line (iOS `CartNoteEntry`, Android `NoteEntry`) and the order note row in TIỀN show the
+  whole note on as many lines as it needs (`CartV2Logic.noteShown`: each line trimmed, blank lines dropped). No "…".
+- Order note row: "Ghi chú" on the left, the note on the right wrapping under itself; the title and the blue pencil
+  stay on its first line. Empty stays blue "Thêm" + pencil.
+- The order note and the item note open the same sheet class on each platform (iOS `CartItemNoteSheet`, now built by
+  `CartItemNoteSheet.orderNote`; Android `CartItemNoteSheet`): same detent, header, text box, hint, buttons, corners.
+  Only the title, placeholder, hint and the product name (item) differ; the order note on a new order adds the photo
+  row. Editing an order keeps it text only.
+- Android: "Xoá ghi chú" and "Lưu" are two equal buttons as on iOS ("Delete note" was cut on two lines at 1 : 1.6).
+
 ## API compatibility
 
 No API, shared package, Prisma, or env change. `GET /api/orders` already accepts `sortOrder=desc`. Installed apps keep
