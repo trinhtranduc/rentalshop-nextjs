@@ -122,6 +122,36 @@ struct DateChip: Equatable {
     }
 }
 
+/// #1032 (owner, mockup "Mọi màn đơn hàng: cảnh báo gọn"): a warning on an order row ("Trễ N ngày",
+/// "Chưa soạn đồ") is small coloured text with a small icon in front and no box, so the status badge stays the
+/// strongest colour. Only order rows use it; `DS.Status.late` / `.waiting` keep their fills for other screens.
+enum RowWarning: Equatable {
+    case late, notPrepared
+
+    /// Text and icon colour
+    var color: UIColor {
+        switch self {
+        case .late: return UIColor(hexString: "B91C1C")
+        case .notPrepared: return UIColor(hexString: "9A3412")
+        }
+    }
+
+    /// No fill
+    var colors: DS.Pill { DS.Pill(text: color, fill: .clear) }
+
+    /// The SF Symbol before the text
+    var symbolName: String {
+        switch self {
+        case .late: return "clock"
+        case .notPrepared: return "shippingbox"
+        }
+    }
+
+    /// Pill size, medium weight
+    static let fontSize: CGFloat = DS.TextSize.pill
+    static var font: UIFont { Utils.mediumFont(size: fontSize) }
+}
+
 /// One `GET /api/orders` request of the tab
 struct OrdersQuery: Equatable {
     var keyword: String?
@@ -379,6 +409,8 @@ enum OrdersHomeLogic {
         /// #1008: a date chip shows the `dateKind` icon then `date` in place of `text`
         var dateKind: DateChip.Kind? = nil
         var date: String? = nil
+        /// #1032: "Trễ N ngày" / "Chưa soạn đồ" are drawn as a soft row warning (icon + text, no fill)
+        var warning: RowWarning? = nil
         static func == (lhs: WorkChip, rhs: WorkChip) -> Bool { lhs.text == rhs.text }
     }
 
@@ -394,9 +426,12 @@ enum OrdersHomeLogic {
             let day = DayFormatter.dmy(date, timeZone: timeZone)
             chips.append(WorkChip(text: label + " " + day, colors: chipKind.colors, dateKind: chipKind, date: day))
         }
-        if work.lateDays > 0 { chips.append(WorkChip(text: LateText.days(work.lateDays), colors: DS.Status.late)) }
+        if work.lateDays > 0 {
+            chips.append(WorkChip(text: LateText.days(work.lateDays), colors: RowWarning.late.colors, warning: .late))
+        }
         if notPreparedApplies(kind: kind, isReadyToDeliver: work.isReadyToDeliver) {
-            chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: DS.Status.waiting))
+            chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: RowWarning.notPrepared.colors,
+                                  warning: .notPrepared))
         }
         return chips
     }
@@ -416,7 +451,8 @@ enum OrdersHomeLogic {
             if row.order.isReadyToDeliver == true {
                 chips.append(WorkChip(text: "calendar.v2.ready".localized(), colors: DS.Status.done))
             } else {
-                chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: DS.Status.waiting))
+                chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: RowWarning.notPrepared.colors,
+                                      warning: .notPrepared))
             }
         }
         return chips

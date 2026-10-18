@@ -680,7 +680,7 @@ private fun WorkRow(
                     ) {
                         OrdersBoardLogic.workChips(work, kind).forEach { chip ->
                             // #1008 (owner): the date chip shows its icon then the date
-                            val (text, colors) = when (chip.kind) {
+                            val (text, warning) = when (chip.kind) {
                                 OrdersBoardLogic.WorkChipKind.PICKUP -> {
                                     DateChip(OrderRowDates.ChipKind.PICKUP, chip.date.orEmpty(), "$pickupLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
                                     return@forEach
@@ -689,13 +689,11 @@ private fun WorkRow(
                                     DateChip(OrderRowDates.ChipKind.RETURN, chip.date.orEmpty(), "$returnLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
                                     return@forEach
                                 }
-                                OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to DS.Status.Late
-                                OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
+                                // #1032 (owner): icon + coloured text, no box
+                                OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to RowWarning.LATE
+                                OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to RowWarning.NOT_PREPARED
                             }
-                            Text(
-                                text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = colors.text, maxLines = 1,
-                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
-                            )
+                            RowWarningText(text, warning)
                         }
                     }
                     // Owner: the total (bold) always; "còn thu N" smaller under it when something is due
@@ -788,7 +786,7 @@ internal fun NotPickedUpOrderRow(order: OrderSummary, overdueDays: Int, onClick:
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, 0), orderRowTexts()),
         chips = chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, null, p, r) },
         pills = if (overdueDays > 0) {
-            listOf(pluralStringResource(R.plurals.not_picked_up_overdue_days, overdueDays, overdueDays) to DS.Status.Late)
+            listOf(pluralStringResource(R.plurals.not_picked_up_overdue_days, overdueDays, overdueDays) to RowWarning.LATE)
         } else {
             emptyList()
         },
@@ -838,7 +836,7 @@ private fun OrderRow(
         metaBold = OrdersBoardLogic.metaIsBold(rentSortedBy),
         qty = qty,
         // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
-        pills = if (row.lateDays > 0 && rentSortedBy == null && context != RowContext.PRODUCT) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
+        pills = if (row.lateDays > 0 && rentSortedBy == null && context != RowContext.PRODUCT) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to RowWarning.LATE) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
         // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
@@ -867,7 +865,8 @@ private fun BoardRow(
     metaBold: Boolean = false,
     /** #891: product detail → its orders: "× qty" of the product before the total */
     qty: Int? = null,
-    pills: List<Pair<String, DS.Pill>>,
+    /** #1032: "Trễ N ngày" / "Quá N ngày": soft warnings (icon + text, no box) */
+    pills: List<Pair<String, RowWarning>>,
     /** Null hides the money (staff with "hide financial data") */
     total: String?,
     struck: Boolean,
@@ -930,7 +929,7 @@ private fun BoardRow(
                 if (pills.isNotEmpty() || payShown != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                            pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
+                            pills.forEach { (text, warning) -> RowWarningText(text, warning) }
                         }
                         payShown?.let { Text(it.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = it.second, maxLines = 1) }
                     }
@@ -990,6 +989,30 @@ internal fun DateChip(kind: OrderRowDates.ChipKind, date: String, spoken: String
     ) {
         Icon(OrdersBoardLogic.chipIcon(kind), contentDescription = null, tint = OrdersBoardLogic.chipIconTint, modifier = Modifier.size(iconSize))
         Text(date, fontSize = dateSize, fontWeight = weight, color = colors.text, maxLines = 1)
+    }
+}
+
+/**
+ * #1032 (owner, mockup "Mọi màn đơn hàng: cảnh báo gọn"): an order row warning: the icon then the text in the
+ * warning colour, 12sp medium, no fill, no start padding; TalkBack reads [text] (plus [suffix]) as before.
+ * [suffix] (the calendar " · phí N") follows in grey regular on the same line; [padded] false under a total.
+ */
+@Composable
+internal fun RowWarningText(text: String, warning: RowWarning, suffix: String? = null, padded: Boolean = true) {
+    val iconSize = with(LocalDensity.current) { RowWarning.fontSize.toDp() }
+    val spoken = text + suffix.orEmpty()
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier.background(warning.fill)
+            .then(if (padded) Modifier.padding(start = 0.dp, end = 4.dp, top = 4.dp, bottom = 4.dp) else Modifier)
+            .clearAndSetSemantics { contentDescription = spoken },
+    ) {
+        Icon(warning.icon, contentDescription = null, tint = warning.color, modifier = Modifier.size(iconSize))
+        Text(text, fontSize = RowWarning.fontSize, fontWeight = RowWarning.weight, color = warning.color, maxLines = 1)
+        suffix?.let {
+            Text(it, fontSize = RowWarning.fontSize, fontWeight = RowWarning.feeWeight, color = RowWarning.feeColor, maxLines = 1)
+        }
     }
 }
 
