@@ -2731,3 +2731,8 @@
 
 /* #1024: VoiceOver on the cart MÓN header "Thêm" */
 "products.cart.addItem.accessibility" = "Thêm món";
+/* #1043: the cart's order note entry and its sheet (the item note sheet) */
+"cart.orderNote.title" = "Ghi chú đơn";
+"cart.orderNote.placeholder" = "Ví dụ: giao trước 9h, khách lấy tại tiệm";
+"cart.orderNote.hint" = "Cho cả đơn. Ghi chú từng món nằm dưới món đó.";
+"cart.orderNote.photos" = "%d ảnh";

@@ -410,6 +410,13 @@ object CartV2Logic {
     fun itemNoteSpoken(productName: String, note: String?, noteLabel: String, accessibilityFormat: String): ItemNoteSpoken =
         ItemNoteSpoken(text = noteText(note) ?: noteLabel, actionLabel = String.format(accessibilityFormat, productName))
 
+    /**
+     * #1043 (iOS `orderNoteMaxPhotos`): the "Ghi chú đơn" sheet's photo row — up to MAX_NOTE_PHOTOS on a new order
+     * (#480); none while editing an order (its photos live on the order detail)
+     */
+    fun orderNoteMaxPhotos(editMode: Boolean): Int =
+        if (editMode) 0 else com.anyrent.pos.domain.orders.OrderDetailLogic.MAX_NOTE_PHOTOS
+
     /** #677: the cart header's ⋯ menu ("Chia sẻ báo giá", "Xoá giỏ hàng") */
     data class MoreMenu(val shareEnabled: Boolean, val clearEnabled: Boolean)
 

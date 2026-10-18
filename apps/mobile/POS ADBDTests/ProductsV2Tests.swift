@@ -283,6 +283,19 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNotEqual("products.cart.addItem.accessibility".localized(), "products.cart.addItem.accessibility", "Thêm món is localized")
     }
 
+    /// #1043: the order note uses the item note sheet: photos (#480) only on a new order, and its own strings
+    func testOrderNoteSheetPhotosAndStrings() throws {
+        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: false), 5)
+        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: false), OrderDetailLogic.maxNotePhotos)
+        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: true), 0, "editing an order stays text only")
+        // the cart entry shows the order note on one line, like an item note
+        XCTAssertEqual(CartV2Logic.itemNoteLine("Giao trước 9h\nKhách lấy tại tiệm"), "Giao trước 9h Khách lấy tại tiệm")
+        for key in ["cart.orderNote.title", "cart.orderNote.placeholder", "cart.orderNote.hint"] {
+            XCTAssertNotEqual(key.localized(), key, "\(key) is localized")
+        }
+        XCTAssertNotEqual("cart.orderNote.title".localized(), "cart.itemNote.title".localized())
+    }
+
     func testInventoryRoleIsPickedOnlyWhenTheApiAllowsIt() throws {
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: nil), [.outletStaff, .outletAdmin])
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: true, currentRole: nil), [.outletStaff, .outletAdmin, .outletInventory])

@@ -199,16 +199,17 @@ private fun NoteContentField(text: String, onTextChange: (String) -> Unit) {
     }
 }
 
-/** 72dp photo; tap opens the full-screen viewer, the dark × badge at the corner removes it */
+/** 72dp photo; tap opens the full-screen viewer, the dark × badge at the corner removes it. #1043: also the cart's
+ *  "Ghi chú đơn" sheet, at 56dp */
 @Composable
-private fun PhotoTile(model: Any, onOpen: () -> Unit, onRemove: () -> Unit) {
-    Box(Modifier.size(72.dp)) {
+internal fun PhotoTile(model: Any, onOpen: () -> Unit, size: androidx.compose.ui.unit.Dp = 72.dp, onRemove: () -> Unit) {
+    Box(Modifier.size(size)) {
         AsyncImage(
             model = model,
             contentDescription = stringResource(R.string.notes_v2_photo),
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(72.dp)
+                .size(size)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFFE2E8F0))
                 .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
@@ -230,13 +231,13 @@ private fun PhotoTile(model: Any, onOpen: () -> Unit, onRemove: () -> Unit) {
     }
 }
 
-/** Dashed "Thêm" tile: camera glyph over the word */
+/** Dashed "Thêm" tile: camera glyph over the word (#1043: also the cart's "Ghi chú đơn" sheet, at 56dp) */
 @Composable
-private fun AddTile(onAdd: () -> Unit) {
+internal fun AddTile(onAdd: () -> Unit, size: androidx.compose.ui.unit.Dp = 72.dp) {
     val dash = Color(0xFF94A3B8)
     Column(
         Modifier
-            .size(72.dp)
+            .size(size)
             .background(V2Colors.Section, RoundedCornerShape(12.dp))
             .drawBehind {
                 drawRoundRect(
