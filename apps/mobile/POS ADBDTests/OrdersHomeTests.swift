@@ -370,6 +370,7 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(copy("orders.row.dueBack"), "Hạn trả %@")
         XCTAssertEqual(copy("orders.row.returned"), "Đã trả %@")
         XCTAssertEqual(copy("orders.row.sold"), "Bán %@")
+        XCTAssertEqual(copy("orders.chip.sale"), "Bán", "#1026: spoken word of the sale date chip")
         XCTAssertEqual(copy("orders.row.cancelled"), "Huỷ %@")
         XCTAssertEqual(copy("overview.v2.todayWork"), "Việc hôm nay · %@")
         XCTAssertEqual(copy("overview.v2.todayWork.pickups"), "Cần giao hôm nay")
@@ -539,11 +540,15 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(copy("orders.v2.sortDate.pickup"), "Ngày lấy")
         XCTAssertEqual(copy("orders.v2.sortDate.return"), "Ngày trả")
         XCTAssertEqual(copy("orders.v2.sortDate.created"), "Ngày tạo")
-        XCTAssertEqual(copy("orders.v2.direction.nearest"), "Gần nhất trước")
-        XCTAssertEqual(copy("orders.v2.direction.farthest"), "Xa nhất trước")
+        // #1056: `desc` puts the latest date first, `asc` the earliest
+        XCTAssertEqual(copy("orders.v2.direction.nearest"), "Mới nhất trước")
+        XCTAssertEqual(copy("orders.v2.direction.farthest"), "Cũ nhất trước")
         XCTAssertEqual(copy("orders.v2.direction.newest"), "Mới nhất trước")
         XCTAssertEqual(copy("orders.v2.direction.oldest"), "Cũ nhất trước")
-        XCTAssertEqual(String(format: copy("orders.v2.sortBar"), "ngày lấy", "gần nhất trước"), "Xếp theo ngày lấy · gần nhất trước")
+        let en = bundle.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(en?.localizedString(forKey: "orders.v2.direction.nearest", value: nil, table: nil), "Latest first")
+        XCTAssertEqual(en?.localizedString(forKey: "orders.v2.direction.farthest", value: nil, table: nil), "Earliest first")
+        XCTAssertEqual(String(format: copy("orders.v2.sortBar"), "ngày lấy", "mới nhất trước"), "Xếp theo ngày lấy · mới nhất trước")
         XCTAssertEqual(String(format: copy("orders.v2.filter.rangeOf"), "ngày lấy"), "Khoảng ngày lấy")
         XCTAssertEqual(copy("order.header.step.handOver"), "Lấy")
         XCTAssertEqual(copy("order.header.step.handedOver"), "Đã lấy")
@@ -740,6 +745,12 @@ final class OrdersHomeTests: XCTestCase {
     }
 
     /// Texts of the labels a user can see in the cell (the label and every parent up to the cell are shown)
+    /// #1008: a date chip as shown: the icon (a text attachment) then the date
+    private func iconChip(_ date: String) -> String { "\u{FFFC} " + date }
+
+    /// #1032: a row warning shows its icon, a space, then the text
+    private func warningChip(_ text: String) -> String { "\u{FFFC} " + text }
+
     private func visibleTexts(_ cell: UITableViewCell) -> [String] {
         func isShown(_ view: UIView) -> Bool {
             var current: UIView? = view
@@ -787,14 +798,41 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertTrue(paidTexts.contains(MoneyFormatter.format(300000)))
     }
 
+    /// #1037: product / customer detail put the row in a stack view, not a table view: it must get its content height
+    func testStandaloneRowHasItsContentHeightInAStackView() throws {
+        let order = try listOrder(1, status: "RESERVED")
+        func stackedHeight(_ cell: OrderRowCell) -> CGFloat {
+            cell.configure(.order(order, lateDays: 0), context: .productOrders(quantity: 1), hidesMoney: false)
+            let control = UIControl()
+            control.addSubview(cell)
+            cell.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                cell.topAnchor.constraint(equalTo: control.topAnchor), cell.bottomAnchor.constraint(equalTo: control.bottomAnchor),
+                cell.leadingAnchor.constraint(equalTo: control.leadingAnchor), cell.trailingAnchor.constraint(equalTo: control.trailingAnchor),
+            ])
+            let stack = UIStackView(arrangedSubviews: [control])
+            stack.axis = .vertical
+            let host = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            host.addSubview(stack)
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                stack.topAnchor.constraint(equalTo: host.topAnchor), stack.leadingAnchor.constraint(equalTo: host.leadingAnchor),
+                stack.trailingAnchor.constraint(equalTo: host.trailingAnchor),
+            ])
+            host.layoutIfNeeded()
+            return control.frame.height
+        }
+        XCTAssertGreaterThanOrEqual(stackedHeight(OrderRowCell.standalone()), 44, "the row shows its lines")
+    }
+
     /// #888 (owner): Tất cả đơn rows have no "Trễ N ngày" chip; other lists keep it; the name stays on one line
     func testRentListRowHasNoLateChip() throws {
         let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
         let late = try listOrder(1, status: "PICKUPED", balances: "")
         cell.configure(.order(late, lateDays: 3), context: .rentList(sortedBy: .returnDate), hidesMoney: false)
-        XCTAssertFalse(visibleTexts(cell).contains(LateText.days(3)))
+        XCTAssertFalse(visibleTexts(cell).contains(warningChip(LateText.days(3))))
         cell.configure(.order(late, lateDays: 3), context: .search, hidesMoney: false)
-        XCTAssertTrue(visibleTexts(cell).contains(LateText.days(3)))
+        XCTAssertTrue(visibleTexts(cell).contains(warningChip(LateText.days(3))))
         func labels(_ view: UIView) -> [UILabel] { (view as? UILabel).map { [$0] } ?? [] + view.subviews.flatMap(labels) }
         let name = labels(cell.contentView).first { $0.text == late.customerName }
         XCTAssertEqual(name?.numberOfLines, 1)
@@ -836,11 +874,11 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertTrue(OrdersHomeLogic.metaIsBold(sortedBy: .created))
         XCTAssertFalse(OrdersHomeLogic.metaIsBold(sortedBy: .pickup))
         XCTAssertFalse(OrdersHomeLogic.metaIsBold(sortedBy: nil))
-        // Chip colours from the mockup: Lấy blue, Trả purple
-        XCTAssertEqual(hex(DateChip.Kind.pickup.colors.fill), "EFF6FF")
-        XCTAssertEqual(hex(DateChip.Kind.pickup.colors.text), "1E40AF")
-        XCTAssertEqual(hex(DateChip.Kind.return.colors.fill), "F5F3FF")
-        XCTAssertEqual(hex(DateChip.Kind.return.colors.text), "5B21B6")
+        // #1026 (owner, intentional change from #891 blue / purple): no colour, dark text on no fill
+        for kind in [DateChip.Kind.pickup, .return, .sale] {
+            XCTAssertEqual(kind.colors.fill.cgColor.alpha, 0, "\(kind): no fill")
+            XCTAssertEqual(hex(kind.colors.text), "0F172A", "\(kind): dark text")
+        }
     }
 
     func testRowCellShowsChipsQuantityAndBoldCreatedDay() throws {
@@ -849,7 +887,7 @@ final class OrdersHomeTests: XCTestCase {
         let order = try listOrder(1, status: "RESERVED", balances: "")
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .created), hidesMoney: false)
         let texts = visibleTexts(cell)
-        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 01/10/26"), "\(texts)")
+        XCTAssertTrue(texts.contains(iconChip("01/10/26")), "#1008: icon then date: \(texts)")
         let meta = labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }
         XCTAssertEqual(meta?.font, Utils.boldFont(size: 13), "sorted by created: the created day is bold")
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
@@ -865,7 +903,7 @@ final class OrdersHomeTests: XCTestCase {
         func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
         func dateFont(_ cell: OrderRowCell, prefix: String) -> UIFont? {
             guard let label = views(cell.contentView).compactMap({ $0 as? InsetLabel })
-                .first(where: { $0.attributedText?.string.hasPrefix(prefix) == true }),
+                .first(where: { $0.accessibilityLabel?.hasPrefix(prefix) == true }), // #1008: the word is spoken, not shown
                   let text = label.attributedText else { return nil }
             return text.attribute(.font, at: text.length - 1, effectiveRange: nil) as? UIFont
         }
@@ -883,6 +921,325 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
     }
 
+    // MARK: #1025 — a product's orders sort like Tất cả đơn
+
+    func testProductOrdersDefaultSortIsPickupNearestFirst() {
+        let sort = EntityOrdersLogic.defaultProductSort
+        XCTAssertEqual(sort.sortDate, .pickup)
+        XCTAssertEqual(sort.direction, .nearestFirst)
+        let query = EntityOrdersLogic.productOrdersQuery(sort)
+        XCTAssertEqual(query.sortBy, "pickupPlanAt")
+        XCTAssertEqual(query.sortOrder, "desc", "nearest first means desc, as on Tất cả đơn (#888)")
+        XCTAssertEqual(OrdersHomeLogic.sortBarText(sort), OrdersHomeLogic.sortBarText(RentOrdersFilter()))
+    }
+
+    func testProductOrdersQueryPerChoice() {
+        let expected: [(RentOrdersFilter.SortDate, RentOrdersFilter.Direction, String, String)] = [
+            (.pickup, .nearestFirst, "pickupPlanAt", "desc"), (.pickup, .farthestFirst, "pickupPlanAt", "asc"),
+            (.returnDate, .nearestFirst, "returnPlanAt", "desc"), (.returnDate, .farthestFirst, "returnPlanAt", "asc"),
+            (.created, .nearestFirst, "createdAt", "desc"), (.created, .farthestFirst, "createdAt", "asc"),
+        ]
+        for (date, direction, sortBy, sortOrder) in expected {
+            var sort = RentOrdersFilter()
+            sort.sortDate = date
+            sort.direction = direction
+            let query = EntityOrdersLogic.productOrdersQuery(sort)
+            XCTAssertEqual(query.sortBy, sortBy, "\(date) \(direction)")
+            XCTAssertEqual(query.sortOrder, sortOrder, "\(date) \(direction)")
+        }
+    }
+
+    func testOnlyProductOrdersGetTheSortControl() {
+        XCTAssertTrue(OverviewRankingOrdersFilter.product(id: 1, name: "Áo").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.customer(id: 1, name: "An").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.rentedOut(title: "x").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.lateReturns(title: "x").hasSortControl)
+        XCTAssertFalse(OverviewRankingOrdersFilter.snapshot(.pickup, title: "x").hasSortControl)
+        var sort = RentOrdersFilter()
+        sort.sortDate = .returnDate
+        if case .sortedList(let date) = EntityOrdersLogic.rowContext(.product(id: 1, name: "Áo"), sort: sort) {
+            XCTAssertEqual(date, .returnDate)
+        } else {
+            XCTFail("product rows carry the sort date")
+        }
+        if case .list = EntityOrdersLogic.rowContext(.customer(id: 1, name: "An"), sort: sort) {} else {
+            XCTFail("the customer list keeps the plain list row")
+        }
+    }
+
+    /// #1025: the product list row bolds the sorted date (rule #891/#893)
+    func testProductOrdersRowBoldsSortedDate() throws {
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        func labels(_ view: UIView) -> [UILabel] { (view as? UILabel).map { [$0] } ?? [] + view.subviews.flatMap(labels) }
+        func dateFont(_ cell: OrderRowCell, prefix: String) -> UIFont? {
+            guard let label = views(cell.contentView).compactMap({ $0 as? InsetLabel })
+                .first(where: { $0.accessibilityLabel?.hasPrefix(prefix) == true }),
+                  let text = label.attributedText else { return nil }
+            return text.attribute(.font, at: text.length - 1, effectiveRange: nil) as? UIFont
+        }
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let order = try listOrder(1, status: "RESERVED", balances: "")
+        let pickup = "orders.chip.pickup".localized(), back = "orders.chip.return".localized()
+        let product = OverviewRankingOrdersFilter.product(id: 1, name: "Áo")
+        // Default sort: the pickup chip is bold
+        cell.configure(.order(order, lateDays: 0), context: EntityOrdersLogic.rowContext(product, sort: EntityOrdersLogic.defaultProductSort),
+                       hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .sortedList(sortedBy: .returnDate), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.boldFont(size: DS.TextSize.body))
+        cell.configure(.order(order, lateDays: 0), context: .sortedList(sortedBy: .created), hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }?.font, Utils.boldFont(size: 13),
+                       "sorted by created: the created day is bold")
+        // The plain list row (customer orders) bolds nothing
+        cell.configure(.order(order, lateDays: 0), context: .list, hidesMoney: false)
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
+    }
+
+    // MARK: #1008 — date chips show an icon in place of "Lấy" / "Trả"
+
+    func testDateChipIconsAndSpokenText() {
+        XCTAssertEqual(DateChip.Kind.pickup.symbolName, "arrow.up.forward")
+        XCTAssertEqual(DateChip.Kind.return.symbolName, "arrow.uturn.backward")
+        XCTAssertNotNil(UIImage(systemName: DateChip.Kind.pickup.symbolName))
+        XCTAssertNotNil(UIImage(systemName: DateChip.Kind.return.symbolName))
+        let pickup = iso.date(from: "2026-10-13T17:30:00Z")! // 14/10 in Vietnam
+        let back = iso.date(from: "2026-10-16T02:00:00Z")!
+        let chips = OrdersHomeLogic.dateChips(pickupPlanAt: pickup, returnPlanAt: back, sortedBy: .pickup, timeZone: vietnam)
+        XCTAssertEqual(chips.map(\.accessibilityText), ["orders.chip.pickup".localized() + " 14/10/26",
+                                                        "orders.chip.return".localized() + " 16/10/26"])
+
+        // The chip view: icon + " " + date, no word; VoiceOver reads the word and the date; #1026: no fill
+        let stack = DateChipStack()
+        stack.show(chips)
+        let labels = stack.arrangedSubviews.compactMap { $0 as? InsetLabel }
+        XCTAssertEqual(labels.count, 2)
+        XCTAssertEqual(labels.map(\.accessibilityLabel), chips.map(\.accessibilityText))
+        for (label, chip) in zip(labels, chips) {
+            let text = label.attributedText!
+            XCTAssertFalse(text.string.contains(chip.label), "the word is gone")
+            XCTAssertTrue(text.string.hasSuffix(" " + chip.date))
+            XCTAssertNotNil(text.attribute(.attachment, at: 0, effectiveRange: nil) as? NSTextAttachment, "icon first")
+            XCTAssertEqual(label.backgroundColor?.cgColor.alpha ?? 0, 0, "#1026: no fill")
+        }
+
+        // Việc cần làm / calendar date chips carry the icon kind and the date; their text stays the spoken text
+        let work = TodayWorkRow(id: 1, orderNumber: "1", pickupPlanAt: pickup, returnPlanAt: back,
+                                isReadyToDeliver: false, totalAmount: 0, amountDue: 0, lateDays: 1)
+        let workChips = OrdersHomeLogic.workChips(work, kind: .handOver, timeZone: vietnam)
+        XCTAssertEqual(workChips.map(\.dateKind), [.pickup, nil, nil], "only the date chip gets an icon")
+        XCTAssertEqual(workChips[0].date, "14/10/26")
+        XCTAssertEqual(OrdersHomeLogic.workChips(work, kind: .takeBack, timeZone: vietnam).first?.dateKind, .return)
+        let lines = UIStackView()
+        OrderRowCell.fillChipLines(lines, chips: workChips, width: 1000)
+        let shown = lines.arrangedSubviews.flatMap { ($0 as? UIStackView)?.arrangedSubviews ?? [] }.compactMap { $0 as? InsetLabel }
+        XCTAssertEqual(shown.first?.accessibilityLabel, "orders.chip.pickup".localized() + " 14/10/26")
+        XCTAssertEqual(shown.first?.attributedText?.string.hasSuffix(" 14/10/26"), true)
+        XCTAssertFalse(shown.first?.attributedText?.string.contains("orders.chip.pickup".localized()) ?? true)
+        XCTAssertEqual(shown[1].accessibilityLabel, LateText.days(1), "other chips keep their spoken text")
+    }
+
+    // MARK: #1026 — only the status badge keeps colour
+
+    /// Every date chip (order rows, Việc cần làm, calendar): no fill, grey icon, dark text; the spoken text keeps the word
+    func testDateChipsHaveNoFillAndAGreyIcon() throws {
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        XCTAssertEqual(hex(DateChip.iconColor), "64748B")
+        for kind in [DateChip.Kind.pickup, .return, .sale] { XCTAssertEqual(hex(kind.iconColor), "64748B") }
+
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let order = try listOrder(1, status: "RESERVED", balances: "")
+        cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
+        let chips = views(cell.contentView).compactMap { $0 as? InsetLabel }.filter { $0.accessibilityLabel != nil && !$0.isHidden }
+        XCTAssertEqual(chips.map(\.accessibilityLabel), ["orders.chip.pickup".localized() + " 01/10/26",
+                                                         "orders.chip.return".localized() + " 08/10/26"], "spoken text unchanged")
+        for chip in chips {
+            XCTAssertEqual(chip.backgroundColor?.cgColor.alpha ?? 0, 0, "no fill")
+            XCTAssertEqual(chip.insets.left, 0, "no fill, no left padding")
+            let text = chip.attributedText!
+            let dateColor = text.attribute(.foregroundColor, at: text.length - 1, effectiveRange: nil) as? UIColor
+            XCTAssertEqual(dateColor.map(hex), "0F172A", "dark date")
+            XCTAssertNotNil(text.attribute(.attachment, at: 0, effectiveRange: nil) as? NSTextAttachment, "icon first")
+        }
+        // The status badge keeps its solid colour
+        let badge = views(cell.contentView).compactMap { $0 as? RowTagLabel }.first { $0.text == OrdersHomeLogic.statusTag(.reserved).text }
+        XCTAssertEqual(badge?.backgroundColor.map(hex), "EF4444")
+
+        // Việc cần làm: the date chip has no fill; #1032 (intentional change): "Trễ N ngày" and "Chưa soạn đồ"
+        // lost their box too (see testRowWarningsHaveNoBox)
+        let work = TodayWorkRow(id: 1, orderNumber: "1", pickupPlanAt: iso.date(from: "2026-10-13T17:30:00Z"),
+                                returnPlanAt: iso.date(from: "2026-10-16T02:00:00Z"), isReadyToDeliver: false,
+                                totalAmount: 0, amountDue: 0, lateDays: 1)
+        let lines = UIStackView()
+        OrderRowCell.fillChipLines(lines, chips: OrdersHomeLogic.workChips(work, kind: .handOver, timeZone: vietnam), width: 1000)
+        let shown = lines.arrangedSubviews.flatMap { ($0 as? UIStackView)?.arrangedSubviews ?? [] }.compactMap { $0 as? InsetLabel }
+        XCTAssertEqual(shown.count, 3)
+        XCTAssertEqual(shown[0].backgroundColor?.cgColor.alpha ?? 0, 0)
+        XCTAssertEqual(shown[0].accessibilityLabel, "orders.chip.pickup".localized() + " 14/10/26")
+        XCTAssertEqual(shown[1].backgroundColor?.cgColor.alpha ?? 0, 0, "#1032: Trễ N ngày has no box")
+        XCTAssertEqual(shown[2].backgroundColor?.cgColor.alpha ?? 0, 0, "#1032: Chưa soạn đồ has no box")
+
+        // Product calendar day orders: "↗ 05/10/26   ↩ 07/10/26", no words (VoiceOver keeps products.calendar.orderDays)
+        let font = Utils.regularFont(size: DS.TextSize.secondary)
+        let dates = ProductCalendarViewController.iconDates(pickup: "05/10/26", ret: "07/10/26", font: font, color: DS.Color.textMuted)
+        XCTAssertEqual(dates.string, "\u{FFFC} 05/10/26   \u{FFFC} 07/10/26")
+    }
+
+    /// A sale row: "↗ dd/mm/yy" (the created day) in place of "Bán dd/mm/yy"; VoiceOver reads "Bán dd/mm/yy"
+    func testSaleRowShowsTheSaleDateChip() throws {
+        let created = iso.date(from: "2026-10-14T18:00:00Z")! // 15/10 in Vietnam
+        let chip = OrdersHomeLogic.saleChip(orderType: .sale, status: .completed, createdAt: created, timeZone: vietnam)
+        XCTAssertEqual(chip, DateChip(kind: .sale, label: "orders.chip.sale".localized(), date: "15/10/26", bold: false))
+        XCTAssertEqual(chip?.accessibilityText, String(format: "orders.row.sold".localized(), "15/10/26"), "spoken as before")
+        XCTAssertEqual(DateChip.Kind.sale.symbolName, "arrow.up.forward")
+        XCTAssertNil(OrdersHomeLogic.saleChip(orderType: .sale, status: .cancelled, createdAt: created), "a cancelled sale keeps Huỷ")
+        XCTAssertNil(OrdersHomeLogic.saleChip(orderType: .rent, status: .reserved, createdAt: created))
+
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let sale = try order(status: "COMPLETED", type: "SALE")
+        cell.configure(.order(sale, lateDays: 0), context: .list, hidesMoney: false)
+        let texts = visibleTexts(cell)
+        XCTAssertTrue(texts.contains(iconChip("02/10/26")), "\(texts)")
+        XCTAssertFalse(texts.contains { $0.hasPrefix("orders.chip.sale".localized() + " ") }, "no word: \(texts)")
+        let cancelled = try order(status: "CANCELLED", type: "SALE", updated: "2026-09-29T03:00:00.000Z")
+        cell.configure(.order(cancelled, lateDays: 0), context: .list, hidesMoney: false)
+        XCTAssertTrue(visibleTexts(cell).contains(String(format: "orders.row.cancelled".localized(), "29/09/26")))
+
+        // Customer detail: a sale order shows the same chip
+        let row = CustomerOrderRow(id: 3, orderNumber: "3", orderType: .sale, status: .completed, totalAmount: 0,
+                                   pickupPlanAt: nil, returnPlanAt: nil, createdAt: created, itemCount: 1, items: [CustomerOrderRow.Item(productName: "Áo", quantity: 1)])
+        cell.configure(customerOrder: row, hidesMoney: false)
+        XCTAssertTrue(visibleTexts(cell).contains(iconChip("15/10/26")), "\(visibleTexts(cell))")
+    }
+
+    /// #1025: in the sorted product list a sale row shows the day the list is sorted by (pickup sort → pickup day,
+    /// created sort → created day; return sort keeps the created day). Other lists keep the created day.
+    func testSortedProductListSaleRowShowsTheSortedDay() throws {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        // created 02/10/26, pickup 04/10/26 (Vietnam)
+        let sale = try order(status: "COMPLETED", type: "SALE")
+        func shows(_ context: OrderRowContext, _ date: String, _ other: String, file: StaticString = #filePath, line: UInt = #line) {
+            cell.configure(.order(sale, lateDays: 0), context: context, hidesMoney: false)
+            let texts = visibleTexts(cell)
+            XCTAssertTrue(texts.contains(iconChip(date)), "\(context): \(texts)", file: file, line: line)
+            XCTAssertFalse(texts.contains(iconChip(other)), "\(context): \(texts)", file: file, line: line)
+        }
+        shows(.sortedList(sortedBy: .pickup), "04/10/26", "02/10/26")
+        shows(.sortedList(sortedBy: .created), "02/10/26", "04/10/26")
+        shows(.sortedList(sortedBy: .returnDate), "02/10/26", "04/10/26")
+        shows(.list, "02/10/26", "04/10/26")
+
+        // No pickup day on the sale: falls back to the created day
+        let json = #"{"id":2,"orderNumber":"ORD-1-0063","orderType":"SALE","status":"COMPLETED","createdAt":"2026-10-02T03:00:00.000Z","updatedAt":"2026-10-02T03:00:00.000Z","customerName":"Tâm","outletId":1,"outletName":"A","customerId":1,"createdById":1,"createdByName":"B","totalAmount":1,"orderItems":[]}"#
+        let noPickup = try JSONDecoder.shared.decode(Order.self, from: Data(json.utf8))
+        cell.configure(.order(noPickup, lateDays: 0), context: .sortedList(sortedBy: .pickup), hidesMoney: false)
+        XCTAssertTrue(visibleTexts(cell).contains(iconChip("02/10/26")), "\(visibleTexts(cell))")
+
+        // VoiceOver reads the shown day ("Bán 04/10/26")
+        cell.configure(.order(sale, lateDays: 0), context: .sortedList(sortedBy: .pickup), hidesMoney: false)
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        XCTAssertTrue(views(cell.contentView).contains { $0.accessibilityLabel == String(format: "orders.row.sold".localized(), "04/10/26") })
+    }
+
+    // MARK: #1032 — late and not-prepared warnings without a box
+
+    /// "Trễ N ngày" (red, clock) and "Chưa soạn đồ" (orange, box): icon then text, no fill; spoken text unchanged;
+    /// the status badge stays solid. Order rows, Việc cần làm, Chưa lấy đồ and the calendar day rows.
+    func testRowWarningsHaveNoBox() throws {
+        func views(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(views) }
+        XCTAssertEqual(hex(RowWarning.late.color), "B91C1C")
+        XCTAssertEqual(hex(RowWarning.notPrepared.color), "9A3412")
+        XCTAssertEqual(RowWarning.late.symbolName, "clock")
+        XCTAssertEqual(RowWarning.notPrepared.symbolName, "shippingbox")
+        XCTAssertEqual(RowWarning.fontSize, DS.TextSize.pill)
+        XCTAssertEqual(RowWarning.font, Utils.mediumFont(size: DS.TextSize.pill))
+        XCTAssertNotNil(UIImage(systemName: RowWarning.late.symbolName))
+        XCTAssertNotNil(UIImage(systemName: RowWarning.notPrepared.symbolName))
+        // The DS tokens other screens use keep their fills
+        XCTAssertEqual(hex(DS.Status.late.fill), "FEE2E2")
+        XCTAssertEqual(hex(DS.Status.waiting.fill), "FFEDD5")
+
+        func assertWarning(_ label: InsetLabel?, _ text: String, _ warning: RowWarning, line: UInt = #line) {
+            guard let label else { return XCTFail("no warning \(text)", line: line) }
+            XCTAssertEqual(label.backgroundColor?.cgColor.alpha ?? 0, 0, "no fill", line: line)
+            XCTAssertEqual(label.insets.left, 0, "no box, no left padding", line: line)
+            XCTAssertEqual(label.accessibilityLabel, text, "spoken text unchanged", line: line)
+            guard let attributed = label.attributedText else { return XCTFail("no text", line: line) }
+            XCTAssertNotNil(attributed.attribute(.attachment, at: 0, effectiveRange: nil) as? NSTextAttachment, "icon first", line: line)
+            XCTAssertEqual(attributed.string, "\u{FFFC} " + text, line: line)
+            let color = attributed.attribute(.foregroundColor, at: attributed.length - 1, effectiveRange: nil) as? UIColor
+            XCTAssertEqual(color.map(hex), hex(warning.color), line: line)
+            let font = attributed.attribute(.font, at: attributed.length - 1, effectiveRange: nil) as? UIFont
+            XCTAssertEqual(font, RowWarning.font, line: line)
+        }
+
+        // Order list / search row: "Trễ 3 ngày"; the status badge keeps its solid fill
+        let cell = OrderRowCell(style: .default, reuseIdentifier: OrderRowCell.reuseId)
+        let late = try listOrder(1, status: "PICKUPED", balances: "")
+        cell.configure(.order(late, lateDays: 3), context: .search, hidesMoney: false)
+        let insetLabels = views(cell.contentView).compactMap { $0 as? InsetLabel }
+        assertWarning(insetLabels.first { $0.accessibilityLabel == LateText.days(3) }, LateText.days(3), .late)
+        let badge = views(cell.contentView).compactMap { $0 as? RowTagLabel }.first { !$0.isHidden && $0.text != nil && $0.text != "" }
+        XCTAssertNotEqual(badge?.backgroundColor?.cgColor.alpha ?? 0, 0, "status badge stays solid")
+        XCTAssertNil(views(cell.contentView).compactMap { $0 as? RowTagLabel }.first { $0.text == LateText.days(3) },
+                     "no boxed late tag")
+
+        // Chưa lấy đồ: "Quá 3 ngày · nên gọi khách"
+        let reserved = try listOrder(2, status: "RESERVED", balances: "")
+        cell.configure(.order(reserved, lateDays: 3), context: .notPickedUp, hidesMoney: false)
+        let overdue = PluralText.format("notPickedUp.chip", count: 3, 3)
+        assertWarning(views(cell.contentView).compactMap { $0 as? InsetLabel }.first { $0.accessibilityLabel == overdue }, overdue, .late)
+
+        // Việc cần làm: "Trễ 1 ngày", "Chưa soạn đồ"
+        let work = TodayWorkRow(id: 1, orderNumber: "1", pickupPlanAt: iso.date(from: "2026-10-13T17:30:00Z"),
+                                returnPlanAt: iso.date(from: "2026-10-16T02:00:00Z"), isReadyToDeliver: false,
+                                totalAmount: 0, amountDue: 0, lateDays: 1)
+        let lines = UIStackView()
+        OrderRowCell.fillChipLines(lines, chips: OrdersHomeLogic.workChips(work, kind: .handOver, timeZone: vietnam), width: 1000)
+        let shown = lines.arrangedSubviews.flatMap { ($0 as? UIStackView)?.arrangedSubviews ?? [] }.compactMap { $0 as? InsetLabel }
+        XCTAssertEqual(shown.count, 3)
+        assertWarning(shown[1], LateText.days(1), .late)
+        assertWarning(shown[2], "orders.v2.notPrepared".localized(), .notPrepared)
+    }
+
+    /// #1032 (owner, mockup "Lịch › đơn trễ: icon"): the calendar late note is the order-row late warning (clock,
+    /// small red text, not bold, no box), then "· phí N" in grey regular; VoiceOver reads the same text as before
+    func testCalendarLateNoteUsesTheLateWarning() throws {
+        let fee = " · " + String(format: "calendar.v2.fee".localized(), MoneyFormatter.format(50000))
+        let withFee = CalendarDayRowCell.lateNote(days: 2, fee: 50000)
+        XCTAssertEqual(withFee.spoken, LateText.days(2) + fee, "spoken text unchanged")
+        XCTAssertEqual(withFee.text.string, "\u{FFFC} " + LateText.days(2) + fee)
+        XCTAssertNotNil(withFee.text.attribute(.attachment, at: 0, effectiveRange: nil) as? NSTextAttachment, "clock first")
+        let lateAt = (withFee.text.string as NSString).range(of: LateText.days(2)).location
+        XCTAssertEqual((withFee.text.attribute(.foregroundColor, at: lateAt, effectiveRange: nil) as? UIColor).map(hex), "B91C1C")
+        XCTAssertEqual(withFee.text.attribute(.font, at: lateAt, effectiveRange: nil) as? UIFont, RowWarning.font, "small, not bold")
+        let feeAt = withFee.text.length - 1
+        XCTAssertEqual((withFee.text.attribute(.foregroundColor, at: feeAt, effectiveRange: nil) as? UIColor).map(hex), "64748B")
+        XCTAssertEqual(withFee.text.attribute(.font, at: feeAt, effectiveRange: nil) as? UIFont,
+                       Utils.regularFont(size: DS.TextSize.pill))
+        let noFee = CalendarDayRowCell.lateNote(days: 1, fee: nil)
+        XCTAssertEqual(noFee.spoken, LateText.days(1))
+        XCTAssertEqual(noFee.text.string, "\u{FFFC} " + LateText.days(1))
+
+        // The cell: a late return row shows it with no fill; VoiceOver keeps the old text
+        let json = #"{"id":3,"orderNumber":"ORD-1-0063","customerName":"Huy","status":"PICKUPED","orderType":"RENT","totalAmount":300000,"lateFee":50000,"orderItems":[],"createdAt":"2026-10-05T07:30:00.000Z","pickupPlanAt":"2026-10-13T17:30:00.000Z","returnPlanAt":"2026-10-16T02:00:00.000Z"}"#
+        let order = try JSONDecoder.shared.decode(CalendarDayOrder.self, from: Data(json.utf8))
+        let cell = CalendarDayRowCell(style: .default, reuseIdentifier: nil)
+        cell.configure(CalendarDayRow(kind: .takeBack, order: order, lateDays: 2), hidesMoney: false)
+        func labels(_ view: UIView) -> [UILabel] { ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels) }
+        let note = try XCTUnwrap(labels(cell.contentView).first { $0.accessibilityLabel == LateText.days(2) + fee })
+        XCTAssertFalse(note.isHidden)
+        XCTAssertEqual(note.attributedText?.string, withFee.text.string)
+        XCTAssertEqual(note.backgroundColor?.cgColor.alpha ?? 0, 0, "no box")
+        // Reused for a row with money due: the old 14pt bold orange note, no icon
+        cell.configure(CalendarDayRow(kind: .takeBack, order: order, lateDays: 0), hidesMoney: false)
+        XCTAssertFalse(labels(cell.contentView).contains { $0.accessibilityLabel == LateText.days(2) + fee })
+    }
+
     // MARK: #893 — lean Việc cần làm rows
 
     /// Line 2 of a Việc cần làm row: the task's own date chip, then "Trễ N ngày", then "Chưa soạn đồ"
@@ -894,9 +1251,11 @@ final class OrdersHomeTests: XCTestCase {
         let chips = OrdersHomeLogic.workChips(handOver, kind: .handOver, timeZone: vietnam)
         XCTAssertEqual(chips.map(\.text), ["orders.chip.pickup".localized() + " 14/10/26", LateText.days(2),
                                            "orders.v2.notPrepared".localized()])
-        XCTAssertEqual(hex(chips[0].colors.fill), "EFF6FF")
-        XCTAssertEqual(hex(chips[1].colors.fill), hex(DS.Status.late.fill))
-        XCTAssertEqual(hex(chips[2].colors.fill), hex(DS.Status.waiting.fill))
+        XCTAssertEqual(chips[0].colors.fill.cgColor.alpha, 0, "#1026: the date chip has no fill")
+        // #1032 (intentional change from the #893 pink / orange boxes): coloured text, no fill
+        XCTAssertEqual(chips[1].colors.fill.cgColor.alpha, 0)
+        XCTAssertEqual(chips[2].colors.fill.cgColor.alpha, 0)
+        XCTAssertEqual(chips.map(\.warning), [nil, .late, .notPrepared])
         let takeBack = TodayWorkRow(id: 2, orderNumber: "2", pickupPlanAt: pickup, returnPlanAt: back, isReadyToDeliver: true,
                                     totalAmount: 300_000)
         XCTAssertEqual(OrdersHomeLogic.workChips(takeBack, kind: .takeBack, timeZone: vietnam).map(\.text),
@@ -919,7 +1278,7 @@ final class OrdersHomeTests: XCTestCase {
         let texts = visibleTexts(cell)
         XCTAssertFalse(texts.contains { $0.hasPrefix("#") }, "no #code · tạo line: \(texts)")
         XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "no other date")
-        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"))
+        XCTAssertTrue(texts.contains(iconChip("14/10/26")))
         XCTAssertTrue(texts.contains(String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(200_000))))
         XCTAssertTrue(texts.contains(MoneyFormatter.format(300_000)), "the total always shows (owner)")
     }
@@ -934,7 +1293,7 @@ final class OrdersHomeTests: XCTestCase {
         let texts = visibleTexts(cell)
         XCTAssertTrue(texts.contains("Vest đen slim fit"), "\(texts)")
         XCTAssertTrue(texts.contains("#0062 · " + String(format: "orders.row.created".localized(), "02/10/26 09:12")))
-        XCTAssertTrue(texts.contains("orders.chip.return".localized() + " 15/10/26"))
+        XCTAssertTrue(texts.contains(iconChip("15/10/26")))
         XCTAssertTrue(texts.contains(MoneyFormatter.format(380000)))
         XCTAssertTrue(texts.contains(OrdersHomeLogic.statusTag(.reserved).text))
     }
@@ -946,7 +1305,7 @@ final class OrdersHomeTests: XCTestCase {
         let cell = CalendarDayRowCell(style: .default, reuseIdentifier: nil)
         cell.configure(CalendarDayRow(kind: .handOver, order: order, lateDays: 0), hidesMoney: false)
         let texts = visibleTexts(cell)
-        XCTAssertTrue(texts.contains("orders.chip.pickup".localized() + " 14/10/26"), "\(texts)")
+        XCTAssertTrue(texts.contains(iconChip("14/10/26")), "\(texts)")
         XCTAssertFalse(texts.contains { $0.contains("16/10/26") }, "#893 lean row: only the task's own date")
     }
 
@@ -964,6 +1323,17 @@ final class OrdersHomeTests: XCTestCase {
         let readyChip = OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: ready, lateDays: 0), timeZone: vietnam)[1]
         XCTAssertEqual(hex(readyChip.colors.fill), "D1FAE5")
         XCTAssertEqual(hex(readyChip.colors.text), "047857")
+        XCTAssertNil(readyChip.warning, "#1032: Sẵn sàng giao keeps its green box")
+        let notReadyChip = OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: notReady, lateDays: 0), timeZone: vietnam)[1]
+        XCTAssertEqual(notReadyChip.warning, .notPrepared, "#1032: Chưa soạn đồ is a soft warning (no box)")
+        XCTAssertEqual(notReadyChip.colors.fill.cgColor.alpha, 0)
+        let calendarLines = UIStackView()
+        OrderRowCell.fillChipLines(calendarLines, chips: [readyChip, notReadyChip], width: 1000)
+        let calendarShown = calendarLines.arrangedSubviews.flatMap { ($0 as? UIStackView)?.arrangedSubviews ?? [] }
+            .compactMap { $0 as? InsetLabel }
+        XCTAssertEqual(calendarShown[0].backgroundColor.map(hex), "D1FAE5")
+        XCTAssertEqual(calendarShown[1].backgroundColor?.cgColor.alpha ?? 0, 0)
+        XCTAssertEqual(calendarShown[1].accessibilityLabel, "orders.v2.notPrepared".localized())
         XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: notReady, lateDays: 0), timeZone: vietnam).map(\.text),
                        ["orders.chip.pickup".localized() + " 14/10/26", "orders.v2.notPrepared".localized()])
         XCTAssertEqual(OrdersHomeLogic.calendarChips(CalendarDayRow(kind: .handOver, order: older, lateDays: 0), timeZone: vietnam).count, 2,
@@ -1009,8 +1379,8 @@ final class OrdersHomeTests: XCTestCase {
         let order = try listOrder(1, status: "RESERVED", balances: #","amountDue":250000,"refundDue":0"#)
         cell.configure(.order(order, lateDays: 3), context: .notPickedUp, hidesMoney: false)
         let texts = visibleTexts(cell)
-        XCTAssertTrue(texts.contains(PluralText.format("notPickedUp.chip", count: 3, 3)))
-        XCTAssertFalse(texts.contains(LateText.days(3)))
+        XCTAssertTrue(texts.contains(warningChip(PluralText.format("notPickedUp.chip", count: 3, 3))), "\(texts)")
+        XCTAssertFalse(texts.contains(warningChip(LateText.days(3))))
         func labels(_ view: UIView) -> [UILabel] {
             ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
         }
@@ -1068,7 +1438,7 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(total.font, Utils.boldFont(size: DS.TextSize.name))
         cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
         let chips = labels(cell.contentView).compactMap { $0 as? InsetLabel }.filter { !($0.superview?.isHidden ?? true) }
-            .compactMap(\.text)
+            .compactMap(\.accessibilityLabel)
         XCTAssertEqual(Set(chips), [LateText.days(2), "orders.v2.notPrepared".localized()], "late + not prepared")
     }
 }

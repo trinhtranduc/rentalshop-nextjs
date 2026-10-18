@@ -105,7 +105,7 @@ enum ProductPricing {
             let price = product.rentPrice ?? product.rent
             return price > 0 ? price : nil
         }
-        // #951: an option priced 0 is a 0đ price; only a legacy rentPrice of 0 means "no price"
+        // #951: an option priced 0 is a 0đ price. A bare rentPrice of 0 is not a list price. #996 prices it in the cart.
         guard let price = options.first(where: { $0.type.uppercased() == ProductPricingMode.perRental.rawValue })?.price,
               price >= 0 else { return nil }
         return price
@@ -304,6 +304,17 @@ enum ProductImages {
 
 // MARK: - Barcode
 
+/// Code for a new product: last 8 digits of the clock + 3 random digits. Same rule as the web form
+/// `generateBarcode` (#994). An edit keeps the saved code; the form only calls this on create and on regenerate.
+enum ProductBarcode {
+    static func generate(now: Int64 = Int64(Date().timeIntervalSince1970 * 1000), random: Int = Int.random(in: 0...999)) -> String {
+        let clock = String(now)
+        let suffix = clock.count >= 8 ? String(clock.suffix(8)) : String(repeating: "0", count: 8 - clock.count) + clock
+        let tail = String(format: "%03d", min(max(random, 0), 999))
+        return suffix + tail
+    }
+}
+
 enum BarcodeMatch {
     /// The product whose barcode equals the scanned code (trimmed, case-insensitive). The search API also matches
     /// names, so a scan keeps only an exact barcode.
@@ -412,31 +423,82 @@ struct CartLineCalc: Equatable {
     }
 }
 
-/// "Tổng giá vốn" and, in a sale cart, "Lãi dự kiến" (#888)
-struct CartCostSummary: Equatable {
-    let totalCost: Double
-    /// Sale cart only: total (after discount) − total cost; negative is a loss
-    let profit: Double?
+/// #1024 (option A, icon + word): the cart's icons; Android `CartV2Icon` uses the Material twin.
+/// #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): one edit icon for every edit in the cart
+enum CartV2Icon: String {
+    /// MÓN header "Thêm" (SF Symbol)
+    case addItem = "plus.circle"
+    /// Giảm giá, Đặt cọc, the order note, a line's note: the mockup's pen-line, drawn by `DS.editIcon` (`V2.editPencil`)
+    case edit = "pen-line"
+
+    /// a line's "Ghi chú" / its note
+    static let itemNote = CartV2Icon.edit
+    /// the order's "Ghi chú" row in TIỀN
+    static let orderNote = CartV2Icon.edit
 }
 
-/// Cost lines of the cart (#888): only for roles that may see prices (never OUTLET_STAFF), only lines with a cost
-enum CartCostLogic {
-    /// "Giá vốn" of a line: cost × quantity; nil when hidden or the product has no cost
-    static func lineCost(_ item: CartItem, showsPrices: Bool) -> Double? {
-        guard showsPrices, let cost = item.costPrice, cost > 0 else { return nil }
-        return cost * Double(item.quantity)
-    }
+/// #1056 (owner, mockup cartmoney): the rows of the cart's TIỀN section; editable rows open a sheet (Android `CartMoneyRow`)
+enum CartMoneyRow: CaseIterable {
+    case subtotal, discount, total, deposit, note
 
-    /// Nil when hidden or no line has a cost
-    static func summary(_ items: [CartItem], total: Double, orderType: OrderType, showsPrices: Bool) -> CartCostSummary? {
-        let costs = items.compactMap { lineCost($0, showsPrices: showsPrices) }
-        guard !costs.isEmpty else { return nil }
-        let totalCost = costs.reduce(0, +)
-        return CartCostSummary(totalCost: totalCost, profit: orderType == .sale ? total - totalCost : nil)
-    }
+    var isEditable: Bool { self == .discount || self == .deposit || self == .note }
+}
+
+/// #1056: how a TIỀN value is drawn. Rule of the whole cart: blue = tappable, black / grey = read only
+enum CartMoneyTone: Equatable {
+    /// black, no icon
+    case plain
+    /// blue (primary), bold, then the blue pencil
+    case action
+    /// the order note's text: one line, dark grey (#334155), then the blue pencil
+    case noteText
 }
 
 enum CartV2Logic {
+    /// #1056: an empty note shows the blue "Thêm"; a note shows its text
+    static func moneyRowTone(_ row: CartMoneyRow, note: String? = nil) -> CartMoneyTone {
+        guard row.isEditable else { return .plain }
+        return row == .note && noteShown(note) != nil ? .noteText : .action
+    }
+
+    /// #1056 (owner: "note cần xuống dòng"): a note as the cart shows it, in full on several lines — each line trimmed,
+    /// blank lines dropped; nil = "Ghi chú" / "Thêm"
+    static func noteShown(_ note: String?) -> String? {
+        guard let text = noteText(note) else { return nil }
+        return text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: "\n")
+    }
+
+    /// #1056: "−50.000đ" above 0, else "0đ" (both blue now; the value used to be green above 0)
+    static func discountShown(_ discountAmount: Double) -> Double { discountAmount > 0 ? -discountAmount : 0 }
+
+    /// #1067: the most a discount can be: the line subtotal before discount (tiền thuê / tiền hàng; deposit is not
+    /// part of it), or 100% for a percent discount
+    static func discountLimit(subtotal: Double, isPercent: Bool) -> Double { isPercent ? 100 : max(0, subtotal) }
+
+    /// #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): refused, never clamped; equal to the limit is fine (total 0)
+    static func discountExceeds(value: Double, subtotal: Double, isPercent: Bool) -> Bool {
+        value > discountLimit(subtotal: subtotal, isPercent: isPercent)
+    }
+
+    /// #1067: "Giảm giá không được lớn hơn tổng đơn (77đ)" / "(100%)", nil while the value is allowed
+    static func discountError(value: Double, subtotal: Double, isPercent: Bool) -> String? {
+        guard discountExceeds(value: value, subtotal: subtotal, isPercent: isPercent) else { return nil }
+        let limit = isPercent ? "100%" : money(discountLimit(subtotal: subtotal, isPercent: false))
+        return String(format: "cart.discount.tooHigh".localized(), limit)
+    }
+
+    /// #1067: the cart's saved discount after lines changed (items removed, quantity or price lowered); non-nil blocks
+    /// "Tạo đơn" / "Lưu thay đổi" with the same message
+    static func cartDiscountError(_ cart: Cart) -> String? {
+        discountError(value: cart.discount, subtotal: cart.subtotalAmount, isPercent: cart.discountType == .percentage)
+    }
+
+    /// #1056: what VoiceOver reads after the row title: the value (+ the note photos), then "Sửa"
+    static func moneyRowSpoken(value: String, photos: String? = nil) -> String {
+        [value, photos, "products.detail.edit".localized()].compactMap { $0 }.joined(separator: ", ")
+    }
+
     static func calc(_ item: CartItem, orderType: OrderType) -> CartLineCalc {
         let unit: CartLineCalc.Unit
         if orderType == .sale {
@@ -594,6 +656,25 @@ enum CartV2Logic {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    /// #1024 (option A): a line's note on one line (line breaks become spaces) for the pencil entry, which cuts it
+    /// with "…"; nil = the entry shows "Ghi chú"
+    static func itemNoteLine(_ note: String?) -> String? {
+        guard let text = noteText(note) else { return nil }
+        return text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
+    /// #1024: what VoiceOver reads on the pencil entry, as before the icon: "Ghi chú cho <product>", then the note
+    static func itemNoteSpoken(productName: String?, note: String?) -> (label: String, value: String?) {
+        (String(format: "cart.itemNote.accessibility".localized(), productName ?? ""), noteText(note))
+    }
+
+    /// #1043: the "Ghi chú đơn" sheet's photo row — up to `OrderDetailLogic.maxNotePhotos` on a new order (#480);
+    /// none while editing an order (its photos live on the order detail)
+    static func orderNoteMaxPhotos(editMode: Bool) -> Int {
+        editMode ? 0 : OrderDetailLogic.maxNotePhotos
+    }
+
     /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn
     static func missingPrices(_ cart: Cart) -> [String] {
         cart.items.filter { needsPrice($0, orderType: cart.orderType) }
@@ -610,6 +691,54 @@ enum CartV2Logic {
         let asked = items.filter { $0.productId == item.productId }.reduce(0) { $0 + $1.quantity }
         guard let status = item.availabilityStatus, status.available < max(asked, item.quantity) else { return nil }
         return max(0, status.available)
+    }
+
+    /// #1054: how strong the shortage warning is: `.low` = some units free (fewer than asked), `.none` = nothing free
+    /// #1064: `.ok` = 2+ free and enough for the cart (green)
+    enum ShortageTone: Equatable {
+        case ok, low, none
+    }
+
+    /// #1054 (owner): "Chỉ còn 1 trống…" in red read as out of stock; red only when nothing is free
+    static func shortageTone(left: Int) -> ShortageTone {
+        left >= 1 ? .low : .none
+    }
+
+    /// #1064: the one availability pill of a cart line: the short shown text (`key`), the longer VoiceOver text
+    /// (`spokenKey`), the count, and the tone
+    struct AvailabilityNote: Equatable {
+        let key: String
+        let spokenKey: String
+        let count: Int
+        let tone: ShortageTone
+
+        var text: String { String(format: key.localized(), count) }
+        var spoken: String { String(format: spokenKey.localized(), count) }
+    }
+
+    /// #1064 (owner): 0 free = "Hết đồ" / "Hết hàng" (red); 1 free, or fewer than asked (amber); 2+ free and at
+    /// least `asked` (green). Shown: "Còn N" when enough, "Chỉ còn N" when fewer than asked ("text còn trống dài quá");
+    /// VoiceOver adds "trong ngày đã chọn" / "trong kho". nil while availability is not loaded
+    static func availabilityNote(available: Int?, asked: Int, isRent: Bool) -> AvailabilityNote? {
+        guard let available else { return nil }
+        if available <= 0 {
+            return isRent
+                ? AvailabilityNote(key: "products.cart.bookedOut", spokenKey: "products.cart.unavailableRent", count: 0, tone: .none)
+                : AvailabilityNote(key: "products.cart.outOfStock", spokenKey: "products.cart.outOfStock", count: 0, tone: .none)
+        }
+        let tone: ShortageTone = available >= 2 && available >= asked ? .ok : .low
+        if available >= asked {
+            return AvailabilityNote(key: "products.cart.left", spokenKey: isRent ? "products.cart.freeRent" : "products.cart.inStock",
+                                    count: available, tone: tone)
+        }
+        return AvailabilityNote(key: "products.cart.onlyLeft", spokenKey: isRent ? "products.cart.shortRent" : "products.cart.shortStock",
+                                count: available, tone: tone)
+    }
+
+    /// #1064: the note of a cart line; `asked` = units of the product across all its lines (#951)
+    static func availabilityNote(_ item: CartItem, in items: [CartItem], isRent: Bool) -> AvailabilityNote? {
+        let asked = items.filter { $0.productId == item.productId }.reduce(0) { $0 + $1.quantity }
+        return availabilityNote(available: item.availabilityStatus?.available, asked: max(asked, item.quantity), isRent: isRent)
     }
 
     /// Paid now: the prepaid deposit for a rental, the order total for a sale

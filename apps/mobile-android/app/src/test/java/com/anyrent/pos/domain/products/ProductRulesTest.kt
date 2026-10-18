@@ -107,29 +107,6 @@ class ProductRulesTest {
         assertNull(ProductCostPrice.shown(product(), showsPrices = true))
     }
 
-    private fun costLine(cost: Double?, qty: Int = 1, isSale: Boolean = false) =
-        CartLine(product().copy(costPrice = cost), qty, isSale = isSale)
-
-    /** #888: "Giá vốn" per cart line = cost × quantity, only when > 0 and the role may see prices (iOS `CartCostLogic`) */
-    @Test
-    fun `cart line cost`() {
-        assertEquals(360_000.0, CartCostLogic.lineCost(costLine(180_000.0, qty = 2), showsPrices = true))
-        assertNull("staff never", CartCostLogic.lineCost(costLine(180_000.0, qty = 2), showsPrices = false))
-        assertNull(CartCostLogic.lineCost(costLine(0.0), showsPrices = true))
-        assertNull(CartCostLogic.lineCost(costLine(null), showsPrices = true))
-    }
-
-    /** #888: "Tổng giá vốn" in both carts; the sale cart adds "Lãi dự kiến" = total − total cost */
-    @Test
-    fun `cart cost summary`() {
-        val lines = listOf(costLine(800_000.0), costLine(180_000.0, qty = 2), costLine(null))
-        assertEquals(CartCostSummary(1_160_000.0, 1_280_000.0), CartCostLogic.summary(lines, 2_440_000.0, isSale = true, showsPrices = true))
-        assertEquals(CartCostSummary(1_160_000.0, null), CartCostLogic.summary(lines, 750_000.0, isSale = false, showsPrices = true))
-        assertEquals(-400_000.0, CartCostLogic.summary(listOf(costLine(900_000.0)), 500_000.0, isSale = true, showsPrices = true)?.profit)
-        assertNull(CartCostLogic.summary(lines, 2_440_000.0, isSale = true, showsPrices = false))
-        assertNull(CartCostLogic.summary(listOf(costLine(null), costLine(0.0)), 600_000.0, isSale = true, showsPrices = true))
-    }
-
     /** #887: an empty cost field sends 0 only when the product had a cost, so an unknown cost is never wiped */
     @Test
     fun `cost price sent on save never wipes an unknown cost`() {
@@ -271,6 +248,42 @@ class ProductRulesTest {
         assertEquals(3, CartV2Logic.rentalDays(day, day.plusDays(2)))
     }
 
+    /** #1054 (owner): some units free = the amber warning, none free = red (iOS `shortageTone`) */
+    @Test
+    fun `shortage tone is low when some units are free and none at zero`() {
+        assertEquals(CartV2Logic.ShortageTone.LOW, CartV2Logic.shortageTone(1))
+        assertEquals(CartV2Logic.ShortageTone.LOW, CartV2Logic.shortageTone(3))
+        assertEquals(CartV2Logic.ShortageTone.NONE, CartV2Logic.shortageTone(0))
+    }
+
+    /**
+     * #1064 (owner, iOS `availabilityNote`): 0 free = "Hết đồ" / "Hết hàng" in red; 1 free (or fewer than asked) =
+     * amber; 2+ free and enough for the cart = green "Còn N". Short texts; TalkBack reads the long one. Nothing until loaded
+     */
+    @Test
+    fun `availability note follows the free count`() {
+        val note = CartV2Logic::availabilityNote
+        fun n(text: Int, spoken: Int, count: Int, tone: CartV2Logic.ShortageTone) = CartV2Logic.AvailabilityNote(text, spoken, count, tone)
+        val (ok, low, none) = Triple(CartV2Logic.ShortageTone.OK, CartV2Logic.ShortageTone.LOW, CartV2Logic.ShortageTone.NONE)
+        assertNull(note(null, 1, true))
+        assertNull(note(null, 1, false))
+        // 0: red
+        assertEquals(n(R.string.v2_cart_booked_out, R.string.v2_cart_unavailable_rent, 0, none), note(0, 1, true))
+        assertEquals(n(R.string.v2_cart_booked_out, R.string.v2_cart_unavailable_rent, 0, none), note(-2, 1, true))
+        assertEquals(n(R.string.v2_cart_out_of_stock, R.string.v2_cart_out_of_stock, 0, none), note(0, 1, false))
+        // 1 free, 1 asked: amber "Còn 1"
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_free_rent, 1, low), note(1, 1, true))
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_in_stock, 1, low), note(1, 1, false))
+        // fewer than asked: amber "Chỉ còn N" (2 free but 3 in the cart cannot be filled → amber, not green)
+        assertEquals(n(R.string.v2_cart_only_left, R.string.v2_cart_short_stock, 1, low), note(1, 3, false))
+        assertEquals(n(R.string.v2_cart_only_left, R.string.v2_cart_short_rent, 2, low), note(2, 3, true))
+        assertEquals(n(R.string.v2_cart_only_left, R.string.v2_cart_short_stock, 2, low), note(2, 3, false))
+        // 2+ and enough: green "Còn N"
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_free_rent, 2, ok), note(2, 2, true))
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_free_rent, 5, ok), note(5, 1, true))
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_in_stock, 5, ok), note(5, 1, false))
+    }
+
     @Test
     fun `switching to sale after a pricing toggle uses the sale price`() {
         CartStore.clear(persistToDisk = false)
@@ -293,6 +306,14 @@ class ProductRulesTest {
         assertEquals(R.string.api_error_stock_below_rented, ApiErrorMessages.stringId("STOCK_BELOW_RENTED"))
         assertEquals(R.string.api_error_stock_below_rented, ApiErrorMessages.stringId("stock_below_rented"))
         assertEquals(0, ApiErrorMessages.stringId("SOMETHING_ELSE"))
+    }
+
+    /** #994: last 8 clock digits + 3 random digits, same as the web form */
+    @Test
+    fun `generated barcode is eight clock digits plus three random`() {
+        assertEquals("00123456042", ProductBarcode.generate(1_759_000_123_456, 42))
+        assertEquals("00123456999", ProductBarcode.generate(1_759_000_123_456, 999))
+        assertEquals("00000042007", ProductBarcode.generate(42, 7))
     }
 
     @Test

@@ -54,7 +54,7 @@ class CartZeroPriceLinesTest {
         assertEquals(0.0, ProductPricing.perRental(free)!!, 0.0)
         assertNull(ProductPricing.perDay(free))
         assertEquals(0.0, ProductRowLogic.price(free)!!.main, 0.0)
-        // a product without options and rentPrice 0 has no price
+        // A bare rentPrice of 0 is not a list price (sale-only stays sale-only). The cart still prices it at 0đ (#996).
         assertNull(ProductPricing.perRental(noPrice))
         assertNull(ProductRowLogic.price(noPrice))
         // sale 0 stays "not for sale" (old rows)
@@ -78,17 +78,18 @@ class CartZeroPriceLinesTest {
     }
 
     @Test
-    fun `a product without a rent price still asks for one`() {
+    fun `a product priced 0 creates at 0đ and a mode it does not price still asks`() {
         CartStore.addProduct(noPrice)
         val line = CartStore.lines.value.single()
-        assertTrue(CartV2Logic.needsPrice(line, isSale = false))
-        assertNull(CartV2Logic.chipPrice(line, isSale = false))
-        assertEquals(listOf("SP 3"), CartV2Logic.missingPrices(CartStore.lines.value, isSale = false))
-        // typed 0 is a price
-        CartStore.applyLinePricing(line.lineId, "FIXED", 0.0)
-        assertFalse(CartV2Logic.needsPrice(CartStore.lines.value.single(), isSale = false))
-        // clearing the typed price asks again
+        assertEquals(0.0, line.unitPrice, 0.0)
+        assertFalse(CartV2Logic.needsPrice(line, isSale = false))
+        assertEquals(0.0, CartV2Logic.chipPrice(line, isSale = false)!!, 0.0)
+        assertTrue(CartV2Logic.missingPrices(CartStore.lines.value, isSale = false).isEmpty())
+        CartStore.applyLinePricing(line.lineId, "FIXED", 50_000.0)
         CartStore.applyLinePricing(line.lineId, "FIXED", null)
+        assertEquals(0.0, CartStore.lines.value.single().unitPrice, 0.0)
+        assertFalse(CartV2Logic.needsPrice(CartStore.lines.value.single(), isSale = false))
+        CartStore.setPricingType(line.lineId, "DAILY")
         assertTrue(CartV2Logic.needsPrice(CartStore.lines.value.single(), isSale = false))
     }
 

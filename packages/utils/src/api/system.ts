@@ -46,6 +46,25 @@ export interface SystemStats {
   };
 }
 
+/** #1017: GET /api/admin/embedding-backfill */
+export interface EmbeddingBackfillStatus {
+  merchantId: number | null;
+  products: { withImages: number; missingEmbedding: number; withEmbedding: number };
+  jobs: Record<'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED', number>;
+  topMerchants: Array<{ id: number; name: string; missingEmbedding: number }>;
+}
+
+/** #1017: POST /api/admin/embedding-backfill */
+export interface EmbeddingBackfillResult {
+  merchantId: number | null;
+  dryRun: boolean;
+  merchants: number;
+  products: number;
+  queued: number;
+  skippedAlreadyQueued: number;
+  skippedFailed: number;
+}
+
 // ============================================================================
 // SYSTEM API CLIENT
 // ============================================================================
@@ -207,5 +226,25 @@ export const systemApi = {
       page: number;
       limit: number;
     }>(response);
-  }
+  },
+
+  /** #1017: image-search embedding counts (ADMIN only) */
+  async getEmbeddingBackfillStatus(merchantId?: number): Promise<ApiResponse<EmbeddingBackfillStatus>> {
+    const query = merchantId ? `?merchantId=${merchantId}` : '';
+    const response = await authenticatedFetch(`${apiUrls.system.embeddingBackfill}${query}`);
+    return await parseApiResponse<EmbeddingBackfillStatus>(response);
+  },
+
+  /** #1017: queue missing image-search embeddings (ADMIN only); `dryRun` only counts */
+  async runEmbeddingBackfill(body: {
+    merchantId?: number;
+    includeFailed?: boolean;
+    dryRun?: boolean;
+  }): Promise<ApiResponse<EmbeddingBackfillResult>> {
+    const response = await authenticatedFetch(apiUrls.system.embeddingBackfill, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return await parseApiResponse<EmbeddingBackfillResult>(response);
+  },
 };

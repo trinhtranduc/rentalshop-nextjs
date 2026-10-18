@@ -1,5 +1,9 @@
 package com.anyrent.pos.ui.orders.v2
 
+import androidx.compose.material.icons.automirrored.outlined.Undo
+import androidx.compose.material.icons.outlined.ArrowOutward
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Schedule
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.orders.OrderRowDates
@@ -37,6 +41,20 @@ data class RentOrdersFilter(
     val isDefault get() = sortDate == SortDate.PICKUP && direction == SortDirection.NEAREST_FIRST && range == DateRangeChoice.Any
 }
 
+/**
+ * #1025 (owner): the orders of one product sort like Tất cả đơn (#888): Ngày lấy / Ngày trả / Ngày tạo, nearest
+ * first = `desc`. Default pickup day, nearest first. iOS `EntityOrdersLogic.defaultProductSort` / `productOrdersQuery`.
+ */
+object ProductOrdersSort {
+    val DEFAULT = RentOrdersFilter()
+
+    /** `sortBy` to `sortOrder` of `GET /api/orders` */
+    fun query(sort: RentOrdersFilter): Pair<String, String> = sort.sortDate.apiField to sort.direction.apiOrder
+
+    /** The date the rows show bold: the sort date on a product's orders; none on a customer's (no sort control) */
+    fun boldDate(isProduct: Boolean, sort: RentOrdersFilter): SortDate? = sort.sortDate.takeIf { isProduct }
+}
+
 /** One `GET /api/orders` request of the tab */
 data class OrdersQuery(
     val q: String? = null,
@@ -65,6 +83,33 @@ enum class RowTag { HAND_OVER, TAKE_BACK, RESERVED, RENTING, RETURNED, COMPLETED
 enum class DayWord { TODAY, TOMORROW, YESTERDAY, NONE }
 
 /** Pure texts and counts of the boards Main, VL-tat-ca, VL-ban, VL-tim, Loc (#401); unit tested */
+/**
+ * #1032 (owner, mockup "Mọi màn đơn hàng: cảnh báo gọn"): a warning on an order row ("Trễ N ngày", "Quá N ngày",
+ * "Chưa soạn đồ") is small coloured text with a small icon in front and no box, so the status badge stays the
+ * strongest colour (iOS `RowWarning`). Only order rows use it; `DS.Status.Late` / `Waiting` keep their fills.
+ */
+enum class RowWarning(val color: androidx.compose.ui.graphics.Color, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    LATE(androidx.compose.ui.graphics.Color(0xFFB91C1C), androidx.compose.material.icons.Icons.Outlined.Schedule),
+    NOT_PREPARED(androidx.compose.ui.graphics.Color(0xFF9A3412), androidx.compose.material.icons.Icons.Outlined.Inventory2),
+    ;
+
+    /** No fill */
+    val fill: androidx.compose.ui.graphics.Color get() = androidx.compose.ui.graphics.Color.Transparent
+
+    companion object {
+        /** Pill size (12sp), medium weight (iOS `RowWarning.font`) */
+        val fontSize: androidx.compose.ui.unit.TextUnit = com.anyrent.pos.ui.theme.DS.TextSize.Pill
+        val weight: androidx.compose.ui.text.font.FontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+
+        /** #1032 (owner, mockup "Lịch › đơn trễ: icon"): the grey "· phí N" after the calendar late warning */
+        val feeColor = androidx.compose.ui.graphics.Color(0xFF64748B)
+        val feeWeight: androidx.compose.ui.text.font.FontWeight = androidx.compose.ui.text.font.FontWeight.Normal
+
+        /** " · phí N" after "Trễ N ngày": the spoken note stays "Trễ N ngày · phí N" as before */
+        fun feeSuffix(feeText: String): String = " · $feeText"
+    }
+}
+
 object OrdersBoardLogic {
     /** "0053" of "ORD-1-0053"; numbers without a dash stay whole */
     fun shortNumber(orderNumber: String): String =
@@ -134,6 +179,13 @@ object OrdersBoardLogic {
     /** #893: one chip; [date] for PICKUP / RETURN, [days] for LATE */
     data class WorkChip(val kind: WorkChipKind, val date: String? = null, val days: Int = 0)
 
+    /** #1032 (owner): "Trễ N ngày" / "Chưa soạn đồ" are soft row warnings (icon + text, no box); dates are not */
+    fun warning(kind: WorkChipKind): RowWarning? = when (kind) {
+        WorkChipKind.LATE -> RowWarning.LATE
+        WorkChipKind.NOT_PREPARED -> RowWarning.NOT_PREPARED
+        WorkChipKind.PICKUP, WorkChipKind.RETURN -> null
+    }
+
 
     /** #893 (owner): the task's own date (Lấy for a hand-over, Trả for a take-back), "Trễ N ngày", "Chưa soạn đồ" */
     fun workChips(work: TodayWorkRow, kind: WorkKind, zone: java.time.ZoneId = ShopTime.zone): List<WorkChip> = buildList {
@@ -159,14 +211,32 @@ object OrdersBoardLogic {
             pickupLabel = pickupLabel, returnLabel = returnLabel,
         )
 
+    /**
+     * #1041: the "↗ dd/mm/yy" chip of a sale row; in a product's sorted list ([sortedBy]) the pickup day when sorted
+     * by pickup, else the created day (return sort keeps it); the created day when the pickup day is missing (iOS)
+     */
+    fun saleChip(order: OrderSummary, sortedBy: SortDate?, saleLabel: String = "Bán"): OrderRowDates.DateChip? {
+        val created = OrdersHomeLogic.parseInstant(order.createdAt)
+        val date = if (sortedBy == SortDate.PICKUP) OrdersHomeLogic.parseInstant(order.pickupPlanAt) ?: created else created
+        return OrderRowDates.saleChip(order.orderType, order.status, date, saleLabel)
+    }
+
     /** #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" is bold dark text (no background) */
     fun metaIsBold(sortedBy: SortDate?): Boolean = sortedBy == SortDate.CREATED
 
-    /** #891 (option C): light blue "Lấy", light purple "Trả" (iOS DateChip.Kind.colors) */
-    fun chipColors(kind: OrderRowDates.ChipKind): com.anyrent.pos.ui.theme.DS.Pill = when (kind) {
-        OrderRowDates.ChipKind.PICKUP -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF1E40AF), androidx.compose.ui.graphics.Color(0xFFEFF6FF))
-        OrderRowDates.ChipKind.RETURN -> com.anyrent.pos.ui.theme.DS.Pill(androidx.compose.ui.graphics.Color(0xFF5B21B6), androidx.compose.ui.graphics.Color(0xFFF5F3FF))
+    /** #1008 (owner): the icon in place of the word: arrow going out (pickup, #1026 sale), arrow coming back (return); iOS symbolName */
+    fun chipIcon(kind: OrderRowDates.ChipKind): androidx.compose.ui.graphics.vector.ImageVector = when (kind) {
+        OrderRowDates.ChipKind.PICKUP, OrderRowDates.ChipKind.SALE -> androidx.compose.material.icons.Icons.Outlined.ArrowOutward
+        OrderRowDates.ChipKind.RETURN -> androidx.compose.material.icons.Icons.AutoMirrored.Outlined.Undo
     }
+
+    /** #1026 (owner): only the status badge keeps colour; every date chip is dark text on no fill (iOS DateChip.Kind.colors) */
+    @Suppress("UNUSED_PARAMETER")
+    fun chipColors(kind: OrderRowDates.ChipKind): com.anyrent.pos.ui.theme.DS.Pill =
+        com.anyrent.pos.ui.theme.DS.Pill(com.anyrent.pos.ui.theme.DS.Colors.Text, androidx.compose.ui.graphics.Color.Transparent)
+
+    /** #1026 (owner, mockup "Mọi màn đơn hàng: bớt màu"): the grey icon of every date chip (iOS DateChip.iconColor) */
+    val chipIconTint = androidx.compose.ui.graphics.Color(0xFF64748B)
 
     /** #888 line 1 of a "Tất cả đơn" row: "#0063 · tạo 05/10/26" (owner: the created day stays where it was) */
     fun rentRowMeta(order: OrderSummary, texts: OrderRowDates.Texts = OrderRowDates.Texts()): String =

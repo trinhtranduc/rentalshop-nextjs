@@ -19,10 +19,13 @@ data class FreeStripDay(val key: String, val day: String, val free: Int, val isT
     }
 }
 
-/** "Sắp tới / Đang thuê / Đã xong"; cancelled orders are in no chip */
+/**
+ * "Sắp tới / Đang thuê / Đã xong"; cancelled orders are in no chip. #1056 (owner): the farthest pickup on top, as
+ * "Tất cả N"; "Đang thuê" the farthest return on top
+ */
 enum class ProductOrdersChip(val statuses: List<String>, val sortBy: String, val sortOrder: String) {
-    UPCOMING(listOf("RESERVED"), "pickupPlanAt", "asc"),
-    RENTING(listOf("PICKUPED"), "returnPlanAt", "asc"),
+    UPCOMING(listOf("RESERVED"), "pickupPlanAt", "desc"),
+    RENTING(listOf("PICKUPED"), "returnPlanAt", "desc"),
     DONE(listOf("RETURNED", "COMPLETED"), "createdAt", "desc"),
 }
 

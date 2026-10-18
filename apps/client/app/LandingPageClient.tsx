@@ -10,7 +10,7 @@ import { publicPlansApi, translatePlanFeature } from '@rentalshop/utils'
 import { usePlansTranslations, useAuth } from '@rentalshop/hooks'
 import type { Plan } from '@rentalshop/types'
 import type { PublicLocale } from '@rentalshop/constants'
-import { APP_STORE_URL, WEB_OPT_OUT_COOKIE, isIpadDesktop, isWebOptOut } from '../lib/store-redirect'
+import { scheduleLandingStoreNavigation } from '../lib/landing-store-navigation'
 import { createSchemas, createFAQSchema } from './lib/schemas'
 import { getAnyRentLogoUrl } from '../lib/brand'
 import { LandingBrandLogo } from './components/LandingBrandLogo'
@@ -72,18 +72,8 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
   const router = useRouter()
   const { user } = useAuth()
 
-  // #946: iPadOS "desktop site" sends a Mac UA, so middleware.ts lets it through; touch points tell it apart.
-  useEffect(() => {
-    try {
-      const web = new URLSearchParams(window.location.search).get('web')
-      const cookie = document.cookie.match(new RegExp(`(?:^|; )${WEB_OPT_OUT_COOKIE}=([^;]*)`))?.[1]
-      if (!isWebOptOut(web, cookie) && isIpadDesktop(navigator.userAgent, navigator.maxTouchPoints)) {
-        window.location.replace(APP_STORE_URL)
-      }
-    } catch {
-      // keep the page
-    }
-  }, [])
+  // #992: every mobile device sees the landing first, then opens its store after load and paint.
+  useEffect(() => scheduleLandingStoreNavigation(window), [])
   
   // Structured Data for SEO (JSON-LD)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

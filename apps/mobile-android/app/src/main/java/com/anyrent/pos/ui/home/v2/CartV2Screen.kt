@@ -54,8 +54,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -76,13 +79,12 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
 import com.anyrent.pos.domain.orders.EditOrderSheet
-import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.domain.customers.CustomerPickerEdit
-import com.anyrent.pos.domain.products.CartCostLogic
 import com.anyrent.pos.domain.products.CartDateRow
 import com.anyrent.pos.domain.products.CartLineCalc
-import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.CartProblem
+import com.anyrent.pos.domain.products.CartMoneyRow
+import com.anyrent.pos.domain.products.CartMoneyTone
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
@@ -114,9 +116,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.withStyle
+import androidx.compose.material.icons.outlined.AddCircleOutline
+import com.anyrent.pos.ui.common.AppIcons
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import com.anyrent.pos.domain.products.CartV2Icon
 
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
@@ -154,8 +158,6 @@ fun CartV2Screen(
     val editOriginal by CartStore.editOriginal.collectAsState()
     val isSale = orderType == "SALE"
     val app = LocalContext.current.applicationContext as AnyRentApp
-    // #888: cost lines only for roles that may see prices (never OUTLET_STAFF)
-    val showsPrices = ProductAccess.showsPriceFields(PermissionManager.role)
 
     // Same money as the old cart: computed from the collected lines so every change redraws
     val subtotal = lines.sumOf { it.lineTotal }
@@ -164,6 +166,14 @@ fun CartV2Screen(
         CartStore.DiscountType.PERCENT -> subtotal * (discount.coerceIn(0.0, 100.0) / 100.0)
     }
     val total = (subtotal - discountAmount).coerceAtLeast(0.0)
+    // #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): a discount above the subtotal (e.g. items removed after it
+    // was set) is refused, not clamped: the cart shows why and "Tạo đơn" / "Lưu thay đổi" stay off until it is fixed
+    val discountPercent = discountType == CartStore.DiscountType.PERCENT
+    val discountInvalid = CartV2Logic.discountExceeds(discount, subtotal, discountPercent)
+    val discountTooHighMessage = stringResource(
+        R.string.v2_cart_discount_too_high,
+        CartV2Logic.discountLimitText(subtotal, discountPercent) { formatMoneyVnd(it) },
+    )
 
     // Batch availability of the lines for the chosen dates; #518 also reads which other orders hold them
     var availability by remember { mutableStateOf<Map<Int, ProductAvailability>>(emptyMap()) }
@@ -483,11 +493,18 @@ fun CartV2Screen(
             }
 
             SectionBand(stringResource(R.string.v2_cart_items, lines.sumOf { it.quantity })) {
-                Text(
-                    "+ " + stringResource(R.string.v2_cart_add_more),
-                    fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
-                    modifier = Modifier.clickable(onClick = onAddItems).padding(vertical = 8.dp).semantics { role = Role.Button },
-                )
+                // #1024 (option A, iOS): plus-circle icon + "Thêm"; TalkBack reads "Thêm món"
+                val addLabel = stringResource(R.string.v2_cart_add_item_accessibility)
+                Row(
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onAddItems)
+                        .padding(vertical = 8.dp, horizontal = 2.dp)
+                        .semantics(mergeDescendants = true) { role = Role.Button; contentDescription = addLabel },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(cartIcon(CartV2Icon.ADD_ITEM), contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
+                    Text(stringResource(R.string.v2_cart_add_more), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+                }
             }
             if (lines.isEmpty()) {
                 Text(stringResource(R.string.v2_cart_empty), color = DS.Colors.TextMuted, modifier = Modifier.padding(16.dp))
@@ -501,7 +518,6 @@ fun CartV2Screen(
                     isSale = isSale,
                     available = available[line.product.id],
                     productQuantity = productQuantities[line.product.id] ?: line.quantity,
-                    cost = CartCostLogic.lineCost(line, showsPrices),
                     overlapText = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { OverlapWarnings.cartLine(it, overlapTexts) },
                     onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
                         { onOpenCalendar(c.productId, c.from.toString()) }
@@ -517,45 +533,46 @@ fun CartV2Screen(
             SectionBand(stringResource(R.string.v2_cart_money))
             V2ValueRow(stringResource(if (isSale) R.string.v2_cart_sale_subtotal else R.string.v2_cart_rent_subtotal), formatMoneyVnd(subtotal), valueColor = DS.Colors.Text)
             ThinDivider()
-            V2ValueRow(
+            // #1056 (owner): blue value + pencil = the row opens a sheet; Tiền thuê / Tổng cộng stay black
+            CartMoneyEditRow(
                 stringResource(R.string.v2_cart_discount),
-                if (discountAmount > 0) formatMoneyVnd(-discountAmount) else formatMoneyVnd(0.0),
+                formatMoneyVnd(CartV2Logic.discountShown(discountAmount)),
+                tone = CartV2Logic.moneyRowTone(CartMoneyRow.DISCOUNT),
                 onClick = { numericText = discount.toLong().toString(); numericEditor = "DISCOUNT" },
-                valueColor = if (discountAmount > 0) V2Colors.Ok else DS.Colors.TextMuted,
             )
             ThinDivider()
             V2ValueRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(total), valueColor = DS.Colors.Text, bold = true)
             ThinDivider()
-            // #888: "Tổng giá vốn", and "Lãi dự kiến" in a sale cart; only for roles that may see prices
-            CartCostLogic.summary(lines, total, isSale, showsPrices)?.let { costs ->
-                V2ValueRow(stringResource(R.string.v2_cart_total_cost), formatMoneyVnd(costs.totalCost), valueColor = DS.Colors.Text)
-                ThinDivider()
-                costs.profit?.let { profit ->
-                    V2ValueRow(
-                        stringResource(R.string.v2_cart_profit), formatMoneyVnd(profit),
-                        valueColor = if (profit < 0) Color(0xFFB91C1C) else V2Colors.Ok, bold = true,
-                    )
-                    ThinDivider()
-                }
-            }
             if (!isSale) {
-                V2ValueRow(
+                CartMoneyEditRow(
                     stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
+                    tone = CartV2Logic.moneyRowTone(CartMoneyRow.DEPOSIT),
                     onClick = { numericText = deposit.toLong().toString(); numericEditor = "DEPOSIT" },
-                    valueColor = DS.Colors.Primary,
                 )
                 ThinDivider()
             }
-            V2ValueRow(
+            // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
+            val noteFiles by CartStore.noteImageFiles.collectAsState()
+            val notePhotos = if (editingOrderId == null) noteFiles.size else 0
+            CartMoneyEditRow(
                 stringResource(R.string.v2_cart_note),
-                notes.ifBlank { stringResource(R.string.v2_cart_add_note) },
+                CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
+                tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
+                photoCount = notePhotos,
                 onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
-                valueColor = if (notes.isBlank()) DS.Colors.Primary else DS.Colors.TextMuted,
             )
             Spacer(Modifier.height(24.dp))
         }
 
         HorizontalDivider(color = DS.Colors.Border)
+        if (discountInvalid) {
+            // #1067: same red notice as the overlap block, above the CTA
+            OverlapNotice(
+                text = discountTooHighMessage,
+                background = Color(0xFFFEF2F2), borderColor = Color(0xFFFECACA), tint = Color(0xFFB91C1C), textColor = Color(0xFF991B1B),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
+            )
+        }
         if (createBlocked) {
             // #518 board GH-trung-tat: the shop does not allow overlapping rentals
             OverlapNotice(
@@ -566,6 +583,7 @@ fun CartV2Screen(
         }
         // The cart button: the create / sale confirm sheet, or the "Lưu thay đổi" sheet while editing
         fun onCta() {
+            if (discountInvalid) return
             val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
             val messages = problems.map { problemText.getValue(it) } +
                 CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
@@ -622,7 +640,7 @@ fun CartV2Screen(
                     AppPrimaryButton(
                         stringResource(R.string.v2_cart_edit_save),
                         modifier = Modifier.weight(2f).height(48.dp),
-                        enabled = !createBlocked,
+                        enabled = !createBlocked && !discountInvalid,
                         onClick = ::onCta,
                     )
                 }
@@ -646,7 +664,7 @@ fun CartV2Screen(
                         },
                     ),
                     modifier = Modifier.weight(1.1f),
-                    enabled = !createBlocked,
+                    enabled = !createBlocked && !discountInvalid,
                     onClick = ::onCta,
                 )
             }
@@ -721,8 +739,11 @@ fun CartV2Screen(
             noteLineId = null
         } else {
             CartItemNoteSheet(
-                productName = line.product.name,
+                title = stringResource(R.string.v2_item_note_title),
+                subtitle = line.product.name,
                 note = line.note,
+                placeholder = stringResource(R.string.v2_item_note_placeholder),
+                hint = stringResource(R.string.v2_item_note_hint),
                 onDismiss = { noteLineId = null },
                 onSave = { note -> CartStore.updateNote(id, note); noteLineId = null },
             )
@@ -740,6 +761,12 @@ fun CartV2Screen(
             rawValue = numericText,
             onRawValueChange = { numericText = it },
             onDismiss = { numericEditor = null },
+            // #1067: the typed discount above the subtotal (or 100%) shows the error and Confirm stays off
+            errorText = discountTooHighMessage.takeIf {
+                editor == "DISCOUNT" && CartV2Logic.discountExceeds(numericText.toDoubleOrNull() ?: 0.0, subtotal, discountPercent)
+            },
+            confirmEnabled = editor != "DISCOUNT" ||
+                !CartV2Logic.discountExceeds(numericText.toDoubleOrNull() ?: 0.0, subtotal, discountPercent),
             onConfirm = {
                 val value = numericText.toDoubleOrNull() ?: 0.0
                 when {
@@ -760,16 +787,17 @@ fun CartV2Screen(
         }
     }
     noteDraft?.let { draft ->
-        // #477: note editor of board GC-ghi-chu. #480: with photos, kept by the cart and sent on create; editing an
-        // existing order stays text only (its photos live on the order detail)
+        // #1043 (iOS editNote): the item note sheet as "Ghi chú đơn", prefilled while editing an order. #480: on a new
+        // order it also holds the note photos, kept by the cart and sent on create; editing an existing order stays
+        // text only (its photos live on the order detail)
         val saved = CartStore.noteImageFiles.value
-        com.anyrent.pos.ui.orders.v2.NoteEditorV2(
-            orderNumber = null, text = draft, onTextChange = { noteDraft = it }, busy = false, error = null,
-            showPhotos = editingOrderId == null,
-            files = noteDraftFiles,
-            onRemoveFile = { file -> noteDraftFiles = noteDraftFiles - file },
-            onAdd = { notePicking = true; notePicker.launch("image/*") },
-            onPreview = { notePreview = it },
+        val maxPhotos = CartV2Logic.orderNoteMaxPhotos(editMode = editingOrderId != null)
+        CartItemNoteSheet(
+            title = stringResource(R.string.v2_order_note_title),
+            subtitle = null,
+            note = draft,
+            placeholder = stringResource(R.string.v2_order_note_placeholder),
+            hint = stringResource(R.string.v2_order_note_hint),
             onDismiss = {
                 if (!notePicking) {
                     // Close without saving: drop the photos picked in this round only
@@ -777,14 +805,24 @@ fun CartV2Screen(
                     noteDraft = null
                 }
             },
-            onSave = {
-                CartStore.setNotes(draft.trim())
+            onSave = { text ->
+                CartStore.setNotes(CartV2Logic.noteText(text).orEmpty())
                 if (editingOrderId == null) {
                     (saved - noteDraftFiles.toSet()).forEach { runCatching { it.delete() } }
                     CartStore.setNoteImageFiles(noteDraftFiles)
                 }
                 noteDraft = null
             },
+            photos = if (maxPhotos > 0) {
+                {
+                    NoteSheetPhotos(
+                        files = noteDraftFiles, max = maxPhotos,
+                        onRemove = { file -> noteDraftFiles = noteDraftFiles - file },
+                        onAdd = { notePicking = true; notePicker.launch("image/*") },
+                        onPreview = { notePreview = it },
+                    )
+                }
+            } else null,
         )
     }
     notePreview?.let { com.anyrent.pos.ui.common.FullScreenImagePreview(model = it, onDismiss = { notePreview = null }) }
@@ -905,8 +943,6 @@ private fun ItemRow(
     available: Int?,
     /** #951: units of this product across all its cart lines (the shortage compares them with [available]) */
     productQuantity: Int = line.quantity,
-    /** #888 "Giá vốn" of the line (cost × quantity); null hides the row */
-    cost: Double? = null,
     /** #518 / #684 "Hết hàng từ 03/10 → 05/10"; replaces the shortage chip */
     overlapText: String? = null,
     /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
@@ -926,15 +962,20 @@ private fun ItemRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    val shortText = overlapText ?: CartV2Logic.shortage(available, productQuantity)?.let { left ->
-                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
-                    }
+                    // #1064: one pill once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
+                    // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. The overlap tag (red) replaces it
+                    val note = if (overlapText == null) CartV2Logic.availabilityNote(available, productQuantity, !isSale) else null
+                    val shortText = overlapText ?: note?.let { stringResource(it.textRes, it.count) }
+                    // #1064: the pill is short; TalkBack says which days / the stock
+                    val spoken = note?.let { stringResource(it.spokenRes, it.count) }
+                    val style = CartShortageStyle.of(note?.tone ?: CartV2Logic.ShortageTone.NONE)
                     shortText?.let { text ->
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         Text(
                             if (onOpenOverlap != null) "$text ›" else text,
-                            fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
-                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2))
+                            fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text,
+                            modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
+                                .clip(RoundedCornerShape(6.dp)).background(style.colors.fill)
                                 .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
                                 .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
                         )
@@ -942,15 +983,7 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
-                if (isSale && available != null) {
-                    Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                }
-                cost?.let {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.v2_cart_cost), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
-                        Text(formatMoneyVnd(it), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = Color(0xFF334155), maxLines = 1)
-                    }
-                }
+                // #1064: a sale line's "Còn N" is now the pill beside the name (one count per line)
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
@@ -961,6 +994,22 @@ private fun ItemRow(
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
+    }
+}
+
+/**
+ * #1054 (owner, iOS `shortageStyle`): the shortage pill: the amber "Chưa soạn đồ" palette (#1032, `DS.Status.Waiting`)
+ * in Medium while some units are free; the booked-out red in SemiBold when none are (and for the overlap tag)
+ */
+internal data class CartShortageStyle(val colors: DS.Pill, val weight: FontWeight) {
+    companion object {
+        private val BookedOut = DS.Pill(Color(0xFF991B1B), Color(0xFFFEE2E2))
+
+        fun of(tone: CartV2Logic.ShortageTone): CartShortageStyle = when (tone) {
+            CartV2Logic.ShortageTone.OK -> CartShortageStyle(DS.Status.Done, FontWeight.Medium) // #1064: 2+ and enough
+            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.Medium)
+            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.SemiBold)
+        }
     }
 }
 
@@ -1140,38 +1189,132 @@ private fun CartPricingSheet(
     }
 }
 
-/** #684 (canvas N1, iOS itemNoteButton): "+ Ghi chú" when the line has no note, else "Ghi chú · <note> Sửa" (2 lines) */
+/** #1024: the Material icon of each cart icon (iOS SF Symbols in `CartV2Icon`) */
+internal fun cartIcon(icon: CartV2Icon): ImageVector = when (icon) {
+    CartV2Icon.ADD_ITEM -> Icons.Outlined.AddCircleOutline
+    CartV2Icon.EDIT -> CartEditIcon
+}
+
+/**
+ * #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): the cart's one edit icon — the mockup's blue pen-line
+ * after the text of every row that opens a sheet (Giảm giá, Đặt cọc, the order note, a line's note). iOS `V2.editPencil`
+ */
+internal val CartEditIcon: ImageVector get() = AppIcons.EditLine
+internal val CartEditIconSize = 15.dp
+
+@Composable
+private fun CartEditPencil(modifier: Modifier = Modifier) {
+    Icon(cartIcon(CartV2Icon.EDIT), contentDescription = null, tint = DS.Colors.Primary, modifier = modifier.size(CartEditIconSize))
+}
+
+/**
+ * #684 (canvas N1), #1024 (option A, iOS itemNoteButton): "Ghi chú" when the line has no note, else the note in a
+ * light box. #1061: blue "Ghi chú" / the note, then the cart's one blue edit icon. TalkBack reads the text and
+ * "Ghi chú cho <product>".
+ */
 @Composable
 private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Unit) {
-    val label = stringResource(R.string.v2_item_note_accessibility, productName)
-    val text = CartV2Logic.noteText(note)
-    if (text == null) {
-        Text(
-            stringResource(R.string.v2_item_note_add),
-            fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569),
-            modifier = Modifier.clip(RoundedCornerShape(6.dp))
-                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
-                .padding(vertical = 4.dp, horizontal = 2.dp),
-        )
-    } else {
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))) { append(stringResource(R.string.v2_item_note_label)) }
-                withStyle(SpanStyle(color = Color(0xFF334155))) { append(" · $text ") }
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)) { append(stringResource(R.string.v2_item_note_edit)) }
-            },
-            fontSize = DS.TextSize.Secondary, maxLines = 2, overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFFF8FAFC))
-                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-        )
+    val spoken = CartV2Logic.itemNoteSpoken(
+        productName, note,
+        noteLabel = stringResource(R.string.v2_item_note_label),
+        accessibilityFormat = stringResource(R.string.v2_item_note_accessibility),
+    )
+    NoteEntry(note, emptyText = spoken.text, spokenText = spoken.text, actionLabel = spoken.actionLabel, onClick = onClick)
+}
+
+/**
+ * #1056 (owner, mockup cartmoney; iOS `V2ValueRow(editable:)`): a TIỀN row that opens a sheet — the title, then the
+ * value in blue bold (or the whole order note, wrapped on the right, in #334155) and a small blue pencil; no ›. The whole row is the
+ * button; TalkBack reads "title, value[, N ảnh], Sửa". [photoCount] (#1043, order note on a new order) adds a grey
+ * camera + count before the pencil.
+ */
+@Composable
+private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, onClick: () -> Unit, photoCount: Int = 0) {
+    val photos = if (photoCount > 0) stringResource(R.string.v2_order_note_photos, photoCount) else null
+    val spoken = CartV2Logic.moneyRowSpoken(title, value, stringResource(R.string.edit), photos)
+    // #1056 (owner: "note cần xuống dòng"): a note wraps on the right; the title and the pencil stay on its first line
+    val isNoteText = tone == CartMoneyTone.NOTE_TEXT
+    val align = if (isNoteText) Alignment.Top else Alignment.CenterVertically
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics { contentDescription = spoken; role = Role.Button }
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 16.dp, vertical = if (isNoteText) 13.dp else 0.dp),
+        verticalAlignment = align,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(title, fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+        Row(
+            Modifier.weight(1f),
+            verticalAlignment = align,
+            horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.End), // #1061: mockup cartedit A, value 7dp before the pencil
+        ) {
+            Text(
+                value,
+                fontSize = DS.TextSize.Body,
+                fontWeight = if (isNoteText) FontWeight.Normal else FontWeight.Bold,
+                color = if (isNoteText) Color(0xFF334155) else DS.Colors.Primary,
+                maxLines = if (isNoteText) Int.MAX_VALUE else 1, overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (photoCount > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                    Text("$photoCount", fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+                }
+            }
+            CartEditPencil(Modifier.padding(top = if (isNoteText) 2.dp else 0.dp))
+        }
     }
 }
 
-/** #684 (canvas N2, iOS CartItemNoteSheet): "Ghi chú món" — title + ✕, product name, text area, "Xoá ghi chú" / "Lưu" */
+/**
+ * #1024 option A: a cart line's note entry. #1056 (owner: "note cần xuống dòng", iOS `CartNoteEntry`): the whole note
+ * on as many lines as it needs (it was one line cut with "…")
+ */
+@Composable
+private fun NoteEntry(note: String?, emptyText: String, spokenText: String, actionLabel: String, onClick: () -> Unit) {
+    val shown = CartV2Logic.noteShown(note)
+    val boxed = if (shown != null) Modifier.background(Color(0xFFF8FAFC)) else Modifier
+    Row(
+        modifier = Modifier.clip(RoundedCornerShape(8.dp)).then(boxed)
+            .clickable(onClickLabel = actionLabel, role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = spokenText }
+            .padding(horizontal = if (shown != null) 8.dp else 2.dp, vertical = if (shown != null) 5.dp else 4.dp),
+        verticalAlignment = if (shown != null) Alignment.Top else Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            shown ?: emptyText,
+            fontSize = DS.TextSize.Secondary,
+            fontWeight = if (shown != null) FontWeight.Normal else FontWeight.SemiBold,
+            color = if (shown != null) Color(0xFF334155) else DS.Colors.Primary,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        // #1061: the text, then the cart's one blue edit icon, like the TIỀN rows
+        CartEditPencil(Modifier.padding(top = if (shown != null) 2.dp else 0.dp))
+    }
+}
+
+/**
+ * #684 (canvas N2, iOS CartItemNoteSheet): "Ghi chú món" — title + ✕, product name, text area, "Xoá ghi chú" / "Lưu".
+ * #1043: the same sheet is the cart's "Ghi chú đơn" (no [subtitle]; [photos] = the note photo row on a new order).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () -> Unit, onSave: (String?) -> Unit) {
+private fun CartItemNoteSheet(
+    title: String,
+    subtitle: String?,
+    note: String?,
+    placeholder: String,
+    hint: String,
+    onDismiss: () -> Unit,
+    onSave: (String?) -> Unit,
+    photos: (@Composable () -> Unit)? = null,
+) {
     var text by remember { mutableStateOf(note.orEmpty()) }
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
@@ -1186,33 +1329,59 @@ private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () 
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.v2_item_note_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
-                    modifier = Modifier.weight(1f))
+                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f).semantics { heading() })
                 val closeLabel = stringResource(R.string.close)
                 Box(
                     Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(onClickLabel = closeLabel, onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Outlined.Close, contentDescription = closeLabel, tint = Color(0xFF475569), modifier = Modifier.size(18.dp)) }
             }
-            Text(productName, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 2)
+            subtitle?.let { Text(it, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 2) }
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
-                placeholder = { Text(stringResource(R.string.v2_item_note_placeholder)) },
+                placeholder = { Text(placeholder) },
                 minLines = 5,
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = title },
             )
-            Text(stringResource(R.string.v2_item_note_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            Text(hint, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            photos?.invoke()
             Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!CartV2Logic.noteText(note).isNullOrEmpty()) {
                     OutlinedButton(onClick = { onSave(null) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
-                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                     }
                 }
-                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1.6f).height(50.dp)) {
+                // #1056: two equal buttons, as on iOS ("Delete note" was cut on two lines)
+                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
                     Text(stringResource(R.string.v2_item_note_save), fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+    }
+}
+
+/** #1043 (iOS CartItemNoteSheet photo row): "Ảnh" + "2/5 ảnh", then 56dp tiles with a × and "Thêm" while there is room */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun NoteSheetPhotos(files: List<java.io.File>, max: Int, onRemove: (java.io.File) -> Unit, onAdd: () -> Unit, onPreview: (Any) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.notes_v2_photos), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.detail_photos_count, files.size, max), fontSize = DS.TextSize.Secondary, color = Color(0xFF64748B))
+        }
+        androidx.compose.foundation.layout.FlowRow(
+            Modifier.padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            files.forEach { file ->
+                com.anyrent.pos.ui.orders.v2.PhotoTile(file, { onPreview(file) }, size = 56.dp) { onRemove(file) }
+            }
+            if (com.anyrent.pos.domain.notifications.NoteEditorLogic.canAdd(files.size, max)) {
+                com.anyrent.pos.ui.orders.v2.AddTile(onAdd, size = 56.dp)
             }
         }
     }

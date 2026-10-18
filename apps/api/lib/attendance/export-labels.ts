@@ -7,6 +7,7 @@ const REJECT_REASONS: Record<string, string> = {
   QR_EXPIRED: 'Mã QR hết hiệu lực',
   QR_WRONG_OUTLET: 'Mã QR của chi nhánh khác',
   ATTENDANCE_NOT_CONFIGURED: 'Chi nhánh chưa cài vị trí',
+  ATTENDANCE_LOCATION_NOT_SET: 'Chi nhánh chưa đặt vị trí (chưa đo khoảng cách)',
 };
 
 /** IN → "Vào", OUT → "Ra". */

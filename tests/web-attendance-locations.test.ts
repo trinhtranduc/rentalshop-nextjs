@@ -46,13 +46,22 @@ describe('locationRow', () => {
     expect(locationRow(s({ qrMode: 'FIXED' })).qr).toBe('none');
   });
 
+  it('location needs both coordinates; zero is a valid coordinate', () => {
+    expect(locationRow(s({})).locationConfigured).toBe(false);
+    expect(locationRow(s({ latitude: 10.77 })).locationConfigured).toBe(false);
+    expect(locationRow(s({ longitude: 106.7 })).locationConfigured).toBe(false);
+    expect(locationRow(s({ latitude: 0, longitude: 0 })).locationConfigured).toBe(true);
+    expect(locationRow(s({ latitude: 10.77, longitude: 106.7 })).locationConfigured).toBe(true);
+    expect(locationRow(s({ qr: { generated: true } })).locationConfigured).toBe(false);
+  });
+
   it('radius in metres', () => {
     expect(locationRow(s({ radiusM: 150 })).radiusM).toBe(150);
   });
 
   it('settings not loaded (or failed): unknown, not "no QR"', () => {
-    expect(locationRow(null)).toEqual({ qr: null, radiusM: null });
-    expect(locationRow(undefined)).toEqual({ qr: null, radiusM: null });
+    expect(locationRow(null)).toEqual({ qr: null, radiusM: null, locationConfigured: null });
+    expect(locationRow(undefined)).toEqual({ qr: null, radiusM: null, locationConfigured: null });
   });
 });
 

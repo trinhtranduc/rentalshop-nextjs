@@ -135,7 +135,8 @@ class Utils: NSObject {
         }
     }
     class func saveBillPrinter(ip: String){
-        UserDefaults.standard.set(ip, forKey: "IpBillPrinter")
+        UserDefaults.standard.set(ip, forKey: PrinterSetup.ipKey)
+        UserDefaults.standard.set(true, forKey: PrinterSetup.chosenKey) // #1011: chosen in Máy in, even 192.168.1.199
     }
     class func loadBillPrinter() -> String{
         // #970: no fake default; "" until a printer IP is saved (the old 192.168.1.199 fallback counts as none)

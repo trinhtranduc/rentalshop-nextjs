@@ -273,7 +273,7 @@ export function SubscriptionChangePlanDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="ar-dialog md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0 max-md:flex max-md:flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+      <DialogContent className="ar-dialog md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0 max-md:flex max-md:flex-col max-md:h-[var(--ar-vvh,100dvh)] max-md:max-h-[var(--ar-vvh,100dvh)] max-md:w-full max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-[var(--ar-vvt,0px)] max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
         <DialogHeader className="px-6 py-4 border-b border-ar-line shrink-0 max-md:px-4 max-md:pr-12">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-ar-primary" />
@@ -545,6 +545,7 @@ export function SubscriptionChangePlanDialog({
           className="ar-dialog-footer md:px-6 md:py-4 md:border-t md:border-ar-line"
           summaryLabel="Total due"
           summaryAmount={planChange ? formatCurrency(planChange.totalDue, newCurrency) : undefined}
+          hint={selectedPlanId && !paymentReady ? 'Choose a payment method and enter the transaction ID to continue.' : undefined}
           secondary={
             <Button variant="outline" onClick={handleClose} disabled={loading}>
               Cancel

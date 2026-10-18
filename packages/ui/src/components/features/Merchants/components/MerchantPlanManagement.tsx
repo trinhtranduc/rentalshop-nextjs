@@ -172,7 +172,7 @@ export function MerchantPlanManagement({
       : 'N/A';
 
   // Dialog classes: full screen below 768 px, unchanged from 768 px
-  const phoneDialog = 'max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:overflow-hidden max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5';
+  const phoneDialog = 'max-md:h-[var(--ar-vvh,100dvh)] max-md:max-h-[var(--ar-vvh,100dvh)] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-[var(--ar-vvt,0px)] max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:overflow-hidden max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5';
   const phoneBody = 'max-md:flex-1 max-md:min-h-0 max-md:overflow-y-auto max-md:pb-4';
 
   // Adapter function to convert SubscriptionChangePlanDialog callback to onPlanChange format

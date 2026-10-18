@@ -1,3 +1,5 @@
+import { getApiMessage, getApiSuccessMessage, type ApiMessageValues } from '../api-messages';
+
 /**
  * API Response Builder
  * Chuẩn hóa response format với error codes để client có thể translate
@@ -68,6 +70,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'GPS_INACCURATE': 'Your location is not accurate enough. Move near a door or window and try again.',
   'MOCK_LOCATION': 'A fake location was detected. Turn off the location spoofing app and try again.',
   'ATTENDANCE_NOT_CONFIGURED': 'Attendance is not set up for this branch yet (location or QR code missing).',
+  'ATTENDANCE_LOCATION_NOT_SET': 'This branch has no attendance location yet, so the distance cannot be checked. Ask the shop owner to set it in Attendance › QR & location.',
   'SHIFT_OVERLAP': 'This shift overlaps another shift of the same employee.',
   'SHIFT_LOCKED': 'Past days and days already worked cannot be changed.',
   'SHIFT_TEMPLATE_IN_USE': 'This shift is in use. Hide it instead of deleting it.',
@@ -284,6 +287,9 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'EMBEDDING_JOBS_CRON_HEALTHY': 'Embedding jobs cron is healthy',
   'EMBEDDING_SYNC_QUEUED': 'Product queued for image-search indexing',
   'EMBEDDING_SYNC_COMPLETED': 'Product image search is ready',
+  'EMBEDDING_BACKFILL_STATUS': 'Image search status retrieved',
+  'EMBEDDING_BACKFILL_DRY_RUN': 'Image search check finished; nothing was queued',
+  'EMBEDDING_BACKFILL_QUEUED': 'Products queued for image-search indexing',
   'TOP_OUTLETS_SUCCESS': 'Top shops retrieved successfully',
   'TOP_PRODUCTS_SUCCESS': 'Top products retrieved successfully',
   'OUTLET_FOUND': 'Outlet retrieved successfully',
@@ -293,8 +299,13 @@ const SUCCESS_MESSAGES: Record<string, string> = {
 /**
  * Get default message for error/success code
  */
-function getDefaultMessage(code: string): string {
-  return ERROR_MESSAGES[code] || SUCCESS_MESSAGES[code] || code;
+function getDefaultMessage(code: string, values?: ApiMessageValues): string {
+  return getApiMessage(code, values ?? {}, undefined, { ...ERROR_MESSAGES, ...SUCCESS_MESSAGES });
+}
+
+/** #1013: message of a success response; a code without a sentence never gets the error fallback */
+function getSuccessMessage(code: string): string {
+  return getApiSuccessMessage(code, {}, undefined, { ...ERROR_MESSAGES, ...SUCCESS_MESSAGES });
 }
 
 /**
@@ -340,7 +351,7 @@ export class ResponseBuilder {
     return {
       success: true,
       code,
-      message: getDefaultMessage(code),
+      message: getSuccessMessage(code),
       data,
       meta
     };
@@ -382,7 +393,7 @@ export class ResponseBuilder {
     return {
       success: true,
       code,
-      message: getDefaultMessage(code),
+      message: getSuccessMessage(code),
       data,
       meta: {
         page: pagination.page,
@@ -422,17 +433,17 @@ export class ResponseBuilder {
       });
     }
     
-    // Return validation error with field-level details in error field
-    // Message comes from translation system via error code
-    const errorString = errorMessages.length > 0 
-      ? errorMessages.join('; ') 
-      : 'Input validation failed';
-    
+    // Field paths stay in the server log. The client sees the catalog sentence only.
+    if (errorMessages.length > 0) {
+      console.error('Validation error (not sent to client):', errorMessages.join('; '));
+    }
+    const sentence = getDefaultMessage('VALIDATION_ERROR');
+
     return {
       success: false,
       code: 'VALIDATION_ERROR',
-      message: getDefaultMessage('VALIDATION_ERROR'),
-      error: errorString // Keep detailed validation errors for debugging
+      message: sentence,
+      error: sentence,
     };
   }
 

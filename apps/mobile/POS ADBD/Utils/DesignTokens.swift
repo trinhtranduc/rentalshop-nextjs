@@ -111,6 +111,35 @@ enum DS {
     static func symbol(_ name: String, _ size: CGFloat, weight: UIImage.SymbolWeight = .medium) -> UIImage? {
         UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: symbolPointSize(for: size, name: name), weight: weight))
     }
+
+    /// #1061 (owner: "icon đúng mockup"): the mockup's edit icon, Lucide "pen-line" (pencil + underline), drawn from its
+    /// 24×24 paths `M12 20h9` and `M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z`, stroke 2.2, round caps and joins, no
+    /// fill. SF `pencil.line` needs iOS 17 (the app targets 15). A template image: tint it. Android `AppIcons.EditLine`
+    static func editIcon(size: CGFloat) -> UIImage? {
+        let format = UIGraphicsImageRendererFormat.preferred()
+        format.opaque = false
+        let image = UIGraphicsImageRenderer(size: CGSize(width: size, height: size), format: format).image { context in
+            let cg = context.cgContext
+            cg.scaleBy(x: size / 24, y: size / 24)
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: 12, y: 20))
+            path.addLine(to: CGPoint(x: 21, y: 20))
+            // the arc's chord (3√2) is longer than 2 × 2.1, so SVG grows the radius to half of it: a half circle at (18, 5)
+            path.move(to: CGPoint(x: 16.5, y: 3.5))
+            path.addArc(withCenter: CGPoint(x: 18, y: 5), radius: 1.5 * 2.squareRoot(),
+                        startAngle: .pi * 5 / 4, endAngle: .pi / 4, clockwise: true)
+            path.addLine(to: CGPoint(x: 7, y: 19))
+            path.addLine(to: CGPoint(x: 3, y: 20))
+            path.addLine(to: CGPoint(x: 4, y: 16))
+            path.close()
+            path.lineWidth = 2.2
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            UIColor.black.setStroke()
+            path.stroke()
+        }
+        return image.withRenderingMode(.alwaysTemplate)
+    }
 }
 
 /// #888 (owner): every order status badge in the app uses the old app colours: solid fill, white text.

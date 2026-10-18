@@ -579,4 +579,82 @@ final class OverviewDashLogicTests: XCTestCase {
         // An older API: no collateralHeld
         XCTAssertNil(try decode(TodayWork.self, #"{"pickupsToday":{"count":0,"orders":[]},"returnsToday":{"count":0,"orders":[]},"overdueReturns":{"count":0,"orders":[]},"noShows":{"count":0,"orders":[]}}"#).collateralHeld)
     }
+
+    // MARK: - #1059 Đơn tạo hôm nay
+
+    func testTopCardsHideOnlyOnARangeOfExactlyToday() {
+        inEachZone { zone in
+            let today = "2026-10-18"
+            let todayRange = OverviewDashLogic.range(of: .today, todayKey: today)
+            XCTAssertFalse(OverviewDashLogic.showsTopCards(range: todayRange, todayKey: today), zone)
+            XCTAssertTrue(OverviewDashLogic.showsTodayOrders(range: todayRange, todayKey: today), zone)
+            for chip in [OverviewChip.last7, .thisMonth] {
+                let range = OverviewDashLogic.range(of: chip, todayKey: today)
+                XCTAssertTrue(OverviewDashLogic.showsTopCards(range: range, todayKey: today), "\(chip) \(zone)")
+                XCTAssertFalse(OverviewDashLogic.showsTodayOrders(range: range, todayKey: today), "\(chip) \(zone)")
+            }
+            // Tuỳ chọn: today alone behaves as Hôm nay; another day or a longer range keeps the Top cards
+            let customToday = OverviewDashLogic.range(of: .custom, todayKey: today, custom: DayKeyRange(start: today, end: today))
+            XCTAssertFalse(OverviewDashLogic.showsTopCards(range: customToday, todayKey: today), zone)
+            let yesterday = DayKeyRange(start: "2026-10-17", end: "2026-10-17")
+            XCTAssertTrue(OverviewDashLogic.showsTopCards(range: OverviewDashLogic.range(of: .custom, todayKey: today, custom: yesterday), todayKey: today), zone)
+            let span = DayKeyRange(start: "2026-10-17", end: today)
+            XCTAssertTrue(OverviewDashLogic.showsTopCards(range: OverviewDashLogic.range(of: .custom, todayKey: today, custom: span), todayKey: today), zone)
+        }
+    }
+
+    func testTodayOrdersSummaryIsTheOrderValueTile() {
+        let split = OverviewReport(netRevenue: 0, revenueGrowth: nil, newOrders: 9, series: [], topProducts: [],
+                                   totalOrderValue: 2_201_000,
+                                   orderValueByType: .init(rent: .init(amount: 2_015_000, orders: 7), sale: .init(amount: 186_000, orders: 1)))
+        let tile = OverviewDashLogic.tiles(report: split, now: nil)[0]
+        let summary = OverviewDashLogic.todayOrdersSummary(report: split, rowsCount: 99)
+        // N = the tile's "N đơn mới" chip, total = the tile's value (not the rows: cancelled orders are left out there too)
+        XCTAssertEqual(summary, OverviewTodayOrdersSummary(count: 8, total: 2_201_000))
+        XCTAssertEqual(summary?.count, tile.count?.count)
+        XCTAssertEqual(summary?.total, tile.value)
+        XCTAssertEqual(OverviewDashLogic.compact(summary!.total, vietnamese: true), OverviewDashLogic.tileText(tile, vietnamese: true))
+        // An older API without orderValueByType: the non-cancelled rows count
+        let older = report(orderValue: 500_000)
+        XCTAssertEqual(OverviewDashLogic.todayOrdersSummary(report: older, rowsCount: 2), OverviewTodayOrdersSummary(count: 2, total: 500_000))
+        XCTAssertNil(OverviewDashLogic.todayOrdersSummary(report: nil, rowsCount: 2))
+    }
+
+    func testTodayOrderRowsNewestFirstWithoutCancelledFiveAtMost() throws {
+        let items = try decode([DailyIncomeOrder].self, """
+        [{"id":1,"orderNumber":"100001","orderType":"RENT","status":"RESERVED","customerName":"Amber","totalAmount":155000,"createdAt":"2026-10-18T02:12:00.000Z"},
+         {"id":2,"orderNumber":"100002","orderType":"RENT","status":"PICKUPED","customerName":"Jason","totalAmount":189000,"createdAt":"2026-10-18T04:40:00.000Z"},
+         {"id":3,"orderNumber":"100003","orderType":"SALE","status":"COMPLETED","customerName":"Kiểm Thử","totalAmount":186000,"createdAt":"2026-10-18T07:05:00.000Z"},
+         {"id":4,"orderNumber":"100004","orderType":"RENT","status":"CANCELLED","customerName":"Huỷ","totalAmount":900000,"createdAt":"2026-10-18T11:59:00.000Z"},
+         {"id":5,"orderNumber":"100005","orderType":"RENT","status":"RESERVED","customerName":"Sarah","totalAmount":396000,"createdAt":"2026-10-18T09:22:00.000Z"},
+         {"id":6,"orderNumber":"100006","orderType":"RENT","status":"RESERVED","customerName":"Lisa","totalAmount":309000,"createdAt":"2026-10-18T11:50:00.000Z"},
+         {"id":7,"orderNumber":"100007","orderType":"RENT","status":"RESERVED","customerName":"Old","totalAmount":100000,"createdAt":"2026-10-17T17:30:00.000Z"},
+         {"id":6,"orderNumber":"100006","orderType":"RENT","status":"RESERVED","customerName":"Lisa","totalAmount":309000,"createdAt":"2026-10-18T11:50:00.000Z"}]
+        """)
+        let rows = OverviewDashLogic.todayOrderRows(items)
+        XCTAssertEqual(rows.map(\.orderId), [6, 5, 3, 2, 1])
+        XCTAssertEqual(rows.map(\.customer), ["Lisa", "Sarah", "Kiểm Thử", "Jason", "Amber"])
+        XCTAssertEqual(rows.map(\.amount), [309_000, 396_000, 186_000, 189_000, 155_000])
+        XCTAssertEqual(rows.map(\.isRent), [true, true, false, true, true])
+        XCTAssertEqual(OverviewDashLogic.todayOrdersCount(items), 6)
+        XCTAssertEqual(OverviewDashLogic.todayOrderRows(items, limit: 2).map(\.orderId), [6, 5])
+        XCTAssertEqual(OverviewDashLogic.todayOrderRows([]), [])
+    }
+
+    func testTodayOrderLineIsVietnamTimeAndKindInEveryPhoneZone() throws {
+        let localize: (String) -> String = { ["overview.dash.todayOrders.rent": "Thuê", "overview.dash.todayOrders.sale": "Bán"][$0] ?? $0 }
+        try inEachZone { zone in
+            let items = try decode([DailyIncomeOrder].self, """
+            [{"id":6,"orderNumber":"901052","orderType":"RENT","status":"RESERVED","customerName":"Lisa","totalAmount":309000,"createdAt":"2026-10-18T11:50:00.000Z"},
+             {"id":3,"orderNumber":"#0031","orderType":"SALE","status":"COMPLETED","totalAmount":186000,"createdAt":"2026-10-17T17:05:00.000Z"},
+             {"id":2,"orderNumber":"100002","orderType":"RENT","status":"RESERVED","totalAmount":0}]
+            """)
+            let rows = OverviewDashLogic.todayOrderRows(items)
+            // 11:50Z = 18:50 in Vietnam; 17:05Z the day before = 00:05 of today
+            XCTAssertEqual(OverviewDashLogic.todayOrderSubtitle(rows[0], localize: localize), "#901052 · 18:50 · Thuê", zone)
+            XCTAssertEqual(OverviewDashLogic.todayOrderSubtitle(rows[1], localize: localize), "#0031 · 00:05 · Bán", zone)
+            XCTAssertEqual(OverviewDashLogic.todayOrderNumberAndTime(rows[2]), "#100002", zone)
+            XCTAssertEqual(rows[1].customer, "", zone)
+        }
+    }
 }

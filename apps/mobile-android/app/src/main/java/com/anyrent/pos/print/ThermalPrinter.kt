@@ -67,17 +67,25 @@ object ThermalPrinter {
     /** SharedPreferences `anyrent.printer` key of the bank QR switch (#622) */
     const val KEY_PRINT_BANK_QR = "printBankQr"
 
+    /**
+     * #1011: the note as saved in Máy in, even blank (iOS `Utils.loadNotePrinter`); the default only before
+     * anything was saved
+     */
+    fun savedNote(prefs: SharedPreferences): String = prefs.getString("printerNote", null) ?: DEFAULT_PRINTER_NOTE
+
+    /** #1028: the IP as typed, "," (a Vietnamese decimal key) turned into "." and spaces removed (iOS `PrinterSetup.normalizedIP`) */
+    fun normalizeIp(text: String): String = text.replace(',', '.').filterNot(Char::isWhitespace)
+
     fun configFromPrefs(
         prefs: SharedPreferences,
         bankTitle: String = "BANK TRANSFER",
         bankAccountLabel: String = "Account: %s",
     ): Config = Config(
-        ip = prefs.getString("printerIp", "").orEmpty(),
+        ip = normalizeIp(prefs.getString("printerIp", "").orEmpty()), // #1011/#1028: as iOS, no stray spaces or commas
         port = prefs.getString("printerPort", "9100")?.toIntOrNull() ?: 9100,
         paperWidthMm = prefs.getString("paperWidth", "80")?.toIntOrNull() ?: 80,
         name = prefs.getString("printerName", "").orEmpty(),
-        note = prefs.getString("printerNote", DEFAULT_PRINTER_NOTE).orEmpty()
-            .ifBlank { DEFAULT_PRINTER_NOTE },
+        note = savedNote(prefs),
         printBankQr = prefs.getBoolean(KEY_PRINT_BANK_QR, false),
         bankTitle = bankTitle,
         bankAccountLabel = bankAccountLabel,

@@ -133,6 +133,8 @@ class ProductCalendarLogicTest {
         assertEquals(emptyList<Int>(), ProductCalendarLogic.ordersCovering(d(11), orders, vietnam).map { it.id })
 
         assertEquals("Lấy 07/10/26 · trả 09/10/26", ProductCalendarLogic.orderDates(orders[0], zone = vietnam))
+        // #1026: the row shows ↗ / ↩ then the days alone; the words stay in the spoken text above
+        assertEquals("07/10/26" to "09/10/26", ProductCalendarLogic.orderDays(orders[0], zone = vietnam))
         assertEquals(2, ProductCalendarLogic.quantity(orders[0], 5))
         assertEquals(1, ProductCalendarLogic.quantity(orders[1], 5))
     }

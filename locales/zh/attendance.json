@@ -140,6 +140,7 @@
       "QR_EXPIRED": "二维码已失效",
       "QR_WRONG_OUTLET": "其他门店的二维码",
       "ATTENDANCE_NOT_CONFIGURED": "门店未设置位置",
+      "ATTENDANCE_LOCATION_NOT_SET": "门店未设置位置（未核对距离）",
       "other": "已拒绝"
     },
     "editIn": "上班 {time}",
@@ -317,6 +318,7 @@
     "open": "打开 ›"
   },
   "locations": {
+    "locationSet": "已设置位置",
     "title": "考勤二维码与位置",
     "subtitle": "每个门店有自己的二维码、位置和需要打卡的人员名单。",
     "col": {

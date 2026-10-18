@@ -314,7 +314,7 @@ export function SubscriptionExtendDialogEnhanced({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="ar-dialog w-full max-w-[calc(100vw-1rem)] md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-3 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+      <DialogContent className="ar-dialog w-full max-w-[calc(100vw-1rem)] md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden max-md:h-[var(--ar-vvh,100dvh)] max-md:max-h-[var(--ar-vvh,100dvh)] max-md:max-w-full max-md:overflow-y-hidden max-md:rounded-none max-md:border-0 max-md:top-[var(--ar-vvt,0px)] max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-3 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
         <DialogHeader className="shrink-0 max-md:pr-10">
           <DialogTitle className="text-lg font-semibold flex items-center gap-2">
             <Calendar className="h-5 w-5 text-ar-primary" />

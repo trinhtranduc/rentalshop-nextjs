@@ -328,6 +328,9 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
     }
 }
 
+/** #1028: `KeyboardType.Decimal` can show the locale "," and no "."; the URI keyboard has "." in every language (iOS `.numbersAndPunctuation`) */
+internal val PrinterIpKeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
@@ -337,13 +340,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     var ip by remember { mutableStateOf(prefs.getString("printerIp", "").orEmpty()) }
     var port by remember { mutableStateOf(prefs.getString("printerPort", "9100").orEmpty()) }
     var paper by remember { mutableStateOf(prefs.getString("paperWidth", "80").orEmpty()) }
-    var note by remember {
-        mutableStateOf(
-            prefs.getString("printerNote", ThermalPrinter.DEFAULT_PRINTER_NOTE)
-                .orEmpty()
-                .ifBlank { ThermalPrinter.DEFAULT_PRINTER_NOTE },
-        )
-    }
+    var note by remember { mutableStateOf(ThermalPrinter.savedNote(prefs)) } // #1011: a cleared note stays cleared
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     // #622: saved as soon as it changes, like iOS
@@ -356,7 +353,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     fun persist() {
         prefs.edit()
             .putString("printerName", name)
-            .putString("printerIp", ip)
+            .putString("printerIp", ThermalPrinter.normalizeIp(ip)) // #1011/#1028: as iOS
             .putString("printerPort", port)
             .putString("paperWidth", paper)
             .putString("printerNote", note)
@@ -366,7 +363,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     fun testPrint() {
         persist()
         val config = ThermalPrinter.Config(
-            ip = ip,
+            ip = ThermalPrinter.normalizeIp(ip),
             port = port.toIntOrNull() ?: 9100,
             paperWidthMm = paper.toIntOrNull() ?: 80,
             name = name,
@@ -405,8 +402,8 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                 SettingsDetailNote(stringResource(R.string.printer_hint))
                 SettingsDetailField(label = stringResource(R.string.printer_name), value = name, onValueChange = { name = it })
                 SettingsDetailField(
-                    label = stringResource(R.string.printer_ip), value = ip, onValueChange = { ip = it },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    label = stringResource(R.string.printer_ip), value = ip, onValueChange = { ip = ThermalPrinter.normalizeIp(it) },
+                    keyboardOptions = PrinterIpKeyboardOptions, // #1028: has "." in Vietnamese
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     SettingsDetailField(
@@ -496,9 +493,9 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                         )
                         AppInputField(
                             value = ip,
-                            onValueChange = { ip = it },
+                            onValueChange = { ip = ThermalPrinter.normalizeIp(it) },
                             label = stringResource(R.string.printer_ip),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            keyboardOptions = PrinterIpKeyboardOptions, // #1028: has "." in Vietnamese
                         )
                         AppInputField(
                             value = port,

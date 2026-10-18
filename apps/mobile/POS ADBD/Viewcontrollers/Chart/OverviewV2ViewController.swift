@@ -31,6 +31,11 @@ final class OverviewV2ViewController: BaseViewControler {
     private var reportFailed: String?
     /// #754: staff and warehouse (no revenue) have only the Hôm nay card; its failure shows the reason with Retry
     private var nowFailed: String?
+    /// #1059: income/orders `status=new` rows of today (every page) for "Đơn tạo hôm nay"; nil until loaded
+    private var newOrders: [DailyIncomeOrder]?
+    private var newOrdersFailed = false
+    private static let newOrdersPageSize = 200
+    private static let newOrdersMaxPages = 10
     private var loading = false
     private var generation = 0
     private var requests: [DataRequest] = []
@@ -186,6 +191,16 @@ final class OverviewV2ViewController: BaseViewControler {
                 })
             }
         }
+        // #1059: today's new orders for the card that replaces the Top cards
+        let listsNewOrders = showsRevenue && OverviewDashLogic.showsTodayOrders(range: range, todayKey: todayKey)
+        var loadedNewOrders: [DailyIncomeOrder]?
+        if listsNewOrders {
+            group.enter()
+            loadNewOrders(range, offset: 0, page: 1, token: token) { items in
+                loadedNewOrders = items
+                group.leave()
+            }
+        }
         if showsOperations {
             group.enter()
             requests.append(TabsV2APIService.shared.overviewNow { now, error in
@@ -198,6 +213,19 @@ final class OverviewV2ViewController: BaseViewControler {
             guard let self, token == self.generation else { return }
             self.refresh.endRefreshing()
             self.loading = false
+            if listsNewOrders {
+                // A quiet refresh that fails keeps the rows on screen
+                if let loadedNewOrders {
+                    self.newOrders = loadedNewOrders
+                    self.newOrdersFailed = false
+                } else if !keep || self.newOrders == nil {
+                    self.newOrders = nil
+                    self.newOrdersFailed = true
+                }
+            } else {
+                self.newOrders = nil
+                self.newOrdersFailed = false
+            }
             if keep, self.showsRevenue, newReport == nil {
                 // Quiet refresh failed: keep the figures, try again on the next appear
                 if let newNow { self.now = newNow }
@@ -216,6 +244,24 @@ final class OverviewV2ViewController: BaseViewControler {
             }
             self.render()
         }
+    }
+
+    /// #1059: every page of today's `status=new` rows (the API pages by order id, the card wants the newest);
+    /// nil when a page failed
+    private func loadNewOrders(_ range: DayKeyRange, offset: Int, page: Int, token: Int,
+                               done: @escaping ([DailyIncomeOrder]?) -> Void) {
+        let size = Self.newOrdersPageSize
+        requests.append(TabsV2APIService.shared.overviewNewOrders(range, offset: offset, limit: size) { [weak self] data, _ in
+            guard let self, token == self.generation, let data else { return done(nil) }
+            let items = data.days?.flatMap { $0.orders ?? [] } ?? []
+            if data.pagination?.hasMore == true, !items.isEmpty, page < Self.newOrdersMaxPages {
+                self.loadNewOrders(range, offset: offset + size, page: page + 1, token: token) { more in
+                    done(more.map { items + $0 })
+                }
+            } else {
+                done(items)
+            }
+        })
     }
 
     // MARK: - Render
@@ -247,8 +293,13 @@ final class OverviewV2ViewController: BaseViewControler {
             contentStack.addArrangedSubview(failureCard(failed))
         }
         if showsRevenue, reportFailed == nil {
-            contentStack.addArrangedSubview(topCard(products: true))
-            contentStack.addArrangedSubview(topCard(products: false))
+            // #1059: a range of exactly today lists today's new orders instead of ranking them
+            if OverviewDashLogic.showsTopCards(range: range, todayKey: todayKey) {
+                contentStack.addArrangedSubview(topCard(products: true))
+                contentStack.addArrangedSubview(topCard(products: false))
+            } else {
+                contentStack.addArrangedSubview(todayOrdersCard())
+            }
         }
         if !showsRevenue && !showsOperations {
             let label = OVFont.label("overview.v2.noAccess".localized(), DS.TextSize.body, color: OVColor.muted, lines: 0)
@@ -499,6 +550,85 @@ final class OverviewV2ViewController: BaseViewControler {
         navigationController?.pushViewController(controller, animated: true)
     }
 
+    // MARK: Đơn tạo hôm nay (#1059)
+
+    /// Title + "Xem tất cả", "N đơn · Tổng giá trị" (= the Giá trị đơn mới tile), the five newest orders of today
+    private func todayOrdersCard() -> UIView {
+        let title = OVFont.label("overview.dash.todayOrders.title".localized(), DS.TextSize.body, .semibold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let viewAll = UIButton(type: .system)
+        viewAll.setTitle("overview.dash.top.viewAll".localized(), for: .normal)
+        viewAll.titleLabel?.font = OVFont.make(DS.TextSize.secondary, .semibold)
+        viewAll.setTitleColor(OVColor.blue, for: .normal)
+        viewAll.setContentHuggingPriority(.required, for: .horizontal)
+        viewAll.accessibilityIdentifier = "overview.todayOrders.viewAll"
+        viewAll.addTarget(self, action: #selector(viewAllTodayOrdersTapped), for: .touchUpInside)
+        let header = UIStackView(arrangedSubviews: [title, viewAll])
+        header.alignment = .center
+        header.spacing = 8
+
+        let box: UIView
+        if loading || report == nil || (newOrders == nil && !newOrdersFailed) {
+            viewAll.isHidden = true
+            let spinner = UIActivityIndicatorView(activityIndicatorStyle: .medium)
+            spinner.startAnimating()
+            box = card([header, spinner])
+        } else {
+            var views: [UIView] = [header]
+            let items = newOrders ?? []
+            if let summary = OverviewDashLogic.todayOrdersSummary(report: report,
+                                                                  rowsCount: newOrders.map(OverviewDashLogic.todayOrdersCount)) {
+                views.append(todayOrdersSummaryView(summary))
+            }
+            let rows = OverviewDashLogic.todayOrderRows(items)
+            if newOrdersFailed {
+                views.append(OVFont.label("—", DS.TextSize.body, color: OVColor.muted))
+            } else if rows.isEmpty {
+                let empty = OVFont.label("overview.dash.todayOrders.empty".localized(), DS.TextSize.secondary,
+                                         color: OVColor.muted, lines: 0)
+                empty.accessibilityIdentifier = "overview.todayOrders.empty"
+                views.append(empty)
+            } else {
+                for row in rows {
+                    let view = OverviewTodayOrderRowView(row: row, subtitle: OverviewDashLogic.todayOrderNumberAndTime(row),
+                                                         kind: OverviewDashLogic.todayOrderKind(row),
+                                                         amountText: OverviewDashLogic.compact(row.amount, vietnamese: vietnamese))
+                    view.addTarget(self, action: #selector(todayOrderTapped(_:)), for: .touchUpInside)
+                    views.append(view)
+                }
+            }
+            box = card(views, spacing: 6)
+        }
+        box.accessibilityIdentifier = "overview.todayOrders"
+        return box
+    }
+
+    private func todayOrdersSummaryView(_ summary: OverviewTodayOrdersSummary) -> UIView {
+        let orders = PluralText.format("overview.dash.orders", count: summary.count, summary.count)
+        let text = String(format: "overview.dash.todayOrders.summary".localized(), orders)
+        let label = OVFont.label(text, DS.TextSize.secondary, color: OVColor.muted, lines: 0)
+        let total = OVFont.label(OverviewDashLogic.compact(summary.total, vietnamese: vietnamese), 20, .bold, digits: true)
+        total.textAlignment = .right
+        total.setContentHuggingPriority(.required, for: .horizontal)
+        total.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [label, total])
+        row.alignment = .firstBaseline
+        row.spacing = 8
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = "\(text) \(MoneyFormatter.format(summary.total))"
+        row.accessibilityIdentifier = "overview.todayOrders.summary"
+        return row
+    }
+
+    /// The list behind the Giá trị đơn mới tile, for today
+    @objc private func viewAllTodayOrdersTapped() { openOrders(for: .orderValue) }
+
+    @objc private func todayOrderTapped(_ sender: OverviewTodayOrderRowView) {
+        let detail = OrderDetailViewController(orderId: sender.row.orderId)
+        detail.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(detail, animated: true)
+    }
+
     // MARK: Hôm nay
 
     private func todayCard() -> UIView {
@@ -625,6 +755,72 @@ private extension UIView {
         let view = UIView()
         view.snp.makeConstraints { make in make.height.equalTo(height) }
         return view
+    }
+}
+
+/// #1059: one order of "Đơn tạo hôm nay": customer (bold), "#number · HH:mm · ↗ Thuê / Bán" (grey), total (bold).
+/// A hairline above it, as the mockup; tap opens the order.
+final class OverviewTodayOrderRowView: UIControl {
+    let row: OverviewTodayOrderRow
+
+    init(row: OverviewTodayOrderRow, subtitle: String, kind: String, amountText: String) {
+        self.row = row
+        super.init(frame: .zero)
+        let customer = row.customer.isEmpty ? "order.header.walkIn".localized() : row.customer
+        let name = OVFont.label(customer, DS.TextSize.body, .bold)
+        name.lineBreakMode = .byTruncatingTail
+        let detail = UILabel()
+        detail.adjustsFontForContentSizeCategory = true
+        detail.numberOfLines = 1
+        let font = OVFont.make(DS.TextSize.pill)
+        let text = NSMutableAttributedString(string: subtitle + " · ", attributes: [.font: font, .foregroundColor: OVColor.muted])
+        if row.isRent, let icon = DS.symbol("arrow.up.right", 10, weight: .semibold)?.withTintColor(OVColor.muted, renderingMode: .alwaysOriginal) {
+            let attachment = NSTextAttachment()
+            attachment.image = icon
+            attachment.bounds = CGRect(x: 0, y: 0, width: icon.size.width, height: icon.size.height)
+            text.append(NSAttributedString(attachment: attachment))
+            text.append(NSAttributedString(string: " ", attributes: [.font: font]))
+        }
+        text.append(NSAttributedString(string: kind, attributes: [.font: font, .foregroundColor: OVColor.muted]))
+        detail.attributedText = text
+        let texts = UIStackView(arrangedSubviews: [name, detail])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let amount = OVFont.label(amountText, DS.TextSize.body, .heavy, digits: true)
+        amount.textAlignment = .right
+        amount.setContentHuggingPriority(.required, for: .horizontal)
+        amount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let line = UIStackView(arrangedSubviews: [texts, amount])
+        line.alignment = .top
+        line.spacing = 8
+        line.isUserInteractionEnabled = false
+        let rule = UIView()
+        rule.backgroundColor = OVColor.track
+        rule.isUserInteractionEnabled = false
+        addSubview(rule)
+        addSubview(line)
+        rule.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(1)
+        }
+        line.snp.makeConstraints { make in
+            make.top.equalTo(rule.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-2)
+        }
+        snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        isAccessibilityElement = true
+        accessibilityTraits = UIAccessibilityTraitButton
+        accessibilityLabel = "\(customer), \(subtitle), \(kind), \(amountText)"
+        accessibilityIdentifier = "overview.todayOrders.row"
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.6 : 1 }
     }
 }
 

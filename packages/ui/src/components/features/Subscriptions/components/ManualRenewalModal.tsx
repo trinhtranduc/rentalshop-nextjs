@@ -130,7 +130,7 @@ export function ManualRenewalModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="ar-dialog md:max-w-lg max-h-[90vh] overflow-hidden flex flex-col max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-0 max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
+      <DialogContent className="ar-dialog md:max-w-lg max-h-[90vh] overflow-hidden flex flex-col max-md:h-[var(--ar-vvh,100dvh)] max-md:max-h-[var(--ar-vvh,100dvh)] max-md:w-full max-md:max-w-full max-md:rounded-none max-md:border-0 max-md:top-[var(--ar-vvt,0px)] max-md:left-0 max-md:translate-x-0 max-md:translate-y-0 max-md:p-4 max-md:pb-0 max-md:gap-0 max-md:[&>button]:right-1.5 max-md:[&>button]:top-1.5 max-md:[&>button]:p-3.5">
         <DialogHeader className="flex-shrink-0 max-md:pr-10 max-md:pb-3">
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-ar-primary" />

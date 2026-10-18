@@ -70,6 +70,8 @@ scripts/mobile-e2e/adb-ui.sh dump | tap "~Giao đồ" | shot 20-detail-handover 
   password), `test7hOrdersByProductAndCustomer`, `test7iNotifications`, `test7jTodayWorkAndNotPickedUp`. The seed has no
   notifications: insert a long one into your own DB to exercise wrapping.
   Soft checks print `E2E_NOTE: SOFT CHECK FAILED …` in the log instead of failing.
+- A merchant run first runs `prepare-accounts.sh staged` (three products on merchant1 for `test8cOverlapTagAndRoleSheet`
+  and `test8dCartLines`; idempotent, a failure only warns). `--no-stage` skips it.
 - The test handles the notification prompt ("Don’t Allow" / "Không cho phép") and onboarding ("Skip" / "Bỏ qua"),
   logs in, and relaunches once so app-config flags apply.
 - Android debug builds take `-PapiBaseUrl=http://10.0.2.2:<port>` (no edit to `build.gradle.kts`); the debug network

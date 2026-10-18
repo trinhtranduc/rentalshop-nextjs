@@ -240,7 +240,7 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
 
   const reasonText = (r: AttendancePersonRow) => {
     if (r.errorCode === 'OUT_OF_RANGE') return t('person.error.OUT_OF_RANGE', { radius: settings.data?.radiusM ?? 100 });
-    const known = ['GPS_INACCURATE', 'MOCK_LOCATION', 'QR_EXPIRED', 'QR_WRONG_OUTLET', 'ATTENDANCE_NOT_CONFIGURED'];
+    const known = ['GPS_INACCURATE', 'MOCK_LOCATION', 'QR_EXPIRED', 'QR_WRONG_OUTLET', 'ATTENDANCE_NOT_CONFIGURED', 'ATTENDANCE_LOCATION_NOT_SET'];
     return r.errorCode && known.includes(r.errorCode) ? t(`person.error.${r.errorCode}`) : t('person.error.other');
   };
 
@@ -308,7 +308,7 @@ function Person({ access, outlet }: { access: AttendanceAccess; outlet: OutletOp
         </Select>
         <MonthNav month={month} onChange={(d) => set({ month: addMonths(month, d), day: null })} />
         <Select aria-label={t('person.filter.label')} value={filter} onChange={(e) => setFilter(e.target.value as RowFilter)} className="border-ar-line">
-          {(['all', 'rejected', 'suspected'] as RowFilter[]).map((f) => (
+          {(['all', 'suspected'] as RowFilter[]).map((f) => (
             <option key={f} value={f}>
               {t(`person.filter.${f}`)}
             </option>

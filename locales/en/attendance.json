@@ -140,6 +140,7 @@
       "QR_EXPIRED": "QR code expired",
       "QR_WRONG_OUTLET": "QR code of another outlet",
       "ATTENDANCE_NOT_CONFIGURED": "Outlet location not set",
+      "ATTENDANCE_LOCATION_NOT_SET": "Outlet has no location (distance not checked)",
       "other": "Rejected"
     },
     "editIn": "in {time}",
@@ -317,6 +318,7 @@
     "open": "Open ›"
   },
   "locations": {
+    "locationSet": "Location set",
     "title": "Attendance QR & location",
     "subtitle": "Each branch has its own QR code, location and list of people who clock in.",
     "col": {

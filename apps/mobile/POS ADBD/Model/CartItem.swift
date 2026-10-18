@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - Availability Status
 /// Represents product availability status
-struct AvailabilityStatus: Codable {
+struct AvailabilityStatus: Codable, Equatable {
     let isAvailable: Bool
     let available: Int
 }
@@ -253,8 +253,7 @@ struct CartItem: Codable {
         // offer the missing FIXED/DAILY mode at price zero.
         let activeOptions = product.pricingOptions?.filter { $0.isActive != false } ?? []
         let legacyRent = product.rentPrice ?? product.rent
-        if activeOptions.isEmpty && legacyRent <= 0 {
-            // #951: no rent price at all (a 0 rentPrice without options): the line asks for one
+        if activeOptions.isEmpty && legacyRent < 0 {
             self.pricingOptions = []
             self.priceMissing = true
         } else if activeOptions.isEmpty {

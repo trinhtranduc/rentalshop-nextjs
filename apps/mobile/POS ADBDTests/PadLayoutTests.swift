@@ -44,6 +44,55 @@ final class PadLayoutTests: XCTestCase {
         }
     }
 
+    /// #1033: loading placeholders (spinners stretched across a card) hug at 750, as strong as the old full-width
+    /// rule, so the column came out narrow on the first pass and widened when the figures arrived.
+    func testReadableColumnStaysFullWidthWithHuggingContent() {
+        for (width, expected) in [(CGFloat(393), CGFloat(393)), (1376, 900)] {
+            let view = UIView(frame: CGRect(x: 0, y: 0, width: width, height: 800))
+            let spinner = UIActivityIndicatorView(style: .medium)
+            let title = UILabel()
+            title.text = "Thực thu theo ngày"
+            let stack = UIStackView(arrangedSubviews: [title, spinner])
+            stack.axis = .vertical
+            stack.alignment = .fill
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(stack)
+            let guide = view.readableColumn()
+            NSLayoutConstraint.activate([
+                stack.leadingAnchor.constraint(equalTo: guide.leadingAnchor),
+                stack.trailingAnchor.constraint(equalTo: guide.trailingAnchor),
+                stack.topAnchor.constraint(equalTo: view.topAnchor),
+            ])
+            view.layoutIfNeeded()
+            XCTAssertEqual(stack.frame.width, expected, accuracy: 0.5, "width \(width)")
+            XCTAssertEqual(stack.frame.midX, width / 2, accuracy: 0.5, "centered at \(width)")
+        }
+    }
+
+    /// #1033: Tổng quan's first layout (figures still loading) already fills the phone width
+    func testOverviewFirstLayoutUsesTheFullWidth() throws {
+        let key = "com.rental.shop.user"
+        let saved = UserDefaults.standard.data(forKey: key)
+        defer {
+            if let saved { UserDefaults.standard.set(saved, forKey: key) } else { UserDefaults.standard.removeObject(forKey: key) }
+        }
+        let user = try JSONDecoder.shared.decode(User.self, from: Data(#"{"id":1,"token":"t","permissions":["analytics.view"]}"#.utf8))
+        User.save(user: user)
+        XCTAssertEqual(User.current()?.permissions, ["analytics.view"], "fixture: the owner sees the figures")
+
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 393, height: 852))
+        let controller = OverviewV2ViewController()
+        window.rootViewController = UINavigationController(rootViewController: controller)
+        window.isHidden = false
+        defer { window.isHidden = true }
+        window.layoutIfNeeded()
+
+        let scroll = try XCTUnwrap(controller.view.subviews.first { $0 is UIScrollView } as? UIScrollView)
+        XCTAssertEqual(scroll.frame.width, 393, accuracy: 0.5, "first pass: full width")
+        let content = try XCTUnwrap(scroll.subviews.first { $0 is UIStackView })
+        XCTAssertEqual(content.frame.width, 393 - 2 * DS.Spacing.lg, accuracy: 0.5, "cards span the screen")
+    }
+
     // MARK: Form sheet and photo
 
     func testFormSheetFitsTheWindow() {

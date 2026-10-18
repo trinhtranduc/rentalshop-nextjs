@@ -20,6 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material.icons.outlined.NorthEast
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -66,6 +70,9 @@ import com.anyrent.pos.domain.overview.OverviewTileChip
 import com.anyrent.pos.domain.overview.OverviewTileKind
 import com.anyrent.pos.domain.overview.OverviewTopKind
 import com.anyrent.pos.domain.overview.OverviewTopRow
+import com.anyrent.pos.domain.overview.IncomeRow
+import com.anyrent.pos.domain.overview.OverviewTodayOrders
+import com.anyrent.pos.domain.overview.OverviewTodayOrderRow
 import com.anyrent.pos.domain.overview.OverviewWaterfallKey
 import com.anyrent.pos.ui.common.AppDateRangePickerSheet
 import com.anyrent.pos.ui.common.formatDayShort
@@ -151,6 +158,8 @@ fun OverviewV2Screen(
     onOpenOrdersTab: () -> Unit = {},
     /** #722: "Xem các đơn liên quan" of a tile: ([OverviewRelatedKind.key], start, end) */
     onOpenRelated: (String, String, String) -> Unit = { _, _, _ -> },
+    /** #1059: a row of "Đơn tạo hôm nay" opens the order */
+    onOpenOrder: (Int) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     // #674: back on screen or an order changed: quiet reload only when dirty or 10 minutes old
@@ -221,7 +230,15 @@ fun OverviewV2Screen(
             if (state.showsOperations && OverviewDashLogic.showsTodayCard(range, today)) {
                 TodayCard(state.now, state.loading, onOpenOrdersTab, onOpenRentedOut, onOpenNotPickedUp)
             }
-            if (state.showsRevenue && !failed) {
+            // #1059: a range of exactly today lists today's new orders instead of ranking them
+            if (state.showsRevenue && !failed && OverviewTodayOrders.showsTodayOrders(range, today)) {
+                TodayOrdersCard(
+                    report, state.newOrders, state.newOrdersFailed, state.loading, vietnamese,
+                    onViewAll = { onOpenRelated(OverviewRelatedKind.ORDER_VALUE.key, start, end) },
+                    onOpen = onOpenOrder,
+                )
+            }
+            if (state.showsRevenue && !failed && OverviewTodayOrders.showsTopCards(range, today)) {
                 OverviewTopKind.entries.forEach { kind ->
                     TopCard(
                         kind, report, state.loading, vietnamese,
@@ -423,6 +440,89 @@ private fun TopCard(
                     onClick = row.id?.let { id -> { onOpen(id) } },
                 )
             }
+        }
+    }
+}
+
+/** #1059 "Đơn tạo hôm nay": title + Xem tất cả, "N đơn · Tổng giá trị" (= the Giá trị đơn mới tile), five newest orders */
+@Composable
+private fun TodayOrdersCard(
+    report: OverviewReport?,
+    items: List<IncomeRow>?,
+    failed: Boolean,
+    loading: Boolean,
+    vietnamese: Boolean,
+    onViewAll: () -> Unit,
+    onOpen: (Int) -> Unit,
+) {
+    val ready = !loading && report != null && (items != null || failed)
+    OVCard(modifier = Modifier.testTag("overview.todayOrders"), spacing = 6) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.overview_dash_today_orders_title), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold,
+                color = OV.Ink, modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            if (ready) {
+                Text(
+                    stringResource(R.string.overview_dash_top_view_all), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = OV.Blue,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onViewAll)
+                        .padding(horizontal = 4.dp, vertical = 6.dp).testTag("overview.todayOrders.viewAll"),
+                )
+            }
+        }
+        if (!ready) {
+            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+            return@OVCard
+        }
+        OverviewTodayOrders.summary(report, items?.let { OverviewTodayOrders.count(it) })?.let { summary ->
+            val text = stringResource(R.string.overview_dash_today_orders_summary, ordersText(summary.count))
+            Row(
+                Modifier.fillMaxWidth().testTag("overview.todayOrders.summary").semantics(mergeDescendants = true) {},
+                verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(text, fontSize = DS.TextSize.Secondary, color = OV.Muted, modifier = Modifier.weight(1f).padding(bottom = 2.dp))
+                Text(OverviewDashLogic.compact(summary.total, vietnamese), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = OV.Ink, maxLines = 1)
+            }
+        }
+        val rows = OverviewTodayOrders.rows(items.orEmpty())
+        when {
+            failed -> Text("—", fontSize = DS.TextSize.Body, color = OV.Muted)
+            rows.isEmpty() -> Text(
+                stringResource(R.string.overview_dash_today_orders_empty), fontSize = DS.TextSize.Secondary, color = OV.Muted,
+                modifier = Modifier.testTag("overview.todayOrders.empty"),
+            )
+            else -> rows.forEach { row -> TodayOrderRow(row, vietnamese) { onOpen(row.id) } }
+        }
+    }
+}
+
+@Composable
+private fun TodayOrderRow(row: OverviewTodayOrderRow, vietnamese: Boolean, onClick: () -> Unit) {
+    val customer = row.customer.ifBlank { stringResource(R.string.share_walk_in) }
+    val kind = stringResource(if (row.isRent) R.string.overview_dash_today_orders_rent else R.string.overview_dash_today_orders_sale)
+    val numberAndTime = OverviewTodayOrders.numberAndTime(row)
+    val amount = OverviewDashLogic.compact(row.amount, vietnamese)
+    Column(Modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(OV.Track))
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = DS.TouchTarget).clickable(role = Role.Button, onClick = onClick)
+                .testTag("overview.todayOrders.row")
+                .semantics(mergeDescendants = true) { contentDescription = "$customer, $numberAndTime, $kind, $amount" }
+                .padding(top = 8.dp, bottom = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(customer, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = OV.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("$numberAndTime · ", fontSize = DS.TextSize.Pill, color = OV.Muted, maxLines = 1)
+                    if (row.isRent) {
+                        Icon(Icons.Outlined.NorthEast, contentDescription = null, tint = OV.Muted, modifier = Modifier.size(12.dp))
+                        Spacer(Modifier.width(2.dp))
+                    }
+                    Text(kind, fontSize = DS.TextSize.Pill, color = OV.Muted, maxLines = 1)
+                }
+            }
+            Text(amount, fontSize = DS.TextSize.Body, fontWeight = FontWeight.ExtraBold, color = OV.Ink, maxLines = 1)
         }
     }
 }

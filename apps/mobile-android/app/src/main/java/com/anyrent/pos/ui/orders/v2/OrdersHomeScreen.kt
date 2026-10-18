@@ -72,6 +72,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -512,7 +514,7 @@ private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, on
             Modifier.defaultMinSize(minHeight = 36.dp).clickable(onClick = onSort),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // #888: always says how the list is sorted: "Xếp theo ngày lấy · gần nhất trước ▾"
+            // #888: always says how the list is sorted: "Xếp theo ngày lấy · mới nhất trước ▾"
             Text(sortBarText(state.filter), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
             Spacer(Modifier.size(4.dp))
             Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(14.dp))
@@ -540,7 +542,7 @@ internal fun sortDateLabel(date: SortDate): Int = when (date) {
     SortDate.CREATED -> R.string.orders_v2_sort_date_created
 }
 
-/** #888 "Gần nhất trước" / "Xa nhất trước"; created date: "Mới nhất trước" / "Cũ nhất trước" (iOS `directionTitle`) */
+/** #888, #1056: "Mới nhất trước" (desc) / "Cũ nhất trước" (asc) for every date; English pickup/return "Latest first" / "Earliest first" (iOS `directionTitle`) */
 internal fun directionLabel(date: SortDate, direction: SortDirection): Int = when {
     date == SortDate.CREATED && direction == SortDirection.NEAREST_FIRST -> R.string.orders_v2_direction_newest
     date == SortDate.CREATED -> R.string.orders_v2_direction_oldest
@@ -548,9 +550,9 @@ internal fun directionLabel(date: SortDate, direction: SortDirection): Int = whe
     else -> R.string.orders_v2_direction_farthest
 }
 
-/** #888 "Xếp theo ngày lấy · gần nhất trước" */
+/** #888 "Xếp theo ngày lấy · mới nhất trước" */
 @Composable
-private fun sortBarText(filter: RentOrdersFilter): String = stringResource(
+internal fun sortBarText(filter: RentOrdersFilter): String = stringResource(
     R.string.orders_v2_sort_bar,
     stringResource(sortDateLabel(filter.sortDate)).lowercase(),
     stringResource(directionLabel(filter.sortDate, filter.direction)).lowercase(),
@@ -677,16 +679,21 @@ private fun WorkRow(
                         modifier = Modifier.weight(1f),
                     ) {
                         OrdersBoardLogic.workChips(work, kind).forEach { chip ->
-                            val (text, colors) = when (chip.kind) {
-                                OrdersBoardLogic.WorkChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
-                                OrdersBoardLogic.WorkChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
-                                OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to DS.Status.Late
-                                OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
+                            // #1008 (owner): the date chip shows its icon then the date
+                            val (text, warning) = when (chip.kind) {
+                                OrdersBoardLogic.WorkChipKind.PICKUP -> {
+                                    DateChip(OrderRowDates.ChipKind.PICKUP, chip.date.orEmpty(), "$pickupLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                                    return@forEach
+                                }
+                                OrdersBoardLogic.WorkChipKind.RETURN -> {
+                                    DateChip(OrderRowDates.ChipKind.RETURN, chip.date.orEmpty(), "$returnLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                                    return@forEach
+                                }
+                                // #1032 (owner): icon + coloured text, no box
+                                OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to RowWarning.LATE
+                                OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to RowWarning.NOT_PREPARED
                             }
-                            Text(
-                                text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = colors.text, maxLines = 1,
-                                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
-                            )
+                            RowWarningText(text, warning)
                         }
                     }
                     // Owner: the total (bold) always; "còn thu N" smaller under it when something is due
@@ -723,8 +730,9 @@ internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
 
 /** The Orders tab "Tất cả" row (list context) for the orders by product / customer screens (#482) */
 @Composable
-internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.LIST, orderRowTexts(), onClick = onClick)
+internal fun OrderListRow(row: OrdersRow.Order, sortedBy: SortDate? = null, onClick: () -> Unit) {
+    // #1025: a product's orders bold the date they are sorted by; the rest of the list row is unchanged
+    OrderRow(row, RowContext.LIST, orderRowTexts(), boldDate = sortedBy, saleSortedBy = sortedBy, onClick = onClick)
 }
 
 /** #891 (owner): product detail → its orders: the order row plus "× qty" of this product; no pay line, no late chip */
@@ -750,7 +758,12 @@ internal fun CustomerOrderListRow(row: com.anyrent.pos.domain.customers.Customer
         name = com.anyrent.pos.domain.customers.CustomerRules.itemsTitle(row)
             ?: pluralStringResource(R.plurals.customers_v2_items, row.itemCount, row.itemCount),
         lines = lines,
-        chips = if (isRent) chipLabels().let { (p, r) -> OrderRowDates.chips(row.pickupPlanAt, row.returnPlanAt, false, false, p, r) } else null,
+        chips = if (isRent) {
+            chipLabels().let { (p, r) -> OrderRowDates.chips(row.pickupPlanAt, row.returnPlanAt, false, false, p, r) }
+        } else {
+            // #1026 (owner): "Bán dd/mm/yy" → "↗ dd/mm/yy"
+            OrderRowDates.saleChip(row.orderType, row.status, row.createdAt, saleChipLabel())?.let { listOf(it) }
+        },
         pills = emptyList(),
         total = formatMoneyVnd(row.totalAmount),
         struck = row.status.equals("CANCELLED", ignoreCase = true),
@@ -774,7 +787,7 @@ internal fun NotPickedUpOrderRow(order: OrderSummary, overdueDays: Int, onClick:
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, 0), orderRowTexts()),
         chips = chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, null, p, r) },
         pills = if (overdueDays > 0) {
-            listOf(pluralStringResource(R.plurals.not_picked_up_overdue_days, overdueDays, overdueDays) to DS.Status.Late)
+            listOf(pluralStringResource(R.plurals.not_picked_up_overdue_days, overdueDays, overdueDays) to RowWarning.LATE)
         } else {
             emptyList()
         },
@@ -796,6 +809,10 @@ private fun OrderRow(
     context: RowContext,
     texts: OrderRowDates.Texts,
     rentSortedBy: SortDate? = null,
+    /** #891 / #1025: the date shown bold; Tất cả đơn bolds its sort date, a product's orders theirs */
+    boldDate: SortDate? = rentSortedBy,
+    /** #1041: a product's sorted list; a sale row shows the day it is sorted by (other lists: the created day) */
+    saleSortedBy: SortDate? = null,
     qty: Int? = null,
     onClick: () -> Unit,
 ) {
@@ -815,11 +832,16 @@ private fun OrderRow(
         name = order.customerName,
         // #496: no product line; #891 (option C): a rent order shows the Lấy / Trả chips in place of the task line
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
-        chips = if (isSale) null else chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, rentSortedBy, p, r) },
-        metaBold = OrdersBoardLogic.metaIsBold(rentSortedBy),
+        // #1026 (owner): a sale shows "↗ dd/mm/yy" in place of "Bán dd/mm/yy"
+        chips = if (isSale) {
+            OrdersBoardLogic.saleChip(order, saleSortedBy, saleChipLabel())?.let { listOf(it) }
+        } else {
+            chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, boldDate, p, r) }
+        },
+        metaBold = OrdersBoardLogic.metaIsBold(boldDate),
         qty = qty,
         // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
-        pills = if (row.lateDays > 0 && rentSortedBy == null && context != RowContext.PRODUCT) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to DS.Status.Late) else emptyList(),
+        pills = if (row.lateDays > 0 && rentSortedBy == null && context != RowContext.PRODUCT) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to RowWarning.LATE) else emptyList(),
         total = formatMoneyVnd(order.totalAmount),
         struck = tagKind == RowTag.CANCELLED,
         // Balances of the list API (#389); nothing on an older API, a cancelled order or when fully paid (#458)
@@ -848,7 +870,8 @@ private fun BoardRow(
     metaBold: Boolean = false,
     /** #891: product detail → its orders: "× qty" of the product before the total */
     qty: Int? = null,
-    pills: List<Pair<String, DS.Pill>>,
+    /** #1032: "Trễ N ngày" / "Quá N ngày": soft warnings (icon + text, no box) */
+    pills: List<Pair<String, RowWarning>>,
     /** Null hides the money (staff with "hide financial data") */
     total: String?,
     struck: Boolean,
@@ -911,7 +934,7 @@ private fun BoardRow(
                 if (pills.isNotEmpty() || payShown != null) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
-                            pills.forEach { (text, colors) -> Tag(text, colors, RowTagStyle.NOTE) }
+                            pills.forEach { (text, warning) -> RowWarningText(text, warning) }
                         }
                         payShown?.let { Text(it.first, fontSize = DS.TextSize.Secondary, fontWeight = RowMoneyText.payWeight, color = it.second, maxLines = 1) }
                     }
@@ -942,24 +965,58 @@ internal fun OrderRowDateLines(lines: OrderRowDates.Lines) {
     lines.task?.let { Text(it, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis) }
 }
 
-/** #891 (option C): light "Lấy dd/mm/yy" (blue) and "Trả dd/mm/yy" (purple) chips; the sorted date only bolder (iOS DateChipStack) */
+/** #891 (option C): the "↗ dd/mm/yy" / "↩ dd/mm/yy" (#1026 sale "↗ dd/mm/yy") chips, no colour; the sorted date only bolder (iOS DateChipStack) */
 @Composable
 internal fun DateChipsRow(chips: List<OrderRowDates.DateChip>) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         chips.forEach { chip ->
-            val colors = OrdersBoardLogic.chipColors(chip.kind)
-            // #893 (owner on device): the sorted chip is bold (label and date), the other regular
+            // #893 (owner on device): the sorted chip is bold (icon and date), the other regular
             val weight = if (chip.bold) DateChipText.sortedWeight else DateChipText.otherWeight
-            Text(
-                buildAnnotatedString {
-                    append(chip.label + " ")
-                    pushStyle(SpanStyle(fontSize = DS.TextSize.Body, fontWeight = weight))
-                    append(chip.date)
-                    pop()
-                },
-                fontSize = DS.TextSize.Secondary, fontWeight = weight, color = colors.text, maxLines = 1,
-                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(colors.fill).padding(horizontal = 8.dp, vertical = 4.dp),
-            )
+            DateChip(chip.kind, chip.date, chip.accessibilityText, DS.TextSize.Body, weight)
+        }
+    }
+}
+
+/**
+ * #1008 (owner): one date chip: the pickup / return / sale icon (as big as the 14sp label it replaces)
+ * then the date; TalkBack reads [spoken] ("Lấy 14/10/26"). Order rows, Việc cần làm and the calendar day rows.
+ * #1026 (owner): no fill (so no start padding), a grey icon, dark text; only the status badge keeps colour.
+ */
+@Composable
+internal fun DateChip(kind: OrderRowDates.ChipKind, date: String, spoken: String, dateSize: TextUnit, weight: FontWeight) {
+    val colors = OrdersBoardLogic.chipColors(kind)
+    val iconSize = with(LocalDensity.current) { DS.TextSize.Secondary.toDp() }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.background(colors.fill).padding(start = 0.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)
+            .clearAndSetSemantics { contentDescription = spoken },
+    ) {
+        Icon(OrdersBoardLogic.chipIcon(kind), contentDescription = null, tint = OrdersBoardLogic.chipIconTint, modifier = Modifier.size(iconSize))
+        Text(date, fontSize = dateSize, fontWeight = weight, color = colors.text, maxLines = 1)
+    }
+}
+
+/**
+ * #1032 (owner, mockup "Mọi màn đơn hàng: cảnh báo gọn"): an order row warning: the icon then the text in the
+ * warning colour, 12sp medium, no fill, no start padding; TalkBack reads [text] (plus [suffix]) as before.
+ * [suffix] (the calendar " · phí N") follows in grey regular on the same line; [padded] false under a total.
+ */
+@Composable
+internal fun RowWarningText(text: String, warning: RowWarning, suffix: String? = null, padded: Boolean = true) {
+    val iconSize = with(LocalDensity.current) { RowWarning.fontSize.toDp() }
+    val spoken = text + suffix.orEmpty()
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier.background(warning.fill)
+            .then(if (padded) Modifier.padding(start = 0.dp, end = 4.dp, top = 4.dp, bottom = 4.dp) else Modifier)
+            .clearAndSetSemantics { contentDescription = spoken },
+    ) {
+        Icon(warning.icon, contentDescription = null, tint = warning.color, modifier = Modifier.size(iconSize))
+        Text(text, fontSize = RowWarning.fontSize, fontWeight = RowWarning.weight, color = warning.color, maxLines = 1)
+        suffix?.let {
+            Text(it, fontSize = RowWarning.fontSize, fontWeight = RowWarning.feeWeight, color = RowWarning.feeColor, maxLines = 1)
         }
     }
 }
@@ -973,6 +1030,10 @@ internal object DateChipText {
 /** Chip labels in the app language */
 @Composable
 internal fun chipLabels(): Pair<String, String> = stringResource(R.string.orders_chip_pickup) to stringResource(R.string.orders_chip_return)
+
+/** #1026: the spoken word of a sale date chip ("Bán") */
+@Composable
+internal fun saleChipLabel(): String = stringResource(R.string.orders_chip_sale)
 
 
 /** #496 line 1 of an order row */
@@ -1027,14 +1088,15 @@ private fun StateMessage(message: String, onRetry: (() -> Unit)? = null) {
     }
 }
 
-/** "Lọc & sắp xếp" (board Loc): sort, date range and "Xem N đơn" */
+/** "Lọc & sắp xếp" (board Loc): sort, date range and "Xem N đơn". #1025: a product's orders hide the range ([showsRange]) */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun FilterSheet(
+internal fun FilterSheet(
     initial: RentOrdersFilter,
     count: suspend (RentOrdersFilter) -> Int?,
     onApply: (RentOrdersFilter) -> Unit,
     onDismiss: () -> Unit,
+    showsRange: Boolean = true,
 ) {
     var filter by remember { mutableStateOf(initial) }
     var total by remember { mutableStateOf<Int?>(null) }
@@ -1084,7 +1146,7 @@ private fun FilterSheet(
                     filter = filter.copy(direction = SortDirection.entries[it])
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (showsRange) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val dateName = stringResource(sortDateLabel(filter.sortDate)).lowercase()
                 SheetLabel(stringResource(R.string.orders_v2_filter_range_of, dateName).uppercase())
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

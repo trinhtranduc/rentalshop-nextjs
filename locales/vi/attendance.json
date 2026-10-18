@@ -140,6 +140,7 @@
       "QR_EXPIRED": "Mã QR hết hiệu lực",
       "QR_WRONG_OUTLET": "Mã QR của chi nhánh khác",
       "ATTENDANCE_NOT_CONFIGURED": "Chi nhánh chưa cài vị trí",
+      "ATTENDANCE_LOCATION_NOT_SET": "Chi nhánh chưa đặt vị trí (chưa đo khoảng cách)",
       "other": "Bị từ chối"
     },
     "editIn": "vào {time}",
@@ -317,6 +318,7 @@
     "open": "Mở ›"
   },
   "locations": {
+    "locationSet": "Đã đặt vị trí",
     "title": "Mã QR & vị trí chấm công",
     "subtitle": "Mỗi chi nhánh một mã QR, vị trí và danh sách người cần chấm công.",
     "col": {

@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -71,6 +72,7 @@ import com.anyrent.pos.domain.products.ProductCalendarLogic.Tone
 import com.anyrent.pos.domain.products.ProductStock
 import com.anyrent.pos.domain.products.barcodeText
 import com.anyrent.pos.ui.common.AppPrimaryButton
+import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
 import com.anyrent.pos.ui.orders.v2.orderRowTexts
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
@@ -244,7 +246,10 @@ fun ProductCalendarScreen(
                 Text(stringResource(R.string.v2_calendar_no_orders), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
             }
             dayOrders.forEach { order ->
-                DayOrderRow(order, ProductCalendarLogic.orderDates(order, texts), ProductCalendarLogic.quantity(order, productId)) { onOpenOrder(order.id) }
+                DayOrderRow(
+                    order, ProductCalendarLogic.orderDates(order, texts), ProductCalendarLogic.orderDays(order, texts),
+                    ProductCalendarLogic.quantity(order, productId),
+                ) { onOpenOrder(order.id) }
             }
             Spacer(Modifier.height(16.dp))
         }
@@ -347,7 +352,7 @@ private fun LegendItem(color: Color, label: String) {
 }
 
 @Composable
-private fun DayOrderRow(order: OrderSummary, dates: String, quantity: Int, onClick: () -> Unit) {
+private fun DayOrderRow(order: OrderSummary, dates: String, days: Pair<String?, String?>, quantity: Int, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button }
             .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 6.dp),
@@ -362,7 +367,22 @@ private fun DayOrderRow(order: OrderSummary, dates: String, quantity: Int, onCli
                 },
                 fontSize = DS.TextSize.Name, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
-            if (dates.isNotEmpty()) Text(dates, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+            // #1026 (owner): the grey ↗ / ↩ icons in place of "Lấy" / "trả"; TalkBack still reads [dates]
+            if (dates.isNotEmpty()) {
+                val iconSize = with(androidx.compose.ui.platform.LocalDensity.current) { DS.TextSize.Secondary.toDp() }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = dates },
+                ) {
+                    listOf(OrderRowDates.ChipKind.PICKUP to days.first, OrderRowDates.ChipKind.RETURN to days.second).forEach { (kind, day) ->
+                        if (day == null) return@forEach
+                        if (kind == OrderRowDates.ChipKind.RETURN && days.first != null) Spacer(Modifier.size(8.dp))
+                        Icon(OrdersBoardLogic.chipIcon(kind), contentDescription = null, tint = OrdersBoardLogic.chipIconTint, modifier = Modifier.size(iconSize))
+                        Text(day, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+                    }
+                }
+            }
         }
         Text(stringResource(R.string.v2_calendar_quantity, quantity), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
     }

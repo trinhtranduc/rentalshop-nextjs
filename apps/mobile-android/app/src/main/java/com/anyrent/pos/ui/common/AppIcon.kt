@@ -34,15 +34,27 @@ object AppIcons {
         strokeIcon("Barcode", "M4 7V5h3M17 5h3v2M20 17v2h-3M7 19H4v-2M8 9v6M11 9v6M14 9v6M17 9v6")
     }
 
-    private fun strokeIcon(name: String, pathData: String): ImageVector =
+    /**
+     * #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): the cart's one edit icon, the mockup's Lucide
+     * "pen-line" (pencil + underline), stroke 2.2 (iOS `DS.editIcon`)
+     */
+    val EditLine: ImageVector by lazy {
+        strokeIcon("EditLine", "M12 20h9", "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z", strokeWidth = 2.2f)
+    }
+
+    private fun strokeIcon(name: String, vararg paths: String, strokeWidth: Float = 2f): ImageVector =
         ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
-            .addPath(
-                pathData = PathParser().parsePathString(pathData).toNodes(),
-                fill = null,
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
-            )
+            .apply {
+                paths.forEach { pathData ->
+                    addPath(
+                        pathData = PathParser().parsePathString(pathData).toNodes(),
+                        fill = null,
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = strokeWidth,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    )
+                }
+            }
             .build()
 }

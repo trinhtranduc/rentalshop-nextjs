@@ -82,28 +82,74 @@ struct RowDatePart: Equatable {
     let marked: Bool
 }
 
-/// #891 (owner, option C): a light date chip of an order row, "Lấy 14/10/26" (blue) / "Trả 16/10/26" (purple).
-/// The date the list is sorted by is only bolder text; the chip keeps its light background.
+/// #891 (owner, option C): the date chip of an order row, "Lấy 14/10/26" / "Trả 16/10/26" / "Bán 15/10/26".
+/// #1026 (owner): no colour; a grey icon then the date in dark text, no background. The date the list is
+/// sorted by is only bolder text.
 struct DateChip: Equatable {
     enum Kind: Equatable {
         case pickup, `return`
+        /// #1026: the day of a sale ("Bán dd/mm/yy"), with the pickup icon
+        case sale
 
-        var colors: DS.Pill {
+        /// #1026 (owner): only the status badge keeps colour; every date chip is dark text on no fill
+        var colors: DS.Pill { DS.Pill(text: DS.Color.text, fill: .clear) }
+
+        /// #1026 (owner): the icon is grey
+        var iconColor: UIColor { DateChip.iconColor }
+
+        /// #1008 (owner): the SF Symbol shown in place of the word "Lấy" / "Trả" (#1026: "Bán" uses ↗)
+        var symbolName: String {
             switch self {
-            case .pickup: return DS.Pill(text: UIColor(hexString: "1E40AF"), fill: UIColor(hexString: "EFF6FF"))
-            case .return: return DS.Pill(text: UIColor(hexString: "5B21B6"), fill: UIColor(hexString: "F5F3FF"))
+            case .pickup, .sale: return "arrow.up.forward"
+            case .return: return "arrow.uturn.backward"
             }
         }
     }
+
+    /// #1026 (owner, mockup "Mọi màn đơn hàng: bớt màu"): the icon colour of every date chip
+    static let iconColor = UIColor(hexString: "64748B")
 
     let kind: Kind
     let label: String
     let date: String
     let bold: Bool
 
+    /// #1008: what VoiceOver reads, "Lấy 14/10/26" (the chip shows only the icon and the date)
+    var accessibilityText: String { label + " " + date }
+
     static func == (lhs: DateChip, rhs: DateChip) -> Bool {
         lhs.kind == rhs.kind && lhs.label == rhs.label && lhs.date == rhs.date && lhs.bold == rhs.bold
     }
+}
+
+/// #1032 (owner, mockup "Mọi màn đơn hàng: cảnh báo gọn"): a warning on an order row ("Trễ N ngày",
+/// "Chưa soạn đồ") is small coloured text with a small icon in front and no box, so the status badge stays the
+/// strongest colour. Only order rows use it; `DS.Status.late` / `.waiting` keep their fills for other screens.
+enum RowWarning: Equatable {
+    case late, notPrepared
+
+    /// Text and icon colour
+    var color: UIColor {
+        switch self {
+        case .late: return UIColor(hexString: "B91C1C")
+        case .notPrepared: return UIColor(hexString: "9A3412")
+        }
+    }
+
+    /// No fill
+    var colors: DS.Pill { DS.Pill(text: color, fill: .clear) }
+
+    /// The SF Symbol before the text
+    var symbolName: String {
+        switch self {
+        case .late: return "clock"
+        case .notPrepared: return "shippingbox"
+        }
+    }
+
+    /// Pill size, medium weight
+    static let fontSize: CGFloat = DS.TextSize.pill
+    static var font: UIFont { Utils.mediumFont(size: fontSize) }
 }
 
 /// One `GET /api/orders` request of the tab
@@ -357,8 +403,14 @@ enum OrdersHomeLogic {
 
     /// #893 (owner): one chip on line 2 of a lean Việc cần làm row
     struct WorkChip: Equatable {
+        /// The full text ("Lấy 14/10/26"); for a date chip it is what VoiceOver reads
         let text: String
         let colors: DS.Pill
+        /// #1008: a date chip shows the `dateKind` icon then `date` in place of `text`
+        var dateKind: DateChip.Kind? = nil
+        var date: String? = nil
+        /// #1032: "Trễ N ngày" / "Chưa soạn đồ" are drawn as a soft row warning (icon + text, no fill)
+        var warning: RowWarning? = nil
         static func == (lhs: WorkChip, rhs: WorkChip) -> Bool { lhs.text == rhs.text }
     }
 
@@ -371,11 +423,15 @@ enum OrdersHomeLogic {
         let chipKind: DateChip.Kind = kind == .handOver ? .pickup : .return
         if let date {
             let label = (kind == .handOver ? "orders.chip.pickup" : "orders.chip.return").localized()
-            chips.append(WorkChip(text: label + " " + DayFormatter.dmy(date, timeZone: timeZone), colors: chipKind.colors))
+            let day = DayFormatter.dmy(date, timeZone: timeZone)
+            chips.append(WorkChip(text: label + " " + day, colors: chipKind.colors, dateKind: chipKind, date: day))
         }
-        if work.lateDays > 0 { chips.append(WorkChip(text: LateText.days(work.lateDays), colors: DS.Status.late)) }
+        if work.lateDays > 0 {
+            chips.append(WorkChip(text: LateText.days(work.lateDays), colors: RowWarning.late.colors, warning: .late))
+        }
         if notPreparedApplies(kind: kind, isReadyToDeliver: work.isReadyToDeliver) {
-            chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: DS.Status.waiting))
+            chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: RowWarning.notPrepared.colors,
+                                  warning: .notPrepared))
         }
         return chips
     }
@@ -387,14 +443,16 @@ enum OrdersHomeLogic {
         let handOver = row.kind == .handOver
         if let date = handOver ? row.order.pickupPlanAt : row.order.returnPlanAt {
             let label = (handOver ? "orders.chip.pickup" : "orders.chip.return").localized()
-            chips.append(WorkChip(text: label + " " + DayFormatter.dmy(date, timeZone: timeZone),
-                                  colors: (handOver ? DateChip.Kind.pickup : DateChip.Kind.return).colors))
+            let chipKind: DateChip.Kind = handOver ? .pickup : .return
+            let day = DayFormatter.dmy(date, timeZone: timeZone)
+            chips.append(WorkChip(text: label + " " + day, colors: chipKind.colors, dateKind: chipKind, date: day))
         }
         if handOver {
             if row.order.isReadyToDeliver == true {
                 chips.append(WorkChip(text: "calendar.v2.ready".localized(), colors: DS.Status.done))
             } else {
-                chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: DS.Status.waiting))
+                chips.append(WorkChip(text: "orders.v2.notPrepared".localized(), colors: RowWarning.notPrepared.colors,
+                                      warning: .notPrepared))
             }
         }
         return chips
@@ -420,6 +478,21 @@ enum OrdersHomeLogic {
             .compactMap { $0 }
     }
 
+    /// #1026 (owner): a sale row (not cancelled) shows "↗ dd/mm/yy" (its created day) in place of "Bán dd/mm/yy";
+    /// VoiceOver still reads "Bán dd/mm/yy". Nil for a rent order, a cancelled sale ("Huỷ …" stays) or no date.
+    static func saleChip(orderType: OrderType, status: OrderStatus, createdAt: Date?,
+                         timeZone: TimeZone = Date.shopTimeZone) -> DateChip? {
+        guard orderType == .sale, status != .cancelled, let createdAt else { return nil }
+        return DateChip(kind: .sale, label: "orders.chip.sale".localized(),
+                        date: DayFormatter.dmy(createdAt, timeZone: timeZone), bold: false)
+    }
+
+    /// #1041: the day a sale row shows in a product's sorted list (`sortedBy`): the pickup day when sorted by pickup,
+    /// else the created day (return sort keeps the created day); the created day when the pickup day is missing
+    static func saleChipDate(createdAt: Date?, pickupPlanAt: Date?, sortedBy: RentOrdersFilter.SortDate?) -> Date? {
+        sortedBy == .pickup ? (pickupPlanAt ?? createdAt) : createdAt
+    }
+
     /// #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" on line 2 is bold dark text (no background)
     static func metaIsBold(sortedBy: RentOrdersFilter.SortDate?) -> Bool {
         sortedBy == .created
@@ -439,7 +512,8 @@ enum OrdersHomeLogic {
         }
     }
 
-    /// "Gần nhất trước" / "Xa nhất trước"; created date: "Mới nhất trước" / "Cũ nhất trước"
+    /// #1056: "Mới nhất trước" (desc) / "Cũ nhất trước" (asc) for every date in Vietnamese; English pickup/return
+    /// "Latest first" / "Earliest first", created "Newest first" / "Oldest first"
     static func directionTitle(_ date: RentOrdersFilter.SortDate, _ direction: RentOrdersFilter.Direction) -> String {
         let key: String
         switch (date, direction) {
@@ -451,7 +525,7 @@ enum OrdersHomeLogic {
         return key.localized()
     }
 
-    /// The bar above the list: "Xếp theo ngày lấy · gần nhất trước"
+    /// The bar above the list: "Xếp theo ngày lấy · mới nhất trước"
     static func sortBarText(_ filter: RentOrdersFilter) -> String {
         String(format: "orders.v2.sortBar".localized(), sortDateTitle(filter.sortDate).lowercased(),
                directionTitle(filter.sortDate, filter.direction).lowercased())

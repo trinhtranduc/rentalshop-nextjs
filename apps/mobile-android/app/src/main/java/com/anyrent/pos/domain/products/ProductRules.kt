@@ -1,5 +1,7 @@
 package com.anyrent.pos.domain.products
 
+import androidx.annotation.StringRes
+import com.anyrent.pos.R
 import com.anyrent.pos.data.UserRole
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Product
@@ -101,7 +103,7 @@ object ProductPricing {
             if (product.pricingType.equals("DAILY", ignoreCase = true)) return null
             return product.rentPrice.takeIf { it > 0 }
         }
-        // #951: an option of 0 is a 0đ price; a product without options and rentPrice 0 has no price
+        // #951: an option of 0 is a 0đ price. A bare rentPrice of 0 is not a list price (a sale-only product). #996 prices it in the cart.
         return product.pricingOptions.firstOrNull { it.type.equals("FIXED", ignoreCase = true) }?.price?.takeIf { it >= 0 }
     }
 
@@ -252,6 +254,18 @@ object ProductImages {
     }
 }
 
+/**
+ * Code for a new product: last 8 digits of the clock + 3 random digits.
+ * Same rule as the web form `generateBarcode` (#994). An edit keeps the saved code.
+ */
+object ProductBarcode {
+    fun generate(now: Long = System.currentTimeMillis(), random: Int = (0..999).random()): String {
+        val clock = now.toString().let { if (it.length >= 8) it.takeLast(8) else it.padStart(8, '0') }
+        val tail = random.coerceIn(0, 999).toString().padStart(3, '0')
+        return clock + tail
+    }
+}
+
 object BarcodeMatch {
     /** The product whose barcode equals [code] (trimmed, case-insensitive); the search API also matches names */
     fun exact(code: String, products: List<Product>): Product? {
@@ -346,27 +360,6 @@ data class CartPricingChoice(val type: String, val catalogPrice: Double?)
 /** Live preview of the sheet: "130.000đ × 3 ngày × 1" ([days] only for a daily rent price) and its total */
 data class CartPricePreview(val unitPrice: Double, val days: Int?, val quantity: Int, val total: Double)
 
-/** "Tổng giá vốn" and, in a sale cart, "Lãi dự kiến" (#888, iOS `CartCostSummary`) */
-data class CartCostSummary(
-    val totalCost: Double,
-    /** Sale cart only: total (after discount) − total cost; negative is a loss */
-    val profit: Double?,
-)
-
-/** Cost lines of the cart (#888, iOS `CartCostLogic`): only for roles that may see prices, only lines with a cost */
-object CartCostLogic {
-    /** "Giá vốn" of a line: cost × quantity; null when hidden or the product has no cost */
-    fun lineCost(line: CartLine, showsPrices: Boolean): Double? =
-        line.product.costPrice?.takeIf { showsPrices && it > 0 }?.let { it * line.quantity }
-
-    /** Null when hidden or no line has a cost */
-    fun summary(lines: List<CartLine>, total: Double, isSale: Boolean, showsPrices: Boolean): CartCostSummary? {
-        val costs = lines.mapNotNull { lineCost(it, showsPrices) }
-        if (costs.isEmpty()) return null
-        val totalCost = costs.sum()
-        return CartCostSummary(totalCost, if (isSale) total - totalCost else null)
-    }
-}
 
 /** What one cart line costs: "150.000đ/ngày × 3 ngày", "300.000đ/lần × 2", "Giá bán 850.000đ × 1" */
 data class CartLineCalc(
@@ -385,9 +378,101 @@ data class CartLineCalc(
 /** Why the new cart cannot open the review yet (iOS `Cart.validate()`, same order) */
 enum class CartProblem { EMPTY, NO_CUSTOMER, NO_PICKUP, NO_RETURN }
 
+/**
+ * #1024 (option A, icon + word): the cart's icons; the UI maps each to its Material icon
+ * (`Icons.Outlined.<material>`). [ios] is the SF Symbol of iOS `CartV2Icon`.
+ */
+enum class CartV2Icon(val material: String, val ios: String) {
+    /** MÓN header "Thêm" */
+    ADD_ITEM("AddCircleOutline", "plus.circle"),
+    /**
+     * #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): Giảm giá, Đặt cọc, the order note, a line's
+     * note — the mockup's pen-line (`AppIcons.EditLine`; iOS `DS.editIcon`)
+     */
+    EDIT("EditLine", "pen-line"),
+    ;
+
+    companion object {
+        /** a line's "Ghi chú" / its note */
+        val ITEM_NOTE = EDIT
+        /** the order's "Ghi chú" row in TIỀN */
+        val ORDER_NOTE = EDIT
+    }
+}
+
+/** #1056 (owner, mockup cartmoney): the rows of the cart's TIỀN section; [editable] rows open a sheet (iOS `CartMoneyRow`) */
+enum class CartMoneyRow(val editable: Boolean) {
+    SUBTOTAL(false), DISCOUNT(true), TOTAL(false), DEPOSIT(true), NOTE(true),
+}
+
+/** #1056: how a TIỀN value is drawn. Rule of the whole cart: blue = tappable, black / grey = read only */
+enum class CartMoneyTone {
+    /** black, no icon */
+    PLAIN,
+    /** blue (primary), bold, then the blue pencil */
+    ACTION,
+    /** the order note's text: one line, dark grey (#334155), then the blue pencil */
+    NOTE_TEXT,
+}
+
 object CartV2Logic {
+    /** #1056 (iOS `moneyRowTone`): an empty note shows the blue "Thêm"; a note shows its text */
+    fun moneyRowTone(row: CartMoneyRow, note: String? = null): CartMoneyTone = when {
+        !row.editable -> CartMoneyTone.PLAIN
+        row == CartMoneyRow.NOTE && noteShown(note) != null -> CartMoneyTone.NOTE_TEXT
+        else -> CartMoneyTone.ACTION
+    }
+
+    /**
+     * #1056 (owner: "note cần xuống dòng", iOS `noteShown`): a note as the cart shows it, in full on several lines —
+     * each line trimmed, blank lines dropped; null = "Ghi chú" / "Thêm"
+     */
+    fun noteShown(note: String?): String? =
+        noteText(note)?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }?.joinToString("\n")
+
+    /** #1056 (iOS `discountShown`): "−50.000đ" above 0, else "0đ" (both blue now) */
+    fun discountShown(discountAmount: Double): Double = if (discountAmount > 0) -discountAmount else 0.0
+
+    /** #1067 (iOS `discountLimit`): the most a discount can be: the line subtotal before discount, or 100% */
+    fun discountLimit(subtotal: Double, isPercent: Boolean): Double = if (isPercent) 100.0 else subtotal.coerceAtLeast(0.0)
+
+    /** #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): refused, never clamped; equal to the limit is fine */
+    fun discountExceeds(value: Double, subtotal: Double, isPercent: Boolean): Boolean = value > discountLimit(subtotal, isPercent)
+
+    /** #1067: the X in "Giảm giá không được lớn hơn tổng đơn (X)": the subtotal as money, or "100%" */
+    fun discountLimitText(subtotal: Double, isPercent: Boolean, money: (Double) -> String): String =
+        if (isPercent) "100%" else money(discountLimit(subtotal, isPercent = false))
+
+    /** #1056 (iOS `moneyRowSpoken`): TalkBack reads the title, the value (+ the note photos) and "Sửa" */
+    fun moneyRowSpoken(title: String, value: String, edit: String, photos: String? = null): String =
+        listOfNotNull(title, value, photos, edit).joinToString(", ")
+
     /** #684: a line's note as shown and sent: trimmed; null when blank (an empty sheet clears it), iOS `noteText` */
     fun noteText(note: String?): String? = note?.trim()?.takeIf { it.isNotEmpty() }
+
+    /**
+     * #1024 (iOS `itemNoteLine`): a line's note on one line (line breaks become spaces) for the pencil entry, which
+     * cuts it with "…"; null = the entry shows "Ghi chú"
+     */
+    fun itemNoteLine(note: String?): String? =
+        noteText(note)?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }?.joinToString(" ")
+
+    /**
+     * #1024 (iOS `itemNoteSpoken`): what TalkBack reads on the pencil entry, as before the icon: the visible text
+     * ("Ghi chú" or the note) and the action label "Ghi chú cho <product>". [noteLabel] is "Ghi chú",
+     * [accessibilityFormat] "Ghi chú cho %1$s".
+     */
+    data class ItemNoteSpoken(val text: String, val actionLabel: String)
+
+    fun itemNoteSpoken(productName: String, note: String?, noteLabel: String, accessibilityFormat: String): ItemNoteSpoken =
+        ItemNoteSpoken(text = noteText(note) ?: noteLabel, actionLabel = String.format(accessibilityFormat, productName))
+
+    /**
+     * #1043 (iOS `orderNoteMaxPhotos`): the "Ghi chú đơn" sheet's photo row — up to MAX_NOTE_PHOTOS on a new order
+     * (#480); none while editing an order (its photos live on the order detail)
+     */
+    fun orderNoteMaxPhotos(editMode: Boolean): Int =
+        if (editMode) 0 else com.anyrent.pos.domain.orders.OrderDetailLogic.MAX_NOTE_PHOTOS
 
     /** #677: the cart header's ⋯ menu ("Chia sẻ báo giá", "Xoá giỏ hàng") */
     data class MoreMenu(val shareEnabled: Boolean, val clearEnabled: Boolean)
@@ -429,7 +514,7 @@ object CartV2Logic {
 
     /**
      * #951: the line has a price for its mode: one typed for this order (0 included, a saved order's price too), else
-     * the product's option of that mode (0đ included), else the legacy rent price of its own type when > 0.
+     * the product's option of that mode (0đ included), else the legacy rent price of its own type, 0 included (#996).
      */
     fun hasPrice(line: CartLine): Boolean =
         line.isSale || line.unitPriceOverride != null || catalogPrice(line.product, line.pricingType) != null
@@ -463,11 +548,11 @@ object CartV2Logic {
 
     /**
      * The product's price for a pricing type: its option (#951: 0đ included), else the legacy rent price of its own
-     * type when > 0 (a product without options and rentPrice 0 has no price)
+     * type, 0 included (#996). A mode the product does not price is null ("Nhập giá").
      */
     fun catalogPrice(product: Product, type: String): Double? =
         product.pricingOptions.firstOrNull { it.type.equals(type, ignoreCase = true) && it.price >= 0 }?.price
-            ?: product.rentPrice.takeIf { product.pricingType.equals(type, ignoreCase = true) && it > 0 }
+            ?: product.rentPrice.takeIf { product.pricingType.equals(type, ignoreCase = true) && it >= 0 }
 
     /** Theo lần and Theo ngày always, then every other option type of the product, each with its catalog price */
     fun pricingChoices(line: CartLine): List<CartPricingChoice> {
@@ -524,6 +609,37 @@ object CartV2Logic {
     /** Units free for the dates (rent) or in stock (sale) when fewer than asked; null = enough or unknown */
     fun shortage(available: Int?, quantity: Int): Int? =
         available?.takeIf { it < quantity }?.coerceAtLeast(0)
+
+    /** #1054: how strong the shortage warning is: LOW = some units free (fewer than asked), NONE = nothing free */
+    enum class ShortageTone { OK, LOW, NONE }
+
+    /** #1054 (owner, iOS `shortageTone`): "Chỉ còn 1 trống…" in red read as out of stock; red only when nothing is free */
+    fun shortageTone(left: Int): ShortageTone = if (left >= 1) ShortageTone.LOW else ShortageTone.NONE
+
+    /**
+     * #1064: the one availability pill of a cart line: the short shown text, the longer TalkBack text, the count and
+     * the tone (iOS `AvailabilityNote`)
+     */
+    data class AvailabilityNote(@StringRes val textRes: Int, @StringRes val spokenRes: Int, val count: Int, val tone: ShortageTone)
+
+    /**
+     * #1064 (owner, iOS `availabilityNote`): 0 free = "Hết đồ" / "Hết hàng" (red); 1 free, or fewer than [asked]
+     * (amber); 2+ free and at least [asked] (green). Shown: "Còn N" when enough, "Chỉ còn N" when fewer than asked
+     * ("text còn trống dài quá"); TalkBack adds "trong ngày đã chọn" / "trong kho". null while not loaded
+     */
+    fun availabilityNote(available: Int?, asked: Int, isRent: Boolean): AvailabilityNote? {
+        if (available == null) return null
+        if (available <= 0) {
+            return if (isRent) AvailabilityNote(R.string.v2_cart_booked_out, R.string.v2_cart_unavailable_rent, 0, ShortageTone.NONE)
+            else AvailabilityNote(R.string.v2_cart_out_of_stock, R.string.v2_cart_out_of_stock, 0, ShortageTone.NONE)
+        }
+        val tone = if (available >= 2 && available >= asked) ShortageTone.OK else ShortageTone.LOW
+        return if (available >= asked) {
+            AvailabilityNote(R.string.v2_cart_left, if (isRent) R.string.v2_cart_free_rent else R.string.v2_cart_in_stock, available, tone)
+        } else {
+            AvailabilityNote(R.string.v2_cart_only_left, if (isRent) R.string.v2_cart_short_rent else R.string.v2_cart_short_stock, available, tone)
+        }
+    }
 
     /** Paid now: the prepaid deposit for a rental, the order total for a sale */
     fun collectNow(isSale: Boolean, total: Double, deposit: Double): Double = if (isSale) total else deposit

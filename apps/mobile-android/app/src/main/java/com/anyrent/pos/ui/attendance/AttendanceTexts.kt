@@ -35,6 +35,10 @@ object AttendanceTexts {
                 ?: context.getString(R.string.attendance_err_wrong_outlet_msg_plain))
         PunchRejectionKind.GPS_INACCURATE -> context.getString(R.string.attendance_err_gps) to
             (r.accuracyM?.let { context.getString(R.string.attendance_err_gps_msg, it) } ?: context.getString(R.string.attendance_err_gps_msg_plain))
+        PunchRejectionKind.LOCATION_NOT_SET ->
+            (r.outletName?.let { context.getString(R.string.attendance_err_location_not_set_named, it) }
+                ?: context.getString(R.string.attendance_err_location_not_set)) to
+                context.getString(R.string.attendance_err_location_not_set_msg)
         PunchRejectionKind.NOT_CONFIGURED -> context.getString(R.string.attendance_err_not_configured) to
             context.getString(R.string.attendance_err_not_configured_msg)
         PunchRejectionKind.MODULE_OFF -> context.getString(R.string.attendance_err_module_off) to context.getString(R.string.attendance_err_module_off_msg)

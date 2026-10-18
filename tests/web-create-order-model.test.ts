@@ -21,6 +21,7 @@ import {
   computeTotals,
   dayRangeIso,
   dayStartIso,
+  discountExceeds,
   draftFromOrder,
   findByBarcode,
   firstMissing,
@@ -491,10 +492,15 @@ describe('0đ products and free lines (#951)', () => {
     expect(lineFromProduct(FREE, 'SALE').unitPrice).toBe(0);
   });
 
-  it('a product without a rent price still asks for one', () => {
+  it('a product priced 0 creates at 0đ without asking (#996)', () => {
     const line = lineFromProduct(NO_PRICE, 'RENT');
-    expect(needsPrice(line, 'RENT')).toBe(true);
-    expect(firstMissing({ ...base, lines: [line] })).toBe('price');
+    expect(line.unitPrice).toBe(0);
+    expect(needsPrice(line, 'RENT')).toBe(false);
+    expect(lineTotal(line, 'RENT', 3)).toBe(0);
+    expect(firstMissing({ ...base, lines: [line] })).toBeNull();
+    const daily = selectMode([line], 22, 'DAILY');
+    expect(needsPrice(daily[0], 'RENT')).toBe(true);
+    expect(firstMissing({ ...base, lines: daily })).toBe('price');
   });
 
   it('a priced line can be given free: typed 0 is a price, not "Nhập giá"', () => {
@@ -512,8 +518,9 @@ describe('0đ products and free lines (#951)', () => {
     let lines = setLinePrice(setLinePrice([lineFromProduct(AO_DAI, 'RENT')], 11, 0), 11, null);
     expect(lines[0].unitPrice).toBe(150_000);
     expect(needsPrice(lines[0], 'RENT')).toBe(false);
-    lines = setLinePrice(setLinePrice([lineFromProduct(NO_PRICE, 'RENT')], 22, 0), 22, null);
-    expect(needsPrice(lines[0], 'RENT')).toBe(true);
+    lines = setLinePrice(setLinePrice([lineFromProduct(NO_PRICE, 'RENT')], 22, 50_000), 22, null);
+    expect(lines[0].unitPrice).toBe(0);
+    expect(needsPrice(lines[0], 'RENT')).toBe(false);
   });
 
   it('a free line keeps 0 through Thuê → Bán → Thuê and in the saved order', () => {
@@ -679,5 +686,22 @@ describe('every add makes a new line (#952)', () => {
       [11, 0],
     ]);
     expect(new Set(d.lines.map((l) => l.key)).size).toBe(3);
+  });
+});
+
+// #1067 owner: "chặn giảm giá lớn hơn tổng đơn luôn" — same rule as iOS CartV2Logic.discountExceeds
+describe('discountExceeds (#1067)', () => {
+  it('refuses an amount above the subtotal before discount', () => {
+    expect(discountExceeds('amount', 5_000_050_000, 77)).toBe(true);
+    expect(discountExceeds('amount', 78, 77)).toBe(true);
+    expect(discountExceeds('amount', 77, 77)).toBe(false);
+    expect(discountExceeds('amount', 0, 0)).toBe(false);
+    expect(discountExceeds('amount', 10, 0)).toBe(true);
+  });
+
+  it('caps a percent discount at 100%', () => {
+    expect(discountExceeds('percentage', 101, 77)).toBe(true);
+    expect(discountExceeds('percentage', 100, 77)).toBe(false);
+    expect(discountExceeds('percentage', 50, 0)).toBe(false);
   });
 });

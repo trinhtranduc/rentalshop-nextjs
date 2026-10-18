@@ -140,6 +140,7 @@
       "QR_EXPIRED": "QRコードの期限切れ",
       "QR_WRONG_OUTLET": "別の店舗のQRコード",
       "ATTENDANCE_NOT_CONFIGURED": "店舗の位置が未設定",
+      "ATTENDANCE_LOCATION_NOT_SET": "店舗の位置が未設定（距離未確認）",
       "other": "拒否"
     },
     "editIn": "出勤 {time}",
@@ -317,6 +318,7 @@
     "open": "開く ›"
   },
   "locations": {
+    "locationSet": "位置設定済み",
     "title": "勤怠のQRと位置",
     "subtitle": "店舗ごとにQRコード、位置、打刻する人の一覧があります。",
     "col": {

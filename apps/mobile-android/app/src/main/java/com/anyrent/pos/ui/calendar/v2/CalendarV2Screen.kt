@@ -69,6 +69,8 @@ import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.ui.orders.v2.OrderRowMetaColor
 import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
+import com.anyrent.pos.ui.orders.v2.RowWarning
+import com.anyrent.pos.ui.orders.v2.RowWarningText
 import com.anyrent.pos.ui.orders.v2.orderRowTexts
 import com.anyrent.pos.ui.theme.DS
 import java.time.LocalDate
@@ -300,11 +302,22 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f),
             ) {
                 CalendarLogic.rowChips(row).forEach { chip ->
+                    // #1008 (owner): the date chip shows its icon then the date (the shared order-row chip)
                     val (text, colors) = when (chip.kind) {
-                        CalendarLogic.RowChipKind.PICKUP -> "$pickupLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.PICKUP)
-                        CalendarLogic.RowChipKind.RETURN -> "$returnLabel ${chip.date}" to OrdersBoardLogic.chipColors(OrderRowDates.ChipKind.RETURN)
+                        CalendarLogic.RowChipKind.NOT_PREPARED -> {
+                            // #1032 (owner): the order-row warning: box icon + orange text, no box
+                            RowWarningText(notPrepared, RowWarning.NOT_PREPARED)
+                            return@forEach
+                        }
+                        CalendarLogic.RowChipKind.PICKUP -> {
+                            com.anyrent.pos.ui.orders.v2.DateChip(OrderRowDates.ChipKind.PICKUP, chip.date.orEmpty(), "$pickupLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                            return@forEach
+                        }
+                        CalendarLogic.RowChipKind.RETURN -> {
+                            com.anyrent.pos.ui.orders.v2.DateChip(OrderRowDates.ChipKind.RETURN, chip.date.orEmpty(), "$returnLabel ${chip.date}", DS.TextSize.Secondary, FontWeight.Medium)
+                            return@forEach
+                        }
                         CalendarLogic.RowChipKind.READY -> ready to DS.Status.Done
-                        CalendarLogic.RowChipKind.NOT_PREPARED -> notPrepared to DS.Status.Waiting
                     }
                     Text(
                         text, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = colors.text, maxLines = 1,
@@ -317,8 +330,12 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
                 // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
                 val note = when (val n = CalendarLogic.note(row)) {
                     is CalendarNote.Late -> {
+                        // #1032 (owner, mockup "Lịch › đơn trễ: icon"): the order-row late warning (clock, small red
+                        // text, not bold, no box), then " · phí N" in grey; TalkBack reads "Trễ N ngày · phí N" as before
                         val late = pluralStringResource(R.plurals.orders_late_days, n.days, n.days)
-                        (n.fee?.let { "$late · ${stringResource(R.string.calendar_v2_fee, formatMoneyVnd(it))}" } ?: late) to V2Colors.Danger
+                        val fee = n.fee?.let { RowWarning.feeSuffix(stringResource(R.string.calendar_v2_fee, formatMoneyVnd(it))) }
+                        RowWarningText(late, RowWarning.LATE, suffix = fee, padded = false)
+                        null
                     }
                     is CalendarNote.Refund -> stringResource(R.string.orders_v2_pay_refund, formatMoneyVnd(n.amount)) to DS.Status.Return.text
                     is CalendarNote.Due -> stringResource(R.string.orders_v2_pay_due, formatMoneyVnd(n.amount)) to DS.Status.Waiting.text

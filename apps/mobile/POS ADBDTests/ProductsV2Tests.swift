@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import POS_ADBD
 
@@ -136,13 +137,7 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(ProductDetailV2Logic.quantity(of: 99, in: order), 1, "list without the item: 1")
     }
 
-    // MARK: - Cart cost (#888)
-
-    private func costLine(_ cost: Double?, qty: Int = 1, price: Double = 300_000) -> CartItem {
-        var line = item(price: price, qty: qty)
-        line.costPrice = cost
-        return line
-    }
+    // MARK: - Cart cost (#888, hidden in the cart since #1007)
 
     /// #888: a cart line carries the product's cost; a cart saved before #888 (no key) still decodes
     func testCartLineTakesTheProductCost() throws {
@@ -157,26 +152,12 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNil(old.costPrice)
     }
 
-    /// #888: "Giá vốn" per line = cost × quantity, only when > 0 and the role may see prices
-    func testCartLineCost() {
-        XCTAssertEqual(CartCostLogic.lineCost(costLine(180_000, qty: 2), showsPrices: true), 360_000)
-        XCTAssertNil(CartCostLogic.lineCost(costLine(180_000, qty: 2), showsPrices: false), "staff never")
-        XCTAssertNil(CartCostLogic.lineCost(costLine(0), showsPrices: true))
-        XCTAssertNil(CartCostLogic.lineCost(costLine(nil), showsPrices: true))
-    }
-
-    /// #888: "Tổng giá vốn" in both carts; the sale cart adds "Lãi dự kiến" = total − total cost
-    func testCartCostSummary() {
-        let lines = [costLine(800_000), costLine(180_000, qty: 2), costLine(nil)]
-        XCTAssertEqual(CartCostLogic.summary(lines, total: 2_440_000, orderType: .sale, showsPrices: true),
-                       CartCostSummary(totalCost: 1_160_000, profit: 1_280_000))
-        XCTAssertEqual(CartCostLogic.summary(lines, total: 750_000, orderType: .rent, showsPrices: true),
-                       CartCostSummary(totalCost: 1_160_000, profit: nil))
-        XCTAssertEqual(CartCostLogic.summary([costLine(900_000)], total: 500_000, orderType: .sale, showsPrices: true)?.profit,
-                       -400_000, "a loss shows as negative")
-        XCTAssertNil(CartCostLogic.summary(lines, total: 2_440_000, orderType: .sale, showsPrices: false))
-        XCTAssertNil(CartCostLogic.summary([costLine(nil), costLine(0)], total: 600_000, orderType: .sale, showsPrices: true),
-                     "no line with a cost: no cost rows")
+    /// #1007 (owner 2026-10-17): the cart never shows cost price ("Giá vốn", "Tổng giá vốn", "Lãi dự kiến") for any
+    /// role, because the cart is shown to the customer. The cart strings are gone; the line still carries `costPrice`.
+    func testCartShowsNoCostPrice() {
+        for key in ["products.cart.cost", "products.cart.totalCost", "products.cart.profit"] {
+            XCTAssertEqual(Bundle.main.localizedString(forKey: key, value: nil, table: nil), key, "\(key) should be removed")
+        }
     }
 
     /// #887: the form sends the typed cost; an empty field sends 0 only when the product had a cost (the user cleared
@@ -276,6 +257,193 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(OrdersHomeLogic.hidesMoney(role: .outletInventory, hideForStaff: false))
         XCTAssertTrue(ChangeHistoryLogic.isStaff("OUTLET_INVENTORY"))
         XCTAssertFalse(ChangeHistoryLogic.canView("OUTLET_INVENTORY"))
+    }
+
+    /// #1061: the item note line (empty or filled) and the TIỀN edit rows show the same blue pencil, after the text
+    func testCartUsesOnePencil() throws {
+        let money = V2ValueRow(title: "Giảm giá", editable: true)
+        let empty = CartNoteEntry(note: nil, emptyTitle: "Ghi chú")
+        let filled = CartNoteEntry(note: "Sửa eo 2cm", emptyTitle: "Ghi chú")
+        let icon = try XCTUnwrap(DS.editIcon(size: V2.editPencilSize))
+        XCTAssertEqual(icon.size, CGSize(width: V2.editPencilSize, height: V2.editPencilSize))
+        XCTAssertEqual(icon.renderingMode, .alwaysTemplate)
+        let reference = try XCTUnwrap(icon.pngData())
+        XCTAssertEqual(V2.editPencil().image?.pngData(), reference)
+        for pencil in [money.pencil, empty.pencil, filled.pencil] {
+            XCTAssertEqual(pencil.image?.pngData(), reference)
+            XCTAssertEqual(pencil.tintColor, DS.Color.primary)
+            XCTAssertFalse(pencil.isHidden)
+        }
+        // empty: "Ghi chú" in blue (blue = tappable); filled: the note in #334155
+        XCTAssertEqual(empty.textLabel.textColor, DS.Color.primary)
+        XCTAssertEqual(filled.textLabel.text, "Sửa eo 2cm")
+        XCTAssertEqual(filled.textLabel.textColor, UIColor(hexString: "334155"))
+        // the text first, the pencil after it, no other icon
+        for entry in [empty, filled] {
+            let row = try XCTUnwrap(entry.subviews.first as? UIStackView)
+            XCTAssertEqual(row.arrangedSubviews, [entry.textLabel, entry.pencil])
+        }
+    }
+
+    /// #1024 (option A): the cart's icons, the item note on one line, and what VoiceOver reads
+    func testCartIconsAndItemNoteLine() throws {
+        XCTAssertEqual(CartV2Icon.addItem.rawValue, "plus.circle")
+        // #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): one pen-line for every edit in the cart,
+        // drawn by DS.editIcon (SF `pencil.line` needs iOS 17)
+        XCTAssertEqual(CartV2Icon.edit.rawValue, "pen-line")
+        XCTAssertEqual(CartV2Icon.itemNote, .edit)
+        XCTAssertEqual(CartV2Icon.orderNote, .edit)
+        XCTAssertNotNil(UIImage(systemName: CartV2Icon.addItem.rawValue), "addItem is an SF Symbol")
+        // nil = the entry shows "Ghi chú"; a note is one line (the button cuts it with "…")
+        XCTAssertNil(CartV2Logic.itemNoteLine(nil))
+        XCTAssertNil(CartV2Logic.itemNoteLine(" \n\t "))
+        XCTAssertEqual(CartV2Logic.itemNoteLine("  Sửa eo 2cm "), "Sửa eo 2cm")
+        XCTAssertEqual(CartV2Logic.itemNoteLine("Tặng kèm\n size M\r\n\ngiao trước 9h\n"), "Tặng kèm size M giao trước 9h")
+        let long = String(repeating: "Giao trước 9h ", count: 20)
+        XCTAssertEqual(CartV2Logic.itemNoteLine(long), long.trimmingCharacters(in: .whitespaces), "the text is whole; the button truncates it")
+        // VoiceOver: "Ghi chú cho <product>" and the note, as before the icon
+        let empty = CartV2Logic.itemNoteSpoken(productName: "Áo dài", note: "  ")
+        XCTAssertEqual(empty.label, String(format: "cart.itemNote.accessibility".localized(), "Áo dài"))
+        XCTAssertTrue(empty.label.contains("Áo dài"))
+        XCTAssertNil(empty.value)
+        XCTAssertEqual(CartV2Logic.itemNoteSpoken(productName: "Áo dài", note: " Size M ").value, "Size M")
+        XCTAssertNotEqual("products.cart.addItem.accessibility".localized(), "products.cart.addItem.accessibility", "Thêm món is localized")
+    }
+
+    /// #1043: the order note uses the item note sheet: photos (#480) only on a new order, and its own strings
+    func testOrderNoteSheetPhotosAndStrings() throws {
+        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: false), 5)
+        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: false), OrderDetailLogic.maxNotePhotos)
+        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: true), 0, "editing an order stays text only")
+        // the cart entry shows the order note on one line, like an item note
+        XCTAssertEqual(CartV2Logic.itemNoteLine("Giao trước 9h\nKhách lấy tại tiệm"), "Giao trước 9h Khách lấy tại tiệm")
+        for key in ["cart.orderNote.title", "cart.orderNote.placeholder", "cart.orderNote.hint"] {
+            XCTAssertNotEqual(key.localized(), key, "\(key) is localized")
+        }
+        XCTAssertNotEqual("cart.orderNote.title".localized(), "cart.itemNote.title".localized())
+    }
+
+    /// #1056: the cart line's price link must not fade. A `.system` button fades a new attributed title in, and the
+    /// cart builds a new link on every render (2–3 renders while it opens): the price vanished and came back
+    func testCartPricingLinkIsASteadyCustomButton() {
+        let link = CartV2ViewController.pricingLinkButton(amount: "200.000đ", unit: "theo lần")
+        XCTAssertEqual(link.buttonType, .custom, "a .system button fades its title in on each render")
+        XCTAssertEqual(link.attributedTitle(for: .normal)?.string, "200.000đ / theo lần")
+        XCTAssertEqual(link.contentHorizontalAlignment, .leading)
+        XCTAssertNotNil(link.image(for: .normal), "the ⌄ stays")
+        XCTAssertNotNil(link.attributedTitle(for: .highlighted), "a tap still dims the link, as the .system button did")
+        let empty = CartV2ViewController.pricingLinkButton(amount: nil, unit: "theo lần")
+        XCTAssertEqual(empty.attributedTitle(for: .normal)?.string,
+                       "products.cart.pricing.enterPrice".localized() + " / theo lần")
+    }
+
+    /// #1056: the same availability answer changes nothing and posts nothing (each post rebuilt every cart row)
+    func testSameAvailabilityDoesNotNotifyTheCart() {
+        let cart = Cart()
+        cart.addItem(CartItem(productId: 7, productName: "Áo dài", barcode: nil, quantity: 1, price: 300_000, deposit: 0,
+                              originalRentPrice: 300_000, originalSalePrice: 0))
+        let status = AvailabilityStatus(isAvailable: true, available: 3)
+        XCTAssertTrue(cart.updateAvailabilityStatus(for: 7, status: status), "nil → loaded is a change")
+        XCTAssertFalse(cart.updateAvailabilityStatus(for: 7, status: status), "the same answer again is not")
+        XCTAssertTrue(cart.updateAvailabilityStatus(for: 7, status: AvailabilityStatus(isAvailable: true, available: 2)))
+        XCTAssertFalse(cart.updateAvailabilityStatus(for: 99, status: status), "no line of that product")
+
+        let saved = CartStore.shared.cart
+        defer { CartStore.shared.replaceCart(with: saved, notify: false) }
+        CartStore.shared.replaceCart(with: cart, notify: false)
+        var posts = 0
+        let token = NotificationCenter.default.addObserver(forName: .cartStoreDidChange, object: nil, queue: nil) { _ in posts += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+        CartStore.shared.updateAvailabilityStatus(for: 7, status: AvailabilityStatus(isAvailable: true, available: 2))
+        XCTAssertEqual(posts, 0, "unchanged availability does not redraw the cart")
+        CartStore.shared.updateAvailabilityStatus(for: 7, status: AvailabilityStatus(isAvailable: false, available: 0))
+        XCTAssertEqual(posts, 1)
+    }
+
+    /// #1056 (owner: "note cần xuống dòng"): a note shows in full, its own line breaks kept, blank lines dropped
+    func testNoteShownKeepsTheLines() {
+        XCTAssertNil(CartV2Logic.noteShown(nil))
+        XCTAssertNil(CartV2Logic.noteShown(" \n\t "))
+        XCTAssertEqual(CartV2Logic.noteShown("  Giao 9h \n\n Khách lấy tại tiệm  "), "Giao 9h\nKhách lấy tại tiệm")
+        let long = String(repeating: "Giao trước 9h ", count: 20).trimmingCharacters(in: .whitespaces)
+        XCTAssertEqual(CartV2Logic.noteShown(long), long, "never cut")
+    }
+
+    /// #1056: the item note line wraps (it was one line cut with "…"); empty it reads "Ghi chú"
+    func testItemNoteEntryWraps() {
+        let note = "Giao trước 9h sáng thứ 7\nKhách lấy tại tiệm, gọi trước 30 phút"
+        let entry = CartNoteEntry(note: note, emptyTitle: "Ghi chú")
+        XCTAssertEqual(entry.textLabel.numberOfLines, 0)
+        XCTAssertEqual(entry.textLabel.text, note)
+        XCTAssertTrue(entry.accessibilityTraits.contains(.button))
+        XCTAssertEqual(CartNoteEntry(note: "  ", emptyTitle: "Ghi chú").textLabel.text, "Ghi chú")
+    }
+
+    /// #1056: the order note row in TIỀN wraps its text on the right; money rows stay one line
+    func testOrderNoteRowWraps() {
+        let row = V2ValueRow(title: "Ghi chú", editable: true, wrapsValue: true)
+        XCTAssertEqual(row.valueLabel.numberOfLines, 0)
+        XCTAssertEqual(row.valueLabel.textAlignment, .right)
+        XCTAssertEqual(V2ValueRow(title: "Giảm giá", editable: true).valueLabel.numberOfLines, 1)
+    }
+
+    /// #1056 (owner: "style present note view nên giống nhau"): the order and item note sheets are one sheet —
+    /// same detent and corners; only the order note on a new order has the photo row
+    func testOrderAndItemNoteSheetsAreTheSame() {
+        let item = CartItemNoteSheet(productName: "Áo dài", note: nil)
+        let order = CartItemNoteSheet.orderNote(note: "Giao 9h", photos: [], editMode: false)
+        let editing = CartItemNoteSheet.orderNote(note: nil, photos: [], editMode: true)
+        for sheet in [item, order, editing] {
+            XCTAssertEqual(sheet.sheetPresentationController?.detents, [.large()])
+            XCTAssertEqual(sheet.sheetPresentationController?.preferredCornerRadius, 24)
+        }
+        XCTAssertEqual(item.maxPhotos, 0)
+        XCTAssertEqual(order.maxPhotos, CartV2Logic.orderNoteMaxPhotos(editMode: false))
+        XCTAssertEqual(editing.maxPhotos, 0, "editing an order stays text only")
+        XCTAssertEqual(order.titleText, "cart.orderNote.title".localized())
+        XCTAssertEqual(item.titleText, "cart.itemNote.title".localized())
+    }
+
+    /// #1056 (owner, mockup cartmoney): TIỀN — blue value + pencil = tappable, black = read only (Android CartMoneyRowsTest)
+    func testCartMoneyRowsBlueMeansTappable() throws {
+        XCTAssertFalse(CartMoneyRow.subtotal.isEditable)
+        XCTAssertFalse(CartMoneyRow.total.isEditable)
+        XCTAssertTrue(CartMoneyRow.discount.isEditable)
+        XCTAssertTrue(CartMoneyRow.deposit.isEditable)
+        XCTAssertTrue(CartMoneyRow.note.isEditable)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.subtotal), .plain)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.total), .plain)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.discount), .action, "a discount of 0 is blue too")
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.deposit), .action)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.note, note: nil), .action, "empty note: blue Thêm")
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.note, note: " \n "), .action)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.note, note: "Khách lấy lúc 9h"), .noteText)
+        XCTAssertEqual(CartV2Logic.discountShown(0), 0)
+        XCTAssertEqual(CartV2Logic.discountShown(-5), 0)
+        XCTAssertEqual(CartV2Logic.discountShown(50_000), -50_000)
+        let edit = "products.detail.edit".localized()
+        XCTAssertEqual(CartV2Logic.moneyRowSpoken(value: "0đ"), "0đ, \(edit)")
+        XCTAssertEqual(CartV2Logic.moneyRowSpoken(value: "Khách lấy lúc 9h", photos: "2 ảnh"), "Khách lấy lúc 9h, 2 ảnh, \(edit)")
+        for key in ["products.cart.note", "products.cart.addNote", "products.detail.edit"] {
+            XCTAssertNotEqual(key.localized(), key, "\(key) is localized")
+        }
+    }
+
+    /// #1056: the editable row has no ›, a blue bold value and a blue pencil; VoiceOver: title, then "value, Sửa"
+    func testEditableValueRowLooksTappable() throws {
+        let row = V2ValueRow(title: "Giảm giá", editable: true)
+        row.valueLabel.text = "0đ"
+        XCTAssertTrue(row.chevron.isHidden, "no › on an editable row")
+        XCTAssertFalse(row.pencil.isHidden)
+        XCTAssertEqual(row.pencil.tintColor, DS.Color.primary)
+        XCTAssertEqual(row.valueLabel.textColor, DS.Color.primary)
+        XCTAssertTrue(row.valueLabel.font.fontDescriptor.symbolicTraits.contains(.traitBold))
+        XCTAssertTrue(row.accessibilityTraits.contains(.button))
+        XCTAssertEqual(row.accessibilityLabel, "Giảm giá")
+        XCTAssertEqual(row.accessibilityValue, CartV2Logic.moneyRowSpoken(value: "0đ"))
+        let plain = V2ValueRow(title: "Tổng cộng", chevron: false)
+        XCTAssertTrue(plain.pencil.isHidden, "read-only rows have no pencil")
+        XCTAssertTrue(plain.chevron.isHidden)
     }
 
     func testInventoryRoleIsPickedOnlyWhenTheApiAllowsIt() throws {
@@ -430,6 +598,72 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(CartV2Logic.collectNow(cart), 1_530_000)
     }
 
+    /// #1054 (owner): "Chỉ còn 1 trống…" in red read as out of stock; some units free = amber (#1032 palette),
+    /// none free = red as before
+    func testShortageToneAmberWhenSomeUnitsFree() {
+        XCTAssertEqual(CartV2Logic.shortageTone(left: 1), .low)
+        XCTAssertEqual(CartV2Logic.shortageTone(left: 3), .low)
+        XCTAssertEqual(CartV2Logic.shortageTone(left: 0), .none)
+
+        let low = CartV2ViewController.shortageStyle(.low)
+        XCTAssertEqual(low.colors.text, DS.Status.waiting.text)
+        XCTAssertEqual(low.colors.fill, DS.Status.waiting.fill)
+        XCTAssertEqual(low.colors.text, UIColor(hexString: "9A3412"))
+        XCTAssertEqual(low.colors.fill, UIColor(hexString: "FFEDD5"))
+        XCTAssertEqual(low.weight, .medium)
+
+        let none = CartV2ViewController.shortageStyle(.none)
+        XCTAssertEqual(none.colors.text, UIColor(hexString: "991B1B"))
+        XCTAssertEqual(none.colors.fill, UIColor(hexString: "FEE2E2"))
+        XCTAssertEqual(none.weight, .bold)
+    }
+
+    /// #1064 (owner): 0 free = "Hết đồ" / "Hết hàng" in red; 1 free (or fewer than asked) = amber; 2+ free and enough
+    /// for the cart = green "Còn N". Short texts ("text còn trống dài quá"); VoiceOver reads the long one. Nothing
+    /// until availability loads
+    func testAvailabilityNoteByFreeCount() {
+        typealias Note = CartV2Logic.AvailabilityNote
+        func note(_ available: Int?, _ asked: Int, _ rent: Bool) -> Note? {
+            CartV2Logic.availabilityNote(available: available, asked: asked, isRent: rent)
+        }
+        XCTAssertNil(note(nil, 1, true))
+        XCTAssertNil(note(nil, 1, false))
+
+        // 0: red
+        XCTAssertEqual(note(0, 1, true), Note(key: "products.cart.bookedOut", spokenKey: "products.cart.unavailableRent", count: 0, tone: .none))
+        XCTAssertEqual(note(-2, 1, true), Note(key: "products.cart.bookedOut", spokenKey: "products.cart.unavailableRent", count: 0, tone: .none))
+        XCTAssertEqual(note(0, 1, false), Note(key: "products.cart.outOfStock", spokenKey: "products.cart.outOfStock", count: 0, tone: .none))
+        // 1 free, 1 asked: amber "Còn 1"
+        XCTAssertEqual(note(1, 1, true), Note(key: "products.cart.left", spokenKey: "products.cart.freeRent", count: 1, tone: .low))
+        XCTAssertEqual(note(1, 1, false), Note(key: "products.cart.left", spokenKey: "products.cart.inStock", count: 1, tone: .low))
+        // fewer than asked: amber "Chỉ còn N" (2 free but 3 in the cart cannot be filled → amber, not green)
+        XCTAssertEqual(note(1, 3, false), Note(key: "products.cart.onlyLeft", spokenKey: "products.cart.shortStock", count: 1, tone: .low))
+        XCTAssertEqual(note(2, 3, true), Note(key: "products.cart.onlyLeft", spokenKey: "products.cart.shortRent", count: 2, tone: .low))
+        XCTAssertEqual(note(2, 3, false), Note(key: "products.cart.onlyLeft", spokenKey: "products.cart.shortStock", count: 2, tone: .low))
+        // 2+ and enough: green "Còn N"
+        XCTAssertEqual(note(2, 2, true), Note(key: "products.cart.left", spokenKey: "products.cart.freeRent", count: 2, tone: .ok))
+        XCTAssertEqual(note(5, 1, true), Note(key: "products.cart.left", spokenKey: "products.cart.freeRent", count: 5, tone: .ok))
+        XCTAssertEqual(note(5, 1, false), Note(key: "products.cart.left", spokenKey: "products.cart.inStock", count: 5, tone: .ok))
+
+        // Every text exists, reads the count, and the shown one is short
+        for n in [note(0, 1, true), note(0, 1, false), note(1, 1, true), note(2, 3, true), note(4, 1, true), note(4, 1, false)].compactMap({ $0 }) {
+            XCTAssertNotEqual(n.text, n.key)
+            XCTAssertNotEqual(n.spoken, n.spokenKey)
+            if n.count > 0 {
+                XCTAssertTrue(n.text.contains("\(n.count)"))
+                XCTAssertTrue(n.spoken.contains("\(n.count)"))
+            }
+            XCTAssertFalse(n.text.contains("trong ngày") || n.text.contains("on these dates"), n.text)
+            XCTAssertLessThanOrEqual(n.text.count, 14, n.text)
+        }
+
+        // Green reuses the "done" token, same weight as amber
+        let ok = CartV2ViewController.shortageStyle(.ok)
+        XCTAssertEqual(ok.colors.text, DS.Status.done.text)
+        XCTAssertEqual(ok.colors.fill, DS.Status.done.fill)
+        XCTAssertEqual(ok.weight, .medium)
+    }
+
     func testShortageAndRentalDays() {
         var line = item(price: 1, qty: 2)
         XCTAssertNil(CartV2Logic.shortage(line))
@@ -466,6 +700,13 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(response.localizedMessage, "STOCK_BELOW_RENTED".localized())
         XCTAssertNotEqual(response.localizedMessage, "STOCK_BELOW_RENTED")
         XCTAssertEqual(response.toNSError().localizedDescription, response.localizedMessage)
+    }
+
+    /// #994: last 8 clock digits + 3 random digits, same as the web form
+    func testGeneratedBarcodeIsEightClockDigitsPlusThreeRandom() {
+        XCTAssertEqual(ProductBarcode.generate(now: 1_759_000_123_456, random: 42), "00123456042")
+        XCTAssertEqual(ProductBarcode.generate(now: 1_759_000_123_456, random: 999), "00123456999")
+        XCTAssertEqual(ProductBarcode.generate(now: 42, random: 7), "00000042007")
     }
 
     func testBarcodeKeepsOnlyAnExactMatch() throws {
@@ -662,6 +903,21 @@ final class ProductFormKeyboardTests: XCTestCase {
     }
 
     /// #952 (owner): no "Xong" bar on the number pads; a tap outside a field or a drag of the form closes the keyboard
+    /// #994: create starts with an 11-digit code and a button that replaces it
+    func testNewProductStartsWithAGeneratedBarcode() throws {
+        let form = try merchantForm()
+        let barcode = try XCTUnwrap(fields(form.view).first { $0.accessibilityLabel == "products.form.barcode".localized() })
+        let first = try XCTUnwrap(barcode.text)
+        XCTAssertEqual(first.count, 11)
+        XCTAssertTrue(first.allSatisfy(\.isNumber))
+        let regenerate = try XCTUnwrap(allViews(form.view).compactMap { $0 as? UIButton }
+            .first { $0.accessibilityLabel == "products.form.regenerateBarcode".localized() })
+        regenerate.sendActions(for: .touchUpInside)
+        let second = try XCTUnwrap(barcode.text)
+        XCTAssertEqual(second.count, 11)
+        XCTAssertTrue(second.allSatisfy(\.isNumber))
+    }
+
     func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
         let form = try merchantForm()
         let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }
@@ -1352,8 +1608,9 @@ extension ProductsV2Tests {
         XCTAssertEqual(ProductRowLogic.price(free), ProductRowPrice(main: 0, mainMode: .perRental, second: nil, secondMode: nil))
         let daily0 = try product(#"{"id":3,"name":"A","rentPrice":0,"pricingOptions":[{"id":1,"type":"DAILY","price":0,"isDefault":true}]}"#)
         XCTAssertEqual(ProductPricing.perDay(daily0), 0)
-        XCTAssertNil(ProductPricing.perRental(try product(noRentPrice)))
-        XCTAssertNil(ProductRowLogic.price(try product(noRentPrice)))
+        let zero = try product(noRentPrice)
+        XCTAssertNil(ProductPricing.perRental(zero), "a bare rentPrice of 0 is not a list price; the cart still accepts it (#996)")
+        XCTAssertNil(ProductRowLogic.price(zero))
         // salePrice 0 still reads "not for sale" (the apps save 0 for an empty box)
         XCTAssertNil(ProductPricing.sale(free))
     }
@@ -1388,21 +1645,23 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartV2Logic.startPrice(line, type: "FIXED"), 0)
     }
 
-    func testAProductWithoutARentPriceStillAsks() throws {
+    /// #996: a product stored at rent price 0 creates at 0đ. Theo ngày still asks when the product has no daily price.
+    func testAZeroRentPriceCreatesWithoutAsking() throws {
         let cart = Cart()
         cart.orderType = .rent
         cart.addItem(CartItem(from: try product(noRentPrice), quantity: 1, price: 0))
-        XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
-        XCTAssertNil(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "Nhập giá")
-        XCTAssertNil(CartV2Logic.pricingChoices(cart.items[0]).first?.catalogPrice)
-        XCTAssertNil(CartV2Logic.startPrice(cart.items[0], type: "FIXED"), "the field starts empty")
-        XCTAssertFalse(CartV2Logic.missingPrices(cart).isEmpty)
-        // typing 0 gives it a price
-        cart.updatePrice(at: 0, price: 0)
+        XCTAssertEqual(cart.items[0].price, 0)
         XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        XCTAssertEqual(CartV2Logic.link(cart.items[0], orderType: .rent).amount, "0đ")
+        XCTAssertEqual(CartV2Logic.pricingChoices(cart.items[0]).first?.catalogPrice, 0)
+        XCTAssertEqual(CartV2Logic.startPrice(cart.items[0], type: "FIXED"), 0)
         XCTAssertTrue(CartV2Logic.missingPrices(cart).isEmpty)
-        // clearing the typed price asks again
+        XCTAssertEqual(cart.toCreateOrderRequest().orderItems.first?.unitPrice, 0)
+        cart.updatePrice(at: 0, price: 50_000)
         cart.clearPrice(at: 0)
+        XCTAssertEqual(cart.items[0].price, 0)
+        XCTAssertFalse(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
+        cart.selectPricingType(at: 0, type: "DAILY")
         XCTAssertTrue(CartV2Logic.needsPrice(cart.items[0], orderType: .rent))
     }
 
@@ -1547,5 +1806,93 @@ extension ProductsV2Tests {
         XCTAssertFalse(chosen.isEmpty)
         XCTAssertEqual(CartDateRowLogic.iconSymbol, "calendar")
         XCTAssertEqual(CartDateRowLogic.iconSize, 40, "same circle as the customer row avatar")
+    }
+}
+
+// MARK: - #1067 discount can't be more than the order total
+
+extension ProductsV2Tests {
+    func testDiscountLimitIsTheSubtotalOrOneHundredPercent() {
+        XCTAssertEqual(CartV2Logic.discountLimit(subtotal: 77, isPercent: false), 77)
+        XCTAssertEqual(CartV2Logic.discountLimit(subtotal: 77, isPercent: true), 100)
+        XCTAssertEqual(CartV2Logic.discountLimit(subtotal: -5, isPercent: false), 0)
+    }
+
+    func testDiscountAboveTheSubtotalIsRefused() {
+        // the e2e cart: −5.000.050.000 on a 77đ order
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 5_000_050_000, subtotal: 77, isPercent: false))
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 78, subtotal: 77, isPercent: false))
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 77, subtotal: 77, isPercent: false), "equal: total 0 is allowed")
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 0, subtotal: 0, isPercent: false), "no discount on an empty cart is fine")
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 10, subtotal: 0, isPercent: false))
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 101, subtotal: 77, isPercent: true))
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 100, subtotal: 77, isPercent: true))
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 50, subtotal: 0, isPercent: true), "50% of nothing is 0")
+    }
+
+    func testDiscountErrorNamesTheLimit() {
+        XCTAssertNil(CartV2Logic.discountError(value: 77, subtotal: 77, isPercent: false))
+        let amount = CartV2Logic.discountError(value: 5_000_050_000, subtotal: 77, isPercent: false)
+        XCTAssertNotNil(amount)
+        XCTAssertTrue(amount?.contains("(77đ)") == true, amount ?? "nil")
+        let percent = CartV2Logic.discountError(value: 150, subtotal: 77, isPercent: true)
+        XCTAssertTrue(percent?.contains("(100%)") == true, percent ?? "nil")
+        let bundle = Bundle(for: OrderRowCell.self)
+        let vi = bundle.path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        let en = bundle.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(vi?.localizedString(forKey: "cart.discount.tooHigh", value: nil, table: nil),
+                       "Giảm giá không được lớn hơn tổng đơn (%@)")
+        XCTAssertEqual(en?.localizedString(forKey: "cart.discount.tooHigh", value: nil, table: nil),
+                       "Discount can't be more than the order total (%@)")
+    }
+
+    /// Removing items so the subtotal falls below the saved discount makes the cart's discount invalid (blocks create)
+    func testCartDiscountTurnsInvalidWhenItemsAreRemoved() {
+        let cart = Cart()
+        cart.addItem(CartItem(productId: 1, productName: "Áo dài", barcode: nil, quantity: 1, price: 300_000, deposit: 0,
+                              originalRentPrice: 300_000, originalSalePrice: 0))
+        cart.addItem(CartItem(productId: 2, productName: "Vest", barcode: nil, quantity: 1, price: 50_000, deposit: 0,
+                              originalRentPrice: 50_000, originalSalePrice: 0))
+        cart.discountType = .amount
+        cart.discount = 200_000
+        XCTAssertNil(CartV2Logic.cartDiscountError(cart))
+        cart.removeItem(at: 0)
+        XCTAssertNotNil(CartV2Logic.cartDiscountError(cart))
+        cart.discount = 50_000
+        XCTAssertNil(CartV2Logic.cartDiscountError(cart))
+        cart.discountType = .percentage
+        cart.discount = 100
+        XCTAssertNil(CartV2Logic.cartDiscountError(cart))
+    }
+
+    /// The keypad opened on an old value: the first key replaces it instead of appending (5.000.050.000 bug)
+    func testKeypadFirstKeyReplacesTheOpeningValue() {
+        var entry = NumberPadEntry("50000")
+        entry.press("7")
+        XCTAssertEqual(entry.text, "7")
+        entry.press("7")
+        XCTAssertEqual(entry.text, "77", "after the first key, keys append")
+        entry.press("000")
+        XCTAssertEqual(entry.text, "77000")
+        entry.press("⌫")
+        XCTAssertEqual(entry.text, "7700")
+
+        var cleared = NumberPadEntry("50000")
+        cleared.press("⌫")
+        XCTAssertEqual(cleared.text, "0", "backspace clears the selected old value")
+        cleared.press("5")
+        XCTAssertEqual(cleared.text, "5")
+
+        var zero = NumberPadEntry("0")
+        zero.press("000")
+        XCTAssertEqual(zero.text, "0")
+        zero.press("4")
+        XCTAssertEqual(zero.text, "4")
+        zero.press("⌫")
+        XCTAssertEqual(zero.text, "0")
+
+        var oldThousands = NumberPadEntry("50000")
+        oldThousands.press("000")
+        XCTAssertEqual(oldThousands.text, "0", "000 on a fresh entry starts from 0, not 50000000")
     }
 }

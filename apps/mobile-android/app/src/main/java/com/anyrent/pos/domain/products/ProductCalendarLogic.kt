@@ -123,6 +123,11 @@ object ProductCalendarLogic {
         return listOfNotNull(pickup, ret).joinToString(" · ")
     }
 
+    /** #1026: the pickup and return days alone ("T4 07/10", "T6 09/10"), shown after the ↗ / ↩ icons; null when missing */
+    fun orderDays(order: OrderSummary, texts: OrderRowDates.Texts = OrderRowDates.Texts(), zone: ZoneId = OrderRowDates.shopZone): Pair<String?, String?> =
+        parseDay(order.pickupPlanAt, zone)?.let { OrderRowDates.day(it, texts.weekdays) } to
+            parseDay(order.returnPlanAt, zone)?.let { OrderRowDates.day(it, texts.weekdays) }
+
     /** Units of [productId] in [order]; 1 when the list did not say */
     fun quantity(order: OrderSummary, productId: Int): Int = order.productQuantities[productId]?.takeIf { it > 0 } ?: 1
 

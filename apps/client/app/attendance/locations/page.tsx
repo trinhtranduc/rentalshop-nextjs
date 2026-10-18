@@ -2,7 +2,7 @@
 
 /**
  * Chấm công → Mã QR & vị trí (#945): the branches in scope (an outlet admin gets its own only) with QR status and
- * radius; "Mở ›" opens the branch page. Radius is not in GET /api/attendance/settings (list), so each branch
+ * radius and location setup status; "Mở ›" opens the branch page. Radius is not in GET /api/attendance/settings (list), so each branch
  * reads GET /api/attendance/settings?outletId= (no API change).
  */
 import React from 'react';
@@ -32,6 +32,11 @@ function Locations({ outlets }: { outlets: OutletOption[] }) {
     if (row.qr === 'none') return <Pill tone="gray">{t('outlets.noQr')}</Pill>;
     return <Pill tone="ok">{t(row.qr === 'fixed' ? 'outlets.qrFixed' : 'outlets.qrDaily')}</Pill>;
   };
+  const locationCell = (outletId: number) => {
+    const configured = locationRow(settings.data?.[outletId]).locationConfigured;
+    if (configured === null) return <span className="text-ar-faint">—</span>;
+    return <Pill tone={configured ? 'ok' : 'late'}>{t(configured ? 'locations.locationSet' : 'outlet.noLocation')}</Pill>;
+  };
   const radiusText = (outletId: number) => {
     const r = locationRow(settings.data?.[outletId]).radiusM;
     return r == null ? '—' : t('locations.radius', { radius: r });
@@ -46,6 +51,7 @@ function Locations({ outlets }: { outlets: OutletOption[] }) {
             <tr>
               <th className={thClass}>{t('locations.col.outlet')}</th>
               <th className={thClass}>{t('locations.col.address')}</th>
+              <th className={thClass}>{t('outlet.location')}</th>
               <th className={thClass}>{t('locations.col.qr')}</th>
               <th className={thClass}>{t('locations.col.radius')}</th>
               <th className={thClass}>
@@ -58,6 +64,7 @@ function Locations({ outlets }: { outlets: OutletOption[] }) {
               <tr key={o.id}>
                 <td className={`${tdClass} font-semibold`}>{o.name}</td>
                 <td className={`${tdClass} text-ar-ink-2`}>{o.address || <span className="text-ar-faint">—</span>}</td>
+                <td className={tdClass}>{locationCell(o.id)}</td>
                 <td className={tdClass}>{qrCell(o.id)}</td>
                 <td className={`${tdClass} whitespace-nowrap`}>{radiusText(o.id)}</td>
                 <td className={`${tdClass} text-right`}>
