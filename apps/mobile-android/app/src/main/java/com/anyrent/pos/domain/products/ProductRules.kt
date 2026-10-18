@@ -383,10 +383,19 @@ enum class CartProblem { EMPTY, NO_CUSTOMER, NO_PICKUP, NO_RETURN }
 enum class CartV2Icon(val material: String, val ios: String) {
     /** MÓN header "Thêm" */
     ADD_ITEM("AddCircleOutline", "plus.circle"),
-    /** a line's "Ghi chú" / its note */
-    ITEM_NOTE("Edit", "square.and.pencil"),
-    /** the order's "Ghi chú" row in TIỀN */
-    ORDER_NOTE("Description", "note.text"),
+    /**
+     * #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): Giảm giá, Đặt cọc, the order note, a line's
+     * note — the mockup's pen-line (`AppIcons.EditLine`; iOS `DS.editIcon`)
+     */
+    EDIT("EditLine", "pen-line"),
+    ;
+
+    companion object {
+        /** a line's "Ghi chú" / its note */
+        val ITEM_NOTE = EDIT
+        /** the order's "Ghi chú" row in TIỀN */
+        val ORDER_NOTE = EDIT
+    }
 }
 
 /** #1056 (owner, mockup cartmoney): the rows of the cart's TIỀN section; [editable] rows open a sheet (iOS `CartMoneyRow`) */

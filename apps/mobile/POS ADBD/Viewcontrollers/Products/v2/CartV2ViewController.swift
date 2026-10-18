@@ -571,8 +571,9 @@ final class CartV2ViewController: BaseViewControler {
         return row
     }
 
-    /// #684 (canvas N1), #1024 (option A): pencil + "Ghi chú" (grey) when the line has no note, else pencil + the
-    /// note in a light box. #1056 (owner): the whole note, on as many lines as it needs
+    /// #684 (canvas N1), #1024 (option A): "Ghi chú" when the line has no note, else the note in a light box.
+    /// #1056 (owner): the whole note, on as many lines as it needs. #1061: blue "Ghi chú" / the note, then the cart's one
+    /// blue edit icon
     private func itemNoteButton(_ item: CartItem, index: Int) -> UIControl {
         let spoken = CartV2Logic.itemNoteSpoken(productName: item.productName, note: item.note)
         let entry = CartNoteEntry(note: item.note, emptyTitle: "cart.itemNote.label".localized())
