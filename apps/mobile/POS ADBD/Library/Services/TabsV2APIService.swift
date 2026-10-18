@@ -115,6 +115,23 @@ final class TabsV2APIService: BaseService {
         return params
     }
 
+    /// #1059 "Đơn tạo hôm nay": one page of GET /api/analytics/income/orders `status=new` (the rows behind the
+    /// "Giá trị đơn mới" tile), shop civil days, the merchant's chosen branch (#828)
+    @discardableResult
+    func overviewNewOrders(_ range: DayKeyRange, offset: Int, limit: Int = 200,
+                           completion: @escaping (IncomeOrdersData?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.incomeOrders, parameters: Self.overviewNewOrdersParameters(range, offset: offset, limit: limit),
+                completion: completion)
+    }
+
+    static func overviewNewOrdersParameters(_ range: DayKeyRange, offset: Int, limit: Int = 200,
+                                            outletId: Int? = CurrentOutlet.shared.merchantFilterId) -> [String: Any] {
+        var params: [String: Any] = ["startDate": range.start, "endDate": range.end, "status": "new", "plan": "false",
+                                     "limit": limit, "offset": offset, "timeZone": Date.shopTimeZone.identifier]
+        if let outletId { params["outletIds"] = String(outletId) }
+        return params
+    }
+
     @discardableResult
     func overviewNow(completion: @escaping (OverviewNow?, NSError?) -> Void) -> DataRequest {
         request(APIEndpoint.Path.outletOperations, parameters: Self.outletOperationsParameters(), completion: completion)

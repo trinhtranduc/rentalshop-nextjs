@@ -2025,4 +2025,10 @@
     <string name="api_error_valid_user_id_required">ID người dùng hợp lệ là bắt buộc</string>
     <string name="api_error_validation_failed">Xác thực thất bại</string>
     <string name="api_error_verification_email_sent">Email xác thực đã được gửi</string>
+    <!-- #1059 Tổng quan › Hôm nay: đơn tạo hôm nay -->
+    <string name="overview_dash_today_orders_title">Đơn tạo hôm nay</string>
+    <string name="overview_dash_today_orders_summary">%1$s · Tổng giá trị</string>
+    <string name="overview_dash_today_orders_empty">Chưa có đơn nào hôm nay</string>
+    <string name="overview_dash_today_orders_rent">Thuê</string>
+    <string name="overview_dash_today_orders_sale">Bán</string>
 </resources>

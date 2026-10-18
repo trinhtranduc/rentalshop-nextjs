@@ -971,6 +971,8 @@ private fun MainTabs(
                     onOpenRentedOut = { rootNavController.navigate(Routes.RentedOut) { launchSingleTop = true } },
                     onOpenNotPickedUp = { rootNavController.navigate(Routes.NotPickedUp) { launchSingleTop = true } },
                     onOpenRelated = { kind, start, end -> rootNavController.navigate(Routes.overviewRelated(kind, start, end)) },
+                    // #1059: a row of "Đơn tạo hôm nay"
+                    onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                     // #496: "Việc hôm nay" rows open the Orders tab, like tapping the tab
                     onOpenOrdersTab = { MainTabRouter.openOrdersList(refresh = false) },
                 )
