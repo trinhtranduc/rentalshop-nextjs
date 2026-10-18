@@ -604,6 +604,12 @@ enum CartV2Logic {
         (String(format: "cart.itemNote.accessibility".localized(), productName ?? ""), noteText(note))
     }
 
+    /// #1043: the "Ghi chú đơn" sheet's photo row — up to `OrderDetailLogic.maxNotePhotos` on a new order (#480);
+    /// none while editing an order (its photos live on the order detail)
+    static func orderNoteMaxPhotos(editMode: Bool) -> Int {
+        editMode ? 0 : OrderDetailLogic.maxNotePhotos
+    }
+
     /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn
     static func missingPrices(_ cart: Cart) -> [String] {
         cart.items.filter { needsPrice($0, orderType: cart.orderType) }

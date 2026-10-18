@@ -54,8 +54,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -538,12 +541,12 @@ fun CartV2Screen(
                 )
                 ThinDivider()
             }
-            V2ValueRow(
-                stringResource(R.string.v2_cart_note),
-                notes.ifBlank { stringResource(R.string.v2_cart_add_note) },
+            // #1043: like an item's note line; opens the same sheet ("Ghi chú đơn")
+            val noteFiles by CartStore.noteImageFiles.collectAsState()
+            OrderNoteEntry(
+                note = notes,
+                photoCount = if (editingOrderId == null) noteFiles.size else 0,
                 onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
-                valueColor = if (notes.isBlank()) DS.Colors.Primary else DS.Colors.TextMuted,
-                icon = cartIcon(CartV2Icon.ORDER_NOTE), // #1024
             )
             Spacer(Modifier.height(24.dp))
         }
@@ -714,8 +717,11 @@ fun CartV2Screen(
             noteLineId = null
         } else {
             CartItemNoteSheet(
-                productName = line.product.name,
+                title = stringResource(R.string.v2_item_note_title),
+                subtitle = line.product.name,
                 note = line.note,
+                placeholder = stringResource(R.string.v2_item_note_placeholder),
+                hint = stringResource(R.string.v2_item_note_hint),
                 onDismiss = { noteLineId = null },
                 onSave = { note -> CartStore.updateNote(id, note); noteLineId = null },
             )
@@ -753,16 +759,17 @@ fun CartV2Screen(
         }
     }
     noteDraft?.let { draft ->
-        // #477: note editor of board GC-ghi-chu. #480: with photos, kept by the cart and sent on create; editing an
-        // existing order stays text only (its photos live on the order detail)
+        // #1043 (iOS editNote): the item note sheet as "Ghi chú đơn", prefilled while editing an order. #480: on a new
+        // order it also holds the note photos, kept by the cart and sent on create; editing an existing order stays
+        // text only (its photos live on the order detail)
         val saved = CartStore.noteImageFiles.value
-        com.anyrent.pos.ui.orders.v2.NoteEditorV2(
-            orderNumber = null, text = draft, onTextChange = { noteDraft = it }, busy = false, error = null,
-            showPhotos = editingOrderId == null,
-            files = noteDraftFiles,
-            onRemoveFile = { file -> noteDraftFiles = noteDraftFiles - file },
-            onAdd = { notePicking = true; notePicker.launch("image/*") },
-            onPreview = { notePreview = it },
+        val maxPhotos = CartV2Logic.orderNoteMaxPhotos(editMode = editingOrderId != null)
+        CartItemNoteSheet(
+            title = stringResource(R.string.v2_order_note_title),
+            subtitle = null,
+            note = draft,
+            placeholder = stringResource(R.string.v2_order_note_placeholder),
+            hint = stringResource(R.string.v2_order_note_hint),
             onDismiss = {
                 if (!notePicking) {
                     // Close without saving: drop the photos picked in this round only
@@ -770,14 +777,24 @@ fun CartV2Screen(
                     noteDraft = null
                 }
             },
-            onSave = {
-                CartStore.setNotes(draft.trim())
+            onSave = { text ->
+                CartStore.setNotes(CartV2Logic.noteText(text).orEmpty())
                 if (editingOrderId == null) {
                     (saved - noteDraftFiles.toSet()).forEach { runCatching { it.delete() } }
                     CartStore.setNoteImageFiles(noteDraftFiles)
                 }
                 noteDraft = null
             },
+            photos = if (maxPhotos > 0) {
+                {
+                    NoteSheetPhotos(
+                        files = noteDraftFiles, max = maxPhotos,
+                        onRemove = { file -> noteDraftFiles = noteDraftFiles - file },
+                        onAdd = { notePicking = true; notePicker.launch("image/*") },
+                        onPreview = { notePreview = it },
+                    )
+                }
+            } else null,
         )
     }
     notePreview?.let { com.anyrent.pos.ui.common.FullScreenImagePreview(model = it, onDismiss = { notePreview = null }) }
@@ -1143,19 +1160,58 @@ private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Uni
         noteLabel = stringResource(R.string.v2_item_note_label),
         accessibilityFormat = stringResource(R.string.v2_item_note_accessibility),
     )
+    NoteEntry(CartV2Icon.ITEM_NOTE, note, emptyText = spoken.text, spokenText = spoken.text, actionLabel = spoken.actionLabel, onClick = onClick)
+}
+
+/**
+ * #1043 (iOS orderNoteRow): the order note in TIỀN — the note entry with the order-note icon (+ a camera and the
+ * photo count on a new order); opens the "Ghi chú đơn" sheet
+ */
+@Composable
+private fun OrderNoteEntry(note: String, photoCount: Int, onClick: () -> Unit) {
+    val title = stringResource(R.string.v2_order_note_title)
+    val spoken = listOfNotNull(
+        CartV2Logic.noteText(note) ?: title,
+        if (photoCount > 0) stringResource(R.string.v2_order_note_photos, photoCount) else null,
+    ).joinToString(", ")
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(Modifier.weight(1f, fill = false)) {
+            NoteEntry(CartV2Icon.ORDER_NOTE, note, emptyText = title, spokenText = spoken, actionLabel = title, onClick = onClick)
+        }
+        if (photoCount > 0) {
+            Row(
+                Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).clearAndSetSemantics {}
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                Text("$photoCount", fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+            }
+        }
+    }
+}
+
+/** #1024 option A / #1043: the item note line and the order note line are the same entry */
+@Composable
+private fun NoteEntry(icon: CartV2Icon, note: String?, emptyText: String, spokenText: String, actionLabel: String, onClick: () -> Unit) {
     val line = CartV2Logic.itemNoteLine(note)
     val boxed = if (line != null) Modifier.background(Color(0xFFF8FAFC)) else Modifier
     Row(
         modifier = Modifier.clip(RoundedCornerShape(8.dp)).then(boxed)
-            .clickable(onClickLabel = spoken.actionLabel, role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = spoken.text }
+            .clickable(onClickLabel = actionLabel, role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = spokenText }
             .padding(horizontal = if (line != null) 8.dp else 2.dp, vertical = if (line != null) 5.dp else 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(cartIcon(CartV2Icon.ITEM_NOTE), contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+        Icon(cartIcon(icon), contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
         Text(
-            line ?: spoken.text,
+            line ?: emptyText,
             fontSize = DS.TextSize.Secondary,
             fontWeight = if (line != null) FontWeight.Normal else FontWeight.SemiBold,
             color = if (line != null) Color(0xFF334155) else Color(0xFF64748B),
@@ -1164,10 +1220,22 @@ private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Uni
     }
 }
 
-/** #684 (canvas N2, iOS CartItemNoteSheet): "Ghi chú món" — title + ✕, product name, text area, "Xoá ghi chú" / "Lưu" */
+/**
+ * #684 (canvas N2, iOS CartItemNoteSheet): "Ghi chú món" — title + ✕, product name, text area, "Xoá ghi chú" / "Lưu".
+ * #1043: the same sheet is the cart's "Ghi chú đơn" (no [subtitle]; [photos] = the note photo row on a new order).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () -> Unit, onSave: (String?) -> Unit) {
+private fun CartItemNoteSheet(
+    title: String,
+    subtitle: String?,
+    note: String?,
+    placeholder: String,
+    hint: String,
+    onDismiss: () -> Unit,
+    onSave: (String?) -> Unit,
+    photos: (@Composable () -> Unit)? = null,
+) {
     var text by remember { mutableStateOf(note.orEmpty()) }
     val focus = remember { androidx.compose.ui.focus.FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
@@ -1182,24 +1250,25 @@ private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () 
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.v2_item_note_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
-                    modifier = Modifier.weight(1f))
+                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f).semantics { heading() })
                 val closeLabel = stringResource(R.string.close)
                 Box(
                     Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(onClickLabel = closeLabel, onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Outlined.Close, contentDescription = closeLabel, tint = Color(0xFF475569), modifier = Modifier.size(18.dp)) }
             }
-            Text(productName, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 2)
+            subtitle?.let { Text(it, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 2) }
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
-                placeholder = { Text(stringResource(R.string.v2_item_note_placeholder)) },
+                placeholder = { Text(placeholder) },
                 minLines = 5,
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = title },
             )
-            Text(stringResource(R.string.v2_item_note_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            Text(hint, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            photos?.invoke()
             Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!CartV2Logic.noteText(note).isNullOrEmpty()) {
                     OutlinedButton(onClick = { onSave(null) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
@@ -1209,6 +1278,30 @@ private fun CartItemNoteSheet(productName: String, note: String?, onDismiss: () 
                 Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1.6f).height(50.dp)) {
                     Text(stringResource(R.string.v2_item_note_save), fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+    }
+}
+
+/** #1043 (iOS CartItemNoteSheet photo row): "Ảnh" + "2/5 ảnh", then 56dp tiles with a × and "Thêm" while there is room */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun NoteSheetPhotos(files: List<java.io.File>, max: Int, onRemove: (java.io.File) -> Unit, onAdd: () -> Unit, onPreview: (Any) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.notes_v2_photos), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.detail_photos_count, files.size, max), fontSize = DS.TextSize.Secondary, color = Color(0xFF64748B))
+        }
+        androidx.compose.foundation.layout.FlowRow(
+            Modifier.padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            files.forEach { file ->
+                com.anyrent.pos.ui.orders.v2.PhotoTile(file, { onPreview(file) }, size = 56.dp) { onRemove(file) }
+            }
+            if (com.anyrent.pos.domain.notifications.NoteEditorLogic.canAdd(files.size, max)) {
+                com.anyrent.pos.ui.orders.v2.AddTile(onAdd, size = 56.dp)
             }
         }
     }

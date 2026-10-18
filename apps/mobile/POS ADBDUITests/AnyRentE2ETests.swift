@@ -547,6 +547,45 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #1043: the order note in TIỀN looks like an item note line and opens the same sheet ("Ghi chú đơn"); the note
+    /// shows on the entry after Lưu, and "Xoá ghi chú" clears it again
+    func test8hCartOrderNoteSheet() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        let entry = app.buttons.matching(NSPredicate(format: "label IN %@", ["Order note", "Ghi chú đơn"])).firstMatch
+        XCTAssertTrue(e2e.scrollTo(entry), "the order note entry is in TIỀN")
+        sleep(1)
+        e2e.shot("1043a-cart-order-note-empty")
+        entry.tap()
+        let title = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Order note", "Ghi chú đơn"])).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "the entry opens the Ghi chú đơn sheet")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "the keyboard opens, as in the item sheet")
+        XCTAssertTrue(e2e.element(labelBeginsWith: ["Photos", "Ảnh"]).exists, "a new order keeps the note photos (#480)")
+        sleep(1)
+        e2e.shot("1043b-cart-order-note-sheet")
+        app.textViews.firstMatch.typeText("Giao trước 9h sáng thứ 7\nKhách lấy tại tiệm, gọi trước 30 phút")
+        e2e.shot("1043c-cart-order-note-typed")
+        e2e.button(["Lưu", "Save"]).tap()
+        sleep(2)
+        let filled = app.buttons.matching(NSPredicate(format: "value CONTAINS 'Giao trước 9h'")).firstMatch
+        XCTAssertTrue(filled.waitForExistence(timeout: 5), "the note shows on the entry")
+        _ = e2e.scrollTo(filled)
+        e2e.shot("1043d-cart-order-note-filled")
+        filled.tap()
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "the filled entry opens the sheet again")
+        XCTAssertEqual(app.textViews.firstMatch.value as? String, "Giao trước 9h sáng thứ 7\nKhách lấy tại tiệm, gọi trước 30 phút",
+                       "the sheet is prefilled")
+        e2e.button(["Xoá ghi chú", "Delete note"]).tap()
+        sleep(2)
+        XCTAssertTrue(entry.waitForExistence(timeout: 5), "Xoá ghi chú empties the entry")
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "value CONTAINS 'Giao trước 9h'")).firstMatch.exists)
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
     /// #893: swiping a cart line right-to-left removes it (red "Xoá" when the swipe stops halfway)
     func test8gCartSwipeDelete() throws {
         try e2e.requireFlag("newProducts")

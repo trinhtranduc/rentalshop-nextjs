@@ -2733,3 +2733,8 @@
 
 /* #1024: VoiceOver on the cart MÓN header "Thêm" */
 "products.cart.addItem.accessibility" = "Add item";
+/* #1043: the cart's order note entry and its sheet (the item note sheet) */
+"cart.orderNote.title" = "Order note";
+"cart.orderNote.placeholder" = "e.g. deliver before 9am, the customer picks up in store";
+"cart.orderNote.hint" = "For the whole order. Each item's note is under that item.";
+"cart.orderNote.photos" = "%d photos";

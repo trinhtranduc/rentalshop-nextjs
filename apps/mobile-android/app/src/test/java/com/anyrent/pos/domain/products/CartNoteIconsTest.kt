@@ -37,4 +37,14 @@ class CartNoteIconsTest {
         assertEquals("Size M", has.text)
         assertEquals("Ghi chú cho Áo dài", has.actionLabel)
     }
+
+    /** #1043: the order note uses the item note sheet; photos (#480) only on a new order (iOS ProductsV2Tests) */
+    @Test
+    fun orderNoteSheetPhotosOnlyOnNewOrder() {
+        assertEquals(5, CartV2Logic.orderNoteMaxPhotos(editMode = false))
+        assertEquals(com.anyrent.pos.domain.orders.OrderDetailLogic.MAX_NOTE_PHOTOS, CartV2Logic.orderNoteMaxPhotos(editMode = false))
+        assertEquals(0, CartV2Logic.orderNoteMaxPhotos(editMode = true))
+        // the cart entry shows the order note on one line, like an item note
+        assertEquals("Giao trước 9h Khách lấy tại tiệm", CartV2Logic.itemNoteLine("Giao trước 9h\nKhách lấy tại tiệm"))
+    }
 }

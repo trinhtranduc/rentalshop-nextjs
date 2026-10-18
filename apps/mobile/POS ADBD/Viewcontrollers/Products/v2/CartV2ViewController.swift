@@ -326,13 +326,7 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(V2.divider())
         }
 
-        let note = V2ValueRow(title: "products.cart.note".localized(), icon: CartV2Icon.orderNote.rawValue) // #1024
-        let noteText = (cart.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        note.valueLabel.text = noteText.isEmpty ? "products.cart.addNote".localized() : noteText
-        note.valueLabel.textColor = noteText.isEmpty ? DS.Color.primary : DS.Color.textMuted
-        note.valueLabel.lineBreakMode = .byTruncatingTail
-        note.addTarget(self, action: #selector(editNote), for: .touchUpInside)
-        content.addArrangedSubview(note)
+        content.addArrangedSubview(orderNoteRow()) // #1043: like an item's note line; opens the same sheet
         content.addArrangedSubview(UIView.spacer(height: 24))
 
         if cart.isEditMode {
@@ -577,32 +571,77 @@ final class CartV2ViewController: BaseViewControler {
     /// #684 (canvas N1), #1024 (option A): pencil + "Ghi chú" (grey) when the line has no note, else pencil + the
     /// note on one line, cut with "…", in a light box
     private func itemNoteButton(_ item: CartItem, index: Int) -> UIButton {
+        let spoken = CartV2Logic.itemNoteSpoken(productName: item.productName, note: item.note)
+        return noteEntryButton(icon: .itemNote, note: item.note, emptyTitle: "cart.itemNote.label".localized(),
+                               label: spoken.label, value: spoken.value) { [weak self] in self?.openItemNote(index: index) }
+    }
+
+    /// #1024 option A / #1043: icon + the word (grey) when there is no note, else icon + the note on one line, cut
+    /// with "…", in a light box. The item note line and the order note line are the same button.
+    private func noteEntryButton(icon: CartV2Icon, note: String?, emptyTitle: String, label: String, value: String?,
+                                 action: @escaping () -> Void) -> UIButton {
         let button = UIButton(type: .system)
         button.contentHorizontalAlignment = .leading
         button.titleLabel?.numberOfLines = 1
         button.titleLabel?.lineBreakMode = .byTruncatingTail
-        button.setImage(DS.symbol(CartV2Icon.itemNote.rawValue, 15, weight: .medium), for: .normal)
+        button.setImage(DS.symbol(icon.rawValue, 15, weight: .medium), for: .normal)
         button.tintColor = UIColor(hexString: "64748B")
         button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -3, bottom: 0, right: 3)
-        if let note = CartV2Logic.itemNoteLine(item.note) {
-            button.setTitle(note, for: .normal)
+        if let line = CartV2Logic.itemNoteLine(note) {
+            button.setTitle(line, for: .normal)
             button.titleLabel?.font = Utils.regularFont(size: DS.TextSize.secondary)
             button.setTitleColor(UIColor(hexString: "334155"), for: .normal)
             button.backgroundColor = UIColor(hexString: "F8FAFC")
             button.layer.cornerRadius = 8
             button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 8)
         } else {
-            button.setTitle("cart.itemNote.label".localized(), for: .normal)
+            button.setTitle(emptyTitle, for: .normal)
             button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
             button.setTitleColor(UIColor(hexString: "64748B"), for: .normal)
             button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 3, bottom: 4, right: 8)
         }
-        let spoken = CartV2Logic.itemNoteSpoken(productName: item.productName, note: item.note)
-        button.accessibilityLabel = spoken.label
-        button.accessibilityValue = spoken.value
-        button.addAction(UIAction { [weak self] _ in self?.openItemNote(index: index) }, for: .touchUpInside)
+        button.accessibilityLabel = label
+        button.accessibilityValue = value
+        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
         button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
         return button
+    }
+
+    /// #1043: the order note in TIỀN — the note entry with the order-note icon (+ a camera and the photo count on a
+    /// new order); opens the "Ghi chú đơn" sheet
+    private func orderNoteRow() -> UIView {
+        let photoCount = cart.isEditMode ? 0 : CartStore.shared.noteImageData.count
+        let photosText = photoCount > 0 ? String(format: "cart.orderNote.photos".localized(), photoCount) : nil
+        let value = [CartV2Logic.noteText(cart.notes), photosText].compactMap { $0 }.joined(separator: ", ")
+        let button = noteEntryButton(icon: .orderNote, note: cart.notes, emptyTitle: "cart.orderNote.title".localized(),
+                                     label: "cart.orderNote.title".localized(), value: value.isEmpty ? nil : value) { [weak self] in
+            self?.editNote()
+        }
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let line = UIStackView(arrangedSubviews: [button])
+        line.alignment = .center
+        line.spacing = 8
+        if photoCount > 0 {
+            let photos = UIButton(type: .system)
+            photos.setImage(DS.symbol("camera", 14, weight: .medium), for: .normal)
+            photos.setTitle(" \(photoCount)", for: .normal)
+            photos.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
+            photos.tintColor = UIColor(hexString: "64748B")
+            photos.setTitleColor(UIColor(hexString: "64748B"), for: .normal)
+            photos.isAccessibilityElement = false // read in the note entry's value
+            photos.addAction(UIAction { [weak self] _ in self?.editNote() }, for: .touchUpInside)
+            photos.setContentHuggingPriority(.required, for: .horizontal)
+            photos.setContentCompressionResistancePriority(.required, for: .horizontal)
+            line.addArrangedSubview(photos)
+        }
+        line.addArrangedSubview(UIView())
+        let row = UIView()
+        row.addSubview(line)
+        line.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.top.bottom.equalToSuperview().inset(10)
+        }
+        return row
     }
 
     /// #684 (canvas N2): the separate "Ghi chú món" sheet; an empty text clears the note
@@ -874,8 +913,26 @@ final class CartV2ViewController: BaseViewControler {
         present(picker, animated: true)
     }
 
-    @objc private func editNote() {
-        OrderNotesEditorViewController.presentCartNote(from: self) // #477: note editor of board GC-ghi-chu
+    /// #1043: the "Ghi chú đơn" sheet — the item note sheet with the order's note (prefilled while editing an order).
+    /// #480: on a new order it also holds the note photos, kept by the cart (memory only) and sent on create; editing
+    /// an existing order stays text only (its photos live on the order detail).
+    private func editNote() {
+        let store = CartStore.shared
+        let editMode = store.cart.isEditMode
+        // Photos already kept by the cart keep their compressed bytes; only new picks are compressed
+        let kept = editMode ? [] : store.noteImageData.compactMap { data in UIImage(data: data).map { ($0, data) } }
+        var keptData: [ObjectIdentifier: Data] = [:]
+        kept.forEach { keptData[ObjectIdentifier($0.0)] = $0.1 }
+        let sheet = CartItemNoteSheet(title: "cart.orderNote.title".localized(), subtitle: nil, note: store.cart.notes,
+                                      placeholder: "cart.orderNote.placeholder".localized(),
+                                      hint: "cart.orderNote.hint".localized(),
+                                      photos: kept.map { $0.0 }, maxPhotos: CartV2Logic.orderNoteMaxPhotos(editMode: editMode))
+        sheet.onSaveWithPhotos = { text, images in
+            store.setNotes(CartV2Logic.noteText(text))
+            guard !editMode else { return }
+            store.setNoteImageData(images.compactMap { keptData[ObjectIdentifier($0)] ?? NoteEditorLogic.compressedJPEG($0) })
+        }
+        present(sheet, animated: true)
     }
 
     @objc private func ctaTapped() {
@@ -1365,17 +1422,41 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     }
 }
 
-/// #684 (canvas N2): "Ghi chú món" — title + ✕, the product name, a text area, "Xoá ghi chú" / "Lưu"
-final class CartItemNoteSheet: UIViewController {
+/// #684 (canvas N2): "Ghi chú món" — title + ✕, the product name, a text area, "Xoá ghi chú" / "Lưu".
+/// #1043: the same sheet is the cart's "Ghi chú đơn" (no subtitle; on a new order a row of up to 5 note photos, #480).
+final class CartItemNoteSheet: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    /// The item note: the text (nil = cleared)
     var onSave: ((String?) -> Void)?
-    private let productName: String
+    /// #1043 order note: the text (nil = cleared) and the photos
+    var onSaveWithPhotos: ((String?, [UIImage]) -> Void)?
+    private let titleText: String
+    private let subtitle: String?
     private let note: String?
+    private let hintText: String
+    private let maxPhotos: Int
+    private var photos: [UIImage]
     private let textView = UITextView()
-    private let placeholder = V2.label("cart.itemNote.placeholder".localized(), size: DS.TextSize.input, color: UIColor(hexString: "94A3B8"))
+    private let placeholder: UILabel
+    private let photoTiles = UIStackView()
+    private let photoCount = V2.label(size: DS.TextSize.secondary, color: UIColor(hexString: "64748B"))
 
-    init(productName: String, note: String?) {
-        self.productName = productName
+    private static let tileSize: CGFloat = 56
+
+    convenience init(productName: String, note: String?) {
+        self.init(title: "cart.itemNote.title".localized(), subtitle: productName, note: note,
+                  placeholder: "cart.itemNote.placeholder".localized(), hint: "cart.itemNote.hint".localized())
+    }
+
+    /// `maxPhotos` 0 = no photo row
+    init(title: String, subtitle: String?, note: String?, placeholder: String, hint: String,
+         photos: [UIImage] = [], maxPhotos: Int = 0) {
+        titleText = title
+        self.subtitle = subtitle
         self.note = note
+        hintText = hint
+        self.maxPhotos = maxPhotos
+        self.photos = Array(photos.prefix(maxPhotos))
+        self.placeholder = V2.label(placeholder, size: DS.TextSize.input, color: UIColor(hexString: "94A3B8"))
         super.init(nibName: nil, bundle: nil)
         if let sheet = sheetPresentationController {
             sheet.detents = [.large()]
@@ -1389,7 +1470,7 @@ final class CartItemNoteSheet: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = DS.Color.surface
-        let title = V2.label("cart.itemNote.title".localized(), size: 20, weight: .bold)
+        let title = V2.label(titleText, size: 20, weight: .bold)
         title.accessibilityTraits = UIAccessibilityTraitHeader
         let close = UIButton(type: .system)
         close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
@@ -1402,7 +1483,6 @@ final class CartItemNoteSheet: UIViewController {
         let header = UIStackView(arrangedSubviews: [title, close])
         header.alignment = .center
         header.spacing = DS.Spacing.md
-        let name = V2.label(productName, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 2)
 
         textView.text = note
         textView.font = Utils.regularFont(size: DS.TextSize.input)
@@ -1411,7 +1491,7 @@ final class CartItemNoteSheet: UIViewController {
         textView.layer.borderColor = DS.Color.primary.cgColor
         textView.layer.cornerRadius = 12
         textView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
-        textView.accessibilityLabel = "cart.itemNote.title".localized()
+        textView.accessibilityLabel = titleText
         textView.delegate = self
         textView.snp.makeConstraints { make in make.height.equalTo(140) }
         textView.addSubview(placeholder)
@@ -1420,7 +1500,7 @@ final class CartItemNoteSheet: UIViewController {
             make.leading.equalToSuperview().offset(15)
         }
         placeholder.isHidden = !(note ?? "").isEmpty
-        let hint = V2.label("cart.itemNote.hint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+        let hint = V2.label(hintText, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
 
         let clear = UIButton(type: .system)
         clear.setTitle("cart.itemNote.clear".localized(), for: .normal)
@@ -1438,26 +1518,162 @@ final class CartItemNoteSheet: UIViewController {
         buttons.distribution = .fillEqually
         buttons.snp.makeConstraints { make in make.height.equalTo(50) }
 
-        let stack = UIStackView(arrangedSubviews: [header, name, textView, hint, buttons])
+        var rows: [UIView] = [header]
+        if let subtitle {
+            rows.append(V2.label(subtitle, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 2))
+        }
+        rows += [textView, hint]
+        if maxPhotos > 0 {
+            rows.append(photoRow())
+        }
+        rows.append(buttons)
+        let stack = UIStackView(arrangedSubviews: rows)
         stack.axis = .vertical
         stack.spacing = 12
-        stack.setCustomSpacing(16, after: name)
-        stack.setCustomSpacing(22, after: hint)
+        stack.setCustomSpacing(16, after: subtitle == nil ? header : rows[1])
+        stack.setCustomSpacing(22, after: rows[rows.count - 2])
         view.addSubview(stack)
         stack.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(28)
             make.leading.trailing.equalToSuperview().inset(20)
         }
+        renderPhotos()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        // Not again after the photo picker closes
+        guard presentedViewController == nil, !isBeingDismissed, !didFocus else { return }
+        didFocus = true
         textView.becomeFirstResponder()
     }
 
+    private var didFocus = false
+
     private func finish(_ text: String?) {
         let onSave = self.onSave
-        dismiss(animated: true) { onSave?(text) }
+        let onSaveWithPhotos = self.onSaveWithPhotos
+        let photos = self.photos
+        view.endEditing(true)
+        dismiss(animated: true) {
+            onSave?(text)
+            onSaveWithPhotos?(text, photos)
+        }
+    }
+
+    // MARK: - Photos (#1043, order note on a new order)
+
+    /// "Ảnh" + "2/5", then 56pt tiles with a × and a "+" tile while there is room
+    private func photoRow() -> UIView {
+        let title = V2.label("Photos".localized(), size: DS.TextSize.body, weight: .bold)
+        let titleRow = UIStackView(arrangedSubviews: [title, UIView(), photoCount])
+        titleRow.alignment = .firstBaseline
+        photoTiles.axis = .horizontal
+        photoTiles.spacing = 10
+        photoTiles.alignment = .center
+        let tilesRow = UIStackView(arrangedSubviews: [photoTiles, UIView()])
+        let stack = UIStackView(arrangedSubviews: [titleRow, tilesRow])
+        stack.axis = .vertical
+        stack.spacing = 8
+        return stack
+    }
+
+    private func renderPhotos() {
+        guard maxPhotos > 0 else { return }
+        photoTiles.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        for (index, image) in photos.enumerated() {
+            photoTiles.addArrangedSubview(photoTile(image, index: index))
+        }
+        if NoteEditorLogic.canAdd(count: photos.count, max: maxPhotos) {
+            let add = UIButton(type: .system)
+            add.setImage(DS.symbol("camera", 18, weight: .medium), for: .normal)
+            add.tintColor = DS.Color.primary
+            add.backgroundColor = V2.sectionFill
+            add.layer.cornerRadius = 10
+            add.layer.borderWidth = 1
+            add.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
+            add.accessibilityLabel = "Add photos".localized()
+            add.addAction(UIAction { [weak self, weak add] _ in self?.addPhoto(from: add) }, for: .touchUpInside)
+            add.snp.makeConstraints { make in make.size.equalTo(Self.tileSize) }
+            photoTiles.addArrangedSubview(add)
+        }
+        photoCount.text = NoteEditorLogic.countLabel(count: photos.count, max: maxPhotos)
+    }
+
+    private func photoTile(_ image: UIImage, index: Int) -> UIView {
+        let open = UIButton(type: .custom)
+        open.setImage(image, for: .normal)
+        open.imageView?.contentMode = .scaleAspectFill
+        open.contentHorizontalAlignment = .fill
+        open.contentVerticalAlignment = .fill
+        open.clipsToBounds = true
+        open.layer.cornerRadius = 10
+        open.accessibilityLabel = "Note photo".localized()
+        open.addAction(UIAction { [weak self] _ in
+            let viewer = NoteImagePreviewViewController(image: image)
+            viewer.modalPresentationStyle = .fullScreen
+            self?.present(viewer, animated: true)
+        }, for: .touchUpInside)
+        let remove = UIButton(type: .system)
+        remove.setImage(DS.symbol("xmark", 10, weight: .bold), for: .normal)
+        remove.tintColor = .white
+        remove.backgroundColor = DS.Color.text.withAlphaComponent(0.85)
+        remove.layer.cornerRadius = 11
+        remove.accessibilityLabel = "Remove photo".localized()
+        remove.addAction(UIAction { [weak self] _ in
+            guard let self, self.photos.indices.contains(index) else { return }
+            self.photos.remove(at: index)
+            self.renderPhotos()
+        }, for: .touchUpInside)
+        let tile = UIView()
+        tile.addSubview(open)
+        tile.addSubview(remove)
+        tile.snp.makeConstraints { make in make.size.equalTo(Self.tileSize) }
+        open.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        remove.snp.makeConstraints { make in
+            make.size.equalTo(22)
+            make.top.trailing.equalToSuperview().inset(3)
+        }
+        return tile
+    }
+
+    private func addPhoto(from source: UIView?) {
+        guard NoteEditorLogic.canAdd(count: photos.count, max: maxPhotos) else { return }
+        view.endEditing(true)
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Photo Library".localized(), style: .default) { [weak self] _ in
+            self?.presentPicker(.photoLibrary)
+        })
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            alert.addAction(UIAlertAction(title: "Camera".localized(), style: .default) { [weak self] _ in
+                self?.presentPicker(.camera)
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        if let popover = alert.popoverPresentationController, let source {
+            popover.sourceView = source
+            popover.sourceRect = source.bounds
+        }
+        present(alert, animated: true)
+    }
+
+    private func presentPicker(_ source: UIImagePickerController.SourceType) {
+        let picker = UIImagePickerController()
+        picker.sourceType = source
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String: Any]) {
+        picker.dismiss(animated: true)
+        guard let image = info[UIImagePickerControllerOriginalImage] as? UIImage,
+              NoteEditorLogic.canAdd(count: photos.count, max: maxPhotos) else { return }
+        photos.append(image)
+        renderPhotos()
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 }
 
