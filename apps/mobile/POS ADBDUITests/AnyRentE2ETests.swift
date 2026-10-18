@@ -1181,7 +1181,8 @@ final class AnyRentE2ETests: XCTestCase {
         } else {
             e2e.soft(false, "summary line and Giá trị đơn mới tile")
         }
-        title.swipeUp()
+        // The card sits under the tiles, chart and Hôm nay counters
+        app.swipeUp()
         sleep(1)
         e2e.shot("75-overview-today-orders")
 
