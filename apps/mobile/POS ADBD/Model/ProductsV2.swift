@@ -423,14 +423,18 @@ struct CartLineCalc: Equatable {
     }
 }
 
-/// #1024 (option A, icon + word): the cart's icons; Android `CartV2Icon` uses the Material twin
+/// #1024 (option A, icon + word): the cart's icons; Android `CartV2Icon` uses the Material twin.
+/// #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): one edit icon for every edit in the cart
 enum CartV2Icon: String {
-    /// MÓN header "Thêm"
+    /// MÓN header "Thêm" (SF Symbol)
     case addItem = "plus.circle"
+    /// Giảm giá, Đặt cọc, the order note, a line's note: the mockup's pen-line, drawn by `DS.editIcon` (`V2.editPencil`)
+    case edit = "pen-line"
+
     /// a line's "Ghi chú" / its note
-    case itemNote = "square.and.pencil"
+    static let itemNote = CartV2Icon.edit
     /// the order's "Ghi chú" row in TIỀN
-    case orderNote = "note.text"
+    static let orderNote = CartV2Icon.edit
 }
 
 /// #1056 (owner, mockup cartmoney): the rows of the cart's TIỀN section; editable rows open a sheet (Android `CartMoneyRow`)

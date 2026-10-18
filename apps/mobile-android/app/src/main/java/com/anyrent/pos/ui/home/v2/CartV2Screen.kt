@@ -117,8 +117,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material.icons.outlined.AddCircleOutline
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Edit
+import com.anyrent.pos.ui.common.AppIcons
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import com.anyrent.pos.domain.products.CartV2Icon
@@ -1169,13 +1168,25 @@ private fun CartPricingSheet(
 /** #1024: the Material icon of each cart icon (iOS SF Symbols in `CartV2Icon`) */
 internal fun cartIcon(icon: CartV2Icon): ImageVector = when (icon) {
     CartV2Icon.ADD_ITEM -> Icons.Outlined.AddCircleOutline
-    CartV2Icon.ITEM_NOTE -> Icons.Outlined.Edit
-    CartV2Icon.ORDER_NOTE -> Icons.Outlined.Description
+    CartV2Icon.EDIT -> CartEditIcon
 }
 
 /**
- * #684 (canvas N1), #1024 (option A, iOS itemNoteButton): pencil + "Ghi chú" (grey) when the line has no note, else
- * pencil + the note on one line, cut with "…", in a light box. TalkBack reads the text and "Ghi chú cho <product>".
+ * #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): the cart's one edit icon — the mockup's blue pen-line
+ * after the text of every row that opens a sheet (Giảm giá, Đặt cọc, the order note, a line's note). iOS `V2.editPencil`
+ */
+internal val CartEditIcon: ImageVector get() = AppIcons.EditLine
+internal val CartEditIconSize = 15.dp
+
+@Composable
+private fun CartEditPencil(modifier: Modifier = Modifier) {
+    Icon(cartIcon(CartV2Icon.EDIT), contentDescription = null, tint = DS.Colors.Primary, modifier = modifier.size(CartEditIconSize))
+}
+
+/**
+ * #684 (canvas N1), #1024 (option A, iOS itemNoteButton): "Ghi chú" when the line has no note, else the note in a
+ * light box. #1061: blue "Ghi chú" / the note, then the cart's one blue edit icon. TalkBack reads the text and
+ * "Ghi chú cho <product>".
  */
 @Composable
 private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Unit) {
@@ -1184,7 +1195,7 @@ private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Uni
         noteLabel = stringResource(R.string.v2_item_note_label),
         accessibilityFormat = stringResource(R.string.v2_item_note_accessibility),
     )
-    NoteEntry(CartV2Icon.ITEM_NOTE, note, emptyText = spoken.text, spokenText = spoken.text, actionLabel = spoken.actionLabel, onClick = onClick)
+    NoteEntry(note, emptyText = spoken.text, spokenText = spoken.text, actionLabel = spoken.actionLabel, onClick = onClick)
 }
 
 /**
@@ -1214,7 +1225,7 @@ private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, 
         Row(
             Modifier.weight(1f),
             verticalAlignment = align,
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+            horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.End), // #1061: mockup cartedit A, value 7dp before the pencil
         ) {
             Text(
                 value,
@@ -1231,8 +1242,7 @@ private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, 
                     Text("$photoCount", fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
                 }
             }
-            Icon(Icons.Outlined.Edit, contentDescription = null, tint = DS.Colors.Primary,
-                modifier = Modifier.padding(top = if (isNoteText) 2.dp else 0.dp).size(16.dp))
+            CartEditPencil(Modifier.padding(top = if (isNoteText) 2.dp else 0.dp))
         }
     }
 }
@@ -1242,7 +1252,7 @@ private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, 
  * on as many lines as it needs (it was one line cut with "…")
  */
 @Composable
-private fun NoteEntry(icon: CartV2Icon, note: String?, emptyText: String, spokenText: String, actionLabel: String, onClick: () -> Unit) {
+private fun NoteEntry(note: String?, emptyText: String, spokenText: String, actionLabel: String, onClick: () -> Unit) {
     val shown = CartV2Logic.noteShown(note)
     val boxed = if (shown != null) Modifier.background(Color(0xFFF8FAFC)) else Modifier
     Row(
@@ -1253,13 +1263,15 @@ private fun NoteEntry(icon: CartV2Icon, note: String?, emptyText: String, spoken
         verticalAlignment = if (shown != null) Alignment.Top else Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(cartIcon(icon), contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.padding(top = if (shown != null) 2.dp else 0.dp).size(16.dp))
         Text(
             shown ?: emptyText,
             fontSize = DS.TextSize.Secondary,
             fontWeight = if (shown != null) FontWeight.Normal else FontWeight.SemiBold,
-            color = if (shown != null) Color(0xFF334155) else Color(0xFF64748B),
+            color = if (shown != null) Color(0xFF334155) else DS.Colors.Primary,
+            modifier = Modifier.weight(1f, fill = false),
         )
+        // #1061: the text, then the cart's one blue edit icon, like the TIỀN rows
+        CartEditPencil(Modifier.padding(top = if (shown != null) 2.dp else 0.dp))
     }
 }
 

@@ -17,6 +17,20 @@ enum V2 {
     static let warn = UIColor(hexString: "9A3412")
     static let danger = UIColor(hexString: "B91C1C")
 
+    /// #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): the size of the cart's one edit icon
+    static let editPencilSize: CGFloat = 15
+
+    /// #1061: the cart's one edit icon — the mockup's blue pen-line (`DS.editIcon`) after the text of every row that
+    /// opens a sheet (Giảm giá, Đặt cọc, the order note, a line's note). Android `CartEditIcon`
+    static func editPencil() -> UIImageView {
+        let pencil = UIImageView(image: DS.editIcon(size: editPencilSize))
+        pencil.tintColor = DS.Color.primary
+        pencil.contentMode = .center
+        pencil.setContentHuggingPriority(.required, for: .horizontal)
+        pencil.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return pencil
+    }
+
     static func label(_ text: String? = nil, size: CGFloat, weight: UIFont.Weight = .regular,
                       color: UIColor = DS.Color.text, lines: Int = 1) -> UILabel {
         let label = UILabel()
@@ -234,13 +248,15 @@ final class V2ValueRow: UIControl {
     let titleLabel = V2.label(size: DS.TextSize.body)
     let valueLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
     let chevron = UIImageView(image: DS.symbol("chevron.right", 16))
-    /// #1056: the small blue pencil after the value of an editable row
-    let pencil = UIImageView(image: DS.symbol("pencil", 13, weight: .semibold))
+    /// #1056: the small blue pencil after the value of an editable row (#1061: the cart's one edit icon)
+    let pencil = V2.editPencil()
     /// #1056: views between the value and the pencil (the order note's camera + photo count)
     let accessories = UIStackView()
     /// #1056: read after the value on an editable row (the note photos, "2 ảnh")
     var spokenExtra: String?
     private let editable: Bool
+    /// #1061 (mockup cartedit A): the value sits 7pt before the pencil, or 6pt before the camera + count
+    private var valueToAccessories: Constraint?
 
     /// `icon`: an SF Symbol before the title (#1024: the cart's order note), grey; nil = none as before.
     /// `editable` (#1056, owner: blue = tappable): no ›, the value blue and bold, then a blue pencil; VoiceOver reads
@@ -260,8 +276,6 @@ final class V2ValueRow: UIControl {
             valueLabel.lineBreakMode = wrapsValue ? .byWordWrapping : .byTruncatingTail
             valueLabel.numberOfLines = wrapsValue ? 0 : 1
             valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-            pencil.tintColor = DS.Color.primary
-            pencil.contentMode = .center
             accessories.spacing = 3
             accessories.alignment = .center
             accessories.isUserInteractionEnabled = false
@@ -270,10 +284,10 @@ final class V2ValueRow: UIControl {
             pencil.snp.makeConstraints { make in
                 make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
                 if wrapsValue { make.centerY.equalTo(titleLabel) } else { make.centerY.equalToSuperview() }
-                make.width.height.equalTo(16)
+                make.width.height.equalTo(V2.editPencilSize)
             }
             accessories.snp.makeConstraints { make in
-                make.trailing.equalTo(pencil.snp.leading).offset(-6)
+                make.trailing.equalTo(pencil.snp.leading).offset(-7)
                 if wrapsValue { make.centerY.equalTo(titleLabel) } else { make.centerY.equalToSuperview() }
             }
             accessories.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -314,7 +328,7 @@ final class V2ValueRow: UIControl {
         valueLabel.snp.makeConstraints { make in
             make.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(DS.Spacing.sm)
             if editable {
-                make.trailing.equalTo(accessories.snp.leading).offset(-6)
+                valueToAccessories = make.trailing.equalTo(accessories.snp.leading).constraint
             } else {
                 make.trailing.equalTo(arrow.snp.leading).offset(chevron ? -6 : 0)
             }
@@ -332,6 +346,12 @@ final class V2ValueRow: UIControl {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    override func layoutSubviews() {
+        // the camera + count is added after init (the order note on a new order)
+        valueToAccessories?.update(offset: accessories.arrangedSubviews.isEmpty ? 0 : -6)
+        super.layoutSubviews()
+    }
+
     override var accessibilityLabel: String? {
         get { editable ? titleLabel.text : [titleLabel.text, valueLabel.text].compactMap { $0 }.joined(separator: ", ") }
         set {}
@@ -347,26 +367,30 @@ final class V2ValueRow: UIControl {
     }
 }
 
-/// #1056 (owner: "note cần xuống dòng"): a cart line's note entry — a grey pencil and "Ghi chú" when there is no note,
-/// else the pencil and the whole note on as many lines as it needs, in a light box (#1024 cut it to one line)
+/// #1056 (owner: "note cần xuống dòng"): a cart line's note entry — "Ghi chú" when there is no note, else the whole
+/// note on as many lines as it needs, in a light box (#1024 cut it to one line). #1061 (owner: "đổi icon edit không
+/// giống"): the text, then the cart's one blue edit icon (`V2.editPencil`) like the TIỀN rows; "Ghi chú" is blue
 final class CartNoteEntry: UIControl {
     let textLabel = UILabel()
-    private let icon = UIImageView(image: DS.symbol(CartV2Icon.itemNote.rawValue, 15, weight: .medium))
+    let pencil = V2.editPencil()
 
     init(note: String?, emptyTitle: String) {
         super.init(frame: .zero)
         let shown = CartV2Logic.noteShown(note)
-        icon.tintColor = UIColor(hexString: "64748B")
-        icon.contentMode = .center
-        icon.setContentHuggingPriority(.required, for: .horizontal)
         textLabel.numberOfLines = 0
         textLabel.lineBreakMode = .byWordWrapping
         textLabel.text = shown ?? emptyTitle
-        textLabel.font = shown == nil ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
-        textLabel.textColor = UIColor(hexString: shown == nil ? "64748B" : "334155")
-        let row = UIStackView(arrangedSubviews: [icon, textLabel])
+        let font = shown == nil ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
+        textLabel.font = font
+        textLabel.textColor = shown == nil ? DS.Color.primary : UIColor(hexString: "334155")
+        // the pencil sits on the text's first line
+        pencil.snp.makeConstraints { make in
+            make.width.equalTo(V2.editPencilSize)
+            make.height.equalTo(max(V2.editPencilSize, ceil(font.lineHeight)))
+        }
+        let row = UIStackView(arrangedSubviews: [textLabel, pencil])
         row.spacing = 6
-        row.alignment = .firstBaseline
+        row.alignment = .top
         row.isUserInteractionEnabled = false
         addSubview(row)
         if shown != nil {
@@ -376,7 +400,6 @@ final class CartNoteEntry: UIControl {
         let insets = shown == nil ? UIEdgeInsets(top: 4, left: 3, bottom: 4, right: 8)
             : UIEdgeInsets(top: 6, left: 9, bottom: 6, right: 10)
         row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(insets) }
-        icon.snp.makeConstraints { make in make.width.equalTo(18) }
         snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
         isAccessibilityElement = true
         accessibilityTraits = UIAccessibilityTraitButton

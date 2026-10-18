@@ -259,14 +259,41 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertFalse(ChangeHistoryLogic.canView("OUTLET_INVENTORY"))
     }
 
+    /// #1061: the item note line (empty or filled) and the TIỀN edit rows show the same blue pencil, after the text
+    func testCartUsesOnePencil() throws {
+        let money = V2ValueRow(title: "Giảm giá", editable: true)
+        let empty = CartNoteEntry(note: nil, emptyTitle: "Ghi chú")
+        let filled = CartNoteEntry(note: "Sửa eo 2cm", emptyTitle: "Ghi chú")
+        let icon = try XCTUnwrap(DS.editIcon(size: V2.editPencilSize))
+        XCTAssertEqual(icon.size, CGSize(width: V2.editPencilSize, height: V2.editPencilSize))
+        XCTAssertEqual(icon.renderingMode, .alwaysTemplate)
+        let reference = try XCTUnwrap(icon.pngData())
+        XCTAssertEqual(V2.editPencil().image?.pngData(), reference)
+        for pencil in [money.pencil, empty.pencil, filled.pencil] {
+            XCTAssertEqual(pencil.image?.pngData(), reference)
+            XCTAssertEqual(pencil.tintColor, DS.Color.primary)
+            XCTAssertFalse(pencil.isHidden)
+        }
+        // empty: "Ghi chú" in blue (blue = tappable); filled: the note in #334155
+        XCTAssertEqual(empty.textLabel.textColor, DS.Color.primary)
+        XCTAssertEqual(filled.textLabel.text, "Sửa eo 2cm")
+        XCTAssertEqual(filled.textLabel.textColor, UIColor(hexString: "334155"))
+        // the text first, the pencil after it, no other icon
+        for entry in [empty, filled] {
+            let row = try XCTUnwrap(entry.subviews.first as? UIStackView)
+            XCTAssertEqual(row.arrangedSubviews, [entry.textLabel, entry.pencil])
+        }
+    }
+
     /// #1024 (option A): the cart's icons, the item note on one line, and what VoiceOver reads
     func testCartIconsAndItemNoteLine() throws {
         XCTAssertEqual(CartV2Icon.addItem.rawValue, "plus.circle")
-        XCTAssertEqual(CartV2Icon.itemNote.rawValue, "square.and.pencil")
-        XCTAssertEqual(CartV2Icon.orderNote.rawValue, "note.text")
-        for icon in [CartV2Icon.addItem, .itemNote, .orderNote] {
-            XCTAssertNotNil(UIImage(systemName: icon.rawValue), "\(icon) is an SF Symbol")
-        }
+        // #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): one pen-line for every edit in the cart,
+        // drawn by DS.editIcon (SF `pencil.line` needs iOS 17)
+        XCTAssertEqual(CartV2Icon.edit.rawValue, "pen-line")
+        XCTAssertEqual(CartV2Icon.itemNote, .edit)
+        XCTAssertEqual(CartV2Icon.orderNote, .edit)
+        XCTAssertNotNil(UIImage(systemName: CartV2Icon.addItem.rawValue), "addItem is an SF Symbol")
         // nil = the entry shows "Ghi chú"; a note is one line (the button cuts it with "…")
         XCTAssertNil(CartV2Logic.itemNoteLine(nil))
         XCTAssertNil(CartV2Logic.itemNoteLine(" \n\t "))

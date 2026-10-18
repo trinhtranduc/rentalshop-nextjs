@@ -685,6 +685,43 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
+    /// #1061 (owner: "đổi icon edit không giống", mockup cartedit option A): every edit in the cart shows the one blue
+    /// pen-line after blue text — the item note ("Ghi chú", then the note), Giảm giá, Cọc, the order note. onepencil-*.png
+    func test8kCartOnePencil() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        let discount = e2e.element(labelBeginsWith: ["Discount", "Giảm giá"])
+        XCTAssertTrue(e2e.scrollTo(discount), "Giảm giá row in TIỀN")
+        discount.tap()
+        for key in ["5", "0", "0", "0", "0"] { e2e.tapIfExists(e2e.button([key]), timeout: 2) }
+        e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+        sleep(2)
+        let save = e2e.button(["Lưu", "Save"])
+        let orderNote = e2e.button(["Note", "Ghi chú"])
+        XCTAssertTrue(e2e.scrollTo(orderNote), "the order note row in TIỀN")
+        orderNote.tap()
+        XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 5), "the order note sheet opens")
+        app.textViews.firstMatch.typeText("Khách lấy lúc 9h, giao tại shop, gọi trước 30 phút")
+        save.tap()
+        sleep(2)
+        app.swipeDown()
+        sleep(1)
+        e2e.shot("onepencil-1-item-note-empty")
+        let itemNote = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Ghi chú cho' OR label BEGINSWITH 'Note for'")).firstMatch
+        XCTAssertTrue(itemNote.waitForExistence(timeout: 5), "the item note entry")
+        itemNote.tap()
+        XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 5), "the item note sheet opens")
+        app.textViews.firstMatch.typeText("Sửa eo 2cm, lên lai 3cm, giao kèm móc treo")
+        save.tap()
+        sleep(2)
+        e2e.shot("onepencil-2-item-note-filled")
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
     /// #893: swiping a cart line right-to-left removes it (red "Xoá" when the swipe stops halfway)
     func test8gCartSwipeDelete() throws {
         try e2e.requireFlag("newProducts")

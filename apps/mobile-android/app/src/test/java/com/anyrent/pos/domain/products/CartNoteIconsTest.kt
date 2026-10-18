@@ -10,10 +10,13 @@ class CartNoteIconsTest {
     fun iconsMatchIos() {
         assertEquals("AddCircleOutline", CartV2Icon.ADD_ITEM.material)
         assertEquals("plus.circle", CartV2Icon.ADD_ITEM.ios)
-        assertEquals("Edit", CartV2Icon.ITEM_NOTE.material)
-        assertEquals("square.and.pencil", CartV2Icon.ITEM_NOTE.ios)
-        assertEquals("Description", CartV2Icon.ORDER_NOTE.material)
-        assertEquals("note.text", CartV2Icon.ORDER_NOTE.ios)
+        // #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): one pen-line for every edit in the cart
+        // (`CartIcons.EditLine`, the mockup's Lucide paths; iOS DS.editIcon)
+        assertEquals("EditLine", CartV2Icon.EDIT.material)
+        assertEquals("pen-line", CartV2Icon.EDIT.ios)
+        assertEquals(CartV2Icon.EDIT, CartV2Icon.ITEM_NOTE)
+        assertEquals(CartV2Icon.EDIT, CartV2Icon.ORDER_NOTE)
+        assertEquals(listOf(CartV2Icon.ADD_ITEM, CartV2Icon.EDIT), CartV2Icon.values().toList())
     }
 
     @Test
