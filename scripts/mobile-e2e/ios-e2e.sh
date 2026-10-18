@@ -6,7 +6,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|staff|inventory] [--only <testMethod>] [--skip <testMethod>]... [--lang vi|en]
+Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|staff|inventory] [--only <testMethod>] [--skip <testMethod>]... [--lang vi|en] [--no-stage]
        scripts/mobile-e2e/ios-e2e.sh --scenario <slug> --role owner|staff|kho [--only <testMethod>] [--lang vi|en]
        scripts/mobile-e2e/ios-e2e.sh --email <e> --password <p> --role merchant|staff|inventory [--label <dir>]
 
@@ -26,6 +26,9 @@ Builds the Development scheme and runs -only-testing:"POS ADBDUITests/AnyRentE2E
   --email/--password log in as any account; --role says what the account is (merchant|staff|inventory), --label names
                      the screenshot dir (default: the email's local part)
   --lang vi|en       app language for the run (xcodebuild -testLanguage); default: simulator setting
+  --no-stage         skip the staging step. By default a merchant run (seeded merchant1, no --scenario/--email) first runs
+                     prepare-accounts.sh staged on $E2E_DATABASE_URL: the three products test8cOverlapTagAndRoleSheet and
+                     test8dCartLines need (idempotent; a failure only warns)
 
 Credentials, flags and the output dir reach the UI test through TEST_RUNNER_* variables
 (xcodebuild strips the prefix): E2E_EMAIL, E2E_PASSWORD, E2E_ROLE, E2E_FEATURES, E2E_OUT_DIR.
@@ -37,6 +40,7 @@ EOF
 }
 
 FRESH=0
+STAGE=1
 ONLY=""
 SKIPS=()
 SCENARIO=""; ROLE_ARG=""; ARG_EMAIL=""; ARG_PASSWORD=""; LABEL=""
@@ -45,6 +49,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
     --fresh) FRESH=1 ;;
+    --no-stage) STAGE=0 ;;
     --account) E2E_ACCOUNT="${2:?--account needs merchant|staff|inventory}"; shift ;;
     --only) ONLY="${2:?--only needs a test method}"; shift ;;
     --skip) SKIPS+=("-skip-testing:POS ADBDUITests/AnyRentE2ETests/${2:?--skip needs a test method}"); shift ;;
@@ -108,6 +113,16 @@ echo "Simulator: $E2E_SIMULATOR ($UDID)"
 if ! curl -fsS -m 3 "$(e2e_api_base_url)/api/health" >/dev/null 2>&1; then
   echo "API not reachable at $(e2e_api_base_url). Run scripts/mobile-e2e/api-local.sh start first." >&2
   exit 1
+fi
+
+# test8c / test8d need three staged products on merchant1 (prepare-accounts.sh staged, #1040)
+if [ "$STAGE" = 1 ] && [ -z "$SCENARIO" ] && [ -z "$ARG_EMAIL" ] && [ "$E2E_ACCOUNT" = merchant ]; then
+  if command -v psql >/dev/null 2>&1; then
+    "$(dirname "${BASH_SOURCE[0]}")/prepare-accounts.sh" staged \
+      || echo "WARNING: prepare-accounts.sh staged failed; test8cOverlapTagAndRoleSheet and test8dCartLines will fail" >&2
+  else
+    echo "WARNING: no psql; skipped prepare-accounts.sh staged (test8c / test8d need it)" >&2
+  fi
 fi
 
 xcrun simctl boot "$UDID" 2>/dev/null || true

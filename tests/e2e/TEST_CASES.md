@@ -981,7 +981,7 @@ Lượt chạy đầy đủ gần nhất (merchant1, API cục bộ, tiếng Vi�
 | `test7jTodayWorkAndNotPickedUp` | thẻ việc hôm nay, Chưa lấy đồ | **fail**: không thấy mục "Việc hôm nay" (iOS nay dùng thẻ "Hôm nay"; test có thể cũ) |
 | `test7eOverlapSetting` | "Cho tạo đơn khi trùng lịch" bật / tắt | không có trong log của lượt này (log có thể bị cắt vì ổ đĩa đầy giữa chừng): cần chạy lại |
 | `test8StaffRestrictions`, `test8bStaffNoHistory`, `test8bInventoryRole` | staff và kho: hạn chế, không có lịch sử, quản lý sản phẩm | chạy riêng bằng `--account staff` / `inventory` |
-| `test8cOverlapTagAndRoleSheet`, `test8dCartLines` | thẻ "Hết hàng" trong giỏ, dòng giỏ không thẻ | **fail**: cần sản phẩm riêng ("Váy cưới thuê theo ngày"…) mà seed cục bộ không có |
+| `test8cOverlapTagAndRoleSheet`, `test8dCartLines` | thẻ "Hết hàng" trong giỏ, dòng giỏ không thẻ | **fail**: cần sản phẩm riêng ("Váy cưới thuê theo ngày"…) mà seed cục bộ không có (#1040: `ios-e2e.sh` nay tự chạy `prepare-accounts.sh staged` cho tài khoản merchant) |
 | `test9SettingsLogout` | cài đặt, đăng xuất | đạt |
 
 Các ca fail phải được phân loại (dữ liệu seed, test cũ hay lỗi app) và sửa hoặc ghi known bug; chưa làm trong PR này.
