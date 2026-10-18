@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - Availability Status
 /// Represents product availability status
-struct AvailabilityStatus: Codable {
+struct AvailabilityStatus: Codable, Equatable {
     let isAvailable: Bool
     let available: Int
 }

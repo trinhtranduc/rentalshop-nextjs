@@ -93,8 +93,12 @@ final class CartV2ViewController: BaseViewControler {
         render()
         loadAvailability()
         refreshStalePricing()
-        // #518: the owner may have changed "Cho tạo đơn khi trùng lịch" since this user signed in
-        OverlapSetting.refresh { [weak self] _ in self?.render() }
+        // #518: the owner may have changed "Cho tạo đơn khi trùng lịch" since this user signed in.
+        // #1056: redraw only when it did (each render rebuilds every row)
+        let allowedBefore = OverlapSetting.isAllowed
+        OverlapSetting.refresh { [weak self] allowed in
+            if allowed != allowedBefore { self?.render() }
+        }
     }
 
     /// #473 — a rent line that does not offer "Theo lần / Theo ngày" may be stale (added before the product got its
@@ -642,28 +646,41 @@ final class CartV2ViewController: BaseViewControler {
     private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
         let chip = CartV2Logic.chip(item, orderType: cart.orderType)
         let link = CartV2Logic.link(item, orderType: cart.orderType)
-        let button = UIButton(type: .system)
-        let title = NSMutableAttributedString(string: link.amount ?? "products.cart.pricing.enterPrice".localized(), attributes: [
-            NSAttributedString.Key.font: link.amount == nil ? Utils.boldFont(size: DS.TextSize.body)
-                : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .bold),
-            NSAttributedString.Key.foregroundColor: DS.Color.primary,
-        ])
-        title.append(NSAttributedString(string: " / " + link.unit, attributes: [
-            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
-            NSAttributedString.Key.foregroundColor: DS.Color.primary,
-        ]))
-        button.setAttributedTitle(title, for: .normal)
+        let button = Self.pricingLinkButton(amount: link.amount, unit: link.unit)
+        button.tag = index
+        button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
+        button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
+        button.addTarget(self, action: #selector(pricingChipTapped(_:)), for: .touchUpInside)
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
+        return button
+    }
+
+    /// #1056: the blue link of a cart line. A `.custom` button: a `.system` one fades a new attributed title in, and
+    /// the cart builds a new link on every render, so the price blanked and came back each time the cart opened or
+    /// updated. Pressed, the text dims as the `.system` button did.
+    static func pricingLinkButton(amount: String?, unit: String) -> UIButton {
+        let button = UIButton(type: .custom)
+        func title(alpha: CGFloat) -> NSAttributedString {
+            let color = DS.Color.primary.withAlphaComponent(alpha)
+            let text = NSMutableAttributedString(string: amount ?? "products.cart.pricing.enterPrice".localized(), attributes: [
+                NSAttributedString.Key.font: amount == nil ? Utils.boldFont(size: DS.TextSize.body)
+                    : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .bold),
+                NSAttributedString.Key.foregroundColor: color,
+            ])
+            text.append(NSAttributedString(string: " / " + unit, attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
+                NSAttributedString.Key.foregroundColor: color,
+            ]))
+            return text
+        }
+        button.setAttributedTitle(title(alpha: 1), for: .normal)
+        button.setAttributedTitle(title(alpha: 0.4), for: .highlighted)
         button.setImage(DS.symbol("chevron.down", 13, weight: .semibold), for: .normal)
         button.tintColor = DS.Color.primary
         button.semanticContentAttribute = .forceRightToLeft
         button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: -6)
         button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
         button.contentHorizontalAlignment = .leading
-        button.tag = index
-        button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
-        button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
-        button.addTarget(self, action: #selector(pricingChipTapped(_:)), for: .touchUpInside)
-        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
         return button
     }
 
@@ -726,14 +743,20 @@ final class CartV2ViewController: BaseViewControler {
                         }
                     }
                 }
+                let conflictsChanged = found != self.conflicts
                 self.conflicts = found
+                var posted = false
                 for result in results {
                     let available = result.availabilityByOutlet?.first?.effectivelyAvailable ?? result.totalAvailableStock ?? 0
                     let ok = result.isAvailable && available >= result.requestedQuantity
-                    CartStore.shared.updateAvailabilityStatus(for: result.productId, status: AvailabilityStatus(isAvailable: ok, available: available))
+                    if CartStore.shared.updateAvailabilityStatus(for: result.productId,
+                                                                 status: AvailabilityStatus(isAvailable: ok, available: available)) {
+                        posted = true
+                    }
                 }
-                // The store posts a change only for lines it updates: draw the conflicts in any case
-                self.render()
+                // The store posts (and the cart redraws) only for lines it changed: draw new conflicts when it did not.
+                // #1056: nothing new = no redraw
+                if conflictsChanged && !posted { self.render() }
             }
         }
     }
