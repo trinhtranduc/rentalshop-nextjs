@@ -1176,7 +1176,7 @@ internal fun cartIcon(icon: CartV2Icon): ImageVector = when (icon) {
  * after the text of every row that opens a sheet (Giảm giá, Đặt cọc, the order note, a line's note). iOS `V2.editPencil`
  */
 internal val CartEditIcon: ImageVector get() = AppIcons.EditLine
-internal val CartEditIconSize = 16.dp
+internal val CartEditIconSize = 15.dp
 
 @Composable
 private fun CartEditPencil(modifier: Modifier = Modifier) {
@@ -1225,7 +1225,7 @@ private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, 
         Row(
             Modifier.weight(1f),
             verticalAlignment = align,
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+            horizontalArrangement = Arrangement.spacedBy(7.dp, Alignment.End), // #1061: mockup cartedit A, value 7dp before the pencil
         ) {
             Text(
                 value,

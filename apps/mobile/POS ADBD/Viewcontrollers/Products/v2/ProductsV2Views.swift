@@ -18,7 +18,7 @@ enum V2 {
     static let danger = UIColor(hexString: "B91C1C")
 
     /// #1061 (owner: "đổi icon edit không giống", "icon đúng mockup"): the size of the cart's one edit icon
-    static let editPencilSize: CGFloat = 16
+    static let editPencilSize: CGFloat = 15
 
     /// #1061: the cart's one edit icon — the mockup's blue pen-line (`DS.editIcon`) after the text of every row that
     /// opens a sheet (Giảm giá, Đặt cọc, the order note, a line's note). Android `CartEditIcon`
@@ -255,6 +255,8 @@ final class V2ValueRow: UIControl {
     /// #1056: read after the value on an editable row (the note photos, "2 ảnh")
     var spokenExtra: String?
     private let editable: Bool
+    /// #1061 (mockup cartedit A): the value sits 7pt before the pencil, or 6pt before the camera + count
+    private var valueToAccessories: Constraint?
 
     /// `icon`: an SF Symbol before the title (#1024: the cart's order note), grey; nil = none as before.
     /// `editable` (#1056, owner: blue = tappable): no ›, the value blue and bold, then a blue pencil; VoiceOver reads
@@ -282,10 +284,10 @@ final class V2ValueRow: UIControl {
             pencil.snp.makeConstraints { make in
                 make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
                 if wrapsValue { make.centerY.equalTo(titleLabel) } else { make.centerY.equalToSuperview() }
-                make.width.height.equalTo(16)
+                make.width.height.equalTo(V2.editPencilSize)
             }
             accessories.snp.makeConstraints { make in
-                make.trailing.equalTo(pencil.snp.leading).offset(-6)
+                make.trailing.equalTo(pencil.snp.leading).offset(-7)
                 if wrapsValue { make.centerY.equalTo(titleLabel) } else { make.centerY.equalToSuperview() }
             }
             accessories.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -326,7 +328,7 @@ final class V2ValueRow: UIControl {
         valueLabel.snp.makeConstraints { make in
             make.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(DS.Spacing.sm)
             if editable {
-                make.trailing.equalTo(accessories.snp.leading).offset(-6)
+                valueToAccessories = make.trailing.equalTo(accessories.snp.leading).constraint
             } else {
                 make.trailing.equalTo(arrow.snp.leading).offset(chevron ? -6 : 0)
             }
@@ -343,6 +345,12 @@ final class V2ValueRow: UIControl {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layoutSubviews() {
+        // the camera + count is added after init (the order note on a new order)
+        valueToAccessories?.update(offset: accessories.arrangedSubviews.isEmpty ? 0 : -6)
+        super.layoutSubviews()
+    }
 
     override var accessibilityLabel: String? {
         get { editable ? titleLabel.text : [titleLabel.text, valueLabel.text].compactMap { $0 }.joined(separator: ", ") }

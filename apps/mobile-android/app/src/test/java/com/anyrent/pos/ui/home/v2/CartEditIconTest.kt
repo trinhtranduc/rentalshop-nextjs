@@ -22,7 +22,7 @@ class CartEditIconTest {
         assertSame(AppIcons.EditLine, cartIcon(CartV2Icon.ITEM_NOTE))
         assertSame(AppIcons.EditLine, cartIcon(CartV2Icon.ORDER_NOTE))
         assertSame(AppIcons.EditLine, CartEditIcon)
-        assertEquals(16.dp, CartEditIconSize)
+        assertEquals(15.dp, CartEditIconSize)
     }
 
     @Test

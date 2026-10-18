@@ -11,7 +11,8 @@ Issue: #1061 · Status: approved · Intent: ./intent.md
 1. `CartV2Icon` has `addItem` (`plus.circle`) and `edit` (`pen-line`); `itemNote` and `orderNote` are the same `edit`.
    Android `CartV2Icon`: `ADD_ITEM` and `EDIT` (`EditLine` / `pen-line`); `ITEM_NOTE` and `ORDER_NOTE` are `EDIT`.
 2. The pencil of a TIỀN edit row and of an item note line come from one helper (iOS `V2.editPencil()` →
-   `DS.editIcon(size: 16)`, Android `CartEditIcon` / `CartEditIconSize` 16dp), tinted primary blue.
+   `DS.editIcon(size: 15)`, Android `CartEditIcon` / `CartEditIconSize` 15dp), tinted primary blue,
+   7pt after a money value and 6pt after a note (mockup `cartedit.html`, option A, approved by the owner).
 3. Item note line, empty: "Ghi chú" in bold primary blue, then the pencil. Filled: the note (wrapped, #334155) in the
    light box, then the pencil on its first line. No leading icon.
 4. The order note row keeps title, value, camera + count, pencil. No `note.text` / `Description` anywhere in the cart.
