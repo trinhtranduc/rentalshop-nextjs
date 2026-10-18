@@ -595,11 +595,13 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireRole("merchant")
         try e2e.start()
         e2e.emptyCart()
-        if e2e.openProduct(where: { $0 > 1 }) != nil {
+        // Three open orders or more, so "Sắp tới" can show its order (the seed has few; add pickups in your own DB)
+        if e2e.openProduct(where: { $0 > 2 }) ?? e2e.openProduct(where: { $0 > 1 }) != nil {
             let upcoming = e2e.element(labelBeginsWith: ["Upcoming ", "Sắp tới "], type: .button)
             e2e.tapIfExists(upcoming, timeout: 3)
             sleep(2)
-            _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["All ", "Tất cả "], type: .button), maxSwipes: 2)
+            app.swipeUp()
+            sleep(1)
             e2e.shot("polish-01-detail-upcoming")
             let all = e2e.element(labelBeginsWith: ["All ", "Tất cả "], type: .button)
             if e2e.scrollTo(all) {
@@ -612,11 +614,17 @@ final class AnyRentE2ETests: XCTestCase {
             } else {
                 e2e.soft(false, "Tất cả N on product detail")
             }
-            e2e.goBackOnce()
+            // The detail is scrolled to its orders: back to the top so "Quay lại" can be tapped (not an order row)
+            app.swipeDown()
+            app.swipeDown()
+            e2e.goBack()
         } else {
             e2e.note("#1056: no product with two open orders")
         }
-        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        guard e2e.openCartWithOneItem() else {
+            e2e.shot("polish-03-cart-missing")
+            return XCTFail("Could not open the cart with an item")
+        }
         e2e.shot("polish-03-cart-open")
         let discount = e2e.element(labelBeginsWith: ["Discount", "Giảm giá"])
         XCTAssertTrue(e2e.scrollTo(discount), "Giảm giá row in TIỀN")
