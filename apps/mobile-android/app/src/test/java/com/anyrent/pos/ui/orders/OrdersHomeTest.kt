@@ -17,6 +17,7 @@ import com.anyrent.pos.ui.orders.v2.OrdersSection
 import com.anyrent.pos.ui.orders.v2.SortDate
 import com.anyrent.pos.ui.orders.v2.SortDirection
 import com.anyrent.pos.ui.orders.v2.PayLine
+import com.anyrent.pos.ui.orders.v2.ProductOrdersSort
 import com.anyrent.pos.ui.orders.v2.RentOrdersFilter
 import com.anyrent.pos.ui.orders.v2.RowTag
 import com.anyrent.pos.ui.orders.v2.RowTagStyle
@@ -721,5 +722,46 @@ class OrdersHomeTest {
         vm.selectStatus("RESERVED"); advanceUntilIdle()
         assertTrue(vm.state.value.loading)
         assertTrue(vm.state.value.sections.isEmpty())
+    }
+
+    /** #1025 (owner): a product's orders sort like Tất cả đơn; default pickup day, nearest first (`desc`, as #888) */
+    @Test
+    fun `product orders default sort is pickup nearest first`() {
+        val sort = ProductOrdersSort.DEFAULT
+        assertEquals(SortDate.PICKUP, sort.sortDate)
+        assertEquals(SortDirection.NEAREST_FIRST, sort.direction)
+        assertEquals("pickupPlanAt" to "desc", ProductOrdersSort.query(sort))
+    }
+
+    /** #1025: the `sortBy` / `sortOrder` sent for every choice of the sheet */
+    @Test
+    fun `product orders query per choice`() {
+        val expected = mapOf(
+            (SortDate.PICKUP to SortDirection.NEAREST_FIRST) to ("pickupPlanAt" to "desc"),
+            (SortDate.PICKUP to SortDirection.FARTHEST_FIRST) to ("pickupPlanAt" to "asc"),
+            (SortDate.RETURN to SortDirection.NEAREST_FIRST) to ("returnPlanAt" to "desc"),
+            (SortDate.RETURN to SortDirection.FARTHEST_FIRST) to ("returnPlanAt" to "asc"),
+            (SortDate.CREATED to SortDirection.NEAREST_FIRST) to ("createdAt" to "desc"),
+            (SortDate.CREATED to SortDirection.FARTHEST_FIRST) to ("createdAt" to "asc"),
+        )
+        expected.forEach { (choice, query) ->
+            val sort = RentOrdersFilter(sortDate = choice.first, direction = choice.second)
+            assertEquals("$choice", query, ProductOrdersSort.query(sort))
+        }
+    }
+
+    /** #1025: product rows bold the sorted date (rule #891/#893); the customer's orders bold nothing */
+    @Test
+    fun `product orders rows bold the sorted date`() {
+        val order = listOrder("RESERVED", pickup = "2026-10-13T17:30:00Z", returns = "2026-10-16T02:00:00Z")
+        val bold = ProductOrdersSort.boldDate(isProduct = true, ProductOrdersSort.DEFAULT)
+        assertEquals(SortDate.PICKUP, bold)
+        assertEquals(listOf(true, false), OrdersBoardLogic.dateChips(order, bold).map { it.bold })
+        val byReturn = ProductOrdersSort.boldDate(isProduct = true, RentOrdersFilter(sortDate = SortDate.RETURN))
+        assertEquals(listOf(false, true), OrdersBoardLogic.dateChips(order, byReturn).map { it.bold })
+        val byCreated = ProductOrdersSort.boldDate(isProduct = true, RentOrdersFilter(sortDate = SortDate.CREATED))
+        assertEquals(listOf(false, false), OrdersBoardLogic.dateChips(order, byCreated).map { it.bold })
+        assertEquals(true, OrdersBoardLogic.metaIsBold(byCreated))
+        assertEquals(null, ProductOrdersSort.boldDate(isProduct = false, RentOrdersFilter(sortDate = SortDate.RETURN)))
     }
 }

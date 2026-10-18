@@ -41,6 +41,20 @@ data class RentOrdersFilter(
     val isDefault get() = sortDate == SortDate.PICKUP && direction == SortDirection.NEAREST_FIRST && range == DateRangeChoice.Any
 }
 
+/**
+ * #1025 (owner): the orders of one product sort like Tất cả đơn (#888): Ngày lấy / Ngày trả / Ngày tạo, nearest
+ * first = `desc`. Default pickup day, nearest first. iOS `EntityOrdersLogic.defaultProductSort` / `productOrdersQuery`.
+ */
+object ProductOrdersSort {
+    val DEFAULT = RentOrdersFilter()
+
+    /** `sortBy` to `sortOrder` of `GET /api/orders` */
+    fun query(sort: RentOrdersFilter): Pair<String, String> = sort.sortDate.apiField to sort.direction.apiOrder
+
+    /** The date the rows show bold: the sort date on a product's orders; none on a customer's (no sort control) */
+    fun boldDate(isProduct: Boolean, sort: RentOrdersFilter): SortDate? = sort.sortDate.takeIf { isProduct }
+}
+
 /** One `GET /api/orders` request of the tab */
 data class OrdersQuery(
     val q: String? = null,

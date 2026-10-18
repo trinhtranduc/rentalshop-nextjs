@@ -552,7 +552,7 @@ internal fun directionLabel(date: SortDate, direction: SortDirection): Int = whe
 
 /** #888 "Xếp theo ngày lấy · gần nhất trước" */
 @Composable
-private fun sortBarText(filter: RentOrdersFilter): String = stringResource(
+internal fun sortBarText(filter: RentOrdersFilter): String = stringResource(
     R.string.orders_v2_sort_bar,
     stringResource(sortDateLabel(filter.sortDate)).lowercase(),
     stringResource(directionLabel(filter.sortDate, filter.direction)).lowercase(),
@@ -730,8 +730,9 @@ internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
 
 /** The Orders tab "Tất cả" row (list context) for the orders by product / customer screens (#482) */
 @Composable
-internal fun OrderListRow(row: OrdersRow.Order, onClick: () -> Unit) {
-    OrderRow(row, RowContext.LIST, orderRowTexts(), onClick = onClick)
+internal fun OrderListRow(row: OrdersRow.Order, sortedBy: SortDate? = null, onClick: () -> Unit) {
+    // #1025: a product's orders bold the date they are sorted by; the rest of the list row is unchanged
+    OrderRow(row, RowContext.LIST, orderRowTexts(), boldDate = sortedBy, onClick = onClick)
 }
 
 /** #891 (owner): product detail → its orders: the order row plus "× qty" of this product; no pay line, no late chip */
@@ -808,6 +809,8 @@ private fun OrderRow(
     context: RowContext,
     texts: OrderRowDates.Texts,
     rentSortedBy: SortDate? = null,
+    /** #891 / #1025: the date shown bold; Tất cả đơn bolds its sort date, a product's orders theirs */
+    boldDate: SortDate? = rentSortedBy,
     qty: Int? = null,
     onClick: () -> Unit,
 ) {
@@ -831,9 +834,9 @@ private fun OrderRow(
         chips = if (isSale) {
             OrderRowDates.saleChip(order.orderType, order.status, OrdersHomeLogic.parseInstant(order.createdAt), saleChipLabel())?.let { listOf(it) }
         } else {
-            chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, rentSortedBy, p, r) }
+            chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, boldDate, p, r) }
         },
-        metaBold = OrdersBoardLogic.metaIsBold(rentSortedBy),
+        metaBold = OrdersBoardLogic.metaIsBold(boldDate),
         qty = qty,
         // #888 (owner): no "Trễ N ngày" chip on Tất cả đơn; Việc cần làm and the detail keep it
         pills = if (row.lateDays > 0 && rentSortedBy == null && context != RowContext.PRODUCT) listOf(pluralStringResource(R.plurals.orders_late_days, row.lateDays, row.lateDays) to RowWarning.LATE) else emptyList(),
@@ -1083,14 +1086,15 @@ private fun StateMessage(message: String, onRetry: (() -> Unit)? = null) {
     }
 }
 
-/** "Lọc & sắp xếp" (board Loc): sort, date range and "Xem N đơn" */
+/** "Lọc & sắp xếp" (board Loc): sort, date range and "Xem N đơn". #1025: a product's orders hide the range ([showsRange]) */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun FilterSheet(
+internal fun FilterSheet(
     initial: RentOrdersFilter,
     count: suspend (RentOrdersFilter) -> Int?,
     onApply: (RentOrdersFilter) -> Unit,
     onDismiss: () -> Unit,
+    showsRange: Boolean = true,
 ) {
     var filter by remember { mutableStateOf(initial) }
     var total by remember { mutableStateOf<Int?>(null) }
@@ -1140,7 +1144,7 @@ private fun FilterSheet(
                     filter = filter.copy(direction = SortDirection.entries[it])
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (showsRange) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val dateName = stringResource(sortDateLabel(filter.sortDate)).lowercase()
                 SheetLabel(stringResource(R.string.orders_v2_filter_range_of, dateName).uppercase())
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
