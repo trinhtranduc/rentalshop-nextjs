@@ -221,9 +221,13 @@ final class CartStore {
         notifyDidChange()
     }
 
-    func updateAvailabilityStatus(for productId: Int, status: AvailabilityStatus?) {
-        storage.updateAvailabilityStatus(for: productId, status: status)
+    /// #1056: posts only when a line's availability changed; every post rebuilds the cart screen, and the same
+    /// answer arrives on each cart open
+    @discardableResult
+    func updateAvailabilityStatus(for productId: Int, status: AvailabilityStatus?) -> Bool {
+        guard storage.updateAvailabilityStatus(for: productId, status: status) else { return false }
         NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
+        return true
     }
 
     func syncPricesWithOrderType() {

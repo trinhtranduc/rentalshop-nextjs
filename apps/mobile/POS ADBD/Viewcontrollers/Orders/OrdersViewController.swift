@@ -351,7 +351,7 @@ final class OrdersViewController: BaseViewControler {
             chip.titleLabel?.font = selected ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             chip.accessibilityTraits = selected ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected) : UIAccessibilityTraitButton
         }
-        // #888: always says how the list is sorted: "Xếp theo ngày lấy · gần nhất trước ▾"
+        // #888: always says how the list is sorted: "Xếp theo ngày lấy · mới nhất trước ▾"
         sortButton.setTitle(OrdersHomeLogic.sortBarText(viewModel.filter), for: .normal)
         countLabel.text = viewModel.total.map { PluralText.format("orders.v2.count", count: $0, $0) }
         if let total = viewModel.total {

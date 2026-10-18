@@ -1622,8 +1622,8 @@
     <string name="orders_v2_sort_date_pickup">Ngày lấy</string>
     <string name="orders_v2_sort_date_return">Ngày trả</string>
     <string name="orders_v2_sort_date_created">Ngày tạo</string>
-    <string name="orders_v2_direction_nearest">Gần nhất trước</string>
-    <string name="orders_v2_direction_farthest">Xa nhất trước</string>
+    <string name="orders_v2_direction_nearest">Mới nhất trước</string>
+    <string name="orders_v2_direction_farthest">Cũ nhất trước</string>
     <string name="orders_v2_direction_newest">Mới nhất trước</string>
     <string name="orders_v2_direction_oldest">Cũ nhất trước</string>
     <string name="orders_v2_sort_bar">Xếp theo %1$s · %2$s</string>

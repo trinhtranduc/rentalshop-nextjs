@@ -229,18 +229,56 @@ final class V2Stepper: UIView {
     }
 }
 
-/// Tappable row "title ……… value ›"
+/// Tappable row "title ……… value ›"; `editable` (#1056, the cart's TIỀN): "title ……… value ✎" in blue
 final class V2ValueRow: UIControl {
     let titleLabel = V2.label(size: DS.TextSize.body)
     let valueLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
+    let chevron = UIImageView(image: DS.symbol("chevron.right", 16))
+    /// #1056: the small blue pencil after the value of an editable row
+    let pencil = UIImageView(image: DS.symbol("pencil", 13, weight: .semibold))
+    /// #1056: views between the value and the pencil (the order note's camera + photo count)
+    let accessories = UIStackView()
+    /// #1056: read after the value on an editable row (the note photos, "2 ảnh")
+    var spokenExtra: String?
+    private let editable: Bool
 
-    /// `icon`: an SF Symbol before the title (#1024: the cart's order note), grey; nil = none as before
-    init(title: String, chevron: Bool = true, icon: String? = nil) {
+    /// `icon`: an SF Symbol before the title (#1024: the cart's order note), grey; nil = none as before.
+    /// `editable` (#1056, owner: blue = tappable): no ›, the value blue and bold, then a blue pencil; VoiceOver reads
+    /// the title, then "value, Sửa"
+    init(title: String, chevron: Bool = true, icon: String? = nil, editable: Bool = false) {
+        self.editable = editable
         super.init(frame: .zero)
+        let chevron = chevron && !editable
         titleLabel.text = title
         valueLabel.textAlignment = .right
         addSubview(titleLabel)
         addSubview(valueLabel)
+        if editable {
+            valueLabel.textColor = DS.Color.primary
+            valueLabel.font = Utils.boldFont(size: DS.TextSize.body)
+            valueLabel.lineBreakMode = .byTruncatingTail
+            valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            pencil.tintColor = DS.Color.primary
+            pencil.contentMode = .center
+            accessories.spacing = 3
+            accessories.alignment = .center
+            accessories.isUserInteractionEnabled = false
+            addSubview(accessories)
+            addSubview(pencil)
+            pencil.snp.makeConstraints { make in
+                make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
+                make.centerY.equalToSuperview()
+                make.width.height.equalTo(16)
+            }
+            accessories.snp.makeConstraints { make in
+                make.trailing.equalTo(pencil.snp.leading).offset(-6)
+                make.centerY.equalToSuperview()
+            }
+            accessories.setContentCompressionResistancePriority(.required, for: .horizontal)
+            accessories.setContentHuggingPriority(.required, for: .horizontal)
+        } else {
+            pencil.isHidden = true
+        }
         var titleLeading = snp.leading
         var titleInset = DS.Spacing.lg
         if let icon {
@@ -256,7 +294,7 @@ final class V2ValueRow: UIControl {
             titleLeading = image.snp.trailing
             titleInset = 8
         }
-        let arrow = UIImageView(image: DS.symbol("chevron.right", 16))
+        let arrow = self.chevron
         arrow.tintColor = UIColor(hexString: "94A3B8")
         arrow.contentMode = .center
         arrow.isHidden = !chevron
@@ -273,7 +311,11 @@ final class V2ValueRow: UIControl {
         }
         valueLabel.snp.makeConstraints { make in
             make.leading.greaterThanOrEqualTo(titleLabel.snp.trailing).offset(DS.Spacing.sm)
-            make.trailing.equalTo(arrow.snp.leading).offset(chevron ? -6 : 0)
+            if editable {
+                make.trailing.equalTo(accessories.snp.leading).offset(-6)
+            } else {
+                make.trailing.equalTo(arrow.snp.leading).offset(chevron ? -6 : 0)
+            }
             make.centerY.equalToSuperview()
         }
         titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -284,7 +326,12 @@ final class V2ValueRow: UIControl {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override var accessibilityLabel: String? {
-        get { [titleLabel.text, valueLabel.text].compactMap { $0 }.joined(separator: ", ") }
+        get { editable ? titleLabel.text : [titleLabel.text, valueLabel.text].compactMap { $0 }.joined(separator: ", ") }
+        set {}
+    }
+
+    override var accessibilityValue: String? {
+        get { editable ? CartV2Logic.moneyRowSpoken(value: valueLabel.text ?? "", photos: spokenExtra) : nil }
         set {}
     }
 

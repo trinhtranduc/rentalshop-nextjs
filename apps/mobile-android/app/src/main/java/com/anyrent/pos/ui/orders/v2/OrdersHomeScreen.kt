@@ -514,7 +514,7 @@ private fun ListControls(state: OrdersHomeState, onStatus: (String?) -> Unit, on
             Modifier.defaultMinSize(minHeight = 36.dp).clickable(onClick = onSort),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // #888: always says how the list is sorted: "Xếp theo ngày lấy · gần nhất trước ▾"
+            // #888: always says how the list is sorted: "Xếp theo ngày lấy · mới nhất trước ▾"
             Text(sortBarText(state.filter), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
             Spacer(Modifier.size(4.dp))
             Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(14.dp))
@@ -542,7 +542,7 @@ internal fun sortDateLabel(date: SortDate): Int = when (date) {
     SortDate.CREATED -> R.string.orders_v2_sort_date_created
 }
 
-/** #888 "Gần nhất trước" / "Xa nhất trước"; created date: "Mới nhất trước" / "Cũ nhất trước" (iOS `directionTitle`) */
+/** #888, #1056: "Mới nhất trước" (desc) / "Cũ nhất trước" (asc) for every date; English pickup/return "Latest first" / "Earliest first" (iOS `directionTitle`) */
 internal fun directionLabel(date: SortDate, direction: SortDirection): Int = when {
     date == SortDate.CREATED && direction == SortDirection.NEAREST_FIRST -> R.string.orders_v2_direction_newest
     date == SortDate.CREATED -> R.string.orders_v2_direction_oldest
@@ -550,7 +550,7 @@ internal fun directionLabel(date: SortDate, direction: SortDirection): Int = whe
     else -> R.string.orders_v2_direction_farthest
 }
 
-/** #888 "Xếp theo ngày lấy · gần nhất trước" */
+/** #888 "Xếp theo ngày lấy · mới nhất trước" */
 @Composable
 internal fun sortBarText(filter: RentOrdersFilter): String = stringResource(
     R.string.orders_v2_sort_bar,

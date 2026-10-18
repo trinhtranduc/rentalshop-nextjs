@@ -2482,8 +2482,8 @@
 "orders.v2.sortDate.pickup" = "Ngày lấy";
 "orders.v2.sortDate.return" = "Ngày trả";
 "orders.v2.sortDate.created" = "Ngày tạo";
-"orders.v2.direction.nearest" = "Gần nhất trước";
-"orders.v2.direction.farthest" = "Xa nhất trước";
+"orders.v2.direction.nearest" = "Mới nhất trước";
+"orders.v2.direction.farthest" = "Cũ nhất trước";
 "orders.v2.direction.newest" = "Mới nhất trước";
 "orders.v2.direction.oldest" = "Cũ nhất trước";
 "orders.v2.sortBar" = "Xếp theo %1$@ · %2$@";

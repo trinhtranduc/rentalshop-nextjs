@@ -512,7 +512,8 @@ enum OrdersHomeLogic {
         }
     }
 
-    /// "Gần nhất trước" / "Xa nhất trước"; created date: "Mới nhất trước" / "Cũ nhất trước"
+    /// #1056: "Mới nhất trước" (desc) / "Cũ nhất trước" (asc) for every date in Vietnamese; English pickup/return
+    /// "Latest first" / "Earliest first", created "Newest first" / "Oldest first"
     static func directionTitle(_ date: RentOrdersFilter.SortDate, _ direction: RentOrdersFilter.Direction) -> String {
         let key: String
         switch (date, direction) {
@@ -524,7 +525,7 @@ enum OrdersHomeLogic {
         return key.localized()
     }
 
-    /// The bar above the list: "Xếp theo ngày lấy · gần nhất trước"
+    /// The bar above the list: "Xếp theo ngày lấy · mới nhất trước"
     static func sortBarText(_ filter: RentOrdersFilter) -> String {
         String(format: "orders.v2.sortBar".localized(), sortDateTitle(filter.sortDate).lowercased(),
                directionTitle(filter.sortDate, filter.direction).lowercased())

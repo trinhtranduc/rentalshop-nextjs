@@ -206,11 +206,16 @@ class Cart {
         items[index].availabilityStatus = status
     }
     
-    /// Update availability status for all items with same productId
-    func updateAvailabilityStatus(for productId: Int, status: AvailabilityStatus?) {
-        for index in items.indices where items[index].productId == productId {
+    /// Update availability status for all items with same productId. #1056: true when a line changed (the cart
+    /// redraws only then)
+    @discardableResult
+    func updateAvailabilityStatus(for productId: Int, status: AvailabilityStatus?) -> Bool {
+        var changed = false
+        for index in items.indices where items[index].productId == productId && items[index].availabilityStatus != status {
             items[index].availabilityStatus = status
+            changed = true
         }
+        return changed
     }
     
     /// Update note for item at specific index

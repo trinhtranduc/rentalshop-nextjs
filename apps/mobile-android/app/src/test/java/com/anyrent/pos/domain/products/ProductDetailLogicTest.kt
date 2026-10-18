@@ -52,8 +52,9 @@ class ProductDetailLogicTest {
         assertEquals(listOf("PICKUPED"), ProductOrdersChip.RENTING.statuses)
         assertEquals(listOf("RETURNED", "COMPLETED"), ProductOrdersChip.DONE.statuses)
         assertFalse(ProductOrdersChip.entries.flatMap { it.statuses }.contains("CANCELLED"))
-        assertEquals("pickupPlanAt" to "asc", ProductOrdersChip.UPCOMING.sortBy to ProductOrdersChip.UPCOMING.sortOrder)
-        assertEquals("returnPlanAt" to "asc", ProductOrdersChip.RENTING.sortBy to ProductOrdersChip.RENTING.sortOrder)
+        // #1056 (owner): the farthest pickup on top, as "Tất cả N"; "Đang thuê" the farthest return on top
+        assertEquals("pickupPlanAt" to "desc", ProductOrdersChip.UPCOMING.sortBy to ProductOrdersChip.UPCOMING.sortOrder)
+        assertEquals("returnPlanAt" to "desc", ProductOrdersChip.RENTING.sortBy to ProductOrdersChip.RENTING.sortOrder)
         assertEquals("createdAt" to "desc", ProductOrdersChip.DONE.sortBy to ProductOrdersChip.DONE.sortOrder)
     }
 
