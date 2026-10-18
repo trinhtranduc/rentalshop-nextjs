@@ -28,7 +28,14 @@ const mockAuthServer = {
 
 jest.mock('@rentalshop/auth/server', () => mockAuthServer);
 jest.mock('@rentalshop/auth', () => ({ ROLE_PERMISSIONS: { ADMIN: ['orders.view'] } }));
-jest.mock('@rentalshop/utils', () => ({ ResponseBuilder: { error: (code: string) => ({ success: false, code }) } }));
+jest.mock('@rentalshop/utils', () => ({
+  ResponseBuilder: {
+    error: (code: string) => ({ success: false, code }),
+    // #987: login message comes from the real success builder (same shape and catalog sentence)
+    success: (code: string, data?: unknown, meta?: unknown) =>
+      jest.requireActual('../../packages/utils/src/api/response-builder').ResponseBuilder.success(code, data, meta),
+  },
+}));
 jest.mock('@rentalshop/constants', () => ({
   USER_ROLE: { MERCHANT: 'MERCHANT' },
   // #824: login refuses users of a disabled outlet (real helper)
@@ -103,6 +110,11 @@ describe('mobile login with refresh token (#344)', () => {
     expect(mockDb.sessions.createUserSession).toHaveBeenCalledWith(1, undefined, 'Mozilla/5.0 (Macintosh)', 7, { platform: 'web' });
     expect(res.body.data.token).toBe('web-7d');
     expect(res.body.data.refreshToken).toBeUndefined();
+    // #986/#987: no Accept-Language → Vietnamese catalog sentence
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.code).toBe('LOGIN_SUCCESS');
+    expect(res.body.message).toBe('Đăng nhập thành công');
   });
 
   describe('session platform (#660)', () => {
