@@ -43,6 +43,8 @@ data class IncomeRow(
     val collateral: Double?,
     /** `SALE`, `RENT_DEPOSIT` ... `MULTIPLE` (#757); blank on an older API */
     val revenueType: String = "",
+    /** #1059: when the order was created; null when missing or unreadable */
+    val createdAt: java.time.Instant? = null,
 )
 
 /** [HELD] (#938): an order whose collateral is held now; listed on Thế chân, not part of the period total */
@@ -191,6 +193,8 @@ object OverviewRelated {
                             depositAmount = number(o, "depositAmount") ?: 0.0,
                             collateral = number(o, "collateral"),
                             revenueType = text(o, "revenueType"),
+                            createdAt = text(o, "createdAt").takeIf { it.isNotBlank() }
+                                ?.let { runCatching { java.time.Instant.parse(it) }.getOrNull() },
                         ),
                     )
                 }

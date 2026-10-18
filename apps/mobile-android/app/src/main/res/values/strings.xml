@@ -2052,4 +2052,10 @@
     <string name="api_error_valid_user_id_required">Valid user ID is required</string>
     <string name="api_error_validation_failed">Validation failed</string>
     <string name="api_error_verification_email_sent">Verification email has been sent</string>
+    <!-- #1059 Overview › Today: orders created today -->
+    <string name="overview_dash_today_orders_title">Orders created today</string>
+    <string name="overview_dash_today_orders_summary">%1$s · Total value</string>
+    <string name="overview_dash_today_orders_empty">No orders today yet</string>
+    <string name="overview_dash_today_orders_rent">Rent</string>
+    <string name="overview_dash_today_orders_sale">Sale</string>
 </resources>

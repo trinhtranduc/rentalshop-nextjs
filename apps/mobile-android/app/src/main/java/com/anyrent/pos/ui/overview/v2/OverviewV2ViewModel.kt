@@ -15,6 +15,9 @@ import com.anyrent.pos.domain.overview.OverviewDashLogic
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.OverviewNow
 import com.anyrent.pos.domain.overview.OverviewReport
+import com.anyrent.pos.domain.overview.IncomeRow
+import com.anyrent.pos.domain.overview.OverviewRelated
+import com.anyrent.pos.domain.overview.OverviewTodayOrders
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import java.time.Instant
 import kotlinx.coroutines.CancellationException
@@ -44,6 +47,9 @@ data class OverviewV2State(
     val loading: Boolean = true,
     val reportError: String? = null,
     val refreshing: Boolean = false,
+    /** #1059: income/orders `status=new` rows of today (every page) for "Đơn tạo hôm nay"; null until loaded */
+    val newOrders: List<IncomeRow>? = null,
+    val newOrdersFailed: Boolean = false,
 )
 
 /** Redesigned overview (#374): one period of `analytics/period` plus the "now" figures of outlet-operations */
@@ -97,7 +103,10 @@ class OverviewV2ViewModel(
             (if (snapshot.showsRevenue) snapshot.report != null else snapshot.now != null)
         if (!keep) _state.update { it.copy(loading = true, report = null, chartReport = null, reportError = null) }
         val version = freshness.begin()
+        // #1059: today's new orders for the card that replaces the Top cards
+        val listsNewOrders = snapshot.showsRevenue && OverviewTodayOrders.showsTodayOrders(range, today())
         job = viewModelScope.launch {
+            var newOrders: List<IncomeRow>? = null
             val (report, chart, now) = withContext(Dispatchers.IO) {
                 coroutineScope {
                     val report = async {
@@ -119,12 +128,22 @@ class OverviewV2ViewModel(
                             OverviewLogic.nowFromJson(fetch(OverviewLogic.outletOperationsPath(CurrentOutlet.merchantFilterId)).optJSONObject("data") ?: JSONObject())
                         }.getOrNull()
                     }
+                    val orders = async { if (listsNewOrders) loadNewOrders(range) else null }
+                    newOrders = orders.await()
                     Triple(report.await(), chart.await(), now.await())
                 }
             }
             if (report?.exceptionOrNull() is CancellationException) return@launch
+            // A quiet refresh that fails keeps the rows on screen
+            val keptOrders = when {
+                !listsNewOrders -> null
+                newOrders != null -> newOrders
+                keep -> _state.value.newOrders
+                else -> null
+            }
+            val ordersFailed = listsNewOrders && keptOrders == null
             if (keep && report?.isFailure == true) {
-                _state.update { it.copy(now = now ?: it.now, refreshing = false) }
+                _state.update { it.copy(now = now ?: it.now, refreshing = false, newOrders = keptOrders, newOrdersFailed = ordersFailed) }
                 return@launch
             }
             if (report?.isFailure != true) freshness.loaded(version, clock())
@@ -136,10 +155,24 @@ class OverviewV2ViewModel(
                     now = now ?: it.now,
                     loading = false,
                     refreshing = false,
+                    newOrders = keptOrders,
+                    newOrdersFailed = ordersFailed,
                 )
             }
         }
     }
+
+    /** #1059: every page of today's `status=new` rows (the API pages by order id); null when a page failed */
+    private fun loadNewOrders(range: DayRange): List<IncomeRow>? = runCatching {
+        val rows = mutableListOf<IncomeRow>()
+        for (page in 0 until OverviewTodayOrders.MAX_PAGES) {
+            val path = OverviewTodayOrders.path(range, offset = page * OverviewTodayOrders.PAGE_SIZE, outletId = CurrentOutlet.merchantFilterId)
+            val (items, hasMore) = OverviewRelated.pageFromJson(fetch(path).optJSONObject("data") ?: JSONObject())
+            rows += items
+            if (!hasMore || items.isEmpty()) break
+        }
+        rows.toList()
+    }.getOrNull()
 
     class Factory : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
