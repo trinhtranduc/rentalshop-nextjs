@@ -472,6 +472,28 @@ enum CartV2Logic {
     /// #1056: "−50.000đ" above 0, else "0đ" (both blue now; the value used to be green above 0)
     static func discountShown(_ discountAmount: Double) -> Double { discountAmount > 0 ? -discountAmount : 0 }
 
+    /// #1067: the most a discount can be: the line subtotal before discount (tiền thuê / tiền hàng; deposit is not
+    /// part of it), or 100% for a percent discount
+    static func discountLimit(subtotal: Double, isPercent: Bool) -> Double { isPercent ? 100 : max(0, subtotal) }
+
+    /// #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): refused, never clamped; equal to the limit is fine (total 0)
+    static func discountExceeds(value: Double, subtotal: Double, isPercent: Bool) -> Bool {
+        value > discountLimit(subtotal: subtotal, isPercent: isPercent)
+    }
+
+    /// #1067: "Giảm giá không được lớn hơn tổng đơn (77đ)" / "(100%)", nil while the value is allowed
+    static func discountError(value: Double, subtotal: Double, isPercent: Bool) -> String? {
+        guard discountExceeds(value: value, subtotal: subtotal, isPercent: isPercent) else { return nil }
+        let limit = isPercent ? "100%" : money(discountLimit(subtotal: subtotal, isPercent: false))
+        return String(format: "cart.discount.tooHigh".localized(), limit)
+    }
+
+    /// #1067: the cart's saved discount after lines changed (items removed, quantity or price lowered); non-nil blocks
+    /// "Tạo đơn" / "Lưu thay đổi" with the same message
+    static func cartDiscountError(_ cart: Cart) -> String? {
+        discountError(value: cart.discount, subtotal: cart.subtotalAmount, isPercent: cart.discountType == .percentage)
+    }
+
     /// #1056: what VoiceOver reads after the row title: the value (+ the note photos), then "Sửa"
     static func moneyRowSpoken(value: String, photos: String? = nil) -> String {
         [value, photos, "products.detail.edit".localized()].compactMap { $0 }.joined(separator: ", ")

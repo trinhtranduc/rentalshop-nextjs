@@ -488,6 +488,15 @@ export interface Totals {
   dueAtPickup: number;
 }
 
+/**
+ * #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"; iOS CartV2Logic.discountExceeds): a discount above what it
+ * applies to (the line subtotal before discount), or above 100%, is refused, not clamped. Equal is fine (total 0).
+ */
+export function discountExceeds(type: DiscountType, value: number, subtotal: number): boolean {
+  const limit = type === 'percentage' ? 100 : Math.max(0, num(subtotal));
+  return num(value) > limit;
+}
+
 export function computeTotals(input: TotalsInput): Totals {
   const rent = input.orderType === 'RENT';
   const subtotal = input.lines.reduce((s, l) => s + lineTotal(l, input.orderType, input.days), 0);

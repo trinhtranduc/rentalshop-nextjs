@@ -690,7 +690,8 @@
         "deposit": "Deposit now",
         "security": "Security at pickup",
         "dueAtPickup": "Due at pickup",
-        "includesSecurity": "Includes security {amount}"
+        "includesSecurity": "Includes security {amount}",
+        "discountTooHigh": "Discount can't be more than the order total ({limit})"
       },
       "missing": {
         "days": "Choose pickup and return days to create the order.",

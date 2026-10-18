@@ -15,6 +15,32 @@ enum DiscountPadType {
     case amount
 }
 
+/// #1067: the keypad opens on the old value as if it were selected: the first key replaces it (⌫ clears it to 0)
+/// instead of appending, so a discount no longer grows on every edit (5.000.050.000 on a 77đ order). Then keys append.
+struct NumberPadEntry: Equatable {
+    private(set) var text: String
+    private var fresh: Bool
+
+    init(_ text: String, fresh: Bool? = nil) {
+        self.text = text
+        self.fresh = fresh ?? (text != "0")
+    }
+
+    mutating func press(_ key: String) {
+        let base = fresh ? "0" : text
+        fresh = false
+        switch key {
+        case "⌫":
+            let dropped = String(base.dropLast())
+            text = dropped.isEmpty ? "0" : dropped
+        case "000":
+            text = base == "0" ? "0" : base + key
+        default:
+            text = base == "0" ? key : base + key
+        }
+    }
+}
+
 /// Price / deposit / discount keypad as a filter-style sheet:
 /// centered title, no Cancel, one blue Confirm. Dismiss with the grabber.
 class NumberPickerViewController: UIViewController {
@@ -25,6 +51,15 @@ class NumberPickerViewController: UIViewController {
     private var result: String = "0" {
         didSet { refreshValueLabel() }
     }
+    /// #1067: true until the first key; that key replaces the opening value
+    private var freshEntry = true
+    /// #1067: the cart's line subtotal; set, a discount above it (or above 100%) shows the error and Confirm is off
+    var discountSubtotal: Double?
+    private var hasDiscountLimit: Bool {
+        if case .discount = mode { return discountSubtotal != nil }
+        return false
+    }
+    static let discountErrorHeight: CGFloat = 22
     private var discountType: DiscountPadType = .percentage
 
     private let headerView = RCSheetHeaderView()
@@ -44,6 +79,17 @@ class NumberPickerViewController: UIViewController {
         stack.distribution = .fillEqually
         stack.backgroundColor = .systemGray5
         return stack
+    }()
+
+    private lazy var errorLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.mediumFont(size: 14)
+        label.textColor = UIColor(hexString: "B91C1C")
+        label.textAlignment = .center
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.8
+        label.accessibilityIdentifier = "discount.error"
+        return label
     }()
 
     private lazy var confirmButton: RCPrimaryButton = {
@@ -87,6 +133,7 @@ class NumberPickerViewController: UIViewController {
 
         view.addSubview(headerView)
         view.addSubview(valueLabel)
+        view.addSubview(errorLabel)
         view.addSubview(numberPadStackView)
         view.addSubview(footerStack)
 
@@ -102,8 +149,13 @@ class NumberPickerViewController: UIViewController {
             make.leading.trailing.equalToSuperview().inset(16)
             make.height.equalTo(65)
         }
+        errorLabel.snp.makeConstraints { make in
+            make.top.equalTo(valueLabel.snp.bottom)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.height.equalTo(hasDiscountLimit ? Self.discountErrorHeight : 0)
+        }
         numberPadStackView.snp.makeConstraints { make in
-            make.top.equalTo(valueLabel.snp.bottom).offset(16)
+            make.top.equalTo(errorLabel.snp.bottom).offset(16)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(232)
         }
@@ -187,25 +239,40 @@ class NumberPickerViewController: UIViewController {
         } else {
             valueLabel.text = result.inDouble().formatStringInCommon()
         }
+        refreshDiscountError()
+    }
+
+    /// #1067: nil when there is no limit or the value is allowed
+    private var discountError: String? {
+        guard case .discount(let type) = mode, let subtotal = discountSubtotal else { return nil }
+        return CartV2Logic.discountError(value: result.inDouble(), subtotal: subtotal, isPercent: type == .percentage)
+    }
+
+    private func refreshDiscountError() {
+        let error = discountError
+        errorLabel.text = error
+        errorLabel.isHidden = error == nil
+        confirmButton.isEnabled = error == nil
     }
 
     @objc private func numberTapped(_ sender: UIButton) {
         guard let number = sender.title(for: .normal) else { return }
-        if result == "0" {
-            result = number
-        } else {
-            result.append(number)
-        }
+        press(number)
     }
 
     @objc private func deleteNumber() {
-        result = String(result.dropLast())
-        if result.isEmpty {
-            result = "0"
-        }
+        press("⌫")
+    }
+
+    private func press(_ key: String) {
+        var entry = NumberPadEntry(result, fresh: freshEntry && result != "0")
+        entry.press(key)
+        freshEntry = false
+        result = entry.text
     }
 
     @objc private func confirmTapped() {
+        guard discountError == nil else { return }
         let value = result.inDouble()
         switch mode {
         case .discount(let type):
@@ -223,7 +290,8 @@ class NumberPickerViewController: UIViewController {
     @objc private func percentTapped() {
         mode = .discount(type: .percentage)
         discountType = .percentage
-        result = min(result.inDouble(), 100).inString()
+        // #1067: the cart shows the error instead of clamping; older screens keep the clamp
+        result = (discountSubtotal == nil ? min(result.inDouble(), 100) : result.inDouble()).inString()
         updateDiscountTypeButtons()
     }
 
@@ -280,7 +348,7 @@ extension NumberPickerViewController {
                 sheet.detents = [
                     .custom { _ in
                         if case .discount = controller.mode {
-                            return discountHeight
+                            return discountHeight + (controller.discountSubtotal == nil ? 0 : discountErrorHeight)
                         }
                         return keypadHeight
                     },

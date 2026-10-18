@@ -166,6 +166,14 @@ fun CartV2Screen(
         CartStore.DiscountType.PERCENT -> subtotal * (discount.coerceIn(0.0, 100.0) / 100.0)
     }
     val total = (subtotal - discountAmount).coerceAtLeast(0.0)
+    // #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): a discount above the subtotal (e.g. items removed after it
+    // was set) is refused, not clamped: the cart shows why and "Tạo đơn" / "Lưu thay đổi" stay off until it is fixed
+    val discountPercent = discountType == CartStore.DiscountType.PERCENT
+    val discountInvalid = CartV2Logic.discountExceeds(discount, subtotal, discountPercent)
+    val discountTooHighMessage = stringResource(
+        R.string.v2_cart_discount_too_high,
+        CartV2Logic.discountLimitText(subtotal, discountPercent) { formatMoneyVnd(it) },
+    )
 
     // Batch availability of the lines for the chosen dates; #518 also reads which other orders hold them
     var availability by remember { mutableStateOf<Map<Int, ProductAvailability>>(emptyMap()) }
@@ -557,6 +565,14 @@ fun CartV2Screen(
         }
 
         HorizontalDivider(color = DS.Colors.Border)
+        if (discountInvalid) {
+            // #1067: same red notice as the overlap block, above the CTA
+            OverlapNotice(
+                text = discountTooHighMessage,
+                background = Color(0xFFFEF2F2), borderColor = Color(0xFFFECACA), tint = Color(0xFFB91C1C), textColor = Color(0xFF991B1B),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
+            )
+        }
         if (createBlocked) {
             // #518 board GH-trung-tat: the shop does not allow overlapping rentals
             OverlapNotice(
@@ -567,6 +583,7 @@ fun CartV2Screen(
         }
         // The cart button: the create / sale confirm sheet, or the "Lưu thay đổi" sheet while editing
         fun onCta() {
+            if (discountInvalid) return
             val problems = CartV2Logic.problems(lines.sumOf { it.quantity }, customer != null, isSale, datesChosen)
             val messages = problems.map { problemText.getValue(it) } +
                 CartV2Logic.missingPrices(lines, isSale).map { needPriceText.format(it) }
@@ -623,7 +640,7 @@ fun CartV2Screen(
                     AppPrimaryButton(
                         stringResource(R.string.v2_cart_edit_save),
                         modifier = Modifier.weight(2f).height(48.dp),
-                        enabled = !createBlocked,
+                        enabled = !createBlocked && !discountInvalid,
                         onClick = ::onCta,
                     )
                 }
@@ -647,7 +664,7 @@ fun CartV2Screen(
                         },
                     ),
                     modifier = Modifier.weight(1.1f),
-                    enabled = !createBlocked,
+                    enabled = !createBlocked && !discountInvalid,
                     onClick = ::onCta,
                 )
             }
@@ -744,6 +761,12 @@ fun CartV2Screen(
             rawValue = numericText,
             onRawValueChange = { numericText = it },
             onDismiss = { numericEditor = null },
+            // #1067: the typed discount above the subtotal (or 100%) shows the error and Confirm stays off
+            errorText = discountTooHighMessage.takeIf {
+                editor == "DISCOUNT" && CartV2Logic.discountExceeds(numericText.toDoubleOrNull() ?: 0.0, subtotal, discountPercent)
+            },
+            confirmEnabled = editor != "DISCOUNT" ||
+                !CartV2Logic.discountExceeds(numericText.toDoubleOrNull() ?: 0.0, subtotal, discountPercent),
             onConfirm = {
                 val value = numericText.toDoubleOrNull() ?: 0.0
                 when {

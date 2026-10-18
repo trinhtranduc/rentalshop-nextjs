@@ -48,6 +48,14 @@ final class CartV2ViewController: BaseViewControler {
     /// #518: lines booked out for the chosen dates, by product (from the batch availability answer)
     private var conflicts: [Int: CartScheduleConflict] = [:]
     private lazy var blockedNotice: UIView = CartOverlapViews.notice("cart.overlap.blocked".localized(), style: .blocked)
+    /// #1067: holds the red "Giảm giá không được lớn hơn tổng đơn (X)" notice while the saved discount is above the lines
+    private let discountNoticeHost: UIStackView = {
+        let host = UIStackView()
+        host.axis = .vertical
+        host.isHidden = true
+        return host
+    }()
+    private var discountNoticeText: String?
 
     private var cart: Cart { CartStore.shared.cart }
     private var isRent: Bool { cart.orderType == .rent }
@@ -181,7 +189,7 @@ final class CartV2ViewController: BaseViewControler {
         // #518 (board GH-trung-tat): the "no overlapping orders" notice sits above the CTA row while it is blocked
         [texts, ctaButton].forEach(ctaRow.addSubview)
         buildEditBar()
-        let bottomColumn = UIStackView(arrangedSubviews: [blockedNotice, ctaRow, editBar])
+        let bottomColumn = UIStackView(arrangedSubviews: [discountNoticeHost, blockedNotice, ctaRow, editBar])
         bottomColumn.axis = .vertical
         bottomColumn.spacing = 10
         blockedNotice.isHidden = true
@@ -340,8 +348,11 @@ final class CartV2ViewController: BaseViewControler {
         }
         ctaButton.setTitle(CartV2Logic.ctaTitleKey(isEditMode: cart.isEditMode, isRent: isRent).localized(), for: .normal)
         // #518 OFF: "Tạo đơn" is greyed and disabled with the notice; the API refuses the order too
-        let blocked = ctaState == .blocked
-        blockedNotice.isHidden = !blocked
+        // #1067: a saved discount above the lines (items removed after it was set) blocks the same way, with its notice
+        let discountProblem = CartV2Logic.cartDiscountError(cart)
+        renderDiscountNotice(discountProblem)
+        let blocked = ctaState == .blocked || discountProblem != nil
+        blockedNotice.isHidden = ctaState != .blocked
         ctaButton.isEnabled = !blocked
         ctaButton.backgroundColor = blocked ? UIColor(hexString: "CBD5E1") : DS.Color.primary
         ctaButton.alpha = cart.items.isEmpty && !blocked ? 0.5 : 1
@@ -349,6 +360,18 @@ final class CartV2ViewController: BaseViewControler {
         editSaveButton.isEnabled = !blocked
         editSaveButton.backgroundColor = ctaButton.backgroundColor
         editSaveButton.alpha = ctaButton.alpha
+    }
+
+    /// #1067: the discount notice (same red box as the overlap block), rebuilt only when its text changes
+    private func renderDiscountNotice(_ text: String?) {
+        discountNoticeHost.isHidden = text == nil
+        guard text != discountNoticeText else { return }
+        discountNoticeText = text
+        discountNoticeHost.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        guard let text else { return }
+        let notice = CartOverlapViews.notice(text, style: .blocked)
+        notice.accessibilityIdentifier = "cart.discount.notice"
+        discountNoticeHost.addArrangedSubview(notice)
     }
 
     /// "Giỏ hàng", or "Sửa đơn #482913" over "Heather Robinson · Đơn thuê" while editing an order (#676)
@@ -884,6 +907,7 @@ final class CartV2ViewController: BaseViewControler {
         let picker = NumberPickerViewController.instance()
         picker.delegate = self
         picker.amountChoiceTitle = "products.cart.discountAmount".localized()
+        picker.discountSubtotal = cart.subtotalAmount // #1067: the sheet refuses more than this (or 100%)
         picker.configure(initialValue: cart.discount, mode: .discount(type: cart.discountType == .percentage ? .percentage : .amount))
         present(picker, animated: true)
     }
@@ -918,7 +942,7 @@ final class CartV2ViewController: BaseViewControler {
         // A double tap must not open two previews or sheets (#341)
         guard PadSplit.cartIsInFront(self, top: navigationController?.topViewController), presentedViewController == nil else { return }
         // #518 OFF: blocked until the dates, quantities or lines change (the button is disabled too)
-        guard ctaState != .blocked else { return }
+        guard ctaState != .blocked, CartV2Logic.cartDiscountError(cart) == nil else { return }
         HapticFeedback.medium()
         var (valid, errors) = cart.validate()
         let missingPrices = CartV2Logic.missingPrices(cart)

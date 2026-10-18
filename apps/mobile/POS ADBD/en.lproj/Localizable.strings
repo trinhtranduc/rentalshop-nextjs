@@ -2745,3 +2745,6 @@
 "overview.dash.todayOrders.empty" = "No orders today yet";
 "overview.dash.todayOrders.rent" = "Rent";
 "overview.dash.todayOrders.sale" = "Sale";
+
+/* #1067: discount above the order total */
+"cart.discount.tooHigh" = "Discount can't be more than the order total (%@)";

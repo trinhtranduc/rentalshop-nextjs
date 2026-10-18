@@ -2743,3 +2743,6 @@
 "overview.dash.todayOrders.empty" = "Chưa có đơn nào hôm nay";
 "overview.dash.todayOrders.rent" = "Thuê";
 "overview.dash.todayOrders.sale" = "Bán";
+
+/* #1067: discount above the order total */
+"cart.discount.tooHigh" = "Giảm giá không được lớn hơn tổng đơn (%@)";

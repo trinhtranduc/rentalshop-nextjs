@@ -24,6 +24,7 @@ import {
   cardPrices,
   chunk,
   computeTotals,
+  discountExceeds,
   dayRangeIso,
   draftFromOrder,
   pickOutlet,
@@ -411,6 +412,10 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     securityDeposit,
     loyaltyDiscount: loyalty.discount,
   });
+  // #1067: a discount above the rent / goods (or 100%) is refused with a red line and blocks the submit
+  const discountTooHigh = discountExceeds(discountType, discountValue, totals.subtotal)
+    ? t('editor.money.discountTooHigh', { limit: discountType === 'percentage' ? '100%' : money(totals.subtotal) })
+    : null;
   const missing = firstMissing({
     orderType,
     pickup,
@@ -511,7 +516,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
       if (missing === 'customer') setCustomerOpen(true);
       return;
     }
-    if (cta === 'blocked') return;
+    if (cta === 'blocked' || discountTooHigh) return;
     // A new order is confirmed first (iOS CreateOrderConfirmSheet, #569); an edit only on a schedule overlap
     if (!confirmed && (!editing || cta === 'warn')) {
       setConfirmOpen(true);
@@ -878,6 +883,11 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
                 </button>
               )}
             </div>
+            {discountTooHigh && (
+              <p className="m-0 text-right text-sm font-medium text-ar-danger" role="alert">
+                {discountTooHigh}
+              </p>
+            )}
             {totals.discountAmount > 0 && discountType === 'percentage' && (
               <div className="flex justify-between text-sm text-ar-muted">
                 <span />
@@ -934,7 +944,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           <button
             type="button"
             onClick={() => void submit()}
-            disabled={submitting || compressing || cta === 'blocked' || (!!missing && missing !== 'days' && missing !== 'customer')}
+            disabled={submitting || compressing || cta === 'blocked' || !!discountTooHigh || (!!missing && missing !== 'days' && missing !== 'customer')}
             className="h-[52px] rounded-[14px] bg-ar-primary text-base font-semibold text-ar-on-primary hover:opacity-95 disabled:opacity-50"
           >
             {submitLabel}
