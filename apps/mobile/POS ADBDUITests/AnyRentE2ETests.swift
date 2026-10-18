@@ -722,6 +722,35 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
+    /// #1064 (owner): every cart line says how many are free (green "Còn N trống…" when 2+ and enough); a sale line
+    /// shows one count. cart-avail-*.png
+    func test8lCartAvailabilityNotes() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        guard addFromHome("Product 1 - Electronics"), addFromHome("Product 2 - Tools") else {
+            return XCTFail("could not add two products")
+        }
+        guard openCart() else { return XCTFail("cart did not open") }
+        e2e.cartRentToday()
+        sleep(3)
+        let free = app.staticTexts.matching(NSPredicate(format:
+            "label CONTAINS 'Còn ' AND label CONTAINS 'trống trong ngày' OR label CONTAINS 'free on these dates' AND NOT label CONTAINS 'Only'"))
+        e2e.note("rent notes: \(free.allElementsBoundByIndex.map(\.label))")
+        e2e.soft(free.count >= 1, "a rent line with enough units says Còn N trống trong ngày đã chọn")
+        e2e.shot("cart-avail-1-rent")
+        e2e.tapIfExists(e2e.button(["Sale", "Bán"]), timeout: 3)
+        sleep(3)
+        let counts = app.staticTexts.matching(NSPredicate(format:
+            "label CONTAINS 'trong kho' OR label CONTAINS 'in stock' OR label CONTAINS 'Hết hàng' OR label CONTAINS 'Out of stock'"))
+        e2e.note("sale notes: \(counts.allElementsBoundByIndex.map(\.label))")
+        e2e.soft(counts.count >= 1 && counts.count <= 2, "one count per sale line (\(counts.count))")
+        e2e.shot("cart-avail-3-sale")
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
     /// #893: swiping a cart line right-to-left removes it (red "Xoá" when the swipe stops halfway)
     func test8gCartSwipeDelete() throws {
         try e2e.requireFlag("newProducts")
@@ -2391,6 +2420,8 @@ final class AnyRentE2ETests: XCTestCase {
             "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only ' OR label CONTAINS 'Không còn trống' OR label CONTAINS 'Unavailable on these dates' OR label BEGINSWITH ' Hết đồ' OR label BEGINSWITH ' Booked out' OR label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
         // A product already booked out today (an earlier run took the units) shows the red "Hết …" tag at once instead of "Chỉ còn N trống"
         let outTag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Xem các đơn' OR label BEGINSWITH 'See the orders'")).firstMatch
+        sleep(2)
+        e2e.shot("33a2-overlap-cart-free") // #1064: enough units → green "Còn N trống…"
         for _ in 0..<40 where !short.exists && !outTag.exists {
             guard plus.exists else { break }
             plus.tap()
