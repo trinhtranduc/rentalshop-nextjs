@@ -2728,3 +2728,6 @@
 "attendance.error.locationNotSet.title" = "Chi nhánh chưa đặt vị trí";
 "attendance.error.locationNotSet.titleNamed" = "%@ chưa đặt vị trí";
 "attendance.error.locationNotSet.message" = "Chưa đo được khoảng cách. Nhờ chủ shop đặt vị trí ở Chấm công › Mã QR & vị trí.";
+
+/* #1024: VoiceOver on the cart MÓN header "Thêm" */
+"products.cart.addItem.accessibility" = "Thêm món";

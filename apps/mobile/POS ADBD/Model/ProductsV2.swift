@@ -423,6 +423,16 @@ struct CartLineCalc: Equatable {
     }
 }
 
+/// #1024 (option A, icon + word): the cart's icons; Android `CartV2Icon` uses the Material twin
+enum CartV2Icon: String {
+    /// MÓN header "Thêm"
+    case addItem = "plus.circle"
+    /// a line's "Ghi chú" / its note
+    case itemNote = "square.and.pencil"
+    /// the order's "Ghi chú" row in TIỀN
+    case orderNote = "note.text"
+}
+
 enum CartV2Logic {
     static func calc(_ item: CartItem, orderType: OrderType) -> CartLineCalc {
         let unit: CartLineCalc.Unit
@@ -579,6 +589,19 @@ enum CartV2Logic {
     static func noteText(_ note: String?) -> String? {
         let trimmed = (note ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// #1024 (option A): a line's note on one line (line breaks become spaces) for the pencil entry, which cuts it
+    /// with "…"; nil = the entry shows "Ghi chú"
+    static func itemNoteLine(_ note: String?) -> String? {
+        guard let text = noteText(note) else { return nil }
+        return text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
+    /// #1024: what VoiceOver reads on the pencil entry, as before the icon: "Ghi chú cho <product>", then the note
+    static func itemNoteSpoken(productName: String?, note: String?) -> (label: String, value: String?) {
+        (String(format: "cart.itemNote.accessibility".localized(), productName ?? ""), noteText(note))
     }
 
     /// "Nhập giá cho …" for each rent line without a price; shown in the "Lỗi" alert before Tạo đơn

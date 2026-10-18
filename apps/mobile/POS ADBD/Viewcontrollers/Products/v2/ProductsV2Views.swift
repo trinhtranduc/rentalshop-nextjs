@@ -234,12 +234,28 @@ final class V2ValueRow: UIControl {
     let titleLabel = V2.label(size: DS.TextSize.body)
     let valueLabel = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted)
 
-    init(title: String, chevron: Bool = true) {
+    /// `icon`: an SF Symbol before the title (#1024: the cart's order note), grey; nil = none as before
+    init(title: String, chevron: Bool = true, icon: String? = nil) {
         super.init(frame: .zero)
         titleLabel.text = title
         valueLabel.textAlignment = .right
         addSubview(titleLabel)
         addSubview(valueLabel)
+        var titleLeading = snp.leading
+        var titleInset = DS.Spacing.lg
+        if let icon {
+            let image = UIImageView(image: DS.symbol(icon, 17))
+            image.tintColor = UIColor(hexString: "64748B")
+            image.contentMode = .center
+            addSubview(image)
+            image.snp.makeConstraints { make in
+                make.leading.equalToSuperview().offset(DS.Spacing.lg)
+                make.centerY.equalToSuperview()
+                make.width.height.equalTo(20)
+            }
+            titleLeading = image.snp.trailing
+            titleInset = 8
+        }
         let arrow = UIImageView(image: DS.symbol("chevron.right", 16))
         arrow.tintColor = UIColor(hexString: "94A3B8")
         arrow.contentMode = .center
@@ -247,7 +263,7 @@ final class V2ValueRow: UIControl {
         addSubview(arrow)
         snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(DS.Spacing.lg)
+            make.leading.equalTo(titleLeading).offset(titleInset)
             make.centerY.equalToSuperview()
         }
         arrow.snp.makeConstraints { make in

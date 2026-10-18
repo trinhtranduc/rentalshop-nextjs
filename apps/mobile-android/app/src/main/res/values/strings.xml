@@ -653,6 +653,7 @@
     </plurals>
     <string name="v2_cart_items">Items · %1$d</string>
     <string name="v2_cart_add_more">Add</string>
+    <string name="v2_cart_add_item_accessibility">Add item</string>
     <string name="v2_cart_empty">The cart is empty. Add products from the list.</string>
     <string name="v2_calc_per_rental">%1$s/rental × %2$d</string>
     <plurals name="v2_calc_per_day">
