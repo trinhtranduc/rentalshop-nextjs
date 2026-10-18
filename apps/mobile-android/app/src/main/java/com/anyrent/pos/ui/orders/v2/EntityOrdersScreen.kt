@@ -293,7 +293,7 @@ fun EntityOrdersScreen(
         )
         HorizontalDivider(color = DS.Colors.Divider, thickness = 1.dp)
         if (isProduct) {
-            // #1025: the Tất cả đơn sort bar (#888): "Xếp theo ngày lấy · gần nhất trước ▾"
+            // #1025: the Tất cả đơn sort bar (#888): "Xếp theo ngày lấy · mới nhất trước ▾"
             Row(
                 Modifier.fillMaxWidth().background(DS.Colors.Surface).padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,

@@ -42,7 +42,9 @@ enum ProductOrdersChip: Int, CaseIterable {
         }
     }
 
-    var sortOrder: String { self == .done ? "desc" : "asc" }
+    /// #1056 (owner): the farthest date on top in every chip, as "Tất cả N" (`pickupPlanAt desc`): "Sắp tới" the
+    /// farthest pickup, "Đang thuê" the farthest return, "Đã xong" the newest
+    var sortOrder: String { "desc" }
 
     var titleKey: String {
         switch self {

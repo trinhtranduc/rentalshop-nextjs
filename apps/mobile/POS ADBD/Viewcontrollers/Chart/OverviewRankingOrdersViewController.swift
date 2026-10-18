@@ -570,7 +570,7 @@ final class OverviewRankingOrdersViewController: BaseViewControler {
         renderEntityHeader()
     }
 
-    /// #1025: the Tất cả đơn sort bar (#888): "Xếp theo ngày lấy · gần nhất trước ▾", then a divider
+    /// #1025: the Tất cả đơn sort bar (#888): "Xếp theo ngày lấy · mới nhất trước ▾", then a divider
     private func buildSortBar() {
         sortButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
         sortButton.setTitleColor(DS.Color.primary, for: .normal)
