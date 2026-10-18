@@ -618,6 +618,52 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(none.weight, .bold)
     }
 
+    /// #1064 (owner): 0 free = "Không còn trống…" / "Hết hàng" in red; 1 free (or fewer than asked) = amber
+    /// "Chỉ còn N …"; 2+ free and enough for the cart = green "Còn N …". Nothing until availability loads
+    func testAvailabilityNoteByFreeCount() {
+        XCTAssertNil(CartV2Logic.availabilityNote(available: nil, asked: 1, isRent: true))
+        XCTAssertNil(CartV2Logic.availabilityNote(available: nil, asked: 1, isRent: false))
+
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 0, asked: 1, isRent: true),
+                       .init(key: "products.cart.unavailableRent", count: 0, tone: .none))
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: -2, asked: 1, isRent: true),
+                       .init(key: "products.cart.unavailableRent", count: 0, tone: .none))
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 0, asked: 1, isRent: false),
+                       .init(key: "products.cart.outOfStock", count: 0, tone: .none))
+
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 1, asked: 1, isRent: true),
+                       .init(key: "products.cart.shortRent", count: 1, tone: .low))
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 1, asked: 3, isRent: false),
+                       .init(key: "products.cart.shortStock", count: 1, tone: .low))
+        // 2 free but 3 in the cart: the order cannot be filled → amber, not green
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 2, asked: 3, isRent: true),
+                       .init(key: "products.cart.shortRent", count: 2, tone: .low))
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 2, asked: 3, isRent: false),
+                       .init(key: "products.cart.shortStock", count: 2, tone: .low))
+
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 2, asked: 2, isRent: true),
+                       .init(key: "products.cart.freeRent", count: 2, tone: .ok))
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 5, asked: 1, isRent: true),
+                       .init(key: "products.cart.freeRent", count: 5, tone: .ok))
+        XCTAssertEqual(CartV2Logic.availabilityNote(available: 5, asked: 1, isRent: false),
+                       .init(key: "products.cart.inStock", count: 5, tone: .ok))
+
+        // The texts exist in both languages and read the count
+        let note = CartV2Logic.AvailabilityNote(key: "products.cart.freeRent", count: 4, tone: .ok)
+        XCTAssertNotEqual(note.text, "products.cart.freeRent")
+        XCTAssertTrue(note.text.contains("4"))
+        XCTAssertNotEqual(CartV2Logic.AvailabilityNote(key: "products.cart.unavailableRent", count: 0, tone: .none).text,
+                          "products.cart.unavailableRent")
+        XCTAssertNotEqual(CartV2Logic.AvailabilityNote(key: "products.cart.outOfStock", count: 0, tone: .none).text,
+                          "products.cart.outOfStock")
+
+        // Green reuses the "done" token, same weight as amber
+        let ok = CartV2ViewController.shortageStyle(.ok)
+        XCTAssertEqual(ok.colors.text, DS.Status.done.text)
+        XCTAssertEqual(ok.colors.fill, DS.Status.done.fill)
+        XCTAssertEqual(ok.weight, .medium)
+    }
+
     func testShortageAndRentalDays() {
         var line = item(price: 1, qty: 2)
         XCTAssertNil(CartV2Logic.shortage(line))

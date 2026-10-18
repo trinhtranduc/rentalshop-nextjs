@@ -256,6 +256,31 @@ class ProductRulesTest {
         assertEquals(CartV2Logic.ShortageTone.NONE, CartV2Logic.shortageTone(0))
     }
 
+    /**
+     * #1064 (owner, iOS `availabilityNote`): 0 free = "Không còn trống…" / "Hết hàng" in red; 1 free (or fewer than
+     * asked) = amber "Chỉ còn N …"; 2+ free and enough for the cart = green "Còn N …". Nothing until loaded
+     */
+    @Test
+    fun `availability note follows the free count`() {
+        val note = CartV2Logic::availabilityNote
+        assertNull(note(null, 1, true))
+        assertNull(note(null, 1, false))
+
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_unavailable_rent, 0, CartV2Logic.ShortageTone.NONE), note(0, 1, true))
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_unavailable_rent, 0, CartV2Logic.ShortageTone.NONE), note(-2, 1, true))
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_out_of_stock, 0, CartV2Logic.ShortageTone.NONE), note(0, 1, false))
+
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_short_rent, 1, CartV2Logic.ShortageTone.LOW), note(1, 1, true))
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_short_stock, 1, CartV2Logic.ShortageTone.LOW), note(1, 3, false))
+        // 2 free but 3 in the cart: the order cannot be filled → amber, not green
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_short_rent, 2, CartV2Logic.ShortageTone.LOW), note(2, 3, true))
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_short_stock, 2, CartV2Logic.ShortageTone.LOW), note(2, 3, false))
+
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_free_rent, 2, CartV2Logic.ShortageTone.OK), note(2, 2, true))
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_free_rent, 5, CartV2Logic.ShortageTone.OK), note(5, 1, true))
+        assertEquals(CartV2Logic.AvailabilityNote(R.string.v2_cart_in_stock, 5, CartV2Logic.ShortageTone.OK), note(5, 1, false))
+    }
+
     @Test
     fun `switching to sale after a pricing toggle uses the sale price`() {
         CartStore.clear(persistToDisk = false)
