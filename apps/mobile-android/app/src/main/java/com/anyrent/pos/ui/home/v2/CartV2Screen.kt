@@ -1297,10 +1297,11 @@ private fun CartItemNoteSheet(
             Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!CartV2Logic.noteText(note).isNullOrEmpty()) {
                     OutlinedButton(onClick = { onSave(null) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
-                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                     }
                 }
-                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1.6f).height(50.dp)) {
+                // #1056: two equal buttons, as on iOS ("Delete note" was cut on two lines)
+                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
                     Text(stringResource(R.string.v2_item_note_save), fontWeight = FontWeight.Bold)
                 }
             }
