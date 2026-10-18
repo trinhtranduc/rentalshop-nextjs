@@ -29,6 +29,16 @@ class CartMoneyRowsTest {
         assertEquals(CartMoneyTone.NOTE_TEXT, CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = "Khách lấy lúc 9h"))
     }
 
+    /** #1056 (owner: "note cần xuống dòng"): a note shows in full, its own line breaks kept, blank lines dropped */
+    @Test
+    fun noteShownKeepsTheLines() {
+        assertEquals(null, CartV2Logic.noteShown(null))
+        assertEquals(null, CartV2Logic.noteShown(" \n\t "))
+        assertEquals("Giao 9h\nKhách lấy tại tiệm", CartV2Logic.noteShown("  Giao 9h \n\n Khách lấy tại tiệm  "))
+        val long = "Giao trước 9h ".repeat(20).trim()
+        assertEquals(long, CartV2Logic.noteShown(long))
+    }
+
     @Test
     fun discountShowsMinusOrZero() {
         assertEquals(0.0, CartV2Logic.discountShown(0.0), 0.0)

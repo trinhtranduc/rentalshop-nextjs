@@ -549,7 +549,7 @@ fun CartV2Screen(
             val notePhotos = if (editingOrderId == null) noteFiles.size else 0
             CartMoneyEditRow(
                 stringResource(R.string.v2_cart_note),
-                CartV2Logic.itemNoteLine(notes) ?: stringResource(R.string.v2_cart_add_note),
+                CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
                 tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
                 photoCount = notePhotos,
                 onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
@@ -1189,7 +1189,7 @@ private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Uni
 
 /**
  * #1056 (owner, mockup cartmoney; iOS `V2ValueRow(editable:)`): a TIỀN row that opens a sheet — the title, then the
- * value in blue bold (or the order note on one line in #334155) and a small blue pencil; no ›. The whole row is the
+ * value in blue bold (or the whole order note, wrapped on the right, in #334155) and a small blue pencil; no ›. The whole row is the
  * button; TalkBack reads "title, value[, N ảnh], Sửa". [photoCount] (#1043, order note on a new order) adds a grey
  * camera + count before the pencil.
  */
@@ -1197,29 +1197,31 @@ private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Uni
 private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, onClick: () -> Unit, photoCount: Int = 0) {
     val photos = if (photoCount > 0) stringResource(R.string.v2_order_note_photos, photoCount) else null
     val spoken = CartV2Logic.moneyRowSpoken(title, value, stringResource(R.string.edit), photos)
+    // #1056 (owner: "note cần xuống dòng"): a note wraps on the right; the title and the pencil stay on its first line
+    val isNoteText = tone == CartMoneyTone.NOTE_TEXT
+    val align = if (isNoteText) Alignment.Top else Alignment.CenterVertically
     Row(
         Modifier
             .fillMaxWidth()
             .clickable(role = Role.Button, onClick = onClick)
             .clearAndSetSemantics { contentDescription = spoken; role = Role.Button }
             .heightIn(min = 48.dp)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 16.dp, vertical = if (isNoteText) 13.dp else 0.dp),
+        verticalAlignment = align,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(title, fontSize = DS.TextSize.Body, color = DS.Colors.Text)
         Row(
             Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = align,
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
         ) {
-            val isNoteText = tone == CartMoneyTone.NOTE_TEXT
             Text(
                 value,
                 fontSize = DS.TextSize.Body,
                 fontWeight = if (isNoteText) FontWeight.Normal else FontWeight.Bold,
                 color = if (isNoteText) Color(0xFF334155) else DS.Colors.Primary,
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                maxLines = if (isNoteText) Int.MAX_VALUE else 1, overflow = TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.End,
                 modifier = Modifier.weight(1f, fill = false),
             )
@@ -1229,31 +1231,34 @@ private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, 
                     Text("$photoCount", fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
                 }
             }
-            Icon(Icons.Outlined.Edit, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
+            Icon(Icons.Outlined.Edit, contentDescription = null, tint = DS.Colors.Primary,
+                modifier = Modifier.padding(top = if (isNoteText) 2.dp else 0.dp).size(16.dp))
         }
     }
 }
 
-/** #1024 option A / #1043: the item note line and the order note line are the same entry */
+/**
+ * #1024 option A: a cart line's note entry. #1056 (owner: "note cần xuống dòng", iOS `CartNoteEntry`): the whole note
+ * on as many lines as it needs (it was one line cut with "…")
+ */
 @Composable
 private fun NoteEntry(icon: CartV2Icon, note: String?, emptyText: String, spokenText: String, actionLabel: String, onClick: () -> Unit) {
-    val line = CartV2Logic.itemNoteLine(note)
-    val boxed = if (line != null) Modifier.background(Color(0xFFF8FAFC)) else Modifier
+    val shown = CartV2Logic.noteShown(note)
+    val boxed = if (shown != null) Modifier.background(Color(0xFFF8FAFC)) else Modifier
     Row(
         modifier = Modifier.clip(RoundedCornerShape(8.dp)).then(boxed)
             .clickable(onClickLabel = actionLabel, role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = spokenText }
-            .padding(horizontal = if (line != null) 8.dp else 2.dp, vertical = if (line != null) 5.dp else 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = if (shown != null) 8.dp else 2.dp, vertical = if (shown != null) 5.dp else 4.dp),
+        verticalAlignment = if (shown != null) Alignment.Top else Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(cartIcon(icon), contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+        Icon(cartIcon(icon), contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.padding(top = if (shown != null) 2.dp else 0.dp).size(16.dp))
         Text(
-            line ?: emptyText,
+            shown ?: emptyText,
             fontSize = DS.TextSize.Secondary,
-            fontWeight = if (line != null) FontWeight.Normal else FontWeight.SemiBold,
-            color = if (line != null) Color(0xFF334155) else Color(0xFF64748B),
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            fontWeight = if (shown != null) FontWeight.Normal else FontWeight.SemiBold,
+            color = if (shown != null) Color(0xFF334155) else Color(0xFF64748B),
         )
     }
 }
@@ -1310,10 +1315,11 @@ private fun CartItemNoteSheet(
             Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!CartV2Logic.noteText(note).isNullOrEmpty()) {
                     OutlinedButton(onClick = { onSave(null) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
-                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.v2_item_note_clear), color = Color(0xFFB91C1C), fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
                     }
                 }
-                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1.6f).height(50.dp)) {
+                // #1056: two equal buttons, as on iOS ("Delete note" was cut on two lines)
+                Button(onClick = { onSave(text) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f).height(50.dp)) {
                     Text(stringResource(R.string.v2_item_note_save), fontWeight = FontWeight.Bold)
                 }
             }

@@ -333,6 +333,50 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(posts, 1)
     }
 
+    /// #1056 (owner: "note cần xuống dòng"): a note shows in full, its own line breaks kept, blank lines dropped
+    func testNoteShownKeepsTheLines() {
+        XCTAssertNil(CartV2Logic.noteShown(nil))
+        XCTAssertNil(CartV2Logic.noteShown(" \n\t "))
+        XCTAssertEqual(CartV2Logic.noteShown("  Giao 9h \n\n Khách lấy tại tiệm  "), "Giao 9h\nKhách lấy tại tiệm")
+        let long = String(repeating: "Giao trước 9h ", count: 20).trimmingCharacters(in: .whitespaces)
+        XCTAssertEqual(CartV2Logic.noteShown(long), long, "never cut")
+    }
+
+    /// #1056: the item note line wraps (it was one line cut with "…"); empty it reads "Ghi chú"
+    func testItemNoteEntryWraps() {
+        let note = "Giao trước 9h sáng thứ 7\nKhách lấy tại tiệm, gọi trước 30 phút"
+        let entry = CartNoteEntry(note: note, emptyTitle: "Ghi chú")
+        XCTAssertEqual(entry.textLabel.numberOfLines, 0)
+        XCTAssertEqual(entry.textLabel.text, note)
+        XCTAssertTrue(entry.accessibilityTraits.contains(.button))
+        XCTAssertEqual(CartNoteEntry(note: "  ", emptyTitle: "Ghi chú").textLabel.text, "Ghi chú")
+    }
+
+    /// #1056: the order note row in TIỀN wraps its text on the right; money rows stay one line
+    func testOrderNoteRowWraps() {
+        let row = V2ValueRow(title: "Ghi chú", editable: true, wrapsValue: true)
+        XCTAssertEqual(row.valueLabel.numberOfLines, 0)
+        XCTAssertEqual(row.valueLabel.textAlignment, .right)
+        XCTAssertEqual(V2ValueRow(title: "Giảm giá", editable: true).valueLabel.numberOfLines, 1)
+    }
+
+    /// #1056 (owner: "style present note view nên giống nhau"): the order and item note sheets are one sheet —
+    /// same detent and corners; only the order note on a new order has the photo row
+    func testOrderAndItemNoteSheetsAreTheSame() {
+        let item = CartItemNoteSheet(productName: "Áo dài", note: nil)
+        let order = CartItemNoteSheet.orderNote(note: "Giao 9h", photos: [], editMode: false)
+        let editing = CartItemNoteSheet.orderNote(note: nil, photos: [], editMode: true)
+        for sheet in [item, order, editing] {
+            XCTAssertEqual(sheet.sheetPresentationController?.detents, [.large()])
+            XCTAssertEqual(sheet.sheetPresentationController?.preferredCornerRadius, 24)
+        }
+        XCTAssertEqual(item.maxPhotos, 0)
+        XCTAssertEqual(order.maxPhotos, CartV2Logic.orderNoteMaxPhotos(editMode: false))
+        XCTAssertEqual(editing.maxPhotos, 0, "editing an order stays text only")
+        XCTAssertEqual(order.titleText, "cart.orderNote.title".localized())
+        XCTAssertEqual(item.titleText, "cart.itemNote.title".localized())
+    }
+
     /// #1056 (owner, mockup cartmoney): TIỀN — blue value + pencil = tappable, black = read only (Android CartMoneyRowsTest)
     func testCartMoneyRowsBlueMeansTappable() throws {
         XCTAssertFalse(CartMoneyRow.subtotal.isEditable)

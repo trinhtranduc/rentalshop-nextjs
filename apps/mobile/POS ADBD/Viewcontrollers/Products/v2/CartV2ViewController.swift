@@ -572,51 +572,24 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     /// #684 (canvas N1), #1024 (option A): pencil + "Ghi chú" (grey) when the line has no note, else pencil + the
-    /// note on one line, cut with "…", in a light box
-    private func itemNoteButton(_ item: CartItem, index: Int) -> UIButton {
+    /// note in a light box. #1056 (owner): the whole note, on as many lines as it needs
+    private func itemNoteButton(_ item: CartItem, index: Int) -> UIControl {
         let spoken = CartV2Logic.itemNoteSpoken(productName: item.productName, note: item.note)
-        return noteEntryButton(icon: .itemNote, note: item.note, emptyTitle: "cart.itemNote.label".localized(),
-                               label: spoken.label, value: spoken.value) { [weak self] in self?.openItemNote(index: index) }
-    }
-
-    /// #1024 option A / #1043: icon + the word (grey) when there is no note, else icon + the note on one line, cut
-    /// with "…", in a light box. The item note line and the order note line are the same button.
-    private func noteEntryButton(icon: CartV2Icon, note: String?, emptyTitle: String, label: String, value: String?,
-                                 action: @escaping () -> Void) -> UIButton {
-        let button = UIButton(type: .system)
-        button.contentHorizontalAlignment = .leading
-        button.titleLabel?.numberOfLines = 1
-        button.titleLabel?.lineBreakMode = .byTruncatingTail
-        button.setImage(DS.symbol(icon.rawValue, 15, weight: .medium), for: .normal)
-        button.tintColor = UIColor(hexString: "64748B")
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -3, bottom: 0, right: 3)
-        if let line = CartV2Logic.itemNoteLine(note) {
-            button.setTitle(line, for: .normal)
-            button.titleLabel?.font = Utils.regularFont(size: DS.TextSize.secondary)
-            button.setTitleColor(UIColor(hexString: "334155"), for: .normal)
-            button.backgroundColor = UIColor(hexString: "F8FAFC")
-            button.layer.cornerRadius = 8
-            button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 11, bottom: 6, right: 8)
-        } else {
-            button.setTitle(emptyTitle, for: .normal)
-            button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
-            button.setTitleColor(UIColor(hexString: "64748B"), for: .normal)
-            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 3, bottom: 4, right: 8)
-        }
-        button.accessibilityLabel = label
-        button.accessibilityValue = value
-        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
-        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
-        return button
+        let entry = CartNoteEntry(note: item.note, emptyTitle: "cart.itemNote.label".localized())
+        entry.accessibilityLabel = spoken.label
+        entry.accessibilityValue = spoken.value
+        entry.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        entry.addAction(UIAction { [weak self] _ in self?.openItemNote(index: index) }, for: .touchUpInside)
+        return entry
     }
 
     /// #1043: the order note in TIỀN; opens the "Ghi chú đơn" sheet. #1056 (owner): a row like the others — "Ghi chú",
-    /// then the blue "Thêm" or the note on one line (#334155, cut with "…"), a grey camera + count on a new order with
-    /// photos, and the blue pencil
+    /// then the blue "Thêm" or the whole note on the right, wrapped on as many lines as it needs (#334155), a grey
+    /// camera + count on a new order with photos, and the blue pencil
     private func orderNoteRow() -> UIView {
         let photoCount = cart.isEditMode ? 0 : CartStore.shared.noteImageData.count
-        let row = V2ValueRow(title: "products.cart.note".localized(), editable: true)
-        row.valueLabel.text = CartV2Logic.itemNoteLine(cart.notes) ?? "products.cart.addNote".localized()
+        let row = V2ValueRow(title: "products.cart.note".localized(), editable: true, wrapsValue: true)
+        row.valueLabel.text = CartV2Logic.noteShown(cart.notes) ?? "products.cart.addNote".localized()
         if CartV2Logic.moneyRowTone(.note, note: cart.notes) == .noteText {
             row.valueLabel.textColor = UIColor(hexString: "334155")
             row.valueLabel.font = Utils.regularFont(size: DS.TextSize.body)
@@ -931,10 +904,7 @@ final class CartV2ViewController: BaseViewControler {
         let kept = editMode ? [] : store.noteImageData.compactMap { data in UIImage(data: data).map { ($0, data) } }
         var keptData: [ObjectIdentifier: Data] = [:]
         kept.forEach { keptData[ObjectIdentifier($0.0)] = $0.1 }
-        let sheet = CartItemNoteSheet(title: "cart.orderNote.title".localized(), subtitle: nil, note: store.cart.notes,
-                                      placeholder: "cart.orderNote.placeholder".localized(),
-                                      hint: "cart.orderNote.hint".localized(),
-                                      photos: kept.map { $0.0 }, maxPhotos: CartV2Logic.orderNoteMaxPhotos(editMode: editMode))
+        let sheet = CartItemNoteSheet.orderNote(note: store.cart.notes, photos: kept.map { $0.0 }, editMode: editMode)
         sheet.onSaveWithPhotos = { text, images in
             store.setNotes(CartV2Logic.noteText(text))
             guard !editMode else { return }
@@ -1448,11 +1418,12 @@ final class CartItemNoteSheet: UIViewController, UIImagePickerControllerDelegate
     var onSave: ((String?) -> Void)?
     /// #1043 order note: the text (nil = cleared) and the photos
     var onSaveWithPhotos: ((String?, [UIImage]) -> Void)?
-    private let titleText: String
+    let titleText: String
     private let subtitle: String?
     private let note: String?
     private let hintText: String
-    private let maxPhotos: Int
+    /// 0 = no photo row (an item note, or the order note while editing an order)
+    let maxPhotos: Int
     private var photos: [UIImage]
     private let textView = UITextView()
     private let placeholder: UILabel
@@ -1464,6 +1435,14 @@ final class CartItemNoteSheet: UIViewController, UIImagePickerControllerDelegate
     convenience init(productName: String, note: String?) {
         self.init(title: "cart.itemNote.title".localized(), subtitle: productName, note: note,
                   placeholder: "cart.itemNote.placeholder".localized(), hint: "cart.itemNote.hint".localized())
+    }
+
+    /// #1043 "Ghi chú đơn": the same sheet as an item note (#1056, owner: one look for both); the photo row only on a
+    /// new order
+    static func orderNote(note: String?, photos: [UIImage], editMode: Bool) -> CartItemNoteSheet {
+        CartItemNoteSheet(title: "cart.orderNote.title".localized(), subtitle: nil, note: note,
+                          placeholder: "cart.orderNote.placeholder".localized(), hint: "cart.orderNote.hint".localized(),
+                          photos: photos, maxPhotos: CartV2Logic.orderNoteMaxPhotos(editMode: editMode))
     }
 
     /// `maxPhotos` 0 = no photo row
