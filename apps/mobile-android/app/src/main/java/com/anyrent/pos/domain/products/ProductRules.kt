@@ -408,9 +408,16 @@ object CartV2Logic {
     /** #1056 (iOS `moneyRowTone`): an empty note shows the blue "Thêm"; a note shows its text */
     fun moneyRowTone(row: CartMoneyRow, note: String? = null): CartMoneyTone = when {
         !row.editable -> CartMoneyTone.PLAIN
-        row == CartMoneyRow.NOTE && itemNoteLine(note) != null -> CartMoneyTone.NOTE_TEXT
+        row == CartMoneyRow.NOTE && noteShown(note) != null -> CartMoneyTone.NOTE_TEXT
         else -> CartMoneyTone.ACTION
     }
+
+    /**
+     * #1056 (owner: "note cần xuống dòng", iOS `noteShown`): a note as the cart shows it, in full on several lines —
+     * each line trimmed, blank lines dropped; null = "Ghi chú" / "Thêm"
+     */
+    fun noteShown(note: String?): String? =
+        noteText(note)?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }?.joinToString("\n")
 
     /** #1056 (iOS `discountShown`): "−50.000đ" above 0, else "0đ" (both blue now) */
     fun discountShown(discountAmount: Double): Double = if (discountAmount > 0) -discountAmount else 0.0

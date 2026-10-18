@@ -454,7 +454,15 @@ enum CartV2Logic {
     /// #1056: an empty note shows the blue "Thêm"; a note shows its text
     static func moneyRowTone(_ row: CartMoneyRow, note: String? = nil) -> CartMoneyTone {
         guard row.isEditable else { return .plain }
-        return row == .note && itemNoteLine(note) != nil ? .noteText : .action
+        return row == .note && noteShown(note) != nil ? .noteText : .action
+    }
+
+    /// #1056 (owner: "note cần xuống dòng"): a note as the cart shows it, in full on several lines — each line trimmed,
+    /// blank lines dropped; nil = "Ghi chú" / "Thêm"
+    static func noteShown(_ note: String?) -> String? {
+        guard let text = noteText(note) else { return nil }
+        return text.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }.joined(separator: "\n")
     }
 
     /// #1056: "−50.000đ" above 0, else "0đ" (both blue now; the value used to be green above 0)

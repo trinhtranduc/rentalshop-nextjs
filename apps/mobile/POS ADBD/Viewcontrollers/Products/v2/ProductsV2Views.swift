@@ -244,8 +244,9 @@ final class V2ValueRow: UIControl {
 
     /// `icon`: an SF Symbol before the title (#1024: the cart's order note), grey; nil = none as before.
     /// `editable` (#1056, owner: blue = tappable): no ›, the value blue and bold, then a blue pencil; VoiceOver reads
-    /// the title, then "value, Sửa"
-    init(title: String, chevron: Bool = true, icon: String? = nil, editable: Bool = false) {
+    /// the title, then "value, Sửa". `wrapsValue` (#1056, the order note): the value on as many lines as it needs, on
+    /// the right; the title and the pencil stay on its first line
+    init(title: String, chevron: Bool = true, icon: String? = nil, editable: Bool = false, wrapsValue: Bool = false) {
         self.editable = editable
         super.init(frame: .zero)
         let chevron = chevron && !editable
@@ -256,7 +257,8 @@ final class V2ValueRow: UIControl {
         if editable {
             valueLabel.textColor = DS.Color.primary
             valueLabel.font = Utils.boldFont(size: DS.TextSize.body)
-            valueLabel.lineBreakMode = .byTruncatingTail
+            valueLabel.lineBreakMode = wrapsValue ? .byWordWrapping : .byTruncatingTail
+            valueLabel.numberOfLines = wrapsValue ? 0 : 1
             valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             pencil.tintColor = DS.Color.primary
             pencil.contentMode = .center
@@ -267,12 +269,12 @@ final class V2ValueRow: UIControl {
             addSubview(pencil)
             pencil.snp.makeConstraints { make in
                 make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
-                make.centerY.equalToSuperview()
+                if wrapsValue { make.centerY.equalTo(titleLabel) } else { make.centerY.equalToSuperview() }
                 make.width.height.equalTo(16)
             }
             accessories.snp.makeConstraints { make in
                 make.trailing.equalTo(pencil.snp.leading).offset(-6)
-                make.centerY.equalToSuperview()
+                if wrapsValue { make.centerY.equalTo(titleLabel) } else { make.centerY.equalToSuperview() }
             }
             accessories.setContentCompressionResistancePriority(.required, for: .horizontal)
             accessories.setContentHuggingPriority(.required, for: .horizontal)
@@ -302,7 +304,7 @@ final class V2ValueRow: UIControl {
         snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
         titleLabel.snp.makeConstraints { make in
             make.leading.equalTo(titleLeading).offset(titleInset)
-            make.centerY.equalToSuperview()
+            if wrapsValue { make.firstBaseline.equalTo(valueLabel.snp.firstBaseline) } else { make.centerY.equalToSuperview() }
         }
         arrow.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
@@ -316,7 +318,12 @@ final class V2ValueRow: UIControl {
             } else {
                 make.trailing.equalTo(arrow.snp.leading).offset(chevron ? -6 : 0)
             }
-            make.centerY.equalToSuperview()
+            if wrapsValue {
+                make.top.equalToSuperview().offset(13)
+                make.bottom.equalToSuperview().offset(-13)
+            } else {
+                make.centerY.equalToSuperview()
+            }
         }
         titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         isAccessibilityElement = true
@@ -337,6 +344,48 @@ final class V2ValueRow: UIControl {
 
     override var isHighlighted: Bool {
         didSet { backgroundColor = isHighlighted ? V2.chipFill : .clear }
+    }
+}
+
+/// #1056 (owner: "note cần xuống dòng"): a cart line's note entry — a grey pencil and "Ghi chú" when there is no note,
+/// else the pencil and the whole note on as many lines as it needs, in a light box (#1024 cut it to one line)
+final class CartNoteEntry: UIControl {
+    let textLabel = UILabel()
+    private let icon = UIImageView(image: DS.symbol(CartV2Icon.itemNote.rawValue, 15, weight: .medium))
+
+    init(note: String?, emptyTitle: String) {
+        super.init(frame: .zero)
+        let shown = CartV2Logic.noteShown(note)
+        icon.tintColor = UIColor(hexString: "64748B")
+        icon.contentMode = .center
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+        textLabel.numberOfLines = 0
+        textLabel.lineBreakMode = .byWordWrapping
+        textLabel.text = shown ?? emptyTitle
+        textLabel.font = shown == nil ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
+        textLabel.textColor = UIColor(hexString: shown == nil ? "64748B" : "334155")
+        let row = UIStackView(arrangedSubviews: [icon, textLabel])
+        row.spacing = 6
+        row.alignment = .firstBaseline
+        row.isUserInteractionEnabled = false
+        addSubview(row)
+        if shown != nil {
+            backgroundColor = UIColor(hexString: "F8FAFC")
+            layer.cornerRadius = 8
+        }
+        let insets = shown == nil ? UIEdgeInsets(top: 4, left: 3, bottom: 4, right: 8)
+            : UIEdgeInsets(top: 6, left: 9, bottom: 6, right: 10)
+        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(insets) }
+        icon.snp.makeConstraints { make in make.width.equalTo(18) }
+        snp.makeConstraints { make in make.height.greaterThanOrEqualTo(32) }
+        isAccessibilityElement = true
+        accessibilityTraits = UIAccessibilityTraitButton
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.5 : 1 }
     }
 }
 
