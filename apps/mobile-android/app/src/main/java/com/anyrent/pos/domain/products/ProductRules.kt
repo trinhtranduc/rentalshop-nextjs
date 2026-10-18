@@ -606,19 +606,29 @@ object CartV2Logic {
     /** #1054 (owner, iOS `shortageTone`): "Chỉ còn 1 trống…" in red read as out of stock; red only when nothing is free */
     fun shortageTone(left: Int): ShortageTone = if (left >= 1) ShortageTone.LOW else ShortageTone.NONE
 
-    /** #1064: the one availability pill of a cart line: a string id, its count, and the tone (iOS `AvailabilityNote`) */
-    data class AvailabilityNote(@StringRes val textRes: Int, val count: Int, val tone: ShortageTone)
+    /**
+     * #1064: the one availability pill of a cart line: the short shown text, the longer TalkBack text, the count and
+     * the tone (iOS `AvailabilityNote`)
+     */
+    data class AvailabilityNote(@StringRes val textRes: Int, @StringRes val spokenRes: Int, val count: Int, val tone: ShortageTone)
 
     /**
-     * #1064 (owner, iOS `availabilityNote`): 0 free = "Không còn trống…" / "Hết hàng" (red); 1 free, or fewer than
-     * [asked] = "Chỉ còn N …" (amber); 2+ free and at least [asked] = "Còn N …" (green). null while not loaded
+     * #1064 (owner, iOS `availabilityNote`): 0 free = "Hết đồ" / "Hết hàng" (red); 1 free, or fewer than [asked]
+     * (amber); 2+ free and at least [asked] (green). Shown: "Còn N" when enough, "Chỉ còn N" when fewer than asked
+     * ("text còn trống dài quá"); TalkBack adds "trong ngày đã chọn" / "trong kho". null while not loaded
      */
-    fun availabilityNote(available: Int?, asked: Int, isRent: Boolean): AvailabilityNote? = when {
-        available == null -> null
-        available <= 0 -> AvailabilityNote(if (isRent) R.string.v2_cart_unavailable_rent else R.string.v2_cart_out_of_stock, 0, ShortageTone.NONE)
-        available >= 2 && available >= asked ->
-            AvailabilityNote(if (isRent) R.string.v2_cart_free_rent else R.string.v2_cart_in_stock, available, ShortageTone.OK)
-        else -> AvailabilityNote(if (isRent) R.string.v2_cart_short_rent else R.string.v2_cart_short_stock, available, ShortageTone.LOW)
+    fun availabilityNote(available: Int?, asked: Int, isRent: Boolean): AvailabilityNote? {
+        if (available == null) return null
+        if (available <= 0) {
+            return if (isRent) AvailabilityNote(R.string.v2_cart_booked_out, R.string.v2_cart_unavailable_rent, 0, ShortageTone.NONE)
+            else AvailabilityNote(R.string.v2_cart_out_of_stock, R.string.v2_cart_out_of_stock, 0, ShortageTone.NONE)
+        }
+        val tone = if (available >= 2 && available >= asked) ShortageTone.OK else ShortageTone.LOW
+        return if (available >= asked) {
+            AvailabilityNote(R.string.v2_cart_left, if (isRent) R.string.v2_cart_free_rent else R.string.v2_cart_in_stock, available, tone)
+        } else {
+            AvailabilityNote(R.string.v2_cart_only_left, if (isRent) R.string.v2_cart_short_rent else R.string.v2_cart_short_stock, available, tone)
+        }
     }
 
     /** Paid now: the prepaid deposit for a rental, the order total for a sale */

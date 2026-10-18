@@ -522,12 +522,13 @@ final class CartV2ViewController: BaseViewControler {
             tag.setContentCompressionResistancePriority(.required, for: .horizontal)
             nameRow.addArrangedSubview(tag)
         }
-        // #1064: one pill per line once availability is loaded: green "Còn N …" (2+ and enough), amber "Chỉ còn N …"
-        // (#1054), red "Không còn trống…" / "Hết hàng" at 0. Hidden behind the overlap tag
+        // #1064: one pill per line once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
+        // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. Hidden behind the overlap tag
         if !(isRent && conflicts[item.productId] != nil),
            let note = CartV2Logic.availabilityNote(item, in: cart.items, isRent: isRent) {
             let style = Self.shortageStyle(note.tone)
             let warn = V2.label(" " + note.text + " ", size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
+            warn.accessibilityLabel = note.spoken // #1064: the pill is short; VoiceOver says which days / the stock
             warn.numberOfLines = 0
             warn.backgroundColor = style.colors.fill
             warn.layer.cornerRadius = 6

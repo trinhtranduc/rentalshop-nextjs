@@ -682,26 +682,35 @@ enum CartV2Logic {
         left >= 1 ? .low : .none
     }
 
-    /// #1064: the one availability pill of a cart line: a `Localizable.strings` key, its count, and the tone
+    /// #1064: the one availability pill of a cart line: the short shown text (`key`), the longer VoiceOver text
+    /// (`spokenKey`), the count, and the tone
     struct AvailabilityNote: Equatable {
         let key: String
+        let spokenKey: String
         let count: Int
         let tone: ShortageTone
 
         var text: String { String(format: key.localized(), count) }
+        var spoken: String { String(format: spokenKey.localized(), count) }
     }
 
-    /// #1064 (owner): 0 free = "Không còn trống…" / "Hết hàng" (red); 1 free, or fewer than asked = "Chỉ còn N …"
-    /// (amber); 2+ free and at least `asked` = "Còn N …" (green). nil while availability is not loaded
+    /// #1064 (owner): 0 free = "Hết đồ" / "Hết hàng" (red); 1 free, or fewer than asked (amber); 2+ free and at
+    /// least `asked` (green). Shown: "Còn N" when enough, "Chỉ còn N" when fewer than asked ("text còn trống dài quá");
+    /// VoiceOver adds "trong ngày đã chọn" / "trong kho". nil while availability is not loaded
     static func availabilityNote(available: Int?, asked: Int, isRent: Bool) -> AvailabilityNote? {
         guard let available else { return nil }
         if available <= 0 {
-            return AvailabilityNote(key: isRent ? "products.cart.unavailableRent" : "products.cart.outOfStock", count: 0, tone: .none)
+            return isRent
+                ? AvailabilityNote(key: "products.cart.bookedOut", spokenKey: "products.cart.unavailableRent", count: 0, tone: .none)
+                : AvailabilityNote(key: "products.cart.outOfStock", spokenKey: "products.cart.outOfStock", count: 0, tone: .none)
         }
-        if available >= 2 && available >= asked {
-            return AvailabilityNote(key: isRent ? "products.cart.freeRent" : "products.cart.inStock", count: available, tone: .ok)
+        let tone: ShortageTone = available >= 2 && available >= asked ? .ok : .low
+        if available >= asked {
+            return AvailabilityNote(key: "products.cart.left", spokenKey: isRent ? "products.cart.freeRent" : "products.cart.inStock",
+                                    count: available, tone: tone)
         }
-        return AvailabilityNote(key: isRent ? "products.cart.shortRent" : "products.cart.shortStock", count: available, tone: .low)
+        return AvailabilityNote(key: "products.cart.onlyLeft", spokenKey: isRent ? "products.cart.shortRent" : "products.cart.shortStock",
+                                count: available, tone: tone)
     }
 
     /// #1064: the note of a cart line; `asked` = units of the product across all its lines (#951)

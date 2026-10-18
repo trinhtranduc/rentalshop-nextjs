@@ -2745,6 +2745,10 @@
 "overview.dash.todayOrders.sale" = "Bán";
 
 /* #1064: cart line availability pill (0 free = red, 2+ and enough = green) */
-"products.cart.unavailableRent" = "Không còn trống trong ngày đã chọn";
+"products.cart.unavailableRent" = "Hết đồ trong ngày đã chọn";
 "products.cart.outOfStock" = "Hết hàng";
-"products.cart.freeRent" = "Còn %d trống trong ngày đã chọn";
+"products.cart.freeRent" = "Còn %d trong ngày đã chọn";
+/* #1064 (owner: "text còn trống dài quá"): the short pill texts; the lines above are the VoiceOver texts */
+"products.cart.left" = "Còn %d";
+"products.cart.onlyLeft" = "Chỉ còn %d";
+"products.cart.bookedOut" = "Hết đồ";

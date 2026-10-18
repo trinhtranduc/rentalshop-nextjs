@@ -939,17 +939,20 @@ private fun ItemRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    // #1064: one pill once availability is loaded: green "Còn N …" (2+ and enough), amber "Chỉ còn N …"
-                    // (#1054), red "Không còn trống…" / "Hết hàng" at 0. The overlap tag (red) replaces it
+                    // #1064: one pill once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
+                    // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. The overlap tag (red) replaces it
                     val note = if (overlapText == null) CartV2Logic.availabilityNote(available, productQuantity, !isSale) else null
                     val shortText = overlapText ?: note?.let { stringResource(it.textRes, it.count) }
+                    // #1064: the pill is short; TalkBack says which days / the stock
+                    val spoken = note?.let { stringResource(it.spokenRes, it.count) }
                     val style = CartShortageStyle.of(note?.tone ?: CartV2Logic.ShortageTone.NONE)
                     shortText?.let { text ->
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         Text(
                             if (onOpenOverlap != null) "$text ›" else text,
                             fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text,
-                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(style.colors.fill)
+                            modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
+                                .clip(RoundedCornerShape(6.dp)).background(style.colors.fill)
                                 .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
                                 .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
                         )

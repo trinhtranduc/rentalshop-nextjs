@@ -2747,6 +2747,10 @@
 "overview.dash.todayOrders.sale" = "Sale";
 
 /* #1064: cart line availability pill (0 free = red, 2+ and enough = green) */
-"products.cart.unavailableRent" = "Unavailable on these dates";
+"products.cart.unavailableRent" = "Booked out on these dates";
 "products.cart.outOfStock" = "Out of stock";
-"products.cart.freeRent" = "%d free on these dates";
+"products.cart.freeRent" = "%d left on these dates";
+/* #1064 (owner: "text còn trống dài quá"): the short pill texts; the lines above are the VoiceOver texts */
+"products.cart.left" = "%d left";
+"products.cart.onlyLeft" = "Only %d left";
+"products.cart.bookedOut" = "Booked out";
