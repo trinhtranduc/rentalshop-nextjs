@@ -555,7 +555,8 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         e2e.emptyCart()
         guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
-        let entry = app.buttons.matching(NSPredicate(format: "label IN %@", ["Order note", "Ghi chú đơn"])).firstMatch
+        // #1056: the order note is a TIỀN row "Ghi chú … Thêm ✎" (it was the "Ghi chú đơn" entry)
+        let entry = app.buttons.matching(NSPredicate(format: "label IN %@", ["Note", "Ghi chú"])).firstMatch
         XCTAssertTrue(e2e.scrollTo(entry), "the order note entry is in TIỀN")
         sleep(1)
         e2e.shot("1043a-cart-order-note-empty")
@@ -582,6 +583,60 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         XCTAssertTrue(entry.waitForExistence(timeout: 5), "Xoá ghi chú empties the entry")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "value CONTAINS 'Giao trước 9h'")).firstMatch.exists)
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
+    /// #1056: product detail "Sắp tới" lists the farthest pickup first; "Tất cả N" reads "… · mới nhất trước";
+    /// the cart opens without the price link flashing (record the simulator around this test); TIỀN rows that can be
+    /// changed are blue with a pencil (discount 0 / note empty, then filled). Screenshots polish-*.png.
+    func test8iReleasePolish() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        if e2e.openProduct(where: { $0 > 1 }) != nil {
+            let upcoming = e2e.element(labelBeginsWith: ["Upcoming ", "Sắp tới "], type: .button)
+            e2e.tapIfExists(upcoming, timeout: 3)
+            sleep(2)
+            _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["All ", "Tất cả "], type: .button), maxSwipes: 2)
+            e2e.shot("polish-01-detail-upcoming")
+            let all = e2e.element(labelBeginsWith: ["All ", "Tất cả "], type: .button)
+            if e2e.scrollTo(all) {
+                all.tap()
+                sleep(3)
+                let bar = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'latest first' OR label CONTAINS[c] 'mới nhất trước'")).firstMatch
+                e2e.soft(bar.waitForExistence(timeout: 5), "#1056: Tất cả N sort bar reads 'mới nhất trước'")
+                e2e.shot("polish-02-all-orders")
+                e2e.goBackOnce()
+            } else {
+                e2e.soft(false, "Tất cả N on product detail")
+            }
+            e2e.goBackOnce()
+        } else {
+            e2e.note("#1056: no product with two open orders")
+        }
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        e2e.shot("polish-03-cart-open")
+        let discount = e2e.element(labelBeginsWith: ["Discount", "Giảm giá"])
+        XCTAssertTrue(e2e.scrollTo(discount), "Giảm giá row in TIỀN")
+        sleep(1)
+        e2e.shot("polish-04-money-empty")
+        discount.tap()
+        for key in ["5", "0", "0", "0", "0"] { e2e.tapIfExists(e2e.button([key]), timeout: 2) }
+        e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+        sleep(2)
+        let note = e2e.button(["Note", "Ghi chú"])
+        if e2e.scrollTo(note) {
+            note.tap()
+            if app.textViews.firstMatch.waitForExistence(timeout: 5) {
+                app.textViews.firstMatch.typeText("Khách lấy lúc 9h, giao tại shop, gọi trước 30 phút")
+                e2e.button(["Lưu", "Save"]).tap()
+                sleep(2)
+            }
+        }
+        _ = e2e.scrollTo(e2e.button(["Note", "Ghi chú"]))
+        e2e.shot("polish-05-money-filled")
         e2e.goBackOnce()
         e2e.emptyCart()
     }
@@ -626,14 +681,14 @@ final class AnyRentE2ETests: XCTestCase {
         let cost = e2e.element(labelBeginsWith: ["Cost", "Giá vốn"])
         e2e.soft(!cost.waitForExistence(timeout: 3), "no Giá vốn on the line (\(e2e.role))")
         e2e.shot("8f-10-cart-rent")
-        _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["Note", "Ghi chú"]))
+        _ = e2e.scrollTo(e2e.button(["Note", "Ghi chú"]))
         e2e.soft(!e2e.element(labelBeginsWith: ["Total cost", "Tổng giá vốn"]).exists, "no Tổng giá vốn (\(e2e.role))")
         e2e.shot("8f-11-cart-rent-money")
         e2e.tapIfExists(e2e.button(["Sale", "Bán"]))
         sleep(1)
         app.swipeDown()
         e2e.shot("8f-20-cart-sale")
-        _ = e2e.scrollTo(e2e.element(labelBeginsWith: ["Note", "Ghi chú"]))
+        _ = e2e.scrollTo(e2e.button(["Note", "Ghi chú"]))
         e2e.soft(!e2e.element(labelBeginsWith: ["Expected profit", "Lãi dự kiến"]).exists, "no Lãi dự kiến (\(e2e.role))")
         e2e.shot("8f-21-cart-sale-money")
         e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))

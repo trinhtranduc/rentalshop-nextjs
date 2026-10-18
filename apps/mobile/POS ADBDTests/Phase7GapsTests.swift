@@ -40,8 +40,11 @@ final class Phase7GapsTests: XCTestCase {
         XCTAssertEqual(ProductOrdersChip.done.statuses, [.returned, .completed])
         XCTAssertFalse(ProductOrdersChip.allCases.flatMap(\.statuses).contains(.cancelled))
         XCTAssertEqual(ProductOrdersChip.upcoming.sortBy, "pickupPlanAt")
-        XCTAssertEqual(ProductOrdersChip.upcoming.sortOrder, "asc")
+        // #1056 (owner): the farthest pickup on top, as "Tất cả N"; "Đang thuê" the farthest return on top
+        XCTAssertEqual(ProductOrdersChip.upcoming.sortOrder, "desc")
         XCTAssertEqual(ProductOrdersChip.renting.sortBy, "returnPlanAt")
+        XCTAssertEqual(ProductOrdersChip.renting.sortOrder, "desc")
+        XCTAssertEqual(ProductOrdersChip.done.sortBy, "createdAt")
         XCTAssertEqual(ProductOrdersChip.done.sortOrder, "desc")
     }
 

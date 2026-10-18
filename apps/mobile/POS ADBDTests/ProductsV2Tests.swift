@@ -296,6 +296,85 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertNotEqual("cart.orderNote.title".localized(), "cart.itemNote.title".localized())
     }
 
+    /// #1056: the cart line's price link must not fade. A `.system` button fades a new attributed title in, and the
+    /// cart builds a new link on every render (2–3 renders while it opens): the price vanished and came back
+    func testCartPricingLinkIsASteadyCustomButton() {
+        let link = CartV2ViewController.pricingLinkButton(amount: "200.000đ", unit: "theo lần")
+        XCTAssertEqual(link.buttonType, .custom, "a .system button fades its title in on each render")
+        XCTAssertEqual(link.attributedTitle(for: .normal)?.string, "200.000đ / theo lần")
+        XCTAssertEqual(link.contentHorizontalAlignment, .leading)
+        XCTAssertNotNil(link.image(for: .normal), "the ⌄ stays")
+        XCTAssertNotNil(link.attributedTitle(for: .highlighted), "a tap still dims the link, as the .system button did")
+        let empty = CartV2ViewController.pricingLinkButton(amount: nil, unit: "theo lần")
+        XCTAssertEqual(empty.attributedTitle(for: .normal)?.string,
+                       "products.cart.pricing.enterPrice".localized() + " / theo lần")
+    }
+
+    /// #1056: the same availability answer changes nothing and posts nothing (each post rebuilt every cart row)
+    func testSameAvailabilityDoesNotNotifyTheCart() {
+        let cart = Cart()
+        cart.addItem(CartItem(productId: 7, productName: "Áo dài", barcode: nil, quantity: 1, price: 300_000, deposit: 0,
+                              originalRentPrice: 300_000, originalSalePrice: 0))
+        let status = AvailabilityStatus(isAvailable: true, available: 3)
+        XCTAssertTrue(cart.updateAvailabilityStatus(for: 7, status: status), "nil → loaded is a change")
+        XCTAssertFalse(cart.updateAvailabilityStatus(for: 7, status: status), "the same answer again is not")
+        XCTAssertTrue(cart.updateAvailabilityStatus(for: 7, status: AvailabilityStatus(isAvailable: true, available: 2)))
+        XCTAssertFalse(cart.updateAvailabilityStatus(for: 99, status: status), "no line of that product")
+
+        let saved = CartStore.shared.cart
+        defer { CartStore.shared.replaceCart(with: saved, notify: false) }
+        CartStore.shared.replaceCart(with: cart, notify: false)
+        var posts = 0
+        let token = NotificationCenter.default.addObserver(forName: .cartStoreDidChange, object: nil, queue: nil) { _ in posts += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+        CartStore.shared.updateAvailabilityStatus(for: 7, status: AvailabilityStatus(isAvailable: true, available: 2))
+        XCTAssertEqual(posts, 0, "unchanged availability does not redraw the cart")
+        CartStore.shared.updateAvailabilityStatus(for: 7, status: AvailabilityStatus(isAvailable: false, available: 0))
+        XCTAssertEqual(posts, 1)
+    }
+
+    /// #1056 (owner, mockup cartmoney): TIỀN — blue value + pencil = tappable, black = read only (Android CartMoneyRowsTest)
+    func testCartMoneyRowsBlueMeansTappable() throws {
+        XCTAssertFalse(CartMoneyRow.subtotal.isEditable)
+        XCTAssertFalse(CartMoneyRow.total.isEditable)
+        XCTAssertTrue(CartMoneyRow.discount.isEditable)
+        XCTAssertTrue(CartMoneyRow.deposit.isEditable)
+        XCTAssertTrue(CartMoneyRow.note.isEditable)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.subtotal), .plain)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.total), .plain)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.discount), .action, "a discount of 0 is blue too")
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.deposit), .action)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.note, note: nil), .action, "empty note: blue Thêm")
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.note, note: " \n "), .action)
+        XCTAssertEqual(CartV2Logic.moneyRowTone(.note, note: "Khách lấy lúc 9h"), .noteText)
+        XCTAssertEqual(CartV2Logic.discountShown(0), 0)
+        XCTAssertEqual(CartV2Logic.discountShown(-5), 0)
+        XCTAssertEqual(CartV2Logic.discountShown(50_000), -50_000)
+        let edit = "products.detail.edit".localized()
+        XCTAssertEqual(CartV2Logic.moneyRowSpoken(value: "0đ"), "0đ, \(edit)")
+        XCTAssertEqual(CartV2Logic.moneyRowSpoken(value: "Khách lấy lúc 9h", photos: "2 ảnh"), "Khách lấy lúc 9h, 2 ảnh, \(edit)")
+        for key in ["products.cart.note", "products.cart.addNote", "products.detail.edit"] {
+            XCTAssertNotEqual(key.localized(), key, "\(key) is localized")
+        }
+    }
+
+    /// #1056: the editable row has no ›, a blue bold value and a blue pencil; VoiceOver: title, then "value, Sửa"
+    func testEditableValueRowLooksTappable() throws {
+        let row = V2ValueRow(title: "Giảm giá", editable: true)
+        row.valueLabel.text = "0đ"
+        XCTAssertTrue(row.chevron.isHidden, "no › on an editable row")
+        XCTAssertFalse(row.pencil.isHidden)
+        XCTAssertEqual(row.pencil.tintColor, DS.Color.primary)
+        XCTAssertEqual(row.valueLabel.textColor, DS.Color.primary)
+        XCTAssertTrue(row.valueLabel.font.fontDescriptor.symbolicTraits.contains(.traitBold))
+        XCTAssertTrue(row.accessibilityTraits.contains(.button))
+        XCTAssertEqual(row.accessibilityLabel, "Giảm giá")
+        XCTAssertEqual(row.accessibilityValue, CartV2Logic.moneyRowSpoken(value: "0đ"))
+        let plain = V2ValueRow(title: "Tổng cộng", chevron: false)
+        XCTAssertTrue(plain.pencil.isHidden, "read-only rows have no pencil")
+        XCTAssertTrue(plain.chevron.isHidden)
+    }
+
     func testInventoryRoleIsPickedOnlyWhenTheApiAllowsIt() throws {
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: false, currentRole: nil), [.outletStaff, .outletAdmin])
         XCTAssertEqual(UserFormRoles.choices(inventoryRole: true, currentRole: nil), [.outletStaff, .outletAdmin, .outletInventory])
