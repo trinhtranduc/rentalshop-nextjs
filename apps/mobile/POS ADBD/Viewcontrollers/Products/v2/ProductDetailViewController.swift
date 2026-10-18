@@ -430,7 +430,7 @@ final class ProductDetailViewController: BaseViewControler {
         let row = UIControl()
         row.tag = index
         row.addTarget(self, action: #selector(orderTapped(_:)), for: .touchUpInside)
-        let cell = OrderRowCell(style: .default, reuseIdentifier: nil)
+        let cell = OrderRowCell.standalone()
         cell.configure(.order(order, lateDays: 0),
                        context: .productOrders(quantity: ProductDetailV2Logic.quantity(of: productId, in: order)),
                        hidesMoney: OrdersHomeLogic.hidesMoney(role: User.current()?.role,

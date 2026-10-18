@@ -2461,6 +2461,30 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #1037: product detail chips "Sắp tới" / "Đang thuê" / "Đã xong" list the product's orders as visible rows
+    func test7pProductDetailChipOrders() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        guard e2e.openProduct(where: { $0 > 0 }) != nil else { return XCTFail("No product with open orders") }
+        let chips: [([String], String)] = [(["Sắp tới", "Upcoming"], "upcoming"), (["Đang thuê", "Rented"], "renting"),
+                                           (["Đã xong", "Done"], "done")]
+        for (labels, name) in chips {
+            let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", labels[0], labels[1])).firstMatch
+            guard e2e.scrollTo(chip) else { XCTFail("chip \(name) missing"); continue }
+            // "Sắp tới 2" → 2; a chip without a number has not loaded
+            let count = Int(chip.label.split(separator: " ").last.map(String.init) ?? "") ?? 0
+            chip.tap()
+            sleep(2)
+            let rows = app.buttons.matching(NSPredicate(format: "label CONTAINS ', #'"))
+            let visible = rows.allElementsBoundByIndex.filter { $0.frame.height >= 44 }
+            e2e.shot("66-product-chip-\(name)")
+            if count > 0 {
+                XCTAssertFalse(visible.isEmpty, "chip \(name) (\(count)) shows its order rows; rows: "
+                               + rows.allElementsBoundByIndex.map { "\($0.label) h=\($0.frame.height)" }.joined(separator: " | "))
+            }
+        }
+    }
+
     /// #622: Settings → Tài khoản ngân hàng (list, add form, bank picker) and the printer switch "In QR chuyển khoản"
     func test7kBankAccounts() throws {
         try e2e.requireFlag("newSettings")

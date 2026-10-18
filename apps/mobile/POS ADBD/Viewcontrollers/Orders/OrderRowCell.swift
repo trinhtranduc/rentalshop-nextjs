@@ -246,6 +246,16 @@ final class OrderRowCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    /// #1037: a row placed in a stack view instead of a table view (product and customer detail lists).
+    /// Outside a table view a cell keeps its `contentView` on autoresizing, so the cell had no Auto Layout height
+    /// and the rows collapsed to 0 pt. Here the content view is pinned to the cell, and its content sets the height.
+    static func standalone() -> OrderRowCell {
+        let cell = OrderRowCell(style: .default, reuseIdentifier: nil)
+        cell.contentView.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        return cell
+    }
+
     /// #888 (owner, mockup v5): line 1 name (one line, full width) + status badge right; line 2 "#code · tạo …";
     /// line 3 dates / task + total right; line 4 notes (late, not prepared) + pay line right. 8pt between lines.
     private func buildLayout() {
