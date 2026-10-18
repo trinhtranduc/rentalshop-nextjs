@@ -934,15 +934,18 @@ private fun ItemRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    val shortText = overlapText ?: CartV2Logic.shortage(available, productQuantity)?.let { left ->
-                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, left)
+                    val left = if (overlapText == null) CartV2Logic.shortage(available, productQuantity) else null
+                    val shortText = overlapText ?: left?.let {
+                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, it)
                     }
+                    // #1054: the overlap tag stays red; the shortage is amber while some units are free
+                    val style = CartShortageStyle.of(left?.let { CartV2Logic.shortageTone(it) } ?: CartV2Logic.ShortageTone.NONE)
                     shortText?.let { text ->
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         Text(
                             if (onOpenOverlap != null) "$text ›" else text,
-                            fontSize = DS.TextSize.Pill, fontWeight = FontWeight.SemiBold, color = Color(0xFF991B1B),
-                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEE2E2))
+                            fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text,
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(style.colors.fill)
                                 .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
                                 .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
                         )
@@ -963,6 +966,21 @@ private fun ItemRow(
             }
         }
         HorizontalDivider(color = DS.Colors.Divider)
+    }
+}
+
+/**
+ * #1054 (owner, iOS `shortageStyle`): the shortage pill: the amber "Chưa soạn đồ" palette (#1032, `DS.Status.Waiting`)
+ * in Medium while some units are free; the booked-out red in SemiBold when none are (and for the overlap tag)
+ */
+internal data class CartShortageStyle(val colors: DS.Pill, val weight: FontWeight) {
+    companion object {
+        private val BookedOut = DS.Pill(Color(0xFF991B1B), Color(0xFFFEE2E2))
+
+        fun of(tone: CartV2Logic.ShortageTone): CartShortageStyle = when (tone) {
+            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.Medium)
+            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.SemiBold)
+        }
     }
 }
 

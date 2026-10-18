@@ -628,6 +628,16 @@ enum CartV2Logic {
         return max(0, status.available)
     }
 
+    /// #1054: how strong the shortage warning is: `.low` = some units free (fewer than asked), `.none` = nothing free
+    enum ShortageTone: Equatable {
+        case low, none
+    }
+
+    /// #1054 (owner): "Chỉ còn 1 trống…" in red read as out of stock; red only when nothing is free
+    static func shortageTone(left: Int) -> ShortageTone {
+        left >= 1 ? .low : .none
+    }
+
     /// Paid now: the prepaid deposit for a rental, the order total for a sale
     static func collectNow(_ cart: Cart) -> Double {
         cart.orderType == .rent ? cart.depositAmount : cart.amountDue

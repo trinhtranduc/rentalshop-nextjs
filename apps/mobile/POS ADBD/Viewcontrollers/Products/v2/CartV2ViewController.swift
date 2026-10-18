@@ -521,13 +521,15 @@ final class CartV2ViewController: BaseViewControler {
             tag.setContentCompressionResistancePriority(.required, for: .horizontal)
             nameRow.addArrangedSubview(tag)
         }
-        let shortageText: String? = CartV2Logic.shortage(item, in: cart.items).map { left in
-            String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left)
+        let shortage: (text: String, left: Int)? = CartV2Logic.shortage(item, in: cart.items).map { left in
+            (String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left), left)
         }
-        if !(isRent && conflicts[item.productId] != nil), let text = shortageText {
-            let warn = V2.label(" " + text + " ", size: DS.TextSize.pill, weight: .bold, color: UIColor(hexString: "991B1B"))
+        if !(isRent && conflicts[item.productId] != nil), let shortage {
+            // #1054: amber while some units are free, red only when none are
+            let style = Self.shortageStyle(CartV2Logic.shortageTone(left: shortage.left))
+            let warn = V2.label(" " + shortage.text + " ", size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
             warn.numberOfLines = 0
-            warn.backgroundColor = UIColor(hexString: "FEE2E2")
+            warn.backgroundColor = style.colors.fill
             warn.layer.cornerRadius = 6
             warn.clipsToBounds = true
             warn.setContentHuggingPriority(.required, for: .horizontal)
@@ -1167,6 +1169,17 @@ final class CartV2ViewController: BaseViewControler {
         if stack.last === self { stack.removeLast() }
         stack.append(detail)
         navigationController.setViewControllers(stack, animated: true)
+    }
+}
+
+extension CartV2ViewController {
+    /// #1054 (owner): the shortage pill: the amber "Chưa soạn đồ" palette (#1032, `DS.Status.waiting`) in medium while
+    /// some units are free; the booked-out red in bold when none are
+    static func shortageStyle(_ tone: CartV2Logic.ShortageTone) -> (colors: DS.Pill, weight: UIFont.Weight) {
+        switch tone {
+        case .low: return (DS.Status.waiting, .medium)
+        case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .bold)
+        }
     }
 }
 
