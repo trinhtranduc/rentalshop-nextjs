@@ -722,30 +722,41 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
-    /// #1064 (owner): every cart line says how many are free (green "Còn N" when 2+ and enough); a sale line
-    /// shows one count. cart-avail-*.png
+    /// #1064 (owner): every cart line says how many are free in a short pill ("Còn N" green when 2+ and enough, amber
+    /// "Còn 1" / "Chỉ còn N", red "Hết đồ" / "Hết hàng"); VoiceOver reads "… trong ngày đã chọn" / "… trong kho"; a sale
+    /// line shows one count. Products 1, 5 and 9 have no open orders in the seed; for all three colours set their outlet
+    /// stock to 0, 1 and 2 first (the run only checks what it sees). cart-avail-*.png
     func test8lCartAvailabilityNotes() throws {
         try e2e.requireFlag("newProducts")
         try e2e.requireRole("merchant")
         try e2e.start()
         e2e.emptyCart()
-        guard addFromHome("Product 1 - Electronics"), addFromHome("Product 2 - Tools") else {
-            return XCTFail("could not add two products")
-        }
+        let names = ["Product 1 - Electronics", "Product 5 - Party Supplies", "Product 9 - Office Equipment"]
+        for name in names where !addFromHome(name) { return XCTFail("could not add \(name)") }
         guard openCart() else { return XCTFail("cart did not open") }
         e2e.cartRentToday()
         sleep(3)
-        let free = app.staticTexts.matching(NSPredicate(format:
-            "label BEGINSWITH 'Còn ' AND label CONTAINS 'trong ngày' OR label CONTAINS 'left on these dates' AND NOT label BEGINSWITH 'Only'"))
-        e2e.note("rent notes: \(free.allElementsBoundByIndex.map(\.label))")
-        e2e.soft(free.count >= 1, "a rent line with enough units says Còn N (VoiceOver: Còn N trong ngày đã chọn)")
+        let rentNotes = app.staticTexts.matching(NSPredicate(format:
+            "label CONTAINS 'trong ngày đã chọn' OR label CONTAINS 'on these dates'"))
+        e2e.note("rent notes: \(rentNotes.allElementsBoundByIndex.map(\.label))")
+        XCTAssertEqual(rentNotes.count, names.count, "one availability pill per rent line")
+        let long = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'trống trong ngày đã chọn' AND label BEGINSWITH 'Còn'")).count
+        XCTAssertEqual(long, 0, "the old long Còn N trống … text is gone")
         e2e.shot("cart-avail-1-rent")
+        // two more of the last product: with 2 free it turns amber "Chỉ còn 2" (3 asked)
+        let plus = app.buttons.matching(NSPredicate(format: "label == 'Thêm 1' OR label == 'One more'"))
+        if plus.count >= names.count {
+            plus.element(boundBy: names.count - 1).tap(); sleep(1)
+            plus.element(boundBy: names.count - 1).tap(); sleep(3)
+        }
+        e2e.note("rent notes after +2: \(rentNotes.allElementsBoundByIndex.map(\.label))")
+        e2e.shot("cart-avail-2-rent-fewer-than-asked")
         e2e.tapIfExists(e2e.button(["Sale", "Bán"]), timeout: 3)
         sleep(3)
         let counts = app.staticTexts.matching(NSPredicate(format:
-            "label CONTAINS 'trong kho' OR label CONTAINS 'in stock' OR label CONTAINS 'Hết hàng' OR label CONTAINS 'Out of stock'"))
+            "label CONTAINS 'trong kho' OR label CONTAINS 'in stock' OR label == 'Hết hàng' OR label == 'Out of stock'"))
         e2e.note("sale notes: \(counts.allElementsBoundByIndex.map(\.label))")
-        e2e.soft(counts.count >= 1 && counts.count <= 2, "one count per sale line (\(counts.count))")
+        XCTAssertEqual(counts.count, names.count, "one count per sale line")
         e2e.shot("cart-avail-3-sale")
         e2e.goBackOnce()
         e2e.emptyCart()
