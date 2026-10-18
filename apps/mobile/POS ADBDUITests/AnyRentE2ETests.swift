@@ -621,7 +621,7 @@ final class AnyRentE2ETests: XCTestCase {
             XCTAssertTrue(handOver.waitForExistence(timeout: 10), "RESERVED rent order shows Giao đồ")
             e2e.shot("50-detail-reserved")
             handOver.tap()
-            let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã giao"], type: .button)
+            let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)  // #888: "Đã lấy · thu …"
             XCTAssertTrue(handed.waitForExistence(timeout: 8), "Giao đồ sheet has a confirm button")
             e2e.shot("51-detail-handover-sheet")
             handed.tap()
@@ -834,7 +834,9 @@ final class AnyRentE2ETests: XCTestCase {
             if e2e.tapOrderSheetRow(["Edit order", "Sửa đơn"]) {
                 sleep(3)
                 e2e.shot("5d-detail-edit-order")
-                e2e.goBackOnce()
+                // Leave edit mode with Huỷ sửa: a cart left as "Sửa đơn #n" has no Tạo đơn for the next flows (#1040)
+                XCTAssertTrue(e2e.leaveEditMode(), "Huỷ sửa leaves the edit cart")
+                return
             } else {
                 e2e.soft(false, "Booked order offers Sửa đơn")
             }
@@ -1540,6 +1542,8 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newProducts")
         try e2e.requireRole("merchant")
         try e2e.start()
+        // A cart left as "Sửa đơn #n" by an earlier flow has "Lưu thay đổi", not Tạo đơn (#1040)
+        e2e.leaveEditMode()
         guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
         e2e.cartRentToday()
         _ = e2e.pickFirstCustomer()
@@ -1583,7 +1587,7 @@ final class AnyRentE2ETests: XCTestCase {
         let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
         if handOver.waitForExistence(timeout: 8) {
             handOver.tap()
-            let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã giao"], type: .button)
+            let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)  // #888: "Đã lấy · thu …"
             if handed.waitForExistence(timeout: 8) { handed.tap() }
             sleep(3)
             e2e.dismissAlerts()
@@ -1677,25 +1681,9 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireRole("merchant")
         try e2e.start()
 
-        // A cart left in edit mode by an earlier run cannot be left except by saving: save it unchanged first
-        e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        if e2e.homeCart.waitForExistence(timeout: 4) {
-            e2e.homeCart.tap()
-            let leftoverSave = e2e.button(["Lưu thay đổi", "Save changes"])
-            if leftoverSave.waitForExistence(timeout: 5) {
-                leftoverSave.tap()
-                sleep(2)
-                e2e.shot("60-0-leftover-edit-sheet-unchanged")
-                let sheetSave = app.buttons["cart.edit.save"]
-                if sheetSave.waitForExistence(timeout: 5) { sheetSave.tap() }
-                sleep(4)
-                e2e.shot("60-0-leftover-edit-saved")
-                e2e.goBack()
-            } else {
-                e2e.goBackOnce()
-                e2e.emptyCart()
-            }
-        }
+        // A cart left in edit mode by an earlier run: leave it with Huỷ sửa (#677), then empty any other cart
+        if e2e.leaveEditMode() { e2e.shot("60-0-leftover-edit-cancelled") }
+        e2e.emptyCart()
 
         // Load Tất cả đơn first: the new order must then appear through the orders-changed signal (#674)
         XCTAssertTrue(openAllOrders(), "Tất cả đơn loads")
@@ -1737,10 +1725,8 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("60d-edit-detail-before")
 
-        let edit = e2e.button(["Edit order", "Sửa đơn"])
-        guard edit.waitForExistence(timeout: 5) else { return XCTFail("Booked order offers Sửa đơn") }
-        edit.tap()
-        sleep(2)
+        // #930: the bottom bar is In / Giao đồ / ⋯; Sửa đơn is a row of the ⋯ sheet
+        guard e2e.tapOrderSheetRow(["Edit order", "Sửa đơn"]) else { return XCTFail("Booked order offers Sửa đơn in ⋯") }
         e2e.shot("60d2-edit-after-tap")
         // Sửa đơn loads the order into the cart and shows the product list; the cart bar opens the cart
         if !e2e.button(["Lưu thay đổi", "Save changes"]).exists, e2e.homeCart.waitForExistence(timeout: 5) {
@@ -4154,6 +4140,35 @@ private final class E2E {
             if remove.waitForExistence(timeout: 1) { remove.tap(); sleep(1) }
         }
         goBackOnce()
+    }
+
+    /// #677: leave a cart in edit mode ("Sửa đơn #n") with Huỷ sửa → confirm (the app shows the order again), then back to
+    /// the tab bar. Works from the edit cart, the product list Sửa đơn opens, or a tab. False when the cart is not editing.
+    @discardableResult
+    func leaveEditMode() -> Bool {
+        let cancel = app.buttons["cart.edit.cancel"]
+        if !cancel.exists {
+            if !homeCart.exists { tapTab(["Home", "Trang chủ"], index: 0) }
+            guard homeCart.waitForExistence(timeout: 4) else { return false }
+            homeCart.tap()
+            guard cancel.waitForExistence(timeout: 5) else {
+                goBackOnce()  // an ordinary cart: leave it as it is
+                return false
+            }
+        }
+        cancel.tap()
+        let confirm = app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Huỷ sửa", "Hủy sửa", "Cancel edit"])).firstMatch
+        guard confirm.waitForExistence(timeout: 5) else {
+            note("Huỷ sửa asked no confirmation")
+            return false
+        }
+        confirm.tap()
+        sleep(3)
+        dismissAlerts()
+        for _ in 0..<3 where !(tabBar.exists && tabBar.isHittable) { goBack() }
+        let left = !app.buttons["cart.edit.cancel"].exists
+        if left { note("left a cart in edit mode with Huỷ sửa") }
+        return left
     }
 
     /// Home → product detail → Thêm vào giỏ → back → open the cart. True when the cart shows.
