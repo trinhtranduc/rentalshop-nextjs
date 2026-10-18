@@ -532,3 +532,92 @@ extension OverviewDashLogic {
         }
     }
 }
+
+// MARK: - #1059 Đơn tạo hôm nay (replaces the Top cards on a one-day range of today)
+
+/// The card's summary: the "Giá trị đơn mới" tile's count and value
+struct OverviewTodayOrdersSummary: Equatable {
+    let count: Int
+    let total: Double
+}
+
+/// One order created today
+struct OverviewTodayOrderRow: Equatable {
+    let orderId: Int
+    let orderNumber: String
+    let customer: String
+    let createdAt: Date?
+    let isRent: Bool
+    let amount: Double
+}
+
+extension OverviewDashLogic {
+    static let todayOrdersLimit = 5
+
+    /// #1059: a range of exactly today (the Hôm nay chip, or Tuỳ chọn picking today) lists today's new orders instead
+    /// of ranking them. Keyed off the range, as `showsTodayCard`, so both ways of choosing today behave the same.
+    static func showsTodayOrders(range: DayKeyRange, todayKey: String) -> Bool {
+        showsTodayCard(range: range, todayKey: todayKey)
+    }
+
+    /// Top sản phẩm / Top khách hàng: every range but a range of exactly today (7 ngày, Tháng này, other Tuỳ chọn)
+    static func showsTopCards(range: DayKeyRange, todayKey: String) -> Bool {
+        !showsTodayOrders(range: range, todayKey: todayKey)
+    }
+
+    /// N and the total come from the tile itself (`tiles`: `totalOrderValue` and the "N đơn mới" chip, cancelled left
+    /// out), so the card and the tile never disagree. An API without `orderValueByType` falls back to `rowsCount`.
+    static func todayOrdersSummary(report: OverviewReport?, rowsCount: Int? = nil) -> OverviewTodayOrdersSummary? {
+        let tile = tiles(report: report, now: nil).first { $0.kind == .orderValue }
+        guard let total = tile?.value, let count = tile?.count?.count ?? rowsCount else { return nil }
+        return OverviewTodayOrdersSummary(count: count, total: total)
+    }
+
+    /// income/orders `status=new` rows: cancelled orders left out (as the tile), one row per order, newest first,
+    /// `limit` at most. The API pages by order id, so the caller passes every page of the day.
+    static func todayOrderRows(_ items: [DailyIncomeOrder], limit: Int = todayOrdersLimit) -> [OverviewTodayOrderRow] {
+        var seen = Set<Int>()
+        let rows: [OverviewTodayOrderRow] = items.compactMap { item in
+            guard let id = item.id, item.status?.uppercased() != "CANCELLED", seen.insert(id).inserted else { return nil }
+            return OverviewTodayOrderRow(orderId: id, orderNumber: item.orderNumber ?? "\(id)",
+                                         customer: item.customerName ?? "", createdAt: item.createdAt,
+                                         isRent: item.orderType?.uppercased() != "SALE", amount: item.totalAmount ?? 0)
+        }
+        let sorted = rows.sorted { a, b in
+            switch (a.createdAt, b.createdAt) {
+            case let (x?, y?) where x != y: return x > y
+            case (.some, nil): return true
+            case (nil, .some): return false
+            default: return a.orderId > b.orderId
+            }
+        }
+        return Array(sorted.prefix(max(0, limit)))
+    }
+
+    /// Non-cancelled orders in the rows (the summary's fallback count on an older API)
+    static func todayOrdersCount(_ items: [DailyIncomeOrder]) -> Int {
+        Set(items.filter { $0.status?.uppercased() != "CANCELLED" }.compactMap(\.id)).count
+    }
+
+    /// "#901052 · 18:50" (created time in the shop zone)
+    static func todayOrderNumberAndTime(_ row: OverviewTodayOrderRow, timeZone: TimeZone = Date.shopTimeZone) -> String {
+        let number = row.orderNumber.hasPrefix("#") ? row.orderNumber : "#" + row.orderNumber
+        guard let created = row.createdAt else { return number }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "HH:mm"
+        return "\(number) · \(formatter.string(from: created))"
+    }
+
+    /// "Thuê" / "Bán"
+    static func todayOrderKind(_ row: OverviewTodayOrderRow, localize: (String) -> String = { $0.localized() }) -> String {
+        localize(row.isRent ? "overview.dash.todayOrders.rent" : "overview.dash.todayOrders.sale")
+    }
+
+    /// The whole grey line: "#901052 · 18:50 · Thuê" / "… · Bán"
+    static func todayOrderSubtitle(_ row: OverviewTodayOrderRow, timeZone: TimeZone = Date.shopTimeZone,
+                                   localize: (String) -> String = { $0.localized() }) -> String {
+        "\(todayOrderNumberAndTime(row, timeZone: timeZone)) · \(todayOrderKind(row, localize: localize))"
+    }
+}

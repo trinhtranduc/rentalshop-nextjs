@@ -2738,3 +2738,10 @@
 "cart.orderNote.placeholder" = "e.g. deliver before 9am, the customer picks up in store";
 "cart.orderNote.hint" = "For the whole order. Each item's note is under that item.";
 "cart.orderNote.photos" = "%d photos";
+
+/* #1059 Tổng quan › Hôm nay: orders created today */
+"overview.dash.todayOrders.title" = "Orders created today";
+"overview.dash.todayOrders.summary" = "%@ · Total value";
+"overview.dash.todayOrders.empty" = "No orders today yet";
+"overview.dash.todayOrders.rent" = "Rent";
+"overview.dash.todayOrders.sale" = "Sale";

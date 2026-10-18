@@ -2736,3 +2736,10 @@
 "cart.orderNote.placeholder" = "Ví dụ: giao trước 9h, khách lấy tại tiệm";
 "cart.orderNote.hint" = "Cho cả đơn. Ghi chú từng món nằm dưới món đó.";
 "cart.orderNote.photos" = "%d ảnh";
+
+/* #1059 Tổng quan › Hôm nay: đơn tạo hôm nay */
+"overview.dash.todayOrders.title" = "Đơn tạo hôm nay";
+"overview.dash.todayOrders.summary" = "%@ · Tổng giá trị";
+"overview.dash.todayOrders.empty" = "Chưa có đơn nào hôm nay";
+"overview.dash.todayOrders.rent" = "Thuê";
+"overview.dash.todayOrders.sale" = "Bán";
