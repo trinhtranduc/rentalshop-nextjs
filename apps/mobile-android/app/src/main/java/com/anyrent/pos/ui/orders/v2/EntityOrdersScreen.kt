@@ -151,12 +151,16 @@ fun EntityOrdersScreen(
         } else {
             async(Dispatchers.IO) { CustomersV2Api.rentingCount(entityId).getOrNull()?.let { renting = it } }
         }
-        fetch(1).onSuccess {
-            orders = it.items
-            total = it.total ?: it.items.size
-            hasMore = it.hasMore
-            page = 1
-            error = null
+        fetch(1).onSuccess { result ->
+            // #1066: back to row 0 before the rows are shown. requestScrollToItem forgets the old first row's key and,
+            // unlike scrollToItem, does not wait for a layout (the first load has none yet)
+            EntityOrdersPaging.showFirstPage(result, scrollToTop = { listState.requestScrollToItem(0) }) {
+                orders = it.items
+                total = it.total ?: it.items.size
+                hasMore = it.hasMore
+                page = 1
+                error = null
+            }
         }.onFailure { error = it.message }
         loading = false
         side.await()
@@ -174,9 +178,11 @@ fun EntityOrdersScreen(
                 fetch(page + 1).onSuccess {
                     // A page of the previous sort is dropped
                     if (sortAtStart != sort) return@onSuccess
-                    orders = orders + it.items
-                    hasMore = it.hasMore
-                    page += 1
+                    EntityOrdersPaging.showNextPage(it) { next ->
+                        orders = orders + next.items
+                        hasMore = next.hasMore
+                        page += 1
+                    }
                 }
                 loadingMore = false
             }
