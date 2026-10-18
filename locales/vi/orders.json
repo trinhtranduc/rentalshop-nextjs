@@ -690,7 +690,8 @@
         "deposit": "Thu cọc ngay",
         "security": "Thế chân khi giao",
         "dueAtPickup": "Còn thu khi giao",
-        "includesSecurity": "Gồm thế chân {amount}"
+        "includesSecurity": "Gồm thế chân {amount}",
+        "discountTooHigh": "Giảm giá không được lớn hơn tổng đơn ({limit})"
       },
       "missing": {
         "days": "Chọn ngày giao, trả để tạo đơn.",

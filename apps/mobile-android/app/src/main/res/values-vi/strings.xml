@@ -1259,6 +1259,7 @@
     <string name="v2_order_note_hint">Cho cả đơn. Ghi chú từng món nằm dưới món đó.</string>
     <string name="v2_order_note_photos">%1$d ảnh</string>
     <string name="v2_cart_overlap_blocked">Cửa hàng không cho tạo đơn trùng lịch. Đổi ngày, bớt số lượng hoặc bỏ món đã hết.</string>
+    <string name="v2_cart_discount_too_high">Giảm giá không được lớn hơn tổng đơn (%1$s)</string>
     <string name="v2_create_overlap_title">Trùng lịch</string>
     <string name="v2_create_overlap_line">%1$s thiếu %2$d bộ ngày %3$s (đã thuê ở %4$s).</string>
     <string name="v2_create_overlap_line_no_order">%1$s thiếu %2$d bộ ngày %3$s.</string>

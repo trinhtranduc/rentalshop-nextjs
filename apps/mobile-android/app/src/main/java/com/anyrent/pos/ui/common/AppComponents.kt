@@ -55,7 +55,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -513,8 +516,26 @@ fun RankingCard(
 }
 
 /**
+ * #1067 (iOS `NumberPadEntry`): the keypad opens on the old value as if it were selected: the first key
+ * replaces it (⌫ clears it to 0) instead of appending, so a value no longer grows on every edit. Then keys
+ * append as before, at most 12 characters.
+ */
+data class NumericPadEntry(val text: String, val fresh: Boolean = text != "0") {
+    fun press(key: String): NumericPadEntry {
+        val base = if (fresh) "0" else text
+        val next = when (key) {
+            "⌫" -> if (fresh) "0" else base.dropLast(1).ifBlank { "0" }
+            "000" -> if (base == "0") "0" else base + key
+            else -> if (base == "0") key else base + key
+        }
+        return NumericPadEntry(next.take(12), fresh = false)
+    }
+}
+
+/**
  * Price / deposit keypad as a filter-style sheet: centered title, one blue
  * Confirm, no Cancel. Swipe the grabber to dismiss.
+ * #1067: [errorText] shows in red under the value and [confirmEnabled] false disables Confirm.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -525,8 +546,11 @@ fun AppNumericPadSheet(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     formattedValue: String = formatMoney(rawValue.toDoubleOrNull() ?: 0.0),
+    errorText: String? = null,
+    confirmEnabled: Boolean = true,
     extraContent: @Composable ColumnScope.() -> Unit = {},
 ) {
+    var fresh by remember { mutableStateOf(true) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -572,6 +596,17 @@ fun AppNumericPadSheet(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            if (errorText != null) {
+                // #1067: red under the value while it is refused (Confirm is off too)
+                Text(
+                    errorText,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFFB91C1C),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp),
+                )
+            }
             Column(Modifier.fillMaxWidth()) {
                 listOf(
                     listOf("1", "2", "3"),
@@ -586,12 +621,9 @@ fun AppNumericPadSheet(
                                     .weight(1f)
                                     .height(58.dp)
                                     .clickable {
-                                        onRawValueChange(
-                                            when (key) {
-                                                "⌫" -> rawValue.dropLast(1).ifBlank { "0" }
-                                                else -> if (rawValue == "0") key else rawValue + key
-                                            }.take(12),
-                                        )
+                                        val next = NumericPadEntry(rawValue, fresh = fresh && rawValue != "0").press(key)
+                                        fresh = false
+                                        onRawValueChange(next.text)
                                     },
                                 shape = RectangleShape,
                                 color = MaterialTheme.colorScheme.surface,
@@ -625,6 +657,7 @@ fun AppNumericPadSheet(
                 extraContent()
                 AppPrimaryButton(
                     text = stringResource(R.string.confirm),
+                    enabled = confirmEnabled,
                     onClick = onConfirm,
                 )
             }

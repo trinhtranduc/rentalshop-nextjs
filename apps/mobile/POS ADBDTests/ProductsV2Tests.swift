@@ -1808,3 +1808,91 @@ extension ProductsV2Tests {
         XCTAssertEqual(CartDateRowLogic.iconSize, 40, "same circle as the customer row avatar")
     }
 }
+
+// MARK: - #1067 discount can't be more than the order total
+
+extension ProductsV2Tests {
+    func testDiscountLimitIsTheSubtotalOrOneHundredPercent() {
+        XCTAssertEqual(CartV2Logic.discountLimit(subtotal: 77, isPercent: false), 77)
+        XCTAssertEqual(CartV2Logic.discountLimit(subtotal: 77, isPercent: true), 100)
+        XCTAssertEqual(CartV2Logic.discountLimit(subtotal: -5, isPercent: false), 0)
+    }
+
+    func testDiscountAboveTheSubtotalIsRefused() {
+        // the e2e cart: −5.000.050.000 on a 77đ order
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 5_000_050_000, subtotal: 77, isPercent: false))
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 78, subtotal: 77, isPercent: false))
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 77, subtotal: 77, isPercent: false), "equal: total 0 is allowed")
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 0, subtotal: 0, isPercent: false), "no discount on an empty cart is fine")
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 10, subtotal: 0, isPercent: false))
+        XCTAssertTrue(CartV2Logic.discountExceeds(value: 101, subtotal: 77, isPercent: true))
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 100, subtotal: 77, isPercent: true))
+        XCTAssertFalse(CartV2Logic.discountExceeds(value: 50, subtotal: 0, isPercent: true), "50% of nothing is 0")
+    }
+
+    func testDiscountErrorNamesTheLimit() {
+        XCTAssertNil(CartV2Logic.discountError(value: 77, subtotal: 77, isPercent: false))
+        let amount = CartV2Logic.discountError(value: 5_000_050_000, subtotal: 77, isPercent: false)
+        XCTAssertNotNil(amount)
+        XCTAssertTrue(amount?.contains("(77đ)") == true, amount ?? "nil")
+        let percent = CartV2Logic.discountError(value: 150, subtotal: 77, isPercent: true)
+        XCTAssertTrue(percent?.contains("(100%)") == true, percent ?? "nil")
+        let bundle = Bundle(for: OrderRowCell.self)
+        let vi = bundle.path(forResource: "vi-VN", ofType: "lproj").flatMap(Bundle.init(path:))
+        let en = bundle.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:))
+        XCTAssertEqual(vi?.localizedString(forKey: "cart.discount.tooHigh", value: nil, table: nil),
+                       "Giảm giá không được lớn hơn tổng đơn (%@)")
+        XCTAssertEqual(en?.localizedString(forKey: "cart.discount.tooHigh", value: nil, table: nil),
+                       "Discount can't be more than the order total (%@)")
+    }
+
+    /// Removing items so the subtotal falls below the saved discount makes the cart's discount invalid (blocks create)
+    func testCartDiscountTurnsInvalidWhenItemsAreRemoved() {
+        let cart = Cart()
+        cart.addItem(CartItem(productId: 1, productName: "Áo dài", barcode: nil, quantity: 1, price: 300_000, deposit: 0,
+                              originalRentPrice: 300_000, originalSalePrice: 0))
+        cart.addItem(CartItem(productId: 2, productName: "Vest", barcode: nil, quantity: 1, price: 50_000, deposit: 0,
+                              originalRentPrice: 50_000, originalSalePrice: 0))
+        cart.discountType = .amount
+        cart.discount = 200_000
+        XCTAssertNil(CartV2Logic.cartDiscountError(cart))
+        cart.removeItem(at: 0)
+        XCTAssertNotNil(CartV2Logic.cartDiscountError(cart))
+        cart.discount = 50_000
+        XCTAssertNil(CartV2Logic.cartDiscountError(cart))
+        cart.discountType = .percentage
+        cart.discount = 100
+        XCTAssertNil(CartV2Logic.cartDiscountError(cart))
+    }
+
+    /// The keypad opened on an old value: the first key replaces it instead of appending (5.000.050.000 bug)
+    func testKeypadFirstKeyReplacesTheOpeningValue() {
+        var entry = NumberPadEntry("50000")
+        entry.press("7")
+        XCTAssertEqual(entry.text, "7")
+        entry.press("7")
+        XCTAssertEqual(entry.text, "77", "after the first key, keys append")
+        entry.press("000")
+        XCTAssertEqual(entry.text, "77000")
+        entry.press("⌫")
+        XCTAssertEqual(entry.text, "7700")
+
+        var cleared = NumberPadEntry("50000")
+        cleared.press("⌫")
+        XCTAssertEqual(cleared.text, "0", "backspace clears the selected old value")
+        cleared.press("5")
+        XCTAssertEqual(cleared.text, "5")
+
+        var zero = NumberPadEntry("0")
+        zero.press("000")
+        XCTAssertEqual(zero.text, "0")
+        zero.press("4")
+        XCTAssertEqual(zero.text, "4")
+        zero.press("⌫")
+        XCTAssertEqual(zero.text, "0")
+
+        var oldThousands = NumberPadEntry("50000")
+        oldThousands.press("000")
+        XCTAssertEqual(oldThousands.text, "0", "000 on a fresh entry starts from 0, not 50000000")
+    }
+}

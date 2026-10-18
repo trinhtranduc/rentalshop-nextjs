@@ -2752,3 +2752,6 @@
 "products.cart.left" = "Còn %d";
 "products.cart.onlyLeft" = "Chỉ còn %d";
 "products.cart.bookedOut" = "Hết đồ";
+
+/* #1067: discount above the order total */
+"cart.discount.tooHigh" = "Giảm giá không được lớn hơn tổng đơn (%@)";

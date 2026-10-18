@@ -2754,3 +2754,6 @@
 "products.cart.left" = "%d left";
 "products.cart.onlyLeft" = "Only %d left";
 "products.cart.bookedOut" = "Booked out";
+
+/* #1067: discount above the order total */
+"cart.discount.tooHigh" = "Discount can't be more than the order total (%@)";

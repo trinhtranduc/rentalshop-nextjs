@@ -21,6 +21,7 @@ import {
   computeTotals,
   dayRangeIso,
   dayStartIso,
+  discountExceeds,
   draftFromOrder,
   findByBarcode,
   firstMissing,
@@ -685,5 +686,22 @@ describe('every add makes a new line (#952)', () => {
       [11, 0],
     ]);
     expect(new Set(d.lines.map((l) => l.key)).size).toBe(3);
+  });
+});
+
+// #1067 owner: "chặn giảm giá lớn hơn tổng đơn luôn" — same rule as iOS CartV2Logic.discountExceeds
+describe('discountExceeds (#1067)', () => {
+  it('refuses an amount above the subtotal before discount', () => {
+    expect(discountExceeds('amount', 5_000_050_000, 77)).toBe(true);
+    expect(discountExceeds('amount', 78, 77)).toBe(true);
+    expect(discountExceeds('amount', 77, 77)).toBe(false);
+    expect(discountExceeds('amount', 0, 0)).toBe(false);
+    expect(discountExceeds('amount', 10, 0)).toBe(true);
+  });
+
+  it('caps a percent discount at 100%', () => {
+    expect(discountExceeds('percentage', 101, 77)).toBe(true);
+    expect(discountExceeds('percentage', 100, 77)).toBe(false);
+    expect(discountExceeds('percentage', 50, 0)).toBe(false);
   });
 });

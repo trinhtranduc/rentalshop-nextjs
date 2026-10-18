@@ -433,6 +433,16 @@ object CartV2Logic {
     /** #1056 (iOS `discountShown`): "−50.000đ" above 0, else "0đ" (both blue now) */
     fun discountShown(discountAmount: Double): Double = if (discountAmount > 0) -discountAmount else 0.0
 
+    /** #1067 (iOS `discountLimit`): the most a discount can be: the line subtotal before discount, or 100% */
+    fun discountLimit(subtotal: Double, isPercent: Boolean): Double = if (isPercent) 100.0 else subtotal.coerceAtLeast(0.0)
+
+    /** #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): refused, never clamped; equal to the limit is fine */
+    fun discountExceeds(value: Double, subtotal: Double, isPercent: Boolean): Boolean = value > discountLimit(subtotal, isPercent)
+
+    /** #1067: the X in "Giảm giá không được lớn hơn tổng đơn (X)": the subtotal as money, or "100%" */
+    fun discountLimitText(subtotal: Double, isPercent: Boolean, money: (Double) -> String): String =
+        if (isPercent) "100%" else money(discountLimit(subtotal, isPercent = false))
+
     /** #1056 (iOS `moneyRowSpoken`): TalkBack reads the title, the value (+ the note photos) and "Sửa" */
     fun moneyRowSpoken(title: String, value: String, edit: String, photos: String? = null): String =
         listOfNotNull(title, value, photos, edit).joinToString(", ")

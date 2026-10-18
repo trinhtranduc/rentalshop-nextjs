@@ -1280,6 +1280,7 @@
     <string name="v2_order_note_hint">For the whole order. Each item\'s note is under that item.</string>
     <string name="v2_order_note_photos">%1$d photos</string>
     <string name="v2_cart_overlap_blocked">This shop does not allow overlapping rentals. Change the dates, lower the quantity, or remove items that are fully booked.</string>
+    <string name="v2_cart_discount_too_high">Discount can\'t be more than the order total (%1$s)</string>
     <string name="v2_create_overlap_title">Overlapping booking</string>
     <string name="v2_create_overlap_line">%1$s is short %2$d on %3$s (rented in %4$s).</string>
     <string name="v2_create_overlap_line_no_order">%1$s is short %2$d on %3$s.</string>
