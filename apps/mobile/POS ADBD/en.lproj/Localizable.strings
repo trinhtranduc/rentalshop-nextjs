@@ -2745,3 +2745,8 @@
 "overview.dash.todayOrders.empty" = "No orders today yet";
 "overview.dash.todayOrders.rent" = "Rent";
 "overview.dash.todayOrders.sale" = "Sale";
+
+/* #1064: cart line availability pill (0 free = red, 2+ and enough = green) */
+"products.cart.unavailableRent" = "Unavailable on these dates";
+"products.cart.outOfStock" = "Out of stock";
+"products.cart.freeRent" = "%d free on these dates";

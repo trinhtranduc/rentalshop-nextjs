@@ -939,12 +939,11 @@ private fun ItemRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    val left = if (overlapText == null) CartV2Logic.shortage(available, productQuantity) else null
-                    val shortText = overlapText ?: left?.let {
-                        stringResource(if (isSale) R.string.v2_cart_short_stock else R.string.v2_cart_short_rent, it)
-                    }
-                    // #1054: the overlap tag stays red; the shortage is amber while some units are free
-                    val style = CartShortageStyle.of(left?.let { CartV2Logic.shortageTone(it) } ?: CartV2Logic.ShortageTone.NONE)
+                    // #1064: one pill once availability is loaded: green "Còn N …" (2+ and enough), amber "Chỉ còn N …"
+                    // (#1054), red "Không còn trống…" / "Hết hàng" at 0. The overlap tag (red) replaces it
+                    val note = if (overlapText == null) CartV2Logic.availabilityNote(available, productQuantity, !isSale) else null
+                    val shortText = overlapText ?: note?.let { stringResource(it.textRes, it.count) }
+                    val style = CartShortageStyle.of(note?.tone ?: CartV2Logic.ShortageTone.NONE)
                     shortText?.let { text ->
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         Text(
@@ -958,9 +957,7 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
-                if (isSale && available != null) {
-                    Text(stringResource(R.string.v2_cart_in_stock, available), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                }
+                // #1064: a sale line's "Còn N" is now the pill beside the name (one count per line)
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
@@ -983,6 +980,7 @@ internal data class CartShortageStyle(val colors: DS.Pill, val weight: FontWeigh
         private val BookedOut = DS.Pill(Color(0xFF991B1B), Color(0xFFFEE2E2))
 
         fun of(tone: CartV2Logic.ShortageTone): CartShortageStyle = when (tone) {
+            CartV2Logic.ShortageTone.OK -> CartShortageStyle(DS.Status.Done, FontWeight.Medium) // #1064: 2+ and enough
             CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.Medium)
             CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.SemiBold)
         }

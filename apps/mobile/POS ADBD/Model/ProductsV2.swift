@@ -672,13 +672,42 @@ enum CartV2Logic {
     }
 
     /// #1054: how strong the shortage warning is: `.low` = some units free (fewer than asked), `.none` = nothing free
+    /// #1064: `.ok` = 2+ free and enough for the cart (green)
     enum ShortageTone: Equatable {
-        case low, none
+        case ok, low, none
     }
 
     /// #1054 (owner): "Chỉ còn 1 trống…" in red read as out of stock; red only when nothing is free
     static func shortageTone(left: Int) -> ShortageTone {
         left >= 1 ? .low : .none
+    }
+
+    /// #1064: the one availability pill of a cart line: a `Localizable.strings` key, its count, and the tone
+    struct AvailabilityNote: Equatable {
+        let key: String
+        let count: Int
+        let tone: ShortageTone
+
+        var text: String { String(format: key.localized(), count) }
+    }
+
+    /// #1064 (owner): 0 free = "Không còn trống…" / "Hết hàng" (red); 1 free, or fewer than asked = "Chỉ còn N …"
+    /// (amber); 2+ free and at least `asked` = "Còn N …" (green). nil while availability is not loaded
+    static func availabilityNote(available: Int?, asked: Int, isRent: Bool) -> AvailabilityNote? {
+        guard let available else { return nil }
+        if available <= 0 {
+            return AvailabilityNote(key: isRent ? "products.cart.unavailableRent" : "products.cart.outOfStock", count: 0, tone: .none)
+        }
+        if available >= 2 && available >= asked {
+            return AvailabilityNote(key: isRent ? "products.cart.freeRent" : "products.cart.inStock", count: available, tone: .ok)
+        }
+        return AvailabilityNote(key: isRent ? "products.cart.shortRent" : "products.cart.shortStock", count: available, tone: .low)
+    }
+
+    /// #1064: the note of a cart line; `asked` = units of the product across all its lines (#951)
+    static func availabilityNote(_ item: CartItem, in items: [CartItem], isRent: Bool) -> AvailabilityNote? {
+        let asked = items.filter { $0.productId == item.productId }.reduce(0) { $0 + $1.quantity }
+        return availabilityNote(available: item.availabilityStatus?.available, asked: max(asked, item.quantity), isRent: isRent)
     }
 
     /// Paid now: the prepaid deposit for a rental, the order total for a sale

@@ -2743,3 +2743,8 @@
 "overview.dash.todayOrders.empty" = "Chưa có đơn nào hôm nay";
 "overview.dash.todayOrders.rent" = "Thuê";
 "overview.dash.todayOrders.sale" = "Bán";
+
+/* #1064: cart line availability pill (0 free = red, 2+ and enough = green) */
+"products.cart.unavailableRent" = "Không còn trống trong ngày đã chọn";
+"products.cart.outOfStock" = "Hết hàng";
+"products.cart.freeRent" = "Còn %d trống trong ngày đã chọn";

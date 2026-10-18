@@ -55,11 +55,12 @@ fd="$(texts 2500)"
 echo "$fd" | grep -q "$(L v2_detail_free_calendar)" && pass "tag opens '$(L v2_detail_free_calendar)'" || fail "tag did not open the free days: ${fd:0:300}"
 "$U" back >/dev/null; sleep 2
 
-# MOB-STOCK-07: Het for tomorrow (free): no tag, no shortage line
+# MOB-STOCK-07: Het for tomorrow (1 free): no tag, not unavailable; #1064: the amber "Only 1 free on these dates"
 pick_dates 1 2
 "$U" shot a-stock-6-het-tomorrow >/dev/null
 t="$(texts 1500)"
-if echo "$t" | grep -Eq "$(L v2_cart_overlap_one_day 'x' | sed 's/x.*//')[0-9]|$(L v2_cart_short_rent 1 | sed 's/1.*//')"; then fail "Het for tomorrow shows a tag or shortage: ${t:0:400}"; else pass "Het for tomorrow: no tag, no shortage line"; fi
+if echo "$t" | grep -Eq "$(L v2_cart_overlap_one_day 'x' | sed 's/x.*//')[0-9]|$(L v2_cart_unavailable_rent)"; then fail "Het for tomorrow shows a tag or unavailable: ${t:0:400}"; else pass "Het for tomorrow: no tag, not unavailable"; fi
+echo "$t" | grep -q "$(L v2_cart_short_rent 1)" && pass "Het tomorrow: '$(L v2_cart_short_rent 1)'" || fail "Het tomorrow should say '$(L v2_cart_short_rent 1)': ${t:0:400}"
 
 # MOB-STOCK-08: 2 x Het for tomorrow: "Only 1 free on these dates"
 "$U" tap "$(L v2_stepper_plus)" >/dev/null; sleep 2

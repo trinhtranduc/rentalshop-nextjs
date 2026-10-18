@@ -2058,4 +2058,8 @@
     <string name="overview_dash_today_orders_empty">No orders today yet</string>
     <string name="overview_dash_today_orders_rent">Rent</string>
     <string name="overview_dash_today_orders_sale">Sale</string>
+    <!-- #1064: cart line availability pill (0 free = red, 2+ and enough = green) -->
+    <string name="v2_cart_unavailable_rent">Unavailable on these dates</string>
+    <string name="v2_cart_out_of_stock">Out of stock</string>
+    <string name="v2_cart_free_rent">%1$d free on these dates</string>
 </resources>

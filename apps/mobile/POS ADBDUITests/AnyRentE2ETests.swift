@@ -2385,8 +2385,10 @@ final class AnyRentE2ETests: XCTestCase {
         guard e2e.addToCartAndOpen(product: key) else { return XCTFail("Could not put \(key) in the cart") }
         e2e.cartRentToday()
         let plus = e2e.button(["One more", "Thêm 1"])
+        // #1064: a line with enough units says "Còn N trống…" (green): only "Chỉ còn N" (amber) or "Không còn trống" /
+        // "Unavailable on these dates" (red) means the stock runs out
         let short = app.staticTexts.matching(NSPredicate(format:
-            "label CONTAINS 'trống trong ngày' OR label CONTAINS 'free on these dates' OR label BEGINSWITH ' Hết đồ' OR label BEGINSWITH ' Booked out' OR label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
+            "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only ' OR label CONTAINS 'Không còn trống' OR label CONTAINS 'Unavailable on these dates' OR label BEGINSWITH ' Hết đồ' OR label BEGINSWITH ' Booked out' OR label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
         // A product already booked out today (an earlier run took the units) shows the red "Hết …" tag at once instead of "Chỉ còn N trống"
         let outTag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Xem các đơn' OR label BEGINSWITH 'See the orders'")).firstMatch
         for _ in 0..<40 where !short.exists && !outTag.exists {
@@ -3093,9 +3095,12 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.pickDayInDateSheet(tomorrowDay)
         e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
         sleep(3)
-        let shortage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only'")).firstMatch
-        e2e.note("STOCKFLOW het-tomorrow shortage: \(shortage.exists ? shortage.label : "<none>") tag: \(tag.exists)")
-        XCTAssertFalse(shortage.exists, "Het is free tomorrow: no shortage line")
+        // #1064 (owner): the one unit free tomorrow is the amber "Chỉ còn 1 trống…", never the red "Không còn trống"
+        let shortage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Không còn trống' OR label CONTAINS 'Unavailable on these dates'")).firstMatch
+        let oneLeft = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only'")).firstMatch
+        e2e.note("STOCKFLOW het-tomorrow note: \(oneLeft.exists ? oneLeft.label : "<none>") red: \(shortage.exists) tag: \(tag.exists)")
+        XCTAssertFalse(shortage.exists, "Het is free tomorrow: not unavailable")
+        e2e.soft(oneLeft.exists && freeFrom(oneLeft.label) == 1, "Het tomorrow says 1 left")
         e2e.shot("1d-stock-het-tomorrow")
         // MOB-STOCK-08: 2 × Het tomorrow, only 1 exists → "Chỉ còn 1 trống trong ngày đã chọn"
         let plusOne = e2e.button(["Thêm 1", "One more"])

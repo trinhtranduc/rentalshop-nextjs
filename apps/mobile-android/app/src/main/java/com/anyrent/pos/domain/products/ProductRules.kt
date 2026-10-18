@@ -1,5 +1,7 @@
 package com.anyrent.pos.domain.products
 
+import androidx.annotation.StringRes
+import com.anyrent.pos.R
 import com.anyrent.pos.data.UserRole
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.data.model.Product
@@ -599,10 +601,25 @@ object CartV2Logic {
         available?.takeIf { it < quantity }?.coerceAtLeast(0)
 
     /** #1054: how strong the shortage warning is: LOW = some units free (fewer than asked), NONE = nothing free */
-    enum class ShortageTone { LOW, NONE }
+    enum class ShortageTone { OK, LOW, NONE }
 
     /** #1054 (owner, iOS `shortageTone`): "Chỉ còn 1 trống…" in red read as out of stock; red only when nothing is free */
     fun shortageTone(left: Int): ShortageTone = if (left >= 1) ShortageTone.LOW else ShortageTone.NONE
+
+    /** #1064: the one availability pill of a cart line: a string id, its count, and the tone (iOS `AvailabilityNote`) */
+    data class AvailabilityNote(@StringRes val textRes: Int, val count: Int, val tone: ShortageTone)
+
+    /**
+     * #1064 (owner, iOS `availabilityNote`): 0 free = "Không còn trống…" / "Hết hàng" (red); 1 free, or fewer than
+     * [asked] = "Chỉ còn N …" (amber); 2+ free and at least [asked] = "Còn N …" (green). null while not loaded
+     */
+    fun availabilityNote(available: Int?, asked: Int, isRent: Boolean): AvailabilityNote? = when {
+        available == null -> null
+        available <= 0 -> AvailabilityNote(if (isRent) R.string.v2_cart_unavailable_rent else R.string.v2_cart_out_of_stock, 0, ShortageTone.NONE)
+        available >= 2 && available >= asked ->
+            AvailabilityNote(if (isRent) R.string.v2_cart_free_rent else R.string.v2_cart_in_stock, available, ShortageTone.OK)
+        else -> AvailabilityNote(if (isRent) R.string.v2_cart_short_rent else R.string.v2_cart_short_stock, available, ShortageTone.LOW)
+    }
 
     /** Paid now: the prepaid deposit for a rental, the order total for a sale */
     fun collectNow(isSale: Boolean, total: Double, deposit: Double): Double = if (isSale) total else deposit
