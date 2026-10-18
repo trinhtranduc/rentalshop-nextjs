@@ -618,6 +618,52 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(none.weight, .bold)
     }
 
+    /// #1064 (owner): 0 free = "Hết đồ" / "Hết hàng" in red; 1 free (or fewer than asked) = amber; 2+ free and enough
+    /// for the cart = green "Còn N". Short texts ("text còn trống dài quá"); VoiceOver reads the long one. Nothing
+    /// until availability loads
+    func testAvailabilityNoteByFreeCount() {
+        typealias Note = CartV2Logic.AvailabilityNote
+        func note(_ available: Int?, _ asked: Int, _ rent: Bool) -> Note? {
+            CartV2Logic.availabilityNote(available: available, asked: asked, isRent: rent)
+        }
+        XCTAssertNil(note(nil, 1, true))
+        XCTAssertNil(note(nil, 1, false))
+
+        // 0: red
+        XCTAssertEqual(note(0, 1, true), Note(key: "products.cart.bookedOut", spokenKey: "products.cart.unavailableRent", count: 0, tone: .none))
+        XCTAssertEqual(note(-2, 1, true), Note(key: "products.cart.bookedOut", spokenKey: "products.cart.unavailableRent", count: 0, tone: .none))
+        XCTAssertEqual(note(0, 1, false), Note(key: "products.cart.outOfStock", spokenKey: "products.cart.outOfStock", count: 0, tone: .none))
+        // 1 free, 1 asked: amber "Còn 1"
+        XCTAssertEqual(note(1, 1, true), Note(key: "products.cart.left", spokenKey: "products.cart.freeRent", count: 1, tone: .low))
+        XCTAssertEqual(note(1, 1, false), Note(key: "products.cart.left", spokenKey: "products.cart.inStock", count: 1, tone: .low))
+        // fewer than asked: amber "Chỉ còn N" (2 free but 3 in the cart cannot be filled → amber, not green)
+        XCTAssertEqual(note(1, 3, false), Note(key: "products.cart.onlyLeft", spokenKey: "products.cart.shortStock", count: 1, tone: .low))
+        XCTAssertEqual(note(2, 3, true), Note(key: "products.cart.onlyLeft", spokenKey: "products.cart.shortRent", count: 2, tone: .low))
+        XCTAssertEqual(note(2, 3, false), Note(key: "products.cart.onlyLeft", spokenKey: "products.cart.shortStock", count: 2, tone: .low))
+        // 2+ and enough: green "Còn N"
+        XCTAssertEqual(note(2, 2, true), Note(key: "products.cart.left", spokenKey: "products.cart.freeRent", count: 2, tone: .ok))
+        XCTAssertEqual(note(5, 1, true), Note(key: "products.cart.left", spokenKey: "products.cart.freeRent", count: 5, tone: .ok))
+        XCTAssertEqual(note(5, 1, false), Note(key: "products.cart.left", spokenKey: "products.cart.inStock", count: 5, tone: .ok))
+
+        // Every text exists, reads the count, and the shown one is short
+        for n in [note(0, 1, true), note(0, 1, false), note(1, 1, true), note(2, 3, true), note(4, 1, true), note(4, 1, false)].compactMap({ $0 }) {
+            XCTAssertNotEqual(n.text, n.key)
+            XCTAssertNotEqual(n.spoken, n.spokenKey)
+            if n.count > 0 {
+                XCTAssertTrue(n.text.contains("\(n.count)"))
+                XCTAssertTrue(n.spoken.contains("\(n.count)"))
+            }
+            XCTAssertFalse(n.text.contains("trong ngày") || n.text.contains("on these dates"), n.text)
+            XCTAssertLessThanOrEqual(n.text.count, 14, n.text)
+        }
+
+        // Green reuses the "done" token, same weight as amber
+        let ok = CartV2ViewController.shortageStyle(.ok)
+        XCTAssertEqual(ok.colors.text, DS.Status.done.text)
+        XCTAssertEqual(ok.colors.fill, DS.Status.done.fill)
+        XCTAssertEqual(ok.weight, .medium)
+    }
+
     func testShortageAndRentalDays() {
         var line = item(price: 1, qty: 2)
         XCTAssertNil(CartV2Logic.shortage(line))

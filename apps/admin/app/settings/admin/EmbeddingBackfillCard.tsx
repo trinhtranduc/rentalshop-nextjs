@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle, useToast } from '@rentalshop/ui';
 import { useSettingsTranslations } from '@rentalshop/hooks';
 import { systemApi } from '@rentalshop/utils';
@@ -23,15 +23,22 @@ export function EmbeddingBackfillCard() {
   const [confirmCount, setConfirmCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // #1065: read t / toastError through a ref so loadStatus never changes identity. With them in its deps, every
+  // render (each setStatus) made a new loadStatus, the mount effect ran again, and the card fetched in a loop.
+  const latest = useRef({ t, toastError });
+  latest.current = { t, toastError };
+
+  /** One GET: on mount, on "Làm mới", after a real (non dry-run) run. */
   const loadStatus = useCallback(async () => {
+    const fail = (message: string) => latest.current.toastError(latest.current.t('embeddingBackfill.loadFailed'), message);
     try {
       const res = await systemApi.getEmbeddingBackfillStatus();
       if (res.success && res.data) setStatus(res.data);
-      else toastError(t('embeddingBackfill.loadFailed'), res.message || '');
+      else fail(res.message || '');
     } catch (err) {
-      toastError(t('embeddingBackfill.loadFailed'), (err as Error)?.message || '');
+      fail((err as Error)?.message || '');
     }
-  }, [t, toastError]);
+  }, []);
 
   useEffect(() => {
     loadStatus();

@@ -2032,4 +2032,12 @@
     <string name="overview_dash_today_orders_empty">Chưa có đơn nào hôm nay</string>
     <string name="overview_dash_today_orders_rent">Thuê</string>
     <string name="overview_dash_today_orders_sale">Bán</string>
+    <!-- #1064: cart line availability pill (0 free = red, 2+ and enough = green) -->
+    <string name="v2_cart_unavailable_rent">Hết đồ trong ngày đã chọn</string>
+    <string name="v2_cart_out_of_stock">Hết hàng</string>
+    <string name="v2_cart_free_rent">Còn %1$d trong ngày đã chọn</string>
+    <!-- #1064 (owner: "text còn trống dài quá"): the short pill texts; the lines above are the TalkBack texts -->
+    <string name="v2_cart_left">Còn %1$d</string>
+    <string name="v2_cart_only_left">Chỉ còn %1$d</string>
+    <string name="v2_cart_booked_out">Hết đồ</string>
 </resources>

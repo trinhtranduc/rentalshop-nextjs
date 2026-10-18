@@ -256,6 +256,34 @@ class ProductRulesTest {
         assertEquals(CartV2Logic.ShortageTone.NONE, CartV2Logic.shortageTone(0))
     }
 
+    /**
+     * #1064 (owner, iOS `availabilityNote`): 0 free = "Hết đồ" / "Hết hàng" in red; 1 free (or fewer than asked) =
+     * amber; 2+ free and enough for the cart = green "Còn N". Short texts; TalkBack reads the long one. Nothing until loaded
+     */
+    @Test
+    fun `availability note follows the free count`() {
+        val note = CartV2Logic::availabilityNote
+        fun n(text: Int, spoken: Int, count: Int, tone: CartV2Logic.ShortageTone) = CartV2Logic.AvailabilityNote(text, spoken, count, tone)
+        val (ok, low, none) = Triple(CartV2Logic.ShortageTone.OK, CartV2Logic.ShortageTone.LOW, CartV2Logic.ShortageTone.NONE)
+        assertNull(note(null, 1, true))
+        assertNull(note(null, 1, false))
+        // 0: red
+        assertEquals(n(R.string.v2_cart_booked_out, R.string.v2_cart_unavailable_rent, 0, none), note(0, 1, true))
+        assertEquals(n(R.string.v2_cart_booked_out, R.string.v2_cart_unavailable_rent, 0, none), note(-2, 1, true))
+        assertEquals(n(R.string.v2_cart_out_of_stock, R.string.v2_cart_out_of_stock, 0, none), note(0, 1, false))
+        // 1 free, 1 asked: amber "Còn 1"
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_free_rent, 1, low), note(1, 1, true))
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_in_stock, 1, low), note(1, 1, false))
+        // fewer than asked: amber "Chỉ còn N" (2 free but 3 in the cart cannot be filled → amber, not green)
+        assertEquals(n(R.string.v2_cart_only_left, R.string.v2_cart_short_stock, 1, low), note(1, 3, false))
+        assertEquals(n(R.string.v2_cart_only_left, R.string.v2_cart_short_rent, 2, low), note(2, 3, true))
+        assertEquals(n(R.string.v2_cart_only_left, R.string.v2_cart_short_stock, 2, low), note(2, 3, false))
+        // 2+ and enough: green "Còn N"
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_free_rent, 2, ok), note(2, 2, true))
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_free_rent, 5, ok), note(5, 1, true))
+        assertEquals(n(R.string.v2_cart_left, R.string.v2_cart_in_stock, 5, ok), note(5, 1, false))
+    }
+
     @Test
     fun `switching to sale after a pricing toggle uses the sale price`() {
         CartStore.clear(persistToDisk = false)

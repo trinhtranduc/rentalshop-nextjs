@@ -722,6 +722,46 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
+    /// #1064 (owner): every cart line says how many are free in a short pill ("Còn N" green when 2+ and enough, amber
+    /// "Còn 1" / "Chỉ còn N", red "Hết đồ" / "Hết hàng"); VoiceOver reads "… trong ngày đã chọn" / "… trong kho"; a sale
+    /// line shows one count. Products 1, 5 and 9 have no open orders in the seed; for all three colours set their outlet
+    /// stock to 0, 1 and 2 first (the run only checks what it sees). cart-avail-*.png
+    func test8lCartAvailabilityNotes() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        let names = ["Product 1 - Electronics", "Product 5 - Party Supplies", "Product 9 - Office Equipment"]
+        for name in names where !addFromHome(name) { return XCTFail("could not add \(name)") }
+        guard openCart() else { return XCTFail("cart did not open") }
+        e2e.cartRentToday()
+        sleep(3)
+        let rentNotes = app.staticTexts.matching(NSPredicate(format:
+            "label CONTAINS 'trong ngày đã chọn' OR label CONTAINS 'on these dates'"))
+        e2e.note("rent notes: \(rentNotes.allElementsBoundByIndex.map(\.label))")
+        XCTAssertEqual(rentNotes.count, names.count, "one availability pill per rent line")
+        let long = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'trống trong ngày đã chọn' AND label BEGINSWITH 'Còn'")).count
+        XCTAssertEqual(long, 0, "the old long Còn N trống … text is gone")
+        e2e.shot("cart-avail-1-rent")
+        // two more of the last product: with 2 free it turns amber "Chỉ còn 2" (3 asked)
+        let plus = app.buttons.matching(NSPredicate(format: "label == 'Thêm 1' OR label == 'One more'"))
+        if plus.count >= names.count {
+            plus.element(boundBy: names.count - 1).tap(); sleep(1)
+            plus.element(boundBy: names.count - 1).tap(); sleep(3)
+        }
+        e2e.note("rent notes after +2: \(rentNotes.allElementsBoundByIndex.map(\.label))")
+        e2e.shot("cart-avail-2-rent-fewer-than-asked")
+        e2e.tapIfExists(e2e.button(["Sale", "Bán"]), timeout: 3)
+        sleep(3)
+        let counts = app.staticTexts.matching(NSPredicate(format:
+            "label CONTAINS 'trong kho' OR label CONTAINS 'in stock' OR label == 'Hết hàng' OR label == 'Out of stock'"))
+        e2e.note("sale notes: \(counts.allElementsBoundByIndex.map(\.label))")
+        XCTAssertEqual(counts.count, names.count, "one count per sale line")
+        e2e.shot("cart-avail-3-sale")
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
     /// #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): the discount sheet refuses more than the lines, the first key
     /// replaces the old value, and removing lines below a saved discount blocks "Tạo đơn" with the same message.
     /// Product 1 (28) + Product 2 (32) in the seed.
@@ -2450,10 +2490,15 @@ final class AnyRentE2ETests: XCTestCase {
         guard e2e.addToCartAndOpen(product: key) else { return XCTFail("Could not put \(key) in the cart") }
         e2e.cartRentToday()
         let plus = e2e.button(["One more", "Thêm 1"])
+        // #1064: the pill is short ("Còn N" / "Chỉ còn N" / "Hết đồ"); its label is the VoiceOver text. A line with enough
+        // units says "Còn N trong ngày đã chọn" (green): only "Chỉ còn N trống…" (amber) or "Hết đồ trong ngày…" (red) means
+        // the stock runs out
         let short = app.staticTexts.matching(NSPredicate(format:
-            "label CONTAINS 'trống trong ngày' OR label CONTAINS 'free on these dates' OR label BEGINSWITH ' Hết đồ' OR label BEGINSWITH ' Booked out' OR label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
+            "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only ' OR label BEGINSWITH ' Hết đồ' OR label BEGINSWITH ' Booked out' OR label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
         // A product already booked out today (an earlier run took the units) shows the red "Hết …" tag at once instead of "Chỉ còn N trống"
         let outTag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Xem các đơn' OR label BEGINSWITH 'See the orders'")).firstMatch
+        sleep(2)
+        e2e.shot("33a2-overlap-cart-free") // #1064: enough units → green "Còn N"
         for _ in 0..<40 where !short.exists && !outTag.exists {
             guard plus.exists else { break }
             plus.tap()
@@ -3158,9 +3203,13 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.pickDayInDateSheet(tomorrowDay)
         e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
         sleep(3)
-        let shortage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only'")).firstMatch
-        e2e.note("STOCKFLOW het-tomorrow shortage: \(shortage.exists ? shortage.label : "<none>") tag: \(tag.exists)")
-        XCTAssertFalse(shortage.exists, "Het is free tomorrow: no shortage line")
+        // #1064 (owner): the one unit free tomorrow is the amber "Còn 1" (VoiceOver "Còn 1 trong ngày đã chọn"), never the
+        // red "Hết đồ"
+        let shortage = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
+        let oneLeft = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Còn 1 trong ngày' OR label BEGINSWITH '1 left on these dates'")).firstMatch
+        e2e.note("STOCKFLOW het-tomorrow note: \(oneLeft.exists ? oneLeft.label : "<none>") red: \(shortage.exists) tag: \(tag.exists)")
+        XCTAssertFalse(shortage.exists, "Het is free tomorrow: not unavailable")
+        e2e.soft(oneLeft.exists && freeFrom(oneLeft.label) == 1, "Het tomorrow says 1 left")
         e2e.shot("1d-stock-het-tomorrow")
         // MOB-STOCK-08: 2 × Het tomorrow, only 1 exists → "Chỉ còn 1 trống trong ngày đã chọn"
         let plusOne = e2e.button(["Thêm 1", "One more"])

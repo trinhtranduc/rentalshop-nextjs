@@ -2059,4 +2059,12 @@
     <string name="overview_dash_today_orders_empty">No orders today yet</string>
     <string name="overview_dash_today_orders_rent">Rent</string>
     <string name="overview_dash_today_orders_sale">Sale</string>
+    <!-- #1064: cart line availability pill (0 free = red, 2+ and enough = green) -->
+    <string name="v2_cart_unavailable_rent">Booked out on these dates</string>
+    <string name="v2_cart_out_of_stock">Out of stock</string>
+    <string name="v2_cart_free_rent">%1$d left on these dates</string>
+    <!-- #1064 (owner: "text còn trống dài quá"): the short pill texts; the lines above are the TalkBack texts -->
+    <string name="v2_cart_left">%1$d left</string>
+    <string name="v2_cart_only_left">Only %1$d left</string>
+    <string name="v2_cart_booked_out">Booked out</string>
 </resources>

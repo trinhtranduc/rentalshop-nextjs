@@ -545,13 +545,13 @@ final class CartV2ViewController: BaseViewControler {
             tag.setContentCompressionResistancePriority(.required, for: .horizontal)
             nameRow.addArrangedSubview(tag)
         }
-        let shortage: (text: String, left: Int)? = CartV2Logic.shortage(item, in: cart.items).map { left in
-            (String(format: (isRent ? "products.cart.shortRent" : "products.cart.shortStock").localized(), left), left)
-        }
-        if !(isRent && conflicts[item.productId] != nil), let shortage {
-            // #1054: amber while some units are free, red only when none are
-            let style = Self.shortageStyle(CartV2Logic.shortageTone(left: shortage.left))
-            let warn = V2.label(" " + shortage.text + " ", size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
+        // #1064: one pill per line once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
+        // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. Hidden behind the overlap tag
+        if !(isRent && conflicts[item.productId] != nil),
+           let note = CartV2Logic.availabilityNote(item, in: cart.items, isRent: isRent) {
+            let style = Self.shortageStyle(note.tone)
+            let warn = V2.label(" " + note.text + " ", size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
+            warn.accessibilityLabel = note.spoken // #1064: the pill is short; VoiceOver says which days / the stock
             warn.numberOfLines = 0
             warn.backgroundColor = style.colors.fill
             warn.layer.cornerRadius = 6
@@ -561,11 +561,8 @@ final class CartV2ViewController: BaseViewControler {
             nameRow.addArrangedSubview(warn)
         }
 
-        // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. A sale line keeps "Còn N"
-        if !isRent, let available = item.availabilityStatus?.available {
-            column.addArrangedSubview(V2.label(String(format: "products.cart.inStock".localized(), available),
-                                               size: DS.TextSize.secondary, color: DS.Color.textMuted))
-        }
+        // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. #1064: a sale line's
+        // "Còn N" is now the pill beside the name (one count per line)
         let bottom = UIStackView(arrangedSubviews: [total, UIView(), stepper])
         bottom.alignment = .center
         bottom.spacing = 8
@@ -1178,6 +1175,7 @@ extension CartV2ViewController {
     /// some units are free; the booked-out red in bold when none are
     static func shortageStyle(_ tone: CartV2Logic.ShortageTone) -> (colors: DS.Pill, weight: UIFont.Weight) {
         switch tone {
+        case .ok: return (DS.Status.done, .medium) // #1064: 2+ free and enough for the cart
         case .low: return (DS.Status.waiting, .medium)
         case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .bold)
         }
