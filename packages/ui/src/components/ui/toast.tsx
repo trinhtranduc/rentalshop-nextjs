@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -195,25 +195,29 @@ export const useToasts = () => {
 };
 
 // Unified toast hook with consistent naming (public API)
+// #1065: the returned functions keep their identity across renders (addToast / removeToast are stable), so a
+// caller can list them in useCallback / useEffect deps without re-running on every render.
 export const useToast = () => {
   const { addToast, removeToast } = useToasts();
-  
-  const toastSuccess = (title: string, message?: string) => addToast('success', title, message);
-  const toastError = (title: string, message?: string) => addToast('error', title, message); // #919: hides after 6 s
-  const toastWarning = (title: string, message?: string) => addToast('warning', title, message);
-  const toastInfo = (title: string, message?: string) => addToast('info', title, message);
-  
-  return {
-    // Primary API - use these to avoid naming conflicts
-    toastSuccess,
-    toastError,
-    toastWarning,
-    toastInfo,
-    removeToast,
-    // Deprecated: kept for backward compatibility, will be removed in future
-    success: toastSuccess,
-    error: toastError,
-    warning: toastWarning,
-    info: toastInfo,
-  };
+
+  return useMemo(() => {
+    const toastSuccess = (title: string, message?: string) => addToast('success', title, message);
+    const toastError = (title: string, message?: string) => addToast('error', title, message); // #919: hides after 6 s
+    const toastWarning = (title: string, message?: string) => addToast('warning', title, message);
+    const toastInfo = (title: string, message?: string) => addToast('info', title, message);
+
+    return {
+      // Primary API - use these to avoid naming conflicts
+      toastSuccess,
+      toastError,
+      toastWarning,
+      toastInfo,
+      removeToast,
+      // Deprecated: kept for backward compatibility, will be removed in future
+      success: toastSuccess,
+      error: toastError,
+      warning: toastWarning,
+      info: toastInfo,
+    };
+  }, [addToast, removeToast]);
 };
