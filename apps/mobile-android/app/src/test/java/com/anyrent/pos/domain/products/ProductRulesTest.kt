@@ -248,6 +248,14 @@ class ProductRulesTest {
         assertEquals(3, CartV2Logic.rentalDays(day, day.plusDays(2)))
     }
 
+    /** #1054 (owner): some units free = the amber warning, none free = red (iOS `shortageTone`) */
+    @Test
+    fun `shortage tone is low when some units are free and none at zero`() {
+        assertEquals(CartV2Logic.ShortageTone.LOW, CartV2Logic.shortageTone(1))
+        assertEquals(CartV2Logic.ShortageTone.LOW, CartV2Logic.shortageTone(3))
+        assertEquals(CartV2Logic.ShortageTone.NONE, CartV2Logic.shortageTone(0))
+    }
+
     @Test
     fun `switching to sale after a pricing toggle uses the sale price`() {
         CartStore.clear(persistToDisk = false)

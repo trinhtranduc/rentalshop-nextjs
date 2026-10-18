@@ -448,6 +448,26 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(CartV2Logic.collectNow(cart), 1_530_000)
     }
 
+    /// #1054 (owner): "Chỉ còn 1 trống…" in red read as out of stock; some units free = amber (#1032 palette),
+    /// none free = red as before
+    func testShortageToneAmberWhenSomeUnitsFree() {
+        XCTAssertEqual(CartV2Logic.shortageTone(left: 1), .low)
+        XCTAssertEqual(CartV2Logic.shortageTone(left: 3), .low)
+        XCTAssertEqual(CartV2Logic.shortageTone(left: 0), .none)
+
+        let low = CartV2ViewController.shortageStyle(.low)
+        XCTAssertEqual(low.colors.text, DS.Status.waiting.text)
+        XCTAssertEqual(low.colors.fill, DS.Status.waiting.fill)
+        XCTAssertEqual(low.colors.text, UIColor(hexString: "9A3412"))
+        XCTAssertEqual(low.colors.fill, UIColor(hexString: "FFEDD5"))
+        XCTAssertEqual(low.weight, .medium)
+
+        let none = CartV2ViewController.shortageStyle(.none)
+        XCTAssertEqual(none.colors.text, UIColor(hexString: "991B1B"))
+        XCTAssertEqual(none.colors.fill, UIColor(hexString: "FEE2E2"))
+        XCTAssertEqual(none.weight, .bold)
+    }
+
     func testShortageAndRentalDays() {
         var line = item(price: 1, qty: 2)
         XCTAssertNil(CartV2Logic.shortage(line))
