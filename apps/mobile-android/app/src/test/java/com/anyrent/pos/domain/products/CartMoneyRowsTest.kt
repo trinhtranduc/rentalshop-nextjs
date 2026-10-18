@@ -52,4 +52,27 @@ class CartMoneyRowsTest {
         assertEquals("Ghi chú, Thêm, Sửa", CartV2Logic.moneyRowSpoken("Ghi chú", "Thêm", "Sửa"))
         assertEquals("Ghi chú, Khách lấy lúc 9h, 2 ảnh, Sửa", CartV2Logic.moneyRowSpoken("Ghi chú", "Khách lấy lúc 9h", "Sửa", photos = "2 ảnh"))
     }
+
+    /** #1067 (iOS testDiscountLimitIsTheSubtotalOrOneHundredPercent): the subtotal before discount, or 100% */
+    @Test
+    fun discountLimitIsTheSubtotalOrOneHundredPercent() {
+        assertEquals(77.0, CartV2Logic.discountLimit(subtotal = 77.0, isPercent = false), 0.0)
+        assertEquals(100.0, CartV2Logic.discountLimit(subtotal = 77.0, isPercent = true), 0.0)
+        assertEquals(0.0, CartV2Logic.discountLimit(subtotal = -5.0, isPercent = false), 0.0)
+        assertEquals("(77đ)", "(" + CartV2Logic.discountLimitText(77.0, isPercent = false) { "${it.toLong()}đ" } + ")")
+        assertEquals("100%", CartV2Logic.discountLimitText(77.0, isPercent = true) { "${it.toLong()}đ" })
+    }
+
+    /** #1067: the e2e cart had −5.000.050.000 on a 77đ order */
+    @Test
+    fun discountAboveTheSubtotalIsRefused() {
+        assertTrue(CartV2Logic.discountExceeds(5_000_050_000.0, subtotal = 77.0, isPercent = false))
+        assertTrue(CartV2Logic.discountExceeds(78.0, subtotal = 77.0, isPercent = false))
+        assertFalse("equal: total 0 is allowed", CartV2Logic.discountExceeds(77.0, subtotal = 77.0, isPercent = false))
+        assertFalse("no discount on an empty cart is fine", CartV2Logic.discountExceeds(0.0, subtotal = 0.0, isPercent = false))
+        assertTrue("items removed below the saved discount", CartV2Logic.discountExceeds(10.0, subtotal = 0.0, isPercent = false))
+        assertTrue(CartV2Logic.discountExceeds(101.0, subtotal = 77.0, isPercent = true))
+        assertFalse(CartV2Logic.discountExceeds(100.0, subtotal = 77.0, isPercent = true))
+        assertFalse("50% of nothing is 0", CartV2Logic.discountExceeds(50.0, subtotal = 0.0, isPercent = true))
+    }
 }
