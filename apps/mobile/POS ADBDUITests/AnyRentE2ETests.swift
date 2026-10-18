@@ -1154,6 +1154,78 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("74-overview-today")
     }
 
+    /// #1059: on Hôm nay "Đơn tạo hôm nay" replaces Top sản phẩm / Top khách hàng; its "N đơn · Tổng giá trị" equals the
+    /// Giá trị đơn mới tile; a row opens the order, "Xem tất cả" the tile's list; 7 ngày brings the Top cards back.
+    func test7oOverviewTodayOrders() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        let week = e2e.element(labelBeginsWith: ["7 days", "7 ngày"], type: .button)
+        guard week.waitForExistence(timeout: 8) else { throw XCTSkip("No revenue for this account: no card") }
+        sleep(3)
+        let title = e2e.element(labelBeginsWith: ["Orders created today", "Đơn tạo hôm nay"], type: .staticText)
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "Đơn tạo hôm nay card on Hôm nay")
+        let topProducts = e2e.element(labelBeginsWith: ["Top products", "Top sản phẩm"], type: .staticText)
+        XCTAssertFalse(topProducts.exists, "no Top sản phẩm on Hôm nay")
+
+        // The summary equals the tile: "8 đơn · Tổng giá trị 2.201.000đ" vs the tile's "8 đơn mới"
+        let summary = app.otherElements["overview.todayOrders.summary"]
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Giá trị đơn mới", "New order value")).firstMatch
+        if summary.waitForExistence(timeout: 15), tile.waitForExistence(timeout: 5) {
+            e2e.note("TODAY ORDERS | \(summary.label) | TILE \(tile.label)")
+            let count = summary.label.split(separator: " ").first.map(String.init) ?? "?"
+            XCTAssertTrue(tile.label.contains("\(count) đơn mới") || tile.label.contains("\(count) new order"),
+                          "summary count \(count) equals the tile chip: \(tile.label)")
+        } else {
+            e2e.soft(false, "summary line and Giá trị đơn mới tile")
+        }
+        title.swipeUp()
+        sleep(1)
+        e2e.shot("75-overview-today-orders")
+
+        let row = app.buttons["overview.todayOrders.row"].firstMatch
+        if row.waitForExistence(timeout: 8) {
+            e2e.note("TODAY ORDER ROW | \(row.label)")
+            row.tap()
+            sleep(3)
+            e2e.shot("75b-overview-today-order-detail")
+            e2e.goBackOnce()
+            sleep(2)
+        } else {
+            e2e.soft(app.staticTexts["overview.todayOrders.empty"].exists, "rows or the empty text")
+        }
+
+        let viewAll = app.buttons["overview.todayOrders.viewAll"]
+        if viewAll.waitForExistence(timeout: 5) {
+            viewAll.tap()
+            let total = app.staticTexts["related.total"]
+            XCTAssertTrue(total.waitForExistence(timeout: 20), "Xem tất cả opens the Giá trị đơn mới list")
+            let deadline = Date().addingTimeInterval(30)
+            while total.label.isEmpty && Date() < deadline { sleep(1) }
+            e2e.note("TODAY ORDERS RELATED | \(total.label)")
+            e2e.shot("75c-overview-today-orders-all")
+            e2e.goBackOnce()
+            sleep(2)
+        } else {
+            e2e.soft(false, "Xem tất cả on Đơn tạo hôm nay")
+        }
+
+        app.swipeDown()
+        sleep(1)
+        week.tap()
+        sleep(4)
+        XCTAssertFalse(title.exists, "no Đơn tạo hôm nay on 7 ngày")
+        app.swipeUp()
+        sleep(1)
+        XCTAssertTrue(topProducts.waitForExistence(timeout: 10), "Top sản phẩm on 7 ngày")
+        e2e.shot("75d-overview-7-days-top")
+        app.swipeDown()
+        e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .button).tap()
+        sleep(2)
+    }
+
 
     func test7aCustomers() throws {
         try e2e.requireFlag("newCustomers")
