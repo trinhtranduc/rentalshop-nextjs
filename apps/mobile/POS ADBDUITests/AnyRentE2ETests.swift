@@ -722,6 +722,71 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
+    /// #1067 (owner: "chặn giảm giá lớn hơn tổng đơn luôn"): the discount sheet refuses more than the lines, the first key
+    /// replaces the old value, and removing lines below a saved discount blocks "Tạo đơn" with the same message.
+    /// Product 1 (28) + Product 2 (32) in the seed.
+    func test8lCartDiscountCap() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.emptyCart()
+        guard addFromHome("Product 1 - Electronics"), addFromHome("Product 2 - Tools") else {
+            return XCTFail("could not add Product 1 and Product 2")
+        }
+        guard openCart() else { return XCTFail("cart did not open") }
+        let discount = e2e.element(labelBeginsWith: ["Discount", "Giảm giá"])
+        XCTAssertTrue(e2e.scrollTo(discount), "Giảm giá row in TIỀN")
+        discount.tap()
+        let confirm = e2e.button(["Confirm", "Xác nhận"])
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "the discount sheet opens")
+        for key in ["9", "9", "9", "9"] { e2e.tapIfExists(e2e.button([key]), timeout: 2) }
+        let error = app.staticTexts["discount.error"]
+        XCTAssertTrue(error.waitForExistence(timeout: 3), "red error under the value")
+        e2e.note("discount error: \(error.label)")
+        XCTAssertTrue(error.label.hasPrefix("Giảm giá không được lớn hơn tổng đơn") || error.label.hasPrefix("Discount can't be more"))
+        XCTAssertFalse(confirm.isEnabled, "Confirm is off while the discount is above the lines")
+        e2e.shot("discount-cap-1-sheet-error")
+        for _ in 0..<4 { e2e.tapIfExists(e2e.button(["⌫"]), timeout: 2) }
+        for key in ["5", "0"] { e2e.tapIfExists(e2e.button([key]), timeout: 2) }
+        XCTAssertTrue(confirm.isEnabled, "50 ≤ 60 is allowed")
+        confirm.tap()
+        sleep(2)
+
+        // Opening again on 50: the first key replaces it (it used to append: 5040)
+        XCTAssertTrue(e2e.scrollTo(discount))
+        discount.tap()
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        for key in ["4", "0"] { e2e.tapIfExists(e2e.button([key]), timeout: 2) }
+        XCTAssertTrue(app.staticTexts["40"].waitForExistence(timeout: 2), "the sheet shows 40, not 5040")
+        e2e.shot("discount-cap-2-sheet-replaced")
+        confirm.tap()
+        sleep(2)
+
+        // Remove Product 2: 28 left, below the saved 40 → notice + "Tạo đơn" off
+        let line = app.staticTexts["Product 2 - Tools"]
+        XCTAssertTrue(e2e.scrollTo(line))
+        line.swipeLeft()
+        sleep(1)
+        let delete = app.buttons.matching(identifier: "cart.swipe.delete").firstMatch
+        if app.staticTexts["Product 2 - Tools"].exists && delete.exists && delete.isHittable {
+            delete.tap()
+        } else if app.staticTexts["Product 2 - Tools"].exists {
+            // a full right-to-left swipe removes the line (#893)
+            let start = line.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: line.coordinate(withNormalizedOffset: CGVector(dx: -1.5, dy: 0.5)))
+        }
+        sleep(1)
+        XCTAssertFalse(app.staticTexts["Product 2 - Tools"].waitForExistence(timeout: 2), "Product 2 removed")
+        let notice = app.otherElements["cart.discount.notice"]
+        let noticeText = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Giảm giá không được' OR label BEGINSWITH 'Discount can'")).firstMatch
+        XCTAssertTrue(notice.waitForExistence(timeout: 3) || noticeText.waitForExistence(timeout: 1), "the cart shows the discount notice")
+        let create = e2e.button(["Create order", "Tạo đơn"])
+        if create.exists { XCTAssertFalse(create.isEnabled, "Tạo đơn is off") }
+        e2e.shot("discount-cap-3-blocked-after-remove")
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
     /// #893: swiping a cart line right-to-left removes it (red "Xoá" when the swipe stops halfway)
     func test8gCartSwipeDelete() throws {
         try e2e.requireFlag("newProducts")
