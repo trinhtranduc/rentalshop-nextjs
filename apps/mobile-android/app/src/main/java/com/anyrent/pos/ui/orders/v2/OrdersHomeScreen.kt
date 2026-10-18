@@ -732,7 +732,7 @@ internal fun OrderBoardRow(row: OrdersRow.Order, onClick: () -> Unit) {
 @Composable
 internal fun OrderListRow(row: OrdersRow.Order, sortedBy: SortDate? = null, onClick: () -> Unit) {
     // #1025: a product's orders bold the date they are sorted by; the rest of the list row is unchanged
-    OrderRow(row, RowContext.LIST, orderRowTexts(), boldDate = sortedBy, onClick = onClick)
+    OrderRow(row, RowContext.LIST, orderRowTexts(), boldDate = sortedBy, saleSortedBy = sortedBy, onClick = onClick)
 }
 
 /** #891 (owner): product detail → its orders: the order row plus "× qty" of this product; no pay line, no late chip */
@@ -811,6 +811,8 @@ private fun OrderRow(
     rentSortedBy: SortDate? = null,
     /** #891 / #1025: the date shown bold; Tất cả đơn bolds its sort date, a product's orders theirs */
     boldDate: SortDate? = rentSortedBy,
+    /** #1041: a product's sorted list; a sale row shows the day it is sorted by (other lists: the created day) */
+    saleSortedBy: SortDate? = null,
     qty: Int? = null,
     onClick: () -> Unit,
 ) {
@@ -832,7 +834,7 @@ private fun OrderRow(
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
         // #1026 (owner): a sale shows "↗ dd/mm/yy" in place of "Bán dd/mm/yy"
         chips = if (isSale) {
-            OrderRowDates.saleChip(order.orderType, order.status, OrdersHomeLogic.parseInstant(order.createdAt), saleChipLabel())?.let { listOf(it) }
+            OrdersBoardLogic.saleChip(order, saleSortedBy, saleChipLabel())?.let { listOf(it) }
         } else {
             chipLabels().let { (p, r) -> OrdersBoardLogic.dateChips(order, boldDate, p, r) }
         },

@@ -487,6 +487,12 @@ enum OrdersHomeLogic {
                         date: DayFormatter.dmy(createdAt, timeZone: timeZone), bold: false)
     }
 
+    /// #1041: the day a sale row shows in a product's sorted list (`sortedBy`): the pickup day when sorted by pickup,
+    /// else the created day (return sort keeps the created day); the created day when the pickup day is missing
+    static func saleChipDate(createdAt: Date?, pickupPlanAt: Date?, sortedBy: RentOrdersFilter.SortDate?) -> Date? {
+        sortedBy == .pickup ? (pickupPlanAt ?? createdAt) : createdAt
+    }
+
     /// #891 (option C): sorted by created date, "tạo dd/mm/yy HH:mm" on line 2 is bold dark text (no background)
     static func metaIsBold(sortedBy: RentOrdersFilter.SortDate?) -> Bool {
         sortedBy == .created
