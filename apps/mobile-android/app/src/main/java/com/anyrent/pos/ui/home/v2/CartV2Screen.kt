@@ -83,6 +83,8 @@ import com.anyrent.pos.domain.customers.CustomerPickerEdit
 import com.anyrent.pos.domain.products.CartDateRow
 import com.anyrent.pos.domain.products.CartLineCalc
 import com.anyrent.pos.domain.products.CartProblem
+import com.anyrent.pos.domain.products.CartMoneyRow
+import com.anyrent.pos.domain.products.CartMoneyTone
 import com.anyrent.pos.domain.products.CartV2Logic
 import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
@@ -524,28 +526,32 @@ fun CartV2Screen(
             SectionBand(stringResource(R.string.v2_cart_money))
             V2ValueRow(stringResource(if (isSale) R.string.v2_cart_sale_subtotal else R.string.v2_cart_rent_subtotal), formatMoneyVnd(subtotal), valueColor = DS.Colors.Text)
             ThinDivider()
-            V2ValueRow(
+            // #1056 (owner): blue value + pencil = the row opens a sheet; Tiền thuê / Tổng cộng stay black
+            CartMoneyEditRow(
                 stringResource(R.string.v2_cart_discount),
-                if (discountAmount > 0) formatMoneyVnd(-discountAmount) else formatMoneyVnd(0.0),
+                formatMoneyVnd(CartV2Logic.discountShown(discountAmount)),
+                tone = CartV2Logic.moneyRowTone(CartMoneyRow.DISCOUNT),
                 onClick = { numericText = discount.toLong().toString(); numericEditor = "DISCOUNT" },
-                valueColor = if (discountAmount > 0) V2Colors.Ok else DS.Colors.TextMuted,
             )
             ThinDivider()
             V2ValueRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(total), valueColor = DS.Colors.Text, bold = true)
             ThinDivider()
             if (!isSale) {
-                V2ValueRow(
+                CartMoneyEditRow(
                     stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
+                    tone = CartV2Logic.moneyRowTone(CartMoneyRow.DEPOSIT),
                     onClick = { numericText = deposit.toLong().toString(); numericEditor = "DEPOSIT" },
-                    valueColor = DS.Colors.Primary,
                 )
                 ThinDivider()
             }
-            // #1043: like an item's note line; opens the same sheet ("Ghi chú đơn")
+            // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
             val noteFiles by CartStore.noteImageFiles.collectAsState()
-            OrderNoteEntry(
-                note = notes,
-                photoCount = if (editingOrderId == null) noteFiles.size else 0,
+            val notePhotos = if (editingOrderId == null) noteFiles.size else 0
+            CartMoneyEditRow(
+                stringResource(R.string.v2_cart_note),
+                CartV2Logic.itemNoteLine(notes) ?: stringResource(R.string.v2_cart_add_note),
+                tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
+                photoCount = notePhotos,
                 onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
             )
             Spacer(Modifier.height(24.dp))
@@ -1164,34 +1170,48 @@ private fun ItemNoteEntry(productName: String, note: String?, onClick: () -> Uni
 }
 
 /**
- * #1043 (iOS orderNoteRow): the order note in TIỀN — the note entry with the order-note icon (+ a camera and the
- * photo count on a new order); opens the "Ghi chú đơn" sheet
+ * #1056 (owner, mockup cartmoney; iOS `V2ValueRow(editable:)`): a TIỀN row that opens a sheet — the title, then the
+ * value in blue bold (or the order note on one line in #334155) and a small blue pencil; no ›. The whole row is the
+ * button; TalkBack reads "title, value[, N ảnh], Sửa". [photoCount] (#1043, order note on a new order) adds a grey
+ * camera + count before the pencil.
  */
 @Composable
-private fun OrderNoteEntry(note: String, photoCount: Int, onClick: () -> Unit) {
-    val title = stringResource(R.string.v2_order_note_title)
-    val spoken = listOfNotNull(
-        CartV2Logic.noteText(note) ?: title,
-        if (photoCount > 0) stringResource(R.string.v2_order_note_photos, photoCount) else null,
-    ).joinToString(", ")
+private fun CartMoneyEditRow(title: String, value: String, tone: CartMoneyTone, onClick: () -> Unit, photoCount: Int = 0) {
+    val photos = if (photoCount > 0) stringResource(R.string.v2_order_note_photos, photoCount) else null
+    val spoken = CartV2Logic.moneyRowSpoken(title, value, stringResource(R.string.edit), photos)
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics { contentDescription = spoken; role = Role.Button }
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.weight(1f, fill = false)) {
-            NoteEntry(CartV2Icon.ORDER_NOTE, note, emptyText = title, spokenText = spoken, actionLabel = title, onClick = onClick)
-        }
-        if (photoCount > 0) {
-            Row(
-                Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).clearAndSetSemantics {}
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
-                Text("$photoCount", fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+        Text(title, fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+        Row(
+            Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+        ) {
+            val isNoteText = tone == CartMoneyTone.NOTE_TEXT
+            Text(
+                value,
+                fontSize = DS.TextSize.Body,
+                fontWeight = if (isNoteText) FontWeight.Normal else FontWeight.Bold,
+                color = if (isNoteText) Color(0xFF334155) else DS.Colors.Primary,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (photoCount > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                    Text("$photoCount", fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = Color(0xFF64748B))
+                }
             }
+            Icon(Icons.Outlined.Edit, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
         }
     }
 }

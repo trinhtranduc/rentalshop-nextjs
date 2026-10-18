@@ -299,10 +299,9 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(subtotal)
         content.addArrangedSubview(V2.divider())
 
-        let discount = V2ValueRow(title: "products.cart.discount".localized())
-        let discountValue = cart.discountAmount
-        discount.valueLabel.text = discountValue > 0 ? MoneyFormatter.format(-discountValue) : MoneyFormatter.format(0)
-        discount.valueLabel.textColor = discountValue > 0 ? V2.ok : DS.Color.textMuted
+        // #1056 (owner): blue value + pencil = the row opens a sheet; Tiền thuê / Tổng cộng stay black
+        let discount = V2ValueRow(title: "products.cart.discount".localized(), editable: true)
+        discount.valueLabel.text = MoneyFormatter.format(CartV2Logic.discountShown(cart.discountAmount))
         discount.addTarget(self, action: #selector(editDiscount), for: .touchUpInside)
         content.addArrangedSubview(discount)
         content.addArrangedSubview(V2.divider())
@@ -317,16 +316,14 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(V2.divider())
 
         if isRent {
-            let deposit = V2ValueRow(title: "products.cart.deposit".localized())
+            let deposit = V2ValueRow(title: "products.cart.deposit".localized(), editable: true)
             deposit.valueLabel.text = MoneyFormatter.format(cart.depositAmount)
-            deposit.valueLabel.textColor = DS.Color.primary
-            deposit.valueLabel.font = Utils.boldFont(size: DS.TextSize.name)
             deposit.addTarget(self, action: #selector(editDeposit), for: .touchUpInside)
             content.addArrangedSubview(deposit)
             content.addArrangedSubview(V2.divider())
         }
 
-        content.addArrangedSubview(orderNoteRow()) // #1043: like an item's note line; opens the same sheet
+        content.addArrangedSubview(orderNoteRow()) // #1043: opens the item note sheet; #1056: a TIỀN row like the others
         content.addArrangedSubview(UIView.spacer(height: 24))
 
         if cart.isEditMode {
@@ -607,40 +604,26 @@ final class CartV2ViewController: BaseViewControler {
         return button
     }
 
-    /// #1043: the order note in TIỀN — the note entry with the order-note icon (+ a camera and the photo count on a
-    /// new order); opens the "Ghi chú đơn" sheet
+    /// #1043: the order note in TIỀN; opens the "Ghi chú đơn" sheet. #1056 (owner): a row like the others — "Ghi chú",
+    /// then the blue "Thêm" or the note on one line (#334155, cut with "…"), a grey camera + count on a new order with
+    /// photos, and the blue pencil
     private func orderNoteRow() -> UIView {
         let photoCount = cart.isEditMode ? 0 : CartStore.shared.noteImageData.count
-        let photosText = photoCount > 0 ? String(format: "cart.orderNote.photos".localized(), photoCount) : nil
-        let value = [CartV2Logic.noteText(cart.notes), photosText].compactMap { $0 }.joined(separator: ", ")
-        let button = noteEntryButton(icon: .orderNote, note: cart.notes, emptyTitle: "cart.orderNote.title".localized(),
-                                     label: "cart.orderNote.title".localized(), value: value.isEmpty ? nil : value) { [weak self] in
-            self?.editNote()
+        let row = V2ValueRow(title: "products.cart.note".localized(), editable: true)
+        row.valueLabel.text = CartV2Logic.itemNoteLine(cart.notes) ?? "products.cart.addNote".localized()
+        if CartV2Logic.moneyRowTone(.note, note: cart.notes) == .noteText {
+            row.valueLabel.textColor = UIColor(hexString: "334155")
+            row.valueLabel.font = Utils.regularFont(size: DS.TextSize.body)
         }
-        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let line = UIStackView(arrangedSubviews: [button])
-        line.alignment = .center
-        line.spacing = 8
         if photoCount > 0 {
-            let photos = UIButton(type: .system)
-            photos.setImage(DS.symbol("camera", 14, weight: .medium), for: .normal)
-            photos.setTitle(" \(photoCount)", for: .normal)
-            photos.titleLabel?.font = Utils.boldFont(size: DS.TextSize.secondary)
-            photos.tintColor = UIColor(hexString: "64748B")
-            photos.setTitleColor(UIColor(hexString: "64748B"), for: .normal)
-            photos.isAccessibilityElement = false // read in the note entry's value
-            photos.addAction(UIAction { [weak self] _ in self?.editNote() }, for: .touchUpInside)
-            photos.setContentHuggingPriority(.required, for: .horizontal)
-            photos.setContentCompressionResistancePriority(.required, for: .horizontal)
-            line.addArrangedSubview(photos)
+            let camera = UIImageView(image: DS.symbol("camera", 14, weight: .medium))
+            camera.tintColor = UIColor(hexString: "64748B")
+            let count = V2.label("\(photoCount)", size: DS.TextSize.secondary, weight: .bold, color: UIColor(hexString: "64748B"))
+            row.accessories.addArrangedSubview(camera)
+            row.accessories.addArrangedSubview(count)
+            row.spokenExtra = String(format: "cart.orderNote.photos".localized(), photoCount)
         }
-        line.addArrangedSubview(UIView())
-        let row = UIView()
-        row.addSubview(line)
-        line.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
-            make.top.bottom.equalToSuperview().inset(10)
-        }
+        row.addAction(UIAction { [weak self] _ in self?.editNote() }, for: .touchUpInside)
         return row
     }
 

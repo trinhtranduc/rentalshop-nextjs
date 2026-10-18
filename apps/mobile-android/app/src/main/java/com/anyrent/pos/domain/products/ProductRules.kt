@@ -389,7 +389,36 @@ enum class CartV2Icon(val material: String, val ios: String) {
     ORDER_NOTE("Description", "note.text"),
 }
 
+/** #1056 (owner, mockup cartmoney): the rows of the cart's TIỀN section; [editable] rows open a sheet (iOS `CartMoneyRow`) */
+enum class CartMoneyRow(val editable: Boolean) {
+    SUBTOTAL(false), DISCOUNT(true), TOTAL(false), DEPOSIT(true), NOTE(true),
+}
+
+/** #1056: how a TIỀN value is drawn. Rule of the whole cart: blue = tappable, black / grey = read only */
+enum class CartMoneyTone {
+    /** black, no icon */
+    PLAIN,
+    /** blue (primary), bold, then the blue pencil */
+    ACTION,
+    /** the order note's text: one line, dark grey (#334155), then the blue pencil */
+    NOTE_TEXT,
+}
+
 object CartV2Logic {
+    /** #1056 (iOS `moneyRowTone`): an empty note shows the blue "Thêm"; a note shows its text */
+    fun moneyRowTone(row: CartMoneyRow, note: String? = null): CartMoneyTone = when {
+        !row.editable -> CartMoneyTone.PLAIN
+        row == CartMoneyRow.NOTE && itemNoteLine(note) != null -> CartMoneyTone.NOTE_TEXT
+        else -> CartMoneyTone.ACTION
+    }
+
+    /** #1056 (iOS `discountShown`): "−50.000đ" above 0, else "0đ" (both blue now) */
+    fun discountShown(discountAmount: Double): Double = if (discountAmount > 0) -discountAmount else 0.0
+
+    /** #1056 (iOS `moneyRowSpoken`): TalkBack reads the title, the value (+ the note photos) and "Sửa" */
+    fun moneyRowSpoken(title: String, value: String, edit: String, photos: String? = null): String =
+        listOfNotNull(title, value, photos, edit).joinToString(", ")
+
     /** #684: a line's note as shown and sent: trimmed; null when blank (an empty sheet clears it), iOS `noteText` */
     fun noteText(note: String?): String? = note?.trim()?.takeIf { it.isNotEmpty() }
 

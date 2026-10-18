@@ -433,7 +433,38 @@ enum CartV2Icon: String {
     case orderNote = "note.text"
 }
 
+/// #1056 (owner, mockup cartmoney): the rows of the cart's TIỀN section; editable rows open a sheet (Android `CartMoneyRow`)
+enum CartMoneyRow: CaseIterable {
+    case subtotal, discount, total, deposit, note
+
+    var isEditable: Bool { self == .discount || self == .deposit || self == .note }
+}
+
+/// #1056: how a TIỀN value is drawn. Rule of the whole cart: blue = tappable, black / grey = read only
+enum CartMoneyTone: Equatable {
+    /// black, no icon
+    case plain
+    /// blue (primary), bold, then the blue pencil
+    case action
+    /// the order note's text: one line, dark grey (#334155), then the blue pencil
+    case noteText
+}
+
 enum CartV2Logic {
+    /// #1056: an empty note shows the blue "Thêm"; a note shows its text
+    static func moneyRowTone(_ row: CartMoneyRow, note: String? = nil) -> CartMoneyTone {
+        guard row.isEditable else { return .plain }
+        return row == .note && itemNoteLine(note) != nil ? .noteText : .action
+    }
+
+    /// #1056: "−50.000đ" above 0, else "0đ" (both blue now; the value used to be green above 0)
+    static func discountShown(_ discountAmount: Double) -> Double { discountAmount > 0 ? -discountAmount : 0 }
+
+    /// #1056: what VoiceOver reads after the row title: the value (+ the note photos), then "Sửa"
+    static func moneyRowSpoken(value: String, photos: String? = nil) -> String {
+        [value, photos, "products.detail.edit".localized()].compactMap { $0 }.joined(separator: ", ")
+    }
+
     static func calc(_ item: CartItem, orderType: OrderType) -> CartLineCalc {
         let unit: CartLineCalc.Unit
         if orderType == .sale {
