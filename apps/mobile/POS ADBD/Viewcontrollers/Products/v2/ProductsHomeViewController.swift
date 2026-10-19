@@ -550,7 +550,7 @@ final class ProductRowV2Cell: UITableViewCell {
     var onRemove: (() -> Void)?
     private let minusButton = UIButton(type: .system)
     private let plusButton = UIButton(type: .system)
-    private let countLabel = V2.label(size: DS.TextSize.name, weight: .medium, color: .white)
+    private let countLabel = V2.label(size: DS.TextSize.name, weight: .medium, color: DS.Color.text)
     private let stepper = UIStackView()
     /// A tap on the thumbnail (#472)
     var onImage: (() -> Void)?
@@ -576,10 +576,11 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.layer.cornerRadius = DS.touchTarget / 2 // #671: round
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
         addButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
-        // #1084: − n + once the product is in the cart (a capsule in the primary colour)
+        // #1084: − n + once the product is in the cart. Mockup A (owner 2026-10-19): a thin grey outline on white, blue
+        // − and +, like the quantity box in the cart
         for (button, symbol) in [(minusButton, "minus"), (plusButton, "plus")] {
             button.setImage(DS.symbol(symbol, DS.Icon.sm, weight: .semibold), for: .normal)
-            button.tintColor = .white
+            button.tintColor = DS.Color.primary
             button.snp.makeConstraints { make in make.width.equalTo(40); make.height.equalTo(DS.touchTarget) }
         }
         minusButton.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
@@ -592,7 +593,9 @@ final class ProductRowV2Cell: UITableViewCell {
         stepper.addArrangedSubview(minusButton)
         stepper.addArrangedSubview(countLabel)
         stepper.addArrangedSubview(plusButton)
-        stepper.backgroundColor = DS.Color.primary
+        stepper.backgroundColor = .white
+        stepper.layer.borderWidth = 1
+        stepper.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
         stepper.layer.cornerRadius = DS.touchTarget / 2
         stepper.isHidden = true
         stepper.setContentHuggingPriority(.required, for: .horizontal)
@@ -679,7 +682,7 @@ final class ProductRowV2Cell: UITableViewCell {
             addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
         case .inCart(let count):
-            // #681: solid primary once in the cart, against the light + of the other rows; #1084: with − and +
+            // #1084 / #1090: the outlined − n + replaces the + once the product is in the cart
             addButton.isHidden = true
             stepper.isHidden = false
             countLabel.text = "\(count)"
