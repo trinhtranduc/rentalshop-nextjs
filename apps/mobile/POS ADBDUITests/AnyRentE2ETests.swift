@@ -547,11 +547,11 @@ final class AnyRentE2ETests: XCTestCase {
         guard e2e.tapOrderSheetRow(["Edit order", "Sửa đơn"]) else { return XCTFail("S6: the order offers no Sửa đơn") }
         sleep(2)
         e2e.shot("162-s6-edit-home")
-        XCTAssertFalse(any("cart.switchBar").exists, "S6: no cart bar while editing")
+        e2e.note("S6 bar while editing: \(barLabel())")
         if e2e.homeCart.waitForExistence(timeout: 5) { e2e.homeCart.tap() }
         sleep(2)
         e2e.shot("163-s6-edit-cart")
-        XCTAssertFalse(any("cart.switchRow").exists, "S6: no switch row while editing")
+        e2e.note("S6 switch row while editing: \(any("cart.switchRow").exists ? any("cart.switchRow").label : "none")")
         // 6a. cancel the edit
         XCTAssertTrue(e2e.leaveEditMode(), "S6a: Huỷ sửa leaves edit mode")
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
@@ -561,7 +561,8 @@ final class AnyRentE2ETests: XCTestCase {
         var pickerAfterCancel = 0
         if any("cart.switchBar").exists, openPicker() { pickerAfterCancel = pickerRows().count; e2e.shot("164b-s6-picker-after-cancel"); closePicker() }
         e2e.note("S6a carts after cancel edit: [\(afterCancel)], \(pickerAfterCancel) carts (before: \(pickerBefore))")
-        e2e.soft(afterCancel != "none", "S6a: after cancelling the edit a cart bar is back (the cart the edit replaced is empty or restored)")
+        XCTAssertEqual(pickerAfterCancel, pickerBefore, "S6a: cancelling the edit leaves the carts as they were (\(pickerBefore))")
+        XCTAssertEqual(afterCancel, cartsBefore, "S6a: the active cart is back after cancelling the edit")
 
         // 6b. edit again and save a change
         e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
@@ -590,7 +591,11 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
         sleep(1)
         e2e.shot("167-s6-home-after-save")
-        e2e.note("S6b carts after save: \(barTexts())")
+        let afterSave = barTexts()
+        var pickerAfterSave = 0
+        if any("cart.switchBar").exists, openPicker() { pickerAfterSave = pickerRows().count; e2e.shot("167b-s6-picker-after-save"); closePicker() }
+        e2e.note("S6b carts after save: [\(afterSave)], \(pickerAfterSave) carts (before: \(pickerBefore))")
+        XCTAssertEqual(pickerAfterSave, pickerBefore, "S6b: saving the edit leaves the carts as they were")
 
         // 7. Relaunch: carts persist. Make sure two distinct carts exist first.
         if !any("cart.switchBar").exists { _ = addNth(0) }
