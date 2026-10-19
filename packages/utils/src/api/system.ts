@@ -67,6 +67,10 @@ export interface EmbeddingBackfillResult {
   all?: boolean;
   /** #1087: waiting jobs turned into forced re-embeds (`all`) */
   upgradedPending?: number;
+  /** #1089: waiting jobs of the chosen shop raised to the shop priority */
+  prioritized?: number;
+  /** #1089: batches run in the request when `processSeconds` > 0 */
+  processing?: { batches: number; processed: number; completed: number; failed: number };
 }
 
 // ============================================================================
@@ -245,6 +249,8 @@ export const systemApi = {
     includeFailed?: boolean;
     dryRun?: boolean;
     all?: boolean;
+    /** #1089: 0–60 s of processing that shop's jobs in the request */
+    processSeconds?: number;
   }): Promise<ApiResponse<EmbeddingBackfillResult>> {
     const response = await authenticatedFetch(apiUrls.system.embeddingBackfill, {
       method: 'POST',

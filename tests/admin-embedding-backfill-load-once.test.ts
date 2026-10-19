@@ -116,13 +116,13 @@ function findByText(node: unknown, label: string): { props: Record<string, unkno
   return findByText(el.props.children, label);
 }
 
-function mountCard() {
+function mountCard(opts: { pending?: () => number; top?: Array<{ id: number; name: string; missingEmbedding: number }> } = {}) {
   const runtime = createRuntime();
-  const calls = { status: 0, run: [] as Record<string, unknown>[] };
+  const calls = { status: 0, run: [] as Record<string, unknown>[], statusArgs: [] as unknown[] };
   const status = () => ({
     products: { withImages: 3, missingEmbedding: 1, withEmbedding: 2 },
-    jobs: { PENDING: 0, RUNNING: 0, COMPLETED: 2, FAILED: 0 },
-    topMerchants: [],
+    jobs: { PENDING: opts.pending ? opts.pending() : 0, RUNNING: 0, COMPLETED: 2, FAILED: 0 },
+    topMerchants: opts.top ?? [],
   });
   const stub = () => null;
   const { EmbeddingBackfillCard } = load<{ EmbeddingBackfillCard: () => unknown }>(
@@ -139,8 +139,9 @@ function mountCard() {
       '@rentalshop/hooks': { useSettingsTranslations: () => (key: string) => key },
       '@rentalshop/utils': {
         systemApi: {
-          getEmbeddingBackfillStatus: async () => {
+          getEmbeddingBackfillStatus: async (merchantId?: number) => {
             calls.status++;
+            calls.statusArgs.push(merchantId);
             // A fresh object every answer, like a real response
             return { success: true, data: status() };
           },
@@ -199,6 +200,70 @@ describe('Embedding backfill card loads its status once (#1065)', () => {
     tree = await runtime.settle(render);
     expect(calls.run).toEqual([{ dryRun: true, all: true }, { dryRun: false, all: true }]);
     expect(calls.status).toBe(2);
+  });
+});
+
+// #1089: one shop at a time
+describe('Embedding backfill card for one shop (#1089)', () => {
+  const top = [{ id: 32, name: 'Tiệm nhà Ann', missingEmbedding: 5 }];
+
+  it('"Chọn" on a top shop reloads the status once for that shop, then sits idle', async () => {
+    const { runtime, calls, render } = mountCard({ top });
+    let tree = await runtime.settle(render);
+    expect(calls.statusArgs).toEqual([undefined]);
+    const pick = findByText(tree, 'embeddingBackfill.shopPick');
+    expect(pick).not.toBeNull();
+    (pick!.props.onClick as () => void)();
+    tree = await runtime.settle(render);
+    expect(calls.statusArgs).toEqual([undefined, 32]);
+    await runtime.settle(render);
+    expect(calls.status).toBe(2);
+    expect(findByText(tree, 'embeddingBackfill.reindexShop')).not.toBeNull();
+  });
+
+  it('"Đánh index lại shop này" sends merchantId and processSeconds 45, then polls every 15 s until nothing waits', async () => {
+    let waiting = 3;
+    const timers: Array<{ fn: () => void; ms: number; cleared: boolean }> = [];
+    const realSet = global.setInterval;
+    const realClear = global.clearInterval;
+    (global as any).setInterval = (fn: () => void, ms: number) => {
+      const t = { fn, ms, cleared: false };
+      timers.push(t);
+      return t;
+    };
+    (global as any).clearInterval = (t: { cleared: boolean }) => {
+      if (t) t.cleared = true;
+    };
+    try {
+      const { runtime, calls, render } = mountCard({ top, pending: () => waiting });
+      let tree = await runtime.settle(render);
+      (findByText(tree, 'embeddingBackfill.shopPick')!.props.onClick as () => void)();
+      tree = await runtime.settle(render);
+      (findByText(tree, 'embeddingBackfill.reindexShop')!.props.onClick as () => void)();
+      tree = await runtime.settle(render);
+      expect(calls.run).toEqual([{ dryRun: true, all: true, merchantId: 32 }]);
+      (findByText(tree, 'embeddingBackfill.confirm')!.props.onClick as () => void)();
+      tree = await runtime.settle(render);
+      expect(calls.run[1]).toEqual({ dryRun: false, all: true, merchantId: 32, processSeconds: 45 });
+
+      const live = timers.filter((t) => !t.cleared);
+      expect(live).toHaveLength(1);
+      expect(live[0].ms).toBe(15000);
+      expect(findByText(tree, 'embeddingBackfill.shopPolling')).not.toBeNull();
+      const before = calls.status;
+      live[0].fn();
+      tree = await runtime.settle(render);
+      expect(calls.status).toBe(before + 1); // one GET per tick
+      waiting = 0;
+      live[0].fn();
+      tree = await runtime.settle(render);
+      // Nothing waits: polling turns off (React then runs the effect cleanup that clears the interval;
+      // this tiny runtime has no cleanups, so the flag is what is checked)
+      expect(findByText(tree, 'embeddingBackfill.shopPolling')).toBeNull();
+    } finally {
+      (global as any).setInterval = realSet;
+      (global as any).clearInterval = realClear;
+    }
   });
 });
 
