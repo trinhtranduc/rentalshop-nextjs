@@ -1,8 +1,10 @@
 """
-CLIP ViT-B/32 image embeddings via ONNX Runtime (no PyTorch).
+CLIP image embeddings via ONNX Runtime (no PyTorch).
 
-Model: Xenova/clip-vit-base-patch32  onnx/vision_model.onnx
-Output: 512-dim image_embeds (visual projection is in the graph)
+Model chosen by env CLIP_MODEL (#1087):
+- openai (default): Xenova/clip-vit-base-patch32  onnx/vision_model.onnx  (ViT-B/32)
+- marqo-fashionclip: Marqo/marqo-fashionCLIP      onnx/vision_model.onnx  (ViT-B/16, fashion)
+Both: input pixel_values 1x3x224x224, output 512-dim image_embeds, same CLIP preprocessing.
 """
 
 from __future__ import annotations
@@ -21,12 +23,29 @@ CLIP_MEAN = np.array([0.48145466, 0.4578275, 0.40821073], dtype=np.float32)
 CLIP_STD = np.array([0.26862954, 0.26130258, 0.27577711], dtype=np.float32)
 EXPECTED_DIM = 512
 
-DEFAULT_MODEL_PATH = os.getenv(
-    "CLIP_ONNX_PATH",
-    "/models/clip-vit-base-patch32/onnx/vision_model.onnx",
-)
-HF_REPO_ID = "Xenova/clip-vit-base-patch32"
-HF_FILENAME = "onnx/vision_model.onnx"
+# key -> (Hugging Face repo, file in the repo, local folder the Docker image bakes it into)
+CLIP_MODELS = {
+    "openai": ("Xenova/clip-vit-base-patch32", "onnx/vision_model.onnx", "/models/clip-vit-base-patch32"),
+    "marqo-fashionclip": ("Marqo/marqo-fashionCLIP", "onnx/vision_model.onnx", "/models/marqo-fashionclip"),
+}
+DEFAULT_CLIP_MODEL = "openai"
+
+
+def clip_model_key() -> str:
+    """CLIP_MODEL env; unset or blank = openai (the model used before #1087)."""
+    key = (os.getenv("CLIP_MODEL") or "").strip().lower() or DEFAULT_CLIP_MODEL
+    if key not in CLIP_MODELS:
+        raise RuntimeError(f"Unknown CLIP_MODEL {key!r}. Use one of: {', '.join(sorted(CLIP_MODELS))}")
+    return key
+
+
+def clip_model_path(key: str) -> str:
+    """CLIP_ONNX_PATH wins only for the default model (kept for old deploys); else the model's own folder."""
+    repo, filename, folder = CLIP_MODELS[key]
+    configured = os.getenv("CLIP_ONNX_PATH")
+    if configured and key == DEFAULT_CLIP_MODEL:
+        return configured
+    return os.path.join(folder, filename)
 
 
 def _resize_shortest_edge(image: Image.Image, size: int) -> Image.Image:
@@ -69,16 +88,17 @@ def l2_normalize(embeddings: np.ndarray) -> np.ndarray:
     return embeddings / norms
 
 
-def ensure_onnx_model(path: str) -> str:
+def ensure_onnx_model(path: str, key: str = DEFAULT_CLIP_MODEL) -> str:
     if os.path.isfile(path):
         return path
     from huggingface_hub import hf_hub_download
 
-    print(f"⬇️  ONNX not found at {path}, downloading {HF_REPO_ID}/{HF_FILENAME}")
-    local_dir = os.path.dirname(os.path.dirname(path)) or "/models/clip-vit-base-patch32"
+    repo, filename, folder = CLIP_MODELS[key]
+    print(f"⬇️  ONNX not found at {path}, downloading {repo}/{filename}")
+    local_dir = os.path.dirname(os.path.dirname(path)) or folder
     downloaded = hf_hub_download(
-        repo_id=HF_REPO_ID,
-        filename=HF_FILENAME,
+        repo_id=repo,
+        filename=filename,
         local_dir=local_dir,
     )
     return downloaded
@@ -87,8 +107,10 @@ def ensure_onnx_model(path: str) -> str:
 class EmbeddingModel:
     """ONNX Runtime CLIP vision encoder."""
 
-    def __init__(self, model_path: str = DEFAULT_MODEL_PATH):
-        self.model_path = model_path
+    def __init__(self, model_path: Optional[str] = None, model_key: Optional[str] = None):
+        self.model_key = model_key or clip_model_key()
+        self.hf_repo = CLIP_MODELS[self.model_key][0]
+        self.model_path = model_path or clip_model_path(self.model_key)
         self.session: Optional[ort.InferenceSession] = None
         self.input_name: Optional[str] = None
         self.output_name: Optional[str] = None
@@ -98,7 +120,7 @@ class EmbeddingModel:
         return self._loaded and self.session is not None
 
     async def load(self) -> None:
-        path = ensure_onnx_model(self.model_path)
+        path = ensure_onnx_model(self.model_path, self.model_key)
         intra = int(os.getenv("ORT_INTRA_OP_NUM_THREADS", "1"))
 
         sess_options = ort.SessionOptions()
@@ -107,7 +129,7 @@ class EmbeddingModel:
         sess_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
 
-        print(f"🔄 Loading ONNX CLIP vision model: {path} (intra_op={intra})")
+        print(f"🔄 Loading ONNX CLIP vision model {self.model_key} ({self.hf_repo}): {path} (intra_op={intra})")
         self.session = ort.InferenceSession(
             path,
             sess_options=sess_options,

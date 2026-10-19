@@ -35,7 +35,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="Image Embedding API",
-    description="Generate CLIP ViT-B/32 embeddings (512-dim). Search is handled by the Node API.",
+    description="Generate CLIP embeddings (512-dim; model from CLIP_MODEL). Search is handled by the Node API.",
     version="2.0.0",
     lifespan=lifespan,
 )
@@ -91,6 +91,9 @@ async def health_check():
         "model_loaded": model is not None and model.is_loaded(),
         "backend": "onnxruntime",
         "dimension": 512,
+        # #1087: which CLIP model encodes (CLIP_MODEL); search and index must use the same one
+        "model": model.model_key if model is not None else None,
+        "hf_repo": model.hf_repo if model is not None else None,
     }
 
 
