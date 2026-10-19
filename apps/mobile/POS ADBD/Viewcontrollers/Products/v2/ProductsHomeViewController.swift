@@ -516,7 +516,7 @@ final class ProductRowV2Cell: UITableViewCell {
     private let photo = V2.thumbnail(size: 68, radius: 12)
     /// #937: up to two lines, then "…" (Home only)
     private let nameLabel: UILabel = {
-        let label = V2.label(size: DS.TextSize.name, weight: .bold, lines: 2)
+        let label = V2.label(size: DS.TextSize.name, weight: .medium, lines: 2)
         label.lineBreakMode = .byTruncatingTail
         return label
     }()

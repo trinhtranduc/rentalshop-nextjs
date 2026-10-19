@@ -53,14 +53,14 @@ final class DateChipStack: UIStackView {
             // #893 (owner on device): medium vs bold read the same; the sorted chip is bold (label and date),
             // the other one regular
             // #1008 (owner): an icon in place of the word "Lấy" / "Trả"; VoiceOver still reads "Lấy 14/10/26"
-            let labelFont = chip.bold ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
+            let labelFont = chip.bold ? Utils.mediumFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
             let text = NSMutableAttributedString(attributedString: DateChipIcon.text(chip.kind, font: labelFont))
             text.append(NSAttributedString(string: " ", attributes: [
                 NSAttributedString.Key.font: labelFont,
                 NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
             ]))
             text.append(NSAttributedString(string: chip.date, attributes: [
-                NSAttributedString.Key.font: chip.bold ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body),
+                NSAttributedString.Key.font: chip.bold ? Utils.mediumFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body),
                 NSAttributedString.Key.foregroundColor: chip.kind.colors.text,
             ]))
             label.attributedText = text
@@ -259,7 +259,7 @@ final class OrderRowCell: UITableViewCell {
     /// #888 (owner, mockup v5): line 1 name (one line, full width) + status badge right; line 2 "#code · tạo …";
     /// line 3 dates / task + total right; line 4 notes (late, not prepared) + pay line right. 8pt between lines.
     private func buildLayout() {
-        nameLabel.font = Utils.boldFont(size: DS.TextSize.name)
+        nameLabel.font = Utils.mediumFont(size: DS.TextSize.name)
         nameLabel.textColor = DS.Color.text
         nameLabel.numberOfLines = 1
         nameLabel.lineBreakMode = .byTruncatingTail
@@ -532,7 +532,7 @@ final class OrderRowCell: UITableViewCell {
             if case .sortedList(let date) = context { sortedBy = date }
             metaLabel.text = OrdersHomeLogic.rentRowMeta(order)
             if OrdersHomeLogic.metaIsBold(sortedBy: sortedBy) {
-                metaLabel.font = Utils.boldFont(size: 13)
+                metaLabel.font = Utils.mediumFont(size: 13)
                 metaLabel.textColor = DS.Color.text
             }
             setChips(OrdersHomeLogic.dateChips(pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt, sortedBy: sortedBy))
