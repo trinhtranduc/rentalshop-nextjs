@@ -75,7 +75,16 @@ final class CartSwitchBar: UIView {
         accessibilityIdentifier = "cart.switchBar"
 
         nameLabel.lineBreakMode = .byTruncatingTail
-        let texts = UIStackView(arrangedSubviews: [nameLabel, summaryLabel, datesLabel])
+        nameLabel.setContentHuggingPriority(.required, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let chevron = UIImageView(image: DS.symbol("chevron.down", 13, weight: .bold))
+        chevron.tintColor = DS.Color.primary
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let nameRow = UIStackView(arrangedSubviews: [nameLabel, chevron, UIView()])
+        nameRow.spacing = 5
+        nameRow.alignment = .center
+        let texts = UIStackView(arrangedSubviews: [nameRow, summaryLabel, datesLabel])
         texts.axis = .vertical
         texts.spacing = 2
         texts.isUserInteractionEnabled = false
@@ -83,27 +92,14 @@ final class CartSwitchBar: UIView {
         let switchArea = UIControl()
         switchArea.accessibilityIdentifier = "cart.switchBar.switch"
         switchArea.addTarget(self, action: #selector(switchTapped), for: .touchUpInside)
-        // The picker affordance: a round grey button with a down chevron
-        let picker = UIView()
-        picker.backgroundColor = UIColor(hexString: "F1F5F9")
-        picker.layer.cornerRadius = 15
-        picker.isUserInteractionEnabled = false
-        let pickerIcon = UIImageView(image: DS.symbol("chevron.down", 13, weight: .bold))
-        pickerIcon.tintColor = DS.Color.primary
-        picker.addSubview(pickerIcon)
-        pickerIcon.snp.makeConstraints { $0.center.equalToSuperview() }
-        [avatar, texts, picker].forEach(switchArea.addSubview)
-        picker.snp.makeConstraints { make in
-            make.trailing.centerY.equalToSuperview()
-            make.size.equalTo(30)
-        }
+        [avatar, texts].forEach(switchArea.addSubview)
         avatar.isUserInteractionEnabled = false
         avatar.snp.makeConstraints { make in
             make.leading.centerY.equalToSuperview()
         }
         texts.snp.makeConstraints { make in
             make.leading.equalTo(avatar.snp.trailing).offset(9)
-            make.trailing.lessThanOrEqualTo(picker.snp.leading).offset(-8)
+            make.trailing.lessThanOrEqualToSuperview()
             make.top.bottom.equalToSuperview()
         }
 
