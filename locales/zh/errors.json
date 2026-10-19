@@ -77,6 +77,7 @@
   "DAILY_INCOME_SUCCESS": "已获取每日收入",
   "INCOME_ORDERS_SUCCESS": "已获取收入订单列表",
   "EMBEDDING_BACKFILL_STATUS": "已加载图片搜索状态。",
+  "EMBEDDING_JOBS_LIST": "已加载图片搜索任务。",
   "EMBEDDING_BACKFILL_DRY_RUN": "检查完成，未加入队列。",
   "EMBEDDING_BACKFILL_QUEUED": "商品已加入图片搜索队列。"
 }

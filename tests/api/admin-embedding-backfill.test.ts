@@ -88,6 +88,10 @@ jest.mock('@rentalshop/utils', () => ({
   handleApiError: (e: any) => ({ response: { success: false, message: String(e) }, statusCode: 500 }),
 }));
 
+// #1095: the status adds the model in use (python /health + Qdrant collection)
+const mockModel = { name: 'marqo-fashionclip', hfRepo: 'Marqo/marqo-fashionCLIP', collection: 'product-images-pro-fashion', reachable: true };
+jest.mock('../../apps/api/lib/image-search-model', () => ({ getImageSearchModelInfo: jest.fn(async () => mockModel) }));
+
 import { GET, POST } from '../../apps/api/app/api/admin/embedding-backfill/route';
 
 function req(role: string, body?: any, url = 'http://api.test/api/admin/embedding-backfill') {
@@ -139,6 +143,11 @@ describe('GET status', () => {
       { id: 10, name: 'Shop 10', missingEmbedding: 2 },
       { id: 20, name: 'Shop 20', missingEmbedding: 2 },
     ]);
+  });
+
+  it('#1095: tells which model and collection image search uses', async () => {
+    const res: any = await GET(req('ADMIN'));
+    expect(res.body.data.model).toEqual(mockModel);
   });
 
   it('filters by merchantId and rejects a bad or unknown one', async () => {

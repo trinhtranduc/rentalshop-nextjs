@@ -312,6 +312,8 @@ export interface ApiUrls {
     logs: string;
     deletedRecords: string;
     embeddingBackfill: string;
+    /** #1095 */
+    embeddingJobs: string;
   };
   notifications: {
     list: string;
@@ -886,6 +888,7 @@ function createApiUrls(): ApiUrls {
     logs: `${base}/api/system/logs`,
     deletedRecords: `${base}/api/deleted-records`,
     embeddingBackfill: `${base}/api/admin/embedding-backfill`,
+    embeddingJobs: `${base}/api/admin/embedding-jobs`,
   },
     notifications: {
       list: `${base}/api/notifications`,

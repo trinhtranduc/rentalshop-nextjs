@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import ts from 'typescript';
 
-type Hook = { value?: unknown; deps?: unknown[] };
+type Hook = { value?: unknown; deps?: unknown[]; cleanup?: unknown };
 
 /** One mounted component: renders, runs effects whose deps changed, re-renders while state changes. */
 function createRuntime(contextValue?: unknown) {
@@ -42,11 +42,17 @@ function createRuntime(contextValue?: unknown) {
   };
   const useCallback = (fn: unknown, deps?: unknown[]) => useMemo(() => fn, deps);
   const useRef = (init: unknown) => useMemo(() => ({ current: init }), []);
+  // #1095: like React, a re-run (deps changed) first calls the previous run's cleanup
   const useEffect = (fn: () => unknown, deps?: unknown[]) => {
     const k = index++;
     if (!hooks[k] || changed(hooks[k].deps, deps)) {
-      hooks[k] = { deps };
-      effects.push(fn);
+      const previous = hooks[k]?.cleanup;
+      const hook: Hook = { deps };
+      hooks[k] = hook;
+      effects.push(() => {
+        if (typeof previous === 'function') previous();
+        hook.cleanup = fn();
+      });
     }
   };
   const react = {
@@ -118,7 +124,7 @@ function findByText(node: unknown, label: string): { props: Record<string, unkno
 
 function mountCard(opts: { pending?: () => number; top?: Array<{ id: number; name: string; missingEmbedding: number }> } = {}) {
   const runtime = createRuntime();
-  const calls = { status: 0, run: [] as Record<string, unknown>[], statusArgs: [] as unknown[] };
+  const calls = { status: 0, jobs: 0, run: [] as Record<string, unknown>[], statusArgs: [] as unknown[], jobsArgs: [] as Record<string, unknown>[] };
   const status = () => ({
     products: { withImages: 3, missingEmbedding: 1, withEmbedding: 2 },
     jobs: { PENDING: opts.pending ? opts.pending() : 0, RUNNING: 0, COMPLETED: 2, FAILED: 0 },
@@ -145,6 +151,22 @@ function mountCard(opts: { pending?: () => number; top?: Array<{ id: number; nam
             // A fresh object every answer, like a real response
             return { success: true, data: status() };
           },
+          // #1095: the jobs table of the open tab, its counts and the progress of the last run
+          getEmbeddingJobs: async (query: Record<string, unknown>) => {
+            calls.jobs++;
+            calls.jobsArgs.push(query);
+            return {
+              success: true,
+              data: {
+                rows: [],
+                total: 0,
+                page: 1,
+                limit: 50,
+                counts: { PENDING: 0, RUNNING: 0, COMPLETED: 0, FAILED: 0 },
+                progress: { since: '', total: 0, done: 0, running: 0, failed: 0, pending: 0, completedLast10Min: 0, etaMinutes: null },
+              },
+            };
+          },
           runEmbeddingBackfill: async (body: { dryRun: boolean }) => {
             calls.run.push(body);
             return { success: true, data: { dryRun: body.dryRun, merchants: 1, products: 1, queued: 1, skippedAlreadyQueued: 0, skippedFailed: 0 } };
@@ -161,7 +183,30 @@ describe('Embedding backfill card loads its status once (#1065)', () => {
     const { runtime, calls, render } = mountCard();
     await runtime.settle(render);
     expect(calls.status).toBe(1);
+    expect(calls.jobs).toBe(1); // #1095: and the jobs table once
     expect(runtime.renders()).toBeLessThan(10);
+  });
+
+  // #1095: a tab reads its own rows once; nothing waits, so nothing polls
+  it('a tab click reads that tab once, from page 1', async () => {
+    const { runtime, calls, render } = mountCard();
+    let tree = await runtime.settle(render);
+    const failed = findByText(tree, 'embeddingBackfill.jobFailed');
+    expect(failed).toBeNull(); // the label is followed by the count, so it is not the only child
+    const tabs: any[] = [];
+    const walk = (n: any) => {
+      if (!n || typeof n !== 'object') return;
+      if (Array.isArray(n)) return n.forEach(walk);
+      if (n.type === 'button' && Array.isArray(n.props?.children) && n.props.children[0] === 'embeddingBackfill.jobFailed') tabs.push(n);
+      walk(n.props?.children);
+    };
+    walk(tree);
+    expect(tabs).toHaveLength(1);
+    tabs[0].props.onClick();
+    tree = await runtime.settle(render);
+    expect(calls.jobs).toBe(2);
+    expect(calls.jobsArgs[1]).toMatchObject({ status: 'FAILED', page: 1, limit: 50 });
+    expect(calls.status).toBe(1);
   });
 
   it('a dry-run check posts once and does not reload the status; Refresh and a real run reload it once', async () => {
@@ -260,6 +305,8 @@ describe('Embedding backfill card for one shop (#1089)', () => {
       // Nothing waits: polling turns off (React then runs the effect cleanup that clears the interval;
       // this tiny runtime has no cleanups, so the flag is what is checked)
       expect(findByText(tree, 'embeddingBackfill.shopPolling')).toBeNull();
+      // #1095: the runtime now runs effect cleanups, so the interval is really cleared
+      expect(live[0].cleared).toBe(true);
     } finally {
       (global as any).setInterval = realSet;
       (global as any).clearInterval = realClear;
