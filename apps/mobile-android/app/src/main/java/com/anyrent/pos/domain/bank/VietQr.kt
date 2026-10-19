@@ -148,11 +148,11 @@ object VietQr {
         return code.takeIf { it in knownBins }
     }
 
-    /** EMV string, or null when the bank has no BIN or the number is not 8-16 digits (web rules) */
+    /** EMV string, or null when the bank has no BIN or the number is not 6-16 digits (web rules) */
     fun payload(account: OutletBankAccount): String? {
         val number = account.accountNumber.trim()
         val bin = bin(account.bankName, account.bankCode) ?: return null
-        if (number.length !in 8..16 || !number.all { it in '0'..'9' }) return null
+        if (number.length !in 6..16 || !number.all { it in '0'..'9' }) return null
         return payload(bin, number)
     }
 
@@ -172,7 +172,7 @@ object VietQr {
     fun payload(account: OutletBankAccount, amount: Double, content: String?): String? {
         val number = account.accountNumber.trim()
         val bin = bin(account.bankName, account.bankCode) ?: return null
-        if (number.length !in 8..16 || !number.all { it in '0'..'9' }) return null
+        if (number.length !in 6..16 || !number.all { it in '0'..'9' }) return null
         val rounded = Math.round(amount)
         val text = content?.let { ascii(it) }?.takeIf { it.isNotBlank() }
         if (rounded <= 0 && text == null) return payload(bin, number)

@@ -17,7 +17,7 @@ import { z } from 'zod';
  */
 const bankAccountUpdateSchema = z.object({
   accountHolderName: z.string().min(1).optional(),
-  accountNumber: z.string().min(8).max(16).optional(),
+  accountNumber: z.string().min(6).max(16).optional(),
   bankName: z.string().min(1).optional(),
   bankCode: z.string().optional(),
   branch: z.string().optional(),

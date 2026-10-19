@@ -40,11 +40,11 @@ enum VietQR {
         return knownBins.contains(code) ? code : nil
     }
 
-    /// EMV string for an account, or nil when the bank has no BIN or the number is not 8-16 digits (web rules)
+    /// EMV string for an account, or nil when the bank has no BIN or the number is not 6-16 digits (web rules)
     static func payload(for account: BankAccount) -> String? {
         let number = account.accountNumber.trimmingCharacters(in: .whitespaces)
         guard let bin = bin(bankName: account.bankName, bankCode: account.bankCode),
-              number.count >= 8, number.count <= 16, number.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+              number.count >= 6, number.count <= 16, number.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
         return payload(bin: bin, accountNumber: number)
     }
 

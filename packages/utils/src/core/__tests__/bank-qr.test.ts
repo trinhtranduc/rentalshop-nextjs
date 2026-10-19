@@ -167,7 +167,18 @@ describe('VietQR Generation', () => {
 
       expect(() => {
         generateVietQRString(info, 100000, 'test');
-      }).toThrow('Account number must be 8-16 digits');
+      }).toThrow('Account number must be 6-16 digits');
+    });
+
+    it('accepts a 6-digit account number (VIB)', () => {
+      const info: BankAccountInfo = {
+        accountNumber: '123456',
+        accountHolderName: 'Test Account',
+        bankName: 'Vietinbank',
+        bankCode: 'ICB',
+      };
+
+      expect(() => generateVietQRString(info, 100000, 'test')).not.toThrow();
     });
 
     it('should throw error if bank BIN not found', () => {
