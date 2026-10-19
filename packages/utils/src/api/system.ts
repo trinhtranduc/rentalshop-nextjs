@@ -52,6 +52,42 @@ export interface EmbeddingBackfillStatus {
   products: { withImages: number; missingEmbedding: number; withEmbedding: number };
   jobs: Record<'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED', number>;
   topMerchants: Array<{ id: number; name: string; missingEmbedding: number }>;
+  /** #1095: model and collection in use; optional for an older API */
+  model?: { name: string | null; hfRepo: string | null; collection: string | null; reachable: boolean };
+}
+
+export type EmbeddingJobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+
+/** #1095: GET /api/admin/embedding-jobs */
+export interface EmbeddingJobsList {
+  rows: Array<{
+    jobId: number;
+    productId: number;
+    productName: string;
+    thumbnail: string | null;
+    merchantId: number | null;
+    merchantName: string;
+    status: EmbeddingJobStatus;
+    attempts: number;
+    maxAttempts: number;
+    updatedAt: string;
+    lastError: string | null;
+  }>;
+  /** jobs of this status (for paging) */
+  total: number;
+  page: number;
+  limit: number;
+  counts: Record<EmbeddingJobStatus, number>;
+  progress: {
+    since: string;
+    total: number;
+    done: number;
+    running: number;
+    failed: number;
+    pending: number;
+    completedLast10Min: number;
+    etaMinutes: number | null;
+  };
 }
 
 /** #1017: POST /api/admin/embedding-backfill */
@@ -76,6 +112,16 @@ export interface EmbeddingBackfillResult {
 // ============================================================================
 // SYSTEM API CLIENT
 // ============================================================================
+
+/** #1095: query string shared by the jobs list and its CSV */
+function embeddingJobsParams(query: { status: EmbeddingJobStatus; merchantId?: number; since?: string; limit?: number; page?: number }) {
+  const params = new URLSearchParams({ status: query.status });
+  if (query.merchantId) params.set('merchantId', String(query.merchantId));
+  if (query.since) params.set('since', query.since);
+  if (query.limit) params.set('limit', String(query.limit));
+  if (query.page) params.set('page', String(query.page));
+  return params;
+}
 
 /**
  * System API client for system administration operations
@@ -241,6 +287,33 @@ export const systemApi = {
     const query = merchantId ? `?merchantId=${merchantId}` : '';
     const response = await authenticatedFetch(`${apiUrls.system.embeddingBackfill}${query}`);
     return await parseApiResponse<EmbeddingBackfillStatus>(response);
+  },
+
+  /** #1095: newest jobs of one status, counts per status and progress since `since` (ADMIN only) */
+  async getEmbeddingJobs(query: {
+    status: EmbeddingJobStatus;
+    merchantId?: number;
+    since?: string;
+    limit?: number;
+    page?: number;
+  }): Promise<ApiResponse<EmbeddingJobsList>> {
+    const response = await authenticatedFetch(`${apiUrls.system.embeddingJobs}?${embeddingJobsParams(query)}`);
+    return await parseApiResponse<EmbeddingJobsList>(response);
+  },
+
+  /** #1095: the jobs of one tab as a CSV file (at most 10000 rows), for a download link */
+  async downloadEmbeddingJobsCsv(query: {
+    status: EmbeddingJobStatus;
+    merchantId?: number;
+    since?: string;
+  }): Promise<{ blob: Blob; filename: string }> {
+    const params = embeddingJobsParams(query);
+    params.set('format', 'csv');
+    const response = await authenticatedFetch(`${apiUrls.system.embeddingJobs}?${params.toString()}`);
+    if (!response.ok) throw new Error(`CSV download failed (${response.status})`);
+    const disposition = response.headers.get('content-disposition') || '';
+    const filename = /filename="([^"]+)"/.exec(disposition)?.[1] || 'embedding-jobs.csv';
+    return { blob: await response.blob(), filename };
   },
 
   /** #1017: queue missing image-search embeddings (ADMIN only); `dryRun` only counts; #1087 `all` re-indexes all */

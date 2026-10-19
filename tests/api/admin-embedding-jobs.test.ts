@@ -4,7 +4,13 @@
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
-  NextResponse: { json: (body: any, init?: any) => ({ body, status: init?.status || 200 }) },
+  // `new NextResponse(stream, init)` (the CSV) is a plain Response here; `.json` as in the other route tests
+  NextResponse: Object.assign(
+    function NextResponse(body: any, init?: any) {
+      return new Response(body, init);
+    },
+    { json: (body: any, init?: any) => ({ body, status: init?.status || 200 }) },
+  ),
 }));
 
 const mockRoles: string[][] = [];
