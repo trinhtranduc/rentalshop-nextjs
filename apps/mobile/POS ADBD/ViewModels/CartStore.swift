@@ -52,6 +52,27 @@ final class CartStore {
         }
     }
 
+    /// Number of the cart that was in use when an order edit opened its own cart; closing the edit cart returns there
+    private var returnCartNumber: Int?
+
+    /// Edit an order. With a draft in the cart in use, the edit gets its own new cart and the draft stays; with an
+    /// empty cart (or while already editing) the cart in use is replaced as before. False when no cart is free.
+    @discardableResult
+    func startEditCart(_ cart: Cart, notify: Bool = true) -> Bool {
+        if storage.hasDraftContent && !storage.isEditMode {
+            guard carts.count < Self.maxCarts else { return false }
+            returnCartNumber = storage.number
+            cart.number = (1...(Self.maxCarts + 1)).first { n in !carts.contains { $0.number == n } } ?? carts.count + 1
+            carts.append(cart)
+            activeIndex = carts.count - 1
+            noteImageData = []
+            didChangeCarts(notify: notify)
+        } else {
+            replaceCart(with: cart, notify: notify)
+        }
+        return true
+    }
+
     /// The cart in use is done (order created, cart cleared): it closes and the next one is used.
     /// `persistToDisk: false` is a logout / test reset: every cart is dropped from memory.
     func resetCart(notify: Bool = true, persistToDisk: Bool = true) {
@@ -124,8 +145,13 @@ final class CartStore {
 
     private func closeActiveCart() {
         if carts.count > 1 {
+            let wasEdit = storage.isEditMode
             carts.remove(at: activeIndex)
             activeIndex = min(activeIndex, carts.count - 1)
+            if wasEdit, let back = carts.firstIndex(where: { $0.number == returnCartNumber }) {
+                activeIndex = back
+            }
+            returnCartNumber = nil
         } else {
             storage.clear()
             storage.number = 1

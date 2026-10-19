@@ -2771,3 +2771,4 @@
 "cart.multi.delete" = "Delete";
 "cart.multi.delete.title" = "Delete this cart?";
 "cart.multi.delete.message" = "%@ has %d items. They will be removed.";
+"cart.multi.limit" = "10 carts are open. Close one before editing an order.";

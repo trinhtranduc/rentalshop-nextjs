@@ -63,7 +63,12 @@ enum OrderEditLauncher {
             cart.customer = cartCustomer
         }
 
-        CartStore.shared.replaceCart(with: cart)
+        guard CartStore.shared.startEditCart(cart) else {
+            let alert = UIAlertController(title: nil, message: "cart.multi.limit".localized(), preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            tabbarController.present(alert, animated: true)
+            return
+        }
         tabbarController.selectedIndex = 0
 
         // Find MainViewController in the navigation stack to update cart badge and reload cart

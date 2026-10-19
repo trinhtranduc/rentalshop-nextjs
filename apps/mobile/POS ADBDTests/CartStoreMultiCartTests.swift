@@ -159,4 +159,50 @@ final class CartStoreMultiCartTests: XCTestCase {
         cart.orderType = .sale
         XCTAssertNil(CartSwitchText.dates(of: cart))
     }
+
+    // MARK: editing an order opens its own cart
+
+    private func editCart(orderId: Int = 77) -> Cart {
+        let c = Cart()
+        c.orderId = orderId
+        c.customer = customer(9, "Bảo")
+        return c
+    }
+
+    func testEditWithDraftOpensANewCartAndKeepsTheDraft() {
+        store.setCustomer(customer(1, "Mai"))
+        XCTAssertTrue(store.startEditCart(editCart(), notify: false))
+        XCTAssertEqual(store.carts.count, 2)
+        XCTAssertTrue(store.cart.isEditMode)
+        XCTAssertEqual(store.carts[0].customer?.full_name, "Mai", "the draft is untouched")
+    }
+
+    func testClosingTheEditCartReturnsToTheDraft() {
+        store.setCustomer(customer(1, "Mai"))
+        store.newCart(notify: false)
+        store.setCustomer(customer(2, "Lâm"))
+        store.switchCart(to: 0, notify: false)
+        XCTAssertTrue(store.startEditCart(editCart(), notify: false))
+        store.resetCart(notify: false)
+        XCTAssertEqual(store.carts.count, 2)
+        XCTAssertEqual(store.cart.customer?.full_name, "Mai", "back to the cart that was in use")
+        XCTAssertFalse(store.cart.isEditMode)
+    }
+
+    func testEditWithAnEmptyCartReplacesIt() {
+        XCTAssertTrue(store.startEditCart(editCart(), notify: false))
+        XCTAssertEqual(store.carts.count, 1)
+        XCTAssertTrue(store.cart.isEditMode)
+    }
+
+    func testEditIsRefusedAtTheLimit() {
+        store.setCustomer(customer(1, "Mai"))
+        while store.carts.count < CartStore.maxCarts {
+            store.newCart(notify: false)
+            store.setCustomer(customer(store.carts.count, "K\(store.carts.count)"))
+        }
+        XCTAssertFalse(store.startEditCart(editCart(), notify: false))
+        XCTAssertEqual(store.carts.count, CartStore.maxCarts)
+        XCTAssertFalse(store.cart.isEditMode)
+    }
 }

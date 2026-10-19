@@ -12,7 +12,7 @@ Mockup: artifact 9b56KwErJWiGpiyFEfyEY4, tab "Nhiều giỏ hàng", Cách 1.
 7. Nút "+" trên sản phẩm thêm vào giỏ đang dùng.
 8. Tạo đơn thành công: xoá giỏ đó; giỏ kế tiếp thành giỏ đang dùng; nếu còn 1 giỏ thì giao diện về như hiện nay; nếu hết giỏ thì tạo giỏ trống.
 9. Xoá giỏ (vuốt trong bảng chọn giỏ): luôn hỏi xác nhận. Xoá giỏ đang dùng chuyển sang giỏ kế tiếp.
-10. Sửa đơn: dùng giỏ đang dùng như hiện nay (xác nhận 17/10).
+10. Sửa đơn: nếu giỏ đang dùng có nội dung dở thì mở một giỏ riêng cho đơn sửa (giỏ dở giữ nguyên); lưu hoặc huỷ sửa xong thì đóng giỏ sửa đơn và quay lại đúng giỏ dở trước đó. Giỏ đang dùng trống thì thay như trước. Đã đủ 10 giỏ: báo "Đang mở 10 giỏ…" và không cho sửa (chủ shop chốt 2026-10-19, thay cho xác nhận 17/10).
 11. Lưu trên máy theo tài khoản (UserDefaults / SharedPreferences). Dữ liệu cũ (1 giỏ) đọc được và trở thành giỏ đầu tiên. Số giỏ tối đa 10.
 12. Icon xe đẩy ở hàng tiêu đề đổi thành icon giỏ; số trên icon = số món giỏ đang dùng (như hiện nay).
 

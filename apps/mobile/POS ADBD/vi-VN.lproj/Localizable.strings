@@ -2769,3 +2769,4 @@
 "cart.multi.delete" = "Xoá";
 "cart.multi.delete.title" = "Xoá giỏ này?";
 "cart.multi.delete.message" = "%@ có %d món. Các món sẽ bị xoá.";
+"cart.multi.limit" = "Đang mở 10 giỏ. Hãy đóng bớt một giỏ rồi sửa đơn.";

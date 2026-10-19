@@ -2040,7 +2040,12 @@ extension InfoMainViewController: OrderCheckViewControllerDelegate {
                 let fullOrder = Order.from(detail: detail)
                 let cart = Cart.fromOrderDetail(detail)
                 
-                CartStore.shared.replaceCart(with: cart)
+                guard CartStore.shared.startEditCart(cart) else {
+                    let alert = UIAlertController(title: nil, message: "cart.multi.limit".localized(), preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
+                    return
+                }
                 
                 // Set customer from full order for InfoCustomerView
                 var customer = Customer()
