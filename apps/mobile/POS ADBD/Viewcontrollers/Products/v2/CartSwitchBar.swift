@@ -50,10 +50,10 @@ enum CartSwitchText {
 }
 
 final class CartSwitchBar: UIView {
-    /// #1079: the bar shows with 2+ carts (also while an order edit is the cart in use, so the other carts stay in reach),
-    /// or with 1 cart that has items (that is how a second cart is started).
+    /// #1079: the bar shows with 2+ carts, or when the cart in use has items, also an order edit that was left with the
+    /// back button (it stays as the cart in use, so the bar is how the user sees it and starts another cart).
     static func shouldShow(cartCount: Int, itemCount: Int, isEditMode: Bool) -> Bool {
-        cartCount > 1 || (!isEditMode && itemCount > 0)
+        cartCount > 1 || itemCount > 0
     }
 
     var onSwitch: (() -> Void)?

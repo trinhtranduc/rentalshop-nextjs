@@ -146,7 +146,8 @@ final class CartStoreMultiCartTests: XCTestCase {
         XCTAssertTrue(CartSwitchBar.shouldShow(cartCount: 1, itemCount: 2, isEditMode: false))
         XCTAssertTrue(CartSwitchBar.shouldShow(cartCount: 2, itemCount: 0, isEditMode: false))
         XCTAssertTrue(CartSwitchBar.shouldShow(cartCount: 3, itemCount: 2, isEditMode: true), "other carts stay in reach while editing")
-        XCTAssertFalse(CartSwitchBar.shouldShow(cartCount: 1, itemCount: 2, isEditMode: true))
+        XCTAssertTrue(CartSwitchBar.shouldShow(cartCount: 1, itemCount: 2, isEditMode: true), "an edit left with the back button stays visible")
+        XCTAssertFalse(CartSwitchBar.shouldShow(cartCount: 1, itemCount: 0, isEditMode: false))
     }
 
     func testDatesShowOnlyForRentalWithBothDays() {
