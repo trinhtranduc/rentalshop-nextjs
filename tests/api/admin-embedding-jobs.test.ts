@@ -50,11 +50,11 @@ function matches(j: Job, where: any): boolean {
 
 const mockPrisma = {
   embeddingJob: {
-    findMany: jest.fn(async ({ where, take }: any) =>
+    findMany: jest.fn(async ({ where, take, skip = 0 }: any) =>
       jobs
         .filter((j) => matches(j, where))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || b.id - a.id)
-        .slice(0, take)
+        .slice(skip, skip + take)
         .map((j) => {
           const p = products[j.productId];
           return { ...j, product: { id: p.id, name: p.name, images: p.images, merchantId: p.merchantId, merchant: { name: merchants[p.merchantId] } } };
@@ -167,4 +167,61 @@ describe('GET /api/admin/embedding-jobs', () => {
     const res: any = await GET(req('ADMIN', '?status=COMPLETED&limit=1'));
     expect(res.body.data.rows).toHaveLength(1);
   });
+
+  it('pages: page 2 skips the first page and every answer says the total of the tab', async () => {
+    const first: any = await GET(req('ADMIN', '?status=COMPLETED&limit=1'));
+    expect(first.body.data).toMatchObject({ page: 1, limit: 1, total: 2 });
+    expect(first.body.data.rows.map((r: any) => r.jobId)).toEqual([13]);
+    const second: any = await GET(req('ADMIN', '?status=COMPLETED&limit=1&page=2'));
+    expect(second.body.data).toMatchObject({ page: 2, total: 2 });
+    expect(second.body.data.rows.map((r: any) => r.jobId)).toEqual([14]);
+    expect(((await GET(req('ADMIN', '?page=0'))) as any).status).toBe(400);
+  });
 });
+
+describe('GET /api/admin/embedding-jobs?format=csv', () => {
+  async function csv(query: string) {
+    const res: any = await GET(req('ADMIN', query));
+    return { res, text: await res.text() };
+  }
+
+  it('is ADMIN only', async () => {
+    const res: any = await GET(req('OPS', '?status=COMPLETED&format=csv'));
+    expect(res.status).toBe(403);
+  });
+
+  it('downloads the tab as CSV with a header, one line per job, quoted fields and the same filters', async () => {
+    jobs.push({ id: 20, productId: 4, status: 'FAILED', attempts: 2, maxAttempts: 5, updatedAt: minutesAgo(6), finishedAt: null, lastError: 'bad "quote", comma\nnew line' });
+    const { res, text } = await csv('?status=FAILED&format=csv');
+    expect(res.headers.get('content-type')).toContain('text/csv');
+    expect(res.headers.get('content-disposition')).toContain('attachment');
+    const lines = text.trim().split('\r\n');
+    expect(lines[0]).toBe('productId,productName,shop,status,attempts,updatedAt,lastError');
+    expect(lines).toHaveLength(3);
+    expect(lines[1]).toBe(`3,Váy cưới,Linh Phương Beauty,FAILED,5/5,${minutesAgo(5).toISOString()},${'x'.repeat(300)}`);
+    expect(lines[2]).toBe(`4,Vest,Áo dài Bình Dương,FAILED,2/5,${minutesAgo(6).toISOString()},"bad ""quote"", comma\nnew line"`.replace('\\n', '\n'));
+
+    const shopOnly = await csv('?status=FAILED&format=csv&merchantId=28');
+    expect(shopOnly.text.trim().split('\r\n')).toHaveLength(2);
+  });
+
+  it('a value that starts like a formula is neutralised', async () => {
+    products[1].name = '=HYPERLINK("x")';
+    const { text } = await csv('?status=RUNNING&format=csv');
+    expect(text).toContain(`"'=HYPERLINK(""x"")"`);
+    products[1].name = 'Áo dài gấm đỏ';
+  });
+
+  it('stops at 10000 rows and reads the jobs in batches', async () => {
+    const many: Job[] = [];
+    for (let i = 0; i < 10005; i++) {
+      many.push({ id: 1000 + i, productId: 1, status: 'COMPLETED', attempts: 1, maxAttempts: 5, updatedAt: minutesAgo(1), finishedAt: minutesAgo(1), lastError: null });
+    }
+    jobs = many;
+    const { text } = await csv('?status=COMPLETED&format=csv');
+    expect(text.trim().split('\r\n')).toHaveLength(10001); // header + 10000
+    const takes = mockPrisma.embeddingJob.findMany.mock.calls.map((c: any) => c[0].take);
+    expect(Math.max(...takes)).toBeLessThanOrEqual(1000);
+  });
+});
+
