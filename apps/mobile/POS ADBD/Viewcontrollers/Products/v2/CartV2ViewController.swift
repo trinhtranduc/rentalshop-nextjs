@@ -561,15 +561,21 @@ final class CartV2ViewController: BaseViewControler {
         if !(isRent && conflicts[item.productId] != nil),
            let note = CartV2Logic.availabilityNote(item, in: cart.items, isRent: isRent) {
             let style = Self.shortageStyle(note.tone)
-            let warn = V2.label(" " + note.text + " ", size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
-            warn.accessibilityLabel = note.spoken // #1064: the pill is short; VoiceOver says which days / the stock
+            // Owner (2026-10-19): no pill background; a small round dot + text in the same colour
+            let warn = V2.label(note.text, size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
             warn.numberOfLines = 0
-            warn.backgroundColor = style.colors.fill
-            warn.layer.cornerRadius = 6
-            warn.clipsToBounds = true
-            warn.setContentHuggingPriority(.required, for: .horizontal)
-            warn.setContentCompressionResistancePriority(.required, for: .horizontal)
-            nameRow.addArrangedSubview(warn)
+            let dot = UIView()
+            dot.backgroundColor = style.colors.text
+            dot.layer.cornerRadius = 4
+            dot.snp.makeConstraints { make in make.size.equalTo(8) }
+            let status = UIStackView(arrangedSubviews: [dot, warn])
+            status.spacing = 5
+            status.alignment = .center
+            status.isAccessibilityElement = true
+            status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
+            status.setContentHuggingPriority(.required, for: .horizontal)
+            status.setContentCompressionResistancePriority(.required, for: .horizontal)
+            nameRow.addArrangedSubview(status)
         }
 
         // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. #1064: a sale line's
