@@ -775,6 +775,10 @@
     "resultWouldQueue": "Would queue",
     "resultSkippedQueued": "Already waiting",
     "resultSkippedFailed": "Skipped (last job failed)",
+    "reindexAll": "Re-index everything",
+    "reindexConfirmTitle": "Re-index {count} products?",
+    "reindexConfirmBody": "Use after changing the image search model. Every product with photos gets a new embedding, also those that have one; the work runs in the background through the embedding cron.",
+    "resultUpgraded": "Waiting jobs switched to re-index",
     "loadFailed": "Could not load image search status",
     "runFailed": "Could not queue embeddings"
   }

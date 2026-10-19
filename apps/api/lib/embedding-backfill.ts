@@ -14,6 +14,8 @@ const TOP_MERCHANTS = 10;
 const JOB_STATUSES = ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED'] as const;
 
 export const BACKFILL_SOURCE = 'admin-backfill';
+/** #1087: re-embed even with a recent embedding (the job runner forces this source past the cooldown) */
+export const REINDEX_SOURCE = 'manual-force';
 export const BACKFILL_PRIORITY = 1;
 
 type Candidate = { id: number; merchantId: number; hasEmbedding: boolean };
@@ -82,13 +84,19 @@ export async function getEmbeddingBackfillStatus(merchantId?: number) {
   };
 }
 
-export type BackfillOptions = { merchantId?: number; includeFailed?: boolean; dryRun?: boolean };
+export type BackfillOptions = { merchantId?: number; includeFailed?: boolean; dryRun?: boolean; all?: boolean };
 
+/**
+ * `all` (#1087, model change): every product with photos is re-embedded, also those with an embedding or a
+ * failed last job. A waiting job becomes a forced one (no second job); a running one is left alone.
+ */
 export async function runEmbeddingBackfill(options: BackfillOptions) {
-  const { merchantId, includeFailed = false, dryRun = false } = options;
-  const missing = (await scanCandidates(merchantId)).filter((c) => !c.hasEmbedding);
+  const { merchantId, includeFailed = false, dryRun = false, all = false } = options;
+  const candidates = await scanCandidates(merchantId);
+  const missing = all ? candidates : candidates.filter((c) => !c.hasEmbedding);
 
   const toQueue: Candidate[] = [];
+  const toUpgrade: number[] = [];
   let skippedAlreadyQueued = 0;
   let skippedFailed = 0;
 
@@ -101,24 +109,34 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
       orderBy: [{ productId: 'asc' }, { createdAt: 'desc' }],
     });
     const active = new Set<number>();
+    const pending = new Set<number>();
     const latest = new Map<number, string>();
     for (const job of jobs) {
       if (job.status === 'PENDING' || job.status === 'RUNNING') active.add(job.productId);
+      if (job.status === 'PENDING') pending.add(job.productId);
       if (!latest.has(job.productId)) latest.set(job.productId, job.status);
     }
     for (const c of batch) {
-      if (active.has(c.id)) skippedAlreadyQueued += 1;
+      if (all && pending.has(c.id)) toUpgrade.push(c.id);
+      else if (active.has(c.id)) skippedAlreadyQueued += 1;
+      else if (all) toQueue.push(c);
       else if (!includeFailed && latest.get(c.id) === 'FAILED') skippedFailed += 1;
       else toQueue.push(c);
     }
   }
 
   if (!dryRun) {
+    for (const ids of chunks(toUpgrade, WRITE_BATCH)) {
+      await prisma.embeddingJob.updateMany({
+        where: { productId: { in: ids }, status: 'PENDING' },
+        data: { source: REINDEX_SOURCE },
+      });
+    }
     for (const batch of chunks(toQueue, WRITE_BATCH)) {
       await prisma.embeddingJob.createMany({
         data: batch.map((c) => ({
           productId: c.id,
-          source: BACKFILL_SOURCE,
+          source: all ? REINDEX_SOURCE : BACKFILL_SOURCE,
           priority: BACKFILL_PRIORITY,
           status: 'PENDING',
         })),
@@ -129,10 +147,12 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
   return {
     merchantId: merchantId ?? null,
     dryRun,
+    all,
     merchants: new Set(toQueue.map((c) => c.merchantId)).size,
     products: missing.length,
     queued: toQueue.length,
     skippedAlreadyQueued,
     skippedFailed,
+    upgradedPending: toUpgrade.length,
   };
 }

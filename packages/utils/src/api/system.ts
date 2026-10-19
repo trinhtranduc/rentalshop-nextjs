@@ -63,6 +63,10 @@ export interface EmbeddingBackfillResult {
   queued: number;
   skippedAlreadyQueued: number;
   skippedFailed: number;
+  /** #1087: true when every product with photos was taken (re-index); optional for an older API */
+  all?: boolean;
+  /** #1087: waiting jobs turned into forced re-embeds (`all`) */
+  upgradedPending?: number;
 }
 
 // ============================================================================
@@ -235,11 +239,12 @@ export const systemApi = {
     return await parseApiResponse<EmbeddingBackfillStatus>(response);
   },
 
-  /** #1017: queue missing image-search embeddings (ADMIN only); `dryRun` only counts */
+  /** #1017: queue missing image-search embeddings (ADMIN only); `dryRun` only counts; #1087 `all` re-indexes all */
   async runEmbeddingBackfill(body: {
     merchantId?: number;
     includeFailed?: boolean;
     dryRun?: boolean;
+    all?: boolean;
   }): Promise<ApiResponse<EmbeddingBackfillResult>> {
     const response = await authenticatedFetch(apiUrls.system.embeddingBackfill, {
       method: 'POST',

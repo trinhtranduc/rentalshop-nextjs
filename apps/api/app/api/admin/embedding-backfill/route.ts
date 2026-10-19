@@ -5,9 +5,10 @@
  *   ADMIN only. Counts for active, non-deleted products with images: withImages, missingEmbedding,
  *   withEmbedding; EmbeddingJob counts by status; top 10 merchants by missing count.
  *
- * POST /api/admin/embedding-backfill  { merchantId?, includeFailed?, dryRun? }
+ * POST /api/admin/embedding-backfill  { merchantId?, includeFailed?, dryRun?, all? }
  *   ADMIN only. Queues one embedding job per product missing an embedding. Skips products with a
  *   PENDING/RUNNING job, and products whose last job FAILED unless includeFailed. dryRun writes nothing.
+ *   `all` (#1087, model change): every product with photos, forced re-embed; a waiting job is upgraded.
  *   After queuing, kicks the in-process runner without waiting; `/api/cron/embedding-jobs` drains the rest.
  *
  * Ids are the integer Merchant.id (these models have no CUID).
@@ -31,6 +32,7 @@ const backfillBodySchema = z.object({
   merchantId: z.number().int().positive().optional(),
   includeFailed: z.boolean().optional(),
   dryRun: z.boolean().optional(),
+  all: z.boolean().optional(),
 });
 
 async function merchantMissing(merchantId?: number): Promise<boolean> {
@@ -79,7 +81,7 @@ export const POST = withAdminOnly(async (request: NextRequest) => {
 
     const result = await runEmbeddingBackfill(parsed.data);
 
-    if (!result.dryRun && result.queued > 0) {
+    if (!result.dryRun && result.queued + result.upgradedPending > 0) {
       // Same kick as sync-embeddings: do not block the request; the cron drains the rest.
       void db.embeddingJobs.processPending({ batchSize: 3 }).catch((error: unknown) => {
         console.error('[Embedding backfill] processPending failed:', error instanceof Error ? error.message : error);

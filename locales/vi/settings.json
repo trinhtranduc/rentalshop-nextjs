@@ -775,6 +775,10 @@
     "resultWouldQueue": "Sẽ đưa vào hàng chờ",
     "resultSkippedQueued": "Đã có trong hàng chờ",
     "resultSkippedFailed": "Bỏ qua (tác vụ gần nhất lỗi)",
+    "reindexAll": "Đánh index lại tất cả",
+    "reindexConfirmTitle": "Đánh index lại {count} sản phẩm?",
+    "reindexConfirmBody": "Dùng khi đổi model tìm bằng ảnh. Mọi sản phẩm có ảnh được tạo lại embedding, kể cả sản phẩm đã có; tác vụ chạy nền qua cron embedding.",
+    "resultUpgraded": "Job đang chờ chuyển sang tạo lại",
     "loadFailed": "Không tải được trạng thái tìm bằng ảnh",
     "runFailed": "Không tạo được embedding"
   }
