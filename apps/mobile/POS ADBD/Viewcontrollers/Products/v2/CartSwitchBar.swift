@@ -105,12 +105,14 @@ final class CartSwitchBar: UIView {
 
         openButton.setTitle("cart.multi.view".localized(), for: .normal)
         openButton.setImage(DS.symbol("chevron.right", 12, weight: .bold), for: .normal)
-        openButton.tintColor = DS.Color.primary
+        openButton.tintColor = .white
         openButton.semanticContentAttribute = .forceRightToLeft
         openButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 5, bottom: 0, right: -5)
-        openButton.setTitleColor(DS.Color.primary, for: .normal)
+        openButton.setTitleColor(.white, for: .normal)
         openButton.titleLabel?.font = Utils.boldFont(size: 13.5)
-        openButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
+        openButton.backgroundColor = DS.Color.primary
+        openButton.layer.cornerRadius = 11
+        openButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
         openButton.setContentHuggingPriority(.required, for: .horizontal)
         openButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         openButton.accessibilityIdentifier = "cart.switchBar.open"
