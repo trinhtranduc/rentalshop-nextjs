@@ -831,7 +831,7 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(ProductsHomeEmptyState.state(productCount: 0, isLoading: true, hasQuery: false, error: nil), .none)
     }
 
-    /// #681 (Home option 1): the "● Còn N hôm nay" / "● Hết hôm nay" line is 13pt semibold (was 14pt regular, #468)
+    /// #681 (Home option 1): the "● Còn N hôm nay" / "● Hết hôm nay" line is 13pt regular (#1080; semibold in #681)
     func testStockLabelIsSemibold13() throws {
         let cell = ProductRowV2Cell(style: .default, reuseIdentifier: ProductRowV2Cell.reuseId)
         cell.bind(try product(#"{"id":1,"name":"Áo dài"}"#), inCart: 0)
@@ -839,7 +839,7 @@ final class ProductsV2Tests: XCTestCase {
             ((view as? UILabel).map { [$0] } ?? []) + view.subviews.flatMap(labels)
         }
         let stock = try XCTUnwrap(labels(cell.contentView).first { $0.text?.hasPrefix("● ") == true })
-        XCTAssertEqual(stock.font, V2.label(size: 13, weight: .semibold).font)
+        XCTAssertEqual(stock.font, V2.label(size: 13, weight: .regular).font)
     }
 
     /// #937: a long name wraps to two lines on Home, then "…"

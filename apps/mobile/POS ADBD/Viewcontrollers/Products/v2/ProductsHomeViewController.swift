@@ -521,7 +521,7 @@ final class ProductRowV2Cell: UITableViewCell {
         return label
     }()
     /// "● Còn N hôm nay" / "● Hết hôm nay": the colour carries the state (#468); 13pt semibold (#681)
-    private let stockLabel = V2.label(size: 13, weight: .semibold)
+    private let stockLabel = V2.label(size: 13, weight: .regular)
     private let priceLabel = V2.label(size: DS.TextSize.body, lines: 2)
     private let addButton = UIButton(type: .system)
     private let plusImage = DS.symbol("plus", DS.Icon.sm, weight: .semibold)
