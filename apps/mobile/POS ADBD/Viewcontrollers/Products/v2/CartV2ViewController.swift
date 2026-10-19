@@ -506,7 +506,7 @@ final class CartV2ViewController: BaseViewControler {
         let name = V2.label(item.productName, size: DS.TextSize.name, weight: .medium, lines: 2)
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .bold)
+        let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .medium)
         total.textAlignment = .left
         total.setContentHuggingPriority(.required, for: .horizontal)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -534,7 +534,7 @@ final class CartV2ViewController: BaseViewControler {
         if isRent, let conflict = conflicts[item.productId] {
             let tag = UIButton(type: .system)
             tag.setTitle("● " + ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
-            tag.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
+            tag.titleLabel?.font = Utils.regularFont(size: DS.TextSize.pill)
             tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
             // Owner (2026-10-19): same look as the "Còn N" status: "●" + text in dark red, no background
             tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
@@ -661,8 +661,8 @@ final class CartV2ViewController: BaseViewControler {
         func title(alpha: CGFloat) -> NSAttributedString {
             let color = DS.Color.primary.withAlphaComponent(alpha)
             let text = NSMutableAttributedString(string: amount ?? "products.cart.pricing.enterPrice".localized(), attributes: [
-                NSAttributedString.Key.font: amount == nil ? Utils.boldFont(size: DS.TextSize.body)
-                    : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .bold),
+                NSAttributedString.Key.font: amount == nil ? Utils.mediumFont(size: DS.TextSize.body)
+                    : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .medium),
                 NSAttributedString.Key.foregroundColor: color,
             ])
             text.append(NSAttributedString(string: " / " + unit, attributes: [
@@ -1177,9 +1177,9 @@ extension CartV2ViewController {
     /// some units are free; the booked-out red in bold when none are
     static func shortageStyle(_ tone: CartV2Logic.ShortageTone) -> (colors: DS.Pill, weight: UIFont.Weight) {
         switch tone {
-        case .ok: return (DS.Status.done, .medium) // #1064: 2+ free and enough for the cart
-        case .low: return (DS.Status.waiting, .medium)
-        case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .bold)
+        case .ok: return (DS.Status.done, .regular) // #1064: 2+ free and enough for the cart
+        case .low: return (DS.Status.waiting, .regular)
+        case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .regular)
         }
     }
 }

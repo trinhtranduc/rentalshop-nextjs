@@ -610,12 +610,12 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(low.colors.fill, DS.Status.waiting.fill)
         XCTAssertEqual(low.colors.text, UIColor(hexString: "9A3412"))
         XCTAssertEqual(low.colors.fill, UIColor(hexString: "FFEDD5"))
-        XCTAssertEqual(low.weight, .medium)
+        XCTAssertEqual(low.weight, .regular)
 
         let none = CartV2ViewController.shortageStyle(.none)
         XCTAssertEqual(none.colors.text, UIColor(hexString: "991B1B"))
         XCTAssertEqual(none.colors.fill, UIColor(hexString: "FEE2E2"))
-        XCTAssertEqual(none.weight, .bold)
+        XCTAssertEqual(none.weight, .regular)
     }
 
     /// #1064 (owner): 0 free = "Hết đồ" / "Hết hàng" in red; 1 free (or fewer than asked) = amber; 2+ free and enough
@@ -661,7 +661,7 @@ final class ProductsV2Tests: XCTestCase {
         let ok = CartV2ViewController.shortageStyle(.ok)
         XCTAssertEqual(ok.colors.text, DS.Status.done.text)
         XCTAssertEqual(ok.colors.fill, DS.Status.done.fill)
-        XCTAssertEqual(ok.weight, .medium)
+        XCTAssertEqual(ok.weight, .regular)
     }
 
     func testShortageAndRentalDays() {
