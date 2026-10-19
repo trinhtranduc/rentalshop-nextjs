@@ -347,7 +347,7 @@ class OrdersHomeTest {
 
     @Test
     fun `row total stays bold, pay line is regular (#468)`() {
-        assertEquals(FontWeight.Bold, RowMoneyText.totalWeight)
+        assertEquals(FontWeight.Medium, RowMoneyText.totalWeight)
         assertEquals(FontWeight.Normal, RowMoneyText.payWeight)
     }
 
@@ -519,7 +519,7 @@ class OrdersHomeTest {
     /** #893 (owner on device): the sorted chip reads clearly bold, the other regular; Home cart bar blue, no add toast (iOS) */
     @Test
     fun `sorted chip weight, home cart bar and add toast`() {
-        assertEquals(FontWeight.Bold, com.anyrent.pos.ui.orders.v2.DateChipText.sortedWeight)
+        assertEquals(FontWeight.Medium, com.anyrent.pos.ui.orders.v2.DateChipText.sortedWeight)
         assertEquals(FontWeight.Normal, com.anyrent.pos.ui.orders.v2.DateChipText.otherWeight)
         // #952: the floating cart bar is gone (the top-right cart button stays)
         assertEquals(false, com.anyrent.pos.ui.home.v2.HomeCart.showsFloatingBar)

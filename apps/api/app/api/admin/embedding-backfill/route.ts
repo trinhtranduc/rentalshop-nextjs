@@ -5,10 +5,13 @@
  *   ADMIN only. Counts for active, non-deleted products with images: withImages, missingEmbedding,
  *   withEmbedding; EmbeddingJob counts by status; top 10 merchants by missing count.
  *
- * POST /api/admin/embedding-backfill  { merchantId?, includeFailed?, dryRun? }
+ * POST /api/admin/embedding-backfill  { merchantId?, includeFailed?, dryRun?, all? }
  *   ADMIN only. Queues one embedding job per product missing an embedding. Skips products with a
  *   PENDING/RUNNING job, and products whose last job FAILED unless includeFailed. dryRun writes nothing.
+ *   `all` (#1087, model change): every product with photos, forced re-embed; a waiting job is upgraded.
  *   After queuing, kicks the in-process runner without waiting; `/api/cron/embedding-jobs` drains the rest.
+ *   #1089: with `merchantId` that shop's jobs get priority 5 (waiting ones raised, `prioritized`), and
+ *   `processSeconds` (0–60) runs that shop's batches in the request for up to that budget (`processing`).
  *
  * Ids are the integer Merchant.id (these models have no CUID).
  */
@@ -31,7 +34,24 @@ const backfillBodySchema = z.object({
   merchantId: z.number().int().positive().optional(),
   includeFailed: z.boolean().optional(),
   dryRun: z.boolean().optional(),
+  all: z.boolean().optional(),
+  processSeconds: z.number().min(0).max(60).optional(),
 });
+
+/** #1089: batches of the shop's pending jobs until one processes nothing or the budget is used */
+async function processForBudget(seconds: number, merchantId?: number) {
+  const startedAt = Date.now();
+  const total = { batches: 0, processed: 0, completed: 0, failed: 0 };
+  for (;;) {
+    const batch = await db.embeddingJobs.processPending({ batchSize: 5, ...(merchantId ? { merchantId } : {}) });
+    total.batches += 1;
+    total.processed += batch.processed;
+    total.completed += batch.completed;
+    total.failed += batch.failed;
+    if (batch.processed === 0 || Date.now() - startedAt >= seconds * 1000) break;
+  }
+  return total;
+}
 
 async function merchantMissing(merchantId?: number): Promise<boolean> {
   if (!merchantId) return false;
@@ -72,14 +92,19 @@ export const POST = withAdminOnly(async (request: NextRequest) => {
     if (!parsed.success) {
       return NextResponse.json(ResponseBuilder.validationError(parsed.error.flatten()), { status: 400 });
     }
-    const { merchantId } = parsed.data;
+    const { merchantId, processSeconds = 0, ...options } = parsed.data;
     if (await merchantMissing(merchantId)) {
       return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: 404 });
     }
 
-    const result = await runEmbeddingBackfill(parsed.data);
+    const result = await runEmbeddingBackfill({ ...options, merchantId });
 
-    if (!result.dryRun && result.queued > 0) {
+    if (!result.dryRun && processSeconds > 0) {
+      const processing = await processForBudget(processSeconds, merchantId);
+      return NextResponse.json(ResponseBuilder.success('EMBEDDING_BACKFILL_QUEUED', { ...result, processing }));
+    }
+
+    if (!result.dryRun && result.queued + result.upgradedPending > 0) {
       // Same kick as sync-embeddings: do not block the request; the cron drains the rest.
       void db.embeddingJobs.processPending({ batchSize: 3 }).catch((error: unknown) => {
         console.error('[Embedding backfill] processPending failed:', error instanceof Error ? error.message : error);

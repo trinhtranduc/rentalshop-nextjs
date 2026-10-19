@@ -19,6 +19,8 @@
 		A828B0000000000000000001 /* CurrentOutlet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000001 /* CurrentOutlet.swift */; };
 		A828B0000000000000000002 /* OutletHeaderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000002 /* OutletHeaderButton.swift */; };
 		A828B0000000000000000003 /* OutletPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A828F0000000000000000003 /* OutletPickerSheet.swift */; };
+		A1079B000000000000000001 /* CartSwitchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1079F000000000000000001 /* CartSwitchBar.swift */; };
+		A1079B000000000000000002 /* CartPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1079F000000000000000002 /* CartPickerSheet.swift */; };
 		884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */; };
 		A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A640F0000000000000000003 /* OrderShareImageTests.swift */; };
 		5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */; };
@@ -191,6 +193,7 @@
 		9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9700A0022E9F000100970001 /* PrinterSetupTests.swift */; };
 		A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */; };
 		A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A1 /* CartNotePhotosTests.swift */; };
+		A4800480B0000000000000A2 /* CartStoreMultiCartTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */; };
 		16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA71945D1F2C820062603E /* DesignTokens.swift */; };
 		17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */; };
 		17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A0C2121B33928148F209CE /* TabsV2APIService.swift */; };
@@ -416,6 +419,8 @@
 		A828F0000000000000000001 /* CurrentOutlet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentOutlet.swift; sourceTree = "<group>"; };
 		A828F0000000000000000002 /* OutletHeaderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletHeaderButton.swift; sourceTree = "<group>"; };
 		A828F0000000000000000003 /* OutletPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutletPickerSheet.swift; sourceTree = "<group>"; };
+		A1079F000000000000000001 /* CartSwitchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartSwitchBar.swift; sourceTree = "<group>"; };
+		A1079F000000000000000002 /* CartPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartPickerSheet.swift; sourceTree = "<group>"; };
 		6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChangeHistoryTests.swift; sourceTree = "<group>"; };
 		A640F0000000000000000003 /* OrderShareImageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderShareImageTests.swift; sourceTree = "<group>"; };
 		D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScheduleConflictTests.swift; sourceTree = "<group>"; };
@@ -609,6 +614,7 @@
 		9700A0022E9F000100970001 /* PrinterSetupTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrinterSetupTests.swift; sourceTree = "<group>"; };
 		A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsNotesV2Tests.swift; sourceTree = "<group>"; };
 		A4800480F0000000000000A1 /* CartNotePhotosTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartNotePhotosTests.swift; sourceTree = "<group>"; };
+		A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartStoreMultiCartTests.swift; sourceTree = "<group>"; };
 		628848789A17EEF1ECD704C3 /* AppConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigService.swift; sourceTree = "<group>"; };
 		64454969BCB62EEB55223203 /* OverviewV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2.swift; sourceTree = "<group>"; };
 		A616F0000000000000000001 /* OverviewDashLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewDashLogic.swift; sourceTree = "<group>"; };
@@ -1046,6 +1052,8 @@
 			isa = PBXGroup;
 			children = (
 				A828F0000000000000000003 /* OutletPickerSheet.swift */,
+				A1079F000000000000000001 /* CartSwitchBar.swift */,
+				A1079F000000000000000002 /* CartPickerSheet.swift */,
 				652DA5D7BA71EFDFF72F4079 /* ProductsV2Views.swift */,
 				B571C0A7C503DDE475BF3D2D /* ProductsHomeViewController.swift */,
 				A47201AA0000000000000002 /* ImageViewerViewController.swift */,
@@ -1077,6 +1085,7 @@
 				9700A0022E9F000100970001 /* PrinterSetupTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
 				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
+				A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				A622F0000000000000000002 /* BankQRTests.swift */,
 				A654F0000000000000000002 /* ImageSearchQueryTests.swift */,
@@ -1907,6 +1916,7 @@
 				9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
 				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
+				A4800480B0000000000000A2 /* CartStoreMultiCartTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				A622B0000000000000000002 /* BankQRTests.swift in Sources */,
 				A654B0000000000000000002 /* ImageSearchQueryTests.swift in Sources */,
@@ -1932,6 +1942,8 @@
 				A828B0000000000000000001 /* CurrentOutlet.swift in Sources */,
 				A828B0000000000000000002 /* OutletHeaderButton.swift in Sources */,
 				A828B0000000000000000003 /* OutletPickerSheet.swift in Sources */,
+				A1079B000000000000000001 /* CartSwitchBar.swift in Sources */,
+				A1079B000000000000000002 /* CartPickerSheet.swift in Sources */,
 				886B188321AE39620029CFB1 /* CalendarViewController.swift in Sources */,
 				043F06452D854E670047DC11 /* HapticFeedback.swift in Sources */,
 				8864537421B0F29D002AE29C /* LargeValueFormatter.swift in Sources */,

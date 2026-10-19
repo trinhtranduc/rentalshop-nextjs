@@ -505,11 +505,11 @@ final class CalendarDayButton: UIControl {
 final class CalendarDayRowCell: UITableViewCell {
     static let reuseId = "CalendarDayRowCell"
     private let tagLabel = PaddedLabel()
-    private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    private let nameLabel = V2.label(size: DS.TextSize.name, weight: .medium)
     /// #496: "#0053 · tạo T7 03/10" and the status line, as on the order list rows
     /// #893 (owner, lean row): the day task's date chip and "Sẵn sàng giao" / "Chưa soạn đồ", wrapping
     private let chipLines = UIStackView()
-    private let totalLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    private let totalLabel = V2.label(size: DS.TextSize.name, weight: .medium)
     private let noteLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: V2.danger)
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
@@ -577,7 +577,7 @@ final class CalendarDayRowCell: UITableViewCell {
         let order = row.order
         // #893 (owner, lean row): no "#code · tạo", no other date; the day task's chip and ready / not prepared
         let amountWidth = ((MoneyFormatter.format(order.totalAmount)) as NSString)
-            .size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
+            .size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.name)]).width
         OrderRowCell.fillChipLines(chipLines, chips: OrdersHomeLogic.calendarChips(row),
                                    width: min(UIScreen.main.bounds.width, PadLayout.readableWidth) - 2 * DS.Spacing.lg - max(amountWidth, 110) - DS.Spacing.md)
         totalLabel.text = hidesMoney ? nil : MoneyFormatter.format(row.order.totalAmount)

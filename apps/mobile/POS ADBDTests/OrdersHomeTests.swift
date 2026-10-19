@@ -889,7 +889,7 @@ final class OrdersHomeTests: XCTestCase {
         let texts = visibleTexts(cell)
         XCTAssertTrue(texts.contains(iconChip("01/10/26")), "#1008: icon then date: \(texts)")
         let meta = labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }
-        XCTAssertEqual(meta?.font, Utils.boldFont(size: 13), "sorted by created: the created day is bold")
+        XCTAssertEqual(meta?.font, Utils.mediumFont(size: 13), "sorted by created: the created day is medium")
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
         XCTAssertEqual(labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }?.font, Utils.regularFont(size: 13))
         cell.configure(.order(order, lateDays: 0), context: .productOrders(quantity: 2), hidesMoney: false)
@@ -911,11 +911,11 @@ final class OrdersHomeTests: XCTestCase {
         let order = try listOrder(1, status: "RESERVED", balances: "")
         let pickup = "orders.chip.pickup".localized(), back = "orders.chip.return".localized()
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .pickup), hidesMoney: false)
-        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.mediumFont(size: DS.TextSize.body))
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .returnDate), hidesMoney: false)
         XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
-        XCTAssertEqual(dateFont(cell, prefix: back), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.mediumFont(size: DS.TextSize.body))
         cell.configure(.order(order, lateDays: 0), context: .rentList(sortedBy: .created), hidesMoney: false)
         XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
@@ -984,15 +984,15 @@ final class OrdersHomeTests: XCTestCase {
         // Default sort: the pickup chip is bold
         cell.configure(.order(order, lateDays: 0), context: EntityOrdersLogic.rowContext(product, sort: EntityOrdersLogic.defaultProductSort),
                        hidesMoney: false)
-        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.mediumFont(size: DS.TextSize.body))
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
         cell.configure(.order(order, lateDays: 0), context: .sortedList(sortedBy: .returnDate), hidesMoney: false)
         XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
-        XCTAssertEqual(dateFont(cell, prefix: back), Utils.boldFont(size: DS.TextSize.body))
+        XCTAssertEqual(dateFont(cell, prefix: back), Utils.mediumFont(size: DS.TextSize.body))
         cell.configure(.order(order, lateDays: 0), context: .sortedList(sortedBy: .created), hidesMoney: false)
         XCTAssertEqual(dateFont(cell, prefix: pickup), Utils.regularFont(size: DS.TextSize.body))
         XCTAssertEqual(dateFont(cell, prefix: back), Utils.regularFont(size: DS.TextSize.body))
-        XCTAssertEqual(labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }?.font, Utils.boldFont(size: 13),
+        XCTAssertEqual(labels(cell.contentView).first { $0.text?.hasPrefix("#") == true }?.font, Utils.mediumFont(size: 13),
                        "sorted by created: the created day is bold")
         // The plain list row (customer orders) bolds nothing
         cell.configure(.order(order, lateDays: 0), context: .list, hidesMoney: false)
@@ -1435,7 +1435,7 @@ final class OrdersHomeTests: XCTestCase {
         let pay = try XCTUnwrap(money.first { $0.text == String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000)) })
         XCTAssertEqual(pay.font, Utils.mediumFont(size: DS.TextSize.secondary))
         let total = try XCTUnwrap(money.first { $0.text == MoneyFormatter.format(300000) })
-        XCTAssertEqual(total.font, Utils.boldFont(size: DS.TextSize.name))
+        XCTAssertEqual(total.font, Utils.mediumFont(size: DS.TextSize.name))
         cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
         let chips = labels(cell.contentView).compactMap { $0 as? InsetLabel }.filter { !($0.superview?.isHidden ?? true) }
             .compactMap(\.accessibilityLabel)

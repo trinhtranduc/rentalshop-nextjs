@@ -454,6 +454,8 @@ fun CartV2Screen(
         }
 
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            // #1079: with 2+ carts open, "Giỏ · name · i/n · Đổi" opens the cart list (not while editing an order)
+            if (editingOrderId == null) CartSwitchRow()
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
             CustomerRow(name = customer?.displayName, phone = customer?.phone, onClick = { showCustomer = true })
             if (!isSale) {
@@ -472,13 +474,13 @@ fun CartV2Screen(
                         // iOS starts with no dates: "Chọn ngày thuê" in the primary colour, no day pill (#448)
                         Text(
                             stringResource(R.string.v2_cart_pick_dates),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary,
+                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
                             modifier = Modifier.weight(1f),
                         )
                     } else {
                         Text(
                             dateRow.text.orEmpty(),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
+                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Normal, maxLines = 1, softWrap = false,
                             overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                         )
                         val days = dateRow.days ?: 1
@@ -492,20 +494,8 @@ fun CartV2Screen(
                 }
             }
 
-            SectionBand(stringResource(R.string.v2_cart_items, lines.sumOf { it.quantity })) {
-                // #1024 (option A, iOS): plus-circle icon + "Thêm"; TalkBack reads "Thêm món"
-                val addLabel = stringResource(R.string.v2_cart_add_item_accessibility)
-                Row(
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onAddItems)
-                        .padding(vertical = 8.dp, horizontal = 2.dp)
-                        .semantics(mergeDescendants = true) { role = Role.Button; contentDescription = addLabel },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Icon(cartIcon(CartV2Icon.ADD_ITEM), contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(18.dp))
-                    Text(stringResource(R.string.v2_cart_add_more), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
-                }
-            }
+            // Owner (2026-10-19): no "Thêm" button in the cart; items are added from the home list
+            SectionBand(stringResource(R.string.v2_cart_items, lines.sumOf { it.quantity }))
             if (lines.isEmpty()) {
                 Text(stringResource(R.string.v2_cart_empty), color = DS.Colors.TextMuted, modifier = Modifier.padding(16.dp))
             }
@@ -927,7 +917,7 @@ private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 name ?: stringResource(R.string.v2_cart_pick_customer),
-                fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold,
+                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium,
                 color = if (name == null) DS.Colors.Primary else DS.Colors.Text,
             )
             if (!phone.isNullOrBlank()) Text(phone, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
@@ -960,7 +950,7 @@ private fun ItemRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // #684: the "Hết 09/10 → 11/10 ›" tag (or the shortage chip) beside the name, on its right (owner)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, maxLines = 2,
+                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     // #1064: one pill once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
                     // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. The overlap tag (red) replaces it
@@ -971,13 +961,15 @@ private fun ItemRow(
                     val style = CartShortageStyle.of(note?.tone ?: CartV2Logic.ShortageTone.NONE)
                     shortText?.let { text ->
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
+                        // Owner (2026-10-19): no pill background; "●" + text in the same colour, regular weight, on the right
                         Text(
-                            if (onOpenOverlap != null) "$text ›" else text,
+                            "● " + if (onOpenOverlap != null) "$text ›" else text,
                             fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
                             modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
-                                .clip(RoundedCornerShape(6.dp)).background(style.colors.fill)
+                                .clip(RoundedCornerShape(6.dp))
                                 .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
-                                .padding(horizontal = 8.dp, vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
+                                .padding(vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
                         )
                     }
                 }
@@ -985,7 +977,7 @@ private fun ItemRow(
                 PricingChip(line, isSale, onOpenPricing)
                 // #1064: a sale line's "Còn N" is now the pill beside the name (one count per line)
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
+                    Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.weight(1f))
                     V2Stepper(value = line.quantity, onChange = onQuantity, minimum = 0, compact = true)
                 }
                 // #684 (canvas N1): "+ Ghi chú", or the line's note in a light box; either opens "Ghi chú món".
@@ -1006,9 +998,9 @@ internal data class CartShortageStyle(val colors: DS.Pill, val weight: FontWeigh
         private val BookedOut = DS.Pill(Color(0xFF991B1B), Color(0xFFFEE2E2))
 
         fun of(tone: CartV2Logic.ShortageTone): CartShortageStyle = when (tone) {
-            CartV2Logic.ShortageTone.OK -> CartShortageStyle(DS.Status.Done, FontWeight.Medium) // #1064: 2+ and enough
-            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.Medium)
-            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.SemiBold)
+            CartV2Logic.ShortageTone.OK -> CartShortageStyle(DS.Status.Done, FontWeight.Normal) // #1064: 2+ and enough
+            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.Normal)
+            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.Normal)
         }
     }
 }
@@ -1034,7 +1026,7 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
         Text(
             // #951: 0đ is a price; only a rent line without any price shows "Nhập giá"
             CartV2Logic.chipPrice(line, isSale)?.let { formatMoneyVnd(it) } ?: stringResource(R.string.v2_pricing_enter_price),
-            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary, maxLines = 1,
+            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Primary, maxLines = 1,
         )
         Text(
             " / " + label.lowercase(java.util.Locale("vi")) + (daysText?.let { " × $it" } ?: ""),
@@ -1290,7 +1282,7 @@ private fun NoteEntry(note: String?, emptyText: String, spokenText: String, acti
         Text(
             shown ?: emptyText,
             fontSize = DS.TextSize.Secondary,
-            fontWeight = if (shown != null) FontWeight.Normal else FontWeight.SemiBold,
+            fontWeight = if (shown != null) FontWeight.Normal else FontWeight.Medium,
             color = if (shown != null) Color(0xFF334155) else DS.Colors.Primary,
             modifier = Modifier.weight(1f, fill = false),
         )

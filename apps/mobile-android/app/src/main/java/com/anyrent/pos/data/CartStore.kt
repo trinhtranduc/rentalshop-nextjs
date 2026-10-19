@@ -28,8 +28,37 @@ import java.time.temporal.ChronoUnit
 object CartStore {
     enum class DiscountType { AMOUNT, PERCENT }
 
+    /** #1079: at most this many carts are open at once (iOS `CartStore.maxCarts`) */
+    const val MAX_CARTS = 10
+
+    /** What the cart bar and "Chọn giỏ" show for one cart; `customerName` is null while no customer is chosen ("Giỏ k") */
+    data class CartSummary(
+        val number: Int,
+        val customerName: String?,
+        val avatar: String,
+        val itemCount: Int,
+        val total: Double,
+        val isSale: Boolean,
+        /** "19/10/26 → 21/10/26" for a rental cart with both days chosen, else null */
+        val dates: String?,
+        /** The order number while this cart edits an order */
+        val editOrderNumber: String?,
+    )
+
+    /** One open cart. The one in use lives in the flows below; the others keep a snapshot (`json`) and its summary. */
+    private class Slot(var number: Int, var json: JSONObject? = null, var summary: CartSummary? = null)
+
     private const val PREFS = "anyrent.cart"
     private const val KEY_PREFIX = "draftCart."
+    private const val MULTI_KEY_PREFIX = "draftCarts."
+
+    private val slots = mutableListOf(Slot(1))
+    private var activeIdx = 0
+    /** Number of the cart in use when an order edit opened its own cart; closing the edit cart returns there */
+    private var returnNumber: Int? = null
+    /** Bumped on every change to the carts, so the cart bar recomposes */
+    private val _revision = MutableStateFlow(0)
+    val revision: StateFlow<Int> = _revision.asStateFlow()
 
     private lateinit var prefs: SharedPreferences
     /// Off until this user's disk snapshot is loaded so an empty in-memory cart
@@ -122,12 +151,15 @@ object CartStore {
     fun restoreFromDisk() {
         if (!::prefs.isInitialized) return
         val userId = SessionStore.userId ?: return
-        val raw = prefs.getString(KEY_PREFIX + userId, null)
+        val multi = prefs.getString(MULTI_KEY_PREFIX + userId, null)
+        val legacy = prefs.getString(KEY_PREFIX + userId, null)
         persistEnabled = false
-        if (raw != null) {
-            runCatching { applyJson(JSONObject(raw)) }
-                .onFailure { android.util.Log.w("AnyRentCart", "Draft cart restore failed: ${it.message}") }
-        }
+        runCatching {
+            when {
+                multi != null -> applyCartsJson(JSONObject(multi))
+                legacy != null -> applyLegacyDraftJson(JSONObject(legacy))
+            }
+        }.onFailure { android.util.Log.w("AnyRentCart", "Draft cart restore failed: ${it.message}") }
         persistEnabled = true
     }
 
@@ -329,7 +361,36 @@ object CartStore {
         return orderId
     }
 
+    /**
+     * The cart in use is done (order created, "Xoá giỏ", edit cancelled): it closes and the next one is used; with one
+     * cart it is just emptied. `persistToDisk = false` is a logout / test reset: every cart is dropped from memory.
+     */
     fun clear(persistToDisk: Boolean = true) {
+        if (!persistToDisk) {
+            resetAll()
+            persistEnabled = false
+            return
+        }
+        closeActiveCart()
+        persist()
+    }
+
+    /** Every cart is dropped (outlet switch, logout) */
+    fun clearAll(persistToDisk: Boolean = true) {
+        resetAll()
+        if (persistToDisk) persist() else persistEnabled = false
+    }
+
+    private fun resetAll() {
+        slots.clear()
+        slots.add(Slot(1))
+        activeIdx = 0
+        returnNumber = null
+        resetActiveState()
+        bump()
+    }
+
+    private fun resetActiveState() {
         dropNoteImages()
         _editingOrderId.value = null
         _editOriginal.value = null
@@ -346,7 +407,170 @@ object CartStore {
         _returnDate.value = ShopTime.today().plusDays(1)
         _datesChosen.value = false
         _orderType.value = "RENT"
-        if (persistToDisk) persist() else persistEnabled = false
+    }
+
+    private fun closeActiveCart() {
+        if (slots.size > 1) {
+            val wasEdit = isEditing
+            slots.removeAt(activeIdx)
+            activeIdx = minOf(activeIdx, slots.size - 1)
+            if (wasEdit) {
+                val back = slots.indexOfFirst { it.number == returnNumber }
+                if (back >= 0) activeIdx = back
+            }
+            returnNumber = null
+            loadSlot(slots[activeIdx])
+        } else {
+            resetActiveState()
+            slots[0].number = 1
+        }
+        bump()
+    }
+
+    // MARK: - Several carts (#1079)
+
+    val cartCount: Int get() = slots.size
+    val activeIndex: Int get() = activeIdx
+
+    private fun bump() = _revision.update { it + 1 }
+
+    private fun hasDraftContent() = _lines.value.isNotEmpty() || _customer.value != null || _editingOrderId.value != null
+
+    /** Summaries of every cart, the one in use read live */
+    fun cartSummaries(): List<CartSummary> = slots.mapIndexed { index, slot ->
+        if (index == activeIdx) liveSummary(slot.number) else slot.summary ?: liveSummary(slot.number)
+    }
+
+    private fun liveSummary(number: Int): CartSummary {
+        val customer = _customer.value
+        val name = customer?.displayName
+        val sale = _orderType.value == "SALE"
+        val dates = if (!sale && _datesChosen.value) {
+            "${_pickupDate.value.format(SHORT_DAY)} → ${_returnDate.value.format(SHORT_DAY)}"
+        } else {
+            null
+        }
+        return CartSummary(
+            number = number,
+            customerName = name,
+            avatar = avatarText(customer, number),
+            itemCount = itemCount,
+            total = totalAmount,
+            isSale = sale,
+            dates = dates,
+            editOrderNumber = if (isEditing) _editOriginal.value?.orderNumber?.takeIf { it.isNotBlank() } else null,
+        )
+    }
+
+    private val SHORT_DAY: java.time.format.DateTimeFormatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yy")
+
+    /** First letters of the first and last word of the customer name, else the cart number (iOS `avatarText`) */
+    private fun avatarText(customer: Customer?, number: Int): String {
+        val words = customer?.displayName?.trim()?.split(Regex("\\s+"))?.filter { it.isNotBlank() }.orEmpty()
+        val first = words.firstOrNull()?.firstOrNull() ?: return number.toString()
+        val last = words.takeIf { it.size > 1 }?.last()?.firstOrNull() ?: return first.uppercase()
+        return "$first$last".uppercase()
+    }
+
+    private fun nextNumber(): Int = (1..MAX_CARTS + 1).first { n -> slots.none { it.number == n } }
+
+    /** The cart in use is parked (snapshot + summary) while another one takes over the flows */
+    private fun captureActive() {
+        val slot = slots[activeIdx]
+        slot.json = toJson()
+        slot.summary = liveSummary(slot.number)
+    }
+
+    private fun loadSlot(slot: Slot) {
+        dropNoteImages()
+        val json = slot.json
+        if (json != null) applyJson(json) else resetActiveState()
+        slot.json = null
+        slot.summary = null
+    }
+
+    /** A new empty cart, used at once. False at the limit. */
+    fun newCart(): Boolean {
+        if (slots.size >= MAX_CARTS) return false
+        captureActive()
+        slots.add(Slot(nextNumber()))
+        activeIdx = slots.size - 1
+        resetActiveState()
+        persist()
+        return true
+    }
+
+    fun switchCart(index: Int) {
+        if (index !in slots.indices || index == activeIdx) return
+        captureActive()
+        activeIdx = index
+        loadSlot(slots[index])
+        persist()
+    }
+
+    /** The cart at `index` is removed; with only one cart it is just emptied */
+    fun deleteCart(index: Int) {
+        if (index !in slots.indices) return
+        if (slots.size == 1) {
+            resetActiveState()
+            slots[0].number = 1
+        } else {
+            slots.removeAt(index)
+            when {
+                index < activeIdx -> activeIdx -= 1
+                index == activeIdx -> {
+                    activeIdx = minOf(index, slots.size - 1)
+                    loadSlot(slots[activeIdx])
+                }
+            }
+        }
+        persist()
+    }
+
+    /** All carts as one JSON (what is saved to disk); the cart in use is read from the flows and stays where it is */
+    internal fun cartsJson(): JSONObject {
+        val array = JSONArray()
+        slots.forEachIndexed { index, slot ->
+            val cart = if (index == activeIdx) toJson() else slot.json
+            array.put(JSONObject().put("number", slot.number).put("cart", cart))
+        }
+        return JSONObject().put("active", activeIdx).put("carts", array)
+    }
+
+    /** Restore what `cartsJson` saved */
+    internal fun applyCartsJson(json: JSONObject) {
+        val array = json.optJSONArray("carts") ?: return
+        val restored = mutableListOf<Slot>()
+        for (i in 0 until array.length()) {
+            val item = array.optJSONObject(i) ?: continue
+            val cart = item.optJSONObject("cart") ?: continue
+            restored.add(Slot(item.optInt("number", i + 1), cart))
+        }
+        if (restored.isEmpty()) return
+        val active = json.optInt("active", 0).coerceIn(0, restored.size - 1)
+        // summaries for the parked carts come from loading each one once
+        restored.forEachIndexed { index, slot ->
+            if (index != active) {
+                applyJson(slot.json!!)
+                slot.summary = liveSummary(slot.number)
+            }
+        }
+        slots.clear()
+        slots.addAll(restored)
+        activeIdx = active
+        returnNumber = null
+        loadSlot(slots[activeIdx])
+        bump()
+    }
+
+    /** A draft saved before several carts existed becomes the first cart */
+    internal fun applyLegacyDraftJson(json: JSONObject) {
+        slots.clear()
+        slots.add(Slot(1))
+        activeIdx = 0
+        returnNumber = null
+        applyJson(json)
+        bump()
     }
 
     /**
@@ -417,6 +641,14 @@ object CartStore {
             )
         }
 
+        // #1079: a draft in the cart in use stays; the edit gets its own cart (an empty cart, or an edit, is replaced)
+        if (hasDraftContent() && !isEditing) {
+            if (slots.size >= MAX_CARTS) throw CartLimitException()
+            returnNumber = slots[activeIdx].number
+            captureActive()
+            slots.add(Slot(nextNumber()))
+            activeIdx = slots.size - 1
+        }
         // Assign after building so collectors never see a cleared mid-load cart.
         dropNoteImages()
         _editingOrderId.value = summary.id
@@ -468,18 +700,18 @@ object CartStore {
     }
 
     fun persistToDisk() {
+        bump()
         if (!persistEnabled || !::prefs.isInitialized) return
         val userId = SessionStore.userId ?: return
-        val key = KEY_PREFIX + userId
-        val hasDraft = _lines.value.isNotEmpty() ||
-            _customer.value != null ||
-            _editingOrderId.value != null
+        val key = MULTI_KEY_PREFIX + userId
+        // One empty cart is the default; only drafts worth keeping are saved
+        val hasDraft = slots.size > 1 || hasDraftContent()
         val editor = prefs.edit()
         if (!hasDraft) {
-            editor.remove(key).commit()
+            editor.remove(key).remove(KEY_PREFIX + userId).commit()
             return
         }
-        editor.putString(key, toJson().toString()).commit()
+        editor.putString(key, cartsJson().toString()).remove(KEY_PREFIX + userId).commit()
     }
 
     /** #888 the saved draft, for tests */
@@ -702,3 +934,6 @@ object CartStore {
     fun isoPickup(): String = OrderPlanDays.pickupInstant(_pickupDate.value)
     fun isoReturn(): String = OrderPlanDays.returnInstant(_returnDate.value)
 }
+
+/** #1079: all 10 carts are open, so an order cannot be opened for editing */
+class CartLimitException : IllegalStateException("cart_limit")

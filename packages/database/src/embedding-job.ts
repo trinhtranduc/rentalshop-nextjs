@@ -102,7 +102,8 @@ export const simplifiedEmbeddingJobs = {
     return { reclaimed, failed };
   },
 
-  processPending: async (options?: { batchSize?: number; productId?: number }) => {
+  /** #1089: `merchantId` limits the batch to jobs of that merchant's products */
+  processPending: async (options?: { batchSize?: number; productId?: number; merchantId?: number }) => {
     const batchSize = Math.max(1, Math.min(50, options?.batchSize ?? 5));
     let processed = 0;
     let completed = 0;
@@ -113,7 +114,8 @@ export const simplifiedEmbeddingJobs = {
       where: {
         status: 'PENDING',
         nextRunAt: { lte: new Date() },
-        ...(typeof options?.productId === 'number' ? { productId: options.productId } : {})
+        ...(typeof options?.productId === 'number' ? { productId: options.productId } : {}),
+        ...(typeof options?.merchantId === 'number' ? { product: { merchantId: options.merchantId } } : {})
       },
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
       take: batchSize

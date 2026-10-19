@@ -667,7 +667,7 @@ private fun WorkRow(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         work.customerName?.takeIf { it.isNotBlank() } ?: "N/A",
-                        fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                        fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                     )
                     Tag(stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back), tagColors, RowTagStyle.STATUS)
@@ -893,7 +893,7 @@ private fun BoardRow(
                     Text(
                         name?.takeIf { it.isNotBlank() } ?: "N/A",
                         fontSize = DS.TextSize.Name,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Medium,
                         color = DS.Colors.Text,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -904,7 +904,7 @@ private fun BoardRow(
                 Text(
                     lines.meta, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     color = if (metaBold) DS.Colors.Text else OrderRowMetaColor,
-                    fontWeight = if (metaBold) FontWeight.Bold else FontWeight.Normal,
+                    fontWeight = if (metaBold) FontWeight.Medium else FontWeight.Normal,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(1f)) {
@@ -1023,7 +1023,7 @@ internal fun RowWarningText(text: String, warning: RowWarning, suffix: String? =
 
 /** #893: weights of the date chips (iOS DateChipStack) */
 internal object DateChipText {
-    val sortedWeight = FontWeight.Bold
+    val sortedWeight = FontWeight.Medium
     val otherWeight = FontWeight.Normal
 }
 
@@ -1056,7 +1056,7 @@ internal enum class RowTagStyle(
 
 /** Money column of an order row (#468): the total bold, the pay line ("còn thu N" / "trả cọc N") regular */
 internal object RowMoneyText {
-    val totalWeight = FontWeight.Bold
+    val totalWeight = FontWeight.Medium
     val payWeight = FontWeight.Normal
 }
 

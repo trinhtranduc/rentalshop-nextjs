@@ -362,7 +362,7 @@ private fun DayOrderRow(order: OrderSummary, dates: String, days: Pair<String?, 
         Column(Modifier.weight(1f)) {
             Text(
                 buildAnnotatedString {
-                    withStyle(SpanStyle(color = DS.Colors.Text, fontWeight = FontWeight.Bold)) { append(order.customerName.orEmpty()) }
+                    withStyle(SpanStyle(color = DS.Colors.Text, fontWeight = FontWeight.Medium)) { append(order.customerName.orEmpty()) }
                     withStyle(SpanStyle(color = DS.Colors.TextMuted, fontWeight = FontWeight.SemiBold)) { append(" #${order.orderNumber}") }
                 },
                 fontSize = DS.TextSize.Name, maxLines = 1, overflow = TextOverflow.Ellipsis,

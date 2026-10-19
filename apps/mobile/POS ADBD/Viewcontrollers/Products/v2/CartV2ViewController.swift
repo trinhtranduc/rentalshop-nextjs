@@ -254,6 +254,10 @@ final class CartV2ViewController: BaseViewControler {
 
     // MARK: - Render
 
+    @objc private func switchCartTapped() {
+        present(CartPickerSheet(), animated: true)
+    }
+
     @objc private func cartChanged() {
         guard isViewLoaded, view.window != nil else { return }
         render()
@@ -272,6 +276,13 @@ final class CartV2ViewController: BaseViewControler {
         renderMoreMenu()
 
         content.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        // #1079: with 2+ carts open, "Giỏ · name · i/n · Đổi ⌄" opens the cart list
+        let store = CartStore.shared
+        if store.carts.count > 1, !cart.isEditMode {
+            let row = CartSwitchRow(cart: cart, position: store.activeIndex + 1, total: store.carts.count)
+            row.addTarget(self, action: #selector(switchCartTapped), for: .touchUpInside)
+            content.addArrangedSubview(row)
+        }
         content.addArrangedSubview(band())
         content.addArrangedSubview(customerRow())
         if isRent {
@@ -279,18 +290,8 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(datesRow())
         }
 
-        // #1024 (option A): plus-circle icon + "Thêm"; VoiceOver reads "Thêm món"
-        let add = UIButton(type: .system)
-        add.setTitle("products.cart.addMore".localized(), for: .normal)
-        add.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
-        add.setImage(DS.symbol(CartV2Icon.addItem.rawValue, 18, weight: .semibold), for: .normal)
-        add.tintColor = DS.Color.primary
-        add.imageEdgeInsets = UIEdgeInsets(top: 0, left: -5, bottom: 0, right: 5)
-        add.contentEdgeInsets = UIEdgeInsets(top: 0, left: 5, bottom: 0, right: 0)
-        add.accessibilityLabel = "products.cart.addItem.accessibility".localized()
-        add.addTarget(self, action: #selector(addMoreTapped), for: .touchUpInside)
-        add.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
-        content.addArrangedSubview(V2.sectionHeader(String(format: "products.cart.items".localized(), cart.itemCount), trailing: add))
+        // Owner (2026-10-19): no "Thêm" button in the cart; items are added from the home list
+        content.addArrangedSubview(V2.sectionHeader(String(format: "products.cart.items".localized(), cart.itemCount)))
         if cart.items.isEmpty {
             let empty = V2.label("products.cart.empty".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
             content.addArrangedSubview(padded(empty, vertical: 20))
@@ -410,7 +411,7 @@ final class CartV2ViewController: BaseViewControler {
         avatar.backgroundColor = UIColor(hexString: "DBEAFE")
         avatar.layer.cornerRadius = 20
         avatar.clipsToBounds = true
-        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.name, weight: .bold,
+        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.name, weight: .medium,
                              color: name == nil ? DS.Color.primary : DS.Color.text)
         let phone = V2.label(customer?.phone, size: DS.TextSize.secondary, color: DS.Color.textMuted)
         phone.isHidden = (customer?.phone ?? "").isEmpty
@@ -453,7 +454,7 @@ final class CartV2ViewController: BaseViewControler {
         icon.backgroundColor = UIColor(hexString: "DBEAFE")
         icon.layer.cornerRadius = CartDateRowLogic.iconSize / 2
         icon.clipsToBounds = true
-        let label = V2.label(text, size: DS.TextSize.name, weight: .bold, color: days == nil ? DS.Color.primary : DS.Color.text)
+        let label = V2.label(text, size: DS.TextSize.name, weight: days == nil ? .medium : .regular, color: days == nil ? DS.Color.primary : DS.Color.text)
         // #893 (owner): room inside the pill (10pt left/right, 4pt top/bottom), one line
         let pill = InsetLabel()
         pill.insets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
@@ -502,10 +503,10 @@ final class CartV2ViewController: BaseViewControler {
             }
         }
         let calc = CartV2Logic.calc(item, orderType: cart.orderType)
-        let name = V2.label(item.productName, size: DS.TextSize.name, weight: .bold, lines: 2)
+        let name = V2.label(item.productName, size: DS.TextSize.name, weight: .medium, lines: 2)
         name.setContentHuggingPriority(.defaultLow, for: .horizontal)
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .bold)
+        let total = V2.label(MoneyFormatter.format(calc.total), size: DS.TextSize.name, weight: .medium)
         total.textAlignment = .left
         total.setContentHuggingPriority(.required, for: .horizontal)
         total.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -532,12 +533,11 @@ final class CartV2ViewController: BaseViewControler {
 
         if isRent, let conflict = conflicts[item.productId] {
             let tag = UIButton(type: .system)
-            tag.setTitle(ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
-            tag.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
+            tag.setTitle("● " + ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
+            tag.titleLabel?.font = Utils.regularFont(size: DS.TextSize.pill)
             tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
-            tag.backgroundColor = UIColor(hexString: "FEE2E2")
-            tag.layer.cornerRadius = 6
-            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+            // Owner (2026-10-19): same look as the "Còn N" status: "●" + text in dark red, no background
+            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
             tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
             tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
             tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(28) }
@@ -550,15 +550,17 @@ final class CartV2ViewController: BaseViewControler {
         if !(isRent && conflicts[item.productId] != nil),
            let note = CartV2Logic.availabilityNote(item, in: cart.items, isRent: isRent) {
             let style = Self.shortageStyle(note.tone)
-            let warn = V2.label(" " + note.text + " ", size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
-            warn.accessibilityLabel = note.spoken // #1064: the pill is short; VoiceOver says which days / the stock
-            warn.numberOfLines = 0
-            warn.backgroundColor = style.colors.fill
-            warn.layer.cornerRadius = 6
-            warn.clipsToBounds = true
-            warn.setContentHuggingPriority(.required, for: .horizontal)
-            warn.setContentCompressionResistancePriority(.required, for: .horizontal)
-            nameRow.addArrangedSubview(warn)
+            // Owner (2026-10-19): no pill background; a round dot + text in the same colour. The dot is the "●" glyph in
+            // the same label (as on the home list), so it always sits right next to the text
+            let status = V2.label("● " + note.text, size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
+            status.numberOfLines = 0
+            status.textAlignment = .right
+            status.isAccessibilityElement = true
+            status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
+            status.setContentHuggingPriority(.required, for: .horizontal)
+            status.setContentCompressionResistancePriority(.required, for: .horizontal)
+            // right-aligned: the name takes the free width, the status sits on the trailing edge
+            nameRow.addArrangedSubview(status)
         }
 
         // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. #1064: a sale line's
@@ -659,8 +661,8 @@ final class CartV2ViewController: BaseViewControler {
         func title(alpha: CGFloat) -> NSAttributedString {
             let color = DS.Color.primary.withAlphaComponent(alpha)
             let text = NSMutableAttributedString(string: amount ?? "products.cart.pricing.enterPrice".localized(), attributes: [
-                NSAttributedString.Key.font: amount == nil ? Utils.boldFont(size: DS.TextSize.body)
-                    : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .bold),
+                NSAttributedString.Key.font: amount == nil ? Utils.mediumFont(size: DS.TextSize.body)
+                    : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .medium),
                 NSAttributedString.Key.foregroundColor: color,
             ])
             text.append(NSAttributedString(string: " / " + unit, attributes: [
@@ -1175,9 +1177,9 @@ extension CartV2ViewController {
     /// some units are free; the booked-out red in bold when none are
     static func shortageStyle(_ tone: CartV2Logic.ShortageTone) -> (colors: DS.Pill, weight: UIFont.Weight) {
         switch tone {
-        case .ok: return (DS.Status.done, .medium) // #1064: 2+ free and enough for the cart
-        case .low: return (DS.Status.waiting, .medium)
-        case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .bold)
+        case .ok: return (DS.Status.done, .regular) // #1064: 2+ free and enough for the cart
+        case .low: return (DS.Status.waiting, .regular)
+        case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .regular)
         }
     }
 }

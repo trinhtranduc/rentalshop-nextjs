@@ -211,6 +211,7 @@ final class V2Stepper: UIView {
 
     init(compact: Bool = false) {
         super.init(frame: .zero)
+        if compact { valueLabel.font = Utils.mediumFont(size: DS.TextSize.name) } // #1080: the cart line
         layer.cornerRadius = 10
         layer.borderWidth = 1
         layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
@@ -380,7 +381,7 @@ final class CartNoteEntry: UIControl {
         textLabel.numberOfLines = 0
         textLabel.lineBreakMode = .byWordWrapping
         textLabel.text = shown ?? emptyTitle
-        let font = shown == nil ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
+        let font = shown == nil ? Utils.mediumFont(size: DS.TextSize.secondary) : Utils.regularFont(size: DS.TextSize.secondary)
         textLabel.font = font
         textLabel.textColor = shown == nil ? DS.Color.primary : UIColor(hexString: "334155")
         // the pencil sits on the text's first line

@@ -2,7 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# #1087: openai (default, Xenova/clip-vit-base-patch32) or marqo-fashionclip (Marqo/marqo-fashionCLIP).
+# The same name must be set as the runtime variable CLIP_MODEL; a model not baked here is downloaded at start.
+ARG CLIP_MODEL=openai
+
 ENV PYTHONUNBUFFERED=1 \
+    CLIP_MODEL=${CLIP_MODEL} \
     OMP_NUM_THREADS=1 \
     OPENBLAS_NUM_THREADS=1 \
     MKL_NUM_THREADS=1 \
@@ -20,9 +25,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY python-embedding-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Bake CLIP ViT-B/32 vision ONNX (fp32, 512-dim image_embeds) into the image
+# Bake the chosen vision ONNX (fp32, 512-dim image_embeds) into the image
 # so cold start does not download ~350MB at runtime.
-RUN python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Xenova/clip-vit-base-patch32', filename='onnx/vision_model.onnx', local_dir='/models/clip-vit-base-patch32')"
+RUN python -c "import os; from huggingface_hub import hf_hub_download; \
+m = {'openai': ('Xenova/clip-vit-base-patch32', '/models/clip-vit-base-patch32'), \
+     'marqo-fashionclip': ('Marqo/marqo-fashionCLIP', '/models/marqo-fashionclip')}[os.environ['CLIP_MODEL']]; \
+hf_hub_download(repo_id=m[0], filename='onnx/vision_model.onnx', local_dir=m[1])"
 
 COPY python-embedding-service/app/ ./app/
 

@@ -42,6 +42,8 @@ final class ProductsHomeViewController: BaseViewControler {
     private let retryButton = UIButton(type: .system)
     /// #937: the cart (the bell moved to Cài đặt → Thông báo)
     private let cartButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+    /// #1079: with 2+ carts open, the cart in use above the tab bar
+    private let cartBar = CartSwitchBar()
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -201,6 +203,14 @@ final class ProductsHomeViewController: BaseViewControler {
             make.leading.trailing.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: list)
+        view.addSubview(cartBar)
+        cartBar.isHidden = true
+        cartBar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(10)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
+        }
+        cartBar.onSwitch = { [weak self] in self?.present(CartPickerSheet(), animated: true) }
+        cartBar.onOpen = { [weak self] in self?.openCart() }
         emptyLabel.textAlignment = .center
         view.addSubview(emptyLabel)
         emptyLabel.snp.makeConstraints { make in
@@ -279,7 +289,10 @@ final class ProductsHomeViewController: BaseViewControler {
 
     private func updateCartBar() {
         let cart = CartStore.shared.cart
-        list.contentInset.bottom = 16
+        let showsBar = CartSwitchBar.shouldShow(cartCount: CartStore.shared.carts.count, itemCount: cart.itemCount, isEditMode: cart.isEditMode)
+        cartBar.isHidden = !showsBar
+        if showsBar { cartBar.configure(cart: cart) }
+        list.contentInset.bottom = showsBar ? 88 : 16
         cartButton.badge = HomeCartButton.badge(itemCount: cart.itemCount)
         cartButton.accessibilityValue = HomeCartButton.accessibilityValue(itemCount: cart.itemCount)
     }
@@ -369,6 +382,11 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.pushViewController(detail, animated: true)
     }
 
+    fileprivate func removeFromCart(_ product: Product) {
+        ProductsCartBridge.removeOne(productId: ProductRowLogic.cartId(product))
+        HapticFeedback.light()
+    }
+
     fileprivate func addToCart(_ product: Product) {
         ProductsCartBridge.add(product)
         HapticFeedback.light()
@@ -382,7 +400,7 @@ final class ProductsHomeViewController: BaseViewControler {
 /// #937 (owner): the Home top-right cart button; the badge counts the cart's items.
 /// #952 (owner): it is the only entry to the cart (no floating cart bar)
 enum HomeCartButton {
-    static let symbol = "cart"
+    static let symbol = "basket"
     /// #893 (owner): no "added to cart" toast; the badge already says it
     static let showsAddedToast = false
 
@@ -398,6 +416,17 @@ enum HomeCartButton {
 
 /// Adds a product the same way the old Home does (price by the cart's order type)
 enum ProductsCartBridge {
+    /// #1084: the − of the row stepper: one unit less on the product's last line; the line goes at 0
+    static func removeOne(productId: Int) {
+        let items = CartStore.shared.cart.items
+        guard let index = items.lastIndex(where: { $0.productId == productId }) else { return }
+        if items[index].quantity > 1 {
+            CartStore.shared.updateQuantity(at: index, quantity: items[index].quantity - 1)
+        } else {
+            CartStore.shared.removeItem(at: index)
+        }
+    }
+
     static func add(_ product: Product) {
         let cart = CartStore.shared.cart
         let price = cart.orderType == .rent ? (product.rentPrice ?? product.rent) : (product.salePrice ?? product.sale)
@@ -422,6 +451,7 @@ extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate
         let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
         cell.bind(product, inCart: inCart)
         cell.onAdd = { [weak self] in self?.addToCart(product) }
+        cell.onRemove = { [weak self] in self?.removeFromCart(product) }
         // #472: the thumbnail opens the photo full screen; without a photo it opens detail like the row
         cell.onImage = { [weak self] in
             guard let self else { return }
@@ -456,6 +486,7 @@ extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate
             let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
             tile.bind(product, inCart: inCart)
             tile.onAdd = { [weak self] in self?.addToCart(product) }
+            tile.onRemove = { [weak self] in self?.removeFromCart(product) }
             tile.onImage = { [weak self] in
                 guard let self else { return }
                 if let request = ProductImages.thumbnailTap(product) {
@@ -503,18 +534,24 @@ final class ProductRowV2Cell: UITableViewCell {
     private let photo = V2.thumbnail(size: 68, radius: 12)
     /// #937: up to two lines, then "…" (Home only)
     private let nameLabel: UILabel = {
-        let label = V2.label(size: DS.TextSize.name, weight: .bold, lines: 2)
+        let label = V2.label(size: DS.TextSize.name, weight: .medium, lines: 2)
         label.lineBreakMode = .byTruncatingTail
         return label
     }()
     /// "● Còn N hôm nay" / "● Hết hôm nay": the colour carries the state (#468); 13pt semibold (#681)
-    private let stockLabel = V2.label(size: 13, weight: .semibold)
+    private let stockLabel = V2.label(size: 13, weight: .regular)
     private let priceLabel = V2.label(size: DS.TextSize.body, lines: 2)
     private let addButton = UIButton(type: .system)
     private let plusImage = DS.symbol("plus", DS.Icon.sm, weight: .semibold)
     /// #681: the + stays light until the product is in the cart
     private static let addFill = UIColor(hexString: "EFF4FF")
     var onAdd: (() -> Void)?
+    /// #1084: the − of the stepper shown once the product is in the cart
+    var onRemove: (() -> Void)?
+    private let minusButton = UIButton(type: .system)
+    private let plusButton = UIButton(type: .system)
+    private let countLabel = V2.label(size: DS.TextSize.name, weight: .medium, color: DS.Color.text)
+    private let stepper = UIStackView()
     /// A tap on the thumbnail (#472)
     var onImage: (() -> Void)?
     private lazy var photoTap = UITapGestureRecognizer(target: self, action: #selector(photoTapped))
@@ -539,7 +576,33 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.layer.cornerRadius = DS.touchTarget / 2 // #671: round
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
         addButton.snp.makeConstraints { make in make.width.height.equalTo(DS.touchTarget) }
-        let row = UIStackView(arrangedSubviews: [photo, texts, addButton])
+        // #1084: − n + once the product is in the cart. Mockup A (owner 2026-10-19): a thin grey outline on white, blue
+        // − and +, like the quantity box in the cart
+        for (button, symbol) in [(minusButton, "minus"), (plusButton, "plus")] {
+            button.setImage(DS.symbol(symbol, DS.Icon.sm, weight: .semibold), for: .normal)
+            button.tintColor = DS.Color.primary
+            button.snp.makeConstraints { make in make.width.equalTo(40); make.height.equalTo(DS.touchTarget) }
+        }
+        minusButton.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
+        plusButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
+        countLabel.textAlignment = .center
+        countLabel.setContentHuggingPriority(.required, for: .horizontal)
+        countLabel.snp.makeConstraints { make in make.width.greaterThanOrEqualTo(22) }
+        stepper.axis = .horizontal
+        stepper.alignment = .center
+        stepper.addArrangedSubview(minusButton)
+        stepper.addArrangedSubview(countLabel)
+        stepper.addArrangedSubview(plusButton)
+        stepper.backgroundColor = .white
+        stepper.layer.borderWidth = 1
+        stepper.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
+        stepper.layer.cornerRadius = DS.touchTarget / 2
+        stepper.isHidden = true
+        stepper.setContentHuggingPriority(.required, for: .horizontal)
+        stepper.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let trailing = UIStackView(arrangedSubviews: [addButton, stepper])
+        trailing.alignment = .center
+        let row = UIStackView(arrangedSubviews: [photo, texts, trailing])
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 12
@@ -608,6 +671,8 @@ final class ProductRowV2Cell: UITableViewCell {
         addButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
         switch ProductRowLogic.addState(free: free, inCart: inCart) {
         case .add, .out:
+            addButton.isHidden = false
+            stepper.isHidden = true
             // #671: out today still adds (another day can be rented), so the button keeps its colour.
             // #681: light until the product is in the cart
             addButton.setImage(plusImage, for: .normal)
@@ -617,18 +682,22 @@ final class ProductRowV2Cell: UITableViewCell {
             addButton.layer.borderWidth = 0
             addButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
         case .inCart(let count):
-            addButton.setImage(nil, for: .normal)
-            addButton.setTitle("\(count)", for: .normal)
-            // #681: solid primary once in the cart, against the light + of the other rows
-            addButton.backgroundColor = DS.Color.primary
-            addButton.tintColor = .white
-            addButton.layer.borderWidth = 0
-            addButton.accessibilityLabel = String(format: "products.add.inCart.accessibility".localized(), name, count)
+            // #1084 / #1090: the outlined − n + replaces the + once the product is in the cart
+            addButton.isHidden = true
+            stepper.isHidden = false
+            countLabel.text = "\(count)"
+            minusButton.accessibilityLabel = String(format: "products.stepper.minus".localized())
+            plusButton.accessibilityLabel = String(format: "products.add.accessibility".localized(), name)
+            countLabel.accessibilityLabel = String(format: "products.add.inCart.accessibility".localized(), name, count)
         }
     }
 
     @objc private func addTapped() {
         onAdd?()
+    }
+
+    @objc private func removeTapped() {
+        onRemove?()
     }
 
     @objc private func photoTapped() {

@@ -13,7 +13,17 @@ final class CartStore {
 
     private static let defaultsPrefix = "anyrent.draftCart."
 
-    private var storage = Cart()
+    /// #1079: at most this many carts are open at once
+    static let maxCarts = 10
+    private static let multiPrefix = "anyrent.draftCarts."
+
+    /// The open carts; `activeIndex` is the one the rest of the app reads and edits as `cart`
+    private(set) var carts: [Cart] = [Cart()]
+    private(set) var activeIndex = 0
+    private var storage: Cart {
+        get { carts[activeIndex] }
+        set { carts[activeIndex] = newValue }
+    }
     /// #480: note photos picked in the cart note editor (JPEG ~180KB each, at most `OrderDetailLogic.maxNotePhotos`),
     /// sent as `notesImages` when the order is created. Memory only: not in the draft saved to disk, so they are gone
     /// after an app restart. Cleared with the cart.
@@ -33,6 +43,7 @@ final class CartStore {
     }
 
     func replaceCart(with cart: Cart, notify: Bool = true) {
+        cart.number = storage.number
         storage = cart
         noteImageData = []
         persistToDiskNow()
@@ -41,8 +52,46 @@ final class CartStore {
         }
     }
 
+    /// Number of the cart that was in use when an order edit opened its own cart; closing the edit cart returns there
+    private var returnCartNumber: Int?
+
+    /// Edit an order. With a draft in the cart in use, the edit gets its own new cart and the draft stays; with an
+    /// empty cart (or while already editing) the cart in use is replaced as before. False when no cart is free.
+    @discardableResult
+    func startEditCart(_ cart: Cart, notify: Bool = true) -> Bool {
+        if storage.hasDraftContent && !storage.isEditMode {
+            guard carts.count < Self.maxCarts else { return false }
+            returnCartNumber = storage.number
+            cart.number = (1...(Self.maxCarts + 1)).first { n in !carts.contains { $0.number == n } } ?? carts.count + 1
+            carts.append(cart)
+            activeIndex = carts.count - 1
+            noteImageData = []
+            didChangeCarts(notify: notify)
+        } else {
+            replaceCart(with: cart, notify: notify)
+        }
+        return true
+    }
+
+    /// The cart in use is done (order created, cart cleared): it closes and the next one is used.
+    /// `persistToDisk: false` is a logout / test reset: every cart is dropped from memory.
     func resetCart(notify: Bool = true, persistToDisk: Bool = true) {
-        storage.clear()
+        guard persistToDisk else {
+            resetAllCarts(notify: notify, persistToDisk: false)
+            return
+        }
+        closeActiveCart()
+        noteImageData = []
+        persistToDiskNow()
+        if notify {
+            NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
+        }
+    }
+
+    /// Every cart is dropped (outlet switch, logout)
+    func resetAllCarts(notify: Bool = true, persistToDisk: Bool = true) {
+        carts = [Cart()]
+        activeIndex = 0
         noteImageData = []
         if persistToDisk {
             persistToDiskNow()
@@ -54,24 +103,139 @@ final class CartStore {
         }
     }
 
+    // MARK: - Several carts (#1079)
+
+    /// A new empty cart, used at once. False at the limit.
+    @discardableResult
+    func newCart(notify: Bool = true) -> Bool {
+        guard carts.count < Self.maxCarts else { return false }
+        let cart = Cart()
+        cart.number = (1...(Self.maxCarts + 1)).first { n in !carts.contains { $0.number == n } } ?? carts.count + 1
+        carts.append(cart)
+        activeIndex = carts.count - 1
+        noteImageData = []
+        didChangeCarts(notify: notify)
+        return true
+    }
+
+    func switchCart(to index: Int, notify: Bool = true) {
+        guard carts.indices.contains(index), index != activeIndex else { return }
+        activeIndex = index
+        noteImageData = []
+        didChangeCarts(notify: notify)
+    }
+
+    /// The cart at `index` is removed; with only one cart it is just emptied
+    func deleteCart(at index: Int, notify: Bool = true) {
+        guard carts.indices.contains(index) else { return }
+        if carts.count == 1 {
+            storage.clear()
+            storage.number = 1
+        } else {
+            carts.remove(at: index)
+            if index < activeIndex {
+                activeIndex -= 1
+            } else if activeIndex >= carts.count {
+                activeIndex = carts.count - 1
+            }
+        }
+        noteImageData = []
+        didChangeCarts(notify: notify)
+    }
+
+    private func closeActiveCart() {
+        if carts.count > 1 {
+            let wasEdit = storage.isEditMode
+            carts.remove(at: activeIndex)
+            activeIndex = min(activeIndex, carts.count - 1)
+            if wasEdit, let back = carts.firstIndex(where: { $0.number == returnCartNumber }) {
+                activeIndex = back
+            }
+            returnCartNumber = nil
+        } else {
+            storage.clear()
+            storage.number = 1
+        }
+    }
+
+    private func didChangeCarts(notify: Bool) {
+        persistToDiskNow()
+        if notify {
+            NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
+        }
+    }
+
+    /// Customer name, or "Giỏ k" while the cart has no customer yet
+    static func title(of cart: Cart) -> String {
+        if let name = customerName(of: cart) { return name }
+        return String(format: "cart.multi.title".localized(), cart.number)
+    }
+
+    /// Round avatar text: first letters of the first and last word of the customer name, else the cart number
+    static func avatarText(of cart: Cart) -> String {
+        guard let name = customerName(of: cart) else { return "\(cart.number)" }
+        let words = name.split(separator: " ")
+        guard let first = words.first?.first else { return "\(cart.number)" }
+        guard words.count > 1, let last = words.last?.first else { return String(first).uppercased() }
+        return (String(first) + String(last)).uppercased()
+    }
+
+    private static func customerName(of cart: Cart) -> String? {
+        guard let customer = cart.customer else { return nil }
+        let full = customer.full_name?.trimmingCharacters(in: .whitespaces) ?? ""
+        if !full.isEmpty { return full }
+        let joined = [customer.firstName, customer.lastName].compactMap { $0 }.joined(separator: " ")
+            .trimmingCharacters(in: .whitespaces)
+        return joined.isEmpty ? nil : joined
+    }
+
     func restoreFromDisk() {
         guard let userId = User.account()?.id, userId > 0 else { return }
-        guard let data = UserDefaults.standard.data(forKey: Self.key(for: userId)) else {
+        let defaults = UserDefaults.standard
+        guard let restored = Self.decodeSnapshot(multi: defaults.data(forKey: Self.multiKey(for: userId)),
+                                                 legacy: defaults.data(forKey: Self.key(for: userId))) else {
             hydratedUserId = userId
             return
         }
+        isRestoring = true
+        carts = restored.carts
+        activeIndex = restored.activeIndex
+        isRestoring = false
+        hydratedUserId = userId
+        NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
+    }
 
-        do {
-            let snapshot = try JSONDecoder().decode(Cart.DiskSnapshot.self, from: data)
-            isRestoring = true
-            storage.applyDiskSnapshot(snapshot)
-            isRestoring = false
-            hydratedUserId = userId
-            NotificationCenter.default.post(name: .cartStoreDidChange, object: storage)
-        } catch {
-            Swift.print("⚠️ Draft cart restore failed: \(error.localizedDescription)")
-            isRestoring = false
+    /// The saved carts: the new list, else an old single-cart draft as the first cart; nil when nothing readable
+    static func decodeSnapshot(multi: Data?, legacy: Data?) -> (carts: [Cart], activeIndex: Int)? {
+        if let multi, let saved = try? JSONDecoder().decode(MultiSnapshot.self, from: multi), !saved.carts.isEmpty {
+            let carts = saved.carts.prefix(maxCarts).map { snapshot -> Cart in
+                let cart = Cart()
+                cart.applyDiskSnapshot(snapshot)
+                return cart
+            }
+            return (Array(carts), min(max(saved.activeIndex, 0), carts.count - 1))
         }
+        if let legacy {
+            do {
+                let snapshot = try JSONDecoder().decode(Cart.DiskSnapshot.self, from: legacy)
+                let cart = Cart()
+                cart.applyDiskSnapshot(snapshot)
+                cart.number = 1
+                return ([cart], 0)
+            } catch {
+                Swift.print("⚠️ Draft cart restore failed: \(error.localizedDescription)")
+            }
+        }
+        return nil
+    }
+
+    static func encodeSnapshot(carts: [Cart], activeIndex: Int) throws -> Data {
+        try JSONEncoder().encode(MultiSnapshot(activeIndex: activeIndex, carts: carts.map { $0.makeDiskSnapshot() }))
+    }
+
+    private struct MultiSnapshot: Codable {
+        var activeIndex: Int
+        var carts: [Cart.DiskSnapshot]
     }
 
     func setCustomer(_ customer: Customer?) {
@@ -243,23 +407,30 @@ final class CartStore {
     func persistToDiskNow() {
         guard !isRestoring else { return }
         guard let userId = User.account()?.id, userId > 0 else { return }
-        let key = Self.key(for: userId)
-        guard storage.hasDraftContent else {
-            // Only delete the saved cart after this user was restored, or after
+        let key = Self.multiKey(for: userId)
+        // One empty cart is the default; only drafts worth keeping are saved
+        guard carts.contains(where: { $0.hasDraftContent }) || carts.count > 1 else {
+            // Only delete the saved carts after this user was restored, or after
             // an explicit clear / successful order (`resetCart(persistToDisk: true)`).
             guard hydratedUserId == userId else { return }
             UserDefaults.standard.removeObject(forKey: key)
+            UserDefaults.standard.removeObject(forKey: Self.key(for: userId))
             UserDefaults.standard.synchronize()
             return
         }
         do {
-            let data = try JSONEncoder().encode(storage.makeDiskSnapshot())
+            let data = try Self.encodeSnapshot(carts: carts, activeIndex: activeIndex)
             UserDefaults.standard.set(data, forKey: key)
+            UserDefaults.standard.removeObject(forKey: Self.key(for: userId))
             UserDefaults.standard.synchronize()
             hydratedUserId = userId
         } catch {
             Swift.print("⚠️ Draft cart persist failed: \(error.localizedDescription)")
         }
+    }
+
+    private static func multiKey(for userId: Int) -> String {
+        "\(multiPrefix)\(userId)"
     }
 
     private static func key(for userId: Int) -> String {

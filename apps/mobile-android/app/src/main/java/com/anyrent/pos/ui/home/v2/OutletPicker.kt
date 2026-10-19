@@ -186,7 +186,7 @@ fun OutletHeaderButton(modifier: Modifier = Modifier) {
 /** Applies a branch choice: drops the cart when asked, then every order and stock view reloads */
 object OutletSwitcher {
     fun switchTo(outletId: Int, clearCart: Boolean) {
-        if (clearCart) CartStore.clear()
+        if (clearCart) CartStore.clearAll()
         CurrentOutlet.select(outletId)
     }
 }

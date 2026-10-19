@@ -775,7 +775,21 @@
     "resultWouldQueue": "Would queue",
     "resultSkippedQueued": "Already waiting",
     "resultSkippedFailed": "Skipped (last job failed)",
+    "reindexAll": "Re-index everything",
+    "reindexConfirmTitle": "Re-index {count} products?",
+    "reindexConfirmBody": "Use after changing the image search model. Every product with photos gets a new embedding, also those that have one; the work runs in the background through the embedding cron.",
+    "resultUpgraded": "Waiting jobs switched to re-index",
     "loadFailed": "Could not load image search status",
-    "runFailed": "Could not queue embeddings"
+    "runFailed": "Could not queue embeddings",
+    "shopAll": "All shops",
+    "shopChosen": "Shop #{id} {name}",
+    "shopSearchPlaceholder": "Shop name or id",
+    "shopSearch": "Find",
+    "shopClear": "All shops",
+    "shopPick": "Choose",
+    "shopModelNote": "The image model is set for the whole system. After a model change, a shop that is not re-indexed is not found by image search.",
+    "shopPolling": "Updating this shop… {count} job(s) waiting. Refreshes every 15 s.",
+    "reindexShop": "Re-index this shop",
+    "resultProcessed": "Processed now: {processed} (done {completed}, failed {failed})"
   }
 }
