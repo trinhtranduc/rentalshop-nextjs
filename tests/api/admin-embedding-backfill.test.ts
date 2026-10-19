@@ -264,3 +264,60 @@ describe('POST backfill with all', () => {
   });
 });
 
+
+// #1089: one shop at a time — its jobs go first and can be processed in the request
+describe('POST backfill for one shop', () => {
+  it('new jobs of the chosen shop get priority 5; system-wide ones keep 1', async () => {
+    await POST(req('ADMIN', { merchantId: 20 }));
+    expect(store.jobs.map((j) => j.priority)).toEqual([5, 5]);
+    store.jobs = [];
+    await POST(req('ADMIN', {}));
+    expect(store.jobs.every((j) => j.priority === 1)).toBe(true);
+  });
+
+  it("raises that shop's waiting jobs to 5 and reports them; other shops untouched", async () => {
+    store.jobs.push({ id: 90, productId: 7, status: 'PENDING', priority: 1, createdAt: 0 });
+    store.jobs.push({ id: 91, productId: 1, status: 'PENDING', priority: 1, createdAt: 1 });
+    const res: any = await POST(req('ADMIN', { merchantId: 20 }));
+    expect(res.body.data).toMatchObject({ queued: 1, skippedAlreadyQueued: 1, prioritized: 1 });
+    expect(store.jobs.find((j) => j.id === 90)?.priority).toBe(5);
+    expect(store.jobs.find((j) => j.id === 91)?.priority).toBe(1);
+  });
+
+  it('dry run raises nothing; without merchantId prioritized is 0', async () => {
+    store.jobs.push({ id: 92, productId: 7, status: 'PENDING', priority: 1, createdAt: 0 });
+    const dry: any = await POST(req('ADMIN', { merchantId: 20, dryRun: true }));
+    expect(dry.body.data.prioritized).toBe(1);
+    expect(store.jobs.find((j) => j.id === 92)?.priority).toBe(1);
+    const all: any = await POST(req('ADMIN', { dryRun: true }));
+    expect(all.body.data.prioritized).toBe(0);
+  });
+
+  it('processSeconds runs that shop’s batches in the request until one processes nothing', async () => {
+    mockDb.embeddingJobs.processPending
+      .mockResolvedValueOnce({ queued: 5, processed: 5, completed: 4, failed: 1, skipped: 0 })
+      .mockResolvedValueOnce({ queued: 2, processed: 2, completed: 2, failed: 0, skipped: 0 })
+      .mockResolvedValueOnce({ queued: 0, processed: 0, completed: 0, failed: 0, skipped: 0 });
+    const res: any = await POST(req('ADMIN', { merchantId: 20, all: true, processSeconds: 45 }));
+    expect(res.status).toBe(200);
+    expect(mockDb.embeddingJobs.processPending).toHaveBeenCalledTimes(3);
+    expect(mockDb.embeddingJobs.processPending).toHaveBeenCalledWith({ batchSize: 5, merchantId: 20 });
+    expect(res.body.data.processing).toEqual({ batches: 3, processed: 7, completed: 6, failed: 1 });
+  });
+
+  it('processSeconds 0 or a dry run keeps the old kick and adds no processing', async () => {
+    const run: any = await POST(req('ADMIN', { merchantId: 20 }));
+    expect(run.body.data.processing).toBeUndefined();
+    expect(mockDb.embeddingJobs.processPending).toHaveBeenCalledWith({ batchSize: 3 });
+    jest.clearAllMocks();
+    const dry: any = await POST(req('ADMIN', { merchantId: 20, dryRun: true, processSeconds: 30 }));
+    expect(dry.body.data.processing).toBeUndefined();
+    expect(mockDb.embeddingJobs.processPending).not.toHaveBeenCalled();
+  });
+
+  it('rejects processSeconds out of 0–60 or not a number', async () => {
+    expect((await POST(req('ADMIN', { merchantId: 20, processSeconds: 61 }))).status).toBe(400);
+    expect((await POST(req('ADMIN', { merchantId: 20, processSeconds: -1 }))).status).toBe(400);
+    expect((await POST(req('ADMIN', { merchantId: 20, processSeconds: '30' }))).status).toBe(400);
+  });
+});
