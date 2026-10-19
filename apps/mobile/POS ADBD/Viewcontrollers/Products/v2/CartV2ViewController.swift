@@ -254,6 +254,10 @@ final class CartV2ViewController: BaseViewControler {
 
     // MARK: - Render
 
+    @objc private func switchCartTapped() {
+        present(CartPickerSheet(), animated: true)
+    }
+
     @objc private func cartChanged() {
         guard isViewLoaded, view.window != nil else { return }
         render()
@@ -272,6 +276,13 @@ final class CartV2ViewController: BaseViewControler {
         renderMoreMenu()
 
         content.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        // #1079: with 2+ carts open, "Giỏ · name · i/n · Đổi ⌄" opens the cart list
+        let store = CartStore.shared
+        if store.carts.count > 1, !cart.isEditMode {
+            let row = CartSwitchRow(cart: cart, position: store.activeIndex + 1, total: store.carts.count)
+            row.addTarget(self, action: #selector(switchCartTapped), for: .touchUpInside)
+            content.addArrangedSubview(row)
+        }
         content.addArrangedSubview(band())
         content.addArrangedSubview(customerRow())
         if isRent {

@@ -1077,7 +1077,7 @@ class InfoMainViewController: BaseViewControler {
     }
     
     func reset() {
-        CartStore.shared.resetCart()
+        CartStore.shared.resetAllCarts()
         
         // MARK: - Cache clear commented out
         // ProductAvailabilityCache.shared.clearAll()

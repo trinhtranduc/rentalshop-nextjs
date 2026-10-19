@@ -42,6 +42,8 @@ final class ProductsHomeViewController: BaseViewControler {
     private let retryButton = UIButton(type: .system)
     /// #937: the cart (the bell moved to Cài đặt → Thông báo)
     private let cartButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
+    /// #1079: with 2+ carts open, the cart in use above the tab bar
+    private let cartBar = CartSwitchBar()
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -201,6 +203,14 @@ final class ProductsHomeViewController: BaseViewControler {
             make.leading.trailing.bottom.equalToSuperview()
         }
         configPullToRefresh(tableview: list)
+        view.addSubview(cartBar)
+        cartBar.isHidden = true
+        cartBar.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(10)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-8)
+        }
+        cartBar.onSwitch = { [weak self] in self?.present(CartPickerSheet(), animated: true) }
+        cartBar.onOpen = { [weak self] in self?.openCart() }
         emptyLabel.textAlignment = .center
         view.addSubview(emptyLabel)
         emptyLabel.snp.makeConstraints { make in
@@ -279,7 +289,10 @@ final class ProductsHomeViewController: BaseViewControler {
 
     private func updateCartBar() {
         let cart = CartStore.shared.cart
-        list.contentInset.bottom = 16
+        let showsBar = CartStore.shared.carts.count > 1
+        cartBar.isHidden = !showsBar
+        if showsBar { cartBar.configure(cart: cart) }
+        list.contentInset.bottom = showsBar ? 88 : 16
         cartButton.badge = HomeCartButton.badge(itemCount: cart.itemCount)
         cartButton.accessibilityValue = HomeCartButton.accessibilityValue(itemCount: cart.itemCount)
     }
@@ -382,7 +395,7 @@ final class ProductsHomeViewController: BaseViewControler {
 /// #937 (owner): the Home top-right cart button; the badge counts the cart's items.
 /// #952 (owner): it is the only entry to the cart (no floating cart bar)
 enum HomeCartButton {
-    static let symbol = "cart"
+    static let symbol = "basket"
     /// #893 (owner): no "added to cart" toast; the badge already says it
     static let showsAddedToast = false
 

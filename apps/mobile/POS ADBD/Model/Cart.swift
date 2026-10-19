@@ -13,6 +13,8 @@ import Foundation
 class Cart {
     
     // MARK: - Properties
+    /// #1079: which "Giỏ k" this is among the open carts (names a cart with no customer yet)
+    var number: Int = 1
     var orderId: Int? // ID of order being edited (nil if creating new order)
     /// #676: the order as it was loaded for edit (number, dates, lines, paid); nil for a new order
     var editOriginal: CartEditOriginal?
@@ -296,6 +298,8 @@ class Cart {
         var loyaltyDiscountAmount: Double
         /// #676; absent in drafts saved before it
         var editOriginal: CartEditOriginal? = nil
+        /// #1079; absent in drafts saved before several carts existed
+        var number: Int? = nil
     }
 
     struct DiskCustomer: Codable {
@@ -341,11 +345,13 @@ class Cart {
             manualSecurityDeposit: manualSecurityDeposit,
             loyaltyRedeemPoints: loyaltyRedeemPoints,
             loyaltyDiscountAmount: loyaltyDiscountAmount,
-            editOriginal: editOriginal
+            editOriginal: editOriginal,
+            number: number
         )
     }
 
     func applyDiskSnapshot(_ snapshot: DiskSnapshot) {
+        number = snapshot.number ?? 1
         orderId = snapshot.orderId
         editOriginal = snapshot.orderId == nil ? nil : snapshot.editOriginal
         items = snapshot.items

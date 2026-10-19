@@ -650,7 +650,7 @@ class MainViewController: BaseViewControler {
     
     private func clean() {
         // Clear cart completely
-        CartStore.shared.resetCart()
+        CartStore.shared.resetAllCarts()
         
         // Clear availability cache when clearing cart
         ProductAvailabilityCache.shared.clearAll()

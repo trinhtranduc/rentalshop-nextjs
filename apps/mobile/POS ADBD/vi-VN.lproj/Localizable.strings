@@ -2755,3 +2755,17 @@
 
 /* #1067: discount above the order total */
 "cart.discount.tooHigh" = "Giảm giá không được lớn hơn tổng đơn (%@)";
+
+/* #1079 several carts */
+"cart.multi.title" = "Giỏ %d";
+"cart.multi.summary" = "%d món · %@";
+"cart.multi.view" = "Xem giỏ";
+"cart.multi.picker.title" = "Chọn giỏ";
+"cart.multi.picker.count" = "%d giỏ";
+"cart.multi.new" = "+ Giỏ mới";
+"cart.multi.noCustomer" = "chưa chọn khách";
+"cart.multi.row.label" = "Giỏ";
+"cart.multi.change" = "Đổi";
+"cart.multi.delete" = "Xoá";
+"cart.multi.delete.title" = "Xoá giỏ này?";
+"cart.multi.delete.message" = "%@ có %d món. Các món sẽ bị xoá.";

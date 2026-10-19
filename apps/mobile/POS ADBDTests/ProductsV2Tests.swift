@@ -863,7 +863,7 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(HomeCartButton.badge(itemCount: 3), "3")
         XCTAssertEqual(HomeCartButton.badge(itemCount: 99), "99")
         XCTAssertEqual(HomeCartButton.badge(itemCount: 140), "99")
-        XCTAssertEqual(HomeCartButton.symbol, "cart")
+        XCTAssertEqual(HomeCartButton.symbol, "basket")
     }
 }
 

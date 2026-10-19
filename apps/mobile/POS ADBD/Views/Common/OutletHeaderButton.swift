@@ -150,7 +150,7 @@ enum OutletSwitcher {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "outlet.switch.confirm.cancel".localized(), style: .cancel))
         alert.addAction(UIAlertAction(title: "outlet.switch.confirm.ok".localized(), style: .destructive) { _ in
-            CartStore.shared.resetCart()
+            CartStore.shared.resetAllCarts()
             current.select(outlet.id)
         })
         alert.view.accessibilityIdentifier = "outlet.switch.confirm"
