@@ -536,9 +536,11 @@ final class CartV2ViewController: BaseViewControler {
             tag.setTitle(ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
             tag.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
             tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
-            tag.backgroundColor = UIColor(hexString: "FEE2E2")
-            tag.layer.cornerRadius = 6
-            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+            // Owner (2026-10-19): same look as the "Còn N" status: a small round dot + text, no background
+            tag.setImage(DS.symbol("circle.fill", 8, weight: .regular), for: .normal)
+            tag.tintColor = UIColor(hexString: "991B1B")
+            tag.imageEdgeInsets = UIEdgeInsets(top: 0, left: -5, bottom: 0, right: 5)
+            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 5, bottom: 4, right: 0)
             tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
             tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
             tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(28) }
