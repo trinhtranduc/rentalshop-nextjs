@@ -122,7 +122,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
 
     if (!formData.accountNumber.trim()) {
       newErrors.accountNumber = t('form.errors.accountNumberRequired');
-    } else if (!/^\d{8,16}$/.test(formData.accountNumber)) {
+    } else if (!/^\d{6,16}$/.test(formData.accountNumber)) {
       newErrors.accountNumber = t('form.errors.accountNumberInvalid');
     }
 

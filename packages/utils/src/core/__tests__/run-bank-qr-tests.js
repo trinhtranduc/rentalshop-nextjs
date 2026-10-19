@@ -176,7 +176,7 @@ test('Validation: Invalid account number format', () => {
     assert(false, 'Should throw error for invalid account number');
   } catch (error) {
     assert(
-      error.message.includes('8-16 digits'),
+      error.message.includes('6-16 digits'),
       `Expected error about account number format, got: ${error.message}`
     );
     passed++;
