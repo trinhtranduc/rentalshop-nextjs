@@ -207,4 +207,29 @@ final class CartStoreMultiCartTests: XCTestCase {
         XCTAssertEqual(store.carts.count, CartStore.maxCarts)
         XCTAssertFalse(store.cart.isEditMode)
     }
+
+    // MARK: #1084 the − of the Home row stepper
+
+    private func line(_ productId: Int, qty: Int) -> CartItem {
+        CartItem(productId: productId, productName: "P\(productId)", barcode: nil, quantity: qty, price: 100, deposit: 0,
+                 originalRentPrice: 100, originalSalePrice: 0)
+    }
+
+    func testRemoveOneLowersTheQuantityThenDropsTheLine() {
+        store.addItem(line(7, qty: 2))
+        ProductsCartBridge.removeOne(productId: 7)
+        XCTAssertEqual(store.cart.items.first?.quantity, 1)
+        ProductsCartBridge.removeOne(productId: 7)
+        XCTAssertTrue(store.cart.items.isEmpty)
+        ProductsCartBridge.removeOne(productId: 7) // nothing left: no crash
+        XCTAssertTrue(store.cart.items.isEmpty)
+    }
+
+    func testRemoveOnlyTouchesThatProduct() {
+        store.addItem(line(1, qty: 1))
+        store.addItem(line(2, qty: 3))
+        ProductsCartBridge.removeOne(productId: 2)
+        XCTAssertEqual(store.cart.items.first { $0.productId == 2 }?.quantity, 2)
+        XCTAssertEqual(store.cart.items.first { $0.productId == 1 }?.quantity, 1)
+    }
 }
