@@ -1,0 +1,26 @@
+# Spec — #1095
+
+1. `GET /api/admin/embedding-jobs` (ADMIN): query `merchantId?`, `status` (PENDING|RUNNING|COMPLETED|FAILED,
+   default RUNNING), `since?` (ISO; default now − 24 h), `limit` 1–50 (default 50). Returns
+   `{ rows, counts, progress }`:
+   - `rows`: newest `updatedAt` first: jobId, productId, productName, thumbnail (first photo or null),
+     merchantId, merchantName, status, attempts, maxAttempts, updatedAt, lastError (≤ 300 chars).
+   - `counts`: jobs per status for the same shop and `updatedAt ≥ since`.
+   - `progress`: `{ since, total, done, running, failed, pending, completedLast10Min, etaMinutes }`;
+     `etaMinutes = ceil(pending / (completedLast10Min / 10))`, null when nothing completed in 10 min.
+   Ids are integer `EmbeddingJob.id` / `Product.id` / `Merchant.id` (no CUID on these models).
+1b. Paging and CSV (owner, same PR): `page` (≥ 1, default 1) skips `(page − 1) × limit` rows; the answer adds
+   `page`, `limit`, `total` (jobs of that status, same shop and since). `format=csv` returns `text/csv` (attachment)
+   for the whole tab: header `productId,productName,shop,status,attempts,updatedAt,lastError`, RFC 4180 quoting,
+   a value starting with `= + - @` gets a leading `'`, at most 10000 rows, read and streamed 1000 at a time.
+2. `GET /api/admin/embedding-backfill` adds `model { name, hfRepo, collection, reachable }`: python `/health`
+   (2 s timeout); collection from `QDRANT_COLLECTION_ENV` with the vector store's rule. Python down →
+   `reachable: false`, `name: null`. Old fields unchanged.
+3. Admin card (mockup `scratchpad/mcadmin.html`): model line; shop picker (as #1089); progress bar of the last
+   run (start time kept in state + localStorage after Re-index / Create, else last 24 h); 3 stats; tabs with
+   counts and a table (thumbnail, name linking `/merchants/:id/products/:productId`, shop, status, attempts,
+   updated, error); buttons at the bottom; refresh every 15 s only while pending + running > 0, one request
+   per endpoint per tick, stops on unmount / shop change. Under the table: "x–y / total", "Trang trước",
+   "Trang sau" (50 per page; tab or shop change goes back to page 1). "Tải CSV" downloads the open tab through
+   `systemApi.downloadEmbeddingJobsCsv` (authenticated fetch → Blob → download link).
+4. vi/en strings in `locales/{en,vi}/settings.json`.

@@ -3,7 +3,7 @@
  *
  * GET  /api/admin/embedding-backfill[?merchantId=N]
  *   ADMIN only. Counts for active, non-deleted products with images: withImages, missingEmbedding,
- *   withEmbedding; EmbeddingJob counts by status; top 10 merchants by missing count.
+ *   withEmbedding; EmbeddingJob counts by status; top 10 merchants by missing count; #1095 `model` in use.
  *
  * POST /api/admin/embedding-backfill  { merchantId?, includeFailed?, dryRun?, all? }
  *   ADMIN only. Queues one embedding job per product missing an embedding. Skips products with a
@@ -21,6 +21,7 @@ import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { z } from 'zod';
 import { getEmbeddingBackfillStatus, runEmbeddingBackfill } from '../../../../lib/embedding-backfill';
+import { getImageSearchModelInfo } from '../../../../lib/image-search-model';
 
 export const runtime = 'nodejs';
 
@@ -71,8 +72,9 @@ export const GET = withAdminOnly(async (request: NextRequest) => {
       return NextResponse.json(ResponseBuilder.error('MERCHANT_NOT_FOUND'), { status: 404 });
     }
 
-    const status = await getEmbeddingBackfillStatus(merchantId);
-    return NextResponse.json(ResponseBuilder.success('EMBEDDING_BACKFILL_STATUS', status));
+    // #1095: `model` (python /health + Qdrant collection) for the monitor's model line; additive
+    const [status, model] = await Promise.all([getEmbeddingBackfillStatus(merchantId), getImageSearchModelInfo()]);
+    return NextResponse.json(ResponseBuilder.success('EMBEDDING_BACKFILL_STATUS', { ...status, model }));
   } catch (error) {
     console.error('Error in GET /api/admin/embedding-backfill:', error);
     const { response, statusCode } = handleApiError(error);
