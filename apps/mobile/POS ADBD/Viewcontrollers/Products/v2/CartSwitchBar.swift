@@ -66,14 +66,8 @@ final class CartSwitchBar: UIView {
         layer.shadowOffset = CGSize(width: 0, height: 4)
         accessibilityIdentifier = "cart.switchBar"
 
-        let chevron = UIImageView(image: DS.symbol("chevron.down", 12, weight: .bold))
-        chevron.tintColor = DS.Color.textMuted
-        chevron.setContentHuggingPriority(.required, for: .horizontal)
         nameLabel.lineBreakMode = .byTruncatingTail
-        let nameRow = UIStackView(arrangedSubviews: [nameLabel, chevron])
-        nameRow.spacing = 4
-        nameRow.alignment = .center
-        let texts = UIStackView(arrangedSubviews: [nameRow, summaryLabel])
+        let texts = UIStackView(arrangedSubviews: [nameLabel, summaryLabel])
         texts.axis = .vertical
         texts.spacing = 2
         texts.isUserInteractionEnabled = false
@@ -81,14 +75,27 @@ final class CartSwitchBar: UIView {
         let switchArea = UIControl()
         switchArea.accessibilityIdentifier = "cart.switchBar.switch"
         switchArea.addTarget(self, action: #selector(switchTapped), for: .touchUpInside)
-        [avatar, texts].forEach(switchArea.addSubview)
+        // The picker affordance: a round grey button with the up/down chevrons, like the other pickers
+        let picker = UIView()
+        picker.backgroundColor = UIColor(hexString: "F1F5F9")
+        picker.layer.cornerRadius = 15
+        picker.isUserInteractionEnabled = false
+        let pickerIcon = UIImageView(image: DS.symbol("chevron.up.chevron.down", 12, weight: .bold))
+        pickerIcon.tintColor = DS.Color.primary
+        picker.addSubview(pickerIcon)
+        pickerIcon.snp.makeConstraints { $0.center.equalToSuperview() }
+        [avatar, texts, picker].forEach(switchArea.addSubview)
+        picker.snp.makeConstraints { make in
+            make.trailing.centerY.equalToSuperview()
+            make.size.equalTo(30)
+        }
         avatar.isUserInteractionEnabled = false
         avatar.snp.makeConstraints { make in
             make.leading.centerY.equalToSuperview()
         }
         texts.snp.makeConstraints { make in
             make.leading.equalTo(avatar.snp.trailing).offset(9)
-            make.trailing.lessThanOrEqualToSuperview()
+            make.trailing.lessThanOrEqualTo(picker.snp.leading).offset(-8)
             make.top.bottom.equalToSuperview()
         }
 
