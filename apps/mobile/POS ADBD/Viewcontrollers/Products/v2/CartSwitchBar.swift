@@ -38,6 +38,13 @@ enum CartSwitchText {
     static func summary(of cart: Cart) -> String {
         String(format: "cart.multi.summary".localized(), cart.itemCount, MoneyFormatter.format(cart.totalAmount))
     }
+
+    /// "15/10/26 → 18/10/26" for a rental cart with both days chosen, else nil
+    static func dates(of cart: Cart) -> String? {
+        guard cart.orderType == .rent else { return nil }
+        let state = CartDateRowLogic.state(pickup: cart.pickupPlanAt, return: cart.returnPlanAt)
+        return state.isEmpty ? nil : state.text
+    }
 }
 
 final class CartSwitchBar: UIView {
@@ -52,6 +59,7 @@ final class CartSwitchBar: UIView {
     private let avatar = CartAvatarView()
     private let nameLabel = V2.label(size: DS.TextSize.body, weight: .bold)
     private let summaryLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private let datesLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let openButton = UIButton(type: .system)
 
     override init(frame: CGRect) {
@@ -67,7 +75,7 @@ final class CartSwitchBar: UIView {
         accessibilityIdentifier = "cart.switchBar"
 
         nameLabel.lineBreakMode = .byTruncatingTail
-        let texts = UIStackView(arrangedSubviews: [nameLabel, summaryLabel])
+        let texts = UIStackView(arrangedSubviews: [nameLabel, summaryLabel, datesLabel])
         texts.axis = .vertical
         texts.spacing = 2
         texts.isUserInteractionEnabled = false
@@ -75,12 +83,12 @@ final class CartSwitchBar: UIView {
         let switchArea = UIControl()
         switchArea.accessibilityIdentifier = "cart.switchBar.switch"
         switchArea.addTarget(self, action: #selector(switchTapped), for: .touchUpInside)
-        // The picker affordance: a round grey button with the up/down chevrons, like the other pickers
+        // The picker affordance: a round grey button with a down chevron
         let picker = UIView()
         picker.backgroundColor = UIColor(hexString: "F1F5F9")
         picker.layer.cornerRadius = 15
         picker.isUserInteractionEnabled = false
-        let pickerIcon = UIImageView(image: DS.symbol("chevron.up.chevron.down", 12, weight: .bold))
+        let pickerIcon = UIImageView(image: DS.symbol("chevron.down", 13, weight: .bold))
         pickerIcon.tintColor = DS.Color.primary
         picker.addSubview(pickerIcon)
         pickerIcon.snp.makeConstraints { $0.center.equalToSuperview() }
@@ -132,6 +140,9 @@ final class CartSwitchBar: UIView {
         avatar.configure(cart: cart)
         nameLabel.text = CartStore.title(of: cart)
         summaryLabel.text = CartSwitchText.summary(of: cart)
+        let dates = CartSwitchText.dates(of: cart)
+        datesLabel.text = dates
+        datesLabel.isHidden = dates == nil
         accessibilityLabel = CartStore.title(of: cart)
     }
 

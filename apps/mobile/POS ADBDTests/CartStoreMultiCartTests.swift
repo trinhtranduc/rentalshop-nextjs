@@ -147,4 +147,16 @@ final class CartStoreMultiCartTests: XCTestCase {
         XCTAssertTrue(CartSwitchBar.shouldShow(cartCount: 2, itemCount: 0, isEditMode: false))
         XCTAssertFalse(CartSwitchBar.shouldShow(cartCount: 3, itemCount: 2, isEditMode: true))
     }
+
+    func testDatesShowOnlyForRentalWithBothDays() {
+        var cart = Cart()
+        XCTAssertNil(CartSwitchText.dates(of: cart))
+        cart.orderType = .rent
+        cart.pickupPlanAt = Date(timeIntervalSince1970: 1_760_000_000)
+        XCTAssertNil(CartSwitchText.dates(of: cart), "one day only")
+        cart.returnPlanAt = Date(timeIntervalSince1970: 1_760_259_200)
+        XCTAssertTrue(CartSwitchText.dates(of: cart)?.contains("→") == true)
+        cart.orderType = .sale
+        XCTAssertNil(CartSwitchText.dates(of: cart))
+    }
 }

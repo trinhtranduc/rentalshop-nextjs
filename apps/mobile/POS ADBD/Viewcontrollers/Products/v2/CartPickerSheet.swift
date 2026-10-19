@@ -126,6 +126,7 @@ private final class CartPickerCell: UITableViewCell {
     private let avatar = CartAvatarView(size: 40)
     private let nameLabel = V2.label(size: DS.TextSize.input, weight: .bold)
     private let infoLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private let datesLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
     private let check = UIImageView(image: DS.symbol("checkmark", 17, weight: .bold))
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -134,7 +135,7 @@ private final class CartPickerCell: UITableViewCell {
         nameLabel.lineBreakMode = .byTruncatingTail
         check.tintColor = DS.Color.primary
         check.setContentHuggingPriority(.required, for: .horizontal)
-        let texts = UIStackView(arrangedSubviews: [nameLabel, infoLabel])
+        let texts = UIStackView(arrangedSubviews: [nameLabel, infoLabel, datesLabel])
         texts.axis = .vertical
         texts.spacing = 3
         let row = UIStackView(arrangedSubviews: [avatar, texts, check])
@@ -154,6 +155,9 @@ private final class CartPickerCell: UITableViewCell {
         let kind = (cart.orderType == .rent ? "products.cart.rent" : "products.cart.sale").localized()
         infoLabel.text = kind + " · " + CartSwitchText.summary(of: cart)
             + (cart.customer == nil ? " · " + "cart.multi.noCustomer".localized() : "")
+        let dates = CartSwitchText.dates(of: cart)
+        datesLabel.text = dates
+        datesLabel.isHidden = dates == nil
         check.isHidden = !isActive
         contentView.backgroundColor = isActive ? UIColor(hexString: "EFF6FF") : .white
         accessibilityIdentifier = "cart.picker.row"
