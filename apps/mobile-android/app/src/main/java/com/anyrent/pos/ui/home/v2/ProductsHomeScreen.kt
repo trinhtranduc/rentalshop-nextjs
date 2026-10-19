@@ -27,7 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.ShoppingBasket
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Badge
@@ -117,6 +117,10 @@ fun ProductsHomeScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val lines by CartStore.lines.collectAsState()
+    // #1079: the cart bar floats above the bottom navigation; the list leaves room under it
+    CartStore.revision.collectAsState().value
+    val cartEditing by CartStore.editingOrderId.collectAsState()
+    val showsCartBar = CartBarLogic.shouldShow(CartStore.cartCount, lines.sumOf { it.quantity }, cartEditing != null)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var draft by remember { mutableStateOf(state.query) }
@@ -190,7 +194,7 @@ fun ProductsHomeScreen(
                     val cartBadge = ProductRowLogic.cartBadge(lines.sumOf { it.quantity })
                     IconButton(onClick = onOpenCart) {
                         BadgedBox(badge = { cartBadge?.let { Badge(containerColor = DS.Colors.Primary, contentColor = Color.White) { Text(it) } } }) {
-                            Icon(Icons.Outlined.ShoppingCart, contentDescription = stringResource(R.string.cart), modifier = Modifier.size(DS.Icon.Lg))
+                            Icon(Icons.Outlined.ShoppingBasket, contentDescription = stringResource(R.string.cart), modifier = Modifier.size(DS.Icon.Lg))
                         }
                     }
                 }
@@ -252,7 +256,7 @@ fun ProductsHomeScreen(
                     )
                     else -> LazyColumn(
                         state = listState,
-                        contentPadding = PaddingValues(bottom = 16.dp),
+                        contentPadding = PaddingValues(bottom = if (showsCartBar) 96.dp else 16.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
                         items(state.products, key = { it.id }) { product ->
@@ -281,7 +285,8 @@ fun ProductsHomeScreen(
             }
         }
 
-        // #952 (owner): no floating cart bar; the top-right cart button with its count is the only entry
+        // #1079: the cart bar (name, items, total, "Xem giỏ"); #952 removed the old floating bar, this one also switches carts
+        CartSwitchBar(onOpenCart = onOpenCart, modifier = Modifier.align(Alignment.BottomCenter))
     }
 
     if (showForm) {
@@ -393,7 +398,7 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
             // #681: name, price, stock — one fact per line, 8 dp apart
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
                 // #937: up to two lines, then "…" (Home only)
-                Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = ProductRowLogic.NAME_MAX_LINES, overflow = TextOverflow.Ellipsis)
+                Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = ProductRowLogic.NAME_MAX_LINES, overflow = TextOverflow.Ellipsis)
                 val unit = { mode: PricingMode -> if (mode == PricingMode.PER_DAY) unitDay else unitRental }
                 val text = buildAnnotatedString {
                     val muted = SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
@@ -416,8 +421,8 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
                 Text(
                     "● " + if (free > 0) stringResource(R.string.v2_stock_free, free) else stringResource(R.string.v2_stock_none_today),
                     fontSize = 13.sp,
-                    // #468: the colour carries the state; #681: 13 semibold
-                    fontWeight = FontWeight.SemiBold,
+                    // #468: the colour carries the state; #1080 (owner): regular weight
+                    fontWeight = FontWeight.Normal,
                     color = when {
                         free <= 0 -> V2Colors.Danger
                         free == 1 -> V2Colors.Warn

@@ -2067,4 +2067,26 @@
     <string name="v2_cart_left">%1$d left</string>
     <string name="v2_cart_only_left">Only %1$d left</string>
     <string name="v2_cart_booked_out">Booked out</string>
+
+    <!-- #1079 several carts -->
+    <string name="v2_cart_multi_title">Cart %1$d</string>
+    <string name="v2_cart_multi_view">View cart</string>
+    <string name="v2_cart_multi_picker_title">Choose cart</string>
+    <string name="v2_cart_multi_new">+ New cart</string>
+    <string name="v2_cart_multi_no_customer">no customer yet</string>
+    <string name="v2_cart_multi_row_label">Cart</string>
+    <string name="v2_cart_multi_change">Change</string>
+    <string name="v2_cart_multi_delete">Delete</string>
+    <string name="v2_cart_multi_delete_title">Delete this cart?</string>
+    <string name="v2_cart_multi_delete_message">%1$s has %2$d items. The items will be removed.</string>
+    <string name="v2_cart_multi_limit">10 carts are open. Close one before editing an order.</string>
+    <string name="v2_cart_multi_edit_title">Edit order #%1$s</string>
+    <plurals name="v2_cart_multi_summary">
+        <item quantity="one">%1$d item · %2$s</item>
+        <item quantity="other">%1$d items · %2$s</item>
+    </plurals>
+    <plurals name="v2_cart_multi_picker_count">
+        <item quantity="one">%1$d cart</item>
+        <item quantity="other">%1$d carts</item>
+    </plurals>
 </resources>

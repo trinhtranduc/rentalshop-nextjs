@@ -161,7 +161,7 @@ internal fun V2Stepper(value: Int, onChange: (Int) -> Unit, minimum: Int = 0, co
                 .semantics { contentDescription = minus; role = Role.Button },
             contentAlignment = Alignment.Center,
         ) { Text("−", fontSize = 20.sp, color = if (value > minimum) DS.Colors.Text else DS.Colors.TextMuted) }
-        Text("$value", fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 28.dp))
+        Text("$value", fontSize = DS.TextSize.Name, fontWeight = if (compact) FontWeight.Medium else FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 28.dp))
         Box(
             Modifier
                 .size(width = 44.dp, height = if (compact) 38.dp else 44.dp)

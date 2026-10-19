@@ -287,7 +287,7 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 row.order.customerName?.takeIf { it.isNotBlank() } ?: row.order.orderNumber,
-                fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, maxLines = 1,
+                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = 1,
                 overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
             Text(
@@ -326,7 +326,7 @@ private fun DayRow(row: CalendarDayRow, onClick: () -> Unit) {
                 }
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(formatMoneyVnd(row.order.totalAmount), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                Text(formatMoneyVnd(row.order.totalAmount), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text)
                 // Board Lich: late days (+ stored fee), else what to give back or still to collect (#390)
                 val note = when (val n = CalendarLogic.note(row)) {
                     is CalendarNote.Late -> {

@@ -2040,4 +2040,24 @@
     <string name="v2_cart_left">Còn %1$d</string>
     <string name="v2_cart_only_left">Chỉ còn %1$d</string>
     <string name="v2_cart_booked_out">Hết đồ</string>
+
+    <!-- #1079 several carts -->
+    <string name="v2_cart_multi_title">Giỏ %1$d</string>
+    <string name="v2_cart_multi_view">Xem giỏ</string>
+    <string name="v2_cart_multi_picker_title">Chọn giỏ</string>
+    <string name="v2_cart_multi_new">+ Giỏ mới</string>
+    <string name="v2_cart_multi_no_customer">chưa chọn khách</string>
+    <string name="v2_cart_multi_row_label">Giỏ</string>
+    <string name="v2_cart_multi_change">Đổi</string>
+    <string name="v2_cart_multi_delete">Xoá</string>
+    <string name="v2_cart_multi_delete_title">Xoá giỏ này?</string>
+    <string name="v2_cart_multi_delete_message">%1$s có %2$d món. Các món sẽ bị xoá.</string>
+    <string name="v2_cart_multi_limit">Đang mở 10 giỏ. Hãy đóng bớt một giỏ rồi sửa đơn.</string>
+    <string name="v2_cart_multi_edit_title">Sửa đơn #%1$s</string>
+    <plurals name="v2_cart_multi_summary">
+        <item quantity="other">%1$d món · %2$s</item>
+    </plurals>
+    <plurals name="v2_cart_multi_picker_count">
+        <item quantity="other">%1$d giỏ</item>
+    </plurals>
 </resources>

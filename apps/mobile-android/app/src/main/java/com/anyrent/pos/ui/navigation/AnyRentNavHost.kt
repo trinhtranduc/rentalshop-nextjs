@@ -797,7 +797,13 @@ internal suspend fun loadOrderIntoCart(orderId: Int): Result<Unit> {
     val detail = withContext(Dispatchers.IO) { ApiClient.get().getOrder(orderId) }
         .getOrElse { return Result.failure(Exception(it.message ?: "Could not load order", it)) }
     return runCatching { CartStore.loadFromOrderDetail(detail) }
-        .recoverCatching { throw Exception(it.message ?: "Could not load order into cart", it) }
+        .recoverCatching {
+            // #1079: all 10 carts are open
+            if (it is com.anyrent.pos.data.CartLimitException) {
+                throw Exception(com.anyrent.pos.AnyRentApp.instance?.getString(R.string.v2_cart_multi_limit) ?: "cart_limit", it)
+            }
+            throw Exception(it.message ?: "Could not load order into cart", it)
+        }
 }
 
 @Composable
