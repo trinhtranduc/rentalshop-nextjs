@@ -3,7 +3,7 @@
 //  POS ADBD
 //
 //  #1079 several carts: the bar above the tab bar on Home while 2+ carts are open (avatar, cart name, "N món · total",
-//  "Xem giỏ ›"), the round avatar, and the "Giỏ · name · i/n · Đổi ⌄" row on the cart screen.
+//  "Xem giỏ" + chevron), the round avatar, and the "Giỏ · name · i/n · Đổi" + chevron row on the cart screen.
 //
 
 import UIKit
@@ -66,7 +66,7 @@ final class CartSwitchBar: UIView {
         layer.shadowOffset = CGSize(width: 0, height: 4)
         accessibilityIdentifier = "cart.switchBar"
 
-        let chevron = UIImageView(image: DS.symbol("chevron.down", 11, weight: .semibold))
+        let chevron = UIImageView(image: DS.symbol("chevron.down", 12, weight: .bold))
         chevron.tintColor = DS.Color.textMuted
         chevron.setContentHuggingPriority(.required, for: .horizontal)
         nameLabel.lineBreakMode = .byTruncatingTail
@@ -92,7 +92,11 @@ final class CartSwitchBar: UIView {
             make.top.bottom.equalToSuperview()
         }
 
-        openButton.setTitle("cart.multi.view".localized() + " ›", for: .normal)
+        openButton.setTitle("cart.multi.view".localized(), for: .normal)
+        openButton.setImage(DS.symbol("chevron.right", 12, weight: .bold), for: .normal)
+        openButton.tintColor = .white
+        openButton.semanticContentAttribute = .forceRightToLeft
+        openButton.imageEdgeInsets = UIEdgeInsets(top: 0, left: 5, bottom: 0, right: -5)
         openButton.setTitleColor(.white, for: .normal)
         openButton.titleLabel?.font = Utils.boldFont(size: 13.5)
         openButton.backgroundColor = DS.Color.primary
@@ -139,8 +143,14 @@ final class CartSwitchRow: UIControl {
         name.lineBreakMode = .byTruncatingTail
         name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let count = V2.label("\(position)/\(total)", size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        let change = V2.label("cart.multi.change".localized() + " ⌄", size: DS.TextSize.body, weight: .bold, color: DS.Color.primary)
-        let row = UIStackView(arrangedSubviews: [caption, name, UIView(), count, change])
+        let change = V2.label("cart.multi.change".localized(), size: DS.TextSize.body, weight: .bold, color: DS.Color.primary)
+        let changeChevron = UIImageView(image: DS.symbol("chevron.down", 12, weight: .bold))
+        changeChevron.tintColor = DS.Color.primary
+        changeChevron.setContentHuggingPriority(.required, for: .horizontal)
+        let changeStack = UIStackView(arrangedSubviews: [change, changeChevron])
+        changeStack.spacing = 3
+        changeStack.alignment = .center
+        let row = UIStackView(arrangedSubviews: [caption, name, UIView(), count, changeStack])
         row.spacing = 8
         row.alignment = .center
         row.isUserInteractionEnabled = false
