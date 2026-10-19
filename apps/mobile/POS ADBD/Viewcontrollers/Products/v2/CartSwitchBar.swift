@@ -41,6 +41,11 @@ enum CartSwitchText {
 }
 
 final class CartSwitchBar: UIView {
+    /// #1079: the bar shows with 2+ carts, or with 1 cart that has items (that is how a second cart is started). Never while editing an order.
+    static func shouldShow(cartCount: Int, itemCount: Int, isEditMode: Bool) -> Bool {
+        !isEditMode && (cartCount > 1 || itemCount > 0)
+    }
+
     var onSwitch: (() -> Void)?
     var onOpen: (() -> Void)?
 

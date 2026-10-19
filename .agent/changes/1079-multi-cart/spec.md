@@ -4,8 +4,8 @@ Mockup: artifact 9b56KwErJWiGpiyFEfyEY4, tab "Nhiều giỏ hàng", Cách 1.
 
 ## Quy tắc
 1. `CartStore` giữ danh sách giỏ + giỏ đang dùng. Mọi chỗ đang đọc `CartStore.cart` đọc giỏ đang dùng (không đổi chỗ gọi).
-2. Có đúng 1 giỏ: giao diện giống hiện nay.
-3. Từ 2 giỏ, Trang chủ có thanh giỏ trên thanh tab: avatar (chữ cái đầu khách, hoặc số thứ tự nếu chưa có khách), tên giỏ 1 dòng cắt "…", "N món · tổng tiền", nút "Xem giỏ ›".
+2. Có đúng 1 giỏ và giỏ trống: giao diện giống hiện nay. Có 1 giỏ nhưng đã có món: thanh giỏ vẫn hiện (đây là cách tạo giỏ thứ hai).
+3. Từ 2 giỏ, hoặc 1 giỏ có món (không phải lúc sửa đơn), Trang chủ có thanh giỏ trên thanh tab: avatar (chữ cái đầu khách, hoặc số thứ tự nếu chưa có khách), tên giỏ 1 dòng cắt "…", "N món · tổng tiền", nút "Xem giỏ ›".
 4. Bấm tên giỏ: bảng "Chọn giỏ" liệt kê các giỏ (tên, loại, số món, tổng tiền, ngày), giỏ đang dùng có dấu ✓, nút "+ Giỏ mới". Chọn một dòng: đổi giỏ và đóng bảng.
 5. Bấm "Xem giỏ": mở màn giỏ như hiện nay. Từ 2 giỏ, đầu màn giỏ có hàng "Giỏ · tên · i/n · Đổi ⌄" mở cùng bảng chọn giỏ.
 6. Giỏ chưa có khách tên "Giỏ k" (k = số thứ tự giỏ nhỏ nhất chưa dùng). Có khách thì tên = tên khách.

@@ -289,7 +289,7 @@ final class ProductsHomeViewController: BaseViewControler {
 
     private func updateCartBar() {
         let cart = CartStore.shared.cart
-        let showsBar = CartStore.shared.carts.count > 1
+        let showsBar = CartSwitchBar.shouldShow(cartCount: CartStore.shared.carts.count, itemCount: cart.itemCount, isEditMode: cart.isEditMode)
         cartBar.isHidden = !showsBar
         if showsBar { cartBar.configure(cart: cart) }
         list.contentInset.bottom = showsBar ? 88 : 16
