@@ -2757,3 +2757,18 @@
 
 /* #1067: discount above the order total */
 "cart.discount.tooHigh" = "Discount can't be more than the order total (%@)";
+
+/* #1079 several carts */
+"cart.multi.title" = "Cart %d";
+"cart.multi.summary" = "%d items · %@";
+"cart.multi.view" = "View cart";
+"cart.multi.picker.title" = "Choose cart";
+"cart.multi.picker.count" = "%d carts";
+"cart.multi.new" = "+ New cart";
+"cart.multi.noCustomer" = "no customer yet";
+"cart.multi.row.label" = "Cart";
+"cart.multi.change" = "Change";
+"cart.multi.delete" = "Delete";
+"cart.multi.delete.title" = "Delete this cart?";
+"cart.multi.delete.message" = "%@ has %d items. They will be removed.";
+"cart.multi.limit" = "10 carts are open. Close one before editing an order.";
