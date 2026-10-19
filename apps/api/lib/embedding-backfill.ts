@@ -17,6 +17,8 @@ export const BACKFILL_SOURCE = 'admin-backfill';
 /** #1087: re-embed even with a recent embedding (the job runner forces this source past the cooldown) */
 export const REINDEX_SOURCE = 'manual-force';
 export const BACKFILL_PRIORITY = 1;
+/** #1089: jobs of a shop chosen in the admin card run before the system-wide backfill */
+export const MERCHANT_PRIORITY = 5;
 
 type Candidate = { id: number; merchantId: number; hasEmbedding: boolean };
 
@@ -97,6 +99,8 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
 
   const toQueue: Candidate[] = [];
   const toUpgrade: number[] = [];
+  /** #1089: waiting jobs of the chosen shop, raised to MERCHANT_PRIORITY */
+  const toRaise: number[] = [];
   let skippedAlreadyQueued = 0;
   let skippedFailed = 0;
 
@@ -117,6 +121,7 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
       if (!latest.has(job.productId)) latest.set(job.productId, job.status);
     }
     for (const c of batch) {
+      if (merchantId && pending.has(c.id)) toRaise.push(c.id);
       if (all && pending.has(c.id)) toUpgrade.push(c.id);
       else if (active.has(c.id)) skippedAlreadyQueued += 1;
       else if (all) toQueue.push(c);
@@ -125,7 +130,14 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
     }
   }
 
+  const priority = merchantId ? MERCHANT_PRIORITY : BACKFILL_PRIORITY;
   if (!dryRun) {
+    for (const ids of chunks(toRaise, WRITE_BATCH)) {
+      await prisma.embeddingJob.updateMany({
+        where: { productId: { in: ids }, status: 'PENDING' },
+        data: { priority: MERCHANT_PRIORITY },
+      });
+    }
     for (const ids of chunks(toUpgrade, WRITE_BATCH)) {
       await prisma.embeddingJob.updateMany({
         where: { productId: { in: ids }, status: 'PENDING' },
@@ -137,7 +149,7 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
         data: batch.map((c) => ({
           productId: c.id,
           source: all ? REINDEX_SOURCE : BACKFILL_SOURCE,
-          priority: BACKFILL_PRIORITY,
+          priority,
           status: 'PENDING',
         })),
       });
@@ -154,5 +166,6 @@ export async function runEmbeddingBackfill(options: BackfillOptions) {
     skippedAlreadyQueued,
     skippedFailed,
     upgradedPending: toUpgrade.length,
+    prioritized: toRaise.length,
   };
 }

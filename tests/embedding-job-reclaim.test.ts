@@ -65,3 +65,12 @@ it('does not count a job that finished between the read and the update', async (
 
   expect(await simplifiedEmbeddingJobs.reclaimStale({ now })).toEqual({ reclaimed: 0, failed: 0 });
 });
+
+// #1089: process one shop's jobs only
+it('processPending with merchantId reads only that merchant’s jobs; without it, unchanged', async () => {
+  mockJobs.findMany.mockResolvedValue([]);
+  await simplifiedEmbeddingJobs.processPending({ batchSize: 5, merchantId: 20 });
+  expect(mockJobs.findMany.mock.calls[0][0].where.product).toEqual({ merchantId: 20 });
+  await simplifiedEmbeddingJobs.processPending({ batchSize: 5 });
+  expect(mockJobs.findMany.mock.calls[1][0].where.product).toBeUndefined();
+});

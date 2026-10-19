@@ -780,6 +780,16 @@
     "reindexConfirmBody": "Dùng khi đổi model tìm bằng ảnh. Mọi sản phẩm có ảnh được tạo lại embedding, kể cả sản phẩm đã có; tác vụ chạy nền qua cron embedding.",
     "resultUpgraded": "Job đang chờ chuyển sang tạo lại",
     "loadFailed": "Không tải được trạng thái tìm bằng ảnh",
-    "runFailed": "Không tạo được embedding"
+    "runFailed": "Không tạo được embedding",
+    "shopAll": "Tất cả shop",
+    "shopChosen": "Shop #{id} {name}",
+    "shopSearchPlaceholder": "Tên hoặc mã shop",
+    "shopSearch": "Tìm",
+    "shopClear": "Tất cả shop",
+    "shopPick": "Chọn",
+    "shopModelNote": "Model tìm bằng ảnh đặt cho cả hệ thống. Sau khi đổi model, shop chưa được đánh index lại sẽ không tìm thấy bằng ảnh.",
+    "shopPolling": "Đang cập nhật shop này… còn {count} tác vụ chờ. Tự tải lại mỗi 15 giây.",
+    "reindexShop": "Đánh index lại shop này",
+    "resultProcessed": "Đã xử lý ngay: {processed} (xong {completed}, lỗi {failed})"
   }
 }
