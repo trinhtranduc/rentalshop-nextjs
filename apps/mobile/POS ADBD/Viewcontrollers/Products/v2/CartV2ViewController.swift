@@ -533,14 +533,11 @@ final class CartV2ViewController: BaseViewControler {
 
         if isRent, let conflict = conflicts[item.productId] {
             let tag = UIButton(type: .system)
-            tag.setTitle(ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
+            tag.setTitle("● " + ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
             tag.titleLabel?.font = Utils.boldFont(size: DS.TextSize.pill)
             tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
-            // Owner (2026-10-19): same look as the "Còn N" status: a small round dot + text, no background
-            tag.setImage(DS.symbol("circle.fill", 8, weight: .regular), for: .normal)
-            tag.tintColor = UIColor(hexString: "991B1B")
-            tag.imageEdgeInsets = UIEdgeInsets(top: 0, left: -5, bottom: 0, right: 5)
-            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 5, bottom: 4, right: 0)
+            // Owner (2026-10-19): same look as the "Còn N" status: "●" + text in dark red, no background
+            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
             tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
             tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
             tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(28) }
@@ -553,17 +550,11 @@ final class CartV2ViewController: BaseViewControler {
         if !(isRent && conflicts[item.productId] != nil),
            let note = CartV2Logic.availabilityNote(item, in: cart.items, isRent: isRent) {
             let style = Self.shortageStyle(note.tone)
-            // Owner (2026-10-19): no pill background; a small round dot + text in the same colour
-            let warn = V2.label(note.text, size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
-            warn.numberOfLines = 0
-            warn.textAlignment = .right
-            let dot = UIView()
-            dot.backgroundColor = style.colors.text
-            dot.layer.cornerRadius = 4
-            dot.snp.makeConstraints { make in make.size.equalTo(8) }
-            let status = UIStackView(arrangedSubviews: [dot, warn])
-            status.spacing = 5
-            status.alignment = .center
+            // Owner (2026-10-19): no pill background; a round dot + text in the same colour. The dot is the "●" glyph in
+            // the same label (as on the home list), so it always sits right next to the text
+            let status = V2.label("● " + note.text, size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
+            status.numberOfLines = 0
+            status.textAlignment = .right
             status.isAccessibilityElement = true
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
             status.setContentHuggingPriority(.required, for: .horizontal)
