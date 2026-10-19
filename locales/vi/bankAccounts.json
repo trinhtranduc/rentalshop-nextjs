@@ -8,7 +8,7 @@
     "accountHolderName": "Tên chủ tài khoản",
     "accountHolderNamePlaceholder": "Nhập tên chủ tài khoản",
     "accountNumber": "Số tài khoản",
-    "accountNumberPlaceholder": "Nhập số tài khoản (8-16 chữ số)",
+    "accountNumberPlaceholder": "Nhập số tài khoản (6-16 chữ số)",
     "bankName": "Tên ngân hàng",
     "bankNamePlaceholder": "Chọn ngân hàng",
     "bankCode": "Mã ngân hàng",
@@ -26,7 +26,7 @@
     "errors": {
       "accountHolderNameRequired": "Tên chủ tài khoản là bắt buộc",
       "accountNumberRequired": "Số tài khoản là bắt buộc",
-      "accountNumberInvalid": "Số tài khoản phải có 8-16 chữ số",
+      "accountNumberInvalid": "Số tài khoản phải có 6-16 chữ số",
       "bankNameRequired": "Tên ngân hàng là bắt buộc"
     }
   },

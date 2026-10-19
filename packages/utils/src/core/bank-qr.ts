@@ -463,9 +463,9 @@ export function validateBankAccountInfo(info: BankAccountInfo): {
     errors.push('Bank name is required');
   }
   
-  // Validate account number format (should be numeric, 8-16 digits)
-  if (info.accountNumber && !/^\d{8,16}$/.test(info.accountNumber)) {
-    errors.push('Account number should be 8-16 digits');
+  // Validate account number format (should be numeric, 6-16 digits)
+  if (info.accountNumber && !/^\d{6,16}$/.test(info.accountNumber)) {
+    errors.push('Account number should be 6-16 digits');
   }
   
   return {
@@ -743,9 +743,9 @@ export function generateVietQRString(
     throw new Error(`Bank BIN code not found for bank: ${bankName || bankCode || 'unknown'}`);
   }
   
-  // Validate account number (should be numeric, 8-16 digits)
-  if (!/^\d{8,16}$/.test(accountNumber)) {
-    throw new Error('Account number must be 8-16 digits');
+  // Validate account number (should be numeric, 6-16 digits)
+  if (!/^\d{6,16}$/.test(accountNumber)) {
+    throw new Error('Account number must be 6-16 digits');
   }
 
   // Only include amount if > 0

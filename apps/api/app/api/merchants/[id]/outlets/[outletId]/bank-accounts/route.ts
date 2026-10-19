@@ -17,7 +17,7 @@ import { z } from 'zod';
  */
 const bankAccountSchema = z.object({
   accountHolderName: z.string().min(1, 'Account holder name is required'),
-  accountNumber: z.string().min(8, 'Account number must be at least 8 digits').max(16, 'Account number must be at most 16 digits'),
+  accountNumber: z.string().min(6, 'Account number must be at least 6 digits').max(16, 'Account number must be at most 16 digits'),
   bankName: z.string().min(1, 'Bank name is required'),
   bankCode: z.string().optional(),
   branch: z.string().optional(),
