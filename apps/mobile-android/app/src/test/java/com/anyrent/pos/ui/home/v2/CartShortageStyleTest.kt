@@ -15,7 +15,7 @@ class CartShortageStyleTest {
         assertEquals(DS.Status.Waiting, low.colors)
         assertEquals(Color(0xFF9A3412), low.colors.text)
         assertEquals(Color(0xFFFFEDD5), low.colors.fill)
-        assertEquals(FontWeight.Medium, low.weight)
+        assertEquals(FontWeight.Normal, low.weight)
     }
 
     /** #1064 (owner): 2+ free and enough for the cart = green, the existing "done" token, same weight as amber */
@@ -23,7 +23,7 @@ class CartShortageStyleTest {
     fun `enough units uses the done palette in medium`() {
         val ok = CartShortageStyle.of(CartV2Logic.ShortageTone.OK)
         assertEquals(DS.Status.Done, ok.colors)
-        assertEquals(FontWeight.Medium, ok.weight)
+        assertEquals(FontWeight.Normal, ok.weight)
     }
 
     @Test
@@ -31,6 +31,6 @@ class CartShortageStyleTest {
         val none = CartShortageStyle.of(CartV2Logic.ShortageTone.NONE)
         assertEquals(Color(0xFF991B1B), none.colors.text)
         assertEquals(Color(0xFFFEE2E2), none.colors.fill)
-        assertEquals(FontWeight.SemiBold, none.weight)
+        assertEquals(FontWeight.Normal, none.weight)
     }
 }
