@@ -42,6 +42,17 @@ const mockPrisma = {
         .sort((a, b) => a.productId - b.productId || b.createdAt - a.createdAt)
         .map(({ productId, status }) => ({ productId, status })),
     ),
+    // #1087: `all` turns a waiting job into a forced re-embed instead of adding a second one
+    updateMany: jest.fn(async ({ where, data }: any) => {
+      let count = 0;
+      for (const j of store.jobs) {
+        if (where.productId.in.includes(j.productId) && j.status === where.status) {
+          Object.assign(j, data);
+          count += 1;
+        }
+      }
+      return { count };
+    }),
     createMany: jest.fn(async ({ data }: any) => {
       for (const row of data) store.jobs.push({ id: ++store.seq, createdAt: store.seq, ...row });
       return { count: data.length };
@@ -208,3 +219,48 @@ describe('POST backfill', () => {
     expect(mockPrisma.embeddingJob.createMany).not.toHaveBeenCalled();
   });
 });
+
+// #1087: a model change needs every product re-embedded into the new collection
+describe('POST backfill with all', () => {
+  it('dry run counts every active product with photos, also indexed and failed ones, and writes nothing', async () => {
+    store.jobs.push({ id: 80, productId: 2, status: 'FAILED', createdAt: 0 });
+    const res: any = await POST(req('ADMIN', { all: true, dryRun: true }));
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe('EMBEDDING_BACKFILL_DRY_RUN');
+    expect(res.body.data).toMatchObject({
+      all: true, dryRun: true, products: 5, queued: 5, merchants: 2, skippedAlreadyQueued: 0, skippedFailed: 0, upgradedPending: 0,
+    });
+    expect(mockPrisma.embeddingJob.createMany).not.toHaveBeenCalled();
+    expect(mockPrisma.embeddingJob.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('queues forced jobs, turns a waiting job into a forced one, skips a running one', async () => {
+    store.jobs.push({ id: 81, productId: 1, status: 'PENDING', source: 'admin-backfill', createdAt: 0 });
+    store.jobs.push({ id: 82, productId: 7, status: 'RUNNING', source: 'admin-backfill', createdAt: 1 });
+    const res: any = await POST(req('ADMIN', { all: true }));
+    expect(res.body.code).toBe('EMBEDDING_BACKFILL_QUEUED');
+    expect(res.body.data).toMatchObject({ all: true, products: 5, queued: 3, upgradedPending: 1, skippedAlreadyQueued: 1 });
+    const pending = store.jobs.filter((j) => j.status === 'PENDING');
+    expect(pending.map((j) => j.productId).sort()).toEqual([1, 2, 3, 8]);
+    expect(pending.every((j) => j.source === 'manual-force')).toBe(true);
+    expect(store.jobs.find((j) => j.id === 82)?.source).toBe('admin-backfill');
+    expect(mockDb.embeddingJobs.processPending).toHaveBeenCalledWith({ batchSize: 3 });
+  });
+
+  it('a second run adds nothing', async () => {
+    await POST(req('ADMIN', { all: true }));
+    const again: any = await POST(req('ADMIN', { all: true }));
+    expect(again.body.data).toMatchObject({ queued: 0, upgradedPending: 5 });
+    expect(store.jobs).toHaveLength(5);
+  });
+
+  it('without all the old behaviour stays (no all field change in counts)', async () => {
+    const res: any = await POST(req('ADMIN', { dryRun: true }));
+    expect(res.body.data).toMatchObject({ all: false, products: 4, queued: 4, upgradedPending: 0 });
+  });
+
+  it('rejects a non-boolean all', async () => {
+    expect((await POST(req('ADMIN', { all: 'yes' }))).status).toBe(400);
+  });
+});
+

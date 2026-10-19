@@ -118,7 +118,7 @@ function findByText(node: unknown, label: string): { props: Record<string, unkno
 
 function mountCard() {
   const runtime = createRuntime();
-  const calls = { status: 0, run: [] as { dryRun: boolean }[] };
+  const calls = { status: 0, run: [] as Record<string, unknown>[] };
   const status = () => ({
     products: { withImages: 3, missingEmbedding: 1, withEmbedding: 2 },
     jobs: { PENDING: 0, RUNNING: 0, COMPLETED: 2, FAILED: 0 },
@@ -178,6 +178,26 @@ describe('Embedding backfill card loads its status once (#1065)', () => {
     expect(refresh).not.toBeNull();
     (refresh!.props.onClick as () => void)();
     tree = await runtime.settle(render);
+    expect(calls.status).toBe(2);
+  });
+
+  // #1087: after a model change every product with photos is queued again
+  it('"Đánh index lại tất cả" dry-runs with all, then the confirm runs with all and reloads the status once', async () => {
+    const { runtime, calls, render } = mountCard();
+    let tree = await runtime.settle(render);
+
+    const reindex = findByText(tree, 'embeddingBackfill.reindexAll');
+    expect(reindex).not.toBeNull();
+    (reindex!.props.onClick as () => void)();
+    tree = await runtime.settle(render);
+    expect(calls.run).toEqual([{ dryRun: true, all: true }]);
+    expect(findByText(tree, 'embeddingBackfill.reindexConfirmTitle')).not.toBeNull();
+
+    const confirm = findByText(tree, 'embeddingBackfill.confirm');
+    expect(confirm).not.toBeNull();
+    (confirm!.props.onClick as () => void)();
+    tree = await runtime.settle(render);
+    expect(calls.run).toEqual([{ dryRun: true, all: true }, { dryRun: false, all: true }]);
     expect(calls.status).toBe(2);
   });
 });

@@ -1,8 +1,12 @@
 # Image Embedding API (ONNX CLIP)
 
-Server-only CLIP ViT-B/32 embeddings. This service does **not** search Qdrant or open Postgres.
+Server-only CLIP embeddings. This service does **not** search Qdrant or open Postgres.
 
-- Model: `Xenova/clip-vit-base-patch32` `onnx/vision_model.onnx`
+- Model (`CLIP_MODEL`, #1087): `openai` (default) = `Xenova/clip-vit-base-patch32`,
+  `marqo-fashionclip` = `Marqo/marqo-fashionCLIP` (fashion, ViT-B/16, ~3–4× slower on CPU), both
+  `onnx/vision_model.onnx`. Railway passes the variable to the Dockerfile `ARG`, which bakes that model.
+  `GET /health` returns `model`. Vectors of two models do not match: switch the API's
+  `QDRANT_COLLECTION_ENV` to a new collection and re-index when the model changes.
 - Output: 512-dim L2-normalized `image_embeds`
 - Runtime: ONNX Runtime fp32, `OMP_NUM_THREADS=1`
 

@@ -11,6 +11,7 @@ import type { EmbeddingBackfillResult, EmbeddingBackfillStatus } from '@rentalsh
  * runs a dry-run check, then (after a confirm inside the card) queues the missing embedding jobs.
  * #1029: the confirm count comes from a fresh dry run with the same includeFailed, so it is what POST would
  * queue now (products already PENDING/RUNNING, or last FAILED when not retried, are not counted).
+ * #1087: "Đánh index lại tất cả" (after a model change) runs the same dry run → confirm → run with `all`.
  */
 export function EmbeddingBackfillCard() {
   const t = useSettingsTranslations();
@@ -21,6 +22,8 @@ export function EmbeddingBackfillCard() {
   const [confirming, setConfirming] = useState(false);
   /** Dry-run `queued` behind the open confirm; null while that dry run is loading. */
   const [confirmCount, setConfirmCount] = useState<number | null>(null);
+  /** #1087: the open confirm re-indexes every product with photos */
+  const [reindexAll, setReindexAll] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // #1065: read t / toastError through a ref so loadStatus never changes identity. With them in its deps, every
@@ -44,10 +47,10 @@ export function EmbeddingBackfillCard() {
     loadStatus();
   }, [loadStatus]);
 
-  const run = async (dryRun: boolean) => {
+  const run = async (dryRun: boolean, all = false) => {
     setBusy(true);
     try {
-      const res = await systemApi.runEmbeddingBackfill({ dryRun, includeFailed });
+      const res = await systemApi.runEmbeddingBackfill(all ? { dryRun, all: true } : { dryRun, includeFailed });
       if (res.success && res.data) {
         setResult(res.data);
         if (!dryRun) await loadStatus();
@@ -60,19 +63,21 @@ export function EmbeddingBackfillCard() {
       setBusy(false);
       setConfirming(false);
       setConfirmCount(null);
+      setReindexAll(false);
     }
   };
 
-  /** Opens the confirm with what POST would queue now: a dry run with the same includeFailed. */
-  const openConfirm = async () => {
+  /** Opens the confirm with what POST would queue now: a dry run with the same includeFailed (or `all`). */
+  const openConfirm = async (all = false) => {
     setConfirming(true);
+    setReindexAll(all);
     setConfirmCount(null);
     setBusy(true);
     try {
-      const res = await systemApi.runEmbeddingBackfill({ dryRun: true, includeFailed });
+      const res = await systemApi.runEmbeddingBackfill(all ? { dryRun: true, all: true } : { dryRun: true, includeFailed });
       if (res.success && res.data) {
         setResult(res.data);
-        setConfirmCount(res.data.queued);
+        setConfirmCount(res.data.queued + (all ? res.data.upgradedPending ?? 0 : 0));
       } else {
         toastError(t('embeddingBackfill.runFailed'), res.message || '');
         setConfirming(false);
@@ -88,6 +93,7 @@ export function EmbeddingBackfillCard() {
   const closeConfirm = () => {
     setConfirming(false);
     setConfirmCount(null);
+    setReindexAll(false);
   };
 
   const stats: [string, number | undefined][] = [
@@ -163,13 +169,17 @@ export function EmbeddingBackfillCard() {
               <p className="font-medium">{t('embeddingBackfill.nothingToQueue')}</p>
             ) : (
               <>
-                <p className="font-medium">{t('embeddingBackfill.confirmTitle', { count: confirmCount })}</p>
-                <p className="text-sm text-muted-foreground">{t('embeddingBackfill.confirmBody')}</p>
+                <p className="font-medium">
+                  {t(reindexAll ? 'embeddingBackfill.reindexConfirmTitle' : 'embeddingBackfill.confirmTitle', { count: confirmCount })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {t(reindexAll ? 'embeddingBackfill.reindexConfirmBody' : 'embeddingBackfill.confirmBody')}
+                </p>
               </>
             )}
             <div className="flex gap-2">
               {confirmCount !== null && confirmCount > 0 && (
-                <Button size="sm" onClick={() => run(false)} disabled={busy}>
+                <Button size="sm" onClick={() => run(false, reindexAll)} disabled={busy}>
                   {t('embeddingBackfill.confirm')}
                 </Button>
               )}
@@ -183,8 +193,11 @@ export function EmbeddingBackfillCard() {
             <Button variant="outline" onClick={() => run(true)} disabled={busy}>
               {t('embeddingBackfill.check')}
             </Button>
-            <Button onClick={openConfirm} disabled={busy}>
+            <Button onClick={() => openConfirm()} disabled={busy}>
               {t('embeddingBackfill.run')}
+            </Button>
+            <Button variant="outline" onClick={() => openConfirm(true)} disabled={busy}>
+              {t('embeddingBackfill.reindexAll')}
             </Button>
           </div>
         )}
@@ -202,6 +215,9 @@ export function EmbeddingBackfillCard() {
             </p>
             <p>{t('embeddingBackfill.resultSkippedQueued')}: {result.skippedAlreadyQueued}</p>
             <p>{t('embeddingBackfill.resultSkippedFailed')}: {result.skippedFailed}</p>
+            {result.all && (
+              <p>{t('embeddingBackfill.resultUpgraded')}: {result.upgradedPending ?? 0}</p>
+            )}
           </div>
         )}
       </CardContent>
