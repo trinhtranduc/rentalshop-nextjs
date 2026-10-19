@@ -373,6 +373,249 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #1079 multi-cart: bar, picker, switch, rent + sale create, delete with confirm, edit order, relaunch
+    func test11MultiCart() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        if e2e.leaveEditMode() { e2e.shot("110-leftover-edit-cancelled") }
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(app.tables.cells.firstMatch.waitForExistence(timeout: 15), "Home list loads")
+
+        func any(_ id: String) -> XCUIElement { app.descendants(matching: .any).matching(identifier: id).firstMatch }
+        func alive(_ step: String) { e2e.note("ALIVE \(step): state \(app.state.rawValue)") }
+        func addNth(_ n: Int) -> Bool {
+            let add = app.tables.buttons.matching(NSPredicate(
+                format: "(label BEGINSWITH 'Add ' AND label CONTAINS 'cart') OR (label BEGINSWITH 'Thêm ' AND label CONTAINS 'giỏ')"))
+            var seen = 0
+            for index in 0..<min(add.count, 8) {
+                let candidate = add.element(boundBy: index)
+                guard candidate.isHittable && candidate.isEnabled else { continue }
+                if seen == n { candidate.tap(); sleep(1); return true }
+                seen += 1
+            }
+            return false
+        }
+        func openPicker() -> Bool {
+            let sw = any("cart.switchBar.switch")
+            guard sw.waitForExistence(timeout: 5) else { return false }
+            sw.tap()
+            return any("cart.picker").waitForExistence(timeout: 5)
+        }
+        func pickerRows() -> [XCUIElement] { app.cells.matching(identifier: "cart.picker.row").allElementsBoundByIndex }
+        func barLabel() -> String { any("cart.switchBar").exists ? any("cart.switchBar").label : "none" }
+        func barTexts() -> String { any("cart.switchBar").exists ? any("cart.switchBar").descendants(matching: .staticText).allElementsBoundByIndex.map(\.label).joined(separator: " / ") : "none" }
+        func closePicker() { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap(); sleep(1) }
+
+        // 0. Clean start: empty cart, no bar
+        e2e.emptyCart()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertFalse(any("cart.switchBar").exists, "S0: no bar with an empty single cart")
+        e2e.shot("110-s0-empty-no-bar")
+
+        // 1. First item: bar appears with 1 cart
+        XCTAssertTrue(addNth(0), "S1: add an item")
+        XCTAssertTrue(any("cart.switchBar").waitForExistence(timeout: 5), "S1: bar shows for a single cart with items")
+        e2e.shot("111-s1-bar-one-cart")
+        e2e.note("S1 bar label: \(any("cart.switchBar").label)")
+        XCTAssertTrue(openPicker(), "S1: tapping the name opens the picker")
+        e2e.shot("112-s1-picker-one-cart")
+        let newBtn = app.buttons["cart.picker.new"]
+        XCTAssertTrue(newBtn.waitForExistence(timeout: 3), "S1: + Giỏ mới exists")
+        newBtn.tap()
+        sleep(1)
+        e2e.shot("113-s1-after-new-cart")
+        // second cart is empty and active; bar still shows (2 carts)
+        XCTAssertTrue(any("cart.switchBar").waitForExistence(timeout: 5), "S1: bar shows with 2 carts")
+        e2e.note("S1 bar after new cart: \(any("cart.switchBar").label)")
+        XCTAssertTrue(addNth(1) || addNth(0), "S1: add an item to cart 2")
+        e2e.shot("114-s1-cart2-with-item")
+        XCTAssertTrue(openPicker(), "S1: picker with two carts")
+        let rows = pickerRows()
+        XCTAssertEqual(rows.count, 2, "S1: picker lists two carts")
+        e2e.shot("115-s1-picker-two-carts")
+        // switch to cart 1 (the other row)
+        if rows.count == 2 { (rows.first { !$0.label.isEmpty && !($0.value as? String ?? "").contains("selected") } ?? rows[0]).tap() }
+        sleep(1)
+        e2e.shot("116-s1-switched")
+        e2e.note("S1 bar after switch: \(any("cart.switchBar").label)")
+
+        // 2. Open the cart: switch row, customer, name
+        let open = app.buttons["cart.switchBar.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 3), "S2: Xem giỏ button")
+        open.tap()
+        XCTAssertTrue(any("cart.switchRow").waitForExistence(timeout: 8), "S2: cart screen shows the Giỏ · Đổi row")
+        e2e.note("S2 row label: \(any("cart.switchRow").label)")
+        e2e.shot("120-s2-cart-row-unnamed")
+        let customer = e2e.pickFirstCustomer() ?? ""
+        sleep(1)
+        alive("after "+#line.description)
+        e2e.shot("121-s2-cart-customer")
+        e2e.note("S2 row label after customer: \(any("cart.switchRow").label) (customer \(customer))")
+        XCTAssertFalse(any("cart.switchRow").label.hasPrefix("Giỏ "), "S2: after choosing a customer the row shows the customer name, not Giỏ k")
+        // dates -> then back to Home: bar has the dates line
+        e2e.cartRentToday()
+        e2e.shot("122-s2-cart-dates")
+        alive("after "+#line.description)
+        e2e.goBackOnce()
+        sleep(1)
+        e2e.shot("123-s2-home-bar-with-dates")
+        alive("after "+#line.description)
+        let texts = e2e.screenTexts().joined(separator: " | ")
+        e2e.note("S2 home texts: \(texts)")
+        e2e.soft(texts.contains("→"), "S2: bar shows the rental dates line")
+
+        // 3. Rent order: create from the cart, then the bar/cart state
+        e2e.note("S3 app state before tap: \(app.state.rawValue)")
+        app.buttons["cart.switchBar.open"].tap()
+        e2e.note("S3 app state after tap: \(app.state.rawValue)")
+        XCTAssertTrue(e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8), "S3: cart opens")
+        XCTAssertTrue(e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "130-s3-rent"),
+                      "S3: rent order created (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        sleep(1)
+        e2e.shot("131-s3-home-after-rent")
+        XCTAssertTrue(any("cart.switchBar").exists, "S3: the other cart (with item) is active and the bar still shows")
+        e2e.note("S3 bar after rent: \(any("cart.switchBar").label) | \(e2e.screenTexts().joined(separator: " | "))")
+
+        // 4. Sale order from the remaining cart
+        any("cart.switchBar.open").tap()
+        XCTAssertTrue(e2e.button(["Back to products", "Quay lại chọn sản phẩm"]).waitForExistence(timeout: 8), "S4: cart opens")
+        XCTAssertFalse(any("cart.switchRow").exists, "S4: one cart left, no switch row")
+        let sale = e2e.button(["Sale", "Bán"])
+        if sale.waitForExistence(timeout: 3) { sale.tap(); sleep(1) }
+        _ = e2e.pickFirstCustomer()
+        e2e.shot("140-s4-sale-cart")
+        XCTAssertTrue(e2e.createOrderFromCart(cta: ["Sell & collect", "Bán & thu tiền"], shotPrefix: "141-s4-sale"),
+                      "S4: sale order created (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        sleep(1)
+        e2e.shot("142-s4-home-after-sale")
+        XCTAssertFalse(any("cart.switchBar").exists, "S4: all carts done, no bar")
+
+        // 5. Delete: build two carts, swipe-delete with confirmation
+        XCTAssertTrue(addNth(0), "S5: item for cart 1")
+        XCTAssertTrue(openPicker(), "S5: picker")
+        app.buttons["cart.picker.new"].tap(); sleep(1)
+        XCTAssertTrue(addNth(1) || addNth(0), "S5: item for cart 2")
+        XCTAssertTrue(openPicker(), "S5: picker with 2")
+        e2e.shot("150-s5-picker-before-delete")
+        var rs = pickerRows()
+        XCTAssertEqual(rs.count, 2, "S5: two carts")
+        rs.last?.swipeLeft()
+        sleep(1)
+        e2e.shot("151-s5-swipe")
+        let del = app.buttons.matching(NSPredicate(format: "label IN %@", ["Xoá", "Xóa", "Delete"])).firstMatch
+        XCTAssertTrue(del.waitForExistence(timeout: 3), "S5: swipe shows Xoá")
+        del.tap()
+        let confirmTitle = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Xoá giỏ này?", "Delete this cart?"])).firstMatch
+        XCTAssertTrue(confirmTitle.waitForExistence(timeout: 3), "S5: delete asks for confirmation")
+        e2e.shot("152-s5-confirm")
+        let cancel = app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Huỷ", "Hủy", "Cancel"])).firstMatch
+        XCTAssertTrue(cancel.exists, "S5: Cancel on the alert")
+        cancel.tap(); sleep(1)
+        XCTAssertEqual(pickerRows().count, 2, "S5: cancel keeps both carts")
+        rs = pickerRows()
+        rs.last?.swipeLeft(); sleep(1)
+        app.buttons.matching(NSPredicate(format: "label IN %@", ["Xoá", "Xóa", "Delete"])).firstMatch.tap()
+        let ok = app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Xoá", "Xóa", "Delete"])).firstMatch
+        XCTAssertTrue(ok.waitForExistence(timeout: 3), "S5: destructive confirm button")
+        ok.tap(); sleep(1)
+        e2e.shot("153-s5-after-delete")
+        e2e.note("S5 after delete: rows \(pickerRows().count), texts \(e2e.screenTexts().joined(separator: " | "))")
+        if any("cart.picker").exists { closePicker() }
+        e2e.shot("154-s5-home-after-delete")
+
+        // 6. Edit an existing order while 1-2 carts hold items
+        e2e.note("S6 start: bar \(any("cart.switchBar").exists ? any("cart.switchBar").label : "none")")
+        if !any("cart.switchBar").exists { _ = addNth(0) }
+        if any("cart.switchBar").exists, openPicker() { app.buttons["cart.picker.new"].tap(); sleep(1); _ = addNth(1) || addNth(0) }
+        e2e.shot("160-s6-before-edit")
+        let cartsBefore = barTexts()
+        var pickerBefore = 0
+        if any("cart.switchBar").exists, openPicker() { pickerBefore = pickerRows().count; closePicker() }
+        let beforeTexts = e2e.screenTexts().joined(separator: " | ")
+        XCTAssertTrue(e2e.tapTab(["My Order", "Đơn hàng"], index: 1) || true)
+        XCTAssertTrue(openAllOrders(), "S6: Tất cả đơn")
+        sleep(2)
+        let booked = app.cells.allElementsBoundByIndex.first { E2E.texts($0).contains("Đã đặt") || E2E.texts($0).contains("Reserved") }
+        let rowToEdit = booked ?? app.cells.firstMatch
+        e2e.tapRow(rowToEdit)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "S6: order detail opens")
+        e2e.shot("161-s6-detail")
+        e2e.note("S6 carts before edit: [\(cartsBefore)], \(pickerBefore) carts")
+        guard e2e.tapOrderSheetRow(["Edit order", "Sửa đơn"]) else { return XCTFail("S6: the order offers no Sửa đơn") }
+        sleep(2)
+        e2e.shot("162-s6-edit-home")
+        XCTAssertFalse(any("cart.switchBar").exists, "S6: no cart bar while editing")
+        if e2e.homeCart.waitForExistence(timeout: 5) { e2e.homeCart.tap() }
+        sleep(2)
+        e2e.shot("163-s6-edit-cart")
+        XCTAssertFalse(any("cart.switchRow").exists, "S6: no switch row while editing")
+        // 6a. cancel the edit
+        XCTAssertTrue(e2e.leaveEditMode(), "S6a: Huỷ sửa leaves edit mode")
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        sleep(1)
+        e2e.shot("164-s6-after-cancel-edit")
+        let afterCancel = barTexts()
+        var pickerAfterCancel = 0
+        if any("cart.switchBar").exists, openPicker() { pickerAfterCancel = pickerRows().count; e2e.shot("164b-s6-picker-after-cancel"); closePicker() }
+        e2e.note("S6a carts after cancel edit: [\(afterCancel)], \(pickerAfterCancel) carts (before: \(pickerBefore))")
+        e2e.soft(afterCancel != "none", "S6a: after cancelling the edit a cart bar is back (the cart the edit replaced is empty or restored)")
+
+        // 6b. edit again and save a change
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        XCTAssertTrue(openAllOrders(), "S6b: Tất cả đơn")
+        sleep(2)
+        let again = app.cells.allElementsBoundByIndex.first { E2E.texts($0).contains("Đã đặt") || E2E.texts($0).contains("Reserved") } ?? app.cells.firstMatch
+        e2e.tapRow(again)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "S6b: detail opens")
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Edit order", "Sửa đơn"]), "S6b: Sửa đơn")
+        sleep(2)
+        if e2e.homeCart.waitForExistence(timeout: 5) { e2e.homeCart.tap() }
+        let plus = e2e.button(["Thêm 1", "One more"])
+        if e2e.scrollTo(plus) { plus.tap(); sleep(2); e2e.dismissAlerts() }
+        let save = e2e.button(["Lưu thay đổi", "Save changes"])
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "S6b: Lưu thay đổi")
+        if !save.isHittable { app.swipeDown() }
+        save.tap()
+        let sheetSave = app.buttons["cart.edit.save"]
+        XCTAssertTrue(sheetSave.waitForExistence(timeout: 8), "S6b: save sheet")
+        e2e.shot("165-s6-save-sheet")
+        sheetSave.tap()
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10), "S6b: save lands on the order detail")
+        sleep(2)
+        e2e.shot("166-s6-saved-detail")
+        e2e.goBackOnce()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        sleep(1)
+        e2e.shot("167-s6-home-after-save")
+        e2e.note("S6b carts after save: \(barTexts())")
+
+        // 7. Relaunch: carts persist. Make sure two distinct carts exist first.
+        if !any("cart.switchBar").exists { _ = addNth(0) }
+        if openPicker() { app.buttons["cart.picker.new"].tap(); sleep(1); _ = addNth(1) || addNth(0) }
+        e2e.shot("168-s7-before-relaunch")
+        let beforeRelaunch = barTexts()
+        var rowsBefore = 0
+        if openPicker() { rowsBefore = pickerRows().count; closePicker() }
+        app.terminate(); app.launch()
+        e2e.settle(seconds: 8)
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        sleep(2)
+        e2e.shot("170-s7-after-relaunch")
+        let afterRelaunch = barTexts()
+        e2e.note("S7 bar before [\(beforeRelaunch)] after [\(afterRelaunch)], carts before \(rowsBefore)")
+        XCTAssertEqual(afterRelaunch, beforeRelaunch, "S7: the active cart survives a relaunch")
+        if openPicker() {
+            XCTAssertEqual(pickerRows().count, rowsBefore, "S7: all carts survive a relaunch")
+            e2e.shot("171-s7-picker-after-relaunch")
+            closePicker()
+        }
+        // clean: empty carts
+        e2e.emptyCart()
+    }
+
     func test3CartSale() throws {
         try e2e.requireFlag("newProducts")
         try e2e.requireRole("merchant")
