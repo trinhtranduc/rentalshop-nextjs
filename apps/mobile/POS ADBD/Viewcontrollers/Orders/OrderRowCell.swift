@@ -281,7 +281,7 @@ final class OrderRowCell: UITableViewCell {
         taskLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         taskLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
-        totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
+        totalLabel.font = Utils.mediumFont(size: DS.TextSize.name)
         totalLabel.textColor = DS.Color.text
         // #468: the pay line is regular weight (colour carries the meaning); the total stays bold
         payLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
@@ -398,7 +398,7 @@ final class OrderRowCell: UITableViewCell {
         workChipLines.arrangedSubviews.forEach { $0.removeFromSuperview() }
         workChipLines.isHidden = true
         thirdLine?.alignment = .center
-        totalLabel.font = Utils.boldFont(size: DS.TextSize.name)
+        totalLabel.font = Utils.mediumFont(size: DS.TextSize.name)
         workDueLabel.isHidden = true
     }
 
@@ -506,7 +506,7 @@ final class OrderRowCell: UITableViewCell {
         // Right: the total (bold) always; "còn thu N" smaller under it when something is due (owner)
         let dueText = OrdersHomeLogic.workDue(work).map { String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format($0)) }
         let totalText = MoneyFormatter.format(work.totalAmount)
-        let totalWidth = (totalText as NSString).size(withAttributes: [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name)]).width
+        let totalWidth = (totalText as NSString).size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.name)]).width
         let dueWidth = (dueText as NSString?)?.size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary)]).width ?? 0
         let available = PadLayout.rowWidthEstimate - 2 * DS.Gap.rowHorizontal - max(totalWidth, dueWidth) - DS.Spacing.sm
         setWorkChips(OrdersHomeLogic.workChips(work, kind: kind), width: available)
@@ -596,7 +596,7 @@ final class OrderRowCell: UITableViewCell {
             totalLabel.attributedText = NSAttributedString(string: text, attributes: [
                 NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.styleSingle.rawValue,
                 NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
-                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name),
+                NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.name),
             ])
         } else {
             totalLabel.attributedText = nil

@@ -1435,7 +1435,7 @@ final class OrdersHomeTests: XCTestCase {
         let pay = try XCTUnwrap(money.first { $0.text == String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format(120000)) })
         XCTAssertEqual(pay.font, Utils.mediumFont(size: DS.TextSize.secondary))
         let total = try XCTUnwrap(money.first { $0.text == MoneyFormatter.format(300000) })
-        XCTAssertEqual(total.font, Utils.boldFont(size: DS.TextSize.name))
+        XCTAssertEqual(total.font, Utils.mediumFont(size: DS.TextSize.name))
         cell.configure(.work(row, kind: .handOver), context: .work(isLate: true), hidesMoney: false)
         let chips = labels(cell.contentView).compactMap { $0 as? InsetLabel }.filter { !($0.superview?.isHidden ?? true) }
             .compactMap(\.accessibilityLabel)
