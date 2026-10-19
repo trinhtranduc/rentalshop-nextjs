@@ -36,7 +36,9 @@ final class CartAvatarView: UILabel {
 enum CartSwitchText {
     /// "2 món · 520.000"
     static func summary(of cart: Cart) -> String {
-        String(format: "cart.multi.summary".localized(), cart.itemCount, MoneyFormatter.format(cart.totalAmount))
+        let text = String(format: "cart.multi.summary".localized(), cart.itemCount, MoneyFormatter.format(cart.totalAmount))
+        guard cart.isEditMode, let number = cart.editOriginal?.orderNumber, !number.isEmpty else { return text }
+        return String(format: "products.cart.edit.title".localized(), number) + " · " + text
     }
 
     /// "15/10/26 → 18/10/26" for a rental cart with both days chosen, else nil
@@ -48,9 +50,10 @@ enum CartSwitchText {
 }
 
 final class CartSwitchBar: UIView {
-    /// #1079: the bar shows with 2+ carts, or with 1 cart that has items (that is how a second cart is started). Never while editing an order.
+    /// #1079: the bar shows with 2+ carts (also while an order edit is the cart in use, so the other carts stay in reach),
+    /// or with 1 cart that has items (that is how a second cart is started).
     static func shouldShow(cartCount: Int, itemCount: Int, isEditMode: Bool) -> Bool {
-        !isEditMode && (cartCount > 1 || itemCount > 0)
+        cartCount > 1 || (!isEditMode && itemCount > 0)
     }
 
     var onSwitch: (() -> Void)?
