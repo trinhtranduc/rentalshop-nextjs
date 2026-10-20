@@ -751,4 +751,21 @@ final class CurrentOutletLogicTests: XCTestCase {
         json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any]
         XCTAssertEqual(json?["outletId"] as? Int, 3)
     }
+
+    /// #1062: the Overview related-orders lists (GET income/orders) narrow to the branch chosen on Home and send the
+    /// shop time zone, as the tiles do; without a branch (outlet users, or "Tất cả chi nhánh") no outletIds
+    func testIncomeOrdersSendsBranchAndShopTimeZone() {
+        var start = DateComponents(); start.year = 2026; start.month = 10; start.day = 18
+        let day = Calendar(identifier: .gregorian).date(from: start)!
+        let withBranch = AnalyticsAPIService.incomeOrdersParameters(startDate: day, endDate: day, status: "new", plan: false,
+                                                                    limit: 50, offset: 0, outletId: 3)
+        XCTAssertEqual(withBranch["outletIds"] as? String, "3")
+        XCTAssertEqual(withBranch["timeZone"] as? String, Date.shopTimeZone.identifier)
+        XCTAssertEqual(withBranch["status"] as? String, "new")
+        XCTAssertEqual(withBranch["limit"] as? Int, 50)
+        let allBranches = AnalyticsAPIService.incomeOrdersParameters(startDate: day, endDate: day, status: nil, plan: nil,
+                                                                     limit: nil, offset: nil, outletId: nil)
+        XCTAssertNil(allBranches["outletIds"])
+        XCTAssertEqual(allBranches["timeZone"] as? String, Date.shopTimeZone.identifier)
+    }
 }

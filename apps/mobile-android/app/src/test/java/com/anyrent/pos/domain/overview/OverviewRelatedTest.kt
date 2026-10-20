@@ -121,4 +121,18 @@ class OverviewRelatedTest {
         assertEquals(1, OverviewRelated.count(held + period))
         assertTrue(OverviewRelated.heldRows(JSONObject("{}")).isEmpty())
     }
+
+    /** #1062: the related-orders list asks the shop day and the branch chosen on Home, as the tiles do */
+    @Test fun pathAsksTheShopDayAndTheChosenBranch() {
+        assertEquals(
+            "/api/analytics/income/orders?startDate=2026-10-18&endDate=2026-10-18&status=new&plan=false&limit=200&offset=0" +
+                "&timeZone=Asia%2FHo_Chi_Minh&outletIds=3",
+            OverviewRelated.path("2026-10-18", "2026-10-18", "new", offset = 0, limit = 200, outletId = 3),
+        )
+        assertEquals(
+            "/api/analytics/income/orders?startDate=2026-10-01&endDate=2026-10-18&status=all&plan=false&limit=20&offset=40" +
+                "&timeZone=Asia%2FHo_Chi_Minh",
+            OverviewRelated.path("2026-10-01", "2026-10-18", "all", offset = 40, limit = 20, outletId = null),
+        )
+    }
 }
