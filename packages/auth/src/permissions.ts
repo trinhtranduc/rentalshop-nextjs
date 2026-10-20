@@ -48,6 +48,10 @@ export type Permission =
   | 'orders.delete'
   | 'orders.export'
   | 'orders.manage' // Full order management (create, view, update, delete, export)
+
+  // Online booking requests (#1124): see them / confirm or reject them. Not for Nhân viên kho.
+  | 'bookings.view'
+  | 'bookings.manage'
   
   // Customer Management
   | 'customers.manage'
@@ -81,7 +85,7 @@ export type Permission =
   | 'loyalty.manage'
   | 'loyalty.adjust';
 
-export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing' | 'bankAccounts' | 'loyalty';
+export type Resource = 'system' | 'merchant' | 'outlet' | 'users' | 'products' | 'orders' | 'customers' | 'analytics' | 'billing' | 'bankAccounts' | 'loyalty' | 'bookings';
 
 // ============================================================================
 // CRITICAL PERMISSIONS - Never Remove (Security & Functionality)
@@ -159,6 +163,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'products.manage', 'products.view', 'products.export',
     'posts.manage', 'posts.view',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
+    'bookings.view', 'bookings.manage', // #1124
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',                    // Full access (backward compatibility)
     'analytics.view.dashboard',
@@ -205,6 +210,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'users.manage', 'users.view',
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
+    'bookings.view', 'bookings.manage', // #1124
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',                    // Full access - can see all outlets
     'analytics.view.dashboard',
@@ -223,6 +229,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'users.manage', 'users.view',
     'products.manage', 'products.view', 'products.export',
     'orders.create', 'orders.view', 'orders.update', 'orders.delete', 'orders.export', 'orders.manage',
+    'bookings.view', 'bookings.manage', // #1124
     'customers.manage', 'customers.view', 'customers.export',
     'analytics.view',                    // Full access - can see their outlet
     'analytics.view.dashboard',
@@ -241,6 +248,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'products.view', // ❌ NO products.export
     // ❌ NO products.create (#825, owner 2026-10-11), NO products.update: staff cannot add or edit products
     'orders.create', 'orders.view', 'orders.update', // ❌ NO orders.delete, orders.export
+    'bookings.view', 'bookings.manage', // #1124
     'customers.view', 'customers.manage', // ❌ NO customers.export
     'analytics.view.dashboard',          // ✅ Daily/today-metrics (dashboard only)
     'analytics.view.revenue.daily',      // ✅ Daily Income Analytics only (not full revenue analytics)

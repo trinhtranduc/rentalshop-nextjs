@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
-import { withPermissions } from '@rentalshop/auth/server';
+import { hasPermission, withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
 import { 
@@ -962,6 +962,10 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     // create transaction (afterInsert); a request closed in between throws there and rolls the order back.
     const bookingRequestId = (parsed.data as { bookingRequestId?: number }).bookingRequestId;
     if (bookingRequestId) {
+      // Confirming a request is its own permission (#1124): Nhân viên kho can create orders but not confirm requests
+      if (!(await hasPermission(user as Parameters<typeof hasPermission>[0], 'bookings.manage'))) {
+        return NextResponse.json(ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'), { status: 403 });
+      }
       const booking = await db.prisma.bookingRequest.findUnique({ where: { id: bookingRequestId } });
       if (!booking || booking.merchantId !== outlet.merchantId) {
         return NextResponse.json(ResponseBuilder.error('BOOKING_REQUEST_NOT_FOUND'), { status: 404 });
