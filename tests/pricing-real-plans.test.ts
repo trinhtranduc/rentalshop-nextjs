@@ -24,7 +24,7 @@ describe('pricing cards from the real plans (#1147)', () => {
   it('vi: real VND amounts, sorted, no Trial, no inactive plan, Enterprise is contact', () => {
     const cards = buildPricingCards(apiPlans as any, 'vi');
     expect(cards.map((c) => c.id)).toEqual(['basic', 'professional', 'enterprise']);
-    expect(cards.map((c) => c.price?.replace(/\s/g, ' '))).toEqual(['99.000 ₫', '179.000 ₫', null]);
+    expect(cards.map((c) => (c.price === null ? null : c.price.replace(/\s/g, ' ')))).toEqual(['99.000 ₫', '179.000 ₫', null]);
     expect(cards[1].isPopular).toBe(true);
   });
 
