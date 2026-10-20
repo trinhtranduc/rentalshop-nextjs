@@ -1,0 +1,365 @@
+{
+  "navigation": {
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "login": "Connexion"
+  },
+  "hero": {
+    "title": "Gestion de boutique de location",
+    "subtitle": "Logiciel et système",
+    "description": "Logiciel de gestion pour boutiques de location : produits, clients, commandes de location et planning des retraits et retours dans un seul système. Pour la location d'áo dài, de robes de mariée, de matériel, de véhicules, de costumes ou d'imprimantes. Disponible sur iOS, Android et le web.",
+    "downloadApp": "Télécharger l'app",
+    "tryWebPortal": "Essayer la version web",
+    "tagline": "Commandes de location, calendrier et produits dans une seule app — essai gratuit.",
+    "trustStores": "Plus de 500 boutiques actives",
+    "trustRating": "Note de 4,9/5",
+    "trustSecure": "Sûr et fiable",
+    "imageAlt": "Gestion d'une boutique de location avec AnyRent sur mobile, dans une boutique"
+  },
+  "download": {
+    "title": "Disponible sur toutes les plateformes",
+    "description": "Gérez votre boutique de location où que vous soyez, à tout moment",
+    "mobileApp": "Application mobile",
+    "mobileAppDesc": "Gérez votre boutique en déplacement avec l'app iOS et Android",
+    "webPortal": "Version web",
+    "webPortalDesc": "Toutes les fonctionnalités dans n'importe quel navigateur, sur tous les écrans",
+    "analytics": "Tableau de bord",
+    "analyticsDesc": "Suivez les performances de votre activité grâce à des rapports détaillés",
+    "downloadOnAppStore": "Télécharger sur l'App Store",
+    "downloadOnGooglePlay": "Disponible sur Google Play"
+  },
+  "aiSearch": {
+    "badge": "Intelligence artificielle",
+    "title": "Trouvez vos articles de location par image grâce à l'IA",
+    "description": "Grâce à l'IA, vos clients prennent une photo ou importent une image et trouvent aussitôt les articles de location correspondants. Inutile de retenir un nom ou de taper des mots-clés : une seule photo suffit. Cette fonctionnalité distingue AnyRent des autres logiciels de location.",
+    "feature1Title": "Une photo pour trouver un article",
+    "feature1Desc": "Le client photographie un modèle d'áo dài, de robe de mariée ou de costume : l'IA le reconnaît et propose des articles similaires en stock.",
+    "feature2Title": "Reconnaissance intelligente",
+    "feature2Desc": "Des embeddings vectoriels et des réseaux de neurones analysent l'image et reconnaissent avec précision la couleur, le style et la matière.",
+    "feature3Title": "Résultats immédiats",
+    "feature3Desc": "En quelques secondes, la liste des articles les plus proches s'affiche, avec leur disponibilité et leur prix de location.",
+    "matchFound": "3 articles correspondants trouvés",
+    "videoAlt": "Démonstration de la recherche d'articles de location par image dans AnyRent",
+    "queryAlt": "Photo d'un modèle d'áo dài utilisée pour la recherche par image",
+    "matchesAlt": "Trois robes de location similaires trouvées par la recherche par image",
+    "phoneAlt": "Écran AnyRent affichant les résultats de la recherche par image",
+    "snap": "Photo",
+    "learnMore": "En savoir plus sur la recherche par image →"
+  },
+  "duplicatePrevention": {
+    "badge": "Anti-chevauchement",
+    "title": "Évitez les locations qui se chevauchent",
+    "description": "AnyRent vérifie la disponibilité avant de créer une commande. Un même article ne peut pas être réservé sur des dates qui se chevauchent : votre réputation et votre chiffre d'affaires sont protégés.",
+    "feature1Title": "Vérification automatique du calendrier",
+    "feature1Desc": "Quand vous choisissez un article et des dates, le système les compare aux réservations, aux articles sortis et aux retours prévus.",
+    "feature2Title": "Alertes claires",
+    "feature2Desc": "Si les dates se chevauchent, un avertissement s'affiche aussitôt : plus besoin de jongler avec le calendrier.",
+    "feature3Title": "Un stock toujours exact",
+    "feature3Desc": "Chaque article n'est loué qu'une fois par période : les tailles et le stock restent fiables.",
+    "blockedLabel": "Chevauchement — commande bloquée",
+    "calendarAlt": "Calendrier de location montrant une réservation en conflit",
+    "alertAlt": "Alerte : l'article est déjà réservé aux mêmes dates"
+  },
+  "orderWorkflow": {
+    "badge": "Parcours de location",
+    "title": "Des commandes de location simples à gérer",
+    "description": "Suivez tout le cycle de location dans un parcours clair : réservation → retrait → retour. L'équipe va plus vite et le client sait toujours où en est sa commande.",
+    "feature1Title": "Créer et réserver en quelques minutes",
+    "feature1Desc": "Choisissez le client, les articles et les dates de retrait et de retour : la commande « Réservée » est créée en quelques étapes, sur l'app ou le web.",
+    "feature2Title": "Retrait et retour en toute clarté",
+    "feature2Desc": "Passez la commande « En location » puis « Rendue » au bon moment : calendrier et stock se mettent à jour aussitôt.",
+    "feature3Title": "Chaque étape au même endroit",
+    "feature3Desc": "Historique, paiements et notes sur la fiche de la commande : moins d'oublis et moins de questions.",
+    "flowLabel": "Réservée → En location → Rendue",
+    "phoneAlt": "Fiche d'une commande de location dans AnyRent",
+    "flowAlt": "Trois statuts de location : réservée, en location, rendue"
+  },
+  "features": {
+    "title": "Fonctionnalités de gestion de location",
+    "description": "Tout ce qu'il faut pour gérer efficacement une activité de location : commandes, stock et clients dans un seul système. Pour la location d'áo dài, de robes de mariée, de matériel, de véhicules, de costumes ou d'imprimantes.",
+    "aiImageSearch": "Recherche par image avec l'IA",
+    "aiImageSearchDesc": "Trouvez un article de location en important une photo. L'IA reconnaît la couleur, le style et la matière et propose les articles correspondants de votre stock.",
+    "orderManagement": "Gestion des commandes de location",
+    "orderManagementDesc": "Créez, suivez et gérez facilement vos commandes de location, avec leur statut et leur historique.",
+    "customerManagement": "Gestion des clients",
+    "customerManagementDesc": "Conservez les coordonnées et l'historique de location de vos clients pour entretenir la relation.",
+    "calendarScheduling": "Calendrier et planning de location",
+    "calendarSchedulingDesc": "Un calendrier visuel pour suivre les sorties, les retours et la disponibilité des articles.",
+    "financialReports": "Rapports financiers",
+    "financialReportsDesc": "Des rapports détaillés pour suivre le chiffre d'affaires et analyser votre activité.",
+    "duplicatePrevention": "Pas de doubles réservations",
+    "duplicatePreventionDesc": "Le système empêche les commandes qui se chevauchent et garde un stock exact.",
+    "multiPlatform": "Multiplateforme",
+    "multiPlatformDesc": "Accédez à vos données de location sur iOS, Android et le web, sans ressaisie.",
+    "viewAllFeatures": "Voir toutes les fonctionnalités",
+    "badge": "Fonctionnalités"
+  },
+  "customSolution": {
+    "title": "Besoin d'une solution sur mesure ?",
+    "description": "Votre activité de location a des besoins particuliers ? Nous adaptons la gestion de location à vos besoins, de la location d'áo dài, de robes de mariée, de matériel ou de véhicules à d'autres secteurs spécialisés.",
+    "benefits": {
+      "title": "Les avantages du sur-mesure",
+      "customized": "Une solution entièrement adaptée à votre activité",
+      "dedicated": "Un accompagnement dédié par une équipe d'experts",
+      "scalable": "Un système qui suit la croissance de votre activité",
+      "integration": "Une intégration simple avec vos outils existants"
+    },
+    "contact": {
+      "title": "Contactez-nous",
+      "description": "Échangeons sur une solution adaptée à votre activité de location",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "Demande de solution de location sur mesure",
+      "emailBody": "Bonjour,\n\nJe suis intéressé(e) par une solution de gestion de location sur mesure pour mon activité.\n\nMerci de me contacter pour en discuter.\n\nCordialement,",
+      "whatsappMessage": "Bonjour, je suis intéressé(e) par une solution de gestion de location sur mesure. Merci de me contacter.",
+      "responseTime": "Réponse sous 24 heures"
+    }
+  },
+  "whyChoose": {
+    "title": "Pourquoi choisir AnyRent pour votre boutique de location ?",
+    "description": "Des centaines de loueurs font déjà confiance à notre système de gestion de location.",
+    "easyToUse": "Simple à utiliser",
+    "easyToUseDesc": "Une interface intuitive pensée pour les loueurs, sans aucune compétence technique.",
+    "timeSaving": "Gain de temps",
+    "timeSavingDesc": "Les tâches répétitives sont automatisées : vous développez votre activité au lieu de remplir des papiers.",
+    "increaseRevenue": "Plus de chiffre d'affaires",
+    "increaseRevenueDesc": "Un stock et un suivi client plus précis permettent de louer davantage.",
+    "support": "Support 24h/24, 7j/7",
+    "supportDesc": "Notre équipe support vous aide dès que vous en avez besoin.",
+    "activeStores": "Boutiques actives",
+    "rating": "Note de 4,9/5",
+    "badge": "Pourquoi nous"
+  },
+  "stats": {
+    "activeStores": "Boutiques actives",
+    "ordersProcessed": "Commandes traitées",
+    "customerRating": "Note des clients",
+    "supportAvailable": "Support disponible"
+  },
+  "testimonials": {
+    "title": "Ce que disent nos clients",
+    "description": "Des centaines de loueurs satisfaits",
+    "badge": "Témoignages",
+    "items": {
+      "john": {
+        "quote": "AnyRent m'aide à gérer ma boutique de location efficacement. L'interface est simple et les fonctionnalités sont complètes.",
+        "name": "John Smith",
+        "role": "Gérant d'une boutique de location"
+      },
+      "sarah": {
+        "quote": "La gestion des commandes est très pratique : je suis toutes les commandes facilement et je gère bien mon stock.",
+        "name": "Sarah Johnson",
+        "role": "Responsable de boutique"
+      },
+      "mike": {
+        "quote": "L'application mobile est très pratique : je gère ma boutique de n'importe où et l'interface est intuitive.",
+        "name": "Mike Wilson",
+        "role": "Chef d'entreprise"
+      },
+      "aoDai": {
+        "quote": "AnyRent m'aide à gérer ma boutique de location d'áo dài très efficacement. Le calendrier de réservation et la gestion des tailles sont très pratiques.",
+        "name": "Emily Chen",
+        "role": "Gérante d'une boutique de location d'áo dài"
+      },
+      "equipment": {
+        "quote": "Gérer le stock de matériel n'a jamais été aussi simple : je suis précisément l'état du matériel et le planning des locations.",
+        "name": "David Kim",
+        "role": "Gérant d'une boutique de location de matériel"
+      },
+      "weddingDress": {
+        "quote": "La gestion des locations de robes de mariée est très professionnelle : je gère plusieurs robes en même temps et je vois l'historique des clientes.",
+        "name": "Sophie Martinez",
+        "role": "Gérante d'une boutique de location de robes de mariée"
+      },
+      "camera": {
+        "quote": "La location d'appareils photo et d'accessoires est devenue simple. Le contrôle de l'état et le planning d'entretien sont très utiles.",
+        "name": "James Anderson",
+        "role": "Gérant d'une boutique de location d'appareils photo"
+      }
+    }
+  },
+  "cta": {
+    "title": "Prêt à commencer ?",
+    "description": "Rejoignez des milliers de loueurs qui font confiance à notre plateforme"
+  },
+  "blog": {
+    "title": "Derniers articles",
+    "subtitle": "Idées et conseils pour votre activité de location",
+    "badge": "Blog"
+  },
+  "faq": {
+    "title": "Questions fréquentes sur le logiciel de gestion de location",
+    "description": "Tout ce qu'il faut savoir sur AnyRent, le système de gestion de location",
+    "items": {
+      "freeUse": {
+        "question": "AnyRent est-il gratuit ?",
+        "answer": "AnyRent propose un essai gratuit. Inscrivez-vous et utilisez les fonctionnalités de base sans frais : commandes de location, stock et clients."
+      },
+      "multipleDevices": {
+        "question": "Puis-je l'utiliser sur plusieurs appareils ?",
+        "answer": "Oui, AnyRent fonctionne sur iOS, Android et dans le navigateur. Gérez votre boutique où que vous soyez."
+      },
+      "dataSecure": {
+        "question": "Mes données sont-elles en sécurité ?",
+        "answer": "Nous protégeons vos données. Les informations sur les commandes, le stock et les clients sont chiffrées et stockées de façon sécurisée dans le cloud."
+      },
+      "support": {
+        "question": "Proposez-vous un support client ?",
+        "answer": "Oui, le support AnyRent est disponible 24h/24, 7j/7. Notre équipe vous aide par chat, email et téléphone."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Des tarifs simples",
+    "description": "Choisissez la formule adaptée à votre activité",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
+    "months": {
+      "three": "3 mois",
+      "six": "6 mois",
+      "twelve": "12 mois"
+    },
+    "loading": "Chargement des formules...",
+    "error": "Impossible de charger les formules",
+    "errorHint": "Veuillez réessayer dans quelques minutes ou contacter AnyRent pour obtenir un devis.",
+    "retry": "Réessayer",
+    "noPlans": "Aucune formule disponible pour le moment.",
+    "buttonText": "Commencer",
+    "plans": {
+      "freeTrial": {
+        "name": "Essai gratuit",
+        "subtitle": "Idéal pour démarrer",
+        "period": "7 jours",
+        "description": "Toutes les fonctionnalités gratuitement",
+        "buttonText": "Commencer l'essai gratuit"
+      },
+      "basic": {
+        "name": "Formule Basic",
+        "subtitle": "Pour les petites activités de location",
+        "period": "par mois",
+        "description": "Idéale pour les petites boutiques de location",
+        "buttonText": "Commencer",
+        "mostPopular": "La plus choisie"
+      },
+      "premium": {
+        "name": "Formule Premium",
+        "subtitle": "Pour les entreprises en croissance",
+        "period": "par mois",
+        "description": "Des fonctionnalités avancées pour les structures plus grandes",
+        "buttonText": "Commencer"
+      }
+    },
+    "features": {
+      "orderManagement": "Gestion des commandes",
+      "productManagement": "Gestion des produits",
+      "customerManagement": "Gestion des clients",
+      "revenueReports": "Rapports de chiffre d'affaires",
+      "singleAccount": "1 compte",
+      "twoAccounts": "2 comptes",
+      "fiveAccounts": "5 comptes",
+      "webPortal": "Version web",
+      "additionalAccounts": "Comptes supplémentaires",
+      "freeUpdates": "Mises à jour gratuites",
+      "mobileApp": "Application mobile"
+    },
+    "allPlansInclude": "Inclus dans toutes les formules",
+    "support24": "Support 24h/24, 7j/7",
+    "dataBackup": "Sauvegarde des données",
+    "freeUpdates": "Mises à jour gratuites",
+    "training": "Formation",
+    "additionalPricingTitle": "Tarifs complémentaires",
+    "additionalAccountPrice": "Compte supplémentaire",
+    "additionalAccountDescription": "Prix de chaque compte utilisateur au-delà de la limite de la formule",
+    "additionalAccountPriceValue": "30 000 VND/mois",
+    "addonPrice": "Options",
+    "addonDescription": "Prix des options qui augmentent les limites (points de vente, utilisateurs, produits, clients, commandes)",
+    "addonPriceValue": "Sur devis",
+    "close": "Fermer",
+    "additionalPricingNote": "En savoir plus sur les comptes supplémentaires et les options",
+    "priceLabel": "Prix :",
+    "additionalPricingSr": "Tarifs des comptes supplémentaires et des options"
+  },
+  "footer": {
+    "description": "AnyRent — logiciel de gestion de location au Vietnam, pour la location d'áo dài, de robes de mariée, de matériel, de véhicules, de costumes et d'imprimantes. Commandes, stock et clients dans un seul système.",
+    "product": {
+      "title": "Produit",
+      "features": "Fonctionnalités",
+      "pricing": "Tarifs",
+      "downloadApp": "Télécharger l'app"
+    },
+    "support": {
+      "title": "Assistance",
+      "faq": "Questions fréquentes",
+      "documentation": "Articles",
+      "contact": "Nous contacter"
+    },
+    "company": {
+      "title": "Entreprise",
+      "aboutUs": "À propos",
+      "terms": "Conditions",
+      "privacy": "Confidentialité"
+    },
+    "copyright": "© 2024 AnyRent. Tous droits réservés.",
+    "imageSearch": "Recherche par image (IA)",
+    "industries": {
+      "title": "Secteurs",
+      "aoDai": "Location d'áo dài",
+      "weddingDress": "Location de robes de mariée",
+      "equipment": "Location de matériel",
+      "costume": "Location de costumes"
+    }
+  },
+  "industries": {
+    "title": "Solutions par secteur",
+    "subtitle": "Optimisé pour chaque type d'activité de location",
+    "aoDai": {
+      "title": "Location d'áo dài",
+      "desc": "Stock par taille et couleur. Calendrier de réservation sans doublons."
+    },
+    "weddingDress": {
+      "title": "Location de robes de mariée",
+      "desc": "Collections, rendez-vous d'essayage, formules mariage complètes."
+    },
+    "equipment": {
+      "title": "Location de matériel",
+      "desc": "État du matériel, planning d'entretien, contrats de location."
+    },
+    "costume": {
+      "title": "Location de costumes",
+      "desc": "Spectacles, cosplay, événements. Gestion des tailles et accessoires."
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Nous écrire sur Zalo",
+    "whatsappTitle": "Nous écrire sur WhatsApp",
+    "telegramTitle": "Nous écrire sur Telegram",
+    "zaloQrTitle": "Scannez le QR code pour nous écrire sur Zalo",
+    "zaloQrHint": "Ouvrez l'app Zalo et scannez le QR code ci-dessus pour nous contacter",
+    "openZalo": "Ouvrir Zalo",
+    "close": "Fermer",
+    "zaloQrAlt": "QR code Zalo",
+    "greeting": "Bonjour ! J'aimerais en savoir plus sur AnyRent."
+  },
+  "sections": {
+    "hero": "Présentation",
+    "aiSearch": "Recherche par image avec l'IA",
+    "duplicatePrevention": "Prévention des chevauchements",
+    "orderWorkflow": "Parcours d'une commande de location",
+    "features": "Fonctionnalités",
+    "customSolution": "Solution sur mesure",
+    "stats": "Chiffres clés",
+    "testimonials": "Témoignages",
+    "cta": "Commencer",
+    "faq": "Questions fréquentes",
+    "pricing": "Formules",
+    "blog": "Articles"
+  }
+}

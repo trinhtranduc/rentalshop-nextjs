@@ -1,0 +1,365 @@
+{
+  "navigation": {
+    "features": "Funciones",
+    "pricing": "Precios",
+    "faq": "Preguntas",
+    "contact": "Contacto",
+    "login": "Iniciar sesión"
+  },
+  "hero": {
+    "title": "Gestión de tiendas de alquiler",
+    "subtitle": "Software y sistema",
+    "description": "Software para tiendas de alquiler: productos, clientes, pedidos de alquiler y la agenda de recogidas y devoluciones en un solo sistema. Para alquiler de áo dài, vestidos de novia, equipos, vehículos, disfraces o impresoras. Disponible en iOS, Android y web.",
+    "downloadApp": "Descargar la app",
+    "tryWebPortal": "Probar la versión web",
+    "tagline": "Pedidos de alquiler, calendario y productos en una sola app — prueba gratis.",
+    "trustStores": "Más de 500 tiendas activas",
+    "trustRating": "Valoración 4,9/5",
+    "trustSecure": "Seguro y fiable",
+    "imageAlt": "Gestión de una tienda de alquiler con AnyRent en el móvil, en una boutique"
+  },
+  "download": {
+    "title": "Disponible en todas las plataformas",
+    "description": "Gestiona tu tienda de alquiler desde cualquier lugar y en cualquier momento",
+    "mobileApp": "App móvil",
+    "mobileAppDesc": "Gestiona tu tienda de alquiler sobre la marcha con la app para iOS y Android",
+    "webPortal": "Versión web",
+    "webPortalDesc": "Todas las funciones en cualquier navegador, cómodas en cualquier pantalla",
+    "analytics": "Panel de análisis",
+    "analyticsDesc": "Conoce el rendimiento de tu negocio con informes detallados",
+    "downloadOnAppStore": "Descargar en App Store",
+    "downloadOnGooglePlay": "Disponible en Google Play"
+  },
+  "aiSearch": {
+    "badge": "Inteligencia artificial",
+    "title": "Encuentra productos de alquiler por imagen con IA",
+    "description": "Con IA, el cliente hace una foto o sube una imagen y encuentra al instante los productos de alquiler que coinciden. No hace falta recordar nombres ni escribir palabras clave: basta con una foto. Esta función distingue a AnyRent de otros programas de alquiler.",
+    "feature1Title": "Haz una foto y encuentra el producto",
+    "feature1Desc": "El cliente fotografía un áo dài, un vestido de novia o un disfraz de muestra, y la IA lo reconoce y sugiere productos similares en stock.",
+    "feature2Title": "Reconocimiento inteligente",
+    "feature2Desc": "Embeddings vectoriales y redes neuronales analizan la imagen y reconocen color, estilo y material con gran precisión.",
+    "feature3Title": "Resultados al instante",
+    "feature3Desc": "En segundos aparece la lista de productos más parecidos, con disponibilidad y precio de alquiler.",
+    "matchFound": "3 productos coincidentes",
+    "videoAlt": "Demostración de la búsqueda de productos de alquiler por imagen en AnyRent",
+    "queryAlt": "Foto de un áo dài de muestra usada para buscar por imagen",
+    "matchesAlt": "Tres vestidos de alquiler similares encontrados por la búsqueda por imagen",
+    "phoneAlt": "Pantalla de AnyRent con resultados de la búsqueda por imagen",
+    "snap": "Foto",
+    "learnMore": "Más sobre la búsqueda por imagen →"
+  },
+  "duplicatePrevention": {
+    "badge": "Sin solapamientos",
+    "title": "Evita pedidos de alquiler solapados",
+    "description": "AnyRent comprueba la disponibilidad antes de crear un pedido. El mismo producto no se puede reservar en fechas que se solapan: así proteges tu reputación y tus ingresos.",
+    "feature1Title": "Revisión automática del calendario",
+    "feature1Desc": "Al elegir el producto y las fechas, el sistema lo compara con las reservas, los productos entregados y las devoluciones previstas.",
+    "feature2Title": "Avisos claros",
+    "feature2Desc": "Si las fechas se solapan, verás un aviso al momento, sin cuadrar el calendario a mano.",
+    "feature3Title": "Inventario siempre exacto",
+    "feature3Desc": "Cada artículo se alquila una sola vez por periodo, así que las tallas y el stock son fiables.",
+    "blockedLabel": "Solapamiento — pedido bloqueado",
+    "calendarAlt": "Calendario de alquiler con una reserva solapada",
+    "alertAlt": "Aviso de que el producto ya está reservado en las mismas fechas"
+  },
+  "orderWorkflow": {
+    "badge": "Flujo de alquiler",
+    "title": "Gestión de pedidos de alquiler fácil y cómoda",
+    "description": "Sigue todo el ciclo del alquiler en un flujo claro: reserva → recogida → devolución. El equipo trabaja más rápido y el cliente siempre sabe en qué punto está su pedido.",
+    "feature1Title": "Crea y reserva en minutos",
+    "feature1Desc": "Elige cliente, productos y fechas de recogida y devolución: el pedido «Reservado» se crea en pocos pasos en la app o en la web.",
+    "feature2Title": "Recogida y devolución claras",
+    "feature2Desc": "Pasa el pedido a «En alquiler» o «Devuelto» en el momento justo; el calendario y el stock se actualizan al instante.",
+    "feature3Title": "Cada paso en un solo lugar",
+    "feature3Desc": "Historial, pagos y notas en el detalle del pedido: menos pasos olvidados y menos preguntas.",
+    "flowLabel": "Reservado → En alquiler → Devuelto",
+    "phoneAlt": "Pantalla de detalle de un pedido de alquiler en AnyRent",
+    "flowAlt": "Tres estados de alquiler: reservado, en alquiler, devuelto"
+  },
+  "features": {
+    "title": "Funciones para tiendas de alquiler",
+    "description": "Todo lo necesario para gestionar un negocio de alquiler con eficacia: pedidos, inventario y clientes en un solo sistema. Para alquiler de áo dài, vestidos de novia, equipos, vehículos, disfraces o impresoras.",
+    "aiImageSearch": "Búsqueda por imagen con IA",
+    "aiImageSearchDesc": "Encuentra productos de alquiler al instante subiendo una foto. La IA reconoce color, estilo y material y sugiere artículos de tu inventario.",
+    "orderManagement": "Gestión de pedidos de alquiler",
+    "orderManagementDesc": "Crea, sigue y gestiona pedidos de alquiler con facilidad, con su estado e historial.",
+    "customerManagement": "Gestión de clientes",
+    "customerManagementDesc": "Guarda los datos y el historial de alquiler de tus clientes para cuidar la relación con ellos.",
+    "calendarScheduling": "Calendario y agenda de alquiler",
+    "calendarSchedulingDesc": "Un calendario visual para seguir alquileres, devoluciones y disponibilidad de productos.",
+    "financialReports": "Informes financieros",
+    "financialReportsDesc": "Informes detallados para seguir los ingresos y analizar el rendimiento del negocio.",
+    "duplicatePrevention": "Sin pedidos duplicados",
+    "duplicatePreventionDesc": "El sistema evita pedidos solapados y mantiene el inventario exacto.",
+    "multiPlatform": "Multiplataforma",
+    "multiPlatformDesc": "Accede a los datos de tu tienda en iOS, Android y web sin volver a introducirlos.",
+    "viewAllFeatures": "Ver todas las funciones",
+    "badge": "Funciones"
+  },
+  "customSolution": {
+    "title": "¿Necesitas una solución a medida?",
+    "description": "¿Tu negocio de alquiler tiene necesidades especiales? Adaptamos la gestión de alquiler a lo que necesitas: desde alquiler de áo dài, vestidos de novia, equipos o vehículos hasta otros sectores especializados.",
+    "benefits": {
+      "title": "Ventajas de una solución a medida",
+      "customized": "Una solución totalmente adaptada a tu negocio",
+      "dedicated": "Soporte y asesoría dedicados de un equipo experto",
+      "scalable": "Un sistema que crece con tu negocio",
+      "integration": "Integración sencilla con tus sistemas actuales"
+    },
+    "contact": {
+      "title": "Contáctanos",
+      "description": "Hablemos de una solución para tu negocio de alquiler",
+      "email": "Correo",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "Consulta sobre una solución de alquiler a medida",
+      "emailBody": "Hola:\n\nMe interesa una solución de gestión de alquiler a medida para mi negocio.\n\nPor favor, contactadme para hablar de los detalles.\n\nUn saludo,",
+      "whatsappMessage": "Hola, me interesa una solución de gestión de alquiler a medida. Por favor, contactadme.",
+      "responseTime": "Respondemos en menos de 24 horas"
+    }
+  },
+  "whyChoose": {
+    "title": "¿Por qué elegir AnyRent para tu tienda de alquiler?",
+    "description": "Cientos de negocios de alquiler ya confían en nuestro sistema de gestión de alquiler.",
+    "easyToUse": "Fácil de usar",
+    "easyToUseDesc": "Una interfaz intuitiva pensada para dueños de tiendas de alquiler, sin conocimientos técnicos.",
+    "timeSaving": "Ahorra tiempo",
+    "timeSavingDesc": "Las tareas rutinarias se automatizan y puedes centrarte en hacer crecer el negocio en vez del papeleo.",
+    "increaseRevenue": "Más ingresos",
+    "increaseRevenueDesc": "Un inventario y unos clientes mejor gestionados se traducen en más alquileres.",
+    "support": "Soporte 24/7",
+    "supportDesc": "Nuestro equipo de soporte te ayuda siempre que lo necesites.",
+    "activeStores": "Tiendas activas",
+    "rating": "Valoración 4,9/5",
+    "badge": "Por qué AnyRent"
+  },
+  "stats": {
+    "activeStores": "Tiendas activas",
+    "ordersProcessed": "Pedidos gestionados",
+    "customerRating": "Valoración de clientes",
+    "supportAvailable": "Soporte"
+  },
+  "testimonials": {
+    "title": "Lo que dicen nuestros clientes",
+    "description": "Cientos de dueños de negocios de alquiler satisfechos",
+    "badge": "Opiniones",
+    "items": {
+      "john": {
+        "quote": "AnyRent me ayuda a gestionar mi negocio de alquiler con eficacia. La interfaz es sencilla y tiene todas las funciones que necesito.",
+        "name": "John Smith",
+        "role": "Dueño de una tienda de alquiler"
+      },
+      "sarah": {
+        "quote": "La gestión de pedidos es muy práctica: sigo todos los pedidos con facilidad y tengo el inventario bajo control.",
+        "name": "Sarah Johnson",
+        "role": "Encargada de tienda"
+      },
+      "mike": {
+        "quote": "La app móvil es muy práctica: gestiono la tienda desde cualquier sitio y es muy intuitiva.",
+        "name": "Mike Wilson",
+        "role": "Empresario"
+      },
+      "aoDai": {
+        "quote": "AnyRent me ayuda a llevar mi tienda de alquiler de áo dài con mucha eficacia. El calendario de reservas y la gestión de tallas son muy cómodos.",
+        "name": "Emily Chen",
+        "role": "Dueña de una tienda de alquiler de áo dài"
+      },
+      "equipment": {
+        "quote": "Gestionar el inventario de equipos nunca fue tan fácil: sé con precisión el estado de los equipos y la agenda de alquileres.",
+        "name": "David Kim",
+        "role": "Dueño de una tienda de alquiler de equipos"
+      },
+      "weddingDress": {
+        "quote": "La gestión de alquileres de vestidos de novia es muy profesional: llevo varios vestidos a la vez y veo el historial de cada clienta.",
+        "name": "Sophie Martinez",
+        "role": "Dueña de una tienda de alquiler de vestidos de novia"
+      },
+      "camera": {
+        "quote": "Alquilar cámaras y accesorios se ha vuelto sencillo. La revisión del estado de los equipos y la agenda de mantenimiento son muy útiles.",
+        "name": "James Anderson",
+        "role": "Dueño de una tienda de alquiler de cámaras"
+      }
+    }
+  },
+  "cta": {
+    "title": "¿Listo para empezar?",
+    "description": "Únete a miles de negocios de alquiler que confían en nuestra plataforma"
+  },
+  "blog": {
+    "title": "Últimos artículos",
+    "subtitle": "Ideas y consejos para tu negocio de alquiler",
+    "badge": "Artículos"
+  },
+  "faq": {
+    "title": "Preguntas frecuentes sobre el software para tiendas de alquiler",
+    "description": "Todo lo que necesitas saber sobre AnyRent, el sistema de gestión de alquiler",
+    "items": {
+      "freeUse": {
+        "question": "¿AnyRent es gratis?",
+        "answer": "AnyRent ofrece una prueba gratuita. Regístrate y usa las funciones básicas sin coste: pedidos de alquiler, inventario y clientes."
+      },
+      "multipleDevices": {
+        "question": "¿Puedo usarlo en varios dispositivos?",
+        "answer": "Sí, AnyRent funciona en iOS, Android y en el navegador. Gestiona tu tienda desde cualquier lugar."
+      },
+      "dataSecure": {
+        "question": "¿Mis datos están seguros?",
+        "answer": "Protegemos tus datos. La información de pedidos, inventario y clientes se cifra y se guarda de forma segura en la nube."
+      },
+      "support": {
+        "question": "¿Ofrecéis soporte al cliente?",
+        "answer": "Sí, el soporte de AnyRent está disponible 24/7 por chat, correo y teléfono."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Precios sencillos",
+    "description": "Elige el plan que mejor se adapte a tu negocio",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
+    "months": {
+      "three": "3 meses",
+      "six": "6 meses",
+      "twelve": "12 meses"
+    },
+    "loading": "Cargando planes...",
+    "error": "No se pudieron cargar los planes",
+    "errorHint": "Vuelve a intentarlo en unos minutos o contacta con AnyRent para pedir un presupuesto.",
+    "retry": "Reintentar",
+    "noPlans": "No hay planes disponibles por ahora.",
+    "buttonText": "Empezar",
+    "plans": {
+      "freeTrial": {
+        "name": "Prueba gratuita",
+        "subtitle": "Ideal para empezar",
+        "period": "7 días",
+        "description": "Prueba todas las funciones gratis",
+        "buttonText": "Empezar la prueba gratis"
+      },
+      "basic": {
+        "name": "Plan Básico",
+        "subtitle": "Para negocios de alquiler pequeños",
+        "period": "al mes",
+        "description": "Ideal para tiendas de alquiler pequeñas",
+        "buttonText": "Empezar",
+        "mostPopular": "El más elegido"
+      },
+      "premium": {
+        "name": "Plan Premium",
+        "subtitle": "Para negocios en crecimiento",
+        "period": "al mes",
+        "description": "Funciones avanzadas para operaciones más grandes",
+        "buttonText": "Empezar"
+      }
+    },
+    "features": {
+      "orderManagement": "Gestión de pedidos",
+      "productManagement": "Gestión de productos",
+      "customerManagement": "Gestión de clientes",
+      "revenueReports": "Informes de ingresos",
+      "singleAccount": "1 cuenta",
+      "twoAccounts": "2 cuentas",
+      "fiveAccounts": "5 cuentas",
+      "webPortal": "Versión web",
+      "additionalAccounts": "Cuentas adicionales",
+      "freeUpdates": "Actualizaciones gratis",
+      "mobileApp": "App móvil"
+    },
+    "allPlansInclude": "Todos los planes incluyen",
+    "support24": "Soporte 24/7",
+    "dataBackup": "Copia de seguridad",
+    "freeUpdates": "Actualizaciones gratis",
+    "training": "Formación",
+    "additionalPricingTitle": "Información de precios adicionales",
+    "additionalAccountPrice": "Cuenta adicional",
+    "additionalAccountDescription": "Precio de cada cuenta de usuario por encima del límite del plan",
+    "additionalAccountPriceValue": "30.000 VND/mes",
+    "addonPrice": "Complementos",
+    "addonDescription": "Precio de los complementos que amplían los límites (sucursales, usuarios, productos, clientes, pedidos)",
+    "addonPriceValue": "Consultar precio",
+    "close": "Cerrar",
+    "additionalPricingNote": "Más información sobre cuentas adicionales y complementos",
+    "priceLabel": "Precio:",
+    "additionalPricingSr": "Precios de cuentas adicionales y complementos"
+  },
+  "footer": {
+    "description": "AnyRent — software para tiendas de alquiler en Vietnam: alquiler de áo dài, vestidos de novia, equipos, vehículos, disfraces e impresoras. Pedidos de alquiler, inventario y clientes en un solo sistema.",
+    "product": {
+      "title": "Producto",
+      "features": "Funciones",
+      "pricing": "Precios",
+      "downloadApp": "Descargar la app"
+    },
+    "support": {
+      "title": "Ayuda",
+      "faq": "Preguntas frecuentes",
+      "documentation": "Artículos",
+      "contact": "Contacto"
+    },
+    "company": {
+      "title": "Empresa",
+      "aboutUs": "Sobre nosotros",
+      "terms": "Términos",
+      "privacy": "Privacidad"
+    },
+    "copyright": "© 2024 AnyRent. Todos los derechos reservados.",
+    "imageSearch": "Búsqueda por imagen con IA",
+    "industries": {
+      "title": "Sectores",
+      "aoDai": "Alquiler de áo dài",
+      "weddingDress": "Alquiler de vestidos de novia",
+      "equipment": "Alquiler de equipos",
+      "costume": "Alquiler de disfraces"
+    }
+  },
+  "industries": {
+    "title": "Soluciones por sector",
+    "subtitle": "Optimizado para cada tipo de negocio de alquiler",
+    "aoDai": {
+      "title": "Alquiler de áo dài",
+      "desc": "Stock por talla y color. Calendario de reservas sin solapamientos."
+    },
+    "weddingDress": {
+      "title": "Alquiler de vestidos de novia",
+      "desc": "Colecciones, citas de prueba y paquetes de boda completos."
+    },
+    "equipment": {
+      "title": "Alquiler de equipos",
+      "desc": "Estado, agenda de mantenimiento y contratos de alquiler."
+    },
+    "costume": {
+      "title": "Alquiler de disfraces",
+      "desc": "Espectáculos, cosplay y eventos. Gestión de tallas y accesorios."
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Escríbenos por Zalo",
+    "whatsappTitle": "Escríbenos por WhatsApp",
+    "telegramTitle": "Escríbenos por Telegram",
+    "zaloQrTitle": "Escanea el código QR para escribirnos por Zalo",
+    "zaloQrHint": "Abre la app de Zalo y escanea el código QR de arriba para contactar con nosotros",
+    "openZalo": "Abrir Zalo",
+    "close": "Cerrar",
+    "zaloQrAlt": "Código QR de Zalo",
+    "greeting": "¡Hola! Me gustaría saber más sobre AnyRent."
+  },
+  "sections": {
+    "hero": "Presentación",
+    "aiSearch": "Búsqueda por imagen con IA",
+    "duplicatePrevention": "Prevención de pedidos solapados",
+    "orderWorkflow": "Flujo de un pedido de alquiler",
+    "features": "Funciones",
+    "customSolution": "Solución a medida",
+    "stats": "Cifras",
+    "testimonials": "Opiniones",
+    "cta": "Empezar",
+    "faq": "Preguntas frecuentes",
+    "pricing": "Planes",
+    "blog": "Artículos"
+  }
+}

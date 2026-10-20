@@ -72,6 +72,8 @@ export function EmbeddingBackfillCard() {
   const [status, setStatus] = useState<EmbeddingBackfillStatus | null>(null);
   const [jobsList, setJobsList] = useState<EmbeddingJobsList | null>(null);
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
+  /** #1107: the last jobs GET failed; the table keeps its last rows and shows a notice with Retry */
+  const [jobsFailed, setJobsFailed] = useState(false);
   const [tab, setTab] = useState<EmbeddingJobStatus>('RUNNING');
   const [page, setPage] = useState(1);
   const [downloading, setDownloading] = useState(false);
@@ -118,10 +120,16 @@ export function EmbeddingBackfillCard() {
         limit: PAGE_SIZE,
         page: jobPage,
       });
-      if (res.success && res.data) setJobsList(res.data);
+      if (res.success && res.data) {
+        setJobsList(res.data);
+        setJobsFailed(false);
+      } else {
+        setJobsFailed(true);
+      }
       setLastRefresh(new Date().toISOString());
     } catch {
-      // the counts still show; the table keeps its last rows
+      // #1107: the counts still show and the table keeps its last rows, with a notice and Retry
+      setJobsFailed(true);
     }
   }, []);
 
@@ -291,11 +299,12 @@ export function EmbeddingBackfillCard() {
     <Card className="max-w-5xl">
       <CardHeader className="flex flex-row flex-wrap items-center gap-3">
         <CardTitle className="flex-1">{t('embeddingBackfill.title')}</CardTitle>
-        {model && (
+        {/* #1107: a status without `model` (older API, or the image service down) still shows the line */}
+        {status && (
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-            {model.reachable && model.name
+            {model?.reachable && model.name
               ? t('embeddingBackfill.modelLine', { name: model.name, collection: model.collection ?? '-' })
-              : t('embeddingBackfill.modelUnknown', { collection: model.collection ?? '-' })}
+              : t('embeddingBackfill.modelUnknown', { collection: model?.collection ?? '-' })}
           </span>
         )}
         <Button variant="outline" size="sm" onClick={loadAll} disabled={busy}>
@@ -476,7 +485,17 @@ export function EmbeddingBackfillCard() {
                 ))}
               </tbody>
             </table>
-            {jobsList && jobsList.rows.length === 0 && <p className="p-3 text-sm text-muted-foreground">{t('embeddingBackfill.emptyTab')}</p>}
+            {jobsFailed ? (
+              <div role="alert" className="flex flex-wrap items-center gap-2 p-3 text-sm text-red-700">
+                <span>{t('embeddingBackfill.jobsLoadFailed')}</span>
+                {/* one GET of the open tab (#1065: no loop) */}
+                <Button size="sm" variant="outline" onClick={loadJobs}>
+                  {t('embeddingBackfill.retry')}
+                </Button>
+              </div>
+            ) : (
+              jobsList && jobsList.rows.length === 0 && <p className="p-3 text-sm text-muted-foreground">{t('embeddingBackfill.emptyTab')}</p>
+            )}
           </div>
           {jobsList && jobsList.total > PAGE_SIZE && (
             <div className="flex items-center justify-end gap-2 pt-2 text-sm">

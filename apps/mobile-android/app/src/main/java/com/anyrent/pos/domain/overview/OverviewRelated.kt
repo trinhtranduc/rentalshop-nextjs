@@ -2,6 +2,7 @@ package com.anyrent.pos.domain.overview
 
 import androidx.annotation.StringRes
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.ShopTime
 import org.json.JSONObject
 
 /**
@@ -121,6 +122,14 @@ enum class EventReason(@StringRes val res: Int) {
 }
 
 object OverviewRelated {
+    /**
+     * #1062: one page of `GET /api/analytics/income/orders` for a bucket. The shop civil day (`timeZone`) and the
+     * merchant's branch chosen on Home (`outletIds`, #828) as the tiles, so the rows add up to the tile.
+     */
+    fun path(startDate: String, endDate: String, status: String, offset: Int, limit: Int, outletId: Int?): String =
+        "/api/analytics/income/orders?startDate=$startDate&endDate=$endDate&status=$status&plan=false" +
+            "&limit=$limit&offset=$offset&timeZone=${ShopTime.timeZoneParam()}" + (outletId?.let { "&outletIds=$it" } ?: "")
+
     /** What each row adds to the figure; rows that add nothing to Còn phải thu or Thế chân are left out */
     fun rows(kind: OverviewRelatedKind, items: List<IncomeRow>): List<RelatedRow> = items.mapNotNull { item ->
         val type = item.orderType.uppercase()

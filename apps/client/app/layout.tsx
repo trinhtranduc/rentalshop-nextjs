@@ -10,6 +10,7 @@ import dePublic from '../../../locales/de/public.json';
 import thPublic from '../../../locales/th/public.json';
 import idPublic from '../../../locales/id/public.json';
 import esPublic from '../../../locales/es/public.json';
+import { publicLandingMessages } from '../lib/public-content/landing-messages';
 import { headers } from 'next/headers';
 import { isPublicLocale, type PublicLocale } from '@rentalshop/constants';
 import type { Metadata } from 'next'
@@ -795,33 +796,11 @@ function getPublicContentMessages(locale: PublicLocale) {
   }
 
   const copy = publicCopyByLocale[locale] || enPublic;
+  // #1103: a full landing translation for every public locale (was English with 9 keys overridden)
   return {
     ...messages.en,
     public: copy,
-    landing: {
-      ...enLanding,
-      hero: {
-        ...enLanding.hero,
-        title: copy.heroTitle,
-        description: copy.heroDescription,
-        downloadApp: copy.tryApp,
-      },
-      features: {
-        ...enLanding.features,
-        title: copy.ordersTitle,
-        description: copy.ordersDescription,
-      },
-      aiSearch: {
-        ...enLanding.aiSearch,
-        title: copy.imageTitle,
-        description: copy.imageDescription,
-      },
-      blog: {
-        ...enLanding.blog,
-        title: copy.blogTitle,
-        subtitle: copy.blogDescription,
-      },
-    },
+    landing: publicLandingMessages(locale),
   };
 }
 

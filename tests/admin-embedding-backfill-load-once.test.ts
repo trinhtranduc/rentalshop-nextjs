@@ -122,13 +122,21 @@ function findByText(node: unknown, label: string): { props: Record<string, unkno
   return findByText(el.props.children, label);
 }
 
-function mountCard(opts: { pending?: () => number; top?: Array<{ id: number; name: string; missingEmbedding: number }> } = {}) {
+function mountCard(opts: {
+  pending?: () => number;
+  top?: Array<{ id: number; name: string; missingEmbedding: number }>;
+  /** #1107: the jobs GET throws while this returns true */
+  jobsFail?: () => boolean;
+  /** #1107: the status answer has no `model` (an API from before #1095) */
+  noModel?: boolean;
+} = {}) {
   const runtime = createRuntime();
   const calls = { status: 0, jobs: 0, run: [] as Record<string, unknown>[], statusArgs: [] as unknown[], jobsArgs: [] as Record<string, unknown>[] };
   const status = () => ({
     products: { withImages: 3, missingEmbedding: 1, withEmbedding: 2 },
     jobs: { PENDING: opts.pending ? opts.pending() : 0, RUNNING: 0, COMPLETED: 2, FAILED: 0 },
     topMerchants: opts.top ?? [],
+    ...(opts.noModel ? {} : { model: { name: 'marqo-fashionclip', hfRepo: null, collection: 'product-images-dev', reachable: true } }),
   });
   const stub = () => null;
   const { EmbeddingBackfillCard } = load<{ EmbeddingBackfillCard: () => unknown }>(
@@ -155,6 +163,7 @@ function mountCard(opts: { pending?: () => number; top?: Array<{ id: number; nam
           getEmbeddingJobs: async (query: Record<string, unknown>) => {
             calls.jobs++;
             calls.jobsArgs.push(query);
+            if (opts.jobsFail?.()) throw new Error('Failed to fetch');
             return {
               success: true,
               data: {
@@ -311,6 +320,32 @@ describe('Embedding backfill card for one shop (#1089)', () => {
       (global as any).setInterval = realSet;
       (global as any).clearInterval = realClear;
     }
+  });
+});
+
+// #1107: an API error showed an empty table and no model line, with no hint that anything failed
+describe('Embedding backfill card when the API fails (#1107)', () => {
+  it('a failed jobs GET shows the error with Retry; Retry is one jobs GET and the notice goes once it answers', async () => {
+    let failing = true;
+    const { runtime, calls, render } = mountCard({ jobsFail: () => failing });
+    let tree = await runtime.settle(render);
+    expect(calls.jobs).toBe(1);
+    expect(findByText(tree, 'embeddingBackfill.jobsLoadFailed')).not.toBeNull();
+    expect(findByText(tree, 'embeddingBackfill.emptyTab')).toBeNull();
+    const retry = findByText(tree, 'embeddingBackfill.retry');
+    expect(retry).not.toBeNull();
+    failing = false;
+    (retry!.props.onClick as () => void)();
+    tree = await runtime.settle(render);
+    expect(calls.jobs).toBe(2);
+    expect(calls.status).toBe(1);
+    expect(findByText(tree, 'embeddingBackfill.jobsLoadFailed')).toBeNull();
+  });
+
+  it('a status without `model` shows the "model unknown" line instead of nothing', async () => {
+    const { runtime, render } = mountCard({ noModel: true });
+    const tree = await runtime.settle(render);
+    expect(findByText(tree, 'embeddingBackfill.modelUnknown')).not.toBeNull();
   });
 });
 
