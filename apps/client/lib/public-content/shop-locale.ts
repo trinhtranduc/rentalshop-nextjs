@@ -24,9 +24,13 @@ export function shopLocale(publicCookie?: string | null, appCookie?: string | nu
   return 'vi';
 }
 
-/** BCP 47 tag for `Intl` on the shop pages (English with day-first dates, like the Vietnamese ones) */
+/**
+ * BCP 47 tag for `Intl` on the shop pages: English with day-first dates (like the Vietnamese ones), Thai with
+ * Gregorian years (the shop's calendar; Thai `Intl` defaults to the Buddhist era, 2569 for 2026)
+ */
 export function intlLocale(locale: string): string {
   if (locale === 'zh') return 'zh-CN';
   if (locale === 'en') return 'en-GB';
+  if (locale === 'th') return 'th-TH-u-ca-gregory';
   return locale;
 }

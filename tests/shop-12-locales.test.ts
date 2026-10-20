@@ -77,6 +77,17 @@ describe('#1146 locale helpers', () => {
     }
   });
 
+  it('the middleware matcher runs on both shop pages', () => {
+    const { config } = require('../apps/client/middleware');
+    const { getMiddlewareMatchers } = require('next/dist/build/analysis/get-page-static-info');
+    const matchers = getMiddlewareMatchers(config.matcher, {});
+    const matches = (p: string) => matchers.some((m: { regexp: string }) => new RegExp(m.regexp).test(p));
+    expect(matches('/lan-anh/products')).toBe(true);
+    expect(matches('/lan-anh/booking/AB12C')).toBe(true);
+    expect(matches('/lan-anh/booking')).toBe(false);
+    expect(matches('/ru/orders')).toBe(false);
+  });
+
   it('the middleware passes the shop language to the page', () => {
     const run = (cookies: Record<string, string>) => {
       next.mockClear();
@@ -151,6 +162,9 @@ describe('#1146 formats', () => {
     expect(sp(formatShopMoney(12.5, 'USD', 'fr'))).toBe('12,5 $US');
     expect(formatDayKey('2026-10-05', 'de')).toBe('05.10.2026');
     expect(formatDayKey('2026-10-05', 'en')).toBe('05/10/2026');
+    // Thai: Gregorian years like the shop's calendar, not the Buddhist era (2569)
+    expect(formatDayKey('2026-10-05', 'th')).toBe('05/10/2026');
+    expect(monthLabel('2026-10', 'th')).toContain('2026');
     expect(weekdayLabels('ru')).toHaveLength(7);
     expect(weekdayLabels('de')[0]).toMatch(/^Mo/);
     expect(sp(monthLabel('2026-10', 'fr'))).toBe('octobre 2026');

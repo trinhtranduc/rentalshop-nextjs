@@ -125,6 +125,7 @@ export const config = {
     '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)/:page(pricing|features|download|image-search)',
     // #1146 public shop pages
     '/:tenantKey/products',
-    '/:tenantKey/booking/:code',
+    // a bare trailing `:code` does not match in Next's matcher; the pattern makes it match
+    '/:tenantKey/booking/:code([A-Za-z0-9]{5})',
   ],
 };
