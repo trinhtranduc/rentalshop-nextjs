@@ -241,3 +241,19 @@ export function legacySettingsRedirect(search: string): string {
   params.set(SETTINGS_PARAM, tab);
   return withQuery('/dashboard', params);
 }
+
+/** #1145 shop currency shown in "Tiền tệ": VND or USD; anything else is what CurrencyProvider shows (USD). */
+export type ShopCurrency = 'VND' | 'USD';
+export function shopCurrency(value: unknown): ShopCurrency {
+  return String(value ?? '').trim().toUpperCase() === 'VND' ? 'VND' : 'USD';
+}
+
+/** #1145 only the owner changes the currency (the API answers 403 for every other role). */
+export function canChangeCurrency(role?: string | null): boolean {
+  return String(role || '').toUpperCase() === 'MERCHANT';
+}
+
+/** #1145 confirm example: the same amount in both currencies, nothing converted ("220.000 đ → $220,000.00"). */
+export function currencyExample(from: ShopCurrency, to: ShopCurrency, format: (amount: number, currency: ShopCurrency) => string): string {
+  return `${format(220000, from)} → ${format(220000, to)}`;
+}

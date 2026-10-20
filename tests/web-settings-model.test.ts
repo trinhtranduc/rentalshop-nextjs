@@ -242,7 +242,10 @@ describe('store settings (#528)', () => {
     // the UI-language → currency rule is gone; sign-up sets the currency once on the server
     expect('currencyForLocale' in settingsModel).toBe(false);
     const panel = readFileSync(join(__dirname, '../apps/client/app/settings/SettingsPanel.tsx'), 'utf8');
-    expect(panel).not.toMatch(/updateMerchantCurrency/);
+    // #1145: the only call is the owner's Lưu in Thông tin cửa hàng (saveMerchant), never on open
+    expect(panel.match(/updateMerchantCurrency/g)).toHaveLength(1);
+    const save = panel.slice(panel.indexOf('const saveMerchant'), panel.indexOf('// ------------------------------------------------------------------ outlet'));
+    expect(save).toMatch(/updateMerchantCurrency/);
     expect(panel).not.toMatch(/currencySynced/);
   });
 

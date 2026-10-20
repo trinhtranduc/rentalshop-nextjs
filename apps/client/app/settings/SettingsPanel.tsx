@@ -9,7 +9,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
-import { BankAccountSection, useToast } from '@rentalshop/ui';
+import { BankAccountSection, useCurrency, useToast } from '@rentalshop/ui';
 import { merchantsApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
 import { SettingsSubscriptionMerchantActions } from '../components/SettingsSubscriptionMerchantActions';
 import { Skeleton, type T } from '../orders/list/parts';
@@ -30,7 +30,7 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { groupedTabs, onlineBookingFlag, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
+import { canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -110,6 +110,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const { user: authUser, logout, refreshUser } = useAuth();
   const { canManageMerchants, canManageOutlets } = usePermissions();
   const { toastSuccess, toastError } = useToast();
+  const { setCurrency } = useCurrency();
   const user = authUser as unknown as SettingsUser | null;
   const role = String(user?.role || '').toUpperCase();
 
@@ -173,22 +174,49 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
     taxId: str(merchant.taxId),
     tenantKey: str(merchant.tenantKey) || tenantKey,
     description: str(merchant.description),
+    // #1145 "Tiền tệ" (owner only)
+    ...(canChangeCurrency(role) ? { currency: shopCurrency(merchant.currency) } : {}),
   };
 
   const saveMerchant = async (form: ShopForm) => {
+    const { currency: nextCurrency, ...info } = form;
+    const currencyChanged = canChangeCurrency(role) && !!nextCurrency && nextCurrency !== merchantForm.currency;
+    const infoChanged = JSON.stringify(info) !== JSON.stringify({ ...merchantForm, currency: undefined });
+    if (currencyChanged && nextCurrency) {
+      try {
+        const res = await settingsApi.updateMerchantCurrency({ currency: nextCurrency });
+        if (!res.success) {
+          toastError(ts('messages.errorTitle'), res.error || ts('messages.currencyUpdateFailed'));
+          return false;
+        }
+        setCurrency(nextCurrency);
+        updateStoredUser((u) => {
+          const m = u.merchant as Record<string, unknown> | undefined;
+          if (m) m.currency = nextCurrency;
+        });
+      } catch {
+        toastError(ts('messages.errorTitle'), ts('messages.currencyUpdateFailed'));
+        return false;
+      }
+      if (!infoChanged) {
+        await refreshUser();
+        toastSuccess(ts('messages.successTitle'), ts('messages.currencyUpdated'));
+        return true;
+      }
+    }
     const payload = {
-      name: form.name,
-      phone: form.phone,
-      address: form.address,
-      city: form.city,
-      state: form.state,
-      zipCode: form.zipCode,
-      country: form.country,
-      businessType: form.businessType || '',
-      pricingType: form.pricingType || '',
-      taxId: form.taxId || '',
-      tenantKey: form.tenantKey || '',
-      description: form.description || '',
+      name: info.name,
+      phone: info.phone,
+      address: info.address,
+      city: info.city,
+      state: info.state,
+      zipCode: info.zipCode,
+      country: info.country,
+      businessType: info.businessType || '',
+      pricingType: info.pricingType || '',
+      taxId: info.taxId || '',
+      tenantKey: info.tenantKey || '',
+      description: info.description || '',
     };
     try {
       const res = await settingsApi.updateMerchantInfo(payload);
@@ -322,7 +350,15 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
       case 'merchant':
         return (
           <>
-            <ShopInfoSection kind="merchant" initial={merchantForm} email={str(merchant.email)} canEdit={canManageMerchants} onSave={saveMerchant} t={t} />
+            <ShopInfoSection
+              kind="merchant"
+              initial={merchantForm}
+              email={str(merchant.email)}
+              canEdit={canManageMerchants}
+              canEditCurrency={canChangeCurrency(role)}
+              onSave={saveMerchant}
+              t={t}
+            />
             <OnlineBookingSection
               t={t}
               enabled={bookingFlag === true}

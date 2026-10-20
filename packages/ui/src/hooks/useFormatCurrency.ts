@@ -17,10 +17,10 @@
  */
 
 import { useCurrency } from '../contexts/CurrencyContext';
-import { formatCurrency } from '@rentalshop/utils';
+import { formatCurrency, formatShopAmount } from '@rentalshop/utils';
 
 export function useFormatCurrency() {
-  const { currency } = useCurrency();
+  const { currency, showDollar } = useCurrency();
   
   /**
    * Format amount with merchant's currency
@@ -28,7 +28,8 @@ export function useFormatCurrency() {
    * @returns Formatted currency string
    */
   return (amount: number | null | undefined): string => {
-    return formatCurrency(amount, currency);
+    // #1145 shop web: "$220,000" for USD; VND and admin unchanged
+    return showDollar ? formatShopAmount(amount, currency) : formatCurrency(amount, currency);
   };
 }
 

@@ -21,7 +21,12 @@
       "language": "언어 및 화면"
     },
     "form": {
-      "more": "더 보기"
+      "more": "더 보기",
+      "currency": "통화",
+      "currencyHint": "웹과 상점 페이지에서 가격을 표시하는 방식입니다. 금액은 환산되지 않습니다.",
+      "currencyConfirmTitle": "통화를 {code}(으)로 변경할까요?",
+      "currencyConfirmBody": "웹과 상점 페이지의 모든 가격이 {code}(으)로 표시됩니다. 금액은 그대로이며 환산되지 않습니다({example}).",
+      "currencyConfirmOk": "{code}(으)로 변경"
     },
     "outlets": {
       "count": "지점 {count}개",

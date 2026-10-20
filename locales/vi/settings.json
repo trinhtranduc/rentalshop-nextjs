@@ -550,7 +550,12 @@
       "save": "Lưu",
       "saving": "Đang lưu…",
       "readOnly": "Bạn chỉ xem được mục này.",
-      "more": "Thêm"
+      "more": "Thêm",
+      "currency": "Tiền tệ",
+      "currencyHint": "Cách hiện giá trên web và trang shop. Số tiền không tự quy đổi.",
+      "currencyConfirmTitle": "Đổi tiền tệ sang {code}?",
+      "currencyConfirmBody": "Mọi giá trên web và trang shop sẽ hiện bằng {code}. Số tiền giữ nguyên, không quy đổi ({example}).",
+      "currencyConfirmOk": "Đổi sang {code}"
     },
     "outlets": {
       "title": "Chi nhánh",

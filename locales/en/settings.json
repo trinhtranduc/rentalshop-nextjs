@@ -550,7 +550,12 @@
       "save": "Save",
       "saving": "Saving…",
       "readOnly": "You can only view this section.",
-      "more": "More"
+      "more": "More",
+      "currency": "Currency",
+      "currencyHint": "How prices show on the web and the shop page. Amounts are not converted.",
+      "currencyConfirmTitle": "Change currency to {code}?",
+      "currencyConfirmBody": "Every price on the web and the shop page will show in {code}. Amounts stay the same, nothing is converted ({example}).",
+      "currencyConfirmOk": "Change to {code}"
     },
     "outlets": {
       "title": "Outlets",
