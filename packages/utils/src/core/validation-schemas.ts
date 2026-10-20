@@ -369,7 +369,11 @@ const baseOrderSchema = z.object({
   rentalDurationUnit: z.enum(['day', 'hour']).optional(),
 });
 
-export const orderCreateSchema = baseOrderSchema;
+export const orderCreateSchema = baseOrderSchema.extend({
+  // #1124 confirming an online booking request: the request becomes CONFIRMED in the create transaction.
+  // Create only (installed apps never send it); not part of orderUpdateSchema.
+  bookingRequestId: z.coerce.number().int().positive().optional(),
+});
 export const orderUpdateSchema = baseOrderSchema.partial();
 // ✅ NO id field - id comes from query params, not body
 
@@ -559,6 +563,8 @@ export const outletUpdateSchema = z.object({
   printNote: outletPrintNoteSchema,
   // Print the default bank account + VietQR on this outlet's bills (#628). Omitted = unchanged.
   printBankQr: z.boolean().optional(),
+  // #1124 this outlet takes online booking requests (when the shop turned booking on). Omitted = unchanged.
+  acceptsOnlineBooking: z.boolean().optional(),
   isActive: z.boolean().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'CLOSED', 'SUSPENDED']).optional(),
 });

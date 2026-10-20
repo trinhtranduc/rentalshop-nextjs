@@ -48,9 +48,9 @@ describe('mobile app-config (#362)', () => {
   const allOn = (features: Record<string, boolean>) => Object.values(features).every((on) => on === true);
   const allOff = (features: Record<string, boolean>) => Object.values(features).every((on) => on === false);
 
-  it('#456: MOBILE_FEATURES unset → all 8 features on', () => {
+  it('#456: MOBILE_FEATURES unset → all 9 features on (#1124 adds onlineBooking)', () => {
     const { features } = buildMobileAppConfig({ MOBILE_FEATURES: undefined });
-    expect(Object.keys(features)).toHaveLength(8);
+    expect(Object.keys(features)).toHaveLength(9);
     expect(allOn(features)).toBe(true);
   });
 

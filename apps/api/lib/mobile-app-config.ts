@@ -16,6 +16,8 @@ export const MOBILE_FEATURE_KEYS = [
   'newSettings',
   'newAuth',
   'newCustomers',
+  // #1124 "Đặt online" chip, list and confirm flow (apps built after PR4/PR5 read it)
+  'onlineBooking',
 ] as const;
 
 export type MobileFeatureKey = (typeof MOBILE_FEATURE_KEYS)[number];

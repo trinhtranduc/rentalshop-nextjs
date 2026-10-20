@@ -556,5 +556,18 @@
   "EMBEDDING_BACKFILL_STATUS": "Image search status loaded.",
   "EMBEDDING_JOBS_LIST": "Image search jobs loaded.",
   "EMBEDDING_BACKFILL_DRY_RUN": "Check finished. Nothing was queued.",
-  "EMBEDDING_BACKFILL_QUEUED": "Products queued for image search."
+  "EMBEDDING_BACKFILL_QUEUED": "Products queued for image search.",
+  "BOOKING_DISABLED": "This shop does not take online booking requests.",
+  "BOOKING_OUTLET_UNAVAILABLE": "This branch does not take online booking requests.",
+  "BOOKING_NOT_AVAILABLE": "This item is not free on one of the chosen days. Pick other days or a smaller quantity.",
+  "BOOKING_RATE_LIMITED": "Too many booking requests. Please wait a while and try again, or call the shop.",
+  "BOOKING_REQUEST_NOT_FOUND": "Booking request not found.",
+  "BOOKING_REQUEST_CLOSED": "This booking request was already confirmed, rejected or has expired.",
+  "INVALID_PHONE": "Please enter a valid phone number.",
+  "BOOKING_AVAILABILITY": "Availability loaded.",
+  "BOOKING_REQUEST_CREATED": "Booking request sent. The shop will confirm it soon.",
+  "BOOKING_REQUEST_FOUND": "Booking request loaded.",
+  "BOOKING_REQUESTS_FOUND": "Booking requests loaded.",
+  "BOOKING_REQUEST_PREPARED": "Booking request ready to create the order.",
+  "BOOKING_REQUEST_REJECTED": "Booking request rejected."
 }

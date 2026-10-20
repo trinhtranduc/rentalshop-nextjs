@@ -178,6 +178,8 @@ model Merchant {
   /// #518 "Cho tạo đơn khi trùng lịch". true (default) = today's behaviour, no availability check on save.
   /// false = the API rejects RENT orders that would exceed outlet stock on some VN civil day.
   allowOverlappingOrders Boolean            @default(true)
+  /// #1124 Đặt đơn online: customers may send booking requests from the public shop page. Off until the shop turns it on.
+  onlineBookingEnabled Boolean              @default(false)
   /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
   /// is a civil day in this zone. Existing shops and register calls without a zone: Asia/Ho_Chi_Minh.
   timezone             String               @default("Asia/Ho_Chi_Minh")
@@ -217,6 +219,8 @@ model Outlet {
   printNote    String?
   /// Print the default bank account + VietQR on bills of this outlet (#628). Synced web ↔ mobile.
   printBankQr  Boolean       @default(false)
+  /// #1124 this outlet takes online booking requests (only when Merchant.onlineBookingEnabled)
+  acceptsOnlineBooking Boolean @default(true)
   isActive     Boolean       @default(true)
   isDefault    Boolean       @default(false)
   createdAt    DateTime      @default(now())
@@ -1355,4 +1359,61 @@ model AttendanceMonthLock {
   lockedAt   DateTime @default(now())
 
   @@unique([outletId, month])
+}
+
+/// #1124 Đặt đơn online: a customer's request from the public shop page. Not an order: the shop confirms it, which
+/// creates a RESERVED order through POST /api/orders (bookingRequestId). PENDING past expiresAt reads as EXPIRED.
+model BookingRequest {
+  id            Int                  @id @default(autoincrement())
+  /// 5 characters A–Z/2–9 without 0, O, 1, I; shown to the customer and in the tracking link
+  code          String               @unique
+  merchantId    Int
+  outletId      Int
+  status        BookingRequestStatus @default(PENDING)
+  customerName  String
+  /// digits only, a leading + kept
+  customerPhone String
+  note          String?
+  /// start of the Vietnam civil day of pickup / return, like a RENT order created from the apps
+  pickupPlanAt  DateTime
+  returnPlanAt  DateTime
+  expiresAt     DateTime
+  /// OUT_OF_STOCK | CANNOT_CONTACT | OTHER
+  rejectReason  String?
+  rejectNote    String?
+  orderId       Int?                 @unique
+  customerId    Int?
+  decidedById   Int?
+  decidedAt     DateTime?
+  /// anti-spam only, never shown
+  clientIp      String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  items         BookingRequestItem[]
+
+  @@index([merchantId, status, createdAt])
+  @@index([outletId, status])
+  @@index([customerPhone, createdAt])
+}
+
+model BookingRequestItem {
+  id          Int            @id @default(autoincrement())
+  requestId   Int
+  productId   Int
+  quantity    Int
+  /// product name when sent (the product may be renamed or deleted later)
+  productName String
+  /// rent price shown when sent, for reference only; the order price comes from the cart
+  unitPrice   Float?
+  request     BookingRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+enum BookingRequestStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  EXPIRED
+  CANCELLED
 }

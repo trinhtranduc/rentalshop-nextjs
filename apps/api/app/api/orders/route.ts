@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
@@ -41,6 +42,7 @@ import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
 import { narrowOrderOutlets } from '../../../lib/order-outlet-ids';
 import { resolveOrderDeposits } from '../../../lib/order-deposits';
 import { clampOrderDiscount, sumLineTotals } from '../../../lib/order-discount';
+import { BookingRequestClosedError, effectiveBookingStatus } from '../../../lib/booking-requests';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
@@ -956,27 +958,67 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     // #518: a shop with "Cho tạo đơn khi trùng lịch" OFF refuses a rental that would exceed outlet stock on
     // some VN civil day. Default ON (or missing column) runs no extra query. The check runs inside the create
     // transaction after the #341 replay lookup, so a retried create still returns its order.
+    // #1124 confirming an online booking request: same shop, still PENDING and not expired. Marked CONFIRMED in the
+    // create transaction (afterInsert); a request closed in between throws there and rolls the order back.
+    const bookingRequestId = (parsed.data as { bookingRequestId?: number }).bookingRequestId;
+    if (bookingRequestId) {
+      const booking = await db.prisma.bookingRequest.findUnique({ where: { id: bookingRequestId } });
+      if (!booking || booking.merchantId !== outlet.merchantId) {
+        return NextResponse.json(ResponseBuilder.error('BOOKING_REQUEST_NOT_FOUND'), { status: 404 });
+      }
+      if (booking.orderId || effectiveBookingStatus(booking) !== 'PENDING') {
+        return NextResponse.json(ResponseBuilder.error('BOOKING_REQUEST_CLOSED'), { status: 409 });
+      }
+    }
+    const confirmBooking = bookingRequestId
+      ? async (tx: unknown, created: { id: number }) => {
+          const now = new Date();
+          const marked = await (tx as Prisma.TransactionClient).bookingRequest.updateMany({
+            where: { id: bookingRequestId, status: 'PENDING', orderId: null, expiresAt: { gt: now } },
+            data: {
+              status: 'CONFIRMED',
+              orderId: created.id,
+              customerId: parsed.data.customerId ?? null,
+              decidedById: user.id,
+              decidedAt: now,
+            },
+          });
+          if (marked.count === 0) throw new BookingRequestClosedError();
+        }
+      : undefined;
+
     const checkSchedule =
       parsed.data.orderType === ORDER_TYPE.RENT &&
       (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders === false &&
       Boolean(orderData.pickupPlanAt && orderData.returnPlanAt);
-    const createResult = checkSchedule
-      ? await db.orders.createOnce(createGuard, orderData, {
-          beforeInsert: async (tx: unknown) => {
-            const conflicts = await loadScheduleConflicts(tx as ScheduleDbClient, {
-              outletId: parsed.data.outletId,
-              pickupPlanAt: orderData.pickupPlanAt,
-              returnPlanAt: orderData.returnPlanAt,
-              items: orderItemsData.map((item: { productId: number; quantity: number; productName?: string | null }) => ({
-                productId: item.productId,
-                quantity: item.quantity,
-                productName: item.productName ?? null
-              }))
-            });
-            return conflicts.length > 0 ? conflicts : null;
-          }
-        })
-      : await db.orders.createOnce(createGuard, orderData);
+    let createResult: Awaited<ReturnType<typeof db.orders.createOnce>>;
+    try {
+      createResult = checkSchedule
+        ? await db.orders.createOnce(createGuard, orderData, {
+            ...(confirmBooking ? { afterInsert: confirmBooking } : {}),
+            beforeInsert: async (tx: unknown) => {
+              const conflicts = await loadScheduleConflicts(tx as ScheduleDbClient, {
+                outletId: parsed.data.outletId,
+                pickupPlanAt: orderData.pickupPlanAt,
+                returnPlanAt: orderData.returnPlanAt,
+                items: orderItemsData.map((item: { productId: number; quantity: number; productName?: string | null }) => ({
+                  productId: item.productId,
+                  quantity: item.quantity,
+                  productName: item.productName ?? null
+                }))
+              });
+              return conflicts.length > 0 ? conflicts : null;
+            }
+          })
+        : confirmBooking
+          ? await db.orders.createOnce(createGuard, orderData, { afterInsert: confirmBooking })
+          : await db.orders.createOnce(createGuard, orderData);
+    } catch (error) {
+      if (error instanceof BookingRequestClosedError) {
+        return NextResponse.json(ResponseBuilder.error('BOOKING_REQUEST_CLOSED'), { status: 409 });
+      }
+      throw error;
+    }
     if (createResult.blocked) {
       return NextResponse.json(
         scheduleConflictBody(ResponseBuilder.error(ORDER_SCHEDULE_CONFLICT), createResult.blocked as ScheduleConflict[]),

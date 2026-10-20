@@ -136,7 +136,7 @@ describe('POST /api/public/[tenantKey]/booking-requests', () => {
     const res = await create(body());
     expect(res.status).toBe(409);
     expect(res.body.code).toBe('BOOKING_NOT_AVAILABLE');
-    expect(res.body.error).toEqual({ productId: 12, date: '2026-10-23' });
+    expect(res.body.data).toEqual({ productId: 12, date: '2026-10-23' });
     expect(mockStore.requests).toHaveLength(0);
   });
 
@@ -144,7 +144,7 @@ describe('POST /api/public/[tenantKey]/booking-requests', () => {
     mockStore.orders.push({ id: 6, outletId: 3, productId: 12, quantity: 1, status: 'RESERVED', orderType: 'RENT', pickupPlanAt: vnDay('2026-10-21'), returnPlanAt: vnDay('2026-10-21') });
     const res = await create(body({ returnDate: '2026-10-21' }));
     expect(res.status).toBe(409);
-    expect(res.body.error).toEqual({ productId: 12, date: '2026-10-21' });
+    expect(res.body.data).toEqual({ productId: 12, date: '2026-10-21' });
   });
 
   it('refuses: shop off (403), outlet not taking requests, past pickup, another shop’s product, bad phone (400)', async () => {
