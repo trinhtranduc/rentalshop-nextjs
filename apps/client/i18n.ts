@@ -11,6 +11,9 @@ import enPublic from '../../locales/en/public.json';
  */
 
 import { getRequestConfig } from 'next-intl/server';
+import { isPublicLocale } from '@rentalshop/constants';
+import { appLocaleFor } from './lib/public-content/shop-locale';
+import { shopMessages } from './lib/public-content/shop-messages';
 
 // Supported locales
 export const locales = ['en', 'vi', 'zh', 'ko', 'ja'] as const;
@@ -237,10 +240,22 @@ export default getRequestConfig(async () => {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      const localeCookie = cookieStore.get('NEXT_LOCALE');
-      
-      if (localeCookie?.value && isValidLocale(localeCookie.value)) {
-        locale = localeCookie.value;
+      // #1146: a public-only language (e.g. ru) falls back to an app language
+      locale = appLocaleFor(cookieStore.get('NEXT_LOCALE')?.value);
+
+      // #1146: the public shop pages use the shop language the middleware picked (12 public languages)
+      const { headers } = await import('next/headers');
+      const shopLanguage = headers().get('x-anyrent-shop-page') ? headers().get('x-anyrent-public-locale') : null;
+      if (isPublicLocale(shopLanguage)) {
+        if (isValidLocale(shopLanguage)) locale = shopLanguage;
+        else {
+          return {
+            locale: shopLanguage,
+            messages: { ...messages.en, ...shopMessages(shopLanguage, { products: enProducts, common: enCommon }) },
+            timeZone: 'Asia/Ho_Chi_Minh',
+            now: new Date(),
+          };
+        }
       }
     } catch (error) {
       // Fallback to default if error

@@ -99,5 +99,15 @@
       "errorNetwork": "연결할 수 없습니다. 네트워크를 확인한 뒤 다시 시도하세요.",
       "errorGeneric": "지금은 검색할 수 없습니다. 다시 시도하세요."
     }
-  }
+  },
+  "uncategorized": "미분류",
+  "productsPlural": "개 상품",
+  "noProductsFound": "상품을 찾을 수 없습니다",
+  "noProducts": "상품이 없습니다",
+  "tryDifferentSearch": "검색어나 필터를 바꿔 보세요",
+  "checkBackLater": "이 매장에는 아직 상품이 없습니다. 나중에 다시 확인해 주세요.",
+  "clearFilters": "필터 지우기",
+  "storeNotFound": "매장을 찾을 수 없습니다",
+  "storeNotFoundMessage": "찾으시는 매장이 없습니다. 주소를 확인하거나 매장 주인에게 문의해 주세요.",
+  "goToHomepage": "홈으로"
 }

@@ -3,6 +3,7 @@
  * kept in the browser, the form and the tracking page. Days are Vietnam civil day keys (`YYYY-MM-DD`); calendar
  * maths runs on the key itself (UTC dates built from the key), never on the machine's local day.
  */
+import { intlLocale } from '../../../../lib/public-content/shop-locale';
 
 export type DayStatus = 'free' | 'full';
 export interface PublicDay {
@@ -84,9 +85,47 @@ export function nightsBetween(pickup: string, ret: string): number {
   return Math.round((keyToUtc(ret) - keyToUtc(pickup)) / DAY_MS) + 1;
 }
 
-export function formatDayKey(key: string): string {
+export function formatDayKey(key: string, locale: string = 'vi'): string {
   const [y, m, d] = key.split('-');
-  return `${d}/${m}/${y}`;
+  if (locale === 'vi') return `${d}/${m}/${y}`;
+  // #1146: the page language's date order; a day key is a civil day, so format it in UTC
+  return new Intl.DateTimeFormat(intlLocale(locale), { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(
+    keyToUtc(key)
+  );
+}
+
+const WEEKDAYS_VI = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+/** Calendar header, Monday first: `T2 … CN` in Vietnamese, else the page language's short day names */
+export function weekdayLabels(locale: string = 'vi'): string[] {
+  if (locale === 'vi') return WEEKDAYS_VI;
+  const format = new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short', timeZone: 'UTC' });
+  // 2024-01-01 is a Monday
+  return Array.from({ length: 7 }, (_, i) => format.format(Date.UTC(2024, 0, 1 + i)));
+}
+
+/** Calendar title for `YYYY-MM`: `10/2026` in Vietnamese, else e.g. `October 2026` / `октябрь 2026 г.` */
+export function monthLabel(month: string, locale: string = 'vi'): string {
+  if (locale === 'vi') return `${month.slice(5)}/${month.slice(0, 4)}`;
+  const [y, m] = month.split('-').map(Number);
+  return new Intl.DateTimeFormat(intlLocale(locale), { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(Date.UTC(y, m - 1, 1));
+}
+
+/** A moment in the shop's Vietnam time: `HH:mm dd/mm/yyyy` in Vietnamese, else the page language's date and time */
+export function formatShopTime(iso: string, locale: string = 'vi'): string {
+  if (locale !== 'vi') {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Asia/Ho_Chi_Minh',
+    }).format(new Date(iso));
+  }
+  const d = new Date(new Date(iso).getTime() + 7 * 3600 * 1000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())} ${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
 }
 
 // ---------------------------------------------------------------------------------------------------------------

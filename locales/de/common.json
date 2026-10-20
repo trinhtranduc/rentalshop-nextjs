@@ -1,0 +1,9 @@
+{
+  "pagination": {
+    "showing": "Angezeigt",
+    "to": "bis",
+    "of": "von",
+    "itemsPerPage": "Pro Seite",
+    "apply": "Übernehmen"
+  }
+}

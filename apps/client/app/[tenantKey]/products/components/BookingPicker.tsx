@@ -8,12 +8,14 @@ import type { Product } from '@rentalshop/types';
 import { formatShopMoney, productPriceLines } from '../lib/public-shop';
 import {
   calendarMonth,
+  monthLabel,
   monthOf,
   monthRange,
   nightsBetween,
   pickRange,
   rangeIsFree,
   shiftMonth,
+  weekdayLabels,
   type BookingRequestDraft,
   type DateRange,
 } from '../lib/booking';
@@ -35,13 +37,10 @@ interface BookingPickerProps {
   onAdd: (where: { outletId: number; pickupDate: string; returnDate: string }, quantity: number) => void;
 }
 
-const WEEKDAYS_VI = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-const WEEKDAYS_EN = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-
 /** #1124 mockup screen 2 — branch, a free/full month calendar, quantity, estimate, "Thêm vào yêu cầu" */
 export function BookingPicker({ tenantKey, product, outlets, currency, todayKey, draft, onAdd }: BookingPickerProps) {
   const t = useTranslations('products.public.booking');
-  const english = useLocale() !== 'vi';
+  const locale = useLocale();
   const accepting = outlets.filter((o) => o.acceptsOnlineBooking);
   const [outletId, setOutletId] = useState<number>(
     accepting.some((o) => o.id === draft.outletId) ? (draft.outletId as number) : accepting[0]?.id
@@ -132,7 +131,7 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="min-w-[72px] text-center text-sm font-semibold text-slate-900">
-              {month.slice(5)}/{month.slice(0, 4)}
+              {monthLabel(month, locale)}
             </span>
             <button
               type="button"
@@ -146,7 +145,7 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
           </span>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center text-[13px]">
-          {(english ? WEEKDAYS_EN : WEEKDAYS_VI).map((w) => (
+          {weekdayLabels(locale).map((w) => (
             <span key={w} className="text-[11px] text-slate-400">
               {w}
             </span>
@@ -231,7 +230,7 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
           {estimate != null && (
             <>
               {' · '}
-              {t('estimate')} <b className="text-slate-900">{formatShopMoney(estimate, currency)}</b>
+              {t('estimate')} <b className="text-slate-900">{formatShopMoney(estimate, currency, locale)}</b>
             </>
           )}
         </div>

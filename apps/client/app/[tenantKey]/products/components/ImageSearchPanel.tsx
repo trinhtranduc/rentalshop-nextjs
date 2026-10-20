@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, X } from 'lucide-react';
 import { AiSearchTile } from './AiSearchIcon';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { publicImageSearchApi, type PublicImageSearchProduct } from '@rentalshop/utils';
 import { formatShopMoney, productPriceLines, telLink, zaloLink } from '../lib/public-shop';
 import { checkPickedImage, downscaleForSearch, imageSearchView, similarityPercent, type ImageSearchView } from '../lib/image-search';
@@ -31,7 +31,8 @@ export function ImageSearchPanel({ tenantKey, currency, phone, onOpen, pickSigna
   const [view, setView] = useState<ImageSearchView>({ kind: 'idle' });
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const money = (amount: number) => formatShopMoney(amount, currency);
+  const locale = useLocale();
+  const money = (amount: number) => formatShopMoney(amount, currency, locale);
 
   useEffect(() => {
     if (pickSignal > 0) input.current?.click();

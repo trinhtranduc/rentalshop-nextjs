@@ -3,10 +3,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Check, RefreshCw } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { publicBookingApi, type PublicBookingRequest } from '@rentalshop/utils';
 import { telLink, zaloLink } from '../../products/lib/public-shop';
-import { bookingErrorKey, formatDayKey, nightsBetween, trackingView } from '../../products/lib/booking';
+import { bookingErrorKey, formatDayKey, formatShopTime, nightsBetween, trackingView } from '../../products/lib/booking';
 
 const STEP_KEY: Record<string, string> = {
   sent: 'stepSent',
@@ -17,17 +17,12 @@ const STEP_KEY: Record<string, string> = {
   cancelled: 'stepCancelled',
 };
 
-/** "HH:mm dd/mm/yyyy" in the shop's Vietnam time */
-function shopTime(iso: string): string {
-  const d = new Date(new Date(iso).getTime() + 7 * 3600 * 1000);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())} ${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
-}
-
 /** #1124 mockup screen 4 — code, steps, days, branch, items, estimate, Gọi / Zalo */
 export function BookingTracking({ tenantKey, code }: { tenantKey: string; code: string }) {
   const t = useTranslations('products.public.booking');
   const tp = useTranslations('products.public');
+  const locale = useLocale();
+  const shopTime = (iso: string) => formatShopTime(iso, locale);
   const [request, setRequest] = useState<PublicBookingRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,7 +104,7 @@ export function BookingTracking({ tenantKey, code }: { tenantKey: string; code: 
               <div className="flex justify-between gap-3">
                 <span className="text-slate-500">{t('dates')}</span>
                 <span className="text-right">
-                  {formatDayKey(request.pickupDate)} → {formatDayKey(request.returnDate)} · {t('days', { count: days })}
+                  {formatDayKey(request.pickupDate, locale)} → {formatDayKey(request.returnDate, locale)} · {t('days', { count: days })}
                 </span>
               </div>
               {request.outlet && (

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { Product } from '@rentalshop/types';
 import { formatShopMoney, productPriceLines, telLink, zaloLink } from '../lib/public-shop';
 import { canBook, type BookingRequestDraft } from '../lib/booking';
@@ -30,7 +30,8 @@ export function PublicProductSheet({ product, categoryName, currency, phone, onC
   const t = useTranslations('products.public');
   const tb = useTranslations('products.public.booking');
   const [picking, setPicking] = useState(false);
-  const money = (amount: number) => formatShopMoney(amount, currency);
+  const locale = useLocale();
+  const money = (amount: number) => formatShopMoney(amount, currency, locale);
   const prices = productPriceLines(product);
   const images = (product.images || []).filter(Boolean);
   const [photo, setPhoto] = useState(0);

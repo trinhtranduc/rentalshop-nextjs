@@ -13,6 +13,8 @@ import esPublic from '../../../locales/es/public.json';
 import { publicLandingMessages } from '../lib/public-content/landing-messages';
 import { publicFeaturesMessages, publicPlansMessages } from '../lib/public-content/page-namespaces';
 import { headers } from 'next/headers';
+import { appLocaleFor, type AppLocale } from '../lib/public-content/shop-locale';
+import { shopMessages } from '../lib/public-content/shop-messages';
 import { isPublicLocale, type PublicLocale } from '@rentalshop/constants';
 import type { Metadata } from 'next'
 import { Inter, Be_Vietnam_Pro } from 'next/font/google'
@@ -104,16 +106,13 @@ const beVietnam = Be_Vietnam_Pro({
 // Generate metadata based on locale
 export async function generateMetadata(): Promise<Metadata> {
   // Get locale from cookies (same logic as RootLayout)
-  let locale: 'en' | 'vi' | 'zh' | 'ko' | 'ja' = 'vi';
+  let locale: AppLocale = 'vi';
   
   try {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
-    const localeCookie = cookieStore.get('NEXT_LOCALE');
-    
-    if (localeCookie?.value && ['en', 'vi', 'zh', 'ko', 'ja'].includes(localeCookie.value)) {
-      locale = localeCookie.value as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
-    }
+    // #1146: a public-only language (e.g. ru picked on a shop page) falls back to an app language
+    locale = appLocaleFor(cookieStore.get('NEXT_LOCALE')?.value);
   } catch (error) {
     // Fallback to Vietnamese
     locale = 'vi';
@@ -805,6 +804,8 @@ function getPublicContentMessages(locale: PublicLocale) {
     // #1114: the localized features and pricing pages
     features: publicFeaturesMessages(locale),
     plans: publicPlansMessages(locale),
+    // #1146: the public shop page strings (products.public, pagination)
+    ...shopMessages(locale, { products: enProducts, common: enCommon }),
   };
 }
 
@@ -815,16 +816,13 @@ export default async function RootLayout({
 }) {
   // ✅ READ COOKIE SERVER-SIDE - No flash, correct locale from start
   // Default to Vietnamese for Vietnam market
-  let locale: 'en' | 'vi' | 'zh' | 'ko' | 'ja' = 'vi';
+  let locale: AppLocale = 'vi';
   
   try {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
-    const localeCookie = cookieStore.get('NEXT_LOCALE');
-    
-    if (localeCookie?.value && ['en', 'vi', 'zh', 'ko', 'ja'].includes(localeCookie.value)) {
-      locale = localeCookie.value as 'en' | 'vi' | 'zh' | 'ko' | 'ja';
-    }
+    // #1146: a public-only language (e.g. ru picked on a shop page) falls back to an app language
+    locale = appLocaleFor(cookieStore.get('NEXT_LOCALE')?.value);
   } catch (error) {
     // Fallback to Vietnamese (primary market)
     console.log('Using default locale: vi');
