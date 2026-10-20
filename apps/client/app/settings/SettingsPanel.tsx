@@ -23,6 +23,7 @@ import {
   LanguageSection,
   LegacyPanel,
   OutletsSection,
+  OnlineBookingSection,
   ProfileSection,
   ReceiptSection,
   ShareLinksSection,
@@ -339,6 +340,13 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
           <>
             <ShopInfoSection kind="merchant" initial={merchantForm} email={str(merchant.email)} canEdit={canManageMerchants} onSave={saveMerchant} t={t} />
             <OutletsSection t={t} />
+            <OnlineBookingSection
+              t={t}
+              enabled={(merchant as { onlineBookingEnabled?: unknown }).onlineBookingEnabled === true}
+              canEditShop={role === 'MERCHANT'}
+              canEditOutlets={canManageOutlets}
+              onShopChanged={() => void refreshUser?.()}
+            />
             <ShareLinksSection
               publicProductLink={user?.publicProductLink || str(user?.merchant?.publicProductLink)}
               tenantKey={merchantForm.tenantKey}
@@ -350,6 +358,14 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
         return (
           <>
             <ShopInfoSection kind="outlet" initial={outletForm} canEdit={canManageOutlets} onSave={saveOutlet} t={t} />
+            {role === 'OUTLET_ADMIN' && (
+              <OnlineBookingSection
+                t={t}
+                enabled={(user?.merchant as { onlineBookingEnabled?: unknown } | undefined)?.onlineBookingEnabled === true}
+                canEditShop={false}
+                canEditOutlets={canManageOutlets}
+              />
+            )}
             <ShareLinksSection
               publicProductLink={str(user?.outlet?.merchant?.publicProductLink)}
               tenantKey={str(user?.outlet?.merchant?.tenantKey) || str(user?.merchant?.tenantKey)}

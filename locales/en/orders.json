@@ -1059,6 +1059,58 @@
       "bankName": "Bank",
       "bankAccount": "Account no.",
       "bankHolder": "Holder"
+    },
+    "online": {
+      "button": "Online bookings",
+      "title": "Online bookings",
+      "subtitle": "Requests customers sent from your shop page. Confirm to create an order, or reject.",
+      "backToOrders": "Orders",
+      "settings": "Online booking settings",
+      "noAccess": "You cannot view online bookings.",
+      "loadFailed": "Could not load online bookings.",
+      "actionFailed": "That did not work. Try again.",
+      "items": "{count} items",
+      "hoursLeft": "{hours}h left",
+      "phone": "Phone",
+      "outlet": "Outlet",
+      "days": "Rental days",
+      "customer": "Customer",
+      "customerKnown": "Existing customer",
+      "customerNew": "New customer (created on confirm)",
+      "note": "Note",
+      "free": "Available",
+      "shortOn": "Short from {day}",
+      "confirm": "Confirm",
+      "reject": "Reject",
+      "openOrder": "View order",
+      "rejectTitle": "Reject request",
+      "rejectHint": "Pick a reason. The customer will see the request was rejected.",
+      "notePlaceholder": "Extra note (optional)",
+      "notePlaceholderRequired": "Write the reason",
+      "noteRequired": "Write a reason when you pick \"Other\".",
+      "rejectedBecause": "Reject reason",
+      "cancel": "Cancel",
+      "close": "Close",
+      "fromRequest": "From an online booking request",
+      "status": {
+        "PENDING": "Waiting",
+        "CONFIRMED": "Confirmed",
+        "REJECTED": "Rejected",
+        "EXPIRED": "Expired",
+        "CANCELLED": "Cancelled by customer"
+      },
+      "empty": {
+        "PENDING": "No requests waiting.",
+        "CONFIRMED": "No confirmed requests yet.",
+        "REJECTED": "No rejected requests.",
+        "EXPIRED": "No expired requests.",
+        "CANCELLED": "No requests cancelled by customers."
+      },
+      "reasons": {
+        "OUT_OF_STOCK": "Out of stock",
+        "CANNOT_CONTACT": "Could not reach the customer",
+        "OTHER": "Other"
+      }
     }
   }
 }

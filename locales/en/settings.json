@@ -742,6 +742,13 @@
       "bankQrNoAccount": "This outlet has no bank account yet.",
       "bankQrAddAccount": "Add a bank account",
       "bankQrReadOnly": "Only the owner or the outlet manager can change this."
+    },
+    "onlineBooking": {
+      "title": "Accept online bookings",
+      "hint": "Customers book from your shop page; you confirm before it becomes an order.",
+      "ownerOnly": "Only the shop owner can turn this on or off.",
+      "outlets": "Outlets that accept bookings",
+      "outletsHint": "Turn off outlets that should not take online bookings."
     }
   },
   "embeddingBackfill": {

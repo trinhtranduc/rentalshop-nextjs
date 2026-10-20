@@ -44,6 +44,7 @@ export * from './referrals';
 export * from './posts';
 export * from './public-booking';
 export * from './public-image-search';
+export * from './booking-requests';
 export * from './loyalty';
 export * from './attendance';
 

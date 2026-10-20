@@ -12,7 +12,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useAuth, useCanExportData } from '@rentalshop/hooks';
-import { getLocalDateKey, ordersApi } from '@rentalshop/utils';
+import { bookingRequestsApi, getLocalDateKey, ordersApi } from '@rentalshop/utils';
+import { canSeeBookings } from './online/online-model';
 import { useShopToday } from '../hooks/useShopToday';
 import type { OrderFilters } from '@rentalshop/types';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
@@ -145,6 +146,20 @@ export default function OrdersPage() {
 
   // #852: branch picker (MERCHANT with 2+ branches). "Tất cả" = active branches, sent as explicit ids.
   const isMerchant = user?.role === 'MERCHANT';
+  // Đặt online (#1124): requests still waiting for an answer
+  const seesBookings = canSeeBookings(user?.role);
+  const [pendingBookings, setPendingBookings] = useState(0);
+  useEffect(() => {
+    if (!seesBookings) return;
+    let live = true;
+    bookingRequestsApi
+      .list({ status: 'PENDING', limit: 1 })
+      .then((res) => live && res.success && res.data && setPendingBookings(res.data.counts?.PENDING ?? 0))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [seesBookings]);
   const branchOptions = useBranchOptions(!authLoading && isMerchant);
   const options = useMemo(() => branchOptions ?? [], [branchOptions]);
   const picker = showsBranchPicker(user?.role, options);
@@ -294,6 +309,14 @@ export default function OrdersPage() {
               onChange={(ids) => update({ outlets: outletsParam(ids, options) })}
               t={td}
             />
+          )}
+          {seesBookings && (
+            <Link href="/orders/online" className={outlineBtn} data-online-bookings>
+              {t('online.button')}
+              {pendingBookings > 0 && (
+                <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-ar-danger px-1.5 text-xs font-bold text-white">{pendingBookings}</span>
+              )}
+            </Link>
           )}
           {canExport && tab === 'all' && (
             <>
