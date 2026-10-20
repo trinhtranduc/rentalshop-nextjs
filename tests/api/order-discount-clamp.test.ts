@@ -119,6 +119,7 @@ describe('PUT /api/orders/:id clamps a discount above the lines (#1070)', () => 
     ctx = staffOutlet1;
     mockDb.outlets.findById.mockImplementation(async (id: number) => ({ id, merchantId: 2 }));
     mockDb.orders.update.mockImplementation(async (_id: number, data: any) => ({ id: 5, ...data }));
+    mockDb.products.findById.mockImplementation(async (id: number) => ({ id, merchantId: 2 }));
   });
 
   it('old iOS edit: amount discount above the existing lines → 200, stored discount = lines, total as sent', async () => {
