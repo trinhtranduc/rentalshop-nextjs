@@ -40,6 +40,7 @@ import {
 import { readAnalyticsTimeZone } from '../../../lib/analytics-days';
 import { narrowOrderOutlets } from '../../../lib/order-outlet-ids';
 import { resolveOrderDeposits } from '../../../lib/order-deposits';
+import { clampOrderDiscount, sumLineTotals } from '../../../lib/order-discount';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
@@ -892,6 +893,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       parsed.data.securityDeposit
     );
 
+    // #1070: a discount above the lines is stored clamped to them (old apps send it unclamped), never rejected
+    const discount = clampOrderDiscount(parsed.data, sumLineTotals(orderItemsData));
+
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
       orderNumber,
@@ -906,8 +910,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       damageFee: parsed.data.damageFee || 0,
       lateFee: parsed.data.lateFee || 0,
       discountType: parsed.data.discountType,
-      discountValue: parsed.data.discountValue || 0,
-      discountAmount: parsed.data.discountAmount || 0,
+      discountValue: discount.discountValue || 0,
+      discountAmount: discount.discountAmount || 0,
       pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
       returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
       rentalDuration: rentalDuration,
