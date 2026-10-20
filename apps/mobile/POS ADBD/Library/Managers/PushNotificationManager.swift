@@ -125,6 +125,12 @@ final class PushNotificationManager: NSObject {
             return
         }
 
+        // #1124 "Có đơn đặt online mới" → the request
+        if let requestId = BookingLogic.requestId(fromPush: userInfo) {
+            openBookingRequest(id: requestId)
+            return
+        }
+
         let orderIdString =
             (userInfo["orderId"] as? String)
             ?? (userInfo["order_id"] as? String)
@@ -169,6 +175,26 @@ final class PushNotificationManager: NSObject {
             }
             self.pushMyShifts()
         }
+    }
+
+    /// #1124: one online booking request on the selected tab (the main UI once it shows)
+    func openBookingRequest(id: Int) {
+        DispatchQueue.main.async {
+            guard User.account() != nil, let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
+            if !(appDelegate.window?.rootViewController is TabbarViewController) {
+                appDelegate.loadMainUserView(forceMain: true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.pushBookingRequest(id: id) }
+                return
+            }
+            self.pushBookingRequest(id: id)
+        }
+    }
+
+    private func pushBookingRequest(id: Int) {
+        guard let tabBar = (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController as? TabbarViewController,
+              let nav = (tabBar.selectedViewController as? UINavigationController)
+                ?? (tabBar.viewControllers?.first as? UINavigationController) else { return }
+        nav.pushViewController(BookingRequestDetailViewController(requestId: id), animated: true)
     }
 
     private func pushMyShifts() {

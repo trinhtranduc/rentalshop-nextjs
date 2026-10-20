@@ -28,6 +28,10 @@ final class OrdersViewController: BaseViewControler {
     private let titleLabel = UILabel()
     private let modeButton = UIButton(type: .system)
     private let titleRow = UIStackView()
+    /// #1124 "Đặt online" with the red count of requests waiting; hidden unless the shop takes online bookings
+    private let bookingButton = UIButton(type: .system)
+    private let bookingBadge = InsetLabel()
+    private var bookingAvailable = false
     private let searchBox = UIView()
     private let searchField = UITextField()
     private let scanButton = UIButton(type: .system)
@@ -76,12 +80,77 @@ final class OrdersViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         // #674: back from a detail or the tab again: a quiet refresh only when an order changed or the list is old
         viewModel.refreshIfNeeded()
+        refreshBookingButton()
     }
 
     /// #674: an order was created or changed somewhere; refresh now when on screen, else on the next appear
     @objc private func ordersChanged() {
         viewModel.markDirty()
-        if isViewLoaded, view.window != nil { viewModel.refreshIfNeeded() }
+        if isViewLoaded, view.window != nil {
+            viewModel.refreshIfNeeded()
+            refreshBookingButton()
+        }
+    }
+
+    // MARK: - Online booking (#1124)
+
+    private func buildBookingButton() {
+        bookingButton.setTitle("booking.chip".localized(), for: .normal)
+        bookingButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        bookingButton.setTitleColor(DS.Color.text, for: .normal)
+        bookingButton.layer.cornerRadius = 10
+        bookingButton.layer.borderWidth = 1
+        bookingButton.layer.borderColor = Self.chipBorder.cgColor
+        bookingButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+        bookingButton.accessibilityIdentifier = "orders.booking"
+        bookingButton.addTarget(self, action: #selector(bookingTapped), for: .touchUpInside)
+        bookingButton.snp.makeConstraints { make in make.height.equalTo(40) }
+        bookingButton.isHidden = true
+        bookingBadge.insets = UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)
+        bookingBadge.font = Utils.boldFont(size: DS.TextSize.pill)
+        bookingBadge.textColor = .white
+        bookingBadge.backgroundColor = UIColor(hexString: "DC2626")
+        bookingBadge.layer.cornerRadius = 9
+        bookingBadge.clipsToBounds = true
+        bookingBadge.isHidden = true
+        bookingBadge.accessibilityIdentifier = "orders.booking.count"
+        bookingButton.addSubview(bookingBadge)
+        bookingBadge.snp.makeConstraints { make in
+            make.centerY.equalTo(bookingButton.snp.top).offset(2)
+            make.centerX.equalTo(bookingButton.snp.trailing).offset(-4)
+            make.height.greaterThanOrEqualTo(18)
+            make.width.greaterThanOrEqualTo(18)
+        }
+        bookingBadge.textAlignment = .center
+    }
+
+    /// The chip needs the server feature, the shop's switch and `bookings.view`; the count is the requests waiting
+    private func refreshBookingButton() {
+        let permissions = User.current()?.permissions ?? []
+        guard FeatureFlags.shared.isOn(.onlineBooking), permissions.contains(BookingLogic.viewPermission) else {
+            bookingButton.isHidden = true
+            return
+        }
+        TabsV2APIService.shared.onlineBookingEnabled { [weak self] enabled, error in
+            guard let self, error == nil else { return }
+            self.bookingAvailable = BookingLogic.isAvailable(featureOn: FeatureFlags.shared.isOn(.onlineBooking),
+                                                             merchantEnabled: enabled, permissions: permissions)
+            self.bookingButton.isHidden = !self.bookingAvailable
+            guard self.bookingAvailable else { return }
+            TabsV2APIService.shared.bookingRequests(status: .pending, limit: 1) { [weak self] list, _ in
+                guard let self, let list else { return }
+                let count = list.pendingCount
+                self.bookingBadge.text = count > 99 ? "99+" : "\(count)"
+                self.bookingBadge.isHidden = count == 0
+                self.bookingButton.accessibilityValue = "\(count)"
+            }
+        }
+    }
+
+    @objc private func bookingTapped() {
+        let list = BookingRequestsViewController()
+        list.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(list, animated: true)
     }
 
     // MARK: - Layout
@@ -138,8 +207,11 @@ final class OrdersViewController: BaseViewControler {
         modeButton.snp.makeConstraints { make in make.height.equalTo(40) }
         titleRow.addArrangedSubview(titleLabel)
         titleRow.addArrangedSubview(UIView())
+        buildBookingButton()
+        titleRow.addArrangedSubview(bookingButton)
         titleRow.addArrangedSubview(modeButton)
         titleRow.alignment = .center
+        titleRow.spacing = DS.Spacing.sm
 
         // Search field with the scan button inside (board Main); clear button while searching (VL-tim)
         searchBox.layer.cornerRadius = 12

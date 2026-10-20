@@ -2770,3 +2770,35 @@
 "cart.multi.delete.title" = "Xoá giỏ này?";
 "cart.multi.delete.message" = "%@ có %d món. Các món sẽ bị xoá.";
 "cart.multi.limit" = "Đang mở 10 giỏ. Hãy đóng bớt một giỏ rồi sửa đơn.";
+
+/* #1124 Đặt online */
+"booking.chip" = "Đặt online";
+"booking.title" = "Đặt online";
+"booking.detail.title" = "Yêu cầu đặt online";
+"booking.status.pending" = "Chờ xác nhận";
+"booking.status.confirmed" = "Đã xác nhận";
+"booking.status.rejected" = "Từ chối";
+"booking.status.expired" = "Hết hạn";
+"booking.status.cancelled" = "Đã huỷ";
+"booking.status.unknown" = "Khác";
+"booking.items" = "%d món";
+"booking.hoursLeft" = "Còn %d giờ để xác nhận";
+"booking.empty" = "Chưa có yêu cầu nào";
+"booking.section.customer" = "Khách hàng";
+"booking.section.rental" = "Thuê";
+"booking.section.note" = "Ghi chú của khách";
+"booking.outlet" = "Chi nhánh";
+"booking.dates" = "Ngày thuê";
+"booking.returningCustomer" = "Khách cũ: %@";
+"booking.newCustomer" = "Khách mới, sẽ được tạo khi xác nhận";
+"booking.item.free" = "Còn đồ";
+"booking.item.short" = "Thiếu đồ từ ngày %@";
+"booking.shortWarning" = "Có món không đủ số lượng trong những ngày khách chọn. Kiểm tra trước khi xác nhận.";
+"booking.action.confirm" = "Xác nhận";
+"booking.action.reject" = "Từ chối";
+"booking.reject.title" = "Lý do từ chối";
+"booking.reject.outOfStock" = "Hết đồ";
+"booking.reject.cannotContact" = "Không liên lạc được";
+"booking.reject.other" = "Khác";
+"booking.reject.otherPlaceholder" = "Lý do khách sẽ thấy";
+"booking.cancel" = "Huỷ";

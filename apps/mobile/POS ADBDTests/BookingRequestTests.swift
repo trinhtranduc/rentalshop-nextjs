@@ -172,3 +172,14 @@ final class BookingRequestTests: XCTestCase {
         XCTAssertNil(BookingLogic.requestId(fromPush: ["type": "ORDER_CREATED", "orderId": "3"]))
     }
 }
+
+extension BookingRequestTests {
+    func testInboxRowOpensTheRequest() throws {
+        let row = try JSONDecoder().decode(InboxNotification.self, from: Data(#"""
+        {"id":1,"type":"BOOKING_REQUEST","title":"Có đơn đặt online mới","message":null,"body":"A7K3Q","isRead":false,
+         "readAt":null,"createdAt":"2026-10-20T07:05:00.000Z","data":{"type":"BOOKING_REQUEST","bookingRequestId":12,"code":"A7K3Q","outletId":3}}
+        """#.utf8))
+        XCTAssertEqual(row.bookingRequestIdValue, 12)
+        XCTAssertNil(row.orderIdValue)
+    }
+}

@@ -155,6 +155,7 @@
 		04F1A0032F1B0001000A0003 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 04F1A0042F1B0001000A0004 /* FirebaseMessaging */; };
 		04F1A0122F1B0001000A0012 /* DraftOrderReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1A0112F1B0001000A0011 /* DraftOrderReminder.swift */; };
 		04F1A0222F1B0001000A0022 /* DraftOrderNotificationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1A0212F1B0001000A0021 /* DraftOrderNotificationCard.swift */; };
+		A1124B000000000000000001 /* BookingRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1124F000000000000000001 /* BookingRequest.swift */; };
 		04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0001 /* InboxNotification.swift */; };
 		04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0002 /* NotificationService.swift */; };
 		04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04F1B0012F1C0101000A0003 /* NotificationCell.swift */; };
@@ -193,6 +194,7 @@
 		9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9700A0022E9F000100970001 /* PrinterSetupTests.swift */; };
 		A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */; };
 		A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A1 /* CartNotePhotosTests.swift */; };
+		A1124B0000000000000000E1 /* BookingRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1124F0000000000000000E1 /* BookingRequestTests.swift */; };
 		A4800480B0000000000000A2 /* CartStoreMultiCartTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */; };
 		16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA71945D1F2C820062603E /* DesignTokens.swift */; };
 		17A8F15D2425531D3A98D73D /* CustomersV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F677EA40098CED48493B0C8 /* CustomersV2Tests.swift */; };
@@ -333,6 +335,8 @@
 		C9D2ABB224B0D53C0028EAAC /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D2ABB424B0D53C0028EAAC /* Localizable.strings */; };
 		9700A0032E9F000100970001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9700A0042E9F000100970001 /* InfoPlist.strings */; };
 		C9EFF5B1237BF75E00A6CB57 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EFF5B0237BF75E00A6CB57 /* Customer.swift */; };
+		A1124B000000000000000002 /* BookingRequestsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1124F000000000000000002 /* BookingRequestsViewController.swift */; };
+		A1124B000000000000000003 /* BookingRequestDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1124F000000000000000003 /* BookingRequestDetailViewController.swift */; };
 		CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E19ED151DD6F782E5777FB /* OrdersViewController.swift */; };
 		CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */; };
 		D40FB2637C62BD90BAE52C00 /* UpdateRequiredViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17452EF02F0FA1167A7EFDD /* UpdateRequiredViewController.swift */; };
@@ -546,6 +550,7 @@
 		04F1A0052F1B0001000A0005 /* POS ADBD.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "POS ADBD.entitlements"; sourceTree = "<group>"; };
 		04F1A0112F1B0001000A0011 /* DraftOrderReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderReminder.swift; sourceTree = "<group>"; };
 		04F1A0212F1B0001000A0021 /* DraftOrderNotificationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderNotificationCard.swift; sourceTree = "<group>"; };
+		A1124F000000000000000001 /* BookingRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingRequest.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0001 /* InboxNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxNotification.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0002 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		04F1B0012F1C0101000A0003 /* NotificationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCell.swift; sourceTree = "<group>"; };
@@ -588,6 +593,8 @@
 		09DFF664402F310DBDA0C7DD /* AuthForms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthForms.swift; sourceTree = "<group>"; };
 		0A1F5CFB8CF4F6BC049B3945 /* AppConfigTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		0F60A53B395A4465C009145E /* Pods_POS_ADBD.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_POS_ADBD.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1124F000000000000000002 /* BookingRequestsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingRequestsViewController.swift; sourceTree = "<group>"; };
+		A1124F000000000000000003 /* BookingRequestDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingRequestDetailViewController.swift; sourceTree = "<group>"; };
 		15E19ED151DD6F782E5777FB /* OrdersViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersViewController.swift; sourceTree = "<group>"; };
 		16733093F5AD2CBACB593E6B /* CalendarV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarV2.swift; sourceTree = "<group>"; };
 		1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ViewModel.swift; sourceTree = "<group>"; };
@@ -614,6 +621,7 @@
 		9700A0022E9F000100970001 /* PrinterSetupTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrinterSetupTests.swift; sourceTree = "<group>"; };
 		A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsNotesV2Tests.swift; sourceTree = "<group>"; };
 		A4800480F0000000000000A1 /* CartNotePhotosTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartNotePhotosTests.swift; sourceTree = "<group>"; };
+		A1124F0000000000000000E1 /* BookingRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingRequestTests.swift; sourceTree = "<group>"; };
 		A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CartStoreMultiCartTests.swift; sourceTree = "<group>"; };
 		628848789A17EEF1ECD704C3 /* AppConfigService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppConfigService.swift; sourceTree = "<group>"; };
 		64454969BCB62EEB55223203 /* OverviewV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverviewV2.swift; sourceTree = "<group>"; };
@@ -1085,6 +1093,7 @@
 				9700A0022E9F000100970001 /* PrinterSetupTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
 				A4800480F0000000000000A1 /* CartNotePhotosTests.swift */,
+				A1124F0000000000000000E1 /* BookingRequestTests.swift */,
 				A4800480F0000000000000A2 /* CartStoreMultiCartTests.swift */,
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				A622F0000000000000000002 /* BankQRTests.swift */,
@@ -1109,6 +1118,8 @@
 		7774545E329D2F692CB2C4CB /* Orders */ = {
 			isa = PBXGroup;
 			children = (
+				A1124F000000000000000002 /* BookingRequestsViewController.swift */,
+				A1124F000000000000000003 /* BookingRequestDetailViewController.swift */,
 				15E19ED151DD6F782E5777FB /* OrdersViewController.swift */,
 				C466A2A395154AD70553624A /* OrderRowCell.swift */,
 				8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */,
@@ -1150,6 +1161,7 @@
 				C94E9CD8233DEB5500D63CC0 /* Merchant.swift */,
 				A909F0000000000000000001 /* Attendance.swift */,
 				C9EFF5B0237BF75E00A6CB57 /* Customer.swift */,
+				A1124F000000000000000001 /* BookingRequest.swift */,
 				04F1B0012F1C0101000A0001 /* InboxNotification.swift */,
 				C9B0410523AC919A00DED0B3 /* DateFormatTransform.swift */,
 				8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */,
@@ -1916,6 +1928,7 @@
 				9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
 				A4800480B0000000000000A1 /* CartNotePhotosTests.swift in Sources */,
+				A1124B0000000000000000E1 /* BookingRequestTests.swift in Sources */,
 				A4800480B0000000000000A2 /* CartStoreMultiCartTests.swift in Sources */,
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				A622B0000000000000000002 /* BankQRTests.swift in Sources */,
@@ -1964,6 +1977,7 @@
 				04A1B0112F7A000100000011 /* SubscriptionViewController.swift in Sources */,
 				04A1B0112F7A000100000013 /* SubscriptionAPIService.swift in Sources */,
 				04A1B0112F7A000100000015 /* SubscriptionStatusInfo.swift in Sources */,
+				A1124B000000000000000001 /* BookingRequest.swift in Sources */,
 				04F1B0022F1C0101000A0001 /* InboxNotification.swift in Sources */,
 				04F1B0022F1C0101000A0002 /* NotificationService.swift in Sources */,
 				04F1B0022F1C0101000A0003 /* NotificationCell.swift in Sources */,
@@ -2152,6 +2166,8 @@
 				4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */,
 				61800AE4201230EA1EED530E /* TodayWork.swift in Sources */,
 				6E5F77822E6F01D26CD3E7DC /* OrdersHomeViewModel.swift in Sources */,
+				A1124B000000000000000002 /* BookingRequestsViewController.swift in Sources */,
+				A1124B000000000000000003 /* BookingRequestDetailViewController.swift in Sources */,
 				CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */,
 				E4524B2B978D3134644DADCB /* OrderRowCell.swift in Sources */,
 				F05A9EEA160D9C22272C8D9E /* OrdersFilterSheet.swift in Sources */,
