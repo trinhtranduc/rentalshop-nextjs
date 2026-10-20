@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { publicBookingApi } from '@rentalshop/utils';
 import { formatShopMoney } from '../lib/public-shop';
 import {
@@ -29,6 +29,7 @@ interface BookingRequestSheetProps {
 /** #1124 mockup screen 3 — the items of the request, name, phone, note, hidden honeypot, "Gửi yêu cầu" */
 export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRemove, onSent, onClose }: BookingRequestSheetProps) {
   const t = useTranslations('products.public.booking');
+  const locale = useLocale();
   const router = useRouter();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -87,7 +88,7 @@ export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRem
     if (key === 'errorFull' && res.data && 'date' in res.data) {
       const full = res.data;
       const item = draft.items.find((i) => i.productId === full.productId);
-      setFailure(item ? t('errorFull', { name: item.name, date: formatDayKey(full.date) }) : t('errorFullNoName', { date: formatDayKey(full.date) }));
+      setFailure(item ? t('errorFull', { name: item.name, date: formatDayKey(full.date, locale) }) : t('errorFullNoName', { date: formatDayKey(full.date, locale) }));
     } else if (key === 'phoneInvalid') setErrors({ phone: 'phoneInvalid' });
     else setFailure(t(key));
   };
@@ -117,7 +118,7 @@ export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRem
             {draft.pickupDate && draft.returnDate && (
               <>
                 {' · '}
-                {formatDayKey(draft.pickupDate)} → {formatDayKey(draft.returnDate)} · {t('days', { count: days })}
+                {formatDayKey(draft.pickupDate, locale)} → {formatDayKey(draft.returnDate, locale)} · {t('days', { count: days })}
               </>
             )}
           </div>
@@ -128,7 +129,7 @@ export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRem
                   <div className="truncate text-[15px] font-medium text-slate-900">{i.name}</div>
                   <div className="text-[13px] text-slate-500">× {i.quantity}</div>
                 </div>
-                {totals[idx] != null && <b className="text-[15px]">{formatShopMoney(totals[idx]!, currency)}</b>}
+                {totals[idx] != null && <b className="text-[15px]">{formatShopMoney(totals[idx]!, currency, locale)}</b>}
                 <button type="button" onClick={() => onRemove(i.productId)} className="text-[13px] font-semibold text-red-700">
                   {t('remove')}
                 </button>
@@ -138,7 +139,7 @@ export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRem
           {total != null && (
             <div className="flex justify-between text-[15px]">
               <span className="text-slate-600">{t('total')}</span>
-              <b>{formatShopMoney(total, currency)}</b>
+              <b>{formatShopMoney(total, currency, locale)}</b>
             </div>
           )}
 

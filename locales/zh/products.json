@@ -99,5 +99,15 @@
       "errorNetwork": "无法连接。请检查网络后重试。",
       "errorGeneric": "暂时无法搜索。请重试。"
     }
-  }
+  },
+  "uncategorized": "未分类",
+  "productsPlural": "件商品",
+  "noProductsFound": "未找到商品",
+  "noProducts": "暂无商品",
+  "tryDifferentSearch": "试试调整搜索或筛选条件",
+  "checkBackLater": "这家店暂时没有商品，请稍后再来看看。",
+  "clearFilters": "清除筛选",
+  "storeNotFound": "未找到店铺",
+  "storeNotFoundMessage": "找不到你要的店铺。请检查网址或联系店主。",
+  "goToHomepage": "返回首页"
 }

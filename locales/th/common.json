@@ -1,0 +1,9 @@
+{
+  "pagination": {
+    "showing": "แสดง",
+    "to": "ถึง",
+    "of": "จาก",
+    "itemsPerPage": "ต่อหน้า",
+    "apply": "ใช้"
+  }
+}

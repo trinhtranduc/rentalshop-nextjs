@@ -99,5 +99,15 @@
       "errorNetwork": "接続できません。ネットワークを確認してもう一度お試しください。",
       "errorGeneric": "現在検索できません。もう一度お試しください。"
     }
-  }
+  },
+  "uncategorized": "未分類",
+  "productsPlural": "件の商品",
+  "noProductsFound": "商品が見つかりません",
+  "noProducts": "商品はありません",
+  "tryDifferentSearch": "検索語やフィルターを変えてみてください",
+  "checkBackLater": "このショップには現在商品がありません。後でもう一度ご確認ください。",
+  "clearFilters": "フィルターをクリア",
+  "storeNotFound": "ショップが見つかりません",
+  "storeNotFoundMessage": "お探しのショップが見つかりません。URL を確認するか、ショップのオーナーにお問い合わせください。",
+  "goToHomepage": "ホームへ"
 }

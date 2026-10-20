@@ -1,0 +1,9 @@
+{
+  "pagination": {
+    "showing": "顯示",
+    "to": "至",
+    "of": "，共",
+    "itemsPerPage": "每頁筆數",
+    "apply": "套用"
+  }
+}

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { Pagination } from '@rentalshop/ui';
 import type { Product, Category } from '@rentalshop/types';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalDateKey } from '@rentalshop/utils';
 import { formatShopMoney, productPriceLines } from '../lib/public-shop';
 import { addToRequest, emptyRequest, loadRequest, removeFromRequest, saveRequest, type BookingRequestDraft } from '../lib/booking';
@@ -51,7 +51,8 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
   const searchParams = useSearchParams();
   const t = useTranslations('products');
   const tp = useTranslations('products.public');
-  const money = (amount: number) => formatShopMoney(amount, currency);
+  const locale = useLocale();
+  const money = (amount: number) => formatShopMoney(amount, currency, locale);
 
   const currentCategoryId = searchParams.get('categoryId') ? parseInt(searchParams.get('categoryId')!, 10) : null;
   const currentSearch = searchParams.get('search') || '';

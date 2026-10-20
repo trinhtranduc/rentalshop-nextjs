@@ -1,6 +1,7 @@
 /**
  * #665 — pure helpers for the public shop page (prices, money, contact links).
  */
+import { intlLocale } from '../../../../lib/public-content/shop-locale';
 
 export interface ShopPricingOption {
   type: string;
@@ -45,8 +46,20 @@ export function productPriceLines(product: ShopPricedProduct): ShopPriceLines {
   };
 }
 
-/** VND as `500.000đ`; other currencies as `$12.50` */
-export function formatShopMoney(amount: number, currency?: string | null): string {
+/**
+ * Money in the shop's currency. Vietnamese (default): VND as `500.000đ`, other currencies as `$12.50`.
+ * #1146 other page languages: their own grouping and symbol, still in the shop's currency (`500 000 ₫` in ru).
+ */
+export function formatShopMoney(amount: number, currency?: string | null, locale: string = 'vi'): string {
+  if (locale !== 'vi') {
+    const code = currency || 'VND';
+    return new Intl.NumberFormat(intlLocale(locale), {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: code === 'VND' ? 0 : 2,
+    }).format(code === 'VND' ? Math.round(amount) : amount);
+  }
   if (!currency || currency === 'VND') {
     return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Math.round(amount))}đ`;
   }
