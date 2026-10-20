@@ -33,6 +33,8 @@ class SettingsV2ViewModelTest {
         override suspend fun plan(): SettingsPlan? { plans++; return planAnswer }
         override suspend fun count(item: SettingsItem): Int? { counts++; return 12 }
         override suspend fun refreshOverlap() { overlaps++ }
+        var currencies = 0
+        override suspend fun refreshCurrency() { currencies++ }
     }
 
     @Test
@@ -70,5 +72,20 @@ class SettingsV2ViewModelTest {
         vm.onShown("MERCHANT", canEditOverlap = true, items = emptyList()); advanceUntilIdle()
         assertEquals(2, source.plans)
         assertEquals(1, source.overlaps)
+    }
+
+    /** #1145: every shop role re-reads the currency with the same throttle; ADMIN has no shop */
+    @Test
+    fun `currency is read on show with the same throttle`() = runTest(dispatcher) {
+        val source = FakeSource()
+        var now = Instant.parse("2026-10-08T03:00:00Z")
+        val vm = SettingsV2ViewModel(source) { now }
+        vm.onShown("OUTLET_STAFF", canEditOverlap = false, items = emptyList()); advanceUntilIdle()
+        assertEquals(1, source.currencies)
+        now = now.plusSeconds(60)
+        vm.onShown("OUTLET_STAFF", canEditOverlap = false, items = emptyList()); advanceUntilIdle()
+        assertEquals("within 10 minutes: nothing", 1, source.currencies)
+        vm.onShown("ADMIN", canEditOverlap = false, items = emptyList()); advanceUntilIdle()
+        assertEquals(1, source.currencies)
     }
 }

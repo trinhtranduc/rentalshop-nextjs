@@ -32,6 +32,8 @@ data class UserProfile(
     val modules: Set<String> = emptySet(),
     /** #1124 the login's `user.permissions`; null when the API sends none */
     val permissions: Set<String>? = null,
+    /** #1145 the shop's currency (`merchant.currency`); VND when the payload has none */
+    val currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopCurrency.VND,
 ) {
     val displayName: String
         get() = listOfNotNull(firstName, lastName)

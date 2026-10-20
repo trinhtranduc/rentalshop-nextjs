@@ -114,6 +114,7 @@ class ApiClient(
         SessionStore.allowOverlappingOrders = profile.allowOverlappingOrders
         SessionStore.modules = profile.modules
         SessionStore.permissions = profile.permissions
+        SessionStore.currency = profile.currency
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
@@ -202,6 +203,25 @@ class ApiClient(
         val json = execute(put("$baseUrl/api/settings/merchant", body))
         val value = OverlapSetting.fromResponse(json) ?: allow
         SessionStore.allowOverlappingOrders = value
+        value
+    }
+
+    /** #1145: GET /api/settings/currency (every role); an answer without a currency keeps the cached one */
+    fun refreshCurrency(): Result<com.anyrent.pos.domain.money.ShopCurrency> = runCatching {
+        val json = execute(get("$baseUrl/api/settings/currency"))
+        requireSuccess(json)
+        val value = com.anyrent.pos.domain.settings.CurrencySetting.fromResponse(json) ?: SessionStore.currency
+        SessionStore.currency = value
+        value
+    }
+
+    /** #1145: PUT /api/settings/currency (shop owner; others get 403 INSUFFICIENT_PERMISSIONS) */
+    fun setCurrency(currency: com.anyrent.pos.domain.money.ShopCurrency): Result<com.anyrent.pos.domain.money.ShopCurrency> = runCatching {
+        val body = com.anyrent.pos.domain.settings.CurrencySetting.body(currency).toString().toRequestBody(jsonMedia)
+        val json = execute(put("$baseUrl/api/settings/currency", body))
+        requireSuccess(json)
+        val value = com.anyrent.pos.domain.settings.CurrencySetting.fromResponse(json) ?: currency
+        SessionStore.currency = value
         value
     }
 
@@ -1378,6 +1398,7 @@ class ApiClient(
             outletPhone = outlet?.optString("phone")?.takeIf { it.isNotBlank() },
             outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
             allowOverlappingOrders = OverlapSetting.fromMerchant(merchant),
+            currency = com.anyrent.pos.domain.settings.CurrencySetting.fromMerchant(merchant),
             modules = com.anyrent.pos.domain.attendance.AttendanceLogic.modules(merchant),
             permissions = user.optJSONArray("permissions")?.let { arr ->
                 (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { p -> p.isNotBlank() } }.toSet()

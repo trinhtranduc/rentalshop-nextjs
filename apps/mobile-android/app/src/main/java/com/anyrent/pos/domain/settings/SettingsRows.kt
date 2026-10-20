@@ -8,7 +8,10 @@ import org.json.JSONObject
 enum class SettingsItem {
     /** #937: the inbox, moved here from the Home bell */
     NOTIFICATIONS,
-    STORE_INFO, RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
+    STORE_INFO,
+    /** #1145 "Tiền tệ" (VND / USD), shop owner only, right under Thông tin cửa hàng */
+    CURRENCY,
+    RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
     PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
 }
@@ -34,6 +37,7 @@ object SettingsRows {
      * - bank accounts (#622): MERCHANT, OUTLET_ADMIN (as iOS)
      * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
      * - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
+     * - currency (#1145): MERCHANT only ([CurrencySetting.canEdit]), right after Thông tin cửa hàng
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
         val management = buildList {
@@ -49,7 +53,9 @@ object SettingsRows {
         return listOf(
             SettingsSection(
                 SettingsGroup.STORE,
-                listOf(SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO, SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
+                listOf(SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO) +
+                    listOfNotNull(SettingsItem.CURRENCY.takeIf { CurrencySetting.canEdit(role) }) +
+                    listOf(SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
                     listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }),
             ),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
