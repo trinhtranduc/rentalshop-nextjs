@@ -79,5 +79,18 @@
   "EMBEDDING_BACKFILL_STATUS": "画像検索の状態を読み込みました。",
   "EMBEDDING_JOBS_LIST": "画像検索のジョブを読み込みました。",
   "EMBEDDING_BACKFILL_DRY_RUN": "確認が完了しました。キューには追加されていません。",
-  "EMBEDDING_BACKFILL_QUEUED": "商品を画像検索のキューに追加しました。"
+  "EMBEDDING_BACKFILL_QUEUED": "商品を画像検索のキューに追加しました。",
+  "BOOKING_DISABLED": "このお店はオンライン予約を受け付けていません。",
+  "BOOKING_OUTLET_UNAVAILABLE": "この店舗はオンライン予約を受け付けていません。",
+  "BOOKING_NOT_AVAILABLE": "選んだ日のうち空きのない日があります。別の日か少ない数量を選んでください。",
+  "BOOKING_RATE_LIMITED": "予約リクエストが多すぎます。しばらく待ってから再度お試しいただくか、お店にお電話ください。",
+  "BOOKING_REQUEST_NOT_FOUND": "予約リクエストが見つかりません。",
+  "BOOKING_REQUEST_CLOSED": "この予約リクエストは確定済み、お断り済み、または期限切れです。",
+  "INVALID_PHONE": "有効な電話番号を入力してください。",
+  "BOOKING_AVAILABILITY": "空き状況を読み込みました。",
+  "BOOKING_REQUEST_CREATED": "予約リクエストを送信しました。お店からの確認をお待ちください。",
+  "BOOKING_REQUEST_FOUND": "予約リクエストを読み込みました。",
+  "BOOKING_REQUESTS_FOUND": "予約リクエスト一覧を読み込みました。",
+  "BOOKING_REQUEST_PREPARED": "予約リクエストから注文を作成する準備ができました。",
+  "BOOKING_REQUEST_REJECTED": "予約リクエストをお断りしました。"
 }

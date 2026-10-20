@@ -74,6 +74,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         tenantKey: userProfile.merchant.tenantKey, // Include tenantKey for referral code
         // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
         allowOverlappingOrders: (userProfile.merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
+        // #1124 "Nhận đặt online" (additive; false when off or missing)
+        onlineBookingEnabled: (userProfile.merchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(userProfile.merchant),
         // #907 active feature modules (additive; [] when none)

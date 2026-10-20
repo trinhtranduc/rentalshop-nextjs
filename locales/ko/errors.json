@@ -79,5 +79,18 @@
   "EMBEDDING_BACKFILL_STATUS": "이미지 검색 상태를 불러왔습니다.",
   "EMBEDDING_JOBS_LIST": "이미지 검색 작업을 불러왔습니다.",
   "EMBEDDING_BACKFILL_DRY_RUN": "확인이 끝났습니다. 대기열에 추가된 항목은 없습니다.",
-  "EMBEDDING_BACKFILL_QUEUED": "상품을 이미지 검색 대기열에 추가했습니다."
+  "EMBEDDING_BACKFILL_QUEUED": "상품을 이미지 검색 대기열에 추가했습니다.",
+  "BOOKING_DISABLED": "이 매장은 온라인 예약을 받지 않습니다.",
+  "BOOKING_OUTLET_UNAVAILABLE": "이 지점은 온라인 예약을 받지 않습니다.",
+  "BOOKING_NOT_AVAILABLE": "선택한 날짜 중 대여할 수 없는 날이 있습니다. 다른 날짜나 적은 수량을 선택하세요.",
+  "BOOKING_RATE_LIMITED": "예약 요청이 너무 많습니다. 잠시 후 다시 시도하거나 매장에 전화하세요.",
+  "BOOKING_REQUEST_NOT_FOUND": "예약 요청을 찾을 수 없습니다.",
+  "BOOKING_REQUEST_CLOSED": "이 예약 요청은 이미 확정, 거절되었거나 만료되었습니다.",
+  "INVALID_PHONE": "올바른 전화번호를 입력하세요.",
+  "BOOKING_AVAILABILITY": "예약 가능 일정을 불러왔습니다.",
+  "BOOKING_REQUEST_CREATED": "예약 요청을 보냈습니다. 매장에서 곧 확인합니다.",
+  "BOOKING_REQUEST_FOUND": "예약 요청을 불러왔습니다.",
+  "BOOKING_REQUESTS_FOUND": "예약 요청 목록을 불러왔습니다.",
+  "BOOKING_REQUEST_PREPARED": "예약 요청으로 주문을 만들 준비가 되었습니다.",
+  "BOOKING_REQUEST_REJECTED": "예약 요청을 거절했습니다."
 }

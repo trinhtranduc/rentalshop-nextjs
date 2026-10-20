@@ -95,6 +95,10 @@ export type CreateOrderOnceOptions = {
    * therefore still replays its existing order instead of being blocked by it.
    */
   beforeInsert?: (tx: unknown) => Promise<unknown>;
+  /**
+   * #1124: runs inside the transaction right after a real insert (never on a replay). Throwing rolls the order back.
+   */
+  afterInsert?: (tx: unknown, order: { id: number }) => Promise<void>;
 };
 
 /**
@@ -149,6 +153,7 @@ export async function createOrderOnce(
       }
 
       const order = await tx.order.create({ data, include });
+      if (options.afterInsert) await options.afterInsert(tx, order);
 
       if (key && keyTableReady) {
         await tx.orderCreateKey.upsert({

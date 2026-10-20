@@ -202,6 +202,16 @@ const ERROR_MESSAGES: Record<string, string> = {
   'SEARCH_TIMEOUT':
     'The image search took too long. Try a smaller photo, or try again in a few minutes.',
   
+
+  // #1124 online booking requests
+  'BOOKING_DISABLED': "This shop does not take online booking requests.",
+  'BOOKING_OUTLET_UNAVAILABLE': "This branch does not take online booking requests.",
+  'BOOKING_NOT_AVAILABLE': "This item is not free on one of the chosen days. Pick other days or a smaller quantity.",
+  'BOOKING_RATE_LIMITED': "Too many booking requests. Please wait a while and try again, or call the shop.",
+  'BOOKING_REQUEST_NOT_FOUND': "Booking request not found.",
+  'BOOKING_REQUEST_CLOSED': "This booking request was already confirmed, rejected or has expired.",
+  'INVALID_PHONE': "Please enter a valid phone number.",
+
   // Default
   'UNKNOWN_ERROR': 'An unknown error occurred',
 };
@@ -210,6 +220,13 @@ const ERROR_MESSAGES: Record<string, string> = {
  * Success code to default English message mapping
  */
 const SUCCESS_MESSAGES: Record<string, string> = {
+  // #1124 online booking requests
+  'BOOKING_AVAILABILITY': "Availability loaded.",
+  'BOOKING_REQUEST_CREATED': "Booking request sent. The shop will confirm it soon.",
+  'BOOKING_REQUEST_FOUND': "Booking request loaded.",
+  'BOOKING_REQUESTS_FOUND': "Booking requests loaded.",
+  'BOOKING_REQUEST_PREPARED': "Booking request ready to create the order.",
+  'BOOKING_REQUEST_REJECTED': "Booking request rejected.",
   // Authentication
   'LOGIN_SUCCESS': 'Login successful',
   'LOGOUT_SUCCESS': 'Logged out successfully',

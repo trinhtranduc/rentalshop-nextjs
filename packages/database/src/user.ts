@@ -416,6 +416,7 @@ export const simplifiedUsers = {
             tenantKey: true, // Include tenantKey for referral code
             allowOverlappingOrders: true, // #518 shop setting for GET /api/users/profile
             timezone: true, // #567 shop time zone for GET /api/users/profile
+            onlineBookingEnabled: true, // #1124 online booking switch for GET /api/users/profile
             isActive: true,
             planId: true,
             // subscriptionStatus removed - use subscription.status

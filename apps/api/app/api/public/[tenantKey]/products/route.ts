@@ -181,6 +181,25 @@ export async function GET(
       outletsResult = [];
     }
 
+    // #1124 "Đặt thuê" on the shop page: the shop's switch and the outlets that take requests. Fail-closed: an
+    // error (e.g. migration not applied yet) means booking off, the page stays as today.
+    let onlineBooking = false;
+    let bookingOutletIds = new Set<number>();
+    try {
+      const flags = await db.prisma.merchant.findUnique({ where: { id: merchant.id }, select: { onlineBookingEnabled: true } });
+      onlineBooking = flags?.onlineBookingEnabled === true;
+      if (onlineBooking) {
+        const accepting = await db.prisma.outlet.findMany({
+          where: { merchantId: merchant.id, isActive: true, acceptsOnlineBooking: true },
+          select: { id: true },
+        });
+        bookingOutletIds = new Set(accepting.map((o: { id: number }) => o.id));
+      }
+    } catch (error) {
+      console.error('⚠️ Online booking flags unavailable:', error);
+      onlineBooking = false;
+    }
+
     // #663: allowlisted fields only (no cost price, CUIDs or internal fields on a public page)
     const transformedProducts = (productsResult.data || []).map(toPublicProduct);
 
@@ -196,7 +215,8 @@ export async function GET(
         city: merchant.city,
         country: merchant.country,
         currency: merchant.currency,
-        isActive: merchant.isActive
+        isActive: merchant.isActive,
+        onlineBooking
       },
       products: transformedProducts,
       categories: categoriesResult || [],
@@ -208,7 +228,8 @@ export async function GET(
         city: outlet.city || '',
         state: outlet.state || '',
         zipCode: outlet.zipCode || '',
-        country: outlet.country || ''
+        country: outlet.country || '',
+        acceptsOnlineBooking: onlineBooking && bookingOutletIds.has(outlet.id)
       })),
       pagination: {
         total: productsResult.total || 0,

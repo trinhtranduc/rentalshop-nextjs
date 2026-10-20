@@ -11,8 +11,11 @@ describe('#682 OUTLET_INVENTORY permissions', () => {
   const inventory = ROLE_PERMISSIONS.OUTLET_INVENTORY;
   const staff = ROLE_PERMISSIONS.OUTLET_STAFF;
 
-  it('is staff plus the four product keys, nothing else', () => {
-    const expected = new Set([...staff, ...PRODUCT_KEYS]);
+  // #1124 (owner default 2026-10-20): staff decide online booking requests, Nhân viên kho does not
+  const BOOKING_KEYS = ['bookings.view', 'bookings.manage'];
+
+  it('is staff plus the four product keys, minus the booking keys, nothing else', () => {
+    const expected = new Set([...staff.filter((k) => !BOOKING_KEYS.includes(k)), ...PRODUCT_KEYS]);
     expect(new Set(inventory)).toEqual(expected);
     expect(inventory.length).toBe(expected.size);
   });
@@ -34,7 +37,15 @@ describe('#682 OUTLET_INVENTORY permissions', () => {
     );
     // Recorded from the code before #682; #825 (owner 2026-10-11) then took products.create from OUTLET_STAFF
     const before682 = require('./__fixtures__/role-permissions-before-682.json');
-    const expected = { ...before682, OUTLET_STAFF: before682.OUTLET_STAFF.filter((k: string) => k !== 'products.create') };
+    // and #1124 added bookings.view / bookings.manage to ADMIN, MERCHANT, OUTLET_ADMIN and OUTLET_STAFF
+    const withBookings = (keys: string[]) => [...keys, 'bookings.manage', 'bookings.view'].sort();
+    const expected = {
+      ...before682,
+      ADMIN: withBookings(before682.ADMIN),
+      MERCHANT: withBookings(before682.MERCHANT),
+      OUTLET_ADMIN: withBookings(before682.OUTLET_ADMIN),
+      OUTLET_STAFF: withBookings(before682.OUTLET_STAFF.filter((k: string) => k !== 'products.create')),
+    };
     expect(others).toEqual(expected);
   });
 });

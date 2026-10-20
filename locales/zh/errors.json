@@ -79,5 +79,18 @@
   "EMBEDDING_BACKFILL_STATUS": "已加载图片搜索状态。",
   "EMBEDDING_JOBS_LIST": "已加载图片搜索任务。",
   "EMBEDDING_BACKFILL_DRY_RUN": "检查完成，未加入队列。",
-  "EMBEDDING_BACKFILL_QUEUED": "商品已加入图片搜索队列。"
+  "EMBEDDING_BACKFILL_QUEUED": "商品已加入图片搜索队列。",
+  "BOOKING_DISABLED": "该店暂不接受在线预约。",
+  "BOOKING_OUTLET_UNAVAILABLE": "该分店暂不接受在线预约。",
+  "BOOKING_NOT_AVAILABLE": "所选日期中有一天已无空闲，请换日期或减少数量。",
+  "BOOKING_RATE_LIMITED": "预约请求过多，请稍后再试或致电店家。",
+  "BOOKING_REQUEST_NOT_FOUND": "找不到该预约请求。",
+  "BOOKING_REQUEST_CLOSED": "该预约请求已确认、已拒绝或已过期。",
+  "INVALID_PHONE": "请输入有效的电话号码。",
+  "BOOKING_AVAILABILITY": "已加载可租日期。",
+  "BOOKING_REQUEST_CREATED": "预约请求已发送，店家会尽快确认。",
+  "BOOKING_REQUEST_FOUND": "已加载预约请求。",
+  "BOOKING_REQUESTS_FOUND": "已加载预约请求列表。",
+  "BOOKING_REQUEST_PREPARED": "已可根据预约请求创建订单。",
+  "BOOKING_REQUEST_REJECTED": "已拒绝该预约请求。"
 }
