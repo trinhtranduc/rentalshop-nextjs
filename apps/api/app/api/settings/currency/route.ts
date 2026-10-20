@@ -4,7 +4,6 @@ import { withPermissions, withAnyAuth } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { isValidCurrency } from '@rentalshop/constants';
-import type { CurrencyCode } from '@rentalshop/types';
 
 /**
  * PUT /api/settings/currency
@@ -13,7 +12,7 @@ import type { CurrencyCode } from '@rentalshop/types';
  * #1145: only the shop owner (role MERCHANT) may change it. Other roles get 403 INSUFFICIENT_PERMISSIONS,
  * even when a custom role was granted `merchant.manage`. Before, `merchant.view` was enough.
  */
-export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequest, { user }) => {
   try {
     if (user.role !== USER_ROLE.MERCHANT) {
       return NextResponse.json(
@@ -108,7 +107,7 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
     // Get merchant with full details using db
     const merchant = await db.merchants.findById(dbUser.merchant.id);
     
-    const currencyValue = (merchant as any)?.currency || 'USD';
+    const currencyValue = (merchant as { currency?: string } | null)?.currency || 'USD';
     console.log('🔍 CURRENCY API: Returning currency:', currencyValue);
     return NextResponse.json({
       success: true,
