@@ -817,6 +817,8 @@
     "nextPage": "Next",
     "pageRange": "{from}–{to} / {total}",
     "downloadCsv": "Download CSV",
-    "downloadFailed": "Could not download the CSV"
+    "downloadFailed": "Could not download the CSV",
+    "jobsLoadFailed": "Could not load the job list. Check the connection or try again.",
+    "retry": "Retry"
   }
 }

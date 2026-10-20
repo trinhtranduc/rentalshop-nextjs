@@ -226,6 +226,7 @@
     },
     "loading": "Loading plans...",
     "error": "Failed to load plans",
+    "errorHint": "Please try again in a few minutes, or contact AnyRent for a quote.",
     "retry": "Retry",
     "noPlans": "No plans available at the moment.",
     "buttonText": "Get Started",

@@ -817,6 +817,8 @@
     "nextPage": "Trang sau",
     "pageRange": "{from}–{to} / {total}",
     "downloadCsv": "Tải CSV",
-    "downloadFailed": "Không tải được file CSV"
+    "downloadFailed": "Không tải được file CSV",
+    "jobsLoadFailed": "Không tải được danh sách tác vụ. Kiểm tra kết nối hoặc thử lại.",
+    "retry": "Thử lại"
   }
 }

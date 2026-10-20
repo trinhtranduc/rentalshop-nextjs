@@ -1523,7 +1523,9 @@ const Pricing = React.memo(() => {
         {/* Error State */}
         {error && !loading && (
           <div className="text-center py-20">
-            <p className="text-red-600 mb-4">{error || tPricing('error')}</p>
+            {/* #1108: the technical error (e.g. "Failed to fetch") stays in the console, the page shows its own words */}
+            <p className="text-slate-800 font-medium mb-1">{tPricing('error')}</p>
+            <p className="text-slate-500 text-sm mb-4">{tPricing('errorHint')}</p>
             <Button 
               onClick={() => window.location.reload()} 
               variant="outline"

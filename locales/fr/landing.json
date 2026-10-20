@@ -226,6 +226,7 @@
     },
     "loading": "Chargement des formules...",
     "error": "Impossible de charger les formules",
+    "errorHint": "Veuillez réessayer dans quelques minutes ou contacter AnyRent pour obtenir un devis.",
     "retry": "Réessayer",
     "noPlans": "Aucune formule disponible pour le moment.",
     "buttonText": "Commencer",

@@ -226,6 +226,7 @@
     },
     "loading": "Memuat paket...",
     "error": "Gagal memuat paket",
+    "errorHint": "Silakan coba lagi dalam beberapa menit atau hubungi AnyRent untuk penawaran harga.",
     "retry": "Coba lagi",
     "noPlans": "Belum ada paket saat ini.",
     "buttonText": "Mulai",

@@ -91,3 +91,18 @@ describe('landing source has no hardcoded copy', () => {
     expect(PHRASES.filter((phrase) => source.includes(phrase))).toEqual([]);
   });
 });
+
+/** #1108: a failed plans request showed the raw "Failed to fetch"; the section shows a friendly text in the page language */
+describe('landing pricing error text (#1108)', () => {
+  const source = readFileSync(join(__dirname, '../apps/client/app/LandingPageClient.tsx'), 'utf8');
+
+  it('never renders the raw error message', () => {
+    expect(source).not.toMatch(/\{\s*error\s*\|\|/);
+    expect(source).toMatch(/tPricing\('errorHint'\)/);
+  });
+
+  it('has the hint in English (the key test above checks every locale)', () => {
+    expect(flatten(en as Tree)['pricing.errorHint']?.trim()).toBeTruthy();
+  });
+});
+
