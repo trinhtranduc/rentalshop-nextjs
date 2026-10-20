@@ -151,8 +151,8 @@ export interface RegisterData {
   outletName?: string;
   merchantCode?: string;
   outletCode?: string;
-  /** Preferred UI language for localized onboarding seed */
-  locale?: 'en' | 'vi';
+  /** Sign-up UI language (en, vi, ja…): onboarding seed copy and shop currency (#1143) */
+  locale?: string;
   country?: string;
   businessType?: string;
   pricingType?: string;

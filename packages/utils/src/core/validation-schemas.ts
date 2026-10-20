@@ -73,8 +73,8 @@ export const registerSchema = z.object({
   state: z.string().optional(),
   zipCode: z.string().optional(),
   country: z.string().min(2, 'Please select a valid country').optional(),
-  // Preferred UI language for localized onboarding seed (en | vi)
-  locale: z.enum(['en', 'vi']).optional(),
+  // Sign-up UI language (en, vi, ja, zh-TW…): onboarding seed copy (en* → en, else vi) and shop currency (#1143)
+  locale: z.string().trim().max(20).optional(),
   // For outlet staff registration
   merchantCode: z.string().optional(),
   outletCode: z.string().optional(),
@@ -126,7 +126,8 @@ export const merchantGoogleRegisterSchema = z.object({
     .optional(),
   referralCode: z.string().min(1).optional(),
   country: z.string().min(2, 'Please select a valid country').optional(),
-  locale: z.enum(['en', 'vi']).optional(),
+  // Sign-up UI language, as in registerSchema (#1143)
+  locale: z.string().trim().max(20).optional(),
 });
 
 export const loginGoogleSchema = z.object({

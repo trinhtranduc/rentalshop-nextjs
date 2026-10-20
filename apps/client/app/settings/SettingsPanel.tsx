@@ -7,11 +7,10 @@
  * shared panel, wrapped in `.ar-legacy` for dark mode. Gói dịch vụ is `SubscriptionTab` (#557).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
-import { BankAccountSection, useCurrency, useToast } from '@rentalshop/ui';
+import { BankAccountSection, useToast } from '@rentalshop/ui';
 import { merchantsApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
-import type { CurrencyCode } from '@rentalshop/types';
 import { SettingsSubscriptionMerchantActions } from '../components/SettingsSubscriptionMerchantActions';
 import { Skeleton, type T } from '../orders/list/parts';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
@@ -31,7 +30,7 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { currencyForLocale, groupedTabs, onlineBookingFlag, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
+import { groupedTabs, onlineBookingFlag, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -104,14 +103,12 @@ function BranchSelect({ options, value, onChange, t }: { options: BranchOption[]
 }
 
 export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null, onOutlet, list = false, onList }: SettingsPanelProps) {
-  const locale = useLocale();
   const t = useTranslations('settings.web') as unknown as T;
   const td = useTranslations('dashboard') as unknown as T;
   const ts = useTranslations('settings');
   const tu = useTranslations('users');
   const { user: authUser, logout, refreshUser } = useAuth();
   const { canManageMerchants, canManageOutlets } = usePermissions();
-  const { currency, setCurrency } = useCurrency();
   const { toastSuccess, toastError } = useToast();
   const user = authUser as unknown as SettingsUser | null;
   const role = String(user?.role || '').toUpperCase();
@@ -151,35 +148,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
     };
   }, [role, user?.merchantId, user?.merchant?.tenantKey]);
 
-  const changeCurrency = useCallback(
-    async (next: CurrencyCode) => {
-      try {
-        const res = await settingsApi.updateMerchantCurrency({ currency: next });
-        if (res.success) {
-          setCurrency(next);
-          updateStoredUser((u) => {
-            const m = u.merchant as Record<string, unknown> | undefined;
-            if (m) m.currency = next;
-          });
-          toastSuccess(ts('messages.successTitle'), ts('messages.currencyUpdated'));
-        } else toastError(ts('messages.errorTitle'), res.error || ts('messages.currencyUpdateFailed'));
-      } catch {
-        toastError(ts('messages.errorTitle'), ts('messages.currencyUpdateFailed'));
-      }
-    },
-    [setCurrency, toastSuccess, toastError, ts],
-  );
-
-  // The old merchant tab kept the shop currency on the UI language (vi → VND, else USD). Kept.
-  const currencySynced = useRef<string | null>(null);
-  useEffect(() => {
-    if (tab !== 'merchant' || role !== 'MERCHANT' || !user?.merchant) return;
-    const target = currencyForLocale(locale);
-    const key = `${locale}-${target}`;
-    if (currencySynced.current === key) return;
-    currencySynced.current = key;
-    if (currency !== target) changeCurrency(target as CurrencyCode);
-  }, [tab, role, user?.merchant, locale, currency, changeCurrency]);
+  // #1143: opening Settings or changing the UI language never changes the shop currency (set at sign-up)
 
   // #1138: login has no onlineBookingEnabled; load the profile once so the switch shows the stored value
   const bookingFlag = onlineBookingFlag(merchant);

@@ -117,11 +117,6 @@ export function tenantKeyValid(value: string): boolean {
   return value === '' || /^[a-z0-9-]+$/.test(value);
 }
 
-/** The old merchant tab switched the shop currency to the UI language (vi → VND, else USD). */
-export function currencyForLocale(locale: string): 'VND' | 'USD' {
-  return locale === 'vi' ? 'VND' : 'USD';
-}
-
 /**
  * #1138 "Nhận đặt online": the login payload has no `onlineBookingEnabled`, only
  * GET /api/users/profile does. A missing key is unknown (load the profile), never OFF.

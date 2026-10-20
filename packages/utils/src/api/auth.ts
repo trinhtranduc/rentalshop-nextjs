@@ -31,7 +31,8 @@ export interface RegisterMerchantGoogleBody {
   tenantKey?: string;
   referralCode?: string;
   country?: string;
-  locale?: 'en' | 'vi';
+  /** Sign-up UI language (#1143) */
+  locale?: string;
 }
 
 /**

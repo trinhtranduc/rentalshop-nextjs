@@ -9,6 +9,7 @@ import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '
 import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { registerTimeZone } from '../../../../lib/shop-timezone';
+import { registrationCurrency } from '../../../../lib/registration-currency';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {
   getDefaultPricingConfig,
@@ -134,8 +135,9 @@ export async function POST(request: NextRequest) {
     if (isMerchantRegistration) {
       // MERCHANT REGISTRATION
       const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+      const explicitLocale = (validatedData as { locale?: string }).locale || cookieLocale;
       const onboardingLocale = resolveOnboardingLocaleFromContext({
-        locale: (validatedData as { locale?: string }).locale || cookieLocale,
+        locale: explicitLocale,
         country: validatedData.country,
         acceptLanguage: request.headers.get('accept-language'),
       });
@@ -205,6 +207,8 @@ export async function POST(request: NextRequest) {
             pricingConfig: buildPricingConfig(businessType, validatedData.pricingType),
             // #567 the registering device's zone; missing/invalid (old apps) → Asia/Ho_Chi_Minh, never a 400
             timezone: registerTimeZone(body),
+            // #1143 set once from the sign-up language (vi → VND, other → USD); Settings never changes it
+            currency: registrationCurrency(explicitLocale, onboardingLocale),
           } as any
         });
         

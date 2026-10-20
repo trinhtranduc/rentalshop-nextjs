@@ -18,6 +18,7 @@ import { buildSimpleCorsHeaders } from '@rentalshop/utils/server';
 import { verifyGoogleIdToken } from '../../../../../lib/verify-google-id-token';
 import { buildAuthLoginSuccessResponse } from '../../../../../lib/build-auth-login-response';
 import { registerTimeZone } from '../../../../../lib/shop-timezone';
+import { registrationCurrency } from '../../../../../lib/registration-currency';
 
 function parseName(name: string): { firstName: string; lastName: string } {
   const parts = name.trim().split(/\s+/);
@@ -172,8 +173,9 @@ export async function POST(request: NextRequest) {
           ? deriveBusinessTypeFromTags(businessTags)
           : ((validated.businessType as BusinessType) || 'GENERAL');
 
+      const explicitLocale = (validated as { locale?: string }).locale || request.cookies.get('NEXT_LOCALE')?.value;
       const onboardingLocale = resolveOnboardingLocaleFromContext({
-        locale: (validated as { locale?: string }).locale || request.cookies.get('NEXT_LOCALE')?.value,
+        locale: explicitLocale,
         country: validated.country,
         acceptLanguage: request.headers.get('accept-language'),
       });
@@ -197,6 +199,8 @@ export async function POST(request: NextRequest) {
           pricingConfig: buildPricingConfig(businessType, validated.pricingType),
           // #567 the registering device's zone; missing/invalid (old apps) → Asia/Ho_Chi_Minh, never a 400
           timezone: registerTimeZone(body),
+          // #1143 set once from the sign-up language (vi → VND, other → USD); Settings never changes it
+          currency: registrationCurrency(explicitLocale, onboardingLocale),
         } as any,
       });
 

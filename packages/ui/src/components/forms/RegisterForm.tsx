@@ -85,7 +85,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const { toastSuccess, toastError, removeToast } = useToast();
   const t = useAuthTranslations();
   const locale = useLocale();
-  const onboardingLocale = locale?.toLowerCase().startsWith('en') ? 'en' as const : 'vi' as const;
+  // #1143 the UI language as is: the API picks the seed copy (en* → en, else vi) and the shop currency (vi → VND, else USD)
+  const signupLocale = locale || 'vi';
   
   // Get referralCode from URL query params
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -206,7 +207,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             pricingType: values.pricingType,
             address: values.address || undefined,
             referralCode: values.referralCode?.trim() || referralCode || undefined,
-            locale: onboardingLocale,
+            locale: signupLocale,
           });
           clearTimeout(timeoutId);
           if (!result.success) {
@@ -259,7 +260,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           pricingType: values.pricingType || 'FIXED',
           address: values.address || '',
           referralCode: values.referralCode?.trim() || referralCode || undefined,
-          locale: onboardingLocale,
+          locale: signupLocale,
         };
 
         const result = await authApi.register(registrationData);
