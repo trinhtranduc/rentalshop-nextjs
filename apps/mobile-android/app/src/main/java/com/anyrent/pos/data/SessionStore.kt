@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.anyrent.pos.domain.money.ShopCurrency
+import com.anyrent.pos.domain.money.ShopMoney
 import java.util.UUID
 
 /**
@@ -41,6 +43,8 @@ object SessionStore {
     /** #910 active module keys of the shop (`merchant.modules`, #907) */
     private const val KEY_MODULES = "merchantModules"
     private const val KEY_PERMISSIONS = "permissions"
+    /** #1145 the shop's currency (`merchant.currency`, "VND" / "USD"); absent = VND */
+    private const val KEY_CURRENCY = "merchantCurrency"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -59,6 +63,24 @@ object SessionStore {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         _allowOverlappingOrders.value = prefs.getBoolean(KEY_ALLOW_OVERLAP, true)
         _modules.value = prefs.getStringSet(KEY_MODULES, emptySet()).orEmpty().toSet()
+        setCurrencyValue(ShopCurrency.from(prefs.getString(KEY_CURRENCY, null)))
+    }
+
+    private val _currency = MutableStateFlow(ShopCurrency.VND)
+
+    /** #1145 the shop's currency, from login `merchant.currency` and GET /api/settings/currency; VND when unknown */
+    val currencyFlow: StateFlow<ShopCurrency> = _currency.asStateFlow()
+
+    var currency: ShopCurrency
+        get() = _currency.value
+        set(value) {
+            setCurrencyValue(value)
+            if (isReady) prefs.edit().putString(KEY_CURRENCY, value.code).apply()
+        }
+
+    private fun setCurrencyValue(value: ShopCurrency) {
+        _currency.value = value
+        ShopMoney.publish(value)
     }
 
     private val _modules = MutableStateFlow<Set<String>>(emptySet())
@@ -245,8 +267,10 @@ object SessionStore {
             .remove(KEY_ALLOW_OVERLAP)
             .remove(KEY_MODULES)
             .remove(KEY_PERMISSIONS)
+            .remove(KEY_CURRENCY)
             .apply()
         _allowOverlappingOrders.value = true
+        setCurrencyValue(ShopCurrency.VND)
         _modules.value = emptySet()
         if (!rememberedEmail.isNullOrBlank()) {
             lastLoginEmail = rememberedEmail

@@ -58,6 +58,8 @@ import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.money.ShopCurrency
+import com.anyrent.pos.domain.money.ShopMoney
 import com.anyrent.pos.domain.settings.OverlapSetting
 import com.anyrent.pos.domain.settings.PasswordProblem
 import com.anyrent.pos.domain.settings.SettingsGroup
@@ -129,6 +131,28 @@ fun SettingsV2Screen(
                 // 403 INSUFFICIENT_PERMISSIONS and other known codes read as their message; anything else as a plain retry
                 val id = ApiErrorMessages.stringId(AppError.from(failure).code)
                 overlapError = if (id != 0) context.getString(id) else overlapFailedText
+            }
+        }
+    }
+
+    // #1145 "Tiền tệ": the session's currency; a choice, then a confirm, then PUT /api/settings/currency
+    val currency by SessionStore.currencyFlow.collectAsState()
+    var currencyChoice by remember { mutableStateOf(false) }
+    var currencyTarget by remember { mutableStateOf<ShopCurrency?>(null) }
+    var currencySaving by remember { mutableStateOf(false) }
+    var currencyError by remember { mutableStateOf<String?>(null) }
+    val currencyFailedText = stringResource(R.string.settings_v2_currency_failed)
+
+    fun saveCurrency(target: ShopCurrency) {
+        if (currencySaving) return
+        currencySaving = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { ApiClient.get().setCurrency(target) }
+            currencySaving = false
+            currencyTarget = null
+            result.onFailure { failure ->
+                val id = ApiErrorMessages.stringId(AppError.from(failure).code)
+                currencyError = if (id != 0) context.getString(id) else currencyFailedText
             }
         }
     }
@@ -208,6 +232,7 @@ fun SettingsV2Screen(
                     SettingsItem.PRINTER -> prefs.getString("printerIp", "").orEmpty().trim().ifBlank { stringResource(R.string.settings_v2_printer_none) }
                     SettingsItem.CUSTOMERS, SettingsItem.USERS -> counts[item]?.toString()
                     SettingsItem.PLAN -> plan?.let { planText(it) }
+                    SettingsItem.CURRENCY -> ShopMoney.label(currency)
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }
                     else -> null
                 }
@@ -216,6 +241,7 @@ fun SettingsV2Screen(
                     when (item) {
                         SettingsItem.NOTIFICATIONS -> onOpenInbox()
                         SettingsItem.STORE_INFO -> onOpenStore()
+                        SettingsItem.CURRENCY -> currencyChoice = true
                         SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER -> onOpenPrinter()
                         SettingsItem.CATEGORIES -> showCategories = true
                         SettingsItem.CUSTOMERS -> onOpenCustomers()
@@ -316,6 +342,28 @@ fun SettingsV2Screen(
         )
     }
     overlapError?.let { message -> AppAlertError(message = message, onDismiss = { overlapError = null }) }
+    if (currencyChoice) {
+        CurrencyChoiceDialog(
+            current = currency,
+            onDismiss = { currencyChoice = false },
+            onPick = { picked ->
+                currencyChoice = false
+                if (picked != currency) currencyTarget = picked
+            },
+        )
+    }
+    currencyTarget?.let { target ->
+        AppAlertConfirm(
+            title = stringResource(R.string.settings_v2_currency_confirm_title, target.code),
+            message = stringResource(R.string.settings_v2_currency_confirm_message, target.code, ShopMoney.example(currency, target)),
+            confirmLabel = stringResource(R.string.settings_v2_currency_confirm_button, target.code),
+            confirmLoading = currencySaving,
+            dismissEnabled = !currencySaving,
+            onDismiss = { currencyTarget = null },
+            onConfirm = { saveCurrency(target) },
+        )
+    }
+    currencyError?.let { message -> AppAlertError(message = message, onDismiss = { currencyError = null }) }
     passwordError?.let { message ->
         AppAlertError(message = message.ifBlank { stringResource(R.string.calendar_v2_error) }, onDismiss = { passwordError = null })
     }
@@ -333,6 +381,39 @@ fun SettingsV2Screen(
             },
         )
     }
+}
+
+/** #1145 "Tiền tệ": VND (đ) / USD ($) as radio rows, the current one marked (iOS action sheet) */
+@Composable
+private fun CurrencyChoiceDialog(current: ShopCurrency, onDismiss: () -> Unit, onPick: (ShopCurrency) -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = DS.Colors.Surface,
+        title = { Text(stringResource(R.string.settings_v2_currency), fontWeight = FontWeight.Bold, color = DS.Colors.Text) },
+        text = {
+            Column {
+                ShopCurrency.values().forEach { option ->
+                    val selected = option == current
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                            .clickable(role = androidx.compose.ui.semantics.Role.RadioButton) { onPick(option) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        androidx.compose.material3.RadioButton(selected = selected, onClick = { onPick(option) })
+                        Text(
+                            ShopMoney.label(option), fontSize = DS.TextSize.Body, color = DS.Colors.Text,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 /** #518 (board CD-trung-lich): title, explanation and a switch that saves at once */
@@ -376,6 +457,7 @@ private fun itemTitle(item: SettingsItem): String = stringResource(
     when (item) {
         SettingsItem.NOTIFICATIONS -> R.string.notifications
         SettingsItem.STORE_INFO -> R.string.store_info
+        SettingsItem.CURRENCY -> R.string.settings_v2_currency
         SettingsItem.RECEIPT_NOTE -> R.string.settings_v2_receipt_note
         SettingsItem.PRINTER -> R.string.settings_v2_printer
         SettingsItem.BANK_ACCOUNTS -> R.string.bank_accounts

@@ -29,6 +29,8 @@ interface SettingsV2Source {
     suspend fun plan(): SettingsPlan?
     suspend fun count(item: SettingsItem): Int?
     suspend fun refreshOverlap()
+    /** #1145 GET /api/settings/currency into the session */
+    suspend fun refreshCurrency() {}
 }
 
 object ApiSettingsV2Source : SettingsV2Source {
@@ -46,10 +48,14 @@ object ApiSettingsV2Source : SettingsV2Source {
     override suspend fun refreshOverlap() {
         withContext(Dispatchers.IO) { ApiClient.get().refreshAllowOverlappingOrders() }
     }
+
+    override suspend fun refreshCurrency() {
+        withContext(Dispatchers.IO) { ApiClient.get().refreshCurrency() }
+    }
 }
 
 /**
- * #674: plan, counts and the overlap switch are read on the first show and then at most every 10 minutes (or when
+ * #674: plan, counts, the overlap switch and the currency (#1145) are read on the first show and then at most every 10 minutes (or when
  * the role changes), not on every show. A failed read keeps the last value.
  */
 class SettingsV2ViewModel(
@@ -70,6 +76,8 @@ class SettingsV2ViewModel(
         fetchedAt = now()
         viewModelScope.launch {
             if (canEditOverlap) launch { source.refreshOverlap() }
+            // #1145: every shop role reads the currency (the owner may have changed it on the web)
+            if (role != "ADMIN") launch { source.refreshCurrency() }
             if (role != "ADMIN") {
                 launch { source.plan()?.let { plan -> _data.update { it.copy(plan = plan) } } }
             }

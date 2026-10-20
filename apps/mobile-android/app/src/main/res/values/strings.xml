@@ -2124,4 +2124,12 @@
     <string name="booking_reject_sheet_title">Reject online order</string>
     <string name="booking_reject_sheet_description">Pick a reason to tell the customer. The customer will see this reason.</string>
     <string name="booking_reject_note_placeholder">Note for the customer (optional)</string>
+    <!-- #1145 shop currency -->
+    <string name="settings_v2_currency">Currency</string>
+    <string name="settings_v2_currency_confirm_title">Change currency to %1$s?</string>
+    <string name="settings_v2_currency_confirm_message">All prices in the app will show in %1$s. Amounts stay the same, nothing is converted (%2$s).</string>
+    <string name="settings_v2_currency_confirm_button">Change to %1$s</string>
+    <string name="settings_v2_currency_failed">Could not change the currency. Please try again.</string>
+    <string name="v2_pricing_unit_usd">$</string>
+    <string name="v2_pricing_unit_daily_usd">$/day</string>
 </resources>
