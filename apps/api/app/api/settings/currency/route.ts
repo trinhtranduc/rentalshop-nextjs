@@ -2,24 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions, withAnyAuth } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API } from '@rentalshop/constants';
+import { API, USER_ROLE } from '@rentalshop/constants';
 import { isValidCurrency } from '@rentalshop/constants';
 import type { CurrencyCode } from '@rentalshop/types';
 
 /**
  * PUT /api/settings/currency
- * Update merchant's currency settings
- * Only accessible by users with merchant.view permission (ADMIN, MERCHANT)
+ * Update the shop currency (VND / USD). Amounts are never converted; only how prices are shown.
+ *
+ * #1145: only the shop owner (role MERCHANT) may change it. Other roles get 403 INSUFFICIENT_PERMISSIONS,
+ * even when a custom role was granted `merchant.manage`. Before, `merchant.view` was enough.
  */
-export const PUT = withPermissions(['merchant.view'])(async (request: NextRequest, { user, userScope }) => {
+export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequest, { user, userScope }) => {
   try {
-    console.log('🔍 CURRENCY API: PUT /api/settings/currency called');
-    console.log('🔍 CURRENCY API: User:', {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      merchantId: userScope.merchantId
-    });
+    if (user.role !== USER_ROLE.MERCHANT) {
+      return NextResponse.json(
+        ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+        { status: API.STATUS.FORBIDDEN }
+      );
+    }
 
     const body = await request.json();
     const { currency } = body;
