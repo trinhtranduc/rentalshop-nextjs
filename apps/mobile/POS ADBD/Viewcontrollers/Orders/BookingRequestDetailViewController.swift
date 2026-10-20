@@ -31,6 +31,7 @@ final class BookingRequestDetailViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "booking.detail.title".localized()
+        navigationItem.titleView = BookingNavTitle.label(title)
         view.backgroundColor = DS.Color.surface
         setupUI()
     }
@@ -409,6 +410,7 @@ final class BookingRejectSheetViewController: UIViewController, UITextFieldDeleg
             row.accessibilityTraits = on ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton
         }
         // "Khác" needs a few words the customer will read
+        noteField.placeholder = (selected == .other ? "booking.reject.otherPlaceholder" : "booking.reject.notePlaceholder").localized()
         let ready = selected != nil && (selected != .other || !note.isEmpty)
         send.isEnabled = ready
         send.alpha = ready ? 1 : 0.4

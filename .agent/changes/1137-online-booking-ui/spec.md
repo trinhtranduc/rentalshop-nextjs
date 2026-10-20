@@ -11,3 +11,8 @@
 3. No API, model or reason change.
 
 Acceptance: build both apps; screenshots of chip, list title, detail title, reject sheet.
+
+Found while testing: iOS drew the nav-bar title white on the white bar (`AppDelegate` appearance), so "Đơn online"
+never showed in the bar. The list and detail now put a dark title label in the bar (`BookingNavTitle`); the list's
+duplicate big heading is gone (Android already shows the title in its top bar).
+When "Khác" is picked the note placeholder becomes "Lý do khách sẽ thấy" (the note is required then).
