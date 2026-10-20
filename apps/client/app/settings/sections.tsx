@@ -14,7 +14,8 @@ import { useToast } from '@rentalshop/ui';
 import { authApi, bookingRequestsApi, outletsApi, usersApi } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
 import { Modal, fieldClass } from '../orders/create/parts';
-import { addressLine, passwordProblem, publicLinks, tenantKeyValid } from './settings-model';
+import { addressLine, currencyExample, passwordProblem, publicLinks, tenantKeyValid, type ShopCurrency } from './settings-model';
+import { formatShopAmount } from '@rentalshop/utils';
 import { outletBookingRows } from '../orders/online/online-model';
 import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
 import { usePrintSettings } from '../components/usePrintSettings';
@@ -86,6 +87,8 @@ export interface ShopForm {
   tenantKey?: string;
   businessType?: string;
   pricingType?: string;
+  /** #1145 shop currency (owner only; amounts are never converted) */
+  currency?: ShopCurrency;
 }
 
 export function ShopInfoSection({
@@ -93,6 +96,7 @@ export function ShopInfoSection({
   initial,
   email,
   canEdit,
+  canEditCurrency = false,
   onSave,
   t,
 }: {
@@ -100,11 +104,14 @@ export function ShopInfoSection({
   initial: ShopForm;
   email?: string;
   canEdit: boolean;
+  /** #1145 "Tiền tệ": the owner only */
+  canEditCurrency?: boolean;
   onSave: (form: ShopForm) => Promise<unknown>;
   t: T;
 }) {
   const [form, setForm] = useState<ShopForm>(initial);
   const [saving, setSaving] = useState(false);
+  const [askCurrency, setAskCurrency] = useState(false);
   const [problem, setProblem] = useState('');
   const listId = useId();
   const key = JSON.stringify(initial);
@@ -117,13 +124,24 @@ export function ShopInfoSection({
     setForm((f) => ({ ...f, [name]: name === 'tenantKey' ? e.target.value.toLowerCase() : e.target.value }));
   };
 
+  const showCurrency = kind === 'merchant' && canEditCurrency && !!initial.currency;
+  const currencyChanged = showCurrency && form.currency !== initial.currency;
+  const nextCurrency = form.currency || 'VND';
+
+  const save = async () => {
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+    setAskCurrency(false);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return setProblem(t('form.nameRequired'));
     if (kind === 'outlet' && !form.address.trim()) return setProblem(t('form.addressRequired'));
-    setSaving(true);
-    await onSave(form);
-    setSaving(false);
+    // #1145 every price changes how it is shown: ask first
+    if (currencyChanged) return setAskCurrency(true);
+    await save();
   };
 
   return (
@@ -159,6 +177,31 @@ export function ShopInfoSection({
                 <input name="state" value={form.state} onChange={set('state')} disabled={!canEdit} className={inputClass} />
               </Field>
             </div>
+            {showCurrency && (
+              <div className="flex flex-col gap-1.5">
+                <span id={`${listId}-cur`} className={labelClass}>
+                  {t('form.currency')}
+                </span>
+                <div role="radiogroup" aria-labelledby={`${listId}-cur`} className="inline-flex w-fit rounded-xl border border-ar-line bg-ar-surface-muted p-1">
+                  {(['VND', 'USD'] as const).map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.currency === c}
+                      data-currency={c}
+                      onClick={() => setForm((f) => ({ ...f, currency: c }))}
+                      className={`h-10 min-w-[112px] rounded-[10px] px-4 text-[15px] font-semibold ${
+                        form.currency === c ? 'bg-ar-surface text-ar-primary-ink shadow-sm ring-1 ring-ar-primary' : 'text-ar-ink-2 hover:bg-ar-subtle'
+                      }`}
+                    >
+                      {c === 'VND' ? 'VND (đ)' : 'USD ($)'}
+                    </button>
+                  ))}
+                </div>
+                <p className="m-0 text-sm text-ar-muted">{t('form.currencyHint')}</p>
+              </div>
+            )}
             {/* #1140: rarely used fields, closed by default. Mã URL moved to Trang shop công khai (still sent unchanged). */}
             <details className="group rounded-xl border border-ar-line px-4 py-3">
               <summary className="cursor-pointer text-sm font-semibold text-ar-ink-2">
@@ -225,6 +268,31 @@ export function ShopInfoSection({
             {saving ? t('form.saving') : t('form.save')}
           </button>
         </div>
+      )}
+      {showCurrency && (
+        <Modal
+          open={askCurrency}
+          title={t('form.currencyConfirmTitle', { code: nextCurrency })}
+          onClose={() => (saving ? undefined : setAskCurrency(false))}
+          closeLabel={t('form.cancel')}
+          footer={
+            <>
+              <button type="button" onClick={() => setAskCurrency(false)} disabled={saving} className={outlineBtn}>
+                {t('form.cancel')}
+              </button>
+              <button type="button" data-currency-confirm onClick={() => void save()} disabled={saving} className={primaryBtn}>
+                {saving ? t('form.saving') : t('form.currencyConfirmOk', { code: nextCurrency })}
+              </button>
+            </>
+          }
+        >
+          <p className="m-0 text-[15px] text-ar-ink">
+            {t('form.currencyConfirmBody', {
+              code: nextCurrency,
+              example: currencyExample(initial.currency || 'VND', nextCurrency, formatShopAmount),
+            })}
+          </p>
+        </Modal>
       )}
     </form>
   );

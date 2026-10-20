@@ -21,7 +21,12 @@
       "language": "言語と表示"
     },
     "form": {
-      "more": "その他"
+      "more": "その他",
+      "currency": "通貨",
+      "currencyHint": "Webとショップページでの価格の表示方法です。金額は換算されません。",
+      "currencyConfirmTitle": "通貨を{code}に変更しますか？",
+      "currencyConfirmBody": "Webとショップページのすべての価格が{code}で表示されます。金額はそのままで、換算されません（{example}）。",
+      "currencyConfirmOk": "{code}に変更"
     },
     "outlets": {
       "count": "{count}店舗",

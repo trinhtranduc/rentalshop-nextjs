@@ -21,7 +21,12 @@
       "language": "语言与外观"
     },
     "form": {
-      "more": "更多"
+      "more": "更多",
+      "currency": "货币",
+      "currencyHint": "网页和店铺页面上价格的显示方式。金额不会自动换算。",
+      "currencyConfirmTitle": "将货币改为 {code}？",
+      "currencyConfirmBody": "网页和店铺页面上的所有价格都将以 {code} 显示。金额保持不变，不做换算（{example}）。",
+      "currencyConfirmOk": "改为 {code}"
     },
     "outlets": {
       "count": "{count} 个分店",

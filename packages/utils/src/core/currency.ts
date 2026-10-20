@@ -194,6 +194,19 @@ export function formatCurrency(
 }
 
 /**
+ * #1145 shop web money: VND exactly as `formatCurrency` (no symbol, "220,000"); USD with "$" before the amount,
+ * no decimals when whole, two when there are cents ("$220,000", "$1,234.50", "-$50"). Amounts are never converted.
+ */
+export function formatShopAmount(amount: number | null | undefined, currency: CurrencyCode = 'USD'): string {
+  if (currency !== 'USD') return formatCurrency(amount, currency);
+  const n = amount === null || amount === undefined || isNaN(amount) ? 0 : amount;
+  const abs = Math.abs(n);
+  const digits = Math.round(abs * 100) % 100 === 0 ? 0 : 2;
+  const text = new Intl.NumberFormat('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(abs);
+  return `${n < 0 && Math.round(abs * 100) > 0 ? '-' : ''}$${text}`;
+}
+
+/**
  * Parse currency string to number
  * @param currencyString - Currency string to parse
  * @param currency - Currency code to parse from

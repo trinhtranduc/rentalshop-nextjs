@@ -16,6 +16,8 @@ interface CurrencyContextType {
   symbol: string;
   /** Currency name (e.g., 'US Dollar', 'Vietnamese Dong') */
   name: string;
+  /** #1145 shop web: USD amounts get "$" (`formatShopAmount`); off elsewhere (admin) */
+  showDollar?: boolean;
 }
 
 /**
@@ -43,6 +45,8 @@ interface CurrencyProviderProps {
   initialCurrency?: CurrencyCode;
   /** Merchant currency (if available) */
   merchantCurrency?: CurrencyCode;
+  /** #1145 shop web: show "$" before USD amounts in `useFormatCurrency` */
+  showDollar?: boolean;
 }
 
 /**
@@ -69,6 +73,7 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
   children,
   initialCurrency = 'USD',
   merchantCurrency,
+  showDollar = false,
 }) => {
   const [currency, setCurrency] = useState<CurrencyCode>(
     merchantCurrency || initialCurrency
@@ -89,6 +94,7 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
     setCurrency,
     symbol: config.symbol,
     name: config.name,
+    showDollar,
   };
 
   return (
