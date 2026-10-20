@@ -78,7 +78,9 @@ describe('public page paths', () => {
     const matches = (path: string) => matchers.some((m: { regexp: string }) => new RegExp(m.regexp).test(path));
     for (const locale of PUBLIC_LOCALES) for (const page of PUBLIC_PAGES) expect(matches(`/${locale}/${page}`)).toBe(true);
     expect(matches('/ru/orders')).toBe(false);
-    expect(matches('/shop-demo/products')).toBe(false);
+    // #1146: the public shop pages run the middleware for their language; their sub-paths do not
+    expect(matches('/shop-demo/products')).toBe(true);
+    expect(matches('/shop-demo/products/12')).toBe(false);
   });
 });
 

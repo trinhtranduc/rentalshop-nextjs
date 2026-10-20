@@ -22,23 +22,43 @@ import {
   Globe,
   Link as LinkIcon
 } from 'lucide-react';
-import { 
-  SUBSCRIPTION_PLANS, 
-  getPlanComparison
-} from '@rentalshop/constants';
+import { getPlanComparison } from '@rentalshop/constants';
 import {
   COMPARISON_NAME_KEYS,
-  formatComparisonValue,
+  buildPricingCards,
   formatPlanLimit,
-  formatPricingPrice,
   planTextKeys,
+  type PricingCard,
+  type PricingCardLimits,
+  type PublicPlanLike,
 } from '../../lib/pricing-format';
 
-export default function PricingClient() {
+/** Comparison rows whose values come from the API plan (#1147); the other rows are feature flags. */
+const LIMIT_ROWS: Record<string, keyof PricingCardLimits> = {
+  Products: 'products',
+  Customers: 'customers',
+  Users: 'users',
+  Outlets: 'outlets',
+  Orders: 'orders',
+};
+
+type Props = {
+  /** GET /api/plans/public, loaded on the server; null when the API failed (#1147). */
+  plans: PublicPlanLike[] | null;
+};
+
+function ComparisonCell({ value }: { value: string | boolean }) {
+  if (typeof value !== 'boolean') return <>{value}</>;
+  return value ? <Check className="h-5 w-5 text-green-500 mx-auto" /> : <X className="h-5 w-5 text-red-400 mx-auto" />;
+}
+
+export default function PricingClient({ plans: apiPlans }: Props) {
   const t = useTranslations('plans.pricingPage');
   const locale = useLocale();
-  const plans = Object.values(SUBSCRIPTION_PLANS).sort((a, b) => a.sortOrder - b.sortOrder);
+  // #1147: real plans, prices and limits; never the SUBSCRIPTION_PLANS constants
+  const plans = buildPricingCards(apiPlans, locale);
   const comparison = getPlanComparison();
+  const cardById = (id: string): PricingCard | undefined => plans.find((p) => p.id === id);
 
   const getPlanIcon = (planId: string) => {
     switch (planId) {
@@ -50,9 +70,15 @@ export default function PricingClient() {
     }
   };
 
-  const formatPrice = (price: number) => formatPricingPrice(price, locale);
   const limit = (value: number) => formatPlanLimit(value, locale, t('unlimited'));
-  const cell = (value: string | boolean) => (typeof value === 'string' ? formatComparisonValue(value, locale) : value);
+  /** A comparison cell: limits and web access from the API card, '—' when the API gave none. */
+  const cell = (featureName: string, planId: string, value: string | boolean): string | boolean => {
+    const card = cardById(planId);
+    const limitKey = LIMIT_ROWS[featureName];
+    if (limitKey) return card?.limits ? limit(card.limits[limitKey]) : '—';
+    if (featureName === 'Web Dashboard') return card?.web ?? '—';
+    return value;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -100,16 +126,14 @@ export default function PricingClient() {
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-12">
           {plans.map((plan) => {
-            const keys = planTextKeys(plan.id, plan.badge);
+            const keys = planTextKeys(plan.id, plan.isPopular ? 'Most Popular' : null);
             return (
             <Card key={plan.id} className={`relative ${plan.isPopular ? 'ring-2 ring-purple-500 shadow-xl' : 'shadow-lg'}`}>
-              {plan.badge && (
+              {keys.badge && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className={`px-4 py-1 text-sm font-medium ${
-                    plan.badge === 'Most Popular' ? 'bg-purple-100 text-purple-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                  <Badge className="px-4 py-1 text-sm font-medium bg-purple-100 text-purple-800">
                     <Star className="h-3 w-3 mr-1" />
-                    {keys.badge ? t(keys.badge) : plan.badge}
+                    {t(keys.badge)}
                   </Badge>
                 </div>
               )}
@@ -124,13 +148,18 @@ export default function PricingClient() {
                   {getPlanIcon(plan.id)}
                 </div>
                 <CardTitle className="text-2xl font-bold text-gray-900">{keys.name ? t(keys.name) : plan.name}</CardTitle>
-                <p className="text-gray-600 mt-2">{keys.description ? t(keys.description) : plan.description}</p>
+                {keys.description && <p className="text-gray-600 mt-2">{t(keys.description)}</p>}
                 
+                {/* #1147: the real VND amount in vi only (#1121); otherwise "contact" */}
                 <div className="mt-4">
-                  <span className="text-4xl font-bold text-gray-900">
-                    {formatPrice(plan.basePrice)}
-                  </span>
-                  <span className="text-gray-500 ml-2">{t('perMonth')}</span>
+                  {plan.price ? (
+                    <>
+                      <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                      <span className="text-gray-500 ml-2">{t('perMonth')}</span>
+                    </>
+                  ) : (
+                    <span className="text-2xl font-bold text-gray-900">{t('contactSales')}</span>
+                  )}
                 </div>
               </CardHeader>
               
@@ -142,17 +171,20 @@ export default function PricingClient() {
                   <Check className="h-4 w-4 ml-auto text-green-500" />
                 </div>
                 
+                {plan.web !== null && (
                 <div className="flex items-center text-sm">
                   <Globe className="h-4 w-4 mr-2 text-gray-400" />
                   <span className="text-gray-600">{t('webDashboard')}</span>
-                  {plan.platform === 'mobile+web' ? (
+                  {plan.web ? (
                     <Check className="h-4 w-4 ml-auto text-green-500" />
                   ) : (
                     <X className="h-4 w-4 ml-auto text-red-400" />
                   )}
                 </div>
+                )}
 
-                {/* Limits */}
+                {/* Limits (#1147: from the API; hidden when the API gave none) */}
+                {plan.limits && (
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">{t('products')}</span>
@@ -175,6 +207,7 @@ export default function PricingClient() {
                     <span className="font-medium">{limit(plan.limits.orders)}</span>
                   </div>
                 </div>
+                )}
 
                 {/* Product Public Check */}
                 <div className="border-t pt-4">
@@ -234,37 +267,13 @@ export default function PricingClient() {
                       {COMPARISON_NAME_KEYS[feature.name] ? t(COMPARISON_NAME_KEYS[feature.name]) : feature.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      {typeof feature.basic === 'boolean' ? (
-                        feature.basic ? (
-                          <Check className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <X className="h-5 w-5 text-red-400 mx-auto" />
-                        )
-                      ) : (
-                        cell(feature.basic)
-                      )}
+                      <ComparisonCell value={cell(feature.name, 'basic', feature.basic)} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      {typeof feature.professional === 'boolean' ? (
-                        feature.professional ? (
-                          <Check className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <X className="h-5 w-5 text-red-400 mx-auto" />
-                        )
-                      ) : (
-                        cell(feature.professional)
-                      )}
+                      <ComparisonCell value={cell(feature.name, 'professional', feature.professional)} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      {typeof feature.enterprise === 'boolean' ? (
-                        feature.enterprise ? (
-                          <Check className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <X className="h-5 w-5 text-red-400 mx-auto" />
-                        )
-                      ) : (
-                        cell(feature.enterprise)
-                      )}
+                      <ComparisonCell value={cell(feature.name, 'enterprise', feature.enterprise)} />
                     </td>
                   </tr>
                 ))}

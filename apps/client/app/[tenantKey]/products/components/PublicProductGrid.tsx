@@ -5,9 +5,16 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { Pagination } from '@rentalshop/ui';
 import type { Product, Category } from '@rentalshop/types';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { getLocalDateKey } from '@rentalshop/utils';
 import { formatShopMoney, productPriceLines } from '../lib/public-shop';
+import { addToRequest, emptyRequest, loadRequest, removeFromRequest, saveRequest, type BookingRequestDraft } from '../lib/booking';
 import { PublicProductSheet } from './PublicProductSheet';
+import { BookingRequestSheet } from './BookingRequestSheet';
+import type { BookingOutlet } from './BookingPicker';
+import { ImageSearchPanel } from './ImageSearchPanel';
+import { ScanSearchIcon } from './AiSearchIcon';
+import { canSearchByImage } from '../lib/image-search';
 
 interface PublicProductGridProps {
   products: Product[];
@@ -20,22 +27,63 @@ interface PublicProductGridProps {
     limit: number;
     hasMore: boolean;
   };
+  /** #1124 */
+  tenantKey?: string;
+  onlineBooking?: boolean;
+  outlets?: BookingOutlet[];
+  /** #1128: the shop has products indexed for image search */
+  imageSearchAvailable?: boolean;
 }
 
+const SHOP_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const browserStorage = () => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+};
+
 /** #665 — search, category chips, product cards and the detail sheet */
-export function PublicProductGrid({ products, categories, currency, phone, pagination }: PublicProductGridProps) {
+export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [], imageSearchAvailable = false }: PublicProductGridProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const t = useTranslations('products');
   const tp = useTranslations('products.public');
-  const money = (amount: number) => formatShopMoney(amount, currency);
+  const locale = useLocale();
+  const money = (amount: number) => formatShopMoney(amount, currency, locale);
 
   const currentCategoryId = searchParams.get('categoryId') ? parseInt(searchParams.get('categoryId')!, 10) : null;
   const currentSearch = searchParams.get('search') || '';
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
   const [query, setQuery] = useState(currentSearch);
   const [opened, setOpened] = useState<Product | null>(null);
+  const tb = useTranslations('products.public.booking');
+  const bookingOn = Boolean(tenantKey && onlineBooking && outlets.some((o) => o.acceptsOnlineBooking));
+  const [draft, setDraft] = useState<BookingRequestDraft>(emptyRequest());
+  const [reviewing, setReviewing] = useState(false);
+  const [added, setAdded] = useState(false);
+  const todayKey = getLocalDateKey(new Date(), SHOP_TIME_ZONE);
+  const imageSearchOn = canSearchByImage({ tenantKey, imageSearchAvailable });
+  const [pickSignal, setPickSignal] = useState(0);
+  const ti = useTranslations('products.public.imageSearch');
+
+  // The request is read after mount (no localStorage on the server)
+  useEffect(() => {
+    if (bookingOn && tenantKey) setDraft(loadRequest(browserStorage(), tenantKey));
+  }, [bookingOn, tenantKey]);
+
+  const updateDraft = (next: BookingRequestDraft) => {
+    setDraft(next);
+    if (tenantKey) saveRequest(browserStorage(), tenantKey, next);
+  };
+
+  useEffect(() => {
+    if (!added) return;
+    const timer = setTimeout(() => setAdded(false), 2500);
+    return () => clearTimeout(timer);
+  }, [added]);
 
   const updateFilters = useCallback(
     (updates: { categoryId?: number | null; search?: string; page?: number }) => {
@@ -78,7 +126,7 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
     }`;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 sm:px-5">
+    <main className={`mx-auto w-full max-w-6xl px-4 sm:px-5 ${bookingOn && draft.items.length > 0 ? 'pb-24' : ''}`}>
       <div className="sticky top-0 z-10 bg-slate-50 pb-2.5 pt-4">
         <label className="flex h-[46px] items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5">
           <Search className="h-[18px] w-[18px] flex-none text-slate-500" aria-hidden />
@@ -89,6 +137,20 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
             placeholder={tp('searchPlaceholder')}
             className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-slate-900 outline-none placeholder:text-slate-500"
           />
+          {imageSearchOn && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setPickSignal((n) => n + 1);
+              }}
+              aria-label={ti('cameraButton')}
+              data-testid="image-search-camera"
+              className="ai-search-gradient flex h-9 w-[42px] flex-none items-center justify-center rounded-[10px] text-white"
+            >
+              <ScanSearchIcon className="h-5 w-5" />
+            </button>
+          )}
         </label>
         {categories.length > 0 && (
           <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -108,6 +170,18 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
           </div>
         )}
       </div>
+
+      {imageSearchOn && tenantKey && (
+        <div className="mt-2">
+          <ImageSearchPanel
+            tenantKey={tenantKey}
+            currency={currency}
+            phone={phone}
+            pickSignal={pickSignal}
+            onOpen={(product) => setOpened(product as unknown as Product)}
+          />
+        </div>
+      )}
 
       {pagination && pagination.total > 0 && (
         <div className="mb-3 mt-1.5 text-[13px] text-slate-600">{tp('count', { count: pagination.total })}</div>
@@ -198,6 +272,63 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
           currency={currency}
           phone={phone}
           onClose={() => setOpened(null)}
+          booking={
+            bookingOn && tenantKey
+              ? {
+                  tenantKey,
+                  enabled: true,
+                  outlets,
+                  todayKey,
+                  draft,
+                  onAdd: (where, quantity) => {
+                    const main = productPriceLines(opened).main;
+                    updateDraft(
+                      addToRequest(draft, where, {
+                        productId: opened.id,
+                        name: opened.name,
+                        quantity,
+                        unitPrice: main?.amount ?? null,
+                        perDay: main?.unit === 'day',
+                      })
+                    );
+                    setAdded(true);
+                  },
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {bookingOn && draft.items.length > 0 && !reviewing && (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={() => setReviewing(true)}
+            data-testid="booking-bar"
+            className="mx-auto flex h-14 w-full max-w-lg items-center justify-between rounded-2xl bg-slate-900 px-4 text-white shadow-lg"
+          >
+            <span className="text-[15px] font-semibold">
+              {tb('requestBar', { count: draft.items.reduce((a, i) => a + i.quantity, 0) })}
+            </span>
+            <span className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold">{tb('viewRequest')}</span>
+          </button>
+          {added && <p className="mx-auto mt-2 max-w-lg text-center text-[13px] font-semibold text-emerald-700">{tb('added')}</p>}
+        </div>
+      )}
+
+      {reviewing && tenantKey && (
+        <BookingRequestSheet
+          tenantKey={tenantKey}
+          draft={draft}
+          outlets={outlets}
+          currency={currency}
+          onRemove={(productId) => {
+            const next = removeFromRequest(draft, productId);
+            updateDraft(next);
+            if (next.items.length === 0) setReviewing(false);
+          }}
+          onSent={() => updateDraft(emptyRequest())}
+          onClose={() => setReviewing(false)}
         />
       )}
     </main>

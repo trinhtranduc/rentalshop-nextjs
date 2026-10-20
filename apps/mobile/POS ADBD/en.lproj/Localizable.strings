@@ -2772,3 +2772,48 @@
 "cart.multi.delete.title" = "Delete this cart?";
 "cart.multi.delete.message" = "%@ has %d items. They will be removed.";
 "cart.multi.limit" = "10 carts are open. Close one before editing an order.";
+
+/* #1124 Online booking */
+"booking.chip" = "Online orders";
+"booking.title" = "Online orders";
+"booking.detail.title" = "Online order";
+"booking.status.pending" = "Waiting";
+"booking.status.confirmed" = "Confirmed";
+"booking.status.rejected" = "Rejected";
+"booking.status.expired" = "Expired";
+"booking.status.cancelled" = "Cancelled";
+"booking.status.unknown" = "Other";
+"booking.items" = "%d items";
+"booking.hoursLeft" = "%d h left to confirm";
+"booking.empty" = "No requests yet";
+"booking.section.customer" = "Customer";
+"booking.section.rental" = "Rental";
+"booking.section.note" = "Customer note";
+"booking.outlet" = "Branch";
+"booking.dates" = "Dates";
+"booking.returningCustomer" = "Returning customer: %@";
+"booking.newCustomer" = "New customer, created when you confirm";
+"booking.item.free" = "Available";
+"booking.item.short" = "Short from %@";
+"booking.shortWarning" = "Some items are short on the chosen days. Check before you confirm.";
+"booking.action.confirm" = "Confirm";
+"booking.action.reject" = "Reject";
+"booking.reject.title" = "Reason";
+"booking.reject.outOfStock" = "Out of stock";
+"booking.reject.cannotContact" = "Cannot reach the customer";
+"booking.reject.other" = "Other";
+"booking.reject.otherPlaceholder" = "Reason the customer will see";
+"booking.cancel" = "Cancel";
+"booking.reject.sheetTitle" = "Reject online order";
+"booking.reject.sheetDescription" = "Pick a reason to tell the customer. The customer will see this reason.";
+"booking.reject.notePlaceholder" = "Note for the customer (optional)";
+
+/* #1145 shop currency (Settings v2, shop owner) */
+"settings.v2.currency" = "Currency";
+"settings.v2.currency.cancel" = "Cancel";
+"settings.v2.currency.confirm.title" = "Change currency to %@?";
+"settings.v2.currency.confirm.message" = "All prices in the app will show in %@. Amounts stay the same, nothing is converted (%@).";
+"settings.v2.currency.confirm.button" = "Change to %@";
+"settings.v2.currency.failed" = "Could not change the currency. Please try again.";
+"currency.usd.unit" = "$";
+"currency.usd.unitDaily" = "$/day";

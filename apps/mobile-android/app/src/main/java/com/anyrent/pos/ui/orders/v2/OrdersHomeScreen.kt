@@ -137,7 +137,7 @@ private val ChipStatuses = listOf(null, "RESERVED", "PICKUPED", "RETURNED", "CAN
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
+fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit, onOpenBookings: () -> Unit = {}) {
     val app = LocalContext.current.applicationContext as AnyRentApp
     val viewModel: OrdersHomeViewModel = viewModel(
         factory = remember { OrdersHomeViewModel.Factory(app.container.todayWorkRepository) },
@@ -200,6 +200,8 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit) {
                         color = DS.Colors.Text,
                         modifier = Modifier.weight(1f),
                     )
+                    // #1124 "Đặt online" with the count of requests waiting (hidden unless the shop takes them)
+                    com.anyrent.pos.ui.booking.BookingChip(onClick = onOpenBookings)
                     OutlinedPill(
                         text = stringResource(if (saleMode) R.string.orders_v2_title_rent else R.string.orders_v2_title_sale),
                         onClick = {

@@ -63,6 +63,7 @@ final class SettingsV2ViewController: BaseViewControler {
         loadPlan()
         loadCounts()
         refreshOverlapSetting()
+        refreshCurrency()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -313,6 +314,65 @@ final class SettingsV2ViewController: BaseViewControler {
         }
     }
 
+    // MARK: - Shop currency (#1145)
+
+    private func refreshCurrency() {
+        ShopCurrencyStore.refresh { [weak self] _ in
+            guard let self, !ShopCurrencyStore.saving else { return }
+            self.listView.reloadData()
+        }
+    }
+
+    /// "VND (đ)" / "USD ($)", the current one checked; another one asks to confirm
+    private func chooseCurrency() {
+        let current = ShopCurrencyStore.current
+        let sheet = UIAlertController(title: "settings.v2.currency".localized(), message: nil, preferredStyle: .actionSheet)
+        for currency in ShopCurrency.allCases {
+            let action = UIAlertAction(title: currency.label, style: .default) { [weak self] _ in
+                guard currency != current else { return }
+                self?.confirmCurrency(currency, from: current)
+            }
+            action.setValue(currency == current, forKey: "checked")
+            sheet.addAction(action)
+        }
+        sheet.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        present(sheet, animated: true)
+    }
+
+    private func confirmCurrency(_ currency: ShopCurrency, from current: ShopCurrency) {
+        let alert = UIAlertController(title: ShopCurrencyLogic.confirmTitle(to: currency),
+                                      message: ShopCurrencyLogic.confirmMessage(from: current, to: currency),
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: ShopCurrencyLogic.confirmButton(to: currency), style: .default) { [weak self] _ in
+            self?.saveCurrency(currency)
+        })
+        present(alert, animated: true)
+    }
+
+    private func saveCurrency(_ currency: ShopCurrency) {
+        guard !ShopCurrencyStore.saving else { return }
+        ShopCurrencyStore.saving = true
+        TabsV2APIService.shared.setShopCurrency(currency) { [weak self] saved, error in
+            DispatchQueue.main.async {
+                ShopCurrencyStore.saving = false
+                if let saved, error == nil {
+                    ShopCurrencyStore.store(saved)
+                    self?.listView.reloadData()
+                    return
+                }
+                guard let self else { return }
+                let failure = error ?? NSError.errorWithOwnMessage(message: "settings.v2.currency.failed".localized(), domain: "RC")
+                UIAlertController.errorAlert(parent: self, error: failure)
+            }
+        }
+    }
+
     // MARK: - Rows
 
     private enum Section {
@@ -350,6 +410,7 @@ final class SettingsV2ViewController: BaseViewControler {
         switch item {
         case .notifications: return "Notifications".localized()
         case .storeInfo: return "Store Information".localized()
+        case .currency: return "settings.v2.currency".localized()
         case .receiptNote: return "settings.v2.receiptNote".localized()
         case .printer: return "settings.v2.printer".localized()
         case .bankAccounts: return "Bank Accounts".localized()
@@ -376,6 +437,8 @@ final class SettingsV2ViewController: BaseViewControler {
             return counts[item].map(String.init)
         case .plan:
             return plan.map(SettingsV2Logic.planText)
+        case .currency:
+            return ShopCurrencyStore.current.label
         case .language:
             let code = Bundle.main.preferredLocalizations.first ?? "vi"
             let locale = Locale(identifier: code)
@@ -424,6 +487,8 @@ final class SettingsV2ViewController: BaseViewControler {
             navigationController?.pushViewController(page, animated: true)
         case .plan:
             break
+        case .currency:
+            chooseCurrency()
         case .language:
             if let url = URL(string: UIApplicationOpenSettingsURLString) {
                 UIApplication.shared.open(url)

@@ -5,7 +5,7 @@ import FeaturesClient from './FeaturesClient';
 const BASE_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop';
 
 export const metadata: Metadata = {
-  title: 'Tính năng Phần mềm Quản lý Cho thuê | AnyRent',
+  title: { absolute: 'Tính năng Phần mềm Quản lý Cho thuê | AnyRent' },
   description:
     'Khám phá tính năng phần mềm quản lý cửa hàng cho thuê AnyRent: quản lý đơn hàng, kho hàng, khách hàng, lịch đặt, báo cáo doanh thu. Hỗ trợ iOS và Web.',
   keywords: [

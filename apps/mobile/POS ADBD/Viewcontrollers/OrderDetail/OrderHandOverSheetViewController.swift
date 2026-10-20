@@ -263,7 +263,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         label.text = title
         field.keyboardType = .numberPad
         field.font = Utils.regularFont(size: DS.TextSize.input)
-        field.text = value > 0 ? MoneyFormatter.format(value) : ""
+        field.text = value > 0 ? MoneyFormatter.plain(value) : ""
         field.placeholder = "0"
         field.borderStyle = .none
         field.layer.cornerRadius = 12
@@ -329,7 +329,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
     @objc private func feeChanged(_ field: UITextField) {
         let amount = Self.amount(from: field.text)
-        field.text = amount > 0 ? MoneyFormatter.format(amount) : ""
+        field.text = amount > 0 ? MoneyFormatter.plain(amount) : ""
         renderMoney()
     }
 

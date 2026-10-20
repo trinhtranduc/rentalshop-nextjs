@@ -1,9 +1,10 @@
 package com.anyrent.pos.domain.overview
 
+import com.anyrent.pos.domain.money.ShopCurrency
+import com.anyrent.pos.domain.money.ShopMoney
 import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.math.abs
-import kotlin.math.roundToLong
 
 /**
  * #725: the Overview as iOS draws it (`OverviewDashLogic.swift`, #616): period chips, four tiles with chips, compact
@@ -166,24 +167,15 @@ object OverviewDashLogic {
 
     // Money text
 
-    /** Full below a million ("450.000"), else "18,65 tr" / "1,2 tỷ" (en "18.65M" / "1.2B"); two decimals at most */
-    fun compact(amount: Double, vietnamese: Boolean): String {
-        val magnitude = abs(amount)
-        if (magnitude < 1_000_000) return money(amount)
-        val billion = magnitude >= 1_000_000_000
-        val scaled = (magnitude / (if (billion) 1_000_000_000.0 else 1_000_000.0) * 100).roundToLong() / 100.0
-        var text = "%.2f".format(java.util.Locale.US, scaled).trimEnd('0').trimEnd('.')
-        if (vietnamese) text = text.replace('.', ',')
-        val unit = if (vietnamese) (if (billion) " tỷ" else " tr") else (if (billion) "B" else "M")
-        return (if (amount < 0) "−" else "") + text + unit
-    }
+    /**
+     * Full below a million ("450.000"), else "18,65 tr" / "1,2 tỷ" (en "18.65M" / "1.2B"); two decimals at most.
+     * USD shop (#1145): "$450,000" / "$18.65M".
+     */
+    fun compact(amount: Double, vietnamese: Boolean, currency: ShopCurrency = ShopMoney.current): String =
+        ShopMoney.compact(amount, vietnamese, currency)
 
-    /** "1.234.567" / "−1.234" (iOS `MoneyFormatter.format`) */
-    fun money(amount: Double): String {
-        val rounded = Math.round(amount)
-        val digits = abs(rounded).toString().reversed().chunked(3).joinToString(".").reversed()
-        return (if (rounded < 0) "−" else "") + digits
-    }
+    /** "1.234.567" / "−1.234" (iOS `MoneyFormatter.format`); "$1,234,567" in a USD shop (#1145) */
+    fun money(amount: Double, currency: ShopCurrency = ShopMoney.current): String = ShopMoney.format(amount, currency)
 
     /** "+1.234" / "−1.234" */
     fun signedMoney(amount: Double): String = if (amount < 0) "−" + money(-amount) else "+" + money(amount)

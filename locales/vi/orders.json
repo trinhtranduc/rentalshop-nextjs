@@ -1059,6 +1059,58 @@
       "bankName": "Ngân hàng",
       "bankAccount": "STK",
       "bankHolder": "Chủ TK"
+    },
+    "online": {
+      "button": "Đặt online",
+      "title": "Đặt online",
+      "subtitle": "Yêu cầu khách gửi từ trang shop. Xác nhận để tạo đơn, hoặc từ chối.",
+      "backToOrders": "Đơn hàng",
+      "settings": "Cài đặt đặt online",
+      "noAccess": "Bạn không có quyền xem đặt online.",
+      "loadFailed": "Không tải được yêu cầu đặt online.",
+      "actionFailed": "Không thực hiện được. Thử lại.",
+      "items": "{count} món",
+      "hoursLeft": "còn {hours} giờ",
+      "phone": "Số điện thoại",
+      "outlet": "Chi nhánh",
+      "days": "Ngày thuê",
+      "customer": "Khách hàng",
+      "customerKnown": "Khách cũ của shop",
+      "customerNew": "Khách mới (tạo khi xác nhận)",
+      "note": "Ghi chú",
+      "free": "Còn đủ",
+      "shortOn": "Thiếu từ {day}",
+      "confirm": "Xác nhận",
+      "reject": "Từ chối",
+      "openOrder": "Xem đơn",
+      "rejectTitle": "Từ chối yêu cầu",
+      "rejectHint": "Chọn lý do. Khách sẽ thấy yêu cầu đã bị từ chối.",
+      "notePlaceholder": "Ghi chú thêm (không bắt buộc)",
+      "notePlaceholderRequired": "Ghi rõ lý do",
+      "noteRequired": "Hãy ghi lý do khi chọn \"Khác\".",
+      "rejectedBecause": "Lý do từ chối",
+      "cancel": "Huỷ",
+      "close": "Đóng",
+      "fromRequest": "Từ yêu cầu đặt online",
+      "status": {
+        "PENDING": "Chờ xác nhận",
+        "CONFIRMED": "Đã xác nhận",
+        "REJECTED": "Đã từ chối",
+        "EXPIRED": "Hết hạn",
+        "CANCELLED": "Khách huỷ"
+      },
+      "empty": {
+        "PENDING": "Chưa có yêu cầu nào chờ xác nhận.",
+        "CONFIRMED": "Chưa có yêu cầu đã xác nhận.",
+        "REJECTED": "Chưa từ chối yêu cầu nào.",
+        "EXPIRED": "Không có yêu cầu hết hạn.",
+        "CANCELLED": "Không có yêu cầu bị khách huỷ."
+      },
+      "reasons": {
+        "OUT_OF_STOCK": "Hết đồ",
+        "CANNOT_CONTACT": "Không liên lạc được",
+        "OTHER": "Khác"
+      }
     }
   }
 }

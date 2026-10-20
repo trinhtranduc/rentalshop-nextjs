@@ -428,6 +428,10 @@ final class NotificationsViewController: BaseViewControler {
             navigationController?.pushViewController(MyShiftsViewController(), animated: true)
             return
         }
+        if let requestId = notification.bookingRequestIdValue {
+            navigationController?.pushViewController(BookingRequestDetailViewController(requestId: requestId), animated: true)
+            return
+        }
         if let orderId = notification.orderIdValue {
             PushNotificationManager.shared.openOrderDetail(orderId: orderId)
         }

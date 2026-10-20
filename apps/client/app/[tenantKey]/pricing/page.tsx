@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import PricingClient from '../../pricing/PricingClient';
 import { faqJsonLd, publicPageJsonLd, publicPageMessages, publicPageMetadata } from '../../../lib/public-content/public-pages';
 import { localizedPageLocale } from '../../../lib/public-content/localized-page';
+import { loadPublicPlans } from '../../../lib/public-content/public-plans';
 
 type Props = { params: { tenantKey: string } };
 
@@ -10,7 +11,8 @@ export function generateMetadata({ params }: Props): Metadata {
   return publicPageMetadata(localizedPageLocale(params.tenantKey), 'pricing');
 }
 
-export default function LocalizedPricingPage({ params }: Props) {
+export default async function LocalizedPricingPage({ params }: Props) {
+  const plans = await loadPublicPlans();
   const locale = localizedPageLocale(params.tenantKey);
   const faq = publicPageMessages(locale).pricingFaq;
   return (
@@ -20,7 +22,7 @@ export default function LocalizedPricingPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd([[faq.q1, faq.a1], [faq.q2, faq.a2], [faq.q3, faq.a3]])) }}
       />
-      <PricingClient />
+      <PricingClient plans={plans} />
     </>
   );
 }

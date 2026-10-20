@@ -150,6 +150,10 @@ export default async function PublicProductsPage({
         currency={merchant.currency}
         phone={phone}
         pagination={pagination}
+        tenantKey={tenantKey}
+        onlineBooking={merchant.onlineBooking === true}
+        imageSearchAvailable={merchant.imageSearchAvailable === true}
+        outlets={outlets}
       />
       <PublicShopFooter />
     </div>

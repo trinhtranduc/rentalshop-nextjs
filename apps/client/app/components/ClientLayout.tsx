@@ -115,7 +115,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
   return (
     <ThemeProvider>
-      <CurrencyProvider merchantCurrency={merchantCurrency}>
+      <CurrencyProvider merchantCurrency={merchantCurrency} showDollar>
         {showSidebar ? (
           <ShopShell user={user} pathname={pathname} onLogout={handleLogout}>
             <div className="w-full min-w-0">{children}</div>

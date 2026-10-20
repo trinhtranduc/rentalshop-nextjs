@@ -1,6 +1,6 @@
 'use client';
 
-import { storedUserDiffers } from './auth-sync';
+import { mergeRefreshedUser, storedUserDiffers } from './auth-sync';
 import { useState, useEffect, useCallback } from 'react';
 import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from '@rentalshop/utils';
 import type { User } from '@rentalshop/types';
@@ -248,18 +248,20 @@ export function useAuth() {
         const data = await response.json();
         
         if (data.success && data.data) {
+          // #1140: the profile has no permissions; keep the login fields it does not send
+          const user = mergeRefreshedUser(getStoredUser() as unknown as Record<string, unknown> | null, data.data);
           // Use storeAuthData to properly save user data (maintains token and authData structure)
           const token = getAuthToken();
           if (token) {
-            storeAuthData(token, data.data);
+            storeAuthData(token, user);
           } else {
             // Fallback: just save user if no token
-            localStorage.setItem('user', JSON.stringify(data.data));
+            localStorage.setItem('user', JSON.stringify(user));
           }
           
           setState(prev => ({ 
             ...prev, 
-            user: data.data,
+            user,
             loading: false 
           }));
         }

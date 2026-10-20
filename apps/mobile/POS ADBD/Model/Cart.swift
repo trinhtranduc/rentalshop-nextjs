@@ -32,6 +32,9 @@ class Cart {
     var manualSecurityDeposit: Double? // Manual security deposit (nil = not set, user must input if needed)
     var loyaltyRedeemPoints: Int = 0
     var loyaltyDiscountAmount: Double = 0
+    /// #1124: the online booking request this cart confirms (sent as `bookingRequestId`) and its branch
+    var bookingRequestId: Int?
+    var bookingOutletId: Int?
     
     // MARK: - Computed Properties
     var amountDue: Double {
@@ -272,6 +275,8 @@ class Cart {
         isDepositManuallyOverridden = false
         loyaltyRedeemPoints = 0
         loyaltyDiscountAmount = 0
+        bookingRequestId = nil
+        bookingOutletId = nil
     }
 
     var hasDraftContent: Bool {
@@ -300,6 +305,9 @@ class Cart {
         var editOriginal: CartEditOriginal? = nil
         /// #1079; absent in drafts saved before several carts existed
         var number: Int? = nil
+        /// #1124; absent in drafts saved before online booking
+        var bookingRequestId: Int? = nil
+        var bookingOutletId: Int? = nil
     }
 
     struct DiskCustomer: Codable {
@@ -346,7 +354,9 @@ class Cart {
             loyaltyRedeemPoints: loyaltyRedeemPoints,
             loyaltyDiscountAmount: loyaltyDiscountAmount,
             editOriginal: editOriginal,
-            number: number
+            number: number,
+            bookingRequestId: bookingRequestId,
+            bookingOutletId: bookingOutletId
         )
     }
 
@@ -381,6 +391,8 @@ class Cart {
         manualSecurityDeposit = snapshot.manualSecurityDeposit
         loyaltyRedeemPoints = snapshot.loyaltyRedeemPoints
         loyaltyDiscountAmount = snapshot.loyaltyDiscountAmount
+        bookingRequestId = snapshot.bookingRequestId
+        bookingOutletId = snapshot.bookingOutletId
     }
     
     // MARK: - Helper Methods
@@ -941,7 +953,7 @@ class Cart {
         guard let customerId = customer?.customer_id else {
             // Return a default CreateOrderRequest with invalid customerId
             // This will be caught by validation
-            return CreateOrderRequest(
+            var invalid = CreateOrderRequest(
                 orderType: orderType.rawValue.uppercased(),
                 customerId: 0,
                 totalAmount: totalAmount,
@@ -962,9 +974,11 @@ class Cart {
                 rentalDuration: nil,
                 rentalDurationUnit: nil
             )
+            invalid.bookingRequestId = bookingRequestId
+            return invalid
         }
         
-        return CreateOrderRequest(
+        var request = CreateOrderRequest(
             orderType: orderType.rawValue.uppercased(),
             customerId: customerId,
             totalAmount: totalAmount,
@@ -985,6 +999,8 @@ class Cart {
             rentalDuration: isRentOrder ? calculateRentalDays() : nil,
             rentalDurationUnit: isRentOrder ? "day" : nil
         )
+        request.bookingRequestId = bookingRequestId
+        return request
     }
     
     // MARK: - Helper Methods for CreateOrderRequest
@@ -1051,6 +1067,8 @@ struct CreateOrderRequest: Codable {
     let rentalDurationUnit: String?
     /// #828: set by `OrderService.createOrder` for a merchant; nil keeps the API default (the default outlet)
     var outletId: Int? = nil
+    /// #1124: the online booking request this order confirms (optional on the API; old apps never send it)
+    var bookingRequestId: Int? = nil
     
     struct LoyaltyRedeemRequest: Codable {
         let points: Int
@@ -1078,6 +1096,7 @@ struct CreateOrderRequest: Codable {
         case rentalDuration
         case rentalDurationUnit
         case outletId
+        case bookingRequestId
         // Explicitly exclude 'subtotal'
     }
     
@@ -1105,6 +1124,7 @@ struct CreateOrderRequest: Codable {
         try container.encodeIfPresent(rentalDuration, forKey: .rentalDuration)
         try container.encodeIfPresent(rentalDurationUnit, forKey: .rentalDurationUnit)
         try container.encodeIfPresent(outletId, forKey: .outletId)
+        try container.encodeIfPresent(bookingRequestId, forKey: .bookingRequestId)
         
         // Explicitly NOT encoding 'subtotal' field
     }

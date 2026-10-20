@@ -927,7 +927,7 @@ final class OverviewDetailSheet: UIViewController {
         // #716: the orders behind the money (created in the period, cancelled left out), not orderCounts.new
         let count = content.report.orderValueByType.map { $0.rent.orders + $0.sale.orders } ?? content.report.newOrders
         views.append(legendRow(OVColor.ink, "overview.dash.detail.newOrders".localized(), note: count.map(orders) ?? "—",
-                               value: content.report.totalOrderValue.map(MoneyFormatter.format) ?? "—"))
+                               value: content.report.totalOrderValue.map { MoneyFormatter.format($0) } ?? "—"))
         if let split = content.report.orderValueByType {
             let (rent, sale) = OverviewDashLogic.split(split.rent, split.sale)
             views.append(stacked([(rent.share, OVColor.blue, false), (sale.share, OVColor.violet, false)]))

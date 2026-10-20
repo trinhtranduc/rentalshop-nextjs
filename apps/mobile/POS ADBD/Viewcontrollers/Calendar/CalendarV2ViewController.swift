@@ -57,6 +57,8 @@ final class CalendarV2ViewController: BaseViewControler {
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        // #1145: the owner changed the shop currency: money is redrawn
+        NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
         loadMonth()
         loadDay()
     }
@@ -282,6 +284,11 @@ final class CalendarV2ViewController: BaseViewControler {
     }
 
     // MARK: - Render
+
+    @objc private func currencyChanged() {
+        guard isViewLoaded else { return }
+        listView.reloadData()
+    }
 
     private func renderMonth() {
         monthLabel.text = String(format: "calendar.v2.month".localized(), month, year)

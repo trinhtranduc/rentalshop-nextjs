@@ -62,8 +62,17 @@ object CartOrderSubmit {
             lineExtras = lineExtras(lines),
             idempotencyKey = idempotencyKey,
             noteImages = noteImages,
+            outletId = orderOutletId(CurrentOutlet.merchantFilterId),
+            bookingRequestId = bookingRequestId(),
         )
     }
+
+    /** #1124: the booking request the cart confirms, sent as `bookingRequestId` */
+    fun bookingRequestId(): Int? = CartStore.bookingRequestId.value
+
+    /** #1124: a booking's order goes to the booking's outlet; else the chosen branch (#828) */
+    fun orderOutletId(merchantFilterId: Int?): Int? =
+        com.anyrent.pos.domain.booking.BookingLogic.orderOutletId(CartStore.bookingOutletId.value, merchantFilterId)
 
     /**
      * The review screen's rental check before it saves (#676): null when the save may go on, else the message it shows

@@ -23,7 +23,7 @@ struct Merchant: Codable {
     let businessType: String?
     let businessTags: [String]?
     let taxId: String?
-    let currency: String?
+    var currency: String?
     let pricingType: String?
     let subscription: Subscription?
     

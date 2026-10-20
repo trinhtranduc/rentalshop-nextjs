@@ -32,3 +32,16 @@ export function storedUserDiffers(current: SyncedUser | null | undefined, stored
   if (!stored) return false;
   return userSyncSignature(current) !== userSyncSignature(stored);
 }
+
+/**
+ * #1140: GET /api/users/profile (refreshUser) has no `permissions` and fewer merchant fields than the login
+ * payload. Keep what the profile does not send (same user only), so a refresh never turns the owner read-only.
+ */
+export function mergeRefreshedUser<T extends { id?: unknown; merchant?: unknown }>(prev: Record<string, unknown> | null | undefined, next: T): T {
+  if (!prev || prev.id !== next.id) return next;
+  const prevMerchant = prev.merchant && typeof prev.merchant === 'object' ? (prev.merchant as Record<string, unknown>) : null;
+  const nextMerchant = next.merchant && typeof next.merchant === 'object' ? (next.merchant as Record<string, unknown>) : null;
+  const merged = { ...prev, ...next } as Record<string, unknown>;
+  if (prevMerchant && nextMerchant && prevMerchant.id === nextMerchant.id) merged.merchant = { ...prevMerchant, ...nextMerchant };
+  return merged as T;
+}

@@ -1,0 +1,9 @@
+{
+  "pagination": {
+    "showing": "Affichage de",
+    "to": "à",
+    "of": "sur",
+    "itemsPerPage": "Par page",
+    "apply": "Appliquer"
+  }
+}

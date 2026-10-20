@@ -420,12 +420,11 @@ object ChangeHistory {
         return "%02d:%02d".format(t.hour, t.minute)
     }
 
-    /** "1.000.000đ" (minus sign for a negative amount) */
-    fun money(amount: Double): String {
-        val rounded = Math.round(amount)
-        val digits = kotlin.math.abs(rounded).toString().reversed().chunked(3).joinToString(".").reversed()
-        return (if (rounded < 0) "−" else "") + digits + "đ"
-    }
+    /** "1.000.000đ" (minus sign for a negative amount); "$1,000,000" in a USD shop (#1145) */
+    fun money(
+        amount: Double,
+        currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
+    ): String = com.anyrent.pos.domain.money.ShopMoney.withUnit(amount, currency)
 
     /** Whole numbers without decimals, grouped with dots ("1.000"); fractions keep up to 2 decimals */
     fun number(value: Double): String {

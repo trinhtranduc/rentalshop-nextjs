@@ -57,6 +57,7 @@ class MainActivity : ComponentActivity() {
         }
         consumeOpenCartIntent(intent)
         consumeOpenMyShiftsIntent(intent)
+        consumeOpenBookingIntent(intent)
         requestNotificationPermissionIfNeeded()
         if (SessionStore.isLoggedIn) {
             PushRegistrar.refreshTokenIfLoggedIn()
@@ -98,6 +99,20 @@ class MainActivity : ComponentActivity() {
         }
         consumeOpenCartIntent(intent)
         consumeOpenMyShiftsIntent(intent)
+        consumeOpenBookingIntent(intent)
+    }
+
+    /** #1124: foreground push = our own extra; background push (tray) = FCM's `type` + `bookingRequestId` string extras */
+    private fun consumeOpenBookingIntent(intent: Intent?) {
+        if (intent == null) return
+        val ours = intent.getIntExtra(com.anyrent.pos.push.BookingPush.EXTRA_BOOKING_REQUEST_ID, -1).takeIf { it > 0 }
+        val tray = com.anyrent.pos.domain.booking.BookingLogic.requestIdFromPush(
+            mapOf("type" to intent.getStringExtra("type"), "bookingRequestId" to intent.getStringExtra("bookingRequestId")),
+        )
+        val id = ours ?: tray ?: return
+        intent.removeExtra(com.anyrent.pos.push.BookingPush.EXTRA_BOOKING_REQUEST_ID)
+        intent.removeExtra("bookingRequestId")
+        com.anyrent.pos.push.BookingPush.requestOpen(id)
     }
 
     private fun consumeOpenMyShiftsIntent(intent: Intent?) {

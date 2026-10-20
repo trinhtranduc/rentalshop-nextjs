@@ -160,6 +160,8 @@ final class TabsV2APIService: BaseService {
 
     private struct MerchantFlags: Decodable {
         let allowOverlappingOrders: Bool?
+        /// #1124 "Nhận đặt online"; missing (older API) = off
+        let onlineBookingEnabled: Bool?
     }
 
     /// `merchant.allowOverlappingOrders` of GET /api/users/profile (missing = ON); nil without a merchant
@@ -176,6 +178,29 @@ final class TabsV2APIService: BaseService {
         request(APIEndpoint.Path.merchantSettings, method: .put,
                 parameters: ["allowOverlappingOrders": allowed]) { (body: MerchantFlags?, error: NSError?) in
             completion(body.map { $0.allowOverlappingOrders ?? allowed }, error)
+        }
+    }
+
+    // MARK: - Shop currency (#1145)
+
+    private struct CurrencyBody: Decodable {
+        let currency: String?
+    }
+
+    /// `currency` of GET /api/settings/currency, normalised (missing = VND)
+    @discardableResult
+    func shopCurrency(completion: @escaping (ShopCurrency?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.settingsCurrency) { (body: CurrencyBody?, error: NSError?) in
+            completion(body.map { ShopCurrency.normalise($0.currency) }, error)
+        }
+    }
+
+    /// PUT /api/settings/currency `{ currency }` (403 for staff). Answers the saved value.
+    @discardableResult
+    func setShopCurrency(_ currency: ShopCurrency, completion: @escaping (ShopCurrency?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.settingsCurrency, method: .put,
+                parameters: ["currency": currency.rawValue]) { (body: CurrencyBody?, error: NSError?) in
+            completion(body.map { ShopCurrency.normalise($0.currency ?? currency.rawValue) }, error)
         }
     }
 
@@ -220,3 +245,50 @@ final class TabsV2APIService: BaseService {
             }
     }
 }
+
+// MARK: - Online booking requests (#1124)
+
+extension TabsV2APIService {
+    /// `merchant.onlineBookingEnabled` of GET /api/users/profile; false when off, missing or without a merchant
+    @discardableResult
+    func onlineBookingEnabled(completion: @escaping (Bool, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.userProfile) { (body: ProfileFlags?, error: NSError?) in
+            completion(body?.merchant?.onlineBookingEnabled == true, error)
+        }
+    }
+
+    /// GET /api/booking-requests (newest first, `counts` per status); outlet users only see their branch
+    @discardableResult
+    func bookingRequests(status: BookingStatus?, page: Int = 1, limit: Int = 30,
+                         completion: @escaping (BookingRequestList?, NSError?) -> Void) -> DataRequest {
+        var parameters: [String: Any] = ["page": page, "limit": limit]
+        if let status, status != .unknown { parameters["status"] = status.rawValue }
+        if let outletId = CurrentOutlet.shared.merchantFilterId { parameters["outletId"] = outletId }
+        return request(APIEndpoint.Path.bookingRequests, parameters: parameters, completion: completion)
+    }
+
+    @discardableResult
+    func bookingRequest(id: Int, completion: @escaping (BookingRequest?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.bookingRequest(id: id), completion: completion)
+    }
+
+    /// "Xác nhận": finds or creates the customer by phone and answers what the cart needs. Creates no order.
+    @discardableResult
+    func prepareBookingRequest(id: Int, completion: @escaping (BookingPrepare?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.bookingRequestPrepare(id: id), method: .post, parameters: [:], completion: completion)
+    }
+
+    private struct RejectAnswer: Decodable { let id: Int; let status: String }
+
+    @discardableResult
+    func rejectBookingRequest(id: Int, reason: BookingRejectReason, note: String?,
+                              completion: @escaping (Bool, NSError?) -> Void) -> DataRequest {
+        var parameters: [String: Any] = ["reason": reason.rawValue]
+        if let note, !note.isEmpty { parameters["note"] = note }
+        return request(APIEndpoint.Path.bookingRequestReject(id: id), method: .post, parameters: parameters) {
+            (body: RejectAnswer?, error: NSError?) in
+            completion(body != nil, error)
+        }
+    }
+}
+

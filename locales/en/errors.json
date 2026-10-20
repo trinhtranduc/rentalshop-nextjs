@@ -385,6 +385,7 @@
   "PRODUCT_HAS_OPEN_ORDERS": "This product is on an order that is reserved or being rented. Finish or cancel those orders before deleting it.",
   "SEARCH_FAILED": "We couldn't search by image right now. Please try again in a moment, or use text search.",
   "SEARCH_TIMEOUT": "The image search took too long. Please try again in a few minutes.",
+  "IMAGE_SEARCH_RATE_LIMITED": "Too many image searches. Please try again in a few minutes.",
   "INVALID_LIMIT": "Invalid number of results requested",
   "INVALID_MIN_SIMILARITY": "Invalid minimum similarity (must be between 0 and 1)",
   "NO_PRODUCTS_FOUND": "No similar products found",
@@ -556,5 +557,18 @@
   "EMBEDDING_BACKFILL_STATUS": "Image search status loaded.",
   "EMBEDDING_JOBS_LIST": "Image search jobs loaded.",
   "EMBEDDING_BACKFILL_DRY_RUN": "Check finished. Nothing was queued.",
-  "EMBEDDING_BACKFILL_QUEUED": "Products queued for image search."
+  "EMBEDDING_BACKFILL_QUEUED": "Products queued for image search.",
+  "BOOKING_DISABLED": "This shop does not take online booking requests.",
+  "BOOKING_OUTLET_UNAVAILABLE": "This branch does not take online booking requests.",
+  "BOOKING_NOT_AVAILABLE": "This item is not free on one of the chosen days. Pick other days or a smaller quantity.",
+  "BOOKING_RATE_LIMITED": "Too many booking requests. Please wait a while and try again, or call the shop.",
+  "BOOKING_REQUEST_NOT_FOUND": "Booking request not found.",
+  "BOOKING_REQUEST_CLOSED": "This booking request was already confirmed, rejected or has expired.",
+  "INVALID_PHONE": "Please enter a valid phone number.",
+  "BOOKING_AVAILABILITY": "Availability loaded.",
+  "BOOKING_REQUEST_CREATED": "Booking request sent. The shop will confirm it soon.",
+  "BOOKING_REQUEST_FOUND": "Booking request loaded.",
+  "BOOKING_REQUESTS_FOUND": "Booking requests loaded.",
+  "BOOKING_REQUEST_PREPARED": "Booking request ready to create the order.",
+  "BOOKING_REQUEST_REJECTED": "Booking request rejected."
 }

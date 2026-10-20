@@ -123,8 +123,10 @@ struct OrderShareModel: Equatable {
 
     // MARK: - Formatting
 
-    /// `1.150.000đ` in every language
-    static func money(_ amount: Double) -> String { MoneyFormatter.format(amount) + "đ" }
+    /// `1.150.000đ` in every language (`$1,150,000` in a USD shop, #1145)
+    static func money(_ amount: Double, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        MoneyFormatter.suffixed(amount, currency: currency)
+    }
 
     /// `− 300.000đ`
     static func minus(_ amount: Double) -> String { "− " + money(abs(amount)) }

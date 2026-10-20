@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { Product } from '@rentalshop/types';
 import { formatShopMoney, productPriceLines, telLink, zaloLink } from '../lib/public-shop';
+import { canBook, type BookingRequestDraft } from '../lib/booking';
+import { BookingPicker, type BookingOutlet } from './BookingPicker';
 
 interface PublicProductSheetProps {
   product: Product;
@@ -12,12 +14,24 @@ interface PublicProductSheetProps {
   currency?: string | null;
   phone?: string | null;
   onClose: () => void;
+  /** #1124: online booking of the shop; absent or off → Gọi / Zalo only, as before */
+  booking?: {
+    tenantKey: string;
+    enabled: boolean;
+    outlets: BookingOutlet[];
+    todayKey: string;
+    draft: BookingRequestDraft;
+    onAdd: (where: { outletId: number; pickupDate: string; returnDate: string }, quantity: number) => void;
+  };
 }
 
-/** #665 — product detail: photos, price rows, Gọi shop / Hỏi thuê qua Zalo */
-export function PublicProductSheet({ product, categoryName, currency, phone, onClose }: PublicProductSheetProps) {
+/** #665 — product detail: photos, price rows, Gọi shop / Hỏi thuê qua Zalo; #1124 "Đặt thuê" when the shop takes requests */
+export function PublicProductSheet({ product, categoryName, currency, phone, onClose, booking }: PublicProductSheetProps) {
   const t = useTranslations('products.public');
-  const money = (amount: number) => formatShopMoney(amount, currency);
+  const tb = useTranslations('products.public.booking');
+  const [picking, setPicking] = useState(false);
+  const locale = useLocale();
+  const money = (amount: number) => formatShopMoney(amount, currency, locale);
   const prices = productPriceLines(product);
   const images = (product.images || []).filter(Boolean);
   const [photo, setPhoto] = useState(0);
@@ -35,6 +49,7 @@ export function PublicProductSheet({ product, categoryName, currency, phone, onC
     };
   }, [onClose]);
 
+  const bookable = Boolean(booking && canBook({ onlineBooking: booking.enabled, outlets: booking.outlets, hasRentPrice: prices.main != null }));
   const rows: { label: string; value: string; accent?: boolean }[] = [];
   if (prices.main?.unit === 'rent') rows.push({ label: t('rentFixed'), value: money(prices.main.amount), accent: true });
   const daily = prices.main?.unit === 'day' ? prices.main.amount : prices.daily;
@@ -103,11 +118,40 @@ export function PublicProductSheet({ product, categoryName, currency, phone, onC
                 ))}
               </div>
             )}
-            {product.description && <p className="whitespace-pre-line text-sm text-slate-700">{product.description}</p>}
-            <p className="text-[13px] text-slate-600">{t('askNote')}</p>
+            {picking && booking ? (
+              <BookingPicker
+                tenantKey={booking.tenantKey}
+                product={product}
+                outlets={booking.outlets}
+                currency={currency}
+                todayKey={booking.todayKey}
+                draft={booking.draft}
+                onAdd={(where, quantity) => {
+                  booking.onAdd(where, quantity);
+                  onClose();
+                }}
+              />
+            ) : (
+              <>
+                {product.description && <p className="whitespace-pre-line text-sm text-slate-700">{product.description}</p>}
+                {!bookable && <p className="text-[13px] text-slate-600">{t('askNote')}</p>}
+              </>
+            )}
           </div>
+          {bookable && !picking && (
+            <div className="border-t border-slate-200 px-4 pt-3 sm:px-6">
+              <button
+                type="button"
+                onClick={() => setPicking(true)}
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-blue-700 text-[15px] font-bold text-white"
+                data-testid="booking-start"
+              >
+                {tb('book')}
+              </button>
+            </div>
+          )}
           {(tel || zalo) && (
-            <div className="mt-auto flex gap-2.5 border-t border-slate-200 px-4 pb-5 pt-3 sm:px-6">
+            <div className={`mt-auto flex gap-2.5 px-4 pb-5 pt-3 sm:px-6 ${bookable ? '' : 'border-t border-slate-200'}`}>
               {tel && (
                 <a
                   href={tel}
@@ -121,7 +165,11 @@ export function PublicProductSheet({ product, categoryName, currency, phone, onC
                   href={zalo}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-12 flex-[2] items-center justify-center rounded-xl bg-blue-700 text-[15px] font-bold text-white"
+                  className={
+                    bookable
+                      ? 'flex h-12 flex-1 items-center justify-center rounded-xl border-[1.5px] border-slate-200 text-[15px] font-bold text-slate-900'
+                      : 'flex h-12 flex-[2] items-center justify-center rounded-xl bg-blue-700 text-[15px] font-bold text-white'
+                  }
                 >
                   {t('askZalo')}
                 </a>

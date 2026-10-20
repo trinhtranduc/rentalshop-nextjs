@@ -2770,3 +2770,48 @@
 "cart.multi.delete.title" = "Xoá giỏ này?";
 "cart.multi.delete.message" = "%@ có %d món. Các món sẽ bị xoá.";
 "cart.multi.limit" = "Đang mở 10 giỏ. Hãy đóng bớt một giỏ rồi sửa đơn.";
+
+/* #1124 Đặt online */
+"booking.chip" = "Đơn online";
+"booking.title" = "Đơn online";
+"booking.detail.title" = "Đơn online";
+"booking.status.pending" = "Chờ xác nhận";
+"booking.status.confirmed" = "Đã xác nhận";
+"booking.status.rejected" = "Từ chối";
+"booking.status.expired" = "Hết hạn";
+"booking.status.cancelled" = "Đã huỷ";
+"booking.status.unknown" = "Khác";
+"booking.items" = "%d món";
+"booking.hoursLeft" = "Còn %d giờ để xác nhận";
+"booking.empty" = "Chưa có yêu cầu nào";
+"booking.section.customer" = "Khách hàng";
+"booking.section.rental" = "Thuê";
+"booking.section.note" = "Ghi chú của khách";
+"booking.outlet" = "Chi nhánh";
+"booking.dates" = "Ngày thuê";
+"booking.returningCustomer" = "Khách cũ: %@";
+"booking.newCustomer" = "Khách mới, sẽ được tạo khi xác nhận";
+"booking.item.free" = "Còn đồ";
+"booking.item.short" = "Thiếu đồ từ ngày %@";
+"booking.shortWarning" = "Có món không đủ số lượng trong những ngày khách chọn. Kiểm tra trước khi xác nhận.";
+"booking.action.confirm" = "Xác nhận";
+"booking.action.reject" = "Từ chối";
+"booking.reject.title" = "Lý do từ chối";
+"booking.reject.outOfStock" = "Hết đồ";
+"booking.reject.cannotContact" = "Không liên lạc được";
+"booking.reject.other" = "Khác";
+"booking.reject.otherPlaceholder" = "Lý do khách sẽ thấy";
+"booking.cancel" = "Huỷ";
+"booking.reject.sheetTitle" = "Từ chối đơn online";
+"booking.reject.sheetDescription" = "Chọn lý do để báo cho khách. Khách sẽ nhận được lý do này.";
+"booking.reject.notePlaceholder" = "Ghi chú cho khách (không bắt buộc)";
+
+/* #1145 shop currency (Settings v2, shop owner) */
+"settings.v2.currency" = "Tiền tệ";
+"settings.v2.currency.cancel" = "Huỷ";
+"settings.v2.currency.confirm.title" = "Đổi tiền tệ sang %@?";
+"settings.v2.currency.confirm.message" = "Mọi giá trong app sẽ hiện bằng %@. Số tiền giữ nguyên, không quy đổi (%@).";
+"settings.v2.currency.confirm.button" = "Đổi sang %@";
+"settings.v2.currency.failed" = "Không đổi được tiền tệ. Vui lòng thử lại.";
+"currency.usd.unit" = "$";
+"currency.usd.unitDaily" = "$/ngày";

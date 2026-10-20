@@ -250,9 +250,11 @@ enum OverviewDashLogic {
 
     /// Tile value: full below a million ("450.000"), else "18,65 tr" / "1,2 tỷ" (en "18.65M" / "1.2B");
     /// two decimals at most, trailing zeros dropped
-    static func compact(_ amount: Double, vietnamese: Bool) -> String {
+    /// #1145: a USD shop reads "$18.65M" / "$1.2B" in every language, "$450,000" below a million
+    static func compact(_ amount: Double, vietnamese: Bool, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        if currency == .usd { return MoneyFormatter.compactUSD(amount) }
         let magnitude = abs(amount)
-        guard magnitude >= 1_000_000 else { return MoneyFormatter.format(amount) }
+        guard magnitude >= 1_000_000 else { return MoneyFormatter.format(amount, currency: .vnd) }
         let billion = magnitude >= 1_000_000_000
         var scaled = magnitude / (billion ? 1_000_000_000 : 1_000_000)
         scaled = (scaled * 100).rounded() / 100
@@ -265,9 +267,10 @@ enum OverviewDashLogic {
     }
 
     /// Value of a tile: "—" when unknown, "+" before a positive signed value
-    static func tileText(_ tile: OverviewTile, vietnamese: Bool, compact useCompact: Bool = true) -> String {
+    static func tileText(_ tile: OverviewTile, vietnamese: Bool, compact useCompact: Bool = true,
+                         currency: ShopCurrency = ShopCurrencyStore.current) -> String {
         guard let value = tile.value else { return "—" }
-        let text = useCompact ? compact(value, vietnamese: vietnamese) : MoneyFormatter.format(value)
+        let text = useCompact ? compact(value, vietnamese: vietnamese, currency: currency) : MoneyFormatter.format(value, currency: currency)
         return tile.signed && value > 0 ? "+" + text : text
     }
 

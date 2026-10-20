@@ -385,6 +385,7 @@
   "PRODUCT_HAS_OPEN_ORDERS": "Sản phẩm đang có trong đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi xoá.",
   "SEARCH_FAILED": "Chưa tìm được bằng hình ảnh lúc này. Vui lòng thử lại sau ít phút hoặc tìm bằng tên sản phẩm.",
   "SEARCH_TIMEOUT": "Tìm bằng hình ảnh mất quá nhiều thời gian. Vui lòng thử lại sau ít phút.",
+  "IMAGE_SEARCH_RATE_LIMITED": "Bạn đã tìm bằng ảnh quá nhiều lần. Vui lòng thử lại sau ít phút.",
   "INVALID_LIMIT": "Số lượng kết quả yêu cầu không hợp lệ",
   "INVALID_MIN_SIMILARITY": "Độ tương đồng tối thiểu không hợp lệ (phải từ 0 đến 1)",
   "NO_PRODUCTS_FOUND": "Không tìm thấy sản phẩm nào giống ảnh này",
@@ -556,5 +557,18 @@
   "EMBEDDING_BACKFILL_STATUS": "Đã tải trạng thái tìm bằng ảnh.",
   "EMBEDDING_JOBS_LIST": "Đã tải danh sách tác vụ tìm bằng ảnh.",
   "EMBEDDING_BACKFILL_DRY_RUN": "Đã kiểm tra xong. Chưa tạo gì.",
-  "EMBEDDING_BACKFILL_QUEUED": "Đã đưa sản phẩm vào hàng chờ tìm bằng ảnh."
+  "EMBEDDING_BACKFILL_QUEUED": "Đã đưa sản phẩm vào hàng chờ tìm bằng ảnh.",
+  "BOOKING_DISABLED": "Cửa hàng chưa nhận đặt thuê online.",
+  "BOOKING_OUTLET_UNAVAILABLE": "Chi nhánh này chưa nhận đặt thuê online.",
+  "BOOKING_NOT_AVAILABLE": "Món này đã hết vào một ngày đã chọn. Chọn ngày khác hoặc giảm số lượng.",
+  "BOOKING_RATE_LIMITED": "Gửi quá nhiều yêu cầu. Vui lòng đợi một lúc rồi thử lại, hoặc gọi cửa hàng.",
+  "BOOKING_REQUEST_NOT_FOUND": "Không tìm thấy yêu cầu đặt thuê.",
+  "BOOKING_REQUEST_CLOSED": "Yêu cầu này đã được xác nhận, từ chối hoặc đã hết hạn.",
+  "INVALID_PHONE": "Vui lòng nhập số điện thoại hợp lệ.",
+  "BOOKING_AVAILABILITY": "Đã tải lịch còn trống.",
+  "BOOKING_REQUEST_CREATED": "Đã gửi yêu cầu đặt thuê. Cửa hàng sẽ xác nhận sớm.",
+  "BOOKING_REQUEST_FOUND": "Đã tải yêu cầu đặt thuê.",
+  "BOOKING_REQUESTS_FOUND": "Đã tải danh sách yêu cầu đặt thuê.",
+  "BOOKING_REQUEST_PREPARED": "Đã sẵn sàng tạo đơn từ yêu cầu đặt thuê.",
+  "BOOKING_REQUEST_REJECTED": "Đã từ chối yêu cầu đặt thuê."
 }

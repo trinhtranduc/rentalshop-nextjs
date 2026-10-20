@@ -961,16 +961,23 @@ private fun ItemRow(
                     val style = CartShortageStyle.of(note?.tone ?: CartV2Logic.ShortageTone.NONE)
                     shortText?.let { text ->
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
-                        // Owner (2026-10-19): no pill background; "●" + text in the same colour, regular weight, on the right
-                        Text(
-                            "● " + if (onOpenOverlap != null) "$text ›" else text,
-                            fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        // #1132 (owner, mockup A, iOS `stockPill`): a soft pill in the tone's fill, a 7 dp dot in the text
+                        // colour, then the text (semibold); the overlap tag keeps its tap and "›"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(percent = 50))
                                 .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
-                                .padding(vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
-                        )
+                                .background(style.colors.fill)
+                                .padding(horizontal = 9.dp, vertical = 3.dp),
+                        ) {
+                            Box(Modifier.size(7.dp).clip(CircleShape).background(style.colors.text))
+                            Text(
+                                if (onOpenOverlap != null) "$text ›" else text,
+                                fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text, maxLines = 1,
+                            )
+                        }
                     }
                 }
                 // #482: the link opens the "Cách tính giá" sheet
@@ -996,11 +1003,13 @@ private fun ItemRow(
 internal data class CartShortageStyle(val colors: DS.Pill, val weight: FontWeight) {
     companion object {
         private val BookedOut = DS.Pill(Color(0xFF991B1B), Color(0xFFFEE2E2))
+        private val Enough = DS.Pill(Color(0xFF166534), Color(0xFFDCFCE7))
 
         fun of(tone: CartV2Logic.ShortageTone): CartShortageStyle = when (tone) {
-            CartV2Logic.ShortageTone.OK -> CartShortageStyle(DS.Status.Done, FontWeight.Normal) // #1064: 2+ and enough
-            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.Normal)
-            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.Normal)
+            // #1132 (mockup A): soft fills, semibold text
+            CartV2Logic.ShortageTone.OK -> CartShortageStyle(Enough, FontWeight.SemiBold) // #1064: 2+ and enough
+            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.SemiBold)
+            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.SemiBold)
         }
     }
 }
@@ -1067,9 +1076,18 @@ private fun pricingLabel(type: String): String = when (type.uppercase()) {
 /** "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise */
 @Composable
 private fun pricingPriceText(price: Double, type: String, isSale: Boolean): String {
-    val money = formatMoneyVnd(price) + "đ"
+    val money = com.anyrent.pos.domain.money.ShopMoney.withUnit(price)
     return if (!isSale && type.equals("DAILY", ignoreCase = true)) stringResource(R.string.v2_pricing_per_day_suffix, money) else money
 }
+
+/** Unit after the price field: "đ" / "đ/ngày", or "$" / "$/ngày" in a USD shop (#1145) */
+@Composable
+private fun pricingUnitText(daily: Boolean): String =
+    if (com.anyrent.pos.domain.money.ShopMoney.current == com.anyrent.pos.domain.money.ShopCurrency.USD) {
+        stringResource(if (daily) R.string.v2_pricing_unit_daily_usd else R.string.v2_pricing_unit_usd)
+    } else {
+        stringResource(if (daily) R.string.v2_pricing_unit_daily else R.string.v2_pricing_unit)
+    }
 
 /**
  * "Cách tính giá" (#482, board Gio-hang-chon-gia; iOS `CartPricingSheetViewController`): the pricing options as radio
@@ -1147,13 +1165,13 @@ private fun CartPricingSheet(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(stringResource(R.string.v2_pricing_price_field), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                 OutlinedTextField(
-                    value = if (digits.isEmpty()) "" else formatMoneyVnd(price),
+                    value = if (digits.isEmpty()) "" else com.anyrent.pos.domain.money.ShopMoney.plain(price),
                     onValueChange = { text -> digits = CartV2Logic.priceDigits(text) },
                     placeholder = { Text("0") },
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text),
                     trailingIcon = {
-                        Text(stringResource(if (daily) R.string.v2_pricing_unit_daily else R.string.v2_pricing_unit),
+                        Text(pricingUnitText(daily),
                             fontSize = DS.TextSize.Body, color = Color(0xFF64748B), modifier = Modifier.padding(end = 14.dp))
                     },
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
@@ -1166,11 +1184,11 @@ private fun CartPricingSheet(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val money = formatMoneyVnd(preview.unitPrice) + "đ"
+                val money = com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.unitPrice)
                 val text = preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
                     ?: "$money × ${preview.quantity}"
                 Text(text, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
-                Text(formatMoneyVnd(preview.total) + "đ", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                Text(com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
             AppPrimaryButton(
                 stringResource(R.string.v2_pricing_apply),

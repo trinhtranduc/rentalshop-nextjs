@@ -335,7 +335,7 @@ enum ChangeHistoryLogic {
             return (flag ? "history.value.yes" : "history.value.no").localized()
         case .number(let number):
             if moneyFields.contains(field) || field.hasPrefix("pricing.") { return CartV2Logic.money(number) }
-            if field == "discountValue" { return MoneyFormatter.format(number) }
+            if field == "discountValue" { return MoneyFormatter.plain(number) } // an amount or a percent
             return plainNumber(number)
         case .text(let text):
             let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

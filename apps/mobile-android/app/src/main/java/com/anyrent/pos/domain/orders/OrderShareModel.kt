@@ -242,12 +242,11 @@ data class OrderShareModel(
                 .joinToString("") { it.uppercase() }
                 .ifEmpty { "A" }
 
-        /** `1.150.000đ`: dot thousands, no decimals, every language (spec 6) */
-        fun money(amount: Double): String {
-            val rounded = Math.round(amount)
-            val digits = kotlin.math.abs(rounded).toString().reversed().chunked(3).joinToString(".").reversed()
-            return (if (rounded < 0) "− " else "") + digits + "đ"
-        }
+        /** `1.150.000đ`: dot thousands, no decimals, every language (spec 6); `$1,150,000` in a USD shop (#1145) */
+        fun money(
+            amount: Double,
+            currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
+        ): String = com.anyrent.pos.domain.money.ShopMoney.withUnit(amount, currency).replaceFirst("−", "− ")
 
         private fun minus(amount: Double): String = "− " + money(amount)
 

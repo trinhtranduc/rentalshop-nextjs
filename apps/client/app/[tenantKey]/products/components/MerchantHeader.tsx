@@ -3,7 +3,8 @@
 import React from 'react';
 import { MessageCircle, Phone } from 'lucide-react';
 import { LanguageSwitcher } from '@rentalshop/ui';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { isPublicLocale } from '@rentalshop/constants';
 import { shopInitials, telLink, zaloLink } from '../lib/public-shop';
 
 export interface PublicOutlet {
@@ -24,9 +25,14 @@ interface MerchantHeaderProps {
   outlets?: PublicOutlet[];
 }
 
+/** #1146: the 12 public languages; the choice (NEXT_PUBLIC_LOCALE) reloads the same shop page */
+const samePage = () => `${window.location.pathname}${window.location.search}`;
+
 /** #665 — shop name, outlet address and the Gọi / Nhắn Zalo buttons */
 export function MerchantHeader({ merchant, outlets = [] }: MerchantHeaderProps) {
   const t = useTranslations('products.public');
+  const current = useLocale();
+  const locale = isPublicLocale(current) ? current : 'vi';
   const outlet = outlets[0];
   const phone = outlet?.phone || merchant.phone || null;
   const tel = telLink(phone);
@@ -44,7 +50,7 @@ export function MerchantHeader({ merchant, outlets = [] }: MerchantHeaderProps) 
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">{merchant.name}</h1>
             <div className="flex-none sm:hidden">
-              <LanguageSwitcher variant="compact" />
+              <LanguageSwitcher variant="compact" publicLocale={locale} publicPath={samePage} />
             </div>
           </div>
           {place && <p className="mt-1 text-sm text-slate-600">{place}</p>}
@@ -75,7 +81,7 @@ export function MerchantHeader({ merchant, outlets = [] }: MerchantHeaderProps) 
           </div>
         )}
         <div className="hidden flex-none sm:block">
-          <LanguageSwitcher variant="compact" />
+          <LanguageSwitcher variant="compact" publicLocale={locale} publicPath={samePage} />
         </div>
       </div>
     </header>

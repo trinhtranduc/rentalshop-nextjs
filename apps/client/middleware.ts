@@ -4,6 +4,7 @@ import {
   WEB_OPT_OUT_COOKIE,
   WEB_OPT_OUT_MAX_AGE,
 } from './lib/store-redirect';
+import { isShopPath, shopLocale } from './lib/public-content/shop-locale';
 
 const PUBLIC_LOCALE_COOKIE = 'NEXT_PUBLIC_LOCALE';
 const PUBLIC_LOCALE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -60,6 +61,16 @@ function nextForPublicLocale(request: NextRequest, locale: PublicLocale) {
  * Keep the #946 web opt-out cookie. No other path runs this.
  */
 export function middleware(request: NextRequest) {
+  // #1146: the public shop pages speak the 12 public languages (picked with NEXT_PUBLIC_LOCALE, else NEXT_LOCALE)
+  if (isShopPath(request.nextUrl.pathname)) {
+    const headers = new Headers(request.headers);
+    headers.set(
+      'x-anyrent-public-locale',
+      shopLocale(request.cookies.get(PUBLIC_LOCALE_COOKIE)?.value, request.cookies.get('NEXT_LOCALE')?.value)
+    );
+    headers.set('x-anyrent-shop-page', '1');
+    return NextResponse.next({ request: { headers } });
+  }
   const publicLocale = publicLocaleFromPath(request.nextUrl.pathname);
   // #1114: /vi/{page} goes to the Vietnamese URL of that page (image search has its own slug)
   const publicPage = publicPageFromPath(request.nextUrl.pathname);
@@ -112,5 +123,9 @@ export const config = {
     '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)/post/:path*',
     // #1114
     '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)/:page(pricing|features|download|image-search)',
+    // #1146 public shop pages
+    '/:tenantKey/products',
+    // a bare trailing `:code` does not match in Next's matcher; the pattern makes it match
+    '/:tenantKey/booking/:code([A-Za-z0-9]{5})',
   ],
 };

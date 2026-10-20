@@ -1,0 +1,56 @@
+{
+  "web": {
+    "online": {
+      "button": "온라인 예약",
+      "title": "온라인 예약",
+      "subtitle": "고객이 가게 페이지에서 보낸 예약 요청입니다. 확정하면 주문이 생성되고, 거절할 수도 있습니다.",
+      "backToOrders": "주문",
+      "settings": "온라인 예약 설정",
+      "noAccess": "온라인 예약을 볼 권한이 없습니다.",
+      "loadFailed": "온라인 예약을 불러오지 못했습니다.",
+      "actionFailed": "처리하지 못했습니다. 다시 시도해 주세요.",
+      "items": "{count}개",
+      "hoursLeft": "{hours}시간 남음",
+      "phone": "전화번호",
+      "outlet": "지점",
+      "days": "대여일",
+      "customer": "고객",
+      "customerKnown": "기존 고객",
+      "customerNew": "신규 고객 (확정 시 생성)",
+      "note": "메모",
+      "free": "재고 있음",
+      "shortOn": "{day}부터 부족",
+      "confirm": "확정",
+      "reject": "거절",
+      "openOrder": "주문 보기",
+      "rejectTitle": "요청 거절",
+      "rejectHint": "사유를 선택하세요. 고객에게 요청이 거절되었다고 표시됩니다.",
+      "notePlaceholder": "추가 메모 (선택)",
+      "notePlaceholderRequired": "사유를 입력하세요",
+      "noteRequired": "\"기타\"를 선택하면 사유를 입력해야 합니다.",
+      "rejectedBecause": "거절 사유",
+      "cancel": "취소",
+      "close": "닫기",
+      "fromRequest": "온라인 예약 요청에서 생성",
+      "status": {
+        "PENDING": "대기 중",
+        "CONFIRMED": "확정됨",
+        "REJECTED": "거절됨",
+        "EXPIRED": "만료됨",
+        "CANCELLED": "고객이 취소함"
+      },
+      "empty": {
+        "PENDING": "대기 중인 요청이 없습니다.",
+        "CONFIRMED": "아직 확정된 요청이 없습니다.",
+        "REJECTED": "거절한 요청이 없습니다.",
+        "EXPIRED": "만료된 요청이 없습니다.",
+        "CANCELLED": "고객이 취소한 요청이 없습니다."
+      },
+      "reasons": {
+        "OUT_OF_STOCK": "재고 없음",
+        "CANNOT_CONTACT": "고객과 연락이 안 됨",
+        "OTHER": "기타"
+      }
+    }
+  }
+}

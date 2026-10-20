@@ -11,10 +11,12 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { COUNTRIES } from '@rentalshop/constants';
 import { useToast } from '@rentalshop/ui';
-import { authApi, outletsApi, usersApi } from '@rentalshop/utils';
+import { authApi, bookingRequestsApi, outletsApi, usersApi } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
 import { Modal, fieldClass } from '../orders/create/parts';
-import { addressLine, passwordProblem, publicLinks, tenantKeyValid } from './settings-model';
+import { addressLine, currencyExample, passwordProblem, publicLinks, tenantKeyValid, type ShopCurrency } from './settings-model';
+import { formatShopAmount } from '@rentalshop/utils';
+import { outletBookingRows } from '../orders/online/online-model';
 import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
 import { usePrintSettings } from '../components/usePrintSettings';
 import { BillPreview, BillTestPrint, LabelPreview, useLabelTestPrint } from './PrintPreviews';
@@ -85,6 +87,8 @@ export interface ShopForm {
   tenantKey?: string;
   businessType?: string;
   pricingType?: string;
+  /** #1145 shop currency (owner only; amounts are never converted) */
+  currency?: ShopCurrency;
 }
 
 export function ShopInfoSection({
@@ -92,6 +96,7 @@ export function ShopInfoSection({
   initial,
   email,
   canEdit,
+  canEditCurrency = false,
   onSave,
   t,
 }: {
@@ -99,11 +104,14 @@ export function ShopInfoSection({
   initial: ShopForm;
   email?: string;
   canEdit: boolean;
+  /** #1145 "Tiền tệ": the owner only */
+  canEditCurrency?: boolean;
   onSave: (form: ShopForm) => Promise<unknown>;
   t: T;
 }) {
   const [form, setForm] = useState<ShopForm>(initial);
   const [saving, setSaving] = useState(false);
+  const [askCurrency, setAskCurrency] = useState(false);
   const [problem, setProblem] = useState('');
   const listId = useId();
   const key = JSON.stringify(initial);
@@ -116,14 +124,24 @@ export function ShopInfoSection({
     setForm((f) => ({ ...f, [name]: name === 'tenantKey' ? e.target.value.toLowerCase() : e.target.value }));
   };
 
+  const showCurrency = kind === 'merchant' && canEditCurrency && !!initial.currency;
+  const currencyChanged = showCurrency && form.currency !== initial.currency;
+  const nextCurrency = form.currency || 'VND';
+
+  const save = async () => {
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+    setAskCurrency(false);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return setProblem(t('form.nameRequired'));
     if (kind === 'outlet' && !form.address.trim()) return setProblem(t('form.addressRequired'));
-    if (kind === 'merchant' && !tenantKeyValid(form.tenantKey || '')) return setProblem(t('form.tenantKeyInvalid'));
-    setSaving(true);
-    await onSave(form);
-    setSaving(false);
+    // #1145 every price changes how it is shown: ask first
+    if (currencyChanged) return setAskCurrency(true);
+    await save();
   };
 
   return (
@@ -150,59 +168,91 @@ export function ShopInfoSection({
           )}
         </div>
         {kind === 'merchant' ? (
-          <fieldset className="m-0 grid gap-3.5 rounded-xl border border-ar-line px-4 pb-4 pt-3.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
-            <legend className="px-1.5 text-sm font-bold text-ar-ink-2">{t('form.address')}</legend>
-            <Field label={t('form.street')} className="col-span-full">
+          <>
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+              <Field label={t('form.street')}>
+                <input name="address" value={form.address} onChange={set('address')} disabled={!canEdit} className={inputClass} />
+              </Field>
+              <Field label={t('form.state')}>
+                <input name="state" value={form.state} onChange={set('state')} disabled={!canEdit} className={inputClass} />
+              </Field>
+            </div>
+            {showCurrency && (
+              <div className="flex flex-col gap-1.5">
+                <span id={`${listId}-cur`} className={labelClass}>
+                  {t('form.currency')}
+                </span>
+                <div role="radiogroup" aria-labelledby={`${listId}-cur`} className="inline-flex w-fit rounded-xl border border-ar-line bg-ar-surface-muted p-1">
+                  {(['VND', 'USD'] as const).map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.currency === c}
+                      data-currency={c}
+                      onClick={() => setForm((f) => ({ ...f, currency: c }))}
+                      className={`h-10 min-w-[112px] rounded-[10px] px-4 text-[15px] font-semibold ${
+                        form.currency === c ? 'bg-ar-surface text-ar-primary-ink shadow-sm ring-1 ring-ar-primary' : 'text-ar-ink-2 hover:bg-ar-subtle'
+                      }`}
+                    >
+                      {c === 'VND' ? 'VND (đ)' : 'USD ($)'}
+                    </button>
+                  ))}
+                </div>
+                <p className="m-0 text-sm text-ar-muted">{t('form.currencyHint')}</p>
+              </div>
+            )}
+            {/* #1140: rarely used fields, closed by default. Mã URL moved to Trang shop công khai (still sent unchanged). */}
+            <details className="group rounded-xl border border-ar-line px-4 py-3">
+              <summary className="cursor-pointer text-sm font-semibold text-ar-ink-2">
+                {t('form.more')}: {[t('form.city'), t('form.country'), t('form.zip'), t('form.description')].join(', ')}
+              </summary>
+              <div className="mt-3.5 grid gap-3.5 [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
+                <Field label={t('form.city')}>
+                  <input name="city" value={form.city} onChange={set('city')} disabled={!canEdit} className={inputClass} />
+                </Field>
+                <Field label={t('form.country')}>
+                  <input name="country" list={listId} value={form.country} onChange={set('country')} disabled={!canEdit} className={inputClass} />
+                  <datalist id={listId}>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.name} />
+                    ))}
+                  </datalist>
+                </Field>
+                <Field label={t('form.zip')}>
+                  <input name="zipCode" value={form.zipCode} onChange={set('zipCode')} disabled={!canEdit} placeholder={t('form.optional')} className={inputClass} />
+                </Field>
+                <Field label={t('form.description')} className="col-span-full">
+                  <textarea
+                    name="description"
+                    rows={3}
+                    value={form.description || ''}
+                    onChange={set('description')}
+                    disabled={!canEdit}
+                    className={`${inputClass} h-auto resize-y py-2.5`}
+                  />
+                </Field>
+              </div>
+            </details>
+          </>
+        ) : (
+          <>
+            {/* PUT /api/settings/outlet stores name, address, phone and description only, and needs the address. */}
+            <Field label={t('form.address')} required={canEdit ? t('form.required') : undefined}>
               <input name="address" value={form.address} onChange={set('address')} disabled={!canEdit} className={inputClass} />
             </Field>
-            <Field label={t('form.city')}>
-              <input name="city" value={form.city} onChange={set('city')} disabled={!canEdit} className={inputClass} />
+            <Field label={t('form.description')}>
+              <textarea
+                name="description"
+                rows={3}
+                value={form.description || ''}
+                onChange={set('description')}
+                disabled={!canEdit}
+                className={`${inputClass} h-auto resize-y py-2.5`}
+              />
             </Field>
-            <Field label={t('form.state')}>
-              <input name="state" value={form.state} onChange={set('state')} disabled={!canEdit} className={inputClass} />
-            </Field>
-            <Field label={t('form.country')}>
-              <input name="country" list={listId} value={form.country} onChange={set('country')} disabled={!canEdit} className={inputClass} />
-              <datalist id={listId}>
-                {COUNTRIES.map((c) => (
-                  <option key={c.code} value={c.name} />
-                ))}
-              </datalist>
-            </Field>
-            <Field label={t('form.zip')}>
-              <input name="zipCode" value={form.zipCode} onChange={set('zipCode')} disabled={!canEdit} placeholder={t('form.optional')} className={inputClass} />
-            </Field>
-          </fieldset>
-        ) : (
-          // PUT /api/settings/outlet stores name, address, phone and description only, and needs the address.
-          <Field label={t('form.address')} required={canEdit ? t('form.required') : undefined}>
-            <input name="address" value={form.address} onChange={set('address')} disabled={!canEdit} className={inputClass} />
-          </Field>
+          </>
         )}
-        {kind === 'merchant' && (
-          <Field label={t('form.tenantKey')} hint={t('form.tenantKeyHint')}>
-            <input
-              name="tenantKey"
-              value={form.tenantKey || ''}
-              onChange={set('tenantKey')}
-              disabled={!canEdit}
-              pattern="[a-z0-9\-]*"
-              autoCapitalize="none"
-              spellCheck={false}
-              className={`${inputClass} lowercase`}
-            />
-          </Field>
-        )}
-        <Field label={t('form.description')}>
-          <textarea
-            name="description"
-            rows={3}
-            value={form.description || ''}
-            onChange={set('description')}
-            disabled={!canEdit}
-            className={`${inputClass} h-auto resize-y py-2.5`}
-          />
-        </Field>
         {problem && (
           <p role="alert" className="m-0 text-sm text-ar-danger">
             {problem}
@@ -219,6 +269,31 @@ export function ShopInfoSection({
           </button>
         </div>
       )}
+      {showCurrency && (
+        <Modal
+          open={askCurrency}
+          title={t('form.currencyConfirmTitle', { code: nextCurrency })}
+          onClose={() => (saving ? undefined : setAskCurrency(false))}
+          closeLabel={t('form.cancel')}
+          footer={
+            <>
+              <button type="button" onClick={() => setAskCurrency(false)} disabled={saving} className={outlineBtn}>
+                {t('form.cancel')}
+              </button>
+              <button type="button" data-currency-confirm onClick={() => void save()} disabled={saving} className={primaryBtn}>
+                {saving ? t('form.saving') : t('form.currencyConfirmOk', { code: nextCurrency })}
+              </button>
+            </>
+          }
+        >
+          <p className="m-0 text-[15px] text-ar-ink">
+            {t('form.currencyConfirmBody', {
+              code: nextCurrency,
+              example: currencyExample(initial.currency || 'VND', nextCurrency, formatShopAmount),
+            })}
+          </p>
+        </Modal>
+      )}
     </form>
   );
 }
@@ -227,7 +302,7 @@ export function ShopInfoSection({
 // Chi nhánh (merchant)
 // ----------------------------------------------------------------------------
 
-type OutletRow = { id: number; name: string; phone?: string | null; isDefault?: boolean; address?: string | null; city?: string | null; state?: string | null; printNote?: string | null; printBankQr?: boolean };
+type OutletRow = { id: number; name: string; phone?: string | null; isDefault?: boolean; address?: string | null; city?: string | null; state?: string | null; printNote?: string | null; printBankQr?: boolean; acceptsOnlineBooking?: boolean };
 
 function useOutlets() {
   const [state, setState] = useState<{ rows: OutletRow[]; loading: boolean; failed: boolean }>({ rows: [], loading: true, failed: false });
@@ -250,55 +325,134 @@ function useOutlets() {
   return { ...state, retry: () => setNonce((n) => n + 1) };
 }
 
-export function OutletsSection({ t }: { t: T }) {
-  const { rows, loading, failed, retry } = useOutlets();
+/** #1140: one row to the Chi nhánh menu (add / edit / bank accounts live there) instead of the full list. */
+export function OutletsLinkRow({ t }: { t: T }) {
+  const { rows, loading, failed } = useOutlets();
   return (
-    <section id="chi-nhanh" className={`${cardClass} overflow-hidden`}>
-      <div className="flex items-center justify-between gap-3 px-5 pb-2.5 pt-4">
-        <h2 className="m-0 text-lg font-bold">{t('outlets.title')}</h2>
-        <Link href="/outlets" className={smallBtn}>
-          {t('outlets.add')}
-        </Link>
+    <section id="chi-nhanh" className={`${cardClass} flex flex-wrap items-center justify-between gap-3 px-5 py-4`}>
+      <span className="flex min-w-0 flex-col">
+        <span className="text-[15px] font-semibold">{t('outlets.title')}</span>
+        {!loading && !failed && <span className="text-sm text-ar-muted">{t('outlets.count', { count: rows.length })}</span>}
+      </span>
+      <Link href="/outlets" className={smallBtn}>
+        {t('outlets.open')} ›
+      </Link>
+    </section>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Đặt online (#1124): the shop takes booking requests from its public page
+// ----------------------------------------------------------------------------
+
+export function OnlineBookingSection({
+  t,
+  enabled,
+  canEditShop,
+  canEditOutlets,
+  onShopChanged,
+}: {
+  t: T;
+  /** Merchant.onlineBookingEnabled (profile) */
+  enabled: boolean;
+  /** Only the owner turns the shop switch (API: MERCHANT / ADMIN) */
+  canEditShop: boolean;
+  /** Owner, or the outlet admin for their outlet (API: outlet.manage) */
+  canEditOutlets: boolean;
+  onShopChanged?: () => void;
+}) {
+  const ts = useTranslations('settings');
+  const { toastSuccess, toastError } = useToast();
+  const { rows, loading, failed, retry } = useOutlets();
+  const [shopOn, setShopOn] = useState(enabled);
+  const [shopSaving, setShopSaving] = useState(false);
+  const [outletOn, setOutletOn] = useState<Record<number, boolean>>({});
+  const [outletSaving, setOutletSaving] = useState<Record<number, boolean>>({});
+  useEffect(() => setShopOn(enabled), [enabled]);
+  useEffect(() => {
+    setOutletOn(Object.fromEntries(outletBookingRows(rows).map((r) => [r.id, r.on])));
+  }, [rows]);
+  const titleId = useId();
+  const hintId = useId();
+  const outletsId = useId();
+
+  const toggleShop = async (next: boolean) => {
+    setShopOn(next);
+    setShopSaving(true);
+    try {
+      const res = await bookingRequestsApi.setOnlineBooking(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('onlineBooking.title'));
+      onShopChanged?.();
+    } catch (error) {
+      setShopOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('onlineBooking.title'));
+    } finally {
+      setShopSaving(false);
+    }
+  };
+  const toggleOutlet = async (row: OutletRow, next: boolean) => {
+    setOutletOn((m) => ({ ...m, [row.id]: next }));
+    setOutletSaving((m) => ({ ...m, [row.id]: true }));
+    try {
+      const res = await outletsApi.updateOutlet(row.id, { acceptsOnlineBooking: next } as unknown as Parameters<typeof outletsApi.updateOutlet>[1]);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), `${t('onlineBooking.outlets')} — ${row.name}`);
+    } catch (error) {
+      setOutletOn((m) => ({ ...m, [row.id]: !next }));
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('onlineBooking.outlets'));
+    } finally {
+      setOutletSaving((m) => ({ ...m, [row.id]: false }));
+    }
+  };
+
+  return (
+    <section id="dat-online" className={`${cardClass} flex flex-col gap-4 px-5 py-4`} data-online-booking-setting>
+      <div className="flex min-h-[44px] items-start justify-between gap-3">
+        <span className="flex flex-col gap-1">
+          <h2 id={titleId} className="m-0 text-lg font-bold">
+            {t('onlineBooking.title')}
+          </h2>
+          <span id={hintId} className="text-sm text-ar-muted">
+            {t('onlineBooking.hint')}
+            {!canEditShop && ` ${t('onlineBooking.ownerOnly')}`}
+          </span>
+        </span>
+        <Switch checked={shopOn} onChange={toggleShop} disabled={!canEditShop || shopSaving} labelledBy={titleId} describedBy={hintId} />
       </div>
       {failed ? (
-        <div role="alert" className="flex flex-wrap items-center gap-3 border-t border-ar-subtle px-5 py-4 text-sm text-ar-muted">
+        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ar-muted">
           <span>{t('outlets.loadFailed')}</span>
           <button type="button" onClick={retry} className={smallBtn}>
             {t('outlets.retry')}
           </button>
         </div>
       ) : loading ? (
-        <div className="flex flex-col gap-2 border-t border-ar-subtle px-5 py-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ) : rows.length === 0 ? (
-        <p className="m-0 border-t border-ar-subtle px-5 py-4 text-sm text-ar-muted">{t('outlets.empty')}</p>
+        <Skeleton className="h-10 w-full" />
       ) : (
-        <ul className="m-0 list-none p-0">
-          {rows.map((o) => {
-            const line = [addressLine(o), o.phone].filter(Boolean).join(' · ');
-            return (
-              <li key={o.id} className="flex flex-wrap items-center gap-3 border-t border-ar-subtle px-5 py-3">
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[15px] font-semibold">
-                    {o.name}{' '}
-                    {o.isDefault && <span className="rounded-md bg-ar-reserved-bg px-1.5 py-0.5 text-xs font-semibold text-ar-reserved">{t('outlets.main')}</span>}
+        rows.length > 0 && (
+          <div className="flex flex-col gap-2 border-t border-ar-subtle pt-4">
+            <span id={outletsId} className="text-[15px] font-semibold text-ar-ink">
+              {t('onlineBooking.outlets')}
+            </span>
+            <p className="-mt-1 mb-0 text-sm text-ar-muted">{t('onlineBooking.outletsHint')}</p>
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {rows.map((r) => (
+                <li key={r.id} className={`flex min-h-[44px] items-center justify-between gap-3 ${shopOn ? '' : 'opacity-60'}`}>
+                  <span id={`${outletsId}-${r.id}`} className="text-[15px] text-ar-ink">
+                    {r.name}
                   </span>
-                  {line && <span className="text-sm text-ar-muted [overflow-wrap:anywhere]">{line}</span>}
-                </span>
-                <span className="flex gap-2">
-                  <Link href={`/outlets/${o.id}/bank-accounts`} className={smallBtn}>
-                    {t('outlets.bank')}
-                  </Link>
-                  <Link href="/outlets" className={smallBtn}>
-                    {t('outlets.edit')}
-                  </Link>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+                  <Switch
+                    checked={outletOn[r.id] !== false}
+                    onChange={(next) => toggleOutlet(r, next)}
+                    disabled={!canEditOutlets || outletSaving[r.id]}
+                    labelledBy={`${outletsId} ${outletsId}-${r.id}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
       )}
     </section>
   );
@@ -307,6 +461,50 @@ export function OutletsSection({ t }: { t: T }) {
 // ----------------------------------------------------------------------------
 // Chia sẻ: public product page + referral link
 // ----------------------------------------------------------------------------
+
+function useOrigin() {
+  const [origin, setOrigin] = useState('');
+  useEffect(() => setOrigin(window.location.origin), []);
+  return origin;
+}
+
+function LinkRow({ which, value, hint, t }: { which: 'product' | 'registration'; value: string | null; hint: string; t: T }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard blocked: the link is still selectable in the field.
+    }
+  };
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-semibold text-ar-ink-2">{t(`links.${which}`)}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          readOnly
+          value={value || ''}
+          placeholder={t('links.none')}
+          aria-label={t(`links.${which}`)}
+          onFocus={(e) => e.currentTarget.select()}
+          className={`${inputClass} min-w-0 flex-[1_1_240px] font-mono text-sm`}
+        />
+        <button type="button" onClick={copy} disabled={!value} className={`${outlineBtn} h-11 rounded-xl`}>
+          {copied ? t('links.copied') : t('links.copy')}
+        </button>
+        {which === 'product' && value && (
+          <a href={value} target="_blank" rel="noopener noreferrer" className={`${outlineBtn} h-11 rounded-xl`}>
+            {t('links.open')}
+          </a>
+        )}
+      </div>
+      {hint && <span className="text-xs text-ar-muted">{hint}</span>}
+    </div>
+  );
+}
 
 export function ShareLinksSection({
   publicProductLink,
@@ -319,49 +517,90 @@ export function ShareLinksSection({
   referralCode?: string | null;
   t: T;
 }) {
-  const [origin, setOrigin] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
-  useEffect(() => setOrigin(window.location.origin), []);
+  const origin = useOrigin();
   const { productLink, registrationLink } = publicLinks(origin, { publicProductLink, tenantKey, referralCode });
-  const copy = async (which: string, value: string | null) => {
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(which);
-      window.setTimeout(() => setCopied((c) => (c === which ? null : c)), 2000);
-    } catch {
-      // Clipboard blocked: the link is still selectable in the field.
-    }
-  };
-  const row = (which: 'product' | 'registration', value: string | null, hint: string) => (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-semibold text-ar-ink-2">{t(`links.${which}`)}</span>
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          readOnly
-          value={value || ''}
-          placeholder={t('links.none')}
-          aria-label={t(`links.${which}`)}
-          onFocus={(e) => e.currentTarget.select()}
-          className={`${inputClass} min-w-0 flex-[1_1_240px] font-mono text-sm`}
-        />
-        <button type="button" onClick={() => copy(which, value)} disabled={!value} className={`${outlineBtn} h-11 rounded-xl`}>
-          {copied === which ? t('links.copied') : t('links.copy')}
-        </button>
-        {which === 'product' && value && (
-          <a href={value} target="_blank" rel="noopener noreferrer" className={`${outlineBtn} h-11 rounded-xl`}>
-            {t('links.open')}
-          </a>
-        )}
-      </div>
-      <span className="text-xs text-ar-muted">{hint}</span>
-    </div>
-  );
   return (
     <SectionCard title={t('links.title')}>
-      {row('product', productLink, t('links.productHint'))}
-      {row('registration', registrationLink, t('links.registrationHint'))}
+      <LinkRow which="product" value={productLink} hint={t('links.productHint')} t={t} />
+      <LinkRow which="registration" value={registrationLink} hint={t('links.registrationHint')} t={t} />
     </SectionCard>
+  );
+}
+
+/**
+ * Trang shop công khai (#1140, owner): Mã URL cửa hàng (moved from the shop form, saved through the same
+ * merchant update with the other fields unchanged) + public page link, then the referral link.
+ */
+export function PublicPageSection({
+  tenantKey,
+  publicProductLink,
+  canEdit,
+  onSave,
+  t,
+}: {
+  tenantKey: string;
+  publicProductLink?: string | null;
+  canEdit: boolean;
+  onSave: (tenantKey: string) => Promise<unknown>;
+  t: T;
+}) {
+  const origin = useOrigin();
+  const [value, setValue] = useState(tenantKey);
+  const [saving, setSaving] = useState(false);
+  const [problem, setProblem] = useState('');
+  useEffect(() => setValue(tenantKey), [tenantKey]);
+  const dirty = value !== tenantKey;
+  const { productLink, registrationLink } = publicLinks(origin, { publicProductLink, tenantKey });
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantKeyValid(value)) return setProblem(t('form.tenantKeyInvalid'));
+    setSaving(true);
+    await onSave(value);
+    setSaving(false);
+  };
+  return (
+    <>
+      <form onSubmit={submit} className={`${cardClass} overflow-hidden`}>
+        <div className="flex flex-col gap-4 px-5 py-[18px]">
+          <h2 className="m-0 text-lg font-bold">{t('nav.public-page')}</h2>
+          <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('links.productHint')}</p>
+          <Field label={t('form.tenantKey')} hint={t('form.tenantKeyHint')}>
+            <input
+              name="tenantKey"
+              value={value}
+              onChange={(e) => {
+                setProblem('');
+                setValue(e.target.value.toLowerCase());
+              }}
+              disabled={!canEdit}
+              pattern="[a-z0-9\-]*"
+              autoCapitalize="none"
+              spellCheck={false}
+              className={`${inputClass} lowercase`}
+            />
+          </Field>
+          <LinkRow which="product" value={productLink} hint="" t={t} />
+          {problem && (
+            <p role="alert" className="m-0 text-sm text-ar-danger">
+              {problem}
+            </p>
+          )}
+        </div>
+        {canEdit && (
+          <div className="flex flex-wrap justify-end gap-2 border-t border-ar-subtle bg-ar-surface-muted px-5 py-3.5">
+            <button type="button" onClick={() => setValue(tenantKey)} disabled={!dirty || saving} className={`${outlineBtn} h-11 rounded-xl px-[18px]`}>
+              {t('form.cancel')}
+            </button>
+            <button type="submit" disabled={!dirty || saving} className={`${primaryBtn} h-11 rounded-xl px-[22px]`}>
+              {saving ? t('form.saving') : t('form.save')}
+            </button>
+          </div>
+        )}
+      </form>
+      <SectionCard title={t('links.registration')}>
+        <LinkRow which="registration" value={registrationLink} hint={t('links.registrationHint')} t={t} />
+      </SectionCard>
+    </>
   );
 }
 
@@ -729,7 +968,7 @@ export function ProfileSection({
       className={`${cardClass} overflow-hidden`}
     >
       <div className="flex flex-col gap-4 px-5 py-[18px]">
-        <h2 className="m-0 text-lg font-bold">{t('profile.title')}</h2>
+        <h2 className="m-0 text-lg font-bold">{t('nav.profile')}</h2>
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
           <Field label={t('profile.lastName')}>
             <input name="lastName" value={form.lastName} onChange={set('lastName')} autoComplete="family-name" className={inputClass} />

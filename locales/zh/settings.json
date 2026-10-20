@@ -1,0 +1,37 @@
+{
+  "web": {
+    "onlineBooking": {
+      "title": "接受在线预订",
+      "hint": "顾客在您的店铺页面预订，您确认后才会成为订单。",
+      "ownerOnly": "只有店主可以开启或关闭此功能。",
+      "outlets": "接受预订的门店",
+      "outletsHint": "关闭不接受在线预订的门店。"
+    },
+    "groups": {
+      "shop": "店铺",
+      "account": "账户",
+      "me": "我"
+    },
+    "nav": {
+      "outlet": "分店",
+      "public-page": "公开店铺页面",
+      "bank-accounts": "银行",
+      "profile": "个人资料",
+      "account": "密码与安全",
+      "language": "语言与外观"
+    },
+    "form": {
+      "more": "更多",
+      "currency": "货币",
+      "currencyHint": "网页和店铺页面上价格的显示方式。金额不会自动换算。",
+      "currencyConfirmTitle": "将货币改为 {code}？",
+      "currencyConfirmBody": "网页和店铺页面上的所有价格都将以 {code} 显示。金额保持不变，不做换算（{example}）。",
+      "currencyConfirmOk": "改为 {code}"
+    },
+    "outlets": {
+      "count": "{count} 个分店",
+      "open": "打开分店"
+    },
+    "back": "返回"
+  }
+}

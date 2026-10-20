@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.anyrent.pos.domain.money.ShopCurrency
+import com.anyrent.pos.domain.money.ShopMoney
 import java.util.UUID
 
 /**
@@ -40,6 +42,9 @@ object SessionStore {
     private const val KEY_ALLOW_OVERLAP = "allowOverlappingOrders"
     /** #910 active module keys of the shop (`merchant.modules`, #907) */
     private const val KEY_MODULES = "merchantModules"
+    private const val KEY_PERMISSIONS = "permissions"
+    /** #1145 the shop's currency (`merchant.currency`, "VND" / "USD"); absent = VND */
+    private const val KEY_CURRENCY = "merchantCurrency"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -58,6 +63,24 @@ object SessionStore {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         _allowOverlappingOrders.value = prefs.getBoolean(KEY_ALLOW_OVERLAP, true)
         _modules.value = prefs.getStringSet(KEY_MODULES, emptySet()).orEmpty().toSet()
+        setCurrencyValue(ShopCurrency.from(prefs.getString(KEY_CURRENCY, null)))
+    }
+
+    private val _currency = MutableStateFlow(ShopCurrency.VND)
+
+    /** #1145 the shop's currency, from login `merchant.currency` and GET /api/settings/currency; VND when unknown */
+    val currencyFlow: StateFlow<ShopCurrency> = _currency.asStateFlow()
+
+    var currency: ShopCurrency
+        get() = _currency.value
+        set(value) {
+            setCurrencyValue(value)
+            if (isReady) prefs.edit().putString(KEY_CURRENCY, value.code).apply()
+        }
+
+    private fun setCurrencyValue(value: ShopCurrency) {
+        _currency.value = value
+        ShopMoney.publish(value)
     }
 
     private val _modules = MutableStateFlow<Set<String>>(emptySet())
@@ -117,6 +140,17 @@ object SessionStore {
         get() = prefs.getString(KEY_LAST_LOGIN_EMAIL, null)
         set(value) {
             prefs.edit().putString(KEY_LAST_LOGIN_EMAIL, value).apply()
+        }
+
+    /**
+     * #1124 the login's permission list (`user.permissions`); null for a session signed in before this version,
+     * then [com.anyrent.pos.domain.booking.BookingLogic] decides by [role].
+     */
+    var permissions: Set<String>?
+        get() = if (isReady) prefs.getStringSet(KEY_PERMISSIONS, null)?.toSet() else null
+        set(value) {
+            if (!isReady) return
+            prefs.edit().apply { if (value == null) remove(KEY_PERMISSIONS) else putStringSet(KEY_PERMISSIONS, value) }.apply()
         }
 
     var role: String?
@@ -232,8 +266,11 @@ object SessionStore {
             .remove(KEY_MERCHANT_ADDRESS)
             .remove(KEY_ALLOW_OVERLAP)
             .remove(KEY_MODULES)
+            .remove(KEY_PERMISSIONS)
+            .remove(KEY_CURRENCY)
             .apply()
         _allowOverlappingOrders.value = true
+        setCurrencyValue(ShopCurrency.VND)
         _modules.value = emptySet()
         if (!rememberedEmail.isNullOrBlank()) {
             lastLoginEmail = rememberedEmail

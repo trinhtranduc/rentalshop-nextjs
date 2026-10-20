@@ -2060,4 +2060,47 @@
     <plurals name="v2_cart_multi_picker_count">
         <item quantity="other">%1$d giỏ</item>
     </plurals>
+    <!-- #1124 Đặt online -->
+    <string name="booking_chip">Đơn online</string>
+    <string name="booking_title">Đơn online</string>
+    <string name="booking_detail_title">Đơn online</string>
+    <string name="booking_status_pending">Chờ xác nhận</string>
+    <string name="booking_status_confirmed">Đã xác nhận</string>
+    <string name="booking_status_rejected">Từ chối</string>
+    <string name="booking_status_expired">Hết hạn</string>
+    <string name="booking_status_cancelled">Đã huỷ</string>
+    <string name="booking_status_unknown">Khác</string>
+    <string name="booking_items">%1$d món</string>
+    <string name="booking_hours_left">Còn %1$d giờ để xác nhận</string>
+    <string name="booking_empty">Chưa có yêu cầu nào</string>
+    <string name="booking_section_customer">Khách hàng</string>
+    <string name="booking_section_rental">Thuê</string>
+    <string name="booking_section_note">Ghi chú của khách</string>
+    <string name="booking_outlet">Chi nhánh</string>
+    <string name="booking_dates">Ngày thuê</string>
+    <string name="booking_returning_customer">Khách cũ: %1$s</string>
+    <string name="booking_new_customer">Khách mới, sẽ được tạo khi xác nhận</string>
+    <string name="booking_item_free">Còn đồ</string>
+    <string name="booking_item_short">Thiếu đồ từ ngày %1$s</string>
+    <string name="booking_short_warning">Có món không đủ số lượng trong những ngày khách chọn. Kiểm tra trước khi xác nhận.</string>
+    <string name="booking_action_confirm">Xác nhận</string>
+    <string name="booking_action_reject">Từ chối</string>
+    <string name="booking_reject_title">Lý do từ chối</string>
+    <string name="booking_reject_out_of_stock">Hết đồ</string>
+    <string name="booking_reject_cannot_contact">Không liên lạc được</string>
+    <string name="booking_reject_other">Khác</string>
+    <string name="booking_reject_other_placeholder">Lý do khách sẽ thấy</string>
+    <string name="booking_cancel">Huỷ</string>
+    <string name="booking_load_failed">Không tải được danh sách yêu cầu</string>
+    <string name="booking_reject_sheet_title">Từ chối đơn online</string>
+    <string name="booking_reject_sheet_description">Chọn lý do để báo cho khách. Khách sẽ nhận được lý do này.</string>
+    <string name="booking_reject_note_placeholder">Ghi chú cho khách (không bắt buộc)</string>
+    <!-- #1145 shop currency -->
+    <string name="settings_v2_currency">Tiền tệ</string>
+    <string name="settings_v2_currency_confirm_title">Đổi tiền tệ sang %1$s?</string>
+    <string name="settings_v2_currency_confirm_message">Mọi giá trong app sẽ hiện bằng %1$s. Số tiền giữ nguyên, không quy đổi (%2$s).</string>
+    <string name="settings_v2_currency_confirm_button">Đổi sang %1$s</string>
+    <string name="settings_v2_currency_failed">Không đổi được tiền tệ. Vui lòng thử lại.</string>
+    <string name="v2_pricing_unit_usd">$</string>
+    <string name="v2_pricing_unit_daily_usd">$/ngày</string>
 </resources>

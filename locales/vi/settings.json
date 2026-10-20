@@ -515,15 +515,16 @@
     },
     "nav": {
       "merchant": "Thông tin cửa hàng",
-      "outlet": "Thông tin chi nhánh",
-      "bank-accounts": "Tài khoản ngân hàng",
+      "outlet": "Chi nhánh",
+      "bank-accounts": "Ngân hàng",
       "receipt": "Phiếu in",
       "subscription": "Gói dịch vụ",
-      "profile": "Tài khoản của tôi",
-      "account": "Đổi mật khẩu",
-      "language": "Ngôn ngữ",
+      "profile": "Hồ sơ",
+      "account": "Mật khẩu & bảo mật",
+      "language": "Ngôn ngữ & giao diện",
       "appearance": "Giao diện",
-      "printer": "Máy in"
+      "printer": "Máy in",
+      "public-page": "Trang shop công khai"
     },
     "form": {
       "required": "bắt buộc",
@@ -548,7 +549,13 @@
       "cancel": "Huỷ",
       "save": "Lưu",
       "saving": "Đang lưu…",
-      "readOnly": "Bạn chỉ xem được mục này."
+      "readOnly": "Bạn chỉ xem được mục này.",
+      "more": "Thêm",
+      "currency": "Tiền tệ",
+      "currencyHint": "Cách hiện giá trên web và trang shop. Số tiền không tự quy đổi.",
+      "currencyConfirmTitle": "Đổi tiền tệ sang {code}?",
+      "currencyConfirmBody": "Mọi giá trên web và trang shop sẽ hiện bằng {code}. Số tiền giữ nguyên, không quy đổi ({example}).",
+      "currencyConfirmOk": "Đổi sang {code}"
     },
     "outlets": {
       "title": "Chi nhánh",
@@ -558,7 +565,9 @@
       "bank": "Tài khoản ngân hàng",
       "empty": "Chưa có chi nhánh nào",
       "loadFailed": "Không tải được danh sách chi nhánh.",
-      "retry": "Thử lại"
+      "retry": "Thử lại",
+      "count": "{count} chi nhánh",
+      "open": "Mở Chi nhánh"
     },
     "links": {
       "title": "Chia sẻ cửa hàng",
@@ -742,7 +751,20 @@
       "bankQrNoAccount": "Chi nhánh chưa có tài khoản ngân hàng",
       "bankQrAddAccount": "Thêm tài khoản ngân hàng",
       "bankQrReadOnly": "Chỉ chủ cửa hàng hoặc quản lý chi nhánh được đổi cài đặt này."
-    }
+    },
+    "onlineBooking": {
+      "title": "Nhận đặt online",
+      "hint": "Khách đặt thuê từ trang shop, bạn xác nhận trước khi thành đơn.",
+      "ownerOnly": "Chỉ chủ shop bật / tắt được.",
+      "outlets": "Chi nhánh nhận đặt",
+      "outletsHint": "Tắt ở chi nhánh không muốn nhận đặt online."
+    },
+    "groups": {
+      "shop": "Cửa hàng",
+      "account": "Tài khoản",
+      "me": "Tôi"
+    },
+    "back": "Quay lại"
   },
   "embeddingBackfill": {
     "title": "Tìm bằng ảnh",

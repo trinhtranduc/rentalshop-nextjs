@@ -1156,6 +1156,8 @@ private fun AppAlertDialogButton(
         modifier = modifier.height(46.dp),
         shape = RoundedCornerShape(12.dp),
         border = border,
+        // #1145: 12dp sides (default 24dp) so a two-button alert fits "Đổi sang USD" without "…"
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = container,
             contentColor = content,

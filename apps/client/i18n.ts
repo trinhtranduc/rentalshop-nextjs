@@ -11,6 +11,9 @@ import enPublic from '../../locales/en/public.json';
  */
 
 import { getRequestConfig } from 'next-intl/server';
+import { isPublicLocale } from '@rentalshop/constants';
+import { appLocaleFor } from './lib/public-content/shop-locale';
+import { shopMessages } from './lib/public-content/shop-messages';
 
 // Supported locales
 export const locales = ['en', 'vi', 'zh', 'ko', 'ja'] as const;
@@ -79,6 +82,29 @@ import jaAuth from '../../locales/ja/auth.json';
 import jaLanding from '../../locales/ja/landing.json';
 import jaPlans from '../../locales/ja/plans.json';
 import jaAttendance from '../../locales/ja/attendance.json';
+import zhOrders from '../../locales/zh/orders.json';
+import zhProducts from '../../locales/zh/products.json';
+import zhSettings from '../../locales/zh/settings.json';
+import koOrders from '../../locales/ko/orders.json';
+import koProducts from '../../locales/ko/products.json';
+import koSettings from '../../locales/ko/settings.json';
+import jaOrders from '../../locales/ja/orders.json';
+import jaProducts from '../../locales/ja/products.json';
+import jaSettings from '../../locales/ja/settings.json';
+
+// ja, ko, zh translate only some keys of these namespaces; the rest stays English.
+type Messages = Record<string, unknown>;
+function mergeOverEnglish(base: Messages, partial: Messages): Messages {
+  const out: Messages = { ...base };
+  for (const [key, value] of Object.entries(partial)) {
+    const current = out[key];
+    out[key] =
+      value && typeof value === 'object' && current && typeof current === 'object'
+        ? mergeOverEnglish(current as Messages, value as Messages)
+        : value;
+  }
+  return out;
+}
 
 // Combine all messages by locale
 const messages = {
@@ -135,10 +161,10 @@ const messages = {
     plans: zhPlans,
     // Fallback to English for other sections
     dashboard: enDashboard,
-    orders: enOrders,
-    products: enProducts,
+    orders: mergeOverEnglish(enOrders, zhOrders),
+    products: mergeOverEnglish(enProducts, zhProducts),
     customers: enCustomers,
-    settings: enSettings,
+    settings: mergeOverEnglish(enSettings, zhSettings),
     validation: enValidation,
     errors: enErrors,
     users: enUsers,
@@ -159,10 +185,10 @@ const messages = {
     plans: koPlans,
     // Fallback to English for other sections
     dashboard: enDashboard,
-    orders: enOrders,
-    products: enProducts,
+    orders: mergeOverEnglish(enOrders, koOrders),
+    products: mergeOverEnglish(enProducts, koProducts),
     customers: enCustomers,
-    settings: enSettings,
+    settings: mergeOverEnglish(enSettings, koSettings),
     validation: enValidation,
     errors: enErrors,
     users: enUsers,
@@ -183,10 +209,10 @@ const messages = {
     plans: jaPlans,
     // Fallback to English for other sections
     dashboard: enDashboard,
-    orders: enOrders,
-    products: enProducts,
+    orders: mergeOverEnglish(enOrders, jaOrders),
+    products: mergeOverEnglish(enProducts, jaProducts),
     customers: enCustomers,
-    settings: enSettings,
+    settings: mergeOverEnglish(enSettings, jaSettings),
     validation: enValidation,
     errors: enErrors,
     users: enUsers,
@@ -214,10 +240,22 @@ export default getRequestConfig(async () => {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
-      const localeCookie = cookieStore.get('NEXT_LOCALE');
-      
-      if (localeCookie?.value && isValidLocale(localeCookie.value)) {
-        locale = localeCookie.value;
+      // #1146: a public-only language (e.g. ru) falls back to an app language
+      locale = appLocaleFor(cookieStore.get('NEXT_LOCALE')?.value);
+
+      // #1146: the public shop pages use the shop language the middleware picked (12 public languages)
+      const { headers } = await import('next/headers');
+      const shopLanguage = headers().get('x-anyrent-shop-page') ? headers().get('x-anyrent-public-locale') : null;
+      if (isPublicLocale(shopLanguage)) {
+        if (isValidLocale(shopLanguage)) locale = shopLanguage;
+        else {
+          return {
+            locale: shopLanguage,
+            messages: { ...messages.en, ...shopMessages(shopLanguage, { products: enProducts, common: enCommon }) },
+            timeZone: 'Asia/Ho_Chi_Minh',
+            now: new Date(),
+          };
+        }
       }
     } catch (error) {
       // Fallback to default if error

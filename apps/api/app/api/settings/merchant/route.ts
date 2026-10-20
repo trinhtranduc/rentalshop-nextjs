@@ -17,6 +17,7 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  * - Automatically includes: ADMIN, MERCHANT
  * - `allowOverlappingOrders` (#518, boolean): role MERCHANT or ADMIN only (403 INSUFFICIENT_PERMISSIONS
  *   otherwise). A body with only that field updates just the setting (no name required).
+ * - `onlineBookingEnabled` (#1124, boolean "Nhận đặt online"): role MERCHANT or ADMIN only, like allowOverlappingOrders.
  * - `timezone` (#567, IANA id): role MERCHANT only (ADMIN changes it via PUT /api/merchants/[id]; others
  *   403 INSUFFICIENT_PERMISSIONS). Unknown zone → 400 INVALID_TIMEZONE. A body with only the shop settings
  *   updates just those (no name required). A change is written to the audit log (entity Merchant).
@@ -52,6 +53,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       description,
       tenantKey,
       allowOverlappingOrders,
+      onlineBookingEnabled,
       timezone
     } = body;
 
@@ -59,6 +61,22 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // even when a custom role was granted merchant.manage.
     if (allowOverlappingOrders !== undefined) {
       if (typeof allowOverlappingOrders !== 'boolean') {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_INPUT'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT && user.role !== USER_ROLE.ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
+    // #1124 "Nhận đặt online": boolean, shop owner (or platform ADMIN) only
+    if (onlineBookingEnabled !== undefined) {
+      if (typeof onlineBookingEnabled !== 'boolean') {
         return NextResponse.json(
           ResponseBuilder.error('INVALID_INPUT'),
           { status: API.STATUS.BAD_REQUEST }
@@ -92,7 +110,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // every other body is the business-info form as before and still needs a name.
     const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
     const settingOnly =
-      (allowOverlappingOrders !== undefined || timezone !== undefined) &&
+      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || timezone !== undefined) &&
       BUSINESS_FIELDS.every((field) => body[field] === undefined);
 
     // Validate required fields
@@ -167,6 +185,9 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     if (allowOverlappingOrders !== undefined) {
       updateData.allowOverlappingOrders = allowOverlappingOrders;
     }
+    if (onlineBookingEnabled !== undefined) {
+      updateData.onlineBookingEnabled = onlineBookingEnabled;
+    }
     if (timezone !== undefined) {
       updateData.timezone = timezone;
     }
@@ -202,6 +223,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         description: updatedMerchant.description,
         tenantKey: updatedMerchant.tenantKey,
         allowOverlappingOrders: (updatedMerchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
+        // #1124 additive; false when off or missing
+        onlineBookingEnabled: (updatedMerchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         ...merchantTimeZoneField(updatedMerchant),
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,

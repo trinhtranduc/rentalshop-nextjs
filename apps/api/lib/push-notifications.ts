@@ -439,3 +439,55 @@ export async function sendPushToUsers(
     return { sent: 0, failed: userIds.length };
   }
 }
+
+/** #1124 a new online booking request at an outlet */
+export interface BookingRequestPushPayload {
+  bookingRequestId: number;
+  code: string;
+  customerName: string;
+  pickupDate: string;
+  returnDate: string;
+  itemCount: number;
+}
+
+/** "21/10" from a Vietnam day key "2026-10-21" */
+function dayMonth(ymd: string): string {
+  const [, m, d] = ymd.split('-');
+  return `${d}/${m}`;
+}
+
+/**
+ * #1124 Inbox row + push to the outlet's users and the shop owner(s) when a customer sends a booking request.
+ * Type `BOOKING_REQUEST`: installed apps show it as a neutral inbox row (unknown types match by name) and a tap
+ * does nothing there (no orderId). Fire-and-forget: never throws, never delays the customer's response.
+ */
+export function notifyOutletBookingRequest(outletId: number, payload: BookingRequestPushPayload): void {
+  void (async () => {
+    try {
+      const outlet = await db.prisma.outlet.findUnique({ where: { id: outletId }, select: { merchantId: true, name: true } });
+      const owners = outlet
+        ? await db.prisma.user.findMany({
+            where: { merchantId: outlet.merchantId, role: 'MERCHANT', isActive: true, deletedAt: null },
+            select: { id: true },
+          })
+        : [];
+      const userIds = [...new Set([...(await findActiveUserIdsForOutlet(outletId)), ...owners.map((u: { id: number }) => u.id)])];
+      if (userIds.length === 0) return;
+      const title = `Yêu cầu đặt thuê mới · ${payload.code}`;
+      const days = payload.pickupDate === payload.returnDate
+        ? dayMonth(payload.pickupDate)
+        : `${dayMonth(payload.pickupDate)} → ${dayMonth(payload.returnDate)}`;
+      const body = `${payload.customerName} · ${payload.itemCount} món · ${days}${outlet?.name ? ` · ${outlet.name}` : ''}`;
+      const data: Record<string, string> = {
+        type: 'BOOKING_REQUEST',
+        bookingRequestId: String(payload.bookingRequestId),
+        code: payload.code,
+        outletId: String(outletId),
+      };
+      await createNotificationsForUsers(userIds, { type: 'BOOKING_REQUEST', title, body, data });
+      await sendPushToUsers(userIds, { title, body, data });
+    } catch (error) {
+      console.error('❌ notifyOutletBookingRequest failed:', error);
+    }
+  })();
+}

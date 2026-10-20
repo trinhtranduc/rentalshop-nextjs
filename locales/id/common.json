@@ -1,0 +1,9 @@
+{
+  "pagination": {
+    "showing": "Menampilkan",
+    "to": "sampai",
+    "of": "dari",
+    "itemsPerPage": "Per halaman",
+    "apply": "Terapkan"
+  }
+}

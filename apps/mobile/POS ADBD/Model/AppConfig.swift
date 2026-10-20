@@ -34,6 +34,8 @@ struct PlatformConfig: Codable, Equatable {
 /// says `false` for a screen turns it off and shows the old one.
 enum MobileFeature: String, CaseIterable, Codable {
     case newOrders, newOrderDetail, newProducts, newCalendar, newOverview, newSettings, newAuth, newCustomers
+    /// #1124 "Đặt online" chip, list and confirm flow
+    case onlineBooking
 }
 
 struct AppConfig: Codable, Equatable {

@@ -16,10 +16,12 @@ struct InboxNotificationPayload: Codable {
     let outletId: String?
     let orderType: String?
     let previousStatus: String?
+    /// #1124 `BOOKING_REQUEST`
+    var bookingRequestId: String? = nil
 }
 
 extension InboxNotificationPayload {
-    enum CodingKeys: String, CodingKey { case type, orderId, orderNumber, status, outletId, orderType, previousStatus }
+    enum CodingKeys: String, CodingKey { case type, orderId, orderNumber, status, outletId, orderType, previousStatus, bookingRequestId }
 
     /// #909: every field may be a string or a number (a `SHIFT_CHANGED` row carries `{ outletId, dates }`); one odd
     /// field never fails the whole inbox
@@ -37,6 +39,7 @@ extension InboxNotificationPayload {
         outletId = text(.outletId)
         orderType = text(.orderType)
         previousStatus = text(.previousStatus)
+        bookingRequestId = text(.bookingRequestId)
     }
 }
 
@@ -62,6 +65,12 @@ struct InboxNotification: Codable {
     var orderIdValue: Int? {
         guard let raw = data?.orderId, let value = Int(raw) else { return nil }
         return value
+    }
+
+    /// #1124 "Có đơn đặt online mới": the request it opens
+    var bookingRequestIdValue: Int? {
+        guard type == "BOOKING_REQUEST" || data?.type == "BOOKING_REQUEST" else { return nil }
+        return data?.bookingRequestId.flatMap { Int($0) }
     }
 
     var createdAtDate: Date? {
