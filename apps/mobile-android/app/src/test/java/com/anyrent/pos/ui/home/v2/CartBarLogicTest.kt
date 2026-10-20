@@ -15,7 +15,9 @@ class CartBarLogicTest {
         assertTrue(CartBarLogic.shouldShow(cartCount = 1, itemCount = 2, isEditing = false))
         assertTrue(CartBarLogic.shouldShow(cartCount = 2, itemCount = 0, isEditing = false))
         assertTrue("other carts stay in reach while editing", CartBarLogic.shouldShow(cartCount = 3, itemCount = 2, isEditing = true))
-        assertFalse(CartBarLogic.shouldShow(cartCount = 1, itemCount = 2, isEditing = true))
+        // #1099 (iOS #1083): an edit left with the back button stays visible as the only cart
+        assertTrue(CartBarLogic.shouldShow(cartCount = 1, itemCount = 2, isEditing = true))
+        assertFalse(CartBarLogic.shouldShow(cartCount = 1, itemCount = 0, isEditing = true))
     }
 
     private fun summary(number: Int, name: String?) = CartStore.CartSummary(
