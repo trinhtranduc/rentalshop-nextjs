@@ -92,6 +92,11 @@ export function isPublicRoute(pathname: string): boolean {
   if (publicProductPagePattern.test(pathname)) {
     return true;
   }
+
+  // #1124 booking request tracking page: the customer opens it by its 5-character code, no login
+  if (/^\/[a-z0-9-]+\/booking\/[a-z0-9]{5}$/i.test(pathname)) {
+    return true;
+  }
   
   return false;
 }
