@@ -456,7 +456,10 @@ private fun RejectSheet(onDismiss: () -> Unit, onSend: (BookingRejectReason, Str
                 value = note,
                 onValueChange = { note = it },
                 singleLine = true,
-                placeholder = { Text(stringResource(R.string.booking_reject_note_placeholder)) },
+                placeholder = {
+                    // "Khác" needs a few words the customer will read
+                    Text(stringResource(if (selected == BookingRejectReason.OTHER) R.string.booking_reject_other_placeholder else R.string.booking_reject_note_placeholder))
+                },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth().testTag("booking.reject.note"),
             )
