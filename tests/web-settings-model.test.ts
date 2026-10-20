@@ -28,7 +28,6 @@ import {
 import {
   addressLine,
   closeSettingsHref,
-  currencyForLocale,
   defaultTab,
   groupedTabs,
   isSettingsList,
@@ -41,6 +40,9 @@ import {
   tabsForRole,
   tenantKeyValid,
 } from '../apps/client/app/settings/settings-model';
+import * as settingsModel from '../apps/client/app/settings/settings-model';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { getLocalDateKey } from '../packages/utils/src/core/date';
 
 const VI_WEEKDAYS = 'CN,T2,T3,T4,T5,T6,T7'.split(',');
@@ -230,12 +232,18 @@ describe('store settings (#528)', () => {
     expect(passwordProblem({ currentPassword: 'x', newPassword: 'abcdef', confirmPassword: 'abcdef' })).toBeNull();
   });
 
-  it('validates the store URL key and the currency rule', () => {
+  it('validates the store URL key', () => {
     expect(tenantKeyValid('hoa-mai-2')).toBe(true);
     expect(tenantKeyValid('')).toBe(true);
     expect(tenantKeyValid('Hoa Mai')).toBe(false);
-    expect(currencyForLocale('vi')).toBe('VND');
-    expect(currencyForLocale('en')).toBe('USD');
+  });
+
+  it('#1143: opening Settings or changing the UI language never updates the shop currency', () => {
+    // the UI-language → currency rule is gone; sign-up sets the currency once on the server
+    expect('currencyForLocale' in settingsModel).toBe(false);
+    const panel = readFileSync(join(__dirname, '../apps/client/app/settings/SettingsPanel.tsx'), 'utf8');
+    expect(panel).not.toMatch(/updateMerchantCurrency/);
+    expect(panel).not.toMatch(/currencySynced/);
   });
 
   it('builds share links from login data or the tenant key', () => {
