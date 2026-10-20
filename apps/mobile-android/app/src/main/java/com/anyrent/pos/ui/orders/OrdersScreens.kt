@@ -92,6 +92,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
+import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.FeatureFlags
@@ -182,6 +183,7 @@ private fun fetchScopedOrders(
             endDate = endDate,
             status = snapshotStatus,
             page = page,
+            outletId = CurrentOutlet.merchantFilterId, // #1062: as the Overview snapshot it opens from
         )
     }
     // iOS OrderListViewModel: SALE always sorts by createdAt; RENT uses pickup or createdAt.

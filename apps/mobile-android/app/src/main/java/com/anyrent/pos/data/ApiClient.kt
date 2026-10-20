@@ -359,11 +359,12 @@ class ApiClient(
         status: String,
         page: Int = 1,
         limit: Int = 20,
+        outletId: Int? = null,
     ): Result<PageResult<OrderSummary>> = runCatching {
         val offset = (page - 1) * limit
+        // #1062: shop day + the merchant's chosen branch, as the Overview figure it drills into
         val json = authedGet(
-            "/api/analytics/income/orders?startDate=$startDate&endDate=$endDate" +
-                "&status=$status&plan=false&limit=$limit&offset=$offset",
+            com.anyrent.pos.domain.overview.OverviewRelated.path(startDate, endDate, status, offset, limit, outletId),
         )
         val data = json.optJSONObject("data") ?: JSONObject()
         val days = data.optJSONArray("days") ?: JSONArray()
@@ -394,10 +395,11 @@ class ApiClient(
         status: String,
         offset: Int,
         limit: Int = 200,
+        outletId: Int? = null,
     ): Result<Pair<List<com.anyrent.pos.domain.overview.IncomeRow>, Boolean>> = runCatching {
+        // #1062: shop day + the merchant's chosen branch, so the rows add up to the tile
         val json = authedGet(
-            "/api/analytics/income/orders?startDate=$startDate&endDate=$endDate" +
-                "&status=$status&plan=false&limit=$limit&offset=$offset",
+            com.anyrent.pos.domain.overview.OverviewRelated.path(startDate, endDate, status, offset, limit, outletId),
         )
         com.anyrent.pos.domain.overview.OverviewRelated.pageFromJson(json.optJSONObject("data") ?: JSONObject())
     }

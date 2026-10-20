@@ -74,7 +74,7 @@ private fun loadRelated(kind: OverviewRelatedKind, startDate: String, endDate: S
     held + kind.buckets.flatMap { bucket ->
         val items = mutableListOf<IncomeRow>()
         for (page in 0 until MAX_PAGES) {
-            val (rows, hasMore) = api.incomeRows(startDate, endDate, bucket, offset = page * PAGE_SIZE, limit = PAGE_SIZE).getOrThrow()
+            val (rows, hasMore) = api.incomeRows(startDate, endDate, bucket, offset = page * PAGE_SIZE, limit = PAGE_SIZE, outletId = CurrentOutlet.merchantFilterId).getOrThrow()
             items += rows
             if (!hasMore || rows.isEmpty()) break
         }
