@@ -36,6 +36,8 @@ enum class MobileFeature(val key: String) {
     NEW_SETTINGS("newSettings"),
     NEW_AUTH("newAuth"),
     NEW_CUSTOMERS("newCustomers"),
+    /** #1124 "Đặt online" chip, list and confirm flow */
+    ONLINE_BOOKING("onlineBooking"),
 }
 
 object AppVersion {

@@ -30,6 +30,8 @@ data class UserProfile(
     val allowOverlappingOrders: Boolean = true,
     /** #910 active module keys (`merchant.modules`); empty when the API sends none */
     val modules: Set<String> = emptySet(),
+    /** #1124 the login's `user.permissions`; null when the API sends none */
+    val permissions: Set<String>? = null,
 ) {
     val displayName: String
         get() = listOfNotNull(firstName, lastName)
@@ -177,6 +179,8 @@ data class InboxNotification(
     val orderId: Int?,
     /** `data.status` of an `ORDER_STATUS_CHANGED` notification; picks the icon of the new inbox (#477) */
     val status: String? = null,
+    /** #1124 `data.bookingRequestId` of a `BOOKING_REQUEST` notification: the row opens that request */
+    val bookingRequestId: Int? = null,
 )
 
 data class CalendarDay(

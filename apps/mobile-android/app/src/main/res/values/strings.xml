@@ -2089,4 +2089,36 @@
         <item quantity="one">%1$d cart</item>
         <item quantity="other">%1$d carts</item>
     </plurals>
+    <!-- #1124 Đặt online -->
+    <string name="booking_chip">Online bookings</string>
+    <string name="booking_title">Online bookings</string>
+    <string name="booking_detail_title">Online booking request</string>
+    <string name="booking_status_pending">Waiting</string>
+    <string name="booking_status_confirmed">Confirmed</string>
+    <string name="booking_status_rejected">Rejected</string>
+    <string name="booking_status_expired">Expired</string>
+    <string name="booking_status_cancelled">Cancelled</string>
+    <string name="booking_status_unknown">Other</string>
+    <string name="booking_items">%1$d items</string>
+    <string name="booking_hours_left">%1$d h left to confirm</string>
+    <string name="booking_empty">No requests yet</string>
+    <string name="booking_section_customer">Customer</string>
+    <string name="booking_section_rental">Rental</string>
+    <string name="booking_section_note">Customer note</string>
+    <string name="booking_outlet">Branch</string>
+    <string name="booking_dates">Rental days</string>
+    <string name="booking_returning_customer">Returning customer: %1$s</string>
+    <string name="booking_new_customer">New customer, created when you confirm</string>
+    <string name="booking_item_free">Available</string>
+    <string name="booking_item_short">Short from %1$s</string>
+    <string name="booking_short_warning">Some items are short on the days the customer chose. Check before confirming.</string>
+    <string name="booking_action_confirm">Confirm</string>
+    <string name="booking_action_reject">Reject</string>
+    <string name="booking_reject_title">Reason for rejecting</string>
+    <string name="booking_reject_out_of_stock">Out of stock</string>
+    <string name="booking_reject_cannot_contact">Could not reach the customer</string>
+    <string name="booking_reject_other">Other</string>
+    <string name="booking_reject_other_placeholder">Reason the customer will see</string>
+    <string name="booking_cancel">Cancel</string>
+    <string name="booking_load_failed">Could not load the requests</string>
 </resources>

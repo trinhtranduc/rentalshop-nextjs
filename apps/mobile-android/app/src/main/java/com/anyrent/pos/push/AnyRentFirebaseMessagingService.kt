@@ -28,7 +28,9 @@ class AnyRentFirebaseMessagingService : FirebaseMessagingService() {
             ?: ""
         // #910: a schedule change opens "Ca và công của tôi", never an order
         val shiftChanged = AttendancePush.isShiftChanged(message.data["type"])
-        val orderId = if (shiftChanged) null else message.data["orderId"]?.toIntOrNull()
+        // #1124: a booking request opens its detail (it has no orderId)
+        val bookingRequestId = com.anyrent.pos.domain.booking.BookingLogic.requestIdFromPush(message.data)
+        val orderId = if (shiftChanged || bookingRequestId != null) null else message.data["orderId"]?.toIntOrNull()
         InboxUnread.invalidate() // #674: the home badge asks the server again (the row is already saved)
         if (orderId != null) {
             SessionStore.pendingOrderId = orderId
@@ -38,10 +40,11 @@ class AnyRentFirebaseMessagingService : FirebaseMessagingService() {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (orderId != null) putExtra(MainActivity.EXTRA_ORDER_ID, orderId)
             if (shiftChanged) putExtra(AttendancePush.EXTRA_OPEN_MY_SHIFTS, true)
+            if (bookingRequestId != null) putExtra(BookingPush.EXTRA_BOOKING_REQUEST_ID, bookingRequestId)
         }
         val pending = PendingIntent.getActivity(
             this,
-            orderId ?: if (shiftChanged) SHIFT_CHANGED_REQUEST else 0,
+            orderId ?: bookingRequestId?.let { BOOKING_REQUEST_BASE + it } ?: if (shiftChanged) SHIFT_CHANGED_REQUEST else 0,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
@@ -65,5 +68,7 @@ class AnyRentFirebaseMessagingService : FirebaseMessagingService() {
     companion object {
         private const val TAG = "AnyRentFCM"
         private const val SHIFT_CHANGED_REQUEST = 910
+        /** PendingIntent request codes of booking pushes, apart from order ids */
+        private const val BOOKING_REQUEST_BASE = 1_124_000_000
     }
 }

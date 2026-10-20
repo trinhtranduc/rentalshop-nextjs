@@ -73,6 +73,14 @@ object CartStore {
     private val _editOriginal = MutableStateFlow<EditOrderSheet.Original?>(null)
     val editOriginal: StateFlow<EditOrderSheet.Original?> = _editOriginal.asStateFlow()
 
+    /** #1124: the online booking this cart confirms (`POST /api/orders` `bookingRequestId`); null for any other cart */
+    private val _bookingRequestId = MutableStateFlow<Int?>(null)
+    val bookingRequestId: StateFlow<Int?> = _bookingRequestId.asStateFlow()
+
+    /** #1124: the booking's outlet; its order goes there, not to the chosen branch */
+    private val _bookingOutletId = MutableStateFlow<Int?>(null)
+    val bookingOutletId: StateFlow<Int?> = _bookingOutletId.asStateFlow()
+
     private val _lines = MutableStateFlow<List<CartLine>>(emptyList())
     val lines: StateFlow<List<CartLine>> = _lines.asStateFlow()
 
@@ -400,6 +408,8 @@ object CartStore {
         dropNoteImages()
         _editingOrderId.value = null
         _editOriginal.value = null
+        _bookingRequestId.value = null
+        _bookingOutletId.value = null
         _lines.value = emptyList()
         _customer.value = null
         _notes.value = ""
@@ -417,7 +427,8 @@ object CartStore {
 
     private fun closeActiveCart() {
         if (slots.size > 1) {
-            val wasEdit = isEditing
+            // #1124: a booking cart opened beside a draft returns there too
+            val wasEdit = isEditing || _bookingRequestId.value != null
             slots.removeAt(activeIdx)
             activeIdx = minOf(activeIdx, slots.size - 1)
             if (wasEdit) {
@@ -440,7 +451,8 @@ object CartStore {
 
     private fun bump() = _revision.update { it + 1 }
 
-    private fun hasDraftContent() = _lines.value.isNotEmpty() || _customer.value != null || _editingOrderId.value != null
+    private fun hasDraftContent() = _lines.value.isNotEmpty() || _customer.value != null || _editingOrderId.value != null ||
+        _bookingRequestId.value != null
 
     /** Summaries of every cart, the one in use read live */
     fun cartSummaries(): List<CartSummary> = slots.mapIndexed { index, slot ->
@@ -705,6 +717,52 @@ object CartStore {
         persistToDisk()
     }
 
+    /**
+     * #1124 "Xác nhận" of an online booking: a rent cart with the customer, the shop days, the note and the items at
+     * the product's rent price (a product the app could not load keeps its line at 0). A draft in the cart in use
+     * stays and the booking gets its own cart; creating the order returns there. False at the cart limit (nothing
+     * changes). iOS `CartStore.startBookingCart` + `BookingCartBuilder`.
+     */
+    fun startBookingCart(
+        prepare: com.anyrent.pos.domain.booking.BookingPrepare,
+        products: Map<Int, Product>,
+    ): Boolean {
+        if (hasDraftContent() || _bookingRequestId.value != null) {
+            if (slots.size >= MAX_CARTS) return false
+            returnNumber = slots[activeIdx].number
+            captureActive()
+            slots.add(Slot(nextNumber()))
+            activeIdx = slots.size - 1
+        }
+        resetActiveState()
+        _orderType.value = "RENT"
+        _customer.value = prepare.customer?.let {
+            Customer(id = it.id, firstName = it.firstName, lastName = it.lastName, phone = it.phone, email = null, address = null)
+        }
+        val pickup = parseOrderDate(prepare.pickupPlanAt) ?: ShopTime.today()
+        val ret = parseOrderDate(prepare.returnPlanAt)?.takeUnless { it.isBefore(pickup) } ?: pickup
+        _pickupDate.value = pickup
+        _returnDate.value = ret
+        _datesChosen.value = true
+        _notes.value = prepare.notes.orEmpty()
+        _bookingRequestId.value = prepare.bookingRequestId.takeIf { it > 0 }
+        _bookingOutletId.value = prepare.outletId
+        val days = rentalDaysInclusive()
+        _lines.value = prepare.items.map { item ->
+            val product = products[item.productId] ?: Product(
+                id = item.productId,
+                name = item.productName.ifBlank { "Product #${item.productId}" },
+                barcode = null, rentPrice = 0.0, salePrice = null, stock = 0, available = 0, renting = 0,
+                categoryId = null, categoryName = null, imageUrl = null,
+            )
+            CartLine(product = product, quantity = item.quantity.coerceAtLeast(1), rentalDays = days, isSale = false)
+        }
+        syncRentalDays()
+        refreshAutoDeposit()
+        persistToDisk()
+        return true
+    }
+
     fun persistToDisk() {
         bump()
         if (!persistEnabled || !::prefs.isInitialized) return
@@ -782,6 +840,8 @@ object CartStore {
         return JSONObject()
             .put("editingOrderId", _editingOrderId.value ?: JSONObject.NULL)
             .put("editOriginal", _editOriginal.value?.let(::editOriginalJson) ?: JSONObject.NULL)
+            .put("bookingRequestId", _bookingRequestId.value ?: JSONObject.NULL)
+            .put("bookingOutletId", _bookingOutletId.value ?: JSONObject.NULL)
             .put("orderType", _orderType.value)
             .put("pickup", _pickupDate.value.toString())
             .put("return", _returnDate.value.toString())
@@ -801,6 +861,8 @@ object CartStore {
         _editingOrderId.value = json.optInt("editingOrderId", 0).takeIf { it > 0 }
         // A draft saved before #676 has no snapshot: no "Đã đổi" tags, title without a number
         _editOriginal.value = json.optJSONObject("editOriginal")?.takeIf { _editingOrderId.value != null }?.let(::parseEditOriginal)
+        _bookingRequestId.value = json.optInt("bookingRequestId", 0).takeIf { it > 0 }
+        _bookingOutletId.value = json.optInt("bookingOutletId", 0).takeIf { it > 0 }
         _orderType.value = json.optString("orderType").ifBlank { "RENT" }
         _pickupDate.value = runCatching { LocalDate.parse(json.optString("pickup")) }.getOrDefault(ShopTime.today())
         _returnDate.value = runCatching { LocalDate.parse(json.optString("return")) }.getOrDefault(ShopTime.today().plusDays(1))
