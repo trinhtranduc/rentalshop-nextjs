@@ -66,11 +66,17 @@ final class BookingRequestsViewController: BaseViewControler {
         listView.accessibilityIdentifier = "booking.list"
         emptyLabel.textAlignment = .center
 
+        let heading = V2.label("booking.title".localized(), size: DS.TextSize.title, weight: .bold)
+        view.addSubview(heading)
+        heading.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.sm)
+            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg)
+        }
         view.addSubview(scroll)
         view.addSubview(listView)
         view.addSubview(emptyLabel)
         scroll.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.sm)
+            make.top.equalTo(heading.snp.bottom).offset(DS.Spacing.md)
             make.leading.trailing.equalTo(view.readableColumn())
             make.height.equalTo(36)
         }

@@ -116,8 +116,8 @@ final class OrdersViewController: BaseViewControler {
         bookingBadge.accessibilityIdentifier = "orders.booking.count"
         bookingButton.addSubview(bookingBadge)
         bookingBadge.snp.makeConstraints { make in
-            make.centerY.equalTo(bookingButton.snp.top).offset(2)
-            make.centerX.equalTo(bookingButton.snp.trailing).offset(-4)
+            make.centerY.equalToSuperview()
+            make.trailing.equalToSuperview().offset(-10)
             make.height.greaterThanOrEqualTo(18)
             make.width.greaterThanOrEqualTo(18)
         }
@@ -142,6 +142,9 @@ final class OrdersViewController: BaseViewControler {
                 let count = list.pendingCount
                 self.bookingBadge.text = count > 99 ? "99+" : "\(count)"
                 self.bookingBadge.isHidden = count == 0
+                // the count sits inside the chip, after the title
+                let right: CGFloat = count == 0 ? 12 : 12 + 8 + self.bookingBadge.intrinsicContentSize.width
+                self.bookingButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: right)
                 self.bookingButton.accessibilityValue = "\(count)"
             }
         }
