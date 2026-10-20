@@ -1,0 +1,81 @@
+{
+  "common": { "home": "Home" },
+  "meta": {
+    "pricing": {
+      "title": "Pricing for Rental Shop Management Software | AnyRent",
+      "description": "AnyRent pricing for rental shop management software: Basic, Professional and Enterprise plans. 14-day free trial. Plans from 79,000 VND per month.",
+      "ogDescription": "Basic, Professional and Enterprise plans. 14-day free trial. From 79,000 VND per month.",
+      "name": "AnyRent pricing - Rental shop management software",
+      "breadcrumb": "Pricing"
+    },
+    "features": {
+      "title": "Rental Shop Management Software Features | AnyRent",
+      "description": "Explore AnyRent features for rental shops: rental orders, inventory, customers, booking calendar and revenue reports. On iOS, Android and the web.",
+      "ogDescription": "Orders, inventory, customers, booking calendar and revenue reports on mobile and the web.",
+      "name": "AnyRent features - Rental shop management software",
+      "breadcrumb": "Features"
+    },
+    "download": {
+      "title": "Download the AnyRent App — iOS & Android | Rental Shop Software",
+      "description": "Get AnyRent on the App Store and Google Play. Run your rental shop from your phone or the Web Portal: orders, inventory, calendar and customers.",
+      "ogDescription": "Manage your rental shop anytime on iPhone, Android and the Web Portal.",
+      "name": "Download the AnyRent app",
+      "breadcrumb": "Download"
+    },
+    "imageSearch": {
+      "title": "Find Rental Products by Photo with AI | AnyRent",
+      "description": "AnyRent AI Image Search: snap a photo of a dress, wedding gown or device and instantly find similar items in your stock, with availability and rental price.",
+      "ogDescription": "Take a photo and AI finds similar items in your stock. Availability and rental price show up right away.",
+      "name": "Find rental products by photo with AI",
+      "breadcrumb": "AI image search"
+    }
+  },
+  "pricingFaq": {
+    "q1": "Is the AnyRent rental management software free?",
+    "a1": "AnyRent comes with a 14-day free trial with every feature. After that you can choose a plan that fits, from 79,000 VND per month.",
+    "q2": "Can I upgrade my plan later?",
+    "a2": "Yes, you can upgrade at any time. Billing is prorated and you get the higher plan's features right away.",
+    "q3": "What happens if I go over my plan limits?",
+    "a3": "If you go over your plan limits, you will need to move to a higher plan. We let you know when you are close to a limit."
+  },
+  "download": {
+    "eyebrow": "AnyRent · Multi-platform",
+    "title": "Download the AnyRent app",
+    "intro": "Run your rental shop on iPhone, Android or in the browser. Orders, inventory and the rental calendar stay in sync in real time.",
+    "getTitle": "Get it now",
+    "getSubtitle": "Pick the store for your device.",
+    "webPrefix": "Or try the",
+    "webPortal": "Web Portal",
+    "webSuffix": "right in your browser — no app to install.",
+    "cards": {
+      "mobile": { "title": "Mobile app", "desc": "Create orders and check stock and the rental calendar at the counter or on the go." },
+      "web": { "title": "Web Portal", "desc": "Full reports, shop settings and team management on your computer." },
+      "sync": { "title": "In sync everywhere", "desc": "One account, with data synced between the iOS and Android apps and the web." }
+    },
+    "links": { "pricing": "See pricing →", "features": "Features →", "imageSearch": "Find products by photo with AI →" }
+  },
+  "imageSearch": {
+    "eyebrow": "Artificial intelligence · AI Image Search",
+    "title": "Find rental products by photo with AI",
+    "intro": "All a customer needs is a photo. AnyRent finds similar items in your stock, with availability and rental price. No product codes to remember, no keywords to type.",
+    "tryFree": "Start free trial",
+    "download": "Download the app",
+    "imageAlt": "AnyRent screen showing AI photo search results",
+    "steps": {
+      "snap": { "title": "Snap a photo to search", "desc": "Take or upload a photo of an áo dài, wedding dress or outfit. No name or barcode needed." },
+      "match": { "title": "Smart AI matching", "desc": "Vector embeddings compare color, cut and material to suggest the closest items in your stock." },
+      "instant": { "title": "Instant results", "desc": "Within seconds you get matching items with stock and rental price, ready to create an order." }
+    },
+    "whyTitle": "Why do rental shops need AI Image Search?",
+    "why1": "Customers remember the style and color, not the product code.",
+    "why2": "Staff find items faster when the shop is busy.",
+    "why3": "Fewer mix-ups in size or model with a large stock (áo dài, wedding dresses, costumes).",
+    "links": { "features": "All features →", "pricing": "Pricing →", "aoDai": "Áo dài rental →" },
+    "faq": {
+      "q1": "How does AI photo search work?",
+      "a1": "A customer or staff member takes or uploads a sample photo. AnyRent uses AI embeddings to compare it with the product photos in your stock and returns similar items with availability and rental price.",
+      "q2": "Which rental businesses is AI Image Search for?",
+      "a2": "It works especially well for áo dài, wedding dress, costume and equipment rental, when customers remember the look better than the product code."
+    }
+  }
+}

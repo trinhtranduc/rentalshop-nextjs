@@ -11,6 +11,7 @@ import thPublic from '../../../locales/th/public.json';
 import idPublic from '../../../locales/id/public.json';
 import esPublic from '../../../locales/es/public.json';
 import { publicLandingMessages } from '../lib/public-content/landing-messages';
+import { publicFeaturesMessages, publicPlansMessages } from '../lib/public-content/page-namespaces';
 import { headers } from 'next/headers';
 import { isPublicLocale, type PublicLocale } from '@rentalshop/constants';
 import type { Metadata } from 'next'
@@ -801,6 +802,9 @@ function getPublicContentMessages(locale: PublicLocale) {
     ...messages.en,
     public: copy,
     landing: publicLandingMessages(locale),
+    // #1114: the localized features and pricing pages
+    features: publicFeaturesMessages(locale),
+    plans: publicPlansMessages(locale),
   };
 }
 

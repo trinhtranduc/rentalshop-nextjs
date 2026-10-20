@@ -1,0 +1,81 @@
+{
+  "navigation": { "home": "Startseite", "pricing": "Preise", "login": "Anmelden" },
+  "hero": {
+    "badge": "Funktionen",
+    "title": "Entdecken Sie, was AnyRent kann",
+    "description": "Eine umfassende Software für Verleihgeschäfte mit allen Funktionen in der mobilen App und im Webportal. Führen Sie Ihr Geschäft effizient, wo immer Sie sind.",
+    "downloadApp": "App herunterladen",
+    "tryWebPortal": "Webportal testen"
+  },
+  "platforms": {
+    "title": "Mehrere Plattformen",
+    "description": "Ihr Verleihgeschäft auf jedem Gerät aufrufen und verwalten",
+    "mobile": {
+      "title": "Mobile App",
+      "description": "Verwalten Sie Ihr Verleihgeschäft jederzeit und überall mit den Apps für iOS und Android",
+      "features": { "ios": "Volle iOS-Unterstützung", "android": "Android-Unterstützung", "offline": "Offline-Modus", "sync": "Automatische Synchronisierung" }
+    },
+    "web": {
+      "title": "Webportal",
+      "description": "Alle Funktionen im Browser, mit modernem, responsivem Design",
+      "features": { "responsive": "Responsives Design", "fullFeatures": "Voller Funktionsumfang", "reports": "Detaillierte Berichte", "multiUser": "Mehrere Benutzer" }
+    }
+  },
+  "mobile": {
+    "badge": "Mobile App",
+    "title": "Funktionen der mobilen App",
+    "description": "Verwalten Sie Ihr Verleihgeschäft direkt auf dem Smartphone",
+    "screenshotPlaceholder": "Screenshot der mobilen App",
+    "features": {
+      "orderManagement": { "title": "Auftragsverwaltung", "description": "Mietaufträge direkt auf dem Smartphone anlegen, ansehen und verwalten. Auftragsstatus und Vorgangsverlauf im Blick behalten." },
+      "customerManagement": { "title": "Kundenverwaltung", "description": "Kundendaten und Mietverlauf speichern und Kundenbeziehungen einfach pflegen." },
+      "inventoryManagement": { "title": "Lagerverwaltung", "description": "Bestände und Verfügbarkeit verfolgen und das Lager effizient verwalten." },
+      "scheduling": { "title": "Kalender und Planung", "description": "Miet- und Rückgabekalender ansehen und Termine übersichtlich planen." },
+      "quickSearch": { "title": "Schnellsuche", "description": "Aufträge, Kunden und Artikel mit der intelligenten Suche schnell finden." },
+      "notifications": { "title": "Benachrichtigungen", "description": "Benachrichtigungen zu neuen Aufträgen, Rückgabeerinnerungen und wichtigen Ereignissen erhalten." }
+    },
+    "details": {
+      "viewDetails": "Details ansehen",
+      "benefits": {
+        "accessAnywhere": { "title": "Jederzeit und überall", "description": "Verwaltung vom Mobilgerät" },
+        "autoSync": { "title": "Automatische Synchronisierung", "description": "Daten immer aktuell" }
+      }
+    }
+  },
+  "web": {
+    "badge": "Webportal",
+    "title": "Funktionen des Webportals",
+    "description": "Umfassende Verwaltung des Verleihgeschäfts im Browser",
+    "screenshotPlaceholder": "Screenshot des Webportals",
+    "features": {
+      "analytics": { "title": "Analysen und Berichte", "description": "Detaillierte Umsatzberichte ansehen, Geschäftsleistung und Verkaufstrends analysieren." },
+      "reports": { "title": "Finanzberichte", "description": "Finanz-, Umsatz- und Gesamtberichte erstellen und exportieren." },
+      "settings": { "title": "Einstellungen und Konfiguration", "description": "System- und Geschäftseinstellungen verwalten und an Ihre Bedürfnisse anpassen." },
+      "userManagement": { "title": "Benutzerverwaltung", "description": "Benutzer, Berechtigungen und Rollen hinzufügen, bearbeiten und verwalten." },
+      "payments": { "title": "Zahlungsverwaltung", "description": "Zahlungen und Rechnungen verfolgen und Finanzen im Detail verwalten." },
+      "security": { "title": "Sicherheit", "description": "Datenschutz durch Verschlüsselung, automatische Backups und Zugriffskontrolle." }
+    },
+    "details": {
+      "viewDetails": "Details ansehen",
+      "benefits": {
+        "fullInterface": { "title": "Vollständige Oberfläche", "description": "Alle Funktionen im Web" },
+        "detailedReports": { "title": "Detaillierte Berichte", "description": "Daten exportieren und analysieren" }
+      }
+    }
+  },
+  "details": { "title": "Funktionen im Detail", "description": "Erfahren Sie mehr über die Funktionen von AnyRent", "mobileApp": "Mobile App", "webPortal": "Webportal" },
+  "shared": {
+    "badge": "Gemeinsame Funktionen",
+    "title": "Gemeinsame Funktionen",
+    "description": "Funktionen, die in der mobilen App und im Webportal verfügbar sind",
+    "features": {
+      "cloudSync": { "title": "Cloud-Synchronisierung", "description": "Daten werden automatisch auf allen Geräten synchronisiert. Änderungen auf einem Gerät erscheinen sofort auf den anderen." },
+      "dataSecurity": { "title": "Datensicherheit", "description": "Ihre Daten werden verschlüsselt und sicher in der Cloud gespeichert. Automatische Backups verhindern Datenverlust." },
+      "realTime": { "title": "Aktualisierung in Echtzeit", "description": "Alle Änderungen sind sofort auf allen Geräten sichtbar. Ihr Team arbeitet mit stets synchronisierten Daten." },
+      "scalable": { "title": "Skalierbar", "description": "Das System wächst mit Ihrem Geschäft, vom kleinen Laden bis zur großen Kette." }
+    }
+  },
+  "cta": { "title": "Bereit loszulegen?", "description": "Schließen Sie sich den Verleihgeschäften an, die bereits AnyRent nutzen", "downloadApp": "App herunterladen", "tryWebPortal": "Webportal testen" },
+  "footer": { "description": "AnyRent – Software für Verleihgeschäfte", "home": "Startseite", "pricing": "Preise", "login": "Anmelden", "copyright": "© 2024 AnyRent. Alle Rechte vorbehalten." },
+  "screens": { "order": "Auftragsverwaltung", "product": "Artikelverwaltung", "calendar": "Kalender und Planung", "users": "Benutzerverwaltung", "webCalendar": "Auftragskalender", "webOrderDetail": "Auftragsdetails", "webOrder": "Auftragsverwaltung", "prev": "Vorheriger Screenshot", "next": "Nächster Screenshot", "goTo": "Screenshot {index} anzeigen" }
+}

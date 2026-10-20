@@ -65,6 +65,19 @@
         "title": "通知",
         "description": "新しい注文、返却リマインダー、重要なイベントに関する通知を受け取ります。"
       }
+    },
+    "details": {
+      "viewDetails": "詳細を見る",
+      "benefits": {
+        "accessAnywhere": {
+          "title": "いつでもどこでも利用",
+          "description": "モバイル端末から管理"
+        },
+        "autoSync": {
+          "title": "自動同期",
+          "description": "データは常に最新"
+        }
+      }
     }
   },
   "web": {
@@ -153,5 +166,17 @@
     "pricing": "価格",
     "login": "ログイン",
     "copyright": "© 2024 AnyRent. 全著作権所有。"
+  },
+  "screens": {
+    "order": "注文管理",
+    "product": "商品管理",
+    "calendar": "カレンダーと予定",
+    "users": "ユーザー管理",
+    "webCalendar": "注文カレンダー",
+    "webOrderDetail": "注文の詳細",
+    "webOrder": "注文管理",
+    "prev": "前の画面",
+    "next": "次の画面",
+    "goTo": "画面 {index} を表示"
   }
 }

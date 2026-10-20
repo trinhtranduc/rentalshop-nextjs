@@ -83,3 +83,28 @@ describe('landing middleware serves HTML before a mobile store navigation', () =
     expect(options.request.headers.get('x-anyrent-public-locale')).toBe('vi');
   });
 });
+
+describe('#1114 localized public pages', () => {
+  it.each([
+    ['/vi/pricing', '/pricing'],
+    ['/vi/features', '/features'],
+    ['/vi/download', '/download'],
+    ['/vi/image-search', '/tim-san-pham-bang-hinh-anh'],
+  ])('redirects %s to the Vietnamese page %s', (source, expected) => {
+    redirect.mockClear();
+    middleware({ nextUrl: new URL(`https://www.anyrent.shop${source}`) } as unknown as NextRequest);
+    expect(redirect).toHaveBeenCalledWith(new URL(`https://www.anyrent.shop${expected}`), 308);
+  });
+
+  it('serves /ru/pricing in Russian without a redirect', () => {
+    next.mockClear(); redirect.mockClear();
+    middleware({
+      nextUrl: new URL('https://www.anyrent.shop/ru/pricing'),
+      headers: new Headers(),
+      cookies: { get: () => undefined },
+    } as unknown as NextRequest);
+    expect(redirect).not.toHaveBeenCalled();
+    const call = next.mock.calls[0] as unknown as [{ request: { headers: Headers } }];
+    expect(call[0].request.headers.get('x-anyrent-public-locale')).toBe('ru');
+  });
+});

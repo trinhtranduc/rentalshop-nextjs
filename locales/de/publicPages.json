@@ -1,0 +1,81 @@
+{
+  "common": { "home": "Startseite" },
+  "meta": {
+    "pricing": {
+      "title": "Preise der Software für Verleihgeschäfte | AnyRent",
+      "description": "AnyRent-Preise für Verleihgeschäfte: Tarife Basic, Professional und Enterprise. 14 Tage kostenlos testen. Ab 79.000 VND pro Monat.",
+      "ogDescription": "Tarife Basic, Professional und Enterprise. 14 Tage kostenlos testen. Ab 79.000 VND pro Monat.",
+      "name": "AnyRent-Preise – Software für Verleihgeschäfte",
+      "breadcrumb": "Preise"
+    },
+    "features": {
+      "title": "Funktionen der Software für Verleihgeschäfte | AnyRent",
+      "description": "Entdecken Sie die Funktionen von AnyRent: Mietaufträge, Lager, Kunden, Buchungskalender und Umsatzberichte. Für iOS, Android und das Web.",
+      "ogDescription": "Aufträge, Lager, Kunden, Buchungskalender und Umsatzberichte auf dem Smartphone und im Web.",
+      "name": "AnyRent-Funktionen – Software für Verleihgeschäfte",
+      "breadcrumb": "Funktionen"
+    },
+    "download": {
+      "title": "AnyRent-App herunterladen — iOS & Android | Verleihsoftware",
+      "description": "Laden Sie AnyRent im App Store und bei Google Play. Führen Sie Ihr Verleihgeschäft vom Smartphone oder im Webportal: Aufträge, Lager, Kalender und Kunden.",
+      "ogDescription": "Verwalten Sie Ihr Verleihgeschäft jederzeit auf iPhone, Android und im Webportal.",
+      "name": "AnyRent-App herunterladen",
+      "breadcrumb": "Herunterladen"
+    },
+    "imageSearch": {
+      "title": "Mietartikel per Foto mit KI finden | AnyRent",
+      "description": "KI-Bildsuche von AnyRent: Fotografieren Sie ein Áo dài, ein Brautkleid oder ein Gerät und finden Sie sofort ähnliche Artikel im Lager, mit Verfügbarkeit und Mietpreis.",
+      "ogDescription": "Foto aufnehmen, und die KI findet ähnliche Artikel im Lager. Verfügbarkeit und Mietpreis erscheinen sofort.",
+      "name": "Mietartikel per Foto mit KI finden",
+      "breadcrumb": "KI-Bildsuche"
+    }
+  },
+  "pricingFaq": {
+    "q1": "Ist die Verleihsoftware AnyRent kostenlos?",
+    "a1": "AnyRent bietet eine 14-tägige kostenlose Testphase mit allen Funktionen. Danach wählen Sie einen passenden Tarif ab 79.000 VND pro Monat.",
+    "q2": "Kann ich meinen Tarif später wechseln?",
+    "a2": "Ja, Sie können jederzeit upgraden. Die Abrechnung erfolgt anteilig, und die Funktionen des höheren Tarifs stehen sofort zur Verfügung.",
+    "q3": "Was passiert, wenn ich die Tarifgrenzen überschreite?",
+    "a3": "Wenn Sie die Grenzen überschreiten, müssen Sie in einen höheren Tarif wechseln. Wir benachrichtigen Sie, bevor eine Grenze erreicht ist."
+  },
+  "download": {
+    "eyebrow": "AnyRent · Plattformübergreifend",
+    "title": "AnyRent-App herunterladen",
+    "intro": "Führen Sie Ihr Verleihgeschäft auf iPhone, Android oder im Browser. Aufträge, Lager und Mietkalender werden in Echtzeit synchronisiert.",
+    "getTitle": "Jetzt herunterladen",
+    "getSubtitle": "Wählen Sie den Store für Ihr Gerät.",
+    "webPrefix": "Oder testen Sie das",
+    "webPortal": "Webportal",
+    "webSuffix": "direkt im Browser, ganz ohne App-Installation.",
+    "cards": {
+      "mobile": { "title": "Mobile App", "desc": "Aufträge anlegen, Lager und Mietkalender prüfen, an der Theke oder unterwegs." },
+      "web": { "title": "Webportal", "desc": "Vollständige Berichte, Geschäftseinstellungen und Teamverwaltung am Computer." },
+      "sync": { "title": "Überall synchron", "desc": "Ein Konto, mit synchronisierten Daten zwischen iOS- und Android-App und dem Web." }
+    },
+    "links": { "pricing": "Preise ansehen →", "features": "Funktionen →", "imageSearch": "Artikel per Foto mit KI finden →" }
+  },
+  "imageSearch": {
+    "eyebrow": "Künstliche Intelligenz · KI-Bildsuche",
+    "title": "Mietartikel per Foto mit KI finden",
+    "intro": "Ihr Kunde braucht nur ein Foto. AnyRent findet ähnliche Artikel in Ihrem Lager, mit Verfügbarkeit und Mietpreis. Keine Artikelnummern merken, keine Suchbegriffe eintippen.",
+    "tryFree": "Kostenlos testen",
+    "download": "App herunterladen",
+    "imageAlt": "AnyRent-Bildschirm mit Ergebnissen der KI-Bildsuche",
+    "steps": {
+      "snap": { "title": "Foto machen und suchen", "desc": "Fotografieren oder laden Sie ein Beispiel für Áo dài, Brautkleid oder Kostüm hoch, ohne Namen oder Barcode." },
+      "match": { "title": "Intelligente KI-Erkennung", "desc": "Vektor-Embeddings vergleichen Farbe, Schnitt und Material und schlagen die ähnlichsten Artikel im Lager vor." },
+      "instant": { "title": "Sofortige Ergebnisse", "desc": "In wenigen Sekunden erscheinen passende Artikel mit Bestand und Mietpreis, bereit für den Auftrag." }
+    },
+    "whyTitle": "Warum brauchen Verleihgeschäfte die KI-Bildsuche?",
+    "why1": "Kunden erinnern sich an Schnitt und Farbe, nicht an die Artikelnummer.",
+    "why2": "Das Team findet Artikel schneller, wenn viel los ist.",
+    "why3": "Weniger Verwechslungen bei Größe und Modell in großen Lagern (Áo dài, Brautkleider, Kostüme).",
+    "links": { "features": "Alle Funktionen →", "pricing": "Preise →", "aoDai": "Áo-dài-Verleih →" },
+    "faq": {
+      "q1": "Wie funktioniert die KI-Bildsuche?",
+      "a1": "Kunde oder Mitarbeiter fotografieren oder laden ein Beispielbild hoch. AnyRent vergleicht es mithilfe von KI-Embeddings mit den Produktfotos im Lager und zeigt ähnliche Artikel mit Verfügbarkeit und Mietpreis.",
+      "q2": "Für welche Verleihbranchen eignet sich die KI-Bildsuche?",
+      "a2": "Besonders gut für den Verleih von Áo dài, Brautkleidern, Kostümen und Geräten, wenn sich Kunden eher an das Aussehen als an die Artikelnummer erinnern."
+    }
+  }
+}

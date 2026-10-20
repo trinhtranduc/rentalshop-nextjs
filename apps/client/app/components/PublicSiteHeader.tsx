@@ -5,10 +5,14 @@ import { Button, LanguageSwitcher, Logo } from '@rentalshop/ui'
 import { useAuth } from '@rentalshop/hooks'
 import { User } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { usePublicHref, usePublicPageSwitcher } from '../../lib/public-content/use-public-href'
 
 export default function PublicSiteHeader() {
   const t = useTranslations('landing')
   const { user } = useAuth()
+  // #1114: links stay in the language of the page
+  const href = usePublicHref()
+  const switcher = usePublicPageSwitcher()
 
   return (
     <header
@@ -17,7 +21,7 @@ export default function PublicSiteHeader() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center transition-opacity hover:opacity-80">
+          <Link href={href('home')} className="flex items-center transition-opacity hover:opacity-80">
             <Logo
               size="md"
               variant="custom"
@@ -30,30 +34,30 @@ export default function PublicSiteHeader() {
 
           <div className="hidden items-center space-x-8 md:flex">
             <Link
-              href="/features"
+              href={href('features')}
               className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
             >
               {t('navigation.features')}
             </Link>
             <Link
-              href="/pricing"
+              href={href('pricing')}
               className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
             >
               {t('navigation.pricing')}
             </Link>
             <Link
-              href="/#faq"
+              href={href('faq')}
               className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
             >
               {t('navigation.faq')}
             </Link>
             <Link
-              href="/#contact"
+              href={href('contact')}
               className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
             >
               {t('navigation.contact')}
             </Link>
-            <LanguageSwitcher variant="compact" />
+            <LanguageSwitcher variant="compact" {...switcher} />
             <Button
               asChild
               variant="default"
@@ -73,7 +77,7 @@ export default function PublicSiteHeader() {
           </div>
 
           <div className="flex items-center space-x-3 md:hidden">
-            <LanguageSwitcher variant="compact" />
+            <LanguageSwitcher variant="compact" {...switcher} />
             <Button
               asChild
               variant="default"

@@ -1,4 +1,4 @@
-import { isPublicLocale, publicLocaleFromPath, type PublicLocale } from '@rentalshop/constants';
+import { isPublicLocale, publicLocaleFromPath, publicPageFromPath, publicPagePath, type PublicLocale } from '@rentalshop/constants';
 import { NextResponse, type NextRequest } from 'next/server';
 import {
   WEB_OPT_OUT_COOKIE,
@@ -61,6 +61,13 @@ function nextForPublicLocale(request: NextRequest, locale: PublicLocale) {
  */
 export function middleware(request: NextRequest) {
   const publicLocale = publicLocaleFromPath(request.nextUrl.pathname);
+  // #1114: /vi/{page} goes to the Vietnamese URL of that page (image search has its own slug)
+  const publicPage = publicPageFromPath(request.nextUrl.pathname);
+  if (publicPage?.locale === 'vi') {
+    const destination = new URL(request.nextUrl.toString());
+    destination.pathname = publicPagePath('vi', publicPage.page);
+    return NextResponse.redirect(destination, 308);
+  }
   if (publicLocale === 'vi' && request.nextUrl.pathname.startsWith('/vi')) {
     const destination = new URL(request.nextUrl.toString());
     destination.pathname = destination.pathname.slice(3) || '/';
@@ -98,5 +105,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)', '/post/:path*', '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)/post/:path*'],
+  matcher: [
+    '/',
+    '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)',
+    '/post/:path*',
+    '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)/post/:path*',
+    // #1114
+    '/:locale(vi|en|ja|ko|zh|ru|zh-TW|fr|de|th|id|es)/:page(pricing|features|download|image-search)',
+  ],
 };

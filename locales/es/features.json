@@ -1,0 +1,81 @@
+{
+  "navigation": { "home": "Inicio", "pricing": "Precios", "login": "Iniciar sesión" },
+  "hero": {
+    "badge": "Funciones",
+    "title": "Descubre todo lo que hace AnyRent",
+    "description": "Un software completo de gestión para tiendas de alquiler, con todas las funciones en la app móvil y en el portal web. Gestiona tu negocio de forma eficiente desde cualquier lugar.",
+    "downloadApp": "Descargar la app",
+    "tryWebPortal": "Probar el portal web"
+  },
+  "platforms": {
+    "title": "Varias plataformas",
+    "description": "Accede a tu tienda de alquiler y gestiónala desde cualquier dispositivo",
+    "mobile": {
+      "title": "App móvil",
+      "description": "Gestiona tu tienda de alquiler en cualquier momento y lugar con las apps de iOS y Android",
+      "features": { "ios": "Compatibilidad total con iOS", "android": "Compatible con Android", "offline": "Modo sin conexión", "sync": "Sincronización automática" }
+    },
+    "web": {
+      "title": "Portal web",
+      "description": "Todas las funciones en el navegador, con un diseño moderno y adaptable",
+      "features": { "responsive": "Diseño adaptable", "fullFeatures": "Todas las funciones", "reports": "Informes detallados", "multiUser": "Varios usuarios" }
+    }
+  },
+  "mobile": {
+    "badge": "App móvil",
+    "title": "Funciones de la app móvil",
+    "description": "Gestiona tu tienda de alquiler directamente desde el móvil",
+    "screenshotPlaceholder": "Captura de la app móvil",
+    "features": {
+      "orderManagement": { "title": "Gestión de pedidos", "description": "Crea, consulta y gestiona pedidos de alquiler desde el móvil. Sigue el estado de los pedidos y el historial de operaciones." },
+      "customerManagement": { "title": "Gestión de clientes", "description": "Guarda los datos de los clientes y su historial de alquileres y cuida la relación con ellos fácilmente." },
+      "inventoryManagement": { "title": "Gestión de inventario", "description": "Controla las cantidades y la disponibilidad de los artículos y gestiona el inventario de forma eficiente." },
+      "scheduling": { "title": "Calendario y agenda", "description": "Consulta el calendario de alquileres y devoluciones y organiza la agenda de un vistazo." },
+      "quickSearch": { "title": "Búsqueda rápida", "description": "Encuentra rápidamente pedidos, clientes y artículos con la búsqueda inteligente." },
+      "notifications": { "title": "Notificaciones", "description": "Recibe avisos de nuevos pedidos, recordatorios de devolución y eventos importantes." }
+    },
+    "details": {
+      "viewDetails": "Ver detalles",
+      "benefits": {
+        "accessAnywhere": { "title": "Acceso en cualquier momento y lugar", "description": "Gestión desde tu dispositivo móvil" },
+        "autoSync": { "title": "Sincronización automática", "description": "Datos siempre al día" }
+      }
+    }
+  },
+  "web": {
+    "badge": "Portal web",
+    "title": "Funciones del portal web",
+    "description": "Gestión completa de la tienda de alquiler desde el navegador",
+    "screenshotPlaceholder": "Captura del portal web",
+    "features": {
+      "analytics": { "title": "Análisis e informes", "description": "Consulta informes detallados de ingresos y analiza el rendimiento del negocio y las tendencias de venta." },
+      "reports": { "title": "Informes financieros", "description": "Crea y exporta informes financieros, de ingresos y generales." },
+      "settings": { "title": "Ajustes y configuración", "description": "Gestiona los ajustes del sistema y de la tienda y adáptalos a tus necesidades." },
+      "userManagement": { "title": "Gestión de usuarios", "description": "Añade, edita y gestiona usuarios, permisos y roles." },
+      "payments": { "title": "Gestión de pagos", "description": "Controla pagos y facturas y gestiona las finanzas al detalle." },
+      "security": { "title": "Seguridad", "description": "Protege los datos con cifrado, copias de seguridad automáticas y control de acceso." }
+    },
+    "details": {
+      "viewDetails": "Ver detalles",
+      "benefits": {
+        "fullInterface": { "title": "Interfaz completa", "description": "Todas las funciones en la web" },
+        "detailedReports": { "title": "Informes detallados", "description": "Exporta y analiza los datos" }
+      }
+    }
+  },
+  "details": { "title": "Detalle de funciones", "description": "Conoce más a fondo las funciones de AnyRent", "mobileApp": "App móvil", "webPortal": "Portal web" },
+  "shared": {
+    "badge": "Funciones comunes",
+    "title": "Funciones comunes",
+    "description": "Disponibles tanto en la app móvil como en el portal web",
+    "features": {
+      "cloudSync": { "title": "Sincronización en la nube", "description": "Los datos se sincronizan automáticamente en todos los dispositivos. Un cambio en uno aparece al instante en los demás." },
+      "dataSecurity": { "title": "Seguridad de los datos", "description": "Tus datos se cifran y se guardan de forma segura en la nube. Las copias automáticas evitan que se pierdan." },
+      "realTime": { "title": "Actualización en tiempo real", "description": "Cada cambio se refleja al momento en todos los dispositivos. Tu equipo trabaja siempre con datos sincronizados." },
+      "scalable": { "title": "Escalable", "description": "El sistema crece con tu negocio, desde una tienda pequeña hasta una gran cadena." }
+    }
+  },
+  "cta": { "title": "¿Listo para empezar?", "description": "Únete a las tiendas de alquiler que ya usan AnyRent", "downloadApp": "Descargar la app", "tryWebPortal": "Probar el portal web" },
+  "footer": { "description": "AnyRent - software de gestión para tiendas de alquiler", "home": "Inicio", "pricing": "Precios", "login": "Iniciar sesión", "copyright": "© 2024 AnyRent. Todos los derechos reservados." },
+  "screens": { "order": "Gestión de pedidos", "product": "Gestión de artículos", "calendar": "Calendario y agenda", "users": "Gestión de usuarios", "webCalendar": "Calendario de pedidos", "webOrderDetail": "Detalle del pedido", "webOrder": "Gestión de pedidos", "prev": "Captura anterior", "next": "Captura siguiente", "goTo": "Ver captura {index}" }
+}
