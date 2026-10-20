@@ -77,6 +77,27 @@
       "backToShop": "お店に戻る",
       "total": "概算",
       "items": "商品"
+    },
+    "imageSearch": {
+      "title": "見本の写真はありますか？AIで似た商品を探す",
+      "hintDesktop": "ここに画像をドラッグ＆ドロップするか、パソコンから選んでください。画像は検索だけに使い、保存しません。",
+      "hintMobile": "見本を撮影するか写真を選ぶと、店内の似た商品をすぐ探せます。",
+      "choose": "写真を選ぶ",
+      "cameraButton": "画像で探す",
+      "yourPhoto": "あなたの写真",
+      "searching": "似た商品を探しています…",
+      "resultsTitle": "写真に最も近い商品 · {count}点",
+      "similar": "{percent}% 一致",
+      "inStockToday": "本日在庫あり",
+      "outToday": "本日在庫なし",
+      "empty": "店内に似た商品が見つかりませんでした。写真をお店に送って相談してください。",
+      "sendZalo": "Zaloでお店に写真を送る",
+      "invalidImage": "画像が無効です。JPG、PNG、WebPの画像を選んでください。",
+      "tooLarge": "画像が大きすぎます。15MB未満の画像を選んでください。",
+      "errorRateLimited": "検索回数が多すぎます。数分後にもう一度お試しください。",
+      "errorBusy": "画像検索が混み合っています。数分後にもう一度お試しください。",
+      "errorNetwork": "接続できません。ネットワークを確認してもう一度お試しください。",
+      "errorGeneric": "現在検索できません。もう一度お試しください。"
     }
   }
 }

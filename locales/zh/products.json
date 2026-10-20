@@ -77,6 +77,27 @@
       "backToShop": "返回店铺",
       "total": "预估",
       "items": "商品"
+    },
+    "imageSearch": {
+      "title": "有样图吗？用 AI 找相似商品",
+      "hintDesktop": "将图片拖到这里，或从电脑中选择。图片仅用于搜索，不会保存。",
+      "hintMobile": "拍摄或选择样图，立即找出店内相似的商品。",
+      "choose": "选择图片",
+      "cameraButton": "以图搜索",
+      "yourPhoto": "你的图片",
+      "searching": "正在查找相似商品…",
+      "resultsTitle": "与你的图片最相似 · {count} 件",
+      "similar": "相似度 {percent}%",
+      "inStockToday": "今天可租",
+      "outToday": "今天已租完",
+      "empty": "店内暂未找到相似商品。把图片发给店铺咨询吧。",
+      "sendZalo": "通过 Zalo 把图片发给店铺",
+      "invalidImage": "图片无效。请选择 JPG、PNG 或 WebP 图片。",
+      "tooLarge": "图片过大。请选择小于 15 MB 的图片。",
+      "errorRateLimited": "搜索次数过多。请几分钟后再试。",
+      "errorBusy": "以图搜索繁忙。请几分钟后再试。",
+      "errorNetwork": "无法连接。请检查网络后重试。",
+      "errorGeneric": "暂时无法搜索。请重试。"
     }
   }
 }
