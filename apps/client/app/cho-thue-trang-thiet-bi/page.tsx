@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Phần mềm Quản lý Cho thuê Trang thiết bị | AnyRent',
+  title: { absolute: 'Phần mềm Quản lý Cho thuê Trang thiết bị | AnyRent' },
   description: 'Phần mềm quản lý cho thuê trang thiết bị, máy móc, dụng cụ chuyên nghiệp. Theo dõi tình trạng thiết bị, lịch bảo trì, đơn hàng và khách hàng. Dùng thử miễn phí.',
   keywords: [
     'phần mềm quản lý cho thuê trang thiết bị',

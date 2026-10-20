@@ -5,7 +5,7 @@ import { publicPageAlternates } from '../../lib/public-content/public-pages'
 const PATH = '/tim-san-pham-bang-hinh-anh'
 
 export const metadata: Metadata = {
-  title: 'Tìm sản phẩm cho thuê bằng hình ảnh AI | AnyRent',
+  title: { absolute: 'Tìm sản phẩm cho thuê bằng hình ảnh AI | AnyRent' },
   description:
     'AI Image Search của AnyRent: chụp ảnh áo dài, áo cưới hoặc thiết bị — tìm ngay sản phẩm tương tự trong kho, kèm tồn kho và giá thuê.',
   keywords: [

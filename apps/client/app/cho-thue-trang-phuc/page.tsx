@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Phần mềm Quản lý Cho thuê Trang phục | AnyRent',
+  title: { absolute: 'Phần mềm Quản lý Cho thuê Trang phục | AnyRent' },
   description: 'Phần mềm quản lý cho thuê trang phục biểu diễn, cosplay, trang phục sự kiện, đồng phục. Quản lý kho, đơn hàng, lịch đặt và khách hàng. Dùng thử miễn phí.',
   keywords: [
     'phần mềm quản lý cho thuê trang phục',

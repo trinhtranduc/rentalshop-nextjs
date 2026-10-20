@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { publicPageAlternates } from '../../lib/public-content/public-pages';
+import { loadPublicPlans } from '../../lib/public-content/public-plans';
 import PricingClient from './PricingClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop';
 
 export const metadata: Metadata = {
-  title: 'Bảng giá Phần mềm Quản lý Cho thuê | AnyRent',
+  // #1147: absolute, the root layout template would add a second "| AnyRent"
+  title: { absolute: 'Bảng giá Phần mềm Quản lý Cho thuê | AnyRent' },
   description:
     'Bảng giá AnyRent - Phần mềm quản lý cửa hàng cho thuê. Gói Basic, Professional, Enterprise. Dùng thử miễn phí 14 ngày. Giá chỉ từ 99.000đ/tháng.',
   keywords: [
@@ -104,7 +106,8 @@ const pricingFaqJsonLd = {
   ],
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const plans = await loadPublicPlans();
   return (
     <>
       <script
@@ -115,7 +118,7 @@ export default function PricingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingFaqJsonLd) }}
       />
-      <PricingClient />
+      <PricingClient plans={plans} />
     </>
   );
 }
