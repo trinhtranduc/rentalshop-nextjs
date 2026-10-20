@@ -221,3 +221,19 @@ describe('links on localized pages', () => {
     expect(publicHref(locale, 'industry:cho-thue-ao-dai')).toBe(`/${locale}/features`);
   });
 });
+
+describe('#1114 legacy redirects', () => {
+  it('no redirect sends a localized page to the Vietnamese page any more', async () => {
+    const config = require('../apps/client/next.config.js');
+    const { getMiddlewareMatchers } = require('next/dist/build/analysis/get-page-static-info');
+    const redirects: Array<{ source: string; destination: string }> = await config.redirects();
+    const hit = (path: string) =>
+      redirects.find((r) => getMiddlewareMatchers([r.source], {}).some((m: { regexp: string }) => new RegExp(m.regexp).test(path)));
+    for (const locale of NOT_VI) {
+      for (const page of PUBLIC_PAGES) expect(hit(`/${locale}/${page}`)).toBeUndefined();
+      expect(hit(`/${locale}/tim-san-pham-bang-hinh-anh`)?.destination).toBe('/:locale/image-search');
+    }
+    expect(hit('/vi/pricing')?.destination).toBe('/:page');
+    expect(hit('/vi/image-search')?.destination).toBe('/tim-san-pham-bang-hinh-anh');
+  });
+});
