@@ -4147,8 +4147,13 @@ final class AnyRentE2ETests: XCTestCase {
         reject.tap()
         let reason = e2e.button(["Hết đồ", "Out of stock"])
         XCTAssertTrue(reason.waitForExistence(timeout: 5), "reason sheet")
-        e2e.shot("booking-07-reject-sheet")
+        // #1137: the sheet has a title and a description; pick the reason, then send
+        e2e.soft(app.staticTexts["booking.reject.sheet"].exists, "reject sheet title")
         reason.tap()
+        e2e.shot("booking-07-reject-sheet")
+        let send = app.buttons["booking.reject.send"]
+        XCTAssertTrue(send.waitForExistence(timeout: 5), "Từ chối in the sheet")
+        send.tap()
         sleep(3)
         let rejected = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Từ chối", "Rejected"])).firstMatch
         XCTAssertTrue(rejected.waitForExistence(timeout: 10), "status Từ chối")

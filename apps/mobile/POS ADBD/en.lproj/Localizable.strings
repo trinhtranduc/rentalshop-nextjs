@@ -2774,9 +2774,9 @@
 "cart.multi.limit" = "10 carts are open. Close one before editing an order.";
 
 /* #1124 Online booking */
-"booking.chip" = "Online bookings";
-"booking.title" = "Online bookings";
-"booking.detail.title" = "Online booking";
+"booking.chip" = "Online orders";
+"booking.title" = "Online orders";
+"booking.detail.title" = "Online order";
 "booking.status.pending" = "Waiting";
 "booking.status.confirmed" = "Confirmed";
 "booking.status.rejected" = "Rejected";
@@ -2804,3 +2804,6 @@
 "booking.reject.other" = "Other";
 "booking.reject.otherPlaceholder" = "Reason the customer will see";
 "booking.cancel" = "Cancel";
+"booking.reject.sheetTitle" = "Reject online order";
+"booking.reject.sheetDescription" = "Pick a reason to tell the customer. The customer will see this reason.";
+"booking.reject.notePlaceholder" = "Note for the customer (optional)";

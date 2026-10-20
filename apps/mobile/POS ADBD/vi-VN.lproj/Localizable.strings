@@ -2772,9 +2772,9 @@
 "cart.multi.limit" = "Đang mở 10 giỏ. Hãy đóng bớt một giỏ rồi sửa đơn.";
 
 /* #1124 Đặt online */
-"booking.chip" = "Đặt online";
-"booking.title" = "Đặt online";
-"booking.detail.title" = "Yêu cầu đặt online";
+"booking.chip" = "Đơn online";
+"booking.title" = "Đơn online";
+"booking.detail.title" = "Đơn online";
 "booking.status.pending" = "Chờ xác nhận";
 "booking.status.confirmed" = "Đã xác nhận";
 "booking.status.rejected" = "Từ chối";
@@ -2802,3 +2802,6 @@
 "booking.reject.other" = "Khác";
 "booking.reject.otherPlaceholder" = "Lý do khách sẽ thấy";
 "booking.cancel" = "Huỷ";
+"booking.reject.sheetTitle" = "Từ chối đơn online";
+"booking.reject.sheetDescription" = "Chọn lý do để báo cho khách. Khách sẽ nhận được lý do này.";
+"booking.reject.notePlaceholder" = "Ghi chú cho khách (không bắt buộc)";

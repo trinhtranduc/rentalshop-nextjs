@@ -2061,9 +2061,9 @@
         <item quantity="other">%1$d giỏ</item>
     </plurals>
     <!-- #1124 Đặt online -->
-    <string name="booking_chip">Đặt online</string>
-    <string name="booking_title">Đặt online</string>
-    <string name="booking_detail_title">Yêu cầu đặt online</string>
+    <string name="booking_chip">Đơn online</string>
+    <string name="booking_title">Đơn online</string>
+    <string name="booking_detail_title">Đơn online</string>
     <string name="booking_status_pending">Chờ xác nhận</string>
     <string name="booking_status_confirmed">Đã xác nhận</string>
     <string name="booking_status_rejected">Từ chối</string>
@@ -2092,4 +2092,7 @@
     <string name="booking_reject_other_placeholder">Lý do khách sẽ thấy</string>
     <string name="booking_cancel">Huỷ</string>
     <string name="booking_load_failed">Không tải được danh sách yêu cầu</string>
+    <string name="booking_reject_sheet_title">Từ chối đơn online</string>
+    <string name="booking_reject_sheet_description">Chọn lý do để báo cho khách. Khách sẽ nhận được lý do này.</string>
+    <string name="booking_reject_note_placeholder">Ghi chú cho khách (không bắt buộc)</string>
 </resources>

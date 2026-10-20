@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,18 +25,27 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -54,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
@@ -279,7 +293,6 @@ fun BookingRequestDetailScreen(requestId: Int, onBack: () -> Unit, onOpenCart: (
     var busy by remember { mutableStateOf(false) }
     var attempt by remember { mutableIntStateOf(0) }
     var askReason by remember { mutableStateOf(false) }
-    var askOther by remember { mutableStateOf(false) }
     val limitText = stringResource(R.string.v2_cart_multi_limit)
     LaunchedEffect(requestId, attempt) {
         withContext(Dispatchers.IO) { ApiClient.get().bookingRequest(requestId) }
@@ -377,58 +390,90 @@ fun BookingRequestDetailScreen(requestId: Int, onBack: () -> Unit, onOpenCart: (
     }
 
     if (askReason) {
-        AlertDialog(
-            onDismissRequest = { askReason = false },
-            title = { Text(stringResource(R.string.booking_reject_title)) },
-            text = {
-                Column {
-                    BookingRejectReason.entries.forEach { reason ->
-                        Text(
-                            stringResource(reasonLabel(reason)),
-                            fontSize = DS.TextSize.Body,
-                            color = DS.Colors.Text,
-                            modifier = Modifier.fillMaxWidth()
-                                .clickable {
-                                    askReason = false
-                                    if (reason == BookingRejectReason.OTHER) askOther = true else reject(reason, null)
-                                }
-                                .padding(vertical = 14.dp)
-                                .testTag("booking.reject.${reason.apiValue}"),
-                        )
-                    }
-                }
+        RejectSheet(
+            onDismiss = { askReason = false },
+            onSend = { reason, note ->
+                askReason = false
+                reject(reason, note)
             },
-            confirmButton = {},
-            dismissButton = { TextButton(onClick = { askReason = false }) { Text(stringResource(R.string.booking_cancel)) } },
         )
     }
+}
 
-    if (askOther) {
-        var note by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { askOther = false },
-            title = { Text(stringResource(R.string.booking_reject_other)) },
-            text = {
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    placeholder = { Text(stringResource(R.string.booking_reject_other_placeholder)) },
-                    modifier = Modifier.fillMaxWidth().testTag("booking.reject.note"),
-                )
-            },
-            confirmButton = {
-                // "Khác" needs a few words the customer will read
-                TextButton(
-                    onClick = {
-                        askOther = false
-                        reject(BookingRejectReason.OTHER, note.trim())
-                    },
-                    enabled = note.isNotBlank(),
-                    modifier = Modifier.testTag("booking.reject.send"),
-                ) { Text(stringResource(R.string.booking_action_reject)) }
-            },
-            dismissButton = { TextButton(onClick = { askOther = false }) { Text(stringResource(R.string.booking_cancel)) } },
-        )
+/**
+ * #1137 "Từ chối đơn online" as a bottom sheet (iOS `BookingRejectSheetViewController`): title, a line saying the
+ * customer sees the reason, one row per reason (tap picks it), a note for the customer (needed for "Khác"), "Từ chối".
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RejectSheet(onDismiss: () -> Unit, onSend: (BookingRejectReason, String?) -> Unit) {
+    var selected by remember { mutableStateOf<BookingRejectReason?>(null) }
+    var note by remember { mutableStateOf("") }
+    val ready = selected != null && (selected != BookingRejectReason.OTHER || note.isNotBlank())
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = DS.Colors.Surface,
+    ) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp).padding(bottom = 24.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.booking_reject_sheet_title), fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                    color = DS.Colors.Text, modifier = Modifier.weight(1f).testTag("booking.reject.sheet"))
+                val closeLabel = stringResource(R.string.booking_cancel)
+                Box(
+                    Modifier.size(36.dp).clip(CircleShape).background(DS.Colors.Divider).clickable(onClickLabel = closeLabel, onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Close, contentDescription = closeLabel, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(stringResource(R.string.booking_reject_sheet_description), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            Spacer(Modifier.height(16.dp))
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).border(1.dp, DS.Colors.Border, RoundedCornerShape(12.dp))) {
+                BookingRejectReason.entries.forEachIndexed { index, reason ->
+                    if (index > 0) HorizontalDivider(color = DS.Colors.Divider)
+                    val on = reason == selected
+                    Row(
+                        Modifier.fillMaxWidth().height(52.dp)
+                            .selectable(selected = on, onClick = { selected = reason })
+                            .padding(horizontal = 16.dp)
+                            .testTag("booking.reject.${reason.apiValue}"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(stringResource(reasonLabel(reason)), fontSize = DS.TextSize.Body,
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+                        if (on) Icon(Icons.Outlined.Check, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                singleLine = true,
+                placeholder = {
+                    // "Khác" needs a few words the customer will read
+                    Text(stringResource(if (selected == BookingRejectReason.OTHER) R.string.booking_reject_other_placeholder else R.string.booking_reject_note_placeholder))
+                },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().testTag("booking.reject.note"),
+            )
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = { selected?.let { onSend(it, note.trim().ifEmpty { null }) } },
+                enabled = ready,
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                modifier = Modifier.fillMaxWidth().height(52.dp).testTag("booking.reject.send"),
+            ) {
+                Text(stringResource(R.string.booking_action_reject), fontSize = DS.TextSize.Input, fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
 
