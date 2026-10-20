@@ -3,8 +3,8 @@
   "meta": {
     "pricing": {
       "title": "Tarifs du logiciel de gestion de location | AnyRent",
-      "description": "Tarifs AnyRent pour les magasins de location : formules Basic, Professional et Enterprise. Essai gratuit de 14 jours. À partir de 79 000 VND par mois.",
-      "ogDescription": "Formules Basic, Professional et Enterprise. Essai gratuit de 14 jours. À partir de 79 000 VND par mois.",
+      "description": "Tarifs AnyRent pour les magasins de location : formules Basic, Professional et Enterprise. Essai gratuit de 14 jours. Des formules mensuelles abordables.",
+      "ogDescription": "Formules Basic, Professional et Enterprise. Essai gratuit de 14 jours. Des formules mensuelles abordables.",
       "name": "Tarifs AnyRent - logiciel de gestion de location",
       "breadcrumb": "Tarifs"
     },
@@ -32,7 +32,7 @@
   },
   "pricingFaq": {
     "q1": "Le logiciel de gestion de location AnyRent est-il gratuit ?",
-    "a1": "AnyRent propose un essai gratuit de 14 jours avec toutes les fonctionnalités. Ensuite, vous choisissez la formule qui vous convient, à partir de 79 000 VND par mois.",
+    "a1": "AnyRent propose un essai gratuit de 14 jours avec toutes les fonctionnalités. Ensuite, vous choisissez la formule mensuelle adaptée à votre magasin.",
     "q2": "Puis-je changer de formule plus tard ?",
     "a2": "Oui, vous pouvez passer à une formule supérieure à tout moment. La facturation est calculée au prorata et vous accédez tout de suite aux fonctionnalités supplémentaires.",
     "q3": "Que se passe-t-il si je dépasse les limites de ma formule ?",
