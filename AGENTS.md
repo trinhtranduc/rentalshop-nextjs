@@ -116,6 +116,7 @@ Domain (`.claude/skills/`):
 - `api-compat-review` — any API, shared-package, rule, migration, or API env change (installed apps)
 - `bug-fix-tdd` — any bug or hotfix
 - `mobile-e2e-local` — test the iOS/Android apps end to end on a simulator against a local seeded API
+- `translate-post` — put a published Vietnamese blog post into every public language (owner publishes)
 
 ## Things agents get wrong
 
