@@ -11,7 +11,12 @@
     "subtitle": "软件与系统",
     "description": "领先的租赁店管理软件和租赁管理系统。适用于各种租赁业务的综合解决方案：旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁管理。具有iOS 和Web多平台支持的现代商店管理软件。",
     "downloadApp": "下载应用",
-    "tryWebPortal": "试用Web门户"
+    "tryWebPortal": "试用Web门户",
+    "tagline": "在一个应用中管理租赁订单、日程和商品 — 免费试用。",
+    "trustStores": "500+ 家门店在用",
+    "trustRating": "评分 4.9/5",
+    "trustSecure": "安全可靠",
+    "imageAlt": "在精品店用手机通过 AnyRent 管理租赁店"
   },
   "download": {
     "title": "所有平台可用",
@@ -39,7 +44,9 @@
     "videoAlt": "AnyRent应用AI图像搜索功能演示视频",
     "queryAlt": "用于以图搜物的奥黛样片",
     "matchesAlt": "AI图像搜索匹配到的三件租赁服饰",
-    "phoneAlt": "显示AI以图搜物结果的AnyRent手机界面"
+    "phoneAlt": "显示AI以图搜物结果的AnyRent手机界面",
+    "snap": "拍照",
+    "learnMore": "了解 AI 以图找货 →"
   },
   "duplicatePrevention": {
     "badge": "防重复预订",
@@ -65,7 +72,7 @@
     "feature2Desc": "在合适时机切换到 PICKUPED / RETURNED，并与日历、库存同步。",
     "feature3Title": "一步到位跟踪",
     "feature3Desc": "在订单详情查看历史、付款与备注 — 减少遗漏与反复询问。",
-    "flowLabel": "RESERVED → PICKUP → RETURN",
+    "flowLabel": "已预订 → 租赁中 → 已归还",
     "phoneAlt": "AnyRent 租赁订单详情界面",
     "flowAlt": "预订、已取、已还三种状态"
   },
@@ -121,7 +128,8 @@
     "support": "24/7支持",
     "supportDesc": "随时通过租赁店管理软件的专门客户支持团队获得帮助。提供24/7支持的租赁管理系统。",
     "activeStores": "活跃商店",
-    "rating": "4.9/5评分"
+    "rating": "4.9/5评分",
+    "badge": "为什么选择我们"
   },
   "stats": {
     "activeStores": "活跃商店",
@@ -168,7 +176,8 @@
         "name": "赵明",
         "role": "相机租赁店老板"
       }
-    }
+    },
+    "badge": "客户评价"
   },
   "cta": {
     "title": "准备开始了吗？",
@@ -176,7 +185,8 @@
   },
   "blog": {
     "title": "最新文章",
-    "subtitle": "探索租赁业务的见解与实用技巧"
+    "subtitle": "探索租赁业务的见解与实用技巧",
+    "badge": "博客"
   },
   "faq": {
     "title": "关于租赁店管理软件的常见问题",
@@ -268,7 +278,9 @@
     "addonDescription": "用于增加限制（门店、用户、产品、客户、订单）的计划附加组件价格",
     "addonPriceValue": "联系了解价格",
     "close": "关闭",
-    "additionalPricingNote": "了解更多关于附加账户和附加组件定价的信息"
+    "additionalPricingNote": "了解更多关于附加账户和附加组件定价的信息",
+    "priceLabel": "价格：",
+    "additionalPricingSr": "追加账号和附加包的价格说明"
   },
   "footer": {
     "description": "AnyRent - 越南领先的租赁店管理软件和租赁管理系统。适用于旗袍租赁、婚纱租赁、设备租赁、车辆租赁、演出服装租赁、打印机租赁的专业解决方案。高效的租赁订单管理、租赁库存管理和客户管理。",
@@ -290,7 +302,63 @@
       "terms": "条款",
       "privacy": "隐私"
     },
-    "copyright": "© 2024 AnyRent. 保留所有权利。"
+    "copyright": "© 2024 AnyRent. 保留所有权利。",
+    "imageSearch": "AI 以图找货",
+    "industries": {
+      "title": "行业",
+      "aoDai": "奥黛租赁",
+      "weddingDress": "婚纱租赁",
+      "equipment": "设备租赁",
+      "costume": "服装租赁"
+    }
+  },
+  "industries": {
+    "title": "行业解决方案",
+    "subtitle": "针对各类租赁业务优化",
+    "aoDai": {
+      "title": "奥黛租赁",
+      "desc": "按尺码、颜色管理库存。预订日程避免重复订单。"
+    },
+    "weddingDress": {
+      "title": "婚纱租赁",
+      "desc": "系列管理、试穿预约、婚礼套餐。"
+    },
+    "equipment": {
+      "title": "设备租赁",
+      "desc": "跟踪设备状态、保养计划和租赁合同。"
+    },
+    "costume": {
+      "title": "服装租赁",
+      "desc": "演出、Cosplay、活动。管理尺码和配饰。"
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "通过 Zalo 联系",
+    "whatsappTitle": "通过 WhatsApp 联系",
+    "telegramTitle": "通过 Telegram 联系",
+    "zaloQrTitle": "扫描二维码，通过 Zalo 联系我们",
+    "zaloQrHint": "打开 Zalo 应用，扫描上方二维码与我们联系",
+    "openZalo": "打开 Zalo",
+    "close": "关闭",
+    "zaloQrAlt": "Zalo 二维码",
+    "greeting": "您好！我想了解 AnyRent。"
+  },
+  "sections": {
+    "hero": "首页介绍",
+    "aiSearch": "AI 以图找货功能",
+    "duplicatePrevention": "防重复订单功能",
+    "orderWorkflow": "租赁订单流程",
+    "features": "功能",
+    "customSolution": "定制方案咨询",
+    "stats": "数据",
+    "testimonials": "客户评价",
+    "cta": "开始使用",
+    "faq": "常见问题",
+    "pricing": "价格方案",
+    "blog": "博客"
   }
 }
 

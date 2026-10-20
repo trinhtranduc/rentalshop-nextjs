@@ -11,7 +11,12 @@
     "subtitle": "Chuyên nghiệp",
     "description": "Phần mềm quản lý cửa hàng cho thuê hàng đầu tại Việt Nam. Hệ thống quản lý cho thuê toàn diện phù hợp cho nhiều ngành nghề: quản lý cho thuê áo dài, quản lý cho thuê áo cưới, quản lý cho thuê trang thiết bị, quản lý cho thuê xe, quản lý cho thuê trang phục biểu diễn, quản lý cho thuê máy in. Giải pháp quản lý cửa hàng cho thuê hiện đại, dễ sử dụng với hỗ trợ đa nền tảng iOS và Web.",
     "downloadApp": "Tải ứng dụng",
-    "tryWebPortal": "Dùng thử Web Portal"
+    "tryWebPortal": "Dùng thử Web Portal",
+    "tagline": "Quản lý đơn thuê, lịch & sản phẩm trên một app — dùng thử miễn phí.",
+    "trustStores": "500+ cửa hàng đang dùng",
+    "trustRating": "Đánh giá 4.9/5",
+    "trustSecure": "An toàn & ổn định",
+    "imageAlt": "Quản lý cửa hàng cho thuê bằng AnyRent trên điện thoại tại cửa hàng"
   },
   "download": {
     "title": "Có sẵn trên mọi nền tảng",
@@ -39,7 +44,9 @@
     "videoAlt": "Demo tìm sản phẩm cho thuê bằng hình ảnh AI trên AnyRent",
     "queryAlt": "Ảnh áo dài mẫu dùng để tìm kiếm bằng hình",
     "matchesAlt": "Ba trang phục cho thuê tương tự được AI gợi ý",
-    "phoneAlt": "Màn hình điện thoại AnyRent hiển thị kết quả tìm bằng ảnh AI"
+    "phoneAlt": "Màn hình điện thoại AnyRent hiển thị kết quả tìm bằng ảnh AI",
+    "snap": "Chụp",
+    "learnMore": "Tìm hiểu tìm sản phẩm bằng hình ảnh AI →"
   },
   "duplicatePrevention": {
     "badge": "Chống trùng lịch",
@@ -65,7 +72,7 @@
     "feature2Desc": "Chuyển trạng thái PICKUPED / RETURNED đúng lúc, gắn với lịch và tồn kho thực tế.",
     "feature3Title": "Theo dõi mọi bước trên một màn hình",
     "feature3Desc": "Xem lịch sử đơn, thanh toán và ghi chú ngay trên chi tiết đơn — giảm sót bước, giảm hỏi lại.",
-    "flowLabel": "RESERVED → PICKUP → RETURN",
+    "flowLabel": "Đã đặt → Đang thuê → Đã trả",
     "phoneAlt": "Màn hình chi tiết đơn thuê trên AnyRent",
     "flowAlt": "Ba trạng thái đơn thuê: đặt trước, đã lấy, đã trả"
   },
@@ -121,7 +128,8 @@
     "support": "Hỗ trợ 24/7",
     "supportDesc": "Nhận trợ giúp bất cứ khi nào bạn cần với đội ngũ hỗ trợ khách hàng chuyên dụng của phần mềm quản lý cửa hàng cho thuê. Hệ thống quản lý cho thuê với hỗ trợ 24/7.",
     "activeStores": "Cửa hàng hoạt động",
-    "rating": "Đánh giá 4.9/5"
+    "rating": "Đánh giá 4.9/5",
+    "badge": "Vì sao chọn AnyRent"
   },
   "stats": {
     "activeStores": "Cửa hàng hoạt động",
@@ -168,7 +176,8 @@
         "name": "Trần Văn Hùng",
         "role": "Chủ cửa hàng cho thuê máy ảnh"
       }
-    }
+    },
+    "badge": "Khách hàng nói gì"
   },
   "cta": {
     "title": "Sẵn sàng bắt đầu?",
@@ -176,7 +185,8 @@
   },
   "blog": {
     "title": "Bài viết mới nhất",
-    "subtitle": "Khám phá những kiến thức và mẹo hữu ích cho doanh nghiệp cho thuê của bạn"
+    "subtitle": "Khám phá những kiến thức và mẹo hữu ích cho doanh nghiệp cho thuê của bạn",
+    "badge": "Bài viết"
   },
   "faq": {
     "title": "Câu hỏi thường gặp về Phần mềm Quản lý Cửa hàng Cho thuê",
@@ -268,7 +278,9 @@
     "addonDescription": "Giá cho các addon gói để tăng giới hạn (cửa hàng, người dùng, sản phẩm, khách hàng, đơn hàng)",
     "addonPriceValue": "Liên hệ để biết giá",
     "close": "Đóng",
-    "additionalPricingNote": "Tìm hiểu thêm về giá tài khoản bổ sung và addon"
+    "additionalPricingNote": "Tìm hiểu thêm về giá tài khoản bổ sung và addon",
+    "priceLabel": "Giá:",
+    "additionalPricingSr": "Thông tin giá thêm cho tài khoản và gói mở rộng"
   },
   "footer": {
     "description": "AnyRent - Phần mềm quản lý cửa hàng cho thuê và hệ thống quản lý cho thuê hàng đầu tại Việt Nam. Giải pháp chuyên nghiệp cho quản lý cho thuê áo dài, cho thuê áo cưới, cho thuê trang thiết bị, cho thuê xe, cho thuê trang phục biểu diễn, cho thuê máy in. Quản lý đơn hàng cho thuê, quản lý kho cho thuê và quản lý khách hàng hiệu quả.",
@@ -290,7 +302,63 @@
       "terms": "Điều khoản",
       "privacy": "Quyền riêng tư"
     },
-    "copyright": "© 2024 AnyRent. Bảo lưu mọi quyền."
+    "copyright": "© 2024 AnyRent. Bảo lưu mọi quyền.",
+    "imageSearch": "Tìm bằng hình ảnh AI",
+    "industries": {
+      "title": "Ngành nghề",
+      "aoDai": "Cho thuê áo dài",
+      "weddingDress": "Cho thuê áo cưới",
+      "equipment": "Cho thuê thiết bị",
+      "costume": "Cho thuê trang phục"
+    }
+  },
+  "industries": {
+    "title": "Giải pháp theo ngành nghề",
+    "subtitle": "Phần mềm được tối ưu cho từng loại hình kinh doanh cho thuê",
+    "aoDai": {
+      "title": "Cho thuê Áo dài",
+      "desc": "Quản lý kho theo size, màu. Lịch đặt tránh trùng đơn."
+    },
+    "weddingDress": {
+      "title": "Cho thuê Áo cưới",
+      "desc": "Bộ sưu tập, lịch hẹn thử, gói combo cưới trọn vẹn."
+    },
+    "equipment": {
+      "title": "Cho thuê Thiết bị",
+      "desc": "Theo dõi tình trạng, lịch bảo trì, hợp đồng cho thuê."
+    },
+    "costume": {
+      "title": "Cho thuê Trang phục",
+      "desc": "Biểu diễn, cosplay, sự kiện. Quản lý size và phụ kiện."
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Liên hệ Zalo",
+    "whatsappTitle": "Liên hệ WhatsApp",
+    "telegramTitle": "Liên hệ Telegram",
+    "zaloQrTitle": "Quét mã QR để liên hệ Zalo",
+    "zaloQrHint": "Mở ứng dụng Zalo và quét mã QR code bên trên để kết nối với chúng tôi",
+    "openZalo": "Mở Zalo",
+    "close": "Đóng",
+    "zaloQrAlt": "Mã QR Zalo",
+    "greeting": "Xin chào! Tôi muốn tìm hiểu về AnyRent."
+  },
+  "sections": {
+    "hero": "Phần mở đầu",
+    "aiSearch": "Tính năng tìm bằng hình ảnh AI",
+    "duplicatePrevention": "Tính năng chống trùng đơn",
+    "orderWorkflow": "Tính năng quy trình đơn thuê",
+    "features": "Tính năng",
+    "customSolution": "Liên hệ giải pháp riêng",
+    "stats": "Số liệu",
+    "testimonials": "Khách hàng nói gì",
+    "cta": "Bắt đầu",
+    "faq": "Câu hỏi thường gặp",
+    "pricing": "Bảng giá",
+    "blog": "Bài viết"
   }
 }
 

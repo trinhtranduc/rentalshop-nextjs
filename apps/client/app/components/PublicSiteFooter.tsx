@@ -58,33 +58,33 @@ export default function PublicSiteFooter() {
               </li>
               <li>
                 <Link href="/tim-san-pham-bang-hinh-anh" className="text-sm text-gray-400 transition-colors hover:text-white">
-                  Tìm bằng hình ảnh AI
+                  {t('imageSearch')}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div className="md:col-span-2">
-            <h3 className="mb-4 text-lg font-semibold">Ngành nghề</h3>
+            <h3 className="mb-4 text-lg font-semibold">{t('industries.title')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/cho-thue-ao-dai" className="text-sm text-gray-400 transition-colors hover:text-white">
-                  Cho thuê áo dài
+                  {t('industries.aoDai')}
                 </Link>
               </li>
               <li>
                 <Link href="/cho-thue-ao-cuoi" className="text-sm text-gray-400 transition-colors hover:text-white">
-                  Cho thuê áo cưới
+                  {t('industries.weddingDress')}
                 </Link>
               </li>
               <li>
                 <Link href="/cho-thue-trang-thiet-bi" className="text-sm text-gray-400 transition-colors hover:text-white">
-                  Cho thuê thiết bị
+                  {t('industries.equipment')}
                 </Link>
               </li>
               <li>
                 <Link href="/cho-thue-trang-phuc" className="text-sm text-gray-400 transition-colors hover:text-white">
-                  Cho thuê trang phục
+                  {t('industries.costume')}
                 </Link>
               </li>
             </ul>

@@ -11,7 +11,12 @@
     "subtitle": "ソフトウェアとシステム",
     "description": "トップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。様々なレンタル事業に対応する包括的なソリューション：アオザイレンタル、ウェディングドレスレンタル、設備レンタル、車両レンタル、衣装レンタル、プリンターレンタル管理。iOS、Webのマルチプラットフォームサポートを備えたモダンな店舗管理ソフトウェア。",
     "downloadApp": "アプリをダウンロード",
-    "tryWebPortal": "Webポータルを試す"
+    "tryWebPortal": "Webポータルを試す",
+    "tagline": "レンタル注文・カレンダー・商品をひとつのアプリで管理 — 無料でお試しいただけます。",
+    "trustStores": "500店舗以上が利用中",
+    "trustRating": "評価 4.9/5",
+    "trustSecure": "安全・安定",
+    "imageAlt": "ブティックでスマートフォンからレンタル店を管理する AnyRent"
   },
   "download": {
     "title": "すべてのプラットフォームで利用可能",
@@ -39,7 +44,9 @@
     "videoAlt": "AnyRentアプリのAI画像検索機能デモビデオ",
     "queryAlt": "ビジュアル検索クエリ用のアオザイ写真",
     "matchesAlt": "AI画像検索でマッチした3着のレンタル衣装",
-    "phoneAlt": "AI画像検索結果を表示するAnyRentのスマホ画面"
+    "phoneAlt": "AI画像検索結果を表示するAnyRentのスマホ画面",
+    "snap": "撮影",
+    "learnMore": "AI画像検索について詳しく →"
   },
   "duplicatePrevention": {
     "badge": "重複防止",
@@ -65,7 +72,7 @@
     "feature2Desc": "適切なタイミングでPICKUPED / RETURNEDへ更新し、カレンダーと在庫に同期。",
     "feature3Title": "すべてのステップを一画面で",
     "feature3Desc": "履歴・支払い・メモを注文詳細で確認 — 抜け漏れと問い合わせを減らします。",
-    "flowLabel": "RESERVED → PICKUP → RETURN",
+    "flowLabel": "予約済み → レンタル中 → 返却済み",
     "phoneAlt": "AnyRentのレンタル注文詳細画面",
     "flowAlt": "予約・受取・返却の3ステータス"
   },
@@ -121,7 +128,8 @@
     "support": "24/7サポート",
     "supportDesc": "レンタルショップ管理ソフトウェアの専用カスタマーサポートチームを通じて、いつでもサポートを受けることができます。24/7サポートを提供するレンタル管理システム。",
     "activeStores": "アクティブな店舗",
-    "rating": "4.9/5評価"
+    "rating": "4.9/5評価",
+    "badge": "選ばれる理由"
   },
   "stats": {
     "activeStores": "アクティブな店舗",
@@ -168,7 +176,8 @@
         "name": "伊藤大輔",
         "role": "カメラレンタルショップオーナー"
       }
-    }
+    },
+    "badge": "お客様の声"
   },
   "cta": {
     "title": "始める準備はできましたか？",
@@ -176,7 +185,8 @@
   },
   "blog": {
     "title": "最新の記事",
-    "subtitle": "レンタル事業に役立つ情報やヒントをご紹介します"
+    "subtitle": "レンタル事業に役立つ情報やヒントをご紹介します",
+    "badge": "ブログ"
   },
   "faq": {
     "title": "レンタルショップ管理ソフトウェアに関するよくある質問",
@@ -268,7 +278,9 @@
     "addonDescription": "制限を増やすためのプランアドオンの料金（店舗、ユーザー、製品、顧客、注文）",
     "addonPriceValue": "料金についてはお問い合わせください",
     "close": "閉じる",
-    "additionalPricingNote": "追加アカウントおよびアドオン料金の詳細"
+    "additionalPricingNote": "追加アカウントおよびアドオン料金の詳細",
+    "priceLabel": "料金：",
+    "additionalPricingSr": "追加アカウントとアドオンの料金について"
   },
   "footer": {
     "description": "AnyRent - ベトナムのトップクラスのレンタルショップ管理ソフトウェアとレンタル管理システム。アオザイレンタル、ウェディングドレスレンタル、設備レンタル、車両レンタル、衣装レンタル、プリンターレンタルの専門ソリューション。効率的なレンタル注文管理、レンタル在庫管理、顧客管理。",
@@ -290,7 +302,63 @@
       "terms": "利用規約",
       "privacy": "プライバシー"
     },
-    "copyright": "© 2024 AnyRent. 全著作権所有。"
+    "copyright": "© 2024 AnyRent. 全著作権所有。",
+    "imageSearch": "AI画像検索",
+    "industries": {
+      "title": "業種",
+      "aoDai": "アオザイレンタル",
+      "weddingDress": "ウェディングドレスレンタル",
+      "equipment": "機材レンタル",
+      "costume": "衣装レンタル"
+    }
+  },
+  "industries": {
+    "title": "業種別ソリューション",
+    "subtitle": "レンタル業態ごとに最適化",
+    "aoDai": {
+      "title": "アオザイレンタル",
+      "desc": "サイズ・色別の在庫管理。予約カレンダーでダブルブッキングを防止。"
+    },
+    "weddingDress": {
+      "title": "ウェディングドレスレンタル",
+      "desc": "コレクション、試着の予約、ウェディングのセットプラン。"
+    },
+    "equipment": {
+      "title": "機材レンタル",
+      "desc": "状態、メンテナンス予定、レンタル契約を管理。"
+    },
+    "costume": {
+      "title": "衣装レンタル",
+      "desc": "舞台、コスプレ、イベント。サイズと小物を管理。"
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Zaloで問い合わせ",
+    "whatsappTitle": "WhatsAppで問い合わせ",
+    "telegramTitle": "Telegramで問い合わせ",
+    "zaloQrTitle": "QRコードを読み取ってZaloで問い合わせ",
+    "zaloQrHint": "Zaloアプリを開き、上のQRコードを読み取ってください",
+    "openZalo": "Zaloを開く",
+    "close": "閉じる",
+    "zaloQrAlt": "ZaloのQRコード",
+    "greeting": "こんにちは！AnyRentについて詳しく知りたいです。"
+  },
+  "sections": {
+    "hero": "トップ",
+    "aiSearch": "AI画像検索機能",
+    "duplicatePrevention": "ダブルブッキング防止機能",
+    "orderWorkflow": "レンタル注文の流れ",
+    "features": "機能",
+    "customSolution": "カスタムソリューションのお問い合わせ",
+    "stats": "実績",
+    "testimonials": "お客様の声",
+    "cta": "はじめる",
+    "faq": "よくある質問",
+    "pricing": "料金プラン",
+    "blog": "ブログ"
   }
 }
 

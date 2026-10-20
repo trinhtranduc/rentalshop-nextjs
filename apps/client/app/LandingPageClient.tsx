@@ -389,7 +389,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
         <SoftSkyStage tone="mist" className="min-h-[88vh] flex items-center">
           <section
             className="relative w-full"
-            aria-label="Hero section"
+            aria-label={t('sections.hero')}
           >
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
               <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -407,7 +407,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                   </p>
                   <p className="sr-only">{t('hero.description')}</p>
                   <p className="text-base sm:text-lg text-slate-600 mb-10 max-w-xl leading-relaxed">
-                    Quản lý đơn thuê, lịch &amp; sản phẩm trên một app — dùng thử miễn phí.
+                    {t('hero.tagline')}
                   </p>
 
                   <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4">
@@ -428,15 +428,15 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                   <div className="mt-12 flex flex-wrap items-center gap-6 text-sm text-slate-600">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-emerald-600" />
-                      <span>500+ Active Stores</span>
+                      <span>{t('hero.trustStores')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4 text-amber-500 fill-current" />
-                      <span>4.9/5 Rating</span>
+                      <span>{t('hero.trustRating')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-sky-700" />
-                      <span>Secure &amp; Reliable</span>
+                      <span>{t('hero.trustSecure')}</span>
                     </div>
                   </div>
                 </div>
@@ -450,7 +450,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                     <div className="la-hero relative overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.35)] ring-1 ring-sky-100/70 bg-white">
                       <Image
                         src="/anyrent-landing-hero-soft.png"
-                        alt="AnyRent rental shop management on mobile in a boutique"
+                        alt={t('hero.imageAlt')}
                         width={1280}
                         height={720}
                         priority
@@ -468,7 +468,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
         {/* 3 main features — soft-sky spotlights */}
         <FeatureSpotlight
           id="ai-search"
-          ariaLabel="AI Image Search feature"
+          ariaLabel={t('sections.aiSearch')}
           badgeIcon={Brain}
           badge={t('aiSearch.badge')}
           title={t('aiSearch.title')}
@@ -484,7 +484,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
               href="/tim-san-pham-bang-hinh-anh"
               className="inline-flex items-center text-sm font-semibold text-sky-800 hover:text-sky-950 underline-offset-4 hover:underline"
             >
-              Tìm hiểu tìm sản phẩm bằng hình ảnh AI →
+              {t('aiSearch.learnMore')}
             </Link>
           }
           visual={
@@ -508,7 +508,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                 />
                 <div className="la-pill mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-sky-800 shadow-sm border border-sky-100 -rotate-6">
                   <Camera className="w-3 h-3" />
-                  <span>Snap</span>
+                  <span>{t('aiSearch.snap')}</span>
                 </div>
               </div>
               <div className="la-right absolute right-0 bottom-6 z-30 w-[72%] max-w-[280px] sm:right-0 sm:bottom-8">
@@ -529,7 +529,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
 
         <FeatureSpotlight
           id="duplicate-prevention"
-          ariaLabel="Duplicate order prevention feature"
+          ariaLabel={t('sections.duplicatePrevention')}
           badgeIcon={AlertTriangle}
           badge={t('duplicatePrevention.badge')}
           title={t('duplicatePrevention.title')}
@@ -574,7 +574,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
 
         <FeatureSpotlight
           id="order-workflow"
-          ariaLabel="Rental order workflow feature"
+          ariaLabel={t('sections.orderWorkflow')}
           badgeIcon={BarChart3}
           badge={t('orderWorkflow.badge')}
           title={t('orderWorkflow.title')}
@@ -615,7 +615,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
 
         {/* Features — secondary cards + view details */}
         <SoftSkyStage tone="white" className="py-24 md:py-28">
-        <section id="features" className="relative" aria-label="Features section">
+        <section id="features" className="relative" aria-label={t('sections.features')}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <Badge variant="outline" className={softSkyBadgeClass}>
@@ -687,14 +687,14 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
             </div>
             
             <div className="mt-16 pt-12 border-t border-sky-100">
-              <h3 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-3">Giải pháp theo ngành nghề</h3>
-              <p className="text-center text-slate-500 mb-10 max-w-xl mx-auto">Phần mềm được tối ưu cho từng loại hình kinh doanh cho thuê</p>
+              <h3 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-3">{t('industries.title')}</h3>
+              <p className="text-center text-slate-500 mb-10 max-w-xl mx-auto">{t('industries.subtitle')}</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                 {[
-                  { href: '/cho-thue-ao-dai', title: 'Cho thuê Áo dài', desc: 'Quản lý kho theo size, màu. Lịch đặt tránh trùng đơn.' },
-                  { href: '/cho-thue-ao-cuoi', title: 'Cho thuê Áo cưới', desc: 'Bộ sưu tập, lịch hẹn thử, gói combo cưới trọn vẹn.' },
-                  { href: '/cho-thue-trang-thiet-bi', title: 'Cho thuê Thiết bị', desc: 'Theo dõi tình trạng, lịch bảo trì, hợp đồng cho thuê.' },
-                  { href: '/cho-thue-trang-phuc', title: 'Cho thuê Trang phục', desc: 'Biểu diễn, cosplay, sự kiện. Quản lý size và phụ kiện.' },
+                  { href: '/cho-thue-ao-dai', title: t('industries.aoDai.title'), desc: t('industries.aoDai.desc') },
+                  { href: '/cho-thue-ao-cuoi', title: t('industries.weddingDress.title'), desc: t('industries.weddingDress.desc') },
+                  { href: '/cho-thue-trang-thiet-bi', title: t('industries.equipment.title'), desc: t('industries.equipment.desc') },
+                  { href: '/cho-thue-trang-phuc', title: t('industries.costume.title'), desc: t('industries.costume.desc') },
                 ].map((item) => (
                   <Card key={item.href} className={softSkyCardClass}>
                     <Link href={item.href} className="block">
@@ -713,7 +713,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
 
       {/* Custom Solution Contact Section */}
       <SoftSkyStage tone="white" className="py-24 md:py-28">
-      <section id="custom-solution" className="relative" aria-label="Custom solution contact section">
+      <section id="custom-solution" className="relative" aria-label={t('sections.customSolution')}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white border border-sky-100 shadow-sm mb-6">
@@ -808,7 +808,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                         <div className="flex-shrink-0">
                           <Image
                             src="/image/qrcode-0764774647.jpeg"
-                            alt="Zalo QR Code"
+                            alt={t('contactButtons.zaloQrAlt')}
                             width={100}
                             height={100}
                             className="rounded-lg border border-sky-100"
@@ -816,7 +816,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                         </div>
                         <div className="flex-1">
                           <p className="text-xs text-slate-500 mb-2">
-                            Quét mã QR để liên hệ Zalo
+                            {t('contactButtons.zaloQrTitle')}
                           </p>
                           <a
                             href="https://zalo.me/0764774647"
@@ -825,7 +825,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                             className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0068FF] text-white rounded-lg hover:bg-[#0052CC] transition-colors text-xs font-medium"
                           >
                             <MessageCircle className="w-3 h-3" />
-                            Mở Zalo
+                            {t('contactButtons.openZalo')}
                           </a>
                         </div>
                       </div>
@@ -871,7 +871,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
           <div className="text-center mb-16">
             <Badge variant="outline" className={softSkyBadgeClass}>
               <Star className="w-4 h-4 mr-2 text-sky-700" />
-              Why Choose Us
+              {t('whyChoose.badge')}
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
               {t('whyChoose.title')}
@@ -959,16 +959,17 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
 
 // Lazy load heavy components to reduce initial bundle size
 const Stats = React.memo(() => {
+  const t = useTranslations('landing')
   return (
     <SoftSkyStage tone="white" className="py-20">
-    <section className="relative" aria-label="Statistics section">
+    <section className="relative" aria-label={t('sections.stats')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-4 gap-8 text-center">
           {[
-            { value: '500+', label: 'Active Stores' },
-            { value: '500,000+', label: 'Orders Processed' },
-            { value: '4.9/5', label: 'Customer Rating' },
-            { value: '24/7', label: 'Support Available' },
+            { value: '500+', label: t('stats.activeStores') },
+            { value: '500,000+', label: t('stats.ordersProcessed') },
+            { value: '4.9/5', label: t('stats.customerRating') },
+            { value: '24/7', label: t('stats.supportAvailable') },
           ].map((stat) => (
             <div key={stat.label} className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-8 shadow-sm">
               <div className="text-4xl font-bold text-slate-900 mb-2">{stat.value}</div>
@@ -985,6 +986,7 @@ const Stats = React.memo(() => {
 const Testimonials = React.memo(() => {
   const t = useTranslations('landing.testimonials')
   const tItems = useTranslations('landing.testimonials.items')
+  const tSections = useTranslations('landing.sections')
   
   // Get first letter of name for avatar
   const getInitial = (name: string) => {
@@ -1007,12 +1009,12 @@ const Testimonials = React.memo(() => {
   
   return (
     <SoftSkyStage tone="mist" className="py-24 md:py-28">
-    <section className="relative" aria-label="Testimonials section">
+    <section className="relative" aria-label={tSections('testimonials')}>
       <div className="w-full">
         <div className="text-center mb-16 px-4 sm:px-6 lg:px-8">
           <Badge variant="outline" className={softSkyBadgeClass}>
             <Star className="w-4 h-4 mr-2 text-sky-700 fill-sky-700" />
-            <span className="text-sm font-medium">Testimonials</span>
+            <span className="text-sm font-medium">{t('badge')}</span>
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
             {t('title')}
@@ -1075,9 +1077,10 @@ const Testimonials = React.memo(() => {
 const CTA = React.memo(() => {
   const t = useTranslations('landing.cta')
   const tHero = useTranslations('landing.hero')
+  const tSections = useTranslations('landing.sections')
   return (
       <SoftSkyStage tone="mist" className="py-24 md:py-28">
-      <section className="relative" aria-label="Call to action section">
+      <section className="relative" aria-label={tSections('cta')}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
             {t('title')}
@@ -1107,6 +1110,7 @@ const CTA = React.memo(() => {
 
 const FAQ = React.memo(() => {
   const t = useTranslations('landing.faq')
+  const tSections = useTranslations('landing.sections')
   const [openItems, setOpenItems] = React.useState(new Set());
   
   const toggleItem = (index: number) => {
@@ -1161,7 +1165,7 @@ const FAQ = React.memo(() => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
       />
-      <section id="faq" className="relative py-24 md:py-28 bg-[#F4F8FC]" aria-label="Frequently asked questions">
+      <section id="faq" className="relative py-24 md:py-28 bg-[#F4F8FC]" aria-label={tSections('faq')}>
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -top-24 right-0 h-[420px] w-[420px] rounded-full bg-[#C9DEF5]/40 blur-3xl" />
         <div className="absolute bottom-0 left-[-80px] h-[360px] w-[360px] rounded-full bg-[#D7E8F8]/50 blur-3xl" />
@@ -1207,6 +1211,7 @@ const FAQ = React.memo(() => {
 
 const Pricing = React.memo(() => {
   const tPricing = useTranslations('landing.pricing')
+  const tSections = useTranslations('landing.sections')
   const tPlans = usePlansTranslations()
   const [selectedDuration, setSelectedDuration] = useState<'3' | '6' | '12'>('3'); // '3', '6', '12'
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -1457,7 +1462,7 @@ const Pricing = React.memo(() => {
 
   return (
     <SoftSkyStage tone="white" className="py-24 md:py-28">
-    <section id="pricing" className="relative" aria-label="Pricing plans">
+    <section id="pricing" className="relative" aria-label={tSections('pricing')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
@@ -1645,7 +1650,7 @@ const Pricing = React.memo(() => {
             <DialogHeader>
               <DialogTitle>{tPricing('additionalPricingTitle')}</DialogTitle>
               <DialogDescription>
-                Information about additional pricing for accounts and addons
+                {tPricing('additionalPricingSr')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6 mt-4">
@@ -1659,7 +1664,7 @@ const Pricing = React.memo(() => {
                     {tPricing('additionalAccountDescription')}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Price:</span>
+                    <span className="text-sm text-gray-700">{tPricing('priceLabel')}</span>
                     <span className="text-lg font-bold text-gray-900">
                       {tPricing('additionalAccountPriceValue')}
                     </span>
@@ -1677,7 +1682,7 @@ const Pricing = React.memo(() => {
                     {tPricing('addonDescription')}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Price:</span>
+                    <span className="text-sm text-gray-700">{tPricing('priceLabel')}</span>
                     <span className="text-lg font-bold text-gray-900">
                       {tPricing('addonPriceValue')}
                     </span>
@@ -1731,17 +1736,17 @@ const Footer = React.memo(() => {
               <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</Link></li>
               <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</Link></li>
               <li><Link href="/download" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</Link></li>
-              <li><Link href="/tim-san-pham-bang-hinh-anh" className="text-gray-400 hover:text-white transition-colors text-sm">Tìm bằng hình ảnh AI</Link></li>
+              <li><Link href="/tim-san-pham-bang-hinh-anh" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('imageSearch')}</Link></li>
             </ul>
           </div>
           
           <div className="md:col-span-2">
-            <h3 className="text-lg font-semibold mb-4">Ngành nghề</h3>
+            <h3 className="text-lg font-semibold mb-4">{tf('industries.title')}</h3>
             <ul className="space-y-2">
-              <li><Link href="/cho-thue-ao-dai" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo dài</Link></li>
-              <li><Link href="/cho-thue-ao-cuoi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê áo cưới</Link></li>
-              <li><Link href="/cho-thue-trang-thiet-bi" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê thiết bị</Link></li>
-              <li><Link href="/cho-thue-trang-phuc" className="text-gray-400 hover:text-white transition-colors text-sm">Cho thuê trang phục</Link></li>
+              <li><Link href="/cho-thue-ao-dai" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.aoDai')}</Link></li>
+              <li><Link href="/cho-thue-ao-cuoi" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.weddingDress')}</Link></li>
+              <li><Link href="/cho-thue-trang-thiet-bi" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.equipment')}</Link></li>
+              <li><Link href="/cho-thue-trang-phuc" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.costume')}</Link></li>
             </ul>
           </div>
           
@@ -1796,6 +1801,7 @@ const TelegramLogo = () => (
 
 // FloatingButtons component with CSS transitions (no framer-motion)
 const FloatingButtons = React.memo(() => {
+  const t = useTranslations('landing.contactButtons')
   // Số điện thoại: 0764774647
   // Format cho WhatsApp: 840764774647 (thêm 84 đầu)
   // Format cho Zalo: 0764774647
@@ -1803,8 +1809,8 @@ const FloatingButtons = React.memo(() => {
   const phoneNumber = '840764774647';
   const zaloNumber = '0764774647';
   const telegramNumber = '0764774647';
-  const whatsappMessage = encodeURIComponent('Xin chào! Tôi muốn tìm hiểu về AnyRent.');
-  const telegramMessage = encodeURIComponent('Xin chào! Tôi muốn tìm hiểu về AnyRent.');
+  const whatsappMessage = encodeURIComponent(t('greeting'));
+  const telegramMessage = encodeURIComponent(t('greeting'));
   
   const [showZaloQR, setShowZaloQR] = useState(false);
   const zaloButtonRef = useRef<HTMLButtonElement>(null);
@@ -1838,7 +1844,7 @@ const FloatingButtons = React.memo(() => {
               setShowZaloQR(!showZaloQR);
             }}
             className="flex items-center gap-2 bg-[#0068FF] text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:bg-[#0052CC] transition-colors"
-            title="Liên hệ Zalo"
+            title={t('zaloTitle')}
           >
             <ZaloLogo />
             <span className="text-xs font-semibold hidden sm:inline">Zalo</span>
@@ -1850,7 +1856,7 @@ const FloatingButtons = React.memo(() => {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 bg-[#25D366] text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:bg-[#20BA5A] transition-colors"
-            title="Liên hệ WhatsApp"
+            title={t('whatsappTitle')}
           >
             <WhatsAppLogo />
             <span className="text-xs font-semibold hidden sm:inline">WhatsApp</span>
@@ -1862,7 +1868,7 @@ const FloatingButtons = React.memo(() => {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 bg-[#0088cc] text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg hover:bg-[#006ba3] transition-colors"
-            title="Liên hệ Telegram"
+            title={t('telegramTitle')}
           >
             <TelegramLogo />
             <span className="text-xs font-semibold hidden sm:inline">Telegram</span>
@@ -1889,11 +1895,11 @@ const FloatingButtons = React.memo(() => {
             }}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Quét mã QR để liên hệ Zalo</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('zaloQrTitle')}</h3>
               <button
                 onClick={() => setShowZaloQR(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label="Đóng"
+                aria-label={t('close')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1902,13 +1908,13 @@ const FloatingButtons = React.memo(() => {
               <div className="relative w-48 h-48 bg-white rounded-lg p-2">
                 <Image
                   src="/image/qrcode-0764774647.jpeg"
-                  alt="Zalo QR Code"
+                  alt={t('zaloQrAlt')}
                   fill
                   className="object-contain rounded-lg"
                 />
               </div>
               <p className="text-sm text-gray-600 text-center">
-                Mở ứng dụng Zalo và quét mã QR code bên trên để kết nối với chúng tôi
+                {t('zaloQrHint')}
               </p>
             </div>
             <a
@@ -1918,7 +1924,7 @@ const FloatingButtons = React.memo(() => {
               className="block w-full text-center px-4 py-2 bg-[#0068FF] text-white rounded-lg hover:bg-[#0052CC] transition-colors text-sm font-medium"
             >
               <MessageCircle className="w-4 h-4 inline mr-2" />
-              Mở Zalo
+              {t('openZalo')}
             </a>
           </div>
         </>
