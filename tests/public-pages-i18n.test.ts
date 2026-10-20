@@ -42,6 +42,9 @@ function flatten(tree: unknown, prefix = ''): Record<string, string> {
 const VIETNAMESE = /[ăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i;
 const NOT_VI = PUBLIC_LOCALES.filter((locale) => locale !== 'vi');
 
+/** Metadata titles are `{ absolute }` so the layout template does not add a second "| AnyRent" */
+const titleOf = (title: unknown) => String((title as { absolute?: string })?.absolute ?? title);
+
 const viPaths: Record<string, string> = {
   pricing: '/pricing',
   features: '/features',
@@ -109,10 +112,18 @@ describe('public page translations', () => {
     'pages.imageSearch.eyebrow',
     'features.navigation.home',
     'features.screens.alt',
+    // Plan and badge names are product names, kept as in the app
+    'pricing.planBasic',
+    'pricing.planProfessional',
+    'pricing.planEnterprise',
+    'pricing.badgePremium',
   ]);
   const SAME_IN: Partial<Record<PublicLocale, string[]>> = {
-    fr: ['features.web.badge', 'pages.download.cards.web.title'],
-    de: ['features.web.badge', 'pages.download.cards.web.title', 'features.mobile.badge'],
+    fr: ['features.web.badge', 'pages.download.cards.web.title', 'features.mobile.features.notifications.title'],
+    de: [
+      'features.web.badge', 'pages.download.cards.web.title', 'features.mobile.badge',
+      'features.platforms.mobile.title', 'features.details.mobileApp', 'pricing.mobileApp', 'pages.download.cards.mobile.title',
+    ],
     es: ['features.web.badge'],
     id: ['features.web.badge', 'pages.download.cards.web.title'],
   };
@@ -163,14 +174,14 @@ describe('public page SEO', () => {
       const metadata = publicPageMetadata(locale, page);
       expect(metadata.alternates?.canonical).toBe(publicPagePath(locale, page));
       expect(metadata.alternates?.languages).toEqual(group);
-      expect(String(metadata.title)).toContain('AnyRent');
+      expect(titleOf(metadata.title)).toContain('AnyRent');
       expect(metadata.description?.trim()).toBeTruthy();
     }
   });
 
   it('titles differ per language', () => {
     for (const page of PUBLIC_PAGES) {
-      const titles = PUBLIC_LOCALES.map((locale) => String(publicPageMetadata(locale, page).title));
+      const titles = PUBLIC_LOCALES.map((locale) => titleOf(publicPageMetadata(locale, page).title));
       expect(new Set(titles).size).toBe(PUBLIC_LOCALES.length);
     }
   });
