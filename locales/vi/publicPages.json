@@ -1,0 +1,81 @@
+{
+  "common": { "home": "Trang chủ" },
+  "meta": {
+    "pricing": {
+      "title": "Bảng giá Phần mềm Quản lý Cho thuê | AnyRent",
+      "description": "Bảng giá AnyRent - Phần mềm quản lý cửa hàng cho thuê. Gói Basic, Professional, Enterprise. Dùng thử miễn phí 14 ngày. Giá chỉ từ 99.000đ/tháng.",
+      "ogDescription": "Gói Basic, Professional, Enterprise. Dùng thử miễn phí 14 ngày. Giá chỉ từ 99.000đ/tháng.",
+      "name": "Bảng giá AnyRent - Phần mềm Quản lý Cho thuê",
+      "breadcrumb": "Bảng giá"
+    },
+    "features": {
+      "title": "Tính năng Phần mềm Quản lý Cho thuê | AnyRent",
+      "description": "Khám phá tính năng phần mềm quản lý cửa hàng cho thuê AnyRent: quản lý đơn hàng, kho hàng, khách hàng, lịch đặt, báo cáo doanh thu. Hỗ trợ iOS và Web.",
+      "ogDescription": "Quản lý đơn hàng, kho, khách hàng, lịch đặt và báo cáo doanh thu trên iOS và Web.",
+      "name": "Tính năng AnyRent - Phần mềm Quản lý Cho thuê",
+      "breadcrumb": "Tính năng"
+    },
+    "download": {
+      "title": "Tải ứng dụng AnyRent — iOS & Android | Phần mềm quản lý cho thuê",
+      "description": "Tải AnyRent trên App Store và Google Play. Quản lý cửa hàng cho thuê trên điện thoại hoặc Web Portal — đơn hàng, kho, lịch, khách hàng.",
+      "ogDescription": "Quản lý cửa hàng cho thuê mọi lúc trên iPhone, Android và Web Portal.",
+      "name": "Tải ứng dụng AnyRent",
+      "breadcrumb": "Tải ứng dụng"
+    },
+    "imageSearch": {
+      "title": "Tìm sản phẩm cho thuê bằng hình ảnh AI | AnyRent",
+      "description": "AI Image Search của AnyRent: chụp ảnh áo dài, áo cưới hoặc thiết bị — tìm ngay sản phẩm tương tự trong kho, kèm tồn kho và giá thuê.",
+      "ogDescription": "Chụp ảnh → AI tìm sản phẩm tương tự trong kho. Tồn kho và giá thuê hiện ngay.",
+      "name": "Tìm sản phẩm cho thuê bằng hình ảnh AI",
+      "breadcrumb": "Tìm sản phẩm bằng hình ảnh AI"
+    }
+  },
+  "pricingFaq": {
+    "q1": "Phần mềm quản lý cho thuê AnyRent có miễn phí không?",
+    "a1": "AnyRent cung cấp 14 ngày dùng thử miễn phí với đầy đủ tính năng. Sau đó bạn có thể chọn gói phù hợp từ 99.000đ/tháng.",
+    "q2": "Tôi có thể nâng cấp gói sau không?",
+    "a2": "Có, bạn có thể nâng cấp gói bất cứ lúc nào. Thanh toán sẽ được tính theo tỷ lệ và bạn sẽ có quyền truy cập ngay các tính năng cao hơn.",
+    "q3": "Chuyện gì xảy ra nếu tôi vượt giới hạn gói?",
+    "a3": "Nếu bạn vượt giới hạn gói, bạn sẽ cần nâng cấp lên gói cao hơn. Chúng tôi sẽ thông báo khi bạn gần đạt giới hạn."
+  },
+  "download": {
+    "eyebrow": "AnyRent · Đa nền tảng",
+    "title": "Tải ứng dụng AnyRent",
+    "intro": "Quản lý cửa hàng cho thuê trên iPhone, Android hoặc trình duyệt. Đồng bộ đơn hàng, kho và lịch thuê theo thời gian thực.",
+    "getTitle": "Tải ngay",
+    "getSubtitle": "Chọn cửa hàng phù hợp với thiết bị của bạn.",
+    "webPrefix": "Hoặc dùng thử",
+    "webPortal": "Web Portal",
+    "webSuffix": "ngay trên trình duyệt — không cần cài app.",
+    "cards": {
+      "mobile": { "title": "Ứng dụng di động", "desc": "Tạo đơn, check tồn kho và lịch thuê ngay tại cửa hàng hoặc khi đang di chuyển." },
+      "web": { "title": "Web Portal", "desc": "Đầy đủ báo cáo, cấu hình cửa hàng và quản lý đội ngũ trên máy tính." },
+      "sync": { "title": "Đồng bộ mọi nơi", "desc": "Một tài khoản — dữ liệu đồng bộ giữa app iOS, Android và web." }
+    },
+    "links": { "pricing": "Xem bảng giá →", "features": "Tính năng →", "imageSearch": "Tìm sản phẩm bằng hình ảnh AI →" }
+  },
+  "imageSearch": {
+    "eyebrow": "Trí tuệ nhân tạo · AI Image Search",
+    "title": "Tìm sản phẩm cho thuê bằng hình ảnh AI",
+    "intro": "Khách chỉ cần một bức ảnh — AnyRent tìm sản phẩm tương tự trong kho, kèm tình trạng còn hàng và giá thuê. Không cần nhớ tên mã hay gõ từ khóa.",
+    "tryFree": "Dùng thử miễn phí",
+    "download": "Tải ứng dụng",
+    "imageAlt": "Màn hình AnyRent hiển thị kết quả tìm bằng ảnh AI",
+    "steps": {
+      "snap": { "title": "Chụp ảnh tìm sản phẩm", "desc": "Chụp hoặc tải ảnh mẫu áo dài, áo cưới, trang phục — không cần nhớ tên hay barcode." },
+      "match": { "title": "Nhận diện thông minh bằng AI", "desc": "Vector embedding phân tích màu, kiểu dáng, chất liệu để gợi ý sản phẩm gần nhất trong kho." },
+      "instant": { "title": "Kết quả tức thì", "desc": "Vài giây có danh sách khớp kèm tồn kho và giá thuê — sẵn sàng tạo đơn." }
+    },
+    "whyTitle": "Vì sao shop cho thuê cần AI Image Search?",
+    "why1": "Khách nhớ kiểu dáng, màu sắc — không nhớ mã sản phẩm.",
+    "why2": "Nhân viên tìm hàng nhanh hơn khi cửa hàng đông.",
+    "why3": "Giảm nhầm size/mẫu khi kho lớn (áo dài, áo cưới, trang phục).",
+    "links": { "features": "Tất cả tính năng →", "pricing": "Bảng giá →", "aoDai": "Cho thuê áo dài →" },
+    "faq": {
+      "q1": "Tìm sản phẩm bằng hình ảnh AI hoạt động thế nào?",
+      "a1": "Khách hoặc nhân viên chụp/tải ảnh mẫu. AnyRent dùng AI embedding để so khớp với ảnh sản phẩm trong kho và trả về các món tương tự kèm tình trạng còn hàng và giá thuê.",
+      "q2": "AI Image Search phù hợp ngành nào?",
+      "a2": "Đặc biệt hiệu quả với cho thuê áo dài, áo cưới, trang phục và thiết bị — khi khách nhớ kiểu dáng hơn là tên mã sản phẩm."
+    }
+  }
+}

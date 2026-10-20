@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { usePublicHref, usePublicPageSwitcher } from '../../lib/public-content/use-public-href'
 import { Button, Card, CardContent, Badge, Logo, LanguageSwitcher } from '@rentalshop/ui'
 import { useAuth } from '@rentalshop/hooks'
 import { User } from 'lucide-react'
@@ -38,6 +39,9 @@ import {
 
 const FeaturesClient = () => {
   const t = useTranslations('features')
+  // #1114: links and the language switcher stay in the language of the page
+  const href = usePublicHref()
+  const switcher = usePublicPageSwitcher()
   const router = useRouter()
   const { user } = useAuth()
   const [mobileScreenshotIndex, setMobileScreenshotIndex] = useState(0)
@@ -45,16 +49,16 @@ const FeaturesClient = () => {
   const mobileIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const mobileScreenshots = [
-    { src: '/anyrent-iphone-order.jpg', alt: 'Order Management', label: 'Quản lý Đơn hàng' },
-    { src: '/anyrent-iphone-product.jpg', alt: 'Product Management', label: 'Quản lý Sản phẩm' },
-    { src: '/anyrent-iphone-calendar.jpg', alt: 'Calendar & Scheduling', label: 'Lịch & Lên lịch' },
-    { src: '/anyrent-user-management.jpg', alt: 'User Management', label: 'Quản lý Người dùng' },
+    { src: '/anyrent-iphone-order.jpg', alt: t('screens.order'), label: t('screens.order') },
+    { src: '/anyrent-iphone-product.jpg', alt: t('screens.product'), label: t('screens.product') },
+    { src: '/anyrent-iphone-calendar.jpg', alt: t('screens.calendar'), label: t('screens.calendar') },
+    { src: '/anyrent-user-management.jpg', alt: t('screens.users'), label: t('screens.users') },
   ]
 
   const webScreenshots = [
-    { src: '/anyrent-web-order-calendar.png', alt: 'Order Calendar', label: 'Lịch Đơn hàng' },
-    { src: '/anyrent-web-order-detail.png', alt: 'Order Details', label: 'Chi tiết Đơn hàng' },
-    { src: '/anyrent-web-order.png', alt: 'Order Management', label: 'Quản lý Đơn hàng' },
+    { src: '/anyrent-web-order-calendar.png', alt: t('screens.webCalendar'), label: t('screens.webCalendar') },
+    { src: '/anyrent-web-order-detail.png', alt: t('screens.webOrderDetail'), label: t('screens.webOrderDetail') },
+    { src: '/anyrent-web-order.png', alt: t('screens.webOrder'), label: t('screens.webOrder') },
   ]
 
   const nextMobileScreenshot = () => {
@@ -95,7 +99,7 @@ const FeaturesClient = () => {
       <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <Link href={href('home')} className="flex items-center hover:opacity-80 transition-opacity">
               <Logo 
                 size="md" 
                 variant="custom" 
@@ -106,10 +110,10 @@ const FeaturesClient = () => {
               />
             </Link>
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
+              <Link href={href('home')} className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
                 {t('navigation.home')}
               </Link>
-              <LanguageSwitcher variant="compact" />
+              <LanguageSwitcher variant="compact" {...switcher} />
               {user ? (
                 <Button
                   onClick={() => router.push('/dashboard')}
@@ -305,7 +309,7 @@ const FeaturesClient = () => {
                   setTimeout(() => setIsMobilePaused(false), 3000)
                 }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 z-10"
-                aria-label="Previous screenshot"
+                aria-label={t('screens.prev')}
               >
                 <ChevronLeft className="w-5 h-5 text-gray-900" />
               </button>
@@ -316,7 +320,7 @@ const FeaturesClient = () => {
                   setTimeout(() => setIsMobilePaused(false), 3000)
                 }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 z-10"
-                aria-label="Next screenshot"
+                aria-label={t('screens.next')}
               >
                 <ChevronRight className="w-5 h-5 text-gray-900" />
               </button>
@@ -334,7 +338,7 @@ const FeaturesClient = () => {
                     className={`w-2 h-2 rounded-full transition-all duration-200 ${
                       index === mobileScreenshotIndex ? 'bg-white w-6' : 'bg-white/50'
                     }`}
-                    aria-label={`Go to screenshot ${index + 1}`}
+                    aria-label={t('screens.goTo', { index: index + 1 })}
                   />
                 ))}
               </div>

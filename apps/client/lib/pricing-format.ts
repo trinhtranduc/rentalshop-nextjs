@@ -9,6 +9,14 @@ const INTL_LOCALES: Record<string, string> = {
   ja: 'ja-JP',
   ko: 'ko-KR',
   zh: 'zh-CN',
+  // #1114: the newer public locales of the localized pricing page
+  ru: 'ru-RU',
+  'zh-TW': 'zh-TW',
+  fr: 'fr-FR',
+  de: 'de-DE',
+  th: 'th-TH',
+  id: 'id-ID',
+  es: 'es-ES',
 };
 
 /** App locale (vi, en, ja, ko, zh) to a BCP 47 tag; unknown values fall back to vi-VN. */

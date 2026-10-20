@@ -1,0 +1,81 @@
+{
+  "navigation": { "home": "Accueil", "pricing": "Tarifs", "login": "Connexion" },
+  "hero": {
+    "badge": "Fonctionnalités",
+    "title": "Découvrez tout ce que fait AnyRent",
+    "description": "Un logiciel complet de gestion de magasin de location, avec toutes les fonctionnalités dans l'application mobile et le portail web. Gérez votre activité efficacement, où que vous soyez.",
+    "downloadApp": "Télécharger l'application",
+    "tryWebPortal": "Essayer le portail web"
+  },
+  "platforms": {
+    "title": "Plusieurs plateformes",
+    "description": "Accédez à votre magasin de location et gérez-le sur n'importe quel appareil",
+    "mobile": {
+      "title": "Application mobile",
+      "description": "Gérez votre magasin de location à tout moment et partout avec les applications iOS et Android",
+      "features": { "ios": "Prise en charge complète d'iOS", "android": "Prise en charge d'Android", "offline": "Mode hors ligne", "sync": "Synchronisation automatique" }
+    },
+    "web": {
+      "title": "Portail web",
+      "description": "Toutes les fonctionnalités dans le navigateur, avec une interface moderne et adaptative",
+      "features": { "responsive": "Interface adaptative", "fullFeatures": "Fonctionnalités complètes", "reports": "Rapports détaillés", "multiUser": "Plusieurs utilisateurs" }
+    }
+  },
+  "mobile": {
+    "badge": "Application mobile",
+    "title": "Fonctionnalités de l'application mobile",
+    "description": "Gérez votre magasin de location directement depuis votre téléphone",
+    "screenshotPlaceholder": "Capture d'écran de l'application mobile",
+    "features": {
+      "orderManagement": { "title": "Gestion des commandes", "description": "Créez, consultez et gérez les commandes de location depuis votre téléphone. Suivez le statut des commandes et l'historique des opérations." },
+      "customerManagement": { "title": "Gestion des clients", "description": "Conservez les informations clients et l'historique des locations, et entretenez facilement la relation client." },
+      "inventoryManagement": { "title": "Gestion du stock", "description": "Suivez les quantités et la disponibilité des articles et gérez votre stock efficacement." },
+      "scheduling": { "title": "Calendrier et planning", "description": "Consultez le calendrier des locations et des retours et gérez le planning d'un coup d'œil." },
+      "quickSearch": { "title": "Recherche rapide", "description": "Retrouvez rapidement commandes, clients et articles grâce à la recherche intelligente." },
+      "notifications": { "title": "Notifications", "description": "Recevez des notifications pour les nouvelles commandes, les rappels de retour et les événements importants." }
+    },
+    "details": {
+      "viewDetails": "Voir le détail",
+      "benefits": {
+        "accessAnywhere": { "title": "Accès à tout moment, partout", "description": "Gestion depuis votre appareil mobile" },
+        "autoSync": { "title": "Synchronisation automatique", "description": "Des données toujours à jour" }
+      }
+    }
+  },
+  "web": {
+    "badge": "Portail web",
+    "title": "Fonctionnalités du portail web",
+    "description": "Une gestion complète du magasin de location dans le navigateur",
+    "screenshotPlaceholder": "Capture d'écran du portail web",
+    "features": {
+      "analytics": { "title": "Analyses et rapports", "description": "Consultez des rapports détaillés sur le chiffre d'affaires et analysez les performances et les tendances de vente." },
+      "reports": { "title": "Rapports financiers", "description": "Créez et exportez des rapports financiers, de chiffre d'affaires et de synthèse." },
+      "settings": { "title": "Paramètres et configuration", "description": "Gérez les paramètres du système et du magasin et adaptez-les à vos besoins." },
+      "userManagement": { "title": "Gestion des utilisateurs", "description": "Ajoutez, modifiez et gérez les utilisateurs, les droits et les rôles." },
+      "payments": { "title": "Gestion des paiements", "description": "Suivez les paiements et les factures et gérez vos finances en détail." },
+      "security": { "title": "Sécurité", "description": "Protégez vos données grâce au chiffrement, aux sauvegardes automatiques et au contrôle d'accès." }
+    },
+    "details": {
+      "viewDetails": "Voir le détail",
+      "benefits": {
+        "fullInterface": { "title": "Interface complète", "description": "Toutes les fonctionnalités sur le web" },
+        "detailedReports": { "title": "Rapports détaillés", "description": "Export et analyse des données" }
+      }
+    }
+  },
+  "details": { "title": "Détail des fonctionnalités", "description": "Découvrez plus en détail les fonctionnalités d'AnyRent", "mobileApp": "Application mobile", "webPortal": "Portail web" },
+  "shared": {
+    "badge": "Fonctionnalités communes",
+    "title": "Fonctionnalités communes",
+    "description": "Disponibles à la fois dans l'application mobile et le portail web",
+    "features": {
+      "cloudSync": { "title": "Synchronisation cloud", "description": "Les données se synchronisent automatiquement sur tous les appareils. Une modification sur un appareil apparaît aussitôt sur les autres." },
+      "dataSecurity": { "title": "Sécurité des données", "description": "Vos données sont chiffrées et stockées en toute sécurité dans le cloud. Les sauvegardes automatiques évitent toute perte." },
+      "realTime": { "title": "Mises à jour en temps réel", "description": "Chaque modification apparaît instantanément sur tous les appareils. Votre équipe travaille avec des données toujours synchronisées." },
+      "scalable": { "title": "Évolutif", "description": "Le système grandit avec votre activité, du petit magasin à la grande enseigne." }
+    }
+  },
+  "cta": { "title": "Prêt à commencer ?", "description": "Rejoignez les magasins de location qui utilisent déjà AnyRent", "downloadApp": "Télécharger l'application", "tryWebPortal": "Essayer le portail web" },
+  "footer": { "description": "AnyRent - logiciel de gestion de magasins de location", "home": "Accueil", "pricing": "Tarifs", "login": "Connexion", "copyright": "© 2024 AnyRent. Tous droits réservés." },
+  "screens": { "order": "Gestion des commandes", "product": "Gestion des articles", "calendar": "Calendrier et planning", "users": "Gestion des utilisateurs", "webCalendar": "Calendrier des commandes", "webOrderDetail": "Détail de la commande", "webOrder": "Gestion des commandes", "prev": "Capture précédente", "next": "Capture suivante", "goTo": "Voir la capture {index}" }
+}

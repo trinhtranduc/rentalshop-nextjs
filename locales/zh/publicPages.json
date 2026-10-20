@@ -1,0 +1,81 @@
+{
+  "common": { "home": "首页" },
+  "meta": {
+    "pricing": {
+      "title": "租赁店管理软件价格方案 | AnyRent",
+      "description": "AnyRent 价格方案：Basic、Professional、Enterprise。14 天免费试用，每月 99,000 越南盾起，专为租赁店打造的管理软件。",
+      "ogDescription": "Basic、Professional、Enterprise 三种方案。14 天免费试用，每月 99,000 越南盾起。",
+      "name": "AnyRent 价格方案 - 租赁店管理软件",
+      "breadcrumb": "价格"
+    },
+    "features": {
+      "title": "租赁店管理软件功能 | AnyRent",
+      "description": "了解 AnyRent 的功能：租赁订单、库存、客户、预约日历和营收报表。支持 iOS、Android 和网页版。",
+      "ogDescription": "在手机和网页上管理订单、库存、客户、预约日历和营收报表。",
+      "name": "AnyRent 功能 - 租赁店管理软件",
+      "breadcrumb": "功能"
+    },
+    "download": {
+      "title": "下载 AnyRent 应用 — iOS 和 Android | 租赁店管理",
+      "description": "在 App Store 和 Google Play 下载 AnyRent。通过手机或网页门户管理订单、库存、日历和客户。",
+      "ogDescription": "随时在 iPhone、Android 和网页门户上管理您的租赁店。",
+      "name": "下载 AnyRent 应用",
+      "breadcrumb": "下载"
+    },
+    "imageSearch": {
+      "title": "用 AI 以图找租赁商品 | AnyRent",
+      "description": "AnyRent AI 图片搜索：拍一张奥黛、婚纱或设备的照片，即可在库存中找到相似商品，并显示库存状态和租金。",
+      "ogDescription": "拍照后 AI 在库存中查找相似商品，库存状态和租金立即显示。",
+      "name": "用 AI 以图找租赁商品",
+      "breadcrumb": "AI 图片搜索"
+    }
+  },
+  "pricingFaq": {
+    "q1": "AnyRent 租赁管理软件免费吗？",
+    "a1": "AnyRent 提供 14 天全功能免费试用。之后您可以选择合适的方案，每月 99,000 越南盾起。",
+    "q2": "以后可以升级方案吗？",
+    "a2": "可以，您随时都能升级。费用按比例计算，升级后立即可以使用更高方案的功能。",
+    "q3": "超出方案限额会怎样？",
+    "a3": "超出限额时需要升级到更高的方案。快达到限额时我们会提前通知您。"
+  },
+  "download": {
+    "eyebrow": "AnyRent · 多平台",
+    "title": "下载 AnyRent 应用",
+    "intro": "在 iPhone、Android 或浏览器上管理租赁店。订单、库存和租赁日历实时同步。",
+    "getTitle": "立即下载",
+    "getSubtitle": "请选择适合您设备的应用商店。",
+    "webPrefix": "或直接在浏览器中试用",
+    "webPortal": "网页门户",
+    "webSuffix": "，无需安装应用。",
+    "cards": {
+      "mobile": { "title": "移动应用", "desc": "在店里或外出时都能创建订单、查看库存和租赁日历。" },
+      "web": { "title": "网页门户", "desc": "在电脑上查看完整报表、设置店铺并管理团队。" },
+      "sync": { "title": "随处同步", "desc": "一个账号，iOS、Android 应用和网页之间的数据保持同步。" }
+    },
+    "links": { "pricing": "查看价格 →", "features": "功能 →", "imageSearch": "用 AI 以图找商品 →" }
+  },
+  "imageSearch": {
+    "eyebrow": "人工智能 · AI 图片搜索",
+    "title": "用 AI 以图找租赁商品",
+    "intro": "客人只需要一张照片。AnyRent 会在库存中找出相似商品，并显示库存状态和租金。无需记住商品编号，也不用输入关键词。",
+    "tryFree": "免费试用",
+    "download": "下载应用",
+    "imageAlt": "AnyRent 显示 AI 图片搜索结果的界面",
+    "steps": {
+      "snap": { "title": "拍照找商品", "desc": "拍摄或上传奥黛、婚纱、服装的参考照片，无需商品名称或条码。" },
+      "match": { "title": "AI 智能识别", "desc": "向量嵌入会比较颜色、款式和材质，推荐库存中最接近的商品。" },
+      "instant": { "title": "即时出结果", "desc": "几秒钟内就能看到匹配的商品及库存和租金，可直接创建订单。" }
+    },
+    "whyTitle": "租赁店为什么需要 AI 图片搜索？",
+    "why1": "客人记得的是款式和颜色，而不是商品编号。",
+    "why2": "店里忙的时候，员工也能更快找到商品。",
+    "why3": "库存再多，也能减少尺码或款式拿错（奥黛、婚纱、服装）。",
+    "links": { "features": "全部功能 →", "pricing": "价格 →", "aoDai": "奥黛租赁 →" },
+    "faq": {
+      "q1": "AI 图片搜索是怎么工作的？",
+      "a1": "客人或员工拍摄或上传参考照片。AnyRent 用 AI 嵌入把它与库存中的商品照片进行比对，并返回相似商品及库存状态和租金。",
+      "q2": "AI 图片搜索适合哪些行业？",
+      "a2": "特别适合奥黛、婚纱、服装和设备租赁，尤其是客人记得样子却不记得商品编号的时候。"
+    }
+  }
+}

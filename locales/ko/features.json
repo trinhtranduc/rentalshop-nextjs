@@ -65,6 +65,19 @@
         "title": "알림",
         "description": "새 주문, 반납 알림 및 중요한 이벤트에 대한 알림을 받으세요."
       }
+    },
+    "details": {
+      "viewDetails": "자세히 보기",
+      "benefits": {
+        "accessAnywhere": {
+          "title": "언제 어디서나 접속",
+          "description": "모바일 기기로 관리"
+        },
+        "autoSync": {
+          "title": "자동 동기화",
+          "description": "데이터가 항상 최신 상태"
+        }
+      }
     }
   },
   "web": {
@@ -153,5 +166,17 @@
     "pricing": "가격",
     "login": "로그인",
     "copyright": "© 2024 AnyRent. 모든 권리 보유."
+  },
+  "screens": {
+    "order": "주문 관리",
+    "product": "상품 관리",
+    "calendar": "캘린더 및 일정",
+    "users": "사용자 관리",
+    "webCalendar": "주문 캘린더",
+    "webOrderDetail": "주문 상세",
+    "webOrder": "주문 관리",
+    "prev": "이전 화면",
+    "next": "다음 화면",
+    "goTo": "{index}번 화면 보기"
   }
 }

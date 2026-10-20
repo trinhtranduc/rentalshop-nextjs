@@ -1,0 +1,81 @@
+{
+  "navigation": { "home": "Beranda", "pricing": "Harga", "login": "Masuk" },
+  "hero": {
+    "badge": "Fitur",
+    "title": "Temukan kemampuan AnyRent",
+    "description": "Software manajemen toko sewa yang lengkap, dengan semua fitur di aplikasi seluler dan portal web. Kelola bisnis Anda secara efisien dari mana saja.",
+    "downloadApp": "Unduh aplikasi",
+    "tryWebPortal": "Coba portal web"
+  },
+  "platforms": {
+    "title": "Beragam platform",
+    "description": "Akses dan kelola toko sewa dari perangkat apa pun",
+    "mobile": {
+      "title": "Aplikasi seluler",
+      "description": "Kelola toko sewa kapan saja dan di mana saja dengan aplikasi iOS dan Android",
+      "features": { "ios": "Dukungan penuh iOS", "android": "Dukungan Android", "offline": "Mode offline", "sync": "Sinkronisasi otomatis" }
+    },
+    "web": {
+      "title": "Portal web",
+      "description": "Semua fitur lewat browser, dengan desain modern yang responsif",
+      "features": { "responsive": "Desain responsif", "fullFeatures": "Fitur lengkap", "reports": "Laporan terperinci", "multiUser": "Banyak pengguna" }
+    }
+  },
+  "mobile": {
+    "badge": "Aplikasi seluler",
+    "title": "Fitur aplikasi seluler",
+    "description": "Kelola toko sewa langsung dari ponsel dengan fitur yang andal",
+    "screenshotPlaceholder": "Tangkapan layar aplikasi seluler",
+    "features": {
+      "orderManagement": { "title": "Manajemen pesanan", "description": "Buat, lihat, dan kelola pesanan sewa langsung dari ponsel. Pantau status pesanan dan riwayat transaksi." },
+      "customerManagement": { "title": "Manajemen pelanggan", "description": "Simpan data pelanggan dan riwayat sewa, serta jaga hubungan dengan pelanggan dengan mudah." },
+      "inventoryManagement": { "title": "Manajemen stok", "description": "Pantau jumlah dan ketersediaan barang serta kelola stok secara efisien." },
+      "scheduling": { "title": "Kalender dan jadwal", "description": "Lihat kalender sewa dan pengembalian serta atur jadwal dengan mudah." },
+      "quickSearch": { "title": "Pencarian cepat", "description": "Temukan pesanan, pelanggan, dan barang dengan cepat lewat pencarian pintar." },
+      "notifications": { "title": "Pemberitahuan", "description": "Terima pemberitahuan pesanan baru, pengingat pengembalian, dan kejadian penting." }
+    },
+    "details": {
+      "viewDetails": "Lihat detail",
+      "benefits": {
+        "accessAnywhere": { "title": "Akses kapan saja, di mana saja", "description": "Kelola dari perangkat seluler" },
+        "autoSync": { "title": "Sinkronisasi otomatis", "description": "Data selalu terbaru" }
+      }
+    }
+  },
+  "web": {
+    "badge": "Portal web",
+    "title": "Fitur portal web",
+    "description": "Kelola toko sewa secara lengkap lewat browser",
+    "screenshotPlaceholder": "Tangkapan layar portal web",
+    "features": {
+      "analytics": { "title": "Analitik dan laporan", "description": "Lihat laporan pendapatan terperinci, analisis kinerja bisnis dan tren penjualan." },
+      "reports": { "title": "Laporan keuangan", "description": "Buat dan ekspor laporan keuangan, laporan pendapatan, dan laporan ringkasan." },
+      "settings": { "title": "Pengaturan dan konfigurasi", "description": "Kelola pengaturan sistem dan toko serta sesuaikan dengan kebutuhan." },
+      "userManagement": { "title": "Manajemen pengguna", "description": "Tambah, ubah, dan kelola pengguna, hak akses, dan peran." },
+      "payments": { "title": "Manajemen pembayaran", "description": "Pantau pembayaran dan tagihan serta kelola keuangan secara terperinci." },
+      "security": { "title": "Keamanan", "description": "Lindungi data dengan enkripsi, cadangan otomatis, dan kontrol akses." }
+    },
+    "details": {
+      "viewDetails": "Lihat detail",
+      "benefits": {
+        "fullInterface": { "title": "Antarmuka lengkap", "description": "Semua fitur di web" },
+        "detailedReports": { "title": "Laporan terperinci", "description": "Ekspor dan analisis data" }
+      }
+    }
+  },
+  "details": { "title": "Detail fitur", "description": "Kenali lebih jauh fitur-fitur AnyRent", "mobileApp": "Aplikasi seluler", "webPortal": "Portal web" },
+  "shared": {
+    "badge": "Fitur bersama",
+    "title": "Fitur bersama",
+    "description": "Tersedia di aplikasi seluler maupun portal web",
+    "features": {
+      "cloudSync": { "title": "Sinkronisasi cloud", "description": "Data tersinkron otomatis di semua perangkat. Perubahan di satu perangkat langsung muncul di perangkat lain." },
+      "dataSecurity": { "title": "Keamanan data", "description": "Data Anda dienkripsi dan disimpan dengan aman di cloud. Cadangan otomatis mencegah data hilang." },
+      "realTime": { "title": "Pembaruan real time", "description": "Setiap perubahan langsung tampil di semua perangkat. Tim bekerja dengan data yang selalu tersinkron." },
+      "scalable": { "title": "Dapat berkembang", "description": "Sistem tumbuh bersama bisnis Anda, dari toko kecil hingga jaringan besar." }
+    }
+  },
+  "cta": { "title": "Siap memulai?", "description": "Bergabunglah dengan toko sewa yang sudah memakai AnyRent", "downloadApp": "Unduh aplikasi", "tryWebPortal": "Coba portal web" },
+  "footer": { "description": "AnyRent - software manajemen toko sewa", "home": "Beranda", "pricing": "Harga", "login": "Masuk", "copyright": "© 2024 AnyRent. Hak cipta dilindungi." },
+  "screens": { "order": "Manajemen pesanan", "product": "Manajemen barang", "calendar": "Kalender dan jadwal", "users": "Manajemen pengguna", "webCalendar": "Kalender pesanan", "webOrderDetail": "Detail pesanan", "webOrder": "Manajemen pesanan", "prev": "Tangkapan sebelumnya", "next": "Tangkapan berikutnya", "goTo": "Lihat tangkapan {index}" }
+}

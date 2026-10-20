@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { publicPageAlternates } from '../../lib/public-content/public-pages';
 import PricingClient from './PricingClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop';
@@ -15,17 +16,8 @@ export const metadata: Metadata = {
     'dùng thử phần mềm cho thuê miễn phí',
     'AnyRent pricing',
   ],
-  alternates: {
-    canonical: '/pricing',
-    languages: {
-      'x-default': '/pricing',
-      vi: '/pricing',
-      en: '/pricing',
-      zh: '/pricing',
-      ko: '/pricing',
-      ja: '/pricing',
-    },
-  },
+  // #1114: the localized siblings of this page
+  alternates: { canonical: '/pricing', languages: publicPageAlternates('pricing') },
   openGraph: {
     title: 'Bảng giá Phần mềm Quản lý Cho thuê | AnyRent',
     description:

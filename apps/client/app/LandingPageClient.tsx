@@ -16,6 +16,7 @@ import { getAnyRentLogoUrl } from '../lib/brand'
 import { LandingBrandLogo } from './components/LandingBrandLogo'
 import PublicSiteFooter from './components/PublicSiteFooter'
 import { StoreBadges } from './components/StoreBadges'
+import { usePublicHref } from '../lib/public-content/use-public-href'
 import {
   SoftSkyStage,
   softSkyBadgeClass,
@@ -69,6 +70,8 @@ import {
 
 const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => {
   const t = useTranslations('landing')
+  // #1114: links stay in the language of the page
+  const href = usePublicHref()
   const router = useRouter()
   const { user } = useAuth()
 
@@ -313,10 +316,13 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessData) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsData) }}
-      />
+      {/* #1114: the reviews are Vietnamese customers' words; only the Vietnamese landing carries them */}
+      {(!publicLocale || publicLocale === 'vi') && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsData) }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteData) }}
@@ -328,12 +334,12 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
         <header className="bg-white/80 backdrop-blur-md border-b border-sky-100/80 sticky top-0 z-50" role="banner">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+              <Link href={href('home')} className="flex items-center hover:opacity-80 transition-opacity">
                 <LandingBrandLogo />
               </Link>
               <div className="hidden md:flex items-center space-x-8">
-                <Link href="/features" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
-                <Link href="/pricing" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</Link>
+                <Link href={href('features')} className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.features')}</Link>
+                <Link href={href('pricing')} className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.pricing')}</Link>
                 <a href="#faq" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.faq')}</a>
                 <a href="#contact" className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium">{t('navigation.contact')}</a>
                 <LanguageSwitcher variant="compact" publicLocale={publicLocale} />
@@ -481,7 +487,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
           ]}
           cta={
             <Link
-              href="/tim-san-pham-bang-hinh-anh"
+              href={href('image-search')}
               className="inline-flex items-center text-sm font-semibold text-sky-800 hover:text-sky-950 underline-offset-4 hover:underline"
             >
               {t('aiSearch.learnMore')}
@@ -679,7 +685,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                 size="lg"
                 className="border-2 border-sky-200 text-sky-900 hover:bg-sky-50 hover:border-sky-300 rounded-xl px-8 py-3 text-base font-medium transition-all duration-200"
               >
-                <Link href="/features">
+                <Link href={href('features')}>
                   <ArrowRight className="w-5 h-5 mr-2" />
                   {t('features.viewAllFeatures')}
                 </Link>
@@ -1710,6 +1716,8 @@ const Pricing = React.memo(() => {
 
 const Footer = React.memo(() => {
   const tf = useTranslations('landing.footer')
+  // #1114: links stay in the language of the page; industry pages are Vietnamese only
+  const href = usePublicHref()
   return (
     <footer id="contact" className="bg-slate-900 text-white py-12" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1735,20 +1743,20 @@ const Footer = React.memo(() => {
           <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('product.title')}</h3>
             <ul className="space-y-2">
-              <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</Link></li>
-              <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</Link></li>
-              <li><Link href="/download" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</Link></li>
-              <li><Link href="/tim-san-pham-bang-hinh-anh" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('imageSearch')}</Link></li>
+              <li><Link href={href('features')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.features')}</Link></li>
+              <li><Link href={href('pricing')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.pricing')}</Link></li>
+              <li><Link href={href('download')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('product.downloadApp')}</Link></li>
+              <li><Link href={href('image-search')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('imageSearch')}</Link></li>
             </ul>
           </div>
           
           <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('industries.title')}</h3>
             <ul className="space-y-2">
-              <li><Link href="/cho-thue-ao-dai" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.aoDai')}</Link></li>
-              <li><Link href="/cho-thue-ao-cuoi" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.weddingDress')}</Link></li>
-              <li><Link href="/cho-thue-trang-thiet-bi" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.equipment')}</Link></li>
-              <li><Link href="/cho-thue-trang-phuc" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.costume')}</Link></li>
+              <li><Link href={href('industry:cho-thue-ao-dai')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.aoDai')}</Link></li>
+              <li><Link href={href('industry:cho-thue-ao-cuoi')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.weddingDress')}</Link></li>
+              <li><Link href={href('industry:cho-thue-trang-thiet-bi')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.equipment')}</Link></li>
+              <li><Link href={href('industry:cho-thue-trang-phuc')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('industries.costume')}</Link></li>
             </ul>
           </div>
           
@@ -1756,7 +1764,7 @@ const Footer = React.memo(() => {
             <h3 className="text-lg font-semibold mb-4">{tf('support.title')}</h3>
             <ul className="space-y-2">
               <li><a href="#faq" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.faq')}</a></li>
-              <li><Link href="/blog" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.documentation')}</Link></li>
+              <li><Link href={href('blog')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.documentation')}</Link></li>
               <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('support.contact')}</a></li>
             </ul>
           </div>
@@ -1764,7 +1772,7 @@ const Footer = React.memo(() => {
           <div className="md:col-span-2">
             <h3 className="text-lg font-semibold mb-4">{tf('company.title')}</h3>
             <ul className="space-y-2">
-              <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.aboutUs')}</Link></li>
+              <li><Link href={href('features')} className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.aboutUs')}</Link></li>
               <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.terms')}</Link></li>
               <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">{tf('company.privacy')}</Link></li>
             </ul>
