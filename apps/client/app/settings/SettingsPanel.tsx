@@ -19,7 +19,6 @@ import { useTheme } from '../providers/ThemeProvider';
 import {
   AccountSection,
   AppearanceSection,
-  LANGUAGES,
   LanguageSection,
   LegacyPanel,
   OnlineBookingSection,
@@ -117,7 +116,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const user = authUser as unknown as SettingsUser | null;
   const role = String(user?.role || '').toUpperCase();
 
-  const { enabled: themeSwitch, choice: themeChoice } = useTheme();
+  const { enabled: themeSwitch } = useTheme();
   const groups = useMemo(() => groupedTabs(tabsForRole(role)), [role]);
 
   // #852: the owner sets bank accounts and the receipt per branch (active branches; default first)
@@ -327,12 +326,9 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   };
 
   // ------------------------------------------------------------------ render
-  const languageName = LANGUAGES.find((l) => l.value === locale)?.label || locale;
-  const sideText = (id: SettingsTab) =>
-    id === 'language' ? (themeSwitch ? `${languageName} · ${t(`appearance.${themeChoice}`)}` : languageName) : '';
+  // #1140: one line per row, no side text (it wrapped "Ngôn ngữ & giao diện" onto 4 lines)
   const navItem = (id: SettingsTab) => {
     const on = id === tab;
-    const side = sideText(id);
     return (
       <li key={id}>
         <button
@@ -343,12 +339,9 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             on ? 'lg:bg-ar-surface lg:font-semibold lg:shadow-[0_1px_2px_rgba(15,23,42,0.08)]' : 'lg:text-ar-ink-2'
           }`}
         >
-          <span className="min-w-0">{t(`nav.${id}`)}</span>
-          <span className="flex flex-none items-center gap-1 font-normal text-ar-muted">
-            {side && <span className="max-w-[160px] truncate text-sm">{side}</span>}
-            <span className="lg:hidden">
-              <ShellIcon d={ICONS.chevronRight} />
-            </span>
+          <span className="min-w-0 truncate whitespace-nowrap">{t(`nav.${id}`)}</span>
+          <span className="flex-none text-ar-muted lg:hidden">
+            <ShellIcon d={ICONS.chevronRight} />
           </span>
         </button>
       </li>
