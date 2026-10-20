@@ -104,6 +104,15 @@ export function currencyForLocale(locale: string): 'VND' | 'USD' {
   return locale === 'vi' ? 'VND' : 'USD';
 }
 
+/**
+ * #1138 "Nhận đặt online": the login payload has no `onlineBookingEnabled`, only
+ * GET /api/users/profile does. A missing key is unknown (load the profile), never OFF.
+ */
+export function onlineBookingFlag(merchant: { onlineBookingEnabled?: unknown } | null | undefined): boolean | null {
+  const v = merchant?.onlineBookingEnabled;
+  return typeof v === 'boolean' ? v : null;
+}
+
 /** Public product page and referral sign-up link, from the login payload or the tenant key. */
 export function publicLinks(
   origin: string,
