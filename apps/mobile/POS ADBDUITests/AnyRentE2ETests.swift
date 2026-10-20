@@ -1539,6 +1539,38 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("74-overview-today")
     }
 
+    /// #1062: with a branch chosen on Home, the Giá trị đơn mới list of 7 ngày adds up to the tile (no other branch)
+    func test7pRelatedOrdersBranch() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else {
+            throw XCTSkip("No Reports tab for this account")
+        }
+        let week = e2e.element(labelBeginsWith: ["7 days", "7 ngày"], type: .button)
+        guard week.waitForExistence(timeout: 8) else { throw XCTSkip("No revenue for this account") }
+        week.tap()
+        sleep(4)
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Giá trị đơn mới", "New order value")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 15), "Giá trị đơn mới tile")
+        let parts = tile.label.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        let value = parts.count > 1 ? parts[1] : "?"
+        e2e.note("RELATED BRANCH | TILE \(tile.label)")
+        e2e.shot("76-overview-7-days-tile")
+        tile.tap()
+        let see = e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button)
+        XCTAssertTrue(see.waitForExistence(timeout: 8), "Xem các đơn liên quan in the tile sheet")
+        e2e.shot("76b-overview-tile-sheet")
+        see.tap()
+        let total = app.staticTexts["related.total"]
+        XCTAssertTrue(total.waitForExistence(timeout: 20), "related orders list")
+        let deadline = Date().addingTimeInterval(30)
+        while total.label.isEmpty && Date() < deadline { sleep(1) }
+        e2e.note("RELATED BRANCH | LIST \(total.label)")
+        e2e.shot("76c-overview-related-orders")
+        XCTAssertTrue(total.label.hasSuffix(value), "list total \(total.label) equals the tile \(value)")
+        e2e.goBackOnce()
+    }
+
     /// #1059: on Hôm nay "Đơn tạo hôm nay" replaces Top sản phẩm / Top khách hàng; its "N đơn · Tổng giá trị" equals the
     /// Giá trị đơn mới tile; a row opens the order, "Xem tất cả" the tile's list; 7 ngày brings the Top cards back.
     func test7oOverviewTodayOrders() throws {
