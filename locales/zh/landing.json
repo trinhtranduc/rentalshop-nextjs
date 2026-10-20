@@ -226,6 +226,7 @@
     },
     "loading": "正在加载套餐...",
     "error": "无法加载套餐",
+    "errorHint": "请几分钟后重试，或联系 AnyRent 获取报价。",
     "retry": "重试",
     "noPlans": "目前没有可用的套餐。",
     "buttonText": "开始",

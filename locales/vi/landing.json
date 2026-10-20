@@ -226,6 +226,7 @@
     },
     "loading": "Đang tải gói...",
     "error": "Không thể tải gói",
+    "errorHint": "Vui lòng thử lại sau ít phút hoặc liên hệ AnyRent để được báo giá.",
     "retry": "Thử lại",
     "noPlans": "Hiện không có gói nào.",
     "buttonText": "Bắt đầu",

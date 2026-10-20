@@ -226,6 +226,7 @@
     },
     "loading": "Tarife werden geladen...",
     "error": "Tarife konnten nicht geladen werden",
+    "errorHint": "Bitte versuchen Sie es in ein paar Minuten erneut oder kontaktieren Sie AnyRent für ein Angebot.",
     "retry": "Erneut versuchen",
     "noPlans": "Derzeit sind keine Tarife verfügbar.",
     "buttonText": "Jetzt starten",

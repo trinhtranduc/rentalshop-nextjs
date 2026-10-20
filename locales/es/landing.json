@@ -226,6 +226,7 @@
     },
     "loading": "Cargando planes...",
     "error": "No se pudieron cargar los planes",
+    "errorHint": "Vuelve a intentarlo en unos minutos o contacta con AnyRent para pedir un presupuesto.",
     "retry": "Reintentar",
     "noPlans": "No hay planes disponibles por ahora.",
     "buttonText": "Empezar",

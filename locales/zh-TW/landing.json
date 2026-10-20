@@ -226,6 +226,7 @@
     },
     "loading": "正在載入方案...",
     "error": "無法載入方案",
+    "errorHint": "請幾分鐘後再試一次，或聯絡 AnyRent 取得報價。",
     "retry": "重試",
     "noPlans": "目前沒有可用的方案。",
     "buttonText": "開始使用",
