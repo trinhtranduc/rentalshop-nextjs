@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Badge } from '@rentalshop/ui'
 import type { LucideIcon } from 'lucide-react'
 import { SoftSkyStage, softSkyBadgeClass } from './LandingAtmosphere'
+import { observeReveal, revealStart, type RevealState } from '../../lib/landing-reveal'
 
 export type FeatureSpotlightStep = {
   icon: LucideIcon
@@ -29,6 +30,24 @@ type FeatureSpotlightProps = {
   cta?: React.ReactNode
 }
 
+/**
+ * #1100: `data-anim` on a block of landing images. Absent on the server (images visible without JS); `ready` hides
+ * them until the block scrolls into view, `in` plays the entry animation once (classes `la-*`, globals.css).
+ */
+export function useLandingReveal<T extends Element>() {
+  const ref = useRef<T>(null)
+  const [state, setState] = useState<RevealState | null>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const start = revealStart(window, el)
+    setState(start)
+    if (start !== 'ready') return
+    return observeReveal(window, el, () => setState('in'))
+  }, [])
+  return { ref, anim: state && state !== 'off' ? state : undefined }
+}
+
 /** Shared soft-sky spotlight layout (same language as AI Search section). */
 export function FeatureSpotlight({
   id,
@@ -43,6 +62,7 @@ export function FeatureSpotlight({
   visual,
   cta,
 }: FeatureSpotlightProps) {
+  const reveal = useLandingReveal<HTMLDivElement>()
   return (
     <SoftSkyStage tone={tone} className="py-24 md:py-28">
       <section id={id} className="relative" aria-label={ariaLabel}>
@@ -82,6 +102,8 @@ export function FeatureSpotlight({
             </div>
 
             <div
+              ref={reveal.ref}
+              data-anim={reveal.anim}
               className={
                 reverse
                   ? 'order-1 lg:order-1 flex justify-center lg:justify-start'
