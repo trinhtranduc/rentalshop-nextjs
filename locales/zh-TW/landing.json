@@ -93,7 +93,8 @@
     "duplicatePreventionDesc": "系統避免重疊的訂單，確保庫存數字正確。",
     "multiPlatform": "多平台支援",
     "multiPlatformDesc": "在 iOS、Android 與網頁上順暢存取租賃店資料。",
-    "viewAllFeatures": "查看所有功能詳情"
+    "viewAllFeatures": "查看所有功能詳情",
+    "badge": "功能"
   },
   "customSolution": {
     "title": "需要客製化的租賃方案嗎？",

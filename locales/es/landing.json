@@ -93,7 +93,8 @@
     "duplicatePreventionDesc": "El sistema evita pedidos solapados y mantiene el inventario exacto.",
     "multiPlatform": "Multiplataforma",
     "multiPlatformDesc": "Accede a los datos de tu tienda en iOS, Android y web sin volver a introducirlos.",
-    "viewAllFeatures": "Ver todas las funciones"
+    "viewAllFeatures": "Ver todas las funciones",
+    "badge": "Funciones"
   },
   "customSolution": {
     "title": "¿Necesitas una solución a medida?",

@@ -93,7 +93,8 @@
     "duplicatePreventionDesc": "Le système empêche les commandes qui se chevauchent et garde un stock exact.",
     "multiPlatform": "Multiplateforme",
     "multiPlatformDesc": "Accédez à vos données de location sur iOS, Android et le web, sans ressaisie.",
-    "viewAllFeatures": "Voir toutes les fonctionnalités"
+    "viewAllFeatures": "Voir toutes les fonctionnalités",
+    "badge": "Fonctionnalités"
   },
   "customSolution": {
     "title": "Besoin d'une solution sur mesure ?",

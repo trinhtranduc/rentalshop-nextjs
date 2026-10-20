@@ -620,7 +620,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
             <div className="text-center mb-16">
               <Badge variant="outline" className={softSkyBadgeClass}>
                 <Sparkles className="w-4 h-4 mr-2 text-sky-700" />
-                Features
+                {t('features.badge')}
               </Badge>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
                 {t('features.title')}

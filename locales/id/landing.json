@@ -93,7 +93,8 @@
     "duplicatePreventionDesc": "Sistem mencegah pesanan yang bentrok dan menjaga stok tetap akurat.",
     "multiPlatform": "Multiplatform",
     "multiPlatformDesc": "Akses data toko sewa di iOS, Android, dan web tanpa input ulang.",
-    "viewAllFeatures": "Lihat semua fitur"
+    "viewAllFeatures": "Lihat semua fitur",
+    "badge": "Fitur"
   },
   "customSolution": {
     "title": "Butuh Solusi Sewa Khusus?",

@@ -73,7 +73,7 @@ describe('landing source has no hardcoded copy', () => {
   /** Text that once sat in the JSX instead of the locale files */
   const PHRASES = [
     'Why Choose Us', 'Active Stores', 'Orders Processed', 'Customer Rating', 'Support Available', 'Secure &amp; Reliable',
-    'Testimonials</span>', 'Price:', '>Snap<', 'Blog section', 'Hero section', 'Statistics section',
+    'Testimonials</span>', 'Price:', '>Snap<', 'Blog section', 'Hero section', 'Statistics section', '\n              Features\n',
   ];
 
   const code = (file: string) => readFileSync(join(__dirname, '..', file), 'utf8')

@@ -93,7 +93,8 @@
     "duplicatePreventionDesc": "Das System verhindert überlappende Aufträge und hält den Bestand genau.",
     "multiPlatform": "Für alle Plattformen",
     "multiPlatformDesc": "Ihre Verleihdaten auf iOS, Android und im Web – ohne doppelte Eingabe.",
-    "viewAllFeatures": "Alle Funktionen im Detail"
+    "viewAllFeatures": "Alle Funktionen im Detail",
+    "badge": "Funktionen"
   },
   "customSolution": {
     "title": "Brauchen Sie eine individuelle Lösung?",
