@@ -2244,10 +2244,11 @@ final class AnyRentE2ETests: XCTestCase {
 
     /// Home search field (v2 placeholder "Tìm tên, mã vạch hoặc chụp ảnh"; older "Tên, mã vạch…")
     private var homeSearch: XCUIElement {
-        let byLabel = e2e.field(["Name, barcode…", "Tên, mã vạch…", "Tìm tên, mã vạch hoặc chụp ảnh"])
+        // English Home placeholder: "Search name, barcode or take a photo" (`products.home.searchPlaceholder`)
+        let byLabel = e2e.field(["Name, barcode…", "Tên, mã vạch…", "Tìm tên, mã vạch hoặc chụp ảnh", "Search name, barcode or take a photo"])
         if byLabel.exists { return byLabel }
         return app.textFields.matching(NSPredicate(format:
-            "placeholderValue BEGINSWITH 'Tìm tên' OR placeholderValue BEGINSWITH 'Name' OR label BEGINSWITH 'Tìm tên'")).firstMatch
+            "placeholderValue BEGINSWITH 'Tìm tên' OR placeholderValue BEGINSWITH 'Name' OR placeholderValue BEGINSWITH 'Search name' OR label BEGINSWITH 'Tìm tên'")).firstMatch
     }
 
     /// Orders tab → Tất cả đơn; true when rows show
