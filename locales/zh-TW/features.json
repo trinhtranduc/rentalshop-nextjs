@@ -1,0 +1,81 @@
+{
+  "navigation": { "home": "首頁", "pricing": "價格", "login": "登入" },
+  "hero": {
+    "badge": "功能特色",
+    "title": "探索 AnyRent 的強大功能",
+    "description": "完整的租賃店管理軟體，行動 App 與網頁入口功能齊全，讓您隨時隨地有效經營。",
+    "downloadApp": "下載 App",
+    "tryWebPortal": "試用網頁入口"
+  },
+  "platforms": {
+    "title": "多平台",
+    "description": "在任何裝置上存取與管理您的租賃店",
+    "mobile": {
+      "title": "行動 App",
+      "description": "透過 iOS 與 Android App，隨時隨地管理租賃店",
+      "features": { "ios": "完整支援 iOS", "android": "支援 Android", "offline": "離線模式", "sync": "自動同步資料" }
+    },
+    "web": {
+      "title": "網頁入口",
+      "description": "透過瀏覽器使用完整功能，介面現代且自適應",
+      "features": { "responsive": "自適應設計", "fullFeatures": "功能完整", "reports": "詳細報表", "multiUser": "支援多位使用者" }
+    }
+  },
+  "mobile": {
+    "badge": "行動 App",
+    "title": "行動 App 功能",
+    "description": "用手機就能以強大功能管理租賃店",
+    "screenshotPlaceholder": "行動 App 截圖",
+    "features": {
+      "orderManagement": { "title": "訂單管理", "description": "直接在手機上建立、查看與管理租賃訂單，追蹤訂單狀態與交易紀錄。" },
+      "customerManagement": { "title": "客戶管理", "description": "保存客戶資料與租賃紀錄，輕鬆維繫客戶關係。" },
+      "inventoryManagement": { "title": "庫存管理", "description": "追蹤商品數量與供應狀態，有效管理庫存。" },
+      "scheduling": { "title": "行事曆與排程", "description": "查看租賃與歸還行事曆，直覺管理排程。" },
+      "quickSearch": { "title": "快速搜尋", "description": "以智慧搜尋快速找到訂單、客戶與商品。" },
+      "notifications": { "title": "通知", "description": "接收新訂單、歸還提醒與重要事件的通知。" }
+    },
+    "details": {
+      "viewDetails": "查看詳情",
+      "benefits": {
+        "accessAnywhere": { "title": "隨時隨地使用", "description": "用行動裝置管理" },
+        "autoSync": { "title": "自動同步", "description": "資料隨時保持最新" }
+      }
+    }
+  },
+  "web": {
+    "badge": "網頁版",
+    "title": "網頁入口功能",
+    "description": "透過瀏覽器全面管理租賃店，功能完整",
+    "screenshotPlaceholder": "網頁入口截圖",
+    "features": {
+      "analytics": { "title": "分析與報表", "description": "查看詳細營收報表，分析經營成效與銷售趨勢。" },
+      "reports": { "title": "財務報表", "description": "建立並匯出財務報表、營收報表與綜合報表。" },
+      "settings": { "title": "設定與配置", "description": "管理系統設定與店鋪配置，依需求自訂。" },
+      "userManagement": { "title": "使用者管理", "description": "新增、編輯與管理使用者、權限與角色。" },
+      "payments": { "title": "付款管理", "description": "追蹤付款與帳單，詳細管理財務。" },
+      "security": { "title": "安全性", "description": "以加密、自動備份與存取控制保護資料。" }
+    },
+    "details": {
+      "viewDetails": "查看詳情",
+      "benefits": {
+        "fullInterface": { "title": "完整介面", "description": "網頁上提供所有功能" },
+        "detailedReports": { "title": "詳細報表", "description": "匯出與分析資料" }
+      }
+    }
+  },
+  "details": { "title": "功能詳情", "description": "深入了解 AnyRent 的強大功能", "mobileApp": "行動 App", "webPortal": "網頁入口" },
+  "shared": {
+    "badge": "共同功能",
+    "title": "共同功能",
+    "description": "行動 App 與網頁入口都能使用的功能",
+    "features": {
+      "cloudSync": { "title": "雲端同步", "description": "資料自動在所有裝置間同步，一台裝置上的變更會立即更新到其他裝置。" },
+      "dataSecurity": { "title": "資料安全", "description": "您的資料經過加密並安全儲存在雲端，自動備份確保資料不會遺失。" },
+      "realTime": { "title": "即時更新", "description": "所有變更都會立即反映在每台裝置上，團隊隨時使用同步的資料協作。" },
+      "scalable": { "title": "可擴充", "description": "系統可依業務需求擴充，從小型店面到大型連鎖都適用。" }
+    }
+  },
+  "cta": { "title": "準備好開始了嗎？", "description": "加入已在使用 AnyRent 的租賃業者", "downloadApp": "下載 App", "tryWebPortal": "試用網頁入口" },
+  "footer": { "description": "AnyRent - 越南領先的租賃店管理軟體", "home": "首頁", "pricing": "價格", "login": "登入", "copyright": "© 2024 AnyRent. 保留所有權利。" },
+  "screens": { "order": "訂單管理", "product": "商品管理", "calendar": "行事曆與排程", "users": "使用者管理", "webCalendar": "訂單行事曆", "webOrderDetail": "訂單詳情", "webOrder": "訂單管理", "prev": "上一張截圖", "next": "下一張截圖", "goTo": "查看第 {index} 張截圖" }
+}

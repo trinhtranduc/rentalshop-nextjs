@@ -166,5 +166,17 @@
     "pricing": "Bảng giá",
     "login": "Đăng nhập",
     "copyright": "© 2024 AnyRent. Bảo lưu mọi quyền."
+  },
+  "screens": {
+    "order": "Quản lý Đơn hàng",
+    "product": "Quản lý Sản phẩm",
+    "calendar": "Lịch & Lên lịch",
+    "users": "Quản lý Người dùng",
+    "webCalendar": "Lịch Đơn hàng",
+    "webOrderDetail": "Chi tiết Đơn hàng",
+    "webOrder": "Quản lý Đơn hàng",
+    "prev": "Ảnh trước",
+    "next": "Ảnh tiếp theo",
+    "goTo": "Xem ảnh {index}"
   }
 }

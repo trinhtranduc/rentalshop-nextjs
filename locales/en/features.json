@@ -166,5 +166,17 @@
     "pricing": "Pricing",
     "login": "Login",
     "copyright": "© 2024 AnyRent. All rights reserved."
+  },
+  "screens": {
+    "order": "Order Management",
+    "product": "Product Management",
+    "calendar": "Calendar & Scheduling",
+    "users": "User Management",
+    "webCalendar": "Order Calendar",
+    "webOrderDetail": "Order Details",
+    "webOrder": "Order Management",
+    "prev": "Previous screenshot",
+    "next": "Next screenshot",
+    "goTo": "Go to screenshot {index}"
   }
 }

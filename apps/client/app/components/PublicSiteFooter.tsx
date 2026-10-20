@@ -3,9 +3,12 @@
 import Link from 'next/link'
 import { Mail, Phone, Store } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { usePublicHref } from '../../lib/public-content/use-public-href'
 
 export default function PublicSiteFooter() {
   const t = useTranslations('landing.footer')
+  // #1114: links stay in the language of the page; industry pages are Vietnamese only
+  const href = usePublicHref()
 
   return (
     <footer id="contact" className="relative overflow-hidden bg-slate-900 py-12 text-white" role="contentinfo">
@@ -42,22 +45,22 @@ export default function PublicSiteFooter() {
             <h3 className="mb-4 text-lg font-semibold">{t('product.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/features" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('features')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('product.features')}
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('pricing')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('product.pricing')}
                 </Link>
               </li>
               <li>
-                <Link href="/download" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('download')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('product.downloadApp')}
                 </Link>
               </li>
               <li>
-                <Link href="/tim-san-pham-bang-hinh-anh" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('image-search')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('imageSearch')}
                 </Link>
               </li>
@@ -68,22 +71,22 @@ export default function PublicSiteFooter() {
             <h3 className="mb-4 text-lg font-semibold">{t('industries.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/cho-thue-ao-dai" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('industry:cho-thue-ao-dai')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('industries.aoDai')}
                 </Link>
               </li>
               <li>
-                <Link href="/cho-thue-ao-cuoi" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('industry:cho-thue-ao-cuoi')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('industries.weddingDress')}
                 </Link>
               </li>
               <li>
-                <Link href="/cho-thue-trang-thiet-bi" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('industry:cho-thue-trang-thiet-bi')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('industries.equipment')}
                 </Link>
               </li>
               <li>
-                <Link href="/cho-thue-trang-phuc" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('industry:cho-thue-trang-phuc')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('industries.costume')}
                 </Link>
               </li>
@@ -94,17 +97,17 @@ export default function PublicSiteFooter() {
             <h3 className="mb-4 text-lg font-semibold">{t('support.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/#faq" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('faq')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('support.faq')}
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('blog')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('support.documentation')}
                 </Link>
               </li>
               <li>
-                <Link href="/#contact" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('contact')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('support.contact')}
                 </Link>
               </li>
@@ -115,7 +118,7 @@ export default function PublicSiteFooter() {
             <h3 className="mb-4 text-lg font-semibold">{t('company.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/features" className="text-sm text-gray-400 transition-colors hover:text-white">
+                <Link href={href('features')} className="text-sm text-gray-400 transition-colors hover:text-white">
                   {t('company.aboutUs')}
                 </Link>
               </li>

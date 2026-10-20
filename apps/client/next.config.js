@@ -101,30 +101,13 @@ const nextConfig = {
         destination: '/tim-san-pham-bang-hinh-anh',
         permanent: true,
       },
-      // Locale-prefixed paths are not real routes (cookie i18n) — collapse to the VN SEO slug
+      // Vietnamese has no prefix: /vi/... goes to the Vietnamese URL
+      { source: '/vi/:page(ai-search|tim-san-pham-bang-hinh-anh|image-search)', destination: '/tim-san-pham-bang-hinh-anh', permanent: true },
+      { source: '/vi/:page(features|pricing|download)', destination: '/:page', permanent: true },
+      // #1114: these pages exist in every public language; old aliases go to the page in that language
       {
-        source: '/:locale(vi|en|zh|ko|ja)/ai-search',
-        destination: '/tim-san-pham-bang-hinh-anh',
-        permanent: true,
-      },
-      {
-        source: '/:locale(vi|en|zh|ko|ja)/tim-san-pham-bang-hinh-anh',
-        destination: '/tim-san-pham-bang-hinh-anh',
-        permanent: true,
-      },
-      {
-        source: '/:locale(vi|en|zh|ko|ja)/features',
-        destination: '/features',
-        permanent: true,
-      },
-      {
-        source: '/:locale(vi|en|zh|ko|ja)/pricing',
-        destination: '/pricing',
-        permanent: true,
-      },
-      {
-        source: '/:locale(vi|en|zh|ko|ja)/download',
-        destination: '/download',
+        source: '/:locale(en|zh|ko|ja|ru|zh-TW|fr|de|th|id|es)/:page(ai-search|tim-san-pham-bang-hinh-anh)',
+        destination: '/:locale/image-search',
         permanent: true,
       },
       {

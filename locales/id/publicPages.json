@@ -1,0 +1,81 @@
+{
+  "common": { "home": "Beranda" },
+  "meta": {
+    "pricing": {
+      "title": "Harga Software Manajemen Toko Sewa | AnyRent",
+      "description": "Harga AnyRent untuk toko sewa: paket Basic, Professional, dan Enterprise. Uji coba gratis 14 hari. Paket bulanan yang terjangkau.",
+      "ogDescription": "Paket Basic, Professional, dan Enterprise. Uji coba gratis 14 hari. Paket bulanan yang terjangkau.",
+      "name": "Harga AnyRent - software manajemen toko sewa",
+      "breadcrumb": "Harga"
+    },
+    "features": {
+      "title": "Fitur Software Manajemen Toko Sewa | AnyRent",
+      "description": "Lihat fitur AnyRent: pesanan sewa, stok, pelanggan, kalender pemesanan, dan laporan pendapatan. Tersedia di iOS, Android, dan web.",
+      "ogDescription": "Kelola pesanan, stok, pelanggan, kalender pemesanan, dan laporan pendapatan di ponsel dan web.",
+      "name": "Fitur AnyRent - software manajemen toko sewa",
+      "breadcrumb": "Fitur"
+    },
+    "download": {
+      "title": "Unduh Aplikasi AnyRent — iOS & Android | Software Toko Sewa",
+      "description": "Unduh AnyRent di App Store dan Google Play. Kelola toko sewa dari ponsel atau portal web: pesanan, stok, kalender, dan pelanggan.",
+      "ogDescription": "Kelola toko sewa kapan saja di iPhone, Android, dan portal web.",
+      "name": "Unduh aplikasi AnyRent",
+      "breadcrumb": "Unduh"
+    },
+    "imageSearch": {
+      "title": "Cari Barang Sewaan dengan Foto Pakai AI | AnyRent",
+      "description": "Pencarian gambar AI di AnyRent: foto áo dài, gaun pengantin, atau peralatan, lalu langsung temukan barang serupa di stok beserta ketersediaan dan harga sewanya.",
+      "ogDescription": "Ambil foto, lalu AI mencari barang serupa di stok. Ketersediaan dan harga sewa langsung tampil.",
+      "name": "Cari barang sewaan dengan foto pakai AI",
+      "breadcrumb": "Pencarian gambar AI"
+    }
+  },
+  "pricingFaq": {
+    "q1": "Apakah software manajemen sewa AnyRent gratis?",
+    "a1": "AnyRent menyediakan uji coba gratis 14 hari dengan semua fitur. Setelah itu Anda bisa memilih paket bulanan yang cocok untuk toko Anda.",
+    "q2": "Bisakah saya ganti paket nanti?",
+    "a2": "Bisa, Anda dapat upgrade kapan saja. Tagihan dihitung proporsional dan fitur paket yang lebih tinggi langsung bisa dipakai.",
+    "q3": "Apa yang terjadi jika saya melewati batas paket?",
+    "a3": "Jika melewati batas, Anda perlu pindah ke paket yang lebih tinggi. Kami akan memberi tahu saat Anda mendekati batas."
+  },
+  "download": {
+    "eyebrow": "AnyRent · Multiplatform",
+    "title": "Unduh aplikasi AnyRent",
+    "intro": "Kelola toko sewa di iPhone, Android, atau browser. Pesanan, stok, dan kalender sewa tersinkron secara real time.",
+    "getTitle": "Unduh sekarang",
+    "getSubtitle": "Pilih toko aplikasi yang sesuai dengan perangkat Anda.",
+    "webPrefix": "Atau coba",
+    "webPortal": "portal web",
+    "webSuffix": "langsung di browser, tanpa perlu memasang aplikasi.",
+    "cards": {
+      "mobile": { "title": "Aplikasi seluler", "desc": "Buat pesanan, cek stok dan kalender sewa di kasir maupun saat bepergian." },
+      "web": { "title": "Portal web", "desc": "Laporan lengkap, pengaturan toko, dan pengelolaan tim di komputer." },
+      "sync": { "title": "Tersinkron di mana saja", "desc": "Satu akun, data tersinkron antara aplikasi iOS, Android, dan web." }
+    },
+    "links": { "pricing": "Lihat harga →", "features": "Fitur →", "imageSearch": "Cari barang dengan foto pakai AI →" }
+  },
+  "imageSearch": {
+    "eyebrow": "Kecerdasan buatan · Pencarian gambar AI",
+    "title": "Cari barang sewaan dengan foto pakai AI",
+    "intro": "Pelanggan cukup membawa satu foto. AnyRent mencari barang serupa di stok Anda, lengkap dengan ketersediaan dan harga sewa. Tidak perlu hafal kode barang atau mengetik kata kunci.",
+    "tryFree": "Coba gratis",
+    "download": "Unduh aplikasi",
+    "imageAlt": "Layar AnyRent menampilkan hasil pencarian gambar AI",
+    "steps": {
+      "snap": { "title": "Foto untuk mencari", "desc": "Foto atau unggah contoh áo dài, gaun pengantin, atau kostum, tanpa perlu nama atau barcode." },
+      "match": { "title": "Pencocokan cerdas dengan AI", "desc": "Embedding vektor membandingkan warna, model, dan bahan untuk menyarankan barang paling mirip di stok." },
+      "instant": { "title": "Hasil seketika", "desc": "Dalam hitungan detik muncul daftar barang yang cocok beserta stok dan harga sewa, siap dibuatkan pesanan." }
+    },
+    "whyTitle": "Mengapa toko sewa membutuhkan pencarian gambar AI?",
+    "why1": "Pelanggan ingat model dan warnanya, bukan kode barangnya.",
+    "why2": "Staf menemukan barang lebih cepat saat toko ramai.",
+    "why3": "Lebih jarang salah ukuran atau model saat stok banyak (áo dài, gaun pengantin, kostum).",
+    "links": { "features": "Semua fitur →", "pricing": "Harga →", "aoDai": "Sewa áo dài →" },
+    "faq": {
+      "q1": "Bagaimana cara kerja pencarian gambar AI?",
+      "a1": "Pelanggan atau staf memotret atau mengunggah foto contoh. AnyRent membandingkannya dengan foto barang di stok memakai embedding AI dan menampilkan barang serupa beserta ketersediaan dan harga sewa.",
+      "q2": "Cocok untuk usaha sewa apa saja pencarian gambar AI?",
+      "a2": "Sangat efektif untuk sewa áo dài, gaun pengantin, kostum, dan peralatan, saat pelanggan lebih ingat tampilannya daripada kode barangnya."
+    }
+  }
+}

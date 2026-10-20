@@ -23,8 +23,12 @@ const publicFetch = async (url: string, options: RequestInit = {}): Promise<Resp
     ...(options.headers as Record<string, string>),
   };
 
+  // #1117: never through Next's data cache. A fetch without a cache option is cached forever in a server
+  // component (and survives deploys on Vercel), so a list or a post kept its state from before an edition was
+  // published (/en/post stayed empty). Public pages are rendered per request anyway.
   const defaultOptions: RequestInit = {
     method: 'GET',
+    cache: 'no-store',
     headers,
     ...options,
   };

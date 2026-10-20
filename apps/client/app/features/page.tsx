@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { publicPageAlternates } from '../../lib/public-content/public-pages';
 import FeaturesClient from './FeaturesClient';
 
 const BASE_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://anyrent.shop';
@@ -16,17 +17,8 @@ export const metadata: Metadata = {
     'app quản lý cho thuê iOS',
     'AnyRent features',
   ],
-  alternates: {
-    canonical: '/features',
-    languages: {
-      'x-default': '/features',
-      vi: '/features',
-      en: '/features',
-      zh: '/features',
-      ko: '/features',
-      ja: '/features',
-    },
-  },
+  // #1114: the localized siblings of this page
+  alternates: { canonical: '/features', languages: publicPageAlternates('features') },
   openGraph: {
     title: 'Tính năng Phần mềm Quản lý Cho thuê | AnyRent',
     description:

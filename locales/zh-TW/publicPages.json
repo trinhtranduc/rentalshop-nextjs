@@ -1,0 +1,81 @@
+{
+  "common": { "home": "首頁" },
+  "meta": {
+    "pricing": {
+      "title": "租賃店管理軟體價格方案 | AnyRent",
+      "description": "AnyRent 價格方案：Basic、Professional、Enterprise。14 天免費試用，月付方案價格實惠，專為租賃店打造的管理軟體。",
+      "ogDescription": "Basic、Professional、Enterprise 三種方案。14 天免費試用，月付方案價格實惠。",
+      "name": "AnyRent 價格方案 - 租賃店管理軟體",
+      "breadcrumb": "價格"
+    },
+    "features": {
+      "title": "租賃店管理軟體功能 | AnyRent",
+      "description": "了解 AnyRent 的功能：租賃訂單、庫存、客戶、預約行事曆與營收報表。支援 iOS、Android 與網頁版。",
+      "ogDescription": "在手機與網頁上管理訂單、庫存、客戶、預約行事曆與營收報表。",
+      "name": "AnyRent 功能 - 租賃店管理軟體",
+      "breadcrumb": "功能"
+    },
+    "download": {
+      "title": "下載 AnyRent App — iOS 與 Android | 租賃店管理",
+      "description": "在 App Store 與 Google Play 下載 AnyRent。透過手機或網頁入口管理訂單、庫存、行事曆與客戶。",
+      "ogDescription": "隨時在 iPhone、Android 與網頁入口管理您的租賃店。",
+      "name": "下載 AnyRent App",
+      "breadcrumb": "下載"
+    },
+    "imageSearch": {
+      "title": "用 AI 以圖找租賃商品 | AnyRent",
+      "description": "AnyRent AI 圖片搜尋：拍一張奧黛、婚紗或設備的照片，就能在庫存中找到相似商品，並顯示庫存狀態與租金。",
+      "ogDescription": "拍照後 AI 在庫存中尋找相似商品，庫存狀態與租金立即顯示。",
+      "name": "用 AI 以圖找租賃商品",
+      "breadcrumb": "AI 圖片搜尋"
+    }
+  },
+  "pricingFaq": {
+    "q1": "AnyRent 租賃管理軟體免費嗎？",
+    "a1": "AnyRent 提供 14 天全功能免費試用。之後您可以選擇適合店家的月付方案。",
+    "q2": "之後可以升級方案嗎？",
+    "a2": "可以，您隨時都能升級。費用按比例計算，升級後馬上可以使用更高方案的功能。",
+    "q3": "超出方案上限會怎樣？",
+    "a3": "超出上限時需要升級到更高的方案。快到上限時我們會提前通知您。"
+  },
+  "download": {
+    "eyebrow": "AnyRent · 多平台",
+    "title": "下載 AnyRent App",
+    "intro": "在 iPhone、Android 或瀏覽器上管理租賃店。訂單、庫存與租賃行事曆即時同步。",
+    "getTitle": "立即下載",
+    "getSubtitle": "請選擇適合您裝置的應用程式商店。",
+    "webPrefix": "或直接在瀏覽器中試用",
+    "webPortal": "網頁入口",
+    "webSuffix": "，不必安裝 App。",
+    "cards": {
+      "mobile": { "title": "行動 App", "desc": "在店裡或外出時都能建立訂單、查看庫存與租賃行事曆。" },
+      "web": { "title": "網頁入口", "desc": "在電腦上查看完整報表、設定店鋪並管理團隊。" },
+      "sync": { "title": "隨處同步", "desc": "一個帳號，iOS、Android App 與網頁之間的資料保持同步。" }
+    },
+    "links": { "pricing": "查看價格 →", "features": "功能 →", "imageSearch": "用 AI 以圖找商品 →" }
+  },
+  "imageSearch": {
+    "eyebrow": "人工智慧 · AI 圖片搜尋",
+    "title": "用 AI 以圖找租賃商品",
+    "intro": "客人只需要一張照片。AnyRent 會在庫存中找出相似商品，並顯示庫存狀態與租金。不必記住商品編號，也不用輸入關鍵字。",
+    "tryFree": "免費試用",
+    "download": "下載 App",
+    "imageAlt": "AnyRent 顯示 AI 圖片搜尋結果的畫面",
+    "steps": {
+      "snap": { "title": "拍照找商品", "desc": "拍攝或上傳奧黛、婚紗、服裝的參考照片，不需要商品名稱或條碼。" },
+      "match": { "title": "AI 智慧辨識", "desc": "向量嵌入會比較顏色、款式與材質，推薦庫存中最接近的商品。" },
+      "instant": { "title": "即時出結果", "desc": "幾秒內就能看到符合的商品及庫存與租金，可以直接建立訂單。" }
+    },
+    "whyTitle": "租賃店為什麼需要 AI 圖片搜尋？",
+    "why1": "客人記得的是款式與顏色，而不是商品編號。",
+    "why2": "店裡忙的時候，員工也能更快找到商品。",
+    "why3": "庫存再多，也能減少尺寸或款式拿錯（奧黛、婚紗、服裝）。",
+    "links": { "features": "全部功能 →", "pricing": "價格 →", "aoDai": "奧黛租賃 →" },
+    "faq": {
+      "q1": "AI 圖片搜尋是怎麼運作的？",
+      "a1": "客人或員工拍攝或上傳參考照片。AnyRent 用 AI 嵌入將它與庫存中的商品照片比對，並回傳相似商品及庫存狀態與租金。",
+      "q2": "AI 圖片搜尋適合哪些行業？",
+      "a2": "特別適合奧黛、婚紗、服裝與設備租賃，尤其是客人記得樣子卻不記得商品編號的時候。"
+    }
+  }
+}

@@ -65,6 +65,19 @@
         "title": "通知",
         "description": "接收有关新订单、退货提醒和重要事件的通知。"
       }
+    },
+    "details": {
+      "viewDetails": "查看详情",
+      "benefits": {
+        "accessAnywhere": {
+          "title": "随时随地使用",
+          "description": "用移动设备管理"
+        },
+        "autoSync": {
+          "title": "自动同步",
+          "description": "数据始终保持最新"
+        }
+      }
     }
   },
   "web": {
@@ -153,5 +166,17 @@
     "pricing": "定价",
     "login": "登录",
     "copyright": "© 2024 AnyRent. 保留所有权利。"
+  },
+  "screens": {
+    "order": "订单管理",
+    "product": "商品管理",
+    "calendar": "日历与排期",
+    "users": "用户管理",
+    "webCalendar": "订单日历",
+    "webOrderDetail": "订单详情",
+    "webOrder": "订单管理",
+    "prev": "上一张截图",
+    "next": "下一张截图",
+    "goTo": "查看第 {index} 张截图"
   }
 }

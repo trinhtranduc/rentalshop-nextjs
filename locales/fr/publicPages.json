@@ -1,0 +1,81 @@
+{
+  "common": { "home": "Accueil" },
+  "meta": {
+    "pricing": {
+      "title": "Tarifs du logiciel de gestion de location | AnyRent",
+      "description": "Tarifs AnyRent pour les magasins de location : formules Basic, Professional et Enterprise. Essai gratuit de 14 jours. Des formules mensuelles abordables.",
+      "ogDescription": "Formules Basic, Professional et Enterprise. Essai gratuit de 14 jours. Des formules mensuelles abordables.",
+      "name": "Tarifs AnyRent - logiciel de gestion de location",
+      "breadcrumb": "Tarifs"
+    },
+    "features": {
+      "title": "Fonctionnalités du logiciel de gestion de location | AnyRent",
+      "description": "Découvrez les fonctionnalités d'AnyRent : commandes de location, stock, clients, calendrier des réservations et rapports de chiffre d'affaires. Sur iOS, Android et le web.",
+      "ogDescription": "Commandes, stock, clients, calendrier des réservations et rapports de chiffre d'affaires sur mobile et sur le web.",
+      "name": "Fonctionnalités AnyRent - logiciel de gestion de location",
+      "breadcrumb": "Fonctionnalités"
+    },
+    "download": {
+      "title": "Télécharger l'application AnyRent — iOS et Android | Location",
+      "description": "Téléchargez AnyRent sur l'App Store et Google Play. Gérez votre magasin de location depuis votre téléphone ou le portail web : commandes, stock, calendrier et clients.",
+      "ogDescription": "Gérez votre magasin de location à tout moment sur iPhone, Android et le portail web.",
+      "name": "Télécharger l'application AnyRent",
+      "breadcrumb": "Télécharger"
+    },
+    "imageSearch": {
+      "title": "Trouver des articles de location par photo avec l'IA | AnyRent",
+      "description": "Recherche par image IA d'AnyRent : photographiez un áo dài, une robe de mariée ou un équipement et trouvez aussitôt des articles similaires en stock, avec disponibilité et prix de location.",
+      "ogDescription": "Prenez une photo : l'IA trouve des articles similaires en stock. Disponibilité et prix de location s'affichent tout de suite.",
+      "name": "Trouver des articles de location par photo avec l'IA",
+      "breadcrumb": "Recherche par image IA"
+    }
+  },
+  "pricingFaq": {
+    "q1": "Le logiciel de gestion de location AnyRent est-il gratuit ?",
+    "a1": "AnyRent propose un essai gratuit de 14 jours avec toutes les fonctionnalités. Ensuite, vous choisissez la formule mensuelle adaptée à votre magasin.",
+    "q2": "Puis-je changer de formule plus tard ?",
+    "a2": "Oui, vous pouvez passer à une formule supérieure à tout moment. La facturation est calculée au prorata et vous accédez tout de suite aux fonctionnalités supplémentaires.",
+    "q3": "Que se passe-t-il si je dépasse les limites de ma formule ?",
+    "a3": "Si vous dépassez les limites, il faudra passer à une formule supérieure. Nous vous prévenons lorsque vous approchez d'une limite."
+  },
+  "download": {
+    "eyebrow": "AnyRent · Multiplateforme",
+    "title": "Télécharger l'application AnyRent",
+    "intro": "Gérez votre magasin de location sur iPhone, Android ou dans le navigateur. Commandes, stock et calendrier de location restent synchronisés en temps réel.",
+    "getTitle": "Télécharger maintenant",
+    "getSubtitle": "Choisissez la boutique adaptée à votre appareil.",
+    "webPrefix": "Ou essayez le",
+    "webPortal": "portail web",
+    "webSuffix": "directement dans votre navigateur, sans installer d'application.",
+    "cards": {
+      "mobile": { "title": "Application mobile", "desc": "Créez des commandes, vérifiez le stock et le calendrier de location au comptoir ou en déplacement." },
+      "web": { "title": "Portail web", "desc": "Rapports complets, réglages du magasin et gestion de l'équipe sur ordinateur." },
+      "sync": { "title": "Synchronisé partout", "desc": "Un seul compte, des données synchronisées entre les applications iOS et Android et le web." }
+    },
+    "links": { "pricing": "Voir les tarifs →", "features": "Fonctionnalités →", "imageSearch": "Trouver des articles par photo avec l'IA →" }
+  },
+  "imageSearch": {
+    "eyebrow": "Intelligence artificielle · Recherche par image IA",
+    "title": "Trouver des articles de location par photo avec l'IA",
+    "intro": "Une photo suffit à votre client. AnyRent trouve des articles similaires dans votre stock, avec leur disponibilité et leur prix de location. Pas de référence à retenir ni de mot-clé à taper.",
+    "tryFree": "Essai gratuit",
+    "download": "Télécharger l'application",
+    "imageAlt": "Écran AnyRent affichant les résultats de la recherche par image IA",
+    "steps": {
+      "snap": { "title": "Prenez une photo pour chercher", "desc": "Photographiez ou importez un modèle d'áo dài, de robe de mariée ou de costume, sans nom ni code-barres." },
+      "match": { "title": "Reconnaissance intelligente par IA", "desc": "Les embeddings vectoriels comparent couleur, coupe et matière pour proposer les articles les plus proches de votre stock." },
+      "instant": { "title": "Résultats immédiats", "desc": "En quelques secondes, la liste des correspondances avec stock et prix de location, prête pour créer la commande." }
+    },
+    "whyTitle": "Pourquoi un magasin de location a-t-il besoin de la recherche par image IA ?",
+    "why1": "Les clients se souviennent du style et de la couleur, pas de la référence.",
+    "why2": "L'équipe trouve plus vite les articles quand le magasin est plein.",
+    "why3": "Moins d'erreurs de taille ou de modèle avec un grand stock (áo dài, robes de mariée, costumes).",
+    "links": { "features": "Toutes les fonctionnalités →", "pricing": "Tarifs →", "aoDai": "Location d'áo dài →" },
+    "faq": {
+      "q1": "Comment fonctionne la recherche par image IA ?",
+      "a1": "Le client ou un employé prend ou importe une photo modèle. AnyRent la compare aux photos des articles en stock grâce aux embeddings IA et renvoie les articles similaires avec disponibilité et prix de location.",
+      "q2": "Pour quels types de location la recherche par image IA est-elle adaptée ?",
+      "a2": "Elle est particulièrement efficace pour la location d'áo dài, de robes de mariée, de costumes et d'équipement, quand les clients se souviennent de l'apparence plutôt que de la référence."
+    }
+  }
+}
