@@ -4,6 +4,13 @@
  * Pure helpers only (the pages are thin); Vietnam civil day keys throughout.
  */
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
+
+// The @rentalshop/utils barrel pulls in React files; create-model only needs the pure pricing modules (as in
+// web-orders-confirm.test.ts)
+jest.mock('@rentalshop/utils', () => ({
+  ...(jest.requireActual('../packages/utils/src/core/order-line-pricing') as object),
+  ...(jest.requireActual('../packages/utils/src/core/rental-days') as object),
+}));
 import {
   BOOKING_TABS,
   REJECT_REASONS,

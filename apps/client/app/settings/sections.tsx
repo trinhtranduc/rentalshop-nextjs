@@ -11,10 +11,11 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { COUNTRIES } from '@rentalshop/constants';
 import { useToast } from '@rentalshop/ui';
-import { authApi, outletsApi, usersApi } from '@rentalshop/utils';
+import { authApi, bookingRequestsApi, outletsApi, usersApi } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
 import { Modal, fieldClass } from '../orders/create/parts';
 import { addressLine, passwordProblem, publicLinks, tenantKeyValid } from './settings-model';
+import { outletBookingRows } from '../orders/online/online-model';
 import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
 import { usePrintSettings } from '../components/usePrintSettings';
 import { BillPreview, BillTestPrint, LabelPreview, useLabelTestPrint } from './PrintPreviews';
@@ -227,7 +228,7 @@ export function ShopInfoSection({
 // Chi nhánh (merchant)
 // ----------------------------------------------------------------------------
 
-type OutletRow = { id: number; name: string; phone?: string | null; isDefault?: boolean; address?: string | null; city?: string | null; state?: string | null; printNote?: string | null; printBankQr?: boolean };
+type OutletRow = { id: number; name: string; phone?: string | null; isDefault?: boolean; address?: string | null; city?: string | null; state?: string | null; printNote?: string | null; printBankQr?: boolean; acceptsOnlineBooking?: boolean };
 
 function useOutlets() {
   const [state, setState] = useState<{ rows: OutletRow[]; loading: boolean; failed: boolean }>({ rows: [], loading: true, failed: false });
@@ -299,6 +300,123 @@ export function OutletsSection({ t }: { t: T }) {
             );
           })}
         </ul>
+      )}
+    </section>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Đặt online (#1124): the shop takes booking requests from its public page
+// ----------------------------------------------------------------------------
+
+export function OnlineBookingSection({
+  t,
+  enabled,
+  canEditShop,
+  canEditOutlets,
+  onShopChanged,
+}: {
+  t: T;
+  /** Merchant.onlineBookingEnabled (profile) */
+  enabled: boolean;
+  /** Only the owner turns the shop switch (API: MERCHANT / ADMIN) */
+  canEditShop: boolean;
+  /** Owner, or the outlet admin for their outlet (API: outlet.manage) */
+  canEditOutlets: boolean;
+  onShopChanged?: () => void;
+}) {
+  const ts = useTranslations('settings');
+  const { toastSuccess, toastError } = useToast();
+  const { rows, loading, failed, retry } = useOutlets();
+  const [shopOn, setShopOn] = useState(enabled);
+  const [shopSaving, setShopSaving] = useState(false);
+  const [outletOn, setOutletOn] = useState<Record<number, boolean>>({});
+  const [outletSaving, setOutletSaving] = useState<Record<number, boolean>>({});
+  useEffect(() => setShopOn(enabled), [enabled]);
+  useEffect(() => {
+    setOutletOn(Object.fromEntries(outletBookingRows(rows).map((r) => [r.id, r.on])));
+  }, [rows]);
+  const titleId = useId();
+  const hintId = useId();
+  const outletsId = useId();
+
+  const toggleShop = async (next: boolean) => {
+    setShopOn(next);
+    setShopSaving(true);
+    try {
+      const res = await bookingRequestsApi.setOnlineBooking(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('onlineBooking.title'));
+      onShopChanged?.();
+    } catch (error) {
+      setShopOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('onlineBooking.title'));
+    } finally {
+      setShopSaving(false);
+    }
+  };
+  const toggleOutlet = async (row: OutletRow, next: boolean) => {
+    setOutletOn((m) => ({ ...m, [row.id]: next }));
+    setOutletSaving((m) => ({ ...m, [row.id]: true }));
+    try {
+      const res = await outletsApi.updateOutlet(row.id, { acceptsOnlineBooking: next } as unknown as Parameters<typeof outletsApi.updateOutlet>[1]);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), `${t('onlineBooking.outlets')} — ${row.name}`);
+    } catch (error) {
+      setOutletOn((m) => ({ ...m, [row.id]: !next }));
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('onlineBooking.outlets'));
+    } finally {
+      setOutletSaving((m) => ({ ...m, [row.id]: false }));
+    }
+  };
+
+  return (
+    <section id="dat-online" className={`${cardClass} flex flex-col gap-4 px-5 py-4`} data-online-booking-setting>
+      <div className="flex min-h-[44px] items-start justify-between gap-3">
+        <span className="flex flex-col gap-1">
+          <h2 id={titleId} className="m-0 text-lg font-bold">
+            {t('onlineBooking.title')}
+          </h2>
+          <span id={hintId} className="text-sm text-ar-muted">
+            {t('onlineBooking.hint')}
+            {!canEditShop && ` ${t('onlineBooking.ownerOnly')}`}
+          </span>
+        </span>
+        <Switch checked={shopOn} onChange={toggleShop} disabled={!canEditShop || shopSaving} labelledBy={titleId} describedBy={hintId} />
+      </div>
+      {failed ? (
+        <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ar-muted">
+          <span>{t('outlets.loadFailed')}</span>
+          <button type="button" onClick={retry} className={smallBtn}>
+            {t('outlets.retry')}
+          </button>
+        </div>
+      ) : loading ? (
+        <Skeleton className="h-10 w-full" />
+      ) : (
+        rows.length > 0 && (
+          <div className="flex flex-col gap-2 border-t border-ar-subtle pt-4">
+            <span id={outletsId} className="text-[15px] font-semibold text-ar-ink">
+              {t('onlineBooking.outlets')}
+            </span>
+            <p className="-mt-1 mb-0 text-sm text-ar-muted">{t('onlineBooking.outletsHint')}</p>
+            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+              {rows.map((r) => (
+                <li key={r.id} className={`flex min-h-[44px] items-center justify-between gap-3 ${shopOn ? '' : 'opacity-60'}`}>
+                  <span id={`${outletsId}-${r.id}`} className="text-[15px] text-ar-ink">
+                    {r.name}
+                  </span>
+                  <Switch
+                    checked={outletOn[r.id] !== false}
+                    onChange={(next) => toggleOutlet(r, next)}
+                    disabled={!canEditOutlets || outletSaving[r.id]}
+                    labelledBy={`${outletsId} ${outletsId}-${r.id}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
       )}
     </section>
   );

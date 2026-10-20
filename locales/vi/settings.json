@@ -742,6 +742,13 @@
       "bankQrNoAccount": "Chi nhánh chưa có tài khoản ngân hàng",
       "bankQrAddAccount": "Thêm tài khoản ngân hàng",
       "bankQrReadOnly": "Chỉ chủ cửa hàng hoặc quản lý chi nhánh được đổi cài đặt này."
+    },
+    "onlineBooking": {
+      "title": "Nhận đặt online",
+      "hint": "Khách đặt thuê từ trang shop, bạn xác nhận trước khi thành đơn.",
+      "ownerOnly": "Chỉ chủ shop bật / tắt được.",
+      "outlets": "Chi nhánh nhận đặt",
+      "outletsHint": "Tắt ở chi nhánh không muốn nhận đặt online."
     }
   },
   "embeddingBackfill": {

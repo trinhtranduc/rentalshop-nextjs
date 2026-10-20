@@ -13,7 +13,8 @@ import { BUSINESS } from '@rentalshop/constants';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { useAuth, useOrderTranslations } from '@rentalshop/hooks';
-import { compressImage, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { bookingRequestsApi, compressImage, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { draftFromBooking } from '../online/online-model';
 import { useShopToday } from '../../hooks/useShopToday';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
@@ -243,6 +244,8 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const [securityDeposit] = useState(draft?.securityDeposit ?? 0);
   const [notes, setNotes] = useState(draft?.notes ?? '');
   const [notesOpen, setNotesOpen] = useState(!!draft?.notes);
+  // Đặt online › Xác nhận (#1124): the request this new order answers; sent as bookingRequestId
+  const [bookingRequestId, setBookingRequestId] = useState<number | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [compressing, setCompressing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -316,6 +319,35 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     }
     const outlet = Number(params.get('outletId'));
     if (outlet > 0 && !user?.outletId) setOutletId(outlet);
+    const booking = Number(params.get('bookingRequestId'));
+    if (booking > 0) {
+      bookingRequestsApi
+        .prepare(booking)
+        .then(async (res) => {
+          if (!res.success || !res.data) return;
+          const d = draftFromBooking(res.data, getLocalDateKey);
+          setBookingRequestId(d.bookingRequestId);
+          setPickup(d.pickup);
+          setRet(d.ret);
+          setDaysOpen(false);
+          if (!user?.outletId) setOutletId(d.outletId);
+          if (d.customer) setCustomer(d.customer);
+          if (d.notes) {
+            setNotes(d.notes);
+            setNotesOpen(true);
+          }
+          const products = await Promise.all(d.items.map((i) => productsApi.getProduct(i.productId).catch(() => null)));
+          setLines((cur) =>
+            d.items.reduce((acc, item, i) => {
+              const p = products[i];
+              if (!p || !p.success || !p.data) return acc;
+              const added = addProduct(acc, p.data as unknown as ProductLike, 'RENT');
+              return setQuantity(added, added[added.length - 1].key, item.quantity);
+            }, cur),
+          );
+        })
+        .catch(() => undefined);
+    }
     const productId = Number(params.get('productId'));
     if (productId > 0) {
       productsApi
@@ -483,6 +515,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           depositAmount,
           securityDeposit,
           notes,
+          bookingRequestId,
           loyaltyPoints: loyalty.redeemPoints,
           original: order ? { pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt } : null,
         })
@@ -589,6 +622,16 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           >
             <ShellIcon d={ICONS.chevronLeft} size={16} />
             {t('editor.backToOrder', { number: order.orderNumber })}
+          </Link>
+        )}
+        {!editing && bookingRequestId != null && (
+          <Link
+            href={`/orders/online/${bookingRequestId}`}
+            data-booking-banner
+            className="flex w-fit items-center gap-1 text-sm font-semibold text-ar-primary-ink no-underline hover:underline"
+          >
+            <ShellIcon d={ICONS.chevronLeft} size={16} />
+            {t('online.fromRequest')}
           </Link>
         )}
         <div className="flex flex-wrap items-center justify-between gap-3">
