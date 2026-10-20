@@ -16,8 +16,10 @@ const publicFetch = async (url: string, options: RequestInit = {}): Promise<Resp
     ...(options.headers as Record<string, string>),
   };
 
+  // #1117: not through Next's data cache, same as posts.ts (a cached public plans list would keep old prices)
   const defaultOptions: RequestInit = {
     method: 'GET',
+    cache: 'no-store',
     headers,
     ...options,
   };
