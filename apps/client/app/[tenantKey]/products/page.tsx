@@ -152,6 +152,7 @@ export default async function PublicProductsPage({
         pagination={pagination}
         tenantKey={tenantKey}
         onlineBooking={merchant.onlineBooking === true}
+        imageSearchAvailable={merchant.imageSearchAvailable === true}
         outlets={outlets}
       />
       <PublicShopFooter />

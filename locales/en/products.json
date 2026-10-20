@@ -742,6 +742,27 @@
       "backToShop": "Back to the shop",
       "total": "Estimate",
       "items": "Items"
+    },
+    "imageSearch": {
+      "title": "Have a sample photo? Find similar items with AI",
+      "hintDesktop": "Drop a photo here or choose one from your device. The photo is only used for the search and is not kept.",
+      "hintMobile": "Take or choose a photo to find similar items in this shop.",
+      "choose": "Choose photo",
+      "cameraButton": "Search by photo",
+      "yourPhoto": "Your photo",
+      "searching": "Finding similar items…",
+      "resultsTitle": "Closest to your photo · {count} items",
+      "similar": "{percent}% similar",
+      "inStockToday": "Available today",
+      "outToday": "Not available today",
+      "empty": "No similar item in this shop yet. Send the photo to the shop for advice.",
+      "sendZalo": "Send the photo on Zalo",
+      "invalidImage": "This photo cannot be used. Choose a JPG, PNG or WebP image.",
+      "tooLarge": "The photo is too large. Choose one under 15 MB.",
+      "errorRateLimited": "Too many searches. Please try again in a few minutes.",
+      "errorBusy": "Photo search is busy. Please try again in a few minutes.",
+      "errorNetwork": "No connection. Check your network and try again.",
+      "errorGeneric": "The search did not work right now. Please try again."
     }
   }
 }

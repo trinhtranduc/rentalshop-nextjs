@@ -200,6 +200,19 @@ export async function GET(
       onlineBooking = false;
     }
 
+    // #1128 "Tìm bằng ảnh" on the shop page: shown when at least one active product has an embedding. Fail-closed.
+    let imageSearchAvailable = false;
+    try {
+      const indexed = await db.prisma.product.findFirst({
+        where: { merchantId: merchant.id, isActive: true, deletedAt: null, embeddingGeneratedAt: { not: null } },
+        select: { id: true },
+      });
+      imageSearchAvailable = Boolean(indexed);
+    } catch (error) {
+      console.error('⚠️ Image search flag unavailable:', error);
+      imageSearchAvailable = false;
+    }
+
     // #663: allowlisted fields only (no cost price, CUIDs or internal fields on a public page)
     const transformedProducts = (productsResult.data || []).map(toPublicProduct);
 
@@ -216,7 +229,8 @@ export async function GET(
         country: merchant.country,
         currency: merchant.currency,
         isActive: merchant.isActive,
-        onlineBooking
+        onlineBooking,
+        imageSearchAvailable
       },
       products: transformedProducts,
       categories: categoriesResult || [],

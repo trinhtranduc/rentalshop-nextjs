@@ -23,6 +23,7 @@
   "CANNOT_TRANSFER_LAST_MERCHANT_OWNER": "このアカウントを変更する前に、別の有効な事業者オーナーを割り当ててください",
   "SEARCH_FAILED": "現在、画像検索を利用できません。しばらくしてから再度お試しいただくか、テキストで検索してください。",
   "SEARCH_TIMEOUT": "画像検索に時間がかかりすぎました。数分後に再度お試しください。",
+  "IMAGE_SEARCH_RATE_LIMITED": "画像検索の回数が多すぎます。数分後にもう一度お試しください。",
   "INVALID_LIMIT": "取得件数の指定が無効です",
   "INVALID_MIN_SIMILARITY": "最小類似度が無効です（0〜1の範囲で指定してください）",
   "NO_PRODUCTS_FOUND": "似ている商品が見つかりませんでした",

@@ -742,6 +742,27 @@
       "backToShop": "Về trang shop",
       "total": "Tạm tính",
       "items": "Món"
+    },
+    "imageSearch": {
+      "title": "Có ảnh mẫu? Tìm đồ giống bằng AI",
+      "hintDesktop": "Kéo thả ảnh vào đây hoặc chọn ảnh từ máy. Ảnh chỉ dùng để tìm, không lưu lại.",
+      "hintMobile": "Chụp hoặc chọn ảnh mẫu, tìm ngay đồ giống trong shop.",
+      "choose": "Chọn ảnh",
+      "cameraButton": "Tìm bằng hình ảnh",
+      "yourPhoto": "Ảnh của bạn",
+      "searching": "Đang tìm đồ giống…",
+      "resultsTitle": "Giống nhất với ảnh của bạn · {count} mẫu",
+      "similar": "{percent}% giống",
+      "inStockToday": "Còn hôm nay",
+      "outToday": "Hết hôm nay",
+      "empty": "Chưa thấy mẫu giống trong shop. Gửi ảnh cho shop để được tư vấn.",
+      "sendZalo": "Gửi ảnh qua Zalo shop",
+      "invalidImage": "Ảnh không hợp lệ. Hãy chọn ảnh JPG, PNG hoặc WebP.",
+      "tooLarge": "Ảnh quá lớn. Hãy chọn ảnh nhỏ hơn 15 MB.",
+      "errorRateLimited": "Bạn đã tìm quá nhiều lần. Vui lòng thử lại sau ít phút.",
+      "errorBusy": "Tìm bằng ảnh đang bận. Vui lòng thử lại sau ít phút.",
+      "errorNetwork": "Không kết nối được. Kiểm tra mạng rồi thử lại.",
+      "errorGeneric": "Không tìm được lúc này. Vui lòng thử lại."
     }
   }
 }
