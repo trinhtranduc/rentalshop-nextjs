@@ -610,12 +610,26 @@ final class ProductsV2Tests: XCTestCase {
         XCTAssertEqual(low.colors.fill, DS.Status.waiting.fill)
         XCTAssertEqual(low.colors.text, UIColor(hexString: "9A3412"))
         XCTAssertEqual(low.colors.fill, UIColor(hexString: "FFEDD5"))
-        XCTAssertEqual(low.weight, .regular)
+        XCTAssertEqual(low.weight, .semibold) // #1132: soft pill, semibold
 
         let none = CartV2ViewController.shortageStyle(.none)
         XCTAssertEqual(none.colors.text, UIColor(hexString: "991B1B"))
         XCTAssertEqual(none.colors.fill, UIColor(hexString: "FEE2E2"))
-        XCTAssertEqual(none.weight, .regular)
+        XCTAssertEqual(none.weight, .semibold)
+    }
+
+    /// #1132 (owner, mockup A): the status is a pill — the tone's fill behind, a 7 pt dot in the text colour, the text
+    func testStockPillHasFillDotAndText() {
+        let pill = CartV2ViewController.stockPill(text: "Còn 1", tone: .low)
+        XCTAssertEqual(pill.backgroundColor, UIColor(hexString: "FFEDD5"))
+        pill.layoutIfNeeded()
+        let labels = pill.subviews.flatMap { [$0] + $0.subviews }.compactMap { $0 as? UILabel }
+        XCTAssertEqual(labels.first?.text, "Còn 1", "the text has no glyph dot any more")
+        XCTAssertEqual(labels.first?.textColor, UIColor(hexString: "9A3412"))
+        let dots = pill.subviews.flatMap { [$0] + $0.subviews }.filter { $0.accessibilityIdentifier == "cart.stockPill.dot" }
+        XCTAssertFalse(dots.isEmpty, "a round dot sits before the text")
+        XCTAssertEqual(CartV2ViewController.stockPill(text: "Còn 3", tone: .ok).backgroundColor, UIColor(hexString: "DCFCE7"))
+        XCTAssertEqual(CartV2ViewController.stockPill(text: "Hết", tone: .none).backgroundColor, UIColor(hexString: "FEE2E2"))
     }
 
     /// #1064 (owner): 0 free = "Hết đồ" / "Hết hàng" in red; 1 free (or fewer than asked) = amber; 2+ free and enough
@@ -659,9 +673,9 @@ final class ProductsV2Tests: XCTestCase {
 
         // Green reuses the "done" token, same weight as amber
         let ok = CartV2ViewController.shortageStyle(.ok)
-        XCTAssertEqual(ok.colors.text, DS.Status.done.text)
-        XCTAssertEqual(ok.colors.fill, DS.Status.done.fill)
-        XCTAssertEqual(ok.weight, .regular)
+        XCTAssertEqual(ok.colors.text, UIColor(hexString: "166534")) // #1132
+        XCTAssertEqual(ok.colors.fill, UIColor(hexString: "DCFCE7"))
+        XCTAssertEqual(ok.weight, .semibold)
     }
 
     func testShortageAndRentalDays() {
