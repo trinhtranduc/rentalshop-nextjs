@@ -961,16 +961,23 @@ private fun ItemRow(
                     val style = CartShortageStyle.of(note?.tone ?: CartV2Logic.ShortageTone.NONE)
                     shortText?.let { text ->
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
-                        // Owner (2026-10-19): no pill background; "●" + text in the same colour, regular weight, on the right
-                        Text(
-                            "● " + if (onOpenOverlap != null) "$text ›" else text,
-                            fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        // #1132 (owner, mockup A, iOS `stockPill`): a soft pill in the tone's fill, a 7 dp dot in the text
+                        // colour, then the text (semibold); the overlap tag keeps its tap and "›"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(percent = 50))
                                 .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
-                                .padding(vertical = if (onOpenOverlap != null) 6.dp else 2.dp),
-                        )
+                                .background(style.colors.fill)
+                                .padding(horizontal = 9.dp, vertical = 3.dp),
+                        ) {
+                            Box(Modifier.size(7.dp).clip(CircleShape).background(style.colors.text))
+                            Text(
+                                if (onOpenOverlap != null) "$text ›" else text,
+                                fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text, maxLines = 1,
+                            )
+                        }
                     }
                 }
                 // #482: the link opens the "Cách tính giá" sheet
@@ -996,11 +1003,13 @@ private fun ItemRow(
 internal data class CartShortageStyle(val colors: DS.Pill, val weight: FontWeight) {
     companion object {
         private val BookedOut = DS.Pill(Color(0xFF991B1B), Color(0xFFFEE2E2))
+        private val Enough = DS.Pill(Color(0xFF166534), Color(0xFFDCFCE7))
 
         fun of(tone: CartV2Logic.ShortageTone): CartShortageStyle = when (tone) {
-            CartV2Logic.ShortageTone.OK -> CartShortageStyle(DS.Status.Done, FontWeight.Normal) // #1064: 2+ and enough
-            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.Normal)
-            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.Normal)
+            // #1132 (mockup A): soft fills, semibold text
+            CartV2Logic.ShortageTone.OK -> CartShortageStyle(Enough, FontWeight.SemiBold) // #1064: 2+ and enough
+            CartV2Logic.ShortageTone.LOW -> CartShortageStyle(DS.Status.Waiting, FontWeight.SemiBold)
+            CartV2Logic.ShortageTone.NONE -> CartShortageStyle(BookedOut, FontWeight.SemiBold)
         }
     }
 }

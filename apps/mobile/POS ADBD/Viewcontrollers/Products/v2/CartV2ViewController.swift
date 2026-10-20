@@ -532,33 +532,20 @@ final class CartV2ViewController: BaseViewControler {
 
 
         if isRent, let conflict = conflicts[item.productId] {
-            let tag = UIButton(type: .system)
-            tag.setTitle("● " + ScheduleConflictLogic.tagText(conflict) + " ›", for: .normal)
-            tag.titleLabel?.font = Utils.regularFont(size: DS.TextSize.pill)
-            tag.setTitleColor(UIColor(hexString: "991B1B"), for: .normal)
-            // Owner (2026-10-19): same look as the "Còn N" status: "●" + text in dark red, no background
-            tag.contentEdgeInsets = UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)
+            // #1132 (owner, mockup A): the same soft red pill as "Hết", still tappable, with "›"
+            let tag = Self.stockPill(text: ScheduleConflictLogic.tagText(conflict) + " ›", tone: .none)
             tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
+            tag.accessibilityTraits = UIAccessibilityTraitButton
             tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
-            tag.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(28) }
-            tag.setContentHuggingPriority(.required, for: .horizontal)
-            tag.setContentCompressionResistancePriority(.required, for: .horizontal)
             nameRow.addArrangedSubview(tag)
         }
         // #1064: one pill per line once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
         // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. Hidden behind the overlap tag
         if !(isRent && conflicts[item.productId] != nil),
            let note = CartV2Logic.availabilityNote(item, in: cart.items, isRent: isRent) {
-            let style = Self.shortageStyle(note.tone)
-            // Owner (2026-10-19): no pill background; a round dot + text in the same colour. The dot is the "●" glyph in
-            // the same label (as on the home list), so it always sits right next to the text
-            let status = V2.label("● " + note.text, size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
-            status.numberOfLines = 0
-            status.textAlignment = .right
-            status.isAccessibilityElement = true
+            // #1132 (owner, mockup A): a soft pill in the tone's fill, a dot in the text colour, then the text
+            let status = Self.stockPill(text: note.text, tone: note.tone)
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
-            status.setContentHuggingPriority(.required, for: .horizontal)
-            status.setContentCompressionResistancePriority(.required, for: .horizontal)
             // right-aligned: the name takes the free width, the status sits on the trailing edge
             nameRow.addArrangedSubview(status)
         }
@@ -1177,10 +1164,39 @@ extension CartV2ViewController {
     /// some units are free; the booked-out red in bold when none are
     static func shortageStyle(_ tone: CartV2Logic.ShortageTone) -> (colors: DS.Pill, weight: UIFont.Weight) {
         switch tone {
-        case .ok: return (DS.Status.done, .regular) // #1064: 2+ free and enough for the cart
-        case .low: return (DS.Status.waiting, .regular)
-        case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .regular)
+        // #1132 (mockup A): soft fills, semibold text
+        case .ok: return (DS.Pill(text: UIColor(hexString: "166534"), fill: UIColor(hexString: "DCFCE7")), .semibold) // #1064: 2+ free and enough
+        case .low: return (DS.Status.waiting, .semibold)
+        case .none: return (DS.Pill(text: UIColor(hexString: "991B1B"), fill: UIColor(hexString: "FEE2E2")), .semibold)
         }
+    }
+
+    /// #1132 (owner, mockup A): the cart line's stock status (and the overlap tag): a capsule in the tone's fill with a
+    /// 7 pt dot in the text colour before the text. A UIControl so the overlap tag can take a tap.
+    static func stockPill(text: String, tone: CartV2Logic.ShortageTone) -> UIControl {
+        let style = shortageStyle(tone)
+        let pill = UIControl()
+        pill.backgroundColor = style.colors.fill
+        pill.isAccessibilityElement = true
+        pill.accessibilityLabel = text
+        let dot = UIView()
+        dot.accessibilityIdentifier = "cart.stockPill.dot"
+        dot.backgroundColor = style.colors.text
+        dot.layer.cornerRadius = 3.5
+        dot.snp.makeConstraints { make in make.size.equalTo(7) }
+        let label = V2.label(text, size: DS.TextSize.pill, weight: style.weight, color: style.colors.text)
+        label.numberOfLines = 1
+        let row = UIStackView(arrangedSubviews: [dot, label])
+        row.spacing = 5
+        row.alignment = .center
+        row.isUserInteractionEnabled = false
+        pill.addSubview(row)
+        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)) }
+        pill.setContentHuggingPriority(.required, for: .horizontal)
+        pill.setContentCompressionResistancePriority(.required, for: .horizontal)
+        pill.layer.cornerRadius = (ceil(label.font.lineHeight) + 6) / 2
+        pill.clipsToBounds = true
+        return pill
     }
 }
 
