@@ -697,12 +697,12 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
               <p className="text-center text-slate-500 mb-10 max-w-xl mx-auto">{t('industries.subtitle')}</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                 {[
-                  { href: '/cho-thue-ao-dai', title: t('industries.aoDai.title'), desc: t('industries.aoDai.desc') },
-                  { href: '/cho-thue-ao-cuoi', title: t('industries.weddingDress.title'), desc: t('industries.weddingDress.desc') },
-                  { href: '/cho-thue-trang-thiet-bi', title: t('industries.equipment.title'), desc: t('industries.equipment.desc') },
-                  { href: '/cho-thue-trang-phuc', title: t('industries.costume.title'), desc: t('industries.costume.desc') },
+                  { href: href('industry:cho-thue-ao-dai'), title: t('industries.aoDai.title'), desc: t('industries.aoDai.desc') },
+                  { href: href('industry:cho-thue-ao-cuoi'), title: t('industries.weddingDress.title'), desc: t('industries.weddingDress.desc') },
+                  { href: href('industry:cho-thue-trang-thiet-bi'), title: t('industries.equipment.title'), desc: t('industries.equipment.desc') },
+                  { href: href('industry:cho-thue-trang-phuc'), title: t('industries.costume.title'), desc: t('industries.costume.desc') },
                 ].map((item) => (
-                  <Card key={item.href} className={softSkyCardClass}>
+                  <Card key={item.title} className={softSkyCardClass}>
                     <Link href={item.href} className="block">
                       <CardContent className="p-6">
                         <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
