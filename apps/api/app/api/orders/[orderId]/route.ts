@@ -18,6 +18,7 @@ import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, n
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
 import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
+import { clampOrderDiscount, sumLineTotals } from '../../../../lib/order-discount';
 import {
   findEditScheduleConflicts,
   scheduleConflictBody,
@@ -752,6 +753,22 @@ export const PUT = async (
         });
       }
       
+      // #1070: a discount above the lines (sent in this edit, else the stored ones) is clamped, never rejected.
+      // Only fields the client sent are rewritten; the client's totalAmount is kept as before.
+      if ('discountAmount' in validUpdateData || 'discountValue' in validUpdateData) {
+        const lines = Array.isArray(validUpdateData.orderItems) ? validUpdateData.orderItems : existingOrder.orderItems;
+        const discount = clampOrderDiscount(
+          {
+            discountType: 'discountType' in validUpdateData ? validUpdateData.discountType : existingOrder.discountType,
+            discountValue: validUpdateData.discountValue,
+            discountAmount: validUpdateData.discountAmount,
+          },
+          sumLineTotals(lines)
+        );
+        if ('discountValue' in validUpdateData) validUpdateData.discountValue = discount.discountValue;
+        if ('discountAmount' in validUpdateData) validUpdateData.discountAmount = discount.discountAmount;
+      }
+
       console.log('🔧 Filtered update data keys:', Object.keys(validUpdateData));
 
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
