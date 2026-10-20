@@ -6,17 +6,20 @@
 export type SettingsTab =
   | 'merchant'
   | 'outlet'
+  | 'public-page'
   | 'bank-accounts'
   | 'receipt'
   | 'subscription'
   | 'profile'
   | 'account'
-  | 'language'
-  | 'appearance';
+  | 'language';
+
+/** Nav group headers (#1140 layout C): Cửa hàng · Tài khoản · Tôi. */
+export type SettingsGroup = 'shop' | 'account' | 'me';
 
 export interface SettingsTabDef {
   id: SettingsTab;
-  group: 'shop' | 'me';
+  group: SettingsGroup;
   /** Roles that see the tab; undefined = every role. Same rules as the old Settings menu. */
   roles?: string[];
 }
@@ -24,26 +27,37 @@ export interface SettingsTabDef {
 export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'merchant', group: 'shop', roles: ['MERCHANT'] },
   { id: 'outlet', group: 'shop', roles: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'] },
+  /** #1140: Mã URL + public page / referral links, moved out of Thông tin cửa hàng */
+  { id: 'public-page', group: 'shop', roles: ['MERCHANT'] },
   /** #852: the owner sets bank accounts per branch here too (branch select on top) */
   { id: 'bank-accounts', group: 'shop', roles: ['MERCHANT', 'OUTLET_ADMIN'] },
   /** Phiếu in (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */
   { id: 'receipt', group: 'shop' },
-  { id: 'subscription', group: 'shop', roles: ['MERCHANT'] },
+  { id: 'subscription', group: 'account', roles: ['MERCHANT'] },
   { id: 'profile', group: 'me' },
+  /** Mật khẩu & bảo mật: change password, logout, delete account */
   { id: 'account', group: 'me' },
+  /** Ngôn ngữ & giao diện (#1140 merged the old `appearance` tab in) */
   { id: 'language', group: 'me' },
-  { id: 'appearance', group: 'me' },
 ];
 
-/** `themeSwitch: false` (the NEXT_PUBLIC_ENABLE_THEME_SWITCH kill switch) hides Giao diện. */
-export function tabsForRole(role?: string | null, opts: { themeSwitch?: boolean } = {}): SettingsTabDef[] {
+export const SETTINGS_GROUPS: SettingsGroup[] = ['shop', 'account', 'me'];
+
+/** Old keys that now open another tab. `printer` (#623) → Phiếu in (#626); `appearance` → Ngôn ngữ & giao diện (#1140). */
+const TAB_ALIASES: Record<string, SettingsTab> = { printer: 'receipt', appearance: 'language' };
+
+/** Visible tabs for a role. Giao diện lives inside `language`, so the theme kill switch hides no tab. */
+export function tabsForRole(role?: string | null): SettingsTabDef[] {
   const r = String(role || '').toUpperCase();
-  return SETTINGS_TABS.filter(
-    (tab) => (!tab.roles || tab.roles.includes(r)) && !(tab.id === 'appearance' && opts.themeSwitch === false),
-  );
+  return SETTINGS_TABS.filter((tab) => !tab.roles || tab.roles.includes(r));
 }
 
-/** First screen: the shop for owners and outlet users (the board), otherwise "Tài khoản của tôi". */
+/** Tabs per group header, in nav order, empty groups dropped. */
+export function groupedTabs(tabs: SettingsTabDef[]): Array<{ group: SettingsGroup; tabs: SettingsTabDef[] }> {
+  return SETTINGS_GROUPS.map((group) => ({ group, tabs: tabs.filter((t) => t.group === group) })).filter((g) => g.tabs.length > 0);
+}
+
+/** First screen: the shop for owners and outlet users (the board), otherwise "Hồ sơ". */
 export function defaultTab(role?: string | null): SettingsTab {
   const r = String(role || '').toUpperCase();
   if (r === 'MERCHANT') return 'merchant';
@@ -54,16 +68,20 @@ export function defaultTab(role?: string | null): SettingsTab {
 export type TabResolution = { tab: SettingsTab; redirect?: string };
 
 /**
- * `?tab=` → the tab to show. `loyalty` moved to /loyalty; a tab the role may not open (e.g.
- * anyone but the owner on `subscription`) falls back to the default.
+ * `?tab=` → the tab to show. `loyalty` moved to /loyalty; old keys map through `TAB_ALIASES`; a tab
+ * the role may not open (e.g. anyone but the owner on `subscription`) falls back to the default.
  */
 export function resolveTab(requested: string | null | undefined, role?: string | null): TabResolution {
   if (requested === 'loyalty') return { tab: defaultTab(role), redirect: '/loyalty' };
-  // Máy in (#623) was merged into Phiếu in (#626); old links still land there
-  if (requested === 'printer') requested = 'receipt';
+  if (requested && TAB_ALIASES[requested]) requested = TAB_ALIASES[requested];
   const allowed = tabsForRole(role);
   const hit = allowed.find((t) => t.id === requested);
   return { tab: hit ? hit.id : defaultTab(role) };
+}
+
+/** #1140: `?settings=` with no tab is the section list on a phone (desktop shows the default tab). */
+export function isSettingsList(requested: string | null | undefined): boolean {
+  return requested === '';
 }
 
 export interface AddressLike {

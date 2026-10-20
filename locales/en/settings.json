@@ -515,15 +515,16 @@
     },
     "nav": {
       "merchant": "Store information",
-      "outlet": "Outlet information",
-      "bank-accounts": "Bank accounts",
+      "outlet": "Outlet",
+      "bank-accounts": "Bank",
       "receipt": "Receipt",
       "subscription": "Subscription",
-      "profile": "My account",
-      "account": "Change password",
-      "language": "Language",
+      "profile": "Profile",
+      "account": "Password & security",
+      "language": "Language & appearance",
       "appearance": "Appearance",
-      "printer": "Printer"
+      "printer": "Printer",
+      "public-page": "Public shop page"
     },
     "form": {
       "required": "required",
@@ -548,7 +549,8 @@
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving…",
-      "readOnly": "You can only view this section."
+      "readOnly": "You can only view this section.",
+      "more": "More"
     },
     "outlets": {
       "title": "Outlets",
@@ -558,7 +560,9 @@
       "bank": "Bank accounts",
       "empty": "No outlets yet",
       "loadFailed": "Couldn't load outlets.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "count": "{count, plural, one {# outlet} other {# outlets}}",
+      "open": "Open Outlets"
     },
     "links": {
       "title": "Share your store",
@@ -749,7 +753,13 @@
       "ownerOnly": "Only the shop owner can turn this on or off.",
       "outlets": "Outlets that accept bookings",
       "outletsHint": "Turn off outlets that should not take online bookings."
-    }
+    },
+    "groups": {
+      "shop": "Shop",
+      "account": "Account",
+      "me": "Me"
+    },
+    "back": "Back"
   },
   "embeddingBackfill": {
     "title": "Image search",

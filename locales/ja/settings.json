@@ -6,6 +6,27 @@
       "ownerOnly": "オン・オフを切り替えられるのはショップオーナーだけです。",
       "outlets": "予約を受け付ける店舗",
       "outletsHint": "オンライン予約を受け付けない店舗はオフにしてください。"
-    }
+    },
+    "groups": {
+      "shop": "ショップ",
+      "account": "アカウント",
+      "me": "自分"
+    },
+    "nav": {
+      "outlet": "店舗",
+      "public-page": "公開ショップページ",
+      "bank-accounts": "銀行",
+      "profile": "プロフィール",
+      "account": "パスワードとセキュリティ",
+      "language": "言語と表示"
+    },
+    "form": {
+      "more": "その他"
+    },
+    "outlets": {
+      "count": "{count}店舗",
+      "open": "店舗を開く"
+    },
+    "back": "戻る"
   }
 }

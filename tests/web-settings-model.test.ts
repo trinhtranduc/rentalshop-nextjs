@@ -30,6 +30,8 @@ import {
   closeSettingsHref,
   currencyForLocale,
   defaultTab,
+  groupedTabs,
+  isSettingsList,
   legacySettingsRedirect,
   mapSubscriptionStatus,
   passwordProblem,
@@ -161,10 +163,45 @@ describe('staff list (#528)', () => {
 });
 
 describe('store settings (#528)', () => {
-  it('shows the same tabs per role as the old settings menu', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'bank-accounts', 'receipt', 'subscription', 'profile', 'account', 'language', 'appearance']);
-    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language', 'appearance']);
-    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language', 'appearance']);
+  it('layout C (#1140): 8 tabs for the owner, 6 for the outlet admin, 5 for staff', () => {
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'public-page', 'bank-accounts', 'receipt', 'subscription', 'profile', 'account', 'language']);
+    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language']);
+    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language']);
+    expect(tabsForRole('OUTLET_INVENTORY').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language']);
+  });
+
+  it('groups the nav as Cửa hàng · Tài khoản · Tôi, dropping empty groups (#1140)', () => {
+    const shape = (role: string) => groupedTabs(tabsForRole(role)).map((g) => [g.group, g.tabs.map((t) => t.id)]);
+    expect(shape('MERCHANT')).toEqual([
+      ['shop', ['merchant', 'public-page', 'bank-accounts', 'receipt']],
+      ['account', ['subscription']],
+      ['me', ['profile', 'account', 'language']],
+    ]);
+    expect(shape('OUTLET_STAFF')).toEqual([
+      ['shop', ['outlet', 'receipt']],
+      ['me', ['profile', 'account', 'language']],
+    ]);
+  });
+
+  it('every old ?settings= key still opens a tab (#1140)', () => {
+    const owner: Record<string, string> = {
+      merchant: 'merchant', outlet: 'merchant', 'bank-accounts': 'bank-accounts', receipt: 'receipt', printer: 'receipt',
+      subscription: 'subscription', profile: 'profile', account: 'account', language: 'language', appearance: 'language',
+    };
+    for (const [key, tab] of Object.entries(owner)) expect(resolveTab(key, 'MERCHANT').tab).toBe(tab);
+    const staff: Record<string, string> = {
+      merchant: 'outlet', outlet: 'outlet', 'bank-accounts': 'outlet', receipt: 'receipt', printer: 'receipt',
+      subscription: 'outlet', profile: 'profile', account: 'account', language: 'language', appearance: 'language', 'public-page': 'outlet',
+    };
+    for (const [key, tab] of Object.entries(staff)) expect(resolveTab(key, 'OUTLET_STAFF').tab).toBe(tab);
+    expect(resolveTab('public-page', 'MERCHANT').tab).toBe('public-page');
+    expect(resolveTab('appearance', 'OUTLET_ADMIN').tab).toBe('language');
+  });
+
+  it('?settings= with no tab is the phone list (#1140)', () => {
+    expect(isSettingsList('')).toBe(true);
+    expect(isSettingsList('merchant')).toBe(false);
+    expect(isSettingsList(null)).toBe(false);
   });
 
   it('resolves ?tab= with the old guards', () => {
@@ -251,12 +288,11 @@ describe('Cài đặt dialog URL (#539)', () => {
   });
 });
 
-describe('Giao diện tab (#539)', () => {
-  it('is in "me" for every role and hidden by the theme kill switch', () => {
-    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toContain('appearance');
-    expect(tabsForRole('MERCHANT', { themeSwitch: true }).map((t) => t.id)).toContain('appearance');
-    expect(tabsForRole('MERCHANT', { themeSwitch: false }).map((t) => t.id)).not.toContain('appearance');
-    expect(resolveTab('appearance', 'OUTLET_STAFF').tab).toBe('appearance');
+describe('Giao diện (#539, inside Ngôn ngữ & giao diện since #1140)', () => {
+  it('has no tab of its own; the old key opens language in "me"', () => {
+    expect(tabsForRole('OUTLET_STAFF').some((t) => (t.id as string) === 'appearance')).toBe(false);
+    expect(tabsForRole('MERCHANT').find((t) => t.id === 'language')?.group).toBe('me');
+    expect(resolveTab('appearance', 'OUTLET_STAFF').tab).toBe('language');
   });
 });
 

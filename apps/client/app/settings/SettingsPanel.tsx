@@ -22,16 +22,17 @@ import {
   LANGUAGES,
   LanguageSection,
   LegacyPanel,
-  OutletsSection,
   OnlineBookingSection,
+  OutletsLinkRow,
   ProfileSection,
+  PublicPageSection,
   ReceiptSection,
   ShareLinksSection,
   ShopInfoSection,
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { currencyForLocale, onlineBookingFlag, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
+import { currencyForLocale, groupedTabs, onlineBookingFlag, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -77,6 +78,10 @@ interface SettingsPanelProps {
   /** #852: `?settingsOutlet=` — the owner's branch on the bank-accounts / receipt tabs */
   outletParam?: string | null;
   onOutlet?: (outletId: number) => void;
+  /** #1140: phone shows the grouped section list (`?settings=` with no tab); desktop ignores it */
+  list?: boolean;
+  /** Phone back button: return to the list */
+  onList?: () => void;
 }
 
 /** #852: "Chi nhánh" select on top of the per-branch tabs (owner with 2+ active branches) */
@@ -99,7 +104,7 @@ function BranchSelect({ options, value, onChange, t }: { options: BranchOption[]
   );
 }
 
-export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null, onOutlet }: SettingsPanelProps) {
+export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null, onOutlet, list = false, onList }: SettingsPanelProps) {
   const locale = useLocale();
   const t = useTranslations('settings.web') as unknown as T;
   const td = useTranslations('dashboard') as unknown as T;
@@ -113,7 +118,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const role = String(user?.role || '').toUpperCase();
 
   const { enabled: themeSwitch, choice: themeChoice } = useTheme();
-  const tabs = useMemo(() => tabsForRole(role, { themeSwitch }), [role, themeSwitch]);
+  const groups = useMemo(() => groupedTabs(tabsForRole(role)), [role]);
 
   // #852: the owner sets bank accounts and the receipt per branch (active branches; default first)
   const perBranch = role === 'MERCHANT' && (tab === 'bank-accounts' || tab === 'receipt');
@@ -323,21 +328,28 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
 
   // ------------------------------------------------------------------ render
   const languageName = LANGUAGES.find((l) => l.value === locale)?.label || locale;
+  const sideText = (id: SettingsTab) =>
+    id === 'language' ? (themeSwitch ? `${languageName} · ${t(`appearance.${themeChoice}`)}` : languageName) : '';
   const navItem = (id: SettingsTab) => {
     const on = id === tab;
+    const side = sideText(id);
     return (
-      <li key={id} className="flex-none lg:flex-auto">
+      <li key={id}>
         <button
           type="button"
           aria-current={on ? 'page' : undefined}
           onClick={() => onTab(id)}
-          className={`flex min-h-[40px] w-full items-center justify-between gap-3 whitespace-nowrap rounded-[10px] px-3 text-left text-[15px] ${
-            on ? 'bg-ar-surface font-semibold text-ar-ink shadow-[0_1px_2px_rgba(15,23,42,0.08)]' : 'text-ar-ink-2 hover:bg-ar-subtle'
+          className={`flex min-h-[48px] w-full items-center justify-between gap-3 bg-ar-surface px-4 text-left text-[15px] text-ar-ink hover:bg-ar-subtle lg:min-h-[40px] lg:rounded-[10px] lg:bg-transparent lg:px-3 ${
+            on ? 'lg:bg-ar-surface lg:font-semibold lg:shadow-[0_1px_2px_rgba(15,23,42,0.08)]' : 'lg:text-ar-ink-2'
           }`}
         >
-          {t(`nav.${id}`)}
-          {id === 'language' && <span className="hidden font-normal text-ar-muted lg:inline">{languageName}</span>}
-          {id === 'appearance' && <span className="hidden font-normal text-ar-muted lg:inline">{t(`appearance.${themeChoice}`)}</span>}
+          <span className="min-w-0">{t(`nav.${id}`)}</span>
+          <span className="flex flex-none items-center gap-1 font-normal text-ar-muted">
+            {side && <span className="max-w-[160px] truncate text-sm">{side}</span>}
+            <span className="lg:hidden">
+              <ShellIcon d={ICONS.chevronRight} />
+            </span>
+          </span>
         </button>
       </li>
     );
@@ -349,7 +361,6 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
         return (
           <>
             <ShopInfoSection kind="merchant" initial={merchantForm} email={str(merchant.email)} canEdit={canManageMerchants} onSave={saveMerchant} t={t} />
-            <OutletsSection t={t} />
             <OnlineBookingSection
               t={t}
               enabled={bookingFlag === true}
@@ -357,12 +368,18 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
               canEditOutlets={canManageOutlets}
               onShopChanged={() => void refreshUser?.()}
             />
-            <ShareLinksSection
-              publicProductLink={user?.publicProductLink || str(user?.merchant?.publicProductLink)}
-              tenantKey={merchantForm.tenantKey}
-              t={t}
-            />
+            <OutletsLinkRow t={t} />
           </>
+        );
+      case 'public-page':
+        return (
+          <PublicPageSection
+            tenantKey={merchantForm.tenantKey || ''}
+            publicProductLink={user?.publicProductLink || str(user?.merchant?.publicProductLink)}
+            canEdit={canManageMerchants}
+            onSave={(key) => saveMerchant({ ...merchantForm, tenantKey: key })}
+            t={t}
+          />
         );
       case 'outlet':
         return (
@@ -430,9 +447,13 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
       case 'account':
         return <AccountSection userId={user?.id ?? null} onSignOut={signOut} t={t} />;
       case 'language':
-        return <LanguageSection t={t} />;
-      case 'appearance':
-        return <AppearanceSection t={t} />;
+        // #1140: Ngôn ngữ & giao diện on one page; the theme kill switch still hides Giao diện
+        return (
+          <>
+            <LanguageSection t={t} />
+            {themeSwitch && <AppearanceSection t={t} />}
+          </>
+        );
       case 'profile':
       default:
         return (
@@ -447,9 +468,6 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
     }
   };
 
-  const shopTabs = tabs.filter((x) => x.group === 'shop');
-  const meTabs = tabs.filter((x) => x.group === 'me');
-
   const closeButton = (className: string) => (
     <button
       type="button"
@@ -461,30 +479,46 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
     </button>
   );
 
+  // #1140: desktop = nav + page side by side; phone = the grouped list, or one page with back
   return (
     <div className="flex h-full min-h-0 flex-col text-ar-ink lg:flex-row">
       <nav
         aria-label={t('navLabel')}
-        className="flex-none border-b border-ar-line bg-ar-subtle px-4 pb-3 pt-3 lg:w-[240px] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-3 lg:py-5"
+        className={`${list ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col overflow-y-auto bg-ar-subtle px-4 pb-6 pt-3 lg:flex lg:w-[240px] lg:flex-none lg:border-r lg:border-ar-line lg:px-3 lg:py-5`}
       >
-        <div className="mb-2 flex items-center justify-between lg:mb-3 lg:px-3">
+        <div className="mb-1 flex items-center justify-between lg:mb-2 lg:px-3">
           <h2 id={titleId} className="m-0 text-lg font-bold">
             {t('dialogTitle')}
           </h2>
           {closeButton('flex lg:hidden')}
         </div>
         {!user ? (
-          <Skeleton className="h-10 w-full lg:h-40" />
+          <Skeleton className="h-40 w-full" />
         ) : (
-          <ul className="-mx-4 m-0 flex list-none gap-1 overflow-x-auto p-0 px-4 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0">
-            {shopTabs.map((x) => navItem(x.id))}
-            {shopTabs.length > 0 && <li aria-hidden="true" className="mx-1 w-px flex-none self-stretch bg-ar-line lg:mx-3 lg:my-2 lg:h-px lg:w-auto" />}
-            {meTabs.map((x) => navItem(x.id))}
-          </ul>
+          groups.map(({ group, tabs }) => (
+            <div key={group}>
+              <h3 className="m-0 px-1 pb-1.5 pt-4 text-xs font-semibold uppercase tracking-wide text-ar-muted lg:px-3 lg:pb-1 lg:pt-3">{t(`groups.${group}`)}</h3>
+              <ul className="m-0 flex list-none flex-col divide-y divide-ar-line overflow-hidden rounded-xl border border-ar-line p-0 lg:gap-0.5 lg:divide-y-0 lg:overflow-visible lg:rounded-none lg:border-0">
+                {tabs.map((x) => navItem(x.id))}
+              </ul>
+            </div>
+          ))
         )}
       </nav>
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {/* Each section card carries its own title, so the right side only needs ✕. */}
+      <div className={`${list ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-1 flex-col lg:flex`}>
+        {/* Phone: back to the list + page title. Desktop: each section card carries its own title, so only ✕. */}
+        <div className="flex flex-none items-center gap-1 border-b border-ar-line px-2 py-2 lg:hidden">
+          <button
+            type="button"
+            onClick={onList}
+            aria-label={t('back')}
+            className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] text-ar-ink-2 hover:bg-ar-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-ar-primary"
+          >
+            <ShellIcon d={ICONS.chevronLeft} />
+          </button>
+          <span className="min-w-0 flex-1 truncate text-lg font-bold">{t(`nav.${tab}`)}</span>
+          {closeButton('flex')}
+        </div>
         <div className="hidden flex-none justify-end px-3 pt-3 lg:flex">{closeButton('flex')}</div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 lg:px-8 lg:pt-0">
           {!user ? (
