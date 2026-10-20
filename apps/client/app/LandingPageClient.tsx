@@ -447,7 +447,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                       className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
                       aria-hidden="true"
                     />
-                    <div className="relative overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.35)] ring-1 ring-sky-100/70 bg-white">
+                    <div className="la-hero relative overflow-hidden rounded-[1.75rem] border border-white shadow-[0_28px_50px_-18px_rgba(15,55,95,0.35)] ring-1 ring-sky-100/70 bg-white">
                       <Image
                         src="/anyrent-landing-hero-soft.png"
                         alt="AnyRent rental shop management on mobile in a boutique"
@@ -493,10 +493,10 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                 className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
                 aria-hidden="true"
               />
-              <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
+              <div className="la-phone absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
                 <SoftPhoneFrame src="/anyrent-ai-phone-results.png" alt={t('aiSearch.phoneAlt')} />
               </div>
-              <div className="absolute left-0 top-16 z-30 w-[38%] max-w-[150px] sm:left-2 sm:top-20">
+              <div className="la-left absolute left-0 top-16 z-30 w-[38%] max-w-[150px] sm:left-2 sm:top-20">
                 <SoftPhotoCard
                   src="/anyrent-ai-query-aodai.png"
                   alt={t('aiSearch.queryAlt')}
@@ -506,19 +506,19 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                   sizes="150px"
                   className="border-2"
                 />
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-sky-800 shadow-sm border border-sky-100 -rotate-6">
+                <div className="la-pill mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-sky-800 shadow-sm border border-sky-100 -rotate-6">
                   <Camera className="w-3 h-3" />
                   <span>Snap</span>
                 </div>
               </div>
-              <div className="absolute right-0 bottom-6 z-30 w-[72%] max-w-[280px] sm:right-0 sm:bottom-8">
+              <div className="la-right absolute right-0 bottom-6 z-30 w-[72%] max-w-[280px] sm:right-0 sm:bottom-8">
                 <SoftPhotoCard
                   src="/anyrent-ai-match-results.png"
                   alt={t('aiSearch.matchesAlt')}
                   rotate="rotate-[3deg]"
                   className="ring-emerald-100/80"
                 />
-                <div className="mt-2 ml-auto mr-1 flex w-fit items-center gap-1.5 rounded-full bg-emerald-50/95 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm border border-emerald-100 rotate-[3deg]">
+                <div className="la-pill mt-2 ml-auto mr-1 flex w-fit items-center gap-1.5 rounded-full bg-emerald-50/95 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm border border-emerald-100 rotate-[3deg]">
                   <Check className="w-3 h-3" />
                   <span>{t('aiSearch.matchFound')}</span>
                 </div>
@@ -547,13 +547,13 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                 className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-amber-50/50"
                 aria-hidden="true"
               />
-              <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
+              <div className="la-phone absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
                 <SoftPhoneFrame
                   src="/anyrent-landing-duplicate-calendar.png"
                   alt={t('duplicatePrevention.calendarAlt')}
                 />
               </div>
-              <div className="absolute right-0 bottom-10 z-30 w-[70%] max-w-[270px] sm:right-1">
+              <div className="la-right absolute right-0 bottom-10 z-30 w-[70%] max-w-[270px] sm:right-1">
                 <SoftPhotoCard
                   src="/anyrent-landing-duplicate-alert.png"
                   alt={t('duplicatePrevention.alertAlt')}
@@ -563,7 +563,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                   sizes="270px"
                   className="ring-amber-100/80"
                 />
-                <div className="mt-2 ml-auto flex w-fit items-center gap-1.5 rounded-full bg-amber-50/95 px-2.5 py-1 text-[11px] font-semibold text-amber-800 shadow-sm border border-amber-100 rotate-[4deg]">
+                <div className="la-pill mt-2 ml-auto flex w-fit items-center gap-1.5 rounded-full bg-amber-50/95 px-2.5 py-1 text-[11px] font-semibold text-amber-800 shadow-sm border border-amber-100 rotate-[4deg]">
                   <AlertTriangle className="w-3 h-3" />
                   <span>{t('duplicatePrevention.blockedLabel')}</span>
                 </div>
@@ -591,20 +591,20 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                 className="absolute inset-x-6 top-10 bottom-8 rounded-[2.5rem] bg-gradient-to-br from-sky-100/80 via-white to-slate-100/70"
                 aria-hidden="true"
               />
-              <div className="absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
+              <div className="la-phone absolute left-1/2 top-0 z-20 w-[58%] max-w-[240px] -translate-x-1/2">
                 <SoftPhoneFrame
                   src="/anyrent-landing-order-phone.png"
                   alt={t('orderWorkflow.phoneAlt')}
                 />
               </div>
-              <div className="absolute left-0 right-0 bottom-6 z-30 px-2 sm:px-0">
+              <div className="la-bottom absolute left-0 right-0 bottom-6 z-30 px-2 sm:px-0">
                 <SoftPhotoCard
                   src="/anyrent-landing-order-flow-strip.png"
                   alt={t('orderWorkflow.flowAlt')}
                   rotate="rotate-[-2deg]"
                   sizes="380px"
                 />
-                <div className="mt-2 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-sky-800 shadow-sm border border-sky-100 -rotate-2">
+                <div className="la-pill mt-2 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-sky-800 shadow-sm border border-sky-100 -rotate-2">
                   <Check className="w-3 h-3" />
                   <span>{t('orderWorkflow.flowLabel')}</span>
                 </div>
