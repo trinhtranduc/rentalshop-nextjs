@@ -75,6 +75,8 @@ final class ProductsHomeViewController: BaseViewControler {
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        // #1145: the owner changed the shop currency: money is redrawn
+        NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
         viewModel.reload()
     }
 
@@ -298,6 +300,11 @@ final class ProductsHomeViewController: BaseViewControler {
     }
 
     // MARK: - Actions
+
+    @objc private func currencyChanged() {
+        guard isViewLoaded else { return }
+        cartChanged()
+    }
 
     @objc private func cartChanged() {
         updateCartBar()

@@ -67,6 +67,8 @@ final class OrdersViewController: BaseViewControler {
         viewModel.onChange = { [weak self] in self?.render() }
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        // #1145: the owner changed the shop currency: money is redrawn
+        NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
         viewModel.reload()
     }
 
@@ -432,6 +434,11 @@ final class OrdersViewController: BaseViewControler {
         if let total = viewModel.total {
             searchSummaryLabel.text = PluralText.format("orders.v2.search.summary", count: total, total, viewModel.searchText)
         }
+    }
+
+    @objc private func currencyChanged() {
+        guard isViewLoaded else { return }
+        render()
     }
 
     private func render() {

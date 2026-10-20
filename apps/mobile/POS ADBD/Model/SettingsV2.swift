@@ -12,6 +12,8 @@ enum SettingsV2Item: Equatable {
     /// #937: the inbox, moved here from the Home bell
     case notifications
     case storeInfo, receiptNote, printer, bankAccounts
+    /// #1145 "Tiền tệ", shop owner only, right after "Thông tin cửa hàng"
+    case currency
     case categories, customers, users, export
     case plan, language, password, appInfo, deleteAccount
 }
@@ -171,5 +173,90 @@ struct SettingsListTotal: Codable {
         case .users: return "/api/users"
         default: return nil
         }
+    }
+}
+
+// MARK: - Shop currency (#1145)
+
+extension Notification.Name {
+    /// The shop currency changed: money on screen is redrawn
+    static let shopCurrencyDidChange = Notification.Name("shopCurrencyDidChange")
+}
+
+/// The shop currency cached on the signed-in user (login `merchant.currency`), refreshed from
+/// GET /api/settings/currency on Cài đặt and changed there by the shop owner
+enum ShopCurrencyStore {
+    private static var cached: ShopCurrency?
+    private static var lastRefresh: Date?
+    /// A save is on its way: a refresh must not overwrite it
+    static var saving = false
+
+    /// The cached user's currency; VND without one. Read once, then kept until the user changes.
+    static var current: ShopCurrency {
+        if let cached { return cached }
+        let value = ShopCurrency.normalise(User.current()?.currency)
+        cached = value
+        return value
+    }
+
+    /// A user was saved or signed out: read the currency again next time
+    static func userDidChange() { cached = nil }
+
+    /// Writes the value into the cached user; posts `.shopCurrencyDidChange` when it changed
+    static func store(_ currency: ShopCurrency) {
+        let previous = current
+        if let user = User.account(), user.merchant != nil, user.merchant?.currency != currency.rawValue {
+            user.merchant?.currency = currency.rawValue
+            User.save(user: user)
+        }
+        cached = currency
+        if previous != currency {
+            NotificationCenter.default.post(name: .shopCurrencyDidChange, object: nil)
+        }
+    }
+
+    /// Reads the shop's currency, at most once a minute unless forced (an owner may change it on another device).
+    /// Completion runs on the main queue with the value in effect.
+    static func refresh(force: Bool = false, completion: ((ShopCurrency) -> Void)? = nil) {
+        guard User.account()?.merchant != nil else {
+            completion?(current)
+            return
+        }
+        if !force, let lastRefresh, Date().timeIntervalSince(lastRefresh) < 60 {
+            completion?(current)
+            return
+        }
+        lastRefresh = Date()
+        TabsV2APIService.shared.shopCurrency { currency, _ in
+            DispatchQueue.main.async {
+                if let currency, !saving { store(currency) }
+                completion?(current)
+            }
+        }
+    }
+}
+
+enum ShopCurrencyLogic {
+    /// The "Tiền tệ" row: the shop owner only (the API refuses others with 403)
+    static func canChange(role: Role?) -> Bool { role == .merchant }
+
+    /// The example in the confirm: 220000 in the old currency → in the new one ("220.000 → $220,000")
+    static func example(from: ShopCurrency, to: ShopCurrency) -> String {
+        MoneyFormatter.format(220_000, currency: from) + " → " + MoneyFormatter.format(220_000, currency: to)
+    }
+
+    /// "Đổi tiền tệ sang USD?"
+    static func confirmTitle(to: ShopCurrency) -> String {
+        String(format: "settings.v2.currency.confirm.title".localized(), to.rawValue)
+    }
+
+    /// "Mọi giá trong app sẽ hiện bằng USD. Số tiền giữ nguyên, không quy đổi (220.000 → $220,000)."
+    static func confirmMessage(from: ShopCurrency, to: ShopCurrency) -> String {
+        String(format: "settings.v2.currency.confirm.message".localized(), to.rawValue, example(from: from, to: to))
+    }
+
+    /// "Đổi sang USD"
+    static func confirmButton(to: ShopCurrency) -> String {
+        String(format: "settings.v2.currency.confirm.button".localized(), to.rawValue)
     }
 }

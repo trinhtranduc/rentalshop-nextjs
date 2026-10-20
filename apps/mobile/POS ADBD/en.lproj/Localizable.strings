@@ -2807,3 +2807,13 @@
 "booking.reject.sheetTitle" = "Reject online order";
 "booking.reject.sheetDescription" = "Pick a reason to tell the customer. The customer will see this reason.";
 "booking.reject.notePlaceholder" = "Note for the customer (optional)";
+
+/* #1145 shop currency (Settings v2, shop owner) */
+"settings.v2.currency" = "Currency";
+"settings.v2.currency.cancel" = "Cancel";
+"settings.v2.currency.confirm.title" = "Change currency to %@?";
+"settings.v2.currency.confirm.message" = "All prices in the app will show in %@. Amounts stay the same, nothing is converted (%@).";
+"settings.v2.currency.confirm.button" = "Change to %@";
+"settings.v2.currency.failed" = "Could not change the currency. Please try again.";
+"currency.usd.unit" = "$";
+"currency.usd.unitDaily" = "$/day";
