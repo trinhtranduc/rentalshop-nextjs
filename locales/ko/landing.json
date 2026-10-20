@@ -11,7 +11,12 @@
     "subtitle": "소프트웨어 및 시스템",
     "description": "선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 다양한 렌탈 비즈니스를 위한 포괄적인 솔루션: 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈, 공연 의상 렌탈, 프린터 렌탈 관리. iOS 및 Web을 위한 멀티 플랫폼 지원을 갖춘 현대적인 매장 관리 소프트웨어.",
     "downloadApp": "앱 다운로드",
-    "tryWebPortal": "웹 포털 체험하기"
+    "tryWebPortal": "웹 포털 체험하기",
+    "tagline": "렌탈 주문, 일정, 상품을 하나의 앱에서 관리하세요 — 무료 체험.",
+    "trustStores": "500개 이상 매장 이용 중",
+    "trustRating": "평점 4.9/5",
+    "trustSecure": "안전하고 안정적",
+    "imageAlt": "부티크에서 휴대폰으로 렌탈 매장을 관리하는 AnyRent"
   },
   "download": {
     "title": "모든 플랫폼에서 사용 가능",
@@ -39,7 +44,9 @@
     "videoAlt": "AnyRent 앱의 AI 이미지 검색 기능 데모 비디오",
     "queryAlt": "비주얼 검색에 사용하는 아오자이 샘플 사진",
     "matchesAlt": "AI 이미지 검색으로 매칭된 렌탈 의상 3점",
-    "phoneAlt": "AI 이미지 검색 결과를 보여주는 AnyRent 휴대폰 화면"
+    "phoneAlt": "AI 이미지 검색 결과를 보여주는 AnyRent 휴대폰 화면",
+    "snap": "촬영",
+    "learnMore": "AI 이미지 검색 자세히 보기 →"
   },
   "duplicatePrevention": {
     "badge": "중복 방지",
@@ -65,7 +72,7 @@
     "feature2Desc": "적시에 PICKUPED / RETURNED로 전환하고 캘린더·재고와 동기화합니다.",
     "feature3Title": "모든 단계를 한 화면에서",
     "feature3Desc": "주문 상세에서 이력, 결제, 메모를 확인 — 누락과 재질문을 줄입니다.",
-    "flowLabel": "RESERVED → PICKUP → RETURN",
+    "flowLabel": "예약됨 → 대여 중 → 반납됨",
     "phoneAlt": "AnyRent 렌탈 주문 상세 화면",
     "flowAlt": "예약, 수령, 반납 세 가지 상태"
   },
@@ -86,7 +93,8 @@
     "duplicatePreventionDesc": "렌탈샵 관리 소프트웨어의 스마트 시스템이 중복 주문을 방지하고 정확한 재고 관리를 보장합니다. 렌탈 관리 시스템으로 렌탈 재고를 효율적으로 관리하세요.",
     "multiPlatform": "멀티 플랫폼 지원",
     "multiPlatformDesc": "멀티 플랫폼 렌탈 관리 시스템. 렌탈샵 관리 소프트웨어를 통해 iOS 및 웹 플랫폼에서 렌탈샵 관리 데이터를 원활하게 액세스하세요.",
-    "viewAllFeatures": "모든 기능 세부사항 보기"
+    "viewAllFeatures": "모든 기능 세부사항 보기",
+    "badge": "기능"
   },
   "customSolution": {
     "title": "맞춤형 렌탈 솔루션이 필요하신가요?",
@@ -121,7 +129,8 @@
     "support": "24/7 지원",
     "supportDesc": "렌탈샵 관리 소프트웨어의 전담 고객 지원 팀을 통해 언제든지 도움을 받으세요. 24/7 지원을 제공하는 렌탈 관리 시스템.",
     "activeStores": "활성 매장",
-    "rating": "4.9/5 평점"
+    "rating": "4.9/5 평점",
+    "badge": "선택하는 이유"
   },
   "stats": {
     "activeStores": "활성 매장",
@@ -168,7 +177,8 @@
         "name": "이동욱",
         "role": "카메라 렌탈샵 사장"
       }
-    }
+    },
+    "badge": "고객 후기"
   },
   "cta": {
     "title": "시작할 준비가 되셨나요?",
@@ -176,7 +186,8 @@
   },
   "blog": {
     "title": "최신 블로그 게시물",
-    "subtitle": "렌탈 비즈니스를 위한 인사이트와 유용한 팁을 확인하세요"
+    "subtitle": "렌탈 비즈니스를 위한 인사이트와 유용한 팁을 확인하세요",
+    "badge": "블로그"
   },
   "faq": {
     "title": "렌탈샵 관리 소프트웨어에 대한 자주 묻는 질문",
@@ -268,7 +279,9 @@
     "addonDescription": "제한을 늘리기 위한 플랜 애드온 가격 (매장, 사용자, 제품, 고객, 주문)",
     "addonPriceValue": "가격 문의",
     "close": "닫기",
-    "additionalPricingNote": "추가 계정 및 애드온 가격에 대해 자세히 알아보기"
+    "additionalPricingNote": "추가 계정 및 애드온 가격에 대해 자세히 알아보기",
+    "priceLabel": "가격:",
+    "additionalPricingSr": "추가 계정 및 애드온 요금 안내"
   },
   "footer": {
     "description": "AnyRent - 베트남의 선도적인 렌탈샵 관리 소프트웨어 및 렌탈 관리 시스템. 아오자이 렌탈, 웨딩드레스 렌탈, 장비 렌탈, 차량 렌탈, 공연 의상 렌탈, 프린터 렌탈을 위한 전문 솔루션. 효율적인 렌탈 주문 관리, 렌탈 재고 관리 및 고객 관리.",
@@ -290,7 +303,63 @@
       "terms": "약관",
       "privacy": "개인정보 보호"
     },
-    "copyright": "© 2024 AnyRent. 모든 권리 보유."
+    "copyright": "© 2024 AnyRent. 모든 권리 보유.",
+    "imageSearch": "AI 이미지 검색",
+    "industries": {
+      "title": "업종",
+      "aoDai": "아오자이 렌탈",
+      "weddingDress": "웨딩드레스 렌탈",
+      "equipment": "장비 렌탈",
+      "costume": "의상 렌탈"
+    }
+  },
+  "industries": {
+    "title": "업종별 솔루션",
+    "subtitle": "렌탈 업종별로 최적화된 소프트웨어",
+    "aoDai": {
+      "title": "아오자이 렌탈",
+      "desc": "사이즈·색상별 재고 관리. 예약 일정으로 중복 예약을 막습니다."
+    },
+    "weddingDress": {
+      "title": "웨딩드레스 렌탈",
+      "desc": "컬렉션, 피팅 예약, 웨딩 패키지 구성."
+    },
+    "equipment": {
+      "title": "장비 렌탈",
+      "desc": "상태, 정비 일정, 렌탈 계약 관리."
+    },
+    "costume": {
+      "title": "의상 렌탈",
+      "desc": "공연, 코스프레, 이벤트. 사이즈와 액세서리 관리."
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Zalo로 문의",
+    "whatsappTitle": "WhatsApp으로 문의",
+    "telegramTitle": "Telegram으로 문의",
+    "zaloQrTitle": "QR 코드를 스캔해 Zalo로 문의하세요",
+    "zaloQrHint": "Zalo 앱을 열고 위의 QR 코드를 스캔해 주세요",
+    "openZalo": "Zalo 열기",
+    "close": "닫기",
+    "zaloQrAlt": "Zalo QR 코드",
+    "greeting": "안녕하세요! AnyRent에 대해 알고 싶습니다."
+  },
+  "sections": {
+    "hero": "소개",
+    "aiSearch": "AI 이미지 검색 기능",
+    "duplicatePrevention": "중복 예약 방지 기능",
+    "orderWorkflow": "렌탈 주문 흐름",
+    "features": "기능",
+    "customSolution": "맞춤 솔루션 문의",
+    "stats": "통계",
+    "testimonials": "고객 후기",
+    "cta": "시작하기",
+    "faq": "자주 묻는 질문",
+    "pricing": "요금제",
+    "blog": "블로그"
   }
 }
 

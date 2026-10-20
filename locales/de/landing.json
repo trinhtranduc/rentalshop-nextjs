@@ -1,0 +1,364 @@
+{
+  "navigation": {
+    "features": "Funktionen",
+    "pricing": "Preise",
+    "faq": "FAQ",
+    "contact": "Kontakt",
+    "login": "Anmelden"
+  },
+  "hero": {
+    "title": "Verwaltung für Verleihgeschäfte",
+    "subtitle": "Software und System",
+    "description": "Software für Verleihgeschäfte: Produkte, Kunden, Mietaufträge und der Plan für Abholung und Rückgabe in einem System. Für den Verleih von Áo dài, Brautkleidern, Geräten, Fahrzeugen, Kostümen oder Druckern. Verfügbar für iOS, Android und im Web.",
+    "downloadApp": "App herunterladen",
+    "tryWebPortal": "Web-Version testen",
+    "tagline": "Mietaufträge, Kalender und Produkte in einer App — kostenlos testen.",
+    "trustStores": "Über 500 aktive Geschäfte",
+    "trustRating": "Bewertung 4,9/5",
+    "trustSecure": "Sicher und zuverlässig",
+    "imageAlt": "Verleihgeschäft mit AnyRent auf dem Smartphone in einer Boutique verwalten"
+  },
+  "download": {
+    "title": "Auf allen Plattformen verfügbar",
+    "description": "Verwalten Sie Ihr Verleihgeschäft jederzeit und überall",
+    "mobileApp": "Mobile App",
+    "mobileAppDesc": "Ihr Verleihgeschäft unterwegs verwalten – mit der App für iOS und Android",
+    "webPortal": "Web-Version",
+    "webPortalDesc": "Alle Funktionen in jedem Browser, auf jedem Bildschirm gut bedienbar",
+    "analytics": "Auswertungen",
+    "analyticsDesc": "Detaillierte Berichte zur Entwicklung Ihres Geschäfts",
+    "downloadOnAppStore": "Laden im App Store",
+    "downloadOnGooglePlay": "Jetzt bei Google Play"
+  },
+  "aiSearch": {
+    "badge": "Künstliche Intelligenz",
+    "title": "Mietartikel per Bild finden – mit KI",
+    "description": "Mit KI machen Kunden ein Foto oder laden ein Bild hoch und finden sofort passende Mietartikel. Keine Namen merken, keine Suchbegriffe tippen – ein Foto genügt. Diese Funktion hebt AnyRent von anderer Verleih-Software ab.",
+    "feature1Title": "Foto machen, Artikel finden",
+    "feature1Desc": "Der Kunde fotografiert ein Áo dài, ein Brautkleid oder ein Kostüm als Vorlage – die KI erkennt es und schlägt ähnliche Artikel aus dem Bestand vor.",
+    "feature2Title": "Intelligente Erkennung",
+    "feature2Desc": "Vektor-Embeddings und neuronale Netze analysieren das Bild und erkennen Farbe, Schnitt und Material sehr genau.",
+    "feature3Title": "Ergebnisse in Sekunden",
+    "feature3Desc": "In wenigen Sekunden erscheint eine Liste der passendsten Artikel mit Verfügbarkeit und Mietpreis.",
+    "matchFound": "3 passende Artikel gefunden",
+    "videoAlt": "Demo der Bildsuche nach Mietartikeln in AnyRent",
+    "queryAlt": "Foto eines Áo dài als Vorlage für die Bildsuche",
+    "matchesAlt": "Drei ähnliche Mietkleider, gefunden von der Bildsuche",
+    "phoneAlt": "AnyRent-Bildschirm mit Ergebnissen der Bildsuche",
+    "snap": "Foto",
+    "learnMore": "Mehr zur Bildsuche mit KI →"
+  },
+  "duplicatePrevention": {
+    "badge": "Schutz vor Überschneidungen",
+    "title": "Keine überlappenden Mietaufträge",
+    "description": "AnyRent prüft die Verfügbarkeit, bevor ein Auftrag angelegt wird. Derselbe Artikel kann nicht für überlappende Termine gebucht werden – das schützt Ihren Ruf und Ihren Umsatz.",
+    "feature1Title": "Automatische Kalenderprüfung",
+    "feature1Desc": "Sobald Sie Artikel und Mietzeitraum wählen, gleicht das System mit Reservierungen, ausgegebenen Artikeln und anstehenden Rückgaben ab.",
+    "feature2Title": "Klare Warnhinweise",
+    "feature2Desc": "Überschneiden sich Termine, sehen Sie sofort eine Warnung – kein mühsames Abgleichen im Kalender mehr.",
+    "feature3Title": "Immer ein genauer Bestand",
+    "feature3Desc": "Jeder Artikel wird pro Zeitraum nur einmal vermietet, Größen und Bestand bleiben verlässlich.",
+    "blockedLabel": "Überschneidung – Auftrag blockiert",
+    "calendarAlt": "Mietkalender mit einer überlappenden Buchung",
+    "alertAlt": "Hinweis: Der Artikel ist für dieselben Tage bereits gebucht"
+  },
+  "orderWorkflow": {
+    "badge": "Mietablauf",
+    "title": "Mietaufträge einfach und bequem verwalten",
+    "description": "Der ganze Mietablauf in einem klaren Ablauf: Reservierung → Abholung → Rückgabe. Das Team arbeitet schneller, und Kunden wissen immer, wo ihr Auftrag steht.",
+    "feature1Title": "In Minuten anlegen und reservieren",
+    "feature1Desc": "Kunde, Artikel und Abhol- und Rückgabetermin wählen – der Auftrag „Reserviert“ ist in wenigen Schritten in der App oder im Web angelegt.",
+    "feature2Title": "Klare Abholung und Rückgabe",
+    "feature2Desc": "Setzen Sie den Auftrag zur richtigen Zeit auf „In Miete“ oder „Zurückgegeben“ – Kalender und Bestand aktualisieren sich sofort.",
+    "feature3Title": "Jeder Schritt an einem Ort",
+    "feature3Desc": "Verlauf, Zahlungen und Notizen im Auftragsdetail – weniger vergessene Schritte, weniger Rückfragen.",
+    "flowLabel": "Reserviert → In Miete → Zurückgegeben",
+    "phoneAlt": "Detailansicht eines Mietauftrags in AnyRent",
+    "flowAlt": "Drei Mietstatus: reserviert, in Miete, zurückgegeben"
+  },
+  "features": {
+    "title": "Funktionen für Verleihgeschäfte",
+    "description": "Alles, was Sie für einen effizienten Verleih brauchen: Aufträge, Bestand und Kunden in einem System. Für den Verleih von Áo dài, Brautkleidern, Geräten, Fahrzeugen, Kostümen oder Druckern.",
+    "aiImageSearch": "Bildsuche mit KI",
+    "aiImageSearchDesc": "Mietartikel sofort per Foto finden. Die KI erkennt Farbe, Schnitt und Material und schlägt passende Artikel aus Ihrem Bestand vor.",
+    "orderManagement": "Mietaufträge verwalten",
+    "orderManagementDesc": "Mietaufträge einfach anlegen, verfolgen und verwalten – mit Status und Verlauf.",
+    "customerManagement": "Kundenverwaltung",
+    "customerManagementDesc": "Kundendaten und Mietverlauf speichern und Stammkunden pflegen.",
+    "calendarScheduling": "Mietkalender und Planung",
+    "calendarSchedulingDesc": "Ein übersichtlicher Kalender für Ausgaben, Rückgaben und die Verfügbarkeit der Artikel.",
+    "financialReports": "Finanzberichte",
+    "financialReportsDesc": "Detaillierte Berichte, um Umsatz zu verfolgen und das Geschäft auszuwerten.",
+    "duplicatePrevention": "Keine Doppelbuchungen",
+    "duplicatePreventionDesc": "Das System verhindert überlappende Aufträge und hält den Bestand genau.",
+    "multiPlatform": "Für alle Plattformen",
+    "multiPlatformDesc": "Ihre Verleihdaten auf iOS, Android und im Web – ohne doppelte Eingabe.",
+    "viewAllFeatures": "Alle Funktionen im Detail",
+    "badge": "Funktionen"
+  },
+  "customSolution": {
+    "title": "Brauchen Sie eine individuelle Lösung?",
+    "description": "Ihr Verleihgeschäft hat besondere Anforderungen? Wir passen die Verleihverwaltung an Ihre Bedürfnisse an – vom Verleih von Áo dài, Brautkleidern, Geräten oder Fahrzeugen bis zu anderen Spezialbranchen.",
+    "benefits": {
+      "title": "Vorteile einer individuellen Lösung",
+      "customized": "Komplett auf Ihr Geschäft zugeschnitten",
+      "dedicated": "Persönliche Betreuung und Beratung durch Experten",
+      "scalable": "Ein System, das mit Ihrem Geschäft wächst",
+      "integration": "Einfache Anbindung an Ihre bestehenden Systeme"
+    },
+    "contact": {
+      "title": "Kontakt aufnehmen",
+      "description": "Sprechen Sie mit uns über eine Lösung für Ihr Verleihgeschäft",
+      "email": "E-Mail",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "Anfrage: individuelle Verleihlösung",
+      "emailBody": "Hallo,\n\nich interessiere mich für eine individuelle Verleihverwaltung für mein Geschäft.\n\nBitte melden Sie sich bei mir, um die Details zu besprechen.\n\nViele Grüße",
+      "whatsappMessage": "Hallo, ich interessiere mich für eine individuelle Verleihverwaltung. Bitte melden Sie sich bei mir.",
+      "responseTime": "Wir antworten innerhalb von 24 Stunden"
+    }
+  },
+  "whyChoose": {
+    "title": "Warum AnyRent für Ihr Verleihgeschäft?",
+    "description": "Hunderte Verleihgeschäfte vertrauen bereits unserem System.",
+    "easyToUse": "Einfach zu bedienen",
+    "easyToUseDesc": "Eine intuitive Oberfläche für Verleiher – ganz ohne technische Kenntnisse.",
+    "timeSaving": "Zeit sparen",
+    "timeSavingDesc": "Routineaufgaben laufen automatisch, und Sie kümmern sich ums Wachstum statt um Papierkram.",
+    "increaseRevenue": "Mehr Umsatz",
+    "increaseRevenueDesc": "Genauere Bestands- und Kundenverwaltung bringt mehr Vermietungen.",
+    "support": "Support rund um die Uhr",
+    "supportDesc": "Unser Support-Team hilft Ihnen, wann immer Sie es brauchen.",
+    "activeStores": "Aktive Geschäfte",
+    "rating": "Bewertung 4,9/5",
+    "badge": "Warum wir"
+  },
+  "stats": {
+    "activeStores": "Aktive Geschäfte",
+    "ordersProcessed": "Bearbeitete Aufträge",
+    "customerRating": "Kundenbewertung",
+    "supportAvailable": "Support"
+  },
+  "testimonials": {
+    "title": "Das sagen unsere Kunden",
+    "description": "Hunderte zufriedene Verleiher",
+    "badge": "Kundenstimmen",
+    "items": {
+      "john": {
+        "quote": "Mit AnyRent führe ich mein Verleihgeschäft viel effizienter. Die Oberfläche ist einfach, und es gibt alle Funktionen, die ich brauche.",
+        "name": "John Smith",
+        "role": "Inhaber eines Verleihgeschäfts"
+      },
+      "sarah": {
+        "quote": "Die Auftragsverwaltung ist sehr praktisch: Ich behalte alle Aufträge im Blick und habe meinen Bestand im Griff.",
+        "name": "Sarah Johnson",
+        "role": "Filialleiterin"
+      },
+      "mike": {
+        "quote": "Die mobile App ist sehr praktisch: Ich verwalte mein Geschäft von überall, und die Bedienung ist intuitiv.",
+        "name": "Mike Wilson",
+        "role": "Unternehmer"
+      },
+      "aoDai": {
+        "quote": "AnyRent hilft mir, meinen Áo-dài-Verleih sehr effizient zu führen. Der Buchungskalender und die Größenverwaltung sind sehr praktisch.",
+        "name": "Emily Chen",
+        "role": "Inhaberin eines Áo-dài-Verleihs"
+      },
+      "equipment": {
+        "quote": "Die Geräteverwaltung war noch nie so einfach: Ich kenne den Zustand der Geräte und den Mietplan genau.",
+        "name": "David Kim",
+        "role": "Inhaber eines Geräteverleihs"
+      },
+      "weddingDress": {
+        "quote": "Die Verwaltung der Brautkleid-Vermietung ist sehr professionell: Ich verwalte viele Kleider gleichzeitig und sehe den Verlauf der Kundinnen.",
+        "name": "Sophie Martinez",
+        "role": "Inhaberin eines Brautmodenverleihs"
+      },
+      "camera": {
+        "quote": "Der Verleih von Kameras und Zubehör ist einfach geworden. Zustandsprüfung und Wartungsplan sind sehr nützlich.",
+        "name": "James Anderson",
+        "role": "Inhaber eines Kameraverleihs"
+      }
+    }
+  },
+  "cta": {
+    "title": "Bereit loszulegen?",
+    "description": "Schließen Sie sich Tausenden Verleihgeschäften an, die unserer Plattform vertrauen"
+  },
+  "blog": {
+    "title": "Neueste Beiträge",
+    "subtitle": "Ideen und Tipps für Ihr Verleihgeschäft",
+    "badge": "Blog"
+  },
+  "faq": {
+    "title": "Häufige Fragen zur Software für Verleihgeschäfte",
+    "description": "Alles, was Sie über das Verleihsystem AnyRent wissen müssen",
+    "items": {
+      "freeUse": {
+        "question": "Ist AnyRent kostenlos?",
+        "answer": "AnyRent bietet eine kostenlose Testphase. Registrieren Sie sich und nutzen Sie die Grundfunktionen ohne Kosten: Mietaufträge, Bestand und Kunden."
+      },
+      "multipleDevices": {
+        "question": "Kann ich AnyRent auf mehreren Geräten nutzen?",
+        "answer": "Ja, AnyRent läuft auf iOS, Android und im Browser. Verwalten Sie Ihr Verleihgeschäft von überall."
+      },
+      "dataSecure": {
+        "question": "Sind meine Daten sicher?",
+        "answer": "Wir schützen Ihre Daten. Angaben zu Aufträgen, Bestand und Kunden werden verschlüsselt und sicher in der Cloud gespeichert."
+      },
+      "support": {
+        "question": "Gibt es Kundensupport?",
+        "answer": "Ja, der AnyRent-Support ist rund um die Uhr erreichbar – per Chat, E-Mail und Telefon."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Einfache Preise",
+    "description": "Wählen Sie den Tarif, der zu Ihrem Geschäft passt",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
+    "months": {
+      "three": "3 Monate",
+      "six": "6 Monate",
+      "twelve": "12 Monate"
+    },
+    "loading": "Tarife werden geladen...",
+    "error": "Tarife konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "noPlans": "Derzeit sind keine Tarife verfügbar.",
+    "buttonText": "Jetzt starten",
+    "plans": {
+      "freeTrial": {
+        "name": "Kostenloser Test",
+        "subtitle": "Ideal für den Einstieg",
+        "period": "7 Tage",
+        "description": "Alle Funktionen kostenlos testen",
+        "buttonText": "Kostenlos testen"
+      },
+      "basic": {
+        "name": "Basic-Tarif",
+        "subtitle": "Für kleine Verleihgeschäfte",
+        "period": "pro Monat",
+        "description": "Ideal für kleine Verleihgeschäfte",
+        "buttonText": "Jetzt starten",
+        "mostPopular": "Am beliebtesten"
+      },
+      "premium": {
+        "name": "Premium-Tarif",
+        "subtitle": "Für wachsende Unternehmen",
+        "period": "pro Monat",
+        "description": "Erweiterte Funktionen für größere Betriebe",
+        "buttonText": "Jetzt starten"
+      }
+    },
+    "features": {
+      "orderManagement": "Auftragsverwaltung",
+      "productManagement": "Produktverwaltung",
+      "customerManagement": "Kundenverwaltung",
+      "revenueReports": "Umsatzberichte",
+      "singleAccount": "1 Konto",
+      "twoAccounts": "2 Konten",
+      "fiveAccounts": "5 Konten",
+      "webPortal": "Web-Version",
+      "additionalAccounts": "Zusätzliche Konten",
+      "freeUpdates": "Kostenlose Updates",
+      "mobileApp": "Mobile App"
+    },
+    "allPlansInclude": "In allen Tarifen enthalten",
+    "support24": "Support rund um die Uhr",
+    "dataBackup": "Datensicherung",
+    "freeUpdates": "Kostenlose Updates",
+    "training": "Schulung",
+    "additionalPricingTitle": "Weitere Preise",
+    "additionalAccountPrice": "Zusätzliches Konto",
+    "additionalAccountDescription": "Preis pro zusätzlichem Benutzerkonto über dem Limit des Tarifs",
+    "additionalAccountPriceValue": "30.000 VND/Monat",
+    "addonPrice": "Zusatzpakete",
+    "addonDescription": "Preis für Zusatzpakete, die die Limits erhöhen (Filialen, Benutzer, Produkte, Kunden, Aufträge)",
+    "addonPriceValue": "Preis auf Anfrage",
+    "close": "Schließen",
+    "additionalPricingNote": "Mehr zu zusätzlichen Konten und Zusatzpaketen",
+    "priceLabel": "Preis:",
+    "additionalPricingSr": "Preise für zusätzliche Konten und Zusatzpakete"
+  },
+  "footer": {
+    "description": "AnyRent – Software für Verleihgeschäfte in Vietnam: Verleih von Áo dài, Brautkleidern, Geräten, Fahrzeugen, Kostümen und Druckern. Mietaufträge, Bestand und Kunden in einem System.",
+    "product": {
+      "title": "Produkt",
+      "features": "Funktionen",
+      "pricing": "Preise",
+      "downloadApp": "App herunterladen"
+    },
+    "support": {
+      "title": "Hilfe",
+      "faq": "Häufige Fragen",
+      "documentation": "Beiträge",
+      "contact": "Kontakt"
+    },
+    "company": {
+      "title": "Unternehmen",
+      "aboutUs": "Über uns",
+      "terms": "Nutzungsbedingungen",
+      "privacy": "Datenschutz"
+    },
+    "copyright": "© 2024 AnyRent. Alle Rechte vorbehalten.",
+    "imageSearch": "Bildsuche mit KI",
+    "industries": {
+      "title": "Branchen",
+      "aoDai": "Áo-dài-Verleih",
+      "weddingDress": "Brautkleidverleih",
+      "equipment": "Geräteverleih",
+      "costume": "Kostümverleih"
+    }
+  },
+  "industries": {
+    "title": "Lösungen nach Branche",
+    "subtitle": "Optimiert für jede Art von Verleihgeschäft",
+    "aoDai": {
+      "title": "Áo-dài-Verleih",
+      "desc": "Bestand nach Größe und Farbe. Buchungskalender ohne Doppelbuchungen."
+    },
+    "weddingDress": {
+      "title": "Brautkleidverleih",
+      "desc": "Kollektionen, Anprobetermine, komplette Hochzeitspakete."
+    },
+    "equipment": {
+      "title": "Geräteverleih",
+      "desc": "Zustand, Wartungsplan und Mietverträge im Blick."
+    },
+    "costume": {
+      "title": "Kostümverleih",
+      "desc": "Theater, Cosplay, Events. Größen und Zubehör verwalten."
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Über Zalo schreiben",
+    "whatsappTitle": "Über WhatsApp schreiben",
+    "telegramTitle": "Über Telegram schreiben",
+    "zaloQrTitle": "QR-Code scannen und uns über Zalo schreiben",
+    "zaloQrHint": "Öffnen Sie die Zalo-App und scannen Sie den QR-Code oben, um uns zu kontaktieren",
+    "openZalo": "Zalo öffnen",
+    "close": "Schließen",
+    "zaloQrAlt": "Zalo-QR-Code",
+    "greeting": "Hallo! Ich möchte mehr über AnyRent erfahren."
+  },
+  "sections": {
+    "hero": "Einführung",
+    "aiSearch": "Bildsuche mit KI",
+    "duplicatePrevention": "Schutz vor überlappenden Aufträgen",
+    "orderWorkflow": "Ablauf eines Mietauftrags",
+    "features": "Funktionen",
+    "customSolution": "Individuelle Lösung",
+    "stats": "Zahlen",
+    "testimonials": "Kundenstimmen",
+    "cta": "Loslegen",
+    "faq": "Häufige Fragen",
+    "pricing": "Tarife",
+    "blog": "Beiträge"
+  }
+}

@@ -11,7 +11,12 @@
     "subtitle": "Software & System",
     "description": "Leading rental shop management software and rental management system. Comprehensive solution for various rental businesses: ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental management. Modern shop management software with multi-platform support for iOS, and Web.",
     "downloadApp": "Download App",
-    "tryWebPortal": "Try Web Portal"
+    "tryWebPortal": "Try Web Portal",
+    "tagline": "Manage rental orders, calendar & products in one app — free trial.",
+    "trustStores": "500+ Active Stores",
+    "trustRating": "4.9/5 Rating",
+    "trustSecure": "Secure & Reliable",
+    "imageAlt": "AnyRent rental shop management on mobile in a boutique"
   },
   "download": {
     "title": "Available on All Platforms",
@@ -39,7 +44,9 @@
     "videoAlt": "Demo of AI image search finding rental products on AnyRent",
     "queryAlt": "Sample ao dai photo used as visual search query",
     "matchesAlt": "Three similar rental dresses matched by AI image search",
-    "phoneAlt": "AnyRent phone screen showing AI image search results"
+    "phoneAlt": "AnyRent phone screen showing AI image search results",
+    "snap": "Snap",
+    "learnMore": "Learn about AI image search →"
   },
   "duplicatePrevention": {
     "badge": "Conflict protection",
@@ -86,7 +93,8 @@
     "duplicatePreventionDesc": "Smart system in rental shop management software prevents duplicate orders and ensures accurate inventory management. Efficient rental inventory management with rental management system.",
     "multiPlatform": "Multi-Platform Support",
     "multiPlatformDesc": "Multi-platform rental management system. Access rental shop management data from iOS, Android, and web platforms seamlessly with rental shop management software.",
-    "viewAllFeatures": "View All Features Details"
+    "viewAllFeatures": "View All Features Details",
+    "badge": "Features"
   },
   "customSolution": {
     "title": "Need a Custom Rental Solution?",
@@ -121,7 +129,8 @@
     "support": "24/7 Support",
     "supportDesc": "Get help whenever you need it with dedicated customer support team of rental shop management software. Rental management system with 24/7 support.",
     "activeStores": "Active Stores",
-    "rating": "4.9/5 Rating"
+    "rating": "4.9/5 Rating",
+    "badge": "Why Choose Us"
   },
   "stats": {
     "activeStores": "Active Stores",
@@ -168,7 +177,8 @@
         "name": "James Anderson",
         "role": "Camera Rental Shop Owner"
       }
-    }
+    },
+    "badge": "Testimonials"
   },
   "cta": {
     "title": "Ready to Get Started?",
@@ -176,7 +186,8 @@
   },
   "blog": {
     "title": "Latest Blog Posts",
-    "subtitle": "Discover insights and tips for your rental business"
+    "subtitle": "Discover insights and tips for your rental business",
+    "badge": "Blog"
   },
   "faq": {
     "title": "Frequently Asked Questions about Rental Shop Management Software",
@@ -268,7 +279,9 @@
     "addonDescription": "Price for plan addons to increase limits (outlets, users, products, customers, orders)",
     "addonPriceValue": "Contact for pricing",
     "close": "Close",
-    "additionalPricingNote": "Learn more about additional account and addon pricing"
+    "additionalPricingNote": "Learn more about additional account and addon pricing",
+    "priceLabel": "Price:",
+    "additionalPricingSr": "Information about additional pricing for accounts and addons"
   },
   "footer": {
     "description": "AnyRent - Leading rental shop management software and rental management system in Vietnam. Professional solution for ao dai rental, wedding dress rental, equipment rental, vehicle rental, costume rental, printer rental management. Efficient rental order management, rental inventory management, and customer management.",
@@ -290,7 +303,63 @@
       "terms": "Terms",
       "privacy": "Privacy"
     },
-    "copyright": "© 2024 AnyRent. All rights reserved."
+    "copyright": "© 2024 AnyRent. All rights reserved.",
+    "imageSearch": "AI image search",
+    "industries": {
+      "title": "Industries",
+      "aoDai": "Ao dai rental",
+      "weddingDress": "Wedding dress rental",
+      "equipment": "Equipment rental",
+      "costume": "Costume rental"
+    }
+  },
+  "industries": {
+    "title": "Solutions by industry",
+    "subtitle": "Optimised for each kind of rental business",
+    "aoDai": {
+      "title": "Ao dai rental",
+      "desc": "Stock by size and colour. A booking calendar that prevents double bookings."
+    },
+    "weddingDress": {
+      "title": "Wedding dress rental",
+      "desc": "Collections, fitting appointments and complete wedding packages."
+    },
+    "equipment": {
+      "title": "Equipment rental",
+      "desc": "Track condition, maintenance schedules and rental contracts."
+    },
+    "costume": {
+      "title": "Costume rental",
+      "desc": "Performances, cosplay and events. Manage sizes and accessories."
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Contact us on Zalo",
+    "whatsappTitle": "Contact us on WhatsApp",
+    "telegramTitle": "Contact us on Telegram",
+    "zaloQrTitle": "Scan the QR code to contact us on Zalo",
+    "zaloQrHint": "Open the Zalo app and scan the QR code above to connect with us",
+    "openZalo": "Open Zalo",
+    "close": "Close",
+    "zaloQrAlt": "Zalo QR code",
+    "greeting": "Hello! I would like to learn about AnyRent."
+  },
+  "sections": {
+    "hero": "Hero section",
+    "aiSearch": "AI Image Search feature",
+    "duplicatePrevention": "Duplicate order prevention feature",
+    "orderWorkflow": "Rental order workflow feature",
+    "features": "Features section",
+    "customSolution": "Custom solution contact section",
+    "stats": "Statistics section",
+    "testimonials": "Testimonials section",
+    "cta": "Call to action section",
+    "faq": "Frequently asked questions",
+    "pricing": "Pricing plans",
+    "blog": "Blog section"
   }
 }
 
