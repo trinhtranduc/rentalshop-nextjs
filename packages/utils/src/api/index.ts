@@ -42,6 +42,7 @@ export * from './response-builder';
 // export * from './route-helpers';
 export * from './referrals';
 export * from './posts';
+export * from './public-booking';
 export * from './loyalty';
 export * from './attendance';
 

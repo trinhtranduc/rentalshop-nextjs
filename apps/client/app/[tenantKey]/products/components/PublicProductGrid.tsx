@@ -6,8 +6,12 @@ import { Search } from 'lucide-react';
 import { Pagination } from '@rentalshop/ui';
 import type { Product, Category } from '@rentalshop/types';
 import { useTranslations } from 'next-intl';
+import { getLocalDateKey } from '@rentalshop/utils';
 import { formatShopMoney, productPriceLines } from '../lib/public-shop';
+import { addToRequest, emptyRequest, loadRequest, removeFromRequest, saveRequest, type BookingRequestDraft } from '../lib/booking';
 import { PublicProductSheet } from './PublicProductSheet';
+import { BookingRequestSheet } from './BookingRequestSheet';
+import type { BookingOutlet } from './BookingPicker';
 
 interface PublicProductGridProps {
   products: Product[];
@@ -20,10 +24,23 @@ interface PublicProductGridProps {
     limit: number;
     hasMore: boolean;
   };
+  /** #1124 */
+  tenantKey?: string;
+  onlineBooking?: boolean;
+  outlets?: BookingOutlet[];
 }
 
+const SHOP_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const browserStorage = () => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+};
+
 /** #665 — search, category chips, product cards and the detail sheet */
-export function PublicProductGrid({ products, categories, currency, phone, pagination }: PublicProductGridProps) {
+export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [] }: PublicProductGridProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -36,6 +53,28 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
   const [query, setQuery] = useState(currentSearch);
   const [opened, setOpened] = useState<Product | null>(null);
+  const tb = useTranslations('products.public.booking');
+  const bookingOn = Boolean(tenantKey && onlineBooking && outlets.some((o) => o.acceptsOnlineBooking));
+  const [draft, setDraft] = useState<BookingRequestDraft>(emptyRequest());
+  const [reviewing, setReviewing] = useState(false);
+  const [added, setAdded] = useState(false);
+  const todayKey = getLocalDateKey(new Date(), SHOP_TIME_ZONE);
+
+  // The request is read after mount (no localStorage on the server)
+  useEffect(() => {
+    if (bookingOn && tenantKey) setDraft(loadRequest(browserStorage(), tenantKey));
+  }, [bookingOn, tenantKey]);
+
+  const updateDraft = (next: BookingRequestDraft) => {
+    setDraft(next);
+    if (tenantKey) saveRequest(browserStorage(), tenantKey, next);
+  };
+
+  useEffect(() => {
+    if (!added) return;
+    const timer = setTimeout(() => setAdded(false), 2500);
+    return () => clearTimeout(timer);
+  }, [added]);
 
   const updateFilters = useCallback(
     (updates: { categoryId?: number | null; search?: string; page?: number }) => {
@@ -78,7 +117,7 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
     }`;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 sm:px-5">
+    <main className={`mx-auto w-full max-w-6xl px-4 sm:px-5 ${bookingOn && draft.items.length > 0 ? 'pb-24' : ''}`}>
       <div className="sticky top-0 z-10 bg-slate-50 pb-2.5 pt-4">
         <label className="flex h-[46px] items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5">
           <Search className="h-[18px] w-[18px] flex-none text-slate-500" aria-hidden />
@@ -198,6 +237,63 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
           currency={currency}
           phone={phone}
           onClose={() => setOpened(null)}
+          booking={
+            bookingOn && tenantKey
+              ? {
+                  tenantKey,
+                  enabled: true,
+                  outlets,
+                  todayKey,
+                  draft,
+                  onAdd: (where, quantity) => {
+                    const main = productPriceLines(opened).main;
+                    updateDraft(
+                      addToRequest(draft, where, {
+                        productId: opened.id,
+                        name: opened.name,
+                        quantity,
+                        unitPrice: main?.amount ?? null,
+                        perDay: main?.unit === 'day',
+                      })
+                    );
+                    setAdded(true);
+                  },
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {bookingOn && draft.items.length > 0 && !reviewing && (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={() => setReviewing(true)}
+            data-testid="booking-bar"
+            className="mx-auto flex h-14 w-full max-w-lg items-center justify-between rounded-2xl bg-slate-900 px-4 text-white shadow-lg"
+          >
+            <span className="text-[15px] font-semibold">
+              {tb('requestBar', { count: draft.items.reduce((a, i) => a + i.quantity, 0) })}
+            </span>
+            <span className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold">{tb('viewRequest')}</span>
+          </button>
+          {added && <p className="mx-auto mt-2 max-w-lg text-center text-[13px] font-semibold text-emerald-700">{tb('added')}</p>}
+        </div>
+      )}
+
+      {reviewing && tenantKey && (
+        <BookingRequestSheet
+          tenantKey={tenantKey}
+          draft={draft}
+          outlets={outlets}
+          currency={currency}
+          onRemove={(productId) => {
+            const next = removeFromRequest(draft, productId);
+            updateDraft(next);
+            if (next.items.length === 0) setReviewing(false);
+          }}
+          onSent={() => updateDraft(emptyRequest())}
+          onClose={() => setReviewing(false)}
         />
       )}
     </main>
