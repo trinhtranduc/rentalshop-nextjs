@@ -3,8 +3,8 @@
   "meta": {
     "pricing": {
       "title": "租賃店管理軟體價格方案 | AnyRent",
-      "description": "AnyRent 價格方案：Basic、Professional、Enterprise。14 天免費試用，每月 79,000 越南盾起，專為租賃店打造的管理軟體。",
-      "ogDescription": "Basic、Professional、Enterprise 三種方案。14 天免費試用，每月 79,000 越南盾起。",
+      "description": "AnyRent 價格方案：Basic、Professional、Enterprise。14 天免費試用，月付方案價格實惠，專為租賃店打造的管理軟體。",
+      "ogDescription": "Basic、Professional、Enterprise 三種方案。14 天免費試用，月付方案價格實惠。",
       "name": "AnyRent 價格方案 - 租賃店管理軟體",
       "breadcrumb": "價格"
     },
@@ -32,7 +32,7 @@
   },
   "pricingFaq": {
     "q1": "AnyRent 租賃管理軟體免費嗎？",
-    "a1": "AnyRent 提供 14 天全功能免費試用。之後您可以選擇合適的方案，每月 79,000 越南盾起。",
+    "a1": "AnyRent 提供 14 天全功能免費試用。之後您可以選擇適合店家的月付方案。",
     "q2": "之後可以升級方案嗎？",
     "a2": "可以，您隨時都能升級。費用按比例計算，升級後馬上可以使用更高方案的功能。",
     "q3": "超出方案上限會怎樣？",
