@@ -252,16 +252,26 @@ class AnalyticsAPIService: BaseService, AnalyticsAPIServiceProtocol {
     }
 
     // MARK: - Income Orders (GET /api/analytics/income/orders)
-    func loadIncomeOrders(startDate: Date? = nil, endDate: Date? = nil, status: String? = nil, plan: Bool? = nil, limit: Int? = nil, offset: Int? = nil, completion: @escaping (IncomeOrdersData?, NSError?) -> Void) {
-        let path = APIEndpoint.Path.incomeOrders
-        let fullURL = APIEndpoint.currentBaseURL + path
-        var params: [String: Any] = [:]
+    /// #1062: the shop time zone and the merchant's branch chosen on Home (#828), as the Overview tiles
+    /// (`TabsV2APIService.overviewReportParameters`), so the related-orders rows add up to the tile
+    static func incomeOrdersParameters(startDate: Date?, endDate: Date?, status: String?, plan: Bool?, limit: Int?,
+                                       offset: Int?, outletId: Int? = CurrentOutlet.shared.merchantFilterId) -> [String: Any] {
+        var params: [String: Any] = ["timeZone": Date.shopTimeZone.identifier]
         if let startDate = startDate { params["startDate"] = startDate.dateServerInString() }
         if let endDate = endDate { params["endDate"] = endDate.dateServerInString() }
         if let status = status, !status.isEmpty { params["status"] = status }
         if let plan = plan { params["plan"] = plan }
         if let limit = limit { params["limit"] = limit }
         if let offset = offset { params["offset"] = offset }
+        if let outletId { params["outletIds"] = String(outletId) }
+        return params
+    }
+
+    func loadIncomeOrders(startDate: Date? = nil, endDate: Date? = nil, status: String? = nil, plan: Bool? = nil, limit: Int? = nil, offset: Int? = nil, completion: @escaping (IncomeOrdersData?, NSError?) -> Void) {
+        let path = APIEndpoint.Path.incomeOrders
+        let fullURL = APIEndpoint.currentBaseURL + path
+        let params = Self.incomeOrdersParameters(startDate: startDate, endDate: endDate, status: status, plan: plan,
+                                                 limit: limit, offset: offset)
         AuthSession.shared.request(fullURL, method: .get, parameters: params, headers: BaseService.jsonHeader)
             .responseData { response in
                 switch response.result {
