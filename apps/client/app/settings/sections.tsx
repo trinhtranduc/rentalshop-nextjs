@@ -900,7 +900,7 @@ export function ProfileSection({
       className={`${cardClass} overflow-hidden`}
     >
       <div className="flex flex-col gap-4 px-5 py-[18px]">
-        <h2 className="m-0 text-lg font-bold">{t('profile.title')}</h2>
+        <h2 className="m-0 text-lg font-bold">{t('nav.profile')}</h2>
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
           <Field label={t('profile.lastName')}>
             <input name="lastName" value={form.lastName} onChange={set('lastName')} autoComplete="family-name" className={inputClass} />
