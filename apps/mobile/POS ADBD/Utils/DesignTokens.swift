@@ -201,7 +201,28 @@ enum DayFormatter {
     }
 }
 
-/// `1.150.000` (dot grouping, no decimals, no currency symbol — #399)
+/// #1145 the shop's currency (`merchant.currency`). Amounts are never converted, only shown differently.
+enum ShopCurrency: String, Equatable, CaseIterable {
+    case vnd = "VND"
+    case usd = "USD"
+
+    /// "USD" (any case, trimmed) is USD; anything else, empty or missing is VND (as before #1145)
+    static func normalise(_ raw: String?) -> ShopCurrency {
+        raw?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == ShopCurrency.usd.rawValue ? .usd : .vnd
+    }
+
+    /// "VND (đ)" / "USD ($)"
+    var label: String {
+        switch self {
+        case .vnd: return "VND (đ)"
+        case .usd: return "USD ($)"
+        }
+    }
+}
+
+/// The one money formatter of the app (#399, #1145).
+/// VND: `1.150.000` (dot grouping, no decimals, no symbol). USD: `$1,150,000` (en-US grouping, symbol first,
+/// 2 decimals only when there are cents: `$1,234.50`). Negative amounts start with "−" (U+2212).
 enum MoneyFormatter {
     private static let formatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -212,9 +233,65 @@ enum MoneyFormatter {
         return formatter
     }()
 
-    static func format(_ amount: Double) -> String {
+    private static func usdFormatter(cents: Bool) -> NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        formatter.decimalSeparator = "."
+        formatter.groupingSize = 3
+        formatter.usesGroupingSeparator = true
+        formatter.minimumFractionDigits = cents ? 2 : 0
+        formatter.maximumFractionDigits = cents ? 2 : 0
+        return formatter
+    }
+
+    private static let usdWhole = usdFormatter(cents: false)
+    private static let usdCents = usdFormatter(cents: true)
+
+    /// "1.150.000" in VND, "$1,150,000" in USD (the shop's currency unless one is given)
+    static func format(_ amount: Double, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        switch currency {
+        case .vnd:
+            return plain(amount)
+        case .usd:
+            let cents = (amount * 100).rounded()
+            let magnitude = abs(cents) / 100
+            let whole = abs(cents).truncatingRemainder(dividingBy: 100) == 0
+            let digits = (whole ? usdWhole : usdCents).string(from: NSNumber(value: magnitude)) ?? String(format: "%.2f", magnitude)
+            return (cents < 0 ? "−" : "") + "$" + digits
+        }
+    }
+
+    /// The VND style "1.150.000" whatever the currency: money input fields stay plain numbers (#1145)
+    static func plain(_ amount: Double) -> String {
         let rounded = amount.rounded()
         let digits = formatter.string(from: NSNumber(value: abs(rounded))) ?? "\(Int(abs(rounded)))"
         return (rounded < 0 ? "−" : "") + digits
+    }
+
+    /// With the currency mark where the app wrote "đ" after the amount: "150.000đ" in VND, "$150,000" in USD
+    static func suffixed(_ amount: Double, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        currency == .vnd ? format(amount, currency: .vnd) + "đ" : format(amount, currency: currency)
+    }
+
+    /// Unit next to a price field: "đ" / "đ/ngày" in VND, "$" / "$/ngày" in USD
+    static func unitLabel(daily: Bool, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        switch currency {
+        case .vnd: return (daily ? "products.cart.pricing.unitDaily" : "products.cart.pricing.unit").localized()
+        case .usd: return (daily ? "currency.usd.unitDaily" : "currency.usd.unit").localized()
+        }
+    }
+
+    /// USD compact: "$18.65M", "$1.2B" (two decimals at most, trailing zeros dropped); the full amount below a million
+    static func compactUSD(_ amount: Double) -> String {
+        let magnitude = abs(amount)
+        guard magnitude >= 1_000_000 else { return format(amount, currency: .usd) }
+        let billion = magnitude >= 1_000_000_000
+        var scaled = magnitude / (billion ? 1_000_000_000 : 1_000_000)
+        scaled = (scaled * 100).rounded() / 100
+        var text = String(format: "%.2f", scaled)
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return (amount < 0 ? "−" : "") + "$" + text + (billion ? "B" : "M")
     }
 }

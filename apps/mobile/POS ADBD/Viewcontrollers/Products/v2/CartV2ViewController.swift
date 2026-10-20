@@ -1427,16 +1427,16 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     }
 
     private func setPrice(_ value: Double?) {
-        priceField.text = value.map { MoneyFormatter.format($0) } ?? ""
+        priceField.text = value.map { MoneyFormatter.plain($0) } ?? ""
         priceField.placeholder = "0"
         let daily = orderType == .rent && selectedType == ProductPricingMode.perDay.rawValue
-        unitLabel.text = (daily ? "products.cart.pricing.unitDaily" : "products.cart.pricing.unit").localized()
+        unitLabel.text = MoneyFormatter.unitLabel(daily: daily)
         updatePreview()
     }
 
     @objc private func priceChanged() {
         let digits = String((priceField.text ?? "").filter { $0.isNumber }.prefix(12))
-        priceField.text = digits.isEmpty ? "" : MoneyFormatter.format(Double(digits) ?? 0)
+        priceField.text = digits.isEmpty ? "" : MoneyFormatter.plain(Double(digits) ?? 0)
         updatePreview()
     }
 

@@ -107,6 +107,8 @@ enum APIEndpoint {
         static let registerMerchant = "/api/merchants/register"
         /// PUT the signed-in user's shop settings; `{ allowOverlappingOrders }` alone for the #518 switch
         static let merchantSettings = "/api/settings/merchant"
+        /// #1145 the shop currency: GET (every role) / PUT `{ currency }` (shop owner)
+        static let settingsCurrency = "/api/settings/currency"
 
         // #1124 online booking requests (shop side)
         static let bookingRequests = "/api/booking-requests"

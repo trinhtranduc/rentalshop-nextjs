@@ -69,6 +69,8 @@ final class OverviewV2ViewController: BaseViewControler {
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
+        // #1145: the owner changed the shop currency: money is redrawn
+        NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
         load()
     }
 
@@ -265,6 +267,11 @@ final class OverviewV2ViewController: BaseViewControler {
     }
 
     // MARK: - Render
+
+    @objc private func currencyChanged() {
+        guard isViewLoaded else { return }
+        render()
+    }
 
     private func render() {
         let range = self.range

@@ -278,6 +278,7 @@ class User: NSObject, Codable {
         CurrentOutlet.shared.forget(userId: current()?.id)
         AuthTokenStore.clear()
         UserDefaults.standard.removeObject(forKey: userKey)
+        ShopCurrencyStore.userDidChange()
         UserDefaults.standard.synchronize()
         print("✅ User reset successfully from UserDefaults")
     }
@@ -306,6 +307,7 @@ class User: NSObject, Codable {
         do {
             let data = try JSONEncoder.shared.encode(user)
             UserDefaults.standard.set(data, forKey: userKey)
+            ShopCurrencyStore.userDidChange()
             UserDefaults.standard.synchronize()
             print("✅ User saved successfully to UserDefaults")
             print("   User: \(user.fullName ?? "Unknown")")

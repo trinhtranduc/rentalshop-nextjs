@@ -531,9 +531,9 @@ enum CartV2Logic {
 
     // MARK: Pricing sheet (#482, board Gio-hang-chon-gia)
 
-    /// "150.000đ"
-    static func money(_ amount: Double) -> String {
-        MoneyFormatter.format(amount) + "đ"
+    /// "150.000đ" ("$150,000" in a USD shop, #1145)
+    static func money(_ amount: Double, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        MoneyFormatter.suffixed(amount, currency: currency)
     }
 
     /// "Theo lần", "Theo ngày", "Theo block", "Theo giờ"; another type reads as sent
@@ -1062,10 +1062,10 @@ enum MoneyInput {
         return Double(digits)
     }
 
-    /// 1250000 → "1.250.000"
+    /// 1250000 → "1.250.000" (a plain number in any currency, #1145)
     static func display(_ value: Double?) -> String {
         guard let value else { return "" }
-        return MoneyFormatter.format(value)
+        return MoneyFormatter.plain(value)
     }
 }
 

@@ -56,7 +56,14 @@ final class OrderDetailViewController: BaseViewControler {
         titleLabel.minimumScaleFactor = 0.7
         navBar.setCustomTitleView(titleLabel, centered: true)
         buildLayout()
+        // #1145: the owner changed the shop currency: money is redrawn
+        NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
         load()
+    }
+
+    @objc private func currencyChanged() {
+        guard isViewLoaded else { return }
+        render()
     }
 
     private func buildLayout() {
