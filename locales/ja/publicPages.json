@@ -3,8 +3,8 @@
   "meta": {
     "pricing": {
       "title": "レンタル店管理ソフトの料金プラン | AnyRent",
-      "description": "AnyRent の料金プラン：Basic、Professional、Enterprise。14日間の無料トライアル付き。月額 99,000 VND から始められるレンタル店管理ソフトです。",
-      "ogDescription": "Basic・Professional・Enterprise の3プラン。14日間無料トライアル。月額 99,000 VND から。",
+      "description": "AnyRent の料金プラン：Basic、Professional、Enterprise。14日間の無料トライアル付き。月額 79,000 VND から始められるレンタル店管理ソフトです。",
+      "ogDescription": "Basic・Professional・Enterprise の3プラン。14日間無料トライアル。月額 79,000 VND から。",
       "name": "AnyRent 料金プラン - レンタル店管理ソフト",
       "breadcrumb": "料金"
     },
@@ -32,7 +32,7 @@
   },
   "pricingFaq": {
     "q1": "AnyRent のレンタル管理ソフトは無料ですか？",
-    "a1": "全機能を使える14日間の無料トライアルがあります。その後は月額 99,000 VND からのプランをお選びいただけます。",
+    "a1": "全機能を使える14日間の無料トライアルがあります。その後は月額 79,000 VND からのプランをお選びいただけます。",
     "q2": "後からプランをアップグレードできますか？",
     "a2": "はい、いつでもアップグレードできます。料金は日割りで計算され、上位プランの機能をすぐにご利用いただけます。",
     "q3": "プランの上限を超えたらどうなりますか？",
