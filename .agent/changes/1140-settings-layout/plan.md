@@ -26,3 +26,9 @@ UI only. Deep links covered by aliases. Currency sync effect left as is (still o
 ## Rollback
 
 Revert the PR.
+
+## Decision log
+
+- 2026-10-20: owner review of the first screenshots: nav rows must stay on one line. Side text ("Tiếng Việt · Sáng") dropped; English "Language & appearance" → "Language & theme". Checked 5 locales at 1366 and 1024: no row wraps or is cut.
+- 2026-10-20: the owner saw Thông tin cửa hàng read-only. Cause: `refreshUser` (the #1138 profile load, and every save) replaced the user with GET /api/users/profile, which has no `permissions`. Fixed in `packages/hooks` (`mergeRefreshedUser`: same user keeps the login fields the profile does not send), failing test first (`tests/auth-refresh-keeps-login-fields.test.ts`). Client-only hook; no API change.
+- Profile card title uses `nav.profile` (Hồ sơ) to match the nav.
