@@ -43,6 +43,7 @@ export * from './response-builder';
 export * from './referrals';
 export * from './posts';
 export * from './public-booking';
+export * from './booking-requests';
 export * from './loyalty';
 export * from './attendance';
 

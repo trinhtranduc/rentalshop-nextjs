@@ -557,6 +557,8 @@ export interface PayloadInput {
   securityDeposit: number;
   notes: string;
   loyaltyPoints?: number;
+  /** #1124: a new order made from an online booking request; the API confirms that request in the same create */
+  bookingRequestId?: number | null;
   /** Edit: the order's saved plan instants, kept when their Vietnam day is still the chosen one (#589). */
   original?: { pickupPlanAt?: string | Date | null; returnPlanAt?: string | Date | null } | null;
 }
@@ -617,6 +619,7 @@ export function buildPayload(input: PayloadInput) {
       };
     }),
     ...(input.mode === 'create' && input.loyaltyPoints && input.loyaltyPoints > 0 ? { loyaltyRedeem: { points: input.loyaltyPoints } } : {}),
+    ...(input.mode === 'create' && input.bookingRequestId ? { bookingRequestId: input.bookingRequestId } : {}),
   };
 }
 

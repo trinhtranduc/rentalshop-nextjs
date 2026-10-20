@@ -100,6 +100,12 @@ export interface ApiUrls {
     export: string;
     bulkImport: string;
   };
+  bookingRequests: {
+    list: string;
+    get: (id: number) => string;
+    prepare: (id: number) => string;
+    reject: (id: number) => string;
+  };
   loyalty: {
     program: string;
     tiers: string;
@@ -676,6 +682,12 @@ function createApiUrls(): ApiUrls {
       stats: `${base}/api/customers/stats`,
       export: `${base}/api/customers/export`,
       bulkImport: `${base}/api/customers/bulk-import`,
+    },
+    bookingRequests: {
+      list: `${base}/api/booking-requests`,
+      get: (id: number) => `${base}/api/booking-requests/${id}`,
+      prepare: (id: number) => `${base}/api/booking-requests/${id}/prepare`,
+      reject: (id: number) => `${base}/api/booking-requests/${id}/reject`,
     },
     loyalty: {
       program: `${base}/api/loyalty/program`,
