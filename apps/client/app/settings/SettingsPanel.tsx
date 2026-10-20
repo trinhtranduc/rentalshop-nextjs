@@ -31,7 +31,7 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { currencyForLocale, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
+import { currencyForLocale, onlineBookingFlag, settingsOutletChoice, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -176,6 +176,16 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
     currencySynced.current = key;
     if (currency !== target) changeCurrency(target as CurrencyCode);
   }, [tab, role, user?.merchant, locale, currency, changeCurrency]);
+
+  // #1138: login has no onlineBookingEnabled; load the profile once so the switch shows the stored value
+  const bookingFlag = onlineBookingFlag(merchant);
+  const showsBooking = tab === 'merchant' || (tab === 'outlet' && role === 'OUTLET_ADMIN');
+  const profileLoaded = useRef(false);
+  useEffect(() => {
+    if (!showsBooking || bookingFlag !== null || !user?.merchant || profileLoaded.current) return;
+    profileLoaded.current = true;
+    void refreshUser?.();
+  }, [showsBooking, bookingFlag, user?.merchant, refreshUser]);
 
   const merchantForm: ShopForm = {
     name: str(merchant.name),
@@ -342,7 +352,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             <OutletsSection t={t} />
             <OnlineBookingSection
               t={t}
-              enabled={(merchant as { onlineBookingEnabled?: unknown }).onlineBookingEnabled === true}
+              enabled={bookingFlag === true}
               canEditShop={role === 'MERCHANT'}
               canEditOutlets={canManageOutlets}
               onShopChanged={() => void refreshUser?.()}
@@ -361,7 +371,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             {role === 'OUTLET_ADMIN' && (
               <OnlineBookingSection
                 t={t}
-                enabled={(user?.merchant as { onlineBookingEnabled?: unknown } | undefined)?.onlineBookingEnabled === true}
+                enabled={bookingFlag === true}
                 canEditShop={false}
                 canEditOutlets={canManageOutlets}
               />
