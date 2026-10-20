@@ -88,3 +88,85 @@ export function planTextKeys(planId: string, badge?: string | null) {
     badge: badge ? BADGE_KEYS[badge] ?? null : null,
   };
 }
+
+// ---------------------------------------------------------------------------
+// #1147: plan cards come from GET /api/plans/public, never from SUBSCRIPTION_PLANS.
+// ---------------------------------------------------------------------------
+
+export type PricingCardId = 'basic' | 'professional' | 'enterprise' | string;
+
+export interface PricingCardLimits {
+  products: number;
+  customers: number;
+  users: number;
+  outlets: number;
+  orders: number;
+}
+
+export interface PricingCard {
+  id: PricingCardId;
+  name: string;
+  isPopular: boolean;
+  /** Formatted amount, or null: no amount (non-vi locale #1121, a 0 / contact price, or no API data). */
+  price: string | null;
+  /** null when the API gave no plans: show no numbers rather than wrong ones. */
+  limits: PricingCardLimits | null;
+  /** Web dashboard access; null when unknown. */
+  web: boolean | null;
+}
+
+/** The subset of a public API plan the pricing page reads. */
+export interface PublicPlanLike {
+  name: string;
+  basePrice: number;
+  isActive?: boolean;
+  isPopular?: boolean;
+  sortOrder?: number;
+  limits?: Partial<PricingCardLimits> & { allowWebAccess?: boolean };
+}
+
+const FALLBACK_IDS = ['basic', 'professional', 'enterprise'];
+const FALLBACK_NAMES: Record<string, string> = { basic: 'Basic', professional: 'Professional', enterprise: 'Enterprise' };
+
+/** API failure: the plan names only, no amount and no limits. */
+export function fallbackPricingCards(): PricingCard[] {
+  return FALLBACK_IDS.map((id) => ({
+    id,
+    name: FALLBACK_NAMES[id],
+    isPopular: id === 'professional',
+    price: null,
+    limits: null,
+    web: null,
+  }));
+}
+
+const limitOf = (value: unknown): number => (typeof value === 'number' ? value : -1);
+
+/**
+ * Active public plans (no Trial) to pricing cards, in sortOrder. Only vi shows an amount, in VND (#1121);
+ * a price of 0 (Enterprise) means "contact".
+ */
+export function buildPricingCards(plans: PublicPlanLike[] | null | undefined, locale: string): PricingCard[] {
+  const visible = (Array.isArray(plans) ? plans : [])
+    .filter((p) => p && p.isActive !== false && !(p.name || '').toLowerCase().includes('trial'))
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  if (visible.length === 0) return fallbackPricingCards();
+
+  return visible.map((p) => {
+    const l = p.limits ?? {};
+    return {
+      id: (p.name || '').trim().toLowerCase(),
+      name: p.name,
+      isPopular: Boolean(p.isPopular),
+      price: locale === 'vi' && p.basePrice > 0 ? formatPricingPrice(p.basePrice, locale) : null,
+      limits: {
+        products: limitOf(l.products),
+        customers: limitOf(l.customers),
+        users: limitOf(l.users),
+        outlets: limitOf(l.outlets),
+        orders: limitOf(l.orders),
+      },
+      web: typeof l.allowWebAccess === 'boolean' ? l.allowWebAccess : null,
+    };
+  });
+}
