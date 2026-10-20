@@ -63,11 +63,12 @@ import com.anyrent.pos.ui.theme.DS
 /** #1079: when the cart bar shows (iOS `CartSwitchBar.shouldShow`) */
 object CartBarLogic {
     /**
-     * With 2+ carts (also while an order edit is the cart in use, so the other carts stay in reach), or with 1 cart
-     * that has items (that is how a second cart is started).
+     * With 2+ carts, or when the cart in use has items — also an order edit left with the back button, which stays as
+     * the cart in use, so the bar is how the user sees it and starts another cart (#1099, iOS #1083).
      */
+    @Suppress("UNUSED_PARAMETER")
     fun shouldShow(cartCount: Int, itemCount: Int, isEditing: Boolean): Boolean =
-        cartCount > 1 || (!isEditing && itemCount > 0)
+        cartCount > 1 || itemCount > 0
 
     private val palette = listOf(Color(0xFF1D4ED8), Color(0xFF7C3AED), Color(0xFF0F766E), Color(0xFFEA580C))
     private val noCustomer = Color(0xFF94A3B8)
