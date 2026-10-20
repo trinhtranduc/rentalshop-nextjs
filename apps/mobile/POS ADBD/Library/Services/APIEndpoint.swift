@@ -108,6 +108,12 @@ enum APIEndpoint {
         /// PUT the signed-in user's shop settings; `{ allowOverlappingOrders }` alone for the #518 switch
         static let merchantSettings = "/api/settings/merchant"
 
+        // #1124 online booking requests (shop side)
+        static let bookingRequests = "/api/booking-requests"
+        static func bookingRequest(id: Int) -> String { "/api/booking-requests/\(id)" }
+        static func bookingRequestPrepare(id: Int) -> String { "/api/booking-requests/\(id)/prepare" }
+        static func bookingRequestReject(id: Int) -> String { "/api/booking-requests/\(id)/reject" }
+
         // Subscriptions
         static let subscriptionsStatus = "/api/subscriptions/status"
         

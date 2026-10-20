@@ -4083,6 +4083,84 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("05-collateral-related-orders")
     }
+
+    /// #1124 "Đặt online": needs two PENDING requests on merchant1's shop (names "Nguyễn Thị Mai" and "Trần Văn Bình",
+    /// made through POST /api/public/<tenantKey>/booking-requests) and MOBILE_FEATURES with onlineBooking.
+    /// Chip with the count → list → Mai → Xác nhận → the new cart is filled → Tạo đơn → Đã xác nhận; then Bình → Từ chối.
+    func testOnlineBooking() throws {
+        try e2e.requireFlag("onlineBooking")
+        try e2e.start()
+        XCTAssertTrue(e2e.tapTab(["My Order", "Đơn hàng"], index: 1), "Orders tab")
+        let chip = app.buttons["orders.booking"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 15), "Đặt online chip")
+        let count = app.staticTexts["orders.booking.count"]
+        XCTAssertTrue(count.waitForExistence(timeout: 10), "red count")
+        e2e.note("BOOKING COUNT | \(count.label)")
+        e2e.shot("booking-01-orders-chip")
+        chip.tap()
+        sleep(2)
+        let mai = app.cells.matching(NSPredicate(format: "label BEGINSWITH 'Nguyễn Thị Mai'")).firstMatch
+        XCTAssertTrue(mai.waitForExistence(timeout: 10), "Mai's request in the list")
+        e2e.shot("booking-02-list")
+        mai.tap()
+        sleep(2)
+        let confirm = app.buttons["booking.confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "Xác nhận")
+        e2e.shot("booking-03-detail")
+        app.swipeUp(); sleep(1)
+        e2e.shot("booking-03b-detail-items")
+        confirm.tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        let cartCustomer = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Nguyễn Thị Mai'")).firstMatch
+        XCTAssertTrue(cartCustomer.waitForExistence(timeout: 10), "the new cart has the customer")
+        e2e.shot("booking-04-cart-prefilled")
+        guard e2e.createOrderFromCart(cta: ["Create order", "Tạo đơn"], shotPrefix: "booking-05-order") else {
+            return XCTFail("Order from the booking was not created (last alert: \(e2e.lastAlert ?? "none"))")
+        }
+        e2e.note("BOOKING ORDER | \(e2e.lastCreatedOrderNumber ?? "?")")
+
+        // Back to the list: Mai is now under Đã xác nhận
+        for _ in 0..<4 where !app.buttons["booking.tab.CONFIRMED"].exists { e2e.goBackOnce() }
+        if !app.buttons["booking.tab.CONFIRMED"].exists {
+            e2e.tapTab(["My Order", "Đơn hàng"], index: 1); sleep(1)
+            e2e.tapTab(["My Order", "Đơn hàng"], index: 1); sleep(1)
+            if chip.waitForExistence(timeout: 5) { chip.tap(); sleep(2) }
+        }
+        let confirmedTab = app.buttons["booking.tab.CONFIRMED"]
+        XCTAssertTrue(confirmedTab.waitForExistence(timeout: 10), "Đã xác nhận tab")
+        confirmedTab.tap()
+        sleep(2)
+        let maiConfirmed = app.cells.matching(NSPredicate(format: "label BEGINSWITH 'Nguyễn Thị Mai'")).firstMatch
+        XCTAssertTrue(maiConfirmed.waitForExistence(timeout: 10), "Mai under Đã xác nhận")
+        e2e.soft(maiConfirmed.label.contains("Đã xác nhận") || maiConfirmed.label.contains("Confirmed"), "status Đã xác nhận (\(maiConfirmed.label))")
+        e2e.shot("booking-06-confirmed")
+
+        // Reject Bình: Hết đồ
+        app.buttons["booking.tab.PENDING"].tap()
+        sleep(2)
+        let binh = app.cells.matching(NSPredicate(format: "label BEGINSWITH 'Trần Văn Bình'")).firstMatch
+        XCTAssertTrue(binh.waitForExistence(timeout: 10), "Bình's request")
+        binh.tap()
+        let reject = app.buttons["booking.reject"]
+        XCTAssertTrue(reject.waitForExistence(timeout: 10), "Từ chối")
+        reject.tap()
+        let reason = e2e.button(["Hết đồ", "Out of stock"])
+        XCTAssertTrue(reason.waitForExistence(timeout: 5), "reason sheet")
+        e2e.shot("booking-07-reject-sheet")
+        reason.tap()
+        sleep(3)
+        let rejected = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Từ chối", "Rejected"])).firstMatch
+        XCTAssertTrue(rejected.waitForExistence(timeout: 10), "status Từ chối")
+        XCTAssertFalse(app.buttons["booking.confirm"].isHittable, "no actions on a rejected request")
+        e2e.shot("booking-08-rejected")
+        e2e.goBackOnce()
+        sleep(1)
+        e2e.goBackOnce()
+        sleep(2)
+        e2e.soft(!app.staticTexts["orders.booking.count"].exists, "no red count when nothing waits")
+        e2e.shot("booking-09-orders-no-count")
+    }
 }
 
 // MARK: - Helper (self-contained; does not use POS_ADBDUITests' private helpers)

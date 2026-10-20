@@ -468,7 +468,8 @@ class OrderService: BaseService, OrderServiceProtocol {
     /// `idempotencyKey`: one value per checkout, reused on retry, so the API never creates the order twice (#341).
     func createOrder(from cart: Cart, idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
         var request = cart.toCreateOrderRequest()
-        request.outletId = CurrentOutlet.shared.merchantFilterId // #828: the merchant's chosen branch
+        // #828: the merchant's chosen branch; #1124: an online booking is created at the branch the customer chose
+        request.outletId = cart.bookingOutletId ?? CurrentOutlet.shared.merchantFilterId
         let validation = request.validate()
         if !validation.isValid {
             let errorMessage = validation.errors.joined(separator: "\n")
@@ -494,7 +495,8 @@ class OrderService: BaseService, OrderServiceProtocol {
 
     func createOrder(from cart: Cart, notesImages: [Data], idempotencyKey: String? = nil, completion: @escaping (Order?, NSError?) -> Void) {
         var request = cart.toCreateOrderRequest()
-        request.outletId = CurrentOutlet.shared.merchantFilterId // #828: the merchant's chosen branch
+        // #828: the merchant's chosen branch; #1124: an online booking is created at the branch the customer chose
+        request.outletId = cart.bookingOutletId ?? CurrentOutlet.shared.merchantFilterId
         let validation = request.validate()
         if !validation.isValid {
             let errorMessage = validation.errors.joined(separator: "\n")

@@ -73,6 +73,24 @@ final class CartStore {
         return true
     }
 
+    /// #1124 "Xác nhận" of an online booking: like an order edit, a draft in the cart in use keeps its cart and the
+    /// booking gets its own new one (closing it returns to the draft); an empty cart is replaced. False when no cart is free.
+    @discardableResult
+    func startBookingCart(_ cart: Cart, notify: Bool = true) -> Bool {
+        if storage.hasDraftContent {
+            guard carts.count < Self.maxCarts else { return false }
+            returnCartNumber = storage.number
+            cart.number = (1...(Self.maxCarts + 1)).first { n in !carts.contains { $0.number == n } } ?? carts.count + 1
+            carts.append(cart)
+            activeIndex = carts.count - 1
+            noteImageData = []
+            didChangeCarts(notify: notify)
+        } else {
+            replaceCart(with: cart, notify: notify)
+        }
+        return true
+    }
+
     /// The cart in use is done (order created, cart cleared): it closes and the next one is used.
     /// `persistToDisk: false` is a logout / test reset: every cart is dropped from memory.
     func resetCart(notify: Bool = true, persistToDisk: Bool = true) {
@@ -145,7 +163,7 @@ final class CartStore {
 
     private func closeActiveCart() {
         if carts.count > 1 {
-            let wasEdit = storage.isEditMode
+            let wasEdit = storage.isEditMode || storage.bookingRequestId != nil
             carts.remove(at: activeIndex)
             activeIndex = min(activeIndex, carts.count - 1)
             if wasEdit, let back = carts.firstIndex(where: { $0.number == returnCartNumber }) {
