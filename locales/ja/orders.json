@@ -1,0 +1,56 @@
+{
+  "web": {
+    "online": {
+      "button": "オンライン予約",
+      "title": "オンライン予約",
+      "subtitle": "お客様がショップページから送った予約リクエストです。確定すると注文を作成します。辞退もできます。",
+      "backToOrders": "注文",
+      "settings": "オンライン予約の設定",
+      "noAccess": "オンライン予約を表示する権限がありません。",
+      "loadFailed": "オンライン予約を読み込めませんでした。",
+      "actionFailed": "うまくいきませんでした。もう一度お試しください。",
+      "items": "{count} 点",
+      "hoursLeft": "残り {hours} 時間",
+      "phone": "電話番号",
+      "outlet": "店舗",
+      "days": "レンタル日",
+      "customer": "お客様",
+      "customerKnown": "既存のお客様",
+      "customerNew": "新しいお客様（確定時に作成）",
+      "note": "メモ",
+      "free": "在庫あり",
+      "shortOn": "{day} から不足",
+      "confirm": "確定",
+      "reject": "辞退",
+      "openOrder": "注文を見る",
+      "rejectTitle": "リクエストを辞退",
+      "rejectHint": "理由を選んでください。お客様にはリクエストが辞退されたことが表示されます。",
+      "notePlaceholder": "補足（任意）",
+      "notePlaceholderRequired": "理由を入力",
+      "noteRequired": "「その他」を選んだ場合は理由を入力してください。",
+      "rejectedBecause": "辞退の理由",
+      "cancel": "キャンセル",
+      "close": "閉じる",
+      "fromRequest": "オンライン予約リクエストから",
+      "status": {
+        "PENDING": "確認待ち",
+        "CONFIRMED": "確定済み",
+        "REJECTED": "辞退済み",
+        "EXPIRED": "期限切れ",
+        "CANCELLED": "お客様がキャンセル"
+      },
+      "empty": {
+        "PENDING": "確認待ちのリクエストはありません。",
+        "CONFIRMED": "確定済みのリクエストはまだありません。",
+        "REJECTED": "辞退したリクエストはありません。",
+        "EXPIRED": "期限切れのリクエストはありません。",
+        "CANCELLED": "お客様がキャンセルしたリクエストはありません。"
+      },
+      "reasons": {
+        "OUT_OF_STOCK": "在庫切れ",
+        "CANNOT_CONTACT": "お客様に連絡がつかない",
+        "OTHER": "その他"
+      }
+    }
+  }
+}

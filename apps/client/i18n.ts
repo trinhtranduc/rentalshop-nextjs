@@ -79,6 +79,29 @@ import jaAuth from '../../locales/ja/auth.json';
 import jaLanding from '../../locales/ja/landing.json';
 import jaPlans from '../../locales/ja/plans.json';
 import jaAttendance from '../../locales/ja/attendance.json';
+import zhOrders from '../../locales/zh/orders.json';
+import zhProducts from '../../locales/zh/products.json';
+import zhSettings from '../../locales/zh/settings.json';
+import koOrders from '../../locales/ko/orders.json';
+import koProducts from '../../locales/ko/products.json';
+import koSettings from '../../locales/ko/settings.json';
+import jaOrders from '../../locales/ja/orders.json';
+import jaProducts from '../../locales/ja/products.json';
+import jaSettings from '../../locales/ja/settings.json';
+
+// ja, ko, zh translate only some keys of these namespaces; the rest stays English.
+type Messages = Record<string, unknown>;
+function mergeOverEnglish(base: Messages, partial: Messages): Messages {
+  const out: Messages = { ...base };
+  for (const [key, value] of Object.entries(partial)) {
+    const current = out[key];
+    out[key] =
+      value && typeof value === 'object' && current && typeof current === 'object'
+        ? mergeOverEnglish(current as Messages, value as Messages)
+        : value;
+  }
+  return out;
+}
 
 // Combine all messages by locale
 const messages = {
@@ -135,10 +158,10 @@ const messages = {
     plans: zhPlans,
     // Fallback to English for other sections
     dashboard: enDashboard,
-    orders: enOrders,
-    products: enProducts,
+    orders: mergeOverEnglish(enOrders, zhOrders),
+    products: mergeOverEnglish(enProducts, zhProducts),
     customers: enCustomers,
-    settings: enSettings,
+    settings: mergeOverEnglish(enSettings, zhSettings),
     validation: enValidation,
     errors: enErrors,
     users: enUsers,
@@ -159,10 +182,10 @@ const messages = {
     plans: koPlans,
     // Fallback to English for other sections
     dashboard: enDashboard,
-    orders: enOrders,
-    products: enProducts,
+    orders: mergeOverEnglish(enOrders, koOrders),
+    products: mergeOverEnglish(enProducts, koProducts),
     customers: enCustomers,
-    settings: enSettings,
+    settings: mergeOverEnglish(enSettings, koSettings),
     validation: enValidation,
     errors: enErrors,
     users: enUsers,
@@ -183,10 +206,10 @@ const messages = {
     plans: jaPlans,
     // Fallback to English for other sections
     dashboard: enDashboard,
-    orders: enOrders,
-    products: enProducts,
+    orders: mergeOverEnglish(enOrders, jaOrders),
+    products: mergeOverEnglish(enProducts, jaProducts),
     customers: enCustomers,
-    settings: enSettings,
+    settings: mergeOverEnglish(enSettings, jaSettings),
     validation: enValidation,
     errors: enErrors,
     users: enUsers,

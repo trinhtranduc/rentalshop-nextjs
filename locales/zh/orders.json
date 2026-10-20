@@ -1,0 +1,56 @@
+{
+  "web": {
+    "online": {
+      "button": "在线预订",
+      "title": "在线预订",
+      "subtitle": "顾客从您的店铺页面提交的预订申请。确认后即创建订单，也可以拒绝。",
+      "backToOrders": "订单",
+      "settings": "在线预订设置",
+      "noAccess": "您无权查看在线预订。",
+      "loadFailed": "无法加载在线预订。",
+      "actionFailed": "操作未成功，请重试。",
+      "items": "{count} 件",
+      "hoursLeft": "剩余 {hours} 小时",
+      "phone": "电话",
+      "outlet": "门店",
+      "days": "租借日期",
+      "customer": "顾客",
+      "customerKnown": "老顾客",
+      "customerNew": "新顾客（确认时创建）",
+      "note": "备注",
+      "free": "有货",
+      "shortOn": "{day} 起不足",
+      "confirm": "确认",
+      "reject": "拒绝",
+      "openOrder": "查看订单",
+      "rejectTitle": "拒绝申请",
+      "rejectHint": "请选择原因。顾客会看到申请已被拒绝。",
+      "notePlaceholder": "补充说明（可选）",
+      "notePlaceholderRequired": "请填写原因",
+      "noteRequired": "选择“其他”时请填写原因。",
+      "rejectedBecause": "拒绝原因",
+      "cancel": "取消",
+      "close": "关闭",
+      "fromRequest": "来自在线预订申请",
+      "status": {
+        "PENDING": "待处理",
+        "CONFIRMED": "已确认",
+        "REJECTED": "已拒绝",
+        "EXPIRED": "已过期",
+        "CANCELLED": "顾客已取消"
+      },
+      "empty": {
+        "PENDING": "没有待处理的申请。",
+        "CONFIRMED": "暂无已确认的申请。",
+        "REJECTED": "没有已拒绝的申请。",
+        "EXPIRED": "没有已过期的申请。",
+        "CANCELLED": "没有顾客取消的申请。"
+      },
+      "reasons": {
+        "OUT_OF_STOCK": "缺货",
+        "CANNOT_CONTACT": "联系不上顾客",
+        "OTHER": "其他"
+      }
+    }
+  }
+}
