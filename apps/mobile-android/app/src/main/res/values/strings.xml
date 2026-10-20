@@ -2090,9 +2090,9 @@
         <item quantity="other">%1$d carts</item>
     </plurals>
     <!-- #1124 Đặt online -->
-    <string name="booking_chip">Online bookings</string>
-    <string name="booking_title">Online bookings</string>
-    <string name="booking_detail_title">Online booking request</string>
+    <string name="booking_chip">Online orders</string>
+    <string name="booking_title">Online orders</string>
+    <string name="booking_detail_title">Online order</string>
     <string name="booking_status_pending">Waiting</string>
     <string name="booking_status_confirmed">Confirmed</string>
     <string name="booking_status_rejected">Rejected</string>
@@ -2121,4 +2121,7 @@
     <string name="booking_reject_other_placeholder">Reason the customer will see</string>
     <string name="booking_cancel">Cancel</string>
     <string name="booking_load_failed">Could not load the requests</string>
+    <string name="booking_reject_sheet_title">Reject online order</string>
+    <string name="booking_reject_sheet_description">Pick a reason to tell the customer. The customer will see this reason.</string>
+    <string name="booking_reject_note_placeholder">Note for the customer (optional)</string>
 </resources>

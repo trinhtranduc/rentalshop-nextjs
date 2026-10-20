@@ -24,6 +24,8 @@ final class BookingRequestsViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "booking.title".localized()
+        // #1137: "Đơn online" in the navigation bar (the app's bar title text is white on white)
+        navigationItem.titleView = BookingNavTitle.label(title)
         view.backgroundColor = DS.Color.surface
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(reload), name: OrdersChangeSignal.name, object: nil)
@@ -66,17 +68,11 @@ final class BookingRequestsViewController: BaseViewControler {
         listView.accessibilityIdentifier = "booking.list"
         emptyLabel.textAlignment = .center
 
-        let heading = V2.label("booking.title".localized(), size: DS.TextSize.title, weight: .bold)
-        view.addSubview(heading)
-        heading.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.sm)
-            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg)
-        }
         view.addSubview(scroll)
         view.addSubview(listView)
         view.addSubview(emptyLabel)
         scroll.snp.makeConstraints { make in
-            make.top.equalTo(heading.snp.bottom).offset(DS.Spacing.md)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.md)
             make.leading.trailing.equalTo(view.readableColumn())
             make.height.equalTo(36)
         }
@@ -232,5 +228,16 @@ final class BookingRequestCell: UITableViewCell {
         let closed = row.bookingStatus == .expired || row.bookingStatus == .rejected || row.bookingStatus == .cancelled
         contentView.alpha = closed ? 0.6 : 1
         accessibilityLabel = "\(row.customerName), \(row.bookingStatus.titleKey.localized())"
+    }
+}
+
+/// #1137 title in the navigation bar of the online-order screens. The app-wide bar appearance draws titles white on a
+/// white bar (AppDelegate), so these screens put a dark label in the bar instead.
+enum BookingNavTitle {
+    static func label(_ text: String?) -> UILabel {
+        let label = V2.label(text, size: 18, weight: .bold)
+        label.accessibilityTraits = UIAccessibilityTraitHeader
+        label.accessibilityIdentifier = "booking.navTitle"
+        return label
     }
 }
