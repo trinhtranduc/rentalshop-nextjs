@@ -113,6 +113,7 @@ class ApiClient(
         SessionStore.outletAddress = profile.outletAddress
         SessionStore.allowOverlappingOrders = profile.allowOverlappingOrders
         SessionStore.modules = profile.modules
+        SessionStore.permissions = profile.permissions
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
@@ -137,6 +138,56 @@ class ApiClient(
         val modules = modulesFromProfile(json) ?: SessionStore.modules
         SessionStore.modules = modules
         modules
+    }
+
+    /** #1124 the shop's "Đặt online" switch (`merchant.onlineBookingEnabled` of GET /api/users/profile); off when missing */
+    fun onlineBookingEnabled(): Result<Boolean> = runCatching {
+        val data = execute(get("$baseUrl/api/users/profile")).optJSONObject("data")
+        val merchant = data?.optJSONObject("merchant") ?: data?.optJSONObject("user")?.optJSONObject("merchant")
+        merchant?.optBoolean("onlineBookingEnabled", false) == true
+    }
+
+    /** #1124 GET /api/booking-requests (newest first, `counts` per status); scoped to the chosen branch like orders */
+    fun bookingRequests(
+        status: com.anyrent.pos.domain.booking.BookingStatus?,
+        page: Int = 1,
+        limit: Int = 20,
+        outletId: Int? = CurrentOutlet.merchantFilterId,
+    ): Result<com.anyrent.pos.domain.booking.BookingRequestList> = runCatching {
+        val query = buildList {
+            status?.takeIf { it != com.anyrent.pos.domain.booking.BookingStatus.UNKNOWN }?.let { add("status=${it.apiValue}") }
+            add("page=$page")
+            add("limit=$limit")
+            outletId?.let { add("outletId=$it") }
+        }.joinToString("&")
+        val json = execute(get("$baseUrl/api/booking-requests?$query"))
+        requireSuccess(json)
+        com.anyrent.pos.domain.booking.BookingLogic.parseList(json)
+    }
+
+    /** #1124 GET /api/booking-requests/{id}: the row plus `items[].shortDay` and the returning `customer` */
+    fun bookingRequest(id: Int): Result<com.anyrent.pos.domain.booking.BookingRequest> = runCatching {
+        val json = execute(get("$baseUrl/api/booking-requests/$id"))
+        requireSuccess(json)
+        com.anyrent.pos.domain.booking.BookingLogic.parseDetail(json)
+    }
+
+    /** #1124 POST /api/booking-requests/{id}/prepare: finds or creates the customer, returns what the cart needs */
+    fun prepareBookingRequest(id: Int): Result<com.anyrent.pos.domain.booking.BookingPrepare> = runCatching {
+        val json = execute(post("/api/booking-requests/$id/prepare", "{}".toRequestBody(jsonMedia)))
+        requireSuccess(json)
+        com.anyrent.pos.domain.booking.BookingLogic.parsePrepare(json)
+    }
+
+    /** #1124 POST /api/booking-requests/{id}/reject {reason, note} */
+    fun rejectBookingRequest(
+        id: Int,
+        reason: com.anyrent.pos.domain.booking.BookingRejectReason,
+        note: String?,
+    ): Result<Unit> = runCatching {
+        val body = com.anyrent.pos.domain.booking.BookingLogic.rejectBody(reason, note).toString().toRequestBody(jsonMedia)
+        requireSuccess(execute(post("/api/booking-requests/$id/reject", body)))
+        Unit
     }
 
     private fun modulesFromProfile(json: JSONObject): Set<String>? {
@@ -484,6 +535,8 @@ class ApiClient(
         noteImages: List<ByteArray> = emptyList(),
         /** #828: the merchant's chosen branch; null keeps the API default (outlet users: their own outlet) */
         outletId: Int? = CurrentOutlet.merchantFilterId,
+        /** #1124: the online booking this order confirms; null = the same request as before */
+        bookingRequestId: Int? = null,
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEachIndexed { index, (productId, qty, unitPrice) ->
@@ -515,6 +568,7 @@ class ApiClient(
             .put("isReadyToDeliver", false)
             .apply {
                 if (outletId != null) put("outletId", outletId)
+                if (bookingRequestId != null) put("bookingRequestId", bookingRequestId)
                 if (customerId != null) put("customerId", customerId)
                 if (!notes.isNullOrBlank()) put("notes", notes)
                 if (orderType == "RENT") {
@@ -1325,6 +1379,9 @@ class ApiClient(
             outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
             allowOverlappingOrders = OverlapSetting.fromMerchant(merchant),
             modules = com.anyrent.pos.domain.attendance.AttendanceLogic.modules(merchant),
+            permissions = user.optJSONArray("permissions")?.let { arr ->
+                (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { p -> p.isNotBlank() } }.toSet()
+            },
         )
     }
 
@@ -1341,6 +1398,7 @@ class ApiClient(
             createdAt = item.optString("createdAt").takeIf { it.isNotBlank() },
             orderId = orderId,
             status = payload?.optString("status")?.takeIf { it.isNotBlank() && it != "null" },
+            bookingRequestId = com.anyrent.pos.domain.booking.BookingLogic.requestIdFromInbox(item.optString("type"), payload),
         )
     }
 

@@ -65,6 +65,7 @@ fun InboxScreen(
     onBack: () -> Unit,
     onOpenOrder: (Int) -> Unit,
     onOpenMyShifts: () -> Unit = {},
+    onOpenBookingRequest: (Int) -> Unit = {},
 ) {
     var items by remember { mutableStateOf<List<InboxNotification>>(emptyList()) }
     var page by remember { mutableIntStateOf(1) }
@@ -175,6 +176,8 @@ fun InboxScreen(
                                         }
                                         // #910: a schedule change opens "Ca và công của tôi"
                                         if (com.anyrent.pos.push.AttendancePush.isShiftChanged(item.type)) onOpenMyShifts()
+                                        // #1124: a booking request opens its detail
+                                        else if (item.bookingRequestId != null) onOpenBookingRequest(item.bookingRequestId)
                                         else item.orderId?.let(onOpenOrder)
                                     }
                                 },

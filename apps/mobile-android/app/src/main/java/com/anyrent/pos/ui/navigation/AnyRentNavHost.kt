@@ -161,6 +161,9 @@ object Routes {
     // #910 attendance: the QR scanner (#927: no "Chấm công" screen in between) and "Ca và công của tôi"
     const val Attendance = "attendance"
     const val MyShifts = "my-shifts"
+    // #1124 "Đặt online": the requests list and one request
+    const val Bookings = "bookings"
+    const val BookingDetail = "booking/{requestId}"
     const val Subscription = "subscription"
     // #373 redesigned products and cart (flag newProducts)
     const val ProductDetailV2 = "product-v2/{productId}"
@@ -174,6 +177,7 @@ object Routes {
     const val ChangeHistory = "changes/{target}/{id}?subtitle={subtitle}"
 
     fun orderDetail(id: Int) = "order/$id"
+    fun bookingDetail(id: Int) = "booking/$id"
     fun analyticsOrders(entityType: String, entityId: Int) = "analytics-orders/$entityType/$entityId"
     fun analyticsOrders(entityType: String, entityId: Int, start: String, end: String) =
         "analytics-orders/$entityType/$entityId?start=$start&end=$end"
@@ -291,12 +295,14 @@ fun AnyRentNavHost(
                     onBack = { rootNavController.popBackStack() },
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                     onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
+                    onOpenBookingRequest = { id -> rootNavController.navigate(Routes.bookingDetail(id)) },
                 )
             } else {
                 InboxScreen(
                     onBack = { rootNavController.popBackStack() },
                     onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
                     onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
+                    onOpenBookingRequest = { id -> rootNavController.navigate(Routes.bookingDetail(id)) },
                 )
             }
         }
@@ -765,6 +771,22 @@ fun AnyRentNavHost(
         composable(Routes.MyShifts) {
             com.anyrent.pos.ui.attendance.MyShiftsScreen(onBack = { rootNavController.popBackStack() })
         }
+        composable(Routes.Bookings) {
+            com.anyrent.pos.ui.booking.BookingRequestsScreen(
+                onBack = { rootNavController.popBackStack() },
+                onOpenRequest = { id -> rootNavController.navigate(Routes.bookingDetail(id)) },
+            )
+        }
+        composable(
+            Routes.BookingDetail,
+            arguments = listOf(navArgument("requestId") { type = NavType.IntType }),
+        ) { entry ->
+            com.anyrent.pos.ui.booking.BookingRequestDetailScreen(
+                requestId = entry.arguments?.getInt("requestId") ?: 0,
+                onBack = { rootNavController.popBackStack() },
+                onOpenCart = { rootNavController.navigate(Routes.cart()) },
+            )
+        }
         composable(Routes.AppInfo) {
             val features by FeatureFlags.enabled.collectAsState()
             AppInfoScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
@@ -773,6 +795,21 @@ fun AnyRentNavHost(
 
     LaunchedOpenDraftCart(rootNavController)
     LaunchedOpenMyShifts(rootNavController)
+    LaunchedOpenBookingRequest(rootNavController)
+}
+
+/** #1124: a tapped `BOOKING_REQUEST` push opens that request once the user is signed in and past login */
+@Composable
+private fun LaunchedOpenBookingRequest(navController: NavHostController) {
+    val pending by com.anyrent.pos.push.BookingPush.pendingRequestId.collectAsState()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(pending, currentRoute) {
+        if (pending == null || !SessionStore.isLoggedIn) return@LaunchedEffect
+        val dest = currentRoute ?: return@LaunchedEffect
+        if (dest != Routes.Main && dest != Routes.Inbox && dest != Routes.Bookings && dest != Routes.BookingDetail) return@LaunchedEffect
+        val id = com.anyrent.pos.push.BookingPush.consume() ?: return@LaunchedEffect
+        navController.navigate(Routes.bookingDetail(id))
+    }
 }
 
 /** #910: a tapped `SHIFT_CHANGED` push opens "Ca và công của tôi" once the user is signed in and past login */
@@ -947,7 +984,10 @@ private fun MainTabs(
                 // Redesigned orders tab behind the server flag (#371); the current list otherwise
                 val features by FeatureFlags.enabled.collectAsState()
                 if (MobileFeature.NEW_ORDERS in features) {
-                    OrdersHomeScreen(onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) })
+                    OrdersHomeScreen(
+                        onOpenOrder = { id -> rootNavController.navigate(Routes.orderDetail(id)) },
+                        onOpenBookings = { rootNavController.navigate(Routes.Bookings) },
+                    )
                     return@composable
                 }
                 OrdersScreen(

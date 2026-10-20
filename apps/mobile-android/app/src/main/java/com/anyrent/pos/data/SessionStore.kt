@@ -40,6 +40,7 @@ object SessionStore {
     private const val KEY_ALLOW_OVERLAP = "allowOverlappingOrders"
     /** #910 active module keys of the shop (`merchant.modules`, #907) */
     private const val KEY_MODULES = "merchantModules"
+    private const val KEY_PERMISSIONS = "permissions"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -117,6 +118,17 @@ object SessionStore {
         get() = prefs.getString(KEY_LAST_LOGIN_EMAIL, null)
         set(value) {
             prefs.edit().putString(KEY_LAST_LOGIN_EMAIL, value).apply()
+        }
+
+    /**
+     * #1124 the login's permission list (`user.permissions`); null for a session signed in before this version,
+     * then [com.anyrent.pos.domain.booking.BookingLogic] decides by [role].
+     */
+    var permissions: Set<String>?
+        get() = if (isReady) prefs.getStringSet(KEY_PERMISSIONS, null)?.toSet() else null
+        set(value) {
+            if (!isReady) return
+            prefs.edit().apply { if (value == null) remove(KEY_PERMISSIONS) else putStringSet(KEY_PERMISSIONS, value) }.apply()
         }
 
     var role: String?
@@ -232,6 +244,7 @@ object SessionStore {
             .remove(KEY_MERCHANT_ADDRESS)
             .remove(KEY_ALLOW_OVERLAP)
             .remove(KEY_MODULES)
+            .remove(KEY_PERMISSIONS)
             .apply()
         _allowOverlappingOrders.value = true
         _modules.value = emptySet()
