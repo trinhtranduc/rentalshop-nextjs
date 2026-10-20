@@ -4,11 +4,12 @@
 //
 //  #1124 one online booking request (mockup screen 6): customer (tap to call), returning-customer hint, branch, days,
 //  items with what is free, note. "Xác nhận" opens a new cart filled from the request (the order is created there,
-//  carrying `bookingRequestId`); "Từ chối" asks a reason.
+//  carrying `bookingRequestId`); "Từ chối" opens a sheet that asks a reason (#1137).
 //
 
 import UIKit
 import SnapKit
+import IQKeyboardManagerSwift
 
 final class BookingRequestDetailViewController: BaseViewControler {
     private let requestId: Int
@@ -255,43 +256,18 @@ final class BookingRequestDetailViewController: BaseViewControler {
         }
     }
 
+    /// #1137: a bottom sheet with a title, a line saying the customer sees the reason, the reasons, a note and send
     @objc private func rejectTapped() {
-        let sheet = UIAlertController(title: "booking.reject.title".localized(), message: nil, preferredStyle: .actionSheet)
-        for reason in BookingRejectReason.allCases {
-            sheet.addAction(UIAlertAction(title: reason.titleKey.localized(), style: .default) { [weak self] _ in
-                if reason == .other {
-                    self?.askOtherReason()
-                } else {
-                    self?.reject(reason, note: nil)
-                }
-            })
+        let sheet = BookingRejectSheetViewController()
+        sheet.onSend = { [weak self, weak sheet] reason, note in
+            sheet?.dismiss(animated: true) { self?.reject(reason, note: note) }
         }
-        sheet.addAction(UIAlertAction(title: "booking.cancel".localized(), style: .cancel))
-        sheet.popoverPresentationController?.sourceView = rejectButton
-        sheet.popoverPresentationController?.sourceRect = rejectButton.bounds
+        if let presentation = sheet.sheetPresentationController {
+            presentation.detents = [.medium(), .large()]
+            presentation.prefersGrabberVisible = true
+            presentation.preferredCornerRadius = 24
+        }
         present(sheet, animated: true)
-    }
-
-    /// "Khác" needs a few words the customer will read
-    private func askOtherReason() {
-        let alert = UIAlertController(title: "booking.reject.other".localized(), message: nil, preferredStyle: .alert)
-        alert.addTextField { field in
-            field.placeholder = "booking.reject.otherPlaceholder".localized()
-            field.accessibilityIdentifier = "booking.reject.note"
-        }
-        let send = UIAlertAction(title: "booking.action.reject".localized(), style: .destructive) { [weak self, weak alert] _ in
-            let note = alert?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            self?.reject(.other, note: note)
-        }
-        send.isEnabled = false
-        alert.addAction(UIAlertAction(title: "booking.cancel".localized(), style: .cancel))
-        alert.addAction(send)
-        NotificationCenter.default.addObserver(forName: .UITextFieldTextDidChange,
-                                               object: alert.textFields?.first, queue: .main) { [weak alert] _ in
-            let text = alert?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            send.isEnabled = !text.isEmpty
-        }
-        present(alert, animated: true)
     }
 
     private func reject(_ reason: BookingRejectReason, note: String?) {
@@ -304,4 +280,163 @@ final class BookingRequestDetailViewController: BaseViewControler {
             self.load()
         }
     }
+}
+
+/// #1137 "Từ chối đơn online": title, a description, one row per reason (tap picks it), a note for the customer
+/// (needed for "Khác"), then "Từ chối". Same reasons and API call as before.
+final class BookingRejectSheetViewController: UIViewController, UITextFieldDelegate {
+    var onSend: ((BookingRejectReason, String?) -> Void)?
+
+    private var selected: BookingRejectReason?
+    private var rows: [(BookingRejectReason, UIButton)] = []
+    private let noteField = UITextField()
+    private let send = V2.primaryButton("booking.action.reject".localized())
+    private let scroll = UIScrollView()
+    private var keyboardManagerWasEnabled = true
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+
+        let title = V2.label("booking.reject.sheetTitle".localized(), size: 20, weight: .bold)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        title.accessibilityIdentifier = "booking.reject.sheet"
+        let close = UIButton(type: .system)
+        close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
+        close.tintColor = DS.Color.textMuted
+        close.backgroundColor = DS.Color.divider
+        close.layer.cornerRadius = 18
+        close.accessibilityLabel = "booking.cancel".localized()
+        close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        close.snp.makeConstraints { make in make.size.equalTo(36) }
+        let header = UIStackView(arrangedSubviews: [title, close])
+        header.alignment = .center
+        header.spacing = DS.Spacing.md
+
+        let description = V2.label("booking.reject.sheetDescription".localized(), size: DS.TextSize.secondary,
+                                   color: DS.Color.textMuted, lines: 0)
+
+        let options = UIStackView()
+        options.axis = .vertical
+        options.layer.cornerRadius = DS.Radius.card
+        options.layer.borderWidth = 1
+        options.layer.borderColor = DS.Color.border.cgColor
+        options.clipsToBounds = true
+        for (index, reason) in BookingRejectReason.allCases.enumerated() {
+            if index > 0 { options.addArrangedSubview(V2.divider()) }
+            let row = reasonRow(reason)
+            rows.append((reason, row))
+            options.addArrangedSubview(row)
+        }
+
+        noteField.font = Utils.regularFont(size: DS.TextSize.input)
+        noteField.textColor = DS.Color.text
+        noteField.placeholder = "booking.reject.notePlaceholder".localized()
+        noteField.accessibilityIdentifier = "booking.reject.note"
+        noteField.layer.cornerRadius = DS.Radius.card
+        noteField.layer.borderWidth = 1
+        noteField.layer.borderColor = DS.Color.border.cgColor
+        noteField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 14, height: 48))
+        noteField.leftViewMode = .always
+        noteField.returnKeyType = .done
+        noteField.delegate = self
+        noteField.addTarget(self, action: #selector(noteChanged), for: .editingChanged)
+        noteField.snp.makeConstraints { make in make.height.equalTo(48) }
+
+        send.backgroundColor = UIColor(hexString: "DC2626")
+        send.accessibilityIdentifier = "booking.reject.send"
+        send.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+
+        let content = UIStackView(arrangedSubviews: [header, description, options, noteField, send])
+        content.axis = .vertical
+        content.spacing = DS.Spacing.md
+        content.setCustomSpacing(DS.Spacing.lg, after: description)
+        content.setCustomSpacing(DS.Spacing.lg, after: noteField)
+
+        scroll.keyboardDismissMode = .interactive
+        scroll.alwaysBounceVertical = true
+        view.addSubview(scroll)
+        scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
+        scroll.addSubview(content)
+        content.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(DS.Spacing.xl)
+            make.leading.trailing.equalTo(view).inset(20)
+            make.bottom.equalToSuperview().offset(-20)
+        }
+        render()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // #532: IQKeyboardManager scrolls a sheet's title away; the sheet lifts itself above the keyboard
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
+    }
+
+    private func reasonRow(_ reason: BookingRejectReason) -> UIButton {
+        let row = UIButton(type: .system)
+        row.contentHorizontalAlignment = .leading
+        row.setTitle(reason.titleKey.localized(), for: .normal)
+        row.setTitleColor(DS.Color.text, for: .normal)
+        row.titleLabel?.font = Utils.regularFont(size: DS.TextSize.body)
+        row.contentEdgeInsets = UIEdgeInsets(top: 0, left: DS.Spacing.lg, bottom: 0, right: 44)
+        row.accessibilityIdentifier = "booking.reject.\(reason.rawValue)"
+        row.addTarget(self, action: #selector(reasonTapped(_:)), for: .touchUpInside)
+        row.snp.makeConstraints { make in make.height.equalTo(52) }
+        let check = UIImageView(image: DS.symbol("checkmark", 16, weight: .bold))
+        check.tintColor = DS.Color.primary
+        check.tag = 1
+        row.addSubview(check)
+        check.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.trailing.equalToSuperview().offset(-DS.Spacing.lg)
+        }
+        return row
+    }
+
+    private var note: String { noteField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+
+    private func render() {
+        for (reason, row) in rows {
+            let on = reason == selected
+            row.viewWithTag(1)?.isHidden = !on
+            row.titleLabel?.font = on ? Utils.boldFont(size: DS.TextSize.body) : Utils.regularFont(size: DS.TextSize.body)
+            row.accessibilityTraits = on ? UIAccessibilityTraitButton | UIAccessibilityTraitSelected : UIAccessibilityTraitButton
+        }
+        // "Khác" needs a few words the customer will read
+        let ready = selected != nil && (selected != .other || !note.isEmpty)
+        send.isEnabled = ready
+        send.alpha = ready ? 1 : 0.4
+    }
+
+    @objc private func reasonTapped(_ sender: UIButton) {
+        selected = rows.first(where: { $0.1 === sender })?.0
+        render()
+        if selected == .other { noteField.becomeFirstResponder() }
+    }
+
+    @objc private func noteChanged() { render() }
+
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if let sheet = sheetPresentationController { sheet.animateChanges { sheet.selectedDetentIdentifier = .large } }
+        return true
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+
+    @objc private func sendTapped() {
+        guard let selected else { return }
+        view.endEditing(true)
+        onSend?(selected, note.isEmpty ? nil : note)
+    }
+
+    @objc private func closeTapped() { dismiss(animated: true) }
 }
