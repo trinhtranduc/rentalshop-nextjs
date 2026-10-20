@@ -202,3 +202,13 @@ describe('public booking API client', () => {
     expect(await publicBookingApi.getRequest('linhbeauty', 'A7K3Q')).toEqual({ success: false, status: 0, code: 'NETWORK_ERROR' });
   });
 });
+
+describe('tracking page is public (#1124)', () => {
+  it('/{tenantKey}/booking/{code} needs no login; other shop paths still do', async () => {
+    const { isPublicRoute } = await import('../apps/client/lib/routes');
+    expect(isPublicRoute('/linhbeauty/booking/A7K3Q')).toBe(true);
+    expect(isPublicRoute('/linhbeauty/products')).toBe(true);
+    expect(isPublicRoute('/linhbeauty/booking')).toBe(false);
+    expect(isPublicRoute('/orders/123')).toBe(false);
+  });
+});
