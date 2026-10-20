@@ -62,9 +62,14 @@ enum EntityOrdersLogic {
         orders.filter { $0.status != .cancelled }.reduce(0) { $0 + $1.totalAmount }
     }
 
-    /// "2,1tr" from a million up (board), the full amount below
-    static func compactMoney(_ amount: Double) -> String {
-        guard amount >= 1_000_000 else { return MoneyFormatter.format(amount) }
+    /// "2,1tr" from a million up (board), the full amount below; #1145 "$2.1M" / "$450,000" in a USD shop
+    static func compactMoney(_ amount: Double, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        if currency == .usd {
+            guard amount >= 1_000_000 else { return MoneyFormatter.format(amount, currency: .usd) }
+            let tenths = Int((amount / 100_000).rounded())
+            return tenths % 10 == 0 ? "$\(tenths / 10)M" : "$\(tenths / 10).\(tenths % 10)M"
+        }
+        guard amount >= 1_000_000 else { return MoneyFormatter.format(amount, currency: .vnd) }
         let tenths = Int((amount / 100_000).rounded())
         let whole = tenths / 10
         let tenth = tenths % 10
@@ -88,7 +93,7 @@ enum EntityOrdersLogic {
         [
             EntityOrdersTile(title: "orders.entity.tile.orders".localized(), value: "\(total)"),
             EntityOrdersTile(title: "orders.entity.tile.spent".localized(),
-                             value: hidesMoney ? "—" : spent.map(compactMoney) ?? "—"),
+                             value: hidesMoney ? "—" : spent.map { compactMoney($0) } ?? "—"),
             EntityOrdersTile(title: "orders.entity.tile.renting".localized(), value: renting.map(String.init) ?? "—", accent: true),
         ]
     }

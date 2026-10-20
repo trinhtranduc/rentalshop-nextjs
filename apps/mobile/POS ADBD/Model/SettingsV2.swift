@@ -39,8 +39,11 @@ enum SettingsV2Logic {
     /// - bankAccounts (#622): MERCHANT and OUTLET_ADMIN (the API rejects writes from OUTLET_STAFF)
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
     /// - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
+    /// - currency (#1145): MERCHANT only, after storeInfo
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
-        var storeItems: [SettingsV2Item] = [.notifications, .storeInfo, .receiptNote, .printer]
+        var storeItems: [SettingsV2Item] = [.notifications, .storeInfo]
+        if ShopCurrencyLogic.canChange(role: role) { storeItems.append(.currency) }
+        storeItems += [.receiptNote, .printer]
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
         let store = SettingsV2Section(group: .store, items: storeItems)
 

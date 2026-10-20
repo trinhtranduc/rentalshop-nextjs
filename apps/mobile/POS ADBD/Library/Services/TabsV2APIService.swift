@@ -181,6 +181,29 @@ final class TabsV2APIService: BaseService {
         }
     }
 
+    // MARK: - Shop currency (#1145)
+
+    private struct CurrencyBody: Decodable {
+        let currency: String?
+    }
+
+    /// `currency` of GET /api/settings/currency, normalised (missing = VND)
+    @discardableResult
+    func shopCurrency(completion: @escaping (ShopCurrency?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.settingsCurrency) { (body: CurrencyBody?, error: NSError?) in
+            completion(body.map { ShopCurrency.normalise($0.currency) }, error)
+        }
+    }
+
+    /// PUT /api/settings/currency `{ currency }` (403 for staff). Answers the saved value.
+    @discardableResult
+    func setShopCurrency(_ currency: ShopCurrency, completion: @escaping (ShopCurrency?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.settingsCurrency, method: .put,
+                parameters: ["currency": currency.rawValue]) { (body: CurrencyBody?, error: NSError?) in
+            completion(body.map { ShopCurrency.normalise($0.currency ?? currency.rawValue) }, error)
+        }
+    }
+
     // MARK: - Change history (#519)
 
     @discardableResult
