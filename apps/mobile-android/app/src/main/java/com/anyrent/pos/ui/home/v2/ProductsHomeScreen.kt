@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.home.v2
 import com.anyrent.pos.data.CurrentOutlet
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,6 +30,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ShoppingBasket
 import androidx.compose.material.icons.outlined.PhotoCamera
@@ -271,6 +276,7 @@ fun ProductsHomeScreen(
                                     // #893 (owner): no "added to cart" toast; the + count already says it
                                     if (HomeCart.showsAddedToast) Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
                                 },
+                                onRemove = { CartStore.removeOne(product.id) },
                             )
                         }
                         if (state.hasMore) {
@@ -362,12 +368,23 @@ private fun ImageSearchButton(label: String, onClick: () -> Unit) {
     }
 }
 
+/** #1099: outline of the − n + (iOS `#CBD5E1`) */
+private val StepperBorder = Color(0xFFCBD5E1)
+
 /** #681: the + stays light until the product is in the cart (iOS `ProductRowV2Cell.addFill`) */
 private val AddFill = Color(0xFFEFF4FF)
 
 /** The Products home row; image search results reuse it (#672) */
 @Composable
-internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onImage: () -> Unit, onAdd: () -> Unit) {
+internal fun ProductRow(
+    product: Product,
+    inCart: Int,
+    onOpen: () -> Unit,
+    onImage: () -> Unit,
+    onAdd: () -> Unit,
+    /** #1099 (iOS #1084/#1090): with it, a product in the cart shows an outlined − n + instead of the solid count */
+    onRemove: (() -> Unit)? = null,
+) {
     val free = ProductRowLogic.subtitle(product).free
     val addState = ProductRowLogic.addState(free, inCart)
     val price = ProductRowLogic.price(product)
@@ -431,21 +448,56 @@ internal fun ProductRow(product: Product, inCart: Int, onOpen: () -> Unit, onIma
                     maxLines = 1,
                 )
             }
-            // #671: round, and the same when out today (tapping still adds; "Hết hôm nay" says the rest).
-            // #681: light until the product is in the cart, then solid primary with the count
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(if (addState is AddButtonState.InCart) DS.Colors.Primary else AddFill)
-                    .clickable(onClick = onAdd)
-                    .semantics { contentDescription = addLabel; role = Role.Button },
-                contentAlignment = Alignment.Center,
-            ) {
-                if (addState is AddButtonState.InCart) {
-                    Text(addState.count.toString(), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = Color.White)
-                } else {
-                    Icon(Icons.Outlined.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
+            if (addState is AddButtonState.InCart && onRemove != null) {
+                // #1099 (iOS mockup A, #1090): thin grey outline on white, blue − and +, the count in the middle,
+                // like the quantity box in the cart; − at 1 takes the product out of the cart
+                val minusLabel = stringResource(R.string.v2_stepper_minus)
+                Row(
+                    Modifier
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color.White)
+                        .border(1.dp, StepperBorder, RoundedCornerShape(22.dp))
+                        .testTag("product.row.stepper"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier.size(width = 40.dp, height = 44.dp).clickable(onClick = onRemove)
+                            .semantics { contentDescription = minusLabel; role = Role.Button },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Outlined.Remove, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
+                    }
+                    Text(
+                        addState.count.toString(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
+                        modifier = Modifier.widthIn(min = 22.dp).semantics { contentDescription = addLabel },
+                        textAlign = TextAlign.Center,
+                    )
+                    Box(
+                        Modifier.size(width = 40.dp, height = 44.dp).clickable(onClick = onAdd)
+                            .semantics { contentDescription = addLabel; role = Role.Button },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Outlined.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
+                    }
+                }
+            } else {
+                // #671: round, and the same when out today (tapping still adds; "Hết hôm nay" says the rest).
+                // #681: light until the product is in the cart, then solid primary with the count
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(if (addState is AddButtonState.InCart) DS.Colors.Primary else AddFill)
+                        .clickable(onClick = onAdd)
+                        .semantics { contentDescription = addLabel; role = Role.Button },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (addState is AddButtonState.InCart) {
+                        Text(addState.count.toString(), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = Color.White)
+                    } else {
+                        Icon(Icons.Outlined.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
+                    }
                 }
             }
         }

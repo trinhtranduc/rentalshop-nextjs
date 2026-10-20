@@ -872,3 +872,87 @@ html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) 
 html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) [data-receipt-content] .border {
   border-color: rgb(226 232 240);
 }
+
+/* #1100 landing image animations (mockup A). `data-anim` is set after mount only (images visible without JS).
+   Moves use the individual `translate` / `scale` properties so the cards keep their Tailwind rotate / centring. */
+[data-anim='ready'] .la-phone,
+[data-anim='ready'] .la-left,
+[data-anim='ready'] .la-right,
+[data-anim='ready'] .la-bottom,
+[data-anim='ready'] .la-pill {
+  opacity: 0;
+}
+[data-anim='in'] .la-phone {
+  animation: la-rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-anim='in'] .la-left {
+  animation: la-in-left 0.8s 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both, la-float 6s 1.2s ease-in-out infinite;
+}
+[data-anim='in'] .la-right {
+  animation: la-in-right 0.8s 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both, la-float 7s 1.4s ease-in-out infinite;
+}
+[data-anim='in'] .la-bottom {
+  animation: la-rise 0.8s 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both, la-float 7s 1.3s ease-in-out infinite;
+}
+[data-anim='in'] .la-pill {
+  animation: la-pop 0.5s 0.95s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes la-rise {
+  from { opacity: 0; translate: 0 28px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes la-in-left {
+  from { opacity: 0; translate: -40px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes la-in-right {
+  from { opacity: 0; translate: 40px 0; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes la-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -7px; }
+}
+@keyframes la-pop {
+  from { opacity: 0; scale: 0.6; }
+  to { opacity: 1; scale: 1; }
+}
+/* Hero: a very slow zoom and one shine when the page opens */
+.la-hero img {
+  animation: la-ken-burns 16s ease-in-out infinite alternate;
+}
+.la-hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: la-shine 1.6s 0.4s ease-out both;
+}
+@keyframes la-ken-burns {
+  from { scale: 1; }
+  to { scale: 1.06; }
+}
+@keyframes la-shine {
+  to { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-anim] .la-phone,
+  [data-anim] .la-left,
+  [data-anim] .la-right,
+  [data-anim] .la-bottom,
+  [data-anim] .la-pill {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .la-hero img,
+  .la-hero::after {
+    animation: none !important;
+  }
+  .la-hero::after {
+    display: none;
+  }
+}

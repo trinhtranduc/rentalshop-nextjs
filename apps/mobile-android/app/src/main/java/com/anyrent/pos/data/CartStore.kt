@@ -345,6 +345,12 @@ object CartStore {
         persist()
     }
 
+    /** #1099 (iOS `ProductsCartBridge.removeOne`): the − of the Home row: one unit less on the product's last line; the line goes at 0 */
+    fun removeOne(productId: Int) {
+        val line = _lines.value.lastOrNull { it.product.id == productId } ?: return
+        updateQuantity(line.lineId, line.quantity - 1)
+    }
+
     fun remove(lineId: String) {
         _lines.update { it.filterNot { line -> line.lineId == lineId } }
         refreshAutoDeposit()
