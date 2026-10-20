@@ -10,7 +10,7 @@ import React, { useEffect, useId, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@rentalshop/hooks';
 import { SettingsPanel } from '../../settings/SettingsPanel';
-import { SETTINGS_OUTLET_PARAM, SETTINGS_PARAM, closeSettingsHref, resolveTab, settingsHref, settingsOutletHref, type SettingsTab } from '../../settings/settings-model';
+import { SETTINGS_OUTLET_PARAM, SETTINGS_PARAM, closeSettingsHref, isSettingsList, resolveTab, settingsHref, settingsOutletHref, type SettingsTab } from '../../settings/settings-model';
 
 export function SettingsDialog({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
   const router = useRouter();
@@ -26,6 +26,8 @@ export function SettingsDialog({ onOpenChange }: { onOpenChange?: (open: boolean
   const role = String((user as { role?: string } | null)?.role || '').toUpperCase();
   const { tab, redirect } = resolveTab(requested, role);
   const search = searchParams.toString();
+  // #1140: `?settings=` alone is the phone's section list (desktop shows the default tab), so keep it
+  const list = isSettingsList(requested);
 
   useEffect(() => onOpenChange?.(open), [open, onOpenChange]);
 
@@ -33,11 +35,12 @@ export function SettingsDialog({ onOpenChange }: { onOpenChange?: (open: boolean
   useEffect(() => {
     if (!open || !role) return;
     if (redirect) router.replace(redirect);
-    else if (requested !== tab) router.replace(settingsHref(pathname, search, tab), { scroll: false });
-  }, [open, role, redirect, requested, tab, pathname, search, router]);
+    else if (!list && requested !== tab) router.replace(settingsHref(pathname, search, tab), { scroll: false });
+  }, [open, role, redirect, list, requested, tab, pathname, search, router]);
 
   const close = () => router.replace(closeSettingsHref(pathname, search), { scroll: false });
   const onTab = (next: SettingsTab) => router.replace(settingsHref(pathname, search, next), { scroll: false });
+  const onList = () => router.replace(settingsHref(pathname, search, ''), { scroll: false });
   // #852: the owner's branch on the bank-accounts / receipt tabs
   const onOutlet = (id: number) => router.replace(settingsOutletHref(pathname, search, id), { scroll: false });
 
@@ -77,7 +80,7 @@ export function SettingsDialog({ onOpenChange }: { onOpenChange?: (open: boolean
         tabIndex={-1}
         className="relative flex h-full w-full flex-col overflow-hidden bg-ar-surface shadow-2xl outline-none lg:h-[min(720px,100%)] lg:w-[min(1040px,100%)] lg:rounded-2xl lg:border lg:border-ar-line"
       >
-        <SettingsPanel tab={tab} onTab={onTab} onClose={close} titleId={titleId} outletParam={searchParams.get(SETTINGS_OUTLET_PARAM)} onOutlet={onOutlet} />
+        <SettingsPanel tab={tab} onTab={onTab} onClose={close} titleId={titleId} outletParam={searchParams.get(SETTINGS_OUTLET_PARAM)} onOutlet={onOutlet} list={list} onList={onList} />
       </div>
     </div>
   );
