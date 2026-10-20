@@ -16,14 +16,18 @@ object EntityOrdersLogic {
     /** Money of the loaded non-cancelled orders (customer "Đã chi" when the API sent no summary) */
     fun spent(orders: List<OrderSummary>): Double = orders.filterNot(::cancelled).sumOf { it.totalAmount }
 
-    /** "2,1tr" from a million up (board), the full amount below ([full]) */
+    /** "2,1tr" from a million up (board), the full amount below ([full]); USD shop (#1145): "$2.1M" */
     fun compactMoney(
         amount: Double,
         full: (Double) -> String,
         million: String = "%d,%dtr",
         millionWhole: String = "%dtr",
+        currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
     ): String {
         if (amount < 1_000_000) return full(amount)
+        if (currency == com.anyrent.pos.domain.money.ShopCurrency.USD) {
+            return com.anyrent.pos.domain.money.ShopMoney.compact(amount, vietnamese = false, currency = currency)
+        }
         val tenths = Math.round(amount / 100_000).toInt()
         val whole = tenths / 10
         val tenth = tenths % 10

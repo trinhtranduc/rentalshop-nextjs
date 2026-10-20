@@ -2095,4 +2095,12 @@
     <string name="booking_reject_sheet_title">Từ chối đơn online</string>
     <string name="booking_reject_sheet_description">Chọn lý do để báo cho khách. Khách sẽ nhận được lý do này.</string>
     <string name="booking_reject_note_placeholder">Ghi chú cho khách (không bắt buộc)</string>
+    <!-- #1145 shop currency -->
+    <string name="settings_v2_currency">Tiền tệ</string>
+    <string name="settings_v2_currency_confirm_title">Đổi tiền tệ sang %1$s?</string>
+    <string name="settings_v2_currency_confirm_message">Mọi giá trong app sẽ hiện bằng %1$s. Số tiền giữ nguyên, không quy đổi (%2$s).</string>
+    <string name="settings_v2_currency_confirm_button">Đổi sang %1$s</string>
+    <string name="settings_v2_currency_failed">Không đổi được tiền tệ. Vui lòng thử lại.</string>
+    <string name="v2_pricing_unit_usd">$</string>
+    <string name="v2_pricing_unit_daily_usd">$/ngày</string>
 </resources>

@@ -1076,9 +1076,18 @@ private fun pricingLabel(type: String): String = when (type.uppercase()) {
 /** "150.000đ/ngày" for a daily rent price, "350.000đ" otherwise */
 @Composable
 private fun pricingPriceText(price: Double, type: String, isSale: Boolean): String {
-    val money = formatMoneyVnd(price) + "đ"
+    val money = com.anyrent.pos.domain.money.ShopMoney.withUnit(price)
     return if (!isSale && type.equals("DAILY", ignoreCase = true)) stringResource(R.string.v2_pricing_per_day_suffix, money) else money
 }
+
+/** Unit after the price field: "đ" / "đ/ngày", or "$" / "$/ngày" in a USD shop (#1145) */
+@Composable
+private fun pricingUnitText(daily: Boolean): String =
+    if (com.anyrent.pos.domain.money.ShopMoney.current == com.anyrent.pos.domain.money.ShopCurrency.USD) {
+        stringResource(if (daily) R.string.v2_pricing_unit_daily_usd else R.string.v2_pricing_unit_usd)
+    } else {
+        stringResource(if (daily) R.string.v2_pricing_unit_daily else R.string.v2_pricing_unit)
+    }
 
 /**
  * "Cách tính giá" (#482, board Gio-hang-chon-gia; iOS `CartPricingSheetViewController`): the pricing options as radio
@@ -1156,13 +1165,13 @@ private fun CartPricingSheet(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(stringResource(R.string.v2_pricing_price_field), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                 OutlinedTextField(
-                    value = if (digits.isEmpty()) "" else formatMoneyVnd(price),
+                    value = if (digits.isEmpty()) "" else com.anyrent.pos.domain.money.ShopMoney.plain(price),
                     onValueChange = { text -> digits = CartV2Logic.priceDigits(text) },
                     placeholder = { Text("0") },
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text),
                     trailingIcon = {
-                        Text(stringResource(if (daily) R.string.v2_pricing_unit_daily else R.string.v2_pricing_unit),
+                        Text(pricingUnitText(daily),
                             fontSize = DS.TextSize.Body, color = Color(0xFF64748B), modifier = Modifier.padding(end = 14.dp))
                     },
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
@@ -1175,11 +1184,11 @@ private fun CartPricingSheet(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFF8FAFC)).padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val money = formatMoneyVnd(preview.unitPrice) + "đ"
+                val money = com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.unitPrice)
                 val text = preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
                     ?: "$money × ${preview.quantity}"
                 Text(text, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
-                Text(formatMoneyVnd(preview.total) + "đ", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                Text(com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
             AppPrimaryButton(
                 stringResource(R.string.v2_pricing_apply),
