@@ -12,6 +12,9 @@ import { addToRequest, emptyRequest, loadRequest, removeFromRequest, saveRequest
 import { PublicProductSheet } from './PublicProductSheet';
 import { BookingRequestSheet } from './BookingRequestSheet';
 import type { BookingOutlet } from './BookingPicker';
+import { ImageSearchPanel } from './ImageSearchPanel';
+import { ScanSearchIcon } from './AiSearchIcon';
+import { canSearchByImage } from '../lib/image-search';
 
 interface PublicProductGridProps {
   products: Product[];
@@ -28,6 +31,8 @@ interface PublicProductGridProps {
   tenantKey?: string;
   onlineBooking?: boolean;
   outlets?: BookingOutlet[];
+  /** #1128: the shop has products indexed for image search */
+  imageSearchAvailable?: boolean;
 }
 
 const SHOP_TIME_ZONE = 'Asia/Ho_Chi_Minh';
@@ -40,7 +45,7 @@ const browserStorage = () => {
 };
 
 /** #665 — search, category chips, product cards and the detail sheet */
-export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [] }: PublicProductGridProps) {
+export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [], imageSearchAvailable = false }: PublicProductGridProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -59,6 +64,9 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
   const [reviewing, setReviewing] = useState(false);
   const [added, setAdded] = useState(false);
   const todayKey = getLocalDateKey(new Date(), SHOP_TIME_ZONE);
+  const imageSearchOn = canSearchByImage({ tenantKey, imageSearchAvailable });
+  const [pickSignal, setPickSignal] = useState(0);
+  const ti = useTranslations('products.public.imageSearch');
 
   // The request is read after mount (no localStorage on the server)
   useEffect(() => {
@@ -128,6 +136,20 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
             placeholder={tp('searchPlaceholder')}
             className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-slate-900 outline-none placeholder:text-slate-500"
           />
+          {imageSearchOn && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setPickSignal((n) => n + 1);
+              }}
+              aria-label={ti('cameraButton')}
+              data-testid="image-search-camera"
+              className="ai-search-gradient flex h-9 w-[42px] flex-none items-center justify-center rounded-[10px] text-white"
+            >
+              <ScanSearchIcon className="h-5 w-5" />
+            </button>
+          )}
         </label>
         {categories.length > 0 && (
           <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
@@ -147,6 +169,18 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
           </div>
         )}
       </div>
+
+      {imageSearchOn && tenantKey && (
+        <div className="mt-2">
+          <ImageSearchPanel
+            tenantKey={tenantKey}
+            currency={currency}
+            phone={phone}
+            pickSignal={pickSignal}
+            onOpen={(product) => setOpened(product as unknown as Product)}
+          />
+        </div>
+      )}
 
       {pagination && pagination.total > 0 && (
         <div className="mb-3 mt-1.5 text-[13px] text-slate-600">{tp('count', { count: pagination.total })}</div>

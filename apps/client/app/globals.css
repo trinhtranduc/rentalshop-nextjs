@@ -956,3 +956,28 @@ html.ar-shell[data-ar-theme='dark'] body > :not(.ar-theme):not(:has(.ar-theme)) 
     display: none;
   }
 }
+
+/* #1128 "Tìm bằng ảnh" icon A: conic gradient tile + a soft breathing ring */
+.ai-search-gradient {
+  background: conic-gradient(from 210deg, #2563eb, #7c3aed, #06b6d4, #2563eb);
+}
+.ai-search-tile {
+  background: conic-gradient(from 210deg, #2563eb, #7c3aed, #06b6d4, #2563eb);
+  box-shadow: 0 8px 18px -8px rgba(79, 70, 229, 0.7);
+}
+.ai-search-tile::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 17px;
+  border: 2px solid rgba(124, 58, 237, 0.35);
+  animation: ai-search-breathe 2.4s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes ai-search-breathe {
+  0% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-search-tile::after { animation: none; opacity: 0; }
+}
