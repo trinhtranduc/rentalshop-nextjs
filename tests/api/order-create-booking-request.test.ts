@@ -12,6 +12,9 @@ jest.mock('next/server', () => ({
 let ctx: any;
 jest.mock('@rentalshop/auth/server', () => ({
   withPermissions: () => (handler: any) => (request: any) => handler(request, ctx),
+  // the real check reads custom merchant roles from the DB; here the default role table decides
+  hasPermission: async (user: any, permission: string) =>
+    (require('../../packages/auth/src/permissions').ROLE_PERMISSIONS[user.role] || []).includes(permission),
 }));
 
 // ---------------------------------------------------------------------------------------------
@@ -322,6 +325,18 @@ describe('POST /api/orders with bookingRequestId (#1124)', () => {
     const res: any = await POST(post(rentBody({ bookingRequestId: b.id })));
     expect(res.status).toBe(409);
     expect(res.body.code).toBe('BOOKING_REQUEST_CLOSED');
+  });
+
+  it('Nhân viên kho (OUTLET_INVENTORY) may create orders but not confirm a booking request (403, no order)', async () => {
+    const b = booking();
+    ctx = { user: { id: 10, role: 'OUTLET_INVENTORY', merchantId: 2, outletId: 3, email: 'k@x' }, userScope: { merchantId: 2, outletId: 3 } };
+    const res: any = await POST(post(rentBody({ bookingRequestId: b.id })));
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('INSUFFICIENT_PERMISSIONS');
+    expect(liveOrders()).toHaveLength(0);
+    expect(b.status).toBe('PENDING');
+    const plain: any = await POST(post(rentBody()));
+    expect(plain.status).toBe(200);
   });
 
   it('without bookingRequestId nothing about booking requests is read or written (installed apps)', async () => {

@@ -14,7 +14,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const { id } = await Promise.resolve(params);
-  return withPermissions(['orders.view'])(async (_request: NextRequest, { user, userScope }) => {
+  return withPermissions(['bookings.view'])(async (_request: NextRequest, { user, userScope }) => {
     try {
       const scope = bookingScope(user, userScope);
       if (!scope) return NextResponse.json(ResponseBuilder.error('NO_MERCHANT_ACCESS'), { status: 403 });

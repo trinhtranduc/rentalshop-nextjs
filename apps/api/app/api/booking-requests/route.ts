@@ -18,7 +18,7 @@ const querySchema = z.object({
  * with `counts` per status (for the "Đặt online" chip). PENDING past 24 h is stored as EXPIRED here (lazy expiry).
  * Merchant users: their shop (optionally one outlet). Outlet users: only their outlet.
  */
-export const GET = withPermissions(['orders.view'])(async (request: NextRequest, { user, userScope }) => {
+export const GET = withPermissions(['bookings.view'])(async (request: NextRequest, { user, userScope }) => {
   try {
     const scope = bookingScope(user, userScope);
     if (!scope) return NextResponse.json(ResponseBuilder.error('NO_MERCHANT_ACCESS'), { status: 403 });
