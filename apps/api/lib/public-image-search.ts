@@ -5,7 +5,7 @@
  * 10, and a request budget because every miss calls the embedding service. The photo is never stored.
  */
 import { VALIDATION } from '@rentalshop/constants';
-import { toPublicProduct } from './public-product';
+import { toPublicProduct, type PublicProductSource } from './public-product';
 
 export const PUBLIC_IMAGE_SEARCH_LIMIT = 10;
 /**
@@ -21,11 +21,20 @@ export const PUBLIC_IMAGE_SEARCH_RATE = {
 
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
-export type PickedImage = { name?: string; type?: string; size: number };
+export type PickedImage = { name?: string; type?: string; size: number; arrayBuffer?: () => Promise<ArrayBuffer> };
+
+/** The fields read from a `db.products.findByIds` row */
+export type SearchRow = Omit<PublicProductSource, 'outletStock'> & {
+  isActive?: boolean;
+  deletedAt?: Date | string | null;
+  merchantId?: number;
+  merchant?: { id: number } | null;
+  outletStock?: Array<{ stock?: number | null; renting?: number | null; outlet?: { id: number; name: string; address?: string | null } | null }>;
+};
 
 /** null when the upload can be searched, else the error code (400) */
 export function checkPublicSearchImage(file: PickedImage | null | undefined): 'NO_IMAGE_FILE' | 'IMAGE_VALIDATION_FAILED' | null {
-  if (!file || typeof (file as any).arrayBuffer !== 'function') return 'NO_IMAGE_FILE';
+  if (!file || typeof file.arrayBuffer !== 'function') return 'NO_IMAGE_FILE';
   const type = String(file.type || '').toLowerCase().trim();
   const name = String(file.name || '').toLowerCase().trim();
   const typeOk = type ? VALIDATION.ALLOWED_IMAGE_TYPES.some((t: string) => t.toLowerCase() === type) : false;
@@ -36,8 +45,8 @@ export function checkPublicSearchImage(file: PickedImage | null | undefined): 'N
 }
 
 /** A `db.products.findByIds` row → the public product plus how similar it is */
-export function toPublicSearchResult(product: any, similarity: number) {
-  const outletStock = (product.outletStock || []).map((stock: any) => ({
+export function toPublicSearchResult(product: SearchRow, similarity: number) {
+  const outletStock = (product.outletStock || []).map((stock) => ({
     stock: stock.stock || 0,
     renting: stock.renting || 0,
     available: Math.max(0, (stock.stock || 0) - (stock.renting || 0)),
@@ -61,7 +70,7 @@ export function toPublicSearchResult(product: any, similarity: number) {
 /** Hits (best first) → the shop's active products, at most `limit`; other shops' rows never pass */
 export function publicSearchResults(
   hits: Array<{ productId: number; similarity: number }>,
-  rows: any[],
+  rows: SearchRow[],
   merchantId: number,
   limit: number = PUBLIC_IMAGE_SEARCH_LIMIT
 ) {

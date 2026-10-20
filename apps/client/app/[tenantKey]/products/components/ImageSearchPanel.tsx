@@ -150,7 +150,7 @@ export function ImageSearchPanel({ tenantKey, currency, phone, onOpen, pickSigna
           {!busy && view.kind === 'results' && (
             <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
               {view.products.map((product) => {
-                const main = productPriceLines(product as any).main;
+                const main = productPriceLines(product).main;
                 const inStock = (product.available ?? 0) > 0;
                 return (
                   <button

@@ -10,6 +10,7 @@ import {
   PUBLIC_IMAGE_SEARCH_VECTOR_LIMIT,
   checkPublicSearchImage,
   publicSearchResults,
+  type SearchRow,
 } from '../../../../../lib/public-image-search';
 
 export const dynamic = 'force-dynamic';
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     const form = await request.formData();
     const file = form.get('image') as File | null;
-    const invalid = checkPublicSearchImage(file as any);
+    const invalid = checkPublicSearchImage(file);
     if (invalid) return json(request, ResponseBuilder.error(invalid), 400);
 
     const now = Date.now();
@@ -62,9 +63,10 @@ export async function POST(request: NextRequest, { params }: Params) {
       let embedding: number[];
       try {
         embedding = await getEmbeddingService().generateEmbeddingFromBuffer(await compressImageForEmbedding(buffer));
-      } catch (error: any) {
-        const message = error?.message ? String(error.message) : String(error);
-        if (error?.name === 'AbortError' || message.toLowerCase().includes('timeout')) {
+      } catch (error) {
+        const err = error as { name?: string; message?: string } | undefined;
+        const message = err?.message ? String(err.message) : String(error);
+        if (err?.name === 'AbortError' || message.toLowerCase().includes('timeout')) {
           return json(request, ResponseBuilder.error('SEARCH_TIMEOUT'), 503);
         }
         console.error('❌ Public image search: /embed failed:', message);
@@ -83,13 +85,13 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const rows = hits.length ? await db.products.findByIds(hits.map((h) => h.productId)) : [];
-    const products = publicSearchResults(hits, rows, merchant.id);
+    const products = publicSearchResults(hits, rows as unknown as SearchRow[], merchant.id);
     return json(
       request,
       ResponseBuilder.success(products.length ? 'PRODUCTS_FOUND' : 'NO_PRODUCTS_FOUND', { products, total: products.length })
     );
   } catch (error) {
-    console.error('❌ Public image search failed:', (error as any)?.message || error);
+    console.error('❌ Public image search failed:', (error as Error | undefined)?.message || error);
     const { response, statusCode } = handleApiError(error);
     if (statusCode >= 500) return json(request, ResponseBuilder.error('SEARCH_FAILED'), 503);
     return json(request, response, statusCode);
