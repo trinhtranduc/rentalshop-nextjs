@@ -195,6 +195,15 @@ export const SCENARIOS: Record<string, Step[]> = {
   noItems: [{ body: { ...RENT_BODY, orderItems: [] } }],
   // Unchanged: unknown customer
   unknownCustomer: [{ body: { ...RENT_BODY, customerId: 999 } }],
+  // #1070: old iOS / Android send an amount discount above the lines (lines 450.000) and a total clamped to 0
+  overDiscountAmount: [{ body: { ...RENT_BODY, totalAmount: 0, discountType: 'amount', discountValue: 600000, discountAmount: 600000 } }],
+  // #1070: old iOS sends a percentage above 100 (lines 150.000)
+  overDiscountPercent: [{
+    body: {
+      orderType: 'SALE', customerId: CUSTOMER.id, totalAmount: 0, discountType: 'percentage', discountValue: 150, discountAmount: 225000,
+      orderItems: [{ productId: 11, quantity: 1, unitPrice: 150000, totalPrice: 150000 }],
+    },
+  }],
 };
 
 /** Deterministic Math.random (order numbers), restarted for every scenario */

@@ -10,6 +10,8 @@
  *   staff within 60 s, or a create with an `Idempotency-Key` already used, returns the first order (same
  *   response, 200) instead of inserting a second one. main-real inserted a second order.
  * - #361 (PR #364) a SALE stores no `depositAmount` / `securityDeposit`, whatever the client sends.
+ * - #1070 (owner "cách A"): a discount above the order lines is stored clamped to the lines (percentage → 100);
+ *   status, `totalAmount` (the client's, already 0) and every other field are unchanged. See `DISCOUNT_CLAMPED`.
  * - Added fields: none. (#341 also reads the optional `Idempotency-Key` header; old apps do not send it.)
  * - #986/#987 text only, listed in `TEXT_CHANGED`, as listed as intended in the PR #999 review: `message` /
  *   `error` of `noItems` and `unknownCustomer` are the Vietnamese catalog sentence of the code (e.g. "Customer
@@ -29,10 +31,17 @@ const REPLAYED: Record<string, number> = { sameOrderTwiceNoKey: 1, walkInTwiceNo
 const SALE_DEPOSIT_DROPPED = ['saleWithDeposit'];
 /** #986/#987: only the `message` / `error` text of these error answers changes (see header) */
 const TEXT_CHANGED = ['noItems', 'unknownCustomer'];
+/** #1070: the stored discount is clamped to Σ line totalPrice (scenario → clamped discountValue / discountAmount) */
+const DISCOUNT_CLAMPED: Record<string, { discountValue: number; discountAmount: number }> = {
+  overDiscountAmount: { discountValue: 450000, discountAmount: 450000 },
+  overDiscountPercent: { discountValue: 100, discountAmount: 150000 },
+};
 
 let now: Record<string, any>;
 const before = golden as Record<string, any>;
-const unchanged = Object.keys(golden).filter((n) => !(n in REPLAYED) && !SALE_DEPOSIT_DROPPED.includes(n));
+const unchanged = Object.keys(golden).filter(
+  (n) => !(n in REPLAYED) && !SALE_DEPOSIT_DROPPED.includes(n) && !(n in DISCOUNT_CLAMPED)
+);
 
 /** Fields that identify one inserted row: they differ between a replayed order and a second insert */
 const withoutRowIdentity = (data: any) => {
@@ -115,5 +124,15 @@ describe('#361: a sale holds no deposit', () => {
       ...old,
       body: { ...old.body, data: { ...old.body.data, depositAmount: 0, securityDeposit: 0 } },
     });
+  });
+});
+
+describe('#1070: a discount above the lines is clamped, the request still succeeds', () => {
+  it.each(Object.entries(DISCOUNT_CLAMPED))('%s: same response except the clamped discount', (scenario, clamped) => {
+    const old = before[scenario].responses[0];
+    const current = now[scenario].responses[0];
+    expect(old.status).toBe(200);
+    expect(current).toEqual({ ...old, body: { ...old.body, data: { ...old.body.data, ...clamped } } });
+    expect(now[scenario].ordersInTable).toBe(1);
   });
 });
