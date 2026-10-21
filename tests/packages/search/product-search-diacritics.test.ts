@@ -9,7 +9,7 @@
  *       - query WITHOUT diacritics ("ao") → accent-INSENSITIVE, also matches "Áo".
  *       - query WITH diacritics ("áo")    → exact accented match only.
  *  3. Multi-word: ALL words must match (AND), each in the name.
- *  4. Barcode matches the whole term (exact / prefix), independent of the word rules.
+ *  4. Barcode matches when the code contains the typed text, independent of the word rules.
  */
 
 // Inline removeVietnameseDiacritics (same behaviour as @rentalshop/utils)
@@ -56,11 +56,11 @@ function nameMatches(product: Product, searchInput: string): boolean {
   });
 }
 
-// Mirrors buildProductSearchOr(): name match OR barcode (exact) match.
+// Mirrors buildProductSearchOr(): name match OR the barcode contains the typed text.
 function productMatches(product: Product, searchInput: string): boolean {
-  const term = searchInput.trim();
-  if (product.barcode && product.barcode === term) return true;
-  return nameMatches(product, term);
+  const term = searchInput.trim().toLowerCase();
+  if (term && product.barcode && product.barcode.toLowerCase().includes(term)) return true;
+  return nameMatches(product, searchInput);
 }
 
 const aoDai: Product = {
@@ -129,6 +129,9 @@ describe('Product Search - word-prefix + conditional accent', () => {
   describe('Barcode search', () => {
     it('"AD-001" → matches by barcode', () => {
       expect(productMatches(aoDai, 'AD-001')).toBe(true);
+    });
+    it('"001" → matches a barcode that contains those digits', () => {
+      expect(productMatches(aoDai, '001')).toBe(true);
     });
     it('"AT-002" → matches "Ao thun" by barcode', () => {
       expect(productMatches(aoThun, 'AT-002')).toBe(true);

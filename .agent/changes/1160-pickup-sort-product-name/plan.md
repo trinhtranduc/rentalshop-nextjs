@@ -5,7 +5,7 @@ Issue: #1160 · Status: accepted · Spec: ./spec.md
 ## Steps
 
 1. Add `pickup` to `SORTS` and the en/vi order sort labels.
-2. Match product search on the name only. Keep an exact, case-insensitive barcode match.
+2. Match product search on the name, or on a barcode that contains the typed text. Do not match the description.
 3. Update the product-list and home-search hints.
 4. Skills: `api-compat-review`, `i18n-keys`, `mobile-parity`.
 5. Verify: `cd tests && yarn test web-orders-model.test.ts product-search-punctuation.test.ts packages/search/product-search-diacritics.test.ts`.

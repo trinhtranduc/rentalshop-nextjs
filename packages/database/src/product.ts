@@ -74,7 +74,7 @@ async function findMatchingProductIds(searchInput: string, merchantId?: number):
 
 /**
  * Build the `where.OR` array for a product text search: DB-level name matching
- * (via findMatchingProductIds) OR an exact barcode match.
+ * (via findMatchingProductIds) OR a barcode match (the code contains the typed text).
  * Falls back to legacy per-word Prisma `contains` on the name if the raw query is unavailable.
  */
 async function buildProductSearchOr(
@@ -290,8 +290,8 @@ export async function searchProducts(filters: ProductSearchFilter) {
     const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
 
     if (words.length > 0) {
-      // A full barcode still matches, so a scan that sends the code as `q` keeps working.
-      const barcodeCondition = { barcode: { equals: searchTerm, mode: 'insensitive' } };
+      // Barcode: the code contains the typed text, so a partial code and a full scan both match.
+      const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
       where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
     }
   }
@@ -1571,13 +1571,13 @@ export const simplifiedProducts = {
           }
     // If available=false or undefined, don't filter - show all products
     
-    // Text search matches the product name. A full barcode still matches (scan / installed apps).
+    // Text search matches the product name, or a barcode that contains the typed text.
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
       const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
 
       if (words.length > 0) {
-        const barcodeCondition = { barcode: { equals: searchTerm, mode: 'insensitive' } };
+        const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
         where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
       }
     }

@@ -7,8 +7,8 @@ Issue: #1160 · Status: accepted · Intent: ./intent.md
 1. The shop web Đơn hàng sort menu includes "Ngày lấy sớm nhất", which requests `sortBy=pickupPlanAt` and `sortOrder=asc`.
 2. An unknown sort value still falls back to newest.
 3. A product search word matches the product name (word prefix, same accent rules). It does not match the description.
-4. A fragment of a barcode does not match. The full barcode, ignoring case, still matches.
-5. The product-list hint says the search is by name. The phone home hint says name or take a photo.
+4. The barcode matches when the code contains the typed text, ignoring case. A word that is only in the description does not match.
+5. The product-list hint says name or barcode. The phone home hint says name, barcode, or take a photo.
 
 ## Out of scope
 

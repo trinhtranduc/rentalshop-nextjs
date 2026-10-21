@@ -4,11 +4,11 @@ Issue: #1160 · Author: owner · Status: accepted · Created: 2026-10-21
 
 ## Problem
 
-The shop web order list cannot sort by the planned pickup day. The product search box also matches the description and any part of the barcode.
+The shop web order list cannot sort by the planned pickup day. Product search should match the product name or the barcode, and should not match the description.
 
 ## Proposed outcome
 
-The Đơn hàng menu has "Ngày lấy sớm nhất" (`pickupPlanAt` ascending; orders with no pickup day stay last). Product search matches the product name. A full barcode still matches so a scan keeps working.
+The Đơn hàng menu has "Ngày lấy sớm nhất" (`pickupPlanAt` ascending; orders with no pickup day stay last). Product search matches the product name or a barcode that contains the typed text. The description is not searched.
 
 ## Affected users and systems
 
@@ -24,4 +24,4 @@ None.
 
 ## Decision log
 
-- 2026-10-21 — Sort by earliest pickup, and search products by name. Keep an exact barcode match for scanners (owner ask + installed apps).
+- 2026-10-21 — Sort by earliest pickup. Product search matches the name or the barcode (owner corrected the name-only ask). Description is not searched.

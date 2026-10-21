@@ -216,7 +216,7 @@
     "add": "Thêm"
   },
   "search": {
-    "placeholder": "Tìm theo tên sản phẩm...",
+    "placeholder": "Tìm theo tên hoặc mã vạch...",
     "noResults": "Không tìm thấy sản phẩm phù hợp"
   },
   "stats": {
@@ -330,7 +330,7 @@
     },
     "search": {
       "label": "Tìm sản phẩm",
-      "placeholder": "Tên sản phẩm"
+      "placeholder": "Tên hoặc mã vạch"
     },
     "category": {
       "label": "Danh mục",
@@ -640,7 +640,7 @@
       "size": "Khổ tem: {size}",
       "print": "In {count} tem",
       "printNone": "In tem",
-      "search": "Tìm tên sản phẩm",
+      "search": "Tìm tên hoặc mã sản phẩm",
       "selectPage": "Chọn tất cả trên trang",
       "noCode": "Chưa có mã",
       "loadFailed": "Không tải được sản phẩm.",

@@ -242,7 +242,7 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
         XCTAssertTrue(app.tables.cells.firstMatch.waitForExistence(timeout: 15), "Product list should load")
-        let search = e2e.field(["Search by name or take a photo", "Tìm tên hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
+        let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
         XCTAssertTrue(search.waitForExistence(timeout: 5), "search field on Home")
         for number in [3, 5, 6, 7, 8, 9, 10, 18, 26, 27, 28] {
             search.tap()
@@ -1916,7 +1916,7 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newProducts")
         try e2e.start()
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        let search = e2e.field(["Search by name or take a photo", "Tìm tên hoặc chụp ảnh"])
+        let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh"])
         XCTAssertTrue(search.waitForExistence(timeout: 10), "Home search")
         search.tap()
         search.typeText("Váy trùng đơn test\n")
@@ -1984,7 +1984,7 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newProducts")
         try e2e.start()
         e2e.tapTab(["Home", "Trang chủ"], index: 0)
-        let search = e2e.field(["Search by name or take a photo", "Tìm tên hoặc chụp ảnh"])
+        let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh"])
         XCTAssertTrue(search.waitForExistence(timeout: 10), "Home search")
         for name in ["Váy cưới thuê theo ngày", "Vest xanh navy thuê lần", "Váy trùng đơn test"] {
             search.tap()
@@ -2242,10 +2242,10 @@ final class AnyRentE2ETests: XCTestCase {
 
     // MARK: - Fixes merged on dev 2026-10-08 (#670 #671 #672 #674 #676)
 
-    /// Home search field (v2 placeholder "Tìm tên hoặc chụp ảnh"; older "Tên, mã vạch…")
+    /// Home search field (v2 placeholder "Tìm tên, mã vạch hoặc chụp ảnh"; older "Tên, mã vạch…")
     private var homeSearch: XCUIElement {
-        // English Home placeholder: "Search by name or take a photo" (`products.home.searchPlaceholder`)
-        let byLabel = e2e.field(["Name, barcode…", "Tên, mã vạch…", "Tìm tên hoặc chụp ảnh", "Search by name or take a photo"])
+        // English Home placeholder: "Search name, barcode or take a photo" (`products.home.searchPlaceholder`)
+        let byLabel = e2e.field(["Name, barcode…", "Tên, mã vạch…", "Tìm tên, mã vạch hoặc chụp ảnh", "Search name, barcode or take a photo"])
         if byLabel.exists { return byLabel }
         return app.textFields.matching(NSPredicate(format:
             "placeholderValue BEGINSWITH 'Tìm tên' OR placeholderValue BEGINSWITH 'Name' OR placeholderValue BEGINSWITH 'Search name' OR label BEGINSWITH 'Tìm tên'")).firstMatch
@@ -4548,8 +4548,8 @@ private final class E2E {
     /// Home → search the product by name → open its detail. True when "Add to cart" shows.
     func openProduct(named name: String) -> Bool {
         tapTab(["Home", "Trang chủ"], index: 0)
-        // v2 placeholder "Tìm tên hoặc chụp ảnh" (the old "Tên, mã vạch…" is gone: openProduct never found its field)
-        let search = field(["Search by name or take a photo", "Tìm tên hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
+        // v2 placeholder "Tìm tên, mã vạch hoặc chụp ảnh" (the old "Tên, mã vạch…" is gone: openProduct never found its field)
+        let search = field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
         guard search.waitForExistence(timeout: 10) else { note("openProduct '\(name)': no Home search field"); shot("openproduct-no-search"); return false }
         search.tap()
         search.clearText()
