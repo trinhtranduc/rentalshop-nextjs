@@ -35,10 +35,10 @@ export function normalizeBarcode<T>(barcode: T): T | null {
 //   2. Conditional accent, driven by whether the QUERY carries diacritics:
 //        - query WITHOUT diacritics ("ao")  → accent-INSENSITIVE, also matches "Áo".
 //        - query WITH diacritics ("áo")     → exact accented match only.
-// Multi-word queries require ALL words to match (AND), each in name OR description.
+// Multi-word queries require ALL words to match (AND), each in the product name.
 
 /**
- * Resolve product IDs whose name/description match the search term at the DB level
+ * Resolve product IDs whose name matches the search term at the DB level
  * (the only place the accent rules above can be enforced correctly).
  * Returns `null` if the raw query fails (e.g. unaccent/normalize unavailable) so the
  * caller can fall back to the legacy Prisma `contains` matching without regressing.
@@ -51,8 +51,7 @@ async function findMatchingProductIds(searchInput: string, merchantId?: number):
     const perWord = words.map((word: string) => {
       const { hasDiacritics, pattern } = buildSearchWordTerm(word);
       const nameSql = projectSearchColumnSql('name', hasDiacritics);
-      const descriptionSql = projectSearchColumnSql('description', hasDiacritics);
-      return Prisma.sql`(${nameSql} LIKE ${pattern} OR ${descriptionSql} LIKE ${pattern})`;
+      return Prisma.sql`(${nameSql} LIKE ${pattern})`;
     });
     // ALL words must match (AND). Scope to merchant so the LIMIT budget isn't consumed
     // by other tenants (a broad term like "ao" can match a lot).
@@ -74,9 +73,9 @@ async function findMatchingProductIds(searchInput: string, merchantId?: number):
 }
 
 /**
- * Build the `where.OR` array for a product text search: DB-level name/description
- * matching (via findMatchingProductIds) OR the given barcode condition.
- * Falls back to legacy per-word Prisma `contains` if the raw query is unavailable.
+ * Build the `where.OR` array for a product text search: DB-level name matching
+ * (via findMatchingProductIds) OR an exact barcode match.
+ * Falls back to legacy per-word Prisma `contains` on the name if the raw query is unavailable.
  */
 async function buildProductSearchOr(
   searchTerm: string,
@@ -95,12 +94,10 @@ async function buildProductSearchOr(
       const normalizedWord = removeVietnameseDiacritics(originalWord);
       const wordConditions: any[] = [
         { name: { contains: originalWord, mode: 'insensitive' } },
-        { description: { contains: originalWord, mode: 'insensitive' } },
       ];
       if (normalizedWord !== originalWord) {
         wordConditions.push(
-          { name: { contains: normalizedWord, mode: 'insensitive' } },
-          { description: { contains: normalizedWord, mode: 'insensitive' } }
+          { name: { contains: normalizedWord, mode: 'insensitive' } }
         );
       }
       return { OR: wordConditions };
@@ -286,15 +283,15 @@ export async function searchProducts(filters: ProductSearchFilter) {
 
   // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
   // Word-prefix + conditional-accent matching (see buildProductSearchOr / order.ts):
-  // "Áo dài đỏ" matches products whose name/description contain ALL words as word-prefixes.
+  // "Áo dài đỏ" matches products whose name contains ALL words as word-prefixes.
   const searchQuery = q || search;
   if (searchQuery) {
     const searchTerm = searchQuery.trim();
     const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
 
     if (words.length > 0) {
-      // Barcode is an exact match here (not word-by-word).
-      const barcodeCondition = { barcode: { equals: searchTerm } };
+      // A full barcode still matches, so a scan that sends the code as `q` keeps working.
+      const barcodeCondition = { barcode: { equals: searchTerm, mode: 'insensitive' } };
       where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
     }
   }
@@ -1574,15 +1571,13 @@ export const simplifiedProducts = {
           }
     // If available=false or undefined, don't filter - show all products
     
-    // Text search - word-prefix + conditional-accent matching (see buildProductSearchOr / order.ts):
-    // "Áo dài đỏ" matches products whose name/description contain ALL words as word-prefixes.
+    // Text search matches the product name. A full barcode still matches (scan / installed apps).
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
       const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
 
       if (words.length > 0) {
-        // Barcode is a prefix/contains match here (kept from prior behaviour).
-        const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
+        const barcodeCondition = { barcode: { equals: searchTerm, mode: 'insensitive' } };
         where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
       }
     }

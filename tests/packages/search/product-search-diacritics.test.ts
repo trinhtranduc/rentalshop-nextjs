@@ -4,11 +4,11 @@
  *
  * Rules:
  *  1. Word-prefix matching (NOT substring): a term must start the whole value OR start any
- *     word inside name/description. "dai" matches "Áo dài" but "ai" (mid-word) does not.
+ *     word inside the name. "dai" matches "Áo dài" but "ai" (mid-word) does not.
  *  2. Conditional accent driven by the QUERY:
  *       - query WITHOUT diacritics ("ao") → accent-INSENSITIVE, also matches "Áo".
  *       - query WITH diacritics ("áo")    → exact accented match only.
- *  3. Multi-word: ALL words must match (AND), each in name OR description.
+ *  3. Multi-word: ALL words must match (AND), each in the name.
  *  4. Barcode matches the whole term (exact / prefix), independent of the word rules.
  */
 
@@ -37,7 +37,7 @@ interface Product {
   barcode: string | null;
 }
 
-// Mirrors findMatchingProductIds(): ALL words must match (AND), each in name OR description.
+// Mirrors findMatchingProductIds(): ALL words must match (AND), each in the name.
 function nameMatches(product: Product, searchInput: string): boolean {
   const words = searchInput.trim().split(/\s+/).filter((w) => w.length > 0);
   if (words.length === 0) return false;
@@ -52,7 +52,7 @@ function nameMatches(product: Product, searchInput: string): boolean {
     const proj = (s: string) =>
       hasDiacritics ? s.normalize('NFC').toLowerCase() : removeVietnameseDiacritics(s).toLowerCase();
     const hit = (v: string) => like(proj(v), startPattern) || like(proj(v), wordPattern);
-    return hit(product.name) || hit(product.description || '');
+    return hit(product.name);
   });
 }
 
@@ -85,8 +85,8 @@ describe('Product Search - word-prefix + conditional accent', () => {
     it('"truyen" → matches "...truyền thống"', () => {
       expect(productMatches(aoDai, 'truyen')).toBe(true);
     });
-    it('"lua" → matches via description "Vải lụa..."', () => {
-      expect(productMatches(aoDai, 'lua')).toBe(true);
+    it('"lua" does not match a word that is only in the description', () => {
+      expect(productMatches(aoDai, 'lua')).toBe(false);
     });
   });
 

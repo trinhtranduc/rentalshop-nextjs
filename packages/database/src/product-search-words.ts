@@ -110,14 +110,12 @@ export function searchValueMatches(value: string | null | undefined, word: strin
   return likeMatches(projectSearchValue(value, hasDiacritics), pattern);
 }
 
-/** True when ALL query words match the name OR the description (mirrors findMatchingProductIds). */
+/** True when ALL query words match the product name (mirrors findMatchingProductIds). */
 export function productTextMatches(
   product: { name: string; description?: string | null },
   query: string
 ): boolean {
   const words = splitSearchWords(query);
   if (words.length === 0) return false;
-  return words.every(
-    (w) => searchValueMatches(product.name, w) || searchValueMatches(product.description, w)
-  );
+  return words.every((w) => searchValueMatches(product.name, w));
 }
