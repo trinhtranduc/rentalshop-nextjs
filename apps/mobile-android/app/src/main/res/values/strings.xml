@@ -957,12 +957,12 @@
     <!-- Orders tab boards (#401) -->
     <string name="orders_v2_title_rent">Rentals</string>
     <string name="orders_v2_title_sale">Sales</string>
-    <string name="orders_v2_search_placeholder">Name, phone, order number, item</string>
+    <string name="orders_v2_search_placeholder">Name, phone, or order number</string>
     <string name="orders_v2_search_cancel">Cancel</string>
     <string name="orders_v2_search_clear">Clear search</string>
     <plurals name="orders_v2_search_summary">
-        <item quantity="one">%1$d order matches “%2$s” · all statuses, item names too</item>
-        <item quantity="other">%1$d orders match “%2$s” · all statuses, item names too</item>
+        <item quantity="one">%1$d order matches “%2$s” · all statuses</item>
+        <item quantity="other">%1$d orders match “%2$s” · all statuses</item>
     </plurals>
     <plurals name="orders_v2_count">
         <item quantity="one">%1$d order</item>

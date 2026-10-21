@@ -4540,7 +4540,7 @@ private final class E2E {
     }
 
     var ordersSearchField: XCUIElement {
-        let v2 = field(["Name, phone, order number, item", "Tìm tên, SĐT, mã đơn, tên đồ"])
+        let v2 = field(["Name, phone, or order number", "Tìm tên, SĐT hoặc mã đơn"])
         return v2.exists ? v2 : app.searchFields.firstMatch.exists ? app.searchFields.firstMatch
             : app.textFields.matching(NSPredicate(format: "placeholderValue BEGINSWITH 'Name, phone' OR placeholderValue BEGINSWITH 'Tên'")).firstMatch
     }
