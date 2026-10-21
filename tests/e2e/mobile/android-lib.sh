@@ -109,9 +109,12 @@ home_search() { # home_search <ascii text>: filter the Home list
 }
 add_to_cart() { # add_to_cart <product> [times]: + on the Home row, then the stepper on the row
   "$U" tap "$(L v2_add_to_cart_named "$1")" >/dev/null || return 1
-  local i=2; while [ "$i" -le "${2:-1}" ]; do "$U" tap "$(L v2_add_in_cart_named "$1" $((i - 1)))" >/dev/null; i=$((i + 1)); done
+  # the − n + stepper (#1084): the count text and the + carry the same description; the + is the second node
+  local i=2 d; while [ "$i" -le "${2:-1}" ]; do d="$(L v2_add_in_cart_named "$1" $((i - 1)))"
+    "$U" tap "$d" 2 >/dev/null 2>&1 || "$U" tap "$d" >/dev/null; sleep 1; i=$((i + 1)); done
 }
-open_cart() { "$U" tap "$(L v2_cart_create)" >/dev/null; sleep 2; }   # the cart bar on Home carries the same label as the cart button
+# the cart bar on Home: "View cart" since the multi-cart bar (#1079); older builds labelled it like the cart button
+open_cart() { tap_any "$(L v2_cart_multi_view)|$(L v2_cart_create)" >/dev/null; sleep 2; }
 pick_customer() { "$U" tap "$(L v2_cart_pick_customer)" >/dev/null; sleep 2; "$U" tap "$1" >/dev/null; sleep 2; }
 # pick_dates <start offset> <end offset> (VN days from today): the default (today -> tomorrow) needs no taps
 pick_dates() {
@@ -133,7 +136,7 @@ submit_order() { # submit_order -> prints the order number; the confirm sheet's 
 }
 # clear_cart: from Home (cart bar) or the cart screen: More -> Clear cart -> Delete, then back on Home
 clear_cart() {
-  have_any "$(L v2_cart_more)" || { have_any "$(L v2_cart_create)" && "$U" tap "$(L v2_cart_create)" >/dev/null && sleep 2; }
+  have_any "$(L v2_cart_more)" || { tap_any "$(L v2_cart_multi_view)|$(L v2_cart_create)" && sleep 2; }
   if have_any "$(L v2_cart_more)"; then
     "$U" tap "$(L v2_cart_more)" >/dev/null; sleep 1; tap_any "$(L clear_cart)"; sleep 1; tap_any "$(L delete)"; sleep 2
     have_any "$(L v2_cart_back)" && "$U" tap "$(L v2_cart_back)" >/dev/null; sleep 1

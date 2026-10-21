@@ -705,11 +705,13 @@ final class AnyRentE2ETests: XCTestCase {
         guard openAllOrders() else { return XCTFail("Tất cả đơn did not list rows") }
         sleep(1)
         e2e.shot("4b-00-default-pickup")
-        e2e.soft(e2e.element(labelBeginsWith: ["Sorted by pickup date · latest first", "Xếp theo ngày lấy · gần nhất trước"], type: .button).exists,
+        e2e.soft(e2e.element(labelBeginsWith: ["Sorted by pickup date · latest first", "Xếp theo ngày lấy · mới nhất trước"], type: .button).exists,
                  "default: sorted by pickup date, nearest first")
         let dmy = "[0-9]{2}/[0-9]{2}/[0-9]{2}"
-        let dateLine = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "(Lấy|Pickup) \(dmy).*(Trả|Return) \(dmy).*")).firstMatch
-        e2e.soft(dateLine.waitForExistence(timeout: 3), "a row reads Lấy dd/mm/yy … Trả dd/mm/yy")
+        // #1008: the two dates are icon chips ("↗ 20/10/26", "↩ 22/10/26"); VoiceOver reads each as "Lấy 20/10/26" / "Trả 22/10/26"
+        let pickupChip = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "(Lấy|Pickup) \(dmy)")).firstMatch
+        let returnChip = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "(Trả|Return) \(dmy)")).firstMatch
+        e2e.soft(pickupChip.waitForExistence(timeout: 3) && returnChip.exists, "a row has the chips Lấy dd/mm/yy and Trả dd/mm/yy")
         e2e.soft(app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "#.* · (tạo|created) \(dmy) [0-9]{2}:[0-9]{2}")).firstMatch.exists,
                  "Tất cả đơn rows keep #code · tạo dd/mm/yy HH:mm (owner)")
 
@@ -2242,10 +2244,11 @@ final class AnyRentE2ETests: XCTestCase {
 
     /// Home search field (v2 placeholder "Tìm tên, mã vạch hoặc chụp ảnh"; older "Tên, mã vạch…")
     private var homeSearch: XCUIElement {
-        let byLabel = e2e.field(["Name, barcode…", "Tên, mã vạch…", "Tìm tên, mã vạch hoặc chụp ảnh"])
+        // English Home placeholder: "Search name, barcode or take a photo" (`products.home.searchPlaceholder`)
+        let byLabel = e2e.field(["Name, barcode…", "Tên, mã vạch…", "Tìm tên, mã vạch hoặc chụp ảnh", "Search name, barcode or take a photo"])
         if byLabel.exists { return byLabel }
         return app.textFields.matching(NSPredicate(format:
-            "placeholderValue BEGINSWITH 'Tìm tên' OR placeholderValue BEGINSWITH 'Name' OR label BEGINSWITH 'Tìm tên'")).firstMatch
+            "placeholderValue BEGINSWITH 'Tìm tên' OR placeholderValue BEGINSWITH 'Name' OR placeholderValue BEGINSWITH 'Search name' OR label BEGINSWITH 'Tìm tên'")).firstMatch
     }
 
     /// Orders tab → Tất cả đơn; true when rows show
@@ -3420,7 +3423,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapIfExists(e2e.button(["Sale", "Bán"]), timeout: 3)
         let more = e2e.button(["Thêm 1", "One more"])
         if more.waitForExistence(timeout: 3) { more.tap(); sleep(1) }
-        let inStock = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'trong kho' OR label CONTAINS 'in stock'")).firstMatch
+        // #1132: the availability pill is a control (not a static text); its VoiceOver label is the long "Còn 5 trong kho"
+        let inStock = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'trong kho' OR label CONTAINS 'in stock'")).firstMatch
         e2e.note("STOCKFLOW sale cart line: \(inStock.exists ? inStock.label : "<none>")")
         e2e.soft(inStock.exists && inStock.label.contains("5"), "a sale line shows the 5 in stock")
         e2e.shot("1d-stock-cart-sale")
@@ -3449,7 +3453,9 @@ final class AnyRentE2ETests: XCTestCase {
             e2e.shot("1d-stock-detail")
             e2e.note("STOCKFLOW detail Con5: \(e2e.screenTexts().prefix(30))")
             let texts = e2e.screenTexts().joined(separator: " ¦ ")
-            e2e.soft(texts.contains("Còn 2") || texts.contains("2 left") || texts.contains("Còn trống"), "detail shows 2 free")
+            // the next-days strip: today's cell reads "<day>: <free>" (VoiceOver), shown as "20 / 2"
+            let todayCell = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "\(e2e.vnDay(0).day): 2")).firstMatch
+            e2e.soft(todayCell.exists || texts.contains("Còn 2") || texts.contains("2 left"), "detail shows 2 free today in the next-days strip")
             e2e.goBackOnce()
         }
 
@@ -3480,8 +3486,9 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(3)
         // #1064 (owner): the one unit free tomorrow is the amber "Còn 1" (VoiceOver "Còn 1 trong ngày đã chọn"), never the
         // red "Hết đồ"
-        let shortage = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
-        let oneLeft = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Còn 1 trong ngày' OR label BEGINSWITH '1 left on these dates'")).firstMatch
+        // #1132: the pills are controls, so look at any element
+        let shortage = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Hết đồ' OR label BEGINSWITH 'Booked out'")).firstMatch
+        let oneLeft = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Còn 1 trong ngày' OR label BEGINSWITH '1 left on these dates'")).firstMatch
         e2e.note("STOCKFLOW het-tomorrow note: \(oneLeft.exists ? oneLeft.label : "<none>") red: \(shortage.exists) tag: \(tag.exists)")
         XCTAssertFalse(shortage.exists, "Het is free tomorrow: not unavailable")
         e2e.soft(oneLeft.exists && freeFrom(oneLeft.label) == 1, "Het tomorrow says 1 left")
@@ -3489,7 +3496,7 @@ final class AnyRentE2ETests: XCTestCase {
         // MOB-STOCK-08: 2 × Het tomorrow, only 1 exists → "Chỉ còn 1 trống trong ngày đã chọn"
         let plusOne = e2e.button(["Thêm 1", "One more"])
         if plusOne.waitForExistence(timeout: 3) { plusOne.tap(); sleep(2) }
-        let short2 = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Chỉ còn' OR label CONTAINS 'Only'")).firstMatch
+        let short2 = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Chỉ còn' OR label BEGINSWITH 'Only'")).firstMatch
         e2e.note("STOCKFLOW het-tomorrow x2 shortage: \(short2.exists ? short2.label : "<none>")")
         XCTAssertTrue(short2.exists, "2 × Het for tomorrow shows how many are left")
         XCTAssertEqual(freeFrom(short2.label), 1, "…and says 1")
@@ -3503,9 +3510,23 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// A day row of the calendar or of Việc cần làm as "out:300000" / "back:200000": its tag (Giao / Cần giao = out,
+    /// Trả / Cần trả = back) and its total. Nil for a cell that is not an order row.
+    private func calendarRow(_ cell: XCUIElement) -> String? {
+        let labels = cell.staticTexts.allElementsBoundByIndex.map { $0.label.trimmingCharacters(in: .whitespaces) }
+        let kind: String
+        if labels.contains(where: { ["Giao", "Hand over", "Cần giao", "To hand over"].contains($0) }) { kind = "out" }
+        else if labels.contains(where: { ["Trả", "Return", "Cần trả", "To take back"].contains($0) }) { kind = "back" }
+        else { return nil }
+        guard let money = labels.first(where: { $0.range(of: "^[0-9]{1,3}([.,][0-9]{3})*$", options: .regularExpression) != nil }) else { return nil }
+        return kind + ":" + money.filter(\.isNumber)
+    }
+
     /// MOB-CAL-01..: month grid and day list for the ops scenario (orders 710001..710009 around today). Every selected day's
-    /// header summary ("giao x · trả y") and the order numbers of its rows are noted as `E2E_NOTE: CAL <yyyy-MM-dd> | …`
-    /// for tests/e2e/mobile/calendar-check.js (API: /api/calendar/orders/count and /by-date).
+    /// header summary ("lấy x · trả y", today "N trễ · lấy x · trả y") and its rows are noted as
+    /// `E2E_NOTE: CAL <yyyy-MM-dd> | … | rows=out:300000,back:200000` for tests/e2e/mobile/calendar-check.js (API:
+    /// /api/calendar/orders/count, /by-date and the late returns of outlet-operations). The rows show no order number
+    /// (#893 lean row): a row is its tag (Giao = out, Trả = back) and its total. Grid cells read "dd/mm/yy" (#888).
     func test6bCalendarOps() throws {
         try e2e.requireScenario(["ops"])
         try e2e.requireRole("merchant")
@@ -3521,25 +3542,25 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("CAL header: \(header.label)")
         XCTAssertTrue(header.label.contains(todayDM), "today's header shows the Vietnam day \(todayDM) (\(header.label))")
         e2e.shot("6b-calendar-today")
+        func dmy(_ day: (key: String, dm: String, day: Int)) -> String { day.dm + "/" + String(day.key.prefix(4).suffix(2)) }
         for offset in -5...4 {
             let day = e2e.vnDay(offset)
-            let cell = app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + day.dm)).firstMatch
+            let cell = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", dmy(day))).firstMatch
             guard cell.waitForExistence(timeout: 3), cell.isHittable else { e2e.note("CAL \(day.key) | not on this month's grid"); continue }
             cell.tap()
             sleep(3)
             let title = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", day.dm)).allElementsBoundByIndex
                 .map(\.label).first { $0.uppercased() == $0 || $0.hasPrefix("HÔM NAY") } ?? ""
-            let summary = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'giao ' OR label CONTAINS 'hand'")).allElementsBoundByIndex.map(\.label).joined(separator: " / ")
-            var numbers: [String] = []
+            let summary = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'lấy ' OR label CONTAINS 'out '")).allElementsBoundByIndex.map(\.label).first ?? ""
+            var rows: [String] = []
             for cellRow in app.tables.cells.allElementsBoundByIndex where cellRow.exists {
-                let text = E2E.texts(cellRow)
-                if let r = text.range(of: "#\\d+", options: .regularExpression) { numbers.append(String(text[r]).replacingOccurrences(of: "#", with: "")) }
+                if let row = calendarRow(cellRow) { rows.append(row) }
             }
-            e2e.note("CAL \(day.key) | title=\(title) | summary=\(summary) | orders=\(numbers.sorted().joined(separator: ","))")
+            e2e.note("CAL \(day.key) | title=\(title) | summary=\(summary) | rows=\(rows.sorted().joined(separator: ","))")
             if offset == 0 || offset == 1 || offset == -2 || offset == 3 { e2e.shot("6b-calendar-\(day.key)") }
         }
         // MOB-CAL-02: a day row opens its order
-        if let day = Optional(e2e.vnDay(0)), let cell = Optional(app.descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@", " " + day.dm)).firstMatch), cell.exists {
+        if let day = Optional(e2e.vnDay(0)), let cell = Optional(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", dmy(day))).firstMatch), cell.exists {
             cell.tap()
             sleep(2)
             if app.tables.cells.firstMatch.waitForExistence(timeout: 5) {
@@ -3562,7 +3583,7 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(4)
         let counters: [(key: String, labels: [String])] = [
             ("pickups", ["Cần giao", "To hand over"]), ("returns", ["Cần nhận trả", "To take back"]),
-            ("late", ["Trễ hạn trả", "Late returns"]), ("noshows", ["Quá ngày lấy", "Pickup day passed"]),
+            ("late", ["Trễ hạn trả", "Overdue returns"]), ("noshows", ["Quá ngày lấy", "Past pickup"]),
         ]
         for c in counters {
             let el = e2e.element(labelBeginsWith: c.labels, type: .button)
@@ -3598,7 +3619,7 @@ final class AnyRentE2ETests: XCTestCase {
             return numbers.sorted().joined(separator: ",")
         }
         // Trễ hạn trả → list of late returns; Quá ngày lấy → "Chưa lấy đồ"
-        for (key, labels, shot) in [("late", ["Trễ hạn trả", "Late returns"], "7m-late-list"), ("noshows", ["Quá ngày lấy", "Pickup day passed"], "7m-noshow-list")] {
+        for (key, labels, shot) in [("late", ["Trễ hạn trả", "Overdue returns"], "7m-late-list"), ("noshows", ["Quá ngày lấy", "Past pickup"], "7m-noshow-list")] {
             let el = e2e.element(labelBeginsWith: labels, type: .button)
             guard e2e.scrollTo(el) else { continue }
             el.tap()
@@ -3616,7 +3637,19 @@ final class AnyRentE2ETests: XCTestCase {
             sleep(3)
             e2e.tapIfExists(e2e.button(["To do", "Việc cần làm"]), timeout: 3)
             sleep(3)
-            e2e.note("TODOLIST orders-todo | rows=\(rowNumbers())")
+            // #893 lean rows: no order number; the "HÔM NAY · …" section as tag:total (todo-check.js `orders-todo-today`)
+            let headers = app.staticTexts.allElementsBoundByIndex.filter { $0.exists && $0.label == $0.label.uppercased() && $0.label.contains(" · ") }
+                .sorted { $0.frame.minY < $1.frame.minY }
+            var today: [String] = []
+            if let i = headers.firstIndex(where: { $0.label.hasPrefix("HÔM NAY ·") || $0.label.hasPrefix("TODAY ·") }) {
+                let top = headers[i].frame.maxY
+                // a header can be listed twice (same frame): the next section starts at the first header below this one
+                let bottom = headers.first { $0.frame.minY > headers[i].frame.minY + 1 }?.frame.minY ?? .greatestFiniteMagnitude
+                for cell in app.cells.allElementsBoundByIndex where cell.exists && cell.frame.minY >= top - 1 && cell.frame.maxY <= bottom + 1 {
+                    if let row = calendarRow(cell) { today.append(row) }
+                }
+            }
+            e2e.note("TODOLIST orders-todo-today | rows=\(today.sorted().joined(separator: ","))")
             e2e.shot("7m-orders-todo")
         }
     }
