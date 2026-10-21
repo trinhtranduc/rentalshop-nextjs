@@ -50,8 +50,8 @@ describe('#1009 product search: a word after punctuation is a word start', () =>
     expect(productTextMatches({ name: 'Bộ vest v.2' }, '2')).toBe(true);
   });
 
-  it('description is searched the same way', () => {
-    expect(productTextMatches({ name: 'Áo dài', description: 'Màu (đỏ)' }, 'do')).toBe(true);
+  it('a word that is only in the description does not match', () => {
+    expect(productTextMatches({ name: 'Áo dài', description: 'Màu (đỏ)' }, 'do')).toBe(false);
   });
 
   it('splits the query on punctuation and drops empty words', () => {

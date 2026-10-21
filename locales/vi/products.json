@@ -216,7 +216,7 @@
     "add": "Thêm"
   },
   "search": {
-    "placeholder": "Tìm kiếm theo tên, mã vạch hoặc SKU...",
+    "placeholder": "Tìm theo tên hoặc mã vạch...",
     "noResults": "Không tìm thấy sản phẩm phù hợp"
   },
   "stats": {

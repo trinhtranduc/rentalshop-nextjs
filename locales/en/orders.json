@@ -808,6 +808,7 @@
       "newest": "Newest",
       "oldest": "Oldest",
       "nearest": "Next task first",
+      "pickup": "Earliest pickup",
       "total": "Highest total"
     },
     "search": {

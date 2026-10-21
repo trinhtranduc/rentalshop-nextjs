@@ -74,6 +74,7 @@ export const SORTS = {
   newest: { sortBy: 'createdAt', sortOrder: 'desc' },
   oldest: { sortBy: 'createdAt', sortOrder: 'asc' },
   nearest: { sortBy: 'nearestTask', sortOrder: 'asc' },
+  pickup: { sortBy: 'pickupPlanAt', sortOrder: 'asc' },
   total: { sortBy: 'totalAmount', sortOrder: 'desc' },
 } as const;
 export type SortKey = keyof typeof SORTS;
