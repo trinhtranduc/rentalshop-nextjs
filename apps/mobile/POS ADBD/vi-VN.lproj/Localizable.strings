@@ -1912,11 +1912,11 @@
 /* Orders tab boards (#401) */
 "orders.v2.title.rent" = "Đơn thuê";
 "orders.v2.title.sale" = "Đơn bán";
-"orders.v2.search.placeholder" = "Tìm tên, SĐT, mã đơn, tên đồ";
+"orders.v2.search.placeholder" = "Tìm tên, SĐT hoặc mã đơn";
 "orders.v2.search.cancel" = "Huỷ";
 "orders.v2.search.clear" = "Xoá nội dung tìm";
-"orders.v2.search.summary" = "%d đơn khớp “%@” · tìm trong mọi trạng thái, cả tên đồ";
-"orders.v2.search.summary.one" = "%d đơn khớp “%@” · tìm trong mọi trạng thái, cả tên đồ";
+"orders.v2.search.summary" = "%d đơn khớp “%@” · tìm trong mọi trạng thái";
+"orders.v2.search.summary.one" = "%d đơn khớp “%@” · tìm trong mọi trạng thái";
 "orders.v2.count" = "%d đơn";
 "orders.v2.count.one" = "%d đơn";
 "orders.v2.band.work" = "lấy %d · trả %d";

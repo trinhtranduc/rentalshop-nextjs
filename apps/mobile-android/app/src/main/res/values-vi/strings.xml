@@ -941,11 +941,11 @@
     <!-- Orders tab boards (#401) -->
     <string name="orders_v2_title_rent">Đơn thuê</string>
     <string name="orders_v2_title_sale">Đơn bán</string>
-    <string name="orders_v2_search_placeholder">Tìm tên, SĐT, mã đơn, tên đồ</string>
+    <string name="orders_v2_search_placeholder">Tìm tên, SĐT hoặc mã đơn</string>
     <string name="orders_v2_search_cancel">Huỷ</string>
     <string name="orders_v2_search_clear">Xoá nội dung tìm</string>
     <plurals name="orders_v2_search_summary">
-        <item quantity="other">%1$d đơn khớp “%2$s” · tìm trong mọi trạng thái, cả tên đồ</item>
+        <item quantity="other">%1$d đơn khớp “%2$s” · tìm trong mọi trạng thái</item>
     </plurals>
     <plurals name="orders_v2_count">
         <item quantity="other">%1$d đơn</item>

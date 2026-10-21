@@ -25,13 +25,14 @@ export function orderListOrderBy(sortBy: string, sortOrder: 'asc' | 'desc'): Pri
 }
 
 /**
- * Build search conditions for orders with contains matching across:
+ * Build search conditions for orders. A query matches only:
  * - order number
  * - customer phone
  * - customer first name / last name / full name
  *
  * Customer-name matching is diacritics-insensitive via PostgreSQL unaccent(),
  * so "hong ngoc" matches both "Hồng Ngọc" and "Hong Ngoc".
+ * Item and product names are not searched.
  */
 export async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
   const searchTerm = searchInput.trim();
@@ -87,30 +88,6 @@ export async function buildOrderSearchConditions(searchInput: string, merchantId
   if (matchingCustomerIds.length > 0) {
     conditions.push({ customerId: { in: matchingCustomerIds } });
   }
-
-  // Step 3 (#362): orders by the name of an item — the merchant's products (accent-insensitive) and the
-  // name snapshot kept on each order item
-  try {
-    const productMerchantFilter = merchantId != null
-      ? Prisma.sql`AND "merchantId" = ${merchantId}`
-      : Prisma.empty;
-    const productResults: Array<{ id: number }> = await prisma.$queryRaw`
-      SELECT id FROM "Product"
-      WHERE unaccent(lower(COALESCE("name", ''))) LIKE ${namePattern}
-      ${productMerchantFilter}
-      LIMIT 2000
-    `;
-    const matchingProductIds = productResults.map((result) => result.id);
-    if (matchingProductIds.length > 0) {
-      conditions.push({ orderItems: { some: { productId: { in: matchingProductIds } } } });
-    }
-  } catch {
-    // unaccent() unavailable — the snapshot match below still works
-  }
-  conditions.push(
-    { orderItems: { some: { productName: { contains: searchTerm, mode: 'insensitive' } } } },
-    { orderItems: { some: { product: { name: { contains: searchTerm, mode: 'insensitive' } } } } }
-  );
 
   return conditions;
 }

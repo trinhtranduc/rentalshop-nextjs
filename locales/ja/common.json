@@ -215,7 +215,7 @@
     "openMenu": "メニューを開く",
     "closeMenu": "メニューを閉じる",
     "search": "検索",
-    "searchPlaceholder": "名前、電話番号、注文番号、商品名で検索",
+    "searchPlaceholder": "名前、電話番号、注文番号で検索",
     "themeToDark": "ダークテーマに切り替え",
     "themeToLight": "ライトテーマに切り替え",
     "logout": "ログアウト",

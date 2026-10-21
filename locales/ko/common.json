@@ -215,7 +215,7 @@
     "openMenu": "메뉴 열기",
     "closeMenu": "메뉴 닫기",
     "search": "검색",
-    "searchPlaceholder": "이름, 전화번호, 주문번호, 상품명 검색",
+    "searchPlaceholder": "이름, 전화번호, 주문번호 검색",
     "themeToDark": "다크 테마로 전환",
     "themeToLight": "라이트 테마로 전환",
     "logout": "로그아웃",

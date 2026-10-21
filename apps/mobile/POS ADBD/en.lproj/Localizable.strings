@@ -1914,11 +1914,11 @@
 /* Orders tab boards (#401) */
 "orders.v2.title.rent" = "Rentals";
 "orders.v2.title.sale" = "Sales";
-"orders.v2.search.placeholder" = "Name, phone, order number, item";
+"orders.v2.search.placeholder" = "Name, phone, or order number";
 "orders.v2.search.cancel" = "Cancel";
 "orders.v2.search.clear" = "Clear search";
-"orders.v2.search.summary" = "%d orders match “%@” · all statuses, item names too";
-"orders.v2.search.summary.one" = "%d order matches “%@” · all statuses, item names too";
+"orders.v2.search.summary" = "%d orders match “%@” · all statuses";
+"orders.v2.search.summary.one" = "%d order matches “%@” · all statuses";
 "orders.v2.count" = "%d orders";
 "orders.v2.count.one" = "%d order";
 "orders.v2.band.work" = "hand over %d · take back %d";
