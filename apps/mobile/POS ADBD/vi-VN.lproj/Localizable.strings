@@ -1552,6 +1552,7 @@
 "products.scan.notFound" = "Không tìm thấy sản phẩm có mã %@";
 "products.stepper.minus" = "Bớt 1";
 "products.stepper.plus" = "Thêm 1";
+"products.stepper.enter" = "Nhập số lượng";
 "products.detail.edit" = "Sửa";
 "products.detail.deposit" = "cọc %@";
 "products.detail.orders" = "Đơn của sản phẩm";

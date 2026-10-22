@@ -1114,3 +1114,15 @@ enum CartDateRowLogic {
                      days: CartV2Logic.rentalDays(pickup: pickup, return: returnDate, timeZone: timeZone))
     }
 }
+
+/// Quantity from the shared number-pad sheet (#1162).
+enum QuantityEntry {
+    /// 9.999 is enough stock for a rental SKU. The pad's "000" would otherwise jump to millions.
+    static let maximum = 9_999
+
+    static func fromPad(_ value: Double, minimum: Int) -> Int {
+        guard value.isFinite else { return minimum }
+        let n = value >= Double(maximum) ? maximum : Int(value)
+        return min(max(n, minimum), maximum)
+    }
+}

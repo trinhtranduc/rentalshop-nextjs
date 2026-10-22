@@ -595,6 +595,7 @@
     <string name="v2_scan_not_found">Không tìm thấy sản phẩm có mã %1$s</string>
     <string name="v2_stepper_minus">Bớt 1</string>
     <string name="v2_stepper_plus">Thêm 1</string>
+    <string name="v2_stepper_enter">Nhập số lượng</string>
     <string name="v2_detail_edit">Sửa</string>
     <string name="v2_detail_deposit">cọc %1$s</string>
     <string name="v2_detail_orders">Đơn của sản phẩm</string>

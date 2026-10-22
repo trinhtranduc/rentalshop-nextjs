@@ -373,6 +373,29 @@ final class AnyRentE2ETests: XCTestCase {
         }
     }
 
+    /// #1162: tap the quantity number, type 20 on the shared pad, confirm.
+    func test2bQuantityPad() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        guard e2e.openCartWithOneItem() else { return XCTFail("Could not open the cart with an item") }
+        e2e.shot("qty-1-cart")
+        let enter = e2e.button(["Nhập số lượng", "Enter quantity"])
+        guard e2e.scrollTo(enter) else { return XCTFail("cart line has Nhập số lượng") }
+        enter.tap()
+        let confirm = e2e.button(["Confirm", "Xác nhận"])
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "the quantity pad opens")
+        e2e.shot("qty-2-pad")
+        for key in ["2", "0"] { e2e.tapIfExists(e2e.button([key]), timeout: 2) }
+        XCTAssertTrue(app.staticTexts["20"].waitForExistence(timeout: 2), "the pad shows 20")
+        e2e.shot("qty-3-typed-20")
+        confirm.tap()
+        sleep(1)
+        XCTAssertTrue(enter.waitForExistence(timeout: 5), "pad closes")
+        XCTAssertTrue(app.staticTexts["20"].waitForExistence(timeout: 3), "the cart line quantity is 20")
+        e2e.shot("qty-4-applied")
+    }
+
     /// #1079 multi-cart: bar, picker, switch, rent + sale create, delete with confirm, edit order, relaunch
     func test11MultiCart() throws {
         try e2e.requireFlag("newProducts")

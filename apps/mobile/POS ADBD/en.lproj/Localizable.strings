@@ -1554,6 +1554,7 @@
 "products.scan.notFound" = "No product with code %@";
 "products.stepper.minus" = "One less";
 "products.stepper.plus" = "One more";
+"products.stepper.enter" = "Enter quantity";
 "products.detail.edit" = "Edit";
 "products.detail.deposit" = "deposit %@";
 "products.detail.orders" = "Orders of this product";

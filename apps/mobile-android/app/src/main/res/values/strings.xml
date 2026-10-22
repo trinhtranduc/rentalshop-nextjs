@@ -596,6 +596,7 @@
     <string name="v2_scan_not_found">No product with code %1$s</string>
     <string name="v2_stepper_minus">One less</string>
     <string name="v2_stepper_plus">One more</string>
+    <string name="v2_stepper_enter">Enter quantity</string>
     <string name="v2_detail_edit">Edit</string>
     <string name="v2_detail_deposit">deposit %1$s</string>
     <string name="v2_detail_orders">Orders of this product</string>
