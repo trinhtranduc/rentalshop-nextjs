@@ -123,6 +123,40 @@ export interface PublicPlanLike {
   isPopular?: boolean;
   sortOrder?: number;
   limits?: Partial<PricingCardLimits> & { allowWebAccess?: boolean };
+  features?: unknown;
+}
+
+/** #1171: we do not sell API access; the comparison table must not show that row. */
+export const HIDDEN_COMPARISON_ROWS = ['API Access'] as const;
+
+export function visibleComparisonFeatures<T extends { name: string }>(features: T[]): T[] {
+  return features.filter((row) => !(HIDDEN_COMPARISON_ROWS as readonly string[]).includes(row.name));
+}
+
+function featureNames(features: unknown): string[] {
+  if (!Array.isArray(features)) return [];
+  return features.flatMap((item) => {
+    if (typeof item === 'string') return [item];
+    if (item && typeof item === 'object' && 'name' in item && typeof (item as { name: unknown }).name === 'string') {
+      return [(item as { name: string }).name];
+    }
+    return [];
+  });
+}
+
+function normalizeFeature(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * #1171: the pricing page shows web only when the plan’s features include it.
+ * Production Basic has limits.allowWebAccess true and no web feature — that flag must not win.
+ */
+export function planHasWebDashboard(plan: Pick<PublicPlanLike, 'features'>): boolean {
+  const names = featureNames(plan.features).map(normalizeFeature);
+  return names.some(
+    (n) => n.includes('webdashboard') || n === 'allprofessionalfeatures' || n.includes('allprofessional')
+  );
 }
 
 const FALLBACK_IDS = ['basic', 'professional', 'enterprise'];
@@ -166,7 +200,7 @@ export function buildPricingCards(plans: PublicPlanLike[] | null | undefined, lo
         outlets: limitOf(l.outlets),
         orders: limitOf(l.orders),
       },
-      web: typeof l.allowWebAccess === 'boolean' ? l.allowWebAccess : null,
+      web: planHasWebDashboard(p),
     };
   });
 }

@@ -23,11 +23,14 @@ import {
   Link as LinkIcon
 } from 'lucide-react';
 import { getPlanComparison } from '@rentalshop/constants';
+import PublicSiteHeader from '../components/PublicSiteHeader';
+import PublicSiteFooter from '../components/PublicSiteFooter';
 import {
   COMPARISON_NAME_KEYS,
   buildPricingCards,
   formatPlanLimit,
   planTextKeys,
+  visibleComparisonFeatures,
   type PricingCard,
   type PricingCardLimits,
   type PublicPlanLike,
@@ -58,6 +61,7 @@ export default function PricingClient({ plans: apiPlans }: Props) {
   // #1147: real plans, prices and limits; never the SUBSCRIPTION_PLANS constants
   const plans = buildPricingCards(apiPlans, locale);
   const comparison = getPlanComparison();
+  const comparisonFeatures = visibleComparisonFeatures(comparison.features);
   const cardById = (id: string): PricingCard | undefined => plans.find((p) => p.id === id);
 
   const getPlanIcon = (planId: string) => {
@@ -81,7 +85,9 @@ export default function PricingClient({ plans: apiPlans }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50">
+      <PublicSiteHeader />
+      <div className="py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -261,7 +267,7 @@ export default function PricingClient({ plans: apiPlans }: Props) {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {comparison.features.map((feature, index) => (
+                {comparisonFeatures.map((feature, index) => (
                   <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {COMPARISON_NAME_KEYS[feature.name] ? t(COMPARISON_NAME_KEYS[feature.name]) : feature.name}
@@ -280,6 +286,26 @@ export default function PricingClient({ plans: apiPlans }: Props) {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* #1171 paid extras: extra user, extra outlet, attendance */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('addonTitle')}</h2>
+          <p className="text-gray-600 mb-6">{t('addonIntro')}</p>
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3 text-gray-800">
+              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <span>{t('addonUser')}</span>
+            </li>
+            <li className="flex items-start gap-3 text-gray-800">
+              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <span>{t('addonOutlet')}</span>
+            </li>
+            <li className="flex items-start gap-3 text-gray-800">
+              <Check className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+              <span>{t('addonAttendance')}</span>
+            </li>
+          </ul>
         </div>
 
         {/* FAQ Section */}
@@ -343,6 +369,8 @@ export default function PricingClient({ plans: apiPlans }: Props) {
           </div>
         </div>
       </div>
+      </div>
+      <PublicSiteFooter />
     </div>
   );
 }
