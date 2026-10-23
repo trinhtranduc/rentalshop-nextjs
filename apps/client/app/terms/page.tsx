@@ -298,7 +298,7 @@ export default function TermsPage() {
             <div className="bg-bg-secondary rounded-lg p-4 inline-block text-text-secondary">
               <div className="flex items-center mb-1">
                 <Mail className="w-4 h-4 mr-2" />
-                <span>trinhduc20@gmail.com</span>
+                <span>support@anyrent.shop</span>
               </div>
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2" />

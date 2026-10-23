@@ -110,6 +110,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Service',
+      email: 'support@anyrent.shop',
       availableLanguage: ['Vietnamese', 'English', 'Chinese', 'Korean', 'Japanese'],
     },
   };
@@ -200,7 +201,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
     image: logoUrl,
     priceRange: '$$',
     telephone: '+84764774647',
-    email: 'trinhduc20@gmail.com',
+    email: 'support@anyrent.shop',
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'VN',
@@ -767,7 +768,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                 <div className="space-y-4">
                   {/* Email */}
                   <a
-                    href={`mailto:trinhduc20@gmail.com?subject=${encodeURIComponent(t('customSolution.contact.emailSubject'))}&body=${encodeURIComponent(t('customSolution.contact.emailBody'))}`}
+                    href={`mailto:${t('footer.emailAddress')}?subject=${encodeURIComponent(t('customSolution.contact.emailSubject'))}&body=${encodeURIComponent(t('customSolution.contact.emailBody'))}`}
                     className="flex items-center space-x-4 p-4 bg-sky-50/80 hover:bg-sky-50 rounded-xl transition-all duration-200 border border-sky-100 hover:border-sky-200 group"
                   >
                     <div className="w-12 h-12 bg-white border border-sky-100 rounded-xl flex items-center justify-center group-hover:border-sky-200 transition-colors">
@@ -775,7 +776,7 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
                     </div>
                     <div className="flex-1">
                       <div className="text-sm text-slate-500 mb-1">{t('customSolution.contact.email')}</div>
-                      <div className="text-slate-900 font-semibold text-sm">trinhduc20@gmail.com</div>
+                      <div className="text-slate-900 font-semibold text-sm">{t('footer.emailAddress')}</div>
                     </div>
                     <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-sky-700 transition-colors" />
                   </a>
@@ -1730,11 +1731,15 @@ const Footer = React.memo(() => {
             <p className="text-gray-400 mb-4 text-sm">
               {tf('description')}
             </p>
-            <div className="flex space-x-4">
-              <a href="mailto:trinhduc20@gmail.com" className="text-gray-400 hover:text-white transition-colors" aria-label="Email">
-                <Mail className="w-5 h-5" />
+            <div className="space-y-3">
+              <a
+                href={`mailto:${tf('emailAddress')}`}
+                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                <Mail className="w-4 h-4 shrink-0" />
+                {tf('emailAddress')}
               </a>
-              <a href="https://wa.me/840764774647" className="text-gray-400 hover:text-white transition-colors" aria-label="WhatsApp">
+              <a href="https://wa.me/840764774647" className="inline-flex text-gray-400 hover:text-white transition-colors" aria-label="WhatsApp">
                 <Phone className="w-5 h-5" />
               </a>
             </div>
