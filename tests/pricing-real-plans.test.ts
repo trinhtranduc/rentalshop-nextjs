@@ -5,19 +5,26 @@
  * Must hold under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import { describe, expect, it } from '@jest/globals';
-import { buildPricingCards, fallbackPricingCards } from '../apps/client/lib/pricing-format';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { getPlanComparison } from '../packages/constants/src/subscription';
+import {
+  buildPricingCards,
+  fallbackPricingCards,
+  visibleComparisonFeatures,
+} from '../apps/client/lib/pricing-format';
 
 const limits = (products: number, customers: number, users: number, outlets: number, orders: number) => ({
   products, customers, users, outlets, orders, allowWebAccess: true, allowMobileAccess: true,
 });
 
-// Shape of production GET https://api.anyrent.shop/api/plans/public on 2026-10-20
+// Shape of production GET https://api.anyrent.shop/api/plans/public on 2026-10-23
 const apiPlans = [
-  { id: 3, name: 'Professional', basePrice: 179000, currency: 'VND', isActive: true, isPopular: true, sortOrder: 2, limits: limits(5000, -1, 4, 1, 5000) },
-  { id: 1, name: 'Trial', basePrice: 0, currency: 'VND', isActive: true, isPopular: false, sortOrder: 0, limits: limits(2000, -1, 3, 1, 2000) },
-  { id: 4, name: 'Enterprise', basePrice: 0, currency: 'VND', isActive: true, isPopular: false, sortOrder: 3, limits: limits(-1, -1, -1, -1, -1) },
-  { id: 2, name: 'Basic', basePrice: 99000, currency: 'VND', isActive: true, isPopular: false, sortOrder: 1, limits: limits(2000, -1, 2, 1, 2000) },
-  { id: 9, name: 'Old', basePrice: 50000, currency: 'VND', isActive: false, isPopular: false, sortOrder: 4, limits: limits(1, 1, 1, 1, 1) },
+  { id: 3, name: 'Professional', basePrice: 179000, currency: 'VND', isActive: true, isPopular: true, sortOrder: 2, limits: limits(5000, -1, 4, 1, 5000), features: ['All Basic features', 'Web dashboard access'] },
+  { id: 1, name: 'Trial', basePrice: 0, currency: 'VND', isActive: true, isPopular: false, sortOrder: 0, limits: limits(2000, -1, 3, 1, 2000), features: ['Mobile app access'] },
+  { id: 4, name: 'Enterprise', basePrice: 0, currency: 'VND', isActive: true, isPopular: false, sortOrder: 3, limits: limits(-1, -1, -1, -1, -1), features: ['All Professional features'] },
+  { id: 2, name: 'Basic', basePrice: 99000, currency: 'VND', isActive: true, isPopular: false, sortOrder: 1, limits: limits(2000, -1, 2, 1, 2000), features: ['Mobile app access', 'Basic inventory management'] },
+  { id: 9, name: 'Old', basePrice: 50000, currency: 'VND', isActive: false, isPopular: false, sortOrder: 4, limits: limits(1, 1, 1, 1, 1), features: [] },
 ];
 
 describe('pricing cards from the real plans (#1147)', () => {
@@ -33,7 +40,17 @@ describe('pricing cards from the real plans (#1147)', () => {
     expect(basic.limits).toEqual({ products: 2000, customers: -1, users: 2, outlets: 1, orders: 2000 });
     expect(pro.limits).toEqual({ products: 5000, customers: -1, users: 4, outlets: 1, orders: 5000 });
     expect(ent.limits?.products).toBe(-1);
-    expect(basic.web).toBe(true);
+    // #1171: Basic allowWebAccess is true in production, but features have no web dashboard
+    expect(basic.web).toBe(false);
+    expect(pro.web).toBe(true);
+    expect(ent.web).toBe(true);
+  });
+
+  it('#1171 hides API Access and keeps Home on the pricing page', () => {
+    expect(visibleComparisonFeatures(getPlanComparison().features).map((f) => f.name)).not.toContain('API Access');
+    const src = readFileSync(join(__dirname, '../apps/client/app/pricing/PricingClient.tsx'), 'utf8');
+    expect(src).toMatch(/PublicSiteHeader/);
+    expect(src).toMatch(/addonTitle/);
   });
 
   it.each(['en', 'ru', 'ja', 'ko', 'zh', 'zh-TW', 'fr', 'de', 'th', 'id', 'es'])('%s: no amount on any card (#1121)', (locale) => {

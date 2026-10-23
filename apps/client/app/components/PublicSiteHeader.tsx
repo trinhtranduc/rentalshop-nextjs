@@ -34,6 +34,12 @@ export default function PublicSiteHeader() {
 
           <div className="hidden items-center space-x-8 md:flex">
             <Link
+              href={href('home')}
+              className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+            >
+              {t('navigation.home')}
+            </Link>
+            <Link
               href={href('features')}
               className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
             >
@@ -77,6 +83,12 @@ export default function PublicSiteHeader() {
           </div>
 
           <div className="flex items-center space-x-3 md:hidden">
+            <Link
+              href={href('home')}
+              className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+            >
+              {t('navigation.home')}
+            </Link>
             <LanguageSwitcher variant="compact" {...switcher} />
             <Button
               asChild
