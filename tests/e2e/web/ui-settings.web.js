@@ -59,6 +59,7 @@ async function main() {
       check('SET-01 sidebar "Cài đặt cửa hàng" opens the dialog on the shop tab (?settings=merchant)', /settings=merchant/.test(page.url()), page.url());
       const tabs = [
         ['Thông tin cửa hàng', 'merchant', /Tên cửa hàng/],
+        ['Trang shop công khai', 'public-page', /Hiện giá trên trang shop/],
         ['Phiếu in', 'receipt', /Ghi chú in hóa đơn/],
         ['Gói dịch vụ', 'subscription', /Mức sử dụng/],
         ['Tài khoản của tôi', 'profile', /Họ/],
@@ -335,6 +336,104 @@ async function main() {
       await api.call('DELETE', `/api/products/${small.id}`).catch(() => {});
       await api.call('DELETE', `/api/customers/${cust.id}`).catch(() => {});
       await api.call('PUT', '/api/settings/merchant', { allowOverlappingOrders: true });
+    }, sp);
+
+    await H.runCase('WEB-UI-SET-11', 'Hiện giá trên trang shop: tắt thì khách thấy Liên hệ, bật thì thấy số tiền; restored', async () => {
+      const wantedOn = merchant0.showPublicPrice !== false;
+      restore.push(() => api.call('PUT', '/api/settings/merchant', { showPublicPrice: wantedOn }).catch(() => {}));
+      const tenantKey = merchant0.tenantKey;
+      check('SET-11 merchant has a public tenantKey', !!tenantKey, tenantKey);
+
+      const waitMerchantPut = () =>
+        page.waitForResponse((r) => /\/api\/settings\/merchant/.test(r.url()) && r.request().method() === 'PUT', { timeout: 30000 });
+      const dumpPut = async (res) => {
+        const body = res ? res.request().postData() : '';
+        const json = res ? await res.json().catch(() => ({})) : {};
+        const line = `HTTP ${res ? res.status() : 'none'} body=${body} resp=${JSON.stringify(json).slice(0, 400)}`;
+        console.log(`  SET-11 PUT /api/settings/merchant ${line}`);
+        return { body, json, line, status: res && res.status() };
+      };
+      const clickPriceSwitch = async () => {
+        const put = waitMerchantPut();
+        await dlg().locator('[data-show-public-price-setting] [role="switch"]').click();
+        return dumpPut(await put.catch(() => null));
+      };
+
+      await openTab('public-page');
+      const sw = dlg().locator('[data-show-public-price-setting] [role="switch"]');
+      await sw.waitFor({ timeout: 30000 });
+      await page.waitForTimeout(800);
+      const tabText = (await dlg().innerText()).replace(/\s+/g, ' ');
+      check('SET-11 tab shows "Hiện giá trên trang shop" and the switch', /Hiện giá trên trang shop/.test(tabText) && (await sw.count()) === 1, tabText.slice(0, 240));
+
+      const guest = await browser.newContext({ locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh' });
+      const g = await guest.newPage();
+      const catalog = async () => {
+        const pub = await fetch(`${H.CFG.api}/api/public/${tenantKey}/products?limit=4`).then((r) => r.json());
+        await g.goto(`${H.CFG.client}/${tenantKey}/products`, { waitUntil: 'domcontentloaded', timeout: 180000 });
+        await H.settle(g, 25000);
+        const product = (pub.data && pub.data.products && pub.data.products[0]) || {};
+        const card = product.name ? g.getByRole('button').filter({ hasText: product.name }).first() : g.locator('button').first();
+        const cardText = (await card.innerText().catch(() => '')).replace(/\s+/g, ' ');
+        return {
+          showPublicPrice: pub.data && pub.data.merchant && pub.data.merchant.showPublicPrice,
+          rentPrice: product.rentPrice,
+          hasRentPrice: product.hasRentPrice,
+          cardText,
+          products: ((pub.data && pub.data.products) || []).length
+        };
+      };
+
+      if ((await sw.getAttribute('aria-checked')) !== 'true') {
+        const turnOn = await clickPriceSwitch();
+        check('SET-11 start from ON: PUT 200', turnOn.status === 200, turnOn.line);
+      }
+
+      const onCat = await catalog();
+      check(
+        'SET-11 prices ON: public API keeps rentPrice and merchant.showPublicPrice true',
+        onCat.showPublicPrice === true && onCat.products > 0 && onCat.rentPrice != null,
+        JSON.stringify(onCat)
+      );
+      check(
+        'SET-11 prices ON: product card shows a money amount, not "Liên hệ"',
+        /\d/.test(onCat.cardText) && !/Liên hệ/.test(onCat.cardText),
+        onCat.cardText
+      );
+
+      const offPut = await clickPriceSwitch();
+      let offBody = {};
+      try {
+        offBody = JSON.parse(offPut.body || '{}');
+      } catch {
+        offBody = {};
+      }
+      check('SET-11 turn OFF: PUT body is only { showPublicPrice: false }', offBody.showPublicPrice === false && Object.keys(offBody).length === 1, offPut.line);
+      check(
+        'SET-11 turn OFF: HTTP 200, not BUSINESS_NAME_REQUIRED / "Business name is required"',
+        offPut.status === 200 && offPut.json.code !== 'BUSINESS_NAME_REQUIRED',
+        offPut.line
+      );
+
+      const offCat = await catalog();
+      check(
+        'SET-11 prices OFF: public API nulls rentPrice and merchant.showPublicPrice false',
+        offCat.showPublicPrice === false && offCat.rentPrice == null && offCat.hasRentPrice === true,
+        JSON.stringify(offCat)
+      );
+      check(
+        'SET-11 prices OFF: product card shows "Liên hệ", not a money amount',
+        /Liên hệ/.test(offCat.cardText) && !/₫|VND|\/ ngày|\/ngày/.test(offCat.cardText),
+        offCat.cardText
+      );
+
+      const onPut = await clickPriceSwitch();
+      check('SET-11 turn ON again: PUT 200 { showPublicPrice: true }', onPut.status === 200 && /"showPublicPrice":true/.test(onPut.body || ''), onPut.line);
+      const back = await catalog();
+      check('SET-11 prices ON again: card shows money', /\d/.test(back.cardText) && !/Liên hệ/.test(back.cardText), back.cardText);
+
+      await guest.close();
+      await api.call('PUT', '/api/settings/merchant', { showPublicPrice: wantedOn }).catch(() => {});
     }, sp);
   } finally {
     for (const fn of restore.reverse()) await fn();
