@@ -957,8 +957,8 @@ const LandingPage = ({ publicLocale }: { publicLocale?: PublicLocale } = {}) => 
       {/* Footer - Below the fold */}
       <PublicSiteFooter />
       
-      {/* FloatingButtons */}
-      <FloatingButtons />
+      {/* Crisp occupies the bottom-right corner; Zalo/WhatsApp/Telegram stay in the contact card. */}
+      {false && <FloatingButtons />}
     </div>
     </>
   );
