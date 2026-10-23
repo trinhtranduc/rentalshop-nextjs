@@ -48,7 +48,7 @@ export default function PrivacyPage() {
                   <li>
                     {isVi ? 'Tên cá nhân: TRẦN ĐỨC TRÌNH' : 'Individual name: TRAN DUC TRINH'}
                   </li>
-                  <li>Email: trinhduc20@gmail.com</li>
+                  <li>Email: support@anyrent.shop</li>
                   <li>Phone: +84 76 477 4647</li>
                   <li>{isVi ? 'Quốc gia: Việt Nam' : 'Country: Vietnam'}</li>
                 </ul>
@@ -226,8 +226,8 @@ export default function PrivacyPage() {
               </p>
               <p>
                 {isVi
-                  ? 'Để thực hiện các quyền này, hãy liên hệ qua email: trinhduc20@gmail.com. Tôi sẽ cố gắng phản hồi trong vòng 30 ngày.'
-                  : 'To exercise these rights, contact me at: trinhduc20@gmail.com. I will do my best to respond within 30 days.'}
+                  ? 'Để thực hiện các quyền này, hãy liên hệ qua email: support@anyrent.shop. Tôi sẽ cố gắng phản hồi trong vòng 30 ngày.'
+                  : 'To exercise these rights, contact me at: support@anyrent.shop. I will do my best to respond within 30 days.'}
               </p>
             </div>
           </section>
@@ -263,8 +263,8 @@ export default function PrivacyPage() {
             </h2>
             <p className="text-text-secondary">
               {isVi
-                ? 'Nếu bạn có bất kỳ câu hỏi nào về chính sách này hoặc cách tôi xử lý dữ liệu cá nhân, hãy liên hệ qua email: trinhduc20@gmail.com hoặc số điện thoại: +84 76 477 4647.'
-                : 'If you have any questions about this Policy or how I handle personal data, please contact me at: trinhduc20@gmail.com or phone: +84 76 477 4647.'}
+                ? 'Nếu bạn có bất kỳ câu hỏi nào về chính sách này hoặc cách tôi xử lý dữ liệu cá nhân, hãy liên hệ qua email: support@anyrent.shop hoặc số điện thoại: +84 76 477 4647.'
+                : 'If you have any questions about this Policy or how I handle personal data, please contact me at: support@anyrent.shop or phone: +84 76 477 4647.'}
             </p>
           </section>
         </div>

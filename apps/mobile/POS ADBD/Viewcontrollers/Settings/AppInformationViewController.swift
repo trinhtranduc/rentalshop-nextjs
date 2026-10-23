@@ -56,7 +56,7 @@ class AppInformationViewController: BaseViewControler {
             case .build: return Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
             case .privacyPolicy: return ""
             case .termsOfService: return ""
-            case .email: return "trinhduc20@gmail.com"
+            case .email: return "support@anyrent.shop"
             case .website: return AppLegalLinks.websiteHost
             }
         }
@@ -77,7 +77,7 @@ class AppInformationViewController: BaseViewControler {
             case .termsOfService:
                 return URL(string: AppLegalLinks.termsURL)
             case .email:
-                return URL(string: "mailto:trinhduc20@gmail.com")
+                return URL(string: "mailto:support@anyrent.shop")
             case .website:
                 return URL(string: AppLegalLinks.websiteURL)
             default:
