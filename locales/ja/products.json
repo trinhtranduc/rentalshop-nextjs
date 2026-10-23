@@ -98,7 +98,8 @@
       "errorBusy": "画像検索が混み合っています。数分後にもう一度お試しください。",
       "errorNetwork": "接続できません。ネットワークを確認してもう一度お試しください。",
       "errorGeneric": "現在検索できません。もう一度お試しください。"
-    }
+    },
+    "priceHidden": "お問い合わせ"
   },
   "uncategorized": "未分類",
   "productsPlural": "件の商品",

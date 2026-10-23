@@ -98,7 +98,8 @@
       "errorBusy": "La recherche par photo est occupée. Réessayez dans quelques minutes.",
       "errorNetwork": "Pas de connexion. Vérifiez votre réseau et réessayez.",
       "errorGeneric": "La recherche n’a pas fonctionné. Réessayez."
-    }
+    },
+    "priceHidden": "Nous contacter"
   },
   "uncategorized": "Sans catégorie",
   "productsPlural": "articles",

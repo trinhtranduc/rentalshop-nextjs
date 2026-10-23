@@ -88,6 +88,11 @@ export function zaloLink(phone?: string | null): string | null {
 }
 
 /** Up to two initials for the logo tile: "Lan Anh Bridal" → "LA" */
+/** Catalogue amounts: missing flag (old API) keeps showing prices. */
+export function catalogShowsPrices(showPublicPrice?: boolean | null): boolean {
+  return showPublicPrice !== false;
+}
+
 export function shopInitials(name?: string | null): string {
   const words = (name ?? '').trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '?';

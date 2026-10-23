@@ -131,20 +131,19 @@ describe('POST /api/public/[tenantKey]/booking-requests', () => {
     expect((await create(body({ phone: '0900000099' }), '3.3.3.3')).status).toBe(429);
   });
 
-  it('409 BOOKING_NOT_AVAILABLE with the product and day when an item is full on one day', async () => {
+  it('#1174 occupying orders do not 409: the guest request is still saved', async () => {
     mockStore.orders.push({ id: 5, outletId: 3, productId: 12, quantity: 1, status: 'RESERVED', orderType: 'RENT', pickupPlanAt: vnDay('2026-10-23'), returnPlanAt: vnDay('2026-10-25') });
     const res = await create(body());
-    expect(res.status).toBe(409);
-    expect(res.body.code).toBe('BOOKING_NOT_AVAILABLE');
-    expect(res.body.data).toEqual({ productId: 12, date: '2026-10-23' });
-    expect(mockStore.requests).toHaveLength(0);
+    expect(res.status).toBe(201);
+    expect(res.body.code).toBe('BOOKING_REQUEST_CREATED');
+    expect(mockStore.requests).toHaveLength(1);
   });
 
-  it('a same-day pickup and return still occupies that day', async () => {
+  it('#1174 a same-day pickup and return still creates a request when that day is occupied', async () => {
     mockStore.orders.push({ id: 6, outletId: 3, productId: 12, quantity: 1, status: 'RESERVED', orderType: 'RENT', pickupPlanAt: vnDay('2026-10-21'), returnPlanAt: vnDay('2026-10-21') });
     const res = await create(body({ returnDate: '2026-10-21' }));
-    expect(res.status).toBe(409);
-    expect(res.body.data).toEqual({ productId: 12, date: '2026-10-21' });
+    expect(res.status).toBe(201);
+    expect(mockStore.requests).toHaveLength(1);
   });
 
   it('refuses: shop off (403), outlet not taking requests, past pickup, another shop’s product, bad phone (400)', async () => {

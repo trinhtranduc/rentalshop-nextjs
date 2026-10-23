@@ -153,6 +153,7 @@ export default async function PublicProductsPage({
         tenantKey={tenantKey}
         onlineBooking={merchant.onlineBooking === true}
         imageSearchAvailable={merchant.imageSearchAvailable === true}
+        showPublicPrice={merchant.showPublicPrice !== false}
         outlets={outlets}
       />
       <PublicShopFooter />

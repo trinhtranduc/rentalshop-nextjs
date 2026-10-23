@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { publicBookingApi, type PublicBookingDay } from '@rentalshop/utils';
 import type { Product } from '@rentalshop/types';
-import { formatShopMoney, productPriceLines } from '../lib/public-shop';
+import { catalogShowsPrices, formatShopMoney, productPriceLines } from '../lib/public-shop';
 import {
   calendarMonth,
   monthLabel,
   monthOf,
-  monthRange,
   nightsBetween,
   pickRange,
-  rangeIsFree,
   shiftMonth,
   weekdayLabels,
   type BookingRequestDraft,
@@ -35,11 +32,13 @@ interface BookingPickerProps {
   /** The request already in the browser: its outlet and days are suggested (one range for the whole request) */
   draft: BookingRequestDraft;
   onAdd: (where: { outletId: number; pickupDate: string; returnDate: string }, quantity: number) => void;
+  showPublicPrice?: boolean;
 }
 
-/** #1124 mockup screen 2 — branch, a free/full month calendar, quantity, estimate, "Thêm vào yêu cầu" */
-export function BookingPicker({ tenantKey, product, outlets, currency, todayKey, draft, onAdd }: BookingPickerProps) {
+/** #1124 mockup screen 2 — branch, month calendar, quantity, estimate, "Thêm vào yêu cầu". #1174 no Còn/Hết. */
+export function BookingPicker({ product, outlets, currency, todayKey, draft, onAdd, showPublicPrice }: BookingPickerProps) {
   const t = useTranslations('products.public.booking');
+  const tp = useTranslations('products.public');
   const locale = useLocale();
   const accepting = outlets.filter((o) => o.acceptsOnlineBooking);
   const [outletId, setOutletId] = useState<number>(
@@ -49,44 +48,18 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
   const [range, setRange] = useState<DateRange>(
     draft.pickupDate && draft.returnDate && draft.pickupDate >= todayKey ? { pickup: draft.pickupDate, return: draft.returnDate } : { pickup: null, return: null }
   );
-  const [days, setDays] = useState<PublicBookingDay[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
-  useEffect(() => {
-    if (!outletId) return;
-    let active = true;
-    const { from, to } = monthRange(month);
-    setLoading(true);
-    setFailed(false);
-    publicBookingApi.availability(tenantKey, { productId: product.id, outletId, from, to }).then((res) => {
-      if (!active) return;
-      setLoading(false);
-      if (res.success && res.data) {
-        const incoming = res.data.days;
-        // Keep the other months already seen so a range across two months can be checked
-        setDays((prev) => [...prev.filter((d) => !incoming.some((n) => n.date === d.date)), ...incoming]);
-      } else setFailed(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, [tenantKey, product.id, outletId, month]);
-
-  // A new branch: the days seen belong to the old one
-  useEffect(() => setDays([]), [outletId]);
-
-  const grid = useMemo(() => calendarMonth(month, days, todayKey), [month, days, todayKey]);
+  const grid = useMemo(() => calendarMonth(month, [], todayKey), [month, todayKey]);
   const prices = productPriceLines(product);
-  const complete = range.pickup && range.return;
-  const free = complete ? rangeIsFree(days, range.pickup!, range.return!) : false;
+  const showPrices = catalogShowsPrices(showPublicPrice);
+  const complete = Boolean(range.pickup && range.return);
   const dayCount = complete ? nightsBetween(range.pickup!, range.return!) : 0;
-  const estimate = complete && prices.main ? quantity * (prices.main.unit === 'day' ? prices.main.amount * dayCount : prices.main.amount) : null;
+  const estimate = complete && showPrices && prices.main ? quantity * (prices.main.unit === 'day' ? prices.main.amount * dayCount : prices.main.amount) : null;
   const sameAsDraft = draft.items.length > 0;
 
   const tap = (key: string, state: string) => {
-    if (state === 'past' || state === 'full' || state === 'unknown') return;
+    if (state === 'past') return;
     setRange((r) => pickRange(r, key));
   };
 
@@ -156,7 +129,7 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
           {grid.days.map((d) => {
             const selected = inRange(d.date);
             const edge = d.date === range.pickup || d.date === range.return;
-            const disabled = d.state !== 'free';
+            const disabled = d.state === 'past';
             return (
               <button
                 key={d.date}
@@ -170,11 +143,9 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
                     ? 'bg-blue-700 font-bold text-white'
                     : selected
                       ? 'bg-blue-100 text-blue-800'
-                      : d.state === 'full'
-                        ? 'text-slate-300 line-through'
-                        : d.state === 'free'
-                          ? 'text-slate-900 hover:bg-slate-100'
-                          : 'text-slate-300'
+                      : d.state === 'free'
+                        ? 'text-slate-900 hover:bg-slate-100'
+                        : 'text-slate-300'
                 } ${d.today && !edge ? 'ring-1 ring-slate-300' : ''}`}
               >
                 {d.day}
@@ -187,15 +158,8 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
             <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-blue-700 align-middle" />
             {t('legendSelected')}
           </span>
-          <span>
-            <span className="mr-1 text-slate-300 line-through">8</span>
-            {t('legendFull')}
-          </span>
-          {loading && <span>{t('loadingDays')}</span>}
         </div>
-        {failed && <p className="mt-1 text-[13px] text-red-700">{t('daysError')}</p>}
         {!complete && <p className="mt-1 text-[13px] text-slate-500">{t('pickHint')}</p>}
-        {complete && !free && <p className="mt-1 text-[13px] text-red-700">{t('rangeFull')}</p>}
         {sameAsDraft && <p className="mt-1 text-[12.5px] text-slate-500">{t('sameRange')}</p>}
       </div>
 
@@ -233,12 +197,18 @@ export function BookingPicker({ tenantKey, product, outlets, currency, todayKey,
               {t('estimate')} <b className="text-slate-900">{formatShopMoney(estimate, currency, locale)}</b>
             </>
           )}
+          {!showPrices && (
+            <>
+              {' · '}
+              <b className="text-slate-900">{tp('priceHidden')}</b>
+            </>
+          )}
         </div>
       )}
 
       <button
         type="button"
-        disabled={!complete || !free || !outletId}
+        disabled={!complete || !outletId}
         onClick={() => onAdd({ outletId, pickupDate: range.pickup!, returnDate: range.return! }, quantity)}
         className="h-12 rounded-xl bg-blue-700 text-[15px] font-bold text-white disabled:opacity-40"
       >

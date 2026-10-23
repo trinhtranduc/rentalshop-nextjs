@@ -98,7 +98,8 @@
       "errorBusy": "Die Fotosuche ist ausgelastet. Bitte versuchen Sie es in ein paar Minuten erneut.",
       "errorNetwork": "Keine Verbindung. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.",
       "errorGeneric": "Die Suche hat gerade nicht funktioniert. Bitte erneut versuchen."
-    }
+    },
+    "priceHidden": "Kontakt"
   },
   "uncategorized": "Ohne Kategorie",
   "productsPlural": "Artikeln",

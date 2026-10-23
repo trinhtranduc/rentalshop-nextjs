@@ -14,6 +14,7 @@ jest.mock('next/server', () => ({
 }));
 
 const productTable = new Map<number, any>();
+const mockFlags = { showPublicPrice: true };
 const mockDb: any = {
   merchants: {
     findByTenantKey: jest.fn(async (key: string) =>
@@ -22,6 +23,9 @@ const mockDb: any = {
   },
   products: {
     findByIds: jest.fn(async (ids: number[]) => ids.map((id) => productTable.get(id)).filter((p) => p && !p.deletedAt)),
+  },
+  prisma: {
+    merchant: { findUnique: jest.fn(async () => ({ showPublicPrice: mockFlags.showPublicPrice })) },
   },
 };
 jest.mock('@rentalshop/database', () => ({ db: mockDb }));
@@ -104,6 +108,7 @@ beforeEach(() => {
   resetRateSlots();
   mockEmbed.mockReset().mockResolvedValue([0.1, 0.2]);
   mockVectorSearch.mockReset().mockResolvedValue([]);
+  mockFlags.showPublicPrice = true;
   jest.clearAllMocks();
 });
 
@@ -152,6 +157,15 @@ describe('results', () => {
     expect(list[0]).not.toHaveProperty('merchant');
     expect(list[0].available).toBe(2);
     expect(list[0].outletStock[0]).toMatchObject({ stock: 3, available: 2, renting: 1, outlet: { id: 11 } });
+    expect(list[0].rentPrice).toBe(250000);
+  });
+
+  it('#1174 hides amounts when the shop turned prices off', async () => {
+    mockFlags.showPublicPrice = false;
+    productTable.set(5, product(5));
+    mockVectorSearch.mockResolvedValue([{ productId: '5', similarity: 0.9 }]);
+    const list = (await call(image())).body.data.products;
+    expect(list[0]).toMatchObject({ id: 5, rentPrice: null, salePrice: null, deposit: null, hasRentPrice: true, similarity: 0.9 });
   });
 
   it('at most 10 products', async () => {

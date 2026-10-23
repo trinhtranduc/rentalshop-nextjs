@@ -35,23 +35,31 @@ export interface PublicProductSource {
   updatedAt?: Date | string;
 }
 
+export function sourceHasRentPrice(product: PublicProductSource): boolean {
+  if (typeof product.rentPrice === 'number' && product.rentPrice > 0) return true;
+  return (product.pricingOptions ?? []).some((option) => typeof option.price === 'number' && option.price > 0);
+}
+
 /**
  * #663 — the public shop page is open to anyone. Build its product from an allowlist so cost price
  * (giá vốn), CUIDs and internal fields never leave the API, whatever `db.products.search` adds later.
+ * #1174 `hidePrices`: keep the keys, set amounts to null; `hasRentPrice` still reflects the source so Đặt thuê works.
  */
-export function toPublicProduct(product: PublicProductSource) {
+export function toPublicProduct(product: PublicProductSource, opts?: { hidePrices?: boolean }) {
+  const hidePrices = opts?.hidePrices === true;
+  const hasRentPrice = sourceHasRentPrice(product);
   return {
     id: product.id,
     name: product.name,
     description: product.description ?? null,
     images: parseProductImages(product.images as Parameters<typeof parseProductImages>[0]),
-    rentPrice: product.rentPrice,
-    salePrice: product.salePrice ?? null,
-    deposit: product.deposit ?? 0,
+    rentPrice: hidePrices ? null : product.rentPrice,
+    salePrice: hidePrices ? null : product.salePrice ?? null,
+    deposit: hidePrices ? null : product.deposit ?? 0,
     pricingType: product.pricingType ?? null,
     pricingOptions: (product.pricingOptions ?? []).map((option) => ({
       type: option.type,
-      price: option.price,
+      price: hidePrices ? null : option.price,
       unit: option.unit ?? null,
       blockSize: option.blockSize ?? null,
       isDefault: Boolean(option.isDefault),
@@ -72,5 +80,6 @@ export function toPublicProduct(product: PublicProductSource) {
     })),
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
+    hasRentPrice,
   };
 }

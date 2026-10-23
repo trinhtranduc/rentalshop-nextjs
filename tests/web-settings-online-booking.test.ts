@@ -3,7 +3,7 @@
  * only GET /api/users/profile does. A missing key is "unknown" (load the profile), never OFF.
  */
 import { describe, expect, it } from '@jest/globals';
-import { onlineBookingFlag } from '../apps/client/app/settings/settings-model';
+import { onlineBookingFlag, showPublicPriceFlag } from '../apps/client/app/settings/settings-model';
 
 describe('onlineBookingFlag (#1138)', () => {
   it('login-shaped merchant (tenantKey, no flag) is unknown, not OFF', () => {
@@ -20,5 +20,16 @@ describe('onlineBookingFlag (#1138)', () => {
     expect(onlineBookingFlag(null)).toBeNull();
     expect(onlineBookingFlag(undefined)).toBeNull();
     expect(onlineBookingFlag({ onlineBookingEnabled: 'true' })).toBeNull();
+  });
+});
+
+describe('showPublicPriceFlag (#1174)', () => {
+  it('login-shaped merchant (no flag) is unknown', () => {
+    expect(showPublicPriceFlag({ id: 12, tenantKey: 'shop-12' })).toBeNull();
+  });
+
+  it('profile-shaped merchant gives the stored value', () => {
+    expect(showPublicPriceFlag({ showPublicPrice: true })).toBe(true);
+    expect(showPublicPriceFlag({ showPublicPrice: false })).toBe(false);
   });
 });

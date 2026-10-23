@@ -98,7 +98,8 @@
       "errorBusy": "Pencarian foto sedang sibuk. Coba lagi dalam beberapa menit.",
       "errorNetwork": "Tidak ada koneksi. Periksa jaringan lalu coba lagi.",
       "errorGeneric": "Pencarian tidak berhasil saat ini. Coba lagi."
-    }
+    },
+    "priceHidden": "Hubungi toko"
   },
   "uncategorized": "Tanpa kategori",
   "productsPlural": "produk",
