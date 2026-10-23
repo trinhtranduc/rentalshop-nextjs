@@ -23,17 +23,17 @@ export default function PublicSiteFooter() {
               <span className="text-xl font-bold text-white">AnyRent</span>
             </div>
             <p className="mb-4 text-sm text-gray-400">{t('description')}</p>
-            <div className="flex space-x-4">
+            <div className="space-y-3">
               <a
-                href="mailto:trinhduc20@gmail.com"
-                className="text-gray-400 transition-colors hover:text-white"
-                aria-label="Email"
+                href={`mailto:${t('emailAddress')}`}
+                className="flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-white"
               >
-                <Mail className="h-5 w-5" />
+                <Mail className="h-4 w-4 shrink-0" />
+                {t('emailAddress')}
               </a>
               <a
                 href="https://wa.me/840764774647"
-                className="text-gray-400 transition-colors hover:text-white"
+                className="inline-flex text-gray-400 transition-colors hover:text-white"
                 aria-label="WhatsApp"
               >
                 <Phone className="h-5 w-5" />
