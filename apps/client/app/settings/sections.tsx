@@ -537,18 +537,48 @@ export function PublicPageSection({
   canEdit,
   onSave,
   t,
+  showPublicPrice = true,
+  canEditPrice = false,
+  onPriceChanged,
 }: {
   tenantKey: string;
   publicProductLink?: string | null;
   canEdit: boolean;
   onSave: (tenantKey: string) => Promise<unknown>;
   t: T;
+  /** #1174 Hiện giá trên trang shop */
+  showPublicPrice?: boolean;
+  canEditPrice?: boolean;
+  onPriceChanged?: () => void;
 }) {
   const origin = useOrigin();
+  const ts = useTranslations('settings');
+  const { toastSuccess, toastError } = useToast();
   const [value, setValue] = useState(tenantKey);
   const [saving, setSaving] = useState(false);
   const [problem, setProblem] = useState('');
+  const [priceOn, setPriceOn] = useState(showPublicPrice);
+  const [priceSaving, setPriceSaving] = useState(false);
+  const priceTitleId = useId();
+  const priceHintId = useId();
   useEffect(() => setValue(tenantKey), [tenantKey]);
+  useEffect(() => setPriceOn(showPublicPrice), [showPublicPrice]);
+  const togglePrice = async (next: boolean) => {
+    if (!canEditPrice) return;
+    setPriceOn(next);
+    setPriceSaving(true);
+    try {
+      const res = await bookingRequestsApi.setShowPublicPrice(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('publicPage.showPrice'));
+      onPriceChanged?.();
+    } catch (error) {
+      setPriceOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('publicPage.showPrice'));
+    } finally {
+      setPriceSaving(false);
+    }
+  };
   const dirty = value !== tenantKey;
   const { productLink, registrationLink } = publicLinks(origin, { publicProductLink, tenantKey });
   const submit = async (e: React.FormEvent) => {
@@ -600,6 +630,20 @@ export function PublicPageSection({
       <SectionCard title={t('links.registration')}>
         <LinkRow which="registration" value={registrationLink} hint={t('links.registrationHint')} t={t} />
       </SectionCard>
+      <section className={`${cardClass} flex flex-col gap-4 px-5 py-4`} data-show-public-price-setting>
+        <div className="flex min-h-[44px] items-start justify-between gap-3">
+          <span className="flex flex-col gap-1">
+            <h2 id={priceTitleId} className="m-0 text-lg font-bold">
+              {t('publicPage.showPrice')}
+            </h2>
+            <span id={priceHintId} className="text-sm text-ar-muted">
+              {t('publicPage.showPriceHint')}
+              {!canEditPrice && ` ${t('publicPage.ownerOnly')}`}
+            </span>
+          </span>
+          <Switch checked={priceOn} onChange={togglePrice} disabled={!canEditPrice || priceSaving} labelledBy={priceTitleId} describedBy={priceHintId} />
+        </div>
+      </section>
     </>
   );
 }

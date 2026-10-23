@@ -24,15 +24,15 @@ import {
 const free = (dates: string[]) => dates.map((date) => ({ date, status: 'free' as const }));
 
 describe('calendar month (Vietnam day keys)', () => {
-  it('October 2026 starts on a Thursday (Monday-first grid) and marks free / full / past', () => {
+  it('October 2026 starts on a Thursday (Monday-first grid); future days are free without availability (#1174)', () => {
     const days = [...free(['2026-10-20', '2026-10-21']), { date: '2026-10-22', status: 'full' as const }];
     const m = calendarMonth('2026-10', days, '2026-10-20');
     expect(m.leadingBlanks).toBe(3); // Mon, Tue, Wed empty
     expect(m.days).toHaveLength(31);
     expect(m.days[18]).toMatchObject({ date: '2026-10-19', state: 'past' });
     expect(m.days[19]).toMatchObject({ date: '2026-10-20', state: 'free', today: true });
-    expect(m.days[21]).toMatchObject({ date: '2026-10-22', state: 'full' });
-    expect(m.days[25]).toMatchObject({ date: '2026-10-26', state: 'unknown' }); // not loaded yet
+    expect(m.days[21]).toMatchObject({ date: '2026-10-22', state: 'free' });
+    expect(m.days[25]).toMatchObject({ date: '2026-10-26', state: 'free' });
   });
 
   it('February of a leap year has 29 days', () => {
@@ -141,6 +141,7 @@ describe('booking button and errors', () => {
     expect(canBook({ onlineBooking: true, outlets: [{ id: 1, acceptsOnlineBooking: false }], hasRentPrice: true })).toBe(false);
     expect(canBook({ onlineBooking: true, outlets, hasRentPrice: false })).toBe(false);
     expect(canBook({ onlineBooking: undefined as unknown as boolean, outlets: [], hasRentPrice: true })).toBe(false); // old API
+    expect(canBook({ onlineBooking: true, outlets, hasRentPrice: false, showPublicPrice: false })).toBe(true);
   });
 
   it('maps API codes to page messages; 409 names the full day', () => {
@@ -200,6 +201,16 @@ describe('public booking API client', () => {
     (global as any).fetch = jest.fn(async () => { throw new Error('offline'); });
     const { publicBookingApi } = await import('../packages/utils/src/api/public-booking');
     expect(await publicBookingApi.getRequest('linhbeauty', 'A7K3Q')).toEqual({ success: false, status: 0, code: 'NETWORK_ERROR' });
+  });
+});
+
+describe('image search cards (#1174)', () => {
+  it('do not render Còn/Hết chips', () => {
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const src = fs.readFileSync(path.join(__dirname, '../apps/client/app/[tenantKey]/products/components/ImageSearchPanel.tsx'), 'utf8');
+    expect(src).not.toMatch('inStockToday');
+    expect(src).not.toMatch('outToday');
   });
 });
 

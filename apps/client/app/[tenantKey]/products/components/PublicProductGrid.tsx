@@ -7,7 +7,7 @@ import { Pagination } from '@rentalshop/ui';
 import type { Product, Category } from '@rentalshop/types';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalDateKey } from '@rentalshop/utils';
-import { formatShopMoney, productPriceLines } from '../lib/public-shop';
+import { catalogShowsPrices, formatShopMoney, productPriceLines } from '../lib/public-shop';
 import { addToRequest, emptyRequest, loadRequest, removeFromRequest, saveRequest, type BookingRequestDraft } from '../lib/booking';
 import { PublicProductSheet } from './PublicProductSheet';
 import { BookingRequestSheet } from './BookingRequestSheet';
@@ -33,6 +33,8 @@ interface PublicProductGridProps {
   outlets?: BookingOutlet[];
   /** #1128: the shop has products indexed for image search */
   imageSearchAvailable?: boolean;
+  /** #1174: false → catalogue shows Liên hệ */
+  showPublicPrice?: boolean;
 }
 
 const SHOP_TIME_ZONE = 'Asia/Ho_Chi_Minh';
@@ -45,7 +47,7 @@ const browserStorage = () => {
 };
 
 /** #665 — search, category chips, product cards and the detail sheet */
-export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [], imageSearchAvailable = false }: PublicProductGridProps) {
+export function PublicProductGrid({ products, categories, currency, phone, pagination, tenantKey, onlineBooking = false, outlets = [], imageSearchAvailable = false, showPublicPrice = true }: PublicProductGridProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -53,6 +55,7 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
   const tp = useTranslations('products.public');
   const locale = useLocale();
   const money = (amount: number) => formatShopMoney(amount, currency, locale);
+  const showPrices = catalogShowsPrices(showPublicPrice);
 
   const currentCategoryId = searchParams.get('categoryId') ? parseInt(searchParams.get('categoryId')!, 10) : null;
   const currentSearch = searchParams.get('search') || '';
@@ -178,6 +181,7 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
             currency={currency}
             phone={phone}
             pickSignal={pickSignal}
+            showPublicPrice={showPublicPrice}
             onOpen={(product) => setOpened(product as unknown as Product)}
           />
         </div>
@@ -210,19 +214,25 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
                   </div>
                   <div className="flex flex-col gap-1 px-2.5 pb-3 pt-2.5 sm:px-3.5 sm:pb-3.5 sm:pt-3">
                     <div className="text-sm font-bold leading-snug text-slate-900 sm:text-[15px]">{product.name}</div>
-                    {prices.main && (
-                      <div className="text-[15px] font-extrabold text-blue-700 sm:text-[17px]">
-                        {money(prices.main.amount)}{' '}
-                        <span className="text-[13px] font-semibold text-slate-600">
-                          {prices.main.unit === 'day' ? tp('perDay') : tp('perRent')}
-                        </span>
-                      </div>
-                    )}
-                    {prices.daily != null && (
-                      <div className="text-[13px] font-semibold text-slate-900">{tp('orDaily', { price: money(prices.daily) })}</div>
-                    )}
-                    {prices.sale != null && (
-                      <div className="text-[13px] text-slate-600">{tp('sale', { price: money(prices.sale) })}</div>
+                    {showPrices ? (
+                      <>
+                        {prices.main && (
+                          <div className="text-[15px] font-extrabold text-blue-700 sm:text-[17px]">
+                            {money(prices.main.amount)}{' '}
+                            <span className="text-[13px] font-semibold text-slate-600">
+                              {prices.main.unit === 'day' ? tp('perDay') : tp('perRent')}
+                            </span>
+                          </div>
+                        )}
+                        {prices.daily != null && (
+                          <div className="text-[13px] font-semibold text-slate-900">{tp('orDaily', { price: money(prices.daily) })}</div>
+                        )}
+                        {prices.sale != null && (
+                          <div className="text-[13px] text-slate-600">{tp('sale', { price: money(prices.sale) })}</div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-[15px] font-extrabold text-blue-700 sm:text-[17px]">{tp('priceHidden')}</div>
                     )}
                   </div>
                 </button>
@@ -272,6 +282,7 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
           currency={currency}
           phone={phone}
           onClose={() => setOpened(null)}
+          showPublicPrice={showPublicPrice}
           booking={
             bookingOn && tenantKey
               ? {
@@ -322,6 +333,7 @@ export function PublicProductGrid({ products, categories, currency, phone, pagin
           draft={draft}
           outlets={outlets}
           currency={currency}
+          showPublicPrice={showPublicPrice}
           onRemove={(productId) => {
             const next = removeFromRequest(draft, productId);
             updateDraft(next);

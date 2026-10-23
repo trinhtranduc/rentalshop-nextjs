@@ -759,6 +759,11 @@
       "outlets": "Chi nhánh nhận đặt",
       "outletsHint": "Tắt ở chi nhánh không muốn nhận đặt online."
     },
+    "publicPage": {
+      "showPrice": "Hiện giá trên trang shop",
+      "showPriceHint": "Tắt thì khách thấy “Liên hệ”, không thấy số tiền.",
+      "ownerOnly": "Chỉ chủ shop bật / tắt được."
+    },
     "groups": {
       "shop": "Cửa hàng",
       "account": "Tài khoản",

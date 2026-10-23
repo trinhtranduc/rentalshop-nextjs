@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { Product } from '@rentalshop/types';
-import { formatShopMoney, productPriceLines, telLink, zaloLink } from '../lib/public-shop';
+import { catalogShowsPrices, formatShopMoney, productPriceLines, telLink, zaloLink } from '../lib/public-shop';
 import { canBook, type BookingRequestDraft } from '../lib/booking';
 import { BookingPicker, type BookingOutlet } from './BookingPicker';
 
@@ -23,10 +23,11 @@ interface PublicProductSheetProps {
     draft: BookingRequestDraft;
     onAdd: (where: { outletId: number; pickupDate: string; returnDate: string }, quantity: number) => void;
   };
+  showPublicPrice?: boolean;
 }
 
 /** #665 — product detail: photos, price rows, Gọi shop / Hỏi thuê qua Zalo; #1124 "Đặt thuê" when the shop takes requests */
-export function PublicProductSheet({ product, categoryName, currency, phone, onClose, booking }: PublicProductSheetProps) {
+export function PublicProductSheet({ product, categoryName, currency, phone, onClose, booking, showPublicPrice }: PublicProductSheetProps) {
   const t = useTranslations('products.public');
   const tb = useTranslations('products.public.booking');
   const [picking, setPicking] = useState(false);
@@ -49,14 +50,27 @@ export function PublicProductSheet({ product, categoryName, currency, phone, onC
     };
   }, [onClose]);
 
-  const bookable = Boolean(booking && canBook({ onlineBooking: booking.enabled, outlets: booking.outlets, hasRentPrice: prices.main != null }));
+  const showPrices = catalogShowsPrices(showPublicPrice);
+  const bookable = Boolean(
+    booking &&
+      canBook({
+        onlineBooking: booking.enabled,
+        outlets: booking.outlets,
+        hasRentPrice: prices.main != null || (product as { hasRentPrice?: boolean }).hasRentPrice === true,
+        showPublicPrice,
+      })
+  );
   const rows: { label: string; value: string; accent?: boolean }[] = [];
-  if (prices.main?.unit === 'rent') rows.push({ label: t('rentFixed'), value: money(prices.main.amount), accent: true });
-  const daily = prices.main?.unit === 'day' ? prices.main.amount : prices.daily;
-  if (daily != null)
-    rows.push({ label: t('rentDaily'), value: `${money(daily)} ${t('perDay')}`, accent: prices.main?.unit === 'day' });
-  if (prices.deposit != null) rows.push({ label: t('deposit'), value: money(prices.deposit) });
-  if (prices.sale != null) rows.push({ label: t('buy'), value: money(prices.sale) });
+  if (showPrices) {
+    if (prices.main?.unit === 'rent') rows.push({ label: t('rentFixed'), value: money(prices.main.amount), accent: true });
+    const daily = prices.main?.unit === 'day' ? prices.main.amount : prices.daily;
+    if (daily != null)
+      rows.push({ label: t('rentDaily'), value: `${money(daily)} ${t('perDay')}`, accent: prices.main?.unit === 'day' });
+    if (prices.deposit != null) rows.push({ label: t('deposit'), value: money(prices.deposit) });
+    if (prices.sale != null) rows.push({ label: t('buy'), value: money(prices.sale) });
+  } else {
+    rows.push({ label: t('priceHidden'), value: t('priceHidden'), accent: true });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 sm:items-center sm:p-6" onClick={onClose}>
@@ -126,6 +140,7 @@ export function PublicProductSheet({ product, categoryName, currency, phone, onC
                 currency={currency}
                 todayKey={booking.todayKey}
                 draft={booking.draft}
+                showPublicPrice={showPublicPrice}
                 onAdd={(where, quantity) => {
                   booking.onAdd(where, quantity);
                   onClose();

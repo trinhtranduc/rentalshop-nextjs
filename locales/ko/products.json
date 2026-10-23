@@ -98,7 +98,8 @@
       "errorBusy": "이미지 검색이 혼잡합니다. 잠시 후 다시 시도하세요.",
       "errorNetwork": "연결할 수 없습니다. 네트워크를 확인한 뒤 다시 시도하세요.",
       "errorGeneric": "지금은 검색할 수 없습니다. 다시 시도하세요."
-    }
+    },
+    "priceHidden": "문의"
   },
   "uncategorized": "미분류",
   "productsPlural": "개 상품",

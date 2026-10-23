@@ -86,4 +86,13 @@ export const bookingRequestsApi = {
     });
     return parseApiResponse<{ onlineBookingEnabled?: boolean }>(response);
   },
+
+  /** Settings › "Hiện giá trên trang shop" (owner only, #1174) */
+  async setShowPublicPrice(enabled: boolean) {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify({ showPublicPrice: enabled }),
+    });
+    return parseApiResponse<{ showPublicPrice?: boolean }>(response);
+  },
 };

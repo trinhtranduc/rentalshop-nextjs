@@ -98,7 +98,8 @@
       "errorBusy": "La búsqueda por foto está ocupada. Inténtalo de nuevo en unos minutos.",
       "errorNetwork": "Sin conexión. Revisa tu red e inténtalo de nuevo.",
       "errorGeneric": "La búsqueda no funcionó ahora. Inténtalo de nuevo."
-    }
+    },
+    "priceHidden": "Contactar"
   },
   "uncategorized": "Sin categoría",
   "productsPlural": "artículos",

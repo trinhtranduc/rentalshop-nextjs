@@ -7,6 +7,11 @@
       "outlets": "接受预订的门店",
       "outletsHint": "关闭不接受在线预订的门店。"
     },
+    "publicPage": {
+      "showPrice": "在店铺页面显示价格",
+      "showPriceHint": "关闭后，访客会看到“联系商家”，而不是金额。",
+      "ownerOnly": "只有店主可以开启或关闭此功能。"
+    },
     "groups": {
       "shop": "店铺",
       "account": "账户",

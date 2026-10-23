@@ -5,7 +5,7 @@ import { ImagePlus, Loader2, X } from 'lucide-react';
 import { AiSearchTile } from './AiSearchIcon';
 import { useLocale, useTranslations } from 'next-intl';
 import { publicImageSearchApi, type PublicImageSearchProduct } from '@rentalshop/utils';
-import { formatShopMoney, productPriceLines, telLink, zaloLink } from '../lib/public-shop';
+import { catalogShowsPrices, formatShopMoney, productPriceLines, telLink, zaloLink } from '../lib/public-shop';
 import { checkPickedImage, downscaleForSearch, imageSearchView, similarityPercent, type ImageSearchView } from '../lib/image-search';
 
 interface ImageSearchPanelProps {
@@ -16,14 +16,15 @@ interface ImageSearchPanelProps {
   onOpen: (product: PublicImageSearchProduct) => void;
   /** The camera button in the search bar asks the panel to pick a photo */
   pickSignal: number;
+  showPublicPrice?: boolean;
 }
 
 /**
  * #1128 (mockup "AI tìm bằng ảnh: giới thiệu", B) — "Có ảnh mẫu? Tìm đồ giống bằng AI" above the grid: pick or drop a
  * photo (phone: camera or library), it is downscaled to 1024 px in the browser, and the shop's 10 most similar
- * products show right here with % similarity and today's stock. The photo is not stored.
+ * products show right here with % similarity. The photo is not stored. #1174: no Còn/Hết chip.
  */
-export function ImageSearchPanel({ tenantKey, currency, phone, onOpen, pickSignal }: ImageSearchPanelProps) {
+export function ImageSearchPanel({ tenantKey, currency, phone, onOpen, pickSignal, showPublicPrice }: ImageSearchPanelProps) {
   const t = useTranslations('products.public.imageSearch');
   const tp = useTranslations('products.public');
   const input = useRef<HTMLInputElement>(null);
@@ -152,7 +153,7 @@ export function ImageSearchPanel({ tenantKey, currency, phone, onOpen, pickSigna
             <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
               {view.products.map((product) => {
                 const main = productPriceLines(product).main;
-                const inStock = (product.available ?? 0) > 0;
+                const showPrices = catalogShowsPrices(showPublicPrice);
                 return (
                   <button
                     key={product.id}
@@ -171,14 +172,13 @@ export function ImageSearchPanel({ tenantKey, currency, phone, onOpen, pickSigna
                     </div>
                     <div className="flex flex-col gap-0.5 px-2 pb-2 pt-1.5">
                       <div className="text-[13px] font-bold leading-snug text-slate-900">{product.name}</div>
-                      {main && (
+                      {showPrices && main ? (
                         <div className="text-[13px] font-extrabold text-blue-700">
                           {money(main.amount)} <span className="font-semibold text-slate-600">{main.unit === 'day' ? tp('perDay') : tp('perRent')}</span>
                         </div>
-                      )}
-                      <div className={`text-[12px] font-semibold ${inStock ? 'text-emerald-700' : 'text-red-700'}`}>
-                        ● {inStock ? t('inStockToday') : t('outToday')}
-                      </div>
+                      ) : !showPrices ? (
+                        <div className="text-[13px] font-extrabold text-blue-700">{tp('priceHidden')}</div>
+                      ) : null}
                     </div>
                   </button>
                 );

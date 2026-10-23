@@ -183,11 +183,17 @@ export async function GET(
 
     // #1124 "Đặt thuê" on the shop page: the shop's switch and the outlets that take requests. Fail-closed: an
     // error (e.g. migration not applied yet) means booking off, the page stays as today.
+    // #1174 prices: fail-open (keep showing) when the column is unreadable so old catalogues stay as today.
     let onlineBooking = false;
+    let showPublicPrice = true;
     let bookingOutletIds = new Set<number>();
     try {
-      const flags = await db.prisma.merchant.findUnique({ where: { id: merchant.id }, select: { onlineBookingEnabled: true } });
+      const flags = await db.prisma.merchant.findUnique({
+        where: { id: merchant.id },
+        select: { onlineBookingEnabled: true, showPublicPrice: true } as { onlineBookingEnabled: true; showPublicPrice?: true },
+      });
       onlineBooking = flags?.onlineBookingEnabled === true;
+      showPublicPrice = (flags as { showPublicPrice?: boolean } | null)?.showPublicPrice !== false;
       if (onlineBooking) {
         const accepting = await db.prisma.outlet.findMany({
           where: { merchantId: merchant.id, isActive: true, acceptsOnlineBooking: true },
@@ -198,6 +204,7 @@ export async function GET(
     } catch (error) {
       console.error('⚠️ Online booking flags unavailable:', error);
       onlineBooking = false;
+      showPublicPrice = true;
     }
 
     // #1128 "Tìm bằng ảnh" on the shop page: shown when at least one active product has an embedding. Fail-closed.
@@ -214,7 +221,9 @@ export async function GET(
     }
 
     // #663: allowlisted fields only (no cost price, CUIDs or internal fields on a public page)
-    const transformedProducts = (productsResult.data || []).map(toPublicProduct);
+    const transformedProducts = (productsResult.data || []).map((product: any) =>
+      toPublicProduct(product, { hidePrices: !showPublicPrice })
+    );
 
     const responseData = {
       merchant: {
@@ -230,6 +239,7 @@ export async function GET(
         currency: merchant.currency,
         isActive: merchant.isActive,
         onlineBooking,
+        showPublicPrice,
         imageSearchAvailable
       },
       products: transformedProducts,

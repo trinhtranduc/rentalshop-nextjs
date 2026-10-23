@@ -30,7 +30,7 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, tabsForRole, type SettingsTab } from './settings-model';
+import { canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -153,13 +153,15 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
 
   // #1138: login has no onlineBookingEnabled; load the profile once so the switch shows the stored value
   const bookingFlag = onlineBookingFlag(merchant);
+  const priceFlag = showPublicPriceFlag(merchant);
   const showsBooking = tab === 'merchant' || (tab === 'outlet' && role === 'OUTLET_ADMIN');
+  const needsProfile = (showsBooking && bookingFlag === null) || (tab === 'public-page' && priceFlag === null);
   const profileLoaded = useRef(false);
   useEffect(() => {
-    if (!showsBooking || bookingFlag !== null || !user?.merchant || profileLoaded.current) return;
+    if (!needsProfile || !user?.merchant || profileLoaded.current) return;
     profileLoaded.current = true;
     void refreshUser?.();
-  }, [showsBooking, bookingFlag, user?.merchant, refreshUser]);
+  }, [needsProfile, user?.merchant, refreshUser]);
 
   const merchantForm: ShopForm = {
     name: str(merchant.name),
@@ -375,6 +377,9 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             tenantKey={merchantForm.tenantKey || ''}
             publicProductLink={user?.publicProductLink || str(user?.merchant?.publicProductLink)}
             canEdit={canManageMerchants}
+            showPublicPrice={priceFlag !== false}
+            canEditPrice={role === 'MERCHANT'}
+            onPriceChanged={() => void refreshUser?.()}
             onSave={(key) => saveMerchant({ ...merchantForm, tenantKey: key })}
             t={t}
           />
