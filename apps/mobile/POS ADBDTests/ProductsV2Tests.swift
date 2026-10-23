@@ -1910,3 +1910,17 @@ extension ProductsV2Tests {
         XCTAssertEqual(oldThousands.text, "0", "000 on a fresh entry starts from 0, not 50000000")
     }
 }
+
+/// #1162 — quantity from the shared number pad
+final class QuantityEntryTests: XCTestCase {
+    func testKeepsAWholeNumber() {
+        XCTAssertEqual(QuantityEntry.fromPad(20, minimum: 0), 20)
+        XCTAssertEqual(QuantityEntry.fromPad(0, minimum: 0), 0)
+    }
+
+    func testClampsBelowTheMinimumAndAboveTheCap() {
+        XCTAssertEqual(QuantityEntry.fromPad(0, minimum: 1), 1)
+        XCTAssertEqual(QuantityEntry.fromPad(10_000, minimum: 0), QuantityEntry.maximum)
+        XCTAssertEqual(QuantityEntry.fromPad(1_000_000, minimum: 0), QuantityEntry.maximum)
+    }
+}
