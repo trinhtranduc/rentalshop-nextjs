@@ -53,8 +53,9 @@ export function calendarMonth(month: string, days: PublicDay[], todayKey: string
   const sundayFirst = new Date(keyToUtc(from)).getUTCDay();
   const out: CalendarDay[] = [];
   for (let key = from; key <= to; key = addDays(key, 1)) {
-    const status = byDate.get(key);
-    const state: CalendarState = key < todayKey ? 'past' : status ?? 'unknown';
+    void byDate;
+    // #1174: guests pick any future Vietnam day; availability is not shown on the public calendar.
+    const state: CalendarState = key < todayKey ? 'past' : 'free';
     out.push({ date: key, day: Number(key.slice(8)), state, today: key === todayKey });
   }
   return { leadingBlanks: (sundayFirst + 6) % 7, days: out };
@@ -211,8 +212,15 @@ export function validateBookingForm(input: { name: string; phone: string; note: 
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { name, phone, note } };
 }
 
-export function canBook(input: { onlineBooking: boolean; outlets: Array<{ id: number; acceptsOnlineBooking?: boolean }>; hasRentPrice: boolean }): boolean {
-  return input.onlineBooking === true && input.hasRentPrice && input.outlets.some((o) => o.acceptsOnlineBooking === true);
+export function canBook(input: {
+  onlineBooking: boolean;
+  outlets: Array<{ id: number; acceptsOnlineBooking?: boolean }>;
+  hasRentPrice: boolean;
+  /** When the shop hides catalogue prices, still allow Đặt thuê (#1174) */
+  showPublicPrice?: boolean;
+}): boolean {
+  const priced = input.showPublicPrice === false ? true : input.hasRentPrice;
+  return input.onlineBooking === true && priced && input.outlets.some((o) => o.acceptsOnlineBooking === true);
 }
 
 export function bookingErrorKey(code?: string | null): string {

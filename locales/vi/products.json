@@ -763,6 +763,7 @@
       "errorBusy": "Tìm bằng ảnh đang bận. Vui lòng thử lại sau ít phút.",
       "errorNetwork": "Không kết nối được. Kiểm tra mạng rồi thử lại.",
       "errorGeneric": "Không tìm được lúc này. Vui lòng thử lại."
-    }
+    },
+    "priceHidden": "Liên hệ"
   }
 }

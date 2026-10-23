@@ -76,6 +76,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         allowOverlappingOrders: (userProfile.merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
         // #1124 "Nhận đặt online" (additive; false when off or missing)
         onlineBookingEnabled: (userProfile.merchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
+        // #1174 "Hiện giá trên trang shop" (additive; true when missing so old shops keep showing prices)
+        showPublicPrice: (userProfile.merchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(userProfile.merchant),
         // #907 active feature modules (additive; [] when none)

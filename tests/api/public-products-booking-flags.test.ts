@@ -7,7 +7,7 @@ jest.mock('next/server', () => ({
   NextResponse: { json: (body: any, init?: any) => ({ body, status: init?.status || 200 }) },
 }));
 
-const mockState = { enabled: true, accepting: [3] as number[], prismaThrows: false };
+const mockState = { enabled: true, showPrice: true, accepting: [3] as number[], prismaThrows: false };
 const mockDb: any = {
   merchants: { findByTenantKey: jest.fn(async () => ({ id: 2, name: 'Shop', isActive: true })) },
   products: { search: jest.fn(async () => ({ data: [], total: 0, page: 1, limit: 50, hasMore: false })) },
@@ -17,7 +17,7 @@ const mockDb: any = {
     merchant: {
       findUnique: jest.fn(async () => {
         if (mockState.prismaThrows) throw new Error('column "onlineBookingEnabled" does not exist');
-        return { onlineBookingEnabled: mockState.enabled };
+        return { onlineBookingEnabled: mockState.enabled, showPublicPrice: mockState.showPrice };
       }),
     },
     outlet: { findMany: jest.fn(async () => mockState.accepting.map((id) => ({ id }))) },
@@ -40,7 +40,7 @@ async function shop() {
 }
 
 describe('public products: online booking flags (#1124)', () => {
-  beforeEach(() => Object.assign(mockState, { enabled: true, accepting: [3], prismaThrows: false }));
+  beforeEach(() => Object.assign(mockState, { enabled: true, showPrice: true, accepting: [3], prismaThrows: false }));
 
   it('booking on: merchant.onlineBooking true, outlets flagged one by one', async () => {
     const data = await shop();
@@ -56,5 +56,21 @@ describe('public products: online booking flags (#1124)', () => {
     mockState.prismaThrows = true;
     data = await shop();
     expect(data.merchant.onlineBooking).toBe(false);
+  });
+});
+
+describe('public products: showPublicPrice (#1174)', () => {
+  beforeEach(() => Object.assign(mockState, { enabled: true, showPrice: true, accepting: [3], prismaThrows: false }));
+
+  it('merchant.showPublicPrice true by default', async () => {
+    const data = await shop();
+    expect(data.merchant.showPublicPrice).toBe(true);
+  });
+
+  it('false when the shop turned prices off; unreadable column still shows prices', async () => {
+    mockState.showPrice = false;
+    expect((await shop()).merchant.showPublicPrice).toBe(false);
+    mockState.prismaThrows = true;
+    expect((await shop()).merchant.showPublicPrice).toBe(true);
   });
 });

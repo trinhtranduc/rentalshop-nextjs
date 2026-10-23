@@ -126,6 +126,15 @@ export function onlineBookingFlag(merchant: { onlineBookingEnabled?: unknown } |
   return typeof v === 'boolean' ? v : null;
 }
 
+/**
+ * #1174 "Hiện giá trên trang shop": login has no `showPublicPrice`, only GET /api/users/profile does.
+ * A missing key is unknown (load the profile). After load, missing still means ON (default true).
+ */
+export function showPublicPriceFlag(merchant: { showPublicPrice?: unknown } | null | undefined): boolean | null {
+  const v = merchant?.showPublicPrice;
+  return typeof v === 'boolean' ? v : null;
+}
+
 /** Public product page and referral sign-up link, from the login payload or the tenant key. */
 export function publicLinks(
   origin: string,

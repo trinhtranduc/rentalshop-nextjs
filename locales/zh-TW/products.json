@@ -98,7 +98,8 @@
       "errorBusy": "以圖搜尋目前忙碌中，請幾分鐘後再試。",
       "errorNetwork": "沒有網路連線。請檢查網路後再試。",
       "errorGeneric": "目前無法搜尋，請再試一次。"
-    }
+    },
+    "priceHidden": "聯絡商家"
   },
   "uncategorized": "未分類",
   "productsPlural": "件商品",

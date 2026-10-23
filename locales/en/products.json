@@ -763,6 +763,7 @@
       "errorBusy": "Photo search is busy. Please try again in a few minutes.",
       "errorNetwork": "No connection. Check your network and try again.",
       "errorGeneric": "The search did not work right now. Please try again."
-    }
+    },
+    "priceHidden": "Contact us"
   }
 }

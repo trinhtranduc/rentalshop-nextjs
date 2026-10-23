@@ -10,10 +10,8 @@ import {
   RATE_PER_PHONE,
   bookingPlanDates,
   clientIpOf,
-  firstShortDay,
   generateBookingCode,
   loadBookingOutlet,
-  loadProductDays,
   normalizePhone,
   takeRateSlot,
   validateBookingDates,
@@ -43,8 +41,8 @@ export async function OPTIONS(request: NextRequest) {
 /**
  * POST /api/public/[tenantKey]/booking-requests (#1124) — a customer sends a booking request from the shop page.
  * No login. Honeypot `website` filled → a fake success, nothing saved. Limits: 5 / 10 min per IP (this instance)
- * and 3 / hour per phone and shop (database). Every item must be free on every Vietnam day of the range
- * (409 BOOKING_NOT_AVAILABLE {productId, date}); nothing is held while the shop decides. 201 {code, status, expiresAt}.
+ * and 3 / hour per phone and shop (database). Guests are not blocked for full days (#1174); the shop decides
+ * at confirm. Nothing is held while the shop decides. 201 {code, status, expiresAt}.
  */
 export async function POST(
   request: NextRequest,
@@ -97,20 +95,6 @@ export async function POST(
     });
     if (recentFromPhone >= RATE_PER_PHONE.limit) {
       return publicJson(request, ResponseBuilder.error('BOOKING_RATE_LIMITED'), 429);
-    }
-
-    for (const product of products) {
-      const days = await loadProductDays(db.prisma, {
-        productId: product.id,
-        outletId: outlet.id,
-        fromYmd: input.pickupDate,
-        toYmd: input.returnDate,
-      });
-      const shortDay = firstShortDay(days, wanted.get(product.id)!);
-      if (shortDay) {
-        // Same shape as ORDER_SCHEDULE_CONFLICT: the standard error body plus `data`
-        return publicJson(request, { ...ResponseBuilder.error('BOOKING_NOT_AVAILABLE'), data: { productId: product.id, date: shortDay } }, 409);
-      }
     }
 
     const { pickupPlanAt, returnPlanAt } = bookingPlanDates(input.pickupDate, input.returnDate);

@@ -180,6 +180,8 @@ model Merchant {
   allowOverlappingOrders Boolean            @default(true)
   /// #1124 Đặt đơn online: customers may send booking requests from the public shop page. Off until the shop turns it on.
   onlineBookingEnabled Boolean              @default(false)
+  /// #1174 Hiện giá trên trang shop công khai. true (default) = today's catalogue. false = API nulls amounts; UI shows "Liên hệ".
+  showPublicPrice      Boolean              @default(true)
   /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
   /// is a civil day in this zone. Existing shops and register calls without a zone: Asia/Ho_Chi_Minh.
   timezone             String               @default("Asia/Ho_Chi_Minh")

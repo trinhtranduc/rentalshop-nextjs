@@ -5,7 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { publicBookingApi } from '@rentalshop/utils';
-import { formatShopMoney } from '../lib/public-shop';
+import { catalogShowsPrices, formatShopMoney } from '../lib/public-shop';
 import {
   bookingErrorKey,
   formatDayKey,
@@ -24,11 +24,14 @@ interface BookingRequestSheetProps {
   onRemove: (productId: number) => void;
   onSent: () => void;
   onClose: () => void;
+  showPublicPrice?: boolean;
 }
 
 /** #1124 mockup screen 3 — the items of the request, name, phone, note, hidden honeypot, "Gửi yêu cầu" */
-export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRemove, onSent, onClose }: BookingRequestSheetProps) {
+export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRemove, onSent, onClose, showPublicPrice }: BookingRequestSheetProps) {
   const t = useTranslations('products.public.booking');
+  const tp = useTranslations('products.public');
+  const showPrices = catalogShowsPrices(showPublicPrice);
   const locale = useLocale();
   const router = useRouter();
   const [name, setName] = useState('');
@@ -129,17 +132,21 @@ export function BookingRequestSheet({ tenantKey, draft, outlets, currency, onRem
                   <div className="truncate text-[15px] font-medium text-slate-900">{i.name}</div>
                   <div className="text-[13px] text-slate-500">× {i.quantity}</div>
                 </div>
-                {totals[idx] != null && <b className="text-[15px]">{formatShopMoney(totals[idx]!, currency, locale)}</b>}
+                {!showPrices ? (
+                  <b className="text-[15px]">{tp('priceHidden')}</b>
+                ) : (
+                  totals[idx] != null && <b className="text-[15px]">{formatShopMoney(totals[idx]!, currency, locale)}</b>
+                )}
                 <button type="button" onClick={() => onRemove(i.productId)} className="text-[13px] font-semibold text-red-700">
                   {t('remove')}
                 </button>
               </div>
             ))}
           </div>
-          {total != null && (
+          {(total != null || !showPrices) && (
             <div className="flex justify-between text-[15px]">
               <span className="text-slate-600">{t('total')}</span>
-              <b>{formatShopMoney(total, currency, locale)}</b>
+              <b>{showPrices && total != null ? formatShopMoney(total, currency, locale) : tp('priceHidden')}</b>
             </div>
           )}
 

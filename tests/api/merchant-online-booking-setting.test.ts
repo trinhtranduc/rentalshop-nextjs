@@ -104,6 +104,30 @@ describe('PUT /api/settings/merchant onlineBookingEnabled (#1124)', () => {
   });
 });
 
+describe('PUT /api/settings/merchant showPublicPrice (#1174)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.users.findById.mockResolvedValue({ id: 10, merchant: { id: 2 } });
+    mockDb.merchants.update.mockImplementation(async (_id: number, data: any) => ({ ...MERCHANT_ROW, showPublicPrice: true, ...data }));
+  });
+
+  it('the owner turns it off with a body carrying only the setting', async () => {
+    ctx = as('MERCHANT');
+    const res: any = await putMerchantSettings(req({ showPublicPrice: false }));
+    expect(res.status).toBe(200);
+    expect(mockDb.merchants.update).toHaveBeenCalledWith(2, { showPublicPrice: false });
+    expect(res.body.data.showPublicPrice).toBe(false);
+  });
+
+  it('403 for an outlet admin, 400 for a non-boolean', async () => {
+    ctx = as('OUTLET_ADMIN', { outletId: 3 });
+    expect(((await putMerchantSettings(req({ showPublicPrice: false }))) as any).status).toBe(403);
+    ctx = as('MERCHANT');
+    expect(((await putMerchantSettings(req({ showPublicPrice: 'no' }))) as any).status).toBe(400);
+    expect(mockDb.merchants.update).not.toHaveBeenCalled();
+  });
+});
+
 describe('profile carries merchant.onlineBookingEnabled (#1124)', () => {
   it('false when the column is missing or false, true when on', async () => {
     for (const [value, expected] of [[undefined, false], [false, false], [true, true]] as const) {
@@ -114,6 +138,20 @@ describe('profile carries merchant.onlineBookingEnabled (#1124)', () => {
       });
       const res: any = await getProfile(req());
       expect(res.body.data.merchant.onlineBookingEnabled).toBe(expected);
+    }
+  });
+});
+
+describe('profile carries merchant.showPublicPrice (#1174)', () => {
+  it('true when the column is missing or true, false when off', async () => {
+    for (const [value, expected] of [[undefined, true], [true, true], [false, false]] as const) {
+      ctx = as('MERCHANT');
+      mockDb.users.findById.mockResolvedValue({
+        id: 10, email: 'u@x', role: 'MERCHANT', merchantId: 2,
+        merchant: { ...MERCHANT_ROW, ...(value === undefined ? {} : { showPublicPrice: value }) },
+      });
+      const res: any = await getProfile(req());
+      expect(res.body.data.merchant.showPublicPrice).toBe(expected);
     }
   });
 });
