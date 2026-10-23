@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Mail, Phone, Store } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { usePublicHref } from '../../lib/public-content/use-public-href'
+import { CrispChat } from './CrispChat'
 
 export default function PublicSiteFooter() {
   const t = useTranslations('landing.footer')
@@ -11,6 +12,8 @@ export default function PublicSiteFooter() {
   const href = usePublicHref()
 
   return (
+    <>
+    <CrispChat />
     <footer id="contact" className="relative overflow-hidden bg-slate-900 py-12 text-white" role="contentinfo">
       <div className="pointer-events-none absolute -top-20 right-10 h-[300px] w-[300px] rounded-full bg-sky-500/15 blur-3xl" aria-hidden="true" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -141,5 +144,6 @@ export default function PublicSiteFooter() {
         </div>
       </div>
     </footer>
+    </>
   )
 }
