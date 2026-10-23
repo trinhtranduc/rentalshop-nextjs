@@ -85,7 +85,17 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const rows = hits.length ? await db.products.findByIds(hits.map((h) => h.productId)) : [];
-    const products = publicSearchResults(hits, rows as unknown as SearchRow[], merchant.id);
+    let hidePrices = false;
+    try {
+      const flags = await db.prisma.merchant.findUnique({
+        where: { id: merchant.id },
+        select: { showPublicPrice: true } as Record<string, true>,
+      });
+      hidePrices = (flags as { showPublicPrice?: boolean } | null)?.showPublicPrice === false;
+    } catch {
+      hidePrices = false;
+    }
+    const products = publicSearchResults(hits, rows as unknown as SearchRow[], merchant.id, undefined, hidePrices);
     return json(
       request,
       ResponseBuilder.success(products.length ? 'PRODUCTS_FOUND' : 'NO_PRODUCTS_FOUND', { products, total: products.length })

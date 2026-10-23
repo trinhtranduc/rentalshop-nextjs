@@ -417,6 +417,7 @@ export const simplifiedUsers = {
             allowOverlappingOrders: true, // #518 shop setting for GET /api/users/profile
             timezone: true, // #567 shop time zone for GET /api/users/profile
             onlineBookingEnabled: true, // #1124 online booking switch for GET /api/users/profile
+            ...({ showPublicPrice: true } as object), // #1174 public catalogue prices (column after migrate)
             isActive: true,
             planId: true,
             // subscriptionStatus removed - use subscription.status

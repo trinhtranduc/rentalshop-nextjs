@@ -164,11 +164,10 @@ describeE2E('BF-BOOK online booking requests (#1124)', () => {
     expect((await pub('GET', `/booking-requests/${r.body.data.code}`)).status).toBe(404);
   });
 
-  test('BF-BOOK-05 a product full on one of the days: 409 BOOKING_NOT_AVAILABLE with the product and the day', async () => {
+  test('BF-BOOK-05 a product full on one of the days still creates a request (#1174)', async () => {
     const r = await send({ returnDate: addDays(day, 1) });
-    expect(r.status).toBe(409);
-    expect(r.body.code).toBe('BOOKING_NOT_AVAILABLE');
-    expect(r.body.data).toEqual({ productId: p2.id, date: addDays(day, 1) });
+    expect(r.status).toBe(201);
+    expect(r.body.code).toBe('BOOKING_REQUEST_CREATED');
   });
 
   test('BF-BOOK-06 rate limits: 4th request of one phone in an hour, 6th of one address in 10 minutes → 429', async () => {

@@ -54,6 +54,10 @@ export interface MerchantCreateData {
 export interface MerchantUpdateData extends Partial<MerchantCreateData> {
   /** #518 "Cho tạo đơn khi trùng lịch" */
   allowOverlappingOrders?: boolean;
+  /** #1124 "Nhận đặt online" */
+  onlineBookingEnabled?: boolean;
+  /** #1174 "Hiện giá trên trang shop" */
+  showPublicPrice?: boolean;
   totalRevenue?: number;
   lastActiveAt?: Date;
   isActive?: boolean;

@@ -45,7 +45,7 @@ export function checkPublicSearchImage(file: PickedImage | null | undefined): 'N
 }
 
 /** A `db.products.findByIds` row → the public product plus how similar it is */
-export function toPublicSearchResult(product: SearchRow, similarity: number) {
+export function toPublicSearchResult(product: SearchRow, similarity: number, hidePrices = false) {
   const outletStock = (product.outletStock || []).map((stock) => ({
     stock: stock.stock || 0,
     renting: stock.renting || 0,
@@ -55,14 +55,17 @@ export function toPublicSearchResult(product: SearchRow, similarity: number) {
   const renting = outletStock.reduce((sum: number, s: { renting: number }) => sum + s.renting, 0);
   const totalStock = product.totalStock ?? 0;
   return {
-    ...toPublicProduct({
-      ...product,
-      totalStock,
-      stock: totalStock,
-      renting,
-      available: Math.max(0, totalStock - renting),
-      outletStock,
-    }),
+    ...toPublicProduct(
+      {
+        ...product,
+        totalStock,
+        stock: totalStock,
+        renting,
+        available: Math.max(0, totalStock - renting),
+        outletStock,
+      },
+      { hidePrices }
+    ),
     similarity,
   };
 }
@@ -72,7 +75,8 @@ export function publicSearchResults(
   hits: Array<{ productId: number; similarity: number }>,
   rows: SearchRow[],
   merchantId: number,
-  limit: number = PUBLIC_IMAGE_SEARCH_LIMIT
+  limit: number = PUBLIC_IMAGE_SEARCH_LIMIT,
+  hidePrices = false
 ) {
   const byId = new Map(rows.map((row) => [row.id, row]));
   const out: ReturnType<typeof toPublicSearchResult>[] = [];
@@ -81,7 +85,7 @@ export function publicSearchResults(
     if (!row || row.isActive === false || row.deletedAt) continue;
     const owner = row.merchant?.id ?? row.merchantId;
     if (owner !== merchantId) continue;
-    out.push(toPublicSearchResult(row, hit.similarity));
+    out.push(toPublicSearchResult(row, hit.similarity, hidePrices));
     if (out.length >= limit) break;
   }
   return out;

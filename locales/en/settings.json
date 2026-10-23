@@ -759,6 +759,11 @@
       "outlets": "Outlets that accept bookings",
       "outletsHint": "Turn off outlets that should not take online bookings."
     },
+    "publicPage": {
+      "showPrice": "Show prices on the shop page",
+      "showPriceHint": "When off, visitors see “Contact us” instead of amounts.",
+      "ownerOnly": "Only the shop owner can turn this on or off."
+    },
     "groups": {
       "shop": "Shop",
       "account": "Account",
