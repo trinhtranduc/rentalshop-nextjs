@@ -11,6 +11,7 @@ import {
   formatPricingPrice,
   planTextKeys,
   pricingIntlLocale,
+  visibleComparisonFeatures,
 } from '../apps/client/lib/pricing-format';
 import { getPlanComparison } from '../packages/constants/src/subscription';
 import vi from '../locales/vi/plans.json';
@@ -60,11 +61,12 @@ describe('pricing texts', () => {
     for (const l of Object.values(locales)) expect(String(l.features.loyalty).trim()).not.toBe('');
   });
   it('every comparison row, plan and badge has a key', () => {
-    for (const f of getPlanComparison().features) {
+    for (const f of visibleComparisonFeatures(getPlanComparison().features)) {
       const key = COMPARISON_NAME_KEYS[f.name];
       expect(key).toBeDefined();
       expect(enKeys).toContain(key);
     }
+    expect(enKeys).toEqual(expect.arrayContaining(['addonTitle', 'addonIntro', 'addonUser', 'addonOutlet', 'addonAttendance']));
     for (const id of ['trial', 'basic', 'professional', 'enterprise']) {
       const k = planTextKeys(id);
       expect(enKeys).toContain(k.name);

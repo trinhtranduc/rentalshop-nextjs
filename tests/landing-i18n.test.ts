@@ -24,6 +24,7 @@ const english = flatten(en as Tree);
 /** Same text in every language: names, numbers, contact channels, discount badges */
 const SAME_AS_ENGLISH = new Set([
   'navigation.faq',
+  'footer.emailAddress',
   'customSolution.contact.email',
   'customSolution.contact.whatsapp',
   'contactButtons.zalo',
