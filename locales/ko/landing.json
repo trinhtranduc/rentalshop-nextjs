@@ -304,6 +304,7 @@
       "terms": "약관",
       "privacy": "개인정보 보호"
     },
+    "emailAddress": "support@anyrent.shop",
     "copyright": "© 2024 AnyRent. 모든 권리 보유.",
     "imageSearch": "AI 이미지 검색",
     "industries": {
@@ -363,4 +364,3 @@
     "blog": "블로그"
   }
 }
-

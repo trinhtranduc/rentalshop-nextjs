@@ -735,8 +735,8 @@ fun AppInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
                 SettingsDetailRow(stringResource(R.string.terms), chevron = true, onClick = { openUrl(AppLegalLinks.TERMS_URL) })
                 SectionBand(stringResource(R.string.developer_contact))
                 SettingsDetailRow(
-                    stringResource(R.string.email), value = "trinhduc20@gmail.com", chevron = true,
-                    onClick = { openUrl("mailto:trinhduc20@gmail.com") },
+                    stringResource(R.string.email), value = "support@anyrent.shop", chevron = true,
+                    onClick = { openUrl("mailto:support@anyrent.shop") },
                 )
                 SettingsDetailRow(
                     stringResource(R.string.website), value = AppLegalLinks.WEBSITE_HOST, chevron = true,
@@ -821,8 +821,8 @@ fun AppInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
                 AppCard {
                     AppInfoLinkRow(
                         title = stringResource(R.string.email),
-                        value = "trinhduc20@gmail.com",
-                        onClick = { openUrl("mailto:trinhduc20@gmail.com") },
+                        value = "support@anyrent.shop",
+                        onClick = { openUrl("mailto:support@anyrent.shop") },
                     )
                     HorizontalDivider(
                         Modifier.padding(start = 16.dp),

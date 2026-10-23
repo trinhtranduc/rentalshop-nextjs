@@ -75,7 +75,7 @@ const organizationSchema = {
     '@type': 'ContactPoint',
     contactType: 'Customer Service',
     telephone: '+84764774647',
-    email: 'trinhduc20@gmail.com',
+    email: 'support@anyrent.shop',
     availableLanguage: ['Vietnamese', 'English'],
   },
 };

@@ -119,7 +119,7 @@ export const createSchemas = (t: any, baseUrl: string) => {
       image: logoUrl,
       priceRange: '$$',
       telephone: '+84764774647',
-      email: 'trinhduc20@gmail.com',
+      email: 'support@anyrent.shop',
       address: {
         '@type': 'PostalAddress',
         addressCountry: 'VN',
