@@ -2,7 +2,7 @@
  * #850: routes of the add-on price list and of a shop's add-ons (owner decisions 2026-10-11).
  * - ADMIN edits the price list; OPS reads it. Only ADMIN adds or removes a shop's add-on.
  * - The price of a shop's add-on comes from the price list, never from the request.
- * - A paused row is not sold; an outlets row needs a multi-branch plan (#826).
+ * - A paused row is not sold; an outlets row is sold on any plan (#1187).
  * - Old `plan-limit-addons` PUT / DELETE refuse a priced item (its columns are packs × pack size).
  */
 import * as fs from 'fs';
@@ -149,12 +149,10 @@ describe('POST /api/merchants/[id]/addons (#850)', () => {
     expect(mockMerchantAddons.add).not.toHaveBeenCalled();
   });
 
-  it('an outlets row needs a multi-branch plan (#826)', async () => {
+  it('an outlets row is sold on a 1-outlet plan (#1187)', async () => {
     mockAddonPrices.findById.mockResolvedValue(branch);
     mockMerchants.findById.mockResolvedValue(merchantOn(SINGLE));
-    const refused = await add({ addonPriceId: 3, packs: 1 });
-    expect(refused.status).toBe(422);
-    expect(refused.body.code).toBe('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN');
+    expect((await add({ addonPriceId: 3, packs: 1 })).status).toBe(201);
     mockMerchants.findById.mockResolvedValue(merchantOn(MULTI));
     expect((await add({ addonPriceId: 3, packs: 1 })).status).toBe(201);
   });

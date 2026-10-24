@@ -4,7 +4,7 @@
  * - Buy: same quote (79.000 ÷ 30 × days left); a shop whose plan already includes loyalty → 422 ADDON_FEATURE_IN_PLAN
  *   (no double charge), quote and purchase alike.
  * - GET adds `featureSources` (plan / add-on per module) for the admin label.
- * - The legacy module switch (#907) stays attendance only.
+ * - Admin can also enable loyalty via PUT /modules/loyalty (#1187).
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
@@ -26,8 +26,15 @@ const mockMerchantAddons = {
 };
 const mockMerchants = { findById: jest.fn() };
 const mockMerchantModules = { listForMerchant: jest.fn(), sources: jest.fn(), upsert: jest.fn() };
+const mockAuditLogs = { create: jest.fn() };
 jest.mock('@rentalshop/database', () => ({
-  db: { addonPrices: mockAddonPrices, merchantAddons: mockMerchantAddons, merchants: mockMerchants, merchantModules: mockMerchantModules },
+  db: {
+    addonPrices: mockAddonPrices,
+    merchantAddons: mockMerchantAddons,
+    merchants: mockMerchants,
+    merchantModules: mockMerchantModules,
+    auditLogs: mockAuditLogs,
+  },
   prisma: {},
 }));
 jest.mock('@rentalshop/utils/server', () => ({
@@ -78,6 +85,12 @@ beforeEach(() => {
   mockMerchantAddons.add.mockImplementation(async (input: any) => ({ addon: { id: 60, ...input }, payment: { id: 1 } }));
   mockMerchantModules.listForMerchant.mockResolvedValue([]);
   mockMerchantModules.sources.mockResolvedValue([]);
+  mockMerchantModules.upsert.mockImplementation(async (_merchantId: number, key: string, d: any) => ({
+    key,
+    enabled: d.enabled,
+    endsAt: d.endsAt ?? null,
+  }));
+  mockAuditLogs.create.mockResolvedValue({});
 });
 
 describe('price list: loyalty row (#967)', () => {
@@ -158,10 +171,11 @@ describe('GET shop add-ons: featureSources (#967)', () => {
   });
 });
 
-describe('legacy module switch stays attendance only (#967)', () => {
-  it('PUT /api/merchants/7/modules/loyalty → 404 (loyalty is plan or paid add-on, never a free switch)', async () => {
+describe('admin can enable loyalty (#1187)', () => {
+  it('PUT /api/merchants/7/modules/loyalty stores the switch (same body as attendance)', async () => {
     const res: any = await putLegacyModule(req({ enabled: true }), { params: { id: '7', key: 'loyalty' } });
-    expect(res.status).toBe(404);
-    expect(mockMerchantModules.upsert).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(mockMerchantModules.upsert).toHaveBeenCalledWith(7, 'loyalty', expect.objectContaining({ enabled: true, updatedById: 1 }));
+    expect(res.body.data).toEqual(expect.objectContaining({ key: 'loyalty', enabled: true }));
   });
 });

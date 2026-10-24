@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation';
 import { Breadcrumb, Dialog, DialogContent, DialogHeader, DialogTitle, PageWrapper, useToast } from '@rentalshop/ui';
 import type { BreadcrumbItem } from '@rentalshop/ui';
-import { addonPricesApi, formatInShopZone } from '@rentalshop/utils';
+import { addonPricesApi, formatInShopZone, merchantModulesApi } from '@rentalshop/utils';
 import type { AddonPriceRow, AddonQuoteData, MerchantAddonItem, MerchantAddonsData, LimitKind } from '@rentalshop/utils';
 import { useAuth, useApiError } from '@rentalshop/hooks';
 import { FEATURE_LABEL, KINDS, KIND_UNIT, featureSourceLabel, formatVnd, isFeatureKind, plusLabel } from '../../../components/addon-labels';
@@ -74,7 +74,8 @@ export default function MerchantAddonsPage() {
     load();
   }, [load]);
 
-  // Only rows on sale; an outlets row only for a multi-branch plan (#826); a feature the shop already has is not offered (#943)
+  // Only rows on sale; a feature the shop already has (add-on or plan) is not offered (#943 / #967).
+  // #1187: an outlets row is sold on any plan (Professional / Basic included).
   const ownedFeatures = useMemo(
     () => new Set((data?.addons || []).filter((a) => isFeatureKind(a.limitKind) && a.featureKey).map((a) => a.featureKey as string)),
     [data?.addons]
@@ -89,10 +90,9 @@ export default function MerchantAddonsPage() {
       prices.filter(
         (p) =>
           p.isActive &&
-          (p.limitKind !== 'outlets' || data?.multiBranchPlan) &&
           !(isFeatureKind(p.limitKind) && p.featureKey && (ownedFeatures.has(p.featureKey) || planFeatures.has(p.featureKey)))
       ),
-    [prices, data?.multiBranchPlan, ownedFeatures, planFeatures]
+    [prices, ownedFeatures, planFeatures]
   );
   useEffect(() => {
     if (priceId !== null && sellable.length && !sellable.some((p) => p.id === priceId)) setPriceId(sellable[0].id);
@@ -156,6 +156,19 @@ export default function MerchantAddonsPage() {
     }
   };
 
+  const setLoyaltySwitch = async (enabled: boolean) => {
+    setBusy(true);
+    try {
+      const res = await merchantModulesApi.update(merchantId, 'loyalty', { enabled });
+      if (res.success) {
+        toastSuccess(enabled ? 'Đã bật Khách thân thiết' : 'Đã tắt Khách thân thiết');
+        await load();
+      } else toastError(translateError(res));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const mark = async (item: MerchantAddonItem, remove: boolean) => {
     setBusy(true);
     try {
@@ -178,6 +191,10 @@ export default function MerchantAddonsPage() {
   const featuresOn = (data?.featureSources || [])
     .map((f) => ({ key: f.key, label: featureSourceLabel(f) }))
     .filter((f): f is { key: string; label: string } => !!f.label);
+  const loyaltySource = (data?.featureSources || []).find((f) => f.key === 'loyalty');
+  const canEnableLoyalty = canEdit && !!loyaltySource && !loyaltySource.active;
+  const canDisableLegacyLoyalty =
+    canEdit && !!loyaltySource?.active && loyaltySource.legacy && !loyaltySource.plan && !loyaltySource.addon;
   const formula =
     quote && quote.reason === 'prorated'
       ? selectedFeature
@@ -279,6 +296,20 @@ export default function MerchantAddonsPage() {
 
             <div className="card pad" data-testid="addon-shop-card">
               <div className="card-title">Add-on của shop</div>
+              {(canEnableLoyalty || canDisableLegacyLoyalty) && (
+                <div className="row" data-testid="loyalty-switch">
+                  {canEnableLoyalty && (
+                    <button className="btn pri" type="button" data-testid="enable-loyalty" disabled={busy} onClick={() => setLoyaltySwitch(true)}>
+                      Bật Khách thân thiết
+                    </button>
+                  )}
+                  {canDisableLegacyLoyalty && (
+                    <button className="btn" type="button" data-testid="disable-loyalty" disabled={busy} onClick={() => setLoyaltySwitch(false)}>
+                      Tắt Khách thân thiết
+                    </button>
+                  )}
+                </div>
+              )}
               {featuresOn.length > 0 && (
                 <div className="kv" data-testid="addon-feature-sources">
                   {featuresOn.map((f) => (

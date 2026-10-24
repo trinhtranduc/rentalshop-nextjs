@@ -247,7 +247,7 @@ export default function AddonPricesPage() {
                       <option value="feature">Tính năng (bật/tắt, không số gói)</option>
                     </select>
                   </div>
-                  {draft.limitKind === 'outlets' && <span className="muted">Chỉ bán cho gói nhiều chi nhánh (Enterprise).</span>}
+                  {draft.limitKind === 'outlets' && <span className="muted">Professional và Basic cũng mua được (mỗi gói thêm 1 cửa).</span>}
                 </div>
               )}
               {!editing && draftFeature && (
