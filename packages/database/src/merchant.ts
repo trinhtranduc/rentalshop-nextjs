@@ -23,6 +23,8 @@ export interface MerchantFilters extends SimpleFilters {
   // subscriptionStatus removed - use subscription.status instead
   planId?: number;
   isActive?: boolean;
+  /** Nested Prisma filter for Merchant.subscription (#1190 dashboard tiles). */
+  subscription?: Record<string, unknown>;
 }
 
 export interface MerchantCreateData {
@@ -313,7 +315,8 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
     search,
     businessType,
     planId,
-    isActive
+    isActive,
+    subscription,
   } = filters;
 
   const skip = (page - 1) * limit;
@@ -351,6 +354,10 @@ export async function search(filters: MerchantFilters): Promise<SimpleResponse<a
 
   if (isActive !== undefined) {
     where.isActive = isActive;
+  }
+
+  if (subscription && Object.keys(subscription).length > 0) {
+    where.subscription = { is: subscription };
   }
 
   // Execute query
