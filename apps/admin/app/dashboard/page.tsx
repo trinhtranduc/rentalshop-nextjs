@@ -271,6 +271,7 @@ export default function AdminDashboard() {
     all: 0,
     inUse: 0,
     trial: 0,
+    inUseTrial: 0,
     expired: 0,
     expiring: 0,
     cancelled: 0,
@@ -356,7 +357,7 @@ export default function AdminDashboard() {
             });
             return r.success ? (r.data?.total ?? 0) : 0;
           };
-          const [all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise] = await Promise.all([
+          const [all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise, inUseTrial] = await Promise.all([
             totalOf(),
             totalOf('current'),
             totalOf('trial'),
@@ -366,8 +367,9 @@ export default function AdminDashboard() {
             totalOf('current', 'Basic'),
             totalOf('current', 'Professional'),
             totalOf('current', 'Enterprise'),
+            totalOf('current', 'Trial'),
           ]);
-          return { all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise };
+          return { all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise, inUseTrial };
         }),
       ]);
 
@@ -641,6 +643,7 @@ export default function AdminDashboard() {
             chips={[
               { label: `Basic: ${subscriptionStats.basic}`, testId: 'dash-chip-basic', href: DASHBOARD_MERCHANT_HREFS.basic },
               { label: `Pro: ${subscriptionStats.pro}`, testId: 'dash-chip-pro', href: DASHBOARD_MERCHANT_HREFS.pro },
+              { label: `Trial: ${subscriptionStats.inUseTrial}`, testId: 'dash-chip-trial-plan', href: DASHBOARD_MERCHANT_HREFS.trialPlan },
               { label: `Enterprise: ${subscriptionStats.enterprise}`, testId: 'dash-chip-enterprise', href: DASHBOARD_MERCHANT_HREFS.enterprise },
             ]}
           />

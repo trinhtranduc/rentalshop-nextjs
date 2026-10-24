@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ADM-STAT (#1194): click each admin dashboard tile / plan chip, land on /merchants
+ * ADM-STAT (#1194 / #1196): click each admin dashboard tile / plan chip, land on /merchants
  * with the matching filter, and every visible row matches that bucket.
  *
  * Oracle = GET /api/merchants?status=&plan=&limit=1 (same query the list uses).
@@ -35,6 +35,7 @@ const CASES = [
   { id: 'ADM-STAT-03', title: 'Basic', testId: 'dash-chip-basic', href: '/merchants?status=current&plan=Basic', query: { status: 'current', plan: 'Basic' } },
   { id: 'ADM-STAT-04', title: 'Pro', testId: 'dash-chip-pro', href: '/merchants?status=current&plan=Professional', query: { status: 'current', plan: 'Professional' } },
   { id: 'ADM-STAT-05', title: 'Enterprise', testId: 'dash-chip-enterprise', href: '/merchants?status=current&plan=Enterprise', query: { status: 'current', plan: 'Enterprise' } },
+  { id: 'ADM-STAT-10', title: 'Trial plan', testId: 'dash-chip-trial-plan', href: '/merchants?status=current&plan=Trial', query: { status: 'current', plan: 'Trial' } },
   { id: 'ADM-STAT-06', title: 'Expired', testId: 'dash-tile-expired', href: '/merchants?status=expired', query: { status: 'expired' } },
   { id: 'ADM-STAT-07', title: 'Trial', testId: 'dash-tile-trial', href: '/merchants?status=trial', query: { status: 'trial' } },
   { id: 'ADM-STAT-08', title: 'Expiring', testId: 'dash-tile-expiring', href: '/merchants?status=expiring', query: { status: 'expiring' } },
@@ -70,9 +71,10 @@ function rowMatches(query, row, nowMs) {
   } else if (st === 'expiring') {
     if (!(end > nowMs && end <= nowMs + EXPIRING_MS)) return `not in 7d window ${row.periodEnd}`;
   }
-  if (planQ === 'Basic' && plan !== 'basic') return `plan ${row.plan}`;
+  if (planQ === 'Basic' && !plan.includes('basic')) return `plan ${row.plan}`;
   if (planQ === 'Professional' && !plan.includes('pro')) return `plan ${row.plan}`;
   if (planQ === 'Enterprise' && !plan.includes('enterprise')) return `plan ${row.plan}`;
+  if (planQ === 'Trial' && plan !== 'trial') return `plan ${row.plan}`;
   return null;
 }
 
