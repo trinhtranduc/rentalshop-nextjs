@@ -32,10 +32,10 @@ describe('admin dashboard portal style (#808)', () => {
   });
 
   it('keeps the metric links and numbers', () => {
-    for (const href of ['DASHBOARD_MERCHANT_HREFS.all', 'DASHBOARD_MERCHANT_HREFS.trial', 'DASHBOARD_MERCHANT_HREFS.active', 'DASHBOARD_MERCHANT_HREFS.cancelled']) {
+    for (const href of ['DASHBOARD_MERCHANT_HREFS.all', 'DASHBOARD_MERCHANT_HREFS.inUse', 'DASHBOARD_MERCHANT_HREFS.expired', 'DASHBOARD_MERCHANT_HREFS.trial', 'DASHBOARD_MERCHANT_HREFS.cancelled']) {
       expect(page).toContain(href);
     }
-    for (const n of ['metrics.totalMerchants', 'subscriptionStats.trial', 'subscriptionStats.active', 'subscriptionStats.expiring', 'subscriptionStats.expired', 'subscriptionStats.cancelled', 'subscriptionStats.basic', 'subscriptionStats.pro']) {
+    for (const n of ['subscriptionStats.all', 'subscriptionStats.inUse', 'subscriptionStats.trial', 'subscriptionStats.expiring', 'subscriptionStats.expired', 'subscriptionStats.cancelled', 'subscriptionStats.basic', 'subscriptionStats.pro']) {
       expect(page).toContain(n);
     }
   });

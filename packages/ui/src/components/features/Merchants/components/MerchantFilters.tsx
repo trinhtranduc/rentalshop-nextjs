@@ -93,8 +93,8 @@ export function MerchantFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="current">In use</SelectItem>
           <SelectItem value="trial">Trial</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
           <SelectItem value="expiring">Expiring soon</SelectItem>
           <SelectItem value="expired">Expired</SelectItem>
           <SelectItem value="cancelled">Cancelled</SelectItem>

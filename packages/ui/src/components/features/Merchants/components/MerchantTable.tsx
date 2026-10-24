@@ -132,7 +132,11 @@ export function MerchantTable({
                 const merchantIsSelected = isSelected(merchant.id);
                 return (
                 <tr 
-                  key={merchant.id} 
+                  key={merchant.id}
+                  data-testid="merchant-row"
+                  data-plan={merchant.subscription?.plan?.name || ''}
+                  data-sub-status={merchant.subscription?.status || ''}
+                  data-period-end={merchant.subscription?.currentPeriodEnd || ''}
                   className={`transition-colors ${
                     merchantIsSelected
                       ? 'bg-blue-50 dark:bg-blue-900/20'
