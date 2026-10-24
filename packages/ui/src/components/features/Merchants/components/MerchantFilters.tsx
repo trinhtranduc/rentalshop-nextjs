@@ -111,6 +111,7 @@ export function MerchantFilters({
           <SelectItem value="all">All Plans</SelectItem>
           <SelectItem value="Basic">Basic</SelectItem>
           <SelectItem value="Professional">Professional</SelectItem>
+          <SelectItem value="Trial">Trial</SelectItem>
           <SelectItem value="Enterprise">Enterprise</SelectItem>
         </SelectContent>
       </Select>

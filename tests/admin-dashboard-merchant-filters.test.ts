@@ -1,5 +1,5 @@
 /**
- * #1194: In use Basic/Pro chips are còn hạn; tiles are real hrefs.
+ * #1194 / #1196: In use plan chips (Trial/Basic/Pro/Enterprise) are còn hạn; tiles are real hrefs.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -18,29 +18,45 @@ const rows = [
   { status: 'ACTIVE', plan: { name: 'Professional' }, currentPeriodEnd: '2026-12-01T00:00:00.000Z' },
   { status: 'CANCELLED', plan: { name: 'Professional' }, currentPeriodEnd: '2026-09-01T00:00:00.000Z' },
   { status: 'ACTIVE', plan: { name: 'Enterprise' }, currentPeriodEnd: '2026-09-01T00:00:00.000Z' },
+  { status: 'TRIAL', plan: { name: 'Trial' }, currentPeriodEnd: '2026-11-01T00:00:00.000Z' },
+  { status: 'ACTIVE', plan: { name: 'Basic — 6 months' }, currentPeriodEnd: '2026-12-01T00:00:00.000Z' },
+  { status: 'ACTIVE', plan: { name: 'Basic' }, currentPeriodEnd: '2026-09-01T00:00:00.000Z' },
 ];
 
-describe('dashboard subscription stats (#1194)', () => {
+describe('dashboard subscription stats (#1194 / #1196 / #1198)', () => {
   it('In use is period not ended; plan chips are among In use only', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
-    expect(stats.inUse).toBe(5);
-    expect(stats.basic).toBe(3);
+    expect(stats.inUse).toBe(7);
+    expect(stats.basic).toBe(4);
     expect(stats.pro).toBe(2);
     expect(stats.enterprise).toBe(0);
-    expect(stats.trial).toBe(2);
+    expect(stats.inUseTrial).toBe(1);
+    expect(stats.trial).toBe(3);
     expect(stats.cancelled).toBe(1);
-    expect(stats.basic + stats.pro + stats.enterprise).toBe(stats.inUse);
+    expect(stats.basic + stats.pro + stats.enterprise + stats.inUseTrial).toBe(stats.inUse);
+  });
+
+  it('totals are every shop on that plan; expired chips are period ended', () => {
+    const stats = computeDashboardSubscriptionStats(rows, NOW);
+    expect(stats.basicAll).toBe(5);
+    expect(stats.proAll).toBe(3);
+    expect(stats.enterpriseAll).toBe(1);
+    expect(stats.basicExpired).toBe(1);
+    expect(stats.proExpired).toBe(1);
+    expect(stats.enterpriseExpired).toBe(1);
+    expect(stats.basic + stats.basicExpired).toBe(stats.basicAll);
+    expect(stats.pro + stats.proExpired).toBe(stats.proAll);
   });
 
   it('a paid ACTIVE shop whose period already ended is not In use', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
-    expect(stats.expired).toBe(2);
-    expect(stats.inUse).toBe(5);
+    expect(stats.expired).toBe(3);
+    expect(stats.inUse).toBe(7);
   });
 
   it('expired = period already ended; expiring = period end in the next 7×24h', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
-    expect(stats.expired).toBe(2);
+    expect(stats.expired).toBe(3);
     expect(stats.expiring).toBe(2);
     expect(DASHBOARD_EXPIRING_MS).toBe(SUBSCRIPTION_EXPIRING_MS);
   });
@@ -73,9 +89,9 @@ describe('merchant list URL → Prisma where (#1192)', () => {
     });
   });
 
-  it('plan=Basic without status lists every Basic shop', () => {
+  it('plan=Basic without status lists every Basic shop (contains, including Basic — 6 months)', () => {
     expect(resolveMerchantListFilters({ plan: 'Basic' }, NOW).subscription).toEqual({
-      plan: { name: { equals: 'Basic', mode: 'insensitive' } },
+      plan: { name: { contains: 'basic', mode: 'insensitive' } },
     });
   });
 
@@ -83,7 +99,15 @@ describe('merchant list URL → Prisma where (#1192)', () => {
     expect(resolveMerchantListFilters({ status: 'current', plan: 'Basic' }, NOW).subscription).toEqual({
       currentPeriodEnd: { gt: NOW },
       status: { notIn: ['CANCELLED', 'PAUSED'] },
-      plan: { name: { equals: 'Basic', mode: 'insensitive' } },
+      plan: { name: { contains: 'basic', mode: 'insensitive' } },
+    });
+  });
+
+  it('plan=Trial is exact equals (signup default name)', () => {
+    expect(resolveMerchantListFilters({ status: 'current', plan: 'Trial' }, NOW).subscription).toEqual({
+      currentPeriodEnd: { gt: NOW },
+      status: { notIn: ['CANCELLED', 'PAUSED'] },
+      plan: { name: { equals: 'Trial', mode: 'insensitive' } },
     });
   });
 
@@ -91,6 +115,12 @@ describe('merchant list URL → Prisma where (#1192)', () => {
     expect(
       resolveMerchantListFilters({ plan: 'Professional' }, NOW).subscription?.plan
     ).toEqual({ name: { contains: 'pro', mode: 'insensitive' } });
+  });
+
+  it('plan=Enterprise matches names that contain enterprise', () => {
+    expect(
+      resolveMerchantListFilters({ plan: 'Enterprise' }, NOW).subscription?.plan
+    ).toEqual({ name: { contains: 'enterprise', mode: 'insensitive' } });
   });
 
   it('numeric plan stays planId for old callers', () => {
@@ -105,6 +135,13 @@ describe('merchant list URL → Prisma where (#1192)', () => {
     });
     expect(resolveMerchantListFilters({ status: 'expired' }, NOW).subscription).toEqual({
       currentPeriodEnd: { lt: NOW },
+    });
+  });
+
+  it('expired + Basic ANDs period ended with plan name', () => {
+    expect(resolveMerchantListFilters({ status: 'expired', plan: 'Basic' }, NOW).subscription).toEqual({
+      currentPeriodEnd: { lt: NOW },
+      plan: { name: { contains: 'basic', mode: 'insensitive' } },
     });
   });
 
@@ -135,15 +172,44 @@ describe('dashboard tiles open the merchant list (#1194)', () => {
     expect(page).toContain("totalOf('current', 'Basic')");
     expect(page).toContain("totalOf('current', 'Professional')");
     expect(page).toContain("totalOf('current', 'Enterprise')");
+    expect(page).toContain("totalOf('current', 'Trial')");
+    expect(page).toContain("totalOf(undefined, 'Basic')");
+    expect(page).toContain("totalOf('expired', 'Basic')");
     expect(page).toContain('dash-chip-basic');
+    expect(page).toContain('dash-chip-basic-all');
+    expect(page).toContain('dash-chip-basic-expired');
+    expect(page).toContain('dash-chip-trial-plan');
     expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.basic');
+    expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.basicAll');
+    expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.basicExpired');
+    expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.trialPlan');
     expect(page).toContain('href={DASHBOARD_MERCHANT_HREFS.inUse}');
     expect(statsSrc).toContain("'/merchants?status=current&plan=Basic'");
+    expect(statsSrc).toContain("'/merchants?plan=Basic'");
+    expect(statsSrc).toContain("'/merchants?status=expired&plan=Basic'");
+    expect(statsSrc).toContain("'/merchants?status=current&plan=Trial'");
     expect(read('apps/admin/app/dashboard/components/DashboardTiles.tsx')).toContain('next/link');
   });
 
   it('uses the merchant hrefs that match the tile filters', () => {
-    for (const key of ['all', 'trial', 'inUse', 'basic', 'pro', 'enterprise', 'expiring', 'expired', 'cancelled'] as const) {
+    for (const key of [
+      'all',
+      'trial',
+      'trialPlan',
+      'inUse',
+      'basic',
+      'pro',
+      'enterprise',
+      'basicAll',
+      'proAll',
+      'enterpriseAll',
+      'basicExpired',
+      'proExpired',
+      'enterpriseExpired',
+      'expiring',
+      'expired',
+      'cancelled',
+    ] as const) {
       expect(page).toContain(`DASHBOARD_MERCHANT_HREFS.${key}`);
       expect(statsSrc).toContain(DASHBOARD_MERCHANT_HREFS[key]);
     }
@@ -156,5 +222,9 @@ describe('dashboard tiles open the merchant list (#1194)', () => {
     for (const value of ['trial', 'expiring', 'expired', 'cancelled', 'inactive']) {
       expect(filters).toContain(`value="${value}"`);
     }
+  });
+
+  it('merchant plan dropdown lists Trial', () => {
+    expect(filters).toContain('value="Trial"');
   });
 });

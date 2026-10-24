@@ -44,13 +44,24 @@ export function inUseSubscriptionWhere(now: Date = new Date()): Record<string, u
   };
 }
 
-/** Plan name fragment for `subscription.plan`. Digits stay `planId` on the merchant. */
+/**
+ * Plan name fragment for `subscription.plan`. Digits stay `planId` on the merchant.
+ * Basic / Pro / Enterprise match the family (`Basic — 6 months`, `Professional`).
+ * Other names (signup `Trial`) stay exact equals.
+ */
 export function merchantPlanNameWhere(plan?: string | null): Record<string, unknown> | undefined {
   if (!plan) return undefined;
   const raw = plan.trim();
   if (!raw || raw.toLowerCase() === 'all' || /^\d+$/.test(raw)) return undefined;
+  const lower = raw.toLowerCase();
   if (PLAN_NAME_PRO.test(raw)) {
     return { name: { contains: 'pro', mode: 'insensitive' } };
+  }
+  if (lower === 'basic') {
+    return { name: { contains: 'basic', mode: 'insensitive' } };
+  }
+  if (lower === 'enterprise') {
+    return { name: { contains: 'enterprise', mode: 'insensitive' } };
   }
   return { name: { equals: raw, mode: 'insensitive' } };
 }
