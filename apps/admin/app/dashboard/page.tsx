@@ -268,13 +268,14 @@ export default function AdminDashboard() {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [productSortBy, setProductSortBy] = useState<RankingSortBy>('revenue');
   const [subscriptionStats, setSubscriptionStats] = useState({
-    active: 0,
+    inUse: 0,
     trial: 0,
     expired: 0,
     expiring: 0,
     cancelled: 0,
     basic: 0,
     pro: 0,
+    enterprise: 0,
     totalRevenue: 0
   });
   const [growthMetrics, setGrowthMetrics] = useState({
@@ -611,18 +612,19 @@ export default function AdminDashboard() {
         {/* Subscription Health Metrics - Clickable */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
           <MetricTile title="Merchants" value={metrics.totalMerchants} pill="Total merchants" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.all)} />
-          <MetricTile title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.trial)} />
           <MetricTile
-            title="Active"
-            value={subscriptionStats.active}
-            pill={`Basic: ${subscriptionStats.basic} | Pro: ${subscriptionStats.pro}`}
+            title="In use"
+            value={subscriptionStats.inUse}
+            pill={`Basic: ${subscriptionStats.basic} | Pro: ${subscriptionStats.pro} | Ent: ${subscriptionStats.enterprise}`}
             tone="good"
-            onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.active)}
+            onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.inUse)}
             chips={[
               { label: `Basic: ${subscriptionStats.basic}`, onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.basic) },
               { label: `Pro: ${subscriptionStats.pro}`, onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.pro) },
+              { label: `Enterprise: ${subscriptionStats.enterprise}`, onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.enterprise) },
             ]}
           />
+          <MetricTile title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.trial)} />
           <MetricTile title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expiring)} />
           <MetricTile title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expired)} />
           <MetricTile title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.cancelled)} />

@@ -12,9 +12,10 @@ GET `/api/merchants` cannot serve that list today: `status=active` means shop `i
 
 ## Proposed outcome
 
-- Basic and Pro numbers are among **ACTIVE** subscriptions only, and each chip opens that merchant list.
-- Trial / Active / Expiring / Expired / Cancelled / Merchants each open `/merchants` with a filter whose `total` matches the tile.
-- GET `/api/merchants` applies subscription status, period bucket, and plan name in the database.
+- The confusing **Active** (DB paid enum) tile is **In use** = còn hạn đang dùng (`currentPeriodEnd > now`, not cancelled/paused).
+- Basic / Pro / Enterprise chips count among In use and open that merchant list.
+- Trial / Expiring / Expired / Cancelled / Merchants each open `/merchants` with a matching `total`.
+- GET `/api/merchants` applies those filters in the database.
 
 ## Affected users and systems
 
@@ -35,5 +36,5 @@ None. Owner: click stats → list those merchants; show matching numbers.
 
 ## Decision log
 
-- 2026-10-24 — Tiles open `/merchants`, not `/subscriptions`. Basic/Pro counted only among ACTIVE. (owner)
-- 2026-10-24 — `status=active` on GET `/api/merchants` means subscription ACTIVE (was shop isActive). Inactive shops stay `status=inactive`. Expired tile uses period-end bucket. (agent, to match the tiles)
+- 2026-10-24 — Tiles open `/merchants`, not `/subscriptions`. (owner)
+- 2026-10-24 — Owner: Active (paid enum) is confusing. Need Basic/Pro/Enterprise filters and “còn hạn đang dùng”. Tile renamed **In use**; `status=current`. `status=active` is an alias of current. (owner)
