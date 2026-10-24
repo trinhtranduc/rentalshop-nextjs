@@ -113,9 +113,18 @@ export const subscriptionSwaggerConfig = {
             in: 'query',
             schema: { 
               type: 'string', 
-              enum: ['active', 'trial', 'expired', 'cancelled'] 
+              enum: ['TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELLED', 'PAUSED', 'EXPIRED'] 
             },
-            description: 'Filter by subscription status'
+            description: 'Filter by subscription status (case-insensitive enum)'
+          },
+          {
+            name: 'bucket',
+            in: 'query',
+            schema: {
+              type: 'string',
+              enum: ['expiring', 'expired']
+            },
+            description: 'Admin dashboard tiles: period end in the next 7 days, or already passed'
           },
           {
             name: 'startDate',

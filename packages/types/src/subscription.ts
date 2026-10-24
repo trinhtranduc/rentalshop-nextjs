@@ -89,6 +89,8 @@ export interface SubscriptionFilters {
   merchantId?: number;
   planId?: number;
   status?: SubscriptionStatus; // ✅ Type safe with enum
+  /** Admin dashboard tiles: period end in 7 days (`expiring`) or already passed (`expired`). */
+  bucket?: 'expiring' | 'expired';
   startDate?: Date | string;
   endDate?: Date | string;
   search?: string;

@@ -44,6 +44,7 @@ export const subscriptionsApi = {
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString());
     if (filters.planId) params.append('planId', filters.planId.toString());
     if (filters.status) params.append('status', filters.status);
+    if (filters.bucket) params.append('bucket', filters.bucket);
     // Handle date fields - convert Date objects to ISO string, use strings as-is
     if (filters.startDate) {
       const startDate = typeof filters.startDate === 'object' && filters.startDate instanceof Date 

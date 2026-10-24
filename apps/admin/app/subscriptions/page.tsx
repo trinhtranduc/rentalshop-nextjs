@@ -61,6 +61,9 @@ export default function SubscriptionsPage() {
   const limit = parseInt(searchParams.get('limit') || '20');
   const search = searchParams.get('q') || '';
   const planId = searchParams.get('planId') || '';
+  const status = searchParams.get('status') || '';
+  const bucket = searchParams.get('bucket') || '';
+  const listFilter = bucket || status;
 
   // ============================================================================
   // DIALOG STATES
@@ -92,8 +95,10 @@ export default function SubscriptionsPage() {
     limit,
     offset: (page - 1) * limit,
     ...(search && { search }),
-    ...(planId && { planId: parseInt(planId) })
-  }), [page, limit, search, planId]);
+    ...(planId && { plan: planId, planId: parseInt(planId) }),
+    ...(status && { status }),
+    ...(bucket && { bucket })
+  }), [page, limit, search, planId, status, bucket]);
 
   const { data, loading, error, refetch } = useSubscriptionsData({ filters });
   
@@ -565,12 +570,36 @@ export default function SubscriptionsPage() {
                 ))}
               </select>
             </div>
+
+            {/* Dashboard tile buckets + DB status (#1180) */}
+            <div className="w-full sm:w-56">
+              <select
+                value={listFilter}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === 'expiring' || value === 'expired') {
+                    updateURL({ bucket: value, status: '', page: 1 });
+                  } else {
+                    updateURL({ status: value, bucket: '', page: 1 });
+                  }
+                }}
+                className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                aria-label="Filter by subscription status"
+              >
+                <option value="">All statuses</option>
+                <option value="TRIAL">Trial</option>
+                <option value="ACTIVE">Active</option>
+                <option value="expiring">Expiring soon</option>
+                <option value="expired">Period ended</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
             
             {/* Clear Filters Button */}
-            {(search || planId) && (
+            {(search || planId || status || bucket) && (
               <Button
                 variant="outline"
-                onClick={() => updateURL({ q: '', planId: '', page: 1 })}
+                onClick={() => updateURL({ q: '', planId: '', status: '', bucket: '', page: 1 })}
               >
                 Clear Filters
               </Button>
