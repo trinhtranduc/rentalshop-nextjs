@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { prisma } from './client';
+import { applySubscriptionListWhere } from './subscription-list-where';
 import { simplifiedMerchantAddons } from './addon-price';
 import { ApiError, ErrorCode, addonRenewalLines, outletAddonsBlockPlan, canChangePlan, calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
 import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
@@ -280,6 +281,7 @@ export async function searchSubscriptions(filters: {
   merchantId?: number;
   planId?: number;
   status?: string;
+  bucket?: string;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
@@ -306,9 +308,10 @@ export async function searchSubscriptions(filters: {
     where.planId = filters.planId;
   }
 
-  if (filters.status) {
-    where.status = filters.status;
-  }
+  applySubscriptionListWhere(where, {
+    status: filters.status,
+    bucket: filters.bucket,
+  });
 
   if (filters.startDate || filters.endDate) {
     where.currentPeriodStart = {};
@@ -1429,7 +1432,10 @@ export const simplifiedSubscriptions = {
         where.status = 'CANCELLED';
       }
     }
-    if (whereFilters.status) where.status = whereFilters.status;
+    applySubscriptionListWhere(where, {
+      status: whereFilters.status,
+      bucket: whereFilters.bucket,
+    });
     
     // Date range filters
     if (whereFilters.startDate || whereFilters.endDate) {

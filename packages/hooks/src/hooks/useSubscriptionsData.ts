@@ -8,7 +8,9 @@ import { subscriptionsApi } from '@rentalshop/utils';
 export interface SubscriptionFilters {
   search?: string;
   status?: string;
+  bucket?: string;
   plan?: string;
+  planId?: number;
   merchant?: string;
   page?: number;
   limit?: number;
@@ -78,8 +80,9 @@ export function useSubscriptionsData(options: UseSubscriptionsDataOptions): UseS
         page,
         search: filters.search,
         status: filters.status,
+        bucket: filters.bucket,
         merchantId: filters.merchant ? parseInt(filters.merchant) : undefined,
-        planId: filters.plan ? parseInt(filters.plan) : undefined
+        planId: filters.planId ?? (filters.plan ? parseInt(filters.plan) : undefined)
       };
       
       const response = await subscriptionsApi.search(searchFilters);

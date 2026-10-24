@@ -20,6 +20,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT])(as
       merchantId: searchParams.get('merchantId') ? parseInt(searchParams.get('merchantId')!) : undefined,
       planId: searchParams.get('planId') ? parseInt(searchParams.get('planId')!) : undefined,
       status: searchParams.get('status') || undefined,
+      bucket: searchParams.get('bucket') || undefined,
       startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
       endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20,

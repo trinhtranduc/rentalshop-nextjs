@@ -625,8 +625,8 @@ export default function AdminDashboard() {
           <MetricTile title="Merchants" value={metrics.totalMerchants} pill="Total merchants" tone="info" onClick={() => router.push('/merchants')} />
           <MetricTile title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push('/subscriptions?status=TRIAL')} />
           <MetricTile title="Active" value={subscriptionStats.active} pill={`Basic: ${subscriptionStats.basic} | Pro: ${subscriptionStats.pro}`} tone="good" onClick={() => router.push('/subscriptions?status=ACTIVE')} />
-          <MetricTile title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push('/subscriptions')} />
-          <MetricTile title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push('/subscriptions')} />
+          <MetricTile title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push('/subscriptions?bucket=expiring')} />
+          <MetricTile title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push('/subscriptions?bucket=expired')} />
           <MetricTile title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push('/subscriptions?status=CANCELLED')} />
         </div>
 
