@@ -207,11 +207,12 @@ describeAdd('BF-ADD buy mid-period: price × packs × days left ÷ days, the lim
 // ============================================================================================================
 
 describeAdd('BF-ADD branch rows and paused rows', () => {
-  test('BF-ADD-08 an outlets row is refused on a single-branch plan and raises the outlets limit on a multi-branch plan', async () => {
+  test('BF-ADD-08 an outlets row raises the outlets limit on a 1-outlet plan and on a multi-branch plan (#1187)', async () => {
     const branch = await createRow({ name: 'Thêm chi nhánh', limitKind: 'outlets', packSize: 1, monthlyPrice: 150000 });
     const single = S.createWorld('add-br1', { planId: pricedPlan('add-br1', { outlets: 1 }) });
     setPeriod(single.merchantId);
-    expect(brief(await buy(single.merchantId, branch.id, 1))).toEqual({ status: 422, code: 'ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN' });
+    expect(created(await buy(single.merchantId, branch.id, 1))).toBe(true);
+    expect((await shop(single.merchantId)).limits.total.outlets).toBe(2);
 
     const multi = S.createWorld('add-br3', { planId: pricedPlan('add-br3', { outlets: 3 }) });
     setPeriod(multi.merchantId);

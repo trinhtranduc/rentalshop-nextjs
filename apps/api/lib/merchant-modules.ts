@@ -6,10 +6,10 @@ import { formatDateKeyInTimeZone } from '../../../packages/utils/src/core/date-r
 const VN = 'Asia/Ho_Chi_Minh';
 
 /**
- * #967: modules the old #907 switch may turn on (admin routes `/api/merchants/[id]/modules*`). Loyalty is not one of
- * them: it comes from the plan or a paid feature add-on only.
+ * #907 / #1187: modules the admin switch may turn on (`PUT /api/merchants/[id]/modules/[key]`). Loyalty can also come
+ * from the plan or a paid feature add-on (#967); the switch is for shops whose plan does not include it.
  */
-export const LEGACY_SWITCH_MODULE_KEYS: string[] = ['attendance'];
+export const LEGACY_SWITCH_MODULE_KEYS: string[] = ['attendance', 'loyalty'];
 
 export function moduleCatalogView(rows: Array<{ key: string; enabled: boolean; endsAt: Date | string | null }>, now = new Date()) {
   const active = new Set(resolveActiveModules(rows, now));

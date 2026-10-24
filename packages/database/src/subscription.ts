@@ -538,7 +538,7 @@ export async function changePlan(
   // #870: the shop's add-ons that continue into the new period (same helper as renew / extend)
   const now = new Date();
   const { items: addonItems, catalog: addonCatalog } = await simplifiedMerchantAddons.renewalItems(subscription.merchantId, now);
-  // A plan without multi-branch while a branch add-on still runs: the admin removes the branch add-ons first
+  // #1187: extra outlets are allowed on any plan, so this never throws (helper kept for the same call site)
   if (outletAddonsBlockPlan(addonItems, plan.limits, now)) {
     throw new ApiError(ErrorCode.PLAN_CHANGE_REMOVE_OUTLET_ADDONS);
   }
