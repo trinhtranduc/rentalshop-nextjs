@@ -32,7 +32,7 @@ describe('admin dashboard portal style (#808)', () => {
   });
 
   it('keeps the metric links and numbers', () => {
-    for (const href of ["'/merchants'", "'/subscriptions?status=TRIAL'", "'/subscriptions?status=ACTIVE'", "'/subscriptions?status=CANCELLED'"]) {
+    for (const href of ['DASHBOARD_MERCHANT_HREFS.all', 'DASHBOARD_MERCHANT_HREFS.trial', 'DASHBOARD_MERCHANT_HREFS.active', 'DASHBOARD_MERCHANT_HREFS.cancelled']) {
       expect(page).toContain(href);
     }
     for (const n of ['metrics.totalMerchants', 'subscriptionStats.trial', 'subscriptionStats.active', 'subscriptionStats.expiring', 'subscriptionStats.expired', 'subscriptionStats.cancelled', 'subscriptionStats.basic', 'subscriptionStats.pro']) {

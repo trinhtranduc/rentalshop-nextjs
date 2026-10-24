@@ -48,36 +48,80 @@ const PILL: Record<PillTone, string> = {
   bad: 'bg-ar-danger-soft text-ar-danger',
 };
 
+export type MetricTileChip = {
+  label: string;
+  onClick: () => void;
+};
+
 /** Metric card: title, big number, small pill, chevron when it links. */
 export function MetricTile({
   title,
   value,
   pill,
+  chips,
   tone = 'neutral',
   onClick,
 }: {
   title: string;
   value: React.ReactNode;
   pill: string;
+  /** Nested filters (Basic / Pro). Outer card stays a div so these can be buttons. */
+  chips?: MetricTileChip[];
   tone?: PillTone;
   onClick?: () => void;
 }) {
-  const body = (
+  const header = (
     <>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-ar-muted">{title}</span>
         {onClick && <ChevronRight className="h-4 w-4 text-ar-faint" aria-hidden />}
       </div>
       <div className="mt-2 text-2xl font-bold leading-none text-ar-ink tabular-nums">{value}</div>
+    </>
+  );
+  const cls =
+    'block w-full min-w-0 rounded-xl border border-ar-line bg-ar-surface shadow-ar p-3 text-left sm:p-4';
+  const interactiveCls = onClick ? ' min-h-[44px] transition-colors hover:border-ar-line-strong' : '';
+
+  if (chips && chips.length > 0) {
+    return (
+      <div className={`${cls}${interactiveCls}`}>
+        {onClick ? (
+          <button type="button" onClick={onClick} className="block w-full text-left">
+            {header}
+          </button>
+        ) : (
+          header
+        )}
+        <div className="mt-3 flex flex-wrap gap-1">
+          {chips.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                chip.onClick();
+              }}
+              className={`inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-medium ${PILL[tone]} min-h-[28px] hover:opacity-80`}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const body = (
+    <>
+      {header}
       <span className={`mt-3 inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-medium ${PILL[tone]}`}>
         {pill}
       </span>
     </>
   );
-  const cls =
-    'block w-full min-w-0 rounded-xl border border-ar-line bg-ar-surface shadow-ar p-3 text-left sm:p-4';
   return onClick ? (
-    <button type="button" onClick={onClick} className={`${cls} min-h-[44px] transition-colors hover:border-ar-line-strong`}>
+    <button type="button" onClick={onClick} className={`${cls}${interactiveCls}`}>
       {body}
     </button>
   ) : (

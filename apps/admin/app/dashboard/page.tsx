@@ -31,6 +31,7 @@ import { SegmentedControl, MetricTile, ChartCard } from './components/DashboardT
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { analyticsApi, formatInShopZone } from '@rentalshop/utils';
 import { getDashboardWindow, bucketByShopPeriod, groupCountsByShopPeriod, inDashboardWindow, type DashboardWindow } from './dashboard-buckets';
+import { computeDashboardSubscriptionStats, DASHBOARD_MERCHANT_HREFS } from './subscription-stats';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { TopProduct, TopOutlet } from '@rentalshop/types';
 import { 
@@ -418,22 +419,9 @@ export default function AdminDashboard() {
         const subsData = subscriptionsResponse.data as any;
         const subscriptions = Array.isArray(subsData) ? subsData : subsData.data || [];
         
+        const tileStats = computeDashboardSubscriptionStats(subscriptions);
         const stats = {
-          active: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'active').length,
-          trial: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'trial').length,
-          expired: subscriptions.filter((s: any) => {
-            // Expired = currentPeriodEnd < now
-            if (!s.currentPeriodEnd) return false;
-            return new Date(s.currentPeriodEnd) < new Date();
-          }).length,
-          expiring: subscriptions.filter((s: any) => {
-            if (!s.currentPeriodEnd) return false;
-            const daysUntilExpiry = Math.ceil((new Date(s.currentPeriodEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-            return daysUntilExpiry <= 7 && daysUntilExpiry > 0;
-          }).length,
-          cancelled: subscriptions.filter((s: any) => String(s.status).toLowerCase() === 'cancelled').length,
-          basic: subscriptions.filter((s: any) => String(s.plan?.name || '').toLowerCase() === 'basic').length,
-          pro: subscriptions.filter((s: any) => String(s.plan?.name || '').toLowerCase().includes('pro')).length,
+          ...tileStats,
           totalRevenue: subscriptions
             .filter((s: any) => {
               const status = String(s.status).toLowerCase();
@@ -622,12 +610,22 @@ export default function AdminDashboard() {
 
         {/* Subscription Health Metrics - Clickable */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-          <MetricTile title="Merchants" value={metrics.totalMerchants} pill="Total merchants" tone="info" onClick={() => router.push('/merchants')} />
-          <MetricTile title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push('/subscriptions?status=TRIAL')} />
-          <MetricTile title="Active" value={subscriptionStats.active} pill={`Basic: ${subscriptionStats.basic} | Pro: ${subscriptionStats.pro}`} tone="good" onClick={() => router.push('/subscriptions?status=ACTIVE')} />
-          <MetricTile title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push('/subscriptions?bucket=expiring')} />
-          <MetricTile title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push('/subscriptions?bucket=expired')} />
-          <MetricTile title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push('/subscriptions?status=CANCELLED')} />
+          <MetricTile title="Merchants" value={metrics.totalMerchants} pill="Total merchants" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.all)} />
+          <MetricTile title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.trial)} />
+          <MetricTile
+            title="Active"
+            value={subscriptionStats.active}
+            pill={`Basic: ${subscriptionStats.basic} | Pro: ${subscriptionStats.pro}`}
+            tone="good"
+            onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.active)}
+            chips={[
+              { label: `Basic: ${subscriptionStats.basic}`, onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.basic) },
+              { label: `Pro: ${subscriptionStats.pro}`, onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.pro) },
+            ]}
+          />
+          <MetricTile title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expiring)} />
+          <MetricTile title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expired)} />
+          <MetricTile title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.cancelled)} />
         </div>
 
         {/* Revenue & Orders Charts */}
