@@ -41,7 +41,8 @@ export default function MerchantsPage() {
   // ============================================================================
   
   const search = searchParams.get('q') || '';
-  const status = searchParams.get('status') || 'all';
+  const statusRaw = searchParams.get('status') || 'all';
+  const status = statusRaw === 'active' || statusRaw === 'inuse' ? 'current' : statusRaw;
   const plan = searchParams.get('plan') || 'all';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
@@ -254,6 +255,7 @@ export default function MerchantsPage() {
           onLimitChange={handleLimitChange}
           onSort={handleSort}
           onSelectionChange={setSelectedMerchantIds}
+          loading={loading}
         />
       </div>
 

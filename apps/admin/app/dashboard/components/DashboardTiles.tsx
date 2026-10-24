@@ -51,6 +51,7 @@ const PILL: Record<PillTone, string> = {
 export type MetricTileChip = {
   label: string;
   onClick: () => void;
+  testId?: string;
 };
 
 /** Metric card: title, big number, small pill, chevron when it links. */
@@ -61,6 +62,7 @@ export function MetricTile({
   chips,
   tone = 'neutral',
   onClick,
+  testId,
 }: {
   title: string;
   value: React.ReactNode;
@@ -69,6 +71,7 @@ export function MetricTile({
   chips?: MetricTileChip[];
   tone?: PillTone;
   onClick?: () => void;
+  testId?: string;
 }) {
   const header = (
     <>
@@ -85,9 +88,9 @@ export function MetricTile({
 
   if (chips && chips.length > 0) {
     return (
-      <div className={`${cls}${interactiveCls}`}>
+      <div className={`${cls}${interactiveCls}`} data-testid={testId}>
         {onClick ? (
-          <button type="button" onClick={onClick} className="block w-full text-left">
+          <button type="button" onClick={onClick} className="block w-full text-left" data-testid={testId ? `${testId}-open` : undefined}>
             {header}
           </button>
         ) : (
@@ -98,6 +101,7 @@ export function MetricTile({
             <button
               key={chip.label}
               type="button"
+              data-testid={chip.testId}
               onClick={(e) => {
                 e.stopPropagation();
                 chip.onClick();
@@ -121,11 +125,11 @@ export function MetricTile({
     </>
   );
   return onClick ? (
-    <button type="button" onClick={onClick} className={`${cls}${interactiveCls}`}>
+    <button type="button" onClick={onClick} className={`${cls}${interactiveCls}`} data-testid={testId}>
       {body}
     </button>
   ) : (
-    <div className={cls}>{body}</div>
+    <div className={cls} data-testid={testId}>{body}</div>
   );
 }
 

@@ -1,5 +1,5 @@
 /**
- * Map admin merchant-list query params to a Prisma `where` (#1190).
+ * Map admin merchant-list query params to a Prisma `where` (#1190 / #1192).
  * Dashboard tiles open `/merchants?status=…&plan=…`; those params must filter
  * in the database so `total` matches the tile (not a post-processed page).
  */
@@ -26,6 +26,24 @@ export type MerchantListResolved = {
 
 const PLAN_NAME_PRO = /^(pro|professional)$/i;
 
+/** Not "đang dùng": cancelled / paused even if the period date is still in the future. */
+export const IN_USE_EXCLUDED_STATUSES = ['CANCELLED', 'PAUSED'] as const;
+
+/** `status=current` (and aliases `active` / `inuse`) = còn hạn, đang dùng. */
+export function isInUseListStatus(status?: string | null): boolean {
+  if (!status) return false;
+  const lower = status.trim().toLowerCase();
+  return lower === 'current' || lower === 'inuse' || lower === 'in-use' || lower === 'active';
+}
+
+/** Period not ended, and not cancelled/paused. */
+export function inUseSubscriptionWhere(now: Date = new Date()): Record<string, unknown> {
+  return {
+    currentPeriodEnd: { gt: now },
+    status: { notIn: [...IN_USE_EXCLUDED_STATUSES] },
+  };
+}
+
 /** Plan name fragment for `subscription.plan`. Digits stay `planId` on the merchant. */
 export function merchantPlanNameWhere(plan?: string | null): Record<string, unknown> | undefined {
   if (!plan) return undefined;
@@ -38,18 +56,16 @@ export function merchantPlanNameWhere(plan?: string | null): Record<string, unkn
 }
 
 function listStatusToSubscriptionStatus(status?: string | null): string | undefined {
-  if (!status || status === 'all') return undefined;
+  if (!status || status === 'all' || isInUseListStatus(status)) return undefined;
   const lower = status.trim().toLowerCase();
   if (lower === 'trial') return 'TRIAL';
-  if (lower === 'active') return 'ACTIVE';
   if (lower === 'cancelled' || lower === 'canceled') return 'CANCELLED';
-  // Period tiles are buckets, not enum EXPIRED
   if (lower === 'expiring' || lower === 'expired' || lower === 'inactive') return undefined;
   return normalizeSubscriptionSearchStatus(status);
 }
 
 function listStatusToBucket(status?: string | null): string | undefined {
-  if (!status) return undefined;
+  if (!status || isInUseListStatus(status)) return undefined;
   const lower = status.trim().toLowerCase();
   if (lower === 'expiring' || lower === 'expired') return lower;
   return undefined;
@@ -57,8 +73,9 @@ function listStatusToBucket(status?: string | null): string | undefined {
 
 /**
  * Resolve GET `/api/merchants` query params.
- * `status=active` = subscription ACTIVE (dashboard Active tile), not shop isActive.
+ * `status=current` (alias `active`) = còn hạn đang dùng, not DB enum ACTIVE.
  * `status=inactive` = shop isActive false. Period tiles use the #1180 window.
+ * `plan=` without status lists every shop on that plan (#1192).
  */
 export function resolveMerchantListFilters(
   query: MerchantListQuery,
@@ -75,12 +92,21 @@ export function resolveMerchantListFilters(
     out.planId = parseInt(plan, 10);
   }
 
+  const planWhere = merchantPlanNameWhere(query.plan);
+  const inUse = isInUseListStatus(query.status);
+
+  if (inUse) {
+    const subscription = inUseSubscriptionWhere(now);
+    if (planWhere) subscription.plan = planWhere;
+    out.subscription = subscription;
+    return out;
+  }
+
   const subscriptionStatus =
     normalizeSubscriptionSearchStatus(query.subscriptionStatus) ||
     listStatusToSubscriptionStatus(query.status);
   const bucket =
     normalizeSubscriptionListBucket(query.bucket) || listStatusToBucket(query.status);
-  const planWhere = merchantPlanNameWhere(query.plan);
 
   const subscription = applySubscriptionListWhere(
     {},

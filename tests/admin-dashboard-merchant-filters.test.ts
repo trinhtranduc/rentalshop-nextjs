@@ -1,6 +1,5 @@
 /**
- * #1190: dashboard tiles list merchants; numbers match the filter.
- * Basic/Pro are among ACTIVE only. Expiring/Expired use the 7×24h period window.
+ * #1192: dashboard shows full totals — all shops, còn hạn, hết hạn, plan chips among all.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -21,15 +20,21 @@ const rows = [
   { status: 'ACTIVE', plan: { name: 'Enterprise' }, currentPeriodEnd: '2026-09-01T00:00:00.000Z' },
 ];
 
-describe('dashboard subscription stats (#1190)', () => {
-  it('counts Basic/Pro only among ACTIVE so they can break down Active', () => {
+describe('dashboard subscription stats (#1192)', () => {
+  it('In use is period not ended; plan chips count every shop on that plan', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
-    expect(stats.active).toBe(4);
-    expect(stats.basic).toBe(2);
-    expect(stats.pro).toBe(1);
+    expect(stats.inUse).toBe(5);
+    expect(stats.basic).toBe(3);
+    expect(stats.pro).toBe(3);
+    expect(stats.enterprise).toBe(1);
     expect(stats.trial).toBe(2);
     expect(stats.cancelled).toBe(1);
-    expect(stats.basic + stats.pro).toBeLessThanOrEqual(stats.active);
+  });
+
+  it('a paid ACTIVE shop whose period already ended is not In use', () => {
+    const stats = computeDashboardSubscriptionStats(rows, NOW);
+    expect(stats.expired).toBe(2);
+    expect(stats.inUse).toBe(5);
   });
 
   it('expired = period already ended; expiring = period end in the next 7×24h', () => {
@@ -40,11 +45,20 @@ describe('dashboard subscription stats (#1190)', () => {
   });
 });
 
-describe('merchant list URL → Prisma where (#1190)', () => {
-  it('status=active is subscription ACTIVE, not shop isActive', () => {
-    const resolved = resolveMerchantListFilters({ status: 'active' }, NOW);
+describe('merchant list URL → Prisma where (#1192)', () => {
+  it('status=current is còn hạn đang dùng, not enum ACTIVE', () => {
+    const resolved = resolveMerchantListFilters({ status: 'current' }, NOW);
     expect(resolved.isActive).toBeUndefined();
-    expect(resolved.subscription).toEqual({ status: 'ACTIVE' });
+    expect(resolved.subscription).toEqual({
+      currentPeriodEnd: { gt: NOW },
+      status: { notIn: ['CANCELLED', 'PAUSED'] },
+    });
+  });
+
+  it('status=active is an alias of current (old Active tile bookmark)', () => {
+    expect(resolveMerchantListFilters({ status: 'active' }, NOW).subscription).toEqual(
+      resolveMerchantListFilters({ status: 'current' }, NOW).subscription
+    );
   });
 
   it('status=inactive is shop isActive false', () => {
@@ -58,18 +72,24 @@ describe('merchant list URL → Prisma where (#1190)', () => {
     });
   });
 
-  it('Active + Basic filters subscription plan name (not parseInt)', () => {
-    expect(resolveMerchantListFilters({ status: 'active', plan: 'Basic' }, NOW).subscription).toEqual({
-      status: 'ACTIVE',
+  it('plan=Basic without status lists every Basic shop', () => {
+    expect(resolveMerchantListFilters({ plan: 'Basic' }, NOW).subscription).toEqual({
       plan: { name: { equals: 'Basic', mode: 'insensitive' } },
     });
   });
 
-  it('plan=Professional matches names that contain pro (same as the Pro chip)', () => {
-    expect(resolveMerchantListFilters({ status: 'active', plan: 'Professional' }, NOW).subscription).toEqual({
-      status: 'ACTIVE',
-      plan: { name: { contains: 'pro', mode: 'insensitive' } },
+  it('In use + Basic still ANDs period with plan name', () => {
+    expect(resolveMerchantListFilters({ status: 'current', plan: 'Basic' }, NOW).subscription).toEqual({
+      currentPeriodEnd: { gt: NOW },
+      status: { notIn: ['CANCELLED', 'PAUSED'] },
+      plan: { name: { equals: 'Basic', mode: 'insensitive' } },
     });
+  });
+
+  it('plan=Professional matches names that contain pro', () => {
+    expect(
+      resolveMerchantListFilters({ plan: 'Professional' }, NOW).subscription?.plan
+    ).toEqual({ name: { contains: 'pro', mode: 'insensitive' } });
   });
 
   it('numeric plan stays planId for old callers', () => {
@@ -92,7 +112,7 @@ describe('merchant list URL → Prisma where (#1190)', () => {
   });
 });
 
-describe('dashboard tiles open the merchant list (#1190)', () => {
+describe('dashboard tiles open the merchant list (#1192)', () => {
   const page = read('apps/admin/app/dashboard/page.tsx');
   const statsSrc = read('apps/admin/app/dashboard/subscription-stats.ts');
   const filters = read('packages/ui/src/components/features/Merchants/components/MerchantFilters.tsx');
@@ -105,15 +125,34 @@ describe('dashboard tiles open the merchant list (#1190)', () => {
     expect(page).not.toContain("/subscriptions?bucket=expired");
   });
 
+  it('does not label the in-use tile Active', () => {
+    expect(page).not.toMatch(/title="Active"/);
+    expect(page).toMatch(/title="In use"/);
+  });
+
+  it('Merchants total and plan chips come from GET /api/merchants without status=current', () => {
+    expect(page).toContain('totalOf()');
+    expect(page).toContain("totalOf(undefined, 'Basic')");
+    expect(page).toContain("totalOf(undefined, 'Professional')");
+    expect(page).toContain("totalOf(undefined, 'Enterprise')");
+    expect(page).toContain("totalOf('current'");
+    expect(page).toContain('dash-chip-basic');
+    expect(page).not.toContain('status=current&plan=');
+    expect(statsSrc).toContain("'/merchants?plan=Basic'");
+  });
+
   it('uses the merchant hrefs that match the tile filters', () => {
-    for (const key of ['all', 'trial', 'active', 'basic', 'pro', 'expiring', 'expired', 'cancelled'] as const) {
+    for (const key of ['all', 'trial', 'inUse', 'basic', 'pro', 'enterprise', 'expiring', 'expired', 'cancelled'] as const) {
       expect(page).toContain(`DASHBOARD_MERCHANT_HREFS.${key}`);
       expect(statsSrc).toContain(DASHBOARD_MERCHANT_HREFS[key]);
     }
   });
 
-  it('merchant status dropdown lists the dashboard buckets', () => {
-    for (const value of ['trial', 'active', 'expiring', 'expired', 'cancelled', 'inactive']) {
+  it('merchant status dropdown lists In use, not Active', () => {
+    expect(filters).toContain('value="current"');
+    expect(filters).toContain('In use');
+    expect(filters).not.toContain('value="active"');
+    for (const value of ['trial', 'expiring', 'expired', 'cancelled', 'inactive']) {
       expect(filters).toContain(`value="${value}"`);
     }
   });

@@ -31,7 +31,7 @@ import { SegmentedControl, MetricTile, ChartCard } from './components/DashboardT
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { analyticsApi, formatInShopZone } from '@rentalshop/utils';
 import { getDashboardWindow, bucketByShopPeriod, groupCountsByShopPeriod, inDashboardWindow, type DashboardWindow } from './dashboard-buckets';
-import { computeDashboardSubscriptionStats, DASHBOARD_MERCHANT_HREFS } from './subscription-stats';
+import { DASHBOARD_MERCHANT_HREFS } from './subscription-stats';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { TopProduct, TopOutlet } from '@rentalshop/types';
 import { 
@@ -268,13 +268,15 @@ export default function AdminDashboard() {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [productSortBy, setProductSortBy] = useState<RankingSortBy>('revenue');
   const [subscriptionStats, setSubscriptionStats] = useState({
-    active: 0,
+    all: 0,
+    inUse: 0,
     trial: 0,
     expired: 0,
     expiring: 0,
     cancelled: 0,
     basic: 0,
     pro: 0,
+    enterprise: 0,
     totalRevenue: 0
   });
   const [growthMetrics, setGrowthMetrics] = useState({
@@ -335,7 +337,8 @@ export default function AdminDashboard() {
         ordersResponse,
         merchantsResponse,
         subscriptionsResponse,
-        growthMetricsResponse
+        growthMetricsResponse,
+        tileTotals,
       ] = await Promise.all([
         analyticsApi.getSystemAnalytics(filters),
         analyticsApi.getRecentActivities(10, 0),
@@ -343,7 +346,29 @@ export default function AdminDashboard() {
         analyticsApi.getOrderAnalytics(filters),
         import('@rentalshop/utils').then(({ merchantsApi }) => merchantsApi.getMerchants()),
         import('@rentalshop/utils').then(({ subscriptionsApi }) => subscriptionsApi.search({ limit: 1000 })),
-        analyticsApi.getGrowthMetrics(filters)
+        analyticsApi.getGrowthMetrics(filters),
+        import('@rentalshop/utils').then(async ({ merchantsApi }) => {
+          const totalOf = async (status?: string, plan?: string) => {
+            const r = await merchantsApi.searchMerchants({
+              status,
+              plan,
+              limit: 1,
+            });
+            return r.success ? (r.data?.total ?? 0) : 0;
+          };
+          const [all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise] = await Promise.all([
+            totalOf(),
+            totalOf('current'),
+            totalOf('trial'),
+            totalOf('expiring'),
+            totalOf('expired'),
+            totalOf('cancelled'),
+            totalOf(undefined, 'Basic'),
+            totalOf(undefined, 'Professional'),
+            totalOf(undefined, 'Enterprise'),
+          ]);
+          return { all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise };
+        }),
       ]);
 
       // System metrics
@@ -414,27 +439,22 @@ export default function AdminDashboard() {
         setMerchantsRegistrationData(merchantsRegistrationChartData);
       }
 
-      // Subscription stats (calculate from subscriptions data)
-      if (subscriptionsResponse.success && subscriptionsResponse.data) {
-        const subsData = subscriptionsResponse.data as any;
-        const subscriptions = Array.isArray(subsData) ? subsData : subsData.data || [];
-        
-        const tileStats = computeDashboardSubscriptionStats(subscriptions);
-        const stats = {
-          ...tileStats,
+      const subsData = subscriptionsResponse.success ? (subscriptionsResponse.data as any) : null;
+      const subscriptions = Array.isArray(subsData) ? subsData : subsData?.data || [];
+      if (tileTotals) {
+        setSubscriptionStats({
+          ...tileTotals,
           totalRevenue: subscriptions
             .filter((s: any) => {
               const status = String(s.status).toLowerCase();
               return inDashboardWindow(s.createdAt, dashWindow) && ['active', 'trial'].includes(status);
             })
             .reduce((sum: number, s: any) => sum + (s.amount || 0), 0)
-        };
-        setSubscriptionStats(stats);
-
-        // Calculate subscription revenue data for chart based on time period
-        const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, dashWindow);
-        setSubscriptionRevenueData(subscriptionRevenueChartData);
+        });
       }
+
+      const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, dashWindow);
+      setSubscriptionRevenueData(subscriptionRevenueChartData);
     } catch (error) {
       console.error('Error fetching system metrics:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch system metrics';
@@ -610,22 +630,24 @@ export default function AdminDashboard() {
 
         {/* Subscription Health Metrics - Clickable */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-          <MetricTile title="Merchants" value={metrics.totalMerchants} pill="Total merchants" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.all)} />
-          <MetricTile title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.trial)} />
           <MetricTile
-            title="Active"
-            value={subscriptionStats.active}
-            pill={`Basic: ${subscriptionStats.basic} | Pro: ${subscriptionStats.pro}`}
-            tone="good"
-            onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.active)}
+            testId="dash-tile-merchants"
+            title="Merchants"
+            value={subscriptionStats.all}
+            pill="All shops"
+            tone="info"
+            onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.all)}
             chips={[
-              { label: `Basic: ${subscriptionStats.basic}`, onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.basic) },
-              { label: `Pro: ${subscriptionStats.pro}`, onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.pro) },
+              { label: `Basic: ${subscriptionStats.basic}`, testId: 'dash-chip-basic', onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.basic) },
+              { label: `Pro: ${subscriptionStats.pro}`, testId: 'dash-chip-pro', onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.pro) },
+              { label: `Enterprise: ${subscriptionStats.enterprise}`, testId: 'dash-chip-enterprise', onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.enterprise) },
             ]}
           />
-          <MetricTile title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expiring)} />
-          <MetricTile title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expired)} />
-          <MetricTile title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.cancelled)} />
+          <MetricTile testId="dash-tile-in-use" title="In use" value={subscriptionStats.inUse} pill="Still in period" tone="good" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.inUse)} />
+          <MetricTile testId="dash-tile-expired" title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expired)} />
+          <MetricTile testId="dash-tile-trial" title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.trial)} />
+          <MetricTile testId="dash-tile-expiring" title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expiring)} />
+          <MetricTile testId="dash-tile-cancelled" title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.cancelled)} />
         </div>
 
         {/* Revenue & Orders Charts */}

@@ -1,7 +1,6 @@
 /**
- * Admin dashboard subscription tiles (#1190).
- * Basic/Pro are among ACTIVE only so they can break down the Active number.
- * Expiring/Expired use the same 7×24h window as GET merchants / #1180.
+ * Admin dashboard subscription tiles (#1192).
+ * Merchants = every shop. In use = còn hạn. Plan chips are among all shops.
  */
 
 /** Same window as `SUBSCRIPTION_EXPIRING_MS` in subscription-list-where.ts (client-safe copy). */
@@ -16,13 +15,14 @@ export type DashboardSubscriptionRow = {
 };
 
 export type DashboardSubscriptionStats = {
-  active: number;
+  inUse: number;
   trial: number;
   expired: number;
   expiring: number;
   cancelled: number;
   basic: number;
   pro: number;
+  enterprise: number;
 };
 
 function statusKey(row: DashboardSubscriptionRow): string {
@@ -33,16 +33,22 @@ function planKey(row: DashboardSubscriptionRow): string {
   return String(row.plan?.name || '').toLowerCase();
 }
 
+export function isSubscriptionInUse(row: DashboardSubscriptionRow, now: Date = new Date()): boolean {
+  const status = statusKey(row);
+  if (status === 'cancelled' || status === 'paused') return false;
+  if (!row.currentPeriodEnd) return false;
+  return new Date(row.currentPeriodEnd).getTime() > now.getTime();
+}
+
 export function computeDashboardSubscriptionStats(
   subscriptions: DashboardSubscriptionRow[],
   now: Date = new Date()
 ): DashboardSubscriptionStats {
   const nowMs = now.getTime();
   const expiringUntil = nowMs + DASHBOARD_EXPIRING_MS;
-  const activeRows = subscriptions.filter((s) => statusKey(s) === 'active');
 
   return {
-    active: activeRows.length,
+    inUse: subscriptions.filter((s) => isSubscriptionInUse(s, now)).length,
     trial: subscriptions.filter((s) => statusKey(s) === 'trial').length,
     cancelled: subscriptions.filter((s) => statusKey(s) === 'cancelled').length,
     expired: subscriptions.filter((s) => {
@@ -54,17 +60,19 @@ export function computeDashboardSubscriptionStats(
       const end = new Date(s.currentPeriodEnd).getTime();
       return end > nowMs && end <= expiringUntil;
     }).length,
-    basic: activeRows.filter((s) => planKey(s) === 'basic').length,
-    pro: activeRows.filter((s) => planKey(s).includes('pro')).length,
+    basic: subscriptions.filter((s) => planKey(s) === 'basic').length,
+    pro: subscriptions.filter((s) => planKey(s).includes('pro')).length,
+    enterprise: subscriptions.filter((s) => planKey(s).includes('enterprise')).length,
   };
 }
 
 export const DASHBOARD_MERCHANT_HREFS = {
   all: '/merchants',
+  basic: '/merchants?plan=Basic',
+  pro: '/merchants?plan=Professional',
+  enterprise: '/merchants?plan=Enterprise',
+  inUse: '/merchants?status=current',
   trial: '/merchants?status=trial',
-  active: '/merchants?status=active',
-  basic: '/merchants?status=active&plan=Basic',
-  pro: '/merchants?status=active&plan=Professional',
   expiring: '/merchants?status=expiring',
   expired: '/merchants?status=expired',
   cancelled: '/merchants?status=cancelled',
