@@ -363,9 +363,9 @@ export default function AdminDashboard() {
             totalOf('expiring'),
             totalOf('expired'),
             totalOf('cancelled'),
-            totalOf(undefined, 'Basic'),
-            totalOf(undefined, 'Professional'),
-            totalOf(undefined, 'Enterprise'),
+            totalOf('current', 'Basic'),
+            totalOf('current', 'Professional'),
+            totalOf('current', 'Enterprise'),
           ]);
           return { all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise };
         }),
@@ -630,24 +630,24 @@ export default function AdminDashboard() {
 
         {/* Subscription Health Metrics - Clickable */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+          <MetricTile testId="dash-tile-merchants" title="Merchants" value={subscriptionStats.all} pill="All shops" tone="info" href={DASHBOARD_MERCHANT_HREFS.all} />
           <MetricTile
-            testId="dash-tile-merchants"
-            title="Merchants"
-            value={subscriptionStats.all}
-            pill="All shops"
-            tone="info"
-            onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.all)}
+            testId="dash-tile-in-use"
+            title="In use"
+            value={subscriptionStats.inUse}
+            pill="Still in period"
+            tone="good"
+            href={DASHBOARD_MERCHANT_HREFS.inUse}
             chips={[
-              { label: `Basic: ${subscriptionStats.basic}`, testId: 'dash-chip-basic', onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.basic) },
-              { label: `Pro: ${subscriptionStats.pro}`, testId: 'dash-chip-pro', onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.pro) },
-              { label: `Enterprise: ${subscriptionStats.enterprise}`, testId: 'dash-chip-enterprise', onClick: () => router.push(DASHBOARD_MERCHANT_HREFS.enterprise) },
+              { label: `Basic: ${subscriptionStats.basic}`, testId: 'dash-chip-basic', href: DASHBOARD_MERCHANT_HREFS.basic },
+              { label: `Pro: ${subscriptionStats.pro}`, testId: 'dash-chip-pro', href: DASHBOARD_MERCHANT_HREFS.pro },
+              { label: `Enterprise: ${subscriptionStats.enterprise}`, testId: 'dash-chip-enterprise', href: DASHBOARD_MERCHANT_HREFS.enterprise },
             ]}
           />
-          <MetricTile testId="dash-tile-in-use" title="In use" value={subscriptionStats.inUse} pill="Still in period" tone="good" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.inUse)} />
-          <MetricTile testId="dash-tile-expired" title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expired)} />
-          <MetricTile testId="dash-tile-trial" title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.trial)} />
-          <MetricTile testId="dash-tile-expiring" title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.expiring)} />
-          <MetricTile testId="dash-tile-cancelled" title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" onClick={() => router.push(DASHBOARD_MERCHANT_HREFS.cancelled)} />
+          <MetricTile testId="dash-tile-expired" title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" href={DASHBOARD_MERCHANT_HREFS.expired} />
+          <MetricTile testId="dash-tile-trial" title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" href={DASHBOARD_MERCHANT_HREFS.trial} />
+          <MetricTile testId="dash-tile-expiring" title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" href={DASHBOARD_MERCHANT_HREFS.expiring} />
+          <MetricTile testId="dash-tile-cancelled" title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" href={DASHBOARD_MERCHANT_HREFS.cancelled} />
         </div>
 
         {/* Revenue & Orders Charts */}

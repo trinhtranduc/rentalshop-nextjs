@@ -1,5 +1,5 @@
 /**
- * #1192: dashboard shows full totals — all shops, còn hạn, hết hạn, plan chips among all.
+ * #1194: In use Basic/Pro chips are còn hạn; tiles are real hrefs.
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -20,15 +20,16 @@ const rows = [
   { status: 'ACTIVE', plan: { name: 'Enterprise' }, currentPeriodEnd: '2026-09-01T00:00:00.000Z' },
 ];
 
-describe('dashboard subscription stats (#1192)', () => {
-  it('In use is period not ended; plan chips count every shop on that plan', () => {
+describe('dashboard subscription stats (#1194)', () => {
+  it('In use is period not ended; plan chips are among In use only', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
     expect(stats.inUse).toBe(5);
     expect(stats.basic).toBe(3);
-    expect(stats.pro).toBe(3);
-    expect(stats.enterprise).toBe(1);
+    expect(stats.pro).toBe(2);
+    expect(stats.enterprise).toBe(0);
     expect(stats.trial).toBe(2);
     expect(stats.cancelled).toBe(1);
+    expect(stats.basic + stats.pro + stats.enterprise).toBe(stats.inUse);
   });
 
   it('a paid ACTIVE shop whose period already ended is not In use', () => {
@@ -112,7 +113,7 @@ describe('merchant list URL → Prisma where (#1192)', () => {
   });
 });
 
-describe('dashboard tiles open the merchant list (#1192)', () => {
+describe('dashboard tiles open the merchant list (#1194)', () => {
   const page = read('apps/admin/app/dashboard/page.tsx');
   const statsSrc = read('apps/admin/app/dashboard/subscription-stats.ts');
   const filters = read('packages/ui/src/components/features/Merchants/components/MerchantFilters.tsx');
@@ -130,15 +131,15 @@ describe('dashboard tiles open the merchant list (#1192)', () => {
     expect(page).toMatch(/title="In use"/);
   });
 
-  it('Merchants total and plan chips come from GET /api/merchants without status=current', () => {
-    expect(page).toContain('totalOf()');
-    expect(page).toContain("totalOf(undefined, 'Basic')");
-    expect(page).toContain("totalOf(undefined, 'Professional')");
-    expect(page).toContain("totalOf(undefined, 'Enterprise')");
-    expect(page).toContain("totalOf('current'");
+  it('In use plan chips are GET /api/merchants status=current and real hrefs', () => {
+    expect(page).toContain("totalOf('current', 'Basic')");
+    expect(page).toContain("totalOf('current', 'Professional')");
+    expect(page).toContain("totalOf('current', 'Enterprise')");
     expect(page).toContain('dash-chip-basic');
-    expect(page).not.toContain('status=current&plan=');
-    expect(statsSrc).toContain("'/merchants?plan=Basic'");
+    expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.basic');
+    expect(page).toContain('href={DASHBOARD_MERCHANT_HREFS.inUse}');
+    expect(statsSrc).toContain("'/merchants?status=current&plan=Basic'");
+    expect(read('apps/admin/app/dashboard/components/DashboardTiles.tsx')).toContain('next/link');
   });
 
   it('uses the merchant hrefs that match the tile filters', () => {
