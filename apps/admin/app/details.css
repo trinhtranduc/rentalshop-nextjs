@@ -1,6 +1,20 @@
 /* #806: admin detail pages in the shop portal style. Scoped to .ar-detail, tokens from globals.css. */
 .ar-detail { color: rgb(var(--ar-ink)); min-width: 0; max-width: 100%; }
 .ar-detail * { min-width: 0; }
+/* #1180: min-width:0 collapsed 16px row checkboxes on merchant product lists */
+.ar-detail input[type="checkbox"],
+.ar-detail input[type="radio"] {
+  min-width: 1rem;
+  min-height: 1rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+.ar-detail th:has(> input[type="checkbox"]),
+.ar-detail td:has(> input[type="checkbox"]) {
+  min-width: 2.5rem;
+  width: 2.5rem;
+}
 .ar-detail h1, .ar-detail h2, .ar-detail h3, .ar-detail p, .ar-detail dd, .ar-detail td, .ar-detail span {
   overflow-wrap: anywhere;
 }
