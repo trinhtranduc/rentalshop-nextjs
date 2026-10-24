@@ -1,6 +1,6 @@
 /**
- * Admin dashboard subscription tiles (#1192).
- * Merchants = every shop. In use = còn hạn. Plan chips are among all shops.
+ * Admin dashboard subscription tiles (#1194).
+ * Merchants = every shop. In use = còn hạn. Plan chips are among In use only.
  */
 
 /** Same window as `SUBSCRIPTION_EXPIRING_MS` in subscription-list-where.ts (client-safe copy). */
@@ -46,9 +46,10 @@ export function computeDashboardSubscriptionStats(
 ): DashboardSubscriptionStats {
   const nowMs = now.getTime();
   const expiringUntil = nowMs + DASHBOARD_EXPIRING_MS;
+  const inUseRows = subscriptions.filter((s) => isSubscriptionInUse(s, now));
 
   return {
-    inUse: subscriptions.filter((s) => isSubscriptionInUse(s, now)).length,
+    inUse: inUseRows.length,
     trial: subscriptions.filter((s) => statusKey(s) === 'trial').length,
     cancelled: subscriptions.filter((s) => statusKey(s) === 'cancelled').length,
     expired: subscriptions.filter((s) => {
@@ -60,17 +61,17 @@ export function computeDashboardSubscriptionStats(
       const end = new Date(s.currentPeriodEnd).getTime();
       return end > nowMs && end <= expiringUntil;
     }).length,
-    basic: subscriptions.filter((s) => planKey(s) === 'basic').length,
-    pro: subscriptions.filter((s) => planKey(s).includes('pro')).length,
-    enterprise: subscriptions.filter((s) => planKey(s).includes('enterprise')).length,
+    basic: inUseRows.filter((s) => planKey(s) === 'basic').length,
+    pro: inUseRows.filter((s) => planKey(s).includes('pro')).length,
+    enterprise: inUseRows.filter((s) => planKey(s).includes('enterprise')).length,
   };
 }
 
 export const DASHBOARD_MERCHANT_HREFS = {
   all: '/merchants',
-  basic: '/merchants?plan=Basic',
-  pro: '/merchants?plan=Professional',
-  enterprise: '/merchants?plan=Enterprise',
+  basic: '/merchants?status=current&plan=Basic',
+  pro: '/merchants?status=current&plan=Professional',
+  enterprise: '/merchants?status=current&plan=Enterprise',
   inUse: '/merchants?status=current',
   trial: '/merchants?status=trial',
   expiring: '/merchants?status=expiring',
