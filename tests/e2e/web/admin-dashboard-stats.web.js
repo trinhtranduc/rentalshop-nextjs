@@ -30,13 +30,17 @@ const CFG = {
 const EXPIRING_MS = 7 * 24 * 60 * 60 * 1000;
 
 const CASES = [
-  { id: 'ADM-STAT-01', title: 'Merchants', testId: 'dash-tile-merchants', href: '/merchants', query: {} },
+  { id: 'ADM-STAT-01', title: 'Merchants', testId: 'dash-tile-merchants-open', href: '/merchants', query: {} },
+  { id: 'ADM-STAT-11', title: 'Basic total', testId: 'dash-chip-basic-all', href: '/merchants?plan=Basic', query: { plan: 'Basic' } },
+  { id: 'ADM-STAT-12', title: 'Pro total', testId: 'dash-chip-pro-all', href: '/merchants?plan=Professional', query: { plan: 'Professional' } },
   { id: 'ADM-STAT-02', title: 'In use', testId: 'dash-tile-in-use-open', href: '/merchants?status=current', query: { status: 'current' } },
-  { id: 'ADM-STAT-03', title: 'Basic', testId: 'dash-chip-basic', href: '/merchants?status=current&plan=Basic', query: { status: 'current', plan: 'Basic' } },
-  { id: 'ADM-STAT-04', title: 'Pro', testId: 'dash-chip-pro', href: '/merchants?status=current&plan=Professional', query: { status: 'current', plan: 'Professional' } },
+  { id: 'ADM-STAT-03', title: 'Basic in use', testId: 'dash-chip-basic', href: '/merchants?status=current&plan=Basic', query: { status: 'current', plan: 'Basic' } },
+  { id: 'ADM-STAT-04', title: 'Pro in use', testId: 'dash-chip-pro', href: '/merchants?status=current&plan=Professional', query: { status: 'current', plan: 'Professional' } },
   { id: 'ADM-STAT-05', title: 'Enterprise', testId: 'dash-chip-enterprise', href: '/merchants?status=current&plan=Enterprise', query: { status: 'current', plan: 'Enterprise' } },
   { id: 'ADM-STAT-10', title: 'Trial plan', testId: 'dash-chip-trial-plan', href: '/merchants?status=current&plan=Trial', query: { status: 'current', plan: 'Trial' } },
-  { id: 'ADM-STAT-06', title: 'Expired', testId: 'dash-tile-expired', href: '/merchants?status=expired', query: { status: 'expired' } },
+  { id: 'ADM-STAT-06', title: 'Expired', testId: 'dash-tile-expired-open', href: '/merchants?status=expired', query: { status: 'expired' } },
+  { id: 'ADM-STAT-13', title: 'Basic expired', testId: 'dash-chip-basic-expired', href: '/merchants?status=expired&plan=Basic', query: { status: 'expired', plan: 'Basic' } },
+  { id: 'ADM-STAT-14', title: 'Pro expired', testId: 'dash-chip-pro-expired', href: '/merchants?status=expired&plan=Professional', query: { status: 'expired', plan: 'Professional' } },
   { id: 'ADM-STAT-07', title: 'Trial', testId: 'dash-tile-trial', href: '/merchants?status=trial', query: { status: 'trial' } },
   { id: 'ADM-STAT-08', title: 'Expiring', testId: 'dash-tile-expiring', href: '/merchants?status=expiring', query: { status: 'expiring' } },
   { id: 'ADM-STAT-09', title: 'Cancelled', testId: 'dash-tile-cancelled', href: '/merchants?status=cancelled', query: { status: 'cancelled' } },

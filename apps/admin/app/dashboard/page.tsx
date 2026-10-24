@@ -278,6 +278,12 @@ export default function AdminDashboard() {
     basic: 0,
     pro: 0,
     enterprise: 0,
+    basicAll: 0,
+    proAll: 0,
+    enterpriseAll: 0,
+    basicExpired: 0,
+    proExpired: 0,
+    enterpriseExpired: 0,
     totalRevenue: 0
   });
   const [growthMetrics, setGrowthMetrics] = useState({
@@ -357,7 +363,12 @@ export default function AdminDashboard() {
             });
             return r.success ? (r.data?.total ?? 0) : 0;
           };
-          const [all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise, inUseTrial] = await Promise.all([
+          const [
+            all, inUse, trial, expiring, expired, cancelled,
+            basic, pro, enterprise, inUseTrial,
+            basicAll, proAll, enterpriseAll,
+            basicExpired, proExpired, enterpriseExpired,
+          ] = await Promise.all([
             totalOf(),
             totalOf('current'),
             totalOf('trial'),
@@ -368,8 +379,19 @@ export default function AdminDashboard() {
             totalOf('current', 'Professional'),
             totalOf('current', 'Enterprise'),
             totalOf('current', 'Trial'),
+            totalOf(undefined, 'Basic'),
+            totalOf(undefined, 'Professional'),
+            totalOf(undefined, 'Enterprise'),
+            totalOf('expired', 'Basic'),
+            totalOf('expired', 'Professional'),
+            totalOf('expired', 'Enterprise'),
           ]);
-          return { all, inUse, trial, expiring, expired, cancelled, basic, pro, enterprise, inUseTrial };
+          return {
+            all, inUse, trial, expiring, expired, cancelled,
+            basic, pro, enterprise, inUseTrial,
+            basicAll, proAll, enterpriseAll,
+            basicExpired, proExpired, enterpriseExpired,
+          };
         }),
       ]);
 
@@ -632,7 +654,19 @@ export default function AdminDashboard() {
 
         {/* Subscription Health Metrics - Clickable */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-          <MetricTile testId="dash-tile-merchants" title="Merchants" value={subscriptionStats.all} pill="All shops" tone="info" href={DASHBOARD_MERCHANT_HREFS.all} />
+          <MetricTile
+            testId="dash-tile-merchants"
+            title="Merchants"
+            value={subscriptionStats.all}
+            pill="All shops"
+            tone="info"
+            href={DASHBOARD_MERCHANT_HREFS.all}
+            chips={[
+              { label: `Basic: ${subscriptionStats.basicAll}`, testId: 'dash-chip-basic-all', href: DASHBOARD_MERCHANT_HREFS.basicAll },
+              { label: `Pro: ${subscriptionStats.proAll}`, testId: 'dash-chip-pro-all', href: DASHBOARD_MERCHANT_HREFS.proAll },
+              { label: `Enterprise: ${subscriptionStats.enterpriseAll}`, testId: 'dash-chip-enterprise-all', href: DASHBOARD_MERCHANT_HREFS.enterpriseAll },
+            ]}
+          />
           <MetricTile
             testId="dash-tile-in-use"
             title="In use"
@@ -647,7 +681,19 @@ export default function AdminDashboard() {
               { label: `Enterprise: ${subscriptionStats.enterprise}`, testId: 'dash-chip-enterprise', href: DASHBOARD_MERCHANT_HREFS.enterprise },
             ]}
           />
-          <MetricTile testId="dash-tile-expired" title="Expired" value={subscriptionStats.expired} pill="Period ended" tone="bad" href={DASHBOARD_MERCHANT_HREFS.expired} />
+          <MetricTile
+            testId="dash-tile-expired"
+            title="Expired"
+            value={subscriptionStats.expired}
+            pill="Period ended"
+            tone="bad"
+            href={DASHBOARD_MERCHANT_HREFS.expired}
+            chips={[
+              { label: `Basic: ${subscriptionStats.basicExpired}`, testId: 'dash-chip-basic-expired', href: DASHBOARD_MERCHANT_HREFS.basicExpired },
+              { label: `Pro: ${subscriptionStats.proExpired}`, testId: 'dash-chip-pro-expired', href: DASHBOARD_MERCHANT_HREFS.proExpired },
+              { label: `Enterprise: ${subscriptionStats.enterpriseExpired}`, testId: 'dash-chip-enterprise-expired', href: DASHBOARD_MERCHANT_HREFS.enterpriseExpired },
+            ]}
+          />
           <MetricTile testId="dash-tile-trial" title="Trial" value={subscriptionStats.trial} pill="In trial period" tone="info" href={DASHBOARD_MERCHANT_HREFS.trial} />
           <MetricTile testId="dash-tile-expiring" title="Expiring Soon" value={subscriptionStats.expiring} pill="Within 7 days" tone="warn" href={DASHBOARD_MERCHANT_HREFS.expiring} />
           <MetricTile testId="dash-tile-cancelled" title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" href={DASHBOARD_MERCHANT_HREFS.cancelled} />

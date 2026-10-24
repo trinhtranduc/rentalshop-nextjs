@@ -20,9 +20,10 @@ const rows = [
   { status: 'ACTIVE', plan: { name: 'Enterprise' }, currentPeriodEnd: '2026-09-01T00:00:00.000Z' },
   { status: 'TRIAL', plan: { name: 'Trial' }, currentPeriodEnd: '2026-11-01T00:00:00.000Z' },
   { status: 'ACTIVE', plan: { name: 'Basic — 6 months' }, currentPeriodEnd: '2026-12-01T00:00:00.000Z' },
+  { status: 'ACTIVE', plan: { name: 'Basic' }, currentPeriodEnd: '2026-09-01T00:00:00.000Z' },
 ];
 
-describe('dashboard subscription stats (#1194 / #1196)', () => {
+describe('dashboard subscription stats (#1194 / #1196 / #1198)', () => {
   it('In use is period not ended; plan chips are among In use only', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
     expect(stats.inUse).toBe(7);
@@ -35,15 +36,27 @@ describe('dashboard subscription stats (#1194 / #1196)', () => {
     expect(stats.basic + stats.pro + stats.enterprise + stats.inUseTrial).toBe(stats.inUse);
   });
 
+  it('totals are every shop on that plan; expired chips are period ended', () => {
+    const stats = computeDashboardSubscriptionStats(rows, NOW);
+    expect(stats.basicAll).toBe(5);
+    expect(stats.proAll).toBe(3);
+    expect(stats.enterpriseAll).toBe(1);
+    expect(stats.basicExpired).toBe(1);
+    expect(stats.proExpired).toBe(1);
+    expect(stats.enterpriseExpired).toBe(1);
+    expect(stats.basic + stats.basicExpired).toBe(stats.basicAll);
+    expect(stats.pro + stats.proExpired).toBe(stats.proAll);
+  });
+
   it('a paid ACTIVE shop whose period already ended is not In use', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
-    expect(stats.expired).toBe(2);
+    expect(stats.expired).toBe(3);
     expect(stats.inUse).toBe(7);
   });
 
   it('expired = period already ended; expiring = period end in the next 7×24h', () => {
     const stats = computeDashboardSubscriptionStats(rows, NOW);
-    expect(stats.expired).toBe(2);
+    expect(stats.expired).toBe(3);
     expect(stats.expiring).toBe(2);
     expect(DASHBOARD_EXPIRING_MS).toBe(SUBSCRIPTION_EXPIRING_MS);
   });
@@ -125,6 +138,13 @@ describe('merchant list URL → Prisma where (#1192)', () => {
     });
   });
 
+  it('expired + Basic ANDs period ended with plan name', () => {
+    expect(resolveMerchantListFilters({ status: 'expired', plan: 'Basic' }, NOW).subscription).toEqual({
+      currentPeriodEnd: { lt: NOW },
+      plan: { name: { contains: 'basic', mode: 'insensitive' } },
+    });
+  });
+
   it('omitting filters returns an empty resolve (old unfiltered list)', () => {
     expect(resolveMerchantListFilters({}, NOW)).toEqual({});
   });
@@ -153,18 +173,43 @@ describe('dashboard tiles open the merchant list (#1194)', () => {
     expect(page).toContain("totalOf('current', 'Professional')");
     expect(page).toContain("totalOf('current', 'Enterprise')");
     expect(page).toContain("totalOf('current', 'Trial')");
+    expect(page).toContain("totalOf(undefined, 'Basic')");
+    expect(page).toContain("totalOf('expired', 'Basic')");
     expect(page).toContain('dash-chip-basic');
+    expect(page).toContain('dash-chip-basic-all');
+    expect(page).toContain('dash-chip-basic-expired');
     expect(page).toContain('dash-chip-trial-plan');
     expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.basic');
+    expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.basicAll');
+    expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.basicExpired');
     expect(page).toContain('href: DASHBOARD_MERCHANT_HREFS.trialPlan');
     expect(page).toContain('href={DASHBOARD_MERCHANT_HREFS.inUse}');
     expect(statsSrc).toContain("'/merchants?status=current&plan=Basic'");
+    expect(statsSrc).toContain("'/merchants?plan=Basic'");
+    expect(statsSrc).toContain("'/merchants?status=expired&plan=Basic'");
     expect(statsSrc).toContain("'/merchants?status=current&plan=Trial'");
     expect(read('apps/admin/app/dashboard/components/DashboardTiles.tsx')).toContain('next/link');
   });
 
   it('uses the merchant hrefs that match the tile filters', () => {
-    for (const key of ['all', 'trial', 'trialPlan', 'inUse', 'basic', 'pro', 'enterprise', 'expiring', 'expired', 'cancelled'] as const) {
+    for (const key of [
+      'all',
+      'trial',
+      'trialPlan',
+      'inUse',
+      'basic',
+      'pro',
+      'enterprise',
+      'basicAll',
+      'proAll',
+      'enterpriseAll',
+      'basicExpired',
+      'proExpired',
+      'enterpriseExpired',
+      'expiring',
+      'expired',
+      'cancelled',
+    ] as const) {
       expect(page).toContain(`DASHBOARD_MERCHANT_HREFS.${key}`);
       expect(statsSrc).toContain(DASHBOARD_MERCHANT_HREFS[key]);
     }
