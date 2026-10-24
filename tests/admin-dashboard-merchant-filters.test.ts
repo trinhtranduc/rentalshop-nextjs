@@ -132,6 +132,18 @@ describe('dashboard tiles open the merchant list (#1190)', () => {
     expect(page).toMatch(/title="In use"/);
   });
 
+  it('tile numbers come from GET /api/merchants with the same status/plan the click uses', () => {
+    expect(page).toContain("totalOf('current'");
+    expect(page).toContain("totalOf('current', 'Basic')");
+    expect(page).toContain("totalOf('current', 'Professional')");
+    expect(page).toContain("totalOf('current', 'Enterprise')");
+    expect(page).toContain("totalOf('trial'");
+    expect(page).toContain('dash-chip-basic');
+    expect(page).toContain('dash-tile-in-use');
+    expect(read('packages/ui/src/components/features/Merchants/Merchants.tsx')).toContain('merchant-list-total');
+    expect(read('packages/ui/src/components/features/Merchants/components/MerchantTable.tsx')).toContain('merchant-row');
+  });
+
   it('uses the merchant hrefs that match the tile filters', () => {
     for (const key of ['all', 'trial', 'inUse', 'basic', 'pro', 'enterprise', 'expiring', 'expired', 'cancelled'] as const) {
       expect(page).toContain(`DASHBOARD_MERCHANT_HREFS.${key}`);

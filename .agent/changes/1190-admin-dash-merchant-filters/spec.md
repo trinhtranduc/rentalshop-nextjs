@@ -17,7 +17,7 @@ Issue: #1190 · Status: accepted · Intent: ./intent.md
 ## Out of scope
 
 - Changing `/subscriptions` (#1180 wiring stays).
-- Recalculating tiles from a dedicated stats API (still derived from the subscriptions fetch).
+- A dedicated stats API. Tile numbers are `GET /api/merchants` `total` with the same `status`/`plan` the click opens.
 - The old paid-only Active tile (DB enum `ACTIVE`).
 - Mobile POS.
 
@@ -40,6 +40,7 @@ Response shape unchanged (`merchants`, `total`, pagination). External ids stay n
 ## Acceptance
 
 - [ ] `computeDashboardSubscriptionStats` tests: In use = period not ended; Basic/Pro/Enterprise among In use
+- [ ] Headed e2e `scripts/e2e/admin-e2e.sh`: each tile/chip opens `/merchants` with the same filter; list total = API total; every visible row matches the bucket
 - [ ] `resolveMerchantListFilters` tests: URL → Prisma where
 - [ ] Dashboard source test: tiles link to `/merchants?...`, not `/subscriptions?...`
 - [ ] MerchantFilters lists the new status values

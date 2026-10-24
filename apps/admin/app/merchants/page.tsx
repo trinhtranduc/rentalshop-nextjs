@@ -255,6 +255,7 @@ export default function MerchantsPage() {
           onLimitChange={handleLimitChange}
           onSort={handleSort}
           onSelectionChange={setSelectedMerchantIds}
+          loading={loading}
         />
       </div>
 
