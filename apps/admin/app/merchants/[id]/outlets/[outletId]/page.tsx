@@ -4,7 +4,7 @@ import '../../../../details.css';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { merchantsApi, parseApiResponse, formatInShopZone } from '@rentalshop/utils';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { PageWrapper,
   PageHeader,
   PageTitle,
@@ -48,12 +48,13 @@ export default function OutletDetailPage() {
   const router = useRouter();
   const merchantId = params.id as string;
   const outletId = params.outletId as string;
+  const searchParams = useSearchParams();
   
   const [outlet, setOutlet] = useState<OutletDetail | null>(null);
   const [merchantName, setMerchantName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(searchParams.get('edit') === '1');
   const [editData, setEditData] = useState<Partial<OutletDetail>>({});
 
   useEffect(() => {
