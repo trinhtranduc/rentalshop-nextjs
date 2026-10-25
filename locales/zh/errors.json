@@ -93,5 +93,8 @@
   "BOOKING_REQUEST_FOUND": "已加载预约请求。",
   "BOOKING_REQUESTS_FOUND": "已加载预约请求列表。",
   "BOOKING_REQUEST_PREPARED": "已可根据预约请求创建订单。",
-  "BOOKING_REQUEST_REJECTED": "已拒绝该预约请求。"
+  "BOOKING_REQUEST_REJECTED": "已拒绝该预约请求。",
+  "BLOCK_PRICE_MISMATCH": "按天数分档的商品价格与价目表不一致。请重新加载商品后再试。",
+  "PRICING_TYPE_REQUIRES_UPDATE": "该商品使用按天数分档计价。请更新应用后再下租赁订单。",
+  "BLOCK_TABLE_INVALID": "按天数分档的价目表无效。请使用 1 到 31 天、不小于 0 的价格，且每个商品只能有一个价目表。"
 }

@@ -211,6 +211,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   'BOOKING_REQUEST_NOT_FOUND': "Booking request not found.",
   'BOOKING_REQUEST_CLOSED': "This booking request was already confirmed, rejected or has expired.",
   'INVALID_PHONE': "Please enter a valid phone number.",
+  // #1189 day-block pricing
+  'BLOCK_PRICE_MISMATCH': "The price of a day-block item does not match the price list. Reload the product and try again.",
+  'PRICING_TYPE_REQUIRES_UPDATE': "This product uses day-block pricing. Please update the app to place this rental.",
+  'BLOCK_TABLE_INVALID': "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.",
 
   // Default
   'UNKNOWN_ERROR': 'An unknown error occurred',

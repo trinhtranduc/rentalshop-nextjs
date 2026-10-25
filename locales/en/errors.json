@@ -570,5 +570,8 @@
   "BOOKING_REQUEST_FOUND": "Booking request loaded.",
   "BOOKING_REQUESTS_FOUND": "Booking requests loaded.",
   "BOOKING_REQUEST_PREPARED": "Booking request ready to create the order.",
-  "BOOKING_REQUEST_REJECTED": "Booking request rejected."
+  "BOOKING_REQUEST_REJECTED": "Booking request rejected.",
+  "BLOCK_PRICE_MISMATCH": "The price of a day-block item does not match the price list. Reload the product and try again.",
+  "PRICING_TYPE_REQUIRES_UPDATE": "This product uses day-block pricing. Please update the app to place this rental.",
+  "BLOCK_TABLE_INVALID": "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product."
 }
