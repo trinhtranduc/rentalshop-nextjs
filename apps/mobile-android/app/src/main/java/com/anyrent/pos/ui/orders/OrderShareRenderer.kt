@@ -251,6 +251,11 @@ internal class OrderShareRenderer(private val context: Context, private val mode
             y += canvas.block(line.name, namePaint, left, y, contentWidth - totalWidth - 16f)
             y += 2f
             y += canvas.block(line.quantity, qtyPaint, left, y, contentWidth)
+            line.formula?.let {
+                // #1189: the sum of a day-block line
+                y += 2f
+                y += canvas.block(it, qtyPaint, left, y, contentWidth)
+            }
             line.note?.let {
                 // #930: the item's own note, italic brown, under its price line
                 y += 3f

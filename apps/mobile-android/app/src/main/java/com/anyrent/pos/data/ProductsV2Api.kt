@@ -1,6 +1,7 @@
 package com.anyrent.pos.data
 
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.PricingOptionInput
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -9,6 +10,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.net.URLEncoder
+
+/** #1189: the API stores BLOCK options only from a client that says it knows them */
+const val PRICING_SCHEMA_VERSION = 2
 
 /**
  * Product calls of the redesigned screens (#373). Existing endpoints only; the old screens keep their calls.
@@ -88,6 +92,11 @@ object ProductsV2Api {
         val deposit: Double?,
         /** Giá vốn (#887); null = not sent, the API keeps the stored cost */
         val costPrice: Double? = null,
+        /**
+         * #1189: 2 = this form sends every option, BLOCK included, so the API replaces the stored table with ours.
+         * null (the old form) keeps the stored table.
+         */
+        val pricingSchemaVersion: Int? = null,
     )
 
     /**
@@ -111,9 +120,11 @@ object ProductsV2Api {
             data.put("salePrice", prices.salePrice ?: 0.0)
             data.put("deposit", prices.deposit ?: 0.0)
             prices.costPrice?.let { data.put("costPrice", it) }
-            data.put("pricingOptions", JSONArray(prices.options.map {
-                JSONObject().put("type", it.type).put("price", it.price).put("isDefault", it.isDefault)
+            data.put("pricingOptions", JSONArray(prices.options.map { option ->
+                option.blockTable?.let { BlockPricing.optionJson(it, option.isDefault) }
+                    ?: JSONObject().put("type", option.type).put("price", option.price).put("isDefault", option.isDefault)
             }))
+            prices.pricingSchemaVersion?.let { data.put("pricingSchemaVersion", it) }
         }
         if (id != null || keptUrls.isNotEmpty()) data.put("images", JSONArray(keptUrls))
 

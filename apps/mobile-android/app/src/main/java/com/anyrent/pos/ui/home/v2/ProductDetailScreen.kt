@@ -252,6 +252,8 @@ fun ProductDetailScreen(
                 val tiles = listOfNotNull(
                     ProductPricing.perRental(current)?.let { stringResource(R.string.v2_price_per_rental) to it },
                     ProductPricing.perDay(current)?.let { stringResource(R.string.v2_price_per_day) to it },
+                    // #1189: the day-1 price of the day-block table
+                    ProductPricing.block(current)?.tiers?.firstOrNull()?.let { stringResource(R.string.v2_price_block) to it },
                     ProductPricing.sale(current)?.let { stringResource(R.string.v2_price_sale) to it },
                 )
                 if (tiles.isNotEmpty()) {

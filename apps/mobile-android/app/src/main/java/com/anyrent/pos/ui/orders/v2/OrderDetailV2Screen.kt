@@ -99,6 +99,7 @@ import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.domain.products.CartV2Logic
+import com.anyrent.pos.domain.products.blockLines
 import com.anyrent.pos.ui.home.v2.orderItemPricingParts
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -960,14 +961,24 @@ private fun ItemRow(item: OrderItem, orderType: String) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            // #1189: a day-block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ", then its sum
+            val block = if (orderType.equals("RENT", ignoreCase = true)) item.blockLines(LocalContext.current.resources) else null
             Text(
                 buildAnnotatedString {
-                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(amount) }
-                    append(" / $unit")
+                    if (block != null) {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(block.first) }
+                        append(" · " + com.anyrent.pos.domain.money.ShopMoney.withUnit(item.unitPrice))
+                    } else {
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(amount) }
+                        append(" / $unit")
+                    }
                 },
                 fontSize = DS.TextSize.Body,
                 color = Color(0xFF475569),
             )
+            block?.second?.let { formula ->
+                Text(formula, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.semantics { contentDescription = "orderDetail.item.blockFormula" })
+            }
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     orderItemQuantityLine(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
