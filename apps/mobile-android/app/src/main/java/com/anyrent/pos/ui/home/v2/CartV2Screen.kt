@@ -51,6 +51,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -1043,12 +1046,15 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
                 .heightIn(min = 32.dp).padding(end = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // One text, so a long summary wraps with its price instead of splitting into two columns
             Text(
-                BlockText.summary(LocalContext.current.resources, blockDetail),
-                fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
+                buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(BlockText.summary(LocalContext.current.resources, blockDetail)) }
+                    append(" · " + com.anyrent.pos.domain.money.ShopMoney.withUnit(line.unitPrice))
+                },
+                fontSize = DS.TextSize.Body, color = DS.Colors.Primary,
                 modifier = Modifier.weight(1f, fill = false),
             )
-            Text(" · " + com.anyrent.pos.domain.money.ShopMoney.withUnit(line.unitPrice), fontSize = DS.TextSize.Body, color = DS.Colors.Primary, maxLines = 1)
             Spacer(Modifier.size(4.dp))
             Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
         }
