@@ -672,7 +672,8 @@ export async function buildAnalyticsPeriodReport(
   const computeSeries = async (): Promise<AnalyticsPeriodSeriesPoint[]> => {
     const series = await computeSeriesRows();
     // #1199: unpaid deposit stages by due day (one query; a stage can fall due where the order has no other event)
-    const planOrders = await loadReservedPlanOrders(prisma, outletFilter);
+    // (only for a range that reaches today: stages of days gone by are overdue, not "future")
+    const planOrders = rangeEnd < todayStart ? [] : await loadReservedPlanOrders(prisma, outletFilter);
     if (planOrders.length === 0) return series;
     for (const point of series) {
       const key = seriesPointKey(point);

@@ -215,7 +215,6 @@ export function buildEventWhere(range: EventWhereRange, options: EventWhereOptio
       ? { AND: [{ status: ORDER_STATUS.CANCELLED }, { updatedAt: { ...inRange } }] }
       : { updatedAt: { ...inRange }, status: ORDER_STATUS.CANCELLED as any }
   ];
-  or.push(paymentIn);
   if (includeSaleCompleted) {
     or.push({
       AND: [{ orderType: ORDER_TYPE.SALE }, { status: ORDER_STATUS.COMPLETED }, { updatedAt: { ...inRange } }]
@@ -224,5 +223,6 @@ export function buildEventWhere(range: EventWhereRange, options: EventWhereOptio
   if (includePlans) {
     or.push({ pickupPlanAt: plannedIn() }, { returnPlanAt: plannedIn() });
   }
+  or.push(paymentIn);
   return { OR: or };
 }
