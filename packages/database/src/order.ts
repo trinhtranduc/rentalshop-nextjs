@@ -259,6 +259,7 @@ const orderInclude = {
       rentalDays: true,
       pricingType: true,
       pricingOptionId: true,
+      pricingSnapshot: true,
       product: {
         select: {
           id: true,
@@ -479,8 +480,9 @@ export async function updateOrder(
       deposit?: number
       notes?: string
       rentalDays?: number
-      pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null
+      pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | 'BLOCK' | null
       pricingOptionId?: number | null
+      pricingSnapshot?: unknown
     }>
   }>
 ): Promise<OrderWithRelations> {
@@ -633,6 +635,7 @@ export async function updateOrder(
           item.pricingOptionId != null && validOptionIds.has(item.pricingOptionId)
             ? item.pricingOptionId
             : null,
+        ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot as any } : {}), // #1189
       }))
     }
     console.log('🔧 Converted orderItems to nested write format');
@@ -1003,6 +1006,7 @@ const ORDER_CREATE_INCLUDE = {
       rentalDays: true,
       pricingType: true,
       pricingOptionId: true,
+      pricingSnapshot: true,
       productName: true,
       productBarcode: true,
       productImages: true,
@@ -1040,6 +1044,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -1082,6 +1087,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             productImages: true, // Snapshot images saved when order was created
             product: { select: { id: true, name: true, barcode: true, images: true } } // Include product images for fallback
           }
@@ -1510,6 +1516,7 @@ export const simplifiedOrders = {
               rentalDays: true,
               pricingType: true,
               pricingOptionId: true,
+              pricingSnapshot: true,
               productImages: true, // Snapshot images saved when order was created
               product: {
                 select: {
@@ -1898,6 +1905,7 @@ export const simplifiedOrders = {
           rentalDays: true,
           pricingType: true,
           pricingOptionId: true,
+          pricingSnapshot: true,
           product: {
             select: {
               id: true,
@@ -2031,6 +2039,7 @@ export const simplifiedOrders = {
           rentalDays: item.rentalDays,
           pricingType: item.pricingType,
           pricingOptionId: item.pricingOptionId,
+          ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {}), // #1189 (additive)
           // Flatten product data
           productId: item.productId ?? item.product?.id,
           productName: item.product?.name,
@@ -2185,6 +2194,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             product: {
               select: {
                 id: true,
@@ -2387,6 +2397,7 @@ export const simplifiedOrders = {
           rentalDays: true,
           pricingType: true,
           pricingOptionId: true,
+          pricingSnapshot: true,
           product: {
             select: {
               id: true,
@@ -2585,6 +2596,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             product: {
               select: {
                 id: true,
