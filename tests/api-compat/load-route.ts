@@ -59,6 +59,8 @@ export function loadRoute(routeDir: string, holder: StoreHolder, root = THIS_ROO
     createAuditHelper: () => ({ logCreate: async () => undefined, logUpdate: async () => undefined }),
     uploadToS3: async () => ({ success: false }),
     commitStagingFiles: async () => ({ success: true, committedKeys: [] }),
+    // growth-metrics (revenue mapping characterization, #1199)
+    percentChange: jest.requireActual(path.join(pkg('utils'), 'analytics/period-report')).percentChange,
   }));
   jest.doMock('@rentalshop/loyalty', () => ({
     calculateAmountDue: jest.requireActual(path.join(pkg('loyalty'), 'earn')).calculateAmountDue,

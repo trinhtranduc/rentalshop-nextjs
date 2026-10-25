@@ -31,10 +31,12 @@ jest.mock('@rentalshop/utils', () => {
   const date = jest.requireActual('../../packages/utils/src/core/date');
   const dateRange = jest.requireActual('../../packages/utils/src/core/date-range');
   const revenue = jest.requireActual('../../packages/utils/src/core/revenue-calculator');
+  const revenueMapping = jest.requireActual('../../packages/utils/src/core/revenue-mapping');
   return {
     ...date,
     ...dateRange,
     ...revenue,
+    ...revenueMapping,
     ResponseBuilder: {
       success: (code: string, data: any) => ({ success: true, code, data }),
       error: (code: string) => ({ success: false, code }),
