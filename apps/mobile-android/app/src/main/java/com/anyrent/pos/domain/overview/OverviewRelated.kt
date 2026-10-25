@@ -85,6 +85,8 @@ enum class EventReason(@StringRes val res: Int) {
     FUTURE_DAMAGE_FEE(R.string.overview_v2_event_future_damage_fee),
     FUTURE_REFUND(R.string.overview_v2_event_future_refund),
     FUTURE_NOTHING(R.string.overview_v2_event_future_nothing),
+    /** #1199 a deposit stage collected on its own day (`RENT_INSTALLMENT`) */
+    INSTALLMENT(R.string.overview_v2_event_installment),
     ;
 
     companion object {
@@ -104,6 +106,7 @@ enum class EventReason(@StringRes val res: Int) {
             "SALE_CANCELLED" -> SALE_CANCELLED
             "RENT_DEPOSIT" -> DEPOSIT
             "RENT_PICKUP" -> PICKUP
+            "RENT_INSTALLMENT" -> INSTALLMENT
             "RENT_CANCELLED" -> RENT_CANCELLED
             "RENT_FUTURE_PICKUP" -> FUTURE_PICKUP
             "RENT_RETURN" -> if (revenue < 0) DEPOSIT_REFUND else if (revenue > 0) RETURN_COLLECTED else NOTHING

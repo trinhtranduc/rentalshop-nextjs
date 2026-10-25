@@ -229,6 +229,8 @@ fun OverviewV2Screen(
             // #620: the Hôm nay counters belong to today only
             if (state.showsOperations && OverviewDashLogic.showsTodayCard(range, today)) {
                 TodayCard(state.now, state.loading, onOpenOrdersTab, onOpenRentedOut, onOpenNotPickedUp)
+                // #1199: deposit stages to collect today / soon (today's range only, like the "Hôm nay" counters)
+                state.now?.installments?.takeIf { !it.isEmpty }?.let { InstallmentsCard(it, onOpenOrder) }
             }
             // #1059: a range of exactly today lists today's new orders instead of ranking them
             if (state.showsRevenue && !failed && OverviewTodayOrders.showsTodayOrders(range, today)) {
@@ -366,6 +368,14 @@ private fun ChartCard(source: OverviewReport?, loading: Boolean, failed: Boolean
             else -> Box(Modifier.fillMaxWidth().height(190.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
             }
+        }
+        // #1199: apart from the bars and the forecast; the stages are not in `futureIncome`
+        val upcoming = if (bars != null) source?.futureInstallmentsTotal else null
+        if (upcoming != null && upcoming.second > 0) {
+            Text(
+                stringResource(R.string.overview_installments_upcoming, formatMoneyVnd(upcoming.first), upcoming.second),
+                fontSize = DS.TextSize.Secondary, color = OV.Muted, modifier = Modifier.testTag("overview.installments.upcoming"),
+            )
         }
     }
 }
