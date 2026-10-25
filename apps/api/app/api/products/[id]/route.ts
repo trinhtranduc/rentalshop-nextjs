@@ -669,7 +669,10 @@ export async function PUT(
       }
 
       // Update the product using the simplified database API with nested write
-      const updatedProduct = await db.products.update(productId, finalUpdateData);
+      // #1200: a client that sends no `pricingSchemaVersion` (installed apps) cannot see BLOCK options;
+      // saving its option list must not delete them.
+      const keepBlockOptions = (productDataFromRequest as any)?.pricingSchemaVersion == null;
+      const updatedProduct = await db.products.update(productId, finalUpdateData, { keepBlockOptions });
       // #519: snapshots with prices, pricing options, per-outlet stock and images (never costPrice)
       await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
         entityType: 'Product',

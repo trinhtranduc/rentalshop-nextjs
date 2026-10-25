@@ -18,6 +18,8 @@ import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, n
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
 import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
+import { hasCapability } from '../../../../lib/client-capabilities';
+import { isInstallmentPayment, shapeOrderPayments } from '../../../../lib/order-payments';
 import { clampOrderDiscount, sumLineTotals } from '../../../../lib/order-discount';
 import {
   findEditScheduleConflicts,
@@ -264,7 +266,9 @@ export const GET = async (
       }
       
       // Get order using the optimized database API
-      const order: any = await db.orders.findByIdDetail(orderIdNum);
+      const detail: any = await db.orders.findByIdDetail(orderIdNum);
+      // #1200: payments[] gets paymentMethod / paymentDate; INSTALLMENT rows only for clients that declare `installments`
+      const order: any = detail ? shapeOrderPayments(detail, request) : detail;
 
       if (!order) {
         console.log('❌ Order not found in database for orderId:', orderIdNum);
@@ -901,6 +905,10 @@ export const PUT = async (
       }
       
       // Flatten order response (consistent with create order response)
+      // #1200: a deposit stage (notes INSTALLMENT) is not counted for clients without the `installments` capability
+      const countedPayments: any[] = (fullOrder.payments || []).filter(
+        (payment: any) => hasCapability(request, 'installments') || !isInstallmentPayment(payment)
+      );
       const flattenedOrder = {
         id: fullOrder.id,
         orderNumber: fullOrder.orderNumber,
@@ -999,8 +1007,8 @@ export const PUT = async (
         }) || [],
         // Calculated fields
         itemCount: fullOrder.orderItems?.length || 0,
-        paymentCount: fullOrder.payments?.length || 0,
-        totalPaid: fullOrder.payments?.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0) || 0
+        paymentCount: countedPayments.length,
+        totalPaid: countedPayments.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0)
       };
 
       // Normalize date fields to UTC ISO strings using toISOString()

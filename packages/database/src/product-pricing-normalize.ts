@@ -4,6 +4,20 @@
  *   negative price is dropped);
  * - exactly one isDefault (the first one when none or several are marked).
  */
+/**
+ * #1200: which existing options a "replace the option set" save deletes. A client that does not send
+ * `pricingSchemaVersion` (installed apps) only knows FIXED / DAILY, so it must not wipe a BLOCK option it
+ * cannot see: BLOCK rows survive unless the payload itself carries BLOCK rows.
+ */
+export function pricingOptionsDeleteWhere(
+  productId: number,
+  opts: { keepBlockOptions?: boolean; payloadHasBlock?: boolean } = {}
+): { productId: number; type?: { not: 'BLOCK' } } {
+  return opts.keepBlockOptions && !opts.payloadHasBlock
+    ? { productId, type: { not: 'BLOCK' } }
+    : { productId };
+}
+
 export function normalizePricingOptions(options: any[] | undefined): any[] {
   const allowed = (options || []).filter((o) => {
     if (!o || (o.type !== 'FIXED' && o.type !== 'DAILY')) return false;
