@@ -60,6 +60,8 @@ enum InstallmentCardView {
         let reserved = detail.status == .reserved
 
         let title = V2.label("deposit.card.title".localized(), size: DS.TextSize.input, weight: .bold)
+        title.adjustsFontSizeToFitWidth = true
+        title.minimumScaleFactor = 0.8
         let badge = DepositUI.pill(String(format: "deposit.badge.collected".localized(), DepositPlanMath.percentText(percent)), DS.Status.done)
         badge.accessibilityIdentifier = "deposit.card.badge"
         var head: [UIView] = [title, UIView(), badge]
@@ -69,6 +71,8 @@ enum InstallmentCardView {
             edit.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
             edit.addAction(UIAction { _ in onEdit() }, for: .touchUpInside)
             edit.accessibilityIdentifier = "deposit.card.edit"
+            edit.setContentCompressionResistancePriority(.required, for: .horizontal)
+            edit.setContentHuggingPriority(.required, for: .horizontal)
             head.append(edit)
         }
         let headRow = UIStackView(arrangedSubviews: head)
@@ -397,6 +401,8 @@ final class CancelDepositOrderSheet: V2FittingSheet, UITextFieldDelegate {
         field.isEnabled = canKeep
         field.accessibilityIdentifier = id
         field.addTarget(self, action: #selector(changed(_:)), for: .editingChanged)
+        // a tap selects the number, so typing replaces it (a "0" left in front would turn 1800000 into 18000000)
+        field.addAction(UIAction { [weak field] _ in DispatchQueue.main.async { field?.selectAll(nil) } }, for: .editingDidBegin)
         KeyboardDoneBar.attach([field])
     }
 
@@ -425,8 +431,11 @@ final class CancelDepositOrderSheet: V2FittingSheet, UITextFieldDelegate {
     @objc private func changed(_ sender: UITextField) {
         let typed = MoneyInput.parse(sender.text) ?? 0
         amounts = sender === keptField ? .keeping(typed, of: collected) : .refunding(typed, of: collected)
-        if sender === keptField { refundField.text = MoneyInput.display(amounts.refund); sender.text = MoneyInput.display(amounts.kept) }
-        else { keptField.text = MoneyInput.display(amounts.kept); sender.text = MoneyInput.display(amounts.refund) }
+        // the box being typed in stays empty at 0 (a "0" put back would send the next digit before it)
+        func shown(_ value: Double) -> String { value > 0 ? MoneyInput.display(value) : "" }
+        if sender === keptField { refundField.text = MoneyInput.display(amounts.refund); sender.text = shown(amounts.kept) }
+        else { keptField.text = MoneyInput.display(amounts.kept); sender.text = shown(amounts.refund) }
+        confirmButton.isEnabled = amounts.isValid
     }
 
     @objc private func confirmTapped() {
@@ -642,8 +651,9 @@ final class EditDepositPlanViewController: BaseViewControler {
     private func refreshTotals() {
         let explicit = rows.map { amount($0) }.reduce(0, +)
         let ok = explicit <= orderTotal + 0.000001
-        let percent = orderTotal > 0 ? explicit / orderTotal * 100 : 0
-        totalLabel.text = String(format: "deposit.plan.total".localized(), DepositPlanMath.percentText((percent * 100).rounded() / 100), MoneyFormatter.format(explicit))
+        // the automatic last stage is the rest: when the stages fit, the plan always adds up to 100%
+        let percent = ok ? 100 : (orderTotal > 0 ? explicit / orderTotal * 100 : 0)
+        totalLabel.text = String(format: "deposit.plan.total".localized(), DepositPlanMath.percentText((percent * 100).rounded() / 100), MoneyFormatter.format(ok ? orderTotal : explicit))
         okLabel.text = ok ? "✓ " + "deposit.plan.fits".localized() : "deposit.cart.exceeds.short".localized()
         okLabel.textColor = ok ? UIColor(hexString: "047857") : DS.Status.late.text
         saveButton.isEnabled = ok

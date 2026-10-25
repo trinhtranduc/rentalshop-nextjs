@@ -146,9 +146,15 @@ final class DepositSettingsViewController: BaseViewControler {
     /// Only the shop owner changes the setting (the API answers 403 to every other role)
     private var canEdit: Bool { User.account()?.role == .merchant }
 
+    init() {
+        super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        hidesBottomBarWhenPushed = true
         DepositUI.scaffold(in: self, title: "deposit.settings.title".localized(), scroll: scroll, stack: stack)
         render()
         load()
@@ -617,6 +623,10 @@ final class DepositTemplateEditorViewController: BaseViewControler {
         let days = DepositUI.field(String(stage.dueRule.days ?? 0), placeholder: "0", keyboard: .numberPad)
         days.accessibilityIdentifier = "deposit.stage.days.\(index)"
         days.isHidden = stage.dueRule.kind == DepositDueRule.onCreateKind
+        days.addAction(UIAction { [weak self] _ in
+            self?.capture()
+            self?.render()
+        }, for: .editingDidEnd)
         labelFields.append(label)
         percentFields.append(percent)
         dayFields.append(days)
