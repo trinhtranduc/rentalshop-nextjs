@@ -12,6 +12,8 @@ enum class SettingsItem {
     /** #1145 "Tiền tệ" (VND / USD), shop owner only, right under Thông tin cửa hàng */
     CURRENCY,
     RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
+    /** #1199 "Cách thu cọc": every role sees it; only the shop owner changes it */
+    DEPOSIT_MODE,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
     PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
 }
@@ -37,6 +39,7 @@ object SettingsRows {
      * - bank accounts (#622): MERCHANT, OUTLET_ADMIN (as iOS)
      * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
      * - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
+     * - deposit mode (#1199): every role, last row of CỬA HÀNG; only MERCHANT edits ([com.anyrent.pos.domain.deposit.DepositPlanLogic.canEditSettings])
      * - currency (#1145): MERCHANT only ([CurrencySetting.canEdit]), right after Thông tin cửa hàng
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
@@ -56,7 +59,8 @@ object SettingsRows {
                 listOf(SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO) +
                     listOfNotNull(SettingsItem.CURRENCY.takeIf { CurrencySetting.canEdit(role) }) +
                     listOf(SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
-                    listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }),
+                    listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
+                    SettingsItem.DEPOSIT_MODE,
             ),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),

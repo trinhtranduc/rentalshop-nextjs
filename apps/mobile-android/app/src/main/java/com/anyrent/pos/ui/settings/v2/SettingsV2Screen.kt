@@ -55,7 +55,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.data.DepositModeStore
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.deposit.DepositMode
+import com.anyrent.pos.ui.deposit.DepositSettingsScreen
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.money.ShopCurrency
@@ -111,6 +114,10 @@ fun SettingsV2Screen(
     var busy by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
     var showCategories by remember { mutableStateOf(false) }
+    // #1199 "Cách thu cọc": the cached mode; a login payload without it is fetched here, not guessed
+    var showDeposit by remember { mutableStateOf(false) }
+    val depositMode by SessionStore.depositModeFlow.collectAsState()
+    LaunchedEffect(Unit) { DepositModeStore.refresh() }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var passwordDone by remember { mutableStateOf(false) }
     val role = SessionStore.role
@@ -233,6 +240,9 @@ fun SettingsV2Screen(
                     SettingsItem.CUSTOMERS, SettingsItem.USERS -> counts[item]?.toString()
                     SettingsItem.PLAN -> plan?.let { planText(it) }
                     SettingsItem.CURRENCY -> ShopMoney.label(currency)
+                    SettingsItem.DEPOSIT_MODE -> stringResource(
+                        if (depositMode == DepositMode.STAGED) R.string.deposit_mode_staged else R.string.deposit_mode_one_time,
+                    )
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }
                     else -> null
                 }
@@ -248,6 +258,7 @@ fun SettingsV2Screen(
                         SettingsItem.USERS -> onOpenUsers()
                         SettingsItem.EXPORT -> onOpenExport()
                         SettingsItem.BANK_ACCOUNTS -> onOpenBankAccounts()
+                        SettingsItem.DEPOSIT_MODE -> showDeposit = true
                         SettingsItem.PLAN -> Unit
                         SettingsItem.LANGUAGE -> runCatching {
                             context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -293,6 +304,10 @@ fun SettingsV2Screen(
     // #632: Cài đặt → Danh mục, the same screen the product form opens
     if (showCategories) {
         CategoryManageScreen(onDismiss = { showCategories = false })
+    }
+    // #1199: Cài đặt → Cách thu cọc (radio rows; only the shop owner changes it)
+    if (showDeposit) {
+        DepositSettingsScreen(onDismiss = { showDeposit = false })
     }
     if (confirmDelete) {
         // Same as the current settings screen
@@ -461,6 +476,7 @@ private fun itemTitle(item: SettingsItem): String = stringResource(
         SettingsItem.RECEIPT_NOTE -> R.string.settings_v2_receipt_note
         SettingsItem.PRINTER -> R.string.settings_v2_printer
         SettingsItem.BANK_ACCOUNTS -> R.string.bank_accounts
+        SettingsItem.DEPOSIT_MODE -> R.string.deposit_settings_title
         SettingsItem.CATEGORIES -> R.string.settings_v2_categories
         SettingsItem.CUSTOMERS -> R.string.customers
         SettingsItem.USERS -> R.string.settings_v2_users
