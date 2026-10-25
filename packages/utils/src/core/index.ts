@@ -223,3 +223,6 @@ export { countRentalDays } from './rental-days';
 // Web order form line pricing (#444)
 export * from './order-line-pricing';
 export * from './product-pricing-options';
+
+// Day-block rental pricing (#1189)
+export * from './block-pricing';
