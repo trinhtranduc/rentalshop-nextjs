@@ -11,6 +11,7 @@ import {
   revenueEventKey,
   withoutCollateral,
   toRevenueOrderData,
+  REVENUE_PLAN_SELECT,
   buildEventWhere,
   EVENT_WHERE_CIVIL
 } from '@rentalshop/utils';
@@ -21,7 +22,7 @@ import { narrowAnalyticsOutletFilter } from '../../../../../lib/analytics-outlet
 const STATUS_VALUES = ['new', 'pickup', 'return', 'cancelled', 'all'] as const;
 type StatusFilter = (typeof STATUS_VALUES)[number];
 
-const EVENT_TYPES_NEW = ['RENT_DEPOSIT', 'SALE'];
+const EVENT_TYPES_NEW = ['RENT_DEPOSIT', 'RENT_INSTALLMENT', 'SALE'];
 const EVENT_TYPES_PICKUP = ['RENT_PICKUP'];
 const EVENT_TYPES_RETURN = ['RENT_RETURN'];
 
@@ -180,7 +181,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         createdAt: true,
         updatedAt: true,
         customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
-        outlet: { select: { id: true, name: true } }
+        outlet: { select: { id: true, name: true } },
+        ...REVENUE_PLAN_SELECT
       },
       take: 10000
     });

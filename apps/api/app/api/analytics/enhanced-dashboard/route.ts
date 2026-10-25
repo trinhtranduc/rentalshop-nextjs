@@ -109,6 +109,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         ...orderWhereClause,
         createdAt: { gte: start, lte: end }
       },
+      includeRevenuePlan: true,
       limit: 1000
     });
 
@@ -118,6 +119,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         ...orderWhereClause,
         createdAt: { gte: start, lte: end }
       },
+      includeRevenuePlan: true,
       limit: 1000
     });
 
@@ -127,6 +129,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         ...orderWhereClause,
         createdAt: { gte: lastMonth, lte: lastMonthEnd }
       },
+      includeRevenuePlan: true,
       limit: 1000
     });
 
