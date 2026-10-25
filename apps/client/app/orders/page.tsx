@@ -19,6 +19,8 @@ import type { OrderFilters } from '@rentalshop/types';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { useOutletOperations } from '../dashboard/OutletOperationsPanel';
+import { useDepositSettings } from '../installments/useDepositSettings';
+import { isStagedMode, paidBadgePercent, type BadgeOrderLike } from '../installments/installments-model';
 import { BranchPicker } from '../dashboard/overview/BranchControls';
 import { outletsParam, resolveBranchSelection, selectionOutletIds, showsBranchPicker } from '../dashboard/branch-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
@@ -218,6 +220,19 @@ export default function OrdersPage() {
     if (tab === 'all') return list.rows.map((o) => buildOrderRow(o, todayKey, getLocalDateKey));
     return buildOpsRows(ops.data, tab, todayKey, getLocalDateKey);
   }, [tab, list.rows, ops.data, todayKey]);
+
+  // #1199: "Đã thu 30%" next to the amount due, only for a shop in staged mode
+  const { settings: depositSettings } = useDepositSettings();
+  const staged = isStagedMode(depositSettings);
+  const paidPercent = useMemo(() => {
+    const map: Record<number, number> = {};
+    if (!staged || tab !== 'all') return map;
+    for (const o of list.rows) {
+      const p = paidBadgePercent(o as unknown as BadgeOrderLike, true);
+      if (p != null) map[o.id] = p;
+    }
+    return map;
+  }, [staged, tab, list.rows]);
 
   // A page past the end (after a filter shrank the list) goes back to the last one
   useEffect(() => {
@@ -451,6 +466,7 @@ export default function OrdersPage() {
           skeletonRows={tab === 'all' ? Math.min(limit, 10) : 4}
           selection={canExport && tab === 'all' ? selection : undefined}
           branchOf={picker ? branchOf : undefined}
+          paidPercent={staged ? paidPercent : undefined}
         />
 
         {tab === 'all' && list.total > 0 && (

@@ -207,7 +207,15 @@ function useSubmit(onClose: () => void) {
   return { submitting, run };
 }
 
-export function HandOverDialog({ onConfirm, ...p }: ActionProps & { onConfirm: () => Promise<boolean | void> }) {
+export function HandOverDialog({
+  onConfirm,
+  extra,
+  ...p
+}: ActionProps & {
+  onConfirm: () => Promise<boolean | void>;
+  /** #1199: deposit stages still unpaid (their money is part of `due`; they are collected first, then the order is handed over) */
+  extra?: React.ReactNode;
+}) {
   const { submitting, run } = useSubmit(p.onClose);
   const m = handOverView(p.order);
   return (
@@ -230,6 +238,7 @@ export function HandOverDialog({ onConfirm, ...p }: ActionProps & { onConfirm: (
       }
     >
       <Items items={p.items} />
+      {extra}
       <MoneyBox rows={m.rows} total={{ label: p.t('detail.dialog.result.due'), amount: m.due, tone: 'text-ar-ink' }} t={p.t} money={p.money} />
       <Papers label={p.t('detail.dialog.papersKeep')} text={p.papers} />
     </ActionDialog>

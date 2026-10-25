@@ -66,6 +66,16 @@ export function PayText({ pay, t, money }: { pay: RowPay | null; t: T; money: Mo
   return <span className={`whitespace-nowrap text-sm tabular-nums ${cls}`}>{text}</span>;
 }
 
+/** #1199 "Đã thu 30%": money collected of a rental that waits for pick-up (staged deposits) */
+export function PaidBadge({ percent, t }: { percent: number | undefined; t: T }) {
+  if (percent == null) return null;
+  return (
+    <span className="mr-2 inline-block whitespace-nowrap rounded-full bg-ar-done-bg px-2.5 py-0.5 text-xs font-semibold text-ar-done" data-paid-badge>
+      {t('installments.paidBadge', { percent })}
+    </span>
+  );
+}
+
 export function scheduleText(s: Schedule | null, t: T, weekdays: string[]): string {
   if (!s) return '';
   const d = (key: string | null) => (key ? formatDayLabel(key, weekdays) : '');
@@ -109,7 +119,10 @@ export function OrdersTable({
   skeletonRows = 6,
   selection,
   branchOf,
+  paidPercent,
 }: {
+  /** #1199: "Đã thu n%" per order id, shop in staged mode only */
+  paidPercent?: Record<number, number>;
   /** #852: the branch of a row (owner with 2+ branches), shown small under the status */
   branchOf?: (row: OrderRow) => { name: string; color: string } | null;
   /** Row checkboxes for "Xuất Excel" of the chosen orders (#526). */
@@ -225,6 +238,7 @@ export function OrdersTable({
                 <span className={`whitespace-nowrap font-bold tabular-nums ${r.cancelled ? 'text-ar-muted line-through' : 'text-ar-ink'}`}>{money(r.total)}</span>
               </td>
               <td className="whitespace-nowrap py-3 pl-2 pr-4 text-right align-middle">
+                <PaidBadge percent={paidPercent?.[r.id]} t={t} />
                 <PayText pay={r.pay} t={t} money={money} />
               </td>
             </tr>
@@ -251,6 +265,7 @@ export function OrdersTable({
               </span>
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className={`font-bold tabular-nums ${r.cancelled ? 'text-ar-muted line-through' : 'text-ar-ink'}`}>{money(r.total)}</span>
+                <PaidBadge percent={paidPercent?.[r.id]} t={t} />
                 <PayText pay={r.pay} t={t} money={money} />
                 <NoteTag note={r.note} t={t} />
               </span>

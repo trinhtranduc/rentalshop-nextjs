@@ -26,6 +26,25 @@ export interface OutletOperationsOrder {
   items?: { name: string | null; quantity: number }[];
 }
 
+/** #1199, only for a client that sends `X-Client-Capabilities: installments`: one deposit stage waiting to be collected */
+export interface InstallmentReminderRow {
+  orderId: number;
+  orderNumber: string;
+  outletId: number | null;
+  customerName: string | null;
+  key: string;
+  label: string;
+  amount: number;
+  remaining: number;
+  dueDateKey: string;
+  lateDays: number;
+}
+
+export interface InstallmentReminderGroup {
+  count: number;
+  orders: InstallmentReminderRow[];
+}
+
 export interface OutletOperationsList {
   count: number;
   orders: OutletOperationsOrder[];
@@ -52,6 +71,10 @@ export interface OutletOperations {
   tomorrowReturns?: OutletOperationsList | null;
   /** #938, with `{ collateralHeld: true }`: rentals out with collateral (the orders of `cash.collateralToReturn`); null without money */
   collateralHeld?: OutletOperationsList | null;
+  /** #1199: deposit stages due today / tomorrow / late (shops with staged deposits) */
+  installmentsDue?: InstallmentReminderGroup | null;
+  installmentsDueTomorrow?: InstallmentReminderGroup | null;
+  installmentsOverdue?: InstallmentReminderGroup | null;
   /** Managers only */
   cash: {
     depositsHeld: { depositAmount: number; securityDeposit: number; orders: number };

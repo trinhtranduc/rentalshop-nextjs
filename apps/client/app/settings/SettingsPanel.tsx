@@ -31,6 +31,7 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
+import { DepositSection } from '../installments/DepositSection';
 import { blockOldAppsFlag, canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
@@ -433,6 +434,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             <BankAccountSection user={authUser} />
           </LegacyPanel>
         );
+      case 'payment':
+        return <DepositSection t={t} />;
       case 'receipt':
         if (role === 'MERCHANT' && allBranches === null) return <Skeleton className="h-[420px] w-full" />;
         return (

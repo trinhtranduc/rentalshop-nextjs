@@ -28,6 +28,7 @@ import {
   discountExceeds,
   dayRangeIso,
   draftFromOrder,
+  planInstantFor,
   pickOutlet,
   findByBarcode,
   firstMissing,
@@ -57,6 +58,21 @@ import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard
 import { useLoyalty } from './useLoyalty';
 import { confirmView } from './confirm-model';
 import { CreateConfirmDialog } from './ConfirmDialog';
+import { StagePlanPanel, type CollectChoice } from '../../installments/StagePlanPanel';
+import { useDepositSettings } from '../../installments/useDepositSettings';
+import {
+  buildPaymentPlan,
+  defaultTemplateOf,
+  draftsFromTemplate,
+  firstStageToCollect,
+  isStagedMode,
+  newReference,
+  percentSum,
+  previewStages,
+  templatesOf,
+  isStaffRole,
+  type PlanItemDraft,
+} from '../../installments/installments-model';
 
 const PAGE_SIZE = 60;
 const MAX_NOTE_IMAGES = 5;
@@ -249,6 +265,17 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const [depositAmount, setDepositAmount] = useState<number | null>(draft?.depositAmount ?? null);
   // Kept as the order already has it (edit); never typed here (#614).
   const [securityDeposit] = useState(draft?.securityDeposit ?? 0);
+  // #1199 "Thu cọc theo giai đoạn": a new rental of a shop in staged mode shows the stages in place of "Cọc"
+  const { settings: depositSettings } = useDepositSettings(!editing);
+  const staged = !editing && orderType === 'RENT' && isStagedMode(depositSettings);
+  const planTemplates = useMemo(() => templatesOf(depositSettings), [depositSettings]);
+  const [templatePick, setTemplatePick] = useState<string | null>(null);
+  const [planEdits, setPlanEdits] = useState<PlanItemDraft[] | null>(null);
+  const [collectChoice, setCollectChoice] = useState<CollectChoice>('CASH');
+  const firstReference = useRef(newReference());
+  const planTemplate = planTemplates.find((x) => x.id === templatePick) ?? defaultTemplateOf(depositSettings);
+  const planItems = useMemo(() => planEdits ?? draftsFromTemplate(planTemplate), [planEdits, planTemplate]);
+  const canEditStages = !isStaffRole(user?.role);
   const [notes, setNotes] = useState(draft?.notes ?? '');
   const [notesOpen, setNotesOpen] = useState(!!draft?.notes);
   // Đặt online › Xác nhận (#1124): the request this new order answers; sent as bookingRequestId
@@ -438,7 +465,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     customerId: customer?.id ?? null,
     orderType,
     total: base.totalAmount,
-    enabled: !editing,
+    enabled: !editing && !staged,
   });
   const totals = computeTotals({
     lines,
@@ -450,6 +477,23 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     securityDeposit,
     loyaltyDiscount: loyalty.discount,
   });
+  const stageTotal = totals.totalAmount - totals.loyaltyDiscount;
+  const stages = useMemo(
+    () =>
+      staged
+        ? previewStages({
+            total: stageTotal,
+            items: planItems,
+            pickupPlanAt: pickup ? planInstantFor(pickup) : null,
+            returnPlanAt: ret ? planInstantFor(ret) : null,
+            currency: shopCurrencyCode,
+          })
+        : [],
+    [staged, stageTotal, planItems, pickup, ret, shopCurrencyCode],
+  );
+  const stagesOver = staged && percentSum(planItems) > 100;
+  const firstAmount = staged ? (firstStageToCollect(stages)?.plannedAmount ?? 0) : 0;
+  const collectAmount = collectChoice !== 'NONE' ? firstAmount : 0;
   // #1067: a discount above the rent / goods (or 100%) is refused with a red line and blocks the submit
   const discountTooHigh = discountExceeds(discountType, discountValue, totals.subtotal)
     ? t('editor.money.discountTooHigh', { limit: discountType === 'percentage' ? '100%' : money(totals.subtotal) })
@@ -508,7 +552,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   // The body sent, and the source of every amount in the confirm dialog (#569)
   const payloadNow = () =>
     customer && outletId
-      ? buildPayload({
+      ? withStagePlan(buildPayload({
           mode: editing ? 'edit' : 'create',
           orderType,
           customerId: customer.id,
@@ -525,8 +569,22 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           loyaltyPoints: loyalty.redeemPoints,
           minorUnit,
           original: order ? { pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt } : null,
-        })
+        }))
       : null;
+  // The server collects stage 1 itself (collectFirstNow) and keeps depositAmount from the payments
+  const withStagePlan = <P extends { depositAmount: number }>(payload: P) =>
+    staged
+      ? {
+          ...payload,
+          depositAmount: 0,
+          paymentPlan: buildPaymentPlan({
+            templateId: planTemplate?.id ?? null,
+            items: planItems,
+            edited: planEdits != null,
+            collectNow: collectAmount > 0 && collectChoice !== 'NONE' ? { method: collectChoice, reference: firstReference.current } : null,
+          }),
+        }
+      : payload;
 
   const overlapLines = Array.from(conflicts.values()).map((c) => {
     const range = dayRangeText(c.dayKeys);
@@ -538,7 +596,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const confirmPayload = confirmOpen && !editing ? payloadNow() : null;
   const confirmData = confirmPayload
     ? confirmView({
-        payload: confirmPayload,
+        payload: staged ? { ...confirmPayload, depositAmount: collectAmount } : confirmPayload,
         totals,
         names: Object.fromEntries(lines.map((l) => [l.productId, l.name])),
         customer,
@@ -556,7 +614,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
       if (missing === 'customer') setCustomerOpen(true);
       return;
     }
-    if (cta === 'blocked' || discountTooHigh) return;
+    if (cta === 'blocked' || discountTooHigh || stagesOver) return;
     // A new order is confirmed first (iOS CreateOrderConfirmSheet, #569); an edit only on a schedule overlap
     if (!confirmed && (!editing || cta === 'warn')) {
       setConfirmOpen(true);
@@ -579,6 +637,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         const res = await ordersApi.createOrder(payload as unknown as CreateInput, photos.length ? { notesImages: photos } : undefined);
         if (!res.success || !res.data) throw scheduleError(res);
         setConfirmOpen(false);
+        firstReference.current = newReference();
         toastSuccess(to('messages.createSuccess'));
         setReceipt(res.data as ReceiptProps['order']);
       }
@@ -619,7 +678,11 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     ? t('editor.saving')
     : editing
       ? t('editor.submit.save')
-      : orderType === 'RENT' && totals.depositAmount > 0
+      : staged
+        ? collectAmount > 0
+          ? t('installments.createAndCollect', { amount: money(collectAmount) })
+          : t('editor.submit.create')
+        : orderType === 'RENT' && totals.depositAmount > 0
         ? t('editor.submit.withDeposit', {
             amount: money(totals.depositAmount),
           })
@@ -969,6 +1032,27 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           </div>
 
           {orderType === 'RENT' && (
+            staged ? (
+              <StagePlanPanel
+                td={(key, values) => t(`installments.${key}`, values)}
+                money={money}
+                stages={stages}
+                todayKey={todayKey}
+                templates={planTemplates}
+                templateId={planTemplate?.id ?? ''}
+                onTemplate={(id) => {
+                  setTemplatePick(id);
+                  setPlanEdits(null);
+                }}
+                items={planItems}
+                canEdit={canEditStages}
+                onPercent={(index, value) => setPlanEdits(planItems.map((item, i) => (i === index ? { ...item, value } : item)))}
+                over={stagesOver}
+                firstAmount={firstAmount}
+                collect={collectChoice}
+                onCollect={setCollectChoice}
+              />
+            ) : (
             <>
               {/* Thế chân is taken at hand-over (Giao đồ / Thế chấp & phí), not here (#614); an edited order keeps its stored value. */}
               <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
@@ -989,6 +1073,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
                 )}
               </div>
             </>
+            )
           )}
 
           {missing && lines.length > 0 && (
@@ -1006,7 +1091,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           <button
             type="button"
             onClick={() => void submit()}
-            disabled={submitting || compressing || cta === 'blocked' || !!discountTooHigh || (!!missing && missing !== 'days' && missing !== 'customer')}
+            disabled={submitting || compressing || cta === 'blocked' || !!discountTooHigh || stagesOver || (!!missing && missing !== 'days' && missing !== 'customer')}
             className="h-[52px] rounded-[14px] bg-ar-primary text-base font-semibold text-ar-on-primary hover:opacity-95 disabled:opacity-50"
           >
             {submitLabel}
