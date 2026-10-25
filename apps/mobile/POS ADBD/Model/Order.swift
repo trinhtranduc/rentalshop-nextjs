@@ -788,6 +788,8 @@ struct OrderItem: Codable {
     let rentalDays: Int?
     let pricingType: String?
     let pricingOptionId: Int?
+    /// #1189: the table and the days a BLOCK line was priced with (nil on every other line and on old orders)
+    let pricingSnapshot: BlockSnapshot?
     
     // Flattened product data - make some fields optional to handle API variations
     let productId: Int?
@@ -831,7 +833,8 @@ struct OrderItem: Codable {
     }
     
     // Default initializer for manual creation
-    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil, rentalDays: Int? = nil, pricingType: String? = nil, pricingOptionId: Int? = nil) {
+    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil, rentalDays: Int? = nil, pricingType: String? = nil, pricingOptionId: Int? = nil, pricingSnapshot: BlockSnapshot? = nil) {
+        self.pricingSnapshot = pricingSnapshot
         self.id = id
         self.quantity = quantity
         self.unitPrice = unitPrice
@@ -861,6 +864,8 @@ struct OrderItem: Codable {
         rentalDays = try container.decodeIfPresent(Int.self, forKey: .rentalDays)
         pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
         pricingOptionId = try container.decodeIfPresent(Int.self, forKey: .pricingOptionId)
+        // A snapshot this app cannot read is no snapshot; it never fails the order
+        pricingSnapshot = (try? container.decodeIfPresent(BlockSnapshot.self, forKey: .pricingSnapshot)) ?? nil
         
         // Why not `try? decodeIfPresent`: that yields EmbeddedProduct??, and then
         // `embedded?.id` is parsed as SwiftUI View.id (compile errors).
@@ -925,6 +930,7 @@ struct OrderItem: Codable {
         try container.encodeIfPresent(rentalDays, forKey: .rentalDays)
         try container.encodeIfPresent(pricingType, forKey: .pricingType)
         try container.encodeIfPresent(pricingOptionId, forKey: .pricingOptionId)
+        try container.encodeIfPresent(pricingSnapshot, forKey: .pricingSnapshot)
         try container.encodeIfPresent(productId, forKey: .productId)
         try container.encode(productName, forKey: .productName)
         try container.encodeIfPresent(productBarcode, forKey: .productBarcode)
@@ -941,7 +947,7 @@ struct OrderItem: Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, quantity, unitPrice, totalPrice, notes
-        case rentalDays, pricingType, pricingOptionId
+        case rentalDays, pricingType, pricingOptionId, pricingSnapshot
         case productId, productName, productBarcode, productImages, productRentPrice, productDeposit
         case product
         case deposit
@@ -1429,6 +1435,11 @@ extension Order {
                 data.append("\(index + 1). \(item.productName.formatStringOriginalCharacter())\n".data(using: .utf8)!)
             }
             
+            // #1189: a day-block line shows how its price was reached
+            if let block = item.blockLines {
+                let text = block.formula.map { block.summary + ": " + $0 } ?? block.summary
+                data.append("   \(text.formatStringOriginalCharacter())\n".data(using: .utf8)!)
+            }
             // Right alignment for price
             data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.right.rawValue))
             data.append("\(item.quantity) x \(item.unitPrice.formatStringInCommon()) = \(item.totalPrice.formatStringInCommon())\n".data(using: .utf8)!)

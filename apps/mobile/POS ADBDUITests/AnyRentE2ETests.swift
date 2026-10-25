@@ -2741,6 +2741,129 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
+    /// #1189 day-block pricing: product form row → price screen (80.000 / 100.000 / 120.000, +20.000 a day, preview
+    /// 5 days = 160.000) → save → cart with 1 / 3 / 5 days (80.000 / 120.000 / 160.000, "Khối 3 ngày + 2 ngày thêm") →
+    /// order → order detail shows the sum. The numbers are the golden ones (tests/fixtures/block-pricing-golden.json).
+    func test7qBlockDayPricing() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let key = "Product 25 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("\(key) not found") }
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "product detail has Sửa")
+        edit.tap()
+        let row = app.descendants(matching: .any)["product.form.blockRow"]
+        XCTAssertTrue(e2e.scrollTo(row), "the product form has the neutral Giá theo khối ngày row")
+        e2e.shot("70a-block-form-row-off")
+        row.tap()
+
+        // Price screen: radio rows, then the table
+        let radio = app.staticTexts["block.radio.label.BLOCK"]
+        XCTAssertTrue(radio.waitForExistence(timeout: 5), "the price screen lists Giá theo khối ngày as a radio row")
+        e2e.shot("70b-block-screen-empty")
+        radio.tap()
+        func typeTier(_ index: Int, _ value: String) {
+            let box = app.textFields["block.tier.\(index)"]
+            XCTAssertTrue(box.waitForExistence(timeout: 5), "tier \(index) box")
+            box.tap()
+            box.typeText(value)
+            e2e.hideKeyboard()
+        }
+        typeTier(1, "80000")
+        for (index, value) in [(2, "100000"), (3, "120000")] {
+            let add = app.buttons["block.addDay"]
+            XCTAssertTrue(e2e.scrollTo(add), "+ Thêm ngày \(index)")
+            add.tap()
+            typeTier(index, value)
+        }
+        let extra = app.textFields["block.extra"]
+        XCTAssertTrue(e2e.scrollTo(extra), "extra price box")
+        extra.tap()
+        extra.typeText("20000")
+        e2e.hideKeyboard()
+        let total = app.staticTexts["block.previewTotal"]
+        XCTAssertTrue(e2e.scrollTo(total), "preview total")
+        XCTAssertTrue((total.label).contains("160.000"), "preview of 5 days is 160.000 (\(total.label))")
+        e2e.shot("70c-block-screen-filled")
+        let save = app.buttons["block.save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 3))
+        save.tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "back on the product form")
+        let summary = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '3 mốc' OR label CONTAINS '3 tiers'")).firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 3), "the form row now says 3 mốc")
+        e2e.shot("70d-block-form-row-on")
+        let saveProduct = e2e.button(["Save changes", "Lưu thay đổi"])
+        e2e.scrollTo(saveProduct)
+        saveProduct.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        XCTAssertTrue(e2e.button(["Add to cart", "Thêm vào giỏ"]).waitForExistence(timeout: 10), "saved, back on the product detail")
+        e2e.shot("70e-block-product-detail")
+        e2e.goBackOnce()
+
+        // Cart: 1 / 3 / 5 days
+        e2e.emptyCart()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(addFromHome(key), "add the block product to the cart")
+        XCTAssertTrue(openCart(), "open the cart")
+        e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))
+        let today = Calendar.current.component(.day, from: Date())
+        func setDays(_ count: Int) {
+            let dates = app.descendants(matching: .any)["cart.datesRow"]
+            XCTAssertTrue(dates.waitForExistence(timeout: 5), "dates row")
+            dates.tap()
+            sleep(1)
+            e2e.pickTodayInDateSheet()
+            // A range already chosen: the first tap on today clears it ("Xác nhận" greys out); tap it again
+            if !e2e.button(["Confirm", "Xác nhận"]).isEnabled { e2e.pickTodayInDateSheet() }
+            if count > 1 {
+                let end = today + count - 1
+                let texts = app.collectionViews.staticTexts.matching(NSPredicate(format: "label == %@", "\(end)"))
+                let byCell = app.collectionViews.cells.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", "\(end)", "\(end) "))
+                let cells = byCell.count > 0 ? byCell : texts
+                let target = end < 15 ? cells.element(boundBy: 0) : cells.element(boundBy: max(0, cells.count - 1))
+                e2e.note("end day \(end): \(cells.count) cells, hittable \(target.isHittable), confirm enabled \(e2e.button(["Confirm", "Xác nhận"]).isEnabled)")
+                if target.isHittable { target.tap() } else { e2e.note("day \(end) not hittable") }
+                sleep(1)
+                e2e.shot("71x-dates-\(count)")
+            }
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+            sleep(2)
+        }
+        for (days, money) in [(1, "80.000"), (3, "120.000"), (5, "160.000")] {
+            setDays(days)
+            let line = app.buttons.matching(NSPredicate(format: "value CONTAINS %@", money)).firstMatch
+            XCTAssertTrue(line.waitForExistence(timeout: 5), "\(days) days: the pricing link shows \(money) (\(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Đổi cách tính giá' OR label BEGINSWITH 'Change pricing'")).firstMatch.value ?? ""))")
+            e2e.shot("71-cart-block-\(days)-days")
+        }
+        let formula = app.staticTexts["cart.blockFormula"]
+        XCTAssertTrue(formula.waitForExistence(timeout: 3), "5 days shows the sum under the link")
+        XCTAssertTrue(formula.label.contains("120.000") && formula.label.contains("20.000") && formula.label.contains("160.000"),
+                      "the sum reads 120.000 (3) + 2 × 20.000 = 160.000 (\(formula.label))")
+
+        // The pricing sheet offers the block row; Theo lần and back
+        let chip = e2e.element(labelBeginsWith: ["Change pricing for", "Đổi cách tính giá"], type: .button)
+        chip.tap()
+        e2e.shot("72a-cart-pricing-sheet-block")
+        let perRental = e2e.element(labelBeginsWith: ["Per rental", "Theo lần"], type: .button)
+        XCTAssertTrue(perRental.waitForExistence(timeout: 5), "the sheet lists Theo lần")
+        let blockRow = e2e.element(labelBeginsWith: ["Day block", "Theo khối ngày"], type: .button)
+        XCTAssertTrue(blockRow.exists, "the sheet lists Theo khối ngày")
+        e2e.tapIfExists(e2e.button(["Apply", "Áp dụng"]), timeout: 2)
+        sleep(1)
+
+        _ = e2e.pickFirstCustomer()
+        guard e2e.createOrderFromCart(cta: ["Create order", "Tạo đơn"], shotPrefix: "73-cart-block", openOrder: true) else {
+            return XCTFail("Block rent order was not created (last alert: \(e2e.lastAlert ?? "none"))")
+        }
+        let sum = app.staticTexts["orderDetail.item.blockFormula"]
+        XCTAssertTrue(sum.waitForExistence(timeout: 10), "order detail shows the sum of the block line")
+        XCTAssertTrue(sum.label.contains("160.000"), "order detail sum (\(sum.label))")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '160.000'")).count >= 1, "the order totals 160.000")
+        e2e.shot("74-order-detail-block")
+    }
+
     /// Product detail → Sửa → "Thuê theo ngày" → new value → Lưu thay đổi. Returns the value the field had (may be "").
     private func editDailyPrice(to value: String, shot: String?) -> String? {
         let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])

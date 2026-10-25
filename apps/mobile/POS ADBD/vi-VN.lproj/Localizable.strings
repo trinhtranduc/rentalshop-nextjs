@@ -2072,7 +2072,7 @@
 "orders.entity.millionWhole" = "%dtr";
 
 /* #482 */
-"products.cart.pricing.block" = "Theo block";
+"products.cart.pricing.block" = "Theo khối ngày";
 "products.cart.pricing.hourly" = "Theo giờ";
 "products.cart.pricing.sale" = "Giá bán";
 "products.cart.pricing.enterPrice" = "Nhập giá";
@@ -2816,3 +2816,32 @@
 "settings.v2.currency.failed" = "Không đổi được tiền tệ. Vui lòng thử lại.";
 "currency.usd.unit" = "$";
 "currency.usd.unitDaily" = "$/ngày";
+
+// #1189 day-block pricing
+"block.title" = "Giá theo khối ngày";
+"block.screen.title" = "Giá thuê · %@";
+"block.save" = "Lưu bảng giá";
+"block.turnOff" = "Tắt giá theo khối ngày";
+"block.row.off" = "Chưa dùng";
+"block.row.tiers" = "%d mốc";
+"block.row.extra" = "+%@ mỗi ngày";
+"block.row.hold" = "giữ giá khối cuối";
+"block.section.default" = "Cách tính giá mặc định";
+"block.hint.default" = "Kiểu giá mặc định khi tạo đơn. Nhân viên đổi được trong giỏ.";
+"block.section.tiers" = "Giá theo số ngày";
+"block.addDay" = "+ Thêm ngày %d";
+"block.removeDay" = "Xoá ngày này";
+"block.section.beyond" = "Thuê quá %d ngày";
+"block.extraPerDay" = "Cộng thêm mỗi ngày";
+"block.holdLast" = "Giữ nguyên giá khối cuối";
+"block.holdLast.price" = "Giữ nguyên giá khối cuối (%@)";
+"block.preview" = "Xem thử";
+"block.error.invalid" = "Nhập đủ giá cho mọi ngày (từ 0 trở lên) và số tiền cộng thêm mỗi ngày.";
+"block.error.empty" = "Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày, hoặc chọn kiểu giá mặc định khác.";
+"block.summary.block" = "Khối %d ngày";
+"block.summary.extra" = "+ %d ngày thêm";
+"products.unit.block" = "/1 ngày";
+"products.price.block" = "Khối ngày";
+"BLOCK_PRICE_MISMATCH" = "Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.";
+"PRICING_TYPE_REQUIRES_UPDATE" = "Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.";
+"BLOCK_TABLE_INVALID" = "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.";

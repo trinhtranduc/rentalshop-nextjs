@@ -587,5 +587,7 @@
   "DEPOSIT_SETTINGS_UPDATED": "Đã cập nhật cài đặt thu cọc",
   "INSTALLMENT_COLLECTED": "Đã thu giai đoạn cọc",
   "INSTALLMENT_VOIDED": "Đã huỷ khoản thu giai đoạn cọc",
-  "DEPOSIT_PLAN_UPDATED": "Đã cập nhật kế hoạch thu cọc"
+  "DEPOSIT_PLAN_UPDATED": "Đã cập nhật kế hoạch thu cọc",
+  "CANCEL_AMOUNTS_MISMATCH": "Số tiền giữ lại lớn hơn số đã thu hoặc không hợp lệ.",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được."
 }

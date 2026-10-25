@@ -52,7 +52,15 @@ struct CartItem: Codable {
     
     // Daily rental pricing
     var pricingType: String?  // nil/FIXED = fixed, DAILY = per-day
-    var rentalDays: Int = 1   // Number of rental days (only used when pricingType == DAILY)
+    /// Number of rental days (DAILY multiplies by it; a BLOCK line looks its price up by it)
+    var rentalDays: Int = 1 {
+        didSet { if rentalDays != oldValue { repriceBlock() } }
+    }
+
+    /// #1189: the day-block table of the chosen BLOCK option, or of the saved order line (`pricingSnapshot`)
+    var blockTable: BlockTable?
+    /// #1189: currency minor unit the table is rounded to (VND 1)
+    var blockCurrency: String?
 
     // Multiple pricing options (Phase 1: FIXED + DAILY)
     var pricingOptions: [PricingOption]?
@@ -67,7 +75,38 @@ struct CartItem: Codable {
     /// (BLOCK) is sent as FIXED: its total is already unit price × quantity, so the payload keeps today's shape.
     var requestPricingType: String {
         let type = pricingType?.uppercased() ?? "FIXED"
+        // #1189: this client sends `X-Client-Capabilities: block-pricing`, so a BLOCK line goes as BLOCK
+        if type == "BLOCK" && isBlockPricing { return type }
         return ["FIXED", "HOURLY", "DAILY"].contains(type) ? type : "FIXED"
+    }
+
+    /// #1189: a line priced from a day-block table. Its `price` is the unit price for `rentalDays` and is kept
+    /// up to date by `repriceBlock`; staff do not type a price on it.
+    var isBlockPricing: Bool {
+        pricingType?.uppercased() == "BLOCK" && blockTable != nil
+    }
+
+    /// The breakdown behind the price ("Khối 3 ngày + 2 ngày thêm"); nil on a line that is not a block line
+    var blockDetail: BlockRentDetail? {
+        guard isBlockPricing, let table = blockTable else { return nil }
+        return BlockPricing.detail(table, days: rentalDays, minorUnit: BlockPricing.minorUnit(currency: blockCurrency ?? ShopCurrencyStore.current.rawValue))
+    }
+
+    /// #1189: a line loaded from a saved order keeps its stored price and gets its saved table, so a changed date
+    /// prices it again; a price typed by hand (`overridden`) stays a plain price
+    mutating func adoptSnapshot(_ snapshot: BlockSnapshot?) {
+        guard pricingType?.uppercased() == "BLOCK", let snapshot, snapshot.overridden != true,
+              BlockPricing.isValid(snapshot.table) else { return }
+        blockTable = snapshot.table
+        blockCurrency = snapshot.currency
+    }
+
+    /// Looks the unit price up in the table for the current days
+    mutating func repriceBlock() {
+        guard let detail = blockDetail else { return }
+        price = detail.total
+        customRentPrice = detail.total
+        priceMissing = false
     }
 
     /// The chosen option id, left out when the type is sent as FIXED in its place
@@ -108,6 +147,10 @@ struct CartItem: Codable {
         self.price = opt.price
         self.customRentPrice = opt.price
         self.priceMissing = false
+        if let table = opt.blockTable {
+            blockTable = table
+            repriceBlock()
+        }
     }
 
     /// Switch between the two cart pricing modes. Products created before
@@ -147,6 +190,10 @@ struct CartItem: Codable {
         price = typed ?? option?.price ?? 0
         priceMissing = typed == nil && option == nil
         customRentPrice = price
+        if normalizedType == "BLOCK", let table = option?.blockTable {
+            blockTable = table
+            repriceBlock()
+        }
     }
 
     /// Save a manual rental price for the currently selected pricing mode.
@@ -199,6 +246,7 @@ struct CartItem: Codable {
     /// Priority: custom price > original price
     func effectivePrice(for orderType: OrderType) -> Double {
         if orderType == .rent {
+            if let detail = blockDetail { return detail.total }
             return customRentPrice ?? originalRentPrice
         } else {
             return customSalePrice ?? originalSalePrice
@@ -276,6 +324,10 @@ struct CartItem: Codable {
             self.selectedPricingOptionId = def.id
             self.pricingType = def.type
             self.price = def.price
+            if let table = def.blockTable {
+                self.blockTable = table
+                self.repriceBlock()
+            }
         } else {
             self.pricingType = product.pricingType ?? "FIXED"
             self.price = 0
@@ -310,5 +362,7 @@ struct CartItem: Codable {
         rentalDays = try c.decodeIfPresent(Int.self, forKey: .rentalDays) ?? 1
         pricingOptions = try c.decodeIfPresent([PricingOption].self, forKey: .pricingOptions)
         selectedPricingOptionId = try c.decodeIfPresent(Int.self, forKey: .selectedPricingOptionId)
+        blockTable = try c.decodeIfPresent(BlockTable.self, forKey: .blockTable)
+        blockCurrency = try c.decodeIfPresent(String.self, forKey: .blockCurrency)
     }
 }

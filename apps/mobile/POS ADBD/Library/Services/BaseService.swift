@@ -16,7 +16,9 @@ class BaseService {
             "X-Device-Type": "ios",
             "X-App-Version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
             "User-Agent": "AnyRent-iOS/1.0.0",
-            "Accept-Language": appAcceptLanguage()
+            "Accept-Language": appAcceptLanguage(),
+            // #1189: this app reads BLOCK options and sends BLOCK prices; without it the API recomputes the price
+            ClientCapabilities.headerName: ClientCapabilities.headerValue
         ]
         
         // Add Authorization header using Bearer token format
@@ -41,7 +43,9 @@ class BaseService {
             "X-Device-Type": "ios",
             "X-App-Version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
             "User-Agent": "AnyRent-iOS/1.0.0",
-            "Accept-Language": appAcceptLanguage()
+            "Accept-Language": appAcceptLanguage(),
+            // #1189: this app reads BLOCK options and sends BLOCK prices; without it the API recomputes the price
+            ClientCapabilities.headerName: ClientCapabilities.headerValue
         ]
         
         // Add Authorization header using Bearer token format

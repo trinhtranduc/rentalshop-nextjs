@@ -105,5 +105,7 @@
   "INSTALLMENT_NOT_FOUND": "保証金の段階が見つかりません。",
   "INSTALLMENT_NO_PLAN": "この注文には保証金の分割計画がありません。",
   "INSTALLMENT_LOYALTY_UNSUPPORTED": "段階払いの保証金がある注文ではポイントを使用できません。",
-  "DEPOSIT_SETTINGS_INVALID": "保証金の設定が正しくありません。テンプレートは1〜3段階、割合の合計は100以下、テンプレートは最大10件です。"
+  "DEPOSIT_SETTINGS_INVALID": "保証金の設定が正しくありません。テンプレートは1〜3段階、割合の合計は100以下、テンプレートは最大10件です。",
+  "CANCEL_AMOUNTS_MISMATCH": "保持する金額が受領済みの金額を超えているか、金額が正しくありません。",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "金額を保持してキャンセルした注文は履歴に残るため、削除できません。"
 }

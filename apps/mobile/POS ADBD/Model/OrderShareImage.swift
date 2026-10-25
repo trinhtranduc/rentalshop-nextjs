@@ -36,6 +36,8 @@ struct OrderShareSource {
         let total: Double
         /// #930: the item's own note (the order's general note is never on the image)
         var note: String? = nil
+        /// #1189: "120.000 (3 ngày) + 2 × 20.000 = 160.000" of a day-block line
+        var formula: String? = nil
     }
 
     var orderType: OrderType
@@ -71,6 +73,8 @@ struct OrderShareModel: Equatable {
         let amount: String
         /// #930: the item's note, under the price line
         let note: String?
+        /// #1189: the sum of a day-block line, under its price line
+        var formula: String? = nil
     }
 
     struct Row: Equatable {
@@ -174,7 +178,7 @@ struct OrderShareModel: Equatable {
         let lines = source.items.map { item -> Line in
             let unit = item.quantity > 0 ? item.total / Double(item.quantity) : item.total
             return Line(name: item.name, detail: "\(item.quantity) × \(money(unit))", amount: money(item.total),
-                        note: CartV2Logic.noteText(item.note))
+                        note: CartV2Logic.noteText(item.note), formula: item.formula)
         }
         // "3 món" counts lines, as the mockups (2 crowns are one line)
         let count = source.items.count
@@ -309,7 +313,7 @@ extension OrderShareSource {
             pickup: detail.pickupPlanAt, returnDate: detail.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt, stored: detail.rentalDuration),
             createdAt: detail.createdAt,
-            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes) },
+            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula) },
             discount: detail.discountAmount, total: detail.totalAmount, deposit: detail.depositAmount,
             collateralPapers: detail.collateralDetails, collateralMoney: detail.securityDeposit
         )
@@ -325,7 +329,7 @@ extension OrderShareSource {
             pickup: order.pickupPlanAt, returnDate: order.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: order.pickupPlanAt, return: order.returnPlanAt, stored: order.rentalDuration),
             createdAt: order.createdAt,
-            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes) },
+            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula) },
             discount: order.discountAmount, total: order.totalAmount, deposit: order.depositAmount,
             collateralPapers: order.collateralDetails, collateralMoney: order.securityDeposit
         )
@@ -344,7 +348,8 @@ extension OrderShareSource {
             pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt,
             rentalDays: OrderDetailLogic.rentalDays(pickup: cart.pickupPlanAt, return: cart.returnPlanAt),
             createdAt: now,
-            items: cart.items.map { Item(name: $0.productName ?? "", quantity: $0.quantity, total: $0.subTotal(for: cart.orderType)) },
+            items: cart.items.map { Item(name: $0.productName ?? "", quantity: $0.quantity, total: $0.subTotal(for: cart.orderType),
+                                         formula: cart.orderType == .rent ? $0.blockDetail.flatMap { $0.extraDays > 0 ? BlockPricing.formula($0) : nil } : nil) },
             discount: cart.discountAmount, total: cart.totalAmount,
             deposit: cart.orderType == .rent ? cart.depositAmount : 0,
             collateralPapers: cart.orderType == .rent ? cart.collateralDetails : nil,

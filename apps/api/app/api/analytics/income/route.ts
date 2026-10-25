@@ -3,7 +3,8 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, listCivilDays, listCivilMonths, toRevenueOrderData, buildEventWhere, EVENT_WHERE_PERIOD } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, getFutureInstallments, listCivilDays, listCivilMonths, toRevenueOrderData, REVENUE_PLAN_SELECT, buildEventWhere, EVENT_WHERE_PERIOD } from '@rentalshop/utils';
+import { loadReservedPlanOrders } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
@@ -104,6 +105,9 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
     };
 
     const outletsToProcess = await getOutletsToProcess();
+
+    // #1199: RESERVED orders with a deposit plan, once per outlet scope: a stage can fall due in any period
+    const planOrdersByScope = new Map<string, Promise<any[]>>();
 
     // Helper function to process income data for a specific outlet
     const processOutletIncome = async (
@@ -206,7 +210,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           pickedUpAt: true,
           returnedAt: true,
           createdAt: true,
-          updatedAt: true
+          updatedAt: true,
+          ...REVENUE_PLAN_SELECT
         },
         take: 10000 // Large limit to get all orders
       });
@@ -221,6 +226,11 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         startOfPeriod,
         endOfPeriod
       );
+
+      // Unpaid deposit stages by due day: its own field, never part of futureIncome (old Android adds that to revenue)
+      const scopeKey = JSON.stringify(outletFilter);
+      if (!planOrdersByScope.has(scopeKey)) planOrdersByScope.set(scopeKey, loadReservedPlanOrders(prisma, outletFilter));
+      const futureInstallments = getFutureInstallments(await planOrdersByScope.get(scopeKey)!, startOfPeriod, endOfPeriod);
 
       // Calculate total deposit collected (tiền thế chân thu được)
       // Tính securityDeposit dựa vào ngày phát sinh (ngày thu tiền cọc)
@@ -355,6 +365,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         totalCollateral: totalCollateral, // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
         totalCollateralPlan: totalCollateralPlan // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
       };
+
+      if (futureInstallments.length > 0) dataPoint.futureInstallments = futureInstallments;
 
       // Add outlet info when outletIds parameter is provided
       if (outlet) {

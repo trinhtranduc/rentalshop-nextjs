@@ -128,6 +128,18 @@ class Cart {
         }
     }
 
+    /// #1189: the product's day-block table changed (the API answered BLOCK_PRICE_MISMATCH): its block lines take
+    /// the new table and are priced again
+    func refreshBlockTable(from product: Product) {
+        let productId = product.product_id != 0 ? product.product_id : (product.id ?? 0)
+        guard let table = ProductPricing.block(product) else { return }
+        for index in items.indices where items[index].productId == productId && items[index].pricingType?.uppercased() == "BLOCK" {
+            items[index].pricingOptions = (product.pricingOptions ?? []).filter { $0.isActive != false }
+            items[index].blockTable = table
+            items[index].repriceBlock()
+        }
+    }
+
     /// #951: the index of a line by its id (nil when it is gone)
     func index(ofLine lineId: UUID) -> Int? {
         items.firstIndex { $0.lineId == lineId }
@@ -157,6 +169,8 @@ class Cart {
     /// This will save the custom price based on current order type
     func updatePrice(at index: Int, price: Double) {
         guard index >= 0 && index < items.count else { return }
+        // #1189: a block line takes its price from the table
+        if orderType == .rent && items[index].isBlockPricing { return }
         items[index].price = price
         
         // Save custom price based on current order type
@@ -174,6 +188,7 @@ class Cart {
     /// for the line's mode, or "Nhập giá" when it has none; sale: back to the sale price)
     func clearPrice(at index: Int) {
         guard index >= 0 && index < items.count else { return }
+        if orderType == .rent && items[index].isBlockPricing { return }
         if orderType == .rent {
             items[index].clearCustomRentalPrice()
         } else {
@@ -252,7 +267,7 @@ class Cart {
     func syncRentalDaysFromDates() {
         guard orderType == .rent else { return }
         guard let days = calculateRentalDays(), days >= 1 else { return }
-        for index in items.indices where items[index].isDailyPricing {
+        for index in items.indices where items[index].isDailyPricing || items[index].isBlockPricing {
             items[index].rentalDays = days
         }
     }
@@ -473,6 +488,7 @@ class Cart {
             cartItem.pricingType = orderItem.pricingType ?? "FIXED"
             cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
+            cartItem.adoptSnapshot(orderItem.pricingSnapshot)
             return cartItem
         }
         cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: orderDetail.orderNumber,
@@ -670,6 +686,7 @@ class Cart {
             cartItem.pricingType = orderItem.pricingType ?? "FIXED"
             cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
+            cartItem.adoptSnapshot(orderItem.pricingSnapshot)
             return cartItem
         }
         cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: order.orderNumber, paid: order.totalPaid,
@@ -848,7 +865,7 @@ class Cart {
                 deposit: item.deposit,
                 notes: finalNote,
                 rentalDays: orderType == .rent
-                    ? (item.isDailyPricing ? item.rentalDays : calculateRentalDays())
+                    ? (item.isDailyPricing || item.isBlockPricing ? item.rentalDays : calculateRentalDays())
                     : nil,
                 imageUrl: item.imageUrl,
                 pricingType: orderType == .rent ? item.requestPricingType : nil,
@@ -933,7 +950,7 @@ class Cart {
                 totalPrice: effectiveSubTotal,
                 deposit: item.deposit,
                 notes: finalNote,
-                rentDays: orderType == .rent && item.isDailyPricing ? item.rentalDays : nil,
+                rentDays: orderType == .rent && (item.isDailyPricing || item.isBlockPricing) ? item.rentalDays : nil,
                 pricingType: orderType == .rent ? item.requestPricingType : nil,
                 pricingOptionId: item.requestPricingOptionId
             )
