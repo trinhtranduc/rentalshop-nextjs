@@ -372,7 +372,9 @@
       "otherOutlets": "Other outlets: {count} free"
     },
     "price": {
-      "perHour": "{price}/hour"
+      "perHour": "{price}/hour",
+      "blockFrom": "from {price}/day · by block",
+      "blockTag": "by block"
     },
     "row": {
       "edit": "Edit",
@@ -582,7 +584,14 @@
       "needOutlet": "Add at least one outlet before adding products.",
       "goOutlets": "Open Outlets",
       "defaultForOrders": "Default for new orders",
-      "defaultHint": "Both prices can be used. New orders start on the default; staff can switch in the cart."
+      "defaultHint": "Both prices can be used. New orders start on the default; staff can switch in the cart.",
+      "priceRow": {
+        "title": "Rental price",
+        "hint": "Per rental, per day or by day blocks. Open the detail page to change it.",
+        "open": "Set up day / block pricing",
+        "summaryExtra": "Using day-block pricing: {count} blocks, +{extra} per extra day",
+        "summaryHold": "Using day-block pricing: {count} blocks, last block price kept"
+      }
     },
     "detail": {
       "back": "Products",
@@ -622,7 +631,39 @@
       "loadFailed": "Could not load the product.",
       "retry": "Try again",
       "otherOutletsTitle": "Stock at other outlets",
-      "otherOutletsHint": "View only. Available = total minus rented out."
+      "otherOutletsHint": "View only. Available = total minus rented out.",
+      "block": {
+        "title": "Price list by days",
+        "hint": "Choose the default price kind for new orders. Staff can still change it in the cart.",
+        "active": "Using day-block pricing",
+        "modeOnce": "Per rental",
+        "modeDay": "Per day",
+        "modeBlock": "Day-block pricing",
+        "modeBlockHint": "One price for each number of days",
+        "tiersTitle": "Price by number of days",
+        "dayRow": "{n} days",
+        "addDay": "+ Add day {n}",
+        "removeDay": "Remove day {n}",
+        "beyond": "Rental over {n} days",
+        "extraPerDay": "Add for each extra day",
+        "holdLast": "Keep the last block price",
+        "holdLastHint": "Renting {days} days still costs {price}",
+        "preview": "Preview",
+        "previewDays": "{n} days",
+        "lessDays": "One day less",
+        "moreDays": "One day more",
+        "save": "Save price list",
+        "saving": "Saving…",
+        "cancel": "Cancel",
+        "turnOff": "Turn off day-block pricing",
+        "saved": "Price list saved",
+        "saveFailed": "Could not save the price list",
+        "problem": {
+          "tierEmpty": "Enter a price for every day in the list.",
+          "extraEmpty": "Enter the amount added for each extra day, or keep the last block price.",
+          "priceEmpty": "Enter a price for the selected price kind."
+        }
+      }
     },
     "orders": {
       "back": "Back to product",

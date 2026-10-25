@@ -18,6 +18,7 @@ import { useTheme } from '../providers/ThemeProvider';
 import {
   AccountSection,
   AppearanceSection,
+  BlockOldAppsSection,
   LanguageSection,
   LegacyPanel,
   OnlineBookingSection,
@@ -30,7 +31,7 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
+import { blockOldAppsFlag, canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -155,7 +156,11 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const bookingFlag = onlineBookingFlag(merchant);
   const priceFlag = showPublicPriceFlag(merchant);
   const showsBooking = tab === 'merchant' || (tab === 'outlet' && role === 'OUTLET_ADMIN');
-  const needsProfile = (showsBooking && bookingFlag === null) || (tab === 'public-page' && priceFlag === null);
+  const oldAppsFlag = blockOldAppsFlag(merchant as { blockPricing?: { oldApps?: unknown } });
+  const needsProfile =
+    (showsBooking && bookingFlag === null) ||
+    (tab === 'public-page' && priceFlag === null) ||
+    (tab === 'merchant' && role === 'MERCHANT' && oldAppsFlag === null);
   const profileLoaded = useRef(false);
   useEffect(() => {
     if (!needsProfile || !user?.merchant || profileLoaded.current) return;
@@ -368,6 +373,9 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
               canEditOutlets={canManageOutlets}
               onShopChanged={() => void refreshUser?.()}
             />
+            {role === 'MERCHANT' && (
+              <BlockOldAppsSection t={t} value={oldAppsFlag ?? 'recompute'} canEdit onChanged={() => void refreshUser?.()} />
+            )}
             <OutletsLinkRow t={t} />
           </>
         );

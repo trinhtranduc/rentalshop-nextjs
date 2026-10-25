@@ -33,7 +33,7 @@ export function BillPreview({ outlet, width, bank = null }: { outlet: ReceiptOut
   const to = useOrderTranslations();
   const order = useSampleOrder();
   const words = useMemo(
-    () => ({ perDay: t('units.perDay'), days: t('units.days', { n: '{n}' }), perHour: t('units.perHour'), hours: t('units.hours', { n: '{n}' }) }),
+    () => ({ perDay: t('units.perDay'), days: t('units.days', { n: '{n}' }), perHour: t('units.perHour'), hours: t('units.hours', { n: '{n}' }), block: t('units.block', { n: '{n}' }), blockExtra: t('units.blockExtra', { n: '{n}', m: '{m}' }) }),
     [t],
   );
   const model = useMemo(() => buildReceipt(order, { outlet }, words), [order, outlet, words]);

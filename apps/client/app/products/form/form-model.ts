@@ -40,6 +40,10 @@ const priced = (n: Num): number | null => {
 
 export interface PricingOptionSource {
   type?: string | null;
+  blockTiers?: unknown;
+  blockStartDay?: number | null;
+  blockExtraMode?: string | null;
+  blockExtraPrice?: number | null;
   price?: Num;
   isDefault?: boolean | null;
   isActive?: boolean | null;
@@ -317,6 +321,8 @@ export interface PayloadOptions {
   branchOutletId?: number;
   /** #825: edit by a role that may not change shared fields: only the id and the stock are sent. */
   stockOnly?: boolean;
+  /** #1189: the product prices by day blocks; the form does not own that table, so the rent prices are not sent */
+  blockPriced?: boolean;
   /** Edit only */
   productId?: number;
   merchantId?: number;
@@ -336,11 +342,14 @@ export function buildPayload(form: FormState, opts: PayloadOptions): Record<stri
   if (opts.stockOnly && opts.productId != null) return { id: opts.productId, outletStock: stockRows };
   const pricing: Record<string, unknown> = {};
   if (opts.canEditPricing) {
-    const pricingOptions = buildPricingOptions(form.perRental, form.perDay, form.defaultMode);
-    pricing.rentPrice = pricingOptions.find((o) => o.isDefault)?.price ?? 0;
     // #951: a typed 0 is a 0đ sale price; an empty box sends nothing
     if (priced(form.salePrice) != null) pricing.salePrice = form.salePrice;
-    pricing.pricingOptions = pricingOptions;
+    // #1189: the day table is edited on the detail page; saving here leaves rent prices and options as they are
+    if (!opts.blockPriced) {
+      const pricingOptions = buildPricingOptions(form.perRental, form.perDay, form.defaultMode);
+      pricing.rentPrice = pricingOptions.find((o) => o.isDefault)?.price ?? 0;
+      pricing.pricingOptions = pricingOptions;
+    }
     if (form.costPrice > 0) pricing.costPrice = form.costPrice;
   }
   const base = {

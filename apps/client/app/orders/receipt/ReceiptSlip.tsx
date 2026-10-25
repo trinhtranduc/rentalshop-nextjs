@@ -108,7 +108,9 @@ export function ReceiptSlip({
             {item.index}. {item.name}
             {item.note ? ` (${item.note})` : ''}
           </div>
-          <div className="rc-calc">{item.calc}</div>
+          <div className="rc-calc" style={item.calc.includes('\n') ? { whiteSpace: 'pre-line' } : undefined}>
+            {item.calc}
+          </div>
         </div>
       ))}
       {model.note && (

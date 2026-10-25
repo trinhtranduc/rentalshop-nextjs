@@ -634,13 +634,15 @@
         "DAILY": "{price}/ngày",
         "HOURLY": "{price}/giờ",
         "FIXED": "{price}/lần",
-        "SALE": "{price}"
+        "SALE": "{price}",
+        "BLOCK": "từ {price}/ngày · theo khối"
       },
       "option": {
         "DAILY": "Theo ngày · {price}/ngày",
         "HOURLY": "Theo giờ · {price}/giờ",
         "FIXED": "Theo lần · {price}/lần",
-        "SALE": "Giá bán · {price}"
+        "SALE": "Giá bán · {price}",
+        "BLOCK": "Theo khối ngày · {price}"
       },
       "cart": {
         "label": "Đơn đang tạo",
@@ -723,7 +725,8 @@
           "FIXED": "Theo lần",
           "DAILY": "Theo ngày",
           "HOURLY": "Theo giờ",
-          "OTHER": "{type}"
+          "OTHER": "{type}",
+          "BLOCK": "Theo khối ngày"
         },
         "price": "Giá cho đơn này",
         "priceFor": "Giá cho đơn này · {name}",
@@ -731,7 +734,8 @@
           "FIXED": "/lần",
           "DAILY": "/ngày",
           "HOURLY": "/giờ",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "cả đợt thuê"
         },
         "note": "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.",
         "done": "Xong",
@@ -769,6 +773,11 @@
         "clear": "Xoá ghi chú",
         "done": "Xong",
         "for": "Ghi chú cho {name}"
+      },
+      "block": {
+        "label": "Khối {n} ngày",
+        "labelExtra": "Khối {n} ngày + {m} ngày thêm",
+        "days": "{n} ngày"
       }
     },
     "tabs": {
@@ -892,7 +901,10 @@
         "fixed": "Giá cố định",
         "perDay": "{amount}/ngày × {days} ngày",
         "empty": "Đơn chưa có món nào.",
-        "image": "Ảnh {name}"
+        "image": "Ảnh {name}",
+        "block": "Khối {n} ngày",
+        "blockExtra": "Khối {n} ngày + {m} ngày thêm",
+        "blockDays": "{n} ngày"
       },
       "notes": {
         "title": "Ghi chú",
@@ -1054,7 +1066,9 @@
         "perDay": "/ngày",
         "days": "{n} ngày",
         "perHour": "/giờ",
-        "hours": "{n} giờ"
+        "hours": "{n} giờ",
+        "block": "Khối {n} ngày",
+        "blockExtra": "Khối {n} ngày + {m} ngày thêm"
       },
       "bankTitle": "Chuyển khoản",
       "bankName": "Ngân hàng",

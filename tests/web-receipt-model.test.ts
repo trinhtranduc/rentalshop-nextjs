@@ -2,7 +2,12 @@
  * #562 shop web Hoá đơn: the lines the slip prints. Per-day lines carry the rental days, money is VND
  * ("2.600.000đ"), days are Vietnam civil days and times Vietnam time — under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+
+// receipt-model takes the day-block text (#1189) from @rentalshop/utils; its barrel pulls in React files
+jest.mock('@rentalshop/utils', () => ({
+  ...(jest.requireActual('../packages/utils/src/core/block-line-text') as object),
+}));
 import {
   buildReceipt,
   formatVnd,
