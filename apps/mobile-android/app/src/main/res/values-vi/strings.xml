@@ -548,6 +548,9 @@
     <string name="api_error_product_held_by_other_outlets">{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.</string>
     <string name="api_error_product_held_by_other_outlets_no_params">Chi nhánh khác còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.</string>
     <string name="api_error_outlet_has_open_orders">Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.</string>
+    <string name="api_error_block_price_mismatch">Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.</string>
+    <string name="api_error_pricing_type_requires_update">Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.</string>
+    <string name="api_error_block_table_invalid">Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.</string>
     <string name="api_error_customer_duplicate">Khách hàng với email hoặc số điện thoại này đã tồn tại</string>
     <string name="api_error_email_exists">Địa chỉ email đã được đăng ký</string>
     <string name="api_error_phone_exists">Số điện thoại đã được đăng ký</string>
@@ -1141,7 +1144,7 @@
     <string name="orders_entity_million_whole">%1$dtr</string>
     <!-- #482 -->
     <string name="v2_pricing_title">Cách tính giá</string>
-    <string name="v2_pricing_block">Theo block</string>
+    <string name="v2_pricing_block">Theo khối ngày</string>
     <string name="v2_pricing_hourly">Theo giờ</string>
     <string name="v2_pricing_sale">Giá bán</string>
     <string name="v2_pricing_enter_price">Nhập giá</string>
@@ -2104,4 +2107,29 @@
     <string name="settings_v2_currency_failed">Không đổi được tiền tệ. Vui lòng thử lại.</string>
     <string name="v2_pricing_unit_usd">$</string>
     <string name="v2_pricing_unit_daily_usd">$/ngày</string>
+    <!-- #1189 day-block pricing -->
+    <string name="block_title">Giá theo khối ngày</string>
+    <string name="block_screen_title">Giá thuê · %1$s</string>
+    <string name="block_save">Lưu bảng giá</string>
+    <string name="block_turn_off">Tắt giá theo khối ngày</string>
+    <string name="block_row_off">Chưa dùng</string>
+    <string name="block_row_tiers">%1$d mốc</string>
+    <string name="block_row_extra">+%1$s mỗi ngày</string>
+    <string name="block_row_hold">giữ giá khối cuối</string>
+    <string name="block_section_default">Cách tính giá mặc định</string>
+    <string name="block_hint_default">Kiểu giá mặc định khi tạo đơn. Nhân viên đổi được trong giỏ.</string>
+    <string name="block_section_tiers">Giá theo số ngày</string>
+    <string name="block_add_day">+ Thêm ngày %1$d</string>
+    <string name="block_remove_day">Xoá ngày này</string>
+    <string name="block_section_beyond">Thuê quá %1$d ngày</string>
+    <string name="block_extra_per_day">Cộng thêm mỗi ngày</string>
+    <string name="block_hold_last">Giữ nguyên giá khối cuối</string>
+    <string name="block_hold_last_price">Giữ nguyên giá khối cuối (%1$s)</string>
+    <string name="block_preview">Xem thử</string>
+    <string name="block_error_invalid">Nhập đủ giá cho mọi ngày (từ 0 trở lên) và số tiền cộng thêm mỗi ngày.</string>
+    <string name="block_error_empty">Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày, hoặc chọn kiểu giá mặc định khác.</string>
+    <string name="block_summary_block">Khối %1$d ngày</string>
+    <string name="block_summary_extra">+ %1$d ngày thêm</string>
+    <string name="v2_unit_per_block">/1 ngày</string>
+    <string name="v2_price_block">Khối ngày</string>
 </resources>

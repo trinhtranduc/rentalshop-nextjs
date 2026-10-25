@@ -1,5 +1,6 @@
 package com.anyrent.pos.print
 
+import com.anyrent.pos.domain.products.blockLines
 import com.anyrent.pos.data.CurrentOutlet
 import android.content.SharedPreferences
 import com.anyrent.pos.data.SessionStore
@@ -235,6 +236,12 @@ object ThermalPrinter {
                 val name = item.productName ?: "#${item.productId}"
                 val withNote = item.note?.takeIf { it.isNotBlank() }?.let { "$name ($it)" } ?: name
                 text("${index + 1}. $withNote")
+                // #1189: a day-block line shows how its price was reached (iOS prints summary + ": " + formula)
+                if (summary.orderType.equals("RENT", ignoreCase = true)) {
+                    com.anyrent.pos.AnyRentApp.instance?.resources?.let { res -> item.blockLines(res) }?.let { (head, formula) ->
+                        text("   " + (formula?.let { "$head: $it" } ?: head))
+                    }
+                }
                 alignRight()
                 text(
                     "${money.format(item.quantity)} x ${money.format(item.unitPrice)} = ${money.format(item.totalPrice)}",
