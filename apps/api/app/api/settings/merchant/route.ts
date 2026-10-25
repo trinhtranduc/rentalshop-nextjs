@@ -6,6 +6,7 @@ import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { isValidTimeZone, merchantTimeZoneField, recordShopTimeZoneChange } from '../../../../lib/shop-timezone';
+import { merchantDepositField } from '../../../../lib/installments';
 
 /** #567 `timezone`: an IANA id that Intl accepts (Asia/Ho_Chi_Minh, Asia/Tokyo, America/New_York, …). */
 const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknown time zone');
@@ -281,6 +282,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         // #1189 additive; 'recompute' when unset
         blockPricing: { oldApps: readOldAppsMode((updatedMerchant as { settings?: unknown }).settings) },
         ...merchantTimeZoneField(updatedMerchant),
+        ...merchantDepositField(updatedMerchant),
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscription?.status,

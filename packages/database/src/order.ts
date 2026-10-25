@@ -1181,6 +1181,8 @@ export const simplifiedOrders = {
       where: whereClause, 
       // Opt-in: product names per order (dashboard lists). Off by default to keep the list query light (#349)
       includeItemNames = false,
+      // #1199: `_count.payments` leaves out deposit-stage rows (notes INSTALLMENT) unless the caller declared `installments`
+      includeInstallments = false,
       ...whereFilters 
     } = filters;
     const skip = (page - 1) * limit;
@@ -1300,7 +1302,7 @@ export const simplifiedOrders = {
           _count: {
             select: {
               orderItems: true,
-              payments: true
+              payments: { where: paymentCountFilter(includeInstallments) }
             }
           },
           ...(includeItemNames
@@ -2092,6 +2094,9 @@ export const simplifiedOrders = {
       select: {
         id: true,
         orderNumber: true,
+        depositPlan: true, // #1199 (the API strips it for clients without the `installments` capability)
+        cancelKeptAmount: true,
+        cancelledAt: true,
         orderType: true,
         status: true,
         totalAmount: true,
@@ -2242,6 +2247,7 @@ export const simplifiedOrders = {
             status: true,
             reference: true,
             notes: true,
+            installmentKey: true, // #1199 which deposit stage the row collects
             processedAt: true,
             createdAt: true,
             updatedAt: true

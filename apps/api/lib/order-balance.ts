@@ -26,6 +26,8 @@ export interface OrderBalanceInput {
 export function computeOrderBalance(order: OrderBalanceInput): { amountDue: number; refundDue: number } {
   const paid = (notes: string) =>
     (order.payments || [])
+      // #1199: a deposit-stage row (notes INSTALLMENT) is already inside `depositAmount`; never a PICKUP / SALE / RETURN_ADJUSTMENT sum
+      .filter((payment) => payment.notes !== 'INSTALLMENT')
       .filter((payment) => payment.status === 'COMPLETED' && payment.notes === notes)
       .reduce((sum, payment) => sum + (payment.amount || 0), 0);
 

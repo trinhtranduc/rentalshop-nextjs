@@ -6,6 +6,7 @@ import {API, USER_ROLE} from '@rentalshop/constants';
 import { toPublicUser } from '../../../../lib/user-scope';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { merchantTimeZoneField } from '../../../../lib/shop-timezone';
+import { merchantDepositField } from '../../../../lib/installments';
 import { activeModuleKeysSafe } from '../../../../lib/merchant-modules';
 
 /**
@@ -83,6 +84,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         blockPricing: { oldApps: readOldAppsMode((userProfile.merchant as { settings?: unknown }).settings) },
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(userProfile.merchant),
+        // #1199 "Cách thu cọc" (additive)
+        ...merchantDepositField(userProfile.merchant),
         // #907 active feature modules (additive; [] when none)
         modules: await activeModuleKeysSafe(userProfile.merchant.id),
         isActive: userProfile.merchant.isActive,

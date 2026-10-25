@@ -418,6 +418,7 @@ export const simplifiedUsers = {
             timezone: true, // #567 shop time zone for GET /api/users/profile
             onlineBookingEnabled: true, // #1124 online booking switch for GET /api/users/profile
             ...({ showPublicPrice: true } as object), // #1174 public catalogue prices (column after migrate)
+            settings: true, // #1189/#1199 shop settings JSON (depositMode reaches the client with the profile)
             isActive: true,
             planId: true,
             // subscriptionStatus removed - use subscription.status

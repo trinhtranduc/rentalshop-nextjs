@@ -7,6 +7,7 @@ export * from './string-utils';
 export * from './function-utils';
 export * from './tenant-key';
 export * from './client-capabilities';
+export * from './deposit-plan';
 export * from './google-credential';
 
 // Export common utilities without conflicts

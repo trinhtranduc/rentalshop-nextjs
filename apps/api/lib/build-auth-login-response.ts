@@ -7,6 +7,7 @@ import { USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { detectPlatform } from './platform-detector';
 import { detectClientPlatform } from './client-platform';
 import { merchantTimeZoneField } from './shop-timezone';
+import { merchantDepositField } from './installments';
 import { activeModuleKeysSafe } from './merchant-modules';
 
 type LoginUserRow = NonNullable<Awaited<ReturnType<typeof db.users.findByEmail>>>;
@@ -107,6 +108,8 @@ export async function buildAuthLoginSuccessResponse(
         allowOverlappingOrders: (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders !== false,
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(merchant),
+        // #1199 "Cách thu cọc" (additive; ONE_TIME for every shop that never set it)
+        ...merchantDepositField(merchant),
         // #907 active feature modules (additive; [] when none)
         modules: await activeModuleKeysSafe(merchant.id),
         subscription: subscriptionData,
