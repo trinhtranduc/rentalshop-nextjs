@@ -98,34 +98,8 @@ __export(src_exports, {
 });
 module.exports = __toCommonJS(src_exports);
 
-// src/hooks/auth-sync.ts
-function userSyncSignature(user) {
-  if (!user)
-    return "";
-  const updatedAt = user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt ?? "";
-  return [user.id, user.firstName, user.lastName, user.name, user.phone, user.email, user.role, user.isActive, updatedAt].map((v2) => v2 === null || v2 === void 0 ? "" : String(v2)).join("|");
-}
-function storedUserDiffers(current, stored) {
-  if (!stored)
-    return false;
-  return userSyncSignature(current) !== userSyncSignature(stored);
-}
-function mergeRefreshedUser(prev, next) {
-  if (!prev || prev.id !== next.id)
-    return next;
-  const prevMerchant = prev.merchant && typeof prev.merchant === "object" ? prev.merchant : null;
-  const nextMerchant = next.merchant && typeof next.merchant === "object" ? next.merchant : null;
-  const merged = { ...prev, ...next };
-  if (prevMerchant && nextMerchant && prevMerchant.id === nextMerchant.id)
-    merged.merchant = { ...prevMerchant, ...nextMerchant };
-  return merged;
-}
-
 // src/hooks/useAuth.ts
 var import_react5 = require("react");
-var import_utils2 = require("@rentalshop/utils");
-
-// src/hooks/useApiError.ts
 var import_utils = require("@rentalshop/utils");
 
 // ../../node_modules/tslib/tslib.es6.mjs
@@ -3814,38 +3788,57 @@ function useApiError() {
       console.log("\u{1F50D} translateError: Handling nested axios error response");
       return translateError(response.response.data);
     }
-    const unknown = (code) => {
-      console.warn("translateError: no translation for error code", code);
-      return t3("UNKNOWN_ERROR");
-    };
     if (response?.code && typeof response.code === "string") {
-      const params = response?.data?.messageParams;
-      const values = params && typeof params === "object" ? params : void 0;
-      return (0, import_utils.translateErrorCode)(t3, response.code, values) ?? unknown(response.code);
+      console.log("\u{1F50D} translateError: Found code field:", response.code);
+      const translated = t3(response.code);
+      console.log("\u{1F50D} translateError: Translation result:", { code: response.code, translated, isTranslated: translated !== response.code });
+      if (translated !== response.code) {
+        console.log("\u2705 translateError: Using translated message:", translated);
+        return translated;
+      }
+      if (response?.message) {
+        console.log("\u26A0\uFE0F translateError: Translation not found, using message:", response.message);
+        return response.message;
+      }
+      console.log("\u26A0\uFE0F translateError: No translation or message, returning code:", response.code);
+      return response.code;
     }
     if (response instanceof Error && response.code) {
       const code = response.code;
-      return (0, import_utils.lookupErrorTranslation)(t3, code) ?? unknown(code);
+      const translated = t3(code);
+      if (translated !== code) {
+        return translated;
+      }
+      return response.message;
     }
-    if (response?.message && typeof response.message === "string" && (0, import_utils.looksLikeErrorCode)(response.message)) {
-      return (0, import_utils.lookupErrorTranslation)(t3, response.message) ?? unknown(response.message);
+    if (response?.message && typeof response.message === "string" && /^[A-Z_]+$/.test(response.message)) {
+      const translated = t3(response.message);
+      if (translated !== response.message) {
+        return translated;
+      }
     }
     if (response?.message) {
       return response.message;
     }
     if (typeof response === "string") {
-      if ((0, import_utils.looksLikeErrorCode)(response)) {
-        return (0, import_utils.lookupErrorTranslation)(t3, response) ?? unknown(response);
+      if (/^[A-Z_]+$/.test(response)) {
+        const translated = t3(response);
+        if (translated !== response) {
+          return translated;
+        }
       }
       return response;
     }
     return t3("UNKNOWN_ERROR");
   };
   const translateSuccess = (response) => {
-    const translated = (0, import_utils.lookupErrorTranslation)(t3, response?.code);
-    if (translated)
-      return translated;
-    if (response?.message && !(0, import_utils.looksLikeErrorCode)(response.message)) {
+    if (response?.code && typeof response.code === "string") {
+      const translated = t3(response.code);
+      if (translated !== response.code) {
+        return translated;
+      }
+    }
+    if (response?.message) {
       return response.message;
     }
     return t3("UNKNOWN_ERROR");
@@ -3955,7 +3948,7 @@ function useAuth() {
         permissionsCount: data.data?.user?.permissions?.length || 0
       });
       if (data.success && data.data?.token) {
-        (0, import_utils2.storeAuthData)(data.data.token, data.data.user);
+        (0, import_utils.storeAuthData)(data.data.token, data.data.user);
         console.log("\u{1F50D} LOGIN: After storeAuthData, checking localStorage...");
         const storedAuth = localStorage.getItem("authData");
         if (storedAuth) {
@@ -3971,7 +3964,7 @@ function useAuth() {
         const storedToken = getAuthToken2();
         if (!storedToken) {
           console.error("\u274C Login: Token was not stored properly, retrying...");
-          (0, import_utils2.storeAuthData)(data.data.token, data.data.user);
+          (0, import_utils.storeAuthData)(data.data.token, data.data.user);
           await new Promise((resolve) => setTimeout(resolve, 10));
           const retryToken = getAuthToken2();
           if (!retryToken) {
@@ -4026,12 +4019,12 @@ function useAuth() {
           return false;
         }
         const data = result.data;
-        (0, import_utils2.storeAuthData)(data.token, data.user);
+        (0, import_utils.storeAuthData)(data.token, data.user);
         const { getAuthToken: getAuthToken2 } = await import("@rentalshop/utils");
         await new Promise((resolve) => setTimeout(resolve, 10));
         let storedToken = getAuthToken2();
         if (!storedToken) {
-          (0, import_utils2.storeAuthData)(data.token, data.user);
+          (0, import_utils.storeAuthData)(data.token, data.user);
           await new Promise((resolve) => setTimeout(resolve, 10));
           storedToken = getAuthToken2();
           if (!storedToken) {
@@ -4063,7 +4056,7 @@ function useAuth() {
     [translateError]
   );
   const logout = (0, import_react5.useCallback)(() => {
-    (0, import_utils2.clearAuthData)();
+    (0, import_utils.clearAuthData)();
     setState({
       user: null,
       loading: false,
@@ -4075,7 +4068,7 @@ function useAuth() {
   }, []);
   const refreshUser = (0, import_react5.useCallback)(async () => {
     try {
-      const token = (0, import_utils2.getAuthToken)();
+      const token = (0, import_utils.getAuthToken)();
       if (!token) {
         setState((prev) => ({ ...prev, user: null, loading: false }));
         return;
@@ -4085,16 +4078,15 @@ function useAuth() {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          const user = mergeRefreshedUser((0, import_utils2.getStoredUser)(), data.data);
-          const token2 = (0, import_utils2.getAuthToken)();
+          const token2 = (0, import_utils.getAuthToken)();
           if (token2) {
-            (0, import_utils2.storeAuthData)(token2, user);
+            (0, import_utils.storeAuthData)(token2, data.data);
           } else {
-            localStorage.setItem("user", JSON.stringify(user));
+            localStorage.setItem("user", JSON.stringify(data.data));
           }
           setState((prev) => ({
             ...prev,
-            user,
+            user: data.data,
             loading: false
           }));
         }
@@ -4110,11 +4102,11 @@ function useAuth() {
     }
   }, [logout]);
   const syncStateFromStorage = (0, import_react5.useCallback)(() => {
-    const token = (0, import_utils2.getAuthToken)();
-    const storedUser = (0, import_utils2.getStoredUser)();
+    const token = (0, import_utils.getAuthToken)();
+    const storedUser = (0, import_utils.getStoredUser)();
     if (token && storedUser) {
       setState((prev) => {
-        if (storedUserDiffers(prev.user, storedUser)) {
+        if (prev.user?.id !== storedUser.id) {
           console.log("\u{1F504} useAuth: Syncing user state from localStorage");
           console.log("\u{1F50D} useAuth: Stored user permissions:", storedUser.permissions);
           const userWithPermissions = {
@@ -4179,13 +4171,13 @@ function useAuth() {
 
 // src/hooks/useAuthErrorHandler.ts
 var import_react6 = require("react");
-var import_utils3 = require("@rentalshop/utils");
+var import_utils2 = require("@rentalshop/utils");
 var useAuthErrorHandler = () => {
   const handleAuthError = (0, import_react6.useCallback)((error) => {
     console.error("Authentication error detected:", error);
     if (error?.message?.includes("Authentication required") || error?.message?.includes("Unauthorized") || error?.message?.includes("Invalid token") || error?.message?.includes("Token expired") || error?.status === 401) {
       console.log("\u{1F504} Authentication error detected, logging out user");
-      (0, import_utils3.clearAuthData)();
+      (0, import_utils2.clearAuthData)();
       if (typeof window !== "undefined") {
       }
     }
@@ -4610,17 +4602,17 @@ function useCanPerform(action) {
 
 // src/hooks/useCurrency.tsx
 var import_react10 = require("react");
-var import_utils4 = require("@rentalshop/utils");
+var import_utils3 = require("@rentalshop/utils");
 var CurrencyContext = (0, import_react10.createContext)(void 0);
 function CurrencyProvider({
   children,
   initialSettings = {}
 }) {
   const [settings, setSettings] = (0, import_react10.useState)({
-    ...import_utils4.DEFAULT_CURRENCY_SETTINGS,
+    ...import_utils3.DEFAULT_CURRENCY_SETTINGS,
     ...initialSettings
   });
-  const currentCurrency = (0, import_utils4.getCurrentCurrency)(settings);
+  const currentCurrency = (0, import_utils3.getCurrentCurrency)(settings);
   const setCurrency = (0, import_react10.useCallback)((currencyCode) => {
     setSettings((prev) => ({
       ...prev,
@@ -4643,13 +4635,13 @@ function CurrencyProvider({
     localStorage.setItem("rentalshop-show-code", (!settings.showCode).toString());
   }, [settings.showCode]);
   const getCurrencyByCode = (0, import_react10.useCallback)((code) => {
-    return (0, import_utils4.getCurrency)(code);
+    return (0, import_utils3.getCurrency)(code);
   }, []);
   const convertAmount = (0, import_react10.useCallback)((amount, from, to) => {
     if (from === to)
       return amount;
-    const fromCurrency = (0, import_utils4.getCurrency)(from);
-    const toCurrency = (0, import_utils4.getCurrency)(to);
+    const fromCurrency = (0, import_utils3.getCurrency)(from);
+    const toCurrency = (0, import_utils3.getCurrency)(to);
     if (!fromCurrency || !toCurrency) {
       throw new Error(`Invalid currency code: ${from} or ${to}`);
     }
@@ -4937,14 +4929,14 @@ function getApiCacheStats() {
 }
 
 // src/hooks/useCustomersData.ts
-var import_utils5 = require("@rentalshop/utils");
+var import_utils4 = require("@rentalshop/utils");
 function useCustomersData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F465} useCustomersData: Fetching with filters:", filters2);
-      const response = await import_utils5.customersApi.searchCustomers(filters2);
+      const response = await import_utils4.customersApi.searchCustomers(filters2);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch customers");
       }
@@ -4977,8 +4969,8 @@ function useCustomersData(options) {
 }
 
 // src/hooks/useMerchantsData.ts
+var import_utils5 = require("@rentalshop/utils");
 var import_utils6 = require("@rentalshop/utils");
-var import_utils7 = require("@rentalshop/utils");
 function useMerchantsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
@@ -5000,9 +4992,9 @@ function useMerchantsData(options) {
         queryParams.set("sortBy", filters2.sortBy);
       if (filters2.sortOrder)
         queryParams.set("sortOrder", filters2.sortOrder);
-      const url = queryParams.toString() ? `${import_utils7.apiUrls.merchants.list}?${queryParams.toString()}` : import_utils7.apiUrls.merchants.list;
-      const response = await (0, import_utils6.authenticatedFetch)(url);
-      const result2 = await (0, import_utils6.parseApiResponse)(response);
+      const url = queryParams.toString() ? `${import_utils6.apiUrls.merchants.list}?${queryParams.toString()}` : import_utils6.apiUrls.merchants.list;
+      const response = await (0, import_utils5.authenticatedFetch)(url);
+      const result2 = await (0, import_utils5.parseApiResponse)(response);
       if (!result2.success || !result2.data) {
         throw new Error("Failed to fetch merchants");
       }
@@ -5048,7 +5040,7 @@ function useMerchantsData(options) {
 // src/hooks/useOrdersData.ts
 var import_react12 = require("react");
 var import_navigation = require("next/navigation");
-var import_utils8 = require("@rentalshop/utils");
+var import_utils7 = require("@rentalshop/utils");
 function useOrdersData(options) {
   const { filters, enabled = true } = options;
   const pathname = (0, import_navigation.usePathname)();
@@ -5062,7 +5054,7 @@ function useOrdersData(options) {
     fetchFn: async (filtersWithPath2) => {
       const { _pathname, ...apiFilters } = filtersWithPath2;
       console.log("\u{1F4E6} useOrdersData: Fetching with filters:", apiFilters);
-      const response = await import_utils8.ordersApi.searchOrders(apiFilters);
+      const response = await import_utils7.ordersApi.searchOrders(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch orders");
       }
@@ -5153,14 +5145,14 @@ function usePagination(config = {}) {
 }
 
 // src/hooks/usePaymentsData.ts
-var import_utils9 = require("@rentalshop/utils");
+var import_utils8 = require("@rentalshop/utils");
 function usePaymentsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4B0} usePaymentsData: Fetching with filters:", filters2);
-      const response = await import_utils9.paymentsApi.getPayments();
+      const response = await import_utils8.paymentsApi.getPayments();
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch payments");
       }
@@ -5185,9 +5177,9 @@ function usePaymentsData(options) {
         );
       }
       if (filters2.dateFilter && filters2.dateFilter !== "all") {
-        const todayKey = (0, import_utils9.getShopTodayKey)();
+        const todayKey = (0, import_utils8.getShopTodayKey)();
         filteredPayments = filteredPayments.filter((p2) => {
-          const paymentKey = (0, import_utils9.toDateKeyInTimeZone)(p2.createdAt, import_utils9.SHOP_TIMEZONE) || "";
+          const paymentKey = (0, import_utils8.toDateKeyInTimeZone)(p2.createdAt, import_utils8.SHOP_TIMEZONE) || "";
           if (filters2.dateFilter === "today") {
             return paymentKey === todayKey;
           } else if (filters2.dateFilter === "this_month") {
@@ -5240,14 +5232,14 @@ function usePaymentsData(options) {
 }
 
 // src/hooks/usePlansData.ts
-var import_utils10 = require("@rentalshop/utils");
+var import_utils9 = require("@rentalshop/utils");
 function usePlansData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4CB} usePlansData: Fetching with filters:", filters2);
-      const response = await import_utils10.plansApi.getPlans({
+      const response = await import_utils9.plansApi.getPlans({
         page: filters2.page,
         limit: filters2.limit,
         search: filters2.search,
@@ -5384,14 +5376,14 @@ function useProductAvailability() {
 }
 
 // src/hooks/useProductsData.ts
-var import_utils11 = require("@rentalshop/utils");
+var import_utils10 = require("@rentalshop/utils");
 function useProductsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F4E6} useProductsData: Fetching with filters:", filters2);
-      const response = await import_utils11.productsApi.searchProducts(filters2);
+      const response = await import_utils10.productsApi.searchProducts(filters2);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch products");
       }
@@ -5424,7 +5416,7 @@ function useProductsData(options) {
 }
 
 // src/hooks/useSubscriptionsData.ts
-var import_utils12 = require("@rentalshop/utils");
+var import_utils11 = require("@rentalshop/utils");
 function useSubscriptionsData(options) {
   const { filters, enabled = true } = options;
   const result = useDedupedApi({
@@ -5438,11 +5430,10 @@ function useSubscriptionsData(options) {
         page,
         search: filters2.search,
         status: filters2.status,
-        bucket: filters2.bucket,
         merchantId: filters2.merchant ? parseInt(filters2.merchant) : void 0,
-        planId: filters2.planId ?? (filters2.plan ? parseInt(filters2.plan) : void 0)
+        planId: filters2.plan ? parseInt(filters2.plan) : void 0
       };
-      const response = await import_utils12.subscriptionsApi.search(searchFilters);
+      const response = await import_utils11.subscriptionsApi.search(searchFilters);
       if (!response.success) {
         throw new Error("Failed to fetch subscriptions");
       }
@@ -5516,7 +5507,6 @@ function useSubscriptionsData(options) {
 // src/hooks/useSubscriptionError.ts
 var import_react15 = require("react");
 var import_ui = require("@rentalshop/ui");
-var import_utils13 = require("@rentalshop/utils");
 function useSubscriptionError() {
   const [error, setError] = (0, import_react15.useState)(null);
   const { addToast } = (0, import_ui.useToasts)();
@@ -5534,11 +5524,17 @@ function useSubscriptionError() {
     const subscriptionStatus = statusMap[errorCode] || error2?.subscriptionStatus || error2?.details?.status;
     const errorMessage = error2.message || error2?.response?.data?.message;
     let translatedMessage = errorMessage || t3("errors.generic");
-    const translatedCode = (0, import_utils13.lookupErrorTranslation)(te, errorCode);
-    if (translatedCode) {
-      translatedMessage = translatedCode;
-    } else if (errorCode || (0, import_utils13.looksLikeErrorCode)(translatedMessage)) {
-      translatedMessage = t3("errors.generic");
+    if (errorCode === "PLAN_LIMIT_EXCEEDED") {
+      translatedMessage = te("PLAN_LIMIT_EXCEEDED");
+    } else if (errorCode === "SUBSCRIPTION_PERIOD_ENDED") {
+      translatedMessage = te("SUBSCRIPTION_PERIOD_ENDED");
+    } else if (errorCode === "SUBSCRIPTION_PERIOD_MISSING") {
+      translatedMessage = te("SUBSCRIPTION_PERIOD_MISSING");
+    } else if (errorCode && typeof errorCode === "string" && errorCode.includes("SUBSCRIPTION")) {
+      const translated = te(errorCode);
+      if (translated !== errorCode) {
+        translatedMessage = translated;
+      }
     }
     const subscriptionError = {
       message: translatedMessage,
@@ -5671,7 +5667,7 @@ var import_ui2 = require("@rentalshop/ui");
 var useToastHandler = () => {
   const { addToast } = (0, import_ui2.useToasts)();
   const showError = (0, import_react17.useCallback)((title, message) => {
-    addToast("error", title, message);
+    addToast("error", title, message, 0);
   }, [addToast]);
   const showSuccess = (0, import_react17.useCallback)((title, message) => {
     addToast("success", title, message, 5e3);
@@ -5769,7 +5765,7 @@ function useCanExportData() {
 // src/hooks/useUsersData.ts
 var import_react19 = require("react");
 var import_navigation3 = require("next/navigation");
-var import_utils14 = require("@rentalshop/utils");
+var import_utils12 = require("@rentalshop/utils");
 function useUsersData(options) {
   const { filters, enabled = true } = options;
   const pathname = (0, import_navigation3.usePathname)();
@@ -5783,7 +5779,7 @@ function useUsersData(options) {
     fetchFn: async (filtersWithPath2) => {
       const { _pathname, ...apiFilters } = filtersWithPath2;
       console.log("\u{1F464} useUsersData: Fetching with filters:", apiFilters);
-      const response = await import_utils14.usersApi.searchUsers(apiFilters);
+      const response = await import_utils12.usersApi.searchUsers(apiFilters);
       if (!response.success || !response.data) {
         throw new Error("Failed to fetch users");
       }
@@ -5873,14 +5869,6 @@ function useOptimisticNavigation() {
 // src/hooks/useGlobalErrorHandler.ts
 var import_react21 = require("react");
 var import_ui3 = require("@rentalshop/ui");
-
-// src/hooks/apiErrorToast.ts
-function apiErrorToast(errorCode) {
-  const isWarning = errorCode === "VALIDATION_ERROR" || typeof errorCode === "string" && errorCode.includes("INVALID");
-  return isWarning ? { type: "warning", titleKey: "labels.warning" } : { type: "error", titleKey: "labels.error" };
-}
-
-// src/hooks/useGlobalErrorHandler.ts
 var lastErrorCode = null;
 var lastErrorTime = 0;
 var DEBOUNCE_MS = 1e3;
@@ -5888,17 +5876,14 @@ function useGlobalErrorHandler() {
   const { addToast } = (0, import_ui3.useToasts)();
   const { translateError } = useApiError();
   const subscriptionErrorHook = useSubscriptionError();
-  const tc = useCommonTranslations();
   const addToastRef = (0, import_react21.useRef)(addToast);
   const translateErrorRef = (0, import_react21.useRef)(translateError);
   const subscriptionErrorHookRef = (0, import_react21.useRef)(subscriptionErrorHook);
-  const tcRef = (0, import_react21.useRef)(tc);
   (0, import_react21.useEffect)(() => {
     addToastRef.current = addToast;
     translateErrorRef.current = translateError;
     subscriptionErrorHookRef.current = subscriptionErrorHook;
-    tcRef.current = tc;
-  }, [addToast, translateError, subscriptionErrorHook, tc]);
+  }, [addToast, translateError, subscriptionErrorHook]);
   (0, import_react21.useEffect)(() => {
     const handleApiError = (event) => {
       const { code, message, error: errorData, fullError } = event.detail;
@@ -5918,11 +5903,10 @@ function useGlobalErrorHandler() {
         code: errorCode,
         message: message || errorData,
         success: false,
-        error: errorData,
-        data: fullError?.data
+        error: errorData
       });
-      const { type, titleKey } = apiErrorToast(errorCode);
-      addToastRef.current(type, tcRef.current(titleKey), translatedMessage);
+      const toastType = errorCode === "VALIDATION_ERROR" || errorCode?.includes("INVALID") ? "warning" : "error";
+      addToastRef.current(toastType, "Error", translatedMessage, 0);
     };
     window.addEventListener("api-error", handleApiError);
     return () => {
@@ -5978,14 +5962,14 @@ function useTableSelection(items, onSelectionChange) {
 }
 
 // src/hooks/useFiltersData.ts
-var import_utils15 = require("@rentalshop/utils");
+var import_utils13 = require("@rentalshop/utils");
 function useOutletsData() {
   const { data, loading, error } = useDedupedApi({
     filters: { _hook: "useOutletsData" },
     // Unique identifier to prevent cache collision
     fetchFn: async () => {
       console.log("\u{1F50D} useOutletsData: Fetching outlets...");
-      const response = await import_utils15.outletsApi.getOutlets();
+      const response = await import_utils13.outletsApi.getOutlets();
       if (response.success && response.data) {
         const outletsData = response.data.outlets || [];
         console.log("\u2705 useOutletsData: Transformed data:", {
@@ -6017,7 +6001,7 @@ function useCategoriesData() {
     // Unique identifier to prevent cache collision
     fetchFn: async () => {
       console.log("\u{1F50D} useCategoriesData: Fetching categories...");
-      const response = await import_utils15.categoriesApi.getCategories();
+      const response = await import_utils13.categoriesApi.getCategories();
       console.log("\u{1F50D} useCategoriesData: Raw API response:", {
         success: response.success,
         hasData: !!response.data,
@@ -6092,7 +6076,7 @@ function useOutletsWithFilters(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F50D} useOutletsWithFilters: Fetching with filters:", filters2);
-      const response = await import_utils15.outletsApi.getOutlets(filters2);
+      const response = await import_utils13.outletsApi.getOutlets(filters2);
       if (response.success && response.data) {
         const apiData = response.data;
         return {
@@ -6126,7 +6110,7 @@ function useCategoriesWithFilters(options) {
     filters,
     fetchFn: async (filters2) => {
       console.log("\u{1F50D} useCategoriesWithFilters: Fetching with filters:", filters2);
-      const response = await import_utils15.categoriesApi.searchCategories(filters2);
+      const response = await import_utils13.categoriesApi.searchCategories(filters2);
       if (response.success && response.data) {
         const apiData = response.data;
         return {

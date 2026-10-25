@@ -1,35 +1,9 @@
 'use client';
 "use client";
 
-// src/hooks/auth-sync.ts
-function userSyncSignature(user) {
-  if (!user)
-    return "";
-  const updatedAt = user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt ?? "";
-  return [user.id, user.firstName, user.lastName, user.name, user.phone, user.email, user.role, user.isActive, updatedAt].map((v2) => v2 === null || v2 === void 0 ? "" : String(v2)).join("|");
-}
-function storedUserDiffers(current, stored) {
-  if (!stored)
-    return false;
-  return userSyncSignature(current) !== userSyncSignature(stored);
-}
-function mergeRefreshedUser(prev, next) {
-  if (!prev || prev.id !== next.id)
-    return next;
-  const prevMerchant = prev.merchant && typeof prev.merchant === "object" ? prev.merchant : null;
-  const nextMerchant = next.merchant && typeof next.merchant === "object" ? next.merchant : null;
-  const merged = { ...prev, ...next };
-  if (prevMerchant && nextMerchant && prevMerchant.id === nextMerchant.id)
-    merged.merchant = { ...prevMerchant, ...nextMerchant };
-  return merged;
-}
-
 // src/hooks/useAuth.ts
 import { useState, useEffect, useCallback } from "react";
 import { getAuthToken, getStoredUser, clearAuthData, storeAuthData } from "@rentalshop/utils";
-
-// src/hooks/useApiError.ts
-import { lookupErrorTranslation, looksLikeErrorCode, translateErrorCode } from "@rentalshop/utils";
 
 // ../../node_modules/tslib/tslib.es6.mjs
 var extendStatics = function(d3, b2) {
@@ -3717,38 +3691,57 @@ function useApiError() {
       console.log("\u{1F50D} translateError: Handling nested axios error response");
       return translateError(response.response.data);
     }
-    const unknown = (code) => {
-      console.warn("translateError: no translation for error code", code);
-      return t3("UNKNOWN_ERROR");
-    };
     if (response?.code && typeof response.code === "string") {
-      const params = response?.data?.messageParams;
-      const values = params && typeof params === "object" ? params : void 0;
-      return translateErrorCode(t3, response.code, values) ?? unknown(response.code);
+      console.log("\u{1F50D} translateError: Found code field:", response.code);
+      const translated = t3(response.code);
+      console.log("\u{1F50D} translateError: Translation result:", { code: response.code, translated, isTranslated: translated !== response.code });
+      if (translated !== response.code) {
+        console.log("\u2705 translateError: Using translated message:", translated);
+        return translated;
+      }
+      if (response?.message) {
+        console.log("\u26A0\uFE0F translateError: Translation not found, using message:", response.message);
+        return response.message;
+      }
+      console.log("\u26A0\uFE0F translateError: No translation or message, returning code:", response.code);
+      return response.code;
     }
     if (response instanceof Error && response.code) {
       const code = response.code;
-      return lookupErrorTranslation(t3, code) ?? unknown(code);
+      const translated = t3(code);
+      if (translated !== code) {
+        return translated;
+      }
+      return response.message;
     }
-    if (response?.message && typeof response.message === "string" && looksLikeErrorCode(response.message)) {
-      return lookupErrorTranslation(t3, response.message) ?? unknown(response.message);
+    if (response?.message && typeof response.message === "string" && /^[A-Z_]+$/.test(response.message)) {
+      const translated = t3(response.message);
+      if (translated !== response.message) {
+        return translated;
+      }
     }
     if (response?.message) {
       return response.message;
     }
     if (typeof response === "string") {
-      if (looksLikeErrorCode(response)) {
-        return lookupErrorTranslation(t3, response) ?? unknown(response);
+      if (/^[A-Z_]+$/.test(response)) {
+        const translated = t3(response);
+        if (translated !== response) {
+          return translated;
+        }
       }
       return response;
     }
     return t3("UNKNOWN_ERROR");
   };
   const translateSuccess = (response) => {
-    const translated = lookupErrorTranslation(t3, response?.code);
-    if (translated)
-      return translated;
-    if (response?.message && !looksLikeErrorCode(response.message)) {
+    if (response?.code && typeof response.code === "string") {
+      const translated = t3(response.code);
+      if (translated !== response.code) {
+        return translated;
+      }
+    }
+    if (response?.message) {
       return response.message;
     }
     return t3("UNKNOWN_ERROR");
@@ -3988,16 +3981,15 @@ function useAuth() {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          const user = mergeRefreshedUser(getStoredUser(), data.data);
           const token2 = getAuthToken();
           if (token2) {
-            storeAuthData(token2, user);
+            storeAuthData(token2, data.data);
           } else {
-            localStorage.setItem("user", JSON.stringify(user));
+            localStorage.setItem("user", JSON.stringify(data.data));
           }
           setState((prev) => ({
             ...prev,
-            user,
+            user: data.data,
             loading: false
           }));
         }
@@ -4017,7 +4009,7 @@ function useAuth() {
     const storedUser = getStoredUser();
     if (token && storedUser) {
       setState((prev) => {
-        if (storedUserDiffers(prev.user, storedUser)) {
+        if (prev.user?.id !== storedUser.id) {
           console.log("\u{1F504} useAuth: Syncing user state from localStorage");
           console.log("\u{1F50D} useAuth: Stored user permissions:", storedUser.permissions);
           const userWithPermissions = {
@@ -5345,9 +5337,8 @@ function useSubscriptionsData(options) {
         page,
         search: filters2.search,
         status: filters2.status,
-        bucket: filters2.bucket,
         merchantId: filters2.merchant ? parseInt(filters2.merchant) : void 0,
-        planId: filters2.planId ?? (filters2.plan ? parseInt(filters2.plan) : void 0)
+        planId: filters2.plan ? parseInt(filters2.plan) : void 0
       };
       const response = await subscriptionsApi.search(searchFilters);
       if (!response.success) {
@@ -5423,7 +5414,6 @@ function useSubscriptionsData(options) {
 // src/hooks/useSubscriptionError.ts
 import { useState as useState6, useCallback as useCallback9 } from "react";
 import { useToasts } from "@rentalshop/ui";
-import { lookupErrorTranslation as lookupErrorTranslation2, looksLikeErrorCode as looksLikeErrorCode2 } from "@rentalshop/utils";
 function useSubscriptionError() {
   const [error, setError] = useState6(null);
   const { addToast } = useToasts();
@@ -5441,11 +5431,17 @@ function useSubscriptionError() {
     const subscriptionStatus = statusMap[errorCode] || error2?.subscriptionStatus || error2?.details?.status;
     const errorMessage = error2.message || error2?.response?.data?.message;
     let translatedMessage = errorMessage || t3("errors.generic");
-    const translatedCode = lookupErrorTranslation2(te, errorCode);
-    if (translatedCode) {
-      translatedMessage = translatedCode;
-    } else if (errorCode || looksLikeErrorCode2(translatedMessage)) {
-      translatedMessage = t3("errors.generic");
+    if (errorCode === "PLAN_LIMIT_EXCEEDED") {
+      translatedMessage = te("PLAN_LIMIT_EXCEEDED");
+    } else if (errorCode === "SUBSCRIPTION_PERIOD_ENDED") {
+      translatedMessage = te("SUBSCRIPTION_PERIOD_ENDED");
+    } else if (errorCode === "SUBSCRIPTION_PERIOD_MISSING") {
+      translatedMessage = te("SUBSCRIPTION_PERIOD_MISSING");
+    } else if (errorCode && typeof errorCode === "string" && errorCode.includes("SUBSCRIPTION")) {
+      const translated = te(errorCode);
+      if (translated !== errorCode) {
+        translatedMessage = translated;
+      }
     }
     const subscriptionError = {
       message: translatedMessage,
@@ -5578,7 +5574,7 @@ import { useToasts as useToasts2 } from "@rentalshop/ui";
 var useToastHandler = () => {
   const { addToast } = useToasts2();
   const showError = useCallback11((title, message) => {
-    addToast("error", title, message);
+    addToast("error", title, message, 0);
   }, [addToast]);
   const showSuccess = useCallback11((title, message) => {
     addToast("success", title, message, 5e3);
@@ -5780,14 +5776,6 @@ function useOptimisticNavigation() {
 // src/hooks/useGlobalErrorHandler.ts
 import { useEffect as useEffect8, useRef as useRef3 } from "react";
 import { useToasts as useToasts3 } from "@rentalshop/ui";
-
-// src/hooks/apiErrorToast.ts
-function apiErrorToast(errorCode) {
-  const isWarning = errorCode === "VALIDATION_ERROR" || typeof errorCode === "string" && errorCode.includes("INVALID");
-  return isWarning ? { type: "warning", titleKey: "labels.warning" } : { type: "error", titleKey: "labels.error" };
-}
-
-// src/hooks/useGlobalErrorHandler.ts
 var lastErrorCode = null;
 var lastErrorTime = 0;
 var DEBOUNCE_MS = 1e3;
@@ -5795,17 +5783,14 @@ function useGlobalErrorHandler() {
   const { addToast } = useToasts3();
   const { translateError } = useApiError();
   const subscriptionErrorHook = useSubscriptionError();
-  const tc = useCommonTranslations();
   const addToastRef = useRef3(addToast);
   const translateErrorRef = useRef3(translateError);
   const subscriptionErrorHookRef = useRef3(subscriptionErrorHook);
-  const tcRef = useRef3(tc);
   useEffect8(() => {
     addToastRef.current = addToast;
     translateErrorRef.current = translateError;
     subscriptionErrorHookRef.current = subscriptionErrorHook;
-    tcRef.current = tc;
-  }, [addToast, translateError, subscriptionErrorHook, tc]);
+  }, [addToast, translateError, subscriptionErrorHook]);
   useEffect8(() => {
     const handleApiError = (event) => {
       const { code, message, error: errorData, fullError } = event.detail;
@@ -5825,11 +5810,10 @@ function useGlobalErrorHandler() {
         code: errorCode,
         message: message || errorData,
         success: false,
-        error: errorData,
-        data: fullError?.data
+        error: errorData
       });
-      const { type, titleKey } = apiErrorToast(errorCode);
-      addToastRef.current(type, tcRef.current(titleKey), translatedMessage);
+      const toastType = errorCode === "VALIDATION_ERROR" || errorCode?.includes("INVALID") ? "warning" : "error";
+      addToastRef.current(toastType, "Error", translatedMessage, 0);
     };
     window.addEventListener("api-error", handleApiError);
     return () => {
