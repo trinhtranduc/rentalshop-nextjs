@@ -5,18 +5,19 @@
  * receipt is the shared one from @rentalshop/ui. Giao đồ / Nhận trả / Huỷ / Xoá dialogs are ../detail/dialogs
  * (#560, iOS rows). Progress, next step, payment and history come from ../orders-model (unit-tested).
  */
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   COLLATERAL_CODES,
   collateralKey,
+  useCurrency,
   useFormatCurrency,
   useToast,
 } from '@rentalshop/ui';
 import { useAuth, useCommonTranslations, useDedupedApi, useOrderTranslations, usePermissions } from '@rentalshop/hooks';
-import { blockLineText, blockSnapshotOf, getLocalDateKey, ordersApi, type BlockSnapshotLike } from '@rentalshop/utils';
+import { blockLineText, blockSnapshotOf, getLocalDateKey, installmentsApi, ordersApi, type BlockSnapshotLike } from '@rentalshop/utils';
 import { useShopToday } from '../../hooks/useShopToday';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
@@ -50,6 +51,9 @@ import { SettingsEditor, SettingsSummary, type PendingFiles, type SettingsForm }
 import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { DangerDialog, HandOverDialog, ReturnDialog, type DialogItem } from '../detail/dialogs';
 import { canCancelOrder, returnFeesUpdate, scheduleRange } from '../detail/actions-model';
+import { InstallmentsCard } from '../../installments/InstallmentsCard';
+import { CancelWithKeptDialog, CollectDialog, EditPlanDialog, UnpaidStages } from '../../installments/InstallmentDialogs';
+import { canEditPlan, cancelView, newReference, unpaidAtPickup, type OrderInstallment, type PlanOrderLike } from '../../installments/installments-model';
 
 type AnyOrder = OrderWithDetails & { customerName?: string; customerPhone?: string };
 
@@ -95,6 +99,7 @@ export default function OrderDetailPage() {
   const { user } = useAuth();
   const { canDeleteOrders, canManageOrders } = usePermissions();
 
+  const td = useCallback((key: string, values?: Record<string, string | number>) => t(`installments.${key}`, values), [t]);
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
   const todayKey = useShopToday();
 
@@ -123,6 +128,13 @@ export default function OrderDetailPage() {
   const [takeBack, setTakeBack] = useState(false);
   const [receipt, setReceipt] = useState(false);
   const [confirm, setConfirm] = useState<'cancel' | 'delete' | null>(null);
+  // #1199 deposit stages: collect one, edit the plan, cancel a collection, pay the unpaid ones at hand-over
+  const [collectStage, setCollectStage] = useState<OrderInstallment | null>(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [voidStage, setVoidStage] = useState<OrderInstallment | null>(null);
+  const [handoverMethod, setHandoverMethod] = useState<'CASH' | 'TRANSFER'>('CASH');
+  const handoverRefs = useRef<Record<string, string>>({});
+  const { currency: shopCurrency } = useCurrency();
   const [ready, setReady] = useState<boolean | null>(null);
   const [readySaving, setReadySaving] = useState(false);
   useEffect(() => setReady(order ? !!order.isReadyToDeliver : null), [order]);
@@ -172,6 +184,10 @@ export default function OrderDetailPage() {
   }
 
   const detail = order as unknown as OrderDetailLike;
+  const planOrder = order as unknown as PlanOrderLike & { id: number };
+  const role = user?.role;
+  const unpaid = unpaidAtPickup(planOrder);
+  const cancelPlan = cancelView(planOrder, role, 0);
   const isRent = order.orderType === 'RENT';
   const status = order.status as string;
   const name = customerNameOf({ customerName: order.customerName, customer: order.customer });
@@ -265,7 +281,36 @@ export default function OrderDetailPage() {
     }
   };
 
-  const confirmPickup = () => changeStatus(() => ordersApi.pickupOrder(order.id));
+  const pickup = async () => {
+    const res = await ordersApi.pickupOrder(order.id);
+    // The page was stale (another screen left a stage unpaid): load it again so the dialog lists the stages
+    if (!res.success && (res as { code?: string }).code === 'INSTALLMENT_UNPAID_AT_PICKUP') await refetch();
+    return res;
+  };
+  const confirmPickup = async () => {
+    if (unpaid.length === 0) return changeStatus(pickup);
+    // #1199: the stages nobody collected are collected first (same method), then the order is handed over
+    setBusy(true);
+    try {
+      for (const stage of unpaid) {
+        const ref = (handoverRefs.current[stage.key] ||= newReference('handover'));
+        const res = await installmentsApi.collect(order.id, stage.key, { amount: stage.plannedAmount, method: handoverMethod, reference: ref });
+        if (!res.success) {
+          await refetch();
+          return false;
+        }
+      }
+      const res = await pickup();
+      if (!res.success) return false;
+      handoverRefs.current = {};
+      await done(true);
+    } catch {
+      // useGlobalErrorHandler shows the API error
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
   const confirmReturn = (fees: { lateFee: number; damageFee: number }) =>
     changeStatus(async () => {
       // returnOrder only changes the status: like iOS, PUT both fees first when either was changed
@@ -413,6 +458,16 @@ export default function OrderDetailPage() {
               money={money}
             />
           )}
+          <InstallmentsCard
+            order={planOrder}
+            role={role}
+            td={td}
+            money={money}
+            toDayKey={getLocalDateKey}
+            onCollect={setCollectStage}
+            onEdit={() => setPlanOpen(true)}
+            onVoid={setVoidStage}
+          />
           <PaymentCard summary={pay} t={t} money={money} />
           {settingsOpen && (
             <SettingsSummary settings={settings} collateralLabel={collateralLabel} onEdit={editNotes} t={t} to={to as unknown as T} money={money} />
@@ -435,6 +490,7 @@ export default function OrderDetailPage() {
         items={dialogItems}
         papers={papers}
         onConfirm={confirmPickup}
+        extra={<UnpaidStages stages={unpaid} method={handoverMethod} onMethod={setHandoverMethod} td={td} money={money} />}
         t={t}
         money={money}
       />
@@ -451,8 +507,68 @@ export default function OrderDetailPage() {
         money={money}
       />
 
+      <CancelWithKeptDialog
+        open={confirm === 'cancel' && cancelPlan.show}
+        order={planOrder}
+        role={role}
+        message={t('detail.dialog.cancel.message', { number: `#${order.orderNumber}` })}
+        td={td}
+        money={money}
+        closeLabel={t('detail.dialog.close')}
+        keepLabel={t('detail.dialog.cancel.keep')}
+        confirmLabel={t('detail.dialog.cancel.confirm')}
+        onClose={() => setConfirm(null)}
+        onDone={done.bind(null, true)}
+      />
+      <CollectDialog
+        open={!!collectStage}
+        order={planOrder}
+        stage={collectStage}
+        role={role}
+        todayKey={todayKey}
+        subtitle={dialogSubtitle(0)}
+        td={td}
+        money={money}
+        closeLabel={t('detail.dialog.close')}
+        onClose={() => setCollectStage(null)}
+        onDone={done.bind(null, true)}
+      />
+      <EditPlanDialog
+        open={planOpen}
+        order={planOrder}
+        canEdit={canEditPlan(planOrder, role)}
+        currency={shopCurrency}
+        td={td}
+        money={money}
+        closeLabel={t('detail.dialog.close')}
+        onClose={() => setPlanOpen(false)}
+        onDone={done.bind(null, true)}
+      />
       <DangerDialog
-        open={confirm === 'cancel'}
+        open={!!voidStage}
+        title={td('voidTitle')}
+        message={td('voidMessage', { label: voidStage?.label ?? '' })}
+        keepLabel={td('cancel')}
+        confirmLabel={td('voidConfirm')}
+        closeLabel={t('detail.dialog.close')}
+        busy={busy}
+        onClose={() => setVoidStage(null)}
+        onConfirm={async () => {
+          if (!voidStage) return;
+          setBusy(true);
+          try {
+            const res = await installmentsApi.voidStage(order.id, voidStage.key);
+            if (res.success) await done(true);
+          } catch {
+            // useGlobalErrorHandler shows the API error
+          } finally {
+            setBusy(false);
+            setVoidStage(null);
+          }
+        }}
+      />
+      <DangerDialog
+        open={confirm === 'cancel' && !cancelPlan.show}
         title={t('detail.dialog.cancel.title')}
         message={t('detail.dialog.cancel.message', { number: `#${order.orderNumber}` })}
         keepLabel={t('detail.dialog.cancel.keep')}

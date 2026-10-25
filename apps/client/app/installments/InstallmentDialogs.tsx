@@ -287,7 +287,7 @@ export function EditPlanDialog({
                 </label>
               </div>
             )}
-            {!row.locked && stage?.dueDateKey && !locked && <span className="text-xs text-ar-muted">{td('dueOn', { day: shortDay(stage.dueDateKey) })}</span>}
+            {!row.locked && stage?.dueDateKey && !locked && row.due !== KEEP_DUE && <span className="text-xs text-ar-muted">{td('dueOn', { day: shortDay(stage.dueDateKey) })}</span>}
           </div>
         );
       })}
