@@ -5,8 +5,16 @@ import {
   getOrderRevenueEvents,
   parseProductImages
 } from '@rentalshop/utils';
-import { collateralByEvent, revenueEventKey, withoutCollateral } from '../core/revenue-calculator';
-import { buildEventWhere, toRevenueOrderData, EVENT_WHERE_PERIOD } from '../core/revenue-mapping';
+import {
+  collateralByEvent,
+  getFutureInstallments,
+  revenueEventKey,
+  withoutCollateral,
+  type FutureInstallmentGroup
+} from '../core/revenue-calculator';
+import { loadReservedPlanOrders } from './future-installments';
+import { effectivePlan, parseDepositPlan } from '../core/deposit-plan';
+import { buildEventWhere, toRevenueOrderData, REVENUE_PLAN_SELECT, EVENT_WHERE_PERIOD } from '../core/revenue-mapping';
 import {
   computeIncomePeriodSummary,
   type IncomePeriodDayRow,
@@ -64,7 +72,8 @@ const revenueSelect = {
   returnedAt: true,
   pickupPlanAt: true,
   returnPlanAt: true,
-  updatedAt: true
+  updatedAt: true,
+  ...REVENUE_PLAN_SELECT
 } as const;
 
 export interface AnalyticsPeriodSeriesPoint {
@@ -81,6 +90,10 @@ export interface AnalyticsPeriodSeriesPoint {
   newOrderCount?: number;
   /** `realIncome` without collateral (#484) */
   collected?: number;
+  /**
+   * #1199: unpaid deposit stages falling due in the bucket, by day. Not part of `futureIncome`. Left out when none.
+   */
+  futureInstallments?: FutureInstallmentGroup[];
   /**
    * Still to collect at hand-over (no collateral) of RENT orders RESERVED for this day, today or later (#605).
    * Not `futureIncome`: old Android adds `futureIncome` to the revenue bar. Left out when it cannot be computed.
@@ -501,11 +514,26 @@ export function splitOrderValueByType(orders: CreatedOrderRow[]): OrderValueByTy
 export function expectedAtHandOver(order: {
   totalAmount?: number | null;
   depositAmount?: number | null;
-  payments?: Array<{ amount?: number | null; status?: string | null; notes?: string | null }> | null;
+  /** #1199: with a deposit plan only its automatic last stage is collected at hand-over */
+  depositPlan?: unknown;
+  createdAt?: Date | string | null;
+  pickupPlanAt?: Date | string | null;
+  payments?: Array<{
+    amount?: number | null;
+    status?: string | null;
+    notes?: string | null;
+    installmentKey?: string | null;
+    processedAt?: Date | string | null;
+    createdAt?: Date | string | null;
+  }> | null;
 }): number {
   const paidAtPickup = (order.payments || [])
     .filter((p) => p.status === 'COMPLETED' && p.notes === 'PICKUP')
     .reduce((sum, p) => sum + (p.amount || 0), 0);
+  if (order.depositPlan != null && parseDepositPlan(order.depositPlan) != null) {
+    const rest = effectivePlan(order, {}).find((stage) => stage.isRest);
+    return Math.max(0, (rest?.amount ?? 0) - paidAtPickup);
+  }
   return Math.max(0, (order.totalAmount || 0) - (order.depositAmount || 0) - paidAtPickup);
 }
 
@@ -642,6 +670,26 @@ export async function buildAnalyticsPeriodReport(
   };
 
   const computeSeries = async (): Promise<AnalyticsPeriodSeriesPoint[]> => {
+    const series = await computeSeriesRows();
+    // #1199: unpaid deposit stages by due day (one query; a stage can fall due where the order has no other event)
+    // (only for a range that reaches today: stages of days gone by are overdue, not "future")
+    const planOrders = rangeEnd < todayStart ? [] : await loadReservedPlanOrders(prisma, outletFilter);
+    if (planOrders.length === 0) return series;
+    for (const point of series) {
+      const key = seriesPointKey(point);
+      if (!key) continue;
+      const bounds =
+        groupBy === 'month'
+          ? listCivilMonths(`${key}-01`, `${key}-01`, timeZone)[0]
+          : getUtcRangeForDateKeys({ from: key }, timeZone);
+      if (!bounds) continue;
+      const groups = getFutureInstallments(planOrders, bounds.start, bounds.end);
+      if (groups.length > 0) point.futureInstallments = groups;
+    }
+    return series;
+  };
+
+  const computeSeriesRows = async (): Promise<AnalyticsPeriodSeriesPoint[]> => {
     if (groupBy === 'day') {
       const { periods } = await computeIncomePeriodSummary(prisma, {
         startDate,
@@ -747,7 +795,17 @@ export async function buildAnalyticsPeriodReport(
         totalAmount: true,
         depositAmount: true,
         pickupPlanAt: true,
-        payments: { where: { status: 'COMPLETED', notes: 'PICKUP' }, select: { amount: true, status: true, notes: true } }
+        createdAt: true,
+        depositPlan: true,
+        payments: {
+          where: {
+            OR: [
+              { status: 'COMPLETED', notes: 'PICKUP' },
+              { status: 'COMPLETED', notes: 'INSTALLMENT' }
+            ]
+          },
+          select: { amount: true, status: true, notes: true, installmentKey: true, processedAt: true, createdAt: true }
+        }
       },
       take: 10000
     });
@@ -956,7 +1014,8 @@ export async function buildAnalyticsPeriodReport(
         returnedAt: true,
         updatedAt: true,
         pickupPlanAt: true,
-        returnPlanAt: true
+        returnPlanAt: true,
+        ...REVENUE_PLAN_SELECT
       },
       take: 10000
     });

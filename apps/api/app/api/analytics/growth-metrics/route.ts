@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, toRevenueOrderData, buildEventWhere, EVENT_WHERE_PERIOD } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, toRevenueOrderData, REVENUE_PLAN_SELECT, buildEventWhere, EVENT_WHERE_PERIOD } from '@rentalshop/utils';
 import { percentChange } from '@rentalshop/utils/server';
 import { API, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { monthKeysOf, previousPeriodKeys, readReportRange, reportRangeOfKeys, shopToday } from '../../../../lib/report-days';
@@ -118,7 +118,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       returnedAt: true,
       pickupPlanAt: true,
       returnPlanAt: true,
-      updatedAt: true
+      updatedAt: true,
+      ...REVENUE_PLAN_SELECT
     } as const;
 
     const fetchPeriodRevenue = async (periodStart: Date, periodEnd: Date): Promise<number> => {

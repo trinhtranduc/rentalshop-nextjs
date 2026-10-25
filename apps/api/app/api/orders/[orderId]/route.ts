@@ -21,7 +21,7 @@ import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timel
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
 import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
 import { hasCapability } from '../../../../lib/client-capabilities';
-import { shapeOrderInstallments, loadShop, unpaidAtPickupBody, unpaidStagesBlockingPickup, recomputeDepositFromPayments, installmentsView } from '../../../../lib/installments';
+import { shapeOrderInstallments, loadShop, unpaidAtPickupBody, unpaidStagesBlockingPickup, recomputeDepositFromPayments, installmentsView, parseCancelRequest, planCancellation, recordPlanCancellation, cancelAuditDescription, keepsCancelAmount, type PlanCancellation } from '../../../../lib/installments';
 import { parseDepositPlan, recalcAfterTotalChange } from '../../../../../../packages/utils/src/core/deposit-plan';
 import { isInstallmentPayment, shapeOrderPayments } from '../../../../lib/order-payments';
 import { clampOrderDiscount, sumLineTotals } from '../../../../lib/order-discount';
@@ -798,6 +798,24 @@ export const PUT = async (
       delete (validUpdateData as any).depositPlan;
       delete (validUpdateData as any).cancelKeptAmount;
       delete (validUpdateData as any).cancelledAt;
+      delete (validUpdateData as any).cancelNote;
+      // #1199 cancelling a plan order: `cancelKeptAmount` (default 0 = refund everything) and `cancelNote`, checked
+      // before anything changes; the refund is recorded after the status changed
+      const cancelAt = new Date();
+      let cancelPlan: PlanCancellation | null = null;
+      const isCancelling = validUpdateData.status === ORDER_STATUS.CANCELLED && existingOrder.status !== ORDER_STATUS.CANCELLED;
+      if (isCancelling) {
+        const checked = await planCancellation(db.prisma, {
+          order: existingOrder,
+          role: user.role,
+          request: parseCancelRequest(body),
+        });
+        if ('error' in checked) {
+          return NextResponse.json(ResponseBuilder.error(checked.error.code), { status: checked.error.status });
+        }
+        cancelPlan = checked.plan;
+        (validUpdateData as any).cancelledAt = cancelAt;
+      }
       const orderHasPlan = parseDepositPlan(existingOrder.depositPlan) != null;
       const clientKnowsInstallments = hasCapability(request, 'installments');
       const planShop = orderHasPlan || clientKnowsInstallments ? await loadShop(db.prisma, merchantId) : null;
@@ -968,6 +986,33 @@ export const PUT = async (
       console.log('✅ Order updated successfully:', updatedOrder);
       // #1199: hand-over time and totals move which stage payments count as "before delivery"
       if (orderHasPlan) await recomputeDepositFromPayments(db.prisma, orderIdNum);
+      // #1199: what went back and what the shop kept (if this fails, the order stays cancelled with no amounts, which
+      // every screen reads as "everything refunded", the old behaviour)
+      if (cancelPlan) {
+        try {
+          await recordPlanCancellation(db.prisma, {
+            orderId: orderIdNum,
+            merchantId,
+            currency: planShop?.currency || 'VND',
+            plan: cancelPlan,
+            userId: user.id,
+            at: cancelAt,
+          });
+          await safeAudit('cancel', () => createAuditHelper(prisma).logCustom({
+            action: 'CUSTOM',
+            entityType: 'Order',
+            entityId: String(orderIdNum),
+            entityName: existingOrder.orderNumber || String(orderIdNum),
+            description: cancelAuditDescription(existingOrder.orderNumber || String(orderIdNum), cancelPlan as PlanCancellation),
+            category: 'BUSINESS',
+            oldValues: { collected: cancelPlan.collected },
+            newValues: { kept: cancelPlan.kept, refunded: cancelPlan.refund, note: cancelPlan.note ?? null },
+            context: buildAuditContext(request, user, userScope)
+          }));
+        } catch (cancelError) {
+          console.error('⚠️ Recording the cancel refund failed (order is cancelled; everything counts as refunded):', cancelError);
+        }
+      }
 
       // Get full order details after update (with all relations)
       const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
@@ -1208,6 +1253,14 @@ export const DELETE = async (
             { status: API.STATUS.FORBIDDEN }
           );
         }
+
+      // #1199: a cancelled order that kept money stays in the history
+      if (keepsCancelAmount(existingOrder as any)) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANCELLED_ORDER_KEEPS_AMOUNT'),
+          { status: 400 }
+        );
+      }
 
       // Authorization checks based on user role
       // OUTLET_STAFF cannot delete orders (no orders.manage permission, but double-check here)

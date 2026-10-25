@@ -52,6 +52,16 @@ describe('toRevenueOrderData', () => {
 
 describe('buildEventWhere', () => {
   const range = { start, end };
+  // #1199: the one clause added for deposit plans, last in every shape: a stage collected / refunded in the period
+  const paymentClause = {
+    payments: {
+      some: {
+        status: { in: ['COMPLETED', 'REFUNDED'] },
+        notes: { in: ['INSTALLMENT', 'CANCEL_REFUND'] },
+        processedAt: { gte: start, lte: end },
+      },
+    },
+  };
 
   it('civil shape (income daily, summary, orders list): the exact old OR', () => {
     expect(buildEventWhere(range, EVENT_WHERE_CIVIL)).toEqual({
@@ -61,6 +71,7 @@ describe('buildEventWhere', () => {
         { returnedAt: { gte: start, lte: end, not: null } },
         { AND: [{ status: 'CANCELLED' }, { updatedAt: { gte: start, lte: end } }] },
         { AND: [{ orderType: 'SALE' }, { status: 'COMPLETED' }, { updatedAt: { gte: start, lte: end } }] },
+        paymentClause,
       ],
     });
   });
@@ -78,6 +89,7 @@ describe('buildEventWhere', () => {
         { updatedAt: { gte: start, lte: end }, status: 'CANCELLED' },
         { pickupPlanAt: { gte: start, lte: end, not: null } },
         { returnPlanAt: { gte: start, lte: end, not: null } },
+        paymentClause,
       ],
     });
   });
@@ -90,6 +102,7 @@ describe('buildEventWhere', () => {
         { pickedUpAt: { gte: start, lte: end } },
         { returnedAt: { gte: start, lte: end } },
         { updatedAt: { gte: start, lte: end }, status: 'CANCELLED' },
+        paymentClause,
       ],
     });
     expect(Object.keys((where.OR[1] as any).pickedUpAt)).not.toContain('not');

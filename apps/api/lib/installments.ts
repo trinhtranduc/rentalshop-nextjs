@@ -282,3 +282,132 @@ export async function findOrderInScope(
 export function isScopeError(value: ScopedOrder | { status: number; code: string }): value is { status: number; code: string } {
   return 'code' in value;
 }
+
+// ---------------------------------------------------------------------------
+// cancelling a plan order (#1199 part B)
+// ---------------------------------------------------------------------------
+
+/** Roles that may keep part of the money when cancelling; staff cancel = refund everything, as before. */
+export const CANCEL_KEEP_ROLES = ['ADMIN', 'MERCHANT', 'OUTLET_ADMIN'];
+
+export interface CancelRequest {
+  /** What the shop keeps; `undefined` = the client sent none (old apps): everything is refunded */
+  keptAmount?: number;
+  note?: string;
+}
+
+/**
+ * Reads the optional `cancelKeptAmount` / `cancelNote` of a cancel request. Anything that is not a finite number
+ * >= 0 is `CANCEL_AMOUNTS_MISMATCH`.
+ */
+export function parseCancelRequest(body: { cancelKeptAmount?: unknown; cancelNote?: unknown } | null | undefined):
+  | { ok: true; value: CancelRequest }
+  | { ok: false } {
+  const raw = body?.cancelKeptAmount;
+  const note = typeof body?.cancelNote === 'string' ? body.cancelNote.trim().slice(0, 500) : undefined;
+  if (raw === undefined || raw === null || raw === '') return { ok: true, value: { ...(note ? { note } : {}) } };
+  const amount = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN;
+  if (!Number.isFinite(amount) || amount < 0) return { ok: false };
+  return { ok: true, value: { keptAmount: amount, ...(note ? { note } : {}) } };
+}
+
+export interface PlanCancellation {
+  /** Collected stages minus refunds already given */
+  collected: number;
+  kept: number;
+  refund: number;
+  /** The client sent no amount: everything goes back (old apps) */
+  refundedAll: boolean;
+  note?: string;
+}
+
+/** Money collected in stages of an order and not refunded yet */
+export async function collectedForCancel(client: any, orderId: number): Promise<number> {
+  const rows = await client.payment.findMany({
+    where: {
+      orderId,
+      OR: [
+        { status: 'COMPLETED', notes: INSTALLMENT_PAYMENT_NOTE },
+        { status: 'REFUNDED', notes: CANCEL_REFUND_NOTE },
+      ],
+    },
+    select: { amount: true, status: true, notes: true },
+  });
+  let total = 0;
+  for (const row of rows as DepositPaymentRow[]) {
+    total += row.status === 'REFUNDED' ? -(row.amount || 0) : row.amount || 0;
+  }
+  return Math.max(0, Math.round(total * 10000) / 10000);
+}
+
+/**
+ * Checks a cancellation BEFORE the status changes. Returns `{ error }` (400 `CANCEL_AMOUNTS_MISMATCH`: kept is
+ * negative, not a number, or more than was collected; 403 `INSTALLMENT_FORBIDDEN_ROLE`: staff keeping money), `{ plan: null }` when
+ * the order has no deposit plan (nothing to do), else the amounts to record after the status changed.
+ */
+export async function planCancellation(
+  client: any,
+  args: { order: PlanOrderLike & { id: number }; role: string; request: ReturnType<typeof parseCancelRequest> }
+): Promise<{ error: { code: string; status: number } } | { plan: PlanCancellation | null }> {
+  if (!args.request.ok) return { error: { code: 'CANCEL_AMOUNTS_MISMATCH', status: 400 } };
+  const { keptAmount, note } = args.request.value;
+  const hasPlan = parseDepositPlan(args.order.depositPlan) != null;
+  const collected = hasPlan ? await collectedForCancel(client, args.order.id) : 0;
+  if (keptAmount !== undefined && keptAmount > 0) {
+    if (!CANCEL_KEEP_ROLES.includes(args.role)) return { error: { code: 'INSTALLMENT_FORBIDDEN_ROLE', status: 403 } };
+    if (keptAmount > collected + 1e-9) return { error: { code: 'CANCEL_AMOUNTS_MISMATCH', status: 400 } };
+  }
+  if (!hasPlan) return { plan: null };
+  const kept = Math.round((keptAmount ?? 0) * 10000) / 10000;
+  const refund = Math.max(0, Math.round((collected - kept) * 10000) / 10000);
+  return { plan: { collected, kept, refund, refundedAll: keptAmount === undefined, ...(note ? { note } : {}) } };
+}
+
+/**
+ * After the order is CANCELLED: records what went back (a `REFUNDED` / `CANCEL_REFUND` payment for the refunded
+ * part) and what the shop kept, in one transaction, and brings `depositAmount` up to date. The refund is dated
+ * `at` = `cancelledAt`, so revenue shows it as a negative event on the cancel day. If this fails the order stays
+ * cancelled with no amounts, which every screen reads as "everything was refunded" (the old behaviour).
+ */
+export async function recordPlanCancellation(
+  prisma: any,
+  args: { orderId: number; merchantId: number | null | undefined; currency: string; plan: PlanCancellation; userId: number | string; at: Date }
+): Promise<void> {
+  const { orderId, merchantId, currency, plan, userId, at } = args;
+  await prisma.$transaction(
+    async (tx: any) => {
+      await lockOrderRow(tx, orderId);
+      if (plan.refund > 0) {
+        await tx.payment.create({
+          data: {
+            orderId,
+            merchantId: merchantId ?? null,
+            amount: plan.refund,
+            currency,
+            method: 'CASH',
+            type: 'ORDER_PAYMENT',
+            status: 'REFUNDED',
+            notes: CANCEL_REFUND_NOTE,
+            description: plan.note || null,
+            processedAt: at,
+            processedBy: String(userId),
+            metadata: JSON.stringify({ kind: 'CANCEL_REFUND', collected: plan.collected, kept: plan.kept, refundedAll: plan.refundedAll }),
+          },
+        });
+      }
+      await tx.order.update({ where: { id: orderId }, data: { cancelKeptAmount: plan.kept, cancelledAt: at } });
+      await recomputeDepositFromPayments(tx, orderId);
+    },
+    { maxWait: 5000, timeout: 15000 }
+  );
+}
+
+export function cancelAuditDescription(orderNumber: string, plan: PlanCancellation): string {
+  const base = `Order ${orderNumber} cancelled: collected ${plan.collected}, kept ${plan.kept}, refunded ${plan.refund}`;
+  return plan.refundedAll ? `${base} (client sent no amounts: everything refunded)` : base;
+}
+
+/** A cancelled order that kept money stays in the history: it cannot be deleted (error `CANCELLED_ORDER_KEEPS_AMOUNT`) */
+export function keepsCancelAmount(order: { status?: string | null; cancelKeptAmount?: number | null }): boolean {
+  return order.status === 'CANCELLED' && (order.cancelKeptAmount || 0) > 0;
+}

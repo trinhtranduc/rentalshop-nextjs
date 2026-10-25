@@ -9,7 +9,45 @@
  * selects and maps orders the same way. Pure refactor of the old inline code: same fields, same query shapes.
  */
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
-import type { OrderRevenueData } from './revenue-calculator';
+import type { OrderRevenueData, OrderRevenuePlan } from './revenue-calculator';
+import {
+  effectivePlan,
+  parseDepositPlan,
+  unpaidExplicitStages,
+  INSTALLMENT_PAYMENT_NOTE,
+  REST_KEY,
+  type PlanPaymentLike
+} from './deposit-plan';
+
+/** `Payment.notes` of the refund a cancellation gives back (#1199) */
+export const CANCEL_REFUND_NOTE = 'CANCEL_REFUND';
+
+/**
+ * #1199: the fields a revenue `select` adds so deposit plans are counted. The payments filter keeps the extra rows to
+ * the plan's own payments (none for an order without a plan), and only the columns the mapper reads.
+ */
+export const REVENUE_PLAN_SELECT = {
+  depositPlan: true as const,
+  cancelKeptAmount: true as const,
+  cancelledAt: true as const,
+  payments: {
+    where: {
+      OR: [
+        { status: 'COMPLETED' as const, notes: INSTALLMENT_PAYMENT_NOTE },
+        { status: 'REFUNDED' as const, notes: CANCEL_REFUND_NOTE }
+      ]
+    },
+    select: {
+      amount: true as const,
+      status: true as const,
+      notes: true as const,
+      installmentKey: true as const,
+      processedAt: true as const,
+      createdAt: true as const,
+      type: true as const
+    }
+  }
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -29,6 +67,50 @@ export interface RevenueOrderRow {
   pickupPlanAt?: Date | string | null;
   returnPlanAt?: Date | string | null;
   updatedAt?: Date | string | null;
+  /** #1199: present when the `select` added `REVENUE_PLAN_SELECT` */
+  depositPlan?: unknown;
+  cancelKeptAmount?: number | null;
+  cancelledAt?: Date | string | null;
+  payments?: PlanPaymentLike[] | null;
+}
+
+function toPlan(order: RevenueOrderRow): OrderRevenuePlan | null {
+  const payments = order.payments || [];
+  const isCollected = (p: PlanPaymentLike) => p.status === 'COMPLETED' && p.notes === INSTALLMENT_PAYMENT_NOTE;
+  const isRefund = (p: PlanPaymentLike) => p.status === 'REFUNDED' && p.notes === CANCEL_REFUND_NOTE;
+  const hasPlan = parseDepositPlan(order.depositPlan) != null;
+  if (!hasPlan && !payments.some((p) => isCollected(p) || isRefund(p))) return null;
+  const money = (p: PlanPaymentLike) => ({ amount: p.amount || 0, at: (p.processedAt ?? p.createdAt) as Date | string });
+  const stages = hasPlan
+    ? effectivePlan(
+        {
+          status: order.status,
+          orderType: order.orderType,
+          totalAmount: order.totalAmount,
+          pickupTotalAmount: order.pickupTotalAmount,
+          depositAmount: order.depositAmount,
+          depositPlan: order.depositPlan,
+          createdAt: order.createdAt,
+          pickupPlanAt: order.pickupPlanAt,
+          returnPlanAt: order.returnPlanAt,
+          pickedUpAt: order.pickedUpAt,
+          payments
+        },
+        {}
+      )
+    : [];
+  return {
+    collected: payments.filter(isCollected).map(money),
+    refunded: payments.filter(isRefund).map(money),
+    keptAmount: order.cancelKeptAmount ?? null,
+    unpaid: unpaidExplicitStages(stages).map((s) => ({
+      key: s.key,
+      label: s.label,
+      amount: s.amount,
+      dueDateKey: s.dueDateKey
+    })),
+    restAmount: stages.find((s) => s.key === REST_KEY)?.amount ?? Math.max(0, (order.totalAmount || 0) - (order.depositAmount || 0))
+  };
 }
 
 /**
@@ -36,6 +118,7 @@ export interface RevenueOrderRow {
  * total); dates pass through untouched (a missing date stays missing).
  */
 export function toRevenueOrderData(order: RevenueOrderRow): OrderRevenueData {
+  const plan = order.orderType === ORDER_TYPE.RENT ? toPlan(order) : null;
   return {
     orderType: order.orderType,
     status: order.status,
@@ -50,7 +133,8 @@ export function toRevenueOrderData(order: RevenueOrderRow): OrderRevenueData {
     returnedAt: order.returnedAt as OrderRevenueData['returnedAt'],
     pickupPlanAt: order.pickupPlanAt,
     returnPlanAt: order.returnPlanAt,
-    updatedAt: order.updatedAt
+    updatedAt: order.updatedAt,
+    ...(plan ? { plan, cancelledAt: order.cancelledAt } : {})
   };
 }
 
@@ -112,6 +196,16 @@ export function buildEventWhere(range: EventWhereRange, options: EventWhereOptio
     ...(requireEventDates ? { not: null } : {})
   });
   const plannedIn = () => ({ gte: start, lte: end, not: null });
+  // #1199: a stage collected or refunded in the period is an event, whatever happened to the order's own dates
+  const paymentIn = {
+    payments: {
+      some: {
+        status: { in: ['COMPLETED', 'REFUNDED'] },
+        notes: { in: [INSTALLMENT_PAYMENT_NOTE, CANCEL_REFUND_NOTE] },
+        processedAt: { gte: start, lte: end }
+      }
+    }
+  };
 
   const or: Record<string, any>[] = [
     { createdAt: inRange },
@@ -129,5 +223,6 @@ export function buildEventWhere(range: EventWhereRange, options: EventWhereOptio
   if (includePlans) {
     or.push({ pickupPlanAt: plannedIn() }, { returnPlanAt: plannedIn() });
   }
+  or.push(paymentIn);
   return { OR: or };
 }
