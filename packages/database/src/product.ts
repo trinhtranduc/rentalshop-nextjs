@@ -372,6 +372,10 @@ export async function searchProducts(filters: ProductSearchFilter) {
             price: true,
             unit: true,
             blockSize: true,
+            blockTiers: true,
+            blockStartDay: true,
+            blockExtraMode: true,
+            blockExtraPrice: true,
             isDefault: true,
             isActive: true,
             sortOrder: true
@@ -1341,13 +1345,17 @@ export const simplifiedProducts = {
         data.category = { connect: { id: defaultCategory.id } };
       }
 
+      // #1189: only a client that sent `pricingSchemaVersion: 2` may create a BLOCK option; never a Product column
+      const allowBlock = data.pricingSchemaVersion === 2;
+      delete data.pricingSchemaVersion;
+
       // Multiple pricing options: normalize, sync default -> rentPrice/pricingType, nest for create
       if (Array.isArray(data.pricingOptions)) {
-        const normalized = normalizePricingOptions(data.pricingOptions);
+        const normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
         if (normalized.length > 0) {
           const def = normalized.find((o) => o.isDefault) || normalized[0];
           data.rentPrice = def.price;
-          data.pricingType = def.type;
+          data.pricingType = def.type === 'BLOCK' ? 'FIXED' : def.type; // #1189: rentPrice = day-1 price, type stays FIXED for old apps
           data.pricingOptions = { create: normalized };
         } else {
           delete data.pricingOptions;
@@ -1381,11 +1389,14 @@ export const simplifiedProducts = {
    */
   update: async (id: number, data: any, options: { keepBlockOptions?: boolean } = {}) => {
     if ('barcode' in data) data.barcode = normalizeBarcode(data.barcode);
+    // #1189: only a client that sent `pricingSchemaVersion: 2` may save a BLOCK option; never a Product column
+    const allowBlock = data.pricingSchemaVersion === 2;
+    delete data.pricingSchemaVersion;
     // Extract pricing options (replace-set) so they aren't passed to product.update directly
     let hasOptions = Array.isArray(data.pricingOptions);
     let normalized: any[] = [];
     if (hasOptions) {
-      normalized = normalizePricingOptions(data.pricingOptions);
+      normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
       delete data.pricingOptions;
       // #1200: an installed app cannot see BLOCK options. Saving a product that has one, it sends
       // pricingOptions [] and rentPrice / salePrice 0 (e2e on main-real). That must change nothing it did not mean:
@@ -1402,7 +1413,7 @@ export const simplifiedProducts = {
       if (normalized.length > 0) {
         const def = normalized.find((o) => o.isDefault) || normalized[0];
         data.rentPrice = def.price;
-        data.pricingType = def.type;
+        data.pricingType = def.type === 'BLOCK' ? 'FIXED' : def.type; // #1189: see create
       }
     }
 
