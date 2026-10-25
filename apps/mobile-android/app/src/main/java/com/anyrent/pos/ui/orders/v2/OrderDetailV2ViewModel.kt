@@ -23,6 +23,8 @@ import kotlinx.coroutines.withContext
 interface OrderDetailSource {
     suspend fun load(id: Int): Result<OrderDetail>
     suspend fun changeStatus(id: Int, status: String): Result<Unit>
+    /** #1199 cancelling an order with deposit stages: the shop keeps [keptAmount] of what was collected (0 = refund all) */
+    suspend fun cancel(id: Int, keptAmount: Double, note: String?): Result<Unit> = changeStatus(id, "CANCELLED")
     /** RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427) */
     suspend fun handOver(id: Int, fields: HandOverFields): Result<Unit>
     suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double): Result<Unit>
@@ -42,6 +44,9 @@ object ApiOrderDetailSource : OrderDetailSource {
 
     override suspend fun changeStatus(id: Int, status: String) =
         withContext(Dispatchers.IO) { ApiClient.get().updateOrderStatus(id, status).map { } }
+
+    override suspend fun cancel(id: Int, keptAmount: Double, note: String?) =
+        withContext(Dispatchers.IO) { ApiClient.get().updateOrderStatus(id, "CANCELLED", cancelKeptAmount = keptAmount, cancelNote = note).map { } }
 
     override suspend fun handOver(id: Int, fields: HandOverFields) =
         withContext(Dispatchers.IO) { ApiClient.get().updateOrderStatus(id, "PICKUPED", fields).map { } }
@@ -114,6 +119,21 @@ class OrderDetailV2ViewModel(
     /** PUT status; [onDone] gets true on success. A 4xx shows its message and reloads the order. */
     fun changeStatus(status: String, onDone: (Boolean) -> Unit = {}) =
         runStatusChange(onDone) { source.changeStatus(orderId, status) }
+
+    /** #1199: cancel keeping part of the money collected (owner / outlet admin); 0 = refund everything, as before */
+    fun cancel(keptAmount: Double, note: String?, onDone: (Boolean) -> Unit = {}) =
+        runStatusChange(onDone) { source.cancel(orderId, keptAmount, note) }
+
+    /** #1199: a stage was collected, voided or the plan edited: tell the lists and reload; [onReloaded] gets the fresh order */
+    fun depositChanged(onReloaded: (OrderDetail?) -> Unit = {}) {
+        ordersChanged()
+        reloadThen(onReloaded)
+    }
+
+    /** Reload the order, then run [onReloaded] with it (null when the reload failed) */
+    fun reloadThen(onReloaded: (OrderDetail?) -> Unit) {
+        viewModelScope.launch { onReloaded(reload()) }
+    }
 
     /** Hand-over: papers and deposit are optional; empty fields still hand the order over (#427) */
     fun handOver(fields: HandOverFields, onDone: (Boolean) -> Unit = {}) =

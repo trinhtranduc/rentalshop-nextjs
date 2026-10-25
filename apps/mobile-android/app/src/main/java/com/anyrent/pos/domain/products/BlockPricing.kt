@@ -199,12 +199,6 @@ data class BlockSnapshot(
     }
 }
 
-/** Header every request carries so the API sends BLOCK options and checks BLOCK prices instead of recomputing them */
-object ClientCapabilities {
-    const val HEADER_NAME = "X-Client-Capabilities"
-    const val HEADER_VALUE = "block-pricing"
-}
-
 /** 400 codes of the order and product routes a BLOCK change can meet */
 object BlockPricingError {
     const val PRICE_MISMATCH = "BLOCK_PRICE_MISMATCH"

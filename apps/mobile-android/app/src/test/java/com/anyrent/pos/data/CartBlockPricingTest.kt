@@ -189,9 +189,9 @@ class CartBlockPricingTest {
     @Test
     fun `every request carries the capability header`() {
         api().getProduct(25)
-        assertEquals("block-pricing", requests.last().header("X-Client-Capabilities"))
+        assertEquals("installments,block-pricing", requests.last().header("X-Client-Capabilities"))
         api().createOrder(orderType = "SALE", customerId = null, lines = listOf(Triple(25, 1, 1.0)), totalAmount = 1.0).getOrThrow()
-        assertEquals("block-pricing", requests.last().header("X-Client-Capabilities"))
+        assertEquals("installments,block-pricing", requests.last().header("X-Client-Capabilities"))
     }
 
     @Test

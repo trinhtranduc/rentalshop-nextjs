@@ -64,6 +64,8 @@ object CartOrderSubmit {
             noteImages = noteImages,
             outletId = orderOutletId(CurrentOutlet.merchantFilterId),
             bookingRequestId = bookingRequestId(),
+            // #1199: a rental of a "Thu cọc theo giai đoạn" shop goes with its stages; the API keeps the money
+            paymentPlan = CartStore.paymentPlanRequest(reference = idempotencyKey),
         )
     }
 

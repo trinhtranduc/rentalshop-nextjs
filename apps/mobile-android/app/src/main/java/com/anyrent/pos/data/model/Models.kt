@@ -34,6 +34,8 @@ data class UserProfile(
     val permissions: Set<String>? = null,
     /** #1145 the shop's currency (`merchant.currency`); VND when the payload has none */
     val currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopCurrency.VND,
+    /** #1199 "Cách thu cọc" (`merchant.depositMode`); null when the payload has none: the screens read GET /api/settings/deposit */
+    val depositMode: com.anyrent.pos.domain.deposit.DepositMode? = null,
 ) {
     val displayName: String
         get() = listOfNotNull(firstName, lastName)
@@ -127,6 +129,10 @@ data class OrderSummary(
     /** Actual hand-over / return instants (#434); null until they happen or on an older payload */
     val pickedUpAt: String? = null,
     val returnedAt: String? = null,
+    /** #1199 deposit stages (`installmentSummary.percentCollected`, `hasDepositPlan`); null on an older API or an order without a plan */
+    val installmentPercentCollected: Double? = null,
+    val hasDepositPlan: Boolean? = null,
+    val cancelKeptAmount: Double? = null,
 )
 
 data class OrderItem(
@@ -165,6 +171,8 @@ data class OrderDetail(
     val outletId: Int? = null,
     /** Nested customer from GET /api/orders/:id — preferred when editing into cart. */
     val customer: Customer? = null,
+    /** #1199 deposit stages (only for a client that sends `installments`); null on an older API or an order without a plan */
+    val deposit: com.anyrent.pos.domain.deposit.DepositPlanInfo? = null,
 )
 
 data class PaymentEntry(
@@ -173,6 +181,8 @@ data class PaymentEntry(
     val paymentMethod: String?,
     val status: String?,
     val notes: String?,
+    /** #1199: the deposit stage this payment collected (`i1`, `i2`, `rest`); only for a client that sends `installments` */
+    val installmentKey: String? = null,
 )
 
 data class InboxNotification(

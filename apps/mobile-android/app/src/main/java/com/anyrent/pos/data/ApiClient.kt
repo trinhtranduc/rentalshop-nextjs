@@ -115,6 +115,8 @@ class ApiClient(
         SessionStore.modules = profile.modules
         SessionStore.permissions = profile.permissions
         SessionStore.currency = profile.currency
+        // #1199: a login without `merchant.depositMode` leaves it unknown; the screens read GET /api/settings/deposit
+        SessionStore.depositMode = profile.depositMode
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
@@ -507,11 +509,16 @@ class ApiClient(
         id: Int,
         status: String,
         fields: HandOverFields = HandOverFields(),
+        /** #1199 cancelling: what the shop keeps of the money collected (0 or null = refund all) and why */
+        cancelKeptAmount: Double? = null,
+        cancelNote: String? = null,
     ): Result<OrderSummary> = runCatching {
         val body = JSONObject().put("status", status).apply {
             fields.collateralType?.let { put("collateralType", it) }
             fields.collateralDetails?.let { put("collateralDetails", it) }
             fields.securityDeposit?.let { put("securityDeposit", it) }
+            if (cancelKeptAmount != null && cancelKeptAmount > 0) put("cancelKeptAmount", cancelKeptAmount)
+            cancelNote?.trim()?.takeIf { it.isNotEmpty() }?.let { put("cancelNote", it) }
         }.toString().toRequestBody(jsonMedia)
         val json = execute(put("$baseUrl/api/orders/$id", body))
         requireSuccess(json)
@@ -557,6 +564,8 @@ class ApiClient(
         outletId: Int? = CurrentOutlet.merchantFilterId,
         /** #1124: the online booking this order confirms; null = the same request as before */
         bookingRequestId: Int? = null,
+        /** #1199: the deposit stages of a rental in a "Thu cọc theo giai đoạn" shop; null = the same request as before */
+        paymentPlan: JSONObject? = null,
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEachIndexed { index, (productId, qty, unitPrice) ->
@@ -595,7 +604,9 @@ class ApiClient(
                 if (customerId != null) put("customerId", customerId)
                 if (!notes.isNullOrBlank()) put("notes", notes)
                 if (orderType == "RENT") {
-                    put("depositAmount", depositAmount)
+                    // #1199: with stages the API keeps the money (`depositAmount` is what the stages collected)
+                    put("depositAmount", if (paymentPlan != null) 0.0 else depositAmount)
+                    if (paymentPlan != null) put("paymentPlan", paymentPlan)
                     if (securityDeposit != null) put("securityDeposit", securityDeposit)
                     if (pickupPlanAt != null) put("pickupPlanAt", pickupPlanAt)
                     if (returnPlanAt != null) put("returnPlanAt", returnPlanAt)
@@ -1369,8 +1380,11 @@ class ApiClient(
         header("X-Device-Type", "android")
         header("X-App-Version", appVersion)
         header("Accept-Language", appAcceptLanguage())
-        // #1189: this app reads BLOCK options and sends BLOCK prices; without it the API recomputes the price
-        header(com.anyrent.pos.domain.products.ClientCapabilities.HEADER_NAME, com.anyrent.pos.domain.products.ClientCapabilities.HEADER_VALUE)
+        // #1199, #1189: this app reads deposit stages and BLOCK options; without the header the API answers like before
+        header(
+            com.anyrent.pos.domain.deposit.ClientCapabilities.HEADER_NAME,
+            com.anyrent.pos.domain.deposit.ClientCapabilities.headerValue,
+        )
         if (authed) {
             val token = tokenProvider()
             if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
@@ -1407,6 +1421,8 @@ class ApiClient(
             outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
             allowOverlappingOrders = OverlapSetting.fromMerchant(merchant),
             currency = com.anyrent.pos.domain.settings.CurrencySetting.fromMerchant(merchant),
+            depositMode = merchant?.takeIf { it.has("depositMode") && !it.isNull("depositMode") }
+                ?.let { com.anyrent.pos.domain.deposit.DepositMode.from(it.optString("depositMode")) },
             modules = com.anyrent.pos.domain.attendance.AttendanceLogic.modules(merchant),
             permissions = user.optJSONArray("permissions")?.let { arr ->
                 (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { p -> p.isNotBlank() } }.toSet()
@@ -1552,6 +1568,10 @@ class ApiClient(
             productTotals = orderItemTotals(o.optJSONArray("orderItems")),
             amountDue = optionalAmount(o, "amountDue"),
             refundDue = optionalAmount(o, "refundDue"),
+            // #1199: only for a client that sends `installments`; absent on an older API or an order without a plan
+            installmentPercentCollected = optionalAmount(o.optJSONObject("installmentSummary") ?: JSONObject(), "percentCollected"),
+            hasDepositPlan = if (o.has("hasDepositPlan") && !o.isNull("hasDepositPlan")) o.optBoolean("hasDepositPlan") else null,
+            cancelKeptAmount = optionalAmount(o, "cancelKeptAmount"),
         )
     }
 
@@ -1627,6 +1647,7 @@ class ApiClient(
                         .takeIf { it.isNotBlank() },
                     status = p.optString("status").takeIf { it.isNotBlank() },
                     notes = p.optString("notes").takeIf { it.isNotBlank() },
+                    installmentKey = p.nullableString("installmentKey"),
                 )
             },
             securityDeposit = root.safeDouble("securityDeposit"),
@@ -1642,6 +1663,7 @@ class ApiClient(
             outletName = root.nullableString("outletName")
                 ?: root.optJSONObject("outlet")?.nullableString("name"),
             outletId = root.positiveInt("outletId") ?: root.optJSONObject("outlet")?.positiveInt("id"),
+            deposit = com.anyrent.pos.domain.deposit.DepositPlanInfo.fromJson(root),
         )
     }
 

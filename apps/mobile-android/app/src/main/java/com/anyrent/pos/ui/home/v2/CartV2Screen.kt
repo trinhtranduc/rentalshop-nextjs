@@ -71,6 +71,11 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
+import com.anyrent.pos.data.DepositModeStore
+import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.domain.deposit.DepositMode
+import com.anyrent.pos.domain.deposit.DepositPlanMath
+import com.anyrent.pos.ui.deposit.CartStagedSection
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.availability.AvailabilityRequest
@@ -163,6 +168,22 @@ fun CartV2Screen(
     val editingOrderId by CartStore.editingOrderId.collectAsState()
     val editOriginal by CartStore.editOriginal.collectAsState()
     val isSale = orderType == "SALE"
+    // #1199 "Thu cọc theo giai đoạn": the shop's mode (a login without it is fetched), its templates, the stages of this cart
+    val depositMode by SessionStore.depositModeFlow.collectAsState()
+    val depositSettings by DepositModeStore.latest.collectAsState()
+    val depositStages by CartStore.depositStages.collectAsState()
+    val depositTemplateId by CartStore.depositTemplateId.collectAsState()
+    val collectFirstNow by CartStore.collectFirstStageNow.collectAsState()
+    val collectMethod by CartStore.collectMethod.collectAsState()
+    val editHasPlan by CartStore.editHasDepositPlan.collectAsState()
+    val stagedMode = depositMode == DepositMode.STAGED
+    LaunchedEffect(Unit) { DepositModeStore.refresh() }
+    // A staged shop: the stages of a new order start from the shop's default template
+    LaunchedEffect(stagedMode, depositSettings, depositStages == null, orderType, editingOrderId) {
+        val template = depositSettings?.startTemplate
+        if (!isSale && editingOrderId == null && stagedMode && depositStages == null && template != null) CartStore.setDepositTemplate(template)
+    }
+    val staged = !isSale && editingOrderId == null && stagedMode && depositStages != null
     val app = LocalContext.current.applicationContext as AnyRentApp
 
     // Same money as the old cart: computed from the collected lines so every change redraws
@@ -272,6 +293,16 @@ fun CartV2Screen(
     )
     val createBlocked = OverlapWarnings.blocksCreate(allowOverlap, overlapConflicts)
     val overlapBlockedMessage = stringResource(R.string.v2_cart_overlap_blocked)
+
+    // #1199: the stages of the cart as they stand now (the API recomputes them), what stage 1 collects, and whether they fit
+    val restLabel = stringResource(R.string.deposit_rest_label)
+    val canEditStages = !PermissionManager.role.isStaffLike
+    val stagedPreview = if (staged) CartStore.stagedPreview(restLabel) else emptyList()
+    val stagesExceed = staged && DepositPlanMath.exceedsTotal(stagedPreview, total)
+    val stagedCollectNow = if (staged && collectFirstNow) stagedPreview.firstOrNull()?.takeIf { !it.isRest }?.amount ?: 0.0 else 0.0
+    val stagedTemplateName = depositSettings?.choices.orEmpty().let { choices ->
+        (choices.firstOrNull { it.id == depositTemplateId } ?: choices.firstOrNull())?.name.orEmpty()
+    }
 
     // #473 — a rent line without "Theo lần / Theo ngày" may be stale (added before the product got its second price,
     // restored from disk, or loaded from an edited order): reload that product once per screen and let the line take
@@ -543,12 +574,28 @@ fun CartV2Screen(
             V2ValueRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(total), valueColor = DS.Colors.Text, bold = true)
             ThinDivider()
             if (!isSale) {
-                CartMoneyEditRow(
-                    stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
-                    tone = CartV2Logic.moneyRowTone(CartMoneyRow.DEPOSIT),
-                    onClick = { numericText = deposit.toLong().toString(); numericEditor = "DEPOSIT" },
-                )
-                ThinDivider()
+                if (editingOrderId != null && editHasPlan) {
+                    // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
+                } else if (staged) {
+                    CartStagedSection(
+                        preview = stagedPreview, templateName = stagedTemplateName, choices = depositSettings?.choices.orEmpty(),
+                        canEdit = canEditStages, exceeds = stagesExceed, collectNow = stagedCollectNow, collectMethod = collectMethod,
+                        todayKey = ShopTime.today().toString(), staffLike = !canEditStages,
+                        onPickTemplate = { CartStore.setDepositTemplate(it) },
+                        onEditStage = { index ->
+                            numericText = stagedPreview.getOrNull(index)?.amount?.toLong()?.toString() ?: "0"
+                            numericEditor = "STAGE:$index"
+                        },
+                        onCollectFirst = { CartStore.setCollectFirstStage(it) },
+                    )
+                } else if (!(stagedMode && editingOrderId == null)) {
+                    CartMoneyEditRow(
+                        stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
+                        tone = CartV2Logic.moneyRowTone(CartMoneyRow.DEPOSIT),
+                        onClick = { numericText = deposit.toLong().toString(); numericEditor = "DEPOSIT" },
+                    )
+                    ThinDivider()
+                }
             }
             // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
             val noteFiles by CartStore.noteImageFiles.collectAsState()
@@ -610,7 +657,8 @@ fun CartV2Screen(
                     returnDate = ret,
                     lines = lines.map { it.product.name to it.quantity },
                     total = total,
-                    deposit = deposit,
+                    // #1199: a staged rental prepays stage 1 only (or nothing)
+                    deposit = if (staged) stagedCollectNow else deposit,
                 )
             }
         }
@@ -651,19 +699,32 @@ fun CartV2Screen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                    Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(
+                            when {
+                                isSale -> R.string.v2_cart_customer_pays
+                                staged -> if (stagedCollectNow > 0) R.string.deposit_cart_collect_now else R.string.deposit_cart_collect_none
+                                else -> R.string.v2_cart_collect_deposit
+                            },
+                        ),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                    )
+                    Text(
+                        formatMoneyVnd(if (staged) stagedCollectNow else CartV2Logic.collectNow(isSale, total, deposit)),
+                        fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold,
+                    )
                 }
                 AppPrimaryButton(
-                    stringResource(
+                    if (staged && stagedCollectNow > 0) stringResource(R.string.deposit_cart_create_and_collect) else stringResource(
                         when (EditOrderSheet.ctaLabel(editing = false, isSale = isSale)) {
                             EditOrderSheet.CtaLabel.SAVE_CHANGES -> R.string.v2_cart_edit_save
                             EditOrderSheet.CtaLabel.SELL_AND_COLLECT -> R.string.v2_cart_sell_and_collect
                             EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
                         },
                     ),
-                    modifier = Modifier.weight(1.1f),
-                    enabled = !createBlocked && !discountInvalid,
+                    // #1199: the long label "Tạo đơn và thu giai đoạn 1" needs the room
+                    modifier = Modifier.weight(if (staged && stagedCollectNow > 0) 1.7f else 1.1f),
+                    enabled = !createBlocked && !discountInvalid && !stagesExceed,
                     onClick = ::onCta,
                 )
             }
@@ -750,10 +811,12 @@ fun CartV2Screen(
     }
     numericEditor?.let { editor ->
         val priceProductId = editor.removePrefix("PRICE:").takeIf { editor.startsWith("PRICE:") && it.isNotBlank() }
+        val stageIndex = editor.removePrefix("STAGE:").toIntOrNull()?.takeIf { editor.startsWith("STAGE:") }
         AppNumericPadSheet(
             title = when {
                 priceProductId != null -> lines.firstOrNull { it.lineId == priceProductId }?.product?.name
                     ?: stringResource(R.string.v2_cart_edit_price)
+                stageIndex != null -> stagedPreview.getOrNull(stageIndex)?.label.orEmpty()
                 editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
                 else -> stringResource(R.string.enter_discount)
             },
@@ -771,6 +834,7 @@ fun CartV2Screen(
                 when {
                     // The line price for this order only, never the product's price (owner 2026-10-05)
                     priceProductId != null -> CartStore.updateUnitPrice(priceProductId, value)
+                    stageIndex != null -> CartStore.setDepositStageAmount(stageIndex, value)
                     editor == "DEPOSIT" -> CartStore.setDeposit(value)
                     else -> CartStore.setDiscount(value)
                 }

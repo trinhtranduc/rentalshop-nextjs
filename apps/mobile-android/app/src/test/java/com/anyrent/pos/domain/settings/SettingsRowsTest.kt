@@ -17,7 +17,7 @@ class SettingsRowsTest {
         assertEquals(
             listOf(
                 SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO, SettingsItem.CURRENCY, SettingsItem.RECEIPT_NOTE,
-                SettingsItem.PRINTER, SettingsItem.BANK_ACCOUNTS,
+                SettingsItem.PRINTER, SettingsItem.BANK_ACCOUNTS, SettingsItem.DEPOSIT_MODE,
             ),
             merchant[0].items,
         )
@@ -46,6 +46,14 @@ class SettingsRowsTest {
             val store = SettingsRows.sections(role, hasPlan = false).first()
             assertEquals(role, SettingsGroup.STORE, store.group)
             assertEquals(role, SettingsItem.NOTIFICATIONS, store.items.first())
+        }
+    }
+
+    /** #1199: "Cách thu cọc" is the last row of CỬA HÀNG for every role (only the owner edits it inside) */
+    @Test
+    fun depositModeRowForEveryRole() {
+        for (role in listOf("ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY")) {
+            assertEquals(role, SettingsItem.DEPOSIT_MODE, SettingsRows.sections(role, hasPlan = false).first().items.last())
         }
     }
 
