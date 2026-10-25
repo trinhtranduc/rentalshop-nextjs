@@ -240,7 +240,8 @@ export async function shapeOrderInstallments<T extends Record<string, any>>(
     owner = outlet?.merchantId ?? null;
   }
   const shop = await loadShop(client, owner);
-  const { depositPlan: _plan, ...rest } = order as Record<string, any>;
+  const rest: Record<string, any> = { ...order };
+  delete rest.depositPlan;
   return { ...rest, ...installmentsView(order as any, shop) } as unknown as T;
 }
 

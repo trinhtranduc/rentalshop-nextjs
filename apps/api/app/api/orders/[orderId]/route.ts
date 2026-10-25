@@ -22,7 +22,7 @@ import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
 import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
 import { hasCapability } from '../../../../lib/client-capabilities';
 import { shapeOrderInstallments, loadShop, unpaidAtPickupBody, unpaidStagesBlockingPickup, recomputeDepositFromPayments, installmentsView } from '../../../../lib/installments';
-import { collectedInStages, parseDepositPlan, planOverflow, recalcAfterTotalChange } from '../../../../../../packages/utils/src/core/deposit-plan';
+import { parseDepositPlan, recalcAfterTotalChange } from '../../../../../../packages/utils/src/core/deposit-plan';
 import { isInstallmentPayment, shapeOrderPayments } from '../../../../lib/order-payments';
 import { clampOrderDiscount, sumLineTotals } from '../../../../lib/order-discount';
 import {
