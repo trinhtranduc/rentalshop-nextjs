@@ -1,0 +1,5269 @@
+{
+  "incomeMonthByDay": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "INCOME_ANALYTICS_SUCCESS",
+        "message": "Thành công",
+        "data": [
+          {
+            "month": "01/10/26",
+            "date": "2026/10/01",
+            "dateISO": "2026-10-01T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 1,
+            "realIncome": 2460000,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 2000000,
+            "totalCollateral": 2000000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "02/10/26",
+            "date": "2026/10/02",
+            "dateISO": "2026-10-02T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 2,
+            "realIncome": 2070000,
+            "futureIncome": 0,
+            "orderCount": 4,
+            "depositRefund": 700000,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "03/10/26",
+            "date": "2026/10/03",
+            "dateISO": "2026-10-03T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 3,
+            "realIncome": 1300000,
+            "futureIncome": 0,
+            "orderCount": 1,
+            "depositRefund": 1800000,
+            "totalCollateral": 800000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "04/10/26",
+            "date": "2026/10/04",
+            "dateISO": "2026-10-04T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 4,
+            "realIncome": -910000,
+            "futureIncome": 0,
+            "orderCount": 2,
+            "depositRefund": 400000,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "05/10/26",
+            "date": "2026/10/05",
+            "dateISO": "2026-10-05T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 5,
+            "realIncome": -180000,
+            "futureIncome": 0,
+            "orderCount": 1,
+            "depositRefund": 300000,
+            "totalCollateral": 300000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "06/10/26",
+            "date": "2026/10/06",
+            "dateISO": "2026-10-06T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 6,
+            "realIncome": 250000,
+            "futureIncome": -100000,
+            "orderCount": 1,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "07/10/26",
+            "date": "2026/10/07",
+            "dateISO": "2026-10-07T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 7,
+            "realIncome": 0,
+            "futureIncome": 450000,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          }
+        ]
+      }
+    },
+    "queries": [
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-01T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-01T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-01T17:00:00.000Z",
+            "lte": "2026-10-02T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-01T17:00:00.000Z",
+            "lte": "2026-10-02T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-02T17:00:00.000Z",
+            "lte": "2026-10-03T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-02T17:00:00.000Z",
+            "lte": "2026-10-03T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-03T17:00:00.000Z",
+            "lte": "2026-10-04T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-03T17:00:00.000Z",
+            "lte": "2026-10-04T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-04T17:00:00.000Z",
+            "lte": "2026-10-05T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-04T17:00:00.000Z",
+            "lte": "2026-10-05T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-06T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-06T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "incomeYearByMonth": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "INCOME_ANALYTICS_SUCCESS",
+        "message": "Thành công",
+        "data": [
+          {
+            "month": "01/26",
+            "dateISO": "2026-01-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 1,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "02/26",
+            "dateISO": "2026-02-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 2,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "03/26",
+            "dateISO": "2026-03-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 3,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "04/26",
+            "dateISO": "2026-04-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 4,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "05/26",
+            "dateISO": "2026-05-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 5,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "06/26",
+            "dateISO": "2026-06-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 6,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "07/26",
+            "dateISO": "2026-07-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 7,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "08/26",
+            "dateISO": "2026-08-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 8,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "09/26",
+            "dateISO": "2026-09-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 9,
+            "realIncome": 780000,
+            "futureIncome": 0,
+            "orderCount": 3,
+            "depositRefund": 500000,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "10/26",
+            "dateISO": "2026-10-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 10,
+            "realIncome": 4990000,
+            "futureIncome": 550000,
+            "orderCount": 9,
+            "depositRefund": 5200000,
+            "totalCollateral": 3100000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "11/26",
+            "dateISO": "2026-11-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 11,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "12/26",
+            "dateISO": "2026-12-01T00:00:00.000Z",
+            "year": 2026,
+            "monthNumber": 12,
+            "realIncome": 0,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          }
+        ]
+      }
+    },
+    "queries": [
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-01-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2025-12-30T17:00:00.000Z",
+                "lte": "2026-02-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2025-12-30T17:00:00.000Z",
+                "lte": "2026-02-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-01-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-01-31T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-01-31T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2025-12-31T17:00:00.000Z",
+            "lte": "2026-01-31T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2025-12-31T17:00:00.000Z",
+            "lte": "2026-01-31T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-01-31T17:00:00.000Z",
+                "lte": "2026-02-28T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-01-30T17:00:00.000Z",
+                "lte": "2026-03-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-01-30T17:00:00.000Z",
+                "lte": "2026-03-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-01-31T17:00:00.000Z",
+                "lte": "2026-02-28T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-01-31T17:00:00.000Z",
+                "lte": "2026-02-28T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-01-31T17:00:00.000Z",
+                "lte": "2026-02-28T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-01-31T17:00:00.000Z",
+            "lte": "2026-02-28T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-01-31T17:00:00.000Z",
+            "lte": "2026-02-28T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-02-28T17:00:00.000Z",
+                "lte": "2026-03-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-02-27T17:00:00.000Z",
+                "lte": "2026-04-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-02-27T17:00:00.000Z",
+                "lte": "2026-04-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-02-28T17:00:00.000Z",
+                "lte": "2026-03-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-02-28T17:00:00.000Z",
+                "lte": "2026-03-31T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-02-28T17:00:00.000Z",
+                "lte": "2026-03-31T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-02-28T17:00:00.000Z",
+            "lte": "2026-03-31T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-02-28T17:00:00.000Z",
+            "lte": "2026-03-31T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-03-31T17:00:00.000Z",
+                "lte": "2026-04-30T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-03-30T17:00:00.000Z",
+                "lte": "2026-05-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-03-30T17:00:00.000Z",
+                "lte": "2026-05-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-03-31T17:00:00.000Z",
+                "lte": "2026-04-30T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-03-31T17:00:00.000Z",
+                "lte": "2026-04-30T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-03-31T17:00:00.000Z",
+                "lte": "2026-04-30T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-03-31T17:00:00.000Z",
+            "lte": "2026-04-30T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-03-31T17:00:00.000Z",
+            "lte": "2026-04-30T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-04-30T17:00:00.000Z",
+                "lte": "2026-05-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-04-29T17:00:00.000Z",
+                "lte": "2026-06-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-04-29T17:00:00.000Z",
+                "lte": "2026-06-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-04-30T17:00:00.000Z",
+                "lte": "2026-05-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-04-30T17:00:00.000Z",
+                "lte": "2026-05-31T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-04-30T17:00:00.000Z",
+                "lte": "2026-05-31T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-04-30T17:00:00.000Z",
+            "lte": "2026-05-31T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-04-30T17:00:00.000Z",
+            "lte": "2026-05-31T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-05-31T17:00:00.000Z",
+                "lte": "2026-06-30T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-05-30T17:00:00.000Z",
+                "lte": "2026-07-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-05-30T17:00:00.000Z",
+                "lte": "2026-07-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-05-31T17:00:00.000Z",
+                "lte": "2026-06-30T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-05-31T17:00:00.000Z",
+                "lte": "2026-06-30T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-05-31T17:00:00.000Z",
+                "lte": "2026-06-30T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-05-31T17:00:00.000Z",
+            "lte": "2026-06-30T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-05-31T17:00:00.000Z",
+            "lte": "2026-06-30T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-06-30T17:00:00.000Z",
+                "lte": "2026-07-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-06-29T17:00:00.000Z",
+                "lte": "2026-08-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-06-29T17:00:00.000Z",
+                "lte": "2026-08-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-06-30T17:00:00.000Z",
+                "lte": "2026-07-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-06-30T17:00:00.000Z",
+                "lte": "2026-07-31T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-06-30T17:00:00.000Z",
+                "lte": "2026-07-31T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-06-30T17:00:00.000Z",
+            "lte": "2026-07-31T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-06-30T17:00:00.000Z",
+            "lte": "2026-07-31T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-07-31T17:00:00.000Z",
+                "lte": "2026-08-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-07-30T17:00:00.000Z",
+                "lte": "2026-09-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-07-30T17:00:00.000Z",
+                "lte": "2026-09-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-07-31T17:00:00.000Z",
+                "lte": "2026-08-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-07-31T17:00:00.000Z",
+                "lte": "2026-08-31T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-07-31T17:00:00.000Z",
+                "lte": "2026-08-31T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-07-31T17:00:00.000Z",
+            "lte": "2026-08-31T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-07-31T17:00:00.000Z",
+            "lte": "2026-08-31T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-08-31T17:00:00.000Z",
+            "lte": "2026-09-30T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-08-31T17:00:00.000Z",
+            "lte": "2026-09-30T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-11-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-11-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-31T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-31T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-31T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-31T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-31T17:00:00.000Z",
+                "lte": "2026-11-30T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-30T17:00:00.000Z",
+                "lte": "2026-12-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-30T17:00:00.000Z",
+                "lte": "2026-12-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-31T17:00:00.000Z",
+                "lte": "2026-11-30T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-31T17:00:00.000Z",
+                "lte": "2026-11-30T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-31T17:00:00.000Z",
+                "lte": "2026-11-30T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-31T17:00:00.000Z",
+            "lte": "2026-11-30T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-31T17:00:00.000Z",
+            "lte": "2026-11-30T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-11-30T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-11-29T17:00:00.000Z",
+                "lte": "2027-01-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-11-29T17:00:00.000Z",
+                "lte": "2027-01-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-11-30T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-11-30T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-11-30T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-11-30T17:00:00.000Z",
+            "lte": "2026-12-31T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-11-30T17:00:00.000Z",
+            "lte": "2026-12-31T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "incomeOutletAdmin": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "INCOME_ANALYTICS_SUCCESS",
+        "message": "Thành công",
+        "data": [
+          {
+            "month": "01/10/26",
+            "date": "2026/10/01",
+            "dateISO": "2026-10-01T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 1,
+            "realIncome": 2460000,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 2000000,
+            "totalCollateral": 2000000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "02/10/26",
+            "date": "2026/10/02",
+            "dateISO": "2026-10-02T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 2,
+            "realIncome": 2070000,
+            "futureIncome": 0,
+            "orderCount": 4,
+            "depositRefund": 700000,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "03/10/26",
+            "date": "2026/10/03",
+            "dateISO": "2026-10-03T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 3,
+            "realIncome": 1300000,
+            "futureIncome": 0,
+            "orderCount": 1,
+            "depositRefund": 1800000,
+            "totalCollateral": 800000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "04/10/26",
+            "date": "2026/10/04",
+            "dateISO": "2026-10-04T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 4,
+            "realIncome": -910000,
+            "futureIncome": 0,
+            "orderCount": 2,
+            "depositRefund": 400000,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "05/10/26",
+            "date": "2026/10/05",
+            "dateISO": "2026-10-05T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 5,
+            "realIncome": -180000,
+            "futureIncome": 0,
+            "orderCount": 1,
+            "depositRefund": 300000,
+            "totalCollateral": 300000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "06/10/26",
+            "date": "2026/10/06",
+            "dateISO": "2026-10-06T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 6,
+            "realIncome": 250000,
+            "futureIncome": -100000,
+            "orderCount": 1,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "07/10/26",
+            "date": "2026/10/07",
+            "dateISO": "2026-10-07T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 7,
+            "realIncome": 0,
+            "futureIncome": 450000,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          }
+        ]
+      }
+    },
+    "queries": [
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-01T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-01T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-01T17:00:00.000Z",
+            "lte": "2026-10-02T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-01T17:00:00.000Z",
+            "lte": "2026-10-02T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-02T17:00:00.000Z",
+            "lte": "2026-10-03T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-02T17:00:00.000Z",
+            "lte": "2026-10-03T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-03T17:00:00.000Z",
+            "lte": "2026-10-04T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-03T17:00:00.000Z",
+            "lte": "2026-10-04T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-04T17:00:00.000Z",
+            "lte": "2026-10-05T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-04T17:00:00.000Z",
+            "lte": "2026-10-05T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ],
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-06T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null,
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-06T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "incomeAdmin": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "INCOME_ANALYTICS_SUCCESS",
+        "message": "Thành công",
+        "data": [
+          {
+            "month": "01/10/26",
+            "date": "2026/10/01",
+            "dateISO": "2026-10-01T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 1,
+            "realIncome": 2460000,
+            "futureIncome": 0,
+            "orderCount": 0,
+            "depositRefund": 2000000,
+            "totalCollateral": 2000000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "02/10/26",
+            "date": "2026/10/02",
+            "dateISO": "2026-10-02T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 2,
+            "realIncome": 2070000,
+            "futureIncome": 0,
+            "orderCount": 4,
+            "depositRefund": 700000,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "03/10/26",
+            "date": "2026/10/03",
+            "dateISO": "2026-10-03T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 3,
+            "realIncome": 1300000,
+            "futureIncome": 0,
+            "orderCount": 1,
+            "depositRefund": 1800000,
+            "totalCollateral": 800000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "04/10/26",
+            "date": "2026/10/04",
+            "dateISO": "2026-10-04T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 4,
+            "realIncome": -910000,
+            "futureIncome": 0,
+            "orderCount": 2,
+            "depositRefund": 400000,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "05/10/26",
+            "date": "2026/10/05",
+            "dateISO": "2026-10-05T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 5,
+            "realIncome": -180000,
+            "futureIncome": 0,
+            "orderCount": 1,
+            "depositRefund": 300000,
+            "totalCollateral": 300000,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "06/10/26",
+            "date": "2026/10/06",
+            "dateISO": "2026-10-06T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 6,
+            "realIncome": 250000,
+            "futureIncome": -100000,
+            "orderCount": 1,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          },
+          {
+            "month": "07/10/26",
+            "date": "2026/10/07",
+            "dateISO": "2026-10-07T00:00:00.000Z",
+            "year": 2026,
+            "dayNumber": 7,
+            "realIncome": 0,
+            "futureIncome": 450000,
+            "orderCount": 0,
+            "depositRefund": 0,
+            "totalCollateral": 0,
+            "totalCollateralPlan": 0
+          }
+        ]
+      }
+    },
+    "queries": [
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-01T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-01T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-02T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-01T17:00:00.000Z",
+            "lte": "2026-10-02T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-01T17:00:00.000Z",
+            "lte": "2026-10-02T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-01T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-03T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-02T17:00:00.000Z",
+            "lte": "2026-10-03T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-02T17:00:00.000Z",
+            "lte": "2026-10-03T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-02T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-04T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-03T17:00:00.000Z",
+            "lte": "2026-10-04T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-03T17:00:00.000Z",
+            "lte": "2026-10-04T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-03T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-05T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-04T17:00:00.000Z",
+            "lte": "2026-10-05T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-04T17:00:00.000Z",
+            "lte": "2026-10-05T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-04T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-10-05T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-10-06T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "orderType": "RENT",
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-10-06T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z",
+            "not": null
+          },
+          "deletedAt": null
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-06T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          },
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "COMPLETED"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "topCustomersWeek": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "TOP_CUSTOMERS_SUCCESS",
+        "message": "Thành công",
+        "data": [
+          {
+            "id": 116,
+            "name": "Khách 116",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 500000
+          },
+          {
+            "id": 101,
+            "name": "Khách 101",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 370000
+          },
+          {
+            "id": 102,
+            "name": "Khách 102",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 200000
+          },
+          {
+            "id": 103,
+            "name": "Khách 103",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 200000
+          },
+          {
+            "id": 105,
+            "name": "Khách 105",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 180000
+          },
+          {
+            "id": 104,
+            "name": "Khách 104",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 150000
+          },
+          {
+            "id": 110,
+            "name": "Khách 110",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 0,
+            "saleCount": 1,
+            "totalSpent": 120000
+          },
+          {
+            "id": 108,
+            "name": "Khách 108",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 100000
+          },
+          {
+            "id": 106,
+            "name": "Khách 106",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 50000
+          },
+          {
+            "id": 109,
+            "name": "Khách 109",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 20000
+          }
+        ]
+      }
+    },
+    "queries": [
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "customerId": {
+            "not": null
+          },
+          "status": {
+            "not": "CANCELLED"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "deletedAt": null
+        }
+      }
+    ]
+  },
+  "topCustomersOutletAdmin": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "TOP_CUSTOMERS_SUCCESS",
+        "message": "Thành công",
+        "data": [
+          {
+            "id": 103,
+            "name": "Khách 103",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 400000
+          },
+          {
+            "id": 101,
+            "name": "Khách 101",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 370000
+          },
+          {
+            "id": 114,
+            "name": "Khách 114",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 350000
+          },
+          {
+            "id": 102,
+            "name": "Khách 102",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 200000
+          },
+          {
+            "id": 105,
+            "name": "Khách 105",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 180000
+          },
+          {
+            "id": 104,
+            "name": "Khách 104",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 150000
+          },
+          {
+            "id": 117,
+            "name": "Khách 117",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 150000
+          },
+          {
+            "id": 110,
+            "name": "Khách 110",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 0,
+            "saleCount": 1,
+            "totalSpent": 120000
+          },
+          {
+            "id": 108,
+            "name": "Khách 108",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 1,
+            "saleCount": 0,
+            "totalSpent": 100000
+          },
+          {
+            "id": 111,
+            "name": "Khách 111",
+            "email": "",
+            "phone": "0900000000",
+            "location": "",
+            "orderCount": 1,
+            "rentalCount": 0,
+            "saleCount": 1,
+            "totalSpent": 80000
+          }
+        ]
+      }
+    },
+    "queries": [
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "customerId": {
+            "not": null
+          },
+          "status": {
+            "not": "CANCELLED"
+          },
+          "outletId": 1,
+          "deletedAt": null
+        }
+      }
+    ]
+  },
+  "systemWeek": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "SYSTEM_ANALYTICS_SUCCESS",
+        "message": "Thành công",
+        "data": {
+          "totalMerchants": 0,
+          "totalOutlets": 0,
+          "totalUsers": 0,
+          "totalProducts": 0,
+          "totalCustomers": 0,
+          "totalOrders": 17,
+          "totalRevenue": 15979000,
+          "activeMerchants": 0,
+          "newMerchantsThisMonth": 0,
+          "newMerchantsThisYear": 0,
+          "merchantTrends": [
+            {
+              "month": "Oct 1",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Oct 2",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Oct 3",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Oct 4",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Oct 5",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Oct 6",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Oct 7",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            }
+          ]
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.getStats",
+        "where": null
+      },
+      {
+        "call": "db.orders.findManyLightweight",
+        "where": {
+          "status": {
+            "not": "CANCELLED"
+          },
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "systemYear": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "SYSTEM_ANALYTICS_SUCCESS",
+        "message": "Thành công",
+        "data": {
+          "totalMerchants": 0,
+          "totalOutlets": 0,
+          "totalUsers": 0,
+          "totalProducts": 0,
+          "totalCustomers": 0,
+          "totalOrders": 17,
+          "totalRevenue": 16759000,
+          "activeMerchants": 0,
+          "newMerchantsThisMonth": 0,
+          "newMerchantsThisYear": 0,
+          "merchantTrends": [
+            {
+              "month": "Jan",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Feb",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Mar",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Apr",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "May",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Jun",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Jul",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Aug",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Sep",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Oct",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Nov",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            },
+            {
+              "month": "Dec",
+              "newMerchants": 0,
+              "activeMerchants": 0
+            }
+          ]
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.getStats",
+        "where": null
+      },
+      {
+        "call": "db.orders.findManyLightweight",
+        "where": {
+          "status": {
+            "not": "CANCELLED"
+          },
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z"
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z"
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2025-12-31T17:00:00.000Z",
+                "lte": "2026-12-31T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "todayMetricsMerchant": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "TODAY_METRICS_SUCCESS",
+        "message": "Lấy số liệu hôm nay thành công",
+        "data": {
+          "totalOrders": 1,
+          "activeRentals": 0,
+          "completedOrders": 0,
+          "totalRevenue": 100000,
+          "overdueItems": 2,
+          "totalStock": 0,
+          "availableStock": 0,
+          "rentingStock": 0
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.search",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": "PICKUPED",
+          "returnPlanAt": {
+            "not": null,
+            "lt": "2026-10-05T17:00:00.000Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "todayMetricsAdmin": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "TODAY_METRICS_SUCCESS",
+        "message": "Lấy số liệu hôm nay thành công",
+        "data": {
+          "totalOrders": 1,
+          "activeRentals": 0,
+          "completedOrders": 0,
+          "totalRevenue": 100000,
+          "overdueItems": 2,
+          "totalStock": 0,
+          "availableStock": 0,
+          "rentingStock": 0
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.search",
+        "where": {
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": "PICKUPED",
+          "returnPlanAt": {
+            "not": null,
+            "lt": "2026-10-05T17:00:00.000Z"
+          }
+        }
+      }
+    ]
+  },
+  "dashboardToday": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "DASHBOARD_DATA_SUCCESS",
+        "message": "Lấy dữ liệu bảng điều khiển nâng cao thành công",
+        "data": {
+          "overview": {
+            "totalOrders": 1,
+            "totalRevenue": 100000,
+            "activeOrders": 0,
+            "completionRate": "100.0"
+          },
+          "orderStatusCounts": {
+            "reserved": 1,
+            "pickup": 0,
+            "completed": 0,
+            "cancelled": 0,
+            "returned": 0
+          },
+          "todayOrders": [
+            {
+              "id": 8,
+              "orderNumber": "ORD-1-0008",
+              "status": "RESERVED",
+              "orderType": "RENT",
+              "totalAmount": 300000,
+              "customerName": "Khách 8",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-05T17:00:00.000Z",
+              "pickupPlanAt": "2026-10-08T02:00:00.000Z",
+              "returnPlanAt": "2026-10-10T02:00:00.000Z",
+              "productNames": "N/A"
+            }
+          ]
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "RETURNED",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": {
+            "not": "CANCELLED"
+          },
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "PICKUPED",
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "RETURNED",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "RESERVED",
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "COMPLETED",
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "CANCELLED",
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "RETURNED",
+          "createdAt": {
+            "gte": "2026-10-05T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          },
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "dashboardAll": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "DASHBOARD_DATA_SUCCESS",
+        "message": "Lấy dữ liệu bảng điều khiển nâng cao thành công",
+        "data": {
+          "overview": {
+            "totalOrders": 17,
+            "totalRevenue": 16429000,
+            "activeOrders": 5,
+            "completionRate": "70.6"
+          },
+          "orderStatusCounts": {
+            "reserved": 5,
+            "pickup": 5,
+            "completed": 2,
+            "cancelled": 2,
+            "returned": 3
+          },
+          "todayOrders": [
+            {
+              "id": 1,
+              "orderNumber": "ORD-1-0001",
+              "status": "RETURNED",
+              "orderType": "RENT",
+              "totalAmount": 300000,
+              "customerName": "Khách 1",
+              "outletName": "Unknown",
+              "createdAt": "2026-09-30T17:00:00.000Z",
+              "pickupPlanAt": "2026-10-02T03:00:00.000Z",
+              "returnPlanAt": "2026-10-03T03:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 2,
+              "orderNumber": "ORD-1-0002",
+              "status": "RETURNED",
+              "orderType": "RENT",
+              "totalAmount": 200000,
+              "customerName": "Khách 2",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-01T04:00:00.000Z",
+              "pickupPlanAt": "2026-10-03T02:00:00.000Z",
+              "returnPlanAt": "2026-10-03T10:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 3,
+              "orderNumber": "ORD-1-0003",
+              "status": "PICKUPED",
+              "orderType": "RENT",
+              "totalAmount": 400000,
+              "customerName": "Khách 3",
+              "outletName": "Unknown",
+              "createdAt": "2026-09-28T03:00:00.000Z",
+              "pickupPlanAt": "2026-10-01T01:00:00.000Z",
+              "returnPlanAt": "2026-10-04T03:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 4,
+              "orderNumber": "ORD-1-0004",
+              "status": "PICKUPED",
+              "orderType": "RENT",
+              "totalAmount": 150000,
+              "customerName": "Khách 4",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-04T05:00:00.000Z",
+              "pickupPlanAt": "2026-10-05T10:00:00.000Z",
+              "returnPlanAt": "2026-10-06T08:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 5,
+              "orderNumber": "ORD-1-0005",
+              "status": "PICKUPED",
+              "orderType": "RENT",
+              "totalAmount": 180000,
+              "customerName": "Khách 5",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-05T02:00:00.000Z",
+              "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+              "returnPlanAt": "2026-10-09T02:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 6,
+              "orderNumber": "ORD-1-0006",
+              "status": "RESERVED",
+              "orderType": "RENT",
+              "totalAmount": 250000,
+              "customerName": "Khách 6",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-02T06:00:00.000Z",
+              "pickupPlanAt": "2026-10-06T09:00:00.000Z",
+              "returnPlanAt": "2026-10-08T09:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 7,
+              "orderNumber": "ORD-1-0007",
+              "status": "RESERVED",
+              "orderType": "RENT",
+              "totalAmount": 150000,
+              "customerName": "Khách 7",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-03T07:00:00.000Z",
+              "pickupPlanAt": "2026-10-04T03:00:00.000Z",
+              "returnPlanAt": "2026-10-05T03:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 8,
+              "orderNumber": "ORD-1-0008",
+              "status": "RESERVED",
+              "orderType": "RENT",
+              "totalAmount": 300000,
+              "customerName": "Khách 8",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-05T17:00:00.000Z",
+              "pickupPlanAt": "2026-10-08T02:00:00.000Z",
+              "returnPlanAt": "2026-10-10T02:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 9,
+              "orderNumber": "ORD-1-0009",
+              "status": "RESERVED",
+              "orderType": "RENT",
+              "totalAmount": 220000,
+              "customerName": "Khách 9",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-04T09:00:00.000Z",
+              "pickupPlanAt": "2026-10-07T02:00:00.000Z",
+              "returnPlanAt": "2026-10-08T02:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 10,
+              "orderNumber": "ORD-1-0010",
+              "status": "COMPLETED",
+              "orderType": "SALE",
+              "totalAmount": 120000,
+              "customerName": "Khách 10",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-02T05:00:00.000Z",
+              "pickupPlanAt": null,
+              "returnPlanAt": null,
+              "productNames": "N/A"
+            },
+            {
+              "id": 11,
+              "orderNumber": "ORD-1-0011",
+              "status": "COMPLETED",
+              "orderType": "SALE",
+              "totalAmount": 80000,
+              "customerName": "Khách 11",
+              "outletName": "Unknown",
+              "createdAt": "2026-09-25T05:00:00.000Z",
+              "pickupPlanAt": null,
+              "returnPlanAt": null,
+              "productNames": "N/A"
+            },
+            {
+              "id": 12,
+              "orderNumber": "ORD-1-0012",
+              "status": "CANCELLED",
+              "orderType": "RENT",
+              "totalAmount": 300000,
+              "customerName": "Khách 12",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-01T08:00:00.000Z",
+              "pickupPlanAt": "2026-10-05T03:00:00.000Z",
+              "returnPlanAt": "2026-10-06T03:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 13,
+              "orderNumber": "ORD-1-0013",
+              "status": "CANCELLED",
+              "orderType": "RENT",
+              "totalAmount": 260000,
+              "customerName": "Khách 13",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-01T09:00:00.000Z",
+              "pickupPlanAt": "2026-10-02T09:00:00.000Z",
+              "returnPlanAt": "2026-10-04T09:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 14,
+              "orderNumber": "ORD-1-0014",
+              "status": "RETURNED",
+              "orderType": "RENT",
+              "totalAmount": 350000,
+              "customerName": "Khách 14",
+              "outletName": "Unknown",
+              "createdAt": "2026-09-24T03:00:00.000Z",
+              "pickupPlanAt": "2026-09-25T03:00:00.000Z",
+              "returnPlanAt": "2026-09-27T03:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 15,
+              "orderNumber": "ORD-1-0015",
+              "status": "PICKUPED",
+              "orderType": "RENT",
+              "totalAmount": 999000,
+              "customerName": "Khách 15",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-02T03:00:00.000Z",
+              "pickupPlanAt": "2026-10-02T03:00:00.000Z",
+              "returnPlanAt": "2026-10-04T03:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 16,
+              "orderNumber": "ORD-1-0016",
+              "status": "PICKUPED",
+              "orderType": "RENT",
+              "totalAmount": 500000,
+              "customerName": "Khách 16",
+              "outletName": "Unknown",
+              "createdAt": "2026-10-02T03:00:00.000Z",
+              "pickupPlanAt": "2026-10-03T03:00:00.000Z",
+              "returnPlanAt": "2026-10-06T03:00:00.000Z",
+              "productNames": "N/A"
+            },
+            {
+              "id": 17,
+              "orderNumber": "ORD-1-0017",
+              "status": "RESERVED",
+              "orderType": "RENT",
+              "totalAmount": 400000,
+              "customerName": "Khách 17",
+              "outletName": "Unknown",
+              "createdAt": "2026-09-29T03:00:00.000Z",
+              "pickupPlanAt": "2026-10-07T16:59:59.000Z",
+              "returnPlanAt": "2026-10-09T03:00:00.000Z",
+              "productNames": "N/A"
+            }
+          ]
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "RETURNED",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": {
+            "not": "CANCELLED"
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "PICKUPED"
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": {
+            "in": [
+              "RESERVED",
+              "PICKUPED",
+              "RETURNED",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          }
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "RESERVED"
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "COMPLETED"
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "CANCELLED"
+        }
+      },
+      {
+        "call": "db.orders.getStats",
+        "where": {
+          "status": "RETURNED"
+        }
+      }
+    ]
+  },
+  "growthDefault": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "GROWTH_METRICS_SUCCESS",
+        "message": "Lấy số liệu tăng trưởng thành công",
+        "data": {
+          "orders": {
+            "current": 13,
+            "previous": 4,
+            "growth": 225
+          },
+          "revenue": {
+            "current": 4990000,
+            "previous": 780000,
+            "growth": 539.74
+          }
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-06T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-08-31T17:00:00.000Z",
+            "lte": "2026-09-30T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-06T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "growthRange": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "GROWTH_METRICS_SUCCESS",
+        "message": "Lấy số liệu tăng trưởng thành công",
+        "data": {
+          "orders": {
+            "current": 13,
+            "previous": 4,
+            "growth": 225
+          },
+          "revenue": {
+            "current": 4990000,
+            "previous": 780000,
+            "growth": 539.74
+          }
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-08-31T17:00:00.000Z",
+            "lte": "2026-09-30T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "growthAdmin": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "GROWTH_METRICS_SUCCESS",
+        "message": "Lấy số liệu tăng trưởng thành công",
+        "data": {
+          "orders": {
+            "current": 13,
+            "previous": 4,
+            "growth": 225
+          },
+          "revenue": {
+            "current": 4990000,
+            "previous": 780000,
+            "growth": 539.74
+          }
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.search",
+        "where": {
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "createdAt": {
+            "gte": "2026-08-31T17:00:00.000Z",
+            "lte": "2026-09-30T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-09-29T17:00:00.000Z",
+                "lte": "2026-10-08T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-09-30T17:00:00.000Z",
+                "lte": "2026-10-07T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "call": "prisma.order.findMany",
+        "where": {
+          "deletedAt": null,
+          "OR": [
+            {
+              "createdAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              }
+            },
+            {
+              "pickedUpAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnedAt": {
+                "gte": "2026-08-30T17:00:00.000Z",
+                "lte": "2026-10-01T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "updatedAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z"
+              },
+              "status": "CANCELLED"
+            },
+            {
+              "pickupPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            },
+            {
+              "returnPlanAt": {
+                "gte": "2026-08-31T17:00:00.000Z",
+                "lte": "2026-09-30T16:59:59.999Z",
+                "not": null
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "enhancedWeek": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "DASHBOARD_DATA_SUCCESS",
+        "message": "Lấy dữ liệu bảng điều khiển nâng cao thành công",
+        "data": {
+          "today": {
+            "orders": 13,
+            "revenue": 13779000
+          },
+          "thisMonth": {
+            "orders": 13,
+            "revenue": 13779000
+          },
+          "activeRentals": 5,
+          "todayPickups": 5,
+          "stock": {
+            "total": 0,
+            "available": 0,
+            "renting": 0
+          },
+          "growth": {
+            "revenue": 1666.54,
+            "orders": 225
+          }
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "createdAt": {
+            "gte": "2026-08-31T17:00:00.000Z",
+            "lte": "2026-09-30T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "status": "PICKUPED"
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "outletId": {
+            "in": [
+              1,
+              2
+            ]
+          },
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-07T16:59:59.999Z"
+          }
+        }
+      }
+    ]
+  },
+  "enhancedAdmin": {
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "code": "DASHBOARD_DATA_SUCCESS",
+        "message": "Lấy dữ liệu bảng điều khiển nâng cao thành công",
+        "data": {
+          "today": {
+            "orders": 13,
+            "revenue": 13779000
+          },
+          "thisMonth": {
+            "orders": 13,
+            "revenue": 13779000
+          },
+          "activeRentals": 5,
+          "todayPickups": 5,
+          "stock": {
+            "total": 0,
+            "available": 0,
+            "renting": 0
+          },
+          "growth": {
+            "revenue": 1666.54,
+            "orders": 225
+          }
+        }
+      }
+    },
+    "queries": [
+      {
+        "call": "db.orders.search",
+        "where": {
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-31T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "createdAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-31T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "createdAt": {
+            "gte": "2026-08-31T17:00:00.000Z",
+            "lte": "2026-09-30T16:59:59.999Z"
+          }
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": "PICKUPED"
+        }
+      },
+      {
+        "call": "db.orders.search",
+        "where": {
+          "status": "PICKUPED",
+          "pickedUpAt": {
+            "gte": "2026-09-30T17:00:00.000Z",
+            "lte": "2026-10-31T16:59:59.999Z"
+          }
+        }
+      }
+    ]
+  }
+}
