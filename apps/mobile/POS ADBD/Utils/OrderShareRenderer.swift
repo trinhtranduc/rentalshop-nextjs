@@ -235,6 +235,11 @@ enum OrderShareRenderer {
             y += p.text(line.name, font: font(16, .semibold), color: C.ink, x: innerX, y: y,
                         width: innerW - amountW - 16, lines: 2) + 2
             y += p.text(line.detail, font: font(14), color: C.muted, x: innerX, y: y, width: innerW, lines: 1)
+            if let formula = line.formula {
+                // #1189: the sum of a day-block line
+                y += 2
+                y += p.text(formula, font: font(14), color: C.muted, x: innerX, y: y, width: innerW, lines: 2)
+            }
             if let note = line.note {
                 // #930: the item's own note, italic brown, under its price line
                 y += 3
