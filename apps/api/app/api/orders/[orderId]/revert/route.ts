@@ -5,6 +5,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../../lib/schedule-conflict';
+import { shapeOrderPayments } from '../../../../../lib/order-payments';
 import {
   findEditScheduleConflicts,
   scheduleConflictBody,
@@ -121,7 +122,7 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        data: reverted,
+        data: shapeOrderPayments(reverted as any, request), // #1200
         code: 'ORDER_REVERTED_SUCCESS',
         message: 'Order reverted successfully'
       });

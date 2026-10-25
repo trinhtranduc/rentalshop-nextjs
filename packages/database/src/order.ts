@@ -1018,6 +1018,15 @@ const ORDER_CREATE_INCLUDE = {
 
 type CreatedOrder = Prisma.OrderGetPayload<{ include: typeof ORDER_CREATE_INCLUDE }>;
 
+/**
+ * #1200: a Payment with notes 'INSTALLMENT' is a deposit stage. Only clients that declare the `installments`
+ * capability get it counted; old clients would show it twice. `notes: { not: ... }` alone drops NULL notes in SQL,
+ * so NULL is listed explicitly.
+ */
+export function paymentCountFilter(includeInstallments?: boolean): Record<string, unknown> {
+  return includeInstallments ? {} : { OR: [{ notes: null }, { notes: { not: 'INSTALLMENT' } }] };
+}
+
 export const simplifiedOrders = {
   /**
    * Find order by ID (simplified API) - OPTIMIZED for performance
@@ -1559,8 +1568,11 @@ export const simplifiedOrders = {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    /** client declared the `installments` capability (#1200) */
+    includeInstallments?: boolean;
   } = {}) => {
     const {
+      includeInstallments,
       merchantId,
       outletId,
       status,
@@ -1662,7 +1674,7 @@ export const simplifiedOrders = {
     // Get payment counts and totals
     const paymentCounts = await prisma.payment.groupBy({
       by: ['orderId'],
-      where: { orderId: { in: orderIds } },
+      where: { orderId: { in: orderIds }, ...paymentCountFilter(includeInstallments) },
       _count: { id: true },
       _sum: { amount: true }
     });
@@ -1739,8 +1751,11 @@ export const simplifiedOrders = {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    /** client declared the `installments` capability (#1200) */
+    includeInstallments?: boolean;
   }) => {
     const {
+      includeInstallments,
       merchantId,
       outletId,
       customerId,
@@ -1959,7 +1974,8 @@ export const simplifiedOrders = {
         by: ['orderId'],
         where: { 
           orderId: { in: orderIds },
-          status: 'COMPLETED'
+          status: 'COMPLETED',
+          ...paymentCountFilter(includeInstallments)
         },
         _sum: { amount: true },
         _count: { id: true }

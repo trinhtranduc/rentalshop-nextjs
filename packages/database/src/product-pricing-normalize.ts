@@ -6,6 +6,20 @@
  * - a BLOCK option stores its table; its `price` is forced to the day-1 price (old apps read it as FIXED);
  * - exactly one isDefault (the first one when none or several are marked).
  */
+/**
+ * #1200: which existing options a "replace the option set" save deletes. A client that does not send
+ * `pricingSchemaVersion` (installed apps) only knows FIXED / DAILY, so it must not wipe a BLOCK option it
+ * cannot see: BLOCK rows survive unless the payload itself carries BLOCK rows.
+ */
+export function pricingOptionsDeleteWhere(
+  productId: number,
+  opts: { keepBlockOptions?: boolean; payloadHasBlock?: boolean } = {}
+): { productId: number; type?: { not: 'BLOCK' } } {
+  return opts.keepBlockOptions && !opts.payloadHasBlock
+    ? { productId, type: { not: 'BLOCK' } }
+    : { productId };
+}
+
 export interface NormalizePricingOptions {
   /** Accept a BLOCK option (the caller sent `pricingSchemaVersion: 2`) */
   allowBlock?: boolean;

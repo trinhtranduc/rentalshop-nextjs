@@ -58,6 +58,8 @@ import { BookingRequestClosedError, effectiveBookingStatus } from '../../../lib/
 import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
+import { hasCapability } from '../../../lib/client-capabilities';
+import { isInstallmentPayment } from '../../../lib/order-payments';
 import {
   findEditScheduleConflicts,
   loadScheduleConflicts,
@@ -258,7 +260,7 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     // For large datasets, use lightweight method for better performance
     const result = await PerformanceMonitor.measureQuery(
       'orders.search',
-      () => db.orders.findManyLightweight(searchFilters)
+      () => db.orders.findManyLightweight({ ...searchFilters, includeInstallments: hasCapability(request, 'installments') })
     );
     
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
@@ -1205,6 +1207,11 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     }
 
+    // #1200: a deposit stage (notes INSTALLMENT) is not counted for clients without the `installments` capability
+    const countedPayments = (loyaltyOrder.payments || []).filter(
+      (payment) => hasCapability(request, 'installments') || !isInstallmentPayment(payment)
+    );
+
     // Flatten order response (consistent with order list response)
     const flattenedOrder = {
       id: loyaltyOrder.id,
@@ -1281,8 +1288,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }) || [],
       // Calculated fields
       itemCount: loyaltyOrder.orderItems?.length || 0,
-      paymentCount: loyaltyOrder.payments?.length || 0,
-      totalPaid: loyaltyOrder.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
+      paymentCount: countedPayments.length,
+      totalPaid: countedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
     };
 
     // Normalize date fields to UTC ISO strings using toISOString()

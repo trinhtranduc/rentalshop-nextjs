@@ -7,7 +7,7 @@
 // - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
-import { normalizePricingOptions } from './product-pricing-normalize';
+import { normalizePricingOptions, pricingOptionsDeleteWhere } from './product-pricing-normalize';
 import { Prisma } from '@prisma/client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
@@ -686,7 +686,9 @@ export async function updateProduct(
     if (hasOptions) {
       // Deleting an option sets OrderItem.pricingOptionId to NULL (FK onDelete: SetNull);
       // OrderItem keeps its pricingType snapshot so historical orders stay correct.
-      await tx.productPricingOption.deleteMany({ where: { productId: id } });
+      await tx.productPricingOption.deleteMany({
+        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: input.keepBlockOptions }),
+      });
       if (normalizedOptions.length > 0) {
         await tx.productPricingOption.createMany({
           data: normalizedOptions.map((o) => ({ ...o, productId: id })),
@@ -1385,17 +1387,29 @@ export const simplifiedProducts = {
   /**
    * Update product (simplified API)
    */
-  update: async (id: number, data: any) => {
+  update: async (id: number, data: any, options: { keepBlockOptions?: boolean } = {}) => {
     if ('barcode' in data) data.barcode = normalizeBarcode(data.barcode);
     // #1189: only a client that sent `pricingSchemaVersion: 2` may save a BLOCK option; never a Product column
     const allowBlock = data.pricingSchemaVersion === 2;
     delete data.pricingSchemaVersion;
     // Extract pricing options (replace-set) so they aren't passed to product.update directly
-    const hasOptions = Array.isArray(data.pricingOptions);
+    let hasOptions = Array.isArray(data.pricingOptions);
     let normalized: any[] = [];
     if (hasOptions) {
       normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
       delete data.pricingOptions;
+      // #1200: an installed app cannot see BLOCK options. Saving a product that has one, it sends
+      // pricingOptions [] and rentPrice / salePrice 0 (e2e on main-real). That must change nothing it did not mean:
+      // leave the option rows alone and do not overwrite the prices with 0 / null.
+      if (options.keepBlockOptions && normalized.length === 0) {
+        const blockCount = await prisma.productPricingOption.count({ where: { productId: id, type: 'BLOCK' } });
+        if (blockCount > 0) {
+          hasOptions = false;
+          for (const field of ['rentPrice', 'salePrice']) {
+            if (data[field] === 0 || data[field] === null) delete data[field];
+          }
+        }
+      }
       if (normalized.length > 0) {
         const def = normalized.find((o) => o.isDefault) || normalized[0];
         data.rentPrice = def.price;
@@ -1420,7 +1434,8 @@ export const simplifiedProducts = {
       if (data.rentPrice !== undefined) {
         data.pricingOptions = {
           updateMany: {
-            where: { isDefault: true },
+            // #1200: the legacy price sync never rewrites a BLOCK option for an old client
+            where: options.keepBlockOptions ? { isDefault: true, type: { not: 'BLOCK' } } : { isDefault: true },
             data: { price: data.rentPrice }
           }
         };
@@ -1430,7 +1445,10 @@ export const simplifiedProducts = {
 
     // Replace option set atomically (FK onDelete: SetNull keeps OrderItem snapshots intact)
     return await prisma.$transaction(async (tx) => {
-      await tx.productPricingOption.deleteMany({ where: { productId: id } });
+      // #1200: an old client (no pricingSchemaVersion) keeps the BLOCK options it cannot see
+      await tx.productPricingOption.deleteMany({
+        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: options.keepBlockOptions }),
+      });
       if (normalized.length > 0) {
         await tx.productPricingOption.createMany({
           data: normalized.map((o) => ({ ...o, productId: id }))

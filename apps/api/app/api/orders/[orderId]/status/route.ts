@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../../lib/change-timeline';
+import { shapeOrderPayments } from '../../../../../lib/order-payments';
 import { API } from '@rentalshop/constants';
 import {
   handleLoyaltyOnCancel,
@@ -317,7 +318,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      data: finalOrder,
+      data: shapeOrderPayments(finalOrder as any, request), // #1200: payments[] aliases + INSTALLMENT by capability
       code: 'ORDER_STATUS_UPDATED_SUCCESS',
       message: responseMessage
     });
