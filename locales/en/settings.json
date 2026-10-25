@@ -769,7 +769,15 @@
       "account": "Account",
       "me": "Me"
     },
-    "back": "Back"
+    "back": "Back",
+    "blockPricing": {
+      "title": "Day-block pricing with old apps",
+      "hint": "Some customers still use an older app that does not know day-block pricing. Choose what the server does when an old app orders a block-priced product.",
+      "recompute": "Server prices it (recommended)",
+      "recomputeHint": "Old apps can still rent it; the price follows the list and the number of days.",
+      "block": "Require an app update",
+      "blockHint": "Old apps cannot order block-priced products; staff must update the app."
+    }
   },
   "embeddingBackfill": {
     "title": "Image search",

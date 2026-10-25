@@ -372,7 +372,9 @@
       "otherOutlets": "Chi nhánh khác còn {count}"
     },
     "price": {
-      "perHour": "{price}/giờ"
+      "perHour": "{price}/giờ",
+      "blockFrom": "từ {price}/ngày · theo khối",
+      "blockTag": "theo khối"
     },
     "row": {
       "edit": "Sửa",
@@ -582,7 +584,14 @@
       "needOutlet": "Cần ít nhất một chi nhánh trước khi thêm sản phẩm.",
       "goOutlets": "Mở Chi nhánh",
       "defaultForOrders": "Mặc định khi tạo đơn",
-      "defaultHint": "Dùng được cả hai giá. Đơn mới chọn sẵn giá mặc định, vẫn đổi được trong giỏ."
+      "defaultHint": "Dùng được cả hai giá. Đơn mới chọn sẵn giá mặc định, vẫn đổi được trong giỏ.",
+      "priceRow": {
+        "title": "Giá thuê",
+        "hint": "Thuê theo lần, theo ngày hoặc theo khối ngày. Mở trang chi tiết để đổi.",
+        "open": "Cấu hình giá theo ngày/khối",
+        "summaryExtra": "Đang dùng giá theo khối ngày: {count} mốc, +{extra} mỗi ngày",
+        "summaryHold": "Đang dùng giá theo khối ngày: {count} mốc, giữ giá khối cuối"
+      }
     },
     "detail": {
       "back": "Sản phẩm",
@@ -622,7 +631,39 @@
       "loadFailed": "Không tải được sản phẩm.",
       "retry": "Thử lại",
       "otherOutletsTitle": "Tồn chi nhánh khác",
-      "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê."
+      "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê.",
+      "block": {
+        "title": "Bảng giá theo ngày",
+        "hint": "Chọn kiểu giá mặc định khi tạo đơn. Nhân viên vẫn đổi được kiểu giá trong giỏ.",
+        "active": "Đang dùng giá theo khối",
+        "modeOnce": "Thuê theo lần",
+        "modeDay": "Thuê theo ngày",
+        "modeBlock": "Giá theo khối ngày",
+        "modeBlockHint": "Mỗi số ngày thuê một giá riêng",
+        "tiersTitle": "Giá theo số ngày",
+        "dayRow": "{n} ngày",
+        "addDay": "+ Thêm ngày {n}",
+        "removeDay": "Xoá ngày {n}",
+        "beyond": "Thuê quá {n} ngày",
+        "extraPerDay": "Cộng thêm mỗi ngày",
+        "holdLast": "Giữ nguyên giá khối cuối",
+        "holdLastHint": "Thuê {days} ngày vẫn tính {price}",
+        "preview": "Xem thử",
+        "previewDays": "{n} ngày",
+        "lessDays": "Bớt một ngày",
+        "moreDays": "Thêm một ngày",
+        "save": "Lưu bảng giá",
+        "saving": "Đang lưu…",
+        "cancel": "Huỷ",
+        "turnOff": "Tắt giá theo khối ngày",
+        "saved": "Đã lưu bảng giá",
+        "saveFailed": "Không lưu được bảng giá",
+        "problem": {
+          "tierEmpty": "Nhập giá cho mọi ngày trong bảng.",
+          "extraEmpty": "Nhập số tiền cộng thêm mỗi ngày, hoặc chọn giữ nguyên giá khối cuối.",
+          "priceEmpty": "Nhập giá cho kiểu giá đang chọn."
+        }
+      }
     },
     "orders": {
       "back": "Quay lại sản phẩm",

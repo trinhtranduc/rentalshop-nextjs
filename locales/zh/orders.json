@@ -51,6 +51,40 @@
         "CANNOT_CONTACT": "联系不上顾客",
         "OTHER": "其他"
       }
+    },
+    "editor": {
+      "option": {
+        "BLOCK": "按天数档位 · {price}"
+      },
+      "pricing": {
+        "mode": {
+          "BLOCK": "按天数档位"
+        },
+        "unit": {
+          "BLOCK": "整个租期"
+        }
+      },
+      "block": {
+        "label": "{n} 天档",
+        "labelExtra": "{n} 天档 + 额外 {m} 天",
+        "days": "{n} 天"
+      },
+      "per": {
+        "BLOCK": "每天 {price} 起 · 按档计价"
+      }
+    },
+    "receipt": {
+      "units": {
+        "block": "{n} 天档",
+        "blockExtra": "{n} 天档 + 额外 {m} 天"
+      }
+    },
+    "detail": {
+      "items": {
+        "block": "{n} 天档",
+        "blockExtra": "{n} 天档 + 额外 {m} 天",
+        "blockDays": "{n} 天"
+      }
     }
   }
 }

@@ -58,8 +58,8 @@ const AO_DAI: ProductLike = {
 
 describe('list rows', () => {
   it('splits rent prices by option type and drops empty sale prices', () => {
-    expect(productPrices(AO_DAI)).toEqual({ once: 250000, day: 150000, hour: null, sale: null });
-    expect(productPrices({ id: 1, rentPrice: 300000, salePrice: 1800000, pricingType: 'FIXED', pricingOptions: [] })).toEqual({ once: 300000, day: null, hour: null, sale: 1800000 });
+    expect(productPrices(AO_DAI)).toEqual({ once: 250000, day: 150000, hour: null, block: null, sale: null });
+    expect(productPrices({ id: 1, rentPrice: 300000, salePrice: 1800000, pricingType: 'FIXED', pricingOptions: [] })).toEqual({ once: 300000, day: null, hour: null, block: null, sale: 1800000 });
     expect(productPrices({ id: 2, rentPrice: 200000, pricingType: 'DAILY' })).toMatchObject({ once: null, day: 200000 });
     expect(productPrices({ id: 3, rentPrice: 50000, pricingType: 'HOURLY' })).toMatchObject({ once: null, hour: 50000 });
     // inactive options are ignored; hourly as DAILY + unit HOUR

@@ -10,10 +10,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { BUSINESS } from '@rentalshop/constants';
-import { useFormatCurrency, useToast } from '@rentalshop/ui';
+import { useCurrency, useFormatCurrency, useToast } from '@rentalshop/ui';
 import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { useAuth, useOrderTranslations } from '@rentalshop/hooks';
-import { bookingRequestsApi, compressImage, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { bookingRequestsApi, compressImage, currencyMinorUnit, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { draftFromBooking } from '../online/online-model';
 import { useShopToday } from '../../hooks/useShopToday';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
@@ -49,6 +49,8 @@ import {
   type OrderType,
   type ProductLike,
   setLineNote,
+  syncBlockPrices,
+  refreshBlockOptions,
 } from './create-model';
 import { allowsOverlap, conflictFromResult, ctaState, dayRangeText, orderListText, type BatchResultLike, type LineConflict } from './schedule-model';
 import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard, fieldClass, type LineStatus, type StockView } from './parts';
@@ -235,7 +237,12 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const [pickup, setPickup] = useState(draft?.pickup ?? '');
   const [ret, setRet] = useState(draft?.ret ?? '');
   const [customer, setCustomer] = useState<CustomerPick | null>(draft?.customer ?? null);
-  const [lines, setLines] = useState<CartLine[]>(draft?.lines ?? []);
+  const [rawLines, setLines] = useState<CartLine[]>(draft?.lines ?? []);
+  // #1189: a day-block line costs what its table says for the order's days; synced here so every use below agrees
+  const { currency: shopCurrencyCode } = useCurrency();
+  const minorUnit = currencyMinorUnit(shopCurrencyCode);
+  const days = orderType === 'RENT' ? rentalDays(pickup, ret) : 0;
+  const lines = useMemo(() => syncBlockPrices(rawLines, orderType, days, minorUnit), [rawLines, orderType, days, minorUnit]);
   const [discountType, setDiscountType] = useState<DiscountType>(draft?.discountType ?? 'amount');
   const [discountValue, setDiscountValue] = useState(draft?.discountValue ?? 0);
   const [discountOpen, setDiscountOpen] = useState(!!draft?.discountValue);
@@ -418,7 +425,6 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   };
 
   // Money
-  const days = orderType === 'RENT' ? rentalDays(pickup, ret) : 0;
   const base = computeTotals({
     lines,
     orderType,
@@ -517,6 +523,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           notes,
           bookingRequestId,
           loyaltyPoints: loyalty.redeemPoints,
+          minorUnit,
           original: order ? { pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt } : null,
         })
       : null;
@@ -582,6 +589,17 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         setConfirmOpen(false);
         overlap.set(false);
         availability.refresh();
+      }
+      // #1189: the day-block price list changed: reload the products and price the lines again (the message is shown above)
+      if (e instanceof Error && e.message === 'BLOCK_PRICE_MISMATCH') {
+        setConfirmOpen(false);
+        const ids = Array.from(new Set(rawLines.map((l) => l.productId)));
+        Promise.all(ids.map((id) => productsApi.getProduct(id).catch(() => null)))
+          .then((res) => {
+            const products = res.flatMap((r) => (r && r.success && r.data ? [r.data as unknown as ProductLike] : []));
+            setLines((cur) => refreshBlockOptions(cur, products));
+          })
+          .catch(() => undefined);
       }
     } finally {
       setSubmitting(false);
@@ -811,6 +829,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
                   line={l}
                   orderType={orderType}
                   total={lineTotal(l, orderType, days)}
+                  minorUnit={minorUnit}
                   days={days}
                   status={statusOf(l)}
                   onQuantity={(n) => setLines((cur) => setQuantity(cur, l.key, n))}
@@ -1090,6 +1109,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
 
 /** The create / update call failed: carry the API code so the screen can react to a 409 "trùng lịch". */
 function scheduleError(res: { code?: string; error?: unknown }): Error {
+  if (res.code === 'BLOCK_PRICE_MISMATCH') return new Error('BLOCK_PRICE_MISMATCH');
   return new Error(res.code === 'ORDER_SCHEDULE_CONFLICT' ? 'ORDER_SCHEDULE_CONFLICT' : String(res.error || 'SAVE_FAILED'));
 }
 

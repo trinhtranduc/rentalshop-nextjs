@@ -51,6 +51,40 @@
         "CANNOT_CONTACT": "고객과 연락이 안 됨",
         "OTHER": "기타"
       }
+    },
+    "editor": {
+      "option": {
+        "BLOCK": "일수 블록 · {price}"
+      },
+      "pricing": {
+        "mode": {
+          "BLOCK": "일수 블록"
+        },
+        "unit": {
+          "BLOCK": "대여 전체"
+        }
+      },
+      "block": {
+        "label": "{n}일 블록",
+        "labelExtra": "{n}일 블록 + 추가 {m}일",
+        "days": "{n}일"
+      },
+      "per": {
+        "BLOCK": "1일 {price}부터 · 블록 요금"
+      }
+    },
+    "receipt": {
+      "units": {
+        "block": "{n}일 블록",
+        "blockExtra": "{n}일 블록 + 추가 {m}일"
+      }
+    },
+    "detail": {
+      "items": {
+        "block": "{n}일 블록",
+        "blockExtra": "{n}일 블록 + 추가 {m}일",
+        "blockDays": "{n}일"
+      }
     }
   }
 }
