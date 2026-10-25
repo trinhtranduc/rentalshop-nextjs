@@ -829,8 +829,13 @@ private fun OrderRow(
     val tagText = stringResource(tagRes).let {
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
     }
+    // #1199: "Đã thu 30%" on an order that collects its deposit in stages
+    val collectedBadge = com.anyrent.pos.domain.deposit.DepositPlanLogic.badgePercent(order.installmentPercentCollected)
+        ?.takeIf { order.status.equals("RESERVED", true) && order.hasDepositPlan == true }
+        ?.let { stringResource(R.string.deposit_badge_collected, it) }
     BoardRow(
         tag = tagText to colors,
+        extraTag = collectedBadge?.let { it to DS.Status.Done },
         name = order.customerName,
         // #496: no product line; #891 (option C): a rent order shows the Lấy / Trả chips in place of the task line
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
@@ -864,6 +869,8 @@ private fun OrderRow(
 @Composable
 private fun BoardRow(
     tag: Pair<String, DS.Pill>,
+    /** #1199: a second pill next to the status ("Đã thu 30%") */
+    extraTag: Pair<String, DS.Pill>? = null,
     name: String?,
     lines: OrderRowDates.Lines,
     /** #891 (option C): the Lấy / Trả chips in place of the task line (rent orders) */
@@ -902,6 +909,7 @@ private fun BoardRow(
                         modifier = Modifier.weight(1f),
                     )
                     Tag(tag.first, tag.second, RowTagStyle.STATUS)
+                    extraTag?.let { Tag(it.first, it.second, RowTagStyle.STATUS) }
                 }
                 Text(
                     lines.meta, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,

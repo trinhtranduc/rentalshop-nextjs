@@ -72,7 +72,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.data.DepositModeStore
+import com.anyrent.pos.data.DepositPlanApi
 import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.deposit.DepositPlanLogic
+import com.anyrent.pos.domain.deposit.OrderInstallment
+import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.domain.ShopTime
@@ -145,6 +151,14 @@ fun OrderDetailV2Screen(
     // #519: "N lần thay đổi · gần nhất …" under "Lịch sử thay đổi", read when the sheet opens
     var historyPage by remember { mutableStateOf<ChangeHistory.Page?>(null) }
     var confirmCancel by remember { mutableStateOf(false) }
+    // #1199 "Thu cọc theo giai đoạn": the stage being collected / voided, the unpaid-stages sheet, the cancel sheet, the plan editor
+    var collecting by remember { mutableStateOf<OrderInstallment?>(null) }
+    var collectThenHandOver by remember { mutableStateOf(false) }
+    var showUnpaid by remember { mutableStateOf(false) }
+    var voiding by remember { mutableStateOf<OrderInstallment?>(null) }
+    var voidError by remember { mutableStateOf<String?>(null) }
+    var cancelSheet by remember { mutableStateOf(false) }
+    var editingPlan by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var extending by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf(false) }
@@ -198,6 +212,21 @@ fun OrderDetailV2Screen(
     }
 
     val detail = state.detail
+    val role = SessionStore.role
+    val hasPlan = DepositPlanLogic.hasPlan(detail?.deposit)
+    // Stages nobody collected block the hand-over: collect them first, then hand over (#1199)
+    val unpaidStages = if (hasPlan && detail?.summary?.status.equals("RESERVED", true)) {
+        DepositPlanLogic.unpaidBeforePickup(detail?.deposit?.installments.orEmpty())
+    } else {
+        emptyList()
+    }
+    fun requestHandOver() {
+        if (unpaidStages.isNotEmpty()) showUnpaid = true else sheet = DetailSheet.HAND_OVER
+    }
+    // An order with collected stages is cancelled in the sheet "Khách đã trả / Tiệm giữ lại / Hoàn cho khách"
+    fun requestCancel() {
+        if (hasPlan && (detail?.deposit?.summary?.collected ?: 0.0) > 0) cancelSheet = true else confirmCancel = true
+    }
     val actions = detail?.let {
         OrderDetailLogic.actions(
             it.summary.orderType,
@@ -266,6 +295,18 @@ fun OrderDetailV2Screen(
                     DetailHeader(detail)
                     DetailBody(
                         detail,
+                        depositCard = if (hasPlan) {
+                            {
+                                InstallmentCard(
+                                    detail, role,
+                                    onEdit = { editingPlan = true },
+                                    onCollect = { collecting = it },
+                                    onStage = { voiding = it },
+                                )
+                            }
+                        } else {
+                            null
+                        },
                         onPreview = { previewImage = it },
                         onEditNotes = { openNotes(detail) },
                         readyRow = if (showReady) {
@@ -290,9 +331,9 @@ fun OrderDetailV2Screen(
                     primary = actions!!.primary,
                     canCancel = actions.canCancel,
                     busy = state.busy || editing,
-                    onHandOver = { sheet = DetailSheet.HAND_OVER },
+                    onHandOver = ::requestHandOver,
                     onReturn = { sheet = DetailSheet.RETURN },
-                    onCancel = { confirmCancel = true },
+                    onCancel = ::requestCancel,
                     onPrint = { print(detail) },
                 )
             }
@@ -347,7 +388,7 @@ fun OrderDetailV2Screen(
                     OrderActionSheet.Action.SHARE -> {
                         scope.launch { runCatching { shareOrderReceipt(context, detail) }.onFailure { toast(it.message) } }
                     }
-                    OrderActionSheet.Action.CANCEL -> { confirmCancel = true }
+                    OrderActionSheet.Action.CANCEL -> { requestCancel() }
                     OrderActionSheet.Action.DELETE -> { confirmDelete = true }
                 }
                 menuOpen = false
@@ -429,6 +470,70 @@ fun OrderDetailV2Screen(
         )
     }
 
+    // --- #1199 Thu cọc theo giai đoạn
+    if (detail != null) {
+        val stages = detail.deposit?.installments.orEmpty()
+        collecting?.let { stage ->
+            CollectInstallmentSheet(
+                detail = detail, stage = stage, number = DepositPlanLogic.stageNumber(stages, stage.key) ?: 1,
+                onDismiss = { collecting = null; collectThenHandOver = false },
+                onCollected = {
+                    collecting = null
+                    val handOverNext = collectThenHandOver
+                    collectThenHandOver = false
+                    vm.depositChanged { fresh ->
+                        // more stages left: ask again; none left: the hand-over goes on
+                        if (handOverNext && fresh != null) {
+                            val left = DepositPlanLogic.unpaidBeforePickup(fresh.deposit?.installments.orEmpty())
+                            if (left.isNotEmpty()) showUnpaid = true else sheet = DetailSheet.HAND_OVER
+                        }
+                    }
+                },
+            )
+        }
+        if (showUnpaid && unpaidStages.isNotEmpty()) {
+            UnpaidStagesSheet(
+                unpaid = unpaidStages, all = stages, onDismiss = { showUnpaid = false },
+                onCollect = { stage -> showUnpaid = false; collectThenHandOver = true; collecting = stage },
+            )
+        }
+        voiding?.let { stage ->
+            val number = DepositPlanLogic.stageNumber(stages, stage.key) ?: 1
+            AppAlertConfirm(
+                title = stringResource(R.string.deposit_void_title, number),
+                message = stringResource(R.string.deposit_void_message, formatMoneyVnd(stage.paidAmount)),
+                confirmLabel = stringResource(R.string.deposit_void_confirm),
+                destructive = true,
+                onConfirm = {
+                    voiding = null
+                    scope.launch {
+                        withContext(Dispatchers.IO) { DepositPlanApi.void(orderId, stage.key) }
+                            .onSuccess { vm.depositChanged() }
+                            .onFailure { voidError = ApiErrorMessages.resolve(context, AppError.from(it).code, it.message.orEmpty()) }
+                    }
+                },
+                onDismiss = { voiding = null },
+            )
+        }
+        if (cancelSheet) {
+            CancelDepositOrderSheet(
+                orderNumber = OrdersBoardLogic.shortNumber(detail.summary.orderNumber),
+                collected = detail.deposit?.summary?.collected ?: 0.0,
+                policy = detail.deposit?.policy ?: DepositModeStore.latest.value?.cancellationPolicy,
+                canKeep = DepositPlanLogic.canKeepOnCancel(role),
+                onDismiss = { cancelSheet = false },
+                onConfirm = { kept, note -> cancelSheet = false; vm.cancel(kept, note) },
+            )
+        }
+        if (editingPlan) {
+            EditDepositPlanScreen(
+                detail = detail, canEdit = DepositPlanLogic.canEditPlan(role),
+                onDismiss = { editingPlan = false },
+                onSaved = { editingPlan = false; vm.depositChanged() },
+            )
+        }
+    }
+    voidError?.let { AppAlertError(message = it, onDismiss = { voidError = null }) }
     if (confirmCancel) {
         AppAlertConfirm(
             title = stringResource(R.string.cancel_order),
@@ -465,7 +570,15 @@ fun OrderDetailV2Screen(
     state.statusError?.let { failure ->
         AppAlertError(
             message = ApiErrorMessages.resolve(context, failure.code, failure.message),
-            onDismiss = vm::dismissStatusError,
+            onDismiss = {
+                vm.dismissStatusError()
+                // #1199: the hand-over was refused (INSTALLMENT_UNPAID_AT_PICKUP): after the reload, show the stages to collect
+                if (failure.code == "INSTALLMENT_UNPAID_AT_PICKUP" && hasPlan) {
+                    vm.reloadThen { fresh ->
+                        if (fresh != null && DepositPlanLogic.unpaidBeforePickup(fresh.deposit?.installments.orEmpty()).isNotEmpty()) showUnpaid = true
+                    }
+                }
+            },
         )
     }
     previewImage?.let { FullScreenImagePreview(model = it, onDismiss = { previewImage = null }) }
@@ -645,6 +758,7 @@ private fun headerNoteText(note: OrderDetailHeader.Note): String {
 @Composable
 private fun DetailBody(
     detail: OrderDetail,
+    depositCard: (@Composable () -> Unit)?,
     onPreview: (Any) -> Unit,
     onEditNotes: () -> Unit,
     readyRow: (@Composable () -> Unit)? = null,
@@ -672,7 +786,9 @@ private fun DetailBody(
             )
             val pickedUp = status == "PICKUPED" || status == "PICKED_UP"
             // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
-            if (!pickedUp && summary.depositAmount > 0) {
+            // #1199: the stages replace the single "Cọc" row
+            if (depositCard != null) depositCard()
+            if (!pickedUp && summary.depositAmount > 0 && depositCard == null) {
                 MoneyRow(stringResource(R.string.detail_deposit), formatMoneyVnd(summary.depositAmount))
             }
             if (!pickedUp && detail.securityDeposit > 0) {
@@ -691,6 +807,17 @@ private fun DetailBody(
                         MoneyRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-money.paidBefore))
                     }
                     MoneyRow(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(money.collectNow), total = true)
+                }
+                "CANCELLED" -> {
+                    // #1199: what the shop kept of the money collected, and what went back to the customer
+                    val kept = summary.cancelKeptAmount ?: 0.0
+                    if (kept > 0) {
+                        MoneyRow(stringResource(R.string.deposit_cancel_kept), formatMoneyVnd(kept))
+                        MoneyRow(
+                            stringResource(R.string.deposit_cancel_refund),
+                            formatMoneyVnd(maxOf(0.0, (detail.deposit?.summary?.collected ?: 0.0) - kept)),
+                        )
+                    }
                 }
                 "PICKUPED", "PICKED_UP" -> {
                     val money = OrderDetailLogic.returnMoney(
