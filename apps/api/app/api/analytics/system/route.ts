@@ -115,6 +115,7 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
           status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders
           ...buildEventWhere({ start: dateStart, end: dateEnd }, EVENT_WHERE_BASIC)
         },
+        includeRevenuePlan: true,
         limit: 10000
       })
     ]);

@@ -129,6 +129,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       // Total revenue based on order status and type
       // ✅ Exclude CANCELLED orders from revenue calculation
       db.orders.search({
+        includeRevenuePlan: true,
         where: {
           ...orderWhereClause,
           status: { not: ORDER_STATUS.CANCELLED } // Exclude cancelled orders

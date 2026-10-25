@@ -503,6 +503,19 @@ final class OrderDetailViewController: BaseViewControler {
             NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
         ]))
+        // #1189: a day-block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ", then its sum
+        let blockLines = orderType == .rent ? item.blockLines : nil
+        if let blockLines {
+            let text = NSMutableAttributedString(string: blockLines.summary, attributes: [
+                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body),
+                NSAttributedString.Key.foregroundColor: DS.Color.text,
+            ])
+            text.append(NSAttributedString(string: " · " + CartV2Logic.money(item.unitPrice), attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
+                NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
+            ]))
+            pricingText.setAttributedString(text)
+        }
         let calc = UILabel()
         calc.attributedText = pricingText
         calc.numberOfLines = 0
@@ -511,6 +524,11 @@ final class OrderDetailViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [name, calc])
         texts.axis = .vertical
         texts.spacing = 4
+        if let formula = blockLines?.formula {
+            let sum = V2.label(formula, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+            sum.accessibilityIdentifier = "orderDetail.item.blockFormula"
+            texts.addArrangedSubview(sum)
+        }
 
         let qty = UILabel()
         qty.font = Utils.regularFont(size: DS.TextSize.secondary)

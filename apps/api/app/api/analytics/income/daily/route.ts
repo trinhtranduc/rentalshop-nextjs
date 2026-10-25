@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getOrderRevenueEvents, civilDayBucket, toRevenueOrderData, buildEventWhere, EVENT_WHERE_CIVIL } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents, civilDayBucket, toRevenueOrderData, REVENUE_PLAN_SELECT, buildEventWhere, EVENT_WHERE_CIVIL } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange, widenCivilRange } from '../../../../../lib/analytics-days';
 
@@ -164,7 +164,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             phone: true
           }
         },
-        outlet: { select: { id: true, name: true } }
+        outlet: { select: { id: true, name: true } },
+        ...REVENUE_PLAN_SELECT
       },
       take: 10000 // Large limit to get all orders
     });
@@ -644,12 +645,24 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     }
     const revenuePlanOrders = await prisma.order.findMany({
       where: revenuePlanWhereClause,
-      select: { totalAmount: true, depositAmount: true }
+      select: {
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        pickupTotalAmount: true,
+        createdAt: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        ...REVENUE_PLAN_SELECT
+      }
     });
-    const revenuePlanFromReserved = revenuePlanOrders.reduce(
-      (sum, o) => sum + Math.max(0, (o.totalAmount || 0) - (o.depositAmount || 0)),
-      0
-    );
+    // #1199: a plan order collects only its automatic last stage at hand-over (its other stages are paid before)
+    const revenuePlanFromReserved = revenuePlanOrders.reduce((sum: number, o: any) => {
+      const plan = toRevenueOrderData(o).plan;
+      return sum + (plan ? plan.restAmount : Math.max(0, (o.totalAmount || 0) - (o.depositAmount || 0)));
+    }, 0);
 
     // Đơn PICKUPED sắp trả: trừ tiền thế chân sẽ hoàn lại khách
     const refundPlanWhereClause: any = {

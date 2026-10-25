@@ -10,7 +10,7 @@ import {
   type CollateralFlow,
   type CollectedBreakdown
 } from '../core/revenue-calculator';
-import { buildEventWhere, toRevenueOrderData, EVENT_WHERE_CIVIL } from '../core/revenue-mapping';
+import { buildEventWhere, toRevenueOrderData, REVENUE_PLAN_SELECT, EVENT_WHERE_CIVIL } from '../core/revenue-mapping';
 import { SHOP_TIMEZONE } from '../core/date';
 import { addDaysToDateKey, civilDayBucket, getUtcRangeForDateKeys, toDateKeyInTimeZone } from '../core/date-range';
 
@@ -132,7 +132,8 @@ export async function computeIncomePeriodSummary(
       pickedUpAt: true,
       returnedAt: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      ...REVENUE_PLAN_SELECT
     },
     take: 10000
   });

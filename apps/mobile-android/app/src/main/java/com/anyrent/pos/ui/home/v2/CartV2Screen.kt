@@ -51,6 +51,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -80,7 +83,10 @@ import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
 import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.customers.CustomerPickerEdit
+import com.anyrent.pos.domain.products.BlockPricing
+import com.anyrent.pos.domain.products.BlockText
 import com.anyrent.pos.domain.products.CartDateRow
+import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.CartLineCalc
 import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartMoneyRow
@@ -330,6 +336,7 @@ fun CartV2Screen(
             }.onFailure {
                 // The cart and the sheet stay; the next confirm retries with the same key
                 submission.failed()
+                scope.launch(Dispatchers.IO) { CartOrderSubmit.reloadBlockTablesIfNeeded(it) } // #1189
                 error = it.message
                     ?.takeUnless { message -> message.isBlank() || message.equals("Validation error", ignoreCase = true) }
                     ?: validationFallbackMessage
@@ -369,6 +376,7 @@ fun CartV2Screen(
             }.onFailure {
                 // The cart and the sheet stay; the next tap retries
                 editSubmission.failed()
+                scope.launch(Dispatchers.IO) { CartOrderSubmit.reloadBlockTablesIfNeeded(it) } // #1189
                 error = CartOrderSubmit.errorMessage(it, validationFallbackMessage)
             }
         }
@@ -417,6 +425,7 @@ fun CartV2Screen(
                                 collateralDetails = CartStore.collateralDetails.value,
                                 shop = com.anyrent.pos.ui.orders.shareShop(),
                                 vi = shareContext.shareIsVietnamese(),
+                                blockFormula = { line -> line.blockDetail?.let { BlockText.formulaOrNull(shareContext.resources, it) } },
                             ),
                         )
                     }.onFailure { error = it.message }
@@ -982,6 +991,13 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
+                // #1189: past the table, the sum under the link: "120.000 (3 ngày) + 2 × 20.000 = 160.000"
+                if (!isSale) line.blockDetail?.takeIf { it.extraDays > 0 }?.let { detail ->
+                    Text(
+                        BlockText.formula(LocalContext.current.resources, detail), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                        modifier = Modifier.semantics { contentDescription = "cart.blockFormula" },
+                    )
+                }
                 // #1064: a sale line's "Còn N" is now the pill beside the name (one count per line)
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.weight(1f))
@@ -1022,6 +1038,28 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
     val days = (CartV2Logic.calc(line, isSale).kind as? CartLineCalc.Kind.PerDay)?.days?.takeIf { it > 1 }
     val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
     val changeLabel = stringResource(R.string.v2_pricing_change, line.product.name)
+    // #1189: a block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ ⌄"
+    val blockDetail = if (isSale) null else line.blockDetail
+    if (blockDetail != null) {
+        Row(
+            modifier.clip(RoundedCornerShape(8.dp)).clickable(onClickLabel = changeLabel, onClick = onClick)
+                .heightIn(min = 32.dp).padding(end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // One text, so a long summary wraps with its price instead of splitting into two columns
+            Text(
+                buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(BlockText.summary(LocalContext.current.resources, blockDetail)) }
+                    append(" · " + com.anyrent.pos.domain.money.ShopMoney.withUnit(line.unitPrice))
+                },
+                fontSize = DS.TextSize.Body, color = DS.Colors.Primary,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            Spacer(Modifier.size(4.dp))
+            Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
+        }
+        return
+    }
     // #684: a blue link "Theo ngày · 400.000đ/ngày × 2 ngày ⌄" (15sp, no border), iOS pricingChip
     Row(
         modifier
@@ -1112,6 +1150,11 @@ private fun CartPricingSheet(
     val price = typed ?: 0.0
     val daily = !isSale && type == "DAILY"
     val preview = CartV2Logic.pricePreview(type, price, days, line.quantity, isSale)
+    // #1189: a block line has no price box; its preview is the table's answer for the cart's days
+    val blockTable = ProductPricing.block(line.product) ?: line.savedBlockTable
+    val isBlock = !isSale && type == "BLOCK" && blockTable != null
+    val blockDetail = if (isBlock) BlockPricing.detail(blockTable!!, days, BlockPricing.minorUnit(com.anyrent.pos.domain.money.ShopMoney.current.code)) else null
+    val sheetRes = LocalContext.current.resources
     androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -1152,7 +1195,9 @@ private fun CartPricingSheet(
                             Text(pricingLabel(choice.type), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
                                 modifier = Modifier.weight(1f))
                             val catalog = choice.catalogPrice
-                            if (catalog != null) {
+                            if (choice.type == "BLOCK" && blockTable != null) {
+                                Text(BlockText.rowSummary(sheetRes, blockTable), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+                            } else if (catalog != null) {
                                 Text(pricingPriceText(catalog, choice.type, isSale), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
                             } else {
                                 Text(stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Body,
@@ -1162,7 +1207,7 @@ private fun CartPricingSheet(
                     }
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (!isBlock) Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(stringResource(R.string.v2_pricing_price_field), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                 OutlinedTextField(
                     value = if (digits.isEmpty()) "" else com.anyrent.pos.domain.money.ShopMoney.plain(price),
@@ -1185,14 +1230,19 @@ private fun CartPricingSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val money = com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.unitPrice)
-                val text = preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
+                val text = if (blockDetail != null) {
+                    BlockText.summary(sheetRes, blockDetail) + (BlockText.formulaOrNull(sheetRes, blockDetail)?.let { "\n$it" } ?: "")
+                } else preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
                     ?: "$money × ${preview.quantity}"
                 Text(text, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
-                Text(com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                Text(
+                    com.anyrent.pos.domain.money.ShopMoney.withUnit(if (blockDetail != null) blockDetail.total * line.quantity else preview.total),
+                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                )
             }
             AppPrimaryButton(
                 stringResource(R.string.v2_pricing_apply),
-                onClick = { onApply(if (isSale) null else type, typed) },
+                onClick = { onApply(if (isSale) null else type, if (isBlock) null else typed) },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
             )
         }

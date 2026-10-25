@@ -587,5 +587,7 @@
   "DEPOSIT_SETTINGS_UPDATED": "Deposit settings updated",
   "INSTALLMENT_COLLECTED": "Deposit stage collected",
   "INSTALLMENT_VOIDED": "Deposit stage voided",
-  "DEPOSIT_PLAN_UPDATED": "Deposit plan updated"
+  "DEPOSIT_PLAN_UPDATED": "Deposit plan updated",
+  "CANCEL_AMOUNTS_MISMATCH": "The amount kept is more than what was collected, or is not a valid amount.",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "A cancelled order that kept money stays in the history and cannot be deleted."
 }

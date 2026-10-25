@@ -8,8 +8,13 @@ import { createAuditHelper } from '@rentalshop/utils/server';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../../lib/change-timeline';
 import { shapeOrderPayments } from '../../../../../lib/order-payments';
 import {
+  cancelAuditDescription,
   loadShop,
+  parseCancelRequest,
+  planCancellation,
   recomputeDepositFromPayments,
+  recordPlanCancellation,
+  type PlanCancellation,
   shapeOrderInstallments,
   unpaidAtPickupBody,
   unpaidStagesBlockingPickup,
@@ -42,6 +47,9 @@ const statusUpdateSchema = z.object({
   collateralReturned: z.boolean().optional(), // Whether collateral was returned
   collateralType: z.string().optional(), // Type of collateral (if any)
   collateralDetails: z.string().optional(), // Details about collateral
+  // #1199 cancelling a plan order: what the shop keeps of the collected deposit (default 0 = refund everything)
+  cancelKeptAmount: z.number().optional(),
+  cancelNote: z.string().max(500).optional(),
 });
 
 /**
@@ -153,8 +161,25 @@ export async function PATCH(
       if (unpaid) return NextResponse.json(unpaidAtPickupBody(unpaid), { status: 400 });
     }
 
+    // #1199: cancelling a plan order. Amounts are checked before anything changes; the refund is recorded after.
+    const cancelAt = new Date();
+    let cancelPlan: PlanCancellation | null = null;
+    const isCancelling = status === ORDER_STATUS.CANCELLED && existingOrder.status !== ORDER_STATUS.CANCELLED;
+    if (isCancelling) {
+      const checked = await planCancellation(prisma, {
+        order: existingOrder as any,
+        role: user.role,
+        request: parseCancelRequest(parsed.data),
+      });
+      if ('error' in checked) {
+        return NextResponse.json(ResponseBuilder.error(checked.error.code), { status: checked.error.status });
+      }
+      cancelPlan = checked.plan;
+    }
+
     // Build update input with automatic timestamp handling
     const updateInput: any = {
+      ...(isCancelling ? { cancelledAt: cancelAt } : {}),
       status,
       ...(notes && { notes }),
       ...(pickupNotes && { pickupNotes }),
@@ -241,6 +266,44 @@ export async function PATCH(
 
     const outlet = await db.outlets.findById(updatedOrder.outletId);
     const merchantId = outlet?.merchantId;
+
+    // #1199: what went back and what the shop kept. If this fails the order stays cancelled with no amounts, which
+    // every screen reads as "everything refunded" (the old behaviour); the failure is logged.
+    if (cancelPlan) {
+      try {
+        const cancelShop = await loadShop(prisma, merchantId);
+        await recordPlanCancellation(prisma, {
+          orderId: orderPublicId,
+          merchantId,
+          currency: cancelShop.currency,
+          plan: cancelPlan,
+          userId: user.id,
+          at: cancelAt,
+        });
+        await safeAudit('cancel', () => createAuditHelper(prisma).logCustom({
+          action: 'CUSTOM',
+          entityType: 'Order',
+          entityId: String(orderPublicId),
+          entityName: existingOrder.orderNumber || String(orderPublicId),
+          description: cancelAuditDescription(existingOrder.orderNumber || String(orderPublicId), cancelPlan as PlanCancellation),
+          category: 'BUSINESS',
+          oldValues: { collected: cancelPlan.collected },
+          newValues: { kept: cancelPlan.kept, refunded: cancelPlan.refund, note: cancelPlan.note ?? null },
+          context: {
+            userId: String(user.id),
+            userEmail: user.email,
+            userRole: user.role,
+            merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+            outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+            userAgent: request.headers.get('user-agent') || undefined,
+            requestId: request.headers.get('x-request-id') || undefined,
+          },
+        }));
+      } catch (cancelError) {
+        console.error('⚠️ Recording the cancel refund failed (order is cancelled; everything counts as refunded):', cancelError);
+      }
+    }
 
     // Loyalty hooks — only for CANCELLED/RETURNED (avoid feature query on unrelated status changes).
     // Fail-open (INV-6): the status change is already committed above; loyalty must never block it.

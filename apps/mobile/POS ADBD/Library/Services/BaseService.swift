@@ -17,7 +17,7 @@ class BaseService {
             "X-App-Version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
             "User-Agent": "AnyRent-iOS/1.0.0",
             "Accept-Language": appAcceptLanguage(),
-            // #1199: this app reads deposit stages and sends `paymentPlan`; without it the API answers like before
+            // #1199, #1189: this app reads deposit stages and BLOCK options; without the header the API answers like before
             ClientCapabilities.headerName: ClientCapabilities.headerValue
         ]
         
@@ -44,7 +44,7 @@ class BaseService {
             "X-App-Version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
             "User-Agent": "AnyRent-iOS/1.0.0",
             "Accept-Language": appAcceptLanguage(),
-            // #1199: this app reads deposit stages and sends `paymentPlan`; without it the API answers like before
+            // #1199, #1189: this app reads deposit stages and BLOCK options; without the header the API answers like before
             ClientCapabilities.headerName: ClientCapabilities.headerValue
         ]
         

@@ -362,6 +362,12 @@ final class CartStore {
         notifyDidChange()
     }
 
+    /// #1189: see `Cart.refreshBlockTable(from:)`
+    func refreshBlockTable(from product: Product) {
+        storage.refreshBlockTable(from: product)
+        notifyDidChange()
+    }
+
     func updateQuantity(at index: Int, quantity: Int) {
         storage.updateQuantity(at: index, quantity: quantity)
         notifyDidChange()

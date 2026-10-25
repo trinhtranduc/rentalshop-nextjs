@@ -412,5 +412,8 @@
   "DEPOSIT_SETTINGS_INVALID": "Cài đặt thu cọc không hợp lệ. Mỗi mẫu có 1 đến 3 giai đoạn, tổng phần trăm không quá 100 và tối đa 10 mẫu.",
   "PRODUCT_DELETE_MERCHANT_ONLY": "Nhân viên không xóa được sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho.",
   "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.",
-  "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh."
+  "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.",
+  "BLOCK_PRICE_MISMATCH": "Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.",
+  "PRICING_TYPE_REQUIRES_UPDATE": "Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.",
+  "BLOCK_TABLE_INVALID": "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá."
 }

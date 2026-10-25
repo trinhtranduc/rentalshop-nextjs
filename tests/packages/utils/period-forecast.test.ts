@@ -88,8 +88,11 @@ function store(orders = ORDERS) {
 }
 
 /** The #605 query: reserved orders with their PICKUP payments (the income summary's own RESERVED query has no payments) */
+// the expected-collected query (#605); the RESERVED plan-order query of `futureInstallments` (#1199) has a `depositPlan` filter
 const isReservedQuery = (args: any) =>
-  (args?.where?.status === 'RESERVED' || args?.where?.status?.equals === 'RESERVED') && !!args?.select?.payments;
+  (args?.where?.status === 'RESERVED' || args?.where?.status?.equals === 'RESERVED') &&
+  !!args?.select?.payments &&
+  !args?.where?.depositPlan;
 
 function run(params: Record<string, any>, s = store()) {
   return buildAnalyticsPeriodReport(s.prisma, s.db, { limit: 5, userRole: 'MERCHANT', outletFilter: outlet1, ...params } as any);
@@ -148,6 +151,16 @@ describe('series[].expectedCollected (daily)', () => {
     const s = store();
     await run({ startDate: '2026-10-01', endDate: '2026-10-07', groupBy: 'day' }, s);
     expect(s.findMany.mock.calls.filter(([args]) => isReservedQuery(args))).toHaveLength(1);
+  });
+
+  it('#1199: one more query for the RESERVED plan orders (futureInstallments), none for a past range', async () => {
+    const isPlanQuery = (args: any) => !!args?.where?.depositPlan;
+    const today = store();
+    await run({ startDate: '2026-10-01', endDate: '2026-10-07', groupBy: 'day' }, today);
+    expect(today.findMany.mock.calls.filter(([args]) => isPlanQuery(args))).toHaveLength(1);
+    const past = store();
+    await run({ startDate: '2026-10-01', endDate: '2026-10-03', groupBy: 'day' }, past);
+    expect(past.findMany.mock.calls.filter(([args]) => isPlanQuery(args))).toHaveLength(0);
   });
 
   it('counts every outlet in scope', async () => {

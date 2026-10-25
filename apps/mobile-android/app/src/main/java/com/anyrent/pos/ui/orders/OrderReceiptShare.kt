@@ -3,6 +3,7 @@ package com.anyrent.pos.ui.orders
 import android.content.Context
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.orders.OrderShareModel
+import com.anyrent.pos.domain.products.blockLines
 import com.anyrent.pos.print.ThermalPrinter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,6 +22,7 @@ internal suspend fun shareOrderReceipt(context: Context, order: OrderDetail) {
         vi = context.shareIsVietnamese(),
         printBankQr = printBankQr,
         bankAccount = account,
+        blockFormula = { it.blockLines(context.resources)?.second },
     )
     shareOrderImage(context, model, subject = order.summary.orderNumber)
 }

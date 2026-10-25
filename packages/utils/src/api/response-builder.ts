@@ -222,6 +222,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'INSTALLMENT_ALREADY_PAID': "This deposit stage was already collected.",
   'INSTALLMENT_FORBIDDEN_ROLE': "Your role cannot do this with deposit stages.",
   'INSTALLMENT_UNPAID_AT_PICKUP': "This order still has a deposit stage that was not collected. Collect it on the web or update the app.",
+  'CANCEL_AMOUNTS_MISMATCH': "The amount kept is more than what was collected, or is not a valid amount.",
+  'CANCELLED_ORDER_KEEPS_AMOUNT': "A cancelled order that kept money stays in the history and cannot be deleted.",
   'INSTALLMENT_NOT_FOUND': "Deposit stage not found.",
   'INSTALLMENT_NO_PLAN': "This order has no deposit plan.",
   'INSTALLMENT_LOYALTY_UNSUPPORTED': "Loyalty points cannot be used on an order with staged deposits.",

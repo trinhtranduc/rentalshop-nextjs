@@ -594,6 +594,7 @@ final class CartV2ViewController: BaseViewControler {
 
     private func datesRow() -> UIView {
         let row = UIControl()
+        row.accessibilityIdentifier = "cart.datesRow"
         row.addTarget(self, action: #selector(pickDates), for: .touchUpInside)
         // #952 (owner): calendar icon in a light-blue circle, same size and margin as the customer avatar
         let state = CartDateRowLogic.state(pickup: cart.pickupPlanAt, return: cart.returnPlanAt)
@@ -677,6 +678,12 @@ final class CartV2ViewController: BaseViewControler {
         nameRow.alignment = .top
         nameRow.spacing = 8
         let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
+        // #1189: "Khối 3 ngày + 2 ngày thêm · 160.000đ" and under it the sum "120.000 (3 ngày) + 2 × 20.000 = 160.000"
+        if cart.orderType == .rent, let detail = item.blockDetail, detail.extraDays > 0 {
+            let formula = V2.label(BlockPricing.formula(detail), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+            formula.accessibilityIdentifier = "cart.blockFormula"
+            column.addArrangedSubview(formula)
+        }
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
@@ -782,7 +789,12 @@ final class CartV2ViewController: BaseViewControler {
     private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
         let chip = CartV2Logic.chip(item, orderType: cart.orderType)
         let link = CartV2Logic.link(item, orderType: cart.orderType)
-        let button = Self.pricingLinkButton(amount: link.amount, unit: link.unit)
+        let button: UIButton
+        if cart.orderType == .rent, let detail = item.blockDetail {
+            button = Self.pricingLinkButton(amount: BlockPricing.summary(detail), unit: CartV2Logic.money(item.price), separator: " · ")
+        } else {
+            button = Self.pricingLinkButton(amount: link.amount, unit: link.unit)
+        }
         button.tag = index
         button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
         button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
@@ -794,7 +806,7 @@ final class CartV2ViewController: BaseViewControler {
     /// #1056: the blue link of a cart line. A `.custom` button: a `.system` one fades a new attributed title in, and
     /// the cart builds a new link on every render, so the price blanked and came back each time the cart opened or
     /// updated. Pressed, the text dims as the `.system` button did.
-    static func pricingLinkButton(amount: String?, unit: String) -> UIButton {
+    static func pricingLinkButton(amount: String?, unit: String, separator: String = " / ") -> UIButton {
         let button = UIButton(type: .custom)
         func title(alpha: CGFloat) -> NSAttributedString {
             let color = DS.Color.primary.withAlphaComponent(alpha)
@@ -803,7 +815,7 @@ final class CartV2ViewController: BaseViewControler {
                     : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .medium),
                 NSAttributedString.Key.foregroundColor: color,
             ])
-            text.append(NSAttributedString(string: " / " + unit, attributes: [
+            text.append(NSAttributedString(string: separator + unit, attributes: [
                 NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
                 NSAttributedString.Key.foregroundColor: color,
             ]))
@@ -1121,6 +1133,7 @@ final class CartV2ViewController: BaseViewControler {
                     self.editSubmission.failed()
                     sheet?.setBusy(false)
                     UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    self.reloadBlockTablesIfNeeded(after: error)
                     return
                 }
                 self.editSubmission.succeeded()
@@ -1223,6 +1236,19 @@ final class CartV2ViewController: BaseViewControler {
         present(sheet, animated: true)
     }
 
+    /// #1189: 400 BLOCK_PRICE_MISMATCH = a product's day table changed after the line was added. Load the products of
+    /// the block lines again; the lines take the new table and the next confirm sends the new price.
+    private func reloadBlockTablesIfNeeded(after error: Error) {
+        guard BlockPricingError.isPriceMismatch(error) else { return }
+        let ids = Set(cart.items.filter { $0.pricingType?.uppercased() == "BLOCK" }.map { $0.productId })
+        for id in ids {
+            ProductService.shared.loadProduct(productId: id) { product, _ in
+                guard let product else { return }
+                DispatchQueue.main.async { CartStore.shared.refreshBlockTable(from: product) }
+            }
+        }
+    }
+
     /// The request `CartViewModel.saveOrder` sends from the review screen, with this checkout's key
     private func submitOrder(confirm: CreateOrderConfirm, sheet: CreateOrderConfirmSheet?) {
         guard submission.begin() else { return }
@@ -1236,6 +1262,7 @@ final class CartV2ViewController: BaseViewControler {
                     self.submission.failed()
                     sheet?.setBusy(false)
                     UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    self.reloadBlockTablesIfNeeded(after: error)
                     return
                 }
                 self.submission.succeeded()
@@ -1427,6 +1454,12 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     private let previewText = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     private let previewTotal = V2.label(size: 18, weight: .bold)
     private let scroll = UIScrollView()
+    private let fieldStack = UIStackView()
+
+    /// #1189: the day-block table the sheet previews (the line's own, else the product's BLOCK option)
+    private var blockTable: BlockTable? {
+        item.blockTable ?? (item.pricingOptions ?? []).first { $0.isActive != false && $0.blockTable != nil }?.blockTable
+    }
 
     init(item: CartItem, orderType: OrderType, days: Int) {
         self.item = item
@@ -1484,7 +1517,10 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
         priceField.addTarget(self, action: #selector(priceChanged), for: .editingChanged)
         priceField.snp.makeConstraints { make in make.height.equalTo(52) }
         let note = V2.label("products.cart.pricing.note".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let field = UIStackView(arrangedSubviews: [fieldTitle, priceField, note])
+        let field = fieldStack
+        field.addArrangedSubview(fieldTitle)
+        field.addArrangedSubview(priceField)
+        field.addArrangedSubview(note)
         field.axis = .vertical
         field.spacing = 6
         content.addArrangedSubview(field)
@@ -1548,7 +1584,8 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
             dot.snp.makeConstraints { make in make.size.equalTo(20) }
             let label = V2.label(CartV2Logic.pricingLabel(choice.type), size: DS.TextSize.input, weight: .bold)
             label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-            let priceText = choice.catalogPrice.map { CartV2Logic.priceText($0, type: choice.type, orderType: orderType) }
+            var priceText = choice.catalogPrice.map { CartV2Logic.priceText($0, type: choice.type, orderType: orderType) }
+            if choice.type == ProductPricingMode.block.rawValue, let table = blockTable { priceText = BlockPricing.rowSummary(table) }
             let price = V2.label(priceText ?? "products.cart.pricing.enterPrice".localized(), size: DS.TextSize.body,
                                  weight: priceText == nil ? .bold : .regular,
                                  color: priceText == nil ? DS.Color.primary : DS.Color.textMuted)
@@ -1587,6 +1624,7 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
         priceField.placeholder = "0"
         let daily = orderType == .rent && selectedType == ProductPricingMode.perDay.rawValue
         unitLabel.text = MoneyFormatter.unitLabel(daily: daily)
+        fieldStack.isHidden = selectedType == ProductPricingMode.block.rawValue
         updatePreview()
     }
 
@@ -1597,13 +1635,21 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     }
 
     private func updatePreview() {
+        // #1189: a block line has no price box; the preview is the table's answer for the cart's days
+        if orderType == .rent, selectedType == ProductPricingMode.block.rawValue, let table = blockTable,
+           let detail = BlockPricing.detail(table, days: days, minorUnit: BlockPricing.minorUnit(currency: ShopCurrencyStore.current.rawValue)) {
+            previewText.text = BlockPricing.summary(detail) + (detail.extraDays > 0 ? "\n" + BlockPricing.formula(detail) : "")
+            previewTotal.text = CartV2Logic.money(detail.total * Double(item.quantity))
+            return
+        }
         let preview = CartV2Logic.pricePreview(type: selectedType, price: price ?? 0, days: days, quantity: item.quantity, orderType: orderType)
         previewText.text = preview.text
         previewTotal.text = CartV2Logic.money(preview.total)
     }
 
     @objc private func applyTapped() {
-        onApply?(orderType == .rent ? selectedType : nil, price)
+        let isBlock = orderType == .rent && selectedType == ProductPricingMode.block.rawValue
+        onApply?(orderType == .rent ? selectedType : nil, isBlock ? nil : price)
         dismiss(animated: true)
     }
 }

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole, isStaffLikeRole } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getOrderRevenueEvents, withoutCollateral, toRevenueOrderData } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents, withoutCollateral, toRevenueOrderData, REVENUE_PLAN_SELECT } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { lastShopDays, readReportRange } from '../../../../lib/report-days';
 import { narrowAnalyticsOutletFilter } from '../../../../lib/analytics-outlets';
@@ -113,7 +113,8 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         returnedAt: true,
         updatedAt: true,
         pickupPlanAt: true, // Add pickupPlanAt for future revenue
-        returnPlanAt: true  // Add returnPlanAt for future revenue
+        returnPlanAt: true, // Add returnPlanAt for future revenue
+        ...REVENUE_PLAN_SELECT
       },
       take: 10000 // Get enough orders to analyze
     });

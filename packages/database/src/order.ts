@@ -9,7 +9,7 @@ import type {
 import { applyOrderDateRange } from './order-date-range';
 import { findNearestTaskPageIds } from './order-nearest-task';
 import { createOrderOnce, type CreateOrderOnceOptions, type OrderCreateGuard } from './order-create-guard';
-import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages, REVENUE_PLAN_SELECT } from '@rentalshop/utils';
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
 
@@ -458,6 +458,9 @@ export async function updateOrder(
     returnPlanAt: Date
     pickedUpAt: Date
     returnedAt: Date
+    /** #1199: what the shop kept when it cancelled, and when */
+    cancelKeptAmount: number
+    cancelledAt: Date
     rentalDuration: number
     isReadyToDeliver: boolean
     collateralType: string
@@ -506,7 +509,8 @@ export async function updateOrder(
     'pickedUpAt', 'returnedAt', 'rentalDuration', 'isReadyToDeliver',
     'collateralType', 'collateralDetails', 'notes', 'notesImages',
     'pickupNotes', 'pickupNotesImages', 'returnNotes', 'returnNotesImages',
-    'damageNotes', 'damageNotesImages'
+    'damageNotes', 'damageNotesImages',
+    'cancelKeptAmount', 'cancelledAt'
   ];
   
   // Build update data - filter to only valid fields
@@ -669,6 +673,11 @@ export async function updateOrder(
   // #505: remember the total collected at hand-over; a later change of totalAmount is extra rent (or a refund)
   if (newStatus === ORDER_STATUS.PICKUPED && newStatus !== oldStatus) {
     updateData.pickupTotalAmount = updateData.totalAmount ?? oldOrder?.totalAmount ?? null;
+  }
+
+  // #1199: the moment of cancellation (revenue shows the refund on that day); an old client sends none
+  if (newStatus === ORDER_STATUS.CANCELLED && newStatus !== oldStatus && !updateData.cancelledAt) {
+    updateData.cancelledAt = new Date();
   }
 
   // CRITICAL: Tự động set returnedAt khi status thay đổi sang RETURNED
@@ -1183,6 +1192,8 @@ export const simplifiedOrders = {
       includeItemNames = false,
       // #1199: `_count.payments` leaves out deposit-stage rows (notes INSTALLMENT) unless the caller declared `installments`
       includeInstallments = false,
+      // #1199: revenue callers add the deposit plan and its payments so staged deposits are counted by day
+      includeRevenuePlan = false,
       ...whereFilters 
     } = filters;
     const skip = (page - 1) * limit;
@@ -1275,6 +1286,7 @@ export const simplifiedOrders = {
           returnedAt: true,
           createdAt: true,
           updatedAt: true,
+          ...(includeRevenuePlan ? REVENUE_PLAN_SELECT : {}),
           customer: { 
             select: { 
               id: true, 
@@ -1755,9 +1767,12 @@ export const simplifiedOrders = {
     sortOrder?: 'asc' | 'desc';
     /** client declared the `installments` capability (#1200) */
     includeInstallments?: boolean;
+    /** revenue callers: add the deposit plan and its payments (#1199) */
+    includeRevenuePlan?: boolean;
   }) => {
     const {
       includeInstallments,
+      includeRevenuePlan,
       merchantId,
       outletId,
       customerId,
@@ -1867,6 +1882,7 @@ export const simplifiedOrders = {
       outletId: true,
       customerId: true,
       createdById: true,
+      ...(includeRevenuePlan ? REVENUE_PLAN_SELECT : {}),
       // Customer data
       customer: {
         select: {

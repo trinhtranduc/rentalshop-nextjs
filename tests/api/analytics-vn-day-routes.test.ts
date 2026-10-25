@@ -50,6 +50,7 @@ jest.mock('@rentalshop/utils/server', () => ({
   buildAnalyticsPeriodReport: (...args: any[]) => mockBuildReport(...args),
   emptyAnalyticsPeriodReport: () => ({}),
   resolveAnalyticsOutletFilter: async () => ({ outletId: { in: [1] } }),
+  loadReservedPlanOrders: async () => [],
   checkPlanLimitIfNeeded: jest.fn(),
   createAuditHelper: () => ({}),
   uploadToS3: jest.fn(),

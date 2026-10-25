@@ -75,6 +75,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     // Get today's orders
     const todayOrders = await db.orders.search({
       where: orderWhereClause,
+      includeRevenuePlan: true,
       limit: 1000
     });
 

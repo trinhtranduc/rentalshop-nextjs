@@ -549,6 +549,9 @@
     <string name="api_error_product_held_by_other_outlets">{outlets} still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.</string>
     <string name="api_error_product_held_by_other_outlets_no_params">Another branch still has this product; only the shop owner can delete it. To stop selling it at your branch, set your stock to 0.</string>
     <string name="api_error_outlet_has_open_orders">This branch still has orders that are reserved or being rented. Complete or cancel them before turning the branch off.</string>
+    <string name="api_error_block_price_mismatch">The price of a day-block item does not match the price list. Reload the product and try again.</string>
+    <string name="api_error_pricing_type_requires_update">This product uses day-block pricing. Please update the app to place this rental.</string>
+    <string name="api_error_block_table_invalid">The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.</string>
     <string name="api_error_customer_duplicate">A customer with this email or phone already exists</string>
     <string name="api_error_email_exists">Email address is already registered</string>
     <string name="api_error_phone_exists">Phone number is already registered</string>
@@ -1161,7 +1164,7 @@
     <string name="orders_entity_million_whole">%1$dM</string>
     <!-- #482 -->
     <string name="v2_pricing_title">Pricing</string>
-    <string name="v2_pricing_block">Per block</string>
+    <string name="v2_pricing_block">Day block</string>
     <string name="v2_pricing_hourly">Per hour</string>
     <string name="v2_pricing_sale">Sale price</string>
     <string name="v2_pricing_enter_price">Enter price</string>
@@ -2142,4 +2145,29 @@
     <string name="settings_v2_currency_failed">Could not change the currency. Please try again.</string>
     <string name="v2_pricing_unit_usd">$</string>
     <string name="v2_pricing_unit_daily_usd">$/day</string>
+    <!-- #1189 day-block pricing -->
+    <string name="block_title">Day-block price</string>
+    <string name="block_screen_title">Rental price · %1$s</string>
+    <string name="block_save">Save price table</string>
+    <string name="block_turn_off">Turn off day-block price</string>
+    <string name="block_row_off">Not used</string>
+    <string name="block_row_tiers">%1$d tiers</string>
+    <string name="block_row_extra">+%1$s per day</string>
+    <string name="block_row_hold">last block price held</string>
+    <string name="block_section_default">Default pricing</string>
+    <string name="block_hint_default">Used by default for new orders. Staff can change it in the cart.</string>
+    <string name="block_section_tiers">Price by number of days</string>
+    <string name="block_add_day">+ Add day %1$d</string>
+    <string name="block_remove_day">Remove this day</string>
+    <string name="block_section_beyond">Rent beyond %1$d days</string>
+    <string name="block_extra_per_day">Add per extra day</string>
+    <string name="block_hold_last">Keep the last block price</string>
+    <string name="block_hold_last_price">Keep the last block price (%1$s)</string>
+    <string name="block_preview">Preview</string>
+    <string name="block_error_invalid">Enter a price for every day (0 or more) and the amount added per extra day.</string>
+    <string name="block_error_empty">There is no day-block price table yet. Enter a price for at least 1 day, or pick another default.</string>
+    <string name="block_summary_block">Block of %1$d days</string>
+    <string name="block_summary_extra">+ %1$d extra days</string>
+    <string name="v2_unit_per_block">/1 day</string>
+    <string name="v2_price_block">Day block</string>
 </resources>
