@@ -216,6 +216,8 @@ export * from './audit-config';
 
 // Revenue calculator utilities (single source of truth for revenue calculations)
 export * from './revenue-calculator';
+// Order row -> calculator input, and the event WHERE (#1199): the one place every revenue screen shares
+export * from './revenue-mapping';
 
 // Rental days: pickup and return day both included (#351)
 export { countRentalDays } from './rental-days';
