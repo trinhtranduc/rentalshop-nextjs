@@ -236,7 +236,7 @@ export function minorUnitDigits(currency?: string | null): number {
 }
 
 /** Round to the currency's smallest unit (VND 1, USD 0.01). */
-export function roundToMinorUnit(amount: number, currency?: string | null): number {
+export function roundMoney(amount: number, currency?: string | null): number {
   const factor = Math.pow(10, minorUnitDigits(currency));
   return Math.round(Math.round((amount + Number.EPSILON) * factor)) / factor;
 }
@@ -392,11 +392,11 @@ export function effectivePlan(
     for (const item of plan.items) {
       const planned =
         item.amountOverride !== undefined
-          ? roundToMinorUnit(item.amountOverride, currency)
+          ? roundMoney(item.amountOverride, currency)
           : percentOf(total, item.value, currency);
       const collected = collectedFor(payments, item.key);
       const locked = collected.amount > 0;
-      const amount = locked ? roundToMinorUnit(collected.amount, currency) : planned;
+      const amount = locked ? roundMoney(collected.amount, currency) : planned;
       const dueKey = dueKeyOf(item, createdKey, pickupKey);
       explicitSum += amount;
       stages.push({
@@ -433,7 +433,7 @@ export function effectivePlan(
     }
   }
 
-  const restAmount = Math.max(0, roundToMinorUnit(total - explicitSum, currency));
+  const restAmount = Math.max(0, roundMoney(total - explicitSum, currency));
   const restCollected = collectedFor(payments, REST_KEY);
   const restPaid = restCollected.amount > 0 ? restCollected.amount : handedOver ? restAmount : 0;
   const restDue = pickupKey;
@@ -459,7 +459,7 @@ export function planOverflow(order: PlanOrderLike, shop: PlanShop = {}, options:
   const explicit = effectivePlan(order, shop, options)
     .filter((stage) => !stage.isRest)
     .reduce((sum, stage) => sum + stage.amount, 0);
-  const over = roundToMinorUnit(explicit - total, shop.currency);
+  const over = roundMoney(explicit - total, shop.currency);
   return over > 0 ? over : 0;
 }
 

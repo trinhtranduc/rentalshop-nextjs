@@ -5,6 +5,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 import { isValidTimeZone, merchantTimeZoneField, recordShopTimeZoneChange } from '../../../../lib/shop-timezone';
+import { merchantDepositField } from '../../../../lib/installments';
 
 /** #567 `timezone`: an IANA id that Intl accepts (Asia/Ho_Chi_Minh, Asia/Tokyo, America/New_York, …). */
 const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknown time zone');
@@ -248,6 +249,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         onlineBookingEnabled: (updatedMerchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         showPublicPrice: (updatedMerchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
         ...merchantTimeZoneField(updatedMerchant),
+        ...merchantDepositField(updatedMerchant),
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscription?.status,

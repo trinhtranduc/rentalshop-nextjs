@@ -21,6 +21,8 @@ import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timel
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
 import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
 import { hasCapability } from '../../../../lib/client-capabilities';
+import { shapeOrderInstallments, loadShop, unpaidAtPickupBody, unpaidStagesBlockingPickup, recomputeDepositFromPayments, installmentsView } from '../../../../lib/installments';
+import { collectedInStages, parseDepositPlan, planOverflow, recalcAfterTotalChange } from '../../../../../../packages/utils/src/core/deposit-plan';
 import { isInstallmentPayment, shapeOrderPayments } from '../../../../lib/order-payments';
 import { clampOrderDiscount, sumLineTotals } from '../../../../lib/order-discount';
 import {
@@ -292,10 +294,18 @@ export const GET = async (
 
       console.log('✅ Order found:', order);
 
+      // #1199: the plan columns are dropped for a client without `installments`; a capable one gets the stages
+      const planShaped: any = await shapeOrderInstallments(
+        order,
+        request,
+        hasCapability(request, 'installments') ? (await db.outlets.findById(order.outletId))?.merchantId : null,
+        db.prisma
+      );
+
       // Flatten order items for mobile (iOS/Android cart edit needs productName/productId
       // on the line — not only nested `product`). Same shape as PUT response.
       const flattenedOrder = {
-        ...order,
+        ...planShaped,
         orderItems: order.orderItems?.map((item: any) => {
           const snapshotImages = parseProductImages(item.productImages);
           const productImages = snapshotImages.length > 0
@@ -782,6 +792,33 @@ export const PUT = async (
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
       const merchantId = existingOutlet?.merchantId;
 
+      // #1199 staged deposits. The plan columns are never written through this route (the MERCHANT edits the plan on
+      // PUT .../deposit-plan); for a plan order the server owns `depositAmount` (sum of the collected stages), so the
+      // value an old app echoes back is ignored and the correct one comes back in the response.
+      delete (validUpdateData as any).depositPlan;
+      delete (validUpdateData as any).cancelKeptAmount;
+      delete (validUpdateData as any).cancelledAt;
+      const orderHasPlan = parseDepositPlan(existingOrder.depositPlan) != null;
+      const clientKnowsInstallments = hasCapability(request, 'installments');
+      const planShop = orderHasPlan || clientKnowsInstallments ? await loadShop(db.prisma, merchantId) : null;
+      if (orderHasPlan && planShop) {
+        delete (validUpdateData as any).depositAmount;
+        const handedOver = existingOrder.status !== ORDER_STATUS.RESERVED;
+        if (!handedOver && validUpdateData.totalAmount !== undefined && validUpdateData.totalAmount !== null) {
+          const change = recalcAfterTotalChange(existingOrder, Number(validUpdateData.totalAmount), planShop);
+          if (change.overpaid) {
+            return NextResponse.json(ResponseBuilder.error('INSTALLMENT_OVERPAID'), { status: 409 });
+          }
+          if (change.overflow > 0) {
+            return NextResponse.json(ResponseBuilder.error('INSTALLMENT_EXCEEDS_TOTAL'), { status: 400 });
+          }
+        }
+        if (validUpdateData.status === ORDER_STATUS.PICKUPED && existingOrder.status !== ORDER_STATUS.PICKUPED) {
+          const unpaid = unpaidStagesBlockingPickup(existingOrder, planShop);
+          if (unpaid) return NextResponse.json(unpaidAtPickupBody(unpaid), { status: 400 });
+        }
+      }
+
       // The products and the customer of the edited order belong to the merchant of its outlet (#789)
       if (merchantId != null) {
         const refsCheck = await checkOrderRefsInMerchant({
@@ -929,6 +966,8 @@ export const PUT = async (
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
       console.log('✅ Order updated successfully:', updatedOrder);
+      // #1199: hand-over time and totals move which stage payments count as "before delivery"
+      if (orderHasPlan) await recomputeDepositFromPayments(db.prisma, orderIdNum);
 
       // Get full order details after update (with all relations)
       const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
@@ -1067,7 +1106,9 @@ export const PUT = async (
         // Calculated fields
         itemCount: fullOrder.orderItems?.length || 0,
         paymentCount: countedPayments.length,
-        totalPaid: countedPayments.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0)
+        totalPaid: countedPayments.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0),
+        // #1199 (additive, only for a client that declared `installments`)
+        ...(clientKnowsInstallments && planShop ? installmentsView(fullOrder, planShop) : {})
       };
 
       // Normalize date fields to UTC ISO strings using toISOString()

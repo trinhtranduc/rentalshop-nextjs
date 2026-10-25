@@ -14,7 +14,7 @@ import {
   planOverflow,
   readPaymentSettings,
   recalcAfterTotalChange,
-  roundToMinorUnit,
+  roundMoney,
   unpaidExplicitStages,
   DEFAULT_DEPOSIT_TEMPLATE,
 } from '../packages/utils/src/core/deposit-plan';
@@ -141,7 +141,7 @@ describe('rounding by currency minor unit', () => {
     const stages = effectivePlan(order({ totalAmount: 100.01 }), { currency: 'USD', timezone: 'Asia/Ho_Chi_Minh' }, { now: NOW });
     expect(stages.map((s) => s.amount)).toEqual([30, 40, 30.01]);
     expect(percentOf(100.01, 33.33, 'USD')).toBe(33.33);
-    expect(roundToMinorUnit(0.005 + 1, 'USD')).toBe(1.01);
+    expect(roundMoney(0.005 + 1, 'USD')).toBe(1.01);
   });
 });
 

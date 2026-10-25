@@ -15,6 +15,8 @@ jest.mock('@rentalshop/auth/server', () => ({
 const mockDb = {
   orders: { findById: jest.fn(), update: jest.fn(), findByIdDetail: jest.fn() },
   outlets: { findById: jest.fn() },
+  // #1199: a client with `installments` also gets the stages, which need the shop currency / time zone
+  prisma: { merchant: { findUnique: jest.fn().mockResolvedValue({ currency: 'VND', timezone: 'Asia/Ho_Chi_Minh', settings: null }) } },
 };
 jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: { $transaction: jest.fn() } }));
 jest.mock('@rentalshop/utils', () => ({
