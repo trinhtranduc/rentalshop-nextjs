@@ -769,7 +769,15 @@
       "account": "Tài khoản",
       "me": "Tôi"
     },
-    "back": "Quay lại"
+    "back": "Quay lại",
+    "blockPricing": {
+      "title": "Giá theo khối ngày với app cũ",
+      "hint": "Một số khách hàng vẫn dùng bản app cũ chưa biết giá theo khối ngày. Chọn cách máy chủ xử lý khi app cũ đặt một sản phẩm giá theo khối.",
+      "recompute": "Máy chủ tự tính giá (đề xuất)",
+      "recomputeHint": "App cũ vẫn đặt thuê được, giá tính đúng theo bảng và số ngày.",
+      "block": "Yêu cầu cập nhật app",
+      "blockHint": "App cũ không đặt được sản phẩm giá theo khối, nhân viên cần cập nhật app."
+    }
   },
   "embeddingBackfill": {
     "title": "Tìm bằng ảnh",

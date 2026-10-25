@@ -104,7 +104,11 @@ describe('GET /api/orders phase 8 (#389)', () => {
       [3, 0, 0],
     ]);
     expect(mockPrisma.payment.groupBy).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.payment.groupBy.mock.calls[0][0].where).toEqual({ orderId: { in: [1, 2, 3] }, status: 'COMPLETED' });
+    expect(mockPrisma.payment.groupBy.mock.calls[0][0].where).toEqual({
+      orderId: { in: [1, 2, 3] },
+      status: 'COMPLETED',
+      OR: [{ notes: null }, { notes: { not: 'INSTALLMENT' } }], // #1199
+    });
   });
 
   it('passes sortBy=nearestTask to the query', async () => {

@@ -51,6 +51,40 @@
         "CANNOT_CONTACT": "お客様に連絡がつかない",
         "OTHER": "その他"
       }
+    },
+    "editor": {
+      "option": {
+        "BLOCK": "日数ブロック · {price}"
+      },
+      "pricing": {
+        "mode": {
+          "BLOCK": "日数ブロック"
+        },
+        "unit": {
+          "BLOCK": "レンタル全体"
+        }
+      },
+      "block": {
+        "label": "{n}日ブロック",
+        "labelExtra": "{n}日ブロック + 追加{m}日",
+        "days": "{n}日"
+      },
+      "per": {
+        "BLOCK": "1日 {price}から · ブロック料金"
+      }
+    },
+    "receipt": {
+      "units": {
+        "block": "{n}日ブロック",
+        "blockExtra": "{n}日ブロック + 追加{m}日"
+      }
+    },
+    "detail": {
+      "items": {
+        "block": "{n}日ブロック",
+        "blockExtra": "{n}日ブロック + 追加{m}日",
+        "blockDays": "{n}日"
+      }
     }
   }
 }

@@ -1,5 +1,10 @@
 /** #626 Phiếu in previews: the sample bill fills every line; dates stay on the Vietnam day. */
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+
+// receipt-model takes the day-block text (#1189) from @rentalshop/utils; its barrel pulls in React files
+jest.mock('@rentalshop/utils', () => ({
+  ...(jest.requireActual('../packages/utils/src/core/block-line-text') as object),
+}));
 import { sampleLabels, sampleReceiptOrder } from '../apps/client/app/settings/print-preview-model';
 import { buildReceipt } from '../apps/client/app/orders/receipt/receipt-model';
 import { code128Bars } from '../apps/client/app/products/labels/code128';

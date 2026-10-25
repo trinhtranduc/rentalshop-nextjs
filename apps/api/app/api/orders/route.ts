@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import { hasPermission, withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
@@ -58,6 +59,20 @@ import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
 import { hasCapability } from '../../../lib/client-capabilities';
+import {
+  installmentsView,
+  planForNewOrder,
+  recomputeDepositFromPayments,
+  shopFromMerchant,
+} from '../../../lib/installments';
+import {
+  depositPlanItemInputSchema,
+  depositPlanSchema,
+  effectivePlan,
+  planOverflow,
+  INSTALLMENT_PAYMENT_NOTE,
+} from '../../../../../packages/utils/src/core/deposit-plan';
+import { isStaffLikeRole } from '@rentalshop/constants';
 import { isInstallmentPayment } from '../../../lib/order-payments';
 import {
   findEditScheduleConflicts,
@@ -964,6 +979,59 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
 
     // #1070: a discount above the lines is stored clamped to them (old apps send it unclamped), never rejected
     const discount = clampOrderDiscount(parsed.data, sumLineTotals(orderItemsData));
+
+    // #1199 staged deposits. Only a client that declared `installments` and sent `paymentPlan` (or `depositPlan`)
+    // can create a plan order, and only a STAGED shop makes one; every other create is exactly as before.
+    const clientKnowsInstallments = hasCapability(request, 'installments');
+    const shopContext = shopFromMerchant(merchant as any);
+    let newDepositPlan: ReturnType<typeof planForNewOrder> = null;
+    let collectFirstNow: { method: string; reference: string; amount: number } | null = null;
+    const planBody = (body as any)?.paymentPlan ?? ((body as any)?.depositPlan ? { items: (body as any).depositPlan.items } : undefined);
+    if (clientKnowsInstallments && planBody && typeof planBody === 'object') {
+      const planInput = z
+        .object({
+          templateId: z.string().max(40).optional().nullable(),
+          items: z.array(depositPlanItemInputSchema).min(1).max(3).optional(),
+          collectFirstNow: z
+            .object({ method: z.enum(['CASH', 'TRANSFER', 'CHECK', 'MANUAL']), reference: z.string().trim().min(8).max(100) })
+            .optional(),
+        })
+        .safeParse(planBody);
+      if (!planInput.success) {
+        return NextResponse.json(ResponseBuilder.validationError(planInput.error.flatten()), { status: 400 });
+      }
+      newDepositPlan = planForNewOrder({
+        shop: shopContext,
+        orderType: parsed.data.orderType,
+        capable: true,
+        canEditItems: !isStaffLikeRole(user.role),
+        input: planInput.data,
+      });
+      if (newDepositPlan) {
+        if ((parsed.data as any).loyaltyRedeem?.points) {
+          return NextResponse.json(ResponseBuilder.error('INSTALLMENT_LOYALTY_UNSUPPORTED'), { status: 400 });
+        }
+        if (!depositPlanSchema.safeParse(newDepositPlan).success) {
+          return NextResponse.json(ResponseBuilder.error('INSTALLMENT_EXCEEDS_TOTAL'), { status: 400 });
+        }
+        const draft = {
+          totalAmount: parsed.data.totalAmount,
+          depositPlan: newDepositPlan,
+          createdAt: new Date(),
+          pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
+          returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
+          payments: [],
+        };
+        if (planOverflow(draft, shopContext) > 0) {
+          return NextResponse.json(ResponseBuilder.error('INSTALLMENT_EXCEEDS_TOTAL'), { status: 400 });
+        }
+        const first = planInput.data.collectFirstNow;
+        const firstStage = effectivePlan(draft, shopContext)[0];
+        if (first && firstStage && !firstStage.isRest && firstStage.amount > 0) {
+          collectFirstNow = { method: first.method, reference: first.reference, amount: firstStage.plannedAmount };
+        }
+      }
+    }
     // #1189: the server repriced a day-block line for an old app: the total comes from the lines, not from the app
     // (it holds the day-1 price). Everything else keeps the app's total, as before.
     let totalAmount = parsed.data.totalAmount;
@@ -990,7 +1058,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       orderType: parsed.data.orderType,
       status: initialStatus,
       totalAmount,
-      depositAmount: deposits.depositAmount,
+      // #1199: a plan order starts with nothing collected; the server keeps depositAmount from the stage payments
+      depositAmount: newDepositPlan ? 0 : deposits.depositAmount,
+      ...(newDepositPlan ? { depositPlan: newDepositPlan as any } : {}),
       securityDeposit: deposits.securityDeposit,
       damageFee: parsed.data.damageFee || 0,
       lateFee: parsed.data.lateFee || 0,
@@ -1074,6 +1144,40 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         }
       : undefined;
 
+    // #1199: "collect stage 1 now" runs in the create transaction, like confirming a booking: a replay or a failure
+    // in between leaves neither a duplicate Payment nor an order without its first stage.
+    const collectFirstStage = collectFirstNow
+      ? async (tx: unknown, created: { id: number }) => {
+          const client = tx as Prisma.TransactionClient;
+          const payment = await client.payment.create({
+            data: {
+              orderId: created.id,
+              merchantId: outlet.merchantId,
+              amount: collectFirstNow!.amount,
+              currency: shopContext.currency,
+              method: collectFirstNow!.method as any,
+              type: 'ORDER_PAYMENT',
+              status: 'COMPLETED',
+              reference: collectFirstNow!.reference,
+              notes: INSTALLMENT_PAYMENT_NOTE,
+              installmentKey: 'i1',
+              processedAt: new Date(),
+              processedBy: String(user.id),
+              metadata: JSON.stringify({ kind: 'COLLECT', source: 'CREATE_ORDER' }),
+            },
+          });
+          const deposit = await recomputeDepositFromPayments(client, created.id);
+          Object.assign(created, { depositAmount: deposit ?? collectFirstNow!.amount, payments: [payment] });
+        }
+      : undefined;
+    const afterInsertHook =
+      confirmBooking || collectFirstStage
+        ? async (tx: unknown, created: { id: number }) => {
+            if (confirmBooking) await confirmBooking(tx, created);
+            if (collectFirstStage) await collectFirstStage(tx, created);
+          }
+        : undefined;
+
     const checkSchedule =
       parsed.data.orderType === ORDER_TYPE.RENT &&
       (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders === false &&
@@ -1082,7 +1186,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     try {
       createResult = checkSchedule
         ? await db.orders.createOnce(createGuard, orderData, {
-            ...(confirmBooking ? { afterInsert: confirmBooking } : {}),
+            ...(afterInsertHook ? { afterInsert: afterInsertHook } : {}),
             beforeInsert: async (tx: unknown) => {
               const conflicts = await loadScheduleConflicts(tx as ScheduleDbClient, {
                 outletId: parsed.data.outletId,
@@ -1097,8 +1201,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
               return conflicts.length > 0 ? conflicts : null;
             }
           })
-        : confirmBooking
-          ? await db.orders.createOnce(createGuard, orderData, { afterInsert: confirmBooking })
+        : afterInsertHook
+          ? await db.orders.createOnce(createGuard, orderData, { afterInsert: afterInsertHook })
           : await db.orders.createOnce(createGuard, orderData);
     } catch (error) {
       if (error instanceof BookingRequestClosedError) {
@@ -1288,7 +1392,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       // Calculated fields
       itemCount: loyaltyOrder.orderItems?.length || 0,
       paymentCount: countedPayments.length,
-      totalPaid: countedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+      totalPaid: countedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0),
+      // #1199 (additive, only for a client that declared `installments`)
+      ...(clientKnowsInstallments ? installmentsView(loyaltyOrder as any, shopContext) : {}),
     };
 
     // Normalize date fields to UTC ISO strings using toISOString()

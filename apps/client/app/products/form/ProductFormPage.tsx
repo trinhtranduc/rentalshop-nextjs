@@ -11,13 +11,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useToast } from '@rentalshop/ui';
+import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { categoriesApi, outletsApi, productsApi } from '@rentalshop/utils';
 import type { ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
 import { fieldClass } from '../../orders/create/parts';
+import { savedBlock } from '../block-model';
 import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
@@ -377,6 +378,7 @@ function ImageSearchCard({ productId, initialIndexedAt, disabled, t }: { product
 
 export function ProductFormPage({ productId }: { productId: number | null }) {
   const isEdit = productId != null;
+  const money = useFormatCurrency();
   const router = useRouter();
   const t = useTranslations('products.web') as unknown as T;
   const { toastSuccess, toastError } = useToast();
@@ -455,6 +457,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   if (data.categories.length === 0) return wrap(<Notice text={t('form.needCategory')} action={<Link href="/categories" className={outlineBtn}>{t('form.goCategories')}</Link>} />);
   if (data.outlets.length === 0) return wrap(<Notice text={t('form.needOutlet')} action={<Link href="/outlets" className={outlineBtn}>{t('form.goOutlets')}</Link>} />);
 
+  // #1189: a product priced by day blocks keeps its table; the form shows one neutral row that leads to the detail page
+  const blockSaved = isEdit && data.product ? savedBlock(data.product) : null;
   const err = (k: FieldKey) => (errors[k] ? t(`form.errors.${errors[k]}`) : undefined);
   const savedPhotos = data.product ? formFromProduct(data.product, [], []).keptImages.length : 0;
   const multiOutlet = data.outlets.length > 1;
@@ -481,7 +485,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     setSaving(true);
     setFailed(false);
     try {
-      const payload = buildPayload(form, { canEditPricing, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
+      const payload = buildPayload(form, { canEditPricing, blockPriced: !!blockSaved, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
       const res = isEdit
         ? await productsApi.updateProduct(productId, payload as unknown as ProductUpdateInput, files)
         : await productsApi.createProduct(payload as unknown as ProductCreateInput, files);
@@ -570,7 +574,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           <Card title={t('form.sections.pricing')}>
             {canEditPricing ? (
               <>
-                <div className="grid gap-4 sm:grid-cols-2">
+                {blockSaved ? null : <div className="grid gap-4 sm:grid-cols-2">
                   <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
                     <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => setPrice('perRental', n)} />
                     {defaultChoice('FIXED')}
@@ -579,8 +583,26 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                     <PriceInput id="pf-perDay" value={form.perDay} onChange={(n) => setPrice('perDay', n)} />
                     {defaultChoice('DAILY')}
                   </Field>
-                </div>
-                <span className="-mt-2 text-xs text-ar-muted">{t(bothPrices ? 'form.defaultHint' : 'form.pricesHint')}</span>
+                </div>}
+                {!blockSaved && <span className="-mt-2 text-xs text-ar-muted">{t(bothPrices ? 'form.defaultHint' : 'form.pricesHint')}</span>}
+                {isEdit && productId != null && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ar-line px-4 py-3" data-rent-price-row>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-[15px] font-semibold text-ar-ink">{t('form.priceRow.title')}</span>
+                      <span className="text-xs text-ar-muted">
+                        {blockSaved
+                          ? t(blockSaved.extraMode === 'EXTRA_PER_DAY' ? 'form.priceRow.summaryExtra' : 'form.priceRow.summaryHold', {
+                              count: blockSaved.tiers.length,
+                              extra: money(blockSaved.extraPrice ?? 0),
+                            })
+                          : t('form.priceRow.hint')}
+                      </span>
+                    </span>
+                    <Link href={`/products/${productId}`} className={outlineBtn}>
+                      {t('form.priceRow.open')}
+                    </Link>
+                  </div>
+                )}
                 <div className="grid gap-4 border-t border-ar-subtle pt-4 sm:grid-cols-3">
                   <Field id="pf-deposit" label={t('form.deposit')} error={err('deposit')}>
                     <AmountInput id="pf-deposit" value={form.deposit} invalid={!!errors.deposit} onChange={(n) => patch({ deposit: n }, ['deposit'])} />

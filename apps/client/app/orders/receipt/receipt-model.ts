@@ -1,10 +1,12 @@
 /**
- * Hoá đơn on the shop web (#562): every line the slip prints, built from the order. Pure (no
- * `@rentalshop/*` import) so it is unit-tested under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
+ * Hoá đơn on the shop web (#562): every line the slip prints, built from the order. Pure (only the shared
+ * day-block text of `@rentalshop/utils`, #1189) so it is unit-tested under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  *
  * Content and order follow the iOS receipt (`Order.toPrintData`, plus the thế chân / giấy tờ /
  * phí hư hại rows of the iOS shared receipt). Days are Vietnam civil days, times Vietnam time.
  */
+
+import { blockLineText, blockSnapshotOf, type BlockSnapshotLike } from '@rentalshop/utils';
 
 export const RECEIPT_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
@@ -23,6 +25,8 @@ export interface ReceiptItemInput {
   totalPrice?: number | null;
   rentalDays?: number | null;
   pricingType?: string | null;
+  /** #1189 what a BLOCK line was priced with */
+  pricingSnapshot?: BlockSnapshotLike | null;
   productName?: string | null;
   product?: { name?: string | null } | null;
   notes?: string | null;
@@ -68,6 +72,9 @@ export interface ReceiptWords {
   days: string;
   perHour: string;
   hours: string;
+  /** #1189 day-block line: "Khối {n} ngày" and "Khối {n} ngày + {m} ngày thêm" (without them a BLOCK line prints as before) */
+  block?: string;
+  blockExtra?: string;
 }
 
 export type ReceiptRowKey = 'deposit' | 'securityDeposit' | 'collateral' | 'damageFee' | 'rentDate' | 'returnDate' | 'createdAt';
@@ -155,6 +162,12 @@ export function itemCalcText(item: ReceiptItemInput, isRent: boolean, words: Rec
   const pricing = text(item.pricingType).toUpperCase();
   const ratio = unit > 0 ? Math.round(total / (qty * unit)) : 0;
   const head = `${qty} × ${formatVnd(unit)}`;
+  const block = isRent && pricing === 'BLOCK' ? blockSnapshotOf(item.pricingSnapshot) : null;
+  if (block && words.block && words.blockExtra) {
+    const text = blockLineText(block, { block: words.block, blockExtra: words.blockExtra, days: words.days }, formatVnd);
+    // two lines: the label, then the formula (a slip is narrow)
+    return `${text.label}\n${text.formula}`;
+  }
   if (isRent && pricing === 'DAILY') {
     const days = Math.max(1, num(item.rentalDays) > 0 ? Math.round(num(item.rentalDays)) : ratio);
     return `${head}${words.perDay} × ${words.days.replace('{n}', String(days))} = ${formatVnd(total)}`;
