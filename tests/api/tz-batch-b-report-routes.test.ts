@@ -51,6 +51,7 @@ jest.mock('@rentalshop/utils', () => {
   const date = jest.requireActual('../../packages/utils/src/core/date');
   const dateRange = jest.requireActual('../../packages/utils/src/core/date-range');
   const revenue = jest.requireActual('../../packages/utils/src/core/revenue-calculator');
+  const revenueMapping = jest.requireActual('../../packages/utils/src/core/revenue-mapping');
   const excel = jest.requireActual('../../packages/utils/src/core/excel');
   const strings = jest.requireActual('../../packages/utils/src/core/string-utils');
   const schemas = jest.requireActual('../../packages/utils/src/core/validation-schemas');
@@ -58,6 +59,7 @@ jest.mock('@rentalshop/utils', () => {
     ...date,
     ...dateRange,
     ...revenue,
+    ...revenueMapping,
     ...excel,
     formatFullName: strings.formatFullName,
     getOrderRevenueEvents: (...args: any[]) => {
