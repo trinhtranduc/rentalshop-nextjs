@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.anyrent.pos.domain.deposit.DepositMode
 import com.anyrent.pos.domain.money.ShopCurrency
 import com.anyrent.pos.domain.money.ShopMoney
 import java.util.UUID
@@ -45,6 +46,8 @@ object SessionStore {
     private const val KEY_PERMISSIONS = "permissions"
     /** #1145 the shop's currency (`merchant.currency`, "VND" / "USD"); absent = VND */
     private const val KEY_CURRENCY = "merchantCurrency"
+    /** #1199 "Cách thu cọc" (`merchant.depositMode`, "ONE_TIME" / "STAGED"); absent = unknown, the screens read GET /api/settings/deposit */
+    private const val KEY_DEPOSIT_MODE = "merchantDepositMode"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -64,7 +67,20 @@ object SessionStore {
         _allowOverlappingOrders.value = prefs.getBoolean(KEY_ALLOW_OVERLAP, true)
         _modules.value = prefs.getStringSet(KEY_MODULES, emptySet()).orEmpty().toSet()
         setCurrencyValue(ShopCurrency.from(prefs.getString(KEY_CURRENCY, null)))
+        _depositMode.value = prefs.getString(KEY_DEPOSIT_MODE, null)?.let(DepositMode::from)
     }
+
+    private val _depositMode = MutableStateFlow<DepositMode?>(null)
+
+    /** #1199 the shop's "Cách thu cọc" from login `merchant.depositMode` and GET /api/settings/deposit; null while unknown */
+    val depositModeFlow: StateFlow<DepositMode?> = _depositMode.asStateFlow()
+
+    var depositMode: DepositMode?
+        get() = _depositMode.value
+        set(value) {
+            _depositMode.value = value
+            if (isReady) prefs.edit().apply { if (value == null) remove(KEY_DEPOSIT_MODE) else putString(KEY_DEPOSIT_MODE, value.raw) }.apply()
+        }
 
     private val _currency = MutableStateFlow(ShopCurrency.VND)
 
@@ -268,7 +284,10 @@ object SessionStore {
             .remove(KEY_MODULES)
             .remove(KEY_PERMISSIONS)
             .remove(KEY_CURRENCY)
+            .remove(KEY_DEPOSIT_MODE)
             .apply()
+        _depositMode.value = null
+        DepositModeStore.reset()
         _allowOverlappingOrders.value = true
         setCurrencyValue(ShopCurrency.VND)
         _modules.value = emptySet()
