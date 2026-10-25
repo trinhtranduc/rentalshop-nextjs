@@ -8,6 +8,7 @@ export type SettingsTab =
   | 'outlet'
   | 'public-page'
   | 'bank-accounts'
+  | 'payment'
   | 'receipt'
   | 'subscription'
   | 'profile'
@@ -31,6 +32,8 @@ export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'public-page', group: 'shop', roles: ['MERCHANT'] },
   /** #852: the owner sets bank accounts per branch here too (branch select on top) */
   { id: 'bank-accounts', group: 'shop', roles: ['MERCHANT', 'OUTLET_ADMIN'] },
+  /** #1199 Thu tiền: "Cách thu cọc", the owner picks one deposit at booking or deposit stages */
+  { id: 'payment', group: 'shop', roles: ['MERCHANT'] },
   /** Phiếu in (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */
   { id: 'receipt', group: 'shop' },
   { id: 'subscription', group: 'account', roles: ['MERCHANT'] },

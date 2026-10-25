@@ -300,6 +300,7 @@ export interface ApiUrls {
     outlet: string;
     billing: string;
     currency: string;
+    deposit: string;
     changePassword: string;
     uploadPicture: string;
     deletePicture: string;
@@ -882,6 +883,7 @@ function createApiUrls(): ApiUrls {
     outlet: `${base}/api/settings/outlet`,
     billing: `${base}/api/settings/billing`,
     currency: `${base}/api/settings/currency`,
+    deposit: `${base}/api/settings/deposit`,
     changePassword: `${base}/api/profile/change-password`,
     uploadPicture: `${base}/api/profile/upload-picture`,
     deletePicture: `${base}/api/profile/delete-picture`,

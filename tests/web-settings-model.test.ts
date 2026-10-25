@@ -165,8 +165,8 @@ describe('staff list (#528)', () => {
 });
 
 describe('store settings (#528)', () => {
-  it('layout C (#1140): 8 tabs for the owner, 6 for the outlet admin, 5 for staff', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'public-page', 'bank-accounts', 'receipt', 'subscription', 'profile', 'account', 'language']);
+  it('layout C (#1140): 9 tabs for the owner, 6 for the outlet admin, 5 for staff', () => {
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'public-page', 'bank-accounts', 'payment', 'receipt', 'subscription', 'profile', 'account', 'language']);
     expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language']);
     expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language']);
     expect(tabsForRole('OUTLET_INVENTORY').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language']);
@@ -175,7 +175,7 @@ describe('store settings (#528)', () => {
   it('groups the nav as Cửa hàng · Tài khoản · Tôi, dropping empty groups (#1140)', () => {
     const shape = (role: string) => groupedTabs(tabsForRole(role)).map((g) => [g.group, g.tabs.map((t) => t.id)]);
     expect(shape('MERCHANT')).toEqual([
-      ['shop', ['merchant', 'public-page', 'bank-accounts', 'receipt']],
+      ['shop', ['merchant', 'public-page', 'bank-accounts', 'payment', 'receipt']],
       ['account', ['subscription']],
       ['me', ['profile', 'account', 'language']],
     ]);
