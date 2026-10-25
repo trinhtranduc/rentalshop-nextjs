@@ -1098,64 +1098,6 @@ declare const ANYRENT_BRANDMARK_PATH = "/anyrent-brandmark-ribbon.png";
 declare const ANYRENT_BRAND_NAME = "AnyRent";
 declare function getAnyRentLogoUrl(baseUrl?: string): string;
 
-/**
- * #907 Feature modules a merchant can be given one by one (admin switch, optional end date).
- * A module is active when its row is enabled, not past `endsAt`, and every module it requires is active.
- * `payroll` (Tính lương, requires attendance) is not in the catalog yet; add it here when it ships.
- * #967 `loyalty` (Khách thân thiết): on through the plan `features` or a feature add-on.
- */
-declare const MODULE_KEY: {
-    readonly ATTENDANCE: "attendance";
-    readonly LOYALTY: "loyalty";
-};
-type ModuleKey = (typeof MODULE_KEY)[keyof typeof MODULE_KEY];
-interface ModuleDefinition {
-    key: string;
-    /** Keys that must be active for this module to be active */
-    requires: string[];
-}
-declare const MODULES: ModuleDefinition[];
-/** #967 module keys a plan includes through its `features` list (plan with `loyalty` → ['loyalty']). */
-declare function planModuleKeys(planFeatures: unknown): string[];
-interface MerchantModuleState {
-    key: string;
-    enabled: boolean;
-    endsAt: Date | string | null;
-}
-/** Active module keys (catalog order) from the stored rows at `now`. Unknown keys are ignored. */
-declare function resolveActiveModules(rows: MerchantModuleState[], now?: Date, catalog?: ModuleDefinition[]): string[];
-/** #943 a shop's feature add-on as read for the module rule (PlanLimitAddon with a featureKey). */
-interface FeatureAddonState {
-    featureKey: string | null;
-    isActive: boolean | null;
-    endsAt: Date | string | null;
-}
-/**
- * #943: module states from both sources: the legacy #907 rows (kept working) and the shop's feature add-ons. An
- * add-on counts as an enabled row while it is switched on and not past `endsAt`. #967: `planKeys` (from
- * `planModuleKeys`) count as rows that never end. Feed the result to `resolveActiveModules` (catalog and `requires`
- * rules unchanged).
- */
-declare function mergeModuleSources(rows: MerchantModuleState[], featureAddons: FeatureAddonState[], now?: Date, planKeys?: string[]): MerchantModuleState[];
-interface ModuleSourceView {
-    key: string;
-    /** On (any source, `requires` met) */
-    active: boolean;
-    /** Included in the plan (`features`) */
-    plan: boolean;
-    /** An un-ended feature add-on */
-    addon: boolean;
-    /** A legacy #907 switch row still on */
-    legacy: boolean;
-}
-/** #967 per catalog module: on or off, and where it comes from (admin "theo gói / theo add-on"). */
-declare function describeModuleSources(input: {
-    rows: MerchantModuleState[];
-    featureAddons: FeatureAddonState[];
-    planFeatures: unknown;
-    now?: Date;
-}): ModuleSourceView[];
-
 declare const BRAND_COLORS: {
     readonly primary: "#22C55E";
     readonly secondary: "#4ADE80";
@@ -1553,26 +1495,6 @@ declare function normalizeBusinessTags(tags: unknown): BusinessTag[];
  */
 declare function deriveBusinessTypeFromTags(tags: BusinessTag[]): BusinessType;
 
-/** Marketing/content languages, separate from POS application languages. */
-declare const PUBLIC_LOCALES: readonly ["vi", "en", "ja", "ko", "zh", "ru", "zh-TW", "fr", "de", "th", "id", "es"];
-type PublicLocale = typeof PUBLIC_LOCALES[number];
-declare const PUBLIC_LOCALE_NAMES: Record<PublicLocale, string>;
-declare function isPublicLocale(value: unknown): value is PublicLocale;
-declare function publicHomePath(locale: PublicLocale): string;
-declare function publicPostPath(locale: PublicLocale, slug?: string): string;
-/** #1114: public marketing pages that exist in every public language */
-declare const PUBLIC_PAGES: readonly ["pricing", "features", "download", "image-search"];
-type PublicPage = typeof PUBLIC_PAGES[number];
-declare function isPublicPage(value: unknown): value is PublicPage;
-declare function publicPagePath(locale: PublicLocale, page: PublicPage): string;
-/** `/{locale}/{page}` for one of the public pages, else null (the Vietnamese URLs have no prefix) */
-declare function publicPageFromPath(pathname: string): {
-    locale: PublicLocale;
-    page: PublicPage;
-} | null;
-/** Classify only marketing routes, never /{locale}/orders or tenant product paths. */
-declare function publicLocaleFromPath(pathname: string): PublicLocale | null;
-
 /**
  * Centralized Constants for Rental Shop Monorepo
  *
@@ -1812,4 +1734,4 @@ declare const CONSTANTS: {
     readonly STATUS: typeof STATUS;
 };
 
-export { ACTION_COLORS, ANYRENT_BRANDMARK_PATH, ANYRENT_BRAND_NAME, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_CYCLES_ARRAY, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TAG, BUSINESS_TAG_OPTIONS, BUSINESS_TAG_VALUES, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BillingIntervalLocale, type BorderColor, type BrandColor, type BusinessTag, type BusinessTagOption, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, type FeatureAddonState, MERCHANT_STATUS, MODULES, MODULE_KEY, type MerchantModuleState, type MerchantPricingConfig, type MerchantStatus, type ModuleDefinition, type ModuleKey, type ModuleSourceView, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_STATUS_TRANSITIONS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, OUTLET_USER_ROLES, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PERIOD_EXPIRY_NOTIFICATIONS, PLATFORM_OPS_ROLES, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, PUBLIC_LOCALES, PUBLIC_LOCALE_NAMES, PUBLIC_PAGES, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type PricingUnit, type ProductAvailabilityStatus, type PublicLocale, type PublicPage, RENEWAL_DURATIONS, SEARCH, STAFF_LIKE_ROLES, SUBSCRIPTION_EXPIRY_CONFIG, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, SYSTEM_LEVEL_USER_ROLES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, canChangeOrderStatus, CONSTANTS as default, deriveBusinessTypeFromTags, describeModuleSources, formatCountryDisplay, getActivePlans, getAllPlans, getAnyRentLogoUrl, getBillingIntervalLabel, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderStatusClassName, getOrderStatusColors, getOrderTypeClass, getPeriodExpiryNotificationDays, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasLoyaltyFeature, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isOutletRole, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isPlatformOpsRole, isPublicLocale, isPublicPage, isStaffLikeRole, isSubscriptionActive, isSystemLevelUserRole, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, mergeModuleSources, normalizeBillingInterval, normalizeBusinessTags, normalizeSubscriptionStatus, planModuleKeys, publicHomePath, publicLocaleFromPath, publicPageFromPath, publicPagePath, publicPostPath, requiresRentalDates, resolveActiveModules, validatePlanConfig };
+export { ACTION_COLORS, ANYRENT_BRANDMARK_PATH, ANYRENT_BRAND_NAME, API, AUDIT_ACTION, AUDIT_ENTITY_TYPE, type ActionColor, type ApiValue, type AuditAction, type AuditEntityType, BACKGROUND_COLORS, BILLING_CYCLES, BILLING_CYCLES_ARRAY, BILLING_INTERVAL, BORDER_COLORS, BRAND_COLORS, BUSINESS, BUSINESS_TAG, BUSINESS_TAG_OPTIONS, BUSINESS_TAG_VALUES, BUSINESS_TYPE_DEFAULTS, BUSINESS_TYPE_DESCRIPTIONS, BUSINESS_TYPE_LABELS, BUSINESS_TYPE_OPTIONS, BUTTON_COLORS, type BackgroundColor, type BillingInterval, type BillingIntervalLocale, type BorderColor, type BrandColor, type BusinessTag, type BusinessTagOption, type BusinessType, type BusinessTypeOption, type BusinessValue, type ButtonVariant, CONSTANTS, COUNTRIES, CURRENCY_CONFIGS, CURRENCY_DECIMALS, CURRENCY_LOCALES, CURRENCY_NAMES, CURRENCY_OPTIONS, CURRENCY_SYMBOLS, CURRENCY_SYMBOL_POSITION, type Country, type CurrencyCode, type CurrencyConfig, DEFAULT_CURRENCY, DEFAULT_CURRENCY_SETTINGS, ENTITY_STATUS, ENTITY_STATUS_COLORS, ENVIRONMENT, EXCHANGE_RATES, type EntityStatus, type EnvironmentValue, MERCHANT_STATUS, type MerchantPricingConfig, type MerchantStatus, NAVIGATION_COLORS, type NavigationColor, ORDER_STATUS, ORDER_STATUS as ORDER_STATUSES, ORDER_STATUS_BUTTON_COLORS, ORDER_STATUS_COLORS$1 as ORDER_STATUS_COLORS, ORDER_STATUS_COLORS as ORDER_STATUS_COLOR_PALETTE, ORDER_STATUS_ICONS, ORDER_STATUS_LABELS, ORDER_STATUS_TRANSITIONS, ORDER_TYPE, ORDER_TYPES, ORDER_TYPE_BUTTON_COLORS, ORDER_TYPE_COLORS$1 as ORDER_TYPE_COLORS, ORDER_TYPE_COLORS as ORDER_TYPE_COLOR_PALETTE, ORDER_TYPE_ICONS, ORDER_TYPE_LABELS, OUTLET_USER_ROLES, type OrderStatus, type OrderType$1 as OrderType, PAGINATION, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_STATUS_COLORS, PAYMENT_TYPE, PERIOD_EXPIRY_NOTIFICATIONS, PLATFORM_OPS_ROLES, PRICING_TYPE, PRICING_TYPE_DESCRIPTIONS, PRICING_TYPE_LABELS, PRICING_TYPE_OPTIONS, PRODUCT_AVAILABILITY_COLORS, PRODUCT_AVAILABILITY_STATUS, type PaginationValue, type PaymentMethod, type PaymentStatus, type PaymentType, type PlanConfig, type PlanFeature, type PlanLimits, type PricingBusinessRules, type PricingDurationLimits, type PricingType, type PricingTypeOption, type PricingUnit, type ProductAvailabilityStatus, RENEWAL_DURATIONS, SEARCH, STAFF_LIKE_ROLES, SUBSCRIPTION_EXPIRY_CONFIG, SUBSCRIPTION_PLANS, SUBSCRIPTION_STATUS, SUBSCRIPTION_STATUS_COLORS, SUPPORTED_CURRENCIES, SYSTEM_LEVEL_USER_ROLES, type SearchValue, type SubscriptionStatus, TEXT_COLORS, TRIAL_CONFIG, type TextColor, UI, type UIValue, USER_ROLE, type UserRole, VALIDATION, type ValidationValue, canChangeOrderStatus, CONSTANTS as default, deriveBusinessTypeFromTags, formatCountryDisplay, getActivePlans, getAllPlans, getAnyRentLogoUrl, getBillingIntervalLabel, getBusinessTypeDescription, getBusinessTypeLabel, getCountriesByRegion, getCountriesSorted, getCountryByCode, getCountryByName, getCurrencyConfig, getCurrencyName, getCurrencySymbol, getDefaultCountry, getDefaultPricingConfig, getDefaultTrialDays, getDurationUnit, getOrderStatusClass, getOrderStatusClassName, getOrderStatusColors, getOrderTypeClass, getPeriodExpiryNotificationDays, getPlan, getPlanComparison, getPlanLimits, getPlanPlatform, getPricingTypeDescription, getPricingTypeLabel, getStatusColor, getStatusLabel, getStatusOptions, getTrialNotificationDays, hasLoyaltyFeature, hasMobileAccess, hasProductPublicCheck, hasWebAccess, isEntityActive, isOrderCompleted, isOutletRole, isPaymentFailed, isPaymentPending, isPaymentSuccessful, isPlatformOpsRole, isStaffLikeRole, isSubscriptionActive, isSystemLevelUserRole, isUnlimitedPlan, isValidCurrency, isValidSubscriptionStatus, normalizeBillingInterval, normalizeBusinessTags, normalizeSubscriptionStatus, requiresRentalDates, validatePlanConfig };
