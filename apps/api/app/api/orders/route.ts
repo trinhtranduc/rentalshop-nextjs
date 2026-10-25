@@ -27,6 +27,17 @@ import {
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { checkOrderRefsInMerchant } from '../../../lib/order-scope';
+import {
+  findBlockOption,
+  priceBlockLine,
+  readOldAppsMode,
+  rentalDaysFor,
+  sameLinePrice,
+  tableOf,
+  totalAfterReprice,
+  type BlockSnapshot,
+} from '../../../lib/order-block-pricing';
+import { blockPricingErrorResponse } from '../../../lib/block-pricing-errors';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
@@ -793,6 +804,17 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       rentalDurationUnit = dominantPricingType === 'DAILY' ? 'day' : dominantPricingType === 'HOURLY' ? 'hour' : null;
     }
 
+    // #1189 day-block pricing: a client without the `block-pricing` capability (every installed app) gets its BLOCK
+    // lines priced by the server; a client with it is checked against the same function.
+    const clientKnowsBlock = hasCapability(request, 'block-pricing');
+    const blockErrors: string[] = [];
+    let blockRepriced = false;
+    let oldAppsModePromise: Promise<'recompute' | 'block'> | null = null;
+    const loadOldAppsMode = () =>
+      (oldAppsModePromise ??= db.prisma.merchant
+        .findUnique({ where: { id: outlet.merchantId }, select: { settings: true } })
+        .then((row: { settings?: unknown } | null) => readOldAppsMode(row?.settings)));
+
     // Process order items - use pricing from request (frontend calculated)
     const orderItemsData = await Promise.all(parsed.data.orderItems?.map(async item => {
           // Get product details for snapshot
@@ -871,6 +893,44 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             pricingOptionId = matchingOption?.id ?? null;
           }
 
+          // #1189: price a day-block line (RENT only) from the table and the Vietnam civil days
+          let lineUnitPrice = finalUnitPrice;
+          let lineTotalPrice = finalTotalPrice;
+          let lineType = optionType;
+          let pricingSnapshot: BlockSnapshot | undefined;
+          if (parsed.data.orderType === ORDER_TYPE.RENT) {
+            const blockOption = findBlockOption(product, { pricingOptionId: item.pricingOptionId, pricingType: item.pricingType });
+            const table = tableOf(blockOption);
+            if (blockOption && table) {
+              if (!clientKnowsBlock && (await loadOldAppsMode()) === 'block') {
+                blockErrors.push('PRICING_TYPE_REQUIRES_UPDATE');
+              } else {
+                const currency = (merchant as { currency?: string }).currency;
+                const priced = priceBlockLine({
+                  table,
+                  optionId: blockOption.id ?? null,
+                  days: rentalDaysFor(parsed.data.pickupPlanAt, parsed.data.returnPlanAt, (merchant as { timezone?: string }).timezone, item.rentDays),
+                  quantity: item.quantity,
+                  currency,
+                });
+                lineType = 'BLOCK' as PricingType;
+                rentalDays = priced.rentalDays;
+                if (blockOption.id != null) pricingOptionId = blockOption.id;
+                if (clientKnowsBlock) {
+                  if (!item.priceOverridden && !sameLinePrice(finalTotalPrice, priced.totalPrice, currency)) {
+                    blockErrors.push('BLOCK_PRICE_MISMATCH');
+                  }
+                  pricingSnapshot = { ...priced.snapshot, ...(item.priceOverridden ? { overridden: true } : {}) };
+                } else {
+                  lineUnitPrice = priced.unitPrice;
+                  lineTotalPrice = priced.totalPrice;
+                  pricingSnapshot = priced.snapshot;
+                  blockRepriced = true;
+                }
+              }
+            }
+          }
+
           // Snapshot product info + selected option to preserve them even if changed later
           return {
             productId: product.id, // Use database ID from product object (not item.productId which might be publicId)
@@ -880,15 +940,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             productImages: product.images || null,
             // Order item fields - use pricing from request if provided
             quantity: item.quantity,
-            unitPrice: finalUnitPrice,
-            totalPrice: finalTotalPrice,
+            unitPrice: lineUnitPrice,
+            totalPrice: lineTotalPrice,
             deposit: finalDeposit, // Deposit per unit
             notes: item.notes || null, // ✅ Preserve notes from request (can be null or empty string)
             rentalDays: rentalDays,
-            pricingType: optionType,
+            pricingType: lineType,
             pricingOptionId,
+            ...(pricingSnapshot ? { pricingSnapshot } : {}),
           };
     }) || []);
+
+    if (blockErrors.length > 0) {
+      return NextResponse.json(blockPricingErrorResponse(blockErrors[0]), { status: 400 });
+    }
 
     // Use depositAmount from request (frontend calculates it from items); a SALE holds no deposit (#361)
     const deposits = resolveOrderDeposits(
@@ -899,6 +964,22 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
 
     // #1070: a discount above the lines is stored clamped to them (old apps send it unclamped), never rejected
     const discount = clampOrderDiscount(parsed.data, sumLineTotals(orderItemsData));
+    // #1189: the server repriced a day-block line for an old app: the total comes from the lines, not from the app
+    // (it holds the day-1 price). Everything else keeps the app's total, as before.
+    let totalAmount = parsed.data.totalAmount;
+    if (blockRepriced) {
+      const repriced = totalAfterReprice({
+        lineTotals: orderItemsData.map((line: { totalPrice: number }) => line.totalPrice),
+        discountType: parsed.data.discountType,
+        discountValue: discount.discountValue,
+        discountAmount: discount.discountAmount,
+        currency: (merchant as { currency?: string }).currency,
+      });
+      totalAmount = repriced.totalAmount;
+      if (discount.discountValue !== undefined || discount.discountAmount !== undefined) {
+        discount.discountAmount = repriced.discountAmount;
+      }
+    }
 
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
@@ -908,7 +989,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       createdBy: { connect: { id: user.id } },
       orderType: parsed.data.orderType,
       status: initialStatus,
-      totalAmount: parsed.data.totalAmount,
+      totalAmount,
       depositAmount: deposits.depositAmount,
       securityDeposit: deposits.securityDeposit,
       damageFee: parsed.data.damageFee || 0,
@@ -947,7 +1028,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       customerId: parsed.data.customerId ?? null,
       createdById: user.id,
       orderType: parsed.data.orderType,
-      totalAmount: parsed.data.totalAmount,
+      totalAmount, // #341 guard compares the stored (server computed) total
       pickupPlanAt: orderData.pickupPlanAt,
       returnPlanAt: orderData.returnPlanAt,
       items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
@@ -1199,7 +1280,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           notes: item.notes,
           rentalDays: item.rentalDays,
           pricingType: item.pricingType,
-          pricingOptionId: item.pricingOptionId
+          pricingOptionId: item.pricingOptionId,
+          // #1189 (additive): only a day-block line has a snapshot; other lines keep the exact old keys
+          ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {})
         };
       }) || [],
       // Calculated fields

@@ -1,3 +1,5 @@
+import { readOldAppsMode, repriceOrderEdit } from '../../../../lib/order-block-pricing';
+import { blockPricingErrorResponse } from '../../../../lib/block-pricing-errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
@@ -314,6 +316,7 @@ export const GET = async (
             rentalDays: item.rentalDays,
             pricingType: item.pricingType,
             pricingOptionId: item.pricingOptionId,
+            ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {}), // #1189 (additive)
             product: item.product
               ? {
                   id: item.product.id,
@@ -744,6 +747,7 @@ export const PUT = async (
 
           return {
             ...item,
+            pricingSnapshot: undefined, // #1189: only the server writes a snapshot, never a client
             rentalDays: item.rentalDays ?? item.rentDays ?? existingItem?.rentalDays,
             pricingType: item.pricingType ?? existingItem?.pricingType,
             // Intent is pricingType. Only keep a client-sent option id when present;
@@ -789,6 +793,60 @@ export const PUT = async (
         });
         if (!refsCheck.ok) {
           return NextResponse.json(ResponseBuilder.error(refsCheck.code), { status: 404 });
+        }
+      }
+
+      // #1189 day-block pricing: an old app (no `block-pricing` capability) gets BLOCK lines priced by the server
+      // from the table and the Vietnam civil days; a client that knows BLOCK is checked. Only when this edit touches
+      // lines, dates, total or discount of a RENT order.
+      {
+        const effectiveType = (validUpdateData as any).orderType ?? existingOrder.orderType;
+        const touchesPrice = ['orderItems', 'pickupPlanAt', 'returnPlanAt', 'totalAmount', 'discountAmount', 'discountValue', 'discountType']
+          .some((key) => key in validUpdateData);
+        if (merchantId != null && effectiveType === 'RENT' && touchesPrice) {
+          let shop: { currency?: string; timezone?: string } | null = null;
+          try {
+            shop = (await db.merchants.findById(merchantId)) as any;
+          } catch {
+            shop = null;
+          }
+          const edit = await repriceOrderEdit({
+            existingItems: existingOrder.orderItems ?? [],
+            bodyItems: Array.isArray(validUpdateData.orderItems) ? validUpdateData.orderItems : null,
+            pickup: (validUpdateData as any).pickupPlanAt ?? existingOrder.pickupPlanAt,
+            returnDate: (validUpdateData as any).returnPlanAt ?? existingOrder.returnPlanAt,
+            datesSent: 'pickupPlanAt' in validUpdateData || 'returnPlanAt' in validUpdateData,
+            totalOrDiscountSent: ['totalAmount', 'discountAmount', 'discountValue', 'discountType'].some((key) => key in validUpdateData),
+            timeZone: shop?.timezone,
+            currency: shop?.currency,
+            clientKnowsBlock: hasCapability(request, 'block-pricing'),
+            loadProduct: async (productId: number) => {
+              try {
+                return (await db.products.findById(productId)) as any;
+              } catch {
+                return null;
+              }
+            },
+            loadOldAppsMode: async () => {
+              const row = await (db.prisma as any).merchant.findUnique({ where: { id: merchantId }, select: { settings: true } });
+              return readOldAppsMode(row?.settings);
+            },
+            discount: {
+              type: 'discountType' in validUpdateData ? (validUpdateData as any).discountType : existingOrder.discountType,
+              value: 'discountValue' in validUpdateData ? (validUpdateData as any).discountValue : existingOrder.discountValue,
+              amount: 'discountAmount' in validUpdateData ? (validUpdateData as any).discountAmount : existingOrder.discountAmount,
+            },
+          });
+          if (edit.error) {
+            return NextResponse.json(blockPricingErrorResponse(edit.error), { status: 400 });
+          }
+          if (edit.items) validUpdateData.orderItems = edit.items;
+          if (edit.totalAmount !== undefined) {
+            (validUpdateData as any).totalAmount = edit.totalAmount;
+            if ('discountAmount' in validUpdateData || Number(existingOrder.discountAmount) > 0) {
+              (validUpdateData as any).discountAmount = edit.discountAmount;
+            }
+          }
         }
       }
 
@@ -991,6 +1049,7 @@ export const PUT = async (
             rentalDays: item.rentalDays,
             pricingType: item.pricingType,
             pricingOptionId: item.pricingOptionId,
+            ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {}), // #1189 (additive)
             // Sanitize nested product so Prisma Json `images` never breaks mobile decoders
             // (iOS OrderItem used to fail PUT response parse → Ready-to-deliver appeared broken).
             product: item.product

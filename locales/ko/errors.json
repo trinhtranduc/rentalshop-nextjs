@@ -93,5 +93,8 @@
   "BOOKING_REQUEST_FOUND": "예약 요청을 불러왔습니다.",
   "BOOKING_REQUESTS_FOUND": "예약 요청 목록을 불러왔습니다.",
   "BOOKING_REQUEST_PREPARED": "예약 요청으로 주문을 만들 준비가 되었습니다.",
-  "BOOKING_REQUEST_REJECTED": "예약 요청을 거절했습니다."
+  "BOOKING_REQUEST_REJECTED": "예약 요청을 거절했습니다.",
+  "BLOCK_PRICE_MISMATCH": "일수 구간 요금 상품의 가격이 요금표와 맞지 않습니다. 상품을 다시 불러온 뒤 다시 시도해 주세요.",
+  "PRICING_TYPE_REQUIRES_UPDATE": "이 상품은 일수 구간 요금을 사용합니다. 대여를 등록하려면 앱을 업데이트해 주세요.",
+  "BLOCK_TABLE_INVALID": "일수 구간 요금표가 올바르지 않습니다. 1~31일, 0 이상의 금액, 상품당 요금표는 하나만 사용하세요."
 }

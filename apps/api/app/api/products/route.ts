@@ -1,3 +1,4 @@
+import { blockOptionsIssue } from '../../../lib/block-options-issue';
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
@@ -11,6 +12,7 @@ import { API, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants'
 import { zeroStockRowsForOtherOutlets } from '../../../lib/product-branch-rules';
 import { otherActiveOutletsFor, otherOutletStock } from '../../../lib/other-outlet-stock';
 import { z } from 'zod';
+import { productForClient } from '../../../lib/block-pricing-legacy';
 import {
   batchTodayEffectiveAvailability,
   resolveProductListAvailabilityOutletId,
@@ -236,7 +238,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
 
       // Build product object, excluding costPrice if user doesn't have permission
       const productData: any = {
-        ...product,
+        ...productForClient(product, request), // #1189: a client without `block-pricing` sees a BLOCK option as FIXED
         images: imageUrls,
         available,
         effectiveAvailableToday: effectiveAvailableToday ?? available,
@@ -581,6 +583,11 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
         { status: 400 }
       );
     }
+    // #1189: a client that sends `pricingSchemaVersion: 2` must send a valid day table
+    const blockIssue = blockOptionsIssue(parsed.data.pricingOptions, parsed.data.pricingSchemaVersion);
+    if (blockIssue) {
+      return NextResponse.json(ResponseBuilder.error(blockIssue), { status: 400 });
+    }
 
     // Determine merchantId
     let merchantId = userScope.merchantId;
@@ -691,6 +698,8 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       durationConfig: parsed.data.durationConfig || null,
       // Multiple pricing options (Phase 1: FIXED + DAILY) - normalized in db layer
       ...(parsed.data.pricingOptions && parsed.data.pricingOptions.length > 0 && { pricingOptions: parsed.data.pricingOptions }),
+      // #1189: only a client with `pricingSchemaVersion: 2` may create a BLOCK option (stripped in the db layer)
+      ...(parsed.data.pricingSchemaVersion === 2 && { pricingSchemaVersion: 2 }),
       ...(parsed.data.categoryId && { category: { connect: { id: parsed.data.categoryId } } }),
       outletStock: {
         create: [...outletStock, ...zeroStockRows].map(os => ({
@@ -761,7 +770,7 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     return NextResponse.json({
       success: true,
       data: {
-        ...product,
+        ...productForClient(product, request),
         images: parseProductImages(product.images)
       },
       code: 'PRODUCT_CREATED_SUCCESS',
