@@ -4200,6 +4200,178 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
+    /// #1199 "Thu cọc theo giai đoạn" (mockups m11b, m4, m5, m6, m7, m8, m9): Settings → Cách thu cọc → STAGED + a
+    /// 30 / 40 / rest template → a rental in the cart with the stages → created with stage 1 collected → Overview and
+    /// list → the detail card → edit plan → hand-over blocked, collect stage 2 → cancel keeping part of the money.
+    /// Needs a product whose price is 12.000.000 (the run sets "Product 2 -" in its own database).
+    func test7qStagedDeposit() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        func text(_ labels: [String]) -> XCUIElement {
+            app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        }
+        func textStarting(_ labels: [String]) -> XCUIElement { e2e.element(labelBeginsWith: labels) }
+        func field(_ id: String) -> XCUIElement { app.textFields[id] }
+        func type(_ element: XCUIElement, _ value: String, clear: Bool = false) {
+            guard element.waitForExistence(timeout: 5) else { return XCTFail("field missing") }
+            element.tap()
+            if clear, let current = element.value as? String, !current.isEmpty {
+                element.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count))
+            }
+            element.typeText(value)
+        }
+        func dismissKeyboard() {
+            let done = e2e.button(["Done", "Xong"])
+            if done.exists && done.isHittable { done.tap() } else { app.keyboards.buttons["return"].tap() }
+        }
+        func scrollTo(_ element: XCUIElement, max: Int = 8) {
+            var tries = 0
+            while !(element.exists && element.isHittable) && tries < max { app.swipeUp(); tries += 1 }
+        }
+
+        // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2 with the warning
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        let row = textStarting(["Cách thu cọc", "Deposit collection"])
+        scrollTo(row)
+        e2e.shot("60a-settings-row")
+        XCTAssertTrue(row.exists, "Settings has the Cách thu cọc row")
+        row.tap()
+        sleep(2)
+        e2e.shot("60b-mode-one-time")
+        let staged = text(["Thu cọc theo giai đoạn", "Staged deposit"])
+        if app.buttons["deposit.mode.STAGED"].exists { app.buttons["deposit.mode.STAGED"].tap() } else { staged.tap() }
+        sleep(1)
+        e2e.shot("60c-enable-warning")
+        e2e.tapIfExists(e2e.button(["Bật", "Turn on"]), timeout: 5)
+        sleep(3)
+        e2e.shot("60d-mode-staged")
+        XCTAssertTrue(textStarting(["Nhân viên đang dùng app cũ", "Staff on an older app"]).exists, "the old-app warning shows in mode 2")
+
+        // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over
+        let templates = textStarting(["Mẫu giai đoạn cọc", "Deposit stage templates"])
+        XCTAssertTrue(templates.waitForExistence(timeout: 5))
+        templates.tap()
+        sleep(2)
+        e2e.shot("60e-templates-empty")
+        let add = e2e.button(["+ Tạo mẫu mới", "+ New template"])
+        XCTAssertTrue(add.waitForExistence(timeout: 5), "+ Tạo mẫu mới")
+        add.tap()
+        sleep(1)
+        type(field("deposit.template.name"), "Áo cưới · 3 giai đoạn")
+        dismissKeyboard()
+        let addStage = e2e.button(["+ Thêm giai đoạn", "+ Add stage"])
+        scrollTo(addStage)
+        addStage.tap()
+        sleep(1)
+        e2e.shot("60f-template-editor")
+        let days = field("deposit.stage.days.1")
+        if days.waitForExistence(timeout: 3) {
+            days.tap()
+            days.typeText(XCUIKeyboardKey.delete.rawValue + "4")
+            dismissKeyboard()
+        }
+        e2e.shot("60g-template-editor-filled")
+        e2e.button(["Lưu mẫu", "Save template"]).tap()
+        sleep(3)
+        e2e.shot("60h-templates-list")
+        XCTAssertTrue(textStarting(["Áo cưới · 3 giai đoạn"]).exists, "the template is listed")
+        e2e.goBackOnce()
+        e2e.goBackOnce()
+
+        // 3. Cart: stages, collect stage 1 with the order
+        e2e.emptyCart()
+        guard e2e.addToCartAndOpen(product: "Product 2 -") else { return XCTFail("Could not put Product 2 in the cart") }
+        e2e.cartRentToday()
+        _ = e2e.pickFirstCustomer()
+        sleep(2)
+        let stageRow = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '3.600.000'")).firstMatch
+        e2e.shot("61a-cart-staged")
+        e2e.soft(stageRow.waitForExistence(timeout: 5), "the cart shows stage 1 = 3.600.000")
+        scrollTo(text(["Phần còn lại, thu khi giao", "The rest, collected at hand-over"]), max: 3)
+        e2e.shot("61b-cart-staged-money")
+        let create = e2e.button(["Tạo đơn và thu giai đoạn 1", "Create order and collect stage 1"])
+        XCTAssertTrue(create.waitForExistence(timeout: 5), "the cart button collects stage 1")
+        create.tap()
+        sleep(2)
+        e2e.shot("61c-confirm-sheet")
+        let sheetConfirm = app.buttons.matching(NSPredicate(format: "label IN %@", ["Tạo đơn", "Create order"])).allElementsBoundByIndex
+            .filter { $0.isHittable }.max { $0.frame.minY < $1.frame.minY }
+        sheetConfirm?.tap()
+        let created = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Đã tạo đơn #' OR label BEGINSWITH 'Order #'")).firstMatch
+        XCTAssertTrue(created.waitForExistence(timeout: 20), "the order is created")
+        let number = created.label.components(separatedBy: "#").last?.components(separatedBy: CharacterSet.decimalDigits.inverted).first ?? ""
+        e2e.note("STAGED ORDER #\(number)")
+        e2e.shot("61d-created")
+        e2e.tapIfExists(e2e.button(["Xem đơn", "View order"]), timeout: 3)
+        sleep(3)
+        e2e.dismissRatingPrompt()
+        e2e.shot("62a-detail-card")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Đã thu 30' OR label BEGINSWITH 'Collected 30'")).firstMatch.exists, "the card says Đã thu 30%")
+
+        // 4. Overview "Cần thu hôm nay" (stage 2 is late: due 4 days before today's pickup) and the list badge
+        e2e.goBackOnce()
+        e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3)
+        sleep(5)
+        e2e.shot("63a-overview")
+        scrollTo(textStarting(["Cần thu hôm nay", "To collect today"]), max: 4)
+        e2e.shot("63b-overview-installments")
+        e2e.soft(textStarting(["Cần thu hôm nay", "To collect today"]).exists, "Overview shows Cần thu hôm nay")
+        e2e.tapTab(["Orders", "Đơn hàng"], index: 1)
+        sleep(4)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(3)
+        e2e.shot("64a-orders-badge")
+        e2e.soft(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Đã thu 30' OR label CONTAINS 'Collected 30'")).firstMatch.exists,
+                 "the order row shows Đã thu 30%")
+
+        // 5. Back to the detail: edit the plan, hand-over blocked, collect stage 2, hand-over sheet
+        let orderRow = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", number)).firstMatch
+        if orderRow.waitForExistence(timeout: 5) { orderRow.tap() } else { return XCTFail("order #\(number) not in the list") }
+        sleep(3)
+        let edit = app.buttons["deposit.card.edit"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 8), "Sửa on the card")
+        edit.tap()
+        sleep(2)
+        e2e.shot("65a-edit-plan")
+        e2e.goBackOnce()
+        sleep(1)
+        let handOver = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Giao đồ' OR label BEGINSWITH 'Hand over'")).firstMatch
+        XCTAssertTrue(handOver.waitForExistence(timeout: 5), "Giao đồ button")
+        handOver.tap()
+        sleep(2)
+        e2e.shot("66a-handover-blocked")
+        XCTAssertTrue(textStarting(["Còn giai đoạn cọc chưa thu", "Deposit stages not collected"]).exists, "the unpaid stages sheet shows")
+        e2e.button(["Thu giai đoạn 2", "Collect stage 2"]).tap()
+        sleep(2)
+        e2e.shot("66b-collect-sheet")
+        let confirmCollect = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thu ' OR label BEGINSWITH 'Collect '")).allElementsBoundByIndex
+            .filter { $0.isHittable }.max { $0.frame.minY < $1.frame.minY }
+        confirmCollect?.tap()
+        sleep(4)
+        e2e.shot("66c-after-collect-handover-sheet")
+        // the hand-over sheet follows by itself: close it without handing over
+        e2e.tapIfExists(e2e.button(["Cancel", "Hủy", "Huỷ", "Close", "Đóng"]), timeout: 3)
+        sleep(2)
+        e2e.shot("66d-detail-stage-2-collected")
+
+        // 6. Cancel keeping 1.800.000 of what the customer paid
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Cancel order", "Hủy đơn", "Huỷ đơn"]), "⋯ → Huỷ đơn")
+        sleep(2)
+        e2e.shot("67a-cancel-sheet")
+        let kept = app.textFields["deposit.cancel.kept"]
+        if kept.waitForExistence(timeout: 5) {
+            kept.tap()
+            kept.typeText("1800000")
+            dismissKeyboard()
+        }
+        e2e.shot("67b-cancel-sheet-kept")
+        e2e.button(["Xác nhận huỷ", "Confirm cancel"]).tap()
+        sleep(4)
+        e2e.shot("67c-detail-cancelled")
+        e2e.note("STAGED FLOW DONE order #\(number)")
+    }
+
     func test9SettingsLogout() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)

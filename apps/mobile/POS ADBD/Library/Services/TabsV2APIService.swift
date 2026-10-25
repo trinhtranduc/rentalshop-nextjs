@@ -22,7 +22,7 @@ final class TabsV2APIService: BaseService {
     static let shared = TabsV2APIService()
 
     @discardableResult
-    private func request<T: Decodable>(_ path: String, method: HTTPMethod = .get, parameters: [String: Any]? = nil,
+    func request<T: Decodable>(_ path: String, method: HTTPMethod = .get, parameters: [String: Any]? = nil,
                                        completion: @escaping (T?, NSError?) -> Void) -> DataRequest {
         let url = APIEndpoint.currentBaseURL + path
         let encoding: ParameterEncoding = method == .get ? URLEncoding.default : JSONEncoding.default

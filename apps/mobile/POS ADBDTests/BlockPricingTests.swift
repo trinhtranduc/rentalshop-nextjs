@@ -278,8 +278,8 @@ final class BlockPricingTests: XCTestCase {
     // MARK: - Header and errors
 
     func testEveryRequestHeaderSetSaysBlockPricing() {
-        XCTAssertEqual(BaseService.jsonHeader.value(for: "X-Client-Capabilities"), "block-pricing")
-        XCTAssertEqual(BaseService.formHeader.value(for: "X-Client-Capabilities"), "block-pricing")
+        XCTAssertEqual(BaseService.jsonHeader.value(for: "X-Client-Capabilities"), "installments, block-pricing")
+        XCTAssertEqual(BaseService.formHeader.value(for: "X-Client-Capabilities"), "installments, block-pricing")
     }
 
     func testPriceMismatchKeepsItsCodeAndShowsASentence() throws {

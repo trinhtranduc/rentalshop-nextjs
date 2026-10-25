@@ -232,12 +232,6 @@ extension NSError {
     static let apiCodeKey = "apiCode"
 }
 
-/// Header every request carries so the API sends BLOCK options and checks BLOCK prices instead of recomputing them
-enum ClientCapabilities {
-    static let headerName = "X-Client-Capabilities"
-    static let headerValue = "block-pricing"
-}
-
 // MARK: - Order lines
 
 extension OrderItem {

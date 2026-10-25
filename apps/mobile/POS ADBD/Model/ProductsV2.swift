@@ -768,7 +768,8 @@ enum CartV2Logic {
 
     /// Paid now: the prepaid deposit for a rental, the order total for a sale
     static func collectNow(_ cart: Cart) -> Double {
-        cart.orderType == .rent ? cart.depositAmount : cart.amountDue
+        if cart.isStagedRental { return cart.stagedCollectNow }  // #1199: stage 1 only, or nothing
+        return cart.orderType == .rent ? cart.depositAmount : cart.amountDue
     }
 
     /// Days tapped in the device-zone date picker → the cart's instants (#596): pickup at the first second of the

@@ -14,6 +14,8 @@ enum SettingsV2Item: Equatable {
     case storeInfo, receiptNote, printer, bankAccounts
     /// #1145 "Tiền tệ", shop owner only, right after "Thông tin cửa hàng"
     case currency
+    /// #1199 "Cách thu cọc": every role sees it; only the shop owner changes it
+    case depositMode
     case categories, customers, users, export
     case plan, language, password, appInfo, deleteAccount
 }
@@ -47,6 +49,7 @@ enum SettingsV2Logic {
         if ShopCurrencyLogic.canChange(role: role) { storeItems.append(.currency) }
         storeItems += [.receiptNote, .printer]
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
+        storeItems.append(.depositMode)
         let store = SettingsV2Section(group: .store, items: storeItems)
 
         var management: [SettingsV2Item] = []
