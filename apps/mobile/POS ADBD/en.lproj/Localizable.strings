@@ -2074,7 +2074,7 @@
 "orders.entity.millionWhole" = "%dM";
 
 /* #482 */
-"products.cart.pricing.block" = "Per block";
+"products.cart.pricing.block" = "Day block";
 "products.cart.pricing.hourly" = "Per hour";
 "products.cart.pricing.sale" = "Sale price";
 "products.cart.pricing.enterPrice" = "Enter price";
@@ -2818,3 +2818,32 @@
 "settings.v2.currency.failed" = "Could not change the currency. Please try again.";
 "currency.usd.unit" = "$";
 "currency.usd.unitDaily" = "$/day";
+
+// #1189 day-block pricing
+"block.title" = "Day-block price";
+"block.screen.title" = "Rental price · %@";
+"block.save" = "Save price table";
+"block.turnOff" = "Turn off day-block price";
+"block.row.off" = "Not used";
+"block.row.tiers" = "%d tiers";
+"block.row.extra" = "+%@ per day";
+"block.row.hold" = "last block price held";
+"block.section.default" = "Default pricing";
+"block.hint.default" = "Used by default for new orders. Staff can change it in the cart.";
+"block.section.tiers" = "Price by number of days";
+"block.addDay" = "+ Add day %d";
+"block.removeDay" = "Remove this day";
+"block.section.beyond" = "Rent beyond %d days";
+"block.extraPerDay" = "Add per extra day";
+"block.holdLast" = "Keep the last block price";
+"block.holdLast.price" = "Keep the last block price (%@)";
+"block.preview" = "Preview";
+"block.error.invalid" = "Enter a price for every day (0 or more) and the amount added per extra day.";
+"block.error.empty" = "There is no day-block price table yet. Enter a price for at least 1 day, or pick another default.";
+"block.summary.block" = "Block of %d days";
+"block.summary.extra" = "+ %d extra days";
+"products.unit.block" = "/1 day";
+"products.price.block" = "Day block";
+"BLOCK_PRICE_MISMATCH" = "The price of a day-block item does not match the price list. Reload the product and try again.";
+"PRICING_TYPE_REQUIRES_UPDATE" = "This product uses day-block pricing. Please update the app to place this rental.";
+"BLOCK_TABLE_INVALID" = "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.";
