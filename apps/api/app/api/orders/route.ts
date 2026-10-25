@@ -63,6 +63,7 @@ import {
   installmentsView,
   planForNewOrder,
   recomputeDepositFromPayments,
+  loadShop,
   shopFromMerchant,
 } from '../../../lib/installments';
 import {
@@ -983,7 +984,9 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     // #1199 staged deposits. Only a client that declared `installments` and sent `paymentPlan` (or `depositPlan`)
     // can create a plan order, and only a STAGED shop makes one; every other create is exactly as before.
     const clientKnowsInstallments = hasCapability(request, 'installments');
-    const shopContext = shopFromMerchant(merchant as any);
+    // `db.merchants.findById` does not select `settings`: read the shop's deposit mode with a query that does (#1138)
+    // (only a client with `installments` reads the stages, so an installed app costs no extra query)
+    const shopContext = clientKnowsInstallments ? await loadShop(prisma, outlet.merchantId) : shopFromMerchant(merchant as any);
     let newDepositPlan: ReturnType<typeof planForNewOrder> = null;
     let collectFirstNow: { method: string; reference: string; amount: number } | null = null;
     const planBody = (body as any)?.paymentPlan ?? ((body as any)?.depositPlan ? { items: (body as any).depositPlan.items } : undefined);

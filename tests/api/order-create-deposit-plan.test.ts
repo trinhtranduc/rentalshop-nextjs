@@ -21,7 +21,8 @@ const mockDb: any = {
     findById: jest.fn(async (id: number) => ({ id, merchantId: 2, isActive: true, name: 'Main' })),
     findDefaultForMerchant: jest.fn(async () => ({ id: 3 })),
   },
-  merchants: { findById: jest.fn(async () => merchantRow) },
+  // The real `db.merchants.findById` selects no `settings` column: the stages must come from a read that asks for it
+  merchants: { findById: jest.fn(async () => { const { settings: _omit, ...row } = merchantRow; return row; }) },
   products: {
     findById: jest.fn(async (id: number) => ({ id, name: 'Dress', pricingType: 'FIXED', pricingOptions: [], merchantId: 2, merchant: { id: 2 } })),
   },
@@ -47,11 +48,11 @@ const mockDb: any = {
     delete: jest.fn(),
   },
   prisma: {
-    merchant: { findUnique: jest.fn(async () => ({ settings: null })) },
+    merchant: { findUnique: jest.fn(async () => ({ currency: merchantRow?.currency, timezone: merchantRow?.timezone, settings: merchantRow?.settings ?? null })) },
     $transaction: jest.fn(async (fn: any) => fn({ order: { findUnique: async () => null } })),
   },
 };
-jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: {} }));
+jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: mockDb.prisma }));
 
 jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/legacy-plan-days'),
