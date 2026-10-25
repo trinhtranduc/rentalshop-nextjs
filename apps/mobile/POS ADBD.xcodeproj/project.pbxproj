@@ -217,6 +217,7 @@
 		595B59EBE56AE7BE95B3F06E /* ProductCalendarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */; };
 		55F5BB7EC8A48865B8ABD8E5 /* AuthForms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DFF664402F310DBDA0C7DD /* AuthForms.swift */; };
 		57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */; };
+		158F1A299C9A80A5D33F422D /* BlockPriceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C27B8AC73B5299F43E9087DA /* BlockPriceViewController.swift */; };
 		A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A632F0000000000000000001 /* CategoryManageViewController.swift */; };
 		607E5D13DAD404F7F526AA2C /* CustomersV2ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */; };
 		61800AE4201230EA1EED530E /* TodayWork.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07CC0B0BF772BE52542D13E /* TodayWork.swift */; };
@@ -227,6 +228,7 @@
 		7455223A117E7116154E6A46 /* AuthFormsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D5AF2D041EA822598543B5 /* AuthFormsTests.swift */; };
 		75C21D317F5521D9A9958865 /* CustomersV2ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */; };
 		763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */; };
+		2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */; };
 		780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B854361D12543F58020DE847 /* Foundation.framework */; };
 		80854D02D5E837AF0AFAF047 /* OverviewV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371CA82265386D2C46D5713C /* OverviewV2ViewController.swift */; };
 		A633B0000000000000000001 /* OverviewTopAllViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A633F0000000000000000001 /* OverviewTopAllViewController.swift */; };
@@ -234,6 +236,7 @@
 		B484B0000000000000000001 /* RentedOutOrdersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B484F0000000000000000001 /* RentedOutOrdersViewController.swift */; };
 		81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32451210261D4A00E83FEBAA /* OrderStatusTests.swift */; };
 		818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */; };
+		5E74715D050E5F0CEB1FAA81 /* BlockPricingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0BFD44494C2A147ACDF44AF /* BlockPricingTests.swift */; };
 		83BD6AF23E08F2BB98957B98 /* OrderExtendSheetViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */; };
 		85ABA05A8130F520F4EEDAC2 /* CustomersV2Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CCD2C1B543D4537FE68B48 /* CustomersV2Views.swift */; };
 		881802B021BE5AEF00D1E366 /* UnixTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881802AF21BE5AEF00D1E366 /* UnixTime.swift */; };
@@ -636,6 +639,7 @@
 		81CCD2C1B543D4537FE68B48 /* CustomersV2Views.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2Views.swift; sourceTree = "<group>"; };
 		8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersFilterSheet.swift; sourceTree = "<group>"; };
 		85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2.swift; sourceTree = "<group>"; };
+		670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPricing.swift; sourceTree = "<group>"; };
 		86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderExtendSheetViewController.swift; sourceTree = "<group>"; };
 		881802AF21BE5AEF00D1E366 /* UnixTime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnixTime.swift; sourceTree = "<group>"; };
 		8841914121CA5C9E00C442C3 /* NavigationTabbarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationTabbarController.swift; sourceTree = "<group>"; };
@@ -692,6 +696,7 @@
 		A4770477F0000000000000A1 /* NotificationsLogic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsLogic.swift; sourceTree = "<group>"; };
 		9C7E52D8C56398199335E3DA /* EditCustomerViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditCustomerViewController.swift; sourceTree = "<group>"; };
 		9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2Tests.swift; sourceTree = "<group>"; };
+		A0BFD44494C2A147ACDF44AF /* BlockPricingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPricingTests.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000011 /* DraftOrderAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderAttributes.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000012 /* DraftOrderLiveActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderLiveActivityView.swift; sourceTree = "<group>"; };
 		A4B110012F1E0101000013 /* DraftOrderLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftOrderLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -720,6 +725,7 @@
 		C37BDFE8E8A481649F08A708 /* POS ADBDTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "POS ADBDTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C466A2A395154AD70553624A /* OrderRowCell.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderRowCell.swift; sourceTree = "<group>"; };
 		C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductFormViewController.swift; sourceTree = "<group>"; };
+		C27B8AC73B5299F43E9087DA /* BlockPriceViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPriceViewController.swift; sourceTree = "<group>"; };
 		A632F0000000000000000001 /* CategoryManageViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryManageViewController.swift; sourceTree = "<group>"; };
 		C68665233AF9D666CE7E723C /* Phase8Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Phase8Tests.swift; sourceTree = "<group>"; };
 		596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShopTimeZoneTests.swift; sourceTree = "<group>"; };
@@ -1068,6 +1074,7 @@
 				665353C0AB5689AA0B083DAA /* ProductDetailViewController.swift */,
 				2E6F520BE7861AF08B3F62AF /* ProductCalendarViewController.swift */,
 				C4FED6C8BE1ED927725D6E7F /* ProductFormViewController.swift */,
+				C27B8AC73B5299F43E9087DA /* BlockPriceViewController.swift */,
 				A632F0000000000000000001 /* CategoryManageViewController.swift */,
 				A587878FD2FE67429CE2F3CF /* CartV2ViewController.swift */,
 			);
@@ -1082,6 +1089,7 @@
 				F8174E6BA337B4B259DD6569 /* FormattersTests.swift */,
 				32451210261D4A00E83FEBAA /* OrderStatusTests.swift */,
 				9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */,
+				A0BFD44494C2A147ACDF44AF /* BlockPricingTests.swift */,
 				6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */,
 				A640F0000000000000000003 /* OrderShareImageTests.swift */,
 				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
@@ -1166,6 +1174,7 @@
 				C9B0410523AC919A00DED0B3 /* DateFormatTransform.swift */,
 				8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */,
 				85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */,
+				670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */,
 				B07CC0B0BF772BE52542D13E /* TodayWork.swift */,
 				16733093F5AD2CBACB593E6B /* CalendarV2.swift */,
 				64454969BCB62EEB55223203 /* OverviewV2.swift */,
@@ -1917,6 +1926,7 @@
 				D471767BB75A2DAE01AA6CEC /* FormattersTests.swift in Sources */,
 				81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */,
 				818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */,
+				5E74715D050E5F0CEB1FAA81 /* BlockPricingTests.swift in Sources */,
 				884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */,
 				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
 				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
@@ -2155,6 +2165,7 @@
 				16E80097E5286FE56886EC3E /* DesignTokens.swift in Sources */,
 				D40FB2637C62BD90BAE52C00 /* UpdateRequiredViewController.swift in Sources */,
 				763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */,
+				2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */,
 				9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */,
 				219F5B5BC02CC3E14401DD74 /* ProductsV2Views.swift in Sources */,
 				C63E672C7A520CC43025F3D5 /* ProductsHomeViewController.swift in Sources */,
@@ -2162,6 +2173,7 @@
 				523C5F222AEAD2B89489E491 /* ProductDetailViewController.swift in Sources */,
 				595B59EBE56AE7BE95B3F06E /* ProductCalendarViewController.swift in Sources */,
 				57EF666653966B684CA1B360 /* ProductFormViewController.swift in Sources */,
+				158F1A299C9A80A5D33F422D /* BlockPriceViewController.swift in Sources */,
 				A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */,
 				4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */,
 				61800AE4201230EA1EED530E /* TodayWork.swift in Sources */,

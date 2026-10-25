@@ -548,6 +548,9 @@
     <string name="api_error_product_held_by_other_outlets">{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.</string>
     <string name="api_error_product_held_by_other_outlets_no_params">Chi nhánh khác còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.</string>
     <string name="api_error_outlet_has_open_orders">Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.</string>
+    <string name="api_error_block_price_mismatch">Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.</string>
+    <string name="api_error_pricing_type_requires_update">Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.</string>
+    <string name="api_error_block_table_invalid">Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.</string>
     <string name="api_error_customer_duplicate">Khách hàng với email hoặc số điện thoại này đã tồn tại</string>
     <string name="api_error_email_exists">Địa chỉ email đã được đăng ký</string>
     <string name="api_error_phone_exists">Số điện thoại đã được đăng ký</string>

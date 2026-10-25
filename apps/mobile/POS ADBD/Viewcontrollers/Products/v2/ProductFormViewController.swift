@@ -28,6 +28,12 @@ final class ProductFormViewController: BaseViewControler {
     private var categoryId: Int?
     private var merchantOutlets: [(id: Int, isDefault: Bool)] = []
     private var defaultMode: ProductPricingMode = .perRental
+    /// #1189: the day-block table edited on `BlockPriceViewController`; nil = none
+    private var blockTable: BlockTable?
+    private let blockRow = V2ValueRow(title: "block.title".localized())
+    private let blockRange = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private var blockRangeWrap = UIView()
+    private var defaultBoxWrap = UIView()
     private var keyboardManagerWasEnabled = true
 
     private let scroll = UIScrollView()
@@ -229,13 +235,23 @@ final class ProductFormViewController: BaseViewControler {
             let defaultBox = UIStackView(arrangedSubviews: [defaultTitle, defaultToggle])
             defaultBox.axis = .vertical
             defaultBox.spacing = 6
-            form.addArrangedSubview(padded(defaultBox, top: 8, bottom: 8))
+            defaultBoxWrap = padded(defaultBox, top: 8, bottom: 8)
+            form.addArrangedSubview(defaultBoxWrap)
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
             configure(depositField, placeholder: "0", numeric: true)
             form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField),
                                          field(title: "products.form.deposit".localized(), required: false, input: depositField)))
             configure(costField, placeholder: "product.form.costPrice.placeholder".localized(), numeric: true)
             form.addArrangedSubview(field(title: "product.form.costPrice".localized(), required: false, input: costField))
+            // #1189: one neutral row; the table is edited on its own screen
+            blockRow.accessibilityIdentifier = "product.form.blockRow"
+            blockRow.addTarget(self, action: #selector(openBlockPrice), for: .touchUpInside)
+            form.addArrangedSubview(V2.divider())
+            form.addArrangedSubview(blockRow)
+            blockRangeWrap = padded(blockRange, top: 0, bottom: 10)
+            form.addArrangedSubview(blockRangeWrap)
+            form.addArrangedSubview(V2.divider())
+            renderBlockRow()
         }
 
         // Stock
@@ -334,6 +350,8 @@ final class ProductFormViewController: BaseViewControler {
         if let cost = product.costPrice, cost > 0 { costField.text = MoneyInput.display(cost) }
         defaultMode = ProductPricing.defaultMode(product)
         defaultToggle.select(defaultMode == .perDay ? 1 : 0)
+        blockTable = ProductPricing.block(product)
+        renderBlockRow()
         photos = (product.images?.isEmpty == false ? product.images! : [product.image_url].compactMap { $0 })
             .filter { !$0.isEmpty }.map { .remote($0) }
         renderStock()
@@ -454,6 +472,39 @@ final class ProductFormViewController: BaseViewControler {
 
     @objc private func formatMoney(_ field: UITextField) {
         field.text = MoneyInput.display(MoneyInput.parse(field.text))
+    }
+
+    /// "Giá theo khối ngày · Chưa dùng ›" or "3 mốc · +20.000đ mỗi ngày ›" with its first and last day under it
+    private func renderBlockRow() {
+        guard showsPrices else { return }
+        if let table = blockTable {
+            blockRow.valueLabel.text = BlockPricing.rowSummary(table)
+            blockRange.text = BlockPricing.rangeSummary(table)
+        } else {
+            blockRow.valueLabel.text = "block.row.off".localized()
+            blockRange.text = nil
+        }
+        blockRangeWrap.isHidden = blockTable == nil
+        // The two-way switch cannot show "Giá theo khối ngày"; that choice lives on the block screen
+        defaultBoxWrap.isHidden = defaultMode == .block
+    }
+
+    @objc private func openBlockPrice() {
+        view.endEditing(true)
+        let draft = BlockPriceDraft(perRental: MoneyInput.parse(perRentalField.text), perDay: MoneyInput.parse(perDayField.text),
+                                    defaultMode: defaultMode, table: blockTable)
+        let screen = BlockPriceViewController(productName: nameField.text ?? "", draft: draft)
+        screen.modalPresentationStyle = .overFullScreen
+        screen.onSave = { [weak self] saved in
+            guard let self else { return }
+            self.perRentalField.text = MoneyInput.display(saved.perRental)
+            self.perDayField.text = MoneyInput.display(saved.perDay)
+            self.blockTable = saved.table
+            self.defaultMode = saved.defaultMode
+            self.defaultToggle.select(saved.defaultMode == .perDay ? 1 : 0)
+            self.renderBlockRow()
+        }
+        present(screen, animated: true)
     }
 
     @objc private func defaultChanged() {
@@ -584,7 +635,7 @@ final class ProductFormViewController: BaseViewControler {
         let barcode = (barcodeField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let keptUrls = photos.compactMap { photo -> String? in if case .remote(let url) = photo { return url }; return nil }
         let newImages = photos.compactMap { photo -> UIImage? in if case .local(let image) = photo { return image }; return nil }
-        let options = showsPrices ? ProductPricing.options(perRental: input.perRental, perDay: input.perDay, defaultMode: input.defaultMode) : nil
+        let options = showsPrices ? ProductPricing.options(perRental: input.perRental, perDay: input.perDay, defaultMode: input.defaultMode, block: blockTable) : nil
         let merchantId = User.current()?.merchant?.id ?? User.current()?.merchantId
 
         let completion: (Product?, NSError?) -> Void = { [weak self] saved, error in
@@ -621,7 +672,9 @@ final class ProductFormViewController: BaseViewControler {
                 isActive: nil,
                 pricingType: nil,
                 durationConfig: nil,
-                pricingOptions: options
+                pricingOptions: options,
+                // #1189: this form sends every option, BLOCK included, so the API replaces the stored table with ours
+                pricingSchemaVersion: showsPrices ? ProductPricingSchema.version : nil
             )
             ProductService.shared.updateProduct(productId: product.id ?? product.product_id, request: request, images: newImages, completion: completion)
         } else {
@@ -637,7 +690,8 @@ final class ProductFormViewController: BaseViewControler {
                 merchantId: merchantId,
                 outletId: outletId,
                 images: keptUrls.isEmpty ? nil : keptUrls,
-                pricingOptions: (options?.isEmpty ?? true) ? nil : options
+                pricingOptions: (options?.isEmpty ?? true) ? nil : options,
+                pricingSchemaVersion: showsPrices ? ProductPricingSchema.version : nil
             )
             ProductService.shared.createProduct(request: request, images: newImages, completion: completion)
         }
