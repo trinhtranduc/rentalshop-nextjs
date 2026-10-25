@@ -2,10 +2,10 @@
  * Capabilities this web client declares to the API in `X-Client-Capabilities` (#1200).
  * The server treats a request without the header as an old client (iOS / Android already installed).
  *
- * Empty on purpose: the behaviours are not shipped yet, so the header is not sent and every response is the
- * one clients get today. The PR that ships a behaviour adds its token here (`installments`, `block-pricing`).
+ * Each PR that ships a behaviour adds its token here (`installments` later). `block-pricing` (#1189): this client
+ * shows and edits day-block price tables and sends the price of a BLOCK line for the server to check.
  */
-export const CLIENT_CAPABILITIES: readonly string[] = [];
+export const CLIENT_CAPABILITIES: readonly string[] = ['block-pricing'];
 
 export const CLIENT_CAPABILITIES_HEADER = 'X-Client-Capabilities';
 

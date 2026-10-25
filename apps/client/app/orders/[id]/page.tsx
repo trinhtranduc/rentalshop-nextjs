@@ -16,7 +16,7 @@ import {
   useToast,
 } from '@rentalshop/ui';
 import { useAuth, useCommonTranslations, useDedupedApi, useOrderTranslations, usePermissions } from '@rentalshop/hooks';
-import { getLocalDateKey, ordersApi } from '@rentalshop/utils';
+import { blockLineText, blockSnapshotOf, getLocalDateKey, ordersApi, type BlockSnapshotLike } from '@rentalshop/utils';
 import { useShopToday } from '../../hooks/useShopToday';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
@@ -60,6 +60,7 @@ interface ItemLike {
   totalPrice?: number;
   rentalDays?: number;
   pricingType?: string;
+  pricingSnapshot?: BlockSnapshotLike | null;
   productName?: string;
   barcode?: string;
   productImages?: unknown;
@@ -198,7 +199,14 @@ export default function OrderDetailPage() {
     const code = item.product?.barcode || item.barcode;
     if (code) parts.push(t('detail.items.code', { code }));
     if (isRent && pricing === 'DAILY') parts.push(t('detail.items.daily'), t('detail.items.perDay', { amount: money(unit), days }));
-    else if (isRent) parts.push(t('detail.items.fixed'), money(unit));
+    else if (isRent && pricing === 'BLOCK') {
+      // #1189: "Khối 3 ngày + 2 ngày thêm" and the formula from the snapshot the order was priced with
+      const snap = blockSnapshotOf(item.pricingSnapshot);
+      if (snap) {
+        const text = blockLineText(snap, { block: t('detail.items.block', { n: '{n}' }), blockExtra: t('detail.items.blockExtra', { n: '{n}', m: '{m}' }), days: t('detail.items.blockDays', { n: '{n}' }) }, money);
+        parts.push(text.label, text.formula);
+      } else parts.push(t('detail.items.fixed'), money(unit));
+    } else if (isRent) parts.push(t('detail.items.fixed'), money(unit));
     else if (qty > 1) parts.push(money(unit));
     const image = images(item.productImages)[0] || images(item.product?.images)[0] || null;
     dialogItems.push({ id: item.id ?? i, name: itemName, qty, image });

@@ -4,8 +4,13 @@
  * order-line helpers (#444, #460); rental days count both ends (#351).
  */
 import {
+  calculateBlockRent,
+  calculateBlockRentDetail,
+  type BlockSnapshotLike,
   computeOrderLineTotal,
   countRentalDays,
+  isValidBlockTable,
+  roundToMinorUnit,
   getPreferredPricingOption,
   repriceOrderLineForOrderType,
   resolveOrderLinePricingType,
@@ -21,6 +26,11 @@ export interface PricingOptionLike {
   price: number;
   isDefault?: boolean | null;
   isActive?: boolean | null;
+  /** #1189 BLOCK option: the table of prices by number of days */
+  blockTiers?: number[] | null;
+  blockStartDay?: number | null;
+  blockExtraMode?: string | null;
+  blockExtraPrice?: number | null;
 }
 
 export interface ProductLike {
@@ -89,6 +99,10 @@ export interface LineOption {
   type: string;
   price: number;
   isDefault: boolean;
+  blockTiers?: number[] | null;
+  blockStartDay?: number | null;
+  blockExtraMode?: string | null;
+  blockExtraPrice?: number | null;
 }
 
 export const activeOptions = (options?: PricingOptionLike[] | null): LineOption[] =>
@@ -99,6 +113,9 @@ export const activeOptions = (options?: PricingOptionLike[] | null): LineOption[
       type: o.type,
       price: num(o.price),
       isDefault: !!o.isDefault,
+      ...(String(o.type).toUpperCase() === 'BLOCK' && Array.isArray(o.blockTiers)
+        ? { blockTiers: o.blockTiers, blockStartDay: o.blockStartDay ?? null, blockExtraMode: o.blockExtraMode ?? null, blockExtraPrice: o.blockExtraPrice ?? null }
+        : {}),
     }));
 
 // ----------------------------------------------------------------------------
@@ -154,14 +171,45 @@ export interface OrderItemLike {
   notes?: string | null;
   pricingType?: string | null;
   pricingOptionId?: number | null;
+  /** #1189 what a BLOCK line was priced with (table, days, formula) */
+  pricingSnapshot?: BlockSnapshotInput | null;
+}
+
+/** The part of `OrderItem.pricingSnapshot` the cart reads back */
+export interface BlockSnapshotInput {
+  type?: string | null;
+  tiers?: number[] | null;
+  startDay?: number | null;
+  extraMode?: string | null;
+  extraPrice?: number | null;
+  overridden?: boolean | null;
 }
 
 /** A saved order item → a line that keeps its pricing type, option and unit price. */
 export function lineFromOrderItem(item: OrderItemLike): CartLine {
   const p = item.product || {};
   const rentPrice = p.rentPrice == null ? num(item.unitPrice) : num(p.rentPrice);
-  const options = activeOptions(p.pricingOptions);
+  let options = activeOptions(p.pricingOptions);
   const pricingType = (item.pricingType || p.pricingType || 'FIXED').toUpperCase();
+  // #1189: an order keeps the table it was priced with; editing the product later must not change it
+  const snap = item.pricingSnapshot;
+  const snapTable =
+    pricingType === 'BLOCK' && snap?.type === 'BLOCK' && Array.isArray(snap.tiers) && isValidBlockTable({ tiers: snap.tiers, startDay: snap.startDay, extraMode: snap.extraMode, extraPrice: snap.extraPrice })
+      ? snap
+      : null;
+  if (snapTable) {
+    const saved: LineOption = {
+      id: item.pricingOptionId ?? null,
+      type: 'BLOCK',
+      price: snapTable.tiers![0],
+      isDefault: true,
+      blockTiers: snapTable.tiers,
+      blockStartDay: snapTable.startDay ?? null,
+      blockExtraMode: snapTable.extraMode ?? null,
+      blockExtraPrice: snapTable.extraPrice ?? null,
+    };
+    options = [...options.filter((o) => o.type.toUpperCase() !== 'BLOCK'), saved];
+  }
   return {
     key: nextLineKey(),
     productId: num(p.id ?? item.productId),
@@ -174,7 +222,8 @@ export function lineFromOrderItem(item: OrderItemLike): CartLine {
     selectedPricingOptionId: item.pricingOptionId ?? options.find((o) => o.type.toUpperCase() === pricingType)?.id ?? null,
     notes: item.notes || '',
     // The saved price is this order's price for its mode: switching mode and back keeps it (#556)
-    customPrices: { [pricingType]: num(item.unitPrice) },
+    // (a BLOCK line was priced by its table; only a hand-typed price is kept as typed)
+    customPrices: pricingType === 'BLOCK' ? (snapTable?.overridden ? { BLOCK: num(item.unitPrice) } : {}) : { [pricingType]: num(item.unitPrice) },
     product: {
       rentPrice,
       salePrice: p.salePrice == null ? rentPrice : num(p.salePrice),
@@ -206,6 +255,20 @@ export function hydrateLines(lines: CartLine[], products: ProductLike[]): CartLi
     };
   });
   return changed ? next : lines;
+}
+
+/**
+ * #1189 after 400 BLOCK_PRICE_MISMATCH (the product's table changed since the line was added): take the loaded
+ * products' current options into the lines, keep each line's price kind. A hand-typed price stays.
+ */
+export function refreshBlockOptions(lines: CartLine[], products: ProductLike[]): CartLine[] {
+  return lines.map((line) => {
+    const p = products.find((x) => x.id === line.productId);
+    const options = activeOptions(p?.pricingOptions);
+    if (!p || options.length === 0) return line;
+    const chosen = options.find((o) => o.type.toUpperCase() === line.pricingType.toUpperCase());
+    return { ...line, selectedPricingOptionId: chosen?.id ?? line.selectedPricingOptionId, product: { ...line.product, pricingOptions: options } };
+  });
 }
 
 /**
@@ -270,6 +333,57 @@ export function lineModes(line: CartLine): string[] {
 }
 
 const optionOf = (line: CartLine, type: string): LineOption | null => line.product.pricingOptions.find((o) => o.type.toUpperCase() === type) || null;
+
+/** The usable day table of a BLOCK option, else null */
+export function blockTableOf(option: LineOption | null | undefined) {
+  if (!option || option.type.toUpperCase() !== 'BLOCK' || !Array.isArray(option.blockTiers)) return null;
+  const table = { tiers: option.blockTiers, startDay: option.blockStartDay, extraMode: option.blockExtraMode, extraPrice: option.blockExtraPrice };
+  return isValidBlockTable(table) ? table : null;
+}
+
+/** #1189: a rent line priced by day blocks (its price is the table's price for the order's days) */
+export const isBlockLine = (line: CartLine, orderType: OrderType): boolean =>
+  orderType === 'RENT' && line.pricingType.toUpperCase() === 'BLOCK' && blockTableOf(optionOf(line, 'BLOCK')) != null;
+
+/** #1189: the price was typed by the staff for this order (kept, sent with `priceOverridden`) */
+export const isBlockOverridden = (line: CartLine): boolean => line.customPrices?.BLOCK != null;
+
+/** #1189: the pieces of a BLOCK line's text ("Khối 3 ngày + 2 ngày thêm", the formula); null for any other line */
+export function blockLineSnapshot(line: CartLine, orderType: OrderType, days: number, minorUnit = 1): BlockSnapshotLike | null {
+  if (!isBlockLine(line, orderType)) return null;
+  const t = blockTableOf(optionOf(line, 'BLOCK'))!;
+  const d = calculateBlockRentDetail(t.tiers, t.startDay, t.extraMode, t.extraPrice, Math.max(1, days), minorUnit);
+  return {
+    type: 'BLOCK',
+    days: d.days,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    totalPrice: roundToMinorUnit(line.unitPrice * line.quantity, minorUnit),
+    basePrice: d.basePrice,
+    extraDays: d.extraDays,
+    extraAmount: d.extraAmount,
+    extraPrice: t.extraPrice ?? 0,
+    overridden: isBlockOverridden(line),
+  };
+}
+
+/**
+ * #1189: the unit price of every BLOCK line from its table and the order's days (1 without days). A hand-typed
+ * price stays. Call it on the lines before showing or sending them, so the screen, the total and the payload agree.
+ */
+export function syncBlockPrices(lines: CartLine[], orderType: OrderType, days: number, minorUnit = 1): CartLine[] {
+  if (orderType !== 'RENT') return lines;
+  let changed = false;
+  const next = lines.map((l) => {
+    if (!isBlockLine(l, orderType) || isBlockOverridden(l)) return l;
+    const t = blockTableOf(optionOf(l, 'BLOCK'))!;
+    const unitPrice = calculateBlockRent(t.tiers, t.startDay, t.extraMode, t.extraPrice, Math.max(1, days), minorUnit);
+    if (unitPrice === l.unitPrice) return l;
+    changed = true;
+    return { ...l, unitPrice };
+  });
+  return changed ? next : lines;
+}
 
 /**
  * Switch a rent line's mode. Price: the one typed for that mode, else the product's option, else 0 ("Nhập giá").
@@ -359,7 +473,7 @@ export function cardPrices(p: ProductLike, orderType: OrderType): Array<{ type: 
         price: num(p.rentPrice),
       },
     ];
-  const order = ['DAILY', 'HOURLY', 'FIXED'];
+  const order = ['BLOCK', 'DAILY', 'HOURLY', 'FIXED'];
   return [...options]
     .sort((a, b) => order.indexOf(a.type.toUpperCase()) - order.indexOf(b.type.toUpperCase()))
     .map((o) => ({ type: o.type.toUpperCase(), price: num(o.price) }));
@@ -557,6 +671,8 @@ export interface PayloadInput {
   securityDeposit: number;
   notes: string;
   loyaltyPoints?: number;
+  /** #1189: smallest amount of the shop currency (VND 1, USD 0.01) */
+  minorUnit?: number;
   /** #1124: a new order made from an online booking request; the API confirms that request in the same create */
   bookingRequestId?: number | null;
   /** Edit: the order's saved plan instants, kept when their Vietnam day is still the chosen one (#589). */
@@ -604,16 +720,19 @@ export function buildPayload(input: PayloadInput) {
     orderItems: input.lines.map((l) => {
       // The API takes FIXED, HOURLY, DAILY; another option type goes as FIXED without its id (iOS requestPricingType)
       const lineType = rent ? resolveOrderLinePricingType(l) : 'FIXED';
-      const type = ['FIXED', 'HOURLY', 'DAILY'].includes(lineType) ? lineType : 'FIXED';
+      // BLOCK goes as BLOCK only with a usable day table (an option of that type without one is "another type")
+      const block = rent && lineType === 'BLOCK' && isBlockLine(l, input.orderType);
+      const type = block || ['FIXED', 'HOURLY', 'DAILY'].includes(lineType) ? lineType : 'FIXED';
       const optionId = rent && type === lineType ? l.selectedPricingOptionId : null;
       return {
         productId: l.productId,
         quantity: l.quantity,
         unitPrice: l.unitPrice,
-        totalPrice: lineTotal(l, input.orderType, days),
+        totalPrice: block ? roundToMinorUnit(l.unitPrice * l.quantity, input.minorUnit ?? 1) : lineTotal(l, input.orderType, days),
         deposit: input.mode === 'create' ? l.deposit * l.quantity : l.deposit,
         notes: l.notes,
-        rentDays: type === 'DAILY' ? Math.max(1, days) : 1,
+        rentDays: type === 'DAILY' || block ? Math.max(1, days) : 1,
+        ...(block && isBlockOverridden(l) ? { priceOverridden: true } : {}),
         pricingType: type,
         ...(optionId != null ? { pricingOptionId: optionId } : {}),
       };

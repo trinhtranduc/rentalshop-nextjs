@@ -21,7 +21,8 @@ import {
   type BlockPricingTable,
 } from '@rentalshop/utils';
 
-export type OldAppsMode = 'recompute' | 'block';
+import { readOldAppsMode, type OldAppsMode } from './block-pricing-settings';
+export type { OldAppsMode };
 
 export interface BlockOptionLike {
   id?: number | null;
@@ -55,11 +56,7 @@ export interface BlockSnapshot {
   overridden?: boolean;
 }
 
-/** `Merchant.settings.blockPricing.oldApps`; anything but 'block' is 'recompute' */
-export function readOldAppsMode(settings: unknown): OldAppsMode {
-  const mode = (settings as { blockPricing?: { oldApps?: unknown } } | null | undefined)?.blockPricing?.oldApps;
-  return mode === 'block' ? 'block' : 'recompute';
-}
+export { readOldAppsMode };
 
 export function tableOf(option: BlockOptionLike | null | undefined): BlockPricingTable | null {
   if (!option || option.type !== 'BLOCK' || !Array.isArray(option.blockTiers)) return null;

@@ -4,6 +4,7 @@ import { withAnyAuth } from '@rentalshop/auth/server';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
 import { toPublicUser } from '../../../../lib/user-scope';
+import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { merchantTimeZoneField } from '../../../../lib/shop-timezone';
 import { activeModuleKeysSafe } from '../../../../lib/merchant-modules';
 
@@ -78,6 +79,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         onlineBookingEnabled: (userProfile.merchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         // #1174 "Hiện giá trên trang shop" (additive; true when missing so old shops keep showing prices)
         showPublicPrice: (userProfile.merchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
+        // #1189 "Với app cũ" for day-block prices (additive; 'recompute' when unset)
+        blockPricing: { oldApps: readOldAppsMode((userProfile.merchant as { settings?: unknown }).settings) },
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(userProfile.merchant),
         // #907 active feature modules (additive; [] when none)

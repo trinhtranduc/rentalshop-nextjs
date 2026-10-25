@@ -105,7 +105,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
   const bankBlock = bank.kind === 'show' ? bank.block : null;
   // "{n} ngày" stays a template: the model fills in each line's days
   const words = useMemo(
-    () => ({ perDay: t('units.perDay'), days: t('units.days', { n: '{n}' }), perHour: t('units.perHour'), hours: t('units.hours', { n: '{n}' }) }),
+    () => ({ perDay: t('units.perDay'), days: t('units.days', { n: '{n}' }), perHour: t('units.perHour'), hours: t('units.hours', { n: '{n}' }), block: t('units.block', { n: '{n}' }), blockExtra: t('units.blockExtra', { n: '{n}', m: '{m}' }) }),
     [t]
   );
   const model = useMemo(

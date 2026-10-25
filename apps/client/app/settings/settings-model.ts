@@ -135,6 +135,16 @@ export function showPublicPriceFlag(merchant: { showPublicPrice?: unknown } | nu
   return typeof v === 'boolean' ? v : null;
 }
 
+/**
+ * #1189 "Với app cũ" (day-block prices): login has no `blockPricing`, only GET /api/users/profile does (#1138).
+ * A missing key is unknown (load the profile), never a choice; any value but 'block' is 'recompute'.
+ */
+export function blockOldAppsFlag(merchant: { blockPricing?: { oldApps?: unknown } | null } | null | undefined): 'recompute' | 'block' | null {
+  const bp = merchant?.blockPricing;
+  if (!bp || typeof bp !== 'object') return null;
+  return bp.oldApps === 'block' ? 'block' : 'recompute';
+}
+
 /** Public product page and referral sign-up link, from the login payload or the tenant key. */
 export function publicLinks(
   origin: string,
