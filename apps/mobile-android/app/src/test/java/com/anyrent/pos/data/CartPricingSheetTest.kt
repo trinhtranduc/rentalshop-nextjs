@@ -99,8 +99,8 @@ class CartPricingSheetTest {
         line = CartStore.lines.value.single()
         assertEquals("BLOCK", line.pricingType)
         assertEquals(400_000.0, line.lineTotal, 0.1)
-        // The order API takes FIXED / HOURLY / DAILY: a block price goes out as FIXED (unit × quantity)
-        assertEquals("FIXED", PricingTypes.normalize(line.pricingType))
+        // #1189: BLOCK stays BLOCK; a block line without a table still goes out as FIXED (CartBlockPricingTest)
+        assertEquals("BLOCK", PricingTypes.normalize(line.pricingType))
         assertEquals("BLOCK", PricingTypes.normalizeOption("block"))
     }
 }

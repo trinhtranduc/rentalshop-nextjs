@@ -17,13 +17,13 @@ import kotlin.math.pow
  */
 
 /**
- * Header every request carries so the API sends the stages of an order and accepts `paymentPlan`. Old builds never
- * send it and keep getting the answers they decode today. One token per feature this build understands; the value is
- * comma separated. Day-block pricing (#1189, PR #1210) adds its own token to [TOKENS] when both are merged.
+ * Header every request carries so the API sends the stages of an order and accepts `paymentPlan` (#1199), and sends
+ * BLOCK options and checks BLOCK prices (#1189). Old builds never send it and keep getting the answers they decode
+ * today. One token per feature this build understands; the value is comma separated.
  */
 object ClientCapabilities {
     const val HEADER_NAME = "X-Client-Capabilities"
-    val TOKENS: List<String> = listOf("installments")
+    val TOKENS: List<String> = listOf("installments", "block-pricing")
     val headerValue: String get() = TOKENS.joinToString(",")
 }
 

@@ -15,6 +15,8 @@ final class OrderDetailViewController: BaseViewControler {
     private var detail: OrderDetail?
     private var orderViewModel: OrderViewModel?
     private var loadGeneration = 0
+    /// #1199: the hand-over was refused (INSTALLMENT_UNPAID_AT_PICKUP): after the reload, show the stages to collect
+    private var checkUnpaidAfterLoad = false
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
@@ -139,6 +141,10 @@ final class OrderDetailViewController: BaseViewControler {
                     self.stateView.isHidden = true
                     self.render()
                     self.loadHistorySummary()
+                    if self.checkUnpaidAfterLoad {
+                        self.checkUnpaidAfterLoad = false
+                        _ = self.presentUnpaidIfNeeded(then: nil)
+                    }
                 } else if self.detail == nil {
                     self.stateView.show(.error(error?.localizedDescription.localized() ?? ""))
                 } else if let error {
@@ -497,6 +503,19 @@ final class OrderDetailViewController: BaseViewControler {
             NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
             NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
         ]))
+        // #1189: a day-block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ", then its sum
+        let blockLines = orderType == .rent ? item.blockLines : nil
+        if let blockLines {
+            let text = NSMutableAttributedString(string: blockLines.summary, attributes: [
+                NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.body),
+                NSAttributedString.Key.foregroundColor: DS.Color.text,
+            ])
+            text.append(NSAttributedString(string: " · " + CartV2Logic.money(item.unitPrice), attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
+                NSAttributedString.Key.foregroundColor: UIColor(hexString: "475569"),
+            ]))
+            pricingText.setAttributedString(text)
+        }
         let calc = UILabel()
         calc.attributedText = pricingText
         calc.numberOfLines = 0
@@ -505,6 +524,11 @@ final class OrderDetailViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [name, calc])
         texts.axis = .vertical
         texts.spacing = 4
+        if let formula = blockLines?.formula {
+            let sum = V2.label(formula, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+            sum.accessibilityIdentifier = "orderDetail.item.blockFormula"
+            texts.addArrangedSubview(sum)
+        }
 
         let qty = UILabel()
         qty.font = Utils.regularFont(size: DS.TextSize.secondary)
@@ -589,7 +613,16 @@ final class OrderDetailViewController: BaseViewControler {
             : "Order total".localized()
         stack.addArrangedSubview(keyValue(discount > 0 ? totalTitle : "order.detail.goods".localized(),
                                           MoneyFormatter.format(detail.totalAmount), divider: false))
-        if detail.depositAmount > 0 {
+        // #1199: the stages replace the single "Cọc" row
+        let hasPlan = DepositPlanLogic.hasPlan(detail)
+        if hasPlan {
+            stack.addArrangedSubview(InstallmentCardView.make(
+                detail: detail, role: User.account()?.role,
+                onEdit: { [weak self] in self?.openPlanEditor() },
+                onCollect: { [weak self] stage in self?.presentCollect(stage) },
+                onStage: { [weak self] stage in self?.confirmVoid(stage) }))
+        }
+        if detail.depositAmount > 0 && !hasPlan {
             stack.addArrangedSubview(keyValue("order.detail.deposit".localized(), MoneyFormatter.format(detail.depositAmount), divider: false))
         }
         if detail.securityDeposit > 0 {
@@ -618,6 +651,11 @@ final class OrderDetailViewController: BaseViewControler {
                 stack.addArrangedSubview(totalRow("At return: collect".localized(), MoneyFormatter.format(money.collect)))
             }
         default:
+            if let kept = detail.cancelKeptAmount, kept > 0, detail.status == .cancelled {
+                let collected = detail.installmentSummary?.collected ?? 0
+                stack.addArrangedSubview(keyValue("deposit.cancel.kept".localized(), MoneyFormatter.format(kept), divider: false))
+                stack.addArrangedSubview(keyValue("deposit.cancel.refund".localized(), MoneyFormatter.format(max(0, collected - kept)), divider: false))
+            }
             if detail.lateFee > 0 {
                 stack.addArrangedSubview(keyValue("Late fee".localized(), MoneyFormatter.format(detail.lateFee), divider: false))
             }
@@ -838,6 +876,8 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     @objc private func handOverTapped() {
+        // #1199: stages nobody collected block the hand-over: collect them first, then hand over
+        if presentUnpaidIfNeeded(then: { [weak self] in self?.presentSheet(.handOver) }) { return }
         presentSheet(.handOver)
     }
 
@@ -919,6 +959,11 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     @objc private func cancelTapped() {
+        // #1199: an order with collected stages: "Khách đã trả / Tiệm giữ lại / Hoàn cho khách"
+        if let detail, DepositPlanLogic.hasPlan(detail), (detail.installmentSummary?.collected ?? 0) > 0 {
+            presentCancelSheet(detail)
+            return
+        }
         UIAlertController.alert(
             parent: self,
             title: "order.cancel.title".localized(),
@@ -930,10 +975,10 @@ final class OrderDetailViewController: BaseViewControler {
         )
     }
 
-    private func performCancel() {
+    private func performCancel(kept: Double = 0, note: String? = nil) {
         guard let viewModel = orderViewModel else { return }
         showProgressText(text: "Updating...".localized())
-        viewModel.cancelOrder { [weak self] result in
+        viewModel.cancelOrder(keptAmount: kept, note: note) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.hideProgress()
@@ -1014,6 +1059,98 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
+    // MARK: - Thu cọc theo giai đoạn (#1199)
+
+    private func openPlanEditor() {
+        guard let detail else { return }
+        let editor = EditDepositPlanViewController(detail: detail, canEdit: DepositPlanLogic.canEditPlan(role: User.account()?.role))
+        editor.onSaved = { [weak self] in
+            OrdersChangeSignal.post()
+            self?.load()
+        }
+        navigationController?.pushViewController(editor, animated: true)
+    }
+
+    private func presentCollect(_ stage: OrderInstallment, then: (() -> Void)? = nil) {
+        guard let detail, presentedViewController == nil else { return }
+        let number = DepositPlanLogic.stageNumber(detail.installments ?? [], key: stage.key) ?? 1
+        let sheet = CollectInstallmentSheet(detail: detail, stage: stage, number: number)
+        sheet.onCollected = { [weak self] in
+            OrdersChangeSignal.post()
+            self?.reloadThen(then)
+        }
+        present(sheet, animated: true)
+    }
+
+    /// Reload the order, then run `then` (the hand-over goes on once the last stage is collected)
+    private func reloadThen(_ then: (() -> Void)?) {
+        OrderService.shared.loadOrderDetail(orderId: orderId) { [weak self] detail, _ in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let detail {
+                    self.detail = detail
+                    self.orderViewModel = OrderViewModel(order: Order.from(detail: detail))
+                    self.render()
+                }
+                then?()
+            }
+        }
+    }
+
+    /// Shows the stages still to collect before a hand-over; false when there are none
+    private func presentUnpaidIfNeeded(then: (() -> Void)?) -> Bool {
+        guard let detail, detail.status == .reserved, DepositPlanLogic.hasPlan(detail), presentedViewController == nil else { return false }
+        let stages = detail.installments ?? []
+        let unpaid = DepositPlanLogic.unpaidBeforePickup(stages)
+        guard !unpaid.isEmpty else { return false }
+        let sheet = UnpaidStagesSheet(unpaid: unpaid, all: stages)
+        sheet.onCollect = { [weak self] stage in
+            self?.presentCollect(stage, then: { [weak self] in
+                // more stages left: ask again; none left: the hand-over goes on
+                if self?.presentUnpaidIfNeeded(then: then) == false { then?() }
+            })
+        }
+        present(sheet, animated: true)
+        return true
+    }
+
+    private func confirmVoid(_ stage: OrderInstallment) {
+        guard let detail else { return }
+        let number = DepositPlanLogic.stageNumber(detail.installments ?? [], key: stage.key) ?? 1
+        UIAlertController.alert(parent: self, title: String(format: "deposit.void.title".localized(), number),
+                                message: String(format: "deposit.void.message".localized(), MoneyFormatter.format(stage.paidAmount)),
+                                okTitle: "deposit.void.confirm".localized(), cancelTitle: "common.action.cancel".localized(),
+                                okAction: { [weak self] _ in self?.void(stage) }, cancelAction: nil)
+    }
+
+    private func void(_ stage: OrderInstallment) {
+        showProgressText(text: "Updating...".localized())
+        DepositPlanAPIService.shared.void(orderId: orderId, key: stage.key, note: nil) { [weak self] ok, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.hideProgress()
+                if ok {
+                    OrdersChangeSignal.post()
+                    self.load()
+                } else if let error {
+                    UIAlertController.errorAlert(parent: self, error: error)
+                }
+            }
+        }
+    }
+
+    private func presentCancelSheet(_ detail: OrderDetail) {
+        guard presentedViewController == nil else { return }
+        let sheet = CancelDepositOrderSheet(orderNumber: OrdersHomeLogic.shortNumber(detail.orderNumber),
+                                            collected: detail.installmentSummary?.collected ?? 0,
+                                            policy: detail.depositPlanPolicy ?? DepositModeStore.latest?.cancellationPolicy,
+                                            canKeep: DepositPlanLogic.canKeepOnCancel(role: User.account()?.role))
+        sheet.onConfirm = { [weak self, weak sheet] kept, note in
+            sheet?.dismiss(animated: true) { self?.performCancel(kept: kept, note: note) }
+        }
+        present(sheet, animated: true)
+    }
+
     private func didChangeOrder(_ order: Order) {
         OrderListViewModel.shared.updateOrder(order)
         OrderListViewModel.shared.setNeedsRefresh()
@@ -1024,6 +1161,7 @@ final class OrderDetailViewController: BaseViewControler {
     /// 4xx (e.g. INVALID_ORDER_STATUS): show the message and reload the order
     private func handleStatusError(_ error: NSError) {
         let outcome = OrderDetailLogic.statusErrorOutcome(error)
+        if outcome.reload, let detail, DepositPlanLogic.hasPlan(detail) { checkUnpaidAfterLoad = true }
         UIAlertController.alert(parent: self, title: "Error".localized(), message: outcome.message) { [weak self] _ in
             if outcome.reload { self?.load() }
         }

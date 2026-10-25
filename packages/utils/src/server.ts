@@ -21,6 +21,7 @@ export * from './core/logger';
 // Database-dependent utilities - SERVER ONLY
 export * from './analytics/income-period-summary';
 export * from './analytics/period-report';
+export * from './analytics/future-installments';
 export * from './core/subscription-manager';
 export * from './core/audit-helper';
 export * from './core/order-number-manager';

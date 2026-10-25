@@ -317,6 +317,28 @@ final class CartStore {
         notifyDidChange()
     }
 
+    /// #1199: the stages of the new order start from a template (nil clears them)
+    func setDepositTemplate(_ template: DepositTemplate?) {
+        storage.depositTemplateId = template?.id
+        storage.depositStages = template.map { $0.items.map(DepositStageDraft.init) }
+        notifyDidChange()
+    }
+
+    /// #1199: the owner typed another amount for a stage of this order (nil = back to its percentage)
+    func setDepositStageAmount(index: Int, amount: Double?) {
+        guard var stages = storage.depositStages, stages.indices.contains(index) else { return }
+        stages[index].amountOverride = amount
+        storage.depositStages = stages
+        notifyDidChange()
+    }
+
+    /// #1199: "Thu ngay giai đoạn 1": the method, or nil to create the order without collecting
+    func setCollectFirstStage(method: String?) {
+        storage.collectFirstStageNow = method != nil
+        if let method { storage.collectMethod = method }
+        notifyDidChange()
+    }
+
     func addItem(_ cartItem: CartItem) {
         storage.addItem(cartItem)
         storage.syncRentalDaysFromDates()
@@ -337,6 +359,12 @@ final class CartStore {
     /// #473 — lines of this product take its current prices when it has both and they do not offer both yet
     func refreshPricing(from product: Product) {
         storage.refreshPricing(from: product)
+        notifyDidChange()
+    }
+
+    /// #1189: see `Cart.refreshBlockTable(from:)`
+    func refreshBlockTable(from product: Product) {
+        storage.refreshBlockTable(from: product)
         notifyDidChange()
     }
 

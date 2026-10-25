@@ -435,6 +435,8 @@ struct OverviewRelatedRow: Equatable {
 enum RelatedEventReason: String, CaseIterable {
     case saleCreated, saleCancelled, deposit, pickup, sameDay, damageFee, depositRefund, nothing
     case rentCancelled, returnCollected, futurePickup, futureDamageFee, futureRefund, futureNothing
+    /// #1199 a deposit stage collected on its own day (`RENT_INSTALLMENT`)
+    case installment
 
     var localizedKey: String { "overview.related.event.\(rawValue)" }
 
@@ -453,6 +455,7 @@ enum RelatedEventReason: String, CaseIterable {
         case "SALE_CANCELLED": return .saleCancelled
         case "RENT_DEPOSIT": return .deposit
         case "RENT_PICKUP": return .pickup
+        case "RENT_INSTALLMENT": return .installment
         case "RENT_CANCELLED": return .rentCancelled
         case "RENT_FUTURE_PICKUP": return .futurePickup
         case "RENT_RETURN": return revenue < 0 ? .depositRefund : (revenue > 0 ? .returnCollected : .nothing)

@@ -70,6 +70,54 @@ export interface OrderRevenueData {
   pickupPlanAt?: Date | string | null; // For future pickup revenue calculation
   returnPlanAt?: Date | string | null; // For future return revenue calculation
   updatedAt?: Date | string | null;
+  /** When the order was cancelled (#1199); the cancel refund is an event of this day. Missing = `updatedAt`. */
+  cancelledAt?: Date | string | null;
+  /**
+   * #1199: money of a deposit plan, only on orders that have one (`toRevenueOrderData` builds it). Missing = the
+   * order is calculated exactly as before the plan existed.
+   */
+  plan?: OrderRevenuePlan | null;
+}
+
+/** One payment of a plan order: its amount and the instant it was taken */
+export interface PlanMoney {
+  amount: number;
+  at: Date | string;
+}
+
+/** A stage of a plan that nobody collected yet */
+export interface UnpaidStage {
+  key: string;
+  label: string;
+  amount: number;
+  dueDateKey: string | null;
+}
+
+/** #1199: what the calculator needs to know about the deposit plan of an order */
+export interface OrderRevenuePlan {
+  /** COMPLETED `INSTALLMENT` payments: each is an event on the day it was collected */
+  collected: PlanMoney[];
+  /** REFUNDED `CANCEL_REFUND` payments of a cancellation */
+  refunded: PlanMoney[];
+  /** `Order.cancelKeptAmount`: what the shop kept when it cancelled (null = old client / not cancelled) */
+  keptAmount: number | null;
+  /** Explicit stages not collected yet */
+  unpaid: UnpaidStage[];
+  /** The automatic last stage (`rest`): total minus all other stages, collected at hand-over */
+  restAmount: number;
+}
+
+function sumMoney(list: PlanMoney[] | undefined): number {
+  return (list || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+}
+
+/**
+ * Money given back when a plan order is cancelled. A client that sent no amounts (old apps) refunds all that was
+ * collected; a cancellation with amounts refunds what its `CANCEL_REFUND` payments say (kept = collected - refunded).
+ */
+export function planRefundOf(plan: OrderRevenuePlan): number {
+  if (plan.keptAmount != null || plan.refunded.length > 0) return sumMoney(plan.refunded);
+  return sumMoney(plan.collected);
 }
 
 /** Total collected at hand-over (#505); the order's total when it was never recorded */
@@ -86,7 +134,7 @@ export interface RevenueEvent {
   revenue: number;
   date: Date;
   description: string;
-  revenueType: 'SALE' | 'RENT_DEPOSIT' | 'RENT_PICKUP' | 'RENT_RETURN' | 'RENT_CANCELLED' | 'SALE_CANCELLED' | 'RENT_FUTURE_PICKUP' | 'RENT_FUTURE_RETURN';
+  revenueType: 'SALE' | 'RENT_DEPOSIT' | 'RENT_INSTALLMENT' | 'RENT_PICKUP' | 'RENT_RETURN' | 'RENT_CANCELLED' | 'SALE_CANCELLED' | 'RENT_FUTURE_PICKUP' | 'RENT_FUTURE_RETURN';
 }
 
 /**
@@ -184,7 +232,9 @@ export function getOrderRevenueEvents(
   // ============================================================================
   // RENT ORDERS
   // ============================================================================
-  else {
+  else if (order.plan) {
+    events.push(...getPlanRentEvents(order, isInRange));
+  } else {
     // Check same day flags
     const isSameDayPickup = isSameDay(createdAt, pickedUpAt);
     const isSameDayReturn = isSameDay(pickedUpAt || createdAt, returnedAt);
@@ -307,6 +357,85 @@ export function getOrderRevenueEvents(
   return events;
 }
 
+/**
+ * #1199: events of a RENT order that has a deposit plan. Every stage that was collected is an event on its real
+ * collection day (`RENT_INSTALLMENT`); whatever was not collected before is counted at hand-over, as before:
+ * pickup = pickup total - collected + collateral; a same-day rent and return is one return event. The cancel refund
+ * is a negative event on the day of cancellation: money the shop kept stays on the days it was collected.
+ */
+function getPlanRentEvents(order: OrderRevenueData, isInRange: (date: Date | string | null) => boolean): RevenueEvent[] {
+  const plan = order.plan as OrderRevenuePlan;
+  const events: RevenueEvent[] = [];
+  const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+  const pickedUpAt = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
+  const returnedAt = order.returnedAt ? new Date(order.returnedAt) : null;
+  const cancelled = order.status === ORDER_STATUS.CANCELLED;
+  const cancelAt = cancelled
+    ? order.cancelledAt
+      ? new Date(order.cancelledAt)
+      : order.updatedAt
+        ? new Date(order.updatedAt)
+        : null
+    : null;
+
+  const totalAmount = order.totalAmount || 0;
+  const pickupTotal = pickupTotalOf(order);
+  const securityDeposit = order.securityDeposit || 0;
+  const returnFees = (order.damageFee || 0) + (order.lateFee || 0);
+  const collected = sumMoney(plan.collected);
+
+  for (const payment of plan.collected) {
+    if (!isInRange(payment.at)) continue;
+    events.push({
+      revenue: payment.amount || 0,
+      date: new Date(payment.at),
+      description: 'Thu cọc theo giai đoạn',
+      revenueType: 'RENT_INSTALLMENT'
+    });
+  }
+
+  const isSameDayReturn = isSameDay(pickedUpAt || createdAt, returnedAt);
+  const isSameDayCancelled = cancelAt && pickedUpAt ? isSameDay(pickedUpAt, cancelAt) : false;
+  const pickupRevenue = pickupTotal - collected + securityDeposit;
+
+  if (!isSameDayReturn && !isSameDayCancelled && pickedUpAt && isInRange(pickedUpAt)) {
+    events.push({
+      revenue: pickupRevenue,
+      date: pickedUpAt,
+      description: 'Thu tiền khi lấy hàng',
+      revenueType: 'RENT_PICKUP'
+    });
+  }
+
+  if (returnedAt && isInRange(returnedAt)) {
+    let returnRevenue: number;
+    let description: string;
+    if (isSameDayReturn) {
+      returnRevenue = totalAmount + returnFees - collected;
+      description = 'Thuê và trả trong cùng ngày';
+    } else {
+      returnRevenue = returnFees + extensionAmountOf(order) - securityDeposit;
+      description = returnRevenue > 0 ? 'Thu phí hư hỏng' : returnRevenue < 0 ? 'Hoàn tiền cọc' : 'Không có phát sinh';
+    }
+    events.push({ revenue: returnRevenue, date: returnedAt, description, revenueType: 'RENT_RETURN' });
+  }
+
+  if (cancelAt && isInRange(cancelAt)) {
+    let refund = planRefundOf(plan);
+    if (!isSameDayCancelled && pickedUpAt && pickedUpAt < cancelAt) refund += pickupRevenue;
+    if (refund > 0) {
+      events.push({
+        revenue: -refund,
+        date: cancelAt,
+        description: 'Đơn hủy (hoàn lại)',
+        revenueType: 'RENT_CANCELLED'
+      });
+    }
+  }
+
+  return events;
+}
+
 /** Where collected money came from (#492). `refunds` is a positive amount taken off the total. */
 export interface CollectedBreakdown {
   deposits: number;
@@ -330,6 +459,7 @@ export function addToCollectedBreakdown(
 ): CollectedBreakdown {
   switch (event.revenueType) {
     case 'RENT_DEPOSIT':
+    case 'RENT_INSTALLMENT':
       breakdown.deposits += event.revenue;
       break;
     case 'SALE':
@@ -464,7 +594,8 @@ export function getFutureRevenueEvents(
     const now = new Date();
     if (pickupPlanAt >= dateRangeStart && pickupPlanAt <= dateRangeEnd && pickupPlanAt > now) {
       // Future pickup revenue = totalAmount - depositAmount (amount expected to receive on pickup day)
-      const futurePickupRevenue = totalAmount - depositAmount;
+      // #1199: a plan order collects only its automatic last stage at hand-over (the other stages are paid before)
+      const futurePickupRevenue = order.plan ? order.plan.restAmount : totalAmount - depositAmount;
 
       if (futurePickupRevenue > 0) {
         events.push({
@@ -511,6 +642,38 @@ export function getFutureRevenueEvents(
   }
 
   return events;
+}
+
+/** Unpaid stages of a plan order that fall due in a period, for the additive `futureInstallments` field (#1199) */
+export interface FutureInstallmentGroup {
+  dueDateKey: string;
+  amount: number;
+  count: number;
+}
+
+/**
+ * #1199: unpaid explicit stages of RESERVED plan orders whose due day is inside `[periodStart, periodEnd]` (shop
+ * civil days). They are NOT part of `futureIncome`: old Android adds `futureIncome` to the revenue bar.
+ */
+export function getFutureInstallments(
+  orders: OrderRevenueData[],
+  periodStart: Date,
+  periodEnd: Date
+): FutureInstallmentGroup[] {
+  const fromKey = shopDayKey(periodStart);
+  const toKey = shopDayKey(periodEnd);
+  const groups = new Map<string, FutureInstallmentGroup>();
+  for (const order of orders) {
+    if (!order.plan || order.orderType !== ORDER_TYPE.RENT || order.status !== ORDER_STATUS.RESERVED) continue;
+    for (const stage of order.plan.unpaid) {
+      if (!stage.dueDateKey || stage.dueDateKey < fromKey || stage.dueDateKey > toKey || !(stage.amount > 0)) continue;
+      const group = groups.get(stage.dueDateKey) || { dueDateKey: stage.dueDateKey, amount: 0, count: 0 };
+      group.amount += stage.amount;
+      group.count += 1;
+      groups.set(stage.dueDateKey, group);
+    }
+  }
+  return [...groups.values()].sort((a, b) => a.dueDateKey.localeCompare(b.dueDateKey));
 }
 
 /**
@@ -643,8 +806,8 @@ export function getOrderRevenueForDate(
         pickupPlanAt) {
       const pickupPlanAtKey = shopDayKey(pickupPlanAt);
       if (pickupPlanAtKey === targetDateKey) {
-        // Future pickup revenue = totalAmount - depositAmount
-        futureRevenue += totalAmount - depositAmount;
+        // Future pickup revenue = totalAmount - depositAmount (a plan order: its automatic last stage, #1199)
+        futureRevenue += order.plan ? order.plan.restAmount : totalAmount - depositAmount;
       }
     }
 
@@ -778,7 +941,24 @@ export function calculateOrderRevenueByStatus(order: OrderRevenueData): number {
     return order.totalAmount || 0;
   }
 
-  // RENT order
+  // RENT order with a deposit plan (#1199): the sum of its events - collected stages, then hand-over
+  if (order.plan) {
+    const collected = sumMoney(order.plan.collected);
+    switch (order.status) {
+      case ORDER_STATUS.RESERVED:
+        return collected;
+      case ORDER_STATUS.PICKUPED:
+        return pickupTotalOf(order) + (order.securityDeposit || 0);
+      case ORDER_STATUS.RETURNED:
+        return (order.totalAmount || 0) + (order.damageFee || 0) + (order.lateFee || 0);
+      case ORDER_STATUS.CANCELLED:
+        // what the shop kept (the refund is the rest): 0 for a full refund, as before
+        return Math.max(0, collected - planRefundOf(order.plan));
+      default:
+        return 0;
+    }
+  }
+
   const createdAt = order.createdAt ? new Date(order.createdAt) : null;
   const pickedUpAt = order.pickedUpAt ? new Date(order.pickedUpAt) : null;
   const returnedAt = order.returnedAt ? new Date(order.returnedAt) : null;

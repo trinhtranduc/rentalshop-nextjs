@@ -570,7 +570,9 @@ class ApiClient(
         val items = JSONArray()
         lines.forEachIndexed { index, (productId, qty, unitPrice) ->
             val extra = lineExtras?.getOrNull(index)
+            // #1189: a BLOCK line goes as BLOCK only when the cart priced it from a table; else it is a plain FIXED price
             val pricingType = PricingTypes.normalize(extra?.pricingType ?: pricingTypesByProduct[productId])
+                .let { if (it == "BLOCK" && extra?.blockPriced != true) "FIXED" else it }
             val itemRentalDays = extra?.rentalDays ?: rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -584,8 +586,9 @@ class ApiClient(
                         (if (extra != null) extra.deposit else depositsByProduct[productId])?.let { put("deposit", it) }
                         (if (extra != null) extra.note else notesByProduct[productId])?.let { put("notes", it) }
                         if (orderType == "RENT") {
-                            put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
+                            put("rentDays", if (pricingType == "DAILY" || pricingType == "BLOCK") itemRentalDays else 1)
                             put("pricingType", pricingType)
+                            if (pricingType == "BLOCK") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
                         }
                     }
             )
@@ -664,7 +667,9 @@ class ApiClient(
         val items = JSONArray()
         lines.forEachIndexed { index, (productId, qty, unitPrice) ->
             val extra = lineExtras?.getOrNull(index)
+            // #1189: a BLOCK line goes as BLOCK only when the cart priced it from a table; else it is a plain FIXED price
             val pricingType = PricingTypes.normalize(extra?.pricingType ?: pricingTypesByProduct[productId])
+                .let { if (it == "BLOCK" && extra?.blockPriced != true) "FIXED" else it }
             val itemRentalDays = extra?.rentalDays ?: rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -678,8 +683,9 @@ class ApiClient(
                         (if (extra != null) extra.deposit else depositsByProduct[productId])?.let { put("deposit", it) }
                         (if (extra != null) extra.note else notesByProduct[productId])?.let { put("notes", it) }
                         if (orderType == "RENT") {
-                            put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
+                            put("rentDays", if (pricingType == "DAILY" || pricingType == "BLOCK") itemRentalDays else 1)
                             put("pricingType", pricingType)
+                            if (pricingType == "BLOCK") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
                         }
                     },
             )
@@ -1374,7 +1380,7 @@ class ApiClient(
         header("X-Device-Type", "android")
         header("X-App-Version", appVersion)
         header("Accept-Language", appAcceptLanguage())
-        // #1199: this app reads deposit stages and sends `paymentPlan`; without it the API answers like before
+        // #1199, #1189: this app reads deposit stages and BLOCK options; without the header the API answers like before
         header(
             com.anyrent.pos.domain.deposit.ClientCapabilities.HEADER_NAME,
             com.anyrent.pos.domain.deposit.ClientCapabilities.headerValue,
@@ -1446,7 +1452,8 @@ class ApiClient(
         name = o.optString("name"),
         barcode = o.optString("barcode").takeIf { it.isNotBlank() },
         rentPrice = o.optDouble("rentPrice", o.optDouble("price", 0.0)),
-        salePrice = o.optDouble("salePrice").takeIf { o.has("salePrice") },
+        // A JSON null reads as NaN with optDouble; NaN in a price crashed the cart (#1199 baseline), so null stays null
+        salePrice = o.optDouble("salePrice").takeIf { o.has("salePrice") && !o.isNull("salePrice") && !it.isNaN() },
         costPrice = o.optDouble("costPrice").takeIf { o.has("costPrice") && !o.isNull("costPrice") && !it.isNaN() },
         stock = o.optInt("stock", o.optInt("totalStock")),
         available = o.optInt("available", o.optInt("stock")),
@@ -1465,6 +1472,7 @@ class ApiClient(
                         type = PricingTypes.normalizeOption(option.optString("type")),
                         price = option.optDouble("price"),
                         isDefault = option.optBoolean("isDefault"),
+                        blockTable = com.anyrent.pos.domain.products.BlockPricing.tableFrom(option),
                     )
                 }
             }
@@ -1699,6 +1707,7 @@ class ApiClient(
             deposit = deposit,
             rentalDays = rentalDays,
             pricingType = pricingType,
+            pricingSnapshot = com.anyrent.pos.domain.products.BlockSnapshot.from(item.optJSONObject("pricingSnapshot")),
         )
     }
 
@@ -1850,4 +1859,7 @@ data class OrderLineExtra(
     val rentalDays: Int,
     val deposit: Double?,
     val note: String?,
+    /** #1189: the line's price comes from a day-block table, so it is sent as BLOCK (with the option id) */
+    val blockPriced: Boolean = false,
+    val pricingOptionId: Int? = null,
 )

@@ -15,8 +15,11 @@ import com.anyrent.pos.domain.deposit.DepositTemplate
 import com.anyrent.pos.domain.deposit.PaymentPlanRequest
 import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.orders.OrderPlanDays
+import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.CartV2Logic
+import com.anyrent.pos.domain.products.PricingMode
 import com.anyrent.pos.domain.products.PricingTypes
+import com.anyrent.pos.domain.products.ProductPricing
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -321,7 +324,7 @@ object CartStore {
         val days = rentalDaysInclusive()
         _lines.update {
             it.map { line ->
-                if (line.pricingType.equals("DAILY", ignoreCase = true)) {
+                if (line.pricingType.equals("DAILY", ignoreCase = true) || line.blockTable != null) {
                     line.copy(rentalDays = days)
                 } else line
             }
@@ -337,7 +340,11 @@ object CartStore {
         val days = rentalDaysInclusive()
         _lines.update { current ->
             current.map { if (it.product.id == product.id) CartV2Logic.withFreshPricing(it, product) else it } +
-                CartLine(product = product, quantity = quantity, rentalDays = days, isSale = sale)
+                // #1189: a product whose default is its day-block table starts on it (iOS takes the default option's type)
+                CartLine(
+                    product = product, quantity = quantity, rentalDays = days, isSale = sale,
+                    pricingType = if (ProductPricing.defaultMode(product) == PricingMode.BLOCK) "BLOCK" else product.pricingType,
+                )
         }
         refreshAutoDeposit()
         persist()
@@ -349,6 +356,12 @@ object CartStore {
         val after = before.map { if (it.product.id == product.id) CartV2Logic.withFreshPricing(it, product) else it }
         if (after == before) return
         _lines.value = after
+        persist()
+    }
+
+    /** #1189: see [CartV2Logic.refreshBlockTable] */
+    fun refreshBlockTable(product: Product) {
+        _lines.update { list -> list.map { CartV2Logic.refreshBlockTable(it, product) } }
         persist()
     }
 
@@ -367,7 +380,8 @@ object CartStore {
     fun updateUnitPrice(lineId: String, price: Double) {
         _lines.update { list ->
             list.map {
-                if (it.lineId == lineId) it.copy(unitPriceOverride = price.coerceAtLeast(0.0)) else it
+                // #1189: a block line takes its price from the table
+                if (it.lineId == lineId && it.blockTable == null) it.copy(unitPriceOverride = price.coerceAtLeast(0.0)) else it
             }
         }
         persist()
@@ -733,6 +747,9 @@ object CartStore {
                 pricingType = item.pricingType.ifBlank { "FIXED" },
                 unitPriceOverride = item.unitPrice,
                 note = item.note,
+                // #1189: a block line keeps its saved table, so a changed date prices it again; a hand-typed price stays a plain price
+                savedBlockTable = item.pricingSnapshot?.takeIf { !it.overridden && item.pricingType.equals("BLOCK", true) }?.table,
+                blockCurrency = item.pricingSnapshot?.currency,
             )
         }
 
@@ -882,7 +899,13 @@ object CartStore {
                         .put("id", option.id ?: JSONObject.NULL)
                         .put("type", option.type)
                         .put("price", option.price)
-                        .put("isDefault", option.isDefault),
+                        .put("isDefault", option.isDefault)
+                        .apply {
+                            option.blockTable?.let { t ->
+                                put("blockTiers", JSONArray(t.tiers)); put("blockStartDay", t.startDay)
+                                put("blockExtraMode", t.extraMode); t.extraPrice?.let { e -> put("blockExtraPrice", e) }
+                            }
+                        },
                 )
             }
             val product = JSONObject()
@@ -912,6 +935,13 @@ object CartStore {
                     .put("isSale", line.isSale)
                     .put("pricingType", line.pricingType)
                     .put("unitPriceOverride", line.unitPriceOverride ?: JSONObject.NULL)
+                    // #1189: the table of a line loaded from a saved order
+                    .apply {
+                        line.savedBlockTable?.let { t ->
+                            put("savedBlock", BlockPricing.optionJson(t, false))
+                            line.blockCurrency?.let { c -> put("blockCurrency", c) }
+                        }
+                    }
                     .put("product", product),
             )
         }
@@ -977,6 +1007,7 @@ object CartStore {
                     type = PricingTypes.normalizeOption(option.optString("type")),
                     price = option.optDouble("price", 0.0),
                     isDefault = option.optBoolean("isDefault"),
+                    blockTable = BlockPricing.tableFrom(option),
                 )
             }
             val salePrice = if (productJson.isNull("salePrice")) null else productJson.optDouble("salePrice")
@@ -1011,6 +1042,8 @@ object CartStore {
                 pricingType = PricingTypes.normalizeOption(line.optString("pricingType").ifBlank { product.pricingType }),
                 note = line.optString("itemNote").takeIf { it.isNotBlank() && it != "null" },
                 unitPriceOverride = override,
+                savedBlockTable = line.optJSONObject("savedBlock")?.let { BlockPricing.tableFrom(it) },
+                blockCurrency = line.optString("blockCurrency").takeIf { it.isNotBlank() && it != "null" },
             )
         }
         // A draft saved before #388 has no flag: keep its deposit when it differs from the items' sum

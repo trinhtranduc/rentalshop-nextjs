@@ -202,9 +202,12 @@ struct OverviewReport: Decodable, Equatable {
         let expectedCollected: Double?
         /// #616: value of the orders created that day (`newOrderValue`, #609); nil on an older API
         let newOrderValue: Double?
+        /// #1199: deposit stages still to collect in this bucket (`futureInstallments`); nil when the API sends none.
+        /// Read apart from `expectedCollected` / `futureIncome`: a stage is never added to them.
+        var futureInstallments: [FutureInstallmentGroup]? = nil
 
         enum CodingKeys: String, CodingKey { case date, month, realIncome, collected, monthNumber, newOrderCount,
-                                                 expectedCollected, newOrderValue }
+                                                 expectedCollected, newOrderValue, futureInstallments }
 
         init(dayKey: String?, monthLabel: String?, realIncome: Double, newOrderCount: Int? = nil,
              expectedCollected: Double? = nil, newOrderValue: Double? = nil) {
@@ -228,6 +231,7 @@ struct OverviewReport: Decodable, Equatable {
             newOrderCount = (try? c.decodeIfPresent(Int.self, forKey: .newOrderCount)) ?? nil
             expectedCollected = (try? c.decodeIfPresent(Double.self, forKey: .expectedCollected)) ?? nil
             newOrderValue = (try? c.decodeIfPresent(Double.self, forKey: .newOrderValue)) ?? nil
+            futureInstallments = (try? c.decodeIfPresent([FutureInstallmentGroup].self, forKey: .futureInstallments)) ?? nil
         }
     }
 
@@ -543,6 +547,9 @@ struct OverviewNow: Decodable, Equatable {
     let noShows: Int?
     /// #616: tomorrow's hand-overs and returns (`tomorrow`); nil when the API left it out
     let tomorrow: Tomorrow?
+    /// #1199 deposit stages to collect (`installmentsDue`, `installmentsOverdue`, `installmentsDueTomorrow`); nil when the
+    /// API left them out (an older API, or a shop without stages)
+    var installments: InstallmentReminders? = nil
 
     struct Tomorrow: Decodable, Equatable {
         let pickups: Int
@@ -595,7 +602,10 @@ struct OverviewNow: Decodable, Equatable {
         }
     }
 
-    private enum CodingKeys: String, CodingKey { case overdueReturns, cash, pickupsToday, returnsToday, doneToday, noShows, tomorrow }
+    private enum CodingKeys: String, CodingKey {
+        case overdueReturns, cash, pickupsToday, returnsToday, doneToday, noShows, tomorrow
+        case installmentsDue, installmentsOverdue, installmentsDueTomorrow
+    }
     private enum GroupKeys: String, CodingKey { case count }
     private enum DoneKeys: String, CodingKey { case pickups, returns }
     private enum CashKeys: String, CodingKey { case depositsHeld, collateralToCollect, collateralToReturn }
@@ -628,6 +638,11 @@ struct OverviewNow: Decodable, Equatable {
         }
         noShows = count(.noShows)
         tomorrow = (try? c.decodeIfPresent(Tomorrow.self, forKey: .tomorrow)) ?? nil
+        let due = (try? c.decodeIfPresent(InstallmentReminderGroup.self, forKey: .installmentsDue)) ?? nil
+        let overdue = (try? c.decodeIfPresent(InstallmentReminderGroup.self, forKey: .installmentsOverdue)) ?? nil
+        let soon = (try? c.decodeIfPresent(InstallmentReminderGroup.self, forKey: .installmentsDueTomorrow)) ?? nil
+        installments = (due != nil || overdue != nil || soon != nil)
+            ? InstallmentReminders(due: (due?.orders ?? []) + (overdue?.orders ?? []), tomorrow: soon?.orders ?? []) : nil
         // The section needs both lists; `doneToday` missing counts as nothing done yet
         if let pickups = count(.pickupsToday), let returns = count(.returnsToday) {
             let done = try? c.nestedContainer(keyedBy: DoneKeys.self, forKey: .doneToday)
@@ -666,4 +681,99 @@ struct OverviewNowResponse: Decodable {
     let message: String?
     let error: String?
     let data: OverviewNow?
+}
+
+
+// MARK: - Deposit stage reminders (#1199)
+
+/// One stage to collect, from `installmentsDue*` of outlet-operations
+struct InstallmentReminderRow: Decodable, Equatable {
+    let orderId: Int
+    let orderNumber: String
+    let customerName: String?
+    let key: String
+    let label: String
+    let amount: Double
+    let remaining: Double
+    let dueDateKey: String?
+    let lateDays: Int
+
+    enum CodingKeys: String, CodingKey { case orderId, orderNumber, customerName, key, label, amount, remaining, dueDateKey, lateDays }
+
+    init(orderId: Int, orderNumber: String, customerName: String?, key: String, label: String, amount: Double,
+         remaining: Double? = nil, dueDateKey: String?, lateDays: Int = 0) {
+        self.orderId = orderId
+        self.orderNumber = orderNumber
+        self.customerName = customerName
+        self.key = key
+        self.label = label
+        self.amount = amount
+        self.remaining = remaining ?? amount
+        self.dueDateKey = dueDateKey
+        self.lateDays = lateDays
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        orderId = try c.decode(Int.self, forKey: .orderId)
+        orderNumber = ((try? c.decodeIfPresent(String.self, forKey: .orderNumber)) ?? nil) ?? ""
+        customerName = (try? c.decodeIfPresent(String.self, forKey: .customerName)) ?? nil
+        key = ((try? c.decodeIfPresent(String.self, forKey: .key)) ?? nil) ?? ""
+        label = ((try? c.decodeIfPresent(String.self, forKey: .label)) ?? nil) ?? ""
+        amount = ((try? c.decodeIfPresent(Double.self, forKey: .amount)) ?? nil) ?? 0
+        remaining = ((try? c.decodeIfPresent(Double.self, forKey: .remaining)) ?? nil) ?? amount
+        dueDateKey = (try? c.decodeIfPresent(String.self, forKey: .dueDateKey)) ?? nil
+        lateDays = ((try? c.decodeIfPresent(Int.self, forKey: .lateDays)) ?? nil) ?? 0
+    }
+}
+
+struct InstallmentReminderGroup: Decodable, Equatable {
+    let count: Int
+    let orders: [InstallmentReminderRow]
+
+    enum CodingKeys: String, CodingKey { case count, orders }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        count = ((try? c.decodeIfPresent(Int.self, forKey: .count)) ?? nil) ?? 0
+        orders = ((try? c.decodeIfPresent([InstallmentReminderRow].self, forKey: .orders)) ?? nil) ?? []
+    }
+}
+
+/// "Cần thu hôm nay" (due today and late) and "Sắp đến hạn" (tomorrow)
+struct InstallmentReminders: Equatable {
+    let due: [InstallmentReminderRow]
+    let tomorrow: [InstallmentReminderRow]
+
+    var isEmpty: Bool { due.isEmpty && tomorrow.isEmpty }
+}
+
+/// The overview's own figures for deposit stages: unpaid stages by due day (`futureInstallments`). Never part of `futureIncome`.
+struct FutureInstallmentGroup: Decodable, Equatable {
+    let dueDateKey: String
+    let amount: Double
+    let count: Int
+
+    enum CodingKeys: String, CodingKey { case dueDateKey, amount, count }
+
+    init(dueDateKey: String, amount: Double, count: Int) {
+        self.dueDateKey = dueDateKey
+        self.amount = amount
+        self.count = count
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dueDateKey = ((try? c.decodeIfPresent(String.self, forKey: .dueDateKey)) ?? nil) ?? ""
+        amount = ((try? c.decodeIfPresent(Double.self, forKey: .amount)) ?? nil) ?? 0
+        count = ((try? c.decodeIfPresent(Int.self, forKey: .count)) ?? nil) ?? 0
+    }
+}
+
+extension OverviewReport {
+    /// #1199: unpaid deposit stages falling due in the period. Shown on their own line, never added to the bars
+    var futureInstallmentsTotal: (amount: Double, count: Int) {
+        let groups = series.flatMap { $0.futureInstallments ?? [] }
+        return (groups.reduce(0) { $0 + $1.amount }, groups.reduce(0) { $0 + $1.count })
+    }
 }

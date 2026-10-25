@@ -64,6 +64,8 @@ final class SettingsV2ViewController: BaseViewControler {
         loadCounts()
         refreshOverlapSetting()
         refreshCurrency()
+        // #1199: a login payload without `depositMode` (older cached login) is fetched here, not guessed
+        DepositModeStore.refresh { [weak self] _ in self?.listView.reloadData() }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -414,6 +416,7 @@ final class SettingsV2ViewController: BaseViewControler {
         case .receiptNote: return "settings.v2.receiptNote".localized()
         case .printer: return "settings.v2.printer".localized()
         case .bankAccounts: return "Bank Accounts".localized()
+        case .depositMode: return "deposit.settings.title".localized()
         case .categories: return "settings.v2.categories".localized()
         case .customers: return "customers.v2.title".localized()
         case .users: return "settings.v2.users".localized()
@@ -439,6 +442,8 @@ final class SettingsV2ViewController: BaseViewControler {
             return plan.map(SettingsV2Logic.planText)
         case .currency:
             return ShopCurrencyStore.current.label
+        case .depositMode:
+            return DepositModeStore.current == .staged ? "deposit.mode.staged".localized() : "deposit.mode.oneTime".localized()
         case .language:
             let code = Bundle.main.preferredLocalizations.first ?? "vi"
             let locale = Locale(identifier: code)
@@ -468,6 +473,9 @@ final class SettingsV2ViewController: BaseViewControler {
         case .bankAccounts:
             let page = BankAccountViewController()
             page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
+        case .depositMode:
+            let page = DepositSettingsViewController()
             navigationController?.pushViewController(page, animated: true)
         case .categories:
             let page = CategoryManageViewController()

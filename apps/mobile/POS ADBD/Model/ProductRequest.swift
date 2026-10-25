@@ -29,6 +29,8 @@ struct CreateProductRequest: Codable {
     let durationConfig: String?
     // Multiple pricing options (Phase 1: FIXED + DAILY)
     let pricingOptions: [PricingOptionRequest]?
+    /// #1189: 2 = this client sends the full option list including BLOCK
+    var pricingSchemaVersion: Int? = nil
 }
 
 // MARK: - Outlet Stock Item Model
@@ -39,9 +41,45 @@ struct OutletStockItem: Codable {
 
 // MARK: - Pricing Option Request Model (Phase 1: FIXED + DAILY)
 struct PricingOptionRequest: Codable {
-    let type: String        // "FIXED" | "DAILY"
+    let type: String        // "FIXED" | "DAILY" | "BLOCK"
     let price: Double
     let isDefault: Bool
+    // #1189: only on a BLOCK option (`price` = day-1 price); left out of the JSON otherwise
+    var blockTiers: [Double]? = nil
+    var blockStartDay: Int? = nil
+    var blockExtraMode: String? = nil
+    var blockExtraPrice: Double? = nil
+
+    init(type: String, price: Double, isDefault: Bool) {
+        self.type = type
+        self.price = price
+        self.isDefault = isDefault
+    }
+
+    init(type: String, price: Double, isDefault: Bool, table: BlockTable) {
+        self.init(type: type, price: price, isDefault: isDefault)
+        blockTiers = table.tiers
+        blockStartDay = table.startDay
+        blockExtraMode = table.extraMode
+        blockExtraPrice = table.extraPrice
+    }
+}
+
+extension PricingOptionRequest {
+    /// The option as the form-data JSON of the product routes; block fields only on a BLOCK option
+    var formDictionary: [String: Any] {
+        var dict: [String: Any] = ["type": type, "price": price, "isDefault": isDefault]
+        if let blockTiers { dict["blockTiers"] = blockTiers }
+        if let blockStartDay { dict["blockStartDay"] = blockStartDay }
+        if let blockExtraMode { dict["blockExtraMode"] = blockExtraMode }
+        if let blockExtraPrice { dict["blockExtraPrice"] = blockExtraPrice }
+        return dict
+    }
+}
+
+/// #1189: the API stores BLOCK options only from a client that says it knows them
+enum ProductPricingSchema {
+    static let version = 2
 }
 
 // MARK: - Create Product Request Extension
@@ -108,7 +146,8 @@ extension CreateProductRequest {
         images: [String]? = nil,
         pricingType: String? = nil,
         durationConfig: String? = nil,
-        pricingOptions: [PricingOptionRequest]? = nil
+        pricingOptions: [PricingOptionRequest]? = nil,
+        pricingSchemaVersion: Int? = nil
     ) -> CreateProductRequest {
         let outletStock = [OutletStockItem(outletId: outletId, stock: totalStock)]
 
@@ -127,7 +166,8 @@ extension CreateProductRequest {
             images: images,
             pricingType: pricingType,
             durationConfig: durationConfig,
-            pricingOptions: pricingOptions
+            pricingOptions: pricingOptions,
+            pricingSchemaVersion: pricingSchemaVersion
         )
     }
 }
@@ -154,6 +194,8 @@ struct UpdateProductRequest: Codable {
     let durationConfig: String?
     // Multiple pricing options (Phase 1: FIXED + DAILY)
     let pricingOptions: [PricingOptionRequest]?
+    /// #1189: 2 = this client sends the full option list including BLOCK
+    var pricingSchemaVersion: Int? = nil
 
     // Default nil so existing factory methods (which omit these) keep compiling
     init(
@@ -172,8 +214,10 @@ struct UpdateProductRequest: Codable {
         isActive: Bool?,
         pricingType: String? = nil,
         durationConfig: String? = nil,
-        pricingOptions: [PricingOptionRequest]? = nil
+        pricingOptions: [PricingOptionRequest]? = nil,
+        pricingSchemaVersion: Int? = nil
     ) {
+        self.pricingSchemaVersion = pricingSchemaVersion
         self.name = name
         self.description = description
         self.barcode = barcode
@@ -399,7 +443,9 @@ extension UpdateProductRequest {
         if let pricingType = pricingType { formData["pricingType"] = pricingType }
         if let durationConfig = durationConfig { formData["durationConfig"] = durationConfig }
         if let pricingOptions = pricingOptions {
-            formData["pricingOptions"] = pricingOptions.map { ["type": $0.type, "price": $0.price, "isDefault": $0.isDefault] as [String: Any] }
+            formData["pricingOptions"] = pricingOptions.map { $0.formDictionary }
+            // #1189: only the v2 form sends it (the API then replaces the BLOCK option with ours); the old form keeps it stored
+            if let pricingSchemaVersion { formData["pricingSchemaVersion"] = pricingSchemaVersion }
         }
 
         return formData
@@ -430,7 +476,9 @@ extension CreateProductRequest {
         if let pricingType = pricingType { formData["pricingType"] = pricingType }
         if let durationConfig = durationConfig { formData["durationConfig"] = durationConfig }
         if let pricingOptions = pricingOptions {
-            formData["pricingOptions"] = pricingOptions.map { ["type": $0.type, "price": $0.price, "isDefault": $0.isDefault] as [String: Any] }
+            formData["pricingOptions"] = pricingOptions.map { $0.formDictionary }
+            // #1189: only the v2 form sends it (the API then replaces the BLOCK option with ours); the old form keeps it stored
+            if let pricingSchemaVersion { formData["pricingSchemaVersion"] = pricingSchemaVersion }
         }
 
         return formData

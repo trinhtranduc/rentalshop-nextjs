@@ -73,6 +73,10 @@ export function matchesWhere(row: Row, where: any): boolean {
     } else if (key === 'NOT') {
       const list = Array.isArray(condition) ? condition : [condition];
       if (list.some((w) => matchesWhere(row, w))) return false;
+    } else if (condition && typeof condition === 'object' && 'some' in condition && Object.keys(condition).length === 1) {
+      // relation filter `{ payments: { some: {...} } }`: a row without that relation has no related rows (#1199)
+      const related: Row[] = Array.isArray(row[key]) ? row[key] : [];
+      if (!related.some((child) => matchesWhere(child, (condition as any).some))) return false;
     } else if (!matchesField(row[key], condition)) {
       return false;
     }

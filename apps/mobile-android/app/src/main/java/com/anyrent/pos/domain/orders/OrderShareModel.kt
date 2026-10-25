@@ -36,7 +36,8 @@ data class ShareShop(
 data class ShareDayStrip(val pickup: String, val returnDay: String, val days: Int?)
 
 /** [note]: the item's own note under its price line (#930); the order's general note is never on the image */
-data class ShareLine(val name: String, val quantity: String, val total: String, val note: String? = null)
+/** [formula] (#1189): the sum of a day-block line, "120.000 (3 ngày) + 2 × 20.000 = 160.000", under its price line */
+data class ShareLine(val name: String, val quantity: String, val total: String, val note: String? = null, val formula: String? = null)
 
 data class ShareRow(val label: ShareText, val value: String)
 
@@ -92,6 +93,8 @@ data class OrderShareModel(
             printBankQr: Boolean = false,
             bankAccount: OutletBankAccount? = null,
             zone: ZoneId = ShopTime.zone,
+            /** #1189: the sum of a day-block order line (null = none); the caller owns the strings */
+            blockFormula: (com.anyrent.pos.data.model.OrderItem) -> String? = { null },
         ): OrderShareModel {
             val summary = order.summary
             val isRent = summary.orderType.equals("RENT", ignoreCase = true)
@@ -155,6 +158,7 @@ data class OrderShareModel(
                     ShareLine(
                         itemName, "${item.quantity} × ${money(item.unitPrice)}", money(item.totalPrice),
                         item.note?.trim()?.takeIf { it.isNotEmpty() },
+                        formula = if (isRent) blockFormula(item) else null,
                     )
                 },
                 rows = rows,
@@ -182,6 +186,8 @@ data class OrderShareModel(
             vi: Boolean,
             now: Instant = Instant.now(),
             zone: ZoneId = ShopTime.zone,
+            /** #1189: the sum of a day-block cart line (null = none) */
+            blockFormula: (CartLine) -> String? = { null },
         ): OrderShareModel {
             val today = now.atZone(zone)
             val subtotal = lines.sumOf { it.lineTotal }
@@ -213,7 +219,10 @@ data class OrderShareModel(
                 customerPhone = customer?.phone?.trim()?.takeIf { it.isNotEmpty() },
                 dayStrip = strip,
                 itemsTitle = itemsTitle(!isSale, lines.size),
-                lines = lines.map { ShareLine(it.product.name, "${it.quantity} × ${money(it.unitPrice)}", money(it.lineTotal)) },
+                lines = lines.map {
+                    ShareLine(it.product.name, "${it.quantity} × ${money(it.unitPrice)}", money(it.lineTotal),
+                        formula = if (isSale) null else blockFormula(it))
+                },
                 rows = rows,
                 highlight = ShareHighlight(ShareText.Res(R.string.share_draft_estimate), money(total), ShareTone.ORANGE),
                 note = ShareText.Res(R.string.share_draft_note),

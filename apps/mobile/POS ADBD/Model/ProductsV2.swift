@@ -90,6 +90,8 @@ enum CategoryRules {
 enum ProductPricingMode: String {
     case perRental = "FIXED"
     case perDay = "DAILY"
+    /// #1189: day-block table ("Giá theo khối ngày")
+    case block = "BLOCK"
 }
 
 enum ProductPricing {
@@ -124,6 +126,11 @@ enum ProductPricing {
         return price
     }
 
+    /// #1189: the day-block table of the product (an active BLOCK option); nil when it has none
+    static func block(_ product: Product) -> BlockTable? {
+        activeOptions(product).compactMap { $0.blockTable }.first
+    }
+
     static func sale(_ product: Product) -> Double? {
         let price = product.salePrice ?? product.sale
         return price > 0 ? price : nil
@@ -131,24 +138,36 @@ enum ProductPricing {
 
     static func defaultMode(_ product: Product) -> ProductPricingMode {
         let type = product.defaultPricingOption?.type.uppercased() ?? product.pricingType?.uppercased()
+        if type == ProductPricingMode.block.rawValue, block(product) != nil { return .block }
         return type == ProductPricingMode.perDay.rawValue ? .perDay : .perRental
     }
 
     /// Options sent on save. The API keeps one default and copies its price into `rentPrice`.
     /// A default without a price falls back to the mode that has one.
-    static func options(perRental: Double?, perDay: Double?, defaultMode: ProductPricingMode) -> [PricingOptionRequest] {
+    static func options(perRental: Double?, perDay: Double?, defaultMode: ProductPricingMode, block: BlockTable? = nil) -> [PricingOptionRequest] {
         // #951: an empty box (nil) is no price; 0 is a 0đ price
         let fixed = (perRental ?? -1) >= 0 ? perRental : nil
         let daily = (perDay ?? -1) >= 0 ? perDay : nil
+        // The default is the mode that has a price: the one asked for, else the first that has one
         var mode = defaultMode
-        if mode == .perDay && daily == nil { mode = .perRental }
-        if mode == .perRental && fixed == nil && daily != nil { mode = .perDay }
+        let has: (ProductPricingMode) -> Bool = { m in
+            switch m {
+            case .perRental: return fixed != nil
+            case .perDay: return daily != nil
+            case .block: return block != nil
+            }
+        }
+        if !has(mode) { mode = [ProductPricingMode.perRental, .perDay, .block].first(where: has) ?? .perRental }
         var result: [PricingOptionRequest] = []
         if let fixed {
             result.append(PricingOptionRequest(type: ProductPricingMode.perRental.rawValue, price: fixed, isDefault: mode == .perRental))
         }
         if let daily {
             result.append(PricingOptionRequest(type: ProductPricingMode.perDay.rawValue, price: daily, isDefault: mode == .perDay))
+        }
+        // #1189: `price` of a BLOCK option is the day-1 price; the API keeps the table only with `pricingSchemaVersion: 2`
+        if let block {
+            result.append(PricingOptionRequest(type: ProductPricingMode.block.rawValue, price: block.tiers.first ?? 0, isDefault: mode == .block, table: block))
         }
         return result
     }
@@ -236,6 +255,12 @@ enum ProductRowLogic {
         let perRental = ProductPricing.perRental(product)
         let perDay = ProductPricing.perDay(product)
         let sale = ProductPricing.sale(product)
+        // #1189: a product whose default is the day-block table shows the day-1 price first
+        if ProductPricing.defaultMode(product) == .block, let table = ProductPricing.block(product), let first = table.tiers.first {
+            let other: (Double, ProductPricingMode)? = perRental.map { ($0, ProductPricingMode.perRental) }
+                ?? perDay.map { ($0, ProductPricingMode.perDay) }
+            return ProductRowPrice(main: first, mainMode: .block, second: other?.0, secondMode: other?.1, sale: sale)
+        }
         switch (perRental, perDay) {
         case let (rental?, day?):
             if ProductPricing.defaultMode(product) == .perDay {
@@ -743,7 +768,8 @@ enum CartV2Logic {
 
     /// Paid now: the prepaid deposit for a rental, the order total for a sale
     static func collectNow(_ cart: Cart) -> Double {
-        cart.orderType == .rent ? cart.depositAmount : cart.amountDue
+        if cart.isStagedRental { return cart.stagedCollectNow }  // #1199: stage 1 only, or nothing
+        return cart.orderType == .rent ? cart.depositAmount : cart.amountDue
     }
 
     /// Days tapped in the device-zone date picker → the cart's instants (#596): pickup at the first second of the
