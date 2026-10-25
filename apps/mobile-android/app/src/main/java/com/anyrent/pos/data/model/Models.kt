@@ -46,6 +46,8 @@ data class PricingOption(
     val type: String,
     val price: Double,
     val isDefault: Boolean = false,
+    /** #1189: the day-block table of a BLOCK option; null on every other option and on payloads from before #1189 */
+    val blockTable: com.anyrent.pos.domain.products.BlockTable? = null,
 )
 
 data class Product(
@@ -139,6 +141,8 @@ data class OrderItem(
     val deposit: Double = 0.0,
     val rentalDays: Int = 1,
     val pricingType: String = "FIXED",
+    /** #1189: the table and the days a BLOCK line was priced with (null on every other line and on old orders) */
+    val pricingSnapshot: com.anyrent.pos.domain.products.BlockSnapshot? = null,
 )
 
 data class OrderDetail(
@@ -249,9 +253,27 @@ data class CartLine(
      * so per-line actions (quantity, price, note, days, remove) target this id, never the product id.
      */
     val lineId: String = java.util.UUID.randomUUID().toString(),
+    /** #1189: the table a line loaded from a saved order was priced with (`pricingSnapshot`); wins over the product's */
+    val savedBlockTable: com.anyrent.pos.domain.products.BlockTable? = null,
+    val blockCurrency: String? = null,
 ) {
+    /** #1189: the day-block table of a BLOCK rent line (the order's saved one, else the product's BLOCK option) */
+    val blockTable: com.anyrent.pos.domain.products.BlockTable?
+        get() = if (isSale || !pricingType.equals("BLOCK", ignoreCase = true)) null
+        else savedBlockTable ?: product.pricingOptions.firstOrNull { it.type.equals("BLOCK", ignoreCase = true) && it.blockTable != null }?.blockTable
+
+    /** #1189: the breakdown behind the unit price ("Khối 3 ngày + 2 ngày thêm"); null on a line that is not a block line */
+    val blockDetail: com.anyrent.pos.domain.products.BlockRentDetail?
+        get() = blockTable?.let {
+            com.anyrent.pos.domain.products.BlockPricing.detail(
+                it, rentalDays,
+                com.anyrent.pos.domain.products.BlockPricing.minorUnit(blockCurrency ?: com.anyrent.pos.domain.money.ShopMoney.current.code),
+            )
+        }
+
     val unitPrice: Double
-        get() = unitPriceOverride ?: if (isSale) {
+        // #1189: a block line takes its price from the table; staff do not type one on it
+        get() = blockDetail?.total ?: unitPriceOverride ?: if (isSale) {
             product.salePrice ?: product.rentPrice
         } else {
             product.pricingOptions.firstOrNull {
