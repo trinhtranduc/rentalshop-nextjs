@@ -59,6 +59,8 @@ final class CartV2ViewController: BaseViewControler {
 
     private var cart: Cart { CartStore.shared.cart }
     private var isRent: Bool { cart.orderType == .rent }
+    /// #1199: the stage whose amount the number sheet is editing (nil = the old "Cọc" row)
+    private var editingStageIndex: Int?
 
     /// Conflicts of the lines still in the cart, in cart order
     private var currentConflicts: [CartScheduleConflict] {
@@ -106,6 +108,11 @@ final class CartV2ViewController: BaseViewControler {
         let allowedBefore = OverlapSetting.isAllowed
         OverlapSetting.refresh { [weak self] allowed in
             if allowed != allowedBefore { self?.render() }
+        }
+        // #1199: a login payload without `depositMode` is fetched; the owner may also have switched the mode since
+        let modeBefore = DepositModeStore.current
+        DepositModeStore.refresh { [weak self] mode in
+            if mode != modeBefore || self?.cart.depositStages == nil { self?.render() }
         }
     }
 
@@ -264,6 +271,7 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     private func render() {
+        seedDepositStages()
         renderTitle()
         typeToggle.select(isRent ? 0 : 1)
         typeToggle.isEnabled = !cart.isEditMode
@@ -328,7 +336,11 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(total)
         content.addArrangedSubview(V2.divider())
 
-        if isRent {
+        if isRent && cart.editHasDepositPlan {
+            // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
+        } else if isRent && cart.isStagedRental {
+            content.addArrangedSubview(stagedSection())
+        } else if isRent && !(DepositModeStore.current == .staged && !cart.isEditMode) {
             let deposit = V2ValueRow(title: "products.cart.deposit".localized(), editable: true)
             deposit.valueLabel.text = MoneyFormatter.format(cart.depositAmount)
             deposit.addTarget(self, action: #selector(editDeposit), for: .touchUpInside)
@@ -346,13 +358,22 @@ final class CartV2ViewController: BaseViewControler {
         } else {
             collectTitle.text = (isRent ? "products.cart.collectDeposit" : "products.cart.customerPays").localized()
             collectAmount.text = MoneyFormatter.format(CartV2Logic.collectNow(cart))
+            if cart.isStagedRental {
+                collectTitle.text = cart.stagedCollectNow > 0 ? "deposit.cart.collectNow".localized() : "deposit.cart.collectNone".localized()
+            }
         }
-        ctaButton.setTitle(CartV2Logic.ctaTitleKey(isEditMode: cart.isEditMode, isRent: isRent).localized(), for: .normal)
+        let stagedCollects = cart.isStagedRental && cart.stagedCollectNow > 0
+        ctaButton.setTitle(stagedCollects ? "deposit.cart.createAndCollect".localized()
+                           : CartV2Logic.ctaTitleKey(isEditMode: cart.isEditMode, isRent: isRent).localized(), for: .normal)
+        ctaButton.titleLabel?.font = Utils.boldFont(size: stagedCollects ? DS.TextSize.body : DS.TextSize.input)
+        ctaButton.titleLabel?.adjustsFontSizeToFitWidth = true
+        ctaButton.titleLabel?.minimumScaleFactor = 0.8
         // #518 OFF: "Tạo đơn" is greyed and disabled with the notice; the API refuses the order too
         // #1067: a saved discount above the lines (items removed after it was set) blocks the same way, with its notice
         let discountProblem = CartV2Logic.cartDiscountError(cart)
         renderDiscountNotice(discountProblem)
-        let blocked = ctaState == .blocked || discountProblem != nil
+        let stagesExceed = cart.isStagedRental && DepositPlanMath.exceedsTotal(cart.stagedPreview(), total: cart.totalAmount)
+        let blocked = ctaState == .blocked || discountProblem != nil || stagesExceed
         blockedNotice.isHidden = ctaState != .blocked
         ctaButton.isEnabled = !blocked
         ctaButton.backgroundColor = blocked ? UIColor(hexString: "CBD5E1") : DS.Color.primary
@@ -364,6 +385,136 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     /// #1067: the discount notice (same red box as the overlap block), rebuilt only when its text changes
+    // MARK: - Thu cọc theo giai đoạn (#1199, mockup m5)
+
+    /// A staged shop: the stages of the new order start from the shop's default template
+    private func seedDepositStages() {
+        guard isRent, !cart.isEditMode, DepositModeStore.current == .staged, cart.depositStages == nil,
+              let template = DepositModeStore.latest?.startTemplate else { return }
+        CartStore.shared.setDepositTemplate(template)
+    }
+
+    private func stagedSection() -> UIView {
+        let column = UIStackView()
+        column.axis = .vertical
+        let settings = DepositModeStore.latest
+        let choices = settings?.choices ?? []
+        let selected = choices.first { $0.id == cart.depositTemplateId }
+        let templateRow = V2ValueRow(title: "deposit.cart.title".localized(), chevron: false)
+        templateRow.valueLabel.text = (selected?.name ?? choices.first?.name ?? "") + (Cart.canEditStages && choices.count > 1 ? "  ⌄" : "")
+        templateRow.valueLabel.textColor = DS.Color.primary
+        templateRow.valueLabel.font = Utils.boldFont(size: DS.TextSize.body)
+        templateRow.accessibilityIdentifier = "deposit.cart.template"
+        if Cart.canEditStages && choices.count > 1 {
+            templateRow.addTarget(self, action: #selector(pickDepositTemplate), for: .touchUpInside)
+        } else {
+            templateRow.isUserInteractionEnabled = false
+        }
+        column.addArrangedSubview(templateRow)
+        column.addArrangedSubview(V2.divider())
+
+        let preview = cart.stagedPreview()
+        let today = DayFormatter.key(Date())
+        for (index, stage) in preview.enumerated() {
+            column.addArrangedSubview(stageRow(stage, index: index, today: today))
+            column.addArrangedSubview(V2.divider())
+        }
+        if DepositPlanMath.exceedsTotal(preview, total: cart.totalAmount) {
+            let warning = DepositUI.warningBox("deposit.cart.exceeds".localized())
+            let holder = UIView()
+            holder.addSubview(warning)
+            warning.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg)) }
+            column.addArrangedSubview(holder)
+        }
+
+        let first = preview.first
+        let collect = V2ValueRow(title: String(format: "deposit.cart.collectFirst".localized(), 1), editable: true)
+        if cart.stagedCollectNow > 0, let first {
+            collect.valueLabel.text = MoneyFormatter.format(first.amount) + " · " + DepositUI.methodName(cart.collectMethod)
+        } else {
+            collect.valueLabel.text = "deposit.cart.collectNone.short".localized()
+        }
+        collect.addTarget(self, action: #selector(pickCollectFirst), for: .touchUpInside)
+        collect.accessibilityIdentifier = "deposit.cart.collectFirst"
+        column.addArrangedSubview(collect)
+        column.addArrangedSubview(V2.divider())
+        return column
+    }
+
+    private func stageRow(_ stage: DepositStagePreview, index: Int, today: String) -> UIView {
+        let editable = Cart.canEditStages && !stage.isRest
+        let name = V2.label(stage.label, size: DS.TextSize.body, lines: 0)
+        let due = stage.dueDateKey == today ? "deposit.due.today".localized() : DepositUI.dayText(stage.dueDateKey)
+        let detail = stage.isRest
+            ? String(format: "deposit.cart.restDetail".localized(), due)
+            : String(format: "deposit.cart.stageDetail".localized(), DepositPlanMath.percentText(stage.percent), due)
+        let sub = V2.label(detail, size: DS.TextSize.pill + 1, color: DS.Color.textMuted, lines: 0)
+        let texts = UIStackView(arrangedSubviews: [name, sub])
+        texts.axis = .vertical
+        texts.spacing = 3
+        let amount = V2.label(MoneyFormatter.format(stage.amount), size: DS.TextSize.body, weight: editable ? .bold : .medium,
+                              color: editable ? DS.Color.primary : DS.Color.text)
+        amount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amount.setContentHuggingPriority(.required, for: .horizontal)
+        var right: [UIView] = [amount]
+        if editable { right.append(V2.editPencil()) }
+        let amountLine = UIStackView(arrangedSubviews: right)
+        amountLine.spacing = 6
+        amountLine.alignment = .center
+        let line = UIStackView(arrangedSubviews: [texts, amountLine])
+        line.spacing = DS.Spacing.md
+        line.alignment = .center
+        let row = UIControl()
+        line.isUserInteractionEnabled = false
+        row.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
+        row.accessibilityIdentifier = "deposit.cart.stage.\(index)"
+        if editable {
+            row.tag = index
+            row.addTarget(self, action: #selector(editStageAmount(_:)), for: .touchUpInside)
+        }
+        return row
+    }
+
+    @objc private func pickDepositTemplate() {
+        let choices = DepositModeStore.latest?.choices ?? []
+        let sheet = UIAlertController(title: "deposit.cart.title".localized(), message: nil, preferredStyle: .actionSheet)
+        for template in choices {
+            sheet.addAction(UIAlertAction(title: template.name, style: .default) { _ in CartStore.shared.setDepositTemplate(template) })
+        }
+        sheet.addAction(UIAlertAction(title: "common.action.cancel".localized(), style: .cancel))
+        sheet.popoverPresentationController?.sourceView = view
+        sheet.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
+        present(sheet, animated: true)
+    }
+
+    @objc private func pickCollectFirst() {
+        let sheet = UIAlertController(title: String(format: "deposit.cart.collectFirst".localized(), 1), message: nil, preferredStyle: .actionSheet)
+        for method in DepositPlanLogic.collectMethods(role: User.account()?.role).filter({ $0 != "CHECK" }) {
+            sheet.addAction(UIAlertAction(title: DepositUI.methodName(method), style: .default) { _ in
+                CartStore.shared.setCollectFirstStage(method: method)
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "deposit.cart.collectNone.short".localized(), style: .default) { _ in
+            CartStore.shared.setCollectFirstStage(method: nil)
+        })
+        sheet.addAction(UIAlertAction(title: "common.action.cancel".localized(), style: .cancel))
+        sheet.popoverPresentationController?.sourceView = view
+        sheet.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
+        present(sheet, animated: true)
+    }
+
+    @objc private func editStageAmount(_ sender: UIControl) {
+        let preview = cart.stagedPreview()
+        guard sender.tag < preview.count else { return }
+        editingStageIndex = sender.tag
+        let picker = NumberPickerViewController.instance()
+        picker.delegate = self
+        picker.configure(initialValue: preview[sender.tag].amount, title: preview[sender.tag].label)
+        present(picker, animated: true)
+    }
+
     private func renderDiscountNotice(_ text: String?) {
         discountNoticeHost.isHidden = text == nil
         guard text != discountNoticeText else { return }
@@ -1239,7 +1390,12 @@ extension CartV2ViewController: NumberPickerViewControllerDelegate {
             CartStore.shared.setDiscountType(type == .percentage ? .percentage : .amount)
             CartStore.shared.setDiscount(value)
         case .normal:
-            CartStore.shared.setManualDepositAmount(value)
+            if let index = editingStageIndex {
+                editingStageIndex = nil
+                CartStore.shared.setDepositStageAmount(index: index, amount: value)
+            } else {
+                CartStore.shared.setManualDepositAmount(value)
+            }
         }
     }
 }

@@ -41,5 +41,8 @@ struct Merchant: Codable {
     var allowOverlappingOrders: Bool? = nil
     /// #907 active paid modules (`attendance`). Missing (older API or cached login) means none.
     var modules: [String]? = nil
+    /// #1199 "Cách thu cọc" (`ONE_TIME` / `STAGED`). Missing (older API or cached login) means unknown: the screens
+    /// read GET /api/settings/deposit, and until then it acts as "Thu cọc 1 lần".
+    var depositMode: String? = nil
 }
 

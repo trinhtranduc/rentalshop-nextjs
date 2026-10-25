@@ -35,6 +35,14 @@ class Cart {
     /// #1124: the online booking request this cart confirms (sent as `bookingRequestId`) and its branch
     var bookingRequestId: Int?
     var bookingOutletId: Int?
+    /// #1199 "Thu cọc theo giai đoạn" (kept in memory only; a new cart starts from the shop's default template):
+    /// the stages of this order, the template they came from, and whether stage 1 is collected with the order
+    var depositStages: [DepositStageDraft]?
+    var depositTemplateId: String?
+    var collectFirstStageNow = true
+    var collectMethod = "CASH"
+    /// The order being edited has a deposit plan: the cart's own "Cọc" is not used
+    var editHasDepositPlan = false
     
     // MARK: - Computed Properties
     var amountDue: Double {
@@ -424,6 +432,7 @@ class Cart {
         cart.discountType = DiscountType(rawValue: orderDetail.discountTypeOrDefault) ?? .amount
         
         // Map deposit amount from order (preserve the original deposit amount)
+        cart.editHasDepositPlan = orderDetail.hasDepositPlan == true // #1199
         if orderDetail.depositAmount > 0 {
             cart.setManualDepositAmount(orderDetail.depositAmount)
         } else {
@@ -625,6 +634,7 @@ class Cart {
         }
         
         // Map deposit amount from order (preserve the original deposit amount)
+        cart.editHasDepositPlan = order.hasDepositPlan == true // #1199
         if order.depositAmount > 0 {
             cart.setManualDepositAmount(order.depositAmount)
         } else {
@@ -1052,7 +1062,7 @@ struct CreateOrderRequest: Codable {
     let orderItems: [CreateOrderItem]
     let pickupPlanAt: String?
     let returnPlanAt: String?
-    let depositAmount: Double?
+    var depositAmount: Double?
     let securityDeposit: Double?
     let damageFee: Double?
     let lateFee: Double?
@@ -1069,6 +1079,8 @@ struct CreateOrderRequest: Codable {
     var outletId: Int? = nil
     /// #1124: the online booking request this order confirms (optional on the API; old apps never send it)
     var bookingRequestId: Int? = nil
+    /// #1199: the deposit stages of a rental in a "Thu cọc theo giai đoạn" shop; nil keeps the request as before
+    var paymentPlan: PaymentPlanRequest? = nil
     
     struct LoyaltyRedeemRequest: Codable {
         let points: Int
@@ -1097,6 +1109,7 @@ struct CreateOrderRequest: Codable {
         case rentalDurationUnit
         case outletId
         case bookingRequestId
+        case paymentPlan
         // Explicitly exclude 'subtotal'
     }
     
@@ -1125,6 +1138,7 @@ struct CreateOrderRequest: Codable {
         try container.encodeIfPresent(rentalDurationUnit, forKey: .rentalDurationUnit)
         try container.encodeIfPresent(outletId, forKey: .outletId)
         try container.encodeIfPresent(bookingRequestId, forKey: .bookingRequestId)
+        try container.encodeIfPresent(paymentPlan, forKey: .paymentPlan)
         
         // Explicitly NOT encoding 'subtotal' field
     }

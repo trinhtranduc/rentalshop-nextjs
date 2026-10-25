@@ -296,6 +296,11 @@ final class OverviewV2ViewController: BaseViewControler {
         if showsOperations, nowFailed == nil || loading, OverviewDashLogic.showsTodayCard(range: range, todayKey: todayKey) {
             contentStack.addArrangedSubview(todayCard())
         }
+        // #1199: deposit stages to collect today / soon (today's range only, like the "Hôm nay" counters)
+        if showsOperations, OverviewDashLogic.showsTodayCard(range: range, todayKey: todayKey),
+           let reminders = now?.installments, !reminders.isEmpty {
+            contentStack.addArrangedSubview(installmentsCard(reminders))
+        }
         if let failed = nowFailed, !loading {
             contentStack.addArrangedSubview(failureCard(failed))
         }
@@ -448,6 +453,14 @@ final class OverviewV2ViewController: BaseViewControler {
                     return DayFormatter.short(date, locale: locale)
                 }, axis: { bar in bar.isDay ? OverviewLogic.dayMonth(bar.key) : bar.key })
                 views.append(chart)
+            }
+            let upcoming = source.futureInstallmentsTotal
+            if upcoming.count > 0 {
+                // #1199: apart from the bars and the forecast; the stages are not in `futureIncome`
+                let line = OVFont.label(String(format: "overview.installments.upcoming".localized(), MoneyFormatter.format(upcoming.amount), upcoming.count),
+                                        DS.TextSize.secondary, color: OVColor.muted, lines: 0)
+                line.accessibilityIdentifier = "overview.installments.upcoming"
+                views.append(line)
             }
         } else if reportFailed != nil {
             return card(views + [OVFont.label("—", DS.TextSize.body, color: OVColor.muted)])
@@ -685,6 +698,63 @@ final class OverviewV2ViewController: BaseViewControler {
             views.append(line)
         }
         return card(views)
+    }
+
+    // MARK: Cần thu hôm nay (#1199, mockup m8)
+
+    private func installmentsCard(_ reminders: InstallmentReminders) -> UIView {
+        var views: [UIView] = []
+        func section(_ titleKey: String, _ rows: [InstallmentReminderRow], tomorrow: Bool) {
+            guard !rows.isEmpty else { return }
+            let title = OVFont.label(titleKey.localized(), DS.TextSize.body, .semibold)
+            title.accessibilityTraits = UIAccessibilityTraitHeader
+            let count = OVFont.label(String(format: "overview.installments.count".localized(), rows.count), DS.TextSize.body, .semibold, color: OVColor.blue)
+            let head = UIStackView(arrangedSubviews: [title, UIView(), count])
+            head.alignment = .center
+            views.append(head)
+            for row in rows { views.append(installmentRow(row, tomorrow: tomorrow)) }
+        }
+        section("overview.installments.today", reminders.due, tomorrow: false)
+        section("overview.installments.soon", reminders.tomorrow, tomorrow: true)
+        views.append(OVFont.label("overview.installments.note".localized(), DS.TextSize.pill, color: OVColor.muted, lines: 0))
+        let box = card(views)
+        box.accessibilityIdentifier = "overview.installments"
+        return box
+    }
+
+    private func installmentRow(_ row: InstallmentReminderRow, tomorrow: Bool) -> UIView {
+        let name = OVFont.label((row.customerName ?? "").isEmpty ? "#" + OrdersHomeLogic.shortNumber(row.orderNumber) : row.customerName!,
+                                DS.TextSize.body, .semibold, lines: 0)
+        let detail = String(format: "overview.installments.row".localized(), row.label, OrdersHomeLogic.shortNumber(row.orderNumber))
+        let sub = OVFont.label(detail, DS.TextSize.pill, color: OVColor.muted, lines: 0)
+        let texts = UIStackView(arrangedSubviews: [name, sub])
+        texts.axis = .vertical
+        texts.spacing = 2
+        var right: [UIView] = [OVFont.label(MoneyFormatter.format(row.remaining), DS.TextSize.body, .semibold)]
+        if row.lateDays > 0 {
+            right.append(DepositUI.pill(String(format: "deposit.status.late".localized(), row.lateDays), DS.Status.late))
+        } else if tomorrow {
+            right.append(DepositUI.pill("deposit.status.tomorrow".localized(), DS.Status.handOver))
+        }
+        let amounts = UIStackView(arrangedSubviews: right)
+        amounts.axis = .vertical
+        amounts.alignment = .trailing
+        amounts.spacing = 3
+        let line = UIStackView(arrangedSubviews: [texts, amounts])
+        line.spacing = DS.Spacing.sm
+        line.alignment = .center
+        let control = UIControl()
+        line.isUserInteractionEnabled = false
+        control.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 0, bottom: 6, right: 0)) }
+        control.accessibilityIdentifier = "overview.installments.row.\(row.orderId)"
+        control.addAction(UIAction { [weak self] _ in
+            guard let self, let navigationController = self.navigationController else { return }
+            let detail = OrderDetailViewController(orderId: row.orderId)
+            detail.hidesBottomBarWhenPushed = true
+            navigationController.pushViewController(detail, animated: true)
+        }, for: .touchUpInside)
+        return control
     }
 
     /// The Orders tab (its "Việc cần làm" lists today's hand-overs and returns)
