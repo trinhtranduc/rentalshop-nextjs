@@ -1915,6 +1915,15 @@
     <string name="api_error_order_updated_success">Cập nhật đơn hàng thành công</string>
     <string name="api_error_outlet_created_success">Tạo cửa hàng thành công</string>
     <string name="api_error_outlet_deleted_success">Xóa cửa hàng thành công</string>
+    <string name="api_error_installment_exceeds_total">Các giai đoạn cọc cộng lại lớn hơn tổng tiền đơn.</string>
+    <string name="api_error_installment_overpaid">Số tiền lớn hơn mức giai đoạn này cho phép, hoặc tổng mới thấp hơn số đã thu.</string>
+    <string name="api_error_installment_already_paid">Giai đoạn cọc này đã được thu.</string>
+    <string name="api_error_installment_forbidden_role">Vai trò của bạn không được thực hiện thao tác này với giai đoạn cọc.</string>
+    <string name="api_error_installment_unpaid_at_pickup">Đơn còn giai đoạn cọc chưa thu. Vui lòng thu trên web hoặc cập nhật ứng dụng.</string>
+    <string name="api_error_installment_not_found">Không tìm thấy giai đoạn cọc.</string>
+    <string name="api_error_installment_no_plan">Đơn này không có kế hoạch thu cọc.</string>
+    <string name="api_error_installment_loyalty_unsupported">Không dùng điểm thưởng được cho đơn thu cọc theo giai đoạn.</string>
+    <string name="api_error_deposit_settings_invalid">Cài đặt thu cọc không hợp lệ. Mỗi mẫu có 1 đến 3 giai đoạn, tổng phần trăm không quá 100 và tối đa 10 mẫu.</string>
     <string name="api_error_outlet_id_required">ID cửa hàng là bắt buộc</string>
     <string name="api_error_outlet_info_updated_success">Cập nhật thông tin cửa hàng thành công</string>
     <string name="api_error_outlet_name_address_required">Tên và địa chỉ cửa hàng là bắt buộc</string>
