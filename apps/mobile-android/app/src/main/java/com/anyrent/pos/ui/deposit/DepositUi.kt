@@ -149,3 +149,25 @@ internal fun installmentChip(stage: OrderInstallment, todayKey: String): Pair<St
     "DUE_TODAY" -> stringResource(R.string.deposit_status_today) to DS.Status.Waiting
     else -> stringResource(R.string.deposit_status_pending) to DS.Status.HandOver
 }
+
+/** Shows the digits of a money input with dots ("1800000" as "1.800.000"); the typed text stays plain digits */
+internal object MoneyGrouping : androidx.compose.ui.text.input.VisualTransformation {
+    override fun filter(text: androidx.compose.ui.text.AnnotatedString): androidx.compose.ui.text.input.TransformedText {
+        val raw = text.text
+        // where each typed character lands once the dots are in
+        val positions = IntArray(raw.length + 1)
+        val shown = StringBuilder()
+        raw.forEachIndexed { index, char ->
+            if (index > 0 && (raw.length - index) % 3 == 0) shown.append('.')
+            positions[index] = shown.length
+            shown.append(char)
+        }
+        positions[raw.length] = shown.length
+        val mapping = object : androidx.compose.ui.text.input.OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int = positions[offset.coerceIn(0, raw.length)]
+            override fun transformedToOriginal(offset: Int): Int =
+                shown.take(offset.coerceAtLeast(0)).count { it != '.' }.coerceIn(0, raw.length)
+        }
+        return androidx.compose.ui.text.input.TransformedText(androidx.compose.ui.text.AnnotatedString(shown.toString()), mapping)
+    }
+}

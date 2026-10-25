@@ -92,7 +92,12 @@ private val CardBorder = Color(0xFFE2E8F0)
 private val Green = Color(0xFF10B981)
 private val DarkGreen = Color(0xFF047857)
 
-private fun cutDay(iso: String?): String = DepositPlanMath.dayText(iso?.take(10))
+/** The shop day (Vietnam civil day) of a collection instant; never the UTC day (timezone-dates) */
+private fun cutDay(iso: String?): String {
+    val instant = iso?.let { runCatching { java.time.Instant.parse(it) }.getOrNull() ?: runCatching { java.time.OffsetDateTime.parse(it).toInstant() }.getOrNull() }
+        ?: return DepositPlanMath.dayText(iso?.take(10))
+    return DepositPlanMath.dayText(instant.atZone(ShopTime.zone).toLocalDate().toString())
+}
 
 @Composable
 private fun stageSubtitle(stage: OrderInstallment): String {
@@ -245,6 +250,7 @@ internal fun CollectInstallmentSheet(
         OutlinedTextField(
             value = amountText, onValueChange = { amountText = it.filter(Char::isDigit).take(12).trimStart('0'); error = null },
             singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            visualTransformation = com.anyrent.pos.ui.deposit.MoneyGrouping,
             textStyle = androidx.compose.ui.text.TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold),
             modifier = Modifier.fillMaxWidth().testTag("deposit.collect.amount"),
         )
@@ -354,6 +360,7 @@ private fun AmountField(value: String, enabled: Boolean, tag: String, onChange: 
     OutlinedTextField(
         value = value, onValueChange = { onChange(it.filter(Char::isDigit).take(12).trimStart('0')) }, enabled = enabled, singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        visualTransformation = com.anyrent.pos.ui.deposit.MoneyGrouping,
         textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.End),
         placeholder = { Text("0", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.End) },
         modifier = Modifier.width(160.dp).testTag(tag),

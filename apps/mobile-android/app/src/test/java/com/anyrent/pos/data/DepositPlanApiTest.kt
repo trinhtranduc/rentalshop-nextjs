@@ -105,6 +105,17 @@ class DepositPlanApiTest {
     }
 
     @Test
+    fun `an order list row carries the collected share for the badge`() {
+        val page = api("{}").parseOrdersPage(
+            JSONObject("""{"success":true,"data":{"orders":[{"id":1,"orderNumber":"1","orderType":"RENT","status":"RESERVED","hasDepositPlan":true,"installmentSummary":{"percentCollected":30}},{"id":2,"orderNumber":"2","orderType":"RENT","status":"RESERVED"}],"total":2}}"""),
+        )
+        assertEquals(30.0, page.items[0].installmentPercentCollected!!, 0.0)
+        assertEquals(true, page.items[0].hasDepositPlan)
+        assertNull(page.items[1].installmentPercentCollected)
+        assertNull(page.items[1].hasDepositPlan)
+    }
+
+    @Test
     fun `stage paths`() {
         assertEquals("/api/orders/7/installments/i2/collect", DepositPlanApi.collectPath(7, "i2"))
         assertEquals("/api/orders/7/installments/i2/void", DepositPlanApi.voidPath(7, "i2"))
