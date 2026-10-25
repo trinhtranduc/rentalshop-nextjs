@@ -227,3 +227,4 @@ export * from './product-pricing-options';
 
 // Day-block rental pricing (#1189)
 export * from './block-pricing';
+export * from './block-line-text';
