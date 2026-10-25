@@ -27,7 +27,6 @@ import {
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { checkOrderRefsInMerchant } from '../../../lib/order-scope';
-import { hasCapability } from '../../../lib/client-capabilities';
 import {
   findBlockOption,
   priceBlockLine,

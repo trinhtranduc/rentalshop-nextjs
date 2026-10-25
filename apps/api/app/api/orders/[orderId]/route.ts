@@ -1,4 +1,3 @@
-import { hasCapability } from '../../../../lib/client-capabilities';
 import { readOldAppsMode, repriceOrderEdit } from '../../../../lib/order-block-pricing';
 import { blockPricingErrorResponse } from '../../../../lib/block-pricing-errors';
 import { NextRequest, NextResponse } from 'next/server';
