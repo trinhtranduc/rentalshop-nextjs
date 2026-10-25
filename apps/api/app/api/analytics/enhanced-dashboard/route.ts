@@ -9,6 +9,7 @@ import {
   formatDateKeyInTimeZone,
   getUtcRangeForDateKeys,
   toDateKeyInTimeZone,
+  toRevenueOrderData
 } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { readAnalyticsTimeZone } from '../../../../lib/analytics-days';
@@ -168,56 +169,11 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
 
     // Calculate metrics using calculatePeriodRevenueBatch (single source of truth)
     // Prepare order data for revenue calculator
-    const todayOrdersData = (todayOrders.data || []).map((order: any) => ({
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount || 0,
-      depositAmount: order.depositAmount || 0,
-      securityDeposit: order.securityDeposit || 0,
-      damageFee: order.damageFee || 0,
-      lateFee: order.lateFee || 0,
-      pickupTotalAmount: order.pickupTotalAmount ?? null,
-      createdAt: order.createdAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      updatedAt: order.updatedAt
-    }));
+    const todayOrdersData = (todayOrders.data || []).map((order: any) => toRevenueOrderData(order));
 
-    const thisMonthOrdersData = (thisMonthOrders.data || []).map((order: any) => ({
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount || 0,
-      depositAmount: order.depositAmount || 0,
-      securityDeposit: order.securityDeposit || 0,
-      damageFee: order.damageFee || 0,
-      lateFee: order.lateFee || 0,
-      pickupTotalAmount: order.pickupTotalAmount ?? null,
-      createdAt: order.createdAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      updatedAt: order.updatedAt
-    }));
+    const thisMonthOrdersData = (thisMonthOrders.data || []).map((order: any) => toRevenueOrderData(order));
 
-    const lastMonthOrdersData = (lastMonthOrders.data || []).map((order: any) => ({
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount || 0,
-      depositAmount: order.depositAmount || 0,
-      securityDeposit: order.securityDeposit || 0,
-      damageFee: order.damageFee || 0,
-      lateFee: order.lateFee || 0,
-      pickupTotalAmount: order.pickupTotalAmount ?? null,
-      createdAt: order.createdAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      updatedAt: order.updatedAt
-    }));
+    const lastMonthOrdersData = (lastMonthOrders.data || []).map((order: any) => toRevenueOrderData(order));
 
     // Calculate revenue for each period
     const { realIncome: todayRevenue } = calculatePeriodRevenueBatch(todayOrdersData, start, end);

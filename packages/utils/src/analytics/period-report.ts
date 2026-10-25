@@ -6,6 +6,7 @@ import {
   parseProductImages
 } from '@rentalshop/utils';
 import { collateralByEvent, revenueEventKey, withoutCollateral } from '../core/revenue-calculator';
+import { buildEventWhere, toRevenueOrderData, EVENT_WHERE_PERIOD } from '../core/revenue-mapping';
 import {
   computeIncomePeriodSummary,
   type IncomePeriodDayRow,
@@ -434,26 +435,7 @@ export function percentChange(current: number, previous: number): number {
   return 0;
 }
 
-function mapRevenueOrder(order: any) {
-  return {
-    orderType: order.orderType,
-    status: order.status,
-    totalAmount: order.totalAmount || 0,
-    depositAmount: order.depositAmount || 0,
-    securityDeposit: order.securityDeposit || 0,
-    damageFee: order.damageFee || 0,
-    lateFee: order.lateFee || 0,
-    pickupTotalAmount: order.pickupTotalAmount ?? null,
-    createdAt: order.createdAt,
-    pickedUpAt: order.pickedUpAt,
-    returnedAt: order.returnedAt,
-    pickupPlanAt: order.pickupPlanAt,
-    returnPlanAt: order.returnPlanAt,
-    updatedAt: order.updatedAt
-  };
-}
-
-function buildEventWhere(
+function buildPeriodEventWhere(
   outletFilter: Record<string, any>,
   periodStart: Date,
   periodEnd: Date
@@ -461,26 +443,7 @@ function buildEventWhere(
   return {
     ...outletFilter,
     deletedAt: null,
-    OR: [
-      { createdAt: { gte: periodStart, lte: periodEnd } },
-      {
-        pickedUpAt: {
-          gte: new Date(periodStart.getTime() - DAY_MS),
-          lte: new Date(periodEnd.getTime() + DAY_MS),
-          not: null
-        }
-      },
-      {
-        returnedAt: {
-          gte: new Date(periodStart.getTime() - DAY_MS),
-          lte: new Date(periodEnd.getTime() + DAY_MS),
-          not: null
-        }
-      },
-      { updatedAt: { gte: periodStart, lte: periodEnd }, status: ORDER_STATUS.CANCELLED as any },
-      { pickupPlanAt: { gte: periodStart, lte: periodEnd, not: null } },
-      { returnPlanAt: { gte: periodStart, lte: periodEnd, not: null } }
-    ]
+    ...buildEventWhere({ start: periodStart, end: periodEnd }, EVENT_WHERE_PERIOD)
   };
 }
 
@@ -698,12 +661,12 @@ export async function buildAnalyticsPeriodReport(
       const endOfMonth = civilMonth.end;
 
       const monthOrders = await prisma.order.findMany({
-        where: buildEventWhere(outletFilter, startOfMonth, endOfMonth),
+        where: buildPeriodEventWhere(outletFilter, startOfMonth, endOfMonth),
         select: revenueSelect,
         take: 10000
       });
 
-      const monthRevenueOrders = monthOrders.map(mapRevenueOrder);
+      const monthRevenueOrders = monthOrders.map(toRevenueOrderData);
       const { realIncome, futureIncome } = calculatePeriodRevenueBatch(monthRevenueOrders, startOfMonth, endOfMonth);
       const { realIncome: collected } = calculatePeriodRevenueBatch(
         monthRevenueOrders.map(withoutCollateral),
@@ -839,13 +802,13 @@ export async function buildAnalyticsPeriodReport(
   // none and the days add up to revenue.cashCollected
   const computeSeriesCollateral = async (): Promise<Map<string, number>> => {
     const orders = await prisma.order.findMany({
-      where: { ...buildEventWhere(outletFilter, rangeStart, rangeEnd), orderType: ORDER_TYPE.RENT as any } as any,
+      where: { ...buildPeriodEventWhere(outletFilter, rangeStart, rangeEnd), orderType: ORDER_TYPE.RENT as any } as any,
       select: revenueSelect,
       take: 10000
     });
     const rows: Array<{ at: Date; amount: number }> = [];
     for (const order of orders) {
-      const data = mapRevenueOrder(order);
+      const data = toRevenueOrderData(order);
       const events = getOrderRevenueEvents(data, rangeStart, rangeEnd);
       const collateral = collateralByEvent(events, getOrderRevenueEvents(withoutCollateral(data), rangeStart, rangeEnd));
       for (const event of events) {
@@ -859,11 +822,11 @@ export async function buildAnalyticsPeriodReport(
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {
     const fetchRevenue = async (ps: Date, pe: Date): Promise<{ revenue: number; collected: number }> => {
       const orders = await prisma.order.findMany({
-        where: buildEventWhere(outletFilter, ps, pe),
+        where: buildPeriodEventWhere(outletFilter, ps, pe),
         select: revenueSelect,
         take: 10000
       });
-      const mapped = orders.map(mapRevenueOrder);
+      const mapped = orders.map(toRevenueOrderData);
       const { realIncome } = calculatePeriodRevenueBatch(mapped, ps, pe);
       const { realIncome: collected } = calculatePeriodRevenueBatch(mapped.map(withoutCollateral), ps, pe);
       return { revenue: realIncome, collected };
@@ -1005,7 +968,7 @@ export async function buildAnalyticsPeriodReport(
 
     for (const order of allOrders) {
       if (!order.customerId) continue;
-      const orderData = mapRevenueOrder(order);
+      const orderData = toRevenueOrderData(order);
       const events = getOrderRevenueEvents(orderData, rangeStart, rangeEnd);
       const orderCreatedAt = order.createdAt ? new Date(order.createdAt) : null;
       const isCreatedInRange =

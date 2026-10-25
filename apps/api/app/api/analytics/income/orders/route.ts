@@ -9,7 +9,10 @@ import {
   civilDayBucket,
   collateralByEvent,
   revenueEventKey,
-  withoutCollateral
+  withoutCollateral,
+  toRevenueOrderData,
+  buildEventWhere,
+  EVENT_WHERE_CIVIL
 } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange, widenCivilRange } from '../../../../../lib/analytics-days';
@@ -31,13 +34,7 @@ function buildOrdersWhereClause(
   if (status === 'all') {
     return {
       ...base,
-      OR: [
-        { createdAt: { gte: queryStart, lte: queryEnd } },
-        { pickedUpAt: { gte: queryStart, lte: queryEnd, not: null } },
-        { returnedAt: { gte: queryStart, lte: queryEnd, not: null } },
-        { AND: [{ status: ORDER_STATUS.CANCELLED }, { updatedAt: { gte: queryStart, lte: queryEnd } }] },
-        { AND: [{ orderType: ORDER_TYPE.SALE }, { status: ORDER_STATUS.COMPLETED }, { updatedAt: { gte: queryStart, lte: queryEnd } }] }
-      ]
+      ...buildEventWhere({ start: queryStart, end: queryEnd }, EVENT_WHERE_CIVIL)
     };
   }
   if (status === 'new') {
@@ -297,22 +294,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
         continue;
       }
 
-      const orderData = {
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        lateFee: order.lateFee || 0,
-        pickupTotalAmount: order.pickupTotalAmount ?? null,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        pickupPlanAt: order.pickupPlanAt,
-        returnPlanAt: order.returnPlanAt,
-        updatedAt: order.updatedAt
-      };
+      const orderData = toRevenueOrderData(order);
       const revenueEvents = filterEventsByStatus(
         getOrderRevenueEvents(orderData, filterStart, filterEnd),
         status
