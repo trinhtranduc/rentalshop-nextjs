@@ -144,6 +144,9 @@ object OrdersBoardLogic {
         return work.count { it.kind == WorkKind.HAND_OVER } to work.count { it.kind == WorkKind.TAKE_BACK }
     }
 
+    /** #1231: the deposit stages of a band (" · thu N") */
+    fun collectCount(rows: List<OrdersRow>): Int = rows.count { it is OrdersRow.Work && it.kind == WorkKind.COLLECT }
+
     /** Red badge on "Việc cần làm": what is late plus what is due today (not tomorrow) */
     fun badgeCount(sections: List<OrdersSection>): Int =
         sections.filter { it.kind == SectionKind.LATE || it.kind == SectionKind.TODAY }.sumOf { it.rows.size }
@@ -174,21 +177,30 @@ object OrdersBoardLogic {
     )
 
     /** #893 (owner): kinds of the chips on line 2 of a lean Việc cần làm row */
-    enum class WorkChipKind { PICKUP, RETURN, LATE, NOT_PREPARED }
+    enum class WorkChipKind { PICKUP, RETURN, LATE, NOT_PREPARED, STAGE }
 
-    /** #893: one chip; [date] for PICKUP / RETURN, [days] for LATE */
-    data class WorkChip(val kind: WorkChipKind, val date: String? = null, val days: Int = 0)
+    /** #893: one chip; [date] for PICKUP / RETURN, [days] for LATE, [label] + [code] for STAGE (#1231 "Cọc 2 · #0053") */
+    data class WorkChip(
+        val kind: WorkChipKind, val date: String? = null, val days: Int = 0,
+        val label: String? = null, val code: String? = null,
+    )
 
     /** #1032 (owner): "Trễ N ngày" / "Chưa soạn đồ" are soft row warnings (icon + text, no box); dates are not */
     fun warning(kind: WorkChipKind): RowWarning? = when (kind) {
         WorkChipKind.LATE -> RowWarning.LATE
         WorkChipKind.NOT_PREPARED -> RowWarning.NOT_PREPARED
-        WorkChipKind.PICKUP, WorkChipKind.RETURN -> null
+        WorkChipKind.PICKUP, WorkChipKind.RETURN, WorkChipKind.STAGE -> null
     }
 
 
     /** #893 (owner): the task's own date (Lấy for a hand-over, Trả for a take-back), "Trễ N ngày", "Chưa soạn đồ" */
     fun workChips(work: TodayWorkRow, kind: WorkKind, zone: java.time.ZoneId = ShopTime.zone): List<WorkChip> = buildList {
+        if (kind == WorkKind.COLLECT) {
+            // #1231: "Cọc 2 · #0053", then "Trễ N ngày" when the stage is late
+            add(WorkChip(WorkChipKind.STAGE, label = work.stageLabel.orEmpty(), code = shortNumber(work.orderNumber)))
+            if (work.lateDays > 0) add(WorkChip(WorkChipKind.LATE, days = work.lateDays))
+            return@buildList
+        }
         val handOver = kind == WorkKind.HAND_OVER
         (if (handOver) work.pickupPlanAt else work.returnPlanAt)?.let {
             add(WorkChip(if (handOver) WorkChipKind.PICKUP else WorkChipKind.RETURN, date = OrderRowDates.dmy(it, zone)))

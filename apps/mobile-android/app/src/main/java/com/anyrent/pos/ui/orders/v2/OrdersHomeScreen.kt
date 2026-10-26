@@ -612,7 +612,10 @@ private fun SectionBand(section: OrdersSection) {
     val summary = when (section.kind) {
         SectionKind.LATE, SectionKind.TODAY, SectionKind.TOMORROW -> {
             val (handOver, takeBack) = OrdersBoardLogic.bandCounts(section.rows)
-            stringResource(R.string.orders_v2_band_work, handOver, takeBack)
+            val collect = OrdersBoardLogic.collectCount(section.rows)
+            // #1231: " · thu N" only when the band has deposit stages
+            stringResource(R.string.orders_v2_band_work, handOver, takeBack) +
+                if (collect > 0) stringResource(R.string.orders_v2_band_collect, collect) else ""
         }
         else -> {
             val (count, amount) = OrdersBoardLogic.saleDaySummary(section.rows)
@@ -654,7 +657,18 @@ private fun WorkRow(
     // #893 (owner, lean row): line 1 name + the light task tag; line 2 the task's date chip, "Trễ N ngày",
     // "Chưa soạn đồ" (wrap only when they do not fit), right "còn thu N" (bold) or the total
     val handOver = kind == WorkKind.HAND_OVER
-    val tagColors = if (handOver) DS.Status.HandOver else DS.Status.Return
+    val tagColors = when (kind) {
+        WorkKind.HAND_OVER -> DS.Status.HandOver
+        WorkKind.TAKE_BACK -> DS.Status.Return
+        WorkKind.COLLECT -> DS.Status.Waiting
+    }
+    val tagText = stringResource(
+        when (kind) {
+            WorkKind.HAND_OVER -> R.string.orders_v2_tag_hand_over
+            WorkKind.TAKE_BACK -> R.string.orders_v2_tag_take_back
+            WorkKind.COLLECT -> R.string.orders_v2_tag_collect
+        },
+    )
     val (pickupLabel, returnLabel) = chipLabels()
     val notPrepared = stringResource(R.string.orders_v2_not_prepared)
     val due = OrdersBoardLogic.workDue(work)
@@ -672,7 +686,7 @@ private fun WorkRow(
                         fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                     )
-                    Tag(stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back), tagColors, RowTagStyle.STATUS)
+                    Tag(tagText, tagColors, RowTagStyle.STATUS)
                 }
                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FlowRow(
@@ -694,6 +708,14 @@ private fun WorkRow(
                                 // #1032 (owner): icon + coloured text, no box
                                 OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to RowWarning.LATE
                                 OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to RowWarning.NOT_PREPARED
+                                // #1231: a deposit stage reads "Cọc 2 · #0053" in plain text
+                                OrdersBoardLogic.WorkChipKind.STAGE -> {
+                                    Text(
+                                        stringResource(R.string.overview_installments_row, chip.label.orEmpty(), chip.code.orEmpty()),
+                                        fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
+                                    )
+                                    return@forEach
+                                }
                             }
                             RowWarningText(text, warning)
                         }
