@@ -44,8 +44,8 @@ function Card({ title, rows, money, td, dataKey }: { title: string; rows: Remind
                   {initials(row.name)}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-semibold text-ar-ink">{row.name || td('walkIn')}</span>
-                  <span className="truncate text-xs text-ar-muted">
+                  <span className="break-words font-semibold text-ar-ink">{row.name || td('walkIn')}</span>
+                  <span className="break-words text-xs text-ar-muted">
                     #{row.orderNumber}
                     {row.stage ? ` · ${td('stageShort', { n: row.stage })}` : ''} · {td('dueOn', { day: shortDay(row.dueDateKey) })}
                   </span>

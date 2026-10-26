@@ -70,7 +70,7 @@ export function InstallmentsCard({
       <div className="flex items-center justify-between gap-2">
         <h2 className="m-0 text-lg font-bold text-ar-ink">{td('cardTitle')}</h2>
         <span className="flex items-center gap-2.5">
-          <span className="rounded-full bg-ar-done-bg px-2.5 py-0.5 text-xs font-semibold text-ar-done" data-paid-percent>
+          <span className="whitespace-nowrap rounded-full bg-ar-done-bg px-2.5 py-0.5 text-xs font-semibold text-ar-done" data-paid-percent>
             {td('paidBadge', { percent })}
           </span>
           <button type="button" onClick={onEdit} className="text-sm font-semibold text-ar-primary-ink hover:underline" data-edit-plan>
@@ -101,7 +101,7 @@ export function InstallmentsCard({
               {stage.status === 'PAID' ? '✓' : stageNumber(list, stage.key)}
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-[15px] font-semibold text-ar-ink">{stage.key === 'rest' ? td('restTitle') : stage.label}</span>
+              <span className="break-words text-[15px] font-semibold text-ar-ink">{stage.key === 'rest' ? td('restTitle') : stage.label}</span>
               <span className="text-xs tabular-nums text-ar-muted">{stage.key === 'rest' ? td('restMeta', { percent: stage.percent, day: td('dueOn', { day: shortDay(stage.dueDateKey) }) }) : meta(stage)}</span>
               {canVoidStage(order, stage, role) && (
                 <button type="button" onClick={() => onVoid(stage)} className="mt-0.5 self-start text-xs font-semibold text-ar-danger hover:underline" data-void-stage={stage.key}>
