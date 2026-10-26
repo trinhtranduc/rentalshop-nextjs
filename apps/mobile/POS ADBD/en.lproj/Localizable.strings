@@ -1926,6 +1926,8 @@
 "orders.v2.yesterday" = "Yesterday";
 "orders.v2.tag.handOver" = "To hand over";
 "orders.v2.tag.takeBack" = "To take back";
+"orders.v2.tag.collect" = "Deposit due";
+"orders.v2.band.collect" = " · collect %d";
 "orders.v2.tag.sale" = "Sale · %@";
 "orders.v2.status.all" = "All";
 "orders.v2.status.reserved" = "Booked";
