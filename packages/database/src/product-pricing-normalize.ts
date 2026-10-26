@@ -20,6 +20,30 @@ export function pricingOptionsDeleteWhere(
     : { productId };
 }
 
+/**
+ * #1215: an installed app shows a BLOCK option as a FIXED option at the day-1 price (#1189) and sends it back on save
+ * as { type, price, isDefault } (no id). Saving for such a client (`keepBlockOptions`), on a product that stores a
+ * BLOCK option:
+ * - that echoed FIXED row (same price as day 1, and no real FIXED option is stored) is dropped, so it is not created
+ *   next to the BLOCK row it came from;
+ * - while the stored BLOCK option is the default it stays the only default: the payload rows are created
+ *   non-default and `blockIsDefault` tells the caller not to take the product price from them.
+ * A product without BLOCK, or a payload row that is not the echo (another price, a real FIXED stored), is untouched.
+ */
+export function withoutEchoedBlockShim<T extends { type: string; price: number; isDefault: boolean }>(
+  normalized: T[],
+  stored: Array<{ type: string; price: number; isDefault: boolean }>
+): { options: T[]; blockIsDefault: boolean } {
+  const block = stored.find((o) => o.type === 'BLOCK');
+  if (!block) return { options: normalized, blockIsDefault: false };
+  const hasRealFixed = stored.some((o) => o.type === 'FIXED');
+  const kept = hasRealFixed ? normalized : normalized.filter((o) => !(o.type === 'FIXED' && o.price === block.price));
+  return {
+    options: block.isDefault ? kept.map((o) => (o.isDefault ? { ...o, isDefault: false } : o)) : kept,
+    blockIsDefault: block.isDefault,
+  };
+}
+
 export interface NormalizePricingOptions {
   /** Accept a BLOCK option (the caller sent `pricingSchemaVersion: 2`) */
   allowBlock?: boolean;
