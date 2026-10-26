@@ -70,6 +70,16 @@ export function isValidBlockTable(table: BlockPricingTable | null | undefined): 
   return true;
 }
 
+/**
+ * #1223 what a product SAVE accepts: a valid table, and "+X per extra day" must have its X (0 is a price).
+ * `isValidBlockTable` stays lenient on purpose: a table already stored without X is still read (+0), never a 500.
+ */
+export function isCompleteBlockTable(table: BlockPricingTable | null | undefined): boolean {
+  if (!isValidBlockTable(table)) return false;
+  const mode = table!.extraMode ?? 'EXTRA_PER_DAY';
+  return mode !== 'EXTRA_PER_DAY' || table!.extraPrice != null;
+}
+
 /** Price and breakdown for `days` days (one unit). Throws RangeError for a table `isValidBlockTable` refuses. */
 export function calculateBlockRentDetail(
   tiers: number[],

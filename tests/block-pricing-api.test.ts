@@ -10,7 +10,8 @@ jest.mock('@rentalshop/utils', () => ({
 }));
 
 import { normalizePricingOptions } from '../packages/database/src/product-pricing-normalize';
-import { isValidBlockTable } from '../packages/utils/src/core/block-pricing';
+import golden from './fixtures/block-pricing-golden.json';
+import { isCompleteBlockTable } from '../packages/utils/src/core/block-pricing';
 import { blockOptionsIssue } from '../apps/api/lib/block-options-issue';
 import { pricingOptionsForClient, productForClient } from '../apps/api/lib/block-pricing-legacy';
 import { hasCapability, getClientCapabilities } from '../apps/api/lib/client-capabilities';
@@ -66,7 +67,11 @@ describe('blockOptionsIssue (product save of a pricingSchemaVersion 2 client)', 
   it.each([
     [[], undefined, null],
     [[{ type: 'BLOCK' }], undefined, null], // old client: ignored, not checked
-    [[{ type: 'BLOCK', blockTiers: [1, 2] }], 2, null],
+    [[{ type: 'BLOCK', blockTiers: [1, 2], blockExtraPrice: 5 }], 2, null],
+    [[{ type: 'BLOCK', blockTiers: [1, 2], blockExtraMode: 'HOLD_LAST' }], 2, null],
+    [[{ type: 'BLOCK', blockTiers: [1, 2], blockExtraPrice: 0 }], 2, null],
+    [[{ type: 'BLOCK', blockTiers: [1, 2] }], 2, 'BLOCK_TABLE_INVALID'], // #1223 EXTRA_PER_DAY without X
+    [[{ type: 'BLOCK', blockTiers: [1, 2], blockExtraMode: 'EXTRA_PER_DAY', blockExtraPrice: null }], 2, 'BLOCK_TABLE_INVALID'],
     [[{ type: 'BLOCK' }], 2, 'BLOCK_TABLE_INVALID'],
     [[{ type: 'BLOCK', blockTiers: [] }], 2, 'BLOCK_TABLE_INVALID'],
     [[{ type: 'BLOCK', blockTiers: [1] }, { type: 'BLOCK', blockTiers: [1] }], 2, 'BLOCK_TABLE_INVALID'],
@@ -75,16 +80,29 @@ describe('blockOptionsIssue (product save of a pricingSchemaVersion 2 client)', 
     expect(blockOptionsIssue(options as any, version as any)).toBe(expected);
   });
 
-  it('applies the same rules as isValidBlockTable', () => {
+  it('applies the same rules as isCompleteBlockTable', () => {
     const tables = [
       { tiers: [1] }, { tiers: [] }, { tiers: [-1] }, { tiers: [1], startDay: 0 }, { tiers: [1], startDay: 31 }, { tiers: [1], startDay: 32 },
-      { tiers: [1], extraMode: 'HOLD_LAST' }, { tiers: [1], extraMode: 'NOPE' }, { tiers: [1], extraPrice: -1 }, { tiers: [1], extraPrice: 5 },
+      { tiers: [1], extraMode: 'HOLD_LAST' }, { tiers: [1], extraMode: 'NOPE' }, { tiers: [1], extraPrice: -1 }, { tiers: [1], extraPrice: 5 }, { tiers: [1], extraMode: 'EXTRA_PER_DAY' }, { tiers: [1], extraMode: 'EXTRA_PER_DAY', extraPrice: 0 },
       { tiers: new Array(31).fill(0) }, { tiers: new Array(32).fill(0) }, { tiers: [NaN] }, { tiers: [1], startDay: 1.5 },
     ];
     for (const t of tables) {
       const option = { type: 'BLOCK', blockTiers: t.tiers, blockStartDay: (t as any).startDay, blockExtraMode: (t as any).extraMode, blockExtraPrice: (t as any).extraPrice };
-      expect([JSON.stringify(t), blockOptionsIssue([option], 2) === null]).toEqual([JSON.stringify(t), isValidBlockTable(t as any)]);
+      expect([JSON.stringify(t), blockOptionsIssue([option], 2) === null]).toEqual([JSON.stringify(t), isCompleteBlockTable(t as any)]);
     }
+  });
+});
+
+describe('#1223 golden tables the API refuses to save', () => {
+  const bad = golden.invalidSaveTables as Record<string, any>;
+  it.each(Object.keys(bad).filter((k) => !k.startsWith('_')))('%s -> BLOCK_TABLE_INVALID', (name) => {
+    const t = bad[name];
+    const option = { type: 'BLOCK', blockTiers: t.tiers, blockStartDay: t.startDay, blockExtraMode: t.extraMode, blockExtraPrice: t.extraPrice };
+    expect(blockOptionsIssue([option], 2)).toBe('BLOCK_TABLE_INVALID');
+  });
+  it.each(Object.entries(golden.tables))('valid golden table %s is saved', (_n, t: any) => {
+    const option = { type: 'BLOCK', blockTiers: t.tiers, blockStartDay: t.startDay, blockExtraMode: t.extraMode, blockExtraPrice: t.extraPrice };
+    expect(blockOptionsIssue([option], 2)).toBeNull();
   });
 });
 

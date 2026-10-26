@@ -10,6 +10,7 @@ import {
   calculateBlockRentForTable,
   currencyMinorUnit,
   isValidBlockTable,
+  isCompleteBlockTable,
   roundToMinorUnit,
 } from '../packages/utils/src/core/block-pricing';
 import { countRentalDays } from '../packages/utils/src/core/rental-days';
@@ -127,5 +128,24 @@ describe('days come from Vietnam civil days (countRentalDays)', () => {
   it('three days across a month end, five days across a year end', () => {
     expect(price('2026-10-30T02:00:00.000Z', '2026-11-01T02:00:00.000Z')).toBe(120000);
     expect(price('2026-12-30T02:00:00.000Z', '2027-01-03T02:00:00.000Z')).toBe(160000);
+  });
+});
+
+describe('#1223 save-time check: EXTRA_PER_DAY needs its extra price', () => {
+  const bad = golden.invalidSaveTables as Record<string, any>;
+  it.each(Object.keys(bad).filter((k) => !k.startsWith('_')))('refuses to save %s', (name) => {
+    expect(isCompleteBlockTable(bad[name])).toBe(false);
+    // a stored table like this is still read (no 500): the calculator keeps +0
+    expect(isValidBlockTable(bad[name])).toBe(true);
+  });
+  it.each(Object.keys(tables))('accepts golden table %s (HOLD_LAST may have no extra price)', (name) => {
+    expect(isCompleteBlockTable(tables[name])).toBe(true);
+  });
+  it('an extra price of 0 is a price', () => {
+    expect(isCompleteBlockTable({ tiers: [1], extraMode: 'EXTRA_PER_DAY', extraPrice: 0 })).toBe(true);
+  });
+  it('still refuses everything isValidBlockTable refuses', () => {
+    expect(isCompleteBlockTable({ tiers: [], extraMode: 'HOLD_LAST' })).toBe(false);
+    expect(isCompleteBlockTable({ tiers: [1], extraMode: 'HOLD_LAST', extraPrice: -1 })).toBe(false);
   });
 });
