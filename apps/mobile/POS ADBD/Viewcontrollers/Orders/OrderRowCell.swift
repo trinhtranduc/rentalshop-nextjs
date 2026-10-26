@@ -572,9 +572,9 @@ final class OrderRowCell: UITableViewCell {
             let isProductList: Bool = { if case .productOrders = context { return true }; return false }()
             setPay(isRentList || isProductList ? nil : OrdersHomeLogic.listPayLine(order))
         }
-        // #1199: "Đã thu 30%" on an order that collects its deposit in stages
+        // #1199/#1222: "Đã thu 30%" on an order that has a deposit plan
         if order.status == .reserved,
-           let badge = DepositPlanLogic.badge(percentCollected: DepositPlanLogic.listBadgePercent(order, staged: DepositModeStore.current == .staged)) {
+           let badge = DepositPlanLogic.badge(percentCollected: DepositPlanLogic.listBadgePercent(order)) {
             pillStack.addArrangedSubview(DepositUI.pill(badge, DS.Status.done))
         }
         phone = nil

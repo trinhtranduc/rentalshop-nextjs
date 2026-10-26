@@ -83,8 +83,6 @@ final class OrdersViewController: BaseViewControler {
         // #674: back from a detail or the tab again: a quiet refresh only when an order changed or the list is old
         viewModel.refreshIfNeeded()
         refreshBookingButton()
-        // #1213: the login payload carries no deposit mode; the list badge "Đã thu N%" needs it
-        DepositModeStore.refresh { [weak self] mode in if mode == .staged { self?.listView.reloadData() } }
     }
 
     /// #674: an order was created or changed somewhere; refresh now when on screen, else on the next appear
