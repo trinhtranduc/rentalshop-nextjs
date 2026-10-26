@@ -259,6 +259,8 @@ export interface PlanPaymentLike {
   status?: string | null;
   notes?: string | null;
   installmentKey?: string | null;
+  /** JSON text (or object) the collect route wrote; `plannedAmount` is the stage amount at the moment of collection (#1219) */
+  metadata?: unknown;
   processedAt?: Date | string | null;
   createdAt?: Date | string | null;
 }
@@ -337,18 +339,34 @@ function dueKeyOf(
   return addDaysToDateKey(createdKey, rule.days);
 }
 
-function collectedFor(payments: PlanPaymentLike[], key: string): { amount: number; at: string | null } {
+/** The stage amount recorded when the row was collected; null for rows taken before #1219 or with unusable metadata. */
+function plannedAtCollection(metadata: unknown): number | null {
+  try {
+    const parsed = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
+    const value = (parsed as { plannedAmount?: unknown } | null)?.plannedAmount;
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function collectedFor(
+  payments: PlanPaymentLike[],
+  key: string
+): { amount: number; at: string | null; plannedThen: number | null } {
   let amount = 0;
+  let plannedThen: number | null = null;
   let at: Date | null = null;
   for (const payment of payments) {
     if (payment.status !== 'COMPLETED' || payment.notes !== INSTALLMENT_PAYMENT_NOTE || payment.installmentKey !== key) {
       continue;
     }
     amount += payment.amount || 0;
+    plannedThen = plannedAtCollection(payment.metadata) ?? plannedThen;
     const when = toDate(payment.processedAt) ?? toDate(payment.createdAt);
     if (when && (!at || when > at)) at = when;
   }
-  return { amount, at: at ? at.toISOString() : null };
+  return { amount, at: at ? at.toISOString() : null, plannedThen };
 }
 
 /**
@@ -406,7 +424,9 @@ export function effectivePlan(
         amount,
         plannedAmount: planned,
         dueDateKey: dueKey,
-        status: statusOf(collected.amount, planned, dueKey),
+        // A locked stage is judged against what it was worth when collected: a later change of the total moves
+        // `planned` but nothing can be collected on the stage any more (#1219). Old rows without it keep `planned`.
+        status: statusOf(collected.amount, locked ? (collected.plannedThen ?? planned) : planned, dueKey),
         paidAmount: collected.amount,
         remaining: locked ? 0 : amount,
         collectedAt: collected.at,

@@ -12,6 +12,7 @@ import {
   chartRange,
   formatDayLabel,
   formatRangeLabel,
+  futureInstallmentsTotal,
   periodRange,
   progressPercent,
   toGrowth,
@@ -308,5 +309,30 @@ describe('Collected related reasons (#757)', () => {
     const vi = require('../locales/vi/dashboard.json').home.related.event;
     const used = ['saleCreated', 'saleCancelled', 'deposit', 'pickup', 'sameDay', 'damageFee', 'depositRefund', 'nothing', 'rentCancelled', 'returnCollected', 'futurePickup', 'futureDamageFee', 'futureRefund', 'futureNothing'];
     for (const k of used) { expect(en[k]).toBeTruthy(); expect(vi[k]).toBeTruthy(); }
+  });
+});
+
+describe('futureInstallmentsTotal (#1221, same as iOS futureInstallmentsTotal)', () => {
+  it('adds amount and count of every group in the chart series', () => {
+    const series = [
+      { date: '2026/11/11', futureInstallments: [{ dueDateKey: '2026-11-11', amount: 3_600_000, count: 1 }] },
+      {
+        date: '2026/11/12',
+        futureInstallments: [
+          { dueDateKey: '2026-11-12', amount: 4_800_000, count: 1 },
+          { dueDateKey: '2026-11-12', amount: 6_000_000, count: 1 },
+        ],
+      },
+      { date: '2026/11/13' },
+    ];
+    expect(futureInstallmentsTotal(series)).toEqual({ amount: 14_400_000, count: 3 });
+  });
+
+  it('is zero when the API sends none (shop without a deposit plan), and survives bad values', () => {
+    expect(futureInstallmentsTotal(null)).toEqual({ amount: 0, count: 0 });
+    expect(futureInstallmentsTotal([{ date: '2026/11/11' }])).toEqual({ amount: 0, count: 0 });
+    expect(
+      futureInstallmentsTotal([{ futureInstallments: [{ dueDateKey: 'x', amount: 'abc' as any, count: null as any }] }]),
+    ).toEqual({ amount: 0, count: 0 });
   });
 });

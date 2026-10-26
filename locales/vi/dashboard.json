@@ -251,7 +251,8 @@
       "today": "Hôm nay",
       "tip": "{day}: {value}",
       "tipForecast": "{day}: {value} · dự kiến thêm {forecast}",
-      "total": "Tổng"
+      "total": "Tổng",
+      "upcomingInstallments": "Cọc theo giai đoạn sắp thu: {amount} ({count} khoản)"
     },
     "today": {
       "title": "Hôm nay",
