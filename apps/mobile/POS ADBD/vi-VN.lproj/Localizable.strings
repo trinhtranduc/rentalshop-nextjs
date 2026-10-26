@@ -2881,7 +2881,7 @@
 "deposit.cart.collectNone.short" = "Không thu ngay";
 "deposit.cart.collectNow" = "Thu ngay · giai đoạn 1";
 "deposit.cart.collectNone" = "Chưa thu cọc";
-"deposit.cart.createAndCollect" = "Tạo đơn và thu giai đoạn 1";
+"deposit.cart.createAndCollect" = "Tạo đơn · thu cọc";
 "deposit.cart.exceeds" = "Các giai đoạn cộng lại lớn hơn tổng đơn. Hãy giảm số tiền một giai đoạn.";
 "deposit.cart.exceeds.short" = "Quá tổng đơn";
 "deposit.badge.collected" = "Đã thu %@%%";

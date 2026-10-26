@@ -4290,7 +4290,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(stageRow.waitForExistence(timeout: 5), "the cart shows stage 1 = 3.600.000")
         scrollTo(text(["Phần còn lại, thu khi giao", "The rest, collected at hand-over"]), max: 3)
         e2e.shot("61b-cart-staged-money")
-        let create = e2e.button(["Tạo đơn và thu giai đoạn 1", "Create order and collect stage 1"])
+        let create = e2e.button(["Tạo đơn · thu cọc", "Create · collect"])
         XCTAssertTrue(create.waitForExistence(timeout: 5), "the cart button collects stage 1")
         create.tap()
         sleep(2)
