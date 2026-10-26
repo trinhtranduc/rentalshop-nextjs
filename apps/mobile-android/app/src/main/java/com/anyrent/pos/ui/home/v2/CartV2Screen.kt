@@ -722,8 +722,7 @@ fun CartV2Screen(
                             EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
                         },
                     ),
-                    // #1199: the long label "Tạo đơn và thu giai đoạn 1" needs the room
-                    modifier = Modifier.weight(if (staged && stagedCollectNow > 0) 1.7f else 1.1f),
+                    modifier = Modifier.weight(1.1f), // #1229: the staged label is short now, no extra room
                     enabled = !createBlocked && !discountInvalid && !stagesExceed,
                     onClick = ::onCta,
                 )

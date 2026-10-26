@@ -2183,7 +2183,7 @@
     <string name="deposit_cart_collect_none_short">Không thu ngay</string>
     <string name="deposit_cart_collect_now">Thu ngay · giai đoạn 1</string>
     <string name="deposit_cart_collect_none">Chưa thu cọc</string>
-    <string name="deposit_cart_create_and_collect">Tạo đơn và thu giai đoạn 1</string>
+    <string name="deposit_cart_create_and_collect">Tạo đơn · thu cọc</string>
     <string name="deposit_cart_exceeds">Các giai đoạn cộng lại lớn hơn tổng đơn. Hãy giảm số tiền một giai đoạn.</string>
     <string name="deposit_cart_exceeds_short">Quá tổng đơn</string>
     <string name="deposit_badge_collected">Đã thu %s%%</string>

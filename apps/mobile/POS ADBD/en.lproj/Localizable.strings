@@ -2883,7 +2883,7 @@
 "deposit.cart.collectNone.short" = "Do not collect now";
 "deposit.cart.collectNow" = "Collect now · stage 1";
 "deposit.cart.collectNone" = "No deposit collected";
-"deposit.cart.createAndCollect" = "Create order and collect stage 1";
+"deposit.cart.createAndCollect" = "Create · collect";
 "deposit.cart.exceeds" = "The stages add up to more than the order total. Lower one stage.";
 "deposit.cart.exceeds.short" = "Over the order total";
 "deposit.badge.collected" = "Collected %@%%";
