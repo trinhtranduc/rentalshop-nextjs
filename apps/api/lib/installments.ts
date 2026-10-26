@@ -195,7 +195,7 @@ export async function recordInstallmentPayment(
 ) {
   const metadata: Record<string, unknown> = { kind: 'COLLECT', source: args.source };
   if (args.collectedOn) metadata.collectedOn = args.collectedOn;
-  if (args.source === 'INSTALLMENT') metadata.plannedAmount = args.stage.plannedAmount;
+  metadata.plannedAmount = args.stage.plannedAmount;
   return tx.payment.create({
     data: {
       orderId: args.orderId,
