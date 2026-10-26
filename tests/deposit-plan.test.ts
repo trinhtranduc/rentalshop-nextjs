@@ -11,6 +11,7 @@ import {
   parseDepositPlan,
   percentOf,
   pickTemplate,
+  planBaseTotal,
   planOverflow,
   readPaymentSettings,
   recalcAfterTotalChange,
@@ -230,5 +231,62 @@ describe('plan JSON', () => {
     const template = pickTemplate(settings, null);
     expect(template).toBe(DEFAULT_DEPOSIT_TEMPLATE);
     expect(applyTemplate(template.items, 'policy').items.map((i) => i.key)).toEqual(['i1']);
+  });
+});
+
+describe('#1219 locked stage status after the total changes', () => {
+  // The collect route records the stage amount at the moment of collection in the payment metadata
+  const metaAt = (plannedAmount: number) => ({ metadata: JSON.stringify({ kind: 'COLLECT', plannedAmount }) });
+
+  it('12M -> 13M after stage 1 was collected in full: stage 1 stays PAID (locked, nothing left to collect)', () => {
+    const o = order({ totalAmount: 13_000_000, payments: [pay('i1', 3_600_000, undefined, metaAt(3_600_000))] });
+    const stages = effectivePlan(o, VND, { now: NOW });
+    expect(stages[0]).toMatchObject({ amount: 3_600_000, plannedAmount: 3_900_000, paidAmount: 3_600_000, remaining: 0, status: 'PAID' });
+    expect(stages.map((s) => s.amount)).toEqual([3_600_000, 5_200_000, 4_200_000]);
+    expect(stages.reduce((s, x) => s + x.amount, 0)).toBe(13_000_000);
+  });
+
+  it('12M -> 11M after stage 1 was collected in full: still PAID', () => {
+    const o = order({ totalAmount: 11_000_000, payments: [pay('i1', 3_600_000, undefined, metaAt(3_600_000))] });
+    expect(effectivePlan(o, VND, { now: NOW })[0]).toMatchObject({ amount: 3_600_000, remaining: 0, status: 'PAID' });
+  });
+
+  it('a stage collected short stays PARTIAL, also after the total changed (spec: thu thiếu -> PARTIAL)', () => {
+    const o = order({ totalAmount: 13_000_000, payments: [pay('i1', 3_000_000, undefined, metaAt(3_600_000))] });
+    expect(effectivePlan(o, VND, { now: NOW })[0]).toMatchObject({ amount: 3_000_000, remaining: 0, status: 'PARTIAL' });
+  });
+
+  it('nothing collected: the stage follows the new total and keeps its due status', () => {
+    const stages = effectivePlan(order({ totalAmount: 13_000_000 }), VND, { now: NOW });
+    expect(stages[0]).toMatchObject({ amount: 3_900_000, paidAmount: 0, status: 'DUE_TODAY' });
+    expect(stages[1].status).toBe('UPCOMING');
+  });
+
+  it('a payment row without the recorded amount (taken before the fix) keeps comparing with the current stage amount', () => {
+    const o = order({ totalAmount: 13_000_000, payments: [pay('i1', 3_600_000)] });
+    expect(effectivePlan(o, VND, { now: NOW })[0].status).toBe('PARTIAL');
+  });
+
+  it('metadata that is not JSON or has no usable number is ignored', () => {
+    for (const metadata of ['not json', '{}', JSON.stringify({ plannedAmount: 'x' }), JSON.stringify({ plannedAmount: -5 }), null]) {
+      const o = order({ totalAmount: 13_000_000, payments: [pay('i1', 3_600_000, undefined, { metadata })] });
+      expect(effectivePlan(o, VND, { now: NOW })[0].status).toBe('PARTIAL');
+    }
+  });
+});
+
+describe('#1219 revert to RESERVED then edit the total', () => {
+  // revert restores status RESERVED and pickedUpAt = null but leaves the old pickupTotalAmount in the row
+  it('planBaseTotal measures the new total when the order is RESERVED again (pickedUpAt null, stale pickupTotalAmount)', () => {
+    const o = order({ totalAmount: 15_000_000, pickupTotalAmount: 12_000_000, pickedUpAt: null });
+    expect(planBaseTotal(o)).toBe(15_000_000);
+    const stages = effectivePlan(o, VND, { now: NOW });
+    expect(stages.map((s) => s.amount)).toEqual([4_500_000, 6_000_000, 4_500_000]);
+    expect(installmentSummary(stages, 15_000_000).planned).toBe(15_000_000);
+  });
+
+  it('after hand-over the stages are still measured against what was collected then', () => {
+    const o = order({ status: 'PICKUPED', totalAmount: 15_000_000, pickupTotalAmount: 12_000_000, pickedUpAt: '2026-11-14T03:00:00Z' });
+    expect(planBaseTotal(o)).toBe(12_000_000);
   });
 });
