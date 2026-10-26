@@ -16,6 +16,7 @@ import {
   type TopBar,
   type TopCustomerLike,
   type ChartMode,
+  futureInstallmentsTotal,
   type ChipTone,
   type DetailKind,
   type SeriesPointLike,
@@ -214,6 +215,7 @@ export function CollectedChart({
   const [mode, setMode] = React.useState<ChartMode>('collected');
   const [hover, setHover] = React.useState<number | null>(null);
   const bars = chartBars(series, mode, weekdays, todayKey);
+  const upcoming = futureInstallmentsTotal(series);
   const compact = useCompact(locale);
   const empty = !loading && !failed && bars.every((b) => b.value === 0 && b.forecast === 0);
   const hasForecast = bars.some((b) => b.forecast > 0);
@@ -373,6 +375,12 @@ export function CollectedChart({
             </div>
           </div>
         </div>
+      )}
+      {/* #1221: apart from the bars and the forecast; the stages are not in `futureIncome` (same line as iOS) */}
+      {!loading && !failed && upcoming.count > 0 && (
+        <p data-testid="overview-installments-upcoming" className="m-0 text-[14px] text-ar-muted">
+          {t('home.chart.upcomingInstallments', { amount: money(upcoming.amount), count: upcoming.count })}
+        </p>
       )}
     </section>
   );

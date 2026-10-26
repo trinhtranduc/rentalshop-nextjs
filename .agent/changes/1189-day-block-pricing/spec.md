@@ -12,7 +12,7 @@ Issue: #1189 · Status: thiết kế đã duyệt 2026-10-25; PR 1 = API + hàm 
 7. **App cũ thấy gì ở sản phẩm:** `rentPrice` = giá ngày 1 và `pricingType` của sản phẩm luôn `FIXED` (không ghi `BLOCK` ở cấp sản phẩm, vì app cũ không giải mã). Với client không có capability `block-pricing`, danh sách `pricingOptions` đổi option BLOCK thành option `FIXED` giá ngày 1 (cùng `id`, bỏ 4 trường `block*`), hoặc bỏ hẳn nếu sản phẩm đã có option FIXED thật (iOS cũ bỏ option BLOCK và cả `rentPrice` nên hiện $0). Áp dụng ở `GET /api/products`, `GET/PUT /api/products/[id]`, `POST /api/products`, `searchByImage`. Client có capability nhận option như đã lưu (type `BLOCK` + bảng).
 
 ## Chưa chốt
-1. **Quá mốc cuối:** "mỗi ngày thêm +X" hay "giữ giá mốc cuối". Mặc định trong spec: mỗi ngày thêm +X (`EXTRA_PER_DAY`); cả hai chế độ đều được hỗ trợ, **chủ shop chưa quyết**.
+1. **Quá mốc cuối (CHỦ ĐÃ CHỐT, #1223):** mặc định "mỗi ngày thêm +X" (`EXTRA_PER_DAY`); "giữ giá mốc cuối" (`HOLD_LAST`) vẫn chọn được theo từng sản phẩm. X **bắt buộc** ở `EXTRA_PER_DAY` (0đ là một giá hợp lệ): web, iOS, Android chặn lưu khi thiếu X, và API trả 400 `BLOCK_TABLE_INVALID` khi lưu (`isCompleteBlockTable`, `blockOptionsIssue`). Bảng đã lưu mà thiếu X vẫn được đọc và tính X = 0 (không lỗi 500).
 2. Nội dung mẫu mặc định của thu cọc theo giai đoạn (thuộc spec `../drafts-installments/spec.md`; khối ngày tạo ra tổng tiền mà các giai đoạn tính %).
 3. Phải thu giai đoạn 1 mới giữ lịch? (thuộc thu cọc.)
 4. Chính sách huỷ mặc định (thuộc thu cọc.)
@@ -22,7 +22,7 @@ Issue: #1189 · Status: thiết kế đã duyệt 2026-10-25; PR 1 = API + hàm 
 ## Behavior (mỗi dòng test được)
 1. Bảng giá: dòng `i` (i = 1..N) là giá cả đơn khi thuê đúng `i` ngày. Số ngày tự đánh số liên tục, không có "khoảng trống". Giá >= 0, N >= 1 (tối đa 31).
 2. Thuê `d` ngày, `d <= N`: giá = `tiers[d-1]`.
-3. `d > N` (**quy tắc chưa chốt, xem "Chưa chốt" 1**): chế độ `EXTRA_PER_DAY` (mặc định tạm): `tiers[N-1] + (d-N) * extra` (`extra` >= 0). Chế độ `HOLD_LAST`: `tiers[N-1]`. Cả hai được cài đặt và test; mỗi sản phẩm chọn một.
+3. `d > N` (chủ đã chốt, xem "Chưa chốt" 1): chế độ `EXTRA_PER_DAY` (mặc định): `tiers[N-1] + (d-N) * extra` (`extra` >= 0). Chế độ `HOLD_LAST`: `tiers[N-1]`. Cả hai được cài đặt và test; mỗi sản phẩm chọn một.
 4. Bảng bắt đầu từ ngày `k > 1` (cho phép, cột `blockStartDay`): thuê ít hơn `k` ngày tính bằng giá mốc đầu. (Nếu chủ shop không muốn: bảng luôn bắt đầu 1 ngày và bỏ dòng này.)
 5. `d` = `countRentalDays(pickup, return, tz)` (`packages/utils/src/core/rental-days.ts:32`): ngày dân sự VN tính cả hai đầu, tối thiểu 1; cùng ngày lấy và trả = 1; `16:59:59Z` và `17:00:00Z` thuộc hai ngày VN khác nhau.
 6. Giá dòng = giá khối x số lượng. Giảm giá đơn áp sau tổng các dòng (như `apps/api/lib/order-discount`). Sửa tay giá dòng (override) vẫn được và không bị server tính lại khi client mới gửi `priceOverridden: true`.

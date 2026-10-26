@@ -136,6 +136,8 @@ export interface SeriesPointLike {
   forecast?: Num;
   /** The API's name for `forecast` (#605): GET /api/analytics/period `series[].expectedCollected` */
   expectedCollected?: Num;
+  /** #1199: unpaid deposit stages by due day; absent when the shop has none in this bucket */
+  futureInstallments?: { dueDateKey?: string; amount?: Num; count?: Num }[] | null;
 }
 
 /** Forecast of a series point: `forecast`, else the API's `expectedCollected` (#605) */
@@ -307,6 +309,22 @@ export function chartBars(
       isToday: !!currentKey && day === currentKey,
     };
   });
+}
+
+/**
+ * #1221: unpaid deposit stages falling due in the series (same as iOS `futureInstallmentsTotal`).
+ * Shown on their own line, never added to the bars or to `futureIncome`.
+ */
+export function futureInstallmentsTotal(series: SeriesPointLike[] | null | undefined): { amount: number; count: number } {
+  let amount = 0;
+  let count = 0;
+  for (const point of series ?? []) {
+    for (const group of point.futureInstallments ?? []) {
+      amount += num(group?.amount) ?? 0;
+      count += num(group?.count) ?? 0;
+    }
+  }
+  return { amount, count };
 }
 
 /**

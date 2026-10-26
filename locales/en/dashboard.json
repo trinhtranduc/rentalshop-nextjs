@@ -251,7 +251,8 @@
       "today": "Today",
       "tip": "{day}: {value}",
       "tipForecast": "{day}: {value} · {forecast} more expected",
-      "total": "Total"
+      "total": "Total",
+      "upcomingInstallments": "Staged deposits coming up: {amount} ({count})"
     },
     "today": {
       "title": "Today",
