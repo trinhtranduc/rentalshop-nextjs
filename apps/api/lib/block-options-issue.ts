@@ -4,7 +4,7 @@
  * options are ignored on save, see `normalizePricingOptions`).
  *
  * Self-contained on purpose (no workspace import): route tests mock `@rentalshop/utils`. The rules are the ones of
- * `isValidBlockTable` (packages/utils/src/core/block-pricing.ts); `tests/block-pricing-api.test.ts` keeps them equal.
+ * `isCompleteBlockTable` (packages/utils/src/core/block-pricing.ts); `tests/block-pricing-api.test.ts` keeps them equal.
  */
 type OptionLike = {
   type?: string;
@@ -23,7 +23,9 @@ export function blockTableValid(o: OptionLike): boolean {
   if (!Number.isInteger(start) || start < 1 || start > 31) return false;
   const mode = o.blockExtraMode ?? 'EXTRA_PER_DAY';
   if (mode !== 'EXTRA_PER_DAY' && mode !== 'HOLD_LAST') return false;
-  return o.blockExtraPrice == null || money(o.blockExtraPrice);
+  // #1223: "+X per extra day" needs its X (0 is a price); HOLD_LAST needs none
+  if (o.blockExtraPrice == null) return mode === 'HOLD_LAST';
+  return money(o.blockExtraPrice);
 }
 
 export function blockOptionsIssue(
