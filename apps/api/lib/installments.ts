@@ -246,6 +246,55 @@ export async function shapeOrderInstallments<T extends Record<string, any>>(
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/orders: which rows have a deposit plan (#1222)
+// ---------------------------------------------------------------------------
+
+interface PlanSumClient {
+  payment: { groupBy: (args: any) => Promise<any> };
+}
+
+/**
+ * Rows of one list page shaped for this caller. A client without `installments` gets the rows it gets today
+ * (`depositPlan` never leaves the API). A capable client gets `hasDepositPlan` on every row and, for a plan order,
+ * `installmentSummary: { collected, percentCollected }` (same names and rounding as the order detail). One grouped
+ * query for the whole page, only when the page holds a plan order.
+ */
+export async function shapeListPlans<T extends Record<string, any>>(
+  orders: T[],
+  capable: boolean,
+  client: PlanSumClient
+): Promise<T[]> {
+  if (!capable) {
+    return orders.map((order) => {
+      if (!('depositPlan' in order)) return order;
+      const { depositPlan: _plan, ...rest } = order;
+      return rest as unknown as T;
+    });
+  }
+  const planIds = orders.filter((order) => parseDepositPlan(order.depositPlan) != null).map((order) => order.id as number);
+  const sums = new Map<number, number>();
+  if (planIds.length > 0) {
+    const rows = (await client.payment.groupBy({
+      by: ['orderId'],
+      where: { orderId: { in: planIds }, status: 'COMPLETED', notes: INSTALLMENT_PAYMENT_NOTE },
+      _sum: { amount: true },
+    })) as Array<{ orderId: number | null; _sum: { amount: number | null } }>;
+    for (const row of rows) if (row.orderId != null) sums.set(row.orderId, row._sum?.amount || 0);
+  }
+  return orders.map((order) => {
+    const { depositPlan, ...rest } = order;
+    if (parseDepositPlan(depositPlan) == null) return { ...rest, hasDepositPlan: false } as unknown as T;
+    const collected = sums.get(order.id as number) || 0;
+    const total = Number(order.totalAmount) || 0;
+    return {
+      ...rest,
+      hasDepositPlan: true,
+      installmentSummary: { collected, percentCollected: total > 0 ? Math.round((collected / total) * 10000) / 100 : 0 },
+    } as unknown as T;
+  });
+}
+
+// ---------------------------------------------------------------------------
 // shared by the installment routes
 // ---------------------------------------------------------------------------
 

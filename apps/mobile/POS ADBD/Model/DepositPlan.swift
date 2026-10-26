@@ -248,13 +248,13 @@ enum DepositPlanLogic {
         stages.firstIndex { $0.key == key }.map { $0 + 1 }
     }
 
-    /// #1213: the list API sends no plan fields, so the badge is computed like the web (`paidBadgePercent`): a staged
-    /// shop, a rental waiting for pick-up, `depositAmount / totalAmount`. A percent the API did send wins.
-    static func listBadgePercent(_ order: Order, staged: Bool) -> Double? {
-        if order.hasDepositPlan == true, let sent = order.installmentPercentCollected { return sent }
-        guard staged, order.orderType == .rent, order.status == .reserved else { return nil }
-        guard order.totalAmount > 0, order.depositAmount > 0 else { return nil }
-        return min(100, (order.depositAmount / order.totalAmount * 100).rounded())
+    /// #1222: the list badge only for a rental waiting for pick-up whose order has a deposit plan (`hasDepositPlan` and
+    /// `installmentSummary.percentCollected`, which the list API sends to a build that declares `installments`).
+    /// A one-time deposit order has no badge, whatever mode the shop is in now.
+    static func listBadgePercent(_ order: Order) -> Double? {
+        guard order.hasDepositPlan == true, order.orderType == .rent, order.status == .reserved,
+              let sent = order.installmentPercentCollected, sent > 0 else { return nil }
+        return min(100, sent.rounded())
     }
 
     /// The list badge "Đã thu 30%": nil without a plan

@@ -108,36 +108,36 @@ final class DepositPlanTests: XCTestCase {
         XCTAssertTrue(InstallmentCardView.subtitle(unpaid).hasSuffix("10/11"), InstallmentCardView.subtitle(unpaid))
     }
 
-    // MARK: #1213 the list badge is computed like the web (the list API sends no plan fields)
+    // MARK: #1222 the list badge only for an order that has a deposit plan; the percent comes from the API
 
-    private func listOrder(type: String = "RENT", status: String = "RESERVED", total: Double, paid: Double) throws -> Order {
+    private func listOrder(type: String = "RENT", status: String = "RESERVED", plan: Bool?, percent: Double? = nil, paid: Double = 4_800_000) throws -> Order {
+        let planJSON = plan.map { ",\"hasDepositPlan\":\($0)" } ?? ""
+        let summary = percent.map { ",\"installmentSummary\":{\"collected\":1,\"percentCollected\":\($0)}" } ?? ""
         let json = """
-        {"id":5,"orderNumber":"100001","orderType":"\(type)","status":"\(status)","totalAmount":\(total),"depositAmount":\(paid),
-         "createdAt":"2026-10-25T01:00:00.000Z","updatedAt":"2026-10-25T01:00:00.000Z"}
+        {"id":5,"orderNumber":"100001","orderType":"\(type)","status":"\(status)","totalAmount":12000000,"depositAmount":\(paid),
+         "createdAt":"2026-10-25T01:00:00.000Z","updatedAt":"2026-10-25T01:00:00.000Z"\(planJSON)\(summary)}
         """.data(using: .utf8)!
         return try JSONDecoder.shared.decode(Order.self, from: json)
     }
 
-    func testListBadgeFromDepositOverTotal() throws {
-        let order = try listOrder(total: 12_000_000, paid: 3_600_000)
-        XCTAssertEqual(DepositPlanLogic.listBadgePercent(order, staged: true), 30)
-        XCTAssertNil(DepositPlanLogic.listBadgePercent(order, staged: false), "a one-time shop's list stays as it was")
-        XCTAssertEqual(DepositPlanLogic.listBadgePercent(try listOrder(total: 3, paid: 1), staged: true), 33)
-        XCTAssertEqual(DepositPlanLogic.listBadgePercent(try listOrder(total: 100, paid: 150), staged: true), 100)
-        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(total: 100, paid: 0), staged: true))
-        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(total: 0, paid: 10), staged: true))
-        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(status: "PICKUPED", total: 100, paid: 30), staged: true))
-        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(type: "SALE", total: 100, paid: 30), staged: true))
+    func testListBadgeOnlyForAnOrderWithAPlan() throws {
+        XCTAssertEqual(DepositPlanLogic.listBadgePercent(try listOrder(plan: true, percent: 40)), 40)
+        XCTAssertEqual(DepositPlanLogic.listBadgePercent(try listOrder(plan: true, percent: 33.33)), 33)
+        XCTAssertEqual(DepositPlanLogic.listBadgePercent(try listOrder(plan: true, percent: 250)), 100)
     }
 
-    func testListBadgePrefersThePercentTheApiSent() throws {
-        let json = """
-        {"id":5,"orderNumber":"100001","orderType":"RENT","status":"RESERVED","totalAmount":100,"depositAmount":10,
-         "createdAt":"2026-10-25T01:00:00.000Z","updatedAt":"2026-10-25T01:00:00.000Z",
-         "hasDepositPlan":true,"installmentSummary":{"percentCollected":40}}
-        """.data(using: .utf8)!
-        let order = try JSONDecoder.shared.decode(Order.self, from: json)
-        XCTAssertEqual(DepositPlanLogic.listBadgePercent(order, staged: false), 40)
+    func testOneTimeDepositOrderHasNoBadgeEvenWithMoneyCollected() throws {
+        // depositAmount 4.8M of 12M = 40%, but there is no plan: no badge (shop STAGED or not)
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(plan: false)))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(plan: false, percent: 40)))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(plan: nil)), "an older API sends no flag")
+    }
+
+    func testNoListBadgeWithoutPercentAfterPickupOrOnASale() throws {
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(plan: true, percent: 0)))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(plan: true)))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(status: "PICKUPED", plan: true, percent: 40)))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(type: "SALE", plan: true, percent: 40)))
     }
 
     func testStageAndSummaryDecode() throws {

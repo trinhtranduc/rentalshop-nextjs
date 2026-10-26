@@ -41,3 +41,23 @@ describe('order list totals vs INSTALLMENT (#1200)', () => {
     expect(capable.where).toEqual({ orderId: { in: [1] } });
   });
 });
+
+describe('findManyLightweight depositPlan select (#1222)', () => {
+  const selectOf = async (filters: any) => {
+    prismaMock.order.findMany.mockClear();
+    await run((f) => simplifiedOrders.findManyLightweight(f), filters);
+    return prismaMock.order.findMany.mock.calls[0][0].select;
+  };
+  it('selects depositPlan only when asked', async () => {
+    expect(await selectOf({ merchantId: 1 })).not.toHaveProperty('depositPlan');
+    expect((await selectOf({ merchantId: 1, includeDepositPlan: true })).depositPlan).toBe(true);
+  });
+  it('returns the column in the rows only when asked', async () => {
+    const plan = { v: 1, items: [] };
+    prismaMock.order.findMany.mockResolvedValue([{ id: 1, orderItems: [], customer: null, outlet: null, depositPlan: plan }]);
+    const asked = await simplifiedOrders.findManyLightweight({ merchantId: 1, includeDepositPlan: true });
+    expect(asked.data[0].depositPlan).toEqual(plan);
+    const notAsked = await simplifiedOrders.findManyLightweight({ merchantId: 1 });
+    expect(notAsked.data[0]).not.toHaveProperty('depositPlan');
+  });
+});

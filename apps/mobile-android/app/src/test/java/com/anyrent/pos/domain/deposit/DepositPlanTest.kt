@@ -74,22 +74,23 @@ class DepositPlanTest {
     // --- payloads
 
     @Test
-    fun `list badge is computed like the web from deposit over total`() {
-        fun badge(total: Double, paid: Double, staged: Boolean = true, type: String = "RENT", status: String = "RESERVED") =
-            DepositPlanLogic.listBadgePercent(type, status, total, paid, staged, hasPlan = null, apiPercent = null)
-        assertEquals(30.0, badge(12_000_000.0, 3_600_000.0)!!, 0.0)
-        assertNull(badge(12_000_000.0, 3_600_000.0, staged = false))
-        assertEquals(33.0, badge(3.0, 1.0)!!, 0.0)
-        assertEquals(100.0, badge(100.0, 150.0)!!, 0.0)
-        assertNull(badge(100.0, 0.0))
-        assertNull(badge(0.0, 10.0))
-        assertNull(badge(100.0, 30.0, status = "PICKUPED"))
-        assertNull(badge(100.0, 30.0, type = "SALE"))
+    fun `list badge only for an order with a plan, percent from the API (1222)`() {
+        fun badge(plan: Boolean?, percent: Double?, type: String = "RENT", status: String = "RESERVED") =
+            DepositPlanLogic.listBadgePercent(type, status, plan, percent)
+        assertEquals(40.0, badge(true, 40.0)!!, 0.0)
+        assertEquals(33.0, badge(true, 33.33)!!, 0.0)
+        assertEquals(100.0, badge(true, 250.0)!!, 0.0)
+        assertNull(badge(true, 0.0))
+        assertNull(badge(true, null))
+        assertNull(badge(true, 40.0, status = "PICKUPED"))
+        assertNull(badge(true, 40.0, type = "SALE"))
     }
 
     @Test
-    fun `list badge prefers the percent the API sent for an order with a plan`() {
-        assertEquals(40.0, DepositPlanLogic.listBadgePercent("RENT", "RESERVED", 100.0, 10.0, staged = false, hasPlan = true, apiPercent = 40.0)!!, 0.0)
+    fun `a one-time deposit order has no badge even with money collected`() {
+        assertNull(DepositPlanLogic.listBadgePercent("RENT", "RESERVED", hasPlan = false, apiPercent = null))
+        assertNull(DepositPlanLogic.listBadgePercent("RENT", "RESERVED", hasPlan = false, apiPercent = 40.0))
+        assertNull(DepositPlanLogic.listBadgePercent("RENT", "RESERVED", hasPlan = null, apiPercent = 40.0)) // an older API sends no flag
     }
 
     @Test
