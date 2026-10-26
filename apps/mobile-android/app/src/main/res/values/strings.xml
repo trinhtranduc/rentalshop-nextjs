@@ -1953,6 +1953,8 @@
     <string name="api_error_installment_not_found">Deposit stage not found.</string>
     <string name="api_error_installment_no_plan">This order has no deposit plan.</string>
     <string name="api_error_installment_loyalty_unsupported">Loyalty points cannot be used on an order with staged deposits.</string>
+    <string name="api_error_cancel_amounts_mismatch">The amount kept is more than what was collected, or is not a valid amount.</string>
+    <string name="api_error_cancelled_order_keeps_amount">A cancelled order that kept money stays in the history and cannot be deleted.</string>
     <string name="api_error_deposit_settings_invalid">The deposit settings are not valid. Use 1 to 3 stages per template, percentages that add up to 100 or less, and at most 10 templates.</string>
     <string name="api_error_outlet_id_required">Outlet ID is required</string>
     <string name="api_error_outlet_info_updated_success">Outlet information updated successfully</string>

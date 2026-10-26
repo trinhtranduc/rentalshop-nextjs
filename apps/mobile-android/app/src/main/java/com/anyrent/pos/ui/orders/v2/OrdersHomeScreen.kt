@@ -153,6 +153,8 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit, onOpenBookings: () -> Unit = {}
     val texts = orderRowTexts()
 
     LaunchedEffect(Unit) { viewModel.onShown() }
+    // #1213: the login payload carries no deposit mode; the list badge "Đã thu N%" needs it
+    LaunchedEffect(Unit) { com.anyrent.pos.data.DepositModeStore.refresh() }
     // After create-order success: MainTabRouter switches to this tab and asks for a reload
     LaunchedEffect(Unit) { MainTabRouter.refreshOrders.collect { viewModel.reload(keepRows = true) } }
     // #674: an order changed while this tab is on screen: quiet refresh
@@ -830,9 +832,10 @@ private fun OrderRow(
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
     }
     // #1199: "Đã thu 30%" on an order that collects its deposit in stages
-    val collectedBadge = com.anyrent.pos.domain.deposit.DepositPlanLogic.badgePercent(order.installmentPercentCollected)
-        ?.takeIf { order.status.equals("RESERVED", true) && order.hasDepositPlan == true }
-        ?.let { stringResource(R.string.deposit_badge_collected, it) }
+    val staged = com.anyrent.pos.data.SessionStore.depositModeFlow.collectAsState().value == com.anyrent.pos.domain.deposit.DepositMode.STAGED
+    val collectedBadge = com.anyrent.pos.domain.deposit.DepositPlanLogic.listBadgePercent(
+        order.orderType, order.status, order.totalAmount, order.depositAmount, staged, order.hasDepositPlan, order.installmentPercentCollected,
+    )?.let { stringResource(R.string.deposit_badge_collected, com.anyrent.pos.domain.deposit.DepositPlanMath.percentText(it)) }
     BoardRow(
         tag = tagText to colors,
         extraTag = collectedBadge?.let { it to DS.Status.Done },

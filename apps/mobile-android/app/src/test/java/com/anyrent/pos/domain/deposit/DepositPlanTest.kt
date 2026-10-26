@@ -74,6 +74,25 @@ class DepositPlanTest {
     // --- payloads
 
     @Test
+    fun `list badge is computed like the web from deposit over total`() {
+        fun badge(total: Double, paid: Double, staged: Boolean = true, type: String = "RENT", status: String = "RESERVED") =
+            DepositPlanLogic.listBadgePercent(type, status, total, paid, staged, hasPlan = null, apiPercent = null)
+        assertEquals(30.0, badge(12_000_000.0, 3_600_000.0)!!, 0.0)
+        assertNull(badge(12_000_000.0, 3_600_000.0, staged = false))
+        assertEquals(33.0, badge(3.0, 1.0)!!, 0.0)
+        assertEquals(100.0, badge(100.0, 150.0)!!, 0.0)
+        assertNull(badge(100.0, 0.0))
+        assertNull(badge(0.0, 10.0))
+        assertNull(badge(100.0, 30.0, status = "PICKUPED"))
+        assertNull(badge(100.0, 30.0, type = "SALE"))
+    }
+
+    @Test
+    fun `list badge prefers the percent the API sent for an order with a plan`() {
+        assertEquals(40.0, DepositPlanLogic.listBadgePercent("RENT", "RESERVED", 100.0, 10.0, staged = false, hasPlan = true, apiPercent = 40.0)!!, 0.0)
+    }
+
+    @Test
     fun `an old order payload has no deposit part`() {
         val info = DepositPlanInfo.fromJson(JSONObject("""{"id":1,"orderNumber":"123456","depositAmount":2000000}"""))
         assertNull(info.installments)

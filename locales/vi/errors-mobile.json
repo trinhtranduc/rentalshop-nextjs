@@ -415,5 +415,7 @@
   "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.",
   "BLOCK_PRICE_MISMATCH": "Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.",
   "PRICING_TYPE_REQUIRES_UPDATE": "Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.",
-  "BLOCK_TABLE_INVALID": "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá."
+  "BLOCK_TABLE_INVALID": "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.",
+  "CANCEL_AMOUNTS_MISMATCH": "Số tiền giữ lại lớn hơn số đã thu hoặc không hợp lệ.",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được."
 }
