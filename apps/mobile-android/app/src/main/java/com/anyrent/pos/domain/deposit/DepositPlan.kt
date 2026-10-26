@@ -325,17 +325,15 @@ object DepositPlanLogic {
         stages.indexOfFirst { it.key == key }.takeIf { it >= 0 }?.plus(1)
 
     /**
-     * #1213: the list API sends no plan fields, so the badge is computed like the web (`paidBadgePercent`): a staged
-     * shop, a rental waiting for pick-up, deposit over total. A percent the API did send for an order with a plan wins.
-     * Same rule as iOS `DepositPlanLogic.listBadgePercent`.
+     * #1222: the list badge only for a rental waiting for pick-up whose order has a deposit plan (`hasDepositPlan` and
+     * `installmentSummary.percentCollected`, which the list API sends to a build that declares `installments`).
+     * A one-time deposit order has no badge, whatever mode the shop is in now. Same rule as iOS
+     * `DepositPlanLogic.listBadgePercent`.
      */
-    fun listBadgePercent(
-        orderType: String, status: String, total: Double, paid: Double, staged: Boolean, hasPlan: Boolean?, apiPercent: Double?,
-    ): Double? {
-        if (hasPlan == true && apiPercent != null) return apiPercent
-        if (!staged || !orderType.equals("RENT", true) || !status.equals("RESERVED", true)) return null
-        if (!(total > 0) || !(paid > 0)) return null
-        return min(100.0, kotlin.math.floor(paid / total * 100 + 0.5))
+    fun listBadgePercent(orderType: String, status: String, hasPlan: Boolean?, apiPercent: Double?): Double? {
+        if (hasPlan != true || !orderType.equals("RENT", true) || !status.equals("RESERVED", true)) return null
+        if (apiPercent == null || !(apiPercent > 0)) return null
+        return min(100.0, kotlin.math.floor(apiPercent + 0.5))
     }
 
     /** The list badge value "30" for "Đã thu 30%": null without a plan */
