@@ -242,17 +242,19 @@ describe('today', () => {
     installmentsDueTomorrow: { count: 1, orders: [stage(14, 'i2', { dueDateKey: '2026-10-07' })] },
   };
 
-  it('adds one row per stage due today or late, most late first, and none for tomorrow', () => {
+  it('adds one row per stage due today or late (most late first) before the late returns, and none for tomorrow', () => {
     const rows = buildTodayRows(withStages, getLocalDateKey);
-    expect(rows.slice(0, 4).map((r) => r.id)).toEqual([1, 2, 3, 4]);
-    const stages = rows.slice(4);
-    expect(stages.map((r) => [r.id, r.kind, r.stage, r.lateDays, r.money])).toEqual([
-      [13, 'installment', 2, 3, { kind: 'collect', amount: 4_800_000 }],
-      [12, 'installment', 1, 1, { kind: 'collect', amount: 4_800_000 }],
-      [11, 'installment', 2, 0, { kind: 'collect', amount: 4_800_000 }],
+    expect(rows.map((r) => [r.id, r.kind, r.stage, r.lateDays])).toEqual([
+      [1, 'pickup', null, 0],
+      [2, 'pickup', null, 0],
+      [3, 'return', null, 0],
+      [13, 'installment', 2, 3],
+      [12, 'installment', 1, 1],
+      [11, 'installment', 2, 0],
+      [4, 'return', null, 4],
     ]);
+    expect(rows.filter((r) => r.kind === 'installment').every((r) => r.money?.kind === 'collect' && r.money.amount === 4_800_000)).toBe(true);
     expect(rows.find((r) => r.id === 14)).toBeUndefined();
-    expect(rows).toHaveLength(7);
   });
 
   it('keeps a pickup row and a stage row of the same order, and two stages of one order', () => {

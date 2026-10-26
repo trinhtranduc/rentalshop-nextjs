@@ -671,7 +671,8 @@ private fun WorkRow(
     )
     val (pickupLabel, returnLabel) = chipLabels()
     val notPrepared = stringResource(R.string.orders_v2_not_prepared)
-    val due = OrdersBoardLogic.workDue(work)
+    // #1231: a deposit stage row shows its amount once (the total), no "còn thu" line under it
+    val due = if (kind == WorkKind.COLLECT) null else OrdersBoardLogic.workDue(work)
     val phone = OrdersBoardLogic.workCallPhone(work, isLate)
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(

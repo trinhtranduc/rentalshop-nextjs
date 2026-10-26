@@ -467,7 +467,7 @@ export interface TodayRow {
 }
 
 /**
- * Today's pickups, then today's and overdue returns (late ones last), each order once, then (#1231) one row per deposit stage that is late or due today.
+ * Today's pickups, then today's and overdue returns (late ones last), each order once; (#1231) one row per deposit stage that is late or due today goes before the late returns.
  * `toDayKey` turns an ISO instant into its Vietnam civil day.
  */
 export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => string): TodayRow[] {
@@ -519,9 +519,10 @@ export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => st
   };
   ops.pickupsToday.orders.forEach((o) => push(o, 'pickup', false));
   ops.returnsToday.orders.forEach((o) => push(o, 'return', false));
-  ops.overdueReturns.orders.forEach((o) => push(o, 'return', true));
+  // #1231: the stages go before the late returns, so a shop with many late returns still sees them in the 5 rows of the card
   [...(ops.installmentsOverdue?.orders ?? [])].sort((a, b) => b.lateDays - a.lateDays).forEach(pushStage);
   (ops.installmentsDue?.orders ?? []).forEach(pushStage);
+  ops.overdueReturns.orders.forEach((o) => push(o, 'return', true));
   return rows;
 }
 
