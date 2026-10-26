@@ -467,19 +467,19 @@ export const showsReminders = (g: ReminderGroups | null | undefined): boolean =>
 export interface BadgeOrderLike {
   orderType?: string | null;
   status?: string | null;
-  totalAmount?: number | null;
-  depositAmount?: number | null;
+  hasDepositPlan?: boolean | null;
+  installmentSummary?: { percentCollected?: number | null } | null;
 }
 
 /**
- * "Đã thu 30%" on a rental still waiting for pick-up, from the money collected so far. Only for a shop in staged
- * mode (`staged`); every other shop's list stays as it was.
+ * "Đã thu 30%" on a rental still waiting for pick-up, only for an order that has a multi-stage deposit plan
+ * (`hasDepositPlan`, sent by the list API to a client that declares `installments`). A one-time deposit order
+ * has no badge, whatever mode the shop is in now (#1222).
  */
-export function paidBadgePercent(o: BadgeOrderLike, staged: boolean): number | null {
-  if (!staged || o.orderType !== 'RENT' || o.status !== 'RESERVED') return null;
-  const total = o.totalAmount ?? 0;
-  const paid = o.depositAmount ?? 0;
-  if (!(total > 0) || !(paid > 0)) return null;
-  return Math.min(100, Math.round((paid / total) * 100));
+export function paidBadgePercent(o: BadgeOrderLike): number | null {
+  if (o.hasDepositPlan !== true || o.orderType !== 'RENT' || o.status !== 'RESERVED') return null;
+  const percent = o.installmentSummary?.percentCollected ?? 0;
+  if (!(percent > 0)) return null;
+  return Math.min(100, Math.round(percent));
 }
 

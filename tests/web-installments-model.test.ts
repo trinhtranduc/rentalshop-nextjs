@@ -385,14 +385,26 @@ describe('dashboard reminders and list badge', () => {
     expect(stageNumberOfKey('rest')).toBeNull();
   });
 
-  it('"Đã thu 30%" only for a staged shop, on a rental waiting for pick-up with money collected', () => {
-    const o = { orderType: 'RENT', status: 'RESERVED', totalAmount: 12_000_000, depositAmount: 3_600_000 };
-    expect(paidBadgePercent(o, true)).toBe(30);
-    expect(paidBadgePercent(o, false)).toBeNull();
-    expect(paidBadgePercent({ ...o, depositAmount: 0 }, true)).toBeNull();
-    expect(paidBadgePercent({ ...o, status: 'PICKUPED' }, true)).toBeNull();
-    expect(paidBadgePercent({ ...o, orderType: 'SALE' }, true)).toBeNull();
-    expect(paidBadgePercent({ ...o, totalAmount: 0 }, true)).toBeNull();
-    expect(paidBadgePercent({ ...o, depositAmount: 99_000_000 }, true)).toBe(100);
+  it('"Đã thu 30%" only for a rental waiting for pick-up whose order has a deposit plan (#1222)', () => {
+    const o = { orderType: 'RENT', status: 'RESERVED', hasDepositPlan: true, installmentSummary: { percentCollected: 30 } };
+    expect(paidBadgePercent(o)).toBe(30);
+    expect(paidBadgePercent({ ...o, installmentSummary: { percentCollected: 33.33 } })).toBe(33);
+    expect(paidBadgePercent({ ...o, installmentSummary: { percentCollected: 250 } })).toBe(100);
+  });
+
+  it('no badge for a one-time deposit order, even with money collected (shop STAGED or not)', () => {
+    const once = { orderType: 'RENT', status: 'RESERVED', totalAmount: 12_000_000, depositAmount: 4_800_000 };
+    expect(paidBadgePercent(once)).toBeNull();
+    expect(paidBadgePercent({ ...once, hasDepositPlan: false })).toBeNull();
+    expect(paidBadgePercent({ ...once, hasDepositPlan: false, installmentSummary: { percentCollected: 40 } })).toBeNull();
+  });
+
+  it('no badge without a collected percent, after pick-up, on a sale, or from an older API', () => {
+    const o = { orderType: 'RENT', status: 'RESERVED', hasDepositPlan: true, installmentSummary: { percentCollected: 30 } };
+    expect(paidBadgePercent({ ...o, installmentSummary: { percentCollected: 0 } })).toBeNull();
+    expect(paidBadgePercent({ ...o, installmentSummary: null })).toBeNull();
+    expect(paidBadgePercent({ ...o, status: 'PICKUPED' })).toBeNull();
+    expect(paidBadgePercent({ ...o, orderType: 'SALE' })).toBeNull();
+    expect(paidBadgePercent({ orderType: 'RENT', status: 'RESERVED' })).toBeNull();
   });
 });
