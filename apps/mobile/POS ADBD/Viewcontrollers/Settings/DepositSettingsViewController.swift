@@ -12,7 +12,36 @@ import SnapKit
 
 // MARK: - Small views the deposit screens share
 
+/// A label that wraps to as many lines as it needs. A plain multi-line `UILabel` inside a stack keeps the height of its
+/// first measure (one line) when the stack then squeezes its width, so a long stage name ended in "…" (#1243).
+final class WrappingLabel: UILabel {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if preferredMaxLayoutWidth != bounds.width {
+            preferredMaxLayoutWidth = bounds.width
+            invalidateIntrinsicContentSize()
+        }
+    }
+}
+
 enum DepositUI {
+    /// `V2.label` that wraps (never "…"): the stage names, their sub lines and the card title
+    static func wrapLabel(_ text: String?, size: CGFloat, weight: UIFont.Weight = .regular, color: UIColor = DS.Color.text) -> UILabel {
+        wrapping(V2.label(text, size: size, weight: weight, color: color, lines: 0))
+    }
+
+    /// The same label as `source` (text, font, colour) as a wrapping one
+    static func wrapping(_ source: UILabel) -> UILabel {
+        let label = WrappingLabel()
+        label.text = source.text
+        label.font = source.font
+        label.textColor = source.textColor
+        label.adjustsFontForContentSizeCategory = source.adjustsFontForContentSizeCategory
+        label.textAlignment = source.textAlignment
+        label.numberOfLines = 0
+        return label
+    }
+
     /// A list row with a radio dot, a bold title and a grey description (settings mode rows, cart template list)
     static func radioRow(title: String, detail: String?, selected: Bool, identifier: String? = nil) -> UIControl {
         let row = UIControl()
@@ -60,6 +89,7 @@ enum DepositUI {
     /// A small status pill ("Đã thu", "Chờ thu", "Trễ 2 ngày")
     static func pill(_ text: String, _ colors: DS.Pill) -> UIView {
         let label = V2.label(text, size: DS.TextSize.pill, weight: .bold, color: colors.text)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal) // a pill never ends in "…"
         let box = UIView()
         box.backgroundColor = colors.fill
         box.layer.cornerRadius = 10
@@ -562,6 +592,9 @@ final class DepositTemplateEditorViewController: BaseViewControler {
         stack.addArrangedSubview(V2.sectionHeader("deposit.template.name".localized()))
         let nameInput = DepositUI.field(name, placeholder: "deposit.template.name.placeholder".localized())
         nameInput.accessibilityIdentifier = "deposit.template.name"
+        // #1243: a long template name shrinks to fit the field instead of ending in "…"
+        nameInput.adjustsFontSizeToFitWidth = true
+        nameInput.minimumFontSize = 11
         nameField = nameInput
         stack.addArrangedSubview(padded(nameInput))
 

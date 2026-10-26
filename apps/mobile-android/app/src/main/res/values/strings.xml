@@ -2209,7 +2209,7 @@
     <string name="deposit_method_manual">Other</string>
     <string name="deposit_cart_title">Staged deposit</string>
     <string name="deposit_cart_stage_detail">%1$s%% of order · due: %2$s</string>
-    <string name="deposit_cart_rest_detail">The rest, collected at hand-over · %s</string>
+    <string name="deposit_cart_rest_detail">At hand-over · %s</string>
     <string name="deposit_cart_collect_first">Collect stage %d now</string>
     <string name="deposit_cart_collect_none_short">Do not collect now</string>
     <string name="deposit_cart_collect_now">Collect now · stage 1</string>
@@ -2234,7 +2234,7 @@
     <string name="deposit_card_collect_stage">Collect stage %d</string>
     <string name="deposit_card_paid_detail">%1$s%% of order · %2$s</string>
     <string name="deposit_card_due_detail">%1$s%% of order · due %2$s</string>
-    <string name="deposit_card_rest_detail">The rest, collected at hand-over · %s</string>
+    <string name="deposit_card_rest_detail">At hand-over · %s</string>
     <string name="deposit_collect_title">Collect stage %d</string>
     <string name="deposit_collect_confirm">Collect %s</string>
     <string name="deposit_unpaid_title">Deposit stages not collected yet</string>

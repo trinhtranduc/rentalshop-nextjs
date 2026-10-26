@@ -570,7 +570,7 @@ export function TodayOrders({
                     {initials(r.customerName)}
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-semibold">{r.customerName || `#${r.orderNumber}`}</span>
+                    <span className={`${r.kind === 'installment' ? 'break-words' : 'truncate'} text-sm font-semibold`}>{r.customerName || `#${r.orderNumber}`}</span>
                     <span className="flex items-center gap-2 text-xs tabular-nums text-ar-muted">
                       #{r.orderNumber}
                       {r.kind === 'installment' && (r.stage ? ` · ${t('home.orders.stage', { n: r.stage })}` : r.stageLabel ? ` · ${r.stageLabel}` : '')}

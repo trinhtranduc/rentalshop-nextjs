@@ -932,7 +932,8 @@ internal fun PrimaryBarButton(text: String, modifier: Modifier, enabled: Boolean
         colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Primary),
         contentPadding = PaddingValues(horizontal = 12.dp),
     ) {
-        Text(text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // #1243: "Giao đồ · thu 12.345.678" wraps to a second line on a small phone; the amount is never cut
+        Text(text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 

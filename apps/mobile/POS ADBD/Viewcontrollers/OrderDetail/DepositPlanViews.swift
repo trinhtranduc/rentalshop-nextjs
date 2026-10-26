@@ -71,11 +71,10 @@ enum InstallmentCardView {
         let planned = summary?.planned ?? stages.reduce(0) { $0 + $1.amount }
         let reserved = detail.status == .reserved
 
-        let title = V2.label("deposit.card.title".localized(), size: DS.TextSize.input, weight: .bold)
-        title.adjustsFontSizeToFitWidth = true
-        title.minimumScaleFactor = 0.8
+        let title = DepositUI.wrapLabel("deposit.card.title".localized(), size: DS.TextSize.input, weight: .bold)
         let badge = DepositUI.pill(String(format: "deposit.badge.collected".localized(), DepositPlanMath.percentText(percent)), DS.Status.done)
         badge.accessibilityIdentifier = "deposit.card.badge"
+        title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         var head: [UIView] = [title, UIView(), badge]
         if reserved {
             let edit = UIButton(type: .system)
@@ -158,8 +157,8 @@ enum InstallmentCardView {
         circle.addSubview(glyph)
         glyph.snp.makeConstraints { make in make.center.equalToSuperview() }
         circle.snp.makeConstraints { make in make.size.equalTo(24) }
-        let name = V2.label(stage.isRest ? "deposit.rest.label".localized() : stage.label, size: DS.TextSize.body, lines: 0)
-        let sub = V2.label(subtitle(stage), size: DS.TextSize.pill, color: DS.Color.textMuted, lines: 0)
+        let name = DepositUI.wrapLabel(stage.isRest ? "deposit.rest.label".localized() : stage.label, size: DS.TextSize.body)
+        let sub = DepositUI.wrapLabel(subtitle(stage), size: DS.TextSize.pill, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, sub])
         texts.axis = .vertical
         texts.spacing = 2

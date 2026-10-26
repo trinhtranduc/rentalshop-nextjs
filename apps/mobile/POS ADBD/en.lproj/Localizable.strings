@@ -2880,7 +2880,7 @@
 "deposit.method.manual" = "Other";
 "deposit.cart.title" = "Staged deposit";
 "deposit.cart.stageDetail" = "%@%% of order · due: %@";
-"deposit.cart.restDetail" = "The rest, collected at hand-over · %@";
+"deposit.cart.restDetail" = "At hand-over · %@";
 "deposit.cart.collectFirst" = "Collect stage %d now";
 "deposit.cart.collectNone.short" = "Do not collect now";
 "deposit.cart.collectNow" = "Collect now · stage 1";
@@ -2905,7 +2905,7 @@
 "deposit.card.collectStage" = "Collect stage %d";
 "deposit.card.paidDetail" = "%@%% of order · %@";
 "deposit.card.dueDetail" = "%@%% of order · due %@";
-"deposit.card.restDetail" = "The rest, collected at hand-over · %@";
+"deposit.card.restDetail" = "At hand-over · %@";
 "deposit.collect.title" = "Collect stage %d";
 "deposit.collect.confirm" = "Collect %@";
 "deposit.unpaid.title" = "Deposit stages not collected yet";

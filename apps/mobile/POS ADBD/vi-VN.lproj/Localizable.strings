@@ -2878,7 +2878,7 @@
 "deposit.method.manual" = "Khác";
 "deposit.cart.title" = "Thu cọc theo giai đoạn";
 "deposit.cart.stageDetail" = "%@%% đơn · hạn: %@";
-"deposit.cart.restDetail" = "Phần còn lại, thu khi giao · %@";
+"deposit.cart.restDetail" = "Thu khi giao · %@";
 "deposit.cart.collectFirst" = "Thu ngay giai đoạn %d";
 "deposit.cart.collectNone.short" = "Không thu ngay";
 "deposit.cart.collectNow" = "Thu ngay · giai đoạn 1";
@@ -2903,7 +2903,7 @@
 "deposit.card.collectStage" = "Thu giai đoạn %d";
 "deposit.card.paidDetail" = "%@%% đơn · %@";
 "deposit.card.dueDetail" = "%@%% đơn · hạn %@";
-"deposit.card.restDetail" = "Phần còn lại, thu khi giao · %@";
+"deposit.card.restDetail" = "Thu khi giao · %@";
 "deposit.collect.title" = "Thu giai đoạn %d";
 "deposit.collect.confirm" = "Thu %@";
 "deposit.unpaid.title" = "Còn giai đoạn cọc chưa thu";

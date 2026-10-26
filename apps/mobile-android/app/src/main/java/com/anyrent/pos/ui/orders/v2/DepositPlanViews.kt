@@ -133,7 +133,7 @@ internal fun InstallmentCard(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.deposit_card_title), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1)
+            Text(stringResource(R.string.deposit_card_title), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             DepositPill(stringResource(R.string.deposit_badge_collected, DepositPlanMath.percentText(percent)), DS.Status.Done, Modifier.testTag("deposit.card.badge"))
             if (reserved) {
                 Text(

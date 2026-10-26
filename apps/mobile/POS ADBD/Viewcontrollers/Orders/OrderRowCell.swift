@@ -440,7 +440,13 @@ final class OrderRowCell: UITableViewCell {
                 label.layer.cornerRadius = 8
                 label.layer.masksToBounds = true
             }
-            let size = label.intrinsicContentSize.width
+            var size = label.intrinsicContentSize.width
+            if size > width, chip.warning == nil, chip.dateKind == nil {
+                // #1243: a long stage label ("Cọc giữ chỗ trước ngày lấy một ngày · #123456") wraps in its own chip, not "…"
+                label.numberOfLines = 0
+                label.preferredMaxLayoutWidth = width - 16
+                size = label.intrinsicContentSize.width
+            }
             if used > 0 && used + 6 + size > width {
                 stack.addArrangedSubview(line)
                 line = UIStackView()
@@ -649,7 +655,10 @@ final class OrdersSectionHeaderView: UITableViewHeaderFooterView {
         summaryLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         summaryLabel.textColor = DS.Color.textMuted
         summaryLabel.textAlignment = .right
-        summaryLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        // #1243: the day stays whole ("HÔM NAY · 26/10/26"); the counts wrap to a second line instead
+        summaryLabel.numberOfLines = 0
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        summaryLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let row = UIStackView(arrangedSubviews: [titleLabel, summaryLabel])
         row.alignment = .firstBaseline
         row.spacing = DS.Spacing.sm

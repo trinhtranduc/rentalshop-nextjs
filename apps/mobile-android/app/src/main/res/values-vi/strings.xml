@@ -2180,7 +2180,7 @@
     <string name="deposit_method_manual">Khác</string>
     <string name="deposit_cart_title">Thu cọc theo giai đoạn</string>
     <string name="deposit_cart_stage_detail">%1$s%% đơn · hạn: %2$s</string>
-    <string name="deposit_cart_rest_detail">Phần còn lại, thu khi giao · %s</string>
+    <string name="deposit_cart_rest_detail">Thu khi giao · %s</string>
     <string name="deposit_cart_collect_first">Thu ngay giai đoạn %d</string>
     <string name="deposit_cart_collect_none_short">Không thu ngay</string>
     <string name="deposit_cart_collect_now">Thu ngay · giai đoạn 1</string>
@@ -2205,7 +2205,7 @@
     <string name="deposit_card_collect_stage">Thu giai đoạn %d</string>
     <string name="deposit_card_paid_detail">%1$s%% đơn · %2$s</string>
     <string name="deposit_card_due_detail">%1$s%% đơn · hạn %2$s</string>
-    <string name="deposit_card_rest_detail">Phần còn lại, thu khi giao · %s</string>
+    <string name="deposit_card_rest_detail">Thu khi giao · %s</string>
     <string name="deposit_collect_title">Thu giai đoạn %d</string>
     <string name="deposit_collect_confirm">Thu %s</string>
     <string name="deposit_unpaid_title">Còn giai đoạn cọc chưa thu</string>
