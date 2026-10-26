@@ -830,9 +830,10 @@ private fun OrderRow(
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
     }
     // #1199: "Đã thu 30%" on an order that collects its deposit in stages
-    val collectedBadge = com.anyrent.pos.domain.deposit.DepositPlanLogic.badgePercent(order.installmentPercentCollected)
-        ?.takeIf { order.status.equals("RESERVED", true) && order.hasDepositPlan == true }
-        ?.let { stringResource(R.string.deposit_badge_collected, it) }
+    val staged = com.anyrent.pos.data.SessionStore.depositModeFlow.collectAsState().value == com.anyrent.pos.domain.deposit.DepositMode.STAGED
+    val collectedBadge = com.anyrent.pos.domain.deposit.DepositPlanLogic.listBadgePercent(
+        order.orderType, order.status, order.totalAmount, order.depositAmount, staged, order.hasDepositPlan, order.installmentPercentCollected,
+    )?.let { stringResource(R.string.deposit_badge_collected, com.anyrent.pos.domain.deposit.DepositPlanMath.percentText(it)) }
     BoardRow(
         tag = tagText to colors,
         extraTag = collectedBadge?.let { it to DS.Status.Done },

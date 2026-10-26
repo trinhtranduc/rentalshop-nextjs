@@ -88,6 +88,58 @@ final class DepositPlanTests: XCTestCase {
         XCTAssertEqual(DepositPlanLogic.badge(percentCollected: 30), String(format: "deposit.badge.collected".localized(), "30"))
     }
 
+    // MARK: #1213 the day a stage was collected is the Vietnam civil day, never the UTC day
+
+    func testPaidDayIsTheVietnamDay() {
+        // 00:12 VN 26/10 = 17:12Z 25/10; 06:53 VN 26/10 = 23:53Z 25/10; 23:59 VN 25/10 = 16:59Z 25/10
+        XCTAssertEqual(InstallmentCardView.paidDay("2026-10-25T17:12:00.000Z"), "26/10")
+        XCTAssertEqual(InstallmentCardView.paidDay("2026-10-25T23:53:00.000Z"), "26/10")
+        XCTAssertEqual(InstallmentCardView.paidDay("2026-10-25T16:59:59.000Z"), "25/10")
+        XCTAssertEqual(InstallmentCardView.paidDay("2026-10-25T17:12:00Z"), "26/10", "no fraction")
+        XCTAssertEqual(InstallmentCardView.paidDay(nil), "")
+    }
+
+    func testPaidSubtitleUsesTheVietnamDay() {
+        let stage = OrderInstallment(key: "i1", label: "Booking deposit", percent: 30, amount: 3_600_000, dueDateKey: "2026-10-25",
+                                     status: "PAID", collectedAt: "2026-10-25T23:53:00.000Z", paidAmount: 3_600_000)
+        XCTAssertTrue(InstallmentCardView.subtitle(stage).hasSuffix("26/10"), InstallmentCardView.subtitle(stage))
+        // the due day is already a key: used as it is
+        let unpaid = OrderInstallment(key: "i2", label: "b", percent: 40, amount: 1, dueDateKey: "2026-11-10", status: "UPCOMING")
+        XCTAssertTrue(InstallmentCardView.subtitle(unpaid).hasSuffix("10/11"), InstallmentCardView.subtitle(unpaid))
+    }
+
+    // MARK: #1213 the list badge is computed like the web (the list API sends no plan fields)
+
+    private func listOrder(type: String = "RENT", status: String = "RESERVED", total: Double, paid: Double) throws -> Order {
+        let json = """
+        {"id":5,"orderNumber":"100001","orderType":"\(type)","status":"\(status)","totalAmount":\(total),"depositAmount":\(paid),
+         "createdAt":"2026-10-25T01:00:00.000Z","updatedAt":"2026-10-25T01:00:00.000Z"}
+        """.data(using: .utf8)!
+        return try JSONDecoder.shared.decode(Order.self, from: json)
+    }
+
+    func testListBadgeFromDepositOverTotal() throws {
+        let order = try listOrder(total: 12_000_000, paid: 3_600_000)
+        XCTAssertEqual(DepositPlanLogic.listBadgePercent(order, staged: true), 30)
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(order, staged: false), "a one-time shop's list stays as it was")
+        XCTAssertEqual(DepositPlanLogic.listBadgePercent(try listOrder(total: 3, paid: 1), staged: true), 33)
+        XCTAssertEqual(DepositPlanLogic.listBadgePercent(try listOrder(total: 100, paid: 150), staged: true), 100)
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(total: 100, paid: 0), staged: true))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(total: 0, paid: 10), staged: true))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(status: "PICKUPED", total: 100, paid: 30), staged: true))
+        XCTAssertNil(DepositPlanLogic.listBadgePercent(try listOrder(type: "SALE", total: 100, paid: 30), staged: true))
+    }
+
+    func testListBadgePrefersThePercentTheApiSent() throws {
+        let json = """
+        {"id":5,"orderNumber":"100001","orderType":"RENT","status":"RESERVED","totalAmount":100,"depositAmount":10,
+         "createdAt":"2026-10-25T01:00:00.000Z","updatedAt":"2026-10-25T01:00:00.000Z",
+         "hasDepositPlan":true,"installmentSummary":{"percentCollected":40}}
+        """.data(using: .utf8)!
+        let order = try JSONDecoder.shared.decode(Order.self, from: json)
+        XCTAssertEqual(DepositPlanLogic.listBadgePercent(order, staged: false), 40)
+    }
+
     func testStageAndSummaryDecode() throws {
         let json = """
         [{"key":"i1","label":"Cọc giữ chỗ","percent":30,"amount":3600000,"plannedAmount":3600000,"remaining":0,"dueDateKey":"2026-10-25",

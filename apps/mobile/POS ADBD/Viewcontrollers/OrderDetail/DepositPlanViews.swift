@@ -37,13 +37,25 @@ enum InstallmentCardView {
         return max(0, Int(now.timeIntervalSince(due) / 86_400))
     }
 
+    /// `dd/MM` of the shop day (Vietnam civil day) a stage was collected; never the UTC day (#1213, timezone-dates).
+    /// `collectedAt` is an instant; `dueDateKey` is already a day key and goes to `DepositUI.dayText` as it is.
+    static func paidDay(_ iso: String?) -> String {
+        guard let iso, !iso.isEmpty else { return "" }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        guard let instant = fractional.date(from: iso) ?? plain.date(from: iso) else { return DepositUI.dayText(String(iso.prefix(10))) }
+        return DepositUI.dayText(DayFormatter.key(instant))
+    }
+
     static func subtitle(_ stage: OrderInstallment) -> String {
         let percent = DepositPlanMath.percentText(stage.percent)
         if stage.isRest {
             return String(format: "deposit.card.restDetail".localized(), DepositUI.dayText(stage.dueDateKey))
         }
         if stage.isPaid {
-            let day = stage.collectedAt.map { DepositUI.dayText(String($0.prefix(10))) } ?? ""
+            let day = paidDay(stage.collectedAt)
             return String(format: "deposit.card.paidDetail".localized(), percent, day)
         }
         return String(format: "deposit.card.dueDetail".localized(), percent, DepositUI.dayText(stage.dueDateKey))
