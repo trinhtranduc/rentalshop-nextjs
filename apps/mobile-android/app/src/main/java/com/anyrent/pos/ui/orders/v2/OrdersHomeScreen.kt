@@ -632,11 +632,14 @@ private fun SectionBand(section: OrdersSection) {
                 fontSize = DS.TextSize.Secondary,
                 fontWeight = FontWeight.Bold,
                 color = if (late) DS.Status.Late.text else BoardColors.Items,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.padding(end = 8.dp),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
-            Text(summary, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+            // #1243: the day stays whole; the counts take the rest and wrap to a second line on a small phone
+            Text(
+                summary, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f),
+            )
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }

@@ -226,6 +226,8 @@ internal fun V2ValueRow(
     bold: Boolean = false,
     /** #1024: an icon before the title (the cart's order note), grey, read by nobody; null = none as before */
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    /** #1243: a long value (the cart's staged-deposit template name) takes the rest of the row and wraps, never "…" */
+    wrapValue: Boolean = false,
 ) {
     Row(
         Modifier
@@ -239,13 +241,15 @@ internal fun V2ValueRow(
         if (icon != null) {
             Icon(icon, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
         }
-        Text(title, fontSize = if (bold) DS.TextSize.Name else DS.TextSize.Body, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+        Text(title, fontSize = if (bold) DS.TextSize.Name else DS.TextSize.Body, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, color = DS.Colors.Text, modifier = if (wrapValue) Modifier else Modifier.weight(1f))
         Text(
             value,
             fontSize = if (bold) 18.sp else DS.TextSize.Body,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             color = valueColor,
-            maxLines = 1,
+            maxLines = if (wrapValue) Int.MAX_VALUE else 1,
+            textAlign = if (wrapValue) androidx.compose.ui.text.style.TextAlign.End else null,
+            modifier = if (wrapValue) Modifier.weight(1f) else Modifier,
         )
         if (onClick != null) {
             Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))

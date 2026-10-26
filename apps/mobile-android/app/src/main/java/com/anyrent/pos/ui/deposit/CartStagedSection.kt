@@ -64,6 +64,7 @@ internal fun CartStagedSection(
                 templateName + if (pickable) "  ⌄" else "",
                 onClick = if (pickable) ({ templateMenu = true }) else null,
                 valueColor = DS.Colors.Primary,
+                wrapValue = true,
             )
             DropdownMenu(expanded = templateMenu, onDismissRequest = { templateMenu = false }) {
                 choices.forEach { template ->
