@@ -1924,6 +1924,8 @@
 "orders.v2.yesterday" = "Hôm qua";
 "orders.v2.tag.handOver" = "Cần giao";
 "orders.v2.tag.takeBack" = "Cần trả";
+"orders.v2.tag.collect" = "Thu cọc";
+"orders.v2.band.collect" = " · thu %d";
 "orders.v2.tag.sale" = "Bán · %@";
 "orders.v2.status.all" = "Tất cả";
 "orders.v2.status.reserved" = "Đã đặt";

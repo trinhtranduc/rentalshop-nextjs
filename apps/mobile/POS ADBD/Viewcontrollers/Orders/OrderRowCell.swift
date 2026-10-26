@@ -491,10 +491,10 @@ final class OrderRowCell: UITableViewCell {
 
     private func bindWork(_ work: TodayWorkRow, kind: WorkKind, isLate: Bool, hidesMoney: Bool) {
         // #893 (owner): the task tag in its light colours (a task, not an order status)
-        if kind == .handOver {
-            tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
-        } else {
-            tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
+        switch kind {
+        case .handOver: tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
+        case .takeBack: tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
+        case .collect: tagLabel.apply("orders.v2.tag.collect".localized(), DS.Status.waiting) // #1231 a deposit stage to collect
         }
         setName(work.customerName)
         // #893 (owner, lean row): no "#code · tạo", no other date, no notes line; line 2 = the task's date chip,
@@ -504,7 +504,7 @@ final class OrderRowCell: UITableViewCell {
         chipStack.show([])
         thirdLine?.alignment = .top
         // Right: the total (bold) always; "còn thu N" smaller under it when something is due (owner)
-        let dueText = OrdersHomeLogic.workDue(work).map { String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format($0)) }
+        let dueText = (kind == .collect ? nil : OrdersHomeLogic.workDue(work)).map { String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format($0)) }
         let totalText = MoneyFormatter.format(work.totalAmount)
         let totalWidth = (totalText as NSString).size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.name)]).width
         let dueWidth = (dueText as NSString?)?.size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary)]).width ?? 0

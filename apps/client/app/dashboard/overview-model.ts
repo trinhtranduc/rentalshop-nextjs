@@ -393,6 +393,17 @@ interface OpsListLike {
   orders: OpsOrderLike[];
 }
 
+/** A deposit stage waiting to be collected (#1199), as `installmentsDue` / `installmentsOverdue` send it */
+export interface OpsStageLike {
+  orderId: number;
+  orderNumber: string;
+  customerName: string | null;
+  key: string;
+  label: string;
+  remaining: number;
+  lateDays: number;
+}
+
 export interface OutletOpsLike {
   date: string;
   pickupsToday: OpsListLike;
@@ -403,6 +414,9 @@ export interface OutletOpsLike {
   tomorrow?: { pickups: number; returns: number } | null;
   tomorrowPickups?: OpsListLike | null;
   tomorrowReturns?: OpsListLike | null;
+  /** #1231: deposit stages due today / late (only for a client that sends `installments`); tomorrow's are not To do */
+  installmentsDue?: { count: number; orders: OpsStageLike[] } | null;
+  installmentsOverdue?: { count: number; orders: OpsStageLike[] } | null;
   cash?: {
     collateralToCollect?: { securityDeposit: number; orders: number };
     collateralToReturn?: { securityDeposit: number; orders: number };
@@ -434,7 +448,7 @@ export function buildTodayWork(ops: OutletOpsLike): TodayWork {
   };
 }
 
-export type TodayRowKind = 'pickup' | 'return';
+export type TodayRowKind = 'pickup' | 'return' | 'installment';
 
 export interface TodayRow {
   id: number;
@@ -446,15 +460,19 @@ export interface TodayRow {
   /** Late return: days past the planned return */
   lateDays: number;
   notPrepared: boolean;
+  /** #1231: a deposit stage row: its number in the order ("i2" -> 2) and its label */
+  stage: number | null;
+  stageLabel: string | null;
   money: { kind: 'collect' | 'refund' | 'fee'; amount: number } | null;
 }
 
 /**
- * Today's pickups, then today's and overdue returns (late ones last), each order once.
+ * Today's pickups, then today's and overdue returns (late ones last), each order once; (#1231) one row per deposit stage that is late or due today goes before the late returns.
  * `toDayKey` turns an ISO instant into its Vietnam civil day.
  */
 export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => string): TodayRow[] {
   const seen = new Set<number>();
+  const seenStages = new Set<string>();
   const rows: TodayRow[] = [];
   const day = (iso: string | null) => (iso ? toDayKey(iso) || null : null);
   const push = (order: OpsOrderLike, kind: TodayRowKind, late: boolean) => {
@@ -475,11 +493,35 @@ export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => st
       returnKey: day(order.returnPlanAt),
       lateDays: late ? Math.max(order.lateDays ?? 0, order.daysOverdue ?? 0) : 0,
       notPrepared: kind === 'pickup' && !order.isReadyToDeliver,
+      stage: null,
+      stageLabel: null,
       money,
+    });
+  };
+  // #1231: one row per deposit stage due today or late (most late first); an order's pickup row and stage rows are different tasks
+  const pushStage = (r: OpsStageLike) => {
+    const stageKey = `stage-${r.orderId}-${r.key}`;
+    if (seenStages.has(stageKey)) return;
+    seenStages.add(stageKey);
+    rows.push({
+      id: r.orderId,
+      orderNumber: r.orderNumber,
+      kind: 'installment',
+      customerName: r.customerName ?? '',
+      pickupKey: null,
+      returnKey: null,
+      lateDays: r.lateDays,
+      notPrepared: false,
+      stage: /^i(\d)$/.test(r.key) ? Number(r.key.slice(1)) : null,
+      stageLabel: r.label || null,
+      money: { kind: 'collect', amount: r.remaining },
     });
   };
   ops.pickupsToday.orders.forEach((o) => push(o, 'pickup', false));
   ops.returnsToday.orders.forEach((o) => push(o, 'return', false));
+  // #1231: the stages go before the late returns, so a shop with many late returns still sees them in the 5 rows of the card
+  [...(ops.installmentsOverdue?.orders ?? [])].sort((a, b) => b.lateDays - a.lateDays).forEach(pushStage);
+  (ops.installmentsDue?.orders ?? []).forEach(pushStage);
   ops.overdueReturns.orders.forEach((o) => push(o, 'return', true));
   return rows;
 }

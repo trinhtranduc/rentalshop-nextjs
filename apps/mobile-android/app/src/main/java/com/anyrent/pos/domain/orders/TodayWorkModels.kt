@@ -16,6 +16,10 @@ data class TodayWorkRow(
     val amountDue: Double = 0.0,
     val refundDue: Double = 0.0,
     val lateDays: Int = 0,
+    /** #1231: a deposit stage row ("Thu cọc"): the stage label ("Cọc 2"); null on every other row */
+    val stageLabel: String? = null,
+    /** #1231: the stage key (`i1`, `i2`), so two stages of one order keep distinct row keys */
+    val stageKey: String? = null,
 )
 
 data class TodayWork(
@@ -26,6 +30,9 @@ data class TodayWork(
     /** Null on an older API: the "Ngày mai" group is hidden */
     val tomorrowPickups: List<TodayWorkRow>? = null,
     val tomorrowReturns: List<TodayWorkRow>? = null,
+    /** #1231: deposit stages due today / late (only for a client that sends `installments`). Tomorrow's are not To do. */
+    val installmentsDue: List<TodayWorkRow> = emptyList(),
+    val installmentsOverdue: List<TodayWorkRow> = emptyList(),
 )
 
 interface TodayWorkRepository {

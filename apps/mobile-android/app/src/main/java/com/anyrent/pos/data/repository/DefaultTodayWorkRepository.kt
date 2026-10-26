@@ -2,6 +2,7 @@ package com.anyrent.pos.data.repository
 
 import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.ApiClient
+import com.anyrent.pos.domain.deposit.InstallmentReminderRow
 import com.anyrent.pos.domain.orders.TodayWork
 import com.anyrent.pos.domain.orders.TodayWorkRepository
 import com.anyrent.pos.domain.orders.TodayWorkRow
@@ -31,6 +32,15 @@ internal fun todayWorkFromJson(data: JSONObject): TodayWork {
         val orders = group.optJSONArray("orders") ?: return emptyList()
         return (0 until orders.length()).mapNotNull { orders.optJSONObject(it)?.let(::todayWorkRowFromJson) }
     }
+    // #1231: a deposit stage is a To do row of its order (`id` = the order, so a tap opens its detail)
+    fun stages(key: String): List<TodayWorkRow> =
+        InstallmentReminderRow.listFrom(data.optJSONObject(key)).map {
+            TodayWorkRow(
+                id = it.orderId, orderNumber = it.orderNumber, customerName = it.customerName,
+                totalAmount = it.remaining, amountDue = it.remaining, lateDays = it.lateDays,
+                stageLabel = it.label, stageKey = it.key,
+            )
+        }
     return TodayWork(
         pickupsToday = rows("pickupsToday").orEmpty(),
         returnsToday = rows("returnsToday").orEmpty(),
@@ -38,6 +48,8 @@ internal fun todayWorkFromJson(data: JSONObject): TodayWork {
         noShows = rows("noShows").orEmpty(),
         tomorrowPickups = rows("tomorrowPickups"),
         tomorrowReturns = rows("tomorrowReturns"),
+        installmentsDue = stages("installmentsDue"),
+        installmentsOverdue = stages("installmentsOverdue"),
     )
 }
 

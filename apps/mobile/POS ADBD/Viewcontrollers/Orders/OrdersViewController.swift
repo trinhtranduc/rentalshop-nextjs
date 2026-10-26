@@ -607,7 +607,9 @@ final class OrdersViewController: BaseViewControler {
         switch section.kind {
         case .late, .today, .tomorrow:
             let counts = OrdersHomeLogic.bandCounts(section.rows)
-            return String(format: "orders.v2.band.work".localized(), counts.handOver, counts.takeBack)
+            let text = String(format: "orders.v2.band.work".localized(), counts.handOver, counts.takeBack)
+            // #1231: " · thu N" only when the band has deposit stages
+            return counts.collect > 0 ? text + String(format: "orders.v2.band.collect".localized(), counts.collect) : text
         case .day:
             let sum = OrdersHomeLogic.saleDaySummary(section.rows)
             let count = PluralText.format("orders.v2.count", count: sum.count, sum.count)

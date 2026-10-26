@@ -264,6 +264,84 @@ class OrdersHomeTest {
         assertEquals("late + today, not tomorrow", 5, OrdersBoardLogic.badgeCount(sections))
     }
 
+    // --- Deposit stages in To do (#1231) ---
+
+    private fun stage(orderId: Int, key: String, label: String, due: String, late: Int = 0) = """
+        {"orderId":$orderId,"orderNumber":"10$orderId","customerName":"Hoa","key":"$key","label":"$label",
+         "amount":4800000,"remaining":4800000,"dueDateKey":"$due","lateDays":$late}
+    """.trimIndent()
+
+    private fun workWithStages() = todayWorkFromJson(JSONObject("""
+        {"pickupsToday":{"count":1,"orders":[${row(1)}]},
+         "returnsToday":{"count":0,"orders":[]},
+         "overdueReturns":{"count":1,"orders":[${row(2, lateDays = 1)}]},
+         "noShows":{"count":0,"orders":[]},
+         "installmentsDue":{"count":1,"orders":[${stage(11, "i2", "Cọc 2", "2026-10-04")}]},
+         "installmentsOverdue":{"count":2,"orders":[
+            ${stage(12, "i1", "Cọc 1", "2026-10-03", late = 1)},
+            ${stage(13, "i2", "Cọc 2", "2026-10-01", late = 3)}]},
+         "installmentsDueTomorrow":{"count":1,"orders":[${stage(14, "i2", "Cọc 2", "2026-10-05")}]}}
+    """.trimIndent()))
+
+    @Test
+    fun `stages due today and late are rows and tomorrow's is not (#1231)`() {
+        val sections = OrdersHomeLogic.todaySections(workWithStages())
+        assertEquals(listOf(SectionKind.LATE, SectionKind.TODAY), sections.map { it.kind })
+        assertEquals(13, sections[0].rows.first().orderId)
+        assertEquals(setOf(13, 2, 12), sections[0].rows.map { it.orderId }.toSet())
+        assertEquals(listOf(1, 11), sections[1].rows.map { it.orderId })
+        assertFalse(sections.flatMap { it.rows }.any { it.orderId == 14 })
+        val first = sections[0].rows[0] as OrdersRow.Work
+        assertEquals(WorkKind.COLLECT, first.kind)
+        assertEquals("Cọc 2", first.row.stageLabel)
+        assertEquals(4800000.0, first.row.amountDue, 0.0)
+        assertEquals(3, first.row.lateDays)
+    }
+
+    @Test
+    fun `two stages of one order keep distinct row keys (#1231)`() {
+        val work = todayWorkFromJson(JSONObject("""
+            {"pickupsToday":{"count":0,"orders":[]},"returnsToday":{"count":0,"orders":[]},
+             "overdueReturns":{"count":0,"orders":[]},"noShows":{"count":0,"orders":[]},
+             "installmentsOverdue":{"count":2,"orders":[
+                ${stage(12, "i1", "Cọc 1", "2026-10-03", late = 1)}, ${stage(12, "i2", "Cọc 2", "2026-10-02", late = 2)}]}}
+        """.trimIndent()))
+        val keys = OrdersHomeLogic.todaySections(work)[0].rows.map { it.key }
+        assertEquals(2, keys.toSet().size)
+    }
+
+    @Test
+    fun `stage rows count in the band and the badge (#1231)`() {
+        val sections = OrdersHomeLogic.todaySections(workWithStages())
+        assertEquals(2, OrdersBoardLogic.collectCount(sections[0].rows))
+        assertEquals(1, OrdersBoardLogic.collectCount(sections[1].rows))
+        assertEquals(5, OrdersBoardLogic.badgeCount(sections))
+    }
+
+    @Test
+    fun `no stage groups leave To do as before (#1231)`() {
+        val work = todayWorkFromJson(JSONObject("""
+            {"pickupsToday":{"count":1,"orders":[${row(1)}]},"returnsToday":{"count":0,"orders":[]},
+             "overdueReturns":{"count":0,"orders":[]},"noShows":{"count":0,"orders":[]}}
+        """.trimIndent()))
+        val sections = OrdersHomeLogic.todaySections(work)
+        assertEquals(listOf(SectionKind.TODAY), sections.map { it.kind })
+        assertEquals(1, OrdersBoardLogic.badgeCount(sections))
+    }
+
+    @Test
+    fun `stage chips are the label with the order code, then the late days (#1231)`() {
+        val sections = OrdersHomeLogic.todaySections(workWithStages())
+        val late = sections[0].rows[0] as OrdersRow.Work
+        val chips = OrdersBoardLogic.workChips(late.row, late.kind)
+        assertEquals(listOf(OrdersBoardLogic.WorkChipKind.STAGE, OrdersBoardLogic.WorkChipKind.LATE), chips.map { it.kind })
+        assertEquals("Cọc 2", chips[0].label)
+        assertEquals("1013", chips[0].code)
+        val today = sections[1].rows[1] as OrdersRow.Work
+        assertEquals(listOf(OrdersBoardLogic.WorkChipKind.STAGE), OrdersBoardLogic.workChips(today.row, today.kind).map { it.kind })
+        assertFalse(OrdersBoardLogic.notPreparedApplies(WorkKind.COLLECT, false))
+    }
+
     @Test
     fun `pay line choice`() {
         assertEquals(PayLine.Due(600000.0), OrdersBoardLogic.payLine(600000.0, 0.0))

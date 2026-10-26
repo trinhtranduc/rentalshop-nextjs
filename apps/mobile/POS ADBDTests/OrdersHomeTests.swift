@@ -185,6 +185,78 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertEqual(OrdersHomeLogic.badgeCount(sections), 5)
     }
 
+    // MARK: Deposit stages in To do (#1231)
+
+    private func stage(_ orderId: Int, _ key: String, label: String, due: String, late: Int = 0, remaining: Int = 4800000) -> String {
+        """
+        {"orderId":\(orderId),"orderNumber":"10\(orderId)","customerName":"Hoa","key":"\(key)","label":"\(label)",
+         "amount":\(remaining),"remaining":\(remaining),"dueDateKey":"\(due)","lateDays":\(late)}
+        """
+    }
+
+    private func workWithStages() throws -> TodayWork {
+        try decodeWork("""
+        {"date":"2026-10-04",
+         "pickupsToday":{"count":1,"orders":[\(row(1))]},
+         "returnsToday":{"count":0,"orders":[]},
+         "overdueReturns":{"count":1,"orders":[\(row(2, lateDays: 1))]},
+         "noShows":{"count":0,"orders":[]},
+         "installmentsDue":{"count":1,"orders":[\(stage(11, "i2", label: "Cọc 2", due: "2026-10-04"))]},
+         "installmentsOverdue":{"count":2,"orders":[
+            \(stage(12, "i1", label: "Cọc 1", due: "2026-10-03", late: 1)),
+            \(stage(13, "i2", label: "Cọc 2", due: "2026-10-01", late: 3))]},
+         "installmentsDueTomorrow":{"count":1,"orders":[\(stage(14, "i2", label: "Cọc 2", due: "2026-10-05"))]}}
+        """)
+    }
+
+    func testStagesDueTodayAndLateAreRowsAndTomorrowIsNot() throws {
+        let sections = OrdersHomeLogic.todaySections(from: try workWithStages())
+        XCTAssertEqual(sections.map(\.kind), [.late, .today])
+        // Late: the stage 3 days late, the stage 1 day late and the return 1 day late; most late first
+        XCTAssertEqual(sections[0].rows.first?.orderId, 13)
+        XCTAssertEqual(Set(sections[0].rows.map(\.orderId)), [13, 2, 12])
+        XCTAssertEqual(sections[1].rows.map(\.orderId), [1, 11])
+        XCTAssertFalse(sections.flatMap(\.rows).contains { $0.orderId == 14 }, "tomorrow's stage is not To do")
+        if case .work(let stageRow, let kind) = sections[0].rows[0] {
+            XCTAssertEqual(kind, .collect)
+            XCTAssertEqual(stageRow.stageLabel, "Cọc 2")
+            XCTAssertEqual(stageRow.amountDue, 4800000)
+            XCTAssertEqual(stageRow.lateDays, 3)
+        } else {
+            XCTFail("expected a work row")
+        }
+    }
+
+    func testStageRowsCountInBandAndBadge() throws {
+        let sections = OrdersHomeLogic.todaySections(from: try workWithStages())
+        // late: 1 return + 2 stages; today: 1 hand-over + 1 stage
+        XCTAssertEqual(OrdersHomeLogic.bandCounts(sections[0].rows).collect, 2)
+        XCTAssertEqual(OrdersHomeLogic.bandCounts(sections[1].rows).collect, 1)
+        XCTAssertEqual(OrdersHomeLogic.badgeCount(sections), 5)
+    }
+
+    func testNoStageGroupsLeavesTodoAsBefore() throws {
+        let work = try decodeWork("""
+        {"pickupsToday":{"count":1,"orders":[\(row(1))]},"returnsToday":{"count":0,"orders":[]},
+         "overdueReturns":{"count":0,"orders":[]},"noShows":{"count":0,"orders":[]}}
+        """)
+        let sections = OrdersHomeLogic.todaySections(from: work)
+        XCTAssertEqual(sections.map(\.kind), [.today])
+        XCTAssertEqual(OrdersHomeLogic.badgeCount(sections), 1)
+    }
+
+    func testStageChipsShowLabelAndLateDays() throws {
+        let sections = OrdersHomeLogic.todaySections(from: try workWithStages())
+        guard case .work(let late, let kind) = sections[0].rows[0] else { return XCTFail("expected a work row") }
+        let chips = OrdersHomeLogic.workChips(late, kind: kind)
+        XCTAssertEqual(chips.count, 2)
+        XCTAssertEqual(chips[0].text, "Cọc 2 · #\(late.orderNumber)")
+        XCTAssertNotNil(chips[1].warning, "late days read as the late warning")
+        guard case .work(let today, let todayKind) = sections[1].rows[1] else { return XCTFail("expected a work row") }
+        XCTAssertEqual(OrdersHomeLogic.workChips(today, kind: todayKind).count, 1, "due today: no late chip")
+        XCTAssertFalse(OrdersHomeLogic.notPreparedApplies(kind: .collect, isReadyToDeliver: false))
+    }
+
     func testPayLineChoice() {
         XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 600000, refundDue: 0), .due(600000))
         XCTAssertEqual(OrdersHomeLogic.payLine(amountDue: 0, refundDue: 200000), .refund(200000))
