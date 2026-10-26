@@ -7,7 +7,7 @@
 // - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
-import { normalizePricingOptions, pricingOptionsDeleteWhere } from './product-pricing-normalize';
+import { normalizePricingOptions, pricingOptionsDeleteWhere, withoutEchoedBlockShim } from './product-pricing-normalize';
 import { Prisma } from '@prisma/client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
@@ -1398,6 +1398,18 @@ export const simplifiedProducts = {
     if (hasOptions) {
       normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
       delete data.pricingOptions;
+      // #1215: the FIXED row an installed app got from a BLOCK option is not a new option; BLOCK stays the default
+      let blockIsDefault = false;
+      if (options.keepBlockOptions && normalized.some((o) => o.type === 'FIXED')) {
+        const blockRows = await prisma.productPricingOption.count({ where: { productId: id, type: 'BLOCK' } });
+        if (blockRows > 0) {
+          const stored = await prisma.productPricingOption.findMany({
+            where: { productId: id, type: { in: ['BLOCK', 'FIXED'] } },
+            select: { type: true, price: true, isDefault: true },
+          });
+          ({ options: normalized, blockIsDefault } = withoutEchoedBlockShim(normalized, stored));
+        }
+      }
       // #1200: an installed app cannot see BLOCK options. Saving a product that has one, it sends
       // pricingOptions [] and rentPrice / salePrice 0 (e2e on main-real). That must change nothing it did not mean:
       // leave the option rows alone and do not overwrite the prices with 0 / null.
@@ -1410,7 +1422,7 @@ export const simplifiedProducts = {
           }
         }
       }
-      if (normalized.length > 0) {
+      if (normalized.length > 0 && !blockIsDefault) {
         const def = normalized.find((o) => o.isDefault) || normalized[0];
         data.rentPrice = def.price;
         data.pricingType = def.type === 'BLOCK' ? 'FIXED' : def.type; // #1189: see create

@@ -1,5 +1,6 @@
 import { blockOptionsIssue } from '../../../../lib/block-options-issue';
 import { pricingOptionsForClient } from '../../../../lib/block-pricing-legacy';
+import { salePriceForClient } from '../../../../lib/legacy-sale-price';
 import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
@@ -201,7 +202,7 @@ export async function GET(
         barcode: product.barcode,
         categoryId: product.categoryId,
         rentPrice: product.rentPrice,
-        salePrice: product.salePrice,
+        salePrice: salePriceForClient(product.salePrice, request), // #1215
         // Only include costPrice if user has products.manage permission
         ...(canViewCostPrice ? { costPrice: product.costPrice ?? null } : {}),
         deposit: product.deposit,
@@ -855,7 +856,7 @@ export async function PUT(
         barcode: updatedProduct.barcode,
         categoryId: updatedProduct.categoryId,
         rentPrice: updatedProduct.rentPrice,
-        salePrice: updatedProduct.salePrice,
+        salePrice: salePriceForClient(updatedProduct.salePrice, request), // #1215
         // Only include costPrice if user has products.manage permission
         ...(canViewCostPrice ? { costPrice: updatedProduct.costPrice ?? null } : {}),
         deposit: updatedProduct.deposit,

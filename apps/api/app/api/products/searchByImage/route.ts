@@ -6,6 +6,7 @@
  */
 
 import { pricingOptionsForClient } from '../../../../lib/block-pricing-legacy';
+import { salePriceForClient } from '../../../../lib/legacy-sale-price';
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
@@ -82,7 +83,7 @@ function mapProductForSearch(product: any, similarity: number, canViewCostPrice:
     renting: totalRenting,
     available,
     rentPrice: product.rentPrice,
-    salePrice: product.salePrice,
+    salePrice: salePriceForClient(product.salePrice, request), // #1215
     // Same rule as GET /api/products: cost price only with products.manage (#653)
     ...(canViewCostPrice ? { costPrice: product.costPrice } : {}),
     deposit: product.deposit,

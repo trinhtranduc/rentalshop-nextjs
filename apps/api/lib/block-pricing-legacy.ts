@@ -9,6 +9,7 @@
  * Capable clients (header `X-Client-Capabilities: block-pricing`) get the options as stored.
  */
 import { hasCapability } from './client-capabilities';
+import { salePriceForClient } from './legacy-sale-price';
 
 type HeaderRequest = { headers?: { get(name: string): string | null } | null } | null | undefined;
 type OptionLike = { type?: string | null; [key: string]: unknown };
@@ -33,8 +34,15 @@ export function pricingOptionsForClient<T extends OptionLike>(options: T[] | nul
   return out;
 }
 
-/** The product with `pricingOptions` as `pricingOptionsForClient` shows them; other fields untouched */
-export function productForClient<T extends { pricingOptions?: OptionLike[] | null }>(product: T, request: HeaderRequest): T {
-  if (!product || !Array.isArray(product.pricingOptions)) return product;
-  return { ...product, pricingOptions: pricingOptionsForClient(product.pricingOptions, request) };
+/**
+ * The product as the caller may read it: `pricingOptions` as `pricingOptionsForClient` shows them, and (#1215)
+ * `salePrice` 0 instead of null for an old Android; other fields untouched
+ */
+export function productForClient<T extends { pricingOptions?: OptionLike[] | null; salePrice?: number | null }>(product: T, request: HeaderRequest): T {
+  if (!product) return product;
+  const out: T = Array.isArray(product.pricingOptions)
+    ? { ...product, pricingOptions: pricingOptionsForClient(product.pricingOptions, request) }
+    : product;
+  const salePrice = salePriceForClient(product.salePrice, request);
+  return salePrice === product.salePrice ? out : { ...out, salePrice };
 }
