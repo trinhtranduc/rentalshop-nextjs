@@ -266,6 +266,8 @@ object ApiErrorMessages {
         "INSTALLMENT_NOT_FOUND" -> R.string.api_error_installment_not_found
         "INSTALLMENT_NO_PLAN" -> R.string.api_error_installment_no_plan
         "INSTALLMENT_LOYALTY_UNSUPPORTED" -> R.string.api_error_installment_loyalty_unsupported
+        "CANCEL_AMOUNTS_MISMATCH" -> R.string.api_error_cancel_amounts_mismatch
+        "CANCELLED_ORDER_KEEPS_AMOUNT" -> R.string.api_error_cancelled_order_keeps_amount
         "DEPOSIT_SETTINGS_INVALID" -> R.string.api_error_deposit_settings_invalid
         "BLOCK_PRICE_MISMATCH" -> R.string.api_error_block_price_mismatch
         "PRICING_TYPE_REQUIRES_UPDATE" -> R.string.api_error_pricing_type_requires_update
