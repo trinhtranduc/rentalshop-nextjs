@@ -27,14 +27,20 @@ describe('admin module routes (#907 rule 4)', () => {
     setCaller(role, { merchantId: null });
     const res: any = await listModules(req('/api/merchants/2/modules'), params({ id: '2' }));
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual([{ key: 'attendance', enabled: true, endDate: '2026-11-11', active: expect.any(Boolean) }]);
+    expect(res.body.data).toEqual([
+      { key: 'attendance', enabled: true, endDate: '2026-11-11', active: expect.any(Boolean) },
+      { key: 'loyalty', enabled: false, endDate: null, active: false },
+    ]);
   });
 
   it('a module without a row is listed as off', async () => {
     setCaller('ADMIN', { merchantId: null });
     mockDb.merchantModules.listForMerchant.mockResolvedValue([]);
     const res: any = await listModules(req('/api/merchants/2/modules'), params({ id: '2' }));
-    expect(res.body.data).toEqual([{ key: 'attendance', enabled: false, endDate: null, active: false }]);
+    expect(res.body.data).toEqual([
+      { key: 'attendance', enabled: false, endDate: null, active: false },
+      { key: 'loyalty', enabled: false, endDate: null, active: false },
+    ]);
   });
 
   it.each(['MERCHANT', 'OUTLET_ADMIN'])('%s cannot read the module routes', async (role) => {

@@ -4,7 +4,7 @@ import { hasLoyaltyFeature } from './subscription';
  * #907 Feature modules a merchant can be given one by one (admin switch, optional end date).
  * A module is active when its row is enabled, not past `endsAt`, and every module it requires is active.
  * `payroll` (Tính lương, requires attendance) is not in the catalog yet; add it here when it ships.
- * #967 `loyalty` (Khách thân thiết): on through the plan `features` or a feature add-on.
+ * #967 / #1187 `loyalty` (Khách thân thiết): plan `features`, a feature add-on, or the admin module switch.
  */
 export const MODULE_KEY = {
   ATTENDANCE: 'attendance',

@@ -308,16 +308,13 @@ describeBranch('BF-BRANCH outlets limit: missing/0 = 1, -1 unlimited, re-enable 
     expect(activeOutletCount(w.merchantId)).toBe(5);
   });
 
-  test('BF-BRANCH-14 a branch add-on on a single-branch plan: 422 ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN, nothing written; other add-ons pass', async () => {
+  test('BF-BRANCH-14 a branch add-on on a 1-outlet plan raises the limit (#1187)', async () => {
     const w = world('limit-14', { outlets: 1 });
     const a = await admin();
-    expect(brief(await a.post('/api/plan-limit-addons', { merchantId: w.merchantId, outlets: 1 }))).toEqual({ status: 422, code: 'ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN' });
-    expect(brief(await a.post(`/api/merchants/${w.merchantId}/plan-limit-addons`, { outlets: 2 }))).toEqual({ status: 422, code: 'ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN' });
-    expect(addonsOf(w.merchantId)).toBe('');
-    const users = await a.post('/api/plan-limit-addons', { merchantId: w.merchantId, outlets: 0, users: 2 });
-    expect(users.ok).toBe(true);
-    expect(addonsOf(w.merchantId)).toBe('0:2:true');
+    expect((await a.post('/api/plan-limit-addons', { merchantId: w.merchantId, outlets: 1 })).status).toBe(201);
+    expect(addonsOf(w.merchantId)).toBe('1:0:true');
     const m = await login(w.merchant);
+    expect((await m.post('/api/outlets', { name: uniqueName('CN'), address: 'HN' })).status).toBe(201);
     expect(brief(await m.post('/api/outlets', { name: uniqueName('CN'), address: 'HN' }))).toEqual({ status: 422, code: 'PLAN_LIMIT_EXCEEDED' });
   });
 

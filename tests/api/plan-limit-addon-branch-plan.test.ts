@@ -1,7 +1,6 @@
 /**
- * #826 (part of #823): a branch add-on (outlets > 0) is only for a multi-branch plan.
- * Multi-branch = the plan's `limits.outlets` is > 1, or -1 (unlimited). The limits may be a JSON string.
- * Add-ons for users / products / customers / orders are not affected.
+ * #826 / #1187: extra outlets are a paid add-on on any plan (same as extra users).
+ * `isMultiBranchPlan` is still the display helper (`limits.outlets` > 1 or -1).
  */
 import * as fs from 'fs';
 import * as path from 'path';
@@ -71,27 +70,25 @@ describe.each([
   ['POST /api/plan-limit-addons', (body: any) => post({ merchantId: 7, ...body })],
   ['POST /api/merchants/[id]/plan-limit-addons', (body: any) => postForMerchant(body)],
 ])('%s (#826)', (_name, create) => {
-  it('refuses a branch add-on on a single-branch plan with 422 and writes nothing', async () => {
+  it('creates a branch add-on on a 1-outlet plan (#1187)', async () => {
     mockMerchants.findById.mockResolvedValue(merchantOnPlan(SINGLE));
     const res = await create({ outlets: 1 });
-    expect(res.status).toBe(422);
-    expect(res.body.code).toBe('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN');
-    expect(mockAddons.create).not.toHaveBeenCalled();
+    expect(res.status).toBe(201);
+    expect(mockAddons.create).toHaveBeenCalledWith(expect.objectContaining({ merchantId: 7, outlets: 1 }));
   });
 
-  it('refuses it when the limits are a JSON string of a single-branch plan', async () => {
+  it('creates it when the limits are a JSON string of a 1-outlet plan', async () => {
     mockMerchants.findById.mockResolvedValue(merchantOnPlan(JSON.stringify(SINGLE)));
     const res = await create({ outlets: 2 });
-    expect(res.status).toBe(422);
-    expect(res.body.code).toBe('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN');
-    expect(mockAddons.create).not.toHaveBeenCalled();
+    expect(res.status).toBe(201);
+    expect(mockAddons.create).toHaveBeenCalledWith(expect.objectContaining({ merchantId: 7, outlets: 2 }));
   });
 
-  it('refuses it when the merchant has no subscription', async () => {
+  it('creates it when the merchant has no subscription (legacy route)', async () => {
     mockMerchants.findById.mockResolvedValue({ id: 7, name: 'Shop', subscription: null });
     const res = await create({ outlets: 1 });
-    expect(res.status).toBe(422);
-    expect(mockAddons.create).not.toHaveBeenCalled();
+    expect(res.status).toBe(201);
+    expect(mockAddons.create).toHaveBeenCalled();
   });
 
   it('creates a branch add-on on a multi-branch plan (outlets 3)', async () => {
@@ -119,13 +116,12 @@ describe.each([
 describe('PUT /api/plan-limit-addons/[id] (#826)', () => {
   const usersAddon = { id: 5, merchantId: 7, outlets: 0, users: 2, isActive: true };
 
-  it('refuses raising outlets from 0 on a single-branch plan with 422 and writes nothing', async () => {
+  it('allows raising outlets from 0 on a 1-outlet plan (#1187)', async () => {
     mockAddons.findById.mockResolvedValue(usersAddon);
     mockMerchants.findById.mockResolvedValue(merchantOnPlan(SINGLE));
     const res = await put('5', { outlets: 1, users: 2 });
-    expect(res.status).toBe(422);
-    expect(res.body.code).toBe('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN');
-    expect(mockAddons.update).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(mockAddons.update).toHaveBeenCalledWith(5, { outlets: 1, users: 2 });
   });
 
   it('allows raising outlets on a multi-branch plan', async () => {
@@ -136,12 +132,12 @@ describe('PUT /api/plan-limit-addons/[id] (#826)', () => {
     expect(mockAddons.update).toHaveBeenCalledWith(5, { outlets: 1 });
   });
 
-  it('refuses turning an inactive branch add-on back on under a single-branch plan', async () => {
+  it('allows turning an inactive branch add-on back on under a 1-outlet plan', async () => {
     mockAddons.findById.mockResolvedValue({ id: 6, merchantId: 7, outlets: 1, users: 0, isActive: false });
     mockMerchants.findById.mockResolvedValue(merchantOnPlan(SINGLE));
     const res = await put('6', { outlets: 1, isActive: true });
-    expect(res.status).toBe(422);
-    expect(mockAddons.update).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(mockAddons.update).toHaveBeenCalledWith(6, { outlets: 1, isActive: true });
   });
 
   it('an existing branch add-on stays editable (notes, lower outlets) on a single-branch plan', async () => {
@@ -174,7 +170,7 @@ describe('admin add-on dialog shows the translated refusal (#826)', () => {
     expect((page.match(/toastError\(translateError\(res\)\)/g) || []).length).toBeGreaterThanOrEqual(2);
   });
 
-  it('the new code is translated in the five locales', () => {
+  it('the unused #826 code stays translated in the five locales', () => {
     for (const lang of ['en', 'vi', 'ja', 'ko', 'zh']) {
       const errors = JSON.parse(
         fs.readFileSync(path.resolve(__dirname, `../../locales/${lang}/errors.json`), 'utf8')
@@ -182,5 +178,16 @@ describe('admin add-on dialog shows the translated refusal (#826)', () => {
       expect(typeof errors.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN).toBe('string');
       expect(errors.ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN.length).toBeGreaterThan(10);
     }
+  });
+
+  it('sells outlet add-ons on any plan and can enable loyalty (#1187)', () => {
+    expect(page).not.toContain("p.limitKind !== 'outlets' || data?.multiBranchPlan");
+    expect(page).toContain('merchantModulesApi');
+    expect(page).toContain('enable-loyalty');
+    const pricesPage = fs.readFileSync(
+      path.resolve(__dirname, '../../apps/admin/app/plans/addon-prices/page.tsx'),
+      'utf8'
+    );
+    expect(pricesPage).not.toContain('Chỉ bán cho gói nhiều chi nhánh');
   });
 });

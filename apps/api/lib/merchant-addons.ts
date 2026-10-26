@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { planModuleKeys } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
-import { calculateAddonQuote, isFeatureAddon, isMultiBranchPlan, ResponseBuilder } from '@rentalshop/utils';
+import { calculateAddonQuote, isFeatureAddon, ResponseBuilder } from '@rentalshop/utils';
 import type { AddonQuote } from '@rentalshop/utils';
 
 /**
  * #850: shared checks of "buy N packs of a price-list row for a shop" (quote and purchase use the same rules).
  * - the row exists and is on sale (paused = no new sales);
- * - an outlets row needs a multi-branch plan (#826);
+ * - an outlets row is sold on any plan, same as extra users (#1187);
  * - the shop has a subscription; the charge now is prorated on its current period (Vietnam days).
  */
 export interface ShopSubscription {
@@ -77,9 +77,6 @@ export async function checkAddonPurchase(merchantId: number, addonPriceId: numbe
   if (!addonPrice) return fail('ADDON_PRICE_NOT_FOUND', 404);
   if (!addonPrice.isActive) return fail('ADDON_PRICE_NOT_ON_SALE', 422);
   const subscription = merchant.subscription;
-  if (addonPrice.limitKind === 'outlets' && !isMultiBranchPlan(subscription?.plan?.limits)) {
-    return fail('ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN', 422);
-  }
   if (!subscription) return fail('SUBSCRIPTION_NOT_FOUND', 404);
   // #943: a feature (attendance…) is on/off: packs are always 1, and a shop holds at most one un-ended item of it
   // (a turned-off one is undone, not bought again)

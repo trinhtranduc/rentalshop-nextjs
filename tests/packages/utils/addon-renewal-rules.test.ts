@@ -108,11 +108,11 @@ describe('schemas and guard (#870)', () => {
     expect(merchantAddonUpdateSchema.safeParse({}).success).toBe(false);
   });
 
-  it('a single-branch plan is blocked by an active branch add-on that is not marked for removal', () => {
+  it('never blocks a plan switch (#1187 extra outlets are allowed on any plan)', () => {
     const single = { outlets: 1 };
     const multi = { outlets: 3 };
     const branch = { id: 1, outlets: 1, isActive: true };
-    expect(outletAddonsBlockPlan([branch], single, now)).toBe(true);
+    expect(outletAddonsBlockPlan([branch], single, now)).toBe(false);
     expect(outletAddonsBlockPlan([branch], multi, now)).toBe(false);
     expect(outletAddonsBlockPlan([{ ...branch, removeAtPeriodEnd: true, endsAt: end }], single, now)).toBe(false);
     expect(outletAddonsBlockPlan([{ ...branch, isActive: false }], single, now)).toBe(false);

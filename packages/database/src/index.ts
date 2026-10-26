@@ -399,6 +399,10 @@ export * from './password-reset';
 
 // Query builder helpers
 export * from './query-builder';
+export {
+  resolveMerchantListFilters,
+  merchantPlanNameWhere,
+} from './merchant-list-filters';
 
 // Cleanup utilities
 export { cleanupOldRequestLogs } from './cleanup-request-logs';
