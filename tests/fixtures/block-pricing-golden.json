@@ -8,6 +8,13 @@
     "usd": { "tiers": [9.99, 14.5], "startDay": 1, "extraMode": "EXTRA_PER_DAY", "extraPrice": 1.005, "currency": "USD" },
     "vndOdd": { "tiers": [80000], "startDay": 1, "extraMode": "EXTRA_PER_DAY", "extraPrice": 0.5, "currency": "VND" }
   },
+  "invalidSaveTables": {
+    "_comment": "#1223 a table the API refuses to SAVE (BLOCK_TABLE_INVALID): EXTRA_PER_DAY without extraPrice. The calculator still reads a stored one as +0.",
+    "extraPerDayNull": { "tiers": [80000, 100000, 120000], "startDay": 1, "extraMode": "EXTRA_PER_DAY", "extraPrice": null },
+    "extraPerDayNoKey": { "tiers": [80000, 100000, 120000], "startDay": 1, "extraMode": "EXTRA_PER_DAY" },
+    "modeMissingExtraNull": { "tiers": [80000], "startDay": 1, "extraMode": null, "extraPrice": null },
+    "singleTierNoExtra": { "tiers": [90000], "startDay": 1, "extraMode": "EXTRA_PER_DAY", "extraPrice": null }
+  },
   "cases": [
     { "table": "vnd80", "days": 1, "total": 80000 },
     { "table": "vnd80", "days": 2, "total": 100000 },
