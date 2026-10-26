@@ -1769,10 +1769,13 @@ export const simplifiedOrders = {
     includeInstallments?: boolean;
     /** revenue callers: add the deposit plan and its payments (#1199) */
     includeRevenuePlan?: boolean;
+    /** GET /api/orders for a client with `installments`: select the plan column only (#1222) */
+    includeDepositPlan?: boolean;
   }) => {
     const {
       includeInstallments,
       includeRevenuePlan,
+      includeDepositPlan,
       merchantId,
       outletId,
       customerId,
@@ -1883,6 +1886,8 @@ export const simplifiedOrders = {
       customerId: true,
       createdById: true,
       ...(includeRevenuePlan ? REVENUE_PLAN_SELECT : {}),
+      // #1222: the list tells a capable client which orders have a deposit plan
+      ...(includeDepositPlan && !includeRevenuePlan ? { depositPlan: true } : {}),
       // Customer data
       customer: {
         select: {
@@ -2038,6 +2043,8 @@ export const simplifiedOrders = {
       damageNotesImages: Array.isArray(order.damageNotesImages) ? order.damageNotesImages : undefined,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+      // #1222: only when the caller asked (the route turns it into `hasDepositPlan`, the column never leaves the API)
+      ...(includeDepositPlan && !includeRevenuePlan ? { depositPlan: order.depositPlan ?? null } : {}),
       
       // Flatten customer data (simplified)
       customerId: order.customerId,

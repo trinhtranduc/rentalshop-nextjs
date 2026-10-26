@@ -61,6 +61,7 @@ import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/sch
 import { hasCapability } from '../../../lib/client-capabilities';
 import {
   installmentsView,
+  shapeListPlans,
   planForNewOrder,
   recomputeDepositFromPayments,
   loadShop,
@@ -275,7 +276,11 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     // For large datasets, use lightweight method for better performance
     const result = await PerformanceMonitor.measureQuery(
       'orders.search',
-      () => db.orders.findManyLightweight({ ...searchFilters, includeInstallments: hasCapability(request, 'installments') })
+      () => db.orders.findManyLightweight({
+        ...searchFilters,
+        includeInstallments: hasCapability(request, 'installments'),
+        includeDepositPlan: hasCapability(request, 'installments'),
+      })
     );
     
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
@@ -284,7 +289,12 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     // #389: what the counter collects / hands back per row, from one grouped payment query for this page
     const pageOrders = result.data || [];
     const paymentSums = await loadCompletedPaymentSums(prisma, pageOrders.map((order: any) => order.id));
-    const ordersWithBalance = attachOrderBalances(pageOrders as any[], paymentSums);
+    // #1222: `hasDepositPlan` + a slim `installmentSummary` only for a client that declared `installments`
+    const ordersWithBalance = await shapeListPlans(
+      attachOrderBalances(pageOrders as any[], paymentSums),
+      hasCapability(request, 'installments'),
+      prisma
+    );
 
     // Normalize date fields in order list to UTC ISO strings using toISOString()
     const normalizedOrders = ordersWithBalance.map(order => ({
