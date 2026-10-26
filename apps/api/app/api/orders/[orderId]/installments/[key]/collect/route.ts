@@ -121,7 +121,7 @@ export async function POST(
                 description: note || null,
                 processedAt,
                 processedBy: String(user.id),
-                metadata: JSON.stringify({ kind: 'COLLECT', source: 'INSTALLMENT', collectedOn: dayKey }),
+                metadata: JSON.stringify({ kind: 'COLLECT', source: 'INSTALLMENT', collectedOn: dayKey, plannedAmount: stage.plannedAmount }),
               },
             });
             await recomputeDepositFromPayments(tx, orderId);

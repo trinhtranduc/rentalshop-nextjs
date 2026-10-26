@@ -2264,6 +2264,7 @@ export const simplifiedOrders = {
             reference: true,
             notes: true,
             installmentKey: true, // #1199 which deposit stage the row collects
+            metadata: true, // #1219 the stage amount at collection (plannedAmount) keeps a collected stage PAID after a total change
             processedAt: true,
             createdAt: true,
             updatedAt: true
