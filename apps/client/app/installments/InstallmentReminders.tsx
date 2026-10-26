@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Tổng quan › "Cần thu hôm nay" and "Sắp đến hạn" (#1199): the deposit stages that are late or due today, and those
- * due tomorrow, from `installmentsOverdue` / `installmentsDue` / `installmentsDueTomorrow` of outlet-operations.
+ * Tổng quan › "Sắp đến hạn" (#1199): the deposit stages due tomorrow, from `installmentsDueTomorrow` of outlet-operations.
+ * #1231: the stages that are late or due today are rows of "Đơn cần làm hôm nay" (the To do list) instead.
  * Only a reminder for staff: nothing is sent to the customer. Rendered only when something is waiting.
  */
 import React from 'react';
@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { OutletOperations } from '@rentalshop/utils';
 import { cardClass, type Money } from '../orders/list/parts';
-import { dueSoonRows, dueTodayRows, showsReminders, shortDay, type ReminderRow } from './installments-model';
+import { dueSoonCount, dueSoonRows, shortDay, type ReminderRow } from './installments-model';
 
 type TD = (key: string, values?: Record<string, string | number>) => string;
 
@@ -64,10 +64,10 @@ function Card({ title, rows, money, td, dataKey }: { title: string; rows: Remind
 export function InstallmentReminders({ data, money }: { data: OutletOperations | null; money: Money }) {
   const t = useTranslations('orders.web');
   const td: TD = (key, values) => t(`installments.${key}`, values as Record<string, string | number>);
-  if (!data || !showsReminders(data)) return null;
+  // #1231: the stages that are late or due today are rows of "Đơn cần làm hôm nay" on the same page; only tomorrow's stay here
+  if (!data || dueSoonCount(data) === 0) return null;
   return (
     <div className="flex flex-wrap gap-4" data-installment-reminders>
-      <Card title={td('dueTodayTitle')} rows={dueTodayRows(data)} money={money} td={td} dataKey="today" />
       <Card title={td('dueSoonTitle')} rows={dueSoonRows(data)} money={money} td={td} dataKey="soon" />
     </div>
   );

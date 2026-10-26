@@ -281,6 +281,8 @@
       "viewAll": "View all",
       "pickupTag": "Hand over",
       "returnTag": "Take back",
+      "installmentTag": "Deposit due",
+      "stage": "Deposit {n}",
       "late": "{days} days late",
       "collect": "{amount}",
       "refund": "refund {amount}",
