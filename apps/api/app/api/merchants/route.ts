@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rentalshop/database';
+import { db, resolveMerchantListFilters } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 // Force TypeScript refresh - address field added
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import {API, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, normalizeSubscriptionStatus, getDefaultPricingConfig, type SubscriptionStatus} from '@rentalshop/constants';
+import {API, USER_ROLE, PLATFORM_OPS_ROLES, getDefaultPricingConfig} from '@rentalshop/constants';
 import type { BusinessType } from '@rentalshop/types';
 
 export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRequest, { user, userScope }) => {
@@ -16,49 +16,34 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
     const plan = searchParams.get('plan');
     const isActive = searchParams.get('isActive');
     const subscriptionStatus = searchParams.get('subscriptionStatus');
+    const bucket = searchParams.get('bucket');
     const limit = parseInt(searchParams.get('limit') || '10');
     const page = parseInt(searchParams.get('page') || '1');
-
-    // Subscription status filtering (stored for post-processing)
-    // Validate against enum values for type safety using normalizeSubscriptionStatus
-    let subscriptionStatusFilter: SubscriptionStatus | null = null;
-    if (subscriptionStatus && subscriptionStatus !== 'all') {
-      // Use normalizeSubscriptionStatus for type-safe validation
-      subscriptionStatusFilter = normalizeSubscriptionStatus(subscriptionStatus);
-    } else if (status === 'trial' || status === 'expired') {
-      // Map legacy status values to enum
-      if (status === 'trial') {
-        subscriptionStatusFilter = SUBSCRIPTION_STATUS.TRIAL;
-      } else if (status === 'expired') {
-        subscriptionStatusFilter = SUBSCRIPTION_STATUS.EXPIRED;
-      }
-    }
 
     // Parse businessType if needed (currently not in query params but keeping for future)
     const businessType = searchParams.get('businessType') as BusinessType | null;
 
-    // Get merchants with pagination and filters
-    // db.merchants.search() handles search, businessType, planId, and isActive internally
+    const listFilters = resolveMerchantListFilters({
+      status,
+      plan,
+      isActive,
+      subscriptionStatus,
+      bucket,
+    });
+
+    // Get merchants with pagination and filters in the database (#1190)
     const result = await db.merchants.search({
       search: search || undefined,
       businessType: businessType || undefined,
-      planId: plan && plan !== 'all' ? parseInt(plan) : undefined,
-      isActive: isActive ? isActive === 'true' : (status && status !== 'all' ? (status === 'active') : undefined),
+      planId: listFilters.planId,
+      isActive: listFilters.isActive,
+      subscription: listFilters.subscription,
       page,
       limit
     });
 
-    let merchants = result.data;
-    let total = result.total;
-
-    // Apply subscription status filter (post-processing)
-    if (subscriptionStatusFilter) {
-      merchants = merchants.filter((m: any) => {
-        const merchantStatus = m.subscription?.status?.toUpperCase();
-        return merchantStatus === subscriptionStatusFilter;
-      });
-      total = merchants.length;
-    }
+    const merchants = result.data;
+    const total = result.total;
 
     // Transform data to match frontend expectations using Prisma _count (no N+1 queries!)
     // db.merchants.search() already includes _count in the result, so we use it directly

@@ -1,12 +1,11 @@
 /**
- * Plan limit add-on rules (#826, owner decision 5 of #823).
+ * Plan limit add-on helpers.
  *
- * A branch add-on (a PlanLimitAddon with `outlets > 0`) is only for a multi-branch plan: the plan's
- * `limits.outlets` is greater than 1, or -1 (unlimited). `limits` may be stored as a JSON string.
+ * #826 used to sell extra outlets only on a multi-branch plan (`limits.outlets` > 1 or -1). #1187 sells extra
+ * outlets on any plan, same as extra users. `isMultiBranchPlan` remains for display (`GET …/addons` `multiBranchPlan`).
  *
- * `outlets: 0` counts as single-branch here. The plan form only accepts -1 (unlimited) or a positive number, and
- * the "0 = unlimited" fallback in plan-limits.ts only exists so legacy rows never block; it does not make a plan
- * a multi-branch plan. A missing `outlets` (or unreadable limits) is not a multi-branch plan either.
+ * `outlets: 0` is still not multi-branch. The plan form only accepts -1 (unlimited) or a positive number, and
+ * the "0 = unlimited" fallback in plan-limits.ts only exists so legacy rows never block.
  */
 
 export const ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN = 'ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN' as const;
@@ -58,14 +57,9 @@ interface AddonForPlanSwitch {
 }
 
 /**
- * #870: a plan without multi-branch cannot be chosen while the shop has a branch add-on that still counts and is not
- * marked for removal (the admin removes the branch add-ons first).
+ * #1187: extra outlets are a paid add-on on any plan, so a plan switch is never blocked by them.
+ * Arguments kept so callers (`changePlan`) stay the same.
  */
-export function outletAddonsBlockPlan(items: AddonForPlanSwitch[], newPlanLimits: unknown, now: Date = new Date()): boolean {
-  if (isMultiBranchPlan(newPlanLimits)) return false;
-  return items.some((item) => {
-    if (!item || item.isActive === false || item.removeAtPeriodEnd) return false;
-    if (item.endsAt && new Date(item.endsAt).getTime() <= now.getTime()) return false;
-    return Number(item.outlets ?? 0) > 0;
-  });
+export function outletAddonsBlockPlan(_items: AddonForPlanSwitch[], _newPlanLimits: unknown, _now: Date = new Date()): boolean {
+  return false;
 }

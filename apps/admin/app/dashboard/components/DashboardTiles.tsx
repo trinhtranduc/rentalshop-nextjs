@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 
 /** Segmented period control (portal "Tổng quan" style). One component, phone and web. */
@@ -48,40 +49,83 @@ const PILL: Record<PillTone, string> = {
   bad: 'bg-ar-danger-soft text-ar-danger',
 };
 
-/** Metric card: title, big number, small pill, chevron when it links. */
+export type MetricTileChip = {
+  label: string;
+  href: string;
+  testId?: string;
+};
+
+/** Metric card: title, big number, small pill, chevron when it links. Real `href` so the list URL carries the filter. */
 export function MetricTile({
   title,
   value,
   pill,
+  chips,
   tone = 'neutral',
-  onClick,
+  href,
+  testId,
 }: {
   title: string;
   value: React.ReactNode;
   pill: string;
+  chips?: MetricTileChip[];
   tone?: PillTone;
-  onClick?: () => void;
+  href?: string;
+  testId?: string;
 }) {
-  const body = (
+  const header = (
     <>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-ar-muted">{title}</span>
-        {onClick && <ChevronRight className="h-4 w-4 text-ar-faint" aria-hidden />}
+        {href && <ChevronRight className="h-4 w-4 text-ar-faint" aria-hidden />}
       </div>
       <div className="mt-2 text-2xl font-bold leading-none text-ar-ink tabular-nums">{value}</div>
+    </>
+  );
+  const cls =
+    'block w-full min-w-0 rounded-xl border border-ar-line bg-ar-surface shadow-ar p-3 text-left sm:p-4';
+  const interactiveCls = href ? ' min-h-[44px] transition-colors hover:border-ar-line-strong' : '';
+
+  if (chips && chips.length > 0) {
+    return (
+      <div className={`${cls}${interactiveCls}`} data-testid={testId}>
+        {href ? (
+          <Link href={href} className="block w-full text-left" data-testid={testId ? `${testId}-open` : undefined}>
+            {header}
+          </Link>
+        ) : (
+          header
+        )}
+        <div className="mt-3 flex flex-wrap gap-1">
+          {chips.map((chip) => (
+            <Link
+              key={chip.href}
+              href={chip.href}
+              data-testid={chip.testId}
+              className={`inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-medium ${PILL[tone]} min-h-[28px] hover:opacity-80`}
+            >
+              {chip.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const body = (
+    <>
+      {header}
       <span className={`mt-3 inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-medium ${PILL[tone]}`}>
         {pill}
       </span>
     </>
   );
-  const cls =
-    'block w-full min-w-0 rounded-xl border border-ar-line bg-ar-surface shadow-ar p-3 text-left sm:p-4';
-  return onClick ? (
-    <button type="button" onClick={onClick} className={`${cls} min-h-[44px] transition-colors hover:border-ar-line-strong`}>
+  return href ? (
+    <Link href={href} className={`${cls}${interactiveCls}`} data-testid={testId}>
       {body}
-    </button>
+    </Link>
   ) : (
-    <div className={cls}>{body}</div>
+    <div className={cls} data-testid={testId}>{body}</div>
   );
 }
 

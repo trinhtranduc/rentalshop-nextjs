@@ -699,7 +699,7 @@ cả câu trả lời của API và dòng dữ liệu (`Outlet`, `OutletStock` d
 | BF-BRANCH-11 | Bật lại khi đã đủ giới hạn | gói 2: tạo B, tắt B, tạo C, bật B (2 route) | 422 `PLAN_LIMIT_EXCEEDED`; B vẫn tắt; 2 chi nhánh hoạt động |
 | BF-BRANCH-12 | Gói không ghi / ghi 0 chi nhánh = 1 | gói thiếu `outlets`; gói `outlets: 0`; thêm chi nhánh thứ 2 | 422 `PLAN_LIMIT_EXCEEDED`; vẫn 1 chi nhánh |
 | BF-BRANCH-13 | -1 không giới hạn | gói -1, thêm 4 | 5 chi nhánh hoạt động |
-| BF-BRANCH-14 | Add-on chi nhánh với gói 1 chi nhánh | ADMIN `POST /api/plan-limit-addons` và `/api/merchants/[id]/plan-limit-addons` với `outlets > 0`; rồi add-on `users: 2` | 422 `ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN`, không có dòng add-on; add-on user được (`0:2:true`); vẫn không thêm được chi nhánh |
+| BF-BRANCH-14 | Add-on chi nhánh với gói 1 chi nhánh | ADMIN `POST /api/plan-limit-addons` `outlets: 1`; chủ shop thêm chi nhánh | 201, add-on `1:0:true`; thêm được cửa thứ 2; cửa thứ 3 → 422 `PLAN_LIMIT_EXCEEDED` |
 | BF-BRANCH-15 | Add-on chi nhánh với gói nhiều chi nhánh | gói 2, đủ 2; add-on `outlets: 1` | add-on được (`1:0:true`); thêm được chi nhánh thứ 3; thứ 4 → 422 |
 | BF-BRANCH-16 | Còn đơn đặt (RESERVED) thì không tắt / xóa | đơn RESERVED ở B; `PUT isActive:false` (2 route), `DELETE` | 409 `OUTLET_HAS_OPEN_ORDERS`, `data.openOrders` 1; B vẫn hoạt động, đơn RESERVED, tồn B `2/2/0` |
 | BF-BRANCH-17 | Đặt + đang thuê, rồi trả và huỷ | 1 RESERVED + 1 PICKUPED | xóa: 409, `openOrders` 2; trả đơn thuê: 409, 1; huỷ đơn đặt: tắt được 200 |
@@ -745,7 +745,7 @@ bằng psql: còn khoảng 21 trên 30 ngày Việt Nam. Số tiền mong đợi
 | BF-ADD-05 | Mua để vượt giới hạn user | 3/3 user; thêm user; mua 1 gói +2 user; thêm 3 user | 422 `PLAN_LIMIT_EXCEEDED`; mua 201, Payment `PLAN_CHANGE` đúng số tiền; 2 user được, user thứ 3 bị 422; giới hạn 3 + 2 = 5 |
 | BF-ADD-06 | Giá trong body bị bỏ qua | gửi `unitPrice: 1` | item lưu giá 40.000 từ bảng giá |
 | BF-ADD-07 | Shop dùng thử | TRIAL mua | thu 0 (`reason: trial`), không có Payment mới |
-| BF-ADD-08 | Gói chi nhánh | dòng outlets cho gói 1 chi nhánh; cho gói 3 chi nhánh | 422 `ADDON_OUTLETS_NEED_MULTI_BRANCH_PLAN`; 201 và giới hạn outlets 4 |
+| BF-ADD-08 | Gói chi nhánh | dòng outlets cho gói 1 chi nhánh; cho gói 3 chi nhánh | 201 giới hạn outlets 2; 201 giới hạn outlets 4 |
 | BF-ADD-09 | Tạm tắt | shop A mua; tạm tắt; shop B mua | B 422 `ADDON_PRICE_NOT_ON_SALE`; A vẫn có giới hạn khách 3 + 50 |
 | BF-ADD-10 | Sửa giá không đổi item đã mua | mua ở 30.000; đổi giá 35.000; mua lại | item cũ 30.000, item mới 35.000 |
 | BF-ADD-11 | Gỡ cuối kỳ | đánh dấu gỡ; hoàn tác; đánh dấu lại; hết kỳ | `endsAt` = cuối kỳ, giới hạn vẫn 5; sau cuối kỳ giới hạn 3, item không còn trong danh sách, không hoàn tác được |

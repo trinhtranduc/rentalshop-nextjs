@@ -42,6 +42,7 @@ interface MerchantsProps {
   onLimitChange?: (limit: number) => void;
   onSort?: (column: string) => void;
   onSelectionChange?: (selectedIds: number[]) => void;
+  loading?: boolean;
 }
 
 /**
@@ -63,7 +64,8 @@ export function Merchants({
   onPageChange,
   onLimitChange,
   onSort,
-  onSelectionChange
+  onSelectionChange,
+  loading = false,
 }: MerchantsProps) {
   
   // Debug: Log data to check pagination condition
@@ -86,6 +88,14 @@ export function Merchants({
 
   return (
     <div className="flex flex-col h-full">
+      <span
+        data-testid="merchant-list-total"
+        data-total={data.total || 0}
+        data-ready={loading ? '0' : '1'}
+        className="sr-only"
+      >
+        {data.total || 0}
+      </span>
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 space-y-2">
         {/* Stats header hidden to save space */}

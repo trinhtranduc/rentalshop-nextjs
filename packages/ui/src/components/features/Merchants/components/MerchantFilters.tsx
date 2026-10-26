@@ -88,15 +88,17 @@ export function MerchantFilters({
 
       {/* Status Filter */}
       <Select value={filters.status} onValueChange={handleStatusChange}>
-        <SelectTrigger className="w-full sm:w-[150px] h-10">
+        <SelectTrigger className="w-full sm:w-[170px] h-10">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Status</SelectItem>
-          <SelectItem value="active">Active</SelectItem>
-          <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="current">In use</SelectItem>
           <SelectItem value="trial">Trial</SelectItem>
+          <SelectItem value="expiring">Expiring soon</SelectItem>
           <SelectItem value="expired">Expired</SelectItem>
+          <SelectItem value="cancelled">Cancelled</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
         </SelectContent>
       </Select>
 
@@ -109,6 +111,7 @@ export function MerchantFilters({
           <SelectItem value="all">All Plans</SelectItem>
           <SelectItem value="Basic">Basic</SelectItem>
           <SelectItem value="Professional">Professional</SelectItem>
+          <SelectItem value="Trial">Trial</SelectItem>
           <SelectItem value="Enterprise">Enterprise</SelectItem>
         </SelectContent>
       </Select>
