@@ -170,6 +170,52 @@ export async function recomputeDepositFromPayments(client: any, orderId: number)
   return value;
 }
 
+/**
+ * The single place that writes a `Payment` for a deposit stage (#1230): the create-order route (`CREATE_ORDER`,
+ * stage 1 taken with the booking) and `POST .../installments/[key]/collect` (`INSTALLMENT`) both call it, so the
+ * metadata is the same. `plannedAmount` is the stage amount at the moment of collection; `effectivePlan` judges a
+ * locked stage against it, so a later change of the total does not turn a fully collected stage into PARTIAL.
+ */
+export async function recordInstallmentPayment(
+  tx: any,
+  args: {
+    orderId: number;
+    merchantId: number | null | undefined;
+    stage: { key: string; plannedAmount: number };
+    amount: number;
+    currency: string;
+    method: string;
+    reference: string;
+    userId: number | string;
+    source: 'CREATE_ORDER' | 'INSTALLMENT';
+    processedAt?: Date;
+    description?: string | null;
+    collectedOn?: string;
+  }
+) {
+  const metadata: Record<string, unknown> = { kind: 'COLLECT', source: args.source };
+  if (args.collectedOn) metadata.collectedOn = args.collectedOn;
+  if (args.source === 'INSTALLMENT') metadata.plannedAmount = args.stage.plannedAmount;
+  return tx.payment.create({
+    data: {
+      orderId: args.orderId,
+      merchantId: args.merchantId ?? null,
+      amount: args.amount,
+      currency: args.currency,
+      method: args.method as any,
+      type: 'ORDER_PAYMENT',
+      status: 'COMPLETED',
+      reference: args.reference,
+      notes: INSTALLMENT_PAYMENT_NOTE,
+      installmentKey: args.stage.key,
+      description: args.description || null,
+      processedAt: args.processedAt ?? new Date(),
+      processedBy: String(args.userId),
+      metadata: JSON.stringify(metadata),
+    },
+  });
+}
+
 /** Row lock on the order for the rest of the transaction: two collects of one stage run one after the other. */
 export async function lockOrderRow(tx: any, orderId: number): Promise<void> {
   await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
