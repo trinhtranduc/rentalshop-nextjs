@@ -1230,6 +1230,12 @@ final class OrderDetailViewController: BaseViewControler {
             return updated
         }
         config.titleLineBreakMode = .byTruncatingTail
+        if style == .primary {
+            // #1243: "Giao đồ · thu 12.345.678" wraps on a small phone; the amount is never cut
+            config.titleLineBreakMode = .byWordWrapping
+            config.titleAlignment = .center
+            config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 10, bottom: 4, trailing: 10)
+        }
         if let symbol {
             // Board CT-gon: the call glyph is a 16px outline
             config.image = DS.symbol(symbol, 16)
