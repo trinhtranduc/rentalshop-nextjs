@@ -15,6 +15,7 @@ import {
   loadShop,
   lockOrderRow,
   recomputeDepositFromPayments,
+  recordInstallmentPayment,
 } from '../../../../../../../lib/installments';
 import {
   INSTALLMENT_PAYMENT_NOTE,
@@ -106,23 +107,19 @@ export async function POST(
             if (taken || stage.paidAmount > 0) throw new InstallmentError('INSTALLMENT_ALREADY_PAID', 409);
             if (amount > stage.plannedAmount + 1e-9) throw new InstallmentError('INSTALLMENT_OVERPAID', 400);
 
-            const payment = await tx.payment.create({
-              data: {
-                orderId,
-                merchantId,
-                amount,
-                currency: shop.currency,
-                method,
-                type: 'ORDER_PAYMENT',
-                status: 'COMPLETED',
-                reference,
-                notes: INSTALLMENT_PAYMENT_NOTE,
-                installmentKey: key,
-                description: note || null,
-                processedAt,
-                processedBy: String(user.id),
-                metadata: JSON.stringify({ kind: 'COLLECT', source: 'INSTALLMENT', collectedOn: dayKey, plannedAmount: stage.plannedAmount }),
-              },
+            const payment = await recordInstallmentPayment(tx, {
+              orderId,
+              merchantId,
+              stage,
+              amount,
+              currency: shop.currency,
+              method,
+              reference,
+              userId: user.id,
+              source: 'INSTALLMENT',
+              processedAt,
+              description: note,
+              collectedOn: dayKey,
             });
             await recomputeDepositFromPayments(tx, orderId);
             const order = await tx.order.findUnique({ where: { id: orderId }, include: { payments: true } });

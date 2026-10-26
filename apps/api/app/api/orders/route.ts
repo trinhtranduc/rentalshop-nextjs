@@ -64,6 +64,7 @@ import {
   shapeListPlans,
   planForNewOrder,
   recomputeDepositFromPayments,
+  recordInstallmentPayment,
   loadShop,
   shopFromMerchant,
 } from '../../../lib/installments';
@@ -72,7 +73,6 @@ import {
   depositPlanSchema,
   effectivePlan,
   planOverflow,
-  INSTALLMENT_PAYMENT_NOTE,
 } from '../../../../../packages/utils/src/core/deposit-plan';
 import { isStaffLikeRole } from '@rentalshop/constants';
 import { isInstallmentPayment } from '../../../lib/order-payments';
@@ -1162,22 +1162,16 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     const collectFirstStage = collectFirstNow
       ? async (tx: unknown, created: { id: number }) => {
           const client = tx as Prisma.TransactionClient;
-          const payment = await client.payment.create({
-            data: {
-              orderId: created.id,
-              merchantId: outlet.merchantId,
-              amount: collectFirstNow!.amount,
-              currency: shopContext.currency,
-              method: collectFirstNow!.method as any,
-              type: 'ORDER_PAYMENT',
-              status: 'COMPLETED',
-              reference: collectFirstNow!.reference,
-              notes: INSTALLMENT_PAYMENT_NOTE,
-              installmentKey: 'i1',
-              processedAt: new Date(),
-              processedBy: String(user.id),
-              metadata: JSON.stringify({ kind: 'COLLECT', source: 'CREATE_ORDER' }),
-            },
+          const payment = await recordInstallmentPayment(client, {
+            orderId: created.id,
+            merchantId: outlet.merchantId,
+            stage: { key: 'i1', plannedAmount: collectFirstNow!.amount },
+            amount: collectFirstNow!.amount,
+            currency: shopContext.currency,
+            method: collectFirstNow!.method,
+            reference: collectFirstNow!.reference,
+            userId: user.id,
+            source: 'CREATE_ORDER',
           });
           const deposit = await recomputeDepositFromPayments(client, created.id);
           Object.assign(created, { depositAmount: deposit ?? collectFirstNow!.amount, payments: [payment] });
