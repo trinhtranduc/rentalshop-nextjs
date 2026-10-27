@@ -622,7 +622,7 @@
     <string name="v2_form_barcode_placeholder">Quét hoặc nhập</string>
     <string name="v2_form_regenerate_barcode">Tạo mã mới</string>
     <string name="v2_form_barcode_used">Mã vạch đã dùng cho %1$s</string>
-    <string name="v2_form_prices">Giá</string>
+    <string name="v2_form_prices">Giá thuê</string>
     <string name="v2_form_per_rental">Theo lần</string>
     <string name="v2_form_per_day">Theo mỗi ngày</string>
     <string name="v2_form_sale_price">Giá bán</string>
@@ -2296,4 +2296,19 @@
     <string name="settings_v2_printing_no_printer">chưa chọn máy in</string>
     <string name="settings_v2_printing_group_slip">Phiếu</string>
     <string name="settings_v2_printing_group_printer">Máy in</string>
+    <!-- #1273 Thế chân: hai phần -->
+    <string name="overview_v2_related_collateral_note">Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là hôm nay thu hoặc trả bao nhiêu. Hai số không cộng với nhau.</string>
+    <string name="overview_v2_related_collateral_note_period">Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là trong kỳ này thu hoặc trả bao nhiêu. Hai số không cộng với nhau.</string>
+    <string name="overview_v2_related_collateral_held_title">Đang giữ thế chân</string>
+    <string name="overview_v2_related_collateral_held_hint">Tiền thế chân shop đang cầm của các đơn chưa trả đồ.</string>
+    <string name="overview_v2_related_collateral_held_total">Tổng đang giữ: %1$s · %2$d đơn</string>
+    <string name="overview_v2_related_collateral_flow_title">Phát sinh hôm nay (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_title_period">Phát sinh trong kỳ (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_hint">Tiền thế chân vào hoặc ra trong ngày này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.</string>
+    <string name="overview_v2_related_collateral_flow_hint_period">Tiền thế chân vào hoặc ra trong kỳ này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.</string>
+    <string name="overview_v2_related_collateral_flow_in">Nhận khi giao: %1$s (%2$d đơn)</string>
+    <string name="overview_v2_related_collateral_flow_out">Trả khi nhận đồ: %1$s (%2$d đơn)</string>
+    <string name="overview_v2_related_collateral_flow_net">Hôm nay shop giữ thêm: %1$s</string>
+    <string name="overview_v2_related_collateral_flow_net_period">Trong kỳ shop giữ thêm: %1$s</string>
+    <string name="overview_v2_related_collateral_held_row">Của đơn chưa trả đồ</string>
 </resources>

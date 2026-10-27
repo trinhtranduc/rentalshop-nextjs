@@ -1575,7 +1575,7 @@
 "products.form.barcodePlaceholder" = "Quét hoặc nhập";
 "products.form.regenerateBarcode" = "Tạo mã mới";
 "products.form.barcodeUsed" = "Mã vạch đã dùng cho %@";
-"products.form.prices" = "Giá";
+"products.form.prices" = "Giá thuê";
 "products.form.perRental" = "Theo lần";
 "products.form.perDay" = "Theo mỗi ngày";
 "products.form.defaultPricing" = "Khi tạo đơn, mặc định tính";
@@ -2991,6 +2991,7 @@
 "settings.v2.profile.group" = "Hồ sơ";
 "settings.v2.profile.security" = "Bảo mật";
 "products.form.unit.once" = "/ lần";
+"products.form.unit.day" = "/ ngày";
 "products.form.perBlock" = "Theo block ngày";
 "products.form.block.notSet" = "Chưa cài";
 "block.intro" = "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.";
@@ -3004,3 +3005,19 @@
 "settings.v2.printing.noPrinter" = "chưa chọn máy in";
 "settings.v2.printing.group.slip" = "Phiếu";
 "settings.v2.printing.group.printer" = "Máy in";
+
+/* #1273 Thế chân: hai phần */
+"overview.related.collateral.note" = "Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là hôm nay thu hoặc trả bao nhiêu. Hai số không cộng với nhau.";
+"overview.related.collateral.note.period" = "Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là trong kỳ này thu hoặc trả bao nhiêu. Hai số không cộng với nhau.";
+"overview.related.collateral.held.title" = "Đang giữ thế chân";
+"overview.related.collateral.held.hint" = "Tiền thế chân shop đang cầm của các đơn chưa trả đồ.";
+"overview.related.collateral.held.total" = "Tổng đang giữ: %@ · %d đơn";
+"overview.related.collateral.flow.title" = "Phát sinh hôm nay (%@)";
+"overview.related.collateral.flow.title.period" = "Phát sinh trong kỳ (%@)";
+"overview.related.collateral.flow.hint" = "Tiền thế chân vào hoặc ra trong ngày này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.";
+"overview.related.collateral.flow.hint.period" = "Tiền thế chân vào hoặc ra trong kỳ này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.";
+"overview.related.collateral.flow.in" = "Nhận khi giao: %@ (%d đơn)";
+"overview.related.collateral.flow.out" = "Trả khi nhận đồ: %@ (%d đơn)";
+"overview.related.collateral.flow.net" = "Hôm nay shop giữ thêm: %@";
+"overview.related.collateral.flow.net.period" = "Trong kỳ shop giữ thêm: %@";
+"overview.related.collateral.held.row" = "Của đơn chưa trả đồ";

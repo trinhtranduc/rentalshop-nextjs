@@ -412,7 +412,19 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
     private let startDate: Date?
     private let endDate: Date?
     private var rows: [OverviewRelatedRow] = []
+    /// #1273: Thế chân shows two sections; `items` is what the table lists (the plain rows for the other tiles)
+    private enum Item {
+        case note(String)
+        case section(title: String, hint: String)
+        case row(OverviewRelatedRow)
+        case total(text: String, id: String)
+    }
+    private var items: [Item] = []
+    /// Set by the Overview for Thế chân: the range in day keys and today (decides "hôm nay" or "trong kỳ")
+    var collateralRange: DayKeyRange?
+    var collateralTodayKey: String = ""
     private let table = UITableView(frame: .zero, style: .plain)
+    private let footerBar = UIView()
     private let totalLabel = UILabel()
     private let spinner = UIActivityIndicatorView(activityIndicatorStyle: .gray)
     private let emptyLabel = UILabel()
@@ -446,7 +458,7 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         totalLabel.textColor = DS.Color.text
         totalLabel.numberOfLines = 0
         totalLabel.accessibilityIdentifier = "related.total"
-        let footer = UIView()
+        let footer = footerBar
         footer.backgroundColor = V2.sectionFill
         footer.addSubview(totalLabel)
         totalLabel.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)) }
@@ -493,10 +505,12 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         let group = DispatchGroup()
         // #938: Thế chân first lists the orders holding collateral now (the "đang giữ N đơn" chip)
         var held: [OverviewRelatedRow] = []
+        var heldCount: Int?
         if kind == .collateral {
             group.enter()
             _ = AnalyticsAPIService.shared.loadOutletOperations(collateralHeld: true) { work, _ in
                 held = OverviewDashLogic.heldRows(work?.collateralHeld?.orders ?? [])
+                heldCount = work?.collateralHeld?.count
                 group.leave()
             }
         }
@@ -512,10 +526,53 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
             self.spinner.stopAnimating()
             self.rows = held + collected
             self.emptyLabel.isHidden = !self.rows.isEmpty
-            let total = MoneyFormatter.format(OverviewDashLogic.relatedTotal(self.rows))
-            self.totalLabel.text = "\("overview.related.total".localized()) · \(OverviewDashLogic.relatedCount(self.rows)): \(total)"
+            if self.kind == .collateral {
+                // #1273: two sections with their own totals, in the list (no sticky total)
+                self.footerBar.isHidden = true
+                self.footerBar.snp.remakeConstraints { make in
+                    make.leading.trailing.equalToSuperview()
+                    make.bottom.equalTo(self.view.safeAreaLayoutGuide)
+                    make.height.equalTo(0)
+                }
+                self.items = self.rows.isEmpty ? [] : self.collateralItems(held: held, heldCount: heldCount, flow: collected)
+            } else {
+                let total = MoneyFormatter.format(OverviewDashLogic.relatedTotal(self.rows))
+                self.totalLabel.text = "\("overview.related.total".localized()) · \(OverviewDashLogic.relatedCount(self.rows)): \(total)"
+                self.items = self.rows.map { .row($0) }
+            }
             self.table.reloadData()
         }
+    }
+
+    /// #1273: the note, "Đang giữ thế chân" with its total, "Phát sinh hôm nay" with Nhận, Trả and the three totals
+    private func collateralItems(held: [OverviewRelatedRow], heldCount: Int?, flow: [OverviewRelatedRow]) -> [Item] {
+        let s = OverviewDashLogic.collateralSections(held: held, heldCount: heldCount, rows: flow)
+        let range = collateralRange
+        let today = range.map { OverviewDashLogic.collateralFlowIsToday(range: $0, todayKey: collateralTodayKey) } ?? false
+        func signed(_ n: Double) -> String { (n < 0 ? "−" : "+") + MoneyFormatter.format(abs(n)) }
+        var out: [Item] = [.note((today ? "overview.related.collateral.note" : "overview.related.collateral.note.period").localized())]
+        out.append(.section(title: "overview.related.collateral.held.title".localized(), hint: "overview.related.collateral.held.hint".localized()))
+        let heldRow = "overview.related.collateral.held.row".localized()
+        out += s.held.map { row in
+            var r = row
+            r.detail = heldRow
+            return .row(r)
+        }
+        let heldMoney = s.heldTotalKnown ? MoneyFormatter.format(s.heldTotal) : "—"
+        out.append(.total(text: String(format: "overview.related.collateral.held.total".localized(), heldMoney, s.heldOrders), id: "related.held.total"))
+        let dayText: String
+        if let range {
+            dayText = range.start == range.end ? OverviewDashLogic.dayMonth(range.start)
+                : "\(OverviewDashLogic.dayMonth(range.start)) – \(OverviewDashLogic.dayMonth(range.end))"
+        } else { dayText = "" }
+        out.append(.section(title: String(format: (today ? "overview.related.collateral.flow.title" : "overview.related.collateral.flow.title.period").localized(), dayText),
+                            hint: (today ? "overview.related.collateral.flow.hint" : "overview.related.collateral.flow.hint.period").localized()))
+        out += (s.received + s.returned).map { .row($0) }
+        out.append(.total(text: String(format: "overview.related.collateral.flow.in".localized(), signed(s.receivedTotal), s.receivedOrders), id: "related.flow.in"))
+        out.append(.total(text: String(format: "overview.related.collateral.flow.out".localized(), "−" + MoneyFormatter.format(s.returnedTotal), s.returnedOrders), id: "related.flow.out"))
+        // the net line keeps the old id: it is the number of the tile (received − returned)
+        out.append(.total(text: String(format: (today ? "overview.related.collateral.flow.net" : "overview.related.collateral.flow.net.period").localized(), signed(s.net)), id: "related.total"))
+        return out
     }
 
     /// Every page of one bucket (the list total must equal the tile, so nothing is left unloaded)
@@ -533,11 +590,52 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         }
     }
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { rows.count }
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { items.count }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        switch items[indexPath.row] {
+        case .note(let text):
+            let cell = styledCell(tableView, "note", fill: UIColor(hexString: "FFFBEB"))
+            cell.textLabel?.text = text
+            cell.textLabel?.font = Utils.regularFont(size: DS.TextSize.secondary)
+            cell.textLabel?.textColor = DS.Color.text
+            cell.accessibilityIdentifier = "related.note"
+            return cell
+        case .section(let title, let hint):
+            let cell = styledCell(tableView, "section", fill: UIColor(hexString: "EFF6FF"))
+            cell.textLabel?.text = title
+            cell.textLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+            cell.textLabel?.textColor = DS.Color.text
+            cell.detailTextLabel?.text = hint
+            cell.detailTextLabel?.numberOfLines = 0
+            cell.detailTextLabel?.font = Utils.regularFont(size: DS.TextSize.pill)
+            cell.detailTextLabel?.textColor = DS.Color.textMuted
+            cell.accessibilityIdentifier = "related.section"
+            return cell
+        case .total(let text, let id):
+            let cell = styledCell(tableView, "total", fill: V2.sectionFill)
+            cell.textLabel?.text = text
+            cell.textLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+            cell.textLabel?.textColor = DS.Color.text
+            cell.textLabel?.accessibilityIdentifier = id
+            cell.isAccessibilityElement = false
+            return cell
+        case .row(let row):
+            return rowCell(tableView, row)
+        }
+    }
+
+    private func styledCell(_ tableView: UITableView, _ id: String, fill: UIColor) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: id) ?? UITableViewCell(style: .subtitle, reuseIdentifier: id)
+        cell.backgroundColor = fill
+        cell.selectionStyle = .none
+        cell.accessoryView = nil
+        cell.textLabel?.numberOfLines = 0
+        return cell
+    }
+
+    private func rowCell(_ tableView: UITableView, _ row: OverviewRelatedRow) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "related") ?? UITableViewCell(style: .subtitle, reuseIdentifier: "related")
-        let row = rows[indexPath.row]
         cell.textLabel?.text = [row.orderNumber, row.customer].filter { !$0.isEmpty }.joined(separator: " · ")
         cell.textLabel?.font = Utils.mediumFont(size: DS.TextSize.body)
         cell.detailTextLabel?.text = row.detail
@@ -551,12 +649,16 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         cell.accessoryView = amount
         cell.accessibilityLabel = "\(row.orderNumber), \(row.detail), \(amount.text ?? "")"
         cell.accessibilityIdentifier = "related.row"
+        cell.backgroundColor = .clear
+        cell.selectionStyle = .default
+        cell.textLabel?.numberOfLines = 1
         return cell
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let detail = OrderDetailViewController(orderId: rows[indexPath.row].orderId)
+        guard case .row(let row) = items[indexPath.row] else { return }
+        let detail = OrderDetailViewController(orderId: row.orderId)
         detail.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(detail, animated: true)
     }

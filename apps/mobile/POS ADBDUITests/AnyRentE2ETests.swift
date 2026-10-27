@@ -1917,7 +1917,7 @@ final class AnyRentE2ETests: XCTestCase {
             add.tap()
             let name = e2e.field(["Product name", "Tên sản phẩm"])
             XCTAssertTrue(name.waitForExistence(timeout: 8), "Add-product form opens")
-            let priceLabels = ["Prices", "Giá", "Per rental", "Theo lần", "Per day", "Theo mỗi ngày",
+            let priceLabels = ["Prices", "Giá", "Rental price", "Giá thuê", "Per rental", "Theo lần", "Per day", "Theo mỗi ngày",
                                "Sale price", "Giá bán", "Deposit per item", "Cọc mỗi món"]
             let price = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", priceLabels)).firstMatch
             XCTAssertFalse(price.exists, "OUTLET_STAFF must not see price fields in the add-product form")
@@ -2959,7 +2959,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(e2e.scrollTo(blockRow), "the new product form has the Theo block ngày row")
         XCTAssertTrue(app.textFields["product.form.perRental"].exists, "Theo lần box")
         XCTAssertTrue(app.textFields["product.form.perDay"].exists, "Theo mỗi ngày box")
-        XCTAssertTrue(app.staticTexts[blockNotSetTexts[0]].exists || app.staticTexts[blockNotSetTexts[1]].exists, "block says Chưa cài")
+        XCTAssertTrue(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "block says Chưa cài (\(blockRow.value ?? ""))")
         XCTAssertFalse(app.descendants(matching: .any)["product.form.kind.block"].exists, "no radio")
         e2e.shot("80a-new-three-prices")
         // the day price survives a trip to the setup screen and back
@@ -3006,7 +3006,7 @@ final class AnyRentE2ETests: XCTestCase {
         back.tap()
         XCTAssertTrue(app.textFields["product.form.perDay"].waitForExistence(timeout: 5), "cancelled setup returns to the form")
         XCTAssertEqual(app.textFields["product.form.perDay"].value as? String, "80.000", "the day price is still there")
-        XCTAssertTrue(app.staticTexts[blockNotSetTexts[0]].exists || app.staticTexts[blockNotSetTexts[1]].exists, "no table was saved: Chưa cài")
+        XCTAssertTrue(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "no table was saved: Chưa cài")
         // the row again, the table by hand, Lưu bảng giá: the summary shows and the day price box stays
         e2e.scrollTo(blockRow)
         blockRow.tap()
@@ -3015,7 +3015,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(app.textFields["block.tier.3"].waitForExistence(timeout: 5))
         app.buttons["block.save"].tap()
         XCTAssertTrue(blockRow.waitForExistence(timeout: 5), "Lưu bảng giá: back on the form")
-        XCTAssertFalse(app.staticTexts[blockNotSetTexts[0]].exists || app.staticTexts[blockNotSetTexts[1]].exists, "the row shows the table summary")
+        XCTAssertFalse(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "the row shows the table summary")
         XCTAssertTrue(app.textFields["product.form.perDay"].exists, "the day price box stays next to the table")
         e2e.shot("80e-new-block-summary")
         e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
@@ -4689,6 +4689,33 @@ final class AnyRentE2ETests: XCTestCase {
         }
         sleep(2)
         e2e.shot("05-collateral-related-orders")
+    }
+
+    /// #1273 Thế chân in two sections: the note, "Đang giữ thế chân" with its total, "Phát sinh hôm nay" with Nhận, Trả and
+    /// the three totals; needs orders with collateral held (some handed over today, some returned today).
+    func test7qCollateralTwoSections() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else { throw XCTSkip("No Reports tab") }
+        sleep(4)
+        let today = e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .button)
+        if today.waitForExistence(timeout: 8) { today.tap(); sleep(3) }
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Collateral")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 10), "Thế chân tile")
+        if !tile.isHittable { app.swipeUp(); sleep(1) }
+        tile.tap()
+        let link = e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button)
+        XCTAssertTrue(link.waitForExistence(timeout: 6), "related orders link")
+        link.tap()
+        XCTAssertTrue(app.staticTexts["related.held.total"].waitForExistence(timeout: 25), "Tổng đang giữ")
+        sleep(2)
+        e2e.shot("90-collateral-sections-top")
+        e2e.note("COLLATERAL HELD TOTAL | \(app.staticTexts["related.held.total"].label)")
+        for _ in 0..<4 where !app.staticTexts["related.total"].isHittable { app.swipeUp(); sleep(1) }
+        XCTAssertTrue(app.staticTexts["related.flow.in"].exists, "Nhận khi giao")
+        XCTAssertTrue(app.staticTexts["related.flow.out"].exists, "Trả khi nhận đồ")
+        e2e.note("COLLATERAL FLOW | \(app.staticTexts["related.flow.in"].label) | \(app.staticTexts["related.flow.out"].label) | \(app.staticTexts["related.total"].label)")
+        e2e.shot("91-collateral-sections-bottom")
     }
 
     /// #1124 "Đặt online": needs two PENDING requests on merchant1's shop (names "Nguyễn Thị Mai" and "Trần Văn Bình",

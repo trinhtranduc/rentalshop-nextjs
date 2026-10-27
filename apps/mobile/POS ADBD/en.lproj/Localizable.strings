@@ -1577,7 +1577,7 @@
 "products.form.barcodePlaceholder" = "Scan or type";
 "products.form.regenerateBarcode" = "New barcode";
 "products.form.barcodeUsed" = "Barcode already used by %@";
-"products.form.prices" = "Prices";
+"products.form.prices" = "Rental price";
 "products.form.perRental" = "Per rental";
 "products.form.perDay" = "Per day";
 "products.form.defaultPricing" = "New orders charge by default";
@@ -2993,6 +2993,7 @@
 "settings.v2.profile.group" = "Profile";
 "settings.v2.profile.security" = "Security";
 "products.form.unit.once" = "/ rental";
+"products.form.unit.day" = "/ day";
 "products.form.perBlock" = "Per day-block";
 "products.form.block.notSet" = "Not set";
 "block.intro" = "Each number of days has one price. A customer who rents exactly that many days pays that row.";
@@ -3006,3 +3007,19 @@
 "settings.v2.printing.noPrinter" = "no printer chosen";
 "settings.v2.printing.group.slip" = "Slip";
 "settings.v2.printing.group.printer" = "Printer";
+
+/* #1273 Thế chân: two sections */
+"overview.related.collateral.note" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.";
+"overview.related.collateral.note.period" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.";
+"overview.related.collateral.held.title" = "Collateral held";
+"overview.related.collateral.held.hint" = "Collateral the shop holds for orders not yet returned.";
+"overview.related.collateral.held.total" = "Total held: %@ · %d orders";
+"overview.related.collateral.flow.title" = "Moved today (%@)";
+"overview.related.collateral.flow.title.period" = "Moved in the period (%@)";
+"overview.related.collateral.flow.hint" = "Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.hint.period" = "Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.in" = "Received at hand-over: %@ (%d orders)";
+"overview.related.collateral.flow.out" = "Returned at return: %@ (%d orders)";
+"overview.related.collateral.flow.net" = "Shop holds more today: %@";
+"overview.related.collateral.flow.net.period" = "Shop holds more in the period: %@";
+"overview.related.collateral.held.row" = "Of an order not yet returned";
