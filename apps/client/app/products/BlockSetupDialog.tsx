@@ -2,15 +2,15 @@
 
 /**
  * #1249 "Giá theo khối ngày" setup screen (web: a full-screen dialog over the product form, the owner's mockup):
- * the day table, "Thuê quá N ngày", the preview, "Tạo nhanh", "Sao chép từ sản phẩm khác", "Lưu bảng giá" and
+ * the day table, "Thuê quá N ngày", the preview, "Sao chép từ sản phẩm khác", "Lưu bảng giá" and
  * "Tắt giá theo khối ngày". Nothing reaches the form until "Lưu bảng giá"; closing keeps the previous choice.
  */
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { productsApi } from '@rentalshop/utils';
 import { outlineBtn, primaryBtn, type T } from '../orders/list/parts';
-import { BlockTableEditor, MoneyBox } from './BlockTableEditor';
-import { blockComplete, emptyBlock, MAX_BLOCK_TIERS, quickTable, type BlockDraft } from './block-draft';
+import { BlockTableEditor } from './BlockTableEditor';
+import { blockComplete, emptyBlock, type BlockDraft } from './block-draft';
 import { savedBlockOf } from './form/form-model';
 
 interface CopyRow {
@@ -97,11 +97,7 @@ export function BlockSetupDialog({
   const t = useTranslations('products.web') as unknown as T;
   const [draft, setDraft] = useState<BlockDraft>(initial ?? emptyBlock());
   const [tried, setTried] = useState(false);
-  const [quickOpen, setQuickOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
-  const [first, setFirst] = useState<number | null>(null);
-  const [step, setStep] = useState<number | null>(null);
-  const [days, setDays] = useState<number | null>(3);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -127,45 +123,6 @@ export function BlockSetupDialog({
           {tried && !blockComplete(draft) && <p role="alert" className="m-0 text-sm text-ar-danger">{t('form.block.incomplete')}</p>}
 
           <div className="flex flex-col gap-2">
-            <button type="button" onClick={() => setQuickOpen((o) => !o)} className="w-fit text-sm font-semibold text-ar-primary hover:underline">
-              ⚡ {t('form.block.quick')}
-            </button>
-            {quickOpen && (
-              <div className="flex flex-col gap-3 rounded-xl border border-ar-line p-3" data-block-quick>
-                <label className="flex items-center justify-between gap-3 text-sm font-semibold text-ar-ink-2">
-                  {t('form.block.quickFirst')}
-                  <MoneyBox value={first} onChange={setFirst} label={t('form.block.quickFirst')} />
-                </label>
-                <label className="flex items-center justify-between gap-3 text-sm font-semibold text-ar-ink-2">
-                  {t('form.block.quickStep')}
-                  <MoneyBox value={step} onChange={setStep} label={t('form.block.quickStep')} />
-                </label>
-                <label className="flex items-center justify-between gap-3 text-sm font-semibold text-ar-ink-2">
-                  {t('form.block.quickDays')}
-                  <input
-                    inputMode="numeric"
-                    aria-label={t('form.block.quickDays')}
-                    value={days ?? ''}
-                    onChange={(e) => {
-                      const d = e.target.value.replace(/\D/g, '');
-                      setDays(d ? Math.min(Number(d), MAX_BLOCK_TIERS) : null);
-                    }}
-                    className="h-10 w-44 max-w-full rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 text-right text-[15px] tabular-nums text-ar-ink outline-none focus:border-ar-primary"
-                  />
-                </label>
-                <button
-                  type="button"
-                  disabled={first == null || step == null || !days}
-                  onClick={() => {
-                    setDraft(quickTable(first as number, step as number, days as number));
-                    setQuickOpen(false);
-                  }}
-                  className={`${outlineBtn} w-fit`}
-                >
-                  {t('form.block.quickMake')}
-                </button>
-              </div>
-            )}
             <button type="button" onClick={() => setCopyOpen((o) => !o)} className="w-fit text-sm font-semibold text-ar-primary hover:underline">
               ⧉ {t('form.block.copy')}
             </button>

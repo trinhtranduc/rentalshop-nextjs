@@ -2288,12 +2288,6 @@
     <string name="v2_form_unit_per_rental">%1$s / lần</string>
     <string name="v2_form_unit_per_day">%1$s / ngày</string>
     <string name="block_intro">Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.</string>
-    <string name="block_quick">Tạo nhanh</string>
-    <string name="block_quick_title">Tạo nhanh</string>
-    <string name="block_quick_first">Giá ngày đầu</string>
-    <string name="block_quick_step">Mỗi ngày thêm</string>
-    <string name="block_quick_days">Số ngày</string>
-    <string name="block_quick_create">Tạo bảng</string>
     <string name="block_copy">Sao chép từ sản phẩm khác</string>
     <string name="block_copy_loading">Đang tải…</string>
     <string name="block_copy_none">Chưa có sản phẩm khác dùng bảng giá theo khối ngày.</string>

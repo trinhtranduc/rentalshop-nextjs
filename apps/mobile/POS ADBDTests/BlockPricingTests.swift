@@ -378,15 +378,6 @@ final class BlockPricingTests: XCTestCase {
         XCTAssertEqual(draft.options.map { $0.type }, ["DAILY"])
     }
 
-    func testQuickTableBuildsRowsFromTheFirstDayAndTheExtraDay() throws {
-        let quick = try XCTUnwrap(BlockPricing.quickTable(firstDay: 80_000, extraPerDay: 20_000, days: 3))
-        XCTAssertEqual(quick, table)
-        XCTAssertEqual(BlockPricing.rent(quick, days: 5), 160_000)
-        XCTAssertNil(BlockPricing.quickTable(firstDay: 80_000, extraPerDay: 20_000, days: 0))
-        XCTAssertNil(BlockPricing.quickTable(firstDay: 80_000, extraPerDay: 20_000, days: 32))
-        XCTAssertNil(BlockPricing.quickTable(firstDay: -1, extraPerDay: 20_000, days: 3))
-    }
-
     func testCopyTakesOnlyTheTableOfAnotherProduct() throws {
         XCTAssertEqual(ProductPricing.block(try product(blockProductJSON)), table)
         XCTAssertNil(ProductPricing.block(try product(oldDaily)))

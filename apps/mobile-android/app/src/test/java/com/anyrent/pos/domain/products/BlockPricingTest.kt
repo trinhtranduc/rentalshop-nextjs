@@ -234,16 +234,6 @@ class BlockPricingTest {
     }
 
     @Test
-    fun `Tạo nhanh builds the table from the first day and the step`() {
-        val t = PriceForm.quickTable(first = 80_000.0, step = 20_000.0, days = 4)
-        assertEquals(listOf(80_000.0, 100_000.0, 120_000.0, 140_000.0), t.tiers)
-        assertEquals(BlockTable.EXTRA_PER_DAY, t.extraMode)
-        assertEquals(20_000.0, t.extraPrice!!, 0.0)
-        assertEquals(31, PriceForm.quickTable(1.0, 1.0, 99).tiers.size)
-        assertEquals(1, PriceForm.quickTable(1.0, 1.0, 0).tiers.size)
-    }
-
-    @Test
     fun `Sao chép copies the table and the rule past the last day of another product`() {
         assertEquals(owner, PriceForm.copyTable(product(listOf(fixed, blockOption))))
         assertNull(PriceForm.copyTable(product(listOf(fixed, daily))))

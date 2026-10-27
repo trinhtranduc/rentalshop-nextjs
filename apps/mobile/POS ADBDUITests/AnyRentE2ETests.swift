@@ -2945,7 +2945,7 @@ final class AnyRentE2ETests: XCTestCase {
     }
 
     /// #1249 (mockup): Thuê theo lần, then ONE of Thuê theo ngày | Giá theo khối ngày. New product: Thuê theo ngày with its
-    /// price box; Giá theo khối ngày opens the setup screen, back keeps Thuê theo ngày; Tạo nhanh fills the table.
+    /// price box; Giá theo khối ngày opens the setup screen, back keeps Thuê theo ngày; the table is typed by hand.
     /// Old per-day product and a product with a table open on the right radio.
     /// Needs the products "Ao dai DAILY cu" (DAILY 150.000 only) and "Vay cuoi co bang" (a BLOCK table) in the shop;
     /// a soft note when they are missing. Nothing is saved.
@@ -2972,21 +2972,34 @@ final class AnyRentE2ETests: XCTestCase {
         blockRadio.tap()
         XCTAssertTrue(app.textFields["block.tier.1"].waitForExistence(timeout: 5), "Giá theo khối ngày without a table opens the setup screen")
         e2e.shot("80b-setup")
-        // Tạo nhanh: 80.000 + 20.000 a day, 3 days
-        let quick = app.buttons["block.quick"]
-        XCTAssertTrue(e2e.scrollTo(quick), "Tạo nhanh")
-        quick.tap()
-        let first = app.textFields["block.quick.first"]
-        XCTAssertTrue(first.waitForExistence(timeout: 5), "Tạo nhanh asks for the first day")
-        first.typeText("80000")
-        app.textFields["block.quick.extra"].tap()
-        app.textFields["block.quick.extra"].typeText("20000")
-        e2e.shot("80c-quick")
-        e2e.tapIfExists(e2e.button(["Create table", "Tạo bảng"]), timeout: 3)
+        // typed by hand: 80.000, 100.000, 120.000 (3 days), 20.000 a day past the table
+        func fillTable() {
+            func typeTier(_ index: Int, _ value: String) {
+                let box = app.textFields["block.tier.\(index)"]
+                XCTAssertTrue(e2e.scrollTo(box), "tier \(index) box")
+                box.tap()
+                box.typeText(value)
+                e2e.hideKeyboard()
+            }
+            typeTier(1, "80000")
+            for (index, value) in [(2, "100000"), (3, "120000")] {
+                let add = app.buttons["block.addDay"]
+                XCTAssertTrue(e2e.scrollTo(add), "+ Thêm ngày \(index)")
+                add.tap()
+                typeTier(index, value)
+            }
+            let extra = app.textFields["block.extra"]
+            XCTAssertTrue(e2e.scrollTo(extra), "extra price box")
+            extra.tap()
+            extra.typeText("20000")
+            e2e.hideKeyboard()
+        }
+        XCTAssertFalse(app.buttons["block.quick"].exists, "there is no Tạo nhanh")
+        fillTable()
         let third = app.textFields["block.tier.3"]
-        XCTAssertTrue(third.waitForExistence(timeout: 5), "Tạo nhanh made 3 rows")
+        XCTAssertTrue(third.waitForExistence(timeout: 5), "3 rows")
         XCTAssertTrue((third.value as? String ?? "").contains("120.000"), "row 3 is 120.000 (\(third.value ?? ""))")
-        e2e.shot("80d-setup-quick")
+        e2e.shot("80d-setup-filled")
         // back without saving: the choice before (Thuê theo ngày, price still there)
         let back = app.buttons["block.back"]
         XCTAssertTrue(back.waitForExistence(timeout: 3), "back")
@@ -2994,16 +3007,11 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(app.textFields["product.form.perDay"].waitForExistence(timeout: 5), "cancelled setup keeps Thuê theo ngày")
         XCTAssertFalse(app.descendants(matching: .any)["product.form.blockSummary"].exists, "no table was saved")
         XCTAssertEqual(app.textFields["product.form.perDay"].value as? String, "80.000", "the day price is still there")
-        // Giá theo khối ngày again, Tạo nhanh, Lưu bảng giá: the summary card shows under the radio
+        // Giá theo khối ngày again, the table by hand, Lưu bảng giá: the summary card shows under the radio
         e2e.scrollTo(blockRadio)
         blockRadio.tap()
-        XCTAssertTrue(app.buttons["block.quick"].waitForExistence(timeout: 5))
-        app.buttons["block.quick"].tap()
-        XCTAssertTrue(app.textFields["block.quick.first"].waitForExistence(timeout: 5))
-        app.textFields["block.quick.first"].typeText("80000")
-        app.textFields["block.quick.extra"].tap()
-        app.textFields["block.quick.extra"].typeText("20000")
-        e2e.tapIfExists(e2e.button(["Create table", "Tạo bảng"]), timeout: 3)
+        XCTAssertTrue(app.textFields["block.tier.1"].waitForExistence(timeout: 5))
+        fillTable()
         XCTAssertTrue(app.textFields["block.tier.3"].waitForExistence(timeout: 5))
         app.buttons["block.save"].tap()
         let summary = app.descendants(matching: .any)["product.form.blockSummary"]
