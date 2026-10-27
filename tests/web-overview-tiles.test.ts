@@ -290,6 +290,17 @@ describe('topBars', () => {
     ]);
     expect(topBars(null)).toEqual([]);
   });
+
+  it('carries the product photo (#1243); blank or missing is null', () => {
+    const bars = topBars([
+      { id: 1, name: 'A', totalRevenue: 10, image: 'https://cdn.example/a.jpg' },
+      { id: 2, name: 'B', totalRevenue: 5, image: '  ' },
+      { id: 3, name: 'C', totalRevenue: 1, image: null },
+      { id: 4, name: 'D', totalRevenue: 1 },
+    ]);
+    expect(bars.map((b) => b.image)).toEqual(['https://cdn.example/a.jpg', null, null, null]);
+    expect(topCustomerBars([{ id: 1, name: 'X', totalSpent: 5 }])[0].image).toBeNull();
+  });
 });
 
 describe('topCustomerBars (#620)', () => {

@@ -448,6 +448,7 @@ private fun TopCard(
                 OVTopRow(
                     row.name, OverviewDashLogic.compact(row.amount, vietnamese), subtitle, row.ratio, if (products) OV.Blue else OV.Violet,
                     onClick = row.id?.let { id -> { onOpen(id) } },
+                    showPhoto = products, image = row.image,
                 )
             }
         }

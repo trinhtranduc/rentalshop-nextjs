@@ -137,6 +137,8 @@ struct OverviewTopRow: Equatable {
     let count: Int
     /// Bar width against the first (largest) row, 0…1
     let ratio: Double
+    /// #1243: first photo of a product; nil for a customer or a product without one
+    var image: String? = nil
 }
 
 enum OverviewDashLogic {
@@ -377,20 +379,20 @@ enum OverviewDashLogic {
 
     /// Top sản phẩm: the API's order (largest revenue first), five at most on the card
     static func topProductRows(_ products: [OverviewReport.TopProduct], limit: Int = topLimit) -> [OverviewTopRow] {
-        topRows(products.map { ($0.id, $0.name, $0.totalRevenue, $0.rentalCount) }, limit: limit)
+        topRows(products.map { ($0.id, $0.name, $0.totalRevenue, $0.rentalCount, $0.image) }, limit: limit)
     }
 
     /// Top khách hàng: the API's order, five at most on the card; a hidden `totalSpent` (null) counts as 0
     static func topCustomerRows(_ customers: [OverviewReport.TopCustomer], limit: Int = topLimit) -> [OverviewTopRow] {
-        topRows(customers.map { ($0.id, $0.name, $0.totalSpent ?? 0, $0.orderCount) }, limit: limit)
+        topRows(customers.map { ($0.id, $0.name, $0.totalSpent ?? 0, $0.orderCount, String?.none) }, limit: limit)
     }
 
-    private static func topRows(_ items: [(id: Int?, name: String, amount: Double, count: Int)], limit: Int) -> [OverviewTopRow] {
+    private static func topRows(_ items: [(id: Int?, name: String, amount: Double, count: Int, image: String?)], limit: Int) -> [OverviewTopRow] {
         let kept = items.prefix(max(0, limit))
         let top = kept.map { max(0, $0.amount) }.max() ?? 0
         return kept.map { item in
             OverviewTopRow(id: item.id, name: item.name, amount: item.amount, count: item.count,
-                           ratio: top > 0 ? max(0, item.amount) / top : 0)
+                           ratio: top > 0 ? max(0, item.amount) / top : 0, image: item.image)
         }
     }
 }

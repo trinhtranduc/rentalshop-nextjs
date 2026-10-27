@@ -8,6 +8,7 @@
 
 import UIKit
 import SnapKit
+import Kingfisher
 
 // MARK: - Tokens
 
@@ -650,7 +651,8 @@ final class OverviewCounterView: UIControl {
 final class OverviewTopRowView: UIControl {
     let row: OverviewTopRow
 
-    init(row: OverviewTopRow, amountText: String, subtitle: String, color: UIColor) {
+    /// `showsPhoto`: a product row, with the product's first photo (or the app's no-image placeholder) in front (#1243)
+    init(row: OverviewTopRow, amountText: String, subtitle: String, color: UIColor, showsPhoto: Bool = false) {
         self.row = row
         super.init(frame: .zero)
         let name = OVFont.label(row.name.isEmpty ? "—" : row.name, DS.TextSize.secondary, .medium)
@@ -678,9 +680,30 @@ final class OverviewTopRowView: UIControl {
         let column = UIStackView(arrangedSubviews: [top, bottom])
         column.axis = .vertical
         column.spacing = 5
-        column.isUserInteractionEnabled = false
-        addSubview(column)
-        column.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)) }
+        let content: UIView
+        if showsPhoto {
+            let photo = UIImageView()
+            photo.contentMode = .scaleAspectFill
+            photo.clipsToBounds = true
+            photo.layer.cornerRadius = 8
+            photo.backgroundColor = OVColor.track
+            photo.setContentHuggingPriority(.required, for: .horizontal)
+            photo.snp.makeConstraints { make in make.width.height.equalTo(36) }
+            let placeholder = UIImage(named: "no-image")
+            photo.image = placeholder
+            if let urlText = row.image?.trimmingCharacters(in: .whitespacesAndNewlines), !urlText.isEmpty, let url = URL(string: urlText) {
+                photo.kf.setImage(with: url, placeholder: placeholder, options: [.transition(.fade(0.15))])
+            }
+            let line = UIStackView(arrangedSubviews: [photo, column])
+            line.spacing = 10
+            line.alignment = .center
+            content = line
+        } else {
+            content = column
+        }
+        content.isUserInteractionEnabled = false
+        addSubview(content)
+        content.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)) }
         snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
         isAccessibilityElement = true
         accessibilityLabel = [row.name, amountText, subtitle].joined(separator: ", ")

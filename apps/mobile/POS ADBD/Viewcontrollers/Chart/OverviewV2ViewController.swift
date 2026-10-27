@@ -530,7 +530,8 @@ final class OverviewV2ViewController: BaseViewControler {
         let subtitle = products ? PluralText.format("overview.dash.top.rentals", count: row.count, row.count)
                                 : PluralText.format("overview.dash.orders", count: row.count, row.count)
         let view = OverviewTopRowView(row: row, amountText: OverviewDashLogic.compact(row.amount, vietnamese: vietnamese),
-                                      subtitle: subtitle, color: products ? OVColor.blue : OVColor.violet)
+                                      subtitle: subtitle, color: products ? OVColor.blue : OVColor.violet,
+                                      showsPhoto: products)
         if row.id != nil {
             view.accessibilityTraits = UIAccessibilityTraitButton
         } else {
