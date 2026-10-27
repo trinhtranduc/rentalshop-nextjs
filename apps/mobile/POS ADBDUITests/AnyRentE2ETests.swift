@@ -2937,6 +2937,12 @@ final class AnyRentE2ETests: XCTestCase {
         let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
         guard edit.waitForExistence(timeout: 5) else { e2e.note("no Sửa on product detail"); return nil }
         edit.tap()
+        // a product with a per-day price opens on Theo ngày; the Theo lần box is shown once that row is picked
+        let perRentalRow = app.descendants(matching: .any)["product.form.kind.perRental"]
+        if perRentalRow.waitForExistence(timeout: 8) {
+            e2e.scrollTo(perRentalRow)
+            perRentalRow.tap()
+        }
         let field = e2e.field(["Rent per rental", "Thuê theo lần"])
         guard field.waitForExistence(timeout: 8) else { e2e.note("no Thuê theo lần field"); return nil }
         e2e.scrollTo(field)
