@@ -529,8 +529,8 @@
         "problemCount": "{name}: 3 photos already",
         "keepNote": "Saved photos are only replaced by new ones. Saving now keeps the old photos."
       },
-      "perRental": "Rent per rental",
-      "perDay": "Rent per day",
+      "perRental": "Per rental",
+      "perDay": "Per day",
       "deposit": "Deposit",
       "salePrice": "Sale price",
       "costPrice": "Cost price",
@@ -581,7 +581,8 @@
       "goCategories": "Open Categories",
       "needOutlet": "Add at least one outlet before adding products.",
       "goOutlets": "Open Outlets",
-      "dayGroup": "Multi-day price (choose 1 of 2)",
+      "blockRow": "Per day-block",
+      "blockNotSet": "Not set",
       "unitOnce": "đ / rental",
       "unitDay": "đ / day",
       "block": {

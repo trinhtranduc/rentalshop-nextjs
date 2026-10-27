@@ -4,8 +4,8 @@
  *
  * Rules are the old shared `ProductForm` (packages/ui/src/components/forms/ProductForm.tsx) and
  * `@rentalshop/utils` product-pricing-options (#460, same as iOS):
- * - #1249 (mockup the owner fixed): "Theo lần" is always there and is the default for new orders; below it ONE of "Thuê theo ngày"
- *   (one day price: FIXED + DAILY) or "Giá theo khối ngày" (the table, set up on its own screen: FIXED + BLOCK); no default switch;
+ * - #1249 (mockup the owner fixed last): "Theo lần" (the default for new orders), "Theo mỗi ngày" and "Theo block ngày"
+ *   (the table, set up on its own screen) all exist together and are all sent: FIXED + DAILY + BLOCK; no default switch;
  * - prices are shown and sent only to users with products.manage who are not OUTLET_STAFF;
  * - #951: an empty price box is no price, 0 is a 0đ price; prices, deposit and outlet stock not negative; quantity > 0;
  * - photos: at most 3, jpg / png / webp, 5 MB each.
@@ -118,9 +118,6 @@ export function savedBlockOf(p: Pick<ProductSource, 'pricingOptions'>): BlockDra
   };
 }
 
-/** #1249: which of the two multi-day prices is chosen: one day price, or the day-block table */
-export type DayKind = 'DAY' | 'BLOCK';
-
 export interface PricingOptionPayload {
   type: PricingMode | 'BLOCK';
   price: number;
@@ -132,28 +129,26 @@ export interface PricingOptionPayload {
 }
 
 /**
- * #1249 the rent options the form sends. "Theo lần" (FIXED) is the default for new orders; without it the chosen
- * multi-day option is. "Thuê theo ngày" sends FIXED + DAILY, "Giá theo khối ngày" FIXED + BLOCK (the flat day price is
- * not sent, it stays in the form). A chosen table is always a complete one (the setup screen saves nothing else).
+ * #1249 the rent options the form sends: "Theo lần" (FIXED, the default for new orders), "Theo mỗi ngày" (DAILY, only
+ * when its box has a price) and "Theo block ngày" (BLOCK, only when a complete table was saved), all together.
+ * Without a "Theo lần" price the first of the others is the default.
  */
-export function buildPricingOptions(p: { perRental: Num; perDay: Num; dayKind: DayKind; block: BlockDraft | null }): PricingOptionPayload[] {
-  const fixed = priced(p.perRental);
+export function buildPricingOptions(p: { perRental: Num; perDay: Num; block: BlockDraft | null }): PricingOptionPayload[] {
   const out: PricingOptionPayload[] = [];
+  const fixed = priced(p.perRental);
   if (fixed != null) out.push({ type: 'FIXED', price: fixed, isDefault: true });
-  const first = out.length === 0;
-  if (p.dayKind === 'BLOCK' && p.block && blockComplete(p.block)) {
+  const daily = priced(p.perDay);
+  if (daily != null) out.push({ type: 'DAILY', price: daily, isDefault: out.length === 0 });
+  if (p.block && blockComplete(p.block)) {
     out.push({
       type: 'BLOCK',
       price: p.block.tiers[0] as number,
-      isDefault: first,
+      isDefault: out.length === 0,
       blockTiers: p.block.tiers as number[],
       blockStartDay: p.block.startDay === 1 ? null : p.block.startDay,
       blockExtraMode: p.block.extraMode,
       blockExtraPrice: p.block.extraMode === 'EXTRA_PER_DAY' ? p.block.extraPrice ?? 0 : null,
     });
-  } else if (p.dayKind === 'DAY') {
-    const daily = priced(p.perDay);
-    if (daily != null) out.push({ type: 'DAILY', price: daily, isDefault: first });
   }
   return out;
 }
@@ -170,9 +165,7 @@ export interface FormState {
   /** #951: null = empty box (no price), 0 = 0đ. */
   perRental: number | null;
   perDay: number | null;
-  /** #1249: the chosen multi-day price. The other one stays in the form (`perDay`, `block`) so switching back loses nothing */
-  dayKind: DayKind;
-  /** The saved table (complete), or null when none was set up */
+  /** The saved table (complete), or null when none was set up ("Chưa cài") */
   block: BlockDraft | null;
   deposit: number;
   /** null = empty box (nothing sent), 0 = 0đ. */
@@ -217,7 +210,6 @@ export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number 
     categoryId: categories[0]?.id ?? 0,
     perRental: null,
     perDay: null,
-    dayKind: 'DAY',
     block: null,
     deposit: 0,
     salePrice: null,
@@ -237,7 +229,7 @@ export function formFromProduct(p: ProductSource, outlets: OutletLite[], categor
   }
   const outletStock = outlets.map((o) => ({ outletId: o.id, stock: saved.get(o.id) ?? 0 }));
   const { perRental, perDay } = rentalPricesOf(p);
-  // a saved table opens on "Giá theo khối ngày"; anything else on "Thuê theo ngày" (an old DAILY keeps its price)
+  // each saved price fills its own row; no table = "Chưa cài"
   const table = savedBlockOf(p);
   return {
     name: p.name || '',
@@ -246,7 +238,6 @@ export function formFromProduct(p: ProductSource, outlets: OutletLite[], categor
     categoryId: p.category?.id || p.categoryId || categories[0]?.id || 0,
     perRental,
     perDay,
-    dayKind: table ? 'BLOCK' : 'DAY',
     block: table,
     deposit: Math.max(0, num(p.deposit)),
     // a stored 0 sale price is "not for sale" (the apps save 0 for an empty box): shown empty
@@ -359,22 +350,14 @@ export interface PayloadOptions {
   merchantId?: number;
 }
 
-/** #1249: the form's state transitions for the two multi-day radios (pure, so the screens only call them) */
-export function chooseDayKind(form: FormState, kind: DayKind): { form: FormState; openSetup: boolean } {
-  if (kind === 'DAY') return { form: { ...form, dayKind: 'DAY' }, openSetup: false };
-  // no table yet: the setup screen opens and the previous choice stays until a table is saved
-  if (!form.block) return { form, openSetup: true };
-  return { form: { ...form, dayKind: 'BLOCK' }, openSetup: false };
-}
-
-/** "Lưu bảng giá": the table goes into the form and "Giá theo khối ngày" is chosen */
+/** "Lưu bảng giá": the table goes into the form */
 export function saveBlockTable(form: FormState, block: BlockDraft): FormState {
-  return { ...form, block, dayKind: 'BLOCK' };
+  return { ...form, block };
 }
 
-/** "Tắt giá theo khối ngày": back to "Thuê theo ngày"; the table is dropped, the day price stays */
+/** "Tắt giá theo khối ngày": the table is dropped (back to "Chưa cài"); the other two prices stay */
 export function turnOffBlock(form: FormState): FormState {
-  return { ...form, dayKind: 'DAY', block: null };
+  return { ...form, block: null };
 }
 
 /**

@@ -137,7 +137,10 @@
     },
     "form": {
       "errors": {},
-      "dayGroup": "여러 날 요금 (둘 중 하나 선택)",
+      "perRental": "1회당",
+      "perDay": "하루당",
+      "blockRow": "일수 블록",
+      "blockNotSet": "미설정",
       "unitOnce": "đ / 회",
       "unitDay": "đ / 일",
       "block": {

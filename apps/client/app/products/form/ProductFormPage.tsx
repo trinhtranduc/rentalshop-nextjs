@@ -35,7 +35,6 @@ import {
   imageSearchState,
   parseCount,
   removedAllSavedPhotos,
-  chooseDayKind,
   saveBlockTable,
   turnOffBlock,
   setOutletStock,
@@ -45,7 +44,6 @@ import {
   type FieldKey,
   type FormState,
   type OutletLite,
-  type DayKind,
   type ProductSource,
 } from './form-model';
 
@@ -513,12 +511,6 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     }
   };
 
-  // #1249: one choice, "Theo lần" or "Theo ngày" (the day table right below it); no default switch
-  const pickDayKind = (kind: DayKind) => {
-    const r = chooseDayKind(form, kind);
-    patch(r.form);
-    if (r.openSetup) setSetupOpen(true);
-  };
   const blockSummary = form.block
     ? t(form.block.extraMode === 'EXTRA_PER_DAY' ? 'form.block.summaryExtra' : 'form.block.summaryHold', { count: form.block.tiers.length, extra: money(form.block.extraPrice ?? 0) })
     : '';
@@ -578,34 +570,22 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                 <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
                   <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} unit={t('form.unitOnce')} onChange={(n) => patch({ perRental: n }, ['perRental'])} />
                 </Field>
-                <div className="flex flex-col gap-2" role="radiogroup" aria-label={t('form.dayGroup')} data-day-kind>
-                  <span className="text-xs font-bold uppercase tracking-[0.06em] text-ar-muted">{t('form.dayGroup')}</span>
-                  <div className={`overflow-hidden rounded-xl border ${form.dayKind === 'DAY' ? 'border-ar-primary' : 'border-ar-line'}`}>
-                    <label className={`flex min-h-[52px] cursor-pointer items-center gap-3 px-4 ${form.dayKind === 'DAY' ? 'bg-ar-primary-soft' : ''}`}>
-                      <input type="radio" name="pf-dayKind" checked={form.dayKind === 'DAY'} onChange={() => pickDayKind('DAY')} className="h-5 w-5 flex-none accent-[var(--ar-primary,#2563eb)]" />
-                      <span className="text-[15px] font-semibold text-ar-ink">{t('form.perDay')}</span>
-                    </label>
-                    {form.dayKind === 'DAY' && (
-                      <div className="border-t border-ar-primary px-4 py-3">
-                        <PriceInput id="pf-perDay" value={form.perDay} unit={t('form.unitDay')} onChange={(n) => patch({ perDay: n })} />
-                      </div>
+                <Field id="pf-perDay" label={t('form.perDay')} error={err('perRental')}>
+                  <PriceInput id="pf-perDay" value={form.perDay} unit={t('form.unitDay')} onChange={(n) => patch({ perDay: n }, ['perRental'])} />
+                </Field>
+                <div className="flex flex-col gap-1.5" data-block-row>
+                  <span className={labelText}>{t('form.blockRow')}</span>
+                  <button type="button" onClick={() => setSetupOpen(true)} aria-label={t('form.block.edit')} data-block-summary className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border border-ar-line-strong px-4 py-2 text-left hover:bg-ar-subtle">
+                    {form.block ? (
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-[15px] font-semibold text-ar-ink">{blockSummary}</span>
+                        <span className="text-xs text-ar-muted">{blockPrices}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[15px] text-ar-muted">{t('form.blockNotSet')}</span>
                     )}
-                  </div>
-                  <div className={`overflow-hidden rounded-xl border ${form.dayKind === 'BLOCK' ? 'border-ar-primary' : 'border-ar-line'}`}>
-                    <label className={`flex min-h-[52px] cursor-pointer items-center gap-3 px-4 ${form.dayKind === 'BLOCK' ? 'bg-ar-primary-soft' : ''}`}>
-                      <input type="radio" name="pf-dayKind" checked={form.dayKind === 'BLOCK'} onChange={() => pickDayKind('BLOCK')} className="h-5 w-5 flex-none accent-[var(--ar-primary,#2563eb)]" />
-                      <span className="text-[15px] font-semibold text-ar-ink">{t('detail.block.modeBlock')}</span>
-                    </label>
-                    {form.dayKind === 'BLOCK' && form.block && (
-                      <button type="button" onClick={() => setSetupOpen(true)} aria-label={t('form.block.edit')} data-block-summary className="flex w-full items-center justify-between gap-3 border-t border-ar-primary px-4 py-3 text-left">
-                        <span className="flex min-w-0 flex-col">
-                          <span className="text-[15px] font-semibold text-ar-ink">{blockSummary}</span>
-                          <span className="text-xs text-ar-muted">{blockPrices}</span>
-                        </span>
-                        <span aria-hidden className="text-xl text-ar-muted">›</span>
-                      </button>
-                    )}
-                  </div>
+                    <span aria-hidden className="text-xl text-ar-muted">›</span>
+                  </button>
                 </div>
                 <div className="grid gap-4 border-t border-ar-subtle pt-4 sm:grid-cols-3">
                   <Field id="pf-deposit" label={t('form.deposit')} error={err('deposit')}>
@@ -734,7 +714,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
       {setupOpen && (
         <BlockSetupDialog
           initial={form.block}
-          canTurnOff={form.dayKind === 'BLOCK'}
+          canTurnOff
           excludeProductId={productId ?? undefined}
           onClose={() => setSetupOpen(false)}
           onSave={(block) => {

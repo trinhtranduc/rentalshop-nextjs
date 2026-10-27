@@ -529,8 +529,8 @@
         "problemCount": "{name}: đã đủ 3 ảnh",
         "keepNote": "Ảnh đã lưu chỉ được thay khi có ảnh mới. Lưu bây giờ sẽ giữ nguyên ảnh cũ."
       },
-      "perRental": "Thuê theo lần",
-      "perDay": "Thuê theo ngày",
+      "perRental": "Theo lần",
+      "perDay": "Theo mỗi ngày",
       "deposit": "Tiền cọc",
       "salePrice": "Giá bán",
       "costPrice": "Giá vốn",
@@ -581,7 +581,8 @@
       "goCategories": "Mở Danh mục",
       "needOutlet": "Cần ít nhất một chi nhánh trước khi thêm sản phẩm.",
       "goOutlets": "Mở Chi nhánh",
-      "dayGroup": "Giá nhiều ngày (chọn 1 trong 2)",
+      "blockRow": "Theo block ngày",
+      "blockNotSet": "Chưa cài",
       "unitOnce": "đ / lần",
       "unitDay": "đ / ngày",
       "block": {

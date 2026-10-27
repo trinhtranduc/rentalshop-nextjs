@@ -137,7 +137,10 @@
     },
     "form": {
       "errors": {},
-      "dayGroup": "複数日の料金（どちらか1つ）",
+      "perRental": "1回ごと",
+      "perDay": "1日ごと",
+      "blockRow": "日数ブロック",
+      "blockNotSet": "未設定",
       "unitOnce": "đ / 回",
       "unitDay": "đ / 日",
       "block": {

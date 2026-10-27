@@ -137,7 +137,10 @@
     },
     "form": {
       "errors": {},
-      "dayGroup": "多日价格（二选一）",
+      "perRental": "按次",
+      "perDay": "按天",
+      "blockRow": "按天数档位",
+      "blockNotSet": "未设置",
       "unitOnce": "đ / 次",
       "unitDay": "đ / 天",
       "block": {
