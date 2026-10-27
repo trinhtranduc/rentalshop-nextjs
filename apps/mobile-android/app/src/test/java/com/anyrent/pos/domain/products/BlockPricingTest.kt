@@ -131,4 +131,56 @@ class BlockPricingTest {
             BlockPricing.parse(listOf("80.000"), 1, BlockTable.HOLD_LAST, "20.000"),
         )
     }
+
+    // #1249: one choice, Theo lần / Theo ngày
+
+    private fun product(options: List<com.anyrent.pos.data.model.PricingOption>, pricingType: String = "FIXED") =
+        com.anyrent.pos.data.model.Product(
+            id = 1, name = "Áo dài", barcode = null, rentPrice = 0.0, salePrice = null, stock = 5, available = 5, renting = 0,
+            categoryId = null, categoryName = null, imageUrl = null, deposit = 0.0, pricingType = pricingType, pricingOptions = options,
+        )
+
+    @Test
+    fun `the kind opens on the saved price`() {
+        val block = com.anyrent.pos.data.model.PricingOption(9, "BLOCK", 80_000.0, true, owner)
+        val fixed = com.anyrent.pos.data.model.PricingOption(1, "FIXED", 150_000.0, false)
+        val daily = com.anyrent.pos.data.model.PricingOption(2, "DAILY", 50_000.0, true)
+        // a saved table, or a per-day default with a day price, is Theo ngày
+        assertEquals(PriceKind.PER_DAY, ProductPricing.kind(product(listOf(fixed, block))))
+        assertEquals(PriceKind.PER_DAY, ProductPricing.kind(product(listOf(daily), "DAILY")))
+        // a per-rental default (with or without an old day price), or no price yet, is Theo lần
+        assertEquals(PriceKind.PER_RENTAL, ProductPricing.kind(product(listOf(fixed.copy(isDefault = true), daily.copy(isDefault = false)))))
+        assertEquals(PriceKind.PER_RENTAL, ProductPricing.kind(product(emptyList())))
+    }
+
+    @Test
+    fun `the old day price is shown as a table and saved as before until edited`() {
+        val seed = BlockPricing.seed(50_000.0)
+        // row 1 = the day price, the same price for each extra day: exactly day price x days
+        assertEquals(BlockTable(listOf(50_000.0), 1, BlockTable.EXTRA_PER_DAY, 50_000.0), seed)
+        assertEquals(200_000.0, BlockPricing.calculateBlockRent(seed!!.tiers, 1, seed.extraMode, seed.extraPrice, 4, 1.0)!!, 0.0)
+        assertNull(BlockPricing.seed(null))
+        // untouched: no table is sent, the product stays a DAILY price
+        assertNull(BlockPricing.tableToSave(seed, 50_000.0))
+        assertNull(BlockPricing.tableToSave(null, 50_000.0))
+        // edited: it is a table; a table on a product without an old day price is always a table
+        val edited = BlockTable(listOf(50_000.0, 90_000.0), 1, BlockTable.EXTRA_PER_DAY, 40_000.0)
+        assertEquals(edited, BlockPricing.tableToSave(edited, 50_000.0))
+        assertEquals(owner, BlockPricing.tableToSave(owner, null))
+    }
+
+    @Test
+    fun `the kind decides the default option`() {
+        assertEquals(PricingMode.PER_RENTAL, ProductPricing.defaultMode(PriceKind.PER_RENTAL, owner))
+        assertEquals(PricingMode.BLOCK, ProductPricing.defaultMode(PriceKind.PER_DAY, owner))
+        assertEquals(PricingMode.PER_DAY, ProductPricing.defaultMode(PriceKind.PER_DAY, null))
+        // Theo lần sends no BLOCK option, so the API drops a saved table; the old day price stays a plain option
+        val once = ProductPricing.options(150_000.0, 50_000.0, PricingMode.PER_RENTAL, null)
+        assertEquals(listOf("FIXED", "DAILY"), once.map { it.type })
+        assertEquals(listOf(true, false), once.map { it.isDefault })
+        // Theo ngày with no typed table is the old DAILY default
+        val legacy = ProductPricing.options(null, 50_000.0, PricingMode.PER_DAY, null)
+        assertEquals(listOf("DAILY"), legacy.map { it.type })
+        assertEquals(listOf(true), legacy.map { it.isDefault })
+    }
 }
