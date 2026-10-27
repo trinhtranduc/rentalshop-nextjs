@@ -626,7 +626,6 @@
     <string name="v2_form_prices">Prices</string>
     <string name="v2_form_per_rental">Rent per rental</string>
     <string name="v2_form_per_day">Rent per day</string>
-    <string name="v2_form_default_pricing">New orders charge by default</string>
     <string name="v2_form_sale_price">Sale price</string>
     <string name="v2_form_not_for_sale">Not for sale</string>
     <string name="v2_form_deposit">Deposit per item</string>
@@ -2280,12 +2279,9 @@
     <string name="block_screen_title">Rental price · %1$s</string>
     <string name="block_save">Save price table</string>
     <string name="block_turn_off">Turn off day-block price</string>
-    <string name="block_row_off">Not used</string>
     <string name="block_row_tiers">%1$d tiers</string>
     <string name="block_row_extra">+%1$s per day</string>
     <string name="block_row_hold">last block price held</string>
-    <string name="block_section_default">Default pricing</string>
-    <string name="block_hint_default">Used by default for new orders. Staff can change it in the cart.</string>
     <string name="block_section_tiers">Price by number of days</string>
     <string name="block_add_day">+ Add day %1$d</string>
     <string name="block_remove_day">Remove this day</string>
@@ -2295,9 +2291,23 @@
     <string name="block_hold_last_price">Keep the last block price (%1$s)</string>
     <string name="block_preview">Preview</string>
     <string name="block_error_invalid">Enter a price for every day (0 or more) and the amount added per extra day.</string>
-    <string name="block_error_empty">There is no day-block price table yet. Enter a price for at least 1 day, or pick another default.</string>
+    <string name="block_error_empty">There is no day-block price table yet. Enter a price for at least 1 day.</string>
     <string name="block_summary_block">Block of %1$d days</string>
     <string name="block_summary_extra">+ %1$d extra days</string>
     <string name="v2_unit_per_block">/1 day</string>
     <string name="v2_price_block">Day block</string>
+    <!-- #1249 product price form (mockup v170) -->
+    <string name="v2_form_multi_day_title">Multi-day price (pick 1 of 2)</string>
+    <string name="v2_form_unit_per_rental">%1$s / rental</string>
+    <string name="v2_form_unit_per_day">%1$s / day</string>
+    <string name="block_intro">Each number of days has its own price. A customer renting exactly that many days pays that line.</string>
+    <string name="block_quick">Quick create</string>
+    <string name="block_quick_title">Quick create</string>
+    <string name="block_quick_first">First day price</string>
+    <string name="block_quick_step">Added for each next day</string>
+    <string name="block_quick_days">Number of days</string>
+    <string name="block_quick_create">Create table</string>
+    <string name="block_copy">Copy from another product</string>
+    <string name="block_copy_loading">Loading…</string>
+    <string name="block_copy_none">No other product has a day-block price table yet.</string>
 </resources>

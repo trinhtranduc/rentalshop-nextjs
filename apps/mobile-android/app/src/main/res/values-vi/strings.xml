@@ -625,7 +625,6 @@
     <string name="v2_form_prices">Giá</string>
     <string name="v2_form_per_rental">Thuê theo lần</string>
     <string name="v2_form_per_day">Thuê theo ngày</string>
-    <string name="v2_form_default_pricing">Khi tạo đơn, mặc định tính</string>
     <string name="v2_form_sale_price">Giá bán</string>
     <string name="v2_form_not_for_sale">Không bán</string>
     <string name="v2_form_deposit">Cọc mỗi món</string>
@@ -2250,12 +2249,9 @@
     <string name="block_screen_title">Giá thuê · %1$s</string>
     <string name="block_save">Lưu bảng giá</string>
     <string name="block_turn_off">Tắt giá theo khối ngày</string>
-    <string name="block_row_off">Chưa dùng</string>
     <string name="block_row_tiers">%1$d mốc</string>
     <string name="block_row_extra">+%1$s mỗi ngày</string>
     <string name="block_row_hold">giữ giá khối cuối</string>
-    <string name="block_section_default">Cách tính giá mặc định</string>
-    <string name="block_hint_default">Kiểu giá mặc định khi tạo đơn. Nhân viên đổi được trong giỏ.</string>
     <string name="block_section_tiers">Giá theo số ngày</string>
     <string name="block_add_day">+ Thêm ngày %1$d</string>
     <string name="block_remove_day">Xoá ngày này</string>
@@ -2265,9 +2261,23 @@
     <string name="block_hold_last_price">Giữ nguyên giá khối cuối (%1$s)</string>
     <string name="block_preview">Xem thử</string>
     <string name="block_error_invalid">Nhập đủ giá cho mọi ngày (từ 0 trở lên) và số tiền cộng thêm mỗi ngày.</string>
-    <string name="block_error_empty">Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày, hoặc chọn kiểu giá mặc định khác.</string>
+    <string name="block_error_empty">Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày.</string>
     <string name="block_summary_block">Khối %1$d ngày</string>
     <string name="block_summary_extra">+ %1$d ngày thêm</string>
     <string name="v2_unit_per_block">/1 ngày</string>
     <string name="v2_price_block">Khối ngày</string>
+    <!-- #1249 form giá sản phẩm (mockup v170) -->
+    <string name="v2_form_multi_day_title">Giá nhiều ngày (chọn 1 trong 2)</string>
+    <string name="v2_form_unit_per_rental">%1$s / lần</string>
+    <string name="v2_form_unit_per_day">%1$s / ngày</string>
+    <string name="block_intro">Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.</string>
+    <string name="block_quick">Tạo nhanh</string>
+    <string name="block_quick_title">Tạo nhanh</string>
+    <string name="block_quick_first">Giá ngày đầu</string>
+    <string name="block_quick_step">Mỗi ngày thêm</string>
+    <string name="block_quick_days">Số ngày</string>
+    <string name="block_quick_create">Tạo bảng</string>
+    <string name="block_copy">Sao chép từ sản phẩm khác</string>
+    <string name="block_copy_loading">Đang tải…</string>
+    <string name="block_copy_none">Chưa có sản phẩm khác dùng bảng giá theo khối ngày.</string>
 </resources>

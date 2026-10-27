@@ -192,7 +192,7 @@ internal fun RadioRow(tag: String, title: String, selected: Boolean, onPick: () 
 
 /** A numeric box that keeps "1.250.000" grouping and reports the text (up to 12 digits) */
 @Composable
-private fun MoneyBox(value: String, tag: String, modifier: Modifier, onChange: (String) -> Unit) {
+internal fun MoneyBox(value: String, tag: String, modifier: Modifier, onChange: (String) -> Unit) {
     Row(
         modifier.height(46.dp).border(1.dp, V2Colors.Border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
