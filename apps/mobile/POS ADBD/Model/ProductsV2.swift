@@ -993,8 +993,10 @@ struct CreateOrderConfirm: Equatable {
     let range: String?
     /// Inclusive civil days; nil for a sale
     let days: Int?
-    /// `Vest đen slim fit, Áo dài lụa đỏ ×2`
+    /// First product only, `Áo dài lụa đỏ ×2` (#1239: a long list pushed the buttons off the screen)
     let items: String
+    /// How many more products the cart has: "+N sản phẩm khác"
+    let moreCount: Int
     let total: Double
     /// Prepaid deposit (rent) or amount due (sale)
     let collect: Double
@@ -1023,18 +1025,17 @@ enum CreateOrderSheetLogic {
             range = dayMonth(pickup, timeZone: timeZone) + " → " + dayMonth(ret, timeZone: timeZone)
             days = CartV2Logic.rentalDays(pickup: pickup, return: ret, timeZone: timeZone)
         }
-        let items = cart.items
-            .map { item in
-                let name = item.productName ?? ""
-                return item.quantity > 1 ? "\(name) ×\(item.quantity)" : name
-            }
-            .joined(separator: ", ")
+        let items = cart.items.first.map { item in
+            let name = item.productName ?? ""
+            return item.quantity > 1 ? "\(name) ×\(item.quantity)" : name
+        } ?? ""
         return CreateOrderConfirm(
             isSale: isSale,
             customer: cart.customer.map(CustomersV2Logic.displayName) ?? "—",
             range: range,
             days: days,
             items: items,
+            moreCount: max(0, cart.items.count - 1),
             total: cart.totalAmount,
             collect: CartV2Logic.collectNow(cart)
         )

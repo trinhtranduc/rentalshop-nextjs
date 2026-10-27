@@ -686,6 +686,10 @@
     <string name="v2_create_confirm_customer">Customer</string>
     <string name="v2_create_confirm_dates">Rental dates</string>
     <string name="v2_create_confirm_items">Items</string>
+    <plurals name="v2_create_confirm_more">
+        <item quantity="one">+%1$d more item</item>
+        <item quantity="other">+%1$d more items</item>
+    </plurals>
     <string name="v2_create_confirm_collect_deposit">Collect deposit now</string>
     <string name="v2_create_confirm_collect_sale">Collect now</string>
     <!-- #676 edit an order from the new cart (board sua-don) -->
