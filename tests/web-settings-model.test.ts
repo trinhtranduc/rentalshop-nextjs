@@ -165,39 +165,44 @@ describe('staff list (#528)', () => {
 });
 
 describe('store settings (#528)', () => {
-  it('layout C (#1140): 9 tabs for the owner, 6 for the outlet admin, 5 for staff', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'public-page', 'bank-accounts', 'payment', 'receipt', 'subscription', 'profile', 'account', 'language']);
-    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'bank-accounts', 'receipt', 'profile', 'account', 'language']);
-    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language']);
-    expect(tabsForRole('OUTLET_INVENTORY').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'account', 'language']);
+  it('compact layout (#1259): 7 tabs for the owner, 5 for the outlet admin, 4 for staff', () => {
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toEqual(['merchant', 'public-page', 'payment', 'receipt', 'subscription', 'profile', 'language']);
+    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toEqual(['outlet', 'payment', 'receipt', 'profile', 'language']);
+    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'language']);
+    expect(tabsForRole('OUTLET_INVENTORY').map((t) => t.id)).toEqual(['outlet', 'receipt', 'profile', 'language']);
   });
 
-  it('groups the nav as Cửa hàng · Tài khoản · Tôi, dropping empty groups (#1140)', () => {
+  it('groups the nav as Cửa hàng · Tài khoản, dropping empty groups (#1259)', () => {
     const shape = (role: string) => groupedTabs(tabsForRole(role)).map((g) => [g.group, g.tabs.map((t) => t.id)]);
     expect(shape('MERCHANT')).toEqual([
-      ['shop', ['merchant', 'public-page', 'bank-accounts', 'payment', 'receipt']],
-      ['account', ['subscription']],
-      ['me', ['profile', 'account', 'language']],
+      ['shop', ['merchant', 'public-page', 'payment', 'receipt']],
+      ['account', ['subscription', 'profile', 'language']],
     ]);
     expect(shape('OUTLET_STAFF')).toEqual([
       ['shop', ['outlet', 'receipt']],
-      ['me', ['profile', 'account', 'language']],
+      ['account', ['profile', 'language']],
     ]);
   });
 
-  it('every old ?settings= key still opens a tab (#1140)', () => {
+  it('every old ?settings= key still opens the right place (#1140, #1259)', () => {
     const owner: Record<string, string> = {
-      merchant: 'merchant', outlet: 'merchant', 'bank-accounts': 'bank-accounts', receipt: 'receipt', printer: 'receipt',
-      subscription: 'subscription', profile: 'profile', account: 'account', language: 'language', appearance: 'language',
+      merchant: 'merchant', outlet: 'merchant', 'bank-accounts': 'payment', payment: 'payment', receipt: 'receipt', printer: 'receipt',
+      subscription: 'subscription', profile: 'profile', account: 'profile', language: 'language', appearance: 'language', 'public-page': 'public-page',
     };
     for (const [key, tab] of Object.entries(owner)) expect(resolveTab(key, 'MERCHANT').tab).toBe(tab);
+    const admin: Record<string, string> = { 'bank-accounts': 'payment', payment: 'payment', account: 'profile', printer: 'receipt', 'public-page': 'outlet' };
+    for (const [key, tab] of Object.entries(admin)) expect(resolveTab(key, 'OUTLET_ADMIN').tab).toBe(tab);
     const staff: Record<string, string> = {
-      merchant: 'outlet', outlet: 'outlet', 'bank-accounts': 'outlet', receipt: 'receipt', printer: 'receipt',
-      subscription: 'outlet', profile: 'profile', account: 'account', language: 'language', appearance: 'language', 'public-page': 'outlet',
+      merchant: 'outlet', outlet: 'outlet', 'bank-accounts': 'outlet', payment: 'outlet', receipt: 'receipt', printer: 'receipt',
+      subscription: 'outlet', profile: 'profile', account: 'profile', language: 'language', appearance: 'language', 'public-page': 'outlet',
     };
     for (const [key, tab] of Object.entries(staff)) expect(resolveTab(key, 'OUTLET_STAFF').tab).toBe(tab);
-    expect(resolveTab('public-page', 'MERCHANT').tab).toBe('public-page');
     expect(resolveTab('appearance', 'OUTLET_ADMIN').tab).toBe('language');
+  });
+
+  it('Thu tiền holds the bank accounts for owner and outlet admin only (#1259)', () => {
+    expect(tabsForRole('MERCHANT').find((t) => t.id === 'payment')?.roles).toEqual(['MERCHANT', 'OUTLET_ADMIN']);
+    expect(tabsForRole('OUTLET_STAFF').some((t) => t.id === 'payment')).toBe(false);
   });
 
   it('?settings= with no tab is the phone list (#1140)', () => {
@@ -212,7 +217,7 @@ describe('store settings (#528)', () => {
     expect(resolveTab('subscription', 'OUTLET_ADMIN')).toEqual({ tab: 'outlet' });
     expect(resolveTab('receipt', 'OUTLET_STAFF')).toEqual({ tab: 'receipt' });
     // #852: the owner sets bank accounts per branch in Cài đặt
-    expect(resolveTab('bank-accounts', 'MERCHANT')).toEqual({ tab: 'bank-accounts' });
+    expect(resolveTab('bank-accounts', 'MERCHANT')).toEqual({ tab: 'payment' });
     expect(resolveTab('bank-accounts', 'OUTLET_STAFF')).toEqual({ tab: 'outlet' });
     expect(resolveTab('loyalty', 'MERCHANT')).toEqual({ tab: 'merchant', redirect: '/loyalty' });
     expect(resolveTab('profile', 'OUTLET_STAFF')).toEqual({ tab: 'profile' });
@@ -300,9 +305,9 @@ describe('Cài đặt dialog URL (#539)', () => {
 });
 
 describe('Giao diện (#539, inside Ngôn ngữ & giao diện since #1140)', () => {
-  it('has no tab of its own; the old key opens language in "me"', () => {
+  it('has no tab of its own; the old key opens language in "account"', () => {
     expect(tabsForRole('OUTLET_STAFF').some((t) => (t.id as string) === 'appearance')).toBe(false);
-    expect(tabsForRole('MERCHANT').find((t) => t.id === 'language')?.group).toBe('me');
+    expect(tabsForRole('MERCHANT').find((t) => t.id === 'language')?.group).toBe('account');
     expect(resolveTab('appearance', 'OUTLET_STAFF').tab).toBe('language');
   });
 });

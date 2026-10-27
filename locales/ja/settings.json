@@ -21,7 +21,8 @@
       "outlet": "店舗",
       "public-page": "公開ショップページ",
       "bank-accounts": "銀行",
-      "profile": "プロフィール",
+      "receipt": "印刷と伝票",
+      "profile": "プロフィールとセキュリティ",
       "account": "パスワードとセキュリティ",
       "language": "言語と表示",
       "payment": "入金"
