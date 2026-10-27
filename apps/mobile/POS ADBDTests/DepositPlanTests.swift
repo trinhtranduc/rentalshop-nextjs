@@ -19,6 +19,17 @@ final class DepositPlanTests: XCTestCase {
         XCTAssertEqual(stages.map(\.percent), [30, 40, 30])
     }
 
+    /// #1245: 30% of 128đ is 38đ; the cart shows the template's 30%, not 38/128 = 29.69%. An edited amount shows its own %.
+    func testPercentIsTemplateUntilAmountEdited() {
+        var d = drafts([30])
+        var stages = DepositPlanMath.stages(d, total: 128, createdKey: "2026-10-25", pickupKey: "2026-10-30", currency: .vnd)
+        XCTAssertEqual(stages[0].amount, 38)
+        XCTAssertEqual(stages[0].percent, 30)
+        d[0].amountOverride = 38
+        stages = DepositPlanMath.stages(d, total: 128, createdKey: "2026-10-25", pickupKey: "2026-10-30", currency: .vnd)
+        XCTAssertEqual(stages[0].percent, 29.7)
+    }
+
     func testRestAbsorbsRounding() {
         // 3 stages of 33.33% of 100.001: the stages always add up to the total
         let stages = DepositPlanMath.stages(drafts([33.33, 33.33]), total: 100_001, createdKey: "2026-10-25", pickupKey: "2026-10-30", currency: .vnd)

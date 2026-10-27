@@ -2182,6 +2182,8 @@
     <string name="deposit_method_check">Séc</string>
     <string name="deposit_method_manual">Khác</string>
     <string name="deposit_cart_title">Thu cọc theo giai đoạn</string>
+    <string name="deposit_cart_template">Mẫu</string>
+    <string name="deposit_cart_stage_short">%1$s%% · %2$s</string>
     <string name="deposit_cart_stage_detail">%1$s%% đơn · hạn: %2$s</string>
     <string name="deposit_cart_rest_detail">Thu khi giao · %s</string>
     <string name="deposit_cart_collect_first">Thu ngay giai đoạn %d</string>

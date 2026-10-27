@@ -343,6 +343,8 @@ final class CartV2ViewController: BaseViewControler {
         if isRent && cart.editHasDepositPlan {
             // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
         } else if isRent && cart.isStagedRental {
+            // #1245: the note row stays with the money rows; the staged deposit is one group of its own below it
+            content.addArrangedSubview(orderNoteRow())
             content.addArrangedSubview(stagedSection())
         } else if isRent && !(DepositModeStore.current == .staged && !cart.isEditMode) {
             let deposit = V2ValueRow(title: "products.cart.deposit".localized(), editable: true)
@@ -352,7 +354,7 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(V2.divider())
         }
 
-        content.addArrangedSubview(orderNoteRow()) // #1043: opens the item note sheet; #1056: a TIỀN row like the others
+        if !(isRent && cart.isStagedRental && !cart.editHasDepositPlan) { content.addArrangedSubview(orderNoteRow()) } // #1043: opens the item note sheet; #1056: a TIỀN row like the others
         content.addArrangedSubview(UIView.spacer(height: 24))
 
         if cart.isEditMode {
@@ -404,7 +406,8 @@ final class CartV2ViewController: BaseViewControler {
         let settings = DepositModeStore.latest
         let choices = settings?.choices ?? []
         let selected = choices.first { $0.id == cart.depositTemplateId }
-        let templateRow = V2ValueRow(title: "deposit.cart.title".localized(), chevron: false, wrapsValue: true)
+        column.addArrangedSubview(V2.sectionHeader("deposit.cart.title".localized())) // #1245: one group, headed like MONEY
+        let templateRow = V2ValueRow(title: "deposit.cart.template".localized(), chevron: false, wrapsValue: true)
         templateRow.valueLabel.text = (selected?.name ?? choices.first?.name ?? "") + (Cart.canEditStages && choices.count > 1 ? "  ⌄" : "")
         templateRow.valueLabel.textColor = DS.Color.primary
         templateRow.valueLabel.font = Utils.boldFont(size: DS.TextSize.body)
@@ -447,11 +450,11 @@ final class CartV2ViewController: BaseViewControler {
 
     private func stageRow(_ stage: DepositStagePreview, index: Int, today: String) -> UIView {
         let editable = Cart.canEditStages && !stage.isRest
-        let name = DepositUI.wrapLabel(stage.label, size: DS.TextSize.body)
+        let name = DepositUI.wrapLabel("\(index + 1). \(stage.label)", size: DS.TextSize.body)
         let due = stage.dueDateKey == today ? "deposit.due.today".localized() : DepositUI.dayText(stage.dueDateKey)
         let detail = stage.isRest
             ? String(format: "deposit.cart.restDetail".localized(), due)
-            : String(format: "deposit.cart.stageDetail".localized(), DepositPlanMath.percentText(stage.percent), due)
+            : String(format: "deposit.cart.stageShort".localized(), DepositPlanMath.percentText(stage.percent), due)
         let sub = DepositUI.wrapLabel(detail, size: DS.TextSize.pill + 1, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, sub])
         texts.axis = .vertical
@@ -471,7 +474,7 @@ final class CartV2ViewController: BaseViewControler {
         let row = UIControl()
         line.isUserInteractionEnabled = false
         row.addSubview(line)
-        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg + 12, bottom: 10, right: DS.Spacing.lg)) } // #1245: stages sit indented under the template
         row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
         row.accessibilityIdentifier = "deposit.cart.stage.\(index)"
         if editable {

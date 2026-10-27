@@ -2981,3 +2981,5 @@
 "BLOCK_TABLE_INVALID" = "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.";
 "products.cart.confirm.more" = "+%d more items";
 "products.cart.confirm.more.one" = "+%d more item";
+"deposit.cart.template" = "Template";
+"deposit.cart.stageShort" = "%@%% · %@";
