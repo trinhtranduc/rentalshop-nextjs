@@ -2301,12 +2301,6 @@
     <string name="v2_form_unit_per_rental">%1$s / rental</string>
     <string name="v2_form_unit_per_day">%1$s / day</string>
     <string name="block_intro">Each number of days has its own price. A customer renting exactly that many days pays that line.</string>
-    <string name="block_quick">Quick create</string>
-    <string name="block_quick_title">Quick create</string>
-    <string name="block_quick_first">First day price</string>
-    <string name="block_quick_step">Added for each next day</string>
-    <string name="block_quick_days">Number of days</string>
-    <string name="block_quick_create">Create table</string>
     <string name="block_copy">Copy from another product</string>
     <string name="block_copy_loading">Loading…</string>
     <string name="block_copy_none">No other product has a day-block price table yet.</string>

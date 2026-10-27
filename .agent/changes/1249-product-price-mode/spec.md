@@ -6,7 +6,7 @@ Issue: #1249 · Intent: ./intent.md · Thay mục "Quyết định đã chốt" 
 1. Form sản phẩm (web, iOS chuẩn, Android theo iOS): ô "Thuê theo lần" luôn có; nhóm "Giá nhiều ngày" là hai radio full width (Thuê theo ngày | Giá theo khối ngày), không thụt lề; Giá bán, Cọc mỗi món, Kho như cũ.
 2. "Thuê theo ngày" được chọn: ô một giá (đ / ngày) hiện ngay dưới radio, nối liền cùng viền. "Giá theo khối ngày" được chọn: thẻ tóm tắt ngay dưới radio, bấm mở màn setup riêng (web: hộp thoại toàn màn hình nhỏ). Bên không chọn chỉ còn một hàng radio.
 3. Chọn "Giá theo khối ngày" khi chưa có bảng: mở thẳng màn setup. Huỷ/quay lại không lưu: lựa chọn trước giữ nguyên. "Lưu bảng giá": bảng vào form, radio = Giá theo khối ngày. "Tắt giá theo khối ngày": radio = Thuê theo ngày, bảng bỏ (giá ngày vẫn còn).
-4. Màn setup block: bảng Số ngày -> Giá (đánh số liên tục), "+ Thêm ngày N", "Thuê quá N ngày" (hai radio), "Xem thử N ngày = ...", "Tạo nhanh" (ngày đầu + mỗi ngày thêm + số ngày, sinh bảng), "Sao chép từ sản phẩm khác" (chép bảng + quy tắc quá mốc, không chép giá bán/cọc), "Lưu bảng giá", "Tắt giá theo khối ngày". Không có danh sách 3 radio.
+4. Màn setup block: bảng Số ngày -> Giá (đánh số liên tục), "+ Thêm ngày N", "Thuê quá N ngày" (hai radio), "Xem thử N ngày = ...", "Sao chép từ sản phẩm khác" (chép bảng + quy tắc quá mốc, không chép giá bán/cọc), "Lưu bảng giá", "Tắt giá theo khối ngày". Không có danh sách 3 radio.
 5. Không công tắc mặc định, không nhãn Đang dùng / Chưa dùng, không hai ô giá song song. Mặc định khi tạo đơn LUÔN là Theo lần. Giỏ/đơn không đổi.
 
 ## Behavior (mỗi dòng test được)
@@ -24,3 +24,6 @@ API, schema, admin `packages/ui` ProductForm, giỏ/đơn/in phiếu, giá theo 
 
 ## API and data
 Không đổi. `.agent/api-changes/LOG.md` có một dòng "không đổi API". Payload dùng các `type` có sẵn (FIXED, DAILY, BLOCK + `pricingSchemaVersion: 2`).
+
+## Cập nhật (#1266)
+Chủ bỏ "Tạo nhanh" khỏi màn setup block (web, iOS, Android). Bảng chỉ nhập tay từng dòng; còn "Sao chép từ sản phẩm khác".

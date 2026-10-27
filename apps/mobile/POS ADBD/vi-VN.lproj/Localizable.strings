@@ -2980,14 +2980,6 @@
 "products.form.manyDays" = "Giá nhiều ngày (chọn 1 trong 2)";
 "products.form.perDay.box" = "Giá thuê mỗi ngày";
 "block.intro" = "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.";
-"block.quick" = "Tạo nhanh: ngày đầu + mỗi ngày thêm";
-"block.quick.title" = "Tạo nhanh";
-"block.quick.message" = "Giá ngày 1, số tiền cộng thêm cho mỗi ngày kế tiếp và số ngày của bảng.";
-"block.quick.first" = "Giá ngày 1";
-"block.quick.extra" = "Cộng thêm mỗi ngày";
-"block.quick.days" = "Số ngày (1-31)";
-"block.quick.create" = "Tạo bảng";
-"block.quick.invalid" = "Nhập giá ngày 1, số tiền cộng thêm mỗi ngày và số ngày từ 1 đến 31.";
 "block.copy" = "Sao chép từ sản phẩm khác";
 "block.copy.empty" = "Chưa có sản phẩm nào có bảng giá theo khối ngày.";
 "block.error.nothing" = "Nhập giá ít nhất cho 1 ngày.";

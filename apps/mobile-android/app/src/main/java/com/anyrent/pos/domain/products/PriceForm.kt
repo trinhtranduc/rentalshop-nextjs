@@ -50,12 +50,6 @@ object PriceForm {
         DayKind.BLOCK -> ProductPricing.options(s.perRental, null, PricingMode.PER_RENTAL, s.block)
     }
 
-    /** "Tạo nhanh": [days] rows, row 1 = [first], each next row [step] more; the same [step] for each day past the table */
-    fun quickTable(first: Double, step: Double, days: Int): BlockTable {
-        val n = days.coerceIn(1, BlockPricing.MAX_TIERS)
-        return BlockTable((0 until n).map { first + it * step }, 1, BlockTable.EXTRA_PER_DAY, step)
-    }
-
     /** "Sao chép từ sản phẩm khác": its table and its rule past the last day (never its sale price or deposit) */
     fun copyTable(other: Product): BlockTable? = ProductPricing.block(other)
 }

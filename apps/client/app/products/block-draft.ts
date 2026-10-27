@@ -22,9 +22,3 @@ export function blockComplete(b: BlockDraft): boolean {
   if (b.tiers.length < 1 || b.tiers.length > MAX_BLOCK_TIERS || b.tiers.some((t) => t == null || t < 0)) return false;
   return b.extraMode !== 'EXTRA_PER_DAY' || (b.extraPrice != null && b.extraPrice >= 0);
 }
-
-/** "Tạo nhanh": the first day's price plus a step for each extra day makes `days` rows (1 … 31); the step is also the extra price past the table */
-export function quickTable(first: number, step: number, days: number): BlockDraft {
-  const n = Math.max(1, Math.min(MAX_BLOCK_TIERS, Math.floor(days)));
-  return { tiers: Array.from({ length: n }, (_, i) => first + i * step), startDay: 1, extraMode: 'EXTRA_PER_DAY', extraPrice: step };
-}
