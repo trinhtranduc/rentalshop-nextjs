@@ -445,9 +445,9 @@ describe('#1273 Thế chân in two sections', () => {
     expect(dayMonth('2026-10-27')).toBe('27/10');
   });
 
-  it('has the new strings in all five languages', () => {
+  it('has the new strings in en and vi (dashboard.json exists only for these two)', () => {
     const keys = ['sectionNote', 'sectionNotePeriod', 'heldTitle', 'heldHint', 'heldTotal', 'flowTitle', 'flowTitlePeriod', 'flowHint', 'flowHintPeriod', 'flowIn', 'flowOut', 'flowNet', 'flowNetPeriod'];
-    for (const lang of ['en', 'vi', 'ja', 'ko', 'zh']) {
+    for (const lang of ['en', 'vi']) {
       const json = JSON.parse(readFileSync(join(__dirname, '..', 'locales', lang, 'dashboard.json'), 'utf8'));
       const related = (json.home ?? json).related;
       for (const k of keys) expect(`${lang} ${k} ${typeof related[k]}`).toBe(`${lang} ${k} string`);
