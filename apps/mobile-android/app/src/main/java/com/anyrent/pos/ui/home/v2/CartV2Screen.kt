@@ -1041,19 +1041,16 @@ private fun ItemRow(
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         // #1132 (owner, mockup A, iOS `stockPill`): a soft pill in the tone's fill, a 7 dp dot in the text
                         // colour, then the text (semibold); the overlap tag keeps its tap and "›"
-                        // #1241 (owner): a tap opens the product's Lịch trống (the overlap tag: its first booked-out day);
-                        // the touch box is 48 dp high, the pill inside keeps its look
+                        // #1241 (owner): a tap opens the product's Lịch trống (the overlap tag: its first booked-out day).
+                        // The pill is exactly as wide as its text; Compose widens a small clickable's touch area to 48 dp
+                        // on its own, so the row does not grow
                         val open = onOpenOverlap ?: onOpenProduct
-                        Box(
-                            Modifier.heightIn(min = 48.dp)
-                                .then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
-                                .clickable(onClickLabel = hint, role = Role.Button, onClick = open),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
-                            modifier = Modifier.clip(RoundedCornerShape(percent = 50))
+                            modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
+                                .clip(RoundedCornerShape(percent = 50))
+                                .clickable(onClickLabel = hint, role = Role.Button, onClick = open)
                                 .background(style.colors.fill)
                                 .padding(horizontal = 9.dp, vertical = 3.dp),
                         ) {
@@ -1062,7 +1059,6 @@ private fun ItemRow(
                                 if (onOpenOverlap != null) "$text ›" else text,
                                 fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text, maxLines = 1,
                             )
-                        }
                         }
                     }
                 }

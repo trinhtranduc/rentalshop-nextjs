@@ -679,6 +679,7 @@ final class CartV2ViewController: BaseViewControler {
         let nameRow = UIStackView(arrangedSubviews: [name])
         nameRow.alignment = .top
         nameRow.spacing = 8
+        name.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal) // #1241: spare width goes to the name, never the chip
         let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
         // #1189: "Khối 3 ngày + 2 ngày thêm · 160.000đ" and under it the sum "120.000 (3 ngày) + 2 × 20.000 = 160.000"
         if cart.orderType == .rent, let detail = item.blockDetail, detail.extraDays > 0 {
@@ -706,6 +707,7 @@ final class CartV2ViewController: BaseViewControler {
             // #1132 (owner, mockup A): a soft pill in the tone's fill, a dot in the text colour, then the text
             let status = Self.stockPill(text: note.text, tone: note.tone)
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
+            status.accessibilityTraits = UIAccessibilityTraitButton // #1241: it opens the product
             status.addAction(UIAction { [weak self] _ in self?.openProductCalendar(productId: item.productId, focusDay: nil) }, for: .touchUpInside)
             // #1241 (owner): stays on the right; the pill is exactly as wide as its text, the name takes the rest
             nameRow.addArrangedSubview(status)
@@ -1372,8 +1374,12 @@ extension CartV2ViewController {
         row.alignment = .center
         row.isUserInteractionEnabled = false
         pill.addSubview(row)
-        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)) }
+        let insets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)
+        pill.fitting = row
+        pill.insets = insets
+        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(insets) }
         pill.setContentHuggingPriority(.required, for: .horizontal)
+        pill.setContentHuggingPriority(.required, for: .vertical)
         pill.setContentCompressionResistancePriority(.required, for: .horizontal)
         pill.layer.cornerRadius = (ceil(label.font.lineHeight) + 6) / 2
         pill.clipsToBounds = true
@@ -1382,7 +1388,18 @@ extension CartV2ViewController {
 }
 
 /// #1241: the cart's stock chip is about 20 pt high; the touch area grows to 44 pt without changing the look
+/// #1241: and its width is the text's: a UIControl has no intrinsic size of its own, so the stack gave it the spare width
+/// and the pill's fill ran past the text. `fitting` is the dot + label row, `insets` the pill padding
 final class PillControl: UIControl {
+    var fitting: UIView?
+    var insets = UIEdgeInsets.zero
+
+    override var intrinsicContentSize: CGSize {
+        guard let fitting else { return super.intrinsicContentSize }
+        let size = fitting.systemLayoutSizeFitting(UILayoutFittingCompressedSize)
+        return CGSize(width: ceil(size.width) + insets.left + insets.right, height: ceil(size.height) + insets.top + insets.bottom)
+    }
+
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         let dy = max(0, (44 - bounds.height) / 2), dx = max(0, (44 - bounds.width) / 2)
         return bounds.insetBy(dx: -dx, dy: -dy).contains(point)
