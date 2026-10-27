@@ -23,6 +23,7 @@ internal suspend fun shareOrderReceipt(context: Context, order: OrderDetail) {
         printBankQr = printBankQr,
         bankAccount = account,
         blockFormula = { it.blockLines(context.resources)?.second },
+        blockSummary = { it.blockLines(context.resources)?.first },
     )
     shareOrderImage(context, model, subject = order.summary.orderNumber)
 }

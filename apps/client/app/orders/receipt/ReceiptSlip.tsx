@@ -50,12 +50,46 @@ export const SLIP_58_CSS = `
 .rc-58 .rc-qr{width:28mm;height:28mm}
 `;
 
+/** #1252 Thu cọc theo giai đoạn: one row per stage (name, amount), a small line (percent, day, status), then the totals */
+function StagesBlock({ stages, ti }: { stages: NonNullable<ReceiptModel['stages']>; ti: Tr }) {
+  return (
+    <div data-receipt-stages>
+      <hr className="rc-rule" />
+      <div className="rc-strong">{ti('cardTitle')}</div>
+      {stages.items.map((stage) => (
+        <div key={stage.key} className="rc-item" data-stage={stage.key} data-stage-status={stage.status}>
+          <div className="rc-row">
+            <span className="rc-item-name">{stage.isRest ? ti('restTitle') : `${stage.number}. ${stage.label}`}</span>
+            <span>{stage.amount}</span>
+          </div>
+          {!stage.isRest && (
+            <div className="rc-soft">
+              {ti(stage.paid ? 'paidMeta' : 'stageMeta', { percent: stage.percent, day: stage.paid ? stage.day : stage.day ? ti('dueOn', { day: stage.day }) : '' })}
+              {' · '}
+              {ti(`status.${stage.status}`)}
+            </div>
+          )}
+        </div>
+      ))}
+      <div className="rc-row rc-strong">
+        <span>{ti('collected')}</span>
+        <span>{stages.collected}</span>
+      </div>
+      <div className="rc-row rc-strong">
+        <span>{ti('remaining')}</span>
+        <span>{stages.remaining}</span>
+      </div>
+    </div>
+  );
+}
+
 export function ReceiptSlip({
   model,
   t,
   collateralLabel,
   width = 80,
   bank = null,
+  ti,
 }: {
   model: ReceiptModel;
   t: Tr;
@@ -64,6 +98,8 @@ export function ReceiptSlip({
   width?: 80 | 58;
   /** Bank account + VietQR of the outlet (#628), when its `printBankQr` is on and it has a default account. */
   bank?: BillBankBlock | null;
+  /** Translator of `orders.web.installments` (#1252): without it the staged-deposit block is not printed */
+  ti?: Tr;
 }) {
   const { shop, customer } = model;
   return (
@@ -139,6 +175,8 @@ export function ReceiptSlip({
         <span>{t('total')}</span>
         <span>{model.total}</span>
       </div>
+
+      {model.stages && ti && <StagesBlock stages={model.stages} ti={ti} />}
 
       {model.isRent && (
         <>

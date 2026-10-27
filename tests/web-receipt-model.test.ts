@@ -181,3 +181,42 @@ describe('resolvePrintNote (#347)', () => {
     expect(resolvePrintNote({ orderType: 'SALE', outlet: { printNote: 'x' } })).toBeNull();
   });
 });
+
+// #1252 Thu cọc theo giai đoạn on the slip
+describe('staged deposit block (#1252)', () => {
+  const stage = (over: Record<string, unknown>) => ({ key: 'i1', label: 'Giữ chỗ', percent: 30, amount: 300000, remaining: 0, paidAmount: 0, dueDateKey: '2026-10-28', status: 'UPCOMING', collectedAt: null, ...over });
+  const planned: ReceiptOrderInput = {
+    ...rent,
+    hasDepositPlan: true,
+    installments: [
+      // collected 17:30 UTC on 25/10 = 00:30 on 26/10 in Vietnam
+      stage({ key: 'i1', paidAmount: 300000, status: 'PAID', collectedAt: '2026-10-25T17:30:00.000Z' }),
+      stage({ key: 'i2', label: 'Chốt mẫu', percent: 40, amount: 400000, remaining: 400000, status: 'DUE_TODAY', dueDateKey: '2026-10-27' }),
+      stage({ key: 'rest', label: 'rest', percent: 30, amount: 300000, remaining: 300000, dueDateKey: '2026-11-01' }),
+      stage({ key: 'i9', label: 'Huỷ', status: 'VOID' }),
+    ],
+    installmentSummary: { collected: 300000, remaining: 700000 },
+  };
+
+  it('lists the stages with the Vietnam day, the totals, and drops a void stage', () => {
+    const stages = buildReceipt(planned, {}, VI).stages!;
+    expect(stages.items.map((s) => [s.number, s.key, s.amount, s.status, s.day, s.paid, s.isRest])).toEqual([
+      [1, 'i1', '300.000đ', 'PAID', '26/10', true, false],
+      [2, 'i2', '400.000đ', 'DUE_TODAY', '27/10', false, false],
+      [3, 'rest', '300.000đ', 'UPCOMING', '01/11', false, true],
+    ]);
+    expect([stages.collected, stages.remaining]).toEqual(['300.000đ', '700.000đ']);
+  });
+
+  it('adds up the totals when the summary is missing', () => {
+    const stages = buildReceipt({ ...planned, installmentSummary: null }, {}, VI).stages!;
+    expect([stages.collected, stages.remaining]).toEqual(['300.000đ', '700.000đ']);
+  });
+
+  it('prints nothing for a one-time deposit, a sale, or an order without stages', () => {
+    expect(buildReceipt(rent, {}, VI).stages).toBeNull();
+    expect(buildReceipt({ ...planned, hasDepositPlan: false }, {}, VI).stages).toBeNull();
+    expect(buildReceipt({ ...planned, installments: [] }, {}, VI).stages).toBeNull();
+    expect(buildReceipt({ ...planned, orderType: 'SALE' }, {}, VI).stages).toBeNull();
+  });
+});
