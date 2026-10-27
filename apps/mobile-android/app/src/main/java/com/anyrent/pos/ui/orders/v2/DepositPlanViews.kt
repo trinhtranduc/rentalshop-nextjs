@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -126,12 +127,12 @@ internal fun InstallmentCard(
     val reserved = detail.summary.status.equals("RESERVED", true)
     val today = ShopTime.today().toString()
     Column(
-        Modifier.fillMaxWidth().padding(vertical = 12.dp) // #1246: flat, same side margin as the other rows
+        Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp) // #1246: no frame, a section like "ITEMS"
             .testTag("deposit.card"),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.deposit_card_title), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.deposit_card_title).uppercase(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
             DepositPill(stringResource(R.string.deposit_badge_collected, DepositPlanMath.percentText(percent)), DS.Status.Done, Modifier.testTag("deposit.card.badge"))
             if (reserved) {
                 Text(
@@ -180,13 +181,25 @@ private fun HorizontalDividerLine() {
 private fun StageRow(stage: OrderInstallment, number: Int, today: String, tappable: Boolean, onTap: () -> Unit) {
     val paid = stage.isPaid
     val (chipText, chipColors) = installmentChip(stage, today)
+    val late = stage.status == "OVERDUE"
+    // a late stage stands out with a soft red band that bleeds 8dp past the text column
+    val band = if (late) {
+        Modifier.layout { measurable, constraints ->
+            val bleed = 8.dp.roundToPx()
+            val placeable = measurable.measure(constraints.copy(minWidth = constraints.maxWidth + 2 * bleed, maxWidth = constraints.maxWidth + 2 * bleed))
+            layout(constraints.maxWidth, placeable.height) { placeable.place(-bleed, 0) }
+        }.background(Color(0xFFFEF2F2), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp)
+    } else {
+        Modifier
+    }
     Row(
-        Modifier.fillMaxWidth().then(if (tappable) Modifier.clickable(onClick = onTap) else Modifier).padding(vertical = 4.dp).testTag("deposit.stage.${stage.key}"),
+        Modifier.fillMaxWidth().then(band).then(if (tappable) Modifier.clickable(onClick = onTap) else Modifier).padding(vertical = 10.dp).testTag("deposit.stage.${stage.key}"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(24.dp).background(if (paid) Green else Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
-            Text(if (paid) "✓" else "$number", fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = if (paid) Color.White else DS.Colors.Primary)
+        Box(Modifier.size(24.dp).background(if (paid) Green else if (late) Color(0xFFFEE2E2) else Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
+            Text(if (paid) "✓" else if (late) "!" else "$number", fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold,
+                color = if (paid) Color.White else if (late) Color(0xFFB91C1C) else DS.Colors.Primary)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label, fontSize = DS.TextSize.Body)
