@@ -157,22 +157,6 @@ object BlockPricing {
         data class Table(val table: BlockTable) : Input()
     }
 
-    /**
-     * #1249: a product priced per day without a table opens with its day price on row 1 and the same price for each
-     * extra day. That table charges exactly day price x days, so it is the old price shown as a table.
-     */
-    fun seed(perDay: Double?): BlockTable? =
-        perDay?.takeIf { it >= 0 }?.let { BlockTable(listOf(it), 1, BlockTable.EXTRA_PER_DAY, it) }
-
-    /**
-     * The table to send, or null when the form sends none: nothing typed, or the table is still the one shown from
-     * the old day price (the product then stays the DAILY price it was)
-     */
-    fun tableToSave(table: BlockTable?, perDay: Double?): BlockTable? {
-        if (table == null) return null
-        return if (seed(perDay) == table) null else table
-    }
-
     /** The boxes of the price screen to a table. `tierTexts[i]` is the price of day `startDay + i` as typed ("120.000"). */
     fun parse(tierTexts: List<String>, startDay: Int = 1, extraMode: String, extraText: String): Input {
         val tiers = tierTexts.map { MoneyInput.parse(it) }

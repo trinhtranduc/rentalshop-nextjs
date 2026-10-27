@@ -11,14 +11,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useToast } from '@rentalshop/ui';
+import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { categoriesApi, outletsApi, productsApi } from '@rentalshop/utils';
 import type { ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
 import { fieldClass } from '../../orders/create/parts';
-import { BlockTableEditor, RadioRow } from '../BlockTableEditor';
+import { BlockSetupDialog } from '../BlockSetupDialog';
 import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
@@ -35,7 +35,9 @@ import {
   imageSearchState,
   parseCount,
   removedAllSavedPhotos,
-  savedBlockOf,
+  chooseDayKind,
+  saveBlockTable,
+  turnOffBlock,
   setOutletStock,
   setTotalStock,
   validateForm,
@@ -43,7 +45,7 @@ import {
   type FieldKey,
   type FormState,
   type OutletLite,
-  type PriceKind,
+  type DayKind,
   type ProductSource,
 } from './form-model';
 
@@ -170,8 +172,8 @@ function AmountInput({ id, value, onChange, invalid }: { id: string; value: numb
 }
 
 /** #951: a price box. Empty = no price (null); "0" is a 0đ price and stays visible. */
-function PriceInput({ id, value, onChange, invalid }: { id: string; value: number | null; onChange: (n: number | null) => void; invalid?: boolean }) {
-  return (
+function PriceInput({ id, value, onChange, invalid, unit }: { id: string; value: number | null; onChange: (n: number | null) => void; invalid?: boolean; unit?: string }) {
+  const input = (
     <input
       id={id}
       inputMode="numeric"
@@ -184,8 +186,15 @@ function PriceInput({ id, value, onChange, invalid }: { id: string; value: numbe
         const digits = e.target.value.replace(/\D/g, '');
         onChange(digits ? Number(digits) : null);
       }}
-      className={`${inputClass} tabular-nums ${invalid ? errorBorder : ''}`}
+      className={`${inputClass} tabular-nums ${unit ? 'pr-20' : ''} ${invalid ? errorBorder : ''}`}
     />
+  );
+  if (!unit) return input;
+  return (
+    <span className="relative block">
+      {input}
+      <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ar-faint">{unit}</span>
+    </span>
   );
 }
 
@@ -401,6 +410,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const [errors, setErrors] = useState<Partial<Record<FieldKey, ErrorCode>>>({});
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const money = useFormatCurrency();
 
   useEffect(() => {
     if (!data) return;
@@ -456,7 +467,6 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   if (data.outlets.length === 0) return wrap(<Notice text={t('form.needOutlet')} action={<Link href="/outlets" className={outlineBtn}>{t('form.goOutlets')}</Link>} />);
 
   // #1249: a saved day table; leaving "Theo ngày" for "Theo lần" must tell the API to drop it
-  const hadBlock = isEdit && !!data.product && savedBlockOf(data.product) != null;
   const err = (k: FieldKey) => (errors[k] ? t(`form.errors.${errors[k]}`) : undefined);
   const savedPhotos = data.product ? formFromProduct(data.product, [], []).keptImages.length : 0;
   const multiOutlet = data.outlets.length > 1;
@@ -483,7 +493,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     setSaving(true);
     setFailed(false);
     try {
-      const payload = buildPayload(form, { canEditPricing, hadBlock, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
+      const payload = buildPayload(form, { canEditPricing, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
       const res = isEdit
         ? await productsApi.updateProduct(productId, payload as unknown as ProductUpdateInput, files)
         : await productsApi.createProduct(payload as unknown as ProductCreateInput, files);
@@ -504,7 +514,20 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   };
 
   // #1249: one choice, "Theo lần" or "Theo ngày" (the day table right below it); no default switch
-  const setKind = (priceKind: PriceKind) => patch({ priceKind }, ['block', 'perRental']);
+  const pickDayKind = (kind: DayKind) => {
+    const r = chooseDayKind(form, kind);
+    patch(r.form);
+    if (r.openSetup) setSetupOpen(true);
+  };
+  const blockSummary = form.block
+    ? t(form.block.extraMode === 'EXTRA_PER_DAY' ? 'form.block.summaryExtra' : 'form.block.summaryHold', { count: form.block.tiers.length, extra: money(form.block.extraPrice ?? 0) })
+    : '';
+  const blockPrices = form.block
+    ? [0, form.block.tiers.length - 1]
+        .filter((i, k, a) => a.indexOf(i) === k)
+        .map((i) => `${t('detail.block.dayRow', { n: form.block!.startDay + i })} ${money(form.block!.tiers[i] ?? 0)}`)
+        .join(' · ')
+    : '';
 
   return wrap(
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -552,20 +575,38 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           <Card title={t('form.sections.pricing')}>
             {canEditPricing ? (
               <>
-                <div role="radiogroup" aria-label={t('form.priceKind.title')} className="overflow-hidden rounded-xl border border-ar-line" data-price-kind>
-                  <RadioRow name="pf-priceKind" checked={form.priceKind === 'ONCE'} onSelect={() => setKind('ONCE')} title={t('form.perRental')} />
-                  <RadioRow name="pf-priceKind" checked={form.priceKind === 'DAY'} onSelect={() => setKind('DAY')} title={t('form.perDay')} hint={t('form.priceKind.dayHint')} />
+                <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
+                  <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} unit={t('form.unitOnce')} onChange={(n) => patch({ perRental: n }, ['perRental'])} />
+                </Field>
+                <div className="flex flex-col gap-2" role="radiogroup" aria-label={t('form.dayGroup')} data-day-kind>
+                  <span className="text-xs font-bold uppercase tracking-[0.06em] text-ar-muted">{t('form.dayGroup')}</span>
+                  <div className={`overflow-hidden rounded-xl border ${form.dayKind === 'DAY' ? 'border-ar-primary' : 'border-ar-line'}`}>
+                    <label className={`flex min-h-[52px] cursor-pointer items-center gap-3 px-4 ${form.dayKind === 'DAY' ? 'bg-ar-primary-soft' : ''}`}>
+                      <input type="radio" name="pf-dayKind" checked={form.dayKind === 'DAY'} onChange={() => pickDayKind('DAY')} className="h-5 w-5 flex-none accent-[var(--ar-primary,#2563eb)]" />
+                      <span className="text-[15px] font-semibold text-ar-ink">{t('form.perDay')}</span>
+                    </label>
+                    {form.dayKind === 'DAY' && (
+                      <div className="border-t border-ar-primary px-4 py-3">
+                        <PriceInput id="pf-perDay" value={form.perDay} unit={t('form.unitDay')} onChange={(n) => patch({ perDay: n })} />
+                      </div>
+                    )}
+                  </div>
+                  <div className={`overflow-hidden rounded-xl border ${form.dayKind === 'BLOCK' ? 'border-ar-primary' : 'border-ar-line'}`}>
+                    <label className={`flex min-h-[52px] cursor-pointer items-center gap-3 px-4 ${form.dayKind === 'BLOCK' ? 'bg-ar-primary-soft' : ''}`}>
+                      <input type="radio" name="pf-dayKind" checked={form.dayKind === 'BLOCK'} onChange={() => pickDayKind('BLOCK')} className="h-5 w-5 flex-none accent-[var(--ar-primary,#2563eb)]" />
+                      <span className="text-[15px] font-semibold text-ar-ink">{t('detail.block.modeBlock')}</span>
+                    </label>
+                    {form.dayKind === 'BLOCK' && form.block && (
+                      <button type="button" onClick={() => setSetupOpen(true)} aria-label={t('form.block.edit')} data-block-summary className="flex w-full items-center justify-between gap-3 border-t border-ar-primary px-4 py-3 text-left">
+                        <span className="flex min-w-0 flex-col">
+                          <span className="text-[15px] font-semibold text-ar-ink">{blockSummary}</span>
+                          <span className="text-xs text-ar-muted">{blockPrices}</span>
+                        </span>
+                        <span aria-hidden className="text-xl text-ar-muted">›</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {form.priceKind === 'ONCE' ? (
-                  <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
-                    <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => patch({ perRental: n }, ['perRental'])} />
-                  </Field>
-                ) : (
-                  <>
-                    <BlockTableEditor block={form.block} onChange={(block) => patch({ block }, ['block'])} showErrors={!!errors.block} firstId="pf-block" />
-                    {errors.block && <span role="alert" className="text-sm text-ar-danger">{err('block')}</span>}
-                  </>
-                )}
                 <div className="grid gap-4 border-t border-ar-subtle pt-4 sm:grid-cols-3">
                   <Field id="pf-deposit" label={t('form.deposit')} error={err('deposit')}>
                     <AmountInput id="pf-deposit" value={form.deposit} invalid={!!errors.deposit} onChange={(n) => patch({ deposit: n }, ['deposit'])} />
@@ -690,6 +731,22 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           {saving ? (isEdit ? t('form.saving') : t('form.creating')) : isEdit ? t('form.save') : t('form.create')}
         </button>
       </div>
+      {setupOpen && (
+        <BlockSetupDialog
+          initial={form.block}
+          canTurnOff={form.dayKind === 'BLOCK'}
+          excludeProductId={productId ?? undefined}
+          onClose={() => setSetupOpen(false)}
+          onSave={(block) => {
+            patch((f) => saveBlockTable(f, block));
+            setSetupOpen(false);
+          }}
+          onTurnOff={() => {
+            patch((f) => turnOffBlock(f));
+            setSetupOpen(false);
+          }}
+        />
+      )}
     </form>,
   );
 }
