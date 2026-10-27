@@ -2983,7 +2983,7 @@
 "settings.v2.collect.accounts" = "%d tài khoản";
 "settings.v2.collect.banks" = "%d ngân hàng";
 "settings.v2.collect.oneTime" = "Cọc 1 lần";
-"settings.v2.collect.staged" = "Cọc theo giai đoạn";
+"settings.v2.collect.staged" = "Theo giai đoạn";
 "settings.v2.collect.policy.set" = "Đã đặt";
 "settings.v2.collect.policy.unset" = "Chưa đặt";
 "settings.v2.printing" = "In & phiếu";
@@ -3008,3 +3008,10 @@
 "block.copy" = "Sao chép từ sản phẩm khác";
 "block.copy.empty" = "Chưa có sản phẩm nào có bảng giá theo khối ngày.";
 "block.error.nothing" = "Nhập giá ít nhất cho 1 ngày.";
+/* #1270 Cài đặt phương án B */
+"settings.v2.deposit" = "Cọc";
+"settings.v2.deposit.group.mode" = "Cách thu cọc";
+"settings.v2.deposit.group.stages" = "Giai đoạn & chính sách";
+"settings.v2.printing.noPrinter" = "chưa chọn máy in";
+"settings.v2.printing.group.slip" = "Phiếu";
+"settings.v2.printing.group.printer" = "Máy in";
