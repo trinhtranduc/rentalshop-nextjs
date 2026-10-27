@@ -97,6 +97,9 @@ object PricingTypes {
     fun normalizeOption(raw: String?): String = raw?.trim()?.uppercase()?.takeIf { it in known || it == "BLOCK" } ?: "FIXED"
 }
 
+/** #1249: the one choice on the product form, Theo lần or Theo ngày (= the day table on the form); no "mặc định tính" switch */
+enum class PriceKind { PER_RENTAL, PER_DAY }
+
 data class PricingOptionInput(val type: String, val price: Double, val isDefault: Boolean, val blockTable: BlockTable? = null)
 
 object ProductPricing {
@@ -129,6 +132,21 @@ object ProductPricing {
             ?: product.pricingType
         if (type.equals("BLOCK", ignoreCase = true) && block(product) != null) return PricingMode.BLOCK
         return if (type.equals("DAILY", ignoreCase = true)) PricingMode.PER_DAY else PricingMode.PER_RENTAL
+    }
+
+    /**
+     * #1249: a saved table, or a per-day default with a day price, is "Theo ngày"; everything else (a per-rental
+     * default, a product with no price yet) is "Theo lần"
+     */
+    fun kind(product: Product): PriceKind {
+        if (block(product) != null) return PriceKind.PER_DAY
+        return if (defaultMode(product) == PricingMode.PER_DAY && perDay(product) != null) PriceKind.PER_DAY else PriceKind.PER_RENTAL
+    }
+
+    /** The default option a kind saves: "Theo lần" is FIXED; "Theo ngày" is the typed table, else the old DAILY price */
+    fun defaultMode(kind: PriceKind, table: BlockTable?): PricingMode = when (kind) {
+        PriceKind.PER_RENTAL -> PricingMode.PER_RENTAL
+        PriceKind.PER_DAY -> if (table != null) PricingMode.BLOCK else PricingMode.PER_DAY
     }
 
     /**
@@ -315,6 +333,8 @@ data class ProductFormInput(
     val rented: Int,
     val photoCount: Int,
     val showsPrices: Boolean,
+    /** #1249: the day table "Theo ngày" sends; null = none */
+    val block: BlockTable? = null,
 )
 
 sealed class ProductFormIssue {
