@@ -86,11 +86,15 @@ final class CartV2ViewController: BaseViewControler {
 
     /// #684: the cart tag "Trùng đơn ngày …" → Lịch trống of that product on the first clashing day
     private func openConflictDay(_ conflict: CartScheduleConflict) {
-        ProductService.shared.loadProduct(productId: conflict.productId) { [weak self] product, _ in
+        openProductCalendar(productId: conflict.productId, focusDay: ScheduleConflictLogic.focusDay(conflict))
+    }
+
+    /// #1241 (owner): a tap on "Còn N" / "Hết" opens that product's Lịch trống, the screen the overlap tag opens
+    private func openProductCalendar(productId: Int, focusDay: String?) {
+        ProductService.shared.loadProduct(productId: productId) { [weak self] product, _ in
             DispatchQueue.main.async {
                 guard let self, let product else { return }
-                let calendar = ProductCalendarViewController(product: product, orders: nil,
-                                                             focusDay: ScheduleConflictLogic.focusDay(conflict))
+                let calendar = ProductCalendarViewController(product: product, orders: nil, focusDay: focusDay)
                 calendar.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(calendar, animated: true)
             }
@@ -675,7 +679,11 @@ final class CartV2ViewController: BaseViewControler {
         let nameRow = UIStackView(arrangedSubviews: [name])
         nameRow.alignment = .top
         nameRow.spacing = 8
-        let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
+        // #1241 (owner): the stock / overlap chip sits on its own row under the name, on the left, as wide as its text
+        let chipRow = UIStackView(arrangedSubviews: [UIView()])
+        chipRow.alignment = .center
+        chipRow.isHidden = true
+        let column = UIStackView(arrangedSubviews: [nameRow, chipRow, UIStackView(arrangedSubviews: [link, UIView()])])
         // #1189: "Khối 3 ngày + 2 ngày thêm · 160.000đ" and under it the sum "120.000 (3 ngày) + 2 × 20.000 = 160.000"
         if cart.orderType == .rent, let detail = item.blockDetail, detail.extraDays > 0 {
             let formula = V2.label(BlockPricing.formula(detail), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
@@ -693,7 +701,8 @@ final class CartV2ViewController: BaseViewControler {
             tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
             tag.accessibilityTraits = UIAccessibilityTraitButton
             tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
-            nameRow.addArrangedSubview(tag)
+            chipRow.insertArrangedSubview(tag, at: 0)
+            chipRow.isHidden = false
         }
         // #1064: one pill per line once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
         // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. Hidden behind the overlap tag
@@ -702,8 +711,9 @@ final class CartV2ViewController: BaseViewControler {
             // #1132 (owner, mockup A): a soft pill in the tone's fill, a dot in the text colour, then the text
             let status = Self.stockPill(text: note.text, tone: note.tone)
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
-            // right-aligned: the name takes the free width, the status sits on the trailing edge
-            nameRow.addArrangedSubview(status)
+            status.addAction(UIAction { [weak self] _ in self?.openProductCalendar(productId: item.productId, focusDay: nil) }, for: .touchUpInside)
+            chipRow.insertArrangedSubview(status, at: 0)
+            chipRow.isHidden = false
         }
 
         // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. #1064: a sale line's
@@ -1351,7 +1361,7 @@ extension CartV2ViewController {
     /// 7 pt dot in the text colour before the text. A UIControl so the overlap tag can take a tap.
     static func stockPill(text: String, tone: CartV2Logic.ShortageTone) -> UIControl {
         let style = shortageStyle(tone)
-        let pill = UIControl()
+        let pill = PillControl()
         pill.backgroundColor = style.colors.fill
         pill.isAccessibilityElement = true
         pill.accessibilityLabel = text
@@ -1373,6 +1383,14 @@ extension CartV2ViewController {
         pill.layer.cornerRadius = (ceil(label.font.lineHeight) + 6) / 2
         pill.clipsToBounds = true
         return pill
+    }
+}
+
+/// #1241: the cart's stock chip is about 20 pt high; the touch area grows to 44 pt without changing the look
+final class PillControl: UIControl {
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dy = max(0, (44 - bounds.height) / 2), dx = max(0, (44 - bounds.width) / 2)
+        return bounds.insetBy(dx: -dx, dy: -dy).contains(point)
     }
 }
 

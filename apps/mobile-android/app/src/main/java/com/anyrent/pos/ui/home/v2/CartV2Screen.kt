@@ -153,7 +153,7 @@ fun CartV2Screen(
     /** #677 "Huỷ sửa": edit mode left and the cart emptied; the order's detail again (loaded fresh) */
     onEditCancelled: (Int) -> Unit = onOpenOrder,
     /** #684: the "Hết hàng …" tag → Lịch trống of the product on that day (`yyyy-MM-dd`) */
-    onOpenCalendar: (Int, String) -> Unit = { _, _ -> },
+    onOpenCalendar: (Int, String?) -> Unit = { _, _ -> },
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -551,6 +551,7 @@ fun CartV2Screen(
                     onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
                         { onOpenCalendar(c.productId, c.from.toString()) }
                     },
+                    onOpenProduct = { onOpenCalendar(line.product.id, null) },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.lineId, q) },
                     onOpenPricing = { pricingLineId = line.lineId },
                     onOpenNote = { noteLineId = line.lineId },
@@ -1011,6 +1012,8 @@ private fun ItemRow(
     overlapText: String? = null,
     /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
     onOpenOverlap: (() -> Unit)? = null,
+    /** #1241 (owner): a tap on "Còn N" / "Hết" opens this product's Lịch trống */
+    onOpenProduct: () -> Unit = {},
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
     onOpenNote: () -> Unit = {},
@@ -1023,9 +1026,9 @@ private fun ItemRow(
             // total and −/+. No card, and no separate "450.000/lần × 1" line: its numbers are in the link
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // #684: the "Hết 09/10 → 11/10 ›" tag (or the shortage chip) beside the name, on its right (owner)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 2,
-                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                // #1241 (owner, iOS): the chip sits on its own row under the name, on the left, as wide as its text
+                run {
                     // #1064: one pill once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
                     // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. The overlap tag (red) replaces it
                     val note = if (overlapText == null) CartV2Logic.availabilityNote(available, productQuantity, !isSale) else null
@@ -1037,12 +1040,19 @@ private fun ItemRow(
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         // #1132 (owner, mockup A, iOS `stockPill`): a soft pill in the tone's fill, a 7 dp dot in the text
                         // colour, then the text (semibold); the overlap tag keeps its tap and "›"
+                        // #1241 (owner): a tap opens the product's Lịch trống (the overlap tag: its first booked-out day);
+                        // the touch box is 48 dp high, the pill inside keeps its look
+                        val open = onOpenOverlap ?: onOpenProduct
+                        Box(
+                            Modifier.align(Alignment.Start).heightIn(min = 48.dp)
+                                .then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
+                                .clickable(onClickLabel = hint, role = Role.Button, onClick = open),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
-                            modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
-                                .clip(RoundedCornerShape(percent = 50))
-                                .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
+                            modifier = Modifier.clip(RoundedCornerShape(percent = 50))
                                 .background(style.colors.fill)
                                 .padding(horizontal = 9.dp, vertical = 3.dp),
                         ) {
@@ -1051,6 +1061,7 @@ private fun ItemRow(
                                 if (onOpenOverlap != null) "$text ›" else text,
                                 fontSize = DS.TextSize.Pill, fontWeight = style.weight, color = style.colors.text, maxLines = 1,
                             )
+                        }
                         }
                     }
                 }
