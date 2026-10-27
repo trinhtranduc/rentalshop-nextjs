@@ -2976,6 +2976,23 @@
 "products.cart.confirm.more.one" = "+%d sản phẩm khác";
 "deposit.cart.template" = "Mẫu";
 "deposit.cart.stageShort" = "%@%% · %@";
+/* #1259 Cài đặt gọn lại */
+"settings.v2.collect" = "Thu tiền";
+"settings.v2.collect.group.bank" = "Ngân hàng";
+"settings.v2.collect.group.deposit" = "Cọc";
+"settings.v2.collect.accounts" = "%d tài khoản";
+"settings.v2.collect.banks" = "%d ngân hàng";
+"settings.v2.collect.oneTime" = "Cọc 1 lần";
+"settings.v2.collect.staged" = "Cọc theo giai đoạn";
+"settings.v2.collect.policy.set" = "Đã đặt";
+"settings.v2.collect.policy.unset" = "Chưa đặt";
+"settings.v2.printing" = "In & phiếu";
+"settings.v2.advanced" = "Nâng cao";
+"settings.v2.advanced.value" = "Ứng dụng · Xoá tài khoản";
+"settings.v2.profile.title" = "Hồ sơ & bảo mật";
+"settings.v2.profile.hint" = "hồ sơ, mật khẩu";
+"settings.v2.profile.group" = "Hồ sơ";
+"settings.v2.profile.security" = "Bảo mật";
 "products.form.unit.once" = "/ lần";
 "products.form.manyDays" = "Giá nhiều ngày (chọn 1 trong 2)";
 "products.form.perDay.box" = "Giá thuê mỗi ngày";

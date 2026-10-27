@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
@@ -38,13 +39,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -59,6 +64,7 @@ import com.anyrent.pos.data.DepositModeStore
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.deposit.DepositMode
 import com.anyrent.pos.ui.deposit.DepositSettingsScreen
+import com.anyrent.pos.ui.deposit.DepositStart
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.money.ShopCurrency
@@ -86,6 +92,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.util.Locale
+
+/** #1259: the screens that open over the Settings list */
+enum class SettingsSubPage { COLLECT, ADVANCED, PROFILE }
 
 /** Redesigned settings tab (#374, board Cai-dat), shown when `newSettings` is on: links to the existing screens */
 @Composable
@@ -115,7 +124,12 @@ fun SettingsV2Screen(
     var showPassword by remember { mutableStateOf(false) }
     var showCategories by remember { mutableStateOf(false) }
     // #1199 "Cách thu cọc": the cached mode; a login payload without it is fetched here, not guessed
-    var showDeposit by remember { mutableStateOf(false) }
+    // #1259: Thu tiền / Nâng cao / Hồ sơ & bảo mật open over the list; the deposit screens open from Thu tiền
+    var subPage by rememberSaveable { mutableStateOf<SettingsSubPage?>(null) }
+    var depositStart by remember { mutableStateOf<DepositStart?>(null) }
+    var collectRefresh by remember { mutableStateOf(0) }
+    // #1259: bank accounts of the default branch, read by Thu tiền; shown next to its row (null until known)
+    var bankCount by remember { mutableStateOf<Int?>(null) }
     val depositMode by SessionStore.depositModeFlow.collectAsState()
     LaunchedEffect(Unit) { DepositModeStore.refresh() }
     var passwordError by remember { mutableStateOf<String?>(null) }
@@ -142,27 +156,8 @@ fun SettingsV2Screen(
         }
     }
 
-    // #1145 "Tiền tệ": the session's currency; a choice, then a confirm, then PUT /api/settings/currency
+    // #1145 "Tiền tệ": the session's currency (#1259: changed inside Thông tin cửa hàng, shown next to its row here)
     val currency by SessionStore.currencyFlow.collectAsState()
-    var currencyChoice by remember { mutableStateOf(false) }
-    var currencyTarget by remember { mutableStateOf<ShopCurrency?>(null) }
-    var currencySaving by remember { mutableStateOf(false) }
-    var currencyError by remember { mutableStateOf<String?>(null) }
-    val currencyFailedText = stringResource(R.string.settings_v2_currency_failed)
-
-    fun saveCurrency(target: ShopCurrency) {
-        if (currencySaving) return
-        currencySaving = true
-        scope.launch {
-            val result = withContext(Dispatchers.IO) { ApiClient.get().setCurrency(target) }
-            currencySaving = false
-            currencyTarget = null
-            result.onFailure { failure ->
-                val id = ApiErrorMessages.stringId(AppError.from(failure).code)
-                currencyError = if (id != 0) context.getString(id) else currencyFailedText
-            }
-        }
-    }
 
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
     // #937: unread count on "Thông báo" (moved from the Home bell). #674: follows the inbox and pushes; the server is
@@ -172,6 +167,7 @@ fun SettingsV2Screen(
         com.anyrent.pos.ui.inbox.InboxUnread.invalidations.collect { com.anyrent.pos.ui.inbox.InboxUnread.refreshIfNeeded() }
     }
     val sections = SettingsRows.sections(role, hasPlan = plan != null)
+    LaunchedEffect(role, collectRefresh) { SettingsBankCount.load(role)?.let { bankCount = it } }
 
     // #388: totals next to Khách hàng / Người dùng, only for the rows this role sees; a failed call shows nothing.
     // #518 overlap switch re-read from the profile. #674: on show, but the view model skips it within 10 minutes.
@@ -192,10 +188,34 @@ fun SettingsV2Screen(
 
     LazyColumn(Modifier.fillMaxSize().background(DS.Colors.Surface)) {
         item(key = "title") {
-            Text(
-                stringResource(R.string.settings_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
-            )
+            // #1259: the inbox is the bell at the top right (it was the "Thông báo" row), with the unread count
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.settings_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f),
+                )
+                val bellLabel = stringResource(R.string.notifications)
+                val badge = SettingsRows.unreadBadge(unread)
+                Box(
+                    Modifier.size(48.dp).clickable(onClickLabel = bellLabel, onClick = onOpenInbox)
+                        .semantics { contentDescription = if (badge != null) "$bellLabel $badge" else bellLabel }
+                        .testTag("settings.notifications"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Notifications, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Lg))
+                    if (badge != null) {
+                        Box(
+                            Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 4.dp).heightIn(min = 18.dp).widthIn(min = 18.dp)
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(9.dp)).background(Color(0xFFEF4444))
+                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text(badge, color = Color.White, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
         }
         // #927: the big clock card first, only with the attendance module and when the shop picked this person
         item(key = "attendance") {
@@ -205,10 +225,13 @@ fun SettingsV2Screen(
         item(key = "profile") {
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
             val name = SessionStore.userName?.takeIf { it.isNotBlank() } ?: SessionStore.email.orEmpty()
-            val subtitle = listOfNotNull(roleDisplayValue(role).takeIf { it.isNotBlank() }, SessionStore.merchantName?.takeIf { it.isNotBlank() })
-                .joinToString(" · ")
+            // #1259: the name card opens Hồ sơ & bảo mật (profile + change password)
+            val subtitle = listOfNotNull(
+                roleDisplayValue(role).takeIf { it.isNotBlank() }, SessionStore.merchantName?.takeIf { it.isNotBlank() },
+                stringResource(R.string.settings_v2_profile_hint),
+            ).joinToString(" · ")
             Row(
-                Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+                Modifier.fillMaxWidth().clickable { subPage = SettingsSubPage.PROFILE }.heightIn(min = 72.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -219,61 +242,65 @@ fun SettingsV2Screen(
                     Text(name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                     if (subtitle.isNotBlank()) Text(subtitle, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
+                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))
             }
         }
         sections.forEach { section ->
             item(key = "band-${section.group}") {
-                SectionBand(
-                    stringResource(
-                        when (section.group) {
-                            SettingsGroup.STORE -> R.string.settings_v2_group_store
-                            SettingsGroup.MANAGEMENT -> R.string.settings_v2_group_management
-                            SettingsGroup.ACCOUNT -> R.string.settings_v2_group_account
-                        },
-                    ),
-                )
+                when (section.group) {
+                    else -> SectionBand(
+                        stringResource(
+                            when (section.group) {
+                                SettingsGroup.STORE -> R.string.settings_v2_group_store
+                                SettingsGroup.MANAGEMENT -> R.string.settings_v2_group_management
+                                else -> R.string.settings_v2_group_account
+                            },
+                        ),
+                    )
+                }
             }
             items(section.items, key = { it.name }) { item ->
                 val value = when (item) {
-                    SettingsItem.RECEIPT_NOTE -> ThermalPrinter.savedNote(prefs).replace('\n', ' ') // #1011
-                    SettingsItem.PRINTER -> prefs.getString("printerIp", "").orEmpty().trim().ifBlank { stringResource(R.string.settings_v2_printer_none) }
+                    SettingsItem.STORE_INFO -> SettingsRows.storeValue(
+                        SessionStore.outletName ?: SessionStore.merchantName, if (SettingsRows.storeInfoShowsCurrency(role)) currency.code else null,
+                    )
+                    SettingsItem.COLLECT -> SettingsRows.collectValue(
+                        depositMode == DepositMode.STAGED, bankCount,
+                        stringResource(R.string.settings_v2_collect_one_time), stringResource(R.string.settings_v2_collect_staged),
+                    ) { count -> context.getString(R.string.settings_v2_collect_banks, count) }
+                    SettingsItem.PRINTING -> SettingsRows.printingValue(
+                        hasPrinter = prefs.getString("printerIp", "").orEmpty().isNotBlank(),
+                        paperMillimetres = prefs.getString("paperWidth", "80")?.toIntOrNull() ?: 80,
+                        none = stringResource(R.string.settings_v2_printer_none),
+                    )
                     SettingsItem.CUSTOMERS, SettingsItem.USERS -> counts[item]?.toString()
                     SettingsItem.PLAN -> plan?.let { planText(it) }
-                    SettingsItem.CURRENCY -> ShopMoney.label(currency)
-                    SettingsItem.DEPOSIT_MODE -> stringResource(
-                        if (depositMode == DepositMode.STAGED) R.string.deposit_mode_staged else R.string.deposit_mode_one_time,
-                    )
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }
+                    SettingsItem.ADVANCED -> stringResource(R.string.settings_v2_advanced_value)
                     else -> null
                 }
-                val badge = if (item == SettingsItem.NOTIFICATIONS) SettingsRows.unreadBadge(unread) else null
-                SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN, badge = badge) {
+                SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN) {
                     when (item) {
-                        SettingsItem.NOTIFICATIONS -> onOpenInbox()
                         SettingsItem.STORE_INFO -> onOpenStore()
-                        SettingsItem.CURRENCY -> currencyChoice = true
-                        SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER -> onOpenPrinter()
+                        SettingsItem.COLLECT -> subPage = SettingsSubPage.COLLECT
+                        SettingsItem.PRINTING -> onOpenPrinter()
                         SettingsItem.CATEGORIES -> showCategories = true
                         SettingsItem.CUSTOMERS -> onOpenCustomers()
                         SettingsItem.USERS -> onOpenUsers()
                         SettingsItem.EXPORT -> onOpenExport()
-                        SettingsItem.BANK_ACCOUNTS -> onOpenBankAccounts()
-                        SettingsItem.DEPOSIT_MODE -> showDeposit = true
                         SettingsItem.PLAN -> Unit
                         SettingsItem.LANGUAGE -> runCatching {
                             context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
-                        SettingsItem.PASSWORD -> showPassword = true
-                        SettingsItem.APP_INFO -> onOpenAppInfo()
-                        SettingsItem.DELETE_ACCOUNT -> confirmDelete = true
+                        SettingsItem.ADVANCED -> subPage = SettingsSubPage.ADVANCED
                     }
                 }
             }
-        }
-        if (OverlapSetting.canEdit(role)) {
-            item(key = "band-orders") { SectionBand(stringResource(R.string.settings_v2_group_orders)) }
-            item(key = "allow-overlap") {
-                AllowOverlapRow(checked = overlapPending ?: allowOverlap, saving = overlapPending != null, onChange = { setAllowOverlap(it) })
+            // #1259: the owner's overlap switch is the last line of CỬA HÀNG
+            if (section.group == SettingsGroup.STORE && OverlapSetting.canEdit(role)) {
+                item(key = "allow-overlap") {
+                    AllowOverlapRow(checked = overlapPending ?: allowOverlap, saving = overlapPending != null, onChange = { setAllowOverlap(it) })
+                }
             }
         }
         item(key = "logout") {
@@ -305,9 +332,25 @@ fun SettingsV2Screen(
     if (showCategories) {
         CategoryManageScreen(onDismiss = { showCategories = false })
     }
-    // #1199: Cài đặt → Cách thu cọc (radio rows; only the shop owner changes it)
-    if (showDeposit) {
-        DepositSettingsScreen(onDismiss = { showDeposit = false })
+    // #1259: Thu tiền, Nâng cao and Hồ sơ & bảo mật open over the list
+    when (subPage) {
+        SettingsSubPage.COLLECT -> CollectMoneyScreen(
+            onBack = { subPage = null },
+            onOpenBankAccounts = onOpenBankAccounts,
+            onOpenDeposit = { depositStart = it },
+            refreshKey = collectRefresh,
+        )
+        SettingsSubPage.ADVANCED -> AdvancedScreen(
+            onBack = { subPage = null },
+            onOpenAppInfo = onOpenAppInfo,
+            onDeleteAccount = { confirmDelete = true },
+        )
+        SettingsSubPage.PROFILE -> ProfileSecurityScreen(onBack = { subPage = null }, onChangePassword = { showPassword = true })
+        null -> Unit
+    }
+    // #1199: Thu tiền → Cách thu cọc / Mẫu giai đoạn / Chính sách huỷ (only the shop owner changes them)
+    depositStart?.let { start ->
+        DepositSettingsScreen(start = start, onDismiss = { depositStart = null; collectRefresh++ })
     }
     if (confirmDelete) {
         // Same as the current settings screen
@@ -357,28 +400,6 @@ fun SettingsV2Screen(
         )
     }
     overlapError?.let { message -> AppAlertError(message = message, onDismiss = { overlapError = null }) }
-    if (currencyChoice) {
-        CurrencyChoiceDialog(
-            current = currency,
-            onDismiss = { currencyChoice = false },
-            onPick = { picked ->
-                currencyChoice = false
-                if (picked != currency) currencyTarget = picked
-            },
-        )
-    }
-    currencyTarget?.let { target ->
-        AppAlertConfirm(
-            title = stringResource(R.string.settings_v2_currency_confirm_title, target.code),
-            message = stringResource(R.string.settings_v2_currency_confirm_message, target.code, ShopMoney.example(currency, target)),
-            confirmLabel = stringResource(R.string.settings_v2_currency_confirm_button, target.code),
-            confirmLoading = currencySaving,
-            dismissEnabled = !currencySaving,
-            onDismiss = { currencyTarget = null },
-            onConfirm = { saveCurrency(target) },
-        )
-    }
-    currencyError?.let { message -> AppAlertError(message = message, onDismiss = { currencyError = null }) }
     passwordError?.let { message ->
         AppAlertError(message = message.ifBlank { stringResource(R.string.calendar_v2_error) }, onDismiss = { passwordError = null })
     }
@@ -400,7 +421,7 @@ fun SettingsV2Screen(
 
 /** #1145 "Tiền tệ": VND (đ) / USD ($) as radio rows, the current one marked (iOS action sheet) */
 @Composable
-private fun CurrencyChoiceDialog(current: ShopCurrency, onDismiss: () -> Unit, onPick: (ShopCurrency) -> Unit) {
+internal fun CurrencyChoiceDialog(current: ShopCurrency, onDismiss: () -> Unit, onPick: (ShopCurrency) -> Unit) {
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = DS.Colors.Surface,
@@ -470,27 +491,23 @@ private fun planText(plan: SettingsPlan): String {
 @Composable
 private fun itemTitle(item: SettingsItem): String = stringResource(
     when (item) {
-        SettingsItem.NOTIFICATIONS -> R.string.notifications
         SettingsItem.STORE_INFO -> R.string.store_info
-        SettingsItem.CURRENCY -> R.string.settings_v2_currency
-        SettingsItem.RECEIPT_NOTE -> R.string.settings_v2_receipt_note
-        SettingsItem.PRINTER -> R.string.settings_v2_printer
-        SettingsItem.BANK_ACCOUNTS -> R.string.bank_accounts
-        SettingsItem.DEPOSIT_MODE -> R.string.deposit_settings_title
+        SettingsItem.COLLECT -> R.string.settings_v2_collect
+        SettingsItem.PRINTING -> R.string.settings_v2_printing
         SettingsItem.CATEGORIES -> R.string.settings_v2_categories
         SettingsItem.CUSTOMERS -> R.string.customers
         SettingsItem.USERS -> R.string.settings_v2_users
         SettingsItem.EXPORT -> R.string.export_data
         SettingsItem.PLAN -> R.string.settings_v2_plan
         SettingsItem.LANGUAGE -> R.string.settings_v2_language
-        SettingsItem.PASSWORD -> R.string.change_password
-        SettingsItem.APP_INFO -> R.string.app_info
-        SettingsItem.DELETE_ACCOUNT -> R.string.delete_account
+        SettingsItem.ADVANCED -> R.string.settings_v2_advanced
     },
 )
 
 @Composable
-private fun SettingRow(title: String, value: String?, chevron: Boolean, badge: String? = null, onClick: () -> Unit) {
+internal fun SettingRow(
+    title: String, value: String?, chevron: Boolean, badge: String? = null, titleColor: Color = DS.Colors.Text, onClick: () -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -500,7 +517,7 @@ private fun SettingRow(title: String, value: String?, chevron: Boolean, badge: S
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(title, fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+        Text(title, fontSize = DS.TextSize.Body, color = titleColor)
         Spacer(Modifier.weight(1f))
         if (!value.isNullOrBlank()) {
             Text(value, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 200.dp))

@@ -21,7 +21,8 @@
       "outlet": "지점",
       "public-page": "공개 매장 페이지",
       "bank-accounts": "은행",
-      "profile": "프로필",
+      "receipt": "인쇄 및 영수증",
+      "profile": "프로필 및 보안",
       "account": "비밀번호 및 보안",
       "language": "언어 및 화면",
       "payment": "수납"

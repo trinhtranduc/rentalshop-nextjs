@@ -7,16 +7,14 @@ export type SettingsTab =
   | 'merchant'
   | 'outlet'
   | 'public-page'
-  | 'bank-accounts'
   | 'payment'
   | 'receipt'
   | 'subscription'
   | 'profile'
-  | 'account'
   | 'language';
 
-/** Nav group headers (#1140 layout C): Cửa hàng · Tài khoản · Tôi. */
-export type SettingsGroup = 'shop' | 'account' | 'me';
+/** Nav group headers (#1259): Cửa hàng · Tài khoản. */
+export type SettingsGroup = 'shop' | 'account';
 
 export interface SettingsTabDef {
   id: SettingsTab;
@@ -30,24 +28,27 @@ export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'outlet', group: 'shop', roles: ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'] },
   /** #1140: Mã URL + public page / referral links, moved out of Thông tin cửa hàng */
   { id: 'public-page', group: 'shop', roles: ['MERCHANT'] },
-  /** #852: the owner sets bank accounts per branch here too (branch select on top) */
-  { id: 'bank-accounts', group: 'shop', roles: ['MERCHANT', 'OUTLET_ADMIN'] },
-  /** #1199 Thu tiền: "Cách thu cọc", the owner picks one deposit at booking or deposit stages */
-  { id: 'payment', group: 'shop', roles: ['MERCHANT'] },
-  /** Phiếu in (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */
+  /**
+   * #1259 "Thu tiền": bank accounts (#852, per branch for the owner) + "Cách thu cọc" (#1199, owner only), one tab.
+   * The tab is open to the outlet admin for the bank accounts; the deposit part stays owner only.
+   */
+  { id: 'payment', group: 'shop', roles: ['MERCHANT', 'OUTLET_ADMIN'] },
+  /** "In & phiếu" (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */
   { id: 'receipt', group: 'shop' },
   { id: 'subscription', group: 'account', roles: ['MERCHANT'] },
-  { id: 'profile', group: 'me' },
-  /** Mật khẩu & bảo mật: change password, logout, delete account */
-  { id: 'account', group: 'me' },
+  /** "Hồ sơ & bảo mật" (#1259): profile, then change password, logout, delete account */
+  { id: 'profile', group: 'account' },
   /** Ngôn ngữ & giao diện (#1140 merged the old `appearance` tab in) */
-  { id: 'language', group: 'me' },
+  { id: 'language', group: 'account' },
 ];
 
-export const SETTINGS_GROUPS: SettingsGroup[] = ['shop', 'account', 'me'];
+export const SETTINGS_GROUPS: SettingsGroup[] = ['shop', 'account'];
 
-/** Old keys that now open another tab. `printer` (#623) → Phiếu in (#626); `appearance` → Ngôn ngữ & giao diện (#1140). */
-const TAB_ALIASES: Record<string, SettingsTab> = { printer: 'receipt', appearance: 'language' };
+/**
+ * Old keys that now open another tab. `printer` (#623) → In & phiếu (#626); `appearance` → Ngôn ngữ & giao diện (#1140);
+ * `bank-accounts` → Thu tiền and `account` → Hồ sơ & bảo mật (#1259).
+ */
+const TAB_ALIASES: Record<string, SettingsTab> = { printer: 'receipt', appearance: 'language', 'bank-accounts': 'payment', account: 'profile' };
 
 /** Visible tabs for a role. Giao diện lives inside `language`, so the theme kill switch hides no tab. */
 export function tabsForRole(role?: string | null): SettingsTabDef[] {
@@ -60,7 +61,7 @@ export function groupedTabs(tabs: SettingsTabDef[]): Array<{ group: SettingsGrou
   return SETTINGS_GROUPS.map((group) => ({ group, tabs: tabs.filter((t) => t.group === group) })).filter((g) => g.tabs.length > 0);
 }
 
-/** First screen: the shop for owners and outlet users (the board), otherwise "Hồ sơ". */
+/** First screen: the shop for owners and outlet users (the board), otherwise "Hồ sơ & bảo mật". */
 export function defaultTab(role?: string | null): SettingsTab {
   const r = String(role || '').toUpperCase();
   if (r === 'MERCHANT') return 'merchant';

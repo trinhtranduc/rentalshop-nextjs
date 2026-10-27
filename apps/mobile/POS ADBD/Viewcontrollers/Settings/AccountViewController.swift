@@ -32,6 +32,8 @@ class AccountViewController: BaseViewControler {
             switch self {
             case .info: 
                 var items: [StoreItem] = [.storeName, .staffName, .role, .email, .address, .phone]
+                // #1259: "Tiền tệ" moved here from the Settings list; the shop owner only
+                if SettingsV2Logic.storeInfoShowsCurrency(role: User.account()?.role) { items.insert(.currency, at: 1) }
                 // Add affiliate link if available (only for admin/merchant)
                 if let user = User.account(), (user.role == .admin || user.role == .merchant) {
                     if user.affiliateLink != nil {
@@ -47,11 +49,12 @@ class AccountViewController: BaseViewControler {
     }
     
     private enum StoreItem {
-        case storeName, staffName, role, plan, duration, subscription, email, address, phone, affiliateLink, publicProductLink
+        case storeName, currency, staffName, role, plan, duration, subscription, email, address, phone, affiliateLink, publicProductLink
         
         var title: String {
             switch self {
             case .storeName: return "Store Name".localized()
+            case .currency: return "settings.v2.currency".localized()
             case .staffName: return "Staff Name".localized()
             case .role: return "Role".localized()
             case .plan: return "Plan".localized()
@@ -68,6 +71,7 @@ class AccountViewController: BaseViewControler {
         func value(for user: User) -> String? {
             switch self {
             case .storeName: return user.storeName
+            case .currency: return ShopCurrencyStore.current.label
             case .staffName:
                 let firstName = user.firstName ?? ""
                 let lastName = user.lastName ?? ""
@@ -126,6 +130,12 @@ class AccountViewController: BaseViewControler {
         // Ensure navigation bar is hidden when returning to this screen
         navigationController?.setNavigationBarHidden(true, animated: false)
         accountTableView.reloadData() // Refresh data when view appears
+        if SettingsV2Logic.storeInfoShowsCurrency(role: user?.role) {
+            ShopCurrencyStore.refresh { [weak self] _ in
+                guard let self, !ShopCurrencyStore.saving else { return }
+                self.accountTableView.reloadData()
+            }
+        }
     }
     
     override func setupUI() {
@@ -296,7 +306,7 @@ extension AccountViewController: UITableViewDataSource, UITableViewDelegate {
             let cell = tableView.dequeueReusableCell(withIdentifier: SettingsDetailV2Cell.reuseId, for: indexPath) as! SettingsDetailV2Cell
             // Links stay tappable to copy them, as before
             cell.configure(title: item.title, value: user.flatMap { item.value(for: $0) } ?? "-",
-                           selectable: item == .affiliateLink || item == .publicProductLink)
+                           selectable: item == .affiliateLink || item == .publicProductLink || item == .currency)
             return cell
         }
         let cell = UITableViewCell(style: .value1, reuseIdentifier: "AccountCell")
@@ -317,7 +327,7 @@ extension AccountViewController: UITableViewDataSource, UITableViewDelegate {
         config.secondaryTextProperties.color = .secondaryLabel
         
         // Enable selection for links to allow copying
-        if item == .affiliateLink || item == .publicProductLink {
+        if item == .affiliateLink || item == .publicProductLink || item == .currency {
             cell.selectionStyle = .default
             cell.accessoryType = .none
         } else {
@@ -340,13 +350,67 @@ extension AccountViewController: UITableViewDataSource, UITableViewDelegate {
         let item = section.items[indexPath.row]
         
         // Handle link copying
-        if item == .affiliateLink, let link = user.affiliateLink {
+        if item == .currency {
+            chooseCurrency()
+        } else if item == .affiliateLink, let link = user.affiliateLink {
             copyToClipboard(text: link, label: "Affiliate Link".localized())
         } else if item == .publicProductLink, let link = user.publicProductLink {
             copyToClipboard(text: link, label: "Public Product Link".localized())
         }
     }
     
+    // MARK: - Shop currency (#1145, moved here from the Settings list by #1259)
+
+    /// "VND (đ)" / "USD ($)", the current one checked; another one asks to confirm
+    private func chooseCurrency() {
+        let current = ShopCurrencyStore.current
+        let sheet = UIAlertController(title: "settings.v2.currency".localized(), message: nil, preferredStyle: .actionSheet)
+        for currency in ShopCurrency.allCases {
+            let action = UIAlertAction(title: currency.label, style: .default) { [weak self] _ in
+                guard currency != current else { return }
+                self?.confirmCurrency(currency, from: current)
+            }
+            action.setValue(currency == current, forKey: "checked")
+            sheet.addAction(action)
+        }
+        sheet.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        present(sheet, animated: true)
+    }
+
+    private func confirmCurrency(_ currency: ShopCurrency, from current: ShopCurrency) {
+        let alert = UIAlertController(title: ShopCurrencyLogic.confirmTitle(to: currency),
+                                      message: ShopCurrencyLogic.confirmMessage(from: current, to: currency),
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: ShopCurrencyLogic.confirmButton(to: currency), style: .default) { [weak self] _ in
+            self?.saveCurrency(currency)
+        })
+        present(alert, animated: true)
+    }
+
+    private func saveCurrency(_ currency: ShopCurrency) {
+        guard !ShopCurrencyStore.saving else { return }
+        ShopCurrencyStore.saving = true
+        TabsV2APIService.shared.setShopCurrency(currency) { [weak self] saved, error in
+            DispatchQueue.main.async {
+                ShopCurrencyStore.saving = false
+                if let saved, error == nil {
+                    ShopCurrencyStore.store(saved)
+                    self?.accountTableView.reloadData()
+                    return
+                }
+                guard let self else { return }
+                let failure = error ?? NSError.errorWithOwnMessage(message: "settings.v2.currency.failed".localized(), domain: "RC")
+                UIAlertController.errorAlert(parent: self, error: failure)
+            }
+        }
+    }
+
     private func copyToClipboard(text: String, label: String) {
         UIPasteboard.general.string = text
         // Show toast or alert
