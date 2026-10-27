@@ -435,17 +435,37 @@ final class CartV2ViewController: BaseViewControler {
         }
 
         let first = preview.first
-        let collect = V2ValueRow(title: String(format: "deposit.cart.collectFirst".localized(), 1), editable: true)
-        if cart.stagedCollectNow > 0, let first {
-            collect.valueLabel.text = MoneyFormatter.format(first.amount)
-        } else {
-            collect.valueLabel.text = "deposit.cart.collectNone.short".localized()
-        }
+        // #1245: a flat row like the stages (title left, blue amount + pencil right), so the amount never drifts to the title
+        let collectText = cart.stagedCollectNow > 0 && first != nil ? MoneyFormatter.format(first!.amount) : "deposit.cart.collectNone.short".localized()
+        let collect = actionRow(title: String(format: "deposit.cart.collectFirst".localized(), 1), value: collectText)
         collect.addTarget(self, action: #selector(pickCollectFirst), for: .touchUpInside)
         collect.accessibilityIdentifier = "deposit.cart.collectFirst"
         column.addArrangedSubview(collect)
         column.addArrangedSubview(V2.divider())
         return column
+    }
+
+    private func actionRow(title: String, value: String) -> UIControl {
+        let name = DepositUI.wrapLabel(title, size: DS.TextSize.body)
+        let amount = V2.label(value, size: DS.TextSize.body, weight: .bold, color: DS.Color.primary)
+        amount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amount.setContentHuggingPriority(.required, for: .horizontal)
+        let right = UIStackView(arrangedSubviews: [amount, V2.editPencil()])
+        right.spacing = 6
+        right.alignment = .center
+        let line = UIStackView(arrangedSubviews: [name, right])
+        line.spacing = DS.Spacing.md
+        line.alignment = .center
+        line.isUserInteractionEnabled = false
+        let row = UIControl()
+        row.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = title
+        row.accessibilityValue = value
+        row.accessibilityTraits = UIAccessibilityTraitButton
+        return row
     }
 
     private func stageRow(_ stage: DepositStagePreview, index: Int, today: String) -> UIView {
