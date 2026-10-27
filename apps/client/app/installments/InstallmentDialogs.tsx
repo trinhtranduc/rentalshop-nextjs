@@ -69,7 +69,6 @@ export function CollectDialog({
 }) {
   const staff = isStaffRole(role);
   const [amount, setAmount] = useState(0);
-  const [method, setMethod] = useState<'CASH' | 'TRANSFER'>('CASH');
   const [day, setDay] = useState(todayKey);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -78,7 +77,6 @@ export function CollectDialog({
   useEffect(() => {
     if (!open || !stage) return;
     setAmount(stage.plannedAmount);
-    setMethod('CASH');
     setDay(todayKey);
     setNote('');
     reference.current = newReference('collect');
@@ -92,7 +90,7 @@ export function CollectDialog({
     try {
       const res = await installmentsApi.collect(order.id, stage.key, {
         amount,
-        method,
+        method: 'CASH',
         ...(!staff && day && day !== todayKey ? { collectedOn: day } : {}),
         ...(note.trim() ? { note: note.trim() } : {}),
         reference: reference.current,
@@ -136,13 +134,6 @@ export function CollectDialog({
         <span className={`text-xs font-normal ${problem ? 'text-ar-danger' : 'text-ar-muted'}`} role={problem ? 'alert' : undefined}>
           {problem === 'over' ? td('overStage', { amount: money(stage.plannedAmount) }) : td('amountHint', { amount: money(stage.plannedAmount) })}
         </span>
-      </label>
-      <label className={labelClass}>
-        {td('method')}
-        <select className={selectClass} value={method} onChange={(e) => setMethod(e.target.value === 'TRANSFER' ? 'TRANSFER' : 'CASH')}>
-          <option value="CASH">{td('cash')}</option>
-          <option value="TRANSFER">{td('transfer')}</option>
-        </select>
       </label>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {!staff && (
@@ -322,14 +313,10 @@ export function EditPlanDialog({
 
 export function UnpaidStages({
   stages,
-  method,
-  onMethod,
   td,
   money,
 }: {
   stages: OrderInstallment[];
-  method: 'CASH' | 'TRANSFER';
-  onMethod: (next: 'CASH' | 'TRANSFER') => void;
   td: TD;
   money: Money;
 }) {
@@ -349,15 +336,6 @@ export function UnpaidStages({
       </ul>
       <div className="flex items-center justify-between gap-3 border-t border-ar-line pt-2 text-sm">
         <span className="font-semibold text-ar-ink-2">{td('unpaidTotal', { amount: money(sum) })}</span>
-        <select
-          aria-label={td('method')}
-          value={method}
-          onChange={(e) => onMethod(e.target.value === 'TRANSFER' ? 'TRANSFER' : 'CASH')}
-          className="h-9 cursor-pointer rounded-[10px] border border-ar-line-strong bg-ar-surface px-2 text-sm font-semibold text-ar-ink"
-        >
-          <option value="CASH">{td('cash')}</option>
-          <option value="TRANSFER">{td('transfer')}</option>
-        </select>
       </div>
     </div>
   );

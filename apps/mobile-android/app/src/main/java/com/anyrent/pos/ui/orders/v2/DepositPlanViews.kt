@@ -70,9 +70,7 @@ import com.anyrent.pos.ui.common.toUtcMillis
 import com.anyrent.pos.ui.deposit.DepositFullScreen
 import com.anyrent.pos.ui.deposit.DepositNote
 import com.anyrent.pos.ui.deposit.DepositPill
-import com.anyrent.pos.ui.deposit.DepositRadioRow
 import com.anyrent.pos.ui.deposit.DepositWarningBox
-import com.anyrent.pos.ui.deposit.depositMethodName
 import com.anyrent.pos.ui.deposit.installmentChip
 import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.V2Colors
@@ -221,7 +219,7 @@ private fun DepositSheetFrame(onDismiss: () -> Unit, content: @Composable Column
     }
 }
 
-/** "Thu giai đoạn N": the amount (up to what the stage still needs) and the method */
+/** "Thu giai đoạn N": the amount (up to what the stage still needs); the method is always CASH (#1237) */
 @Composable
 internal fun CollectInstallmentSheet(
     detail: OrderDetail,
@@ -232,8 +230,6 @@ internal fun CollectInstallmentSheet(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val methods = DepositPlanLogic.collectMethods(com.anyrent.pos.data.PermissionManager.role.isStaffLike)
-    var method by remember { mutableStateOf("CASH") }
     var amountText by remember { mutableStateOf((if (stage.remaining > 0) stage.remaining else stage.amount).toLong().toString()) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -254,7 +250,6 @@ internal fun CollectInstallmentSheet(
             textStyle = androidx.compose.ui.text.TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold),
             modifier = Modifier.fillMaxWidth().testTag("deposit.collect.amount"),
         )
-        Column { methods.forEach { item -> DepositRadioRow(depositMethodName(item), null, item == method, { method = item }) } }
         error?.let { Text(it, fontSize = DS.TextSize.Secondary, color = V2Colors.Danger) }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SecondaryBarButton(stringResource(R.string.cancel), Modifier.weight(1f), !busy, onClick = onDismiss)
@@ -263,7 +258,7 @@ internal fun CollectInstallmentSheet(
             ) {
                 busy = true
                 scope.launch {
-                    val result = withContext(Dispatchers.IO) { DepositPlanApi.collect(detail.summary.id, stage.key, amount, method, reference) }
+                    val result = withContext(Dispatchers.IO) { DepositPlanApi.collect(detail.summary.id, stage.key, amount, "CASH", reference) }
                     busy = false
                     result.onSuccess { onCollected() }
                         .onFailure { error = ApiErrorMessages.resolve(context, AppError.from(it).code, it.message.orEmpty()) }
