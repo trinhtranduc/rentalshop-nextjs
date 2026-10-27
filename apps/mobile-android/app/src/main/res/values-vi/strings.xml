@@ -623,8 +623,8 @@
     <string name="v2_form_regenerate_barcode">Tạo mã mới</string>
     <string name="v2_form_barcode_used">Mã vạch đã dùng cho %1$s</string>
     <string name="v2_form_prices">Giá</string>
-    <string name="v2_form_per_rental">Thuê theo lần</string>
-    <string name="v2_form_per_day">Thuê theo ngày</string>
+    <string name="v2_form_per_rental">Theo lần</string>
+    <string name="v2_form_per_day">Theo mỗi ngày</string>
     <string name="v2_form_sale_price">Giá bán</string>
     <string name="v2_form_not_for_sale">Không bán</string>
     <string name="v2_form_deposit">Cọc mỗi món</string>
@@ -2283,17 +2283,12 @@
     <string name="settings_v2_profile_hint">hồ sơ, mật khẩu</string>
     <string name="settings_v2_profile_group">Hồ sơ</string>
     <string name="settings_v2_profile_security">Bảo mật</string>
-    <!-- #1249 form giá sản phẩm (mockup v170) -->
-    <string name="v2_form_multi_day_title">Giá nhiều ngày (chọn 1 trong 2)</string>
+    <!-- #1249 form giá sản phẩm (mockup v179) -->
+    <string name="v2_form_per_block">Theo block ngày</string>
+    <string name="v2_form_block_not_set">Chưa cài</string>
     <string name="v2_form_unit_per_rental">%1$s / lần</string>
     <string name="v2_form_unit_per_day">%1$s / ngày</string>
     <string name="block_intro">Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.</string>
-    <string name="block_quick">Tạo nhanh</string>
-    <string name="block_quick_title">Tạo nhanh</string>
-    <string name="block_quick_first">Giá ngày đầu</string>
-    <string name="block_quick_step">Mỗi ngày thêm</string>
-    <string name="block_quick_days">Số ngày</string>
-    <string name="block_quick_create">Tạo bảng</string>
     <string name="block_copy">Sao chép từ sản phẩm khác</string>
     <string name="block_copy_loading">Đang tải…</string>
     <string name="block_copy_none">Chưa có sản phẩm khác dùng bảng giá theo khối ngày.</string>

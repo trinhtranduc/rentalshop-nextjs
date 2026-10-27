@@ -88,7 +88,6 @@ import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.BlockTable
 import com.anyrent.pos.domain.products.BlockText
-import com.anyrent.pos.domain.products.DayKind
 import com.anyrent.pos.domain.products.PriceForm
 import com.anyrent.pos.domain.products.PriceFormState
 import com.anyrent.pos.domain.products.ProductBarcode
@@ -153,15 +152,12 @@ fun ProductFormV2Screen(
     var categoryId by remember { mutableStateOf(initial?.categoryId) }
     var categoryName by remember { mutableStateOf(initial?.categoryName) }
     var perRental by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.perRental(it) })) }
-    // #1249 (mockup v170): Thuê theo lần always; below it ONE of Thuê theo ngày (a day price) or Giá theo khối ngày (the table,
-    // set up on its own screen). The other one's data stays in memory so switching back and forth loses nothing.
+    // #1249 (mockup v179): Theo lần, Theo mỗi ngày and Theo block ngày all exist together (no radio); the table is set up on its own screen.
     val opened = remember { PriceForm.open(initial) }
-    var dayKind by remember { mutableStateOf(opened.dayKind) }
     var perDay by remember { mutableStateOf(MoneyInput.display(opened.perDay)) }
     var block by remember { mutableStateOf(opened.block) }
     var showBlockScreen by remember { mutableStateOf(false) }
-    fun priceState() = PriceFormState(MoneyInput.parse(perRental), MoneyInput.parse(perDay), dayKind, block)
-    fun applyPrice(next: PriceFormState) { dayKind = next.dayKind; block = next.block }
+    fun priceState() = PriceFormState(MoneyInput.parse(perRental), MoneyInput.parse(perDay), block)
     var sale by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.sale(it) })) }
     var deposit by remember { mutableStateOf(MoneyInput.display(initial?.deposit?.takeIf { it > 0 })) }
     // #887: Giá vốn (optional, prices only)
@@ -227,9 +223,9 @@ fun ProductFormV2Screen(
         val input = ProductFormInput(
             name = name,
             perRental = price.perRental,
-            perDay = if (price.dayKind == DayKind.DAY) price.perDay else null,
+            perDay = price.perDay,
             defaultMode = PricingMode.PER_RENTAL,
-            block = if (price.dayKind == DayKind.BLOCK) price.block else null,
+            block = price.block,
             salePrice = MoneyInput.parse(sale),
             deposit = MoneyInput.parse(deposit),
             quantity = quantity,
@@ -384,38 +380,29 @@ fun ProductFormV2Screen(
                 SectionBand(stringResource(R.string.v2_form_prices))
                 FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
                     placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_rental, ShopMoney.symbol()))
-                Text(
-                    stringResource(R.string.v2_form_multi_day_title).uppercase(),
-                    fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 6.dp),
-                )
-                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RadioCard("kind.day", stringResource(R.string.v2_form_per_day), dayKind == DayKind.DAY, { applyPrice(PriceForm.chooseDay(priceState())) }) {
-                        FormField(
-                            "", value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) }, placeholder = "0", numeric = true,
-                            modifier = Modifier.fillMaxWidth(), start = 12.dp, end = 12.dp, label = false,
-                            description = stringResource(R.string.v2_form_per_day), unit = stringResource(R.string.v2_form_unit_per_day, ShopMoney.symbol()),
-                        )
-                    }
-                    RadioCard("kind.block", stringResource(R.string.block_title), dayKind == DayKind.BLOCK, {
-                        val choice = PriceForm.chooseBlock(priceState())
-                        applyPrice(choice.state)
-                        if (choice.openSetup) showBlockScreen = true
-                    }) {
-                        block?.let { table ->
-                            val res = LocalContext.current.resources
-                            Row(
-                                Modifier.fillMaxWidth().clickable { showBlockScreen = true }.semantics { contentDescription = "block.summary" }
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(BlockText.rowSummary(res, table), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold)
-                                    Text(BlockText.rangeSummary(res, table), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                                }
-                                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
+                    placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_day, ShopMoney.symbol()))
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.v2_form_per_block), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold)
+                    val res = LocalContext.current.resources
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { showBlockScreen = true }.semantics { contentDescription = "block.summary" }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            val table = block
+                            if (table != null) {
+                                Text(BlockText.rowSummary(res, table), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold)
+                                Text(BlockText.rangeSummary(res, table), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                            } else {
+                                Text(stringResource(R.string.v2_form_block_not_set), fontSize = DS.TextSize.Input, color = DS.Colors.TextMuted)
                             }
                         }
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
                     }
                 }
                 Row {
@@ -484,29 +471,13 @@ fun ProductFormV2Screen(
             BlockPriceScreen(
                 initial = block,
                 currentProductId = initial?.id,
-                onSave = { table -> applyPrice(PriceForm.saveBlock(priceState(), table)); block = table; showBlockScreen = false },
-                onTurnOff = { applyPrice(PriceForm.turnOffBlock(priceState())); showBlockScreen = false },
+                onSave = { table -> block = PriceForm.saveBlock(priceState(), table).block; showBlockScreen = false },
+                onTurnOff = { block = PriceForm.turnOffBlock(priceState()).block; showBlockScreen = false },
                 onClose = { showBlockScreen = false },
             )
         }
     }
     error?.let { message -> AppAlertError(message = message, onDismiss = { error = null }) }
-}
-
-/** A full-width card with a radio row; when [selected] the [content] sits right below it inside the same border (mockup v170) */
-@Composable
-private fun RadioCard(tag: String, title: String, selected: Boolean, onPick: () -> Unit, content: @Composable () -> Unit) {
-    val shape = RoundedCornerShape(12.dp)
-    Column(
-        Modifier.fillMaxWidth().clip(shape).background(if (selected) Color(0xFFEFF6FF) else Color.White)
-            .border(if (selected) 1.5.dp else 1.dp, if (selected) DS.Colors.Primary else V2Colors.Border, shape),
-    ) {
-        RadioRow(tag, title, selected, onPick) {}
-        if (selected) {
-            HorizontalDivider(color = DS.Colors.Primary.copy(alpha = 0.35f))
-            Column(Modifier.background(Color.White)) { content() }
-        }
-    }
 }
 
 @Composable

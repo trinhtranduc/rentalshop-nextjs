@@ -3,58 +3,37 @@ package com.anyrent.pos.domain.products
 import com.anyrent.pos.data.model.Product
 
 /**
- * #1249 (mockup v170): the rent prices of the product form. "Thuê theo lần" is always there and is the default for
- * new orders. Below it ONE of two radios: "Thuê theo ngày" (one price per day) or "Giá theo khối ngày" (the table, set
- * up on its own screen). The price of the other radio stays in memory so switching back and forth loses nothing, but
- * only the chosen one is sent. Pure, so it runs in plain JVM tests (iOS `ProductPriceForm`).
+ * #1249 (mockup v179): the rent prices of the product form. Three prices exist together, no radio and no default
+ * switch: "Theo lần" (the default for new orders), "Theo mỗi ngày" (one price per day) and "Theo block ngày" (the
+ * table, set up on its own screen, "Chưa cài" when null). All three are sent when filled. Pure, so it runs in plain
+ * JVM tests (iOS `ProductPriceForm`).
  */
-enum class DayKind { DAY, BLOCK }
-
 data class PriceFormState(
     val perRental: Double?,
     val perDay: Double?,
-    val dayKind: DayKind,
     val block: BlockTable?,
 )
 
-/** [openSetup]: the radio asked for a table that does not exist yet; the setup screen opens and [state] is unchanged */
-data class BlockChoice(val state: PriceFormState, val openSetup: Boolean)
-
 object PriceForm {
-    /** New product: Thuê theo ngày with empty boxes. Saved product: a table -> Giá theo khối ngày, else Thuê theo ngày with its day price. */
+    /** New product: three empty prices. Saved product: each saved price fills its own row, no table = "Chưa cài". */
     fun open(product: Product?): PriceFormState {
-        if (product == null) return PriceFormState(null, null, DayKind.DAY, null)
-        val table = ProductPricing.block(product)
+        if (product == null) return PriceFormState(null, null, null)
         return PriceFormState(
             perRental = ProductPricing.perRental(product),
             perDay = ProductPricing.perDay(product),
-            dayKind = if (table != null) DayKind.BLOCK else DayKind.DAY,
-            block = table,
+            block = ProductPricing.block(product),
         )
     }
 
-    fun chooseDay(s: PriceFormState): PriceFormState = s.copy(dayKind = DayKind.DAY)
-
-    fun chooseBlock(s: PriceFormState): BlockChoice =
-        if (s.block == null) BlockChoice(s, openSetup = true) else BlockChoice(s.copy(dayKind = DayKind.BLOCK), openSetup = false)
-
     /** "Lưu bảng giá" */
-    fun saveBlock(s: PriceFormState, table: BlockTable): PriceFormState = s.copy(dayKind = DayKind.BLOCK, block = table)
+    fun saveBlock(s: PriceFormState, table: BlockTable): PriceFormState = s.copy(block = table)
 
-    /** "Tắt giá theo khối ngày": back to Thuê theo ngày; the day price stays, the table goes */
-    fun turnOffBlock(s: PriceFormState): PriceFormState = s.copy(dayKind = DayKind.DAY, block = null)
+    /** "Tắt giá theo khối ngày": the table goes ("Chưa cài"); the other two prices stay */
+    fun turnOffBlock(s: PriceFormState): PriceFormState = s.copy(block = null)
 
-    /** What is sent: FIXED + DAILY, or FIXED + BLOCK. FIXED is the default; without it the other option is. */
-    fun options(s: PriceFormState): List<PricingOptionInput> = when (s.dayKind) {
-        DayKind.DAY -> ProductPricing.options(s.perRental, s.perDay, PricingMode.PER_RENTAL, null)
-        DayKind.BLOCK -> ProductPricing.options(s.perRental, null, PricingMode.PER_RENTAL, s.block)
-    }
-
-    /** "Tạo nhanh": [days] rows, row 1 = [first], each next row [step] more; the same [step] for each day past the table */
-    fun quickTable(first: Double, step: Double, days: Int): BlockTable {
-        val n = days.coerceIn(1, BlockPricing.MAX_TIERS)
-        return BlockTable((0 until n).map { first + it * step }, 1, BlockTable.EXTRA_PER_DAY, step)
-    }
+    /** What is sent: FIXED + DAILY (when its box has a price) + BLOCK (when a table is set). FIXED is the default; without it the next one is. */
+    fun options(s: PriceFormState): List<PricingOptionInput> =
+        ProductPricing.options(s.perRental, s.perDay, PricingMode.PER_RENTAL, s.block)
 
     /** "Sao chép từ sản phẩm khác": its table and its rule past the last day (never its sale price or deposit) */
     fun copyTable(other: Product): BlockTable? = ProductPricing.block(other)

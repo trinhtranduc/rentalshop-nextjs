@@ -245,16 +245,6 @@ extension OrderItem {
 
 // MARK: - Form input
 
-extension BlockPricing {
-    /// "Tạo nhanh": `days` rows, the first costs `firstDay`, each next day costs `extraPerDay` more, and every day past
-    /// the table costs `extraPerDay` more too. Nil for a count outside 1...31 or a negative price.
-    static func quickTable(firstDay: Double, extraPerDay: Double, days: Int) -> BlockTable? {
-        guard days >= 1, days <= maxTiers, firstDay >= 0, extraPerDay >= 0 else { return nil }
-        let tiers = (0..<days).map { firstDay + Double($0) * extraPerDay }
-        return BlockTable(tiers: tiers, startDay: 1, extraMode: BlockTable.extraPerDay, extraPrice: extraPerDay)
-    }
-}
-
 enum BlockTableInput: Equatable {
     /// every box empty: no table
     case empty

@@ -27,18 +27,13 @@ final class ProductFormViewController: BaseViewControler {
     private var categories: [Category] = []
     private var categoryId: Int?
     private var merchantOutlets: [(id: Int, isDefault: Bool)] = []
-    /// #1249 (owner's mockup): Thuê theo lần is always there; below it ONE of Thuê theo ngày (one price a day) or Giá theo
-    /// khối ngày (the table, set up on its own screen). Both the day price and the table stay in memory while the radio
-    /// changes; only the chosen one is sent.
+    /// #1249 (mockup v179): Theo lần, Theo mỗi ngày and Theo block ngày (the table, set up on its own screen) all exist
+    /// together and are all sent when filled; no radio, no "mặc định tính" switch.
     private var priceDraft = ProductPriceDraft()
     private let perDayField = UITextField()
-    private var kindCards: [ProductDayKind: UIView] = [:]
-    private var kindRadios: [ProductDayKind: UIView] = [:]
-    private var kindRows: [ProductDayKind: UIView] = [:]
-    private var kindLabels: [ProductDayKind: UILabel] = [:]
-    private var kindExtras: [ProductDayKind: UIView] = [:]
     private let blockSummaryTitle = V2.label(size: DS.TextSize.input, weight: .bold)
     private let blockSummaryRange = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private let blockNotSet = V2.label("products.form.block.notSet".localized(), size: DS.TextSize.input, color: DS.Color.textMuted)
     private var keyboardManagerWasEnabled = true
 
     private let scroll = UIScrollView()
@@ -233,14 +228,12 @@ final class ProductFormViewController: BaseViewControler {
             perRentalField.accessibilityIdentifier = "product.form.perRental"
             form.addArrangedSubview(field(title: "products.form.perRental".localized(), required: false, input: perRentalField,
                                           unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.once".localized()))
-            let groupTitle = V2.label("products.form.manyDays".localized().uppercased(), size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
-            form.addArrangedSubview(padded(groupTitle, top: 8, bottom: 6))
             configure(perDayField, placeholder: "0", numeric: true)
             perDayField.accessibilityIdentifier = "product.form.perDay"
-            perDayField.accessibilityLabel = "products.form.perDay.box".localized()
-            form.addArrangedSubview(padded(kindCard(.perDay), top: 0, bottom: 10))
-            form.addArrangedSubview(padded(kindCard(.block), top: 0, bottom: 4))
-            renderKind()
+            form.addArrangedSubview(field(title: "products.form.perDay".localized(), required: false, input: perDayField,
+                                          unit: MoneyFormatter.unitLabel(daily: true)))
+            form.addArrangedSubview(blockRow())
+            renderBlock()
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
             configure(depositField, placeholder: "0", numeric: true)
             form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField),
@@ -344,7 +337,7 @@ final class ProductFormViewController: BaseViewControler {
         saleField.text = MoneyInput.display(ProductPricing.sale(product))
         if let deposit = product.deposit, deposit > 0 { depositField.text = MoneyInput.display(deposit) }
         if let cost = product.costPrice, cost > 0 { costField.text = MoneyInput.display(cost) }
-        renderKind()
+        renderBlock()
         photos = (product.images?.isEmpty == false ? product.images! : [product.image_url].compactMap { $0 })
             .filter { !$0.isEmpty }.map { .remote($0) }
         renderStock()
@@ -467,114 +460,60 @@ final class ProductFormViewController: BaseViewControler {
         field.text = MoneyInput.display(MoneyInput.parse(field.text))
     }
 
-    /// One card of the group "Giá nhiều ngày": a radio row, and right under it (same border) the day price box or the
-    /// summary of the table
-    private func kindCard(_ kind: ProductDayKind) -> UIView {
-        let dot = UIView()
-        dot.backgroundColor = .white
-        dot.layer.cornerRadius = 11
-        dot.isUserInteractionEnabled = false
-        dot.snp.makeConstraints { make in make.size.equalTo(22) }
-        let label = V2.label((kind == .perDay ? "products.form.perDay" : "block.title").localized(), size: DS.TextSize.input)
-        let radio = UIStackView(arrangedSubviews: [dot, label, UIView()])
-        radio.alignment = .center
-        radio.spacing = 14
-        radio.isLayoutMarginsRelativeArrangement = true
-        radio.layoutMargins = UIEdgeInsets(top: 8, left: 14, bottom: 8, right: 14)
-        radio.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(52) }
-        radio.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(kindTapped(_:))))
-        radio.tag = kind == .perDay ? 0 : 1
-        radio.accessibilityIdentifier = kind == .perDay ? "product.form.kind.perDay" : "product.form.kind.block"
-        radio.isAccessibilityElement = true
-        radio.accessibilityTraits = UIAccessibilityTraitButton
-        radio.accessibilityLabel = label.text
-        kindRadios[kind] = dot
-        kindRows[kind] = radio
-        kindLabels[kind] = label
-
-        let extra: UIView
-        if kind == .perDay {
-            let unit = V2.label(MoneyFormatter.unitLabel(daily: true), size: DS.TextSize.body, color: DS.Color.textMuted)
-            unit.setContentHuggingPriority(.required, for: .horizontal)
-            let row = UIStackView(arrangedSubviews: [perDayField, unit])
-            row.alignment = .center
-            row.spacing = 8
-            row.isLayoutMarginsRelativeArrangement = true
-            row.layoutMargins = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
-            row.snp.makeConstraints { make in make.height.equalTo(48) }
-            extra = row
-        } else {
-            blockSummaryTitle.numberOfLines = 1
-            let texts = UIStackView(arrangedSubviews: [blockSummaryTitle, blockSummaryRange])
-            texts.axis = .vertical
-            texts.spacing = 2
-            let chevron = UIImageView(image: DS.symbol("chevron.right", 14, weight: .semibold))
-            chevron.tintColor = DS.Color.textMuted
-            chevron.setContentHuggingPriority(.required, for: .horizontal)
-            let row = UIStackView(arrangedSubviews: [texts, UIView(), chevron])
-            row.alignment = .center
-            row.isLayoutMarginsRelativeArrangement = true
-            row.layoutMargins = UIEdgeInsets(top: 10, left: 14, bottom: 10, right: 14)
-            row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
-            row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openBlockSetup)))
-            row.isAccessibilityElement = true
-            row.accessibilityTraits = UIAccessibilityTraitButton
-            row.accessibilityIdentifier = "product.form.blockSummary"
-            extra = row
-        }
-        let line = V2.divider()
-        let extraWrap = UIStackView(arrangedSubviews: [line, extra])
-        extraWrap.axis = .vertical
-        kindExtras[kind] = extraWrap
-        let card = UIStackView(arrangedSubviews: [radio, extraWrap])
-        card.axis = .vertical
-        card.layer.cornerRadius = 12
-        card.layer.borderWidth = 1
-        card.clipsToBounds = true
-        kindCards[kind] = card
-        return card
+    /// "Theo block ngày": a title and a bordered row with the table summary ("Chưa cài" when none); a tap opens the setup screen
+    private func blockRow() -> UIView {
+        let title = V2.label("products.form.perBlock".localized(), size: DS.TextSize.body, weight: .bold)
+        blockSummaryTitle.numberOfLines = 1
+        let texts = UIStackView(arrangedSubviews: [blockSummaryTitle, blockSummaryRange, blockNotSet])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let chevron = UIImageView(image: DS.symbol("chevron.right", 14, weight: .semibold))
+        chevron.tintColor = DS.Color.textMuted
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [texts, UIView(), chevron])
+        row.alignment = .center
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        row.layer.cornerRadius = 12
+        row.layer.borderWidth = 1
+        row.layer.borderColor = V2.border.cgColor
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
+        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openBlockSetup)))
+        row.isAccessibilityElement = true
+        row.accessibilityTraits = UIAccessibilityTraitButton
+        row.accessibilityIdentifier = "product.form.blockSummary"
+        row.accessibilityLabel = title.text
+        let stack = UIStackView(arrangedSubviews: [title, row])
+        stack.axis = .vertical
+        stack.spacing = 6
+        return padded(stack, top: 8, bottom: 8)
     }
 
-    /// Radios, borders and what hangs under the chosen radio; the other card is just its radio row
-    private func renderKind() {
+    /// The summary of the table, or "Chưa cài"
+    private func renderBlock() {
         guard showsPrices else { return }
-        for kind in [ProductDayKind.perDay, .block] {
-            let selected = priceDraft.kind == kind
-            kindRadios[kind]?.layer.borderWidth = selected ? 6 : 1.5
-            kindRadios[kind]?.layer.borderColor = (selected ? DS.Color.primary : UIColor(hexString: "94A3B8")).cgColor
-            kindLabels[kind]?.font = selected ? Utils.boldFont(size: DS.TextSize.input) : Utils.regularFont(size: DS.TextSize.input)
-            kindRows[kind]?.backgroundColor = selected ? UIColor(hexString: "EFF6FF") : .white
-            kindExtras[kind]?.isHidden = !selected
-            kindCards[kind]?.layer.borderColor = (selected ? DS.Color.primary : V2.border).cgColor
-        }
-        if let table = priceDraft.block {
+        let table = priceDraft.block
+        blockSummaryTitle.isHidden = table == nil
+        blockSummaryRange.isHidden = table == nil
+        blockNotSet.isHidden = table != nil
+        if let table {
             blockSummaryTitle.text = BlockPricing.rowSummary(table)
             blockSummaryRange.text = BlockPricing.rangeSummary(table)
         }
     }
 
-    @objc private func kindTapped(_ gesture: UITapGestureRecognizer) {
-        view.endEditing(true)
-        syncDraftFromBoxes()
-        let kind: ProductDayKind = gesture.view?.tag == 1 ? .block : .perDay
-        switch priceDraft.choose(kind) {
-        case .selected: renderKind()
-        case .needsSetup: openBlockSetup()
-        }
-    }
-
-    /// The setup screen. Back without saving leaves the draft (and so the previous radio) as it was.
+    /// The setup screen. Back without saving leaves the draft as it was.
     @objc private func openBlockSetup() {
         view.endEditing(true)
         syncDraftFromBoxes()
         let screen = BlockPriceViewController(table: priceDraft.block)
         screen.onSave = { [weak self] table in
             self?.priceDraft.saveTable(table)
-            self?.renderKind()
+            self?.renderBlock()
         }
         screen.onTurnOff = { [weak self] in
             self?.priceDraft.turnOffTable()
-            self?.renderKind()
+            self?.renderBlock()
         }
         navigationController?.pushViewController(screen, animated: true)
     }
@@ -684,9 +623,9 @@ final class ProductFormViewController: BaseViewControler {
         let input = ProductFormInput(
             name: nameField.text ?? "",
             perRental: priceDraft.perRental,
-            perDay: priceDraft.kind == .perDay ? priceDraft.perDay : nil,
+            perDay: priceDraft.perDay,
             defaultMode: .perRental,
-            block: priceDraft.kind == .block ? priceDraft.block : nil,
+            block: priceDraft.block,
             salePrice: MoneyInput.parse(saleField.text),
             deposit: MoneyInput.parse(depositField.text),
             quantity: quantityStepper.value,

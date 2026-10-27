@@ -137,7 +137,10 @@
     },
     "form": {
       "errors": {},
-      "dayGroup": "複数日の料金（どちらか1つ）",
+      "perRental": "1回ごと",
+      "perDay": "1日ごと",
+      "blockRow": "日数ブロック",
+      "blockNotSet": "未設定",
       "unitOnce": "đ / 回",
       "unitDay": "đ / 日",
       "block": {
@@ -147,11 +150,6 @@
         "setupHint": "日数ごとに1つの料金です。ちょうどその日数借りるとその行の料金になります。",
         "save": "料金表を保存",
         "turnOff": "日数区分料金をオフにする",
-        "quick": "かんたん作成：初日 + 1日追加ごと",
-        "quickFirst": "初日の料金",
-        "quickStep": "1日追加ごと",
-        "quickDays": "日数",
-        "quickMake": "表を作成",
         "copy": "他の商品からコピー",
         "copyTitle": "料金表をコピーする商品を選択",
         "copySearch": "商品を検索",

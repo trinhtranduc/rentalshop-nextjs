@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -48,7 +47,6 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.BlockTable
 import com.anyrent.pos.domain.products.BlockText
-import com.anyrent.pos.domain.products.MoneyInput
 import com.anyrent.pos.domain.products.PriceForm
 import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.ui.common.AppAlertError
@@ -59,7 +57,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * #1249 (mockup v170, iOS `BlockPriceViewController`): the setup screen of "Giá theo khối ngày". The table of prices by
- * number of days, what happens past the last day, a preview, "Tạo nhanh", "Sao chép từ sản phẩm khác", "Lưu bảng giá" and
+ * number of days, what happens past the last day, a preview, "Sao chép từ sản phẩm khác", "Lưu bảng giá" and
  * (when a table exists) "Tắt giá theo khối ngày". No list of price kinds here. It only edits the form's draft; the form
  * saves the product. Closing without "Lưu bảng giá" changes nothing.
  */
@@ -73,7 +71,6 @@ fun BlockPriceScreen(
 ) {
     val state = remember { BlockEditorState().apply { load(initial) } }
     var error by remember { mutableStateOf<String?>(null) }
-    var showQuick by remember { mutableStateOf(false) }
     var showCopy by remember { mutableStateOf(false) }
     val invalidText = stringResource(R.string.block_error_invalid)
     val emptyText = stringResource(R.string.block_error_empty)
@@ -101,10 +98,6 @@ fun BlockPriceScreen(
             )
             BlockTableEditor(state)
             TextButton(
-                onClick = { showQuick = true },
-                modifier = Modifier.padding(start = 8.dp, top = 8.dp).heightIn(min = 44.dp).semantics { contentDescription = "block.quick" },
-            ) { Text(stringResource(R.string.block_quick), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = DS.Colors.Primary) }
-            TextButton(
                 onClick = { showCopy = true },
                 modifier = Modifier.padding(start = 8.dp).heightIn(min = 44.dp).semantics { contentDescription = "block.copy" },
             ) { Text(stringResource(R.string.block_copy), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold, color = DS.Colors.Primary) }
@@ -120,43 +113,10 @@ fun BlockPriceScreen(
             }
         }
     }
-    if (showQuick) {
-        QuickTableDialog(onDismiss = { showQuick = false }, onCreate = { table -> state.load(table); showQuick = false })
-    }
     if (showCopy) {
         CopyTableDialog(currentProductId, onDismiss = { showCopy = false }, onPick = { table -> state.load(table); showCopy = false })
     }
     error?.let { AppAlertError(message = it, onDismiss = { error = null }) }
-}
-
-/** "Tạo nhanh": first-day price, the amount added for each next day, and how many days to list */
-@Composable
-private fun QuickTableDialog(onDismiss: () -> Unit, onCreate: (BlockTable) -> Unit) {
-    var first by remember { mutableStateOf("") }
-    var step by remember { mutableStateOf("") }
-    var days by remember { mutableStateOf("5") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.block_quick_title), fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(stringResource(R.string.block_quick_first), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
-                MoneyBox(first, "block.quick.first", Modifier.fillMaxWidth()) { first = it }
-                Text(stringResource(R.string.block_quick_step), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
-                MoneyBox(step, "block.quick.step", Modifier.fillMaxWidth()) { step = it }
-                Text(stringResource(R.string.block_quick_days), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
-                MoneyBox(days, "block.quick.days", Modifier.width(120.dp)) { days = it }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = MoneyInput.parse(first) != null,
-                onClick = { onCreate(PriceForm.quickTable(MoneyInput.parse(first) ?: 0.0, MoneyInput.parse(step) ?: 0.0, (MoneyInput.parse(days) ?: 1.0).toInt())) },
-                modifier = Modifier.semantics { contentDescription = "block.quick.create" },
-            ) { Text(stringResource(R.string.block_quick_create), fontWeight = FontWeight.Bold) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
 }
 
 /** "Sao chép từ sản phẩm khác": the products that have a table; a tap copies its table and the rule past the last day */

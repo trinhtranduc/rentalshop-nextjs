@@ -3,7 +3,7 @@
 //  POS ADBD
 //
 //  #1249 (owner's mockup): the setup screen of "Giá theo khối ngày", opened from the product form. The table of prices
-//  by number of days, what happens past the last day, a preview, "Tạo nhanh", "Sao chép từ sản phẩm khác", then
+//  by number of days, what happens past the last day, a preview, "Sao chép từ sản phẩm khác", then
 //  "Lưu bảng giá" and "Tắt giá theo khối ngày". There is no list of price kinds here. It only edits the form's draft;
 //  the product is saved by the form.
 //
@@ -14,7 +14,7 @@ import SnapKit
 final class BlockPriceViewController: UIViewController {
     /// "Lưu bảng giá": a valid table
     var onSave: ((BlockTable) -> Void)?
-    /// "Tắt giá theo khối ngày": back to Thuê theo ngày
+    /// "Tắt giá theo khối ngày": the table is dropped ("Chưa cài")
     var onTurnOff: (() -> Void)?
 
     private let editor = BlockTableEditorView()
@@ -104,7 +104,6 @@ final class BlockPriceViewController: UIViewController {
         let intro = V2.label("block.intro".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
         content.addArrangedSubview(padded(intro, top: 12, bottom: 4))
         content.addArrangedSubview(editor)
-        content.addArrangedSubview(link("block.quick".localized(), symbol: "bolt.fill", id: "block.quick", action: #selector(quickTapped)))
         content.addArrangedSubview(link("block.copy".localized(), symbol: "doc.on.doc", id: "block.copy", action: #selector(copyTapped)))
         content.addArrangedSubview(UIView().heighted(24))
     }
@@ -153,33 +152,6 @@ final class BlockPriceViewController: UIViewController {
         view.endEditing(true)
         onTurnOff?()
         navigationController?.popViewController(animated: true)
-    }
-
-    /// "Tạo nhanh": first day + each extra day + number of days → the rows (the owner can still edit them)
-    @objc private func quickTapped() {
-        view.endEditing(true)
-        let alert = UIAlertController(title: "block.quick.title".localized(), message: "block.quick.message".localized(), preferredStyle: .alert)
-        let placeholders = ["block.quick.first", "block.quick.extra", "block.quick.days"]
-        for (index, key) in placeholders.enumerated() {
-            alert.addTextField { field in
-                field.placeholder = key.localized()
-                field.keyboardType = .numberPad
-                field.accessibilityIdentifier = key
-                if index == 2 { field.text = "3" }
-            }
-        }
-        alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        alert.addAction(UIAlertAction(title: "block.quick.create".localized(), style: .default) { [weak self, weak alert] _ in
-            let texts = alert?.textFields?.map { $0.text } ?? []
-            guard texts.count == 3, let first = MoneyInput.parse(texts[0]), let extra = MoneyInput.parse(texts[1]),
-                  let days = Int(texts[2] ?? ""),
-                  let table = BlockPricing.quickTable(firstDay: first, extraPerDay: extra, days: days) else {
-                UIAlertController.alert(parent: self ?? UIViewController(), title: "Error".localized(), message: "block.quick.invalid".localized())
-                return
-            }
-            self?.editor.load(table)
-        })
-        present(alert, animated: true)
     }
 
     @objc private func copyTapped() {

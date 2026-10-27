@@ -137,7 +137,10 @@
     },
     "form": {
       "errors": {},
-      "dayGroup": "여러 날 요금 (둘 중 하나 선택)",
+      "perRental": "1회당",
+      "perDay": "하루당",
+      "blockRow": "일수 블록",
+      "blockNotSet": "미설정",
       "unitOnce": "đ / 회",
       "unitDay": "đ / 일",
       "block": {
@@ -147,11 +150,6 @@
         "setupHint": "일수마다 요금이 하나씩 있습니다. 정확히 그 일수만큼 빌리면 해당 줄의 요금이 적용됩니다.",
         "save": "요금표 저장",
         "turnOff": "일수 구간 요금 끄기",
-        "quick": "빠른 만들기: 첫날 + 하루 추가마다",
-        "quickFirst": "첫날 요금",
-        "quickStep": "하루 추가마다",
-        "quickDays": "일수",
-        "quickMake": "표 만들기",
         "copy": "다른 상품에서 복사",
         "copyTitle": "요금표를 복사할 상품 선택",
         "copySearch": "상품 검색",
