@@ -24,13 +24,9 @@ export interface BlockProductSource {
   rentPrice?: number | string | null;
 }
 
-export interface BlockDraft {
-  /** `tiers[i]` is the price of renting exactly `startDay + i` days; null = an empty box */
-  tiers: Array<number | null>;
-  startDay: number;
-  extraMode: BlockExtraMode;
-  extraPrice: number | null;
-}
+export type { BlockDraft } from './block-draft';
+export { blockToSave, seedFromDaily } from './block-draft';
+import type { BlockDraft } from './block-draft';
 
 export interface PricingDraft {
   mode: RentMode;

@@ -5,7 +5,6 @@
 import { describe, expect, it } from '@jest/globals';
 import {
   effectiveDefaultMode,
-  hasDefaultChoice,
   MAX_PHOTO_BYTES,
   buildPayload,
   buildPricingOptions,
@@ -114,7 +113,7 @@ describe('form state', () => {
       categoryId: 8,
       perRental: 250000,
       perDay: 150000,
-      defaultMode: 'DAILY',
+      priceKind: 'DAY',
       deposit: 500000,
       salePrice: null,
       costPrice: 0,
@@ -175,13 +174,13 @@ describe('validation', () => {
   });
 
   it('price rules only when prices are shown', () => {
-    const f = valid({ salePrice: null, defaultMode: 'DAILY', perDay: null, perRental: -1 });
-    expect(validateForm(f, { canEditPricing: true })).toEqual({ perRental: 'priceNegative', defaultMode: 'dailyNeedsPrice' });
+    const f = valid({ salePrice: null, priceKind: 'DAY', perDay: null, perRental: -1 });
+    expect(validateForm(f, { canEditPricing: true })).toEqual({ perRental: 'priceNegative', block: 'blockEmpty' });
     expect(validateForm(f, { canEditPricing: false })).toEqual({});
   });
 
   it('a product for rent only can be saved without a sale price (#741)', () => {
-    const f = valid({ salePrice: null, perRental: 135000, perDay: null, defaultMode: 'ONCE' as never });
+    const f = valid({ salePrice: null, perRental: 135000, perDay: null });
     expect(validateForm(f, { canEditPricing: true })).toEqual({});
     expect(buildPayload(f, { canEditPricing: true, productId: 5 })).not.toHaveProperty('salePrice');
   });
@@ -194,7 +193,7 @@ describe('validation', () => {
 
 describe('payload', () => {
   it('create with price rights: options, default price as rentPrice, sale and cost', () => {
-    const f = valid({ perRental: 250, perDay: 150, defaultMode: 'DAILY', costPrice: 90, description: 'x', barcode: ' 77 ' });
+    const f = valid({ perRental: 250, perDay: 150, costPrice: 90, description: 'x', barcode: ' 77 ' });
     expect(buildPayload(f, { canEditPricing: true })).toEqual({
       name: 'Vest',
       description: 'x',
@@ -206,12 +205,12 @@ describe('payload', () => {
         { outletId: 1, stock: 2 },
         { outletId: 3, stock: 0 },
       ],
-      rentPrice: 150,
+      rentPrice: 250,
       salePrice: 100,
       costPrice: 90,
       pricingOptions: [
-        { type: 'FIXED', price: 250, isDefault: false },
-        { type: 'DAILY', price: 150, isDefault: true },
+        { type: 'FIXED', price: 250, isDefault: true },
+        { type: 'DAILY', price: 150, isDefault: false },
       ],
       images: [],
     });
@@ -279,14 +278,8 @@ describe('photos', () => {
   });
 });
 
-describe('default price for new orders (#547 owner feedback: no either/or toggle)', () => {
-  it('is a choice only when both prices are set (an empty box is null, #951)', () => {
-    expect(hasDefaultChoice(50000, 20000)).toBe(true);
-    expect(hasDefaultChoice(50000, null)).toBe(false);
-    expect(hasDefaultChoice(null, 20000)).toBe(false);
-  });
-
-  it('falls back to the price that exists', () => {
+describe('falling back to the price that exists', () => {
+  it('a default without a price moves to the mode that has one', () => {
     expect(effectiveDefaultMode(50000, null, 'DAILY')).toBe('FIXED');
     expect(effectiveDefaultMode(null, 20000, 'FIXED')).toBe('DAILY');
     expect(effectiveDefaultMode(50000, 20000, 'DAILY')).toBe('DAILY');
@@ -359,7 +352,7 @@ describe('0đ prices (#951)', () => {
     const f = formFromProduct({ ...product, salePrice: 0, pricingOptions: [{ type: 'FIXED', price: 0, isDefault: true }] }, outlets, categories);
     expect(f.perRental).toBe(0);
     expect(f.perDay).toBeNull();
-    expect(f.defaultMode).toBe('FIXED');
+    expect(f.priceKind).toBe('ONCE');
   });
 
   it('builds a 0đ option, and a default on it', () => {
@@ -369,15 +362,13 @@ describe('0đ prices (#951)', () => {
       { type: 'FIXED', price: 0, isDefault: false },
       { type: 'DAILY', price: 50, isDefault: true },
     ]);
-    expect(hasDefaultChoice(0, 50)).toBe(true);
-    expect(hasDefaultChoice(null, 50)).toBe(false);
     expect(effectiveDefaultMode(null, 0, 'FIXED')).toBe('DAILY');
   });
 
   it('validation accepts 0đ prices and still refuses negatives', () => {
     expect(validateForm(valid({ perRental: 0, perDay: 0, salePrice: 0 }), { canEditPricing: true })).toEqual({});
-    expect(validateForm(valid({ perDay: 0, defaultMode: 'DAILY' }), { canEditPricing: true })).toEqual({});
-    expect(validateForm(valid({ perDay: null, defaultMode: 'DAILY' }), { canEditPricing: true })).toEqual({ defaultMode: 'dailyNeedsPrice' });
+    expect(validateForm(valid({ perDay: 0, priceKind: 'DAY' }), { canEditPricing: true })).toEqual({});
+    expect(validateForm(valid({ perDay: null, priceKind: 'DAY' }), { canEditPricing: true })).toEqual({ block: 'blockEmpty' });
     expect(validateForm(valid({ perDay: -1 }), { canEditPricing: true })).toEqual({ perRental: 'priceNegative' });
     expect(validateForm(valid({ salePrice: -1 }), { canEditPricing: true })).toEqual({ salePrice: 'priceNegative' });
   });
