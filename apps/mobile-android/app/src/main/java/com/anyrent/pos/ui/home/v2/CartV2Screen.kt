@@ -153,7 +153,7 @@ fun CartV2Screen(
     /** #677 "Huỷ sửa": edit mode left and the cart emptied; the order's detail again (loaded fresh) */
     onEditCancelled: (Int) -> Unit = onOpenOrder,
     /** #684: the "Hết hàng …" tag → Lịch trống of the product on that day (`yyyy-MM-dd`) */
-    onOpenCalendar: (Int, String) -> Unit = { _, _ -> },
+    onOpenCalendar: (Int, String?) -> Unit = { _, _ -> },
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -174,7 +174,6 @@ fun CartV2Screen(
     val depositStages by CartStore.depositStages.collectAsState()
     val depositTemplateId by CartStore.depositTemplateId.collectAsState()
     val collectFirstNow by CartStore.collectFirstStageNow.collectAsState()
-    val collectMethod by CartStore.collectMethod.collectAsState()
     val editHasPlan by CartStore.editHasDepositPlan.collectAsState()
     val stagedMode = depositMode == DepositMode.STAGED
     LaunchedEffect(Unit) { DepositModeStore.refresh() }
@@ -457,6 +456,7 @@ fun CartV2Screen(
                                 shop = com.anyrent.pos.ui.orders.shareShop(),
                                 vi = shareContext.shareIsVietnamese(),
                                 blockFormula = { line -> line.blockDetail?.let { BlockText.formulaOrNull(shareContext.resources, it) } },
+                                blockSummary = { line -> line.blockDetail?.let { BlockText.summary(shareContext.resources, it) } },
                             ),
                         )
                     }.onFailure { error = it.message }
@@ -514,13 +514,13 @@ fun CartV2Screen(
                         // iOS starts with no dates: "Chọn ngày thuê" in the primary colour, no day pill (#448)
                         Text(
                             stringResource(R.string.v2_cart_pick_dates),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
                             modifier = Modifier.weight(1f),
                         )
                     } else {
                         Text(
                             dateRow.text.orEmpty(),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Normal, maxLines = 1, softWrap = false,
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Normal, maxLines = 1, softWrap = false,
                             overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                         )
                         val days = dateRow.days ?: 1
@@ -552,6 +552,7 @@ fun CartV2Screen(
                     onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
                         { onOpenCalendar(c.productId, c.from.toString()) }
                     },
+                    onOpenProduct = { onOpenCalendar(line.product.id, null) },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.lineId, q) },
                     onOpenPricing = { pricingLineId = line.lineId },
                     onOpenNote = { noteLineId = line.lineId },
@@ -560,6 +561,20 @@ fun CartV2Screen(
               }
             }
 
+            // #1045 note row as a lambda: a staged rental shows it before the deposit group (#1245)
+            val noteRow: @Composable () -> Unit = {
+                // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
+                val noteFiles by CartStore.noteImageFiles.collectAsState()
+                val notePhotos = if (editingOrderId == null) noteFiles.size else 0
+                CartMoneyEditRow(
+                    stringResource(R.string.v2_cart_note),
+                    CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
+                    tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
+                    photoCount = notePhotos,
+                    onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
+                )
+            }
+            val stagedGroup = !isSale && !(editingOrderId != null && editHasPlan) && staged
             SectionBand(stringResource(R.string.v2_cart_money))
             V2ValueRow(stringResource(if (isSale) R.string.v2_cart_sale_subtotal else R.string.v2_cart_rent_subtotal), formatMoneyVnd(subtotal), valueColor = DS.Colors.Text)
             ThinDivider()
@@ -577,10 +592,11 @@ fun CartV2Screen(
                 if (editingOrderId != null && editHasPlan) {
                     // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
                 } else if (staged) {
+                    noteRow() // #1245: the note stays with the money rows; the staged deposit is one group below it
                     CartStagedSection(
                         preview = stagedPreview, templateName = stagedTemplateName, choices = depositSettings?.choices.orEmpty(),
-                        canEdit = canEditStages, exceeds = stagesExceed, collectNow = stagedCollectNow, collectMethod = collectMethod,
-                        todayKey = ShopTime.today().toString(), staffLike = !canEditStages,
+                        canEdit = canEditStages, exceeds = stagesExceed, collectNow = stagedCollectNow,
+                        todayKey = ShopTime.today().toString(),
                         onPickTemplate = { CartStore.setDepositTemplate(it) },
                         onEditStage = { index ->
                             numericText = stagedPreview.getOrNull(index)?.amount?.toLong()?.toString() ?: "0"
@@ -597,16 +613,7 @@ fun CartV2Screen(
                     ThinDivider()
                 }
             }
-            // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
-            val noteFiles by CartStore.noteImageFiles.collectAsState()
-            val notePhotos = if (editingOrderId == null) noteFiles.size else 0
-            CartMoneyEditRow(
-                stringResource(R.string.v2_cart_note),
-                CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
-                tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
-                photoCount = notePhotos,
-                onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
-            )
+            if (!stagedGroup) noteRow()
             Spacer(Modifier.height(24.dp))
         }
 
@@ -992,7 +999,7 @@ private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 name ?: stringResource(R.string.v2_cart_pick_customer),
-                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium,
+                fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium,
                 color = if (name == null) DS.Colors.Primary else DS.Colors.Text,
             )
             if (!phone.isNullOrBlank()) Text(phone, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
@@ -1012,6 +1019,8 @@ private fun ItemRow(
     overlapText: String? = null,
     /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
     onOpenOverlap: (() -> Unit)? = null,
+    /** #1241 (owner): a tap on "Còn N" / "Hết" opens this product's Lịch trống */
+    onOpenProduct: () -> Unit = {},
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
     onOpenNote: () -> Unit = {},
@@ -1027,6 +1036,7 @@ private fun ItemRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    // #1241 (owner): the chip stays on the right, exactly as wide as its text (the name takes the rest)
                     // #1064: one pill once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
                     // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. The overlap tag (red) replaces it
                     val note = if (overlapText == null) CartV2Logic.availabilityNote(available, productQuantity, !isSale) else null
@@ -1038,12 +1048,16 @@ private fun ItemRow(
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         // #1132 (owner, mockup A, iOS `stockPill`): a soft pill in the tone's fill, a 7 dp dot in the text
                         // colour, then the text (semibold); the overlap tag keeps its tap and "›"
+                        // #1241 (owner): a tap opens the product's Lịch trống (the overlap tag: its first booked-out day).
+                        // The pill is exactly as wide as its text; Compose widens a small clickable's touch area to 48 dp
+                        // on its own, so the row does not grow
+                        val open = onOpenOverlap ?: onOpenProduct
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
                                 .clip(RoundedCornerShape(percent = 50))
-                                .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
+                                .clickable(onClickLabel = hint, role = Role.Button, onClick = open)
                                 .background(style.colors.fill)
                                 .padding(horizontal = 9.dp, vertical = 3.dp),
                         ) {

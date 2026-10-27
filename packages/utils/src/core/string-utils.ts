@@ -304,6 +304,12 @@ export const removeVietnameseDiacritics = (text: string): string => {
 };
 
 /**
+ * The one folding rule for search (#1250): NFC, strip Vietnamese marks, đ -> d, lower case.
+ * Apply it to the query AND to the stored text, so "Họa", "Hoạ", "hoa" and "HOA" are the same word.
+ */
+export const foldSearchText = (text: string): string => removeVietnameseDiacritics(text).toLowerCase();
+
+/**
  * Format full name from firstName and lastName
  * Handles null values correctly (filters out null before joining)
  * 

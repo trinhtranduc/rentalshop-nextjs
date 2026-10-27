@@ -21,7 +21,8 @@
       "outlet": "分店",
       "public-page": "公开店铺页面",
       "bank-accounts": "银行",
-      "profile": "个人资料",
+      "receipt": "打印与单据",
+      "profile": "资料与安全",
       "account": "密码与安全",
       "language": "语言与外观",
       "payment": "收款"
@@ -62,7 +63,6 @@
       "viewOnly": "仅查看",
       "productDepositNote": "每件商品的定金在商品页面设置（“定金”一栏）。",
       "newOrdersOnly": "只影响更改后创建的订单，已有订单保持不变。",
-      "oldAppWarning": "使用旧版应用的员工仍会按商品收取定金。请先更新应用再开启。",
       "templates": "店铺定金模板",
       "templateCount": "{count} 个模板",
       "default": "默认",
@@ -99,9 +99,6 @@
       "saved": "已保存定金设置",
       "saveFailed": "保存失败",
       "loadFailed": "无法加载定金设置。",
-      "confirmTitle": "开启分阶段收定金？",
-      "confirmOk": "开启",
-      "close": "关闭",
       "due": {
         "onCreate": "下单时",
         "beforePickup": "取货前 {days} 天",

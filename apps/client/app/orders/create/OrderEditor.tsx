@@ -842,7 +842,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           >
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="text-sm text-ar-muted">{t('editor.cart.customer')}</span>
-              <span className={`truncate text-base font-semibold ${customer ? 'text-ar-ink' : 'text-ar-faint'}`}>
+              <span className={`truncate text-[15px] font-semibold ${customer ? 'text-ar-ink' : 'text-ar-faint'}`}>
                 {customer ? [customer.name, customer.phone].filter(Boolean).join(' · ') : t('editor.cart.pickCustomer')}
               </span>
             </span>

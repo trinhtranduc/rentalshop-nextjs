@@ -220,6 +220,9 @@ struct Order: Codable {
     var installmentPercentCollected: Double? = nil
     var hasDepositPlan: Bool? = nil
     var cancelKeptAmount: Double? = nil
+    /// #1252: the stages and totals of the order, kept from the detail (`Order.from(detail:)`) for the bill and share image
+    var stages: [OrderInstallment]? = nil
+    var stageSummary: InstallmentSummary? = nil
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -765,6 +768,8 @@ extension Order {
         )
         order.installmentPercentCollected = detail.installmentSummary?.percentCollected
         order.hasDepositPlan = detail.hasDepositPlan
+        order.stages = detail.installments
+        order.stageSummary = detail.installmentSummary
         order.cancelKeptAmount = detail.cancelKeptAmount
         return order
     }
@@ -1509,6 +1514,11 @@ extension Order {
             data.append("\(("Total".localized().formatStringOriginalCharacter())): \(totalAmount.formatStringInCommon())\n\n".data(using: .utf8)!)
         }
         
+        // #1252: staged deposit (one-time deposit and sale: nothing is added)
+        if let block = DepositPlanReceipt.block(hasPlan: hasDepositPlan, orderType: orderType, stages: stages, summary: stageSummary) {
+            data.append(DepositPlanReceipt.printData(block))
+        }
+
         // Footer for rent orders
         if orderType == .rent {
             // Add note from printer settings

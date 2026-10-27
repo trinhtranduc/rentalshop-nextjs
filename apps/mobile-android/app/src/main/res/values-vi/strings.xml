@@ -622,10 +622,9 @@
     <string name="v2_form_barcode_placeholder">Quét hoặc nhập</string>
     <string name="v2_form_regenerate_barcode">Tạo mã mới</string>
     <string name="v2_form_barcode_used">Mã vạch đã dùng cho %1$s</string>
-    <string name="v2_form_prices">Giá</string>
-    <string name="v2_form_per_rental">Thuê theo lần</string>
-    <string name="v2_form_per_day">Thuê theo ngày</string>
-    <string name="v2_form_default_pricing">Khi tạo đơn, mặc định tính</string>
+    <string name="v2_form_prices">Giá thuê</string>
+    <string name="v2_form_per_rental">Theo lần</string>
+    <string name="v2_form_per_day">Theo mỗi ngày</string>
     <string name="v2_form_sale_price">Giá bán</string>
     <string name="v2_form_not_for_sale">Không bán</string>
     <string name="v2_form_deposit">Cọc mỗi món</string>
@@ -683,6 +682,9 @@
     <string name="v2_create_confirm_customer">Khách</string>
     <string name="v2_create_confirm_dates">Lịch thuê</string>
     <string name="v2_create_confirm_items">Món</string>
+    <plurals name="v2_create_confirm_more">
+        <item quantity="other">+%1$d sản phẩm khác</item>
+    </plurals>
     <string name="v2_create_confirm_collect_deposit">Thu cọc ngay</string>
     <string name="v2_create_confirm_collect_sale">Thu ngay</string>
     <!-- #676 sửa đơn từ giỏ mới (board sua-don) -->
@@ -2128,9 +2130,6 @@
     <string name="deposit_mode_one_time_detail">Một lần cọc lúc đặt, bằng tổng cọc của từng sản phẩm. Phần còn lại thu khi giao.</string>
     <string name="deposit_mode_staged">Thu cọc theo giai đoạn</string>
     <string name="deposit_mode_staged_detail">Chia cọc thành nhiều giai đoạn theo % giá trị đơn. Phần còn lại thu khi giao.</string>
-    <string name="deposit_warning_old_apps">Nhân viên đang dùng app cũ sẽ vẫn thu cọc theo sản phẩm. Hãy cập nhật app trước khi bật.</string>
-    <string name="deposit_enable_title">Bật thu cọc theo giai đoạn?</string>
-    <string name="deposit_enable_confirm">Bật</string>
     <string name="deposit_owner_only">Chỉ chủ shop đổi được cách thu cọc.</string>
     <string name="deposit_footnote_new_orders_only">Chỉ ảnh hưởng đơn tạo sau khi đổi. Đơn cũ giữ nguyên.</string>
     <string name="deposit_one_time_read_only">Hai giai đoạn thu (chỉ xem)</string>
@@ -2179,6 +2178,8 @@
     <string name="deposit_method_check">Séc</string>
     <string name="deposit_method_manual">Khác</string>
     <string name="deposit_cart_title">Thu cọc theo giai đoạn</string>
+    <string name="deposit_cart_template">Mẫu</string>
+    <string name="deposit_cart_stage_short">%1$s%% · %2$s</string>
     <string name="deposit_cart_stage_detail">%1$s%% đơn · hạn: %2$s</string>
     <string name="deposit_cart_rest_detail">Thu khi giao · %s</string>
     <string name="deposit_cart_collect_first">Thu ngay giai đoạn %d</string>
@@ -2245,12 +2246,9 @@
     <string name="block_screen_title">Giá thuê · %1$s</string>
     <string name="block_save">Lưu bảng giá</string>
     <string name="block_turn_off">Tắt giá theo khối ngày</string>
-    <string name="block_row_off">Chưa dùng</string>
     <string name="block_row_tiers">%1$d mốc</string>
     <string name="block_row_extra">+%1$s mỗi ngày</string>
     <string name="block_row_hold">giữ giá khối cuối</string>
-    <string name="block_section_default">Cách tính giá mặc định</string>
-    <string name="block_hint_default">Kiểu giá mặc định khi tạo đơn. Nhân viên đổi được trong giỏ.</string>
     <string name="block_section_tiers">Giá theo số ngày</string>
     <string name="block_add_day">+ Thêm ngày %1$d</string>
     <string name="block_remove_day">Xoá ngày này</string>
@@ -2260,9 +2258,57 @@
     <string name="block_hold_last_price">Giữ nguyên giá khối cuối (%1$s)</string>
     <string name="block_preview">Xem thử</string>
     <string name="block_error_invalid">Nhập đủ giá cho mọi ngày (từ 0 trở lên) và số tiền cộng thêm mỗi ngày.</string>
-    <string name="block_error_empty">Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày, hoặc chọn kiểu giá mặc định khác.</string>
+    <string name="block_error_empty">Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày.</string>
     <string name="block_summary_block">Khối %1$d ngày</string>
     <string name="block_summary_extra">+ %1$d ngày thêm</string>
     <string name="v2_unit_per_block">/1 ngày</string>
     <string name="v2_price_block">Khối ngày</string>
+    <!-- #1259 Cài đặt gọn lại -->
+    <string name="settings_v2_collect">Thu tiền</string>
+    <string name="settings_v2_collect_group_bank">Ngân hàng</string>
+    <string name="settings_v2_collect_group_deposit">Cọc</string>
+    <string name="settings_v2_collect_accounts">%d tài khoản</string>
+    <string name="settings_v2_collect_banks">%d ngân hàng</string>
+    <string name="settings_v2_collect_one_time">Cọc 1 lần</string>
+    <string name="settings_v2_collect_staged">Theo giai đoạn</string>
+    <string name="settings_v2_collect_policy_set">Đã đặt</string>
+    <string name="settings_v2_collect_policy_unset">Chưa đặt</string>
+    <string name="settings_v2_printing">In &amp; phiếu</string>
+    <string name="settings_v2_advanced">Nâng cao</string>
+    <string name="settings_v2_advanced_value">Ứng dụng · Xoá tài khoản</string>
+    <string name="settings_v2_profile_title">Hồ sơ &amp; bảo mật</string>
+    <string name="settings_v2_profile_hint">hồ sơ, mật khẩu</string>
+    <string name="settings_v2_profile_group">Hồ sơ</string>
+    <string name="settings_v2_profile_security">Bảo mật</string>
+    <!-- #1249 form giá sản phẩm (mockup v179) -->
+    <string name="v2_form_per_block">Theo block ngày</string>
+    <string name="v2_form_block_not_set">Chưa cài</string>
+    <string name="v2_form_unit_per_rental">%1$s / lần</string>
+    <string name="v2_form_unit_per_day">%1$s / ngày</string>
+    <string name="block_intro">Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.</string>
+    <string name="block_copy">Sao chép từ sản phẩm khác</string>
+    <string name="block_copy_loading">Đang tải…</string>
+    <string name="block_copy_none">Chưa có sản phẩm khác dùng bảng giá theo khối ngày.</string>
+    <!-- #1270 Cài đặt phương án B -->
+    <string name="settings_v2_deposit">Cọc</string>
+    <string name="settings_v2_deposit_group_mode">Cách thu cọc</string>
+    <string name="settings_v2_deposit_group_stages">Giai đoạn &amp; chính sách</string>
+    <string name="settings_v2_printing_no_printer">chưa chọn máy in</string>
+    <string name="settings_v2_printing_group_slip">Phiếu</string>
+    <string name="settings_v2_printing_group_printer">Máy in</string>
+    <!-- #1273 Thế chân: hai phần -->
+    <string name="overview_v2_related_collateral_note">Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là hôm nay thu hoặc trả bao nhiêu. Hai số không cộng với nhau.</string>
+    <string name="overview_v2_related_collateral_note_period">Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là trong kỳ này thu hoặc trả bao nhiêu. Hai số không cộng với nhau.</string>
+    <string name="overview_v2_related_collateral_held_title">Đang giữ thế chân</string>
+    <string name="overview_v2_related_collateral_held_hint">Tiền thế chân shop đang cầm của các đơn chưa trả đồ.</string>
+    <string name="overview_v2_related_collateral_held_total">Tổng đang giữ: %1$s · %2$d đơn</string>
+    <string name="overview_v2_related_collateral_flow_title">Phát sinh hôm nay (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_title_period">Phát sinh trong kỳ (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_hint">Tiền thế chân vào hoặc ra trong ngày này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.</string>
+    <string name="overview_v2_related_collateral_flow_hint_period">Tiền thế chân vào hoặc ra trong kỳ này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.</string>
+    <string name="overview_v2_related_collateral_flow_in">Nhận khi giao: %1$s (%2$d đơn)</string>
+    <string name="overview_v2_related_collateral_flow_out">Trả khi nhận đồ: %1$s (%2$d đơn)</string>
+    <string name="overview_v2_related_collateral_flow_net">Hôm nay shop giữ thêm: %1$s</string>
+    <string name="overview_v2_related_collateral_flow_net_period">Trong kỳ shop giữ thêm: %1$s</string>
+    <string name="overview_v2_related_collateral_held_row">Của đơn chưa trả đồ</string>
 </resources>

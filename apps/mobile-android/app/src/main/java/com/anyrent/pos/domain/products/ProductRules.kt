@@ -315,6 +315,8 @@ data class ProductFormInput(
     val rented: Int,
     val photoCount: Int,
     val showsPrices: Boolean,
+    /** #1249: the day table "Theo ngày" sends; null = none */
+    val block: BlockTable? = null,
 )
 
 sealed class ProductFormIssue {

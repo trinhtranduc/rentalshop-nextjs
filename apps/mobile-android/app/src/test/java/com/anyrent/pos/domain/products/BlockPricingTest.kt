@@ -131,4 +131,82 @@ class BlockPricingTest {
             BlockPricing.parse(listOf("80.000"), 1, BlockTable.HOLD_LAST, "20.000"),
         )
     }
+
+    // #1249 (mockup v179): Theo lần + Theo mỗi ngày + Theo block ngày, all together
+
+    private fun product(options: List<com.anyrent.pos.data.model.PricingOption>, pricingType: String = "FIXED") =
+        com.anyrent.pos.data.model.Product(
+            id = 1, name = "Áo dài", barcode = null, rentPrice = 0.0, salePrice = null, stock = 5, available = 5, renting = 0,
+            categoryId = null, categoryName = null, imageUrl = null, deposit = 0.0, pricingType = pricingType, pricingOptions = options,
+        )
+
+    private val fixed = com.anyrent.pos.data.model.PricingOption(1, "FIXED", 150_000.0, false)
+    private val daily = com.anyrent.pos.data.model.PricingOption(2, "DAILY", 200_000.0, true)
+    private val blockOption = com.anyrent.pos.data.model.PricingOption(9, "BLOCK", 80_000.0, false, owner)
+
+    @Test
+    fun `a new product starts with three empty prices`() {
+        val s = PriceForm.open(null)
+        assertNull(s.perRental)
+        assertNull(s.perDay)
+        assertNull(s.block)
+        assertEquals(emptyList<PricingOptionInput>(), PriceForm.options(s))
+    }
+
+    @Test
+    fun `opening a product fills each row from the saved data`() {
+        // all three saved: three prices, the table is shown
+        val all = PriceForm.open(product(listOf(fixed.copy(isDefault = true), daily.copy(isDefault = false), blockOption)))
+        assertEquals(150_000.0, all.perRental!!, 0.0)
+        assertEquals(200_000.0, all.perDay!!, 0.0)
+        assertEquals(owner, all.block)
+        // an old DAILY product: its day price, never turned into a table
+        val old = PriceForm.open(product(listOf(fixed, daily)))
+        assertEquals(200_000.0, old.perDay!!, 0.0)
+        assertNull(old.block)
+        // only a per-rental price: empty day box, block "Chưa cài"
+        val once = PriceForm.open(product(listOf(fixed.copy(isDefault = true))))
+        assertNull(once.perDay)
+        assertNull(once.block)
+        // a table and a day price, no per-rental price: both kept
+        val both = PriceForm.open(product(listOf(daily, blockOption)))
+        assertEquals(200_000.0, both.perDay!!, 0.0)
+        assertEquals(owner, both.block)
+    }
+
+    @Test
+    fun `three prices at once send FIXED and DAILY and BLOCK, FIXED is the only default`() {
+        val out = PriceForm.options(PriceFormState(150_000.0, 80_000.0, owner))
+        assertEquals(listOf("FIXED", "DAILY", "BLOCK"), out.map { it.type })
+        assertEquals(listOf(true, false, false), out.map { it.isDefault })
+        assertEquals(owner, out[2].blockTable)
+        assertEquals(80_000.0, out[2].price, 0.0)
+    }
+
+    @Test
+    fun `an empty day box sends no DAILY`() {
+        assertEquals(listOf("FIXED", "BLOCK"), PriceForm.options(PriceFormState(150_000.0, null, owner)).map { it.type })
+    }
+
+    @Test
+    fun `without a per-rental price the next price is the default`() {
+        assertEquals(listOf(true, false), PriceForm.options(PriceFormState(null, 80_000.0, owner)).map { it.isDefault })
+        val only = PriceForm.options(PriceFormState(null, null, owner))
+        assertEquals(listOf("BLOCK"), only.map { it.type })
+        assertEquals(listOf(true), only.map { it.isDefault })
+    }
+
+    @Test
+    fun `Tắt giá theo khối ngày drops the table and keeps the other two`() {
+        val off = PriceForm.turnOffBlock(PriceForm.saveBlock(PriceFormState(150_000.0, 80_000.0, null), owner))
+        assertNull(off.block)
+        assertEquals(80_000.0, off.perDay!!, 0.0)
+        assertEquals(listOf("FIXED", "DAILY"), PriceForm.options(off).map { it.type })
+    }
+
+    @Test
+    fun `Sao chép copies the table and the rule past the last day of another product`() {
+        assertEquals(owner, PriceForm.copyTable(product(listOf(fixed, blockOption))))
+        assertNull(PriceForm.copyTable(product(listOf(fixed, daily))))
+    }
 }

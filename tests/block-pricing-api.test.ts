@@ -9,7 +9,7 @@ jest.mock('@rentalshop/utils', () => ({
   countRentalDays: jest.requireActual('../packages/utils/src/core/rental-days').countRentalDays,
 }));
 
-import { normalizePricingOptions } from '../packages/database/src/product-pricing-normalize';
+import { normalizePricingOptions, pricingOptionsDeleteWhere, withoutEchoedBlockShim } from '../packages/database/src/product-pricing-normalize';
 import golden from './fixtures/block-pricing-golden.json';
 import { isCompleteBlockTable } from '../packages/utils/src/core/block-pricing';
 import { blockOptionsIssue } from '../apps/api/lib/block-options-issue';
@@ -259,5 +259,29 @@ describe('repriceOrderEdit (PUT /api/orders/[orderId])', () => {
     const override = await repriceOrderEdit({ ...base, clientKnowsBlock: true, bodyItems: [{ ...stored[0], totalPrice: 1, priceOverridden: true }, stored[1]] });
     expect(override.error).toBeUndefined();
     expect(override.items![0]).toMatchObject({ totalPrice: 1 });
+  });
+});
+
+describe('#1249 a product with FIXED + DAILY + BLOCK at once (the new product form)', () => {
+  const sent = [
+    { type: 'FIXED', price: 150000, isDefault: true },
+    { type: 'DAILY', price: 80000, isDefault: false },
+    { type: 'BLOCK', price: 80000, isDefault: false, blockTiers: [80000, 100000, 120000], blockStartDay: null, blockExtraMode: 'EXTRA_PER_DAY', blockExtraPrice: 20000 },
+  ];
+  it('the API stores all three with FIXED as the only default', () => {
+    const stored = normalizePricingOptions(sent, { allowBlock: true });
+    expect(stored.map((o) => [o.type, o.price, o.isDefault])).toEqual([['FIXED', 150000, true], ['DAILY', 80000, false], ['BLOCK', 80000, false]]);
+  });
+  it('an installed app sees FIXED + DAILY, never the table', () => {
+    const list = [{ id: 1, ...sent[0] }, { id: 2, ...sent[1] }, { id: 3, ...sent[2] }];
+    expect(pricingOptionsForClient(list, req()).map((o) => o.type)).toEqual(['FIXED', 'DAILY']);
+  });
+  it('an installed app saving what it saw keeps the BLOCK row and adds no extra FIXED row', () => {
+    const fromOldApp = normalizePricingOptions([sent[0], sent[1]], { allowBlock: false });
+    const stored = [{ type: 'FIXED', price: 150000, isDefault: true }, { type: 'DAILY', price: 80000, isDefault: false }, { type: 'BLOCK', price: 80000, isDefault: false }];
+    const { options, blockIsDefault } = withoutEchoedBlockShim(fromOldApp, stored);
+    expect(options.map((o: any) => o.type)).toEqual(['FIXED', 'DAILY']);
+    expect(blockIsDefault).toBe(false);
+    expect(pricingOptionsDeleteWhere(9, { keepBlockOptions: true, payloadHasBlock: false })).toEqual({ productId: 9, type: { not: 'BLOCK' } });
   });
 });

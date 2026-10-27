@@ -515,7 +515,8 @@ export function unpaidExplicitStages(stages: ResolvedInstallment[]): ResolvedIns
 
 /** Totals for the progress bar and the summary line. */
 export function installmentSummary(stages: ResolvedInstallment[], total: number) {
-  const planned = stages.reduce((sum, stage) => sum + stage.amount, 0);
+  // #1253: a stage of a cancelled order that nobody collected (`VOID`) is not planned money any more
+  const planned = stages.reduce((sum, stage) => sum + (stage.status === 'VOID' ? 0 : stage.amount), 0);
   const collected = stages.reduce((sum, stage) => sum + stage.paidAmount, 0);
   const next = stages
     .filter((stage) => stage.remaining > 0 && stage.status !== 'VOID' && stage.dueDateKey)

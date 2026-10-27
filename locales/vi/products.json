@@ -529,9 +529,8 @@
         "problemCount": "{name}: đã đủ 3 ảnh",
         "keepNote": "Ảnh đã lưu chỉ được thay khi có ảnh mới. Lưu bây giờ sẽ giữ nguyên ảnh cũ."
       },
-      "perRental": "Thuê theo lần",
-      "perDay": "Thuê theo ngày",
-      "pricesHint": "Để trống giá nào cửa hàng không dùng.",
+      "perRental": "Theo lần",
+      "perDay": "Theo mỗi ngày",
       "deposit": "Tiền cọc",
       "salePrice": "Giá bán",
       "costPrice": "Giá vốn",
@@ -568,7 +567,6 @@
         "nameRequired": "Nhập tên sản phẩm",
         "categoryRequired": "Chọn danh mục",
         "priceNegative": "Giá không được âm",
-        "dailyNeedsPrice": "Nhập giá thuê theo ngày để mặc định tính theo ngày",
         "saleRequired": "Nhập giá bán",
         "depositNegative": "Tiền cọc không được âm",
         "stockRequired": "Số lượng phải lớn hơn 0",
@@ -583,14 +581,24 @@
       "goCategories": "Mở Danh mục",
       "needOutlet": "Cần ít nhất một chi nhánh trước khi thêm sản phẩm.",
       "goOutlets": "Mở Chi nhánh",
-      "defaultForOrders": "Mặc định khi tạo đơn",
-      "defaultHint": "Dùng được cả hai giá. Đơn mới chọn sẵn giá mặc định, vẫn đổi được trong giỏ.",
-      "priceRow": {
-        "title": "Giá thuê",
-        "hint": "Thuê theo lần, theo ngày hoặc theo khối ngày. Mở trang chi tiết để đổi.",
-        "open": "Cấu hình giá theo ngày/khối",
-        "summaryExtra": "Đang dùng giá theo khối ngày: {count} mốc, +{extra} mỗi ngày",
-        "summaryHold": "Đang dùng giá theo khối ngày: {count} mốc, giữ giá khối cuối"
+      "blockRow": "Theo block ngày",
+      "blockNotSet": "Chưa cài",
+      "unitOnce": "đ / lần",
+      "unitDay": "đ / ngày",
+      "block": {
+        "summaryExtra": "{count} mốc · +{extra}/ngày",
+        "summaryHold": "{count} mốc · giữ giá khối cuối",
+        "edit": "Sửa bảng giá",
+        "setupHint": "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.",
+        "save": "Lưu bảng giá",
+        "turnOff": "Tắt giá theo khối ngày",
+        "copy": "Sao chép từ sản phẩm khác",
+        "copyTitle": "Chọn sản phẩm để chép bảng giá",
+        "copySearch": "Tìm sản phẩm",
+        "copyEmpty": "Không có sản phẩm nào có bảng giá theo khối ngày.",
+        "copyLoading": "Đang tải…",
+        "close": "Đóng",
+        "incomplete": "Nhập giá cho mọi ngày và số tiền cộng thêm mỗi ngày, hoặc chọn giữ nguyên giá khối cuối."
       }
     },
     "detail": {
@@ -634,12 +642,7 @@
       "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê.",
       "block": {
         "title": "Bảng giá theo ngày",
-        "hint": "Chọn kiểu giá mặc định khi tạo đơn. Nhân viên vẫn đổi được kiểu giá trong giỏ.",
-        "active": "Đang dùng giá theo khối",
-        "modeOnce": "Thuê theo lần",
-        "modeDay": "Thuê theo ngày",
         "modeBlock": "Giá theo khối ngày",
-        "modeBlockHint": "Mỗi số ngày thuê một giá riêng",
         "tiersTitle": "Giá theo số ngày",
         "dayRow": "{n} ngày",
         "addDay": "+ Thêm ngày {n}",
@@ -652,17 +655,7 @@
         "previewDays": "{n} ngày",
         "lessDays": "Bớt một ngày",
         "moreDays": "Thêm một ngày",
-        "save": "Lưu bảng giá",
-        "saving": "Đang lưu…",
-        "cancel": "Huỷ",
-        "turnOff": "Tắt giá theo khối ngày",
-        "saved": "Đã lưu bảng giá",
-        "saveFailed": "Không lưu được bảng giá",
-        "problem": {
-          "tierEmpty": "Nhập giá cho mọi ngày trong bảng.",
-          "extraEmpty": "Nhập số tiền cộng thêm mỗi ngày, hoặc chọn giữ nguyên giá khối cuối.",
-          "priceEmpty": "Nhập giá cho kiểu giá đang chọn."
-        }
+        "edit": "Sửa giá"
       }
     },
     "orders": {

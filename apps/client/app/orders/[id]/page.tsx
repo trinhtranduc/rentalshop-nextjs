@@ -132,7 +132,6 @@ export default function OrderDetailPage() {
   const [collectStage, setCollectStage] = useState<OrderInstallment | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
   const [voidStage, setVoidStage] = useState<OrderInstallment | null>(null);
-  const [handoverMethod, setHandoverMethod] = useState<'CASH' | 'TRANSFER'>('CASH');
   const handoverRefs = useRef<Record<string, string>>({});
   const { currency: shopCurrency } = useCurrency();
   const [ready, setReady] = useState<boolean | null>(null);
@@ -294,7 +293,7 @@ export default function OrderDetailPage() {
     try {
       for (const stage of unpaid) {
         const ref = (handoverRefs.current[stage.key] ||= newReference('handover'));
-        const res = await installmentsApi.collect(order.id, stage.key, { amount: stage.plannedAmount, method: handoverMethod, reference: ref });
+        const res = await installmentsApi.collect(order.id, stage.key, { amount: stage.plannedAmount, method: 'CASH', reference: ref });
         if (!res.success) {
           await refetch();
           return false;
@@ -490,7 +489,7 @@ export default function OrderDetailPage() {
         items={dialogItems}
         papers={papers}
         onConfirm={confirmPickup}
-        extra={<UnpaidStages stages={unpaid} method={handoverMethod} onMethod={setHandoverMethod} td={td} money={money} />}
+        extra={<UnpaidStages stages={unpaid} td={td} money={money} />}
         t={t}
         money={money}
       />

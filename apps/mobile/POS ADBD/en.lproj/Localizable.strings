@@ -1577,9 +1577,9 @@
 "products.form.barcodePlaceholder" = "Scan or type";
 "products.form.regenerateBarcode" = "New barcode";
 "products.form.barcodeUsed" = "Barcode already used by %@";
-"products.form.prices" = "Prices";
-"products.form.perRental" = "Rent per rental";
-"products.form.perDay" = "Rent per day";
+"products.form.prices" = "Rental price";
+"products.form.perRental" = "Per rental";
+"products.form.perDay" = "Per day";
 "products.form.defaultPricing" = "New orders charge by default";
 "products.form.salePrice" = "Sale price";
 "products.form.notForSale" = "Not for sale";
@@ -2828,9 +2828,6 @@
 "deposit.mode.oneTime.detail" = "One deposit when ordering, the sum of each product's deposit. The rest is collected at hand-over.";
 "deposit.mode.staged" = "Staged deposit";
 "deposit.mode.staged.detail" = "Split the deposit into stages as a % of the order. The rest is collected at hand-over.";
-"deposit.warning.oldApps" = "Staff on an older app will still collect the deposit per product. Update the app before turning this on.";
-"deposit.enable.title" = "Turn on staged deposits?";
-"deposit.enable.confirm" = "Turn on";
 "deposit.ownerOnly" = "Only the shop owner can change how deposits are collected.";
 "deposit.footnote.newOrdersOnly" = "Only affects orders created after the change. Existing orders stay as they are.";
 "deposit.oneTime.readOnly" = "Two collection steps (read only)";
@@ -2953,15 +2950,11 @@
 "CANCELLED_ORDER_KEEPS_AMOUNT" = "A cancelled order that kept money stays in the history and cannot be deleted.";
 // #1189 day-block pricing
 "block.title" = "Day-block price";
-"block.screen.title" = "Rental price · %@";
 "block.save" = "Save price table";
 "block.turnOff" = "Turn off day-block price";
-"block.row.off" = "Not used";
 "block.row.tiers" = "%d tiers";
-"block.row.extra" = "+%@ per day";
+"block.row.extra" = "+%@/day";
 "block.row.hold" = "last block price held";
-"block.section.default" = "Default pricing";
-"block.hint.default" = "Used by default for new orders. Staff can change it in the cart.";
 "block.section.tiers" = "Price by number of days";
 "block.addDay" = "+ Add day %d";
 "block.removeDay" = "Remove this day";
@@ -2971,7 +2964,6 @@
 "block.holdLast.price" = "Keep the last block price (%@)";
 "block.preview" = "Preview";
 "block.error.invalid" = "Enter a price for every day (0 or more) and the amount added per extra day.";
-"block.error.empty" = "There is no day-block price table yet. Enter a price for at least 1 day, or pick another default.";
 "block.summary.block" = "Block of %d days";
 "block.summary.extra" = "+ %d extra days";
 "products.unit.block" = "/1 day";
@@ -2979,3 +2971,55 @@
 "BLOCK_PRICE_MISMATCH" = "The price of a day-block item does not match the price list. Reload the product and try again.";
 "PRICING_TYPE_REQUIRES_UPDATE" = "This product uses day-block pricing. Please update the app to place this rental.";
 "BLOCK_TABLE_INVALID" = "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.";
+"products.cart.confirm.more" = "+%d more items";
+"products.cart.confirm.more.one" = "+%d more item";
+"deposit.cart.template" = "Template";
+"deposit.cart.stageShort" = "%@%% · %@";
+/* #1259 compact Settings */
+"settings.v2.collect" = "Payments";
+"settings.v2.collect.group.bank" = "Bank";
+"settings.v2.collect.group.deposit" = "Deposit";
+"settings.v2.collect.accounts" = "%d accounts";
+"settings.v2.collect.banks" = "%d banks";
+"settings.v2.collect.oneTime" = "One-time deposit";
+"settings.v2.collect.staged" = "Staged";
+"settings.v2.collect.policy.set" = "Set";
+"settings.v2.collect.policy.unset" = "Not set";
+"settings.v2.printing" = "Print & receipts";
+"settings.v2.advanced" = "Advanced";
+"settings.v2.advanced.value" = "App info · Delete account";
+"settings.v2.profile.title" = "Profile & security";
+"settings.v2.profile.hint" = "profile, password";
+"settings.v2.profile.group" = "Profile";
+"settings.v2.profile.security" = "Security";
+"products.form.unit.once" = "/ rental";
+"products.form.unit.day" = "/ day";
+"products.form.perBlock" = "Per day-block";
+"products.form.block.notSet" = "Not set";
+"block.intro" = "Each number of days has one price. A customer who rents exactly that many days pays that row.";
+"block.copy" = "Copy from another product";
+"block.copy.empty" = "No product has a day-block price table yet.";
+"block.error.nothing" = "Enter a price for at least 1 day.";
+/* #1270 Settings plan B */
+"settings.v2.deposit" = "Deposit";
+"settings.v2.deposit.group.mode" = "Deposit collection";
+"settings.v2.deposit.group.stages" = "Stages & policy";
+"settings.v2.printing.noPrinter" = "no printer chosen";
+"settings.v2.printing.group.slip" = "Slip";
+"settings.v2.printing.group.printer" = "Printer";
+
+/* #1273 Thế chân: two sections */
+"overview.related.collateral.note" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.";
+"overview.related.collateral.note.period" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.";
+"overview.related.collateral.held.title" = "Collateral held";
+"overview.related.collateral.held.hint" = "Collateral the shop holds for orders not yet returned.";
+"overview.related.collateral.held.total" = "Total held: %@ · %d orders";
+"overview.related.collateral.flow.title" = "Moved today (%@)";
+"overview.related.collateral.flow.title.period" = "Moved in the period (%@)";
+"overview.related.collateral.flow.hint" = "Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.hint.period" = "Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.in" = "Received at hand-over: %@ (%d orders)";
+"overview.related.collateral.flow.out" = "Returned at return: %@ (%d orders)";
+"overview.related.collateral.flow.net" = "Shop holds more today: %@";
+"overview.related.collateral.flow.net.period" = "Shop holds more in the period: %@";
+"overview.related.collateral.held.row" = "Of an order not yet returned";

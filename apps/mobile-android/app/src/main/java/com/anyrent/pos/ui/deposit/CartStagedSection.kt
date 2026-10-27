@@ -31,6 +31,7 @@ import com.anyrent.pos.domain.deposit.DepositPlanMath
 import com.anyrent.pos.domain.deposit.DepositStagePreview
 import com.anyrent.pos.domain.deposit.DepositTemplate
 import com.anyrent.pos.ui.common.formatMoneyVnd
+import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.V2ValueRow
 import com.anyrent.pos.ui.theme.DS
 
@@ -47,9 +48,7 @@ internal fun CartStagedSection(
     canEdit: Boolean,
     exceeds: Boolean,
     collectNow: Double,
-    collectMethod: String,
     todayKey: String,
-    staffLike: Boolean,
     onPickTemplate: (DepositTemplate) -> Unit,
     onEditStage: (Int) -> Unit,
     onCollectFirst: (String?) -> Unit,
@@ -58,9 +57,10 @@ internal fun CartStagedSection(
     var collectMenu by remember { mutableStateOf(false) }
     val pickable = canEdit && choices.size > 1
     Column(Modifier.fillMaxWidth()) {
+        SectionBand(stringResource(R.string.deposit_cart_title)) // #1245: one group, headed like MONEY
         Box {
             V2ValueRow(
-                stringResource(R.string.deposit_cart_title),
+                stringResource(R.string.deposit_cart_template),
                 templateName + if (pickable) "  ⌄" else "",
                 onClick = if (pickable) ({ templateMenu = true }) else null,
                 valueColor = DS.Colors.Primary,
@@ -74,22 +74,20 @@ internal fun CartStagedSection(
         }
         DepositDivider()
         preview.forEachIndexed { index, stage ->
-            StageRow(stage, editable = canEdit && !stage.isRest, todayKey = todayKey, onClick = { onEditStage(index) })
+            StageRow(index, stage, editable = canEdit && !stage.isRest, todayKey = todayKey, onClick = { onEditStage(index) })
             DepositDivider()
         }
         if (exceeds) DepositWarningBox(stringResource(R.string.deposit_cart_exceeds), Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         Box {
             V2ValueRow(
                 stringResource(R.string.deposit_cart_collect_first, 1),
-                if (collectNow > 0 && preview.isNotEmpty()) formatMoneyVnd(preview.first().amount) + " · " + depositMethodName(collectMethod)
+                if (collectNow > 0 && preview.isNotEmpty()) formatMoneyVnd(preview.first().amount)
                 else stringResource(R.string.deposit_cart_collect_none_short),
                 onClick = { collectMenu = true },
                 valueColor = DS.Colors.Primary,
             )
             DropdownMenu(expanded = collectMenu, onDismissRequest = { collectMenu = false }) {
-                DepositPlanLogic.collectMethods(staffLike).filter { it != "CHECK" }.forEach { method ->
-                    DropdownMenuItem(text = { Text(depositMethodName(method)) }, onClick = { collectMenu = false; onCollectFirst(method) })
-                }
+                DropdownMenuItem(text = { Text(stringResource(R.string.deposit_cart_collect_first, 1)) }, onClick = { collectMenu = false; onCollectFirst("CASH") })
                 DropdownMenuItem(text = { Text(stringResource(R.string.deposit_cart_collect_none_short)) }, onClick = { collectMenu = false; onCollectFirst(null) })
             }
         }
@@ -98,18 +96,18 @@ internal fun CartStagedSection(
 }
 
 @Composable
-private fun StageRow(stage: DepositStagePreview, editable: Boolean, todayKey: String, onClick: () -> Unit) {
+private fun StageRow(index: Int, stage: DepositStagePreview, editable: Boolean, todayKey: String, onClick: () -> Unit) {
     val due = if (stage.dueDateKey == todayKey) stringResource(R.string.deposit_due_today) else DepositPlanMath.dayText(stage.dueDateKey)
     val detail = if (stage.isRest) stringResource(R.string.deposit_cart_rest_detail, due)
-    else stringResource(R.string.deposit_cart_stage_detail, DepositPlanMath.percentText(stage.percent), due)
+    else stringResource(R.string.deposit_cart_stage_short, DepositPlanMath.percentText(stage.percent), due)
     Row(
         Modifier.fillMaxWidth().then(if (editable) Modifier.clickable(onClick = onClick) else Modifier)
-            .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+            .heightIn(min = 56.dp).padding(start = 28.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(stage.label, fontSize = DS.TextSize.Body)
+            Text("${index + 1}. ${stage.label}", fontSize = DS.TextSize.Body)
             Text(detail, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         }
         Text(

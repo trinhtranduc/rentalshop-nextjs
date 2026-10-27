@@ -546,7 +546,7 @@ fun AnyRentNavHost(
         composable(Routes.CartV2) {
             CartV2Screen(
                 onBack = { rootNavController.popBackStack() },
-                onOpenCalendar = { id, day -> rootNavController.navigate(Routes.productCalendar(id, day)) },
+                onOpenCalendar = { id, day -> rootNavController.navigate(Routes.productCalendar(id, day)) }, // #1241: day null = no focus day
                 onAddItems = {
                     // #433: the product list on Home, not the screen that opened the cart (e.g. a customer)
                     val backStack = rootNavController.currentBackStack.value.map { it.destination.route }

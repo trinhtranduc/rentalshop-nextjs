@@ -623,10 +623,9 @@
     <string name="v2_form_barcode_placeholder">Scan or type</string>
     <string name="v2_form_regenerate_barcode">New barcode</string>
     <string name="v2_form_barcode_used">Barcode already used by %1$s</string>
-    <string name="v2_form_prices">Prices</string>
-    <string name="v2_form_per_rental">Rent per rental</string>
-    <string name="v2_form_per_day">Rent per day</string>
-    <string name="v2_form_default_pricing">New orders charge by default</string>
+    <string name="v2_form_prices">Rental price</string>
+    <string name="v2_form_per_rental">Per rental</string>
+    <string name="v2_form_per_day">Per day</string>
     <string name="v2_form_sale_price">Sale price</string>
     <string name="v2_form_not_for_sale">Not for sale</string>
     <string name="v2_form_deposit">Deposit per item</string>
@@ -686,6 +685,10 @@
     <string name="v2_create_confirm_customer">Customer</string>
     <string name="v2_create_confirm_dates">Rental dates</string>
     <string name="v2_create_confirm_items">Items</string>
+    <plurals name="v2_create_confirm_more">
+        <item quantity="one">+%1$d more item</item>
+        <item quantity="other">+%1$d more items</item>
+    </plurals>
     <string name="v2_create_confirm_collect_deposit">Collect deposit now</string>
     <string name="v2_create_confirm_collect_sale">Collect now</string>
     <!-- #676 edit an order from the new cart (board sua-don) -->
@@ -2157,9 +2160,6 @@
     <string name="deposit_mode_one_time_detail">One deposit when ordering, the sum of each product\'s deposit. The rest is collected at hand-over.</string>
     <string name="deposit_mode_staged">Staged deposit</string>
     <string name="deposit_mode_staged_detail">Split the deposit into stages as a % of the order. The rest is collected at hand-over.</string>
-    <string name="deposit_warning_old_apps">Staff on an older app will still collect the deposit per product. Update the app before turning this on.</string>
-    <string name="deposit_enable_title">Turn on staged deposits?</string>
-    <string name="deposit_enable_confirm">Turn on</string>
     <string name="deposit_owner_only">Only the shop owner can change how deposits are collected.</string>
     <string name="deposit_footnote_new_orders_only">Only affects orders created after the change. Existing orders stay as they are.</string>
     <string name="deposit_one_time_read_only">Two collection steps (read only)</string>
@@ -2208,6 +2208,8 @@
     <string name="deposit_method_check">Check</string>
     <string name="deposit_method_manual">Other</string>
     <string name="deposit_cart_title">Staged deposit</string>
+    <string name="deposit_cart_template">Template</string>
+    <string name="deposit_cart_stage_short">%1$s%% · %2$s</string>
     <string name="deposit_cart_stage_detail">%1$s%% of order · due: %2$s</string>
     <string name="deposit_cart_rest_detail">At hand-over · %s</string>
     <string name="deposit_cart_collect_first">Collect stage %d now</string>
@@ -2274,12 +2276,9 @@
     <string name="block_screen_title">Rental price · %1$s</string>
     <string name="block_save">Save price table</string>
     <string name="block_turn_off">Turn off day-block price</string>
-    <string name="block_row_off">Not used</string>
     <string name="block_row_tiers">%1$d tiers</string>
     <string name="block_row_extra">+%1$s per day</string>
     <string name="block_row_hold">last block price held</string>
-    <string name="block_section_default">Default pricing</string>
-    <string name="block_hint_default">Used by default for new orders. Staff can change it in the cart.</string>
     <string name="block_section_tiers">Price by number of days</string>
     <string name="block_add_day">+ Add day %1$d</string>
     <string name="block_remove_day">Remove this day</string>
@@ -2289,9 +2288,57 @@
     <string name="block_hold_last_price">Keep the last block price (%1$s)</string>
     <string name="block_preview">Preview</string>
     <string name="block_error_invalid">Enter a price for every day (0 or more) and the amount added per extra day.</string>
-    <string name="block_error_empty">There is no day-block price table yet. Enter a price for at least 1 day, or pick another default.</string>
+    <string name="block_error_empty">There is no day-block price table yet. Enter a price for at least 1 day.</string>
     <string name="block_summary_block">Block of %1$d days</string>
     <string name="block_summary_extra">+ %1$d extra days</string>
     <string name="v2_unit_per_block">/1 day</string>
     <string name="v2_price_block">Day block</string>
+    <!-- #1259 compact Settings -->
+    <string name="settings_v2_collect">Payments</string>
+    <string name="settings_v2_collect_group_bank">Bank</string>
+    <string name="settings_v2_collect_group_deposit">Deposit</string>
+    <string name="settings_v2_collect_accounts">%d accounts</string>
+    <string name="settings_v2_collect_banks">%d banks</string>
+    <string name="settings_v2_collect_one_time">One-time deposit</string>
+    <string name="settings_v2_collect_staged">Staged</string>
+    <string name="settings_v2_collect_policy_set">Set</string>
+    <string name="settings_v2_collect_policy_unset">Not set</string>
+    <string name="settings_v2_printing">Print &amp; receipts</string>
+    <string name="settings_v2_advanced">Advanced</string>
+    <string name="settings_v2_advanced_value">App info · Delete account</string>
+    <string name="settings_v2_profile_title">Profile &amp; security</string>
+    <string name="settings_v2_profile_hint">profile, password</string>
+    <string name="settings_v2_profile_group">Profile</string>
+    <string name="settings_v2_profile_security">Security</string>
+    <!-- #1249 product price form (mockup v179) -->
+    <string name="v2_form_per_block">Per day-block</string>
+    <string name="v2_form_block_not_set">Not set</string>
+    <string name="v2_form_unit_per_rental">%1$s / rental</string>
+    <string name="v2_form_unit_per_day">%1$s / day</string>
+    <string name="block_intro">Each number of days has its own price. A customer renting exactly that many days pays that line.</string>
+    <string name="block_copy">Copy from another product</string>
+    <string name="block_copy_loading">Loading…</string>
+    <string name="block_copy_none">No other product has a day-block price table yet.</string>
+    <!-- #1270 Settings plan B -->
+    <string name="settings_v2_deposit">Deposit</string>
+    <string name="settings_v2_deposit_group_mode">Deposit collection</string>
+    <string name="settings_v2_deposit_group_stages">Stages &amp; policy</string>
+    <string name="settings_v2_printing_no_printer">no printer chosen</string>
+    <string name="settings_v2_printing_group_slip">Slip</string>
+    <string name="settings_v2_printing_group_printer">Printer</string>
+    <!-- #1273 Thế chân: two sections -->
+    <string name="overview_v2_related_collateral_note">The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.</string>
+    <string name="overview_v2_related_collateral_note_period">The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.</string>
+    <string name="overview_v2_related_collateral_held_title">Collateral held</string>
+    <string name="overview_v2_related_collateral_held_hint">Collateral the shop holds for orders not yet returned.</string>
+    <string name="overview_v2_related_collateral_held_total">Total held: %1$s · %2$d orders</string>
+    <string name="overview_v2_related_collateral_flow_title">Moved today (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_title_period">Moved in the period (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_hint">Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.</string>
+    <string name="overview_v2_related_collateral_flow_hint_period">Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.</string>
+    <string name="overview_v2_related_collateral_flow_in">Received at hand-over: %1$s (%2$d orders)</string>
+    <string name="overview_v2_related_collateral_flow_out">Returned at return: %1$s (%2$d orders)</string>
+    <string name="overview_v2_related_collateral_flow_net">Shop holds more today: %1$s</string>
+    <string name="overview_v2_related_collateral_flow_net_period">Shop holds more in the period: %1$s</string>
+    <string name="overview_v2_related_collateral_held_row">Of an order not yet returned</string>
 </resources>

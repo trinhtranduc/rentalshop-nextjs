@@ -529,9 +529,8 @@
         "problemCount": "{name}: 3 photos already",
         "keepNote": "Saved photos are only replaced by new ones. Saving now keeps the old photos."
       },
-      "perRental": "Rent per rental",
-      "perDay": "Rent per day",
-      "pricesHint": "Leave a price empty if the shop does not use it.",
+      "perRental": "Per rental",
+      "perDay": "Per day",
       "deposit": "Deposit",
       "salePrice": "Sale price",
       "costPrice": "Cost price",
@@ -568,7 +567,6 @@
         "nameRequired": "Enter the product name",
         "categoryRequired": "Choose a category",
         "priceNegative": "Prices cannot be negative",
-        "dailyNeedsPrice": "Enter a per-day price to charge per day by default",
         "saleRequired": "Enter the sale price",
         "depositNegative": "Deposit cannot be negative",
         "stockRequired": "Quantity must be more than 0",
@@ -583,14 +581,24 @@
       "goCategories": "Open Categories",
       "needOutlet": "Add at least one outlet before adding products.",
       "goOutlets": "Open Outlets",
-      "defaultForOrders": "Default for new orders",
-      "defaultHint": "Both prices can be used. New orders start on the default; staff can switch in the cart.",
-      "priceRow": {
-        "title": "Rental price",
-        "hint": "Per rental, per day or by day blocks. Open the detail page to change it.",
-        "open": "Set up day / block pricing",
-        "summaryExtra": "Using day-block pricing: {count} blocks, +{extra} per extra day",
-        "summaryHold": "Using day-block pricing: {count} blocks, last block price kept"
+      "blockRow": "Per day-block",
+      "blockNotSet": "Not set",
+      "unitOnce": "đ / rental",
+      "unitDay": "đ / day",
+      "block": {
+        "summaryExtra": "{count} blocks · +{extra}/day",
+        "summaryHold": "{count} blocks · last block price kept",
+        "edit": "Edit price list",
+        "setupHint": "One price for each number of days. A customer renting exactly that many days pays that row.",
+        "save": "Save price list",
+        "turnOff": "Turn off day-block pricing",
+        "copy": "Copy from another product",
+        "copyTitle": "Pick a product to copy its price list",
+        "copySearch": "Search products",
+        "copyEmpty": "No product has a day-block price list.",
+        "copyLoading": "Loading…",
+        "close": "Close",
+        "incomplete": "Fill every day and the amount added for each extra day, or keep the last block price."
       }
     },
     "detail": {
@@ -634,12 +642,7 @@
       "otherOutletsHint": "View only. Available = total minus rented out.",
       "block": {
         "title": "Price list by days",
-        "hint": "Choose the default price kind for new orders. Staff can still change it in the cart.",
-        "active": "Using day-block pricing",
-        "modeOnce": "Per rental",
-        "modeDay": "Per day",
         "modeBlock": "Day-block pricing",
-        "modeBlockHint": "One price for each number of days",
         "tiersTitle": "Price by number of days",
         "dayRow": "{n} days",
         "addDay": "+ Add day {n}",
@@ -652,17 +655,7 @@
         "previewDays": "{n} days",
         "lessDays": "One day less",
         "moreDays": "One day more",
-        "save": "Save price list",
-        "saving": "Saving…",
-        "cancel": "Cancel",
-        "turnOff": "Turn off day-block pricing",
-        "saved": "Price list saved",
-        "saveFailed": "Could not save the price list",
-        "problem": {
-          "tierEmpty": "Enter a price for every day in the list.",
-          "extraEmpty": "Enter the amount added for each extra day, or keep the last block price.",
-          "priceEmpty": "Enter a price for the selected price kind."
-        }
+        "edit": "Edit prices"
       }
     },
     "orders": {

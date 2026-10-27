@@ -86,11 +86,15 @@ final class CartV2ViewController: BaseViewControler {
 
     /// #684: the cart tag "Trùng đơn ngày …" → Lịch trống of that product on the first clashing day
     private func openConflictDay(_ conflict: CartScheduleConflict) {
-        ProductService.shared.loadProduct(productId: conflict.productId) { [weak self] product, _ in
+        openProductCalendar(productId: conflict.productId, focusDay: ScheduleConflictLogic.focusDay(conflict))
+    }
+
+    /// #1241 (owner): a tap on "Còn N" / "Hết" opens that product's Lịch trống, the screen the overlap tag opens
+    private func openProductCalendar(productId: Int, focusDay: String?) {
+        ProductService.shared.loadProduct(productId: productId) { [weak self] product, _ in
             DispatchQueue.main.async {
                 guard let self, let product else { return }
-                let calendar = ProductCalendarViewController(product: product, orders: nil,
-                                                             focusDay: ScheduleConflictLogic.focusDay(conflict))
+                let calendar = ProductCalendarViewController(product: product, orders: nil, focusDay: focusDay)
                 calendar.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(calendar, animated: true)
             }
@@ -339,6 +343,8 @@ final class CartV2ViewController: BaseViewControler {
         if isRent && cart.editHasDepositPlan {
             // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
         } else if isRent && cart.isStagedRental {
+            // #1245: the note row stays with the money rows; the staged deposit is one group of its own below it
+            content.addArrangedSubview(orderNoteRow())
             content.addArrangedSubview(stagedSection())
         } else if isRent && !(DepositModeStore.current == .staged && !cart.isEditMode) {
             let deposit = V2ValueRow(title: "products.cart.deposit".localized(), editable: true)
@@ -348,7 +354,7 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(V2.divider())
         }
 
-        content.addArrangedSubview(orderNoteRow()) // #1043: opens the item note sheet; #1056: a TIỀN row like the others
+        if !(isRent && cart.isStagedRental && !cart.editHasDepositPlan) { content.addArrangedSubview(orderNoteRow()) } // #1043: opens the item note sheet; #1056: a TIỀN row like the others
         content.addArrangedSubview(UIView.spacer(height: 24))
 
         if cart.isEditMode {
@@ -400,7 +406,8 @@ final class CartV2ViewController: BaseViewControler {
         let settings = DepositModeStore.latest
         let choices = settings?.choices ?? []
         let selected = choices.first { $0.id == cart.depositTemplateId }
-        let templateRow = V2ValueRow(title: "deposit.cart.title".localized(), chevron: false, wrapsValue: true)
+        column.addArrangedSubview(V2.sectionHeader("deposit.cart.title".localized())) // #1245: one group, headed like MONEY
+        let templateRow = V2ValueRow(title: "deposit.cart.template".localized(), chevron: false, wrapsValue: true)
         templateRow.valueLabel.text = (selected?.name ?? choices.first?.name ?? "") + (Cart.canEditStages && choices.count > 1 ? "  ⌄" : "")
         templateRow.valueLabel.textColor = DS.Color.primary
         templateRow.valueLabel.font = Utils.boldFont(size: DS.TextSize.body)
@@ -428,12 +435,9 @@ final class CartV2ViewController: BaseViewControler {
         }
 
         let first = preview.first
-        let collect = V2ValueRow(title: String(format: "deposit.cart.collectFirst".localized(), 1), editable: true)
-        if cart.stagedCollectNow > 0, let first {
-            collect.valueLabel.text = MoneyFormatter.format(first.amount) + " · " + DepositUI.methodName(cart.collectMethod)
-        } else {
-            collect.valueLabel.text = "deposit.cart.collectNone.short".localized()
-        }
+        // #1245: a flat row like the stages (title left, blue amount + pencil right), so the amount never drifts to the title
+        let collectText = cart.stagedCollectNow > 0 && first != nil ? MoneyFormatter.format(first!.amount) : "deposit.cart.collectNone.short".localized()
+        let collect = actionRow(title: String(format: "deposit.cart.collectFirst".localized(), 1), value: collectText)
         collect.addTarget(self, action: #selector(pickCollectFirst), for: .touchUpInside)
         collect.accessibilityIdentifier = "deposit.cart.collectFirst"
         column.addArrangedSubview(collect)
@@ -441,13 +445,36 @@ final class CartV2ViewController: BaseViewControler {
         return column
     }
 
+    private func actionRow(title: String, value: String) -> UIControl {
+        let name = DepositUI.wrapLabel(title, size: DS.TextSize.body)
+        let amount = V2.label(value, size: DS.TextSize.body, weight: .bold, color: DS.Color.primary)
+        amount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amount.setContentHuggingPriority(.required, for: .horizontal)
+        let right = UIStackView(arrangedSubviews: [amount, V2.editPencil()])
+        right.spacing = 6
+        right.alignment = .center
+        let line = UIStackView(arrangedSubviews: [name, right])
+        line.spacing = DS.Spacing.md
+        line.alignment = .center
+        line.isUserInteractionEnabled = false
+        let row = UIControl()
+        row.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = title
+        row.accessibilityValue = value
+        row.accessibilityTraits = UIAccessibilityTraitButton
+        return row
+    }
+
     private func stageRow(_ stage: DepositStagePreview, index: Int, today: String) -> UIView {
         let editable = Cart.canEditStages && !stage.isRest
-        let name = DepositUI.wrapLabel(stage.label, size: DS.TextSize.body)
+        let name = DepositUI.wrapLabel("\(index + 1). \(stage.label)", size: DS.TextSize.body)
         let due = stage.dueDateKey == today ? "deposit.due.today".localized() : DepositUI.dayText(stage.dueDateKey)
         let detail = stage.isRest
             ? String(format: "deposit.cart.restDetail".localized(), due)
-            : String(format: "deposit.cart.stageDetail".localized(), DepositPlanMath.percentText(stage.percent), due)
+            : String(format: "deposit.cart.stageShort".localized(), DepositPlanMath.percentText(stage.percent), due)
         let sub = DepositUI.wrapLabel(detail, size: DS.TextSize.pill + 1, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, sub])
         texts.axis = .vertical
@@ -467,7 +494,7 @@ final class CartV2ViewController: BaseViewControler {
         let row = UIControl()
         line.isUserInteractionEnabled = false
         row.addSubview(line)
-        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg + 12, bottom: 10, right: DS.Spacing.lg)) } // #1245: stages sit indented under the template
         row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
         row.accessibilityIdentifier = "deposit.cart.stage.\(index)"
         if editable {
@@ -491,11 +518,9 @@ final class CartV2ViewController: BaseViewControler {
 
     @objc private func pickCollectFirst() {
         let sheet = UIAlertController(title: String(format: "deposit.cart.collectFirst".localized(), 1), message: nil, preferredStyle: .actionSheet)
-        for method in DepositPlanLogic.collectMethods(role: User.account()?.role).filter({ $0 != "CHECK" }) {
-            sheet.addAction(UIAlertAction(title: DepositUI.methodName(method), style: .default) { _ in
-                CartStore.shared.setCollectFirstStage(method: method)
-            })
-        }
+        sheet.addAction(UIAlertAction(title: String(format: "deposit.cart.collectFirst".localized(), 1), style: .default) { _ in
+            CartStore.shared.setCollectFirstStage(method: "CASH")
+        })
         sheet.addAction(UIAlertAction(title: "deposit.cart.collectNone.short".localized(), style: .default) { _ in
             CartStore.shared.setCollectFirstStage(method: nil)
         })
@@ -562,7 +587,7 @@ final class CartV2ViewController: BaseViewControler {
         avatar.backgroundColor = UIColor(hexString: "DBEAFE")
         avatar.layer.cornerRadius = 20
         avatar.clipsToBounds = true
-        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.name, weight: .medium,
+        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.body, weight: .medium,
                              color: name == nil ? DS.Color.primary : DS.Color.text)
         let phone = V2.label(customer?.phone, size: DS.TextSize.secondary, color: DS.Color.textMuted)
         phone.isHidden = (customer?.phone ?? "").isEmpty
@@ -606,7 +631,7 @@ final class CartV2ViewController: BaseViewControler {
         icon.backgroundColor = UIColor(hexString: "DBEAFE")
         icon.layer.cornerRadius = CartDateRowLogic.iconSize / 2
         icon.clipsToBounds = true
-        let label = V2.label(text, size: DS.TextSize.name, weight: days == nil ? .medium : .regular, color: days == nil ? DS.Color.primary : DS.Color.text)
+        let label = V2.label(text, size: DS.TextSize.body, weight: days == nil ? .medium : .regular, color: days == nil ? DS.Color.primary : DS.Color.text)
         // #893 (owner): room inside the pill (10pt left/right, 4pt top/bottom), one line
         let pill = InsetLabel()
         pill.insets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
@@ -677,6 +702,7 @@ final class CartV2ViewController: BaseViewControler {
         let nameRow = UIStackView(arrangedSubviews: [name])
         nameRow.alignment = .top
         nameRow.spacing = 8
+        name.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal) // #1241: spare width goes to the name, never the chip
         let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
         // #1189: "Khối 3 ngày + 2 ngày thêm · 160.000đ" and under it the sum "120.000 (3 ngày) + 2 × 20.000 = 160.000"
         if cart.orderType == .rent, let detail = item.blockDetail, detail.extraDays > 0 {
@@ -704,7 +730,9 @@ final class CartV2ViewController: BaseViewControler {
             // #1132 (owner, mockup A): a soft pill in the tone's fill, a dot in the text colour, then the text
             let status = Self.stockPill(text: note.text, tone: note.tone)
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
-            // right-aligned: the name takes the free width, the status sits on the trailing edge
+            status.accessibilityTraits = UIAccessibilityTraitButton // #1241: it opens the product
+            status.addAction(UIAction { [weak self] _ in self?.openProductCalendar(productId: item.productId, focusDay: nil) }, for: .touchUpInside)
+            // #1241 (owner): stays on the right; the pill is exactly as wide as its text, the name takes the rest
             nameRow.addArrangedSubview(status)
         }
 
@@ -1353,7 +1381,7 @@ extension CartV2ViewController {
     /// 7 pt dot in the text colour before the text. A UIControl so the overlap tag can take a tap.
     static func stockPill(text: String, tone: CartV2Logic.ShortageTone) -> UIControl {
         let style = shortageStyle(tone)
-        let pill = UIControl()
+        let pill = PillControl()
         pill.backgroundColor = style.colors.fill
         pill.isAccessibilityElement = true
         pill.accessibilityLabel = text
@@ -1369,12 +1397,35 @@ extension CartV2ViewController {
         row.alignment = .center
         row.isUserInteractionEnabled = false
         pill.addSubview(row)
-        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)) }
+        let insets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)
+        pill.fitting = row
+        pill.insets = insets
+        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(insets) }
         pill.setContentHuggingPriority(.required, for: .horizontal)
+        pill.setContentHuggingPriority(.required, for: .vertical)
         pill.setContentCompressionResistancePriority(.required, for: .horizontal)
         pill.layer.cornerRadius = (ceil(label.font.lineHeight) + 6) / 2
         pill.clipsToBounds = true
         return pill
+    }
+}
+
+/// #1241: the cart's stock chip is about 20 pt high; the touch area grows to 44 pt without changing the look
+/// #1241: and its width is the text's: a UIControl has no intrinsic size of its own, so the stack gave it the spare width
+/// and the pill's fill ran past the text. `fitting` is the dot + label row, `insets` the pill padding
+final class PillControl: UIControl {
+    var fitting: UIView?
+    var insets = UIEdgeInsets.zero
+
+    override var intrinsicContentSize: CGSize {
+        guard let fitting else { return super.intrinsicContentSize }
+        let size = fitting.systemLayoutSizeFitting(UILayoutFittingCompressedSize)
+        return CGSize(width: ceil(size.width) + insets.left + insets.right, height: ceil(size.height) + insets.top + insets.bottom)
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dy = max(0, (44 - bounds.height) / 2), dx = max(0, (44 - bounds.width) / 2)
+        return bounds.insetBy(dx: -dx, dy: -dy).contains(point)
     }
 }
 

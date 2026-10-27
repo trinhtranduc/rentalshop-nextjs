@@ -354,11 +354,48 @@ enum BarcodeMatch {
 
 // MARK: - Form
 
+/// #1249 (mockup v179): what the price part of the product form holds. "Theo lần", "Theo mỗi ngày" and "Theo block ngày"
+/// all exist together (no radio, no "mặc định tính" switch) and all are sent when filled.
+struct ProductPriceDraft: Equatable {
+    var perRental: Double?
+    var perDay: Double?
+    /// The day table; nil = "Chưa cài"
+    var block: BlockTable?
+
+    init(perRental: Double? = nil, perDay: Double? = nil, block: BlockTable? = nil) {
+        self.perRental = perRental
+        self.perDay = perDay
+        self.block = block
+    }
+
+    /// New product: three empty prices. Saved product: each saved price fills its own row; an old DAILY price stays a
+    /// DAILY price, it is never turned into a table.
+    init(product: Product?) {
+        guard let product else { self.init(); return }
+        self.init(perRental: ProductPricing.perRental(product), perDay: ProductPricing.perDay(product), block: ProductPricing.block(product))
+    }
+
+    /// "Lưu bảng giá" on the setup screen
+    mutating func saveTable(_ table: BlockTable) { block = table }
+
+    /// "Tắt giá theo khối ngày": the table goes ("Chưa cài"); the other two prices stay
+    mutating func turnOffTable() { block = nil }
+
+    /// FIXED + DAILY (when its box has a price) + BLOCK (when a table is set). FIXED is the default whenever it has a price.
+    var options: [PricingOptionRequest] {
+        ProductPricing.options(perRental: perRental, perDay: perDay, defaultMode: .perRental, block: block)
+    }
+
+    var rentPrice: Double { options.first(where: { $0.isDefault })?.price ?? 0 }
+}
+
 struct ProductFormInput {
     var name: String
     var perRental: Double?
     var perDay: Double?
     var defaultMode: ProductPricingMode
+    /// #1249: the day table "Theo ngày" sends; nil = none
+    var block: BlockTable? = nil
     var salePrice: Double?
     var deposit: Double?
     var quantity: Int
@@ -993,8 +1030,10 @@ struct CreateOrderConfirm: Equatable {
     let range: String?
     /// Inclusive civil days; nil for a sale
     let days: Int?
-    /// `Vest đen slim fit, Áo dài lụa đỏ ×2`
+    /// First product only, `Áo dài lụa đỏ ×2` (#1239: a long list pushed the buttons off the screen)
     let items: String
+    /// How many more products the cart has: "+N sản phẩm khác"
+    let moreCount: Int
     let total: Double
     /// Prepaid deposit (rent) or amount due (sale)
     let collect: Double
@@ -1023,18 +1062,17 @@ enum CreateOrderSheetLogic {
             range = dayMonth(pickup, timeZone: timeZone) + " → " + dayMonth(ret, timeZone: timeZone)
             days = CartV2Logic.rentalDays(pickup: pickup, return: ret, timeZone: timeZone)
         }
-        let items = cart.items
-            .map { item in
-                let name = item.productName ?? ""
-                return item.quantity > 1 ? "\(name) ×\(item.quantity)" : name
-            }
-            .joined(separator: ", ")
+        let items = cart.items.first.map { item in
+            let name = item.productName ?? ""
+            return item.quantity > 1 ? "\(name) ×\(item.quantity)" : name
+        } ?? ""
         return CreateOrderConfirm(
             isSale: isSale,
             customer: cart.customer.map(CustomersV2Logic.displayName) ?? "—",
             range: range,
             days: days,
             items: items,
+            moreCount: max(0, cart.items.count - 1),
             total: cart.totalAmount,
             collect: CartV2Logic.collectNow(cart)
         )

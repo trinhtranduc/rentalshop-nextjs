@@ -37,6 +37,15 @@ class DepositPlanTest {
     }
 
     @Test
+    fun `percent is the template one until the amount is edited (1245)`() {
+        val plain = DepositPlanMath.stages(listOf(DepositStageDraft("A", 30.0, DepositDueRule.onCreate)), 128.0, "2026-10-25", "2026-10-30", vnd, "rest")
+        assertEquals(38.0, plain[0].amount, 0.0)
+        assertEquals(30.0, plain[0].percent, 0.0)
+        val edited = DepositPlanMath.stages(listOf(DepositStageDraft("A", 30.0, DepositDueRule.onCreate, amountOverride = 38.0)), 128.0, "2026-10-25", "2026-10-30", vnd, "rest")
+        assertEquals(29.7, edited[0].percent, 0.0)
+    }
+
+    @Test
     fun `an owner amount replaces the percentage and can exceed the total`() {
         val drafts = listOf(DepositStageDraft("A", 30.0, DepositDueRule.onCreate, amountOverride = 13_000_000.0))
         val stages = DepositPlanMath.stages(drafts, 12_000_000.0, "2026-10-25", "2026-11-14", vnd, "rest")

@@ -119,12 +119,7 @@
     "detail": {
       "block": {
         "title": "日数別の料金表",
-        "hint": "新規注文の標準の料金タイプを選びます。スタッフはカートで変更できます。",
-        "active": "日数ブロック料金を使用中",
-        "modeOnce": "1回ごと",
-        "modeDay": "1日ごと",
         "modeBlock": "日数ブロック料金",
-        "modeBlockHint": "日数ごとに個別の料金",
         "tiersTitle": "日数別の料金",
         "dayRow": "{n}日",
         "addDay": "+ {n}日目を追加",
@@ -137,26 +132,31 @@
         "previewDays": "{n}日",
         "lessDays": "1日減らす",
         "moreDays": "1日増やす",
-        "save": "料金表を保存",
-        "saving": "保存中…",
-        "cancel": "キャンセル",
-        "turnOff": "日数ブロック料金をオフ",
-        "saved": "料金表を保存しました",
-        "saveFailed": "料金表を保存できませんでした",
-        "problem": {
-          "tierEmpty": "表のすべての日数に料金を入力してください。",
-          "extraEmpty": "1日ごとの加算額を入力するか、最後のブロック料金のままを選んでください。",
-          "priceEmpty": "選択した料金タイプの料金を入力してください。"
-        }
+        "edit": "料金を編集"
       }
     },
     "form": {
-      "priceRow": {
-        "title": "レンタル料金",
-        "hint": "1回ごと、1日ごと、または日数ブロック。変更は詳細ページで。",
-        "open": "日数・ブロック料金を設定",
-        "summaryExtra": "日数ブロック料金を使用中: {count}ブロック、1日ごとに+{extra}",
-        "summaryHold": "日数ブロック料金を使用中: {count}ブロック、最後のブロック料金のまま"
+      "errors": {},
+      "perRental": "1回ごと",
+      "perDay": "1日ごと",
+      "blockRow": "日数ブロック",
+      "blockNotSet": "未設定",
+      "unitOnce": "đ / 回",
+      "unitDay": "đ / 日",
+      "block": {
+        "summaryExtra": "{count} 区分 · 1日追加ごとに +{extra}",
+        "summaryHold": "{count} 区分 · 最後の区分の料金を維持",
+        "edit": "料金表を編集",
+        "setupHint": "日数ごとに1つの料金です。ちょうどその日数借りるとその行の料金になります。",
+        "save": "料金表を保存",
+        "turnOff": "日数区分料金をオフにする",
+        "copy": "他の商品からコピー",
+        "copyTitle": "料金表をコピーする商品を選択",
+        "copySearch": "商品を検索",
+        "copyEmpty": "日数区分料金の表がある商品はありません。",
+        "copyLoading": "読み込み中…",
+        "close": "閉じる",
+        "incomplete": "すべての日と追加1日あたりの金額を入力するか、最後の区分の料金を維持してください。"
       }
     }
   }

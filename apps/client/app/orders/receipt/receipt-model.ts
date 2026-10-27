@@ -32,6 +32,19 @@ export interface ReceiptItemInput {
   notes?: string | null;
 }
 
+/** One stage of `installments[]` (#1199), as the API sends it to a client that declares `installments` */
+export interface ReceiptInstallmentInput {
+  key: string;
+  label?: string | null;
+  percent?: number | null;
+  amount?: number | null;
+  remaining?: number | null;
+  paidAmount?: number | null;
+  dueDateKey?: string | null;
+  status?: string | null;
+  collectedAt?: string | null;
+}
+
 export interface ReceiptOrderInput {
   id?: number | string | null;
   orderNumber?: string | number | null;
@@ -51,6 +64,10 @@ export interface ReceiptOrderInput {
   discountAmount?: number | null;
   loyaltyDiscount?: number | null;
   depositAmount?: number | null;
+  /** #1252 staged deposit (only for a client that declares `installments`) */
+  hasDepositPlan?: boolean | null;
+  installments?: ReceiptInstallmentInput[] | null;
+  installmentSummary?: { collected?: number | null; remaining?: number | null } | null;
   securityDeposit?: number | null;
   damageFee?: number | null;
   collateralType?: string | null;
@@ -94,6 +111,28 @@ export interface ReceiptItemLine {
   calc: string;
 }
 
+export interface ReceiptStage {
+  number: number;
+  key: string;
+  label: string;
+  /** The last stage, collected at hand-over */
+  isRest: boolean;
+  percent: number;
+  amount: string;
+  /** PAID, PARTIAL, DUE_TODAY, OVERDUE or UPCOMING (a VOID stage is not listed) */
+  status: string;
+  /** `dd/MM`: the Vietnam day it was collected (paid) or is due (not paid) */
+  day: string;
+  paid: boolean;
+}
+
+/** #1252 "Thu cọc theo giai đoạn" block: only for a rental whose order has a plan */
+export interface ReceiptStages {
+  items: ReceiptStage[];
+  collected: string;
+  remaining: string;
+}
+
 export interface ReceiptModel {
   isRent: boolean;
   orderNumber: string;
@@ -111,6 +150,8 @@ export interface ReceiptModel {
   total: string;
   /** RENT only (#347) */
   printNote: string | null;
+  /** #1252: null for a one-time deposit, a sale, or a client that did not declare `installments` */
+  stages: ReceiptStages | null;
 }
 
 const num = (v: unknown): number => {
@@ -152,6 +193,36 @@ export function formatVnDay(value: string | Date | null | undefined): string {
 export function formatVnDateTime(value: string | Date | null | undefined): string {
   const p = vnParts(value);
   return p ? `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}` : '';
+}
+
+/** `dd/MM` of a `YYYY-MM-DD` day key (a Vietnam civil day; no Date, no time zone) */
+function keyToDayMonth(key: string | null | undefined): string {
+  const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(key || '');
+  return m ? `${m[2]}/${m[1]}` : '';
+}
+
+/** #1252: the stages of a staged-deposit rental, or null (one-time deposit: the slip stays as before) */
+export function buildStages(order: ReceiptOrderInput, isRent: boolean): ReceiptStages | null {
+  const list = (order.installments || []).filter((s) => s && text(s.status).toUpperCase() !== 'VOID');
+  if (!isRent || order.hasDepositPlan !== true || list.length === 0) return null;
+  const items = list.map((s, i): ReceiptStage => {
+    const paid = num(s.paidAmount) > 0 || text(s.status).toUpperCase() === 'PAID';
+    const p = paid ? vnParts(s.collectedAt) : null;
+    return {
+      number: i + 1,
+      key: s.key,
+      label: text(s.label),
+      isRest: s.key === 'rest',
+      percent: Math.round(num(s.percent) * 100) / 100,
+      amount: formatVnd(s.amount),
+      status: text(s.status).toUpperCase() || 'UPCOMING',
+      day: paid ? (p ? `${p.day}/${p.month}` : '') : keyToDayMonth(s.dueDateKey),
+      paid,
+    };
+  });
+  const collected = order.installmentSummary?.collected ?? list.reduce((sum, s) => sum + num(s.paidAmount), 0);
+  const remaining = order.installmentSummary?.remaining ?? list.reduce((sum, s) => sum + num(s.remaining), 0);
+  return { items, collected: formatVnd(collected), remaining: formatVnd(remaining) };
 }
 
 /** "1 × 100.000đ/ngày × 26 ngày = 2.600.000đ" (daily rent) or "1 × 100.000đ = 100.000đ". */
@@ -257,5 +328,6 @@ export function buildReceipt(order: ReceiptOrderInput, sources: ReceiptSources, 
     loyaltyDiscount: loyalty > 0 ? formatVnd(loyalty) : null,
     total: formatVnd(total),
     printNote: resolvePrintNote(order, outlet),
+    stages: buildStages(order, isRent),
   };
 }

@@ -21,7 +21,8 @@
       "outlet": "店舗",
       "public-page": "公開ショップページ",
       "bank-accounts": "銀行",
-      "profile": "プロフィール",
+      "receipt": "印刷と伝票",
+      "profile": "プロフィールとセキュリティ",
       "account": "パスワードとセキュリティ",
       "language": "言語と表示",
       "payment": "入金"
@@ -62,7 +63,6 @@
       "viewOnly": "閲覧のみ",
       "productDepositNote": "各商品の保証金は商品ページ（「保証金」欄）で設定します。",
       "newOrdersOnly": "変更後に作成した注文にのみ反映されます。既存の注文はそのままです。",
-      "oldAppWarning": "旧バージョンのアプリを使っているスタッフは、引き続き商品ごとの保証金を回収します。オンにする前にアプリを更新してください。",
       "templates": "店の保証金テンプレート",
       "templateCount": "{count} 件",
       "default": "既定",
@@ -99,9 +99,6 @@
       "saved": "保証金の設定を保存しました",
       "saveFailed": "保存できませんでした",
       "loadFailed": "保証金の設定を読み込めませんでした。",
-      "confirmTitle": "段階での保証金回収をオンにしますか？",
-      "confirmOk": "オンにする",
-      "close": "閉じる",
       "due": {
         "onCreate": "注文時",
         "beforePickup": "受け渡しの {days} 日前",

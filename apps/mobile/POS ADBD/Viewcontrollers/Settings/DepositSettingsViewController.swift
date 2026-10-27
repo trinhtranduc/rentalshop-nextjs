@@ -73,7 +73,7 @@ enum DepositUI {
         return row
     }
 
-    /// Amber note ("Nhân viên đang dùng app cũ ...")
+    /// Amber note ("Chính sách huỷ: ...")
     static func warningBox(_ text: String) -> UIView {
         let box = UIView()
         box.backgroundColor = UIColor(hexString: "FFFBEB")
@@ -230,23 +230,7 @@ final class DepositSettingsViewController: BaseViewControler {
         }
 
         if settings.depositMode == .staged {
-            let warning = DepositUI.warningBox("deposit.warning.oldApps".localized())
-            let padded = UIView()
-            padded.addSubview(warning)
-            warning.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: DS.Spacing.lg, bottom: 12, right: DS.Spacing.lg)) }
-            stack.addArrangedSubview(padded)
-            stack.addArrangedSubview(V2.sectionHeader(""))
-            let templates = V2ValueRow(title: "deposit.templates.row".localized())
-            templates.valueLabel.text = String(format: "deposit.templates.count".localized(), settings.choices.count)
-            templates.addTarget(self, action: #selector(openTemplates), for: .touchUpInside)
-            templates.accessibilityIdentifier = "deposit.templates.row"
-            templates.snp.makeConstraints { make in make.height.equalTo(52) }
-            stack.addArrangedSubview(DepositUI.withDivider(templates))
-            let policy = V2ValueRow(title: "deposit.policy.row".localized())
-            policy.addTarget(self, action: #selector(openPolicy), for: .touchUpInside)
-            policy.accessibilityIdentifier = "deposit.policy.row"
-            policy.snp.makeConstraints { make in make.height.equalTo(52) }
-            stack.addArrangedSubview(DepositUI.withDivider(policy))
+            // #1259: Mẫu giai đoạn and Chính sách huỷ / dời ngày moved to Cài đặt › Thu tiền, next to the bank accounts
             stack.addArrangedSubview(DepositUI.note("deposit.footnote.newOrdersOnly".localized()))
         } else {
             stack.addArrangedSubview(V2.sectionHeader("deposit.oneTime.readOnly".localized()))
@@ -291,14 +275,7 @@ final class DepositSettingsViewController: BaseViewControler {
             UIAlertController.alert(parent: self, title: "deposit.settings.title".localized(), message: "deposit.ownerOnly".localized())
             return
         }
-        if mode == .staged {
-            // The warning of the mockup: staff on an older app keep collecting one deposit per product
-            UIAlertController.alert(parent: self, title: "deposit.enable.title".localized(), message: "deposit.warning.oldApps".localized(),
-                                    okTitle: "deposit.enable.confirm".localized(), cancelTitle: "common.action.cancel".localized(),
-                                    okAction: { [weak self] _ in self?.save(mode) }, cancelAction: nil)
-        } else {
-            save(mode)
-        }
+        save(mode)
     }
 
     private func save(_ mode: DepositMode) {
@@ -320,18 +297,6 @@ final class DepositSettingsViewController: BaseViewControler {
                 }
             }
         }
-    }
-
-    @objc private func openTemplates() { pushTemplates(focusPolicy: false) }
-    @objc private func openPolicy() { pushTemplates(focusPolicy: true) }
-
-    private func pushTemplates(focusPolicy: Bool) {
-        let page = DepositTemplatesViewController(settings: settings, canEdit: canEdit, focusPolicy: focusPolicy)
-        page.onChange = { [weak self] saved in
-            self?.settings = saved
-            self?.render()
-        }
-        navigationController?.pushViewController(page, animated: true)
     }
 }
 

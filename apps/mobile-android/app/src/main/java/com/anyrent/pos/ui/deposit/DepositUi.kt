@@ -71,7 +71,7 @@ internal fun DepositRadioRow(title: String, detail: String?, selected: Boolean, 
     }
 }
 
-/** Amber note ("Nhân viên đang dùng app cũ ...") */
+/** Amber note ("Chính sách huỷ: ...") */
 @Composable
 internal fun DepositWarningBox(text: String, modifier: Modifier = Modifier) {
     Box(

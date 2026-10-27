@@ -29,9 +29,21 @@ class CreateOrderSheetTest {
         assertEquals("Trần Văn Minh", confirm.customer)
         assertEquals("03/10/26 → 05/10/26", confirm.range)
         assertEquals(3, confirm.days)
-        assertEquals("Vest đen slim fit, Áo dài lụa đỏ ×2", confirm.items)
+        assertEquals("the sheet shows the first product only (#1239)", "Vest đen slim fit", confirm.items)
+        assertEquals(1, confirm.moreCount)
         assertEquals(750_000.0, confirm.total, 0.0)
         assertEquals("rent collects the prepaid deposit", 200_000.0, confirm.collect, 0.0)
+    }
+
+    @Test
+    fun `a big cart shows one product and the number of the others`() {
+        val many = (1..15).map { "Sản phẩm $it" to it }
+        val confirm = CreateOrderSheet.confirm(true, "Khách", null, null, many, 1_000.0, 0.0)
+        assertEquals("Sản phẩm 1", confirm.items)
+        assertEquals(14, confirm.moreCount)
+        val one = CreateOrderSheet.confirm(true, "Khách", null, null, listOf("Áo dài" to 2), 1_000.0, 0.0)
+        assertEquals("Áo dài ×2", one.items)
+        assertEquals(0, one.moreCount)
     }
 
     @Test

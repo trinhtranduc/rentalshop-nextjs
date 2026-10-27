@@ -6,16 +6,11 @@ import com.anyrent.pos.domain.products.CategoryRules
 import org.json.JSONObject
 
 enum class SettingsItem {
-    /** #937: the inbox, moved here from the Home bell */
-    NOTIFICATIONS,
-    STORE_INFO,
-    /** #1145 "Tiền tệ" (VND / USD), shop owner only, right under Thông tin cửa hàng */
-    CURRENCY,
-    RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
-    /** #1199 "Cách thu cọc": every role sees it; only the shop owner changes it */
-    DEPOSIT_MODE,
+    /** #1270 CỬA HÀNG (plan B): Thông tin cửa hàng, Tiền tệ (owner only), Tài khoản ngân hàng (owner, outlet admin), Cọc ›, In & phiếu › */
+    STORE_INFO, CURRENCY, BANK_ACCOUNTS, DEPOSIT, PRINTING,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
-    PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
+    /** #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản) */
+    PLAN, LANGUAGE, ADVANCED,
 }
 
 enum class SettingsGroup { STORE, MANAGEMENT, ACCOUNT }
@@ -32,15 +27,14 @@ object SettingsRows {
     const val MIN_PASSWORD_LENGTH = 6
 
     /**
+     * #1259: 3 groups, 12 rows for the owner plus the overlap switch, the name card and the bell.
      * - customers: every role (as today)
      * - users: MERCHANT, OUTLET_ADMIN, ADMIN (`PermissionManager.canManageUsers`)
      * - export: never OUTLET_STAFF (`PermissionManager.canExport`)
      * - plan: once `subscriptions/status` answered, not for ADMIN
-     * - bank accounts (#622): MERCHANT, OUTLET_ADMIN (as iOS)
      * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
-     * - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
-     * - deposit mode (#1199): every role, last row of CỬA HÀNG; only MERCHANT edits ([com.anyrent.pos.domain.deposit.DepositPlanLogic.canEditSettings])
-     * - currency (#1145): MERCHANT only ([CurrencySetting.canEdit]), right after Thông tin cửa hàng
+     * - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
+     * - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
         val management = buildList {
@@ -51,21 +45,27 @@ object SettingsRows {
         }
         val account = buildList {
             if (hasPlan && role != "ADMIN") add(SettingsItem.PLAN)
-            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT))
+            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED))
         }
         return listOf(
             SettingsSection(
                 SettingsGroup.STORE,
-                listOf(SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO) +
+                listOf(SettingsItem.STORE_INFO) +
                     listOfNotNull(SettingsItem.CURRENCY.takeIf { CurrencySetting.canEdit(role) }) +
-                    listOf(SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
                     listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
-                    SettingsItem.DEPOSIT_MODE,
+                    listOf(SettingsItem.DEPOSIT, SettingsItem.PRINTING),
             ),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),
         ).filter { it.items.isNotEmpty() }
     }
+
+    /** "80 mm" once a printer is saved, else "80 mm · chưa chọn máy in" */
+    fun printingValue(hasPrinter: Boolean, paperMillimetres: Int, none: String): String =
+        if (hasPrinter) "$paperMillimetres mm" else "$paperMillimetres mm · $none"
+
+    /** Cọc screen: "Mẫu giai đoạn" and "Chính sách huỷ / dời ngày" look dimmed in "Thu cọc 1 lần" (still tappable) */
+    fun depositStagesDimmed(staged: Boolean): Boolean = !staged
 
     /** #937: badge on the "Thông báo" row: the unread count, capped at 99, none at 0 */
     fun unreadBadge(count: Int): String? = if (count > 0) count.coerceAtMost(99).toString() else null

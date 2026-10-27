@@ -16,14 +16,29 @@ final class SettingsV2ViewController: BaseViewControler {
         case attendance
         case profile
         case item(SettingsV2Item)
-        /// #518 "Cho tạo đơn khi trùng lịch" (board CD-trung-lich), shop owner only
+        /// #518 "Cho phép đặt trùng lịch" (board CD-trung-lich), shop owner only; #1259: last line of CỬA HÀNG
         case overlapSwitch
         case logout
     }
 
     private let listView = UITableView(frame: .zero, style: .plain)
+    private let bellButton = UIButton(type: .system)
+    private let bellBadge: InsetLabel = {
+        let label = InsetLabel()
+        label.insets = UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)
+        label.font = Utils.boldFont(size: DS.TextSize.pill)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.backgroundColor = UIColor(hexString: "EF4444")
+        label.layer.cornerRadius = 9
+        label.layer.masksToBounds = true
+        label.isUserInteractionEnabled = false
+        return label
+    }()
     private var groups: [SettingsV2Section] = []
     private var plan: SettingsPlan?
+    /// #1259: bank accounts of the default branch, for the second text of "Thu tiền" (nil until known)
+    private var bankCount: Int?
     /// Totals next to Khách hàng / Người dùng (#388)
     private var counts: [SettingsV2Item: Int] = [:]
     /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
@@ -64,6 +79,7 @@ final class SettingsV2ViewController: BaseViewControler {
         loadCounts()
         refreshOverlapSetting()
         refreshCurrency()
+        loadBankCount()
         // #1199: a login payload without `depositMode` (older cached login) is fetched here, not guessed
         DepositModeStore.refresh { [weak self] _ in self?.listView.reloadData() }
     }
@@ -83,9 +99,30 @@ final class SettingsV2ViewController: BaseViewControler {
         view.backgroundColor = DS.Color.surface
         let title = V2.label("settings.v2.title".localized(), size: DS.TextSize.title, weight: .bold)
         view.addSubview(title)
+        // #1259: the inbox is the bell at the top right (it was the "Thông báo" row), with the unread count
+        bellButton.setImage(DS.symbol("bell", DS.Icon.lg), for: .normal)
+        bellButton.tintColor = DS.Color.text
+        bellButton.accessibilityLabel = "Notifications".localized()
+        bellButton.accessibilityIdentifier = "settings.notifications"
+        bellButton.addTarget(self, action: #selector(openInbox), for: .touchUpInside)
+        view.addSubview(bellButton)
+        bellBadge.isHidden = true
+        view.addSubview(bellBadge)
+        bellButton.snp.makeConstraints { make in
+            make.centerY.equalTo(title)
+            make.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.md)
+            make.width.height.equalTo(DS.touchTarget)
+        }
+        bellBadge.snp.makeConstraints { make in
+            make.top.equalTo(bellButton).offset(4)
+            make.leading.equalTo(bellButton.snp.centerX).offset(2)
+            make.height.equalTo(18)
+            make.width.greaterThanOrEqualTo(18)
+        }
         title.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
-            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
+            make.leading.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
+            make.trailing.equalTo(bellButton.snp.leading)
         }
         listView.backgroundColor = DS.Color.surface
         listView.separatorStyle = .none
@@ -168,7 +205,16 @@ final class SettingsV2ViewController: BaseViewControler {
         guard count != unreadCount else { return }
         unreadCount = count
         guard isViewLoaded else { return }
-        listView.reloadData()
+        let badge = SettingsV2Logic.unreadBadge(count)
+        bellBadge.text = badge
+        bellBadge.isHidden = badge == nil
+        bellButton.accessibilityValue = badge
+    }
+
+    @objc private func openInbox() {
+        let inbox = NotificationsViewController()
+        inbox.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(inbox, animated: true)
     }
 
     // MARK: - Chấm công (#909, card L #927)
@@ -319,6 +365,7 @@ final class SettingsV2ViewController: BaseViewControler {
     // MARK: - Shop currency (#1145)
 
     private func refreshCurrency() {
+        guard ShopCurrencyLogic.canChange(role: user?.role) else { return }
         ShopCurrencyStore.refresh { [weak self] _ in
             guard let self, !ShopCurrencyStore.saving else { return }
             self.listView.reloadData()
@@ -375,21 +422,31 @@ final class SettingsV2ViewController: BaseViewControler {
         }
     }
 
+    // MARK: - Bank accounts count (#1270)
+
+    /// Bank accounts of the own branch (owner: the default branch), shown next to the deposit mode. A failed call
+    /// leaves the count out.
+    private func loadBankCount() {
+        SettingsBankCount.load(role: user?.role, ownOutletId: user?.outletId) { [weak self] count in
+            guard let self, let count, self.bankCount != count else { return }
+            self.bankCount = count
+            self.listView.reloadData()
+        }
+    }
+
     // MARK: - Rows
 
     private enum Section {
         case attendance
         case profile
         case group(Int)
-        case orders
         case logout
     }
 
-    /// Profile, the groups, ĐƠN HÀNG (shop owner), then Đăng xuất
+    /// Profile, the groups (Thông báo, CỬA HÀNG with the overlap switch for the owner, QUẢN LÝ, TÀI KHOẢN), then Đăng xuất
     private var sections: [Section] {
         var list: [Section] = showsAttendance ? [.attendance, .profile] : [.profile]
         list += groups.indices.map { Section.group($0) }
-        if showsOverlapSetting { list.append(.orders) }
         list.append(.logout)
         return list
     }
@@ -402,52 +459,55 @@ final class SettingsV2ViewController: BaseViewControler {
         switch all[section] {
         case .attendance: return [.attendance]
         case .profile: return [.profile]
-        case .group(let index): return groups[index].items.map { Row.item($0) }
-        case .orders: return [.overlapSwitch]
+        case .group(let index):
+            let rows = groups[index].items.map { Row.item($0) }
+            return groups[index].group == .store && showsOverlapSetting ? rows + [.overlapSwitch] : rows
         case .logout: return [.logout]
         }
     }
 
     private func title(of item: SettingsV2Item) -> String {
         switch item {
-        case .notifications: return "Notifications".localized()
         case .storeInfo: return "Store Information".localized()
         case .currency: return "settings.v2.currency".localized()
-        case .receiptNote: return "settings.v2.receiptNote".localized()
-        case .printer: return "settings.v2.printer".localized()
         case .bankAccounts: return "Bank Accounts".localized()
-        case .depositMode: return "deposit.settings.title".localized()
+        case .deposit: return "settings.v2.deposit".localized()
+        case .printing: return "settings.v2.printing".localized()
         case .categories: return "settings.v2.categories".localized()
         case .customers: return "customers.v2.title".localized()
         case .users: return "settings.v2.users".localized()
         case .export: return "Export Data".localized()
         case .plan: return "settings.v2.plan".localized()
         case .language: return "settings.v2.language".localized()
-        case .password: return "Change Password".localized()
-        case .appInfo: return "App Information".localized()
-        case .deleteAccount: return "Delete Account".localized()
+        case .advanced: return "settings.v2.advanced".localized()
         }
     }
 
     private func value(of item: SettingsV2Item) -> String? {
         switch item {
-        case .receiptNote:
-            return Utils.loadNotePrinter().replacingOccurrences(of: "\n", with: " ")
-        case .printer:
-            let ip = Utils.loadBillPrinter()
-            return ip.isEmpty ? "settings.v2.printer.none".localized() : ip
+        case .storeInfo:
+            let name = (user?.storeName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return name.isEmpty ? nil : name
+        case .currency:
+            return ShopCurrencyStore.current.rawValue
+        case .bankAccounts:
+            return bankCount.map { String(format: "settings.v2.collect.accounts".localized(), $0) }
+        case .deposit:
+            return (DepositModeStore.current == .staged ? "settings.v2.collect.staged" : "settings.v2.collect.oneTime").localized()
+        case .printing:
+            let paper = PaperSize(rawValue: UserDefaults.standard.integer(forKey: "PrinterPaperSize"))?.rawValue ?? PaperSize.k80.rawValue
+            return SettingsV2Logic.printingValue(hasPrinter: !Utils.loadBillPrinter().isEmpty, paperMillimetres: paper,
+                                                 none: "settings.v2.printing.noPrinter".localized())
         case .customers, .users:
             return counts[item].map(String.init)
         case .plan:
             return plan.map(SettingsV2Logic.planText)
-        case .currency:
-            return ShopCurrencyStore.current.label
-        case .depositMode:
-            return DepositModeStore.current == .staged ? "deposit.mode.staged".localized() : "deposit.mode.oneTime".localized()
         case .language:
             let code = Bundle.main.preferredLocalizations.first ?? "vi"
             let locale = Locale(identifier: code)
             return locale.localizedString(forLanguageCode: code)?.capitalized(with: locale)
+        case .advanced:
+            return "settings.v2.advanced.value".localized()
         default:
             return nil
         }
@@ -457,25 +517,22 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func open(_ item: SettingsV2Item) {
         switch item {
-        case .notifications:
-            let inbox = NotificationsViewController()
-            inbox.hidesBottomBarWhenPushed = true
-            navigationController?.pushViewController(inbox, animated: true)
         // #459: detail pages in the new style
         case .storeInfo:
             let page = AccountViewController()
             page.v2 = true
             navigationController?.pushViewController(page, animated: true)
-        case .receiptNote, .printer:
-            let page = PrinterConfigurationViewController()
-            page.v2 = true
-            navigationController?.pushViewController(page, animated: true)
+        case .currency:
+            chooseCurrency()
         case .bankAccounts:
             let page = BankAccountViewController()
             page.v2 = true
             navigationController?.pushViewController(page, animated: true)
-        case .depositMode:
-            let page = DepositSettingsViewController()
+        case .deposit:
+            navigationController?.pushViewController(DepositHubViewController(), animated: true)
+        case .printing:
+            let page = PrinterConfigurationViewController()
+            page.v2 = true
             navigationController?.pushViewController(page, animated: true)
         case .categories:
             let page = CategoryManageViewController()
@@ -495,26 +552,12 @@ final class SettingsV2ViewController: BaseViewControler {
             navigationController?.pushViewController(page, animated: true)
         case .plan:
             break
-        case .currency:
-            chooseCurrency()
         case .language:
             if let url = URL(string: UIApplicationOpenSettingsURLString) {
                 UIApplication.shared.open(url)
             }
-        case .password:
-            askPassword()
-        case .appInfo:
-            let page = AppInformationViewController()
-            page.v2 = true
-            navigationController?.pushViewController(page, animated: true)
-        case .deleteAccount:
-            // Same as the current settings screen
-            let alert = UIAlertController(title: "Delete Account".localized(),
-                                          message: "Are you sure you want to delete your account? This action cannot be undone.".localized(),
-                                          preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-            alert.addAction(UIAlertAction(title: "Delete".localized(), style: .destructive))
-            present(alert, animated: true)
+        case .advanced:
+            navigationController?.pushViewController(AdvancedSettingsViewController(), animated: true)
         }
     }
 
@@ -526,45 +569,6 @@ final class SettingsV2ViewController: BaseViewControler {
             AuthenticationService.shared.logout { _, _ in appDelegate.logout() }
         })
         present(alert, animated: true)
-    }
-
-    /// #482 (board DMK-doi-mat-khau): a bottom sheet over Cài đặt; same call and validation as before
-    private func askPassword() {
-        let sheet = ChangePasswordSheetViewController()
-        sheet.onSubmit = { [weak self, weak sheet] current, new in
-            self?.changePassword(current: current, new: new, sheet: sheet)
-        }
-        if let presentation = sheet.sheetPresentationController {
-            presentation.detents = [.large()]
-            if #available(iOS 16.0, *) {
-                presentation.detents = [.custom { [weak sheet] context in
-                    sheet.map { min(context.maximumDetentValue, $0.fittingHeight()) }
-                }]
-            }
-            presentation.prefersGrabberVisible = true
-            presentation.preferredCornerRadius = 24
-        }
-        present(sheet, animated: true)
-    }
-
-    private func changePassword(current: String, new: String, sheet: ChangePasswordSheetViewController?) {
-        sheet?.setBusy(true)
-        TabsV2APIService.shared.changePassword(current: current, new: new) { [weak self] error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                sheet?.setBusy(false)
-                if let error {
-                    UIAlertController.errorAlert(parent: sheet ?? self, error: error)
-                    return
-                }
-                sheet?.dismiss(animated: true)
-                // The API revokes every token of the account: sign in again with the new password
-                UIAlertController.alert(parent: self, title: "Change Password".localized(),
-                                        message: "settings.v2.password.done".localized()) { _ in
-                    AuthenticationService.shared.logout { _, _ in appDelegate.logout() }
-                }
-            }
-        }
     }
 }
 
@@ -583,16 +587,18 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
         switch sections[section] {
         case .group(let index):
             return V2.sectionHeader(groups[index].title)
-        case .orders:
-            return V2.sectionHeader("settings.v2.group.orders".localized())
         case .attendance:
             return nil
         case .profile, .logout:
-            let band = UIView()
-            band.backgroundColor = DS.Color.background
-            band.snp.makeConstraints { make in make.height.equalTo(8) }
-            return band
+            return thinBand()
         }
+    }
+
+    private func thinBand() -> UIView {
+        let band = UIView()
+        band.backgroundColor = DS.Color.background
+        band.snp.makeConstraints { make in make.height.equalTo(8) }
+        return band
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -617,12 +623,13 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
         switch row {
         case .profile:
             let name = [user?.firstName, user?.lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
-            let subtitle = [user?.role.displayName, user?.storeName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+            let subtitle = [user?.role.displayName, user?.storeName, "settings.v2.profile.hint".localized()]
+                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
             cell.configureProfile(name: name.isEmpty ? (user?.email ?? "—") : name, subtitle: subtitle,
                                   initials: SettingsV2Logic.initials(name))
         case .item(let item):
             cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan,
-                           badge: item == .notifications ? SettingsV2Logic.unreadBadge(unreadCount) : nil)
+                           badge: nil)
         case .logout:
             cell.configureLogout("Logout".localized())
         case .overlapSwitch, .attendance:
@@ -635,7 +642,7 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         switch rows(in: indexPath.section)[indexPath.row] {
         case .attendance: break
-        case .profile: break
+        case .profile: navigationController?.pushViewController(ProfileSecurityViewController(), animated: true)
         case .item(let item): open(item)
         case .overlapSwitch: break
         case .logout: confirmLogout()
@@ -774,18 +781,21 @@ final class SettingsV2Cell: UITableViewCell {
         titleLabel.font = Utils.boldFont(size: DS.TextSize.name)
         titleLabel.textColor = DS.Color.text
         subtitleLabel.text = subtitle
+        subtitleLabel.numberOfLines = 2 // #1259: "Chủ shop · Tiệm Hoa · hồ sơ, mật khẩu" wraps instead of cutting
         subtitleLabel.isHidden = subtitle.isEmpty
         valueLabel.isHidden = true
         badgeBox.isHidden = true
         accessibilityValue = nil
-        chevron.isHidden = true
+        // #1259: the name card opens Hồ sơ & bảo mật
+        chevron.isHidden = false
         line.isHidden = true
-        selectionStyle = .none
-        accessibilityTraits = UIAccessibilityTraitStaticText
+        selectionStyle = .default
+        accessibilityTraits = UIAccessibilityTraitButton
     }
 
     func configure(title: String, value: String?, showsChevron: Bool, badge: String? = nil) {
         avatar.isHidden = true
+        subtitleLabel.numberOfLines = 1
         titleLabel.text = title
         titleLabel.font = Utils.regularFont(size: DS.TextSize.body)
         titleLabel.textColor = DS.Color.text

@@ -935,7 +935,7 @@ final class ProductFormKeyboardTests: XCTestCase {
     func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
         let form = try merchantForm()
         let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }
-        XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887)")
+        XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887); the day table is on its own screen (#1249)")
         numeric.forEach { XCTAssertNil($0.inputAccessoryView, "\($0.accessibilityLabel ?? "field") keeps no Done bar") }
         let taps = (form.view.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
         XCTAssertTrue(taps.contains { !$0.cancelsTouchesInView }, "a tap outside a field ends editing (fields still take taps)")
@@ -962,15 +962,15 @@ final class ProductFormKeyboardTests: XCTestCase {
         window.rootViewController = form
         window.makeKeyAndVisible()
         defer { window.isHidden = true }
-        let perDay = try XCTUnwrap(fields(form.view).first { $0.accessibilityLabel == "products.form.perDay".localized() })
-        XCTAssertTrue(perDay.becomeFirstResponder())
+        let perRental = try XCTUnwrap(fields(form.view).first { $0.accessibilityLabel == "products.form.perRental".localized() })
+        XCTAssertTrue(perRental.becomeFirstResponder())
 
-        perDay.insertText("3")
-        perDay.insertText("0")
-        XCTAssertEqual(perDay.text, "30")
-        ["0", "0", "0"].forEach { perDay.insertText($0) }
-        XCTAssertEqual(perDay.text, "30.000")
-        perDay.resignFirstResponder()
+        perRental.insertText("3")
+        perRental.insertText("0")
+        XCTAssertEqual(perRental.text, "30")
+        ["0", "0", "0"].forEach { perRental.insertText($0) }
+        XCTAssertEqual(perRental.text, "30.000")
+        perRental.resignFirstResponder()
     }
 
     func testCustomerPhoneHasADoneBar() {
@@ -1259,12 +1259,27 @@ extension ProductsV2Tests {
         XCTAssertEqual(confirm.customer, "Trần Văn Minh")
         XCTAssertEqual(confirm.range, "03/10/26 → 05/10/26")
         XCTAssertEqual(confirm.days, 3)
-        XCTAssertEqual(confirm.items, "Vest đen slim fit, Áo dài lụa đỏ ×2")
+        XCTAssertEqual(confirm.items, "Vest đen slim fit", "the sheet shows the first product only (#1239)")
+        XCTAssertEqual(confirm.moreCount, 1)
         XCTAssertEqual(confirm.total, cart.totalAmount)
         XCTAssertEqual(confirm.total, 750_000)
         XCTAssertEqual(confirm.collect, cart.depositAmount, "rent collects the prepaid deposit")
         XCTAssertEqual(confirm.titleKey, "products.cart.confirm.rentTitle")
         XCTAssertEqual(confirm.collectKey, "products.cart.confirm.collectDeposit")
+    }
+
+    func testBigCartShowsOneProductAndTheNumberOfTheOthers() throws {
+        let cart = try rentCart()
+        for index in 3...15 {
+            cart.addItem(CartItem(productId: index, productName: "Sản phẩm \(index)", barcode: nil, quantity: 1, price: 100_000, deposit: 0,
+                                  originalRentPrice: 100_000, originalSalePrice: 0))
+        }
+        let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.items, "Vest đen slim fit")
+        XCTAssertEqual(confirm.moreCount, 14)
+        let single = try rentCart()
+        single.removeItem(at: 1)
+        XCTAssertEqual(CreateOrderSheetLogic.confirm(single, timeZone: vn).moreCount, 0)
     }
 
     func testSaleConfirmSheetCollectsTheAmountDue() throws {

@@ -742,6 +742,8 @@ export interface TopBar {
   value: number;
   /** 0–100 of the highest value in the list */
   width: number;
+  /** #1243 first photo of a top product; null for customers or a product without one */
+  image: string | null;
 }
 
 /** Top products as bars, in the API's order (by order value), at most `limit`. */
@@ -750,7 +752,8 @@ export function topBars(products: TopProductLike[] | null | undefined, limit = 5
   const max = Math.max(0, ...list.map((p) => num(p.totalRevenue) ?? 0));
   return list.map((p) => {
     const value = num(p.totalRevenue) ?? 0;
-    return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+    const image = typeof p.image === 'string' && p.image.trim() ? p.image.trim() : null;
+    return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0, image };
   });
 }
 
@@ -760,7 +763,7 @@ export function topCustomerBars(customers: TopCustomerLike[] | null | undefined,
   const max = Math.max(0, ...list.map((c) => num(c.totalSpent) ?? 0));
   return list.map((c) => {
     const value = num(c.totalSpent) ?? 0;
-    return { id: c.id, name: c.name, rentals: num(c.orderCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+    return { id: c.id, name: c.name, rentals: num(c.orderCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0, image: null };
   });
 }
 
@@ -934,3 +937,57 @@ export function heldRows(orders: HeldOrderLike[] | null | undefined): RelatedRow
   return rows;
 }
 
+
+/** #1273: Thế chân in two parts. Held (the state now) and the flow of the period (+ received, − returned) never add up to each other. */
+export interface CollateralSections {
+  held: RelatedRow[];
+  heldTotal: number;
+  /** Orders held: the API `count` (the list is cut at 500), else the rows */
+  heldOrders: number;
+  /** false when the API list is cut: the sum would be wrong, so the total is not shown */
+  heldTotalKnown: boolean;
+  received: RelatedRow[];
+  returned: RelatedRow[];
+  receivedTotal: number;
+  returnedTotal: number;
+  receivedOrders: number;
+  returnedOrders: number;
+  /** received − returned */
+  net: number;
+}
+
+const distinctOrders = (rows: RelatedRow[]): number => new Set(rows.map((r) => r.id)).size;
+
+export function collateralSections(held: RelatedRow[], heldCount: number | null | undefined, rows: RelatedRow[]): CollateralSections {
+  const heldRowsOnly = held.filter((r) => r.note === 'held');
+  const flow = rows.filter((r) => r.note !== 'held');
+  const received = flow.filter((r) => r.amount > 0);
+  const returned = flow.filter((r) => r.amount < 0);
+  const receivedTotal = received.reduce((sum, r) => sum + r.amount, 0);
+  const returnedTotal = returned.reduce((sum, r) => sum - r.amount, 0);
+  const cut = heldCount != null && heldCount > heldRowsOnly.length;
+  return {
+    held: heldRowsOnly,
+    heldTotal: heldRowsOnly.reduce((sum, r) => sum + r.amount, 0),
+    heldOrders: cut ? (heldCount as number) : distinctOrders(heldRowsOnly),
+    heldTotalKnown: !cut,
+    received,
+    returned,
+    receivedTotal,
+    returnedTotal,
+    receivedOrders: distinctOrders(received),
+    returnedOrders: distinctOrders(returned),
+    net: receivedTotal - returnedTotal,
+  };
+}
+
+/** The flow part is "today" only for the one-day range of today (Vietnam day keys) */
+export function collateralFlowIsToday(from: string, to: string, todayKey: string): boolean {
+  return from === to && from === todayKey;
+}
+
+/** `2026-10-27` → `27/10` */
+export function dayMonth(key: string): string {
+  const [, m, d] = key.split('-');
+  return m && d ? `${d}/${m}` : key;
+}

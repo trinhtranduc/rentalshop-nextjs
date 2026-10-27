@@ -18,7 +18,7 @@ import type { ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
 import { fieldClass } from '../../orders/create/parts';
-import { savedBlock } from '../block-model';
+import { BlockSetupDialog } from '../BlockSetupDialog';
 import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
@@ -28,15 +28,15 @@ import {
   branchHoldsProduct,
   roleMayCreateProducts,
   checkPhotos,
-  effectiveDefaultMode,
   emptyForm,
   firstError,
   formFromProduct,
   generateBarcode,
-  hasDefaultChoice,
   imageSearchState,
   parseCount,
   removedAllSavedPhotos,
+  saveBlockTable,
+  turnOffBlock,
   setOutletStock,
   setTotalStock,
   validateForm,
@@ -44,7 +44,6 @@ import {
   type FieldKey,
   type FormState,
   type OutletLite,
-  type PricingMode,
   type ProductSource,
 } from './form-model';
 
@@ -171,8 +170,8 @@ function AmountInput({ id, value, onChange, invalid }: { id: string; value: numb
 }
 
 /** #951: a price box. Empty = no price (null); "0" is a 0đ price and stays visible. */
-function PriceInput({ id, value, onChange, invalid }: { id: string; value: number | null; onChange: (n: number | null) => void; invalid?: boolean }) {
-  return (
+function PriceInput({ id, value, onChange, invalid, unit }: { id: string; value: number | null; onChange: (n: number | null) => void; invalid?: boolean; unit?: string }) {
+  const input = (
     <input
       id={id}
       inputMode="numeric"
@@ -185,8 +184,15 @@ function PriceInput({ id, value, onChange, invalid }: { id: string; value: numbe
         const digits = e.target.value.replace(/\D/g, '');
         onChange(digits ? Number(digits) : null);
       }}
-      className={`${inputClass} tabular-nums ${invalid ? errorBorder : ''}`}
+      className={`${inputClass} tabular-nums ${unit ? 'pr-20' : ''} ${invalid ? errorBorder : ''}`}
     />
+  );
+  if (!unit) return input;
+  return (
+    <span className="relative block">
+      {input}
+      <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ar-faint">{unit}</span>
+    </span>
   );
 }
 
@@ -378,7 +384,6 @@ function ImageSearchCard({ productId, initialIndexedAt, disabled, t }: { product
 
 export function ProductFormPage({ productId }: { productId: number | null }) {
   const isEdit = productId != null;
-  const money = useFormatCurrency();
   const router = useRouter();
   const t = useTranslations('products.web') as unknown as T;
   const { toastSuccess, toastError } = useToast();
@@ -403,6 +408,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const [errors, setErrors] = useState<Partial<Record<FieldKey, ErrorCode>>>({});
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const money = useFormatCurrency();
 
   useEffect(() => {
     if (!data) return;
@@ -457,8 +464,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   if (data.categories.length === 0) return wrap(<Notice text={t('form.needCategory')} action={<Link href="/categories" className={outlineBtn}>{t('form.goCategories')}</Link>} />);
   if (data.outlets.length === 0) return wrap(<Notice text={t('form.needOutlet')} action={<Link href="/outlets" className={outlineBtn}>{t('form.goOutlets')}</Link>} />);
 
-  // #1189: a product priced by day blocks keeps its table; the form shows one neutral row that leads to the detail page
-  const blockSaved = isEdit && data.product ? savedBlock(data.product) : null;
+  // #1249: a saved day table; leaving "Theo ngày" for "Theo lần" must tell the API to drop it
   const err = (k: FieldKey) => (errors[k] ? t(`form.errors.${errors[k]}`) : undefined);
   const savedPhotos = data.product ? formFromProduct(data.product, [], []).keptImages.length : 0;
   const multiOutlet = data.outlets.length > 1;
@@ -485,7 +491,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     setSaving(true);
     setFailed(false);
     try {
-      const payload = buildPayload(form, { canEditPricing, blockPriced: !!blockSaved, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
+      const payload = buildPayload(form, { canEditPricing, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
       const res = isEdit
         ? await productsApi.updateProduct(productId, payload as unknown as ProductUpdateInput, files)
         : await productsApi.createProduct(payload as unknown as ProductCreateInput, files);
@@ -505,28 +511,15 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     }
   };
 
-  // #547: each price carries its own "Mặc định khi tạo đơn" choice, shown only when both prices are set.
-  // A two-option toggle read as "this product is priced one way or the other" (owner feedback).
-  const bothPrices = hasDefaultChoice(form.perRental, form.perDay);
-  const shownDefault = effectiveDefaultMode(form.perRental, form.perDay, form.defaultMode);
-  const defaultChoice = (mode: PricingMode) =>
-    bothPrices ? (
-      <label className="mt-1 inline-flex w-fit cursor-pointer items-center gap-2 text-sm text-ar-ink-2">
-        <input
-          type="radio"
-          name="pf-defaultMode"
-          checked={shownDefault === mode}
-          onChange={() => patch({ defaultMode: mode }, ['defaultMode'])}
-          className="h-4 w-4 accent-[var(--ar-primary)]"
-        />
-        {t('form.defaultForOrders')}
-      </label>
-    ) : null;
-  const setPrice = (key: 'perRental' | 'perDay', n: number | null) =>
-    patch((f) => {
-      const next = { ...f, [key]: n };
-      return { ...next, defaultMode: effectiveDefaultMode(next.perRental, next.perDay, f.defaultMode) };
-    }, ['perRental', 'defaultMode']);
+  const blockSummary = form.block
+    ? t(form.block.extraMode === 'EXTRA_PER_DAY' ? 'form.block.summaryExtra' : 'form.block.summaryHold', { count: form.block.tiers.length, extra: money(form.block.extraPrice ?? 0) })
+    : '';
+  const blockPrices = form.block
+    ? [0, form.block.tiers.length - 1]
+        .filter((i, k, a) => a.indexOf(i) === k)
+        .map((i) => `${t('detail.block.dayRow', { n: form.block!.startDay + i })} ${money(form.block!.tiers[i] ?? 0)}`)
+        .join(' · ')
+    : '';
 
   return wrap(
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -574,35 +567,26 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           <Card title={t('form.sections.pricing')}>
             {canEditPricing ? (
               <>
-                {blockSaved ? null : <div className="grid gap-4 sm:grid-cols-2">
-                  <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
-                    <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => setPrice('perRental', n)} />
-                    {defaultChoice('FIXED')}
-                  </Field>
-                  <Field id="pf-perDay" label={t('form.perDay')}>
-                    <PriceInput id="pf-perDay" value={form.perDay} onChange={(n) => setPrice('perDay', n)} />
-                    {defaultChoice('DAILY')}
-                  </Field>
-                </div>}
-                {!blockSaved && <span className="-mt-2 text-xs text-ar-muted">{t(bothPrices ? 'form.defaultHint' : 'form.pricesHint')}</span>}
-                {isEdit && productId != null && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ar-line px-4 py-3" data-rent-price-row>
-                    <span className="flex min-w-0 flex-col">
-                      <span className="text-[15px] font-semibold text-ar-ink">{t('form.priceRow.title')}</span>
-                      <span className="text-xs text-ar-muted">
-                        {blockSaved
-                          ? t(blockSaved.extraMode === 'EXTRA_PER_DAY' ? 'form.priceRow.summaryExtra' : 'form.priceRow.summaryHold', {
-                              count: blockSaved.tiers.length,
-                              extra: money(blockSaved.extraPrice ?? 0),
-                            })
-                          : t('form.priceRow.hint')}
+                <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
+                  <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} unit={t('form.unitOnce')} onChange={(n) => patch({ perRental: n }, ['perRental'])} />
+                </Field>
+                <Field id="pf-perDay" label={t('form.perDay')} error={err('perRental')}>
+                  <PriceInput id="pf-perDay" value={form.perDay} unit={t('form.unitDay')} onChange={(n) => patch({ perDay: n }, ['perRental'])} />
+                </Field>
+                <div className="flex flex-col gap-1.5" data-block-row>
+                  <span className={labelText}>{t('form.blockRow')}</span>
+                  <button type="button" onClick={() => setSetupOpen(true)} aria-label={t('form.block.edit')} data-block-summary className="flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border border-ar-line-strong px-4 py-2 text-left hover:bg-ar-subtle">
+                    {form.block ? (
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-[15px] font-semibold text-ar-ink">{blockSummary}</span>
+                        <span className="text-xs text-ar-muted">{blockPrices}</span>
                       </span>
-                    </span>
-                    <Link href={`/products/${productId}`} className={outlineBtn}>
-                      {t('form.priceRow.open')}
-                    </Link>
-                  </div>
-                )}
+                    ) : (
+                      <span className="text-[15px] text-ar-muted">{t('form.blockNotSet')}</span>
+                    )}
+                    <span aria-hidden className="text-xl text-ar-muted">›</span>
+                  </button>
+                </div>
                 <div className="grid gap-4 border-t border-ar-subtle pt-4 sm:grid-cols-3">
                   <Field id="pf-deposit" label={t('form.deposit')} error={err('deposit')}>
                     <AmountInput id="pf-deposit" value={form.deposit} invalid={!!errors.deposit} onChange={(n) => patch({ deposit: n }, ['deposit'])} />
@@ -727,6 +711,22 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           {saving ? (isEdit ? t('form.saving') : t('form.creating')) : isEdit ? t('form.save') : t('form.create')}
         </button>
       </div>
+      {setupOpen && (
+        <BlockSetupDialog
+          initial={form.block}
+          canTurnOff
+          excludeProductId={productId ?? undefined}
+          onClose={() => setSetupOpen(false)}
+          onSave={(block) => {
+            patch((f) => saveBlockTable(f, block));
+            setSetupOpen(false);
+          }}
+          onTurnOff={() => {
+            patch((f) => turnOffBlock(f));
+            setSetupOpen(false);
+          }}
+        />
+      )}
     </form>,
   );
 }

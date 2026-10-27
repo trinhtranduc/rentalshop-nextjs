@@ -199,8 +199,17 @@ final class AnyRentE2ETests: XCTestCase {
             sleep(1)
         }
         openRow(["Customers", "Khách hàng"], "ipad-19-customers")
-        openRow(["Notifications", "Thông báo"], "ipad-20-notifications")
-        openRow(["Printer", "Máy in"], "ipad-21-printer")
+        // #1259: Thông báo is the bell at the top right of Cài đặt
+        let bell = app.buttons["settings.notifications"]
+        if bell.exists {
+            bell.tap()
+            sleep(3)
+            e2e.shot("ipad-20-notifications")
+            back()
+            e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+            sleep(1)
+        }
+        openRow(["Print & receipts", "In & phiếu"], "ipad-21-printer")
         let mine = app.descendants(matching: .any)["attendance.mine"]
         if mine.exists {
             app.swipeDown()
@@ -1908,7 +1917,7 @@ final class AnyRentE2ETests: XCTestCase {
             add.tap()
             let name = e2e.field(["Product name", "Tên sản phẩm"])
             XCTAssertTrue(name.waitForExistence(timeout: 8), "Add-product form opens")
-            let priceLabels = ["Prices", "Giá", "Rent per rental", "Thuê theo lần", "Rent per day", "Thuê theo ngày",
+            let priceLabels = ["Prices", "Giá", "Rental price", "Giá thuê", "Per rental", "Theo lần", "Per day", "Theo mỗi ngày",
                                "Sale price", "Giá bán", "Deposit per item", "Cọc mỗi món"]
             let price = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", priceLabels)).firstMatch
             XCTAssertFalse(price.exists, "OUTLET_STAFF must not see price fields in the add-product form")
@@ -1946,7 +1955,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(!e2e.button(["Change history", "Lịch sử thay đổi"]).exists, "no change history for Nhân viên kho")
         e2e.shot("96-inventory-product-detail")
         edit.tap()
-        let priceLabels = ["Rent per rental", "Thuê theo lần", "Rent per day", "Thuê theo ngày", "Sale price", "Giá bán"]
+        let priceLabels = ["Per rental", "Theo lần", "Per day", "Theo mỗi ngày", "Sale price", "Giá bán"]
         let price = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", priceLabels)).firstMatch
         XCTAssertTrue(price.waitForExistence(timeout: 8), "Nhân viên kho sees the price fields")
         e2e.shot("97-inventory-product-form")
@@ -2111,6 +2120,34 @@ final class AnyRentE2ETests: XCTestCase {
         if !note.exists { app.swipeUp(); sleep(1) }
         e2e.soft(app.staticTexts["orderDetail.item.note"].exists, "the item note shows on order detail")
         e2e.shot("5e-detail-items-scrolled")
+    }
+
+    /// #1246: the staged-deposit card on order detail runs edge to edge like the other rows. E2E_ORDER_NUMBER = a plan order.
+    func test5gDepositCardWidth() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(2)
+        let search = e2e.ordersSearchField
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
+        search.tap()
+        search.typeText(number)
+        sleep(3)
+        let row = app.cells.firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "plan order \(number) in the list")
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10))
+        sleep(2)
+        e2e.shot("5g-detail-top")
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("5g-deposit-card")
+        XCTAssertTrue(app.otherElements["deposit.card"].exists || app.staticTexts["deposit.card.badge"].exists, "the deposit card shows")
     }
 
     /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: Chia sẻ đơn, Ghi chú, Sửa đơn / Gia hạn (#930), Lịch sử,
@@ -2776,7 +2813,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
-    /// #1189 day-block pricing: product form row → price screen (80.000 / 100.000 / 120.000, +20.000 a day, preview
+    /// #1189 / #1249 day-block pricing: product form → Giá theo khối ngày → the setup screen (80.000 / 100.000 / 120.000, +20.000 a day, preview
     /// 5 days = 160.000) → save → cart with 1 / 3 / 5 days (80.000 / 120.000 / 160.000, "Khối 3 ngày + 2 ngày thêm") →
     /// order → order detail shows the sum. The numbers are the golden ones (tests/fixtures/block-pricing-golden.json).
     func test7qBlockDayPricing() throws {
@@ -2788,19 +2825,18 @@ final class AnyRentE2ETests: XCTestCase {
         let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
         XCTAssertTrue(edit.waitForExistence(timeout: 5), "product detail has Sửa")
         edit.tap()
-        let row = app.descendants(matching: .any)["product.form.blockRow"]
-        XCTAssertTrue(e2e.scrollTo(row), "the product form has the neutral Giá theo khối ngày row")
-        e2e.shot("70a-block-form-row-off")
-        row.tap()
-
-        // Price screen: radio rows, then the table
-        let radio = app.staticTexts["block.radio.label.BLOCK"]
-        XCTAssertTrue(radio.waitForExistence(timeout: 5), "the price screen lists Giá theo khối ngày as a radio row")
-        e2e.shot("70b-block-screen-empty")
-        radio.tap()
+        // #1249 (mockup v179): Theo lần, Theo mỗi ngày and the Theo block ngày row all exist; the row opens its own screen
+        let blockFormRow = app.descendants(matching: .any)["product.form.blockSummary"]
+        XCTAssertTrue(e2e.scrollTo(blockFormRow), "the product form has the Theo block ngày row")
+        XCTAssertFalse(app.textFields["block.tier.1"].exists, "the table is not on the form")
+        e2e.shot("70a-form-three-prices")
+        blockFormRow.tap()
+        let firstTier = app.textFields["block.tier.1"]
+        XCTAssertTrue(firstTier.waitForExistence(timeout: 5), "the Theo block ngày row opens the setup screen")
+        e2e.shot("70b-setup-empty")
         func typeTier(_ index: Int, _ value: String) {
             let box = app.textFields["block.tier.\(index)"]
-            XCTAssertTrue(box.waitForExistence(timeout: 5), "tier \(index) box")
+            XCTAssertTrue(e2e.scrollTo(box), "tier \(index) box")
             box.tap()
             box.typeText(value)
             e2e.hideKeyboard()
@@ -2820,14 +2856,12 @@ final class AnyRentE2ETests: XCTestCase {
         let total = app.staticTexts["block.previewTotal"]
         XCTAssertTrue(e2e.scrollTo(total), "preview total")
         XCTAssertTrue((total.label).contains("160.000"), "preview of 5 days is 160.000 (\(total.label))")
-        e2e.shot("70c-block-screen-filled")
-        let save = app.buttons["block.save"]
-        XCTAssertTrue(save.waitForExistence(timeout: 3))
-        save.tap()
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "back on the product form")
-        let summary = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '3 mốc' OR label CONTAINS '3 tiers'")).firstMatch
-        XCTAssertTrue(summary.waitForExistence(timeout: 3), "the form row now says 3 mốc")
-        e2e.shot("70d-block-form-row-on")
+        e2e.shot("70c-setup-filled")
+        let saveTable = app.buttons["block.save"]
+        XCTAssertTrue(saveTable.waitForExistence(timeout: 3), "Lưu bảng giá")
+        saveTable.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["product.form.blockSummary"].waitForExistence(timeout: 5), "back on the form with the summary card")
+        e2e.shot("70d-form-block-summary")
         let saveProduct = e2e.button(["Save changes", "Lưu thay đổi"])
         e2e.scrollTo(saveProduct)
         saveProduct.tap()
@@ -2843,6 +2877,15 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(addFromHome(key), "add the block product to the cart")
         XCTAssertTrue(openCart(), "open the cart")
         e2e.tapIfExists(e2e.button(["Rent", "Thuê"]))
+        // #1249: a line starts on the default option, which is always Theo lần; the pricing sheet switches it to the table
+        let pricingChip = e2e.element(labelBeginsWith: ["Change pricing for", "Đổi cách tính giá"], type: .button)
+        XCTAssertTrue(pricingChip.waitForExistence(timeout: 5), "the line has the pricing link")
+        pricingChip.tap()
+        let pickBlock = e2e.element(labelBeginsWith: ["Day block", "Theo khối ngày"], type: .button)
+        XCTAssertTrue(pickBlock.waitForExistence(timeout: 5), "the pricing sheet lists Theo khối ngày")
+        pickBlock.tap()
+        e2e.tapIfExists(e2e.button(["Apply", "Áp dụng"]), timeout: 2)
+        sleep(1)
         let today = Calendar.current.component(.day, from: Date())
         func setDays(_ count: Int) {
             let dates = app.descendants(matching: .any)["cart.datesRow"]
@@ -2899,18 +2942,116 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("74-order-detail-block")
     }
 
-    /// Product detail → Sửa → "Thuê theo ngày" → new value → Lưu thay đổi. Returns the value the field had (may be "").
+    /// #1249 (mockup v179): Theo lần, Theo mỗi ngày and Theo block ngày exist together. New product: three prices, block
+    /// "Chưa cài"; the row opens the setup screen, back keeps the day price; the table is typed by hand; "Lưu bảng giá"
+    /// shows the summary and the day price box stays. Old per-day product and a product with a table open right.
+    /// Needs the products "Ao dai DAILY cu" (DAILY 150.000 only) and "Vay cuoi co bang" (a BLOCK table) in the shop;
+    /// a soft note when they are missing. Nothing is saved.
+    func test7rProductPriceKind() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "Home has +")
+        add.tap()
+        let blockRow = app.descendants(matching: .any)["product.form.blockSummary"]
+        XCTAssertTrue(e2e.scrollTo(blockRow), "the new product form has the Theo block ngày row")
+        XCTAssertTrue(app.textFields["product.form.perRental"].exists, "Theo lần box")
+        XCTAssertTrue(app.textFields["product.form.perDay"].exists, "Theo mỗi ngày box")
+        XCTAssertTrue(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "block says Chưa cài (\(blockRow.value ?? ""))")
+        XCTAssertFalse(app.descendants(matching: .any)["product.form.kind.block"].exists, "no radio")
+        e2e.shot("80a-new-three-prices")
+        // the day price survives a trip to the setup screen and back
+        let dayBox = app.textFields["product.form.perDay"]
+        e2e.scrollTo(dayBox)
+        dayBox.tap()
+        dayBox.typeText("80000")
+        e2e.hideKeyboard()
+        e2e.scrollTo(blockRow)
+        blockRow.tap()
+        XCTAssertTrue(app.textFields["block.tier.1"].waitForExistence(timeout: 5), "the row opens the setup screen")
+        e2e.shot("80b-setup")
+        // typed by hand: 80.000, 100.000, 120.000 (3 days), 20.000 a day past the table
+        func fillTable() {
+            func typeTier(_ index: Int, _ value: String) {
+                let box = app.textFields["block.tier.\(index)"]
+                XCTAssertTrue(e2e.scrollTo(box), "tier \(index) box")
+                box.tap()
+                box.typeText(value)
+                e2e.hideKeyboard()
+            }
+            typeTier(1, "80000")
+            for (index, value) in [(2, "100000"), (3, "120000")] {
+                let add = app.buttons["block.addDay"]
+                XCTAssertTrue(e2e.scrollTo(add), "+ Thêm ngày \(index)")
+                add.tap()
+                typeTier(index, value)
+            }
+            let extra = app.textFields["block.extra"]
+            XCTAssertTrue(e2e.scrollTo(extra), "extra price box")
+            extra.tap()
+            extra.typeText("20000")
+            e2e.hideKeyboard()
+        }
+        XCTAssertFalse(app.buttons["block.quick"].exists, "there is no Tạo nhanh")
+        fillTable()
+        let third = app.textFields["block.tier.3"]
+        XCTAssertTrue(third.waitForExistence(timeout: 5), "3 rows")
+        XCTAssertTrue((third.value as? String ?? "").contains("120.000"), "row 3 is 120.000 (\(third.value ?? ""))")
+        e2e.shot("80d-setup-filled")
+        // back without saving: nothing changes (day price still there, block still Chưa cài)
+        let back = app.buttons["block.back"]
+        XCTAssertTrue(back.waitForExistence(timeout: 3), "back")
+        back.tap()
+        XCTAssertTrue(app.textFields["product.form.perDay"].waitForExistence(timeout: 5), "cancelled setup returns to the form")
+        XCTAssertEqual(app.textFields["product.form.perDay"].value as? String, "80.000", "the day price is still there")
+        XCTAssertTrue(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "no table was saved: Chưa cài")
+        // the row again, the table by hand, Lưu bảng giá: the summary shows and the day price box stays
+        e2e.scrollTo(blockRow)
+        blockRow.tap()
+        XCTAssertTrue(app.textFields["block.tier.1"].waitForExistence(timeout: 5))
+        fillTable()
+        XCTAssertTrue(app.textFields["block.tier.3"].waitForExistence(timeout: 5))
+        app.buttons["block.save"].tap()
+        XCTAssertTrue(blockRow.waitForExistence(timeout: 5), "Lưu bảng giá: back on the form")
+        XCTAssertFalse(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "the row shows the table summary")
+        XCTAssertTrue(app.textFields["product.form.perDay"].exists, "the day price box stays next to the table")
+        e2e.shot("80e-new-block-summary")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+        e2e.dismissAlerts()
+
+        for (key, shot) in [("Ao dai DAILY", "80c-edit-old-daily"), ("Vay cuoi co", "80d-edit-with-table"), ("Ao vest theo", "80e-edit-per-rental")] {
+            guard e2e.openProduct(named: key) else { e2e.note("\(key) not found"); continue }
+            let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+            guard edit.waitForExistence(timeout: 5) else { e2e.note("no Sửa for \(key)"); e2e.goBackOnce(); continue }
+            edit.tap()
+            let row = app.descendants(matching: .any)["product.form.blockSummary"]
+            _ = e2e.scrollTo(row)
+            e2e.shot(shot)
+            app.swipeUp()
+            sleep(1)
+            e2e.shot(shot + "-more")
+            e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+            e2e.goBackOnce()
+        }
+    }
+
+    private var blockNotSetTexts: [String] { ["Not set", "Chưa cài"] }
+
+    /// Product detail → Sửa → the "Theo mỗi ngày" box (#1249 mockup v179) → new value → Lưu thay đổi. Returns the value the field had (may be "").
     private func editDailyPrice(to value: String, shot: String?) -> String? {
         let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
         guard edit.waitForExistence(timeout: 5) else { e2e.note("no Sửa on product detail"); return nil }
         edit.tap()
-        let field = e2e.field(["Rent per day", "Thuê theo ngày"])
-        guard field.waitForExistence(timeout: 8) else { e2e.note("no Thuê theo ngày field"); return nil }
+        let field = app.textFields["product.form.perDay"]
+        guard field.waitForExistence(timeout: 8) || e2e.scrollTo(field) else { e2e.note("no day price box"); return nil }
         e2e.scrollTo(field)
         let raw = field.value as? String ?? ""
         let old = (raw == field.placeholderValue || raw == "0") ? "" : raw
-        field.tap()
-        field.clearText()
+        // one tap at the right end of the box (caret after the text), then delete what is there and type
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
+        if !old.isEmpty { field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count + 4)) }
         if !value.isEmpty { field.typeText(value) }
         e2e.hideKeyboard()
         if let shot { e2e.shot(shot) }
@@ -3061,6 +3202,77 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
+    /// #1270 Settings plan B: Thông tin cửa hàng, Tiền tệ, Tài khoản ngân hàng, Cọc ›, In & phiếu ›, then the screens.
+    /// Staff runs check what is hidden (currency, bank accounts, the switch); Cọc stays for everyone.
+    func test7zCompactSettings() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        func label(_ labels: [String]) -> XCUIElement {
+            app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        }
+        let isOwner = e2e.role == "merchant"
+        let storeInfo = label(["Store Information", "Thông tin cửa hàng"])
+        let collect = label(["Deposit", "Cọc"])
+        let printing = label(["Print & receipts", "In & phiếu"])
+        XCTAssertTrue(storeInfo.waitForExistence(timeout: 8), "Thông tin cửa hàng row")
+        XCTAssertTrue(collect.exists, "Cọc row (every role: read only for staff)")
+        XCTAssertTrue(printing.exists, "In & phiếu row")
+        XCTAssertEqual(label(["Currency", "Tiền tệ"]).exists, isOwner, "Tiền tệ row for the owner only")
+        XCTAssertEqual(label(["Bank Accounts", "Tài khoản ngân hàng"]).exists, isOwner, "Tài khoản ngân hàng row for owner / outlet admin only")
+        XCTAssertFalse(label(["Payments", "Thu tiền"]).exists, "no Thu tiền screen any more")
+        XCTAssertFalse(label(["Printer", "Máy in"]).exists, "no separate Máy in row")
+        XCTAssertFalse(label(["Change Password", "Đổi mật khẩu"]).exists, "Đổi mật khẩu is inside the name card")
+        XCTAssertFalse(label(["Delete Account", "Xoá tài khoản"]).exists, "Xoá tài khoản is inside Nâng cao")
+        XCTAssertTrue(app.buttons["settings.notifications"].exists, "the Thông báo bell at the top right")
+        e2e.soft(isOwner == app.switches.firstMatch.exists, "the overlap switch shows for the owner only")
+        e2e.shot("z1-settings-top")
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("z2-settings-bottom")
+        let advanced = label(["Advanced", "Nâng cao"])
+        XCTAssertTrue(advanced.exists, "Nâng cao row")
+        app.swipeDown()
+        sleep(1)
+
+        collect.tap()
+        sleep(3)
+        e2e.shot("z3-collect")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.collect.mode"].exists, "Cách thu cọc line")
+        XCTAssertTrue(app.descendants(matching: .any)["deposit.templates.row"].exists, "Mẫu giai đoạn line")
+        XCTAssertTrue(app.descendants(matching: .any)["deposit.policy.row"].exists, "Chính sách huỷ / dời ngày line")
+        e2e.goBackOnce()
+
+        printing.tap()
+        sleep(2)
+        e2e.shot("z4-printing")
+        e2e.goBackOnce()
+
+        XCTAssertTrue(e2e.scrollTo(advanced), "Nâng cao reachable")
+        advanced.tap()
+        sleep(2)
+        e2e.shot("z5-advanced")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.advanced.appInfo"].exists, "Thông tin ứng dụng")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.advanced.deleteAccount"].exists, "Xoá tài khoản")
+        e2e.goBackOnce()
+
+        app.swipeDown()
+        sleep(1)
+        let card = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'hồ sơ, mật khẩu' OR label CONTAINS 'profile, password'")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5), "the name card")
+        card.tap()
+        sleep(2)
+        e2e.shot("z6-profile")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.profile.password"].exists, "Đổi mật khẩu")
+        e2e.goBackOnce()
+
+        storeInfo.tap()
+        sleep(2)
+        e2e.shot("z7-store-info")
+        e2e.goBackOnce()
+    }
+
     /// Cài đặt → Đổi mật khẩu (#490 #491, board DMK-doi-mat-khau): a bottom sheet; an empty submit shows the error
     /// under "Mật khẩu hiện tại". The password is never changed.
     func test7gChangePasswordSheet() throws {
@@ -3068,8 +3280,12 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         sleep(2)
-        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Change Password", "Đổi mật khẩu"])).firstMatch
-        XCTAssertTrue(e2e.scrollTo(row), "Đổi mật khẩu row in Settings")
+        // #1259: the name card opens Hồ sơ & bảo mật, which has the Đổi mật khẩu row
+        let card = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'hồ sơ, mật khẩu' OR label CONTAINS 'profile, password'")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 8), "the name card in Settings")
+        card.tap()
+        let row = app.descendants(matching: .any)["settings.profile.password"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "Đổi mật khẩu row in Hồ sơ & bảo mật")
         row.tap()
         let fields = app.secureTextFields
         XCTAssertTrue(fields.firstMatch.waitForExistence(timeout: 5), "the sheet opens with password fields")
@@ -3184,8 +3400,8 @@ final class AnyRentE2ETests: XCTestCase {
         }
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         sleep(2)
-        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Notifications", "Thông báo"])).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 8), "#937: Thông báo row in Cài đặt")
+        let row = app.buttons["settings.notifications"]
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "#1259: the Thông báo bell in Cài đặt")
         e2e.shot("16b-settings-notifications-row")
         row.tap()
         sleep(3)
@@ -3293,6 +3509,7 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newSettings")
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        // #1270: Tài khoản ngân hàng is a row of CỬA HÀNG again
         let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Bank Accounts", "Tài khoản ngân hàng"])).firstMatch
         if e2e.role != "merchant" { // staff and kho (#682) have no bank-account permission
             e2e.shot("7k-\(e2e.role)-settings")
@@ -3337,11 +3554,11 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("7k-bank-form-edit")
         e2e.goBackOnce()
         sleep(1)
-        e2e.goBackOnce()
+        e2e.goBackOnce() // the list → Cài đặt
 
         // Printer page: the switch sits under the printer note, off by default; turned on for the shot, then back
-        let printer = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
-        XCTAssertTrue(printer.waitForExistence(timeout: 5), "Printer row")
+        let printer = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch
+        XCTAssertTrue(printer.waitForExistence(timeout: 5), "In & phiếu row (#1259)")
         printer.tap()
         let toggle = app.switches["printer.bankQr.switch"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "In QR chuyển khoản trên bill switch")
@@ -3362,8 +3579,8 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         func openPrinterPage() {
             e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-            let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
-            XCTAssertTrue(row.waitForExistence(timeout: 8), "Printer row")
+            let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 8), "In & phiếu row (#1259)")
             row.tap()
             sleep(1)
         }
@@ -3439,8 +3656,8 @@ final class AnyRentE2ETests: XCTestCase {
     func test7oPrinterIPKeyboard() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 8), "Printer row")
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "In & phiếu row (#1259)")
         row.tap()
         let ipField = app.textFields.firstMatch
         XCTAssertTrue(ipField.waitForExistence(timeout: 5), "printer IP field")
@@ -4265,26 +4482,30 @@ final class AnyRentE2ETests: XCTestCase {
             while !(element.exists && element.isHittable) && tries < max { app.swipeUp(); tries += 1 }
         }
 
-        // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2 with the warning
+        // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        let row = textStarting(["Cách thu cọc", "Deposit collection"])
-        scrollTo(row)
+        // #1270: Cọc › holds Cách thu cọc, Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày
+        let collect = text(["Cọc", "Deposit"])
+        scrollTo(collect)
         e2e.shot("60a-settings-row")
-        XCTAssertTrue(row.exists, "Settings has the Cách thu cọc row")
+        XCTAssertTrue(collect.exists, "Settings has the Cọc row")
+        collect.tap()
+        let row = app.descendants(matching: .any)["settings.collect.mode"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "Cọc has the Cách thu cọc row")
         row.tap()
         sleep(2)
         e2e.shot("60b-mode-one-time")
         let staged = text(["Thu cọc theo giai đoạn", "Staged deposit"])
         if app.buttons["deposit.mode.STAGED"].exists { app.buttons["deposit.mode.STAGED"].tap() } else { staged.tap() }
         sleep(1)
-        e2e.shot("60c-enable-warning")
-        e2e.tapIfExists(e2e.button(["Bật", "Turn on"]), timeout: 5)
         sleep(3)
         e2e.shot("60d-mode-staged")
-        XCTAssertTrue(textStarting(["Nhân viên đang dùng app cũ", "Staff on an older app"]).exists, "the old-app warning shows in mode 2")
+        XCTAssertFalse(textStarting(["Nhân viên đang dùng app cũ", "Staff on an older app"]).exists, "no old-app warning in mode 2 (#1275)")
 
-        // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over
-        let templates = textStarting(["Mẫu giai đoạn cọc", "Deposit stage templates"])
+        // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over (#1270: the row is in Cọc)
+        e2e.goBackOnce()
+        sleep(1)
+        let templates = app.descendants(matching: .any)["deposit.templates.row"]
         XCTAssertTrue(templates.waitForExistence(timeout: 5))
         templates.tap()
         sleep(2)
@@ -4468,6 +4689,33 @@ final class AnyRentE2ETests: XCTestCase {
         }
         sleep(2)
         e2e.shot("05-collateral-related-orders")
+    }
+
+    /// #1273 Thế chân in two sections: the note, "Đang giữ thế chân" with its total, "Phát sinh hôm nay" with Nhận, Trả and
+    /// the three totals; needs orders with collateral held (some handed over today, some returned today).
+    func test7qCollateralTwoSections() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else { throw XCTSkip("No Reports tab") }
+        sleep(4)
+        let today = e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .button)
+        if today.waitForExistence(timeout: 8) { today.tap(); sleep(3) }
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Collateral")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 10), "Thế chân tile")
+        if !tile.isHittable { app.swipeUp(); sleep(1) }
+        tile.tap()
+        let link = e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button)
+        XCTAssertTrue(link.waitForExistence(timeout: 6), "related orders link")
+        link.tap()
+        XCTAssertTrue(app.staticTexts["related.held.total"].waitForExistence(timeout: 25), "Tổng đang giữ")
+        sleep(2)
+        e2e.shot("90-collateral-sections-top")
+        e2e.note("COLLATERAL HELD TOTAL | \(app.staticTexts["related.held.total"].label)")
+        for _ in 0..<4 where !app.staticTexts["related.total"].isHittable { app.swipeUp(); sleep(1) }
+        XCTAssertTrue(app.staticTexts["related.flow.in"].exists, "Nhận khi giao")
+        XCTAssertTrue(app.staticTexts["related.flow.out"].exists, "Trả khi nhận đồ")
+        e2e.note("COLLATERAL FLOW | \(app.staticTexts["related.flow.in"].label) | \(app.staticTexts["related.flow.out"].label) | \(app.staticTexts["related.total"].label)")
+        e2e.shot("91-collateral-sections-bottom")
     }
 
     /// #1124 "Đặt online": needs two PENDING requests on merchant1's shop (names "Nguyễn Thị Mai" and "Trần Văn Bình",

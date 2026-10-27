@@ -245,15 +245,6 @@ extension OrderItem {
 
 // MARK: - Form input
 
-/// What the product price screen holds when "Lưu bảng giá" is tapped
-struct BlockPriceDraft: Equatable {
-    var perRental: Double?
-    var perDay: Double?
-    var defaultMode: ProductPricingMode
-    /// nil = no day-block table
-    var table: BlockTable?
-}
-
 enum BlockTableInput: Equatable {
     /// every box empty: no table
     case empty

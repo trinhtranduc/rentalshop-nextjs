@@ -257,6 +257,26 @@ enum OrderShareRenderer {
                    width: valueW, align: .right, lines: 1, shrink: true)
             y += max(p.text(row.label, font: font(15), color: C.muted, x: innerX, y: y, width: innerW - valueW - 12, lines: 2), 19) + 11
         }
+        if let plan = model.plan {
+            // #1252: stages of a staged deposit, then what is collected and what is left
+            y += 2
+            y += p.text(plan.title.uppercased(with: Locale(identifier: "vi")), font: font(13, .bold), color: C.muted,
+                        x: innerX, y: y, width: innerW, lines: 1, kern: 1.2) + 10
+            for stage in plan.stages {
+                let amount = OrderShareModel.money(stage.amount)
+                let amountW = ceil(p.size(amount, font: font(15, .semibold)).width)
+                p.text(amount, font: font(15, .semibold), color: C.ink, x: innerX, y: y, width: innerW, align: .right, lines: 1)
+                y += p.text(stage.title, font: font(15, .semibold), color: C.ink, x: innerX, y: y, width: innerW - amountW - 12, lines: 2) + 1
+                if let detail = stage.detail { y += p.text(detail, font: font(13), color: C.muted, x: innerX, y: y, width: innerW, lines: 2) }
+                y += 8
+            }
+            for (label, value) in [(plan.collectedLabel, plan.collected), (plan.remainingLabel, plan.remaining)] {
+                let text = OrderShareModel.money(value)
+                let valueW = ceil(p.size(text, font: font(15, .bold)).width)
+                p.text(text, font: font(15, .bold), color: C.ink, x: innerX + innerW - valueW, y: y, width: valueW, align: .right, lines: 1)
+                y += max(p.text(label, font: font(15), color: C.muted, x: innerX, y: y, width: innerW - valueW - 12, lines: 1), 19) + 8
+            }
+        }
         y += 4
         let box = CGRect(x: innerX, y: y, width: innerW, height: 60)
         let (bg, labelColor, valueColor): (UIColor, UIColor, UIColor) = {

@@ -4,7 +4,7 @@
  * Tổng quan sections (#514, redrawn in #604): numbers and small charts on the page, the detail in the drawer.
  * Series colours come from the `ar-chart-*` tokens; text always uses ink tokens.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   chartBars,
@@ -661,6 +661,27 @@ export function TopCustomers({
   );
 }
 
+/** #1243 a product's first photo in a small rounded square; no photo (or a broken one): the initial, as before */
+export function TopThumb({ bar, size }: { bar: TopBar; size: string }) {
+  const [broken, setBroken] = useState(false);
+  if (bar.image && !broken) {
+    return (
+      <img
+        src={bar.image}
+        alt=""
+        loading="lazy"
+        onError={() => setBroken(true)}
+        className={`${size} flex-none rounded-lg bg-ar-subtle object-cover`}
+      />
+    );
+  }
+  return (
+    <span aria-hidden="true" className={`flex ${size} flex-none items-center justify-center rounded-lg bg-ar-subtle text-xs font-semibold text-ar-ink-2`}>
+      {initials(bar.name).slice(0, 1)}
+    </span>
+  );
+}
+
 function TopList({
   onViewAll,
   ns,
@@ -718,9 +739,7 @@ function TopList({
               aria-label={tip}
               className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg text-ar-ink no-underline hover:bg-ar-surface-muted"
             >
-              <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-lg bg-ar-subtle text-xs font-semibold text-ar-ink-2">
-                {initials(p.name).slice(0, 1)}
-              </span>
+              <TopThumb bar={p} size="h-8 w-8" />
               <span className="flex min-w-0 flex-col gap-1">
                 <span className="truncate text-[13px]">{p.name}</span>
                 <span aria-hidden="true" className="relative block h-1.5 rounded-[3px] bg-ar-subtle">

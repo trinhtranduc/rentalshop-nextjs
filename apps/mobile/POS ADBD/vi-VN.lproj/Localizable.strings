@@ -1575,9 +1575,9 @@
 "products.form.barcodePlaceholder" = "Quét hoặc nhập";
 "products.form.regenerateBarcode" = "Tạo mã mới";
 "products.form.barcodeUsed" = "Mã vạch đã dùng cho %@";
-"products.form.prices" = "Giá";
-"products.form.perRental" = "Thuê theo lần";
-"products.form.perDay" = "Thuê theo ngày";
+"products.form.prices" = "Giá thuê";
+"products.form.perRental" = "Theo lần";
+"products.form.perDay" = "Theo mỗi ngày";
 "products.form.defaultPricing" = "Khi tạo đơn, mặc định tính";
 "products.form.salePrice" = "Giá bán";
 "products.form.notForSale" = "Không bán";
@@ -2826,9 +2826,6 @@
 "deposit.mode.oneTime.detail" = "Một lần cọc lúc đặt, bằng tổng cọc của từng sản phẩm. Phần còn lại thu khi giao.";
 "deposit.mode.staged" = "Thu cọc theo giai đoạn";
 "deposit.mode.staged.detail" = "Chia cọc thành nhiều giai đoạn theo % giá trị đơn. Phần còn lại thu khi giao.";
-"deposit.warning.oldApps" = "Nhân viên đang dùng app cũ sẽ vẫn thu cọc theo sản phẩm. Hãy cập nhật app trước khi bật.";
-"deposit.enable.title" = "Bật thu cọc theo giai đoạn?";
-"deposit.enable.confirm" = "Bật";
 "deposit.ownerOnly" = "Chỉ chủ shop đổi được cách thu cọc.";
 "deposit.footnote.newOrdersOnly" = "Chỉ ảnh hưởng đơn tạo sau khi đổi. Đơn cũ giữ nguyên.";
 "deposit.oneTime.readOnly" = "Hai giai đoạn thu (chỉ xem)";
@@ -2951,15 +2948,11 @@
 "CANCELLED_ORDER_KEEPS_AMOUNT" = "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được.";
 // #1189 day-block pricing
 "block.title" = "Giá theo khối ngày";
-"block.screen.title" = "Giá thuê · %@";
 "block.save" = "Lưu bảng giá";
 "block.turnOff" = "Tắt giá theo khối ngày";
-"block.row.off" = "Chưa dùng";
 "block.row.tiers" = "%d mốc";
-"block.row.extra" = "+%@ mỗi ngày";
+"block.row.extra" = "+%@/ngày";
 "block.row.hold" = "giữ giá khối cuối";
-"block.section.default" = "Cách tính giá mặc định";
-"block.hint.default" = "Kiểu giá mặc định khi tạo đơn. Nhân viên đổi được trong giỏ.";
 "block.section.tiers" = "Giá theo số ngày";
 "block.addDay" = "+ Thêm ngày %d";
 "block.removeDay" = "Xoá ngày này";
@@ -2969,7 +2962,6 @@
 "block.holdLast.price" = "Giữ nguyên giá khối cuối (%@)";
 "block.preview" = "Xem thử";
 "block.error.invalid" = "Nhập đủ giá cho mọi ngày (từ 0 trở lên) và số tiền cộng thêm mỗi ngày.";
-"block.error.empty" = "Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày, hoặc chọn kiểu giá mặc định khác.";
 "block.summary.block" = "Khối %d ngày";
 "block.summary.extra" = "+ %d ngày thêm";
 "products.unit.block" = "/1 ngày";
@@ -2977,3 +2969,55 @@
 "BLOCK_PRICE_MISMATCH" = "Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.";
 "PRICING_TYPE_REQUIRES_UPDATE" = "Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.";
 "BLOCK_TABLE_INVALID" = "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.";
+"products.cart.confirm.more" = "+%d sản phẩm khác";
+"products.cart.confirm.more.one" = "+%d sản phẩm khác";
+"deposit.cart.template" = "Mẫu";
+"deposit.cart.stageShort" = "%@%% · %@";
+/* #1259 Cài đặt gọn lại */
+"settings.v2.collect" = "Thu tiền";
+"settings.v2.collect.group.bank" = "Ngân hàng";
+"settings.v2.collect.group.deposit" = "Cọc";
+"settings.v2.collect.accounts" = "%d tài khoản";
+"settings.v2.collect.banks" = "%d ngân hàng";
+"settings.v2.collect.oneTime" = "Cọc 1 lần";
+"settings.v2.collect.staged" = "Theo giai đoạn";
+"settings.v2.collect.policy.set" = "Đã đặt";
+"settings.v2.collect.policy.unset" = "Chưa đặt";
+"settings.v2.printing" = "In & phiếu";
+"settings.v2.advanced" = "Nâng cao";
+"settings.v2.advanced.value" = "Ứng dụng · Xoá tài khoản";
+"settings.v2.profile.title" = "Hồ sơ & bảo mật";
+"settings.v2.profile.hint" = "hồ sơ, mật khẩu";
+"settings.v2.profile.group" = "Hồ sơ";
+"settings.v2.profile.security" = "Bảo mật";
+"products.form.unit.once" = "/ lần";
+"products.form.unit.day" = "/ ngày";
+"products.form.perBlock" = "Theo block ngày";
+"products.form.block.notSet" = "Chưa cài";
+"block.intro" = "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.";
+"block.copy" = "Sao chép từ sản phẩm khác";
+"block.copy.empty" = "Chưa có sản phẩm nào có bảng giá theo khối ngày.";
+"block.error.nothing" = "Nhập giá ít nhất cho 1 ngày.";
+/* #1270 Cài đặt phương án B */
+"settings.v2.deposit" = "Cọc";
+"settings.v2.deposit.group.mode" = "Cách thu cọc";
+"settings.v2.deposit.group.stages" = "Giai đoạn & chính sách";
+"settings.v2.printing.noPrinter" = "chưa chọn máy in";
+"settings.v2.printing.group.slip" = "Phiếu";
+"settings.v2.printing.group.printer" = "Máy in";
+
+/* #1273 Thế chân: hai phần */
+"overview.related.collateral.note" = "Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là hôm nay thu hoặc trả bao nhiêu. Hai số không cộng với nhau.";
+"overview.related.collateral.note.period" = "Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là trong kỳ này thu hoặc trả bao nhiêu. Hai số không cộng với nhau.";
+"overview.related.collateral.held.title" = "Đang giữ thế chân";
+"overview.related.collateral.held.hint" = "Tiền thế chân shop đang cầm của các đơn chưa trả đồ.";
+"overview.related.collateral.held.total" = "Tổng đang giữ: %@ · %d đơn";
+"overview.related.collateral.flow.title" = "Phát sinh hôm nay (%@)";
+"overview.related.collateral.flow.title.period" = "Phát sinh trong kỳ (%@)";
+"overview.related.collateral.flow.hint" = "Tiền thế chân vào hoặc ra trong ngày này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.";
+"overview.related.collateral.flow.hint.period" = "Tiền thế chân vào hoặc ra trong kỳ này. + là nhận khi giao đồ, − là trả lại khi khách trả đồ.";
+"overview.related.collateral.flow.in" = "Nhận khi giao: %@ (%d đơn)";
+"overview.related.collateral.flow.out" = "Trả khi nhận đồ: %@ (%d đơn)";
+"overview.related.collateral.flow.net" = "Hôm nay shop giữ thêm: %@";
+"overview.related.collateral.flow.net.period" = "Trong kỳ shop giữ thêm: %@";
+"overview.related.collateral.held.row" = "Của đơn chưa trả đồ";

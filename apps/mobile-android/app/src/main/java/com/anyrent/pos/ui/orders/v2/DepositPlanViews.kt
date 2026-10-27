@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -70,9 +72,7 @@ import com.anyrent.pos.ui.common.toUtcMillis
 import com.anyrent.pos.ui.deposit.DepositFullScreen
 import com.anyrent.pos.ui.deposit.DepositNote
 import com.anyrent.pos.ui.deposit.DepositPill
-import com.anyrent.pos.ui.deposit.DepositRadioRow
 import com.anyrent.pos.ui.deposit.DepositWarningBox
-import com.anyrent.pos.ui.deposit.depositMethodName
 import com.anyrent.pos.ui.deposit.installmentChip
 import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.V2Colors
@@ -127,19 +127,18 @@ internal fun InstallmentCard(
     val reserved = detail.summary.status.equals("RESERVED", true)
     val today = ShopTime.today().toString()
     Column(
-        Modifier.fillMaxWidth().padding(vertical = 10.dp)
-            .border(1.dp, CardBorder, RoundedCornerShape(14.dp)).padding(14.dp)
+        Modifier.fillMaxWidth().padding(vertical = 12.dp) // #1246: no frame; #1265: inside its own band-to-band section
             .testTag("deposit.card"),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.deposit_card_title), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.deposit_card_title).uppercase(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
             DepositPill(stringResource(R.string.deposit_badge_collected, DepositPlanMath.percentText(percent)), DS.Status.Done, Modifier.testTag("deposit.card.badge"))
             if (reserved) {
                 Text(
                     stringResource(if (DepositPlanLogic.canEditPlan(role)) R.string.deposit_card_edit else R.string.deposit_card_view),
                     fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
-                    modifier = Modifier.clickable(onClick = onEdit).heightIn(min = 44.dp).padding(horizontal = 4.dp).testTag("deposit.card.edit"),
+                    modifier = Modifier.clickable(onClick = onEdit).heightIn(min = 44.dp).wrapContentHeight(Alignment.CenterVertically).padding(horizontal = 4.dp).testTag("deposit.card.edit"),
                 )
             }
         }
@@ -182,13 +181,25 @@ private fun HorizontalDividerLine() {
 private fun StageRow(stage: OrderInstallment, number: Int, today: String, tappable: Boolean, onTap: () -> Unit) {
     val paid = stage.isPaid
     val (chipText, chipColors) = installmentChip(stage, today)
+    val late = stage.status == "OVERDUE"
+    // a late stage stands out with a soft red band that bleeds 8dp past the text column
+    val band = if (late) {
+        Modifier.layout { measurable, constraints ->
+            val bleed = 8.dp.roundToPx()
+            val placeable = measurable.measure(constraints.copy(minWidth = constraints.maxWidth + 2 * bleed, maxWidth = constraints.maxWidth + 2 * bleed))
+            layout(constraints.maxWidth, placeable.height) { placeable.place(-bleed, 0) }
+        }.background(Color(0xFFFEF2F2), RoundedCornerShape(8.dp)).padding(horizontal = 8.dp)
+    } else {
+        Modifier
+    }
     Row(
-        Modifier.fillMaxWidth().then(if (tappable) Modifier.clickable(onClick = onTap) else Modifier).padding(vertical = 4.dp).testTag("deposit.stage.${stage.key}"),
+        Modifier.fillMaxWidth().then(band).then(if (tappable) Modifier.clickable(onClick = onTap) else Modifier).padding(vertical = 10.dp).testTag("deposit.stage.${stage.key}"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(24.dp).background(if (paid) Green else Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
-            Text(if (paid) "✓" else "$number", fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold, color = if (paid) Color.White else DS.Colors.Primary)
+        Box(Modifier.size(24.dp).background(if (paid) Green else if (late) Color(0xFFFEE2E2) else Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
+            Text(if (paid) "✓" else if (late) "!" else "$number", fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold,
+                color = if (paid) Color.White else if (late) Color(0xFFB91C1C) else DS.Colors.Primary)
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label, fontSize = DS.TextSize.Body)
@@ -221,7 +232,7 @@ private fun DepositSheetFrame(onDismiss: () -> Unit, content: @Composable Column
     }
 }
 
-/** "Thu giai đoạn N": the amount (up to what the stage still needs) and the method */
+/** "Thu giai đoạn N": the amount (up to what the stage still needs); the method is always CASH (#1237) */
 @Composable
 internal fun CollectInstallmentSheet(
     detail: OrderDetail,
@@ -232,8 +243,6 @@ internal fun CollectInstallmentSheet(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val methods = DepositPlanLogic.collectMethods(com.anyrent.pos.data.PermissionManager.role.isStaffLike)
-    var method by remember { mutableStateOf("CASH") }
     var amountText by remember { mutableStateOf((if (stage.remaining > 0) stage.remaining else stage.amount).toLong().toString()) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -254,7 +263,6 @@ internal fun CollectInstallmentSheet(
             textStyle = androidx.compose.ui.text.TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold),
             modifier = Modifier.fillMaxWidth().testTag("deposit.collect.amount"),
         )
-        Column { methods.forEach { item -> DepositRadioRow(depositMethodName(item), null, item == method, { method = item }) } }
         error?.let { Text(it, fontSize = DS.TextSize.Secondary, color = V2Colors.Danger) }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SecondaryBarButton(stringResource(R.string.cancel), Modifier.weight(1f), !busy, onClick = onDismiss)
@@ -263,7 +271,7 @@ internal fun CollectInstallmentSheet(
             ) {
                 busy = true
                 scope.launch {
-                    val result = withContext(Dispatchers.IO) { DepositPlanApi.collect(detail.summary.id, stage.key, amount, method, reference) }
+                    val result = withContext(Dispatchers.IO) { DepositPlanApi.collect(detail.summary.id, stage.key, amount, "CASH", reference) }
                     busy = false
                     result.onSuccess { onCollected() }
                         .onFailure { error = ApiErrorMessages.resolve(context, AppError.from(it).code, it.message.orEmpty()) }

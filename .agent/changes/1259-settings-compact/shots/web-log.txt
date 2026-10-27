@@ -1,0 +1,26 @@
+owner vi merchant: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | Khách thân thiết | NHÂN SỰ | Nhân viên | CỬA HÀNG | Chi nhánh | Cài đặt cửa hàng
+owner vi public-page: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | Khách thân thiết | NHÂN SỰ | Nhân viên | CỬA HÀNG | Chi nhánh | Cài đặt cửa hàng
+owner vi payment: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | Khách thân thiết | NHÂN SỰ | Nhân viên | CỬA HÀNG | Chi nhánh | Cài đặt cửa hàng
+owner vi receipt: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | Khách thân thiết | NHÂN SỰ | Nhân viên | CỬA HÀNG | Chi nhánh | Cài đặt cửa hàng
+owner vi subscription: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | Khách thân thiết | NHÂN SỰ | Nhân viên | CỬA HÀNG | Chi nhánh | Cài đặt cửa hàng
+owner vi profile: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | Khách thân thiết | NHÂN SỰ | Nhân viên | CỬA HÀNG | Chi nhánh | Cài đặt cửa hàng
+owner vi language: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | Khách thân thiết | NHÂN SỰ | Nhân viên | CỬA HÀNG | Chi nhánh | Cài đặt cửa hàng
+legacy bank-accounts -> url http://localhost:3000/dashboard?settings=payment current=Tổng quan
+legacy account -> url http://localhost:3000/dashboard?settings=profile current=Tổng quan
+legacy printer -> url http://localhost:3000/dashboard?settings=receipt current=Tổng quan
+legacy appearance -> url http://localhost:3000/dashboard?settings=language current=Tổng quan
+owner en merchant: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | Loyalty | PEOPLE | Staff | SHOP | Outlets | Store settings
+owner en public-page: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | Loyalty | PEOPLE | Staff | SHOP | Outlets | Store settings
+owner en payment: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | Loyalty | PEOPLE | Staff | SHOP | Outlets | Store settings
+owner en receipt: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | Loyalty | PEOPLE | Staff | SHOP | Outlets | Store settings
+owner en subscription: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | Loyalty | PEOPLE | Staff | SHOP | Outlets | Store settings
+owner en profile: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | Loyalty | PEOPLE | Staff | SHOP | Outlets | Store settings
+owner en language: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | Loyalty | PEOPLE | Staff | SHOP | Outlets | Store settings
+staff vi outlet: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | CỬA HÀNG | Cài đặt cửa hàng
+staff vi receipt: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | CỬA HÀNG | Cài đặt cửa hàng
+staff vi profile: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | CỬA HÀNG | Cài đặt cửa hàng
+staff vi language: Tổng quan | BÁN & CHO THUÊ | Đơn hàng | Lịch giao trả | Kiểm tra còn hàng | HÀNG HOÁ | Sản phẩm | Danh mục | KHÁCH HÀNG | Khách hàng | CỬA HÀNG | Cài đặt cửa hàng
+staff en outlet: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | SHOP | Store settings
+staff en receipt: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | SHOP | Store settings
+staff en profile: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | SHOP | Store settings
+staff en language: Overview | SALES & RENTALS | Orders | Pickup & return calendar | Check availability | GOODS | Products | Categories | CUSTOMERS | Customers | SHOP | Store settings

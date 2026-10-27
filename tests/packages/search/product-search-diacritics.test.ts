@@ -5,9 +5,7 @@
  * Rules:
  *  1. Word-prefix matching (NOT substring): a term must start the whole value OR start any
  *     word inside the name. "dai" matches "Áo dài" but "ai" (mid-word) does not.
- *  2. Conditional accent driven by the QUERY:
- *       - query WITHOUT diacritics ("ao") → accent-INSENSITIVE, also matches "Áo".
- *       - query WITH diacritics ("áo")    → exact accented match only.
+ *  2. Always accent-insensitive (#1250): "ao", "áo", "ào" all match "Áo"; "Họa" = "Hoạ".
  *  3. Multi-word: ALL words must match (AND), each in the name.
  *  4. Barcode matches when the code contains the typed text, independent of the word rules.
  */
@@ -43,14 +41,10 @@ function nameMatches(product: Product, searchInput: string): boolean {
   if (words.length === 0) return false;
 
   return words.every((word) => {
-    const nfc = word.normalize('NFC');
-    const stripped = removeVietnameseDiacritics(word);
-    const hasDiacritics = nfc.toLowerCase() !== stripped.toLowerCase();
-    const term = (hasDiacritics ? nfc : stripped).toLowerCase();
+    const term = removeVietnameseDiacritics(word).toLowerCase();
     const startPattern = `${term}%`;
     const wordPattern = `% ${term}%`;
-    const proj = (s: string) =>
-      hasDiacritics ? s.normalize('NFC').toLowerCase() : removeVietnameseDiacritics(s).toLowerCase();
+    const proj = (s: string) => removeVietnameseDiacritics(s).toLowerCase();
     const hit = (v: string) => like(proj(v), startPattern) || like(proj(v), wordPattern);
     return hit(product.name);
   });
@@ -90,12 +84,12 @@ describe('Product Search - word-prefix + conditional accent', () => {
     });
   });
 
-  describe('Search WITH diacritics → exact accented match only', () => {
+  describe('Search WITH diacritics → accent-insensitive too (#1250)', () => {
     it('"áo" → matches "Áo dài..."', () => {
       expect(productMatches(aoDai, 'áo')).toBe(true);
     });
-    it('"áo" → does NOT match unaccented "Ao thun trắng"', () => {
-      expect(productMatches(aoThun, 'áo')).toBe(false);
+    it('"áo" → also matches unaccented "Ao thun trắng"', () => {
+      expect(productMatches(aoThun, 'áo')).toBe(true);
     });
     it('"dà" → matches "...dài..." (prefix, correct accent)', () => {
       expect(productMatches(aoDai, 'dà')).toBe(true);

@@ -68,11 +68,11 @@ describe('Đơn hàng branch filter (#852)', () => {
 });
 
 describe('Cài đặt per branch (#852)', () => {
-  it('the owner gets Tài khoản ngân hàng; staff and inventory do not', () => {
-    expect(tabsForRole('MERCHANT').map((t) => t.id)).toContain('bank-accounts');
-    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toContain('bank-accounts');
-    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).not.toContain('bank-accounts');
-    expect(tabsForRole('OUTLET_INVENTORY').map((t) => t.id)).not.toContain('bank-accounts');
+  it('the owner gets Thu tiền (Tài khoản ngân hàng, #1259); staff and inventory do not', () => {
+    expect(tabsForRole('MERCHANT').map((t) => t.id)).toContain('payment');
+    expect(tabsForRole('OUTLET_ADMIN').map((t) => t.id)).toContain('payment');
+    expect(tabsForRole('OUTLET_STAFF').map((t) => t.id)).not.toContain('payment');
+    expect(tabsForRole('OUTLET_INVENTORY').map((t) => t.id)).not.toContain('payment');
   });
 
   it('branch of the bank / receipt tabs: URL if known, else the default branch, else the first', () => {
