@@ -7,14 +7,14 @@
 //   1. Word-prefix matching: a word must start the whole value OR start any word inside it.
 //      A word starts after a space OR after punctuation (#1009): "xanh" finds "Mẫu (Xanh Ngọc)".
 //      The query is split on the same separators, so "(xanh" is the word "xanh".
-//   2. Accent rule, driven by the QUERY word:
-//        - word WITHOUT diacritics ("ao") → accent-INSENSITIVE (unaccent), also matches "Áo".
-//        - word WITH diacritics ("áo")    → exact accented match only (NFC).
+//   2. Always accent-insensitive (#1250), on both sides: the query word and the stored name are
+//      folded the same way (NFC, strip marks, đ → d, lower case). "ao", "áo", "ào" all find "Áo",
+//      and "Họa" finds "Hoạ" whichever way the tone mark sits or the text was encoded (NFC / NFD).
 //   3. A value matches a word when (' ' || projected value) LIKE pattern, where the projected
 //      value has every run of separators replaced by one space.
 
 import { Prisma } from '@prisma/client';
-import { removeVietnameseDiacritics } from '@rentalshop/utils';
+import { foldSearchText } from '@rentalshop/utils';
 
 /**
  * Characters that end a word: whitespace and punctuation. An explicit list (not [[:alnum:]] or
@@ -43,10 +43,8 @@ export function escapeLikePattern(term: string): string {
 }
 
 export interface SearchWordTerm {
-  /** lower-cased term compared against the projected value */
+  /** folded term (no marks, lower case) compared against the projected value */
   term: string;
-  /** true when the query word carries diacritics → exact-accent comparison */
-  hasDiacritics: boolean;
   /** LIKE pattern (backslash escape) applied to ' ' || projected value */
   pattern: string;
 }
@@ -58,32 +56,28 @@ export function splitSearchWords(input: string): string[] {
 
 /** Build the term and LIKE pattern for one query word (a piece from splitSearchWords). */
 export function buildSearchWordTerm(word: string): SearchWordTerm {
-  const nfc = word.normalize('NFC');
-  const stripped = removeVietnameseDiacritics(word);
-  const hasDiacritics = nfc.toLowerCase() !== stripped.toLowerCase();
-  const term = (hasDiacritics ? nfc : stripped).toLowerCase();
-  return { term, hasDiacritics, pattern: `% ${escapeLikePattern(term)}%` };
+  const term = foldSearchText(word);
+  return { term, pattern: `% ${escapeLikePattern(term)}%` };
 }
 
 /**
  * JS twin of projectSearchColumnSql(): the value as the database compares it.
- * (removeVietnameseDiacritics stands in for Postgres unaccent().)
+ * (foldSearchText stands in for lower(unaccent(normalize(..., NFC))).)
  */
-export function projectSearchValue(value: string | null | undefined, hasDiacritics: boolean): string {
-  const v = value || '';
-  const lowered = hasDiacritics ? v.normalize('NFC').toLowerCase() : removeVietnameseDiacritics(v).toLowerCase();
-  return ' ' + lowered.replace(SEPARATOR_RE, ' ');
+export function projectSearchValue(value: string | null | undefined): string {
+  return ' ' + foldSearchText(value || '').replace(SEPARATOR_RE, ' ');
 }
 
 /** Product text columns that search reads. */
 export type SearchTextColumn = 'name' | 'description';
 
-/** SQL projection of a text column, compared with `LIKE pattern`. The regex is a bound parameter. */
-export function projectSearchColumnSql(columnName: SearchTextColumn, hasDiacritics: boolean): Prisma.Sql {
+/**
+ * SQL projection of a text column, compared with `LIKE pattern`. The regex is a bound parameter.
+ * normalize(NFC) first so a name stored decomposed (NFD) is folded like a composed one.
+ */
+export function projectSearchColumnSql(columnName: SearchTextColumn): Prisma.Sql {
   const column = columnName === 'name' ? Prisma.raw('"name"') : Prisma.raw('"description"');
-  return hasDiacritics
-    ? Prisma.sql`(' ' || regexp_replace(lower(normalize(COALESCE(${column}, ''), NFC)), ${SEARCH_SEPARATOR_SQL_REGEX}, ' ', 'g'))`
-    : Prisma.sql`(' ' || regexp_replace(unaccent(lower(COALESCE(${column}, ''))), ${SEARCH_SEPARATOR_SQL_REGEX}, ' ', 'g'))`;
+  return Prisma.sql`(' ' || regexp_replace(lower(unaccent(normalize(COALESCE(${column}, ''), NFC))), ${SEARCH_SEPARATOR_SQL_REGEX}, ' ', 'g'))`;
 }
 
 /** PostgreSQL `value LIKE pattern` (default backslash escape), for tests and twins. */
@@ -106,8 +100,8 @@ export function likeMatches(value: string, pattern: string): boolean {
 
 /** True when `value` (a product name or description) matches the query word `word`. */
 export function searchValueMatches(value: string | null | undefined, word: string): boolean {
-  const { hasDiacritics, pattern } = buildSearchWordTerm(word);
-  return likeMatches(projectSearchValue(value, hasDiacritics), pattern);
+  const { pattern } = buildSearchWordTerm(word);
+  return likeMatches(projectSearchValue(value), pattern);
 }
 
 /** True when ALL query words match the product name (mirrors findMatchingProductIds). */
