@@ -2977,3 +2977,5 @@
 "BLOCK_PRICE_MISMATCH" = "Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.";
 "PRICING_TYPE_REQUIRES_UPDATE" = "Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.";
 "BLOCK_TABLE_INVALID" = "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.";
+"products.cart.confirm.more" = "+%d sản phẩm khác";
+"products.cart.confirm.more.one" = "+%d sản phẩm khác";

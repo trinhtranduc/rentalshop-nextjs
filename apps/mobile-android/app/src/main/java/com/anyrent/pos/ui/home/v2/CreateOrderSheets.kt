@@ -84,7 +84,14 @@ fun CreateOrderConfirmSheet(
                         confirm.range + " · " + pluralStringResource(R.plurals.v2_cart_days, confirm.days, confirm.days),
                     )
                 }
-                ConfirmRow(stringResource(R.string.v2_create_confirm_items), confirm.items)
+                ConfirmRow(
+                    stringResource(R.string.v2_create_confirm_items),
+                    if (confirm.moreCount > 0) {
+                        confirm.items + "\n" + pluralStringResource(R.plurals.v2_create_confirm_more, confirm.moreCount, confirm.moreCount)
+                    } else {
+                        confirm.items
+                    },
+                )
                 ConfirmRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(confirm.total), bold = true)
             }
             if (overlapLines.isNotEmpty()) {

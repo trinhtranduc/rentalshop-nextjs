@@ -1259,12 +1259,27 @@ extension ProductsV2Tests {
         XCTAssertEqual(confirm.customer, "Trần Văn Minh")
         XCTAssertEqual(confirm.range, "03/10/26 → 05/10/26")
         XCTAssertEqual(confirm.days, 3)
-        XCTAssertEqual(confirm.items, "Vest đen slim fit, Áo dài lụa đỏ ×2")
+        XCTAssertEqual(confirm.items, "Vest đen slim fit", "the sheet shows the first product only (#1239)")
+        XCTAssertEqual(confirm.moreCount, 1)
         XCTAssertEqual(confirm.total, cart.totalAmount)
         XCTAssertEqual(confirm.total, 750_000)
         XCTAssertEqual(confirm.collect, cart.depositAmount, "rent collects the prepaid deposit")
         XCTAssertEqual(confirm.titleKey, "products.cart.confirm.rentTitle")
         XCTAssertEqual(confirm.collectKey, "products.cart.confirm.collectDeposit")
+    }
+
+    func testBigCartShowsOneProductAndTheNumberOfTheOthers() throws {
+        let cart = try rentCart()
+        for index in 3...15 {
+            cart.addItem(CartItem(productId: index, productName: "Sản phẩm \(index)", barcode: nil, quantity: 1, price: 100_000, deposit: 0,
+                                  originalRentPrice: 100_000, originalSalePrice: 0))
+        }
+        let confirm = CreateOrderSheetLogic.confirm(cart, timeZone: vn)
+        XCTAssertEqual(confirm.items, "Vest đen slim fit")
+        XCTAssertEqual(confirm.moreCount, 14)
+        let single = try rentCart()
+        single.removeItem(at: 1)
+        XCTAssertEqual(CreateOrderSheetLogic.confirm(single, timeZone: vn).moreCount, 0)
     }
 
     func testSaleConfirmSheetCollectsTheAmountDue() throws {

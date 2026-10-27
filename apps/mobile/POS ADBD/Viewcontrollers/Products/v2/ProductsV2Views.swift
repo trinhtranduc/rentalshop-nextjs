@@ -560,7 +560,11 @@ final class CreateOrderConfirmSheet: V2FittingSheet {
             rows.addArrangedSubview(row("products.cart.confirm.dates".localized(),
                                         range + " · " + PluralText.format("products.cart.days", count: days, days)))
         }
-        rows.addArrangedSubview(row("products.cart.confirm.items".localized(), confirm.items))
+        var itemsText = confirm.items
+        if confirm.moreCount > 0 {
+            itemsText += "\n" + PluralText.format("products.cart.confirm.more", count: confirm.moreCount, confirm.moreCount)
+        }
+        rows.addArrangedSubview(row("products.cart.confirm.items".localized(), itemsText))
         rows.addArrangedSubview(row("products.cart.total".localized(), MoneyFormatter.format(confirm.total), bold: true))
         stack.addArrangedSubview(rows)
         if !overlapWarnings.isEmpty {
