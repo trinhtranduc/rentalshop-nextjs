@@ -589,6 +589,97 @@ final class OverviewDashLogicTests: XCTestCase {
         XCTAssertNil(try decode(TodayWork.self, #"{"pickupsToday":{"count":0,"orders":[]},"returnsToday":{"count":0,"orders":[]},"overdueReturns":{"count":0,"orders":[]},"noShows":{"count":0,"orders":[]}}"#).collateralHeld)
     }
 
+    // MARK: - #1273 Thế chân: two sections (Đang giữ / Phát sinh hôm nay)
+
+    /// The mockup example: 16 orders held (16.200.000), 8 received (+6.400.000), 2 returned (−4.000.000)
+    private func collateralExample() -> (held: [OverviewRelatedRow], flow: [OverviewRelatedRow]) {
+        func row(_ id: Int, _ amount: Double, held: Bool) -> OverviewRelatedRow {
+            OverviewRelatedRow(orderId: id, orderNumber: "\(id)", customer: "", detail: "", amount: amount, held: held)
+        }
+        let heldAmounts: [Double] = [2_000_000, 1_000_000, 1_000_000, 500_000, 500_000, 800_000, 500_000, 500_000,
+                                     500_000, 400_000, 1_500_000, 2_500_000, 1_000_000, 1_500_000, 1_500_000, 500_000]
+        let held = heldAmounts.enumerated().map { row(100 + $0.offset, $0.element, held: true) }
+        // order 103 (= 490268 in the mockup) is held AND received today
+        let flow = [row(111, 2_500_000, held: false), row(103, 500_000, held: false), row(121, -3_000_000, held: false),
+                    row(122, 500_000, held: false), row(123, 500_000, held: false), row(124, 500_000, held: false),
+                    row(125, 500_000, held: false), row(126, 1_000_000, held: false), row(127, 400_000, held: false),
+                    row(128, -1_000_000, held: false)]
+        return (held, flow)
+    }
+
+    func testCollateralSectionsSplitAndTotals() {
+        let (held, flow) = collateralExample()
+        let s = OverviewDashLogic.collateralSections(held: held, heldCount: 16, rows: held + flow)
+        XCTAssertEqual(s.held.count, 16)
+        XCTAssertEqual(s.heldTotal, 16_200_000)
+        XCTAssertEqual(s.heldOrders, 16)
+        XCTAssertTrue(s.heldTotalKnown)
+        XCTAssertEqual(s.received.count, 8)
+        XCTAssertEqual(s.returned.count, 2)
+        XCTAssertEqual(s.receivedTotal, 6_400_000)
+        XCTAssertEqual(s.receivedOrders, 8)
+        XCTAssertEqual(s.returnedTotal, 4_000_000)
+        XCTAssertEqual(s.returnedOrders, 2)
+        XCTAssertEqual(s.net, 2_400_000)
+        // Nhận rows first, then Trả rows (as the mockup); held rows never in the flow sections
+        XCTAssertEqual((s.received + s.returned).map(\.amount).map { $0 > 0 }, Array(repeating: true, count: 8) + [false, false])
+        XCTAssertTrue((s.received + s.returned).allSatisfy { !$0.held })
+    }
+
+    /// An order in both sections counts once in each; the sections never add up to each other
+    func testCollateralSectionsNeverCrossAdd() {
+        let (held, flow) = collateralExample()
+        let s = OverviewDashLogic.collateralSections(held: held, heldCount: 16, rows: held + flow)
+        XCTAssertNotEqual(s.heldTotal + s.net, s.heldTotal)
+        XCTAssertEqual(s.heldTotal, 16_200_000, "held total ignores the flow rows")
+        XCTAssertEqual(s.net, s.receivedTotal - s.returnedTotal, "net ignores the held rows")
+        XCTAssertTrue(s.held.contains { $0.orderId == 103 })
+        XCTAssertTrue(s.received.contains { $0.orderId == 103 })
+    }
+
+    /// The same order received on two days of a period counts as one order, the money counts twice
+    func testCollateralSectionsCountDistinctOrders() {
+        func row(_ id: Int, _ amount: Double) -> OverviewRelatedRow {
+            OverviewRelatedRow(orderId: id, orderNumber: "\(id)", customer: "", detail: "", amount: amount)
+        }
+        let s = OverviewDashLogic.collateralSections(held: [], heldCount: 0, rows: [row(1, 300), row(1, 200), row(2, -100)])
+        XCTAssertEqual(s.receivedTotal, 500)
+        XCTAssertEqual(s.receivedOrders, 1)
+        XCTAssertEqual(s.returnedOrders, 1)
+        XCTAssertEqual(s.net, 400)
+    }
+
+    /// Held list cut by the API limit (500): never show a wrong total
+    func testCollateralHeldTotalHiddenWhenTheListIsCut() {
+        let (held, _) = collateralExample()
+        let cut = OverviewDashLogic.collateralSections(held: held, heldCount: 600, rows: held)
+        XCTAssertFalse(cut.heldTotalKnown)
+        XCTAssertEqual(cut.heldOrders, 600)
+        XCTAssertTrue(OverviewDashLogic.collateralSections(held: held, heldCount: nil, rows: held).heldTotalKnown)
+    }
+
+    func testCollateralFlowIsTodayOnlyForTheOneDayRangeOfToday() {
+        let today = DayKeyRange(start: "2026-10-27", end: "2026-10-27")
+        XCTAssertTrue(OverviewDashLogic.collateralFlowIsToday(range: today, todayKey: "2026-10-27"))
+        XCTAssertFalse(OverviewDashLogic.collateralFlowIsToday(range: today, todayKey: "2026-10-28"))
+        XCTAssertFalse(OverviewDashLogic.collateralFlowIsToday(range: DayKeyRange(start: "2026-10-21", end: "2026-10-27"), todayKey: "2026-10-27"))
+        XCTAssertEqual(OverviewDashLogic.dayMonth("2026-10-27"), "27/10")
+    }
+
+    func testCollateralSectionStringsExistInEnglishAndVietnamese() throws {
+        let keys = ["overview.related.collateral.note", "overview.related.collateral.note.period",
+                    "overview.related.collateral.held.title", "overview.related.collateral.held.hint", "overview.related.collateral.held.total",
+                    "overview.related.collateral.flow.title", "overview.related.collateral.flow.title.period",
+                    "overview.related.collateral.flow.hint", "overview.related.collateral.flow.hint.period",
+                    "overview.related.collateral.flow.in", "overview.related.collateral.flow.out",
+                    "overview.related.collateral.flow.net", "overview.related.collateral.flow.net.period"]
+        for code in ["en", "vi-VN"] {
+            let path = try XCTUnwrap(Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: code))
+            let dict = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
+            for key in keys { XCTAssertNotNil(dict[key], "\(code) \(key)") }
+        }
+    }
+
     // MARK: - #1059 Đơn tạo hôm nay
 
     func testTopCardsHideOnlyOnARangeOfExactlyToday() {
