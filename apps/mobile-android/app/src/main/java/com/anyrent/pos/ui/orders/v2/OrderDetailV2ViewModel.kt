@@ -28,6 +28,9 @@ interface OrderDetailSource {
     /** RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427) */
     suspend fun handOver(id: Int, fields: HandOverFields): Result<Unit>
     suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double): Result<Unit>
+    /** #1279: papers and collateral after pick-up, status unchanged */
+    suspend fun saveCollateral(id: Int, fields: HandOverFields): Result<Unit> =
+        Result.failure(UnsupportedOperationException())
     /** "Sẵn sàng giao" (#470): the same `PUT /api/orders/{id}` the old detail sends */
     suspend fun setReadyToDeliver(id: Int, ready: Boolean): Result<Unit>
     suspend fun saveNotes(
@@ -50,6 +53,9 @@ object ApiOrderDetailSource : OrderDetailSource {
 
     override suspend fun handOver(id: Int, fields: HandOverFields) =
         withContext(Dispatchers.IO) { ApiClient.get().updateOrderStatus(id, "PICKUPED", fields).map { } }
+
+    override suspend fun saveCollateral(id: Int, fields: HandOverFields) =
+        withContext(Dispatchers.IO) { ApiClient.get().updateOrderCollateral(id, fields) }
 
     override suspend fun saveFees(id: Int, lateFee: Double, damageFee: Double) =
         withContext(Dispatchers.IO) { ApiParity.updateOrderFees(id, lateFee, damageFee) }
@@ -138,6 +144,10 @@ class OrderDetailV2ViewModel(
     /** Hand-over: papers and deposit are optional; empty fields still hand the order over (#427) */
     fun handOver(fields: HandOverFields, onDone: (Boolean) -> Unit = {}) =
         runStatusChange(onDone) { source.handOver(orderId, fields) }
+
+    /** #1279: edit papers and collateral of a picked-up order; the money at return is read again from the reloaded order */
+    fun saveCollateral(fields: HandOverFields, onDone: (Boolean) -> Unit = {}) =
+        runStatusChange(onDone) { source.saveCollateral(orderId, fields) }
 
     private fun runStatusChange(onDone: (Boolean) -> Unit, call: suspend () -> Result<Unit>) {
         if (_state.value.busy) return

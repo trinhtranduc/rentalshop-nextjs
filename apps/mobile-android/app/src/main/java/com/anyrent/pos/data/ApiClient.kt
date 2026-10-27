@@ -526,6 +526,17 @@ class ApiClient(
         parseOrderSummary(data)
     }
 
+    /** #1279: papers and collateral of a picked-up order; `PUT /api/orders/{id}` without a status */
+    fun updateOrderCollateral(id: Int, fields: HandOverFields): Result<Unit> = runCatching {
+        val body = JSONObject().apply {
+            fields.collateralType?.let { put("collateralType", it) }
+            fields.collateralDetails?.let { put("collateralDetails", it) }
+            fields.securityDeposit?.let { put("securityDeposit", it) }
+        }.toString().toRequestBody(jsonMedia)
+        val json = execute(put("$baseUrl/api/orders/$id", body))
+        requireSuccess(json)
+    }
+
     fun updateOrderNotes(id: Int, notes: String): Result<Unit> = runCatching {
         val body = JSONObject().put("notes", notes).toString().toRequestBody(jsonMedia)
         execute(put("$baseUrl/api/orders/$id", body))

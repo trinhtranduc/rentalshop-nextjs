@@ -2341,4 +2341,9 @@
     <string name="overview_v2_related_collateral_flow_net">Shop holds more today: %1$s</string>
     <string name="overview_v2_related_collateral_flow_net_period">Shop holds more in the period: %1$s</string>
     <string name="overview_v2_related_collateral_held_row">Of an order not yet returned</string>
+    <string name="detail_collateral_card">Papers &amp; collateral</string>
+    <string name="detail_collateral_edit">Edit</string>
+    <string name="detail_collateral_none">Not entered</string>
+    <string name="detail_collateral_edit_title">Edit papers &amp; collateral</string>
+    <string name="detail_collateral_edit_warning">Changing the collateral changes the amount to give back at return</string>
 </resources>

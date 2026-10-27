@@ -169,6 +169,22 @@ object OrderDetailLogic {
         )
     }
 
+    /** #1279: papers and collateral can be edited after pick-up (rent, PICKUPED); the API checks `orders.update` and the outlet */
+    fun canEditCollateral(orderType: String, status: String, canUpdateOrders: Boolean): Boolean {
+        val st = status.uppercase().let { if (it == "PICKED_UP") "PICKUPED" else it }
+        return canUpdateOrders && orderType.equals("RENT", ignoreCase = true) && st == "PICKUPED"
+    }
+
+    /** #1279 card line "CCCD · 500.000"; null when nothing is saved */
+    fun collateralSummary(papers: String?, securityDeposit: Double, format: (Double) -> String): String? {
+        val parts = listOfNotNull(papers?.trim()?.takeIf { it.isNotEmpty() }, securityDeposit.takeIf { it > 0 }?.let(format))
+        return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+    }
+
+    /** #1279 body of `PUT /api/orders/{id}` from the edit sheet: the hand-over fields, no status */
+    fun collateralEditFields(papers: String, securityDeposit: Double, currentPapers: String?, currentDeposit: Double) =
+        handOverFields(papers, securityDeposit, currentPapers, currentDeposit)
+
     fun returnMoney(
         lateFee: Double,
         damageFee: Double,
