@@ -86,11 +86,15 @@ final class CartV2ViewController: BaseViewControler {
 
     /// #684: the cart tag "Trùng đơn ngày …" → Lịch trống of that product on the first clashing day
     private func openConflictDay(_ conflict: CartScheduleConflict) {
-        ProductService.shared.loadProduct(productId: conflict.productId) { [weak self] product, _ in
+        openProductCalendar(productId: conflict.productId, focusDay: ScheduleConflictLogic.focusDay(conflict))
+    }
+
+    /// #1241 (owner): a tap on "Còn N" / "Hết" opens that product's Lịch trống, the screen the overlap tag opens
+    private func openProductCalendar(productId: Int, focusDay: String?) {
+        ProductService.shared.loadProduct(productId: productId) { [weak self] product, _ in
             DispatchQueue.main.async {
                 guard let self, let product else { return }
-                let calendar = ProductCalendarViewController(product: product, orders: nil,
-                                                             focusDay: ScheduleConflictLogic.focusDay(conflict))
+                let calendar = ProductCalendarViewController(product: product, orders: nil, focusDay: focusDay)
                 calendar.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(calendar, animated: true)
             }
@@ -675,6 +679,7 @@ final class CartV2ViewController: BaseViewControler {
         let nameRow = UIStackView(arrangedSubviews: [name])
         nameRow.alignment = .top
         nameRow.spacing = 8
+        name.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal) // #1241: spare width goes to the name, never the chip
         let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
         // #1189: "Khối 3 ngày + 2 ngày thêm · 160.000đ" and under it the sum "120.000 (3 ngày) + 2 × 20.000 = 160.000"
         if cart.orderType == .rent, let detail = item.blockDetail, detail.extraDays > 0 {
@@ -702,7 +707,9 @@ final class CartV2ViewController: BaseViewControler {
             // #1132 (owner, mockup A): a soft pill in the tone's fill, a dot in the text colour, then the text
             let status = Self.stockPill(text: note.text, tone: note.tone)
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
-            // right-aligned: the name takes the free width, the status sits on the trailing edge
+            status.accessibilityTraits = UIAccessibilityTraitButton // #1241: it opens the product
+            status.addAction(UIAction { [weak self] _ in self?.openProductCalendar(productId: item.productId, focusDay: nil) }, for: .touchUpInside)
+            // #1241 (owner): stays on the right; the pill is exactly as wide as its text, the name takes the rest
             nameRow.addArrangedSubview(status)
         }
 
@@ -1351,7 +1358,7 @@ extension CartV2ViewController {
     /// 7 pt dot in the text colour before the text. A UIControl so the overlap tag can take a tap.
     static func stockPill(text: String, tone: CartV2Logic.ShortageTone) -> UIControl {
         let style = shortageStyle(tone)
-        let pill = UIControl()
+        let pill = PillControl()
         pill.backgroundColor = style.colors.fill
         pill.isAccessibilityElement = true
         pill.accessibilityLabel = text
@@ -1367,12 +1374,35 @@ extension CartV2ViewController {
         row.alignment = .center
         row.isUserInteractionEnabled = false
         pill.addSubview(row)
-        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)) }
+        let insets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)
+        pill.fitting = row
+        pill.insets = insets
+        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(insets) }
         pill.setContentHuggingPriority(.required, for: .horizontal)
+        pill.setContentHuggingPriority(.required, for: .vertical)
         pill.setContentCompressionResistancePriority(.required, for: .horizontal)
         pill.layer.cornerRadius = (ceil(label.font.lineHeight) + 6) / 2
         pill.clipsToBounds = true
         return pill
+    }
+}
+
+/// #1241: the cart's stock chip is about 20 pt high; the touch area grows to 44 pt without changing the look
+/// #1241: and its width is the text's: a UIControl has no intrinsic size of its own, so the stack gave it the spare width
+/// and the pill's fill ran past the text. `fitting` is the dot + label row, `insets` the pill padding
+final class PillControl: UIControl {
+    var fitting: UIView?
+    var insets = UIEdgeInsets.zero
+
+    override var intrinsicContentSize: CGSize {
+        guard let fitting else { return super.intrinsicContentSize }
+        let size = fitting.systemLayoutSizeFitting(UILayoutFittingCompressedSize)
+        return CGSize(width: ceil(size.width) + insets.left + insets.right, height: ceil(size.height) + insets.top + insets.bottom)
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dy = max(0, (44 - bounds.height) / 2), dx = max(0, (44 - bounds.width) / 2)
+        return bounds.insetBy(dx: -dx, dy: -dy).contains(point)
     }
 }
 
