@@ -2318,4 +2318,5 @@
     <string name="overview_v2_related_collateral_flow_out">Trả khi nhận đồ: %1$s (%2$d đơn)</string>
     <string name="overview_v2_related_collateral_flow_net">Hôm nay shop giữ thêm: %1$s</string>
     <string name="overview_v2_related_collateral_flow_net_period">Trong kỳ shop giữ thêm: %1$s</string>
+    <string name="overview_v2_related_collateral_held_row">Của đơn chưa trả đồ</string>
 </resources>

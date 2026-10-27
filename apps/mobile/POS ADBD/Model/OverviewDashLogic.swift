@@ -425,7 +425,7 @@ struct OverviewRelatedRow: Equatable {
     let orderId: Int
     let orderNumber: String
     let customer: String
-    let detail: String
+    var detail: String
     let amount: Double
     /// #938: an order whose collateral is held now (Thế chân); listed, not part of the period total
     var held = false

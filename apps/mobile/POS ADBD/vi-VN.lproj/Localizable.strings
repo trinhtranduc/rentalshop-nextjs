@@ -3030,3 +3030,4 @@
 "overview.related.collateral.flow.out" = "Trả khi nhận đồ: %@ (%d đơn)";
 "overview.related.collateral.flow.net" = "Hôm nay shop giữ thêm: %@";
 "overview.related.collateral.flow.net.period" = "Trong kỳ shop giữ thêm: %@";
+"overview.related.collateral.held.row" = "Của đơn chưa trả đồ";

@@ -345,6 +345,7 @@
       "sectionNote": "Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là hôm nay thu hoặc trả bao nhiêu. Hai số không cộng với nhau.",
       "sectionNotePeriod": "Cùng một đơn có thể hiện ở cả hai phần: phần trên là đang cầm bao nhiêu, phần dưới là trong kỳ này thu hoặc trả bao nhiêu. Hai số không cộng với nhau.",
       "heldTitle": "Đang giữ thế chân",
+      "heldRow": "Của đơn chưa trả đồ",
       "heldHint": "Tiền thế chân shop đang cầm của các đơn chưa trả đồ.",
       "heldTotal": "Tổng đang giữ: {total} · {count} đơn",
       "flowTitle": "Phát sinh hôm nay ({day})",

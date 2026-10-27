@@ -446,7 +446,7 @@ describe('#1273 Thế chân in two sections', () => {
   });
 
   it('has the new strings in en and vi (dashboard.json exists only for these two)', () => {
-    const keys = ['sectionNote', 'sectionNotePeriod', 'heldTitle', 'heldHint', 'heldTotal', 'flowTitle', 'flowTitlePeriod', 'flowHint', 'flowHintPeriod', 'flowIn', 'flowOut', 'flowNet', 'flowNetPeriod'];
+    const keys = ['sectionNote', 'sectionNotePeriod', 'heldTitle', 'heldHint', 'heldRow', 'heldTotal', 'flowTitle', 'flowTitlePeriod', 'flowHint', 'flowHintPeriod', 'flowIn', 'flowOut', 'flowNet', 'flowNetPeriod'];
     for (const lang of ['en', 'vi']) {
       const json = JSON.parse(readFileSync(join(__dirname, '..', 'locales', lang, 'dashboard.json'), 'utf8'));
       const related = (json.home ?? json).related;

@@ -3032,3 +3032,4 @@
 "overview.related.collateral.flow.out" = "Returned at return: %@ (%d orders)";
 "overview.related.collateral.flow.net" = "Shop holds more today: %@";
 "overview.related.collateral.flow.net.period" = "Shop holds more in the period: %@";
+"overview.related.collateral.held.row" = "Of an order not yet returned";

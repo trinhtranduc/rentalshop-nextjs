@@ -345,6 +345,7 @@
       "sectionNote": "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.",
       "sectionNotePeriod": "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.",
       "heldTitle": "Collateral held",
+      "heldRow": "Of an order not yet returned",
       "heldHint": "Collateral the shop holds for orders not yet returned.",
       "heldTotal": "Total held: {total} · {count} orders",
       "flowTitle": "Moved today ({day})",

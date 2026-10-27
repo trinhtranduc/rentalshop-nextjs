@@ -220,7 +220,7 @@ private fun CollateralTwoParts(
             SectionHeader(stringResource(R.string.overview_v2_related_collateral_held_title), stringResource(R.string.overview_v2_related_collateral_held_hint))
         }
         itemsIndexed(s.held, key = { index, row -> "held-$index-${row.id}" }) { _, row ->
-            RelatedRowItem(row, signed = false, onClick = { onOpenOrder(row.id) })
+            RelatedRowItem(row, signed = false, heldInSection = true, onClick = { onOpenOrder(row.id) })
             HorizontalDivider(color = DS.Colors.Border)
         }
         item(key = "held-total") {
@@ -280,14 +280,14 @@ private fun formatAmount(amount: Double, signed: Boolean): String = when {
 }
 
 @Composable
-private fun RelatedRowItem(row: RelatedRow, signed: Boolean, onClick: () -> Unit) {
+private fun RelatedRowItem(row: RelatedRow, signed: Boolean, onClick: () -> Unit, heldInSection: Boolean = false) {
     val detail = when (row.note) {
         RelatedNote.CREATED -> stringResource(R.string.overview_v2_related_created)
         RelatedNote.CANCELLED -> stringResource(R.string.overview_v2_related_cancelled)
         RelatedNote.OWES -> stringResource(R.string.overview_v2_related_owes)
         RelatedNote.COLLATERAL_IN -> stringResource(R.string.overview_v2_related_collateral_in)
         RelatedNote.COLLATERAL_OUT -> stringResource(R.string.overview_v2_related_collateral_out)
-        RelatedNote.HELD -> stringResource(R.string.overview_v2_related_collateral_held)
+        RelatedNote.HELD -> stringResource(if (heldInSection) R.string.overview_v2_related_collateral_held_row else R.string.overview_v2_related_collateral_held)
         RelatedNote.EVENT ->
             if (row.reasons.isEmpty()) row.description
             else row.reasons.map { part -> part.reason?.let { stringResource(it.res) } ?: part.text }.joinToString(" + ")

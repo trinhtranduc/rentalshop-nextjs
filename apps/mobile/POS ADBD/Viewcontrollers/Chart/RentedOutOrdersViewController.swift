@@ -552,7 +552,12 @@ final class OverviewRelatedOrdersViewController: UIViewController, UITableViewDa
         func signed(_ n: Double) -> String { (n < 0 ? "−" : "+") + MoneyFormatter.format(abs(n)) }
         var out: [Item] = [.note((today ? "overview.related.collateral.note" : "overview.related.collateral.note.period").localized())]
         out.append(.section(title: "overview.related.collateral.held.title".localized(), hint: "overview.related.collateral.held.hint".localized()))
-        out += s.held.map { .row($0) }
+        let heldRow = "overview.related.collateral.held.row".localized()
+        out += s.held.map { row in
+            var r = row
+            r.detail = heldRow
+            return .row(r)
+        }
         let heldMoney = s.heldTotalKnown ? MoneyFormatter.format(s.heldTotal) : "—"
         out.append(.total(text: String(format: "overview.related.collateral.held.total".localized(), heldMoney, s.heldOrders), id: "related.held.total"))
         let dayText: String

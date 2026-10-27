@@ -668,7 +668,7 @@ final class OverviewDashLogicTests: XCTestCase {
 
     func testCollateralSectionStringsExistInEnglishAndVietnamese() throws {
         let keys = ["overview.related.collateral.note", "overview.related.collateral.note.period",
-                    "overview.related.collateral.held.title", "overview.related.collateral.held.hint", "overview.related.collateral.held.total",
+                    "overview.related.collateral.held.title", "overview.related.collateral.held.hint", "overview.related.collateral.held.row", "overview.related.collateral.held.total",
                     "overview.related.collateral.flow.title", "overview.related.collateral.flow.title.period",
                     "overview.related.collateral.flow.hint", "overview.related.collateral.flow.hint.period",
                     "overview.related.collateral.flow.in", "overview.related.collateral.flow.out",

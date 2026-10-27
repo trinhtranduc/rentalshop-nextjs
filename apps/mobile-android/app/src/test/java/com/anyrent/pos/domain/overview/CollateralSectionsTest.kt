@@ -84,7 +84,7 @@ class CollateralSectionsTest {
 
     private val keys = listOf(
         "overview_v2_related_collateral_note", "overview_v2_related_collateral_note_period",
-        "overview_v2_related_collateral_held_title", "overview_v2_related_collateral_held_hint", "overview_v2_related_collateral_held_total",
+        "overview_v2_related_collateral_held_title", "overview_v2_related_collateral_held_hint", "overview_v2_related_collateral_held_row", "overview_v2_related_collateral_held_total",
         "overview_v2_related_collateral_flow_title", "overview_v2_related_collateral_flow_title_period",
         "overview_v2_related_collateral_flow_hint", "overview_v2_related_collateral_flow_hint_period",
         "overview_v2_related_collateral_flow_in", "overview_v2_related_collateral_flow_out",

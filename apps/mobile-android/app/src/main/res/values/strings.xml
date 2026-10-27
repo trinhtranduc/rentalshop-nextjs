@@ -2348,4 +2348,5 @@
     <string name="overview_v2_related_collateral_flow_out">Returned at return: %1$s (%2$d orders)</string>
     <string name="overview_v2_related_collateral_flow_net">Shop holds more today: %1$s</string>
     <string name="overview_v2_related_collateral_flow_net_period">Shop holds more in the period: %1$s</string>
+    <string name="overview_v2_related_collateral_held_row">Of an order not yet returned</string>
 </resources>

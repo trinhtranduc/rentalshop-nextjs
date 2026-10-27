@@ -114,7 +114,7 @@ function CollateralTwoParts({ rows, heldCount, from, to, todayKey, t, money }: {
         <table className="w-full border-collapse text-sm">
           {head(t('home.related.heldTitle'), t('home.related.heldHint'), 'held')}
           <tbody>
-            {s.held.map((r, i) => line(r, i, '', t('home.related.note.held')))}
+            {s.held.map((r, i) => line(r, i, '', t('home.related.heldRow')))}
             {total(t('home.related.heldTotal', { total: s.heldTotalKnown ? money(s.heldTotal) : '—', count: s.heldOrders }), 'held')}
           </tbody>
           {head(today ? t('home.related.flowTitle', { day: dayMonth(from) }) : t('home.related.flowTitlePeriod', { range }), t(today ? 'home.related.flowHint' : 'home.related.flowHintPeriod'), 'flow')}
