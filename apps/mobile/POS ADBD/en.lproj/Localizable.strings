@@ -2828,9 +2828,6 @@
 "deposit.mode.oneTime.detail" = "One deposit when ordering, the sum of each product's deposit. The rest is collected at hand-over.";
 "deposit.mode.staged" = "Staged deposit";
 "deposit.mode.staged.detail" = "Split the deposit into stages as a % of the order. The rest is collected at hand-over.";
-"deposit.warning.oldApps" = "Staff on an older app will still collect the deposit per product. Update the app before turning this on.";
-"deposit.enable.title" = "Turn on staged deposits?";
-"deposit.enable.confirm" = "Turn on";
 "deposit.ownerOnly" = "Only the shop owner can change how deposits are collected.";
 "deposit.footnote.newOrdersOnly" = "Only affects orders created after the change. Existing orders stay as they are.";
 "deposit.oneTime.readOnly" = "Two collection steps (read only)";

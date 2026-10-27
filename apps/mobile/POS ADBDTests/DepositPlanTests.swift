@@ -325,14 +325,12 @@ final class DepositPlanTests: XCTestCase {
     // MARK: Strings
 
     func testStringsExistInBothLanguages() throws {
-        let keys = ["deposit.settings.title", "deposit.warning.oldApps", "deposit.cart.createAndCollect", "deposit.card.collectStage",
+        let keys = ["deposit.settings.title", "deposit.cart.createAndCollect", "deposit.card.collectStage",
                     "deposit.cancel.kept", "overview.installments.today", "INSTALLMENT_UNPAID_AT_PICKUP", "CANCEL_AMOUNTS_MISMATCH"]
         for language in ["en", "vi-VN"] {
             let path = try XCTUnwrap(Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: language))
             let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
             for key in keys { XCTAssertNotNil(table[key], "\(language) \(key)") }
         }
-        let vi = try XCTUnwrap(NSDictionary(contentsOfFile: try XCTUnwrap(Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: "vi-VN"))) as? [String: String])
-        XCTAssertEqual(vi["deposit.warning.oldApps"], "Nhân viên đang dùng app cũ sẽ vẫn thu cọc theo sản phẩm. Hãy cập nhật app trước khi bật.")
     }
 }

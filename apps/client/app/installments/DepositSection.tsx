@@ -11,7 +11,7 @@ import React, { useEffect, useId, useMemo, useState } from 'react';
 import { useToast } from '@rentalshop/ui';
 import { installmentsApi, type DepositMode, type DepositSettings, type DepositTemplate } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
-import { Modal, fieldClass } from '../orders/create/parts';
+import { fieldClass } from '../orders/create/parts';
 import {
   DUE_PRESETS,
   dueOptionsFor,
@@ -162,7 +162,6 @@ export function DepositSection({ t }: { t: T }) {
   const [policy, setPolicy] = useState('');
   const [open, setOpen] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [confirm, setConfirm] = useState(false);
 
   const load = (s: DepositSettings) => {
     setMode(s.depositMode);
@@ -174,14 +173,12 @@ export function DepositSection({ t }: { t: T }) {
     // Loaded once per answer from the server
   }, [settings]);
 
-  const saved = settings?.depositMode ?? 'ONE_TIME';
   const baseline = useMemo(
     () => (settings ? JSON.stringify({ m: settings.depositMode, t: templatesOf(settings), p: settings.cancellationPolicy || '' }) : ''),
     [settings]
   );
   const dirty = !!settings && JSON.stringify({ m: mode, t: templates, p: policy }) !== baseline;
   const invalid = mode === 'STAGED' && templates.some((x) => templateProblem(x) !== null);
-  const enabling = mode === 'STAGED' && saved === 'ONE_TIME';
 
   if (loading && !settings) return <Skeleton className="h-[320px] w-full" />;
   if (!settings) {
@@ -203,7 +200,6 @@ export function DepositSection({ t }: { t: T }) {
       if (!res.success || !res.data) throw new Error(res.error || '');
       setSettings(res.data);
       load(res.data);
-      setConfirm(false);
       toastSuccess(td('saved'));
     } catch (e) {
       toastError(td('saveFailed'), e instanceof Error && e.message ? e.message : '');
@@ -258,12 +254,6 @@ export function DepositSection({ t }: { t: T }) {
 
       {mode === 'STAGED' && (
         <>
-          {enabling && (
-            <p role="alert" className="m-0 flex items-start gap-2 rounded-xl border border-ar-unprepared bg-ar-unprepared-bg px-3.5 py-3 text-sm font-medium text-ar-unprepared" data-deposit-warning>
-              <span aria-hidden="true">⚠</span>
-              {td('oldAppWarning')}
-            </p>
-          )}
           <div className="flex flex-col gap-2">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="m-0 text-sm font-bold text-ar-ink-2">{td('templates')}</h3>
@@ -343,29 +333,10 @@ export function DepositSection({ t }: { t: T }) {
         <button type="button" className={outlineBtn} disabled={!dirty || saving} onClick={() => load(settings)}>
           {td('cancel')}
         </button>
-        <button type="button" className={primaryBtn} disabled={!dirty || saving || invalid} onClick={() => (enabling ? setConfirm(true) : void save())}>
+        <button type="button" className={primaryBtn} disabled={!dirty || saving || invalid} onClick={() => void save()}>
           {saving ? td('saving') : td('save')}
         </button>
       </div>
-
-      <Modal
-        open={confirm}
-        title={td('confirmTitle')}
-        onClose={() => !saving && setConfirm(false)}
-        closeLabel={td('close')}
-        footer={
-          <>
-            <button type="button" className={outlineBtn} disabled={saving} onClick={() => setConfirm(false)}>
-              {td('cancel')}
-            </button>
-            <button type="button" className={primaryBtn} disabled={saving} onClick={() => void save()}>
-              {saving ? td('saving') : td('confirmOk')}
-            </button>
-          </>
-        }
-      >
-        <p className="m-0 text-[15px] text-ar-ink-2">{td('oldAppWarning')}</p>
-      </Modal>
     </section>
   );
 }
