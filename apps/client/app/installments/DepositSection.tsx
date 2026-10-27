@@ -282,7 +282,7 @@ export function DepositSection({ t }: { t: T }) {
                     >
                       <span className="flex min-w-0 flex-col">
                         <span className="font-semibold text-ar-ink">{template.name}</span>
-                        <span className="truncate text-xs text-ar-muted">{templateSummary(template, td)}</span>
+                        <span className="break-words text-xs text-ar-muted">{templateSummary(template, td)}</span>
                       </span>
                       <span className="flex flex-none items-center gap-2">
                         {template.isDefault && <span className="rounded-full bg-ar-done-bg px-2.5 py-0.5 text-xs font-semibold text-ar-done">{td('default')}</span>}

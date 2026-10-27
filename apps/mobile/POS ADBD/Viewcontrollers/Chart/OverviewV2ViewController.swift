@@ -723,14 +723,16 @@ final class OverviewV2ViewController: BaseViewControler {
     }
 
     private func installmentRow(_ row: InstallmentReminderRow, tomorrow: Bool) -> UIView {
-        let name = OVFont.label((row.customerName ?? "").isEmpty ? "#" + OrdersHomeLogic.shortNumber(row.orderNumber) : row.customerName!,
-                                DS.TextSize.body, .semibold, lines: 0)
+        let name = DepositUI.wrapping(OVFont.label((row.customerName ?? "").isEmpty ? "#" + OrdersHomeLogic.shortNumber(row.orderNumber) : row.customerName!,
+                                                   DS.TextSize.body, .semibold, lines: 0))
         let detail = String(format: "overview.installments.row".localized(), row.label, OrdersHomeLogic.shortNumber(row.orderNumber))
-        let sub = OVFont.label(detail, DS.TextSize.pill, color: OVColor.muted, lines: 0)
+        let sub = DepositUI.wrapping(OVFont.label(detail, DS.TextSize.pill, color: OVColor.muted, lines: 0))
         let texts = UIStackView(arrangedSubviews: [name, sub])
         texts.axis = .vertical
         texts.spacing = 2
-        var right: [UIView] = [OVFont.label(MoneyFormatter.format(row.remaining), DS.TextSize.body, .semibold)]
+        let money = OVFont.label(MoneyFormatter.format(row.remaining), DS.TextSize.body, .semibold)
+        money.setContentCompressionResistancePriority(.required, for: .horizontal)
+        var right: [UIView] = [money]
         if row.lateDays > 0 {
             right.append(DepositUI.pill(String(format: "deposit.status.late".localized(), row.lateDays), DS.Status.late))
         } else if tomorrow {

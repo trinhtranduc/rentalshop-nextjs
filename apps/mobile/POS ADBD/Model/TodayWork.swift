@@ -26,10 +26,16 @@ struct TodayWork: Codable {
     let tomorrowReturns: TodayWorkGroup?
     /// #938: rentals out with collateral, only when asked (`collateralHeld=1`) and the user sees money; nil otherwise
     var collateralHeld: TodayWorkGroup? = nil
+    /// #1231: deposit stages due today / late (only for a client that sends `installments`); empty on an older API or a
+    /// shop that collects the deposit at once. Tomorrow's stages (`installmentsDueTomorrow`) are not part of To do.
+    var installmentsDue: [InstallmentReminderRow] = []
+    var installmentsOverdue: [InstallmentReminderRow] = []
 
     enum CodingKeys: String, CodingKey {
         case date, pickupsToday, returnsToday, overdueReturns, noShows, tomorrowPickups, tomorrowReturns, collateralHeld
     }
+    /// Read only (the rows are not re-encoded)
+    private enum StageKeys: String, CodingKey { case installmentsDue, installmentsOverdue }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -41,6 +47,9 @@ struct TodayWork: Codable {
         tomorrowPickups = try c.decodeIfPresent(TodayWorkGroup.self, forKey: .tomorrowPickups)
         tomorrowReturns = try c.decodeIfPresent(TodayWorkGroup.self, forKey: .tomorrowReturns)
         collateralHeld = (try? c.decodeIfPresent(TodayWorkGroup.self, forKey: .collateralHeld)) ?? nil
+        let stages = try decoder.container(keyedBy: StageKeys.self)
+        installmentsDue = ((try? stages.decodeIfPresent(InstallmentReminderGroup.self, forKey: .installmentsDue)) ?? nil)?.orders ?? []
+        installmentsOverdue = ((try? stages.decodeIfPresent(InstallmentReminderGroup.self, forKey: .installmentsOverdue)) ?? nil)?.orders ?? []
     }
 }
 
@@ -77,10 +86,19 @@ struct TodayWorkRow: Codable {
     let lateDays: Int
     /// #938: the order's collateral (Thế chân "đang giữ" list); 0 when missing
     var securityDeposit: Double = 0
+    /// #1231: a deposit stage row ("Thu cọc"): the stage label ("Cọc 2"); nil on every other row
+    var stageLabel: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, customerPhone, pickupPlanAt, returnPlanAt
         case isReadyToDeliver, productNames, totalAmount, amountDue, refundDue, lateDays, items, securityDeposit
+    }
+
+    /// #1231: the row of a deposit stage that is due today or late; `id` is the order, so a tap opens its detail
+    init(stage: InstallmentReminderRow) {
+        self.init(id: stage.orderId, orderNumber: stage.orderNumber, customerName: stage.customerName,
+                  totalAmount: stage.remaining, amountDue: stage.remaining, lateDays: stage.lateDays)
+        stageLabel = stage.label
     }
 
     private struct Item: Codable {

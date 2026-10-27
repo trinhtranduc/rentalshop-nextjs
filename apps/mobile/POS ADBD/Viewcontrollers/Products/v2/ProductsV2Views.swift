@@ -332,6 +332,12 @@ final class V2ValueRow: UIControl {
             accessories.setContentHuggingPriority(.required, for: .horizontal)
         } else {
             pencil.isHidden = true
+            if wrapsValue {
+                // #1243: a read-only value (the cart's staged-deposit template name) wraps instead of ending in "…"
+                valueLabel.lineBreakMode = .byWordWrapping
+                valueLabel.numberOfLines = 0
+                valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            }
         }
         var titleLeading = snp.leading
         var titleInset = DS.Spacing.lg

@@ -108,7 +108,7 @@ internal fun DepositFullScreen(title: String, onBack: () -> Unit, bottomBar: (@C
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.close), modifier = Modifier.size(DS.Icon.Lg))
                 }
-                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1)
+                Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             }
             HorizontalDivider(color = DS.Colors.Border)
             Box(Modifier.weight(1f).fillMaxWidth()) { content() }

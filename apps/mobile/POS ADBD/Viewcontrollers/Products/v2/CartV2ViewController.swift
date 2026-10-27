@@ -400,7 +400,7 @@ final class CartV2ViewController: BaseViewControler {
         let settings = DepositModeStore.latest
         let choices = settings?.choices ?? []
         let selected = choices.first { $0.id == cart.depositTemplateId }
-        let templateRow = V2ValueRow(title: "deposit.cart.title".localized(), chevron: false)
+        let templateRow = V2ValueRow(title: "deposit.cart.title".localized(), chevron: false, wrapsValue: true)
         templateRow.valueLabel.text = (selected?.name ?? choices.first?.name ?? "") + (Cart.canEditStages && choices.count > 1 ? "  ⌄" : "")
         templateRow.valueLabel.textColor = DS.Color.primary
         templateRow.valueLabel.font = Utils.boldFont(size: DS.TextSize.body)
@@ -443,12 +443,12 @@ final class CartV2ViewController: BaseViewControler {
 
     private func stageRow(_ stage: DepositStagePreview, index: Int, today: String) -> UIView {
         let editable = Cart.canEditStages && !stage.isRest
-        let name = V2.label(stage.label, size: DS.TextSize.body, lines: 0)
+        let name = DepositUI.wrapLabel(stage.label, size: DS.TextSize.body)
         let due = stage.dueDateKey == today ? "deposit.due.today".localized() : DepositUI.dayText(stage.dueDateKey)
         let detail = stage.isRest
             ? String(format: "deposit.cart.restDetail".localized(), due)
             : String(format: "deposit.cart.stageDetail".localized(), DepositPlanMath.percentText(stage.percent), due)
-        let sub = V2.label(detail, size: DS.TextSize.pill + 1, color: DS.Color.textMuted, lines: 0)
+        let sub = DepositUI.wrapLabel(detail, size: DS.TextSize.pill + 1, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, sub])
         texts.axis = .vertical
         texts.spacing = 3

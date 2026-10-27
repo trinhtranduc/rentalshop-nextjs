@@ -702,12 +702,19 @@ fun AppPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     loading: Boolean = false,
+    fontSize: androidx.compose.ui.unit.TextUnit = 18.sp,
+    singleLine: Boolean = false, // #1229: a long label shrinks and stays on one line instead of wrapping and clipping
 ) {
     Button(
         onClick = onClick,
         enabled = enabled && !loading,
         modifier = modifier.fillMaxWidth().height(50.dp),
         shape = RoundedCornerShape(12.dp),
+        contentPadding = if (singleLine) {
+            androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+        } else {
+            androidx.compose.material3.ButtonDefaults.ContentPadding
+        },
     ) {
         if (loading) {
             CircularProgressIndicator(
@@ -720,7 +727,8 @@ fun AppPrimaryButton(
                 text,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
+                fontSize = fontSize,
+                maxLines = if (singleLine) 1 else Int.MAX_VALUE,
             )
         }
     }

@@ -33,7 +33,8 @@ import java.time.temporal.ChronoUnit
 enum class OrdersSegment { TODAY, RENT, SALE }
 
 /** What the counter does with a "Việc cần làm" row */
-enum class WorkKind { HAND_OVER, TAKE_BACK }
+/** [COLLECT] (#1231): a deposit stage that is due today or late */
+enum class WorkKind { HAND_OVER, TAKE_BACK, COLLECT }
 
 sealed interface OrdersRow {
     val orderId: Int
@@ -41,7 +42,7 @@ sealed interface OrdersRow {
 
     data class Work(val row: TodayWorkRow, val kind: WorkKind) : OrdersRow {
         override val orderId get() = row.id
-        override val key get() = "work-$kind-${row.id}"
+        override val key get() = "work-$kind-${row.id}-${row.stageKey.orEmpty()}"
     }
 
     data class Order(val order: OrderSummary, val lateDays: Int) : OrdersRow {
@@ -123,9 +124,11 @@ object OrdersHomeLogic {
     /** TRỄ HẠN (most late first), HÔM NAY, NGÀY MAI; empty groups and a missing NGÀY MAI are left out */
     fun todaySections(work: TodayWork): List<OrdersSection> {
         fun List<TodayWorkRow>.asWork(kind: WorkKind) = map { OrdersRow.Work(it, kind) }
-        val late = (work.noShows.asWork(WorkKind.HAND_OVER) + work.overdueReturns.asWork(WorkKind.TAKE_BACK))
+        val late = (work.noShows.asWork(WorkKind.HAND_OVER) + work.overdueReturns.asWork(WorkKind.TAKE_BACK) +
+            work.installmentsOverdue.asWork(WorkKind.COLLECT))
             .sortedByDescending { it.row.lateDays }
-        val today = work.pickupsToday.asWork(WorkKind.HAND_OVER) + work.returnsToday.asWork(WorkKind.TAKE_BACK)
+        val today = work.pickupsToday.asWork(WorkKind.HAND_OVER) + work.returnsToday.asWork(WorkKind.TAKE_BACK) +
+            work.installmentsDue.asWork(WorkKind.COLLECT)
         val tomorrow = work.tomorrowPickups.orEmpty().asWork(WorkKind.HAND_OVER) +
             work.tomorrowReturns.orEmpty().asWork(WorkKind.TAKE_BACK)
         return listOf(

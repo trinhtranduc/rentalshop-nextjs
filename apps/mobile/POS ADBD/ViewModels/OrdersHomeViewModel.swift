@@ -16,7 +16,8 @@ enum OrdersSegment: Int, CaseIterable {
 
 /// What the counter does with a "Việc cần làm" row
 enum WorkKind {
-    case handOver, takeBack
+    /// `collect` (#1231): a deposit stage due today or late
+    case handOver, takeBack, collect
 }
 
 enum OrdersRow {
@@ -216,10 +217,12 @@ enum OrdersHomeLogic {
     /// NGÀY MAI is left out when the API did not send it.
     static func todaySections(from work: TodayWork) -> [OrdersSection] {
         let late = (work.noShows.orders.map { OrdersRow.work($0, kind: .handOver) }
-            + work.overdueReturns.orders.map { OrdersRow.work($0, kind: .takeBack) })
+            + work.overdueReturns.orders.map { OrdersRow.work($0, kind: .takeBack) }
+            + work.installmentsOverdue.map { OrdersRow.work(TodayWorkRow(stage: $0), kind: .collect) })
             .sorted { lateDays(of: $0) > lateDays(of: $1) }
         let today = work.pickupsToday.orders.map { OrdersRow.work($0, kind: .handOver) }
             + work.returnsToday.orders.map { OrdersRow.work($0, kind: .takeBack) }
+            + work.installmentsDue.map { OrdersRow.work(TodayWorkRow(stage: $0), kind: .collect) }
         let tomorrow = (work.tomorrowPickups?.orders ?? []).map { OrdersRow.work($0, kind: .handOver) }
             + (work.tomorrowReturns?.orders ?? []).map { OrdersRow.work($0, kind: .takeBack) }
 
@@ -283,11 +286,15 @@ enum OrdersHomeLogic {
         return payLine(amountDue: order.listAmountDue ?? 0, refundDue: order.listRefundDue ?? 0)
     }
 
-    /// "giao N · trả M" of a band
-    static func bandCounts(_ rows: [OrdersRow]) -> (handOver: Int, takeBack: Int) {
-        rows.reduce(into: (handOver: 0, takeBack: 0)) { counts, row in
+    /// "giao N · trả M" of a band; `collect` (#1231) counts the deposit stages
+    static func bandCounts(_ rows: [OrdersRow]) -> (handOver: Int, takeBack: Int, collect: Int) {
+        rows.reduce(into: (handOver: 0, takeBack: 0, collect: 0)) { counts, row in
             guard case .work(_, let kind) = row else { return }
-            if kind == .handOver { counts.handOver += 1 } else { counts.takeBack += 1 }
+            switch kind {
+            case .handOver: counts.handOver += 1
+            case .takeBack: counts.takeBack += 1
+            case .collect: counts.collect += 1
+            }
         }
     }
 
@@ -419,6 +426,15 @@ enum OrdersHomeLogic {
     /// "Trễ N ngày", then "Chưa soạn đồ" (hand-over rows only, never a return)
     static func workChips(_ work: TodayWorkRow, kind: WorkKind, timeZone: TimeZone = Date.shopTimeZone) -> [WorkChip] {
         var chips: [WorkChip] = []
+        if kind == .collect {
+            // #1231: "Cọc 2 · #0053", then "Trễ N ngày" when the stage is late
+            let text = String(format: "overview.installments.row".localized(), work.stageLabel ?? "", shortNumber(work.orderNumber))
+            chips.append(WorkChip(text: text, colors: DS.Status.waiting))
+            if work.lateDays > 0 {
+                chips.append(WorkChip(text: LateText.days(work.lateDays), colors: RowWarning.late.colors, warning: .late))
+            }
+            return chips
+        }
         let date = kind == .handOver ? work.pickupPlanAt : work.returnPlanAt
         let chipKind: DateChip.Kind = kind == .handOver ? .pickup : .return
         if let date {

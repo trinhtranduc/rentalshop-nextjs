@@ -1924,6 +1924,8 @@
 "orders.v2.yesterday" = "Hôm qua";
 "orders.v2.tag.handOver" = "Cần giao";
 "orders.v2.tag.takeBack" = "Cần trả";
+"orders.v2.tag.collect" = "Thu cọc";
+"orders.v2.band.collect" = " · thu %d";
 "orders.v2.tag.sale" = "Bán · %@";
 "orders.v2.status.all" = "Tất cả";
 "orders.v2.status.reserved" = "Đã đặt";
@@ -2876,12 +2878,12 @@
 "deposit.method.manual" = "Khác";
 "deposit.cart.title" = "Thu cọc theo giai đoạn";
 "deposit.cart.stageDetail" = "%@%% đơn · hạn: %@";
-"deposit.cart.restDetail" = "Phần còn lại, thu khi giao · %@";
+"deposit.cart.restDetail" = "Thu khi giao · %@";
 "deposit.cart.collectFirst" = "Thu ngay giai đoạn %d";
 "deposit.cart.collectNone.short" = "Không thu ngay";
 "deposit.cart.collectNow" = "Thu ngay · giai đoạn 1";
 "deposit.cart.collectNone" = "Chưa thu cọc";
-"deposit.cart.createAndCollect" = "Tạo đơn và thu giai đoạn 1";
+"deposit.cart.createAndCollect" = "Tạo đơn · thu cọc";
 "deposit.cart.exceeds" = "Các giai đoạn cộng lại lớn hơn tổng đơn. Hãy giảm số tiền một giai đoạn.";
 "deposit.cart.exceeds.short" = "Quá tổng đơn";
 "deposit.badge.collected" = "Đã thu %@%%";
@@ -2901,7 +2903,7 @@
 "deposit.card.collectStage" = "Thu giai đoạn %d";
 "deposit.card.paidDetail" = "%@%% đơn · %@";
 "deposit.card.dueDetail" = "%@%% đơn · hạn %@";
-"deposit.card.restDetail" = "Phần còn lại, thu khi giao · %@";
+"deposit.card.restDetail" = "Thu khi giao · %@";
 "deposit.collect.title" = "Thu giai đoạn %d";
 "deposit.collect.confirm" = "Thu %@";
 "deposit.unpaid.title" = "Còn giai đoạn cọc chưa thu";

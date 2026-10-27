@@ -219,6 +219,59 @@ describe('today', () => {
     expect(rows[0].returnKey).toBe('2026-10-08');
     expect(rows[3].returnKey).toBe('2026-10-02');
   });
+
+  // #1231: deposit stages due today or late are To do rows; tomorrow's are not
+  const stage = (orderId: number, key: string, o: Record<string, unknown> = {}) => ({
+    orderId,
+    orderNumber: `10${orderId}`,
+    customerName: 'Lan',
+    key,
+    label: key === 'i1' ? 'Cọc giữ chỗ' : 'Cọc trước ngày lấy',
+    remaining: 4_800_000,
+    dueDateKey: '2026-10-06',
+    lateDays: 0,
+    ...o,
+  });
+  const withStages: OutletOpsLike = {
+    ...ops,
+    installmentsDue: { count: 1, orders: [stage(11, 'i2')] },
+    installmentsOverdue: {
+      count: 2,
+      orders: [stage(12, 'i1', { lateDays: 1, dueDateKey: '2026-10-05' }), stage(13, 'i2', { lateDays: 3, dueDateKey: '2026-10-03' })],
+    },
+    installmentsDueTomorrow: { count: 1, orders: [stage(14, 'i2', { dueDateKey: '2026-10-07' })] },
+  };
+
+  it('adds one row per stage due today or late (most late first) before the late returns, and none for tomorrow', () => {
+    const rows = buildTodayRows(withStages, getLocalDateKey);
+    expect(rows.map((r) => [r.id, r.kind, r.stage, r.lateDays])).toEqual([
+      [1, 'pickup', null, 0],
+      [2, 'pickup', null, 0],
+      [3, 'return', null, 0],
+      [13, 'installment', 2, 3],
+      [12, 'installment', 1, 1],
+      [11, 'installment', 2, 0],
+      [4, 'return', null, 4],
+    ]);
+    expect(rows.filter((r) => r.kind === 'installment').every((r) => r.money?.kind === 'collect' && r.money.amount === 4_800_000)).toBe(true);
+    expect(rows.find((r) => r.id === 14)).toBeUndefined();
+  });
+
+  it('keeps a pickup row and a stage row of the same order, and two stages of one order', () => {
+    const rows = buildTodayRows(
+      {
+        ...ops,
+        installmentsDue: { count: 1, orders: [stage(1, 'i2')] },
+        installmentsOverdue: { count: 1, orders: [stage(1, 'i1', { lateDays: 2 })] },
+      },
+      getLocalDateKey,
+    );
+    expect(rows.filter((r) => r.id === 1).map((r) => [r.kind, r.stage])).toEqual([['pickup', null], ['installment', 1], ['installment', 2]]);
+  });
+
+  it('is unchanged when the server sent no stage groups (old client, one-time shop)', () => {
+    expect(buildTodayRows(ops, getLocalDateKey)).toHaveLength(4);
+  });
 });
 
 describe('related orders (#708, #721)', () => {

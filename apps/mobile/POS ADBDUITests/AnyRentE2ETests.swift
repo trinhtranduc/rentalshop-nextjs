@@ -720,6 +720,41 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapIfExists(e2e.button(["Cancel", "Huỷ", "Hủy"]))
     }
 
+    /// #1231: a STAGED shop (prepare with 3 plan orders: stage due today, 3 days late, due tomorrow) lists the stages that
+    /// are due today or late as To do rows; tomorrow's stage is not a row; a tap opens the order
+    func test4dTodoDepositStages() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        let todo = e2e.button(["To do", "Việc cần làm"])
+        XCTAssertTrue(todo.waitForExistence(timeout: 8), "Việc cần làm segment")
+        todo.tap()
+        sleep(3)
+        e2e.shot("1231-a-todo-stages")
+        // The stage rows sit among the late rows (most late first): scroll until both are seen
+        let stageTexts = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Cọc' OR label BEGINSWITH 'Deposit'"))
+        var seen = Set<String>()
+        for _ in 0..<8 {
+            for index in 0..<stageTexts.count { seen.insert(stageTexts.element(boundBy: index).label) }
+            if seen.count >= 2 { break }
+            app.swipeUp()
+            sleep(1)
+        }
+        e2e.note("deposit stage rows seen: \(seen.sorted())")
+        sleep(2)
+        e2e.shot("1231-b-stage-rows")
+        XCTAssertEqual(seen.count, 2, "one row for the stage due today and one for the late stage, none for tomorrow")
+        if let first = seen.sorted().first {
+            let target = stageTexts.matching(NSPredicate(format: "label == %@", first)).firstMatch
+            e2e.tapRow(target)
+            e2e.soft(e2e.orderMoreButton.waitForExistence(timeout: 10), "a deposit stage row opens its order")
+            sleep(2)
+            e2e.shot("1231-c-stage-order")
+            e2e.goBackOnce()
+        }
+    }
+
     /// #888: Tất cả đơn rows show only "Lấy dd/mm/yy  Trả dd/mm/yy"; one "Xếp theo" date drives the order and the range;
     /// the bar always says how the list is sorted. Screens for each date, a range by each date, and an order detail.
     func test4bOrdersSortDates() throws {
@@ -4290,7 +4325,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(stageRow.waitForExistence(timeout: 5), "the cart shows stage 1 = 3.600.000")
         scrollTo(text(["Phần còn lại, thu khi giao", "The rest, collected at hand-over"]), max: 3)
         e2e.shot("61b-cart-staged-money")
-        let create = e2e.button(["Tạo đơn và thu giai đoạn 1", "Create order and collect stage 1"])
+        let create = e2e.button(["Tạo đơn · thu cọc", "Create · collect"])
         XCTAssertTrue(create.waitForExistence(timeout: 5), "the cart button collects stage 1")
         create.tap()
         sleep(2)

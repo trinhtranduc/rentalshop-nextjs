@@ -338,7 +338,7 @@ private fun TemplateEditorPage(
         Column(Modifier.verticalScroll(rememberScrollState())) {
             SectionBand(stringResource(R.string.deposit_template_name))
             OutlinedTextField(
-                value = name, onValueChange = { name = it }, singleLine = true,
+                value = name, onValueChange = { name = it }, maxLines = 3, // #1243: a long name wraps, never cut
                 placeholder = { Text(stringResource(R.string.deposit_template_name_placeholder)) },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
             )

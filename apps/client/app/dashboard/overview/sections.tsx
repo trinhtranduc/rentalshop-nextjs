@@ -553,13 +553,15 @@ export function TodayOrders({
                 ? { text: t('home.orders.late', { days: r.lateDays }), cls: 'bg-ar-late-bg text-ar-late' }
                 : r.kind === 'pickup'
                   ? { text: t('home.orders.pickupTag'), cls: 'bg-ar-reserved-bg text-ar-reserved' }
-                  : { text: t('home.orders.returnTag'), cls: 'bg-ar-subtle text-ar-ink-2' };
+                  : r.kind === 'installment'
+                    ? { text: t('home.orders.installmentTag'), cls: 'bg-ar-primary-soft text-ar-primary-ink' }
+                    : { text: t('home.orders.returnTag'), cls: 'bg-ar-subtle text-ar-ink-2' };
             const amount = r.money ? t(`home.orders.${r.money.kind}`, { amount: money(r.money.amount) }) : '—';
             const tagEl = (extra: string) => (
               <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${tag.cls} ${extra}`}>{tag.text}</span>
             );
             return (
-              <li key={r.id} className="border-t border-ar-line-soft">
+              <li key={`${r.kind}-${r.id}-${r.stage ?? ''}`} className="border-t border-ar-line-soft" data-todo-kind={r.kind}>
                 <Link
                   href={`/orders/${r.orderNumber}`}
                   className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 py-2.5 text-ar-ink no-underline hover:bg-ar-surface-muted sm:grid-cols-[36px_minmax(0,1fr)_auto_auto]"
@@ -568,9 +570,10 @@ export function TodayOrders({
                     {initials(r.customerName)}
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-semibold">{r.customerName || `#${r.orderNumber}`}</span>
+                    <span className={`${r.kind === 'installment' ? 'break-words' : 'truncate'} text-sm font-semibold`}>{r.customerName || `#${r.orderNumber}`}</span>
                     <span className="flex items-center gap-2 text-xs tabular-nums text-ar-muted">
                       #{r.orderNumber}
+                      {r.kind === 'installment' && (r.stage ? ` · ${t('home.orders.stage', { n: r.stage })}` : r.stageLabel ? ` · ${r.stageLabel}` : '')}
                       {tagEl('sm:hidden py-0.5')}
                     </span>
                   </span>

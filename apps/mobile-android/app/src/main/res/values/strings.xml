@@ -976,6 +976,8 @@
     <string name="orders_v2_yesterday">Yesterday</string>
     <string name="orders_v2_tag_hand_over">To hand over</string>
     <string name="orders_v2_tag_take_back">To take back</string>
+    <string name="orders_v2_tag_collect">Deposit due</string>
+    <string name="orders_v2_band_collect">" · collect %1$d"</string>
     <string name="orders_v2_tag_sale">Sale · %1$s</string>
     <string name="orders_v2_status_all">All</string>
     <string name="orders_v2_status_reserved">Booked</string>
@@ -2207,12 +2209,12 @@
     <string name="deposit_method_manual">Other</string>
     <string name="deposit_cart_title">Staged deposit</string>
     <string name="deposit_cart_stage_detail">%1$s%% of order · due: %2$s</string>
-    <string name="deposit_cart_rest_detail">The rest, collected at hand-over · %s</string>
+    <string name="deposit_cart_rest_detail">At hand-over · %s</string>
     <string name="deposit_cart_collect_first">Collect stage %d now</string>
     <string name="deposit_cart_collect_none_short">Do not collect now</string>
     <string name="deposit_cart_collect_now">Collect now · stage 1</string>
     <string name="deposit_cart_collect_none">No deposit collected</string>
-    <string name="deposit_cart_create_and_collect">Create order and collect stage 1</string>
+    <string name="deposit_cart_create_and_collect">Create · collect</string>
     <string name="deposit_cart_exceeds">The stages add up to more than the order total. Lower one stage.</string>
     <string name="deposit_cart_exceeds_short">Over the order total</string>
     <string name="deposit_badge_collected">Collected %s%%</string>
@@ -2232,7 +2234,7 @@
     <string name="deposit_card_collect_stage">Collect stage %d</string>
     <string name="deposit_card_paid_detail">%1$s%% of order · %2$s</string>
     <string name="deposit_card_due_detail">%1$s%% of order · due %2$s</string>
-    <string name="deposit_card_rest_detail">The rest, collected at hand-over · %s</string>
+    <string name="deposit_card_rest_detail">At hand-over · %s</string>
     <string name="deposit_collect_title">Collect stage %d</string>
     <string name="deposit_collect_confirm">Collect %s</string>
     <string name="deposit_unpaid_title">Deposit stages not collected yet</string>
