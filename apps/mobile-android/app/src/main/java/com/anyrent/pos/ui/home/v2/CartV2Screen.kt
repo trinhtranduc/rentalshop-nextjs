@@ -456,6 +456,7 @@ fun CartV2Screen(
                                 shop = com.anyrent.pos.ui.orders.shareShop(),
                                 vi = shareContext.shareIsVietnamese(),
                                 blockFormula = { line -> line.blockDetail?.let { BlockText.formulaOrNull(shareContext.resources, it) } },
+                                blockSummary = { line -> line.blockDetail?.let { BlockText.summary(shareContext.resources, it) } },
                             ),
                         )
                     }.onFailure { error = it.message }
