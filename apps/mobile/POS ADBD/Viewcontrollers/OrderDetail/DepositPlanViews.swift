@@ -135,15 +135,10 @@ enum InstallmentCardView {
             card.addArrangedSubview(button)
         }
 
-        let box = UIView()
-        box.layer.cornerRadius = 14
-        box.layer.borderWidth = 1
-        box.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-        box.addSubview(card)
-        card.snp.makeConstraints { make in make.edges.equalToSuperview().inset(14) }
+        // #1246: flat, same side margin as the other rows (the parent stack already insets by DS.Spacing.lg)
         let holder = UIView()
-        holder.addSubview(box)
-        box.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        holder.addSubview(card)
+        card.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)) }
         holder.accessibilityIdentifier = "deposit.card"
         return holder
     }

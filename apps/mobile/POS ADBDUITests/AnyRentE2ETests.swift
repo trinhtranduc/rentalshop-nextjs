@@ -2113,6 +2113,33 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("5e-detail-items-scrolled")
     }
 
+    /// #1246: the staged-deposit card on order detail runs edge to edge like the other rows. E2E_ORDER_NUMBER = a plan order.
+    func test5gDepositCardWidth() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(2)
+        let search = e2e.ordersSearchField
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
+        search.tap()
+        search.typeText(number)
+        sleep(3)
+        let row = app.cells.firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "plan order \(number) in the list")
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10))
+        sleep(2)
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("5g-deposit-card")
+        XCTAssertTrue(app.otherElements["deposit.card"].exists || app.staticTexts["deposit.card.badge"].exists, "the deposit card shows")
+    }
+
     /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: Chia sẻ đơn, Ghi chú, Sửa đơn / Gia hạn (#930), Lịch sử,
     /// then Huỷ đơn apart. Actions the screen already shows as buttons are not repeated in it.
     func test5cOrderActionSheet() throws {

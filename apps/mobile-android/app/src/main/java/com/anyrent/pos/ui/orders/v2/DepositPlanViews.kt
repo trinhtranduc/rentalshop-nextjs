@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -125,8 +126,7 @@ internal fun InstallmentCard(
     val reserved = detail.summary.status.equals("RESERVED", true)
     val today = ShopTime.today().toString()
     Column(
-        Modifier.fillMaxWidth().padding(vertical = 10.dp)
-            .border(1.dp, CardBorder, RoundedCornerShape(14.dp)).padding(14.dp)
+        Modifier.fillMaxWidth().padding(vertical = 12.dp) // #1246: flat, same side margin as the other rows
             .testTag("deposit.card"),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -137,7 +137,7 @@ internal fun InstallmentCard(
                 Text(
                     stringResource(if (DepositPlanLogic.canEditPlan(role)) R.string.deposit_card_edit else R.string.deposit_card_view),
                     fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
-                    modifier = Modifier.clickable(onClick = onEdit).heightIn(min = 44.dp).padding(horizontal = 4.dp).testTag("deposit.card.edit"),
+                    modifier = Modifier.clickable(onClick = onEdit).heightIn(min = 44.dp).wrapContentHeight(Alignment.CenterVertically).padding(horizontal = 4.dp).testTag("deposit.card.edit"),
                 )
             }
         }
