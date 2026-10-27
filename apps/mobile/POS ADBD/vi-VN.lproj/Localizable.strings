@@ -2951,15 +2951,11 @@
 "CANCELLED_ORDER_KEEPS_AMOUNT" = "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được.";
 // #1189 day-block pricing
 "block.title" = "Giá theo khối ngày";
-"block.screen.title" = "Giá thuê · %@";
 "block.save" = "Lưu bảng giá";
 "block.turnOff" = "Tắt giá theo khối ngày";
-"block.row.off" = "Chưa dùng";
 "block.row.tiers" = "%d mốc";
 "block.row.extra" = "+%@ mỗi ngày";
 "block.row.hold" = "giữ giá khối cuối";
-"block.section.default" = "Cách tính giá mặc định";
-"block.hint.default" = "Kiểu giá mặc định khi tạo đơn. Nhân viên đổi được trong giỏ.";
 "block.section.tiers" = "Giá theo số ngày";
 "block.addDay" = "+ Thêm ngày %d";
 "block.removeDay" = "Xoá ngày này";
@@ -2969,7 +2965,6 @@
 "block.holdLast.price" = "Giữ nguyên giá khối cuối (%@)";
 "block.preview" = "Xem thử";
 "block.error.invalid" = "Nhập đủ giá cho mọi ngày (từ 0 trở lên) và số tiền cộng thêm mỗi ngày.";
-"block.error.empty" = "Chưa có bảng giá theo khối ngày. Nhập giá ít nhất cho 1 ngày, hoặc chọn kiểu giá mặc định khác.";
 "block.summary.block" = "Khối %d ngày";
 "block.summary.extra" = "+ %d ngày thêm";
 "products.unit.block" = "/1 ngày";
@@ -2981,3 +2976,18 @@
 "products.cart.confirm.more.one" = "+%d sản phẩm khác";
 "deposit.cart.template" = "Mẫu";
 "deposit.cart.stageShort" = "%@%% · %@";
+"products.form.unit.once" = "/ lần";
+"products.form.manyDays" = "Giá nhiều ngày (chọn 1 trong 2)";
+"products.form.perDay.box" = "Giá thuê mỗi ngày";
+"block.intro" = "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.";
+"block.quick" = "Tạo nhanh: ngày đầu + mỗi ngày thêm";
+"block.quick.title" = "Tạo nhanh";
+"block.quick.message" = "Giá ngày 1, số tiền cộng thêm cho mỗi ngày kế tiếp và số ngày của bảng.";
+"block.quick.first" = "Giá ngày 1";
+"block.quick.extra" = "Cộng thêm mỗi ngày";
+"block.quick.days" = "Số ngày (1-31)";
+"block.quick.create" = "Tạo bảng";
+"block.quick.invalid" = "Nhập giá ngày 1, số tiền cộng thêm mỗi ngày và số ngày từ 1 đến 31.";
+"block.copy" = "Sao chép từ sản phẩm khác";
+"block.copy.empty" = "Chưa có sản phẩm nào có bảng giá theo khối ngày.";
+"block.error.nothing" = "Nhập giá ít nhất cho 1 ngày.";

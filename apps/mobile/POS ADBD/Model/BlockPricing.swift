@@ -246,19 +246,12 @@ extension OrderItem {
 // MARK: - Form input
 
 extension BlockPricing {
-    /// #1249: a product priced per day without a table opens with its day price on row 1 and the same price for each
-    /// extra day. That table charges exactly day price × days, so it is the old price shown as a table.
-    static func seed(perDay: Double?) -> BlockTable? {
-        guard let perDay, perDay >= 0 else { return nil }
-        return BlockTable(tiers: [perDay], startDay: 1, extraMode: BlockTable.extraPerDay, extraPrice: perDay)
-    }
-
-    /// The table to send, or nil when the form sends none: nothing typed, or the table is still the one shown from
-    /// the old day price (the product then stays the DAILY price it was)
-    static func tableToSave(_ table: BlockTable?, perDay: Double?) -> BlockTable? {
-        guard let table else { return nil }
-        if let seed = seed(perDay: perDay), seed == table { return nil }
-        return table
+    /// "Tạo nhanh": `days` rows, the first costs `firstDay`, each next day costs `extraPerDay` more, and every day past
+    /// the table costs `extraPerDay` more too. Nil for a count outside 1...31 or a negative price.
+    static func quickTable(firstDay: Double, extraPerDay: Double, days: Int) -> BlockTable? {
+        guard days >= 1, days <= maxTiers, firstDay >= 0, extraPerDay >= 0 else { return nil }
+        let tiers = (0..<days).map { firstDay + Double($0) * extraPerDay }
+        return BlockTable(tiers: tiers, startDay: 1, extraMode: BlockTable.extraPerDay, extraPrice: extraPerDay)
     }
 }
 
