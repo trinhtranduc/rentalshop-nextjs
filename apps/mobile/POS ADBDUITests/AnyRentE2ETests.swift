@@ -2803,7 +2803,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
     }
 
-    /// #1189 day-block pricing: product form row → price screen (80.000 / 100.000 / 120.000, +20.000 a day, preview
+    /// #1189 / #1249 day-block pricing: product form Theo ngày → the table on the form (80.000 / 100.000 / 120.000, +20.000 a day, preview
     /// 5 days = 160.000) → save → cart with 1 / 3 / 5 days (80.000 / 120.000 / 160.000, "Khối 3 ngày + 2 ngày thêm") →
     /// order → order detail shows the sum. The numbers are the golden ones (tests/fixtures/block-pricing-golden.json).
     func test7qBlockDayPricing() throws {
@@ -2815,19 +2815,18 @@ final class AnyRentE2ETests: XCTestCase {
         let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
         XCTAssertTrue(edit.waitForExistence(timeout: 5), "product detail has Sửa")
         edit.tap()
-        let row = app.descendants(matching: .any)["product.form.blockRow"]
-        XCTAssertTrue(e2e.scrollTo(row), "the product form has the neutral Giá theo khối ngày row")
-        e2e.shot("70a-block-form-row-off")
-        row.tap()
-
-        // Price screen: radio rows, then the table
-        let radio = app.staticTexts["block.radio.label.BLOCK"]
-        XCTAssertTrue(radio.waitForExistence(timeout: 5), "the price screen lists Giá theo khối ngày as a radio row")
-        e2e.shot("70b-block-screen-empty")
-        radio.tap()
+        // #1249: one choice. A product without a price opens on Theo lần; Theo ngày shows the table on the form itself
+        let perDay = app.descendants(matching: .any)["product.form.kind.perDay"]
+        XCTAssertTrue(e2e.scrollTo(perDay), "the product form has the Theo ngày radio row")
+        XCTAssertFalse(app.descendants(matching: .any)["block.radio.PER_DAY"].exists, "there is no second set of radio rows")
+        e2e.shot("70a-form-theo-lan")
+        perDay.tap()
+        let firstTier = app.textFields["block.tier.1"]
+        XCTAssertTrue(firstTier.waitForExistence(timeout: 5), "Theo ngày shows the day table right on the form")
+        e2e.shot("70b-form-theo-ngay-empty")
         func typeTier(_ index: Int, _ value: String) {
             let box = app.textFields["block.tier.\(index)"]
-            XCTAssertTrue(box.waitForExistence(timeout: 5), "tier \(index) box")
+            XCTAssertTrue(e2e.scrollTo(box), "tier \(index) box")
             box.tap()
             box.typeText(value)
             e2e.hideKeyboard()
@@ -2847,14 +2846,7 @@ final class AnyRentE2ETests: XCTestCase {
         let total = app.staticTexts["block.previewTotal"]
         XCTAssertTrue(e2e.scrollTo(total), "preview total")
         XCTAssertTrue((total.label).contains("160.000"), "preview of 5 days is 160.000 (\(total.label))")
-        e2e.shot("70c-block-screen-filled")
-        let save = app.buttons["block.save"]
-        XCTAssertTrue(save.waitForExistence(timeout: 3))
-        save.tap()
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "back on the product form")
-        let summary = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '3 mốc' OR label CONTAINS '3 tiers'")).firstMatch
-        XCTAssertTrue(summary.waitForExistence(timeout: 3), "the form row now says 3 mốc")
-        e2e.shot("70d-block-form-row-on")
+        e2e.shot("70c-form-theo-ngay-filled")
         let saveProduct = e2e.button(["Save changes", "Lưu thay đổi"])
         e2e.scrollTo(saveProduct)
         saveProduct.tap()
@@ -2926,13 +2918,60 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("74-order-detail-block")
     }
 
-    /// Product detail → Sửa → "Thuê theo ngày" → new value → Lưu thay đổi. Returns the value the field had (may be "").
+    /// #1249 the product form has ONE choice, Theo lần or Theo ngày (the day table right on the form, no switch).
+    /// New product: Theo lần first, then Theo ngày. Old per-day product and a product with a table open on Theo ngày.
+    /// Needs the products "Ao dai DAILY cu" (DAILY 150.000 only) and "Vay cuoi co bang" (a BLOCK table) in the shop;
+    /// a soft note when they are missing. Nothing is saved.
+    func test7rProductPriceKind() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        let add = e2e.button(["Add product", "Thêm sản phẩm"])
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "Home has +")
+        add.tap()
+        let perDay = app.descendants(matching: .any)["product.form.kind.perDay"]
+        XCTAssertTrue(e2e.scrollTo(perDay), "the new product form has the two-row choice")
+        XCTAssertFalse(app.textFields["block.tier.1"].exists, "a new product starts on Theo lần: no day table")
+        e2e.shot("80a-new-theo-lan")
+        perDay.tap()
+        XCTAssertTrue(app.textFields["block.tier.1"].waitForExistence(timeout: 5), "Theo ngày shows the day table on the form")
+        e2e.shot("80b-new-theo-ngay")
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("80b2-new-theo-ngay-more")
+        e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+
+        for (key, shot) in [("Ao dai DAILY", "80c-edit-old-daily"), ("Vay cuoi co", "80d-edit-with-table"), ("Ao vest theo", "80e-edit-per-rental")] {
+            guard e2e.openProduct(named: key) else { e2e.note("\(key) not found"); continue }
+            let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+            guard edit.waitForExistence(timeout: 5) else { e2e.note("no Sửa for \(key)"); e2e.goBackOnce(); continue }
+            edit.tap()
+            let row = app.descendants(matching: .any)["product.form.kind.perDay"]
+            _ = e2e.scrollTo(row)
+            e2e.shot(shot)
+            app.swipeUp()
+            sleep(1)
+            e2e.shot(shot + "-more")
+            e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+            e2e.goBackOnce()
+        }
+    }
+
+    /// Product detail → Sửa → "Thuê theo lần" (#1249: the form has one choice, Theo lần or Theo ngày) → new value → Lưu thay đổi.
+    /// Returns the value the field had (may be "").
     private func editDailyPrice(to value: String, shot: String?) -> String? {
         let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
         guard edit.waitForExistence(timeout: 5) else { e2e.note("no Sửa on product detail"); return nil }
         edit.tap()
-        let field = e2e.field(["Rent per day", "Thuê theo ngày"])
-        guard field.waitForExistence(timeout: 8) else { e2e.note("no Thuê theo ngày field"); return nil }
+        // a product with a per-day price opens on Theo ngày; the Theo lần box is shown once that row is picked
+        let perRentalRow = app.descendants(matching: .any)["product.form.kind.perRental"]
+        if perRentalRow.waitForExistence(timeout: 8) {
+            e2e.scrollTo(perRentalRow)
+            perRentalRow.tap()
+        }
+        let field = e2e.field(["Rent per rental", "Thuê theo lần"])
+        guard field.waitForExistence(timeout: 8) else { e2e.note("no Thuê theo lần field"); return nil }
         e2e.scrollTo(field)
         let raw = field.value as? String ?? ""
         let old = (raw == field.placeholderValue || raw == "0") ? "" : raw

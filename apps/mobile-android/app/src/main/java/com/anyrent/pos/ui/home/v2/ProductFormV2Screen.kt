@@ -84,7 +84,10 @@ import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BarcodeMatch
+import com.anyrent.pos.domain.products.BlockPricing
+import com.anyrent.pos.domain.products.BlockTable
 import com.anyrent.pos.domain.products.BlockText
+import com.anyrent.pos.domain.products.PriceKind
 import com.anyrent.pos.domain.products.ProductBarcode
 import com.anyrent.pos.domain.products.CategoryRules
 import com.anyrent.pos.domain.products.MoneyInput
@@ -147,11 +150,14 @@ fun ProductFormV2Screen(
     var categoryId by remember { mutableStateOf(initial?.categoryId) }
     var categoryName by remember { mutableStateOf(initial?.categoryName) }
     var perRental by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.perRental(it) })) }
-    var perDay by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.perDay(it) })) }
-    var defaultMode by remember { mutableStateOf(initial?.let { ProductPricing.defaultMode(it) } ?: PricingMode.PER_RENTAL) }
-    // #1189: the day-block table edited on its own screen; null = none
-    var blockTable by remember { mutableStateOf(initial?.let { ProductPricing.block(it) }) }
-    var showBlockScreen by remember { mutableStateOf(false) }
+    // #1249: ONE choice, Theo lần (the per-rental box) or Theo ngày (the day table right below it); new products start on Theo lần
+    var priceKind by remember { mutableStateOf(initial?.let { ProductPricing.kind(it) } ?: PriceKind.PER_RENTAL) }
+    // The saved per-day price. There is no box for it any more; it is kept so an old per-day product saves as it was,
+    // and it fills row 1 of the table when the product opens on Theo ngày
+    val legacyPerDay = remember { initial?.let { ProductPricing.perDay(it) } }
+    val blockEditor = remember {
+        BlockEditorState().apply { load(initial?.let { ProductPricing.block(it) } ?: BlockPricing.seed(legacyPerDay)) }
+    }
     var sale by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.sale(it) })) }
     var deposit by remember { mutableStateOf(MoneyInput.display(initial?.deposit?.takeIf { it > 0 })) }
     // #887: Giá vốn (optional, prices only)
@@ -212,12 +218,32 @@ fun ProductFormV2Screen(
         }
     }
 
+    val blockInvalidText = stringResource(R.string.block_error_invalid)
+    val blockEmptyText = stringResource(R.string.block_error_empty)
+
     fun save() {
+        // #1249: Theo ngày sends the typed table; left as the old day price it sends nothing new (the product stays DAILY)
+        var chosenMode = PricingMode.PER_RENTAL
+        var chosenTable: BlockTable? = null
+        if (showsPrices && priceKind == PriceKind.PER_DAY) {
+            when (val typed = blockEditor.input) {
+                BlockPricing.Input.Invalid -> { error = blockInvalidText; return }
+                BlockPricing.Input.Empty -> {
+                    if (legacyPerDay == null) { error = blockEmptyText; return }
+                    chosenMode = PricingMode.PER_DAY
+                }
+                is BlockPricing.Input.Table -> {
+                    chosenTable = BlockPricing.tableToSave(typed.table, legacyPerDay)
+                    chosenMode = ProductPricing.defaultMode(PriceKind.PER_DAY, chosenTable)
+                }
+            }
+        }
         val input = ProductFormInput(
             name = name,
             perRental = MoneyInput.parse(perRental),
-            perDay = MoneyInput.parse(perDay),
-            defaultMode = defaultMode,
+            perDay = legacyPerDay,
+            defaultMode = chosenMode,
+            block = chosenTable,
             salePrice = MoneyInput.parse(sale),
             deposit = MoneyInput.parse(deposit),
             quantity = quantity,
@@ -254,7 +280,7 @@ fun ProductFormV2Screen(
                         categoryId = categoryId,
                         prices = if (showsPrices) {
                             ProductsV2Api.Prices(
-                                options = ProductPricing.options(input.perRental, input.perDay, input.defaultMode, blockTable),
+                                options = ProductPricing.options(input.perRental, input.perDay, input.defaultMode, input.block),
                                 // #1189: this form sends every option, BLOCK included, so the API replaces the stored table with ours
                                 pricingSchemaVersion = PRICING_SCHEMA_VERSION,
                                 salePrice = input.salePrice,
@@ -370,22 +396,15 @@ fun ProductFormV2Screen(
 
             if (showsPrices) {
                 SectionBand(stringResource(R.string.v2_form_prices))
-                Row {
+                RadioRow("kind.perRental", stringResource(R.string.v2_form_per_rental), priceKind == PriceKind.PER_RENTAL, { priceKind = PriceKind.PER_RENTAL }) {}
+                HorizontalDivider(color = DS.Colors.Divider)
+                RadioRow("kind.perDay", stringResource(R.string.v2_form_per_day), priceKind == PriceKind.PER_DAY, { priceKind = PriceKind.PER_DAY }) {}
+                HorizontalDivider(color = DS.Colors.Divider)
+                if (priceKind == PriceKind.PER_RENTAL) {
                     FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, modifier = Modifier.weight(1f), end = 6.dp)
-                    FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, modifier = Modifier.weight(1f), start = 6.dp)
-                }
-                // The two-way switch cannot show "Giá theo khối ngày"; that choice lives on the block screen
-                if (defaultMode != PricingMode.BLOCK) Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.v2_form_default_pricing), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
-                    V2Segmented(
-                        titles = listOf(stringResource(R.string.v2_price_per_rental), stringResource(R.string.v2_price_per_day)),
-                        selected = if (defaultMode == PricingMode.PER_DAY) 1 else 0,
-                        onSelect = { defaultMode = if (it == 1) PricingMode.PER_DAY else PricingMode.PER_RENTAL },
-                        modifier = Modifier.fillMaxWidth(),
-                        fill = true,
-                    )
+                        placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth())
+                } else {
+                    BlockTableEditor(blockEditor)
                 }
                 Row {
                     FormField(stringResource(R.string.v2_form_sale_price), value = sale, onChange = { sale = MoneyInput.display(MoneyInput.parse(it)) },
@@ -395,32 +414,6 @@ fun ProductFormV2Screen(
                 }
                 FormField(stringResource(R.string.v2_form_cost_price), value = cost, onChange = { cost = MoneyInput.display(MoneyInput.parse(it)) },
                     placeholder = stringResource(R.string.v2_form_cost_placeholder), numeric = true, modifier = Modifier.fillMaxWidth())
-                // #1189: one neutral row; the table is edited on its own screen
-                HorizontalDivider(color = DS.Colors.Divider)
-                val blockRes = LocalContext.current.resources
-                val blockRowTitle = stringResource(R.string.block_title)
-                Row(
-                    Modifier.fillMaxWidth().clickable(role = Role.Button) { showBlockScreen = true }
-                        .semantics { contentDescription = "product.form.blockRow" }
-                        .heightIn(min = 56.dp).padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(blockRowTitle, fontSize = DS.TextSize.Body)
-                    Text(
-                        blockTable?.let { BlockText.rowSummary(blockRes, it) } ?: stringResource(R.string.block_row_off),
-                        fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(16.dp))
-                }
-                blockTable?.let { table ->
-                    Text(
-                        BlockText.rangeSummary(blockRes, table), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
-                    )
-                }
-                HorizontalDivider(color = DS.Colors.Divider)
             }
 
             SectionBand(stringResource(R.string.v2_form_stock))
@@ -471,22 +464,6 @@ fun ProductFormV2Screen(
                     checkBarcode(code)
                 },
                 embeddedInSheet = true,
-            )
-        }
-    }
-    if (showBlockScreen) {
-        AppFormSheet(onDismiss = { showBlockScreen = false }, fullScreen = true, nested = true) {
-            BlockPriceScreen(
-                productName = name,
-                draft = BlockPriceDraft(MoneyInput.parse(perRental), MoneyInput.parse(perDay), defaultMode, blockTable),
-                onSave = { saved ->
-                    perRental = MoneyInput.display(saved.perRental)
-                    perDay = MoneyInput.display(saved.perDay)
-                    blockTable = saved.table
-                    defaultMode = saved.defaultMode
-                    showBlockScreen = false
-                },
-                onClose = { showBlockScreen = false },
             )
         }
     }

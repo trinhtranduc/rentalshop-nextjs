@@ -245,13 +245,21 @@ extension OrderItem {
 
 // MARK: - Form input
 
-/// What the product price screen holds when "Lưu bảng giá" is tapped
-struct BlockPriceDraft: Equatable {
-    var perRental: Double?
-    var perDay: Double?
-    var defaultMode: ProductPricingMode
-    /// nil = no day-block table
-    var table: BlockTable?
+extension BlockPricing {
+    /// #1249: a product priced per day without a table opens with its day price on row 1 and the same price for each
+    /// extra day. That table charges exactly day price × days, so it is the old price shown as a table.
+    static func seed(perDay: Double?) -> BlockTable? {
+        guard let perDay, perDay >= 0 else { return nil }
+        return BlockTable(tiers: [perDay], startDay: 1, extraMode: BlockTable.extraPerDay, extraPrice: perDay)
+    }
+
+    /// The table to send, or nil when the form sends none: nothing typed, or the table is still the one shown from
+    /// the old day price (the product then stays the DAILY price it was)
+    static func tableToSave(_ table: BlockTable?, perDay: Double?) -> BlockTable? {
+        guard let table else { return nil }
+        if let seed = seed(perDay: perDay), seed == table { return nil }
+        return table
+    }
 }
 
 enum BlockTableInput: Equatable {

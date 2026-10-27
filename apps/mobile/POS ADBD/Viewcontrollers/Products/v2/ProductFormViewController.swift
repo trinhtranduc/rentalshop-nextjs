@@ -27,13 +27,14 @@ final class ProductFormViewController: BaseViewControler {
     private var categories: [Category] = []
     private var categoryId: Int?
     private var merchantOutlets: [(id: Int, isDefault: Bool)] = []
-    private var defaultMode: ProductPricingMode = .perRental
-    /// #1189: the day-block table edited on `BlockPriceViewController`; nil = none
-    private var blockTable: BlockTable?
-    private let blockRow = V2ValueRow(title: "block.title".localized())
-    private let blockRange = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
-    private var blockRangeWrap = UIView()
-    private var defaultBoxWrap = UIView()
+    /// #1249: ONE choice, "Theo lần" (the per-rental box) or "Theo ngày" (the day table right below it); new products start on Theo lần
+    private var priceKind: ProductPriceKind = .perRental
+    /// The saved per-day price. There is no box for it any more; it is kept so an old per-day product saves as it was,
+    /// and it fills row 1 of the table when the product opens on Theo ngày
+    private var legacyPerDay: Double?
+    private let blockEditor = BlockTableEditorView()
+    private var rentalBoxWrap = UIView()
+    private var kindRows: [ProductPriceKind: UIView] = [:]
     private var keyboardManagerWasEnabled = true
 
     private let scroll = UIScrollView()
@@ -44,12 +45,10 @@ final class ProductFormViewController: BaseViewControler {
     private let barcodeField = UITextField()
     private let barcodeWarning = V2.label(size: DS.TextSize.secondary, color: V2.danger, lines: 0)
     private let perRentalField = UITextField()
-    private let perDayField = UITextField()
     private let saleField = UITextField()
     private let depositField = UITextField()
     /// #887: Giá vốn (optional, prices only)
     private let costField = UITextField()
-    private let defaultToggle = V2Segmented(titles: ["products.price.perRental".localized(), "products.price.perDay".localized()])
     private let quantityStepper = V2Stepper()
     private let stockNote = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
 
@@ -227,31 +226,20 @@ final class ProductFormViewController: BaseViewControler {
         if showsPrices {
             form.addArrangedSubview(V2.sectionHeader("products.form.prices".localized()))
             configure(perRentalField, placeholder: "0", numeric: true)
-            configure(perDayField, placeholder: "0", numeric: true)
-            form.addArrangedSubview(pair(field(title: "products.form.perRental".localized(), required: false, input: perRentalField),
-                                         field(title: "products.form.perDay".localized(), required: false, input: perDayField)))
-            let defaultTitle = V2.label("products.form.defaultPricing".localized(), size: DS.TextSize.body, weight: .bold)
-            defaultToggle.addTarget(self, action: #selector(defaultChanged), for: .valueChanged)
-            let defaultBox = UIStackView(arrangedSubviews: [defaultTitle, defaultToggle])
-            defaultBox.axis = .vertical
-            defaultBox.spacing = 6
-            defaultBoxWrap = padded(defaultBox, top: 8, bottom: 8)
-            form.addArrangedSubview(defaultBoxWrap)
+            form.addArrangedSubview(kindRow(.perRental, title: "products.form.perRental".localized()))
+            form.addArrangedSubview(V2.divider())
+            form.addArrangedSubview(kindRow(.perDay, title: "products.form.perDay".localized()))
+            form.addArrangedSubview(V2.divider())
+            rentalBoxWrap = padded(field(title: "products.form.perRental".localized(), required: false, input: perRentalField), top: 8, bottom: 4)
+            form.addArrangedSubview(rentalBoxWrap)
+            form.addArrangedSubview(blockEditor)
+            renderKind()
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
             configure(depositField, placeholder: "0", numeric: true)
             form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField),
                                          field(title: "products.form.deposit".localized(), required: false, input: depositField)))
             configure(costField, placeholder: "product.form.costPrice.placeholder".localized(), numeric: true)
             form.addArrangedSubview(field(title: "product.form.costPrice".localized(), required: false, input: costField))
-            // #1189: one neutral row; the table is edited on its own screen
-            blockRow.accessibilityIdentifier = "product.form.blockRow"
-            blockRow.addTarget(self, action: #selector(openBlockPrice), for: .touchUpInside)
-            form.addArrangedSubview(V2.divider())
-            form.addArrangedSubview(blockRow)
-            blockRangeWrap = padded(blockRange, top: 0, bottom: 10)
-            form.addArrangedSubview(blockRangeWrap)
-            form.addArrangedSubview(V2.divider())
-            renderBlockRow()
         }
 
         // Stock
@@ -344,14 +332,14 @@ final class ProductFormViewController: BaseViewControler {
         barcodeField.text = product.barcode
         categoryId = product.categoryId ?? product.category?.id
         perRentalField.text = MoneyInput.display(ProductPricing.perRental(product))
-        perDayField.text = MoneyInput.display(ProductPricing.perDay(product))
+        legacyPerDay = ProductPricing.perDay(product)
         saleField.text = MoneyInput.display(ProductPricing.sale(product))
         if let deposit = product.deposit, deposit > 0 { depositField.text = MoneyInput.display(deposit) }
         if let cost = product.costPrice, cost > 0 { costField.text = MoneyInput.display(cost) }
-        defaultMode = ProductPricing.defaultMode(product)
-        defaultToggle.select(defaultMode == .perDay ? 1 : 0)
-        blockTable = ProductPricing.block(product)
-        renderBlockRow()
+        priceKind = ProductPricing.kind(product)
+        // the saved table, else the old day price as row 1 (same price for every extra day)
+        blockEditor.load(ProductPricing.block(product) ?? BlockPricing.seed(perDay: legacyPerDay))
+        renderKind()
         photos = (product.images?.isEmpty == false ? product.images! : [product.image_url].compactMap { $0 })
             .filter { !$0.isEmpty }.map { .remote($0) }
         renderStock()
@@ -461,7 +449,7 @@ final class ProductFormViewController: BaseViewControler {
     }
 
     private func revealFocusedField() {
-        guard let field = [nameField, barcodeField, perRentalField, perDayField, saleField, depositField, costField].first(where: { $0.isFirstResponder }),
+        guard let field = [nameField, barcodeField, perRentalField, saleField, depositField, costField].first(where: { $0.isFirstResponder }),
               let box = field.superview?.superview else { return }
         scroll.scrollRectToVisible(box.convert(box.bounds, to: scroll).insetBy(dx: 0, dy: -12), animated: true)
     }
@@ -474,41 +462,46 @@ final class ProductFormViewController: BaseViewControler {
         field.text = MoneyInput.display(MoneyInput.parse(field.text))
     }
 
-    /// "Giá theo khối ngày · Chưa dùng ›" or "3 mốc · +20.000đ mỗi ngày ›" with its first and last day under it
-    private func renderBlockRow() {
+    /// A radio row of the one price choice; the tap on the row picks it
+    private func kindRow(_ kind: ProductPriceKind, title: String) -> UIView {
+        let label = V2.label(title, size: DS.TextSize.input)
+        let dot = UIView()
+        dot.backgroundColor = .white
+        dot.layer.cornerRadius = 11
+        dot.isUserInteractionEnabled = false
+        dot.snp.makeConstraints { make in make.size.equalTo(22) }
+        let row = UIStackView(arrangedSubviews: [dot, label, UIView()])
+        row.alignment = .center
+        row.spacing = 14
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 8, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg)
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(52) }
+        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(kindTapped(_:))))
+        row.accessibilityIdentifier = kind == .perRental ? "product.form.kind.perRental" : "product.form.kind.perDay"
+        row.tag = kind == .perRental ? 0 : 1
+        kindRows[kind] = row
+        return row
+    }
+
+    /// Shows the chosen kind: the per-rental box, or the day table; both keep what was typed
+    private func renderKind() {
         guard showsPrices else { return }
-        if let table = blockTable {
-            blockRow.valueLabel.text = BlockPricing.rowSummary(table)
-            blockRange.text = BlockPricing.rangeSummary(table)
-        } else {
-            blockRow.valueLabel.text = "block.row.off".localized()
-            blockRange.text = nil
+        for (kind, row) in kindRows {
+            let selected = kind == priceKind
+            guard let stack = row as? UIStackView, stack.arrangedSubviews.count >= 2,
+                  let dot = stack.arrangedSubviews.first, let label = stack.arrangedSubviews[1] as? UILabel else { continue }
+            dot.layer.borderWidth = selected ? 6 : 1.5
+            dot.layer.borderColor = (selected ? DS.Color.primary : UIColor(hexString: "94A3B8")).cgColor
+            label.font = selected ? Utils.boldFont(size: DS.TextSize.input) : Utils.regularFont(size: DS.TextSize.input)
         }
-        blockRangeWrap.isHidden = blockTable == nil
-        // The two-way switch cannot show "Giá theo khối ngày"; that choice lives on the block screen
-        defaultBoxWrap.isHidden = defaultMode == .block
+        rentalBoxWrap.isHidden = priceKind != .perRental
+        blockEditor.isHidden = priceKind != .perDay
     }
 
-    @objc private func openBlockPrice() {
+    @objc private func kindTapped(_ gesture: UITapGestureRecognizer) {
         view.endEditing(true)
-        let draft = BlockPriceDraft(perRental: MoneyInput.parse(perRentalField.text), perDay: MoneyInput.parse(perDayField.text),
-                                    defaultMode: defaultMode, table: blockTable)
-        let screen = BlockPriceViewController(productName: nameField.text ?? "", draft: draft)
-        screen.modalPresentationStyle = .overFullScreen
-        screen.onSave = { [weak self] saved in
-            guard let self else { return }
-            self.perRentalField.text = MoneyInput.display(saved.perRental)
-            self.perDayField.text = MoneyInput.display(saved.perDay)
-            self.blockTable = saved.table
-            self.defaultMode = saved.defaultMode
-            self.defaultToggle.select(saved.defaultMode == .perDay ? 1 : 0)
-            self.renderBlockRow()
-        }
-        present(screen, animated: true)
-    }
-
-    @objc private func defaultChanged() {
-        defaultMode = defaultToggle.selectedIndex == 1 ? .perDay : .perRental
+        priceKind = gesture.view?.tag == 1 ? .perDay : .perRental
+        renderKind()
     }
 
     @objc private func barcodeEdited() {
@@ -606,11 +599,32 @@ final class ProductFormViewController: BaseViewControler {
     @objc private func saveTapped() {
         view.endEditing(true)
         let rented = stockCounts?.rented ?? 0
+        // #1249: Theo ngày sends the typed table; left as the old day price it sends nothing new (the product stays DAILY)
+        let chosen: (defaultMode: ProductPricingMode, table: BlockTable?)
+        if showsPrices && priceKind == .perDay {
+            switch blockEditor.input {
+            case .invalid:
+                UIAlertController.alert(parent: self, title: "Error".localized(), message: "block.error.invalid".localized())
+                return
+            case .empty:
+                guard legacyPerDay != nil else {
+                    UIAlertController.alert(parent: self, title: "Error".localized(), message: "block.error.empty".localized())
+                    return
+                }
+                chosen = (.perDay, nil)
+            case .table(let typed):
+                let table = BlockPricing.tableToSave(typed, perDay: legacyPerDay)
+                chosen = (ProductPricing.defaultMode(kind: .perDay, table: table), table)
+            }
+        } else {
+            chosen = (.perRental, nil)
+        }
         let input = ProductFormInput(
             name: nameField.text ?? "",
             perRental: MoneyInput.parse(perRentalField.text),
-            perDay: MoneyInput.parse(perDayField.text),
-            defaultMode: defaultMode,
+            perDay: legacyPerDay,
+            defaultMode: chosen.defaultMode,
+            block: chosen.table,
             salePrice: MoneyInput.parse(saleField.text),
             deposit: MoneyInput.parse(depositField.text),
             quantity: quantityStepper.value,
@@ -635,7 +649,7 @@ final class ProductFormViewController: BaseViewControler {
         let barcode = (barcodeField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let keptUrls = photos.compactMap { photo -> String? in if case .remote(let url) = photo { return url }; return nil }
         let newImages = photos.compactMap { photo -> UIImage? in if case .local(let image) = photo { return image }; return nil }
-        let options = showsPrices ? ProductPricing.options(perRental: input.perRental, perDay: input.perDay, defaultMode: input.defaultMode, block: blockTable) : nil
+        let options = showsPrices ? ProductPricing.options(perRental: input.perRental, perDay: input.perDay, defaultMode: input.defaultMode, block: input.block) : nil
         let merchantId = User.current()?.merchant?.id ?? User.current()?.merchantId
 
         let completion: (Product?, NSError?) -> Void = { [weak self] saved, error in
