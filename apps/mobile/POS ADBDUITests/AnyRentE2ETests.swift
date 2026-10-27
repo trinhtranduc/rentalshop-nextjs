@@ -1917,7 +1917,7 @@ final class AnyRentE2ETests: XCTestCase {
             add.tap()
             let name = e2e.field(["Product name", "Tên sản phẩm"])
             XCTAssertTrue(name.waitForExistence(timeout: 8), "Add-product form opens")
-            let priceLabels = ["Prices", "Giá", "Per rental", "Theo lần", "Per day", "Theo mỗi ngày",
+            let priceLabels = ["Prices", "Giá", "Rental price", "Giá thuê", "Per rental", "Theo lần", "Per day", "Theo mỗi ngày",
                                "Sale price", "Giá bán", "Deposit per item", "Cọc mỗi món"]
             let price = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", priceLabels)).firstMatch
             XCTAssertFalse(price.exists, "OUTLET_STAFF must not see price fields in the add-product form")
@@ -2959,7 +2959,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(e2e.scrollTo(blockRow), "the new product form has the Theo block ngày row")
         XCTAssertTrue(app.textFields["product.form.perRental"].exists, "Theo lần box")
         XCTAssertTrue(app.textFields["product.form.perDay"].exists, "Theo mỗi ngày box")
-        XCTAssertTrue(app.staticTexts[blockNotSetTexts[0]].exists || app.staticTexts[blockNotSetTexts[1]].exists, "block says Chưa cài")
+        XCTAssertTrue(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "block says Chưa cài (\(blockRow.value ?? ""))")
         XCTAssertFalse(app.descendants(matching: .any)["product.form.kind.block"].exists, "no radio")
         e2e.shot("80a-new-three-prices")
         // the day price survives a trip to the setup screen and back
@@ -3006,7 +3006,7 @@ final class AnyRentE2ETests: XCTestCase {
         back.tap()
         XCTAssertTrue(app.textFields["product.form.perDay"].waitForExistence(timeout: 5), "cancelled setup returns to the form")
         XCTAssertEqual(app.textFields["product.form.perDay"].value as? String, "80.000", "the day price is still there")
-        XCTAssertTrue(app.staticTexts[blockNotSetTexts[0]].exists || app.staticTexts[blockNotSetTexts[1]].exists, "no table was saved: Chưa cài")
+        XCTAssertTrue(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "no table was saved: Chưa cài")
         // the row again, the table by hand, Lưu bảng giá: the summary shows and the day price box stays
         e2e.scrollTo(blockRow)
         blockRow.tap()
@@ -3015,7 +3015,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(app.textFields["block.tier.3"].waitForExistence(timeout: 5))
         app.buttons["block.save"].tap()
         XCTAssertTrue(blockRow.waitForExistence(timeout: 5), "Lưu bảng giá: back on the form")
-        XCTAssertFalse(app.staticTexts[blockNotSetTexts[0]].exists || app.staticTexts[blockNotSetTexts[1]].exists, "the row shows the table summary")
+        XCTAssertFalse(blockNotSetTexts.contains(blockRow.value as? String ?? ""), "the row shows the table summary")
         XCTAssertTrue(app.textFields["product.form.perDay"].exists, "the day price box stays next to the table")
         e2e.shot("80e-new-block-summary")
         e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
