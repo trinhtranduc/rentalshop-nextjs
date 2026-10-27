@@ -4482,7 +4482,7 @@ final class AnyRentE2ETests: XCTestCase {
             while !(element.exists && element.isHittable) && tries < max { app.swipeUp(); tries += 1 }
         }
 
-        // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2 with the warning
+        // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         // #1270: Cọc › holds Cách thu cọc, Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày
         let collect = text(["Cọc", "Deposit"])
@@ -4498,11 +4498,9 @@ final class AnyRentE2ETests: XCTestCase {
         let staged = text(["Thu cọc theo giai đoạn", "Staged deposit"])
         if app.buttons["deposit.mode.STAGED"].exists { app.buttons["deposit.mode.STAGED"].tap() } else { staged.tap() }
         sleep(1)
-        e2e.shot("60c-enable-warning")
-        e2e.tapIfExists(e2e.button(["Bật", "Turn on"]), timeout: 5)
         sleep(3)
         e2e.shot("60d-mode-staged")
-        XCTAssertTrue(textStarting(["Nhân viên đang dùng app cũ", "Staff on an older app"]).exists, "the old-app warning shows in mode 2")
+        XCTAssertFalse(textStarting(["Nhân viên đang dùng app cũ", "Staff on an older app"]).exists, "no old-app warning in mode 2 (#1275)")
 
         // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over (#1270: the row is in Cọc)
         e2e.goBackOnce()

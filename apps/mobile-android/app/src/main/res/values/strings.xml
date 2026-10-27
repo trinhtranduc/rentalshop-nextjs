@@ -2160,9 +2160,6 @@
     <string name="deposit_mode_one_time_detail">One deposit when ordering, the sum of each product\'s deposit. The rest is collected at hand-over.</string>
     <string name="deposit_mode_staged">Staged deposit</string>
     <string name="deposit_mode_staged_detail">Split the deposit into stages as a % of the order. The rest is collected at hand-over.</string>
-    <string name="deposit_warning_old_apps">Staff on an older app will still collect the deposit per product. Update the app before turning this on.</string>
-    <string name="deposit_enable_title">Turn on staged deposits?</string>
-    <string name="deposit_enable_confirm">Turn on</string>
     <string name="deposit_owner_only">Only the shop owner can change how deposits are collected.</string>
     <string name="deposit_footnote_new_orders_only">Only affects orders created after the change. Existing orders stay as they are.</string>
     <string name="deposit_one_time_read_only">Two collection steps (read only)</string>

@@ -87,7 +87,6 @@ fun DepositSettingsScreen(onDismiss: () -> Unit, start: DepositStart = DepositSt
     var focusPolicy by remember { mutableStateOf(start == DepositStart.POLICY) }
     var editing by remember { mutableStateOf<DepositTemplate?>(null) }
     var editingIsNew by remember { mutableStateOf(true) }
-    var confirmEnable by remember { mutableStateOf(false) }
     var ownerOnlyAlert by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -121,8 +120,7 @@ fun DepositSettingsScreen(onDismiss: () -> Unit, start: DepositStart = DepositSt
     fun modeTapped(mode: DepositMode) {
         if (mode == settings.depositMode || saving) return
         if (!canEdit) { ownerOnlyAlert = true; return }
-        // The warning of the mockup: staff on an older app keep collecting one deposit per product
-        if (mode == DepositMode.STAGED) confirmEnable = true else save(mode = mode)
+        save(mode = mode)
     }
 
     when (page) {
@@ -140,7 +138,6 @@ fun DepositSettingsScreen(onDismiss: () -> Unit, start: DepositStart = DepositSt
                 )
                 DepositDivider()
                 if (settings.depositMode == DepositMode.STAGED) {
-                    DepositWarningBox(stringResource(R.string.deposit_warning_old_apps), Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
                     // #1259: Mẫu giai đoạn and Chính sách huỷ / dời ngày moved to Cài đặt › Thu tiền, next to the bank accounts
                     DepositNote(stringResource(R.string.deposit_footnote_new_orders_only))
                 } else {
@@ -177,15 +174,6 @@ fun DepositSettingsScreen(onDismiss: () -> Unit, start: DepositStart = DepositSt
         )
     }
 
-    if (confirmEnable) {
-        AppAlertConfirm(
-            title = stringResource(R.string.deposit_enable_title),
-            message = stringResource(R.string.deposit_warning_old_apps),
-            confirmLabel = stringResource(R.string.deposit_enable_confirm),
-            onConfirm = { confirmEnable = false; save(mode = DepositMode.STAGED) },
-            onDismiss = { confirmEnable = false },
-        )
-    }
     if (ownerOnlyAlert) {
         AppAlertError(
             message = stringResource(R.string.deposit_owner_only), title = stringResource(R.string.deposit_settings_title),

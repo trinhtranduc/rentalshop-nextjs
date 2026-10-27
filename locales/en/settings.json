@@ -794,7 +794,6 @@
       "viewOnly": "View only",
       "productDepositNote": "The deposit of each item is set on the product page (\"Deposit\" field).",
       "newOrdersOnly": "Only affects orders created after the change. Existing orders stay as they are.",
-      "oldAppWarning": "Staff using an old app will still collect the per-product deposit. Update the app before turning this on.",
       "templates": "Shop deposit templates",
       "templateCount": "{count} templates",
       "default": "Default",
@@ -831,9 +830,6 @@
       "saved": "Deposit settings saved",
       "saveFailed": "Could not save",
       "loadFailed": "Could not load the deposit settings.",
-      "confirmTitle": "Turn on deposit in stages?",
-      "confirmOk": "Turn on",
-      "close": "Close",
       "due": {
         "onCreate": "When the order is placed",
         "beforePickup": "{days} days before pick-up",

@@ -794,7 +794,6 @@
       "viewOnly": "Chỉ xem",
       "productDepositNote": "Tiền cọc của mỗi món đặt ở trang sản phẩm (ô \"Tiền cọc\").",
       "newOrdersOnly": "Chỉ ảnh hưởng đơn tạo sau khi đổi. Đơn cũ giữ nguyên.",
-      "oldAppWarning": "Nhân viên đang dùng app cũ sẽ vẫn thu cọc theo sản phẩm. Hãy cập nhật app trước khi bật.",
       "templates": "Mẫu thu cọc của tiệm",
       "templateCount": "{count} mẫu",
       "default": "Mặc định",
@@ -831,9 +830,6 @@
       "saved": "Đã lưu cách thu cọc",
       "saveFailed": "Không lưu được",
       "loadFailed": "Không tải được cài đặt thu cọc.",
-      "confirmTitle": "Bật thu cọc theo giai đoạn?",
-      "confirmOk": "Bật",
-      "close": "Đóng",
       "due": {
         "onCreate": "Khi đặt đơn",
         "beforePickup": "Trước ngày lấy {days} ngày",

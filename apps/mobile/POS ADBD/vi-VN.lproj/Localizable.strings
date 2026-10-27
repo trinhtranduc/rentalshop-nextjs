@@ -2826,9 +2826,6 @@
 "deposit.mode.oneTime.detail" = "Một lần cọc lúc đặt, bằng tổng cọc của từng sản phẩm. Phần còn lại thu khi giao.";
 "deposit.mode.staged" = "Thu cọc theo giai đoạn";
 "deposit.mode.staged.detail" = "Chia cọc thành nhiều giai đoạn theo % giá trị đơn. Phần còn lại thu khi giao.";
-"deposit.warning.oldApps" = "Nhân viên đang dùng app cũ sẽ vẫn thu cọc theo sản phẩm. Hãy cập nhật app trước khi bật.";
-"deposit.enable.title" = "Bật thu cọc theo giai đoạn?";
-"deposit.enable.confirm" = "Bật";
 "deposit.ownerOnly" = "Chỉ chủ shop đổi được cách thu cọc.";
 "deposit.footnote.newOrdersOnly" = "Chỉ ảnh hưởng đơn tạo sau khi đổi. Đơn cũ giữ nguyên.";
 "deposit.oneTime.readOnly" = "Hai giai đoạn thu (chỉ xem)";
