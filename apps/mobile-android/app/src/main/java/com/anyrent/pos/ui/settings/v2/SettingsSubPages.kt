@@ -11,13 +11,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import com.anyrent.pos.R
 import com.anyrent.pos.data.DepositPlanApi
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.repository.BankAccountRepository
 import com.anyrent.pos.domain.deposit.DepositSettings
-import com.anyrent.pos.domain.settings.CollectRow
 import com.anyrent.pos.domain.settings.SettingsRows
 import com.anyrent.pos.ui.deposit.DepositFullScreen
 import com.anyrent.pos.ui.deposit.DepositStart
@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
 /** #1259: active bank accounts of the own branch (the owner: the default, else the first, branch); null when unknown or not for this role */
 internal object SettingsBankCount {
     suspend fun load(role: String?): Int? {
-        if (CollectRow.BANK_ACCOUNTS !in SettingsRows.collectRows(role)) return null
+        if (!com.anyrent.pos.domain.bank.BankAccountRules.canManage(role)) return null
         return withContext(Dispatchers.IO) {
             runCatching {
                 val outlet = BankAccountRepository.outlets().firstOrNull() ?: return@runCatching null
@@ -41,64 +41,43 @@ internal object SettingsBankCount {
 }
 
 /**
- * Cài đặt › Thu tiền (#1259; iOS `CollectMoneyViewController`): NGÂN HÀNG (Tài khoản ngân hàng, owner and outlet admin)
- * and CỌC (Cách thu cọc, Mẫu giai đoạn, Chính sách huỷ / dời ngày). Every role reads the deposit lines; only the shop
- * owner edits them.
+ * Cài đặt › Cọc (#1270 plan B; iOS `DepositHubViewController`): CÁCH THU CỌC (the mode screen) and GIAI ĐOẠN & CHÍNH SÁCH
+ * (Mẫu giai đoạn, Chính sách huỷ / dời ngày). Every role reads; only the shop owner edits. The two lower rows look dimmed
+ * in "Thu cọc 1 lần" but stay tappable.
  */
 @Composable
-internal fun CollectMoneyScreen(
-    onBack: () -> Unit,
-    onOpenBankAccounts: () -> Unit,
-    onOpenDeposit: (DepositStart) -> Unit,
-    refreshKey: Int,
-) {
-    val role = SessionStore.role
+internal fun DepositHubScreen(onBack: () -> Unit, onOpenDeposit: (DepositStart) -> Unit, refreshKey: Int) {
     var settings by remember { mutableStateOf<DepositSettings?>(null) }
-    var bankCount by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(refreshKey) {
         withContext(Dispatchers.IO) { DepositPlanApi.settings() }.onSuccess { settings = it }
-        SettingsBankCount.load(role)?.let { bankCount = it }
     }
-    val rows = SettingsRows.collectRows(role)
-    DepositFullScreen(stringResource(R.string.settings_v2_collect), onBack = onBack) {
+    val loaded = settings
+    val staged = loaded?.depositMode == com.anyrent.pos.domain.deposit.DepositMode.STAGED
+    val dim = if (SettingsRows.depositStagesDimmed(staged)) 0.45f else 1f
+    DepositFullScreen(stringResource(R.string.settings_v2_deposit), onBack = onBack) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            if (CollectRow.BANK_ACCOUNTS in rows) {
-                SectionBand(stringResource(R.string.settings_v2_collect_group_bank))
+            SectionBand(stringResource(R.string.settings_v2_deposit_group_mode))
+            SettingRow(
+                stringResource(R.string.deposit_settings_title),
+                stringResource(if (staged) R.string.settings_v2_collect_staged else R.string.settings_v2_collect_one_time),
+                chevron = true,
+            ) { onOpenDeposit(DepositStart.MODE) }
+            SectionBand(stringResource(R.string.settings_v2_deposit_group_stages))
+            Column(Modifier.alpha(dim)) {
                 SettingRow(
-                    stringResource(R.string.bank_accounts),
-                    bankCount?.let { stringResource(R.string.settings_v2_collect_accounts, it) },
+                    stringResource(R.string.deposit_templates_row),
+                    loaded?.let { stringResource(R.string.deposit_templates_count, it.choices.size) },
                     chevron = true,
-                    onClick = onOpenBankAccounts,
-                )
-            }
-            SectionBand(stringResource(R.string.settings_v2_collect_group_deposit))
-            val loaded = settings
-            rows.filter { it != CollectRow.BANK_ACCOUNTS }.forEach { row ->
-                when (row) {
-                    CollectRow.DEPOSIT_MODE -> SettingRow(
-                        stringResource(R.string.deposit_settings_title),
+                ) { onOpenDeposit(DepositStart.TEMPLATES) }
+                SettingRow(
+                    stringResource(R.string.deposit_policy_row),
+                    loaded?.let {
                         stringResource(
-                            if (loaded?.depositMode == com.anyrent.pos.domain.deposit.DepositMode.STAGED) R.string.settings_v2_collect_staged
-                            else R.string.settings_v2_collect_one_time,
-                        ),
-                        chevron = true,
-                    ) { onOpenDeposit(DepositStart.MODE) }
-                    CollectRow.TEMPLATES -> SettingRow(
-                        stringResource(R.string.deposit_templates_row),
-                        loaded?.let { stringResource(R.string.deposit_templates_count, it.choices.size) },
-                        chevron = true,
-                    ) { onOpenDeposit(DepositStart.TEMPLATES) }
-                    CollectRow.POLICY -> SettingRow(
-                        stringResource(R.string.deposit_policy_row),
-                        loaded?.let {
-                            stringResource(
-                                if (it.cancellationPolicy.isNotBlank()) R.string.settings_v2_collect_policy_set else R.string.settings_v2_collect_policy_unset,
-                            )
-                        },
-                        chevron = true,
-                    ) { onOpenDeposit(DepositStart.POLICY) }
-                    CollectRow.BANK_ACCOUNTS -> Unit
-                }
+                            if (it.cancellationPolicy.isNotBlank()) R.string.settings_v2_collect_policy_set else R.string.settings_v2_collect_policy_unset,
+                        )
+                    },
+                    chevron = true,
+                ) { onOpenDeposit(DepositStart.POLICY) }
             }
         }
     }
