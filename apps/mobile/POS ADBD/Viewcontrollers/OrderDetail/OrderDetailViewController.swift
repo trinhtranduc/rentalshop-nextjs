@@ -614,9 +614,15 @@ final class OrderDetailViewController: BaseViewControler {
         stack.addArrangedSubview(keyValue(discount > 0 ? totalTitle : "order.detail.goods".localized(),
                                           MoneyFormatter.format(detail.totalAmount), divider: false))
         // #1199: the stages replace the single "Cọc" row
+        // #1265: the stages are a section of their own, between two grey bands (the 8pt band under the header)
         let hasPlan = DepositPlanLogic.hasPlan(detail)
+        var planSection: UIView?
+        var above: UIView?
         if hasPlan {
-            stack.addArrangedSubview(InstallmentCardView.make(
+            let goods = UIStackView(arrangedSubviews: stack.arrangedSubviews)  // the goods row, above the section
+            goods.axis = .vertical
+            above = padded(goods, top: 0, bottom: 0)
+            planSection = stageSection(InstallmentCardView.make(
                 detail: detail, role: User.account()?.role,
                 onEdit: { [weak self] in self?.openPlanEditor() },
                 onCollect: { [weak self] stage in self?.presentCollect(stage) },
@@ -663,7 +669,24 @@ final class OrderDetailViewController: BaseViewControler {
                 stack.addArrangedSubview(keyValue("Damage fee".localized(), MoneyFormatter.format(detail.damageFee), divider: false))
             }
         }
-        return padded(stack, top: 0, bottom: 0)
+        guard let above, let planSection else { return padded(stack, top: 0, bottom: 0) }
+        let column = UIStackView(arrangedSubviews: [above, planSection, padded(stack, top: 0, bottom: 0)])
+        column.axis = .vertical
+        return column
+    }
+
+    /// #1265: a block like "Sẵn sàng giao" under the header: grey band above and below, the content in the side gutters
+    private func stageSection(_ content: UIView) -> UIView {
+        func band() -> UIView {
+            let view = UIView()
+            view.backgroundColor = DS.Color.background
+            view.snp.makeConstraints { make in make.height.equalTo(8) }
+            return view
+        }
+        let column = UIStackView(arrangedSubviews: [band(), padded(content, top: 0, bottom: 0), band()])
+        column.axis = .vertical
+        column.accessibilityIdentifier = "deposit.section"
+        return column
     }
 
     private func notesSection(_ detail: OrderDetail) -> UIView {

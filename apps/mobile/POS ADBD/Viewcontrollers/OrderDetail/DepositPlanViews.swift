@@ -138,7 +138,7 @@ enum InstallmentCardView {
         // #1246: no frame. A section like "ITEMS", as wide as the other rows (the parent stack insets by DS.Spacing.lg)
         let holder = UIView()
         holder.addSubview(card)
-        card.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 18, left: 0, bottom: 6, right: 0)) }
+        card.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)) }
         holder.accessibilityIdentifier = "deposit.card"
         return holder
     }

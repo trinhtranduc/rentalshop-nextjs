@@ -2134,6 +2134,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapRow(row)
         XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10))
         sleep(2)
+        e2e.shot("5g-detail-top")
         app.swipeUp()
         sleep(1)
         e2e.shot("5g-deposit-card")
