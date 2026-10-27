@@ -94,13 +94,6 @@ enum ProductPricingMode: String {
     case block = "BLOCK"
 }
 
-/// #1249: the group "Giá nhiều ngày" on the product form: ONE of "Thuê theo ngày" (one price a day) or "Giá theo khối
-/// ngày" (the table). "Thuê theo lần" is always there and is the default for new orders; there is no "mặc định tính" switch.
-enum ProductDayKind: Equatable {
-    case perDay
-    case block
-}
-
 enum ProductPricing {
     private static func activeOptions(_ product: Product) -> [PricingOption] {
         (product.pricingOptions ?? []).filter { $0.isActive != false }
@@ -361,58 +354,36 @@ enum BarcodeMatch {
 
 // MARK: - Form
 
-/// #1249: what the price part of the product form holds. Both the day price and the table stay in memory while the
-/// owner switches the radio, but only the chosen one is sent.
+/// #1249 (mockup v179): what the price part of the product form holds. "Theo lần", "Theo mỗi ngày" and "Theo block ngày"
+/// all exist together (no radio, no "mặc định tính" switch) and all are sent when filled.
 struct ProductPriceDraft: Equatable {
     var perRental: Double?
     var perDay: Double?
-    var kind: ProductDayKind = .perDay
+    /// The day table; nil = "Chưa cài"
     var block: BlockTable?
 
-    enum Choice: Equatable {
-        case selected
-        /// "Giá theo khối ngày" without a table: open the setup screen; nothing changed yet
-        case needsSetup
-    }
-
-    init(perRental: Double? = nil, perDay: Double? = nil, kind: ProductDayKind = .perDay, block: BlockTable? = nil) {
+    init(perRental: Double? = nil, perDay: Double? = nil, block: BlockTable? = nil) {
         self.perRental = perRental
         self.perDay = perDay
-        self.kind = kind
         self.block = block
     }
 
-    /// New product: empty boxes, Thuê theo ngày. Saved product: a table opens on Giá theo khối ngày; anything else on
-    /// Thuê theo ngày with its day price (an old DAILY price stays a DAILY price, it is never turned into a table).
+    /// New product: three empty prices. Saved product: each saved price fills its own row; an old DAILY price stays a
+    /// DAILY price, it is never turned into a table.
     init(product: Product?) {
         guard let product else { self.init(); return }
-        let table = ProductPricing.block(product)
-        self.init(perRental: ProductPricing.perRental(product), perDay: ProductPricing.perDay(product),
-                  kind: table != nil ? .block : .perDay, block: table)
-    }
-
-    mutating func choose(_ next: ProductDayKind) -> Choice {
-        if next == .block && block == nil { return .needsSetup }
-        kind = next
-        return .selected
+        self.init(perRental: ProductPricing.perRental(product), perDay: ProductPricing.perDay(product), block: ProductPricing.block(product))
     }
 
     /// "Lưu bảng giá" on the setup screen
-    mutating func saveTable(_ table: BlockTable) {
-        block = table
-        kind = .block
-    }
+    mutating func saveTable(_ table: BlockTable) { block = table }
 
-    /// "Tắt giá theo khối ngày": back to Thuê theo ngày, the day price is still there
-    mutating func turnOffTable() {
-        block = nil
-        kind = .perDay
-    }
+    /// "Tắt giá theo khối ngày": the table goes ("Chưa cài"); the other two prices stay
+    mutating func turnOffTable() { block = nil }
 
-    /// FIXED, plus DAILY or BLOCK (the chosen one). FIXED is the default whenever it has a price.
+    /// FIXED + DAILY (when its box has a price) + BLOCK (when a table is set). FIXED is the default whenever it has a price.
     var options: [PricingOptionRequest] {
-        ProductPricing.options(perRental: perRental, perDay: kind == .perDay ? perDay : nil, defaultMode: .perRental,
-                               block: kind == .block ? block : nil)
+        ProductPricing.options(perRental: perRental, perDay: perDay, defaultMode: .perRental, block: block)
     }
 
     var rentPrice: Double { options.first(where: { $0.isDefault })?.price ?? 0 }

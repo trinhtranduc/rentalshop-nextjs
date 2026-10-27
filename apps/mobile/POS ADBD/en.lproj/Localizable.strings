@@ -1578,8 +1578,8 @@
 "products.form.regenerateBarcode" = "New barcode";
 "products.form.barcodeUsed" = "Barcode already used by %@";
 "products.form.prices" = "Prices";
-"products.form.perRental" = "Rent per rental";
-"products.form.perDay" = "Rent per day";
+"products.form.perRental" = "Per rental";
+"products.form.perDay" = "Per day";
 "products.form.defaultPricing" = "New orders charge by default";
 "products.form.salePrice" = "Sale price";
 "products.form.notForSale" = "Not for sale";
@@ -2996,8 +2996,8 @@
 "settings.v2.profile.group" = "Profile";
 "settings.v2.profile.security" = "Security";
 "products.form.unit.once" = "/ rental";
-"products.form.manyDays" = "Multi-day price (pick 1 of 2)";
-"products.form.perDay.box" = "Price per day";
+"products.form.perBlock" = "Per day-block";
+"products.form.block.notSet" = "Not set";
 "block.intro" = "Each number of days has one price. A customer who rents exactly that many days pays that row.";
 "block.copy" = "Copy from another product";
 "block.copy.empty" = "No product has a day-block price table yet.";

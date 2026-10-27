@@ -14,7 +14,7 @@ import SnapKit
 final class BlockPriceViewController: UIViewController {
     /// "Lưu bảng giá": a valid table
     var onSave: ((BlockTable) -> Void)?
-    /// "Tắt giá theo khối ngày": back to Thuê theo ngày
+    /// "Tắt giá theo khối ngày": the table is dropped ("Chưa cài")
     var onTurnOff: (() -> Void)?
 
     private let editor = BlockTableEditorView()

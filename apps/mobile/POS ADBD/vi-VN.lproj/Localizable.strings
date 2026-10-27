@@ -1576,8 +1576,8 @@
 "products.form.regenerateBarcode" = "Tạo mã mới";
 "products.form.barcodeUsed" = "Mã vạch đã dùng cho %@";
 "products.form.prices" = "Giá";
-"products.form.perRental" = "Thuê theo lần";
-"products.form.perDay" = "Thuê theo ngày";
+"products.form.perRental" = "Theo lần";
+"products.form.perDay" = "Theo mỗi ngày";
 "products.form.defaultPricing" = "Khi tạo đơn, mặc định tính";
 "products.form.salePrice" = "Giá bán";
 "products.form.notForSale" = "Không bán";
@@ -2994,8 +2994,8 @@
 "settings.v2.profile.group" = "Hồ sơ";
 "settings.v2.profile.security" = "Bảo mật";
 "products.form.unit.once" = "/ lần";
-"products.form.manyDays" = "Giá nhiều ngày (chọn 1 trong 2)";
-"products.form.perDay.box" = "Giá thuê mỗi ngày";
+"products.form.perBlock" = "Theo block ngày";
+"products.form.block.notSet" = "Chưa cài";
 "block.intro" = "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.";
 "block.copy" = "Sao chép từ sản phẩm khác";
 "block.copy.empty" = "Chưa có sản phẩm nào có bảng giá theo khối ngày.";
