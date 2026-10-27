@@ -146,14 +146,14 @@ final class BankQRTests: XCTestCase {
 
     // MARK: - Settings row
 
-    /// #1259: the bank accounts line lives inside Thu tiền; owner and outlet admin only
+    /// #1270: the bank accounts line is a row of CỬA HÀNG for owners and outlet admins only
     func testBankAccountsRowForOwnersAndOutletAdminsOnly() {
-        XCTAssertTrue(SettingsV2Logic.collectRows(role: .merchant).contains(.bankAccounts))
-        XCTAssertTrue(SettingsV2Logic.collectRows(role: .outletAdmin).contains(.bankAccounts))
-        XCTAssertFalse(SettingsV2Logic.collectRows(role: .outletStaff).contains(.bankAccounts))
-        XCTAssertFalse(SettingsV2Logic.collectRows(role: .outletInventory).contains(.bankAccounts))
-        let merchant = SettingsV2Logic.sections(role: .merchant, permissions: [], hasPlan: false)
-        XCTAssertEqual(merchant[0].items, [.storeInfo, .collect, .printing])
+        for role: Role in [.merchant, .outletAdmin] {
+            XCTAssertTrue(SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false)[0].items.contains(.bankAccounts), "\(role)")
+        }
+        for role: Role in [.outletStaff, .outletInventory] {
+            XCTAssertFalse(SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).flatMap(\.items).contains(.bankAccounts), "\(role)")
+        }
     }
 
     func testNewStringsExistInBothLanguages() throws {

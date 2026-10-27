@@ -295,6 +295,8 @@ struct SettingsPageRow {
     var value: String?
     var identifier: String?
     var destructive = false
+    /// #1270: looks dimmed but stays tappable (Mẫu giai đoạn, Chính sách in "Thu cọc 1 lần")
+    var dimmed = false
     var action: (() -> Void)?
 }
 
@@ -343,6 +345,7 @@ class SettingsListPageViewController: BaseViewControler {
                 control.valueLabel.text = row.value
                 control.accessibilityIdentifier = row.identifier
                 if row.destructive { control.titleLabel.textColor = V2.danger }
+                if row.dimmed { control.titleLabel.alpha = 0.45; control.valueLabel.alpha = 0.45 }
                 if let action = row.action {
                     control.tag = actions.count
                     actions.append(action)
@@ -385,28 +388,22 @@ enum SettingsBankCount {
     }
 }
 
-/// Cài đặt › Thu tiền: NGÂN HÀNG (Tài khoản ngân hàng, owner and outlet admin) and CỌC (Cách thu cọc, Mẫu giai đoạn,
-/// Chính sách huỷ / dời ngày). Every role reads the deposit lines; only the shop owner edits them.
-final class CollectMoneyViewController: SettingsListPageViewController {
+/// Cài đặt › Cọc (#1270 plan B): CÁCH THU CỌC (the mode screen) and GIAI ĐOẠN & CHÍNH SÁCH (Mẫu giai đoạn, Chính sách
+/// huỷ / dời ngày). Every role reads; only the shop owner edits. The two lower rows look dimmed in "Thu cọc 1 lần".
+final class DepositHubViewController: SettingsListPageViewController {
     private var settings = DepositSettings(depositMode: DepositModeStore.current)
     private var loaded = false
     private var generation = 0
-    private var bankCount: Int?
 
     private var canEdit: Bool { User.account()?.role == .merchant }
 
-    init() { super.init(title: "settings.v2.collect".localized()) }
+    init() { super.init(title: "settings.v2.deposit".localized()) }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         loadSettings()
-        SettingsBankCount.load(role: User.account()?.role, ownOutletId: User.account()?.outletId) { [weak self] count in
-            guard let self, self.bankCount != count else { return }
-            self.bankCount = count
-            self.reload()
-        }
     }
 
     private func loadSettings() {
@@ -424,40 +421,26 @@ final class CollectMoneyViewController: SettingsListPageViewController {
     }
 
     override func sections() -> [SettingsPageSection] {
-        let rows = SettingsV2Logic.collectRows(role: User.account()?.role)
-        var bank: [SettingsPageRow] = []
-        var deposit: [SettingsPageRow] = []
-        for row in rows {
-            switch row {
-            case .bankAccounts:
-                bank.append(SettingsPageRow(title: "Bank Accounts".localized(),
-                                            value: bankCount.map { String(format: "settings.v2.collect.accounts".localized(), $0) },
-                                            identifier: "settings.collect.bank") { [weak self] in
-                    let page = BankAccountViewController()
-                    page.v2 = true
-                    self?.navigationController?.pushViewController(page, animated: true)
-                })
-            case .depositMode:
-                deposit.append(SettingsPageRow(title: "deposit.settings.title".localized(),
-                                               value: (settings.depositMode == .staged ? "settings.v2.collect.staged" : "settings.v2.collect.oneTime").localized(),
-                                               identifier: "settings.collect.mode") { [weak self] in
+        let staged = settings.depositMode == .staged
+        let dimmed = SettingsV2Logic.depositStagesDimmed(staged: staged)
+        let isSet = !settings.cancellationPolicy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return [
+            SettingsPageSection(header: "settings.v2.deposit.group.mode".localized(), rows: [
+                SettingsPageRow(title: "deposit.settings.title".localized(),
+                                value: (staged ? "settings.v2.collect.staged" : "settings.v2.collect.oneTime").localized(),
+                                identifier: "settings.collect.mode") { [weak self] in
                     self?.navigationController?.pushViewController(DepositSettingsViewController(), animated: true)
-                })
-            case .templates:
-                deposit.append(SettingsPageRow(title: "deposit.templates.row".localized(),
-                                               value: String(format: "deposit.templates.count".localized(), settings.choices.count),
-                                               identifier: "deposit.templates.row") { [weak self] in self?.openTemplates(focusPolicy: false) })
-            case .policy:
-                let isSet = !settings.cancellationPolicy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                deposit.append(SettingsPageRow(title: "deposit.policy.row".localized(),
-                                               value: (isSet ? "settings.v2.collect.policy.set" : "settings.v2.collect.policy.unset").localized(),
-                                               identifier: "deposit.policy.row") { [weak self] in self?.openTemplates(focusPolicy: true) })
-            }
-        }
-        var list: [SettingsPageSection] = []
-        if !bank.isEmpty { list.append(SettingsPageSection(header: "settings.v2.collect.group.bank".localized(), rows: bank)) }
-        list.append(SettingsPageSection(header: "settings.v2.collect.group.deposit".localized(), rows: deposit))
-        return list
+                },
+            ]),
+            SettingsPageSection(header: "settings.v2.deposit.group.stages".localized(), rows: [
+                SettingsPageRow(title: "deposit.templates.row".localized(),
+                                value: String(format: "deposit.templates.count".localized(), settings.choices.count),
+                                identifier: "deposit.templates.row", dimmed: dimmed) { [weak self] in self?.openTemplates(focusPolicy: false) },
+                SettingsPageRow(title: "deposit.policy.row".localized(),
+                                value: (isSet ? "settings.v2.collect.policy.set" : "settings.v2.collect.policy.unset").localized(),
+                                identifier: "deposit.policy.row", dimmed: dimmed) { [weak self] in self?.openTemplates(focusPolicy: true) },
+            ]),
+        ]
     }
 
     private func openTemplates(focusPolicy: Bool) {

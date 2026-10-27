@@ -372,7 +372,57 @@ final class SettingsV2ViewController: BaseViewControler {
         }
     }
 
-    // MARK: - Thu tiền: bank count (#1259)
+    /// "VND (đ)" / "USD ($)", the current one checked; another one asks to confirm
+    private func chooseCurrency() {
+        let current = ShopCurrencyStore.current
+        let sheet = UIAlertController(title: "settings.v2.currency".localized(), message: nil, preferredStyle: .actionSheet)
+        for currency in ShopCurrency.allCases {
+            let action = UIAlertAction(title: currency.label, style: .default) { [weak self] _ in
+                guard currency != current else { return }
+                self?.confirmCurrency(currency, from: current)
+            }
+            action.setValue(currency == current, forKey: "checked")
+            sheet.addAction(action)
+        }
+        sheet.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        present(sheet, animated: true)
+    }
+
+    private func confirmCurrency(_ currency: ShopCurrency, from current: ShopCurrency) {
+        let alert = UIAlertController(title: ShopCurrencyLogic.confirmTitle(to: currency),
+                                      message: ShopCurrencyLogic.confirmMessage(from: current, to: currency),
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
+        alert.addAction(UIAlertAction(title: ShopCurrencyLogic.confirmButton(to: currency), style: .default) { [weak self] _ in
+            self?.saveCurrency(currency)
+        })
+        present(alert, animated: true)
+    }
+
+    private func saveCurrency(_ currency: ShopCurrency) {
+        guard !ShopCurrencyStore.saving else { return }
+        ShopCurrencyStore.saving = true
+        TabsV2APIService.shared.setShopCurrency(currency) { [weak self] saved, error in
+            DispatchQueue.main.async {
+                ShopCurrencyStore.saving = false
+                if let saved, error == nil {
+                    ShopCurrencyStore.store(saved)
+                    self?.listView.reloadData()
+                    return
+                }
+                guard let self else { return }
+                let failure = error ?? NSError.errorWithOwnMessage(message: "settings.v2.currency.failed".localized(), domain: "RC")
+                UIAlertController.errorAlert(parent: self, error: failure)
+            }
+        }
+    }
+
+    // MARK: - Bank accounts count (#1270)
 
     /// Bank accounts of the own branch (owner: the default branch), shown next to the deposit mode. A failed call
     /// leaves the count out.
@@ -419,7 +469,9 @@ final class SettingsV2ViewController: BaseViewControler {
     private func title(of item: SettingsV2Item) -> String {
         switch item {
         case .storeInfo: return "Store Information".localized()
-        case .collect: return "settings.v2.collect".localized()
+        case .currency: return "settings.v2.currency".localized()
+        case .bankAccounts: return "Bank Accounts".localized()
+        case .deposit: return "settings.v2.deposit".localized()
         case .printing: return "settings.v2.printing".localized()
         case .categories: return "settings.v2.categories".localized()
         case .customers: return "customers.v2.title".localized()
@@ -434,18 +486,18 @@ final class SettingsV2ViewController: BaseViewControler {
     private func value(of item: SettingsV2Item) -> String? {
         switch item {
         case .storeInfo:
-            let currency = ShopCurrencyLogic.canChange(role: user?.role) ? ShopCurrencyStore.current.rawValue : nil
-            let text = SettingsV2Logic.storeValue(name: user?.storeName, currency: currency)
-            return text.isEmpty ? nil : text
-        case .collect:
-            return SettingsV2Logic.collectValue(staged: DepositModeStore.current == .staged, bankCount: bankCount,
-                                                oneTime: "settings.v2.collect.oneTime".localized(),
-                                                stagedText: "settings.v2.collect.staged".localized(),
-                                                banks: "settings.v2.collect.banks".localized())
+            let name = (user?.storeName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return name.isEmpty ? nil : name
+        case .currency:
+            return ShopCurrencyStore.current.rawValue
+        case .bankAccounts:
+            return bankCount.map { String(format: "settings.v2.collect.accounts".localized(), $0) }
+        case .deposit:
+            return (DepositModeStore.current == .staged ? "settings.v2.collect.staged" : "settings.v2.collect.oneTime").localized()
         case .printing:
             let paper = PaperSize(rawValue: UserDefaults.standard.integer(forKey: "PrinterPaperSize"))?.rawValue ?? PaperSize.k80.rawValue
             return SettingsV2Logic.printingValue(hasPrinter: !Utils.loadBillPrinter().isEmpty, paperMillimetres: paper,
-                                                 none: "settings.v2.printer.none".localized())
+                                                 none: "settings.v2.printing.noPrinter".localized())
         case .customers, .users:
             return counts[item].map(String.init)
         case .plan:
@@ -470,8 +522,14 @@ final class SettingsV2ViewController: BaseViewControler {
             let page = AccountViewController()
             page.v2 = true
             navigationController?.pushViewController(page, animated: true)
-        case .collect:
-            navigationController?.pushViewController(CollectMoneyViewController(), animated: true)
+        case .currency:
+            chooseCurrency()
+        case .bankAccounts:
+            let page = BankAccountViewController()
+            page.v2 = true
+            navigationController?.pushViewController(page, animated: true)
+        case .deposit:
+            navigationController?.pushViewController(DepositHubViewController(), animated: true)
         case .printing:
             let page = PrinterConfigurationViewController()
             page.v2 = true

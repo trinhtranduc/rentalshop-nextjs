@@ -139,9 +139,6 @@ internal fun StoreInfoV2Page(
     error: String?,
     onBack: () -> Unit,
     onSave: () -> Unit,
-    /** #1259: "Tiền tệ" moved here from the Settings list; the shop owner only (label of the current currency, null = no row) */
-    currencyLabel: String? = null,
-    onCurrency: () -> Unit = {},
 ) {
     var showCountries by remember { mutableStateOf(false) }
     SettingsDetailPage(
@@ -191,7 +188,6 @@ internal fun StoreInfoV2Page(
                     value = form.name, enabled = canEdit, isError = nameError,
                     capitalization = KeyboardCapitalization.Words,
                 ) { onChange(form.copy(name = it)) }
-                if (currencyLabel != null) CurrencyField(currencyLabel, onCurrency)
                 StoreField(
                     AnnotatedString(stringResource(R.string.store_v2_phone)), value = form.phone, enabled = canEdit,
                     keyboardType = KeyboardType.Phone,
@@ -293,32 +289,6 @@ private fun StoreField(
             textStyle = TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).semantics { contentDescription = description },
         )
-    }
-}
-
-/** "Tiền tệ" (#1145, #1259) opens the VND / USD choice; looks like a field with a chevron */
-@Composable
-private fun CurrencyField(value: String, onClick: () -> Unit) {
-    val label = stringResource(R.string.settings_v2_currency)
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .border(1.dp, FieldBorder, RoundedCornerShape(12.dp))
-                .clickable(onClick = onClick)
-                .semantics {
-                    contentDescription = "$label: $value"
-                    role = Role.Button
-                }
-                .padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(value, fontSize = DS.TextSize.Input, maxLines = 1, color = DS.Colors.Text, modifier = Modifier.weight(1f))
-            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(18.dp))
-        }
     }
 }
 

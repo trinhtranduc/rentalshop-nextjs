@@ -37,7 +37,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,21 +53,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
-import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.UserFormRoles
 import com.anyrent.pos.data.repository.SessionStoreAppConfigCache
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
-import com.anyrent.pos.domain.error.ApiErrorMessages
-import com.anyrent.pos.domain.error.AppError
-import com.anyrent.pos.domain.money.ShopCurrency
-import com.anyrent.pos.domain.money.ShopMoney
-import com.anyrent.pos.domain.settings.SettingsRows
 import com.anyrent.pos.print.PrintFeedback
 import com.anyrent.pos.print.ThermalPrinter
-import com.anyrent.pos.ui.common.AppAlertConfirm
 import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppCard
 import com.anyrent.pos.ui.common.AppFilterChip
@@ -78,7 +70,6 @@ import com.anyrent.pos.ui.common.AppSecondaryButton
 import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.home.v2.V2Segmented
-import com.anyrent.pos.ui.settings.v2.CurrencyChoiceDialog
 import com.anyrent.pos.ui.settings.v2.SettingsDetailField
 import com.anyrent.pos.ui.settings.v2.SettingsDetailNote
 import com.anyrent.pos.ui.settings.v2.SettingsDetailPage
@@ -188,53 +179,6 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
         }
     }
 
-    // #1145 "Tiền tệ" (#1259: moved here from the Settings list): a choice, then a confirm, then PUT /api/settings/currency
-    val currency by SessionStore.currencyFlow.collectAsState()
-    var currencyChoice by remember { mutableStateOf(false) }
-    var currencyTarget by remember { mutableStateOf<ShopCurrency?>(null) }
-    var currencySaving by remember { mutableStateOf(false) }
-    var currencyError by remember { mutableStateOf<String?>(null) }
-    val currencyFailedText = stringResource(R.string.settings_v2_currency_failed)
-    fun saveCurrency(target: ShopCurrency) {
-        if (currencySaving) return
-        currencySaving = true
-        scope.launch {
-            val result = withContext(Dispatchers.IO) { ApiClient.get().setCurrency(target) }
-            currencySaving = false
-            currencyTarget = null
-            result.onFailure { failure ->
-                val id = ApiErrorMessages.stringId(AppError.from(failure).code)
-                currencyError = if (id != 0) context.getString(id) else currencyFailedText
-            }
-        }
-    }
-    val showsCurrency = v2 && SettingsRows.storeInfoShowsCurrency(SessionStore.role)
-    LaunchedEffect(showsCurrency) {
-        if (showsCurrency) withContext(Dispatchers.IO) { ApiClient.get().refreshCurrency() }
-    }
-    if (currencyChoice) {
-        CurrencyChoiceDialog(
-            current = currency,
-            onDismiss = { currencyChoice = false },
-            onPick = { picked ->
-                currencyChoice = false
-                if (picked != currency) currencyTarget = picked
-            },
-        )
-    }
-    currencyTarget?.let { target ->
-        AppAlertConfirm(
-            title = stringResource(R.string.settings_v2_currency_confirm_title, target.code),
-            message = stringResource(R.string.settings_v2_currency_confirm_message, target.code, ShopMoney.example(currency, target)),
-            confirmLabel = stringResource(R.string.settings_v2_currency_confirm_button, target.code),
-            confirmLoading = currencySaving,
-            dismissEnabled = !currencySaving,
-            onDismiss = { currencyTarget = null },
-            onConfirm = { saveCurrency(target) },
-        )
-    }
-    currencyError?.let { message -> AppAlertError(message = message, onDismiss = { currencyError = null }) }
-
     // #459 / #484: v2 form style when opened from Settings v2 (`newSettings`, board CH-sua); same permission and save
     if (v2) {
         StoreInfoV2Page(
@@ -259,8 +203,6 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
             error = error,
             onBack = onBack,
             onSave = ::saveStore,
-            currencyLabel = if (showsCurrency) ShopMoney.label(currency) else null,
-            onCurrency = { currencyChoice = true },
         )
     } else {
         Scaffold(
@@ -389,6 +331,11 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
 /** #1028: `KeyboardType.Decimal` can show the locale "," and no "."; the URI keyboard has "." in every language (iOS `.numbersAndPunctuation`) */
 internal val PrinterIpKeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false)
 
+@Composable
+private fun PrinterSectionTitle(text: String) {
+    Text(text.uppercase(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
@@ -444,7 +391,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     // #459: new style when opened from Settings v2 (`newSettings`); same fields, test print and save
     if (v2) {
         SettingsDetailPage(
-            title = stringResource(R.string.printer_config),
+            title = stringResource(R.string.settings_v2_printing), // #1270: In & phiếu
             onBack = onBack,
             bottomBar = {
                 // #970: the result above the buttons, always in view (at the end of the form it was under the fold)
@@ -457,27 +404,28 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                 Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                // #1270 plan B: two sections, PHIẾU (paper width, printed note, bank QR) and MÁY IN (name, IP, port; Thử in below)
+                PrinterSectionTitle(stringResource(R.string.settings_v2_printing_group_slip))
+                SettingsDetailField(
+                    label = stringResource(R.string.paper_width), value = paper, onValueChange = { paper = it.filter(Char::isDigit) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                SettingsDetailField(
+                    label = stringResource(R.string.printer_note), value = note, onValueChange = { note = it },
+                    singleLine = false, minLines = 4,
+                )
+                PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
+                PrinterSectionTitle(stringResource(R.string.settings_v2_printing_group_printer))
                 SettingsDetailNote(stringResource(R.string.printer_hint))
                 SettingsDetailField(label = stringResource(R.string.printer_name), value = name, onValueChange = { name = it })
                 SettingsDetailField(
                     label = stringResource(R.string.printer_ip), value = ip, onValueChange = { ip = ThermalPrinter.normalizeIp(it) },
                     keyboardOptions = PrinterIpKeyboardOptions, // #1028: has "." in Vietnamese
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SettingsDetailField(
-                        label = stringResource(R.string.printer_port), value = port, onValueChange = { port = it.filter(Char::isDigit) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f),
-                    )
-                    SettingsDetailField(
-                        label = stringResource(R.string.paper_width), value = paper, onValueChange = { paper = it.filter(Char::isDigit) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f),
-                    )
-                }
                 SettingsDetailField(
-                    label = stringResource(R.string.printer_note), value = note, onValueChange = { note = it },
-                    singleLine = false, minLines = 4,
+                    label = stringResource(R.string.printer_port), value = port, onValueChange = { port = it.filter(Char::isDigit) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
-                PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
             }
         }
     } else {

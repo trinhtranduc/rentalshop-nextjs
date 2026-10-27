@@ -2985,7 +2985,7 @@
 "settings.v2.collect.accounts" = "%d accounts";
 "settings.v2.collect.banks" = "%d banks";
 "settings.v2.collect.oneTime" = "One-time deposit";
-"settings.v2.collect.staged" = "Staged deposit";
+"settings.v2.collect.staged" = "Staged";
 "settings.v2.collect.policy.set" = "Set";
 "settings.v2.collect.policy.unset" = "Not set";
 "settings.v2.printing" = "Print & receipts";
@@ -3010,3 +3010,10 @@
 "block.copy" = "Copy from another product";
 "block.copy.empty" = "No product has a day-block price table yet.";
 "block.error.nothing" = "Enter a price for at least 1 day.";
+/* #1270 Settings plan B */
+"settings.v2.deposit" = "Deposit";
+"settings.v2.deposit.group.mode" = "Deposit collection";
+"settings.v2.deposit.group.stages" = "Stages & policy";
+"settings.v2.printing.noPrinter" = "no printer chosen";
+"settings.v2.printing.group.slip" = "Slip";
+"settings.v2.printing.group.printer" = "Printer";
