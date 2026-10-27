@@ -679,11 +679,7 @@ final class CartV2ViewController: BaseViewControler {
         let nameRow = UIStackView(arrangedSubviews: [name])
         nameRow.alignment = .top
         nameRow.spacing = 8
-        // #1241 (owner): the stock / overlap chip sits on its own row under the name, on the left, as wide as its text
-        let chipRow = UIStackView(arrangedSubviews: [UIView()])
-        chipRow.alignment = .center
-        chipRow.isHidden = true
-        let column = UIStackView(arrangedSubviews: [nameRow, chipRow, UIStackView(arrangedSubviews: [link, UIView()])])
+        let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
         // #1189: "Khối 3 ngày + 2 ngày thêm · 160.000đ" and under it the sum "120.000 (3 ngày) + 2 × 20.000 = 160.000"
         if cart.orderType == .rent, let detail = item.blockDetail, detail.extraDays > 0 {
             let formula = V2.label(BlockPricing.formula(detail), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
@@ -701,8 +697,7 @@ final class CartV2ViewController: BaseViewControler {
             tag.accessibilityLabel = String(format: "cart.overlap.tagHint".localized(), ScheduleConflictLogic.dayRange(conflict.dayKeys))
             tag.accessibilityTraits = UIAccessibilityTraitButton
             tag.addAction(UIAction { [weak self] _ in self?.openConflictDay(conflict) }, for: .touchUpInside)
-            chipRow.insertArrangedSubview(tag, at: 0)
-            chipRow.isHidden = false
+            nameRow.addArrangedSubview(tag)
         }
         // #1064: one pill per line once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
         // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. Hidden behind the overlap tag
@@ -712,8 +707,8 @@ final class CartV2ViewController: BaseViewControler {
             let status = Self.stockPill(text: note.text, tone: note.tone)
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
             status.addAction(UIAction { [weak self] _ in self?.openProductCalendar(productId: item.productId, focusDay: nil) }, for: .touchUpInside)
-            chipRow.insertArrangedSubview(status, at: 0)
-            chipRow.isHidden = false
+            // #1241 (owner): stays on the right; the pill is exactly as wide as its text, the name takes the rest
+            nameRow.addArrangedSubview(status)
         }
 
         // #482: the link opens the "Cách tính giá" sheet; the price is for this order only. #1064: a sale line's

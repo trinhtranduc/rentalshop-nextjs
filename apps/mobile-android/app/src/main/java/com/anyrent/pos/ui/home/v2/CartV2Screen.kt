@@ -1026,9 +1026,10 @@ private fun ItemRow(
             // total and −/+. No card, and no separate "450.000/lần × 1" line: its numbers are in the link
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // #684: the "Hết 09/10 → 11/10 ›" tag (or the shortage chip) beside the name, on its right (owner)
-                Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                // #1241 (owner, iOS): the chip sits on its own row under the name, on the left, as wide as its text
-                run {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                    Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 2,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    // #1241 (owner): the chip stays on the right, exactly as wide as its text (the name takes the rest)
                     // #1064: one pill once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
                     // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. The overlap tag (red) replaces it
                     val note = if (overlapText == null) CartV2Logic.availabilityNote(available, productQuantity, !isSale) else null
@@ -1044,7 +1045,7 @@ private fun ItemRow(
                         // the touch box is 48 dp high, the pill inside keeps its look
                         val open = onOpenOverlap ?: onOpenProduct
                         Box(
-                            Modifier.align(Alignment.Start).heightIn(min = 48.dp)
+                            Modifier.heightIn(min = 48.dp)
                                 .then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
                                 .clickable(onClickLabel = hint, role = Role.Button, onClick = open),
                             contentAlignment = Alignment.CenterStart,
