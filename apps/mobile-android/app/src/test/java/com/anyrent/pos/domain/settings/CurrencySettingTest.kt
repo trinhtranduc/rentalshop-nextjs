@@ -15,11 +15,10 @@ class CurrencySettingTest {
         assertTrue(CurrencySetting.canEdit("MERCHANT"))
         for (role in listOf("ADMIN", "OPS", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY", "", null)) {
             assertFalse(role.toString(), CurrencySetting.canEdit(role))
-            val rows = SettingsRows.sections(role, hasPlan = false).flatMap { it.items }
-            assertFalse(role.toString(), rows.contains(SettingsItem.CURRENCY))
+            assertFalse(role.toString(), SettingsRows.storeInfoShowsCurrency(role))
         }
-        val store = SettingsRows.sections("MERCHANT", hasPlan = false).first().items
-        assertEquals(store.indexOf(SettingsItem.STORE_INFO) + 1, store.indexOf(SettingsItem.CURRENCY))
+        // #1259: "Tiền tệ" is a line inside Thông tin cửa hàng (owner only), not a row of the Settings list
+        assertTrue(SettingsRows.storeInfoShowsCurrency("MERCHANT"))
     }
 
     @Test

@@ -2270,4 +2270,21 @@
     <string name="block_summary_extra">+ %1$d ngày thêm</string>
     <string name="v2_unit_per_block">/1 ngày</string>
     <string name="v2_price_block">Khối ngày</string>
+    <!-- #1259 Cài đặt gọn lại -->
+    <string name="settings_v2_collect">Thu tiền</string>
+    <string name="settings_v2_collect_group_bank">Ngân hàng</string>
+    <string name="settings_v2_collect_group_deposit">Cọc</string>
+    <string name="settings_v2_collect_accounts">%d tài khoản</string>
+    <string name="settings_v2_collect_banks">%d ngân hàng</string>
+    <string name="settings_v2_collect_one_time">Cọc 1 lần</string>
+    <string name="settings_v2_collect_staged">Cọc theo giai đoạn</string>
+    <string name="settings_v2_collect_policy_set">Đã đặt</string>
+    <string name="settings_v2_collect_policy_unset">Chưa đặt</string>
+    <string name="settings_v2_printing">In &amp; phiếu</string>
+    <string name="settings_v2_advanced">Nâng cao</string>
+    <string name="settings_v2_advanced_value">Ứng dụng · Xoá tài khoản</string>
+    <string name="settings_v2_profile_title">Hồ sơ &amp; bảo mật</string>
+    <string name="settings_v2_profile_hint">hồ sơ, mật khẩu</string>
+    <string name="settings_v2_profile_group">Hồ sơ</string>
+    <string name="settings_v2_profile_security">Bảo mật</string>
 </resources>

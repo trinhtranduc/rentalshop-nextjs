@@ -3127,6 +3127,78 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
+    /// #1259 compact Settings: the list in 3 groups, then Thu tiền, In & phiếu, Nâng cao, Hồ sơ & bảo mật and the
+    /// currency line of Thông tin cửa hàng. Staff runs check what is hidden (bank accounts, currency, the switch).
+    func test7zCompactSettings() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        func label(_ labels: [String]) -> XCUIElement {
+            app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        }
+        let isOwner = e2e.role == "merchant"
+        let storeInfo = label(["Store Information", "Thông tin cửa hàng"])
+        let collect = label(["Payments", "Thu tiền"])
+        let printing = label(["Print & receipts", "In & phiếu"])
+        XCTAssertTrue(storeInfo.waitForExistence(timeout: 8), "Thông tin cửa hàng row")
+        XCTAssertTrue(collect.exists, "Thu tiền row (every role: the deposit lines are read-only for staff)")
+        XCTAssertTrue(printing.exists, "In & phiếu row")
+        XCTAssertFalse(label(["Printer", "Máy in"]).exists, "no separate Máy in row")
+        XCTAssertFalse(label(["Receipt note", "Ghi chú phiếu"]).exists, "no separate Ghi chú phiếu row")
+        XCTAssertFalse(label(["Currency", "Tiền tệ"]).exists, "Tiền tệ is inside Thông tin cửa hàng")
+        XCTAssertFalse(label(["Change Password", "Đổi mật khẩu"]).exists, "Đổi mật khẩu is inside the name card")
+        XCTAssertFalse(label(["Delete Account", "Xoá tài khoản"]).exists, "Xoá tài khoản is inside Nâng cao")
+        e2e.soft(isOwner == app.switches.firstMatch.exists, "the overlap switch shows for the owner only")
+        e2e.shot("z1-settings-top")
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("z2-settings-bottom")
+        let advanced = label(["Advanced", "Nâng cao"])
+        XCTAssertTrue(advanced.exists, "Nâng cao row")
+        app.swipeDown()
+        sleep(1)
+
+        collect.tap()
+        sleep(3)
+        e2e.shot("z3-collect")
+        XCTAssertEqual(app.descendants(matching: .any)["settings.collect.bank"].exists, e2e.role == "merchant" || e2e.role == "outlet_admin",
+                       "bank accounts line only for owner and outlet admin")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.collect.mode"].exists, "Cách thu cọc line")
+        XCTAssertTrue(app.descendants(matching: .any)["deposit.templates.row"].exists, "Mẫu giai đoạn line")
+        XCTAssertTrue(app.descendants(matching: .any)["deposit.policy.row"].exists, "Chính sách huỷ / dời ngày line")
+        e2e.goBackOnce()
+
+        printing.tap()
+        sleep(2)
+        e2e.shot("z4-printing")
+        e2e.goBackOnce()
+
+        XCTAssertTrue(e2e.scrollTo(advanced), "Nâng cao reachable")
+        advanced.tap()
+        sleep(2)
+        e2e.shot("z5-advanced")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.advanced.appInfo"].exists, "Thông tin ứng dụng")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.advanced.deleteAccount"].exists, "Xoá tài khoản")
+        e2e.goBackOnce()
+
+        app.swipeDown()
+        sleep(1)
+        let card = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'hồ sơ, mật khẩu' OR label CONTAINS 'profile, password'")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5), "the name card")
+        card.tap()
+        sleep(2)
+        e2e.shot("z6-profile")
+        XCTAssertTrue(app.descendants(matching: .any)["settings.profile.password"].exists, "Đổi mật khẩu")
+        e2e.goBackOnce()
+
+        storeInfo.tap()
+        sleep(2)
+        e2e.shot("z7-store-info")
+        e2e.soft(label(["Currency", "Tiền tệ"]).exists == isOwner, "Tiền tệ line for the owner only")
+        e2e.goBackOnce()
+    }
+
     /// Cài đặt → Đổi mật khẩu (#490 #491, board DMK-doi-mat-khau): a bottom sheet; an empty submit shows the error
     /// under "Mật khẩu hiện tại". The password is never changed.
     func test7gChangePasswordSheet() throws {

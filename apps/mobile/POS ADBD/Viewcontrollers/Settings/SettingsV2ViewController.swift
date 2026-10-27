@@ -686,6 +686,7 @@ final class SettingsV2Cell: UITableViewCell {
         titleLabel.font = Utils.boldFont(size: DS.TextSize.name)
         titleLabel.textColor = DS.Color.text
         subtitleLabel.text = subtitle
+        subtitleLabel.numberOfLines = 2 // #1259: "Chủ shop · Tiệm Hoa · hồ sơ, mật khẩu" wraps instead of cutting
         subtitleLabel.isHidden = subtitle.isEmpty
         valueLabel.isHidden = true
         badgeBox.isHidden = true
@@ -699,6 +700,7 @@ final class SettingsV2Cell: UITableViewCell {
 
     func configure(title: String, value: String?, showsChevron: Bool, badge: String? = nil) {
         avatar.isHidden = true
+        subtitleLabel.numberOfLines = 1
         titleLabel.text = title
         titleLabel.font = Utils.regularFont(size: DS.TextSize.body)
         titleLabel.textColor = DS.Color.text

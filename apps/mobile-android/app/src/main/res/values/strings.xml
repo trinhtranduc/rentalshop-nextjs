@@ -2300,4 +2300,21 @@
     <string name="block_summary_extra">+ %1$d extra days</string>
     <string name="v2_unit_per_block">/1 day</string>
     <string name="v2_price_block">Day block</string>
+    <!-- #1259 compact Settings -->
+    <string name="settings_v2_collect">Payments</string>
+    <string name="settings_v2_collect_group_bank">Bank</string>
+    <string name="settings_v2_collect_group_deposit">Deposit</string>
+    <string name="settings_v2_collect_accounts">%d accounts</string>
+    <string name="settings_v2_collect_banks">%d banks</string>
+    <string name="settings_v2_collect_one_time">One-time deposit</string>
+    <string name="settings_v2_collect_staged">Staged deposit</string>
+    <string name="settings_v2_collect_policy_set">Set</string>
+    <string name="settings_v2_collect_policy_unset">Not set</string>
+    <string name="settings_v2_printing">Print &amp; receipts</string>
+    <string name="settings_v2_advanced">Advanced</string>
+    <string name="settings_v2_advanced_value">App info · Delete account</string>
+    <string name="settings_v2_profile_title">Profile &amp; security</string>
+    <string name="settings_v2_profile_hint">profile, password</string>
+    <string name="settings_v2_profile_group">Profile</string>
+    <string name="settings_v2_profile_security">Security</string>
 </resources>

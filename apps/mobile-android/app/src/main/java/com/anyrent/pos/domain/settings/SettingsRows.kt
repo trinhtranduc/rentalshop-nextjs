@@ -6,19 +6,27 @@ import com.anyrent.pos.domain.products.CategoryRules
 import org.json.JSONObject
 
 enum class SettingsItem {
-    /** #937: the inbox, moved here from the Home bell */
+    /** #937: the inbox, moved here from the Home bell; #1259: its own row under the name card */
     NOTIFICATIONS,
-    STORE_INFO,
-    /** #1145 "Tiền tệ" (VND / USD), shop owner only, right under Thông tin cửa hàng */
-    CURRENCY,
-    RECEIPT_NOTE, PRINTER, BANK_ACCOUNTS,
-    /** #1199 "Cách thu cọc": every role sees it; only the shop owner changes it */
-    DEPOSIT_MODE,
+    /** #1259 CỬA HÀNG: Thông tin cửa hàng (with Tiền tệ), Thu tiền (bank accounts, deposit, stage templates, cancellation policy), In & phiếu (receipt note + printer) */
+    STORE_INFO, COLLECT, PRINTING,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
-    PLAN, LANGUAGE, PASSWORD, APP_INFO, DELETE_ACCOUNT,
+    /** #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản) */
+    PLAN, LANGUAGE, ADVANCED,
 }
 
-enum class SettingsGroup { STORE, MANAGEMENT, ACCOUNT }
+/** `TOP`: Thông báo, right under the name card, no header */
+enum class SettingsGroup { TOP, STORE, MANAGEMENT, ACCOUNT }
+
+/** The lines of the "Thu tiền" screen (#1259) */
+enum class CollectRow {
+    /** Tài khoản ngân hàng, owner and outlet admin only */
+    BANK_ACCOUNTS,
+    /** #1199 "Cách thu cọc": every role sees it; only the shop owner changes it */
+    DEPOSIT_MODE,
+    /** Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày (owner edits, others read) */
+    TEMPLATES, POLICY,
+}
 
 data class SettingsSection(val group: SettingsGroup, val items: List<SettingsItem>)
 
@@ -32,15 +40,14 @@ object SettingsRows {
     const val MIN_PASSWORD_LENGTH = 6
 
     /**
+     * #1259: 3 groups, 12 lines for the owner with the name card.
      * - customers: every role (as today)
      * - users: MERCHANT, OUTLET_ADMIN, ADMIN (`PermissionManager.canManageUsers`)
      * - export: never OUTLET_STAFF (`PermissionManager.canExport`)
      * - plan: once `subscriptions/status` answered, not for ADMIN
-     * - bank accounts (#622): MERCHANT, OUTLET_ADMIN (as iOS)
      * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
-     * - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
-     * - deposit mode (#1199): every role, last row of CỬA HÀNG; only MERCHANT edits ([com.anyrent.pos.domain.deposit.DepositPlanLogic.canEditSettings])
-     * - currency (#1145): MERCHANT only ([CurrencySetting.canEdit]), right after Thông tin cửa hàng
+     * - notifications (#937): every role, its own row under the name card
+     * - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
         val management = buildList {
@@ -51,21 +58,37 @@ object SettingsRows {
         }
         val account = buildList {
             if (hasPlan && role != "ADMIN") add(SettingsItem.PLAN)
-            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.PASSWORD, SettingsItem.APP_INFO, SettingsItem.DELETE_ACCOUNT))
+            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED))
         }
         return listOf(
-            SettingsSection(
-                SettingsGroup.STORE,
-                listOf(SettingsItem.NOTIFICATIONS, SettingsItem.STORE_INFO) +
-                    listOfNotNull(SettingsItem.CURRENCY.takeIf { CurrencySetting.canEdit(role) }) +
-                    listOf(SettingsItem.RECEIPT_NOTE, SettingsItem.PRINTER) +
-                    listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
-                    SettingsItem.DEPOSIT_MODE,
-            ),
+            SettingsSection(SettingsGroup.TOP, listOf(SettingsItem.NOTIFICATIONS)),
+            SettingsSection(SettingsGroup.STORE, listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING)),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),
         ).filter { it.items.isNotEmpty() }
     }
+
+    /** The lines of Thu tiền: the bank accounts first (owner, outlet admin), then the deposit lines for every role */
+    fun collectRows(role: String?): List<CollectRow> =
+        listOfNotNull(CollectRow.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
+            listOf(CollectRow.DEPOSIT_MODE, CollectRow.TEMPLATES, CollectRow.POLICY)
+
+    /** "Tiền tệ" is a line of Thông tin cửa hàng, for the shop owner only ([CurrencySetting.canEdit]) */
+    fun storeInfoShowsCurrency(role: String?): Boolean = CurrencySetting.canEdit(role)
+
+    /** "Cọc 1 lần · 2 ngân hàng": the deposit mode, then the bank count when known and above zero */
+    fun collectValue(staged: Boolean, bankCount: Int?, oneTime: String, stagedText: String, banks: (Int) -> String): String {
+        val mode = if (staged) stagedText else oneTime
+        return if (bankCount != null && bankCount > 0) "$mode · ${banks(bankCount)}" else mode
+    }
+
+    /** "Tiệm Hoa · VND": the shop name, then the currency code for the owner */
+    fun storeValue(name: String?, currency: String?): String =
+        listOf(name, currency).mapNotNull { it?.trim() }.filter { it.isNotEmpty() }.joinToString(" · ")
+
+    /** "80 mm" once a printer is saved, else the "not set up" text */
+    fun printingValue(hasPrinter: Boolean, paperMillimetres: Int, none: String): String =
+        if (hasPrinter) "$paperMillimetres mm" else none
 
     /** #937: badge on the "Thông báo" row: the unread count, capped at 99, none at 0 */
     fun unreadBadge(count: Int): String? = if (count > 0) count.coerceAtMost(99).toString() else null

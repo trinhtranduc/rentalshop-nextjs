@@ -58,7 +58,6 @@ import com.anyrent.pos.ui.common.AppAlertError
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.V2Colors
-import com.anyrent.pos.ui.home.v2.V2ValueRow
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -67,13 +66,16 @@ import java.util.UUID
 
 private enum class SettingsPage { MAIN, TEMPLATES, EDITOR }
 
+/** #1259: where the screen opens. Thu tiền links to the mode, to the stage templates and to the cancellation policy */
+enum class DepositStart { MODE, TEMPLATES, POLICY }
+
 /**
  * "Cách thu cọc" (#1199, iOS `DepositSettingsViewController`): Settings → Cách thu cọc. Two modes as radio rows
  * (never a switch): "Thu cọc 1 lần" and "Thu cọc theo giai đoạn". Only the shop owner changes anything; every other
  * role reads. Mode 2 has the stage templates and the cancellation policy of the shop.
  */
 @Composable
-fun DepositSettingsScreen(onDismiss: () -> Unit) {
+fun DepositSettingsScreen(onDismiss: () -> Unit, start: DepositStart = DepositStart.MODE) {
     val role = SessionStore.role
     val canEdit = DepositPlanLogic.canEditSettings(role)
     val context = LocalContext.current
@@ -81,8 +83,8 @@ fun DepositSettingsScreen(onDismiss: () -> Unit) {
     var settings by remember { mutableStateOf(DepositSettings(depositMode = DepositModeStore.current)) }
     var loaded by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
-    var page by remember { mutableStateOf(SettingsPage.MAIN) }
-    var focusPolicy by remember { mutableStateOf(false) }
+    var page by remember { mutableStateOf(if (start == DepositStart.MODE) SettingsPage.MAIN else SettingsPage.TEMPLATES) }
+    var focusPolicy by remember { mutableStateOf(start == DepositStart.POLICY) }
     var editing by remember { mutableStateOf<DepositTemplate?>(null) }
     var editingIsNew by remember { mutableStateOf(true) }
     var confirmEnable by remember { mutableStateOf(false) }
@@ -139,15 +141,7 @@ fun DepositSettingsScreen(onDismiss: () -> Unit) {
                 DepositDivider()
                 if (settings.depositMode == DepositMode.STAGED) {
                     DepositWarningBox(stringResource(R.string.deposit_warning_old_apps), Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
-                    SectionBand("")
-                    V2ValueRow(
-                        stringResource(R.string.deposit_templates_row),
-                        stringResource(R.string.deposit_templates_count, settings.choices.size),
-                        onClick = { focusPolicy = false; page = SettingsPage.TEMPLATES },
-                    )
-                    DepositDivider()
-                    V2ValueRow(stringResource(R.string.deposit_policy_row), "", onClick = { focusPolicy = true; page = SettingsPage.TEMPLATES })
-                    DepositDivider()
+                    // #1259: Mẫu giai đoạn and Chính sách huỷ / dời ngày moved to Cài đặt › Thu tiền, next to the bank accounts
                     DepositNote(stringResource(R.string.deposit_footnote_new_orders_only))
                 } else {
                     SectionBand(stringResource(R.string.deposit_one_time_read_only))
@@ -160,9 +154,12 @@ fun DepositSettingsScreen(onDismiss: () -> Unit) {
                 if (!canEdit) DepositNote(stringResource(R.string.deposit_owner_only))
             }
         }
-        SettingsPage.TEMPLATES -> TemplatesPage(
+        SettingsPage.TEMPLATES -> if (!loaded) {
+            // Opened from Thu tiền: wait for the shop's own templates, so a save never starts from the empty default
+            DepositFullScreen(stringResource(R.string.deposit_templates_title), onBack = onDismiss) {}
+        } else TemplatesPage(
             settings = settings, canEdit = canEdit, focusPolicy = focusPolicy, saving = saving,
-            onBack = { page = SettingsPage.MAIN },
+            onBack = { if (start == DepositStart.MODE) page = SettingsPage.MAIN else onDismiss() },
             onEdit = { template, isNew -> editing = template; editingIsNew = isNew; page = SettingsPage.EDITOR },
             onSavePolicy = { text -> save(policy = text) },
         )
