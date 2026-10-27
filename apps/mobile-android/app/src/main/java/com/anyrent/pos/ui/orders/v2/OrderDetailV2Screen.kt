@@ -57,7 +57,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -756,6 +758,27 @@ private fun headerNoteText(note: OrderDetailHeader.Note): String {
     return listOfNotNull(days, due).joinToString(" · ")
 }
 
+/** #1265: the stages as a section of their own, like "Sẵn sàng giao" under the header: an 8dp grey band above and below, full width (iOS `stageSection`) */
+@Composable
+private fun StageSection(content: @Composable () -> Unit) {
+    val gutter = 16.dp
+    Column(
+        Modifier
+            .layout { measurable, constraints ->
+                // the body column insets by 16dp; the bands run edge to edge
+                val extra = (gutter * 2).roundToPx()
+                val width = constraints.maxWidth + extra
+                val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+                layout(constraints.maxWidth, placeable.height) { placeable.place(-gutter.roundToPx(), 0) }
+            }
+            .testTag("deposit.section"),
+    ) {
+        Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
+        Column(Modifier.fillMaxWidth().padding(horizontal = gutter)) { content() }
+        Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
+    }
+}
+
 @Composable
 private fun DetailBody(
     detail: OrderDetail,
@@ -788,7 +811,7 @@ private fun DetailBody(
             val pickedUp = status == "PICKUPED" || status == "PICKED_UP"
             // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
             // #1199: the stages replace the single "Cọc" row
-            if (depositCard != null) depositCard()
+            if (depositCard != null) StageSection(depositCard)
             if (!pickedUp && summary.depositAmount > 0 && depositCard == null) {
                 MoneyRow(stringResource(R.string.detail_deposit), formatMoneyVnd(summary.depositAmount))
             }

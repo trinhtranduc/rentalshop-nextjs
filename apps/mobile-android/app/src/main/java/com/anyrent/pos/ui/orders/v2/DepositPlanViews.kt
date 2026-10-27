@@ -127,7 +127,7 @@ internal fun InstallmentCard(
     val reserved = detail.summary.status.equals("RESERVED", true)
     val today = ShopTime.today().toString()
     Column(
-        Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp) // #1246: no frame, a section like "ITEMS"
+        Modifier.fillMaxWidth().padding(vertical = 12.dp) // #1246: no frame; #1265: inside its own band-to-band section
             .testTag("deposit.card"),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
