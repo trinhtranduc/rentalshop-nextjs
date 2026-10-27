@@ -32,9 +32,8 @@ export function normalizeBarcode<T>(barcode: T): T | null {
 //      inside it. "dai" matches "Áo dài" (word start) but "ai" does not (mid-word).
 //      A word also starts after punctuation: "xanh" matches "Mẫu (Xanh Ngọc)" (#1009).
 //      Rules and the SQL projection live in ./product-search-words.ts.
-//   2. Conditional accent, driven by whether the QUERY carries diacritics:
-//        - query WITHOUT diacritics ("ao")  → accent-INSENSITIVE, also matches "Áo".
-//        - query WITH diacritics ("áo")     → exact accented match only.
+//   2. Always accent-insensitive (#1250): query and name are folded the same way, so "Họa" finds
+//      "Hoạ", and "ao" / "áo" find "Áo" (rules in ./product-search-words.ts).
 // Multi-word queries require ALL words to match (AND), each in the product name.
 
 /**
@@ -282,7 +281,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
   }
 
   // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
-  // Word-prefix + conditional-accent matching (see buildProductSearchOr / order.ts):
+  // Word-prefix + accent-insensitive matching (see buildProductSearchOr / order.ts):
   // "Áo dài đỏ" matches products whose name contains ALL words as word-prefixes.
   const searchQuery = q || search;
   if (searchQuery) {

@@ -445,7 +445,8 @@ object DepositPlanMath {
             explicit += amount
             result += DepositStagePreview(
                 key = "i${index + 1}", label = draft.label,
-                percent = if (total > 0) roundHalfAway(amount / total * 10000) / 100 else draft.percent,
+                // #1245: the template's own % until the owner edits the amount; then the % of the order, 1 decimal
+                percent = if (draft.amountOverride == null || total <= 0) draft.percent else roundHalfAway(amount / total * 1000) / 10,
                 amount = amount, dueDateKey = dueKey(draft, createdKey, pickupKey), isRest = false,
             )
         }

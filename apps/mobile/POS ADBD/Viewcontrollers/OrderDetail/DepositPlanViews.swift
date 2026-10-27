@@ -71,7 +71,7 @@ enum InstallmentCardView {
         let planned = summary?.planned ?? stages.reduce(0) { $0 + $1.amount }
         let reserved = detail.status == .reserved
 
-        let title = DepositUI.wrapLabel("deposit.card.title".localized(), size: DS.TextSize.input, weight: .bold)
+        let title = DepositUI.wrapLabel("deposit.card.title".localized().uppercased(), size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
         let badge = DepositUI.pill(String(format: "deposit.badge.collected".localized(), DepositPlanMath.percentText(percent)), DS.Status.done)
         badge.accessibilityIdentifier = "deposit.card.badge"
         title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -135,15 +135,10 @@ enum InstallmentCardView {
             card.addArrangedSubview(button)
         }
 
-        let box = UIView()
-        box.layer.cornerRadius = 14
-        box.layer.borderWidth = 1
-        box.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-        box.addSubview(card)
-        card.snp.makeConstraints { make in make.edges.equalToSuperview().inset(14) }
+        // #1246: no frame. A section like "ITEMS", as wide as the other rows (the parent stack insets by DS.Spacing.lg)
         let holder = UIView()
-        holder.addSubview(box)
-        box.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        holder.addSubview(card)
+        card.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 18, left: 0, bottom: 6, right: 0)) }
         holder.accessibilityIdentifier = "deposit.card"
         return holder
     }
@@ -151,9 +146,11 @@ enum InstallmentCardView {
     private static func stageRow(_ stage: OrderInstallment, number: Int, tappable: Bool, onTap: @escaping (OrderInstallment) -> Void) -> UIView {
         let circle = UIView()
         let paid = stage.isPaid
-        circle.backgroundColor = paid ? UIColor(hexString: "10B981") : UIColor(hexString: "EFF6FF")
+        let late = stage.status == "OVERDUE"
+        circle.backgroundColor = paid ? UIColor(hexString: "10B981") : (late ? UIColor(hexString: "FEE2E2") : UIColor(hexString: "EFF6FF"))
         circle.layer.cornerRadius = 12
-        let glyph = V2.label(paid ? "✓" : "\(number)", size: DS.TextSize.pill, weight: .bold, color: paid ? .white : DS.Color.primary)
+        let glyph = V2.label(paid ? "✓" : (late ? "!" : "\(number)"), size: DS.TextSize.pill, weight: .bold,
+                             color: paid ? .white : (late ? UIColor(hexString: "B91C1C") : DS.Color.primary))
         circle.addSubview(glyph)
         glyph.snp.makeConstraints { make in make.center.equalToSuperview() }
         circle.snp.makeConstraints { make in make.size.equalTo(24) }
@@ -175,8 +172,17 @@ enum InstallmentCardView {
         line.alignment = .center
         let row = UIControl()
         line.isUserInteractionEnabled = false
+        if late {
+            // a late stage stands out with a soft red band that bleeds 8pt past the text column
+            let band = UIView()
+            band.backgroundColor = UIColor(hexString: "FEF2F2")
+            band.layer.cornerRadius = 8
+            band.isUserInteractionEnabled = false
+            row.addSubview(band)
+            band.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: -8, bottom: 2, right: -8)) }
+        }
         row.addSubview(line)
-        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)) }
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)) }
         row.accessibilityIdentifier = "deposit.stage.\(stage.key)"
         if tappable { row.addAction(UIAction { _ in onTap(stage) }, for: .touchUpInside) }
         return row

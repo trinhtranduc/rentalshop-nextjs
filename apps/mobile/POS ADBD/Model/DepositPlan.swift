@@ -388,7 +388,9 @@ enum DepositPlanMath {
                 ?? percentOf(total, percent: draft.percent, currency: currency)
             explicit += amount
             result.append(DepositStagePreview(key: "i\(index + 1)", label: draft.label,
-                                              percent: total > 0 ? (amount / total * 10000).rounded() / 100 : draft.percent,
+                                              // #1245: the template's own % until the owner edits the amount; then the % of the order, 1 decimal
+                                              percent: draft.amountOverride == nil || total <= 0
+                                                  ? draft.percent : (amount / total * 1000).rounded() / 10,
                                               amount: amount, dueDateKey: dueKey(draft, createdKey: createdKey, pickupKey: pickupKey),
                                               isRest: false))
         }
@@ -543,5 +545,88 @@ extension Cart {
             plan.collectFirstNow = PaymentPlanRequest.CollectFirstNow(method: collectMethod, reference: reference)
         }
         return plan
+    }
+}
+
+// MARK: - Bill and share image (#1252)
+
+/// The staged-deposit block of the printed bill and of the share image: "Thu cọc theo giai đoạn", one entry per stage
+/// (name, amount, "30% đơn · thu 25/10 · Đã thu"), then "Đã thu" and "Còn phải thu". Pure: the same lines on both.
+/// Nil for a one-time deposit, a sale, or an order the API sent without stages (an older API), so those bills do not change.
+enum DepositPlanReceipt {
+    struct Stage: Equatable {
+        let title: String
+        let amount: Double
+        /// nil on the last stage ("Phần còn lại, thu khi giao"): one row only
+        let detail: String?
+    }
+
+    struct Block: Equatable {
+        let title: String
+        let stages: [Stage]
+        let collectedLabel: String
+        let collected: Double
+        let remainingLabel: String
+        let remaining: Double
+    }
+
+    /// `text` translates a key: the app language on the bill, the share image's language on the image
+    static func block(hasPlan: Bool?, orderType: OrderType, stages: [OrderInstallment]?, summary: InstallmentSummary?,
+                      today: String = DayFormatter.key(Date()), text: (String) -> String = { $0.localized() }) -> Block? {
+        let shown = (stages ?? []).filter { $0.status != "VOID" }
+        guard orderType == .rent, hasPlan == true, !shown.isEmpty else { return nil }
+        let rows = shown.enumerated().map { index, stage -> Stage in
+            if stage.isRest { return Stage(title: text("deposit.rest.label"), amount: stage.amount, detail: nil) }
+            return Stage(title: "\(index + 1). \(stage.label)", amount: stage.amount, detail: detail(stage, today: today, text: text))
+        }
+        return Block(title: text("deposit.card.title"), stages: rows,
+                     collectedLabel: text("deposit.card.collected"),
+                     collected: summary?.collected ?? shown.reduce(0) { $0 + $1.paidAmount },
+                     remainingLabel: text("deposit.card.remaining"),
+                     remaining: summary?.remaining ?? shown.reduce(0) { $0 + $1.remaining })
+    }
+
+    /// "30% đơn · 25/10 · Đã thu" (collected day) or "30% đơn · hạn 28/10 · Trễ 2 ngày"
+    static func detail(_ stage: OrderInstallment, today: String, text: (String) -> String) -> String {
+        let percent = DepositPlanMath.percentText(stage.percent)
+        let head = stage.isPaid
+            ? String(format: text("deposit.card.paidDetail"), percent, InstallmentCardView.paidDay(stage.collectedAt))
+            : String(format: text("deposit.card.dueDetail"), percent, DepositUI.dayText(stage.dueDateKey))
+        return head + " · " + status(stage, today: today, text: text)
+    }
+
+    static func status(_ stage: OrderInstallment, today: String, text: (String) -> String) -> String {
+        switch stage.status {
+        case "PAID": return text("deposit.status.paid")
+        case "PARTIAL": return text("deposit.status.partial")
+        case "DUE_TODAY": return text("deposit.status.today")
+        case "OVERDUE":
+            let late = InstallmentCardView.lateDays(stage.dueDateKey, today: today)
+            return late > 0 ? String(format: text("deposit.status.late"), late) : text("deposit.status.due")
+        default: return text("deposit.status.pending")
+        }
+    }
+}
+
+extension DepositPlanReceipt {
+    /// ESC/POS bytes of the block, left aligned, narrow-paper friendly: a stage is its name and amount, then one small line
+    static func printData(_ block: Block) -> Data {
+        var data = Data()
+        func line(_ text: String) { data.append((text.formatStringOriginalCharacter() + "\n").data(using: .utf8) ?? Data()) }
+        data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.left.rawValue))
+        data.append(PrinterCommand.selectOrCancleBoldModel(0))
+        line("------------------------------------------------")
+        data.append(PrinterCommand.selectOrCancleBoldModel(1))
+        line(block.title)
+        data.append(PrinterCommand.selectOrCancleBoldModel(0))
+        for stage in block.stages {
+            line("\(stage.title): \(stage.amount.formatStringInCommon())")
+            if let detail = stage.detail { line("   " + detail) }
+        }
+        data.append(PrinterCommand.selectOrCancleBoldModel(1))
+        line("\(block.collectedLabel): \(block.collected.formatStringInCommon())")
+        line("\(block.remainingLabel): \(block.remaining.formatStringInCommon())")
+        data.append(PrinterCommand.selectOrCancleBoldModel(0))
+        return data
     }
 }
