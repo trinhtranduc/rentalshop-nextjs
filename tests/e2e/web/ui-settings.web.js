@@ -57,15 +57,15 @@ async function main() {
       await dlg().waitFor({ timeout: 20000 });
       await page.waitForTimeout(800);
       check('SET-01 sidebar "Cài đặt cửa hàng" opens the dialog on the shop tab (?settings=merchant)', /settings=merchant/.test(page.url()), page.url());
+      // #1259: 7 tabs for the owner (Thu tiền = bank accounts + deposit, Hồ sơ & bảo mật = profile + password)
       const tabs = [
         ['Thông tin cửa hàng', 'merchant', /Tên cửa hàng/],
         ['Trang shop công khai', 'public-page', /Hiện giá trên trang shop/],
-        ['Phiếu in', 'receipt', /Ghi chú in hóa đơn/],
+        ['Thu tiền', 'payment', /Cách thu cọc/],
+        ['In & phiếu', 'receipt', /Ghi chú in hóa đơn/],
         ['Gói dịch vụ', 'subscription', /Mức sử dụng/],
-        ['Tài khoản của tôi', 'profile', /Họ/],
-        ['Đổi mật khẩu', 'account', /Mật khẩu hiện tại/],
-        ['Ngôn ngữ', 'language', /Ngôn ngữ hiển thị/],
-        ['Giao diện', 'appearance', /Theo hệ thống/]
+        ['Hồ sơ & bảo mật', 'profile', /Mật khẩu hiện tại/],
+        ['Ngôn ngữ & giao diện', 'language', /Ngôn ngữ hiển thị/]
       ];
       for (const [label, id, re] of tabs) {
         await dlg().getByRole('button', { name: new RegExp(`^${label}`) }).first().click();
