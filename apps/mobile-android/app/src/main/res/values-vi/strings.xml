@@ -622,7 +622,7 @@
     <string name="v2_form_barcode_placeholder">Quét hoặc nhập</string>
     <string name="v2_form_regenerate_barcode">Tạo mã mới</string>
     <string name="v2_form_barcode_used">Mã vạch đã dùng cho %1$s</string>
-    <string name="v2_form_prices">Giá</string>
+    <string name="v2_form_prices">Giá thuê</string>
     <string name="v2_form_per_rental">Theo lần</string>
     <string name="v2_form_per_day">Theo mỗi ngày</string>
     <string name="v2_form_sale_price">Giá bán</string>
