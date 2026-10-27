@@ -45,4 +45,11 @@ describe('computeOrderBalance (#362)', () => {
     expect(computeOrderBalance({ orderType: 'RENT', status: 'RETURNED', totalAmount: 500000 })).toEqual({ amountDue: 0, refundDue: 0 });
     expect(computeOrderBalance({ orderType: 'RENT', status: 'CANCELLED', totalAmount: 500000 })).toEqual({ amountDue: 0, refundDue: 0 });
   });
+
+  it('#1279 PICKUPED rental: editing the collateral after pick-up changes what is given back at return', () => {
+    const order = { orderType: 'RENT', status: 'PICKUPED', totalAmount: 600000, securityDeposit: 0, lateFee: 150000, damageFee: 50000, payments: [] };
+    expect(computeOrderBalance(order)).toEqual({ amountDue: 200000, refundDue: 0 });
+    expect(computeOrderBalance({ ...order, securityDeposit: 500000 })).toEqual({ amountDue: 0, refundDue: 300000 });
+    expect(computeOrderBalance({ ...order, securityDeposit: 700000 })).toEqual({ amountDue: 0, refundDue: 500000 });
+  });
 });

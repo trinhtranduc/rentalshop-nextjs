@@ -359,3 +359,124 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         }
     }
 }
+
+/// #1279 "Sửa giấy tờ & thế chân" of a picked-up order (mockup G36-G39): the two fields of the hand-over sheet and a
+/// note that the amount at return changes. Saving sends `PUT /api/orders/{id}` without a status.
+final class CollateralEditSheetViewController: UIViewController, UITextFieldDelegate {
+    /// papers, security deposit
+    var onSave: ((String, Double) -> Void)?
+
+    private let detail: OrderDetail
+    private let papersField = UITextField()
+    private let depositField = UITextField()
+
+    init(detail: OrderDetail) {
+        self.detail = detail
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DS.Color.surface
+
+        let title = UILabel()
+        title.text = "order.collateral.editTitle".localized()
+        title.font = Utils.boldFont(size: 20)
+        title.textColor = DS.Color.text
+        let subtitle = UILabel()
+        subtitle.font = Utils.regularFont(size: DS.TextSize.body)
+        subtitle.textColor = DS.Color.textMuted
+        subtitle.text = "#\(detail.orderNumber)"
+
+        configure(papersField, number: false, text: detail.collateralDetails ?? "")
+        papersField.placeholder = "order.handOver.papersHint".localized()
+        papersField.autocapitalizationType = .allCharacters
+        papersField.accessibilityIdentifier = "collateralEdit.papers"
+        configure(depositField, number: true, text: detail.securityDeposit > 0 ? MoneyFormatter.plain(detail.securityDeposit) : "")
+        depositField.placeholder = "0"
+        depositField.accessibilityIdentifier = "collateralEdit.securityDeposit"
+
+        let warning = UILabel()
+        warning.text = "order.collateral.editWarning".localized()
+        warning.font = Utils.regularFont(size: DS.TextSize.secondary)
+        warning.textColor = UIColor(hexString: "B45309")
+        warning.numberOfLines = 0
+
+        let content = UIStackView(arrangedSubviews: [title, subtitle,
+                                                     labeled("order.handOver.papers".localized(), papersField),
+                                                     labeled("order.handOver.deposit".localized(), depositField), warning])
+        content.axis = .vertical
+        content.spacing = DS.Spacing.md
+        content.setCustomSpacing(DS.Spacing.xs, after: title)
+
+        let save = UIButton(type: .system)
+        save.setTitle("Save".localized(), for: .normal)
+        save.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
+        save.tintColor = .white
+        save.backgroundColor = DS.Color.primary
+        save.layer.cornerRadius = 14
+        save.accessibilityIdentifier = "collateralEdit.save"
+        save.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+
+        view.addSubview(content)
+        view.addSubview(save)
+        content.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+        save.snp.makeConstraints { make in
+            make.height.equalTo(52)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-DS.Spacing.md)
+        }
+        KeyboardDoneBar.attach([depositField])
+    }
+
+    private func configure(_ field: UITextField, number: Bool, text: String) {
+        field.text = text
+        field.keyboardType = number ? .numberPad : .default
+        field.font = Utils.regularFont(size: DS.TextSize.input)
+        field.borderStyle = .none
+        field.layer.cornerRadius = 12
+        field.layer.borderWidth = 1
+        field.layer.borderColor = UIColor(hexString: "CBD5E1").cgColor
+        field.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+        field.leftViewMode = .always
+        field.returnKeyType = .done
+        field.delegate = self
+        field.snp.makeConstraints { make in make.height.equalTo(DS.touchTarget) }
+        if number { field.addTarget(self, action: #selector(depositChanged), for: .editingChanged) }
+    }
+
+    private func labeled(_ title: String, _ field: UITextField) -> UIView {
+        let label = UILabel()
+        label.font = Utils.boldFont(size: DS.TextSize.secondary)
+        label.textColor = DS.Color.text
+        label.text = title
+        let stack = UIStackView(arrangedSubviews: [label, field])
+        stack.axis = .vertical
+        stack.spacing = DS.Spacing.xs
+        return stack
+    }
+
+    @objc private func depositChanged() {
+        let amount = OrderHandOverSheetViewController.amount(from: depositField.text)
+        depositField.text = amount > 0 ? MoneyFormatter.plain(amount) : ""
+    }
+
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+
+    @objc private func saveTapped() {
+        view.endEditing(true)
+        let papers = papersField.text ?? ""
+        let deposit = OrderHandOverSheetViewController.amount(from: depositField.text)
+        dismiss(animated: true) { [onSave] in onSave?(papers, deposit) }
+    }
+}
