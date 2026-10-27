@@ -577,31 +577,59 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
     private let staffPerms = ["products.view", "orders.view", "orders.create", "customers.view", "analytics.view.dashboard"]
 
     func testSettingsRowsByRole() {
-        let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms, hasPlan: true)
-        XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
-        XCTAssertEqual(merchant[0].items, [.notifications, .storeInfo, .currency, .receiptNote, .printer, .bankAccounts, .depositMode])
-        XCTAssertEqual(merchant[1].items, [.categories, .users, .export])
-        XCTAssertEqual(merchant[2].items, [.plan, .language, .password, .appInfo, .deleteAccount])
+        // #1259: 12 lines for the owner = card + Thông báo + 3 + 4 + 3; the owner also has the switch (not a row here)
+        let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms + ["customers.view"], hasPlan: true, showsCustomers: true)
+        XCTAssertEqual(merchant.map(\.group), [.top, .store, .management, .account])
+        XCTAssertEqual(merchant[0].items, [.notifications])
+        XCTAssertEqual(merchant[1].items, [.storeInfo, .collect, .printing])
+        XCTAssertEqual(merchant[2].items, [.categories, .customers, .users, .export])
+        XCTAssertEqual(merchant[3].items, [.plan, .language, .advanced])
+        XCTAssertEqual(1 + merchant.flatMap(\.items).count, 12, "card + 11 rows")
 
         let outletAdmin = SettingsV2Logic.sections(role: .outletAdmin, permissions: outletAdminPerms, hasPlan: false)
-        XCTAssertEqual(outletAdmin[1].items, [.categories, .users, .export])
-        XCTAssertEqual(outletAdmin[2].items, [.language, .password, .appInfo, .deleteAccount])
+        XCTAssertEqual(outletAdmin[1].items, [.storeInfo, .collect, .printing])
+        XCTAssertEqual(outletAdmin[2].items, [.categories, .users, .export])
+        XCTAssertEqual(outletAdmin[3].items, [.language, .advanced])
 
         // Staff: no users, no export (even with an export right), so no QUẢN LÝ group at all
         let staff = SettingsV2Logic.sections(role: .outletStaff, permissions: staffPerms + ["orders.export"], hasPlan: true)
-        XCTAssertEqual(staff.map(\.group), [.store, .account])
+        XCTAssertEqual(staff.map(\.group), [.top, .store, .account])
         XCTAssertFalse(staff.flatMap(\.items).contains(.users))
         XCTAssertFalse(staff.flatMap(\.items).contains(.export))
         XCTAssertFalse(staff.flatMap(\.items).contains(.categories), "#632: staff cannot add a category")
+        XCTAssertEqual(staff[1].items, [.storeInfo, .collect, .printing], "every role sees the shop rows (deposit is read-only for staff)")
     }
 
-    /// #937: "Thông báo" is the first row of CỬA HÀNG for every role (the Home bell became the cart button)
-    func testNotificationsRowFirstForEveryRole() {
+    /// #1259: "Thông báo" is its own row under the name card for every role
+    func testNotificationsRowUnderTheCardForEveryRole() {
         for role: Role in [.admin, .merchant, .outletAdmin, .outletStaff, .outletInventory] {
-            let store = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).first
-            XCTAssertEqual(store?.group, .store, "\(role)")
-            XCTAssertEqual(store?.items.first, .notifications, "\(role)")
+            let top = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).first
+            XCTAssertEqual(top?.group, .top, "\(role)")
+            XCTAssertEqual(top?.items, [.notifications], "\(role)")
         }
+    }
+
+    /// #1259 "Thu tiền": the bank accounts line only for owner and outlet admin; the three deposit lines for everyone
+    func testCollectMoneyRowsByRole() {
+        XCTAssertEqual(SettingsV2Logic.collectRows(role: .merchant), [.bankAccounts, .depositMode, .templates, .policy])
+        XCTAssertEqual(SettingsV2Logic.collectRows(role: .outletAdmin), [.bankAccounts, .depositMode, .templates, .policy])
+        for role: Role? in [.outletStaff, .outletInventory, .admin, nil] {
+            XCTAssertEqual(SettingsV2Logic.collectRows(role: role), [.depositMode, .templates, .policy], "\(String(describing: role))")
+        }
+    }
+
+    /// #1259: the second text of a row shows the value in force
+    func testSettingsRowValues() {
+        XCTAssertEqual(SettingsV2Logic.collectValue(staged: false, bankCount: 2, oneTime: "Cọc 1 lần", stagedText: "Cọc theo giai đoạn", banks: "%d ngân hàng"),
+                       "Cọc 1 lần · 2 ngân hàng")
+        XCTAssertEqual(SettingsV2Logic.collectValue(staged: true, bankCount: nil, oneTime: "Cọc 1 lần", stagedText: "Cọc theo giai đoạn", banks: "%d ngân hàng"),
+                       "Cọc theo giai đoạn")
+        XCTAssertEqual(SettingsV2Logic.collectValue(staged: false, bankCount: 0, oneTime: "Cọc 1 lần", stagedText: "x", banks: "%d ngân hàng"), "Cọc 1 lần")
+        XCTAssertEqual(SettingsV2Logic.storeValue(name: "Tiệm Hoa", currency: "VND"), "Tiệm Hoa · VND")
+        XCTAssertEqual(SettingsV2Logic.storeValue(name: "Tiệm Hoa", currency: nil), "Tiệm Hoa")
+        XCTAssertEqual(SettingsV2Logic.storeValue(name: " ", currency: "VND"), "VND")
+        XCTAssertEqual(SettingsV2Logic.printingValue(hasPrinter: true, paperMillimetres: 80, none: "Chưa chọn"), "80 mm")
+        XCTAssertEqual(SettingsV2Logic.printingValue(hasPrinter: false, paperMillimetres: 80, none: "Chưa chọn"), "Chưa chọn")
     }
 
     /// #937: the row's badge is the unread count, capped at 99, hidden at 0

@@ -287,3 +287,277 @@ final class UserV2Cell: UITableViewCell {
         moreButton.menu = menu
     }
 }
+
+// MARK: - Settings list pages (#1259): Thu tiền, Nâng cao, Hồ sơ & bảo mật
+
+struct SettingsPageRow {
+    var title: String
+    var value: String?
+    var identifier: String?
+    var destructive = false
+    var action: (() -> Void)?
+}
+
+struct SettingsPageSection {
+    var header: String?
+    var rows: [SettingsPageRow]
+}
+
+/// A flat list page in the Settings style: optional band headers, a value row per line, a thin divider under each.
+/// Subclasses give the sections; `reload()` redraws them (values change after a save).
+class SettingsListPageViewController: BaseViewControler {
+    private let scroll = UIScrollView()
+    private let stack = UIStackView()
+    private let pageTitle: String
+    private var actions: [() -> Void] = []
+
+    init(title: String) {
+        pageTitle = title
+        super.init(nibName: nil, bundle: nil)
+        hidesBottomBarWhenPushed = true
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func sections() -> [SettingsPageSection] { [] }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        DepositUI.scaffold(in: self, title: pageTitle, scroll: scroll, stack: stack)
+        reload()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        reload()
+    }
+
+    func reload() {
+        guard isViewLoaded else { return }
+        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        actions = []
+        for section in sections() {
+            if let header = section.header { stack.addArrangedSubview(V2.sectionHeader(header)) }
+            for row in section.rows {
+                let control = V2ValueRow(title: row.title, chevron: row.action != nil)
+                control.valueLabel.text = row.value
+                control.accessibilityIdentifier = row.identifier
+                if row.destructive { control.titleLabel.textColor = V2.danger }
+                if let action = row.action {
+                    control.tag = actions.count
+                    actions.append(action)
+                    control.addTarget(self, action: #selector(rowTapped(_:)), for: .touchUpInside)
+                }
+                control.snp.makeConstraints { make in make.height.equalTo(52) }
+                stack.addArrangedSubview(DepositUI.withDivider(control))
+            }
+        }
+    }
+
+    @objc private func rowTapped(_ sender: UIControl) {
+        guard sender.tag < actions.count else { return }
+        actions[sender.tag]()
+    }
+}
+
+enum SettingsBankCount {
+    /// Active bank accounts of the own branch (the owner: the default, else the first, branch). Completion on the
+    /// main queue; nil when unknown or the role has no bank accounts.
+    static func load(role: Role?, ownOutletId: Int?, completion: @escaping (Int?) -> Void) {
+        guard SettingsV2Logic.canManageBankAccounts(role: role) else { completion(nil); return }
+        let count: (Int?) -> Void = { outletId in
+            guard let outletId else { completion(nil); return }
+            BankAccountService.shared.getBankAccounts(outletId: outletId) { accounts, error in
+                DispatchQueue.main.async {
+                    guard error == nil, let accounts else { completion(nil); return }
+                    completion(accounts.filter { $0.isActive ?? true }.count)
+                }
+            }
+        }
+        if let ownOutletId {
+            count(ownOutletId)
+            return
+        }
+        OutletService.shared.getOutlets { outlets, _ in
+            let active = (outlets ?? []).filter { $0.isActive ?? true }
+            DispatchQueue.main.async { count((active.first { $0.isDefault == true } ?? active.first)?.id) }
+        }
+    }
+}
+
+/// Cài đặt › Thu tiền: NGÂN HÀNG (Tài khoản ngân hàng, owner and outlet admin) and CỌC (Cách thu cọc, Mẫu giai đoạn,
+/// Chính sách huỷ / dời ngày). Every role reads the deposit lines; only the shop owner edits them.
+final class CollectMoneyViewController: SettingsListPageViewController {
+    private var settings = DepositSettings(depositMode: DepositModeStore.current)
+    private var loaded = false
+    private var generation = 0
+    private var bankCount: Int?
+
+    private var canEdit: Bool { User.account()?.role == .merchant }
+
+    init() { super.init(title: "settings.v2.collect".localized()) }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadSettings()
+        SettingsBankCount.load(role: User.account()?.role, ownOutletId: User.account()?.outletId) { [weak self] count in
+            guard let self, self.bankCount != count else { return }
+            self.bankCount = count
+            self.reload()
+        }
+    }
+
+    private func loadSettings() {
+        generation += 1
+        let token = generation
+        DepositPlanAPIService.shared.settings { [weak self] settings, _ in
+            DispatchQueue.main.async {
+                guard let self, token == self.generation, let settings else { return }
+                self.settings = settings
+                self.loaded = true
+                DepositModeStore.didSave(settings)
+                self.reload()
+            }
+        }
+    }
+
+    override func sections() -> [SettingsPageSection] {
+        let rows = SettingsV2Logic.collectRows(role: User.account()?.role)
+        var bank: [SettingsPageRow] = []
+        var deposit: [SettingsPageRow] = []
+        for row in rows {
+            switch row {
+            case .bankAccounts:
+                bank.append(SettingsPageRow(title: "Bank Accounts".localized(),
+                                            value: bankCount.map { String(format: "settings.v2.collect.accounts".localized(), $0) },
+                                            identifier: "settings.collect.bank") { [weak self] in
+                    let page = BankAccountViewController()
+                    page.v2 = true
+                    self?.navigationController?.pushViewController(page, animated: true)
+                })
+            case .depositMode:
+                deposit.append(SettingsPageRow(title: "deposit.settings.title".localized(),
+                                               value: (settings.depositMode == .staged ? "settings.v2.collect.staged" : "settings.v2.collect.oneTime").localized(),
+                                               identifier: "settings.collect.mode") { [weak self] in
+                    self?.navigationController?.pushViewController(DepositSettingsViewController(), animated: true)
+                })
+            case .templates:
+                deposit.append(SettingsPageRow(title: "deposit.templates.row".localized(),
+                                               value: String(format: "deposit.templates.count".localized(), settings.choices.count),
+                                               identifier: "deposit.templates.row") { [weak self] in self?.openTemplates(focusPolicy: false) })
+            case .policy:
+                let isSet = !settings.cancellationPolicy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                deposit.append(SettingsPageRow(title: "deposit.policy.row".localized(),
+                                               value: (isSet ? "settings.v2.collect.policy.set" : "settings.v2.collect.policy.unset").localized(),
+                                               identifier: "deposit.policy.row") { [weak self] in self?.openTemplates(focusPolicy: true) })
+            }
+        }
+        var list: [SettingsPageSection] = []
+        if !bank.isEmpty { list.append(SettingsPageSection(header: "settings.v2.collect.group.bank".localized(), rows: bank)) }
+        list.append(SettingsPageSection(header: "settings.v2.collect.group.deposit".localized(), rows: deposit))
+        return list
+    }
+
+    private func openTemplates(focusPolicy: Bool) {
+        guard loaded else {
+            loadSettings()
+            return
+        }
+        let page = DepositTemplatesViewController(settings: settings, canEdit: canEdit, focusPolicy: focusPolicy)
+        page.onChange = { [weak self] saved in
+            self?.settings = saved
+            self?.reload()
+        }
+        navigationController?.pushViewController(page, animated: true)
+    }
+}
+
+/// Cài đặt › Nâng cao: Thông tin ứng dụng, Xoá tài khoản (no longer next to Đổi mật khẩu)
+final class AdvancedSettingsViewController: SettingsListPageViewController {
+    init() { super.init(title: "settings.v2.advanced".localized()) }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func sections() -> [SettingsPageSection] {
+        [SettingsPageSection(header: nil, rows: [
+            SettingsPageRow(title: "App Information".localized(), identifier: "settings.advanced.appInfo") { [weak self] in
+                let page = AppInformationViewController()
+                page.v2 = true
+                self?.navigationController?.pushViewController(page, animated: true)
+            },
+            SettingsPageRow(title: "Delete Account".localized(), identifier: "settings.advanced.deleteAccount", destructive: true) { [weak self] in
+                // Same as the current settings screen
+                guard let self else { return }
+                let alert = UIAlertController(title: "Delete Account".localized(),
+                                              message: "Are you sure you want to delete your account? This action cannot be undone.".localized(),
+                                              preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+                alert.addAction(UIAlertAction(title: "Delete".localized(), style: .destructive))
+                self.present(alert, animated: true)
+            },
+        ])]
+    }
+}
+
+/// Cài đặt › the name card: Hồ sơ (name, email, role) and Đổi mật khẩu
+final class ProfileSecurityViewController: SettingsListPageViewController {
+    init() { super.init(title: "settings.v2.profile.title".localized()) }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func sections() -> [SettingsPageSection] {
+        let user = User.account()
+        let name = [user?.firstName, user?.lastName].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+        return [
+            SettingsPageSection(header: "settings.v2.profile.group".localized(), rows: [
+                SettingsPageRow(title: "Staff Name".localized(), value: name.isEmpty ? "N/A".localized() : name),
+                SettingsPageRow(title: "Email".localized(), value: user?.email),
+                SettingsPageRow(title: "Role".localized(), value: user?.role.displayName),
+            ]),
+            SettingsPageSection(header: "settings.v2.profile.security".localized(), rows: [
+                SettingsPageRow(title: "Change Password".localized(), identifier: "settings.profile.password") { [weak self] in self?.askPassword() },
+            ]),
+        ]
+    }
+
+    /// #482 (board DMK-doi-mat-khau): a bottom sheet over Cài đặt; same call and validation as before
+    private func askPassword() {
+        let sheet = ChangePasswordSheetViewController()
+        sheet.onSubmit = { [weak self, weak sheet] current, new in
+            self?.changePassword(current: current, new: new, sheet: sheet)
+        }
+        if let presentation = sheet.sheetPresentationController {
+            presentation.detents = [.large()]
+            if #available(iOS 16.0, *) {
+                presentation.detents = [.custom { [weak sheet] context in
+                    sheet.map { min(context.maximumDetentValue, $0.fittingHeight()) }
+                }]
+            }
+            presentation.prefersGrabberVisible = true
+            presentation.preferredCornerRadius = 24
+        }
+        present(sheet, animated: true)
+    }
+
+    private func changePassword(current: String, new: String, sheet: ChangePasswordSheetViewController?) {
+        sheet?.setBusy(true)
+        TabsV2APIService.shared.changePassword(current: current, new: new) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                sheet?.setBusy(false)
+                if let error {
+                    UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    return
+                }
+                sheet?.dismiss(animated: true)
+                // The API revokes every token of the account: sign in again with the new password
+                UIAlertController.alert(parent: self, title: "Change Password".localized(),
+                                        message: "settings.v2.password.done".localized()) { _ in
+                    AuthenticationService.shared.logout { _, _ in appDelegate.logout() }
+                }
+            }
+        }
+    }
+}

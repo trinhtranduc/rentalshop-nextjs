@@ -235,18 +235,7 @@ final class DepositSettingsViewController: BaseViewControler {
             padded.addSubview(warning)
             warning.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: DS.Spacing.lg, bottom: 12, right: DS.Spacing.lg)) }
             stack.addArrangedSubview(padded)
-            stack.addArrangedSubview(V2.sectionHeader(""))
-            let templates = V2ValueRow(title: "deposit.templates.row".localized())
-            templates.valueLabel.text = String(format: "deposit.templates.count".localized(), settings.choices.count)
-            templates.addTarget(self, action: #selector(openTemplates), for: .touchUpInside)
-            templates.accessibilityIdentifier = "deposit.templates.row"
-            templates.snp.makeConstraints { make in make.height.equalTo(52) }
-            stack.addArrangedSubview(DepositUI.withDivider(templates))
-            let policy = V2ValueRow(title: "deposit.policy.row".localized())
-            policy.addTarget(self, action: #selector(openPolicy), for: .touchUpInside)
-            policy.accessibilityIdentifier = "deposit.policy.row"
-            policy.snp.makeConstraints { make in make.height.equalTo(52) }
-            stack.addArrangedSubview(DepositUI.withDivider(policy))
+            // #1259: Mẫu giai đoạn and Chính sách huỷ / dời ngày moved to Cài đặt › Thu tiền, next to the bank accounts
             stack.addArrangedSubview(DepositUI.note("deposit.footnote.newOrdersOnly".localized()))
         } else {
             stack.addArrangedSubview(V2.sectionHeader("deposit.oneTime.readOnly".localized()))
@@ -320,18 +309,6 @@ final class DepositSettingsViewController: BaseViewControler {
                 }
             }
         }
-    }
-
-    @objc private func openTemplates() { pushTemplates(focusPolicy: false) }
-    @objc private func openPolicy() { pushTemplates(focusPolicy: true) }
-
-    private func pushTemplates(focusPolicy: Bool) {
-        let page = DepositTemplatesViewController(settings: settings, canEdit: canEdit, focusPolicy: focusPolicy)
-        page.onChange = { [weak self] saved in
-            self?.settings = saved
-            self?.render()
-        }
-        navigationController?.pushViewController(page, animated: true)
     }
 }
 

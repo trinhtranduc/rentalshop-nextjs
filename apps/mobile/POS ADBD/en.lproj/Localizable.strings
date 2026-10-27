@@ -2983,3 +2983,20 @@
 "products.cart.confirm.more.one" = "+%d more item";
 "deposit.cart.template" = "Template";
 "deposit.cart.stageShort" = "%@%% · %@";
+/* #1259 compact Settings */
+"settings.v2.collect" = "Payments";
+"settings.v2.collect.group.bank" = "Bank";
+"settings.v2.collect.group.deposit" = "Deposit";
+"settings.v2.collect.accounts" = "%d accounts";
+"settings.v2.collect.banks" = "%d banks";
+"settings.v2.collect.oneTime" = "One-time deposit";
+"settings.v2.collect.staged" = "Staged deposit";
+"settings.v2.collect.policy.set" = "Set";
+"settings.v2.collect.policy.unset" = "Not set";
+"settings.v2.printing" = "Print & receipts";
+"settings.v2.advanced" = "Advanced";
+"settings.v2.advanced.value" = "App info · Delete account";
+"settings.v2.profile.title" = "Profile & security";
+"settings.v2.profile.hint" = "profile, password";
+"settings.v2.profile.group" = "Profile";
+"settings.v2.profile.security" = "Security";

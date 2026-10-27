@@ -200,7 +200,7 @@ final class AnyRentE2ETests: XCTestCase {
         }
         openRow(["Customers", "Khách hàng"], "ipad-19-customers")
         openRow(["Notifications", "Thông báo"], "ipad-20-notifications")
-        openRow(["Printer", "Máy in"], "ipad-21-printer")
+        openRow(["Print & receipts", "In & phiếu"], "ipad-21-printer")
         let mine = app.descendants(matching: .any)["attendance.mine"]
         if mine.exists {
             app.swipeDown()
@@ -3134,8 +3134,12 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         sleep(2)
-        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Change Password", "Đổi mật khẩu"])).firstMatch
-        XCTAssertTrue(e2e.scrollTo(row), "Đổi mật khẩu row in Settings")
+        // #1259: the name card opens Hồ sơ & bảo mật, which has the Đổi mật khẩu row
+        let card = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'hồ sơ, mật khẩu' OR label CONTAINS 'profile, password'")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 8), "the name card in Settings")
+        card.tap()
+        let row = app.descendants(matching: .any)["settings.profile.password"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "Đổi mật khẩu row in Hồ sơ & bảo mật")
         row.tap()
         let fields = app.secureTextFields
         XCTAssertTrue(fields.firstMatch.waitForExistence(timeout: 5), "the sheet opens with password fields")
@@ -3359,13 +3363,17 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newSettings")
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Bank Accounts", "Tài khoản ngân hàng"])).firstMatch
+        // #1259: Tài khoản ngân hàng is a line of Thu tiền
+        let collect = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Payments", "Thu tiền"])).firstMatch
+        XCTAssertTrue(collect.waitForExistence(timeout: 8), "Thu tiền row in the Store group")
+        collect.tap()
+        let row = app.descendants(matching: .any)["settings.collect.bank"]
         if e2e.role != "merchant" { // staff and kho (#682) have no bank-account permission
             e2e.shot("7k-\(e2e.role)-settings")
             e2e.soft(!row.exists, "\(e2e.role) does not see Tài khoản ngân hàng")
             return
         }
-        XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in the Store group")
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in Thu tiền")
         e2e.shot("7k-settings-bank-row")
         row.tap()
         sleep(3)
@@ -3406,8 +3414,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
 
         // Printer page: the switch sits under the printer note, off by default; turned on for the shot, then back
-        let printer = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
-        XCTAssertTrue(printer.waitForExistence(timeout: 5), "Printer row")
+        let printer = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch
+        XCTAssertTrue(printer.waitForExistence(timeout: 5), "In & phiếu row (#1259)")
         printer.tap()
         let toggle = app.switches["printer.bankQr.switch"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "In QR chuyển khoản trên bill switch")
@@ -3428,8 +3436,8 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         func openPrinterPage() {
             e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-            let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
-            XCTAssertTrue(row.waitForExistence(timeout: 8), "Printer row")
+            let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 8), "In & phiếu row (#1259)")
             row.tap()
             sleep(1)
         }
@@ -3505,8 +3513,8 @@ final class AnyRentE2ETests: XCTestCase {
     func test7oPrinterIPKeyboard() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Printer", "Máy in"])).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 8), "Printer row")
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "In & phiếu row (#1259)")
         row.tap()
         let ipField = app.textFields.firstMatch
         XCTAssertTrue(ipField.waitForExistence(timeout: 5), "printer IP field")
@@ -4333,10 +4341,14 @@ final class AnyRentE2ETests: XCTestCase {
 
         // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2 with the warning
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        let row = textStarting(["Cách thu cọc", "Deposit collection"])
-        scrollTo(row)
+        // #1259: Thu tiền holds Tài khoản ngân hàng, Cách thu cọc, Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày
+        let collect = text(["Thu tiền", "Payments"])
+        scrollTo(collect)
         e2e.shot("60a-settings-row")
-        XCTAssertTrue(row.exists, "Settings has the Cách thu cọc row")
+        XCTAssertTrue(collect.exists, "Settings has the Thu tiền row")
+        collect.tap()
+        let row = app.descendants(matching: .any)["settings.collect.mode"]
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "Thu tiền has the Cách thu cọc row")
         row.tap()
         sleep(2)
         e2e.shot("60b-mode-one-time")
@@ -4349,8 +4361,10 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("60d-mode-staged")
         XCTAssertTrue(textStarting(["Nhân viên đang dùng app cũ", "Staff on an older app"]).exists, "the old-app warning shows in mode 2")
 
-        // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over
-        let templates = textStarting(["Mẫu giai đoạn cọc", "Deposit stage templates"])
+        // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over (#1259: the row is in Thu tiền)
+        e2e.goBackOnce()
+        sleep(1)
+        let templates = app.descendants(matching: .any)["deposit.templates.row"]
         XCTAssertTrue(templates.waitForExistence(timeout: 5))
         templates.tap()
         sleep(2)
