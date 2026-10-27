@@ -2956,7 +2956,7 @@
 "block.save" = "Save price table";
 "block.turnOff" = "Turn off day-block price";
 "block.row.tiers" = "%d tiers";
-"block.row.extra" = "+%@ per day";
+"block.row.extra" = "+%@/day";
 "block.row.hold" = "last block price held";
 "block.section.tiers" = "Price by number of days";
 "block.addDay" = "+ Add day %d";

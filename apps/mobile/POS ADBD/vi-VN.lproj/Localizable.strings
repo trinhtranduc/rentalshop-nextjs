@@ -2954,7 +2954,7 @@
 "block.save" = "Lưu bảng giá";
 "block.turnOff" = "Tắt giá theo khối ngày";
 "block.row.tiers" = "%d mốc";
-"block.row.extra" = "+%@ mỗi ngày";
+"block.row.extra" = "+%@/ngày";
 "block.row.hold" = "giữ giá khối cuối";
 "block.section.tiers" = "Giá theo số ngày";
 "block.addDay" = "+ Thêm ngày %d";

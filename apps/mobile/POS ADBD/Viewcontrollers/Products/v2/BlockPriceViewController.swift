@@ -17,13 +17,11 @@ final class BlockPriceViewController: UIViewController {
     /// "Tắt giá theo khối ngày": back to Thuê theo ngày
     var onTurnOff: (() -> Void)?
 
-    private let hadTable: Bool
     private let editor = BlockTableEditorView()
     private let scroll = UIScrollView()
     private let content = UIStackView()
 
     init(table: BlockTable?) {
-        hadTable = table != nil
         super.init(nibName: nil, bundle: nil)
         editor.load(table)
     }
@@ -72,13 +70,11 @@ final class BlockPriceViewController: UIViewController {
         save.accessibilityIdentifier = "block.save"
         save.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
         footer.addArrangedSubview(save)
-        if hadTable {
-            let off = V2.secondaryButton("block.turnOff".localized())
-            off.setTitleColor(V2.danger, for: .normal)
-            off.accessibilityIdentifier = "block.turnOff"
-            off.addTarget(self, action: #selector(turnOffTapped), for: .touchUpInside)
-            footer.addArrangedSubview(off)
-        }
+        let off = V2.secondaryButton("block.turnOff".localized())
+        off.setTitleColor(V2.danger, for: .normal)
+        off.accessibilityIdentifier = "block.turnOff"
+        off.addTarget(self, action: #selector(turnOffTapped), for: .touchUpInside)
+        footer.addArrangedSubview(off)
         let footerLine = V2.divider()
         footerLine.backgroundColor = DS.Color.border
         view.addSubview(footer)

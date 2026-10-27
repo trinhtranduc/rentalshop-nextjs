@@ -34,6 +34,7 @@ final class ProductFormViewController: BaseViewControler {
     private let perDayField = UITextField()
     private var kindCards: [ProductDayKind: UIView] = [:]
     private var kindRadios: [ProductDayKind: UIView] = [:]
+    private var kindRows: [ProductDayKind: UIView] = [:]
     private var kindLabels: [ProductDayKind: UILabel] = [:]
     private var kindExtras: [ProductDayKind: UIView] = [:]
     private let blockSummaryTitle = V2.label(size: DS.TextSize.input, weight: .bold)
@@ -488,6 +489,7 @@ final class ProductFormViewController: BaseViewControler {
         radio.accessibilityTraits = UIAccessibilityTraitButton
         radio.accessibilityLabel = label.text
         kindRadios[kind] = dot
+        kindRows[kind] = radio
         kindLabels[kind] = label
 
         let extra: UIView
@@ -541,6 +543,7 @@ final class ProductFormViewController: BaseViewControler {
             kindRadios[kind]?.layer.borderWidth = selected ? 6 : 1.5
             kindRadios[kind]?.layer.borderColor = (selected ? DS.Color.primary : UIColor(hexString: "94A3B8")).cgColor
             kindLabels[kind]?.font = selected ? Utils.boldFont(size: DS.TextSize.input) : Utils.regularFont(size: DS.TextSize.input)
+            kindRows[kind]?.backgroundColor = selected ? UIColor(hexString: "EFF6FF") : .white
             kindExtras[kind]?.isHidden = !selected
             kindCards[kind]?.layer.borderColor = (selected ? DS.Color.primary : V2.border).cgColor
         }
