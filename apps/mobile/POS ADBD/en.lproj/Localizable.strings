@@ -2953,15 +2953,11 @@
 "CANCELLED_ORDER_KEEPS_AMOUNT" = "A cancelled order that kept money stays in the history and cannot be deleted.";
 // #1189 day-block pricing
 "block.title" = "Day-block price";
-"block.screen.title" = "Rental price · %@";
 "block.save" = "Save price table";
 "block.turnOff" = "Turn off day-block price";
-"block.row.off" = "Not used";
 "block.row.tiers" = "%d tiers";
-"block.row.extra" = "+%@ per day";
+"block.row.extra" = "+%@/day";
 "block.row.hold" = "last block price held";
-"block.section.default" = "Default pricing";
-"block.hint.default" = "Used by default for new orders. Staff can change it in the cart.";
 "block.section.tiers" = "Price by number of days";
 "block.addDay" = "+ Add day %d";
 "block.removeDay" = "Remove this day";
@@ -2971,7 +2967,6 @@
 "block.holdLast.price" = "Keep the last block price (%@)";
 "block.preview" = "Preview";
 "block.error.invalid" = "Enter a price for every day (0 or more) and the amount added per extra day.";
-"block.error.empty" = "There is no day-block price table yet. Enter a price for at least 1 day, or pick another default.";
 "block.summary.block" = "Block of %d days";
 "block.summary.extra" = "+ %d extra days";
 "products.unit.block" = "/1 day";
@@ -2983,3 +2978,18 @@
 "products.cart.confirm.more.one" = "+%d more item";
 "deposit.cart.template" = "Template";
 "deposit.cart.stageShort" = "%@%% · %@";
+"products.form.unit.once" = "/ rental";
+"products.form.manyDays" = "Multi-day price (pick 1 of 2)";
+"products.form.perDay.box" = "Price per day";
+"block.intro" = "Each number of days has one price. A customer who rents exactly that many days pays that row.";
+"block.quick" = "Quick create: first day + each extra day";
+"block.quick.title" = "Quick create";
+"block.quick.message" = "Price of day 1, the amount added for each next day, and how many days the table has.";
+"block.quick.first" = "Price of day 1";
+"block.quick.extra" = "Added per extra day";
+"block.quick.days" = "Number of days (1-31)";
+"block.quick.create" = "Create table";
+"block.quick.invalid" = "Enter the price of day 1, the amount added per extra day, and 1 to 31 days.";
+"block.copy" = "Copy from another product";
+"block.copy.empty" = "No product has a day-block price table yet.";
+"block.error.nothing" = "Enter a price for at least 1 day.";

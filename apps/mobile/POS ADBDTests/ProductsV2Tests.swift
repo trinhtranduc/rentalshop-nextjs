@@ -935,7 +935,7 @@ final class ProductFormKeyboardTests: XCTestCase {
     func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
         let form = try merchantForm()
         let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }
-        XCTAssertEqual(numeric.count, 6, "per rental, sale, deposit, cost (#887), and the day table's first day and extra price (#1249)")
+        XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887); the day table is on its own screen (#1249)")
         numeric.forEach { XCTAssertNil($0.inputAccessoryView, "\($0.accessibilityLabel ?? "field") keeps no Done bar") }
         let taps = (form.view.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
         XCTAssertTrue(taps.contains { !$0.cancelsTouchesInView }, "a tap outside a field ends editing (fields still take taps)")

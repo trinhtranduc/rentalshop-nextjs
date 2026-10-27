@@ -83,11 +83,14 @@ import com.anyrent.pos.data.PRICING_SCHEMA_VERSION
 import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.domain.money.ShopMoney
 import com.anyrent.pos.domain.products.BarcodeMatch
 import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.BlockTable
 import com.anyrent.pos.domain.products.BlockText
-import com.anyrent.pos.domain.products.PriceKind
+import com.anyrent.pos.domain.products.DayKind
+import com.anyrent.pos.domain.products.PriceForm
+import com.anyrent.pos.domain.products.PriceFormState
 import com.anyrent.pos.domain.products.ProductBarcode
 import com.anyrent.pos.domain.products.CategoryRules
 import com.anyrent.pos.domain.products.MoneyInput
@@ -150,14 +153,15 @@ fun ProductFormV2Screen(
     var categoryId by remember { mutableStateOf(initial?.categoryId) }
     var categoryName by remember { mutableStateOf(initial?.categoryName) }
     var perRental by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.perRental(it) })) }
-    // #1249: ONE choice, Theo lần (the per-rental box) or Theo ngày (the day table right below it); new products start on Theo lần
-    var priceKind by remember { mutableStateOf(initial?.let { ProductPricing.kind(it) } ?: PriceKind.PER_RENTAL) }
-    // The saved per-day price. There is no box for it any more; it is kept so an old per-day product saves as it was,
-    // and it fills row 1 of the table when the product opens on Theo ngày
-    val legacyPerDay = remember { initial?.let { ProductPricing.perDay(it) } }
-    val blockEditor = remember {
-        BlockEditorState().apply { load(initial?.let { ProductPricing.block(it) } ?: BlockPricing.seed(legacyPerDay)) }
-    }
+    // #1249 (mockup v170): Thuê theo lần always; below it ONE of Thuê theo ngày (a day price) or Giá theo khối ngày (the table,
+    // set up on its own screen). The other one's data stays in memory so switching back and forth loses nothing.
+    val opened = remember { PriceForm.open(initial) }
+    var dayKind by remember { mutableStateOf(opened.dayKind) }
+    var perDay by remember { mutableStateOf(MoneyInput.display(opened.perDay)) }
+    var block by remember { mutableStateOf(opened.block) }
+    var showBlockScreen by remember { mutableStateOf(false) }
+    fun priceState() = PriceFormState(MoneyInput.parse(perRental), MoneyInput.parse(perDay), dayKind, block)
+    fun applyPrice(next: PriceFormState) { dayKind = next.dayKind; block = next.block }
     var sale by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.sale(it) })) }
     var deposit by remember { mutableStateOf(MoneyInput.display(initial?.deposit?.takeIf { it > 0 })) }
     // #887: Giá vốn (optional, prices only)
@@ -218,32 +222,14 @@ fun ProductFormV2Screen(
         }
     }
 
-    val blockInvalidText = stringResource(R.string.block_error_invalid)
-    val blockEmptyText = stringResource(R.string.block_error_empty)
-
     fun save() {
-        // #1249: Theo ngày sends the typed table; left as the old day price it sends nothing new (the product stays DAILY)
-        var chosenMode = PricingMode.PER_RENTAL
-        var chosenTable: BlockTable? = null
-        if (showsPrices && priceKind == PriceKind.PER_DAY) {
-            when (val typed = blockEditor.input) {
-                BlockPricing.Input.Invalid -> { error = blockInvalidText; return }
-                BlockPricing.Input.Empty -> {
-                    if (legacyPerDay == null) { error = blockEmptyText; return }
-                    chosenMode = PricingMode.PER_DAY
-                }
-                is BlockPricing.Input.Table -> {
-                    chosenTable = BlockPricing.tableToSave(typed.table, legacyPerDay)
-                    chosenMode = ProductPricing.defaultMode(PriceKind.PER_DAY, chosenTable)
-                }
-            }
-        }
+        val price = priceState()
         val input = ProductFormInput(
             name = name,
-            perRental = MoneyInput.parse(perRental),
-            perDay = legacyPerDay,
-            defaultMode = chosenMode,
-            block = chosenTable,
+            perRental = price.perRental,
+            perDay = if (price.dayKind == DayKind.DAY) price.perDay else null,
+            defaultMode = PricingMode.PER_RENTAL,
+            block = if (price.dayKind == DayKind.BLOCK) price.block else null,
             salePrice = MoneyInput.parse(sale),
             deposit = MoneyInput.parse(deposit),
             quantity = quantity,
@@ -280,7 +266,7 @@ fun ProductFormV2Screen(
                         categoryId = categoryId,
                         prices = if (showsPrices) {
                             ProductsV2Api.Prices(
-                                options = ProductPricing.options(input.perRental, input.perDay, input.defaultMode, input.block),
+                                options = PriceForm.options(price),
                                 // #1189: this form sends every option, BLOCK included, so the API replaces the stored table with ours
                                 pricingSchemaVersion = PRICING_SCHEMA_VERSION,
                                 salePrice = input.salePrice,
@@ -396,15 +382,41 @@ fun ProductFormV2Screen(
 
             if (showsPrices) {
                 SectionBand(stringResource(R.string.v2_form_prices))
-                RadioRow("kind.perRental", stringResource(R.string.v2_form_per_rental), priceKind == PriceKind.PER_RENTAL, { priceKind = PriceKind.PER_RENTAL }) {}
-                HorizontalDivider(color = DS.Colors.Divider)
-                RadioRow("kind.perDay", stringResource(R.string.v2_form_per_day), priceKind == PriceKind.PER_DAY, { priceKind = PriceKind.PER_DAY }) {}
-                HorizontalDivider(color = DS.Colors.Divider)
-                if (priceKind == PriceKind.PER_RENTAL) {
-                    FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth())
-                } else {
-                    BlockTableEditor(blockEditor)
+                FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
+                    placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_rental, ShopMoney.symbol()))
+                Text(
+                    stringResource(R.string.v2_form_multi_day_title).uppercase(),
+                    fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 6.dp),
+                )
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    RadioCard("kind.day", stringResource(R.string.v2_form_per_day), dayKind == DayKind.DAY, { applyPrice(PriceForm.chooseDay(priceState())) }) {
+                        FormField(
+                            "", value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) }, placeholder = "0", numeric = true,
+                            modifier = Modifier.fillMaxWidth(), start = 12.dp, end = 12.dp, label = false,
+                            description = stringResource(R.string.v2_form_per_day), unit = stringResource(R.string.v2_form_unit_per_day, ShopMoney.symbol()),
+                        )
+                    }
+                    RadioCard("kind.block", stringResource(R.string.block_title), dayKind == DayKind.BLOCK, {
+                        val choice = PriceForm.chooseBlock(priceState())
+                        applyPrice(choice.state)
+                        if (choice.openSetup) showBlockScreen = true
+                    }) {
+                        block?.let { table ->
+                            val res = LocalContext.current.resources
+                            Row(
+                                Modifier.fillMaxWidth().clickable { showBlockScreen = true }.semantics { contentDescription = "block.summary" }
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(BlockText.rowSummary(res, table), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold)
+                                    Text(BlockText.rangeSummary(res, table), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                                }
+                                Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
                 }
                 Row {
                     FormField(stringResource(R.string.v2_form_sale_price), value = sale, onChange = { sale = MoneyInput.display(MoneyInput.parse(it)) },
@@ -467,7 +479,34 @@ fun ProductFormV2Screen(
             )
         }
     }
+    if (showBlockScreen) {
+        AppFormSheet(onDismiss = { showBlockScreen = false }, fullScreen = true, nested = true) {
+            BlockPriceScreen(
+                initial = block,
+                currentProductId = initial?.id,
+                onSave = { table -> applyPrice(PriceForm.saveBlock(priceState(), table)); block = table; showBlockScreen = false },
+                onTurnOff = { applyPrice(PriceForm.turnOffBlock(priceState())); showBlockScreen = false },
+                onClose = { showBlockScreen = false },
+            )
+        }
+    }
     error?.let { message -> AppAlertError(message = message, onDismiss = { error = null }) }
+}
+
+/** A full-width card with a radio row; when [selected] the [content] sits right below it inside the same border (mockup v170) */
+@Composable
+private fun RadioCard(tag: String, title: String, selected: Boolean, onPick: () -> Unit, content: @Composable () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(if (selected) Color(0xFFEFF6FF) else Color.White)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) DS.Colors.Primary else V2Colors.Border, shape),
+    ) {
+        RadioRow(tag, title, selected, onPick) {}
+        if (selected) {
+            HorizontalDivider(color = DS.Colors.Primary.copy(alpha = 0.35f))
+            Column(Modifier.background(Color.White)) { content() }
+        }
+    }
 }
 
 @Composable
@@ -480,6 +519,8 @@ private fun FormField(
     required: Boolean = false,
     numeric: Boolean = false,
     unit: String? = null,
+    label: Boolean = true,
+    description: String = title,
     start: androidx.compose.ui.unit.Dp = 16.dp,
     end: androidx.compose.ui.unit.Dp = 16.dp,
     onDone: (() -> Unit)? = null,
@@ -488,7 +529,7 @@ private fun FormField(
     var hadFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     Column(modifier.padding(start = start, end = end, top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
+        if (label) Text(
             buildAnnotatedString {
                 append(title)
                 if (required) withStyle(SpanStyle(color = V2Colors.Danger)) { append(" *") }
@@ -501,7 +542,7 @@ private fun FormField(
         ) {
             Box(Modifier.weight(1f)) {
                 if (value.isEmpty()) Text(placeholder, fontSize = DS.TextSize.Input, color = Color(0xFF94A3B8))
-                val fieldModifier = Modifier.fillMaxWidth().semantics { contentDescription = title }
+                val fieldModifier = Modifier.fillMaxWidth().semantics { contentDescription = description }
                     .onFocusChanged { focus ->
                         if (focus.isFocused) {
                             hadFocus = true

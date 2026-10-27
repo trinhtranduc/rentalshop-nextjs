@@ -136,13 +136,29 @@
       }
     },
     "form": {
-      "priceKind": {
-        "title": "租金计价方式",
-        "dayHint": "每个天数一个单独价格"
-      },
-      "errors": {
-        "blockEmpty": "请填写各个天数的价格。",
-        "blockIncomplete": "请填写每个天数的价格和每多一天加收的金额，或选择保持最后一档价格。"
+      "errors": {},
+      "dayGroup": "多日价格（二选一）",
+      "unitOnce": "đ / 次",
+      "unitDay": "đ / 天",
+      "block": {
+        "summaryExtra": "{count} 档 · 每多一天 +{extra}",
+        "summaryHold": "{count} 档 · 保持最后一档价格",
+        "edit": "修改价格表",
+        "setupHint": "每个天数一个价格。顾客正好租这么多天，就按该行计价。",
+        "save": "保存价格表",
+        "turnOff": "关闭按天数档位计价",
+        "quick": "快速生成：第一天 + 每多一天",
+        "quickFirst": "第一天价格",
+        "quickStep": "每多一天",
+        "quickDays": "天数",
+        "quickMake": "生成价格表",
+        "copy": "从其他商品复制",
+        "copyTitle": "选择要复制价格表的商品",
+        "copySearch": "搜索商品",
+        "copyEmpty": "没有商品设置了按天数档位的价格表。",
+        "copyLoading": "加载中…",
+        "close": "关闭",
+        "incomplete": "请填写每一天的价格和每多一天加收的金额，或选择保持最后一档价格。"
       }
     }
   }

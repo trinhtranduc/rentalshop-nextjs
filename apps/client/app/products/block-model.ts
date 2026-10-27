@@ -25,7 +25,6 @@ export interface BlockProductSource {
 }
 
 export type { BlockDraft } from './block-draft';
-export { blockToSave, seedFromDaily } from './block-draft';
 import type { BlockDraft } from './block-draft';
 
 export interface PricingDraft {
