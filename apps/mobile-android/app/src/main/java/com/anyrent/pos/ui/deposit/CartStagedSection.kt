@@ -47,9 +47,7 @@ internal fun CartStagedSection(
     canEdit: Boolean,
     exceeds: Boolean,
     collectNow: Double,
-    collectMethod: String,
     todayKey: String,
-    staffLike: Boolean,
     onPickTemplate: (DepositTemplate) -> Unit,
     onEditStage: (Int) -> Unit,
     onCollectFirst: (String?) -> Unit,
@@ -81,15 +79,13 @@ internal fun CartStagedSection(
         Box {
             V2ValueRow(
                 stringResource(R.string.deposit_cart_collect_first, 1),
-                if (collectNow > 0 && preview.isNotEmpty()) formatMoneyVnd(preview.first().amount) + " · " + depositMethodName(collectMethod)
+                if (collectNow > 0 && preview.isNotEmpty()) formatMoneyVnd(preview.first().amount)
                 else stringResource(R.string.deposit_cart_collect_none_short),
                 onClick = { collectMenu = true },
                 valueColor = DS.Colors.Primary,
             )
             DropdownMenu(expanded = collectMenu, onDismissRequest = { collectMenu = false }) {
-                DepositPlanLogic.collectMethods(staffLike).filter { it != "CHECK" }.forEach { method ->
-                    DropdownMenuItem(text = { Text(depositMethodName(method)) }, onClick = { collectMenu = false; onCollectFirst(method) })
-                }
+                DropdownMenuItem(text = { Text(stringResource(R.string.deposit_cart_collect_first, 1)) }, onClick = { collectMenu = false; onCollectFirst("CASH") })
                 DropdownMenuItem(text = { Text(stringResource(R.string.deposit_cart_collect_none_short)) }, onClick = { collectMenu = false; onCollectFirst(null) })
             }
         }

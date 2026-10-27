@@ -192,12 +192,9 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
     private let detail: OrderDetail
     private let stage: OrderInstallment
     private let number: Int
-    private let methods: [String]
-    private var method: String
     private let amountField = UITextField()
     private let errorLabel = V2.label(size: DS.TextSize.secondary, color: DS.Status.late.text, lines: 0)
     private let confirmButton = V2.primaryButton("")
-    private let methodStack = UIStackView()
     /// One per sheet: a retry after a lost answer is the same collect for the API
     private let reference = "ios-" + UUID().uuidString
     private var busy = false
@@ -206,8 +203,6 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
         self.detail = detail
         self.stage = stage
         self.number = number
-        methods = DepositPlanLogic.collectMethods(role: User.account()?.role)
-        method = "CASH"
         super.init()
     }
 
@@ -235,10 +230,6 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
         KeyboardDoneBar.attach([amountField])
         stack.addArrangedSubview(amountField)
 
-        methodStack.axis = .vertical
-        stack.addArrangedSubview(methodStack)
-        renderMethods()
-
         errorLabel.isHidden = true
         stack.addArrangedSubview(errorLabel)
         let cancel = V2.secondaryButton("Cancel".localized())
@@ -247,19 +238,6 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
         confirmButton.accessibilityIdentifier = "deposit.collect.confirm"
         stack.addArrangedSubview(V2FittingSheet.buttons(cancel: cancel, confirm: confirmButton, confirmRatio: 1.6))
         refresh()
-    }
-
-    private func renderMethods() {
-        methodStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for item in methods {
-            let row = DepositUI.radioRow(title: DepositUI.methodName(item), detail: nil, selected: item == method,
-                                         identifier: "deposit.collect.method." + item)
-            row.addAction(UIAction { [weak self] _ in
-                self?.method = item
-                self?.renderMethods()
-            }, for: .touchUpInside)
-            methodStack.addArrangedSubview(row)
-        }
     }
 
     private var amount: Double { MoneyInput.parse(amountField.text) ?? 0 }
@@ -284,7 +262,7 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
         busy = true
         isModalInPresentation = true
         refresh()
-        let request = CollectInstallmentRequest(amount: amount, method: method, collectedOn: nil, note: nil, reference: reference)
+        let request = CollectInstallmentRequest(amount: amount, method: "CASH", collectedOn: nil, note: nil, reference: reference)
         DepositPlanAPIService.shared.collect(orderId: detail.id, key: stage.key, request: request) { [weak self] ok, error in
             DispatchQueue.main.async {
                 guard let self else { return }

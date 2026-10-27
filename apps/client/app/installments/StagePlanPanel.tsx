@@ -116,7 +116,6 @@ export function StagePlanPanel({
             className="h-9 cursor-pointer rounded-[10px] border border-ar-line-strong bg-ar-surface px-2 text-sm font-semibold text-ar-primary-ink"
           >
             <option value="CASH">{td('collectCash', { amount: money(firstAmount) })}</option>
-            <option value="TRANSFER">{td('collectTransfer', { amount: money(firstAmount) })}</option>
             <option value="NONE">{td('collectLater')}</option>
           </select>
         </label>

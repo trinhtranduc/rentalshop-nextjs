@@ -174,7 +174,6 @@ fun CartV2Screen(
     val depositStages by CartStore.depositStages.collectAsState()
     val depositTemplateId by CartStore.depositTemplateId.collectAsState()
     val collectFirstNow by CartStore.collectFirstStageNow.collectAsState()
-    val collectMethod by CartStore.collectMethod.collectAsState()
     val editHasPlan by CartStore.editHasDepositPlan.collectAsState()
     val stagedMode = depositMode == DepositMode.STAGED
     LaunchedEffect(Unit) { DepositModeStore.refresh() }
@@ -579,8 +578,8 @@ fun CartV2Screen(
                 } else if (staged) {
                     CartStagedSection(
                         preview = stagedPreview, templateName = stagedTemplateName, choices = depositSettings?.choices.orEmpty(),
-                        canEdit = canEditStages, exceeds = stagesExceed, collectNow = stagedCollectNow, collectMethod = collectMethod,
-                        todayKey = ShopTime.today().toString(), staffLike = !canEditStages,
+                        canEdit = canEditStages, exceeds = stagesExceed, collectNow = stagedCollectNow,
+                        todayKey = ShopTime.today().toString(),
                         onPickTemplate = { CartStore.setDepositTemplate(it) },
                         onEditStage = { index ->
                             numericText = stagedPreview.getOrNull(index)?.amount?.toLong()?.toString() ?: "0"

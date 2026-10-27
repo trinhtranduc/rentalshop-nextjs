@@ -430,7 +430,7 @@ final class CartV2ViewController: BaseViewControler {
         let first = preview.first
         let collect = V2ValueRow(title: String(format: "deposit.cart.collectFirst".localized(), 1), editable: true)
         if cart.stagedCollectNow > 0, let first {
-            collect.valueLabel.text = MoneyFormatter.format(first.amount) + " · " + DepositUI.methodName(cart.collectMethod)
+            collect.valueLabel.text = MoneyFormatter.format(first.amount)
         } else {
             collect.valueLabel.text = "deposit.cart.collectNone.short".localized()
         }
@@ -491,11 +491,9 @@ final class CartV2ViewController: BaseViewControler {
 
     @objc private func pickCollectFirst() {
         let sheet = UIAlertController(title: String(format: "deposit.cart.collectFirst".localized(), 1), message: nil, preferredStyle: .actionSheet)
-        for method in DepositPlanLogic.collectMethods(role: User.account()?.role).filter({ $0 != "CHECK" }) {
-            sheet.addAction(UIAlertAction(title: DepositUI.methodName(method), style: .default) { _ in
-                CartStore.shared.setCollectFirstStage(method: method)
-            })
-        }
+        sheet.addAction(UIAlertAction(title: String(format: "deposit.cart.collectFirst".localized(), 1), style: .default) { _ in
+            CartStore.shared.setCollectFirstStage(method: "CASH")
+        })
         sheet.addAction(UIAlertAction(title: "deposit.cart.collectNone.short".localized(), style: .default) { _ in
             CartStore.shared.setCollectFirstStage(method: nil)
         })
