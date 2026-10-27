@@ -33,6 +33,7 @@ final class ProductFormViewController: BaseViewControler {
     private let perDayField = UITextField()
     private let blockSummaryTitle = V2.label(size: DS.TextSize.input, weight: .bold)
     private let blockSummaryRange = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private var blockRowView: UIView?
     private let blockNotSet = V2.label("products.form.block.notSet".localized(), size: DS.TextSize.input, color: DS.Color.textMuted)
     private var keyboardManagerWasEnabled = true
 
@@ -231,7 +232,7 @@ final class ProductFormViewController: BaseViewControler {
             configure(perDayField, placeholder: "0", numeric: true)
             perDayField.accessibilityIdentifier = "product.form.perDay"
             form.addArrangedSubview(field(title: "products.form.perDay".localized(), required: false, input: perDayField,
-                                          unit: MoneyFormatter.unitLabel(daily: true)))
+                                          unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.day".localized()))
             form.addArrangedSubview(blockRow())
             renderBlock()
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
@@ -483,6 +484,7 @@ final class ProductFormViewController: BaseViewControler {
         row.accessibilityTraits = UIAccessibilityTraitButton
         row.accessibilityIdentifier = "product.form.blockSummary"
         row.accessibilityLabel = title.text
+        blockRowView = row
         let stack = UIStackView(arrangedSubviews: [title, row])
         stack.axis = .vertical
         stack.spacing = 6
@@ -496,6 +498,7 @@ final class ProductFormViewController: BaseViewControler {
         blockSummaryTitle.isHidden = table == nil
         blockSummaryRange.isHidden = table == nil
         blockNotSet.isHidden = table != nil
+        blockRowView?.accessibilityValue = table.map { BlockPricing.rowSummary($0) } ?? blockNotSet.text
         if let table {
             blockSummaryTitle.text = BlockPricing.rowSummary(table)
             blockSummaryRange.text = BlockPricing.rangeSummary(table)

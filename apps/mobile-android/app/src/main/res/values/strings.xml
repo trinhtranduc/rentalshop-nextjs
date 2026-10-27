@@ -623,7 +623,7 @@
     <string name="v2_form_barcode_placeholder">Scan or type</string>
     <string name="v2_form_regenerate_barcode">New barcode</string>
     <string name="v2_form_barcode_used">Barcode already used by %1$s</string>
-    <string name="v2_form_prices">Prices</string>
+    <string name="v2_form_prices">Rental price</string>
     <string name="v2_form_per_rental">Per rental</string>
     <string name="v2_form_per_day">Per day</string>
     <string name="v2_form_sale_price">Sale price</string>

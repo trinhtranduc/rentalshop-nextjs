@@ -1575,7 +1575,7 @@
 "products.form.barcodePlaceholder" = "Quét hoặc nhập";
 "products.form.regenerateBarcode" = "Tạo mã mới";
 "products.form.barcodeUsed" = "Mã vạch đã dùng cho %@";
-"products.form.prices" = "Giá";
+"products.form.prices" = "Giá thuê";
 "products.form.perRental" = "Theo lần";
 "products.form.perDay" = "Theo mỗi ngày";
 "products.form.defaultPricing" = "Khi tạo đơn, mặc định tính";
@@ -2994,6 +2994,7 @@
 "settings.v2.profile.group" = "Hồ sơ";
 "settings.v2.profile.security" = "Bảo mật";
 "products.form.unit.once" = "/ lần";
+"products.form.unit.day" = "/ ngày";
 "products.form.perBlock" = "Theo block ngày";
 "products.form.block.notSet" = "Chưa cài";
 "block.intro" = "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.";
