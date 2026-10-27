@@ -48,8 +48,8 @@ async function findMatchingProductIds(searchInput: string, merchantId?: number):
 
   try {
     const perWord = words.map((word: string) => {
-      const { hasDiacritics, pattern } = buildSearchWordTerm(word);
-      const nameSql = projectSearchColumnSql('name', hasDiacritics);
+      const { pattern } = buildSearchWordTerm(word);
+      const nameSql = projectSearchColumnSql('name');
       return Prisma.sql`(${nameSql} LIKE ${pattern})`;
     });
     // ALL words must match (AND). Scope to merchant so the LIMIT budget isn't consumed
