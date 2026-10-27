@@ -275,47 +275,121 @@ final class BlockPricingTests: XCTestCase {
                        .table(BlockTable(tiers: [80_000], startDay: 1, extraMode: "HOLD_LAST", extraPrice: nil)))
     }
 
-    // MARK: - #1249 one choice: Theo lần / Theo ngày
+    // MARK: - #1249 Thuê theo lần + one of (Thuê theo ngày | Giá theo khối ngày), the owner's mockup
 
-    func testKindOpensOnTheSavedPrice() throws {
-        // a saved table, or a per-day default, opens on Theo ngày
-        XCTAssertEqual(ProductPricing.kind(try product(blockProductJSON)), .perDay)
-        let daily = try product(#"{"id":1,"name":"X","rentPrice":50000,"pricingType":"DAILY","pricingOptions":[{"id":1,"type":"DAILY","price":50000,"isDefault":true,"isActive":true}]}"#)
-        XCTAssertEqual(ProductPricing.kind(daily), .perDay)
-        // a per-rental default, with or without an old day price, opens on Theo lần; so does a product with no price
-        let both = try product(#"{"id":1,"name":"X","rentPrice":150000,"pricingOptions":[{"id":1,"type":"FIXED","price":150000,"isDefault":true,"isActive":true},{"id":2,"type":"DAILY","price":50000,"isDefault":false,"isActive":true}]}"#)
-        XCTAssertEqual(ProductPricing.kind(both), .perRental)
-        XCTAssertEqual(ProductPricing.kind(try product(#"{"id":1,"name":"X","rentPrice":0}"#)), .perRental)
+    private let oldDaily = #"{"id":1,"name":"X","rentPrice":200000,"pricingType":"DAILY","pricingOptions":[{"id":1,"type":"FIXED","price":150000,"isDefault":false,"isActive":true},{"id":2,"type":"DAILY","price":200000,"isDefault":true,"isActive":true}]}"#
+    private let onlyFixed = #"{"id":1,"name":"X","rentPrice":150000,"pricingOptions":[{"id":1,"type":"FIXED","price":150000,"isDefault":true,"isActive":true}]}"#
+
+    func testNewProductStartsOnTheDayPriceWithEmptyBoxes() {
+        let draft = ProductPriceDraft(product: nil)
+        XCTAssertEqual(draft.kind, .perDay)
+        XCTAssertNil(draft.perRental)
+        XCTAssertNil(draft.perDay)
+        XCTAssertNil(draft.block)
+        XCTAssertTrue(draft.options.isEmpty)
     }
 
-    func testTheOldDayPriceIsShownAsATableAndSavedAsBeforeUntilEdited() {
-        let seed = BlockPricing.seed(perDay: 50_000)
-        // row 1 = the day price and each extra day costs the same: exactly day price × days
-        XCTAssertEqual(seed, BlockTable(tiers: [50_000], startDay: 1, extraMode: BlockTable.extraPerDay, extraPrice: 50_000))
-        XCTAssertEqual(BlockPricing.detail(try! XCTUnwrap(seed), days: 4, minorUnit: 1)?.total, 200_000)
-        XCTAssertNil(BlockPricing.seed(perDay: nil))
-        // untouched: no table is sent, the product stays a DAILY price
-        XCTAssertNil(BlockPricing.tableToSave(seed, perDay: 50_000))
-        XCTAssertNil(BlockPricing.tableToSave(nil, perDay: 50_000))
-        // edited: it is a table
-        let edited = BlockTable(tiers: [50_000, 90_000], startDay: 1, extraMode: BlockTable.extraPerDay, extraPrice: 40_000)
-        XCTAssertEqual(BlockPricing.tableToSave(edited, perDay: 50_000), edited)
-        // a table typed on a product without an old day price is always a table
-        XCTAssertEqual(BlockPricing.tableToSave(table, perDay: nil), table)
+    func testOpeningAProductPicksTheRightRadio() throws {
+        // a table: Giá theo khối ngày
+        let withTable = ProductPriceDraft(product: try product(blockProductJSON))
+        XCTAssertEqual(withTable.kind, .block)
+        XCTAssertEqual(withTable.block, table)
+        // an old DAILY product: Thuê theo ngày with its price, never turned into a table
+        let daily = ProductPriceDraft(product: try product(oldDaily))
+        XCTAssertEqual(daily.kind, .perDay)
+        XCTAssertEqual(daily.perDay, 200_000)
+        XCTAssertEqual(daily.perRental, 150_000)
+        XCTAssertNil(daily.block)
+        // only Theo lần: Thuê theo ngày with an empty day box
+        let once = ProductPriceDraft(product: try product(onlyFixed))
+        XCTAssertEqual(once.kind, .perDay)
+        XCTAssertNil(once.perDay)
+        XCTAssertEqual(once.perRental, 150_000)
     }
 
-    func testTheKindDecidesTheDefaultOption() {
-        XCTAssertEqual(ProductPricing.defaultMode(kind: .perRental, table: table), .perRental)
-        XCTAssertEqual(ProductPricing.defaultMode(kind: .perDay, table: table), .block)
-        XCTAssertEqual(ProductPricing.defaultMode(kind: .perDay, table: nil), .perDay)
-        // Theo lần sends no BLOCK option (the form passes no table): the API drops a saved table
-        let once = ProductPricing.options(perRental: 150_000, perDay: 50_000, defaultMode: .perRental, block: nil)
-        XCTAssertEqual(once.map { $0.type }, ["FIXED", "DAILY"])
-        XCTAssertEqual(once.map { $0.isDefault }, [true, false])
-        // Theo ngày without a typed table is the old DAILY default
-        let legacy = ProductPricing.options(perRental: nil, perDay: 50_000, defaultMode: .perDay, block: nil)
-        XCTAssertEqual(legacy.map { $0.type }, ["DAILY"])
-        XCTAssertEqual(legacy.map { $0.isDefault }, [true])
+    func testThueTheoNgaySendsFixedAndDailyAndNoBlock() {
+        var draft = ProductPriceDraft(product: nil)
+        draft.perRental = 150_000
+        draft.perDay = 80_000
+        draft.block = table
+        XCTAssertEqual(draft.options.map { $0.type }, ["FIXED", "DAILY"])
+        XCTAssertEqual(draft.options.map { $0.isDefault }, [true, false])
+        XCTAssertEqual(draft.rentPrice, 150_000)
+    }
+
+    func testGiaTheoKhoiSendsFixedAndBlockAndNoFlatDaily() {
+        var draft = ProductPriceDraft(product: nil)
+        draft.perRental = 150_000
+        draft.perDay = 80_000
+        draft.saveTable(table)
+        XCTAssertEqual(draft.kind, .block)
+        XCTAssertEqual(draft.options.map { $0.type }, ["FIXED", "BLOCK"])
+        XCTAssertEqual(draft.options.map { $0.isDefault }, [true, false])
+        XCTAssertEqual(draft.options.last?.price, 80_000)
+        XCTAssertEqual(draft.rentPrice, 150_000)
+        // no Theo lần price: the table is the default and rentPrice is day 1
+        draft.perRental = nil
+        XCTAssertEqual(draft.options.map { $0.type }, ["BLOCK"])
+        XCTAssertEqual(draft.options.map { $0.isDefault }, [true])
+        XCTAssertEqual(draft.rentPrice, 80_000)
+    }
+
+    func testTheDefaultIsAlwaysTheoLanWhenItHasAPrice() {
+        var draft = ProductPriceDraft(product: nil)
+        draft.perRental = 0
+        draft.perDay = 5
+        XCTAssertEqual(draft.options.first { $0.isDefault }?.type, "FIXED")
+        draft.perRental = nil
+        XCTAssertEqual(draft.options.first { $0.isDefault }?.type, "DAILY")
+    }
+
+    func testSwitchingBackAndForthKeepsWhatWasTyped() {
+        var draft = ProductPriceDraft(product: nil)
+        draft.perDay = 80_000
+        draft.saveTable(table)
+        XCTAssertEqual(draft.choose(.perDay), .selected)
+        XCTAssertEqual(draft.kind, .perDay)
+        XCTAssertEqual(draft.perDay, 80_000)
+        XCTAssertEqual(draft.block, table)
+        XCTAssertEqual(draft.choose(.block), .selected)
+        XCTAssertEqual(draft.kind, .block)
+        XCTAssertEqual(draft.block, table)
+    }
+
+    func testChoosingBlockWithoutATableOpensSetupAndKeepsThePreviousChoice() {
+        var draft = ProductPriceDraft(product: nil)
+        draft.perDay = 80_000
+        let before = draft
+        XCTAssertEqual(draft.choose(.block), .needsSetup)
+        XCTAssertEqual(draft, before)
+        // saving the setup selects it; cancelling changes nothing
+        draft.saveTable(table)
+        XCTAssertEqual(draft.kind, .block)
+    }
+
+    func testTurningTheTableOffGoesBackToTheDayPrice() {
+        var draft = ProductPriceDraft(product: nil)
+        draft.perDay = 80_000
+        draft.saveTable(table)
+        draft.turnOffTable()
+        XCTAssertEqual(draft.kind, .perDay)
+        XCTAssertNil(draft.block)
+        XCTAssertEqual(draft.perDay, 80_000)
+        XCTAssertEqual(draft.options.map { $0.type }, ["DAILY"])
+    }
+
+    func testQuickTableBuildsRowsFromTheFirstDayAndTheExtraDay() throws {
+        let quick = try XCTUnwrap(BlockPricing.quickTable(firstDay: 80_000, extraPerDay: 20_000, days: 3))
+        XCTAssertEqual(quick, table)
+        XCTAssertEqual(BlockPricing.rent(quick, days: 5), 160_000)
+        XCTAssertNil(BlockPricing.quickTable(firstDay: 80_000, extraPerDay: 20_000, days: 0))
+        XCTAssertNil(BlockPricing.quickTable(firstDay: 80_000, extraPerDay: 20_000, days: 32))
+        XCTAssertNil(BlockPricing.quickTable(firstDay: -1, extraPerDay: 20_000, days: 3))
+    }
+
+    func testCopyTakesOnlyTheTableOfAnotherProduct() throws {
+        XCTAssertEqual(ProductPricing.block(try product(blockProductJSON)), table)
+        XCTAssertNil(ProductPricing.block(try product(oldDaily)))
     }
 
     // MARK: - Header and errors
