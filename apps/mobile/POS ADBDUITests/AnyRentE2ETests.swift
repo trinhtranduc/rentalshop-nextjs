@@ -3202,8 +3202,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.emptyCart()
     }
 
-    /// #1259 compact Settings: the list in 3 groups, then Thu tiền, In & phiếu, Nâng cao, Hồ sơ & bảo mật and the
-    /// currency line of Thông tin cửa hàng. Staff runs check what is hidden (bank accounts, currency, the switch).
+    /// #1270 Settings plan B: Thông tin cửa hàng, Tiền tệ, Tài khoản ngân hàng, Cọc ›, In & phiếu ›, then the screens.
+    /// Staff runs check what is hidden (currency, bank accounts, the switch); Cọc stays for everyone.
     func test7zCompactSettings() throws {
         try e2e.requireFlag("newSettings")
         try e2e.start()
@@ -3214,18 +3214,18 @@ final class AnyRentE2ETests: XCTestCase {
         }
         let isOwner = e2e.role == "merchant"
         let storeInfo = label(["Store Information", "Thông tin cửa hàng"])
-        let collect = label(["Payments", "Thu tiền"])
+        let collect = label(["Deposit", "Cọc"])
         let printing = label(["Print & receipts", "In & phiếu"])
         XCTAssertTrue(storeInfo.waitForExistence(timeout: 8), "Thông tin cửa hàng row")
-        XCTAssertTrue(collect.exists, "Thu tiền row (every role: the deposit lines are read-only for staff)")
+        XCTAssertTrue(collect.exists, "Cọc row (every role: read only for staff)")
         XCTAssertTrue(printing.exists, "In & phiếu row")
+        XCTAssertEqual(label(["Currency", "Tiền tệ"]).exists, isOwner, "Tiền tệ row for the owner only")
+        XCTAssertEqual(label(["Bank Accounts", "Tài khoản ngân hàng"]).exists, isOwner, "Tài khoản ngân hàng row for owner / outlet admin only")
+        XCTAssertFalse(label(["Payments", "Thu tiền"]).exists, "no Thu tiền screen any more")
         XCTAssertFalse(label(["Printer", "Máy in"]).exists, "no separate Máy in row")
-        XCTAssertFalse(label(["Receipt note", "Ghi chú phiếu"]).exists, "no separate Ghi chú phiếu row")
-        XCTAssertTrue(app.buttons["settings.notifications"].exists, "the Thông báo bell at the top right")
-        XCTAssertFalse(label(["Notifications", "Thông báo"]).exists, "no Thông báo row")
-        XCTAssertFalse(label(["Currency", "Tiền tệ"]).exists, "Tiền tệ is inside Thông tin cửa hàng")
         XCTAssertFalse(label(["Change Password", "Đổi mật khẩu"]).exists, "Đổi mật khẩu is inside the name card")
         XCTAssertFalse(label(["Delete Account", "Xoá tài khoản"]).exists, "Xoá tài khoản is inside Nâng cao")
+        XCTAssertTrue(app.buttons["settings.notifications"].exists, "the Thông báo bell at the top right")
         e2e.soft(isOwner == app.switches.firstMatch.exists, "the overlap switch shows for the owner only")
         e2e.shot("z1-settings-top")
         app.swipeUp()
@@ -3239,8 +3239,6 @@ final class AnyRentE2ETests: XCTestCase {
         collect.tap()
         sleep(3)
         e2e.shot("z3-collect")
-        XCTAssertEqual(app.descendants(matching: .any)["settings.collect.bank"].exists, e2e.role == "merchant" || e2e.role == "outlet_admin",
-                       "bank accounts line only for owner and outlet admin")
         XCTAssertTrue(app.descendants(matching: .any)["settings.collect.mode"].exists, "Cách thu cọc line")
         XCTAssertTrue(app.descendants(matching: .any)["deposit.templates.row"].exists, "Mẫu giai đoạn line")
         XCTAssertTrue(app.descendants(matching: .any)["deposit.policy.row"].exists, "Chính sách huỷ / dời ngày line")
@@ -3272,7 +3270,6 @@ final class AnyRentE2ETests: XCTestCase {
         storeInfo.tap()
         sleep(2)
         e2e.shot("z7-store-info")
-        e2e.soft(label(["Currency", "Tiền tệ"]).exists == isOwner, "Tiền tệ line for the owner only")
         e2e.goBackOnce()
     }
 
@@ -3512,17 +3509,14 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.requireFlag("newSettings")
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        // #1259: Tài khoản ngân hàng is a line of Thu tiền
-        let collect = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Payments", "Thu tiền"])).firstMatch
-        XCTAssertTrue(collect.waitForExistence(timeout: 8), "Thu tiền row in the Store group")
-        collect.tap()
-        let row = app.descendants(matching: .any)["settings.collect.bank"]
+        // #1270: Tài khoản ngân hàng is a row of CỬA HÀNG again
+        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Bank Accounts", "Tài khoản ngân hàng"])).firstMatch
         if e2e.role != "merchant" { // staff and kho (#682) have no bank-account permission
             e2e.shot("7k-\(e2e.role)-settings")
             e2e.soft(!row.exists, "\(e2e.role) does not see Tài khoản ngân hàng")
             return
         }
-        XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in Thu tiền")
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in the Store group")
         e2e.shot("7k-settings-bank-row")
         row.tap()
         sleep(3)
@@ -3560,9 +3554,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("7k-bank-form-edit")
         e2e.goBackOnce()
         sleep(1)
-        e2e.goBackOnce() // the list → Thu tiền
-        sleep(1)
-        e2e.goBackOnce() // Thu tiền → Cài đặt (#1259)
+        e2e.goBackOnce() // the list → Cài đặt
 
         // Printer page: the switch sits under the printer note, off by default; turned on for the shot, then back
         let printer = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch
@@ -4492,14 +4484,14 @@ final class AnyRentE2ETests: XCTestCase {
 
         // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2 with the warning
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
-        // #1259: Thu tiền holds Tài khoản ngân hàng, Cách thu cọc, Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày
-        let collect = text(["Thu tiền", "Payments"])
+        // #1270: Cọc › holds Cách thu cọc, Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày
+        let collect = text(["Cọc", "Deposit"])
         scrollTo(collect)
         e2e.shot("60a-settings-row")
-        XCTAssertTrue(collect.exists, "Settings has the Thu tiền row")
+        XCTAssertTrue(collect.exists, "Settings has the Cọc row")
         collect.tap()
         let row = app.descendants(matching: .any)["settings.collect.mode"]
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "Thu tiền has the Cách thu cọc row")
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "Cọc has the Cách thu cọc row")
         row.tap()
         sleep(2)
         e2e.shot("60b-mode-one-time")
@@ -4512,7 +4504,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("60d-mode-staged")
         XCTAssertTrue(textStarting(["Nhân viên đang dùng app cũ", "Staff on an older app"]).exists, "the old-app warning shows in mode 2")
 
-        // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over (#1259: the row is in Thu tiền)
+        // 2. A template 30% on order + 40% four days before pickup, the rest at hand-over (#1270: the row is in Cọc)
         e2e.goBackOnce()
         sleep(1)
         let templates = app.descendants(matching: .any)["deposit.templates.row"]

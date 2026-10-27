@@ -2273,7 +2273,7 @@
     <string name="settings_v2_collect_accounts">%d tài khoản</string>
     <string name="settings_v2_collect_banks">%d ngân hàng</string>
     <string name="settings_v2_collect_one_time">Cọc 1 lần</string>
-    <string name="settings_v2_collect_staged">Cọc theo giai đoạn</string>
+    <string name="settings_v2_collect_staged">Theo giai đoạn</string>
     <string name="settings_v2_collect_policy_set">Đã đặt</string>
     <string name="settings_v2_collect_policy_unset">Chưa đặt</string>
     <string name="settings_v2_printing">In &amp; phiếu</string>
@@ -2292,4 +2292,11 @@
     <string name="block_copy">Sao chép từ sản phẩm khác</string>
     <string name="block_copy_loading">Đang tải…</string>
     <string name="block_copy_none">Chưa có sản phẩm khác dùng bảng giá theo khối ngày.</string>
+    <!-- #1270 Cài đặt phương án B -->
+    <string name="settings_v2_deposit">Cọc</string>
+    <string name="settings_v2_deposit_group_mode">Cách thu cọc</string>
+    <string name="settings_v2_deposit_group_stages">Giai đoạn &amp; chính sách</string>
+    <string name="settings_v2_printing_no_printer">chưa chọn máy in</string>
+    <string name="settings_v2_printing_group_slip">Phiếu</string>
+    <string name="settings_v2_printing_group_printer">Máy in</string>
 </resources>

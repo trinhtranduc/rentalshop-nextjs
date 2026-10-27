@@ -182,7 +182,7 @@ class PrinterConfigurationViewController: BaseViewControler {
 
         let back = SettingsDetailV2.backButton()
         back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
-        let line = SettingsDetailV2.installHeader(on: view, title: "Printer Configuration".localized(), back: back)
+        let line = SettingsDetailV2.installHeader(on: view, title: "settings.v2.printing".localized(), back: back) // #1270: In & phiếu
 
         let test = V2.secondaryButton("Test Printer".localized())
         test.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
@@ -197,11 +197,19 @@ class PrinterConfigurationViewController: BaseViewControler {
         supportLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         supportLabel.textColor = V2.warn
         noteTextView.isScrollEnabled = true
+        // #1270 plan B: two sections, PHIẾU (the printed note) and MÁY IN (IP, test print)
+        func sectionTitle(_ key: String) -> UILabel {
+            let label = V2.label(key.localized().uppercased(), size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
+            label.accessibilityTraits = UIAccessibilityTraitHeader
+            return label
+        }
         let form = UIStackView(arrangedSubviews: [
-            hintLabel,
-            SettingsDetailV2.field("IP Address".localized(), ipField.textField),
+            sectionTitle("settings.v2.printing.group.slip"),
             SettingsDetailV2.textArea("Printer Notes".localized(), noteTextView),
             makeBankQrRow(),
+            sectionTitle("settings.v2.printing.group.printer"),
+            hintLabel,
+            SettingsDetailV2.field("IP Address".localized(), ipField.textField),
             supportLabel,
         ])
         form.axis = .vertical

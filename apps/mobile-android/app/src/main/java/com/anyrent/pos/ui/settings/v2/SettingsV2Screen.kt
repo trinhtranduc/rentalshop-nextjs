@@ -94,7 +94,7 @@ import org.json.JSONObject
 import java.util.Locale
 
 /** #1259: the screens that open over the Settings list */
-enum class SettingsSubPage { COLLECT, ADVANCED, PROFILE }
+enum class SettingsSubPage { DEPOSIT, ADVANCED, PROFILE }
 
 /** Redesigned settings tab (#374, board Cai-dat), shown when `newSettings` is on: links to the existing screens */
 @Composable
@@ -156,8 +156,28 @@ fun SettingsV2Screen(
         }
     }
 
-    // #1145 "Tiền tệ": the session's currency (#1259: changed inside Thông tin cửa hàng, shown next to its row here)
+    // #1145 "Tiền tệ": the session's currency; a choice, then a confirm, then PUT /api/settings/currency
     val currency by SessionStore.currencyFlow.collectAsState()
+    var currencyChoice by remember { mutableStateOf(false) }
+    var currencyTarget by remember { mutableStateOf<ShopCurrency?>(null) }
+    var currencySaving by remember { mutableStateOf(false) }
+    var currencyError by remember { mutableStateOf<String?>(null) }
+    val currencyFailedText = stringResource(R.string.settings_v2_currency_failed)
+
+    fun saveCurrency(target: ShopCurrency) {
+        if (currencySaving) return
+        currencySaving = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { ApiClient.get().setCurrency(target) }
+            currencySaving = false
+            currencyTarget = null
+            result.onFailure { failure ->
+                val id = ApiErrorMessages.stringId(AppError.from(failure).code)
+                currencyError = if (id != 0) context.getString(id) else currencyFailedText
+            }
+        }
+    }
+
 
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
     // #937: unread count on "Thông báo" (moved from the Home bell). #674: follows the inbox and pushes; the server is
@@ -261,17 +281,16 @@ fun SettingsV2Screen(
             }
             items(section.items, key = { it.name }) { item ->
                 val value = when (item) {
-                    SettingsItem.STORE_INFO -> SettingsRows.storeValue(
-                        SessionStore.outletName ?: SessionStore.merchantName, if (SettingsRows.storeInfoShowsCurrency(role)) currency.code else null,
+                    SettingsItem.STORE_INFO -> (SessionStore.outletName ?: SessionStore.merchantName)?.takeIf { it.isNotBlank() }
+                    SettingsItem.CURRENCY -> currency.code
+                    SettingsItem.BANK_ACCOUNTS -> bankCount?.let { stringResource(R.string.settings_v2_collect_accounts, it) }
+                    SettingsItem.DEPOSIT -> stringResource(
+                        if (depositMode == DepositMode.STAGED) R.string.settings_v2_collect_staged else R.string.settings_v2_collect_one_time,
                     )
-                    SettingsItem.COLLECT -> SettingsRows.collectValue(
-                        depositMode == DepositMode.STAGED, bankCount,
-                        stringResource(R.string.settings_v2_collect_one_time), stringResource(R.string.settings_v2_collect_staged),
-                    ) { count -> context.getString(R.string.settings_v2_collect_banks, count) }
                     SettingsItem.PRINTING -> SettingsRows.printingValue(
                         hasPrinter = prefs.getString("printerIp", "").orEmpty().isNotBlank(),
                         paperMillimetres = prefs.getString("paperWidth", "80")?.toIntOrNull() ?: 80,
-                        none = stringResource(R.string.settings_v2_printer_none),
+                        none = stringResource(R.string.settings_v2_printing_no_printer),
                     )
                     SettingsItem.CUSTOMERS, SettingsItem.USERS -> counts[item]?.toString()
                     SettingsItem.PLAN -> plan?.let { planText(it) }
@@ -282,7 +301,9 @@ fun SettingsV2Screen(
                 SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN) {
                     when (item) {
                         SettingsItem.STORE_INFO -> onOpenStore()
-                        SettingsItem.COLLECT -> subPage = SettingsSubPage.COLLECT
+                        SettingsItem.CURRENCY -> currencyChoice = true
+                        SettingsItem.BANK_ACCOUNTS -> onOpenBankAccounts()
+                        SettingsItem.DEPOSIT -> subPage = SettingsSubPage.DEPOSIT
                         SettingsItem.PRINTING -> onOpenPrinter()
                         SettingsItem.CATEGORIES -> showCategories = true
                         SettingsItem.CUSTOMERS -> onOpenCustomers()
@@ -334,9 +355,8 @@ fun SettingsV2Screen(
     }
     // #1259: Thu tiền, Nâng cao and Hồ sơ & bảo mật open over the list
     when (subPage) {
-        SettingsSubPage.COLLECT -> CollectMoneyScreen(
+        SettingsSubPage.DEPOSIT -> DepositHubScreen(
             onBack = { subPage = null },
-            onOpenBankAccounts = onOpenBankAccounts,
             onOpenDeposit = { depositStart = it },
             refreshKey = collectRefresh,
         )
@@ -400,6 +420,28 @@ fun SettingsV2Screen(
         )
     }
     overlapError?.let { message -> AppAlertError(message = message, onDismiss = { overlapError = null }) }
+    if (currencyChoice) {
+        CurrencyChoiceDialog(
+            current = currency,
+            onDismiss = { currencyChoice = false },
+            onPick = { picked ->
+                currencyChoice = false
+                if (picked != currency) currencyTarget = picked
+            },
+        )
+    }
+    currencyTarget?.let { target ->
+        AppAlertConfirm(
+            title = stringResource(R.string.settings_v2_currency_confirm_title, target.code),
+            message = stringResource(R.string.settings_v2_currency_confirm_message, target.code, ShopMoney.example(currency, target)),
+            confirmLabel = stringResource(R.string.settings_v2_currency_confirm_button, target.code),
+            confirmLoading = currencySaving,
+            dismissEnabled = !currencySaving,
+            onDismiss = { currencyTarget = null },
+            onConfirm = { saveCurrency(target) },
+        )
+    }
+    currencyError?.let { message -> AppAlertError(message = message, onDismiss = { currencyError = null }) }
     passwordError?.let { message ->
         AppAlertError(message = message.ifBlank { stringResource(R.string.calendar_v2_error) }, onDismiss = { passwordError = null })
     }
@@ -492,7 +534,9 @@ private fun planText(plan: SettingsPlan): String {
 private fun itemTitle(item: SettingsItem): String = stringResource(
     when (item) {
         SettingsItem.STORE_INFO -> R.string.store_info
-        SettingsItem.COLLECT -> R.string.settings_v2_collect
+        SettingsItem.CURRENCY -> R.string.settings_v2_currency
+        SettingsItem.BANK_ACCOUNTS -> R.string.bank_accounts
+        SettingsItem.DEPOSIT -> R.string.settings_v2_deposit
         SettingsItem.PRINTING -> R.string.settings_v2_printing
         SettingsItem.CATEGORIES -> R.string.settings_v2_categories
         SettingsItem.CUSTOMERS -> R.string.customers

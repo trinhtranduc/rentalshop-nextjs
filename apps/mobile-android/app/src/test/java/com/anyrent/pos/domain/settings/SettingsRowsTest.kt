@@ -6,27 +6,33 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** #374 — settings rows by role, plan parsing, initials, password rules */
 class SettingsRowsTest {
     @Test
     fun rowsByRole() {
-        // #1259: 10 rows for the owner plus the name card = 11 lines; Thông báo is the bell at the top right
+        // #1270 plan B: 12 rows for the owner (+ the overlap switch = 13) plus the name card and the bell
         val merchant = SettingsRows.sections("MERCHANT", hasPlan = true)
         assertEquals(listOf(SettingsGroup.STORE, SettingsGroup.MANAGEMENT, SettingsGroup.ACCOUNT), merchant.map { it.group })
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), merchant[0].items)
+        assertEquals(
+            listOf(SettingsItem.STORE_INFO, SettingsItem.CURRENCY, SettingsItem.BANK_ACCOUNTS, SettingsItem.DEPOSIT, SettingsItem.PRINTING),
+            merchant[0].items,
+        )
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
         assertEquals(listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.ADVANCED), merchant[2].items)
-        assertEquals(11, 1 + merchant.sumOf { it.items.size })
+        assertEquals(12, merchant.sumOf { it.items.size })
 
+        // Outlet admin: bank accounts yes, currency no
         val outletAdmin = SettingsRows.sections("OUTLET_ADMIN", hasPlan = false)
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), outletAdmin[0].items)
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.BANK_ACCOUNTS, SettingsItem.DEPOSIT, SettingsItem.PRINTING), outletAdmin[0].items)
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[1].items)
         assertEquals(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED), outletAdmin[2].items)
 
+        // Staff: no currency, no bank accounts; Cọc stays (read only)
         val staff = SettingsRows.sections("OUTLET_STAFF", hasPlan = true)
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), staff[0].items)
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.DEPOSIT, SettingsItem.PRINTING), staff[0].items)
         assertEquals(listOf(SettingsItem.CUSTOMERS), staff[1].items)
         assertEquals(SettingsItem.PLAN, staff[2].items.first())
 
@@ -34,38 +40,24 @@ class SettingsRowsTest {
         assertFalse(SettingsRows.sections("ADMIN", hasPlan = true).flatMap { it.items }.contains(SettingsItem.PLAN))
     }
 
-    /** #1259: Thông báo is the bell at the top right, not a row, for every role */
+    /** Cọc shows for every role; the store group is first (the bell is not a row) */
     @Test
-    fun notificationsIsNotARow() {
+    fun depositRowForEveryRole() {
         for (role in listOf("ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY", null)) {
             val first = SettingsRows.sections(role, hasPlan = false).first()
             assertEquals(role, SettingsGroup.STORE, first.group)
             assertEquals(role, SettingsItem.STORE_INFO, first.items.first())
+            assertTrue(role, SettingsItem.DEPOSIT in first.items)
         }
     }
 
-    /** #1259 "Thu tiền": the bank accounts line for owner and outlet admin; the three deposit lines for everyone */
-    @Test
-    fun collectRowsByRole() {
-        val all = listOf(CollectRow.BANK_ACCOUNTS, CollectRow.DEPOSIT_MODE, CollectRow.TEMPLATES, CollectRow.POLICY)
-        assertEquals(all, SettingsRows.collectRows("MERCHANT"))
-        assertEquals(all, SettingsRows.collectRows("OUTLET_ADMIN"))
-        for (role in listOf("OUTLET_STAFF", "OUTLET_INVENTORY", "ADMIN", null)) {
-            assertEquals(role, all.drop(1), SettingsRows.collectRows(role))
-        }
-    }
-
-    /** #1259: the second text of a row shows the value in force */
+    /** #1270: the second text of a row shows the value in force */
     @Test
     fun rowValues() {
-        assertEquals("Cọc 1 lần · 2 ngân hàng", SettingsRows.collectValue(false, 2, "Cọc 1 lần", "Cọc theo giai đoạn") { "$it ngân hàng" })
-        assertEquals("Cọc theo giai đoạn", SettingsRows.collectValue(true, null, "Cọc 1 lần", "Cọc theo giai đoạn") { "$it ngân hàng" })
-        assertEquals("Cọc 1 lần", SettingsRows.collectValue(false, 0, "Cọc 1 lần", "x") { "$it ngân hàng" })
-        assertEquals("Tiệm Hoa · VND", SettingsRows.storeValue("Tiệm Hoa", "VND"))
-        assertEquals("Tiệm Hoa", SettingsRows.storeValue("Tiệm Hoa", null))
-        assertEquals("VND", SettingsRows.storeValue(" ", "VND"))
-        assertEquals("80 mm", SettingsRows.printingValue(true, 80, "Chưa chọn"))
-        assertEquals("Chưa chọn", SettingsRows.printingValue(false, 80, "Chưa chọn"))
+        assertEquals("80 mm", SettingsRows.printingValue(true, 80, "chưa chọn máy in"))
+        assertEquals("80 mm · chưa chọn máy in", SettingsRows.printingValue(false, 80, "chưa chọn máy in"))
+        assertTrue(SettingsRows.depositStagesDimmed(staged = false))
+        assertFalse(SettingsRows.depositStagesDimmed(staged = true))
     }
 
     /** #937: the row's badge is the unread count, capped at 99, hidden at 0 */

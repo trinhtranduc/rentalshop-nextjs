@@ -9,22 +9,12 @@
 import Foundation
 
 enum SettingsV2Item: Equatable {
-    /// #1259 CỬA HÀNG: Thông tin cửa hàng (with Tiền tệ), Thu tiền (bank accounts, deposit, stage templates,
-    /// cancellation policy), In & phiếu (receipt note + printer)
-    case storeInfo, collect, printing
+    /// #1270 CỬA HÀNG (plan B): Thông tin cửa hàng, Tiền tệ (owner only), Tài khoản ngân hàng (owner, outlet admin),
+    /// Cọc (screen with two sections), In & phiếu (screen with two sections)
+    case storeInfo, currency, bankAccounts, deposit, printing
     case categories, customers, users, export
     /// #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản)
     case plan, language, advanced
-}
-
-/// The lines of the "Thu tiền" screen (#1259)
-enum SettingsCollectRow: Equatable {
-    /// Tài khoản ngân hàng, owner and outlet admin only
-    case bankAccounts
-    /// #1199 "Cách thu cọc": every role sees it; only the shop owner changes it
-    case depositMode
-    /// Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày (owner edits, others read)
-    case templates, policy
 }
 
 struct SettingsV2Section: Equatable {
@@ -42,7 +32,7 @@ struct SettingsV2Section: Equatable {
 }
 
 enum SettingsV2Logic {
-    /// Sections for a role (#1259: 3 groups, 11 rows for the owner plus the name card and the bell).
+    /// Sections for a role (#1270 plan B: 3 groups, 12 rows for the owner plus the overlap switch, the name card and the bell).
     /// - customers: the redesigned list (#387) when `showsCustomers` (flag `newCustomers`) and any customer right
     /// - users: `users.manage` (as today)
     /// - export: any export right and never OUTLET_STAFF (as today)
@@ -51,7 +41,11 @@ enum SettingsV2Logic {
     /// - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
     /// - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
-        let store = SettingsV2Section(group: .store, items: [.storeInfo, .collect, .printing])
+        var storeItems: [SettingsV2Item] = [.storeInfo]
+        if ShopCurrencyLogic.canChange(role: role) { storeItems.append(.currency) }
+        if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
+        storeItems += [.deposit, .printing]
+        let store = SettingsV2Section(group: .store, items: storeItems)
 
         var management: [SettingsV2Item] = []
         if CategoryRules.canAdd(role: role, permissions: permissions) { management.append(.categories) }
@@ -75,30 +69,13 @@ enum SettingsV2Logic {
             .filter { !$0.items.isEmpty }
     }
 
-    /// The lines of Thu tiền: the bank accounts first (owner, outlet admin), then the deposit lines for every role
-    static func collectRows(role: Role?) -> [SettingsCollectRow] {
-        (canManageBankAccounts(role: role) ? [.bankAccounts] : []) + [.depositMode, .templates, .policy]
-    }
-
-    /// "Tiền tệ" is a line of Thông tin cửa hàng, for the shop owner only (the API refuses others with 403)
-    static func storeInfoShowsCurrency(role: Role?) -> Bool { ShopCurrencyLogic.canChange(role: role) }
-
-    /// "Cọc 1 lần · 2 ngân hàng": the deposit mode, then the bank count when known and above zero
-    static func collectValue(staged: Bool, bankCount: Int?, oneTime: String, stagedText: String, banks: String) -> String {
-        let mode = staged ? stagedText : oneTime
-        guard let bankCount, bankCount > 0 else { return mode }
-        return "\(mode) · \(String(format: banks, bankCount))"
-    }
-
-    /// "Tiệm Hoa · VND": the shop name, then the currency code for the owner
-    static func storeValue(name: String?, currency: String?) -> String {
-        [name, currency].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.joined(separator: " · ")
-    }
-
-    /// "80 mm" once a printer is saved, else the "not set up" text
+    /// "80 mm" once a printer is saved, else "80 mm · chưa chọn máy in"
     static func printingValue(hasPrinter: Bool, paperMillimetres: Int, none: String) -> String {
-        hasPrinter ? "\(paperMillimetres) mm" : none
+        hasPrinter ? "\(paperMillimetres) mm" : "\(paperMillimetres) mm · \(none)"
     }
+
+    /// Cọc screen: "Mẫu giai đoạn" and "Chính sách huỷ / dời ngày" look dimmed in "Thu cọc 1 lần" (still tappable)
+    static func depositStagesDimmed(staged: Bool) -> Bool { !staged }
 
     /// #937: badge on the "Thông báo" row: the unread count, capped at 99, none at 0
     static func unreadBadge(_ count: Int) -> String? {

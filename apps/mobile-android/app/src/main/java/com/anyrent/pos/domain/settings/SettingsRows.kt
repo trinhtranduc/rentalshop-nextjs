@@ -6,24 +6,14 @@ import com.anyrent.pos.domain.products.CategoryRules
 import org.json.JSONObject
 
 enum class SettingsItem {
-    /** #1259 CỬA HÀNG: Thông tin cửa hàng (with Tiền tệ), Thu tiền (bank accounts, deposit, stage templates, cancellation policy), In & phiếu (receipt note + printer) */
-    STORE_INFO, COLLECT, PRINTING,
+    /** #1270 CỬA HÀNG (plan B): Thông tin cửa hàng, Tiền tệ (owner only), Tài khoản ngân hàng (owner, outlet admin), Cọc ›, In & phiếu › */
+    STORE_INFO, CURRENCY, BANK_ACCOUNTS, DEPOSIT, PRINTING,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
     /** #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản) */
     PLAN, LANGUAGE, ADVANCED,
 }
 
 enum class SettingsGroup { STORE, MANAGEMENT, ACCOUNT }
-
-/** The lines of the "Thu tiền" screen (#1259) */
-enum class CollectRow {
-    /** Tài khoản ngân hàng, owner and outlet admin only */
-    BANK_ACCOUNTS,
-    /** #1199 "Cách thu cọc": every role sees it; only the shop owner changes it */
-    DEPOSIT_MODE,
-    /** Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày (owner edits, others read) */
-    TEMPLATES, POLICY,
-}
 
 data class SettingsSection(val group: SettingsGroup, val items: List<SettingsItem>)
 
@@ -37,7 +27,7 @@ object SettingsRows {
     const val MIN_PASSWORD_LENGTH = 6
 
     /**
-     * #1259: 3 groups, 10 rows for the owner plus the name card and the bell.
+     * #1259: 3 groups, 12 rows for the owner plus the overlap switch, the name card and the bell.
      * - customers: every role (as today)
      * - users: MERCHANT, OUTLET_ADMIN, ADMIN (`PermissionManager.canManageUsers`)
      * - export: never OUTLET_STAFF (`PermissionManager.canExport`)
@@ -58,33 +48,24 @@ object SettingsRows {
             addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED))
         }
         return listOf(
-            SettingsSection(SettingsGroup.STORE, listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING)),
+            SettingsSection(
+                SettingsGroup.STORE,
+                listOf(SettingsItem.STORE_INFO) +
+                    listOfNotNull(SettingsItem.CURRENCY.takeIf { CurrencySetting.canEdit(role) }) +
+                    listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
+                    listOf(SettingsItem.DEPOSIT, SettingsItem.PRINTING),
+            ),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),
         ).filter { it.items.isNotEmpty() }
     }
 
-    /** The lines of Thu tiền: the bank accounts first (owner, outlet admin), then the deposit lines for every role */
-    fun collectRows(role: String?): List<CollectRow> =
-        listOfNotNull(CollectRow.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
-            listOf(CollectRow.DEPOSIT_MODE, CollectRow.TEMPLATES, CollectRow.POLICY)
-
-    /** "Tiền tệ" is a line of Thông tin cửa hàng, for the shop owner only ([CurrencySetting.canEdit]) */
-    fun storeInfoShowsCurrency(role: String?): Boolean = CurrencySetting.canEdit(role)
-
-    /** "Cọc 1 lần · 2 ngân hàng": the deposit mode, then the bank count when known and above zero */
-    fun collectValue(staged: Boolean, bankCount: Int?, oneTime: String, stagedText: String, banks: (Int) -> String): String {
-        val mode = if (staged) stagedText else oneTime
-        return if (bankCount != null && bankCount > 0) "$mode · ${banks(bankCount)}" else mode
-    }
-
-    /** "Tiệm Hoa · VND": the shop name, then the currency code for the owner */
-    fun storeValue(name: String?, currency: String?): String =
-        listOf(name, currency).mapNotNull { it?.trim() }.filter { it.isNotEmpty() }.joinToString(" · ")
-
-    /** "80 mm" once a printer is saved, else the "not set up" text */
+    /** "80 mm" once a printer is saved, else "80 mm · chưa chọn máy in" */
     fun printingValue(hasPrinter: Boolean, paperMillimetres: Int, none: String): String =
-        if (hasPrinter) "$paperMillimetres mm" else none
+        if (hasPrinter) "$paperMillimetres mm" else "$paperMillimetres mm · $none"
+
+    /** Cọc screen: "Mẫu giai đoạn" and "Chính sách huỷ / dời ngày" look dimmed in "Thu cọc 1 lần" (still tappable) */
+    fun depositStagesDimmed(staged: Boolean): Boolean = !staged
 
     /** #937: badge on the "Thông báo" row: the unread count, capped at 99, none at 0 */
     fun unreadBadge(count: Int): String? = if (count > 0) count.coerceAtMost(99).toString() else null
