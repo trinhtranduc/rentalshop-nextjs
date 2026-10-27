@@ -587,7 +587,7 @@ final class CartV2ViewController: BaseViewControler {
         avatar.backgroundColor = UIColor(hexString: "DBEAFE")
         avatar.layer.cornerRadius = 20
         avatar.clipsToBounds = true
-        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.name, weight: .medium,
+        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.body, weight: .medium,
                              color: name == nil ? DS.Color.primary : DS.Color.text)
         let phone = V2.label(customer?.phone, size: DS.TextSize.secondary, color: DS.Color.textMuted)
         phone.isHidden = (customer?.phone ?? "").isEmpty
@@ -631,7 +631,7 @@ final class CartV2ViewController: BaseViewControler {
         icon.backgroundColor = UIColor(hexString: "DBEAFE")
         icon.layer.cornerRadius = CartDateRowLogic.iconSize / 2
         icon.clipsToBounds = true
-        let label = V2.label(text, size: DS.TextSize.name, weight: days == nil ? .medium : .regular, color: days == nil ? DS.Color.primary : DS.Color.text)
+        let label = V2.label(text, size: DS.TextSize.body, weight: days == nil ? .medium : .regular, color: days == nil ? DS.Color.primary : DS.Color.text)
         // #893 (owner): room inside the pill (10pt left/right, 4pt top/bottom), one line
         let pill = InsetLabel()
         pill.insets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)

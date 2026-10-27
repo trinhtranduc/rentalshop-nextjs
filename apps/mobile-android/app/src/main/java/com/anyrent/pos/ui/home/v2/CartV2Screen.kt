@@ -514,13 +514,13 @@ fun CartV2Screen(
                         // iOS starts with no dates: "Chọn ngày thuê" in the primary colour, no day pill (#448)
                         Text(
                             stringResource(R.string.v2_cart_pick_dates),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
                             modifier = Modifier.weight(1f),
                         )
                     } else {
                         Text(
                             dateRow.text.orEmpty(),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Normal, maxLines = 1, softWrap = false,
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Normal, maxLines = 1, softWrap = false,
                             overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                         )
                         val days = dateRow.days ?: 1
@@ -999,7 +999,7 @@ private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 name ?: stringResource(R.string.v2_cart_pick_customer),
-                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium,
+                fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium,
                 color = if (name == null) DS.Colors.Primary else DS.Colors.Text,
             )
             if (!phone.isNullOrBlank()) Text(phone, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
