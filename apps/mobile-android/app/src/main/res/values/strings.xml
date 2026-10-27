@@ -624,8 +624,8 @@
     <string name="v2_form_regenerate_barcode">New barcode</string>
     <string name="v2_form_barcode_used">Barcode already used by %1$s</string>
     <string name="v2_form_prices">Prices</string>
-    <string name="v2_form_per_rental">Rent per rental</string>
-    <string name="v2_form_per_day">Rent per day</string>
+    <string name="v2_form_per_rental">Per rental</string>
+    <string name="v2_form_per_day">Per day</string>
     <string name="v2_form_sale_price">Sale price</string>
     <string name="v2_form_not_for_sale">Not for sale</string>
     <string name="v2_form_deposit">Deposit per item</string>
@@ -2313,8 +2313,9 @@
     <string name="settings_v2_profile_hint">profile, password</string>
     <string name="settings_v2_profile_group">Profile</string>
     <string name="settings_v2_profile_security">Security</string>
-    <!-- #1249 product price form (mockup v170) -->
-    <string name="v2_form_multi_day_title">Multi-day price (pick 1 of 2)</string>
+    <!-- #1249 product price form (mockup v179) -->
+    <string name="v2_form_per_block">Per day-block</string>
+    <string name="v2_form_block_not_set">Not set</string>
     <string name="v2_form_unit_per_rental">%1$s / rental</string>
     <string name="v2_form_unit_per_day">%1$s / day</string>
     <string name="block_intro">Each number of days has its own price. A customer renting exactly that many days pays that line.</string>
