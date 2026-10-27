@@ -227,4 +227,45 @@ class OrderDetailLogicTest {
         assertEquals(792.0, OrderDetailLogic.saleSubtotal(items), 0.0)
         assertEquals(0.0, OrderDetailLogic.saleSubtotal(emptyList()), 0.0)
     }
+
+    // #1279 edit papers and collateral after pick-up
+
+    @Test
+    fun `edit collateral only for picked up rent with update permission`() {
+        assertTrue(OrderDetailLogic.canEditCollateral("RENT", "PICKUPED", true))
+        assertTrue(OrderDetailLogic.canEditCollateral("rent", "PICKED_UP", true))
+        assertFalse(OrderDetailLogic.canEditCollateral("RENT", "PICKUPED", false))
+        for (st in listOf("RESERVED", "RETURNED", "CANCELLED", "COMPLETED")) {
+            assertFalse(OrderDetailLogic.canEditCollateral("RENT", st, true))
+        }
+        assertFalse(OrderDetailLogic.canEditCollateral("SALE", "PICKUPED", true))
+    }
+
+    @Test
+    fun `collateral summary joins papers and deposit`() {
+        val fmt = { v: Double -> v.toLong().toString() }
+        assertEquals("CCCD · 500000", OrderDetailLogic.collateralSummary(" CCCD ", 500_000.0, fmt))
+        assertEquals("CCCD", OrderDetailLogic.collateralSummary("CCCD", 0.0, fmt))
+        assertEquals("500000", OrderDetailLogic.collateralSummary(null, 500_000.0, fmt))
+        assertNull(OrderDetailLogic.collateralSummary("  ", 0.0, fmt))
+    }
+
+    @Test
+    fun `collateral edit sends the three fields and clears saved values`() {
+        val f = OrderDetailLogic.collateralEditFields("CCCD", 500_000.0, null, 0.0)
+        assertEquals("ID_CARD", f.collateralType)
+        assertEquals("CCCD", f.collateralDetails)
+        assertEquals(500_000.0, f.securityDeposit!!, 0.0)
+        val cleared = OrderDetailLogic.collateralEditFields("", 0.0, "CCCD", 500_000.0)
+        assertEquals("", cleared.collateralDetails)
+        assertEquals(0.0, cleared.securityDeposit!!, 0.0)
+    }
+
+    @Test
+    fun `return money follows edited collateral`() {
+        assertEquals(300_000.0, OrderDetailLogic.returnMoney(150_000.0, 50_000.0, 500_000.0, emptyList()).refund, 0.0)
+        assertEquals(500_000.0, OrderDetailLogic.returnMoney(150_000.0, 50_000.0, 700_000.0, emptyList()).refund, 0.0)
+        val held = OrderDetailLogic.balance("RENT", "PICKUPED", 1_000_000.0, 300_000.0, 500_000.0, 0.0, 0.0, emptyList())
+        assertEquals(500_000.0, held.refundDue, 0.0)
+    }
 }
