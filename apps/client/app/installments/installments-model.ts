@@ -246,6 +246,14 @@ export const hasPlan = (o: PlanOrderLike | null | undefined): boolean =>
 
 export const percentCollected = (o: PlanOrderLike): number => Math.round(o.installmentSummary?.percentCollected ?? 0);
 
+/** #1253: a cancelled order that kept money: what the shop kept and what went back (collected - kept); null otherwise */
+export function cancelledOutcome(o: PlanOrderLike): { kept: number; refund: number } | null {
+  if (o.status !== 'CANCELLED' || !hasPlan(o)) return null;
+  const kept = o.cancelKeptAmount ?? 0;
+  if (!(kept > 0)) return null;
+  return { kept, refund: Math.max(0, (o.installmentSummary?.collected ?? 0) - kept) };
+}
+
 export const isOpenRental = (o: PlanOrderLike) => o.orderType === 'RENT' && o.status === 'RESERVED';
 
 export const stageNumber = (list: OrderInstallment[], key: string): number => list.findIndex((x) => x.key === key) + 1;

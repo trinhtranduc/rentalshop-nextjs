@@ -33,7 +33,9 @@ const matches = (row: any, where: any): boolean => {
   return true;
 };
 
-export function createFakePrisma(state: FakeState, shop: Record<string, any> = {}) {
+/** `serialize`: transactions queue up one after the other, like `SELECT ... FOR UPDATE` on the one order row of a test */
+export function createFakePrisma(state: FakeState, shop: Record<string, any> = {}, options: { serialize?: boolean } = {}) {
+  let queue: Promise<unknown> = Promise.resolve();
   const withPayments = (order: any) => (order ? { ...order, payments: state.payments.filter((p) => p.orderId === order.id).map((p) => ({ ...p })) } : null);
   const tx: any = {
     $queryRaw: jest.fn(async () => []),
@@ -74,7 +76,12 @@ export function createFakePrisma(state: FakeState, shop: Record<string, any> = {
     merchant: {
       findUnique: jest.fn(async () => ({ currency: 'VND', timezone: 'Asia/Ho_Chi_Minh', settings: null, ...shop })),
     },
-    $transaction: jest.fn(async (fn: any) => fn(tx)),
+    $transaction: jest.fn(async (fn: any) => {
+      if (!options.serialize) return fn(tx);
+      const run = queue.then(() => fn(tx));
+      queue = run.catch(() => undefined);
+      return run;
+    }),
   };
   return { prisma, tx };
 }

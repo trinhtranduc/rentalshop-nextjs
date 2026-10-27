@@ -11,6 +11,7 @@ import { describe, expect, it } from '@jest/globals';
 import {
   buildPaymentPlan,
   cancelView,
+  cancelledOutcome,
   canEditPlan,
   canVoidStage,
   chipTone,
@@ -406,5 +407,21 @@ describe('dashboard reminders and list badge', () => {
     expect(paidBadgePercent({ ...o, status: 'PICKUPED' })).toBeNull();
     expect(paidBadgePercent({ ...o, orderType: 'SALE' })).toBeNull();
     expect(paidBadgePercent({ orderType: 'RENT', status: 'RESERVED' })).toBeNull();
+  });
+});
+
+describe('#1253 a cancelled order shows what the shop kept and what went back', () => {
+  const cancelled = { orderType: 'RENT', status: 'CANCELLED', hasDepositPlan: true, installments: [{ key: 'i1' }] as any, installmentSummary: { collected: 3_600_000 }, cancelKeptAmount: 1_800_000 };
+
+  it('kept and refund (= collected - kept)', () => {
+    expect(cancelledOutcome(cancelled)).toEqual({ kept: 1_800_000, refund: 1_800_000 });
+    expect(cancelledOutcome({ ...cancelled, cancelKeptAmount: 3_600_000 })).toEqual({ kept: 3_600_000, refund: 0 });
+  });
+
+  it('nothing to show when the shop kept nothing, the order is not cancelled, or has no plan', () => {
+    expect(cancelledOutcome({ ...cancelled, cancelKeptAmount: 0 })).toBeNull();
+    expect(cancelledOutcome({ ...cancelled, cancelKeptAmount: null })).toBeNull();
+    expect(cancelledOutcome({ ...cancelled, status: 'RESERVED' })).toBeNull();
+    expect(cancelledOutcome({ ...cancelled, hasDepositPlan: false })).toBeNull();
   });
 });

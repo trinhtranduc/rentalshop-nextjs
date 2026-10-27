@@ -472,12 +472,20 @@ export async function recordPlanCancellation(
   await prisma.$transaction(
     async (tx: any) => {
       await lockOrderRow(tx, orderId);
-      if (plan.refund > 0) {
+      // #1253: two requests that cancel the same order both planned before the status changed. Only this function
+      // writes `cancelKeptAmount`, and CANCELLED is final, so a number there means the amounts are already recorded.
+      const current = await tx.order.findUnique({ where: { id: orderId }, select: { cancelKeptAmount: true } });
+      if (current?.cancelKeptAmount != null) return;
+      // what is still collected right now (a stage collected after the plan was made goes back too)
+      const collectedNow = await collectedForCancel(tx, orderId);
+      const kept = Math.min(plan.kept, collectedNow);
+      const refund = Math.max(0, Math.round((collectedNow - kept) * 10000) / 10000);
+      if (refund > 0) {
         await tx.payment.create({
           data: {
             orderId,
             merchantId: merchantId ?? null,
-            amount: plan.refund,
+            amount: refund,
             currency,
             method: 'CASH',
             type: 'ORDER_PAYMENT',
@@ -486,11 +494,11 @@ export async function recordPlanCancellation(
             description: plan.note || null,
             processedAt: at,
             processedBy: String(userId),
-            metadata: JSON.stringify({ kind: 'CANCEL_REFUND', collected: plan.collected, kept: plan.kept, refundedAll: plan.refundedAll }),
+            metadata: JSON.stringify({ kind: 'CANCEL_REFUND', collected: collectedNow, kept, refundedAll: plan.refundedAll }),
           },
         });
       }
-      await tx.order.update({ where: { id: orderId }, data: { cancelKeptAmount: plan.kept, cancelledAt: at } });
+      await tx.order.update({ where: { id: orderId }, data: { cancelKeptAmount: kept, cancelledAt: at } });
       await recomputeDepositFromPayments(tx, orderId);
     },
     { maxWait: 5000, timeout: 15000 }
