@@ -1,24 +1,23 @@
-# Form sản phẩm: Thuê theo lần + chọn 1 trong 2 (Thuê theo ngày | Giá theo khối ngày)
+# Form sản phẩm: ba loại giá thuê cùng tồn tại (Theo lần / Theo mỗi ngày / Theo block ngày)
 
-Issue: #1249 · Author: Trinh Tran · Status: chủ đã chốt mockup (nói "đồng ý") 2026-10-27 · Created: 2026-10-27
+Issue: #1249 · Author: Trinh Tran · Status: chủ đã chốt lần cuối ("chốt"), 2026-10-27 · Created: 2026-10-27
 
-> Chủ đã chốt mockup (trang mockup 9b56KwErJWiGpiyFEfyEY4, tab "Tạo và sửa sản phẩm", phiên bản 170). Thiết kế này THAY THẾ mọi hướng trước, kể cả radio hai tầng + bảng block nhúng đã merge ở PR #1258.
+> Chủ đã chốt lần cuối: 3 loại giá cùng tồn tại, THAY THẾ thiết kế "chọn 1 trong 2" của #1258/#1260 (đã merge). Nguồn: trang mockup 9b56KwErJWiGpiyFEfyEY4, tab 1 "Tạo và sửa sản phẩm", phiên bản 179.
 
 ## Problem
-Form sản phẩm có quá nhiều chỗ chọn kiểu giá ("Khi tạo đơn, mặc định tính", hai ô giá song song, nhãn Đang dùng / Chưa dùng, bảng block nhúng). Chủ shop: "đơn giản và chuẩn".
+Form sản phẩm có quá nhiều chỗ chọn kiểu giá. Chủ shop: "đơn giản và chuẩn". Thiết kế #1258/#1260 vẫn bắt chọn 1 trong 2 (radio) giữa giá theo ngày và bảng block.
 
 ## Proposed outcome (mockup đã chốt)
-Sắp dọc, không thụt lề, mọi thẻ full width cùng lề:
-1. Mục GIÁ THUÊ: ô "Thuê theo lần" (đ / lần), luôn có, là mặc định khi tạo đơn.
-2. Nhóm "Giá nhiều ngày (chọn 1 trong 2)": radio "Thuê theo ngày" (chọn thì ô một giá đ / ngày hiện NGAY DƯỚI, nối liền cùng viền) hoặc "Giá theo khối ngày" (chọn thì thẻ tóm tắt "N mốc · +X đ/ngày · 1 ngày A · 3 ngày B ›" hiện ngay dưới, bấm mở MÀN RIÊNG). Chưa có bảng mà chọn radio này: mở thẳng màn setup; huỷ/quay lại không lưu thì trở về lựa chọn trước.
-3. Giá bán, Cọc mỗi món, Kho, nút Lưu như cũ.
-4. Màn setup block riêng: bảng Số ngày -> Giá, "+ Thêm ngày N", "Thuê quá N ngày" (Cộng thêm mỗi ngày / Giữ nguyên giá khối cuối), "Xem thử N ngày", "Sao chép từ sản phẩm khác", "Lưu bảng giá", "Tắt giá theo khối ngày" (= quay lại Thuê theo ngày). Không còn danh sách 3 radio "cách tính mặc định".
-5. Không còn công tắc "Khi tạo đơn, mặc định tính", không nhãn "Đang dùng / Chưa dùng", không hai ô giá song song. Mặc định khi tạo đơn luôn là Theo lần; giỏ/đơn giữ như cũ.
+Sắp dọc từ trên xuống, full width cùng lề, KHÔNG thụt lề. Mục GIÁ THUÊ có ba hàng cùng tồn tại, không radio, không công tắc, không nhãn Đang dùng / Chưa dùng:
+1. "Theo lần": một ô giá (đ / lần), luôn có, là mặc định khi tạo đơn.
+2. "Theo mỗi ngày": một ô giá (đ / ngày).
+3. "Theo block ngày": dòng tóm tắt "N mốc · +X đ/ngày · 1 ngày A · 3 ngày B ›" hoặc "Chưa cài ›"; bấm mở màn setup block riêng.
+Dưới đó: Giá bán, Cọc mỗi món, Kho, Lưu như cũ. Màn setup block: bảng Số ngày -> Giá, "+ Thêm ngày N", "Thuê quá N ngày" (hai radio), "Xem thử", "Sao chép từ sản phẩm khác", "Lưu bảng giá", "Tắt giá theo khối ngày" (xoá bảng, về "Chưa cài"). Không có "Tạo nhanh" (#1266, gộp vào PR này).
+Cả ba điền được cùng lúc. Giỏ/đơn: mỗi dòng chọn cách tính qua menu giá như hiện có (mặc định Theo lần); không đổi luồng giỏ.
 
 ## Constraints
-App cài trên main-real đọc/ghi cùng payload FIXED / DAILY / BLOCK. Không đổi API, schema, field. Admin `packages/ui` ProductForm giữ nguyên.
+API không đổi. Lưu gửi FIXED (giá/lần) + DAILY (nếu có giá/ngày) + BLOCK (nếu có bảng) cùng lúc; cờ mặc định = FIXED. App cũ đã đối chiếu (xem spec). Admin `packages/ui` ProductForm giữ nguyên.
 
 ## Decision log
-- 2026-10-27 (1) radio hai tầng + bảng nhúng (#1258, đã merge) -> thay.
-- 2026-10-27 (2..3) các hướng trung gian (đã bỏ).
-- 2026-10-27 (4) Chủ chốt mockup v170 ("đồng ý"). Quyết định cuối. Thay UI của #1258.
+- 2026-10-27 (1..4) radio hai tầng + bảng nhúng, rồi "chọn 1 trong 2" mockup v170 (#1258, #1260): đã thay.
+- 2026-10-27 (5) Chủ chốt lần cuối mockup v179: ba loại giá cùng tồn tại. Quyết định cuối, thay #1258/#1260.
