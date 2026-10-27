@@ -1,159 +1,59 @@
 //
-//  BlockPriceViewController.swift
+//  BlockTableEditorView.swift
 //  POS ADBD
 //
-//  #1189: the product's price screen. Radio rows choose how a new order is priced (Thuê theo lần / Thuê theo ngày /
-//  Giá theo khối ngày), then the day table (1 ngày … N ngày, one price each), what happens past the last day, a
-//  preview and "Lưu bảng giá" / "Tắt giá theo khối ngày". It only edits the form's draft; the product is saved by the
-//  form. Opened from the product form, which hides the row from roles that may not edit prices.
+//  #1249: the day table of "Thuê theo ngày", edited on the product form itself (it was a separate screen with three
+//  radio rows). Prices for 1 … N days, what happens past the last day, and a preview. It only holds the typed texts;
+//  the form reads `input` when it saves.
 //
 
 import UIKit
 import SnapKit
 
-final class BlockPriceViewController: UIViewController, UITextFieldDelegate {
-    var onSave: ((BlockPriceDraft) -> Void)?
+final class BlockTableEditorView: UIStackView {
+    /// Called when a structure change (add / remove a day, past-the-table rule) rebuilt the rows
+    var onChange: (() -> Void)?
 
-    private let productName: String
-    private let hadTable: Bool
-    private var mode: ProductPricingMode
-    private var rentalText: String
-    private var dayText: String
-    private var tierTexts: [String]
-    private var extraMode: String
-    private var extraText: String
+    private var tierTexts: [String] = [""]
+    private var startDay = 1
+    private var extraMode = BlockTable.extraPerDay
+    private var extraText = ""
     private var previewDays = 5
-    private var startDay: Int
     private let previewTotalLabel = V2.label(size: 18, weight: .bold, color: DS.Color.primary)
     private let previewFormulaLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
 
-    private let scroll = UIScrollView()
-    private let content = UIStackView()
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        axis = .vertical
+        render()
+    }
 
-    init(productName: String, draft: BlockPriceDraft) {
-        self.productName = productName
-        hadTable = draft.table != nil
-        mode = draft.defaultMode
-        rentalText = MoneyInput.display(draft.perRental)
-        dayText = MoneyInput.display(draft.perDay)
-        let table = draft.table
+    required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    /// Fills the boxes from a table (nil = one empty day)
+    func load(_ table: BlockTable?) {
         startDay = table?.startDay ?? 1
         tierTexts = table?.tiers.map { MoneyInput.display($0) } ?? [""]
         extraMode = table?.extraMode ?? BlockTable.extraPerDay
         extraText = MoneyInput.display(table?.extraPrice)
-        super.init(nibName: nil, bundle: nil)
+        render()
     }
 
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .white
-        let close = UIButton(type: .system)
-        close.setImage(DS.symbol("xmark", DS.Icon.lg, weight: .semibold), for: .normal)
-        close.tintColor = DS.Color.text
-        close.accessibilityLabel = "Close".localized()
-        close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        let title = V2.label(String(format: "block.screen.title".localized(), productName), size: 20, weight: .bold)
-        let header = UIView()
-        let line = V2.divider()
-        line.backgroundColor = DS.Color.border
-        header.addSubview(close)
-        header.addSubview(title)
-        header.addSubview(line)
-        view.addSubview(header)
-        header.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(56)
-        }
-        close.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(8)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(DS.touchTarget)
-        }
-        title.snp.makeConstraints { make in
-            make.leading.equalTo(close.snp.trailing).offset(4)
-            make.trailing.lessThanOrEqualToSuperview().offset(-DS.Spacing.lg)
-            make.centerY.equalToSuperview()
-        }
-        line.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
-
-        let footer = UIStackView()
-        footer.axis = .vertical
-        footer.spacing = 6
-        footer.backgroundColor = .white
-        footer.isLayoutMarginsRelativeArrangement = true
-        footer.layoutMargins = UIEdgeInsets(top: 12, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg)
-        let save = V2.primaryButton("block.save".localized())
-        save.accessibilityIdentifier = "block.save"
-        save.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
-        save.snp.makeConstraints { make in make.height.equalTo(52) }
-        footer.addArrangedSubview(save)
-        if hadTable {
-            let off = UIButton(type: .system)
-            off.setTitle("block.turnOff".localized(), for: .normal)
-            off.setTitleColor(V2.danger, for: .normal)
-            off.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
-            off.accessibilityIdentifier = "block.turnOff"
-            off.addTarget(self, action: #selector(turnOffTapped), for: .touchUpInside)
-            off.snp.makeConstraints { make in make.height.equalTo(44) }
-            footer.addArrangedSubview(off)
-        }
-        let footerLine = V2.divider()
-        footerLine.backgroundColor = DS.Color.border
-        view.addSubview(footer)
-        view.addSubview(footerLine)
-        footer.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
-        }
-        footerLine.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(footer.snp.top)
-        }
-
-        scroll.keyboardDismissMode = .interactive
-        view.addSubview(scroll)
-        scroll.snp.makeConstraints { make in
-            make.top.equalTo(header.snp.bottom)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(footer.snp.top)
-        }
-        content.axis = .vertical
-        scroll.addSubview(content)
-        content.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-            make.width.equalToSuperview()
-        }
-        render()
+    /// The boxes as they are now: empty, invalid, or a table
+    var input: BlockTableInput {
+        BlockPricing.parse(tierTexts: tierTexts, startDay: startDay, extraMode: extraMode, extraText: extraText)
     }
 
     // MARK: Render
 
     /// Rebuilds the rows; the typed texts live in the properties, so nothing is lost
     private func render() {
-        view.endEditing(true)
-        content.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        endEditing(true)
+        arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        content.addArrangedSubview(V2.sectionHeader("block.section.default".localized()))
-        content.addArrangedSubview(radioRow(.perRental, title: "products.form.perRental".localized(), field: moneyField(text: rentalText, id: "block.rental") { [weak self] in self?.rentalText = $0 }))
-        content.addArrangedSubview(V2.divider())
-        content.addArrangedSubview(radioRow(.perDay, title: "products.form.perDay".localized(), field: moneyField(text: dayText, id: "block.day") { [weak self] in self?.dayText = $0 }))
-        content.addArrangedSubview(V2.divider())
-        let blockSummary: UIView
-        if case .table(let table) = currentInput {
-            blockSummary = V2.label(String(format: "block.row.tiers".localized(), table.tiers.count), size: DS.TextSize.body, color: DS.Color.textMuted)
-        } else {
-            blockSummary = V2.label("block.row.off".localized(), size: DS.TextSize.body, color: DS.Color.textMuted)
-        }
-        content.addArrangedSubview(radioRow(.block, title: "block.title".localized(), field: blockSummary))
-        content.addArrangedSubview(V2.divider())
-        content.addArrangedSubview(padded(V2.label("block.hint.default".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0), top: 10, bottom: 12))
-
-        content.addArrangedSubview(V2.sectionHeader("block.section.tiers".localized()))
+        addArrangedSubview(V2.sectionHeader("block.section.tiers".localized()))
         for index in tierTexts.indices {
-            content.addArrangedSubview(tierRow(index))
+            addArrangedSubview(tierRow(index))
         }
         if tierTexts.count < BlockPricing.maxTiers {
             let add = UIButton(type: .system)
@@ -163,23 +63,18 @@ final class BlockPriceViewController: UIViewController, UITextFieldDelegate {
             add.accessibilityIdentifier = "block.addDay"
             add.addTarget(self, action: #selector(addDayTapped), for: .touchUpInside)
             add.snp.makeConstraints { make in make.height.equalTo(44) }
-            content.addArrangedSubview(padded(add, top: 4, bottom: 8))
+            addArrangedSubview(padded(add, top: 4, bottom: 8))
         }
 
-        content.addArrangedSubview(V2.sectionHeader(String(format: "block.section.beyond".localized(), tierTexts.count).uppercased()))
+        addArrangedSubview(V2.sectionHeader(String(format: "block.section.beyond".localized(), tierTexts.count).uppercased()))
         let lastText = tierTexts.last.flatMap { MoneyInput.parse($0) }
-        content.addArrangedSubview(extraRow(BlockTable.extraPerDay, title: "block.extraPerDay".localized(),
-                                            field: moneyField(text: extraText, id: "block.extra") { [weak self] in self?.extraText = $0; self?.updatePreview() }))
-        content.addArrangedSubview(V2.divider())
+        addArrangedSubview(extraRow(BlockTable.extraPerDay, title: "block.extraPerDay".localized(),
+                                    field: moneyField(text: extraText, id: "block.extra") { [weak self] in self?.extraText = $0; self?.updatePreview() }))
+        addArrangedSubview(V2.divider())
         let holdTitle = lastText.map { String(format: "block.holdLast.price".localized(), MoneyFormatter.suffixed($0)) } ?? "block.holdLast".localized()
-        content.addArrangedSubview(extraRow(BlockTable.holdLast, title: holdTitle, field: nil))
-        content.addArrangedSubview(V2.divider())
-        content.addArrangedSubview(previewBox())
-        content.addArrangedSubview(UIView().heighted(24))
-    }
-
-    private var currentInput: BlockTableInput {
-        BlockPricing.parse(tierTexts: tierTexts, startDay: startDay, extraMode: extraMode, extraText: extraText)
+        addArrangedSubview(extraRow(BlockTable.holdLast, title: holdTitle, field: nil))
+        addArrangedSubview(V2.divider())
+        addArrangedSubview(previewBox())
     }
 
     private func padded(_ view: UIView, top: CGFloat, bottom: CGFloat) -> UIView {
@@ -198,25 +93,6 @@ final class BlockPriceViewController: UIViewController, UITextFieldDelegate {
         dot.snp.makeConstraints { make in make.size.equalTo(22) }
         dot.isUserInteractionEnabled = false
         return dot
-    }
-
-    /// A row of the default-price radio list; the tap on the row (not on its box) picks it
-    private func radioRow(_ rowMode: ProductPricingMode, title: String, field: UIView) -> UIView {
-        let selected = mode == rowMode
-        let label = V2.label(title, size: DS.TextSize.input, weight: selected ? .bold : .regular)
-        label.accessibilityIdentifier = "block.radio.label." + rowMode.rawValue
-        let row = UIStackView(arrangedSubviews: [dot(selected: selected), label, UIView(), field])
-        row.alignment = .center
-        row.spacing = 14
-        row.isLayoutMarginsRelativeArrangement = true
-        row.layoutMargins = UIEdgeInsets(top: 8, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg)
-        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(58) }
-        row.isAccessibilityElement = false
-        let tap = UITapGestureRecognizer(target: self, action: #selector(radioTapped(_:)))
-        row.addGestureRecognizer(tap)
-        row.accessibilityIdentifier = "block.radio." + rowMode.rawValue
-        row.tag = rowMode == .perRental ? 0 : (rowMode == .perDay ? 1 : 2)
-        return row
     }
 
     private func extraRow(_ rowMode: String, title: String, field: UIView?) -> UIView {
@@ -244,7 +120,6 @@ final class BlockPriceViewController: UIViewController, UITextFieldDelegate {
         input.onChange = onChange
         input.placeholder = "0"
         input.accessibilityIdentifier = id
-        input.delegate = self
         let unit = V2.label(MoneyFormatter.unitLabel(daily: false), size: DS.TextSize.body, color: DS.Color.textMuted)
         unit.setContentHuggingPriority(.required, for: .horizontal)
         let box = UIStackView(arrangedSubviews: [input, unit])
@@ -312,7 +187,7 @@ final class BlockPriceViewController: UIViewController, UITextFieldDelegate {
 
     /// "Xem thử": the price of `previewDays` days from the boxes as they are now
     private func updatePreview() {
-        if case .table(let table) = currentInput,
+        if case .table(let table) = input,
            let detail = BlockPricing.detail(table, days: previewDays, minorUnit: BlockPricing.minorUnit(currency: ShopCurrencyStore.current.rawValue)) {
             previewTotalLabel.text = CartV2Logic.money(detail.total)
             previewFormulaLabel.text = BlockPricing.summary(detail) + (detail.extraDays > 0 ? " · " + BlockPricing.formula(detail) : "")
@@ -324,61 +199,23 @@ final class BlockPriceViewController: UIViewController, UITextFieldDelegate {
 
     // MARK: Actions
 
-    @objc private func radioTapped(_ gesture: UITapGestureRecognizer) {
-        let picked: ProductPricingMode = [.perRental, .perDay, .block][gesture.view?.tag ?? 0]
-        mode = picked
-        render()
-    }
-
     @objc private func extraTapped(_ gesture: UITapGestureRecognizer) {
         extraMode = gesture.view?.tag == 0 ? BlockTable.extraPerDay : BlockTable.holdLast
         render()
+        onChange?()
     }
 
     @objc private func addDayTapped() {
         tierTexts.append("")
         render()
+        onChange?()
     }
 
     @objc private func removeDayTapped(_ sender: UIButton) {
         guard tierTexts.count > 1, sender.tag < tierTexts.count else { return }
         tierTexts.remove(at: sender.tag)
         render()
-    }
-
-    @objc private func closeTapped() {
-        dismiss(animated: true)
-    }
-
-    @objc private func turnOffTapped() {
-        let rental = MoneyInput.parse(rentalText)
-        let day = MoneyInput.parse(dayText)
-        var fallback = mode
-        if fallback == .block { fallback = (rental == nil && day != nil) ? .perDay : .perRental }
-        onSave?(BlockPriceDraft(perRental: rental, perDay: day, defaultMode: fallback, table: nil))
-        dismiss(animated: true)
-    }
-
-    @objc private func saveTapped() {
-        view.endEditing(true)
-        let rental = MoneyInput.parse(rentalText)
-        let day = MoneyInput.parse(dayText)
-        var table: BlockTable?
-        switch currentInput {
-        case .table(let value): table = value
-        case .empty: table = nil
-        case .invalid:
-            UIAlertController.alert(parent: self, title: "Error".localized(), message: "block.error.invalid".localized())
-            return
-        }
-        var chosen = mode
-        if chosen == .block && table == nil {
-            UIAlertController.alert(parent: self, title: "Error".localized(), message: "block.error.empty".localized())
-            return
-        }
-        if chosen == .perDay && day == nil { chosen = .perRental }
-        onSave?(BlockPriceDraft(perRental: rental, perDay: day, defaultMode: chosen, table: table))
-        dismiss(animated: true)
+        onChange?()
     }
 }
 

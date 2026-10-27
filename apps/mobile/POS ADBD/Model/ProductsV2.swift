@@ -94,6 +94,12 @@ enum ProductPricingMode: String {
     case block = "BLOCK"
 }
 
+/// #1249: "Theo lần" or "Theo ngày" (= the day table on the form); no "mặc định tính" switch
+enum ProductPriceKind: Equatable {
+    case perRental
+    case perDay
+}
+
 enum ProductPricing {
     private static func activeOptions(_ product: Product) -> [PricingOption] {
         (product.pricingOptions ?? []).filter { $0.isActive != false }
@@ -140,6 +146,21 @@ enum ProductPricing {
         let type = product.defaultPricingOption?.type.uppercased() ?? product.pricingType?.uppercased()
         if type == ProductPricingMode.block.rawValue, block(product) != nil { return .block }
         return type == ProductPricingMode.perDay.rawValue ? .perDay : .perRental
+    }
+
+    /// #1249: the one choice on the product form. A saved table, or a per-day default with a day price, is "Theo ngày";
+    /// everything else (a per-rental default, a product with no price yet) is "Theo lần"
+    static func kind(_ product: Product) -> ProductPriceKind {
+        if block(product) != nil { return .perDay }
+        return defaultMode(product) == .perDay && perDay(product) != nil ? .perDay : .perRental
+    }
+
+    /// The default option a kind saves: "Theo lần" is FIXED; "Theo ngày" is the typed table, else the old DAILY price
+    static func defaultMode(kind: ProductPriceKind, table: BlockTable?) -> ProductPricingMode {
+        switch kind {
+        case .perRental: return .perRental
+        case .perDay: return table != nil ? .block : .perDay
+        }
     }
 
     /// Options sent on save. The API keeps one default and copies its price into `rentPrice`.
@@ -359,6 +380,8 @@ struct ProductFormInput {
     var perRental: Double?
     var perDay: Double?
     var defaultMode: ProductPricingMode
+    /// #1249: the day table "Theo ngày" sends; nil = none
+    var block: BlockTable? = nil
     var salePrice: Double?
     var deposit: Double?
     var quantity: Int
