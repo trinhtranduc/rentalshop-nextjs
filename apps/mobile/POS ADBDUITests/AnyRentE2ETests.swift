@@ -4693,6 +4693,33 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("05-collateral-related-orders")
     }
 
+    /// #1273 Thế chân in two sections: the note, "Đang giữ thế chân" with its total, "Phát sinh hôm nay" with Nhận, Trả and
+    /// the three totals; needs orders with collateral held (some handed over today, some returned today).
+    func test7qCollateralTwoSections() throws {
+        try e2e.requireFlag("newOverview")
+        try e2e.start()
+        guard e2e.tapTab(["Reports", "Báo cáo", "Overview", "Tổng quan"], index: 3) else { throw XCTSkip("No Reports tab") }
+        sleep(4)
+        let today = e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .button)
+        if today.waitForExistence(timeout: 8) { today.tap(); sleep(3) }
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Collateral")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 10), "Thế chân tile")
+        if !tile.isHittable { app.swipeUp(); sleep(1) }
+        tile.tap()
+        let link = e2e.element(labelBeginsWith: ["See these orders", "Xem các đơn liên quan"], type: .button)
+        XCTAssertTrue(link.waitForExistence(timeout: 6), "related orders link")
+        link.tap()
+        XCTAssertTrue(app.staticTexts["related.held.total"].waitForExistence(timeout: 25), "Tổng đang giữ")
+        sleep(2)
+        e2e.shot("90-collateral-sections-top")
+        e2e.note("COLLATERAL HELD TOTAL | \(app.staticTexts["related.held.total"].label)")
+        for _ in 0..<4 where !app.staticTexts["related.total"].isHittable { app.swipeUp(); sleep(1) }
+        XCTAssertTrue(app.staticTexts["related.flow.in"].exists, "Nhận khi giao")
+        XCTAssertTrue(app.staticTexts["related.flow.out"].exists, "Trả khi nhận đồ")
+        e2e.note("COLLATERAL FLOW | \(app.staticTexts["related.flow.in"].label) | \(app.staticTexts["related.flow.out"].label) | \(app.staticTexts["related.total"].label)")
+        e2e.shot("91-collateral-sections-bottom")
+    }
+
     /// #1124 "Đặt online": needs two PENDING requests on merchant1's shop (names "Nguyễn Thị Mai" and "Trần Văn Bình",
     /// made through POST /api/public/<tenantKey>/booking-requests) and MOBILE_FEATURES with onlineBooking.
     /// Chip with the count → list → Mai → Xác nhận → the new cart is filled → Tạo đơn → Đã xác nhận; then Bình → Từ chối.

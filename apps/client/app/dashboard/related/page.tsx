@@ -15,7 +15,11 @@ import { useAuth, useDashboardTranslations } from '@rentalshop/hooks';
 import { analyticsApi, apiUrls, authenticatedFetch, parseApiResponse } from '@rentalshop/utils';
 import { TILE_LABEL } from '../overview/sections';
 import { parseOutletIds } from '../branch-model';
+import { useShopToday } from '../../hooks/useShopToday';
 import {
+  collateralFlowIsToday,
+  collateralSections,
+  dayMonth,
   heldRows,
   isDayKey,
   parseRelated,
@@ -44,10 +48,10 @@ interface IncomePage {
 }
 
 /** #938: the orders holding collateral now, in the dashboard's branches */
-async function loadHeld(outletIds: number[] | null): Promise<RelatedRow[]> {
+async function loadHeld(outletIds: number[] | null): Promise<{ rows: RelatedRow[]; count: number | null }> {
   const res = await analyticsApi.getOutletOperations(outletIds ?? undefined, { collateralHeld: true });
   if (!res.success || !res.data) throw new Error('outlet operations failed');
-  return heldRows(res.data.collateralHeld?.orders);
+  return { rows: heldRows(res.data.collateralHeld?.orders), count: res.data.collateralHeld?.count ?? null };
 }
 
 async function loadBucket(bucket: string, from: string, to: string, outlets: string | null): Promise<IncomeOrderLike[]> {
@@ -65,6 +69,68 @@ async function loadBucket(bucket: string, from: string, to: string, outlets: str
   return items;
 }
 
+type Money = (n: number) => string;
+
+/** #1273: Thế chân in two parts. Held now (a state) and the flow of the period (+ received, − returned); the two never add up */
+function CollateralTwoParts({ rows, heldCount, from, to, todayKey, t, money }: { rows: RelatedRow[]; heldCount: number | null; from: string; to: string; todayKey: string; t: T; money: Money; }) {
+  const s = collateralSections(rows, heldCount, rows);
+  const today = collateralFlowIsToday(from, to, todayKey);
+  const range = from === to ? dayMonth(from) : `${dayMonth(from)} – ${dayMonth(to)}`;
+  const line = (r: RelatedRow, i: number, sign: string, label: string) => (
+    <tr key={`${r.id}-${i}`} data-related-row>
+      <td className="border-b border-ar-subtle px-3 py-2">
+        <Link href={`/orders/${r.orderNumber}`} className="text-ar-primary-ink no-underline hover:underline">
+          {r.orderNumber}
+        </Link>
+      </td>
+      <td className="border-b border-ar-subtle px-3 py-2">{r.customer}</td>
+      <td className="border-b border-ar-subtle px-3 py-2 text-ar-ink-2">{label}</td>
+      <td className={`border-b border-ar-subtle px-3 py-2 text-right tabular-nums ${r.amount < 0 ? 'text-ar-late' : ''}`}>{r.amount < 0 ? `−${money(-r.amount)}` : `${sign}${money(r.amount)}`}</td>
+    </tr>
+  );
+  const head = (title: string, hint: string, attr: string) => (
+    <tbody data-collateral-section={attr}>
+      <tr>
+        <td colSpan={4} className="bg-ar-subtle px-3 py-2">
+          <div className="font-bold">{title}</div>
+          <div className="text-xs text-ar-muted">{hint}</div>
+        </td>
+      </tr>
+    </tbody>
+  );
+  const total = (text: string, attr: string, tone = '') => (
+    <tr data-collateral-total={attr}>
+      <td colSpan={4} className={`bg-ar-subtle px-3 py-2 font-bold tabular-nums ${tone}`}>
+        {text}
+      </td>
+    </tr>
+  );
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="m-0 rounded-lg bg-ar-subtle px-3 py-2 text-sm text-ar-ink-2" data-collateral-note>
+        {t(today ? 'home.related.sectionNote' : 'home.related.sectionNotePeriod')}
+      </p>
+      <div className="overflow-x-auto rounded-xl border border-ar-line bg-ar-surface">
+        <table className="w-full border-collapse text-sm">
+          {head(t('home.related.heldTitle'), t('home.related.heldHint'), 'held')}
+          <tbody>
+            {s.held.map((r, i) => line(r, i, '', t('home.related.heldRow')))}
+            {total(t('home.related.heldTotal', { total: s.heldTotalKnown ? money(s.heldTotal) : '—', count: s.heldOrders }), 'held')}
+          </tbody>
+          {head(today ? t('home.related.flowTitle', { day: dayMonth(from) }) : t('home.related.flowTitlePeriod', { range }), t(today ? 'home.related.flowHint' : 'home.related.flowHintPeriod'), 'flow')}
+          <tbody>
+            {s.received.map((r, i) => line(r, i, '+', t('home.related.note.collateralIn')))}
+            {s.returned.map((r, i) => line(r, i, '+', t('home.related.note.collateralOut')))}
+            {total(t('home.related.flowIn', { amount: `+${money(s.receivedTotal)}`, count: s.receivedOrders }), 'in')}
+            {total(t('home.related.flowOut', { amount: `−${money(s.returnedTotal)}`, count: s.returnedOrders }), 'out')}
+            {total(t(today ? 'home.related.flowNet' : 'home.related.flowNetPeriod', { amount: s.net < 0 ? `−${money(-s.net)}` : `+${money(s.net)}` }), 'net')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function RelatedOrders() {
   const t = useDashboardTranslations() as unknown as T;
   const money = useFormatCurrency();
@@ -77,6 +143,9 @@ function RelatedOrders() {
   const outletIds = parseOutletIds(params.get('outlets'));
   const outlets = outletIds ? outletIds.join(',') : null;
   const [rows, setRows] = useState<RelatedRow[] | null>(null);
+  // #1273: the held orders (the API `count` tells when its list is cut)
+  const [heldCount, setHeldCount] = useState<number | null>(null);
+  const todayKey = useShopToday();
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -84,9 +153,14 @@ function RelatedOrders() {
     let alive = true;
     setRows(null);
     setFailed(false);
-    const held = kind === 'collateral' ? loadHeld(outlets ? outlets.split(',').map(Number) : null) : Promise.resolve([] as RelatedRow[]);
-    Promise.all([held, ...relatedBuckets(kind).map((b) => loadBucket(b, from, to, outlets).then((items) => relatedRows(kind, b, items)))])
-      .then((parts) => alive && setRows(parts.flat()))
+    const held = kind === 'collateral' ? loadHeld(outlets ? outlets.split(',').map(Number) : null) : Promise.resolve({ rows: [] as RelatedRow[], count: null });
+    const period = Promise.all(relatedBuckets(kind).map((b) => loadBucket(b, from, to, outlets).then((items) => relatedRows(kind, b, items))));
+    Promise.all([held, period])
+      .then(([h, parts]) => {
+        if (!alive) return;
+        setHeldCount(h.count);
+        setRows([...h.rows, ...parts.flat()]);
+      })
       .catch(() => alive && setFailed(true));
     return () => {
       alive = false;
@@ -118,7 +192,10 @@ function RelatedOrders() {
       {failed && <p className="m-0 text-ar-late">{t('home.related.failed')}</p>}
       {!failed && rows === null && <p className="m-0 text-ar-muted">…</p>}
       {rows && rows.length === 0 && <p className="m-0 text-ar-muted">{t('home.related.empty')}</p>}
-      {rows && rows.length > 0 && (
+      {rows && rows.length > 0 && kind === 'collateral' && (
+        <CollateralTwoParts rows={rows} heldCount={heldCount} from={from} to={to} todayKey={todayKey} t={t} money={money} />
+      )}
+      {rows && rows.length > 0 && kind !== 'collateral' && (
         <div className="overflow-x-auto rounded-xl border border-ar-line bg-ar-surface">
           <table className="w-full border-collapse text-sm">
             <thead>

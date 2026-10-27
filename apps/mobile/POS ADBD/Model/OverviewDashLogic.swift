@@ -425,7 +425,7 @@ struct OverviewRelatedRow: Equatable {
     let orderId: Int
     let orderNumber: String
     let customer: String
-    let detail: String
+    var detail: String
     let amount: Double
     /// #938: an order whose collateral is held now (Thế chân); listed, not part of the period total
     var held = false
@@ -538,6 +538,57 @@ extension OverviewDashLogic {
             OverviewRelatedRow(orderId: $0.id, orderNumber: $0.orderNumber, customer: $0.customerName ?? "",
                                detail: "overview.related.collateralHeld".localized(), amount: $0.securityDeposit, held: true)
         }
+    }
+
+    // MARK: #1273 Thế chân in two sections
+
+    /// Held now (a state) and the flow of the period (+ received, − returned). The two never add up to each other.
+    struct CollateralSections: Equatable {
+        let held: [OverviewRelatedRow]
+        let heldTotal: Double
+        /// Orders held: the API `count` (its list is cut at 500), else the rows
+        let heldOrders: Int
+        /// false when the API list is cut: the sum would be wrong, so no total is shown
+        let heldTotalKnown: Bool
+        let received: [OverviewRelatedRow]
+        let returned: [OverviewRelatedRow]
+        let receivedTotal: Double
+        /// A positive number (the sum of the rows, sign dropped)
+        let returnedTotal: Double
+        let receivedOrders: Int
+        let returnedOrders: Int
+        /// received − returned
+        var net: Double { receivedTotal - returnedTotal }
+    }
+
+    static func collateralSections(held: [OverviewRelatedRow], heldCount: Int?, rows: [OverviewRelatedRow]) -> CollateralSections {
+        let heldRows = held.filter(\.held)
+        let flow = rows.filter { !$0.held }
+        let received = flow.filter { $0.amount > 0 }
+        let returned = flow.filter { $0.amount < 0 }
+        let cut = (heldCount ?? 0) > heldRows.count
+        return CollateralSections(
+            held: heldRows,
+            heldTotal: heldRows.reduce(0) { $0 + $1.amount },
+            heldOrders: cut ? (heldCount ?? heldRows.count) : Set(heldRows.map(\.orderId)).count,
+            heldTotalKnown: !cut,
+            received: received,
+            returned: returned,
+            receivedTotal: received.reduce(0) { $0 + $1.amount },
+            returnedTotal: returned.reduce(0) { $0 - $1.amount },
+            receivedOrders: Set(received.map(\.orderId)).count,
+            returnedOrders: Set(returned.map(\.orderId)).count)
+    }
+
+    /// The flow part is "hôm nay" only for the one-day range of today
+    static func collateralFlowIsToday(range: DayKeyRange, todayKey: String) -> Bool {
+        range.start == range.end && range.start == todayKey
+    }
+
+    /// `2026-10-27` → `27/10`
+    static func dayMonth(_ key: String) -> String {
+        let parts = key.split(separator: "-")
+        return parts.count == 3 ? "\(parts[2])/\(parts[1])" : key
     }
 }
 

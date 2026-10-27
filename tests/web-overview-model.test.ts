@@ -23,7 +23,12 @@ import {
   relatedCount,
   heldRows,
   eventReasons,
+  collateralSections,
+  collateralFlowIsToday,
+  dayMonth,
 } from '../apps/client/app/dashboard/overview-model';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { getLocalDateKey } from '../packages/utils/src/core/date';
 
 const VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -387,5 +392,65 @@ describe('futureInstallmentsTotal (#1221, same as iOS futureInstallmentsTotal)',
     expect(
       futureInstallmentsTotal([{ futureInstallments: [{ dueDateKey: 'x', amount: 'abc' as any, count: null as any }] }]),
     ).toEqual({ amount: 0, count: 0 });
+  });
+});
+
+describe('#1273 Thế chân in two sections', () => {
+  const held = (id: number, amount: number) => ({ id, orderNumber: String(id), customer: '', note: 'held' as const, description: '', reasons: [], amount });
+  const flow = (id: number, amount: number) => ({ id, orderNumber: String(id), customer: '', note: amount > 0 ? ('collateralIn' as const) : ('collateralOut' as const), description: '', reasons: [], amount });
+  // The mockup: 16 held (16.200.000), 8 received (+6.400.000), 2 returned (−4.000.000); order 103 is in both
+  const heldAmounts = [2e6, 1e6, 1e6, 5e5, 5e5, 8e5, 5e5, 5e5, 5e5, 4e5, 1.5e6, 2.5e6, 1e6, 1.5e6, 1.5e6, 5e5];
+  const heldList = heldAmounts.map((a, i) => held(100 + i, a));
+  const flowList = [flow(111, 2.5e6), flow(103, 5e5), flow(121, -3e6), flow(122, 5e5), flow(123, 5e5), flow(124, 5e5), flow(125, 5e5), flow(126, 1e6), flow(127, 4e5), flow(128, -1e6)];
+
+  it('splits the held rows and the flow rows and totals each part', () => {
+    const s = collateralSections(heldList, 16, [...heldList, ...flowList]);
+    expect(s.held).toHaveLength(16);
+    expect(s.heldTotal).toBe(16_200_000);
+    expect(s.heldOrders).toBe(16);
+    expect(s.heldTotalKnown).toBe(true);
+    expect(s.received).toHaveLength(8);
+    expect(s.returned).toHaveLength(2);
+    expect(s.receivedTotal).toBe(6_400_000);
+    expect(s.receivedOrders).toBe(8);
+    expect(s.returnedTotal).toBe(4_000_000);
+    expect(s.returnedOrders).toBe(2);
+    expect(s.net).toBe(2_400_000);
+    expect([...s.received, ...s.returned].some((r) => r.note === 'held')).toBe(false);
+  });
+
+  it('counts an order in both sections once in each and never adds across', () => {
+    const s = collateralSections(heldList, 16, [...heldList, ...flowList]);
+    expect(s.held.some((r) => r.id === 103)).toBe(true);
+    expect(s.received.some((r) => r.id === 103)).toBe(true);
+    expect(s.heldTotal).toBe(16_200_000);
+    expect(s.net).toBe(s.receivedTotal - s.returnedTotal);
+  });
+
+  it('counts distinct orders when an order moves on two days of a period', () => {
+    const s = collateralSections([], 0, [flow(1, 300), flow(1, 200), flow(2, -100)]);
+    expect([s.receivedTotal, s.receivedOrders, s.returnedOrders, s.net]).toEqual([500, 1, 1, 400]);
+  });
+
+  it('hides the held total when the API list is cut (limit 500)', () => {
+    expect(collateralSections(heldList, 600, heldList).heldTotalKnown).toBe(false);
+    expect(collateralSections(heldList, 600, heldList).heldOrders).toBe(600);
+    expect(collateralSections(heldList, null, heldList).heldTotalKnown).toBe(true);
+  });
+
+  it('is "today" only for the one-day range of today (Vietnam day keys)', () => {
+    expect(collateralFlowIsToday('2026-10-27', '2026-10-27', '2026-10-27')).toBe(true);
+    expect(collateralFlowIsToday('2026-10-27', '2026-10-27', '2026-10-28')).toBe(false);
+    expect(collateralFlowIsToday('2026-10-21', '2026-10-27', '2026-10-27')).toBe(false);
+    expect(dayMonth('2026-10-27')).toBe('27/10');
+  });
+
+  it('has the new strings in en and vi (dashboard.json exists only for these two)', () => {
+    const keys = ['sectionNote', 'sectionNotePeriod', 'heldTitle', 'heldHint', 'heldRow', 'heldTotal', 'flowTitle', 'flowTitlePeriod', 'flowHint', 'flowHintPeriod', 'flowIn', 'flowOut', 'flowNet', 'flowNetPeriod'];
+    for (const lang of ['en', 'vi']) {
+      const json = JSON.parse(readFileSync(join(__dirname, '..', 'locales', lang, 'dashboard.json'), 'utf8'));
+      const related = (json.home ?? json).related;
+      for (const k of keys) expect(`${lang} ${k} ${typeof related[k]}`).toBe(`${lang} ${k} string`);
+    }
   });
 });

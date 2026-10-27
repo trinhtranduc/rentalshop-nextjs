@@ -415,7 +415,10 @@ final class OverviewV2ViewController: BaseViewControler {
         case .collected:
             controller = OverviewRelatedOrdersViewController(kind: .collected, title: kind.title, period: period, startDate: start, endDate: end)
         case .collateral:
-            controller = OverviewRelatedOrdersViewController(kind: .collateral, title: kind.title, period: period, startDate: start, endDate: end)
+            let related = OverviewRelatedOrdersViewController(kind: .collateral, title: kind.title, period: period, startDate: start, endDate: end)
+            related.collateralRange = range
+            related.collateralTodayKey = todayKey
+            controller = related
         case .outstanding:
             controller = OverviewRelatedOrdersViewController(kind: .outstanding, title: kind.title, period: period, startDate: start, endDate: end)
         }
