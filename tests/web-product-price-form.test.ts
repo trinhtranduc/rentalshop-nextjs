@@ -152,3 +152,16 @@ describe('payload details', () => {
     expect(buildPricingOptions({ perRental: 0, perDay: null, dayKind: 'DAY', block: null })).toEqual([{ type: 'FIXED', price: 0, isDefault: true }]);
   });
 });
+
+describe('setup screen helpers', () => {
+  it('Tạo nhanh: first day + each extra day makes N rows, extra price = that step', async () => {
+    const { quickTable } = await import('../apps/client/app/products/block-draft');
+    expect(quickTable(80000, 20000, 4)).toEqual({ tiers: [80000, 100000, 120000, 140000], startDay: 1, extraMode: 'EXTRA_PER_DAY', extraPrice: 20000 });
+    expect(quickTable(80000, 20000, 1).tiers).toEqual([80000]);
+    expect(quickTable(80000, 0, 99).tiers).toHaveLength(31);
+  });
+  it('Sao chép từ sản phẩm khác: the table and the rule past the last day, nothing else', () => {
+    const f = formFromProduct({ name: 'B', rentPrice: 1, salePrice: 9, deposit: 5, pricingOptions: [blockOpt], outletStock: [] }, outlets, categories);
+    expect(f.block).toEqual(table);
+  });
+});

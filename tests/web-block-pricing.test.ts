@@ -93,14 +93,14 @@ describe('block-model: the detail card', () => {
 });
 
 describe('product form: a block product keeps its table (#1249)', () => {
-  it('saving the form sends the table again; leaving it ("Theo lần") sends schema 2 so the API drops it', () => {
+  it('saving the form sends the table again; choosing Thuê theo ngày sends schema 2 so the API drops it', () => {
     const form = formFromProduct({ ...product, name: 'Áo dài', outletStock: [] } as never, [{ id: 3, name: 'A' }], [{ id: 1 }]);
-    expect(form.priceKind).toBe('DAY');
-    const payload = buildFormPayload({ ...form, totalStock: 2 }, { canEditPricing: true, productId: 1, hadBlock: true });
+    expect(form.dayKind).toBe('BLOCK');
+    const payload = buildFormPayload({ ...form, totalStock: 2 }, { canEditPricing: true, productId: 1 });
     expect(payload).toHaveProperty('salePrice', 1500000);
     expect(payload).toHaveProperty('pricingSchemaVersion', 2);
     expect((payload.pricingOptions as Array<{ type: string }>).map((o) => o.type)).toContain('BLOCK');
-    const once = buildFormPayload({ ...form, priceKind: 'ONCE', perRental: 5000, totalStock: 2 }, { canEditPricing: true, productId: 1, hadBlock: true });
+    const once = buildFormPayload({ ...form, dayKind: 'DAY', perRental: 5000, totalStock: 2 }, { canEditPricing: true, productId: 1 });
     expect(once).toHaveProperty('pricingSchemaVersion', 2);
     expect((once.pricingOptions as Array<{ type: string }>).map((o) => o.type)).not.toContain('BLOCK');
   });

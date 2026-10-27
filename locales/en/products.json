@@ -570,9 +570,7 @@
         "saleRequired": "Enter the sale price",
         "depositNegative": "Deposit cannot be negative",
         "stockRequired": "Quantity must be more than 0",
-        "outletStockNegative": "Quantity cannot be negative",
-        "blockEmpty": "Enter the price for each number of days.",
-        "blockIncomplete": "Fill every day and the amount added for each extra day, or keep the last price."
+        "outletStockNegative": "Quantity cannot be negative"
       },
       "noCreate": "You do not have permission to add products.",
       "noEdit": "You do not have permission to edit products.",
@@ -583,9 +581,28 @@
       "goCategories": "Open Categories",
       "needOutlet": "Add at least one outlet before adding products.",
       "goOutlets": "Open Outlets",
-      "priceKind": {
-        "title": "Rental price kind",
-        "dayHint": "One price for each number of days"
+      "dayGroup": "Multi-day price (choose 1 of 2)",
+      "unitOnce": "đ / rental",
+      "unitDay": "đ / day",
+      "block": {
+        "summaryExtra": "{count} blocks · +{extra}/day",
+        "summaryHold": "{count} blocks · last block price kept",
+        "edit": "Edit price list",
+        "setupHint": "One price for each number of days. A customer renting exactly that many days pays that row.",
+        "save": "Save price list",
+        "turnOff": "Turn off day-block pricing",
+        "quick": "Quick fill: first day + each extra day",
+        "quickFirst": "First day price",
+        "quickStep": "Each extra day",
+        "quickDays": "Number of days",
+        "quickMake": "Create list",
+        "copy": "Copy from another product",
+        "copyTitle": "Pick a product to copy its price list",
+        "copySearch": "Search products",
+        "copyEmpty": "No product has a day-block price list.",
+        "copyLoading": "Loading…",
+        "close": "Close",
+        "incomplete": "Fill every day and the amount added for each extra day, or keep the last block price."
       }
     },
     "detail": {
