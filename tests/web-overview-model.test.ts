@@ -450,7 +450,7 @@ describe('#1273 Thế chân in two sections', () => {
     for (const lang of ['en', 'vi', 'ja', 'ko', 'zh']) {
       const json = JSON.parse(readFileSync(join(__dirname, '..', 'locales', lang, 'dashboard.json'), 'utf8'));
       const related = (json.home ?? json).related;
-      for (const k of keys) expect(typeof related[k], `${lang} ${k}`).toBe('string');
+      for (const k of keys) expect(`${lang} ${k} ${typeof related[k]}`).toBe(`${lang} ${k} string`);
     }
   });
 });
