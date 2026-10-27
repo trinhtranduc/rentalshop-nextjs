@@ -2212,6 +2212,8 @@
     <string name="deposit_method_check">Check</string>
     <string name="deposit_method_manual">Other</string>
     <string name="deposit_cart_title">Staged deposit</string>
+    <string name="deposit_cart_template">Template</string>
+    <string name="deposit_cart_stage_short">%1$s%% · %2$s</string>
     <string name="deposit_cart_stage_detail">%1$s%% of order · due: %2$s</string>
     <string name="deposit_cart_rest_detail">At hand-over · %s</string>
     <string name="deposit_cart_collect_first">Collect stage %d now</string>

@@ -560,6 +560,20 @@ fun CartV2Screen(
               }
             }
 
+            // #1045 note row as a lambda: a staged rental shows it before the deposit group (#1245)
+            val noteRow: @Composable () -> Unit = {
+                // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
+                val noteFiles by CartStore.noteImageFiles.collectAsState()
+                val notePhotos = if (editingOrderId == null) noteFiles.size else 0
+                CartMoneyEditRow(
+                    stringResource(R.string.v2_cart_note),
+                    CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
+                    tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
+                    photoCount = notePhotos,
+                    onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
+                )
+            }
+            val stagedGroup = !isSale && !(editingOrderId != null && editHasPlan) && staged
             SectionBand(stringResource(R.string.v2_cart_money))
             V2ValueRow(stringResource(if (isSale) R.string.v2_cart_sale_subtotal else R.string.v2_cart_rent_subtotal), formatMoneyVnd(subtotal), valueColor = DS.Colors.Text)
             ThinDivider()
@@ -577,6 +591,7 @@ fun CartV2Screen(
                 if (editingOrderId != null && editHasPlan) {
                     // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
                 } else if (staged) {
+                    noteRow() // #1245: the note stays with the money rows; the staged deposit is one group below it
                     CartStagedSection(
                         preview = stagedPreview, templateName = stagedTemplateName, choices = depositSettings?.choices.orEmpty(),
                         canEdit = canEditStages, exceeds = stagesExceed, collectNow = stagedCollectNow,
@@ -597,16 +612,7 @@ fun CartV2Screen(
                     ThinDivider()
                 }
             }
-            // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
-            val noteFiles by CartStore.noteImageFiles.collectAsState()
-            val notePhotos = if (editingOrderId == null) noteFiles.size else 0
-            CartMoneyEditRow(
-                stringResource(R.string.v2_cart_note),
-                CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
-                tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
-                photoCount = notePhotos,
-                onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
-            )
+            if (!stagedGroup) noteRow()
             Spacer(Modifier.height(24.dp))
         }
 

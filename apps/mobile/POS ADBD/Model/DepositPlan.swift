@@ -388,7 +388,9 @@ enum DepositPlanMath {
                 ?? percentOf(total, percent: draft.percent, currency: currency)
             explicit += amount
             result.append(DepositStagePreview(key: "i\(index + 1)", label: draft.label,
-                                              percent: total > 0 ? (amount / total * 10000).rounded() / 100 : draft.percent,
+                                              // #1245: the template's own % until the owner edits the amount; then the % of the order, 1 decimal
+                                              percent: draft.amountOverride == nil || total <= 0
+                                                  ? draft.percent : (amount / total * 1000).rounded() / 10,
                                               amount: amount, dueDateKey: dueKey(draft, createdKey: createdKey, pickupKey: pickupKey),
                                               isRest: false))
         }
