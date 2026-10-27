@@ -274,7 +274,7 @@ export default function ProductDetailPage() {
             </dl>
           </Card>
 
-          {canEditPrices && <BlockPricingCard product={p} onSaved={() => setNonce((n) => n + 1)} />}
+          {canEditPrices && <BlockPricingCard product={p} />}
 
           <Card title={t('detail.description')}>
             <p className={`m-0 whitespace-pre-wrap text-[15px] ${p.description ? 'text-ar-ink' : 'text-ar-muted'}`}>{p.description || t('detail.noDescription')}</p>

@@ -119,12 +119,7 @@
     "detail": {
       "block": {
         "title": "按天数价目表",
-        "hint": "选择新订单的默认计价方式。员工仍可在购物车中更改。",
-        "active": "正在使用按天数档位计价",
-        "modeOnce": "按次",
-        "modeDay": "按天",
         "modeBlock": "按天数档位计价",
-        "modeBlockHint": "每个天数一个单独价格",
         "tiersTitle": "按天数的价格",
         "dayRow": "{n} 天",
         "addDay": "+ 添加第 {n} 天",
@@ -137,26 +132,17 @@
         "previewDays": "{n} 天",
         "lessDays": "减少一天",
         "moreDays": "增加一天",
-        "save": "保存价目表",
-        "saving": "保存中…",
-        "cancel": "取消",
-        "turnOff": "关闭按天数档位计价",
-        "saved": "价目表已保存",
-        "saveFailed": "无法保存价目表",
-        "problem": {
-          "tierEmpty": "请为表中每个天数填写价格。",
-          "extraEmpty": "请填写每多一天加收的金额，或选择保持最后一档价格。",
-          "priceEmpty": "请为所选计价方式填写价格。"
-        }
+        "edit": "修改价格"
       }
     },
     "form": {
-      "priceRow": {
-        "title": "租金",
-        "hint": "按次、按天或按天数档位。请在详情页修改。",
-        "open": "设置按天/档位计价",
-        "summaryExtra": "正在使用按天数档位计价：{count} 档，每多一天 +{extra}",
-        "summaryHold": "正在使用按天数档位计价：{count} 档，保持最后一档价格"
+      "priceKind": {
+        "title": "租金计价方式",
+        "dayHint": "每个天数一个单独价格"
+      },
+      "errors": {
+        "blockEmpty": "请填写各个天数的价格。",
+        "blockIncomplete": "请填写每个天数的价格和每多一天加收的金额，或选择保持最后一档价格。"
       }
     }
   }

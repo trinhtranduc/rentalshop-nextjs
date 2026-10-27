@@ -119,12 +119,7 @@
     "detail": {
       "block": {
         "title": "일수별 요금표",
-        "hint": "새 주문의 기본 요금 방식을 선택합니다. 직원은 장바구니에서 바꿀 수 있습니다.",
-        "active": "일수 블록 요금 사용 중",
-        "modeOnce": "1회당",
-        "modeDay": "1일당",
         "modeBlock": "일수 블록 요금",
-        "modeBlockHint": "일수마다 각각 다른 요금",
         "tiersTitle": "일수별 요금",
         "dayRow": "{n}일",
         "addDay": "+ {n}일차 추가",
@@ -137,26 +132,17 @@
         "previewDays": "{n}일",
         "lessDays": "하루 줄이기",
         "moreDays": "하루 늘리기",
-        "save": "요금표 저장",
-        "saving": "저장 중…",
-        "cancel": "취소",
-        "turnOff": "일수 블록 요금 끄기",
-        "saved": "요금표를 저장했습니다",
-        "saveFailed": "요금표를 저장하지 못했습니다",
-        "problem": {
-          "tierEmpty": "표의 모든 일수에 요금을 입력하세요.",
-          "extraEmpty": "하루마다 추가할 금액을 입력하거나 마지막 블록 요금 유지를 선택하세요.",
-          "priceEmpty": "선택한 요금 방식의 요금을 입력하세요."
-        }
+        "edit": "요금 수정"
       }
     },
     "form": {
-      "priceRow": {
-        "title": "대여 요금",
-        "hint": "1회당, 1일당 또는 일수 블록. 변경은 상세 페이지에서 하세요.",
-        "open": "일수·블록 요금 설정",
-        "summaryExtra": "일수 블록 요금 사용 중: {count}개 구간, 하루마다 +{extra}",
-        "summaryHold": "일수 블록 요금 사용 중: {count}개 구간, 마지막 블록 요금 유지"
+      "priceKind": {
+        "title": "대여 요금 방식",
+        "dayHint": "일수마다 각각 다른 요금"
+      },
+      "errors": {
+        "blockEmpty": "일수별 요금을 입력하세요.",
+        "blockIncomplete": "모든 일수와 하루마다 추가할 금액을 입력하거나 마지막 요금 유지를 선택하세요."
       }
     }
   }

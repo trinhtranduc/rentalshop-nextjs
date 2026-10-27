@@ -11,14 +11,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useFormatCurrency, useToast } from '@rentalshop/ui';
+import { useToast } from '@rentalshop/ui';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { categoriesApi, outletsApi, productsApi } from '@rentalshop/utils';
 import type { ProductCreateInput, ProductUpdateInput } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../../orders/list/parts';
 import { fieldClass } from '../../orders/create/parts';
-import { savedBlock } from '../block-model';
+import { BlockTableEditor, RadioRow } from '../BlockTableEditor';
 import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
@@ -28,15 +28,14 @@ import {
   branchHoldsProduct,
   roleMayCreateProducts,
   checkPhotos,
-  effectiveDefaultMode,
   emptyForm,
   firstError,
   formFromProduct,
   generateBarcode,
-  hasDefaultChoice,
   imageSearchState,
   parseCount,
   removedAllSavedPhotos,
+  savedBlockOf,
   setOutletStock,
   setTotalStock,
   validateForm,
@@ -44,7 +43,7 @@ import {
   type FieldKey,
   type FormState,
   type OutletLite,
-  type PricingMode,
+  type PriceKind,
   type ProductSource,
 } from './form-model';
 
@@ -378,7 +377,6 @@ function ImageSearchCard({ productId, initialIndexedAt, disabled, t }: { product
 
 export function ProductFormPage({ productId }: { productId: number | null }) {
   const isEdit = productId != null;
-  const money = useFormatCurrency();
   const router = useRouter();
   const t = useTranslations('products.web') as unknown as T;
   const { toastSuccess, toastError } = useToast();
@@ -457,8 +455,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   if (data.categories.length === 0) return wrap(<Notice text={t('form.needCategory')} action={<Link href="/categories" className={outlineBtn}>{t('form.goCategories')}</Link>} />);
   if (data.outlets.length === 0) return wrap(<Notice text={t('form.needOutlet')} action={<Link href="/outlets" className={outlineBtn}>{t('form.goOutlets')}</Link>} />);
 
-  // #1189: a product priced by day blocks keeps its table; the form shows one neutral row that leads to the detail page
-  const blockSaved = isEdit && data.product ? savedBlock(data.product) : null;
+  // #1249: a saved day table; leaving "Theo ngày" for "Theo lần" must tell the API to drop it
+  const hadBlock = isEdit && !!data.product && savedBlockOf(data.product) != null;
   const err = (k: FieldKey) => (errors[k] ? t(`form.errors.${errors[k]}`) : undefined);
   const savedPhotos = data.product ? formFromProduct(data.product, [], []).keptImages.length : 0;
   const multiOutlet = data.outlets.length > 1;
@@ -485,7 +483,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     setSaving(true);
     setFailed(false);
     try {
-      const payload = buildPayload(form, { canEditPricing, blockPriced: !!blockSaved, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
+      const payload = buildPayload(form, { canEditPricing, hadBlock, productId: productId ?? undefined, merchantId: merchantId ?? undefined, branchOutletId, stockOnly: locked });
       const res = isEdit
         ? await productsApi.updateProduct(productId, payload as unknown as ProductUpdateInput, files)
         : await productsApi.createProduct(payload as unknown as ProductCreateInput, files);
@@ -505,28 +503,8 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
     }
   };
 
-  // #547: each price carries its own "Mặc định khi tạo đơn" choice, shown only when both prices are set.
-  // A two-option toggle read as "this product is priced one way or the other" (owner feedback).
-  const bothPrices = hasDefaultChoice(form.perRental, form.perDay);
-  const shownDefault = effectiveDefaultMode(form.perRental, form.perDay, form.defaultMode);
-  const defaultChoice = (mode: PricingMode) =>
-    bothPrices ? (
-      <label className="mt-1 inline-flex w-fit cursor-pointer items-center gap-2 text-sm text-ar-ink-2">
-        <input
-          type="radio"
-          name="pf-defaultMode"
-          checked={shownDefault === mode}
-          onChange={() => patch({ defaultMode: mode }, ['defaultMode'])}
-          className="h-4 w-4 accent-[var(--ar-primary)]"
-        />
-        {t('form.defaultForOrders')}
-      </label>
-    ) : null;
-  const setPrice = (key: 'perRental' | 'perDay', n: number | null) =>
-    patch((f) => {
-      const next = { ...f, [key]: n };
-      return { ...next, defaultMode: effectiveDefaultMode(next.perRental, next.perDay, f.defaultMode) };
-    }, ['perRental', 'defaultMode']);
+  // #1249: one choice, "Theo lần" or "Theo ngày" (the day table right below it); no default switch
+  const setKind = (priceKind: PriceKind) => patch({ priceKind }, ['block', 'perRental']);
 
   return wrap(
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -574,34 +552,19 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           <Card title={t('form.sections.pricing')}>
             {canEditPricing ? (
               <>
-                {blockSaved ? null : <div className="grid gap-4 sm:grid-cols-2">
+                <div role="radiogroup" aria-label={t('form.priceKind.title')} className="overflow-hidden rounded-xl border border-ar-line" data-price-kind>
+                  <RadioRow name="pf-priceKind" checked={form.priceKind === 'ONCE'} onSelect={() => setKind('ONCE')} title={t('form.perRental')} />
+                  <RadioRow name="pf-priceKind" checked={form.priceKind === 'DAY'} onSelect={() => setKind('DAY')} title={t('form.perDay')} hint={t('form.priceKind.dayHint')} />
+                </div>
+                {form.priceKind === 'ONCE' ? (
                   <Field id="pf-perRental" label={t('form.perRental')} error={err('perRental')}>
-                    <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => setPrice('perRental', n)} />
-                    {defaultChoice('FIXED')}
+                    <PriceInput id="pf-perRental" value={form.perRental} invalid={!!errors.perRental} onChange={(n) => patch({ perRental: n }, ['perRental'])} />
                   </Field>
-                  <Field id="pf-perDay" label={t('form.perDay')}>
-                    <PriceInput id="pf-perDay" value={form.perDay} onChange={(n) => setPrice('perDay', n)} />
-                    {defaultChoice('DAILY')}
-                  </Field>
-                </div>}
-                {!blockSaved && <span className="-mt-2 text-xs text-ar-muted">{t(bothPrices ? 'form.defaultHint' : 'form.pricesHint')}</span>}
-                {isEdit && productId != null && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ar-line px-4 py-3" data-rent-price-row>
-                    <span className="flex min-w-0 flex-col">
-                      <span className="text-[15px] font-semibold text-ar-ink">{t('form.priceRow.title')}</span>
-                      <span className="text-xs text-ar-muted">
-                        {blockSaved
-                          ? t(blockSaved.extraMode === 'EXTRA_PER_DAY' ? 'form.priceRow.summaryExtra' : 'form.priceRow.summaryHold', {
-                              count: blockSaved.tiers.length,
-                              extra: money(blockSaved.extraPrice ?? 0),
-                            })
-                          : t('form.priceRow.hint')}
-                      </span>
-                    </span>
-                    <Link href={`/products/${productId}`} className={outlineBtn}>
-                      {t('form.priceRow.open')}
-                    </Link>
-                  </div>
+                ) : (
+                  <>
+                    <BlockTableEditor block={form.block} onChange={(block) => patch({ block }, ['block'])} showErrors={!!errors.block} firstId="pf-block" />
+                    {errors.block && <span role="alert" className="text-sm text-ar-danger">{err('block')}</span>}
+                  </>
                 )}
                 <div className="grid gap-4 border-t border-ar-subtle pt-4 sm:grid-cols-3">
                   <Field id="pf-deposit" label={t('form.deposit')} error={err('deposit')}>

@@ -37,8 +37,6 @@ export interface PricingDraft {
   block: BlockDraft;
 }
 
-export type DraftProblem = 'tierEmpty' | 'extraEmpty' | 'priceEmpty' | null;
-
 const money = (n: unknown): number | null => {
   if (n == null || n === '') return null;
   const v = typeof n === 'string' ? Number(n) : (n as number);
@@ -84,18 +82,6 @@ export function draftFromProduct(p: BlockProductSource): PricingDraft {
     perDay,
     block: block ?? { tiers: [perDay ?? perRental], startDay: 1, extraMode: 'EXTRA_PER_DAY', extraPrice: null },
   };
-}
-
-/** True when the product has a usable day table (the web form leaves its prices alone then) */
-export const hasBlockTable = (p: BlockProductSource): boolean => savedBlock(p) != null;
-
-/** The first problem that stops a save (the box to fix), null when the draft can be saved */
-export function draftProblem(d: PricingDraft): DraftProblem {
-  if (d.mode === 'FIXED') return d.perRental == null ? 'priceEmpty' : null;
-  if (d.mode === 'DAILY') return d.perDay == null ? 'priceEmpty' : null;
-  if (d.block.tiers.length < 1 || d.block.tiers.some((t) => t == null)) return 'tierEmpty';
-  if (d.block.extraMode === 'EXTRA_PER_DAY' && d.block.extraPrice == null) return 'extraEmpty';
-  return null;
 }
 
 export const canAddDay = (b: BlockDraft): boolean => b.tiers.length < BLOCK_MAX_TIERS;
@@ -155,51 +141,3 @@ export const holdLastExample = (b: BlockDraft): { days: number; price: number } 
   if (last == null) return null;
   return { days: b.startDay + b.tiers.length + 1, price: last };
 };
-
-export interface SavePayload {
-  rentPrice: number;
-  pricingSchemaVersion: 2;
-  pricingOptions: Array<Record<string, unknown>>;
-}
-
-/**
- * Body of the card's save (`PUT /api/products/[id]`): the rent options of the chosen mode. `pricingSchemaVersion: 2`
- * tells the API this client knows BLOCK, so a mode without a table also removes the saved table.
- * Returns null while the draft has a problem.
- */
-export function buildSavePayload(d: PricingDraft): SavePayload | null {
-  if (draftProblem(d)) return null;
-  const options: Array<Record<string, unknown>> = [];
-  if (d.perRental != null) options.push({ type: 'FIXED', price: d.perRental, isDefault: d.mode === 'FIXED' });
-  if (d.perDay != null) options.push({ type: 'DAILY', price: d.perDay, isDefault: d.mode === 'DAILY' });
-  let rentPrice = (d.mode === 'DAILY' ? d.perDay : d.perRental) ?? d.perDay ?? 0;
-  if (d.mode === 'BLOCK') {
-    const table = toTable(d.block);
-    if (!table) return null;
-    rentPrice = table.tiers[0];
-    options.push({
-      type: 'BLOCK',
-      price: table.tiers[0],
-      isDefault: true,
-      blockTiers: table.tiers,
-      blockStartDay: d.block.startDay === 1 ? null : d.block.startDay,
-      blockExtraMode: table.extraMode,
-      blockExtraPrice: table.extraPrice,
-    });
-  }
-  return { rentPrice, pricingSchemaVersion: 2, pricingOptions: options };
-}
-
-/** "Tắt giá theo khối ngày": back to a plain price, the per-day one (the first day's price when there is none) */
-export function turnOff(d: PricingDraft): PricingDraft {
-  if (d.perDay != null) return { ...d, mode: 'DAILY' };
-  if (d.perRental != null) return { ...d, mode: 'FIXED' };
-  return { ...d, mode: 'DAILY', perDay: d.block.tiers[0] };
-}
-
-/** Short summary for the product form row: how many blocks and the extra rule */
-export function blockSummary(b: BlockDraft): { count: number; first: number | null; extraMode: BlockExtraMode; extraPrice: number | null } {
-  return { count: b.tiers.length, first: b.tiers[0], extraMode: b.extraMode, extraPrice: b.extraPrice };
-}
-
-export const sameDraft = (a: PricingDraft, b: PricingDraft): boolean => JSON.stringify(a) === JSON.stringify(b);

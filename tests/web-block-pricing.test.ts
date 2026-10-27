@@ -12,14 +12,11 @@ jest.mock('@rentalshop/utils', () => ({
 import golden from './fixtures/block-pricing-golden.json';
 import {
   addDay,
-  buildSavePayload,
   draftFromProduct,
-  draftProblem,
   previewFor,
   removeLastDay,
   savedBlock,
   setTier,
-  turnOff,
 } from '../apps/client/app/products/block-model';
 import {
   buildPayload,
@@ -92,43 +89,6 @@ describe('block-model: the detail card', () => {
     expect(removeLastDay(b).tiers).toEqual([80000]);
     let full = { ...b, tiers: Array(31).fill(1) };
     expect(addDay(full).tiers).toHaveLength(31);
-  });
-
-  it('save body: BLOCK is the default option, rentPrice = day 1, schema version 2', () => {
-    const body = buildSavePayload(draftFromProduct(product))!;
-    expect(body.pricingSchemaVersion).toBe(2);
-    expect(body.rentPrice).toBe(80000);
-    expect(body.pricingOptions).toEqual([
-      { type: 'BLOCK', price: 80000, isDefault: true, blockTiers: [80000, 100000, 120000], blockStartDay: null, blockExtraMode: 'EXTRA_PER_DAY', blockExtraPrice: 20000 },
-    ]);
-  });
-
-  it('an empty box blocks the save; HOLD_LAST needs no extra price', () => {
-    const d = draftFromProduct(product);
-    expect(draftProblem({ ...d, block: setTier(d.block, 1, null) })).toBe('tierEmpty');
-    expect(buildSavePayload({ ...d, block: setTier(d.block, 1, null) })).toBeNull();
-    expect(draftProblem({ ...d, block: { ...d.block, extraPrice: null } })).toBe('extraEmpty');
-    expect(draftProblem({ ...d, block: { ...d.block, extraMode: 'HOLD_LAST', extraPrice: null } })).toBeNull();
-    expect(draftProblem({ ...d, mode: 'FIXED', perRental: null })).toBe('priceEmpty');
-  });
-
-  it('turning off saves a plain price and sends no BLOCK option', () => {
-    const d = draftFromProduct(product);
-    const off = turnOff(d);
-    expect(off.mode).toBe('DAILY');
-    expect(off.perDay).toBe(80000);
-    const body = buildSavePayload(off)!;
-    expect(body.pricingSchemaVersion).toBe(2);
-    expect(body.pricingOptions).toEqual([{ type: 'DAILY', price: 80000, isDefault: true }]);
-  });
-
-  it('plain modes keep both prices, the chosen one is the default', () => {
-    const body = buildSavePayload({ mode: 'FIXED', perRental: 300000, perDay: 90000, block: draftFromProduct(product).block })!;
-    expect(body.pricingOptions).toEqual([
-      { type: 'FIXED', price: 300000, isDefault: true },
-      { type: 'DAILY', price: 90000, isDefault: false },
-    ]);
-    expect(body.rentPrice).toBe(300000);
   });
 });
 
