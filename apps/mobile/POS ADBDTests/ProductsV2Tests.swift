@@ -935,7 +935,7 @@ final class ProductFormKeyboardTests: XCTestCase {
     func testPriceFieldsHaveNoDoneBarAndTheKeyboardStillCloses() throws {
         let form = try merchantForm()
         let numeric = fields(form.view).filter { $0.keyboardType == .numberPad }
-        XCTAssertEqual(numeric.count, 5, "per rental, per day, sale, deposit, cost (#887)")
+        XCTAssertEqual(numeric.count, 6, "per rental, sale, deposit, cost (#887), and the day table's first day and extra price (#1249)")
         numeric.forEach { XCTAssertNil($0.inputAccessoryView, "\($0.accessibilityLabel ?? "field") keeps no Done bar") }
         let taps = (form.view.gestureRecognizers ?? []).compactMap { $0 as? UITapGestureRecognizer }
         XCTAssertTrue(taps.contains { !$0.cancelsTouchesInView }, "a tap outside a field ends editing (fields still take taps)")
@@ -962,15 +962,15 @@ final class ProductFormKeyboardTests: XCTestCase {
         window.rootViewController = form
         window.makeKeyAndVisible()
         defer { window.isHidden = true }
-        let perDay = try XCTUnwrap(fields(form.view).first { $0.accessibilityLabel == "products.form.perDay".localized() })
-        XCTAssertTrue(perDay.becomeFirstResponder())
+        let perRental = try XCTUnwrap(fields(form.view).first { $0.accessibilityLabel == "products.form.perRental".localized() })
+        XCTAssertTrue(perRental.becomeFirstResponder())
 
-        perDay.insertText("3")
-        perDay.insertText("0")
-        XCTAssertEqual(perDay.text, "30")
-        ["0", "0", "0"].forEach { perDay.insertText($0) }
-        XCTAssertEqual(perDay.text, "30.000")
-        perDay.resignFirstResponder()
+        perRental.insertText("3")
+        perRental.insertText("0")
+        XCTAssertEqual(perRental.text, "30")
+        ["0", "0", "0"].forEach { perRental.insertText($0) }
+        XCTAssertEqual(perRental.text, "30.000")
+        perRental.resignFirstResponder()
     }
 
     func testCustomerPhoneHasADoneBar() {
