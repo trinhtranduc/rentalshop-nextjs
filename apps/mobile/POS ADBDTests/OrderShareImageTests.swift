@@ -336,6 +336,9 @@ final class OrderShareImageTests: XCTestCase {
             ("ban", model(Self.sale())),
             ("nhap", model(Self.draft())),
             ("thue-en", model(Self.rent(), en, qr: true)),
+            ("coc-mot-lan-khoi", model(Self.stagedRent(plan: false))),
+            ("coc-giai-doan-khoi", model(Self.stagedRent(plan: true))),
+            ("coc-giai-doan-khoi-en", model(Self.stagedRent(plan: true), en)),
         ]
         for (name, fixture) in fixtures {
             let image = OrderShareRenderer.image(fixture)
@@ -354,6 +357,26 @@ final class OrderShareImageTests: XCTestCase {
     }
 
     // MARK: - #1252 staged deposit and day-block label
+
+    /// Rental with a day-block line (3 days + 2 extra) and, when `plan`, three deposit stages (collected, today, rest)
+    static func stagedRent(plan: Bool) -> OrderShareSource {
+        var source = rent()
+        source.items = [.init(name: "Váy cưới đuôi cá trơn", quantity: 1, total: 160_000, note: "Size M",
+                              formula: "120.000 (3 ngày) + 2 × 20.000 = 160.000", blockSummary: "Khối 3 ngày + 2 ngày thêm"),
+                        .init(name: "Vương miện ngọc trai", quantity: 2, total: 150_000)]
+        source.total = 310_000
+        source.deposit = 93_000
+        guard plan else { return source }
+        source.hasDepositPlan = true
+        source.stages = [
+            OrderInstallment(key: "i1", label: "Giữ chỗ", percent: 30, amount: 93_000, dueDateKey: "2026-10-05", status: "PAID",
+                             collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: 93_000),
+            OrderInstallment(key: "i2", label: "Chốt mẫu", percent: 40, amount: 124_000, dueDateKey: "2026-10-07", status: "DUE_TODAY"),
+            OrderInstallment(key: "rest", label: "rest", percent: 30, amount: 93_000, dueDateKey: "2026-10-16", status: "UPCOMING"),
+        ]
+        source.stageSummary = InstallmentSummary(planned: 310_000, collected: 93_000, remaining: 217_000, percentCollected: 30)
+        return source
+    }
 
     /// 30% collected 26/10 (00:30 Vietnam time), 40% due today, the rest at hand-over, one void stage
     static let stages: [OrderInstallment] = [
