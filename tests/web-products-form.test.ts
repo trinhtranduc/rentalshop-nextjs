@@ -83,7 +83,7 @@ describe('pricing', () => {
   });
 
   it('builds priced options with one default, falling back to the priced mode', () => {
-    const of = (perRental: number | null, perDay: number | null) => buildPricingOptions({ perRental, perDay, dayKind: 'DAY', block: null });
+    const of = (perRental: number | null, perDay: number | null) => buildPricingOptions({ perRental, perDay, block: null });
     expect(of(250, 150)).toEqual([
       { type: 'FIXED', price: 250, isDefault: true },
       { type: 'DAILY', price: 150, isDefault: false },
@@ -113,7 +113,6 @@ describe('form state', () => {
       categoryId: 8,
       perRental: 250000,
       perDay: 150000,
-      dayKind: 'DAY',
       deposit: 500000,
       salePrice: null,
       costPrice: 0,
@@ -344,11 +343,10 @@ describe('0đ prices (#951)', () => {
     const f = formFromProduct({ ...product, salePrice: 0, pricingOptions: [{ type: 'FIXED', price: 0, isDefault: true }] }, outlets, categories);
     expect(f.perRental).toBe(0);
     expect(f.perDay).toBeNull();
-    expect(f.dayKind).toBe('DAY');
   });
 
   it('builds a 0đ option, and a default on it', () => {
-    const of = (perRental: number | null, perDay: number | null) => buildPricingOptions({ perRental, perDay, dayKind: 'DAY', block: null });
+    const of = (perRental: number | null, perDay: number | null) => buildPricingOptions({ perRental, perDay, block: null });
     expect(of(0, null)).toEqual([{ type: 'FIXED', price: 0, isDefault: true }]);
     expect(of(null, 0)).toEqual([{ type: 'DAILY', price: 0, isDefault: true }]);
     expect(of(0, 50)).toEqual([

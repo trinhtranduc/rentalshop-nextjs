@@ -1,12 +1,11 @@
 /**
- * #1249 web product form, design fixed by the owner's mockup: "Thuê theo lần" always, then ONE of "Thuê theo ngày" (one
- * day price) or "Giá theo khối ngày" (the table, set up on its own screen). Pure model; runs under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
+ * #1249 web product form, design the owner fixed last (mockup v179): "Theo lần", "Theo mỗi ngày" and "Theo block ngày"
+ * all exist together and are all sent. Pure model; runs under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import { describe, expect, it } from '@jest/globals';
 import {
   buildPayload,
   buildPricingOptions,
-  chooseDayKind,
   emptyForm,
   formFromProduct,
   saveBlockTable,
@@ -21,13 +20,13 @@ const blockOpt = { type: 'BLOCK', price: 80000, isDefault: false, blockTiers: ta
 const fresh = () => ({ ...emptyForm(outlets, categories, '1'), name: 'Áo', totalStock: 1, outletStock: [{ outletId: 1, stock: 1 }] });
 const send = (f: ReturnType<typeof fresh>, extra = {}) => buildPayload(f, { canEditPricing: true, ...extra }) as any;
 
-describe('new product', () => {
-  it('starts on Thuê theo ngày with empty boxes (mockup case 1)', () => {
+describe('new product (mockup case 1)', () => {
+  it('starts with three empty prices: no day price, block not set up', () => {
     const f = fresh();
-    expect(f.dayKind).toBe('DAY');
     expect(f.perRental).toBeNull();
     expect(f.perDay).toBeNull();
     expect(f.block).toBeNull();
+    expect(f).not.toHaveProperty('dayKind');
   });
 
   it('the default for new orders is always Theo lần (FIXED isDefault)', () => {
@@ -40,29 +39,32 @@ describe('new product', () => {
     expect(body.pricingSchemaVersion).toBe(2);
   });
 
-  it('without a Theo lần price the day price is the default', () => {
+  it('without a Theo lần price the next price is the default', () => {
     expect(send({ ...fresh(), perDay: 80000 }).pricingOptions).toEqual([{ type: 'DAILY', price: 80000, isDefault: true }]);
     expect(send(fresh()).pricingOptions).toEqual([]);
   });
 });
 
-describe('radio: Thuê theo ngày | Giá theo khối ngày', () => {
-  it('Thuê theo ngày sends FIXED + DAILY and no BLOCK', () => {
-    const f = { ...fresh(), perRental: 150000, perDay: 80000, block: table };
-    const body = send(f);
-    expect(body.pricingOptions.map((o: any) => o.type)).toEqual(['FIXED', 'DAILY']);
-  });
-
-  it('Giá theo khối ngày sends FIXED + BLOCK and no flat DAILY', () => {
-    const f = saveBlockTable({ ...fresh(), perRental: 150000, perDay: 80000 }, table);
-    expect(f.dayKind).toBe('BLOCK');
-    const body = send(f);
+describe('three prices at once', () => {
+  it('Theo lần + Theo mỗi ngày + Theo block ngày: the payload has FIXED + DAILY + BLOCK, FIXED is the default', () => {
+    const body = send(saveBlockTable({ ...fresh(), perRental: 150000, perDay: 80000 }, table));
     expect(body.pricingOptions).toEqual([
       { type: 'FIXED', price: 150000, isDefault: true },
+      { type: 'DAILY', price: 80000, isDefault: false },
       { type: 'BLOCK', price: 80000, isDefault: false, blockTiers: [80000, 100000, 120000], blockStartDay: null, blockExtraMode: 'EXTRA_PER_DAY', blockExtraPrice: 20000 },
     ]);
     expect(body.rentPrice).toBe(150000);
     expect(body.pricingSchemaVersion).toBe(2);
+    expect(body.pricingOptions.filter((o: any) => o.isDefault)).toHaveLength(1);
+  });
+
+  it('an empty day box sends no DAILY, the table still goes', () => {
+    const body = send(saveBlockTable({ ...fresh(), perRental: 150000 }, table));
+    expect(body.pricingOptions.map((o: any) => o.type)).toEqual(['FIXED', 'BLOCK']);
+  });
+
+  it('a typed 0 in the day box is a 0đ price', () => {
+    expect(send({ ...fresh(), perRental: 5, perDay: 0 }).pricingOptions.map((o: any) => o.type)).toEqual(['FIXED', 'DAILY']);
   });
 
   it('only a table: BLOCK is the default and rentPrice is day 1', () => {
@@ -73,83 +75,65 @@ describe('radio: Thuê theo ngày | Giá theo khối ngày', () => {
     expect(body.rentPrice).toBe(80000);
   });
 
-  it('switching back and forth keeps what was typed', () => {
-    let f = { ...fresh(), perRental: 150000, perDay: 80000 };
-    f = saveBlockTable(f, table);
-    const day = chooseDayKind(f, 'DAY').form;
-    expect(day.dayKind).toBe('DAY');
-    expect(day.perDay).toBe(80000);
-    expect(day.block).toEqual(table);
-    const again = chooseDayKind(day, 'BLOCK');
-    expect(again.openSetup).toBe(false);
-    expect(again.form.dayKind).toBe('BLOCK');
-    expect(again.form.block).toEqual(table);
+  it('a day price and a table with no Theo lần: DAILY is the default, BLOCK is not', () => {
+    const body = send(saveBlockTable({ ...fresh(), perDay: 80000 }, table));
+    expect(body.pricingOptions.map((o: any) => [o.type, o.isDefault])).toEqual([['DAILY', true], ['BLOCK', false]]);
   });
 
-  it('choosing Giá theo khối ngày without a table opens the setup and keeps the previous choice until it is saved', () => {
-    const f = { ...fresh(), perDay: 80000 };
-    const r = chooseDayKind(f, 'BLOCK');
-    expect(r.openSetup).toBe(true);
-    expect(r.form.dayKind).toBe('DAY');
-    expect(r.form).toEqual(f);
-    // cancel = keep r.form; saving = saveBlockTable
-    expect(saveBlockTable(r.form, table).dayKind).toBe('BLOCK');
+  it('an incomplete table is never sent', () => {
+    const half: BlockTable = { ...table, tiers: [80000, null] };
+    expect(send(saveBlockTable({ ...fresh(), perRental: 1 }, half)).pricingOptions.map((o: any) => o.type)).toEqual(['FIXED']);
   });
 
-  it('Tắt giá theo khối ngày = back to Thuê theo ngày, the day price stays', () => {
-    const off = turnOffBlock(saveBlockTable({ ...fresh(), perDay: 80000 }, table));
-    expect(off.dayKind).toBe('DAY');
+  it('Tắt giá theo khối ngày: no BLOCK in the payload, the other two stay, schema 2 so the API drops the saved table', () => {
+    const off = turnOffBlock(saveBlockTable({ ...fresh(), perRental: 150000, perDay: 80000 }, table));
     expect(off.block).toBeNull();
     expect(off.perDay).toBe(80000);
-    expect(send(off).pricingOptions.map((o: any) => o.type)).toEqual(['DAILY']);
+    const body = send(off, { productId: 1 });
+    expect(body.pricingOptions.map((o: any) => o.type)).toEqual(['FIXED', 'DAILY']);
+    expect(body.pricingSchemaVersion).toBe(2);
   });
 });
 
 describe('opening a saved product', () => {
   const base = { id: 1, name: 'Áo', rentPrice: 150000, outletStock: [] };
-  it('with a table: Giá theo khối ngày', () => {
-    const f = formFromProduct({ ...base, pricingOptions: [{ type: 'FIXED', price: 150000, isDefault: true }, blockOpt] }, outlets, categories);
-    expect(f.dayKind).toBe('BLOCK');
-    expect(f.block).toEqual(table);
+  it('all three saved (mockup case 2): three prices shown, block summary has the table', () => {
+    const f = formFromProduct({ ...base, pricingOptions: [{ type: 'FIXED', price: 150000, isDefault: true }, { type: 'DAILY', price: 80000 }, blockOpt] }, outlets, categories);
     expect(f.perRental).toBe(150000);
+    expect(f.perDay).toBe(80000);
+    expect(f.block).toEqual(table);
+    expect(send(f, { productId: 1 }).pricingOptions.map((o: any) => o.type)).toEqual(['FIXED', 'DAILY', 'BLOCK']);
   });
-  it('old DAILY product: Thuê theo ngày with its price, never turned into a table', () => {
+  it('old DAILY product: the day box has its price, no table is invented', () => {
     const f = formFromProduct({ ...base, pricingOptions: [{ type: 'FIXED', price: 150000, isDefault: false }, { type: 'DAILY', price: 200000, isDefault: true }] }, outlets, categories);
-    expect(f.dayKind).toBe('DAY');
     expect(f.perDay).toBe(200000);
     expect(f.block).toBeNull();
-    const body = send(f, { productId: 1 });
-    expect(body.pricingOptions).toEqual([
+    expect(send(f, { productId: 1 }).pricingOptions).toEqual([
       { type: 'FIXED', price: 150000, isDefault: true },
       { type: 'DAILY', price: 200000, isDefault: false },
     ]);
   });
-  it('only Theo lần: Thuê theo ngày is chosen with an empty day box', () => {
+  it('only Theo lần (mockup case 4): day box empty, block "Chưa cài", only FIXED is sent', () => {
     const f = formFromProduct({ ...base, pricingOptions: [{ type: 'FIXED', price: 150000, isDefault: true }] }, outlets, categories);
-    expect(f.dayKind).toBe('DAY');
     expect(f.perDay).toBeNull();
+    expect(f.block).toBeNull();
     expect(send(f, { productId: 1 }).pricingOptions).toEqual([{ type: 'FIXED', price: 150000, isDefault: true }]);
   });
-  it('a product with a table AND a day price keeps the day price in memory, sends only the table', () => {
+  it('a table with a day price and no Theo lần: both are kept', () => {
     const f = formFromProduct({ ...base, pricingOptions: [{ type: 'DAILY', price: 90000 }, blockOpt] }, outlets, categories);
-    expect(f.dayKind).toBe('BLOCK');
     expect(f.perDay).toBe(90000);
-    expect(send(f, { productId: 1 }).pricingOptions.map((o: any) => o.type)).toEqual(['BLOCK']);
+    expect(send(f, { productId: 1 }).pricingOptions.map((o: any) => o.type)).toEqual(['DAILY', 'BLOCK']);
   });
 });
 
 describe('payload details', () => {
-  it('edit from a table back to Thuê theo ngày still says schema 2, so the API drops the saved table', () => {
-    const body = send(turnOffBlock(saveBlockTable({ ...fresh(), perDay: 80000 }, table)), { productId: 1 });
-    expect(body.pricingSchemaVersion).toBe(2);
-  });
   it('no price rights: no pricing keys at all', () => {
     const body = buildPayload({ ...fresh(), perRental: 1 }, { canEditPricing: false }) as any;
     expect(body).not.toHaveProperty('pricingOptions');
     expect(body).not.toHaveProperty('pricingSchemaVersion');
   });
   it('buildPricingOptions is the one place that decides what is sent', () => {
-    expect(buildPricingOptions({ perRental: 0, perDay: null, dayKind: 'DAY', block: null })).toEqual([{ type: 'FIXED', price: 0, isDefault: true }]);
+    expect(buildPricingOptions({ perRental: 0, perDay: null, block: null })).toEqual([{ type: 'FIXED', price: 0, isDefault: true }]);
   });
 });
 
