@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -43,6 +44,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CurrentOutlet
+import com.anyrent.pos.domain.ShopTime
+import com.anyrent.pos.domain.overview.CollateralSections
 import com.anyrent.pos.domain.overview.OverviewLogic
 import com.anyrent.pos.domain.overview.IncomeRow
 import com.anyrent.pos.domain.overview.OverviewRelated
@@ -64,14 +67,17 @@ private const val PAGE_SIZE = 200
 private const val MAX_PAGES = 50
 
 /** Every page of every bucket of [kind]: the total must equal the figure, so nothing is left unloaded */
-private fun loadRelated(kind: OverviewRelatedKind, startDate: String, endDate: String): Result<List<RelatedRow>> = runCatching {
+private fun loadRelated(kind: OverviewRelatedKind, startDate: String, endDate: String): Result<RelatedLoad> = runCatching {
     val api = ApiClient.get()
     // #938: Thế chân first lists the orders holding collateral now (the "đang giữ N đơn" chip)
+    var heldCount: Int? = null
     val held = if (kind != OverviewRelatedKind.COLLATERAL) emptyList() else {
         val json = api.authedGet(OverviewLogic.outletOperationsPath(CurrentOutlet.merchantFilterId) + "&collateralHeld=1")
-        OverviewRelated.heldRows(json.optJSONObject("data") ?: org.json.JSONObject())
+        val data = json.optJSONObject("data") ?: org.json.JSONObject()
+        heldCount = OverviewRelated.heldCount(data)
+        OverviewRelated.heldRows(data)
     }
-    held + kind.buckets.flatMap { bucket ->
+    RelatedLoad(held + kind.buckets.flatMap { bucket ->
         val items = mutableListOf<IncomeRow>()
         for (page in 0 until MAX_PAGES) {
             val (rows, hasMore) = api.incomeRows(startDate, endDate, bucket, offset = page * PAGE_SIZE, limit = PAGE_SIZE, outletId = CurrentOutlet.merchantFilterId).getOrThrow()
@@ -79,13 +85,16 @@ private fun loadRelated(kind: OverviewRelatedKind, startDate: String, endDate: S
             if (!hasMore || rows.isEmpty()) break
         }
         OverviewRelated.rows(kind, items)
-    }
+    }, heldCount)
 }
 
-data class RelatedState(val rows: List<RelatedRow>? = null, val error: String? = null)
+/** The rows, and (Thế chân) how many orders the API says are held: its list is cut at 500 */
+data class RelatedLoad(val rows: List<RelatedRow>, val heldCount: Int? = null)
+
+data class RelatedState(val rows: List<RelatedRow>? = null, val heldCount: Int? = null, val error: String? = null)
 
 /** Kept across a trip to an order detail, so the list does not reload on back */
-class OverviewRelatedViewModel(private val loader: suspend () -> Result<List<RelatedRow>>) : ViewModel() {
+class OverviewRelatedViewModel(private val loader: suspend () -> Result<RelatedLoad>) : ViewModel() {
     private val _state = MutableStateFlow(RelatedState())
     val state: StateFlow<RelatedState> = _state.asStateFlow()
 
@@ -93,12 +102,12 @@ class OverviewRelatedViewModel(private val loader: suspend () -> Result<List<Rel
         if (_state.value.rows != null) return
         viewModelScope.launch {
             loader()
-                .onSuccess { _state.value = RelatedState(rows = it) }
+                .onSuccess { _state.value = RelatedState(rows = it.rows, heldCount = it.heldCount) }
                 .onFailure { _state.value = RelatedState(error = it.message.orEmpty()) }
         }
     }
 
-    class Factory(private val loader: suspend () -> Result<List<RelatedRow>>) : ViewModelProvider.Factory {
+    class Factory(private val loader: suspend () -> Result<RelatedLoad>) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = OverviewRelatedViewModel(loader) as T
     }
@@ -156,6 +165,12 @@ fun OverviewRelatedScreen(
             }
             rows == null -> Message(state.error.orEmpty().ifBlank { stringResource(R.string.calendar_v2_error) })
             rows.isEmpty() -> Message(stringResource(R.string.overview_v2_related_empty))
+            kind == OverviewRelatedKind.COLLATERAL -> {
+                // #1273: two sections with their own totals, in the list (no sticky total)
+                val sections = OverviewRelated.sections(rows, state.heldCount, rows)
+                val today = OverviewRelated.flowIsToday(startDate, endDate, ShopTime.today().toString())
+                CollateralTwoParts(sections, today, startDate, endDate, onOpenOrder, Modifier.weight(1f).fillMaxWidth())
+            }
             else -> {
                 LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                     itemsIndexed(rows, key = { index, row -> "$index-${row.id}" }) { _, row ->
@@ -175,6 +190,87 @@ fun OverviewRelatedScreen(
             }
         }
     }
+}
+
+private val NoteFill = Color(0xFFFFFBEB)
+private val SectionFill = Color(0xFFEFF6FF)
+
+/** #1273: "Đang giữ thế chân" (a state) and "Phát sinh hôm nay" (+ received, − returned), each with its totals (iOS: the same list) */
+@Composable
+private fun CollateralTwoParts(
+    s: CollateralSections,
+    today: Boolean,
+    startDate: String,
+    endDate: String,
+    onOpenOrder: (Int) -> Unit,
+    modifier: Modifier,
+) {
+    val day = if (startDate == endDate) OverviewRelated.dayMonth(startDate)
+    else "${OverviewRelated.dayMonth(startDate)} – ${OverviewRelated.dayMonth(endDate)}"
+    val heldMoney = if (s.heldTotalKnown) formatMoneyVnd(s.heldTotal) else "—"
+    LazyColumn(modifier) {
+        item(key = "note") {
+            Text(
+                stringResource(if (today) R.string.overview_v2_related_collateral_note else R.string.overview_v2_related_collateral_note_period),
+                fontSize = DS.TextSize.Secondary, color = DS.Colors.Text,
+                modifier = Modifier.fillMaxWidth().background(NoteFill).padding(horizontal = 16.dp, vertical = 12.dp).testTag("related.note"),
+            )
+        }
+        item(key = "held-head") {
+            SectionHeader(stringResource(R.string.overview_v2_related_collateral_held_title), stringResource(R.string.overview_v2_related_collateral_held_hint))
+        }
+        itemsIndexed(s.held, key = { index, row -> "held-$index-${row.id}" }) { _, row ->
+            RelatedRowItem(row, signed = false, onClick = { onOpenOrder(row.id) })
+            HorizontalDivider(color = DS.Colors.Border)
+        }
+        item(key = "held-total") {
+            TotalLine(stringResource(R.string.overview_v2_related_collateral_held_total, heldMoney, s.heldOrders), "related.held.total")
+        }
+        item(key = "flow-head") {
+            SectionHeader(
+                if (today) stringResource(R.string.overview_v2_related_collateral_flow_title, day)
+                else stringResource(R.string.overview_v2_related_collateral_flow_title_period, day),
+                stringResource(if (today) R.string.overview_v2_related_collateral_flow_hint else R.string.overview_v2_related_collateral_flow_hint_period),
+            )
+        }
+        itemsIndexed(s.received + s.returned, key = { index, row -> "flow-$index-${row.id}" }) { _, row ->
+            RelatedRowItem(row, signed = true, onClick = { onOpenOrder(row.id) })
+            HorizontalDivider(color = DS.Colors.Border)
+        }
+        item(key = "flow-in") {
+            TotalLine(stringResource(R.string.overview_v2_related_collateral_flow_in, formatAmount(s.receivedTotal, true), s.receivedOrders), "related.flow.in")
+        }
+        item(key = "flow-out") {
+            TotalLine(stringResource(R.string.overview_v2_related_collateral_flow_out, formatAmount(-s.returnedTotal, true), s.returnedOrders), "related.flow.out")
+        }
+        item(key = "flow-net") {
+            // keeps the old test tag: it is the number of the tile (received − returned)
+            TotalLine(
+                stringResource(
+                    if (today) R.string.overview_v2_related_collateral_flow_net else R.string.overview_v2_related_collateral_flow_net_period,
+                    formatAmount(s.net, true),
+                ),
+                "related.total", Modifier.navigationBarsPadding(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, hint: String) {
+    Column(Modifier.fillMaxWidth().background(SectionFill).padding(horizontal = 16.dp, vertical = 10.dp)) {
+        Text(title, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text, modifier = Modifier.semantics { heading() })
+        Text(hint, fontSize = DS.TextSize.Pill, color = DS.Colors.TextMuted)
+    }
+}
+
+@Composable
+private fun TotalLine(text: String, tag: String, modifier: Modifier = Modifier) {
+    Text(
+        text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+        modifier = Modifier.fillMaxWidth().background(V2Colors.Section).then(modifier)
+            .padding(horizontal = 16.dp, vertical = 12.dp).testTag(tag).semantics { contentDescription = text },
+    )
 }
 
 private fun formatAmount(amount: Double, signed: Boolean): String = when {

@@ -2334,4 +2334,18 @@
     <string name="settings_v2_printing_no_printer">no printer chosen</string>
     <string name="settings_v2_printing_group_slip">Slip</string>
     <string name="settings_v2_printing_group_printer">Printer</string>
+    <!-- #1273 Thế chân: two sections -->
+    <string name="overview_v2_related_collateral_note">The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.</string>
+    <string name="overview_v2_related_collateral_note_period">The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.</string>
+    <string name="overview_v2_related_collateral_held_title">Collateral held</string>
+    <string name="overview_v2_related_collateral_held_hint">Collateral the shop holds for orders not yet returned.</string>
+    <string name="overview_v2_related_collateral_held_total">Total held: %1$s · %2$d orders</string>
+    <string name="overview_v2_related_collateral_flow_title">Moved today (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_title_period">Moved in the period (%1$s)</string>
+    <string name="overview_v2_related_collateral_flow_hint">Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.</string>
+    <string name="overview_v2_related_collateral_flow_hint_period">Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.</string>
+    <string name="overview_v2_related_collateral_flow_in">Received at hand-over: %1$s (%2$d orders)</string>
+    <string name="overview_v2_related_collateral_flow_out">Returned at return: %1$s (%2$d orders)</string>
+    <string name="overview_v2_related_collateral_flow_net">Shop holds more today: %1$s</string>
+    <string name="overview_v2_related_collateral_flow_net_period">Shop holds more in the period: %1$s</string>
 </resources>
