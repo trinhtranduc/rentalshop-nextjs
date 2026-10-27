@@ -9,6 +9,7 @@ import React from 'react';
 import { cardClass, primaryBtn, type Money } from '../orders/list/parts';
 import {
   canEditPlan,
+  cancelledOutcome,
   canVoidStage,
   chipTone,
   collectedDayKey,
@@ -60,6 +61,7 @@ export function InstallmentsCard({
   const collected = order.installmentSummary?.collected ?? 0;
   const remaining = order.installmentSummary?.remaining ?? 0;
   const next = nextStageToCollect(order);
+  const outcome = cancelledOutcome(order);
   const editable = canEditPlan(order, role);
   const meta = (stage: OrderInstallment) => {
     if (stage.paidAmount > 0) return td('paidMeta', { percent: stage.percent, day: shortDay(collectedDayKey(stage.collectedAt, toDayKey)) });
@@ -91,6 +93,18 @@ export function InstallmentsCard({
           <span className="text-xl font-bold tabular-nums text-ar-ink">{money(remaining)}</span>
         </span>
       </div>
+      {outcome && (
+        <dl className="m-0 flex flex-col gap-1.5 border-t border-ar-subtle pt-2.5 text-[15px]" data-cancel-outcome>
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-ar-ink">{td('cancelKept')}</dt>
+            <dd className="m-0 font-bold tabular-nums text-ar-ink" data-cancel-kept>{money(outcome.kept)}</dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-ar-ink">{td('cancelRefund')}</dt>
+            <dd className="m-0 font-bold tabular-nums text-ar-done" data-cancel-refunded>{money(outcome.refund)}</dd>
+          </div>
+        </dl>
+      )}
       <ul className="m-0 flex list-none flex-col p-0">
         {list.map((stage) => (
           <li key={stage.key} className="flex items-center gap-3 border-t border-ar-subtle py-2.5 first:border-t-0" data-stage={stage.key} data-stage-status={stage.status}>
