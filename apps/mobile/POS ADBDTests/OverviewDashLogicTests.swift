@@ -417,6 +417,15 @@ final class OverviewDashLogicTests: XCTestCase {
 
     // MARK: - Top lists and the Hôm nay card (#620)
 
+    func testTopProductRowsCarryThePhoto() {
+        let rows = OverviewDashLogic.topProductRows([
+            OverviewReport.TopProduct(id: 1, name: "A", rentalCount: 1, totalRevenue: 10, image: "https://cdn.example/a.jpg"),
+            OverviewReport.TopProduct(id: 2, name: "B", rentalCount: 1, totalRevenue: 5, image: nil),
+        ])
+        XCTAssertEqual(rows.map(\.image), ["https://cdn.example/a.jpg", nil])
+        XCTAssertNil(OverviewDashLogic.topCustomerRows([OverviewReport.TopCustomer(id: 1, name: "X", orderCount: 1, totalSpent: 5)]).first?.image)
+    }
+
     func testTopProductRowsKeepFiveAndScaleToTheFirst() {
         let products = (1...7).map { n in
             OverviewReport.TopProduct(id: n, name: "P\(n)", rentalCount: n, totalRevenue: Double(8 - n) * 1_000_000, image: nil)

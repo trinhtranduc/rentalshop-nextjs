@@ -65,6 +65,7 @@ import com.anyrent.pos.domain.overview.OverviewChipTone
 import com.anyrent.pos.domain.overview.OverviewDashBar
 import com.anyrent.pos.domain.overview.OverviewDashLogic
 import com.anyrent.pos.domain.overview.OverviewForecast
+import com.anyrent.pos.ui.home.v2.ProductThumb
 import com.anyrent.pos.ui.theme.DS
 import kotlin.math.max
 import kotlin.math.min
@@ -252,16 +253,25 @@ internal fun OVCounter(title: String, value: String, valueColor: Color, dot: Col
     }
 }
 
-/** Top sản phẩm / Top khách hàng row: name and amount, then a thin bar (against the top row) and the count */
+/**
+ * Top sản phẩm / Top khách hàng row: name and amount, then a thin bar (against the top row) and the count.
+ * [showPhoto] (products, #1243): the product's first photo, or the app's placeholder, in front.
+ */
 @Composable
-internal fun OVTopRow(name: String, amount: String, subtitle: String, ratio: Double, color: Color, onClick: (() -> Unit)?) {
-    Column(
+internal fun OVTopRow(
+    name: String, amount: String, subtitle: String, ratio: Double, color: Color, onClick: (() -> Unit)?,
+    showPhoto: Boolean = false, image: String? = null,
+) {
+    Row(
         Modifier.fillMaxWidth().heightIn(min = DS.TouchTarget)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .semantics(mergeDescendants = true) {}
             .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+    if (showPhoto) ProductThumb(image, 36.dp, 8.dp)
+    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 name.ifBlank { "—" }, fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = OV.Ink,
@@ -273,6 +283,7 @@ internal fun OVTopRow(name: String, amount: String, subtitle: String, ratio: Dou
             OVTrackBar(0.0, ratio, color, false, Modifier.weight(1f).height(4.dp))
             Text(subtitle, fontSize = DS.TextSize.Pill, color = OV.Muted, maxLines = 1)
         }
+    }
     }
 }
 

@@ -742,6 +742,8 @@ export interface TopBar {
   value: number;
   /** 0–100 of the highest value in the list */
   width: number;
+  /** #1243 first photo of a top product; null for customers or a product without one */
+  image: string | null;
 }
 
 /** Top products as bars, in the API's order (by order value), at most `limit`. */
@@ -750,7 +752,8 @@ export function topBars(products: TopProductLike[] | null | undefined, limit = 5
   const max = Math.max(0, ...list.map((p) => num(p.totalRevenue) ?? 0));
   return list.map((p) => {
     const value = num(p.totalRevenue) ?? 0;
-    return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+    const image = typeof p.image === 'string' && p.image.trim() ? p.image.trim() : null;
+    return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0, image };
   });
 }
 
@@ -760,7 +763,7 @@ export function topCustomerBars(customers: TopCustomerLike[] | null | undefined,
   const max = Math.max(0, ...list.map((c) => num(c.totalSpent) ?? 0));
   return list.map((c) => {
     const value = num(c.totalSpent) ?? 0;
-    return { id: c.id, name: c.name, rentals: num(c.orderCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+    return { id: c.id, name: c.name, rentals: num(c.orderCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0, image: null };
   });
 }
 
