@@ -9,8 +9,6 @@
 import Foundation
 
 enum SettingsV2Item: Equatable {
-    /// #937: the inbox, moved here from the Home bell; #1259: its own row under the name card
-    case notifications
     /// #1259 CỬA HÀNG: Thông tin cửa hàng (with Tiền tệ), Thu tiền (bank accounts, deposit, stage templates,
     /// cancellation policy), In & phiếu (receipt note + printer)
     case storeInfo, collect, printing
@@ -30,14 +28,12 @@ enum SettingsCollectRow: Equatable {
 }
 
 struct SettingsV2Section: Equatable {
-    /// `.top`: Thông báo, right under the name card, no header
-    enum Group: Equatable { case top, store, management, account }
+    enum Group: Equatable { case store, management, account }
     let group: Group
     let items: [SettingsV2Item]
 
     var title: String {
         switch group {
-        case .top: return ""
         case .store: return "settings.v2.group.store".localized()
         case .management: return "settings.v2.group.management".localized()
         case .account: return "settings.v2.group.account".localized()
@@ -46,16 +42,15 @@ struct SettingsV2Section: Equatable {
 }
 
 enum SettingsV2Logic {
-    /// Sections for a role (#1259: 3 groups, 12 lines for the owner with the name card).
+    /// Sections for a role (#1259: 3 groups, 11 rows for the owner plus the name card and the bell).
     /// - customers: the redesigned list (#387) when `showsCustomers` (flag `newCustomers`) and any customer right
     /// - users: `users.manage` (as today)
     /// - export: any export right and never OUTLET_STAFF (as today)
     /// - plan: shown once `subscriptions/status` answered
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
-    /// - notifications (#937): every role, its own row under the name card
+    /// - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
     /// - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
-        let top = SettingsV2Section(group: .top, items: [.notifications])
         let store = SettingsV2Section(group: .store, items: [.storeInfo, .collect, .printing])
 
         var management: [SettingsV2Item] = []
@@ -75,7 +70,7 @@ enum SettingsV2Logic {
         if hasPlan { account.append(.plan) }
         account += [.language, .advanced]
 
-        return [top, store, SettingsV2Section(group: .management, items: management),
+        return [store, SettingsV2Section(group: .management, items: management),
                 SettingsV2Section(group: .account, items: account)]
             .filter { !$0.items.isEmpty }
     }

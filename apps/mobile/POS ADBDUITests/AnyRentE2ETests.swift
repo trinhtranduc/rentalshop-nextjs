@@ -199,7 +199,16 @@ final class AnyRentE2ETests: XCTestCase {
             sleep(1)
         }
         openRow(["Customers", "Khách hàng"], "ipad-19-customers")
-        openRow(["Notifications", "Thông báo"], "ipad-20-notifications")
+        // #1259: Thông báo is the bell at the top right of Cài đặt
+        let bell = app.buttons["settings.notifications"]
+        if bell.exists {
+            bell.tap()
+            sleep(3)
+            e2e.shot("ipad-20-notifications")
+            back()
+            e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+            sleep(1)
+        }
         openRow(["Print & receipts", "In & phiếu"], "ipad-21-printer")
         let mine = app.descendants(matching: .any)["attendance.mine"]
         if mine.exists {
@@ -3146,6 +3155,8 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(printing.exists, "In & phiếu row")
         XCTAssertFalse(label(["Printer", "Máy in"]).exists, "no separate Máy in row")
         XCTAssertFalse(label(["Receipt note", "Ghi chú phiếu"]).exists, "no separate Ghi chú phiếu row")
+        XCTAssertTrue(app.buttons["settings.notifications"].exists, "the Thông báo bell at the top right")
+        XCTAssertFalse(label(["Notifications", "Thông báo"]).exists, "no Thông báo row")
         XCTAssertFalse(label(["Currency", "Tiền tệ"]).exists, "Tiền tệ is inside Thông tin cửa hàng")
         XCTAssertFalse(label(["Change Password", "Đổi mật khẩu"]).exists, "Đổi mật khẩu is inside the name card")
         XCTAssertFalse(label(["Delete Account", "Xoá tài khoản"]).exists, "Xoá tài khoản is inside Nâng cao")
@@ -3326,8 +3337,8 @@ final class AnyRentE2ETests: XCTestCase {
         }
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         sleep(2)
-        let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Notifications", "Thông báo"])).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 8), "#937: Thông báo row in Cài đặt")
+        let row = app.buttons["settings.notifications"]
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "#1259: the Thông báo bell in Cài đặt")
         e2e.shot("16b-settings-notifications-row")
         row.tap()
         sleep(3)
@@ -3483,7 +3494,9 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("7k-bank-form-edit")
         e2e.goBackOnce()
         sleep(1)
-        e2e.goBackOnce()
+        e2e.goBackOnce() // the list → Thu tiền
+        sleep(1)
+        e2e.goBackOnce() // Thu tiền → Cài đặt (#1259)
 
         // Printer page: the switch sits under the printer note, off by default; turned on for the shot, then back
         let printer = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Print & receipts", "In & phiếu"])).firstMatch

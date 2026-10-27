@@ -12,36 +12,35 @@ import org.junit.Test
 class SettingsRowsTest {
     @Test
     fun rowsByRole() {
-        // #1259: 12 lines for the owner = card + Thông báo + 3 + 4 + 3 (the overlap switch is not a row here)
+        // #1259: 10 rows for the owner plus the name card = 11 lines; Thông báo is the bell at the top right
         val merchant = SettingsRows.sections("MERCHANT", hasPlan = true)
-        assertEquals(listOf(SettingsGroup.TOP, SettingsGroup.STORE, SettingsGroup.MANAGEMENT, SettingsGroup.ACCOUNT), merchant.map { it.group })
-        assertEquals(listOf(SettingsItem.NOTIFICATIONS), merchant[0].items)
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), merchant[1].items)
-        assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[2].items)
-        assertEquals(listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.ADVANCED), merchant[3].items)
-        assertEquals(12, 1 + merchant.sumOf { it.items.size })
+        assertEquals(listOf(SettingsGroup.STORE, SettingsGroup.MANAGEMENT, SettingsGroup.ACCOUNT), merchant.map { it.group })
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), merchant[0].items)
+        assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
+        assertEquals(listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.ADVANCED), merchant[2].items)
+        assertEquals(11, 1 + merchant.sumOf { it.items.size })
 
         val outletAdmin = SettingsRows.sections("OUTLET_ADMIN", hasPlan = false)
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), outletAdmin[1].items)
-        assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[2].items)
-        assertEquals(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED), outletAdmin[3].items)
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), outletAdmin[0].items)
+        assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[1].items)
+        assertEquals(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED), outletAdmin[2].items)
 
         val staff = SettingsRows.sections("OUTLET_STAFF", hasPlan = true)
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), staff[1].items)
-        assertEquals(listOf(SettingsItem.CUSTOMERS), staff[2].items)
-        assertEquals(SettingsItem.PLAN, staff[3].items.first())
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING), staff[0].items)
+        assertEquals(listOf(SettingsItem.CUSTOMERS), staff[1].items)
+        assertEquals(SettingsItem.PLAN, staff[2].items.first())
 
         // ADMIN has no plan of its own
         assertFalse(SettingsRows.sections("ADMIN", hasPlan = true).flatMap { it.items }.contains(SettingsItem.PLAN))
     }
 
-    /** #1259: "Thông báo" is its own row under the name card for every role */
+    /** #1259: Thông báo is the bell at the top right, not a row, for every role */
     @Test
-    fun notificationsRowUnderTheCardForEveryRole() {
+    fun notificationsIsNotARow() {
         for (role in listOf("ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY", null)) {
-            val top = SettingsRows.sections(role, hasPlan = false).first()
-            assertEquals(role, SettingsGroup.TOP, top.group)
-            assertEquals(role, listOf(SettingsItem.NOTIFICATIONS), top.items)
+            val first = SettingsRows.sections(role, hasPlan = false).first()
+            assertEquals(role, SettingsGroup.STORE, first.group)
+            assertEquals(role, SettingsItem.STORE_INFO, first.items.first())
         }
     }
 

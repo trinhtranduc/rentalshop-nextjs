@@ -153,7 +153,7 @@ final class BankQRTests: XCTestCase {
         XCTAssertFalse(SettingsV2Logic.collectRows(role: .outletStaff).contains(.bankAccounts))
         XCTAssertFalse(SettingsV2Logic.collectRows(role: .outletInventory).contains(.bankAccounts))
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: [], hasPlan: false)
-        XCTAssertEqual(merchant[1].items, [.storeInfo, .collect, .printing])
+        XCTAssertEqual(merchant[0].items, [.storeInfo, .collect, .printing])
     }
 
     func testNewStringsExistInBothLanguages() throws {

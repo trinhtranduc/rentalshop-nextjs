@@ -6,8 +6,6 @@ import com.anyrent.pos.domain.products.CategoryRules
 import org.json.JSONObject
 
 enum class SettingsItem {
-    /** #937: the inbox, moved here from the Home bell; #1259: its own row under the name card */
-    NOTIFICATIONS,
     /** #1259 CỬA HÀNG: Thông tin cửa hàng (with Tiền tệ), Thu tiền (bank accounts, deposit, stage templates, cancellation policy), In & phiếu (receipt note + printer) */
     STORE_INFO, COLLECT, PRINTING,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
@@ -15,8 +13,7 @@ enum class SettingsItem {
     PLAN, LANGUAGE, ADVANCED,
 }
 
-/** `TOP`: Thông báo, right under the name card, no header */
-enum class SettingsGroup { TOP, STORE, MANAGEMENT, ACCOUNT }
+enum class SettingsGroup { STORE, MANAGEMENT, ACCOUNT }
 
 /** The lines of the "Thu tiền" screen (#1259) */
 enum class CollectRow {
@@ -40,13 +37,13 @@ object SettingsRows {
     const val MIN_PASSWORD_LENGTH = 6
 
     /**
-     * #1259: 3 groups, 12 lines for the owner with the name card.
+     * #1259: 3 groups, 10 rows for the owner plus the name card and the bell.
      * - customers: every role (as today)
      * - users: MERCHANT, OUTLET_ADMIN, ADMIN (`PermissionManager.canManageUsers`)
      * - export: never OUTLET_STAFF (`PermissionManager.canExport`)
      * - plan: once `subscriptions/status` answered, not for ADMIN
      * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
-     * - notifications (#937): every role, its own row under the name card
+     * - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
      * - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
@@ -61,7 +58,6 @@ object SettingsRows {
             addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED))
         }
         return listOf(
-            SettingsSection(SettingsGroup.TOP, listOf(SettingsItem.NOTIFICATIONS)),
             SettingsSection(SettingsGroup.STORE, listOf(SettingsItem.STORE_INFO, SettingsItem.COLLECT, SettingsItem.PRINTING)),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),

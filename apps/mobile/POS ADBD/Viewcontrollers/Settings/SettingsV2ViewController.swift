@@ -22,6 +22,19 @@ final class SettingsV2ViewController: BaseViewControler {
     }
 
     private let listView = UITableView(frame: .zero, style: .plain)
+    private let bellButton = UIButton(type: .system)
+    private let bellBadge: InsetLabel = {
+        let label = InsetLabel()
+        label.insets = UIEdgeInsets(top: 1, left: 6, bottom: 1, right: 6)
+        label.font = Utils.boldFont(size: DS.TextSize.pill)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.backgroundColor = UIColor(hexString: "EF4444")
+        label.layer.cornerRadius = 9
+        label.layer.masksToBounds = true
+        label.isUserInteractionEnabled = false
+        return label
+    }()
     private var groups: [SettingsV2Section] = []
     private var plan: SettingsPlan?
     /// #1259: bank accounts of the default branch, for the second text of "Thu tiền" (nil until known)
@@ -86,9 +99,30 @@ final class SettingsV2ViewController: BaseViewControler {
         view.backgroundColor = DS.Color.surface
         let title = V2.label("settings.v2.title".localized(), size: DS.TextSize.title, weight: .bold)
         view.addSubview(title)
+        // #1259: the inbox is the bell at the top right (it was the "Thông báo" row), with the unread count
+        bellButton.setImage(DS.symbol("bell", DS.Icon.lg), for: .normal)
+        bellButton.tintColor = DS.Color.text
+        bellButton.accessibilityLabel = "Notifications".localized()
+        bellButton.accessibilityIdentifier = "settings.notifications"
+        bellButton.addTarget(self, action: #selector(openInbox), for: .touchUpInside)
+        view.addSubview(bellButton)
+        bellBadge.isHidden = true
+        view.addSubview(bellBadge)
+        bellButton.snp.makeConstraints { make in
+            make.centerY.equalTo(title)
+            make.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.md)
+            make.width.height.equalTo(DS.touchTarget)
+        }
+        bellBadge.snp.makeConstraints { make in
+            make.top.equalTo(bellButton).offset(4)
+            make.leading.equalTo(bellButton.snp.centerX).offset(2)
+            make.height.equalTo(18)
+            make.width.greaterThanOrEqualTo(18)
+        }
         title.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
-            make.leading.trailing.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
+            make.leading.equalTo(view.readableColumn()).inset(DS.Spacing.lg) // #973 centered column on iPad
+            make.trailing.equalTo(bellButton.snp.leading)
         }
         listView.backgroundColor = DS.Color.surface
         listView.separatorStyle = .none
@@ -171,7 +205,16 @@ final class SettingsV2ViewController: BaseViewControler {
         guard count != unreadCount else { return }
         unreadCount = count
         guard isViewLoaded else { return }
-        listView.reloadData()
+        let badge = SettingsV2Logic.unreadBadge(count)
+        bellBadge.text = badge
+        bellBadge.isHidden = badge == nil
+        bellButton.accessibilityValue = badge
+    }
+
+    @objc private func openInbox() {
+        let inbox = NotificationsViewController()
+        inbox.hidesBottomBarWhenPushed = true
+        navigationController?.pushViewController(inbox, animated: true)
     }
 
     // MARK: - Chấm công (#909, card L #927)
@@ -375,7 +418,6 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func title(of item: SettingsV2Item) -> String {
         switch item {
-        case .notifications: return "Notifications".localized()
         case .storeInfo: return "Store Information".localized()
         case .collect: return "settings.v2.collect".localized()
         case .printing: return "settings.v2.printing".localized()
@@ -423,10 +465,6 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func open(_ item: SettingsV2Item) {
         switch item {
-        case .notifications:
-            let inbox = NotificationsViewController()
-            inbox.hidesBottomBarWhenPushed = true
-            navigationController?.pushViewController(inbox, animated: true)
         // #459: detail pages in the new style
         case .storeInfo:
             let page = AccountViewController()
@@ -490,7 +528,6 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         switch sections[section] {
         case .group(let index):
-            if groups[index].group == .top { return thinBand() }
             return V2.sectionHeader(groups[index].title)
         case .attendance:
             return nil
@@ -534,7 +571,7 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
                                   initials: SettingsV2Logic.initials(name))
         case .item(let item):
             cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan,
-                           badge: item == .notifications ? SettingsV2Logic.unreadBadge(unreadCount) : nil)
+                           badge: nil)
         case .logout:
             cell.configureLogout("Logout".localized())
         case .overlapSwitch, .attendance:

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
@@ -45,7 +46,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -184,10 +188,34 @@ fun SettingsV2Screen(
 
     LazyColumn(Modifier.fillMaxSize().background(DS.Colors.Surface)) {
         item(key = "title") {
-            Text(
-                stringResource(R.string.settings_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
-            )
+            // #1259: the inbox is the bell at the top right (it was the "Thông báo" row), with the unread count
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.settings_v2_title), fontSize = DS.TextSize.Title, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                    modifier = Modifier.weight(1f),
+                )
+                val bellLabel = stringResource(R.string.notifications)
+                val badge = SettingsRows.unreadBadge(unread)
+                Box(
+                    Modifier.size(48.dp).clickable(onClickLabel = bellLabel, onClick = onOpenInbox)
+                        .semantics { contentDescription = if (badge != null) "$bellLabel $badge" else bellLabel }
+                        .testTag("settings.notifications"),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Notifications, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Lg))
+                    if (badge != null) {
+                        Box(
+                            Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 4.dp).heightIn(min = 18.dp).widthIn(min = 18.dp)
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(9.dp)).background(Color(0xFFEF4444))
+                                .padding(horizontal = 6.dp, vertical = 1.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text(badge, color = Color.White, fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
         }
         // #927: the big clock card first, only with the attendance module and when the shop picked this person
         item(key = "attendance") {
@@ -220,7 +248,6 @@ fun SettingsV2Screen(
         sections.forEach { section ->
             item(key = "band-${section.group}") {
                 when (section.group) {
-                    SettingsGroup.TOP -> Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
                     else -> SectionBand(
                         stringResource(
                             when (section.group) {
@@ -252,10 +279,8 @@ fun SettingsV2Screen(
                     SettingsItem.ADVANCED -> stringResource(R.string.settings_v2_advanced_value)
                     else -> null
                 }
-                val badge = if (item == SettingsItem.NOTIFICATIONS) SettingsRows.unreadBadge(unread) else null
-                SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN, badge = badge) {
+                SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN) {
                     when (item) {
-                        SettingsItem.NOTIFICATIONS -> onOpenInbox()
                         SettingsItem.STORE_INFO -> onOpenStore()
                         SettingsItem.COLLECT -> subPage = SettingsSubPage.COLLECT
                         SettingsItem.PRINTING -> onOpenPrinter()
@@ -466,7 +491,6 @@ private fun planText(plan: SettingsPlan): String {
 @Composable
 private fun itemTitle(item: SettingsItem): String = stringResource(
     when (item) {
-        SettingsItem.NOTIFICATIONS -> R.string.notifications
         SettingsItem.STORE_INFO -> R.string.store_info
         SettingsItem.COLLECT -> R.string.settings_v2_collect
         SettingsItem.PRINTING -> R.string.settings_v2_printing

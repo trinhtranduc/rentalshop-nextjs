@@ -7,7 +7,7 @@ Issue: #1259
 | Mới | Gom từ (cũ) | Ai thấy |
 |---|---|---|
 | Thẻ tên (app) / "Hồ sơ & bảo mật" (web) | Hồ sơ + Đổi mật khẩu / tab Hồ sơ + tab Mật khẩu & bảo mật | mọi vai trò |
-| Thông báo (app, dòng riêng dưới thẻ tên) | CỬA HÀNG, dòng đầu | mọi vai trò |
+| Thông báo (app: ICON CHUÔNG góc phải trên của Cài đặt, kèm số chưa đọc) | CỬA HÀNG, dòng đầu | mọi vai trò |
 | Thông tin cửa hàng (+ Tiền tệ) | Thông tin cửa hàng + dòng Tiền tệ (app); web đã gộp | mọi vai trò; Tiền tệ chỉ chủ shop |
 | Thu tiền | Tài khoản ngân hàng + Cách thu cọc + Mẫu giai đoạn + Chính sách huỷ/dời ngày | ngân hàng: chủ shop, quản lý chi nhánh; cọc: app mọi vai trò xem / chủ shop sửa, web chỉ chủ shop |
 | In & phiếu | Ghi chú phiếu + Máy in (app); tab "Phiếu in" (web) | mọi vai trò; ghi chú in: chủ shop, quản lý chi nhánh |
@@ -25,7 +25,7 @@ Tab "payment" = Tài khoản ngân hàng (chọn chi nhánh một lần ở đ�
 Link cũ: `bank-accounts` -> `payment`, `account` -> `profile`, `printer` -> `receipt`, `appearance` -> `language`; `merchant|outlet|public-page|payment|receipt|subscription|profile|language` giữ; khoá cấm theo vai trò rơi về tab mặc định như trước.
 
 ## App (iOS chuẩn, Android theo)
-Chủ shop: thẻ tên; Thông báo; CỬA HÀNG: Thông tin cửa hàng, Thu tiền, In & phiếu, công tắc; QUẢN LÝ 4 dòng; TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao; Đăng xuất. Đếm: thẻ tên + Thông báo + 3 + 4 + 3 = 12 dòng (không kể công tắc và Đăng xuất).
+Chủ shop: chuông Thông báo ở góc phải trên; thẻ tên; CỬA HÀNG: Thông tin cửa hàng, Thu tiền, In & phiếu, công tắc; QUẢN LÝ 4 dòng; TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao; Đăng xuất. Đếm: thẻ tên + 3 + 4 + 3 = 11 dòng (không kể chuông, công tắc và Đăng xuất). Web giữ chuông có sẵn ở thanh trên, không thêm cái thứ hai.
 Vai trò ẩn đúng như trước: Thu tiền luôn hiện (mọi vai trò xem cọc), dòng Tài khoản ngân hàng bên trong chỉ chủ shop / quản lý chi nhánh; Tiền tệ trong Thông tin cửa hàng chỉ chủ shop; công tắc chỉ chủ shop; Gói dịch vụ khi có gói.
 
 ## Các câu "Cần chốt" (dùng khuyến nghị)
@@ -33,6 +33,9 @@ Vai trò ẩn đúng như trước: Thu tiền luôn hiện (mọi vai trò xem 
 2. Cách thu cọc: app mọi vai trò xem, chỉ chủ shop sửa; web chỉ chủ shop thấy (giữ nguyên).
 3. Hồ sơ + đổi mật khẩu gom vào thẻ tên (app); web một tab "Hồ sơ & bảo mật".
 4. Công tắc đặt trùng lịch ở nhóm CỬA HÀNG.
+
+## Chỉnh sau khi chốt mockup 171
+Chủ: "cài đặt đưa thông báo lên góc phải để icon chuông sẽ hợp lý". Bỏ dòng "Thông báo" khỏi danh sách; chuông ở góc phải trên (iOS `settings.notifications`, Android testTag cùng tên), mở hộp thư như dòng cũ, giữ huy hiệu chưa đọc.
 
 ## Lệch nhỏ so với mockup (giữ nguyên chức năng)
 Ghi trong PR.

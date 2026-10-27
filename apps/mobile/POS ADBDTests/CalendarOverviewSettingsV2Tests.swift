@@ -577,35 +577,34 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
     private let staffPerms = ["products.view", "orders.view", "orders.create", "customers.view", "analytics.view.dashboard"]
 
     func testSettingsRowsByRole() {
-        // #1259: 12 lines for the owner = card + Thông báo + 3 + 4 + 3; the owner also has the switch (not a row here)
+        // #1259: 10 rows for the owner (3 + 4 + 3) plus the name card = 11 lines; Thông báo is the bell at the top right
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms + ["customers.view"], hasPlan: true, showsCustomers: true)
-        XCTAssertEqual(merchant.map(\.group), [.top, .store, .management, .account])
-        XCTAssertEqual(merchant[0].items, [.notifications])
-        XCTAssertEqual(merchant[1].items, [.storeInfo, .collect, .printing])
-        XCTAssertEqual(merchant[2].items, [.categories, .customers, .users, .export])
-        XCTAssertEqual(merchant[3].items, [.plan, .language, .advanced])
-        XCTAssertEqual(1 + merchant.flatMap(\.items).count, 12, "card + 11 rows")
+        XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
+        XCTAssertEqual(merchant[0].items, [.storeInfo, .collect, .printing])
+        XCTAssertEqual(merchant[1].items, [.categories, .customers, .users, .export])
+        XCTAssertEqual(merchant[2].items, [.plan, .language, .advanced])
+        XCTAssertEqual(1 + merchant.flatMap(\.items).count, 11, "name card + 10 rows")
 
         let outletAdmin = SettingsV2Logic.sections(role: .outletAdmin, permissions: outletAdminPerms, hasPlan: false)
-        XCTAssertEqual(outletAdmin[1].items, [.storeInfo, .collect, .printing])
-        XCTAssertEqual(outletAdmin[2].items, [.categories, .users, .export])
-        XCTAssertEqual(outletAdmin[3].items, [.language, .advanced])
+        XCTAssertEqual(outletAdmin[0].items, [.storeInfo, .collect, .printing])
+        XCTAssertEqual(outletAdmin[1].items, [.categories, .users, .export])
+        XCTAssertEqual(outletAdmin[2].items, [.language, .advanced])
 
         // Staff: no users, no export (even with an export right), so no QUẢN LÝ group at all
         let staff = SettingsV2Logic.sections(role: .outletStaff, permissions: staffPerms + ["orders.export"], hasPlan: true)
-        XCTAssertEqual(staff.map(\.group), [.top, .store, .account])
+        XCTAssertEqual(staff.map(\.group), [.store, .account])
         XCTAssertFalse(staff.flatMap(\.items).contains(.users))
         XCTAssertFalse(staff.flatMap(\.items).contains(.export))
         XCTAssertFalse(staff.flatMap(\.items).contains(.categories), "#632: staff cannot add a category")
-        XCTAssertEqual(staff[1].items, [.storeInfo, .collect, .printing], "every role sees the shop rows (deposit is read-only for staff)")
+        XCTAssertEqual(staff[0].items, [.storeInfo, .collect, .printing], "every role sees the shop rows (deposit is read-only for staff)")
     }
 
-    /// #1259: "Thông báo" is its own row under the name card for every role
-    func testNotificationsRowUnderTheCardForEveryRole() {
+    /// #1259: Thông báo is the bell at the top right, not a row, for every role
+    func testNotificationsIsNotARow() {
         for role: Role in [.admin, .merchant, .outletAdmin, .outletStaff, .outletInventory] {
-            let top = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).first
-            XCTAssertEqual(top?.group, .top, "\(role)")
-            XCTAssertEqual(top?.items, [.notifications], "\(role)")
+            let sections = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false)
+            XCTAssertEqual(sections.first?.group, .store, "\(role)")
+            XCTAssertEqual(sections.first?.items.first, .storeInfo, "\(role)")
         }
     }
 
