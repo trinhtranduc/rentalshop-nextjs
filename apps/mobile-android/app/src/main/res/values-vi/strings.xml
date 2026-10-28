@@ -2311,4 +2311,13 @@
     <string name="overview_v2_related_collateral_flow_net">Hôm nay shop giữ thêm: %1$s</string>
     <string name="overview_v2_related_collateral_flow_net_period">Trong kỳ shop giữ thêm: %1$s</string>
     <string name="overview_v2_related_collateral_held_row">Của đơn chưa trả đồ</string>
+    <string name="detail_collateral_card">Giấy tờ &amp; thế chân</string>
+    <string name="detail_collateral_edit">Sửa</string>
+    <string name="detail_collateral_none">Chưa nhập</string>
+    <string name="detail_collateral_edit_title">Sửa giấy tờ &amp; thế chân</string>
+    <string name="detail_collateral_edit_warning">Đổi thế chân sẽ đổi số trả lại khi nhận trả</string>
+    <string name="detail_collateral_papers_row">Giấy tờ</string>
+    <string name="detail_collateral_money_row">Thế chân</string>
+    <string name="detail_payment_title">THANH TOÁN</string>
+    <string name="detail_rent_total">Tổng tiền thuê</string>
 </resources>

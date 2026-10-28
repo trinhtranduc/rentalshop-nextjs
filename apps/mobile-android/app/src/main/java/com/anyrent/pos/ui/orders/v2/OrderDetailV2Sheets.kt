@@ -69,7 +69,6 @@ internal fun HandOverSheet(
                 "${shortDay(s.pickupPlanAt)} → ${shortDay(s.returnPlanAt)}",
             ),
         )
-        SheetItems(detail)
         OutlinedTextField(
             value = papers,
             onValueChange = { papers = it.take(200) },
@@ -100,6 +99,47 @@ internal fun HandOverSheet(
             enabled = !working,
             onDismiss = onDismiss,
             onConfirm = { onConfirm(papers, securityDeposit) },
+        )
+    }
+}
+
+/** #1279 edit sheet (mockup G36-G39): papers and collateral of a picked-up order; status stays PICKUPED */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun CollateralEditSheet(
+    detail: OrderDetail,
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (papers: String, securityDeposit: Double) -> Unit,
+) {
+    val s = detail.summary
+    var papers by remember { mutableStateOf(detail.collateralDetails.orEmpty()) }
+    var depositText by remember { mutableStateOf(detail.securityDeposit.toLong().takeIf { it > 0 }?.toString().orEmpty()) }
+    SheetFrame(onDismiss = { if (!busy) onDismiss() }) {
+        SheetTitle(
+            stringResource(R.string.detail_collateral_edit_title),
+            "#${s.orderNumber} · ${s.customerName.orEmpty()}",
+        )
+        OutlinedTextField(
+            value = papers,
+            onValueChange = { papers = it.take(200) },
+            label = { Text(stringResource(R.string.detail_hand_over_papers)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().testTag("collateralEdit.papers"),
+        )
+        FeeField(
+            stringResource(R.string.detail_hand_over_deposit), depositText, { depositText = it },
+            Modifier.fillMaxWidth().testTag("collateralEdit.securityDeposit"),
+        )
+        Text(
+            stringResource(R.string.detail_collateral_edit_warning),
+            fontSize = DS.TextSize.Secondary, color = Color(0xFFB45309),
+        )
+        SheetButtons(
+            confirm = stringResource(R.string.save),
+            enabled = !busy,
+            onDismiss = onDismiss,
+            onConfirm = { onSave(papers, depositText.toDoubleOrNull() ?: 0.0) },
         )
     }
 }

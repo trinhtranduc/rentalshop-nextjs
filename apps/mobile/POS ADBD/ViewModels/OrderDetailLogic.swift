@@ -206,6 +206,33 @@ enum OrderDetailLogic {
             .reduce(0) { $0 + $1.amount }
     }
 
+    /// #1279: papers and collateral can be edited after pick-up (rent, PICKUPED) by users who may update orders.
+    /// The API checks the same `orders.update` and the outlet; the UI only hides the button.
+    static func canEditCollateral(orderType: OrderType, status: OrderStatus, canUpdateOrders: Bool) -> Bool {
+        canUpdateOrders && orderType == .rent && status == .pickuped
+    }
+
+    /// #1279 card line "CCCD · 500.000"; nil when nothing is saved
+    static func collateralSummary(papers: String?, securityDeposit: Double, format: (Double) -> String) -> String? {
+        let text = (papers ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        var parts: [String] = []
+        if !text.isEmpty { parts.append(text) }
+        if securityDeposit > 0 { parts.append(format(securityDeposit)) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// #1279 `PUT /api/orders/{id}` of the edit sheet: the hand-over fields without a status change
+    static func collateralEditRequest(papers: String, securityDeposit: Double,
+                                      currentPapers: String?, currentDeposit: Double) -> UpdateOrderRequest {
+        let text = papers.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hadPapers = !(currentPapers ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let details: String? = !text.isEmpty ? text : (hadPapers ? "" : nil)
+        let deposit: Double? = (securityDeposit > 0 || currentDeposit > 0) ? max(0, securityDeposit) : nil
+        return UpdateOrderRequest(securityDeposit: deposit,
+                                  collateralType: text.isEmpty ? nil : "ID_CARD",
+                                  collateralDetails: details)
+    }
+
     static func handOver(total: Double, deposit: Double, securityDeposit: Double,
                          payments: [OrderPaymentLine]) -> HandOverMoney {
         HandOverMoney(total: total, deposit: deposit, collateralMoney: securityDeposit,

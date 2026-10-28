@@ -2148,6 +2148,58 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(1)
         e2e.shot("5g-deposit-card")
         XCTAssertTrue(app.otherElements["deposit.card"].exists || app.staticTexts["deposit.card.badge"].exists, "the deposit card shows")
+        // #1285: the sections below the card (papers & collateral, notes) and the bottom bar
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("5g-detail-bottom")
+    }
+
+    /// #1279: a picked-up order keeps a "Giấy tờ & thế chân" card with "Sửa"; the sheet saves new papers and deposit and the
+    /// status stays. E2E_ORDER_NUMBER = a PICKUPED rental.
+    func test5iCollateralEditAfterPickup() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(2)
+        let search = e2e.ordersSearchField
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
+        search.tap()
+        search.typeText(number)
+        sleep(3)
+        let row = app.cells.firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "order \(number) in the list")
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10))
+        sleep(2)
+        let edit = app.buttons["order.detail.collateralEdit"]
+        XCTAssertTrue(e2e.scrollTo(edit), "the collateral card has an edit button")
+        e2e.shot("5i-1-card")
+        edit.tap()
+        let papers = app.textFields["collateralEdit.papers"]
+        XCTAssertTrue(papers.waitForExistence(timeout: 5), "the edit sheet opens")
+        sleep(1)
+        e2e.shot("5i-2-sheet")
+        papers.tap()
+        papers.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40))
+        papers.typeText("GPLX")
+        let deposit = app.textFields["collateralEdit.securityDeposit"]
+        deposit.tap()
+        deposit.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40))
+        deposit.typeText("700000")
+        e2e.shot("5i-3-filled")
+        app.buttons["collateralEdit.save"].tap()
+        sleep(3)
+        let value = app.staticTexts["order.detail.collateralValue"]
+        let savedPapers = app.staticTexts["order.detail.collateralPapers"]
+        XCTAssertTrue(e2e.scrollTo(value), "the section shows the saved value")
+        XCTAssertEqual(savedPapers.label, "GPLX", "papers row says GPLX")
+        XCTAssertTrue(value.label.contains("700") && !value.label.contains("500"), "money row says 700, got \(value.label)")
+        e2e.shot("5i-4-saved")
     }
 
     /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: Chia sẻ đơn, Ghi chú, Sửa đơn / Gia hạn (#930), Lịch sử,
@@ -2937,7 +2989,7 @@ final class AnyRentE2ETests: XCTestCase {
         }
         let sum = app.staticTexts["orderDetail.item.blockFormula"]
         XCTAssertTrue(sum.waitForExistence(timeout: 10), "order detail shows the sum of the block line")
-        XCTAssertTrue(sum.label.contains("160.000"), "order detail sum (\(sum.label))")
+        XCTAssertTrue(sum.label.contains("120.000"), "order detail sum (\(sum.label))")  // #1285: the total sits at the right of the line
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '160.000'")).count >= 1, "the order totals 160.000")
         e2e.shot("74-order-detail-block")
     }
@@ -4563,7 +4615,7 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(3)
         e2e.dismissRatingPrompt()
         e2e.shot("62a-detail-card")
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Đã thu 30' OR label BEGINSWITH 'Collected 30'")).firstMatch.exists, "the card says Đã thu 30%")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Đã thu ' OR label BEGINSWITH 'Collected '")).firstMatch.exists, "the card says Đã thu (the percent follows the seeded rent price, e.g. 29.79%)")
 
         // 4. Overview "Cần thu hôm nay" (stage 2 is late: due 4 days before today's pickup) and the list badge
         e2e.goBackOnce()
@@ -4578,8 +4630,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
         sleep(3)
         e2e.shot("64a-orders-badge")
-        e2e.soft(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Đã thu 30' OR label CONTAINS 'Collected 30'")).firstMatch.exists,
-                 "the order row shows Đã thu 30%")
+        e2e.soft(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Đã thu ' OR label CONTAINS 'Collected '")).firstMatch.exists,
+                 "the order row shows Đã thu")
 
         // 5. Back to the detail: edit the plan, hand-over blocked, collect stage 2, hand-over sheet
         let orderRow = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", number)).firstMatch

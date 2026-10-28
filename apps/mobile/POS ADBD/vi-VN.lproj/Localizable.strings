@@ -3021,3 +3021,11 @@
 "overview.related.collateral.flow.net" = "Hôm nay shop giữ thêm: %@";
 "overview.related.collateral.flow.net.period" = "Trong kỳ shop giữ thêm: %@";
 "overview.related.collateral.held.row" = "Của đơn chưa trả đồ";
+"order.collateral.card" = "Giấy tờ & thế chân";
+"order.collateral.edit" = "Sửa";
+"order.collateral.none" = "Chưa nhập";
+"order.collateral.editTitle" = "Sửa giấy tờ & thế chân";
+"order.collateral.editWarning" = "Đổi thế chân sẽ đổi số trả lại khi nhận trả";
+"order.collateral.papersRow" = "Giấy tờ";
+"order.detail.section.payment" = "THANH TOÁN";
+"order.detail.rentTotal" = "Tổng tiền thuê";

@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -107,7 +109,7 @@ import com.anyrent.pos.domain.orders.OrderPlanDays
 import com.anyrent.pos.ui.common.formatDayShort
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.domain.products.CartV2Logic
-import com.anyrent.pos.domain.products.blockLines
+import com.anyrent.pos.domain.products.blockDetailLines
 import com.anyrent.pos.ui.home.v2.orderItemPricingParts
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -121,7 +123,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private enum class DetailSheet { HAND_OVER, RETURN, NOTES }
+private enum class DetailSheet { HAND_OVER, RETURN, NOTES, COLLATERAL }
 
 internal fun OrderDetail.balancePayments(): List<BalancePayment> =
     payments.map { BalancePayment(it.amount, it.status, it.notes) }
@@ -242,6 +244,10 @@ fun OrderDetailV2Screen(
     val canExtend = detail?.let {
         RentalExtension.canExtend(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
     } == true
+    // #1279: "Giấy tờ & thế chân" card with "Sửa" on a picked-up rental (same orders.update gate; the API is the lock)
+    val canEditCollateral = detail?.let {
+        OrderDetailLogic.canEditCollateral(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
+    } == true
     // #470: "Sẵn sàng giao" for rentals not handed over yet (same orders.update gate as Gia hạn)
     val showReady = detail?.let {
         OrderDetailLogic.showsReadyToDeliver(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
@@ -295,7 +301,23 @@ fun OrderDetailV2Screen(
             }
             else -> {
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    DetailHeader(detail)
+                    DetailHeader(
+                        detail,
+                        readyRow = if (showReady) {
+                            {
+                                ReadyToDeliverRow(detail, saving = state.savingReady) { value, revert ->
+                                    vm.setReadyToDeliver(value) { error ->
+                                        if (error != null) {
+                                            revert()
+                                            toast(ApiErrorMessages.resolve(context, null, error))
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            null
+                        },
+                    )
                     DetailBody(
                         detail,
                         depositCard = if (hasPlan) {
@@ -312,20 +334,7 @@ fun OrderDetailV2Screen(
                         },
                         onPreview = { previewImage = it },
                         onEditNotes = { openNotes(detail) },
-                        readyRow = if (showReady) {
-                            {
-                                ReadyToDeliverRow(detail, saving = state.savingReady) { value, revert ->
-                                    vm.setReadyToDeliver(value) { error ->
-                                        if (error != null) {
-                                            revert()
-                                            toast(ApiErrorMessages.resolve(context, null, error))
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            null
-                        },
+                        onEditCollateral = if (canEditCollateral) ({ sheet = DetailSheet.COLLATERAL }) else null,
                     )
                     Spacer(Modifier.height(24.dp))
                 }
@@ -413,6 +422,17 @@ fun OrderDetailV2Screen(
                         papers, securityDeposit, detail.collateralDetails, detail.securityDeposit,
                     )
                     vm.handOver(fields) { sheet = null }
+                },
+            )
+            DetailSheet.COLLATERAL -> CollateralEditSheet(
+                detail = detail,
+                busy = state.busy,
+                onDismiss = { sheet = null },
+                onSave = { papers, securityDeposit ->
+                    val fields = OrderDetailLogic.collateralEditFields(
+                        papers, securityDeposit, detail.collateralDetails, detail.securityDeposit,
+                    )
+                    vm.saveCollateral(fields) { ok -> if (ok) sheet = null }
                 },
             )
             DetailSheet.RETURN -> ReturnSheet(
@@ -588,8 +608,7 @@ fun OrderDetailV2Screen(
 }
 
 @Composable
-private fun DetailHeader(detail: OrderDetail) {
-    val context = LocalContext.current
+private fun DetailHeader(detail: OrderDetail, readyRow: (@Composable () -> Unit)?) {
     val summary = detail.summary
     val isRent = OrderDetailHeader.isRent(summary.orderType)
     val status = summary.status.uppercase()
@@ -600,78 +619,13 @@ private fun DetailHeader(detail: OrderDetail) {
         OrdersHomeLogic.parseInstant(summary.pickupPlanAt),
         OrdersHomeLogic.parseInstant(summary.returnPlanAt),
     )
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(top = 4.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        // Board D2 (owner 2026-10-09): bold name, then "phone · T6 09/10 → CN 11/10" on one line; tap the phone to dial
-        val dial = OrderDetailHeader.dialNumber(summary.customerPhone)
-        val callLabel = stringResource(R.string.detail_call_customer)
-        val line = buildList {
-            summary.customerPhone?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
-        }.joinToString(" · ")
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                OrderDetailHeader.customerName(summary.customerName) ?: stringResource(R.string.detail_walk_in),
-                fontSize = DS.TextSize.Name,
-                fontWeight = FontWeight.Bold,
-                color = DS.Colors.Text,
-            )
-            if (line.isNotEmpty()) {
-                Text(
-                    line,
-                    fontSize = DS.TextSize.Secondary,
-                    color = DS.Colors.TextMuted,
-                    modifier = if (dial != null) {
-                        Modifier.clickable(onClickLabel = callLabel) {
-                            context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$dial")))
-                        }
-                    } else {
-                        Modifier
-                    },
-                )
-            }
-        }
-        if (OrderDetailHeader.showsLateBanner && lateDays > 0) {
-            val returning = status == "PICKUPED"
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFEF2F2), RoundedCornerShape(12.dp))
-                    .border(1.dp, Color(0xFFFECACA), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = DS.Status.Late.text, modifier = Modifier.size(DS.Icon.Md))
-                Column {
-                    Text(
-                        pluralStringResource(if (returning) R.plurals.detail_late_return else R.plurals.detail_late_hand_over, lateDays, lateDays),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = DS.TextSize.Body,
-                        color = Color(0xFF991B1B),
-                    )
-                    Text(
-                        stringResource(
-                            R.string.detail_due_on,
-                            shortDay(if (returning) summary.returnPlanAt else summary.pickupPlanAt),
-                        ),
-                        fontSize = DS.TextSize.Secondary,
-                        color = Color(0xFF991B1B),
-                    )
-                }
-            }
-        }
-    }
         // #643: one light box: status pill + note (rent) or sale day, then the three steps of a rent
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF8FAFC), RoundedCornerShape(14.dp))
-                .padding(14.dp),
+                // #1279 (owner chose A): edge to edge and square, like iOS; the grey band follows below
+                .background(Color(0xFFF8FAFC))
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -739,7 +693,77 @@ private fun DetailHeader(detail: OrderDetail) {
                 )
             }
         }
-    Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
+    // #1285: under the status block: the late banner (off) and "Sẵn sàng giao"
+    val showsBanner = OrderDetailHeader.showsLateBanner && lateDays > 0
+    if (showsBanner || (isRent && readyRow != null)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (showsBanner) {
+            val returning = status == "PICKUPED"
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFEF2F2), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFFFECACA), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = DS.Status.Late.text, modifier = Modifier.size(DS.Icon.Md))
+                Column {
+                    Text(
+                        pluralStringResource(if (returning) R.plurals.detail_late_return else R.plurals.detail_late_hand_over, lateDays, lateDays),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = DS.TextSize.Body,
+                        color = Color(0xFF991B1B),
+                    )
+                    Text(
+                        stringResource(
+                            R.string.detail_due_on,
+                            shortDay(if (returning) summary.returnPlanAt else summary.pickupPlanAt),
+                        ),
+                        fontSize = DS.TextSize.Secondary,
+                        color = Color(0xFF991B1B),
+                    )
+                }
+            }
+        }
+            if (isRent) readyRow?.invoke()
+        }
+    }
+}
+
+/** Mockup 1b: section "KHÁCH HÀNG": the bold name, the phone under it (tap dials) and a call icon at the right (iOS `customerSection`) */
+@Composable
+private fun CustomerSection(detail: OrderDetail) {
+    val context = LocalContext.current
+    val summary = detail.summary
+    val dial = OrderDetailHeader.dialNumber(summary.customerPhone)
+    val callLabel = stringResource(R.string.detail_call_customer)
+    val phone = summary.customerPhone?.trim()?.takeIf { it.isNotEmpty() }
+    fun call() = context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$dial")))
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                OrderDetailHeader.customerName(summary.customerName) ?: stringResource(R.string.detail_walk_in),
+                fontSize = DS.TextSize.Name,
+                fontWeight = FontWeight.Bold,
+                color = DS.Colors.Text,
+            )
+            if (phone != null) {
+                Text(
+                    phone,
+                    fontSize = DS.TextSize.Secondary,
+                    color = DS.Colors.TextMuted,
+                    modifier = if (dial != null) Modifier.clickable(onClickLabel = callLabel) { call() } else Modifier,
+                )
+            }
+        }
+        if (phone != null && dial != null) {
+            IconButton(onClick = { call() }) {
+                Icon(Icons.Outlined.Phone, contentDescription = callLabel, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Md))
+            }
+        }
+    }
 }
 
 /** "7 ngày · trả sau 2 ngày" (#643) */
@@ -758,24 +782,24 @@ private fun headerNoteText(note: OrderDetailHeader.Note): String {
     return listOfNotNull(days, due).joinToString(" · ")
 }
 
-/** #1265: the stages as a section of their own, like "Sẵn sàng giao" under the header: an 8dp grey band above and below, full width (iOS `stageSection`) */
+// Same names and values as iOS `sectionDividerColor` / `noteFillColor` / `noteInkColor`.
+// This screen uses fixed light colours like iOS (locked to Light), so there is no dark variant.
+private val SectionDividerColor = Color(0xFFEEF0F4)
+private val NoteBoxFill = Color(0xFFF3F4F6)
+private val NoteBoxInk = Color(0xFF475569)
+
+/** The 8dp band between two sections (mockup: #EEF0F4, owner level 2; iOS `sectionBand`) */
 @Composable
-private fun StageSection(content: @Composable () -> Unit) {
-    val gutter = 16.dp
-    Column(
-        Modifier
-            .layout { measurable, constraints ->
-                // the body column insets by 16dp; the bands run edge to edge
-                val extra = (gutter * 2).roundToPx()
-                val width = constraints.maxWidth + extra
-                val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
-                layout(constraints.maxWidth, placeable.height) { placeable.place(-gutter.roundToPx(), 0) }
-            }
-            .testTag("deposit.section"),
-    ) {
-        Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
-        Column(Modifier.fillMaxWidth().padding(horizontal = gutter)) { content() }
-        Box(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
+private fun SectionBand() {
+    Box(Modifier.fillMaxWidth().height(8.dp).background(SectionDividerColor))
+}
+
+/** A section: small caps title, then its rows in the 16dp gutters (iOS `titledSection`) */
+@Composable
+private fun DetailSection(title: String?, tag: String? = null, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp).let { if (tag != null) it.testTag(tag) else it }) {
+        if (title != null) SectionTitle(title)
+        content()
     }
 }
 
@@ -785,110 +809,135 @@ private fun DetailBody(
     depositCard: (@Composable () -> Unit)?,
     onPreview: (Any) -> Unit,
     onEditNotes: () -> Unit,
-    readyRow: (@Composable () -> Unit)? = null,
+    onEditCollateral: (() -> Unit)? = null,
 ) {
     val summary = detail.summary
     val isRent = summary.orderType.equals("RENT", ignoreCase = true)
     val status = summary.status.uppercase()
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        // #643: no "Lịch thuê" / "Ngày bán" rows; the header box carries the days, the steps and the sale day
-        if (isRent) readyRow?.invoke()
-        detail.collateralDetails?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.collateral), it) }
+    val pickedUp = status == "PICKUPED" || status == "PICKED_UP"
+    // #1285 (mockup 1b): customer, items, payment, deposit stages, papers & collateral, notes; an 8dp band between sections
+    Column(Modifier.fillMaxWidth()) {
+        SectionBand()
+        DetailSection(stringResource(R.string.customer).uppercase(), "order.detail.customerSection") { CustomerSection(detail) }
+        SectionBand()
+        DetailSection(stringResource(R.string.detail_items_count, detail.items.size), "order.detail.itemsSection") {
+            detail.items.forEach { ItemRow(it, summary.orderType) }
+            MoneyRow(stringResource(R.string.subtotal), formatMoneyVnd(OrderDetailLogic.saleSubtotal(detail.items)))
+        }
+        SectionBand()
 
-        SectionTitle(stringResource(R.string.detail_items_count, detail.items.sumOf { it.quantity }))
-        detail.items.forEach { ItemRow(it, summary.orderType) }
-
-        if (isRent) {
-            val totalLabel = if (detail.discountAmount > 0) {
-                stringResource(R.string.detail_total_discount, formatMoneyVnd(detail.discountAmount))
-            } else {
-                stringResource(R.string.total)
-            }
-            MoneyRow(
-                if (detail.discountAmount > 0) totalLabel else stringResource(R.string.detail_goods),
-                formatMoneyVnd(summary.totalAmount),
-            )
-            val pickedUp = status == "PICKUPED" || status == "PICKED_UP"
-            // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
-            // #1199: the stages replace the single "Cọc" row
-            if (depositCard != null) StageSection(depositCard)
-            if (!pickedUp && summary.depositAmount > 0 && depositCard == null) {
-                MoneyRow(stringResource(R.string.detail_deposit), formatMoneyVnd(summary.depositAmount))
-            }
-            if (!pickedUp && detail.securityDeposit > 0) {
-                MoneyRow(stringResource(R.string.detail_collateral_money), formatMoneyVnd(detail.securityDeposit))
-            }
-            if (status == "RETURNED") {
-                if (detail.lateFee > 0) MoneyRow(stringResource(R.string.detail_late_fee), formatMoneyVnd(detail.lateFee))
-                if (detail.damageFee > 0) MoneyRow(stringResource(R.string.damage_fee), formatMoneyVnd(detail.damageFee))
-            }
-            when (status) {
-                "RESERVED" -> {
-                    val money = OrderDetailLogic.handOver(
-                        summary.totalAmount, summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
-                    )
-                    if (money.paidBefore > 0) {
-                        MoneyRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-money.paidBefore))
-                    }
-                    MoneyRow(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(money.collectNow), total = true)
-                }
-                "CANCELLED" -> {
-                    // #1199: what the shop kept of the money collected, and what went back to the customer
-                    val kept = summary.cancelKeptAmount ?: 0.0
-                    if (kept > 0) {
-                        MoneyRow(stringResource(R.string.deposit_cancel_kept), formatMoneyVnd(kept))
-                        MoneyRow(
-                            stringResource(R.string.deposit_cancel_refund),
-                            formatMoneyVnd(maxOf(0.0, (detail.deposit?.summary?.collected ?: 0.0) - kept)),
-                        )
-                    }
-                }
-                "PICKUPED", "PICKED_UP" -> {
-                    val money = OrderDetailLogic.returnMoney(
-                        detail.lateFee, detail.damageFee, detail.securityDeposit, detail.balancePayments(),
-                    )
-                    if (money.lateFee > 0) MoneyRow(stringResource(R.string.detail_late_fee), "+" + formatMoneyVnd(money.lateFee), valueColor = DS.Status.Late.text)
-                    if (money.damageFee > 0) MoneyRow(stringResource(R.string.damage_fee), "+" + formatMoneyVnd(money.damageFee), valueColor = DS.Status.Late.text)
-                    if (money.collateralMoney > 0) MoneyRow(stringResource(R.string.detail_return_collateral), formatMoneyVnd(-money.collateralMoney))
-                    if (money.settledBefore > 0) MoneyRow(stringResource(R.string.detail_settled_before), formatMoneyVnd(-money.settledBefore))
-                    if (money.refund > 0) {
-                        MoneyRow(stringResource(R.string.detail_on_return_refund), formatMoneyVnd(money.refund), total = true)
-                    } else {
-                        MoneyRow(stringResource(R.string.detail_on_return_collect), formatMoneyVnd(money.collect), total = true)
-                    }
-                }
-            }
+        // the last "Khi nhận trả" row moves under the papers & collateral section when that shows (iOS `returnRow`);
+        // the shop kept / gave back rows move under the deposit stages (computed here, not inside the section lambdas)
+        val returnMoney = if (isRent && pickedUp) {
+            OrderDetailLogic.returnMoney(detail.lateFee, detail.damageFee, detail.securityDeposit, detail.balancePayments())
         } else {
-            MoneyRow(stringResource(R.string.detail_goods), formatMoneyVnd(OrderDetailLogic.saleSubtotal(detail.items)))
-            if (detail.discountAmount > 0) {
-                MoneyRow(stringResource(R.string.discount), formatMoneyVnd(-detail.discountAmount))
-            }
-            when (status) {
-                "COMPLETED" -> MoneyRow(stringResource(R.string.detail_paid), formatMoneyVnd(summary.totalAmount), total = true)
-                "RESERVED" -> {
-                    val due = OrderDetailLogic.balance(
-                        summary.orderType, summary.status, summary.totalAmount, 0.0, 0.0, 0.0, 0.0, detail.balancePayments(),
-                    ).amountDue
-                    MoneyRow(stringResource(R.string.detail_to_collect), formatMoneyVnd(due), total = true)
+            null
+        }
+        val returnRow: @Composable () -> Unit = {
+            if (returnMoney != null) {
+                if (returnMoney.refund > 0) {
+                    MoneyRow(stringResource(R.string.detail_on_return_refund), formatMoneyVnd(returnMoney.refund), total = true)
+                } else {
+                    MoneyRow(stringResource(R.string.detail_on_return_collect), formatMoneyVnd(returnMoney.collect), total = true)
                 }
+            }
+        }
+        val keptAmount = if (status == "CANCELLED") summary.cancelKeptAmount ?: 0.0 else 0.0
+        val cancelRows: @Composable () -> Unit = {
+            MoneyRow(stringResource(R.string.deposit_cancel_kept), formatMoneyVnd(keptAmount))
+            MoneyRow(
+                stringResource(R.string.deposit_cancel_refund),
+                formatMoneyVnd(maxOf(0.0, (detail.deposit?.summary?.collected ?: 0.0) - keptAmount)),
+            )
+        }
+        DetailSection(stringResource(R.string.detail_payment_title), "order.detail.paymentSection") {
+            if (isRent) {
+                if (detail.discountAmount > 0) MoneyRow(stringResource(R.string.discount), formatMoneyVnd(-detail.discountAmount))
+                MoneyRow(stringResource(R.string.detail_rent_total), formatMoneyVnd(summary.totalAmount), total = true)
+                // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
+                // #1199: the stages replace the single "Cọc" row
+                if (!pickedUp && summary.depositAmount > 0 && depositCard == null) {
+                    MoneyRow(stringResource(R.string.detail_deposit), formatMoneyVnd(summary.depositAmount))
+                }
+                if (!pickedUp && detail.securityDeposit > 0) {
+                    MoneyRow(stringResource(R.string.detail_collateral_money), formatMoneyVnd(detail.securityDeposit))
+                }
+                if (status == "RETURNED") {
+                    if (detail.lateFee > 0) MoneyRow(stringResource(R.string.detail_late_fee), formatMoneyVnd(detail.lateFee))
+                    if (detail.damageFee > 0) MoneyRow(stringResource(R.string.damage_fee), formatMoneyVnd(detail.damageFee))
+                }
+                when (status) {
+                    "RESERVED" -> {
+                        val money = OrderDetailLogic.handOver(
+                            summary.totalAmount, summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
+                        )
+                        if (money.paidBefore > 0) {
+                            MoneyRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-money.paidBefore))
+                        }
+                        MoneyRow(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(money.collectNow), total = true)
+                    }
+                    "CANCELLED" -> if (keptAmount > 0 && depositCard == null) cancelRows()  // #1199
+                    "PICKUPED", "PICKED_UP" -> {
+                        val money = returnMoney!!
+                        if (money.lateFee > 0) MoneyRow(stringResource(R.string.detail_late_fee), "+" + formatMoneyVnd(money.lateFee), valueColor = DS.Status.Late.text)
+                        if (money.damageFee > 0) MoneyRow(stringResource(R.string.damage_fee), "+" + formatMoneyVnd(money.damageFee), valueColor = DS.Status.Late.text)
+                        if (money.collateralMoney > 0) MoneyRow(stringResource(R.string.detail_return_collateral), formatMoneyVnd(-money.collateralMoney))
+                        if (money.settledBefore > 0) MoneyRow(stringResource(R.string.detail_settled_before), formatMoneyVnd(-money.settledBefore))
+                        if (onEditCollateral == null) returnRow()
+                    }
+                }
+            } else {
+                if (detail.discountAmount > 0) {
+                    MoneyRow(stringResource(R.string.discount), formatMoneyVnd(-detail.discountAmount))
+                }
+                when (status) {
+                    "COMPLETED" -> MoneyRow(stringResource(R.string.detail_paid), formatMoneyVnd(summary.totalAmount), total = true)
+                    "RESERVED" -> {
+                        val due = OrderDetailLogic.balance(
+                            summary.orderType, summary.status, summary.totalAmount, 0.0, 0.0, 0.0, 0.0, detail.balancePayments(),
+                        ).amountDue
+                        MoneyRow(stringResource(R.string.detail_to_collect), formatMoneyVnd(due), total = true)
+                    }
+                }
+            }
+        }
+        if (isRent && depositCard != null) {
+            SectionBand()
+            DetailSection(null, "deposit.section") {
+                depositCard()
+                if (keptAmount > 0) cancelRows()
+            }
+        }
+        if (isRent && onEditCollateral != null) {
+            SectionBand()
+            DetailSection(null) {
+                CollateralSection(detail, onEditCollateral)
+                if (returnMoney != null) returnRow()
+            }
+        } else if (isRent) {
+            detail.collateralDetails?.takeIf { it.isNotBlank() }?.let {
+                SectionBand()
+                DetailSection(null) { InfoRow(stringResource(R.string.collateral), it) }
             }
         }
 
         val note = summary.notes?.takeIf { it.isNotBlank() }
         if (note != null || detail.notesImages.isNotEmpty()) {
-            Column(
-                Modifier
-                    .padding(top = 12.dp)
-                    .fillMaxWidth()
-                    .background(Color(0xFFFFFBEB), RoundedCornerShape(10.dp))
-                    .clickable(onClick = onEditNotes)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                note?.let { Text("${stringResource(R.string.notes)}: $it", fontSize = DS.TextSize.Body, color = Color(0xFF78350F)) }
-                if (detail.notesImages.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        detail.notesImages.forEach { url -> Thumb(url, 48.dp) { onPreview(url) } }
+            SectionBand()
+            DetailSection(stringResource(R.string.notes).uppercase(), "order.detail.notesSection") {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(NoteBoxFill, RoundedCornerShape(10.dp))
+                        .clickable(onClick = onEditNotes)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    note?.let { Text(it, fontSize = DS.TextSize.Body, color = NoteBoxInk) }
+                    if (detail.notesImages.isNotEmpty()) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            detail.notesImages.forEach { url -> Thumb(url, 48.dp) { onPreview(url) } }
+                        }
                     }
                 }
             }
@@ -989,8 +1038,30 @@ private fun SectionTitle(text: String) {
         fontSize = DS.TextSize.Secondary,
         fontWeight = FontWeight.Bold,
         color = DS.Colors.TextMuted,
-        modifier = Modifier.padding(top = 18.dp, bottom = 4.dp),
+        modifier = Modifier.heightIn(min = 38.dp).wrapContentHeight(Alignment.CenterVertically),
     )
+}
+
+/** #1279 section "GIẤY TỜ & THẾ CHÂN" with "Sửa" (mockup G22-G24, owner chose A): flat like the items section, two rows like "Đã lấy", no card */
+@Composable
+private fun CollateralSection(detail: OrderDetail, onEdit: () -> Unit) {
+    val none = stringResource(R.string.detail_collateral_none)
+    Column(Modifier.fillMaxWidth().testTag("order.detail.collateralSection")) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
+            Text(
+                stringResource(R.string.detail_collateral_card).uppercase(),
+                fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                stringResource(R.string.detail_collateral_edit),
+                fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
+                modifier = Modifier.heightIn(min = 48.dp).clickable(onClick = onEdit).testTag("order.detail.collateralEdit").wrapContentHeight(Alignment.CenterVertically),
+            )
+        }
+        InfoRow(stringResource(R.string.detail_collateral_papers_row), detail.collateralDetails?.trim()?.takeIf { it.isNotEmpty() } ?: none)
+        InfoRow(stringResource(R.string.detail_collateral_money_row), if (detail.securityDeposit > 0) formatMoneyVnd(detail.securityDeposit) else none)
+    }
 }
 
 @Composable
@@ -1080,11 +1151,7 @@ internal fun MoneyRow(label: String, value: String, total: Boolean = false, valu
     }
 }
 
-/**
- * Board D2 (owner 2026-10-09): the row reads like the cart line — name, "400.000đ / theo ngày × 3 ngày", the item
- * note in a yellow box, then "SL N" and the line total (iOS `itemRow`)
- */
-/** Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent); the total stays on the right */
+/** Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent); the total sits at the right of the name */
 @Composable
 private fun orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int, isSale: Boolean): String {
     val money = formatMoneyVnd(unitPrice)
@@ -1094,50 +1161,40 @@ private fun orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType:
     return "$quantity × $money × " + pluralStringResource(R.plurals.v2_cart_days, days, days)
 }
 
+/**
+ * Mockup 1b, item style B (iOS `itemRow`): a 36dp photo, the name with the line total at the right, "SL × giá" under the name
+ * (a day block adds its sum, "120.000 (3 ngày) + 2 × 20.000"), and the item note in the yellow box (#891) as the last line
+ */
 @Composable
 private fun ItemRow(item: OrderItem, orderType: String) {
-    val (amount, unit) = orderItemPricingParts(item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true))
+    val isRent = orderType.equals("RENT", ignoreCase = true)
+    val block = if (isRent) item.blockDetailLines(LocalContext.current.resources) else null
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Thumb(item.imageUrl, 56.dp)
+        Thumb(item.imageUrl, 36.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                Text(
+                    item.productName ?: "—",
+                    fontSize = DS.TextSize.Body,
+                    fontWeight = FontWeight.Bold,
+                    color = DS.Colors.Text,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+            }
             Text(
-                item.productName ?: "—",
-                fontSize = DS.TextSize.Name,
-                fontWeight = FontWeight.SemiBold,
-                color = DS.Colors.Text,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            // #1189: a day-block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ", then its sum
-            val block = if (orderType.equals("RENT", ignoreCase = true)) item.blockLines(LocalContext.current.resources) else null
-            Text(
-                buildAnnotatedString {
-                    if (block != null) {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(block.first) }
-                        append(" · " + com.anyrent.pos.domain.money.ShopMoney.withUnit(item.unitPrice))
-                    } else {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = DS.Colors.Text)) { append(amount) }
-                        append(" / $unit")
-                    }
-                },
-                fontSize = DS.TextSize.Body,
-                color = Color(0xFF475569),
+                block?.first ?: orderItemQuantityLine(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, !isRent),
+                fontSize = DS.TextSize.Secondary,
+                color = DS.Colors.TextMuted,
             )
             block?.second?.let { formula ->
                 Text(formula, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.semantics { contentDescription = "orderDetail.item.blockFormula" })
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    orderItemQuantityLine(item.quantity, item.unitPrice, item.pricingType, item.rentalDays, !orderType.equals("RENT", ignoreCase = true)),
-                    fontSize = DS.TextSize.Secondary,
-                    color = DS.Colors.TextMuted,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(formatMoneyVnd(item.totalPrice), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
             }
             // #891 (owner): the item note is the last line of the item
             CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
@@ -1146,16 +1203,16 @@ private fun ItemRow(item: OrderItem, orderType: String) {
     HorizontalDivider(color = DS.Colors.Divider)
 }
 
-/** Board D2: the item note on a light yellow box with a pencil, so it does not read as part of the name */
+/** Board D2: the item note on a light grey box with a pencil, so it does not read as part of the name */
 @Composable
 private fun ItemNoteBox(note: String) {
-    val ink = Color(0xFF7A4A00)
+    val ink = NoteBoxInk
     val label = stringResource(R.string.v2_item_note_label)
     Row(
         Modifier
             .padding(top = 2.dp)
             .fillMaxWidth()
-            .background(Color(0xFFFFF7E6), RoundedCornerShape(10.dp))
+            .background(NoteBoxFill, RoundedCornerShape(10.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp)
             .semantics(mergeDescendants = true) { contentDescription = "$label: $note" },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
