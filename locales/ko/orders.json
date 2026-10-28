@@ -53,6 +53,17 @@
       }
     },
     "editor": {
+      "carts": {
+        "label": "장바구니",
+        "title": "장바구니 {n}",
+        "summary": "{count}개 · {amount}",
+        "count": "{count}개",
+        "new": "+ 새 장바구니",
+        "close": "장바구니 닫기",
+        "deleteTitle": "이 장바구니를 삭제할까요?",
+        "deleteMessage": "{name}에 {count}개가 있습니다. 상품이 삭제됩니다.",
+        "delete": "삭제"
+      },
       "option": {
         "BLOCK": "일수 블록 · {price}"
       },
