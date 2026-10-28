@@ -114,11 +114,13 @@ enum BlockPricing {
     }
 
     /// "120.000 (3 ngày) + 2 × 20.000 = 160.000" past the table, "120.000 (3 ngày)" inside it (one unit)
-    static func formula(_ detail: BlockRentDetail, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+    /// `showTotal: false` (#1285, order detail where the total sits at the right of the line) drops the " = 160.000"
+    static func formula(_ detail: BlockRentDetail, currency: ShopCurrency = ShopCurrencyStore.current, showTotal: Bool = true) -> String {
         let money: (Double) -> String = { MoneyFormatter.format($0, currency: currency) }
         let base = money(detail.basePrice) + " (" + PluralText.format("products.cart.days", count: detail.tierDay, detail.tierDay) + ")"
         guard detail.extraDays > 0 else { return base }
-        return base + " + \(detail.extraDays) × " + money(detail.extraPrice) + " = " + money(detail.total)
+        let sum = base + " + \(detail.extraDays) × " + money(detail.extraPrice)
+        return showTotal ? sum + " = " + money(detail.total) : sum
     }
 
     /// Form row: "3 mốc · +20.000đ mỗi ngày" / "3 mốc · giữ giá khối cuối"
@@ -240,6 +242,19 @@ extension OrderItem {
     var blockLines: (summary: String, formula: String?)? {
         guard pricingType?.uppercased() == "BLOCK", let detail = pricingSnapshot?.detail() else { return nil }
         return (BlockPricing.summary(detail), detail.extraDays > 0 ? BlockPricing.formula(detail) : nil)
+    }
+}
+
+extension OrderItem {
+    /// #1285 (mockup 1b, item style B): the "SL × giá" line of an order detail item and, for a day block past the table,
+    /// the formula without its total ("2 × Khối 3 ngày + 2 ngày thêm" / "120.000 (3 ngày) + 2 × 20.000")
+    func detailLines(orderType: OrderType) -> (line: String, formula: String?) {
+        if orderType == .rent, pricingType?.uppercased() == "BLOCK", let detail = pricingSnapshot?.detail() {
+            return ("\(quantity) × " + BlockPricing.summary(detail),
+                    detail.extraDays > 0 ? BlockPricing.formula(detail, showTotal: false) : nil)
+        }
+        return (CartV2Logic.orderItemQuantityLine(quantity: quantity, unitPrice: unitPrice, pricingType: pricingType,
+                                                  rentalDays: rentalDays, orderType: orderType), nil)
     }
 }
 
