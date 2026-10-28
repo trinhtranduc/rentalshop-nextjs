@@ -64,8 +64,11 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         content.spacing = DS.Spacing.xs
         content.setCustomSpacing(DS.Spacing.md, after: subtitle)
 
-        for item in detail.orderItems {
-            content.addArrangedSubview(itemRow(item))
+        // Pickup sheet has no item list (#1287); the return sheet still shows the items
+        if mode == .takeReturn {
+            for item in detail.orderItems {
+                content.addArrangedSubview(itemRow(item))
+            }
         }
 
         if mode == .handOver {

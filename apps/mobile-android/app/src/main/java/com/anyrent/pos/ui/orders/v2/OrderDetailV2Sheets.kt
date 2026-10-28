@@ -69,7 +69,6 @@ internal fun HandOverSheet(
                 "${shortDay(s.pickupPlanAt)} → ${shortDay(s.returnPlanAt)}",
             ),
         )
-        SheetItems(detail)
         OutlinedTextField(
             value = papers,
             onValueChange = { papers = it.take(200) },
