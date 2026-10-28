@@ -31,6 +31,20 @@ final class ProductCalendarViewController: BaseViewControler {
 
     private let scroll = UIScrollView()
     private let content = UIStackView()
+
+    /// #1298 (P1): shared constant names with Android `ProductCalendarScreen.kt`
+    private enum Style {
+        static let band = UIColor(hexString: "EEF0F4")
+        static let bandHeight: CGFloat = 8
+        static let line = UIColor(hexString: "E2E8F0")
+        static let meta = UIColor(hexString: "64748B")
+        static let qtyText = UIColor(hexString: "334155")
+        static let qtyFill = UIColor(hexString: "F1F5F9")
+        static let dates = UIColor(hexString: "475569")
+        static let rowPad: CGFloat = 14
+        static let lineGap: CGFloat = 8
+        static let lineTag = 1298
+    }
     private let thumb = V2.thumbnail(size: 52, radius: 12)
     private let nameLabel = V2.label(size: DS.TextSize.name, weight: .bold, lines: 2)
     private let subLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
@@ -183,13 +197,19 @@ final class ProductCalendarViewController: BaseViewControler {
         content.addArrangedSubview(legendRow)
         content.setCustomSpacing(14, after: legendRow)
 
-        let divider = V2.divider()
-        divider.backgroundColor = DS.Color.border
-        let dividerWrap = UIStackView(arrangedSubviews: [divider])
-        dividerWrap.isLayoutMarginsRelativeArrangement = true
-        dividerWrap.layoutMargins = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
-        content.addArrangedSubview(dividerWrap)
-        content.setCustomSpacing(14, after: dividerWrap)
+        // #1298 (owner, P1): an 8pt band, full width, in place of the thin line above the orders list
+        let bandHost = UIView()
+        let band = UIView()
+        band.backgroundColor = Style.band
+        bandHost.addSubview(band)
+        bandHost.snp.makeConstraints { make in make.height.equalTo(Style.bandHeight) }
+        band.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalToSuperview().offset(-content.layoutMargins.left)
+            make.trailing.equalToSuperview().offset(content.layoutMargins.right)
+        }
+        content.addArrangedSubview(bandHost)
+        content.setCustomSpacing(14, after: bandHost)
 
         // Orders of the tapped day
         let headerWrap = UIStackView(arrangedSubviews: [ordersHeader])
@@ -324,6 +344,8 @@ final class ProductCalendarViewController: BaseViewControler {
             return
         }
         for order in rows { ordersStack.addArrangedSubview(orderRow(order)) }
+        // the thin line goes between orders, not under the last one
+        ordersStack.arrangedSubviews.last?.viewWithTag(Style.lineTag)?.isHidden = true
     }
 
     /// #1026: "↗ T2 05/10   ↩ T4 07/10" (icons from the order row date chips)
@@ -338,35 +360,58 @@ final class ProductCalendarViewController: BaseViewControler {
 
     private func orderRow(_ order: Order) -> UIView {
         let row = UIControl()
-        let name = NSMutableAttributedString(string: order.customerName + " ",
-                                             attributes: [.font: Utils.boldFont(size: DS.TextSize.name), .foregroundColor: DS.Color.text])
-        name.append(NSAttributedString(string: "#\(order.orderNumber)",
-                                       attributes: [.font: Utils.boldFont(size: DS.TextSize.name), .foregroundColor: DS.Color.textMuted]))
         let nameLabel = UILabel()
-        nameLabel.attributedText = name
+        nameLabel.font = Utils.mediumFont(size: DS.TextSize.name)
+        nameLabel.textColor = DS.Color.text
+        nameLabel.text = order.customerName
+        nameLabel.lineBreakMode = .byTruncatingTail
+        nameLabel.setContentHuggingPriority(.required, for: .horizontal)
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let codeLabel = UILabel()
+        codeLabel.font = Utils.regularFont(size: 13)
+        codeLabel.textColor = Style.meta
+        codeLabel.text = "#\(order.orderNumber)"
+        codeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         let pickup = order.pickupPlanAt.map { OrdersHomeLogic.rowDay($0) } ?? "–"
         let ret = order.returnPlanAt.map { OrdersHomeLogic.rowDay($0) } ?? "–"
         let spoken = String(format: "products.calendar.orderDays".localized(), pickup, ret)
-        let days = V2.label(spoken, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        let days = UILabel()
+        days.font = Utils.regularFont(size: DS.TextSize.secondary)
+        days.textColor = Style.dates
         // #1026 (owner): the grey ↗ / ↩ icons in place of "Lấy" / "trả"; VoiceOver still reads the words
         days.attributedText = ProductCalendarViewController.iconDates(pickup: pickup, ret: ret, font: days.font, color: days.textColor)
-        let texts = UIStackView(arrangedSubviews: [nameLabel, days])
-        texts.axis = .vertical
-        texts.spacing = 2
-        texts.isUserInteractionEnabled = false
-        let qty = V2.label(String(format: "products.calendar.qty".localized(), ProductCalendarLogic.quantity(order, productId: productId)),
-                           size: DS.TextSize.body, weight: .bold)
+        let qty = InsetLabel()
+        qty.insets = UIEdgeInsets(top: 2, left: 7, bottom: 2, right: 7)
+        qty.font = Utils.regularFont(size: DS.TextSize.secondary)
+        qty.textColor = Style.qtyText
+        qty.backgroundColor = Style.qtyFill
+        qty.layer.cornerRadius = 6
+        qty.layer.masksToBounds = true
+        qty.text = String(format: "products.calendar.qty".localized(), ProductCalendarLogic.quantity(order, productId: productId))
         qty.setContentCompressionResistancePriority(.required, for: .horizontal)
         qty.setContentHuggingPriority(.required, for: .horizontal)
-        [texts, qty].forEach(row.addSubview)
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow - 1, for: .horizontal)
+        let first = UIStackView(arrangedSubviews: [nameLabel, codeLabel, spacer, qty])
+        first.spacing = 6
+        first.alignment = .center
+        let texts = UIStackView(arrangedSubviews: [first, days])
+        texts.axis = .vertical
+        texts.alignment = .fill
+        texts.spacing = Style.lineGap
+        texts.isUserInteractionEnabled = false
+        let line = UIView()
+        line.backgroundColor = Style.line
+        line.isUserInteractionEnabled = false
+        line.tag = Style.lineTag
+        [texts, line].forEach(row.addSubview)
         texts.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(4)
-            make.top.bottom.equalToSuperview().inset(8)
-            make.trailing.lessThanOrEqualTo(qty.snp.leading).offset(-8)
+            make.leading.trailing.equalToSuperview().inset(4)
+            make.top.bottom.equalToSuperview().inset(Style.rowPad)
         }
-        qty.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-4)
-            make.centerY.equalToSuperview()
+        line.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(1)
         }
         row.isAccessibilityElement = true
         row.accessibilityTraits = UIAccessibilityTraitButton

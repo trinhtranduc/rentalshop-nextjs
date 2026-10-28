@@ -2141,7 +2141,7 @@
 "order.sheet.print" = "In hoá đơn";
 "order.sheet.print.printer" = "Máy in %@";
 "order.sheet.notes" = "Ghi chú";
-"order.sheet.notes.add" = "Thêm ghi chú";
+"order.sheet.notes.add" = "Thêm ghi chú hoặc ảnh cho đơn";
 "order.sheet.notes.text" = "Có 1 ghi chú";
 "order.sheet.notes.photos" = "Có %d ảnh";
 "order.sheet.notes.photos.one" = "Có %d ảnh";
@@ -2149,7 +2149,7 @@
 "order.sheet.notes.textPhotos.one" = "Có 1 ghi chú · %d ảnh";
 "order.sheet.history" = "Lịch sử thay đổi";
 "order.sheet.cancel" = "Huỷ đơn";
-"order.sheet.cancel.subtitle" = "Đơn chuyển sang Đã huỷ, không tính doanh thu";
+"order.sheet.cancel.subtitle" = "Huỷ đơn, xử lý tiền cọc nếu có";
 "order.sheet.delete" = "Xoá đơn";
 "order.sheet.delete.subtitle" = "Xoá hẳn đơn đã huỷ, không hoàn tác được";
 /* #519 Lịch sử thay đổi (boards LS-don, LS-san-pham) */
@@ -3029,3 +3029,6 @@
 "order.collateral.papersRow" = "Giấy tờ";
 "order.detail.section.payment" = "THANH TOÁN";
 "order.detail.rentTotal" = "Tổng tiền thuê";
+"order.sheet.edit.subtitle" = "Đổi món, ngày thuê, khách";
+"order.sheet.extend.subtitle" = "Thêm ngày thuê, tính thêm tiền";
+"order.sheet.history.subtitle" = "Ai sửa gì, lúc nào";

@@ -2143,7 +2143,7 @@
 "order.sheet.print" = "Print receipt";
 "order.sheet.print.printer" = "Printer %@";
 "order.sheet.notes" = "Notes";
-"order.sheet.notes.add" = "Add a note";
+"order.sheet.notes.add" = "Add a note or photos to the order";
 "order.sheet.notes.text" = "1 note";
 "order.sheet.notes.photos" = "%d photos";
 "order.sheet.notes.photos.one" = "%d photo";
@@ -2151,7 +2151,7 @@
 "order.sheet.notes.textPhotos.one" = "1 note · %d photo";
 "order.sheet.history" = "Change history";
 "order.sheet.cancel" = "Cancel order";
-"order.sheet.cancel.subtitle" = "The order becomes Cancelled and leaves revenue";
+"order.sheet.cancel.subtitle" = "Cancel the order, handle the deposit if any";
 "order.sheet.delete" = "Delete order";
 "order.sheet.delete.subtitle" = "Removes the cancelled order for good";
 /* #519 Lịch sử thay đổi (boards LS-don, LS-san-pham) */
@@ -3031,3 +3031,6 @@
 "order.collateral.papersRow" = "Papers";
 "order.detail.section.payment" = "PAYMENT";
 "order.detail.rentTotal" = "Rental total";
+"order.sheet.edit.subtitle" = "Change items, rental dates, customer";
+"order.sheet.extend.subtitle" = "Add rental days, charge the extra";
+"order.sheet.history.subtitle" = "Who changed what, and when";
