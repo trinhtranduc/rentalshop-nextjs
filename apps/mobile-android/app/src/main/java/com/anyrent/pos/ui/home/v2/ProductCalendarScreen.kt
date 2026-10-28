@@ -74,6 +74,7 @@ import com.anyrent.pos.domain.products.barcodeText
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.orders.v2.OrdersBoardLogic
 import com.anyrent.pos.ui.orders.v2.orderRowTexts
+import com.anyrent.pos.ui.orders.v2.OrderRowMetaColor
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -231,7 +232,8 @@ fun ProductCalendarScreen(
                 LegendItem(CalendarColors.LegendNone, stringResource(R.string.v2_calendar_legend_none))
                 LegendItem(DS.Colors.Primary, stringResource(R.string.v2_calendar_legend_chosen))
             }
-            HorizontalDivider(color = V2Colors.Line, modifier = Modifier.padding(horizontal = 16.dp))
+            // #1298 (owner, P1): an 8dp band, full width, in place of the thin line above the orders list
+            Spacer(Modifier.fillMaxWidth().height(DayList.BandHeight).background(DayList.Band))
 
             // Orders that hold the product on the tapped day
             val dayOrders = ProductCalendarLogic.ordersCovering(focusDay, openOrders)
@@ -245,10 +247,10 @@ fun ProductCalendarScreen(
             if (dayOrders.isEmpty()) {
                 Text(stringResource(R.string.v2_calendar_no_orders), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp))
             }
-            dayOrders.forEach { order ->
+            dayOrders.forEachIndexed { index, order ->
                 DayOrderRow(
                     order, ProductCalendarLogic.orderDates(order, texts), ProductCalendarLogic.orderDays(order, texts),
-                    ProductCalendarLogic.quantity(order, productId),
+                    ProductCalendarLogic.quantity(order, productId), showLine = index < dayOrders.lastIndex,
                 ) { onOpenOrder(order.id) }
             }
             Spacer(Modifier.height(16.dp))
@@ -351,22 +353,34 @@ private fun LegendItem(color: Color, label: String) {
     }
 }
 
+/** #1298 (P1): same constant names as iOS `ProductCalendarViewController.Style` */
+private object DayList {
+    val Band = Color(0xFFEEF0F4)
+    val BandHeight = 8.dp
+    val Line = Color(0xFFE2E8F0)
+    val QtyText = Color(0xFF334155)
+    val QtyFill = Color(0xFFF1F5F9)
+    val Dates = Color(0xFF475569)
+    val RowPad = 14.dp
+    val LineGap = 8.dp
+}
+
 @Composable
-private fun DayOrderRow(order: OrderSummary, dates: String, days: Pair<String?, String?>, quantity: Int, onClick: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button }
-            .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                buildAnnotatedString {
-                    withStyle(SpanStyle(color = DS.Colors.Text, fontWeight = FontWeight.Medium)) { append(order.customerName.orEmpty()) }
-                    withStyle(SpanStyle(color = DS.Colors.TextMuted, fontWeight = FontWeight.SemiBold)) { append(" #${order.orderNumber}") }
-                },
-                fontSize = DS.TextSize.Name, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
+private fun DayOrderRow(order: OrderSummary, dates: String, days: Pair<String?, String?>, quantity: Int, showLine: Boolean, onClick: () -> Unit) {
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button }) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = DayList.RowPad), verticalArrangement = Arrangement.spacedBy(DayList.LineGap)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    order.customerName.orEmpty(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                )
+                Text("#${order.orderNumber}", fontSize = 13.sp, fontWeight = FontWeight.Normal, color = OrderRowMetaColor, maxLines = 1)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    stringResource(R.string.v2_calendar_quantity, quantity), fontSize = DS.TextSize.Secondary, color = DayList.QtyText, maxLines = 1,
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(DayList.QtyFill).padding(horizontal = 7.dp, vertical = 2.dp),
+                )
+            }
             // #1026 (owner): the grey ↗ / ↩ icons in place of "Lấy" / "trả"; TalkBack still reads [dates]
             if (dates.isNotEmpty()) {
                 val iconSize = with(androidx.compose.ui.platform.LocalDensity.current) { DS.TextSize.Secondary.toDp() }
@@ -379,11 +393,12 @@ private fun DayOrderRow(order: OrderSummary, dates: String, days: Pair<String?, 
                         if (day == null) return@forEach
                         if (kind == OrderRowDates.ChipKind.RETURN && days.first != null) Spacer(Modifier.size(8.dp))
                         Icon(OrdersBoardLogic.chipIcon(kind), contentDescription = null, tint = OrdersBoardLogic.chipIconTint, modifier = Modifier.size(iconSize))
-                        Text(day, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+                        Text(day, fontSize = DS.TextSize.Secondary, color = DayList.Dates, maxLines = 1)
                     }
                 }
             }
         }
-        Text(stringResource(R.string.v2_calendar_quantity, quantity), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+        // the thin line goes between orders, not under the last one
+        if (showLine) HorizontalDivider(color = DayList.Line, modifier = Modifier.padding(horizontal = 16.dp))
     }
 }
