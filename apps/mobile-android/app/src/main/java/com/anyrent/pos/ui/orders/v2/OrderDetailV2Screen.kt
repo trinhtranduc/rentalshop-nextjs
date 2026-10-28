@@ -370,7 +370,6 @@ fun OrderDetailV2Screen(
             detail.summary.customerName.orEmpty(),
         ).let { text -> if (detail.summary.customerName.isNullOrBlank()) text.substringBeforeLast(" · ") else text }
         OrderActionsSheet(
-            orderNumber = detail.summary.orderNumber,
             rows = rows,
             printerSubtitle = OrderActionSheet.printerSubtitle(
                 printerConfig.name, printerConfig.ip, stringResource(R.string.order_sheet_printer),

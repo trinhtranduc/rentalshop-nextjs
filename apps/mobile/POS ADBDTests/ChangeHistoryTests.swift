@@ -483,6 +483,16 @@ final class ChangeHistoryTests: XCTestCase {
         }
     }
 
+    /// #1297: every row of the ⋯ sheet has a description line, and no key is left untranslated
+    func testSheetDescriptionKeysAreTranslated() {
+        for key in ["order.sheet.share.subtitle", "order.sheet.notes.add", "order.sheet.edit.subtitle",
+                    "order.sheet.extend.subtitle", "order.sheet.history.subtitle", "order.sheet.cancel.subtitle",
+                    "order.sheet.delete.subtitle"] {
+            XCTAssertNotEqual(key.localized(), key, key)
+            XCTAssertFalse(key.localized().isEmpty, key)
+        }
+    }
+
     func testNotesSubtitle() {
         XCTAssertEqual(OrderDetailLogic.notesSubtitle(text: nil, photoCount: 0), "order.sheet.notes.add".localized())
         XCTAssertEqual(OrderDetailLogic.notesSubtitle(text: "  ", photoCount: 0), "order.sheet.notes.add".localized())

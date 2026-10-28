@@ -54,10 +54,10 @@ object OrderActionSheet {
         val photos: String = "%1\$d ảnh",
         /** Photos without text */
         val photosOnly: String = "Có %1\$d ảnh",
-        val add: String = "Thêm ghi chú",
+        val add: String = "Thêm ghi chú hoặc ảnh cho đơn",
     )
 
-    /** "Có 1 ghi chú · 2 ảnh", "Có 1 ghi chú", "Có 2 ảnh" or "Thêm ghi chú" */
+    /** "Có 1 ghi chú · 2 ảnh", "Có 1 ghi chú", "Có 2 ảnh" or "Thêm ghi chú hoặc ảnh cho đơn" */
     fun notesSubtitle(notes: String?, photos: Int, texts: NotesTexts = NotesTexts()): String {
         val summary = notesSummary(notes, photos) ?: return texts.add
         return when {

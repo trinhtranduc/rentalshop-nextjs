@@ -1307,14 +1307,19 @@
         <item quantity="one">%1$d photo</item>
         <item quantity="other">%1$d photos</item>
     </plurals>
-    <string name="order_sheet_notes_add">Add a note</string>
+    <string name="order_sheet_notes_add">Add a note or photos to the order</string>
     <string name="order_sheet_history">Change history</string>
     <string name="order_sheet_edit">Edit order</string>
     <string name="order_sheet_extend">Extend</string>
     <string name="order_sheet_share">Share order</string>
     <string name="order_sheet_cancel">Cancel order</string>
-    <string name="order_sheet_cancel_hint">The order becomes Cancelled and is left out of revenue</string>
+    <string name="order_sheet_cancel_hint">Cancel the order, handle the deposit if any</string>
     <string name="order_sheet_delete">Delete order</string>
+    <string name="order_sheet_edit_hint">Change items, rental dates, customer</string>
+    <string name="order_sheet_extend_hint">Add rental days, charge the extra</string>
+    <string name="order_sheet_history_hint">Who changed what, and when</string>
+    <string name="order_sheet_share_hint">Receipt image to save or send</string>
+    <string name="order_sheet_delete_hint">Removes the cancelled order for good</string>
     <string name="history_title">Change history</string>
     <string name="history_order_subtitle">Order #%1$s · %2$s</string>
     <string name="history_empty">No changes yet</string>

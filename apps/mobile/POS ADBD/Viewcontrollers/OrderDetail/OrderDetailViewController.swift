@@ -160,7 +160,8 @@ final class OrderDetailViewController: BaseViewControler {
         TabsV2APIService.shared.orderChanges(orderId: orderId, limit: 1) { [weak self] page, _ in
             DispatchQueue.main.async {
                 guard let self, let page else { return }
-                self.historySummary = ChangeHistoryLogic.summary(total: page.total, latestAt: page.latestAt)
+                // #1297: nothing changed yet -> the row keeps its description "Ai sửa gì, lúc nào"
+                self.historySummary = page.total > 0 ? ChangeHistoryLogic.summary(total: page.total, latestAt: page.latestAt) : nil
             }
         }
     }
@@ -908,8 +909,7 @@ final class OrderDetailViewController: BaseViewControler {
             OrderActionSheet.Row(action: action, title: OrderActionSheet.title(of: action),
                                  subtitle: self?.sheetSubtitle(action, detail: detail))
         }
-        let sheet = OrderActionSheet(title: String(format: "order.sheet.title".localized(), detail.orderNumber),
-                                     main: sheetActions.main.map(rows), destructive: sheetActions.destructive.map(rows))
+        let sheet = OrderActionSheet(main: sheetActions.main.map(rows), destructive: sheetActions.destructive.map(rows))
         sheet.onSelect = { [weak self] action in self?.perform(action) }
         present(sheet, animated: true)
     }
@@ -922,15 +922,17 @@ final class OrderDetailViewController: BaseViewControler {
         case .notes:
             return OrderDetailLogic.notesSubtitle(text: detail.notes, photoCount: noteImageURLs(detail).count)
         case .history:
-            return historySummary
+            return historySummary ?? "order.sheet.history.subtitle".localized()
         case .cancel:
             return "order.sheet.cancel.subtitle".localized()
         case .delete:
             return "order.sheet.delete.subtitle".localized()
         case .share:
             return "order.sheet.share.subtitle".localized()
-        case .edit, .extend:
-            return nil
+        case .edit:
+            return "order.sheet.edit.subtitle".localized()
+        case .extend:
+            return "order.sheet.extend.subtitle".localized()
         }
     }
 
@@ -1447,8 +1449,8 @@ final class OrderDetailViewController: BaseViewControler {
 
 // MARK: - ⋯ action sheet (#519, board CT-thao-tac)
 
-/// "Đơn #787771" with a close button, the everyday rows, then the red group apart. A row closes the sheet and then
-/// runs its action on the detail screen.
+/// A close button (no title: the order number is on the screen's top bar, #1297), the everyday rows with a small
+/// description under each name, then the red group apart. A row closes the sheet and then runs its action on the detail screen.
 final class OrderActionSheet: V2FittingSheet {
     struct Row {
         let action: OrderSheetAction
@@ -1457,12 +1459,10 @@ final class OrderActionSheet: V2FittingSheet {
     }
 
     var onSelect: ((OrderSheetAction) -> Void)?
-    private let titleText: String
     private let main: [Row]
     private let destructive: [Row]
 
-    init(title: String, main: [Row], destructive: [Row]) {
-        titleText = title
+    init(main: [Row], destructive: [Row]) {
         self.main = main
         self.destructive = destructive
         super.init()
@@ -1487,17 +1487,17 @@ final class OrderActionSheet: V2FittingSheet {
         super.viewDidLoad()
         stack.spacing = 0
 
-        let title = V2.label(titleText, size: 20, weight: .bold, lines: 2)
-        title.accessibilityTraits = UIAccessibilityTraitHeader
+        let spacer = UIView()
         let close = UIButton(type: .system)
         close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
         close.tintColor = UIColor(hexString: "475569")
         close.backgroundColor = UIColor(hexString: "F1F5F9")
         close.layer.cornerRadius = 18
         close.accessibilityLabel = "Close".localized()
+        close.accessibilityIdentifier = "order.sheet.close"
         close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         close.snp.makeConstraints { make in make.size.equalTo(36) }
-        let header = UIStackView(arrangedSubviews: [title, close])
+        let header = UIStackView(arrangedSubviews: [spacer, close])
         header.alignment = .center
         header.spacing = DS.Spacing.md
         stack.addArrangedSubview(header)
