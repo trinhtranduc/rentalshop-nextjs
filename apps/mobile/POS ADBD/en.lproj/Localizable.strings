@@ -3023,3 +3023,8 @@
 "overview.related.collateral.flow.net" = "Shop holds more today: %@";
 "overview.related.collateral.flow.net.period" = "Shop holds more in the period: %@";
 "overview.related.collateral.held.row" = "Of an order not yet returned";
+"order.collateral.card" = "Papers & collateral";
+"order.collateral.edit" = "Edit";
+"order.collateral.none" = "Not entered";
+"order.collateral.editTitle" = "Edit papers & collateral";
+"order.collateral.editWarning" = "Changing the collateral changes the amount to give back at return";

@@ -2150,6 +2150,52 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(app.otherElements["deposit.card"].exists || app.staticTexts["deposit.card.badge"].exists, "the deposit card shows")
     }
 
+    /// #1279: a picked-up order keeps a "Giấy tờ & thế chân" card with "Sửa"; the sheet saves new papers and deposit and the
+    /// status stays. E2E_ORDER_NUMBER = a PICKUPED rental.
+    func test5iCollateralEditAfterPickup() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(2)
+        let search = e2e.ordersSearchField
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
+        search.tap()
+        search.typeText(number)
+        sleep(3)
+        let row = app.cells.firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "order \(number) in the list")
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10))
+        sleep(2)
+        let edit = app.buttons["order.detail.collateralEdit"]
+        XCTAssertTrue(e2e.scrollTo(edit), "the collateral card has an edit button")
+        e2e.shot("5i-1-card")
+        edit.tap()
+        let papers = app.textFields["collateralEdit.papers"]
+        XCTAssertTrue(papers.waitForExistence(timeout: 5), "the edit sheet opens")
+        sleep(1)
+        e2e.shot("5i-2-sheet")
+        papers.tap()
+        papers.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40))
+        papers.typeText("GPLX")
+        let deposit = app.textFields["collateralEdit.securityDeposit"]
+        deposit.tap()
+        deposit.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40))
+        deposit.typeText("700000")
+        e2e.shot("5i-3-filled")
+        app.buttons["collateralEdit.save"].tap()
+        sleep(3)
+        let value = app.staticTexts["order.detail.collateralValue"]
+        XCTAssertTrue(e2e.scrollTo(value), "the card shows the saved value")
+        XCTAssertTrue(value.label.hasPrefix("GPLX") && value.label.contains("700.000") && !value.label.contains("500.000"), "card says GPLX and 700.000, got \(value.label)")
+        e2e.shot("5i-4-saved")
+    }
+
     /// ⋯ on the order detail opens a sheet (board CT-thao-tac), not a UIMenu: Chia sẻ đơn, Ghi chú, Sửa đơn / Gia hạn (#930), Lịch sử,
     /// then Huỷ đơn apart. Actions the screen already shows as buttons are not repeated in it.
     func test5cOrderActionSheet() throws {

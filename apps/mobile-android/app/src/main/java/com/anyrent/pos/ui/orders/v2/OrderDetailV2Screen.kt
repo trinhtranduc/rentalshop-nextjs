@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -121,7 +122,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private enum class DetailSheet { HAND_OVER, RETURN, NOTES }
+private enum class DetailSheet { HAND_OVER, RETURN, NOTES, COLLATERAL }
 
 internal fun OrderDetail.balancePayments(): List<BalancePayment> =
     payments.map { BalancePayment(it.amount, it.status, it.notes) }
@@ -242,6 +243,10 @@ fun OrderDetailV2Screen(
     val canExtend = detail?.let {
         RentalExtension.canExtend(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
     } == true
+    // #1279: "Giấy tờ & thế chân" card with "Sửa" on a picked-up rental (same orders.update gate; the API is the lock)
+    val canEditCollateral = detail?.let {
+        OrderDetailLogic.canEditCollateral(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
+    } == true
     // #470: "Sẵn sàng giao" for rentals not handed over yet (same orders.update gate as Gia hạn)
     val showReady = detail?.let {
         OrderDetailLogic.showsReadyToDeliver(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
@@ -312,6 +317,7 @@ fun OrderDetailV2Screen(
                         },
                         onPreview = { previewImage = it },
                         onEditNotes = { openNotes(detail) },
+                        onEditCollateral = if (canEditCollateral) ({ sheet = DetailSheet.COLLATERAL }) else null,
                         readyRow = if (showReady) {
                             {
                                 ReadyToDeliverRow(detail, saving = state.savingReady) { value, revert ->
@@ -413,6 +419,17 @@ fun OrderDetailV2Screen(
                         papers, securityDeposit, detail.collateralDetails, detail.securityDeposit,
                     )
                     vm.handOver(fields) { sheet = null }
+                },
+            )
+            DetailSheet.COLLATERAL -> CollateralEditSheet(
+                detail = detail,
+                busy = state.busy,
+                onDismiss = { sheet = null },
+                onSave = { papers, securityDeposit ->
+                    val fields = OrderDetailLogic.collateralEditFields(
+                        papers, securityDeposit, detail.collateralDetails, detail.securityDeposit,
+                    )
+                    vm.saveCollateral(fields) { ok -> if (ok) sheet = null }
                 },
             )
             DetailSheet.RETURN -> ReturnSheet(
@@ -785,6 +802,7 @@ private fun DetailBody(
     depositCard: (@Composable () -> Unit)?,
     onPreview: (Any) -> Unit,
     onEditNotes: () -> Unit,
+    onEditCollateral: (() -> Unit)? = null,
     readyRow: (@Composable () -> Unit)? = null,
 ) {
     val summary = detail.summary
@@ -793,7 +811,11 @@ private fun DetailBody(
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         // #643: no "Lịch thuê" / "Ngày bán" rows; the header box carries the days, the steps and the sale day
         if (isRent) readyRow?.invoke()
-        detail.collateralDetails?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.collateral), it) }
+        if (onEditCollateral != null) {
+            CollateralCard(detail, onEditCollateral)
+        } else {
+            detail.collateralDetails?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.collateral), it) }
+        }
 
         SectionTitle(stringResource(R.string.detail_items_count, detail.items.sumOf { it.quantity }))
         detail.items.forEach { ItemRow(it, summary.orderType) }
@@ -991,6 +1013,35 @@ private fun SectionTitle(text: String) {
         color = DS.Colors.TextMuted,
         modifier = Modifier.padding(top = 18.dp, bottom = 4.dp),
     )
+}
+
+/** #1279 card "Giấy tờ & thế chân · CCCD · 500.000" with "Sửa" (mockup G31-G33) */
+@Composable
+private fun CollateralCard(detail: OrderDetail, onEdit: () -> Unit) {
+    val summary = OrderDetailLogic.collateralSummary(detail.collateralDetails, detail.securityDeposit, ::formatMoneyVnd)
+    Column(
+        Modifier
+            .padding(vertical = 8.dp)
+            .fillMaxWidth()
+            .border(2.dp, Color(0xFF10B981), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag("order.detail.collateralCard"),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.detail_collateral_card),
+                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                stringResource(R.string.detail_collateral_edit),
+                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
+                modifier = Modifier.heightIn(min = 48.dp).clickable(onClick = onEdit).testTag("order.detail.collateralEdit").wrapContentHeight(Alignment.CenterVertically),
+            )
+        }
+        Text(summary ?: stringResource(R.string.detail_collateral_none), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+    }
 }
 
 @Composable

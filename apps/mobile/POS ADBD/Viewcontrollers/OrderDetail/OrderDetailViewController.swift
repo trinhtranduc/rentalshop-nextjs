@@ -400,12 +400,85 @@ final class OrderDetailViewController: BaseViewControler {
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
                 stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.dmy(picked)))
             }
-            if let papers = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines), !papers.isEmpty {
+            if OrderDetailLogic.canEditCollateral(orderType: detail.orderType, status: detail.status,
+                                                  canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {
+                stack.addArrangedSubview(collateralCard(detail))
+            } else if let papers = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines), !papers.isEmpty {
                 stack.addArrangedSubview(keyValue("Collateral".localized(), papers))
             }
         }
         // #643: a sale's day is in the header box; the "Ngày bán" row is gone
         return padded(stack, top: 0, bottom: 0)
+    }
+
+    /// #1279 card "Giấy tờ & thế chân · CCCD · 500.000" with "Sửa" on a picked-up rental (mockup G31-G33)
+    private func collateralCard(_ detail: OrderDetail) -> UIView {
+        let title = UILabel()
+        title.font = UIFont(name: "Inter-SemiBold", size: DS.TextSize.body) ?? Utils.boldFont(size: DS.TextSize.body)
+        title.textColor = DS.Color.text
+        title.text = "order.collateral.card".localized()
+        let edit = UIButton(type: .system)
+        edit.setTitle("order.collateral.edit".localized(), for: .normal)
+        edit.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+        edit.tintColor = DS.Color.primary
+        edit.accessibilityIdentifier = "order.detail.collateralEdit"
+        edit.addTarget(self, action: #selector(editCollateralTapped), for: .touchUpInside)
+        edit.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        let top = UIStackView(arrangedSubviews: [title, edit])
+        top.axis = .horizontal
+        top.alignment = .center
+        let value = UILabel()
+        value.font = Utils.regularFont(size: DS.TextSize.body)
+        value.textColor = DS.Color.textMuted
+        value.numberOfLines = 0
+        value.text = OrderDetailLogic.collateralSummary(papers: detail.collateralDetails, securityDeposit: detail.securityDeposit,
+                                                        format: { MoneyFormatter.format($0) })
+            ?? "order.collateral.none".localized()
+        value.accessibilityIdentifier = "order.detail.collateralValue"
+        let box = UIStackView(arrangedSubviews: [top, value])
+        box.axis = .vertical
+        box.spacing = 2
+        box.isLayoutMarginsRelativeArrangement = true
+        box.layoutMargins = UIEdgeInsets(top: 4, left: 12, bottom: 10, right: 4)
+        box.layer.cornerRadius = 12
+        box.layer.borderWidth = 2
+        box.layer.borderColor = UIColor(hexString: "10B981").cgColor
+        box.accessibilityIdentifier = "order.detail.collateralCard"
+        return padded(box, top: DS.Spacing.sm, bottom: DS.Spacing.sm)
+    }
+
+    @objc private func editCollateralTapped() {
+        guard let detail, presentedViewController == nil else { return }
+        let sheet = CollateralEditSheetViewController(detail: detail)
+        sheet.onSave = { [weak self] papers, securityDeposit in
+            self?.saveCollateral(papers: papers, securityDeposit: securityDeposit)
+        }
+        if let presentation = sheet.sheetPresentationController {
+            presentation.detents = [.large()]
+            presentation.prefersGrabberVisible = true
+            presentation.preferredCornerRadius = 24
+        }
+        present(sheet, animated: true)
+    }
+
+    /// #1279: `PUT /api/orders/{id}` with papers and deposit only; the status stays PICKUPED and the detail reloads
+    private func saveCollateral(papers: String, securityDeposit: Double) {
+        guard let detail else { return }
+        let request = OrderDetailLogic.collateralEditRequest(papers: papers, securityDeposit: securityDeposit,
+                                                             currentPapers: detail.collateralDetails,
+                                                             currentDeposit: detail.securityDeposit)
+        showProgressText(text: "Updating...".localized())
+        OrderService.shared.updateOrder(orderId: detail.id, request: request) { [weak self] updated, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.hideProgress()
+                if let error {
+                    self.handleStatusError(error)
+                    return
+                }
+                if let updated { self.didChangeOrder(updated) } else { self.load() }
+            }
+        }
     }
 
     /// "Sẵn sàng giao" (#470, board CT-gon): title, subtitle and a switch that saves at once
