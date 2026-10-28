@@ -19,10 +19,11 @@ object BlockText {
     }
 
     /** "120.000 (3 ngày) + 2 × 20.000 = 160.000" past the table, "120.000 (3 ngày)" inside it (one unit) */
-    fun formula(res: Resources, detail: BlockRentDetail, currency: ShopCurrency = ShopMoney.current): String {
+    fun formula(res: Resources, detail: BlockRentDetail, currency: ShopCurrency = ShopMoney.current, showTotal: Boolean = true): String {
         val base = ShopMoney.format(detail.basePrice, currency) + " (" + days(res, detail.tierDay) + ")"
         if (detail.extraDays <= 0) return base
-        return base + " + ${detail.extraDays} × " + ShopMoney.format(detail.extraPrice, currency) + " = " + ShopMoney.format(detail.total, currency)
+        val sum = base + " + ${detail.extraDays} × " + ShopMoney.format(detail.extraPrice, currency)
+        return if (showTotal) sum + " = " + ShopMoney.format(detail.total, currency) else sum
     }
 
     /** The sum only when there are extra days, else null (the summary already says it) */
@@ -46,6 +47,17 @@ object BlockText {
         if (table.tiers.size == 1) return part(table.startDay, first)
         return part(table.startDay, first) + " · " + part(table.lastTierDay, table.tiers.last())
     }
+}
+
+/**
+ * #1285 (iOS `OrderItem.detailLines`, mockup 1b item style B): the "SL × Khối 3 ngày + 2 ngày thêm" line of a BLOCK order line and its
+ * formula without the total ("120.000 (3 ngày) + 2 × 20.000"); null on any other line or one without a saved table
+ */
+fun com.anyrent.pos.data.model.OrderItem.blockDetailLines(res: Resources): Pair<String, String?>? {
+    if (!pricingType.equals("BLOCK", ignoreCase = true)) return null
+    val detail = pricingSnapshot?.detail() ?: return null
+    return "$quantity × " + BlockText.summary(res, detail) to
+        if (detail.extraDays > 0) BlockText.formula(res, detail, showTotal = false) else null
 }
 
 /** #1189 (iOS `OrderItem.blockLines`): the summary and, past the table, the sum of a BLOCK order line; null on any other line */

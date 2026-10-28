@@ -3027,3 +3027,5 @@
 "order.collateral.editTitle" = "Sửa giấy tờ & thế chân";
 "order.collateral.editWarning" = "Đổi thế chân sẽ đổi số trả lại khi nhận trả";
 "order.collateral.papersRow" = "Giấy tờ";
+"order.detail.section.payment" = "THANH TOÁN";
+"order.detail.rentTotal" = "Tổng tiền thuê";

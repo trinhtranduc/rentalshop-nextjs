@@ -104,6 +104,24 @@ final class BlockPricingTests: XCTestCase {
         XCTAssertEqual(ProductRowLogic.price(p), ProductRowPrice(main: 80_000, mainMode: .block, second: 150_000, secondMode: .perRental))
     }
 
+    /// #1285 mockup 1b, item style B: the "SL × giá" line of an order detail item and the formula without its total
+    func testOrderDetailLinesFollowItemStyleB() throws {
+        func item(_ json: String) throws -> OrderItem { try JSONDecoder.shared.decode(OrderItem.self, from: json.data(using: .utf8)!) }
+        let snap = #","pricingSnapshot":{"version":1,"type":"BLOCK","optionId":9,"tiers":[80000,100000,120000],"startDay":1,"extraMode":"EXTRA_PER_DAY","extraPrice":20000,"currency":"VND","days":5,"quantity":@Q@,"unitPrice":160000,"totalPrice":@T@,"basePrice":120000,"extraDays":2,"extraAmount":40000}"#
+        let block = try item(#"{"id":1,"quantity":2,"unitPrice":160000,"totalPrice":320000,"rentalDays":5,"pricingType":"BLOCK","pricingOptionId":9,"productName":"Áo""# + snap.replacingOccurrences(of: "@Q@", with: "2").replacingOccurrences(of: "@T@", with: "320000") + "}")
+        let blockLines = block.detailLines(orderType: .rent)
+        XCTAssertEqual(blockLines.line, "2 × " + String(format: "block.summary.block".localized(), 3) + " " + String(format: "block.summary.extra".localized(), 2))
+        XCTAssertEqual(blockLines.formula, "120.000 (\(days(3))) + 2 × 20.000")
+        let fixed = try item(#"{"id":1,"quantity":2,"unitPrice":40000,"totalPrice":80000,"pricingType":"FIXED","productName":"Khăn"}"#)
+        XCTAssertEqual(fixed.detailLines(orderType: .rent).line, "2 × 40.000đ")
+        XCTAssertNil(fixed.detailLines(orderType: .rent).formula)
+        let daily = try item(#"{"id":1,"quantity":1,"unitPrice":50000,"totalPrice":250000,"rentalDays":5,"pricingType":"DAILY","productName":"Vest"}"#)
+        XCTAssertEqual(daily.detailLines(orderType: .rent).line, "1 × 50.000đ × " + days(5))
+        // an old block line without a saved table reads like a plain line
+        let old = try item(#"{"id":1,"quantity":1,"unitPrice":160000,"totalPrice":160000,"rentalDays":5,"pricingType":"BLOCK","productName":"Áo"}"#)
+        XCTAssertEqual(old.detailLines(orderType: .rent).line, "1 × 160.000đ")
+    }
+
     func testBlockNumbersMayArriveAsStrings() throws {
         let p = try product(#"{"id":7,"name":"X","rentPrice":1,"pricingOptions":[{"id":9,"type":"BLOCK","price":80000,"isDefault":true,"blockTiers":["80000","100000"],"blockStartDay":1,"blockExtraMode":"HOLD_LAST","blockExtraPrice":"0"}]}"#)
         XCTAssertEqual(ProductPricing.block(p)?.tiers, [80_000, 100_000])

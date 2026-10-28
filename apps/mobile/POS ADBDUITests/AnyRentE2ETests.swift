@@ -2985,7 +2985,7 @@ final class AnyRentE2ETests: XCTestCase {
         }
         let sum = app.staticTexts["orderDetail.item.blockFormula"]
         XCTAssertTrue(sum.waitForExistence(timeout: 10), "order detail shows the sum of the block line")
-        XCTAssertTrue(sum.label.contains("160.000"), "order detail sum (\(sum.label))")
+        XCTAssertTrue(sum.label.contains("120.000"), "order detail sum (\(sum.label))")  // #1285: the total sits at the right of the line
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '160.000'")).count >= 1, "the order totals 160.000")
         e2e.shot("74-order-detail-block")
     }

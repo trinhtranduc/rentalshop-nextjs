@@ -2318,4 +2318,6 @@
     <string name="detail_collateral_edit_warning">Đổi thế chân sẽ đổi số trả lại khi nhận trả</string>
     <string name="detail_collateral_papers_row">Giấy tờ</string>
     <string name="detail_collateral_money_row">Thế chân</string>
+    <string name="detail_payment_title">THANH TOÁN</string>
+    <string name="detail_rent_total">Tổng tiền thuê</string>
 </resources>

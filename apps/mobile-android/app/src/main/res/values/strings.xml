@@ -2348,4 +2348,6 @@
     <string name="detail_collateral_edit_warning">Changing the collateral changes the amount to give back at return</string>
     <string name="detail_collateral_papers_row">Papers</string>
     <string name="detail_collateral_money_row">Collateral</string>
+    <string name="detail_payment_title">PAYMENT</string>
+    <string name="detail_rent_total">Rental total</string>
 </resources>
