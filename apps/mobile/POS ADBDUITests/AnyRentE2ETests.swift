@@ -2242,10 +2242,10 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("\(shotPrefix)-detail")
 
         let more = e2e.orderMoreButton
-        guard e2e.openOrderSheet() else { return XCTFail("\(shotPrefix): ⋯ does not open the sheet titled Đơn #…") }
+        guard e2e.openOrderSheet() else { return XCTFail("\(shotPrefix): ⋯ does not open the ⋯ sheet") }
         sleep(1)
         e2e.shot("\(shotPrefix)-sheet")
-        // A sheet has its own title and a close button; a UIMenu has neither
+        // A sheet has a close button (no title since #1297); a UIMenu has none
         XCTAssertTrue(e2e.button(["Close", "Đóng"]).exists, "\(shotPrefix): the sheet has a close button")
 
         var frames: [CGRect] = []
@@ -5594,9 +5594,9 @@ private final class E2E {
         return byId.exists ? byId : button(["More actions", "Thêm thao tác"])
     }
 
-    /// Title of the ⋯ sheet, "Đơn #787771"
+    /// The ⋯ sheet has no title since #1297 (the order number is on the top bar): its close button marks it
     var orderSheetTitle: XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Đơn #' OR label BEGINSWITH 'Order #'")).firstMatch
+        app.buttons["order.sheet.close"]
     }
 
     /// ⋯ → the sheet; true when its title shows

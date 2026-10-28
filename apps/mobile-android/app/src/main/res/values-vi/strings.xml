@@ -1283,14 +1283,19 @@
     <plurals name="order_sheet_notes_photos_only">
         <item quantity="other">Có %1$d ảnh</item>
     </plurals>
-    <string name="order_sheet_notes_add">Thêm ghi chú</string>
+    <string name="order_sheet_notes_add">Thêm ghi chú hoặc ảnh cho đơn</string>
     <string name="order_sheet_history">Lịch sử thay đổi</string>
     <string name="order_sheet_edit">Sửa đơn</string>
     <string name="order_sheet_extend">Gia hạn</string>
     <string name="order_sheet_share">Chia sẻ đơn</string>
     <string name="order_sheet_cancel">Huỷ đơn</string>
-    <string name="order_sheet_cancel_hint">Đơn chuyển sang Đã huỷ, không tính doanh thu</string>
+    <string name="order_sheet_cancel_hint">Huỷ đơn, xử lý tiền cọc nếu có</string>
     <string name="order_sheet_delete">Xoá đơn</string>
+    <string name="order_sheet_edit_hint">Đổi món, ngày thuê, khách</string>
+    <string name="order_sheet_extend_hint">Thêm ngày thuê, tính thêm tiền</string>
+    <string name="order_sheet_history_hint">Ai sửa gì, lúc nào</string>
+    <string name="order_sheet_share_hint">Ảnh hoá đơn để lưu hoặc gửi</string>
+    <string name="order_sheet_delete_hint">Xoá hẳn đơn đã huỷ, không hoàn tác được</string>
     <string name="history_title">Lịch sử thay đổi</string>
     <string name="history_order_subtitle">Đơn #%1$s · %2$s</string>
     <string name="history_empty">Chưa có thay đổi nào</string>
