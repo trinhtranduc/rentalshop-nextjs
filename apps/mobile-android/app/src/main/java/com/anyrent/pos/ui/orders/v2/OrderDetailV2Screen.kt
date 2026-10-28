@@ -687,8 +687,9 @@ private fun DetailHeader(detail: OrderDetail) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF8FAFC), RoundedCornerShape(14.dp))
-                .padding(14.dp),
+                // #1279 (owner chose A): edge to edge and square, like iOS; the grey band follows below
+                .background(Color(0xFFF8FAFC))
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -812,7 +813,7 @@ private fun DetailBody(
         // #643: no "Lịch thuê" / "Ngày bán" rows; the header box carries the days, the steps and the sale day
         if (isRent) readyRow?.invoke()
         if (onEditCollateral != null) {
-            CollateralCard(detail, onEditCollateral)
+            CollateralSection(detail, onEditCollateral)
         } else {
             detail.collateralDetails?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(R.string.collateral), it) }
         }
@@ -1015,32 +1016,25 @@ private fun SectionTitle(text: String) {
     )
 }
 
-/** #1279 card "Giấy tờ & thế chân · CCCD · 500.000" with "Sửa" (mockup G31-G33) */
+/** #1279 section "GIẤY TỜ & THẾ CHÂN" with "Sửa" (mockup G22-G24, owner chose A): flat like the items section, two rows like "Đã lấy", no card */
 @Composable
-private fun CollateralCard(detail: OrderDetail, onEdit: () -> Unit) {
-    val summary = OrderDetailLogic.collateralSummary(detail.collateralDetails, detail.securityDeposit, ::formatMoneyVnd)
-    Column(
-        Modifier
-            .padding(vertical = 8.dp)
-            .fillMaxWidth()
-            .border(2.dp, Color(0xFF10B981), RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .testTag("order.detail.collateralCard"),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+private fun CollateralSection(detail: OrderDetail, onEdit: () -> Unit) {
+    val none = stringResource(R.string.detail_collateral_none)
+    Column(Modifier.fillMaxWidth().testTag("order.detail.collateralSection")) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
             Text(
-                stringResource(R.string.detail_collateral_card),
-                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                stringResource(R.string.detail_collateral_card).uppercase(),
+                fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 stringResource(R.string.detail_collateral_edit),
-                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
+                fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
                 modifier = Modifier.heightIn(min = 48.dp).clickable(onClick = onEdit).testTag("order.detail.collateralEdit").wrapContentHeight(Alignment.CenterVertically),
             )
         }
-        Text(summary ?: stringResource(R.string.detail_collateral_none), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+        InfoRow(stringResource(R.string.detail_collateral_papers_row), detail.collateralDetails?.trim()?.takeIf { it.isNotEmpty() } ?: none)
+        InfoRow(stringResource(R.string.detail_collateral_money_row), if (detail.securityDeposit > 0) formatMoneyVnd(detail.securityDeposit) else none)
     }
 }
 

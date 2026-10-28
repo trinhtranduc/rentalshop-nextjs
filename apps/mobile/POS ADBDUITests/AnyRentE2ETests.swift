@@ -2191,8 +2191,10 @@ final class AnyRentE2ETests: XCTestCase {
         app.buttons["collateralEdit.save"].tap()
         sleep(3)
         let value = app.staticTexts["order.detail.collateralValue"]
-        XCTAssertTrue(e2e.scrollTo(value), "the card shows the saved value")
-        XCTAssertTrue(value.label.hasPrefix("GPLX") && value.label.contains("700.000") && !value.label.contains("500.000"), "card says GPLX and 700.000, got \(value.label)")
+        let savedPapers = app.staticTexts["order.detail.collateralPapers"]
+        XCTAssertTrue(e2e.scrollTo(value), "the section shows the saved value")
+        XCTAssertEqual(savedPapers.label, "GPLX", "papers row says GPLX")
+        XCTAssertTrue(value.label.contains("700") && !value.label.contains("500"), "money row says 700, got \(value.label)")
         e2e.shot("5i-4-saved")
     }
 

@@ -2346,4 +2346,6 @@
     <string name="detail_collateral_none">Not entered</string>
     <string name="detail_collateral_edit_title">Edit papers &amp; collateral</string>
     <string name="detail_collateral_edit_warning">Changing the collateral changes the amount to give back at return</string>
+    <string name="detail_collateral_papers_row">Papers</string>
+    <string name="detail_collateral_money_row">Collateral</string>
 </resources>

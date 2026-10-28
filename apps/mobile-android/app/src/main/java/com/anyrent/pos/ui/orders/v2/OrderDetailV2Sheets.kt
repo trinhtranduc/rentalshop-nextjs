@@ -125,7 +125,6 @@ internal fun CollateralEditSheet(
             value = papers,
             onValueChange = { papers = it.take(200) },
             label = { Text(stringResource(R.string.detail_hand_over_papers)) },
-            placeholder = { Text(stringResource(R.string.detail_hand_over_papers_hint)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().testTag("collateralEdit.papers"),
         )

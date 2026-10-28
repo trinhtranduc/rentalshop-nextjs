@@ -2316,4 +2316,6 @@
     <string name="detail_collateral_none">Chưa nhập</string>
     <string name="detail_collateral_edit_title">Sửa giấy tờ &amp; thế chân</string>
     <string name="detail_collateral_edit_warning">Đổi thế chân sẽ đổi số trả lại khi nhận trả</string>
+    <string name="detail_collateral_papers_row">Giấy tờ</string>
+    <string name="detail_collateral_money_row">Thế chân</string>
 </resources>

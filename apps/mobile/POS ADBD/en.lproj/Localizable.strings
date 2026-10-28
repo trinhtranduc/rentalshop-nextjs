@@ -3028,3 +3028,4 @@
 "order.collateral.none" = "Not entered";
 "order.collateral.editTitle" = "Edit papers & collateral";
 "order.collateral.editWarning" = "Changing the collateral changes the amount to give back at return";
+"order.collateral.papersRow" = "Papers";
