@@ -737,7 +737,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
                 type="button"
                 aria-haspopup="dialog"
                 onClick={() => setDaysOpen(true)}
-                className={`flex h-10 items-center gap-2 rounded-[10px] border px-3 text-[15px] font-semibold ${
+                className={`flex h-10 items-center gap-2 min-[1100px]:hidden rounded-[10px] border px-3 text-[15px] font-semibold ${
                   pickup && ret ? 'border-ar-line-strong bg-ar-surface text-ar-ink' : 'border-ar-primary bg-ar-primary-soft text-ar-primary-ink'
                 }`}
               >
@@ -831,6 +831,22 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
               </button>
             ))}
           </div>
+
+          {orderType === 'RENT' && (
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => setDaysOpen(true)}
+              data-testid="cart-days"
+              className={`hidden min-h-14 items-center gap-3 rounded-xl border px-3 py-2 text-left min-[1100px]:flex ${
+                pickup && ret ? 'border-ar-line-strong bg-ar-surface text-ar-ink' : 'border-dashed border-ar-primary bg-ar-primary-soft text-ar-primary-ink'
+              }`}
+            >
+              <ShellIcon d="M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M8 3v4M16 3v4" size={18} />
+              <span className="min-w-0 flex-1 text-sm font-semibold">{daysLabel}</span>
+              <span className="text-sm font-semibold text-ar-primary-ink">{pickup && ret ? t('editor.cart.change') : t('editor.cart.choose')}</span>
+            </button>
+          )}
 
           <button
             type="button"
