@@ -369,13 +369,14 @@ private object DayList {
 private fun DayOrderRow(order: OrderSummary, dates: String, days: Pair<String?, String?>, quantity: Int, showLine: Boolean, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button }) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = DayList.RowPad), verticalArrangement = Arrangement.spacedBy(DayList.LineGap)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    order.customerName.orEmpty(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                )
-                Text("#${order.orderNumber}", fontSize = 13.sp, fontWeight = FontWeight.Normal, color = OrderRowMetaColor, maxLines = 1)
-                Spacer(Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        order.customerName.orEmpty(), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Text("#${order.orderNumber}", fontSize = 13.sp, fontWeight = FontWeight.Normal, color = OrderRowMetaColor, maxLines = 1)
+                }
                 Text(
                     stringResource(R.string.v2_calendar_quantity, quantity), fontSize = DS.TextSize.Secondary, color = DayList.QtyText, maxLines = 1,
                     modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(DayList.QtyFill).padding(horizontal = 7.dp, vertical = 2.dp),
