@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import { hasPermission, withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
@@ -27,6 +28,17 @@ import {
 } from '@rentalshop/utils';
 import { checkPlanLimitIfNeeded, createAuditHelper } from '@rentalshop/utils/server';
 import { checkOrderRefsInMerchant } from '../../../lib/order-scope';
+import {
+  findBlockOption,
+  priceBlockLine,
+  readOldAppsMode,
+  rentalDaysFor,
+  sameLinePrice,
+  tableOf,
+  totalAfterReprice,
+  type BlockSnapshot,
+} from '../../../lib/order-block-pricing';
+import { blockPricingErrorResponse } from '../../../lib/block-pricing-errors';
 import { uploadToS3, commitStagingFiles } from '@rentalshop/utils/server';
 import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit } from '../../../lib/image-compression';
 import type { PricingType } from '@rentalshop/constants';
@@ -46,6 +58,24 @@ import { BookingRequestClosedError, effectiveBookingStatus } from '../../../lib/
 import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
+import { hasCapability } from '../../../lib/client-capabilities';
+import {
+  installmentsView,
+  shapeListPlans,
+  planForNewOrder,
+  recomputeDepositFromPayments,
+  recordInstallmentPayment,
+  loadShop,
+  shopFromMerchant,
+} from '../../../lib/installments';
+import {
+  depositPlanItemInputSchema,
+  depositPlanSchema,
+  effectivePlan,
+  planOverflow,
+} from '../../../../../packages/utils/src/core/deposit-plan';
+import { isStaffLikeRole } from '@rentalshop/constants';
+import { isInstallmentPayment } from '../../../lib/order-payments';
 import {
   findEditScheduleConflicts,
   loadScheduleConflicts,
@@ -246,7 +276,11 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     // For large datasets, use lightweight method for better performance
     const result = await PerformanceMonitor.measureQuery(
       'orders.search',
-      () => db.orders.findManyLightweight(searchFilters)
+      () => db.orders.findManyLightweight({
+        ...searchFilters,
+        includeInstallments: hasCapability(request, 'installments'),
+        includeDepositPlan: hasCapability(request, 'installments'),
+      })
     );
     
     console.log('✅ Search completed, found:', result.data?.length || 0, 'orders');
@@ -255,7 +289,12 @@ export const GET = withPermissions(['orders.view'])(async (request, { user, user
     // #389: what the counter collects / hands back per row, from one grouped payment query for this page
     const pageOrders = result.data || [];
     const paymentSums = await loadCompletedPaymentSums(prisma, pageOrders.map((order: any) => order.id));
-    const ordersWithBalance = attachOrderBalances(pageOrders as any[], paymentSums);
+    // #1222: `hasDepositPlan` + a slim `installmentSummary` only for a client that declared `installments`
+    const ordersWithBalance = await shapeListPlans(
+      attachOrderBalances(pageOrders as any[], paymentSums),
+      hasCapability(request, 'installments'),
+      prisma
+    );
 
     // Normalize date fields in order list to UTC ISO strings using toISOString()
     const normalizedOrders = ordersWithBalance.map(order => ({
@@ -791,6 +830,17 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       rentalDurationUnit = dominantPricingType === 'DAILY' ? 'day' : dominantPricingType === 'HOURLY' ? 'hour' : null;
     }
 
+    // #1189 day-block pricing: a client without the `block-pricing` capability (every installed app) gets its BLOCK
+    // lines priced by the server; a client with it is checked against the same function.
+    const clientKnowsBlock = hasCapability(request, 'block-pricing');
+    const blockErrors: string[] = [];
+    let blockRepriced = false;
+    let oldAppsModePromise: Promise<'recompute' | 'block'> | null = null;
+    const loadOldAppsMode = () =>
+      (oldAppsModePromise ??= db.prisma.merchant
+        .findUnique({ where: { id: outlet.merchantId }, select: { settings: true } })
+        .then((row: { settings?: unknown } | null) => readOldAppsMode(row?.settings)));
+
     // Process order items - use pricing from request (frontend calculated)
     const orderItemsData = await Promise.all(parsed.data.orderItems?.map(async item => {
           // Get product details for snapshot
@@ -869,6 +919,44 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             pricingOptionId = matchingOption?.id ?? null;
           }
 
+          // #1189: price a day-block line (RENT only) from the table and the Vietnam civil days
+          let lineUnitPrice = finalUnitPrice;
+          let lineTotalPrice = finalTotalPrice;
+          let lineType = optionType;
+          let pricingSnapshot: BlockSnapshot | undefined;
+          if (parsed.data.orderType === ORDER_TYPE.RENT) {
+            const blockOption = findBlockOption(product, { pricingOptionId: item.pricingOptionId, pricingType: item.pricingType });
+            const table = tableOf(blockOption);
+            if (blockOption && table) {
+              if (!clientKnowsBlock && (await loadOldAppsMode()) === 'block') {
+                blockErrors.push('PRICING_TYPE_REQUIRES_UPDATE');
+              } else {
+                const currency = (merchant as { currency?: string }).currency;
+                const priced = priceBlockLine({
+                  table,
+                  optionId: blockOption.id ?? null,
+                  days: rentalDaysFor(parsed.data.pickupPlanAt, parsed.data.returnPlanAt, (merchant as { timezone?: string }).timezone, item.rentDays),
+                  quantity: item.quantity,
+                  currency,
+                });
+                lineType = 'BLOCK' as PricingType;
+                rentalDays = priced.rentalDays;
+                if (blockOption.id != null) pricingOptionId = blockOption.id;
+                if (clientKnowsBlock) {
+                  if (!item.priceOverridden && !sameLinePrice(finalTotalPrice, priced.totalPrice, currency)) {
+                    blockErrors.push('BLOCK_PRICE_MISMATCH');
+                  }
+                  pricingSnapshot = { ...priced.snapshot, ...(item.priceOverridden ? { overridden: true } : {}) };
+                } else {
+                  lineUnitPrice = priced.unitPrice;
+                  lineTotalPrice = priced.totalPrice;
+                  pricingSnapshot = priced.snapshot;
+                  blockRepriced = true;
+                }
+              }
+            }
+          }
+
           // Snapshot product info + selected option to preserve them even if changed later
           return {
             productId: product.id, // Use database ID from product object (not item.productId which might be publicId)
@@ -878,15 +966,20 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
             productImages: product.images || null,
             // Order item fields - use pricing from request if provided
             quantity: item.quantity,
-            unitPrice: finalUnitPrice,
-            totalPrice: finalTotalPrice,
+            unitPrice: lineUnitPrice,
+            totalPrice: lineTotalPrice,
             deposit: finalDeposit, // Deposit per unit
             notes: item.notes || null, // ✅ Preserve notes from request (can be null or empty string)
             rentalDays: rentalDays,
-            pricingType: optionType,
+            pricingType: lineType,
             pricingOptionId,
+            ...(pricingSnapshot ? { pricingSnapshot } : {}),
           };
     }) || []);
+
+    if (blockErrors.length > 0) {
+      return NextResponse.json(blockPricingErrorResponse(blockErrors[0]), { status: 400 });
+    }
 
     // Use depositAmount from request (frontend calculates it from items); a SALE holds no deposit (#361)
     const deposits = resolveOrderDeposits(
@@ -898,6 +991,77 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     // #1070: a discount above the lines is stored clamped to them (old apps send it unclamped), never rejected
     const discount = clampOrderDiscount(parsed.data, sumLineTotals(orderItemsData));
 
+    // #1199 staged deposits. Only a client that declared `installments` and sent `paymentPlan` (or `depositPlan`)
+    // can create a plan order, and only a STAGED shop makes one; every other create is exactly as before.
+    const clientKnowsInstallments = hasCapability(request, 'installments');
+    // `db.merchants.findById` does not select `settings`: read the shop's deposit mode with a query that does (#1138)
+    // (only a client with `installments` reads the stages, so an installed app costs no extra query)
+    const shopContext = clientKnowsInstallments ? await loadShop(prisma, outlet.merchantId) : shopFromMerchant(merchant as any);
+    let newDepositPlan: ReturnType<typeof planForNewOrder> = null;
+    let collectFirstNow: { method: string; reference: string; amount: number } | null = null;
+    const planBody = (body as any)?.paymentPlan ?? ((body as any)?.depositPlan ? { items: (body as any).depositPlan.items } : undefined);
+    if (clientKnowsInstallments && planBody && typeof planBody === 'object') {
+      const planInput = z
+        .object({
+          templateId: z.string().max(40).optional().nullable(),
+          items: z.array(depositPlanItemInputSchema).min(1).max(3).optional(),
+          collectFirstNow: z
+            .object({ method: z.enum(['CASH', 'TRANSFER', 'CHECK', 'MANUAL']), reference: z.string().trim().min(8).max(100) })
+            .optional(),
+        })
+        .safeParse(planBody);
+      if (!planInput.success) {
+        return NextResponse.json(ResponseBuilder.validationError(planInput.error.flatten()), { status: 400 });
+      }
+      newDepositPlan = planForNewOrder({
+        shop: shopContext,
+        orderType: parsed.data.orderType,
+        capable: true,
+        canEditItems: !isStaffLikeRole(user.role),
+        input: planInput.data,
+      });
+      if (newDepositPlan) {
+        if ((parsed.data as any).loyaltyRedeem?.points) {
+          return NextResponse.json(ResponseBuilder.error('INSTALLMENT_LOYALTY_UNSUPPORTED'), { status: 400 });
+        }
+        if (!depositPlanSchema.safeParse(newDepositPlan).success) {
+          return NextResponse.json(ResponseBuilder.error('INSTALLMENT_EXCEEDS_TOTAL'), { status: 400 });
+        }
+        const draft = {
+          totalAmount: parsed.data.totalAmount,
+          depositPlan: newDepositPlan,
+          createdAt: new Date(),
+          pickupPlanAt: parsed.data.pickupPlanAt ? new Date(parsed.data.pickupPlanAt) : null,
+          returnPlanAt: parsed.data.returnPlanAt ? new Date(parsed.data.returnPlanAt) : null,
+          payments: [],
+        };
+        if (planOverflow(draft, shopContext) > 0) {
+          return NextResponse.json(ResponseBuilder.error('INSTALLMENT_EXCEEDS_TOTAL'), { status: 400 });
+        }
+        const first = planInput.data.collectFirstNow;
+        const firstStage = effectivePlan(draft, shopContext)[0];
+        if (first && firstStage && !firstStage.isRest && firstStage.amount > 0) {
+          collectFirstNow = { method: first.method, reference: first.reference, amount: firstStage.plannedAmount };
+        }
+      }
+    }
+    // #1189: the server repriced a day-block line for an old app: the total comes from the lines, not from the app
+    // (it holds the day-1 price). Everything else keeps the app's total, as before.
+    let totalAmount = parsed.data.totalAmount;
+    if (blockRepriced) {
+      const repriced = totalAfterReprice({
+        lineTotals: orderItemsData.map((line: { totalPrice: number }) => line.totalPrice),
+        discountType: parsed.data.discountType,
+        discountValue: discount.discountValue,
+        discountAmount: discount.discountAmount,
+        currency: (merchant as { currency?: string }).currency,
+      });
+      totalAmount = repriced.totalAmount;
+      if (discount.discountValue !== undefined || discount.discountAmount !== undefined) {
+        discount.discountAmount = repriced.discountAmount;
+      }
+    }
+
     // Create order with proper relations (Order does NOT have direct merchant relation)
     const orderData = {
       orderNumber,
@@ -906,8 +1070,10 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       createdBy: { connect: { id: user.id } },
       orderType: parsed.data.orderType,
       status: initialStatus,
-      totalAmount: parsed.data.totalAmount,
-      depositAmount: deposits.depositAmount,
+      totalAmount,
+      // #1199: a plan order starts with nothing collected; the server keeps depositAmount from the stage payments
+      depositAmount: newDepositPlan ? 0 : deposits.depositAmount,
+      ...(newDepositPlan ? { depositPlan: newDepositPlan as any } : {}),
       securityDeposit: deposits.securityDeposit,
       damageFee: parsed.data.damageFee || 0,
       lateFee: parsed.data.lateFee || 0,
@@ -945,7 +1111,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       customerId: parsed.data.customerId ?? null,
       createdById: user.id,
       orderType: parsed.data.orderType,
-      totalAmount: parsed.data.totalAmount,
+      totalAmount, // #341 guard compares the stored (server computed) total
       pickupPlanAt: orderData.pickupPlanAt,
       returnPlanAt: orderData.returnPlanAt,
       items: orderItemsData.map((item: { productId: number; quantity: number }) => ({
@@ -991,6 +1157,34 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
         }
       : undefined;
 
+    // #1199: "collect stage 1 now" runs in the create transaction, like confirming a booking: a replay or a failure
+    // in between leaves neither a duplicate Payment nor an order without its first stage.
+    const collectFirstStage = collectFirstNow
+      ? async (tx: unknown, created: { id: number }) => {
+          const client = tx as Prisma.TransactionClient;
+          const payment = await recordInstallmentPayment(client, {
+            orderId: created.id,
+            merchantId: outlet.merchantId,
+            stage: { key: 'i1', plannedAmount: collectFirstNow!.amount },
+            amount: collectFirstNow!.amount,
+            currency: shopContext.currency,
+            method: collectFirstNow!.method,
+            reference: collectFirstNow!.reference,
+            userId: user.id,
+            source: 'CREATE_ORDER',
+          });
+          const deposit = await recomputeDepositFromPayments(client, created.id);
+          Object.assign(created, { depositAmount: deposit ?? collectFirstNow!.amount, payments: [payment] });
+        }
+      : undefined;
+    const afterInsertHook =
+      confirmBooking || collectFirstStage
+        ? async (tx: unknown, created: { id: number }) => {
+            if (confirmBooking) await confirmBooking(tx, created);
+            if (collectFirstStage) await collectFirstStage(tx, created);
+          }
+        : undefined;
+
     const checkSchedule =
       parsed.data.orderType === ORDER_TYPE.RENT &&
       (merchant as { allowOverlappingOrders?: boolean }).allowOverlappingOrders === false &&
@@ -999,7 +1193,7 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
     try {
       createResult = checkSchedule
         ? await db.orders.createOnce(createGuard, orderData, {
-            ...(confirmBooking ? { afterInsert: confirmBooking } : {}),
+            ...(afterInsertHook ? { afterInsert: afterInsertHook } : {}),
             beforeInsert: async (tx: unknown) => {
               const conflicts = await loadScheduleConflicts(tx as ScheduleDbClient, {
                 outletId: parsed.data.outletId,
@@ -1014,8 +1208,8 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
               return conflicts.length > 0 ? conflicts : null;
             }
           })
-        : confirmBooking
-          ? await db.orders.createOnce(createGuard, orderData, { afterInsert: confirmBooking })
+        : afterInsertHook
+          ? await db.orders.createOnce(createGuard, orderData, { afterInsert: afterInsertHook })
           : await db.orders.createOnce(createGuard, orderData);
     } catch (error) {
       if (error instanceof BookingRequestClosedError) {
@@ -1123,6 +1317,11 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       }
     }
 
+    // #1200: a deposit stage (notes INSTALLMENT) is not counted for clients without the `installments` capability
+    const countedPayments = (loyaltyOrder.payments || []).filter(
+      (payment) => hasCapability(request, 'installments') || !isInstallmentPayment(payment)
+    );
+
     // Flatten order response (consistent with order list response)
     const flattenedOrder = {
       id: loyaltyOrder.id,
@@ -1192,13 +1391,17 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
           notes: item.notes,
           rentalDays: item.rentalDays,
           pricingType: item.pricingType,
-          pricingOptionId: item.pricingOptionId
+          pricingOptionId: item.pricingOptionId,
+          // #1189 (additive): only a day-block line has a snapshot; other lines keep the exact old keys
+          ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {})
         };
       }) || [],
       // Calculated fields
       itemCount: loyaltyOrder.orderItems?.length || 0,
-      paymentCount: loyaltyOrder.payments?.length || 0,
-      totalPaid: loyaltyOrder.payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
+      paymentCount: countedPayments.length,
+      totalPaid: countedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0),
+      // #1199 (additive, only for a client that declared `installments`)
+      ...(clientKnowsInstallments ? installmentsView(loyaltyOrder as any, shopContext) : {}),
     };
 
     // Normalize date fields to UTC ISO strings using toISOString()

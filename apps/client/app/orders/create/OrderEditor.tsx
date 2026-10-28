@@ -5,15 +5,15 @@
  * with the units still free for those days ("Còn n/m"), the cart on the right. Money and the saved
  * payload come from ./create-model (unit-tested); the calls are the ones the old form used.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { BUSINESS } from '@rentalshop/constants';
-import { useFormatCurrency, useToast } from '@rentalshop/ui';
+import { useCurrency, useFormatCurrency, useToast } from '@rentalshop/ui';
 import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { useAuth, useOrderTranslations } from '@rentalshop/hooks';
-import { bookingRequestsApi, compressImage, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
+import { bookingRequestsApi, compressImage, currencyMinorUnit, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { draftFromBooking } from '../online/online-model';
 import { useShopToday } from '../../hooks/useShopToday';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
@@ -28,6 +28,7 @@ import {
   discountExceeds,
   dayRangeIso,
   draftFromOrder,
+  planInstantFor,
   pickOutlet,
   findByBarcode,
   firstMissing,
@@ -43,18 +44,35 @@ import {
   setQuantity,
   stockOf,
   type CartLine,
-  type CustomerPick,
-  type DiscountType,
   type OrderLike,
   type OrderType,
   type ProductLike,
   setLineNote,
+  syncBlockPrices,
+  refreshBlockOptions,
 } from './create-model';
 import { allowsOverlap, conflictFromResult, ctaState, dayRangeText, orderListText, type BatchResultLike, type LineConflict } from './schedule-model';
 import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard, fieldClass, type LineStatus, type StockView } from './parts';
 import { useLoyalty } from './useLoyalty';
 import { confirmView } from './confirm-model';
 import { CreateConfirmDialog } from './ConfirmDialog';
+import { CartTabs } from './CartTabs';
+import { useDraftCarts } from './useDraftCarts';
+import { blankCart, type DraftCart } from './cart-store';
+import { StagePlanPanel } from '../../installments/StagePlanPanel';
+import { useDepositSettings } from '../../installments/useDepositSettings';
+import {
+  buildPaymentPlan,
+  defaultTemplateOf,
+  draftsFromTemplate,
+  firstStageToCollect,
+  isStagedMode,
+  newReference,
+  percentSum,
+  previewStages,
+  templatesOf,
+  isStaffRole,
+} from '../../installments/installments-model';
 
 const PAGE_SIZE = 60;
 const MAX_NOTE_IMAGES = 5;
@@ -230,34 +248,71 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
 
   const draft = useMemo(() => (order ? draftFromOrder(order, getLocalDateKey) : null), [order]);
 
+  // The carts (#1293): every part of the order that used to be its own state lives in the cart in use.
+  // Editing an order is one cart that is never saved.
+  const userId = ((user as { id?: number } | null)?.id ?? null) as number | null;
+  const firstCart = useMemo(
+    () =>
+      draft
+        ? blankCart(1, {
+            ...draft,
+            discountOpen: !!draft.discountValue,
+            notesOpen: !!draft.notes,
+          })
+        : undefined,
+    [draft],
+  );
+  const store = useDraftCarts({ persist: !editing, userId, first: firstCart });
+  const cart = store.active;
+  const cartId = cart.id;
+  const field =
+    <K extends keyof DraftCart>(key: K) =>
+    (next: SetStateAction<DraftCart[K]>) =>
+      store.patch(cartId, (c) => ({ [key]: typeof next === 'function' ? (next as (prev: DraftCart[K]) => DraftCart[K])(c[key]) : next }) as Partial<DraftCart>);
+
   // Order
-  const [orderType, setOrderType] = useState<OrderType>(draft?.orderType ?? 'RENT');
-  const [pickup, setPickup] = useState(draft?.pickup ?? '');
-  const [ret, setRet] = useState(draft?.ret ?? '');
-  const [customer, setCustomer] = useState<CustomerPick | null>(draft?.customer ?? null);
-  const [lines, setLines] = useState<CartLine[]>(draft?.lines ?? []);
-  const [discountType, setDiscountType] = useState<DiscountType>(draft?.discountType ?? 'amount');
-  const [discountValue, setDiscountValue] = useState(draft?.discountValue ?? 0);
-  const [discountOpen, setDiscountOpen] = useState(!!draft?.discountValue);
-  const [depositAmount, setDepositAmount] = useState<number | null>(draft?.depositAmount ?? null);
+  const { orderType, pickup, ret, customer, lines: rawLines, discountType, discountValue, discountOpen, depositAmount, notes, notesOpen, bookingRequestId, photos, outletId, templatePick, planEdits, collectChoice } = cart;
+  const setOrderType = field('orderType');
+  const setPickup = field('pickup');
+  const setRet = field('ret');
+  const setCustomer = field('customer');
+  const setLines = field('lines');
+  const setDiscountType = field('discountType');
+  const setDiscountValue = field('discountValue');
+  const setDiscountOpen = field('discountOpen');
+  const setDepositAmount = field('depositAmount');
+  const setNotes = field('notes');
+  const setNotesOpen = field('notesOpen');
+  const setPhotos = field('photos');
+  const setOutletId = field('outletId');
+  const setTemplatePick = field('templatePick');
+  const setPlanEdits = field('planEdits');
+  const setCollectChoice = field('collectChoice');
+  // #1189: a day-block line costs what its table says for the order's days; synced here so every use below agrees
+  const { currency: shopCurrencyCode } = useCurrency();
+  const minorUnit = currencyMinorUnit(shopCurrencyCode);
+  const days = orderType === 'RENT' ? rentalDays(pickup, ret) : 0;
+  const lines = useMemo(() => syncBlockPrices(rawLines, orderType, days, minorUnit), [rawLines, orderType, days, minorUnit]);
   // Kept as the order already has it (edit); never typed here (#614).
   const [securityDeposit] = useState(draft?.securityDeposit ?? 0);
-  const [notes, setNotes] = useState(draft?.notes ?? '');
-  const [notesOpen, setNotesOpen] = useState(!!draft?.notes);
-  // Đặt online › Xác nhận (#1124): the request this new order answers; sent as bookingRequestId
-  const [bookingRequestId, setBookingRequestId] = useState<number | null>(null);
-  const [photos, setPhotos] = useState<File[]>([]);
+  // #1199 "Thu cọc theo giai đoạn": a new rental of a shop in staged mode shows the stages in place of "Cọc"
+  const { settings: depositSettings } = useDepositSettings(!editing);
+  const staged = !editing && orderType === 'RENT' && isStagedMode(depositSettings);
+  const planTemplates = useMemo(() => templatesOf(depositSettings), [depositSettings]);
+  const firstReference = useRef(newReference());
+  const planTemplate = planTemplates.find((x) => x.id === templatePick) ?? defaultTemplateOf(depositSettings);
+  const planItems = useMemo(() => planEdits ?? draftsFromTemplate(planTemplate), [planEdits, planTemplate]);
+  const canEditStages = !isStaffRole(user?.role);
   const [compressing, setCompressing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptProps['order'] | null>(null);
 
   // Dialogs: a new rental starts with its days
-  const [daysOpen, setDaysOpen] = useState(!editing);
+  const [daysOpen, setDaysOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
 
-  // Outlet
+  // Outlet: the list; each cart keeps its own choice
   const [outlets, setOutlets] = useState<OutletLite[]>([]);
-  const [outletId, setOutletId] = useState<number | null>(draft?.outletId ?? user?.outletId ?? null);
   useEffect(() => {
     if (user?.outletId && user.outlet) {
       setOutlets([
@@ -267,8 +322,6 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           printNote: (user.outlet as { printNote?: string | null }).printNote ?? null,
         },
       ]);
-      // The user can load after the first render (useState above saw no user yet): pick their outlet now.
-      setOutletId((cur) => cur ?? user.outletId ?? null);
       return;
     }
     if (!merchantId) return;
@@ -285,13 +338,18 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           printBankQr: o.printBankQr,
         }));
         setOutlets(list);
-        setOutletId((cur) => pickOutlet(cur, user?.outletId ?? null, list));
       })
       .catch(() => undefined);
     return () => {
       live = false;
     };
   }, [merchantId, user?.outletId, user?.outlet]);
+  // The cart in use gets a valid outlet: its own, else the user's, else the shop's default (also after the user or list loads)
+  const { patch: patchCart } = store;
+  useEffect(() => {
+    const next = pickOutlet(outletId, user?.outletId ?? null, outlets);
+    if (next !== outletId) patchCart(cartId, { outletId: next });
+  }, [outlets, outletId, cartId, user?.outletId, patchCart]);
 
   // Products
   const [search, setSearch] = useState('');
@@ -306,58 +364,63 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   // Kiểm tra còn hàng → "Tạo đơn với lịch này": ?pickup=&return=&productId=&outletId= prefill a new order
   const prefilled = useRef(false);
   useEffect(() => {
-    if (editing || prefilled.current) return;
+    if (editing || prefilled.current || !store.loaded) return;
     prefilled.current = true;
     const params = new URLSearchParams(window.location.search);
     const key = /^\d{4}-\d{2}-\d{2}$/;
     const from = params.get('pickup') || '';
     const to = params.get('return') || '';
-    if (key.test(from) && key.test(to) && to >= from) {
-      setPickup(from);
-      setRet(to);
-      setDaysOpen(false);
-    }
+    const hasDays = key.test(from) && key.test(to) && to >= from;
     const outlet = Number(params.get('outletId'));
-    if (outlet > 0 && !user?.outletId) setOutletId(outlet);
     const booking = Number(params.get('bookingRequestId'));
+    const productId = Number(params.get('productId'));
+    const fromLink = hasDays || booking > 0 || productId > 0;
+    // #1293: a link opens in the cart in use when it is empty, else in a new cart (none at the limit: leave the page as it is)
+    const current = store.active;
+    const target = !fromLink ? current.id : current.lines.length > 0 ? store.add() : current.id;
+    if (fromLink) window.history.replaceState(window.history.state, '', window.location.pathname);
+    if (!target) return;
+    const fill = (patch: Partial<DraftCart> | ((c: DraftCart) => Partial<DraftCart>)) => store.patch(target, patch);
+    const hasDaysAlready = target === current.id && !!current.pickup && !!current.ret;
+    if (!hasDays && !hasDaysAlready) setDaysOpen(true);
+    if (hasDays) fill({ pickup: from, ret: to });
+    if (outlet > 0 && !user?.outletId) fill({ outletId: outlet });
     if (booking > 0) {
       bookingRequestsApi
         .prepare(booking)
         .then(async (res) => {
           if (!res.success || !res.data) return;
           const d = draftFromBooking(res.data, getLocalDateKey);
-          setBookingRequestId(d.bookingRequestId);
-          setPickup(d.pickup);
-          setRet(d.ret);
           setDaysOpen(false);
-          if (!user?.outletId) setOutletId(d.outletId);
-          if (d.customer) setCustomer(d.customer);
-          if (d.notes) {
-            setNotes(d.notes);
-            setNotesOpen(true);
-          }
+          fill({
+            bookingRequestId: d.bookingRequestId,
+            pickup: d.pickup,
+            ret: d.ret,
+            ...(!user?.outletId ? { outletId: d.outletId } : {}),
+            ...(d.customer ? { customer: d.customer } : {}),
+            ...(d.notes ? { notes: d.notes, notesOpen: true } : {}),
+          });
           const products = await Promise.all(d.items.map((i) => productsApi.getProduct(i.productId).catch(() => null)));
-          setLines((cur) =>
-            d.items.reduce((acc, item, i) => {
+          fill((c) => ({
+            lines: d.items.reduce((acc, item, i) => {
               const p = products[i];
               if (!p || !p.success || !p.data) return acc;
               const added = addProduct(acc, p.data as unknown as ProductLike, 'RENT');
               return setQuantity(added, added[added.length - 1].key, item.quantity);
-            }, cur),
-          );
+            }, c.lines),
+          }));
         })
         .catch(() => undefined);
     }
-    const productId = Number(params.get('productId'));
     if (productId > 0) {
       productsApi
         .getProduct(productId)
         .then((res) => {
-          if (res.success && res.data) setLines((cur) => (cur.length ? cur : addProduct(cur, res.data as unknown as ProductLike, 'RENT')));
+          if (res.success && res.data) fill((c) => (c.lines.length ? {} : { lines: addProduct(c.lines, res.data as unknown as ProductLike, 'RENT') }));
         })
         .catch(() => undefined);
     }
-  }, [editing, user?.outletId]);
+  }, [editing, user?.outletId, store]);
 
   const hydrated = useRef(false);
   useEffect(() => {
@@ -366,10 +429,10 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     Promise.all(draft.lines.map((l) => productsApi.getProduct(l.productId).catch(() => null)))
       .then((res) => {
         const products = res.flatMap((r) => (r && r.success && r.data ? [r.data as unknown as ProductLike] : []));
-        setLines((cur) => hydrateLines(cur, products));
+        patchCart(cartId, (c) => ({ lines: hydrateLines(c.lines, products) }));
       })
       .catch(() => undefined);
-  }, [editing, draft]);
+  }, [editing, draft, patchCart, cartId]);
 
   // Stock
   const ids = useMemo(() => {
@@ -418,7 +481,6 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   };
 
   // Money
-  const days = orderType === 'RENT' ? rentalDays(pickup, ret) : 0;
   const base = computeTotals({
     lines,
     orderType,
@@ -432,7 +494,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     customerId: customer?.id ?? null,
     orderType,
     total: base.totalAmount,
-    enabled: !editing,
+    enabled: !editing && !staged,
   });
   const totals = computeTotals({
     lines,
@@ -444,6 +506,23 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     securityDeposit,
     loyaltyDiscount: loyalty.discount,
   });
+  const stageTotal = totals.totalAmount - totals.loyaltyDiscount;
+  const stages = useMemo(
+    () =>
+      staged
+        ? previewStages({
+            total: stageTotal,
+            items: planItems,
+            pickupPlanAt: pickup ? planInstantFor(pickup) : null,
+            returnPlanAt: ret ? planInstantFor(ret) : null,
+            currency: shopCurrencyCode,
+          })
+        : [],
+    [staged, stageTotal, planItems, pickup, ret, shopCurrencyCode],
+  );
+  const stagesOver = staged && percentSum(planItems) > 100;
+  const firstAmount = staged ? (firstStageToCollect(stages)?.plannedAmount ?? 0) : 0;
+  const collectAmount = collectChoice !== 'NONE' ? firstAmount : 0;
   // #1067: a discount above the rent / goods (or 100%) is refused with a red line and blocks the submit
   const discountTooHigh = discountExceeds(discountType, discountValue, totals.subtotal)
     ? t('editor.money.discountTooHigh', { limit: discountType === 'percentage' ? '100%' : money(totals.subtotal) })
@@ -502,7 +581,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   // The body sent, and the source of every amount in the confirm dialog (#569)
   const payloadNow = () =>
     customer && outletId
-      ? buildPayload({
+      ? withStagePlan(buildPayload({
           mode: editing ? 'edit' : 'create',
           orderType,
           customerId: customer.id,
@@ -517,9 +596,24 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           notes,
           bookingRequestId,
           loyaltyPoints: loyalty.redeemPoints,
+          minorUnit,
           original: order ? { pickupPlanAt: order.pickupPlanAt, returnPlanAt: order.returnPlanAt } : null,
-        })
+        }))
       : null;
+  // The server collects stage 1 itself (collectFirstNow) and keeps depositAmount from the payments
+  const withStagePlan = <P extends { depositAmount: number }>(payload: P) =>
+    staged
+      ? {
+          ...payload,
+          depositAmount: 0,
+          paymentPlan: buildPaymentPlan({
+            templateId: planTemplate?.id ?? null,
+            items: planItems,
+            edited: planEdits != null,
+            collectNow: collectAmount > 0 && collectChoice !== 'NONE' ? { method: collectChoice, reference: firstReference.current } : null,
+          }),
+        }
+      : payload;
 
   const overlapLines = Array.from(conflicts.values()).map((c) => {
     const range = dayRangeText(c.dayKeys);
@@ -531,7 +625,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const confirmPayload = confirmOpen && !editing ? payloadNow() : null;
   const confirmData = confirmPayload
     ? confirmView({
-        payload: confirmPayload,
+        payload: staged ? { ...confirmPayload, depositAmount: collectAmount } : confirmPayload,
         totals,
         names: Object.fromEntries(lines.map((l) => [l.productId, l.name])),
         customer,
@@ -549,7 +643,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
       if (missing === 'customer') setCustomerOpen(true);
       return;
     }
-    if (cta === 'blocked' || discountTooHigh) return;
+    if (cta === 'blocked' || discountTooHigh || stagesOver) return;
     // A new order is confirmed first (iOS CreateOrderConfirmSheet, #569); an edit only on a schedule overlap
     if (!confirmed && (!editing || cta === 'warn')) {
       setConfirmOpen(true);
@@ -572,6 +666,9 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         const res = await ordersApi.createOrder(payload as unknown as CreateInput, photos.length ? { notesImages: photos } : undefined);
         if (!res.success || !res.data) throw scheduleError(res);
         setConfirmOpen(false);
+        firstReference.current = newReference();
+        // #1293: the cart that made the order is done: closed (the only one is emptied), so coming back finds no old items
+        store.remove(cartId);
         toastSuccess(to('messages.createSuccess'));
         setReceipt(res.data as ReceiptProps['order']);
       }
@@ -582,6 +679,17 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         setConfirmOpen(false);
         overlap.set(false);
         availability.refresh();
+      }
+      // #1189: the day-block price list changed: reload the products and price the lines again (the message is shown above)
+      if (e instanceof Error && e.message === 'BLOCK_PRICE_MISMATCH') {
+        setConfirmOpen(false);
+        const ids = Array.from(new Set(rawLines.map((l) => l.productId)));
+        Promise.all(ids.map((id) => productsApi.getProduct(id).catch(() => null)))
+          .then((res) => {
+            const products = res.flatMap((r) => (r && r.success && r.data ? [r.data as unknown as ProductLike] : []));
+            setLines((cur) => refreshBlockOptions(cur, products));
+          })
+          .catch(() => undefined);
       }
     } finally {
       setSubmitting(false);
@@ -601,7 +709,11 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     ? t('editor.saving')
     : editing
       ? t('editor.submit.save')
-      : orderType === 'RENT' && totals.depositAmount > 0
+      : staged
+        ? collectAmount > 0
+          ? t('installments.createAndCollect', { amount: money(collectAmount) })
+          : t('editor.submit.create')
+        : orderType === 'RENT' && totals.depositAmount > 0
         ? t('editor.submit.withDeposit', {
             amount: money(totals.depositAmount),
           })
@@ -612,388 +724,450 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="flex min-h-full flex-col text-ar-ink min-[1100px]:flex-row">
-      {/* Products */}
-      <div className="box-border flex min-w-0 flex-1 flex-col gap-3.5 px-4 pb-10 pt-5 sm:px-8 min-[1100px]:pl-8 min-[1100px]:pr-6">
-        {editing && (
-          <Link
-            href={`/orders/${order.orderNumber}`}
-            className="flex w-fit items-center gap-1 text-sm font-semibold text-ar-primary-ink no-underline hover:underline"
-          >
-            <ShellIcon d={ICONS.chevronLeft} size={16} />
-            {t('editor.backToOrder', { number: order.orderNumber })}
-          </Link>
-        )}
-        {!editing && bookingRequestId != null && (
-          <Link
-            href={`/orders/online/${bookingRequestId}`}
-            data-booking-banner
-            className="flex w-fit items-center gap-1 text-sm font-semibold text-ar-primary-ink no-underline hover:underline"
-          >
-            <ShellIcon d={ICONS.chevronLeft} size={16} />
-            {t('online.fromRequest')}
-          </Link>
-        )}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="m-0 text-2xl font-bold">{editing ? t('editor.editTitle', { number: order.orderNumber }) : t('editor.title')}</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            {showOutletSelect && (
-              <select
-                value={outletId ?? ''}
-                onChange={(e) => setOutletId(Number(e.target.value) || null)}
-                aria-label={t('editor.outlet')}
-                className="h-10 cursor-pointer rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 text-[15px] font-semibold text-ar-ink"
-              >
-                {outlets.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
+    <div className="flex min-h-full flex-col text-ar-ink">
+      {/* #1293: one tab per cart across both columns; Sửa đơn has no carts */}
+      {!editing && (
+        <CartTabs
+          carts={store.carts}
+          activeId={cartId}
+          canAdd={store.canAdd}
+          disabled={submitting}
+          minorUnit={minorUnit}
+          onSwitch={store.switchTo}
+          onAdd={() => {
+            if (store.add()) setDaysOpen(true);
+          }}
+          onRemove={store.remove}
+          t={t}
+          money={money}
+        />
+      )}
+      <div className="flex min-h-0 flex-1 flex-col min-[1100px]:flex-row">
+        {/* Products */}
+        <div className="box-border flex min-w-0 flex-1 flex-col gap-3.5 px-4 pb-10 pt-5 sm:px-8 min-[1100px]:pl-8 min-[1100px]:pr-6">
+          {editing && (
+            <Link
+              href={`/orders/${order.orderNumber}`}
+              className="flex w-fit items-center gap-1 text-sm font-semibold text-ar-primary-ink no-underline hover:underline"
+            >
+              <ShellIcon d={ICONS.chevronLeft} size={16} />
+              {t('editor.backToOrder', { number: order.orderNumber })}
+            </Link>
+          )}
+          {!editing && bookingRequestId != null && (
+            <Link
+              href={`/orders/online/${bookingRequestId}`}
+              data-booking-banner
+              className="flex w-fit items-center gap-1 text-sm font-semibold text-ar-primary-ink no-underline hover:underline"
+            >
+              <ShellIcon d={ICONS.chevronLeft} size={16} />
+              {t('online.fromRequest')}
+            </Link>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="m-0 text-2xl font-bold">{editing ? t('editor.editTitle', { number: order.orderNumber }) : t('editor.title')}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              {showOutletSelect && (
+                <select
+                  value={outletId ?? ''}
+                  onChange={(e) => setOutletId(Number(e.target.value) || null)}
+                  aria-label={t('editor.outlet')}
+                  className="h-10 cursor-pointer rounded-[10px] border border-ar-line-strong bg-ar-surface px-3 text-[15px] font-semibold text-ar-ink"
+                >
+                  {outlets.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {orderType === 'RENT' && (
+                <button
+                  type="button"
+                  aria-haspopup="dialog"
+                  onClick={() => setDaysOpen(true)}
+                  className={`flex h-10 items-center gap-2 min-[1100px]:hidden rounded-[10px] border px-3 text-[15px] font-semibold ${
+                    pickup && ret ? 'border-ar-line-strong bg-ar-surface text-ar-ink' : 'border-ar-primary bg-ar-primary-soft text-ar-primary-ink'
+                  }`}
+                >
+                  <ShellIcon d="M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M8 3v4M16 3v4" size={18} />
+                  {daysLabel}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <label className="flex h-11 items-center gap-2 rounded-xl border border-ar-line-strong bg-ar-surface px-3 text-ar-muted focus-within:border-ar-primary">
+            <ShellIcon d={ICONS.search} size={18} />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void onSearchEnter();
+                }
+              }}
+              aria-label={t('editor.grid.searchLabel')}
+              placeholder={t('editor.grid.search')}
+              className="min-w-0 flex-1 border-0 bg-transparent text-[15px] text-ar-ink outline-none placeholder:text-ar-faint"
+            />
+          </label>
+
+          <span className="text-sm text-ar-muted">{orderType === 'RENT' ? t('editor.grid.helpRent') : t('editor.grid.helpSale')}</span>
+
+          {grid.failed && grid.products.length === 0 ? (
+            <div className={`${cardClass} flex flex-wrap items-center justify-between gap-3 p-4`} role="alert">
+              <span className="text-[15px]">{t('editor.grid.failed')}</span>
+              <button type="button" className={outlineBtn} onClick={grid.retry}>
+                {t('editor.retry')}
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))] max-sm:[grid-template-columns:repeat(2,minmax(0,1fr))]">
+              {grid.products.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  name={p.name}
+                  image={imagesOf(p.images)[0] || null}
+                  prices={cardPrices(p, orderType)}
+                  stock={stockView(p.id)}
+                  inCart={lines.some((l) => l.productId === p.id)}
+                  onAdd={() => add(p)}
+                  t={t}
+                  money={money}
+                />
+              ))}
+              {grid.loading &&
+                Array.from({ length: grid.products.length ? 3 : 9 }, (_, i) => (
+                  <span key={`s${i}`} aria-hidden="true" className="block h-[236px] animate-pulse rounded-[14px] bg-ar-subtle" />
                 ))}
-              </select>
-            )}
+            </div>
+          )}
+          {!grid.loading && !grid.failed && grid.products.length === 0 && (
+            <p className="m-0 py-6 text-center text-[15px] text-ar-muted">{q ? t('editor.grid.noMatch', { q }) : t('editor.grid.empty')}</p>
+          )}
+          {grid.hasMore && !grid.loading && (
+            <button type="button" className={`${outlineBtn} self-center`} onClick={grid.more}>
+              {t('editor.grid.more')}
+            </button>
+          )}
+        </div>
+
+        {/* Cart */}
+        <aside
+          ref={cartRef}
+          aria-label={t('editor.cart.label')}
+          className={`w-full border-t border-ar-line bg-ar-surface min-[1100px]:w-[400px] min-[1100px]:flex-none min-[1100px]:border-l min-[1100px]:border-t-0 ${editing ? '' : 'scroll-mt-12'}`}
+        >
+          {/* Wide screens: the cart stays in view while the grid scrolls (65px = top bar, 48px more for the cart tabs) */}
+          <div
+            className={`box-border flex flex-col gap-4 px-5 pb-24 pt-5 min-[1100px]:sticky min-[1100px]:overflow-y-auto min-[1100px]:pb-6 ${
+              editing ? 'min-[1100px]:top-0 min-[1100px]:max-h-[calc(100vh-65px)]' : 'min-[1100px]:top-12 min-[1100px]:max-h-[calc(100vh-65px-48px)]'
+            }`}
+          >
+            <div role="tablist" aria-label={t('editor.cart.type')} className="grid grid-cols-2 rounded-xl bg-ar-subtle p-1">
+              {(['RENT', 'SALE'] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="tab"
+                  aria-selected={orderType === k}
+                  disabled={editing && orderType !== k}
+                  onClick={() => switchType(k)}
+                  className={`h-10 rounded-[9px] text-[15px] ${
+                    orderType === k ? 'bg-ar-surface font-bold text-ar-ink shadow-ar' : 'font-medium text-ar-muted disabled:opacity-50'
+                  }`}
+                >
+                  {t(`editor.cart.${k}`)}
+                </button>
+              ))}
+            </div>
+
             {orderType === 'RENT' && (
               <button
                 type="button"
                 aria-haspopup="dialog"
                 onClick={() => setDaysOpen(true)}
-                className={`flex h-10 items-center gap-2 rounded-[10px] border px-3 text-[15px] font-semibold ${
-                  pickup && ret ? 'border-ar-line-strong bg-ar-surface text-ar-ink' : 'border-ar-primary bg-ar-primary-soft text-ar-primary-ink'
+                data-testid="cart-days"
+                className={`hidden min-h-14 items-center gap-3 rounded-xl border px-3 py-2 text-left min-[1100px]:flex ${
+                  pickup && ret ? 'border-ar-line-strong bg-ar-surface text-ar-ink' : 'border-dashed border-ar-primary bg-ar-primary-soft text-ar-primary-ink'
                 }`}
               >
                 <ShellIcon d="M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M8 3v4M16 3v4" size={18} />
-                {daysLabel}
+                <span className="min-w-0 flex-1 text-sm font-semibold">{daysLabel}</span>
+                <span className="text-sm font-semibold text-ar-primary-ink">{pickup && ret ? t('editor.cart.change') : t('editor.cart.choose')}</span>
               </button>
             )}
-          </div>
-        </div>
 
-        <label className="flex h-11 items-center gap-2 rounded-xl border border-ar-line-strong bg-ar-surface px-3 text-ar-muted focus-within:border-ar-primary">
-          <ShellIcon d={ICONS.search} size={18} />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                void onSearchEnter();
-              }
-            }}
-            aria-label={t('editor.grid.searchLabel')}
-            placeholder={t('editor.grid.search')}
-            className="min-w-0 flex-1 border-0 bg-transparent text-[15px] text-ar-ink outline-none placeholder:text-ar-faint"
-          />
-        </label>
-
-        <span className="text-sm text-ar-muted">{orderType === 'RENT' ? t('editor.grid.helpRent') : t('editor.grid.helpSale')}</span>
-
-        {grid.failed && grid.products.length === 0 ? (
-          <div className={`${cardClass} flex flex-wrap items-center justify-between gap-3 p-4`} role="alert">
-            <span className="text-[15px]">{t('editor.grid.failed')}</span>
-            <button type="button" className={outlineBtn} onClick={grid.retry}>
-              {t('editor.retry')}
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(180px,1fr))] max-sm:[grid-template-columns:repeat(2,minmax(0,1fr))]">
-            {grid.products.map((p) => (
-              <ProductCard
-                key={p.id}
-                name={p.name}
-                image={imagesOf(p.images)[0] || null}
-                prices={cardPrices(p, orderType)}
-                stock={stockView(p.id)}
-                inCart={lines.some((l) => l.productId === p.id)}
-                onAdd={() => add(p)}
-                t={t}
-                money={money}
-              />
-            ))}
-            {grid.loading &&
-              Array.from({ length: grid.products.length ? 3 : 9 }, (_, i) => (
-                <span key={`s${i}`} aria-hidden="true" className="block h-[236px] animate-pulse rounded-[14px] bg-ar-subtle" />
-              ))}
-          </div>
-        )}
-        {!grid.loading && !grid.failed && grid.products.length === 0 && (
-          <p className="m-0 py-6 text-center text-[15px] text-ar-muted">{q ? t('editor.grid.noMatch', { q }) : t('editor.grid.empty')}</p>
-        )}
-        {grid.hasMore && !grid.loading && (
-          <button type="button" className={`${outlineBtn} self-center`} onClick={grid.more}>
-            {t('editor.grid.more')}
-          </button>
-        )}
-      </div>
-
-      {/* Cart */}
-      <aside
-        ref={cartRef}
-        aria-label={t('editor.cart.label')}
-        className="w-full border-t border-ar-line bg-ar-surface min-[1100px]:w-[400px] min-[1100px]:flex-none min-[1100px]:border-l min-[1100px]:border-t-0"
-      >
-        {/* Wide screens: the cart stays in view while the grid scrolls (65px = top bar) */}
-        <div className="box-border flex flex-col gap-4 px-5 pb-24 pt-5 min-[1100px]:sticky min-[1100px]:top-0 min-[1100px]:max-h-[calc(100vh-65px)] min-[1100px]:overflow-y-auto min-[1100px]:pb-6">
-          <div role="tablist" aria-label={t('editor.cart.type')} className="grid grid-cols-2 rounded-xl bg-ar-subtle p-1">
-            {(['RENT', 'SALE'] as const).map((k) => (
-              <button
-                key={k}
-                type="button"
-                role="tab"
-                aria-selected={orderType === k}
-                disabled={editing && orderType !== k}
-                onClick={() => switchType(k)}
-                className={`h-10 rounded-[9px] text-[15px] ${
-                  orderType === k ? 'bg-ar-surface font-bold text-ar-ink shadow-ar' : 'font-medium text-ar-muted disabled:opacity-50'
-                }`}
-              >
-                {t(`editor.cart.${k}`)}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => setCustomerOpen(true)}
-            className={`flex min-h-14 items-center gap-3 rounded-xl border bg-ar-surface px-3 py-2 text-left ${
-              customer ? 'border-ar-line-strong' : 'border-dashed border-ar-line-strong'
-            }`}
-          >
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-sm text-ar-muted">{t('editor.cart.customer')}</span>
-              <span className={`truncate text-base font-semibold ${customer ? 'text-ar-ink' : 'text-ar-faint'}`}>
-                {customer ? [customer.name, customer.phone].filter(Boolean).join(' · ') : t('editor.cart.pickCustomer')}
-              </span>
-            </span>
-            <span className="text-sm font-semibold text-ar-primary-ink">{customer ? t('editor.cart.change') : t('editor.cart.choose')}</span>
-          </button>
-
-          {loyalty.canUse && (
-            <div className="flex flex-col gap-2 rounded-xl bg-ar-subtle px-3 py-2.5 text-sm">
-              <label className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={loyalty.usePoints}
-                  onChange={(e) => loyalty.setUsePoints(e.target.checked)}
-                  className="h-4 w-4 accent-ar-primary"
-                />
-                <span>
-                  {t('editor.loyalty.use', {
-                    points: loyalty.summary?.points ?? 0,
-                  })}
-                </span>
-              </label>
-              {loyalty.usePoints && (
-                <span className="flex items-center gap-2">
-                  <MoneyInput
-                    value={loyalty.points}
-                    onChange={(n) => loyalty.setPoints(Math.min(n, loyalty.max))}
-                    label={t('editor.loyalty.points')}
-                    className="flex-1"
-                  />
-                  <span className="text-ar-muted">{t('editor.loyalty.max', { max: loyalty.max })}</span>
-                </span>
-              )}
-              {loyalty.invalid && <span className="text-ar-danger">{t('editor.loyalty.invalid')}</span>}
-            </div>
-          )}
-
-          <div className="flex flex-col">
-            <span className="pb-1.5 text-xs font-bold uppercase tracking-[.06em] text-ar-muted">
-              {t(orderType === 'RENT' ? 'editor.cart.rentItems' : 'editor.cart.saleItems', { count: itemCount })}
-            </span>
-            {lines.length === 0 ? (
-              <p className="m-0 border-t border-ar-line-soft py-4 text-[15px] text-ar-muted">{t('editor.cart.empty')}</p>
-            ) : (
-              lines.map((l) => (
-                <CartLineRow
-                  key={l.key}
-                  line={l}
-                  orderType={orderType}
-                  total={lineTotal(l, orderType, days)}
-                  days={days}
-                  status={statusOf(l)}
-                  onQuantity={(n) => setLines((cur) => setQuantity(cur, l.key, n))}
-                  onMode={(mode) => setLines((cur) => selectMode(cur, l.key, mode))}
-                  onPrice={(price) => setLines((cur) => setLinePrice(cur, l.key, price, orderType))}
-                  onNote={(note) => setLines((cur) => setLineNote(cur, l.key, note))}
-                  t={t}
-                  money={money}
-                />
-              ))
-            )}
-          </div>
-
-          {notesOpen ? (
-            <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
-                {t('editor.notes.label')}
-                <textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t('editor.notes.placeholder')}
-                  className={`${fieldClass} h-auto py-2.5 leading-[22px]`}
-                />
-              </label>
-              {editing ? (
-                <span className="text-xs text-ar-muted">{t('editor.notes.photosOnOrder')}</span>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {photos.map((f, i) => (
-                    <PhotoThumb
-                      key={`${f.name}-${i}`}
-                      file={f}
-                      label={t('editor.notes.removePhoto')}
-                      onRemove={() => setPhotos((p) => p.filter((_, j) => j !== i))}
-                    />
-                  ))}
-                  {photos.length < MAX_NOTE_IMAGES && (
-                    <button
-                      type="button"
-                      disabled={compressing}
-                      onClick={() => fileRef.current?.click()}
-                      className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-[10px] border border-dashed border-ar-line-strong text-xs text-ar-muted hover:bg-ar-subtle disabled:opacity-60"
-                    >
-                      <ShellIcon d={ICONS.plus} size={16} />
-                      {compressing
-                        ? '…'
-                        : t('editor.notes.addPhoto', {
-                            count: photos.length,
-                            max: MAX_NOTE_IMAGES,
-                          })}
-                    </button>
-                  )}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => {
-                      const files = e.target.files ? Array.from(e.target.files) : [];
-                      e.target.value = '';
-                      void addPhotos(files);
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          ) : (
             <button
               type="button"
-              onClick={() => setNotesOpen(true)}
-              className="flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-ar-line-strong bg-ar-surface px-3 text-[15px] text-ar-ink-2 hover:bg-ar-subtle"
+              aria-haspopup="dialog"
+              onClick={() => setCustomerOpen(true)}
+              className={`flex min-h-14 items-center gap-3 rounded-xl border bg-ar-surface px-3 py-2 text-left ${
+                customer ? 'border-ar-line-strong' : 'border-dashed border-ar-line-strong'
+              }`}
             >
-              <ShellIcon d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" size={18} />
-              {editing ? t('editor.notes.openEdit') : t('editor.notes.open')}
-            </button>
-          )}
-
-          <div className="flex flex-col gap-2 border-t border-ar-line pt-3">
-            <div className="flex justify-between text-[15px]">
-              <span>{t(orderType === 'RENT' ? 'editor.money.rent' : 'editor.money.goods')}</span>
-              <span className="tabular-nums">{money(totals.subtotal)}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2 text-[15px]">
-              <span>{t('editor.money.discount')}</span>
-              {discountOpen ? (
-                <span className="flex items-center gap-1.5">
-                  <MoneyInput
-                    value={discountValue}
-                    onChange={setDiscountValue}
-                    label={t('editor.money.discount')}
-                    suffix={discountType === 'percentage' ? '%' : undefined}
-                    className="w-[130px]"
-                  />
-                  <select
-                    value={discountType}
-                    onChange={(e) => setDiscountType(e.target.value === 'percentage' ? 'percentage' : 'amount')}
-                    aria-label={t('editor.money.discountType')}
-                    className="h-11 cursor-pointer rounded-xl border border-ar-line-strong bg-ar-surface px-2 text-sm text-ar-ink"
-                  >
-                    <option value="amount">{t('editor.money.amount')}</option>
-                    <option value="percentage">%</option>
-                  </select>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-sm text-ar-muted">{t('editor.cart.customer')}</span>
+                <span className={`truncate text-[15px] font-semibold ${customer ? 'text-ar-ink' : 'text-ar-faint'}`}>
+                  {customer ? [customer.name, customer.phone].filter(Boolean).join(' · ') : t('editor.cart.pickCustomer')}
                 </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setDiscountOpen(true)}
-                  className="h-8 rounded-lg border border-ar-line bg-ar-surface px-2.5 text-sm font-semibold text-ar-primary-ink hover:bg-ar-subtle"
-                >
-                  {t('editor.money.add')}
-                </button>
-              )}
-            </div>
-            {discountTooHigh && (
-              <p className="m-0 text-right text-sm font-medium text-ar-danger" role="alert">
-                {discountTooHigh}
-              </p>
-            )}
-            {totals.discountAmount > 0 && discountType === 'percentage' && (
-              <div className="flex justify-between text-sm text-ar-muted">
-                <span />
-                <span className="tabular-nums">−{money(totals.discountAmount)}</span>
-              </div>
-            )}
-            {totals.loyaltyDiscount > 0 && (
-              <div className="flex justify-between text-[15px]">
-                <span>{t('editor.money.loyalty')}</span>
-                <span className="tabular-nums">−{money(totals.loyaltyDiscount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-lg font-bold">
-              <span>{t('editor.money.total')}</span>
-              <span className="tabular-nums">{money(totals.totalAmount - totals.loyaltyDiscount)}</span>
-            </div>
-          </div>
+              </span>
+              <span className="text-sm font-semibold text-ar-primary-ink">{customer ? t('editor.cart.change') : t('editor.cart.choose')}</span>
+            </button>
 
-          {orderType === 'RENT' && (
-            <>
-              {/* Thế chân is taken at hand-over (Giao đồ / Thế chấp & phí), not here (#614); an edited order keeps its stored value. */}
-              <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
-                {t('editor.money.deposit')}
-                <MoneyInput value={totals.depositAmount} onChange={setDepositAmount} label={t('editor.money.deposit')} />
-              </label>
-              <div className="flex flex-col gap-0.5">
-                <div className="flex justify-between text-[15px] text-ar-unprepared">
-                  <span>{t('editor.money.dueAtPickup')}</span>
-                  <span className="font-bold tabular-nums">{money(totals.dueAtPickup)}</span>
-                </div>
-                {totals.securityDeposit > 0 && (
-                  <span className="text-right text-xs text-ar-muted">
-                    {t('editor.money.includesSecurity', {
-                      amount: money(totals.securityDeposit),
+            {loyalty.canUse && (
+              <div className="flex flex-col gap-2 rounded-xl bg-ar-subtle px-3 py-2.5 text-sm">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={loyalty.usePoints}
+                    onChange={(e) => loyalty.setUsePoints(e.target.checked)}
+                    className="h-4 w-4 accent-ar-primary"
+                  />
+                  <span>
+                    {t('editor.loyalty.use', {
+                      points: loyalty.summary?.points ?? 0,
                     })}
                   </span>
+                </label>
+                {loyalty.usePoints && (
+                  <span className="flex items-center gap-2">
+                    <MoneyInput
+                      value={loyalty.points}
+                      onChange={(n) => loyalty.setPoints(Math.min(n, loyalty.max))}
+                      label={t('editor.loyalty.points')}
+                      className="flex-1"
+                    />
+                    <span className="text-ar-muted">{t('editor.loyalty.max', { max: loyalty.max })}</span>
+                  </span>
+                )}
+                {loyalty.invalid && <span className="text-ar-danger">{t('editor.loyalty.invalid')}</span>}
+              </div>
+            )}
+
+            <div className="flex flex-col">
+              <span className="pb-1.5 text-xs font-bold uppercase tracking-[.06em] text-ar-muted">
+                {t(orderType === 'RENT' ? 'editor.cart.rentItems' : 'editor.cart.saleItems', { count: itemCount })}
+              </span>
+              {lines.length === 0 ? (
+                <p className="m-0 border-t border-ar-line-soft py-4 text-[15px] text-ar-muted">{t('editor.cart.empty')}</p>
+              ) : (
+                lines.map((l) => (
+                  <CartLineRow
+                    key={l.key}
+                    line={l}
+                    orderType={orderType}
+                    total={lineTotal(l, orderType, days)}
+                    minorUnit={minorUnit}
+                    days={days}
+                    status={statusOf(l)}
+                    onQuantity={(n) => setLines((cur) => setQuantity(cur, l.key, n))}
+                    onMode={(mode) => setLines((cur) => selectMode(cur, l.key, mode))}
+                    onPrice={(price) => setLines((cur) => setLinePrice(cur, l.key, price, orderType))}
+                    onNote={(note) => setLines((cur) => setLineNote(cur, l.key, note))}
+                    t={t}
+                    money={money}
+                  />
+                ))
+              )}
+            </div>
+
+            {notesOpen ? (
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
+                  {t('editor.notes.label')}
+                  <textarea
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={t('editor.notes.placeholder')}
+                    className={`${fieldClass} h-auto py-2.5 leading-[22px]`}
+                  />
+                </label>
+                {editing ? (
+                  <span className="text-xs text-ar-muted">{t('editor.notes.photosOnOrder')}</span>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {photos.map((f, i) => (
+                      <PhotoThumb
+                        key={`${f.name}-${i}`}
+                        file={f}
+                        label={t('editor.notes.removePhoto')}
+                        onRemove={() => setPhotos((p) => p.filter((_, j) => j !== i))}
+                      />
+                    ))}
+                    {photos.length < MAX_NOTE_IMAGES && (
+                      <button
+                        type="button"
+                        disabled={compressing}
+                        onClick={() => fileRef.current?.click()}
+                        className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-[10px] border border-dashed border-ar-line-strong text-xs text-ar-muted hover:bg-ar-subtle disabled:opacity-60"
+                      >
+                        <ShellIcon d={ICONS.plus} size={16} />
+                        {compressing
+                          ? '…'
+                          : t('editor.notes.addPhoto', {
+                              count: photos.length,
+                              max: MAX_NOTE_IMAGES,
+                            })}
+                      </button>
+                    )}
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = e.target.files ? Array.from(e.target.files) : [];
+                        e.target.value = '';
+                        void addPhotos(files);
+                      }}
+                    />
+                  </div>
                 )}
               </div>
-            </>
-          )}
+            ) : (
+              <button
+                type="button"
+                onClick={() => setNotesOpen(true)}
+                className="flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-ar-line-strong bg-ar-surface px-3 text-[15px] text-ar-ink-2 hover:bg-ar-subtle"
+              >
+                <ShellIcon d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" size={18} />
+                {editing ? t('editor.notes.openEdit') : t('editor.notes.open')}
+              </button>
+            )}
 
-          {missing && lines.length > 0 && (
-            <p className="m-0 text-sm text-ar-muted" role="status">
-              {missing === 'price'
-                ? t('editor.missing.price', { name: lines.find((l) => needsPrice(l, orderType))?.name ?? '' })
-                : t(`editor.missing.${missing}`)}
-            </p>
-          )}
-          {cta === 'blocked' && (
-            <p className="m-0 rounded-xl bg-ar-danger-soft px-3 py-2.5 text-sm font-medium text-ar-danger" role="alert">
-              {t('editor.overlap.blocked')}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={() => void submit()}
-            disabled={submitting || compressing || cta === 'blocked' || !!discountTooHigh || (!!missing && missing !== 'days' && missing !== 'customer')}
-            className="h-[52px] rounded-[14px] bg-ar-primary text-base font-semibold text-ar-on-primary hover:opacity-95 disabled:opacity-50"
-          >
-            {submitLabel}
-          </button>
-        </div>
-      </aside>
+            <div className="flex flex-col gap-2 border-t border-ar-line pt-3">
+              <div className="flex justify-between text-[15px]">
+                <span>{t(orderType === 'RENT' ? 'editor.money.rent' : 'editor.money.goods')}</span>
+                <span className="tabular-nums">{money(totals.subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2 text-[15px]">
+                <span>{t('editor.money.discount')}</span>
+                {discountOpen ? (
+                  <span className="flex items-center gap-1.5">
+                    <MoneyInput
+                      value={discountValue}
+                      onChange={setDiscountValue}
+                      label={t('editor.money.discount')}
+                      suffix={discountType === 'percentage' ? '%' : undefined}
+                      className="w-[130px]"
+                    />
+                    <select
+                      value={discountType}
+                      onChange={(e) => setDiscountType(e.target.value === 'percentage' ? 'percentage' : 'amount')}
+                      aria-label={t('editor.money.discountType')}
+                      className="h-11 cursor-pointer rounded-xl border border-ar-line-strong bg-ar-surface px-2 text-sm text-ar-ink"
+                    >
+                      <option value="amount">{t('editor.money.amount')}</option>
+                      <option value="percentage">%</option>
+                    </select>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setDiscountOpen(true)}
+                    className="h-8 rounded-lg border border-ar-line bg-ar-surface px-2.5 text-sm font-semibold text-ar-primary-ink hover:bg-ar-subtle"
+                  >
+                    {t('editor.money.add')}
+                  </button>
+                )}
+              </div>
+              {discountTooHigh && (
+                <p className="m-0 text-right text-sm font-medium text-ar-danger" role="alert">
+                  {discountTooHigh}
+                </p>
+              )}
+              {totals.discountAmount > 0 && discountType === 'percentage' && (
+                <div className="flex justify-between text-sm text-ar-muted">
+                  <span />
+                  <span className="tabular-nums">−{money(totals.discountAmount)}</span>
+                </div>
+              )}
+              {totals.loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-[15px]">
+                  <span>{t('editor.money.loyalty')}</span>
+                  <span className="tabular-nums">−{money(totals.loyaltyDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-lg font-bold">
+                <span>{t('editor.money.total')}</span>
+                <span className="tabular-nums">{money(totals.totalAmount - totals.loyaltyDiscount)}</span>
+              </div>
+            </div>
+
+            {orderType === 'RENT' && (
+              staged ? (
+                <StagePlanPanel
+                  td={(key, values) => t(`installments.${key}`, values)}
+                  money={money}
+                  stages={stages}
+                  todayKey={todayKey}
+                  templates={planTemplates}
+                  templateId={planTemplate?.id ?? ''}
+                  onTemplate={(id) => {
+                    setTemplatePick(id);
+                    setPlanEdits(null);
+                  }}
+                  items={planItems}
+                  canEdit={canEditStages}
+                  onPercent={(index, value) => setPlanEdits(planItems.map((item, i) => (i === index ? { ...item, value } : item)))}
+                  over={stagesOver}
+                  firstAmount={firstAmount}
+                  collect={collectChoice}
+                  onCollect={setCollectChoice}
+                />
+              ) : (
+              <>
+                {/* Thế chân is taken at hand-over (Giao đồ / Thế chấp & phí), not here (#614); an edited order keeps its stored value. */}
+                <label className="flex flex-col gap-1.5 text-sm text-ar-muted">
+                  {t('editor.money.deposit')}
+                  <MoneyInput value={totals.depositAmount} onChange={setDepositAmount} label={t('editor.money.deposit')} />
+                </label>
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex justify-between text-[15px] text-ar-unprepared">
+                    <span>{t('editor.money.dueAtPickup')}</span>
+                    <span className="font-bold tabular-nums">{money(totals.dueAtPickup)}</span>
+                  </div>
+                  {totals.securityDeposit > 0 && (
+                    <span className="text-right text-xs text-ar-muted">
+                      {t('editor.money.includesSecurity', {
+                        amount: money(totals.securityDeposit),
+                      })}
+                    </span>
+                  )}
+                </div>
+              </>
+              )
+            )}
+
+            {missing && lines.length > 0 && (
+              <p className="m-0 text-sm text-ar-muted" role="status">
+                {missing === 'price'
+                  ? t('editor.missing.price', { name: lines.find((l) => needsPrice(l, orderType))?.name ?? '' })
+                  : t(`editor.missing.${missing}`)}
+              </p>
+            )}
+            {cta === 'blocked' && (
+              <p className="m-0 rounded-xl bg-ar-danger-soft px-3 py-2.5 text-sm font-medium text-ar-danger" role="alert">
+                {t('editor.overlap.blocked')}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => void submit()}
+              disabled={submitting || compressing || cta === 'blocked' || !!discountTooHigh || stagesOver || (!!missing && missing !== 'days' && missing !== 'customer')}
+              className="h-[52px] rounded-[14px] bg-ar-primary text-base font-semibold text-ar-on-primary hover:opacity-95 disabled:opacity-50"
+            >
+              {submitLabel}
+            </button>
+          </div>
+        </aside>
+      </div>
 
       {/* Phones: a bar that jumps to the cart */}
       {lines.length > 0 && (
@@ -1090,6 +1264,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
 
 /** The create / update call failed: carry the API code so the screen can react to a 409 "trùng lịch". */
 function scheduleError(res: { code?: string; error?: unknown }): Error {
+  if (res.code === 'BLOCK_PRICE_MISMATCH') return new Error('BLOCK_PRICE_MISMATCH');
   return new Error(res.code === 'ORDER_SCHEDULE_CONFLICT' ? 'ORDER_SCHEDULE_CONFLICT' : String(res.error || 'SAVE_FAILED'));
 }
 

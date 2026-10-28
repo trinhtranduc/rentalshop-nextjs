@@ -18,6 +18,8 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
 
     // Build where clause
     const where: any = {};
+    // #1200: this table lists platform (plan / subscription) payments; order payments are not part of it
+    where.type = { not: 'ORDER_PAYMENT' };
     
     if (search) {
       where.OR = [

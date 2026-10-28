@@ -132,6 +132,8 @@ export interface ProductPrices {
   day: number | null;
   /** Older hourly products; shown in the "lần" column with "/giờ". */
   hour: number | null;
+  /** #1189 "Giá theo khối ngày": the price of day 1 (the table is on the detail page); null without a BLOCK option. */
+  block: number | null;
   sale: number | null;
 }
 
@@ -143,7 +145,7 @@ const toNum = (n: unknown): number => {
 
 /** Rent prices by kind: pricing options when the product has them, else rentPrice by pricingType. */
 export function productPrices(p: ProductLike): ProductPrices {
-  const out: ProductPrices = { once: null, day: null, hour: null, sale: pos(toNum(p.salePrice)) };
+  const out: ProductPrices = { once: null, day: null, hour: null, block: null, sale: pos(toNum(p.salePrice)) };
   const options = (p.pricingOptions || []).filter((o) => o && o.isActive !== false);
   if (options.length > 0) {
     for (const o of options) {
@@ -152,7 +154,8 @@ export function productPrices(p: ProductLike): ProductPrices {
       if (price == null) continue;
       const type = String(o.type || '').toUpperCase();
       const unit = String(o.unit || '').toUpperCase();
-      if (type === 'FIXED') out.once ??= price;
+      if (type === 'BLOCK') out.block ??= price;
+      else if (type === 'FIXED') out.once ??= price;
       else if (type === 'HOURLY' || (type === 'DAILY' && unit === 'HOUR')) out.hour ??= price;
       else if (type === 'DAILY') out.day ??= price;
     }

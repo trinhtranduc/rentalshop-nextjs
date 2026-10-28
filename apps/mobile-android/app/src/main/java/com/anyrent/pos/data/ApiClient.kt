@@ -115,6 +115,8 @@ class ApiClient(
         SessionStore.modules = profile.modules
         SessionStore.permissions = profile.permissions
         SessionStore.currency = profile.currency
+        // #1199: a login without `merchant.depositMode` leaves it unknown; the screens read GET /api/settings/deposit
+        SessionStore.depositMode = profile.depositMode
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
@@ -507,16 +509,32 @@ class ApiClient(
         id: Int,
         status: String,
         fields: HandOverFields = HandOverFields(),
+        /** #1199 cancelling: what the shop keeps of the money collected (0 or null = refund all) and why */
+        cancelKeptAmount: Double? = null,
+        cancelNote: String? = null,
     ): Result<OrderSummary> = runCatching {
         val body = JSONObject().put("status", status).apply {
+            fields.collateralType?.let { put("collateralType", it) }
+            fields.collateralDetails?.let { put("collateralDetails", it) }
+            fields.securityDeposit?.let { put("securityDeposit", it) }
+            if (cancelKeptAmount != null && cancelKeptAmount > 0) put("cancelKeptAmount", cancelKeptAmount)
+            cancelNote?.trim()?.takeIf { it.isNotEmpty() }?.let { put("cancelNote", it) }
+        }.toString().toRequestBody(jsonMedia)
+        val json = execute(put("$baseUrl/api/orders/$id", body))
+        requireSuccess(json)
+        val data = json.optJSONObject("data") ?: JSONObject().put("id", id).put("status", status)
+        parseOrderSummary(data)
+    }
+
+    /** #1279: papers and collateral of a picked-up order; `PUT /api/orders/{id}` without a status */
+    fun updateOrderCollateral(id: Int, fields: HandOverFields): Result<Unit> = runCatching {
+        val body = JSONObject().apply {
             fields.collateralType?.let { put("collateralType", it) }
             fields.collateralDetails?.let { put("collateralDetails", it) }
             fields.securityDeposit?.let { put("securityDeposit", it) }
         }.toString().toRequestBody(jsonMedia)
         val json = execute(put("$baseUrl/api/orders/$id", body))
         requireSuccess(json)
-        val data = json.optJSONObject("data") ?: JSONObject().put("id", id).put("status", status)
-        parseOrderSummary(data)
     }
 
     fun updateOrderNotes(id: Int, notes: String): Result<Unit> = runCatching {
@@ -557,11 +575,15 @@ class ApiClient(
         outletId: Int? = CurrentOutlet.merchantFilterId,
         /** #1124: the online booking this order confirms; null = the same request as before */
         bookingRequestId: Int? = null,
+        /** #1199: the deposit stages of a rental in a "Thu cọc theo giai đoạn" shop; null = the same request as before */
+        paymentPlan: JSONObject? = null,
     ): Result<OrderSummary> = runCatching {
         val items = JSONArray()
         lines.forEachIndexed { index, (productId, qty, unitPrice) ->
             val extra = lineExtras?.getOrNull(index)
+            // #1189: a BLOCK line goes as BLOCK only when the cart priced it from a table; else it is a plain FIXED price
             val pricingType = PricingTypes.normalize(extra?.pricingType ?: pricingTypesByProduct[productId])
+                .let { if (it == "BLOCK" && extra?.blockPriced != true) "FIXED" else it }
             val itemRentalDays = extra?.rentalDays ?: rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -575,8 +597,9 @@ class ApiClient(
                         (if (extra != null) extra.deposit else depositsByProduct[productId])?.let { put("deposit", it) }
                         (if (extra != null) extra.note else notesByProduct[productId])?.let { put("notes", it) }
                         if (orderType == "RENT") {
-                            put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
+                            put("rentDays", if (pricingType == "DAILY" || pricingType == "BLOCK") itemRentalDays else 1)
                             put("pricingType", pricingType)
+                            if (pricingType == "BLOCK") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
                         }
                     }
             )
@@ -592,7 +615,9 @@ class ApiClient(
                 if (customerId != null) put("customerId", customerId)
                 if (!notes.isNullOrBlank()) put("notes", notes)
                 if (orderType == "RENT") {
-                    put("depositAmount", depositAmount)
+                    // #1199: with stages the API keeps the money (`depositAmount` is what the stages collected)
+                    put("depositAmount", if (paymentPlan != null) 0.0 else depositAmount)
+                    if (paymentPlan != null) put("paymentPlan", paymentPlan)
                     if (securityDeposit != null) put("securityDeposit", securityDeposit)
                     if (pickupPlanAt != null) put("pickupPlanAt", pickupPlanAt)
                     if (returnPlanAt != null) put("returnPlanAt", returnPlanAt)
@@ -653,7 +678,9 @@ class ApiClient(
         val items = JSONArray()
         lines.forEachIndexed { index, (productId, qty, unitPrice) ->
             val extra = lineExtras?.getOrNull(index)
+            // #1189: a BLOCK line goes as BLOCK only when the cart priced it from a table; else it is a plain FIXED price
             val pricingType = PricingTypes.normalize(extra?.pricingType ?: pricingTypesByProduct[productId])
+                .let { if (it == "BLOCK" && extra?.blockPriced != true) "FIXED" else it }
             val itemRentalDays = extra?.rentalDays ?: rentalDaysByProduct[productId] ?: rentalDays
             val lineTotal = unitPrice * qty *
                 if (orderType == "RENT" && pricingType == "DAILY") itemRentalDays else 1
@@ -667,8 +694,9 @@ class ApiClient(
                         (if (extra != null) extra.deposit else depositsByProduct[productId])?.let { put("deposit", it) }
                         (if (extra != null) extra.note else notesByProduct[productId])?.let { put("notes", it) }
                         if (orderType == "RENT") {
-                            put("rentDays", if (pricingType == "DAILY") itemRentalDays else 1)
+                            put("rentDays", if (pricingType == "DAILY" || pricingType == "BLOCK") itemRentalDays else 1)
                             put("pricingType", pricingType)
+                            if (pricingType == "BLOCK") extra?.pricingOptionId?.let { put("pricingOptionId", it) }
                         }
                     },
             )
@@ -1363,6 +1391,11 @@ class ApiClient(
         header("X-Device-Type", "android")
         header("X-App-Version", appVersion)
         header("Accept-Language", appAcceptLanguage())
+        // #1199, #1189: this app reads deposit stages and BLOCK options; without the header the API answers like before
+        header(
+            com.anyrent.pos.domain.deposit.ClientCapabilities.HEADER_NAME,
+            com.anyrent.pos.domain.deposit.ClientCapabilities.headerValue,
+        )
         if (authed) {
             val token = tokenProvider()
             if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
@@ -1399,6 +1432,8 @@ class ApiClient(
             outletAddress = outlet?.optString("address")?.takeIf { it.isNotBlank() },
             allowOverlappingOrders = OverlapSetting.fromMerchant(merchant),
             currency = com.anyrent.pos.domain.settings.CurrencySetting.fromMerchant(merchant),
+            depositMode = merchant?.takeIf { it.has("depositMode") && !it.isNull("depositMode") }
+                ?.let { com.anyrent.pos.domain.deposit.DepositMode.from(it.optString("depositMode")) },
             modules = com.anyrent.pos.domain.attendance.AttendanceLogic.modules(merchant),
             permissions = user.optJSONArray("permissions")?.let { arr ->
                 (0 until arr.length()).mapNotNull { arr.optString(it).takeIf { p -> p.isNotBlank() } }.toSet()
@@ -1428,7 +1463,8 @@ class ApiClient(
         name = o.optString("name"),
         barcode = o.optString("barcode").takeIf { it.isNotBlank() },
         rentPrice = o.optDouble("rentPrice", o.optDouble("price", 0.0)),
-        salePrice = o.optDouble("salePrice").takeIf { o.has("salePrice") },
+        // A JSON null reads as NaN with optDouble; NaN in a price crashed the cart (#1199 baseline), so null stays null
+        salePrice = o.optDouble("salePrice").takeIf { o.has("salePrice") && !o.isNull("salePrice") && !it.isNaN() },
         costPrice = o.optDouble("costPrice").takeIf { o.has("costPrice") && !o.isNull("costPrice") && !it.isNaN() },
         stock = o.optInt("stock", o.optInt("totalStock")),
         available = o.optInt("available", o.optInt("stock")),
@@ -1447,6 +1483,7 @@ class ApiClient(
                         type = PricingTypes.normalizeOption(option.optString("type")),
                         price = option.optDouble("price"),
                         isDefault = option.optBoolean("isDefault"),
+                        blockTable = com.anyrent.pos.domain.products.BlockPricing.tableFrom(option),
                     )
                 }
             }
@@ -1542,6 +1579,10 @@ class ApiClient(
             productTotals = orderItemTotals(o.optJSONArray("orderItems")),
             amountDue = optionalAmount(o, "amountDue"),
             refundDue = optionalAmount(o, "refundDue"),
+            // #1199: only for a client that sends `installments`; absent on an older API or an order without a plan
+            installmentPercentCollected = optionalAmount(o.optJSONObject("installmentSummary") ?: JSONObject(), "percentCollected"),
+            hasDepositPlan = if (o.has("hasDepositPlan") && !o.isNull("hasDepositPlan")) o.optBoolean("hasDepositPlan") else null,
+            cancelKeptAmount = optionalAmount(o, "cancelKeptAmount"),
         )
     }
 
@@ -1617,6 +1658,7 @@ class ApiClient(
                         .takeIf { it.isNotBlank() },
                     status = p.optString("status").takeIf { it.isNotBlank() },
                     notes = p.optString("notes").takeIf { it.isNotBlank() },
+                    installmentKey = p.nullableString("installmentKey"),
                 )
             },
             securityDeposit = root.safeDouble("securityDeposit"),
@@ -1632,6 +1674,7 @@ class ApiClient(
             outletName = root.nullableString("outletName")
                 ?: root.optJSONObject("outlet")?.nullableString("name"),
             outletId = root.positiveInt("outletId") ?: root.optJSONObject("outlet")?.positiveInt("id"),
+            deposit = com.anyrent.pos.domain.deposit.DepositPlanInfo.fromJson(root),
         )
     }
 
@@ -1675,6 +1718,7 @@ class ApiClient(
             deposit = deposit,
             rentalDays = rentalDays,
             pricingType = pricingType,
+            pricingSnapshot = com.anyrent.pos.domain.products.BlockSnapshot.from(item.optJSONObject("pricingSnapshot")),
         )
     }
 
@@ -1826,4 +1870,7 @@ data class OrderLineExtra(
     val rentalDays: Int,
     val deposit: Double?,
     val note: String?,
+    /** #1189: the line's price comes from a day-block table, so it is sent as BLOCK (with the option id) */
+    val blockPriced: Boolean = false,
+    val pricingOptionId: Int? = null,
 )

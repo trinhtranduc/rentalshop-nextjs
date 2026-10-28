@@ -215,6 +215,14 @@ struct Order: Codable {
     /// payloads without them. Not the computed `amountDue` of the old screens.
     let listAmountDue: Double?
     let listRefundDue: Double?
+    /// #1199: share of the order total collected in deposit stages (`installmentSummary.percentCollected`); nil when
+    /// the order has no plan or the API is older. The list badge "Đã thu 30%".
+    var installmentPercentCollected: Double? = nil
+    var hasDepositPlan: Bool? = nil
+    var cancelKeptAmount: Double? = nil
+    /// #1252: the stages and totals of the order, kept from the detail (`Order.from(detail:)`) for the bill and share image
+    var stages: [OrderInstallment]? = nil
+    var stageSummary: InstallmentSummary? = nil
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -280,6 +288,10 @@ struct Order: Codable {
         case listRefundDue = "refundDue"
     }
 
+    private struct PercentOnly: Decodable {
+        let percentCollected: Double?
+    }
+
     /// Nested objects from list/search payloads — separate from CodingKeys so
     /// synthesized `encode(to:)` still matches stored properties only.
     private enum NestedKeys: String, CodingKey {
@@ -287,6 +299,9 @@ struct Order: Codable {
         case outlet
         case createdBy
         case count = "_count"
+        case installmentSummary
+        case hasDepositPlan
+        case cancelKeptAmount
     }
 
     /// Nested objects returned by list/search endpoints (not flattened).
@@ -439,6 +454,9 @@ struct Order: Codable {
         loyaltyPointsEarned = try container.decodeIfPresent(Int.self, forKey: .loyaltyPointsEarned) ?? 0
         listAmountDue = (try? container.decodeIfPresent(Double.self, forKey: .listAmountDue)) ?? nil
         listRefundDue = (try? container.decodeIfPresent(Double.self, forKey: .listRefundDue)) ?? nil
+        installmentPercentCollected = ((try? nestedContainer.decodeIfPresent(PercentOnly.self, forKey: .installmentSummary)) ?? nil)?.percentCollected
+        hasDepositPlan = (try? nestedContainer.decodeIfPresent(Bool.self, forKey: .hasDepositPlan)) ?? nil
+        cancelKeptAmount = (try? nestedContainer.decodeIfPresent(Double.self, forKey: .cancelKeptAmount)) ?? nil
     }
     
     var amountDue: Double {
@@ -643,6 +661,13 @@ struct OrderDetail: Codable {
     var createdByName: String? = nil
     let orderItems: [OrderItem]
     let payments: [Payment]
+    /// #1199 deposit stages (only for a client that sends `installments`); nil on an older API or an order without a plan
+    var installments: [OrderInstallment]? = nil
+    var installmentSummary: InstallmentSummary? = nil
+    var depositPlanPolicy: String? = nil
+    var hasDepositPlan: Bool? = nil
+    /// What the shop kept when it cancelled (null = refunded everything / not cancelled)
+    var cancelKeptAmount: Double? = nil
     
     // MARK: - Computed Properties
     
@@ -693,7 +718,7 @@ extension Order {
         let createdByNameParts = [createdByFirstName, createdByLastName.isEmpty ? nil : createdByLastName].compactMap { $0 }
         let createdByName = createdByNameParts.joined(separator: " ")
         let totalPaid = detail.payments.reduce(0) { $0 + $1.amount }
-        return Order(
+        var order = Order(
             id: detail.id,
             orderNumber: detail.orderNumber,
             orderType: detail.orderType,
@@ -741,6 +766,12 @@ extension Order {
             paymentCount: detail.payments.count,
             totalPaid: totalPaid
         )
+        order.installmentPercentCollected = detail.installmentSummary?.percentCollected
+        order.hasDepositPlan = detail.hasDepositPlan
+        order.stages = detail.installments
+        order.stageSummary = detail.installmentSummary
+        order.cancelKeptAmount = detail.cancelKeptAmount
+        return order
     }
 }
 
@@ -788,6 +819,8 @@ struct OrderItem: Codable {
     let rentalDays: Int?
     let pricingType: String?
     let pricingOptionId: Int?
+    /// #1189: the table and the days a BLOCK line was priced with (nil on every other line and on old orders)
+    let pricingSnapshot: BlockSnapshot?
     
     // Flattened product data - make some fields optional to handle API variations
     let productId: Int?
@@ -831,7 +864,8 @@ struct OrderItem: Codable {
     }
     
     // Default initializer for manual creation
-    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil, rentalDays: Int? = nil, pricingType: String? = nil, pricingOptionId: Int? = nil) {
+    init(id: Int, quantity: Int, unitPrice: Double, totalPrice: Double, notes: String?, productId: Int?, productName: String, productBarcode: String?, productImages: [String]?, productRentPrice: Double?, productDeposit: Double?, isReadyToDeliver: Bool? = nil, rentalDays: Int? = nil, pricingType: String? = nil, pricingOptionId: Int? = nil, pricingSnapshot: BlockSnapshot? = nil) {
+        self.pricingSnapshot = pricingSnapshot
         self.id = id
         self.quantity = quantity
         self.unitPrice = unitPrice
@@ -861,6 +895,8 @@ struct OrderItem: Codable {
         rentalDays = try container.decodeIfPresent(Int.self, forKey: .rentalDays)
         pricingType = try container.decodeIfPresent(String.self, forKey: .pricingType)
         pricingOptionId = try container.decodeIfPresent(Int.self, forKey: .pricingOptionId)
+        // A snapshot this app cannot read is no snapshot; it never fails the order
+        pricingSnapshot = (try? container.decodeIfPresent(BlockSnapshot.self, forKey: .pricingSnapshot)) ?? nil
         
         // Why not `try? decodeIfPresent`: that yields EmbeddedProduct??, and then
         // `embedded?.id` is parsed as SwiftUI View.id (compile errors).
@@ -925,6 +961,7 @@ struct OrderItem: Codable {
         try container.encodeIfPresent(rentalDays, forKey: .rentalDays)
         try container.encodeIfPresent(pricingType, forKey: .pricingType)
         try container.encodeIfPresent(pricingOptionId, forKey: .pricingOptionId)
+        try container.encodeIfPresent(pricingSnapshot, forKey: .pricingSnapshot)
         try container.encodeIfPresent(productId, forKey: .productId)
         try container.encode(productName, forKey: .productName)
         try container.encodeIfPresent(productBarcode, forKey: .productBarcode)
@@ -941,7 +978,7 @@ struct OrderItem: Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, quantity, unitPrice, totalPrice, notes
-        case rentalDays, pricingType, pricingOptionId
+        case rentalDays, pricingType, pricingOptionId, pricingSnapshot
         case productId, productName, productBarcode, productImages, productRentPrice, productDeposit
         case product
         case deposit
@@ -975,6 +1012,8 @@ struct Payment: Codable {
     let paymentDate: Date
     let status: String
     let notes: String?
+    /// #1199: the deposit stage this payment collected (`i1`, `i2`, `rest`); only for a client that sends `installments`
+    var installmentKey: String? = nil
 }
 
 // MARK: - Update Order Request Model
@@ -1012,6 +1051,9 @@ struct UpdateOrderRequest: Codable {
     let notesImages: [String]?
     /// Late fee set at return (existing order field)
     let lateFee: Double?
+    /// #1199 cancelling: what the shop keeps of the money collected (owner / outlet admin; 0 or nil = refund all) and why
+    var cancelKeptAmount: Double? = nil
+    var cancelNote: String? = nil
 
     init(orderType: String? = nil, status: String? = nil, totalAmount: Double? = nil, depositAmount: Double? = nil, securityDeposit: Double? = nil, customerId: Int? = nil, customerName: String? = nil, customerPhone: String? = nil, customerEmail: String? = nil, outletId: Int? = nil, pickupPlanAt: String? = nil, returnPlanAt: String? = nil, pickedUpAt: String? = nil, returnedAt: String? = nil, rentalDuration: Int? = nil, isReadyToDeliver: Bool? = nil, collateralType: String? = nil, collateralDetails: String? = nil, notes: String? = nil, pickupNotes: String? = nil, returnNotes: String? = nil, damageNotes: String? = nil, damageFee: Double? = nil, discountType: String? = nil, discountValue: Double? = nil, discountAmount: Double? = nil, orderItems: [UpdateOrderItem]? = nil, notesImages: [String]? = nil, lateFee: Double? = nil) {
         self.orderType = orderType
@@ -1078,6 +1120,8 @@ struct UpdateOrderRequest: Codable {
         if let orderItems = orderItems { try container.encode(orderItems, forKey: .orderItems) }
         if let notesImages = notesImages { try container.encode(notesImages, forKey: .notesImages) }
         if let lateFee = lateFee { try container.encode(lateFee, forKey: .lateFee) }
+        if let cancelKeptAmount = cancelKeptAmount { try container.encode(cancelKeptAmount, forKey: .cancelKeptAmount) }
+        if let cancelNote = cancelNote { try container.encode(cancelNote, forKey: .cancelNote) }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -1088,6 +1132,7 @@ struct UpdateOrderRequest: Codable {
         case notes, pickupNotes, returnNotes, damageNotes, damageFee
         case discountType, discountValue, discountAmount
         case orderItems, notesImages, lateFee
+        case cancelKeptAmount, cancelNote
     }
 }
 
@@ -1429,6 +1474,11 @@ extension Order {
                 data.append("\(index + 1). \(item.productName.formatStringOriginalCharacter())\n".data(using: .utf8)!)
             }
             
+            // #1189: a day-block line shows how its price was reached
+            if let block = item.blockLines {
+                let text = block.formula.map { block.summary + ": " + $0 } ?? block.summary
+                data.append("   \(text.formatStringOriginalCharacter())\n".data(using: .utf8)!)
+            }
             // Right alignment for price
             data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.right.rawValue))
             data.append("\(item.quantity) x \(item.unitPrice.formatStringInCommon()) = \(item.totalPrice.formatStringInCommon())\n".data(using: .utf8)!)
@@ -1464,6 +1514,11 @@ extension Order {
             data.append("\(("Total".localized().formatStringOriginalCharacter())): \(totalAmount.formatStringInCommon())\n\n".data(using: .utf8)!)
         }
         
+        // #1252: staged deposit (one-time deposit and sale: nothing is added)
+        if let block = DepositPlanReceipt.block(hasPlan: hasDepositPlan, orderType: orderType, stages: stages, summary: stageSummary) {
+            data.append(DepositPlanReceipt.printData(block))
+        }
+
         // Footer for rent orders
         if orderType == .rent {
             // Add note from printer settings

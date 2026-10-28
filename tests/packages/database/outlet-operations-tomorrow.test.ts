@@ -38,7 +38,11 @@ describe('getOutletOperations tomorrow lists (#362)', () => {
     const select = mockPrisma.order.findMany.mock.calls[0][0].select;
     expect(select).toEqual(expect.objectContaining({
       orderType: true, status: true, lateFee: true, damageFee: true,
-      payments: { select: { amount: true, status: true, notes: true } },
+      // #1199: stage rows (notes INSTALLMENT) are inside depositAmount, so the counter balance never reads them
+      payments: {
+        where: { OR: [{ notes: null }, { notes: { not: 'INSTALLMENT' } }] },
+        select: { amount: true, status: true, notes: true },
+      },
     }));
     expect(select.orderItems.select).toEqual(expect.objectContaining({ productName: true, quantity: true }));
   });

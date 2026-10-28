@@ -258,7 +258,14 @@ export function ProductsTable({
                   <OnceCell row={r} money={money} t={t} />
                 </td>
                 <td className="px-2 py-2.5 text-right">
-                  <PriceCell value={r.prices.day} money={money} />
+                  {r.prices.block != null && r.prices.day == null ? (
+                    <span className="flex flex-col items-end">
+                      <PriceCell value={r.prices.block} money={money} />
+                      <span className="whitespace-nowrap text-xs text-ar-muted">{t('price.blockTag')}</span>
+                    </span>
+                  ) : (
+                    <PriceCell value={r.prices.day} money={money} />
+                  )}
                 </td>
                 <td className="px-2 py-2.5 text-right">
                   <PriceCell value={r.prices.sale} money={money} muted />
@@ -280,6 +287,7 @@ export function ProductsTable({
             r.prices.once != null ? `${money(r.prices.once)} · ${t('cols.once').toLowerCase()}` : '',
             r.prices.hour != null ? t('price.perHour', { price: money(r.prices.hour) }) : '',
             r.prices.day != null ? `${money(r.prices.day)} · ${t('cols.day').toLowerCase()}` : '',
+            r.prices.block != null && r.prices.day == null ? t('price.blockFrom', { price: money(r.prices.block) }) : '',
           ].filter(Boolean);
           return (
             <li key={r.id} className={`flex items-start gap-3 border-t border-ar-subtle px-4 py-3 first:border-t-0 ${isSelected(r.id) ? 'bg-ar-primary-soft/40' : ''}`}>

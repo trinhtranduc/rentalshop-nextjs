@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -48,7 +47,6 @@ import com.anyrent.pos.ui.theme.DS
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun OrderActionsSheet(
-    orderNumber: String,
     rows: OrderActionSheet.Rows,
     /** "Máy in 192.168.1.199"; null = no subtitle */
     printerSubtitle: String?,
@@ -79,11 +77,8 @@ internal fun OrderActionsSheet(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 20.dp),
         ) {
             Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(R.string.order_sheet_title, orderNumber),
-                    fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
+                // #1297: no title (the order number is on the screen's top bar), only the close button
+                Spacer(Modifier.weight(1f))
                 val closeLabel = stringResource(R.string.close)
                 Box(
                     Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(onClickLabel = closeLabel, onClick = onDismiss),
@@ -96,10 +91,10 @@ internal fun OrderActionsSheet(
                 when (action) {
                     OrderActionSheet.Action.PRINT -> ActionRow(stringResource(R.string.order_sheet_print), printerSubtitle) { onAction(action) }
                     OrderActionSheet.Action.NOTES -> ActionRow(stringResource(R.string.order_sheet_notes), notesSubtitle) { onAction(action) }
-                    OrderActionSheet.Action.HISTORY -> ActionRow(stringResource(R.string.order_sheet_history), historySubtitle) { onAction(action) }
-                    OrderActionSheet.Action.EDIT -> ActionRow(stringResource(R.string.order_sheet_edit), null) { onAction(action) }
-                    OrderActionSheet.Action.EXTEND -> ActionRow(stringResource(R.string.order_sheet_extend), null) { onAction(action) }
-                    OrderActionSheet.Action.SHARE -> ActionRow(stringResource(R.string.order_sheet_share), null) { onAction(action) }
+                    OrderActionSheet.Action.HISTORY -> ActionRow(stringResource(R.string.order_sheet_history), historySubtitle ?: stringResource(R.string.order_sheet_history_hint)) { onAction(action) }
+                    OrderActionSheet.Action.EDIT -> ActionRow(stringResource(R.string.order_sheet_edit), stringResource(R.string.order_sheet_edit_hint)) { onAction(action) }
+                    OrderActionSheet.Action.EXTEND -> ActionRow(stringResource(R.string.order_sheet_extend), stringResource(R.string.order_sheet_extend_hint)) { onAction(action) }
+                    OrderActionSheet.Action.SHARE -> ActionRow(stringResource(R.string.order_sheet_share), stringResource(R.string.order_sheet_share_hint)) { onAction(action) }
                     else -> Unit
                 }
             }
@@ -111,7 +106,7 @@ internal fun OrderActionsSheet(
                             stringResource(R.string.order_sheet_cancel), stringResource(R.string.order_sheet_cancel_hint), danger = true,
                         ) { onAction(action) }
                         OrderActionSheet.Action.DELETE -> ActionRow(
-                            stringResource(R.string.order_sheet_delete), null, danger = true,
+                            stringResource(R.string.order_sheet_delete), stringResource(R.string.order_sheet_delete_hint), danger = true,
                         ) { onAction(action) }
                         else -> Unit
                     }

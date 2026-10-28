@@ -1252,3 +1252,64 @@ export function LegacyPanel({ title, children }: { title: string; children: Reac
     </section>
   );
 }
+
+/**
+ * #1189 "Giá theo khối ngày › Với app cũ" (owner only): what the server does with a day-block line sent by an app
+ * that does not know it. Two radio rows; the default (recompute) never stops a shop selling.
+ */
+export function BlockOldAppsSection({
+  t,
+  value,
+  canEdit,
+  onChanged,
+}: {
+  t: T;
+  value: 'recompute' | 'block';
+  canEdit: boolean;
+  onChanged?: () => void;
+}) {
+  const ts = useTranslations('settings');
+  const { toastSuccess, toastError } = useToast();
+  const [mode, setMode] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const name = useId();
+  useEffect(() => setMode(value), [value]);
+  const choose = async (next: 'recompute' | 'block') => {
+    if (!canEdit || saving || next === mode) return;
+    const before = mode;
+    setMode(next);
+    setSaving(true);
+    try {
+      const res = await bookingRequestsApi.setBlockPricingOldApps(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('blockPricing.title'));
+      onChanged?.();
+    } catch (error) {
+      setMode(before);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('blockPricing.title'));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const rows: Array<{ key: 'recompute' | 'block'; title: string; hint: string }> = [
+    { key: 'recompute', title: t('blockPricing.recompute'), hint: t('blockPricing.recomputeHint') },
+    { key: 'block', title: t('blockPricing.block'), hint: t('blockPricing.blockHint') },
+  ];
+  return (
+    <section className={`${cardClass} flex flex-col gap-3 px-5 py-4`} data-block-old-apps-setting>
+      <h2 className="m-0 text-lg font-bold">{t('blockPricing.title')}</h2>
+      <p className="m-0 text-sm text-ar-muted">{t('blockPricing.hint')}</p>
+      <div role="radiogroup" aria-label={t('blockPricing.title')} className="overflow-hidden rounded-xl border border-ar-line">
+        {rows.map((r) => (
+          <label key={r.key} className="flex min-h-[56px] cursor-pointer items-center gap-3 border-t border-ar-subtle px-4 py-2 first:border-t-0">
+            <input type="radio" name={name} checked={mode === r.key} disabled={!canEdit || saving} onChange={() => void choose(r.key)} className="h-5 w-5 flex-none" />
+            <span className="flex flex-col">
+              <span className="text-[15px] font-semibold text-ar-ink">{r.title}</span>
+              <span className="text-xs text-ar-muted">{r.hint}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </section>
+  );
+}

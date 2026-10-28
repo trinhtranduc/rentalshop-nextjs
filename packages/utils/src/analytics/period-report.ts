@@ -5,7 +5,16 @@ import {
   getOrderRevenueEvents,
   parseProductImages
 } from '@rentalshop/utils';
-import { collateralByEvent, revenueEventKey, withoutCollateral } from '../core/revenue-calculator';
+import {
+  collateralByEvent,
+  getFutureInstallments,
+  revenueEventKey,
+  withoutCollateral,
+  type FutureInstallmentGroup
+} from '../core/revenue-calculator';
+import { loadReservedPlanOrders } from './future-installments';
+import { effectivePlan, parseDepositPlan } from '../core/deposit-plan';
+import { buildEventWhere, toRevenueOrderData, REVENUE_PLAN_SELECT, EVENT_WHERE_PERIOD } from '../core/revenue-mapping';
 import {
   computeIncomePeriodSummary,
   type IncomePeriodDayRow,
@@ -63,7 +72,8 @@ const revenueSelect = {
   returnedAt: true,
   pickupPlanAt: true,
   returnPlanAt: true,
-  updatedAt: true
+  updatedAt: true,
+  ...REVENUE_PLAN_SELECT
 } as const;
 
 export interface AnalyticsPeriodSeriesPoint {
@@ -80,6 +90,10 @@ export interface AnalyticsPeriodSeriesPoint {
   newOrderCount?: number;
   /** `realIncome` without collateral (#484) */
   collected?: number;
+  /**
+   * #1199: unpaid deposit stages falling due in the bucket, by day. Not part of `futureIncome`. Left out when none.
+   */
+  futureInstallments?: FutureInstallmentGroup[];
   /**
    * Still to collect at hand-over (no collateral) of RENT orders RESERVED for this day, today or later (#605).
    * Not `futureIncome`: old Android adds `futureIncome` to the revenue bar. Left out when it cannot be computed.
@@ -434,26 +448,7 @@ export function percentChange(current: number, previous: number): number {
   return 0;
 }
 
-function mapRevenueOrder(order: any) {
-  return {
-    orderType: order.orderType,
-    status: order.status,
-    totalAmount: order.totalAmount || 0,
-    depositAmount: order.depositAmount || 0,
-    securityDeposit: order.securityDeposit || 0,
-    damageFee: order.damageFee || 0,
-    lateFee: order.lateFee || 0,
-    pickupTotalAmount: order.pickupTotalAmount ?? null,
-    createdAt: order.createdAt,
-    pickedUpAt: order.pickedUpAt,
-    returnedAt: order.returnedAt,
-    pickupPlanAt: order.pickupPlanAt,
-    returnPlanAt: order.returnPlanAt,
-    updatedAt: order.updatedAt
-  };
-}
-
-function buildEventWhere(
+function buildPeriodEventWhere(
   outletFilter: Record<string, any>,
   periodStart: Date,
   periodEnd: Date
@@ -461,26 +456,7 @@ function buildEventWhere(
   return {
     ...outletFilter,
     deletedAt: null,
-    OR: [
-      { createdAt: { gte: periodStart, lte: periodEnd } },
-      {
-        pickedUpAt: {
-          gte: new Date(periodStart.getTime() - DAY_MS),
-          lte: new Date(periodEnd.getTime() + DAY_MS),
-          not: null
-        }
-      },
-      {
-        returnedAt: {
-          gte: new Date(periodStart.getTime() - DAY_MS),
-          lte: new Date(periodEnd.getTime() + DAY_MS),
-          not: null
-        }
-      },
-      { updatedAt: { gte: periodStart, lte: periodEnd }, status: ORDER_STATUS.CANCELLED as any },
-      { pickupPlanAt: { gte: periodStart, lte: periodEnd, not: null } },
-      { returnPlanAt: { gte: periodStart, lte: periodEnd, not: null } }
-    ]
+    ...buildEventWhere({ start: periodStart, end: periodEnd }, EVENT_WHERE_PERIOD)
   };
 }
 
@@ -538,11 +514,26 @@ export function splitOrderValueByType(orders: CreatedOrderRow[]): OrderValueByTy
 export function expectedAtHandOver(order: {
   totalAmount?: number | null;
   depositAmount?: number | null;
-  payments?: Array<{ amount?: number | null; status?: string | null; notes?: string | null }> | null;
+  /** #1199: with a deposit plan only its automatic last stage is collected at hand-over */
+  depositPlan?: unknown;
+  createdAt?: Date | string | null;
+  pickupPlanAt?: Date | string | null;
+  payments?: Array<{
+    amount?: number | null;
+    status?: string | null;
+    notes?: string | null;
+    installmentKey?: string | null;
+    processedAt?: Date | string | null;
+    createdAt?: Date | string | null;
+  }> | null;
 }): number {
   const paidAtPickup = (order.payments || [])
     .filter((p) => p.status === 'COMPLETED' && p.notes === 'PICKUP')
     .reduce((sum, p) => sum + (p.amount || 0), 0);
+  if (order.depositPlan != null && parseDepositPlan(order.depositPlan) != null) {
+    const rest = effectivePlan(order, {}).find((stage) => stage.isRest);
+    return Math.max(0, (rest?.amount ?? 0) - paidAtPickup);
+  }
   return Math.max(0, (order.totalAmount || 0) - (order.depositAmount || 0) - paidAtPickup);
 }
 
@@ -679,6 +670,26 @@ export async function buildAnalyticsPeriodReport(
   };
 
   const computeSeries = async (): Promise<AnalyticsPeriodSeriesPoint[]> => {
+    const series = await computeSeriesRows();
+    // #1199: unpaid deposit stages by due day (one query; a stage can fall due where the order has no other event)
+    // (only for a range that reaches today: stages of days gone by are overdue, not "future")
+    const planOrders = rangeEnd < todayStart ? [] : await loadReservedPlanOrders(prisma, outletFilter);
+    if (planOrders.length === 0) return series;
+    for (const point of series) {
+      const key = seriesPointKey(point);
+      if (!key) continue;
+      const bounds =
+        groupBy === 'month'
+          ? listCivilMonths(`${key}-01`, `${key}-01`, timeZone)[0]
+          : getUtcRangeForDateKeys({ from: key }, timeZone);
+      if (!bounds) continue;
+      const groups = getFutureInstallments(planOrders, bounds.start, bounds.end);
+      if (groups.length > 0) point.futureInstallments = groups;
+    }
+    return series;
+  };
+
+  const computeSeriesRows = async (): Promise<AnalyticsPeriodSeriesPoint[]> => {
     if (groupBy === 'day') {
       const { periods } = await computeIncomePeriodSummary(prisma, {
         startDate,
@@ -698,12 +709,12 @@ export async function buildAnalyticsPeriodReport(
       const endOfMonth = civilMonth.end;
 
       const monthOrders = await prisma.order.findMany({
-        where: buildEventWhere(outletFilter, startOfMonth, endOfMonth),
+        where: buildPeriodEventWhere(outletFilter, startOfMonth, endOfMonth),
         select: revenueSelect,
         take: 10000
       });
 
-      const monthRevenueOrders = monthOrders.map(mapRevenueOrder);
+      const monthRevenueOrders = monthOrders.map(toRevenueOrderData);
       const { realIncome, futureIncome } = calculatePeriodRevenueBatch(monthRevenueOrders, startOfMonth, endOfMonth);
       const { realIncome: collected } = calculatePeriodRevenueBatch(
         monthRevenueOrders.map(withoutCollateral),
@@ -784,7 +795,17 @@ export async function buildAnalyticsPeriodReport(
         totalAmount: true,
         depositAmount: true,
         pickupPlanAt: true,
-        payments: { where: { status: 'COMPLETED', notes: 'PICKUP' }, select: { amount: true, status: true, notes: true } }
+        createdAt: true,
+        depositPlan: true,
+        payments: {
+          where: {
+            OR: [
+              { status: 'COMPLETED', notes: 'PICKUP' },
+              { status: 'COMPLETED', notes: 'INSTALLMENT' }
+            ]
+          },
+          select: { amount: true, status: true, notes: true, installmentKey: true, processedAt: true, createdAt: true }
+        }
       },
       take: 10000
     });
@@ -839,13 +860,13 @@ export async function buildAnalyticsPeriodReport(
   // none and the days add up to revenue.cashCollected
   const computeSeriesCollateral = async (): Promise<Map<string, number>> => {
     const orders = await prisma.order.findMany({
-      where: { ...buildEventWhere(outletFilter, rangeStart, rangeEnd), orderType: ORDER_TYPE.RENT as any } as any,
+      where: { ...buildPeriodEventWhere(outletFilter, rangeStart, rangeEnd), orderType: ORDER_TYPE.RENT as any } as any,
       select: revenueSelect,
       take: 10000
     });
     const rows: Array<{ at: Date; amount: number }> = [];
     for (const order of orders) {
-      const data = mapRevenueOrder(order);
+      const data = toRevenueOrderData(order);
       const events = getOrderRevenueEvents(data, rangeStart, rangeEnd);
       const collateral = collateralByEvent(events, getOrderRevenueEvents(withoutCollateral(data), rangeStart, rangeEnd));
       for (const event of events) {
@@ -859,11 +880,11 @@ export async function buildAnalyticsPeriodReport(
   const computeGrowth = async (): Promise<AnalyticsPeriodGrowth> => {
     const fetchRevenue = async (ps: Date, pe: Date): Promise<{ revenue: number; collected: number }> => {
       const orders = await prisma.order.findMany({
-        where: buildEventWhere(outletFilter, ps, pe),
+        where: buildPeriodEventWhere(outletFilter, ps, pe),
         select: revenueSelect,
         take: 10000
       });
-      const mapped = orders.map(mapRevenueOrder);
+      const mapped = orders.map(toRevenueOrderData);
       const { realIncome } = calculatePeriodRevenueBatch(mapped, ps, pe);
       const { realIncome: collected } = calculatePeriodRevenueBatch(mapped.map(withoutCollateral), ps, pe);
       return { revenue: realIncome, collected };
@@ -993,7 +1014,8 @@ export async function buildAnalyticsPeriodReport(
         returnedAt: true,
         updatedAt: true,
         pickupPlanAt: true,
-        returnPlanAt: true
+        returnPlanAt: true,
+        ...REVENUE_PLAN_SELECT
       },
       take: 10000
     });
@@ -1005,7 +1027,7 @@ export async function buildAnalyticsPeriodReport(
 
     for (const order of allOrders) {
       if (!order.customerId) continue;
-      const orderData = mapRevenueOrder(order);
+      const orderData = toRevenueOrderData(order);
       const events = getOrderRevenueEvents(orderData, rangeStart, rangeEnd);
       const orderCreatedAt = order.createdAt ? new Date(order.createdAt) : null;
       const isCreatedInRange =

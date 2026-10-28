@@ -93,5 +93,19 @@
   "BOOKING_REQUEST_FOUND": "已加载预约请求。",
   "BOOKING_REQUESTS_FOUND": "已加载预约请求列表。",
   "BOOKING_REQUEST_PREPARED": "已可根据预约请求创建订单。",
-  "BOOKING_REQUEST_REJECTED": "已拒绝该预约请求。"
+  "BOOKING_REQUEST_REJECTED": "已拒绝该预约请求。",
+  "BLOCK_PRICE_MISMATCH": "按天数分档的商品价格与价目表不一致。请重新加载商品后再试。",
+  "PRICING_TYPE_REQUIRES_UPDATE": "该商品使用按天数分档计价。请更新应用后再下租赁订单。",
+  "BLOCK_TABLE_INVALID": "按天数分档的价目表无效。请使用 1 到 31 天、不小于 0 的价格，且每个商品只能有一个价目表。",
+  "INSTALLMENT_EXCEEDS_TOTAL": "各阶段押金之和超过了订单总额。",
+  "INSTALLMENT_OVERPAID": "该金额超过此阶段允许的数额，或新的总额低于已收金额。",
+  "INSTALLMENT_ALREADY_PAID": "该押金阶段已收款。",
+  "INSTALLMENT_FORBIDDEN_ROLE": "您的角色无法对押金阶段执行此操作。",
+  "INSTALLMENT_UNPAID_AT_PICKUP": "该订单还有未收的押金阶段。请在网页端收款或更新应用。",
+  "INSTALLMENT_NOT_FOUND": "未找到押金阶段。",
+  "INSTALLMENT_NO_PLAN": "该订单没有分阶段押金计划。",
+  "INSTALLMENT_LOYALTY_UNSUPPORTED": "分阶段收押金的订单不能使用积分。",
+  "DEPOSIT_SETTINGS_INVALID": "押金设置无效。每个模板 1 到 3 个阶段，百分比之和不超过 100，模板最多 10 个。",
+  "CANCEL_AMOUNTS_MISMATCH": "保留的金额超过已收金额，或金额无效。",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "已取消但保留了款项的订单需保留在历史记录中，无法删除。"
 }

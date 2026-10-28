@@ -22,8 +22,10 @@ object CreateOrderSheet {
         val range: String?,
         /** Inclusive civil days; null for a sale */
         val days: Int?,
-        /** `Vest đen slim fit, Áo dài lụa đỏ ×2` */
+        /** First product only, `Áo dài lụa đỏ ×2` (#1239: a long list pushed the buttons off the screen) */
         val items: String,
+        /** How many more products the cart has: "+N sản phẩm khác" */
+        val moreCount: Int,
         val total: Double,
         /** Prepaid deposit (rent) or the total (sale) */
         val collect: Double,
@@ -53,7 +55,8 @@ object CreateOrderSheet {
             customer = customerName,
             range = if (hasDates) "${dayMonth(pickup!!)} → ${dayMonth(returnDate!!)}" else null,
             days = if (hasDates) CartV2Logic.rentalDays(pickup!!, returnDate!!) else null,
-            items = lines.joinToString(", ") { (name, quantity) -> if (quantity > 1) "$name ×$quantity" else name },
+            items = lines.firstOrNull()?.let { (name, quantity) -> if (quantity > 1) "$name ×$quantity" else name }.orEmpty(),
+            moreCount = maxOf(0, lines.size - 1),
             total = total,
             collect = CartV2Logic.collectNow(isSale, total, deposit),
         )

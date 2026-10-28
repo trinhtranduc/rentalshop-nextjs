@@ -35,12 +35,54 @@ extension Array where Element: Copying {
 /// A single rental pricing option for a product (Phase 1: FIXED + DAILY)
 struct PricingOption: Codable {
     var id: Int?
-    var type: String        // "FIXED" | "DAILY"
+    var type: String        // "FIXED" | "DAILY" | "BLOCK" (#1189: only when the request sends `X-Client-Capabilities: block-pricing`)
     var price: Double
     var isDefault: Bool?
     var isActive: Bool?
+    /// #1189: day-block table of a BLOCK option; nil on every other option and on payloads from before #1189
+    var blockTiers: [Double]? = nil
+    var blockStartDay: Int? = nil
+    var blockExtraMode: String? = nil
+    var blockExtraPrice: Double? = nil
 
     var isDailyType: Bool { return type.uppercased() == "DAILY" }
+
+    /// The table of a BLOCK option; nil for other types or a table that is not usable
+    var blockTable: BlockTable? {
+        guard type.uppercased() == "BLOCK", let tiers = blockTiers else { return nil }
+        let table = BlockTable(tiers: tiers, startDay: blockStartDay ?? 1,
+                               extraMode: blockExtraMode ?? BlockTable.extraPerDay, extraPrice: blockExtraPrice)
+        return BlockPricing.isValid(table) ? table : nil
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, type, price, isDefault, isActive, blockTiers, blockStartDay, blockExtraMode, blockExtraPrice
+    }
+
+    init(id: Int?, type: String, price: Double, isDefault: Bool?, isActive: Bool?, table: BlockTable? = nil) {
+        self.id = id
+        self.type = type
+        self.price = price
+        self.isDefault = isDefault
+        self.isActive = isActive
+        blockTiers = table?.tiers
+        blockStartDay = table?.startDay
+        blockExtraMode = table?.extraMode
+        blockExtraPrice = table?.extraPrice
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(Int.self, forKey: .id)
+        type = try c.decode(String.self, forKey: .type)
+        price = try c.decode(Double.self, forKey: .price)
+        isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault)
+        isActive = try c.decodeIfPresent(Bool.self, forKey: .isActive)
+        blockTiers = BlockJSON.doubles(c, .blockTiers)
+        blockStartDay = (try? c.decodeIfPresent(Int.self, forKey: .blockStartDay)) ?? nil
+        blockExtraMode = (try? c.decodeIfPresent(String.self, forKey: .blockExtraMode)) ?? nil
+        blockExtraPrice = BlockJSON.double(c, .blockExtraPrice)
+    }
 }
 
 /// Stock of a product at one outlet (product detail and list)

@@ -294,7 +294,7 @@ async function main() {
       const { page } = roles.merchant;
       await U.go(page, base, '/dashboard?settings=subscription', { wait: 2500 });
       const t = await U.text(page);
-      check('WEB-ROLE-25', 'merchant: Cài đặt has Thông tin cửa hàng, Phiếu in, Gói dịch vụ, Tài khoản; Gói dịch vụ tab shows the plan (ACTIVE)', /Thông tin cửa hàng/.test(t) && /Phiếu in/.test(t) && /Gói dịch vụ/.test(t) && /E2E Web Roomy/.test(t), brief(t.slice(t.indexOf('Cài đặt')), 260));
+      check('WEB-ROLE-25', 'merchant: Cài đặt has Thông tin cửa hàng, In & phiếu, Gói dịch vụ, Hồ sơ & bảo mật; Gói dịch vụ tab shows the plan (ACTIVE)', /Thông tin cửa hàng/.test(t) && /In & phiếu/.test(t) && /Gói dịch vụ/.test(t) && /E2E Web Roomy/.test(t), brief(t.slice(t.indexOf('Cài đặt')), 260));
     }
 
     // ---------------------------------------------------------------- WEB-ROLE-26 loyalty by URL (merchant on a plan without loyalty)

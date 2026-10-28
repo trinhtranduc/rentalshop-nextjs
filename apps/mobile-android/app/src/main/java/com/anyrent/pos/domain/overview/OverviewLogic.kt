@@ -1,5 +1,7 @@
 package com.anyrent.pos.domain.overview
 
+import com.anyrent.pos.domain.deposit.FutureInstallmentGroup
+import com.anyrent.pos.domain.deposit.InstallmentReminders
 import com.anyrent.pos.domain.ShopTime
 import org.json.JSONObject
 import java.time.LocalDate
@@ -59,6 +61,10 @@ data class OverviewReport(
     /** "Thực thu" as iOS and web show it: money held, collateral included; an older API falls back */
     val heldCash: Double get() = cashCollected ?: collateralFlow?.totalReceived(netRevenue) ?: netRevenue
 
+    /** #1199: unpaid deposit stages falling due in the period (amount, count). Shown on their own line, never added to the bars */
+    val futureInstallmentsTotal: Pair<Double, Int>
+        get() = series.flatMap { it.futureInstallments.orEmpty() }.let { groups -> groups.sumOf { it.amount } to groups.sumOf { it.count } }
+
     /**
      * [dayKey] `yyyy-MM-dd` for daily points; [monthLabel] "10/26" for monthly ones.
      * [newOrderCount] (#484) is null on an older API.
@@ -70,6 +76,11 @@ data class OverviewReport(
         val newOrderCount: Int? = null,
         /** #725 (iOS #616) `expectedCollected`: money still expected that day; null on an older API */
         val expectedCollected: Double? = null,
+        /**
+         * #1199 `futureInstallments`: deposit stages still to collect in this bucket; null when the API sends none.
+         * Read apart from [expectedCollected] / `futureIncome`: a stage is never added to them.
+         */
+        val futureInstallments: List<FutureInstallmentGroup>? = null,
     )
     data class TopProduct(val id: Int?, val name: String, val rentalCount: Int, val totalRevenue: Double, val image: String?)
 
@@ -149,6 +160,8 @@ data class OverviewNow(
     val noShows: Int? = null,
     /** #725 `tomorrow`; null when the API leaves it out */
     val tomorrow: Tomorrow? = null,
+    /** #1199 `installmentsDue` / `installmentsOverdue` / `installmentsDueTomorrow`; null when the API leaves them out */
+    val installments: InstallmentReminders? = null,
 )
 
 /** #496 one row of "VIỆC HÔM NAY": [remaining] still to do, [done] already done today */
@@ -304,6 +317,7 @@ object OverviewLogic {
                     realIncome = number(p, "collected") ?: number(p, "realIncome") ?: 0.0,
                     newOrderCount = number(p, "newOrderCount")?.toInt(),
                     expectedCollected = number(p, "expectedCollected"),
+                    futureInstallments = FutureInstallmentGroup.listFrom(p.optJSONArray("futureInstallments")),
                 )
             },
             topProducts = (0 until (top?.length() ?: 0)).mapNotNull { i ->
@@ -390,6 +404,7 @@ object OverviewLogic {
             returnsToday = todayTask(data, "returnsToday", "returns"),
             noShows = count(data.optJSONObject("noShows"), "count"),
             tomorrow = data.optJSONObject("tomorrow")?.let { Tomorrow(count(it, "pickups") ?: 0, count(it, "returns") ?: 0) },
+            installments = InstallmentReminders.fromJson(data),
         )
     }
 }

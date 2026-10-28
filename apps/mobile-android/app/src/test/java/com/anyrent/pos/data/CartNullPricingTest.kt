@@ -79,7 +79,9 @@ class CartNullPricingTest {
 
     @Test
     fun `an unknown pricing type is read as FIXED and known ones are kept`() {
-        assertEquals("FIXED", api().parseProduct(productJson("BLOCK")).pricingType)
+        // #1189: BLOCK is a pricing type of its own now (was read as FIXED before day-block pricing)
+        assertEquals("BLOCK", api().parseProduct(productJson("BLOCK")).pricingType)
+        assertEquals("FIXED", api().parseProduct(productJson("WEEKLY")).pricingType)
         assertEquals("DAILY", api().parseProduct(productJson("daily")).pricingType)
         assertEquals("HOURLY", api().parseProduct(productJson("HOURLY")).pricingType)
     }

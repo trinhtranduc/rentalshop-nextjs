@@ -579,6 +579,17 @@
     },
     "create": "Tạo đơn",
     "editor": {
+      "carts": {
+        "label": "Các giỏ hàng",
+        "title": "Giỏ {n}",
+        "summary": "{count} món · {amount}",
+        "count": "{count} món",
+        "new": "+ Giỏ mới",
+        "close": "Đóng giỏ",
+        "deleteTitle": "Xoá giỏ này?",
+        "deleteMessage": "{name} có {count} món. Các món sẽ bị xoá.",
+        "delete": "Xoá"
+      },
       "title": "Tạo đơn",
       "editTitle": "Sửa đơn #{number}",
       "backToOrder": "Về đơn #{number}",
@@ -634,13 +645,15 @@
         "DAILY": "{price}/ngày",
         "HOURLY": "{price}/giờ",
         "FIXED": "{price}/lần",
-        "SALE": "{price}"
+        "SALE": "{price}",
+        "BLOCK": "từ {price}/ngày · theo khối"
       },
       "option": {
         "DAILY": "Theo ngày · {price}/ngày",
         "HOURLY": "Theo giờ · {price}/giờ",
         "FIXED": "Theo lần · {price}/lần",
-        "SALE": "Giá bán · {price}"
+        "SALE": "Giá bán · {price}",
+        "BLOCK": "Theo khối ngày · {price}"
       },
       "cart": {
         "label": "Đơn đang tạo",
@@ -723,7 +736,8 @@
           "FIXED": "Theo lần",
           "DAILY": "Theo ngày",
           "HOURLY": "Theo giờ",
-          "OTHER": "{type}"
+          "OTHER": "{type}",
+          "BLOCK": "Theo khối ngày"
         },
         "price": "Giá cho đơn này",
         "priceFor": "Giá cho đơn này · {name}",
@@ -731,7 +745,8 @@
           "FIXED": "/lần",
           "DAILY": "/ngày",
           "HOURLY": "/giờ",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "cả đợt thuê"
         },
         "note": "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.",
         "done": "Xong",
@@ -769,6 +784,11 @@
         "clear": "Xoá ghi chú",
         "done": "Xong",
         "for": "Ghi chú cho {name}"
+      },
+      "block": {
+        "label": "Khối {n} ngày",
+        "labelExtra": "Khối {n} ngày + {m} ngày thêm",
+        "days": "{n} ngày"
       }
     },
     "tabs": {
@@ -808,6 +828,7 @@
       "newest": "Mới tạo nhất",
       "oldest": "Cũ nhất",
       "nearest": "Việc gần nhất",
+      "pickup": "Ngày lấy sớm nhất",
       "total": "Tổng tiền cao nhất"
     },
     "search": {
@@ -891,7 +912,10 @@
         "fixed": "Giá cố định",
         "perDay": "{amount}/ngày × {days} ngày",
         "empty": "Đơn chưa có món nào.",
-        "image": "Ảnh {name}"
+        "image": "Ảnh {name}",
+        "block": "Khối {n} ngày",
+        "blockExtra": "Khối {n} ngày + {m} ngày thêm",
+        "blockDays": "{n} ngày"
       },
       "notes": {
         "title": "Ghi chú",
@@ -1053,7 +1077,9 @@
         "perDay": "/ngày",
         "days": "{n} ngày",
         "perHour": "/giờ",
-        "hours": "{n} giờ"
+        "hours": "{n} giờ",
+        "block": "Khối {n} ngày",
+        "blockExtra": "Khối {n} ngày + {m} ngày thêm"
       },
       "bankTitle": "Chuyển khoản",
       "bankName": "Ngân hàng",
@@ -1111,6 +1137,96 @@
         "CANNOT_CONTACT": "Không liên lạc được",
         "OTHER": "Khác"
       }
+    },
+    "installments": {
+      "paidBadge": "Đã thu {percent}%",
+      "createTitle": "Thu cọc theo giai đoạn",
+      "template": "Mẫu thu cọc",
+      "today": "hôm nay",
+      "todayChip": "Hôm nay",
+      "dueOn": "hạn {day}",
+      "stageMeta": "{percent}% giá trị đơn · {day}",
+      "restTitle": "Phần còn lại, thu khi giao",
+      "restMeta": "Phần còn lại · {day}",
+      "percentOf": "Phần trăm giai đoạn {n}",
+      "overHundred": "Tổng các giai đoạn không được quá 100%.",
+      "collectNow": "Thu ngay giai đoạn 1",
+      "collectCash": "Tiền mặt · {amount}",
+      "collectTransfer": "Chuyển khoản · {amount}",
+      "collectLater": "Tạo đơn, thu sau",
+      "createAndCollect": "Tạo đơn · thu {amount}",
+      "cardTitle": "Thu theo giai đoạn",
+      "edit": "Sửa",
+      "view": "Xem",
+      "collected": "Đã thu",
+      "remaining": "Còn phải thu",
+      "paidMeta": "{percent}% · thu {day}",
+      "voidLink": "Huỷ khoản thu",
+      "collectStage": "Thu giai đoạn {n}",
+      "status": {
+        "PAID": "Đã thu",
+        "PARTIAL": "Thu một phần",
+        "DUE_TODAY": "Hôm nay",
+        "OVERDUE": "Quá hạn",
+        "UPCOMING": "Chờ thu",
+        "VOID": "Đã huỷ"
+      },
+      "collectTitle": "Thu giai đoạn {n}",
+      "cancel": "Huỷ",
+      "close": "Đóng",
+      "collectConfirm": "Thu {amount}",
+      "amount": "Số tiền",
+      "amountHint": "Còn phải thu {amount} ở giai đoạn này. Nhập ít hơn thì phần thiếu dồn vào phần còn lại, thu khi giao.",
+      "overStage": "Không thu quá {amount} của giai đoạn này.",
+      "method": "Hình thức",
+      "cash": "Tiền mặt",
+      "transfer": "Chuyển khoản",
+      "collectedOn": "Ngày thu",
+      "note": "Ghi chú",
+      "notePlaceholder": "Không bắt buộc",
+      "editTitle": "Sửa kế hoạch thanh toán",
+      "viewTitle": "Kế hoạch thanh toán",
+      "editNote": "Chỉ sửa % hoặc hạn của giai đoạn chưa thu. Giai đoạn sau tự tính lại.",
+      "staffNote": "Chỉ chủ shop và quản lý chi nhánh sửa được kế hoạch. Bạn chỉ xem.",
+      "savePlan": "Lưu kế hoạch",
+      "stageTitle": "Giai đoạn {n} · {label}",
+      "paidLocked": "Đã thu, không sửa · {percent}%",
+      "percentOfOrder": "% giá trị đơn",
+      "dueLabel": "Hạn thu",
+      "keepDue": "Giữ hạn {day}",
+      "restLocked": "Phần còn lại, thu khi giao · hạn {day} · tự tính, không sửa",
+      "total": "Tổng",
+      "totalLine": "{percent}% = {amount}",
+      "editProblem": {
+        "percent": "Phần trăm mỗi giai đoạn từ 1 đến 100.",
+        "label": "Tên giai đoạn không được để trống.",
+        "over": "Các giai đoạn cộng lại lớn hơn tổng tiền đơn."
+      },
+      "due": {
+        "onCreate": "Khi đặt đơn",
+        "beforePickup": "Trước ngày lấy {days} ngày",
+        "afterCreate": "Sau khi đặt {days} ngày"
+      },
+      "restShort": "Phần còn lại khi giao",
+      "unpaidTitle": "Còn giai đoạn cọc chưa thu",
+      "unpaidHint": "Thu các giai đoạn này trước, rồi giao đồ.",
+      "unpaidTotal": "Cần thu trước khi giao: {amount}",
+      "voidTitle": "Huỷ khoản thu?",
+      "voidMessage": "Khoản đã thu của \"{label}\" sẽ bị huỷ để thu lại. Chỉ làm khi thu nhầm.",
+      "voidConfirm": "Huỷ khoản thu",
+      "cancelTitle": "Huỷ đơn hàng",
+      "cancelPaid": "Khách đã trả",
+      "cancelKept": "Tiệm giữ lại",
+      "cancelRefund": "Hoàn cho khách",
+      "cancelHint": "Số hoàn = Khách đã trả trừ Tiệm giữ lại. Chỉ sửa khi tiệm đồng ý khác với chính sách.",
+      "cancelHintStaff": "Nhân viên hoàn toàn bộ số khách đã trả. Chủ shop hoặc quản lý chi nhánh quyết định số tiệm giữ lại.",
+      "policyLine": "Chính sách tiệm: {policy}",
+      "dueTodayTitle": "Cần thu hôm nay",
+      "dueSoonTitle": "Sắp đến hạn",
+      "reminderEmpty": "Không có khoản nào.",
+      "lateDays": "Trễ {days} ngày",
+      "stageShort": "giai đoạn {n}",
+      "walkIn": "Khách lẻ"
     }
   }
 }

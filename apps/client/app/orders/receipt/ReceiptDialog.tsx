@@ -88,6 +88,7 @@ function useOutletDetails(open: boolean, order: OrderInput | null, outlet: Recei
 
 export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }: ReceiptPreviewModalProps) {
   const t = useTranslations('orders.web.receipt') as unknown as Tr;
+  const ti = useTranslations('orders.web.installments') as unknown as Tr;
   const to = useOrderTranslations();
   const titleId = useId();
   const printRef = useRef<HTMLButtonElement>(null);
@@ -105,7 +106,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
   const bankBlock = bank.kind === 'show' ? bank.block : null;
   // "{n} ngày" stays a template: the model fills in each line's days
   const words = useMemo(
-    () => ({ perDay: t('units.perDay'), days: t('units.days', { n: '{n}' }), perHour: t('units.perHour'), hours: t('units.hours', { n: '{n}' }) }),
+    () => ({ perDay: t('units.perDay'), days: t('units.days', { n: '{n}' }), perHour: t('units.perHour'), hours: t('units.hours', { n: '{n}' }), block: t('units.block', { n: '{n}' }), blockExtra: t('units.blockExtra', { n: '{n}', m: '{m}' }) }),
     [t]
   );
   const model = useMemo(
@@ -171,7 +172,7 @@ export function ReceiptPreviewModal({ isOpen, onClose, order, outlet, merchant }
         </div>
         <div className="rc-body min-h-0 flex-1 overflow-y-auto bg-ar-subtle px-4 py-6">
           <div ref={paperRef} className="rc-paper mx-auto w-fit max-w-full rounded-sm shadow-[0_1px_3px_rgba(0,0,0,0.12),0_8px_24px_rgba(0,0,0,0.10)]">
-            <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} width={billWidth} bank={bankBlock} />
+            <ReceiptSlip model={model} t={t} collateralLabel={collateralLabel} width={billWidth} bank={bankBlock} ti={ti} />
           </div>
         </div>
         <div className="rc-chrome flex items-center gap-2 border-t border-ar-line-soft px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

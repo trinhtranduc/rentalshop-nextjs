@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from './client';
 
 /**
@@ -27,7 +28,11 @@ const orderRowSelect = {
   lateFee: true,
   pickupTotalAmount: true,
   damageFee: true,
-  payments: { select: { amount: true, status: true, notes: true } },
+  // #1199: deposit-stage rows (notes INSTALLMENT) are already inside depositAmount; the counter balance never sums them
+  payments: {
+    where: { OR: [{ notes: null }, { notes: { not: 'INSTALLMENT' } }] } as Prisma.PaymentWhereInput,
+    select: { amount: true, status: true, notes: true },
+  },
   customer: { select: { firstName: true, lastName: true, phone: true } },
   orderItems: { select: { quantity: true, productName: true, product: { select: { name: true } } } },
 } as const;

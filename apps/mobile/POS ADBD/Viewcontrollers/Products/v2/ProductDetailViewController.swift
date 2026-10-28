@@ -284,6 +284,8 @@ final class ProductDetailViewController: BaseViewControler {
         let prices: [(String, Double?)] = [
             ("products.price.perRental".localized(), ProductPricing.perRental(product)),
             ("products.price.perDay".localized(), ProductPricing.perDay(product)),
+            // #1189: the day-1 price of the day-block table
+            ("products.price.block".localized(), ProductPricing.block(product)?.tiers.first),
             ("products.price.sale".localized(), ProductPricing.sale(product)),
         ]
         for (title, value) in prices {

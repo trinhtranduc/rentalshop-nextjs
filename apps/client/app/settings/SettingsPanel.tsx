@@ -18,6 +18,7 @@ import { useTheme } from '../providers/ThemeProvider';
 import {
   AccountSection,
   AppearanceSection,
+  BlockOldAppsSection,
   LanguageSection,
   LegacyPanel,
   OnlineBookingSection,
@@ -30,7 +31,8 @@ import {
   type ProfileForm,
   type ShopForm,
 } from './sections';
-import { canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
+import { DepositSection } from '../installments/DepositSection';
+import { blockOldAppsFlag, canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -118,7 +120,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const groups = useMemo(() => groupedTabs(tabsForRole(role)), [role]);
 
   // #852: the owner sets bank accounts and the receipt per branch (active branches; default first)
-  const perBranch = role === 'MERCHANT' && (tab === 'bank-accounts' || tab === 'receipt');
+  const perBranch = role === 'MERCHANT' && (tab === 'payment' || tab === 'receipt');
   const allBranches = useBranchOptions(perBranch);
   const branchOptions = useMemo(() => (allBranches ?? []).filter((o) => o.isActive), [allBranches]);
   const branchId = perBranch ? settingsOutletChoice(branchOptions, outletParam) : null;
@@ -155,7 +157,11 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const bookingFlag = onlineBookingFlag(merchant);
   const priceFlag = showPublicPriceFlag(merchant);
   const showsBooking = tab === 'merchant' || (tab === 'outlet' && role === 'OUTLET_ADMIN');
-  const needsProfile = (showsBooking && bookingFlag === null) || (tab === 'public-page' && priceFlag === null);
+  const oldAppsFlag = blockOldAppsFlag(merchant as { blockPricing?: { oldApps?: unknown } });
+  const needsProfile =
+    (showsBooking && bookingFlag === null) ||
+    (tab === 'public-page' && priceFlag === null) ||
+    (tab === 'merchant' && role === 'MERCHANT' && oldAppsFlag === null);
   const profileLoaded = useRef(false);
   useEffect(() => {
     if (!needsProfile || !user?.merchant || profileLoaded.current) return;
@@ -368,6 +374,9 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
               canEditOutlets={canManageOutlets}
               onShopChanged={() => void refreshUser?.()}
             />
+            {role === 'MERCHANT' && (
+              <BlockOldAppsSection t={t} value={oldAppsFlag ?? 'recompute'} canEdit onChanged={() => void refreshUser?.()} />
+            )}
             <OutletsLinkRow t={t} />
           </>
         );
@@ -404,7 +413,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             />
           </>
         );
-      case 'bank-accounts':
+      case 'payment':
+        // #1259 Thu tiền: bank accounts (owner / outlet admin), then "Cách thu cọc" (owner only, as before)
         if (role === 'MERCHANT') {
           // The owner has no outlet of its own: the shared panel reads the picked branch
           if (allBranches === null) return <Skeleton className="h-[320px] w-full" />;
@@ -417,6 +427,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
                   user={{ ...(authUser as object), outletId: branchId ?? undefined, outlet: branchId ? { id: branchId } : null }}
                 />
               </LegacyPanel>
+              <DepositSection t={t} />
             </>
           );
         }
@@ -434,7 +445,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
               t={t}
               canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'}
               outletId={role === 'MERCHANT' ? branchId : undefined}
-              bankLink={role === 'OUTLET_ADMIN' || role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('bank-accounts') } : null}
+              bankLink={role === 'OUTLET_ADMIN' || role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('payment') } : null}
             />
           </>
         );
@@ -447,8 +458,6 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             currentUserRole={user?.role}
           />
         );
-      case 'account':
-        return <AccountSection userId={user?.id ?? null} onSignOut={signOut} t={t} />;
       case 'language':
         // #1140: Ngôn ngữ & giao diện on one page; the theme kill switch still hides Giao diện
         return (
@@ -459,14 +468,18 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
         );
       case 'profile':
       default:
+        // #1259 Hồ sơ & bảo mật: the profile, then change password, logout and delete account
         return (
-          <ProfileSection
-            initial={profileForm}
-            email={str(user?.email)}
-            roleLabel={role ? tu(`roles.${role}`) : '—'}
-            onSave={saveProfile}
-            t={t}
-          />
+          <>
+            <ProfileSection
+              initial={profileForm}
+              email={str(user?.email)}
+              roleLabel={role ? tu(`roles.${role}`) : '—'}
+              onSave={saveProfile}
+              t={t}
+            />
+            <AccountSection userId={user?.id ?? null} onSignOut={signOut} t={t} />
+          </>
         );
     }
   };

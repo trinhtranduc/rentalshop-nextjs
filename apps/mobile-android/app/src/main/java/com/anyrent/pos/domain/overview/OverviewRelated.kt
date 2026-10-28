@@ -29,6 +29,24 @@ enum class OverviewRelatedKind(val key: String, val buckets: List<String>) {
     }
 }
 
+/** #1273: the two parts of Thế chân. [returnedTotal] is a positive number; [net] = received − returned */
+data class CollateralSections(
+    val held: List<RelatedRow>,
+    val heldTotal: Double,
+    /** The API `count` when its list is cut, else the rows */
+    val heldOrders: Int,
+    /** false when the API list is cut: the sum would be wrong, so no total is shown */
+    val heldTotalKnown: Boolean,
+    val received: List<RelatedRow>,
+    val returned: List<RelatedRow>,
+    val receivedTotal: Double,
+    val returnedTotal: Double,
+    val receivedOrders: Int,
+    val returnedOrders: Int,
+) {
+    val net: Double get() = receivedTotal - returnedTotal
+}
+
 /** One row of `GET /api/analytics/income/orders` (an order on one day of the period) */
 data class IncomeRow(
     val id: Int,
@@ -85,6 +103,8 @@ enum class EventReason(@StringRes val res: Int) {
     FUTURE_DAMAGE_FEE(R.string.overview_v2_event_future_damage_fee),
     FUTURE_REFUND(R.string.overview_v2_event_future_refund),
     FUTURE_NOTHING(R.string.overview_v2_event_future_nothing),
+    /** #1199 a deposit stage collected on its own day (`RENT_INSTALLMENT`) */
+    INSTALLMENT(R.string.overview_v2_event_installment),
     ;
 
     companion object {
@@ -104,6 +124,7 @@ enum class EventReason(@StringRes val res: Int) {
             "SALE_CANCELLED" -> SALE_CANCELLED
             "RENT_DEPOSIT" -> DEPOSIT
             "RENT_PICKUP" -> PICKUP
+            "RENT_INSTALLMENT" -> INSTALLMENT
             "RENT_CANCELLED" -> RENT_CANCELLED
             "RENT_FUTURE_PICKUP" -> FUTURE_PICKUP
             "RENT_RETURN" -> if (revenue < 0) DEPOSIT_REFUND else if (revenue > 0) RETURN_COLLECTED else NOTHING
@@ -175,6 +196,42 @@ object OverviewRelated {
             val customer = if (o.isNull("customerName")) "" else o.optString("customerName")
             RelatedRow(id, number.ifBlank { "#$id" }, customer, RelatedNote.HELD, "", amount = amount)
         }
+    }
+
+    /** #1273: `data.collateralHeld.count`, the orders held (the list is cut at 500); null on an older API or without the money right */
+    fun heldCount(data: JSONObject): Int? {
+        val group = data.optJSONObject("collateralHeld") ?: return null
+        return if (group.has("count") && !group.isNull("count")) group.optInt("count") else null
+    }
+
+    /** #1273 Thế chân in two sections: the state now ([held]) and the flow of the period (+ received, − returned); never added to each other */
+    fun sections(held: List<RelatedRow>, heldCount: Int?, rows: List<RelatedRow>): CollateralSections {
+        val heldOnly = held.filter { it.note == RelatedNote.HELD }
+        val flow = rows.filter { it.note != RelatedNote.HELD }
+        val received = flow.filter { it.amount > 0 }
+        val returned = flow.filter { it.amount < 0 }
+        val cut = heldCount != null && heldCount > heldOnly.size
+        return CollateralSections(
+            held = heldOnly,
+            heldTotal = heldOnly.sumOf { it.amount },
+            heldOrders = if (cut) heldCount!! else heldOnly.map { it.id }.toSet().size,
+            heldTotalKnown = !cut,
+            received = received,
+            returned = returned,
+            receivedTotal = received.sumOf { it.amount },
+            returnedTotal = -returned.sumOf { it.amount },
+            receivedOrders = received.map { it.id }.toSet().size,
+            returnedOrders = returned.map { it.id }.toSet().size,
+        )
+    }
+
+    /** The flow part is "hôm nay" only for the one-day range of today */
+    fun flowIsToday(startDate: String, endDate: String, todayKey: String): Boolean = startDate == endDate && startDate == todayKey
+
+    /** `2026-10-27` → `27/10` */
+    fun dayMonth(key: String): String {
+        val parts = key.split("-")
+        return if (parts.size == 3) "${parts[2]}/${parts[1]}" else key
     }
 
     /** One page of `data`: every order row of every day (an order may be on several days), and whether more follow */

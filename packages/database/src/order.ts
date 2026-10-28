@@ -9,7 +9,7 @@ import type {
 import { applyOrderDateRange } from './order-date-range';
 import { findNearestTaskPageIds } from './order-nearest-task';
 import { createOrderOnce, type CreateOrderOnceOptions, type OrderCreateGuard } from './order-create-guard';
-import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages } from '@rentalshop/utils';
+import { removeVietnameseDiacritics, normalizeStartDate, normalizeEndDate, formatFullName, parseProductImages, REVENUE_PLAN_SELECT } from '@rentalshop/utils';
 
 // Date filter lives in ./order-date-range (unit tested; supports exact Vietnam-day bounds)
 
@@ -25,13 +25,14 @@ export function orderListOrderBy(sortBy: string, sortOrder: 'asc' | 'desc'): Pri
 }
 
 /**
- * Build search conditions for orders with contains matching across:
+ * Build search conditions for orders. A query matches only:
  * - order number
  * - customer phone
  * - customer first name / last name / full name
  *
  * Customer-name matching is diacritics-insensitive via PostgreSQL unaccent(),
  * so "hong ngoc" matches both "Hồng Ngọc" and "Hong Ngoc".
+ * Item and product names are not searched.
  */
 export async function buildOrderSearchConditions(searchInput: string, merchantId?: number): Promise<any[]> {
   const searchTerm = searchInput.trim();
@@ -87,30 +88,6 @@ export async function buildOrderSearchConditions(searchInput: string, merchantId
   if (matchingCustomerIds.length > 0) {
     conditions.push({ customerId: { in: matchingCustomerIds } });
   }
-
-  // Step 3 (#362): orders by the name of an item — the merchant's products (accent-insensitive) and the
-  // name snapshot kept on each order item
-  try {
-    const productMerchantFilter = merchantId != null
-      ? Prisma.sql`AND "merchantId" = ${merchantId}`
-      : Prisma.empty;
-    const productResults: Array<{ id: number }> = await prisma.$queryRaw`
-      SELECT id FROM "Product"
-      WHERE unaccent(lower(COALESCE("name", ''))) LIKE ${namePattern}
-      ${productMerchantFilter}
-      LIMIT 2000
-    `;
-    const matchingProductIds = productResults.map((result) => result.id);
-    if (matchingProductIds.length > 0) {
-      conditions.push({ orderItems: { some: { productId: { in: matchingProductIds } } } });
-    }
-  } catch {
-    // unaccent() unavailable — the snapshot match below still works
-  }
-  conditions.push(
-    { orderItems: { some: { productName: { contains: searchTerm, mode: 'insensitive' } } } },
-    { orderItems: { some: { product: { name: { contains: searchTerm, mode: 'insensitive' } } } } }
-  );
 
   return conditions;
 }
@@ -282,6 +259,7 @@ const orderInclude = {
       rentalDays: true,
       pricingType: true,
       pricingOptionId: true,
+      pricingSnapshot: true,
       product: {
         select: {
           id: true,
@@ -480,6 +458,9 @@ export async function updateOrder(
     returnPlanAt: Date
     pickedUpAt: Date
     returnedAt: Date
+    /** #1199: what the shop kept when it cancelled, and when */
+    cancelKeptAmount: number
+    cancelledAt: Date
     rentalDuration: number
     isReadyToDeliver: boolean
     collateralType: string
@@ -502,8 +483,9 @@ export async function updateOrder(
       deposit?: number
       notes?: string
       rentalDays?: number
-      pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null
+      pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | 'BLOCK' | null
       pricingOptionId?: number | null
+      pricingSnapshot?: unknown
     }>
   }>
 ): Promise<OrderWithRelations> {
@@ -527,7 +509,8 @@ export async function updateOrder(
     'pickedUpAt', 'returnedAt', 'rentalDuration', 'isReadyToDeliver',
     'collateralType', 'collateralDetails', 'notes', 'notesImages',
     'pickupNotes', 'pickupNotesImages', 'returnNotes', 'returnNotesImages',
-    'damageNotes', 'damageNotesImages'
+    'damageNotes', 'damageNotesImages',
+    'cancelKeptAmount', 'cancelledAt'
   ];
   
   // Build update data - filter to only valid fields
@@ -656,6 +639,7 @@ export async function updateOrder(
           item.pricingOptionId != null && validOptionIds.has(item.pricingOptionId)
             ? item.pricingOptionId
             : null,
+        ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot as any } : {}), // #1189
       }))
     }
     console.log('🔧 Converted orderItems to nested write format');
@@ -689,6 +673,11 @@ export async function updateOrder(
   // #505: remember the total collected at hand-over; a later change of totalAmount is extra rent (or a refund)
   if (newStatus === ORDER_STATUS.PICKUPED && newStatus !== oldStatus) {
     updateData.pickupTotalAmount = updateData.totalAmount ?? oldOrder?.totalAmount ?? null;
+  }
+
+  // #1199: the moment of cancellation (revenue shows the refund on that day); an old client sends none
+  if (newStatus === ORDER_STATUS.CANCELLED && newStatus !== oldStatus && !updateData.cancelledAt) {
+    updateData.cancelledAt = new Date();
   }
 
   // CRITICAL: Tự động set returnedAt khi status thay đổi sang RETURNED
@@ -1026,6 +1015,7 @@ const ORDER_CREATE_INCLUDE = {
       rentalDays: true,
       pricingType: true,
       pricingOptionId: true,
+      pricingSnapshot: true,
       productName: true,
       productBarcode: true,
       productImages: true,
@@ -1036,6 +1026,15 @@ const ORDER_CREATE_INCLUDE = {
 } as const;
 
 type CreatedOrder = Prisma.OrderGetPayload<{ include: typeof ORDER_CREATE_INCLUDE }>;
+
+/**
+ * #1200: a Payment with notes 'INSTALLMENT' is a deposit stage. Only clients that declare the `installments`
+ * capability get it counted; old clients would show it twice. `notes: { not: ... }` alone drops NULL notes in SQL,
+ * so NULL is listed explicitly.
+ */
+export function paymentCountFilter(includeInstallments?: boolean): Record<string, unknown> {
+  return includeInstallments ? {} : { OR: [{ notes: null }, { notes: { not: 'INSTALLMENT' } }] };
+}
 
 export const simplifiedOrders = {
   /**
@@ -1063,6 +1062,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             product: { select: { id: true, name: true, barcode: true } }
           }
         },
@@ -1105,6 +1105,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             productImages: true, // Snapshot images saved when order was created
             product: { select: { id: true, name: true, barcode: true, images: true } } // Include product images for fallback
           }
@@ -1189,6 +1190,10 @@ export const simplifiedOrders = {
       where: whereClause, 
       // Opt-in: product names per order (dashboard lists). Off by default to keep the list query light (#349)
       includeItemNames = false,
+      // #1199: `_count.payments` leaves out deposit-stage rows (notes INSTALLMENT) unless the caller declared `installments`
+      includeInstallments = false,
+      // #1199: revenue callers add the deposit plan and its payments so staged deposits are counted by day
+      includeRevenuePlan = false,
       ...whereFilters 
     } = filters;
     const skip = (page - 1) * limit;
@@ -1281,6 +1286,7 @@ export const simplifiedOrders = {
           returnedAt: true,
           createdAt: true,
           updatedAt: true,
+          ...(includeRevenuePlan ? REVENUE_PLAN_SELECT : {}),
           customer: { 
             select: { 
               id: true, 
@@ -1308,7 +1314,7 @@ export const simplifiedOrders = {
           _count: {
             select: {
               orderItems: true,
-              payments: true
+              payments: { where: paymentCountFilter(includeInstallments) }
             }
           },
           ...(includeItemNames
@@ -1533,6 +1539,7 @@ export const simplifiedOrders = {
               rentalDays: true,
               pricingType: true,
               pricingOptionId: true,
+              pricingSnapshot: true,
               productImages: true, // Snapshot images saved when order was created
               product: {
                 select: {
@@ -1575,8 +1582,11 @@ export const simplifiedOrders = {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    /** client declared the `installments` capability (#1200) */
+    includeInstallments?: boolean;
   } = {}) => {
     const {
+      includeInstallments,
       merchantId,
       outletId,
       status,
@@ -1678,7 +1688,7 @@ export const simplifiedOrders = {
     // Get payment counts and totals
     const paymentCounts = await prisma.payment.groupBy({
       by: ['orderId'],
-      where: { orderId: { in: orderIds } },
+      where: { orderId: { in: orderIds }, ...paymentCountFilter(includeInstallments) },
       _count: { id: true },
       _sum: { amount: true }
     });
@@ -1755,8 +1765,17 @@ export const simplifiedOrders = {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    /** client declared the `installments` capability (#1200) */
+    includeInstallments?: boolean;
+    /** revenue callers: add the deposit plan and its payments (#1199) */
+    includeRevenuePlan?: boolean;
+    /** GET /api/orders for a client with `installments`: select the plan column only (#1222) */
+    includeDepositPlan?: boolean;
   }) => {
     const {
+      includeInstallments,
+      includeRevenuePlan,
+      includeDepositPlan,
       merchantId,
       outletId,
       customerId,
@@ -1866,6 +1885,9 @@ export const simplifiedOrders = {
       outletId: true,
       customerId: true,
       createdById: true,
+      ...(includeRevenuePlan ? REVENUE_PLAN_SELECT : {}),
+      // #1222: the list tells a capable client which orders have a deposit plan
+      ...(includeDepositPlan && !includeRevenuePlan ? { depositPlan: true } : {}),
       // Customer data
       customer: {
         select: {
@@ -1921,6 +1943,7 @@ export const simplifiedOrders = {
           rentalDays: true,
           pricingType: true,
           pricingOptionId: true,
+          pricingSnapshot: true,
           product: {
             select: {
               id: true,
@@ -1974,7 +1997,8 @@ export const simplifiedOrders = {
         by: ['orderId'],
         where: { 
           orderId: { in: orderIds },
-          status: 'COMPLETED'
+          status: 'COMPLETED',
+          ...paymentCountFilter(includeInstallments)
         },
         _sum: { amount: true },
         _count: { id: true }
@@ -2019,6 +2043,8 @@ export const simplifiedOrders = {
       damageNotesImages: Array.isArray(order.damageNotesImages) ? order.damageNotesImages : undefined,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+      // #1222: only when the caller asked (the route turns it into `hasDepositPlan`, the column never leaves the API)
+      ...(includeDepositPlan && !includeRevenuePlan ? { depositPlan: order.depositPlan ?? null } : {}),
       
       // Flatten customer data (simplified)
       customerId: order.customerId,
@@ -2054,6 +2080,7 @@ export const simplifiedOrders = {
           rentalDays: item.rentalDays,
           pricingType: item.pricingType,
           pricingOptionId: item.pricingOptionId,
+          ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {}), // #1189 (additive)
           // Flatten product data
           productId: item.productId ?? item.product?.id,
           productName: item.product?.name,
@@ -2090,6 +2117,9 @@ export const simplifiedOrders = {
       select: {
         id: true,
         orderNumber: true,
+        depositPlan: true, // #1199 (the API strips it for clients without the `installments` capability)
+        cancelKeptAmount: true,
+        cancelledAt: true,
         orderType: true,
         status: true,
         totalAmount: true,
@@ -2208,6 +2238,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             product: {
               select: {
                 id: true,
@@ -2239,6 +2270,8 @@ export const simplifiedOrders = {
             status: true,
             reference: true,
             notes: true,
+            installmentKey: true, // #1199 which deposit stage the row collects
+            metadata: true, // #1219 the stage amount at collection (plannedAmount) keeps a collected stage PAID after a total change
             processedAt: true,
             createdAt: true,
             updatedAt: true
@@ -2410,6 +2443,7 @@ export const simplifiedOrders = {
           rentalDays: true,
           pricingType: true,
           pricingOptionId: true,
+          pricingSnapshot: true,
           product: {
             select: {
               id: true,
@@ -2608,6 +2642,7 @@ export const simplifiedOrders = {
             rentalDays: true,
             pricingType: true,
             pricingOptionId: true,
+            pricingSnapshot: true,
             product: {
               select: {
                 id: true,

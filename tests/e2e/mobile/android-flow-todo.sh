@@ -13,6 +13,25 @@ for t in texts:
         if seen_header <= 1 and n not in first: first.append(n)
 print(",".join(sorted(allo)) + "\t" + ",".join(sorted(first)))'; }
 card_label() { node_with "$1"; }
+# today_rows: the "HÔM NAY · …" section of Orders > To do as "out:300000,back:200000". These rows show no order number
+# (#893 lean row): a row is its tag (Cần giao / Cần trả) and its total; todo-check.js builds the same list from the API.
+today_rows() { local i dumps=""; for i in 1 2 3; do dumps="$dumps"$'\n'"$("$U" dump)"$'\n@@'; "$U" swipe up >/dev/null; done
+  echo "$dumps" | python3 -c '
+import sys, re
+out_tag, back_tag = sys.argv[1], sys.argv[2]
+best = None
+for dump in sys.stdin.read().split("@@"):
+    texts = [l.split(" | ")[0].strip() for l in dump.split("\n") if l.strip()]
+    hi = next((i for i, t in enumerate(texts) if re.match(r"^(HÔM NAY|TODAY) · ", t)), -1)
+    if hi < 0: continue
+    items, kind, done = [], None, False
+    for t in texts[hi + 1:]:
+        if re.match(r"^[A-ZÀ-Ỹ ,.\-]+ · ", t): done = True; break   # the next section header
+        if t == out_tag or t == back_tag: kind = "out" if t == out_tag else "back"; continue
+        if kind and re.match(r"^\d{1,3}([.,]\d{3})*$", t): items.append(kind + ":" + re.sub(r"\D", "", t)); kind = None
+    if best is None or done: best = items
+    if done: break
+print(",".join(sorted(best or [])))' "$(L orders_v2_tag_hand_over)" "$(L orders_v2_tag_take_back)"; }
 
 set_lang
 do_login ops.owner@e2e-sub.test merchant123
@@ -35,7 +54,7 @@ done
 # the pickups tile opens Orders > To do
 if "$U" tap "~$(L overview_dash_today_pickups)" >/dev/null 2>&1; then
   sleep 4; "$U" shot a-todo-orders >/dev/null
-  IFS=$'\t' read -r all first < <(list_orders 3); note "TODOLIST orders-todo | rows=$all"
+  note "TODOLIST orders-todo-today | rows=$(today_rows)"
 else note "TODOLIST orders-todo | tile not tappable"; fi
 echo "--- todo-check.js (API outlet-operations; logs ops.owner in)"
 node "$CHK/todo-check.js" "$OUT/notes.txt" || FAILS=$((FAILS + 1))

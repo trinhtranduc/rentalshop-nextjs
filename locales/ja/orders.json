@@ -51,6 +51,141 @@
         "CANNOT_CONTACT": "お客様に連絡がつかない",
         "OTHER": "その他"
       }
+    },
+    "editor": {
+      "carts": {
+        "label": "カート",
+        "title": "カート {n}",
+        "summary": "{count}点 · {amount}",
+        "count": "{count}点",
+        "new": "+ 新しいカート",
+        "close": "カートを閉じる",
+        "deleteTitle": "このカートを削除しますか？",
+        "deleteMessage": "{name}には{count}点あります。商品は削除されます。",
+        "delete": "削除"
+      },
+      "option": {
+        "BLOCK": "日数ブロック · {price}"
+      },
+      "pricing": {
+        "mode": {
+          "BLOCK": "日数ブロック"
+        },
+        "unit": {
+          "BLOCK": "レンタル全体"
+        }
+      },
+      "block": {
+        "label": "{n}日ブロック",
+        "labelExtra": "{n}日ブロック + 追加{m}日",
+        "days": "{n}日"
+      },
+      "per": {
+        "BLOCK": "1日 {price}から · ブロック料金"
+      }
+    },
+    "receipt": {
+      "units": {
+        "block": "{n}日ブロック",
+        "blockExtra": "{n}日ブロック + 追加{m}日"
+      }
+    },
+    "detail": {
+      "items": {
+        "block": "{n}日ブロック",
+        "blockExtra": "{n}日ブロック + 追加{m}日",
+        "blockDays": "{n}日"
+      }
+    },
+    "installments": {
+      "paidBadge": "{percent}% 入金済み",
+      "createTitle": "段階払いの保証金",
+      "template": "保証金テンプレート",
+      "today": "本日",
+      "todayChip": "本日",
+      "dueOn": "期限 {day}",
+      "stageMeta": "注文額の {percent}% · {day}",
+      "restTitle": "残額、受け渡し時に回収",
+      "restMeta": "残額 · {day}",
+      "percentOf": "第 {n} 段階の割合",
+      "overHundred": "各段階の合計は 100% を超えられません。",
+      "collectNow": "第 1 段階をすぐに回収",
+      "collectCash": "現金 · {amount}",
+      "collectTransfer": "振込 · {amount}",
+      "collectLater": "作成のみ、後で回収",
+      "createAndCollect": "作成 · {amount} 回収",
+      "cardTitle": "段階ごとの回収",
+      "edit": "編集",
+      "view": "表示",
+      "collected": "回収済み",
+      "remaining": "未回収",
+      "paidMeta": "{percent}% · {day} 回収",
+      "voidLink": "回収を取り消す",
+      "collectStage": "第 {n} 段階を回収",
+      "status": {
+        "PAID": "回収済み",
+        "PARTIAL": "一部回収",
+        "DUE_TODAY": "本日",
+        "OVERDUE": "期限超過",
+        "UPCOMING": "待ち",
+        "VOID": "取消済み"
+      },
+      "collectTitle": "第 {n} 段階を回収",
+      "cancel": "キャンセル",
+      "close": "閉じる",
+      "collectConfirm": "{amount} を回収",
+      "amount": "金額",
+      "amountHint": "この段階で {amount} を回収します。少なく入力した場合、差額は受け渡し時に回収する残額に加算されます。",
+      "overStage": "この段階では {amount} を超えて回収できません。",
+      "method": "方法",
+      "cash": "現金",
+      "transfer": "振込",
+      "collectedOn": "回収日",
+      "note": "メモ",
+      "notePlaceholder": "任意",
+      "editTitle": "支払い計画を編集",
+      "viewTitle": "支払い計画",
+      "editNote": "未回収の段階の % または期限だけ変更できます。後の段階は自動で再計算されます。",
+      "staffNote": "計画を編集できるのは店主と支店管理者のみです。閲覧のみ可能です。",
+      "savePlan": "計画を保存",
+      "stageTitle": "第 {n} 段階 · {label}",
+      "paidLocked": "回収済み、変更不可 · {percent}%",
+      "percentOfOrder": "注文額に対する %",
+      "dueLabel": "期限",
+      "keepDue": "{day} のまま",
+      "restLocked": "残額、受け渡し時に回収 · 期限 {day} · 自動計算、変更不可",
+      "total": "合計",
+      "totalLine": "{percent}% = {amount}",
+      "editProblem": {
+        "percent": "各段階は 1% から 100% の間にしてください。",
+        "label": "段階名を入力してください。",
+        "over": "各段階の合計が注文の合計額を超えています。"
+      },
+      "due": {
+        "onCreate": "注文時",
+        "beforePickup": "受け渡しの {days} 日前",
+        "afterCreate": "注文の {days} 日後"
+      },
+      "restShort": "受け渡し時に残額",
+      "unpaidTitle": "未回収の保証金段階があります",
+      "unpaidHint": "先にこれらの段階を回収してから商品を渡してください。",
+      "unpaidTotal": "受け渡し前に回収する額：{amount}",
+      "voidTitle": "この回収を取り消しますか？",
+      "voidMessage": "「{label}」で回収した金額を取り消し、再度回収できるようにします。誤って回収した場合のみ行ってください。",
+      "voidConfirm": "回収を取り消す",
+      "cancelTitle": "注文をキャンセル",
+      "cancelPaid": "お客様の支払い済み額",
+      "cancelKept": "店が保持",
+      "cancelRefund": "お客様へ返金",
+      "cancelHint": "返金額 = お客様の支払い済み額 − 店が保持。店がポリシーと異なる対応に同意した場合のみ変更してください。",
+      "cancelHintStaff": "スタッフはお客様の支払い済み額を全額返金します。店が保持する額は店主または支店管理者が決めます。",
+      "policyLine": "店のポリシー：{policy}",
+      "dueTodayTitle": "本日回収",
+      "dueSoonTitle": "まもなく期限",
+      "reminderEmpty": "該当なし。",
+      "lateDays": "{days} 日遅れ",
+      "stageShort": "第 {n} 段階",
+      "walkIn": "一般のお客様"
     }
   }
 }

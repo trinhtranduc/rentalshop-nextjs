@@ -4,11 +4,14 @@
  *
  * Rules are the old shared `ProductForm` (packages/ui/src/components/forms/ProductForm.tsx) and
  * `@rentalshop/utils` product-pricing-options (#460, same as iOS):
- * - per-rental ("Theo lần") and per-day ("Theo ngày") prices are both optional; one is the default for new orders;
+ * - #1249 (mockup the owner fixed last): "Theo lần" (the default for new orders), "Theo mỗi ngày" and "Theo block ngày"
+ *   (the table, set up on its own screen) all exist together and are all sent: FIXED + DAILY + BLOCK; no default switch;
  * - prices are shown and sent only to users with products.manage who are not OUTLET_STAFF;
  * - #951: an empty price box is no price, 0 is a 0đ price; prices, deposit and outlet stock not negative; quantity > 0;
  * - photos: at most 3, jpg / png / webp, 5 MB each.
  */
+
+import { blockComplete, type BlockDraft } from '../block-draft';
 
 type Num = number | string | null | undefined;
 
@@ -40,6 +43,10 @@ const priced = (n: Num): number | null => {
 
 export interface PricingOptionSource {
   type?: string | null;
+  blockTiers?: unknown;
+  blockStartDay?: number | null;
+  blockExtraMode?: string | null;
+  blockExtraPrice?: number | null;
   price?: Num;
   isDefault?: boolean | null;
   isActive?: boolean | null;
@@ -94,34 +101,55 @@ export function rentalPricesOf(p: Pick<ProductSource, 'pricingOptions' | 'pricin
   return { perRental: daily ? null : price, perDay: daily ? price : null };
 }
 
+const BLOCK_DAYS_MAX = 31;
+
+/** #1249: the saved day table (an active BLOCK option with usable tiers), or null */
+export function savedBlockOf(p: Pick<ProductSource, 'pricingOptions'>): BlockDraft | null {
+  const o = activeOptions(p.pricingOptions).find((x) => String(x.type || '').toUpperCase() === 'BLOCK');
+  const tiers = o?.blockTiers;
+  if (!o || !Array.isArray(tiers) || tiers.length < 1 || tiers.length > BLOCK_DAYS_MAX) return null;
+  if (!tiers.every((t) => typeof t === 'number' && Number.isFinite(t) && t >= 0)) return null;
+  const start = o.blockStartDay;
+  return {
+    tiers: [...(tiers as number[])],
+    startDay: typeof start === 'number' && start >= 1 && start <= BLOCK_DAYS_MAX ? start : 1,
+    extraMode: o.blockExtraMode === 'HOLD_LAST' ? 'HOLD_LAST' : 'EXTRA_PER_DAY',
+    extraPrice: priced(o.blockExtraPrice),
+  };
+}
+
 export interface PricingOptionPayload {
-  type: PricingMode;
+  type: PricingMode | 'BLOCK';
   price: number;
   isDefault: boolean;
+  blockTiers?: number[];
+  blockStartDay?: number | null;
+  blockExtraMode?: string;
+  blockExtraPrice?: number | null;
 }
 
-/** The default a set of prices can hold: a default without a price falls back to the mode that has one. */
-export function effectiveDefaultMode(perRental: Num, perDay: Num, defaultMode: PricingMode): PricingMode {
-  const fixed = priced(perRental);
-  const daily = priced(perDay);
-  if (defaultMode === 'DAILY' && daily == null) return 'FIXED';
-  if (defaultMode === 'FIXED' && fixed == null && daily != null) return 'DAILY';
-  return defaultMode;
-}
-
-/** "Mặc định khi tạo đơn" is only a choice when both prices are set; with one price, that one is the default. */
-export function hasDefaultChoice(perRental: Num, perDay: Num): boolean {
-  return priced(perRental) != null && priced(perDay) != null;
-}
-
-/** Priced options only, one default; a default without a price falls back to the mode that has one. */
-export function buildPricingOptions(perRental: Num, perDay: Num, defaultMode: PricingMode): PricingOptionPayload[] {
-  const fixed = priced(perRental);
-  const daily = priced(perDay);
-  const mode = effectiveDefaultMode(perRental, perDay, defaultMode);
+/**
+ * #1249 the rent options the form sends: "Theo lần" (FIXED, the default for new orders), "Theo mỗi ngày" (DAILY, only
+ * when its box has a price) and "Theo block ngày" (BLOCK, only when a complete table was saved), all together.
+ * Without a "Theo lần" price the first of the others is the default.
+ */
+export function buildPricingOptions(p: { perRental: Num; perDay: Num; block: BlockDraft | null }): PricingOptionPayload[] {
   const out: PricingOptionPayload[] = [];
-  if (fixed != null) out.push({ type: 'FIXED', price: fixed, isDefault: mode === 'FIXED' });
-  if (daily != null) out.push({ type: 'DAILY', price: daily, isDefault: mode === 'DAILY' });
+  const fixed = priced(p.perRental);
+  if (fixed != null) out.push({ type: 'FIXED', price: fixed, isDefault: true });
+  const daily = priced(p.perDay);
+  if (daily != null) out.push({ type: 'DAILY', price: daily, isDefault: out.length === 0 });
+  if (p.block && blockComplete(p.block)) {
+    out.push({
+      type: 'BLOCK',
+      price: p.block.tiers[0] as number,
+      isDefault: out.length === 0,
+      blockTiers: p.block.tiers as number[],
+      blockStartDay: p.block.startDay === 1 ? null : p.block.startDay,
+      blockExtraMode: p.block.extraMode,
+      blockExtraPrice: p.block.extraMode === 'EXTRA_PER_DAY' ? p.block.extraPrice ?? 0 : null,
+    });
+  }
   return out;
 }
 
@@ -137,7 +165,8 @@ export interface FormState {
   /** #951: null = empty box (no price), 0 = 0đ. */
   perRental: number | null;
   perDay: number | null;
-  defaultMode: PricingMode;
+  /** The saved table (complete), or null when none was set up ("Chưa cài") */
+  block: BlockDraft | null;
   deposit: number;
   /** null = empty box (nothing sent), 0 = 0đ. */
   salePrice: number | null;
@@ -181,7 +210,7 @@ export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number 
     categoryId: categories[0]?.id ?? 0,
     perRental: null,
     perDay: null,
-    defaultMode: 'FIXED',
+    block: null,
     deposit: 0,
     salePrice: null,
     costPrice: 0,
@@ -200,6 +229,8 @@ export function formFromProduct(p: ProductSource, outlets: OutletLite[], categor
   }
   const outletStock = outlets.map((o) => ({ outletId: o.id, stock: saved.get(o.id) ?? 0 }));
   const { perRental, perDay } = rentalPricesOf(p);
+  // each saved price fills its own row; no table = "Chưa cài"
+  const table = savedBlockOf(p);
   return {
     name: p.name || '',
     description: p.description || '',
@@ -207,7 +238,7 @@ export function formFromProduct(p: ProductSource, outlets: OutletLite[], categor
     categoryId: p.category?.id || p.categoryId || categories[0]?.id || 0,
     perRental,
     perDay,
-    defaultMode: defaultModeOf(p),
+    block: table,
     deposit: Math.max(0, num(p.deposit)),
     // a stored 0 sale price is "not for sale" (the apps save 0 for an empty box): shown empty
     salePrice: positive(p.salePrice),
@@ -242,18 +273,17 @@ export function setTotalStock(form: FormState, total: number): FormState {
 // Validation
 // ----------------------------------------------------------------------------
 
-export type FieldKey = 'name' | 'categoryId' | 'perRental' | 'defaultMode' | 'salePrice' | 'deposit' | 'totalStock' | 'outletStock';
+export type FieldKey = 'name' | 'categoryId' | 'perRental' | 'salePrice' | 'deposit' | 'totalStock' | 'outletStock';
 export type ErrorCode =
   | 'nameRequired'
   | 'categoryRequired'
   | 'priceNegative'
-  | 'dailyNeedsPrice'
   | 'depositNegative'
   | 'stockRequired'
   | 'outletStockNegative';
 
 /** Field order on the page (first error gets focus). */
-export const FIELD_ORDER: FieldKey[] = ['name', 'perRental', 'defaultMode', 'salePrice', 'deposit', 'totalStock', 'outletStock', 'categoryId'];
+export const FIELD_ORDER: FieldKey[] = ['name', 'perRental', 'salePrice', 'deposit', 'totalStock', 'outletStock', 'categoryId'];
 
 export function validateForm(form: FormState, opts: { canEditPricing: boolean }): Partial<Record<FieldKey, ErrorCode>> {
   const errors: Partial<Record<FieldKey, ErrorCode>> = {};
@@ -261,8 +291,6 @@ export function validateForm(form: FormState, opts: { canEditPricing: boolean })
   if (!form.categoryId) errors.categoryId = 'categoryRequired';
   if (opts.canEditPricing) {
     if ((form.perRental ?? 0) < 0 || (form.perDay ?? 0) < 0) errors.perRental = 'priceNegative';
-    // #951: a per-day default needs a per-day price; 0đ is one
-    if (form.defaultMode === 'DAILY' && priced(form.perDay) == null) errors.defaultMode = 'dailyNeedsPrice';
     if ((form.salePrice ?? 0) < 0) errors.salePrice = 'priceNegative';
     // #741: the sale price is optional (a rent-only product has 0, as the apps and the API create it)
   }
@@ -322,6 +350,16 @@ export interface PayloadOptions {
   merchantId?: number;
 }
 
+/** "Lưu bảng giá": the table goes into the form */
+export function saveBlockTable(form: FormState, block: BlockDraft): FormState {
+  return { ...form, block };
+}
+
+/** "Tắt giá theo khối ngày": the table is dropped (back to "Chưa cài"); the other two prices stay */
+export function turnOffBlock(form: FormState): FormState {
+  return { ...form, block: null };
+}
+
 /**
  * Body of POST /api/products (create) or PUT /api/products/[id] (edit), sent as the multipart `data` field with the
  * new photo files next to it (unchanged productsApi calls). Prices only with price rights; the API keeps the saved
@@ -336,11 +374,13 @@ export function buildPayload(form: FormState, opts: PayloadOptions): Record<stri
   if (opts.stockOnly && opts.productId != null) return { id: opts.productId, outletStock: stockRows };
   const pricing: Record<string, unknown> = {};
   if (opts.canEditPricing) {
-    const pricingOptions = buildPricingOptions(form.perRental, form.perDay, form.defaultMode);
-    pricing.rentPrice = pricingOptions.find((o) => o.isDefault)?.price ?? 0;
     // #951: a typed 0 is a 0đ sale price; an empty box sends nothing
     if (priced(form.salePrice) != null) pricing.salePrice = form.salePrice;
-    pricing.pricingOptions = pricingOptions;
+    const options = buildPricingOptions(form);
+    pricing.rentPrice = options.find((o) => o.isDefault)?.price ?? 0;
+    pricing.pricingOptions = options;
+    // The API keeps a saved table unless the client says it knows BLOCK (spec #1189 point 9): "Thuê theo ngày" must drop it
+    pricing.pricingSchemaVersion = 2;
     if (form.costPrice > 0) pricing.costPrice = form.costPrice;
   }
   const base = {

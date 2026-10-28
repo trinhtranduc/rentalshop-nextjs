@@ -60,6 +60,8 @@ export interface MerchantUpdateData extends Partial<MerchantCreateData> {
   onlineBookingEnabled?: boolean;
   /** #1174 "Hiện giá trên trang shop" */
   showPublicPrice?: boolean;
+  /** #1189 `Merchant.settings` JSON (blockPricing.oldApps); callers merge with the stored value */
+  settings?: Record<string, unknown>;
   totalRevenue?: number;
   lastActiveAt?: Date;
   isActive?: boolean;

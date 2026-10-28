@@ -21,9 +21,11 @@
       "outlet": "지점",
       "public-page": "공개 매장 페이지",
       "bank-accounts": "은행",
-      "profile": "프로필",
+      "receipt": "인쇄 및 영수증",
+      "profile": "프로필 및 보안",
       "account": "비밀번호 및 보안",
-      "language": "언어 및 화면"
+      "language": "언어 및 화면",
+      "payment": "수납"
     },
     "form": {
       "more": "더 보기",
@@ -37,6 +39,72 @@
       "count": "지점 {count}개",
       "open": "지점 열기"
     },
-    "back": "뒤로"
+    "back": "뒤로",
+    "blockPricing": {
+      "title": "구형 앱의 일수 블록 요금",
+      "hint": "일수 블록 요금을 모르는 구형 앱을 쓰는 고객이 있습니다. 구형 앱이 블록 요금 상품을 주문할 때 서버가 어떻게 처리할지 선택합니다.",
+      "recompute": "서버가 요금 계산(권장)",
+      "recomputeHint": "구형 앱도 대여할 수 있고, 요금은 요금표와 일수대로 계산됩니다.",
+      "block": "앱 업데이트 요구",
+      "blockHint": "구형 앱은 블록 요금 상품을 주문할 수 없습니다. 직원은 앱을 업데이트해야 합니다."
+    },
+    "deposit": {
+      "title": "보증금 수납 방식",
+      "hint": "대여 시 매장이 돈을 받는 방식을 선택하세요.",
+      "oneTime": "보증금 1회 수납",
+      "oneTimeHint": "주문 시 한 번, 각 상품 보증금의 합계로 받습니다. 나머지는 인도 시 수납합니다.",
+      "staged": "단계별 보증금 수납",
+      "stagedHint": "보증금을 주문 금액의 %에 따라 여러 단계로 나눕니다. 나머지는 인도 시 수납합니다.",
+      "twoStages": "현재 대여 주문은 2단계로 수납합니다",
+      "stage1Title": "보증금",
+      "stage1Hint": "각 상품 보증금의 합계, 주문 시 수납",
+      "stage2Title": "잔액",
+      "stage2Hint": "인도 시 수납",
+      "viewOnly": "보기만",
+      "productDepositNote": "각 상품의 보증금은 상품 페이지(\"보증금\" 칸)에서 설정합니다.",
+      "newOrdersOnly": "변경 후 생성한 주문에만 적용됩니다. 기존 주문은 그대로입니다.",
+      "templates": "매장 보증금 템플릿",
+      "templateCount": "템플릿 {count}개",
+      "default": "기본",
+      "templateName": "템플릿 이름",
+      "templateHint": "각 단계에는 주문 금액의 %와 기한만 있습니다. 금액은 주문 생성 시 자동 계산됩니다.",
+      "stage": "{n}단계",
+      "removeStage": "단계 삭제",
+      "stageName": "단계 이름",
+      "stagePercent": "주문 금액 %",
+      "stageDue": "기한",
+      "restTitle": "{n}단계 · 잔액, 인도 시 수납",
+      "restHint": "자동 계산, 수정 불가. 항상 마지막 단계입니다.",
+      "addStage": "단계 추가",
+      "total": "합계",
+      "totalLine": "{sum}% + {rest}% (잔액) = {all}%",
+      "problem": {
+        "name": "템플릿 이름이 필요합니다.",
+        "items": "템플릿은 1~3단계로 구성됩니다.",
+        "label": "각 단계에 이름이 필요합니다.",
+        "percent": "각 단계는 1%에서 100% 사이여야 합니다.",
+        "over": "단계 비율 합계가 100%를 넘을 수 없습니다."
+      },
+      "makeDefault": "기본 템플릿으로 지정",
+      "removeTemplate": "템플릿 삭제",
+      "newTemplate": "새 템플릿",
+      "newTemplateName": "새 템플릿",
+      "newStageName": "예약 보증금",
+      "policy": "취소 / 일정 변경 정책",
+      "policyPlaceholder": "예: 인도 7일 전까지 취소하면 보증금 전액 환불, 7일 미만이면 매장이 보증금을 보유합니다.",
+      "policyHint": "주문을 취소할 때 표시됩니다. 최대 1000자.",
+      "cancel": "취소",
+      "save": "저장",
+      "saving": "저장 중...",
+      "saved": "보증금 설정을 저장했습니다",
+      "saveFailed": "저장할 수 없습니다",
+      "loadFailed": "보증금 설정을 불러올 수 없습니다.",
+      "due": {
+        "onCreate": "주문 시",
+        "beforePickup": "인도 {days}일 전",
+        "afterCreate": "주문 {days}일 후"
+      },
+      "restShort": "인도 시 잔액"
+    }
   }
 }

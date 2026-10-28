@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getOrderRevenueEvents, civilDayBucket } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents, civilDayBucket, toRevenueOrderData, REVENUE_PLAN_SELECT, buildEventWhere, EVENT_WHERE_CIVIL } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange, widenCivilRange } from '../../../../../lib/analytics-days';
 
@@ -105,48 +105,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     // - COMPLETED: Đơn bán hoàn thành (SALE orders, status = COMPLETED và updatedAt trong khoảng)
     const ordersWhereClause: any = {
       deletedAt: null, // Exclude soft-deleted orders
-      OR: [
-        // Đơn được tạo trong khoảng thời gian (use wider range for query)
-        {
-          createdAt: {
-            gte: queryStart,
-            lte: queryEnd
-          }
-        },
-        // Đơn được lấy trong khoảng thời gian (CRITICAL: includes orders created before period)
-        // Use wider range to capture orders that might shift due to timezone
-        {
-          pickedUpAt: {
-            gte: queryStart,
-            lte: queryEnd,
-            not: null
-          }
-        },
-        // Đơn được trả trong khoảng thời gian (CRITICAL: includes orders created/picked up before period)
-        // Use wider range to capture orders that might shift due to timezone
-        {
-          returnedAt: {
-            gte: queryStart,
-            lte: queryEnd,
-            not: null
-          }
-        },
-        // Đơn bị hủy trong khoảng thời gian
-        {
-          AND: [
-            { status: ORDER_STATUS.CANCELLED },
-            { updatedAt: { gte: queryStart, lte: queryEnd } }
-          ]
-        },
-        // Đơn bán hoàn thành trong khoảng thời gian
-        {
-          AND: [
-            { orderType: ORDER_TYPE.SALE },
-            { status: ORDER_STATUS.COMPLETED },
-            { updatedAt: { gte: queryStart, lte: queryEnd } }
-          ]
-        }
-      ]
+      // created / picked up / returned / cancelled / sale completed in the (civil-day-widened) range
+      ...buildEventWhere({ start: queryStart, end: queryEnd }, EVENT_WHERE_CIVIL)
     };
 
     // ============================================================================
@@ -204,7 +164,8 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
             phone: true
           }
         },
-        outlet: { select: { id: true, name: true } }
+        outlet: { select: { id: true, name: true } },
+        ...REVENUE_PLAN_SELECT
       },
       take: 10000 // Large limit to get all orders
     });
@@ -268,22 +229,7 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     // Xử lý từng đơn hàng
     for (const order of allOrders) {
       // Prepare order data for revenue calculator
-      const orderData = {
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        lateFee: order.lateFee || 0,
-        pickupTotalAmount: order.pickupTotalAmount ?? null,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        pickupPlanAt: order.pickupPlanAt,
-        returnPlanAt: order.returnPlanAt,
-        updatedAt: order.updatedAt
-      };
+      const orderData = toRevenueOrderData(order);
 
       // Lấy tất cả revenue events của đơn này dựa trên timestamp trong khoảng
       // Use getOrderRevenueEvents from revenue-calculator.ts (single source of truth)
@@ -699,12 +645,24 @@ export const GET = withPermissions(['analytics.view.revenue', 'analytics.view.re
     }
     const revenuePlanOrders = await prisma.order.findMany({
       where: revenuePlanWhereClause,
-      select: { totalAmount: true, depositAmount: true }
+      select: {
+        orderType: true,
+        status: true,
+        totalAmount: true,
+        depositAmount: true,
+        pickupTotalAmount: true,
+        createdAt: true,
+        pickupPlanAt: true,
+        returnPlanAt: true,
+        pickedUpAt: true,
+        ...REVENUE_PLAN_SELECT
+      }
     });
-    const revenuePlanFromReserved = revenuePlanOrders.reduce(
-      (sum, o) => sum + Math.max(0, (o.totalAmount || 0) - (o.depositAmount || 0)),
-      0
-    );
+    // #1199: a plan order collects only its automatic last stage at hand-over (its other stages are paid before)
+    const revenuePlanFromReserved = revenuePlanOrders.reduce((sum: number, o: any) => {
+      const plan = toRevenueOrderData(o).plan;
+      return sum + (plan ? plan.restAmount : Math.max(0, (o.totalAmount || 0) - (o.depositAmount || 0)));
+    }, 0);
 
     // Đơn PICKUPED sắp trả: trừ tiền thế chân sẽ hoàn lại khách
     const refundPlanWhereClause: any = {

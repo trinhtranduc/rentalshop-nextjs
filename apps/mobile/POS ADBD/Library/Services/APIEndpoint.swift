@@ -109,6 +109,8 @@ enum APIEndpoint {
         static let merchantSettings = "/api/settings/merchant"
         /// #1145 the shop currency: GET (every role) / PUT `{ currency }` (shop owner)
         static let settingsCurrency = "/api/settings/currency"
+        /// #1199 "Cách thu cọc": GET (every role) / PUT (shop owner)
+        static let depositSettings = "/api/settings/deposit"
 
         // #1124 online booking requests (shop side)
         static let bookingRequests = "/api/booking-requests"

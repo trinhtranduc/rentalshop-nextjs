@@ -3,7 +3,8 @@
  * MOB-TODO (#727): the "Hôm nay" counters of Tổng quan (notes `TODO <counter> | <label>`) and the lists they open
  * (`TODOLIST <counter> | rows=a,b`) equal GET /api/analytics/outlet-operations:
  *   Cần giao x/y = doneToday.pickups / (done + pickupsToday.count), Cần nhận trả likewise with returns,
- *   Trễ hạn trả = overdueReturns, Quá ngày lấy = noShows, Ngày mai = tomorrow.{pickups,returns}.
+ *   Trễ hạn trả = overdueReturns, Quá ngày lấy = noShows, Ngày mai = tomorrow.{pickups,returns};
+ *   Đơn hàng > Việc cần làm > Hôm nay (`TODOLIST orders-todo-today | rows=out:300000,back:200000`) = pickupsToday + returnsToday.
  * Account: the `ops` scenario.   node tests/e2e/mobile/todo-check.js <xcodebuild.log | android notes>
  */
 const { notes, login, ZONE, report, check, fail } = require('./lib');
@@ -37,10 +38,13 @@ const nums = (o) => (o?.orders || []).map((x) => x.orderNumber).sort().join(',')
   else results.push(fail('Trễ hạn trả list', 'not opened'));
   if (rows('noshows') !== undefined) results.push(check(first('noshows') === nums(d.noShows), 'Chưa lấy đồ list = the orders', `app=[${first('noshows')}] (all rows [${rows('noshows')}]) api=[${nums(d.noShows)}]`));
   else results.push(fail('Chưa lấy đồ list', 'not opened'));
-  if (rows('orders-todo') !== undefined) {
-    const have = new Set(rows('orders-todo').split(',').filter(Boolean));
-    const need = [...(d.pickupsToday.orders || []), ...(d.returnsToday.orders || [])].map((o) => o.orderNumber);
-    results.push(check(need.every((n) => have.has(n)), 'Đơn hàng > Việc cần làm lists today\'s pickups and returns', `app=[${[...have].sort()}] need=[${need.sort()}]`));
-  }
+  // Orders > To do, the "Hôm nay" section: the rows show no order number since #893, so a row is its tag (out = Cần giao,
+  // back = Cần trả) and its total; today's pending hand-overs and returns of the ops scenario have distinct totals
+  if (rows('orders-todo-today') !== undefined) {
+    const total = (o) => Math.round(Number(o.totalAmount) || 0);
+    const want = [...(d.pickupsToday.orders || []).map((o) => `out:${total(o)}`), ...(d.returnsToday.orders || []).map((o) => `back:${total(o)}`)].sort().join(',');
+    const numbers = [...(d.pickupsToday.orders || []), ...(d.returnsToday.orders || [])].map((o) => `${o.orderNumber}=${o.totalAmount}`).join(' ');
+    results.push(check(rows('orders-todo-today') === want, 'Đơn hàng > Việc cần làm > Hôm nay lists today\'s pickups and returns', `app=[${rows('orders-todo-today')}] api=[${want}] (${numbers})`));
+  } else results.push(fail('Đơn hàng > Việc cần làm', 'not opened'));
   report(results);
 })().catch((e) => { console.error(e); process.exit(2); });

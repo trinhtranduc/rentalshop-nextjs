@@ -18,6 +18,7 @@ class CurrencySettingTest {
             val rows = SettingsRows.sections(role, hasPlan = false).flatMap { it.items }
             assertFalse(role.toString(), rows.contains(SettingsItem.CURRENCY))
         }
+        // #1270: "Tiền tệ" is its own row again, right after Thông tin cửa hàng
         val store = SettingsRows.sections("MERCHANT", hasPlan = false).first().items
         assertEquals(store.indexOf(SettingsItem.STORE_INFO) + 1, store.indexOf(SettingsItem.CURRENCY))
     }

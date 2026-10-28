@@ -390,6 +390,7 @@ internal fun ProductRow(
     val price = ProductRowLogic.price(product)
     val unitRental = stringResource(R.string.v2_unit_per_rental)
     val unitDay = stringResource(R.string.v2_unit_per_day)
+    val unitBlock = stringResource(R.string.v2_unit_per_block)
     val saleShort = stringResource(R.string.v2_price_sale_short)
     val viewLabel = stringResource(R.string.v2_view_image_named, product.name)
     val viewHint = stringResource(R.string.v2_view_image_hint)
@@ -416,7 +417,7 @@ internal fun ProductRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Spacing.sm)) {
                 // #937: up to two lines, then "…" (Home only)
                 Text(product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text, maxLines = ProductRowLogic.NAME_MAX_LINES, overflow = TextOverflow.Ellipsis)
-                val unit = { mode: PricingMode -> if (mode == PricingMode.PER_DAY) unitDay else unitRental }
+                val unit = { mode: PricingMode -> when (mode) { PricingMode.PER_DAY -> unitDay; PricingMode.BLOCK -> unitBlock; PricingMode.PER_RENTAL -> unitRental } }
                 val text = buildAnnotatedString {
                     val muted = SpanStyle(fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                     val mode = price?.mainMode

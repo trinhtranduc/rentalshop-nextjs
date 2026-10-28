@@ -579,6 +579,17 @@
     },
     "create": "New order",
     "editor": {
+      "carts": {
+        "label": "Carts",
+        "title": "Cart {n}",
+        "summary": "{count} items · {amount}",
+        "count": "{count} items",
+        "new": "+ New cart",
+        "close": "Close cart",
+        "deleteTitle": "Delete this cart?",
+        "deleteMessage": "{name} has {count} items. They will be removed.",
+        "delete": "Delete"
+      },
       "title": "New order",
       "editTitle": "Edit order #{number}",
       "backToOrder": "Back to order #{number}",
@@ -634,13 +645,15 @@
         "DAILY": "{price}/day",
         "HOURLY": "{price}/hour",
         "FIXED": "{price}/rental",
-        "SALE": "{price}"
+        "SALE": "{price}",
+        "BLOCK": "from {price}/day · by block"
       },
       "option": {
         "DAILY": "Per day · {price}/day",
         "HOURLY": "Per hour · {price}/hour",
         "FIXED": "Per rental · {price}",
-        "SALE": "Sale price · {price}"
+        "SALE": "Sale price · {price}",
+        "BLOCK": "By day block · {price}"
       },
       "cart": {
         "label": "Order being created",
@@ -723,7 +736,8 @@
           "FIXED": "Per rental",
           "DAILY": "Per day",
           "HOURLY": "Per hour",
-          "OTHER": "{type}"
+          "OTHER": "{type}",
+          "BLOCK": "By day block"
         },
         "price": "Price for this order",
         "priceFor": "Price for this order · {name}",
@@ -731,7 +745,8 @@
           "FIXED": "/rental",
           "DAILY": "/day",
           "HOURLY": "/hr",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "whole rental"
         },
         "note": "Applies to this order only; the product price stays the same.",
         "done": "Done",
@@ -769,6 +784,11 @@
         "clear": "Delete note",
         "done": "Done",
         "for": "Note for {name}"
+      },
+      "block": {
+        "label": "{n}-day block",
+        "labelExtra": "{n}-day block + {m} extra days",
+        "days": "{n} days"
       }
     },
     "tabs": {
@@ -808,6 +828,7 @@
       "newest": "Newest",
       "oldest": "Oldest",
       "nearest": "Next task first",
+      "pickup": "Earliest pickup",
       "total": "Highest total"
     },
     "search": {
@@ -891,7 +912,10 @@
         "fixed": "Fixed price",
         "perDay": "{amount}/day × {days} days",
         "empty": "This order has no items.",
-        "image": "Photo of {name}"
+        "image": "Photo of {name}",
+        "block": "{n}-day block",
+        "blockExtra": "{n}-day block + {m} extra days",
+        "blockDays": "{n} days"
       },
       "notes": {
         "title": "Notes",
@@ -1053,7 +1077,9 @@
         "perDay": "/day",
         "days": "{n} days",
         "perHour": "/hour",
-        "hours": "{n} hours"
+        "hours": "{n} hours",
+        "block": "{n}-day block",
+        "blockExtra": "{n}-day block + {m} extra days"
       },
       "bankTitle": "Bank transfer",
       "bankName": "Bank",
@@ -1111,6 +1137,96 @@
         "CANNOT_CONTACT": "Could not reach the customer",
         "OTHER": "Other"
       }
+    },
+    "installments": {
+      "paidBadge": "{percent}% paid",
+      "createTitle": "Deposit in stages",
+      "template": "Deposit template",
+      "today": "today",
+      "todayChip": "Today",
+      "dueOn": "due {day}",
+      "stageMeta": "{percent}% of the order · {day}",
+      "restTitle": "Remainder, collected at pick-up",
+      "restMeta": "Remainder · {day}",
+      "percentOf": "Percent of stage {n}",
+      "overHundred": "The stages cannot add up to more than 100%.",
+      "collectNow": "Collect stage 1 now",
+      "collectCash": "Cash · {amount}",
+      "collectTransfer": "Bank transfer · {amount}",
+      "collectLater": "Create, collect later",
+      "createAndCollect": "Create · collect {amount}",
+      "cardTitle": "Collected in stages",
+      "edit": "Edit",
+      "view": "View",
+      "collected": "Collected",
+      "remaining": "Still to collect",
+      "paidMeta": "{percent}% · collected {day}",
+      "voidLink": "Cancel collection",
+      "collectStage": "Collect stage {n}",
+      "status": {
+        "PAID": "Paid",
+        "PARTIAL": "Partly paid",
+        "DUE_TODAY": "Today",
+        "OVERDUE": "Overdue",
+        "UPCOMING": "Waiting",
+        "VOID": "Cancelled"
+      },
+      "collectTitle": "Collect stage {n}",
+      "cancel": "Cancel",
+      "close": "Close",
+      "collectConfirm": "Collect {amount}",
+      "amount": "Amount",
+      "amountHint": "{amount} is due for this stage. If you enter less, the difference moves to the remainder collected at pick-up.",
+      "overStage": "You cannot collect more than {amount} for this stage.",
+      "method": "Method",
+      "cash": "Cash",
+      "transfer": "Bank transfer",
+      "collectedOn": "Collected on",
+      "note": "Note",
+      "notePlaceholder": "Optional",
+      "editTitle": "Edit payment plan",
+      "viewTitle": "Payment plan",
+      "editNote": "You can change the % or due day of stages not yet collected. Later stages are recalculated.",
+      "staffNote": "Only the shop owner and the branch manager can edit the plan. You can only view it.",
+      "savePlan": "Save plan",
+      "stageTitle": "Stage {n} · {label}",
+      "paidLocked": "Collected, locked · {percent}%",
+      "percentOfOrder": "% of the order",
+      "dueLabel": "Due",
+      "keepDue": "Keep {day}",
+      "restLocked": "Remainder, collected at pick-up · due {day} · automatic, not editable",
+      "total": "Total",
+      "totalLine": "{percent}% = {amount}",
+      "editProblem": {
+        "percent": "Each stage must be between 1 and 100%.",
+        "label": "A stage needs a name.",
+        "over": "The stages add up to more than the order total."
+      },
+      "due": {
+        "onCreate": "When the order is placed",
+        "beforePickup": "{days} days before pick-up",
+        "afterCreate": "{days} days after booking"
+      },
+      "restShort": "Remainder at pick-up",
+      "unpaidTitle": "A deposit stage is still unpaid",
+      "unpaidHint": "Collect these stages first, then hand over the items.",
+      "unpaidTotal": "To collect before hand-over: {amount}",
+      "voidTitle": "Cancel this collection?",
+      "voidMessage": "The amount collected for \"{label}\" will be cancelled so it can be collected again. Use only for a mistake.",
+      "voidConfirm": "Cancel collection",
+      "cancelTitle": "Cancel order",
+      "cancelPaid": "Customer paid",
+      "cancelKept": "Shop keeps",
+      "cancelRefund": "Refund to customer",
+      "cancelHint": "Refund = Customer paid minus Shop keeps. Change it only when the shop agrees to something other than its policy.",
+      "cancelHintStaff": "Staff refund everything the customer paid. The owner or branch manager decides what the shop keeps.",
+      "policyLine": "Shop policy: {policy}",
+      "dueTodayTitle": "To collect today",
+      "dueSoonTitle": "Due soon",
+      "reminderEmpty": "Nothing here.",
+      "lateDays": "{days} days late",
+      "stageShort": "stage {n}",
+      "walkIn": "Walk-in customer"
     }
   }
 }

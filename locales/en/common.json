@@ -243,7 +243,7 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "search": "Search",
-    "searchPlaceholder": "Search name, phone, order no., item",
+    "searchPlaceholder": "Search name, phone, or order number",
     "themeToDark": "Switch to dark theme",
     "themeToLight": "Switch to light theme",
     "logout": "Log out",

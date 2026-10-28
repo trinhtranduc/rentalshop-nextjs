@@ -5,6 +5,15 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../../lib/schedule-conflict';
+import { shapeOrderPayments } from '../../../../../lib/order-payments';
+import {
+  loadShop,
+  recomputeDepositFromPayments,
+  shapeOrderInstallments,
+  unpaidAtPickupBody,
+  unpaidStagesBlockingPickup,
+} from '../../../../../lib/installments';
+import { parseDepositPlan } from '../../../../../../../packages/utils/src/core/deposit-plan';
 import {
   findEditScheduleConflicts,
   scheduleConflictBody,
@@ -89,6 +98,23 @@ export async function POST(
         return NextResponse.json(ResponseBuilder.error('ORDER_NOT_FOUND'), { status: 403 });
       }
 
+      // #1199 P8: for an order with a deposit plan the server owns the money columns (they follow the stage payments),
+      // and cancelling / un-cancelling moves money. A revert restores everything else, never those.
+      const orderHasPlan = parseDepositPlan((existing as any).depositPlan) != null;
+      for (const key of ['depositPlan', 'cancelKeptAmount', 'cancelledAt']) delete updatePayload[key];
+      if (orderHasPlan) {
+        for (const key of ['depositAmount', 'totalAmount', 'pickupTotalAmount']) delete updatePayload[key];
+        if (updatePayload.status === 'CANCELLED' || existing.status === 'CANCELLED') delete updatePayload.status;
+        if (Object.keys(updatePayload).length === 0) {
+          return NextResponse.json(ResponseBuilder.error('NO_SAFE_FIELDS_TO_REVERT'), { status: 400 });
+        }
+        if (updatePayload.status === 'PICKUPED' && existing.status !== 'PICKUPED') {
+          const planOutlet = await db.outlets.findById(existing.outletId);
+          const unpaid = unpaidStagesBlockingPickup(existing as any, await loadShop(prisma, planOutlet?.merchantId));
+          if (unpaid) return NextResponse.json(unpaidAtPickupBody(unpaid), { status: 400 });
+        }
+      }
+
       // #518: reverting dates / outlet / status can over-book a shop that turned overlapping orders off
       const scheduleConflicts = await findEditScheduleConflicts(db.prisma as unknown as ScheduleDbClient, {
         existingOrder: existing as unknown as EditableOrder,
@@ -109,6 +135,7 @@ export async function POST(
       }
 
       const reverted = await db.orders.update(orderIdNum, updatePayload);
+      if (orderHasPlan) await recomputeDepositFromPayments(prisma, orderIdNum);
       const auditHelper = createAuditHelper(prisma);
       await auditHelper.logCustom({
         action: 'RESTORE',
@@ -121,7 +148,7 @@ export async function POST(
 
       return NextResponse.json({
         success: true,
-        data: reverted,
+        data: await shapeOrderInstallments(shapeOrderPayments(reverted as any, request), request, null, prisma), // #1200, #1199 (plan columns dropped for old clients)
         code: 'ORDER_REVERTED_SUCCESS',
         message: 'Order reverted successfully'
       });

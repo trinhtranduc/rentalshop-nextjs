@@ -216,7 +216,7 @@
     "add": "Add"
   },
   "search": {
-    "placeholder": "Search products by name, barcode, or SKU...",
+    "placeholder": "Search by name or barcode...",
     "noResults": "No products found matching your search"
   },
   "stats": {
@@ -372,7 +372,9 @@
       "otherOutlets": "Other outlets: {count} free"
     },
     "price": {
-      "perHour": "{price}/hour"
+      "perHour": "{price}/hour",
+      "blockFrom": "from {price}/day · by block",
+      "blockTag": "by block"
     },
     "row": {
       "edit": "Edit",
@@ -527,9 +529,8 @@
         "problemCount": "{name}: 3 photos already",
         "keepNote": "Saved photos are only replaced by new ones. Saving now keeps the old photos."
       },
-      "perRental": "Rent per rental",
-      "perDay": "Rent per day",
-      "pricesHint": "Leave a price empty if the shop does not use it.",
+      "perRental": "Per rental",
+      "perDay": "Per day",
       "deposit": "Deposit",
       "salePrice": "Sale price",
       "costPrice": "Cost price",
@@ -566,7 +567,6 @@
         "nameRequired": "Enter the product name",
         "categoryRequired": "Choose a category",
         "priceNegative": "Prices cannot be negative",
-        "dailyNeedsPrice": "Enter a per-day price to charge per day by default",
         "saleRequired": "Enter the sale price",
         "depositNegative": "Deposit cannot be negative",
         "stockRequired": "Quantity must be more than 0",
@@ -581,8 +581,25 @@
       "goCategories": "Open Categories",
       "needOutlet": "Add at least one outlet before adding products.",
       "goOutlets": "Open Outlets",
-      "defaultForOrders": "Default for new orders",
-      "defaultHint": "Both prices can be used. New orders start on the default; staff can switch in the cart."
+      "blockRow": "Per day-block",
+      "blockNotSet": "Not set",
+      "unitOnce": "đ / rental",
+      "unitDay": "đ / day",
+      "block": {
+        "summaryExtra": "{count} blocks · +{extra}/day",
+        "summaryHold": "{count} blocks · last block price kept",
+        "edit": "Edit price list",
+        "setupHint": "One price for each number of days. A customer renting exactly that many days pays that row.",
+        "save": "Save price list",
+        "turnOff": "Turn off day-block pricing",
+        "copy": "Copy from another product",
+        "copyTitle": "Pick a product to copy its price list",
+        "copySearch": "Search products",
+        "copyEmpty": "No product has a day-block price list.",
+        "copyLoading": "Loading…",
+        "close": "Close",
+        "incomplete": "Fill every day and the amount added for each extra day, or keep the last block price."
+      }
     },
     "detail": {
       "back": "Products",
@@ -622,7 +639,24 @@
       "loadFailed": "Could not load the product.",
       "retry": "Try again",
       "otherOutletsTitle": "Stock at other outlets",
-      "otherOutletsHint": "View only. Available = total minus rented out."
+      "otherOutletsHint": "View only. Available = total minus rented out.",
+      "block": {
+        "title": "Price list by days",
+        "modeBlock": "Day-block pricing",
+        "tiersTitle": "Price by number of days",
+        "dayRow": "{n} days",
+        "addDay": "+ Add day {n}",
+        "removeDay": "Remove day {n}",
+        "beyond": "Rental over {n} days",
+        "extraPerDay": "Add for each extra day",
+        "holdLast": "Keep the last block price",
+        "holdLastHint": "Renting {days} days still costs {price}",
+        "preview": "Preview",
+        "previewDays": "{n} days",
+        "lessDays": "One day less",
+        "moreDays": "One day more",
+        "edit": "Edit prices"
+      }
     },
     "orders": {
       "back": "Back to product",

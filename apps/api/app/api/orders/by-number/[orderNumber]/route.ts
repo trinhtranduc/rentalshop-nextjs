@@ -3,6 +3,8 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError, parseProductImages } from '@rentalshop/utils';
 import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import { shapeOrderPayments } from '../../../../../lib/order-payments';
+import { shapeOrderInstallments } from '../../../../../lib/installments';
 
 export const runtime = 'nodejs';
 
@@ -147,7 +149,13 @@ export async function GET(
 
       return NextResponse.json({
         success: true,
-        data: flattenedOrder,
+        // #1200: payments[] aliases + INSTALLMENT by capability; #1199: plan columns / stages by capability
+        data: await shapeOrderInstallments(
+          shapeOrderPayments(flattenedOrder, request),
+          request,
+          order.merchantId || order.outlet?.merchantId,
+          db.prisma
+        ),
         code: 'ORDER_RETRIEVED_SUCCESS',
         message: 'Order retrieved successfully'
       });

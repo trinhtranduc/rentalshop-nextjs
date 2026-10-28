@@ -6,6 +6,20 @@ import { z } from 'zod';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../../lib/change-timeline';
+import { shapeOrderPayments } from '../../../../../lib/order-payments';
+import {
+  cancelAuditDescription,
+  loadShop,
+  parseCancelRequest,
+  planCancellation,
+  recomputeDepositFromPayments,
+  recordPlanCancellation,
+  type PlanCancellation,
+  shapeOrderInstallments,
+  unpaidAtPickupBody,
+  unpaidStagesBlockingPickup,
+} from '../../../../../lib/installments';
+import { parseDepositPlan } from '../../../../../../../packages/utils/src/core/deposit-plan';
 import { API } from '@rentalshop/constants';
 import {
   handleLoyaltyOnCancel,
@@ -25,13 +39,17 @@ const statusUpdateSchema = z.object({
   notes: z.string().optional(),
   pickupNotes: z.string().optional(),
   returnNotes: z.string().optional(),
-  pickedUpAt: z.string().optional(),
-  returnedAt: z.string().optional(),
+  // #1199: a hand-over time decides which stage payments count as "collected before delivery": it must be a real date
+  pickedUpAt: z.string().refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date').optional(),
+  returnedAt: z.string().refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date').optional(),
   // Return-specific fields for collateral management
   returnAmount: z.number().optional(), // Amount to return to customer
   collateralReturned: z.boolean().optional(), // Whether collateral was returned
   collateralType: z.string().optional(), // Type of collateral (if any)
   collateralDetails: z.string().optional(), // Details about collateral
+  // #1199 cancelling a plan order: what the shop keeps of the collected deposit (default 0 = refund everything)
+  cancelKeptAmount: z.number().optional(),
+  cancelNote: z.string().max(500).optional(),
 });
 
 /**
@@ -133,8 +151,35 @@ export async function PATCH(
       );
     }
 
+    // #1199: an order with explicit deposit stages still unpaid cannot be handed over (the `rest` stage never blocks).
+    // `error` is empty on purpose: the installed Android app shows `error` before `message`.
+    const orderHasPlan = parseDepositPlan((existingOrder as any).depositPlan) != null;
+    if (orderHasPlan && status === ORDER_STATUS.PICKUPED && existingOrder.status !== ORDER_STATUS.PICKUPED) {
+      const planOutlet = await db.outlets.findById(existingOrder.outletId);
+      const planShop = await loadShop(prisma, planOutlet?.merchantId);
+      const unpaid = unpaidStagesBlockingPickup(existingOrder as any, planShop);
+      if (unpaid) return NextResponse.json(unpaidAtPickupBody(unpaid), { status: 400 });
+    }
+
+    // #1199: cancelling a plan order. Amounts are checked before anything changes; the refund is recorded after.
+    const cancelAt = new Date();
+    let cancelPlan: PlanCancellation | null = null;
+    const isCancelling = status === ORDER_STATUS.CANCELLED && existingOrder.status !== ORDER_STATUS.CANCELLED;
+    if (isCancelling) {
+      const checked = await planCancellation(prisma, {
+        order: existingOrder as any,
+        role: user.role,
+        request: parseCancelRequest(parsed.data),
+      });
+      if ('error' in checked) {
+        return NextResponse.json(ResponseBuilder.error(checked.error.code), { status: checked.error.status });
+      }
+      cancelPlan = checked.plan;
+    }
+
     // Build update input with automatic timestamp handling
     const updateInput: any = {
+      ...(isCancelling ? { cancelledAt: cancelAt } : {}),
       status,
       ...(notes && { notes }),
       ...(pickupNotes && { pickupNotes }),
@@ -209,6 +254,8 @@ export async function PATCH(
 
     // Update the order (orderPublicId already validated above)
     const updatedOrder = await db.orders.update(orderPublicId, updateInput);
+    // #1199: the hand-over time may have moved; depositAmount follows the stage payments taken before it
+    if (orderHasPlan) await recomputeDepositFromPayments(prisma, orderPublicId);
 
     if (!updatedOrder) {
       return NextResponse.json(
@@ -219,6 +266,44 @@ export async function PATCH(
 
     const outlet = await db.outlets.findById(updatedOrder.outletId);
     const merchantId = outlet?.merchantId;
+
+    // #1199: what went back and what the shop kept. If this fails the order stays cancelled with no amounts, which
+    // every screen reads as "everything refunded" (the old behaviour); the failure is logged.
+    if (cancelPlan) {
+      try {
+        const cancelShop = await loadShop(prisma, merchantId);
+        await recordPlanCancellation(prisma, {
+          orderId: orderPublicId,
+          merchantId,
+          currency: cancelShop.currency,
+          plan: cancelPlan,
+          userId: user.id,
+          at: cancelAt,
+        });
+        await safeAudit('cancel', () => createAuditHelper(prisma).logCustom({
+          action: 'CUSTOM',
+          entityType: 'Order',
+          entityId: String(orderPublicId),
+          entityName: existingOrder.orderNumber || String(orderPublicId),
+          description: cancelAuditDescription(existingOrder.orderNumber || String(orderPublicId), cancelPlan as PlanCancellation),
+          category: 'BUSINESS',
+          oldValues: { collected: cancelPlan.collected },
+          newValues: { kept: cancelPlan.kept, refunded: cancelPlan.refund, note: cancelPlan.note ?? null },
+          context: {
+            userId: String(user.id),
+            userEmail: user.email,
+            userRole: user.role,
+            merchantId: userScope.merchantId != null ? String(userScope.merchantId) : undefined,
+            outletId: userScope.outletId != null ? String(userScope.outletId) : undefined,
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+            userAgent: request.headers.get('user-agent') || undefined,
+            requestId: request.headers.get('x-request-id') || undefined,
+          },
+        }));
+      } catch (cancelError) {
+        console.error('⚠️ Recording the cancel refund failed (order is cancelled; everything counts as refunded):', cancelError);
+      }
+    }
 
     // Loyalty hooks — only for CANCELLED/RETURNED (avoid feature query on unrelated status changes).
     // Fail-open (INV-6): the status change is already committed above; loyalty must never block it.
@@ -317,7 +402,8 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      data: finalOrder,
+      // #1200: payments[] aliases + INSTALLMENT by capability; #1199: plan columns / stages by capability
+      data: await shapeOrderInstallments(shapeOrderPayments(finalOrder as any, request), request, merchantId, prisma),
       code: 'ORDER_STATUS_UPDATED_SUCCESS',
       message: responseMessage
     });

@@ -22,6 +22,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.products.QuantityEntry
+import com.anyrent.pos.ui.common.AppNumericPadSheet
 import com.anyrent.pos.ui.theme.DS
 
 internal object V2Colors {
@@ -145,30 +151,68 @@ internal fun V2Segmented(
     }
 }
 
-/** − n + */
+/** − n + . The number opens the same pad as price / deposit / discount (#1162). */
 @Composable
 internal fun V2Stepper(value: Int, onChange: (Int) -> Unit, minimum: Int = 0, compact: Boolean = false) {
     val minus = stringResource(R.string.v2_stepper_minus)
     val plus = stringResource(R.string.v2_stepper_plus)
-    Row(
-        Modifier.border(1.dp, V2Colors.Line, RoundedCornerShape(10.dp)),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier
-                .size(width = 44.dp, height = if (compact) 38.dp else 44.dp)
-                .clickable(enabled = value > minimum) { onChange(value - 1) }
-                .semantics { contentDescription = minus; role = Role.Button },
-            contentAlignment = Alignment.Center,
-        ) { Text("−", fontSize = 20.sp, color = if (value > minimum) DS.Colors.Text else DS.Colors.TextMuted) }
-        Text("$value", fontSize = DS.TextSize.Name, fontWeight = if (compact) FontWeight.Medium else FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 28.dp))
-        Box(
-            Modifier
-                .size(width = 44.dp, height = if (compact) 38.dp else 44.dp)
-                .clickable { onChange(value + 1) }
-                .semantics { contentDescription = plus; role = Role.Button },
-            contentAlignment = Alignment.Center,
-        ) { Text("+", fontSize = 20.sp) }
+    val enter = stringResource(R.string.v2_stepper_enter)
+    var editing by remember { mutableStateOf(false) }
+    var draft by remember { mutableStateOf("0") }
+    val rowHeight = if (compact) 38.dp else 44.dp
+    // Box, not a bare Row: the sheet must not become a second child of the cart line's Row.
+    Box {
+        Row(
+            Modifier.border(1.dp, V2Colors.Line, RoundedCornerShape(10.dp)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier
+                    .size(width = 44.dp, height = rowHeight)
+                    .clickable(enabled = value > minimum) { onChange(value - 1) }
+                    .semantics { contentDescription = minus; role = Role.Button },
+                contentAlignment = Alignment.Center,
+            ) { Text("−", fontSize = 20.sp, color = if (value > minimum) DS.Colors.Text else DS.Colors.TextMuted) }
+            Box(
+                Modifier
+                    .widthIn(min = 44.dp)
+                    .height(rowHeight)
+                    .clickable {
+                        draft = value.toString()
+                        editing = true
+                    }
+                    .semantics { contentDescription = enter; role = Role.Button },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "$value",
+                    fontSize = DS.TextSize.Name,
+                    fontWeight = if (compact) FontWeight.Medium else FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Box(
+                Modifier
+                    .size(width = 44.dp, height = rowHeight)
+                    .clickable(enabled = value < QuantityEntry.maximum) { onChange(minOf(QuantityEntry.maximum, value + 1)) }
+                    .semantics { contentDescription = plus; role = Role.Button },
+                contentAlignment = Alignment.Center,
+            ) { Text("+", fontSize = 20.sp, color = if (value < QuantityEntry.maximum) DS.Colors.Text else DS.Colors.TextMuted) }
+        }
+        if (editing) {
+            AppNumericPadSheet(
+                title = enter,
+                rawValue = draft,
+                onRawValueChange = { draft = it },
+                formattedValue = draft,
+                onDismiss = { editing = false },
+                onConfirm = {
+                    val next = QuantityEntry.fromPad(draft.toDoubleOrNull() ?: 0.0, minimum)
+                    if (next != value) onChange(next)
+                    editing = false
+                },
+            )
+        }
     }
 }
 
@@ -182,6 +226,8 @@ internal fun V2ValueRow(
     bold: Boolean = false,
     /** #1024: an icon before the title (the cart's order note), grey, read by nobody; null = none as before */
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    /** #1243: a long value (the cart's staged-deposit template name) takes the rest of the row and wraps, never "…" */
+    wrapValue: Boolean = false,
 ) {
     Row(
         Modifier
@@ -195,13 +241,15 @@ internal fun V2ValueRow(
         if (icon != null) {
             Icon(icon, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
         }
-        Text(title, fontSize = if (bold) DS.TextSize.Name else DS.TextSize.Body, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, color = DS.Colors.Text, modifier = Modifier.weight(1f))
+        Text(title, fontSize = if (bold) DS.TextSize.Name else DS.TextSize.Body, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, color = DS.Colors.Text, modifier = if (wrapValue) Modifier else Modifier.weight(1f))
         Text(
             value,
             fontSize = if (bold) 18.sp else DS.TextSize.Body,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             color = valueColor,
-            maxLines = 1,
+            maxLines = if (wrapValue) Int.MAX_VALUE else 1,
+            textAlign = if (wrapValue) androidx.compose.ui.text.style.TextAlign.End else null,
+            modifier = if (wrapValue) Modifier.weight(1f) else Modifier,
         )
         if (onClick != null) {
             Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))

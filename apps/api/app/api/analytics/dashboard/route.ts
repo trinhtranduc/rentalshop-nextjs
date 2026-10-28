@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, formatFullName, calculateOrderRevenueByStatus } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, formatFullName, calculateOrderRevenueByStatus, toRevenueOrderData } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { shopToday } from '../../../../lib/report-days';
 
@@ -129,6 +129,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       // Total revenue based on order status and type
       // ✅ Exclude CANCELLED orders from revenue calculation
       db.orders.search({
+        includeRevenuePlan: true,
         where: {
           ...orderWhereClause,
           status: { not: ORDER_STATUS.CANCELLED } // Exclude cancelled orders
@@ -191,20 +192,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
 
     // Calculate total revenue using calculateOrderRevenueByStatus (single source of truth)
     const totalRevenue = totalRevenueOrders.reduce((sum, order: any) => {
-      const orderData = {
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        lateFee: order.lateFee || 0,
-        pickupTotalAmount: order.pickupTotalAmount ?? null,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        updatedAt: order.updatedAt
-      };
+      const orderData = toRevenueOrderData(order);
       return sum + calculateOrderRevenueByStatus(orderData);
     }, 0);
 

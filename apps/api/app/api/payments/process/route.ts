@@ -10,8 +10,11 @@ import {
   PAYMENT_STATUS,
   PAYMENT_TYPE,
   USER_ROLE,
+  isStaffLikeRole,
 } from '@rentalshop/constants';
 import { z } from 'zod';
+import { CANCEL_REFUND_NOTE, recomputeDepositFromPayments } from '../../../../lib/installments';
+import { INSTALLMENT_PAYMENT_NOTE, parseDepositPlan } from '../../../../../../packages/utils/src/core/deposit-plan';
 
 const processOrderPaymentSchema = z.object({
   orderId: z.number().int().positive(),
@@ -46,6 +49,11 @@ export async function POST(request: NextRequest) {
       }
       const { orderId, amount, method, kind, reference, notes } = parsed.data;
 
+      // #1199: these notes belong to the stage routes (collect / cancel); this route cannot write them
+      if (notes === INSTALLMENT_PAYMENT_NOTE || notes === CANCEL_REFUND_NOTE) {
+        return NextResponse.json(ResponseBuilder.error('ORDER_PAYMENT_INVALID'), { status: 400 });
+      }
+
       // Check if order exists
       const order = await db.orders.findById(orderId);
       if (!order) {
@@ -73,6 +81,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // #1199 P6: on an order with a deposit plan, staff cannot refund money (the installed Android app only refunds
+      // collateral, with notes RETURN_ADJUSTMENT). PICKUP collections stay as they were: they are the `rest` stage.
+      const orderHasPlan = parseDepositPlan((order as any).depositPlan) != null;
+      if (orderHasPlan && kind === 'REFUND' && isStaffLikeRole(user.role) && notes !== 'RETURN_ADJUSTMENT') {
+        return NextResponse.json(ResponseBuilder.error('INSTALLMENT_FORBIDDEN_ROLE'), { status: API.STATUS.FORBIDDEN });
+      }
+
       // Client-generated reference makes retries idempotent for the mobile flow.
       const existing = await db.payments.findFirst({ orderId, reference });
       if (existing) {
@@ -95,6 +110,9 @@ export async function POST(request: NextRequest) {
         processedBy: String(user.id),
         metadata: JSON.stringify({ kind, source: 'ANDROID_POS' }),
       });
+
+      // #1199: the order's pre-delivery total follows its payments (no-op for an order without a plan)
+      if (orderHasPlan) await recomputeDepositFromPayments(prisma, orderId);
 
       // #519: the order's change history shows the money collected / refunded
       await safeAudit('payment', () => createAuditHelper(prisma).logCustom({

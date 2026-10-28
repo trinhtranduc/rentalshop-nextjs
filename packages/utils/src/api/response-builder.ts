@@ -211,6 +211,23 @@ const ERROR_MESSAGES: Record<string, string> = {
   'BOOKING_REQUEST_NOT_FOUND': "Booking request not found.",
   'BOOKING_REQUEST_CLOSED': "This booking request was already confirmed, rejected or has expired.",
   'INVALID_PHONE': "Please enter a valid phone number.",
+  // #1189 day-block pricing
+  'BLOCK_PRICE_MISMATCH': "The price of a day-block item does not match the price list. Reload the product and try again.",
+  'PRICING_TYPE_REQUIRES_UPDATE': "This product uses day-block pricing. Please update the app to place this rental.",
+  'BLOCK_TABLE_INVALID': "The day-block price list is not valid. Use 1 to 31 days, prices of 0 or more, and one block price list per product.",
+
+  // #1199 staged deposits
+  'INSTALLMENT_EXCEEDS_TOTAL': "The deposit stages add up to more than the order total.",
+  'INSTALLMENT_OVERPAID': "This amount is more than the stage allows, or the new total is lower than what was already collected.",
+  'INSTALLMENT_ALREADY_PAID': "This deposit stage was already collected.",
+  'INSTALLMENT_FORBIDDEN_ROLE': "Your role cannot do this with deposit stages.",
+  'INSTALLMENT_UNPAID_AT_PICKUP': "This order still has a deposit stage that was not collected. Collect it on the web or update the app.",
+  'CANCEL_AMOUNTS_MISMATCH': "The amount kept is more than what was collected, or is not a valid amount.",
+  'CANCELLED_ORDER_KEEPS_AMOUNT': "A cancelled order that kept money stays in the history and cannot be deleted.",
+  'INSTALLMENT_NOT_FOUND': "Deposit stage not found.",
+  'INSTALLMENT_NO_PLAN': "This order has no deposit plan.",
+  'INSTALLMENT_LOYALTY_UNSUPPORTED': "Loyalty points cannot be used on an order with staged deposits.",
+  'DEPOSIT_SETTINGS_INVALID': "The deposit settings are not valid. Use 1 to 3 stages per template, percentages that add up to 100 or less, and at most 10 templates.",
 
   // Default
   'UNKNOWN_ERROR': 'An unknown error occurred',
@@ -271,6 +288,11 @@ const SUCCESS_MESSAGES: Record<string, string> = {
   'MERCHANT_INFO_UPDATED_SUCCESS': 'Merchant information updated successfully',
   'OUTLET_INFO_UPDATED_SUCCESS': 'Outlet information updated successfully',
   'CURRENCY_UPDATED_SUCCESS': 'Currency updated successfully',
+  'DEPOSIT_SETTINGS_SUCCESS': "Deposit settings loaded",
+  'DEPOSIT_SETTINGS_UPDATED': "Deposit settings updated",
+  'INSTALLMENT_COLLECTED': "Deposit stage collected",
+  'INSTALLMENT_VOIDED': "Deposit stage voided",
+  'DEPOSIT_PLAN_UPDATED': "Deposit plan updated",
   
   // Delete Operations
   'USER_DELETED_SUCCESS': 'User deleted successfully',

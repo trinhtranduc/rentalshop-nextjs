@@ -136,6 +136,8 @@ export interface SeriesPointLike {
   forecast?: Num;
   /** The API's name for `forecast` (#605): GET /api/analytics/period `series[].expectedCollected` */
   expectedCollected?: Num;
+  /** #1199: unpaid deposit stages by due day; absent when the shop has none in this bucket */
+  futureInstallments?: { dueDateKey?: string; amount?: Num; count?: Num }[] | null;
 }
 
 /** Forecast of a series point: `forecast`, else the API's `expectedCollected` (#605) */
@@ -310,6 +312,22 @@ export function chartBars(
 }
 
 /**
+ * #1221: unpaid deposit stages falling due in the series (same as iOS `futureInstallmentsTotal`).
+ * Shown on their own line, never added to the bars or to `futureIncome`.
+ */
+export function futureInstallmentsTotal(series: SeriesPointLike[] | null | undefined): { amount: number; count: number } {
+  let amount = 0;
+  let count = 0;
+  for (const point of series ?? []) {
+    for (const group of point.futureInstallments ?? []) {
+      amount += num(group?.amount) ?? 0;
+      count += num(group?.count) ?? 0;
+    }
+  }
+  return { amount, count };
+}
+
+/**
  * The Thực thu tile's collected/forecast bar: shown only when the series carries a forecast for today.
  * `pct` is the collected share of collected + forecast.
  */
@@ -375,6 +393,17 @@ interface OpsListLike {
   orders: OpsOrderLike[];
 }
 
+/** A deposit stage waiting to be collected (#1199), as `installmentsDue` / `installmentsOverdue` send it */
+export interface OpsStageLike {
+  orderId: number;
+  orderNumber: string;
+  customerName: string | null;
+  key: string;
+  label: string;
+  remaining: number;
+  lateDays: number;
+}
+
 export interface OutletOpsLike {
   date: string;
   pickupsToday: OpsListLike;
@@ -385,6 +414,9 @@ export interface OutletOpsLike {
   tomorrow?: { pickups: number; returns: number } | null;
   tomorrowPickups?: OpsListLike | null;
   tomorrowReturns?: OpsListLike | null;
+  /** #1231: deposit stages due today / late (only for a client that sends `installments`); tomorrow's are not To do */
+  installmentsDue?: { count: number; orders: OpsStageLike[] } | null;
+  installmentsOverdue?: { count: number; orders: OpsStageLike[] } | null;
   cash?: {
     collateralToCollect?: { securityDeposit: number; orders: number };
     collateralToReturn?: { securityDeposit: number; orders: number };
@@ -416,7 +448,7 @@ export function buildTodayWork(ops: OutletOpsLike): TodayWork {
   };
 }
 
-export type TodayRowKind = 'pickup' | 'return';
+export type TodayRowKind = 'pickup' | 'return' | 'installment';
 
 export interface TodayRow {
   id: number;
@@ -428,15 +460,19 @@ export interface TodayRow {
   /** Late return: days past the planned return */
   lateDays: number;
   notPrepared: boolean;
+  /** #1231: a deposit stage row: its number in the order ("i2" -> 2) and its label */
+  stage: number | null;
+  stageLabel: string | null;
   money: { kind: 'collect' | 'refund' | 'fee'; amount: number } | null;
 }
 
 /**
- * Today's pickups, then today's and overdue returns (late ones last), each order once.
+ * Today's pickups, then today's and overdue returns (late ones last), each order once; (#1231) one row per deposit stage that is late or due today goes before the late returns.
  * `toDayKey` turns an ISO instant into its Vietnam civil day.
  */
 export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => string): TodayRow[] {
   const seen = new Set<number>();
+  const seenStages = new Set<string>();
   const rows: TodayRow[] = [];
   const day = (iso: string | null) => (iso ? toDayKey(iso) || null : null);
   const push = (order: OpsOrderLike, kind: TodayRowKind, late: boolean) => {
@@ -457,11 +493,35 @@ export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => st
       returnKey: day(order.returnPlanAt),
       lateDays: late ? Math.max(order.lateDays ?? 0, order.daysOverdue ?? 0) : 0,
       notPrepared: kind === 'pickup' && !order.isReadyToDeliver,
+      stage: null,
+      stageLabel: null,
       money,
+    });
+  };
+  // #1231: one row per deposit stage due today or late (most late first); an order's pickup row and stage rows are different tasks
+  const pushStage = (r: OpsStageLike) => {
+    const stageKey = `stage-${r.orderId}-${r.key}`;
+    if (seenStages.has(stageKey)) return;
+    seenStages.add(stageKey);
+    rows.push({
+      id: r.orderId,
+      orderNumber: r.orderNumber,
+      kind: 'installment',
+      customerName: r.customerName ?? '',
+      pickupKey: null,
+      returnKey: null,
+      lateDays: r.lateDays,
+      notPrepared: false,
+      stage: /^i(\d)$/.test(r.key) ? Number(r.key.slice(1)) : null,
+      stageLabel: r.label || null,
+      money: { kind: 'collect', amount: r.remaining },
     });
   };
   ops.pickupsToday.orders.forEach((o) => push(o, 'pickup', false));
   ops.returnsToday.orders.forEach((o) => push(o, 'return', false));
+  // #1231: the stages go before the late returns, so a shop with many late returns still sees them in the 5 rows of the card
+  [...(ops.installmentsOverdue?.orders ?? [])].sort((a, b) => b.lateDays - a.lateDays).forEach(pushStage);
+  (ops.installmentsDue?.orders ?? []).forEach(pushStage);
   ops.overdueReturns.orders.forEach((o) => push(o, 'return', true));
   return rows;
 }
@@ -682,6 +742,8 @@ export interface TopBar {
   value: number;
   /** 0–100 of the highest value in the list */
   width: number;
+  /** #1243 first photo of a top product; null for customers or a product without one */
+  image: string | null;
 }
 
 /** Top products as bars, in the API's order (by order value), at most `limit`. */
@@ -690,7 +752,8 @@ export function topBars(products: TopProductLike[] | null | undefined, limit = 5
   const max = Math.max(0, ...list.map((p) => num(p.totalRevenue) ?? 0));
   return list.map((p) => {
     const value = num(p.totalRevenue) ?? 0;
-    return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+    const image = typeof p.image === 'string' && p.image.trim() ? p.image.trim() : null;
+    return { id: p.id, name: p.name, rentals: num(p.rentalCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0, image };
   });
 }
 
@@ -700,7 +763,7 @@ export function topCustomerBars(customers: TopCustomerLike[] | null | undefined,
   const max = Math.max(0, ...list.map((c) => num(c.totalSpent) ?? 0));
   return list.map((c) => {
     const value = num(c.totalSpent) ?? 0;
-    return { id: c.id, name: c.name, rentals: num(c.orderCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0 };
+    return { id: c.id, name: c.name, rentals: num(c.orderCount) ?? 0, value, width: max > 0 ? (Math.max(0, value) / max) * 100 : 0, image: null };
   });
 }
 
@@ -874,3 +937,57 @@ export function heldRows(orders: HeldOrderLike[] | null | undefined): RelatedRow
   return rows;
 }
 
+
+/** #1273: Thế chân in two parts. Held (the state now) and the flow of the period (+ received, − returned) never add up to each other. */
+export interface CollateralSections {
+  held: RelatedRow[];
+  heldTotal: number;
+  /** Orders held: the API `count` (the list is cut at 500), else the rows */
+  heldOrders: number;
+  /** false when the API list is cut: the sum would be wrong, so the total is not shown */
+  heldTotalKnown: boolean;
+  received: RelatedRow[];
+  returned: RelatedRow[];
+  receivedTotal: number;
+  returnedTotal: number;
+  receivedOrders: number;
+  returnedOrders: number;
+  /** received − returned */
+  net: number;
+}
+
+const distinctOrders = (rows: RelatedRow[]): number => new Set(rows.map((r) => r.id)).size;
+
+export function collateralSections(held: RelatedRow[], heldCount: number | null | undefined, rows: RelatedRow[]): CollateralSections {
+  const heldRowsOnly = held.filter((r) => r.note === 'held');
+  const flow = rows.filter((r) => r.note !== 'held');
+  const received = flow.filter((r) => r.amount > 0);
+  const returned = flow.filter((r) => r.amount < 0);
+  const receivedTotal = received.reduce((sum, r) => sum + r.amount, 0);
+  const returnedTotal = returned.reduce((sum, r) => sum - r.amount, 0);
+  const cut = heldCount != null && heldCount > heldRowsOnly.length;
+  return {
+    held: heldRowsOnly,
+    heldTotal: heldRowsOnly.reduce((sum, r) => sum + r.amount, 0),
+    heldOrders: cut ? (heldCount as number) : distinctOrders(heldRowsOnly),
+    heldTotalKnown: !cut,
+    received,
+    returned,
+    receivedTotal,
+    returnedTotal,
+    receivedOrders: distinctOrders(received),
+    returnedOrders: distinctOrders(returned),
+    net: receivedTotal - returnedTotal,
+  };
+}
+
+/** The flow part is "today" only for the one-day range of today (Vietnam day keys) */
+export function collateralFlowIsToday(from: string, to: string, todayKey: string): boolean {
+  return from === to && from === todayKey;
+}
+
+/** `2026-10-27` → `27/10` */
+export function dayMonth(key: string): string {
+  const [, m, d] = key.split('-');
+  return m && d ? `${d}/${m}` : key;
+}

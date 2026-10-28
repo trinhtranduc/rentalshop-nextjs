@@ -80,11 +80,13 @@ object CategoryRules {
 enum class PricingMode(val apiType: String) {
     PER_RENTAL("FIXED"),
     PER_DAY("DAILY"),
+    /** #1189: day-block table ("Giá theo khối ngày") */
+    BLOCK("BLOCK"),
 }
 
 /** #418 — the pricing types `POST /api/orders` accepts; null, blank or unknown read as FIXED (iOS `?? "FIXED"`) */
 object PricingTypes {
-    private val known = setOf("FIXED", "HOURLY", "DAILY")
+    private val known = setOf("FIXED", "HOURLY", "DAILY", "BLOCK")
 
     fun normalize(raw: String?): String = raw?.trim()?.uppercase()?.takeIf { it in known } ?: "FIXED"
 
@@ -95,7 +97,7 @@ object PricingTypes {
     fun normalizeOption(raw: String?): String = raw?.trim()?.uppercase()?.takeIf { it in known || it == "BLOCK" } ?: "FIXED"
 }
 
-data class PricingOptionInput(val type: String, val price: Double, val isDefault: Boolean)
+data class PricingOptionInput(val type: String, val price: Double, val isDefault: Boolean, val blockTable: BlockTable? = null)
 
 object ProductPricing {
     fun perRental(product: Product): Double? {
@@ -115,25 +117,41 @@ object ProductPricing {
         return product.pricingOptions.firstOrNull { it.type.equals("DAILY", ignoreCase = true) }?.price?.takeIf { it >= 0 }
     }
 
+    /** #1189: the day-block table of the product (a BLOCK option); null when it has none */
+    fun block(product: Product): BlockTable? =
+        product.pricingOptions.firstOrNull { it.type.equals("BLOCK", ignoreCase = true) && it.blockTable != null }?.blockTable
+
     fun sale(product: Product): Double? = product.salePrice?.takeIf { it > 0 }
 
     fun defaultMode(product: Product): PricingMode {
         val type = product.pricingOptions.firstOrNull { it.isDefault }?.type
             ?: product.pricingOptions.firstOrNull()?.type
             ?: product.pricingType
+        if (type.equals("BLOCK", ignoreCase = true) && block(product) != null) return PricingMode.BLOCK
         return if (type.equals("DAILY", ignoreCase = true)) PricingMode.PER_DAY else PricingMode.PER_RENTAL
     }
 
-    /** Options sent on save (#951: 0 is a 0đ price, empty = none); a default without a price falls back to the mode that has one */
-    fun options(perRental: Double?, perDay: Double?, defaultMode: PricingMode): List<PricingOptionInput> {
+    /**
+     * Options sent on save (#951: 0 is a 0đ price, empty = none); a default without a price falls back to the mode
+     * that has one. #1189: the BLOCK option carries the table, its `price` is the day-1 price.
+     */
+    fun options(perRental: Double?, perDay: Double?, defaultMode: PricingMode, block: BlockTable? = null): List<PricingOptionInput> {
         val fixed = perRental?.takeIf { it >= 0 }
         val daily = perDay?.takeIf { it >= 0 }
-        var mode = defaultMode
-        if (mode == PricingMode.PER_DAY && daily == null) mode = PricingMode.PER_RENTAL
-        if (mode == PricingMode.PER_RENTAL && fixed == null && daily != null) mode = PricingMode.PER_DAY
+        val has = { m: PricingMode ->
+            when (m) {
+                PricingMode.PER_RENTAL -> fixed != null
+                PricingMode.PER_DAY -> daily != null
+                PricingMode.BLOCK -> block != null
+            }
+        }
+        // The default is the mode that has a price: the one asked for, else the first that has one
+        val mode = if (has(defaultMode)) defaultMode
+        else listOf(PricingMode.PER_RENTAL, PricingMode.PER_DAY, PricingMode.BLOCK).firstOrNull(has) ?: PricingMode.PER_RENTAL
         return listOfNotNull(
             fixed?.let { PricingOptionInput("FIXED", it, mode == PricingMode.PER_RENTAL) },
             daily?.let { PricingOptionInput("DAILY", it, mode == PricingMode.PER_DAY) },
+            block?.let { PricingOptionInput("BLOCK", it.tiers.first(), mode == PricingMode.BLOCK, it) },
         )
     }
 }
@@ -206,6 +224,12 @@ object ProductRowLogic {
         val rental = ProductPricing.perRental(product)
         val day = ProductPricing.perDay(product)
         val sale = ProductPricing.sale(product)
+        // #1189: a product whose default is the day-block table shows the day-1 price first
+        val table = ProductPricing.block(product)
+        if (ProductPricing.defaultMode(product) == PricingMode.BLOCK && table != null) {
+            val other = rental?.let { it to PricingMode.PER_RENTAL } ?: day?.let { it to PricingMode.PER_DAY }
+            return ProductRowPrice(table.tiers.first(), PricingMode.BLOCK, other?.first, other?.second, sale)
+        }
         return when {
             rental != null && day != null ->
                 if (ProductPricing.defaultMode(product) == PricingMode.PER_DAY) {
@@ -291,6 +315,8 @@ data class ProductFormInput(
     val rented: Int,
     val photoCount: Int,
     val showsPrices: Boolean,
+    /** #1249: the day table "Theo ngày" sends; null = none */
+    val block: BlockTable? = null,
 )
 
 sealed class ProductFormIssue {
@@ -544,6 +570,16 @@ object CartV2Logic {
         return line.copy(product = line.product.copy(pricingOptions = product.pricingOptions))
     }
 
+    /**
+     * #1189: the product's day table changed (the API answered BLOCK_PRICE_MISMATCH): a BLOCK line of it takes the
+     * product's new table and is priced again (iOS `Cart.refreshBlockTable`)
+     */
+    fun refreshBlockTable(line: CartLine, product: Product): CartLine {
+        if (line.product.id != product.id || !line.pricingType.equals("BLOCK", ignoreCase = true)) return line
+        if (ProductPricing.block(product) == null) return line
+        return line.copy(product = line.product.copy(pricingOptions = product.pricingOptions), savedBlockTable = null, unitPriceOverride = null)
+    }
+
     // --- Pricing sheet (#482, board Gio-hang-chon-gia; iOS CartV2Logic) ---
 
     /**
@@ -561,6 +597,8 @@ object CartV2Logic {
             val type = option.type.uppercase()
             if (type !in types) types += type
         }
+        // #1189: a line loaded from a saved order offers the table it was priced with
+        if (line.blockTable != null && "BLOCK" !in types) types += "BLOCK"
         return types.map { CartPricingChoice(it, catalogPrice(line.product, it)) }
     }
 

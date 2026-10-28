@@ -6,6 +6,8 @@
 export * from './string-utils';
 export * from './function-utils';
 export * from './tenant-key';
+export * from './client-capabilities';
+export * from './deposit-plan';
 export * from './google-credential';
 
 // Export common utilities without conflicts
@@ -216,6 +218,8 @@ export * from './audit-config';
 
 // Revenue calculator utilities (single source of truth for revenue calculations)
 export * from './revenue-calculator';
+// Order row -> calculator input, and the event WHERE (#1199): the one place every revenue screen shares
+export * from './revenue-mapping';
 
 // Rental days: pickup and return day both included (#351)
 export { countRentalDays } from './rental-days';
@@ -223,3 +227,7 @@ export { countRentalDays } from './rental-days';
 // Web order form line pricing (#444)
 export * from './order-line-pricing';
 export * from './product-pricing-options';
+
+// Day-block rental pricing (#1189)
+export * from './block-pricing';
+export * from './block-line-text';

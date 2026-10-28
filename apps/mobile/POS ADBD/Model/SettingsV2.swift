@@ -9,13 +9,12 @@
 import Foundation
 
 enum SettingsV2Item: Equatable {
-    /// #937: the inbox, moved here from the Home bell
-    case notifications
-    case storeInfo, receiptNote, printer, bankAccounts
-    /// #1145 "Tiền tệ", shop owner only, right after "Thông tin cửa hàng"
-    case currency
+    /// #1270 CỬA HÀNG (plan B): Thông tin cửa hàng, Tiền tệ (owner only), Tài khoản ngân hàng (owner, outlet admin),
+    /// Cọc (screen with two sections), In & phiếu (screen with two sections)
+    case storeInfo, currency, bankAccounts, deposit, printing
     case categories, customers, users, export
-    case plan, language, password, appInfo, deleteAccount
+    /// #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản)
+    case plan, language, advanced
 }
 
 struct SettingsV2Section: Equatable {
@@ -33,20 +32,19 @@ struct SettingsV2Section: Equatable {
 }
 
 enum SettingsV2Logic {
-    /// Sections for a role.
+    /// Sections for a role (#1270 plan B: 3 groups, 12 rows for the owner plus the overlap switch, the name card and the bell).
     /// - customers: the redesigned list (#387) when `showsCustomers` (flag `newCustomers`) and any customer right
     /// - users: `users.manage` (as today)
     /// - export: any export right and never OUTLET_STAFF (as today)
     /// - plan: shown once `subscriptions/status` answered
-    /// - bankAccounts (#622): MERCHANT and OUTLET_ADMIN (the API rejects writes from OUTLET_STAFF)
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
-    /// - notifications (#937): every role, first row of CỬA HÀNG (the Home bell became the cart button)
-    /// - currency (#1145): MERCHANT only, after storeInfo
+    /// - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
+    /// - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
-        var storeItems: [SettingsV2Item] = [.notifications, .storeInfo]
+        var storeItems: [SettingsV2Item] = [.storeInfo]
         if ShopCurrencyLogic.canChange(role: role) { storeItems.append(.currency) }
-        storeItems += [.receiptNote, .printer]
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
+        storeItems += [.deposit, .printing]
         let store = SettingsV2Section(group: .store, items: storeItems)
 
         var management: [SettingsV2Item] = []
@@ -64,12 +62,20 @@ enum SettingsV2Logic {
 
         var account: [SettingsV2Item] = []
         if hasPlan { account.append(.plan) }
-        account += [.language, .password, .appInfo, .deleteAccount]
+        account += [.language, .advanced]
 
         return [store, SettingsV2Section(group: .management, items: management),
                 SettingsV2Section(group: .account, items: account)]
             .filter { !$0.items.isEmpty }
     }
+
+    /// "80 mm" once a printer is saved, else "80 mm · chưa chọn máy in"
+    static func printingValue(hasPrinter: Bool, paperMillimetres: Int, none: String) -> String {
+        hasPrinter ? "\(paperMillimetres) mm" : "\(paperMillimetres) mm · \(none)"
+    }
+
+    /// Cọc screen: "Mẫu giai đoạn" and "Chính sách huỷ / dời ngày" look dimmed in "Thu cọc 1 lần" (still tappable)
+    static func depositStagesDimmed(staged: Bool) -> Bool { !staged }
 
     /// #937: badge on the "Thông báo" row: the unread count, capped at 99, none at 0
     static func unreadBadge(_ count: Int) -> String? {

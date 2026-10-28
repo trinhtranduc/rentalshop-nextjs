@@ -5,12 +5,12 @@
  * money input. Dialogs render inside the shell so they follow the light / dark theme.
  */
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { customersApi } from '@rentalshop/utils';
+import { blockLineText, customersApi } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
 import { outlineBtn, primaryBtn, type Money, type T } from '../list/parts';
 import { RangeCalendar } from '../../components/date-range/RangeCalendar';
-import { checkDays, lineModes, needsPrice, quickDays, rentalDays, type CartLine, type CustomerPick, type OrderType, type Stock } from './create-model';
+import { blockLineSnapshot, checkDays, lineModes, needsPrice, quickDays, rentalDays, type CartLine, type CustomerPick, type OrderType, type Stock } from './create-model';
 
 export const fieldClass =
   'h-11 w-full rounded-xl border border-ar-line-strong bg-ar-surface px-3 text-base text-ar-ink placeholder:text-ar-faint focus:border-ar-primary focus:outline-none';
@@ -432,7 +432,7 @@ export function ProductCard({
 /** What the cart says about a line's units for the chosen days (#556). */
 export type LineStatus = { kind: 'conflict' | 'short' | 'ok'; text: string } | null;
 
-const MODE_KEYS = ['FIXED', 'DAILY', 'HOURLY'];
+const MODE_KEYS = ['FIXED', 'DAILY', 'HOURLY', 'BLOCK'];
 const modeKey = (type: string) => (MODE_KEYS.includes(type) ? type : 'OTHER');
 
 export function CartLineRow({
@@ -447,6 +447,7 @@ export function CartLineRow({
   onNote,
   t,
   money,
+  minorUnit = 1,
 }: {
   line: CartLine;
   orderType: OrderType;
@@ -461,6 +462,7 @@ export function CartLineRow({
   onNote?: (note: string) => void;
   t: T;
   money: Money;
+  minorUnit?: number;
 }) {
   const rent = orderType === 'RENT';
   const type = rent ? line.pricingType : 'SALE';
@@ -470,9 +472,13 @@ export function CartLineRow({
   const notePanelId = useId();
   const note = (line.notes || '').trim();
   const missingPrice = needsPrice(line, orderType);
+  const blockSnap = blockLineSnapshot(line, orderType, days, minorUnit);
+  const blockText = blockSnap
+    ? { ...blockLineText(blockSnap, { block: t('editor.block.label', { n: '{n}' }), blockExtra: t('editor.block.labelExtra', { n: '{n}', m: '{m}' }), days: t('editor.block.days', { n: '{n}' }) }, money), overridden: !!blockSnap.overridden }
+    : null;
   const chip = missingPrice
     ? t('editor.pricing.chipEmpty', { mode: t(`editor.pricing.mode.${modeKey(type)}`, { type }) })
-    : t(`editor.option.${['DAILY', 'HOURLY', 'FIXED', 'SALE'].includes(type) ? type : 'FIXED'}`, { price: money(line.unitPrice) });
+    : t(`editor.option.${['DAILY', 'HOURLY', 'FIXED', 'SALE', 'BLOCK'].includes(type) ? type : 'FIXED'}`, { price: money(line.unitPrice) });
   return (
     <div className="flex flex-col gap-2 border-t border-ar-line-soft py-3">
       <div className="flex items-start gap-2">
@@ -606,6 +612,12 @@ export function CartLineRow({
             {t('editor.pricing.done')}
           </button>
         </div>
+      )}
+      {blockText && !missingPrice && (
+        <span className="text-xs tabular-nums text-ar-muted" data-block-line>
+          <span className="font-semibold text-ar-ink-2">{blockText.label}</span>
+          {!blockText.overridden && ` · ${blockText.formula}`}
+        </span>
       )}
       {rent && type === 'DAILY' && days > 1 && !missingPrice && (
         <span className="text-xs tabular-nums text-ar-muted">

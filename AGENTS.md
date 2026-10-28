@@ -131,5 +131,7 @@ Domain (`.claude/skills/`):
 - Public landing and post routes must share the current landing brandmark and visual system; do not ship a separate legacy logo/header for localized posts.
 - Changing an API without checking the installed apps on `main-real` (`api-compat-review`), or without a row in `.agent/api-changes/LOG.md`.
 - Filling or redefining an existing response field for a new screen (e.g. daily `futureIncome`, which old Android adds to revenue). Add a new field.
+- A shim that rewrites a response for old apps (BLOCK shown as FIXED) is not tested on the way back: the app saves what it was given and the API stores a duplicate. Test read then save. Also read the Kotlin `org.json` parser, not only Swift `Codable` (`null` becomes NaN in `optDouble`).
+- Reading `Merchant.settings` (deposit mode, block pricing) from `db.merchants.findById`: it does not select that column. Use `loadShop(prisma, merchantId)` or a `select: { settings: true }` query, and make the test mock return a row without `settings`.
 - Two PRs that both append keys to `locales/*/errors.json` can merge into invalid JSON or a key listed twice (the last, older text wins). After merging `dev`, run `cd tests && npx jest locales-valid-json`.
 - Keep tool workdirs explicit. From the repository root, use `yarn --cwd tests test ...`; do not mix root-relative edits with a `tests/` workdir in the same command.

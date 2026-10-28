@@ -3,7 +3,8 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, listCivilDays, listCivilMonths } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, getFutureInstallments, listCivilDays, listCivilMonths, toRevenueOrderData, REVENUE_PLAN_SELECT, buildEventWhere, EVENT_WHERE_PERIOD } from '@rentalshop/utils';
+import { loadReservedPlanOrders } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 import { readAnalyticsTimeZone, readCivilRange } from '../../../../lib/analytics-days';
 
@@ -105,6 +106,9 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
 
     const outletsToProcess = await getOutletsToProcess();
 
+    // #1199: RESERVED orders with a deposit plan, once per outlet scope: a stage can fall due in any period
+    const planOrdersByScope = new Map<string, Promise<any[]>>();
+
     // Helper function to process income data for a specific outlet
     const processOutletIncome = async (
       outlet: { id: string | number; publicId: number; name: string } | null,
@@ -160,22 +164,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       // IMPORTANT: Use OR conditions to include orders created BEFORE period but picked up/returned DURING period
       const ordersWhereClause: any = {
         deletedAt: null, // Exclude soft-deleted orders
-        OR: [
-          // Orders created in period (use wider range to capture timezone shifts)
-          { createdAt: { gte: startOfPeriod, lte: endOfPeriod } },
-          // Orders picked up in period (CRITICAL: includes orders created before period)
-          // Use wider range: previous day start to next day end to capture timezone shifts
-          { pickedUpAt: { gte: new Date(startOfPeriod.getTime() - 24 * 60 * 60 * 1000), lte: new Date(endOfPeriod.getTime() + 24 * 60 * 60 * 1000), not: null } },
-          // Orders returned in period (CRITICAL: includes orders created/picked up before period)
-          // Use wider range: previous day start to next day end to capture timezone shifts
-          { returnedAt: { gte: new Date(startOfPeriod.getTime() - 24 * 60 * 60 * 1000), lte: new Date(endOfPeriod.getTime() + 24 * 60 * 60 * 1000), not: null } },
-          // Orders cancelled in period
-          { updatedAt: { gte: startOfPeriod, lte: endOfPeriod }, status: ORDER_STATUS.CANCELLED as any },
-          // Orders with future pickup plan in period
-          { pickupPlanAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } },
-          // Orders with future return plan in period
-          { returnPlanAt: { gte: startOfPeriod, lte: endOfPeriod, not: null } }
-        ]
+        // created in period; picked up / returned within a day of it (timezone shifts); cancelled in period; planned in period
+        ...buildEventWhere({ start: startOfPeriod, end: endOfPeriod }, EVENT_WHERE_PERIOD)
       };
 
       // Apply outlet filtering
@@ -220,29 +210,15 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
           pickedUpAt: true,
           returnedAt: true,
           createdAt: true,
-          updatedAt: true
+          updatedAt: true,
+          ...REVENUE_PLAN_SELECT
         },
         take: 10000 // Large limit to get all orders
       });
 
       // Calculate revenue using calculatePeriodRevenueBatch (single source of truth)
       // Prepare order data for revenue calculator
-      const ordersData = allOrders.map((order: any) => ({
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        lateFee: order.lateFee || 0,
-        pickupTotalAmount: order.pickupTotalAmount ?? null,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        pickupPlanAt: order.pickupPlanAt,
-        returnPlanAt: order.returnPlanAt,
-        updatedAt: order.updatedAt
-      }));
+      const ordersData = allOrders.map((order: any) => toRevenueOrderData(order));
 
       // Calculate period revenue for all orders (batch processing)
       const { realIncome, futureIncome } = calculatePeriodRevenueBatch(
@@ -250,6 +226,11 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         startOfPeriod,
         endOfPeriod
       );
+
+      // Unpaid deposit stages by due day: its own field, never part of futureIncome (old Android adds that to revenue)
+      const scopeKey = JSON.stringify(outletFilter);
+      if (!planOrdersByScope.has(scopeKey)) planOrdersByScope.set(scopeKey, loadReservedPlanOrders(prisma, outletFilter));
+      const futureInstallments = getFutureInstallments(await planOrdersByScope.get(scopeKey)!, startOfPeriod, endOfPeriod);
 
       // Calculate total deposit collected (tiền thế chân thu được)
       // Tính securityDeposit dựa vào ngày phát sinh (ngày thu tiền cọc)
@@ -384,6 +365,8 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
         totalCollateral: totalCollateral, // Tổng tiền thế chân (chỉ tính cho đơn đã PICKUPED)
         totalCollateralPlan: totalCollateralPlan // Tổng tiền thế chân dự kiến (chỉ tính cho đơn RESERVED có pickupPlanAt trong tương lai)
       };
+
+      if (futureInstallments.length > 0) dataPoint.futureInstallments = futureInstallments;
 
       // Add outlet info when outletIds parameter is provided
       if (outlet) {

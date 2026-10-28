@@ -36,6 +36,10 @@ struct OrderShareSource {
         let total: Double
         /// #930: the item's own note (the order's general note is never on the image)
         var note: String? = nil
+        /// #1189: "120.000 (3 ngày) + 2 × 20.000 = 160.000" of a day-block line
+        var formula: String? = nil
+        /// #1252: "Khối 3 ngày + 2 ngày thêm" of a day-block line
+        var blockSummary: String? = nil
     }
 
     var orderType: OrderType
@@ -60,6 +64,10 @@ struct OrderShareSource {
     var deposit: Double
     var collateralPapers: String?
     var collateralMoney: Double
+    /// #1252: the order's deposit stages (only a client that sends `installments` receives them)
+    var hasDepositPlan: Bool? = nil
+    var stages: [OrderInstallment]? = nil
+    var stageSummary: InstallmentSummary? = nil
 }
 
 struct OrderShareModel: Equatable {
@@ -71,6 +79,8 @@ struct OrderShareModel: Equatable {
         let amount: String
         /// #930: the item's note, under the price line
         let note: String?
+        /// #1189: the sum of a day-block line, under its price line
+        var formula: String? = nil
     }
 
     struct Row: Equatable {
@@ -120,6 +130,8 @@ struct OrderShareModel: Equatable {
     let address: String?
     let madeWith: String
     let fileName: String
+    /// #1252: "Thu cọc theo giai đoạn" under the rows of a rental that has stages; nil otherwise
+    var plan: DepositPlanReceipt.Block? = nil
 
     // MARK: - Formatting
 
@@ -173,12 +185,19 @@ struct OrderShareModel: Equatable {
 
         let lines = source.items.map { item -> Line in
             let unit = item.quantity > 0 ? item.total / Double(item.quantity) : item.total
-            return Line(name: item.name, detail: "\(item.quantity) × \(money(unit))", amount: money(item.total),
-                        note: CartV2Logic.noteText(item.note))
+            // #1252: a day-block line says which block it is ("Khối 3 ngày + 2 ngày thêm"), as the order detail does
+            let detail = item.blockSummary.map { item.quantity > 1 ? "\($0) · \(item.quantity) × \(money(unit))" : $0 }
+                ?? "\(item.quantity) × \(money(unit))"
+            return Line(name: item.name, detail: detail, amount: money(item.total),
+                        note: CartV2Logic.noteText(item.note), formula: item.formula)
         }
         // "3 món" counts lines, as the mockups (2 crowns are one line)
         let count = source.items.count
         let subtotal = OrderDetailLogic.saleSubtotal(itemTotals: source.items.map(\.total))
+
+        let plan = source.isDraft ? nil : DepositPlanReceipt.block(
+            hasPlan: source.hasDepositPlan, orderType: source.orderType, stages: source.stages, summary: source.stageSummary,
+            today: DayFormatter.key(now), text: t.text)
 
         var rows: [Row] = []
         let highlightLabel: String
@@ -197,7 +216,8 @@ struct OrderShareModel: Equatable {
         } else if isRent {
             // #930: no "Còn phải trả" (it changes with the status); the rent total is the highlight
             if source.discount > 0 { rows.append(Row(label: t.text("share.discount"), value: minus(source.discount))) }
-            if source.deposit > 0 { rows.append(Row(label: t.text("share.deposit.paid"), value: money(source.deposit))) }
+            // #1252: with stages the block lists what was collected, so the single "Đã cọc" row goes
+            if source.deposit > 0, plan == nil { rows.append(Row(label: t.text("share.deposit.paid"), value: money(source.deposit))) }
             if let collateral { rows.append(Row(label: t.text("share.collateral"), value: collateral)) }
             highlightLabel = t.text("share.rent.total")
             highlightValue = money(source.total)
@@ -227,7 +247,7 @@ struct OrderShareModel: Equatable {
             .joined(separator: " · ")
         let address = source.outletAddress?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        return OrderShareModel(
+        var model = OrderShareModel(
             initials: initials(shopName),
             shopName: shopName,
             outletLine: outletLine,
@@ -252,6 +272,8 @@ struct OrderShareModel: Equatable {
             madeWith: t.text("share.madeWith"),
             fileName: fileName(source, now: now)
         )
+        model.plan = plan
+        return model
     }
 
     /// "CCCD + 2.000.000đ", "CCCD", "2.000.000đ" or nil
@@ -309,9 +331,10 @@ extension OrderShareSource {
             pickup: detail.pickupPlanAt, returnDate: detail.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: detail.pickupPlanAt, return: detail.returnPlanAt, stored: detail.rentalDuration),
             createdAt: detail.createdAt,
-            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes) },
+            items: detail.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula, blockSummary: detail.orderType == .rent ? $0.blockLines?.summary : nil) },
             discount: detail.discountAmount, total: detail.totalAmount, deposit: detail.depositAmount,
-            collateralPapers: detail.collateralDetails, collateralMoney: detail.securityDeposit
+            collateralPapers: detail.collateralDetails, collateralMoney: detail.securityDeposit,
+            hasDepositPlan: detail.hasDepositPlan, stages: detail.installments, stageSummary: detail.installmentSummary
         )
     }
 
@@ -325,9 +348,10 @@ extension OrderShareSource {
             pickup: order.pickupPlanAt, returnDate: order.returnPlanAt,
             rentalDays: Self.rentalDays(pickup: order.pickupPlanAt, return: order.returnPlanAt, stored: order.rentalDuration),
             createdAt: order.createdAt,
-            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes) },
+            items: order.orderItems.map { Item(name: $0.productName, quantity: $0.quantity, total: $0.totalPrice, note: $0.notes, formula: $0.blockLines?.formula, blockSummary: order.orderType == .rent ? $0.blockLines?.summary : nil) },
             discount: order.discountAmount, total: order.totalAmount, deposit: order.depositAmount,
-            collateralPapers: order.collateralDetails, collateralMoney: order.securityDeposit
+            collateralPapers: order.collateralDetails, collateralMoney: order.securityDeposit,
+            hasDepositPlan: order.hasDepositPlan, stages: order.stages, stageSummary: order.stageSummary
         )
     }
 
@@ -344,7 +368,9 @@ extension OrderShareSource {
             pickup: cart.pickupPlanAt, returnDate: cart.returnPlanAt,
             rentalDays: OrderDetailLogic.rentalDays(pickup: cart.pickupPlanAt, return: cart.returnPlanAt),
             createdAt: now,
-            items: cart.items.map { Item(name: $0.productName ?? "", quantity: $0.quantity, total: $0.subTotal(for: cart.orderType)) },
+            items: cart.items.map { Item(name: $0.productName ?? "", quantity: $0.quantity, total: $0.subTotal(for: cart.orderType),
+                                         formula: cart.orderType == .rent ? $0.blockDetail.flatMap { $0.extraDays > 0 ? BlockPricing.formula($0) : nil } : nil,
+                                         blockSummary: cart.orderType == .rent ? $0.blockDetail.map(BlockPricing.summary) : nil) },
             discount: cart.discountAmount, total: cart.totalAmount,
             deposit: cart.orderType == .rent ? cart.depositAmount : 0,
             collateralPapers: cart.orderType == .rent ? cart.collateralDetails : nil,

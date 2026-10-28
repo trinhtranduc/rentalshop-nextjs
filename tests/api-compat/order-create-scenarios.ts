@@ -20,9 +20,16 @@ const STAFF = { id: 7, email: 'staff@test', role: 'OUTLET_STAFF', firstName: 'Mi
 const PRODUCTS: Record<number, any> = {
   11: { id: 11, name: 'Áo dài đỏ', barcode: '8930000000011', images: '["https://img.test/11.jpg"]', pricingType: 'FIXED', pricingOptions: [], merchantId: 1 },
   12: { id: 12, name: 'Váy cưới', barcode: '8930000000012', images: null, pricingType: 'DAILY', pricingOptions: [], merchantId: 1 },
+  // #1189: a product with a day-block table (rentPrice = day-1 price, product type stays FIXED); only block tests use it
+  13: {
+    id: 13, name: 'Áo dài khối ngày', barcode: '8930000000013', images: null, pricingType: 'FIXED', rentPrice: 80000, merchantId: 1,
+    pricingOptions: [
+      { id: 31, type: 'BLOCK', price: 80000, isDefault: true, isActive: true, sortOrder: 0, blockTiers: [80000, 100000, 120000], blockStartDay: null, blockExtraMode: 'EXTRA_PER_DAY', blockExtraPrice: 20000 },
+    ],
+  },
 };
 
-const AUTH = { user: STAFF, userScope: { merchantId: 1, outletId: 1 } };
+export const AUTH = { user: STAFF, userScope: { merchantId: 1, outletId: 1 } };
 
 /** What iOS / Android on main-real send for a rental (no outletId: filled from the staff's outlet) */
 export const RENT_BODY = {
@@ -137,7 +144,7 @@ export function createOrderTable() {
 }
 
 /** db facade: the source tree's real `db.orders`, lookups for outlet / merchant / customer / product */
-function createDb(root: string, prisma: any) {
+export function createDb(root: string, prisma: any, merchant: Record<string, unknown> = {}) {
   const database = path.join(root, 'packages/database/src');
   jest.doMock(path.join(database, 'client'), () => ({ prisma }));
   const { simplifiedOrders } = require(path.join(database, 'order'));
@@ -148,7 +155,7 @@ function createDb(root: string, prisma: any) {
       findById: async (id: number) => (id === OUTLET.id ? { ...OUTLET } : null),
       findDefaultForMerchant: async () => ({ ...OUTLET }),
     },
-    merchants: { findById: async (id: number) => (id === 1 ? { id: 1, name: 'Shop', outlets: [{ id: 1 }] } : null) },
+    merchants: { findById: async (id: number) => (id === 1 ? { id: 1, name: 'Shop', outlets: [{ id: 1 }], ...merchant } : null) },
     customers: { findById: async (id: number) => (id === CUSTOMER.id ? { ...CUSTOMER } : null) },
     products: { findById: async (id: number) => (PRODUCTS[id] ? structuredClone(PRODUCTS[id]) : null) },
   };

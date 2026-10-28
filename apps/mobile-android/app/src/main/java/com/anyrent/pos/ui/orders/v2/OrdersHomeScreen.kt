@@ -612,7 +612,10 @@ private fun SectionBand(section: OrdersSection) {
     val summary = when (section.kind) {
         SectionKind.LATE, SectionKind.TODAY, SectionKind.TOMORROW -> {
             val (handOver, takeBack) = OrdersBoardLogic.bandCounts(section.rows)
-            stringResource(R.string.orders_v2_band_work, handOver, takeBack)
+            val collect = OrdersBoardLogic.collectCount(section.rows)
+            // #1231: " · thu N" only when the band has deposit stages
+            stringResource(R.string.orders_v2_band_work, handOver, takeBack) +
+                if (collect > 0) stringResource(R.string.orders_v2_band_collect, collect) else ""
         }
         else -> {
             val (count, amount) = OrdersBoardLogic.saleDaySummary(section.rows)
@@ -629,11 +632,14 @@ private fun SectionBand(section: OrdersSection) {
                 fontSize = DS.TextSize.Secondary,
                 fontWeight = FontWeight.Bold,
                 color = if (late) DS.Status.Late.text else BoardColors.Items,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.padding(end = 8.dp),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
-            Text(summary, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, maxLines = 1)
+            // #1243: the day stays whole; the counts take the rest and wrap to a second line on a small phone
+            Text(
+                summary, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.weight(1f),
+            )
         }
         HorizontalDivider(color = DS.Colors.Divider)
     }
@@ -654,10 +660,22 @@ private fun WorkRow(
     // #893 (owner, lean row): line 1 name + the light task tag; line 2 the task's date chip, "Trễ N ngày",
     // "Chưa soạn đồ" (wrap only when they do not fit), right "còn thu N" (bold) or the total
     val handOver = kind == WorkKind.HAND_OVER
-    val tagColors = if (handOver) DS.Status.HandOver else DS.Status.Return
+    val tagColors = when (kind) {
+        WorkKind.HAND_OVER -> DS.Status.HandOver
+        WorkKind.TAKE_BACK -> DS.Status.Return
+        WorkKind.COLLECT -> DS.Status.Waiting
+    }
+    val tagText = stringResource(
+        when (kind) {
+            WorkKind.HAND_OVER -> R.string.orders_v2_tag_hand_over
+            WorkKind.TAKE_BACK -> R.string.orders_v2_tag_take_back
+            WorkKind.COLLECT -> R.string.orders_v2_tag_collect
+        },
+    )
     val (pickupLabel, returnLabel) = chipLabels()
     val notPrepared = stringResource(R.string.orders_v2_not_prepared)
-    val due = OrdersBoardLogic.workDue(work)
+    // #1231: a deposit stage row shows its amount once (the total), no "còn thu" line under it
+    val due = if (kind == WorkKind.COLLECT) null else OrdersBoardLogic.workDue(work)
     val phone = OrdersBoardLogic.workCallPhone(work, isLate)
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
@@ -672,7 +690,7 @@ private fun WorkRow(
                         fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                     )
-                    Tag(stringResource(if (handOver) R.string.orders_v2_tag_hand_over else R.string.orders_v2_tag_take_back), tagColors, RowTagStyle.STATUS)
+                    Tag(tagText, tagColors, RowTagStyle.STATUS)
                 }
                 Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FlowRow(
@@ -694,6 +712,14 @@ private fun WorkRow(
                                 // #1032 (owner): icon + coloured text, no box
                                 OrdersBoardLogic.WorkChipKind.LATE -> pluralStringResource(R.plurals.orders_late_days, chip.days, chip.days) to RowWarning.LATE
                                 OrdersBoardLogic.WorkChipKind.NOT_PREPARED -> notPrepared to RowWarning.NOT_PREPARED
+                                // #1231: a deposit stage reads "Cọc 2 · #0053" in plain text
+                                OrdersBoardLogic.WorkChipKind.STAGE -> {
+                                    Text(
+                                        stringResource(R.string.overview_installments_row, chip.label.orEmpty(), chip.code.orEmpty()),
+                                        fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Medium, color = DS.Colors.Text,
+                                    )
+                                    return@forEach
+                                }
                             }
                             RowWarningText(text, warning)
                         }
@@ -829,8 +855,13 @@ private fun OrderRow(
     val tagText = stringResource(tagRes).let {
         if (context == RowContext.SEARCH && isSale) stringResource(R.string.orders_v2_tag_sale, it) else it
     }
+    // #1199/#1222: "Đã thu 30%" on an order that has a deposit plan
+    val collectedBadge = com.anyrent.pos.domain.deposit.DepositPlanLogic.listBadgePercent(
+        order.orderType, order.status, order.hasDepositPlan, order.installmentPercentCollected,
+    )?.let { stringResource(R.string.deposit_badge_collected, com.anyrent.pos.domain.deposit.DepositPlanMath.percentText(it)) }
     BoardRow(
         tag = tagText to colors,
+        extraTag = collectedBadge?.let { it to DS.Status.Done },
         name = order.customerName,
         // #496: no product line; #891 (option C): a rent order shows the Lấy / Trả chips in place of the task line
         lines = OrderRowDates.lines(OrdersBoardLogic.rowDates(order, row.lateDays), texts),
@@ -864,6 +895,8 @@ private fun OrderRow(
 @Composable
 private fun BoardRow(
     tag: Pair<String, DS.Pill>,
+    /** #1199: a second pill next to the status ("Đã thu 30%") */
+    extraTag: Pair<String, DS.Pill>? = null,
     name: String?,
     lines: OrderRowDates.Lines,
     /** #891 (option C): the Lấy / Trả chips in place of the task line (rent orders) */
@@ -902,6 +935,7 @@ private fun BoardRow(
                         modifier = Modifier.weight(1f),
                     )
                     Tag(tag.first, tag.second, RowTagStyle.STATUS)
+                    extraTag?.let { Tag(it.first, it.second, RowTagStyle.STATUS) }
                 }
                 Text(
                     lines.meta, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,

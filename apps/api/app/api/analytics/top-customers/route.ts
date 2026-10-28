@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
 import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole, isStaffLikeRole } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, getOrderRevenueEvents, withoutCollateral } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, getOrderRevenueEvents, withoutCollateral, toRevenueOrderData, REVENUE_PLAN_SELECT } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { lastShopDays, readReportRange } from '../../../../lib/report-days';
 import { narrowAnalyticsOutletFilter } from '../../../../lib/analytics-outlets';
@@ -113,7 +113,8 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
         returnedAt: true,
         updatedAt: true,
         pickupPlanAt: true, // Add pickupPlanAt for future revenue
-        returnPlanAt: true  // Add returnPlanAt for future revenue
+        returnPlanAt: true, // Add returnPlanAt for future revenue
+        ...REVENUE_PLAN_SELECT
       },
       take: 10000 // Get enough orders to analyze
     });
@@ -138,22 +139,7 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
       const customerId = order.customerId; // customerId is number (publicId)
       
       // Prepare order data for revenue calculation
-      const orderData = {
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        lateFee: order.lateFee || 0,
-        pickupTotalAmount: order.pickupTotalAmount ?? null,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        updatedAt: order.updatedAt,
-        pickupPlanAt: order.pickupPlanAt,
-        returnPlanAt: order.returnPlanAt
-      };
+      const orderData = toRevenueOrderData(order);
 
       // Get revenue events within the date range
       const revenueEvents = getOrderRevenueEvents(orderData, dateStart, dateEnd);

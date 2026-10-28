@@ -1,5 +1,10 @@
 package com.anyrent.pos.print
 
+import com.anyrent.pos.domain.products.blockLines
+import com.anyrent.pos.domain.deposit.DepositReceipt
+import com.anyrent.pos.domain.orders.ShareText
+import com.anyrent.pos.domain.ShopTime
+import com.anyrent.pos.ui.orders.shareText
 import com.anyrent.pos.data.CurrentOutlet
 import android.content.SharedPreferences
 import com.anyrent.pos.data.SessionStore
@@ -175,7 +180,14 @@ object ThermalPrinter {
         cut()
     }
 
-    internal fun buildOrderReceipt(config: Config, order: OrderDetail, bankAccount: OutletBankAccount? = null): ByteArray {
+    internal fun buildOrderReceipt(
+        config: Config,
+        order: OrderDetail,
+        bankAccount: OutletBankAccount? = null,
+        /** #1252: resolves the staged-deposit labels (app language); without it (no app, plain JVM) that block is left out */
+        planText: ((com.anyrent.pos.domain.orders.ShareText) -> String)? =
+            com.anyrent.pos.AnyRentApp.instance?.let { app -> { text -> app.shareText(text) } },
+    ): ByteArray {
         val summary = order.summary
         val isRent = summary.orderType.equals("RENT", ignoreCase = true)
         val store = (runCatching { CurrentOutlet.name ?: SessionStore.merchantName }.getOrNull() ?: "AnyRent")
@@ -235,6 +247,12 @@ object ThermalPrinter {
                 val name = item.productName ?: "#${item.productId}"
                 val withNote = item.note?.takeIf { it.isNotBlank() }?.let { "$name ($it)" } ?: name
                 text("${index + 1}. $withNote")
+                // #1189: a day-block line shows how its price was reached (iOS prints summary + ": " + formula)
+                if (summary.orderType.equals("RENT", ignoreCase = true)) {
+                    com.anyrent.pos.AnyRentApp.instance?.resources?.let { res -> item.blockLines(res) }?.let { (head, formula) ->
+                        text("   " + (formula?.let { "$head: $it" } ?: head))
+                    }
+                }
                 alignRight()
                 text(
                     "${money.format(item.quantity)} x ${money.format(item.unitPrice)} = ${money.format(item.totalPrice)}",
@@ -259,6 +277,27 @@ object ThermalPrinter {
             text("")
             bold(false)
             alignLeft()
+
+            // #1252: staged deposit (a one-time deposit and a sale add nothing); iOS `DepositPlanReceipt.printData`
+            val plan = DepositReceipt.block(
+                isRent, order.deposit?.hasPlan, order.deposit?.installments, order.deposit?.summary,
+                java.time.LocalDate.now(ShopTime.zone).toString(),
+            )
+            if (plan != null && planText != null) {
+                text(divider)
+                bold(true)
+                text(planText(plan.title))
+                bold(false)
+                plan.stages.forEach { stage ->
+                    text("${planText(stage.title)}: ${money.format(stage.amount)}")
+                    val detail = listOfNotNull(stage.detail, stage.status).joinToString(" · ") { planText(it) }
+                    if (detail.isNotEmpty()) text("   $detail")
+                }
+                bold(true)
+                text("${planText(ShareText.Res(com.anyrent.pos.R.string.deposit_card_collected))}: ${money.format(plan.collected)}")
+                text("${planText(ShareText.Res(com.anyrent.pos.R.string.deposit_card_remaining))}: ${money.format(plan.remaining)}")
+                bold(false)
+            }
 
             if (isRent) {
                 bold(true)

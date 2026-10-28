@@ -5,6 +5,8 @@
  * Python must not open the tenant database or Qdrant.
  */
 
+import { pricingOptionsForClient } from '../../../../lib/block-pricing-legacy';
+import { salePriceForClient } from '../../../../lib/legacy-sale-price';
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
@@ -64,7 +66,7 @@ function buildSearchFilters(
   return filters;
 }
 
-function mapProductForSearch(product: any, similarity: number, canViewCostPrice: boolean) {
+function mapProductForSearch(product: any, similarity: number, canViewCostPrice: boolean, request?: NextRequest) {
   const totalRenting = (product.outletStock || []).reduce(
     (sum: number, stock: any) => sum + (stock.renting || 0),
     0
@@ -81,7 +83,7 @@ function mapProductForSearch(product: any, similarity: number, canViewCostPrice:
     renting: totalRenting,
     available,
     rentPrice: product.rentPrice,
-    salePrice: product.salePrice,
+    salePrice: salePriceForClient(product.salePrice, request), // #1215
     // Same rule as GET /api/products: cost price only with products.manage (#653)
     ...(canViewCostPrice ? { costPrice: product.costPrice } : {}),
     deposit: product.deposit,
@@ -89,7 +91,7 @@ function mapProductForSearch(product: any, similarity: number, canViewCostPrice:
     isActive: product.isActive,
     pricingType: product.pricingType,
     durationConfig: product.durationConfig,
-    pricingOptions: product.pricingOptions ?? [],
+    pricingOptions: pricingOptionsForClient(product.pricingOptions ?? [], request), // #1189
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
     similarity,
@@ -231,7 +233,7 @@ export const POST = withPermissions(['products.view'], { requireActiveSubscripti
         .map((hit) => {
           const product = productById.get(hit.productId);
           if (!product || product.isActive === false) return null;
-          return mapProductForSearch(product, hit.similarity, canViewCostPrice);
+          return mapProductForSearch(product, hit.similarity, canViewCostPrice, request);
         })
         .filter(Boolean) as ReturnType<typeof mapProductForSearch>[];
 

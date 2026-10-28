@@ -470,6 +470,11 @@ class OrderService: BaseService, OrderServiceProtocol {
         var request = cart.toCreateOrderRequest()
         // #828: the merchant's chosen branch; #1124: an online booking is created at the branch the customer chose
         request.outletId = cart.bookingOutletId ?? CurrentOutlet.shared.merchantFilterId
+        // #1199: a rental of a "Thu cọc theo giai đoạn" shop goes with its stages; the API keeps the money
+        if let plan = cart.paymentPlanRequest(reference: idempotencyKey ?? UUID().uuidString) {
+            request.paymentPlan = plan
+            request.depositAmount = 0
+        }
         let validation = request.validate()
         if !validation.isValid {
             let errorMessage = validation.errors.joined(separator: "\n")
@@ -497,6 +502,11 @@ class OrderService: BaseService, OrderServiceProtocol {
         var request = cart.toCreateOrderRequest()
         // #828: the merchant's chosen branch; #1124: an online booking is created at the branch the customer chose
         request.outletId = cart.bookingOutletId ?? CurrentOutlet.shared.merchantFilterId
+        // #1199: a rental of a "Thu cọc theo giai đoạn" shop goes with its stages; the API keeps the money
+        if let plan = cart.paymentPlanRequest(reference: idempotencyKey ?? UUID().uuidString) {
+            request.paymentPlan = plan
+            request.depositAmount = 0
+        }
         let validation = request.validate()
         if !validation.isValid {
             let errorMessage = validation.errors.joined(separator: "\n")

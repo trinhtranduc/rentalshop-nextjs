@@ -110,7 +110,7 @@ export interface OrderItem {
   totalPrice: number;
   deposit?: number;
   rentalDays?: number;
-  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | 'BLOCK' | null;
   pricingOptionId?: number | null;
   product?: ProductReference;
 }
@@ -126,7 +126,7 @@ export interface OrderItemInput {
   totalPrice: number; // Added missing property
   deposit?: number;
   rentalDays?: number; // Added missing property
-  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | 'BLOCK' | null;
   pricingOptionId?: number | null;
   notes?: string; // Added missing property
 }
@@ -144,7 +144,7 @@ export interface OrderItemWithProduct {
   totalPrice: number;
   deposit?: number;
   rentalDays?: number;
-  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | null;
+  pricingType?: 'FIXED' | 'HOURLY' | 'DAILY' | 'BLOCK' | null;
   pricingOptionId?: number | null;
   notes?: string;
   product: ProductReference;

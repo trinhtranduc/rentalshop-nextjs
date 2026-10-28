@@ -251,6 +251,11 @@ internal class OrderShareRenderer(private val context: Context, private val mode
             y += canvas.block(line.name, namePaint, left, y, contentWidth - totalWidth - 16f)
             y += 2f
             y += canvas.block(line.quantity, qtyPaint, left, y, contentWidth)
+            line.formula?.let {
+                // #1189: the sum of a day-block line
+                y += 2f
+                y += canvas.block(it, qtyPaint, left, y, contentWidth)
+            }
             line.note?.let {
                 // #930: the item's own note, italic brown, under its price line
                 y += 3f
@@ -266,6 +271,31 @@ internal class OrderShareRenderer(private val context: Context, private val mode
             y += 31.5f
             canvas.text(row.value, rowValue, right, y - 3f, Paint.Align.RIGHT)
             canvas.text(t(row.label), rowLabel, left, y - 3f, maxWidth = contentWidth - rowValue.measureText(row.value) - 16f)
+        }
+        model.plan?.let { plan ->
+            // #1252: stages of a staged deposit, then what is collected and what is left
+            y += 22f
+            canvas.text(t(plan.title).uppercase(upper), paint(13f, bold, muted, 0.08f), left, y)
+            y += 14f
+            val stageTitle = paint(15f, medium, Color.parseColor("#1E293B"))
+            val stageDetail = paint(13f, regular, muted)
+            plan.stages.forEach { stage ->
+                val amount = OrderShareModel.money(stage.amount)
+                val amountWidth = stageTitle.measureText(amount)
+                canvas.text(amount, stageTitle, right, y + 20f, Paint.Align.RIGHT)
+                y += canvas.block(t(stage.title), stageTitle, left, y, contentWidth - amountWidth - 16f)
+                val detail = listOfNotNull(stage.detail, stage.status).joinToString(" · ") { t(it) }
+                if (detail.isNotEmpty()) y += canvas.block(detail, stageDetail, left, y, contentWidth)
+                y += 8f
+            }
+            val totalLabel = paint(15f, regular, body)
+            val totalValue = paint(15f, bold, Color.parseColor("#1E293B"))
+            listOf(R.string.deposit_card_collected to plan.collected, R.string.deposit_card_remaining to plan.remaining).forEach { (label, value) ->
+                y += 23f
+                val text = OrderShareModel.money(value)
+                canvas.text(text, totalValue, right, y, Paint.Align.RIGHT)
+                canvas.text(context.getString(label), totalLabel, left, y, maxWidth = contentWidth - totalValue.measureText(text) - 16f)
+            }
         }
         y += 14f
         val h = model.highlight

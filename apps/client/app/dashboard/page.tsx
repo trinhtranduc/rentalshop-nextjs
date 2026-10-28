@@ -13,6 +13,7 @@ import { analyticsApi, getLocalDateKey } from '@rentalshop/utils';
 import { useShopToday } from '../hooks/useShopToday';
 import { DateRangeField } from '../components/date-range/RangeCalendar';
 import { useOutletOperations } from './OutletOperationsPanel';
+import { InstallmentReminders } from '../installments/InstallmentReminders';
 import {
   OVERVIEW_PERIODS,
   buildKpis,
@@ -397,6 +398,9 @@ export default function DashboardPage() {
           <TodayCard work={work} loading={ops.loading} failed={ops.failed} onRetry={ops.reload} weekdays={weekdays} t={t} />
         </div>
       )}
+
+      {/* #1199: stages of staged deposits that are late, due today or due tomorrow (nothing for other shops) */}
+      {todayWork && <InstallmentReminders data={ops.data} money={money} />}
 
       {canViewRevenue && (
         <div className="flex flex-wrap gap-4">

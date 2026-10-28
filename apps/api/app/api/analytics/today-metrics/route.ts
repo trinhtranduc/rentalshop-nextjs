@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
 import { ORDER_STATUS, USER_ROLE, isOutletRole } from '@rentalshop/constants';
-import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculateOrderRevenueByStatus, toRevenueOrderData } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { overdueReturnWhere, shopToday } from '../../../../lib/report-days';
 
@@ -75,6 +75,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     // Get today's orders
     const todayOrders = await db.orders.search({
       where: orderWhereClause,
+      includeRevenuePlan: true,
       limit: 1000
     });
 
@@ -84,20 +85,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     const completedOrders = todayOrders.data?.filter(order => order.status === ORDER_STATUS.COMPLETED).length || 0;
     
     const totalRevenue = (todayOrders.data || []).reduce((sum: number, order: any) => {
-      const orderData = {
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        lateFee: order.lateFee || 0,
-        pickupTotalAmount: order.pickupTotalAmount ?? null,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        updatedAt: order.updatedAt
-      };
+      const orderData = toRevenueOrderData(order);
       return sum + calculateOrderRevenueByStatus(orderData);
     }, 0);
 

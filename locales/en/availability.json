@@ -11,7 +11,7 @@
   "quantity": "Quantity",
   "outlet": "Outlet",
   "selectOutlet": "Select outlet",
-  "searchPlaceholder": "Search name, code, barcode…",
+  "searchPlaceholder": "Search by name or barcode",
   "changeProduct": "Change product",
   "noProductsFound": "No products found",
   "maxProductsReached": "Maximum of 20 products reached",

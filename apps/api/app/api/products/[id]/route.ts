@@ -1,3 +1,6 @@
+import { blockOptionsIssue } from '../../../../lib/block-options-issue';
+import { pricingOptionsForClient } from '../../../../lib/block-pricing-legacy';
+import { salePriceForClient } from '../../../../lib/legacy-sale-price';
 import { NextRequest, NextResponse } from 'next/server';
 import { db, prisma } from '@rentalshop/database';
 import { withPermissions, hasPermission } from '@rentalshop/auth/server';
@@ -199,7 +202,7 @@ export async function GET(
         barcode: product.barcode,
         categoryId: product.categoryId,
         rentPrice: product.rentPrice,
-        salePrice: product.salePrice,
+        salePrice: salePriceForClient(product.salePrice, request), // #1215
         // Only include costPrice if user has products.manage permission
         ...(canViewCostPrice ? { costPrice: product.costPrice ?? null } : {}),
         deposit: product.deposit,
@@ -212,7 +215,7 @@ export async function GET(
         // Optional pricing configuration
         pricingType: product.pricingType ?? null,
         durationConfig: product.durationConfig ?? null,
-        pricingOptions: (product as any).pricingOptions ?? [],
+        pricingOptions: pricingOptionsForClient((product as any).pricingOptions ?? [], request),
         category: product.category,
         merchant: product.merchant,
         outletStock: product.outletStock.map((os: any) => ({
@@ -618,6 +621,12 @@ export async function PUT(
         }
       }
 
+      // #1189: a client that sends `pricingSchemaVersion: 2` must send a valid day table
+      const blockIssue = blockOptionsIssue(productUpdateData.pricingOptions, productUpdateData.pricingSchemaVersion);
+      if (blockIssue) {
+        return NextResponse.json(ResponseBuilder.error(blockIssue), { status: 400 });
+      }
+
       // Prepare outletStock nested write if provided.
       // #825: OUTLET_STAFF passed the shared-field check above, so its write is the stock only
       // (totalStock is recomputed from the outlet rows below).
@@ -669,7 +678,10 @@ export async function PUT(
       }
 
       // Update the product using the simplified database API with nested write
-      const updatedProduct = await db.products.update(productId, finalUpdateData);
+      // #1200: a client that sends no `pricingSchemaVersion` (installed apps) cannot see BLOCK options;
+      // saving its option list must not delete them.
+      const keepBlockOptions = (productDataFromRequest as any)?.pricingSchemaVersion == null;
+      const updatedProduct = await db.products.update(productId, finalUpdateData, { keepBlockOptions });
       // #519: snapshots with prices, pricing options, per-outlet stock and images (never costPrice)
       await safeAudit('update', () => createAuditHelper(prisma).logUpdate({
         entityType: 'Product',
@@ -844,7 +856,7 @@ export async function PUT(
         barcode: updatedProduct.barcode,
         categoryId: updatedProduct.categoryId,
         rentPrice: updatedProduct.rentPrice,
-        salePrice: updatedProduct.salePrice,
+        salePrice: salePriceForClient(updatedProduct.salePrice, request), // #1215
         // Only include costPrice if user has products.manage permission
         ...(canViewCostPrice ? { costPrice: updatedProduct.costPrice ?? null } : {}),
         deposit: updatedProduct.deposit,
@@ -854,7 +866,7 @@ export async function PUT(
         embeddingGeneratedAt: updatedProduct.embeddingGeneratedAt?.toISOString() || null,
         pricingType: updatedProduct.pricingType ?? null,
         durationConfig: updatedProduct.durationConfig ?? null,
-        pricingOptions: updatedProduct.pricingOptions ?? [],
+        pricingOptions: pricingOptionsForClient(updatedProduct.pricingOptions ?? [], request),
         category: updatedProduct.category,
         merchant: updatedProduct.merchant,
         createdAt: updatedProduct.createdAt.toISOString(),

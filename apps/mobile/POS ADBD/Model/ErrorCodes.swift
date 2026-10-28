@@ -1420,11 +1420,16 @@ struct APIErrorResponse: Codable {
     /// Convert to NSError
     func toNSError(httpStatusCode: Int? = nil, domain: String = "RC") -> NSError {
         let statusCode = httpStatusCode ?? self.httpStatusCode
-        return NSError.errorWithOwnMessage(
+        let error = NSError.errorWithOwnMessage(
             message: localizedMessage,
             domain: domain,
             code: statusCode
         )
+        // #1189: the API code stays on the error, so a caller can react to BLOCK_PRICE_MISMATCH
+        guard let code, !code.isEmpty else { return error }
+        var info = error.userInfo
+        info[NSError.apiCodeKey] = code
+        return NSError(domain: error.domain, code: error.code, userInfo: info)
     }
     
     /// Get user-friendly error message (backward compatibility)

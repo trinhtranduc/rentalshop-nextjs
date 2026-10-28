@@ -1,3 +1,5 @@
+import { readOldAppsMode, repriceOrderEdit } from '../../../../lib/order-block-pricing';
+import { blockPricingErrorResponse } from '../../../../lib/block-pricing-errors';
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
@@ -18,6 +20,10 @@ import { bodyExceedsNoteImageLimit, compressImageTo1MB, exceedsNoteImageLimit, n
 import { buildOrderAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { ORDER_SCHEDULE_CONFLICT } from '../../../../lib/schedule-conflict';
 import { checkOrderRefsInMerchant } from '../../../../lib/order-scope';
+import { hasCapability } from '../../../../lib/client-capabilities';
+import { shapeOrderInstallments, loadShop, unpaidAtPickupBody, unpaidStagesBlockingPickup, recomputeDepositFromPayments, installmentsView, parseCancelRequest, planCancellation, recordPlanCancellation, cancelAuditDescription, keepsCancelAmount, type PlanCancellation } from '../../../../lib/installments';
+import { parseDepositPlan, recalcAfterTotalChange } from '../../../../../../packages/utils/src/core/deposit-plan';
+import { isInstallmentPayment, shapeOrderPayments } from '../../../../lib/order-payments';
 import { clampOrderDiscount, sumLineTotals } from '../../../../lib/order-discount';
 import {
   findEditScheduleConflicts,
@@ -264,7 +270,9 @@ export const GET = async (
       }
       
       // Get order using the optimized database API
-      const order: any = await db.orders.findByIdDetail(orderIdNum);
+      const detail: any = await db.orders.findByIdDetail(orderIdNum);
+      // #1200: payments[] gets paymentMethod / paymentDate; INSTALLMENT rows only for clients that declare `installments`
+      const order: any = detail ? shapeOrderPayments(detail, request) : detail;
 
       if (!order) {
         console.log('❌ Order not found in database for orderId:', orderIdNum);
@@ -286,10 +294,18 @@ export const GET = async (
 
       console.log('✅ Order found:', order);
 
+      // #1199: the plan columns are dropped for a client without `installments`; a capable one gets the stages
+      const planShaped: any = await shapeOrderInstallments(
+        order,
+        request,
+        hasCapability(request, 'installments') ? (await db.outlets.findById(order.outletId))?.merchantId : null,
+        db.prisma
+      );
+
       // Flatten order items for mobile (iOS/Android cart edit needs productName/productId
       // on the line — not only nested `product`). Same shape as PUT response.
       const flattenedOrder = {
-        ...order,
+        ...planShaped,
         orderItems: order.orderItems?.map((item: any) => {
           const snapshotImages = parseProductImages(item.productImages);
           const productImages = snapshotImages.length > 0
@@ -310,6 +326,7 @@ export const GET = async (
             rentalDays: item.rentalDays,
             pricingType: item.pricingType,
             pricingOptionId: item.pricingOptionId,
+            ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {}), // #1189 (additive)
             product: item.product
               ? {
                   id: item.product.id,
@@ -740,6 +757,7 @@ export const PUT = async (
 
           return {
             ...item,
+            pricingSnapshot: undefined, // #1189: only the server writes a snapshot, never a client
             rentalDays: item.rentalDays ?? item.rentDays ?? existingItem?.rentalDays,
             pricingType: item.pricingType ?? existingItem?.pricingType,
             // Intent is pricingType. Only keep a client-sent option id when present;
@@ -774,6 +792,51 @@ export const PUT = async (
       const existingOutlet = await db.outlets.findById(existingOrder.outletId);
       const merchantId = existingOutlet?.merchantId;
 
+      // #1199 staged deposits. The plan columns are never written through this route (the MERCHANT edits the plan on
+      // PUT .../deposit-plan); for a plan order the server owns `depositAmount` (sum of the collected stages), so the
+      // value an old app echoes back is ignored and the correct one comes back in the response.
+      delete (validUpdateData as any).depositPlan;
+      delete (validUpdateData as any).cancelKeptAmount;
+      delete (validUpdateData as any).cancelledAt;
+      delete (validUpdateData as any).cancelNote;
+      // #1199 cancelling a plan order: `cancelKeptAmount` (default 0 = refund everything) and `cancelNote`, checked
+      // before anything changes; the refund is recorded after the status changed
+      const cancelAt = new Date();
+      let cancelPlan: PlanCancellation | null = null;
+      const isCancelling = validUpdateData.status === ORDER_STATUS.CANCELLED && existingOrder.status !== ORDER_STATUS.CANCELLED;
+      if (isCancelling) {
+        const checked = await planCancellation(db.prisma, {
+          order: existingOrder,
+          role: user.role,
+          request: parseCancelRequest(body),
+        });
+        if ('error' in checked) {
+          return NextResponse.json(ResponseBuilder.error(checked.error.code), { status: checked.error.status });
+        }
+        cancelPlan = checked.plan;
+        (validUpdateData as any).cancelledAt = cancelAt;
+      }
+      const orderHasPlan = parseDepositPlan(existingOrder.depositPlan) != null;
+      const clientKnowsInstallments = hasCapability(request, 'installments');
+      const planShop = orderHasPlan || clientKnowsInstallments ? await loadShop(db.prisma, merchantId) : null;
+      if (orderHasPlan && planShop) {
+        delete (validUpdateData as any).depositAmount;
+        const handedOver = existingOrder.status !== ORDER_STATUS.RESERVED;
+        if (!handedOver && validUpdateData.totalAmount !== undefined && validUpdateData.totalAmount !== null) {
+          const change = recalcAfterTotalChange(existingOrder, Number(validUpdateData.totalAmount), planShop);
+          if (change.overpaid) {
+            return NextResponse.json(ResponseBuilder.error('INSTALLMENT_OVERPAID'), { status: 409 });
+          }
+          if (change.overflow > 0) {
+            return NextResponse.json(ResponseBuilder.error('INSTALLMENT_EXCEEDS_TOTAL'), { status: 400 });
+          }
+        }
+        if (validUpdateData.status === ORDER_STATUS.PICKUPED && existingOrder.status !== ORDER_STATUS.PICKUPED) {
+          const unpaid = unpaidStagesBlockingPickup(existingOrder, planShop);
+          if (unpaid) return NextResponse.json(unpaidAtPickupBody(unpaid), { status: 400 });
+        }
+      }
+
       // The products and the customer of the edited order belong to the merchant of its outlet (#789)
       if (merchantId != null) {
         const refsCheck = await checkOrderRefsInMerchant({
@@ -785,6 +848,60 @@ export const PUT = async (
         });
         if (!refsCheck.ok) {
           return NextResponse.json(ResponseBuilder.error(refsCheck.code), { status: 404 });
+        }
+      }
+
+      // #1189 day-block pricing: an old app (no `block-pricing` capability) gets BLOCK lines priced by the server
+      // from the table and the Vietnam civil days; a client that knows BLOCK is checked. Only when this edit touches
+      // lines, dates, total or discount of a RENT order.
+      {
+        const effectiveType = (validUpdateData as any).orderType ?? existingOrder.orderType;
+        const touchesPrice = ['orderItems', 'pickupPlanAt', 'returnPlanAt', 'totalAmount', 'discountAmount', 'discountValue', 'discountType']
+          .some((key) => key in validUpdateData);
+        if (merchantId != null && effectiveType === 'RENT' && touchesPrice) {
+          let shop: { currency?: string; timezone?: string } | null = null;
+          try {
+            shop = (await db.merchants.findById(merchantId)) as any;
+          } catch {
+            shop = null;
+          }
+          const edit = await repriceOrderEdit({
+            existingItems: existingOrder.orderItems ?? [],
+            bodyItems: Array.isArray(validUpdateData.orderItems) ? validUpdateData.orderItems : null,
+            pickup: (validUpdateData as any).pickupPlanAt ?? existingOrder.pickupPlanAt,
+            returnDate: (validUpdateData as any).returnPlanAt ?? existingOrder.returnPlanAt,
+            datesSent: 'pickupPlanAt' in validUpdateData || 'returnPlanAt' in validUpdateData,
+            totalOrDiscountSent: ['totalAmount', 'discountAmount', 'discountValue', 'discountType'].some((key) => key in validUpdateData),
+            timeZone: shop?.timezone,
+            currency: shop?.currency,
+            clientKnowsBlock: hasCapability(request, 'block-pricing'),
+            loadProduct: async (productId: number) => {
+              try {
+                return (await db.products.findById(productId)) as any;
+              } catch {
+                return null;
+              }
+            },
+            loadOldAppsMode: async () => {
+              const row = await (db.prisma as any).merchant.findUnique({ where: { id: merchantId }, select: { settings: true } });
+              return readOldAppsMode(row?.settings);
+            },
+            discount: {
+              type: 'discountType' in validUpdateData ? (validUpdateData as any).discountType : existingOrder.discountType,
+              value: 'discountValue' in validUpdateData ? (validUpdateData as any).discountValue : existingOrder.discountValue,
+              amount: 'discountAmount' in validUpdateData ? (validUpdateData as any).discountAmount : existingOrder.discountAmount,
+            },
+          });
+          if (edit.error) {
+            return NextResponse.json(blockPricingErrorResponse(edit.error), { status: 400 });
+          }
+          if (edit.items) validUpdateData.orderItems = edit.items;
+          if (edit.totalAmount !== undefined) {
+            (validUpdateData as any).totalAmount = edit.totalAmount;
+            if ('discountAmount' in validUpdateData || Number(existingOrder.discountAmount) > 0) {
+              (validUpdateData as any).discountAmount = edit.discountAmount;
+            }
+          }
         }
       }
 
@@ -867,6 +984,35 @@ export const PUT = async (
       // Update the order using the simplified database API
       const updatedOrder = await db.orders.update(orderIdNum, validUpdateData);
       console.log('✅ Order updated successfully:', updatedOrder);
+      // #1199: hand-over time and totals move which stage payments count as "before delivery"
+      if (orderHasPlan) await recomputeDepositFromPayments(db.prisma, orderIdNum);
+      // #1199: what went back and what the shop kept (if this fails, the order stays cancelled with no amounts, which
+      // every screen reads as "everything refunded", the old behaviour)
+      if (cancelPlan) {
+        try {
+          await recordPlanCancellation(db.prisma, {
+            orderId: orderIdNum,
+            merchantId,
+            currency: planShop?.currency || 'VND',
+            plan: cancelPlan,
+            userId: user.id,
+            at: cancelAt,
+          });
+          await safeAudit('cancel', () => createAuditHelper(prisma).logCustom({
+            action: 'CUSTOM',
+            entityType: 'Order',
+            entityId: String(orderIdNum),
+            entityName: existingOrder.orderNumber || String(orderIdNum),
+            description: cancelAuditDescription(existingOrder.orderNumber || String(orderIdNum), cancelPlan as PlanCancellation),
+            category: 'BUSINESS',
+            oldValues: { collected: cancelPlan.collected },
+            newValues: { kept: cancelPlan.kept, refunded: cancelPlan.refund, note: cancelPlan.note ?? null },
+            context: buildAuditContext(request, user, userScope)
+          }));
+        } catch (cancelError) {
+          console.error('⚠️ Recording the cancel refund failed (order is cancelled; everything counts as refunded):', cancelError);
+        }
+      }
 
       // Get full order details after update (with all relations)
       const fullOrder: any = await db.orders.findByIdDetail(orderIdNum);
@@ -901,6 +1047,10 @@ export const PUT = async (
       }
       
       // Flatten order response (consistent with create order response)
+      // #1200: a deposit stage (notes INSTALLMENT) is not counted for clients without the `installments` capability
+      const countedPayments: any[] = (fullOrder.payments || []).filter(
+        (payment: any) => hasCapability(request, 'installments') || !isInstallmentPayment(payment)
+      );
       const flattenedOrder = {
         id: fullOrder.id,
         orderNumber: fullOrder.orderNumber,
@@ -983,6 +1133,7 @@ export const PUT = async (
             rentalDays: item.rentalDays,
             pricingType: item.pricingType,
             pricingOptionId: item.pricingOptionId,
+            ...(item.pricingSnapshot ? { pricingSnapshot: item.pricingSnapshot } : {}), // #1189 (additive)
             // Sanitize nested product so Prisma Json `images` never breaks mobile decoders
             // (iOS OrderItem used to fail PUT response parse → Ready-to-deliver appeared broken).
             product: item.product
@@ -999,8 +1150,10 @@ export const PUT = async (
         }) || [],
         // Calculated fields
         itemCount: fullOrder.orderItems?.length || 0,
-        paymentCount: fullOrder.payments?.length || 0,
-        totalPaid: fullOrder.payments?.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0) || 0
+        paymentCount: countedPayments.length,
+        totalPaid: countedPayments.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0),
+        // #1199 (additive, only for a client that declared `installments`)
+        ...(clientKnowsInstallments && planShop ? installmentsView(fullOrder, planShop) : {})
       };
 
       // Normalize date fields to UTC ISO strings using toISOString()
@@ -1100,6 +1253,14 @@ export const DELETE = async (
             { status: API.STATUS.FORBIDDEN }
           );
         }
+
+      // #1199: a cancelled order that kept money stays in the history
+      if (keepsCancelAmount(existingOrder as any)) {
+        return NextResponse.json(
+          ResponseBuilder.error('CANCELLED_ORDER_KEEPS_AMOUNT'),
+          { status: 400 }
+        );
+      }
 
       // Authorization checks based on user role
       // OUTLET_STAFF cannot delete orders (no orders.manage permission, but double-check here)

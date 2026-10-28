@@ -1,4 +1,4 @@
-import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, listCivilDays, listCivilMonths } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, listCivilDays, listCivilMonths, toRevenueOrderData, buildEventWhere, EVENT_WHERE_BASIC } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
@@ -113,13 +113,9 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
       db.orders.findManyLightweight({
         where: {
           status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders
-          OR: [
-            { createdAt: { gte: dateStart, lte: dateEnd } },
-            { pickedUpAt: { gte: dateStart, lte: dateEnd } },
-            { returnedAt: { gte: dateStart, lte: dateEnd } },
-            { updatedAt: { gte: dateStart, lte: dateEnd }, status: ORDER_STATUS.CANCELLED as any }
-          ]
+          ...buildEventWhere({ start: dateStart, end: dateEnd }, EVENT_WHERE_BASIC)
         },
+        includeRevenuePlan: true,
         limit: 10000
       })
     ]);
@@ -166,22 +162,7 @@ export const GET = withPermissions(['system.manage'])(async (request, { user, us
 
     // Calculate revenue using calculatePeriodRevenueBatch (single source of truth)
     const ordersForRevenue = totalRevenue?.data || [];
-    const ordersData = ordersForRevenue.map((order: any) => ({
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount || 0,
-      depositAmount: order.depositAmount || 0,
-      securityDeposit: order.securityDeposit || 0,
-      damageFee: order.damageFee || 0,
-      lateFee: order.lateFee || 0,
-      pickupTotalAmount: order.pickupTotalAmount ?? null,
-      createdAt: order.createdAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      pickupPlanAt: order.pickupPlanAt,
-      returnPlanAt: order.returnPlanAt,
-      updatedAt: order.updatedAt
-    }));
+    const ordersData = ordersForRevenue.map((order: any) => toRevenueOrderData(order));
 
     const { realIncome: calculatedRevenue } = calculatePeriodRevenueBatch(
       ordersData,

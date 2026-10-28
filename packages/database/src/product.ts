@@ -7,7 +7,7 @@
 // - Return: includes both id (CUID) and id (number)
 
 import { prisma } from './client';
-import { normalizePricingOptions } from './product-pricing-normalize';
+import { normalizePricingOptions, pricingOptionsDeleteWhere, withoutEchoedBlockShim } from './product-pricing-normalize';
 import { Prisma } from '@prisma/client';
 import type { ProductSearchFilter } from '@rentalshop/types';
 import { ORDER_STATUS, ORDER_TYPE } from '@rentalshop/constants';
@@ -32,13 +32,12 @@ export function normalizeBarcode<T>(barcode: T): T | null {
 //      inside it. "dai" matches "Áo dài" (word start) but "ai" does not (mid-word).
 //      A word also starts after punctuation: "xanh" matches "Mẫu (Xanh Ngọc)" (#1009).
 //      Rules and the SQL projection live in ./product-search-words.ts.
-//   2. Conditional accent, driven by whether the QUERY carries diacritics:
-//        - query WITHOUT diacritics ("ao")  → accent-INSENSITIVE, also matches "Áo".
-//        - query WITH diacritics ("áo")     → exact accented match only.
-// Multi-word queries require ALL words to match (AND), each in name OR description.
+//   2. Always accent-insensitive (#1250): query and name are folded the same way, so "Họa" finds
+//      "Hoạ", and "ao" / "áo" find "Áo" (rules in ./product-search-words.ts).
+// Multi-word queries require ALL words to match (AND), each in the product name.
 
 /**
- * Resolve product IDs whose name/description match the search term at the DB level
+ * Resolve product IDs whose name matches the search term at the DB level
  * (the only place the accent rules above can be enforced correctly).
  * Returns `null` if the raw query fails (e.g. unaccent/normalize unavailable) so the
  * caller can fall back to the legacy Prisma `contains` matching without regressing.
@@ -49,10 +48,9 @@ async function findMatchingProductIds(searchInput: string, merchantId?: number):
 
   try {
     const perWord = words.map((word: string) => {
-      const { hasDiacritics, pattern } = buildSearchWordTerm(word);
-      const nameSql = projectSearchColumnSql('name', hasDiacritics);
-      const descriptionSql = projectSearchColumnSql('description', hasDiacritics);
-      return Prisma.sql`(${nameSql} LIKE ${pattern} OR ${descriptionSql} LIKE ${pattern})`;
+      const { pattern } = buildSearchWordTerm(word);
+      const nameSql = projectSearchColumnSql('name');
+      return Prisma.sql`(${nameSql} LIKE ${pattern})`;
     });
     // ALL words must match (AND). Scope to merchant so the LIMIT budget isn't consumed
     // by other tenants (a broad term like "ao" can match a lot).
@@ -74,9 +72,9 @@ async function findMatchingProductIds(searchInput: string, merchantId?: number):
 }
 
 /**
- * Build the `where.OR` array for a product text search: DB-level name/description
- * matching (via findMatchingProductIds) OR the given barcode condition.
- * Falls back to legacy per-word Prisma `contains` if the raw query is unavailable.
+ * Build the `where.OR` array for a product text search: DB-level name matching
+ * (via findMatchingProductIds) OR a barcode match (the code contains the typed text).
+ * Falls back to legacy per-word Prisma `contains` on the name if the raw query is unavailable.
  */
 async function buildProductSearchOr(
   searchTerm: string,
@@ -95,12 +93,10 @@ async function buildProductSearchOr(
       const normalizedWord = removeVietnameseDiacritics(originalWord);
       const wordConditions: any[] = [
         { name: { contains: originalWord, mode: 'insensitive' } },
-        { description: { contains: originalWord, mode: 'insensitive' } },
       ];
       if (normalizedWord !== originalWord) {
         wordConditions.push(
-          { name: { contains: normalizedWord, mode: 'insensitive' } },
-          { description: { contains: normalizedWord, mode: 'insensitive' } }
+          { name: { contains: normalizedWord, mode: 'insensitive' } }
         );
       }
       return { OR: wordConditions };
@@ -285,16 +281,16 @@ export async function searchProducts(filters: ProductSearchFilter) {
   }
 
   // Handle search query - use 'q' parameter first, fallback to 'search' for backward compatibility
-  // Word-prefix + conditional-accent matching (see buildProductSearchOr / order.ts):
-  // "Áo dài đỏ" matches products whose name/description contain ALL words as word-prefixes.
+  // Word-prefix + accent-insensitive matching (see buildProductSearchOr / order.ts):
+  // "Áo dài đỏ" matches products whose name contains ALL words as word-prefixes.
   const searchQuery = q || search;
   if (searchQuery) {
     const searchTerm = searchQuery.trim();
     const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
 
     if (words.length > 0) {
-      // Barcode is an exact match here (not word-by-word).
-      const barcodeCondition = { barcode: { equals: searchTerm } };
+      // Barcode: the code contains the typed text, so a partial code and a full scan both match.
+      const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
       where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
     }
   }
@@ -375,6 +371,10 @@ export async function searchProducts(filters: ProductSearchFilter) {
             price: true,
             unit: true,
             blockSize: true,
+            blockTiers: true,
+            blockStartDay: true,
+            blockExtraMode: true,
+            blockExtraPrice: true,
             isDefault: true,
             isActive: true,
             sortOrder: true
@@ -685,7 +685,9 @@ export async function updateProduct(
     if (hasOptions) {
       // Deleting an option sets OrderItem.pricingOptionId to NULL (FK onDelete: SetNull);
       // OrderItem keeps its pricingType snapshot so historical orders stay correct.
-      await tx.productPricingOption.deleteMany({ where: { productId: id } });
+      await tx.productPricingOption.deleteMany({
+        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: input.keepBlockOptions }),
+      });
       if (normalizedOptions.length > 0) {
         await tx.productPricingOption.createMany({
           data: normalizedOptions.map((o) => ({ ...o, productId: id })),
@@ -1342,13 +1344,17 @@ export const simplifiedProducts = {
         data.category = { connect: { id: defaultCategory.id } };
       }
 
+      // #1189: only a client that sent `pricingSchemaVersion: 2` may create a BLOCK option; never a Product column
+      const allowBlock = data.pricingSchemaVersion === 2;
+      delete data.pricingSchemaVersion;
+
       // Multiple pricing options: normalize, sync default -> rentPrice/pricingType, nest for create
       if (Array.isArray(data.pricingOptions)) {
-        const normalized = normalizePricingOptions(data.pricingOptions);
+        const normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
         if (normalized.length > 0) {
           const def = normalized.find((o) => o.isDefault) || normalized[0];
           data.rentPrice = def.price;
-          data.pricingType = def.type;
+          data.pricingType = def.type === 'BLOCK' ? 'FIXED' : def.type; // #1189: rentPrice = day-1 price, type stays FIXED for old apps
           data.pricingOptions = { create: normalized };
         } else {
           delete data.pricingOptions;
@@ -1380,18 +1386,45 @@ export const simplifiedProducts = {
   /**
    * Update product (simplified API)
    */
-  update: async (id: number, data: any) => {
+  update: async (id: number, data: any, options: { keepBlockOptions?: boolean } = {}) => {
     if ('barcode' in data) data.barcode = normalizeBarcode(data.barcode);
+    // #1189: only a client that sent `pricingSchemaVersion: 2` may save a BLOCK option; never a Product column
+    const allowBlock = data.pricingSchemaVersion === 2;
+    delete data.pricingSchemaVersion;
     // Extract pricing options (replace-set) so they aren't passed to product.update directly
-    const hasOptions = Array.isArray(data.pricingOptions);
+    let hasOptions = Array.isArray(data.pricingOptions);
     let normalized: any[] = [];
     if (hasOptions) {
-      normalized = normalizePricingOptions(data.pricingOptions);
+      normalized = normalizePricingOptions(data.pricingOptions, { allowBlock });
       delete data.pricingOptions;
-      if (normalized.length > 0) {
+      // #1215: the FIXED row an installed app got from a BLOCK option is not a new option; BLOCK stays the default
+      let blockIsDefault = false;
+      if (options.keepBlockOptions && normalized.some((o) => o.type === 'FIXED')) {
+        const blockRows = await prisma.productPricingOption.count({ where: { productId: id, type: 'BLOCK' } });
+        if (blockRows > 0) {
+          const stored = await prisma.productPricingOption.findMany({
+            where: { productId: id, type: { in: ['BLOCK', 'FIXED'] } },
+            select: { type: true, price: true, isDefault: true },
+          });
+          ({ options: normalized, blockIsDefault } = withoutEchoedBlockShim(normalized, stored));
+        }
+      }
+      // #1200: an installed app cannot see BLOCK options. Saving a product that has one, it sends
+      // pricingOptions [] and rentPrice / salePrice 0 (e2e on main-real). That must change nothing it did not mean:
+      // leave the option rows alone and do not overwrite the prices with 0 / null.
+      if (options.keepBlockOptions && normalized.length === 0) {
+        const blockCount = await prisma.productPricingOption.count({ where: { productId: id, type: 'BLOCK' } });
+        if (blockCount > 0) {
+          hasOptions = false;
+          for (const field of ['rentPrice', 'salePrice']) {
+            if (data[field] === 0 || data[field] === null) delete data[field];
+          }
+        }
+      }
+      if (normalized.length > 0 && !blockIsDefault) {
         const def = normalized.find((o) => o.isDefault) || normalized[0];
         data.rentPrice = def.price;
-        data.pricingType = def.type;
+        data.pricingType = def.type === 'BLOCK' ? 'FIXED' : def.type; // #1189: see create
       }
     }
 
@@ -1412,7 +1445,8 @@ export const simplifiedProducts = {
       if (data.rentPrice !== undefined) {
         data.pricingOptions = {
           updateMany: {
-            where: { isDefault: true },
+            // #1200: the legacy price sync never rewrites a BLOCK option for an old client
+            where: options.keepBlockOptions ? { isDefault: true, type: { not: 'BLOCK' } } : { isDefault: true },
             data: { price: data.rentPrice }
           }
         };
@@ -1422,7 +1456,10 @@ export const simplifiedProducts = {
 
     // Replace option set atomically (FK onDelete: SetNull keeps OrderItem snapshots intact)
     return await prisma.$transaction(async (tx) => {
-      await tx.productPricingOption.deleteMany({ where: { productId: id } });
+      // #1200: an old client (no pricingSchemaVersion) keeps the BLOCK options it cannot see
+      await tx.productPricingOption.deleteMany({
+        where: pricingOptionsDeleteWhere(id, { keepBlockOptions: options.keepBlockOptions }),
+      });
       if (normalized.length > 0) {
         await tx.productPricingOption.createMany({
           data: normalized.map((o) => ({ ...o, productId: id }))
@@ -1574,14 +1611,12 @@ export const simplifiedProducts = {
           }
     // If available=false or undefined, don't filter - show all products
     
-    // Text search - word-prefix + conditional-accent matching (see buildProductSearchOr / order.ts):
-    // "Áo dài đỏ" matches products whose name/description contain ALL words as word-prefixes.
+    // Text search matches the product name, or a barcode that contains the typed text.
     if (whereFilters.search) {
       const searchTerm = whereFilters.search.trim();
       const words = searchTerm.split(/\s+/).filter((word: string) => word.length > 0);
 
       if (words.length > 0) {
-        // Barcode is a prefix/contains match here (kept from prior behaviour).
         const barcodeCondition = { barcode: { contains: searchTerm, mode: 'insensitive' } };
         where.OR = await buildProductSearchOr(searchTerm, where.merchantId, barcodeCondition);
       }

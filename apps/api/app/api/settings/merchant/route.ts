@@ -4,7 +4,9 @@ import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
+import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { isValidTimeZone, merchantTimeZoneField, recordShopTimeZoneChange } from '../../../../lib/shop-timezone';
+import { merchantDepositField } from '../../../../lib/installments';
 
 /** #567 `timezone`: an IANA id that Intl accepts (Asia/Ho_Chi_Minh, Asia/Tokyo, America/New_York, …). */
 const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknown time zone');
@@ -19,6 +21,10 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  *   otherwise). A body with only that field updates just the setting (no name required).
  * - `onlineBookingEnabled` (#1124, boolean "Nhận đặt online"): role MERCHANT or ADMIN only, like allowOverlappingOrders.
  * - `showPublicPrice` (#1174, boolean "Hiện giá trên trang shop"): role MERCHANT or ADMIN only, like onlineBookingEnabled.
+ * - `blockPricing` (#1189, `{ oldApps: 'recompute' | 'block' }` "Với app cũ"): role MERCHANT only (403
+ *   INSUFFICIENT_PERMISSIONS otherwise, ADMIN included). Stored in `Merchant.settings.blockPricing.oldApps`, merged into
+ *   the other keys of `settings`; any other value is 400 INVALID_INPUT. A body with only that field updates just it.
+ *   GET /api/users/profile returns it as `merchant.blockPricing` (additive).
  * - `timezone` (#567, IANA id): role MERCHANT only (ADMIN changes it via PUT /api/merchants/[id]; others
  *   403 INSUFFICIENT_PERMISSIONS). Unknown zone → 400 INVALID_TIMEZONE. A body with only the shop settings
  *   updates just those (no name required). A change is written to the audit log (entity Merchant).
@@ -56,7 +62,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       allowOverlappingOrders,
       onlineBookingEnabled,
       showPublicPrice,
-      timezone
+      timezone,
+      blockPricing
     } = body;
 
     // #518 "Cho tạo đơn khi trùng lịch": boolean, and only the shop owner (or platform ADMIN) may change it,
@@ -108,6 +115,23 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       }
     }
 
+    // #1189 "Với app cũ": 'recompute' (server prices day-block lines for installed apps) or 'block'; shop owner only
+    if (blockPricing !== undefined) {
+      const mode = (blockPricing as { oldApps?: unknown } | null)?.oldApps;
+      if (mode !== 'recompute' && mode !== 'block') {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_INPUT'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
     // #567 shop time zone: a valid IANA id, and only the shop owner may change it here.
     if (timezone !== undefined) {
       if (!timezoneSchema.safeParse(timezone).success) {
@@ -128,7 +152,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // every other body is the business-info form as before and still needs a name.
     const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
     const settingOnly =
-      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined) &&
+      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined || blockPricing !== undefined) &&
       BUSINESS_FIELDS.every((field) => body[field] === undefined);
 
     // Validate required fields
@@ -212,6 +236,14 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     if (timezone !== undefined) {
       updateData.timezone = timezone;
     }
+    if (blockPricing !== undefined) {
+      // Keep the other keys of `settings` (e.g. installments); only blockPricing.oldApps changes
+      const stored = ((dbUser.merchant as { settings?: Record<string, unknown> | null }).settings ?? {}) as Record<string, unknown>;
+      updateData.settings = {
+        ...stored,
+        blockPricing: { ...((stored.blockPricing as Record<string, unknown> | undefined) ?? {}), oldApps: (blockPricing as { oldApps: string }).oldApps },
+      };
+    }
     
     // Only include tenantKey if it's provided (allows clearing tenantKey by passing empty string)
     if (tenantKey !== undefined) {
@@ -247,7 +279,10 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         // #1124 additive; false when off or missing
         onlineBookingEnabled: (updatedMerchant as { onlineBookingEnabled?: boolean }).onlineBookingEnabled === true,
         showPublicPrice: (updatedMerchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
+        // #1189 additive; 'recompute' when unset
+        blockPricing: { oldApps: readOldAppsMode((updatedMerchant as { settings?: unknown }).settings) },
         ...merchantTimeZoneField(updatedMerchant),
+        ...merchantDepositField(updatedMerchant),
         isActive: updatedMerchant.isActive,
         planId: updatedMerchant.planId,
         subscriptionStatus: updatedMerchant.subscription?.status,

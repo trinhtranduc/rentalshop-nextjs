@@ -331,6 +331,11 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
 /** #1028: `KeyboardType.Decimal` can show the locale "," and no "."; the URI keyboard has "." in every language (iOS `.numbersAndPunctuation`) */
 internal val PrinterIpKeyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false)
 
+@Composable
+private fun PrinterSectionTitle(text: String) {
+    Text(text.uppercase(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
@@ -386,7 +391,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     // #459: new style when opened from Settings v2 (`newSettings`); same fields, test print and save
     if (v2) {
         SettingsDetailPage(
-            title = stringResource(R.string.printer_config),
+            title = stringResource(R.string.settings_v2_printing), // #1270: In & phiếu
             onBack = onBack,
             bottomBar = {
                 // #970: the result above the buttons, always in view (at the end of the form it was under the fold)
@@ -399,27 +404,28 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                 Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                // #1270 plan B: two sections, PHIẾU (paper width, printed note, bank QR) and MÁY IN (name, IP, port; Thử in below)
+                PrinterSectionTitle(stringResource(R.string.settings_v2_printing_group_slip))
+                SettingsDetailField(
+                    label = stringResource(R.string.paper_width), value = paper, onValueChange = { paper = it.filter(Char::isDigit) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                SettingsDetailField(
+                    label = stringResource(R.string.printer_note), value = note, onValueChange = { note = it },
+                    singleLine = false, minLines = 4,
+                )
+                PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
+                PrinterSectionTitle(stringResource(R.string.settings_v2_printing_group_printer))
                 SettingsDetailNote(stringResource(R.string.printer_hint))
                 SettingsDetailField(label = stringResource(R.string.printer_name), value = name, onValueChange = { name = it })
                 SettingsDetailField(
                     label = stringResource(R.string.printer_ip), value = ip, onValueChange = { ip = ThermalPrinter.normalizeIp(it) },
                     keyboardOptions = PrinterIpKeyboardOptions, // #1028: has "." in Vietnamese
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SettingsDetailField(
-                        label = stringResource(R.string.printer_port), value = port, onValueChange = { port = it.filter(Char::isDigit) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f),
-                    )
-                    SettingsDetailField(
-                        label = stringResource(R.string.paper_width), value = paper, onValueChange = { paper = it.filter(Char::isDigit) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f),
-                    )
-                }
                 SettingsDetailField(
-                    label = stringResource(R.string.printer_note), value = note, onValueChange = { note = it },
-                    singleLine = false, minLines = 4,
+                    label = stringResource(R.string.printer_port), value = port, onValueChange = { port = it.filter(Char::isDigit) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
-                PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
             }
         }
     } else {

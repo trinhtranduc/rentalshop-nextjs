@@ -24,6 +24,7 @@ export * from './payments';
 export * from './audit-logs';
 export * from './request-logs';
 export * from './settings';
+export * from './installments';
 export * from './subscriptions';
 export * from './stripe';
 export * from './lemonsqueezy';

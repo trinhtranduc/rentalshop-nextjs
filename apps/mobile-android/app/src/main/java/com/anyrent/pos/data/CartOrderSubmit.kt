@@ -64,6 +64,8 @@ object CartOrderSubmit {
             noteImages = noteImages,
             outletId = orderOutletId(CurrentOutlet.merchantFilterId),
             bookingRequestId = bookingRequestId(),
+            // #1199: a rental of a "Thu cọc theo giai đoạn" shop goes with its stages; the API keeps the money
+            paymentPlan = CartStore.paymentPlanRequest(reference = idempotencyKey),
         )
     }
 
@@ -136,7 +138,27 @@ object CartOrderSubmit {
 
     /** #951: each line's own mode, days, deposit and note, in line order (a product may be on several lines) */
     fun lineExtras(lines: List<com.anyrent.pos.data.model.CartLine>): List<OrderLineExtra> =
-        lines.map { OrderLineExtra(it.pricingType, it.rentalDays, it.product.deposit, it.note) }
+        lines.map { line ->
+            // #1189: a BLOCK line priced from its table goes as BLOCK with the option's id (iOS `requestPricingType`)
+            val block = !line.isSale && line.blockDetail != null
+            OrderLineExtra(
+                pricingType = line.pricingType, rentalDays = line.rentalDays, deposit = line.product.deposit, note = line.note,
+                blockPriced = block,
+                pricingOptionId = if (block) line.product.pricingOptions.firstOrNull { it.type.equals("BLOCK", true) }?.id else null,
+            )
+        }
+
+    /**
+     * #1189: 400 BLOCK_PRICE_MISMATCH = a product's day table changed after the line was added. Load the products of
+     * the block lines again; the lines take the new table and the next confirm sends the new price (iOS
+     * `reloadBlockTablesIfNeeded`). Blocking network calls; run off the main thread. True when it reloaded.
+     */
+    fun reloadBlockTablesIfNeeded(error: Throwable): Boolean {
+        if ((error as? AppError)?.code != com.anyrent.pos.domain.products.BlockPricingError.PRICE_MISMATCH) return false
+        val ids = CartStore.lines.value.filter { it.pricingType.equals("BLOCK", ignoreCase = true) }.map { it.product.id }.toSet()
+        ids.forEach { id -> ApiClient.get().getProduct(id).getOrNull()?.let { CartStore.refreshBlockTable(it) } }
+        return true
+    }
 
     /** The review screen's message for a failed save: the API message, else [fallback] */
     fun errorMessage(error: Throwable, fallback: String): String =

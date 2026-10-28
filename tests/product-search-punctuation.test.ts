@@ -50,8 +50,8 @@ describe('#1009 product search: a word after punctuation is a word start', () =>
     expect(productTextMatches({ name: 'Bộ vest v.2' }, '2')).toBe(true);
   });
 
-  it('description is searched the same way', () => {
-    expect(productTextMatches({ name: 'Áo dài', description: 'Màu (đỏ)' }, 'do')).toBe(true);
+  it('a word that is only in the description does not match', () => {
+    expect(productTextMatches({ name: 'Áo dài', description: 'Màu (đỏ)' }, 'do')).toBe(false);
   });
 
   it('splits the query on punctuation and drops empty words', () => {
@@ -68,10 +68,10 @@ describe('#1009 product search: a word after punctuation is a word start', () =>
 
   it('SQL projection turns separators into spaces with the same list', () => {
     // Column given by name: tests/ has its own @prisma/client without a generated client.
-    const sql = projectSearchColumnSql('name', false);
+    const sql = projectSearchColumnSql('name');
     expect(sql.sql).toContain('regexp_replace');
     expect(sql.values).toContain(SEARCH_SEPARATOR_SQL_REGEX);
-    const sqlAccent = projectSearchColumnSql('description', true);
+    const sqlAccent = projectSearchColumnSql('description');
     expect(sqlAccent.sql).toContain('regexp_replace');
     expect(sqlAccent.values).toContain(SEARCH_SEPARATOR_SQL_REGEX);
   });
@@ -83,9 +83,9 @@ describe('#1009 existing rules stay', () => {
     expect(productTextMatches(mau, 'gọc')).toBe(false);
   });
 
-  it('accented word is exact-accent: "xánh" does not find "Xanh"', () => {
-    expect(productTextMatches(mau, 'xánh')).toBe(false);
-    expect(productTextMatches({ name: 'Ao thun' }, 'áo')).toBe(false);
+  it('accent-insensitive both ways (#1250): "xánh" finds "Xanh"', () => {
+    expect(productTextMatches(mau, 'xánh')).toBe(true);
+    expect(productTextMatches({ name: 'Ao thun' }, 'áo')).toBe(true);
   });
 
   it('all words must match', () => {

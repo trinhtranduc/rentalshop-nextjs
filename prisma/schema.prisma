@@ -182,6 +182,8 @@ model Merchant {
   onlineBookingEnabled Boolean              @default(false)
   /// #1174 Hiện giá trên trang shop công khai. true (default) = today's catalogue. false = API nulls amounts; UI shows "Liên hệ".
   showPublicPrice      Boolean              @default(true)
+  /// #1189 shop settings JSON (nullable). { blockPricing: { oldApps: 'recompute' | 'block' } }
+  settings             Json?
   /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
   /// is a civil day in this zone. Existing shops and register calls without a zone: Asia/Ho_Chi_Minh.
   timezone             String               @default("Asia/Ho_Chi_Minh")
@@ -307,6 +309,11 @@ model ProductPricingOption {
   price      Float
   unit       PricingUnit? // null in Phase 1; used by BLOCK/HOURLY later
   blockSize  Int? // null in Phase 1; number of units per block for BLOCK
+  // #1189 day-block pricing (type BLOCK only; all null on FIXED / DAILY). `price` of a BLOCK option = day-1 price
+  blockTiers      Json? // number[]: all-in price of renting startDay + i days (1..31 entries)
+  blockStartDay   Int? // null = 1
+  blockExtraMode  String? // 'EXTRA_PER_DAY' | 'HOLD_LAST'; null = EXTRA_PER_DAY
+  blockExtraPrice Float? // per day past the last tier (EXTRA_PER_DAY)
   isDefault  Boolean      @default(false)
   isActive   Boolean      @default(true)
   sortOrder  Int          @default(0)
@@ -428,6 +435,13 @@ model Order {
   customerId            Int?
   createdById           Int? // Allow null to support user deletion
   rentalDurationUnit    String?
+  /// #1199 staged deposits: { v, policy?, items: [{ key, label, type: 'PERCENT', value, dueRule | dueDateKey, amountOverride? }] }.
+  /// null = old order / "Thu cọc 1 lần". The last stage `rest` is never stored. Read it through effectivePlan().
+  depositPlan           Json?
+  /// #1199 money the shop keeps when a staged order is cancelled (null = not set)
+  cancelKeptAmount      Float?
+  /// #1199 when the order was cancelled (an edit after cancelling must not move the cancel day)
+  cancelledAt           DateTime?
   createdBy             User?                @relation(fields: [createdById], references: [id], onDelete: SetNull)
   customer              Customer?            @relation(fields: [customerId], references: [id])
   outlet                Outlet               @relation(fields: [outletId], references: [id])
@@ -479,6 +493,7 @@ model OrderItem {
   productImages   Json?
   pricingType     PricingType? // snapshot of the pricing option type used
   pricingOptionId Int? // reference to the selected option (nullable)
+  pricingSnapshot Json? // #1189: day-block table + days + result used for this line (null on non-BLOCK lines)
   order           Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product         Product?              @relation(fields: [productId], references: [id], onDelete: SetNull)
   pricingOption   ProductPricingOption? @relation(fields: [pricingOptionId], references: [id], onDelete: SetNull)
@@ -507,6 +522,9 @@ model Payment {
   orderId        Int?
   subscriptionId Int?
   merchantId     Int?
+  /// #1199 which deposit stage this payment collects ('i1', 'i2', 'rest'); null for every other payment.
+  /// One COMPLETED row per (orderId, installmentKey): partial unique index in the migration (raw SQL).
+  installmentKey String?
   merchant       Merchant?     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
@@ -518,6 +536,7 @@ model Payment {
   @@index([type])
   @@index([method])
   @@index([currency])
+  @@index([status, processedAt])
 }
 
 model Plan {

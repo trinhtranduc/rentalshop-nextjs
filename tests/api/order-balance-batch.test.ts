@@ -57,7 +57,7 @@ describe('order balance for list rows (#389)', () => {
     expect(rows).toEqual([sum(1, 'PICKUP', 5)]);
     expect(groupBy).toHaveBeenCalledWith({
       by: ['orderId', 'notes'],
-      where: { orderId: { in: [1, 2] }, status: 'COMPLETED' },
+      where: { orderId: { in: [1, 2] }, status: 'COMPLETED', OR: [{ notes: null }, { notes: { not: 'INSTALLMENT' } }] }, // #1199: stage rows are inside depositAmount
       _sum: { amount: true },
     });
   });

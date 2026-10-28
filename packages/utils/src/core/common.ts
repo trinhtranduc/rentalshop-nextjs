@@ -3,6 +3,7 @@ import type { User, LoginCredentials } from '@rentalshop/types';
 import type { ApiResponse, ErrorCode } from './errors';
 import { analyzeError } from './errors'; // Import analyzeError for handleApiErrorForUI
 import { getApiBaseUrl } from '../config/api';
+import { clientCapabilitiesHeader } from './client-capabilities';
 
 const API = CONSTANTS.API;
 
@@ -81,6 +82,8 @@ export const publicFetch = async (
     'X-Client-Platform': 'web',
     'X-App-Version': '1.0.0',
     'X-Device-Type': 'browser',
+    // #1200: empty until a capability ships, so no header is sent today
+    ...clientCapabilitiesHeader(),
     // In-app language (NEXT_LOCALE), not the browser's Accept-Language
     'Accept-Language': appAcceptLanguage(),
   };
@@ -257,6 +260,8 @@ export const authenticatedFetch = async (
     'X-Client-Platform': 'web',
     'X-App-Version': '1.0.0',
     'X-Device-Type': 'browser',
+    // #1200: empty until a capability ships, so no header is sent today
+    ...clientCapabilitiesHeader(),
     ...optionsHeaders,  // User-provided headers (merged before Authorization)
     'Accept-Language': appAcceptLanguage(),
   };

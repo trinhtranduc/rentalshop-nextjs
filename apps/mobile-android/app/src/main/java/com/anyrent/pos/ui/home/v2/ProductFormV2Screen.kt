@@ -79,10 +79,17 @@ import coil.compose.AsyncImage
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.data.PRICING_SCHEMA_VERSION
 import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.Product
+import com.anyrent.pos.domain.money.ShopMoney
 import com.anyrent.pos.domain.products.BarcodeMatch
+import com.anyrent.pos.domain.products.BlockPricing
+import com.anyrent.pos.domain.products.BlockTable
+import com.anyrent.pos.domain.products.BlockText
+import com.anyrent.pos.domain.products.PriceForm
+import com.anyrent.pos.domain.products.PriceFormState
 import com.anyrent.pos.domain.products.ProductBarcode
 import com.anyrent.pos.domain.products.CategoryRules
 import com.anyrent.pos.domain.products.MoneyInput
@@ -145,8 +152,12 @@ fun ProductFormV2Screen(
     var categoryId by remember { mutableStateOf(initial?.categoryId) }
     var categoryName by remember { mutableStateOf(initial?.categoryName) }
     var perRental by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.perRental(it) })) }
-    var perDay by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.perDay(it) })) }
-    var defaultMode by remember { mutableStateOf(initial?.let { ProductPricing.defaultMode(it) } ?: PricingMode.PER_RENTAL) }
+    // #1249 (mockup v179): Theo lần, Theo mỗi ngày and Theo block ngày all exist together (no radio); the table is set up on its own screen.
+    val opened = remember { PriceForm.open(initial) }
+    var perDay by remember { mutableStateOf(MoneyInput.display(opened.perDay)) }
+    var block by remember { mutableStateOf(opened.block) }
+    var showBlockScreen by remember { mutableStateOf(false) }
+    fun priceState() = PriceFormState(MoneyInput.parse(perRental), MoneyInput.parse(perDay), block)
     var sale by remember { mutableStateOf(MoneyInput.display(initial?.let { ProductPricing.sale(it) })) }
     var deposit by remember { mutableStateOf(MoneyInput.display(initial?.deposit?.takeIf { it > 0 })) }
     // #887: Giá vốn (optional, prices only)
@@ -208,11 +219,13 @@ fun ProductFormV2Screen(
     }
 
     fun save() {
+        val price = priceState()
         val input = ProductFormInput(
             name = name,
-            perRental = MoneyInput.parse(perRental),
-            perDay = MoneyInput.parse(perDay),
-            defaultMode = defaultMode,
+            perRental = price.perRental,
+            perDay = price.perDay,
+            defaultMode = PricingMode.PER_RENTAL,
+            block = price.block,
             salePrice = MoneyInput.parse(sale),
             deposit = MoneyInput.parse(deposit),
             quantity = quantity,
@@ -249,7 +262,9 @@ fun ProductFormV2Screen(
                         categoryId = categoryId,
                         prices = if (showsPrices) {
                             ProductsV2Api.Prices(
-                                options = ProductPricing.options(input.perRental, input.perDay, input.defaultMode),
+                                options = PriceForm.options(price),
+                                // #1189: this form sends every option, BLOCK included, so the API replaces the stored table with ours
+                                pricingSchemaVersion = PRICING_SCHEMA_VERSION,
                                 salePrice = input.salePrice,
                                 deposit = input.deposit,
                                 // #887: a create sends the typed cost; an update only a typed or cleared one
@@ -363,21 +378,32 @@ fun ProductFormV2Screen(
 
             if (showsPrices) {
                 SectionBand(stringResource(R.string.v2_form_prices))
-                Row {
-                    FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, modifier = Modifier.weight(1f), end = 6.dp)
-                    FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
-                        placeholder = "0", numeric = true, modifier = Modifier.weight(1f), start = 6.dp)
-                }
-                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.v2_form_default_pricing), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold)
-                    V2Segmented(
-                        titles = listOf(stringResource(R.string.v2_price_per_rental), stringResource(R.string.v2_price_per_day)),
-                        selected = if (defaultMode == PricingMode.PER_DAY) 1 else 0,
-                        onSelect = { defaultMode = if (it == 1) PricingMode.PER_DAY else PricingMode.PER_RENTAL },
-                        modifier = Modifier.fillMaxWidth(),
-                        fill = true,
-                    )
+                FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
+                    placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_rental, ShopMoney.symbol()))
+                FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
+                    placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_day, ShopMoney.symbol()))
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.v2_form_per_block), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold)
+                    val res = LocalContext.current.resources
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { showBlockScreen = true }.semantics { contentDescription = "block.summary" }
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            val table = block
+                            if (table != null) {
+                                Text(BlockText.rowSummary(res, table), fontSize = DS.TextSize.Input, fontWeight = FontWeight.Bold)
+                                Text(BlockText.rangeSummary(res, table), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                            } else {
+                                Text(stringResource(R.string.v2_form_block_not_set), fontSize = DS.TextSize.Input, color = DS.Colors.TextMuted)
+                            }
+                        }
+                        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                    }
                 }
                 Row {
                     FormField(stringResource(R.string.v2_form_sale_price), value = sale, onChange = { sale = MoneyInput.display(MoneyInput.parse(it)) },
@@ -440,6 +466,17 @@ fun ProductFormV2Screen(
             )
         }
     }
+    if (showBlockScreen) {
+        AppFormSheet(onDismiss = { showBlockScreen = false }, fullScreen = true, nested = true) {
+            BlockPriceScreen(
+                initial = block,
+                currentProductId = initial?.id,
+                onSave = { table -> block = PriceForm.saveBlock(priceState(), table).block; showBlockScreen = false },
+                onTurnOff = { block = PriceForm.turnOffBlock(priceState()).block; showBlockScreen = false },
+                onClose = { showBlockScreen = false },
+            )
+        }
+    }
     error?.let { message -> AppAlertError(message = message, onDismiss = { error = null }) }
 }
 
@@ -453,6 +490,8 @@ private fun FormField(
     required: Boolean = false,
     numeric: Boolean = false,
     unit: String? = null,
+    label: Boolean = true,
+    description: String = title,
     start: androidx.compose.ui.unit.Dp = 16.dp,
     end: androidx.compose.ui.unit.Dp = 16.dp,
     onDone: (() -> Unit)? = null,
@@ -461,7 +500,7 @@ private fun FormField(
     var hadFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     Column(modifier.padding(start = start, end = end, top = 8.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
+        if (label) Text(
             buildAnnotatedString {
                 append(title)
                 if (required) withStyle(SpanStyle(color = V2Colors.Danger)) { append(" *") }
@@ -474,7 +513,7 @@ private fun FormField(
         ) {
             Box(Modifier.weight(1f)) {
                 if (value.isEmpty()) Text(placeholder, fontSize = DS.TextSize.Input, color = Color(0xFF94A3B8))
-                val fieldModifier = Modifier.fillMaxWidth().semantics { contentDescription = title }
+                val fieldModifier = Modifier.fillMaxWidth().semantics { contentDescription = description }
                     .onFocusChanged { focus ->
                         if (focus.isFocused) {
                             hadFocus = true

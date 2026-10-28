@@ -71,7 +71,7 @@ final class Issue430Tests: XCTestCase {
         XCTAssertEqual(text("notPickedUp.chip", 1, 1), "1 day past · call the customer")
         XCTAssertEqual(text("products.cart.days", 1, 1), "1 day")
         XCTAssertEqual(text("%@/day × %d days", 1, "104", 1), "104/day × 1 day")
-        XCTAssertEqual(text("orders.v2.search.summary", 1, 1, "kiem"), "1 order matches “kiem” · all statuses, item names too")
+        XCTAssertEqual(text("orders.v2.search.summary", 1, 1, "kiem"), "1 order matches “kiem” · all statuses")
         XCTAssertEqual(text("orders.v2.filter.showCount", 1, 1), "Show 1 order")
         XCTAssertEqual(text("Return late %d days", 1, 1), "Return late 1 day")
         XCTAssertEqual(text("Hand-over late %d days", 1, 1), "Hand-over late 1 day")

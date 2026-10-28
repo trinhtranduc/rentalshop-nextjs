@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hasCapability } from '../../../../../lib/client-capabilities';
 import { db } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, ordersQuerySchema, normalizeStartDate, normalizeEndDate } from '@rentalshop/utils';
@@ -102,6 +103,9 @@ export async function GET(
         page: searchFilters.page,
         limit: searchFilters.limit
       });
+
+      // #1199: the payment count leaves out deposit-stage rows for a client that did not declare `installments`
+      searchFilters.includeInstallments = hasCapability(request, 'installments');
 
       // Get orders for this merchant with role-based filtering and pagination
       const result = await db.orders.search(searchFilters);

@@ -59,6 +59,8 @@ final class CartV2ViewController: BaseViewControler {
 
     private var cart: Cart { CartStore.shared.cart }
     private var isRent: Bool { cart.orderType == .rent }
+    /// #1199: the stage whose amount the number sheet is editing (nil = the old "Cọc" row)
+    private var editingStageIndex: Int?
 
     /// Conflicts of the lines still in the cart, in cart order
     private var currentConflicts: [CartScheduleConflict] {
@@ -84,11 +86,15 @@ final class CartV2ViewController: BaseViewControler {
 
     /// #684: the cart tag "Trùng đơn ngày …" → Lịch trống of that product on the first clashing day
     private func openConflictDay(_ conflict: CartScheduleConflict) {
-        ProductService.shared.loadProduct(productId: conflict.productId) { [weak self] product, _ in
+        openProductCalendar(productId: conflict.productId, focusDay: ScheduleConflictLogic.focusDay(conflict))
+    }
+
+    /// #1241 (owner): a tap on "Còn N" / "Hết" opens that product's Lịch trống, the screen the overlap tag opens
+    private func openProductCalendar(productId: Int, focusDay: String?) {
+        ProductService.shared.loadProduct(productId: productId) { [weak self] product, _ in
             DispatchQueue.main.async {
                 guard let self, let product else { return }
-                let calendar = ProductCalendarViewController(product: product, orders: nil,
-                                                             focusDay: ScheduleConflictLogic.focusDay(conflict))
+                let calendar = ProductCalendarViewController(product: product, orders: nil, focusDay: focusDay)
                 calendar.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(calendar, animated: true)
             }
@@ -106,6 +112,11 @@ final class CartV2ViewController: BaseViewControler {
         let allowedBefore = OverlapSetting.isAllowed
         OverlapSetting.refresh { [weak self] allowed in
             if allowed != allowedBefore { self?.render() }
+        }
+        // #1199: a login payload without `depositMode` is fetched; the owner may also have switched the mode since
+        let modeBefore = DepositModeStore.current
+        DepositModeStore.refresh { [weak self] mode in
+            if mode != modeBefore || self?.cart.depositStages == nil { self?.render() }
         }
     }
 
@@ -264,6 +275,7 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     private func render() {
+        seedDepositStages()
         renderTitle()
         typeToggle.select(isRent ? 0 : 1)
         typeToggle.isEnabled = !cart.isEditMode
@@ -328,7 +340,13 @@ final class CartV2ViewController: BaseViewControler {
         content.addArrangedSubview(total)
         content.addArrangedSubview(V2.divider())
 
-        if isRent {
+        if isRent && cart.editHasDepositPlan {
+            // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
+        } else if isRent && cart.isStagedRental {
+            // #1245: the note row stays with the money rows; the staged deposit is one group of its own below it
+            content.addArrangedSubview(orderNoteRow())
+            content.addArrangedSubview(stagedSection())
+        } else if isRent && !(DepositModeStore.current == .staged && !cart.isEditMode) {
             let deposit = V2ValueRow(title: "products.cart.deposit".localized(), editable: true)
             deposit.valueLabel.text = MoneyFormatter.format(cart.depositAmount)
             deposit.addTarget(self, action: #selector(editDeposit), for: .touchUpInside)
@@ -336,7 +354,7 @@ final class CartV2ViewController: BaseViewControler {
             content.addArrangedSubview(V2.divider())
         }
 
-        content.addArrangedSubview(orderNoteRow()) // #1043: opens the item note sheet; #1056: a TIỀN row like the others
+        if !(isRent && cart.isStagedRental && !cart.editHasDepositPlan) { content.addArrangedSubview(orderNoteRow()) } // #1043: opens the item note sheet; #1056: a TIỀN row like the others
         content.addArrangedSubview(UIView.spacer(height: 24))
 
         if cart.isEditMode {
@@ -346,13 +364,22 @@ final class CartV2ViewController: BaseViewControler {
         } else {
             collectTitle.text = (isRent ? "products.cart.collectDeposit" : "products.cart.customerPays").localized()
             collectAmount.text = MoneyFormatter.format(CartV2Logic.collectNow(cart))
+            if cart.isStagedRental {
+                collectTitle.text = cart.stagedCollectNow > 0 ? "deposit.cart.collectNow".localized() : "deposit.cart.collectNone".localized()
+            }
         }
-        ctaButton.setTitle(CartV2Logic.ctaTitleKey(isEditMode: cart.isEditMode, isRent: isRent).localized(), for: .normal)
+        let stagedCollects = cart.isStagedRental && cart.stagedCollectNow > 0
+        ctaButton.setTitle(stagedCollects ? "deposit.cart.createAndCollect".localized()
+                           : CartV2Logic.ctaTitleKey(isEditMode: cart.isEditMode, isRent: isRent).localized(), for: .normal)
+        ctaButton.titleLabel?.font = Utils.boldFont(size: stagedCollects ? DS.TextSize.body : DS.TextSize.input)
+        ctaButton.titleLabel?.adjustsFontSizeToFitWidth = true
+        ctaButton.titleLabel?.minimumScaleFactor = 0.8
         // #518 OFF: "Tạo đơn" is greyed and disabled with the notice; the API refuses the order too
         // #1067: a saved discount above the lines (items removed after it was set) blocks the same way, with its notice
         let discountProblem = CartV2Logic.cartDiscountError(cart)
         renderDiscountNotice(discountProblem)
-        let blocked = ctaState == .blocked || discountProblem != nil
+        let stagesExceed = cart.isStagedRental && DepositPlanMath.exceedsTotal(cart.stagedPreview(), total: cart.totalAmount)
+        let blocked = ctaState == .blocked || discountProblem != nil || stagesExceed
         blockedNotice.isHidden = ctaState != .blocked
         ctaButton.isEnabled = !blocked
         ctaButton.backgroundColor = blocked ? UIColor(hexString: "CBD5E1") : DS.Color.primary
@@ -364,6 +391,155 @@ final class CartV2ViewController: BaseViewControler {
     }
 
     /// #1067: the discount notice (same red box as the overlap block), rebuilt only when its text changes
+    // MARK: - Thu cọc theo giai đoạn (#1199, mockup m5)
+
+    /// A staged shop: the stages of the new order start from the shop's default template
+    private func seedDepositStages() {
+        guard isRent, !cart.isEditMode, DepositModeStore.current == .staged, cart.depositStages == nil,
+              let template = DepositModeStore.latest?.startTemplate else { return }
+        CartStore.shared.setDepositTemplate(template)
+    }
+
+    private func stagedSection() -> UIView {
+        let column = UIStackView()
+        column.axis = .vertical
+        let settings = DepositModeStore.latest
+        let choices = settings?.choices ?? []
+        let selected = choices.first { $0.id == cart.depositTemplateId }
+        column.addArrangedSubview(V2.sectionHeader("deposit.cart.title".localized())) // #1245: one group, headed like MONEY
+        let templateRow = V2ValueRow(title: "deposit.cart.template".localized(), chevron: false, wrapsValue: true)
+        templateRow.valueLabel.text = (selected?.name ?? choices.first?.name ?? "") + (Cart.canEditStages && choices.count > 1 ? "  ⌄" : "")
+        templateRow.valueLabel.textColor = DS.Color.primary
+        templateRow.valueLabel.font = Utils.boldFont(size: DS.TextSize.body)
+        templateRow.accessibilityIdentifier = "deposit.cart.template"
+        if Cart.canEditStages && choices.count > 1 {
+            templateRow.addTarget(self, action: #selector(pickDepositTemplate), for: .touchUpInside)
+        } else {
+            templateRow.isUserInteractionEnabled = false
+        }
+        column.addArrangedSubview(templateRow)
+        column.addArrangedSubview(V2.divider())
+
+        let preview = cart.stagedPreview()
+        let today = DayFormatter.key(Date())
+        for (index, stage) in preview.enumerated() {
+            column.addArrangedSubview(stageRow(stage, index: index, today: today))
+            column.addArrangedSubview(V2.divider())
+        }
+        if DepositPlanMath.exceedsTotal(preview, total: cart.totalAmount) {
+            let warning = DepositUI.warningBox("deposit.cart.exceeds".localized())
+            let holder = UIView()
+            holder.addSubview(warning)
+            warning.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: DS.Spacing.lg, bottom: 8, right: DS.Spacing.lg)) }
+            column.addArrangedSubview(holder)
+        }
+
+        let first = preview.first
+        // #1245: a flat row like the stages (title left, blue amount + pencil right), so the amount never drifts to the title
+        let collectText = cart.stagedCollectNow > 0 && first != nil ? MoneyFormatter.format(first!.amount) : "deposit.cart.collectNone.short".localized()
+        let collect = actionRow(title: String(format: "deposit.cart.collectFirst".localized(), 1), value: collectText)
+        collect.addTarget(self, action: #selector(pickCollectFirst), for: .touchUpInside)
+        collect.accessibilityIdentifier = "deposit.cart.collectFirst"
+        column.addArrangedSubview(collect)
+        column.addArrangedSubview(V2.divider())
+        return column
+    }
+
+    private func actionRow(title: String, value: String) -> UIControl {
+        let name = DepositUI.wrapLabel(title, size: DS.TextSize.body)
+        let amount = V2.label(value, size: DS.TextSize.body, weight: .bold, color: DS.Color.primary)
+        amount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amount.setContentHuggingPriority(.required, for: .horizontal)
+        let right = UIStackView(arrangedSubviews: [amount, V2.editPencil()])
+        right.spacing = 6
+        right.alignment = .center
+        let line = UIStackView(arrangedSubviews: [name, right])
+        line.spacing = DS.Spacing.md
+        line.alignment = .center
+        line.isUserInteractionEnabled = false
+        let row = UIControl()
+        row.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg, bottom: 10, right: DS.Spacing.lg)) }
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
+        row.isAccessibilityElement = true
+        row.accessibilityLabel = title
+        row.accessibilityValue = value
+        row.accessibilityTraits = UIAccessibilityTraitButton
+        return row
+    }
+
+    private func stageRow(_ stage: DepositStagePreview, index: Int, today: String) -> UIView {
+        let editable = Cart.canEditStages && !stage.isRest
+        let name = DepositUI.wrapLabel("\(index + 1). \(stage.label)", size: DS.TextSize.body)
+        let due = stage.dueDateKey == today ? "deposit.due.today".localized() : DepositUI.dayText(stage.dueDateKey)
+        let detail = stage.isRest
+            ? String(format: "deposit.cart.restDetail".localized(), due)
+            : String(format: "deposit.cart.stageShort".localized(), DepositPlanMath.percentText(stage.percent), due)
+        let sub = DepositUI.wrapLabel(detail, size: DS.TextSize.pill + 1, color: DS.Color.textMuted)
+        let texts = UIStackView(arrangedSubviews: [name, sub])
+        texts.axis = .vertical
+        texts.spacing = 3
+        let amount = V2.label(MoneyFormatter.format(stage.amount), size: DS.TextSize.body, weight: editable ? .bold : .medium,
+                              color: editable ? DS.Color.primary : DS.Color.text)
+        amount.setContentCompressionResistancePriority(.required, for: .horizontal)
+        amount.setContentHuggingPriority(.required, for: .horizontal)
+        var right: [UIView] = [amount]
+        if editable { right.append(V2.editPencil()) }
+        let amountLine = UIStackView(arrangedSubviews: right)
+        amountLine.spacing = 6
+        amountLine.alignment = .center
+        let line = UIStackView(arrangedSubviews: [texts, amountLine])
+        line.spacing = DS.Spacing.md
+        line.alignment = .center
+        let row = UIControl()
+        line.isUserInteractionEnabled = false
+        row.addSubview(line)
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: DS.Spacing.lg + 12, bottom: 10, right: DS.Spacing.lg)) } // #1245: stages sit indented under the template
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(56) }
+        row.accessibilityIdentifier = "deposit.cart.stage.\(index)"
+        if editable {
+            row.tag = index
+            row.addTarget(self, action: #selector(editStageAmount(_:)), for: .touchUpInside)
+        }
+        return row
+    }
+
+    @objc private func pickDepositTemplate() {
+        let choices = DepositModeStore.latest?.choices ?? []
+        let sheet = UIAlertController(title: "deposit.cart.title".localized(), message: nil, preferredStyle: .actionSheet)
+        for template in choices {
+            sheet.addAction(UIAlertAction(title: template.name, style: .default) { _ in CartStore.shared.setDepositTemplate(template) })
+        }
+        sheet.addAction(UIAlertAction(title: "common.action.cancel".localized(), style: .cancel))
+        sheet.popoverPresentationController?.sourceView = view
+        sheet.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
+        present(sheet, animated: true)
+    }
+
+    @objc private func pickCollectFirst() {
+        let sheet = UIAlertController(title: String(format: "deposit.cart.collectFirst".localized(), 1), message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: String(format: "deposit.cart.collectFirst".localized(), 1), style: .default) { _ in
+            CartStore.shared.setCollectFirstStage(method: "CASH")
+        })
+        sheet.addAction(UIAlertAction(title: "deposit.cart.collectNone.short".localized(), style: .default) { _ in
+            CartStore.shared.setCollectFirstStage(method: nil)
+        })
+        sheet.addAction(UIAlertAction(title: "common.action.cancel".localized(), style: .cancel))
+        sheet.popoverPresentationController?.sourceView = view
+        sheet.popoverPresentationController?.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
+        present(sheet, animated: true)
+    }
+
+    @objc private func editStageAmount(_ sender: UIControl) {
+        let preview = cart.stagedPreview()
+        guard sender.tag < preview.count else { return }
+        editingStageIndex = sender.tag
+        let picker = NumberPickerViewController.instance()
+        picker.delegate = self
+        picker.configure(initialValue: preview[sender.tag].amount, title: preview[sender.tag].label)
+        present(picker, animated: true)
+    }
+
     private func renderDiscountNotice(_ text: String?) {
         discountNoticeHost.isHidden = text == nil
         guard text != discountNoticeText else { return }
@@ -411,7 +587,7 @@ final class CartV2ViewController: BaseViewControler {
         avatar.backgroundColor = UIColor(hexString: "DBEAFE")
         avatar.layer.cornerRadius = 20
         avatar.clipsToBounds = true
-        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.name, weight: .medium,
+        let title = V2.label(name ?? "products.cart.pickCustomer".localized(), size: DS.TextSize.body, weight: .medium,
                              color: name == nil ? DS.Color.primary : DS.Color.text)
         let phone = V2.label(customer?.phone, size: DS.TextSize.secondary, color: DS.Color.textMuted)
         phone.isHidden = (customer?.phone ?? "").isEmpty
@@ -443,6 +619,7 @@ final class CartV2ViewController: BaseViewControler {
 
     private func datesRow() -> UIView {
         let row = UIControl()
+        row.accessibilityIdentifier = "cart.datesRow"
         row.addTarget(self, action: #selector(pickDates), for: .touchUpInside)
         // #952 (owner): calendar icon in a light-blue circle, same size and margin as the customer avatar
         let state = CartDateRowLogic.state(pickup: cart.pickupPlanAt, return: cart.returnPlanAt)
@@ -454,7 +631,7 @@ final class CartV2ViewController: BaseViewControler {
         icon.backgroundColor = UIColor(hexString: "DBEAFE")
         icon.layer.cornerRadius = CartDateRowLogic.iconSize / 2
         icon.clipsToBounds = true
-        let label = V2.label(text, size: DS.TextSize.name, weight: days == nil ? .medium : .regular, color: days == nil ? DS.Color.primary : DS.Color.text)
+        let label = V2.label(text, size: DS.TextSize.body, weight: days == nil ? .medium : .regular, color: days == nil ? DS.Color.primary : DS.Color.text)
         // #893 (owner): room inside the pill (10pt left/right, 4pt top/bottom), one line
         let pill = InsetLabel()
         pill.insets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
@@ -525,7 +702,14 @@ final class CartV2ViewController: BaseViewControler {
         let nameRow = UIStackView(arrangedSubviews: [name])
         nameRow.alignment = .top
         nameRow.spacing = 8
+        name.setContentHuggingPriority(UILayoutPriority(1), for: .horizontal) // #1241: spare width goes to the name, never the chip
         let column = UIStackView(arrangedSubviews: [nameRow, UIStackView(arrangedSubviews: [link, UIView()])])
+        // #1189: "Khối 3 ngày + 2 ngày thêm · 160.000đ" and under it the sum "120.000 (3 ngày) + 2 × 20.000 = 160.000"
+        if cart.orderType == .rent, let detail = item.blockDetail, detail.extraDays > 0 {
+            let formula = V2.label(BlockPricing.formula(detail), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+            formula.accessibilityIdentifier = "cart.blockFormula"
+            column.addArrangedSubview(formula)
+        }
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
@@ -546,7 +730,9 @@ final class CartV2ViewController: BaseViewControler {
             // #1132 (owner, mockup A): a soft pill in the tone's fill, a dot in the text colour, then the text
             let status = Self.stockPill(text: note.text, tone: note.tone)
             status.accessibilityLabel = note.spoken // #1064: the text is short; VoiceOver says which days / the stock
-            // right-aligned: the name takes the free width, the status sits on the trailing edge
+            status.accessibilityTraits = UIAccessibilityTraitButton // #1241: it opens the product
+            status.addAction(UIAction { [weak self] _ in self?.openProductCalendar(productId: item.productId, focusDay: nil) }, for: .touchUpInside)
+            // #1241 (owner): stays on the right; the pill is exactly as wide as its text, the name takes the rest
             nameRow.addArrangedSubview(status)
         }
 
@@ -631,7 +817,12 @@ final class CartV2ViewController: BaseViewControler {
     private func pricingChip(_ item: CartItem, index: Int) -> UIButton {
         let chip = CartV2Logic.chip(item, orderType: cart.orderType)
         let link = CartV2Logic.link(item, orderType: cart.orderType)
-        let button = Self.pricingLinkButton(amount: link.amount, unit: link.unit)
+        let button: UIButton
+        if cart.orderType == .rent, let detail = item.blockDetail {
+            button = Self.pricingLinkButton(amount: BlockPricing.summary(detail), unit: CartV2Logic.money(item.price), separator: " · ")
+        } else {
+            button = Self.pricingLinkButton(amount: link.amount, unit: link.unit)
+        }
         button.tag = index
         button.accessibilityLabel = String(format: "products.cart.pricing.change".localized(), item.productName ?? "")
         button.accessibilityValue = [chip.label, chip.price ?? "products.cart.pricing.enterPrice".localized()].joined(separator: ", ")
@@ -643,7 +834,7 @@ final class CartV2ViewController: BaseViewControler {
     /// #1056: the blue link of a cart line. A `.custom` button: a `.system` one fades a new attributed title in, and
     /// the cart builds a new link on every render, so the price blanked and came back each time the cart opened or
     /// updated. Pressed, the text dims as the `.system` button did.
-    static func pricingLinkButton(amount: String?, unit: String) -> UIButton {
+    static func pricingLinkButton(amount: String?, unit: String, separator: String = " / ") -> UIButton {
         let button = UIButton(type: .custom)
         func title(alpha: CGFloat) -> NSAttributedString {
             let color = DS.Color.primary.withAlphaComponent(alpha)
@@ -652,7 +843,7 @@ final class CartV2ViewController: BaseViewControler {
                     : UIFont.monospacedDigitSystemFont(ofSize: DS.TextSize.body, weight: .medium),
                 NSAttributedString.Key.foregroundColor: color,
             ])
-            text.append(NSAttributedString(string: " / " + unit, attributes: [
+            text.append(NSAttributedString(string: separator + unit, attributes: [
                 NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.body),
                 NSAttributedString.Key.foregroundColor: color,
             ]))
@@ -970,6 +1161,7 @@ final class CartV2ViewController: BaseViewControler {
                     self.editSubmission.failed()
                     sheet?.setBusy(false)
                     UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    self.reloadBlockTablesIfNeeded(after: error)
                     return
                 }
                 self.editSubmission.succeeded()
@@ -1072,6 +1264,19 @@ final class CartV2ViewController: BaseViewControler {
         present(sheet, animated: true)
     }
 
+    /// #1189: 400 BLOCK_PRICE_MISMATCH = a product's day table changed after the line was added. Load the products of
+    /// the block lines again; the lines take the new table and the next confirm sends the new price.
+    private func reloadBlockTablesIfNeeded(after error: Error) {
+        guard BlockPricingError.isPriceMismatch(error) else { return }
+        let ids = Set(cart.items.filter { $0.pricingType?.uppercased() == "BLOCK" }.map { $0.productId })
+        for id in ids {
+            ProductService.shared.loadProduct(productId: id) { product, _ in
+                guard let product else { return }
+                DispatchQueue.main.async { CartStore.shared.refreshBlockTable(from: product) }
+            }
+        }
+    }
+
     /// The request `CartViewModel.saveOrder` sends from the review screen, with this checkout's key
     private func submitOrder(confirm: CreateOrderConfirm, sheet: CreateOrderConfirmSheet?) {
         guard submission.begin() else { return }
@@ -1085,6 +1290,7 @@ final class CartV2ViewController: BaseViewControler {
                     self.submission.failed()
                     sheet?.setBusy(false)
                     UIAlertController.errorAlert(parent: sheet ?? self, error: error)
+                    self.reloadBlockTablesIfNeeded(after: error)
                     return
                 }
                 self.submission.succeeded()
@@ -1175,7 +1381,7 @@ extension CartV2ViewController {
     /// 7 pt dot in the text colour before the text. A UIControl so the overlap tag can take a tap.
     static func stockPill(text: String, tone: CartV2Logic.ShortageTone) -> UIControl {
         let style = shortageStyle(tone)
-        let pill = UIControl()
+        let pill = PillControl()
         pill.backgroundColor = style.colors.fill
         pill.isAccessibilityElement = true
         pill.accessibilityLabel = text
@@ -1191,12 +1397,35 @@ extension CartV2ViewController {
         row.alignment = .center
         row.isUserInteractionEnabled = false
         pill.addSubview(row)
-        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)) }
+        let insets = UIEdgeInsets(top: 3, left: 8, bottom: 3, right: 9)
+        pill.fitting = row
+        pill.insets = insets
+        row.snp.makeConstraints { make in make.edges.equalToSuperview().inset(insets) }
         pill.setContentHuggingPriority(.required, for: .horizontal)
+        pill.setContentHuggingPriority(.required, for: .vertical)
         pill.setContentCompressionResistancePriority(.required, for: .horizontal)
         pill.layer.cornerRadius = (ceil(label.font.lineHeight) + 6) / 2
         pill.clipsToBounds = true
         return pill
+    }
+}
+
+/// #1241: the cart's stock chip is about 20 pt high; the touch area grows to 44 pt without changing the look
+/// #1241: and its width is the text's: a UIControl has no intrinsic size of its own, so the stack gave it the spare width
+/// and the pill's fill ran past the text. `fitting` is the dot + label row, `insets` the pill padding
+final class PillControl: UIControl {
+    var fitting: UIView?
+    var insets = UIEdgeInsets.zero
+
+    override var intrinsicContentSize: CGSize {
+        guard let fitting else { return super.intrinsicContentSize }
+        let size = fitting.systemLayoutSizeFitting(UILayoutFittingCompressedSize)
+        return CGSize(width: ceil(size.width) + insets.left + insets.right, height: ceil(size.height) + insets.top + insets.bottom)
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let dy = max(0, (44 - bounds.height) / 2), dx = max(0, (44 - bounds.width) / 2)
+        return bounds.insetBy(dx: -dx, dy: -dy).contains(point)
     }
 }
 
@@ -1239,7 +1468,12 @@ extension CartV2ViewController: NumberPickerViewControllerDelegate {
             CartStore.shared.setDiscountType(type == .percentage ? .percentage : .amount)
             CartStore.shared.setDiscount(value)
         case .normal:
-            CartStore.shared.setManualDepositAmount(value)
+            if let index = editingStageIndex {
+                editingStageIndex = nil
+                CartStore.shared.setDepositStageAmount(index: index, amount: value)
+            } else {
+                CartStore.shared.setManualDepositAmount(value)
+            }
         }
     }
 }
@@ -1271,6 +1505,12 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     private let previewText = V2.label(size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
     private let previewTotal = V2.label(size: 18, weight: .bold)
     private let scroll = UIScrollView()
+    private let fieldStack = UIStackView()
+
+    /// #1189: the day-block table the sheet previews (the line's own, else the product's BLOCK option)
+    private var blockTable: BlockTable? {
+        item.blockTable ?? (item.pricingOptions ?? []).first { $0.isActive != false && $0.blockTable != nil }?.blockTable
+    }
 
     init(item: CartItem, orderType: OrderType, days: Int) {
         self.item = item
@@ -1328,7 +1568,10 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
         priceField.addTarget(self, action: #selector(priceChanged), for: .editingChanged)
         priceField.snp.makeConstraints { make in make.height.equalTo(52) }
         let note = V2.label("products.cart.pricing.note".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-        let field = UIStackView(arrangedSubviews: [fieldTitle, priceField, note])
+        let field = fieldStack
+        field.addArrangedSubview(fieldTitle)
+        field.addArrangedSubview(priceField)
+        field.addArrangedSubview(note)
         field.axis = .vertical
         field.spacing = 6
         content.addArrangedSubview(field)
@@ -1392,7 +1635,8 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
             dot.snp.makeConstraints { make in make.size.equalTo(20) }
             let label = V2.label(CartV2Logic.pricingLabel(choice.type), size: DS.TextSize.input, weight: .bold)
             label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-            let priceText = choice.catalogPrice.map { CartV2Logic.priceText($0, type: choice.type, orderType: orderType) }
+            var priceText = choice.catalogPrice.map { CartV2Logic.priceText($0, type: choice.type, orderType: orderType) }
+            if choice.type == ProductPricingMode.block.rawValue, let table = blockTable { priceText = BlockPricing.rowSummary(table) }
             let price = V2.label(priceText ?? "products.cart.pricing.enterPrice".localized(), size: DS.TextSize.body,
                                  weight: priceText == nil ? .bold : .regular,
                                  color: priceText == nil ? DS.Color.primary : DS.Color.textMuted)
@@ -1431,6 +1675,7 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
         priceField.placeholder = "0"
         let daily = orderType == .rent && selectedType == ProductPricingMode.perDay.rawValue
         unitLabel.text = MoneyFormatter.unitLabel(daily: daily)
+        fieldStack.isHidden = selectedType == ProductPricingMode.block.rawValue
         updatePreview()
     }
 
@@ -1441,13 +1686,21 @@ final class CartPricingSheetViewController: UIViewController, UITextFieldDelegat
     }
 
     private func updatePreview() {
+        // #1189: a block line has no price box; the preview is the table's answer for the cart's days
+        if orderType == .rent, selectedType == ProductPricingMode.block.rawValue, let table = blockTable,
+           let detail = BlockPricing.detail(table, days: days, minorUnit: BlockPricing.minorUnit(currency: ShopCurrencyStore.current.rawValue)) {
+            previewText.text = BlockPricing.summary(detail) + (detail.extraDays > 0 ? "\n" + BlockPricing.formula(detail) : "")
+            previewTotal.text = CartV2Logic.money(detail.total * Double(item.quantity))
+            return
+        }
         let preview = CartV2Logic.pricePreview(type: selectedType, price: price ?? 0, days: days, quantity: item.quantity, orderType: orderType)
         previewText.text = preview.text
         previewTotal.text = CartV2Logic.money(preview.total)
     }
 
     @objc private func applyTapped() {
-        onApply?(orderType == .rent ? selectedType : nil, price)
+        let isBlock = orderType == .rent && selectedType == ProductPricingMode.block.rawValue
+        onApply?(orderType == .rent ? selectedType : nil, isBlock ? nil : price)
         dismiss(animated: true)
     }
 }

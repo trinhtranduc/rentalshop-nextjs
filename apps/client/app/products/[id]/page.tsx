@@ -17,6 +17,8 @@ import { Modal } from '../../orders/create/parts';
 import { PRODUCT_ICON } from '../list/parts';
 import { BARCODE_ICON } from '../labels/LabelSheet';
 import { ownStockRows, productPrices, type ProductLike } from '../list/list-model';
+import { BlockPricingCard } from './BlockPricingCard';
+import { draftFromProduct } from '../block-model';
 import { defaultModeOf, imagesOf, sharedFieldsLockedFor, type ProductSource } from '../form/form-model';
 
 const CHECK_ICON = 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11';
@@ -113,6 +115,8 @@ export default function ProductDetailPage() {
   const canDeleteProducts = canManageProducts && !sharedFieldsLockedFor((user as unknown as { role?: string } | null)?.role);
   const [nonce, setNonce] = useState(0);
   const state = useProduct(id, nonce);
+  // #1189: the price table is edited by roles that may edit prices (not OUTLET_STAFF; the API refuses them too)
+  const canEditPrices = canManageProducts && canUpdateProducts && (user as unknown as { role?: string } | null)?.role !== 'OUTLET_STAFF';
 
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -262,12 +266,15 @@ export default function ProductDetailPage() {
                 value={prices.day != null ? t('detail.perDay', { price: money(prices.day) }) : '—'}
                 badge={both && mode === 'DAILY' ? t('detail.default') : undefined}
               />
+              {prices.block != null && <PriceRow label={t('detail.block.modeBlock')} value={t('price.blockFrom', { price: money(prices.block) })} badge={draftFromProduct(p).mode === 'BLOCK' ? t('detail.default') : undefined} />}
               {prices.hour != null && <PriceRow label={t('detail.hour')} value={t('detail.perHour', { price: money(prices.hour) })} />}
               <PriceRow label={t('detail.deposit')} value={money(Number(p.deposit) || 0)} />
               <PriceRow label={t('detail.sale')} value={prices.sale != null ? money(prices.sale) : '—'} />
               {canManageProducts && cost > 0 && <PriceRow label={t('detail.cost')} value={money(cost)} />}
             </dl>
           </Card>
+
+          {canEditPrices && <BlockPricingCard product={p} />}
 
           <Card title={t('detail.description')}>
             <p className={`m-0 whitespace-pre-wrap text-[15px] ${p.description ? 'text-ar-ink' : 'text-ar-muted'}`}>{p.description || t('detail.noDescription')}</p>

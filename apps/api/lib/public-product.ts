@@ -17,6 +17,10 @@ export interface PublicProductSource {
     price: number;
     unit?: string | null;
     blockSize?: number | null;
+    blockTiers?: unknown;
+    blockStartDay?: number | null;
+    blockExtraMode?: string | null;
+    blockExtraPrice?: number | null;
     isDefault?: boolean | null;
   }[];
   categoryId?: number | null;
@@ -62,6 +66,15 @@ export function toPublicProduct(product: PublicProductSource, opts?: { hidePrice
       price: hidePrices ? null : option.price,
       unit: option.unit ?? null,
       blockSize: option.blockSize ?? null,
+      // #1189: the day table of a BLOCK option (hidden with the other prices); other options keep the old keys only
+      ...(option.type === 'BLOCK'
+        ? {
+            blockTiers: hidePrices ? null : option.blockTiers ?? null,
+            blockStartDay: option.blockStartDay ?? null,
+            blockExtraMode: option.blockExtraMode ?? null,
+            blockExtraPrice: hidePrices ? null : option.blockExtraPrice ?? null,
+          }
+        : {}),
       isDefault: Boolean(option.isDefault),
     })),
     categoryId: product.categoryId || product.category?.id,

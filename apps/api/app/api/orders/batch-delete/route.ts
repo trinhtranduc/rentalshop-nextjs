@@ -99,6 +99,18 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
       }
     }
 
+    // #1199: cancelled orders that kept money stay in the history
+    const keptOrders = orders.filter((o: any) => o.status === ORDER_STATUS.CANCELLED && (o.cancelKeptAmount || 0) > 0);
+    if (keptOrders.length > 0) {
+      return NextResponse.json(
+        {
+          ...ResponseBuilder.error('CANCELLED_ORDER_KEEPS_AMOUNT'),
+          data: { keptOrderIds: keptOrders.map((o) => o.id), keptOrderNumbers: keptOrders.map((o) => o.orderNumber) },
+        },
+        { status: 400 }
+      );
+    }
+
     // Authorization checks based on user role
     const unauthorizedOrders: Array<{ id: number; orderNumber: string; reason: string }> = [];
 

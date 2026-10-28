@@ -35,6 +35,14 @@ class Cart {
     /// #1124: the online booking request this cart confirms (sent as `bookingRequestId`) and its branch
     var bookingRequestId: Int?
     var bookingOutletId: Int?
+    /// #1199 "Thu cọc theo giai đoạn" (kept in memory only; a new cart starts from the shop's default template):
+    /// the stages of this order, the template they came from, and whether stage 1 is collected with the order
+    var depositStages: [DepositStageDraft]?
+    var depositTemplateId: String?
+    var collectFirstStageNow = true
+    var collectMethod = "CASH"
+    /// The order being edited has a deposit plan: the cart's own "Cọc" is not used
+    var editHasDepositPlan = false
     
     // MARK: - Computed Properties
     var amountDue: Double {
@@ -128,6 +136,18 @@ class Cart {
         }
     }
 
+    /// #1189: the product's day-block table changed (the API answered BLOCK_PRICE_MISMATCH): its block lines take
+    /// the new table and are priced again
+    func refreshBlockTable(from product: Product) {
+        let productId = product.product_id != 0 ? product.product_id : (product.id ?? 0)
+        guard let table = ProductPricing.block(product) else { return }
+        for index in items.indices where items[index].productId == productId && items[index].pricingType?.uppercased() == "BLOCK" {
+            items[index].pricingOptions = (product.pricingOptions ?? []).filter { $0.isActive != false }
+            items[index].blockTable = table
+            items[index].repriceBlock()
+        }
+    }
+
     /// #951: the index of a line by its id (nil when it is gone)
     func index(ofLine lineId: UUID) -> Int? {
         items.firstIndex { $0.lineId == lineId }
@@ -157,6 +177,8 @@ class Cart {
     /// This will save the custom price based on current order type
     func updatePrice(at index: Int, price: Double) {
         guard index >= 0 && index < items.count else { return }
+        // #1189: a block line takes its price from the table
+        if orderType == .rent && items[index].isBlockPricing { return }
         items[index].price = price
         
         // Save custom price based on current order type
@@ -174,6 +196,7 @@ class Cart {
     /// for the line's mode, or "Nhập giá" when it has none; sale: back to the sale price)
     func clearPrice(at index: Int) {
         guard index >= 0 && index < items.count else { return }
+        if orderType == .rent && items[index].isBlockPricing { return }
         if orderType == .rent {
             items[index].clearCustomRentalPrice()
         } else {
@@ -252,7 +275,7 @@ class Cart {
     func syncRentalDaysFromDates() {
         guard orderType == .rent else { return }
         guard let days = calculateRentalDays(), days >= 1 else { return }
-        for index in items.indices where items[index].isDailyPricing {
+        for index in items.indices where items[index].isDailyPricing || items[index].isBlockPricing {
             items[index].rentalDays = days
         }
     }
@@ -424,6 +447,7 @@ class Cart {
         cart.discountType = DiscountType(rawValue: orderDetail.discountTypeOrDefault) ?? .amount
         
         // Map deposit amount from order (preserve the original deposit amount)
+        cart.editHasDepositPlan = orderDetail.hasDepositPlan == true // #1199
         if orderDetail.depositAmount > 0 {
             cart.setManualDepositAmount(orderDetail.depositAmount)
         } else {
@@ -473,6 +497,7 @@ class Cart {
             cartItem.pricingType = orderItem.pricingType ?? "FIXED"
             cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
+            cartItem.adoptSnapshot(orderItem.pricingSnapshot)
             return cartItem
         }
         cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: orderDetail.orderNumber,
@@ -625,6 +650,7 @@ class Cart {
         }
         
         // Map deposit amount from order (preserve the original deposit amount)
+        cart.editHasDepositPlan = order.hasDepositPlan == true // #1199
         if order.depositAmount > 0 {
             cart.setManualDepositAmount(order.depositAmount)
         } else {
@@ -670,6 +696,7 @@ class Cart {
             cartItem.pricingType = orderItem.pricingType ?? "FIXED"
             cartItem.rentalDays = max(1, orderItem.rentalDays ?? 1)
             cartItem.selectedPricingOptionId = orderItem.pricingOptionId
+            cartItem.adoptSnapshot(orderItem.pricingSnapshot)
             return cartItem
         }
         cart.editOriginal = CartEditOriginal.capture(cart, orderNumber: order.orderNumber, paid: order.totalPaid,
@@ -848,7 +875,7 @@ class Cart {
                 deposit: item.deposit,
                 notes: finalNote,
                 rentalDays: orderType == .rent
-                    ? (item.isDailyPricing ? item.rentalDays : calculateRentalDays())
+                    ? (item.isDailyPricing || item.isBlockPricing ? item.rentalDays : calculateRentalDays())
                     : nil,
                 imageUrl: item.imageUrl,
                 pricingType: orderType == .rent ? item.requestPricingType : nil,
@@ -933,7 +960,7 @@ class Cart {
                 totalPrice: effectiveSubTotal,
                 deposit: item.deposit,
                 notes: finalNote,
-                rentDays: orderType == .rent && item.isDailyPricing ? item.rentalDays : nil,
+                rentDays: orderType == .rent && (item.isDailyPricing || item.isBlockPricing) ? item.rentalDays : nil,
                 pricingType: orderType == .rent ? item.requestPricingType : nil,
                 pricingOptionId: item.requestPricingOptionId
             )
@@ -1052,7 +1079,7 @@ struct CreateOrderRequest: Codable {
     let orderItems: [CreateOrderItem]
     let pickupPlanAt: String?
     let returnPlanAt: String?
-    let depositAmount: Double?
+    var depositAmount: Double?
     let securityDeposit: Double?
     let damageFee: Double?
     let lateFee: Double?
@@ -1069,6 +1096,8 @@ struct CreateOrderRequest: Codable {
     var outletId: Int? = nil
     /// #1124: the online booking request this order confirms (optional on the API; old apps never send it)
     var bookingRequestId: Int? = nil
+    /// #1199: the deposit stages of a rental in a "Thu cọc theo giai đoạn" shop; nil keeps the request as before
+    var paymentPlan: PaymentPlanRequest? = nil
     
     struct LoyaltyRedeemRequest: Codable {
         let points: Int
@@ -1097,6 +1126,7 @@ struct CreateOrderRequest: Codable {
         case rentalDurationUnit
         case outletId
         case bookingRequestId
+        case paymentPlan
         // Explicitly exclude 'subtotal'
     }
     
@@ -1125,6 +1155,7 @@ struct CreateOrderRequest: Codable {
         try container.encodeIfPresent(rentalDurationUnit, forKey: .rentalDurationUnit)
         try container.encodeIfPresent(outletId, forKey: .outletId)
         try container.encodeIfPresent(bookingRequestId, forKey: .bookingRequestId)
+        try container.encodeIfPresent(paymentPlan, forKey: .paymentPlan)
         
         // Explicitly NOT encoding 'subtotal' field
     }

@@ -41,7 +41,7 @@ class Issue482ResourcesTest {
         "v2_pricing_price_field" to "Giá cho đơn này",
         "v2_pricing_note" to "Chỉ áp dụng cho đơn này, không đổi giá sản phẩm.",
         "v2_pricing_apply" to "Áp dụng",
-        "v2_pricing_block" to "Theo block",
+        "v2_pricing_block" to "Theo khối ngày",
         "v2_price_per_rental" to "Theo lần",
         "v2_price_per_day" to "Theo ngày",
         // Item 5: change password sheet

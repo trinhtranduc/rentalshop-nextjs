@@ -23,6 +23,14 @@ export interface RouteResponse {
 /** Plain JSON, as the API sends it (Dates become ISO strings, undefined keys disappear) */
 const json = (value: unknown) => JSON.parse(JSON.stringify(value));
 
+function optionalActual(file: string): Record<string, any> {
+  try {
+    return jest.requireActual(file);
+  } catch {
+    return {};
+  }
+}
+
 export function loadRoute(routeDir: string, holder: StoreHolder, root = THIS_ROOT): Record<string, any> {
   const pkg = (name: string) => path.join(root, 'packages', name, 'src');
   const lib = (name: string) => path.join(root, 'apps/api/lib', name);
@@ -59,6 +67,10 @@ export function loadRoute(routeDir: string, holder: StoreHolder, root = THIS_ROO
     createAuditHelper: () => ({ logCreate: async () => undefined, logUpdate: async () => undefined }),
     uploadToS3: async () => ({ success: false }),
     commitStagingFiles: async () => ({ success: true, committedKeys: [] }),
+    // growth-metrics (revenue mapping characterization, #1199)
+    percentChange: jest.requireActual(path.join(pkg('utils'), 'analytics/period-report')).percentChange,
+    // deposit plans (#1199); an older tree has no such file and no route that asks for it
+    ...optionalActual(path.join(pkg('utils'), 'analytics/future-installments')),
   }));
   jest.doMock('@rentalshop/loyalty', () => ({
     calculateAmountDue: jest.requireActual(path.join(pkg('loyalty'), 'earn')).calculateAmountDue,

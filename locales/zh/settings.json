@@ -21,9 +21,11 @@
       "outlet": "分店",
       "public-page": "公开店铺页面",
       "bank-accounts": "银行",
-      "profile": "个人资料",
+      "receipt": "打印与单据",
+      "profile": "资料与安全",
       "account": "密码与安全",
-      "language": "语言与外观"
+      "language": "语言与外观",
+      "payment": "收款"
     },
     "form": {
       "more": "更多",
@@ -37,6 +39,72 @@
       "count": "{count} 个分店",
       "open": "打开分店"
     },
-    "back": "返回"
+    "back": "返回",
+    "blockPricing": {
+      "title": "旧版应用的按天数档位计价",
+      "hint": "部分客户仍在使用不支持按天数档位计价的旧版应用。请选择旧版应用下单档位计价商品时服务器的处理方式。",
+      "recompute": "服务器自动计价（推荐）",
+      "recomputeHint": "旧版应用仍可下单，价格按价目表和天数正确计算。",
+      "block": "要求更新应用",
+      "blockHint": "旧版应用无法下单档位计价商品，员工需要更新应用。"
+    },
+    "deposit": {
+      "title": "定金收取方式",
+      "hint": "选择店铺租赁时的收款方式。",
+      "oneTime": "一次性收定金",
+      "oneTimeHint": "下单时收一次定金，等于各商品定金之和。余款取货时收取。",
+      "staged": "分阶段收定金",
+      "stagedHint": "按订单金额的百分比把定金分成多个阶段。余款取货时收取。",
+      "twoStages": "目前租赁订单分 2 个阶段收款",
+      "stage1Title": "定金",
+      "stage1Hint": "各商品定金之和，下单时收取",
+      "stage2Title": "余款",
+      "stage2Hint": "取货时收取",
+      "viewOnly": "仅查看",
+      "productDepositNote": "每件商品的定金在商品页面设置（“定金”一栏）。",
+      "newOrdersOnly": "只影响更改后创建的订单，已有订单保持不变。",
+      "templates": "店铺定金模板",
+      "templateCount": "{count} 个模板",
+      "default": "默认",
+      "templateName": "模板名称",
+      "templateHint": "每个阶段只有订单金额的百分比和截止日，金额在创建订单时自动计算。",
+      "stage": "第 {n} 阶段",
+      "removeStage": "删除阶段",
+      "stageName": "阶段名称",
+      "stagePercent": "占订单 %",
+      "stageDue": "截止日",
+      "restTitle": "第 {n} 阶段 · 余款，取货时收取",
+      "restHint": "自动计算，不可修改，始终是最后一个阶段。",
+      "addStage": "添加阶段",
+      "total": "合计",
+      "totalLine": "{sum}% + {rest}%（余款）= {all}%",
+      "problem": {
+        "name": "模板需要名称。",
+        "items": "每个模板有 1 到 3 个阶段。",
+        "label": "每个阶段都需要名称。",
+        "percent": "每个阶段须在 1% 到 100% 之间。",
+        "over": "各阶段百分比合计不能超过 100%。"
+      },
+      "makeDefault": "设为默认模板",
+      "removeTemplate": "删除模板",
+      "newTemplate": "新建模板",
+      "newTemplateName": "新模板",
+      "newStageName": "预订定金",
+      "policy": "取消 / 改期政策",
+      "policyPlaceholder": "例如：取货前 7 天以上取消，全额退还定金；不足 7 天，店铺保留定金。",
+      "policyHint": "取消订单时显示。最多 1000 个字符。",
+      "cancel": "取消",
+      "save": "保存",
+      "saving": "正在保存...",
+      "saved": "已保存定金设置",
+      "saveFailed": "保存失败",
+      "loadFailed": "无法加载定金设置。",
+      "due": {
+        "onCreate": "下单时",
+        "beforePickup": "取货前 {days} 天",
+        "afterCreate": "下单后 {days} 天"
+      },
+      "restShort": "取货时收余款"
+    }
   }
 }

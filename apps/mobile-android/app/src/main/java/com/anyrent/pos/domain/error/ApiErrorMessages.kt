@@ -258,6 +258,20 @@ object ApiErrorMessages {
         "OUTLET_DEACTIVATED" -> R.string.api_error_outlet_deactivated
         "OUTLET_DELETED_SUCCESS" -> R.string.api_error_outlet_deleted_success
         "OUTLET_HAS_OPEN_ORDERS" -> R.string.api_error_outlet_has_open_orders
+        "INSTALLMENT_EXCEEDS_TOTAL" -> R.string.api_error_installment_exceeds_total
+        "INSTALLMENT_OVERPAID" -> R.string.api_error_installment_overpaid
+        "INSTALLMENT_ALREADY_PAID" -> R.string.api_error_installment_already_paid
+        "INSTALLMENT_FORBIDDEN_ROLE" -> R.string.api_error_installment_forbidden_role
+        "INSTALLMENT_UNPAID_AT_PICKUP" -> R.string.api_error_installment_unpaid_at_pickup
+        "INSTALLMENT_NOT_FOUND" -> R.string.api_error_installment_not_found
+        "INSTALLMENT_NO_PLAN" -> R.string.api_error_installment_no_plan
+        "INSTALLMENT_LOYALTY_UNSUPPORTED" -> R.string.api_error_installment_loyalty_unsupported
+        "CANCEL_AMOUNTS_MISMATCH" -> R.string.api_error_cancel_amounts_mismatch
+        "CANCELLED_ORDER_KEEPS_AMOUNT" -> R.string.api_error_cancelled_order_keeps_amount
+        "DEPOSIT_SETTINGS_INVALID" -> R.string.api_error_deposit_settings_invalid
+        "BLOCK_PRICE_MISMATCH" -> R.string.api_error_block_price_mismatch
+        "PRICING_TYPE_REQUIRES_UPDATE" -> R.string.api_error_pricing_type_requires_update
+        "BLOCK_TABLE_INVALID" -> R.string.api_error_block_table_invalid
         "OUTLET_ID_REQUIRED" -> R.string.api_error_outlet_id_required
         "OUTLET_INFO_UPDATED_SUCCESS" -> R.string.api_error_outlet_info_updated_success
         "OUTLET_NAME_ADDRESS_REQUIRED" -> R.string.api_error_outlet_name_address_required

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, calculatePeriodRevenueBatch, toRevenueOrderData, REVENUE_PLAN_SELECT, buildEventWhere, EVENT_WHERE_PERIOD } from '@rentalshop/utils';
 import { percentChange } from '@rentalshop/utils/server';
 import { API, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { monthKeysOf, previousPeriodKeys, readReportRange, reportRangeOfKeys, shopToday } from '../../../../lib/report-days';
@@ -118,41 +118,19 @@ export const GET = withPermissions(['analytics.view.revenue'])(async (request, {
       returnedAt: true,
       pickupPlanAt: true,
       returnPlanAt: true,
-      updatedAt: true
+      updatedAt: true,
+      ...REVENUE_PLAN_SELECT
     } as const;
 
     const fetchPeriodRevenue = async (periodStart: Date, periodEnd: Date): Promise<number> => {
-      const dayMs = 24 * 60 * 60 * 1000;
       const where: any = {
         ...orderWhereClause,
         deletedAt: null,
-        OR: [
-          { createdAt: { gte: periodStart, lte: periodEnd } },
-          { pickedUpAt: { gte: new Date(periodStart.getTime() - dayMs), lte: new Date(periodEnd.getTime() + dayMs), not: null } },
-          { returnedAt: { gte: new Date(periodStart.getTime() - dayMs), lte: new Date(periodEnd.getTime() + dayMs), not: null } },
-          { updatedAt: { gte: periodStart, lte: periodEnd }, status: ORDER_STATUS.CANCELLED as any },
-          { pickupPlanAt: { gte: periodStart, lte: periodEnd, not: null } },
-          { returnPlanAt: { gte: periodStart, lte: periodEnd, not: null } }
-        ]
+        ...buildEventWhere({ start: periodStart, end: periodEnd }, EVENT_WHERE_PERIOD)
       };
 
       const orders = await prisma.order.findMany({ where, select: revenueSelect, take: 10000 });
-      const ordersData = orders.map((order: any) => ({
-        orderType: order.orderType,
-        status: order.status,
-        totalAmount: order.totalAmount || 0,
-        depositAmount: order.depositAmount || 0,
-        securityDeposit: order.securityDeposit || 0,
-        damageFee: order.damageFee || 0,
-        lateFee: order.lateFee || 0,
-        pickupTotalAmount: order.pickupTotalAmount ?? null,
-        createdAt: order.createdAt,
-        pickedUpAt: order.pickedUpAt,
-        returnedAt: order.returnedAt,
-        pickupPlanAt: order.pickupPlanAt,
-        returnPlanAt: order.returnPlanAt,
-        updatedAt: order.updatedAt
-      }));
+      const ordersData = orders.map((order: any) => toRevenueOrderData(order));
 
       const { realIncome } = calculatePeriodRevenueBatch(ordersData, periodStart, periodEnd);
       return realIncome;

@@ -656,7 +656,13 @@ final class ProductRowV2Cell: UITableViewCell {
         let text = NSMutableAttributedString()
         let strong: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.name), NSAttributedString.Key.foregroundColor: DS.Color.text]
         let muted: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary), NSAttributedString.Key.foregroundColor: DS.Color.textMuted]
-        let unit: (ProductPricingMode) -> String = { $0 == .perDay ? "products.unit.perDay".localized() : "products.unit.perRental".localized() }
+        let unit: (ProductPricingMode) -> String = {
+            switch $0 {
+            case .perDay: return "products.unit.perDay".localized()
+            case .block: return "products.unit.block".localized()
+            case .perRental: return "products.unit.perRental".localized()
+            }
+        }
         if let price = ProductRowLogic.price(product) {
             if let mode = price.mainMode {
                 text.append(NSAttributedString(string: MoneyFormatter.format(price.main), attributes: strong))

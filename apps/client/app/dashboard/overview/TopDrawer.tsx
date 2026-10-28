@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 import { topBars, topCustomerBars, type PeriodReportLike, type TopKind } from '../overview-model';
 import { DrawerShell } from './DetailDrawer';
-import { Skeleton, type Money, type T } from './sections';
+import { Skeleton, TopThumb, type Money, type T } from './sections';
 
 const NS: Record<TopKind, { ns: string; count: string; href: (id: number | string) => string }> = {
   products: { ns: 'home.top', count: 'home.top.rentals', href: (id) => `/products/${id}` },
@@ -79,9 +79,14 @@ export function TopDrawer({
             <li key={b.id}>
               <Link
                 href={cfg.href(b.id)}
-                className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-lg px-1 py-1.5 text-ar-ink no-underline hover:bg-ar-surface-muted"
+                className={`grid ${kind === 'products' ? 'grid-cols-[24px_36px_minmax(0,1fr)_auto]' : 'grid-cols-[24px_minmax(0,1fr)_auto]'} items-center gap-x-2.5 gap-y-1 rounded-lg px-1 py-1.5 text-ar-ink no-underline hover:bg-ar-surface-muted`}
               >
                 <span className="row-span-2 text-center text-[13px] font-semibold tabular-nums text-ar-muted">{i + 1}</span>
+                {kind === 'products' && (
+                  <span className="row-span-2">
+                    <TopThumb bar={b} size="h-9 w-9" />
+                  </span>
+                )}
                 <span className="truncate text-[13px]">{b.name}</span>
                 <span className="text-right text-[13px] font-semibold tabular-nums">{money(b.value)}</span>
                 <span aria-hidden="true" className="relative block h-1.5 rounded-[3px] bg-ar-subtle">

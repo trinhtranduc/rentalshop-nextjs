@@ -51,6 +51,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -68,6 +71,11 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
+import com.anyrent.pos.data.DepositModeStore
+import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.domain.deposit.DepositMode
+import com.anyrent.pos.domain.deposit.DepositPlanMath
+import com.anyrent.pos.ui.deposit.CartStagedSection
 import com.anyrent.pos.data.model.CartLine
 import com.anyrent.pos.domain.ShopTime
 import com.anyrent.pos.domain.availability.AvailabilityRequest
@@ -80,7 +88,10 @@ import com.anyrent.pos.domain.orders.CreateOrderSheet
 import com.anyrent.pos.domain.orders.CreateOrderSubmission
 import com.anyrent.pos.domain.orders.EditOrderSheet
 import com.anyrent.pos.domain.customers.CustomerPickerEdit
+import com.anyrent.pos.domain.products.BlockPricing
+import com.anyrent.pos.domain.products.BlockText
 import com.anyrent.pos.domain.products.CartDateRow
+import com.anyrent.pos.domain.products.ProductPricing
 import com.anyrent.pos.domain.products.CartLineCalc
 import com.anyrent.pos.domain.products.CartProblem
 import com.anyrent.pos.domain.products.CartMoneyRow
@@ -142,7 +153,7 @@ fun CartV2Screen(
     /** #677 "Huỷ sửa": edit mode left and the cart emptied; the order's detail again (loaded fresh) */
     onEditCancelled: (Int) -> Unit = onOpenOrder,
     /** #684: the "Hết hàng …" tag → Lịch trống of the product on that day (`yyyy-MM-dd`) */
-    onOpenCalendar: (Int, String) -> Unit = { _, _ -> },
+    onOpenCalendar: (Int, String?) -> Unit = { _, _ -> },
 ) {
     val lines by CartStore.lines.collectAsState()
     val customer by CartStore.customer.collectAsState()
@@ -157,6 +168,21 @@ fun CartV2Screen(
     val editingOrderId by CartStore.editingOrderId.collectAsState()
     val editOriginal by CartStore.editOriginal.collectAsState()
     val isSale = orderType == "SALE"
+    // #1199 "Thu cọc theo giai đoạn": the shop's mode (a login without it is fetched), its templates, the stages of this cart
+    val depositMode by SessionStore.depositModeFlow.collectAsState()
+    val depositSettings by DepositModeStore.latest.collectAsState()
+    val depositStages by CartStore.depositStages.collectAsState()
+    val depositTemplateId by CartStore.depositTemplateId.collectAsState()
+    val collectFirstNow by CartStore.collectFirstStageNow.collectAsState()
+    val editHasPlan by CartStore.editHasDepositPlan.collectAsState()
+    val stagedMode = depositMode == DepositMode.STAGED
+    LaunchedEffect(Unit) { DepositModeStore.refresh() }
+    // A staged shop: the stages of a new order start from the shop's default template
+    LaunchedEffect(stagedMode, depositSettings, depositStages == null, orderType, editingOrderId) {
+        val template = depositSettings?.startTemplate
+        if (!isSale && editingOrderId == null && stagedMode && depositStages == null && template != null) CartStore.setDepositTemplate(template)
+    }
+    val staged = !isSale && editingOrderId == null && stagedMode && depositStages != null
     val app = LocalContext.current.applicationContext as AnyRentApp
 
     // Same money as the old cart: computed from the collected lines so every change redraws
@@ -267,6 +293,16 @@ fun CartV2Screen(
     val createBlocked = OverlapWarnings.blocksCreate(allowOverlap, overlapConflicts)
     val overlapBlockedMessage = stringResource(R.string.v2_cart_overlap_blocked)
 
+    // #1199: the stages of the cart as they stand now (the API recomputes them), what stage 1 collects, and whether they fit
+    val restLabel = stringResource(R.string.deposit_rest_label)
+    val canEditStages = !PermissionManager.role.isStaffLike
+    val stagedPreview = if (staged) CartStore.stagedPreview(restLabel) else emptyList()
+    val stagesExceed = staged && DepositPlanMath.exceedsTotal(stagedPreview, total)
+    val stagedCollectNow = if (staged && collectFirstNow) stagedPreview.firstOrNull()?.takeIf { !it.isRest }?.amount ?: 0.0 else 0.0
+    val stagedTemplateName = depositSettings?.choices.orEmpty().let { choices ->
+        (choices.firstOrNull { it.id == depositTemplateId } ?: choices.firstOrNull())?.name.orEmpty()
+    }
+
     // #473 — a rent line without "Theo lần / Theo ngày" may be stale (added before the product got its second price,
     // restored from disk, or loaded from an edited order): reload that product once per screen and let the line take
     // its prices. A product with one price stays without the toggle.
@@ -330,6 +366,7 @@ fun CartV2Screen(
             }.onFailure {
                 // The cart and the sheet stay; the next confirm retries with the same key
                 submission.failed()
+                scope.launch(Dispatchers.IO) { CartOrderSubmit.reloadBlockTablesIfNeeded(it) } // #1189
                 error = it.message
                     ?.takeUnless { message -> message.isBlank() || message.equals("Validation error", ignoreCase = true) }
                     ?: validationFallbackMessage
@@ -369,6 +406,7 @@ fun CartV2Screen(
             }.onFailure {
                 // The cart and the sheet stay; the next tap retries
                 editSubmission.failed()
+                scope.launch(Dispatchers.IO) { CartOrderSubmit.reloadBlockTablesIfNeeded(it) } // #1189
                 error = CartOrderSubmit.errorMessage(it, validationFallbackMessage)
             }
         }
@@ -417,6 +455,8 @@ fun CartV2Screen(
                                 collateralDetails = CartStore.collateralDetails.value,
                                 shop = com.anyrent.pos.ui.orders.shareShop(),
                                 vi = shareContext.shareIsVietnamese(),
+                                blockFormula = { line -> line.blockDetail?.let { BlockText.formulaOrNull(shareContext.resources, it) } },
+                                blockSummary = { line -> line.blockDetail?.let { BlockText.summary(shareContext.resources, it) } },
                             ),
                         )
                     }.onFailure { error = it.message }
@@ -474,13 +514,13 @@ fun CartV2Screen(
                         // iOS starts with no dates: "Chọn ngày thuê" in the primary colour, no day pill (#448)
                         Text(
                             stringResource(R.string.v2_cart_pick_dates),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium, color = DS.Colors.Primary,
                             modifier = Modifier.weight(1f),
                         )
                     } else {
                         Text(
                             dateRow.text.orEmpty(),
-                            fontSize = DS.TextSize.Name, fontWeight = FontWeight.Normal, maxLines = 1, softWrap = false,
+                            fontSize = DS.TextSize.Body, fontWeight = FontWeight.Normal, maxLines = 1, softWrap = false,
                             overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                         )
                         val days = dateRow.days ?: 1
@@ -512,6 +552,7 @@ fun CartV2Screen(
                     onOpenOverlap = overlapConflicts.firstOrNull { it.productId == line.product.id }?.let { c ->
                         { onOpenCalendar(c.productId, c.from.toString()) }
                     },
+                    onOpenProduct = { onOpenCalendar(line.product.id, null) },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.lineId, q) },
                     onOpenPricing = { pricingLineId = line.lineId },
                     onOpenNote = { noteLineId = line.lineId },
@@ -520,6 +561,20 @@ fun CartV2Screen(
               }
             }
 
+            // #1045 note row as a lambda: a staged rental shows it before the deposit group (#1245)
+            val noteRow: @Composable () -> Unit = {
+                // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
+                val noteFiles by CartStore.noteImageFiles.collectAsState()
+                val notePhotos = if (editingOrderId == null) noteFiles.size else 0
+                CartMoneyEditRow(
+                    stringResource(R.string.v2_cart_note),
+                    CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
+                    tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
+                    photoCount = notePhotos,
+                    onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
+                )
+            }
+            val stagedGroup = !isSale && !(editingOrderId != null && editHasPlan) && staged
             SectionBand(stringResource(R.string.v2_cart_money))
             V2ValueRow(stringResource(if (isSale) R.string.v2_cart_sale_subtotal else R.string.v2_cart_rent_subtotal), formatMoneyVnd(subtotal), valueColor = DS.Colors.Text)
             ThinDivider()
@@ -534,23 +589,31 @@ fun CartV2Screen(
             V2ValueRow(stringResource(R.string.v2_cart_total), formatMoneyVnd(total), valueColor = DS.Colors.Text, bold = true)
             ThinDivider()
             if (!isSale) {
-                CartMoneyEditRow(
-                    stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
-                    tone = CartV2Logic.moneyRowTone(CartMoneyRow.DEPOSIT),
-                    onClick = { numericText = deposit.toLong().toString(); numericEditor = "DEPOSIT" },
-                )
-                ThinDivider()
+                if (editingOrderId != null && editHasPlan) {
+                    // #1199: the plan of this order is edited on the order itself; the cart has no "Cọc" of its own
+                } else if (staged) {
+                    noteRow() // #1245: the note stays with the money rows; the staged deposit is one group below it
+                    CartStagedSection(
+                        preview = stagedPreview, templateName = stagedTemplateName, choices = depositSettings?.choices.orEmpty(),
+                        canEdit = canEditStages, exceeds = stagesExceed, collectNow = stagedCollectNow,
+                        todayKey = ShopTime.today().toString(),
+                        onPickTemplate = { CartStore.setDepositTemplate(it) },
+                        onEditStage = { index ->
+                            numericText = stagedPreview.getOrNull(index)?.amount?.toLong()?.toString() ?: "0"
+                            numericEditor = "STAGE:$index"
+                        },
+                        onCollectFirst = { CartStore.setCollectFirstStage(it) },
+                    )
+                } else if (!(stagedMode && editingOrderId == null)) {
+                    CartMoneyEditRow(
+                        stringResource(R.string.v2_cart_deposit), formatMoneyVnd(deposit),
+                        tone = CartV2Logic.moneyRowTone(CartMoneyRow.DEPOSIT),
+                        onClick = { numericText = deposit.toLong().toString(); numericEditor = "DEPOSIT" },
+                    )
+                    ThinDivider()
+                }
             }
-            // #1043: opens the same sheet ("Ghi chú đơn"); #1056: a row "Ghi chú … Thêm ✎" like the others
-            val noteFiles by CartStore.noteImageFiles.collectAsState()
-            val notePhotos = if (editingOrderId == null) noteFiles.size else 0
-            CartMoneyEditRow(
-                stringResource(R.string.v2_cart_note),
-                CartV2Logic.noteShown(notes) ?: stringResource(R.string.v2_cart_add_note),
-                tone = CartV2Logic.moneyRowTone(CartMoneyRow.NOTE, note = notes),
-                photoCount = notePhotos,
-                onClick = { noteDraftFiles = CartStore.noteImageFiles.value; noteDraft = notes },
-            )
+            if (!stagedGroup) noteRow()
             Spacer(Modifier.height(24.dp))
         }
 
@@ -601,7 +664,8 @@ fun CartV2Screen(
                     returnDate = ret,
                     lines = lines.map { it.product.name to it.quantity },
                     total = total,
-                    deposit = deposit,
+                    // #1199: a staged rental prepays stage 1 only (or nothing)
+                    deposit = if (staged) stagedCollectNow else deposit,
                 )
             }
         }
@@ -642,11 +706,23 @@ fun CartV2Screen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(if (isSale) R.string.v2_cart_customer_pays else R.string.v2_cart_collect_deposit), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                    Text(formatMoneyVnd(CartV2Logic.collectNow(isSale, total, deposit)), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(
+                            when {
+                                isSale -> R.string.v2_cart_customer_pays
+                                staged -> if (stagedCollectNow > 0) R.string.deposit_cart_collect_now else R.string.deposit_cart_collect_none
+                                else -> R.string.v2_cart_collect_deposit
+                            },
+                        ),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                    )
+                    Text(
+                        formatMoneyVnd(if (staged) stagedCollectNow else CartV2Logic.collectNow(isSale, total, deposit)),
+                        fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold,
+                    )
                 }
                 AppPrimaryButton(
-                    stringResource(
+                    if (staged && stagedCollectNow > 0) stringResource(R.string.deposit_cart_create_and_collect) else stringResource(
                         when (EditOrderSheet.ctaLabel(editing = false, isSale = isSale)) {
                             EditOrderSheet.CtaLabel.SAVE_CHANGES -> R.string.v2_cart_edit_save
                             EditOrderSheet.CtaLabel.SELL_AND_COLLECT -> R.string.v2_cart_sell_and_collect
@@ -654,7 +730,10 @@ fun CartV2Screen(
                         },
                     ),
                     modifier = Modifier.weight(1.1f),
-                    enabled = !createBlocked && !discountInvalid,
+                    // #1229: the staged label is short now; one line, 16sp, so it is not clipped on a 360dp phone
+                    fontSize = if (staged && stagedCollectNow > 0) 16.sp else 18.sp,
+                    singleLine = staged && stagedCollectNow > 0,
+                    enabled = !createBlocked && !discountInvalid && !stagesExceed,
                     onClick = ::onCta,
                 )
             }
@@ -741,10 +820,12 @@ fun CartV2Screen(
     }
     numericEditor?.let { editor ->
         val priceProductId = editor.removePrefix("PRICE:").takeIf { editor.startsWith("PRICE:") && it.isNotBlank() }
+        val stageIndex = editor.removePrefix("STAGE:").toIntOrNull()?.takeIf { editor.startsWith("STAGE:") }
         AppNumericPadSheet(
             title = when {
                 priceProductId != null -> lines.firstOrNull { it.lineId == priceProductId }?.product?.name
                     ?: stringResource(R.string.v2_cart_edit_price)
+                stageIndex != null -> stagedPreview.getOrNull(stageIndex)?.label.orEmpty()
                 editor == "DEPOSIT" -> stringResource(R.string.enter_deposit)
                 else -> stringResource(R.string.enter_discount)
             },
@@ -762,6 +843,7 @@ fun CartV2Screen(
                 when {
                     // The line price for this order only, never the product's price (owner 2026-10-05)
                     priceProductId != null -> CartStore.updateUnitPrice(priceProductId, value)
+                    stageIndex != null -> CartStore.setDepositStageAmount(stageIndex, value)
                     editor == "DEPOSIT" -> CartStore.setDeposit(value)
                     else -> CartStore.setDiscount(value)
                 }
@@ -917,7 +999,7 @@ private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 name ?: stringResource(R.string.v2_cart_pick_customer),
-                fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium,
+                fontSize = DS.TextSize.Body, fontWeight = FontWeight.Medium,
                 color = if (name == null) DS.Colors.Primary else DS.Colors.Text,
             )
             if (!phone.isNullOrBlank()) Text(phone, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
@@ -937,6 +1019,8 @@ private fun ItemRow(
     overlapText: String? = null,
     /** #684: a tap on the tag opens Lịch trống on the first booked-out day */
     onOpenOverlap: (() -> Unit)? = null,
+    /** #1241 (owner): a tap on "Còn N" / "Hết" opens this product's Lịch trống */
+    onOpenProduct: () -> Unit = {},
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
     onOpenNote: () -> Unit = {},
@@ -952,6 +1036,7 @@ private fun ItemRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                     Text(line.product.name, fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    // #1241 (owner): the chip stays on the right, exactly as wide as its text (the name takes the rest)
                     // #1064: one pill once availability is loaded: green "Còn N" (2+ and enough), amber "Còn 1" /
                     // "Chỉ còn N" (#1054), red "Hết đồ" / "Hết hàng" at 0. The overlap tag (red) replaces it
                     val note = if (overlapText == null) CartV2Logic.availabilityNote(available, productQuantity, !isSale) else null
@@ -963,12 +1048,16 @@ private fun ItemRow(
                         val hint = stringResource(R.string.v2_cart_overlap_hint)
                         // #1132 (owner, mockup A, iOS `stockPill`): a soft pill in the tone's fill, a 7 dp dot in the text
                         // colour, then the text (semibold); the overlap tag keeps its tap and "›"
+                        // #1241 (owner): a tap opens the product's Lịch trống (the overlap tag: its first booked-out day).
+                        // The pill is exactly as wide as its text; Compose widens a small clickable's touch area to 48 dp
+                        // on its own, so the row does not grow
+                        val open = onOpenOverlap ?: onOpenProduct
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(5.dp),
                             modifier = Modifier.then(if (spoken != null) Modifier.semantics { contentDescription = spoken } else Modifier)
                                 .clip(RoundedCornerShape(percent = 50))
-                                .then(if (onOpenOverlap != null) Modifier.clickable(onClickLabel = hint, role = Role.Button, onClick = onOpenOverlap) else Modifier)
+                                .clickable(onClickLabel = hint, role = Role.Button, onClick = open)
                                 .background(style.colors.fill)
                                 .padding(horizontal = 9.dp, vertical = 3.dp),
                         ) {
@@ -982,6 +1071,13 @@ private fun ItemRow(
                 }
                 // #482: the link opens the "Cách tính giá" sheet
                 PricingChip(line, isSale, onOpenPricing)
+                // #1189: past the table, the sum under the link: "120.000 (3 ngày) + 2 × 20.000 = 160.000"
+                if (!isSale) line.blockDetail?.takeIf { it.extraDays > 0 }?.let { detail ->
+                    Text(
+                        BlockText.formula(LocalContext.current.resources, detail), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                        modifier = Modifier.semantics { contentDescription = "cart.blockFormula" },
+                    )
+                }
                 // #1064: a sale line's "Còn N" is now the pill beside the name (one count per line)
                 Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(formatMoneyVnd(calc.total), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Medium, maxLines = 1, modifier = Modifier.weight(1f))
@@ -1022,6 +1118,28 @@ private fun PricingChip(line: CartLine, isSale: Boolean, onClick: () -> Unit, mo
     val days = (CartV2Logic.calc(line, isSale).kind as? CartLineCalc.Kind.PerDay)?.days?.takeIf { it > 1 }
     val daysText = days?.let { pluralStringResource(R.plurals.v2_cart_days, it, it) }
     val changeLabel = stringResource(R.string.v2_pricing_change, line.product.name)
+    // #1189: a block line reads "Khối 3 ngày + 2 ngày thêm · 160.000đ ⌄"
+    val blockDetail = if (isSale) null else line.blockDetail
+    if (blockDetail != null) {
+        Row(
+            modifier.clip(RoundedCornerShape(8.dp)).clickable(onClickLabel = changeLabel, onClick = onClick)
+                .heightIn(min = 32.dp).padding(end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // One text, so a long summary wraps with its price instead of splitting into two columns
+            Text(
+                buildAnnotatedString {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Medium)) { append(BlockText.summary(LocalContext.current.resources, blockDetail)) }
+                    append(" · " + com.anyrent.pos.domain.money.ShopMoney.withUnit(line.unitPrice))
+                },
+                fontSize = DS.TextSize.Body, color = DS.Colors.Primary,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            Spacer(Modifier.size(4.dp))
+            Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(16.dp))
+        }
+        return
+    }
     // #684: a blue link "Theo ngày · 400.000đ/ngày × 2 ngày ⌄" (15sp, no border), iOS pricingChip
     Row(
         modifier
@@ -1112,6 +1230,11 @@ private fun CartPricingSheet(
     val price = typed ?: 0.0
     val daily = !isSale && type == "DAILY"
     val preview = CartV2Logic.pricePreview(type, price, days, line.quantity, isSale)
+    // #1189: a block line has no price box; its preview is the table's answer for the cart's days
+    val blockTable = ProductPricing.block(line.product) ?: line.savedBlockTable
+    val isBlock = !isSale && type == "BLOCK" && blockTable != null
+    val blockDetail = if (isBlock) BlockPricing.detail(blockTable!!, days, BlockPricing.minorUnit(com.anyrent.pos.domain.money.ShopMoney.current.code)) else null
+    val sheetRes = LocalContext.current.resources
     androidx.compose.material3.ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -1152,7 +1275,9 @@ private fun CartPricingSheet(
                             Text(pricingLabel(choice.type), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text,
                                 modifier = Modifier.weight(1f))
                             val catalog = choice.catalogPrice
-                            if (catalog != null) {
+                            if (choice.type == "BLOCK" && blockTable != null) {
+                                Text(BlockText.rowSummary(sheetRes, blockTable), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+                            } else if (catalog != null) {
                                 Text(pricingPriceText(catalog, choice.type, isSale), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
                             } else {
                                 Text(stringResource(R.string.v2_pricing_enter_price), fontSize = DS.TextSize.Body,
@@ -1162,7 +1287,7 @@ private fun CartPricingSheet(
                     }
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (!isBlock) Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(stringResource(R.string.v2_pricing_price_field), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
                 OutlinedTextField(
                     value = if (digits.isEmpty()) "" else com.anyrent.pos.domain.money.ShopMoney.plain(price),
@@ -1185,14 +1310,19 @@ private fun CartPricingSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val money = com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.unitPrice)
-                val text = preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
+                val text = if (blockDetail != null) {
+                    BlockText.summary(sheetRes, blockDetail) + (BlockText.formulaOrNull(sheetRes, blockDetail)?.let { "\n$it" } ?: "")
+                } else preview.days?.let { "$money × ${pluralStringResource(R.plurals.v2_cart_days, it, it)} × ${preview.quantity}" }
                     ?: "$money × ${preview.quantity}"
                 Text(text, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
-                Text(com.anyrent.pos.domain.money.ShopMoney.withUnit(preview.total), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
+                Text(
+                    com.anyrent.pos.domain.money.ShopMoney.withUnit(if (blockDetail != null) blockDetail.total * line.quantity else preview.total),
+                    fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                )
             }
             AppPrimaryButton(
                 stringResource(R.string.v2_pricing_apply),
-                onClick = { onApply(if (isSale) null else type, typed) },
+                onClick = { onApply(if (isSale) null else type, if (isBlock) null else typed) },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
             )
         }

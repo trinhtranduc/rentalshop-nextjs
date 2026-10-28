@@ -401,7 +401,21 @@
   "PRODUCT_HAS_NO_IMAGES": "Hãy thêm ít nhất một ảnh sản phẩm trước khi đồng bộ tìm kiếm bằng ảnh.",
   "OUTLET_DEACTIVATED": "Chi nhánh đã ngừng hoạt động, liên hệ chủ shop.",
   "PRODUCT_SHARED_FIELDS_MERCHANT_ONLY": "Nhân viên không sửa được tên, giá, ảnh, danh mục và thông tin chung của sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho. Bạn chỉ sửa được tồn kho của chi nhánh mình.",
+  "INSTALLMENT_EXCEEDS_TOTAL": "Các giai đoạn cọc cộng lại lớn hơn tổng tiền đơn.",
+  "INSTALLMENT_OVERPAID": "Số tiền lớn hơn mức giai đoạn này cho phép, hoặc tổng mới thấp hơn số đã thu.",
+  "INSTALLMENT_ALREADY_PAID": "Giai đoạn cọc này đã được thu.",
+  "INSTALLMENT_FORBIDDEN_ROLE": "Vai trò của bạn không được thực hiện thao tác này với giai đoạn cọc.",
+  "INSTALLMENT_UNPAID_AT_PICKUP": "Đơn còn giai đoạn cọc chưa thu. Vui lòng thu trên web hoặc cập nhật ứng dụng.",
+  "INSTALLMENT_NOT_FOUND": "Không tìm thấy giai đoạn cọc.",
+  "INSTALLMENT_NO_PLAN": "Đơn này không có kế hoạch thu cọc.",
+  "INSTALLMENT_LOYALTY_UNSUPPORTED": "Không dùng điểm thưởng được cho đơn thu cọc theo giai đoạn.",
+  "DEPOSIT_SETTINGS_INVALID": "Cài đặt thu cọc không hợp lệ. Mỗi mẫu có 1 đến 3 giai đoạn, tổng phần trăm không quá 100 và tối đa 10 mẫu.",
   "PRODUCT_DELETE_MERCHANT_ONLY": "Nhân viên không xóa được sản phẩm; hãy nhờ chủ shop, quản lý chi nhánh hoặc nhân viên kho.",
   "PRODUCT_HELD_BY_OTHER_OUTLETS": "{outlets} còn sản phẩm này; chỉ chủ shop xóa được. Muốn ngừng bán ở chi nhánh mình, hãy đặt tồn về 0.",
-  "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh."
+  "OUTLET_HAS_OPEN_ORDERS": "Chi nhánh còn đơn đã đặt hoặc đang thuê. Hãy hoàn tất hoặc huỷ các đơn đó trước khi tắt chi nhánh.",
+  "BLOCK_PRICE_MISMATCH": "Giá của món tính theo khối ngày không khớp với bảng giá. Tải lại sản phẩm rồi thử lại.",
+  "PRICING_TYPE_REQUIRES_UPDATE": "Sản phẩm này dùng giá theo khối ngày. Vui lòng cập nhật ứng dụng để đặt thuê.",
+  "BLOCK_TABLE_INVALID": "Bảng giá theo khối ngày không hợp lệ. Dùng từ 1 đến 31 ngày, giá từ 0 trở lên và mỗi sản phẩm chỉ một bảng giá.",
+  "CANCEL_AMOUNTS_MISMATCH": "Số tiền giữ lại lớn hơn số đã thu hoặc không hợp lệ.",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "Đơn đã huỷ có giữ lại tiền cọc nên được lưu trong lịch sử, không xoá được."
 }

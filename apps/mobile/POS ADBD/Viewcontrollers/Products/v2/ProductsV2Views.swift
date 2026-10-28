@@ -200,13 +200,22 @@ final class V2Segmented: UIControl {
     }
 }
 
-/// − n + stepper
+/// − n + stepper. The number opens the same pad as price / deposit / discount (#1162).
 final class V2Stepper: UIView {
     private let minus = UIButton(type: .system)
     private let plus = UIButton(type: .system)
     private let valueLabel = V2.label(size: DS.TextSize.name, weight: .bold)
+    /// Kept alive: NumberPicker's delegate is weak.
+    private let pickerRelay = QuantityPickerRelay()
     var minimum = 0
-    var value = 1 { didSet { valueLabel.text = "\(value)"; minus.isEnabled = value > minimum } }
+    var value = 1 {
+        didSet {
+            valueLabel.text = "\(value)"
+            valueLabel.accessibilityValue = "\(value)"
+            minus.isEnabled = value > minimum
+            plus.isEnabled = value < QuantityEntry.maximum
+        }
+    }
     var onChange: ((Int) -> Void)?
 
     init(compact: Bool = false) {
@@ -222,25 +231,53 @@ final class V2Stepper: UIView {
             button.accessibilityLabel = label.localized()
         }
         valueLabel.textAlignment = .center
+        valueLabel.isUserInteractionEnabled = true
+        valueLabel.isAccessibilityElement = true
+        valueLabel.accessibilityTraits = UIAccessibilityTraitButton
+        valueLabel.accessibilityLabel = "products.stepper.enter".localized()
         let stack = UIStackView(arrangedSubviews: [minus, valueLabel, plus])
         stack.axis = .horizontal
         addSubview(stack)
         stack.snp.makeConstraints { make in make.edges.equalToSuperview() }
         minus.snp.makeConstraints { make in make.width.equalTo(44); make.height.equalTo(compact ? 36 : 40) }
         plus.snp.makeConstraints { make in make.width.equalTo(44) }
-        valueLabel.snp.makeConstraints { make in make.width.greaterThanOrEqualTo(28) }
+        valueLabel.snp.makeConstraints { make in make.width.greaterThanOrEqualTo(44) }
         minus.addTarget(self, action: #selector(step(_:)), for: .touchUpInside)
         plus.addTarget(self, action: #selector(step(_:)), for: .touchUpInside)
+        valueLabel.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(editValue)))
+        pickerRelay.onValue = { [weak self] raw in
+            guard let self else { return }
+            let next = QuantityEntry.fromPad(raw, minimum: self.minimum)
+            guard next != self.value else { return }
+            self.value = next
+            self.onChange?(next)
+        }
         value = 1
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     @objc private func step(_ sender: UIButton) {
-        let next = sender === plus ? value + 1 : max(minimum, value - 1)
+        let next = sender === plus ? min(QuantityEntry.maximum, value + 1) : max(minimum, value - 1)
         guard next != value else { return }
         value = next
         onChange?(next)
+    }
+
+    /// Same sheet as cọc / giảm giá: grabber, keypad, one Confirm. Swipe down to keep the old number.
+    @objc private func editValue() {
+        guard let parent = parentViewController, parent.presentedViewController == nil else { return }
+        let picker = NumberPickerViewController.instance()
+        picker.delegate = pickerRelay
+        picker.configure(initialValue: Double(value), title: "products.stepper.enter".localized())
+        parent.present(picker, animated: true)
+    }
+}
+
+private final class QuantityPickerRelay: NSObject, NumberPickerViewControllerDelegate {
+    var onValue: ((Double) -> Void)?
+    func didSelectNumber(_ value: Double, sender: NumberPickerViewController) {
+        onValue?(value)
     }
 }
 
@@ -295,6 +332,12 @@ final class V2ValueRow: UIControl {
             accessories.setContentHuggingPriority(.required, for: .horizontal)
         } else {
             pencil.isHidden = true
+            if wrapsValue {
+                // #1243: a read-only value (the cart's staged-deposit template name) wraps instead of ending in "…"
+                valueLabel.lineBreakMode = .byWordWrapping
+                valueLabel.numberOfLines = 0
+                valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            }
         }
         var titleLeading = snp.leading
         var titleInset = DS.Spacing.lg
@@ -517,7 +560,11 @@ final class CreateOrderConfirmSheet: V2FittingSheet {
             rows.addArrangedSubview(row("products.cart.confirm.dates".localized(),
                                         range + " · " + PluralText.format("products.cart.days", count: days, days)))
         }
-        rows.addArrangedSubview(row("products.cart.confirm.items".localized(), confirm.items))
+        var itemsText = confirm.items
+        if confirm.moreCount > 0 {
+            itemsText += "\n" + PluralText.format("products.cart.confirm.more", count: confirm.moreCount, confirm.moreCount)
+        }
+        rows.addArrangedSubview(row("products.cart.confirm.items".localized(), itemsText))
         rows.addArrangedSubview(row("products.cart.total".localized(), MoneyFormatter.format(confirm.total), bold: true))
         stack.addArrangedSubview(rows)
         if !overlapWarnings.isEmpty {

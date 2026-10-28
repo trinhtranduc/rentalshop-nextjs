@@ -110,5 +110,54 @@
   "clearFilters": "フィルターをクリア",
   "storeNotFound": "ショップが見つかりません",
   "storeNotFoundMessage": "お探しのショップが見つかりません。URL を確認するか、ショップのオーナーにお問い合わせください。",
-  "goToHomepage": "ホームへ"
+  "goToHomepage": "ホームへ",
+  "web": {
+    "price": {
+      "blockFrom": "1日 {price}から · ブロック料金",
+      "blockTag": "ブロック料金"
+    },
+    "detail": {
+      "block": {
+        "title": "日数別の料金表",
+        "modeBlock": "日数ブロック料金",
+        "tiersTitle": "日数別の料金",
+        "dayRow": "{n}日",
+        "addDay": "+ {n}日目を追加",
+        "removeDay": "{n}日目を削除",
+        "beyond": "{n}日を超えるレンタル",
+        "extraPerDay": "1日ごとに加算",
+        "holdLast": "最後のブロック料金のまま",
+        "holdLastHint": "{days}日借りても {price}",
+        "preview": "試算",
+        "previewDays": "{n}日",
+        "lessDays": "1日減らす",
+        "moreDays": "1日増やす",
+        "edit": "料金を編集"
+      }
+    },
+    "form": {
+      "errors": {},
+      "perRental": "1回ごと",
+      "perDay": "1日ごと",
+      "blockRow": "日数ブロック",
+      "blockNotSet": "未設定",
+      "unitOnce": "đ / 回",
+      "unitDay": "đ / 日",
+      "block": {
+        "summaryExtra": "{count} 区分 · 1日追加ごとに +{extra}",
+        "summaryHold": "{count} 区分 · 最後の区分の料金を維持",
+        "edit": "料金表を編集",
+        "setupHint": "日数ごとに1つの料金です。ちょうどその日数借りるとその行の料金になります。",
+        "save": "料金表を保存",
+        "turnOff": "日数区分料金をオフにする",
+        "copy": "他の商品からコピー",
+        "copyTitle": "料金表をコピーする商品を選択",
+        "copySearch": "商品を検索",
+        "copyEmpty": "日数区分料金の表がある商品はありません。",
+        "copyLoading": "読み込み中…",
+        "close": "閉じる",
+        "incomplete": "すべての日と追加1日あたりの金額を入力するか、最後の区分の料金を維持してください。"
+      }
+    }
+  }
 }

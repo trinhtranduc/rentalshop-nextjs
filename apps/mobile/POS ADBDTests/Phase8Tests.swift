@@ -200,8 +200,8 @@ final class Phase8Tests: XCTestCase {
 
     // MARK: 5. Extend rental
 
-    func testExtendOnlyOpenRentalsWithOrdersUpdate() {
-        XCTAssertTrue(RentalExtension.canExtend(orderType: .rent, status: .reserved, canUpdateOrders: true))
+    func testExtendOnlyRentingOrdersWithOrdersUpdate() {
+        XCTAssertFalse(RentalExtension.canExtend(orderType: .rent, status: .reserved, canUpdateOrders: true), "booked: no Gia hạn")
         XCTAssertTrue(RentalExtension.canExtend(orderType: .rent, status: .pickuped, canUpdateOrders: true))
         XCTAssertFalse(RentalExtension.canExtend(orderType: .rent, status: .returned, canUpdateOrders: true))
         XCTAssertFalse(RentalExtension.canExtend(orderType: .rent, status: .cancelled, canUpdateOrders: true))

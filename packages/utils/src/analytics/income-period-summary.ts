@@ -10,6 +10,7 @@ import {
   type CollateralFlow,
   type CollectedBreakdown
 } from '../core/revenue-calculator';
+import { buildEventWhere, toRevenueOrderData, REVENUE_PLAN_SELECT, EVENT_WHERE_CIVIL } from '../core/revenue-mapping';
 import { SHOP_TIMEZONE } from '../core/date';
 import { addDaysToDateKey, civilDayBucket, getUtcRangeForDateKeys, toDateKeyInTimeZone } from '../core/date-range';
 
@@ -110,19 +111,7 @@ export async function computeIncomePeriodSummary(
   const ordersWhereClause = withOutletScope(
     {
       deletedAt: null,
-      OR: [
-        { createdAt: { gte: queryStart, lte: queryEnd } },
-        { pickedUpAt: { gte: queryStart, lte: queryEnd, not: null } },
-        { returnedAt: { gte: queryStart, lte: queryEnd, not: null } },
-        { AND: [{ status: ORDER_STATUS.CANCELLED }, { updatedAt: { gte: queryStart, lte: queryEnd } }] },
-        {
-          AND: [
-            { orderType: ORDER_TYPE.SALE },
-            { status: ORDER_STATUS.COMPLETED },
-            { updatedAt: { gte: queryStart, lte: queryEnd } }
-          ]
-        }
-      ]
+      ...buildEventWhere({ start: queryStart, end: queryEnd }, EVENT_WHERE_CIVIL)
     },
     outletFilter
   );
@@ -143,7 +132,8 @@ export async function computeIncomePeriodSummary(
       pickedUpAt: true,
       returnedAt: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      ...REVENUE_PLAN_SELECT
     },
     take: 10000
   });
@@ -180,22 +170,8 @@ export async function computeIncomePeriodSummary(
   };
 
   for (const order of allOrders) {
-    const orderData = {
-      orderType: order.orderType,
-      status: order.status,
-      totalAmount: order.totalAmount || 0,
-      depositAmount: order.depositAmount || 0,
-      securityDeposit: order.securityDeposit || 0,
-      damageFee: order.damageFee || 0,
-      lateFee: order.lateFee || 0,
-      pickupTotalAmount: order.pickupTotalAmount ?? null,
-      createdAt: order.createdAt,
-      pickedUpAt: order.pickedUpAt,
-      returnedAt: order.returnedAt,
-      pickupPlanAt: null as Date | null,
-      returnPlanAt: null as Date | null,
-      updatedAt: order.updatedAt
-    };
+    // This summary never uses planned dates; they stay null, as before
+    const orderData = { ...toRevenueOrderData(order), pickupPlanAt: null as Date | null, returnPlanAt: null as Date | null };
 
     const inPeriod = (event: { date: Date }) => event.date >= filterStart && event.date <= filterEnd;
     const revenueEvents = getOrderRevenueEvents(orderData, filterStart, filterEnd).filter(inPeriod);

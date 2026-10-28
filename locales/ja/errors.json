@@ -93,5 +93,19 @@
   "BOOKING_REQUEST_FOUND": "予約リクエストを読み込みました。",
   "BOOKING_REQUESTS_FOUND": "予約リクエスト一覧を読み込みました。",
   "BOOKING_REQUEST_PREPARED": "予約リクエストから注文を作成する準備ができました。",
-  "BOOKING_REQUEST_REJECTED": "予約リクエストをお断りしました。"
+  "BOOKING_REQUEST_REJECTED": "予約リクエストをお断りしました。",
+  "BLOCK_PRICE_MISMATCH": "日数ブロック料金の商品の価格が料金表と一致しません。商品を再読み込みしてもう一度お試しください。",
+  "PRICING_TYPE_REQUIRES_UPDATE": "この商品は日数ブロック料金です。レンタルを登録するにはアプリを更新してください。",
+  "BLOCK_TABLE_INVALID": "日数ブロックの料金表が正しくありません。1〜31日、0以上の金額、1商品につき料金表は1つにしてください。",
+  "INSTALLMENT_EXCEEDS_TOTAL": "保証金の各段階の合計が注文の合計金額を超えています。",
+  "INSTALLMENT_OVERPAID": "この金額は段階の上限を超えているか、新しい合計が受領済みの金額を下回っています。",
+  "INSTALLMENT_ALREADY_PAID": "この保証金の段階はすでに受領済みです。",
+  "INSTALLMENT_FORBIDDEN_ROLE": "お客様の権限では、保証金の段階に対してこの操作はできません。",
+  "INSTALLMENT_UNPAID_AT_PICKUP": "この注文には未受領の保証金の段階があります。ウェブで受領するか、アプリを更新してください。",
+  "INSTALLMENT_NOT_FOUND": "保証金の段階が見つかりません。",
+  "INSTALLMENT_NO_PLAN": "この注文には保証金の分割計画がありません。",
+  "INSTALLMENT_LOYALTY_UNSUPPORTED": "段階払いの保証金がある注文ではポイントを使用できません。",
+  "DEPOSIT_SETTINGS_INVALID": "保証金の設定が正しくありません。テンプレートは1〜3段階、割合の合計は100以下、テンプレートは最大10件です。",
+  "CANCEL_AMOUNTS_MISMATCH": "保持する金額が受領済みの金額を超えているか、金額が正しくありません。",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "金額を保持してキャンセルした注文は履歴に残るため、削除できません。"
 }

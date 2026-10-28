@@ -27,11 +27,13 @@ jest.mock('@rentalshop/utils', () => {
   const date = jest.requireActual('../../packages/utils/src/core/date');
   const dateRange = jest.requireActual('../../packages/utils/src/core/date-range');
   const revenue = jest.requireActual('../../packages/utils/src/core/revenue-calculator');
+  const revenueMapping = jest.requireActual('../../packages/utils/src/core/revenue-mapping');
   const schemas = jest.requireActual('../../packages/utils/src/core/validation-schemas');
   return {
     ...date,
     ...dateRange,
     ...revenue,
+    ...revenueMapping,
     ordersQuerySchema: schemas.ordersQuerySchema,
     ResponseBuilder: {
       success: (code: string, data: any) => ({ success: true, code, data }),
@@ -48,6 +50,7 @@ jest.mock('@rentalshop/utils/server', () => ({
   buildAnalyticsPeriodReport: (...args: any[]) => mockBuildReport(...args),
   emptyAnalyticsPeriodReport: () => ({}),
   resolveAnalyticsOutletFilter: async () => ({ outletId: { in: [1] } }),
+  loadReservedPlanOrders: async () => [],
   checkPlanLimitIfNeeded: jest.fn(),
   createAuditHelper: () => ({}),
   uploadToS3: jest.fn(),

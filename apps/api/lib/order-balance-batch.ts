@@ -30,7 +30,8 @@ export async function loadCompletedPaymentSums(
   if (ids.length === 0) return [];
   return (await client.payment.groupBy({
     by: ['orderId', 'notes'],
-    where: { orderId: { in: ids }, status: 'COMPLETED' },
+    // #1199: deposit-stage rows (notes INSTALLMENT) are part of `depositAmount`, not a step payment
+    where: { orderId: { in: ids }, status: 'COMPLETED', OR: [{ notes: null }, { notes: { not: 'INSTALLMENT' } }] },
     _sum: { amount: true },
   })) as PaymentSumRow[];
 }

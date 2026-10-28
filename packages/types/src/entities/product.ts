@@ -29,6 +29,11 @@ export interface PricingOption {
   price: number;            // per rental (FIXED) or per day (DAILY)
   unit?: PricingUnit | null;   // reserved for BLOCK/HOURLY
   blockSize?: number | null;   // reserved for BLOCK
+  // #1189 day-block pricing (type 'BLOCK'; `price` = day-1 price). Sent/returned only for clients with pricingSchemaVersion 2
+  blockTiers?: number[] | null;          // all-in price of renting blockStartDay + i days
+  blockStartDay?: number | null;         // null = 1
+  blockExtraMode?: 'EXTRA_PER_DAY' | 'HOLD_LAST' | null;
+  blockExtraPrice?: number | null;       // per day past the last tier
   isDefault?: boolean;
   isActive?: boolean;
   sortOrder?: number;

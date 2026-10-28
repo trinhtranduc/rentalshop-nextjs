@@ -5,6 +5,8 @@ import { db } from '@rentalshop/database';
 import { handleApiError, ResponseBuilder, getCalendarDayRangeInTimeZone, formatDateKeyInTimeZone } from '@rentalshop/utils';
 import { daysBetweenDateKeys, getOperationsDay, getOperationsWeek, toOperationsDateKey } from '../../../../lib/outlet-operations-day';
 import { computeOrderBalance } from '../../../../lib/order-balance';
+import { hasCapability } from '../../../../lib/client-capabilities';
+import { loadInstallmentReminders } from '../../../../lib/installment-reminders';
 
 const querySchema = z.object({
   outletIds: z.string().regex(/^\d+(,\d+)*$/).optional(),
@@ -117,6 +119,9 @@ function toRow(order: OperationsRow, todayKey: string, keyOf: (instant: Date) =>
  * #938 `collateralHeld=1`: adds `collateralHeld` { count, orders (≤ 500) }: the rentals out with collateral, the orders
  * behind `cash.collateralToReturn` (null without analytics.view.revenue; absent without the flag).
  *
+ * #1199 (only with `X-Client-Capabilities: installments`): adds `installmentsDue`, `installmentsDueTomorrow`, `installmentsOverdue`
+ * { count, orders (≤ 50) } of deposit stages (rows: orderId, orderNumber, customerName, key, label, amount, remaining, dueDateKey, lateDays).
+ *
  * Access: analytics.view.dashboard.
  * - OUTLET_ADMIN / OUTLET_STAFF: own outlet only (outletIds is ignored).
  * - MERCHANT: its outlets, optionally narrowed with `outletIds=1,3`; foreign outlets → 403.
@@ -175,6 +180,11 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
     // #938: only when asked (`withCollateralHeld`); null without the money right
     const collateralHeld = (ops as { collateralHeld?: unknown }).collateralHeld as Parameters<typeof optionalList>[0];
 
+    // #1199 (additive, only for a client that declared `installments`): deposit stages due today / tomorrow / late
+    const installmentReminders = hasCapability(request, 'installments')
+      ? await loadInstallmentReminders(db.prisma, outletIds, day.dateKey)
+      : {};
+
     return NextResponse.json(
       ResponseBuilder.success('OUTLET_OPERATIONS_SUCCESS', {
         date: day.dateKey,
@@ -191,6 +201,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
         tomorrowReturns: optionalList((ops as any).tomorrowReturns),
         ...(withCollateralHeld ? { collateralHeld: optionalList(collateralHeld) } : {}),
         cash: ops.cash,
+        ...installmentReminders,
       })
     );
   } catch (error) {

@@ -440,7 +440,13 @@ final class OrderRowCell: UITableViewCell {
                 label.layer.cornerRadius = 8
                 label.layer.masksToBounds = true
             }
-            let size = label.intrinsicContentSize.width
+            var size = label.intrinsicContentSize.width
+            if size > width, chip.warning == nil, chip.dateKind == nil {
+                // #1243: a long stage label ("Cọc giữ chỗ trước ngày lấy một ngày · #123456") wraps in its own chip, not "…"
+                label.numberOfLines = 0
+                label.preferredMaxLayoutWidth = width - 16
+                size = label.intrinsicContentSize.width
+            }
             if used > 0 && used + 6 + size > width {
                 stack.addArrangedSubview(line)
                 line = UIStackView()
@@ -491,10 +497,10 @@ final class OrderRowCell: UITableViewCell {
 
     private func bindWork(_ work: TodayWorkRow, kind: WorkKind, isLate: Bool, hidesMoney: Bool) {
         // #893 (owner): the task tag in its light colours (a task, not an order status)
-        if kind == .handOver {
-            tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
-        } else {
-            tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
+        switch kind {
+        case .handOver: tagLabel.apply("orders.v2.tag.handOver".localized(), DS.Status.handOver)
+        case .takeBack: tagLabel.apply("orders.v2.tag.takeBack".localized(), DS.Status.returning)
+        case .collect: tagLabel.apply("orders.v2.tag.collect".localized(), DS.Status.waiting) // #1231 a deposit stage to collect
         }
         setName(work.customerName)
         // #893 (owner, lean row): no "#code · tạo", no other date, no notes line; line 2 = the task's date chip,
@@ -504,7 +510,7 @@ final class OrderRowCell: UITableViewCell {
         chipStack.show([])
         thirdLine?.alignment = .top
         // Right: the total (bold) always; "còn thu N" smaller under it when something is due (owner)
-        let dueText = OrdersHomeLogic.workDue(work).map { String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format($0)) }
+        let dueText = (kind == .collect ? nil : OrdersHomeLogic.workDue(work)).map { String(format: "orders.v2.pay.due".localized(), MoneyFormatter.format($0)) }
         let totalText = MoneyFormatter.format(work.totalAmount)
         let totalWidth = (totalText as NSString).size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.name)]).width
         let dueWidth = (dueText as NSString?)?.size(withAttributes: [NSAttributedString.Key.font: Utils.mediumFont(size: DS.TextSize.secondary)]).width ?? 0
@@ -571,6 +577,11 @@ final class OrderRowCell: UITableViewCell {
             // #891 (owner): Tất cả đơn and product order rows show no pay line; the other lists keep it
             let isProductList: Bool = { if case .productOrders = context { return true }; return false }()
             setPay(isRentList || isProductList ? nil : OrdersHomeLogic.listPayLine(order))
+        }
+        // #1199/#1222: "Đã thu 30%" on an order that has a deposit plan
+        if order.status == .reserved,
+           let badge = DepositPlanLogic.badge(percentCollected: DepositPlanLogic.listBadgePercent(order)) {
+            pillStack.addArrangedSubview(DepositUI.pill(badge, DS.Status.done))
         }
         phone = nil
     }
@@ -644,7 +655,10 @@ final class OrdersSectionHeaderView: UITableViewHeaderFooterView {
         summaryLabel.font = Utils.regularFont(size: DS.TextSize.secondary)
         summaryLabel.textColor = DS.Color.textMuted
         summaryLabel.textAlignment = .right
-        summaryLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        // #1243: the day stays whole ("HÔM NAY · 26/10/26"); the counts wrap to a second line instead
+        summaryLabel.numberOfLines = 0
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        summaryLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let row = UIStackView(arrangedSubviews: [titleLabel, summaryLabel])
         row.alignment = .firstBaseline
         row.spacing = DS.Spacing.sm

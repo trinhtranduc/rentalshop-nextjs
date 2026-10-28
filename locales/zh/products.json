@@ -110,5 +110,54 @@
   "clearFilters": "清除筛选",
   "storeNotFound": "未找到店铺",
   "storeNotFoundMessage": "找不到你要的店铺。请检查网址或联系店主。",
-  "goToHomepage": "返回首页"
+  "goToHomepage": "返回首页",
+  "web": {
+    "price": {
+      "blockFrom": "每天 {price} 起 · 按档计价",
+      "blockTag": "按档计价"
+    },
+    "detail": {
+      "block": {
+        "title": "按天数价目表",
+        "modeBlock": "按天数档位计价",
+        "tiersTitle": "按天数的价格",
+        "dayRow": "{n} 天",
+        "addDay": "+ 添加第 {n} 天",
+        "removeDay": "删除第 {n} 天",
+        "beyond": "租期超过 {n} 天",
+        "extraPerDay": "每多一天加收",
+        "holdLast": "保持最后一档价格",
+        "holdLastHint": "租 {days} 天仍按 {price} 计",
+        "preview": "试算",
+        "previewDays": "{n} 天",
+        "lessDays": "减少一天",
+        "moreDays": "增加一天",
+        "edit": "修改价格"
+      }
+    },
+    "form": {
+      "errors": {},
+      "perRental": "按次",
+      "perDay": "按天",
+      "blockRow": "按天数档位",
+      "blockNotSet": "未设置",
+      "unitOnce": "đ / 次",
+      "unitDay": "đ / 天",
+      "block": {
+        "summaryExtra": "{count} 档 · 每多一天 +{extra}",
+        "summaryHold": "{count} 档 · 保持最后一档价格",
+        "edit": "修改价格表",
+        "setupHint": "每个天数一个价格。顾客正好租这么多天，就按该行计价。",
+        "save": "保存价格表",
+        "turnOff": "关闭按天数档位计价",
+        "copy": "从其他商品复制",
+        "copyTitle": "选择要复制价格表的商品",
+        "copySearch": "搜索商品",
+        "copyEmpty": "没有商品设置了按天数档位的价格表。",
+        "copyLoading": "加载中…",
+        "close": "关闭",
+        "incomplete": "请填写每一天的价格和每多一天加收的金额，或选择保持最后一档价格。"
+      }
+    }
+  }
 }

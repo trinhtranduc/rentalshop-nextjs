@@ -159,19 +159,27 @@ const productBaseSchema = z.object({
   outletStock: z.array(outletStockItemSchema).optional(), // Mobile app uses this field name
   outletStocks: z.array(outletStockItemSchema).optional(), // Web app uses this field name (legacy)
   // Optional pricing configuration (default FIXED if null or undefined)
-  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).nullable().default('FIXED'), // Default to FIXED
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY', 'BLOCK']).nullable().default('FIXED'), // Default to FIXED
   durationConfig: z.string().nullable().optional(), // JSON string: { minDuration, maxDuration, defaultDuration } - required for HOURLY/DAILY
   // Multiple pricing options (Phase 1: FIXED + DAILY only; BLOCK/HOURLY blocked here)
   pricingOptions: z.array(z.object({
     id: z.coerce.number().int().positive().optional(),
-    type: z.enum(['FIXED', 'DAILY']),
-    price: z.number().nonnegative('Option price must be non-negative'), // #951: 0đ is a price
+    type: z.enum(['FIXED', 'DAILY', 'BLOCK']),
+    price: z.number().nonnegative('Option price must be non-negative'), // #951: 0đ is a price; BLOCK: day-1 price
     unit: z.enum(['DAY', 'HOUR']).nullable().optional(),
     blockSize: z.number().int().positive().nullable().optional(),
+    // #1189 day-block table. Shape only here; a client with pricingSchemaVersion 2 is checked by `blockOptionsIssue`
+    blockTiers: z.array(z.number().nonnegative()).max(31).nullable().optional(),
+    blockStartDay: z.number().int().min(1).max(31).nullable().optional(),
+    blockExtraMode: z.enum(['EXTRA_PER_DAY', 'HOLD_LAST']).nullable().optional(),
+    blockExtraPrice: z.number().nonnegative().nullable().optional(),
     isDefault: z.boolean().optional(),
     isActive: z.boolean().optional(),
     sortOrder: z.number().int().optional(),
   })).optional(),
+  // #1189: 2 = the client knows BLOCK options and may save them; absent = an old client (BLOCK is kept, not edited)
+  // multipart forms send the number as text
+  pricingSchemaVersion: z.preprocess((v) => (v === '2' ? 2 : v), z.literal(2)).optional(),
   durationLimits: z.object({
     min: z.number().int().min(1).optional(),
     max: z.number().int().min(1).optional(),
@@ -331,7 +339,9 @@ const orderItemSchema = z.object({
   deposit: z.number().nonnegative('Deposit must be non-negative').optional(), // Optional, deposit per unit
   notes: z.string().optional(), // Optional notes for this item
   rentDays: z.number().int().min(1).optional(), // For rental orders
-  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY']).nullable().optional(),
+  pricingType: z.enum(['FIXED', 'HOURLY', 'DAILY', 'BLOCK']).nullable().optional(),
+  // #1189: true = the staff typed this line price by hand; the server keeps it for a client that knows BLOCK
+  priceOverridden: z.boolean().optional(),
   // nullish: Swift JSONEncoder sends null for Optional.none (not omitted keys)
   pricingOptionId: z.coerce.number().int().positive().nullish(), // Selected pricing option (multi-option products)
 });

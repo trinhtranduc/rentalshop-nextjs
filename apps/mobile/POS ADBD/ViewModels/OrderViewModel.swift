@@ -372,6 +372,20 @@ class OrderViewModel: PreviewViewModelProtocol {
         }
     }
     
+    /// #1199: cancel keeping part of the money collected (owner / outlet admin); 0 = refund everything, as before
+    func cancelOrder(keptAmount: Double, note: String?, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard keptAmount > 0 || !(note ?? "").isEmpty else { return cancelOrder(completion: completion) }
+        var request = UpdateOrderRequest.updateStatus("CANCELLED")
+        if keptAmount > 0 { request.cancelKeptAmount = keptAmount }
+        let text = (note ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty { request.cancelNote = text }
+        OrderService.shared.updateOrder(orderId: order.id, request: request) { [weak self] updated, error in
+            if let error = error { return completion(.failure(error)) }
+            if let updated = updated { self?.order = updated }
+            completion(.success(()))
+        }
+    }
+
     func printOrder(completion: @escaping (Result<Void, Error>) -> Void) {
         // Use PrinterManager to print the order
         PrinterManager.shared.printOrder(order) { result in

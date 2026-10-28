@@ -216,7 +216,7 @@
     "add": "Thêm"
   },
   "search": {
-    "placeholder": "Tìm kiếm theo tên, mã vạch hoặc SKU...",
+    "placeholder": "Tìm theo tên hoặc mã vạch...",
     "noResults": "Không tìm thấy sản phẩm phù hợp"
   },
   "stats": {
@@ -372,7 +372,9 @@
       "otherOutlets": "Chi nhánh khác còn {count}"
     },
     "price": {
-      "perHour": "{price}/giờ"
+      "perHour": "{price}/giờ",
+      "blockFrom": "từ {price}/ngày · theo khối",
+      "blockTag": "theo khối"
     },
     "row": {
       "edit": "Sửa",
@@ -527,9 +529,8 @@
         "problemCount": "{name}: đã đủ 3 ảnh",
         "keepNote": "Ảnh đã lưu chỉ được thay khi có ảnh mới. Lưu bây giờ sẽ giữ nguyên ảnh cũ."
       },
-      "perRental": "Thuê theo lần",
-      "perDay": "Thuê theo ngày",
-      "pricesHint": "Để trống giá nào cửa hàng không dùng.",
+      "perRental": "Theo lần",
+      "perDay": "Theo mỗi ngày",
       "deposit": "Tiền cọc",
       "salePrice": "Giá bán",
       "costPrice": "Giá vốn",
@@ -566,7 +567,6 @@
         "nameRequired": "Nhập tên sản phẩm",
         "categoryRequired": "Chọn danh mục",
         "priceNegative": "Giá không được âm",
-        "dailyNeedsPrice": "Nhập giá thuê theo ngày để mặc định tính theo ngày",
         "saleRequired": "Nhập giá bán",
         "depositNegative": "Tiền cọc không được âm",
         "stockRequired": "Số lượng phải lớn hơn 0",
@@ -581,8 +581,25 @@
       "goCategories": "Mở Danh mục",
       "needOutlet": "Cần ít nhất một chi nhánh trước khi thêm sản phẩm.",
       "goOutlets": "Mở Chi nhánh",
-      "defaultForOrders": "Mặc định khi tạo đơn",
-      "defaultHint": "Dùng được cả hai giá. Đơn mới chọn sẵn giá mặc định, vẫn đổi được trong giỏ."
+      "blockRow": "Theo block ngày",
+      "blockNotSet": "Chưa cài",
+      "unitOnce": "đ / lần",
+      "unitDay": "đ / ngày",
+      "block": {
+        "summaryExtra": "{count} mốc · +{extra}/ngày",
+        "summaryHold": "{count} mốc · giữ giá khối cuối",
+        "edit": "Sửa bảng giá",
+        "setupHint": "Mỗi số ngày thuê một giá. Khách thuê đúng số ngày nào thì tính giá dòng đó.",
+        "save": "Lưu bảng giá",
+        "turnOff": "Tắt giá theo khối ngày",
+        "copy": "Sao chép từ sản phẩm khác",
+        "copyTitle": "Chọn sản phẩm để chép bảng giá",
+        "copySearch": "Tìm sản phẩm",
+        "copyEmpty": "Không có sản phẩm nào có bảng giá theo khối ngày.",
+        "copyLoading": "Đang tải…",
+        "close": "Đóng",
+        "incomplete": "Nhập giá cho mọi ngày và số tiền cộng thêm mỗi ngày, hoặc chọn giữ nguyên giá khối cuối."
+      }
     },
     "detail": {
       "back": "Sản phẩm",
@@ -622,7 +639,24 @@
       "loadFailed": "Không tải được sản phẩm.",
       "retry": "Thử lại",
       "otherOutletsTitle": "Tồn chi nhánh khác",
-      "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê."
+      "otherOutletsHint": "Chỉ xem. Có sẵn = tổng trừ số đang thuê.",
+      "block": {
+        "title": "Bảng giá theo ngày",
+        "modeBlock": "Giá theo khối ngày",
+        "tiersTitle": "Giá theo số ngày",
+        "dayRow": "{n} ngày",
+        "addDay": "+ Thêm ngày {n}",
+        "removeDay": "Xoá ngày {n}",
+        "beyond": "Thuê quá {n} ngày",
+        "extraPerDay": "Cộng thêm mỗi ngày",
+        "holdLast": "Giữ nguyên giá khối cuối",
+        "holdLastHint": "Thuê {days} ngày vẫn tính {price}",
+        "preview": "Xem thử",
+        "previewDays": "{n} ngày",
+        "lessDays": "Bớt một ngày",
+        "moreDays": "Thêm một ngày",
+        "edit": "Sửa giá"
+      }
     },
     "orders": {
       "back": "Quay lại sản phẩm",

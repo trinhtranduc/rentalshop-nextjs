@@ -91,7 +91,7 @@ class OrderActionSheetTest {
         assertEquals("Có 1 ghi chú · 2 ảnh", OrderActionSheet.notesSubtitle("khách lấy thêm cà vạt", 2))
         assertEquals("Có 1 ghi chú", OrderActionSheet.notesSubtitle("x", 0))
         assertEquals("Có 3 ảnh", OrderActionSheet.notesSubtitle("  ", 3))
-        assertEquals("Thêm ghi chú", OrderActionSheet.notesSubtitle(null, 0))
+        assertEquals("Thêm ghi chú hoặc ảnh cho đơn", OrderActionSheet.notesSubtitle(null, 0))
     }
 
     @Test fun printerSubtitle() {

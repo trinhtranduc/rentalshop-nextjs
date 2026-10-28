@@ -105,8 +105,9 @@ final class ShopCurrencyTests: XCTestCase {
             let items = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).flatMap(\.items)
             XCTAssertFalse(items.contains(.currency))
         }
+        // #1270: "Tiền tệ" is its own row again, right after Thông tin cửa hàng (owner only)
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: [], hasPlan: false)
-        XCTAssertEqual(Array(merchant[0].items.prefix(3)), [.notifications, .storeInfo, .currency])
+        XCTAssertEqual(Array(merchant[0].items.prefix(2)), [.storeInfo, .currency])
     }
 
     func testLabelsAndConfirmText() {

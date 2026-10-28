@@ -243,7 +243,7 @@
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
     "search": "Tìm kiếm",
-    "searchPlaceholder": "Tìm tên, SĐT, mã đơn, tên đồ",
+    "searchPlaceholder": "Tìm tên, SĐT hoặc mã đơn",
     "themeToDark": "Chuyển sang giao diện tối",
     "themeToLight": "Chuyển sang giao diện sáng",
     "logout": "Đăng xuất",

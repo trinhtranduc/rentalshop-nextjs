@@ -51,6 +51,141 @@
         "CANNOT_CONTACT": "고객과 연락이 안 됨",
         "OTHER": "기타"
       }
+    },
+    "editor": {
+      "carts": {
+        "label": "장바구니",
+        "title": "장바구니 {n}",
+        "summary": "{count}개 · {amount}",
+        "count": "{count}개",
+        "new": "+ 새 장바구니",
+        "close": "장바구니 닫기",
+        "deleteTitle": "이 장바구니를 삭제할까요?",
+        "deleteMessage": "{name}에 {count}개가 있습니다. 상품이 삭제됩니다.",
+        "delete": "삭제"
+      },
+      "option": {
+        "BLOCK": "일수 블록 · {price}"
+      },
+      "pricing": {
+        "mode": {
+          "BLOCK": "일수 블록"
+        },
+        "unit": {
+          "BLOCK": "대여 전체"
+        }
+      },
+      "block": {
+        "label": "{n}일 블록",
+        "labelExtra": "{n}일 블록 + 추가 {m}일",
+        "days": "{n}일"
+      },
+      "per": {
+        "BLOCK": "1일 {price}부터 · 블록 요금"
+      }
+    },
+    "receipt": {
+      "units": {
+        "block": "{n}일 블록",
+        "blockExtra": "{n}일 블록 + 추가 {m}일"
+      }
+    },
+    "detail": {
+      "items": {
+        "block": "{n}일 블록",
+        "blockExtra": "{n}일 블록 + 추가 {m}일",
+        "blockDays": "{n}일"
+      }
+    },
+    "installments": {
+      "paidBadge": "{percent}% 수납",
+      "createTitle": "단계별 보증금",
+      "template": "보증금 템플릿",
+      "today": "오늘",
+      "todayChip": "오늘",
+      "dueOn": "기한 {day}",
+      "stageMeta": "주문 금액의 {percent}% · {day}",
+      "restTitle": "잔액, 인도 시 수납",
+      "restMeta": "잔액 · {day}",
+      "percentOf": "{n}단계 비율",
+      "overHundred": "단계 합계가 100%를 넘을 수 없습니다.",
+      "collectNow": "1단계 바로 수납",
+      "collectCash": "현금 · {amount}",
+      "collectTransfer": "계좌이체 · {amount}",
+      "collectLater": "생성만, 나중에 수납",
+      "createAndCollect": "주문 생성 · {amount} 수납",
+      "cardTitle": "단계별 수납",
+      "edit": "수정",
+      "view": "보기",
+      "collected": "수납 완료",
+      "remaining": "남은 금액",
+      "paidMeta": "{percent}% · {day} 수납",
+      "voidLink": "수납 취소",
+      "collectStage": "{n}단계 수납",
+      "status": {
+        "PAID": "수납 완료",
+        "PARTIAL": "일부 수납",
+        "DUE_TODAY": "오늘",
+        "OVERDUE": "기한 초과",
+        "UPCOMING": "대기",
+        "VOID": "취소됨"
+      },
+      "collectTitle": "{n}단계 수납",
+      "cancel": "취소",
+      "close": "닫기",
+      "collectConfirm": "{amount} 수납",
+      "amount": "금액",
+      "amountHint": "이 단계에서 {amount}을(를) 받아야 합니다. 더 적게 입력하면 차액은 인도 시 받는 잔액에 합산됩니다.",
+      "overStage": "이 단계에서는 {amount}을(를) 초과해 받을 수 없습니다.",
+      "method": "방법",
+      "cash": "현금",
+      "transfer": "계좌이체",
+      "collectedOn": "수납일",
+      "note": "메모",
+      "notePlaceholder": "선택 사항",
+      "editTitle": "결제 계획 수정",
+      "viewTitle": "결제 계획",
+      "editNote": "아직 수납하지 않은 단계의 % 또는 기한만 수정할 수 있습니다. 이후 단계는 다시 계산됩니다.",
+      "staffNote": "매장 주인과 지점 관리자만 계획을 수정할 수 있습니다. 보기만 가능합니다.",
+      "savePlan": "계획 저장",
+      "stageTitle": "{n}단계 · {label}",
+      "paidLocked": "수납 완료, 수정 불가 · {percent}%",
+      "percentOfOrder": "주문 금액 %",
+      "dueLabel": "기한",
+      "keepDue": "{day} 유지",
+      "restLocked": "잔액, 인도 시 수납 · 기한 {day} · 자동 계산, 수정 불가",
+      "total": "합계",
+      "totalLine": "{percent}% = {amount}",
+      "editProblem": {
+        "percent": "각 단계는 1%에서 100% 사이여야 합니다.",
+        "label": "단계 이름을 입력하세요.",
+        "over": "단계 합계가 주문 총액을 초과합니다."
+      },
+      "due": {
+        "onCreate": "주문 시",
+        "beforePickup": "인도 {days}일 전",
+        "afterCreate": "주문 {days}일 후"
+      },
+      "restShort": "인도 시 잔액",
+      "unpaidTitle": "수납하지 않은 보증금 단계가 있습니다",
+      "unpaidHint": "이 단계를 먼저 수납한 뒤 물품을 인도하세요.",
+      "unpaidTotal": "인도 전 수납 금액: {amount}",
+      "voidTitle": "이 수납을 취소할까요?",
+      "voidMessage": "\"{label}\"에서 받은 금액이 취소되어 다시 받을 수 있습니다. 잘못 받았을 때만 사용하세요.",
+      "voidConfirm": "수납 취소",
+      "cancelTitle": "주문 취소",
+      "cancelPaid": "고객 결제액",
+      "cancelKept": "매장 보유",
+      "cancelRefund": "고객 환불",
+      "cancelHint": "환불 = 고객 결제액 − 매장 보유. 매장이 정책과 다르게 처리하기로 한 경우에만 수정하세요.",
+      "cancelHintStaff": "직원은 고객이 낸 금액을 전액 환불합니다. 매장이 보유할 금액은 주인 또는 지점 관리자가 정합니다.",
+      "policyLine": "매장 정책: {policy}",
+      "dueTodayTitle": "오늘 수납",
+      "dueSoonTitle": "곧 기한",
+      "reminderEmpty": "해당 없음.",
+      "lateDays": "{days}일 지연",
+      "stageShort": "{n}단계",
+      "walkIn": "일반 고객"
     }
   }
 }

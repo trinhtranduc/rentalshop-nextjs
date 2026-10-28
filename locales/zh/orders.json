@@ -51,6 +51,141 @@
         "CANNOT_CONTACT": "联系不上顾客",
         "OTHER": "其他"
       }
+    },
+    "editor": {
+      "carts": {
+        "label": "购物车",
+        "title": "购物车 {n}",
+        "summary": "{count} 件 · {amount}",
+        "count": "{count} 件",
+        "new": "+ 新购物车",
+        "close": "关闭购物车",
+        "deleteTitle": "删除此购物车？",
+        "deleteMessage": "{name}有 {count} 件商品。这些商品将被删除。",
+        "delete": "删除"
+      },
+      "option": {
+        "BLOCK": "按天数档位 · {price}"
+      },
+      "pricing": {
+        "mode": {
+          "BLOCK": "按天数档位"
+        },
+        "unit": {
+          "BLOCK": "整个租期"
+        }
+      },
+      "block": {
+        "label": "{n} 天档",
+        "labelExtra": "{n} 天档 + 额外 {m} 天",
+        "days": "{n} 天"
+      },
+      "per": {
+        "BLOCK": "每天 {price} 起 · 按档计价"
+      }
+    },
+    "receipt": {
+      "units": {
+        "block": "{n} 天档",
+        "blockExtra": "{n} 天档 + 额外 {m} 天"
+      }
+    },
+    "detail": {
+      "items": {
+        "block": "{n} 天档",
+        "blockExtra": "{n} 天档 + 额外 {m} 天",
+        "blockDays": "{n} 天"
+      }
+    },
+    "installments": {
+      "paidBadge": "已收 {percent}%",
+      "createTitle": "分阶段收取定金",
+      "template": "定金模板",
+      "today": "今天",
+      "todayChip": "今天",
+      "dueOn": "截止 {day}",
+      "stageMeta": "订单金额的 {percent}% · {day}",
+      "restTitle": "余款，取货时收取",
+      "restMeta": "余款 · {day}",
+      "percentOf": "第 {n} 阶段百分比",
+      "overHundred": "各阶段合计不能超过 100%。",
+      "collectNow": "立即收取第 1 阶段",
+      "collectCash": "现金 · {amount}",
+      "collectTransfer": "转账 · {amount}",
+      "collectLater": "创建订单，稍后收",
+      "createAndCollect": "创建订单 · 收 {amount}",
+      "cardTitle": "分阶段收款",
+      "edit": "修改",
+      "view": "查看",
+      "collected": "已收",
+      "remaining": "待收",
+      "paidMeta": "{percent}% · {day} 已收",
+      "voidLink": "撤销收款",
+      "collectStage": "收取第 {n} 阶段",
+      "status": {
+        "PAID": "已收",
+        "PARTIAL": "部分已收",
+        "DUE_TODAY": "今天",
+        "OVERDUE": "已逾期",
+        "UPCOMING": "待收",
+        "VOID": "已撤销"
+      },
+      "collectTitle": "收取第 {n} 阶段",
+      "cancel": "取消",
+      "close": "关闭",
+      "collectConfirm": "收取 {amount}",
+      "amount": "金额",
+      "amountHint": "本阶段应收 {amount}。输入较少时，差额并入取货时收取的余款。",
+      "overStage": "本阶段最多收取 {amount}。",
+      "method": "方式",
+      "cash": "现金",
+      "transfer": "转账",
+      "collectedOn": "收款日期",
+      "note": "备注",
+      "notePlaceholder": "选填",
+      "editTitle": "修改付款计划",
+      "viewTitle": "付款计划",
+      "editNote": "只能修改尚未收取阶段的百分比或截止日，后面的阶段会自动重算。",
+      "staffNote": "只有店主和分店经理可以修改计划，您只能查看。",
+      "savePlan": "保存计划",
+      "stageTitle": "第 {n} 阶段 · {label}",
+      "paidLocked": "已收，不可修改 · {percent}%",
+      "percentOfOrder": "占订单 %",
+      "dueLabel": "截止日",
+      "keepDue": "保持 {day}",
+      "restLocked": "余款，取货时收取 · 截止 {day} · 自动计算，不可修改",
+      "total": "合计",
+      "totalLine": "{percent}% = {amount}",
+      "editProblem": {
+        "percent": "每个阶段须在 1% 到 100% 之间。",
+        "label": "阶段名称不能为空。",
+        "over": "各阶段合计超过订单总额。"
+      },
+      "due": {
+        "onCreate": "下单时",
+        "beforePickup": "取货前 {days} 天",
+        "afterCreate": "下单后 {days} 天"
+      },
+      "restShort": "取货时收余款",
+      "unpaidTitle": "还有定金阶段未收",
+      "unpaidHint": "请先收取这些阶段，再交付物品。",
+      "unpaidTotal": "交付前需收取：{amount}",
+      "voidTitle": "撤销这笔收款？",
+      "voidMessage": "“{label}”已收的金额将被撤销，以便重新收取。仅在收错时使用。",
+      "voidConfirm": "撤销收款",
+      "cancelTitle": "取消订单",
+      "cancelPaid": "客户已付",
+      "cancelKept": "店铺留存",
+      "cancelRefund": "退还客户",
+      "cancelHint": "退款 = 客户已付 减去 店铺留存。仅在店铺同意不按政策处理时修改。",
+      "cancelHintStaff": "员工会全额退还客户已付金额。店铺留存的金额由店主或分店经理决定。",
+      "policyLine": "店铺政策：{policy}",
+      "dueTodayTitle": "今天需收",
+      "dueSoonTitle": "即将到期",
+      "reminderEmpty": "暂无。",
+      "lateDays": "逾期 {days} 天",
+      "stageShort": "第 {n} 阶段",
+      "walkIn": "散客"
     }
   }
 }

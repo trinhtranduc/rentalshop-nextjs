@@ -27,7 +27,14 @@ final class ProductFormViewController: BaseViewControler {
     private var categories: [Category] = []
     private var categoryId: Int?
     private var merchantOutlets: [(id: Int, isDefault: Bool)] = []
-    private var defaultMode: ProductPricingMode = .perRental
+    /// #1249 (mockup v179): Theo lần, Theo mỗi ngày and Theo block ngày (the table, set up on its own screen) all exist
+    /// together and are all sent when filled; no radio, no "mặc định tính" switch.
+    private var priceDraft = ProductPriceDraft()
+    private let perDayField = UITextField()
+    private let blockSummaryTitle = V2.label(size: DS.TextSize.input, weight: .bold)
+    private let blockSummaryRange = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
+    private var blockRowView: UIView?
+    private let blockNotSet = V2.label("products.form.block.notSet".localized(), size: DS.TextSize.input, color: DS.Color.textMuted)
     private var keyboardManagerWasEnabled = true
 
     private let scroll = UIScrollView()
@@ -38,12 +45,10 @@ final class ProductFormViewController: BaseViewControler {
     private let barcodeField = UITextField()
     private let barcodeWarning = V2.label(size: DS.TextSize.secondary, color: V2.danger, lines: 0)
     private let perRentalField = UITextField()
-    private let perDayField = UITextField()
     private let saleField = UITextField()
     private let depositField = UITextField()
     /// #887: Giá vốn (optional, prices only)
     private let costField = UITextField()
-    private let defaultToggle = V2Segmented(titles: ["products.price.perRental".localized(), "products.price.perDay".localized()])
     private let quantityStepper = V2Stepper()
     private let stockNote = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted)
 
@@ -221,15 +226,15 @@ final class ProductFormViewController: BaseViewControler {
         if showsPrices {
             form.addArrangedSubview(V2.sectionHeader("products.form.prices".localized()))
             configure(perRentalField, placeholder: "0", numeric: true)
+            perRentalField.accessibilityIdentifier = "product.form.perRental"
+            form.addArrangedSubview(field(title: "products.form.perRental".localized(), required: false, input: perRentalField,
+                                          unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.once".localized()))
             configure(perDayField, placeholder: "0", numeric: true)
-            form.addArrangedSubview(pair(field(title: "products.form.perRental".localized(), required: false, input: perRentalField),
-                                         field(title: "products.form.perDay".localized(), required: false, input: perDayField)))
-            let defaultTitle = V2.label("products.form.defaultPricing".localized(), size: DS.TextSize.body, weight: .bold)
-            defaultToggle.addTarget(self, action: #selector(defaultChanged), for: .valueChanged)
-            let defaultBox = UIStackView(arrangedSubviews: [defaultTitle, defaultToggle])
-            defaultBox.axis = .vertical
-            defaultBox.spacing = 6
-            form.addArrangedSubview(padded(defaultBox, top: 8, bottom: 8))
+            perDayField.accessibilityIdentifier = "product.form.perDay"
+            form.addArrangedSubview(field(title: "products.form.perDay".localized(), required: false, input: perDayField,
+                                          unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.day".localized()))
+            form.addArrangedSubview(blockRow())
+            renderBlock()
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
             configure(depositField, placeholder: "0", numeric: true)
             form.addArrangedSubview(pair(field(title: "products.form.salePrice".localized(), required: false, input: saleField),
@@ -327,13 +332,13 @@ final class ProductFormViewController: BaseViewControler {
         nameField.text = product.name
         barcodeField.text = product.barcode
         categoryId = product.categoryId ?? product.category?.id
-        perRentalField.text = MoneyInput.display(ProductPricing.perRental(product))
-        perDayField.text = MoneyInput.display(ProductPricing.perDay(product))
+        priceDraft = ProductPriceDraft(product: product)
+        perRentalField.text = MoneyInput.display(priceDraft.perRental)
+        perDayField.text = MoneyInput.display(priceDraft.perDay)
         saleField.text = MoneyInput.display(ProductPricing.sale(product))
         if let deposit = product.deposit, deposit > 0 { depositField.text = MoneyInput.display(deposit) }
         if let cost = product.costPrice, cost > 0 { costField.text = MoneyInput.display(cost) }
-        defaultMode = ProductPricing.defaultMode(product)
-        defaultToggle.select(defaultMode == .perDay ? 1 : 0)
+        renderBlock()
         photos = (product.images?.isEmpty == false ? product.images! : [product.image_url].compactMap { $0 })
             .filter { !$0.isEmpty }.map { .remote($0) }
         renderStock()
@@ -456,8 +461,70 @@ final class ProductFormViewController: BaseViewControler {
         field.text = MoneyInput.display(MoneyInput.parse(field.text))
     }
 
-    @objc private func defaultChanged() {
-        defaultMode = defaultToggle.selectedIndex == 1 ? .perDay : .perRental
+    /// "Theo block ngày": a title and a bordered row with the table summary ("Chưa cài" when none); a tap opens the setup screen
+    private func blockRow() -> UIView {
+        let title = V2.label("products.form.perBlock".localized(), size: DS.TextSize.body, weight: .bold)
+        blockSummaryTitle.numberOfLines = 1
+        let texts = UIStackView(arrangedSubviews: [blockSummaryTitle, blockSummaryRange, blockNotSet])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let chevron = UIImageView(image: DS.symbol("chevron.right", 14, weight: .semibold))
+        chevron.tintColor = DS.Color.textMuted
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [texts, UIView(), chevron])
+        row.alignment = .center
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        row.layer.cornerRadius = 12
+        row.layer.borderWidth = 1
+        row.layer.borderColor = V2.border.cgColor
+        row.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(48) }
+        row.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openBlockSetup)))
+        row.isAccessibilityElement = true
+        row.accessibilityTraits = UIAccessibilityTraitButton
+        row.accessibilityIdentifier = "product.form.blockSummary"
+        row.accessibilityLabel = title.text
+        blockRowView = row
+        let stack = UIStackView(arrangedSubviews: [title, row])
+        stack.axis = .vertical
+        stack.spacing = 6
+        return padded(stack, top: 8, bottom: 8)
+    }
+
+    /// The summary of the table, or "Chưa cài"
+    private func renderBlock() {
+        guard showsPrices else { return }
+        let table = priceDraft.block
+        blockSummaryTitle.isHidden = table == nil
+        blockSummaryRange.isHidden = table == nil
+        blockNotSet.isHidden = table != nil
+        blockRowView?.accessibilityValue = table.map { BlockPricing.rowSummary($0) } ?? blockNotSet.text
+        if let table {
+            blockSummaryTitle.text = BlockPricing.rowSummary(table)
+            blockSummaryRange.text = BlockPricing.rangeSummary(table)
+        }
+    }
+
+    /// The setup screen. Back without saving leaves the draft as it was.
+    @objc private func openBlockSetup() {
+        view.endEditing(true)
+        syncDraftFromBoxes()
+        let screen = BlockPriceViewController(table: priceDraft.block)
+        screen.onSave = { [weak self] table in
+            self?.priceDraft.saveTable(table)
+            self?.renderBlock()
+        }
+        screen.onTurnOff = { [weak self] in
+            self?.priceDraft.turnOffTable()
+            self?.renderBlock()
+        }
+        navigationController?.pushViewController(screen, animated: true)
+    }
+
+    private func syncDraftFromBoxes() {
+        guard showsPrices else { return }
+        priceDraft.perRental = MoneyInput.parse(perRentalField.text)
+        priceDraft.perDay = MoneyInput.parse(perDayField.text)
     }
 
     @objc private func barcodeEdited() {
@@ -555,11 +622,13 @@ final class ProductFormViewController: BaseViewControler {
     @objc private func saveTapped() {
         view.endEditing(true)
         let rented = stockCounts?.rented ?? 0
+        syncDraftFromBoxes()
         let input = ProductFormInput(
             name: nameField.text ?? "",
-            perRental: MoneyInput.parse(perRentalField.text),
-            perDay: MoneyInput.parse(perDayField.text),
-            defaultMode: defaultMode,
+            perRental: priceDraft.perRental,
+            perDay: priceDraft.perDay,
+            defaultMode: .perRental,
+            block: priceDraft.block,
             salePrice: MoneyInput.parse(saleField.text),
             deposit: MoneyInput.parse(depositField.text),
             quantity: quantityStepper.value,
@@ -584,7 +653,7 @@ final class ProductFormViewController: BaseViewControler {
         let barcode = (barcodeField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let keptUrls = photos.compactMap { photo -> String? in if case .remote(let url) = photo { return url }; return nil }
         let newImages = photos.compactMap { photo -> UIImage? in if case .local(let image) = photo { return image }; return nil }
-        let options = showsPrices ? ProductPricing.options(perRental: input.perRental, perDay: input.perDay, defaultMode: input.defaultMode) : nil
+        let options = showsPrices ? priceDraft.options : nil
         let merchantId = User.current()?.merchant?.id ?? User.current()?.merchantId
 
         let completion: (Product?, NSError?) -> Void = { [weak self] saved, error in
@@ -621,7 +690,9 @@ final class ProductFormViewController: BaseViewControler {
                 isActive: nil,
                 pricingType: nil,
                 durationConfig: nil,
-                pricingOptions: options
+                pricingOptions: options,
+                // #1189: this form sends every option, BLOCK included, so the API replaces the stored table with ours
+                pricingSchemaVersion: showsPrices ? ProductPricingSchema.version : nil
             )
             ProductService.shared.updateProduct(productId: product.id ?? product.product_id, request: request, images: newImages, completion: completion)
         } else {
@@ -637,7 +708,8 @@ final class ProductFormViewController: BaseViewControler {
                 merchantId: merchantId,
                 outletId: outletId,
                 images: keptUrls.isEmpty ? nil : keptUrls,
-                pricingOptions: (options?.isEmpty ?? true) ? nil : options
+                pricingOptions: (options?.isEmpty ?? true) ? nil : options,
+                pricingSchemaVersion: showsPrices ? ProductPricingSchema.version : nil
             )
             ProductService.shared.createProduct(request: request, images: newImages, completion: completion)
         }

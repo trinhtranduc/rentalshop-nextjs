@@ -36,7 +36,8 @@ data class ShareShop(
 data class ShareDayStrip(val pickup: String, val returnDay: String, val days: Int?)
 
 /** [note]: the item's own note under its price line (#930); the order's general note is never on the image */
-data class ShareLine(val name: String, val quantity: String, val total: String, val note: String? = null)
+/** [formula] (#1189): the sum of a day-block line, "120.000 (3 ngày) + 2 × 20.000 = 160.000", under its price line */
+data class ShareLine(val name: String, val quantity: String, val total: String, val note: String? = null, val formula: String? = null)
 
 data class ShareRow(val label: ShareText, val value: String)
 
@@ -77,6 +78,8 @@ data class OrderShareModel(
     val thanks: ShareText,
     val address: String?,
     val fileName: String,
+    /** #1252: "Thu cọc theo giai đoạn" under the rows of a rental that has stages; null otherwise */
+    val plan: com.anyrent.pos.domain.deposit.DepositReceiptBlock? = null,
 ) {
     val isDraft: Boolean get() = note != null
 
@@ -92,10 +95,19 @@ data class OrderShareModel(
             printBankQr: Boolean = false,
             bankAccount: OutletBankAccount? = null,
             zone: ZoneId = ShopTime.zone,
+            /** #1189: the sum of a day-block order line (null = none); the caller owns the strings */
+            blockFormula: (com.anyrent.pos.data.model.OrderItem) -> String? = { null },
+            /** #1252: "Khối 3 ngày + 2 ngày thêm" of a day-block order line (null = none) */
+            blockSummary: (com.anyrent.pos.data.model.OrderItem) -> String? = { null },
+            now: Instant = Instant.now(),
         ): OrderShareModel {
             val summary = order.summary
             val isRent = summary.orderType.equals("RENT", ignoreCase = true)
             val number = summary.orderNumber.trim().removePrefix("#")
+            val plan = com.anyrent.pos.domain.deposit.DepositReceipt.block(
+                isRent, order.deposit?.hasPlan, order.deposit?.installments, order.deposit?.summary,
+                now.atZone(zone).toLocalDate().toString(), zone,
+            )
 
             val rows = mutableListOf<ShareRow>()
             val highlight: ShareHighlight
@@ -104,7 +116,8 @@ data class OrderShareModel(
                 if (order.discountAmount > 0) {
                     rows += ShareRow(ShareText.Res(R.string.share_discount), minus(order.discountAmount))
                 }
-                if (summary.depositAmount > 0) {
+                // #1252: with stages the block lists what was collected, so the single "Đã cọc" row goes
+                if (summary.depositAmount > 0 && plan == null) {
                     rows += ShareRow(ShareText.Res(R.string.share_deposit_paid), money(summary.depositAmount))
                 }
                 collateral(order.collateralDetails, order.securityDeposit)?.let {
@@ -152,9 +165,13 @@ data class OrderShareModel(
                 itemsTitle = itemsTitle(isRent, order.items.size),
                 lines = order.items.map { item ->
                     val itemName = item.productName?.takeIf { it.isNotBlank() && !it.equals("null", true) } ?: "—"
+                    // #1252: a day-block line says which block it is, as the order detail does
+                    val block = if (isRent) blockSummary(item) else null
+                    val price = "${item.quantity} × ${money(item.unitPrice)}"
                     ShareLine(
-                        itemName, "${item.quantity} × ${money(item.unitPrice)}", money(item.totalPrice),
+                        itemName, block?.let { if (item.quantity > 1) "$it · $price" else it } ?: price, money(item.totalPrice),
                         item.note?.trim()?.takeIf { it.isNotEmpty() },
+                        formula = if (isRent) blockFormula(item) else null,
                     )
                 },
                 rows = rows,
@@ -164,6 +181,7 @@ data class OrderShareModel(
                 thanks = ShareText.Res(R.string.share_thanks, listOf(shop.name)),
                 address = shop.address?.trim()?.takeIf { it.isNotEmpty() },
                 fileName = "Order_${number.replace(Regex("[^A-Za-z0-9_-]"), "_").ifBlank { "order" }}.jpg",
+                plan = plan,
             )
         }
 
@@ -182,6 +200,9 @@ data class OrderShareModel(
             vi: Boolean,
             now: Instant = Instant.now(),
             zone: ZoneId = ShopTime.zone,
+            /** #1189: the sum of a day-block cart line (null = none) */
+            blockFormula: (CartLine) -> String? = { null },
+            blockSummary: (CartLine) -> String? = { null },
         ): OrderShareModel {
             val today = now.atZone(zone)
             val subtotal = lines.sumOf { it.lineTotal }
@@ -213,7 +234,12 @@ data class OrderShareModel(
                 customerPhone = customer?.phone?.trim()?.takeIf { it.isNotEmpty() },
                 dayStrip = strip,
                 itemsTitle = itemsTitle(!isSale, lines.size),
-                lines = lines.map { ShareLine(it.product.name, "${it.quantity} × ${money(it.unitPrice)}", money(it.lineTotal)) },
+                lines = lines.map {
+                    val price = "${it.quantity} × ${money(it.unitPrice)}"
+                    val block = if (isSale) null else blockSummary(it)
+                    ShareLine(it.product.name, block?.let { b -> if (it.quantity > 1) "$b · $price" else b } ?: price, money(it.lineTotal),
+                        formula = if (isSale) null else blockFormula(it))
+                },
                 rows = rows,
                 highlight = ShareHighlight(ShareText.Res(R.string.share_draft_estimate), money(total), ShareTone.ORANGE),
                 note = ShareText.Res(R.string.share_draft_note),

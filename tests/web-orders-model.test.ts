@@ -18,6 +18,7 @@ import {
   parsePage,
   parsePageSize,
   parseSort,
+  SORTS,
   parseStatus,
   parseTab,
   rangeOf,
@@ -41,6 +42,8 @@ describe('filters', () => {
     expect(parsePage('3')).toBe(3);
     expect(parsePage('-1')).toBe(1);
     expect(parseSort('nearest')).toBe('nearest');
+    expect(parseSort('pickup')).toBe('pickup');
+    expect(SORTS.pickup).toEqual({ sortBy: 'pickupPlanAt', sortOrder: 'asc' });
     expect(parseSort('toString')).toBe('newest');
   });
 

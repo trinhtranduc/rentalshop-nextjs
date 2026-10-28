@@ -577,31 +577,46 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
     private let staffPerms = ["products.view", "orders.view", "orders.create", "customers.view", "analytics.view.dashboard"]
 
     func testSettingsRowsByRole() {
-        let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms, hasPlan: true)
+        // #1270 plan B: 12 rows for the owner (+ the overlap switch = 13) plus the name card and the bell
+        let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms + ["customers.view"], hasPlan: true, showsCustomers: true)
         XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
-        XCTAssertEqual(merchant[0].items, [.notifications, .storeInfo, .currency, .receiptNote, .printer, .bankAccounts])
-        XCTAssertEqual(merchant[1].items, [.categories, .users, .export])
-        XCTAssertEqual(merchant[2].items, [.plan, .language, .password, .appInfo, .deleteAccount])
+        XCTAssertEqual(merchant[0].items, [.storeInfo, .currency, .bankAccounts, .deposit, .printing])
+        XCTAssertEqual(merchant[1].items, [.categories, .customers, .users, .export])
+        XCTAssertEqual(merchant[2].items, [.plan, .language, .advanced])
+        XCTAssertEqual(merchant.flatMap(\.items).count, 12)
 
+        // Outlet admin: bank accounts yes, currency no
         let outletAdmin = SettingsV2Logic.sections(role: .outletAdmin, permissions: outletAdminPerms, hasPlan: false)
+        XCTAssertEqual(outletAdmin[0].items, [.storeInfo, .bankAccounts, .deposit, .printing])
         XCTAssertEqual(outletAdmin[1].items, [.categories, .users, .export])
-        XCTAssertEqual(outletAdmin[2].items, [.language, .password, .appInfo, .deleteAccount])
+        XCTAssertEqual(outletAdmin[2].items, [.language, .advanced])
 
-        // Staff: no users, no export (even with an export right), so no QUẢN LÝ group at all
+        // Staff: no currency, no bank accounts; Cọc stays (read only); no users, no export, so no QUẢN LÝ group at all
         let staff = SettingsV2Logic.sections(role: .outletStaff, permissions: staffPerms + ["orders.export"], hasPlan: true)
         XCTAssertEqual(staff.map(\.group), [.store, .account])
+        XCTAssertEqual(staff[0].items, [.storeInfo, .deposit, .printing])
         XCTAssertFalse(staff.flatMap(\.items).contains(.users))
         XCTAssertFalse(staff.flatMap(\.items).contains(.export))
         XCTAssertFalse(staff.flatMap(\.items).contains(.categories), "#632: staff cannot add a category")
     }
 
-    /// #937: "Thông báo" is the first row of CỬA HÀNG for every role (the Home bell became the cart button)
-    func testNotificationsRowFirstForEveryRole() {
+    /// #1259: Thông báo is the bell at the top right, not a row, for every role
+    func testStoreGroupFirstForEveryRole() {
         for role: Role in [.admin, .merchant, .outletAdmin, .outletStaff, .outletInventory] {
-            let store = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).first
-            XCTAssertEqual(store?.group, .store, "\(role)")
-            XCTAssertEqual(store?.items.first, .notifications, "\(role)")
+            let sections = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false)
+            XCTAssertEqual(sections.first?.group, .store, "\(role)")
+            XCTAssertEqual(sections.first?.items.first, .storeInfo, "\(role)")
+            XCTAssertTrue(sections[0].items.contains(.deposit), "Cọc shows for every role \(role)")
         }
+    }
+
+    /// #1270: the second text of a row shows the value in force
+    func testSettingsRowValues() {
+        XCTAssertEqual(SettingsV2Logic.printingValue(hasPrinter: true, paperMillimetres: 80, none: "chưa chọn máy in"), "80 mm")
+        XCTAssertEqual(SettingsV2Logic.printingValue(hasPrinter: false, paperMillimetres: 80, none: "chưa chọn máy in"), "80 mm · chưa chọn máy in")
+        XCTAssertEqual(SettingsV2Logic.printingValue(hasPrinter: false, paperMillimetres: 58, none: "no printer chosen"), "58 mm · no printer chosen")
+        XCTAssertEqual(SettingsV2Logic.depositStagesDimmed(staged: false), true)
+        XCTAssertEqual(SettingsV2Logic.depositStagesDimmed(staged: true), false)
     }
 
     /// #937: the row's badge is the unread count, capped at 99, hidden at 0

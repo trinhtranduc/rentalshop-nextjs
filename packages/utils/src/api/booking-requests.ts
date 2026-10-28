@@ -95,4 +95,13 @@ export const bookingRequestsApi = {
     });
     return parseApiResponse<{ showPublicPrice?: boolean }>(response);
   },
+
+  /** Settings › "Với app cũ" for day-block prices (owner only, #1189): 'recompute' | 'block' */
+  async setBlockPricingOldApps(oldApps: 'recompute' | 'block') {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify({ blockPricing: { oldApps } }),
+    });
+    return parseApiResponse<{ blockPricing?: { oldApps?: string } }>(response);
+  },
 };

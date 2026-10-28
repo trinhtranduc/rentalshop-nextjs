@@ -93,5 +93,19 @@
   "BOOKING_REQUEST_FOUND": "예약 요청을 불러왔습니다.",
   "BOOKING_REQUESTS_FOUND": "예약 요청 목록을 불러왔습니다.",
   "BOOKING_REQUEST_PREPARED": "예약 요청으로 주문을 만들 준비가 되었습니다.",
-  "BOOKING_REQUEST_REJECTED": "예약 요청을 거절했습니다."
+  "BOOKING_REQUEST_REJECTED": "예약 요청을 거절했습니다.",
+  "BLOCK_PRICE_MISMATCH": "일수 구간 요금 상품의 가격이 요금표와 맞지 않습니다. 상품을 다시 불러온 뒤 다시 시도해 주세요.",
+  "PRICING_TYPE_REQUIRES_UPDATE": "이 상품은 일수 구간 요금을 사용합니다. 대여를 등록하려면 앱을 업데이트해 주세요.",
+  "BLOCK_TABLE_INVALID": "일수 구간 요금표가 올바르지 않습니다. 1~31일, 0 이상의 금액, 상품당 요금표는 하나만 사용하세요.",
+  "INSTALLMENT_EXCEEDS_TOTAL": "보증금 단계의 합계가 주문 총액을 초과합니다.",
+  "INSTALLMENT_OVERPAID": "이 금액이 단계 허용 금액을 초과하거나 새 총액이 이미 받은 금액보다 적습니다.",
+  "INSTALLMENT_ALREADY_PAID": "이 보증금 단계는 이미 수납되었습니다.",
+  "INSTALLMENT_FORBIDDEN_ROLE": "현재 권한으로는 보증금 단계에 대해 이 작업을 할 수 없습니다.",
+  "INSTALLMENT_UNPAID_AT_PICKUP": "이 주문에는 아직 수납하지 않은 보증금 단계가 있습니다. 웹에서 수납하거나 앱을 업데이트하세요.",
+  "INSTALLMENT_NOT_FOUND": "보증금 단계를 찾을 수 없습니다.",
+  "INSTALLMENT_NO_PLAN": "이 주문에는 보증금 분할 계획이 없습니다.",
+  "INSTALLMENT_LOYALTY_UNSUPPORTED": "단계별 보증금 주문에는 포인트를 사용할 수 없습니다.",
+  "DEPOSIT_SETTINGS_INVALID": "보증금 설정이 올바르지 않습니다. 템플릿당 1~3단계, 비율 합계는 100 이하, 템플릿은 최대 10개입니다.",
+  "CANCEL_AMOUNTS_MISMATCH": "유지하는 금액이 수납한 금액보다 크거나 올바르지 않습니다.",
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "금액을 유지한 채 취소된 주문은 이력에 남기므로 삭제할 수 없습니다."
 }

@@ -356,4 +356,51 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
         XCTAssertEqual(OrderDetailLogic.saleSubtotal(itemTotals: [396, 396]), 792)
         XCTAssertEqual(OrderDetailLogic.saleSubtotal(itemTotals: []), 0)
     }
+
+    // MARK: #1279 edit papers and collateral after pick-up
+
+    func testEditCollateralOnlyForPickupedRentWithUpdatePermission() {
+        XCTAssertTrue(OrderDetailLogic.canEditCollateral(orderType: .rent, status: .pickuped, canUpdateOrders: true))
+        XCTAssertFalse(OrderDetailLogic.canEditCollateral(orderType: .rent, status: .pickuped, canUpdateOrders: false))
+        for status in [OrderStatus.reserved, .returned, .cancelled, .completed] {
+            XCTAssertFalse(OrderDetailLogic.canEditCollateral(orderType: .rent, status: status, canUpdateOrders: true))
+        }
+        XCTAssertFalse(OrderDetailLogic.canEditCollateral(orderType: .sale, status: .pickuped, canUpdateOrders: true))
+    }
+
+    func testCollateralSummaryJoinsPapersAndDeposit() {
+        let fmt: (Double) -> String = { String(Int($0)) }
+        XCTAssertEqual(OrderDetailLogic.collateralSummary(papers: " CCCD ", securityDeposit: 500_000, format: fmt), "CCCD · 500000")
+        XCTAssertEqual(OrderDetailLogic.collateralSummary(papers: "CCCD", securityDeposit: 0, format: fmt), "CCCD")
+        XCTAssertEqual(OrderDetailLogic.collateralSummary(papers: nil, securityDeposit: 500_000, format: fmt), "500000")
+        XCTAssertNil(OrderDetailLogic.collateralSummary(papers: "  ", securityDeposit: 0, format: fmt))
+    }
+
+    func testCollateralEditRequestKeepsStatusAndSendsOnlyThreeFields() {
+        let request = OrderDetailLogic.collateralEditRequest(papers: "CCCD", securityDeposit: 500_000,
+                                                             currentPapers: nil, currentDeposit: 0)
+        XCTAssertNil(request.status)
+        XCTAssertEqual(request.collateralDetails, "CCCD")
+        XCTAssertEqual(request.collateralType, "ID_CARD")
+        XCTAssertEqual(request.securityDeposit, 500_000)
+        XCTAssertNil(request.totalAmount)
+        XCTAssertNil(request.orderItems)
+        // Clearing a saved value is sent empty / 0
+        let cleared = OrderDetailLogic.collateralEditRequest(papers: "", securityDeposit: 0,
+                                                             currentPapers: "CCCD", currentDeposit: 500_000)
+        XCTAssertEqual(cleared.collateralDetails, "")
+        XCTAssertEqual(cleared.securityDeposit, 0)
+    }
+
+    func testReturnMoneyFollowsEditedCollateral() {
+        // Before: 500k held, 200k fees -> give back 300k. After raising it to 700k -> give back 500k.
+        XCTAssertEqual(OrderDetailLogic.returnMoney(lateFee: 150_000, damageFee: 50_000, securityDeposit: 500_000, payments: []).refund, 300_000)
+        XCTAssertEqual(OrderDetailLogic.returnMoney(lateFee: 150_000, damageFee: 50_000, securityDeposit: 700_000, payments: []).refund, 500_000)
+        let none = OrderDetailLogic.balance(orderType: .rent, status: .pickuped, total: 1_000_000, deposit: 300_000,
+                                            securityDeposit: 0, lateFee: 0, damageFee: 0, payments: [])
+        let held = OrderDetailLogic.balance(orderType: .rent, status: .pickuped, total: 1_000_000, deposit: 300_000,
+                                            securityDeposit: 500_000, lateFee: 0, damageFee: 0, payments: [])
+        XCTAssertEqual(none.refundDue, 0)
+        XCTAssertEqual(held.refundDue, 500_000)
+    }
 }
