@@ -25,10 +25,11 @@ data class ExtensionUpdate(val returnPlanAt: String, val rentalDuration: Int?, v
  * one-day extension still occupies that day.
  */
 object RentalExtension {
+    /** Only a rental that is out (Đang thuê); a booked order changes its days through Sửa đơn */
     fun canExtend(orderType: String, status: String, canUpdateOrders: Boolean): Boolean {
         if (!canUpdateOrders || !orderType.equals("RENT", ignoreCase = true)) return false
         return when (status.uppercase()) {
-            "RESERVED", "PICKUPED", "PICKED_UP" -> true
+            "PICKUPED", "PICKED_UP" -> true
             else -> false
         }
     }
