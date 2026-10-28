@@ -10,6 +10,8 @@ const mockPrisma: any = {
 jest.mock('../../../packages/database/src/client', () => ({ prisma: mockPrisma }));
 jest.mock('@rentalshop/utils', () => ({
   removeVietnameseDiacritics: (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D'),
+  // product-search-words.ts (#1250/#1251) folds words with this; same body as packages/utils string-utils.ts
+  foldSearchText: (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase(),
 }));
 
 import { simplifiedProducts } from '../../../packages/database/src/product';
