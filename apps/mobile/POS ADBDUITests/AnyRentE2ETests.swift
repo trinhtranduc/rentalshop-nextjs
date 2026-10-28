@@ -2148,6 +2148,10 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(1)
         e2e.shot("5g-deposit-card")
         XCTAssertTrue(app.otherElements["deposit.card"].exists || app.staticTexts["deposit.card.badge"].exists, "the deposit card shows")
+        // #1285: the sections below the card (papers & collateral, notes) and the bottom bar
+        app.swipeUp()
+        sleep(1)
+        e2e.shot("5g-detail-bottom")
     }
 
     /// #1279: a picked-up order keeps a "Giấy tờ & thế chân" card with "Sửa"; the sheet saves new papers and deposit and the
