@@ -53,6 +53,17 @@
       }
     },
     "editor": {
+      "carts": {
+        "label": "购物车",
+        "title": "购物车 {n}",
+        "summary": "{count} 件 · {amount}",
+        "count": "{count} 件",
+        "new": "+ 新购物车",
+        "close": "关闭购物车",
+        "deleteTitle": "删除此购物车？",
+        "deleteMessage": "{name}有 {count} 件商品。这些商品将被删除。",
+        "delete": "删除"
+      },
       "option": {
         "BLOCK": "按天数档位 · {price}"
       },
