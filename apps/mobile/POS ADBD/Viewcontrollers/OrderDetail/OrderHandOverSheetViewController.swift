@@ -393,7 +393,6 @@ final class CollateralEditSheetViewController: UIViewController, UITextFieldDele
         subtitle.text = "#\(detail.orderNumber)"
 
         configure(papersField, number: false, text: detail.collateralDetails ?? "")
-        papersField.placeholder = "order.handOver.papersHint".localized()
         papersField.autocapitalizationType = .allCharacters
         papersField.accessibilityIdentifier = "collateralEdit.papers"
         configure(depositField, number: true, text: detail.securityDeposit > 0 ? MoneyFormatter.plain(detail.securityDeposit) : "")

@@ -253,8 +253,14 @@ final class OrderDetailViewController: BaseViewControler {
         if OrderDetailLogic.showsLateBanner && late > 0 {
             stack.addArrangedSubview(lateBanner(detail, days: late))
         }
-        stack.addArrangedSubview(statusBox(detail))
-        return padded(stack, top: DS.Spacing.xs, bottom: DS.Spacing.lg, thickBottom: true)
+        // #1279 (owner chose A): the "Đang thuê" block runs edge to edge, square, with the 8pt grey band below it
+        let top = padded(stack, top: DS.Spacing.xs, bottom: DS.Spacing.lg)
+        let band = UIView()
+        band.backgroundColor = DS.Color.background
+        band.snp.makeConstraints { make in make.height.equalTo(8) }
+        let header = UIStackView(arrangedSubviews: [top, statusBox(detail), band])
+        header.axis = .vertical
+        return header
     }
 
     private var dialNumber: String?
@@ -294,9 +300,8 @@ final class OrderDetailViewController: BaseViewControler {
         box.axis = .vertical
         box.spacing = 14
         box.isLayoutMarginsRelativeArrangement = true
-        box.layoutMargins = UIEdgeInsets(top: 12, left: 14, bottom: 14, right: 14)
+        box.layoutMargins = UIEdgeInsets(top: 12, left: DS.Spacing.lg, bottom: 14, right: DS.Spacing.lg)
         box.backgroundColor = UIColor(hexString: "F8FAFC")
-        box.layer.cornerRadius = DS.Radius.card
         if OrderDetailLogic.showsSteps(orderType: detail.orderType, status: detail.status) {
             box.addArrangedSubview(progressView(detail))
         }
@@ -402,7 +407,7 @@ final class OrderDetailViewController: BaseViewControler {
             }
             if OrderDetailLogic.canEditCollateral(orderType: detail.orderType, status: detail.status,
                                                   canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {
-                stack.addArrangedSubview(collateralCard(detail))
+                stack.addArrangedSubview(collateralSection(detail))
             } else if let papers = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines), !papers.isEmpty {
                 stack.addArrangedSubview(keyValue("Collateral".localized(), papers))
             }
@@ -411,40 +416,41 @@ final class OrderDetailViewController: BaseViewControler {
         return padded(stack, top: 0, bottom: 0)
     }
 
-    /// #1279 card "Giấy tờ & thế chân · CCCD · 500.000" with "Sửa" on a picked-up rental (mockup G31-G33)
-    private func collateralCard(_ detail: OrderDetail) -> UIView {
+    /// #1279 section "GIẤY TỜ & THẾ CHÂN" with "Sửa" on a picked-up rental (mockup G22-G24, owner chose A): flat like the
+    /// items section, a small caps title, the blue "Sửa" at the right, then two rows like "Đã lấy". No card, no border.
+    private func collateralSection(_ detail: OrderDetail) -> UIView {
         let title = UILabel()
-        title.font = UIFont(name: "Inter-SemiBold", size: DS.TextSize.body) ?? Utils.boldFont(size: DS.TextSize.body)
-        title.textColor = DS.Color.text
-        title.text = "order.collateral.card".localized()
+        title.font = Utils.boldFont(size: DS.TextSize.secondary)
+        title.textColor = DS.Color.textMuted
+        title.text = "order.collateral.card".localized().uppercased()
         let edit = UIButton(type: .system)
         edit.setTitle("order.collateral.edit".localized(), for: .normal)
         edit.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
         edit.tintColor = DS.Color.primary
+        edit.contentHorizontalAlignment = .right
         edit.accessibilityIdentifier = "order.detail.collateralEdit"
         edit.addTarget(self, action: #selector(editCollateralTapped), for: .touchUpInside)
         edit.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
         let top = UIStackView(arrangedSubviews: [title, edit])
         top.axis = .horizontal
         top.alignment = .center
-        let value = UILabel()
-        value.font = Utils.regularFont(size: DS.TextSize.body)
-        value.textColor = DS.Color.textMuted
-        value.numberOfLines = 0
-        value.text = OrderDetailLogic.collateralSummary(papers: detail.collateralDetails, securityDeposit: detail.securityDeposit,
-                                                        format: { MoneyFormatter.format($0) })
-            ?? "order.collateral.none".localized()
-        value.accessibilityIdentifier = "order.detail.collateralValue"
-        let box = UIStackView(arrangedSubviews: [top, value])
+        let none = "order.collateral.none".localized()
+        let papersText = detail.collateralDetails?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let papers = keyValue("order.collateral.papersRow".localized(), papersText.isEmpty ? none : papersText)
+        let money = keyValue("Collateral".localized(),
+                             detail.securityDeposit > 0 ? MoneyFormatter.format(detail.securityDeposit) : none)
+        setValueIdentifier(in: papers, "order.detail.collateralPapers")
+        setValueIdentifier(in: money, "order.detail.collateralValue")
+        let box = UIStackView(arrangedSubviews: [top, papers, money])
         box.axis = .vertical
-        box.spacing = 2
-        box.isLayoutMarginsRelativeArrangement = true
-        box.layoutMargins = UIEdgeInsets(top: 4, left: 12, bottom: 10, right: 4)
-        box.layer.cornerRadius = 12
-        box.layer.borderWidth = 2
-        box.layer.borderColor = UIColor(hexString: "10B981").cgColor
-        box.accessibilityIdentifier = "order.detail.collateralCard"
-        return padded(box, top: DS.Spacing.sm, bottom: DS.Spacing.sm)
+        box.accessibilityIdentifier = "order.detail.collateralSection"
+        return box
+    }
+
+    /// the right-hand label of a `keyValue` row gets the id so a UI test reads the value
+    private func setValueIdentifier(in row: UIView, _ id: String) {
+        func labels(_ v: UIView) -> [UILabel] { (v as? UILabel).map { [$0] } ?? v.subviews.flatMap(labels) }
+        labels(row).last?.accessibilityIdentifier = id
     }
 
     @objc private func editCollateralTapped() {
@@ -454,7 +460,7 @@ final class OrderDetailViewController: BaseViewControler {
             self?.saveCollateral(papers: papers, securityDeposit: securityDeposit)
         }
         if let presentation = sheet.sheetPresentationController {
-            presentation.detents = [.large()]
+            presentation.detents = [.medium()]
             presentation.prefersGrabberVisible = true
             presentation.preferredCornerRadius = 24
         }
@@ -991,7 +997,7 @@ final class OrderDetailViewController: BaseViewControler {
             self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit)
         }
         if let presentation = sheet.sheetPresentationController {
-            presentation.detents = [.large()]
+            presentation.detents = [.medium()]
             presentation.prefersGrabberVisible = true
             presentation.preferredCornerRadius = 24
         }
