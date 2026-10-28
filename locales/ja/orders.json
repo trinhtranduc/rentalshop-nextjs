@@ -53,6 +53,17 @@
       }
     },
     "editor": {
+      "carts": {
+        "label": "カート",
+        "title": "カート {n}",
+        "summary": "{count}点 · {amount}",
+        "count": "{count}点",
+        "new": "+ 新しいカート",
+        "close": "カートを閉じる",
+        "deleteTitle": "このカートを削除しますか？",
+        "deleteMessage": "{name}には{count}点あります。商品は削除されます。",
+        "delete": "削除"
+      },
       "option": {
         "BLOCK": "日数ブロック · {price}"
       },

@@ -579,6 +579,17 @@
     },
     "create": "New order",
     "editor": {
+      "carts": {
+        "label": "Carts",
+        "title": "Cart {n}",
+        "summary": "{count} items · {amount}",
+        "count": "{count} items",
+        "new": "+ New cart",
+        "close": "Close cart",
+        "deleteTitle": "Delete this cart?",
+        "deleteMessage": "{name} has {count} items. They will be removed.",
+        "delete": "Delete"
+      },
       "title": "New order",
       "editTitle": "Edit order #{number}",
       "backToOrder": "Back to order #{number}",
