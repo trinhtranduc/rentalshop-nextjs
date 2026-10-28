@@ -2215,7 +2215,8 @@ final class AnyRentE2ETests: XCTestCase {
         checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
                         expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Edit order", "Sửa đơn"],
                                    ["Change history", "Lịch sử thay đổi"]],
-                        destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47a-order-sheet-booked")
+                        destructive: ["Cancel order", "Huỷ đơn"], absent: [["Extend", "Gia hạn"]],
+                        shotPrefix: "47a-order-sheet-booked")
         e2e.goBack()
 
         // A renting order: In + Nhận trả on screen; Gia hạn in the sheet
@@ -2230,7 +2231,7 @@ final class AnyRentE2ETests: XCTestCase {
 
     /// Opens ⋯ on the open detail and checks the sheet against the buttons the screen shows
     private func checkOrderSheet(onScreen: [[String]], onScreenPrefixes: [[String]], expected: [[String]],
-                                 destructive: [String], shotPrefix: String) {
+                                 destructive: [String], absent: [[String]] = [], shotPrefix: String) {
         // Buttons of the screen before the sheet opens (the bottom bar)
         let exact: ([String]) -> Int = { self.app.buttons.matching(NSPredicate(format: "label IN %@", $0)).count }
         let prefix: ([String]) -> Int = { labels in
@@ -2254,6 +2255,7 @@ final class AnyRentE2ETests: XCTestCase {
             XCTAssertTrue(row.exists, "\(shotPrefix): sheet lists \(labels)")
             frames.append(row.exists ? row.frame : .zero)
         }
+        for labels in absent { XCTAssertFalse(e2e.button(labels).exists, "\(shotPrefix): sheet has no \(labels)") }
         let cancel = e2e.button(destructive)
         XCTAssertTrue(cancel.exists, "\(shotPrefix): sheet lists \(destructive) (destructive)")
         if cancel.exists, let last = frames.last, last != .zero {

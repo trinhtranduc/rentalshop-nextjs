@@ -10,9 +10,10 @@
 import Foundation
 
 enum RentalExtension {
+    /// Only a rental that is out (Đang thuê); a booked order changes its days through Sửa đơn
     static func canExtend(orderType: OrderType, status: OrderStatus, canUpdateOrders: Bool) -> Bool {
         guard canUpdateOrders, orderType == .rent else { return false }
-        return status == .reserved || status == .pickuped
+        return status == .pickuped
     }
 
     private static func calendar(_ timeZone: TimeZone) -> Calendar {

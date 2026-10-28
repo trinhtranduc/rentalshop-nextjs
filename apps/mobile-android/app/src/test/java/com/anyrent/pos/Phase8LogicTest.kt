@@ -148,7 +148,7 @@ class Phase8LogicTest {
 
     @Test
     fun `extend only open rentals with orders update`() {
-        assertTrue(RentalExtension.canExtend("RENT", "RESERVED", canUpdateOrders = true))
+        assertFalse(RentalExtension.canExtend("RENT", "RESERVED", canUpdateOrders = true))
         assertTrue(RentalExtension.canExtend("RENT", "PICKUPED", canUpdateOrders = true))
         assertFalse(RentalExtension.canExtend("RENT", "RETURNED", canUpdateOrders = true))
         assertFalse(RentalExtension.canExtend("RENT", "CANCELLED", canUpdateOrders = true))
