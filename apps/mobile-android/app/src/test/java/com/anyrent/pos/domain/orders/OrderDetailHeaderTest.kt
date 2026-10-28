@@ -109,7 +109,7 @@ class OrderDetailHeaderTest {
         assertEquals(
             listOf(
                 Step(StepTitle.BOOKED, "14/09/26 14:33", done = true, accent = false),
-                Step(StepTitle.HANDED_OVER, "01/10/26", done = true, accent = true),
+                Step(StepTitle.HANDED_OVER, "01/10/26 01:00", done = true, accent = true),
                 Step(StepTitle.RETURN, "07/10/26", done = false, accent = false),
             ),
             steps,

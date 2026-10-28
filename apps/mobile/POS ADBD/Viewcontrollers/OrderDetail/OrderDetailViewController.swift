@@ -372,7 +372,8 @@ final class OrderDetailViewController: BaseViewControler {
             // The accent marks a hand-over or return that happened; the booked day stays plain
             day.textColor = step.done && step.kind != .booked ? DS.Color.primary : DS.Color.text
             // #888: the booked (created) step carries its time; pickup and return stay date-only
-            day.text = step.date.map { step.kind == .booked ? DayFormatter.dmyTime($0) : DayFormatter.dmy($0) } ?? "—"
+            // owner: the hand-over that happened carries its time too (Vietnam time)
+            day.text = step.date.map { step.kind == .booked || (step.kind == .handOver && step.done) ? DayFormatter.dmyTime($0) : DayFormatter.dmy($0) } ?? "—"
             day.adjustsFontSizeToFitWidth = true
             day.minimumScaleFactor = 0.8
             let column = UIStackView(arrangedSubviews: [bar, label, day])
@@ -403,7 +404,7 @@ final class OrderDetailViewController: BaseViewControler {
                 stack.addArrangedSubview(readyToDeliverRow(detail))
             }
             if let picked = detail.pickedUpAt, detail.status == .pickuped || detail.status == .returned {
-                stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.dmy(picked)))
+                stack.addArrangedSubview(keyValue("Handed over".localized(), DayFormatter.dmyTime(picked)))
             }
             if OrderDetailLogic.canEditCollateral(orderType: detail.orderType, status: detail.status,
                                                   canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {

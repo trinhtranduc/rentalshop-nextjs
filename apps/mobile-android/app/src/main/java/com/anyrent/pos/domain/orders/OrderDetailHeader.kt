@@ -139,7 +139,7 @@ object OrderDetailHeader {
             Step(StepTitle.BOOKED, dayTimeLabel(days.booked, zone), done = reached >= 1, accent = false),
             Step(
                 if (handedOver) StepTitle.HANDED_OVER else StepTitle.HAND_OVER,
-                dayLabel(days.handOver, weekdays, zone),
+                if (handedOver) dayTimeLabel(days.handOver, zone) else dayLabel(days.handOver, weekdays, zone),
                 done = handedOver,
                 accent = handedOver,
             ),
