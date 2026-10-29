@@ -75,6 +75,7 @@ import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppInputField
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.AppSecondaryButton
+import com.anyrent.pos.domain.settings.ShopInfoLogic
 import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.home.v2.V2Segmented
@@ -83,8 +84,8 @@ import com.anyrent.pos.ui.settings.v2.SettingsDetailNote
 import com.anyrent.pos.ui.settings.v2.SettingsDetailPage
 import com.anyrent.pos.ui.settings.v2.SettingsDetailPrimaryButton
 import com.anyrent.pos.ui.settings.v2.SettingsDetailSecondaryButton
-import com.anyrent.pos.ui.settings.v2.StoreForm
-import com.anyrent.pos.ui.settings.v2.StoreInfoV2Page
+import com.anyrent.pos.ui.settings.v2.OwnBranchScreen
+import com.anyrent.pos.ui.settings.v2.ShopAndBranchesScreen
 import com.anyrent.pos.ui.theme.DS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -114,6 +115,17 @@ import androidx.compose.foundation.layout.Box
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
+    // #1313: the owner has no branch of their own (the old form said "no outlet assigned"): shop + branches. In the new settings the
+    // branch manager and staff open the own-branch form (staff read-only). The classic settings keep the old form for them.
+    val destination = ShopInfoLogic.destination(SessionStore.role)
+    if (destination is ShopInfoLogic.Destination.ShopAndBranches) {
+        ShopAndBranchesScreen(onBack)
+        return
+    }
+    if (v2 && destination is ShopInfoLogic.Destination.OwnBranch) {
+        OwnBranchScreen(destination.editable, onBack)
+        return
+    }
     val context = LocalContext.current
     val canEdit = PermissionManager.canManageStore()
     var name by remember { mutableStateOf(SessionStore.outletName ?: SessionStore.merchantName.orEmpty()) }
@@ -187,32 +199,6 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
         }
     }
 
-    // #459 / #484: v2 form style when opened from Settings v2 (`newSettings`, board CH-sua); same permission and save
-    if (v2) {
-        StoreInfoV2Page(
-            form = StoreForm(name, phone, address, city, state, country, zipCode, description),
-            onChange = { form ->
-                if (canEdit) {
-                    name = form.name
-                    phone = form.phone
-                    address = form.address
-                    city = form.city
-                    state = form.state
-                    country = form.country
-                    zipCode = form.zipCode
-                    description = form.description
-                }
-            },
-            canEdit = canEdit,
-            loadingInitial = loadingInitial,
-            saving = loading,
-            nameError = submitted && name.isBlank(),
-            message = message,
-            error = error,
-            onBack = onBack,
-            onSave = ::saveStore,
-        )
-    } else {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
@@ -333,7 +319,6 @@ fun StoreInfoScreen(onBack: () -> Unit, v2: Boolean = false) {
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         }
-    }
 }
 
 /** #1028: `KeyboardType.Decimal` can show the locale "," and no "."; the URI keyboard has "." in every language (iOS `.numbersAndPunctuation`) */

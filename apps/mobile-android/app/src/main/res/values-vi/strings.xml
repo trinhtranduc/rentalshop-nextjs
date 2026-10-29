@@ -2329,4 +2329,23 @@
     <string name="printer_outlet_readonly">Chỉ chủ shop sửa được ghi chú và QR. Áp dụng cho cả chi nhánh.</string>
     <string name="printer_outlet_load_failed">Không tải được cài đặt hóa đơn của chi nhánh.</string>
     <string name="printer_outlet_save_failed">Không lưu được cài đặt hóa đơn.</string>
+    <!-- #1313 Thông tin cửa hàng và chi nhánh -->
+    <string name="shopinfo_branch_info">Thông tin chi nhánh</string>
+    <string name="shopinfo_title_shop">Sửa cửa hàng</string>
+    <string name="shopinfo_title_branch">Sửa chi nhánh</string>
+    <string name="shopinfo_shop_name">Tên cửa hàng</string>
+    <string name="shopinfo_branch_name">Tên chi nhánh</string>
+    <string name="shopinfo_tax_id">Mã số thuế</string>
+    <string name="shopinfo_tax_id_short">MST</string>
+    <string name="shopinfo_belongs_to">Thuộc cửa hàng %1$s</string>
+    <string name="shopinfo_your_branch">Chi nhánh của bạn · thuộc cửa hàng %1$s</string>
+    <string name="shopinfo_view_only">Bạn chỉ xem được mục này.</string>
+    <string name="shopinfo_view_only_value">Chỉ xem</string>
+    <string name="shopinfo_branches">Chi nhánh · %1$d</string>
+    <string name="shopinfo_tap_to_edit">bấm để sửa</string>
+    <string name="shopinfo_main">Chính</string>
+    <string name="shopinfo_branch_count">%1$d chi nhánh</string>
+    <string name="shopinfo_web_hint">Thêm hoặc tắt chi nhánh: làm trên web.</string>
+    <string name="shopinfo_address_required">Vui lòng nhập địa chỉ.</string>
+    <string name="shopinfo_address_label">Địa chỉ</string>
 </resources>

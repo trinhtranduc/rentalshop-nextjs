@@ -66,10 +66,14 @@ import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.ui.home.v2.V2Colors
 import com.anyrent.pos.ui.theme.DS
 
-/** The outlet fields of the store form (#484, same fields as iOS EditStoreViewController) */
+/** What the store form edits (#1313): the shop (owner) or a branch (name, phone, address) */
+internal enum class StoreFormKind { SHOP, BRANCH }
+
+/** The fields of the store form (#484, #1313, same fields as iOS EditStoreViewController) */
 internal data class StoreForm(
     val name: String = "",
     val phone: String = "",
+    val taxId: String = "",
     val address: String = "",
     val city: String = "",
     val state: String = "",
@@ -123,18 +127,24 @@ private val FieldBorder = Color(0xFFCBD5E1)
 private val Required = Color(0xFFB91C1C)
 
 /**
- * #484 "Thông tin cửa hàng" in the v2 form style (board CH-sua, like KH-sua): label above each field, no icons in
- * fields, address grouped, "KHÁC (không bắt buộc)" description, Hủy / Lưu footer. Read-only without the right.
+ * #484 / #1313 shop and branch form in the v2 style (board CH-sua, mockup "Sửa thông tin shop"): label above each field, no icons in
+ * fields, "KHÁC (không bắt buộc)", Hủy / Lưu footer. Without `canEdit` the fields are off and there is no footer.
+ * - SHOP: name*, phone, tax id, ĐỊA CHỈ (street, ward / district, province), KHÁC (country, postal code, description)
+ * - BRANCH: name*, phone, address*
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun StoreInfoV2Page(
+    kind: StoreFormKind,
+    title: String,
+    subtitle: String?,
     form: StoreForm,
     onChange: (StoreForm) -> Unit,
     canEdit: Boolean,
     loadingInitial: Boolean,
     saving: Boolean,
     nameError: Boolean,
+    addressError: Boolean = false,
     message: String?,
     error: String?,
     onBack: () -> Unit,
@@ -142,7 +152,7 @@ internal fun StoreInfoV2Page(
 ) {
     var showCountries by remember { mutableStateOf(false) }
     SettingsDetailPage(
-        title = stringResource(R.string.store_info),
+        title = title,
         onBack = onBack,
         bottomBar = if (canEdit) {
             {
@@ -178,7 +188,9 @@ internal fun StoreInfoV2Page(
             if (loadingInitial) {
                 SettingsDetailNote(stringResource(R.string.loading))
             } else {
-                val nameLabel = stringResource(R.string.store_v2_name)
+                subtitle?.let { SettingsDetailNote(it) }
+                val shop = kind == StoreFormKind.SHOP
+                val nameLabel = stringResource(if (shop) R.string.shopinfo_shop_name else R.string.shopinfo_branch_name)
                 StoreField(
                     label = buildAnnotatedString {
                         append(nameLabel)
@@ -192,35 +204,44 @@ internal fun StoreInfoV2Page(
                     AnnotatedString(stringResource(R.string.store_v2_phone)), value = form.phone, enabled = canEdit,
                     keyboardType = KeyboardType.Phone,
                 ) { onChange(form.copy(phone = it)) }
-                SectionTitle(stringResource(R.string.store_v2_address_section).uppercase(), null)
-                StoreField(AnnotatedString(stringResource(R.string.store_v2_street)), value = form.address, enabled = canEdit) {
-                    onChange(form.copy(address = it))
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StoreField(
-                        AnnotatedString(stringResource(R.string.store_v2_state)), value = form.state, enabled = canEdit,
-                        modifier = Modifier.weight(1f),
-                    ) { onChange(form.copy(state = it)) }
-                    StoreField(
-                        AnnotatedString(stringResource(R.string.store_v2_city)), value = form.city, enabled = canEdit,
-                        modifier = Modifier.weight(1f),
-                    ) { onChange(form.copy(city = it)) }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CountryField(form.country, enabled = canEdit, modifier = Modifier.weight(1f)) { showCountries = true }
+                if (shop) {
+                    StoreField(AnnotatedString(stringResource(R.string.shopinfo_tax_id)), value = form.taxId, enabled = canEdit) {
+                        onChange(form.copy(taxId = it))
+                    }
+                    SectionTitle(stringResource(R.string.store_v2_address_section).uppercase(), null)
+                    StoreField(AnnotatedString(stringResource(R.string.store_v2_street)), value = form.address, enabled = canEdit) {
+                        onChange(form.copy(address = it))
+                    }
+                    StoreField(AnnotatedString(stringResource(R.string.store_v2_state)), value = form.state, enabled = canEdit) {
+                        onChange(form.copy(state = it))
+                    }
+                    StoreField(AnnotatedString(stringResource(R.string.store_v2_city)), value = form.city, enabled = canEdit) {
+                        onChange(form.copy(city = it))
+                    }
+                    SectionTitle(stringResource(R.string.store_v2_other).uppercase(), stringResource(R.string.store_v2_optional))
+                    CountryField(form.country, enabled = canEdit, modifier = Modifier.fillMaxWidth()) { showCountries = true }
                     StoreField(
                         AnnotatedString(stringResource(R.string.store_v2_postal)), value = form.zipCode, enabled = canEdit,
-                        keyboardType = KeyboardType.Number, modifier = Modifier.weight(1f),
+                        keyboardType = KeyboardType.Number,
                     ) { onChange(form.copy(zipCode = it)) }
+                    StoreField(
+                        AnnotatedString(stringResource(R.string.store_v2_description)), value = form.description, enabled = canEdit,
+                        singleLine = false, placeholder = stringResource(R.string.store_v2_description_placeholder),
+                        capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default,
+                    ) { onChange(form.copy(description = it)) }
+                } else {
+                    val addressLabel = stringResource(R.string.shopinfo_address_label)
+                    StoreField(
+                        label = buildAnnotatedString {
+                            append(addressLabel)
+                            withStyle(SpanStyle(color = Required)) { append(" *") }
+                        },
+                        description = addressLabel,
+                        value = form.address, enabled = canEdit, isError = addressError,
+                        capitalization = KeyboardCapitalization.Sentences,
+                    ) { onChange(form.copy(address = it)) }
                 }
-                SectionTitle(stringResource(R.string.store_v2_other).uppercase(), stringResource(R.string.store_v2_optional))
-                StoreField(
-                    AnnotatedString(stringResource(R.string.store_v2_description)), value = form.description, enabled = canEdit,
-                    singleLine = false, placeholder = stringResource(R.string.store_v2_description_placeholder),
-                    capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Default,
-                ) { onChange(form.copy(description = it)) }
             }
-            if (!canEdit) SettingsDetailNote(stringResource(R.string.no_permission_manage_store), V2Colors.Danger)
             message?.let { SettingsDetailNote(it, DS.Colors.Primary) }
             error?.let { SettingsDetailNote(it, V2Colors.Danger) }
         }

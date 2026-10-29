@@ -2359,4 +2359,23 @@
     <string name="printer_outlet_readonly">Only the shop owner can change the note and the QR. They apply to the whole branch.</string>
     <string name="printer_outlet_load_failed">Could not load the branch bill settings.</string>
     <string name="printer_outlet_save_failed">Could not save the bill settings.</string>
+    <!-- #1313 Shop and branch information -->
+    <string name="shopinfo_branch_info">Branch information</string>
+    <string name="shopinfo_title_shop">Edit shop</string>
+    <string name="shopinfo_title_branch">Edit branch</string>
+    <string name="shopinfo_shop_name">Shop name</string>
+    <string name="shopinfo_branch_name">Branch name</string>
+    <string name="shopinfo_tax_id">Tax ID</string>
+    <string name="shopinfo_tax_id_short">Tax ID</string>
+    <string name="shopinfo_belongs_to">Part of shop %1$s</string>
+    <string name="shopinfo_your_branch">Your branch · part of shop %1$s</string>
+    <string name="shopinfo_view_only">You can only view this.</string>
+    <string name="shopinfo_view_only_value">View only</string>
+    <string name="shopinfo_branches">Branches · %1$d</string>
+    <string name="shopinfo_tap_to_edit">tap to edit</string>
+    <string name="shopinfo_main">Main</string>
+    <string name="shopinfo_branch_count">%1$d branches</string>
+    <string name="shopinfo_web_hint">Add or turn off a branch on the web.</string>
+    <string name="shopinfo_address_required">Please enter the address.</string>
+    <string name="shopinfo_address_label">Address</string>
 </resources>
