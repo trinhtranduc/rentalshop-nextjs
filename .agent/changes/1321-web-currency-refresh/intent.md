@@ -1,6 +1,6 @@
 # Web reads the shop currency again while the tab stays open
 
-Issue: #1321 (epic #1309) · Author: Trinh Tran (agent) · Status: in-progress · Created: 2026-10-29
+Issue: #1321 (epic #1309) · Author: Trinh Tran (agent) · Status: done · Created: 2026-10-29
 
 ## Problem
 

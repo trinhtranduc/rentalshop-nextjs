@@ -1,6 +1,6 @@
 # Plan — Web reads the shop currency again
 
-Issue: #1321 · Status: in-progress · Spec: ./spec.md
+Issue: #1321 · Status: done · Spec: ./spec.md
 
 ## Steps
 

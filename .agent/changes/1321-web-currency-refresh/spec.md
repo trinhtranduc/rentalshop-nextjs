@@ -1,6 +1,6 @@
 # Spec — Web reads the shop currency again
 
-Issue: #1321 · Status: in-progress · Intent: ./intent.md
+Issue: #1321 · Status: done · Intent: ./intent.md
 
 ## Behavior
 

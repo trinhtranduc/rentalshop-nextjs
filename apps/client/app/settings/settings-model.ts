@@ -294,3 +294,25 @@ export function canChangeCurrency(role?: string | null): boolean {
 export function currencyExample(from: ShopCurrency, to: ShopCurrency, format: (amount: number, currency: ShopCurrency) => string): string {
   return `${format(220000, from)} → ${format(220000, to)}`;
 }
+
+/** #1321 web reads the shop currency again at most this often (page load, tab back in front). */
+export const SHOP_CURRENCY_REFRESH_MS = 60_000;
+
+/**
+ * #1321 Should the shop web read `GET /api/settings/currency` now? Pure: the caller passes the clock.
+ * No for ADMIN / OPS or a user without a merchant (nothing to read); yes when never read, when a minute passed,
+ * or when the clock went backwards.
+ */
+export function shouldRefreshShopCurrency(input: {
+  now: number;
+  role?: string | null;
+  hasMerchant: boolean;
+  lastRefreshAt?: number | null;
+}): boolean {
+  const role = String(input.role || '').toUpperCase();
+  if (!role || role === 'ADMIN' || role === 'OPS' || !input.hasMerchant) return false;
+  const last = input.lastRefreshAt;
+  if (last == null || !Number.isFinite(last)) return true;
+  const age = input.now - last;
+  return age < 0 || age >= SHOP_CURRENCY_REFRESH_MS;
+}
