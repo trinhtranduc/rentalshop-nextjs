@@ -13,6 +13,11 @@ enum class SettingsItem {
     PLAN, LANGUAGE, ADVANCED,
 }
 
+/** #1310 the "Thu cọc" row: the shop owner only (`PUT /api/settings/deposit` is MERCHANT only); orders still read the mode for every role */
+object DepositSetting {
+    fun canView(role: String?): Boolean = role == "MERCHANT"
+}
+
 enum class SettingsGroup { STORE, MANAGEMENT, ACCOUNT }
 
 data class SettingsSection(val group: SettingsGroup, val items: List<SettingsItem>)
@@ -53,7 +58,8 @@ object SettingsRows {
                 listOf(SettingsItem.STORE_INFO) +
                     listOfNotNull(SettingsItem.CURRENCY.takeIf { CurrencySetting.canEdit(role) }) +
                     listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
-                    listOf(SettingsItem.DEPOSIT, SettingsItem.PRINTING),
+                    listOfNotNull(SettingsItem.DEPOSIT.takeIf { DepositSetting.canView(role) }) +
+                    listOf(SettingsItem.PRINTING),
             ),
             SettingsSection(SettingsGroup.MANAGEMENT, management),
             SettingsSection(SettingsGroup.ACCOUNT, account),
