@@ -153,6 +153,11 @@ set +e
   TEST_RUNNER_E2E_SCENARIO_ROLE="${ROLE_ARG:-owner}" \
   TEST_RUNNER_E2E_FEATURES="$MOBILE_FEATURES" \
   TEST_RUNNER_E2E_OUT_DIR="$SHOT_DIR" \
+  TEST_RUNNER_E2E_API_URL="$(e2e_api_base_url)" \
+  TEST_RUNNER_E2E_OWNER_EMAIL="${E2E_OWNER_EMAIL:-$E2E_MERCHANT_EMAIL}" \
+  TEST_RUNNER_E2E_OWNER_PASSWORD="${E2E_OWNER_PASSWORD:-$E2E_MERCHANT_PASSWORD}" \
+  TEST_RUNNER_E2E_OUTLET_ID="${E2E_OUTLET_ID:-}" \
+  TEST_RUNNER_E2E_PR1310="${E2E_PR1310:-}" \
   xcodebuild -workspace "POS ADBD.xcworkspace" -scheme Development \
     -destination "platform=iOS Simulator,id=$UDID" \
     -derivedDataPath "$DERIVED" \
