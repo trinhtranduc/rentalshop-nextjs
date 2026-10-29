@@ -16,7 +16,7 @@ Issue: #1314 · Status: in-progress · Spec: ./spec.md
 3. `packages/utils/src/api/booking-requests.ts`: `setAllowOverlappingOrders`.
 4. `sections.tsx`: `OverlapSection`; `SettingsPanel.tsx`: mount for MERCHANT above `BlockOldAppsSection`, profile load when flag unknown.
 5. `locales/{en,vi,ja,ko,zh}/settings.json` `web.overlap.{title,hint}`.
-6. `.agent/api-changes/LOG.md`: no row (no API change).
+6. `.agent/api-changes/LOG.md`: one row, no API change (`packages/utils/src` is a path `pr-governance` watches).
 
 ## Verify
 
