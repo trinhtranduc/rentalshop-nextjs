@@ -18,7 +18,11 @@ launch_app() {
   adb -s "$SERIAL" shell am start -W -n "$a" >/dev/null
 }
 restart_app() { adb -s "$SERIAL" shell am force-stop anyrent.shop; sleep 1; launch_app; }
-texts() { "$U" dump | cut -d'|' -f1,2 | tr '\n' '¦' | cut -c1-"${1:-1500}"; }
+# #1309: python, not cut | tr | cut: with a multi-byte "¦" the byte tools failed with "Illegal byte sequence" under some locales (empty answer)
+texts() { "$U" dump | python3 -c '
+import sys
+out = ["|".join(l.rstrip("\n").split("|")[:2]) for l in sys.stdin]
+sys.stdout.write(("¦".join(out) + "¦")[: int(sys.argv[1])])' "${1:-1500}"; }
 # tap_any "a|b|c": tap the first selector (exact or ~substring) that is on screen
 tap_any() { local IFS='|' s; for s in $1; do if "$U" has "$s" >/dev/null 2>&1; then "$U" tap "$s" >/dev/null; return 0; fi; done; return 1; }
 # have_any "a|b": 0 when one of them is on screen
@@ -197,4 +201,24 @@ msg_readable() {
   echo "$1" | grep -Eq "$RAWRE" && return 1
   if [ "$LANG_E2E" = vi ]; then echo "$1" | grep -Eq '[ạảãàáâậầấẩẫăắằặẳẵéèẻẽẹêếềểễệđíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]'
   else ! echo "$1" | grep -Eq '[ạảãàáâậầấẩẫăắằặẳẵéèẻẽẹêếềểễệđíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]'; fi
+}
+
+# ---- #1309 robust sign-in used by the settings-sync flows ----------------------------------------------------------------------------
+# login_as <email> <password>: leaves the current account, fills the form, retries once; 0 when the tab bar shows
+login_as() {
+  local try
+  for try in 1 2 3; do
+    adb -s "$SERIAL" shell am force-stop anyrent.shop; sleep 1; launch_app; sleep 3; dismiss_prompts   # a fresh launch: tabs or the login form, never a sub screen
+    local w; for w in $(seq 1 12); do on_login_screen && break; have_any "$(L settings)" && have_any "$(L home)" && break; sleep 2; done   # never press Back before the app is up
+    on_login_screen || { do_logout; sleep 2; }
+    "$U" tap "$(L authv2_email)" 2 >/dev/null 2>&1 || tap_any "$(L authv2_email_placeholder)"
+    "$U" clear >/dev/null; "$U" type "$1" >/dev/null; "$U" back >/dev/null; sleep 1
+    "$U" tap "$(L authv2_password)" 2 >/dev/null 2>&1
+    "$U" clear >/dev/null; "$U" type "$2" >/dev/null; "$U" back >/dev/null; sleep 1
+    tap_any "$(L authv2_login_button)"
+    if wait_any "$(L settings)" 20; then sleep 2; dismiss_prompts; return 0; fi
+    note "login_as $1: attempt $try did not reach the tab bar: $(texts 200)"
+    adb -s "$SERIAL" shell am force-stop anyrent.shop; sleep 1
+  done
+  return 1
 }

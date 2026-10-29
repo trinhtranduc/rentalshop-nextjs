@@ -11,7 +11,7 @@
 #   android-flows.sh todo                            the ops scenario Today card and lists vs outlet-operations (todo-check.js)
 #   android-flows.sh limit <owner|staff|kho>         at-limit: add product / customer / order -> readable limit message, nothing created
 #   android-flows.sh role <staff|kho>                ops scenario role screens: no revenue, no delete, orders / calendar load
-#   android-flows.sh settings-sync <currency|print|deposit|overlap>   #1315 owner changes a setting by API, the staff / manager device must show it (written, not run; see android-flow-settings-sync.sh)
+#   android-flows.sh settings-sync <case> [role]   #1315 / #1329 owner changes a setting by API or on the device, the manager / staff / kho device must show it (cases and results: android-flow-settings-sync.sh, SETTINGS_SYNC_ANDROID.md)
 #
 # Install the app first: scripts/mobile-e2e/android-e2e.sh --fresh. Emulator text cannot be typed in Vietnamese: only ASCII is typed.
 . "$(dirname "${BASH_SOURCE[0]}")/android-lib.sh"
