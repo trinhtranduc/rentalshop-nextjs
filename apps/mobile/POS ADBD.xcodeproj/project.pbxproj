@@ -211,6 +211,7 @@
 		3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */; };
 		A622B0000000000000000002 /* BankQRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622F0000000000000000002 /* BankQRTests.swift */; };
 		A1320B0000000000000000001 /* BankAccountCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1320F0000000000000000001 /* BankAccountCacheTests.swift */; };
+		A1327B0000000000000000001 /* SettingsSyncBillTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1327F0000000000000000001 /* SettingsSyncBillTests.swift */; };
 		A1313B0000000000000000004 /* ShopInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1313F0000000000000000004 /* ShopInfoTests.swift */; };
 		A654B0000000000000000002 /* ImageSearchQueryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A654F0000000000000000002 /* ImageSearchQueryTests.swift */; };
 		A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A616F0000000000000000003 /* OverviewDashLogicTests.swift */; };
@@ -607,6 +608,7 @@
 		072FCF5E0A38504620A4F622 /* Pods-POS ADBDTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-POS ADBDTests.debug.xcconfig"; path = "Target Support Files/Pods-POS ADBDTests/Pods-POS ADBDTests.debug.xcconfig"; sourceTree = "<group>"; };
 		08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarOverviewSettingsV2Tests.swift; sourceTree = "<group>"; };
 		A1320F0000000000000000001 /* BankAccountCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BankAccountCacheTests.swift; sourceTree = "<group>"; };
+		A1327F0000000000000000001 /* SettingsSyncBillTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsSyncBillTests.swift; sourceTree = "<group>"; };
 		A622F0000000000000000002 /* BankQRTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BankQRTests.swift; sourceTree = "<group>"; };
 		A1313F0000000000000000004 /* ShopInfoTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShopInfoTests.swift; sourceTree = "<group>"; };
 		A654F0000000000000000002 /* ImageSearchQueryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImageSearchQueryTests.swift; sourceTree = "<group>"; };
@@ -1134,6 +1136,7 @@
 				08477F5D06AB9AA5B68A44A5 /* CalendarOverviewSettingsV2Tests.swift */,
 				A622F0000000000000000002 /* BankQRTests.swift */,
 				A1320F0000000000000000001 /* BankAccountCacheTests.swift */,
+				A1327F0000000000000000001 /* SettingsSyncBillTests.swift */,
 				A1313F0000000000000000004 /* ShopInfoTests.swift */,
 				A654F0000000000000000002 /* ImageSearchQueryTests.swift */,
 				A616F0000000000000000003 /* OverviewDashLogicTests.swift */,
@@ -1977,6 +1980,7 @@
 				3C8CCFD0C9C51C7FB12D4CFC /* CalendarOverviewSettingsV2Tests.swift in Sources */,
 				A622B0000000000000000002 /* BankQRTests.swift in Sources */,
 				A1320B0000000000000000001 /* BankAccountCacheTests.swift in Sources */,
+				A1327B0000000000000000001 /* SettingsSyncBillTests.swift in Sources */,
 				A1313B0000000000000000004 /* ShopInfoTests.swift in Sources */,
 				A654B0000000000000000002 /* ImageSearchQueryTests.swift in Sources */,
 				A616B0000000000000000003 /* OverviewDashLogicTests.swift in Sources */,

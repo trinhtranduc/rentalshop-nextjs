@@ -47,3 +47,35 @@ Mỗi lần chạy: đổi cấu hình bằng API trước, kiểm trên máy th
 
 Test Swift nằm trong `AnyRentE2ETests.swift` (mục `#1315 settings sync`). UI test chạy trong Simulator nên gọi API cục bộ bằng `URLSession` với tư cách chủ shop (`OwnerAPI`), còn máy thử đăng nhập bằng giao diện là nhân viên hoặc quản lý. Chủ shop không được vừa đăng nhập app vừa gọi API (một phiên), nên `test7q`/`test7t` bỏ qua tài khoản chủ shop.
 Ví dụ: `E2E_OUTLET_ID=1 scripts/mobile-e2e/ios-e2e.sh --email admin.outlet1@example.com --password admin123 --role staff --label manager --only test7rSettingsSyncPrintNote --lang vi`.
+
+## iOS: bốn vai trò, lần chạy gộp trên `dev` (#1327, 2026-10-29)
+
+Chạy trên Simulator có cửa sổ (iPhone 17 Pro Max, tiếng Việt), API cục bộ + DB riêng, `E2E_PR1310=1`, `E2E_OUTLET_ID=1`.
+Biến thêm cho ca chủ shop: `TEST_RUNNER_E2E_OWNER_SET` (ví dụ `currency=VND,overlap=off`, cho `test7u`), `TEST_RUNNER_E2E_BRANCH_NAME` (cho `test7w`, mặc định `Outlet 2`), `TEST_RUNNER_E2E_PRINTER_IP=127.0.0.1` (cho `test7nPrinting`, bật `scripts/virtual-printer`).
+Quản lý chi nhánh chạy bằng `--account manager` (OUTLET_ADMIN, `admin.outlet1@example.com`, `E2E_ROLE=manager`).
+
+| Ca | Test | Chủ shop | Quản lý | Nhân viên | Kho |
+|---|---|---|---|---|---|
+| Tiền tệ: chủ shop đổi bằng giao diện | `test7uOwnerChangesSettingsByUI` (`TEST_RUNNER_E2E_OWNER_SET=currency=VND`) | ĐẠT (DB đổi) | | | |
+| Tiền tệ: máy khác thấy sau khi mở lại app | `test7qSettingsSyncCurrency` | bỏ qua (phiên) | ĐẠT | ĐẠT | ĐẠT |
+| Ghi chú in + QR: chủ shop sửa (chi nhánh 1 và chi nhánh khác) | `test7rSettingsSyncPrintNote`, `test7wOwnerPrintOtherBranch` | ĐẠT | | | |
+| Ghi chú in + QR: ô chỉ đọc | `test7rSettingsSyncPrintNote` | | ĐẠT | ĐẠT | ĐẠT |
+| Dòng Cọc chỉ chủ shop (#1310) | `test7sSettingsSyncDepositHidden` | ĐẠT (thấy) | ĐẠT (ẩn) | ĐẠT (ẩn) | ĐẠT (ẩn) |
+| Giỏ vẫn thu cọc theo cấu hình shop | `test7vSettingsSyncDepositCart` | bỏ qua (phiên) | ĐẠT | ĐẠT | ĐẠT |
+| Cho trùng lịch: chủ shop đổi bằng giao diện | `test7uOwnerChangesSettingsByUI` (`overlap=off`), `test7eOverlapSetting` | ĐẠT | | | |
+| Cho trùng lịch: Giỏ khoá/mở | `test7tSettingsSyncOverlapCart` | bỏ qua (phiên) | ĐẠT | ĐẠT | ĐẠT |
+| Thông tin cửa hàng / chi nhánh (#1313) | `test7sShopAndBranchInfo`, `test7zCompactSettings` | ĐẠT | ĐẠT | ĐẠT | ĐẠT |
+| Tài khoản ngân hàng: dòng hiện | `test7kBankAccounts` | ĐẠT | hiện (#1319 chưa làm) | ẩn | ẩn |
+| IP máy in theo máy | `test7oPrinterIPKeyboard` | | ĐẠT | ĐẠT | ĐẠT |
+
+Dữ liệu hoá đơn của máy không phải chủ shop (không đọc chữ trong ảnh): `SettingsSyncBillTests` (unit test chạy trong app, đăng nhập bằng `AuthenticationService`, tải đơn bằng `OrderService`, kiểm byte in `Order.toPrintData` và `OrderShareModel`):
+
+```bash
+scripts/mobile-e2e/ios-e2e.sh --help   # dựng API + DB như trên, rồi:
+cd apps/mobile && TEST_RUNNER_E2E_API_URL=http://localhost:$E2E_API_PORT TEST_RUNNER_E2E_BILL_EMAIL=staff.outlet1@example.com \
+  TEST_RUNNER_E2E_BILL_PASSWORD=staff123 TEST_RUNNER_E2E_OUTLET_ID=1 xcodebuild -workspace "POS ADBD.xcworkspace" -scheme Development \
+  -destination "platform=iOS Simulator,name=<simulator>" -only-testing:"POS ADBDTests/SettingsSyncBillTests" API_BASE_URL=http://localhost:$E2E_API_PORT test
+# thêm TEST_RUNNER_E2E_BILL_WAIT=1 để chạy ca chờ 5 phút (#1320)
+```
+Đạt với nhân viên, quản lý, kho: ghi chú in và số tài khoản mặc định có trong byte in; tắt QR thì không có số tài khoản; chủ shop đổi mặc định ở máy khác thì máy này in tài khoản cũ trong 5 phút, in tài khoản mới sau foreground và sau 5 phút.
+`test7nPrinting` với máy in ảo (`scripts/virtual-printer`, `TEST_RUNNER_E2E_PRINTER_IP=127.0.0.1`) cho thấy tờ in thật.
