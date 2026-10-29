@@ -17,12 +17,14 @@ export interface SyncedUser {
   role?: string | null;
   isActive?: boolean | null;
   updatedAt?: string | Date | null;
+  merchant?: { currency?: string | null } | null;
 }
 
 export function userSyncSignature(user: SyncedUser | null | undefined): string {
   if (!user) return '';
   const updatedAt = user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt ?? '';
-  return [user.id, user.firstName, user.lastName, user.name, user.phone, user.email, user.role, user.isActive, updatedAt]
+  // #1321: the shop currency is read again while the tab is open, so a change must reach every instance
+  return [user.id, user.firstName, user.lastName, user.name, user.phone, user.email, user.role, user.isActive, updatedAt, user.merchant?.currency]
     .map((v) => (v === null || v === undefined ? '' : String(v)))
     .join('|');
 }
