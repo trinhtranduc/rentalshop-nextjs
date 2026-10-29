@@ -82,6 +82,7 @@ final class OverviewV2ViewController: BaseViewControler {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        ShopCurrencyStore.refresh() // #1307
         refreshIfNeeded()
     }
 

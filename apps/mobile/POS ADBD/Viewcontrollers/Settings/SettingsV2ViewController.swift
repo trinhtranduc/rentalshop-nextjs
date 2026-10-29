@@ -365,7 +365,7 @@ final class SettingsV2ViewController: BaseViewControler {
     // MARK: - Shop currency (#1145)
 
     private func refreshCurrency() {
-        guard ShopCurrencyLogic.canChange(role: user?.role) else { return }
+        // #1307: every shop role reads it; only the row and the PUT are owner-only
         ShopCurrencyStore.refresh { [weak self] _ in
             guard let self, !ShopCurrencyStore.saving else { return }
             self.listView.reloadData()

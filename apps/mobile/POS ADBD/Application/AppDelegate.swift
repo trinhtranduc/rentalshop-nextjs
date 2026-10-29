@@ -85,6 +85,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
 
         checkAppConfig()
+        ShopCurrencyStore.refresh() // #1307 cold start with a saved login
         
         return true
     }
@@ -124,6 +125,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         DraftOrderReminder.shared.cancel()
         // The minimum version or screen flags may have changed while the app was in the background
         checkAppConfig()
+        // #1307: the owner may have changed the shop currency meanwhile (at most once a minute)
+        ShopCurrencyStore.refresh()
     }
     
     func applicationDidBecomeActive(_ application: UIApplication) {
