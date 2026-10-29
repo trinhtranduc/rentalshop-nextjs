@@ -29,6 +29,21 @@ const ACCOUNTS = {
     email: process.env.BIZ_E2E_STAFF_EMAIL || 'staff.outlet2@example.com',
     password: process.env.BIZ_E2E_STAFF_PASSWORD || 'staff123'
   },
+  outletAdmin: {
+    // OUTLET_ADMIN of the same outlet as `staff` (#1315 settings sync)
+    email: process.env.BIZ_E2E_OUTLET_ADMIN_EMAIL || 'admin.outlet2@example.com',
+    password: process.env.BIZ_E2E_OUTLET_ADMIN_PASSWORD || 'admin123'
+  },
+  outletAdminOther: {
+    // OUTLET_ADMIN of ANOTHER outlet of the same merchant (#1315)
+    email: process.env.BIZ_E2E_OUTLET_ADMIN_OTHER_EMAIL || 'admin.outlet4@example.com',
+    password: process.env.BIZ_E2E_OUTLET_ADMIN_OTHER_PASSWORD || 'admin123'
+  },
+  staffOther: {
+    // OUTLET_STAFF of ANOTHER outlet of the same merchant (#1315)
+    email: process.env.BIZ_E2E_STAFF_OTHER_EMAIL || 'staff.outlet4@example.com',
+    password: process.env.BIZ_E2E_STAFF_OTHER_PASSWORD || 'staff123'
+  },
   inventory: {
     // #682 OUTLET_INVENTORY (Nhân viên kho) of the same outlet as `staff`
     email: process.env.BIZ_E2E_INVENTORY_EMAIL || 'inventory.outlet2@example.com',
