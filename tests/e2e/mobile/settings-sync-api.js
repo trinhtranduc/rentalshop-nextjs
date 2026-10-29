@@ -8,6 +8,9 @@
  *   settings-sync-api.js set overlap true|false
  *   settings-sync-api.js set print "<note>" true|false     print note + bank QR of the owner's / staff's own outlet
  *   settings-sync-api.js get currency|overlap|print
+ *   settings-sync-api.js bank list                         active bank accounts of the default outlet (JSON: id, number, isDefault)
+ *   settings-sync-api.js bank create <holder> <number> <bankName> true|false   add an account (#1320 bank cache), prints its id
+ *   settings-sync-api.js bank default <id>                 make that account the default of the outlet
  * Env: MOBILE_STAT_API_URL (default http://localhost:$E2E_API_PORT), E2E_MERCHANT_EMAIL / _PASSWORD, E2E_STAFF_EMAIL (outlet to edit).
  */
 const API = process.env.MOBILE_STAT_API_URL || `http://localhost:${process.env.E2E_API_PORT || 3180}`;
@@ -23,7 +26,7 @@ async function call(token, method, path, json) {
 (async () => {
   const [verb, what, a, b] = process.argv.slice(2);
   const login = await fetch(`${API}/api/mobile/auth/login`, {
-    method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': '10.9.9.9' },
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': `10.9.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` },
     body: JSON.stringify({ ...owner, deviceId: 'settings-sync-owner' })
   }).then((x) => x.json());
   const token = login?.data?.token;
@@ -38,5 +41,12 @@ async function call(token, method, path, json) {
   else if (verb === 'get' && what === 'currency') console.log((await call(token, 'GET', '/api/settings/currency')).currency);
   else if (verb === 'get' && what === 'overlap') console.log((await call(token, 'GET', '/api/users/profile')).merchant?.allowOverlappingOrders);
   else if (verb === 'get' && what === 'print') console.log(JSON.stringify({ note: outlet.printNote, qr: outlet.printBankQr }));
+  else if (verb === 'bank') {
+    const base = `/api/merchants/${login.data.user.merchantId}/outlets/${outlet.id}/bank-accounts`;
+    if (what === 'list') console.log(JSON.stringify((await call(token, 'GET', base)).map((x) => ({ id: x.id, number: x.accountNumber, isDefault: x.isDefault }))));
+    else if (what === 'create') console.log((await call(token, 'POST', base, { accountHolderName: a, accountNumber: b, bankName: process.argv[6], bankCode: process.argv[8] || undefined, isDefault: process.argv[7] === "true" })).id);
+    else if (what === 'default') console.log(JSON.stringify(await call(token, 'PUT', `${base}/${a}`, { isDefault: true })).slice(0, 120));
+    else { console.error('usage: bank list|create|default'); process.exit(64); }
+  }
   else { console.error('usage: settings-sync-api.js set|get currency|overlap|print [...]'); process.exit(64); }
 })().catch((e) => { console.error(e.message); process.exit(1); });
