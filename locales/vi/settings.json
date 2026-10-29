@@ -760,6 +760,10 @@
       "outlets": "Chi nhánh nhận đặt",
       "outletsHint": "Tắt ở chi nhánh không muốn nhận đặt online."
     },
+    "overlap": {
+      "title": "Cho tạo đơn khi trùng lịch",
+      "hint": "Tắt thì không tạo được đơn khi đồ đã được thuê hết trong những ngày đó."
+    },
     "publicPage": {
       "showPrice": "Hiện giá trên trang shop",
       "showPriceHint": "Tắt thì khách thấy “Liên hệ”, không thấy số tiền.",

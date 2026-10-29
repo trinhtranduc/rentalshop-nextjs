@@ -760,6 +760,10 @@
       "outlets": "Outlets that accept bookings",
       "outletsHint": "Turn off outlets that should not take online bookings."
     },
+    "overlap": {
+      "title": "Allow overlapping orders",
+      "hint": "When off, an order cannot be created while the items are fully booked on those days."
+    },
     "publicPage": {
       "showPrice": "Show prices on the shop page",
       "showPriceHint": "When off, visitors see “Contact us” instead of amounts.",
