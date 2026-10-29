@@ -39,3 +39,9 @@ Android: `./gradlew :app:assembleDebug :app:testDebugUnitTest --tests '*ShopInfo
 ## Rollback
 
 Revert PR.
+
+## Result (2026-10-29)
+
+- Tests: iOS `ShopInfoTests` 13 green, `CalendarOverviewSettingsV2Tests` + `FormattersTests` green; Android `ShopInfoLogicTest`, `SettingsRowsTest`, `CurrencySettingTest` green, full `testDebugUnitTest` 930 tests, 0 failures.
+- Visible runs on a local API + own Homebrew DB: iOS Simulator (owner: edit shop phone, edit branch phone; staff and branch manager: read-only / editable own branch) via UI test `test7sShopAndBranchInfo`; Android emulator by hand (owner: edit shop phone, edit branch phone). Staff / branch manager on Android not run (same `canEdit` code path as iOS).
+- Live API check with a seeded owner: `PUT /api/settings/merchant` stored name, phone, taxId, address, state, city, country, zipCode, description; `GET /api/outlets?limit=200` answered `limit: 200`.

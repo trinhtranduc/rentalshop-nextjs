@@ -194,7 +194,7 @@ internal fun StoreInfoV2Page(
                 StoreField(
                     label = buildAnnotatedString {
                         append(nameLabel)
-                        withStyle(SpanStyle(color = Required)) { append(" *") }
+                        if (canEdit) withStyle(SpanStyle(color = Required)) { append(" *") }
                     },
                     description = nameLabel,
                     value = form.name, enabled = canEdit, isError = nameError,
@@ -234,7 +234,7 @@ internal fun StoreInfoV2Page(
                     StoreField(
                         label = buildAnnotatedString {
                             append(addressLabel)
-                            withStyle(SpanStyle(color = Required)) { append(" *") }
+                            if (canEdit) withStyle(SpanStyle(color = Required)) { append(" *") }
                         },
                         description = addressLabel,
                         value = form.address, enabled = canEdit, isError = addressError,

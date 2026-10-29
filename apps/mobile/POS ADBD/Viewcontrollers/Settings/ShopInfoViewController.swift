@@ -21,6 +21,7 @@ enum ShopInfoRouter {
             let form = EditStoreViewController()
             form.kind = .branch
             form.branch = user?.outlet
+            form.hidesBottomBarWhenPushed = true // the form has its own Huỷ / Lưu bar
             form.editable = editable
             form.screenTitle = "Branch Information".localized()
             let shop = (user?.merchant?.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -45,6 +46,7 @@ final class ShopInfoViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        loadShop()
         loadBranches()
     }
 
@@ -82,6 +84,26 @@ final class ShopInfoViewController: BaseViewControler {
 
     @objc private func backTapped() { navigationController?.popViewController(animated: true) }
 
+    /// The shop as the server has it; a failed read keeps what the login gave
+    private func loadShop() {
+        TabsV2APIService.shared.shopInfo { [weak self] saved, _ in
+            DispatchQueue.main.async {
+                guard let saved, let user = User.account(), user.merchant != nil else { return }
+                user.merchant?.name = saved.name ?? user.merchant?.name ?? ""
+                user.merchant?.phone = saved.phone
+                user.merchant?.taxId = saved.taxId
+                user.merchant?.address = saved.address
+                user.merchant?.state = saved.state
+                user.merchant?.city = saved.city
+                user.merchant?.country = saved.country
+                user.merchant?.zipCode = saved.zipCode
+                user.merchant?.description = saved.description
+                User.save(user: user)
+                self?.table.reloadData()
+            }
+        }
+    }
+
     private func loadBranches() {
         showProgressText(text: "Loading...".localized())
         OutletService.shared.getOutlets(limit: 200) { [weak self] outlets, error in
@@ -104,6 +126,7 @@ final class ShopInfoViewController: BaseViewControler {
     private func openShopForm() {
         let form = EditStoreViewController()
         form.kind = .shop
+        form.hidesBottomBarWhenPushed = true
         form.screenTitle = "shopinfo.title.shop".localized()
         form.delegate = self
         navigationController?.pushViewController(form, animated: true)
@@ -113,6 +136,7 @@ final class ShopInfoViewController: BaseViewControler {
         guard let outlet = outlets.first(where: { $0.id == row.id }) else { return }
         let form = EditStoreViewController()
         form.kind = .branch
+        form.hidesBottomBarWhenPushed = true
         form.branch = outlet
         form.editable = ShopInfoLogic.canEditBranch(role: User.account()?.role, branchId: outlet.id, ownBranchId: User.account()?.outletId)
         form.screenTitle = "shopinfo.title.branch".localized()

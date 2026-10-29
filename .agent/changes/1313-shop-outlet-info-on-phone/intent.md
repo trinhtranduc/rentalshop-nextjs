@@ -33,3 +33,6 @@ MERCHANT, OUTLET_ADMIN, OUTLET_STAFF, OUTLET_INVENTORY. iOS, Android. Không đ�
 
 - 2026-10-29 — chủ shop chốt mockup: hai khối cho chủ shop, quản lý chỉ chi nhánh mình, nhân viên chỉ xem, không ô Website, Tiền tệ ở khối cửa hàng.
 - 2026-10-29 — địa chỉ gọi theo web: `address` = số nhà, đường; `state` = phường/quận; `city` = tỉnh/thành phố (agent, khớp `addressLine` của web).
+- 2026-10-29 — "Tiền tệ" moves from the Settings list into the shop block of Thông tin cửa hàng (mockup A1 has no Tiền tệ row, A2 has it); the owner's Settings row shows "N chi nhánh" (agent).
+- 2026-10-29 — the old account page (staff name, role, email, affiliate / public product links) is no longer opened from Settings v2; the mockup has no such rows. Links stay on the web (agent; to confirm).
+- 2026-10-29 — iOS used `city` for ward / district and `state` for province (the opposite of web and Android); the new shop form follows web and Android: `state` = ward / district, `city` = province (agent).

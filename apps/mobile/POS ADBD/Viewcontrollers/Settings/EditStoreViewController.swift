@@ -99,7 +99,9 @@ class EditStoreViewController: BaseViewControler {
 
         let isShop = kind == .shop
         let nameTitle = (isShop ? "shopinfo.shopName" : "shopinfo.branchName").localized()
-        let nameBox = UIStackView(arrangedSubviews: [field(requiredTitle(nameTitle), storeNameField, accessibility: nameTitle), nameError])
+        // The red star only where the form can be saved (read-only for staff)
+        let nameBox = UIStackView(arrangedSubviews: [field(editable ? requiredTitle(nameTitle) : plainTitle(nameTitle), storeNameField,
+                                                           accessibility: nameTitle), nameError])
         nameBox.axis = .vertical
         nameBox.spacing = 6
 
@@ -123,7 +125,8 @@ class EditStoreViewController: BaseViewControler {
                 descriptionBlock(),
             ]
         } else {
-            parts.append(field(requiredTitle("Address".localized()), addressField, accessibility: "Address".localized()))
+            parts.append(field(editable ? requiredTitle("Address".localized()) : plainTitle("Address".localized()), addressField,
+                              accessibility: "Address".localized()))
         }
         let form = UIStackView(arrangedSubviews: parts)
         form.axis = .vertical
