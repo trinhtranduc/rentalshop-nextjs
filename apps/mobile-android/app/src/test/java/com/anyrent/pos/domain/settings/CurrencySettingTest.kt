@@ -15,12 +15,10 @@ class CurrencySettingTest {
         assertTrue(CurrencySetting.canEdit("MERCHANT"))
         for (role in listOf("ADMIN", "OPS", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY", "", null)) {
             assertFalse(role.toString(), CurrencySetting.canEdit(role))
-            val rows = SettingsRows.sections(role, hasPlan = false).flatMap { it.items }
-            assertFalse(role.toString(), rows.contains(SettingsItem.CURRENCY))
         }
-        // #1270: "Tiền tệ" is its own row again, right after Thông tin cửa hàng
+        // #1313: "Tiền tệ" is a row inside Thông tin cửa hàng (owner only), no longer a row of the Settings list
         val store = SettingsRows.sections("MERCHANT", hasPlan = false).first().items
-        assertEquals(store.indexOf(SettingsItem.STORE_INFO) + 1, store.indexOf(SettingsItem.CURRENCY))
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.BANK_ACCOUNTS, SettingsItem.DEPOSIT, SettingsItem.PRINTING), store)
     }
 
     /** #1307: every shop role reads the shop currency, only the owner edits it */

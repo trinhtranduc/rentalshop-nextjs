@@ -9,9 +9,9 @@
 import Foundation
 
 enum SettingsV2Item: Equatable {
-    /// #1270 CỬA HÀNG (plan B): Thông tin cửa hàng, Tiền tệ (owner only), Tài khoản ngân hàng (owner, outlet admin),
-    /// Cọc (screen with two sections), In & phiếu (screen with two sections)
-    case storeInfo, currency, bankAccounts, deposit, printing
+    /// #1270 CỬA HÀNG (plan B): Thông tin cửa hàng (owner; other roles "Thông tin chi nhánh"; the owner's Tiền tệ row is inside, #1313),
+    /// Tài khoản ngân hàng (owner, outlet admin), Cọc (screen with two sections), In & phiếu (screen with two sections)
+    case storeInfo, bankAccounts, deposit, printing
     case categories, customers, users, export
     /// #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản)
     case plan, language, advanced
@@ -39,10 +39,9 @@ enum SettingsV2Logic {
     /// - plan: shown once `subscriptions/status` answered
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
     /// - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
-    /// - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
+    /// - the bank accounts line (#622) sits inside Thu tiền; the owner's currency (#1145) inside Thông tin cửa hàng (#1313)
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
         var storeItems: [SettingsV2Item] = [.storeInfo]
-        if ShopCurrencyLogic.canChange(role: role) { storeItems.append(.currency) }
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
         if ShopDepositLogic.canView(role: role) { storeItems.append(.deposit) }
         storeItems.append(.printing)
@@ -178,6 +177,7 @@ struct SettingsListTotal: Codable {
         switch item {
         case .customers: return "/api/customers"
         case .users: return "/api/users"
+        case .storeInfo: return "/api/outlets" // #1313: "3 chi nhánh" on the owner's row
         default: return nil
         }
     }

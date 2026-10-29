@@ -6,8 +6,11 @@ import com.anyrent.pos.domain.products.CategoryRules
 import org.json.JSONObject
 
 enum class SettingsItem {
-    /** #1270 CỬA HÀNG (plan B): Thông tin cửa hàng, Tiền tệ (owner only), Tài khoản ngân hàng (owner, outlet admin), Cọc ›, In & phiếu › */
-    STORE_INFO, CURRENCY, BANK_ACCOUNTS, DEPOSIT, PRINTING,
+    /**
+     * #1270 CỬA HÀNG (plan B): Thông tin cửa hàng (owner; other roles "Thông tin chi nhánh"; the owner's Tiền tệ row is inside, #1313),
+     * Tài khoản ngân hàng (owner, outlet admin), Cọc ›, In & phiếu ›
+     */
+    STORE_INFO, BANK_ACCOUNTS, DEPOSIT, PRINTING,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
     /** #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản) */
     PLAN, LANGUAGE, ADVANCED,
@@ -39,7 +42,7 @@ object SettingsRows {
      * - plan: once `subscriptions/status` answered, not for ADMIN
      * - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN), as iOS
      * - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
-     * - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
+     * - the bank accounts line (#622) sits inside Thu tiền; the owner's currency (#1145) inside Thông tin cửa hàng (#1313)
      */
     fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
         val management = buildList {
@@ -56,7 +59,6 @@ object SettingsRows {
             SettingsSection(
                 SettingsGroup.STORE,
                 listOf(SettingsItem.STORE_INFO) +
-                    listOfNotNull(SettingsItem.CURRENCY.takeIf { CurrencySetting.canEdit(role) }) +
                     listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
                     listOfNotNull(SettingsItem.DEPOSIT.takeIf { DepositSetting.canView(role) }) +
                     listOf(SettingsItem.PRINTING),
@@ -80,6 +82,7 @@ object SettingsRows {
     fun countPath(item: SettingsItem): String? = when (item) {
         SettingsItem.CUSTOMERS -> "/api/customers?limit=1&page=1"
         SettingsItem.USERS -> "/api/users?limit=1&page=1"
+        SettingsItem.STORE_INFO -> "/api/outlets?limit=1&page=1" // #1313: "3 chi nhánh" on the owner's row
         else -> null
     }
 

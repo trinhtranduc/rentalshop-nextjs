@@ -121,12 +121,10 @@ final class ShopCurrencyTests: XCTestCase {
         XCTAssertTrue(ShopCurrencyLogic.canChange(role: .merchant))
         for role: Role? in [.admin, .outletAdmin, .outletStaff, .outletInventory, nil] {
             XCTAssertFalse(ShopCurrencyLogic.canChange(role: role))
-            let items = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).flatMap(\.items)
-            XCTAssertFalse(items.contains(.currency))
         }
-        // #1270: "Tiền tệ" is its own row again, right after Thông tin cửa hàng (owner only)
+        // #1313: "Tiền tệ" is a row of Thông tin cửa hàng (owner only), no longer a row of the Settings list
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: [], hasPlan: false)
-        XCTAssertEqual(Array(merchant[0].items.prefix(2)), [.storeInfo, .currency])
+        XCTAssertEqual(Array(merchant[0].items.prefix(2)), [.storeInfo, .bankAccounts])
     }
 
     func testLabelsAndConfirmText() {

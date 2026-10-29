@@ -3436,13 +3436,14 @@ final class AnyRentE2ETests: XCTestCase {
             app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
         }
         let isOwner = e2e.role == "merchant"
-        let storeInfo = label(["Store Information", "Thông tin cửa hàng"])
+        // #1313: the owner's row is "Thông tin cửa hàng", every other role "Thông tin chi nhánh"
+        let storeInfo = isOwner ? label(["Store Information", "Thông tin cửa hàng"]) : label(["Branch Information", "Thông tin chi nhánh"])
         let collect = label(["Deposit", "Cọc"])
         let printing = label(["Print & receipts", "In & phiếu"])
         XCTAssertTrue(storeInfo.waitForExistence(timeout: 8), "Thông tin cửa hàng row")
         XCTAssertTrue(collect.exists, "Cọc row (every role: read only for staff)")
         XCTAssertTrue(printing.exists, "In & phiếu row")
-        XCTAssertEqual(label(["Currency", "Tiền tệ"]).exists, isOwner, "Tiền tệ row for the owner only")
+        XCTAssertFalse(label(["Currency", "Tiền tệ"]).exists, "#1313: Tiền tệ is inside Thông tin cửa hàng, not a row of the list")
         XCTAssertEqual(label(["Bank Accounts", "Tài khoản ngân hàng"]).exists, isOwner, "Tài khoản ngân hàng row for owner / outlet admin only")
         XCTAssertFalse(label(["Payments", "Thu tiền"]).exists, "no Thu tiền screen any more")
         XCTAssertFalse(label(["Printer", "Máy in"]).exists, "no separate Máy in row")
@@ -3494,6 +3495,67 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("z7-store-info")
         e2e.goBackOnce()
+    }
+
+    /// #1313 Thông tin cửa hàng / chi nhánh. Owner: shop card + Tiền tệ + branch list, edit the shop phone, edit a branch;
+    /// branch manager: the own branch form; staff / kho: the same form, read only (no Lưu).
+    func test7sShopAndBranchInfo() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        func label(_ labels: [String]) -> XCUIElement {
+            app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        }
+        let isOwner = e2e.role == "merchant"
+        let row = isOwner ? label(["Store Information", "Thông tin cửa hàng"]) : label(["Branch Information", "Thông tin chi nhánh"])
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "the Settings row for this role")
+        e2e.shot("s1-settings")
+        row.tap()
+        sleep(3)
+        e2e.shot("s2-info")
+        let save = e2e.button(["Save", "Lưu"])
+        if isOwner {
+            XCTAssertTrue(label(["Currency", "Tiền tệ"]).exists, "Tiền tệ row in the shop block")
+            XCTAssertFalse(app.staticTexts["Outlet ID not found"].exists, "no Outlet ID error")
+            let edit = e2e.button(["Edit", "Sửa"])
+            XCTAssertTrue(edit.waitForExistence(timeout: 5), "Sửa on the shop card")
+            edit.tap()
+            sleep(2)
+            e2e.shot("s3-shop-form")
+            XCTAssertFalse(e2e.field(["Website"]).exists, "no Website field")
+            XCTAssertTrue(e2e.type(into: ["Phone Number", "Số điện thoại"], text: "0901234567"), "type the phone")
+            e2e.hideKeyboard()
+            XCTAssertTrue(save.waitForExistence(timeout: 3), "Lưu")
+            save.tap()
+            sleep(3)
+            e2e.shot("s4-after-shop-save")
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '0901234567'")).firstMatch.waitForExistence(timeout: 6),
+                          "the saved phone shows on the shop card")
+            // a branch
+            let branches = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH[c] 'Branches' OR label BEGINSWITH[c] 'Chi nhánh'")).firstMatch
+            XCTAssertTrue(branches.exists, "the branch list header")
+            let firstBranch = app.tables.cells.element(boundBy: 2)
+            XCTAssertTrue(firstBranch.waitForExistence(timeout: 5), "a branch row")
+            firstBranch.tap()
+            sleep(2)
+            e2e.shot("s5-branch-form")
+            XCTAssertTrue(e2e.type(into: ["Phone Number", "Số điện thoại"], text: "0907654321"), "type the branch phone")
+            e2e.hideKeyboard()
+            save.tap()
+            sleep(3)
+            e2e.shot("s6-after-branch-save")
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '0907654321'")).firstMatch.waitForExistence(timeout: 6),
+                          "the saved branch phone shows in the list")
+        } else {
+            XCTAssertTrue(e2e.field(["Branch name", "Tên chi nhánh"]).waitForExistence(timeout: 5), "the own branch form")
+            if e2e.role == "staff" || e2e.role == "inventory" {
+                XCTAssertFalse(save.exists, "staff: no Lưu")
+                XCTAssertTrue(label(["You can only view this.", "Bạn chỉ xem được mục này."]).exists, "view-only note")
+            } else {
+                XCTAssertTrue(save.exists, "branch manager: Lưu")
+            }
+        }
     }
 
     /// Cài đặt → Đổi mật khẩu (#490 #491, board DMK-doi-mat-khau): a bottom sheet; an empty submit shows the error

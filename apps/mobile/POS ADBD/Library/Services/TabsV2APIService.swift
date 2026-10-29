@@ -181,6 +181,39 @@ final class TabsV2APIService: BaseService {
         }
     }
 
+    // MARK: - Shop info (#1313)
+
+    /// The shop as PUT /api/settings/merchant answers it (only what the form edits)
+    struct MerchantInfoBody: Decodable {
+        let name: String?
+        let phone: String?
+        let address: String?
+        let city: String?
+        let state: String?
+        let zipCode: String?
+        let country: String?
+        let taxId: String?
+        let description: String?
+    }
+
+    private struct ProfileShop: Decodable {
+        let merchant: MerchantInfoBody?
+    }
+
+    /// `merchant` of GET /api/users/profile: the shop as the server has it (the owner may have edited it on the web)
+    @discardableResult
+    func shopInfo(completion: @escaping (MerchantInfoBody?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.userProfile) { (body: ProfileShop?, error: NSError?) in
+            completion(body?.merchant, error)
+        }
+    }
+
+    /// PUT /api/settings/merchant with the shop form (MERCHANT; 403 for other roles). Answers the saved shop.
+    @discardableResult
+    func updateMerchantInfo(_ values: [String: Any], completion: @escaping (MerchantInfoBody?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.merchantSettings, method: .put, parameters: values, completion: completion)
+    }
+
     // MARK: - Shop currency (#1145)
 
     private struct CurrencyBody: Decodable {

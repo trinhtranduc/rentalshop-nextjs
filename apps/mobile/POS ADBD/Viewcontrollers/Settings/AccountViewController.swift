@@ -257,10 +257,8 @@ class AccountViewController: BaseViewControler {
     
     // MARK: - Actions
     @objc private func editButtonTapped() {
-        let editVC = EditStoreViewController()
-        editVC.delegate = self
-        let navController = UINavigationController(rootViewController: editVC)
-        present(navController, animated: true)
+        // #1313: the owner has no branch of their own; the screen depends on the role
+        navigationController?.pushViewController(ShopInfoRouter.makeScreen(), animated: true)
     }
 }
 

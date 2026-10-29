@@ -3035,3 +3035,24 @@
 "printer.outlet.branch" = "Chi nhánh";
 "printer.outlet.readonly" = "Chỉ chủ shop sửa được ghi chú và QR. Áp dụng cho cả chi nhánh.";
 "printer.outlet.loadFailed" = "Không tải được cài đặt hóa đơn của chi nhánh.";
+
+/* #1313 Thông tin cửa hàng và chi nhánh */
+"Branch Information" = "Thông tin chi nhánh";
+"shopinfo.title.shop" = "Sửa cửa hàng";
+"shopinfo.title.branch" = "Sửa chi nhánh";
+"shopinfo.shopName" = "Tên cửa hàng";
+"shopinfo.branchName" = "Tên chi nhánh";
+"shopinfo.taxId" = "Mã số thuế";
+"shopinfo.taxIdShort" = "MST";
+"shopinfo.ward" = "Phường / Quận";
+"shopinfo.province" = "Tỉnh / Thành phố";
+"shopinfo.belongsTo" = "Thuộc cửa hàng %@";
+"shopinfo.yourBranch" = "Chi nhánh của bạn · thuộc cửa hàng %@";
+"shopinfo.viewOnly" = "Bạn chỉ xem được mục này.";
+"shopinfo.viewOnlyValue" = "Chỉ xem";
+"shopinfo.branches" = "Chi nhánh · %d";
+"shopinfo.tapToEdit" = "bấm để sửa";
+"shopinfo.main" = "Chính";
+"shopinfo.branchCount" = "%d chi nhánh";
+"shopinfo.webHint" = "Thêm hoặc tắt chi nhánh: làm trên web.";
+"shopinfo.addressRequired" = "Vui lòng nhập địa chỉ.";

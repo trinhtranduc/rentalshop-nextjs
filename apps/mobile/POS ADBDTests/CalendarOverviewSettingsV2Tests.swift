@@ -577,15 +577,15 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
     private let staffPerms = ["products.view", "orders.view", "orders.create", "customers.view", "analytics.view.dashboard"]
 
     func testSettingsRowsByRole() {
-        // #1270 plan B: 12 rows for the owner (+ the overlap switch = 13) plus the name card and the bell
+        // #1270 plan B: 11 rows for the owner (+ the overlap switch = 12) plus the name card and the bell; #1313: Tiền tệ moved into Thông tin cửa hàng
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: merchantPerms + ["customers.view"], hasPlan: true, showsCustomers: true)
         XCTAssertEqual(merchant.map(\.group), [.store, .management, .account])
-        XCTAssertEqual(merchant[0].items, [.storeInfo, .currency, .bankAccounts, .deposit, .printing])
+        XCTAssertEqual(merchant[0].items, [.storeInfo, .bankAccounts, .deposit, .printing])
         XCTAssertEqual(merchant[1].items, [.categories, .customers, .users, .export])
         XCTAssertEqual(merchant[2].items, [.plan, .language, .advanced])
-        XCTAssertEqual(merchant.flatMap(\.items).count, 12)
+        XCTAssertEqual(merchant.flatMap(\.items).count, 11)
 
-        // Outlet admin: bank accounts yes, currency no
+        // Outlet admin: bank accounts yes
         let outletAdmin = SettingsV2Logic.sections(role: .outletAdmin, permissions: outletAdminPerms, hasPlan: false)
         XCTAssertEqual(outletAdmin[0].items, [.storeInfo, .bankAccounts, .printing])
         XCTAssertEqual(outletAdmin[1].items, [.categories, .users, .export])

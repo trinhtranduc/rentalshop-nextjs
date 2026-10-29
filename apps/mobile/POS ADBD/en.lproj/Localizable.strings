@@ -3037,3 +3037,24 @@
 "printer.outlet.branch" = "Branch";
 "printer.outlet.readonly" = "Only the shop owner can change the note and the QR. They apply to the whole branch.";
 "printer.outlet.loadFailed" = "Could not load the branch bill settings.";
+
+/* #1313 Shop and branch information */
+"Branch Information" = "Branch information";
+"shopinfo.title.shop" = "Edit shop";
+"shopinfo.title.branch" = "Edit branch";
+"shopinfo.shopName" = "Shop name";
+"shopinfo.branchName" = "Branch name";
+"shopinfo.taxId" = "Tax ID";
+"shopinfo.taxIdShort" = "Tax ID";
+"shopinfo.ward" = "Ward / District";
+"shopinfo.province" = "Province / City";
+"shopinfo.belongsTo" = "Part of shop %@";
+"shopinfo.yourBranch" = "Your branch · part of shop %@";
+"shopinfo.viewOnly" = "You can only view this.";
+"shopinfo.viewOnlyValue" = "View only";
+"shopinfo.branches" = "Branches · %d";
+"shopinfo.tapToEdit" = "tap to edit";
+"shopinfo.main" = "Main";
+"shopinfo.branchCount" = "%d branches";
+"shopinfo.webHint" = "Add or turn off a branch on the web.";
+"shopinfo.addressRequired" = "Please enter the address.";

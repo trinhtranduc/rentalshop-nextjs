@@ -13,18 +13,18 @@ import org.junit.Test
 class SettingsRowsTest {
     @Test
     fun rowsByRole() {
-        // #1270 plan B: 12 rows for the owner (+ the overlap switch = 13) plus the name card and the bell
+        // #1270 plan B: 11 rows for the owner (+ the overlap switch = 12) plus the name card and the bell; #1313: Tiền tệ moved into Thông tin cửa hàng
         val merchant = SettingsRows.sections("MERCHANT", hasPlan = true)
         assertEquals(listOf(SettingsGroup.STORE, SettingsGroup.MANAGEMENT, SettingsGroup.ACCOUNT), merchant.map { it.group })
         assertEquals(
-            listOf(SettingsItem.STORE_INFO, SettingsItem.CURRENCY, SettingsItem.BANK_ACCOUNTS, SettingsItem.DEPOSIT, SettingsItem.PRINTING),
+            listOf(SettingsItem.STORE_INFO, SettingsItem.BANK_ACCOUNTS, SettingsItem.DEPOSIT, SettingsItem.PRINTING),
             merchant[0].items,
         )
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
         assertEquals(listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.ADVANCED), merchant[2].items)
-        assertEquals(12, merchant.sumOf { it.items.size })
+        assertEquals(11, merchant.sumOf { it.items.size })
 
-        // Outlet admin: bank accounts yes, currency no
+        // Outlet admin: bank accounts yes
         val outletAdmin = SettingsRows.sections("OUTLET_ADMIN", hasPlan = false)
         assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.BANK_ACCOUNTS, SettingsItem.PRINTING), outletAdmin[0].items)
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[1].items)
