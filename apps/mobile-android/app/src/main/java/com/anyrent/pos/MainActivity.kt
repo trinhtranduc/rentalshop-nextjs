@@ -24,6 +24,7 @@ import com.anyrent.pos.data.ApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.data.repository.BankAccountRepository
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.appconfig.AppConfigGate
@@ -81,6 +82,8 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         DraftOrderReminder.onAppForegrounded()
+        // #1320: the owner may have changed the bank account on another device or on the web
+        BankAccountRepository.clearPrintCache()
     }
 
     override fun onResume() {

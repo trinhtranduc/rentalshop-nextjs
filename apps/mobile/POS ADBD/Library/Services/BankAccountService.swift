@@ -23,8 +23,9 @@ protocol BankAccountServiceProtocol {
 class BankAccountService: BaseService, BankAccountServiceProtocol {
     static let shared = BankAccountService()
 
-    /// Account printed on bills, per outlet, for this app session (#622). Cleared by any write.
-    private var printAccountCache: [Int: BankAccount?] = [:]
+    /// Account printed on bills, per outlet (#622). Cleared by any write and when the app returns to the foreground;
+    /// an entry older than `BillBankQR.cacheTTL` is loaded again (#1320).
+    private var printAccountCache: [Int: (account: BankAccount?, cachedAt: Date)] = [:]
 
     // MARK: - Path
 
@@ -135,8 +136,8 @@ class BankAccountService: BaseService, BankAccountServiceProtocol {
     /// The outlet's account to print on a bill (default, else first). Nil when there is none or the load fails;
     /// a failure is not cached so the next print tries again. Always answers on the main queue.
     func printAccount(outletId: Int, completion: @escaping (BankAccount?) -> Void) {
-        if let cached = printAccountCache[outletId] {
-            completion(cached)
+        if let cached = printAccountCache[outletId], BillBankQR.isCacheFresh(cachedAt: cached.cachedAt, now: Date()) {
+            completion(cached.account)
             return
         }
         getBankAccounts(outletId: outletId) { [weak self] accounts, error in
@@ -145,7 +146,7 @@ class BankAccountService: BaseService, BankAccountServiceProtocol {
                 return
             }
             let account = BillBankQR.pick(accounts)
-            self?.printAccountCache[outletId] = .some(account)
+            self?.printAccountCache[outletId] = (account, Date())
             completion(account)
         }
     }

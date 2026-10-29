@@ -127,6 +127,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         checkAppConfig()
         // #1307: the owner may have changed the shop currency meanwhile (at most once a minute)
         ShopCurrencyStore.refresh()
+        // #1320: the owner may have changed the bank account on another device or on the web
+        BankAccountService.shared.clearPrintCache()
     }
     
     func applicationDidBecomeActive(_ application: UIApplication) {
