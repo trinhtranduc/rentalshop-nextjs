@@ -1,4 +1,4 @@
-# sourced by android-flows.sh: `settings-sync <currency|print|deposit|overlap>` (#1315, epic #1309). WRITTEN, NOT RUN YET.
+# NOT RUN (no disk left for an Android build on 2026-10-29). sourced by android-flows.sh: `settings-sync <currency|print|deposit|overlap>` (#1315, epic #1309). WRITTEN, NOT RUN YET.
 # The OWNER's change goes through the API (tests/e2e/mobile/settings-sync-api.js, as the shop owner); the device is a STAFF account that must
 # show the new value after the app reopens. Status per case:
 #   currency  #1307 (merged, #1312)         print    #1308 (merged, #1311)
@@ -13,18 +13,18 @@ tag="[$LANG_E2E settings-sync/$which_case]"
 STAFF_EMAIL="${E2E_STAFF_EMAIL:-staff.outlet1@example.com}"; STAFF_PW="${E2E_STAFF_PASSWORD:-staff123}"
 set_lang
 open_settings() { tap_any "$(L settings)"; sleep 3; }
-open_overview() { tap_any "$(L overview)"; sleep 5; }
+open_overview() { go_home; sleep 4; }   # the staff Overview has no money tiles: the unit is read on the Home product rows ("$103/lần" vs "103/lần")
 case "$which_case" in
   currency)  # (a) owner changes the currency; the staff device shows the new unit after reopening the app (#1307)
     START="$($SYNC get currency)"; OTHER=USD; [ "$START" = USD ] && OTHER=VND
-    mark() { [ "$1" = VND ] && echo 'đ' || echo '$'; }
+    mark() { [ "$1" = VND ] && echo '/lần|/ngày' || echo '\$'; }
     do_login "$STAFF_EMAIL" "$STAFF_PW"; open_overview; "$U" shot "a-sync-currency-0-$START" >/dev/null
-    t="$(texts 3000)"; echo "$t" | grep -q "$(mark "$START")" && pass "$tag staff sees $START before the change" || fail "$tag staff Overview lacks $(mark "$START") at start: ${t:0:300}"
+    t="$(texts 3000)"; echo "$t" | grep -Eq "$(mark "$START")" && pass "$tag staff sees $START before the change" || fail "$tag staff Overview lacks $(mark "$START") at start: ${t:0:300}"
     $SYNC set currency "$OTHER" >/dev/null && note "owner set currency $OTHER (API)"
     restart_app; sleep 8; open_overview; "$U" shot "a-sync-currency-1-$OTHER" >/dev/null; t="$(texts 3000)"
-    echo "$t" | grep -q "$(mark "$OTHER")" && pass "$tag after reopening, staff Overview shows $OTHER" || fail "$tag staff still shows the old unit after reopening (#1307): ${t:0:300}"
+    echo "$t" | grep -Eq "$(mark "$OTHER")" && pass "$tag after reopening, staff Overview shows $OTHER" || fail "$tag staff still shows the old unit after reopening (#1307): ${t:0:300}"
     $SYNC set currency "$START" >/dev/null; restart_app; sleep 8; open_overview
-    echo "$(texts 3000)" | grep -q "$(mark "$START")" && pass "$tag changed back: staff shows $START again (no stale value)" || fail "$tag staff did not follow the change back"
+    echo "$(texts 3000)" | grep -Eq "$(mark "$START")" && pass "$tag changed back: staff shows $START again (no stale value)" || fail "$tag staff did not follow the change back"
     # owner on the device, UI path (needs a second login; the same single-session rule): Settings -> Currency -> confirm. UNVERIFIED selectors.
     note "TODO owner UI: do_login owner; tap '$(L settings_v2_currency)'; pick the other currency; tap '$(L settings_v2_currency_confirm_button "$OTHER")'; then log in as staff and repeat the check" ;;
   print)  # (b) owner edits note + QR of the branch; staff and manager read them, read-only (#1308)
