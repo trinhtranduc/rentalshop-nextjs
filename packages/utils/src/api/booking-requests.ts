@@ -87,6 +87,15 @@ export const bookingRequestsApi = {
     return parseApiResponse<{ onlineBookingEnabled?: boolean }>(response);
   },
 
+  /** Settings › "Cho tạo đơn khi trùng lịch" (owner only, #1314); the same field the phone switch saves */
+  async setAllowOverlappingOrders(allowed: boolean) {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify({ allowOverlappingOrders: allowed }),
+    });
+    return parseApiResponse<{ allowOverlappingOrders?: boolean }>(response);
+  },
+
   /** Settings › "Hiện giá trên trang shop" (owner only, #1174) */
   async setShowPublicPrice(enabled: boolean) {
     const response = await authenticatedFetch(apiUrls.settings.merchant, {

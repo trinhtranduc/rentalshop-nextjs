@@ -7,6 +7,10 @@
       "outlets": "接受预订的门店",
       "outletsHint": "关闭不接受在线预订的门店。"
     },
+    "overlap": {
+      "title": "允许创建日期冲突的订单",
+      "hint": "关闭后，若所选日期内商品已全部租出，则无法创建订单。"
+    },
     "publicPage": {
       "showPrice": "在店铺页面显示价格",
       "showPriceHint": "关闭后，访客会看到“联系商家”，而不是金额。",

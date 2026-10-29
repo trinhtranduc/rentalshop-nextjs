@@ -22,6 +22,7 @@ import {
   LanguageSection,
   LegacyPanel,
   OnlineBookingSection,
+  OverlapSection,
   OutletsLinkRow,
   ProfileSection,
   PublicPageSection,
@@ -32,7 +33,7 @@ import {
   type ShopForm,
 } from './sections';
 import { DepositSection } from '../installments/DepositSection';
-import { blockOldAppsFlag, canChangeCurrency, groupedTabs, onlineBookingFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
+import { blockOldAppsFlag, canChangeCurrency, canChangeOverlap, groupedTabs, onlineBookingFlag, overlapFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -158,10 +159,11 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const priceFlag = showPublicPriceFlag(merchant);
   const showsBooking = tab === 'merchant' || (tab === 'outlet' && role === 'OUTLET_ADMIN');
   const oldAppsFlag = blockOldAppsFlag(merchant as { blockPricing?: { oldApps?: unknown } });
+  const overlapValue = overlapFlag(merchant);
   const needsProfile =
     (showsBooking && bookingFlag === null) ||
     (tab === 'public-page' && priceFlag === null) ||
-    (tab === 'merchant' && role === 'MERCHANT' && oldAppsFlag === null);
+    (tab === 'merchant' && role === 'MERCHANT' && (oldAppsFlag === null || overlapValue === null));
   const profileLoaded = useRef(false);
   useEffect(() => {
     if (!needsProfile || !user?.merchant || profileLoaded.current) return;
@@ -374,6 +376,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
               canEditOutlets={canManageOutlets}
               onShopChanged={() => void refreshUser?.()}
             />
+            {canChangeOverlap(role) && <OverlapSection t={t} allowed={overlapValue !== false} onChanged={() => void refreshUser?.()} />}
             {role === 'MERCHANT' && (
               <BlockOldAppsSection t={t} value={oldAppsFlag ?? 'recompute'} canEdit onChanged={() => void refreshUser?.()} />
             )}
