@@ -587,14 +587,14 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
 
         // Outlet admin: bank accounts yes, currency no
         let outletAdmin = SettingsV2Logic.sections(role: .outletAdmin, permissions: outletAdminPerms, hasPlan: false)
-        XCTAssertEqual(outletAdmin[0].items, [.storeInfo, .bankAccounts, .deposit, .printing])
+        XCTAssertEqual(outletAdmin[0].items, [.storeInfo, .bankAccounts, .printing])
         XCTAssertEqual(outletAdmin[1].items, [.categories, .users, .export])
         XCTAssertEqual(outletAdmin[2].items, [.language, .advanced])
 
-        // Staff: no currency, no bank accounts; Cọc stays (read only); no users, no export, so no QUẢN LÝ group at all
+        // Staff: no currency, no bank accounts; no Thu cọc (#1310); no users, no export, so no QUẢN LÝ group at all
         let staff = SettingsV2Logic.sections(role: .outletStaff, permissions: staffPerms + ["orders.export"], hasPlan: true)
         XCTAssertEqual(staff.map(\.group), [.store, .account])
-        XCTAssertEqual(staff[0].items, [.storeInfo, .deposit, .printing])
+        XCTAssertEqual(staff[0].items, [.storeInfo, .printing])
         XCTAssertFalse(staff.flatMap(\.items).contains(.users))
         XCTAssertFalse(staff.flatMap(\.items).contains(.export))
         XCTAssertFalse(staff.flatMap(\.items).contains(.categories), "#632: staff cannot add a category")
@@ -606,7 +606,16 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
             let sections = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false)
             XCTAssertEqual(sections.first?.group, .store, "\(role)")
             XCTAssertEqual(sections.first?.items.first, .storeInfo, "\(role)")
-            XCTAssertTrue(sections[0].items.contains(.deposit), "Cọc shows for every role \(role)")
+            XCTAssertEqual(sections[0].items.contains(.deposit), role == .merchant, "#1310 Thu cọc is the owner's only: \(role)")
+            XCTAssertTrue(sections[0].items.contains(.printing), "In & phiếu stays for \(role)")
+        }
+    }
+
+    /// #1310: only the shop owner sees Thu cọc (PUT /api/settings/deposit is MERCHANT only)
+    func testDepositRowOwnerOnly() {
+        XCTAssertTrue(ShopDepositLogic.canView(role: .merchant))
+        for role: Role? in [.admin, .outletAdmin, .outletStaff, .outletInventory, nil] {
+            XCTAssertFalse(ShopDepositLogic.canView(role: role), "\(String(describing: role))")
         }
     }
 

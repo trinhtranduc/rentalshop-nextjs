@@ -26,13 +26,13 @@ class SettingsRowsTest {
 
         // Outlet admin: bank accounts yes, currency no
         val outletAdmin = SettingsRows.sections("OUTLET_ADMIN", hasPlan = false)
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.BANK_ACCOUNTS, SettingsItem.DEPOSIT, SettingsItem.PRINTING), outletAdmin[0].items)
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.BANK_ACCOUNTS, SettingsItem.PRINTING), outletAdmin[0].items)
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[1].items)
         assertEquals(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED), outletAdmin[2].items)
 
-        // Staff: no currency, no bank accounts; Cọc stays (read only)
+        // Staff: no currency, no bank accounts; no Thu cọc (#1310)
         val staff = SettingsRows.sections("OUTLET_STAFF", hasPlan = true)
-        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.DEPOSIT, SettingsItem.PRINTING), staff[0].items)
+        assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.PRINTING), staff[0].items)
         assertEquals(listOf(SettingsItem.CUSTOMERS), staff[1].items)
         assertEquals(SettingsItem.PLAN, staff[2].items.first())
 
@@ -40,15 +40,22 @@ class SettingsRowsTest {
         assertFalse(SettingsRows.sections("ADMIN", hasPlan = true).flatMap { it.items }.contains(SettingsItem.PLAN))
     }
 
-    /** Cọc shows for every role; the store group is first (the bell is not a row) */
+    /** #1310: Thu cọc is the owner's only; the store group is first (the bell is not a row) and In & phiếu stays */
     @Test
-    fun depositRowForEveryRole() {
+    fun depositRowOwnerOnly() {
         for (role in listOf("ADMIN", "MERCHANT", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY", null)) {
             val first = SettingsRows.sections(role, hasPlan = false).first()
             assertEquals(role, SettingsGroup.STORE, first.group)
             assertEquals(role, SettingsItem.STORE_INFO, first.items.first())
-            assertTrue(role, SettingsItem.DEPOSIT in first.items)
+            assertEquals(role, role == "MERCHANT", SettingsItem.DEPOSIT in first.items)
+            assertTrue(role, SettingsItem.PRINTING in first.items)
         }
+    }
+
+    @Test
+    fun depositCanViewOwnerOnly() {
+        assertTrue(DepositSetting.canView("MERCHANT"))
+        for (role in listOf("ADMIN", "OUTLET_ADMIN", "OUTLET_STAFF", "OUTLET_INVENTORY", null)) assertFalse(role, DepositSetting.canView(role))
     }
 
     /** #1270: the second text of a row shows the value in force */
