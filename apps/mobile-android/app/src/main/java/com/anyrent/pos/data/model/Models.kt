@@ -169,6 +169,9 @@ data class OrderDetail(
     val outletName: String? = null,
     /** Outlet of the order (public id): availability for an extension is checked there (#390) */
     val outletId: Int? = null,
+    /** #1308: `outlet.printNote` / `outlet.printBankQr` of the order's outlet; null when the payload lacks them */
+    val outletPrintNote: String? = null,
+    val outletPrintBankQr: Boolean? = null,
     /** Nested customer from GET /api/orders/:id — preferred when editing into cart. */
     val customer: Customer? = null,
     /** #1199 deposit stages (only for a client that sends `installments`); null on an older API or an order without a plan */

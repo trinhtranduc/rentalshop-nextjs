@@ -25,4 +25,7 @@ struct Outlet: Codable {
     let country: String?
     let state: String?
     let zipCode: String?
+    /// #1308: what the branch prints on its bills (`GET /api/outlets`); nil on an older payload
+    var printNote: String? = nil
+    var printBankQr: Bool? = nil
 }

@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
  * The VietQR card follows the printed bill: the "QR chuyển khoản trên hoá đơn" switch and the bill's account.
  */
 internal suspend fun shareOrderReceipt(context: Context, order: OrderDetail) {
-    val printBankQr = context.getSharedPreferences("anyrent.printer", 0).getBoolean(ThermalPrinter.KEY_PRINT_BANK_QR, false)
+    val printBankQr = com.anyrent.pos.domain.print.OutletPrintSettings.printsBankQr(order.outletPrintBankQr) // #1308: the order's outlet
     val account = if (printBankQr) withContext(Dispatchers.IO) { ThermalPrinter.lookupBankAccount(order) } else null
     val model = OrderShareModel.from(
         order = order,

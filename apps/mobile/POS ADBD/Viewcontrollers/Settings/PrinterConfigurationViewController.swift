@@ -70,6 +70,35 @@ class PrinterConfigurationViewController: BaseViewControler {
         return toggle
     }()
 
+    // MARK: - #1308 bill settings of the branch (server)
+
+    private var canEditBill = OutletPrintSettings.canEdit(role: User.current()?.role)
+    private var branches: [Outlet] = []
+    private var outletId: Int?
+    private var billLoaded = false
+    /// What the server has, to save the note only when it changed
+    private var serverNote = ""
+
+    private lazy var branchButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.titleLabel?.font = Utils.boldFont(size: 16)
+        button.contentHorizontalAlignment = .leading
+        button.isHidden = true
+        button.accessibilityIdentifier = "printer.branch.button"
+        button.addTarget(self, action: #selector(chooseBranch), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var readOnlyLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 14)
+        label.textColor = .textSecondary
+        label.numberOfLines = 0
+        label.text = "printer.outlet.readonly".localized()
+        label.isHidden = canEditBill
+        return label
+    }()
+
     private lazy var supportLabel: UILabel = {
         let label = UILabel()
         label.font = Utils.regularFont(size: 12)
@@ -144,7 +173,7 @@ class PrinterConfigurationViewController: BaseViewControler {
             make.edges.equalToSuperview()
         }
 
-        let stack = UIStackView(arrangedSubviews: [hintLabel, settingsCard, supportLabel])
+        let stack = UIStackView(arrangedSubviews: [hintLabel, branchButton, readOnlyLabel, settingsCard, supportLabel])
         stack.axis = .vertical
         stack.spacing = 16
         containerView.addSubview(stack)
@@ -205,8 +234,10 @@ class PrinterConfigurationViewController: BaseViewControler {
         }
         let form = UIStackView(arrangedSubviews: [
             sectionTitle("settings.v2.printing.group.slip"),
+            branchButton,
             SettingsDetailV2.textArea("Printer Notes".localized(), noteTextView),
             makeBankQrRow(),
+            readOnlyLabel,
             sectionTitle("settings.v2.printing.group.printer"),
             hintLabel,
             SettingsDetailV2.field("IP Address".localized(), ipField.textField),
@@ -246,8 +277,77 @@ class PrinterConfigurationViewController: BaseViewControler {
 
     private func loadCurrentConfig() {
         ipField.textField.text = Utils.loadBillPrinter()
-        noteTextView.text = Utils.loadNotePrinter()
-        bankQrSwitch.isOn = Utils.loadPrintBankQr()
+        applyBillEditable()
+        loadBranches()
+    }
+
+    /// The note and the QR switch follow the role, and wait for the server values
+    private func applyBillEditable() {
+        let on = canEditBill && billLoaded
+        noteTextView.isEditable = on
+        noteTextView.alpha = canEditBill ? 1 : 0.6
+        bankQrSwitch.isEnabled = on
+    }
+
+    private func loadBranches() {
+        OutletService.shared.getOutlets { [weak self] outlets, error in
+            guard let self else { return }
+            guard error == nil else { return self.showAlert(message: "printer.outlet.loadFailed".localized()) }
+            self.branches = (outlets ?? []).filter { $0.isActive ?? true }
+            let list = self.branches.map { (id: $0.id, isDefault: $0.isDefault ?? false) }
+            guard let id = OutletPrintSettings.initialOutletId(own: User.account()?.outletId, current: CurrentOutlet.shared.id, outlets: list) else { return }
+            self.showBranch(id)
+        }
+    }
+
+    /// Fills the note and the switch from the branch's server values (the owner gets the old device note once, unsaved)
+    private func showBranch(_ id: Int) {
+        outletId = id
+        guard let outlet = branches.first(where: { $0.id == id }) else { return }
+        serverNote = outlet.printNote ?? ""
+        noteTextView.text = OutletPrintSettings.prefillNote(serverNote: outlet.printNote, legacyNote: OutletPrintSettings.legacyDeviceNote, canEdit: canEditBill)
+        bankQrSwitch.isOn = OutletPrintSettings.printsBankQr(outlet.printBankQr)
+        billLoaded = true
+        applyBillEditable()
+        // the picker only for an owner with more than one branch
+        branchButton.isHidden = !(canEditBill && branches.count > 1)
+        branchButton.setTitle("\("printer.outlet.branch".localized()): \(outlet.name) ▾", for: .normal)
+    }
+
+    @objc private func chooseBranch() {
+        let sheet = UIAlertController(title: "printer.outlet.branch".localized(), message: nil, preferredStyle: .actionSheet)
+        for outlet in branches {
+            let action = UIAlertAction(title: outlet.name, style: .default) { [weak self] _ in self?.showBranch(outlet.id) }
+            action.setValue(outlet.id == outletId, forKey: "checked")
+            sheet.addAction(action)
+        }
+        sheet.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
+        sheet.popoverPresentationController?.anchor(to: branchButton, fallback: view)
+        present(sheet, animated: true)
+    }
+
+    /// Saves the branch's note (when asked) and QR switch with `PUT /api/outlets`; a failure shows the error and
+    /// puts the server values back
+    private func saveBill(withNote: Bool, completion: ((Bool) -> Void)? = nil) {
+        guard canEditBill, billLoaded, let id = outletId else { completion?(true); return }
+        var values: [String: Any] = ["printBankQr": bankQrSwitch.isOn]
+        if withNote { values["printNote"] = noteTextView.text ?? "" }
+        OutletService.shared.updateOutlet(outletId: id, withValues: values) { [weak self] outlet, error in
+            guard let self else { return }
+            if let error {
+                UIAlertController.errorAlert(parent: self, error: error)
+                self.loadBranches()
+                completion?(false)
+                return
+            }
+            if let index = self.branches.firstIndex(where: { $0.id == id }) {
+                self.branches[index].printBankQr = self.bankQrSwitch.isOn
+                if withNote { self.branches[index].printNote = OutletPrintSettings.note(serverNote: self.noteTextView.text) }
+            }
+            if withNote { self.serverNote = OutletPrintSettings.note(serverNote: self.noteTextView.text) ?? "" }
+            OutletPrintSettings.clearLegacyDeviceValues(includingNote: withNote)
+            completion?(true)
+        }
     }
 
     /// "In QR chuyển khoản trên bill" + one-line hint, switch on the right
@@ -274,7 +374,7 @@ class PrinterConfigurationViewController: BaseViewControler {
     }
 
     @objc private func bankQrChanged() {
-        Utils.savePrintBankQr(bankQrSwitch.isOn)
+        saveBill(withNote: false)
     }
 
     private func makeCard() -> UIView {
@@ -349,7 +449,9 @@ class PrinterConfigurationViewController: BaseViewControler {
     @objc private func save() {
         view.endEditing(true)
         persistConfig()
-        showAlert(message: "Configuration saved successfully".localized(), isError: false)
+        saveBill(withNote: true) { [weak self] ok in
+            if ok { self?.showAlert(message: "Configuration saved successfully".localized(), isError: false) }
+        }
     }
 
     /// #1028: "," → ".", no spaces, as it is typed
@@ -361,7 +463,6 @@ class PrinterConfigurationViewController: BaseViewControler {
 
     private func persistConfig() {
         Utils.saveBillPrinter(ip: PrinterSetup.normalizedIP(ipField.textField.text ?? ""))
-        Utils.saveNotePrinter(note: noteTextView.text ?? "")
         Utils.savePrintMethod(method: "network")
     }
 
@@ -422,6 +523,7 @@ extension PrinterConfigurationViewController: UITextFieldDelegate {
 
 extension PrinterConfigurationViewController: UITextViewDelegate {
     func textViewDidEndEditing(_ textView: UITextView) {
-        persistConfig()
+        // #1308: the note belongs to the branch on the server; saved when it changed
+        if canEditBill, billLoaded, (textView.text ?? "") != serverNote { saveBill(withNote: true) }
     }
 }

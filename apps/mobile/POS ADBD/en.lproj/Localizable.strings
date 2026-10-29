@@ -2301,7 +2301,7 @@
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "No bank account yet. Tap + to add one.";
 "printer.bankQr.title" = "Print transfer QR on bills";
-"printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. This device only.";
+"printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. Applies to this branch on every device.";
 "bill.bankQr.title" = "BANK TRANSFER";
 "bill.bankQr.accountNumber" = "Account: %@";
 
@@ -3034,3 +3034,6 @@
 "order.sheet.edit.subtitle" = "Change items, rental dates, customer";
 "order.sheet.extend.subtitle" = "Add rental days, charge the extra";
 "order.sheet.history.subtitle" = "Who changed what, and when";
+"printer.outlet.branch" = "Branch";
+"printer.outlet.readonly" = "Only the shop owner can change the note and the QR. They apply to the whole branch.";
+"printer.outlet.loadFailed" = "Could not load the branch bill settings.";

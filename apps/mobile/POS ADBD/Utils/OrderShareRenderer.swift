@@ -371,10 +371,10 @@ private struct Painter {
 
 /// Builds the model (with the bill's QR decision), renders the JPG off the main thread and opens the share sheet
 enum OrderSharePresenter {
-    /// #622 decision of the printed bill (`PrinterManager.printOrder`): the device switch, then the outlet's
+    /// #622 decision of the printed bill (`PrinterManager.printOrder`): the outlet's switch (#1308, server), then the outlet's
     /// account from `BankAccountService.printAccount` (default active, else first active). Nil after 5 s.
-    static func billQRAccount(outletId: Int?, completion: @escaping (_ switchOn: Bool, _ account: BankAccount?) -> Void) {
-        guard Utils.loadPrintBankQr(), let outletId else {
+    static func billQRAccount(outletId: Int?, outletSwitch: Bool?, completion: @escaping (_ switchOn: Bool, _ account: BankAccount?) -> Void) {
+        guard OutletPrintSettings.printsBankQr(outletSwitch), let outletId else {
             completion(false, nil)
             return
         }
@@ -415,7 +415,7 @@ enum OrderSharePresenter {
         if source.isDraft {
             render(false, nil)
         } else {
-            billQRAccount(outletId: source.outletId, completion: render)
+            billQRAccount(outletId: source.outletId, outletSwitch: source.outletPrintBankQr, completion: render)
         }
     }
 }

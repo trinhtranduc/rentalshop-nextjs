@@ -1442,7 +1442,7 @@
     <string name="bank_account_need_number">Please check account number</string>
     <string name="bank_account_need_holder">Please check account holder name</string>
     <string name="printer_bank_qr_title">Print transfer QR on bills</string>
-    <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. This device only.</string>
+    <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. Applies to this branch on every device.</string>
     <string name="bill_bank_qr_title">BANK TRANSFER</string>
     <string name="bill_bank_qr_account">Account: %1$s</string>
     <!-- #632 categories from the product form -->
@@ -2355,4 +2355,8 @@
     <string name="detail_collateral_money_row">Collateral</string>
     <string name="detail_payment_title">PAYMENT</string>
     <string name="detail_rent_total">Rental total</string>
+    <string name="printer_outlet_branch">Branch</string>
+    <string name="printer_outlet_readonly">Only the shop owner can change the note and the QR. They apply to the whole branch.</string>
+    <string name="printer_outlet_load_failed">Could not load the branch bill settings.</string>
+    <string name="printer_outlet_save_failed">Could not save the bill settings.</string>
 </resources>

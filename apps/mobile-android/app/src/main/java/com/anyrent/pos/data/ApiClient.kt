@@ -1674,6 +1674,9 @@ class ApiClient(
             outletName = root.nullableString("outletName")
                 ?: root.optJSONObject("outlet")?.nullableString("name"),
             outletId = root.positiveInt("outletId") ?: root.optJSONObject("outlet")?.positiveInt("id"),
+            outletPrintNote = root.optJSONObject("outlet")?.nullableString("printNote"),
+            outletPrintBankQr = root.optJSONObject("outlet")?.takeIf { it.has("printBankQr") && !it.isNull("printBankQr") }
+                ?.optBoolean("printBankQr"),
             deposit = com.anyrent.pos.domain.deposit.DepositPlanInfo.fromJson(root),
         )
     }

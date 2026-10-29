@@ -1418,7 +1418,7 @@
     <string name="bank_account_need_number">Vui lòng kiểm tra số tài khoản</string>
     <string name="bank_account_need_holder">Vui lòng kiểm tra tên chủ tài khoản</string>
     <string name="printer_bank_qr_title">In QR chuyển khoản trên bill</string>
-    <string name="printer_bank_qr_hint">In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.</string>
+    <string name="printer_bank_qr_hint">In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Áp dụng cho chi nhánh này trên mọi máy.</string>
     <string name="bill_bank_qr_title">CHUYỂN KHOẢN</string>
     <string name="bill_bank_qr_account">STK: %1$s</string>
     <!-- #632 categories from the product form -->
@@ -2325,4 +2325,8 @@
     <string name="detail_collateral_money_row">Thế chân</string>
     <string name="detail_payment_title">THANH TOÁN</string>
     <string name="detail_rent_total">Tổng tiền thuê</string>
+    <string name="printer_outlet_branch">Chi nhánh</string>
+    <string name="printer_outlet_readonly">Chỉ chủ shop sửa được ghi chú và QR. Áp dụng cho cả chi nhánh.</string>
+    <string name="printer_outlet_load_failed">Không tải được cài đặt hóa đơn của chi nhánh.</string>
+    <string name="printer_outlet_save_failed">Không lưu được cài đặt hóa đơn.</string>
 </resources>
