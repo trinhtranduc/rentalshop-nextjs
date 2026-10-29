@@ -166,3 +166,82 @@ final class BankQRTests: XCTestCase {
         }
     }
 }
+
+/// #1308: the bill's note and bank QR come from the order's own outlet (server), not from the device
+final class OutletPrintSettingsTests: XCTestCase {
+    private let merchant = #""merchant":{"id":1,"name":"Shop","email":"a@b.c","phone":"1","address":"1","city":"A","state":"B","zipCode":"1","country":"VN","businessType":"EQUIPMENT","pricingType":"DAILY","taxId":"1","currency":"VND"}"#
+
+    private func outlet(_ extra: String) throws -> OutletDetail {
+        let json = #"{"id":1,"name":"Main","address":"1","phone":"1","city":"A","state":"B","zipCode":"1","country":"VN","isActive":true,\#(extra)\#(merchant)}"#
+        return try JSONDecoder.shared.decode(OutletDetail.self, from: Data(json.utf8))
+    }
+
+    // MARK: - Model
+
+    func testOutletDetailReadsPrintNoteAndQr() throws {
+        let detail = try outlet(#""printNote":"Mang CCCD","printBankQr":true,"#)
+        XCTAssertEqual(detail.printNote, "Mang CCCD")
+        XCTAssertEqual(detail.printBankQr, true)
+    }
+
+    func testOutletDetailWithoutTheFieldsStillDecodes() throws {
+        let detail = try outlet("")
+        XCTAssertNil(detail.printNote)
+        XCTAssertNil(detail.printBankQr)
+    }
+
+    // MARK: - Note
+
+    func testNoteIsTheServerNote() {
+        XCTAssertEqual(OutletPrintSettings.note(serverNote: "Mang CCCD"), "Mang CCCD")
+    }
+
+    func testBlankOrMissingServerNoteIsNoNoteNotTheOldDefault() {
+        XCTAssertNil(OutletPrintSettings.note(serverNote: nil))
+        XCTAssertNil(OutletPrintSettings.note(serverNote: ""))
+        XCTAssertNil(OutletPrintSettings.note(serverNote: "  \n "))
+    }
+
+    // MARK: - QR
+
+    func testQrFollowsTheOutletSwitch() {
+        XCTAssertTrue(OutletPrintSettings.printsBankQr(true))
+        XCTAssertFalse(OutletPrintSettings.printsBankQr(false))
+        XCTAssertFalse(OutletPrintSettings.printsBankQr(nil))
+    }
+
+    // MARK: - Roles
+
+    func testOnlyOwnerAndOutletAdminEdit() {
+        XCTAssertTrue(OutletPrintSettings.canEdit(role: .merchant))
+        XCTAssertTrue(OutletPrintSettings.canEdit(role: .outletAdmin))
+        XCTAssertFalse(OutletPrintSettings.canEdit(role: .outletStaff))
+        XCTAssertFalse(OutletPrintSettings.canEdit(role: .outletInventory))
+        XCTAssertFalse(OutletPrintSettings.canEdit(role: nil))
+    }
+
+    // MARK: - Pre-fill
+
+    func testOwnerGetsTheOldDeviceNoteWhenTheServerHasNone() {
+        XCTAssertEqual(OutletPrintSettings.prefillNote(serverNote: nil, legacyNote: "Cũ", canEdit: true), "Cũ")
+        XCTAssertEqual(OutletPrintSettings.prefillNote(serverNote: " ", legacyNote: "Cũ", canEdit: true), "Cũ")
+    }
+
+    func testServerNoteWinsAndStaffNeverSeeTheDeviceNote() {
+        XCTAssertEqual(OutletPrintSettings.prefillNote(serverNote: "Máy chủ", legacyNote: "Cũ", canEdit: true), "Máy chủ")
+        XCTAssertEqual(OutletPrintSettings.prefillNote(serverNote: nil, legacyNote: "Cũ", canEdit: false), "")
+        XCTAssertEqual(OutletPrintSettings.prefillNote(serverNote: nil, legacyNote: nil, canEdit: true), "")
+        XCTAssertEqual(OutletPrintSettings.prefillNote(serverNote: nil, legacyNote: "  ", canEdit: true), "")
+    }
+
+    // MARK: - Branch
+
+    func testBranchOwnThenCurrentThenDefaultThenFirst() {
+        let list: [(id: Int, isDefault: Bool)] = [(1, false), (2, true), (3, false)]
+        XCTAssertEqual(OutletPrintSettings.initialOutletId(own: 3, current: 1, outlets: list), 3)
+        XCTAssertEqual(OutletPrintSettings.initialOutletId(own: nil, current: 1, outlets: list), 1)
+        XCTAssertEqual(OutletPrintSettings.initialOutletId(own: nil, current: 9, outlets: list), 2)
+        XCTAssertEqual(OutletPrintSettings.initialOutletId(own: nil, current: nil, outlets: [(5, false), (6, false)]), 5)
+        XCTAssertNil(OutletPrintSettings.initialOutletId(own: nil, current: nil, outlets: []))
+    }
+}
