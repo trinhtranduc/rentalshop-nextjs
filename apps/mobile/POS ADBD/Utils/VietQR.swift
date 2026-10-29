@@ -102,6 +102,16 @@ enum VietQR {
 
 /// #622: bank transfer block at the end of a printed bill (per-device switch in printer settings)
 enum BillBankQR {
+    /// #1320: how long the account printed on bills is kept before it is loaded again (seconds)
+    static let cacheTTL: TimeInterval = 300
+
+    /// #1320: whether an account cached at `cachedAt` may still be printed at `now`. Stale at the limit,
+    /// and stale when the clock went backwards.
+    static func isCacheFresh(cachedAt: Date, now: Date) -> Bool {
+        let age = now.timeIntervalSince(cachedAt)
+        return age >= 0 && age < cacheTTL
+    }
+
     /// The account to print: the default active one, else the first active one
     static func pick(_ accounts: [BankAccount]) -> BankAccount? {
         let active = accounts.filter { $0.isActive ?? true }

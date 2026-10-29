@@ -20,10 +20,16 @@ data class BankOutlet(val id: Int, val name: String, val isDefault: Boolean)
 object BankAccountRepository {
     private val json = "application/json; charset=utf-8".toMediaType()
 
-    /** Account printed on bills, per outlet, for this app session. Cleared by any write; failures are not cached. */
+    /**
+     * Account printed on bills, per outlet. Cleared by any write and when the app returns to the foreground;
+     * an entry older than [BankAccountRules.CACHE_TTL_MS] is loaded again (#1320). Failures are not cached.
+     */
     private val printCache = ConcurrentHashMap<Int, Cached>()
 
-    private class Cached(val account: OutletBankAccount?)
+    private class Cached(val account: OutletBankAccount?, val cachedAtMs: Long)
+
+    /** #1320: the owner may have changed the account on another device or on the web */
+    fun clearPrintCache() = printCache.clear()
 
     private fun basePath(outletId: Int): String {
         val merchantId = SessionStore.merchantId ?: throw AppError.Validation("Merchant ID or Outlet ID not found")
@@ -68,10 +74,12 @@ object BankAccountRepository {
 
     /** The outlet's account for a bill (default, else first), or null when there is none or the load fails */
     fun printAccount(outletId: Int): OutletBankAccount? {
-        printCache[outletId]?.let { return it.account }
+        printCache[outletId]
+            ?.takeIf { BankAccountRules.isCacheFresh(it.cachedAtMs, System.currentTimeMillis()) }
+            ?.let { return it.account }
         val accounts = runCatching { list(outletId) }.getOrNull() ?: return null
         val account = BankAccountRules.pick(accounts)
-        printCache[outletId] = Cached(account)
+        printCache[outletId] = Cached(account, System.currentTimeMillis())
         return account
     }
 }
