@@ -12,24 +12,24 @@ import Foundation
 
 struct Merchant: Codable {
     let id: Int
-    let name: String
+    var name: String
     let email: String?
-    let phone: String?
-    let address: String?
-    let city: String?
-    let state: String?
-    let zipCode: String?
-    let country: String?
+    var phone: String?
+    var address: String?
+    var city: String?
+    var state: String?
+    var zipCode: String?
+    var country: String?
     let businessType: String?
     let businessTags: [String]?
-    let taxId: String?
+    var taxId: String?
     var currency: String?
     let pricingType: String?
     let subscription: Subscription?
     
     // Optional fields from documentation (may not be in login response)
     let website: String?
-    let description: String?
+    var description: String?
     let planId: Int?
     let totalRevenue: Double?
     let lastActiveAt: Date?

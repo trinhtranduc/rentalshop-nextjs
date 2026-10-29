@@ -102,4 +102,16 @@ final class ShopInfoTests: XCTestCase {
         ])
         XCTAssertEqual(rows.map(\.id), [1, 2, 4])
     }
+
+    func testSettingsRowValueByRole() {
+        func value(_ role: Role?, name: String? = "Hoa Sen · Quận 7", count: Int? = 3) -> String? {
+            ShopInfoLogic.rowValue(role: role, branchName: name, branchCount: count, countText: { "\($0) chi nhánh" }, readOnlyText: "Chỉ xem")
+        }
+        XCTAssertEqual(value(.merchant), "3 chi nhánh")
+        XCTAssertNil(value(.merchant, count: nil))
+        XCTAssertEqual(value(.outletAdmin), "Hoa Sen · Quận 7")
+        XCTAssertNil(value(.outletAdmin, name: " "))
+        XCTAssertEqual(value(.outletStaff), "Chỉ xem")
+        XCTAssertEqual(value(.outletInventory), "Chỉ xem")
+    }
 }

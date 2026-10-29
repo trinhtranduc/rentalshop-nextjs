@@ -2,9 +2,10 @@
 //  EditStoreViewController.swift
 //  POS ADBD
 //
-//  "Thông tin cửa hàng" (#484, board CH-sua): the v2 form of "Sửa khách hàng" (label above the field, no icons).
-//  Name (required) and phone, then ĐỊA CHỈ (street; city | state; country | postal code), then KHÁC (description).
-//  Saves through `PUT /api/outlets/{id}` with the same fields as before.
+//  The shop / branch form (#484, board CH-sua; #1313): the v2 form of "Sửa khách hàng" (label above the field, no icons).
+//  - shop (the owner): name (required), phone, tax id, ĐỊA CHỈ (street, ward / district, province), KHÁC (country, postal
+//    code, description). Saves through `PUT /api/settings/merchant`; no website.
+//  - branch: name (required), phone, address (required). Saves through `PUT /api/outlets?id=`. Read-only (no Lưu) for staff.
 //
 
 import UIKit
@@ -16,14 +17,24 @@ protocol EditStoreViewControllerDelegate: AnyObject {
 }
 
 class EditStoreViewController: BaseViewControler {
+    enum Kind { case shop, branch }
+
     // MARK: - Properties
     weak var delegate: EditStoreViewControllerDelegate?
-    private var outlet: Outlet?
-    private var merchant: Merchant?
+    /// What the form edits
+    var kind: Kind = .shop
+    /// The branch being edited (kind `.branch`)
+    var branch: Outlet?
+    /// Fields and Lưu are off for a read-only view (staff)
+    var editable = true
+    var screenTitle = "Store Information".localized()
+    /// Line under the title: "Thuộc cửa hàng …", "Bạn chỉ xem được mục này."
+    var subtitle: String?
 
     // MARK: - UI Components
     private let storeNameField = UITextField()
     private let phoneField = UITextField()
+    private let taxIdField = UITextField()
     private let addressField = UITextField()
     private let cityField = UITextField()
     private let stateField = UITextField()
@@ -67,7 +78,7 @@ class EditStoreViewController: BaseViewControler {
         view.backgroundColor = .white
         let back = CustomersV2UI.iconButton("chevron.left", label: "Back".localized(), size: DS.Icon.lg)
         back.addTarget(self, action: #selector(close), for: .touchUpInside)
-        let title = V2.label("Store Information".localized(), size: 20, weight: .bold)
+        let title = V2.label(screenTitle, size: 20, weight: .bold)
         title.accessibilityTraits = UIAccessibilityTraitHeader
         let header = UIStackView(arrangedSubviews: [back, title])
         header.alignment = .center
@@ -79,36 +90,49 @@ class EditStoreViewController: BaseViewControler {
         storeNameField.autocorrectionType = .no
         storeNameField.addTarget(self, action: #selector(nameChanged), for: .editingChanged)
         phoneField.keyboardType = .phonePad
+        taxIdField.keyboardType = .numbersAndPunctuation
         zipCodeField.keyboardType = .numberPad
         zipCodeField.placeholder = "700000"
-        KeyboardDoneBar.attach([phoneField, zipCodeField])
-        [storeNameField, phoneField, addressField, cityField, stateField, zipCodeField].forEach { $0.delegate = self }
+        KeyboardDoneBar.attach([phoneField, taxIdField, zipCodeField])
+        [storeNameField, phoneField, taxIdField, addressField, cityField, stateField, zipCodeField].forEach { $0.delegate = self }
         nameError.isHidden = true
 
-        let nameBox = UIStackView(arrangedSubviews: [field(requiredTitle("store.v2.name".localized()), storeNameField,
-                                                           accessibility: "store.v2.name".localized()), nameError])
+        let isShop = kind == .shop
+        let nameTitle = (isShop ? "shopinfo.shopName" : "shopinfo.branchName").localized()
+        let nameBox = UIStackView(arrangedSubviews: [field(requiredTitle(nameTitle), storeNameField, accessibility: nameTitle), nameError])
         nameBox.axis = .vertical
         nameBox.spacing = 6
 
-        let cityState = pair(field(plainTitle("store.v2.city".localized()), cityField),
-                             field(plainTitle("store.v2.state".localized()), stateField))
-        let countryZip = pair(countryBlock(), field(plainTitle("Postal Code".localized()), zipCodeField))
-
-        let form = UIStackView(arrangedSubviews: [
-            nameBox,
-            field(plainTitle("Phone Number".localized()), phoneField),
-            sectionTitle("Address".localized(), optional: false),
-            field(plainTitle("store.v2.street".localized()), addressField),
-            cityState,
-            countryZip,
-            sectionTitle("store.v2.other".localized(), optional: true),
-            descriptionBlock(),
-        ])
+        let addressTitle = sectionTitle("Address".localized(), optional: false)
+        let otherTitle = sectionTitle("store.v2.other".localized(), optional: true)
+        var parts: [UIView] = []
+        if let subtitle {
+            parts.append(V2.label(subtitle, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0))
+        }
+        parts += [nameBox, field(plainTitle("Phone Number".localized()), phoneField)]
+        if isShop {
+            parts += [
+                field(plainTitle("shopinfo.taxId".localized()), taxIdField),
+                addressTitle,
+                field(plainTitle("store.v2.street".localized()), addressField),
+                field(plainTitle("shopinfo.ward".localized()), stateField),
+                field(plainTitle("shopinfo.province".localized()), cityField),
+                otherTitle,
+                countryBlock(),
+                field(plainTitle("Postal Code".localized()), zipCodeField),
+                descriptionBlock(),
+            ]
+        } else {
+            parts.append(field(requiredTitle("Address".localized()), addressField, accessibility: "Address".localized()))
+        }
+        let form = UIStackView(arrangedSubviews: parts)
         form.axis = .vertical
         form.spacing = 14
         // Section titles sit a little lower (board: padding-top 6)
-        form.setCustomSpacing(20, after: form.arrangedSubviews[1])
-        form.setCustomSpacing(20, after: form.arrangedSubviews[5])
+        for title in [addressTitle, otherTitle] {
+            if let index = parts.firstIndex(of: title), index > 0 { form.setCustomSpacing(20, after: parts[index - 1]) }
+        }
+        if !editable { setFieldsEnabled(false) }
 
         let scroll = formScroll
         scroll.keyboardDismissMode = .interactive
@@ -125,6 +149,7 @@ class EditStoreViewController: BaseViewControler {
         cancelButton.setContentHuggingPriority(.required, for: .horizontal)
         cancelButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
         [bottomLine, buttons].forEach(bottom.addSubview)
+        bottom.isHidden = !editable
 
         [header, headerLine, scroll, bottom].forEach(view.addSubview)
         header.snp.makeConstraints { make in
@@ -136,6 +161,7 @@ class EditStoreViewController: BaseViewControler {
             make.leading.trailing.equalToSuperview()
         }
         bottom.snp.makeConstraints { make in make.leading.trailing.equalToSuperview() }
+        if !editable { bottom.snp.makeConstraints { make in make.height.equalTo(0) } }
         bottomLine.snp.makeConstraints { make in make.top.leading.trailing.equalToSuperview() }
         buttons.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(12)
@@ -301,20 +327,36 @@ class EditStoreViewController: BaseViewControler {
 
     override func setupData() {
         guard let user = User.account() else { return }
-
-        outlet = user.outlet
-        merchant = user.merchant
-
-        // Prefer outlet data, fallback to merchant data
-        storeNameField.text = outlet?.name ?? merchant?.name ?? ""
-        addressField.text = outlet?.address ?? merchant?.address ?? ""
-        cityField.text = outlet?.city ?? merchant?.city ?? ""
-        stateField.text = outlet?.state ?? merchant?.state ?? ""
-        country = outlet?.country ?? merchant?.country ?? ""
-        zipCodeField.text = outlet?.zipCode ?? merchant?.zipCode ?? ""
-        phoneField.text = outlet?.phone ?? merchant?.phone ?? ""
-        descriptionView.text = outlet?.description ?? ""
+        switch kind {
+        case .shop:
+            let merchant = user.merchant
+            storeNameField.text = merchant?.name ?? ""
+            phoneField.text = merchant?.phone ?? ""
+            taxIdField.text = merchant?.taxId ?? ""
+            addressField.text = merchant?.address ?? ""
+            stateField.text = merchant?.state ?? ""
+            cityField.text = merchant?.city ?? ""
+            country = merchant?.country ?? ""
+            zipCodeField.text = merchant?.zipCode ?? ""
+            descriptionView.text = merchant?.description ?? ""
+        case .branch:
+            let outlet = branch ?? user.outlet
+            storeNameField.text = outlet?.name ?? ""
+            phoneField.text = outlet?.phone ?? ""
+            addressField.text = outlet?.address ?? ""
+        }
         updateDescriptionPlaceholder()
+    }
+
+    /// Read-only: the boxes look like the grey fields of the other read-only forms
+    private func setFieldsEnabled(_ on: Bool) {
+        [storeNameField, phoneField, taxIdField, addressField, cityField, stateField, zipCodeField].forEach {
+            $0.isEnabled = on
+            $0.textColor = on ? DS.Color.text : DS.Color.textMuted
+            $0.backgroundColor = on ? .white : V2.sectionFill
+        }
+        countryButton.isEnabled = on
+        descriptionView.isEditable = on
     }
 
     // MARK: - Actions
@@ -347,69 +389,86 @@ class EditStoreViewController: BaseViewControler {
     }
 
     @objc private func saveButtonTapped() {
-        // Validate required fields
-        guard let storeName = storeNameField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !storeName.isEmpty else {
+        guard editable else { return }
+        switch kind {
+        case .shop: saveShop()
+        case .branch: saveBranch()
+        }
+    }
+
+    private func saveShop() {
+        let form = ShopFormValues(name: storeNameField.text ?? "", phone: phoneField.text ?? "", taxId: taxIdField.text ?? "",
+                                  address: addressField.text ?? "", state: stateField.text ?? "", city: cityField.text ?? "",
+                                  country: country, zipCode: zipCodeField.text ?? "", description: descriptionView.text ?? "")
+        if ShopInfoLogic.problem(shop: form) != nil {
             showNameError("Store name is required".localized())
             storeNameField.becomeFirstResponder()
             return
         }
-
-        // Get outlet ID
-        guard let user = User.account(),
-              let outletId = user.outlet?.id ?? user.outletId else {
-            UIAlertController.errorAlert(
-                parent: self,
-                error: NSError.errorWithOwnMessage(
-                    message: "Outlet ID not found".localized(),
-                    domain: "RC"
-                )
-            )
-            return
-        }
-
-        // Prepare update data
-        var updateData: [String: Any] = [
-            "name": storeName
-        ]
-
-        func trimmed(_ text: String?) -> String? {
-            guard let value = text?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
-            return value
-        }
-        if let address = trimmed(addressField.text) { updateData["address"] = address }
-        if let city = trimmed(cityField.text) { updateData["city"] = city }
-        if let state = trimmed(stateField.text) { updateData["state"] = state }
-        if let countryName = trimmed(self.country) { updateData["country"] = countryName }
-        if let zipCode = trimmed(zipCodeField.text) { updateData["zipCode"] = zipCode }
-        if let phone = trimmed(phoneField.text) { updateData["phone"] = phone }
-        if let description = trimmed(descriptionView.text) { updateData["description"] = description }
-
         view.endEditing(true)
         saveButton.isEnabled = false
         showProgressText(text: "Updating store...".localized())
-
-        // Call API to update outlet
-        OutletService.shared.updateOutlet(outletId: outletId, withValues: updateData) { [weak self] (outlet: Outlet?, error: NSError?) in
+        TabsV2APIService.shared.updateMerchantInfo(ShopInfoLogic.shopPayload(form)) { [weak self] saved, error in
             DispatchQueue.main.async {
-                self?.hideProgress()
-                self?.saveButton.isEnabled = true
-
-                if let error = error {
+                guard let self else { return }
+                self.hideProgress()
+                self.saveButton.isEnabled = true
+                if let error {
                     UIAlertController.errorAlert(parent: self, error: error)
-                } else if let outlet = outlet {
-                    // Update local user data
-                    if let user = User.account() {
-                        user.outlet = outlet
-                        User.save(user: user)
-                    }
-
-                    // Notify delegate
-                    self?.delegate?.didUpdateStore()
-
-                    // Dismiss
-                    self?.dismiss(animated: true)
+                    return
                 }
+                if let user = User.account(), user.merchant != nil {
+                    user.merchant?.name = saved?.name ?? form.name
+                    user.merchant?.phone = saved?.phone
+                    user.merchant?.taxId = saved?.taxId
+                    user.merchant?.address = saved?.address
+                    user.merchant?.state = saved?.state
+                    user.merchant?.city = saved?.city
+                    user.merchant?.country = saved?.country
+                    user.merchant?.zipCode = saved?.zipCode
+                    user.merchant?.description = saved?.description
+                    User.save(user: user)
+                }
+                self.delegate?.didUpdateStore()
+                self.close()
+            }
+        }
+    }
+
+    private func saveBranch() {
+        let form = BranchFormValues(name: storeNameField.text ?? "", phone: phoneField.text ?? "", address: addressField.text ?? "")
+        switch ShopInfoLogic.problem(branch: form) {
+        case .nameRequired?:
+            showNameError("Store name is required".localized())
+            storeNameField.becomeFirstResponder()
+            return
+        case .addressRequired?:
+            UIAlertController.errorAlert(parent: self, error: NSError.errorWithOwnMessage(message: "shopinfo.addressRequired".localized(), domain: "RC"))
+            addressField.becomeFirstResponder()
+            return
+        case nil:
+            break
+        }
+        // The owner picks a branch from the list; a branch manager edits the own one
+        guard let outletId = branch?.id ?? User.account()?.outlet?.id ?? User.account()?.outletId else { return }
+        view.endEditing(true)
+        saveButton.isEnabled = false
+        showProgressText(text: "Updating store...".localized())
+        OutletService.shared.updateOutlet(outletId: outletId, withValues: ShopInfoLogic.branchPayload(form)) { [weak self] (outlet: Outlet?, error: NSError?) in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.hideProgress()
+                self.saveButton.isEnabled = true
+                if let error {
+                    UIAlertController.errorAlert(parent: self, error: error)
+                    return
+                }
+                if let outlet, let user = User.account(), user.outlet?.id == outlet.id {
+                    user.outlet = outlet
+                    User.save(user: user)
+                }
+                self.delegate?.didUpdateStore()
+                self.close()
             }
         }
     }
@@ -422,16 +481,19 @@ extension EditStoreViewController: UITextFieldDelegate {
     }
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        // Name → phone → street → city → state → country picker; postal code → description
+        // Shop: name → phone → tax id → street → ward → province → country picker; postal code → description.
+        // Branch: name → phone → address.
         if textField === storeNameField {
             phoneField.becomeFirstResponder()
         } else if textField === phoneField {
+            (kind == .shop ? taxIdField : addressField).becomeFirstResponder()
+        } else if textField === taxIdField {
             addressField.becomeFirstResponder()
         } else if textField === addressField {
+            if kind == .shop { stateField.becomeFirstResponder() } else { textField.resignFirstResponder() }
+        } else if textField === stateField {
             cityField.becomeFirstResponder()
         } else if textField === cityField {
-            stateField.becomeFirstResponder()
-        } else if textField === stateField {
             countryFieldTapped()
         } else if textField === zipCodeField {
             descriptionView.becomeFirstResponder()
