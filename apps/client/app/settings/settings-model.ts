@@ -149,6 +149,20 @@ export function blockOldAppsFlag(merchant: { blockPricing?: { oldApps?: unknown 
   return bp.oldApps === 'block' ? 'block' : 'recompute';
 }
 
+/**
+ * #1314 "Cho tạo đơn khi trùng lịch" (#518): the stored value, or null when the merchant has no such key
+ * (load the profile). Display it with `!== false`, as the order editor does.
+ */
+export function overlapFlag(merchant: { allowOverlappingOrders?: unknown } | null | undefined): boolean | null {
+  const v = merchant?.allowOverlappingOrders;
+  return typeof v === 'boolean' ? v : null;
+}
+
+/** #1314 only the owner changes the overlap switch (API: MERCHANT / ADMIN; the web card is the owner's). */
+export function canChangeOverlap(role?: string | null): boolean {
+  return String(role || '').toUpperCase() === 'MERCHANT';
+}
+
 /** Public product page and referral sign-up link, from the login payload or the tenant key. */
 export function publicLinks(
   origin: string,

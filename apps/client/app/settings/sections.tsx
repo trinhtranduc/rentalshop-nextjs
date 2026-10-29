@@ -1254,6 +1254,50 @@ export function LegacyPanel({ title, children }: { title: string; children: Reac
 }
 
 /**
+ * #1314 "Cho tạo đơn khi trùng lịch" (owner only): one switch, saved on tap, same setting as the phone's.
+ * Same card style as "Nhận đặt online".
+ */
+export function OverlapSection({ t, allowed, onChanged }: { t: T; allowed: boolean; onChanged?: () => void }) {
+  const ts = useTranslations('settings');
+  const { toastSuccess, toastError } = useToast();
+  const [on, setOn] = useState(allowed);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setOn(allowed), [allowed]);
+  const titleId = useId();
+  const hintId = useId();
+  const toggle = async (next: boolean) => {
+    setOn(next);
+    setSaving(true);
+    try {
+      const res = await bookingRequestsApi.setAllowOverlappingOrders(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('overlap.title'));
+      onChanged?.();
+    } catch (error) {
+      setOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('overlap.title'));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <section className={`${cardClass} px-5 py-4`} data-overlap-setting>
+      <div className="flex min-h-[44px] items-start justify-between gap-3">
+        <span className="flex flex-col gap-1">
+          <h2 id={titleId} className="m-0 text-lg font-bold">
+            {t('overlap.title')}
+          </h2>
+          <span id={hintId} className="text-sm text-ar-muted">
+            {t('overlap.hint')}
+          </span>
+        </span>
+        <Switch checked={on} onChange={toggle} disabled={saving} labelledBy={titleId} describedBy={hintId} />
+      </div>
+    </section>
+  );
+}
+
+/**
  * #1189 "Giá theo khối ngày › Với app cũ" (owner only): what the server does with a day-block line sent by an app
  * that does not know it. Two radio rows; the default (recompute) never stops a shop selling.
  */

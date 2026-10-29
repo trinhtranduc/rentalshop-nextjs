@@ -43,7 +43,8 @@ enum SettingsV2Logic {
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
         var storeItems: [SettingsV2Item] = [.storeInfo]
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
-        storeItems += [.deposit, .printing]
+        if ShopDepositLogic.canView(role: role) { storeItems.append(.deposit) }
+        storeItems.append(.printing)
         let store = SettingsV2Section(group: .store, items: storeItems)
 
         var management: [SettingsV2Item] = []
@@ -238,6 +239,11 @@ enum ShopCurrencyStore {
             }
         }
     }
+}
+
+enum ShopDepositLogic {
+    /// #1310 the "Thu cọc" row: the shop owner only (`PUT /api/settings/deposit` is MERCHANT only). Orders still read the mode for every role.
+    static func canView(role: Role?) -> Bool { role == .merchant }
 }
 
 enum ShopCurrencyLogic {

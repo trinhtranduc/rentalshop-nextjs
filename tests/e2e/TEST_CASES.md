@@ -72,6 +72,28 @@ giới hạn khoảng 10 lần / 15 phút / IP.
 - **Known bug** cases assert the correct rule and run as `test.failing` (green while the bug exists). Set
   `BIZ_E2E_SHOW_BUGS=1` to run them as plain tests.
 
+## SS — Cấu hình shop / chi nhánh đồng bộ giữa các vai trò (`settings-sync.e2e.test.js`, #1315, epic #1309)
+
+Tài khoản: chủ shop; quản lý, nhân viên, kho của chi nhánh A; quản lý và nhân viên của chi nhánh B (cùng merchant). `business-e2e.sh` chọn chúng từ DB (`BIZ_E2E_OUTLET_ADMIN_EMAIL`, `_OUTLET_ADMIN_OTHER_`, `_STAFF_OTHER_`). Mỗi ca đổi giá trị, đọc lại bằng vai trò khác, đổi lại rồi đọc lại (không dính cache); afterAll trả cấu hình về như seed. Trạng thái: tự động, 13 ca.
+
+| ID | Ca | Mong đợi |
+|---|---|---|
+| SS-CUR-01 | chủ shop đổi tiền tệ, đổi lại | mọi vai trò, cả hai chi nhánh, đọc `GET /api/settings/currency` thấy giá trị mới mỗi lần |
+| SS-CUR-02 | quản lý / nhân viên / kho PUT tiền tệ | 403 `INSUFFICIENT_PERMISSIONS`, giá trị không đổi |
+| SS-DEP-01 | chủ shop đổi chế độ cọc và chính sách huỷ, đổi lại | mọi vai trò đọc `GET /api/settings/deposit` thấy giá trị mới |
+| SS-DEP-02 | vai trò khác PUT thu cọc | 403 `INSUFFICIENT_PERMISSIONS`, không đổi |
+| SS-OVL-01 | chủ shop bật / tắt `allowOverlappingOrders`, đổi lại | mọi vai trò đọc `merchant.allowOverlappingOrders` ở `GET /api/users/profile` thấy giá trị mới |
+| SS-OVL-02 | vai trò khác PUT `/api/settings/merchant` | 403, không đổi |
+| SS-PRN-01 | chủ shop sửa ghi chú in + QR chi nhánh A | quản lý, nhân viên, kho thấy ở `GET /api/outlets` và `order.outlet` của `GET /api/orders/:id` |
+| SS-PRN-02 | chủ shop sửa chi nhánh B; quản lý A sửa B | A giữ nguyên, B đổi; quản lý A nhận 403 |
+| SS-PRN-03 | nhân viên / kho PUT `/api/outlets` | 403, không đổi |
+| SS-PRN-04 | [hiện tại] quản lý chi nhánh sửa ghi chú in | 200 (quy tắc chủ shop chốt: chỉ chủ shop sửa, API chưa đổi) |
+| SS-BNK-01 | chủ shop thêm tài khoản ngân hàng | trả 201; quản lý, nhân viên, kho đọc thấy; chi nhánh khác không đọc được |
+| SS-BNK-02 | nhân viên / kho thêm tài khoản | 403, không tạo |
+| SS-BNK-03 | [hiện tại] quản lý chi nhánh thêm tài khoản | 201 (quy tắc chủ shop chốt: chỉ chủ shop, cần issue riêng); quản lý chi nhánh khác bị từ chối (404) |
+
+Mobile (đã viết, chưa chạy): xem `tests/e2e/mobile/SETTINGS_SYNC.md`.
+
 ## BF-PROD — Sản phẩm (`products-pricing.e2e.test.js`)
 
 | ID | Case | Steps | Expected |
