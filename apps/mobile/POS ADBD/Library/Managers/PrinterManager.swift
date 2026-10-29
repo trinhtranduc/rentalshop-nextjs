@@ -533,6 +533,17 @@ class PrinterManager: NSObject {
     // MARK: - Order Printing Methods
     
     func printOrder(_ order: Order, completion: @escaping (Result<Void, PrinterError>) -> Void) {
+        // #1308: an order from the list or the cart has no outlet note / QR switch; read them from the detail first.
+        // A failed load prints without the note and QR.
+        if OutletPrintSettings.needsDetail(order) {
+            OrderService.shared.loadOrderDetail(orderId: order.id) { [weak self] detail, _ in
+                var full = order
+                full.outletPrintNote = detail?.outlet.printNote
+                full.outletPrintBankQr = detail?.outlet.printBankQr ?? false
+                self?.printOrderNetwork(full, completion: completion)
+            }
+            return
+        }
         // let printMethod = Utils.loadPrintMethod()  // Bluetooth disabled
         
         // if printMethod == "bluetooth" {
@@ -550,9 +561,9 @@ class PrinterManager: NSObject {
         }
         
         // Connection per print job (see printWithConnection): safe when several devices share the printer.
-        // #622: with the printer switch on, the outlet's bank account + VietQR goes at the end of the bill.
-        // No account, a failed load or no answer within 5 s → the bill prints as before, without an error.
-        guard Utils.loadPrintBankQr() else {
+        // #622: with the outlet's QR switch on (#1308: the order's outlet, from the server), its bank account + VietQR goes
+        // at the end of the bill. No account, a failed load or no answer within 5 s → the bill prints as before, without an error.
+        guard OutletPrintSettings.printsBankQr(order.outletPrintBankQr) else {
             printWithConnection(data: BillBankQR.billData(for: order, switchOn: false, account: nil), ip: printerIP, port: 9100, completion: completion)
             return
         }

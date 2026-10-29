@@ -51,6 +51,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import com.anyrent.pos.data.CurrentOutlet
+import com.anyrent.pos.data.repository.BankAccountRepository
+import com.anyrent.pos.data.repository.BankOutlet
+import com.anyrent.pos.domain.print.OutletPrintSettings
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
@@ -345,14 +353,59 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     var ip by remember { mutableStateOf(prefs.getString("printerIp", "").orEmpty()) }
     var port by remember { mutableStateOf(prefs.getString("printerPort", "9100").orEmpty()) }
     var paper by remember { mutableStateOf(prefs.getString("paperWidth", "80").orEmpty()) }
-    var note by remember { mutableStateOf(ThermalPrinter.savedNote(prefs)) } // #1011: a cleared note stays cleared
+    // #1308: the note and the QR switch are the branch's settings on the server; the owner and the outlet admin edit
+    // them, everyone else reads them. The old per-device note is offered once to the owner (not saved on its own).
+    val canEditBill = remember { OutletPrintSettings.canEdit(SessionStore.role) }
+    var note by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    // #622: saved as soon as it changes, like iOS
-    var printBankQr by remember { mutableStateOf(prefs.getBoolean(ThermalPrinter.KEY_PRINT_BANK_QR, false)) }
+    var printBankQr by remember { mutableStateOf(false) }
+    var branches by remember { mutableStateOf<List<BankOutlet>>(emptyList()) }
+    var outletId by remember { mutableStateOf<Int?>(null) }
+    var billLoaded by remember { mutableStateOf(false) }
+
+    fun loadBranch(id: Int) {
+        outletId = id
+        billLoaded = false
+        scope.launch {
+            val loaded = withContext(Dispatchers.IO) { ApiParity.getOutletPrint(id) }.getOrNull()
+            if (loaded != null) {
+                note = OutletPrintSettings.prefillNote(loaded.note, prefs.getString("printerNote", null), canEditBill)
+                printBankQr = loaded.bankQr
+                billLoaded = true
+            } else {
+                message = context.getString(R.string.printer_outlet_load_failed)
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val list = withContext(Dispatchers.IO) { runCatching { BankAccountRepository.outlets() }.getOrDefault(emptyList()) }
+        branches = list
+        OutletPrintSettings.initialOutletId(SessionStore.outletId, CurrentOutlet.id, list.map { it.id to it.isDefault })
+            ?.let { loadBranch(it) }
+    }
+
+    fun saveBill(withNote: Boolean, done: (Boolean) -> Unit) {
+        val id = outletId
+        if (!canEditBill || !billLoaded || id == null) return done(true)
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { ApiParity.updateOutletPrint(id, if (withNote) note else null, printBankQr) }
+            if (result.isSuccess) {
+                // the old device values are gone once the server has them
+                prefs.edit().remove(ThermalPrinter.KEY_PRINT_BANK_QR).apply()
+                if (withNote) prefs.edit().remove("printerNote").apply()
+            } else {
+                message = result.exceptionOrNull()?.message ?: context.getString(R.string.printer_outlet_save_failed)
+                loadBranch(id) // back to what the server has
+            }
+            done(result.isSuccess)
+        }
+    }
+
     fun setPrintBankQr(value: Boolean) {
         printBankQr = value
-        prefs.edit().putBoolean(ThermalPrinter.KEY_PRINT_BANK_QR, value).apply()
+        saveBill(withNote = false) { }
     }
 
     fun persist() {
@@ -361,7 +414,6 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
             .putString("printerIp", ThermalPrinter.normalizeIp(ip)) // #1011/#1028: as iOS
             .putString("printerPort", port)
             .putString("paperWidth", paper)
-            .putString("printerNote", note)
             .apply()
     }
 
@@ -385,7 +437,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
 
     fun save() {
         persist()
-        message = context.getString(R.string.saved)
+        saveBill(withNote = true) { ok -> if (ok) message = context.getString(R.string.saved) }
     }
 
     // #459: new style when opened from Settings v2 (`newSettings`); same fields, test print and save
@@ -410,11 +462,13 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                     label = stringResource(R.string.paper_width), value = paper, onValueChange = { paper = it.filter(Char::isDigit) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
+                PrintBranchRow(branches, outletId, canEditBill) { loadBranch(it) }
                 SettingsDetailField(
                     label = stringResource(R.string.printer_note), value = note, onValueChange = { note = it },
-                    singleLine = false, minLines = 4,
+                    enabled = canEditBill && billLoaded, singleLine = false, minLines = 4,
                 )
-                PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
+                PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr, enabled = canEditBill && billLoaded)
+                if (!canEditBill) SettingsDetailNote(stringResource(R.string.printer_outlet_readonly))
                 PrinterSectionTitle(stringResource(R.string.settings_v2_printing_group_printer))
                 SettingsDetailNote(stringResource(R.string.printer_hint))
                 SettingsDetailField(label = stringResource(R.string.printer_name), value = name, onValueChange = { name = it })
@@ -515,14 +569,19 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                             label = stringResource(R.string.paper_width),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         )
+                        PrintBranchRow(branches, outletId, canEditBill) { loadBranch(it) }
                         AppInputField(
                             value = note,
                             onValueChange = { note = it },
                             label = stringResource(R.string.printer_note),
+                            enabled = canEditBill && billLoaded,
                             singleLine = false,
                             minLines = 4,
                         )
-                        PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr)
+                        PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr, enabled = canEditBill && billLoaded)
+                        if (!canEditBill) {
+                            Text(stringResource(R.string.printer_outlet_readonly), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+                        }
                     }
                 }
             }
@@ -530,9 +589,29 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
     }
 }
 
+/** #1308: the branch whose note and QR are shown; a picker only for an owner with more than one active branch */
+@Composable
+private fun PrintBranchRow(branches: List<BankOutlet>, selected: Int?, canPick: Boolean, onPick: (Int) -> Unit) {
+    if (branches.size < 2 || !canPick) return
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            Modifier.fillMaxWidth().clickable { open = true },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.printer_outlet_branch), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+            Text(branches.firstOrNull { it.id == selected }?.name.orEmpty() + " ▾", fontSize = DS.TextSize.Body, color = DS.Colors.Primary)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            branches.forEach { b -> DropdownMenuItem(text = { Text(b.name) }, onClick = { open = false; onPick(b.id) }) }
+        }
+    }
+}
+
 /** "In QR chuyển khoản trên bill" + hint, switch on the right (#622) */
 @Composable
-private fun PrintBankQrRow(checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun PrintBankQrRow(checked: Boolean, onChange: (Boolean) -> Unit, enabled: Boolean = true) {
     val title = stringResource(R.string.printer_bank_qr_title)
     Row(
         Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
@@ -546,6 +625,7 @@ private fun PrintBankQrRow(checked: Boolean, onChange: (Boolean) -> Unit) {
         Switch(
             checked = checked,
             onCheckedChange = onChange,
+            enabled = enabled,
             modifier = Modifier.semantics { contentDescription = title },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,

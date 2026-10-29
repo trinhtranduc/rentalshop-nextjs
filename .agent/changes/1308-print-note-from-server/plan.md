@@ -23,6 +23,6 @@ c) Mobile today: iOS note `PrinterConfigurationViewController` (`noteTextView`, 
 2. Pure logic: iOS `Utils/OutletPrintSettings.swift`, Android `domain/print/OutletPrintSettings.kt`.
 3. Models: iOS `OutletDetail`, `Outlet`, `Order`; Android `OrderDetail`, parse.
 4. Print/share paths read the order's outlet. Printer screen reads/writes the server.
-   Role rule and branch picker for MERCHANT added after the owner's update (see spec rule 5): `canEdit` = MERCHANT or
-   OUTLET_ADMIN; picker only when more than one active branch.
+   Role rule and branch picker for MERCHANT added after the owner's update (see spec rule 5): `canEdit` = MERCHANT only
+   (latest owner rule); picker only when more than one active branch; device settings untouched.
 5. Strings en/vi. Build + tests. PR into `dev`.

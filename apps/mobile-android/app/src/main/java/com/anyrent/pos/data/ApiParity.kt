@@ -135,6 +135,26 @@ object ApiParity {
         )
     }
 
+    /** #1308: what the outlet prints on bills (`Outlet.printNote`, `Outlet.printBankQr`) */
+    data class OutletPrint(val note: String?, val bankQr: Boolean)
+
+    fun getOutletPrint(outletId: Int): Result<OutletPrint> = runCatching {
+        val json = ApiClient.get().authedGet("/api/outlets?page=1&limit=50")
+        val array = json.optJSONObject("data")?.optJSONArray("outlets") ?: org.json.JSONArray()
+        val match = (0 until array.length()).map { array.getJSONObject(it) }.firstOrNull { it.optInt("id") == outletId }
+            ?: error("Outlet not found")
+        OutletPrint(note = match.optText("printNote"), bankQr = match.optBoolean("printBankQr", false))
+    }
+
+    /** #1308: `PUT /api/outlets?outletId=` (outlet.manage; staff get 403). A blank note clears it on the server. */
+    fun updateOutletPrint(outletId: Int, note: String?, bankQr: Boolean): Result<Unit> = runCatching {
+        // note null = only the QR switch is sent (the pre-filled old note is not saved on its own)
+        val body = JSONObject().apply { if (note != null) put("printNote", note) }.put("printBankQr", bankQr)
+            .toString().toRequestBody(jsonMedia)
+        ApiClient.get().authedPut("/api/outlets?outletId=$outletId", body)
+        Unit
+    }
+
     /** A string field, null when missing, JSON null or blank */
     private fun JSONObject.optText(key: String): String? =
         if (!has(key) || isNull(key)) null else optString(key).takeIf { it.isNotBlank() }

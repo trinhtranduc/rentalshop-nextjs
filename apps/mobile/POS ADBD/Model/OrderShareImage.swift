@@ -51,6 +51,8 @@ struct OrderShareSource {
     var outletPhone: String?
     var outletAddress: String?
     var outletId: Int?
+    /// #1308: the order's outlet QR switch (server); nil = off
+    var outletPrintBankQr: Bool? = nil
     var customerName: String?
     var customerPhone: String?
     var pickup: Date?
@@ -336,6 +338,7 @@ extension OrderShareSource {
             collateralPapers: detail.collateralDetails, collateralMoney: detail.securityDeposit,
             hasDepositPlan: detail.hasDepositPlan, stages: detail.installments, stageSummary: detail.installmentSummary
         )
+        outletPrintBankQr = detail.outlet.printBankQr
     }
 
     /// An order (old preview screen when the detail cannot load)
@@ -353,6 +356,7 @@ extension OrderShareSource {
             collateralPapers: order.collateralDetails, collateralMoney: order.securityDeposit,
             hasDepositPlan: order.hasDepositPlan, stages: order.stages, stageSummary: order.stageSummary
         )
+        outletPrintBankQr = order.outletPrintBankQr
     }
 
     /// The cart before it is an order (draft): no number, no QR

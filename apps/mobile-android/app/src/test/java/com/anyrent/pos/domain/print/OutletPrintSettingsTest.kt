@@ -64,9 +64,9 @@ class OutletPrintSettingsTest {
     }
 
     @Test
-    fun onlyOwnerAndOutletAdminEdit() {
+    fun onlyOwnerEdits() {
         assertTrue(OutletPrintSettings.canEdit("MERCHANT"))
-        assertTrue(OutletPrintSettings.canEdit("OUTLET_ADMIN"))
+        assertFalse(OutletPrintSettings.canEdit("OUTLET_ADMIN"))
         assertFalse(OutletPrintSettings.canEdit("OUTLET_STAFF"))
         assertFalse(OutletPrintSettings.canEdit("OUTLET_INVENTORY"))
         assertFalse(OutletPrintSettings.canEdit(null))

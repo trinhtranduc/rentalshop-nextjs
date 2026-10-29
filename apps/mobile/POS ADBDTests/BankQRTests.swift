@@ -134,16 +134,6 @@ final class BankQRTests: XCTestCase {
         XCTAssertNil(BillBankQR.pick([gone]))
     }
 
-    func testPrintSwitchDefaultsOff() {
-        let defaults = UserDefaults.standard
-        let saved = defaults.object(forKey: "PrintBankQr")
-        defer { defaults.set(saved, forKey: "PrintBankQr") }
-        defaults.removeObject(forKey: "PrintBankQr")
-        XCTAssertFalse(Utils.loadPrintBankQr())
-        Utils.savePrintBankQr(true)
-        XCTAssertTrue(Utils.loadPrintBankQr())
-    }
-
     // MARK: - Settings row
 
     /// #1270: the bank accounts line is a row of CỬA HÀNG for owners and outlet admins only
@@ -212,9 +202,9 @@ final class OutletPrintSettingsTests: XCTestCase {
 
     // MARK: - Roles
 
-    func testOnlyOwnerAndOutletAdminEdit() {
+    func testOnlyOwnerEdits() {
         XCTAssertTrue(OutletPrintSettings.canEdit(role: .merchant))
-        XCTAssertTrue(OutletPrintSettings.canEdit(role: .outletAdmin))
+        XCTAssertFalse(OutletPrintSettings.canEdit(role: .outletAdmin))
         XCTAssertFalse(OutletPrintSettings.canEdit(role: .outletStaff))
         XCTAssertFalse(OutletPrintSettings.canEdit(role: .outletInventory))
         XCTAssertFalse(OutletPrintSettings.canEdit(role: nil))

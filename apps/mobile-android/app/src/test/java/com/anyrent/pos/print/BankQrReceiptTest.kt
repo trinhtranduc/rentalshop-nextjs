@@ -17,7 +17,7 @@ class BankQrReceiptTest {
     )
     private val vcbPayload = "00020101021138540010A00000072701240006970436011001234567890208QRIBFTTA53037045802VN63046A15"
 
-    private fun order(type: String) = OrderDetail(
+    private fun order(type: String, outletQr: Boolean? = null) = OrderDetail(
         summary = OrderSummary(
             id = 7, orderNumber = "123456", orderType = type, status = if (type == "RENT") "RESERVED" else "COMPLETED",
             totalAmount = 148_000.0, depositAmount = 0.0, customerName = "Lan", customerPhone = null,
@@ -28,6 +28,7 @@ class BankQrReceiptTest {
         customerId = 1,
         payments = emptyList(),
         outletId = 5,
+        outletPrintBankQr = outletQr, // #1308: the switch is the order's outlet's
     )
 
     private val off = ThermalPrinter.Config(ip = "", printBankQr = false)
@@ -93,16 +94,16 @@ class BankQrReceiptTest {
     fun accountIsLoadedOnlyWhenTheSwitchIsOn() {
         val asked = mutableListOf<Int>()
         // Blank IP: the send fails after the lookup, so nothing goes over the network
-        ThermalPrinter.printOrder(off, order("SALE")) { asked += it; vcb }
+        ThermalPrinter.printOrder(off, order("SALE", outletQr = false)) { asked += it; vcb }
         assertEquals(emptyList<Int>(), asked)
-        ThermalPrinter.printOrder(on, order("SALE")) { asked += it; vcb }
+        ThermalPrinter.printOrder(off, order("SALE", outletQr = true)) { asked += it; vcb }
         assertEquals(listOf(5), asked)
     }
 
     @Test
     fun failingLookupStillPrints() {
         // The lookup throws: printOrder goes on to send (and fails only on the blank IP)
-        val result = ThermalPrinter.printOrder(on, order("RENT")) { error("network down") }
+        val result = ThermalPrinter.printOrder(off, order("RENT", outletQr = true)) { error("network down") }
         assertEquals(ThermalPrinter.Result.Failure("Printer IP required"), result)
     }
 }

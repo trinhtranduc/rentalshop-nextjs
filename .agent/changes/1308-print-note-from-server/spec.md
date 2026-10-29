@@ -9,16 +9,16 @@
 4. Order without outlet print info (iOS list/cart order): load the order detail first, then print. If that fails,
    print without note and QR.
 5. Screen "In & phiếu" (Máy in): note field + QR switch show one branch's values read from `GET /api/outlets`.
-   Role rule (owner, 2026-10-29): MERCHANT and OUTLET_ADMIN edit; every other role (OUTLET_STAFF, OUTLET_INVENTORY) sees the
-   server values read-only (field not editable, switch disabled, one hint line). Pure `OutletPrintSettings.canEdit(role)` on
-   both apps (like `canManageBankAccounts` / `OverlapSetting.canEdit`).
-   Branch: OUTLET_ADMIN and staff use their own outlet. MERCHANT has none: starts on the current branch (`CurrentOutlet`), else the
-   default, else the first active; when the shop has more than one active branch a branch row opens a picker (pattern of the
-   bank accounts screen). Pure `initialOutletId(...)`.
-   Per-device settings (paper width, printer IP, Bluetooth) stay visible and editable for EVERY role.
+   Role rule (owner, latest 2026-10-29): only MERCHANT edits; OUTLET_ADMIN, OUTLET_STAFF and OUTLET_INVENTORY see the server
+   values read-only (field not editable, switch disabled, one hint line). Pure `OutletPrintSettings.canEdit(role)` on both apps.
+   The API is unchanged: it still lets an OUTLET_ADMIN save his outlet; only the mobile UI is limited.
+   Branch: the owner starts on the current branch (`CurrentOutlet`), else the default, else the first active; with more than one
+   active branch a branch row opens a picker (pattern of the bank accounts screen). Others use their own outlet. Pure `initialOutletId(...)`.
+   The per-device settings (paper width, printer IP, Bluetooth) and who may set them are NOT touched here (owner decides separately).
    Out of scope: the "Thu cọc" screen.
 6. Save sends `{printNote, printBankQr}` to `PUT /api/outlets?outletId=<id>`; blank note clears (API stores null).
-   The QR switch saves on change (as before), the note on Lưu / test print / leaving the field (as before).
+   The QR switch saves on change (QR only; the pre-filled note is not sent), the note on Lưu or when leaving the field with a changed text.
+   Device settings (paper, IP) save as before.
    A 403 shows the error and restores the server values.
 7. Pre-fill: editable user, server note blank, legacy device note non-blank -> note field = legacy note (not saved).
    After a successful save the legacy device note is removed.

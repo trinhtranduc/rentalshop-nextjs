@@ -2299,7 +2299,7 @@
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "Chưa có tài khoản ngân hàng. Bấm + để thêm.";
 "printer.bankQr.title" = "In QR chuyển khoản trên bill";
-"printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.";
+"printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Áp dụng cho chi nhánh này trên mọi máy.";
 "bill.bankQr.title" = "CHUYỂN KHOẢN";
 "bill.bankQr.accountNumber" = "STK: %@";
 
@@ -3032,3 +3032,6 @@
 "order.sheet.edit.subtitle" = "Đổi món, ngày thuê, khách";
 "order.sheet.extend.subtitle" = "Thêm ngày thuê, tính thêm tiền";
 "order.sheet.history.subtitle" = "Ai sửa gì, lúc nào";
+"printer.outlet.branch" = "Chi nhánh";
+"printer.outlet.readonly" = "Chỉ chủ shop sửa được ghi chú và QR. Áp dụng cho cả chi nhánh.";
+"printer.outlet.loadFailed" = "Không tải được cài đặt hóa đơn của chi nhánh.";
