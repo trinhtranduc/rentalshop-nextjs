@@ -190,7 +190,7 @@ extension Notification.Name {
 }
 
 /// The shop currency cached on the signed-in user (login `merchant.currency`), refreshed from
-/// GET /api/settings/currency on Cài đặt and changed there by the shop owner
+/// GET /api/settings/currency (Cài đặt, app back in front, Tổng quan; every role) and changed there by the shop owner
 enum ShopCurrencyStore {
     private static var cached: ShopCurrency?
     private static var lastRefresh: Date?
@@ -224,11 +224,9 @@ enum ShopCurrencyStore {
     /// Reads the shop's currency, at most once a minute unless forced (an owner may change it on another device).
     /// Completion runs on the main queue with the value in effect.
     static func refresh(force: Bool = false, completion: ((ShopCurrency) -> Void)? = nil) {
-        guard User.account()?.merchant != nil else {
-            completion?(current)
-            return
-        }
-        if !force, let lastRefresh, Date().timeIntervalSince(lastRefresh) < 60 {
+        // #1307: every shop role reads it (the row is owner-only, the read is not); ADMIN has no shop
+        guard let user = User.account(), user.merchant != nil,
+              ShopCurrencyLogic.shouldRefresh(role: user.role, lastRefresh: lastRefresh, now: Date(), force: force) else {
             completion?(current)
             return
         }
@@ -245,6 +243,17 @@ enum ShopCurrencyStore {
 enum ShopCurrencyLogic {
     /// The "Tiền tệ" row: the shop owner only (the API refuses others with 403)
     static func canChange(role: Role?) -> Bool { role == .merchant }
+
+    /// #1307 reading the shop currency: every shop role, so staff follow the owner's change (not ADMIN, who has no shop)
+    static func canRefresh(role: Role?) -> Bool { role != nil && role != .admin }
+
+    /// #1307 read at most once a minute unless forced
+    static func shouldRefresh(role: Role?, lastRefresh: Date?, now: Date, force: Bool) -> Bool {
+        guard canRefresh(role: role) else { return false }
+        if force { return true }
+        guard let lastRefresh else { return true }
+        return now.timeIntervalSince(lastRefresh) >= 60
+    }
 
     /// The example in the confirm: 220000 in the old currency → in the new one ("220.000 → $220,000")
     static func example(from: ShopCurrency, to: ShopCurrency) -> String {

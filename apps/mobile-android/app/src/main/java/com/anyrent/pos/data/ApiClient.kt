@@ -208,8 +208,16 @@ class ApiClient(
         value
     }
 
+    @Volatile private var lastCurrencyRefreshMs: Long? = null
+
     /** #1145: GET /api/settings/currency (every role); an answer without a currency keeps the cached one */
-    fun refreshCurrency(): Result<com.anyrent.pos.domain.money.ShopCurrency> = runCatching {
+    fun refreshCurrency(force: Boolean = false): Result<com.anyrent.pos.domain.money.ShopCurrency> = runCatching {
+        // #1307: every shop role, at most once a minute (iOS ShopCurrencyStore.refresh)
+        val now = System.currentTimeMillis()
+        if (!com.anyrent.pos.domain.settings.CurrencySetting.shouldRefresh(SessionStore.role, lastCurrencyRefreshMs, now, force)) {
+            return@runCatching SessionStore.currency
+        }
+        lastCurrencyRefreshMs = now
         val json = execute(get("$baseUrl/api/settings/currency"))
         requireSuccess(json)
         val value = com.anyrent.pos.domain.settings.CurrencySetting.fromResponse(json) ?: SessionStore.currency

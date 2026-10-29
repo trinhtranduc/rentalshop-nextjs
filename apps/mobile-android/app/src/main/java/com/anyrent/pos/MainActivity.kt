@@ -19,6 +19,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import com.anyrent.pos.data.ApiClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.push.DraftOrderReminder
@@ -83,6 +87,10 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // First check at launch, again each time the app comes back (a minimum version can change meanwhile)
         appConfigViewModel.refresh()
+        // #1307: the owner may have changed the shop currency meanwhile (at most once a minute)
+        if (SessionStore.isLoggedIn) {
+            lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshCurrency() }
+        }
     }
 
     override fun onStop() {
