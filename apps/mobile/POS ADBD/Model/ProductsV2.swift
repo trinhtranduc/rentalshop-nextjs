@@ -1314,3 +1314,25 @@ enum BranchListing {
         ["outletId": outletId, "productIds": productIds, "isListed": isListed]
     }
 }
+
+// MARK: - "Chi nhánh khác còn N" in the cart (#1353, #1347) — STUB so the tests compile and fail for the right reason
+
+struct OtherBranchStock: Equatable {
+    let outletId: Int
+    let outletName: String
+    let available: Int
+}
+
+struct OtherBranchesAnswer: Decodable {}
+
+enum OtherBranchesHint {
+    static let path = ""
+    static func canAsk(role: Role?) -> Bool { false }
+    static func asks(role: Role?, activeOutletCount: Int) -> Bool { false }
+    static func shortProductIds(items: [CartItem], conflictProductIds: Set<Int>) -> [Int] { [] }
+    static func requestBody(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> [String: Any]? { nil }
+    static func key(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> String { "x" }
+    static func list(_ outlets: [OtherBranchStock]) -> String { "" }
+    static func lineText(_ outlets: [OtherBranchStock]?) -> String? { "" }
+    static func hints(from answer: OtherBranchesAnswer?) -> [Int: [OtherBranchStock]] { [1: []] }
+}

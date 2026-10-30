@@ -2146,3 +2146,201 @@ final class BranchListingTests: XCTestCase {
         XCTAssertEqual(BranchListing.listingPath, "/api/products/listing")
     }
 }
+
+/// #1353 (#1335 PR 2m) — "Chi nhánh khác còn N" in the cart: who asks, which lines, the body (shop days), the text, the decoding
+final class OtherBranchesHintTests: XCTestCase {
+    private func line(_ productId: Int, qty: Int = 1, available: Int? = nil) -> CartItem {
+        var item = CartItem(productId: productId, productName: "SP \(productId)", barcode: nil, quantity: qty, price: 100_000, deposit: 0,
+                            originalRentPrice: 100_000, originalSalePrice: 900_000)
+        if let available { item.availabilityStatus = AvailabilityStatus(isAvailable: available >= qty, available: available) }
+        return item
+    }
+
+    private func instant(_ iso: String) -> Date {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)!
+    }
+
+    private func stock(_ id: Int, _ name: String, _ available: Int) -> OtherBranchStock {
+        OtherBranchStock(outletId: id, outletName: name, available: available)
+    }
+
+    // MARK: Who asks
+
+    func testOnlyTheOwnerAndTheBranchManagersAndStockKeepersCanAsk() {
+        XCTAssertTrue(OtherBranchesHint.canAsk(role: .merchant))
+        XCTAssertTrue(OtherBranchesHint.canAsk(role: .outletAdmin))
+        XCTAssertTrue(OtherBranchesHint.canAsk(role: .outletInventory))
+        XCTAssertFalse(OtherBranchesHint.canAsk(role: .outletStaff))
+        XCTAssertFalse(OtherBranchesHint.canAsk(role: nil))
+    }
+
+    func testTheOwnerAsksOnlyWithTwoOrMoreActiveBranches() {
+        XCTAssertFalse(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 0))
+        XCTAssertFalse(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 1))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 2))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 3))
+    }
+
+    func testABranchRoleAsksUnlessTheShopIsKnownToHaveOneBranch() {
+        // A branch role cannot count the shop's branches (count 0); the API answers [] for a one-branch shop
+        XCTAssertTrue(OtherBranchesHint.asks(role: .outletAdmin, activeOutletCount: 0))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .outletInventory, activeOutletCount: 0))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .outletAdmin, activeOutletCount: 3))
+        XCTAssertFalse(OtherBranchesHint.asks(role: .outletAdmin, activeOutletCount: 1))
+    }
+
+    func testStaffNeverAsksWhateverTheBranchCount() {
+        for count in [0, 1, 2, 5] { XCTAssertFalse(OtherBranchesHint.asks(role: .outletStaff, activeOutletCount: count)) }
+        XCTAssertFalse(OtherBranchesHint.asks(role: nil, activeOutletCount: 3))
+    }
+
+    // MARK: Which lines
+
+    func testOnlyLinesShortOfStockAreAsked() {
+        let items = [line(5, qty: 1, available: 0), line(3, qty: 1, available: 4), line(9, qty: 2, available: 1), line(7, qty: 1, available: nil)]
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: []), [5, 9])
+    }
+
+    func testAProductOnSeveralLinesIsAskedOnceAndTheUnitsAreSummed() {
+        // 1 free, two lines of 1 each: together they ask for 2
+        let items = [line(8, qty: 1, available: 1), line(8, qty: 1, available: 1), line(2, qty: 1, available: 0)]
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: []), [2, 8])
+    }
+
+    func testAScheduleConflictCountsAsShortAndNothingIsAskedWhenAllFit() {
+        let items = [line(4, qty: 1, available: 3), line(6, qty: 1, available: 3)]
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: [6]), [6])
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: []), [])
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: [], conflictProductIds: [6]), [])
+    }
+
+    // MARK: Body (shop days)
+
+    func testAOneDayRentalSendsTheShopDay() {
+        // 30/10 in Vietnam = 29/10 17:00Z .. 30/10 16:59:59Z
+        let body = OtherBranchesHint.requestBody(productIds: [5, 9], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                 returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 7, now: Date())
+        XCTAssertEqual(body?["orderType"] as? String, "RENT")
+        XCTAssertEqual(body?["date"] as? String, "2026-10-30")
+        XCTAssertNil(body?["startDate"])
+        XCTAssertNil(body?["endDate"])
+        XCTAssertEqual(body?["outletId"] as? Int, 7)
+        let products = body?["products"] as? [[String: Int]]
+        XCTAssertEqual(products?.map { $0["productId"] }, [5, 9])
+        XCTAssertEqual(products?.map { $0["quantity"] }, [1, 1])
+    }
+
+    func testAManyDayRentalSendsTheShopDayBounds() {
+        // pickup 30/10 07:00 VN (00:00Z), return 31/10 09:00 VN: the days 30..31, not the instants
+        let body = OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: instant("2026-10-30T00:00:00.000Z"),
+                                                 returnDate: instant("2026-10-31T02:00:00.000Z"), outletId: nil, now: Date())
+        XCTAssertNil(body?["date"])
+        XCTAssertEqual(body?["startDate"] as? String, "2026-10-29T17:00:00.000Z")
+        XCTAssertEqual(body?["endDate"] as? String, "2026-10-31T16:59:59.000Z")
+        XCTAssertNil(body?["outletId"])
+    }
+
+    func testTheVietnamMidnightDecidesTheDay() {
+        // 16:59:59Z is still the 29th in Vietnam, 17:00:00Z is the 30th: two different days
+        let across = OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: instant("2026-10-29T16:59:59.000Z"),
+                                                   returnDate: instant("2026-10-29T17:00:00.000Z"), outletId: 1, now: Date())
+        XCTAssertNil(across?["date"])
+        XCTAssertEqual(across?["startDate"] as? String, "2026-10-28T17:00:00.000Z")
+        XCTAssertEqual(across?["endDate"] as? String, "2026-10-30T16:59:59.000Z")
+        // both inside the 30th: one day
+        let same = OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                 returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 1, now: Date())
+        XCTAssertEqual(same?["date"] as? String, "2026-10-30")
+    }
+
+    func testASaleSendsNoDay() {
+        let body = OtherBranchesHint.requestBody(productIds: [5], isRent: false, pickup: nil, returnDate: nil, outletId: 3, now: Date())
+        XCTAssertEqual(body?["orderType"] as? String, "SALE")
+        XCTAssertNil(body?["date"])
+        XCTAssertNil(body?["startDate"])
+        XCTAssertEqual(body?["outletId"] as? Int, 3)
+    }
+
+    func testNothingToAskGivesNoBody() {
+        let day = instant("2026-10-29T17:00:00.000Z")
+        XCTAssertNil(OtherBranchesHint.requestBody(productIds: [], isRent: true, pickup: day, returnDate: day, outletId: 1, now: Date()))
+        XCTAssertNil(OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: nil, returnDate: day, outletId: 1, now: Date()))
+        XCTAssertNil(OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: day, returnDate: nil, outletId: 1, now: Date()))
+        XCTAssertEqual(OtherBranchesHint.path, "/api/products/other-outlets-availability")
+    }
+
+    // MARK: Key (an answer for another question no longer applies)
+
+    func testTheKeyFollowsTheShopDaysTheBranchAndTheProducts() {
+        let a = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                      returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 1, now: Date())
+        // another instant of the same shop days: same question
+        let sameDays = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-30T02:00:00.000Z"),
+                                             returnDate: instant("2026-10-30T10:00:00.000Z"), outletId: 1, now: Date())
+        XCTAssertFalse(a.isEmpty)
+        XCTAssertEqual(a, sameDays)
+        let nextDay = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-30T17:00:00.000Z"),
+                                            returnDate: instant("2026-10-31T16:59:59.000Z"), outletId: 1, now: Date())
+        XCTAssertNotEqual(a, nextDay)
+        let otherBranch = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 7, now: Date())
+        XCTAssertNotEqual(a, otherBranch)
+        let otherProducts = OtherBranchesHint.key(productIds: [5], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                  returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 1, now: Date())
+        XCTAssertNotEqual(a, otherProducts)
+        let sale = OtherBranchesHint.key(productIds: [5, 9], isRent: false, pickup: nil, returnDate: nil, outletId: 1, now: Date())
+        XCTAssertNotEqual(a, sale)
+        XCTAssertEqual(OtherBranchesHint.key(productIds: [], isRent: true, pickup: nil, returnDate: nil, outletId: 1, now: Date()), "")
+    }
+
+    // MARK: Text
+
+    func testTheListIsTheNamesAndCountsInTheOrderTheAPISends() {
+        XCTAssertEqual(OtherBranchesHint.list([stock(7, "Quận 7", 3), stock(9, "Thủ Đức", 1)]), "Quận 7 (3), Thủ Đức (1)")
+        XCTAssertEqual(OtherBranchesHint.list([stock(7, "Quận 7", 3)]), "Quận 7 (3)")
+        XCTAssertEqual(OtherBranchesHint.list([]), "")
+    }
+
+    func testAManyBranchListShowsTheFirstThreeAndTheRest() {
+        let many = [stock(2, "A", 5), stock(3, "B", 4), stock(4, "C", 3), stock(5, "D", 2), stock(6, "E", 1)]
+        XCTAssertEqual(OtherBranchesHint.list(many), "A (5), B (4), C (3), +2")
+        XCTAssertEqual(OtherBranchesHint.list(Array(many.prefix(3))), "A (5), B (4), C (3)")
+        XCTAssertEqual(OtherBranchesHint.list(Array(many.prefix(4))), "A (5), B (4), C (3), +1")
+    }
+
+    func testNoBranchMeansNoLine() {
+        XCTAssertNil(OtherBranchesHint.lineText([]))
+        XCTAssertNil(OtherBranchesHint.lineText(nil))
+        let text = OtherBranchesHint.lineText([stock(7, "Quận 7", 3)])
+        XCTAssertNotNil(text)
+        XCTAssertTrue(text?.hasSuffix("Quận 7 (3)") ?? false)
+    }
+
+    // MARK: Decoding (an older or newer API never breaks the cart)
+
+    func testTheAnswerIsReadByProduct() {
+        let json = #"{"results":[{"productId":5,"outlets":[{"outletId":7,"outletName":"Quận 7","available":3},{"outletId":9,"outletName":"Thủ Đức","available":1}]},{"productId":9,"outlets":[]}],"extra":1}"#
+        let answer = try? JSONDecoder.shared.decode(OtherBranchesAnswer.self, from: json.data(using: .utf8)!)
+        let hints = OtherBranchesHint.hints(from: answer)
+        XCTAssertEqual(hints[5]?.map { $0.outletName }, ["Quận 7", "Thủ Đức"])
+        XCTAssertEqual(hints[5]?.map { $0.available }, [3, 1])
+        XCTAssertNil(hints[9])
+    }
+
+    func testMissingKeysAndEmptyAnswersGiveNoHints() {
+        for json in [#"{}"#, #"{"results":[]}"#, #"{"results":[{"productId":5}]}"#, #"{"results":[{"productId":5,"outlets":null}]}"#] {
+            let answer = try? JSONDecoder.shared.decode(OtherBranchesAnswer.self, from: json.data(using: .utf8)!)
+            XCTAssertNotNil(answer, json)
+            XCTAssertTrue(OtherBranchesHint.hints(from: answer).isEmpty, json)
+        }
+        XCTAssertTrue(OtherBranchesHint.hints(from: nil).isEmpty)
+    }
+
+    func testABranchWithoutAnameOrWithNoUnitsIsDropped() {
+        let json = #"{"results":[{"productId":5,"outlets":[{"outletId":7,"available":3},{"outletId":8,"outletName":"Quận 8","available":0},{"outletId":9,"outletName":"Thủ Đức","available":2}]}]}"#
+        let answer = try? JSONDecoder.shared.decode(OtherBranchesAnswer.self, from: json.data(using: .utf8)!)
+        XCTAssertEqual(OtherBranchesHint.hints(from: answer)[5]?.map { $0.outletId }, [9])
+    }
+}
