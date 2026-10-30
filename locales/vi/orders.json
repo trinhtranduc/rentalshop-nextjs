@@ -789,7 +789,8 @@
         "label": "Khối {n} ngày",
         "labelExtra": "Khối {n} ngày + {m} ngày thêm",
         "days": "{n} ngày"
-      }
+      },
+      "notListed": "Chi nhánh này chưa hiện món này"
     },
     "tabs": {
       "label": "Danh sách đơn",

@@ -200,9 +200,10 @@ describe('payload', () => {
       categoryId: 7,
       totalStock: 2,
       deposit: 0,
+      // #1341: a new product with several branches carries the ticks (the first branch is ticked by default)
       outletStock: [
-        { outletId: 1, stock: 2 },
-        { outletId: 3, stock: 0 },
+        { outletId: 1, stock: 2, isListed: true },
+        { outletId: 3, stock: 0, isListed: false },
       ],
       rentPrice: 250,
       salePrice: 100,

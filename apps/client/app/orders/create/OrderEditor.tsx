@@ -117,6 +117,8 @@ function useProductGrid(q: string, outletId: number | null) {
       .searchProducts({
         search: q || undefined,
         outletId: outletId ?? undefined,
+        // #1341 "Hiện ở chi nhánh": a new order only offers the products the branch of the order lists
+        listed: true,
         page,
         limit: PAGE_SIZE,
         sortBy: 'name',
@@ -240,7 +242,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const t = useTranslations('orders.web') as unknown as T;
   const to = useOrderTranslations();
   const money = useFormatCurrency();
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastError } = useToast();
   const { user } = useAuth();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
   const todayKey = useShopToday();
@@ -555,6 +557,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         .searchProducts({
           search: text,
           outletId: outletId ?? undefined,
+          listed: true,
           limit: 5,
         } as Parameters<typeof productsApi.searchProducts>[0])
         .catch(() => null);
@@ -563,7 +566,13 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     if (hit) {
       add(hit);
       setSearch('');
+      return;
     }
+    // #1341: a code of a product the shop has but this branch does not list: say so (no button to list it here)
+    const any = await productsApi
+      .searchProducts({ search: text, limit: 5 } as Parameters<typeof productsApi.searchProducts>[0])
+      .catch(() => null);
+    if (any?.success && findByBarcode(listOf<GridProduct>(any.data, 'products'), text)) toastError(t('editor.notListed'));
   };
 
   const addPhotos = async (files: File[]) => {

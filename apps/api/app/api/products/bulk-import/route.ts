@@ -7,7 +7,6 @@ import {
   productCreateSchema
 } from '@rentalshop/utils';
 import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
-import { zeroStockRowsForOtherOutlets } from '../../../../lib/product-branch-rules';
 import { z } from 'zod';
 
 const MAX_IMPORT_ROWS = 3000;
@@ -343,7 +342,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
       where: { merchantId: merchant.id, isActive: true },
       select: { id: true },
     });
-    const zeroStockRows = zeroStockRowsForOtherOutlets([{ outletId: outlet.id }], activeOutlets.map((o: { id: number }) => o.id));
+    // #1341: the import branch lists what it imports; every other active branch gets a 0 row that is NOT listed
+    const otherOutletIds = Array.from(new Set<number>(activeOutlets.map((o: { id: number }) => o.id))).filter((id) => id !== outlet.id);
 
     // Build category map
     const categories = await db.categories.search({ merchantId, limit: 1000 });
@@ -521,9 +521,10 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
                     outletId: outlet.id,
                     stock: validatedProduct.data.totalStock || 0,
                     available: validatedProduct.data.totalStock || 0,
-                    renting: 0
+                    renting: 0,
+                    isListed: true
                   },
-                  ...zeroStockRows.map((row) => ({ outletId: row.outletId, stock: 0, available: 0, renting: 0 }))
+                  ...otherOutletIds.map((outletId) => ({ outletId, stock: 0, available: 0, renting: 0, isListed: false }))
                 ]
               }
             },

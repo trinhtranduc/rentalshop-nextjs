@@ -157,7 +157,26 @@
         "copyLoading": "読み込み中…",
         "close": "閉じる",
         "incomplete": "すべての日と追加1日あたりの金額を入力するか、最後の区分の料金を維持してください。"
+      },
+      "sections": {
+        "stockListing": "在庫と表示する店舗"
+      },
+      "listing": {
+        "branch": "店舗",
+        "stock": "在庫",
+        "column": "この店舗で表示",
+        "tickOf": "{outlet}で表示",
+        "ownerOnly": "オーナーのみ切り替え可",
+        "current": "選択中",
+        "reminder": "この店舗にまだ{stock}点あります（レンタル中{renting}点）。合計には含まれますが、注文作成時には表示されません。",
+        "reminderNoRent": "この店舗にまだ{stock}点あります。合計には含まれますが、注文作成時には表示されません。",
+        "saveFailed": "商品は保存しましたが「この店舗で表示」を保存できませんでした。もう一度お試しください。"
       }
+    },
+    "listing": {
+      "hidden": "非表示",
+      "shown": "表示中",
+      "totalStock": "在庫合計"
     }
   }
 }

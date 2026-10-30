@@ -9,7 +9,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
@@ -23,6 +23,9 @@ import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
   buildPayload,
+  branchShopHasSeveralBranches,
+  canTickBranches,
+  defaultListedOutletId,
   isBranchRole,
   sharedFieldsLockedFor,
   branchHoldsProduct,
@@ -33,10 +36,13 @@ import {
   formFromProduct,
   generateBarcode,
   imageSearchState,
+  listingChanges,
+  listingReminder,
   parseCount,
   removedAllSavedPhotos,
   saveBlockTable,
   turnOffBlock,
+  setOutletListed,
   setOutletStock,
   setTotalStock,
   validateForm,
@@ -79,7 +85,13 @@ function useFormData(productId: number | null, merchantId: number | null, nonce:
         if (cancelled) return;
         if (productId && (!prod || !prod.success || !prod.data)) return setState({ kind: 'notFound' });
         if (!cats.success || !outs.success) return setState({ kind: 'failed' });
-        const outletList = ((outs.data as { outlets?: OutletLite[] } | undefined)?.outlets || []).map((o) => ({ id: o.id, name: o.name, address: o.address ?? null }));
+        const outletList = ((outs.data as { outlets?: OutletLite[] } | undefined)?.outlets || []).map((o) => ({
+          id: o.id,
+          name: o.name,
+          address: o.address ?? null,
+          isDefault: o.isDefault ?? null,
+          isActive: o.isActive ?? null,
+        }));
         setState({
           kind: 'ready',
           data: {
@@ -398,6 +410,11 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   const branchOutletId = isBranchRole(typedUser?.role) ? Number(typedUser?.outletId ?? typedUser?.outlet?.id) || undefined : undefined;
   const sharedLocked = isEdit && sharedFieldsLockedFor(typedUser?.role);
 
+  // #1341: the branch chosen in the product list (?outlet=) is ticked on a new product
+  const searchParams = useSearchParams();
+  const preferredOutletId = Number(searchParams?.get('outlet')) || undefined;
+  const canTick = canTickBranches(typedUser?.role);
+
   const [nonce, setNonce] = useState(0);
   const load = useFormData(allowed ? productId : null, allowed ? merchantId : null, nonce);
   const data = load.kind === 'ready' ? load.data : null;
@@ -413,10 +430,10 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
 
   useEffect(() => {
     if (!data) return;
-    setForm(data.product ? formFromProduct(data.product, data.outlets, data.categories) : emptyForm(data.outlets, data.categories, generateBarcode()));
+    setForm(data.product ? formFromProduct(data.product, data.outlets, data.categories) : emptyForm(data.outlets, data.categories, generateBarcode(), preferredOutletId));
     setFiles([]);
     setErrors({});
-  }, [data]);
+  }, [data, preferredOutletId]);
 
   const patch = useCallback((next: Partial<FormState> | ((f: FormState) => FormState), clear?: FieldKey[]) => {
     setForm((f) => (f ? (typeof next === 'function' ? next(f) : { ...f, ...next }) : f));
@@ -467,7 +484,20 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   // #1249: a saved day table; leaving "Theo ngày" for "Theo lần" must tell the API to drop it
   const err = (k: FieldKey) => (errors[k] ? t(`form.errors.${errors[k]}`) : undefined);
   const savedPhotos = data.product ? formFromProduct(data.product, [], []).keptImages.length : 0;
-  const multiOutlet = data.outlets.length > 1;
+  // #1341: a branch role is only given its own branch by the outlet list, so the product tells whether the shop has several
+  const branchSeesSeveral = branchOutletId != null && isEdit && branchShopHasSeveralBranches(data.product);
+  const multiOutlet = data.outlets.length > 1 || branchSeesSeveral;
+  // the "Hiện ở chi nhánh" tick shows when the shop has two or more open branches (a one-branch shop never sees it)
+  const showTicks = data.outlets.filter((o) => o.isActive !== false).length > 1 || branchSeesSeveral;
+  // a branch role sees its own row only (mockup B3f); the owner sees every branch
+  const shownOutlets = branchOutletId != null ? data.outlets.filter((o) => o.id === branchOutletId) : data.outlets;
+  const currentOutletId = defaultListedOutletId(data.outlets, preferredOutletId);
+  // units on rent per branch (saved rows) for the reminder under an unticked branch
+  const rentingOf: Record<number, number> = {};
+  for (const row of data.product?.outletStock || []) {
+    const id = row?.outlet?.id ?? row?.outletId;
+    if (typeof id === 'number') rentingOf[id] = Number(row.renting) || 0;
+  }
   // #825: OUTLET_ADMIN / kho change shared fields only of a product their outlet holds (the API refuses the others)
   const locked = sharedLocked || (isEdit && branchOutletId != null && !!data.product && !branchHoldsProduct(data.product, branchOutletId));
 
@@ -499,6 +529,18 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
       if (!res.success) {
         setFailed(true);
         return;
+      }
+      // #1341: the ticks have their own route (PUT /api/products/listing), only the owner calls it, one call per branch.
+      // It never refuses an untick; if a call fails the product is saved and the form stays to try again.
+      if (isEdit && canTick) {
+        for (const change of listingChanges(form)) {
+          const done = await productsApi.setBranchListing({ outletId: change.outletId, productIds: [productId], isListed: change.isListed });
+          if (!done.success) {
+            toastError(t('form.listing.saveFailed'));
+            setNonce((n) => n + 1);
+            return;
+          }
+        }
       }
       const id = isEdit ? productId : (res.data as { id?: number } | undefined)?.id;
       toastSuccess(isEdit ? t('form.saved') : t('form.created'));
@@ -612,29 +654,72 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
           </Card>
           </fieldset>
 
-          <Card title={t('form.sections.stock')} aside={multiOutlet ? <span className="text-sm font-semibold tabular-nums text-ar-ink-2">{t('form.sum', { count: form.totalStock })}</span> : undefined}>
+          <Card
+            title={t(showTicks ? 'form.sections.stockListing' : 'form.sections.stock')}
+            aside={multiOutlet && branchOutletId == null ? <span className="text-sm font-semibold tabular-nums text-ar-ink-2">{t('form.sum', { count: form.totalStock })}</span> : undefined}
+          >
             {multiOutlet ? (
               <div className="flex flex-col gap-1.5">
                 <span className={labelText}>
                   {t('form.perOutlet')} <span className="font-normal text-ar-danger">{t('form.required')}</span>
                 </span>
+                {showTicks && (
+                  <div aria-hidden className="grid grid-cols-[minmax(0,1fr)_7rem_8.5rem] items-center gap-x-4 text-xs font-bold uppercase tracking-[0.06em] text-ar-muted max-sm:hidden">
+                    <span>{t('form.listing.branch')}</span>
+                    <span>{t('form.listing.stock')}</span>
+                    <span>{t('form.listing.column')}</span>
+                  </div>
+                )}
                 <ul className="m-0 flex list-none flex-col p-0">
-                  {data.outlets.map((o, i) => {
+                  {shownOutlets.map((o, i) => {
                     const row = form.outletStock.find((r) => r.outletId === o.id);
+                    const ticked = form.listed[o.id] === true;
+                    const open = o.isActive !== false;
+                    const reminder = showTicks && open ? listingReminder({ isListed: ticked, stock: row?.stock ?? 0, renting: rentingOf[o.id] ?? 0 }) : null;
                     return (
-                      <li key={o.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-ar-subtle py-2.5 first:border-t-0">
-                        <span className="flex min-w-0 flex-col">
-                          <span className="font-semibold text-ar-ink">{o.name}</span>
-                          {o.address && <span className="truncate text-sm text-ar-muted">{o.address}</span>}
-                        </span>
-                        <CountInput
-                          id={i === 0 ? 'pf-totalStock' : `pf-outlet-${o.id}`}
-                          label={t('form.quantityOf', { outlet: o.name })}
-                          value={row?.stock ?? 0}
-                          invalid={!!errors.totalStock}
-                          disabled={branchOutletId != null && o.id !== branchOutletId}
-                          onChange={(n) => patch((f) => setOutletStock(f, o.id, n), ['totalStock', 'outletStock'])}
-                        />
+                      <li key={o.id} data-testid={`pf-branch-${o.id}`} className="flex flex-col gap-1.5 border-t border-ar-subtle py-2.5 first:border-t-0">
+                        <div className={`grid items-center gap-x-4 gap-y-2 ${showTicks ? 'sm:grid-cols-[minmax(0,1fr)_7rem_8.5rem]' : 'sm:grid-cols-[minmax(0,1fr)_auto]'}`}>
+                          <span className="flex min-w-0 flex-col">
+                            <span className="font-semibold text-ar-ink">{o.name}</span>
+                            {o.address && <span className="truncate text-sm text-ar-muted">{o.address}</span>}
+                          </span>
+                          <CountInput
+                            id={i === 0 ? 'pf-totalStock' : `pf-outlet-${o.id}`}
+                            label={t('form.quantityOf', { outlet: o.name })}
+                            value={row?.stock ?? 0}
+                            invalid={!!errors.totalStock}
+                            disabled={branchOutletId != null && o.id !== branchOutletId}
+                            onChange={(n) => patch((f) => setOutletStock(f, o.id, n), ['totalStock', 'outletStock'])}
+                          />
+                          {showTicks && (
+                            <span className={`flex flex-col gap-0.5 ${canTick ? '' : 'opacity-60'}`}>
+                              {open ? (
+                                <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ar-ink">
+                                  <input
+                                    type="checkbox"
+                                    id={`pf-listed-${o.id}`}
+                                    checked={ticked}
+                                    disabled={!canTick}
+                                    aria-label={t('form.listing.tickOf', { outlet: o.name })}
+                                    onChange={(e) => patch((f) => setOutletListed(f, o.id, e.target.checked))}
+                                    className="h-[18px] w-[18px] cursor-pointer accent-ar-primary disabled:cursor-not-allowed"
+                                  />
+                                  {!isEdit && ticked && o.id === currentOutletId ? <span className="text-xs text-ar-muted">{t('form.listing.current')}</span> : null}
+                                </label>
+                              ) : (
+                                <span className="text-sm text-ar-faint">—</span>
+                              )}
+                              {!canTick && open && <span className="text-xs text-ar-muted">{t('form.listing.ownerOnly')}</span>}
+                            </span>
+                          )}
+                        </div>
+                        {reminder && (
+                          <p role="note" data-testid={`pf-reminder-${o.id}`} className="m-0 rounded-lg bg-ar-surface-muted px-3 py-2 text-sm text-ar-ink-2">
+                            {reminder.renting > 0
+                              ? t('form.listing.reminder', { stock: reminder.stock, renting: reminder.renting })
+                              : t('form.listing.reminderNoRent', { stock: reminder.stock })}
+                          </p>
+                        )}
                       </li>
                     );
                   })}

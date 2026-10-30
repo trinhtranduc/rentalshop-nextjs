@@ -82,7 +82,8 @@
       },
       "per": {
         "BLOCK": "1日 {price}から · ブロック料金"
-      }
+      },
+      "notListed": "この店舗ではこの商品を表示していません"
     },
     "receipt": {
       "units": {

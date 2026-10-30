@@ -1,6 +1,6 @@
 # Spec — Sản phẩm theo chi nhánh: ô tick "Hiện ở chi nhánh" và công cụ tồn nhiều chi nhánh
 
-Issue: #1335 · Status: draft (chờ chủ shop chốt mockup, chưa code) · Intent: ./intent.md · Plan: ./plan.md
+Issue: #1335 · Status: in-progress (mockup đã chốt; PR 1 = #1341 đang làm, các PR sau chưa) · Intent: ./intent.md · Plan: ./plan.md
 
 Mockup (một artifact chung, hai tab mới "Sản phẩm theo chi nhánh" và "Chi nhánh khác còn và nhập Excel"): https://claude.ai/artifact/9b56KwErJWiGpiyFEfyEY4
 

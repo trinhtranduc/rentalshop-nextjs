@@ -1,6 +1,6 @@
 # Sản phẩm khi shop có nhiều chi nhánh: ô tick "Hiện ở chi nhánh" và công cụ tồn nhiều chi nhánh
 
-Issue: #1335 (PR spec: #1336) · Author: Trinh Tran · Status: draft (chờ chủ shop chốt mockup) · Created: 2026-10-30
+Issue: #1335 (PR spec: #1336) · Author: Trinh Tran · Status: in-progress (mockup đã chốt 2026-10-30; PR 1 = #1341 đang làm) · Created: 2026-10-30
 
 Nền: báo cáo hiện trạng `~/AnyRent-builds/multi-outlet-products-current.md` (đọc từ `origin/dev` b4a535744; 16 mục không nhất quán, 8 câu hỏi).
 Spec liên quan: #824 (luật chi nhánh), #825 (luật sản phẩm theo chi nhánh), #830 (tồn chi nhánh khác), #828 (chọn chi nhánh trên điện thoại), #851 (giữ chi nhánh của đơn), #1305 (biến thể, PR #1306 chưa chốt).

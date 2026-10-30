@@ -1600,6 +1600,12 @@ export const simplifiedProducts = {
       }
     }
     
+    // #1341 "Hiện ở chi nhánh": only the products listed at this branch (listed with stock 0 included). A separate AND, so it
+    // also works for a merchant (no outletId filter above) and next to the `available` filters.
+    if (whereFilters.listedOutletId) {
+      where.AND = [...(Array.isArray(where.AND) ? where.AND : []), { outletStock: { some: { outletId: whereFilters.listedOutletId, isListed: true } } }];
+    }
+
     // Availability filter (only if outletId is not specified, as outletId filter already handles available)
     // Only filter when available=true is explicitly set - show all products (including qty = 0 and < 0) otherwise
     if (whereFilters.available === true && !whereFilters.outletId) {

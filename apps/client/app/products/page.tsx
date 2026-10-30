@@ -21,8 +21,10 @@ import { BARCODE_ICON } from './labels/LabelSheet';
 import {
   EMPTY_SELECTION,
   SORT_KEYS,
+  branchColumnsFor,
   buildRow,
   filterKey,
+  listedFilterFor,
   pageCheckState,
   parseListQuery,
   heldElsewhereParams,
@@ -172,7 +174,13 @@ export default function ProductsPage() {
   // Data
   const [nonce, setNonce] = useState(0);
   const reload = useCallback(() => setNonce((n) => n + 1), []);
-  const apiFilters = useMemo(() => toApiFilters(query) as unknown as ProductFilters, [query]);
+  // #1341 "Hiện ở chi nhánh": a branch (a branch role's own, or the one the owner picked) lists only what it sells
+  const listUser = useMemo(() => {
+    const u = user as unknown as { role?: string; outletId?: number; outlet?: { id?: number } } | null;
+    return u ? { role: u.role, outletId: u.outletId ?? u.outlet?.id } : null;
+  }, [user]);
+  const listed = listedFilterFor(query, listUser);
+  const apiFilters = useMemo(() => toApiFilters(query, { listed }) as unknown as ProductFilters, [query, listed]);
   const list = useProductsPage(apiFilters, nonce);
   const categories = useCategoryChips(nonce);
   const unfiltered = !query.q && !query.categoryId;
@@ -185,7 +193,9 @@ export default function ProductsPage() {
   const typedUser = user as unknown as { role?: string; outletId?: number; outlet?: { id?: number } } | null;
   const scopedOutlet = scopedOutletFor(query.outletId, typedUser ? { role: typedUser.role, outletId: typedUser.outletId ?? typedUser.outlet?.id } : null);
   const source = imageResults ?? list.products;
-  const rows: ProductRow[] = useMemo(() => source.map((p) => buildRow(p, scopedOutlet)), [source, scopedOutlet]);
+  // #1341 "Tất cả chi nhánh" (owner): one column per open branch, each "Hiện · N" / "Chưa hiện"
+  const branchColumns = useMemo(() => branchColumnsFor(query, listUser, outlets as Array<{ id: number; name: string; isActive?: boolean | null }>), [query, listUser, outlets]);
+  const rows: ProductRow[] = useMemo(() => source.map((p) => buildRow(p, scopedOutlet, branchColumns)), [source, scopedOutlet, branchColumns]);
   const total = imageResults ? imageResults.length : list.total;
 
   // A page past the end goes back to the last one
@@ -344,7 +354,7 @@ export default function ProductsPage() {
             </Link>
           )}
           {canCreateProducts && roleMayCreateProducts((user as unknown as { role?: string } | null)?.role) && (
-            <Link href="/products/add" className={primaryBtn}>
+            <Link href={query.outletId ? `/products/add?outlet=${query.outletId}` : '/products/add'} className={primaryBtn}>
               <ShellIcon d={ICONS.plus} size={18} />
               {t('add')}
             </Link>
@@ -487,6 +497,7 @@ export default function ProductsPage() {
           canEdit={canUpdateProducts}
           canDelete={canDeleteProducts}
           onDelete={(row) => setConfirm({ kind: 'one', row })}
+          branchColumns={branchColumns}
           t={t}
           money={money}
           skeletonRows={Math.min(query.limit, 10)}

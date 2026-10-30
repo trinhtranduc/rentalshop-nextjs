@@ -24,7 +24,8 @@ import { softDeleteProducts, openOrdersByProductAndOutlet, PRODUCT_HAS_OPEN_ORDE
 import { buildProductAuditSnapshot, safeAudit } from '../../../../lib/change-timeline';
 import { API, USER_ROLE, VALIDATION, ORDER_STATUS, isOutletRole } from '@rentalshop/constants';
 import { otherActiveOutletsFor, otherOutletStock } from '../../../../lib/other-outlet-stock';
-import { changedSharedFields, heldOutletsLabel, holdsStockAt, otherOutletsHolding, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
+import { changedSharedFields, heldOutletsLabel, holdsOrListsAt, holdsStockAt, otherOutletsHolding, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
+import { autoListOutletIdsForStockWrite, isOldListingClient } from '../../../../lib/product-listing';
 
 function buildImageUploadErrorResponse(detail?: string) {
   const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
@@ -225,6 +226,7 @@ export async function GET(
           // Calculate available = stock - renting (ensure it's always correct)
           available: Math.max(0, (os.stock || 0) - (os.renting || 0)),
           renting: os.renting,
+          isListed: os.isListed !== false, // #1341 "Hiện ở chi nhánh"
           outlet: {
             id: os.outlet.id, // Use id for frontend
             name: os.outlet.name,
@@ -407,8 +409,9 @@ export async function PUT(
         }
 
         // OUTLET_ADMIN / OUTLET_INVENTORY change shared fields only of a product their outlet holds (a 0-stock row
-        // from #825 does not count): a branch must not rename or reprice what only another branch stocks
-        if (!sharedLocked && changesShared && !holdsStockAt(existingProduct.outletStock, userScope.outletId)) {
+        // from #825 does not count) or lists (#1341: a listed product that sold out stays editable): a branch must not
+        // rename or reprice what only another branch stocks
+        if (!sharedLocked && changesShared && !holdsOrListsAt(existingProduct.outletStock, userScope.outletId)) {
           return NextResponse.json(
             ResponseBuilder.error('PRODUCT_NOT_AVAILABLE_AT_OUTLET'),
             { status: API.STATUS.FORBIDDEN }
@@ -640,6 +643,15 @@ export async function PUT(
         const rentingByOutlet = new Map<number, number>(
           (existingProduct.outletStock || []).map((row: any) => [row.outletId, row.renting || 0])
         );
+        // #1341: an old app has no "Hiện ở chi nhánh" tick; when it raises the stock of an unlisted branch the server lists it.
+        // The same stock sent back (an app saves the whole product) never lists, so the owner's untick stays.
+        const autoListed = new Set(
+          autoListOutletIdsForStockWrite(
+            outletStock.filter((s: any) => s?.outletId && typeof s.stock === 'number').map((s: any) => ({ outletId: Number(s.outletId), stock: s.stock })),
+            (existingProduct.outletStock || []).map((row: any) => ({ outletId: row.outletId ?? row.outlet?.id, stock: row.stock, isListed: row.isListed })),
+            isOldListingClient(request)
+          )
+        );
         const outletStockUpserts = [];
         for (const stock of outletStock) {
           if (stock.outletId && typeof stock.stock === 'number') {
@@ -662,7 +674,7 @@ export async function PUT(
             }
             outletStockUpserts.push({
               where: { productId_outletId: { productId, outletId: outlet.id } },
-              update: { stock: stock.stock, available: stock.stock - renting },
+              update: { stock: stock.stock, available: stock.stock - renting, ...(autoListed.has(outlet.id) ? { isListed: true } : {}) },
               create: { outletId: outlet.id, stock: stock.stock, available: stock.stock, renting: 0 }
             });
           } else {

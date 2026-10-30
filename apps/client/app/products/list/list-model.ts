@@ -62,8 +62,11 @@ export function parseListQuery(get: (key: string) => string | null): ListQuery {
   };
 }
 
-/** Filters for `productsApi.searchProducts` (the client sends `search` as `q`). */
-export function toApiFilters(query: ListQuery) {
+/**
+ * Filters for `productsApi.searchProducts` (the client sends `search` as `q`).
+ * #1341 `listed: true` keeps only the products listed at the branch ("Hiện ở chi nhánh"); without it the call is as before.
+ */
+export function toApiFilters(query: ListQuery, opts?: { listed?: boolean }) {
   return {
     search: query.q || undefined,
     categoryId: query.categoryId,
@@ -71,7 +74,40 @@ export function toApiFilters(query: ListQuery) {
     page: query.page,
     limit: query.limit,
     ...SORTS[query.sort],
+    ...(opts?.listed ? { listed: true } : {}),
   };
+}
+
+const OUTLET_ROLES = ['OUTLET_ADMIN', 'OUTLET_STAFF', 'OUTLET_INVENTORY'];
+
+/**
+ * #1341: the list shows one branch (only what that branch lists) for a branch role, and for the owner who picked a branch in
+ * the filter. The owner without a branch sees every product ("Tất cả chi nhánh"). The API ignores `listed` for a
+ * shop with one active branch, so the web does not have to count them.
+ */
+export function listedFilterFor(query: ListQuery, user: { role?: string | null; outletId?: number | null } | null | undefined): boolean {
+  if (!user) return false;
+  if (OUTLET_ROLES.includes(user.role || '')) return true;
+  return (user.role === 'MERCHANT' || user.role === 'ADMIN') && query.outletId != null;
+}
+
+export interface BranchColumn {
+  id: number;
+  name: string;
+}
+
+/**
+ * #1341 "Tất cả chi nhánh" (owner, web): one column per open branch, each cell "Hiện · 8" / "Chưa hiện". Null for a
+ * branch role, with a branch chosen in the filter, or when the shop has fewer than two open branches.
+ */
+export function branchColumnsFor(
+  query: ListQuery,
+  user: { role?: string | null; outletId?: number | null } | null | undefined,
+  outlets: Array<{ id: number; name: string; isActive?: boolean | null }>
+): BranchColumn[] | null {
+  if (!user || (user.role !== 'MERCHANT' && user.role !== 'ADMIN') || query.outletId != null) return null;
+  const open = (outlets || []).filter((o) => o && o.isActive !== false).map((o) => ({ id: o.id, name: o.name }));
+  return open.length >= 2 ? open : null;
 }
 
 /** Same filters without paging, used to count or collect every matching product. */
@@ -94,6 +130,8 @@ export interface OutletStockLike {
   stock?: Num;
   renting?: Num;
   available?: Num;
+  /** #1341 "Hiện ở chi nhánh"; an API from before the column sends none (read as listed) */
+  isListed?: boolean | null;
   outlet?: { id?: number | null; name?: string | null } | null;
 }
 
@@ -214,6 +252,8 @@ export interface ProductRow {
   stock: StockView;
   /** #830: units free at the other outlets of the shop; null when the API sends none (staff, merchant). */
   otherAvailable: number | null;
+  /** #1341: one cell per branch column of "Tất cả chi nhánh" (owner); null in a one-branch view */
+  branches: BranchCell[] | null;
 }
 
 /** Sum of `available` over `otherOutlets`, or null when the field is missing or empty. */
@@ -238,7 +278,30 @@ export function ownStockRows<R extends OutletStockLike>(
   return list.filter((r) => r.outlet?.id === user.outletId);
 }
 
-export function buildRow(p: ProductLike, scopedOutletId?: number): ProductRow {
+export interface BranchCell {
+  outletId: number;
+  /** "Hiện" (true) or "Chưa hiện" (false, also a branch without a row) */
+  listed: boolean;
+  total: number;
+  available: number;
+  /** nothing free today at this branch */
+  out: boolean;
+}
+
+/** #1341: the cells of the "Tất cả chi nhánh" columns for one product. */
+export function branchCells(p: ProductLike, columns: BranchColumn[]): BranchCell[] {
+  const rows = p.outletStock || [];
+  return columns.map((c) => {
+    const row = rows.find((r) => r?.outlet?.id === c.id);
+    if (!row) return { outletId: c.id, listed: false, total: 0, available: 0, out: true };
+    const total = Math.max(0, toNum(row.stock));
+    const renting = Math.max(0, toNum(row.renting));
+    const available = row.available != null ? Math.max(0, toNum(row.available)) : Math.max(0, total - renting);
+    return { outletId: c.id, listed: row.isListed !== false, total, available, out: available <= 0 };
+  });
+}
+
+export function buildRow(p: ProductLike, scopedOutletId?: number, columns?: BranchColumn[] | null): ProductRow {
   return {
     id: p.id,
     name: (p.name || '').trim(),
@@ -248,6 +311,7 @@ export function buildRow(p: ProductLike, scopedOutletId?: number): ProductRow {
     prices: productPrices(p),
     stock: stockView(p, scopedOutletId),
     otherAvailable: otherOutletsAvailable(p),
+    branches: columns ? branchCells(p, columns) : null,
   };
 }
 
