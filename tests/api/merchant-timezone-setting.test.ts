@@ -235,7 +235,7 @@ describe('reads carry merchant.timezone (#567, additive)', () => {
     const res: any = await getProfile(req());
     expect(res.status).toBe(200);
     expect(res.body.data.merchant.timezone).toBe(expected);
-    expect(Object.keys(res.body.data.merchant).sort()).toEqual([...OLD_PROFILE_MERCHANT_KEYS, 'timezone', 'modules', 'onlineBookingEnabled', 'showPublicPrice', 'blockPricing'].sort()) // #907 modules, #1124 onlineBookingEnabled, #1174 showPublicPrice (additive);
+    expect(Object.keys(res.body.data.merchant).sort()).toEqual([...OLD_PROFILE_MERCHANT_KEYS, 'timezone', 'modules', 'onlineBookingEnabled', 'showPublicPrice', 'blockPricing', 'shareOrderNote'].sort()) // #1344 shareOrderNote, #907 modules, #1124 onlineBookingEnabled, #1174 showPublicPrice (additive);
   });
 
   it('login payload: merchant.timezone next to the existing keys', async () => {

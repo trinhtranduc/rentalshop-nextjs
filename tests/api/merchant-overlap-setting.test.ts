@@ -166,7 +166,7 @@ describe('reads: profile and login payload carry merchant.allowOverlappingOrders
     const res: any = await getProfile(req());
     expect(res.status).toBe(200);
     expect(res.body.data.merchant.allowOverlappingOrders).toBe(expected);
-    expect(Object.keys(res.body.data.merchant).sort()).toEqual([...OLD_PROFILE_MERCHANT_KEYS, 'allowOverlappingOrders', 'blockPricing', 'modules', 'onlineBookingEnabled', 'showPublicPrice'].sort()) // #907 modules, #1124 onlineBookingEnabled, #1174 showPublicPrice, #1189 blockPricing (additive);
+    expect(Object.keys(res.body.data.merchant).sort()).toEqual([...OLD_PROFILE_MERCHANT_KEYS, 'allowOverlappingOrders', 'blockPricing', 'modules', 'onlineBookingEnabled', 'showPublicPrice', 'shareOrderNote'].sort()) // #1344 shareOrderNote, #907 modules, #1124 onlineBookingEnabled, #1174 showPublicPrice, #1189 blockPricing (additive);
   });
 
   it('login payload: merchant.allowOverlappingOrders added next to the existing keys', async () => {

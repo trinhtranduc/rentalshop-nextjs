@@ -7,6 +7,12 @@
       "outlets": "接受预订的门店",
       "outletsHint": "关闭不接受在线预订的门店。"
     },
+    "printer": {
+      "shareNote": "在分享的订单图片上显示订单备注",
+      "shareNoteHint": "订单备注会显示在发给客户的图片底部，内部备注也会显示。适用于整个店铺。",
+      "shareNoteBadge": "整个店铺",
+      "shareNoteReadOnly": "只有店主可以开启或关闭此功能。"
+    },
     "overlap": {
       "title": "允许创建日期冲突的订单",
       "hint": "关闭后，若所选日期内商品已全部租出，则无法创建订单。"

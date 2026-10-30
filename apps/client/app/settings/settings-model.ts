@@ -163,6 +163,20 @@ export function canChangeOverlap(role?: string | null): boolean {
   return String(role || '').toUpperCase() === 'MERCHANT';
 }
 
+/**
+ * #1344 "Hiện ghi chú đơn trên ảnh chia sẻ": login has no `shareOrderNote`, only GET /api/users/profile does (every role).
+ * A missing key is unknown (load the profile), never OFF; after the load the API always sends a boolean.
+ */
+export function shareOrderNoteFlag(merchant: { shareOrderNote?: unknown } | null | undefined): boolean | null {
+  const v = merchant?.shareOrderNote;
+  return typeof v === 'boolean' ? v : null;
+}
+
+/** #1344 only the owner changes the switch (API: MERCHANT only, every other role 403); the others see it dimmed. */
+export function canChangeShareOrderNote(role?: string | null): boolean {
+  return String(role || '').toUpperCase() === 'MERCHANT';
+}
+
 /** Public product page and referral sign-up link, from the login payload or the tenant key. */
 export function publicLinks(
   origin: string,

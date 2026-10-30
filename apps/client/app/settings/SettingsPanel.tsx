@@ -33,7 +33,7 @@ import {
   type ShopForm,
 } from './sections';
 import { DepositSection } from '../installments/DepositSection';
-import { blockOldAppsFlag, canChangeCurrency, canChangeOverlap, groupedTabs, onlineBookingFlag, overlapFlag, settingsOutletChoice, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
+import { blockOldAppsFlag, canChangeCurrency, canChangeOverlap, canChangeShareOrderNote, groupedTabs, onlineBookingFlag, overlapFlag, settingsOutletChoice, shareOrderNoteFlag, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -160,8 +160,11 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
   const showsBooking = tab === 'merchant' || (tab === 'outlet' && role === 'OUTLET_ADMIN');
   const oldAppsFlag = blockOldAppsFlag(merchant as { blockPricing?: { oldApps?: unknown } });
   const overlapValue = overlapFlag(merchant);
+  // #1344: every role reads it (profile), only the owner changes it
+  const shareNoteValue = shareOrderNoteFlag(merchant as { shareOrderNote?: unknown });
   const needsProfile =
     (showsBooking && bookingFlag === null) ||
+    (tab === 'receipt' && shareNoteValue === null) ||
     (tab === 'public-page' && priceFlag === null) ||
     (tab === 'merchant' && role === 'MERCHANT' && (oldAppsFlag === null || overlapValue === null));
   const profileLoaded = useRef(false);
@@ -448,6 +451,9 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
               t={t}
               canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'}
               outletId={role === 'MERCHANT' ? branchId : undefined}
+              shareOrderNote={shareNoteValue}
+              canEditShareOrderNote={canChangeShareOrderNote(role)}
+              onShareOrderNoteChanged={() => void refreshUser?.()}
               bankLink={role === 'OUTLET_ADMIN' || role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('payment') } : null}
             />
           </>
