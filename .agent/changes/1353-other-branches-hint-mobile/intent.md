@@ -1,6 +1,6 @@
 # Gợi ý "Chi nhánh khác còn N" trong giỏ (iOS, Android)
 
-Issue: #1353 (của #1335, PR 2m; API + web là #1347) · Author: Trinh Tran · Status: in-progress · Created: 2026-10-30
+Issue: #1353 (của #1335, PR 2m; API + web là #1347) · Author: Trinh Tran · Status: done · Created: 2026-10-30
 
 ## Problem
 

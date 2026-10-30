@@ -1,6 +1,6 @@
 # Spec — Gợi ý "Chi nhánh khác còn N" trong giỏ điện thoại
 
-Issue: #1353 · Status: in-progress · Intent: ./intent.md · Plan: ./plan.md · Gốc: `../1335-multi-outlet-products/spec.md` quy tắc 18-20; API: `../1347-other-branches-hint/spec.md`
+Issue: #1353 · Status: done · Intent: ./intent.md · Plan: ./plan.md · Gốc: `../1335-multi-outlet-products/spec.md` quy tắc 18-20; API: `../1347-other-branches-hint/spec.md`
 
 ## Khi nào gọi
 
