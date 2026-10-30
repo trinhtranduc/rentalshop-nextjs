@@ -144,7 +144,7 @@
     "results": "results",
     "page": "Page",
     "rowsPerPage": "Rows per page",
-    "pageSizeMax": "Maximum {max} rows per page",
+    "pageSizeRange": "From 1 to {max} rows per page",
     "first": "First",
     "last": "Last",
     "noData": "No data to display",

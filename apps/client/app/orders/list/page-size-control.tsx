@@ -9,11 +9,11 @@ type T = (key: string, values?: Record<string, string | number>) => string;
 /**
  * #1362 rows per page: quick sizes (10 / 20 / 50 / 100) and a box to type any number from 1 to 3000.
  * Enter or leaving the box applies it; a number past the edges is cut and the hint says why.
- * Text keys are the list's own `footer.*` (`show`, `perPage`, `perPageLabel`); the hint is `common.pagination.pageSizeMax`.
+ * Text keys are the list's own `footer.*` (`show`, `perPage`, `perPageLabel`); the hint is `common.pagination.pageSizeRange`.
  */
 export function PageSizeControl({ limit, onLimit, t }: { limit: number; onLimit: (limit: number) => void; t: T }) {
   const tc = useTranslations('common');
-  const hint = tc('pagination.pageSizeMax', { max: MAX_PAGE_SIZE });
+  const hint = tc('pagination.pageSizeRange', { max: MAX_PAGE_SIZE });
   const [draft, setDraft] = useState(String(limit));
   const [clamped, setClamped] = useState(false);
 
