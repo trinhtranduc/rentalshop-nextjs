@@ -374,8 +374,29 @@ final class ProductsHomeViewController: BaseViewControler {
                 } else if let product = BarcodeMatch.exact(code, in: page?.products ?? []) {
                     self.openDetail(product)
                 } else {
-                    self.showToast(message: String(format: "products.scan.notFound".localized(), code),
-                                   icon: UIImage(systemName: "exclamationmark.triangle"))
+                    self.reportMissingBarcode(code)
+                }
+            }
+        }
+    }
+
+    /// #1346: a branch role's list holds only the products ticked at its branch. A code that exists but is not ticked here
+    /// says so ("Chi nhánh này chưa hiện món này") instead of "not found"; there is no button to turn it on.
+    private func reportMissingBarcode(_ code: String) {
+        let notFound = { [weak self] in
+            self?.showToast(message: String(format: "products.scan.notFound".localized(), code),
+                            icon: UIImage(systemName: "exclamationmark.triangle"))
+        }
+        guard BranchListing.sendsListed(role: ProductAccess.currentRole, activeOutletCount: CurrentOutlet.shared.outlets.count) else {
+            notFound()
+            return
+        }
+        LiveProductsHomeDataSource(applyBranchListing: false).loadProducts(query: code, page: 1, limit: 20) { [weak self] page, _ in
+            DispatchQueue.main.async {
+                if BarcodeMatch.exact(code, in: page?.products ?? []) != nil {
+                    self?.showToast(message: "products.scan.notListed".localized(), icon: UIImage(systemName: "exclamationmark.triangle"))
+                } else {
+                    notFound()
                 }
             }
         }
@@ -387,6 +408,12 @@ final class ProductsHomeViewController: BaseViewControler {
         detail.onSaved = { [weak self] saved in self?.viewModel.replace(saved) }
         detail.onDeleted = { [weak self] id in self?.viewModel.remove(productId: id) }
         navigationController?.pushViewController(detail, animated: true)
+    }
+
+    /// #1346: false only for the owner of a shop with two or more branches, on a product the branch in use does not list
+    fileprivate func listedHere(_ product: Product) -> Bool {
+        BranchListing.listedForRow(product, role: ProductAccess.currentRole, activeOutletCount: CurrentOutlet.shared.outlets.count,
+                                   outletId: CurrentOutlet.shared.id)
     }
 
     fileprivate func removeFromCart(_ product: Product) {
@@ -456,7 +483,7 @@ extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate
         let cell = tableView.dequeueReusableCell(withIdentifier: ProductRowV2Cell.reuseId, for: indexPath) as! ProductRowV2Cell
         let product = viewModel.products[indexPath.row]
         let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
-        cell.bind(product, inCart: inCart)
+        cell.bind(product, inCart: inCart, listed: listedHere(product))
         cell.onAdd = { [weak self] in self?.addToCart(product) }
         cell.onRemove = { [weak self] in self?.removeFromCart(product) }
         // #472: the thumbnail opens the photo full screen; without a photo it opens detail like the row
@@ -491,7 +518,7 @@ extension ProductsHomeViewController: UITableViewDataSource, UITableViewDelegate
             guard let self else { return }
             let product = products[index]
             let inCart = ProductRowLogic.cartCount(productId: ProductRowLogic.cartId(product), in: CartStore.shared.cart.items)
-            tile.bind(product, inCart: inCart)
+            tile.bind(product, inCart: inCart, listed: listedHere(product))
             tile.onAdd = { [weak self] in self?.addToCart(product) }
             tile.onRemove = { [weak self] in self?.removeFromCart(product) }
             tile.onImage = { [weak self] in
@@ -629,7 +656,7 @@ final class ProductRowV2Cell: UITableViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    func bind(_ product: Product, inCart: Int) {
+    func bind(_ product: Product, inCart: Int, listed: Bool = true) {
         nameLabel.text = product.name
         photo.image = V2.placeholder
         photo.contentMode = .center
@@ -645,7 +672,11 @@ final class ProductRowV2Cell: UITableViewCell {
             }
         }
         let free = ProductRowLogic.subtitle(product).free
-        if free > 0 {
+        if !listed {
+            // #1346: the owner sees it, the branch in use does not list it (only the owner ticks it back, in the form)
+            stockLabel.text = "● " + "products.listing.notShown".localized()
+            stockLabel.textColor = DS.Color.textMuted
+        } else if free > 0 {
             stockLabel.text = "● " + String(format: "products.stock.free".localized(), free)
             stockLabel.textColor = free == 1 ? V2.warn : V2.ok
         } else {
@@ -682,7 +713,11 @@ final class ProductRowV2Cell: UITableViewCell {
 
         let name = product.name ?? ""
         addButton.layer.borderColor = UIColor(hexString: "E2E8F0").cgColor
-        switch ProductRowLogic.addState(free: free, inCart: inCart) {
+        switch ProductRowLogic.addState(free: free, inCart: inCart, listed: listed) {
+        case .notListed:
+            // #1346: nothing to add; the row still opens the product
+            addButton.isHidden = true
+            stepper.isHidden = true
         case .add, .out:
             addButton.isHidden = false
             stepper.isHidden = true

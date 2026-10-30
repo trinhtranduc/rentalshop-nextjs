@@ -36,6 +36,8 @@ final class ProductDetailViewController: BaseViewControler {
     private let metaLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     private let tiles = UIStackView()
     private let stockLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+    /// #1346: OUTLET_STAFF has no edit form, so the greyed "Hiện ở chi nhánh" line lives here (board B5b)
+    private let listingLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     private let stripRow = UIStackView()
     private let stripCaption = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     private let ordersHeader = V2.label("products.detail.orders".localized(), size: DS.TextSize.name, weight: .bold)
@@ -177,7 +179,7 @@ final class ProductDetailViewController: BaseViewControler {
         stripRow.distribution = .fillEqually
         stripRow.spacing = 4
         stripCaption.isHidden = true
-        let info = UIStackView(arrangedSubviews: [nameLabel, metaLabel, tiles, stockLabel, stripRow, stripCaption])
+        let info = UIStackView(arrangedSubviews: [nameLabel, metaLabel, tiles, stockLabel, listingLabel, stripRow, stripCaption])
         info.axis = .vertical
         info.spacing = 6
         info.setCustomSpacing(10, after: metaLabel)
@@ -297,6 +299,7 @@ final class ProductDetailViewController: BaseViewControler {
         // Outlet users see their outlet; a merchant without an outlet sees the totals
         let counts = ProductStock.counts(product, outletId: CurrentOutlet.shared.id)
         stockLabel.text = String(format: "products.stock.summary".localized(), counts.rented, counts.free, counts.total)
+        renderListing()
         renderStrip()
 
         photoStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -323,6 +326,21 @@ final class ProductDetailViewController: BaseViewControler {
         }
         pageLabel.isHidden = urls.count < 2
         pageLabel.text = " 1/\(urls.count) "
+    }
+
+    /// #1346: only for OUTLET_STAFF, and only when the product has rows at two or more branches (as the web)
+    private func renderListing() {
+        let role = ProductAccess.currentRole
+        guard role == .outletStaff, let own = CurrentOutlet.shared.id,
+              BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: product.outletStock?.count ?? 0) else {
+            listingLabel.isHidden = true
+            return
+        }
+        let mark = BranchListing.isListed(product, outletId: own) ? "☑" : "☐"
+        listingLabel.text = "\("products.listing.title".localized()): \(mark) \(CurrentOutlet.shared.name ?? "") · \("products.listing.ownerOnly".localized())"
+        listingLabel.accessibilityIdentifier = "product.detail.listing"
+        listingLabel.alpha = 0.6
+        listingLabel.isHidden = false
     }
 
     private func priceTile(title: String, value: Double) -> UIView {

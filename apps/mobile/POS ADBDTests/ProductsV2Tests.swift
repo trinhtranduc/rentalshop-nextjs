@@ -2046,6 +2046,16 @@ final class BranchListingTests: XCTestCase {
         XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0), .add)
     }
 
+    func testOnlyTheOwnerOfAManyBranchShopSeesAnUnlistedRowAsUnlisted() throws {
+        let p = try product(#"{"id":1,"name":"Áo","outletStock":[{"outletId":7,"stock":4,"isListed":false}]}"#)
+        XCTAssertFalse(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 3, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 3, outletId: 1))
+        // One branch (Basic), outlets not loaded, or a branch role (the list was filtered by the API): never hidden
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 1, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 0, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .outletStaff, activeOutletCount: 0, outletId: 7))
+    }
+
     // MARK: The reminder when unticking
 
     func testReminderOnlyWhenUntickedAndSomethingIsLeft() {

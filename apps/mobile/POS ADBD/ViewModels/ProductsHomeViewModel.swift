@@ -19,11 +19,18 @@ protocol ProductsHomeDataSource {
 }
 
 struct LiveProductsHomeDataSource: ProductsHomeDataSource {
+    /// #1346: a branch role asks for `listed=true` (only the products ticked at its branch). A lookup that must see every
+    /// product (a barcode already used) turns it off.
+    var applyBranchListing = true
+
     func loadProducts(query: String?, page: Int, limit: Int,
                       completion: @escaping (ProductsPage?, NSError?) -> Void) {
         var params: [String: Any] = ["page": page, "limit": limit, "sortBy": "createdAt", "sortOrder": "desc"]
         if let query, !query.isEmpty { params["q"] = query }
         if let outletId = CurrentOutlet.shared.id { params["outletId"] = outletId }
+        if applyBranchListing {
+            params = BranchListing.listParams(params, role: ProductAccess.currentRole, activeOutletCount: CurrentOutlet.shared.outlets.count)
+        }
         ProductService.shared.performGET(path: APIEndpoint.Path.products, parameters: params,
                                          responseType: APIProductsResponse.self,
                                          context: "ProductsHome.loadProducts") { response, error in

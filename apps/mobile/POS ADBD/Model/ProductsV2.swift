@@ -215,6 +215,8 @@ enum ProductAddState: Equatable {
     case add
     case inCart(Int)
     case out
+    /// #1346: the owner sees a product the branch in use does not list; no + (the row says why)
+    case notListed
 }
 
 /// The line under the name: the product code and today's free count (no category)
@@ -278,8 +280,9 @@ enum ProductRowLogic {
     }
 
     /// The cart count wins (#677): a product out today that is already in the cart still shows its count
-    static func addState(free: Int, inCart: Int) -> ProductAddState {
+    static func addState(free: Int, inCart: Int, listed: Bool = true) -> ProductAddState {
         if inCart > 0 { return .inCart(inCart) }
+        if !listed { return .notListed }
         return free <= 0 ? .out : .add
     }
 }
@@ -1188,5 +1191,126 @@ enum QuantityEntry {
         guard value.isFinite else { return minimum }
         let n = value >= Double(maximum) ? maximum : Int(value)
         return min(max(n, minimum), maximum)
+    }
+}
+
+// MARK: - "Hiện ở chi nhánh" (#1346, #1335 PR 1m)
+
+/// One line of the "Hiện ở chi nhánh" box: a branch, its stock of this product, and the tick
+struct BranchTickRow: Equatable {
+    let outletId: Int
+    let name: String
+    let isDefault: Bool
+    let stock: Int
+    let renting: Int
+    var listed: Bool
+}
+
+/// A tick that moved: one `PUT /api/products/listing` call
+struct BranchTickChange: Equatable {
+    let outletId: Int
+    let isListed: Bool
+}
+
+/// The line under an unticked branch that still holds units. It never blocks the save.
+struct BranchListingReminder: Equatable {
+    let stock: Int
+    let renting: Int
+
+    var text: String {
+        if renting > 0 { return String(format: "products.listing.reminder".localized(), stock, renting) }
+        return String(format: "products.listing.reminderNoRent".localized(), stock)
+    }
+}
+
+/// Pure rules of the tick on a product at a branch (`OutletStock.isListed`). The API is the real gate
+/// (`PUT /api/products/listing` is MERCHANT only, a branch role gets 403); these only decide what the screens show and ask for.
+enum BranchListing {
+    /// The token this build adds to `X-Client-Capabilities`: the server then stops re-listing products for it
+    static let capabilityToken = "branch-listing"
+    static let listingPath = "/api/products/listing"
+
+    /// Only the shop owner ticks and unticks (the API: `canSetBranchListing`)
+    static func canSet(role: Role?) -> Bool { role == .merchant }
+
+    private static func isBranchRole(_ role: Role?) -> Bool {
+        role == .outletAdmin || role == .outletInventory || role == .outletStaff
+    }
+
+    /// The owner sees the box with two or more active branches. A branch role cannot count the shop's branches (the
+    /// API lists only its own), so it sees the dimmed tick when the product has rows at two or more branches (as the
+    /// web does). A shop with one branch (every Basic shop) has no tick.
+    static func showsTick(role: Role?, activeOutletCount: Int, productOutletRows: Int) -> Bool {
+        if role == .merchant { return activeOutletCount >= 2 }
+        if isBranchRole(role) { return productOutletRows >= 2 }
+        return false
+    }
+
+    /// A branch role asks for `listed=true` (a shop known to have one branch does not: the API would ignore it).
+    /// The owner never does: the owner sees every product and ticks the missing ones.
+    static func sendsListed(role: Role?, activeOutletCount: Int) -> Bool {
+        isBranchRole(role) && activeOutletCount != 1
+    }
+
+    /// Query of the product list, with `listed=true` added when `sendsListed`
+    static func listParams(_ base: [String: Any], role: Role?, activeOutletCount: Int) -> [String: Any] {
+        guard sendsListed(role: role, activeOutletCount: activeOutletCount) else { return base }
+        var params = base
+        params["listed"] = "true"
+        return params
+    }
+
+    /// The row of that branch says listed unless it says `false`. No row, no branch, or an older API: listed.
+    static func isListed(_ product: Product, outletId: Int?) -> Bool {
+        guard let outletId, let row = product.outletStock?.first(where: { $0.outletId == outletId }) else { return true }
+        return row.isListed ?? true
+    }
+
+    /// Does a Home row count as listed at the branch in use? Only the owner of a shop with two or more branches ever sees
+    /// an unlisted row (a branch role asks for `listed=true`; a one-branch shop has no tick, so nothing is hidden there).
+    static func listedForRow(_ product: Product, role: Role?, activeOutletCount: Int, outletId: Int?) -> Bool {
+        guard role == .merchant, activeOutletCount >= 2 else { return true }
+        return isListed(product, outletId: outletId)
+    }
+
+    /// Lines of the owner's box: every active branch. A saved product follows its rows (no row = not listed); a new
+    /// product ticks the branch it is created at.
+    static func rows(outlets: [(id: Int, name: String, isDefault: Bool)], product: Product?, creatingAt: Int?) -> [BranchTickRow] {
+        outlets.map { outlet in
+            let row = product?.outletStock?.first(where: { $0.outletId == outlet.id })
+            let listed = product == nil ? outlet.id == creatingAt : (row?.isListed ?? (row != nil))
+            return BranchTickRow(outletId: outlet.id, name: outlet.name, isDefault: outlet.isDefault,
+                                 stock: row?.stock ?? 0, renting: row?.renting ?? 0, listed: listed)
+        }
+    }
+
+    /// The ticks that moved between the form as opened and as saved
+    static func changes(from original: [BranchTickRow], to current: [BranchTickRow]) -> [BranchTickChange] {
+        let before = Dictionary(original.map { ($0.outletId, $0.listed) }, uniquingKeysWith: { first, _ in first })
+        return current.compactMap { row in
+            guard let was = before[row.outletId], was != row.listed else { return nil }
+            return BranchTickChange(outletId: row.outletId, isListed: row.listed)
+        }
+    }
+
+    /// A reminder only for an unticked branch that still holds units or has some on rent
+    static func reminder(for row: BranchTickRow) -> BranchListingReminder? {
+        guard !row.listed, row.stock > 0 || row.renting > 0 else { return nil }
+        return BranchListingReminder(stock: row.stock, renting: row.renting)
+    }
+
+    /// `outletStock[]` of a new product from the owner's box: the typed quantity at the branch in use (with its tick),
+    /// then a zero row for every other ticked branch. Unticked branches are left out: the API adds them unlisted.
+    static func createStock(rows: [BranchTickRow], quantity: Int, at outletId: Int) -> [OutletStockItem] {
+        let current = rows.first(where: { $0.outletId == outletId })
+        let first = OutletStockItem(outletId: outletId, stock: quantity, isListed: current?.listed ?? true)
+        let others = rows.filter { $0.outletId != outletId && $0.listed }
+            .map { OutletStockItem(outletId: $0.outletId, stock: 0, isListed: true) }
+        return [first] + others
+    }
+
+    /// Body of `PUT /api/products/listing`
+    static func listingBody(outletId: Int, productIds: [Int], isListed: Bool) -> [String: Any] {
+        ["outletId": outletId, "productIds": productIds, "isListed": isListed]
     }
 }
