@@ -55,15 +55,65 @@ sealed interface ShareMoney {
     data class Collect(val label: ShareText, val value: String) : ShareMoney
 }
 
-/** #1345: what the customer pays at hand-over, from the plan (not built yet) */
+/**
+ * #1345 "Thu khi giao" of the image, fixed by the plan so it reads the same before and after hand-over (iOS
+ * `ShareMoneyRule`): the total minus the stages of the plan (void and the "rest" stage left out), or minus the single
+ * deposit when the order has no plan. Never below zero, rounded to the currency's smallest unit. It does not add the
+ * collateral (its own row) and, unlike the order detail's `HandOverMoney`, does not drop to what is unpaid.
+ */
 object ShareMoneyRule {
+    /** The stages shown and counted: not void, not the "rest"; empty when the order has no plan */
+    fun planStages(
+        hasPlan: Boolean?,
+        stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
+    ): List<com.anyrent.pos.domain.deposit.OrderInstallment> =
+        if (hasPlan == true) stages.orEmpty().filter { it.status != "VOID" && !it.isRest } else emptyList()
+
     fun collectOnDelivery(
         total: Double,
         deposit: Double,
         hasPlan: Boolean?,
         stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
         currency: com.anyrent.pos.domain.money.ShopCurrency,
-    ): Double = -1.0
+    ): Double {
+        val explicit = planStages(hasPlan, stages)
+        val taken = if (explicit.isEmpty()) deposit else explicit.sumOf { it.amount }
+        return com.anyrent.pos.domain.deposit.DepositPlanMath.roundMoney(maxOf(0.0, total - taken), currency)
+    }
+
+    /** "Thu cọc theo giai đoạn": each stage with Đã thu / Chưa thu (never "Trễ", "Hôm nay"); null without stages */
+    fun stages(
+        hasPlan: Boolean?,
+        stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+        zone: ZoneId,
+    ): ShareMoney.Stages? {
+        if (planStages(hasPlan, stages).isEmpty()) return null
+        val rows = stages.orEmpty().filter { it.status != "VOID" }.mapIndexedNotNull { index, stage ->
+            if (stage.isRest) return@mapIndexedNotNull null
+            val percent = com.anyrent.pos.domain.deposit.DepositPlanMath.percentText(stage.percent)
+            val detail = if (stage.isPaid) {
+                ShareText.Res(
+                    R.string.deposit_card_paid_detail,
+                    listOf(percent, com.anyrent.pos.domain.deposit.DepositReceipt.paidDay(stage.collectedAt, zone)),
+                )
+            } else {
+                ShareText.Res(
+                    R.string.deposit_card_due_detail,
+                    listOf(percent, com.anyrent.pos.domain.deposit.DepositPlanMath.dayText(stage.dueDateKey)),
+                )
+            }
+            val status = when {
+                stage.status == "PARTIAL" -> R.string.share_stage_partial
+                stage.isPaid -> R.string.share_stage_paid
+                else -> R.string.share_stage_unpaid
+            }
+            ShareStage(
+                ShareText.Plain("${index + 1}. ${stage.label}"), OrderShareModel.money(stage.amount, currency), detail, ShareText.Res(status),
+            )
+        }
+        return ShareMoney.Stages(ShareText.Res(R.string.deposit_card_title), rows)
+    }
 }
 
 data class ShareHighlight(val label: ShareText, val value: String, val tone: ShareTone)
@@ -96,17 +146,13 @@ data class OrderShareModel(
     val dayStrip: ShareDayStrip?,
     val itemsTitle: ShareText,
     val lines: List<ShareLine>,
-    val rows: List<ShareRow>,
-    val highlight: ShareHighlight,
+    /** The money part, top to bottom (#1345): Tạm tính, Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân */
+    val money: List<ShareMoney>,
     val note: ShareText?,
     val qr: ShareQr?,
     val thanks: ShareText,
     val address: String?,
     val fileName: String,
-    /** #1252: "Thu cọc theo giai đoạn" under the rows of a rental that has stages; null otherwise */
-    val plan: com.anyrent.pos.domain.deposit.DepositReceiptBlock? = null,
-    /** #1345: the money part in order (not built yet) */
-    val money: List<ShareMoney> = emptyList(),
 ) {
     val isDraft: Boolean get() = note != null
 
@@ -132,32 +178,36 @@ data class OrderShareModel(
             val summary = order.summary
             val isRent = summary.orderType.equals("RENT", ignoreCase = true)
             val number = summary.orderNumber.trim().removePrefix("#")
-            val plan = com.anyrent.pos.domain.deposit.DepositReceipt.block(
-                isRent, order.deposit?.hasPlan, order.deposit?.installments, order.deposit?.summary,
-                now.atZone(zone).toLocalDate().toString(), zone,
-            )
-
-            val rows = mutableListOf<ShareRow>()
-            val highlight: ShareHighlight
+            val entries = mutableListOf<ShareMoney>()
+            fun row(label: Int, value: String) {
+                entries += ShareMoney.Row(ShareRow(ShareText.Res(label), value))
+            }
             if (isRent) {
-                // #930: no "Còn phải trả" (it changes with the status); the rent total is the highlight
+                // #1345: Tạm tính / Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân (the order detail's order)
                 if (order.discountAmount > 0) {
-                    rows += ShareRow(ShareText.Res(R.string.share_discount), minus(order.discountAmount))
+                    row(R.string.share_subtotal, money(OrderDetailLogic.saleSubtotal(order.items), currency))
+                    row(R.string.share_discount, minus(order.discountAmount, currency))
                 }
-                // #1252: with stages the block lists what was collected, so the single "Đã cọc" row goes
-                if (summary.depositAmount > 0 && plan == null) {
-                    rows += ShareRow(ShareText.Res(R.string.share_deposit_paid), money(summary.depositAmount))
+                entries += ShareMoney.Total(
+                    ShareHighlight(ShareText.Res(R.string.share_rent_total), money(summary.totalAmount, currency), ShareTone.ACCENT),
+                )
+                val stages = ShareMoneyRule.stages(order.deposit?.hasPlan, order.deposit?.installments, currency, zone)
+                when {
+                    stages != null -> entries += stages
+                    summary.depositAmount > 0 -> row(R.string.share_deposit_paid, money(summary.depositAmount, currency))
+                    else -> entries += ShareMoney.Muted(ShareText.Res(R.string.share_deposit_label), ShareText.Res(R.string.share_deposit_none))
                 }
-                collateral(order.collateralDetails, order.securityDeposit)?.let {
-                    rows += ShareRow(ShareText.Res(R.string.share_collateral), it)
-                }
-                highlight = ShareHighlight(ShareText.Res(R.string.share_rent_total), money(summary.totalAmount), ShareTone.ACCENT)
+                val collect = ShareMoneyRule.collectOnDelivery(
+                    summary.totalAmount, summary.depositAmount, order.deposit?.hasPlan, order.deposit?.installments, currency,
+                )
+                entries += ShareMoney.Collect(ShareText.Res(R.string.share_collect), money(collect, currency))
+                collateral(order.collateralDetails, order.securityDeposit, currency)?.let { row(R.string.share_collateral, it) }
             } else {
-                rows += ShareRow(ShareText.Res(R.string.share_subtotal), money(OrderDetailLogic.saleSubtotal(order.items)))
-                if (order.discountAmount > 0) {
-                    rows += ShareRow(ShareText.Res(R.string.share_discount), minus(order.discountAmount))
-                }
-                highlight = ShareHighlight(ShareText.Res(R.string.share_total), money(summary.totalAmount), ShareTone.GREEN)
+                row(R.string.share_subtotal, money(OrderDetailLogic.saleSubtotal(order.items), currency))
+                if (order.discountAmount > 0) row(R.string.share_discount, minus(order.discountAmount, currency))
+                entries += ShareMoney.Total(
+                    ShareHighlight(ShareText.Res(R.string.share_total), money(summary.totalAmount, currency), ShareTone.GREEN),
+                )
             }
 
             val strip = if (isRent) {
@@ -195,21 +245,19 @@ data class OrderShareModel(
                     val itemName = item.productName?.takeIf { it.isNotBlank() && !it.equals("null", true) } ?: "—"
                     // #1252: a day-block line says which block it is, as the order detail does
                     val block = if (isRent) blockSummary(item) else null
-                    val price = "${item.quantity} × ${money(item.unitPrice)}"
+                    val price = "${item.quantity} × ${money(item.unitPrice, currency)}"
                     ShareLine(
-                        itemName, block?.let { if (item.quantity > 1) "$it · $price" else it } ?: price, money(item.totalPrice),
+                        itemName, block?.let { if (item.quantity > 1) "$it · $price" else it } ?: price, money(item.totalPrice, currency),
                         item.note?.trim()?.takeIf { it.isNotEmpty() },
                         formula = if (isRent) blockFormula(item) else null,
                     )
                 },
-                rows = rows,
-                highlight = highlight,
+                money = entries,
                 note = null,
                 qr = qr(printBankQr, bankAccount, number),
                 thanks = ShareText.Res(R.string.share_thanks, listOf(shop.name)),
                 address = shop.address?.trim()?.takeIf { it.isNotEmpty() },
                 fileName = "Order_${number.replace(Regex("[^A-Za-z0-9_-]"), "_").ifBlank { "order" }}.jpg",
-                plan = plan,
             )
         }
 
@@ -236,12 +284,26 @@ data class OrderShareModel(
             val today = now.atZone(zone)
             val subtotal = lines.sumOf { it.lineTotal }
             val total = (subtotal - discountAmount).coerceAtLeast(0.0)
-            val rows = mutableListOf<ShareRow>()
-            if (discountAmount > 0) rows += ShareRow(ShareText.Res(R.string.share_discount), minus(discountAmount))
+            val entries = mutableListOf<ShareMoney>()
+            if (discountAmount > 0) {
+                entries += ShareMoney.Row(ShareRow(ShareText.Res(R.string.share_discount), minus(discountAmount, currency)))
+            }
+            entries += ShareMoney.Total(
+                ShareHighlight(ShareText.Res(R.string.share_draft_estimate), money(total, currency), ShareTone.ORANGE),
+            )
             if (!isSale) {
-                if (deposit > 0) rows += ShareRow(ShareText.Res(R.string.share_draft_deposit), money(deposit))
-                collateral(collateralDetails, securityDeposit)?.let {
-                    rows += ShareRow(ShareText.Res(R.string.share_collateral), it)
+                // #1345: Cọc giữ đồ (or "Cọc: Chưa cọc"), Thu khi giao, Thế chân
+                entries += if (deposit > 0) {
+                    ShareMoney.Row(ShareRow(ShareText.Res(R.string.share_draft_deposit), money(deposit, currency)))
+                } else {
+                    ShareMoney.Muted(ShareText.Res(R.string.share_deposit_label), ShareText.Res(R.string.share_deposit_none))
+                }
+                entries += ShareMoney.Collect(
+                    ShareText.Res(R.string.share_collect),
+                    money(ShareMoneyRule.collectOnDelivery(total, deposit, null, null, currency), currency),
+                )
+                collateral(collateralDetails, securityDeposit, currency)?.let {
+                    entries += ShareMoney.Row(ShareRow(ShareText.Res(R.string.share_collateral), it))
                 }
             }
             val strip = if (!isSale && pickup != null && returnDate != null) {
@@ -264,13 +326,12 @@ data class OrderShareModel(
                 dayStrip = strip,
                 itemsTitle = itemsTitle(!isSale, lines.size),
                 lines = lines.map {
-                    val price = "${it.quantity} × ${money(it.unitPrice)}"
+                    val price = "${it.quantity} × ${money(it.unitPrice, currency)}"
                     val block = if (isSale) null else blockSummary(it)
-                    ShareLine(it.product.name, block?.let { b -> if (it.quantity > 1) "$b · $price" else b } ?: price, money(it.lineTotal),
+                    ShareLine(it.product.name, block?.let { b -> if (it.quantity > 1) "$b · $price" else b } ?: price, money(it.lineTotal, currency),
                         formula = if (isSale) null else blockFormula(it))
                 },
-                rows = rows,
-                highlight = ShareHighlight(ShareText.Res(R.string.share_draft_estimate), money(total), ShareTone.ORANGE),
+                money = entries,
                 note = ShareText.Res(R.string.share_draft_note),
                 qr = null,
                 thanks = ShareText.Res(R.string.share_thanks, listOf(shop.name)),
@@ -303,14 +364,14 @@ data class OrderShareModel(
             currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
         ): String = com.anyrent.pos.domain.money.ShopMoney.withUnit(amount, currency).replaceFirst("−", "− ")
 
-        private fun minus(amount: Double): String = "− " + money(amount)
+        private fun minus(amount: Double, currency: com.anyrent.pos.domain.money.ShopCurrency): String = "− " + money(amount, currency)
 
         /** `T4 07/10` (vi) / `Wed 07/10` (en) of a shop civil day */
         @Suppress("UNUSED_PARAMETER")
         fun dayLabel(day: LocalDate, vi: Boolean): String = com.anyrent.pos.domain.DayText.dmy(day) // #888
 
-        private fun collateral(details: String?, money: Double): String? {
-            val parts = listOfNotNull(details?.trim()?.takeIf { it.isNotEmpty() }, money.takeIf { it > 0 }?.let { money(it) })
+        private fun collateral(details: String?, amount: Double, currency: com.anyrent.pos.domain.money.ShopCurrency): String? {
+            val parts = listOfNotNull(details?.trim()?.takeIf { it.isNotEmpty() }, amount.takeIf { it > 0 }?.let { money(it, currency) })
             return parts.takeIf { it.isNotEmpty() }?.joinToString(" + ")
         }
 

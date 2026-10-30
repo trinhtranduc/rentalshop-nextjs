@@ -1489,7 +1489,7 @@
     <string name="share_items_rent">Đồ thuê · %1$d món</string>
     <string name="share_items_sale">Hàng mua · %1$d món</string>
     <string name="share_rent_total">Tổng tiền thuê</string>
-    <string name="share_deposit_paid">Đã đặt cọc</string>
+    <string name="share_deposit_paid">Đã cọc</string>
     <string name="share_collateral">Thế chân khi nhận đồ</string>
     <string name="share_amount_due">Còn phải trả</string>
     <string name="share_subtotal">Tạm tính</string>

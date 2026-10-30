@@ -174,7 +174,7 @@ final class OrderShareImageTests: XCTestCase {
     func testRentTotalsHighlightTheRentTotal() {
         let rent = model(Self.rent())
         XCTAssertEqual(rent.rows, [
-            .init(label: "Đã đặt cọc", value: "300.000đ"),
+            .init(label: "Đã cọc", value: "300.000đ"),
             .init(label: "Thế chân khi nhận đồ", value: "CCCD + 2.000.000đ"),
         ])
         XCTAssertEqual(rent.highlightLabel, "Tổng tiền thuê")
@@ -191,14 +191,14 @@ final class OrderShareImageTests: XCTestCase {
         var discounted = Self.rent()
         discounted.discount = 50_000
         discounted.total = 1_100_000
-        XCTAssertEqual(model(discounted).rows.first, .init(label: "Giảm giá", value: "− 50.000đ"))
+        XCTAssertEqual(model(discounted).rows.prefix(2), [.init(label: "Tạm tính", value: "1.150.000đ"), .init(label: "Giảm giá", value: "− 50.000đ")])
         XCTAssertEqual(model(discounted).highlightValue, "1.100.000đ")
 
         var bare = Self.rent()
         bare.deposit = 0
         bare.collateralPapers = nil
         bare.collateralMoney = 0
-        XCTAssertEqual(model(bare).rows, [])
+        XCTAssertEqual(model(bare).rows, [.init(label: "Cọc", value: "Chưa cọc", muted: true)])
     }
 
     func testSaleTotals() {
@@ -339,6 +339,8 @@ final class OrderShareImageTests: XCTestCase {
             ("coc-mot-lan-khoi", model(Self.stagedRent(plan: false))),
             ("coc-giai-doan-khoi", model(Self.stagedRent(plan: true))),
             ("coc-giai-doan-khoi-en", model(Self.stagedRent(plan: true), en)),
+            ("tien-chua-coc", model(Self.noDepositRent())),
+            ("tien-giam-gia-the-chan", model(Self.discountedRent())),
         ]
         for (name, fixture) in fixtures {
             let image = OrderShareRenderer.image(fixture)
@@ -378,6 +380,23 @@ final class OrderShareImageTests: XCTestCase {
         return source
     }
 
+    /// #1345 frame (c): no deposit at all
+    static func noDepositRent() -> OrderShareSource {
+        var source = rent()
+        source.deposit = 0
+        source.collateralPapers = nil
+        source.collateralMoney = 0
+        return source
+    }
+
+    /// #1345 frame (d)+(e): a discount, one deposit and collateral
+    static func discountedRent() -> OrderShareSource {
+        var source = rent()
+        source.items.append(.init(name: "Khăn đóng", quantity: 1, total: 100_000))
+        source.discount = 100_000
+        return source
+    }
+
     /// 30% collected 26/10 (00:30 Vietnam time), 40% due today, the rest at hand-over, one void stage
     static let stages: [OrderInstallment] = [
         OrderInstallment(key: "i1", label: "Giữ chỗ", percent: 30, amount: 300_000, dueDateKey: "2026-10-05", status: "PAID",
@@ -393,45 +412,45 @@ final class OrderShareImageTests: XCTestCase {
         source.stages = Self.stages
         source.stageSummary = InstallmentSummary(planned: 1_000_000, collected: 300_000, remaining: 700_000, percentCollected: 30)
         let m = model(source)
-        let plan = try XCTUnwrap(m.plan)
+        let plan = try XCTUnwrap(m.stageBlock)
         XCTAssertEqual(plan.title, "Thu cọc theo giai đoạn")
-        XCTAssertEqual(plan.stages.map(\.title), ["1. Giữ chỗ", "2. Chốt mẫu", "Phần còn lại, thu khi giao"])
-        XCTAssertEqual(plan.stages.map(\.amount), [300_000, 400_000, 300_000])
+        // #1345: the explicit stages only (the rest is "Thu khi giao"), void stages not listed
+        XCTAssertEqual(plan.stages.map(\.title), ["1. Giữ chỗ", "2. Chốt mẫu"])
+        XCTAssertEqual(plan.stages.map(\.amount), ["300.000đ", "400.000đ"])
         XCTAssertEqual(plan.stages[0].detail, "30% đơn · 26/10 · Đã thu")
-        XCTAssertEqual(plan.stages[1].detail, "40% đơn · hạn 07/10 · Hôm nay")
-        XCTAssertNil(plan.stages[2].detail)
-        XCTAssertEqual([plan.collectedLabel, plan.remainingLabel], ["Đã thu", "Còn phải thu"])
-        XCTAssertEqual([plan.collected, plan.remaining], [300_000, 700_000])
+        XCTAssertEqual(plan.stages[1].detail, "40% đơn · hạn 07/10 · Chưa thu")
         XCTAssertFalse(m.rows.contains { $0.value == OrderShareModel.money(300_000) }, "the single deposit row goes")
+        XCTAssertFalse(m.rows.contains { $0.label == "Còn phải thu" || $0.label == "Đã thu" })
         // English uses the same keys in the other bundle
-        XCTAssertEqual(try XCTUnwrap(model(source, en).plan).title, "Staged deposit")
+        XCTAssertEqual(try XCTUnwrap(model(source, en).stageBlock).title, "Staged deposit")
     }
 
     func testShareStaysTheSameWithoutAPlan() {
         var source = Self.rent()
         let before = model(source)
-        XCTAssertNil(before.plan)
+        XCTAssertNil(before.stageBlock)
         XCTAssertTrue(before.rows.contains { $0.value == OrderShareModel.money(300_000) })
         source.hasDepositPlan = false
         source.stages = Self.stages
-        XCTAssertNil(model(source).plan, "stages without hasDepositPlan (one-time deposit) show nothing")
+        XCTAssertNil(model(source).stageBlock, "stages without hasDepositPlan (one-time deposit) show nothing")
         var sale = Self.sale()
         sale.hasDepositPlan = true
         sale.stages = Self.stages
-        XCTAssertNil(model(sale).plan)
+        XCTAssertNil(model(sale).stageBlock)
         var draft = Self.draft()
         draft.hasDepositPlan = true
         draft.stages = Self.stages
-        XCTAssertNil(model(draft).plan)
+        XCTAssertNil(model(draft).stageBlock)
     }
 
-    func testLateStageSaysHowManyDays() throws {
+    func testLateStageJustSaysNotCollected() throws {
+        // #1345: "Trễ 3 ngày" changes with the day the image is looked at, so a stage is only Đã thu or Chưa thu
         var source = Self.rent()
         source.hasDepositPlan = true
-        source.stages = [OrderInstallment(key: "i1", label: "Giữ chỗ", percent: 50, amount: 500_000, dueDateKey: "2026-10-04", status: "OVERDUE")]
-        let plan = try XCTUnwrap(model(source).plan)
-        XCTAssertEqual(plan.stages[0].detail, "50% đơn · hạn 04/10 · Trễ 3 ngày")
-        XCTAssertEqual([plan.collected, plan.remaining], [0, 500_000])
+        source.stages = [OrderInstallment(key: "i1", label: "Giữ chỗ", percent: 50, amount: 500_000, dueDateKey: "2026-10-04", status: "OVERDUE"),
+                         OrderInstallment(key: "rest", label: "rest", percent: 50, amount: 650_000, dueDateKey: "2026-10-16", status: "UPCOMING")]
+        let plan = try XCTUnwrap(model(source).stageBlock)
+        XCTAssertEqual(plan.stages.map(\.detail), ["50% đơn · hạn 04/10 · Chưa thu"])
     }
 
     func testBlockLineNamesTheBlock() {
@@ -678,5 +697,25 @@ final class OrderShareMoneyOrderTests: XCTestCase {
         // Once stage 2 is collected both agree
         let both = OrderDetailLogic.handOver(total: 1_150_000, deposit: 575_000, securityDeposit: 0, payments: [])
         XCTAssertEqual(both.due, 575_000)
+    }
+}
+
+extension OrderShareModel {
+    /// The plain rows of the money part (the order of all the entries is tested in `OrderShareMoneyOrderTests`)
+    var rows: [Row] { money.compactMap { entry in if case .row(let row) = entry { return row } else { return nil } } }
+
+    private var totalEntry: (label: String, value: String, tone: Highlight)? {
+        for entry in money { if case .total(let label, let value, let tone) = entry { return (label, value, tone) } }
+        return nil
+    }
+
+    /// The big box: the rent total, the sale total or the draft estimate
+    var highlightLabel: String { totalEntry?.label ?? "" }
+    var highlightValue: String { totalEntry?.value ?? "" }
+    var highlight: Highlight? { totalEntry?.tone }
+
+    var stageBlock: StageBlock? {
+        for entry in money { if case .stages(let block) = entry { return block } }
+        return nil
     }
 }
