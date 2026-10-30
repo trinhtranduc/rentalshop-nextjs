@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { prisma } from '@rentalshop/database';
 import { withPermissions, validateMerchantAccess, hasPermission } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, isOutletRole } from '@rentalshop/constants';
+import { planOutletStockUpserts, type OutletStockEntry } from '../../../../../../lib/outlet-stock-upsert';
 
 /**
  * GET /api/merchants/[id]/products/[productId]
@@ -167,6 +167,7 @@ export async function PUT(
       }
 
       // #825: stock only at outlets of this merchant; checked before anything is written
+      const stockEntries: OutletStockEntry[] = [];
       if (Array.isArray(outletStock)) {
         for (const stock of outletStock) {
           if (!stock?.outletId || typeof stock.stock !== 'number') continue;
@@ -174,7 +175,15 @@ export async function PUT(
           if (!outlet || outlet.merchant?.id !== merchant.id) {
             return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: API.STATUS.NOT_FOUND });
           }
+          stockEntries.push({ outletId: outlet.id, stock: stock.stock });
         }
+      }
+
+      // #1339 (bug #359): units out on rent stay rented. Keep each outlet's `renting`, available = stock - renting,
+      // leave outlets that are not in the payload alone, and refuse a stock below `renting` before writing anything.
+      const stockPlan = planOutletStockUpserts(existing.id, existing.outletStock || [], stockEntries);
+      if (!stockPlan.ok) {
+        return NextResponse.json(ResponseBuilder.error(stockPlan.code), { status: API.STATUS.BAD_REQUEST });
       }
 
       // Update main product fields
@@ -192,49 +201,9 @@ export async function PUT(
         ...(pricingOptions !== undefined ? { pricingOptions } : {}),
         // ✅ STANDARDIZED: Always store as array, Prisma will serialize to JSON
         images: Array.isArray(images) ? images : images ? [images] : [],
-        isActive: body.isActive ?? true
+        isActive: body.isActive ?? true,
+        ...(stockPlan.upserts.length > 0 ? { outletStock: { upsert: stockPlan.upserts } } : {})
       });
-
-      // Update outlet stock if provided
-      if (outletStock && Array.isArray(outletStock) && outletStock.length > 0) {
-        console.log('🔄 Updating outlet stock:', outletStock);
-        
-        // Delete existing outlet stock entries for this product
-        await prisma.outletStock.deleteMany({
-          where: { productId: existing.id }
-        });
-
-        // Create new outlet stock entries
-        for (const stock of outletStock) {
-          if (stock.outletId && typeof stock.stock === 'number') {
-            console.log(`🔍 Processing outlet stock - outletId: ${stock.outletId}, stock: ${stock.stock}`);
-            
-            // Verify outlet exists
-            const outlet = await db.outlets.findById(stock.outletId);
-            if (outlet) {
-              console.log(`✅ Found outlet:`, { id: outlet.id, name: outlet.name });
-              
-              await prisma.outletStock.create({
-                data: {
-                  productId: existing.id,
-                  outletId: outlet.id,
-                  stock: stock.stock,
-                  available: stock.stock,
-                  renting: 0
-                }
-              });
-              
-              console.log(`✅ Created outlet stock entry for product ${existing.id} and outlet ${outlet.id}`);
-            } else {
-              console.error(`❌ Outlet not found with id: ${stock.outletId}`);
-            }
-          } else {
-            console.log(`⚠️ Skipping invalid stock entry:`, stock);
-          }
-        }
-      } else {
-        console.log('⚠️ No outletStock provided or empty array');
-      }
 
       // Fetch updated product with outlet stock
       const updatedProduct = await db.products.findById(productPublicId);
