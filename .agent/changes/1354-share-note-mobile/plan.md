@@ -1,6 +1,6 @@
 # Plan — Ghi chú đơn trên ảnh chia sẻ (mobile)
 
-Issue: #1354 · Status: in-progress
+Issue: #1354 · Status: done
 
 Skills: mobile-parity, api-compat-review (không đổi API), verify-change, mobile-e2e-local.
 

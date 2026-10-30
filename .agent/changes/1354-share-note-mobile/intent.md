@@ -1,6 +1,6 @@
 # Intent — Ghi chú đơn trên ảnh chia sẻ (iOS + Android)
 
-Issue: #1354 · Refs #1344 · Status: in-progress
+Issue: #1354 · Refs #1344 · Status: done
 
 ## Vì sao
 

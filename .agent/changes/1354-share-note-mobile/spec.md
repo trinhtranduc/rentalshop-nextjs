@@ -1,6 +1,6 @@
 # Spec — Ghi chú đơn trên ảnh chia sẻ (mobile)
 
-Issue: #1354 · Status: in-progress · Intent: ./intent.md · API: .agent/changes/1344-share-order-note-setting/spec.md
+Issue: #1354 · Status: done · Intent: ./intent.md · API: .agent/changes/1344-share-order-note-setting/spec.md
 
 ## Behavior
 
@@ -25,6 +25,6 @@ Không đổi API, không schema. Chỉ đọc `merchant.shareOrderNote` và ghi
 
 ## Acceptance
 
-- [ ] iOS `OrderShareImageTests` (lớp mới `OrderShareNoteTests`), Android `OrderShareNoteTest`: đỏ rồi xanh
-- [ ] Chuỗi mới en + vi-VN (iOS), values + values-vi (Android)
-- [ ] Ảnh thật từ Simulator (bật / tắt / vai trò khác)
+- [x] iOS `OrderShareImageTests` (lớp mới `OrderShareNoteTests`), Android `OrderShareNoteTest`: đỏ rồi xanh
+- [x] Chuỗi mới en + vi-VN (iOS), values + values-vi (Android)
+- [x] Ảnh thật từ Simulator (bật / tắt / vai trò khác)
