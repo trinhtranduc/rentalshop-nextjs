@@ -342,6 +342,10 @@ final class OrderShareImageTests: XCTestCase {
             ("coc-giai-doan-khoi-en", model(Self.stagedRent(plan: true), en)),
             ("tien-chua-coc", model(Self.noDepositRent())),
             ("tien-giam-gia-the-chan", model(Self.discountedRent())),
+            // #1368: the rental left, the collateral in money and what the customer hands over (stage 2 not collected)
+            ("the-chan-tien-giai-doan", model(Self.moneyCollateralRent())),
+            ("the-chan-tien-giai-doan-en", model(Self.moneyCollateralRent(), en)),
+            ("the-chan-tien-mot-lan-coc", model(Self.rent())),
         ]
         for (name, fixture) in fixtures {
             let image = OrderShareRenderer.image(fixture)
@@ -378,6 +382,25 @@ final class OrderShareImageTests: XCTestCase {
             OrderInstallment(key: "rest", label: "rest", percent: 30, amount: 93_000, dueDateKey: "2026-10-16", status: "UPCOMING"),
         ]
         source.stageSummary = InstallmentSummary(planned: 310_000, collected: 93_000, remaining: 217_000, percentCollected: 30)
+        return source
+    }
+
+    /// #1368 total 1.000.000: stage 1 200.000 collected, stage 2 300.000 not, rest 500.000; collateral 300.000 in money
+    static func moneyCollateralRent(secondPaid: Bool = false) -> OrderShareSource {
+        var source = rent()
+        source.total = 1_000_000
+        source.deposit = secondPaid ? 500_000 : 200_000
+        source.collateralPapers = nil
+        source.collateralMoney = 300_000
+        source.hasDepositPlan = true
+        source.stages = [
+            OrderInstallment(key: "i1", label: "Cọc giữ chỗ", percent: 20, amount: 200_000, dueDateKey: "2026-10-05", status: "PAID",
+                             collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: 200_000),
+            OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: 300_000, dueDateKey: "2026-10-06",
+                             status: secondPaid ? "PAID" : "UPCOMING", collectedAt: secondPaid ? "2026-10-06T03:00:00.000Z" : nil,
+                             paidAmount: secondPaid ? 300_000 : 0),
+            OrderInstallment(key: "rest", label: "rest", percent: 50, amount: 500_000, dueDateKey: "2026-10-16", status: "UPCOMING"),
+        ]
         return source
     }
 
