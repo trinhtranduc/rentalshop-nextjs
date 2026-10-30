@@ -66,7 +66,14 @@ export interface ProductSource {
   pricingType?: string | null;
   pricingOptions?: PricingOptionSource[] | null;
   images?: unknown;
-  outletStock?: Array<{ outletId?: number | null; stock?: Num; outlet?: { id?: number | null } | null }> | null;
+  outletStock?: Array<{
+    outletId?: number | null;
+    stock?: Num;
+    renting?: Num;
+    /** #1341 "Hiện ở chi nhánh"; an API from before the column sends none (read as listed) */
+    isListed?: boolean | null;
+    outlet?: { id?: number | null } | null;
+  }> | null;
   embeddingGeneratedAt?: string | Date | null;
 }
 
@@ -74,6 +81,9 @@ export interface OutletLite {
   id: number;
   name: string;
   address?: string | null;
+  /** #1341: the default branch ticks first on a new product; a closed branch has no tick */
+  isDefault?: boolean | null;
+  isActive?: boolean | null;
 }
 
 // ----------------------------------------------------------------------------
@@ -174,6 +184,10 @@ export interface FormState {
   /** Total quantity; with several outlets it is always the sum of `outletStock`. */
   totalStock: number;
   outletStock: Array<{ outletId: number; stock: number }>;
+  /** #1341 "Hiện ở chi nhánh": the tick of each branch in the form (all branches, ticked or not) */
+  listed: Record<number, boolean>;
+  /** #1341: what the server has (edit); empty on a new product. `listingChanges` compares the two. */
+  savedListed: Record<number, boolean>;
   /** Saved photo URLs still kept (edit). New files live next to the form, not in the state. */
   keptImages: string[];
 }
@@ -201,8 +215,24 @@ export function generateBarcode(now: number = Date.now(), random: number = Math.
   return `${String(now).slice(-8)}${String(Math.floor(random * 1000)).padStart(3, '0')}`;
 }
 
-/** New product: first category, a generated code, every outlet at 0. */
-export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number }>, barcode: string): FormState {
+/**
+ * #1341: the branch ticked on a new product: the branch chosen in the product list, else the default branch, else the first
+ * (mockup B3c). undefined when the shop has no branch.
+ */
+export function defaultListedOutletId(outlets: OutletLite[], preferredId?: number | null): number | undefined {
+  const open = outlets.filter((o) => o.isActive !== false);
+  const pool = open.length > 0 ? open : outlets;
+  return pool.find((o) => o.id === preferredId)?.id ?? pool.find((o) => o.isDefault)?.id ?? pool[0]?.id;
+}
+
+/** #1341: only the owner ticks / unticks "Hiện ở chi nhánh"; the other roles see the ticks greyed out. */
+export function canTickBranches(role: string | null | undefined): boolean {
+  return role === 'MERCHANT' || role === 'ADMIN';
+}
+
+/** New product: first category, a generated code, every outlet at 0, the chosen (or default) branch ticked. */
+export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number }>, barcode: string, listedOutletId?: number | null): FormState {
+  const ticked = defaultListedOutletId(outlets, listedOutletId);
   return {
     name: '',
     description: '',
@@ -216,6 +246,8 @@ export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number 
     costPrice: 0,
     totalStock: 0,
     outletStock: outlets.map((o) => ({ outletId: o.id, stock: 0 })),
+    listed: Object.fromEntries(outlets.map((o) => [o.id, o.id === ticked])),
+    savedListed: {},
     keptImages: [],
   };
 }
@@ -223,11 +255,17 @@ export function emptyForm(outlets: OutletLite[], categories: Array<{ id: number 
 /** Edit: the saved product, one stock row per outlet of the shop (0 where it has none), total = their sum. */
 export function formFromProduct(p: ProductSource, outlets: OutletLite[], categories: Array<{ id: number }>): FormState {
   const saved = new Map<number, number>();
+  // #1341: a branch is ticked when its row says so (a row from an API without the column counts as ticked); no row = not ticked
+  const listedRows = new Map<number, boolean>();
   for (const row of p.outletStock || []) {
     const id = row?.outlet?.id ?? row?.outletId;
-    if (typeof id === 'number' && id > 0) saved.set(id, Math.max(0, num(row.stock)));
+    if (typeof id === 'number' && id > 0) {
+      saved.set(id, Math.max(0, num(row.stock)));
+      listedRows.set(id, row.isListed !== false);
+    }
   }
   const outletStock = outlets.map((o) => ({ outletId: o.id, stock: saved.get(o.id) ?? 0 }));
+  const listed = Object.fromEntries(outlets.map((o) => [o.id, listedRows.get(o.id) ?? false]));
   const { perRental, perDay } = rentalPricesOf(p);
   // each saved price fills its own row; no table = "Chưa cài"
   const table = savedBlockOf(p);
@@ -245,6 +283,8 @@ export function formFromProduct(p: ProductSource, outlets: OutletLite[], categor
     costPrice: Math.max(0, num(p.costPrice)),
     totalStock: outletStock.reduce((sum, r) => sum + r.stock, 0),
     outletStock,
+    listed,
+    savedListed: { ...listed },
     keptImages: imagesOf(p.images),
   };
 }
@@ -260,6 +300,29 @@ export function setOutletStock(form: FormState, outletId: number, stock: number)
   const outletStock = form.outletStock.map((r) => (r.outletId === outletId ? { ...r, stock: Math.max(0, stock) } : r));
   const totalStock = outletStock.length > 1 ? outletStock.reduce((sum, r) => sum + r.stock, 0) : outletStock[0]?.stock ?? form.totalStock;
   return { ...form, outletStock, totalStock };
+}
+
+/** #1341: tick or untick one branch in the form (nothing is sent until the form is saved). */
+export function setOutletListed(form: FormState, outletId: number, isListed: boolean): FormState {
+  return { ...form, listed: { ...form.listed, [outletId]: isListed } };
+}
+
+/** #1341: the ticks to send to PUT /api/products/listing after an edit: branches whose tick differs from the saved one. */
+export function listingChanges(form: FormState): Array<{ outletId: number; isListed: boolean }> {
+  return Object.keys(form.savedListed)
+    .map(Number)
+    .filter((id) => form.listed[id] !== undefined && form.listed[id] !== form.savedListed[id])
+    .sort((a, b) => a - b)
+    .map((outletId) => ({ outletId, isListed: form.listed[outletId] }));
+}
+
+/**
+ * #1341 reminder under an unticked branch that still holds units (mockup B3e): "Còn N cái ở chi nhánh này (M đang thuê), vẫn
+ * tính vào tổng nhưng không hiện khi tạo đơn." Never blocks anything. null = no reminder.
+ */
+export function listingReminder(row: { isListed: boolean; stock: number; renting: number }): { stock: number; renting: number } | null {
+  if (row.isListed) return null;
+  return row.stock > 0 || row.renting > 0 ? { stock: row.stock, renting: row.renting } : null;
 }
 
 /** The single quantity box (one outlet): the outlet row follows the total. */
@@ -367,9 +430,11 @@ export function turnOffBlock(form: FormState): FormState {
  */
 export function buildPayload(form: FormState, opts: PayloadOptions): Record<string, unknown> {
   const branch = opts.branchOutletId;
+  // #1341: a NEW product with several branches carries the ticks (a branch role sends its own row only and the API lists it)
+  const sendTicks = opts.productId == null && branch == null && form.outletStock.length > 1;
   const stockRows = form.outletStock
     .filter((r) => branch == null || r.outletId === branch)
-    .map((r) => ({ outletId: r.outletId, stock: r.stock }));
+    .map((r) => ({ outletId: r.outletId, stock: r.stock, ...(sendTicks ? { isListed: form.listed[r.outletId] === true } : {}) }));
   // #825: OUTLET_STAFF saves only its own stock on edit (the API refuses a changed shared field)
   if (opts.stockOnly && opts.productId != null) return { id: opts.productId, outletStock: stockRows };
   const pricing: Record<string, unknown> = {};

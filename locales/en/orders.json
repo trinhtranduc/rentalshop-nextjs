@@ -789,7 +789,8 @@
         "label": "{n}-day block",
         "labelExtra": "{n}-day block + {m} extra days",
         "days": "{n} days"
-      }
+      },
+      "notListed": "This branch does not show this product"
     },
     "tabs": {
       "label": "Order lists",

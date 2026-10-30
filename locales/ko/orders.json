@@ -82,7 +82,8 @@
       },
       "per": {
         "BLOCK": "1일 {price}부터 · 블록 요금"
-      }
+      },
+      "notListed": "이 매장에서는 이 상품을 표시하지 않습니다"
     },
     "receipt": {
       "units": {

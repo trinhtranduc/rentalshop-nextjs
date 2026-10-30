@@ -82,7 +82,8 @@
       },
       "per": {
         "BLOCK": "每天 {price} 起 · 按档计价"
-      }
+      },
+      "notListed": "此门店未显示该商品"
     },
     "receipt": {
       "units": {
