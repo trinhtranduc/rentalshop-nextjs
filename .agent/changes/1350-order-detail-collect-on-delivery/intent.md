@@ -1,6 +1,6 @@
 # Chi tiết đơn: "Thu khi giao" bằng số thu thật lúc giao
 
-Issue: #1350 · Author: Trinh Tran · Status: in-progress · Created: 2026-10-30
+Issue: #1350 · Author: Trinh Tran · Status: done · Created: 2026-10-30
 
 ## Problem
 

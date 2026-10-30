@@ -1,6 +1,6 @@
 # Spec — Chi tiết đơn: "Thu khi giao"
 
-Issue: #1350 · Status: in-progress · Intent: ./intent.md
+Issue: #1350 · Status: done · Intent: ./intent.md
 
 ## Behavior
 
