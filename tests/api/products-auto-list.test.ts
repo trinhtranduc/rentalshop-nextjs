@@ -39,6 +39,7 @@ const mockPrisma: any = {
   outlet: { findMany: jest.fn() },
   product: { findFirst: jest.fn(), findMany: jest.fn() },
   outletStock: { updateMany: jest.fn(async () => ({ count: 1 })) },
+  merchant: { findUnique: jest.fn(async () => ({ id: 2, settings: null })) },
   $transaction: jest.fn(),
 };
 jest.mock('@rentalshop/database', () => ({

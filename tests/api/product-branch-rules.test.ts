@@ -268,14 +268,14 @@ describe('PUT /api/products/:id — branch roles', () => {
   );
 
   it.each([['OUTLET_ADMIN', outletAdmin], ['OUTLET_INVENTORY', inventory]])(
-    '%s cannot change shared fields of a product its outlet only has a 0-stock row for',
+    '%s cannot change shared fields of a product its outlet only has a 0-stock row for (a row that is not listed, #1341)',
     async (_role, who) => {
       ctx = who;
       mockDb.products.findById.mockResolvedValue({
         ...product,
         outletStock: [
-          { outletId: 1, stock: 0, renting: 0, available: 0, outlet: { id: 1, name: 'Main' } },
-          { outletId: 3, stock: 4, renting: 0, available: 4, outlet: { id: 3, name: 'Second' } },
+          { outletId: 1, stock: 0, renting: 0, available: 0, isListed: false, outlet: { id: 1, name: 'Main' } },
+          { outletId: 3, stock: 4, renting: 0, available: 4, isListed: true, outlet: { id: 3, name: 'Second' } },
         ],
       });
       const rename = await put({ name: 'Vest xanh' });
