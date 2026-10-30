@@ -1,4 +1,5 @@
 import CoreImage
+import UIKit
 import XCTest
 @testable import POS_ADBD
 
@@ -717,5 +718,230 @@ extension OrderShareModel {
     var stageBlock: StageBlock? {
         for entry in money { if case .stages(let block) = entry { return block } }
         return nil
+    }
+}
+
+// MARK: - #1354 the order's note on the image
+
+/// "Hiện ghi chú đơn trên ảnh chia sẻ": mockup "Ảnh chia sẻ đơn: thứ tự tiền", sections 4 and 5, frames (a)-(g) with the
+/// switch ON and OFF. The rule, the 4-line cut and the missing-key reading are pure.
+final class OrderShareNoteTests: XCTestCase {
+    private let vi = ShareLanguage.make(code: "vi-VN")
+    private let en = ShareLanguage.make(code: "en")
+    private let now = ISO8601DateFormatter().date(from: "2026-10-07T07:00:00Z")!
+    private static let note = "Khách hẹn nhận trước 9h sáng. Váy cần là lại trước khi giao."
+
+    private func make(_ source: OrderShareSource, on: Bool, _ language: ShareLanguage? = nil, qr: Bool = false) -> OrderShareModel {
+        OrderShareModel.make(source, language: language ?? vi, bankAccount: qr ? OrderShareImageTests.vcb : nil, qrSwitchOn: qr,
+                             showOrderNote: on, now: now)
+    }
+
+    private func with(_ base: OrderShareSource, note: String? = OrderShareNoteTests.note) -> OrderShareSource {
+        var source = base
+        source.orderNote = note
+        return source
+    }
+
+    private func merchant(_ extra: String) throws -> Merchant {
+        try JSONDecoder().decode(Merchant.self, from: Data("{\"id\": 1, \"name\": \"Shop\"\(extra)}".utf8))
+    }
+
+    private func profile(_ json: String) throws -> ShareOrderNoteProfile {
+        try JSONDecoder().decode(ShareOrderNoteProfile.self, from: Data(json.utf8))
+    }
+
+    // MARK: Who sets it, how it is read
+
+    func testOnlyTheShopOwnerSetsIt() {
+        XCTAssertTrue(ShareOrderNoteRule.canSet(role: .merchant))
+        for role in [Role.admin, .outletAdmin, .outletStaff, .outletInventory] {
+            XCTAssertFalse(ShareOrderNoteRule.canSet(role: role), "\(role)")
+        }
+        XCTAssertFalse(ShareOrderNoteRule.canSet(role: nil))
+    }
+
+    func testMissingFlagMeansOff() throws {
+        XCTAssertFalse(ShareOrderNoteRule.isOn(nil))
+        let old = try merchant("")
+        XCTAssertNil(old.shareOrderNote, "an older API or a cached login has no key")
+        XCTAssertFalse(ShareOrderNoteRule.isOn(old))
+        XCTAssertFalse(ShareOrderNoteRule.isOn(try merchant(", \"shareOrderNote\": null")))
+        XCTAssertFalse(ShareOrderNoteRule.isOn(try merchant(", \"shareOrderNote\": false")))
+        XCTAssertTrue(ShareOrderNoteRule.isOn(try merchant(", \"shareOrderNote\": true")))
+    }
+
+    func testMerchantRoundTripKeepsTheFlag() throws {
+        let decoded = try merchant(", \"shareOrderNote\": true")
+        let again = try JSONDecoder().decode(Merchant.self, from: try JSONEncoder().encode(decoded))
+        XCTAssertEqual(again.shareOrderNote, true)
+    }
+
+    func testProfileFlagIsReadAndAnOddValueNeverFailsTheRead() throws {
+        XCTAssertEqual(try profile("{\"merchant\": {\"shareOrderNote\": true}}").flag, true)
+        XCTAssertEqual(try profile("{\"merchant\": {\"shareOrderNote\": false}}").flag, false)
+        XCTAssertEqual(try profile("{\"merchant\": {\"id\": 1}}").flag, false, "missing key = off")
+        XCTAssertEqual(try profile("{\"merchant\": {\"shareOrderNote\": null}}").flag, false)
+        XCTAssertEqual(try profile("{\"merchant\": {\"shareOrderNote\": \"true\"}}").flag, false, "a string is not a boolean")
+        XCTAssertEqual(try profile("{\"merchant\": {\"shareOrderNote\": 1}}").flag, false)
+        XCTAssertNil(try profile("{\"id\": 1}").flag, "no shop (ADMIN): nothing to read")
+    }
+
+    func testRefreshReadsOnceAMinuteForEveryShopRole() {
+        let t = Date()
+        XCTAssertTrue(ShopCurrencyLogic.shouldRefresh(role: .outletStaff, lastRefresh: nil, now: t, force: false))
+        XCTAssertFalse(ShopCurrencyLogic.shouldRefresh(role: .outletStaff, lastRefresh: t.addingTimeInterval(-30), now: t, force: false))
+        XCTAssertTrue(ShopCurrencyLogic.shouldRefresh(role: .outletStaff, lastRefresh: t.addingTimeInterval(-61), now: t, force: false))
+        XCTAssertFalse(ShopCurrencyLogic.shouldRefresh(role: .admin, lastRefresh: nil, now: t, force: true), "ADMIN has no shop")
+    }
+
+    // MARK: When the block is on the image
+
+    func testTextOnlyForAnOrderWithTheSwitchOnAndANote() {
+        XCTAssertEqual(ShareOrderNoteRule.text("  Giao trước 9h \n", enabled: true, isDraft: false), "Giao trước 9h")
+        XCTAssertNil(ShareOrderNoteRule.text("Giao trước 9h", enabled: false, isDraft: false), "switch off")
+        XCTAssertNil(ShareOrderNoteRule.text("Giao trước 9h", enabled: true, isDraft: true), "a draft has no order note")
+        for empty in [nil, "", "   ", "\n \t"] {
+            XCTAssertNil(ShareOrderNoteRule.text(empty, enabled: true, isDraft: false), "\(String(describing: empty))")
+        }
+    }
+
+    func testOffOrNoNoteIsTheImageOfBefore() {
+        for base in [OrderShareImageTests.rent(), OrderShareImageTests.sale()] {
+            let noNote = make(base, on: true)
+            XCTAssertNil(noNote.orderNote, "no note: no block even with the switch on")
+            XCTAssertNil(make(with(base), on: false).orderNote, "switch off: no block")
+            XCTAssertEqual(make(with(base), on: false), make(base, on: false), "switch off is the image of #1349 line for line")
+            XCTAssertEqual(make(base, on: true), make(base, on: false))
+        }
+    }
+
+    func testTheBlockIsTitledAndKeepsTheNote() {
+        let block = make(with(OrderShareImageTests.rent()), on: true).orderNote
+        XCTAssertEqual(block?.title, "Ghi chú")
+        XCTAssertEqual(block?.text, Self.note)
+        XCTAssertEqual(make(with(OrderShareImageTests.rent()), on: true, en).orderNote?.title, "Note")
+    }
+
+    func testNothingElseOnTheImageMoves() {
+        let off = make(with(OrderShareImageTests.rent()), on: false, qr: true)
+        let on = make(with(OrderShareImageTests.rent()), on: true, qr: true)
+        XCTAssertNotNil(on.orderNote)
+        XCTAssertEqual(on.money, off.money, "the money order (#1349) is the same")
+        XCTAssertEqual(on.lines, off.lines, "item notes (#930) are the same")
+        XCTAssertEqual(on.qr, off.qr)
+        XCTAssertEqual(on.thanks, off.thanks)
+        XCTAssertEqual(on.note, off.note)
+    }
+
+    // MARK: Frames (a)-(g)
+
+    func testFramesAToG() {
+        let rent = OrderShareImageTests.rent()
+        var oneDeposit = rent; oneDeposit.deposit = 300_000                                   // (a)
+        var staged = rent; staged.deposit = 230_000; staged.hasDepositPlan = true             // (b)
+        staged.stages = [OrderInstallment(key: "i1", label: "Cọc giữ chỗ", percent: 20, amount: 230_000, dueDateKey: "2026-10-05",
+                                          status: "PAID", collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: 230_000),
+                         OrderInstallment(key: "rest", label: "rest", percent: 80, amount: 920_000, dueDateKey: "2026-10-16", status: "UPCOMING")]
+        var none = rent; none.deposit = 0                                                     // (c)
+        var discounted = rent; discounted.discount = 100_000; discounted.deposit = 300_000    // (d)
+        var collateral = rent; collateral.deposit = 300_000                                   // (e)
+        collateral.collateralPapers = "CCCD"; collateral.collateralMoney = 2_000_000
+        let frames: [(String, OrderShareSource, Bool)] = [
+            ("a", oneDeposit, true), ("b", staged, true), ("c", none, true), ("d", discounted, true), ("e", collateral, true),
+            ("f sale", OrderShareImageTests.sale(), true), ("g draft", OrderShareImageTests.draft(), false),
+        ]
+        for (name, source, hasBlock) in frames {
+            let off = make(with(source), on: false)
+            let on = make(with(source), on: true)
+            XCTAssertNil(off.orderNote, "(\(name)) switch off")
+            XCTAssertEqual(on.orderNote?.text, hasBlock ? Self.note : nil, "(\(name)) switch on")
+            XCTAssertEqual(on.money, off.money, "(\(name)) the money part does not move")
+        }
+    }
+
+    // MARK: The cut: at most 4 lines, "…" when more
+
+    /// 10 characters per line
+    private func fits10(_ s: String) -> Bool { s.count <= 10 }
+
+    func testWrapsByWordsAndKeepsLineBreaks() {
+        XCTAssertEqual(ShareNoteClip.lines("hello world foo bar", fits: fits10), ["hello", "world foo", "bar"])
+        XCTAssertEqual(ShareNoteClip.lines("a\nb", fits: fits10), ["a", "b"])
+        XCTAssertEqual(ShareNoteClip.lines("a\r\n\r\n\nb  c", fits: fits10), ["a", "b c"], "blank lines do not use up the 4 lines")
+        XCTAssertEqual(ShareNoteClip.lines("   ", fits: fits10), [])
+        XCTAssertEqual(ShareNoteClip.lines("", fits: fits10), [])
+    }
+
+    func testALongWordIsCutByCharacters() {
+        XCTAssertEqual(ShareNoteClip.lines("abcdefghijklmnopqrstuvwxyz", fits: fits10), ["abcdefghij", "klmnopqrst", "uvwxyz"])
+        XCTAssertEqual(ShareNoteClip.lines("ab abcdefghijklmnop", fits: fits10), ["ab", "abcdefghij", "klmnop"])
+    }
+
+    func testFourLinesAreKeptWhole() {
+        XCTAssertEqual(ShareNoteClip.lines("aaaaaaaa bbbbbbbb cccccccc dddddddd", fits: fits10),
+                       ["aaaaaaaa", "bbbbbbbb", "cccccccc", "dddddddd"], "exactly 4 lines: no ellipsis")
+    }
+
+    func testMoreThanFourLinesEndWithAnEllipsisOnTheFourth() {
+        XCTAssertEqual(ShareNoteClip.lines("aaaaaaaa bbbbbbbb cccccccc dddddddd eeeeeeee ffffffff", fits: fits10),
+                       ["aaaaaaaa", "bbbbbbbb", "cccccccc", "dddddddd…"])
+        XCTAssertEqual(ShareNoteClip.lines("aaaaaaaaaa bbbbbbbbbb cccccccccc dddddddddd eeeeeeeeee", fits: fits10),
+                       ["aaaaaaaaaa", "bbbbbbbbbb", "cccccccccc", "ddddddddd…"], "the fourth is shortened so the dots fit")
+        XCTAssertEqual(ShareNoteClip.lines("a\nb\nc\nd\ne", fits: fits10), ["a", "b", "c", "d…"])
+        XCTAssertEqual(ShareNoteClip.lines("a b c d e f", maxLines: 2, fits: { $0.count <= 3 }), ["a b", "c…"])
+    }
+
+    func testVietnameseIsCutAtCharactersNotAtBytes() {
+        // every character here is one Character with combining marks; 10 per line
+        XCTAssertEqual(ShareNoteClip.lines("ếếếếếếếếếếếếế", fits: fits10), ["ếếếếếếếếếế", "ếếế"])
+    }
+
+    // MARK: The drawn image
+
+    func testTheNoteMakesTheImageTallerAndIsCappedAtFourLines() {
+        let rent = OrderShareImageTests.rent()
+        let without = OrderShareRenderer.image(make(with(rent), on: false)).size.height
+        let short = OrderShareRenderer.image(make(with(rent), on: true)).size.height
+        let long = String(repeating: "Váy cưới cần là lại trước khi giao, gọi trước 30 phút. ", count: 12)
+        let longA = OrderShareRenderer.image(make(with(rent, note: long), on: true)).size.height
+        let longB = OrderShareRenderer.image(make(with(rent, note: long + long), on: true)).size.height
+        XCTAssertGreaterThan(short, without, "the block is drawn")
+        XCTAssertGreaterThan(longA, short, "a longer note takes more lines")
+        XCTAssertEqual(longA, longB, "but never more than 4")
+        XCTAssertLessThan(longA - without, 200)
+    }
+
+    /// The image as RGBA bytes, `width` × `height` pixels
+    private func bitmap(_ image: UIImage) -> (width: Int, height: Int, bytes: [UInt8]) {
+        let cg = image.cgImage!
+        var data = [UInt8](repeating: 0, count: cg.width * cg.height * 4)
+        let context = CGContext(data: &data, width: cg.width, height: cg.height, bitsPerComponent: 8, bytesPerRow: cg.width * 4,
+                                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        context.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        return (cg.width, cg.height, data)
+    }
+
+    func testTheNoteIsInsideTheItemsCardAboveTheQRCard() {
+        let flagged = make(with(OrderShareImageTests.rent()), on: true, qr: true)
+        XCTAssertNotNil(flagged.orderNote)
+        XCTAssertNotNil(flagged.qr)
+        let bits = bitmap(OrderShareRenderer.image(flagged))
+        let height = bits.height
+        func rgb(_ x: Int, _ y: Int) -> [UInt8] { Array(bits.bytes[(y * bits.width + x) * 4..<(y * bits.width + x) * 4 + 3]) }
+        // white card rows at x = 36 pt (inside every card), and the rows where the note's grey box (F3F4F6) is at x = 60 pt
+        var cards: [ClosedRange<Int>] = []
+        var noteRows: [Int] = []
+        var start: Int?
+        for y in 0..<height {
+            let white = rgb(72, y) == [255, 255, 255]
+            if white, start == nil { start = y }
+            if !white, let from = start { cards.append(from...(y - 1)); start = nil }
+            if rgb(120, y) == [0xF3, 0xF4, 0xF6] { noteRows.append(y) }
+        }
+        XCTAssertEqual(cards.count, 3, "customer card, items card (money and note), QR card: \(cards)")
+        guard cards.count == 3, let first = noteRows.first, let last = noteRows.last else { return XCTFail("no note box drawn") }
+        XCTAssertTrue(cards[1].contains(first) && cards[1].contains(last), "the note is in the items card: \(cards) \(first)...\(last)")
+        XCTAssertLessThan(last, cards[2].lowerBound, "and above the QR card")
+        XCTAssertLessThan(cards[2].upperBound, height - 60, "the thanks come after the QR card")
     }
 }

@@ -107,6 +107,37 @@ struct OrderShareSource {
     var hasDepositPlan: Bool? = nil
     var stages: [OrderInstallment]? = nil
     var stageSummary: InstallmentSummary? = nil
+    /// #1354: the order's own note (the one the shop writes on the order); on the image only when the shop turns it on
+    var orderNote: String? = nil
+}
+
+/// #1354 "Hiện ghi chú đơn trên ảnh chia sẻ": who sets it, and when the order's note is on the image (Android `ShareOrderNoteRule`)
+enum ShareOrderNoteRule {
+    /// The shop owner only (`PUT /api/settings/merchant` answers 403 to every other role)
+    static func canSet(role: Role?) -> Bool { false }
+
+    /// The shop's switch on the cached merchant; missing = off
+    static func isOn(_ merchant: Merchant?) -> Bool { false }
+
+    /// The note block of the image: the order's note without surrounding blanks, only for an order (not a draft) while
+    /// the switch is on; nil otherwise or when the note is empty
+    static func text(_ note: String?, enabled: Bool, isDraft: Bool) -> String? { nil }
+}
+
+/// #1354 the note block is at most `maxLines` lines of the box it is drawn in
+enum ShareNoteClip {
+    static let maxLines = 4
+
+    /// Wraps `text` by words into lines that `fits` (measured with the font and width the image draws it with). The
+    /// author's line breaks stay, a word longer than a line is cut by characters. More than `maxLines` lines: the last
+    /// kept line is shortened until it fits with "…". Pure; the Android `ShareNoteClip` is the same algorithm.
+    static func lines(_ text: String, maxLines: Int = ShareNoteClip.maxLines, fits: (String) -> Bool) -> [String] { [] }
+}
+
+/// #1354 `merchant.shareOrderNote` of GET /api/users/profile, read so that a missing or odd value is "off", never an error
+struct ShareOrderNoteProfile: Decodable {
+    /// nil without a shop (ADMIN); false when the key is missing, null or not a boolean
+    var flag: Bool? { nil }
 }
 
 struct OrderShareModel: Equatable {
@@ -149,6 +180,11 @@ struct OrderShareModel: Equatable {
         case collect(label: String, value: String)
     }
 
+    struct OrderNote: Equatable {
+        let title: String
+        let text: String
+    }
+
     struct Strip: Equatable {
         let pickupLabel: String
         let pickupDay: String
@@ -184,6 +220,8 @@ struct OrderShareModel: Equatable {
     /// #1345: the money part, top to bottom: Tạm tính, Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân
     let money: [Money]
     let note: String?
+    /// #1354: the order's own note, "GHI CHÚ" block under the money part (nil: switch off, no note, or a draft)
+    var orderNote: OrderNote? = nil
     let qr: QR?
     let thanks: String
     let address: String?
@@ -220,7 +258,8 @@ struct OrderShareModel: Equatable {
 
     /// `bankAccount` is the bill's account (`BillBankQR.pick`); `qrSwitchOn` the "QR chuyển khoản trên hoá đơn" switch
     static func make(_ source: OrderShareSource, language: ShareLanguage = .current, bankAccount: BankAccount? = nil,
-                     qrSwitchOn: Bool = false, now: Date = Date(), currency: ShopCurrency = ShopCurrencyStore.current) -> OrderShareModel {
+                     qrSwitchOn: Bool = false, showOrderNote: Bool = false, now: Date = Date(),
+                     currency: ShopCurrency = ShopCurrencyStore.current) -> OrderShareModel {
         let t = language
         let day: (Date) -> String = { DayFormatter.short($0, timeZone: Date.shopTimeZone, locale: t.locale) }
         let isRent = source.orderType == .rent

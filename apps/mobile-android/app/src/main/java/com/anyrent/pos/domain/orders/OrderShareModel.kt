@@ -116,6 +116,9 @@ object ShareMoneyRule {
     }
 }
 
+/** #1354 the order's own note under the money part: "GHI CHÚ" and the text (cut to 4 lines by the renderer) */
+data class ShareOrderNote(val title: ShareText, val text: String)
+
 data class ShareHighlight(val label: ShareText, val value: String, val tone: ShareTone)
 
 data class ShareQr(
@@ -149,6 +152,8 @@ data class OrderShareModel(
     /** The money part, top to bottom (#1345): Tạm tính, Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân */
     val money: List<ShareMoney>,
     val note: ShareText?,
+    /** #1354 the order's note when the shop turned "Hiện ghi chú đơn trên ảnh chia sẻ" on; null otherwise (and on a draft) */
+    val orderNote: ShareOrderNote? = null,
     val qr: ShareQr?,
     val thanks: ShareText,
     val address: String?,
@@ -174,6 +179,8 @@ data class OrderShareModel(
             blockSummary: (com.anyrent.pos.data.model.OrderItem) -> String? = { null },
             now: Instant = Instant.now(),
             currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
+            /** #1354 the shop's "Hiện ghi chú đơn trên ảnh chia sẻ"; missing = off */
+            showOrderNote: Boolean = false,
         ): OrderShareModel {
             val summary = order.summary
             val isRent = summary.orderType.equals("RENT", ignoreCase = true)
