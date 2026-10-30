@@ -564,7 +564,8 @@ export const simplifiedOutlets = {
         });
         if (products.length > 0) {
           await tx.outletStock.createMany({
-            data: products.map((p) => ({ productId: p.id, outletId: created.id, stock: 0, available: 0, renting: 0 })),
+            // #1341: the new branch lists nothing until the owner ticks the products it sells ("Hiện ở chi nhánh")
+            data: products.map((p) => ({ productId: p.id, outletId: created.id, stock: 0, available: 0, renting: 0, isListed: false })),
             skipDuplicates: true
           });
         }

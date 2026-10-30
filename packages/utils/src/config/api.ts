@@ -73,6 +73,8 @@ export interface ApiUrls {
     bulkUpdate: string;
     bulkImport: string;
     batchDelete: string;
+    /** #1341 PUT: tick / untick "Hiện ở chi nhánh" */
+    listing: string;
     availability: (id: number) => string;
     availabilityCalendar: (id: number) => string;
     batchAvailability: string;
@@ -657,6 +659,7 @@ function createApiUrls(): ApiUrls {
       bulkUpdate: `${base}/api/products/bulk-update`,
       bulkImport: `${base}/api/products/bulk-import`,
       batchDelete: `${base}/api/products/batch-delete`,
+      listing: `${base}/api/products/listing`,
       availability: (id: number) => `${base}/api/products/${id}/availability`,
       availabilityCalendar: (id: number) => `${base}/api/products/${id}/availability-calendar`,
       batchAvailability: `${base}/api/products/batch-availability`,

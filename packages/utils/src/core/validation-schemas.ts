@@ -141,6 +141,8 @@ export const businessTagCatalogQuerySchema = z.object({}).optional();
 const outletStockItemSchema = z.object({
   outletId: z.coerce.number().int().positive('Outlet is required'),
   stock: z.number().int().min(0, 'Stock must be non-negative'),
+  // #1341 "Hiện ở chi nhánh" on create; absent = listed. PUT ignores it (PUT /api/products/listing ticks).
+  isListed: z.boolean().optional(),
 });
 
 // Base product schema (without refine) - used for both create and update
@@ -232,6 +234,8 @@ export const productsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(), // Support page-based pagination
   isActive: z.coerce.boolean().optional(),
   available: z.coerce.boolean().optional(),
+  // #1341 only the products listed at one branch; read with parseListedParam ("false" must not turn it on)
+  listed: z.string().optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
   limit: z.coerce.number().int().min(1).max(3000).default(50),

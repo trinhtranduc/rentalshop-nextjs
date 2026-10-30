@@ -142,6 +142,20 @@ export function holdsStockAt(outletStock: OutletRowLike[] | null | undefined, ou
   return !!row && ((row.stock ?? 0) > 0 || (row.renting ?? 0) > 0);
 }
 
+/**
+ * #1341 rule 15: OUTLET_ADMIN / OUTLET_INVENTORY change shared fields of a product their branch holds (above) OR lists
+ * ("Hiện ở chi nhánh"), so a listed product that sold out can still be edited. Delete keeps `holdsStockAt`.
+ */
+export function holdsOrListsAt(
+  outletStock: Array<OutletRowLike & { isListed?: boolean | null }> | null | undefined,
+  outletId: number | null | undefined
+): boolean {
+  if (!outletId) return false;
+  if (holdsStockAt(outletStock, outletId)) return true;
+  const row = (outletStock || []).find((r) => (r.outlet?.id ?? r.outletId) === outletId);
+  return !!row && row.isListed !== false;
+}
+
 /** Another outlet that still holds a product (#825 delete rule). */
 export interface OtherOutletHold {
   id: number;

@@ -109,6 +109,8 @@ export interface OutletStock {
   stock: number;
   available: number;
   renting: number;
+  /** #1341 "Hiện ở chi nhánh"; the API sends it on every row, an older API does not */
+  isListed?: boolean;
   outlet?: OutletReference;
 }
 
@@ -134,6 +136,8 @@ export interface ProductCreateInput extends BaseFormInput {
   outletStock: Array<{ // Required - every product must have outlet stock
     outletId: number;
     stock: number;
+    /** #1341 "Hiện ở chi nhánh"; leave out = listed */
+    isListed?: boolean;
   }>;
 }
 
@@ -217,6 +221,7 @@ export interface ProductWithStock extends Product {
     stock: number;
     available: number;
     renting: number;
+    isListed?: boolean;
     outlet: OutletReference;
   }>;
 }
@@ -368,6 +373,9 @@ export interface ProductSearchFilter {
   sortBy?: string;      // Add sorting support
   sortOrder?: 'asc' | 'desc';  // Add sorting support
   available?: boolean;  // Add availability filter
+  listed?: boolean;     // #1341 (web client) only products listed at the branch (outletId); the API reads the query value
+  /** #1341 (database layer) branch whose "Hiện ở chi nhánh" list is wanted; set by GET /api/products */
+  listedOutletId?: number;
   status?: string;      // Add status filter
   minPrice?: number;    // Add price range filters
   maxPrice?: number;    // Add price range filters

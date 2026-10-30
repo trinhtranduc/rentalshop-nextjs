@@ -59,6 +59,7 @@ import { buildOrderAuditSnapshot, safeAudit } from '../../../lib/change-timeline
 import { attachOrderBalances, loadCompletedPaymentSums } from '../../../lib/order-balance-batch';
 import { ORDER_SCHEDULE_CONFLICT, type ScheduleConflict } from '../../../lib/schedule-conflict';
 import { hasCapability } from '../../../lib/client-capabilities';
+import { isOldListingClient } from '../../../lib/product-listing';
 import {
   installmentsView,
   shapeListPlans,
@@ -1277,6 +1278,25 @@ export const POST = withPermissions(['orders.create'])(async (request, { user, u
       context: buildAuditContext(request, user, userScope)
     }));
     console.log('✅ Order created successfully:', loyaltyOrder);
+
+    // #1341 "Hiện ở chi nhánh": an old app has no tick and sees every product, so a product it puts on an order is listed
+    // at the branch of the order (one updateMany). An app / the web that sends `branch-listing` is not touched: a draft
+    // cart holding a product the owner unticked still creates its order and does not undo the untick. Best effort.
+    if (!isReplay && isOldListingClient(request) && loyaltyOrder.outletId && loyaltyOrder.orderItems?.length) {
+      try {
+        const productIds = Array.from(
+          new Set(loyaltyOrder.orderItems.map((item) => item.productId || 0).filter((id) => id > 0))
+        );
+        if (productIds.length > 0) {
+          await prisma.outletStock.updateMany({
+            where: { outletId: loyaltyOrder.outletId, productId: { in: productIds }, isListed: false },
+            data: { isListed: true },
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error listing the products of a new order at its branch:', error);
+      }
+    }
 
     // Update outlet stock if order is SALE with COMPLETED status or RENT with RESERVED/PICKUPED status
     if (!isReplay && loyaltyOrder.orderItems && loyaltyOrder.orderItems.length > 0) {

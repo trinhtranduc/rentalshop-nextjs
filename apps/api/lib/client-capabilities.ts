@@ -11,8 +11,12 @@
 
 export const CLIENT_CAPABILITIES_HEADER = 'x-client-capabilities';
 
-/** Tokens the server knows. Add a token here in the PR that ships the behaviour. */
-export type ClientCapability = 'installments' | 'block-pricing';
+/**
+ * Tokens the server knows. Add a token here in the PR that ships the behaviour.
+ * `branch-listing` (#1341): the client shows the "Hiện ở chi nhánh" tick, so the server does not list products for it
+ * (an old app has no tick: the server lists the products it puts on an order, see lib/product-listing.ts).
+ */
+export type ClientCapability = 'installments' | 'block-pricing' | 'branch-listing';
 
 interface HeaderSource {
   get(name: string): string | null;

@@ -161,6 +161,8 @@ export const productsApi = {
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.available !== undefined) params.append('available', filters.available.toString());
+    // #1341 only the products listed at the branch ("Hiện ở chi nhánh"); only `true` is sent
+    if (filters.listed) params.append('listed', 'true');
     if (filters.status) params.append('status', filters.status);
     if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
@@ -334,6 +336,23 @@ export const productsApi = {
       method: 'DELETE',
     });
     return await parseApiResponse<void>(response);
+  },
+
+  /**
+   * #1341 Tick (`isListed: true`) or untick "Hiện ở chi nhánh" for one branch (owner only; PUT /api/products/listing).
+   * Unticking is never refused: stock, units on rent and open orders do not matter.
+   */
+  async setBranchListing(input: { outletId: number; productIds: number[]; isListed: boolean }): Promise<ApiResponse<{
+    outletId: number;
+    isListed: boolean;
+    productIds: number[];
+    changed: number;
+  }>> {
+    const response = await authenticatedFetch(apiUrls.products.listing, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+    return await parseApiResponse<{ outletId: number; isListed: boolean; productIds: number[]; changed: number }>(response);
   },
 
   /**
