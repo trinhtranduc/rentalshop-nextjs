@@ -1,18 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withCustomerExportAuth } from '@rentalshop/auth/server';
-import { db } from '@rentalshop/database';
-import { 
-  handleApiError, 
-  ResponseBuilder,
-  parseDateRangeFromQuery,
-  createExcelWorkbook,
-  formatDateForExcel,
-  generateExcelFilename,
-  formatDateKeyInTimeZone,
-  SHOP_TIMEZONE,
-  type ExcelColumn
-} from '@rentalshop/utils';
-import {API} from '@rentalshop/constants';
+import { handleApiError } from '@rentalshop/utils';
+import {
+  buildCustomersExportResponse,
+  parseCustomersExportBody,
+} from '@/lib/customers-export';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,189 +18,67 @@ export const dynamic = 'force-dynamic';
  * - period: '1month' | '3months' | '6months' | '1year' | 'custom'
  * - startDate: ISO string (required for custom period)
  * - endDate: ISO string (required for custom period)
+ * - merchantId: number (ADMIN only)
+ * - customerIds: repeated, the selected customers (skips the period filter).
+ *   A long selection does not fit in a URL: use POST (#1361).
  */
 export const GET = withCustomerExportAuth(async (authorizedRequest) => {
   try {
     // User is already authenticated and authorized to export customers
     // Only ADMIN, MERCHANT, OUTLET_ADMIN can export
     // OUTLET_STAFF will automatically get 403 Forbidden
-    const { user, userScope, request } = authorizedRequest;
+    const { userScope, request } = authorizedRequest;
 
     const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format') || 'excel'; // Default to Excel
-    const period = searchParams.get('period');
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
-
-    // Parse and validate date range
-    const dateRangeResult = parseDateRangeFromQuery(period, startDateParam, endDateParam);
-    if ('error' in dateRangeResult) {
-      return NextResponse.json(
-        {
-          ...ResponseBuilder.error('INVALID_INPUT'),
-          message: dateRangeResult.error,
-        },
-        { status: 400 }
-      );
-    }
-
-    const { startDate, endDate } = dateRangeResult;
-
-    // Build search filters based on user scope
-    const filters: any = {
-      limit: 10000, // Large limit for export
-      offset: 0,
-      sortBy: 'firstName',
-      sortOrder: 'asc'
-    };
-
-    // Apply scope restrictions
-    // ADMIN may optionally pass merchantId to export one merchant's customers
-    const merchantIdParam = searchParams.get('merchantId');
-    if (userScope.merchantId) {
-      filters.merchantId = userScope.merchantId;
-    } else if (merchantIdParam) {
-      const merchantId = parseInt(merchantIdParam, 10);
-      if (!Number.isNaN(merchantId)) {
-        filters.merchantId = merchantId;
-      }
-    }
-    if (userScope.outletId) {
-      filters.outletId = userScope.outletId;
-    }
-
-    // Get customers
-    const result = await db.customers.search(filters);
-    let customers = result.data || [];
-
-    // Optionally filter by selected IDs (selection export — skip date filter)
     const customerIds = searchParams
       .getAll('customerIds')
       .map((id) => parseInt(id, 10))
       .filter((id) => !Number.isNaN(id));
-    const hasSelection = customerIds.length > 0;
 
-    if (hasSelection) {
-      customers = customers.filter((customer: any) => customerIds.includes(customer.id));
-    } else {
-      // Filter by date range (createdAt) only when exporting by period
-      customers = customers.filter((customer: any) => {
-        if (!customer.createdAt) return false;
-        const createdAt = new Date(customer.createdAt);
-        return createdAt >= startDate && createdAt <= endDate;
-      });
-    }
-
-    const includeMerchant = !userScope.merchantId;
-
-    // Prepare data for export (exclude system IDs)
-    const exportData = customers.map((customer: any) => ({
-      ...(includeMerchant ? { merchantName: customer.merchant?.name || '' } : {}),
-      firstName: customer.firstName || '',
-      lastName: customer.lastName || '',
-      email: customer.email || '',
-      phone: customer.phone || '',
-      address: customer.address || '',
-      city: customer.city || '',
-      state: customer.state || '',
-      country: customer.country || '',
-      zipCode: customer.zipCode || '',
-      idType: customer.idType || '',
-      idNumber: customer.idNumber || '',
-      isActive: customer.isActive ? 'Yes' : 'No',
-      createdAt: formatDateForExcel(customer.createdAt),
-      updatedAt: formatDateForExcel(customer.updatedAt)
-    }));
-
-    // Excel export
-    if (format === 'excel') {
-      const columns: ExcelColumn[] = [
-        ...(includeMerchant ? [{ header: 'Merchant', key: 'merchantName', width: 25 }] : []),
-        { header: 'First Name', key: 'firstName', width: 15 },
-        { header: 'Last Name', key: 'lastName', width: 15 },
-        { header: 'Email', key: 'email', width: 25 },
-        { header: 'Phone', key: 'phone', width: 15 },
-        { header: 'Address', key: 'address', width: 30 },
-        { header: 'City', key: 'city', width: 15 },
-        { header: 'State', key: 'state', width: 15 },
-        { header: 'Country', key: 'country', width: 15 },
-        { header: 'Zip Code', key: 'zipCode', width: 10 },
-        { header: 'ID Type', key: 'idType', width: 15 },
-        { header: 'ID Number', key: 'idNumber', width: 15 },
-        { header: 'Is Active', key: 'isActive', width: 10 },
-        { header: 'Created At', key: 'createdAt', width: 20 },
-        { header: 'Updated At', key: 'updatedAt', width: 20 }
-      ];
-
-      const buffer = createExcelWorkbook(exportData, columns, 'Customers');
-      const filename = generateExcelFilename('customers', startDate, endDate);
-
-      return new NextResponse(buffer, {
-        status: API.STATUS.OK,
-        headers: {
-          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
-        }
-      });
-    }
-
-    // CSV export (backward compatibility)
-    const csvHeaders = [
-      ...(includeMerchant ? ['Merchant'] : []),
-      'First Name',
-      'Last Name',
-      'Email',
-      'Phone',
-      'Address',
-      'City',
-      'State',
-      'Country',
-      'Zip Code',
-      'ID Type',
-      'ID Number',
-      'Is Active',
-      'Created At',
-      'Updated At'
-    ];
-
-    const csvRows = exportData.map((customer: any) => [
-      ...(includeMerchant ? [`"${customer.merchantName || ''}"`] : []),
-      `"${customer.firstName}"`,
-      `"${customer.lastName}"`,
-      `"${customer.email}"`,
-      `"${customer.phone}"`,
-      `"${customer.address}"`,
-      `"${customer.city}"`,
-      `"${customer.state}"`,
-      `"${customer.country}"`,
-      `"${customer.zipCode}"`,
-      `"${customer.idType}"`,
-      `"${customer.idNumber}"`,
-      customer.isActive,
-      customer.createdAt,
-      customer.updatedAt
-    ]);
-
-    const csvContent = [
-      csvHeaders.join(','),
-      ...csvRows.map((row: any) => row.join(','))
-    ].join('\n');
-
-    // Return CSV file
-    return new NextResponse(csvContent, {
-      status: API.STATUS.OK,
-      headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="customers-export-${formatDateKeyInTimeZone(new Date(), SHOP_TIMEZONE)}.csv"`,
-        'Cache-Control': 'no-cache'
-      }
+    return await buildCustomersExportResponse(userScope, {
+      format: searchParams.get('format') || 'excel', // Default to Excel
+      period: searchParams.get('period'),
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+      merchantId: searchParams.get('merchantId'),
+      customerIds,
     });
-
   } catch (error) {
     console.error('Error exporting customers:', error);
     
     // Use unified error handling system
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
+  }
+});
+
+/**
+ * POST /api/customers/export (#1361)
+ * Same file as GET, with the options in a JSON body so that thousands of selected customers fit in the request.
+ * Roles: ADMIN, MERCHANT, OUTLET_ADMIN (`customers.export`); OUTLET_STAFF gets 403. Scope is the caller's own
+ * shop / outlet; ids outside it are skipped.
+ *
+ * Body: { customerIds?: number[] (max 5000), format?: 'excel' | 'csv', period?, startDate?, endDate?, merchantId? }
+ * Without customerIds a period (or dates) is required, else 400 INVALID_INPUT.
+ */
+export const POST = withCustomerExportAuth(async (authorizedRequest) => {
+  try {
+    const { userScope, request } = authorizedRequest;
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      body = undefined;
+    }
+
+    const parsed = parseCustomersExportBody(body);
+    if ('response' in parsed) return parsed.response;
+
+    return await buildCustomersExportResponse(userScope, parsed.options);
+  } catch (error) {
+    console.error('Error exporting customers:', error);
+
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
   }
