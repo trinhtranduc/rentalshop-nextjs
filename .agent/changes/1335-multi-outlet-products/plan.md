@@ -17,8 +17,9 @@ Mỗi mục có một issue con (mở khi bắt đầu), mỗi PR code: `Fixes` 
 | 2m | (a) iOS rồi Android | PR 2 |
 | 3 | (b) Nhân viên không nhận số thừa; `totalStock` đúng; `activeTotalStock` | độc lập, sau PR 1 |
 | 4 | (c) Nhập Excel chọn chi nhánh + giới hạn gói (API + web) | PR 1 |
+| 5 | Khối "Các chi nhánh khác" ở chi tiết sản phẩm trên điện thoại (iOS trước, Android theo iOS); không đổi API | độc lập; sau PR 3 (nhân viên không nhận số chi nhánh khác) |
 
-PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 nếu chủ shop muốn vá rò rỉ cho nhân viên trước. Spec biến thể #1305 vào trước hay sau đều được (spec mục 8).
+PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2; PR 5 chỉ nên đi sau PR 3 nếu chủ shop muốn vá rò rỉ cho nhân viên trước. Spec biến thể #1305 vào trước hay sau đều được (spec mục 8).
 
 ## PR 0 — Sửa lỗi route admin (đứng đầu, `bug-fix-tdd`)
 
@@ -46,7 +47,7 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 
 1. `apps/api/app/api/products/other-outlets-availability/route.ts`: dùng lại cách của `batch-availability/route.ts` (`resolveAvailabilityQueryWindow`, `aggregateConflictingQuantities`, lọc ngày trong SQL theo mốc UTC từ khoá ngày Việt Nam) cho từng chi nhánh khác đang bật; nhân viên 403.
 2. Web: dòng giỏ `apps/client/app/orders/create/parts.tsx` (gần `LineStatus`, `:433`) gọi khi dòng "Hết hàng"/thiếu; chỉ vai trò chủ shop, quản lý, kho.
-3. iOS (`CartV2ViewController.swift:690-727`, `Model/ProductsV2.swift:781-789`), rồi Android (`CartV2Screen.kt:1018-1041`, `ProductRules.kt:664`): một dòng nhỏ dưới chip. Không thêm khối tồn chi nhánh khác trên điện thoại (#830 giữ nguyên, spec Q13).
+3. iOS (`CartV2ViewController.swift:690-727`, `Model/ProductsV2.swift:781-789`), rồi Android (`CartV2Screen.kt:1018-1041`, `ProductRules.kt:664`): một dòng nhỏ dưới chip. Khối "Các chi nhánh khác" ở chi tiết là PR 5.
 4. Test có ngày: Jest chạy `TZ=UTC` và `TZ=Asia/Ho_Chi_Minh`; không dùng `toISOString().split`, `setHours(0,0,0,0)`, `getDate()`, `toLocaleDateString()`.
 
 ## PR 3 — Nhân viên không nhận số thừa, `totalStock` đúng
@@ -61,6 +62,12 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 1. `bulk-import/route.ts`: `outletId` (zod tuỳ chọn), kiểm theo vai trò (spec 25), `checkPlanLimit` theo số món mới (`packages/utils/src/core/validation/plan-limits.ts:254-330`, thêm hàm đếm trước khi nhập); dòng vượt vào `skipped`.
 2. Web `apps/client/app/products/import/` (`import-model.ts:147-158`, `page.tsx`): chọn chi nhánh khi có từ 2 chi nhánh; ẩn khi 1 chi nhánh.
 3. Test: tab cũ (không `outletId`) vào đúng như hôm nay; chọn chi nhánh khác; role chi nhánh bị ép chi nhánh mình; vượt gói.
+
+## PR 5 — Khối "Các chi nhánh khác" trên điện thoại (D11)
+
+1. Không đổi API. iOS: giải mã thêm `otherOutlets` (quản lý/kho, `Model/Product.swift` quanh `:272`, `:370`) và dùng `outletStock[]` cho chủ shop (bỏ chi nhánh đang xem, bỏ chi nhánh đã tắt theo danh sách chi nhánh của `CurrentOutlet`); màn chi tiết `Viewcontrollers/Products/v2/ProductDetailViewController.swift`. Android: `ApiClient.kt:1494-1502` thêm đọc `otherOutlets` rồi `ProductDetail` theo iOS.
+2. Khối chỉ đọc: tên chi nhánh, tồn, đang thuê, "còn trên kệ hôm nay" = `max(0, tồn − đang thuê)`; ghi chú nhỏ "Còn trên kệ hôm nay, chưa tính đơn đặt trước. Muốn biết còn đúng ngày khách thuê, xem ở màn tạo đơn." Nhân viên và gói Basic không có khối. Chuỗi 5 ngôn ngữ (`i18n-keys`); cờ `branchProducts`.
+3. Test: iOS unit (mỗi vai trò thấy / không thấy; Basic không có; chi nhánh đã tắt không hiện); Android unit giống iOS; API (đã có) `tests/api/products-other-outlets.test.ts`: nhân viên không có `otherOutlets`; tương thích: payload cũ không có khoá, app cũ không vỡ; `mobile-e2e-local` với 3 vai trò.
 
 ## Test (tên gợi ý)
 
