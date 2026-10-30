@@ -35,7 +35,7 @@ data class ShareShop(
 /** [days] only on a draft; an order shows a light arrow instead (#930) */
 data class ShareDayStrip(val pickup: String, val returnDay: String, val days: Int?)
 
-/** [note]: the item's own note under its price line (#930); the order's general note is never on the image */
+/** [note]: the item's own note under its price line (#930); the order's general note is [OrderShareModel.orderNote] (#1354) */
 /** [formula] (#1189): the sum of a day-block line, "120.000 (3 ngày) + 2 × 20.000 = 160.000", under its price line */
 data class ShareLine(val name: String, val quantity: String, val total: String, val note: String? = null, val formula: String? = null)
 
@@ -261,6 +261,9 @@ data class OrderShareModel(
                 },
                 money = entries,
                 note = null,
+                // #1354: the order's own note, only while the shop's switch is on
+                orderNote = ShareOrderNoteRule.text(summary.notes, enabled = showOrderNote, isDraft = false)
+                    ?.let { ShareOrderNote(ShareText.Res(R.string.share_order_note_title), it) },
                 qr = qr(printBankQr, bankAccount, number),
                 thanks = ShareText.Res(R.string.share_thanks, listOf(shop.name)),
                 address = shop.address?.trim()?.takeIf { it.isNotEmpty() },

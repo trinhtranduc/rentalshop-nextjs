@@ -11,13 +11,22 @@ object ShareOrderNoteSetting {
     const val FIELD = "shareOrderNote"
 
     /** The switch is editable by the shop owner only */
-    fun canEdit(role: String?): Boolean = false
+    fun canEdit(role: String?): Boolean = OverlapSetting.canEdit(role)
 
     /** Only an explicit `true` turns it on: a missing field (older API), null or a non-boolean reads as OFF */
-    fun fromMerchant(merchant: JSONObject?): Boolean = false
+    fun fromMerchant(merchant: JSONObject?): Boolean = merchant?.opt(FIELD) == true
 
-    /** The value of GET /api/users/profile (`{ data: user }`) or the PUT answer (`{ data: { shareOrderNote } }`); null without a merchant */
-    fun fromResponse(json: JSONObject): Boolean? = null
+    /**
+     * The value of GET /api/users/profile (`{ data: user }`) or the PUT /api/settings/merchant answer
+     * (`{ data: { shareOrderNote } }`); null when the answer carries no merchant (ADMIN): keep the cached value.
+     */
+    fun fromResponse(json: JSONObject): Boolean? {
+        val data = json.optJSONObject("data") ?: json
+        val user = data.optJSONObject("user") ?: data
+        user.optJSONObject("merchant")?.let { return fromMerchant(it) }
+        if (data.has(FIELD)) return fromMerchant(data)
+        return null
+    }
 
-    fun body(on: Boolean): JSONObject = JSONObject()
+    fun body(on: Boolean): JSONObject = JSONObject().put(FIELD, on)
 }
