@@ -105,6 +105,15 @@ export const bookingRequestsApi = {
     return parseApiResponse<{ showPublicPrice?: boolean }>(response);
   },
 
+  /** Settings › In & phiếu › "Hiện ghi chú đơn trên ảnh chia sẻ" (owner only, #1344); the same field the phone switch saves */
+  async setShareOrderNote(enabled: boolean) {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify({ shareOrderNote: enabled }),
+    });
+    return parseApiResponse<{ shareOrderNote?: boolean }>(response);
+  },
+
   /** Settings › "Với app cũ" for day-block prices (owner only, #1189): 'recompute' | 'block' */
   async setBlockPricingOldApps(oldApps: 'recompute' | 'block') {
     const response = await authenticatedFetch(apiUrls.settings.merchant, {

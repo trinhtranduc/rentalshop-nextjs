@@ -751,7 +751,11 @@
       "bankQrHint": "In tài khoản ngân hàng mặc định của chi nhánh và mã VietQR (không kèm số tiền) phía trên lời cảm ơn. Lưu theo chi nhánh, app cũng dùng cài đặt này.",
       "bankQrNoAccount": "Chi nhánh chưa có tài khoản ngân hàng",
       "bankQrAddAccount": "Thêm tài khoản ngân hàng",
-      "bankQrReadOnly": "Chỉ chủ cửa hàng hoặc quản lý chi nhánh được đổi cài đặt này."
+      "bankQrReadOnly": "Chỉ chủ cửa hàng hoặc quản lý chi nhánh được đổi cài đặt này.",
+      "shareNote": "Hiện ghi chú đơn trên ảnh chia sẻ",
+      "shareNoteHint": "Ghi chú của đơn hiện ở cuối ảnh gửi khách, cả ghi chú nội bộ. Áp dụng cho cả shop.",
+      "shareNoteBadge": "Cả shop",
+      "shareNoteReadOnly": "Chỉ chủ shop bật/tắt."
     },
     "onlineBooking": {
       "title": "Nhận đặt online",

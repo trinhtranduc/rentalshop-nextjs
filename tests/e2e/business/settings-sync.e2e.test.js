@@ -22,6 +22,8 @@ describeE2E('SETTINGS-SYNC shop and outlet settings across roles', () => {
   const currencyOf = async (s) => (await must(s.get('/api/settings/currency'), 'currency')).currency;
   const depositOf = async (s) => must(s.get('/api/settings/deposit'), 'deposit');
   const overlapOf = async (s) => (await profileOf(s)).merchant.allowOverlappingOrders;
+  const shareNoteOf = async (s) => (await profileOf(s)).merchant.shareOrderNote;
+  const oldAppsOf = async (s) => (await profileOf(s)).merchant.blockPricing.oldApps;
   const bankList = async (s, outletId) => (await must(s.get(`/api/merchants/${merchantId}/outlets/${outletId}/bank-accounts`), 'bank list')) || [];
   const expect403 = (r) => expect({ status: r.status, success: r.body?.success }).toEqual({ status: 403, success: false });
 
@@ -48,6 +50,8 @@ describeE2E('SETTINGS-SYNC shop and outlet settings across roles', () => {
     orig.currency = await currencyOf(m);
     orig.deposit = await depositOf(m);
     orig.overlap = await overlapOf(m);
+    orig.shareNote = await shareNoteOf(m);
+    orig.oldApps = await oldAppsOf(m);
     orig.outletA = await outletRow(m, outletA);
     orig.outletB = await outletRow(m, outletB);
   });
@@ -57,6 +61,7 @@ describeE2E('SETTINGS-SYNC shop and outlet settings across roles', () => {
     await m.put('/api/settings/currency', { currency: orig.currency });
     await m.put('/api/settings/deposit', { depositMode: orig.deposit.depositMode, cancellationPolicy: orig.deposit.cancellationPolicy || '' });
     await m.put('/api/settings/merchant', { allowOverlappingOrders: orig.overlap });
+    await m.put('/api/settings/merchant', { shareOrderNote: orig.shareNote });
     for (const o of [orig.outletA, orig.outletB]) {
       await m.put(`/api/outlets?outletId=${o.id}`, { printNote: o.printNote ?? '', printBankQr: o.printBankQr ?? false });
     }
@@ -137,6 +142,47 @@ describeE2E('SETTINGS-SYNC shop and outlet settings across roles', () => {
     }
     expect(await overlapOf(m)).toBe(orig.overlap);
     expect(await overlapOf(st)).toBe(orig.overlap);
+  });
+
+  // ------------------------------------------------------------------ shareOrderNote (#1344, Merchant.settings)
+
+  test('SS-SHN-01 owner flips "Hiện ghi chú đơn trên ảnh chia sẻ"; every role reads it from /api/users/profile; other settings keys survive', async () => {
+    expect(orig.shareNote).toBe(false); // a shop that never set it keeps today's image
+    for (const target of [!orig.shareNote, orig.shareNote]) {
+      const r = await m.put('/api/settings/merchant', { shareOrderNote: target });
+      expect(r.status).toBe(200);
+      expect(r.body.data.shareOrderNote).toBe(target);
+      expect(await shareNoteOf(m)).toBe(target);
+      for (const [name, s] of Object.entries(readers())) {
+        expect({ role: name, on: await shareNoteOf(s) }).toEqual({ role: name, on: target });
+      }
+    }
+    // writing the other keys of Merchant.settings (blockPricing, payment) must not lose it
+    await must(m.put('/api/settings/merchant', { shareOrderNote: true }), 'on');
+    expect((await m.put('/api/settings/merchant', { blockPricing: { oldApps: orig.oldApps } })).status).toBe(200);
+    expect((await m.put('/api/settings/deposit', { depositMode: orig.deposit.depositMode, cancellationPolicy: orig.deposit.cancellationPolicy || '' })).status).toBe(200);
+    expect(await shareNoteOf(m)).toBe(true);
+    expect(await oldAppsOf(m)).toBe(orig.oldApps);
+    expect((await depositOf(m)).depositMode).toBe(orig.deposit.depositMode);
+    // and the other way round: writing the new key keeps the old ones
+    await must(m.put('/api/settings/merchant', { shareOrderNote: false }), 'off');
+    expect(await oldAppsOf(m)).toBe(orig.oldApps);
+    expect((await depositOf(m)).depositMode).toBe(orig.deposit.depositMode);
+  });
+
+  test('SS-SHN-02 manager, staff, inventory cannot flip it: 403 INSUFFICIENT_PERMISSIONS, value unchanged; a non-boolean is 400', async () => {
+    for (const [name, s] of Object.entries(readers())) {
+      const r = await s.put('/api/settings/merchant', { shareOrderNote: !orig.shareNote });
+      expect403(r);
+      expect({ role: name, code: r.body.code }).toEqual({ role: name, code: 'INSUFFICIENT_PERMISSIONS' });
+    }
+    expect(await shareNoteOf(m)).toBe(orig.shareNote);
+    expect(await shareNoteOf(st)).toBe(orig.shareNote);
+    for (const bad of ['true', 1, null]) {
+      const r = await m.put('/api/settings/merchant', { shareOrderNote: bad });
+      expect({ bad, status: r.status, code: r.body?.code }).toEqual({ bad, status: 400, code: 'INVALID_INPUT' });
+    }
+    expect(await shareNoteOf(m)).toBe(orig.shareNote);
   });
 
   // ------------------------------------------------------------------ print note + bank QR (Outlet.printNote / printBankQr)
