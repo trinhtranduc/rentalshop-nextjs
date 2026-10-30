@@ -806,6 +806,27 @@ Loyalty bật = gói có `loyalty` HOẶC add-on `loyalty` còn hiệu lực. Ch
 | BF-LOYADD-03 | Tắt từ kỳ sau, hết kỳ | 10 điểm; `PATCH removeAtPeriodEnd`; cho hết kỳ; bán tiếp | đến cuối kỳ vẫn bật, gia hạn chỉ còn giá gói; hết kỳ: `modules` [], 403, không cộng điểm; chương trình và 10 điểm giữ nguyên |
 | BF-LOYADD-04 | Gói có loyalty | không mua add-on; bán 120.000; báo giá / mua add-on | `modules` [loyalty], 12 điểm; 422 `ADDON_FEATURE_IN_PLAN`; `featureSources` loyalty theo gói |
 
+## BF-LIST — Hiện ở chi nhánh (`product-listing.e2e.test.js`, #1341, PR 1 của #1335; chủ shop chốt 2026-10-30)
+
+`OutletStock.isListed`: chi nhánh có bán món hay không. Mỗi describe tự tạo merchant, gói và chi nhánh. Khung header: "app cũ" = không gửi `X-Client-Capabilities`; "app mới" = gửi `branch-listing`.
+
+| ID | Tình huống | Bước | Kỳ vọng |
+|---|---|---|---|
+| BF-LIST-01 | Tạo ở A | chủ shop tạo sản phẩm tồn 5 ở A | dòng A bật (5), dòng B (server thêm) tắt (0) |
+| BF-LIST-02 | Danh sách theo chi nhánh | `listed=true` với kho/nhân viên A, quản lý B, chủ shop `outletId=A/B`; không `listed`; `listed=false` | A thấy; quản lý B không; chủ shop thấy ở A không ở B; không `listed` hoặc `false` vẫn đủ món |
+| BF-LIST-03 | Bật mà tồn 0 | tạo tồn 0 ở A | vẫn có trong `listed=true`; `outletStock[].isListed` đúng ở list và chi tiết |
+| BF-LIST-04 | Chủ shop bật B | `PUT /api/products/listing` | 200, `changed` 1; quản lý B thấy; gửi lại: `changed` 0 |
+| BF-LIST-05 | Vai trò | quản lý B, kho A, nhân viên A gọi tick / bỏ tick | 403 `INSUFFICIENT_PERMISSIONS` kể cả chi nhánh mình; dòng không đổi |
+| BF-LIST-06 | Chi nhánh ngoài shop | chi nhánh của shop khác; chi nhánh đã đóng | 404 `OUTLET_NOT_FOUND` |
+| BF-LIST-07 | Vai trò chi nhánh tạo món | quản lý B tạo, gửi `isListed: false` | dòng B vẫn bật; dòng A tắt |
+| BF-LIST-08 | Chủ shop chọn nhiều chi nhánh | tạo với `isListed` từng dòng | đúng như gửi |
+| BF-LIST-09 | Chi nhánh mới (#824) | tạo chi nhánh C | dòng C của sản phẩm có sẵn tắt; dòng cũ giữ |
+| BF-LIST-10 | Bỏ tick không bị chặn | món còn tồn 4 + 1 đơn mở; bỏ tick A; lấy hàng, trả hàng | 200; tồn không đổi; không còn trong danh sách A; đơn vẫn xem / lấy / trả được |
+| BF-LIST-11 | App cũ tự bật lại | bỏ tick; đơn từ app mới (có token); đơn từ app cũ | app mới: vẫn tắt; app cũ: bật |
+| BF-LIST-12 | PUT từ app cũ | tăng tồn dòng tắt; gửi lại cùng tồn; app mới tăng tồn | tăng: bật; gửi lại: giữ tắt; app mới: giữ tắt |
+| BF-LIST-13 | Shop 1 chi nhánh | `listed=true` | bỏ qua, vẫn đủ món |
+| BF-LIST-14 | Backfill migration | chạy `migration.sql` trong giao dịch rồi ROLLBACK, hai lần | dòng tồn 0 + chưa có đơn tắt; có tồn / đang thuê / từng có đơn bật; sản phẩm không còn dòng bật: dòng id nhỏ nhất bật; sản phẩm xoá mềm không đổi; lần hai giống lần một |
+
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
 
 Chạy: cần API cục bộ và client chạy từ thư mục `.next` RIÊNG (hai `next dev` trong cùng `apps/client` ghi đè bundle của nhau).
