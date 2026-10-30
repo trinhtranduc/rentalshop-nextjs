@@ -13,7 +13,7 @@ Mỗi mục có một issue con (mở khi bắt đầu), mỗi PR code: `Fixes` 
 | 1 | Migration + ô tick (API + web) | chủ shop chốt mockup |
 | 1m | Ô tick trên iOS rồi Android | PR 1 trên `dev-api` |
 | 2 | (a) Gợi ý "chi nhánh khác còn N" (API + web) | PR 1 |
-| 2m | (a) iOS rồi Android; khối "Tồn chi nhánh khác" trên điện thoại | PR 2 |
+| 2m | (a) iOS rồi Android | PR 2 |
 | 3 | (b) Nhân viên không nhận số thừa; `totalStock` đúng; `activeTotalStock` | độc lập, sau PR 1 |
 | 4 | (c) Nhập Excel chọn chi nhánh + giới hạn gói (API + web) | PR 1 |
 
@@ -39,7 +39,7 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 
 1. `apps/api/app/api/products/other-outlets-availability/route.ts`: dùng lại cách của `batch-availability/route.ts` (`resolveAvailabilityQueryWindow`, `aggregateConflictingQuantities`, lọc ngày trong SQL theo mốc UTC từ khoá ngày Việt Nam) cho từng chi nhánh khác đang bật; nhân viên 403.
 2. Web: dòng giỏ `apps/client/app/orders/create/parts.tsx` (gần `LineStatus`, `:433`) gọi khi dòng "Hết hàng"/thiếu; chỉ vai trò chủ shop, quản lý, kho.
-3. iOS (`CartV2ViewController.swift:690-727`, `Model/ProductsV2.swift:781-789`), rồi Android (`CartV2Screen.kt:1018-1041`, `ProductRules.kt:664`): một dòng nhỏ dưới chip; chi tiết sản phẩm của quản lý/kho thêm khối "Tồn chi nhánh khác" (chỉ đọc) từ `otherOutlets`; chủ shop thấy tồn từng chi nhánh.
+3. iOS (`CartV2ViewController.swift:690-727`, `Model/ProductsV2.swift:781-789`), rồi Android (`CartV2Screen.kt:1018-1041`, `ProductRules.kt:664`): một dòng nhỏ dưới chip. Không thêm khối tồn chi nhánh khác trên điện thoại (#830 giữ nguyên, spec Q13).
 4. Test có ngày: Jest chạy `TZ=UTC` và `TZ=Asia/Ho_Chi_Minh`; không dùng `toISOString().split`, `setHours(0,0,0,0)`, `getDate()`, `toLocaleDateString()`.
 
 ## PR 3 — Nhân viên không nhận số thừa, `totalStock` đúng
