@@ -93,6 +93,8 @@ class MainActivity : ComponentActivity() {
         // #1307: the owner may have changed the shop currency meanwhile (at most once a minute)
         if (SessionStore.isLoggedIn) {
             lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshCurrency() }
+            // #1354: and the owner's "show order note on the shared image" switch (at most once a minute)
+            lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshShareOrderNote() }
         }
     }
 

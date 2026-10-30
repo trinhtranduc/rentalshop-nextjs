@@ -225,6 +225,35 @@ class ApiClient(
         value
     }
 
+    @Volatile private var lastShareNoteRefreshMs: Long? = null
+
+    /**
+     * #1354: re-reads "Hiện ghi chú đơn trên ảnh chia sẻ" (`merchant.shareOrderNote` of GET /api/users/profile), every shop
+     * role, at most once a minute unless forced (iOS `ShareOrderNoteStore.refresh`, same throttle as the currency). An
+     * answer without a merchant, or one that arrives while a save is on its way, keeps the cached value.
+     */
+    fun refreshShareOrderNote(force: Boolean = false): Result<Boolean> = runCatching {
+        val now = System.currentTimeMillis()
+        if (!com.anyrent.pos.domain.settings.CurrencySetting.shouldRefresh(SessionStore.role, lastShareNoteRefreshMs, now, force)) {
+            return@runCatching SessionStore.shareOrderNote
+        }
+        lastShareNoteRefreshMs = now
+        val json = execute(get("$baseUrl/api/users/profile"))
+        val value = com.anyrent.pos.domain.settings.ShareOrderNoteSetting.fromResponse(json)
+        if (value != null && !SessionStore.shareOrderNoteSaving) SessionStore.shareOrderNote = value
+        SessionStore.shareOrderNote
+    }
+
+    /** #1354: PUT /api/settings/merchant with only the switch (shop owner; others get 403 INSUFFICIENT_PERMISSIONS) */
+    fun setShareOrderNote(on: Boolean): Result<Boolean> = runCatching {
+        val body = com.anyrent.pos.domain.settings.ShareOrderNoteSetting.body(on).toString().toRequestBody(jsonMedia)
+        val json = execute(put("$baseUrl/api/settings/merchant", body))
+        requireSuccess(json)
+        val value = com.anyrent.pos.domain.settings.ShareOrderNoteSetting.fromResponse(json) ?: on
+        SessionStore.shareOrderNote = value
+        value
+    }
+
     /** #1145: PUT /api/settings/currency (shop owner; others get 403 INSUFFICIENT_PERMISSIONS) */
     fun setCurrency(currency: com.anyrent.pos.domain.money.ShopCurrency): Result<com.anyrent.pos.domain.money.ShopCurrency> = runCatching {
         val body = com.anyrent.pos.domain.settings.CurrencySetting.body(currency).toString().toRequestBody(jsonMedia)

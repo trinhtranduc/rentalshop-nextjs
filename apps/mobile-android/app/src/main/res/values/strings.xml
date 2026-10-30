@@ -2399,4 +2399,11 @@
     <string name="products_listing_save_failed">The product was saved, but \"Shown at branch\" could not be saved. Try again.</string>
     <string name="products_listing_not_shown">Not shown at this branch</string>
     <string name="v2_scan_not_listed">This branch does not show this product</string>
+
+    <!-- #1354 Order note on the shared order image -->
+    <string name="share_order_note_title">Note</string>
+    <string name="printer_share_note_title">Show order note on the shared image</string>
+    <string name="printer_share_note_hint">The order\'s note appears at the bottom of the image sent to customers, internal notes included. Applies to the whole shop.</string>
+    <string name="printer_share_note_readonly">Only the shop owner can turn this on or off.</string>
+    <string name="printer_share_note_failed">Could not save the setting. Please try again.</string>
 </resources>

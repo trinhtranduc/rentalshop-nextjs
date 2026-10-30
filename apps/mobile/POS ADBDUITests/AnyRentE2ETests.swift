@@ -3486,6 +3486,67 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("sync-prn-4-printer-cleared-\(e2e.role)")
     }
 
+    /// #1354: "Hiện ghi chú đơn trên ảnh chia sẻ" on In & phiếu. The owner's switch saves at once (the API then holds it).
+    /// Any other role sees it dimmed with "Chỉ chủ shop bật/tắt." and follows the owner's change after the app comes back to
+    /// the front (the app reads the flag at most once a minute, so the test waits 65 s).
+    func test7uShareOrderNoteSwitch() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        let isOwner = e2e.role == "merchant"
+        let toggle = app.switches["printer.shareNote.switch"]
+        let readonly = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Only the shop owner can turn' OR label BEGINSWITH 'Chỉ chủ shop bật/tắt'")).firstMatch
+        let openPrinter: () -> Void = {
+            self.e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(2)
+            let row = self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Print & receipts' OR label BEGINSWITH 'In & phiếu'")).firstMatch
+            XCTAssertTrue(self.e2e.scrollTo(row), "the Print & receipts row")
+            self.e2e.tapRow(row); sleep(4)
+            XCTAssertTrue(self.e2e.scrollTo(toggle), "the order-note switch")
+        }
+        if isOwner {
+            openPrinter()
+            XCTAssertTrue(toggle.isEnabled, "the owner can use the switch")
+            XCTAssertFalse(readonly.exists, "the owner has no read-only caption")
+            let before = toggle.value as? String == "1"
+            e2e.shot("share-note-owner-1-before")
+            toggle.tap(); sleep(3)
+            XCTAssertEqual(toggle.value as? String, before ? "0" : "1", "the switch moved")
+            e2e.shot("share-note-owner-2-after")
+            // The HTTP login signs the app out (one session per account): only after the screens
+            guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+            XCTAssertEqual(OwnerAPI.shareOrderNote(), !before, "the API holds the new value")
+            _ = OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": before])
+            return
+        }
+        guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+        let original = OwnerAPI.shareOrderNote() ?? false
+        onTeardown { _ = OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": original]) }
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": false]), 200, "the owner turns it OFF")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        openPrinter()
+        XCTAssertEqual(toggle.value as? String, "0", "OFF for \(e2e.role)")
+        XCTAssertFalse(toggle.isEnabled, "dimmed: \(e2e.role) cannot change it")
+        _ = e2e.scrollTo(readonly)
+        XCTAssertTrue(readonly.exists, "Chỉ chủ shop bật/tắt.")
+        e2e.shot("share-note-\(e2e.role)-1-off")
+        e2e.goBackOnce(); sleep(1)
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": true]), 200, "the owner turns it ON (another device)")
+        sleep(65)
+        XCUIDevice.shared.press(.home); sleep(2)
+        app.activate(); sleep(5)
+        openPrinter()
+        XCTAssertEqual(toggle.value as? String, "1", "ON after the app came back to the front (\(e2e.role))")
+        XCTAssertFalse(toggle.isEnabled)
+        e2e.shot("share-note-\(e2e.role)-2-on-after-foreground")
+        e2e.goBackOnce(); sleep(1)
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": false]), 200, "the owner turns it OFF again")
+        sleep(65)
+        XCUIDevice.shared.press(.home); sleep(2)
+        app.activate(); sleep(5)
+        openPrinter()
+        XCTAssertEqual(toggle.value as? String, "0", "OFF again (\(e2e.role))")
+        e2e.shot("share-note-\(e2e.role)-3-off-again")
+    }
+
     /// (c) #1310: "Cọc" is shown to the shop owner only. Needs the build of PR #1316
     func test7sSettingsSyncDepositHidden() throws {
         try e2e.requireFlag("newSettings")
@@ -6322,6 +6383,11 @@ private enum OwnerAPI {
     }
 
     static func put(_ path: String, _ json: [String: Any]) -> Int { call("PUT", path, json).status }
+
+    /// `merchant.shareOrderNote` of GET /api/users/profile (#1354)
+    static func shareOrderNote() -> Bool? {
+        (((call("GET", "/api/users/profile").body?["data"] as? [String: Any])?["merchant"] as? [String: Any])?["shareOrderNote"] as? Bool)
+    }
 
     static func currency() -> String? { ((call("GET", "/api/settings/currency").body?["data"] as? [String: Any])?["currency"] as? String) }
 

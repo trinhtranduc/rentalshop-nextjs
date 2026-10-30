@@ -3076,5 +3076,11 @@
 "share.stage.unpaid" = "Chưa thu";
 "share.stage.partial" = "Thu một phần";
 
+/* #1354 Ghi chú đơn trên ảnh chia sẻ */
+"share.orderNote.title" = "Ghi chú";
+"printer.shareNote.title" = "Hiện ghi chú đơn trên ảnh chia sẻ";
+"printer.shareNote.hint" = "Ghi chú của đơn hiện ở cuối ảnh gửi khách, cả ghi chú nội bộ. Áp dụng cho cả shop.";
+"printer.shareNote.readonly" = "Chỉ chủ shop bật/tắt.";
+"printer.shareNote.failed" = "Không lưu được cài đặt. Vui lòng thử lại.";
 // #1353: dưới dòng giỏ thiếu hàng, các chi nhánh khác còn món trong ngày của đơn
 "products.cart.othersHave" = "Chi nhánh khác còn: %@";

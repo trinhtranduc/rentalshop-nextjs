@@ -70,6 +70,85 @@ class PrinterConfigurationViewController: BaseViewControler {
         return toggle
     }()
 
+    // MARK: - #1354 "Hiện ghi chú đơn trên ảnh chia sẻ" (shop, server)
+
+    /// The shop owner turns it on or off; every other role sees the row dimmed
+    private let canSetShareNote = ShareOrderNoteRule.canSet(role: User.account()?.role)
+
+    private lazy var shareNoteSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.onTintColor = APP_TONE_COLOR
+        toggle.accessibilityLabel = "printer.shareNote.title".localized()
+        toggle.accessibilityIdentifier = "printer.shareNote.switch"
+        toggle.addTarget(self, action: #selector(shareNoteChanged), for: .valueChanged)
+        return toggle
+    }()
+
+    private lazy var shareNoteReadOnlyLabel: UILabel = {
+        let label = UILabel()
+        label.font = Utils.regularFont(size: 14)
+        label.textColor = .textSecondary
+        label.numberOfLines = 0
+        label.text = "printer.shareNote.readonly".localized()
+        label.isHidden = canSetShareNote
+        label.accessibilityIdentifier = "printer.shareNote.readonly"
+        return label
+    }()
+
+    private lazy var shareNoteRow: UIStackView = {
+        let title = UILabel()
+        title.font = Utils.boldFont(size: 16)
+        title.textColor = .textPrimary
+        title.numberOfLines = 0
+        title.text = "printer.shareNote.title".localized()
+        let hint = UILabel()
+        hint.font = Utils.regularFont(size: 14)
+        hint.textColor = .textSecondary
+        hint.numberOfLines = 0
+        hint.text = "printer.shareNote.hint".localized()
+        let texts = UIStackView(arrangedSubviews: [title, hint])
+        texts.axis = .vertical
+        texts.spacing = 2
+        shareNoteSwitch.setContentCompressionResistancePriority(.required, for: .horizontal)
+        shareNoteSwitch.setContentHuggingPriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [texts, shareNoteSwitch])
+        row.spacing = 12
+        row.alignment = .center
+        row.alpha = canSetShareNote ? 1 : 0.55
+        return row
+    }()
+
+    private func showShareNote() {
+        guard !ShareOrderNoteStore.saving else { return }
+        shareNoteSwitch.isOn = ShareOrderNoteStore.isOn
+        shareNoteSwitch.isEnabled = canSetShareNote
+    }
+
+    /// Saves at once; a failed save puts the switch back to what it was and says why
+    @objc private func shareNoteChanged() {
+        guard canSetShareNote, !ShareOrderNoteStore.saving else {
+            shareNoteSwitch.setOn(ShareOrderNoteStore.isOn, animated: true)
+            return
+        }
+        let wanted = shareNoteSwitch.isOn
+        ShareOrderNoteStore.saving = true
+        shareNoteSwitch.isEnabled = false
+        TabsV2APIService.shared.setShareOrderNote(wanted) { [weak self] saved, error in
+            DispatchQueue.main.async {
+                ShareOrderNoteStore.saving = false
+                if let saved, error == nil {
+                    ShareOrderNoteStore.store(saved)
+                    self?.showShareNote()
+                    return
+                }
+                self?.showShareNote() // back to the value before the tap
+                guard let self else { return }
+                let failure = error ?? NSError.errorWithOwnMessage(message: "printer.shareNote.failed".localized(), domain: "RC")
+                UIAlertController.errorAlert(parent: self, error: failure)
+            }
+        }
+    }
+
     // MARK: - #1308 bill settings of the branch (server)
 
     private var canEditBill = OutletPrintSettings.canEdit(role: User.current()?.role)
@@ -134,11 +213,14 @@ class PrinterConfigurationViewController: BaseViewControler {
         }
         setupUI()
         loadCurrentConfig()
+        showShareNote()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
+        // #1354: the owner may have changed it on another device or the web (at most once a minute)
+        ShareOrderNoteStore.refresh { [weak self] _ in self?.showShareNote() }
     }
 
     override func setupUI() {
@@ -165,7 +247,13 @@ class PrinterConfigurationViewController: BaseViewControler {
         let bankQrRow = makeBankQrRow()
         bankQrRow.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
         bankQrRow.isLayoutMarginsRelativeArrangement = true
-        let settingsStack = UIStackView(arrangedSubviews: [ipRow, makeSeparator(), noteBlock, makeSeparator(), bankQrRow])
+        let shareNoteWrap = UIStackView(arrangedSubviews: [shareNoteRow, shareNoteReadOnlyLabel])
+        shareNoteWrap.axis = .vertical
+        shareNoteWrap.spacing = 6
+        shareNoteWrap.layoutMargins = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
+        shareNoteWrap.isLayoutMarginsRelativeArrangement = true
+        let settingsStack = UIStackView(arrangedSubviews: [ipRow, makeSeparator(), noteBlock, makeSeparator(), bankQrRow,
+                                                           makeSeparator(), shareNoteWrap])
         settingsStack.axis = .vertical
         settingsStack.spacing = 0
         settingsCard.addSubview(settingsStack)
@@ -238,6 +326,8 @@ class PrinterConfigurationViewController: BaseViewControler {
             SettingsDetailV2.textArea("Printer Notes".localized(), noteTextView),
             makeBankQrRow(),
             readOnlyLabel,
+            shareNoteRow,
+            shareNoteReadOnlyLabel,
             sectionTitle("settings.v2.printing.group.printer"),
             hintLabel,
             SettingsDetailV2.field("IP Address".localized(), ipField.textField),

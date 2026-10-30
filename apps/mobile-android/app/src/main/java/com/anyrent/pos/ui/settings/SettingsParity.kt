@@ -37,6 +37,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +67,7 @@ import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.UserFormRoles
 import com.anyrent.pos.data.repository.SessionStoreAppConfigCache
+import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.StaffUser
 import com.anyrent.pos.print.PrintFeedback
@@ -75,6 +78,7 @@ import com.anyrent.pos.ui.common.AppFilterChip
 import com.anyrent.pos.ui.common.AppInputField
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.AppSecondaryButton
+import com.anyrent.pos.domain.settings.ShareOrderNoteSetting
 import com.anyrent.pos.domain.settings.ShopInfoLogic
 import com.anyrent.pos.ui.home.v2.SectionBand
 import com.anyrent.pos.ui.home.v2.V2Colors
@@ -454,6 +458,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                 )
                 PrintBankQrRow(checked = printBankQr, onChange = ::setPrintBankQr, enabled = canEditBill && billLoaded)
                 if (!canEditBill) SettingsDetailNote(stringResource(R.string.printer_outlet_readonly))
+                ShareOrderNoteRow(onError = { message = it })
                 PrinterSectionTitle(stringResource(R.string.settings_v2_printing_group_printer))
                 SettingsDetailNote(stringResource(R.string.printer_hint))
                 SettingsDetailField(label = stringResource(R.string.printer_name), value = name, onValueChange = { name = it })
@@ -567,6 +572,7 @@ fun PrinterNetworkScreen(onBack: () -> Unit, v2: Boolean = false) {
                         if (!canEditBill) {
                             Text(stringResource(R.string.printer_outlet_readonly), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                         }
+                        ShareOrderNoteRow(onError = { message = it })
                     }
                 }
             }
@@ -591,6 +597,60 @@ private fun PrintBranchRow(branches: List<BankOutlet>, selected: Int?, canPick: 
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             branches.forEach { b -> DropdownMenuItem(text = { Text(b.name) }, onClick = { open = false; onPick(b.id) }) }
         }
+    }
+}
+
+/**
+ * #1354 "Hiện ghi chú đơn trên ảnh chia sẻ" + hint, switch on the right. Saved at once for the shop owner (a failed save puts
+ * the switch back and says why); every other role sees the row dimmed with "Chỉ chủ shop bật/tắt." The value is read again
+ * when the screen opens (at most once a minute).
+ */
+@Composable
+private fun ShareOrderNoteRow(onError: (String) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val canSet = remember { ShareOrderNoteSetting.canEdit(SessionStore.role) }
+    val on by SessionStore.shareOrderNoteFlow.collectAsState()
+    var saving by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { ApiClient.get().refreshShareOrderNote() } }
+    val title = stringResource(R.string.printer_share_note_title)
+    Column(Modifier.fillMaxWidth().alpha(if (canSet) 1f else 0.55f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text)
+                Text(stringResource(R.string.printer_share_note_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+            }
+            Switch(
+                checked = on,
+                onCheckedChange = { wanted ->
+                    if (!canSet || saving) return@Switch
+                    saving = true
+                    SessionStore.shareOrderNoteSaving = true
+                    SessionStore.shareOrderNote = wanted
+                    scope.launch {
+                        val result = withContext(Dispatchers.IO) { ApiClient.get().setShareOrderNote(wanted) }
+                        SessionStore.shareOrderNoteSaving = false
+                        saving = false
+                        result.onFailure {
+                            SessionStore.shareOrderNote = !wanted // back to the value before the tap
+                            onError(it.message?.takeIf { text -> text.isNotBlank() } ?: context.getString(R.string.printer_share_note_failed))
+                        }
+                    }
+                },
+                enabled = canSet && !saving,
+                modifier = Modifier.semantics { contentDescription = title },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF34C759),
+                    checkedBorderColor = Color(0xFF34C759),
+                ),
+            )
+        }
+        if (!canSet) Text(stringResource(R.string.printer_share_note_readonly), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
     }
 }
 

@@ -2369,4 +2369,11 @@
     <string name="products_listing_save_failed">Đã lưu sản phẩm nhưng chưa lưu được ô Hiện ở chi nhánh. Thử lại.</string>
     <string name="products_listing_not_shown">Chưa hiện ở chi nhánh này</string>
     <string name="v2_scan_not_listed">Chi nhánh này chưa hiện món này</string>
+
+    <!-- #1354 Ghi chú đơn trên ảnh chia sẻ -->
+    <string name="share_order_note_title">Ghi chú</string>
+    <string name="printer_share_note_title">Hiện ghi chú đơn trên ảnh chia sẻ</string>
+    <string name="printer_share_note_hint">Ghi chú của đơn hiện ở cuối ảnh gửi khách, cả ghi chú nội bộ. Áp dụng cho cả shop.</string>
+    <string name="printer_share_note_readonly">Chỉ chủ shop bật/tắt.</string>
+    <string name="printer_share_note_failed">Không lưu được cài đặt. Vui lòng thử lại.</string>
 </resources>

@@ -44,5 +44,8 @@ struct Merchant: Codable {
     /// #1199 "Cách thu cọc" (`ONE_TIME` / `STAGED`). Missing (older API or cached login) means unknown: the screens
     /// read GET /api/settings/deposit, and until then it acts as "Thu cọc 1 lần".
     var depositMode: String? = nil
+    /// #1354 "Hiện ghi chú đơn trên ảnh chia sẻ" (`merchant.shareOrderNote` of GET /api/users/profile, #1344). Missing
+    /// (older API, login payload or cached user) means OFF.
+    var shareOrderNote: Bool? = nil
 }
 

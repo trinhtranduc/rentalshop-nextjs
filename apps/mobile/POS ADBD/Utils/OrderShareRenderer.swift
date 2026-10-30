@@ -31,6 +31,8 @@ enum OrderShareRenderer {
         static let arrow = UIColor(hexString: "94A3B8")
         static let qrBorder = UIColor(hexString: "CBD5E1")
         static let collectEdge = UIColor(hexString: "BFDBFE")
+        /// #1354 the order note's box
+        static let noteBox = UIColor(hexString: "F3F4F6")
     }
 
     private static func font(_ size: CGFloat, _ weight: UIFont.Weight = .regular) -> UIFont {
@@ -316,6 +318,25 @@ enum OrderShareRenderer {
             y += 12
             y += p.text(note, font: font(14), color: C.muted, x: innerX, y: y, width: innerW, lines: 3)
         }
+        if let block = model.orderNote {
+            // #1354: the order's own note, last of the money part and above the QR and the thanks: "GHI CHÚ" and a grey
+            // box of at most 4 lines, cut with "…" (measured with the font it is drawn in)
+            y += 22
+            y += p.text(block.title.uppercased(with: Locale(identifier: "vi")), font: font(13, .bold), color: C.muted,
+                        x: innerX, y: y, width: innerW, lines: 1, kern: 1.2) + 8
+            let boxPad: CGFloat = 14
+            let noteFont = font(14)
+            let textW = innerW - boxPad * 2
+            let lines = ShareNoteClip.lines(block.text) { p.size($0, font: noteFont).width <= textW }
+            let lineH = ceil(noteFont.lineHeight) + 3
+            let box = CGRect(x: innerX, y: y, width: innerW, height: CGFloat(lines.count) * lineH + 20)
+            p.fill(box, radius: 12, color: C.noteBox)
+            for (index, line) in lines.enumerated() {
+                p.text(line, font: noteFont, color: C.muted, x: box.minX + boxPad, y: box.minY + 10 + CGFloat(index) * lineH,
+                       width: textW, lines: 1)
+            }
+            y = box.maxY
+        }
         return y + 18
     }
 }
@@ -407,8 +428,9 @@ enum OrderSharePresenter {
     static func share(_ source: OrderShareSource, from controller: BaseViewControler, sourceView: UIView? = nil) {
         controller.showProgressText(text: "Generating image...".localized())
         let language = ShareLanguage.current
-        let render: (Bool, BankAccount?) -> Void = { [weak controller] switchOn, account in
-            let model = OrderShareModel.make(source, language: language, bankAccount: account, qrSwitchOn: switchOn)
+        let render: (Bool, BankAccount?, Bool) -> Void = { [weak controller] switchOn, account, showOrderNote in
+            let model = OrderShareModel.make(source, language: language, bankAccount: account, qrSwitchOn: switchOn,
+                                             showOrderNote: showOrderNote)
             DispatchQueue.global(qos: .userInitiated).async {
                 let url = OrderShareRenderer.writeJPEG(model)
                 DispatchQueue.main.async {
@@ -429,9 +451,26 @@ enum OrderSharePresenter {
             }
         }
         if source.isDraft {
-            render(false, nil)
+            render(false, nil, false) // a draft has no order note
         } else {
-            billQRAccount(outletId: source.outletId, outletSwitch: source.outletPrintBankQr, completion: render)
+            // #1354: read the shop's switch right before the image (at most once a minute; 3 s at most, then the saved value)
+            noteSwitch { showOrderNote in
+                billQRAccount(outletId: source.outletId, outletSwitch: source.outletPrintBankQr) { switchOn, account in
+                    render(switchOn, account, showOrderNote)
+                }
+            }
         }
+    }
+
+    /// The shop's "Hiện ghi chú đơn trên ảnh chia sẻ" read again, or the saved value after 3 s
+    private static func noteSwitch(completion: @escaping (Bool) -> Void) {
+        var answered = false
+        let answer: (Bool) -> Void = { value in
+            guard !answered else { return }
+            answered = true
+            completion(value)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { answer(ShareOrderNoteStore.isOn) }
+        ShareOrderNoteStore.refresh(completion: answer)
     }
 }

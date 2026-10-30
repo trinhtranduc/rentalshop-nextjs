@@ -35,7 +35,7 @@ data class ShareShop(
 /** [days] only on a draft; an order shows a light arrow instead (#930) */
 data class ShareDayStrip(val pickup: String, val returnDay: String, val days: Int?)
 
-/** [note]: the item's own note under its price line (#930); the order's general note is never on the image */
+/** [note]: the item's own note under its price line (#930); the order's general note is [OrderShareModel.orderNote] (#1354) */
 /** [formula] (#1189): the sum of a day-block line, "120.000 (3 ngày) + 2 × 20.000 = 160.000", under its price line */
 data class ShareLine(val name: String, val quantity: String, val total: String, val note: String? = null, val formula: String? = null)
 
@@ -116,6 +116,9 @@ object ShareMoneyRule {
     }
 }
 
+/** #1354 the order's own note under the money part: "GHI CHÚ" and the text (cut to 4 lines by the renderer) */
+data class ShareOrderNote(val title: ShareText, val text: String)
+
 data class ShareHighlight(val label: ShareText, val value: String, val tone: ShareTone)
 
 data class ShareQr(
@@ -149,6 +152,8 @@ data class OrderShareModel(
     /** The money part, top to bottom (#1345): Tạm tính, Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân */
     val money: List<ShareMoney>,
     val note: ShareText?,
+    /** #1354 the order's note when the shop turned "Hiện ghi chú đơn trên ảnh chia sẻ" on; null otherwise (and on a draft) */
+    val orderNote: ShareOrderNote? = null,
     val qr: ShareQr?,
     val thanks: ShareText,
     val address: String?,
@@ -174,6 +179,8 @@ data class OrderShareModel(
             blockSummary: (com.anyrent.pos.data.model.OrderItem) -> String? = { null },
             now: Instant = Instant.now(),
             currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
+            /** #1354 the shop's "Hiện ghi chú đơn trên ảnh chia sẻ"; missing = off */
+            showOrderNote: Boolean = false,
         ): OrderShareModel {
             val summary = order.summary
             val isRent = summary.orderType.equals("RENT", ignoreCase = true)
@@ -254,6 +261,9 @@ data class OrderShareModel(
                 },
                 money = entries,
                 note = null,
+                // #1354: the order's own note, only while the shop's switch is on
+                orderNote = ShareOrderNoteRule.text(summary.notes, enabled = showOrderNote, isDraft = false)
+                    ?.let { ShareOrderNote(ShareText.Res(R.string.share_order_note_title), it) },
                 qr = qr(printBankQr, bankAccount, number),
                 thanks = ShareText.Res(R.string.share_thanks, listOf(shop.name)),
                 address = shop.address?.trim()?.takeIf { it.isNotEmpty() },

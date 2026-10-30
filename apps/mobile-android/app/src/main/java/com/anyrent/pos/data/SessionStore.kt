@@ -48,6 +48,8 @@ object SessionStore {
     private const val KEY_CURRENCY = "merchantCurrency"
     /** #1199 "Cách thu cọc" (`merchant.depositMode`, "ONE_TIME" / "STAGED"); absent = unknown, the screens read GET /api/settings/deposit */
     private const val KEY_DEPOSIT_MODE = "merchantDepositMode"
+    /** #1354 "Hiện ghi chú đơn trên ảnh chia sẻ" (`merchant.shareOrderNote` of GET /api/users/profile); absent = OFF */
+    private const val KEY_SHARE_ORDER_NOTE = "shareOrderNote"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -68,7 +70,23 @@ object SessionStore {
         _modules.value = prefs.getStringSet(KEY_MODULES, emptySet()).orEmpty().toSet()
         setCurrencyValue(ShopCurrency.from(prefs.getString(KEY_CURRENCY, null)))
         _depositMode.value = prefs.getString(KEY_DEPOSIT_MODE, null)?.let(DepositMode::from)
+        _shareOrderNote.value = prefs.getBoolean(KEY_SHARE_ORDER_NOTE, false)
     }
+
+    private val _shareOrderNote = MutableStateFlow(false)
+
+    /** #1354 the shop's "Hiện ghi chú đơn trên ảnh chia sẻ", cached from GET /api/users/profile; OFF while never read */
+    val shareOrderNoteFlow: StateFlow<Boolean> = _shareOrderNote.asStateFlow()
+
+    var shareOrderNote: Boolean
+        get() = _shareOrderNote.value
+        set(value) {
+            _shareOrderNote.value = value
+            if (isReady) prefs.edit().putBoolean(KEY_SHARE_ORDER_NOTE, value).apply()
+        }
+
+    /** #1354 a save is on its way: a profile read must not overwrite the optimistic value */
+    @Volatile var shareOrderNoteSaving: Boolean = false
 
     private val _depositMode = MutableStateFlow<DepositMode?>(null)
 
@@ -285,7 +303,9 @@ object SessionStore {
             .remove(KEY_PERMISSIONS)
             .remove(KEY_CURRENCY)
             .remove(KEY_DEPOSIT_MODE)
+            .remove(KEY_SHARE_ORDER_NOTE)
             .apply()
+        _shareOrderNote.value = false
         _depositMode.value = null
         DepositModeStore.reset()
         _allowOverlappingOrders.value = true

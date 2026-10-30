@@ -18,6 +18,7 @@ import com.anyrent.pos.R
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.orders.OrderShareModel
 import com.anyrent.pos.domain.orders.ShareMoney
+import com.anyrent.pos.domain.orders.ShareNoteClip
 import com.anyrent.pos.domain.orders.ShareShop
 import com.anyrent.pos.domain.orders.ShareText
 import com.anyrent.pos.domain.orders.ShareTone
@@ -334,6 +335,25 @@ internal class OrderShareRenderer(private val context: Context, private val mode
             y += 15f
             y += canvas.block(t(it), paint(14f, regular, body), left, y, contentWidth)
             y += 2f
+        }
+        model.orderNote?.let { block ->
+            // #1354: the order's own note, last of the money part and above the QR and the thanks: "GHI CHÚ" and a grey
+            // box of at most 4 lines, cut with "…" (measured with the font it is drawn in; iOS draws the same)
+            y += 22f
+            canvas.text(t(block.title).uppercase(upper), paint(13f, bold, muted, 0.08f), left, y + 12f)
+            y += 16f + 8f
+            val boxPad = 14f
+            val textPaint = paint(14f, regular, muted)
+            val textWidth = contentWidth - boxPad * 2
+            val lines = ShareNoteClip.lines(block.text) { textPaint.measureText(it) <= textWidth }
+            val metrics = textPaint.fontMetrics
+            val lineHeight = kotlin.math.ceil(metrics.descent - metrics.ascent) + 3f
+            val boxHeight = lines.size * lineHeight + 20f
+            canvas?.drawRoundRect(RectF(left, y, right, y + boxHeight), 12f, 12f, fill(Color.parseColor("#F3F4F6")))
+            lines.forEachIndexed { index, line ->
+                canvas.text(line, textPaint, left + boxPad, y + 10f + index * lineHeight - metrics.ascent)
+            }
+            y += boxHeight
         }
         return y + 17.5f - top
     }
