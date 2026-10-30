@@ -96,14 +96,9 @@ Gói:
 
 28. Shop có đúng 1 chi nhánh active (gồm mọi shop Basic): API bỏ qua `listed`; giao diện không hiện ô "Hiện ở chi nhánh", "Hiện cả sản phẩm chi nhánh chưa có", gợi ý "chi nhánh khác còn", chọn chi nhánh khi nhập Excel. Route mới vẫn chạy nếu bị gọi (không cần chặn theo gói).
 
-R1 · Cảnh báo mềm khi lưu tồn thấp hơn số đã đặt trước (không chặn):
-
-29. `PUT /api/products/[id]` với `outletStock[]` mà `stock` mới THẤP HƠN `stock` đang lưu của dòng đó: API tính các đơn RENT RESERVED/PICKUPED (chưa xoá) của (sản phẩm, chi nhánh) có ngày trả từ hôm nay (ngày Việt Nam) trở đi; với mỗi ngày tương lai tính "số đã đặt" bằng đúng hàm kiểm còn hàng theo ngày (`calculateEffectivelyAvailable`, `aggregateConflictingQuantities`, `apps/api/lib/availability.ts:87-141`) và cùng cách đổi ngày (`getUtcRangeForDateKeys`, ngày lấy và ngày trả đều chiếm, cùng ngày vẫn chiếm 1 ngày), không tính hai kiểu. Nếu có ngày mà số đã đặt > `stock` mới thì response (vẫn 200, vẫn lưu) thêm `data.stockWarnings = [{ outletId, outletName, newStock, ordersAffected, worstDate, worstNeeded, dates }]` (`dates` tối đa 10 ngày đầu, dạng `YYYY-MM-DD`). Không có cảnh báo thì không thêm khoá. Chỉ thêm trường mới; app cũ bỏ qua.
-30. Giao diện (web, iOS, Android) hiện cảnh báo SAU khi lưu, không chặn: "Có N đơn đã đặt trước cần M cái vào ngày 02/11; tồn mới X sẽ thiếu." kèm nút xem lịch của món (đã có). Cảnh báo chỉ hiện khi API trả `stockWarnings`. Không thay đổi `STOCK_BELOW_RENTED` (vẫn chặn khi `stock < renting`).
-
 Sửa lỗi đứng trước (không phụ thuộc ô tick):
 
-31. Route admin `PUT /api/merchants/[id]/products/[productId]` (`apps/api/app/api/merchants/[id]/products/[productId]/route.ts:198-225`) hiện `deleteMany` rồi `create` `OutletStock` với `renting: 0`, `available = stock`: bug #359 chưa vá ở route này, sau đó trả hàng làm `renting` âm (báo cáo vận hành R2). Sửa: dùng cùng logic upsert giữ `renting` và cùng chặn 400 `STOCK_BELOW_RENTED` như `/api/products/[id]` (`products/[id]/route.ts:633-684`). Đây là PR sửa lỗi (`bug-fix-tdd`: test đỏ trước), không đổi hình dạng response.
+29. Route admin `PUT /api/merchants/[id]/products/[productId]` (`apps/api/app/api/merchants/[id]/products/[productId]/route.ts:198-225`) hiện `deleteMany` rồi `create` `OutletStock` với `renting: 0`, `available = stock`: bug #359 chưa vá ở route này, sau đó trả hàng làm `renting` âm (báo cáo vận hành R2). Sửa: dùng cùng logic upsert giữ `renting` và cùng chặn 400 `STOCK_BELOW_RENTED` như `/api/products/[id]` (`products/[id]/route.ts:633-684`). Đây là PR sửa lỗi (`bug-fix-tdd`: test đỏ trước), không đổi hình dạng response.
 
 ## 4. Ai làm gì (bảng vai trò, API, web, iOS, Android)
 
@@ -117,7 +112,6 @@ Sửa lỗi đứng trước (không phụ thuộc ô tick):
 | Tạo sản phẩm (tick chi nhánh tạo) | có (tick thêm chi nhánh khác) | có | có | không | `POST /api/products` + `isListed` | form (ô "Hiện ở chi nhánh") | form (cùng ô) | form (cùng ô) |
 | Sửa trường dùng chung | có | khi tồn > 0, đang thuê hoặc đang bật | như quản lý | không | `holdsStockAt` nới | form | form | form |
 | Sửa tồn | mọi chi nhánh (web), chi nhánh chọn (điện thoại) | chi nhánh mình | chi nhánh mình | chi nhánh mình nếu shop cấp quyền | `PUT /api/products/[id]` | form | form | form |
-| Cảnh báo khi lưu tồn thấp hơn đơn đã đặt trước (không chặn) | có | có (chi nhánh mình) | có (chi nhánh mình) | không | `stockWarnings` trong `PUT /api/products/[id]` | B7b | B7a | B7a |
 | Gợi ý "chi nhánh khác còn N" | tên + số | tên + số | tên + số | chỉ "Hết hàng" | `POST /api/products/other-outlets-availability` | giỏ | giỏ | giỏ |
 | Nhập Excel chọn chi nhánh | có | chi nhánh mình | chi nhánh mình | không | `bulk-import` + `outletId` | có | không có | không có |
 
@@ -139,15 +133,15 @@ Route:
 | `GET /api/products` | tham số `listed=true` (tuỳ chọn); mỗi `outletStock[]` thêm `isListed`; thêm `activeTotalStock`; nhân viên chỉ nhận dòng của mình; vẫn dùng `ResponseBuilder`/`handleApiError` |
 | `GET /api/products/[id]` | `outletStock[]` thêm `isListed`, `openOrders` (chủ shop/quản lý/kho); thêm `activeTotalStock`; nhân viên chỉ nhận dòng của mình |
 | `POST /api/products` | `outletStock[].isListed` tuỳ chọn (quy tắc 9) |
-| `PUT /api/products/[id]` | tự bật khi ghi `stock > 0` vào dòng tắt (13 ii); `totalStock` luôn tính lại (23); `holdsStockAt` nới (15); thêm `stockWarnings` (quy tắc 29) |
+| `PUT /api/products/[id]` | tự bật khi ghi `stock > 0` vào dòng tắt (13 ii); `totalStock` luôn tính lại (23); `holdsStockAt` nới (15) |
 | `POST /api/orders` | tự tick món chưa tick ở chi nhánh của đơn, chỉ cho app cũ (13 i), cùng chỗ cập nhật tồn `apps/api/app/api/orders/route.ts:1281-1311` |
 | `PUT /api/products/listing` (mới) | tick / bỏ tick hàng loạt ở một chi nhánh, không điều kiện (quy tắc 10, 12); `with*Auth` + zod + `ResponseBuilder` |
-| `PUT /api/merchants/[id]/products/[productId]` | sửa lỗi: giữ `renting`, chặn `STOCK_BELOW_RENTED` (quy tắc 31) |
+| `PUT /api/merchants/[id]/products/[productId]` | sửa lỗi: giữ `renting`, chặn `STOCK_BELOW_RENTED` (quy tắc 29) |
 | `POST /api/products/other-outlets-availability` (mới) | quy tắc 18-19 |
 | `POST /api/products/bulk-import` | `outletId`, giới hạn gói (quy tắc 25-26) |
 | `GET /api/mobile/app-config` | thêm khoá `branchProducts` trong `features` |
 
-Mã lỗi mới: không có (không còn `PRODUCT_LISTING_IN_USE`). Tái dùng `NO_OUTLET_ACCESS`, `INSUFFICIENT_PERMISSIONS`, `OUTLET_NOT_FOUND`, `PRODUCT_NOT_FOUND`, `STOCK_BELOW_RENTED` (route admin, quy tắc 30).
+Mã lỗi mới: không có (không còn `PRODUCT_LISTING_IN_USE`). Tái dùng `NO_OUTLET_ACCESS`, `INSUFFICIENT_PERMISSIONS`, `OUTLET_NOT_FOUND`, `PRODUCT_NOT_FOUND`, `STOCK_BELOW_RENTED` (route admin, quy tắc 29).
 
 Chuỗi giao diện mới (liệt kê để dịch 5 ngôn ngữ, skill `i18n-keys`): "Hiện ở chi nhánh", "Chưa bán ở đây", "Hết hàng", "Hiện cả sản phẩm chi nhánh chưa có", "Chi nhánh này chưa bán món này", "Chi nhánh khác còn", "Nhập vào chi nhánh", câu giải thích không cho bỏ tick ("Đặt số lượng về 0 rồi bỏ tick").
 
@@ -216,7 +210,7 @@ Tag mới nhất là `release-2026-10-12.2` nhưng `main-real` đã nhận bản
 | `GET /api/products` | `listed` tuỳ chọn; `outletStock[].isListed`; `activeTotalStock` | list gửi `outletId` không gửi `listed` (`ProductService.swift:137`); `ProductOutletStock` toàn optional (`Product.swift:89-93`), `outletStock` giải mã bằng `try?` (`Product.swift:370`) | `ProductsV2Api.kt:34` không gửi `listed`; `ApiClient.kt:1494` đọc từng khoá | `packages/utils/src/config/api.ts:652` | không có |
 | `GET /api/products`, `/[id]` cho nhân viên | chỉ dòng chi nhánh mình; `totalStock`/`available`/`renting` theo dòng đó | `totalStock` thành `quantity` (`Product.swift:297-300`): nhân viên thấy số chi nhánh mình thay vì cả shop; màn nào lệch: chưa xác minh | `ProductStock.counts` đã dùng dòng chi nhánh (`ProductRules.kt:164`) | web tự lọc | thay đổi có chủ ý (riêng tư). Ai thấy: nhân viên đa chi nhánh |
 | `POST /api/products` | `outletStock[].isListed` tuỳ chọn; dòng không có = bật; dòng server thêm = tắt | tạo gửi mảng `outletStock` (`ProductRequest.swift:24`) | gửi 1 dòng (`ProductsV2Api.kt:109`) | form gửi mọi chi nhánh (`form-model.ts:218`) | thấp: món mới chỉ bật ở chi nhánh tạo; app cũ vẫn thấy mọi món |
-| `PUT /api/products/[id]` | tự tick khi tồn > 0; `totalStock` tính lại; `holdsStockAt` nới; thêm `data.stockWarnings` (chỉ khi có) | `ProductService.swift:333` gửi `totalStock` kèm `outletStock` | `ProductsV2Api.kt:109`; `ApiClient.kt:884` | form gửi cả hai (`form-model.ts:391`) | thấp: nới thêm; PUT chỉ có `totalStock` không còn ghi thẳng (không thấy app thật gửi vậy) |
+| `PUT /api/products/[id]` | tự tick khi tồn > 0; `totalStock` tính lại; `holdsStockAt` nới | `ProductService.swift:333` gửi `totalStock` kèm `outletStock` | `ProductsV2Api.kt:109`; `ApiClient.kt:884` | form gửi cả hai (`form-model.ts:391`) | thấp: nới thêm; PUT chỉ có `totalStock` không còn ghi thẳng (không thấy app thật gửi vậy) |
 | `POST /api/orders` | tự tick món chưa tick, chỉ cho app cũ (không có `X-Client-Capabilities: branch-listing`) | `OrderService.swift:450` | `ApiClient.kt:341` | web tạo đơn | thấp; Q5 |
 | `PUT /api/merchants/[id]/products/[productId]` (sửa lỗi) | giữ `renting` khi lưu `outletStock`; thêm 400 `STOCK_BELOW_RENTED` khi `stock < renting`; response không đổi | không gọi | không gọi | web admin gọi qua `merchantsApi.products.update` (`packages/utils/src/api/merchants.ts:271`, `apps/admin/app/merchants/[id]/products/[productId]/page.tsx:62-69` trên main-real) | thấp: chỉ web admin hệ thống; lỗi 400 mới chỉ khi lưu tồn thấp hơn số đang thuê (tab cũ hiện thông điệp lỗi) |
 | `POST /api/products/bulk-import` | `outletId` tuỳ chọn; giới hạn gói; món mới bật ở chi nhánh nhập | không gọi | không gọi | `api.ts:658`; `import-model.ts:147` không gửi `outletId` | thấp: tab cũ nhập như cũ nhưng dòng vượt gói vào `skipped` |
@@ -236,6 +230,7 @@ Dòng dự kiến (`planned`) đã thêm vào `.agent/api-changes/LOG.md`.
 - Xuất Excel: giữ như hôm nay (thêm cột "Bán ở chi nhánh" là việc nhỏ sau).
 - (việc sau a) "Tạm ngừng cho thuê theo ngày" cho áo giặt/sửa/hỏng, thay cho việc giảm tồn.
 - (việc sau b) Lịch sử mỗi lần sửa tồn (ai, lúc nào, từ-sang, lý do), làm chung hướng phiếu nhập/xuất ở `docs/TODO.md:297-319`.
+- Cảnh báo mềm khi lưu tồn thấp hơn số đã đặt trước (R1): chưa làm, chủ shop chốt 2026-10-30; khi làm dùng `calculateEffectivelyAvailable` + `aggregateConflictingQuantities` (`availability.ts:87-141`), lưu ý hàm hiện cộng tổng đơn trùng cửa sổ chứ không lấy đỉnh theo ngày (báo cáo vận hành R1: `products/[id]/route.ts:656-662`, `product.ts:1020-1033`, `status/route.ts:154-162`).
 - (việc sau c) Danh sách theo dõi từ báo cáo vận hành, đề xuất mỗi mục một issue riêng:
   - R3: `stock < renting` có thể xảy ra (đơn bán, lấy hàng, sửa #504) làm mọi lần lưu form (kể cả chỉ đổi tên) bị 400 `STOCK_BELOW_RENTED`; chỉ kiểm dòng có `stock` thay đổi (`product.ts:992-1000,1020-1033`, `form-model.ts:224-230,370-372`, `products/[id]/route.ts:657`).
   - R4: form web ghi tồn tuyệt đối của mọi chi nhánh, không khoá lạc quan: lần lưu form cũ ghi đè lần sửa khác (`form-model.ts:370-372`, `products/[id]/route.ts:663-667`).
