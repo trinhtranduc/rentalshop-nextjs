@@ -86,6 +86,8 @@ data class ProductOutletStock(
     val stock: Int,
     val renting: Int,
     val available: Int,
+    /** #1346: the branch lists the product (`OutletStock.isListed`); an API without the field means listed */
+    val isListed: Boolean = true,
 )
 
 data class Customer(

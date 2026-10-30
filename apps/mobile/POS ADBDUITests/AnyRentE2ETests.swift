@@ -318,6 +318,115 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("14-home-cart-button")
     }
 
+    // MARK: #1346 "Hiện ở chi nhánh"
+
+    private var listingTicks: XCUIElementQuery {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.listing.'"))
+    }
+
+    /// Scrolls the open product form down until its "Hiện ở chi nhánh" ticks show; false when the form has none
+    private func scrollToListingTicks() -> Bool {
+        for _ in 0..<6 where !listingTicks.firstMatch.exists { app.swipeUp() }
+        return listingTicks.firstMatch.waitForExistence(timeout: 2)
+    }
+
+    private func editOpenProduct() -> Bool {
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        guard edit.waitForExistence(timeout: 5) else { return false }
+        edit.tap()
+        sleep(2)
+        return true
+    }
+
+    /// #1346: the owner unticks the branch in use in the product form (E2E_LISTING_PRODUCT, default "Product 5 -"), saves, sees the
+    /// row on Home say "Chưa hiện ở chi nhánh này" without a +, then ticks it back. The DB is checked from outside the test.
+    func test1dBranchListingOwner() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let key = ProcessInfo.processInfo.environment["E2E_LISTING_PRODUCT"] ?? "Product 5 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("product \(key) not found") }
+        XCTAssertTrue(editOpenProduct(), "owner sees Edit")
+        if ProcessInfo.processInfo.environment["E2E_EXPECT_NO_TICK"] == "1" { // a shop with one active branch (Basic): no box
+            for _ in 0..<4 { app.swipeUp() }
+            XCTAssertFalse(listingTicks.firstMatch.exists, "a one-branch shop has no 'Hiện ở chi nhánh' box")
+            e2e.shot("37-listing-owner-one-branch-form")
+            e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+            e2e.goBackOnce()
+            XCTAssertTrue(e2e.openProduct(named: key))
+            e2e.goBackOnce()
+            e2e.shot("38-listing-owner-one-branch-home")
+            return
+        }
+        guard scrollToListingTicks() else { return XCTFail("the form has no 'Hiện ở chi nhánh' ticks (a shop with 2+ branches?)") }
+        XCTAssertGreaterThanOrEqual(listingTicks.count, 2, "one tick per active branch")
+        app.swipeUp()
+        e2e.shot("30-listing-owner-form-ticked")
+        let first = listingTicks.element(boundBy: 0)
+        XCTAssertEqual(first.value as? String, "1", "the branch in use is ticked")
+        first.tap()
+        sleep(1)
+        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "0", "tapping unticks")
+        app.swipeUp()
+        e2e.shot("31-listing-owner-form-unticked")
+        let save = e2e.button(["Save changes", "Lưu thay đổi"])
+        XCTAssertTrue(save.waitForExistence(timeout: 3))
+        save.tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.goBackOnce()
+        // Home: the row is still there for the owner, marked, with no +
+        XCTAssertTrue(e2e.openProduct(named: key), "owner still finds the unticked product")
+        e2e.goBackOnce()
+        let notShown = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Not shown at this branch' OR label CONTAINS 'Chưa hiện ở chi nhánh này'")).firstMatch
+        e2e.soft(notShown.waitForExistence(timeout: 5), "the unticked row says it is not shown here")
+        e2e.shot("32-listing-owner-home-unlisted")
+        // Tick it back
+        XCTAssertTrue(e2e.openProduct(named: key))
+        XCTAssertTrue(editOpenProduct())
+        guard scrollToListingTicks() else { return XCTFail("ticks missing on the second edit") }
+        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "0", "the untick was saved")
+        listingTicks.element(boundBy: 0).tap()
+        e2e.button(["Save changes", "Lưu thay đổi"]).tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.goBackOnce()
+        e2e.shot("33-listing-owner-home-ticked-back")
+    }
+
+    /// #1346: a branch role (manager, kho, staff) sees the dimmed tick (E2E_LISTING_PRODUCT has rows at 2+ branches), cannot change it,
+    /// and its list holds no product that is unticked at its branch (E2E_HIDDEN_PRODUCT, unticked from outside the test).
+    func test1eBranchListingBranchRole() throws {
+        try e2e.requireFlag("newProducts")
+        if e2e.role == "merchant" { throw XCTSkip("branch roles only") }
+        try e2e.start()
+        let env = ProcessInfo.processInfo.environment
+        if let hidden = env["E2E_HIDDEN_PRODUCT"] {
+            e2e.tapTab(["Home", "Trang chủ"], index: 0)
+            let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
+            XCTAssertTrue(search.waitForExistence(timeout: 10))
+            search.tap()
+            search.typeText(hidden + "\n")
+            sleep(3)
+            e2e.soft(!app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", hidden)).firstMatch.exists, "'\(hidden)' is unticked at this branch and not listed")
+            e2e.shot("34-listing-\(e2e.role)-hidden-search")
+        }
+        let key = env["E2E_LISTING_PRODUCT"] ?? "Product 5 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("product \(key) not found") }
+        e2e.shot("35-listing-\(e2e.role)-detail")
+        if e2e.role == "staff" { // staff has no edit form: the dimmed line sits on the detail
+            let line = app.staticTexts.matching(NSPredicate(format: "identifier == 'product.detail.listing'")).firstMatch
+            e2e.soft(line.waitForExistence(timeout: 3), "staff sees the dimmed 'Hiện ở chi nhánh' line on the detail")
+            return
+        }
+        XCTAssertTrue(editOpenProduct(), "\(e2e.role) sees Edit")
+        guard scrollToListingTicks() else { return XCTFail("no dimmed tick in the form") }
+        app.swipeUp()
+        e2e.shot("36-listing-\(e2e.role)-form")
+        XCTAssertEqual(listingTicks.count, 1, "only the own branch")
+        XCTAssertFalse(listingTicks.element(boundBy: 0).isEnabled, "the tick is dimmed and cannot be changed")
+    }
+
     func test2CartRent() throws {
         try e2e.requireFlag("newProducts")
         try e2e.requireRole("merchant")

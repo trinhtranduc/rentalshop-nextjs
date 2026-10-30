@@ -2,10 +2,13 @@ package com.anyrent.pos.data
 
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BlockPricing
+import com.anyrent.pos.domain.products.BranchListing
+import com.anyrent.pos.domain.products.BranchOutletStockItem
 import com.anyrent.pos.domain.products.PricingOptionInput
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -20,9 +23,13 @@ const val PRICING_SCHEMA_VERSION = 2
 object ProductsV2Api {
     private val imageMedia = "image/jpeg".toMediaType()
 
-    /** `GET /api/products` with the user's outlet (so the list gets today's free count) */
-    fun listProducts(page: Int, limit: Int, q: String?): Result<ApiClient.PageResult<Product>> = runCatching {
-        val query = buildList {
+    /**
+     * `GET /api/products` with the user's outlet (so the list gets today's free count). #1346: a branch role asks for
+     * `listed=true` (only the products ticked at its branch); [applyBranchListing] = false is for lookups that must see
+     * every product (barcode already used, copying a price table).
+     */
+    fun listProducts(page: Int, limit: Int, q: String?, applyBranchListing: Boolean = true): Result<ApiClient.PageResult<Product>> = runCatching {
+        val base = buildList {
             add("page=$page")
             add("limit=$limit")
             add("sortBy=createdAt")
@@ -30,7 +37,9 @@ object ProductsV2Api {
             if (!q.isNullOrBlank()) add("q=" + URLEncoder.encode(q, "UTF-8"))
             // #828: the branch in use (a merchant's chosen one) so the list gets that branch's stock
             CurrentOutlet.id?.let { add("outletId=$it") }
-        }.joinToString("&")
+        }
+        val query = (if (applyBranchListing) BranchListing.listQuery(base, PermissionManager.role, CurrentOutlet.outlets.size) else base)
+            .joinToString("&")
         val json = ApiClient.get().authedGet("/api/products?$query")
         val data = json.optJSONObject("data") ?: JSONObject()
         val array = data.optJSONArray("products") ?: JSONArray()
@@ -84,6 +93,8 @@ object ProductsV2Api {
         val prices: Prices?,
         val outletId: Int,
         val quantity: Int,
+        /** #1346: the owner's ticks on a NEW product (`outletStock[]` with `isListed`); null = one row, the server ticks it */
+        val createStock: List<BranchOutletStockItem>? = null,
     )
 
     data class Prices(
@@ -106,7 +117,11 @@ object ProductsV2Api {
     fun saveProduct(id: Int?, fields: ProductFields, keptUrls: List<String>, newFiles: List<File>): Result<Product> = runCatching {
         val data = JSONObject()
             .put("name", fields.name)
-            .put("outletStock", JSONArray().put(JSONObject().put("outletId", fields.outletId).put("stock", fields.quantity)))
+            .put(
+                "outletStock",
+                if (id == null && fields.createStock != null) JSONArray(fields.createStock.map { it.toJson() })
+                else JSONArray().put(JSONObject().put("outletId", fields.outletId).put("stock", fields.quantity)),
+            )
         if (id == null) {
             data.put("totalStock", fields.quantity)
             // Create requires `rentPrice`; without price rights it is 0 (as iOS sends)
@@ -141,5 +156,13 @@ object ProductsV2Api {
         val json = if (id == null) ApiClient.get().authedMultipart(path, multipart) else ApiClient.get().authedMultipartPut(path, multipart)
         val savedId = id ?: (json.optJSONObject("data") ?: JSONObject()).optInt("id")
         ApiClient.get().getProduct(savedId).getOrThrow()
+    }
+
+    /** `PUT /api/products/listing` (#1346, owner only): tick or untick one product at one branch */
+    fun setBranchListing(outletId: Int, productId: Int, isListed: Boolean): Result<Unit> = runCatching {
+        val body = BranchListing.listingBody(outletId, listOf(productId), isListed).toString()
+            .toRequestBody("application/json".toMediaType())
+        ApiClient.get().authedPut(BranchListing.LISTING_PATH, body)
+        Unit
     }
 }

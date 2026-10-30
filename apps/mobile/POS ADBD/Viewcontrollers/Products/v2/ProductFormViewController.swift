@@ -75,6 +75,13 @@ final class ProductFormViewController: BaseViewControler {
 
     private var outletsLoadError: String?
 
+    /// #1346 "Hiện ở chi nhánh": the owner's tick per branch, or the branch role's own dimmed row
+    private var tickRows: [BranchTickRow] = []
+    private var tickOriginal: [BranchTickRow] = []
+    private let tickBox = UIStackView()
+    private let tickReminder = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+    private var isOwner: Bool { BranchListing.canSet(role: ProductAccess.currentRole) }
+
     private var userOutletId: Int? { CurrentOutlet.shared.id }
 
     init(product: Product?) {
@@ -89,6 +96,7 @@ final class ProductFormViewController: BaseViewControler {
         view.backgroundColor = .white
         buildLayout()
         fill()
+        loadTickRows()
         loadCategories()
         if userOutletId == nil { loadOutlets() }
         let tap = UITapGestureRecognizer(target: self, action: #selector(endEditing))
@@ -250,7 +258,100 @@ final class ProductFormViewController: BaseViewControler {
         quantityTexts.axis = .vertical
         let quantityRow = UIStackView(arrangedSubviews: [quantityTexts, UIView(), quantityStepper])
         quantityRow.alignment = .center
-        form.addArrangedSubview(padded(quantityRow, top: 8, bottom: 24))
+        form.addArrangedSubview(padded(quantityRow, top: 8, bottom: 8))
+
+        // #1346: "Hiện ở chi nhánh" (hidden for a one-branch shop and while there is nothing to show)
+        tickBox.axis = .vertical
+        tickBox.isHidden = true
+        form.addArrangedSubview(tickBox)
+        form.addArrangedSubview(UIView())
+    }
+
+    // MARK: - Hiện ở chi nhánh (#1346)
+
+    /// Rows for the box. Owner: every active branch of the shop. Branch role: its own branch, only when the product has
+    /// rows at two or more branches (it cannot count the shop's branches).
+    private func makeTickRows() -> [BranchTickRow] {
+        let role = ProductAccess.currentRole
+        if isOwner {
+            let outlets = CurrentOutlet.shared.outlets.map { (id: $0.id, name: $0.name, isDefault: $0.isDefault == true) }
+            guard BranchListing.showsTick(role: role, activeOutletCount: outlets.count, productOutletRows: 0) else { return [] }
+            return BranchListing.rows(outlets: outlets, product: product, creatingAt: userOutletId)
+        }
+        guard let product, let own = userOutletId,
+              BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: product.outletStock?.count ?? 0) else { return [] }
+        let ownName = CurrentOutlet.shared.name ?? ""
+        return BranchListing.rows(outlets: [(id: own, name: ownName, isDefault: false)], product: product, creatingAt: nil)
+    }
+
+    private func loadTickRows() {
+        tickRows = makeTickRows()
+        tickOriginal = tickRows
+        renderTicks()
+    }
+
+    private func renderTicks() {
+        tickBox.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        tickBox.isHidden = tickRows.isEmpty
+        guard !tickRows.isEmpty else { return }
+        tickBox.addArrangedSubview(V2.sectionHeader("products.listing.title".localized()))
+        for (index, row) in tickRows.enumerated() {
+            tickBox.addArrangedSubview(tickRowView(row, index: index))
+        }
+        let lines = tickRows.compactMap { row in BranchListing.reminder(for: row).map { (row.name, $0.text) } }
+        tickReminder.text = lines.count > 1 ? lines.map { "\($0.0): \($0.1)" }.joined(separator: "\n") : lines.first?.1
+        tickReminder.isHidden = lines.isEmpty
+        tickReminder.accessibilityIdentifier = "product.form.listing.reminder"
+        tickBox.addArrangedSubview(padded(tickReminder, top: 2, bottom: 8))
+        if !isOwner {
+            let note = V2.label("products.listing.ownerOnly".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+            tickBox.addArrangedSubview(padded(note, top: 0, bottom: 16))
+        }
+    }
+
+    private func tickRowView(_ row: BranchTickRow, index: Int) -> UIView {
+        let button = UIButton(type: .custom)
+        button.tag = index
+        button.isEnabled = isOwner
+        button.alpha = isOwner ? 1 : 0.5
+        let symbol = row.listed ? "checkmark.square.fill" : "square"
+        let box = UIImageView(image: DS.symbol(symbol, DS.Icon.lg))
+        box.tintColor = row.listed ? DS.Color.primary : DS.Color.textMuted
+        box.setContentHuggingPriority(.required, for: .horizontal)
+        let title = row.isDefault && tickRows.count > 1
+            ? String(format: "products.listing.branchMain".localized(), row.name) : row.name
+        let name = V2.label(title, size: DS.TextSize.body, weight: row.listed ? .bold : .regular, lines: 0)
+        var caption = ""
+        if product != nil {
+            caption = row.renting > 0
+                ? String(format: "products.listing.stockRent".localized(), row.stock, row.renting)
+                : String(format: "products.listing.stock".localized(), row.stock)
+        } else if row.outletId == userOutletId {
+            caption = "products.listing.current".localized()
+        }
+        let captionLabel = V2.label(caption, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+        captionLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let stack = UIStackView(arrangedSubviews: [box, name, UIView(), captionLabel])
+        stack.alignment = .center
+        stack.spacing = 10
+        stack.isUserInteractionEnabled = false
+        button.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: DS.Spacing.lg, bottom: 0, right: DS.Spacing.lg))
+        }
+        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        button.addTarget(self, action: #selector(tickTapped(_:)), for: .touchUpInside)
+        button.accessibilityIdentifier = "product.form.listing.\(row.outletId)"
+        button.accessibilityLabel = "\("products.listing.title".localized()) \(row.name)"
+        button.accessibilityValue = row.listed ? "1" : "0"
+        button.accessibilityTraits = isOwner ? UIAccessibilityTraitButton : UIAccessibilityTraitNotEnabled
+        return button
+    }
+
+    @objc private func tickTapped(_ sender: UIButton) {
+        guard isOwner, sender.tag < tickRows.count else { return }
+        tickRows[sender.tag].listed.toggle()
+        renderTicks()
     }
 
     private func configure(_ field: UITextField, placeholder: String, numeric: Bool) {
@@ -608,7 +709,7 @@ final class ProductFormViewController: BaseViewControler {
     /// A code already used by another product shows a warning; the shop decides
     private func checkBarcode(_ code: String) {
         let ownId = product.map { $0.id ?? $0.product_id }
-        LiveProductsHomeDataSource().loadProducts(query: code, page: 1, limit: 20) { [weak self] page, _ in
+        LiveProductsHomeDataSource(applyBranchListing: false).loadProducts(query: code, page: 1, limit: 20) { [weak self] page, _ in
             DispatchQueue.main.async {
                 guard let self, self.barcodeField.text == code else { return }
                 if let match = BarcodeMatch.exact(code, in: page?.products ?? []), (match.id ?? match.product_id) != ownId {
@@ -648,6 +749,43 @@ final class ProductFormViewController: BaseViewControler {
         save(input, outletId: outletId)
     }
 
+    /// #1346: one PUT per moved tick, then the product is read again so the list gets the new `isListed`. A failure keeps the
+    /// form open (the product is saved); a retry sends only the ticks not saved yet.
+    private func applyTicks(_ moved: [BranchTickChange], productId: Int, saved: Product) {
+        var remaining = moved
+        func next() {
+            guard let change = remaining.first else {
+                ProductService.shared.loadProduct(productId: productId) { [weak self] fresh, _ in
+                    DispatchQueue.main.async {
+                        guard let self else { return }
+                        self.hideProgress()
+                        self.onSaved?(fresh ?? saved)
+                        self.dismiss(animated: true)
+                    }
+                }
+                return
+            }
+            remaining.removeFirst()
+            ProductService.shared.setBranchListing(outletId: change.outletId, productId: productId, isListed: change.isListed) { [weak self] _, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let error {
+                        self.hideProgress()
+                        self.onSaved?(saved)
+                        UIAlertController.alert(parent: self, title: "Error".localized(),
+                                                message: "products.listing.saveFailed".localized() + "\n" + error.localizedDescription)
+                        return
+                    }
+                    if let index = self.tickOriginal.firstIndex(where: { $0.outletId == change.outletId }) {
+                        self.tickOriginal[index].listed = change.isListed
+                    }
+                    next()
+                }
+            }
+        }
+        next()
+    }
+
     private func save(_ input: ProductFormInput, outletId: Int) {
         let name = input.name.trimmingCharacters(in: .whitespacesAndNewlines)
         let barcode = (barcodeField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -659,14 +797,21 @@ final class ProductFormViewController: BaseViewControler {
         let completion: (Product?, NSError?) -> Void = { [weak self] saved, error in
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.hideProgress()
                 if let error {
+                    self.hideProgress()
                     UIAlertController.errorAlert(parent: self, error: error)
                     return
                 }
-                guard let saved else { return }
-                self.onSaved?(saved)
-                self.dismiss(animated: true)
+                guard let saved else { self.hideProgress(); return }
+                // #1346: the owner's moved ticks go to PUT /api/products/listing after the product is saved
+                let moved = (self.isEdit && self.isOwner) ? BranchListing.changes(from: self.tickOriginal, to: self.tickRows) : []
+                if moved.isEmpty {
+                    self.hideProgress()
+                    self.onSaved?(saved)
+                    self.dismiss(animated: true)
+                } else {
+                    self.applyTicks(moved, productId: saved.id ?? saved.product_id, saved: saved)
+                }
             }
         }
 
@@ -709,7 +854,9 @@ final class ProductFormViewController: BaseViewControler {
                 outletId: outletId,
                 images: keptUrls.isEmpty ? nil : keptUrls,
                 pricingOptions: (options?.isEmpty ?? true) ? nil : options,
-                pricingSchemaVersion: showsPrices ? ProductPricingSchema.version : nil
+                pricingSchemaVersion: showsPrices ? ProductPricingSchema.version : nil,
+                // #1346: the owner's ticks; a branch role sends one row and the API ticks its branch
+                outletStock: (isOwner && !tickRows.isEmpty) ? BranchListing.createStock(rows: tickRows, quantity: input.quantity, at: outletId) : nil
             )
             ProductService.shared.createProduct(request: request, images: newImages, completion: completion)
         }

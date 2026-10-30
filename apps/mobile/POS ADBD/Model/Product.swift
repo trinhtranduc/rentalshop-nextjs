@@ -91,15 +91,18 @@ struct ProductOutletStock: Codable {
     var stock: Int?
     var renting: Int?
     var available: Int?
+    /// #1346 "Hiện ở chi nhánh": nil = the API did not send it (older API), which counts as listed
+    var isListed: Bool?
 
     private struct OutletRef: Codable { var id: Int? }
-    private enum CodingKeys: String, CodingKey { case outletId, stock, renting, available, outlet }
+    private enum CodingKeys: String, CodingKey { case outletId, stock, renting, available, outlet, isListed }
 
-    init(outletId: Int?, stock: Int?, renting: Int?, available: Int?) {
+    init(outletId: Int?, stock: Int?, renting: Int?, available: Int?, isListed: Bool? = nil) {
         self.outletId = outletId
         self.stock = stock
         self.renting = renting
         self.available = available
+        self.isListed = isListed
     }
 
     init(from decoder: Decoder) throws {
@@ -109,6 +112,7 @@ struct ProductOutletStock: Codable {
         stock = (try? c.decodeIfPresent(Int.self, forKey: .stock)) ?? nil
         renting = (try? c.decodeIfPresent(Int.self, forKey: .renting)) ?? nil
         available = (try? c.decodeIfPresent(Int.self, forKey: .available)) ?? nil
+        isListed = (try? c.decodeIfPresent(Bool.self, forKey: .isListed)) ?? nil
     }
 
     func encode(to encoder: Encoder) throws {
@@ -117,6 +121,7 @@ struct ProductOutletStock: Codable {
         try c.encodeIfPresent(stock, forKey: .stock)
         try c.encodeIfPresent(renting, forKey: .renting)
         try c.encodeIfPresent(available, forKey: .available)
+        try c.encodeIfPresent(isListed, forKey: .isListed)
     }
 }
 

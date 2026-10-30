@@ -1939,3 +1939,210 @@ final class QuantityEntryTests: XCTestCase {
         XCTAssertEqual(QuantityEntry.fromPad(1_000_000, minimum: 0), QuantityEntry.maximum)
     }
 }
+
+/// #1346 (#1335 PR 1m) — "Hiện ở chi nhánh": who ticks, who sees the tick, what the list asks for, the reminder, the payloads
+final class BranchListingTests: XCTestCase {
+    private func product(_ json: String) throws -> Product {
+        try JSONDecoder.shared.decode(Product.self, from: json.data(using: .utf8)!)
+    }
+
+    private let outlets: [(id: Int, name: String, isDefault: Bool)] = [
+        (id: 1, name: "Quận 1", isDefault: true), (id: 7, name: "Quận 7", isDefault: false), (id: 9, name: "Thủ Đức", isDefault: false)
+    ]
+
+    // MARK: Who may tick
+
+    func testOnlyTheOwnerTicksAndUnticks() {
+        XCTAssertTrue(BranchListing.canSet(role: .merchant))
+        XCTAssertFalse(BranchListing.canSet(role: .outletAdmin))
+        XCTAssertFalse(BranchListing.canSet(role: .outletInventory))
+        XCTAssertFalse(BranchListing.canSet(role: .outletStaff))
+        XCTAssertFalse(BranchListing.canSet(role: nil))
+    }
+
+    // MARK: Who sees the tick
+
+    func testTheOwnerSeesTheTickWithTwoOrMoreActiveBranches() {
+        XCTAssertTrue(BranchListing.showsTick(role: .merchant, activeOutletCount: 2, productOutletRows: 0))
+        XCTAssertTrue(BranchListing.showsTick(role: .merchant, activeOutletCount: 3, productOutletRows: 3))
+        // One branch (every Basic shop), or outlets not loaded yet: no tick
+        XCTAssertFalse(BranchListing.showsTick(role: .merchant, activeOutletCount: 1, productOutletRows: 1))
+        XCTAssertFalse(BranchListing.showsTick(role: .merchant, activeOutletCount: 0, productOutletRows: 5))
+    }
+
+    func testABranchRoleSeesTheDimmedTickWhenTheProductHasRowsAtTwoBranches() {
+        for role in [Role.outletAdmin, .outletInventory, .outletStaff] {
+            XCTAssertTrue(BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: 2), "\(role)")
+            XCTAssertFalse(BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: 1), "\(role)")
+            XCTAssertFalse(BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: 0), "\(role)")
+        }
+        XCTAssertFalse(BranchListing.showsTick(role: nil, activeOutletCount: 3, productOutletRows: 3))
+    }
+
+    // MARK: What the list asks for
+
+    func testBranchRolesAskForListedProductsOnly() {
+        for role in [Role.outletAdmin, .outletInventory, .outletStaff] {
+            XCTAssertTrue(BranchListing.sendsListed(role: role, activeOutletCount: 0), "\(role)")
+            XCTAssertTrue(BranchListing.sendsListed(role: role, activeOutletCount: 3), "\(role)")
+        }
+    }
+
+    func testTheOwnerNeverSendsListedSoTheOwnerSeesEveryProduct() {
+        XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 3))
+        XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 1))
+        XCTAssertFalse(BranchListing.sendsListed(role: nil, activeOutletCount: 3))
+    }
+
+    func testAShopKnownToHaveOneBranchSendsNothing() {
+        XCTAssertFalse(BranchListing.sendsListed(role: .outletStaff, activeOutletCount: 1))
+    }
+
+    func testListParamsAddListedTrueWithoutTouchingTheRest() {
+        let base: [String: Any] = ["page": 1, "limit": 20, "outletId": 7]
+        let staff = BranchListing.listParams(base, role: .outletStaff, activeOutletCount: 0)
+        XCTAssertEqual(staff["listed"] as? String, "true")
+        XCTAssertEqual(staff["page"] as? Int, 1)
+        XCTAssertEqual(staff["limit"] as? Int, 20)
+        XCTAssertEqual(staff["outletId"] as? Int, 7)
+        let owner = BranchListing.listParams(base, role: .merchant, activeOutletCount: 3)
+        XCTAssertNil(owner["listed"])
+        XCTAssertEqual(owner.count, 3)
+    }
+
+    // MARK: The header
+
+    func testTheHeaderDeclaresBranchListing() {
+        XCTAssertEqual(BranchListing.capabilityToken, "branch-listing")
+        XCTAssertTrue(ClientCapabilities.tokens.contains("branch-listing"))
+        XCTAssertTrue(ClientCapabilities.headerValue.contains("branch-listing"))
+        // The older tokens stay
+        XCTAssertTrue(ClientCapabilities.tokens.contains("installments"))
+        XCTAssertTrue(ClientCapabilities.tokens.contains("block-pricing"))
+    }
+
+    // MARK: Is a product listed here
+
+    func testARowIsListedUnlessTheApiSaysFalse() throws {
+        let p = try product(#"{"id":1,"name":"Áo","outletStock":[{"outletId":1,"stock":4,"isListed":false},{"outletId":7,"stock":2,"isListed":true},{"outletId":9,"stock":0}]}"#)
+        XCTAssertFalse(BranchListing.isListed(p, outletId: 1))
+        XCTAssertTrue(BranchListing.isListed(p, outletId: 7))
+        // An older API (no field): listed
+        XCTAssertTrue(BranchListing.isListed(p, outletId: 9))
+        // No row for the branch, or no branch known: nothing to hide
+        XCTAssertTrue(BranchListing.isListed(p, outletId: 42))
+        XCTAssertTrue(BranchListing.isListed(p, outletId: nil))
+        let bare = try product(#"{"id":2,"name":"Khăn"}"#)
+        XCTAssertTrue(BranchListing.isListed(bare, outletId: 7))
+    }
+
+    func testAnUnlistedProductCannotBeAddedButOneAlreadyInTheCartKeepsItsCount() {
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0, listed: false), .notListed)
+        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 0, listed: false), .notListed)
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 2, listed: false), .inCart(2))
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0, listed: true), .add)
+        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 0, listed: true), .out)
+        // The old call keeps working
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0), .add)
+    }
+
+    func testOnlyTheOwnerOfAManyBranchShopSeesAnUnlistedRowAsUnlisted() throws {
+        let p = try product(#"{"id":1,"name":"Áo","outletStock":[{"outletId":7,"stock":4,"isListed":false}]}"#)
+        XCTAssertFalse(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 3, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 3, outletId: 1))
+        // One branch (Basic), outlets not loaded, or a branch role (the list was filtered by the API): never hidden
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 1, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 0, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .outletStaff, activeOutletCount: 0, outletId: 7))
+    }
+
+    // MARK: The reminder when unticking
+
+    func testReminderOnlyWhenUntickedAndSomethingIsLeft() {
+        func row(listed: Bool, stock: Int, renting: Int) -> BranchTickRow {
+            BranchTickRow(outletId: 7, name: "Quận 7", isDefault: false, stock: stock, renting: renting, listed: listed)
+        }
+        XCTAssertEqual(BranchListing.reminder(for: row(listed: false, stock: 4, renting: 2)), BranchListingReminder(stock: 4, renting: 2))
+        XCTAssertEqual(BranchListing.reminder(for: row(listed: false, stock: 4, renting: 0)), BranchListingReminder(stock: 4, renting: 0))
+        XCTAssertEqual(BranchListing.reminder(for: row(listed: false, stock: 0, renting: 2)), BranchListingReminder(stock: 0, renting: 2))
+        // Nothing left (mockup B2c): no line
+        XCTAssertNil(BranchListing.reminder(for: row(listed: false, stock: 0, renting: 0)))
+        // Still ticked: no line
+        XCTAssertNil(BranchListing.reminder(for: row(listed: true, stock: 4, renting: 2)))
+    }
+
+    func testReminderTextNamesTheNumbersAndLeavesOutRentingWhenNone() {
+        let both = BranchListingReminder(stock: 4, renting: 2).text
+        XCTAssertTrue(both.contains("4"))
+        XCTAssertTrue(both.contains("2"))
+        let none = BranchListingReminder(stock: 4, renting: 0).text
+        XCTAssertTrue(none.contains("4"))
+        XCTAssertNotEqual(both, none)
+        XCTAssertFalse(both.contains("products.listing."), "a raw key shows when a string is missing")
+        XCTAssertFalse(none.contains("products.listing."))
+    }
+
+    // MARK: Rows of the form
+
+    func testANewProductTicksTheCreatingBranchOnly() {
+        let rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 7)
+        XCTAssertEqual(rows.map { $0.outletId }, [1, 7, 9])
+        XCTAssertEqual(rows.map { $0.listed }, [false, true, false])
+        XCTAssertEqual(rows.map { $0.name }, ["Quận 1", "Quận 7", "Thủ Đức"])
+        XCTAssertEqual(rows.map { $0.isDefault }, [true, false, false])
+    }
+
+    func testASavedProductFollowsItsRowsAndAMissingRowIsNotListed() throws {
+        let p = try product(#"{"id":12,"name":"Áo dài gấm đỏ","outletStock":[{"outletId":1,"stock":8,"renting":2,"isListed":true},{"outletId":7,"stock":4,"renting":2,"isListed":false}]}"#)
+        let rows = BranchListing.rows(outlets: outlets, product: p, creatingAt: nil)
+        XCTAssertEqual(rows.map { $0.listed }, [true, false, false])
+        XCTAssertEqual(rows.map { $0.stock }, [8, 4, 0])
+        XCTAssertEqual(rows.map { $0.renting }, [2, 2, 0])
+    }
+
+    func testChangesAreOnlyTheTicksThatMoved() {
+        let before = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        var after = before
+        after[0].listed = false
+        after[2].listed = true
+        XCTAssertEqual(BranchListing.changes(from: before, to: after),
+                       [BranchTickChange(outletId: 1, isListed: false), BranchTickChange(outletId: 9, isListed: true)])
+        XCTAssertEqual(BranchListing.changes(from: before, to: before), [])
+    }
+
+    func testCreatingSendsTheTypedStockAtTheCurrentBranchAndZeroRowsForTheOtherTicks() {
+        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        rows[2].listed = true
+        let items = BranchListing.createStock(rows: rows, quantity: 5, at: 1)
+        XCTAssertEqual(items.map { $0.outletId }, [1, 9])
+        XCTAssertEqual(items.map { $0.stock }, [5, 0])
+        XCTAssertEqual(items.map { $0.isListed }, [true, true])
+    }
+
+    func testCreatingWithTheCurrentBranchUntickedStillSendsItsStock() {
+        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        rows[0].listed = false
+        rows[1].listed = true
+        let items = BranchListing.createStock(rows: rows, quantity: 5, at: 1)
+        XCTAssertEqual(items.map { $0.outletId }, [1, 7])
+        XCTAssertEqual(items.map { $0.stock }, [5, 0])
+        XCTAssertEqual(items.map { $0.isListed }, [false, true])
+    }
+
+    // MARK: Requests
+
+    func testAnOutletStockItemSendsIsListedOnlyWhenItIsSet() {
+        XCTAssertEqual(OutletStockItem(outletId: 1, stock: 3).formObject as NSDictionary, ["outletId": 1, "stock": 3] as NSDictionary)
+        XCTAssertEqual(OutletStockItem(outletId: 1, stock: 3, isListed: true).formObject as NSDictionary,
+                       ["outletId": 1, "stock": 3, "isListed": true] as NSDictionary)
+        XCTAssertEqual(OutletStockItem(outletId: 1, stock: 0, isListed: false).formObject["isListed"] as? Bool, false)
+    }
+
+    func testTheListingBodyIsOneBranchAndTheProductIds() {
+        let body = BranchListing.listingBody(outletId: 7, productIds: [12, 13], isListed: false)
+        XCTAssertEqual(body["outletId"] as? Int, 7)
+        XCTAssertEqual(body["productIds"] as? [Int], [12, 13])
+        XCTAssertEqual(body["isListed"] as? Bool, false)
+        XCTAssertEqual(BranchListing.listingPath, "/api/products/listing")
+    }
+}

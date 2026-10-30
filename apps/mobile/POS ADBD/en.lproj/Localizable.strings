@@ -3058,6 +3058,19 @@
 "shopinfo.branchCount" = "%d branches";
 "shopinfo.webHint" = "Add or turn off a branch on the web.";
 "shopinfo.addressRequired" = "Please enter the address.";
+
+// #1346 "Hiện ở chi nhánh"
+"products.listing.title" = "Shown at branch";
+"products.listing.ownerOnly" = "Only the shop owner can turn this on or off";
+"products.listing.current" = "Selected";
+"products.listing.branchMain" = "%@ (main)";
+"products.listing.stock" = "Stock %d";
+"products.listing.stockRent" = "Stock %d · on rent %d";
+"products.listing.reminder" = "%d left at this branch (%d on rent). They still count in the total but are not offered when creating an order.";
+"products.listing.reminderNoRent" = "%d left at this branch. They still count in the total but are not offered when creating an order.";
+"products.listing.saveFailed" = "The product was saved, but \"Shown at branch\" could not be saved. Try again.";
+"products.listing.notShown" = "Not shown at this branch";
+"products.scan.notListed" = "This branch does not show this product";
 "share.collect" = "Collect at hand-over";
 "share.deposit.label" = "Deposit";
 "share.deposit.none" = "No deposit";
