@@ -120,6 +120,82 @@ export function parsePreset(raw: string | null | undefined): CreatedPreset {
   return (CREATED_PRESETS as string[]).includes(raw || '') ? (raw as CreatedPreset) : 'any';
 }
 
+// #1369: "Ngày giao" = planned pickup day (`pickupPlanAt`). The API takes one `dateField` per request,
+// so it excludes "Ngày tạo": the URL carries one of `created=` / `pickup=` (custom days share `from` / `to`).
+export type PickupPreset = 'any' | 'today' | 'tomorrow' | 'next7d' | '7d' | '30d' | 'month' | 'custom';
+export const PICKUP_PRESETS: PickupPreset[] = ['any', 'today', 'tomorrow', 'next7d', '7d', '30d', 'month', 'custom'];
+
+export function parsePickupPreset(raw: string | null | undefined): PickupPreset {
+  return (PICKUP_PRESETS as string[]).includes(raw || '') ? (raw as PickupPreset) : 'any';
+}
+
+/** Pickup-day range of a preset, as Vietnam day keys; `null` for no limit. Forward presets look ahead from today. */
+export function pickupRange(
+  preset: PickupPreset,
+  todayKey: string,
+  custom?: { from?: string | null; to?: string | null },
+): { startDate: string; endDate: string } | null {
+  switch (preset) {
+    case 'today':
+      return { startDate: todayKey, endDate: todayKey };
+    case 'tomorrow': {
+      const day = addDays(todayKey, 1);
+      return { startDate: day, endDate: day };
+    }
+    case 'next7d':
+      return { startDate: todayKey, endDate: addDays(todayKey, 6) };
+    default:
+      return createdRange(preset as CreatedPreset, todayKey, custom);
+  }
+}
+
+export type DateFilterKind = 'created' | 'pickup';
+export type DateRange = { startDate: string; endDate: string };
+
+/** Which date filter the URL asks for. `pickup` wins if both are typed in; a created value that is not a created preset is "any". */
+export function parseDateFilter(createdRaw: string | null | undefined, pickupRaw: string | null | undefined): { kind: DateFilterKind; preset: string } {
+  const pickup = parsePickupPreset(pickupRaw);
+  if (pickup !== 'any') return { kind: 'pickup', preset: pickup };
+  return { kind: 'created', preset: parsePreset(createdRaw) };
+}
+
+export function dateFilterRange(
+  kind: DateFilterKind,
+  preset: string,
+  todayKey: string,
+  custom?: { from?: string | null; to?: string | null },
+): DateRange | null {
+  return kind === 'pickup' ? pickupRange(parsePickupPreset(preset), todayKey, custom) : createdRange(parsePreset(preset), todayKey, custom);
+}
+
+/** Filters sent to GET /api/orders. Pickup adds `dateField=pickupPlanAt`; created keeps the old request. */
+export function dateFilterApiParams(
+  kind: DateFilterKind,
+  range: DateRange | null,
+): { dateField?: 'pickupPlanAt'; startDate?: string; endDate?: string } {
+  if (!range) return {};
+  return kind === 'pickup'
+    ? { dateField: 'pickupPlanAt', startDate: range.startDate, endDate: range.endDate }
+    : { startDate: range.startDate, endDate: range.endDate };
+}
+
+/** URL change for picking `value` in one date filter: the other filter and stale days are cleared. */
+export function dateFilterPatch(
+  kind: DateFilterKind,
+  value: string,
+  draft?: { from: string; to: string },
+): Record<string, string | null> {
+  const own = kind === 'pickup' ? 'pickup' : 'created';
+  const other = kind === 'pickup' ? 'created' : 'pickup';
+  const custom = value === 'custom';
+  return {
+    [own]: value === 'any' ? null : value,
+    [other]: null,
+    from: custom ? draft?.from ?? null : null,
+    to: custom ? draft?.to ?? null : null,
+  };
+}
+
 /** Page numbers to show around the current page; `0` marks a gap. */
 export function pageWindow(page: number, totalPages: number): number[] {
   if (totalPages <= 1) return [1];

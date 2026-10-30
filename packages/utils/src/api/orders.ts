@@ -68,6 +68,7 @@ export const ordersApi = {
       params.append('endDate', filters.endDate);
     }
     
+    if (filters.dateField) params.append('dateField', filters.dateField);
     if (filters.orderType) params.append('orderType', filters.orderType);
     
     // Add pagination parameters

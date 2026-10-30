@@ -1,5 +1,16 @@
 {
   "web": {
+    "pickup": {
+      "label": "인도일:",
+      "any": "모든 날",
+      "today": "오늘",
+      "tomorrow": "내일",
+      "next7d": "다음 7일",
+      "7d": "최근 7일",
+      "30d": "최근 30일",
+      "month": "이번 달",
+      "custom": "직접 지정"
+    },
     "online": {
       "button": "온라인 예약",
       "title": "온라인 예약",
