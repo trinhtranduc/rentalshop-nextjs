@@ -3058,3 +3058,9 @@
 "shopinfo.branchCount" = "%d branches";
 "shopinfo.webHint" = "Add or turn off a branch on the web.";
 "shopinfo.addressRequired" = "Please enter the address.";
+"share.collect" = "Collect at hand-over";
+"share.deposit.label" = "Deposit";
+"share.deposit.none" = "No deposit";
+"share.stage.paid" = "Collected";
+"share.stage.unpaid" = "Not collected";
+"share.stage.partial" = "Part collected";

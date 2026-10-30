@@ -53,6 +53,9 @@
       }
     },
     "editor": {
+      "cart": {
+        "othersHave": "其他分店有货：{list}"
+      },
       "carts": {
         "label": "购物车",
         "title": "购物车 {n}",
