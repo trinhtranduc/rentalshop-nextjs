@@ -825,6 +825,17 @@
       "to": "Đến ngày",
       "apply": "Áp dụng"
     },
+    "pickup": {
+      "label": "Ngày giao:",
+      "any": "Mọi ngày",
+      "today": "Hôm nay",
+      "tomorrow": "Ngày mai",
+      "next7d": "7 ngày tới",
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua",
+      "month": "Tháng này",
+      "custom": "Tuỳ chọn"
+    },
     "sort": {
       "label": "Sắp xếp:",
       "newest": "Mới tạo nhất",

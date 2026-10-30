@@ -9,13 +9,9 @@ type Num = number | null | undefined;
 // URL state
 // ----------------------------------------------------------------------------
 
-export const PAGE_SIZES = [10, 20, 50, 100] as const;
-export const DEFAULT_PAGE_SIZE = 10;
-
-export function parsePageSize(raw: string | null | undefined): number {
-  const n = Number(raw);
-  return (PAGE_SIZES as readonly number[]).includes(n) ? n : DEFAULT_PAGE_SIZE;
-}
+// #1362: rows per page is any whole number 1..3000 (shared with every list)
+import { parsePageSize } from '../../orders/page-size';
+export { DEFAULT_PAGE_SIZE, PAGE_SIZE_PRESETS, PAGE_SIZE_PRESETS as PAGE_SIZES, parsePageSize } from '../../orders/page-size';
 
 export function parsePage(raw: string | null | undefined): number {
   const n = Math.floor(Number(raw));

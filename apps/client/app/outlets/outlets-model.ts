@@ -3,7 +3,9 @@
  * No `@rentalshop/*` imports so `tests/web-outlets-model.test.ts` runs them under both TZ.
  */
 
-export const OUTLET_PAGE_SIZES = [10, 20, 50, 100] as const;
+import { PAGE_SIZE_PRESETS, parsePageSize } from '../orders/page-size';
+
+export const OUTLET_PAGE_SIZES = PAGE_SIZE_PRESETS;
 export const OUTLET_DEFAULT_PAGE_SIZE = 20;
 /** Same limit as the API's `printNote` schema (#347). */
 export const PRINT_NOTE_MAX = 500;
@@ -24,13 +26,12 @@ type ParamReader = { get(name: string): string | null };
 /** URL → list params. Default: newest first (as the old page), 20 rows. */
 export function parseOutletParams(params: ParamReader): OutletParams {
   const page = Math.floor(Number(params.get('page')));
-  const limit = Number(params.get('limit'));
   const sortBy = params.get('sortBy');
   const sortOrder = params.get('sortOrder');
   return {
     q: (params.get('q') || '').trim(),
     page: Number.isFinite(page) && page >= 1 ? page : 1,
-    limit: (OUTLET_PAGE_SIZES as readonly number[]).includes(limit) ? limit : OUTLET_DEFAULT_PAGE_SIZE,
+    limit: parsePageSize(params.get('limit'), OUTLET_DEFAULT_PAGE_SIZE),
     sortBy: sortBy === 'name' ? 'name' : 'createdAt',
     sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
   };

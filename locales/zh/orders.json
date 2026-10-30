@@ -1,5 +1,16 @@
 {
   "web": {
+    "pickup": {
+      "label": "取货日:",
+      "any": "全部日期",
+      "today": "今天",
+      "tomorrow": "明天",
+      "next7d": "未来 7 天",
+      "7d": "过去 7 天",
+      "30d": "过去 30 天",
+      "month": "本月",
+      "custom": "自定义"
+    },
     "online": {
       "button": "在线预订",
       "title": "在线预订",

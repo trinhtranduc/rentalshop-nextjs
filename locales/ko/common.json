@@ -128,6 +128,7 @@
     "results": "결과",
     "page": "페이지",
     "rowsPerPage": "페이지당 행 수",
+    "pageSizeRange": "페이지당 1~{max}행",
     "first": "첫 페이지",
     "last": "마지막 페이지",
     "noData": "표시할 데이터 없음",

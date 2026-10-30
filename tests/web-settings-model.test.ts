@@ -122,7 +122,8 @@ describe('staff list (#528)', () => {
     expect(parseStaffPage('0')).toBe(1);
     expect(parseStaffPage('3')).toBe(3);
     expect(parseStaffPageSize('50')).toBe(50);
-    expect(parseStaffPageSize('25')).toBe(20);
+    expect(parseStaffPageSize('25')).toBe(25);
+    expect(parseStaffPageSize('abc')).toBe(20);
   });
 
   it('reads both GET /api/users shapes', () => {

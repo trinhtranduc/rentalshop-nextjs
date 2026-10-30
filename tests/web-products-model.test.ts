@@ -95,7 +95,8 @@ describe('URL state', () => {
     const q = parseListQuery((k) => params.get(k));
     expect(q).toEqual({ q: 'vest', categoryId: 3, outletId: undefined, sort: 'priceDesc', page: 2, limit: 50 });
     expect(toApiFilters(q)).toMatchObject({ search: 'vest', categoryId: 3, page: 2, limit: 50, sortBy: 'rentPrice', sortOrder: 'desc' });
-    expect(parsePageSize('25')).toBe(10);
+    expect(parsePageSize('25')).toBe(25);
+    expect(parsePageSize('abc')).toBe(10);
     const d = parseListQuery(() => null);
     expect(d).toMatchObject({ q: '', sort: 'name', page: 1, limit: 10 });
     expect(toApiFilters(d)).toMatchObject({ search: undefined, sortBy: 'name', sortOrder: 'asc' });
