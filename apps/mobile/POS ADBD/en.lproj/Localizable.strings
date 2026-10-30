@@ -3084,3 +3084,5 @@
 "printer.shareNote.hint" = "The order's note appears at the bottom of the image sent to customers, internal notes included. Applies to the whole shop.";
 "printer.shareNote.readonly" = "Only the shop owner can turn this on or off.";
 "printer.shareNote.failed" = "Could not save the setting. Please try again.";
+// #1353: under a short cart line, the other branches that still have the product on the order's days
+"products.cart.othersHave" = "Other branches have: %@";

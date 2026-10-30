@@ -841,3 +841,16 @@ extension ProductService {
         }
     }
 }
+
+// MARK: - "Chi nhánh khác còn N" (#1353)
+
+extension ProductService {
+    /// POST /api/products/other-outlets-availability: the other branches that still have each short product on the order's days.
+    /// A hint only, so any failure (network, 403 for staff, 404 on an API without the route) is an empty answer, never an error.
+    @discardableResult
+    func loadOtherBranches(body: [String: Any], completion: @escaping ([Int: [OtherBranchStock]]) -> Void) -> DataRequest {
+        TabsV2APIService.shared.request(OtherBranchesHint.path, method: .post, parameters: body) { (answer: OtherBranchesAnswer?, error: NSError?) in
+            completion(error == nil ? OtherBranchesHint.hints(from: answer) : [:])
+        }
+    }
+}

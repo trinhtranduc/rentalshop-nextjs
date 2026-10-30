@@ -1,7 +1,9 @@
 package com.anyrent.pos.domain.orders
 
 import com.anyrent.pos.data.model.OrderSummary
+import com.anyrent.pos.domain.deposit.OrderInstallment
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.money.ShopCurrency
 import com.anyrent.pos.ui.orders.v2.shortDay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -267,5 +269,115 @@ class OrderDetailLogicTest {
         assertEquals(500_000.0, OrderDetailLogic.returnMoney(150_000.0, 50_000.0, 700_000.0, emptyList()).refund, 0.0)
         val held = OrderDetailLogic.balance("RENT", "PICKUPED", 1_000_000.0, 300_000.0, 500_000.0, 0.0, 0.0, emptyList())
         assertEquals(500_000.0, held.refundDue, 0.0)
+    }
+
+    // ---- #1350 "Thu khi giao" of the order detail follows the plan ----------------------------------------------------
+
+    /** 20% / 30% / rest: stage 1 collected with the booking, stage 2 not yet, the rest at hand-over (iOS `planStages`) */
+    private fun planStages(second: String = "UPCOMING", secondPaid: Double = 0.0, total: Double = 1_150_000.0): List<OrderInstallment> {
+        val first = Math.round(total * 0.2).toDouble()
+        val middle = Math.round(total * 0.3).toDouble()
+        return listOf(
+            OrderInstallment("i1", "Cọc giữ chỗ", 20.0, first, dueDateKey = "2026-10-05", status = "PAID", collectedAt = "2026-10-05T07:00:00.000Z", paidAmount = first, remaining = 0.0),
+            OrderInstallment("i2", "Cọc trước ngày lấy", 30.0, middle, dueDateKey = "2026-10-06", status = second, paidAmount = secondPaid),
+            OrderInstallment("rest", "rest", 50.0, total - first - middle, dueDateKey = "2026-10-16", status = "UPCOMING"),
+        )
+    }
+
+    private fun shown(
+        total: Double = 1_150_000.0,
+        deposit: Double,
+        collateral: Double = 0.0,
+        payments: List<BalancePayment> = emptyList(),
+        plan: Boolean? = true,
+        stages: List<OrderInstallment>?,
+        currency: ShopCurrency = ShopCurrency.VND,
+    ) = OrderDetailLogic.collectOnDeliveryShown(total, deposit, collateral, payments, plan, stages, currency)
+
+    @Test
+    fun `collect on delivery shown is what the customer adds at hand-over not what is still owed`() {
+        // the example of #1350: stage 1 collected 230.000, stage 2 (345.000) not, rest 575.000
+        assertEquals(575_000.0, shown(deposit = 230_000.0, stages = planStages()), 0.0)
+        // and the hand-over suggestion (collectNow) is untouched by this display rule
+        assertEquals(920_000.0, OrderDetailLogic.handOver(1_150_000.0, 230_000.0, 0.0, emptyList()).collectNow, 0.0)
+    }
+
+    @Test
+    fun `collect on delivery shown is the same once the stages are collected`() {
+        val stages = planStages(second = "PAID", secondPaid = 345_000.0)
+        assertEquals(575_000.0, shown(deposit = 575_000.0, stages = stages), 0.0)
+        assertEquals(575_000.0, OrderDetailLogic.handOver(1_150_000.0, 575_000.0, 0.0, emptyList()).collectNow, 0.0)
+    }
+
+    @Test
+    fun `collect on delivery shown equals hand-over when every stage is collected`() {
+        for (total in listOf(100_000.0, 900_000.0, 1_150_000.0, 2_333_333.0)) {
+            val stages = planStages(second = "PAID", secondPaid = Math.round(total * 0.3).toDouble(), total = total)
+            val deposit = stages.filter { !it.isRest }.sumOf { it.paidAmount }
+            val due = OrderDetailLogic.handOver(total, deposit, 0.0, emptyList()).collectNow
+            assertEquals("total $total", due, shown(total = total, deposit = deposit, stages = stages), 0.0)
+        }
+        // thế chân or a PICKUP payment already taken: the hand-over suggestion keeps them, the display too (nothing blocks)
+        val paid = planStages(second = "PAID", secondPaid = 345_000.0)
+        val pickup = listOf(BalancePayment(200_000.0, "COMPLETED", "PICKUP"))
+        val held = OrderDetailLogic.handOver(1_150_000.0, 575_000.0, 500_000.0, pickup).collectNow
+        assertEquals(held, shown(deposit = 575_000.0, collateral = 500_000.0, payments = pickup, stages = paid), 0.0)
+    }
+
+    @Test
+    fun `collect on delivery shown of a one-time deposit or no deposit is unchanged`() {
+        assertEquals(850_000.0, shown(deposit = 300_000.0, plan = false, stages = null), 0.0)
+        assertEquals(850_000.0, shown(deposit = 300_000.0, plan = null, stages = null), 0.0)
+        assertEquals(1_150_000.0, shown(deposit = 0.0, plan = null, stages = null), 0.0)
+        assertEquals(0.0, shown(deposit = 2_000_000.0, plan = null, stages = null), 0.0)
+        assertEquals(850_000.0, shown(deposit = 300_000.0, plan = true, stages = emptyList()), 0.0)
+        assertEquals(850_000.0, shown(deposit = 300_000.0, plan = false, stages = planStages()), 0.0)
+    }
+
+    @Test
+    fun `collect on delivery shown with a discount uses the discounted total`() {
+        // total 900.000 after a discount: 20% = 180.000 collected, 30% = 270.000 not yet, rest 450.000
+        assertEquals(450_000.0, shown(total = 900_000.0, deposit = 180_000.0, stages = planStages(total = 900_000.0)), 0.0)
+    }
+
+    @Test
+    fun `collect on delivery shown does not add collateral`() {
+        assertEquals(575_000.0, shown(deposit = 230_000.0, collateral = 500_000.0, stages = planStages()), 0.0)
+    }
+
+    @Test
+    fun `collect on delivery shown leaves a void stage out`() {
+        val stages = planStages().toMutableList()
+        // stage 2 voided, a new stage 3 of 100.000 not collected: the plan is 230.000 + 100.000
+        stages[1] = OrderInstallment("i2", "Huỷ", 30.0, 345_000.0, dueDateKey = "2026-10-06", status = "VOID")
+        stages.add(2, OrderInstallment("i3", "Cọc 3", 9.0, 100_000.0, dueDateKey = "2026-10-08", status = "UPCOMING"))
+        assertEquals(820_000.0, shown(deposit = 230_000.0, stages = stages), 0.0)
+        // only a void stage left unpaid: nothing blocks, the number is the hand-over suggestion
+        stages.removeAt(2)
+        assertEquals(OrderDetailLogic.handOver(1_150_000.0, 230_000.0, 0.0, emptyList()).collectNow, shown(deposit = 230_000.0, stages = stages), 0.0)
+    }
+
+    @Test
+    fun `collect on delivery shown of a dollar shop rounds to cents`() {
+        val total = 1_150.30
+        val first = 230.06
+        val middle = 345.09
+        val stages = listOf(
+            OrderInstallment("i1", "A", 20.0, first, dueDateKey = "2026-10-05", status = "PAID", paidAmount = first, remaining = 0.0),
+            OrderInstallment("i2", "B", 30.0, middle, dueDateKey = "2026-10-06", status = "UPCOMING"),
+            OrderInstallment("rest", "rest", 50.0, total - first - middle, dueDateKey = "2026-10-16", status = "UPCOMING"),
+        )
+        assertEquals(575.15, shown(total = total, deposit = first, stages = stages, currency = ShopCurrency.USD), 0.0001)
+    }
+
+    @Test
+    fun `the order status does not change the hand-over suggestion or the return money`() {
+        val reserved = OrderDetailLogic.balance("RENT", "RESERVED", 1_150_000.0, 230_000.0, 0.0, 0.0, 0.0, emptyList())
+        assertEquals(920_000.0, reserved.amountDue, 0.0)
+        val pickuped = OrderDetailLogic.balance("RENT", "PICKUPED", 1_150_000.0, 575_000.0, 0.0, 0.0, 0.0, emptyList())
+        assertEquals(0.0, pickuped.amountDue, 0.0)
+        assertEquals(575_000.0, shown(deposit = 230_000.0, stages = planStages()), 0.0)
+        val sale = OrderDetailLogic.balance("SALE", "RESERVED", 500_000.0, 0.0, 0.0, 0.0, 0.0, emptyList())
+        assertEquals(500_000.0, sale.amountDue, 0.0)
     }
 }

@@ -147,6 +147,27 @@ object OrderDetailLogic {
     }
 
     /**
+     * #1350 "Thu khi giao" of the payment section for a rental waiting for pick-up (iOS `collectOnDeliveryShown`). While a
+     * stage of the plan is still uncollected the API refuses the hand-over (`INSTALLMENT_UNPAID_AT_PICKUP`), so it is
+     * collected first and what the customer adds when taking the items is the plan's rest: the number of the stage card
+     * and the share image ([ShareMoneyRule.collectOnDelivery]). Otherwise it is `handOver(...).collectNow`. Display only:
+     * the hand-over button, sheet and the edit sheet keep using `handOver(...).collectNow`.
+     */
+    fun collectOnDeliveryShown(
+        totalAmount: Double,
+        depositAmount: Double,
+        securityDeposit: Double,
+        payments: List<BalancePayment>,
+        hasPlan: Boolean?,
+        stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): Double {
+        val due = handOver(totalAmount, depositAmount, securityDeposit, payments).collectNow
+        val blocking = ShareMoneyRule.planStages(hasPlan, stages).any { it.amount > 0 && it.paidAmount <= 0 }
+        return if (blocking) ShareMoneyRule.collectOnDelivery(totalAmount, depositAmount, hasPlan, stages, currency) else due
+    }
+
+    /**
      * What the hand-over sheet sends besides `status` (#427). Both fields are optional: given papers
      * or deposit are sent, a cleared prefilled value is sent empty / 0, and nothing else is sent.
      */
