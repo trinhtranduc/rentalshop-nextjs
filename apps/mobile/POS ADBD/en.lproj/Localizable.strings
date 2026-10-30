@@ -3071,3 +3071,9 @@
 "products.listing.saveFailed" = "The product was saved, but \"Shown at branch\" could not be saved. Try again.";
 "products.listing.notShown" = "Not shown at this branch";
 "products.scan.notListed" = "This branch does not show this product";
+"share.collect" = "Collect at hand-over";
+"share.deposit.label" = "Deposit";
+"share.deposit.none" = "No deposit";
+"share.stage.paid" = "Collected";
+"share.stage.unpaid" = "Not collected";
+"share.stage.partial" = "Part collected";

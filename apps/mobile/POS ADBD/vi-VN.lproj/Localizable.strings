@@ -2386,7 +2386,7 @@
 "share.items.rent" = "Đồ thuê · %d món";
 "share.items.sale" = "Hàng mua · %d món";
 "share.rent.total" = "Tổng tiền thuê";
-"share.deposit.paid" = "Đã đặt cọc";
+"share.deposit.paid" = "Đã cọc";
 "share.collateral" = "Thế chân khi nhận đồ";
 "share.amountDue" = "Còn phải trả";
 "share.subtotal" = "Tạm tính";
@@ -3069,3 +3069,9 @@
 "products.listing.saveFailed" = "Đã lưu sản phẩm nhưng chưa lưu được ô Hiện ở chi nhánh. Thử lại.";
 "products.listing.notShown" = "Chưa hiện ở chi nhánh này";
 "products.scan.notListed" = "Chi nhánh này chưa hiện món này";
+"share.collect" = "Thu khi giao";
+"share.deposit.label" = "Cọc";
+"share.deposit.none" = "Chưa cọc";
+"share.stage.paid" = "Đã thu";
+"share.stage.unpaid" = "Chưa thu";
+"share.stage.partial" = "Thu một phần";

@@ -95,6 +95,23 @@ export interface BatchProductAvailabilityRequest {
   outletId?: number; // Required for MERCHANT and ADMIN roles
 }
 
+/** #1347 POST /api/products/other-outlets-availability: same days as the batch check, for the order's branch. */
+export interface OtherOutletsAvailabilityRequest {
+  products: Array<{ productId: number; quantity?: number }>;
+  orderType?: 'RENT' | 'SALE';
+  startDate?: string;
+  endDate?: string;
+  date?: string;
+  outletId?: number;
+}
+
+export interface OtherOutletsAvailabilityResponse {
+  results: Array<{
+    productId: number;
+    outlets: Array<{ outletId: number; outletName: string; available: number }>;
+  }>;
+}
+
 export interface BatchProductAvailabilityResult extends ProductAvailabilityResponse {
   error?: string;
 }
@@ -450,6 +467,20 @@ export const productsApi = {
       body: JSON.stringify(request),
     });
     return await parseApiResponse<BatchProductAvailabilityResponse>(response);
+  },
+
+  /**
+   * #1347 Other open branches that still have each product on the days of an order (a hint, owner / manager / stock
+   * keeper only: OUTLET_STAFF gets 403).
+   */
+  async checkOtherOutletsAvailability(
+    request: OtherOutletsAvailabilityRequest
+  ): Promise<ApiResponse<OtherOutletsAvailabilityResponse>> {
+    const response = await authenticatedFetch(apiUrls.products.otherOutletsAvailability, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+    return await parseApiResponse<OtherOutletsAvailabilityResponse>(response);
   },
 
   /**

@@ -28,6 +28,43 @@ struct ShareLanguage {
     func text(_ key: String, _ args: CVarArg...) -> String { String(format: text(key), arguments: args) }
 }
 
+/// #1345 "Thu khi giao" of the image, fixed by the plan so it reads the same before and after hand-over (Android
+/// `ShareMoneyRule`): the total minus the stages of the plan (void and the "rest" stage left out), or minus the single
+/// deposit when the order has no plan. Never below zero, rounded to the currency's smallest unit. It does not add the
+/// collateral (its own row) and, unlike the order detail's `HandOverMoney`, does not drop to what is unpaid.
+enum ShareMoneyRule {
+    /// The stages shown and counted: not void, not the "rest"; empty when the order has no plan
+    static func planStages(hasPlan: Bool?, stages: [OrderInstallment]?) -> [OrderInstallment] {
+        hasPlan == true ? (stages ?? []).filter { $0.status != "VOID" && !$0.isRest } : []
+    }
+
+    static func collectOnDelivery(total: Double, deposit: Double, hasPlan: Bool?, stages: [OrderInstallment]?,
+                                  currency: ShopCurrency) -> Double {
+        let explicit = planStages(hasPlan: hasPlan, stages: stages)
+        let taken = explicit.isEmpty ? deposit : explicit.reduce(0) { $0 + $1.amount }
+        return DepositPlanMath.roundMoney(max(0, total - taken), currency: currency)
+    }
+
+    /// "Thu cọc theo giai đoạn": each stage with Đã thu / Chưa thu (never "Trễ N ngày", "Hôm nay"); nil without stages
+    static func stageBlock(hasPlan: Bool?, stages: [OrderInstallment]?, currency: ShopCurrency,
+                           text: (String) -> String) -> OrderShareModel.StageBlock? {
+        guard !planStages(hasPlan: hasPlan, stages: stages).isEmpty else { return nil }
+        let shown = (stages ?? []).filter { $0.status != "VOID" }
+        var rows: [OrderShareModel.Stage] = []
+        for (index, stage) in shown.enumerated() where !stage.isRest {
+            let percent = DepositPlanMath.percentText(stage.percent)
+            let detail = stage.isPaid
+                ? String(format: text("deposit.card.paidDetail"), percent, InstallmentCardView.paidDay(stage.collectedAt))
+                : String(format: text("deposit.card.dueDetail"), percent, DepositUI.dayText(stage.dueDateKey))
+            let status = stage.status == "PARTIAL" ? "share.stage.partial" : (stage.isPaid ? "share.stage.paid" : "share.stage.unpaid")
+            rows.append(OrderShareModel.Stage(title: "\(index + 1). \(stage.label)",
+                                              amount: OrderShareModel.money(stage.amount, currency: currency),
+                                              detail: detail + " · " + text(status)))
+        }
+        return OrderShareModel.StageBlock(title: text("deposit.card.title"), stages: rows)
+    }
+}
+
 /// The facts the image is made from (one order, or the cart before it is an order)
 struct OrderShareSource {
     struct Item: Equatable {
@@ -88,6 +125,28 @@ struct OrderShareModel: Equatable {
     struct Row: Equatable {
         let label: String
         let value: String
+        /// #1345: a grey row ("Cọc: Chưa cọc")
+        var muted: Bool = false
+    }
+
+    /// #1345: one stage of the deposit block, "20% đơn · 05/10 · Đã thu" under its name and amount
+    struct Stage: Equatable {
+        let title: String
+        let amount: String
+        let detail: String
+    }
+
+    struct StageBlock: Equatable {
+        let title: String
+        let stages: [Stage]
+    }
+
+    /// #1345: the money part of the image, top to bottom
+    enum Money: Equatable {
+        case row(Row)
+        case total(label: String, value: String, tone: Highlight)
+        case stages(StageBlock)
+        case collect(label: String, value: String)
     }
 
     struct Strip: Equatable {
@@ -122,18 +181,14 @@ struct OrderShareModel: Equatable {
     let strip: Strip?
     let itemsHeader: String
     let lines: [Line]
-    let rows: [Row]
-    let highlightLabel: String
-    let highlightValue: String
-    let highlight: Highlight
+    /// #1345: the money part, top to bottom: Tạm tính, Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân
+    let money: [Money]
     let note: String?
     let qr: QR?
     let thanks: String
     let address: String?
     let madeWith: String
     let fileName: String
-    /// #1252: "Thu cọc theo giai đoạn" under the rows of a rental that has stages; nil otherwise
-    var plan: DepositPlanReceipt.Block? = nil
 
     // MARK: - Formatting
 
@@ -143,7 +198,9 @@ struct OrderShareModel: Equatable {
     }
 
     /// `− 300.000đ`
-    static func minus(_ amount: Double) -> String { "− " + money(abs(amount)) }
+    static func minus(_ amount: Double, currency: ShopCurrency = ShopCurrencyStore.current) -> String {
+        "− " + money(abs(amount), currency: currency)
+    }
 
     /// First letters of the first two words: "Lan Anh Bridal" → "LA"
     static func initials(_ name: String) -> String {
@@ -163,10 +220,11 @@ struct OrderShareModel: Equatable {
 
     /// `bankAccount` is the bill's account (`BillBankQR.pick`); `qrSwitchOn` the "QR chuyển khoản trên hoá đơn" switch
     static func make(_ source: OrderShareSource, language: ShareLanguage = .current, bankAccount: BankAccount? = nil,
-                     qrSwitchOn: Bool = false, now: Date = Date()) -> OrderShareModel {
+                     qrSwitchOn: Bool = false, now: Date = Date(), currency: ShopCurrency = ShopCurrencyStore.current) -> OrderShareModel {
         let t = language
         let day: (Date) -> String = { DayFormatter.short($0, timeZone: Date.shopTimeZone, locale: t.locale) }
         let isRent = source.orderType == .rent
+        let fmt: (Double) -> String = { money($0, currency: currency) }
 
         let kind = t.text(isRent ? "share.kind.rent" : "share.kind.sale")
         // #930: "Đơn thuê · tạo 05/10/26 14:30" (Vietnam time)
@@ -188,48 +246,51 @@ struct OrderShareModel: Equatable {
         let lines = source.items.map { item -> Line in
             let unit = item.quantity > 0 ? item.total / Double(item.quantity) : item.total
             // #1252: a day-block line says which block it is ("Khối 3 ngày + 2 ngày thêm"), as the order detail does
-            let detail = item.blockSummary.map { item.quantity > 1 ? "\($0) · \(item.quantity) × \(money(unit))" : $0 }
-                ?? "\(item.quantity) × \(money(unit))"
-            return Line(name: item.name, detail: detail, amount: money(item.total),
+            let detail = item.blockSummary.map { item.quantity > 1 ? "\($0) · \(item.quantity) × \(fmt(unit))" : $0 }
+                ?? "\(item.quantity) × \(fmt(unit))"
+            return Line(name: item.name, detail: detail, amount: fmt(item.total),
                         note: CartV2Logic.noteText(item.note), formula: item.formula)
         }
         // "3 món" counts lines, as the mockups (2 crowns are one line)
         let count = source.items.count
         let subtotal = OrderDetailLogic.saleSubtotal(itemTotals: source.items.map(\.total))
 
-        let plan = source.isDraft ? nil : DepositPlanReceipt.block(
-            hasPlan: source.hasDepositPlan, orderType: source.orderType, stages: source.stages, summary: source.stageSummary,
-            today: DayFormatter.key(now), text: t.text)
-
-        var rows: [Row] = []
-        let highlightLabel: String
-        let highlightValue: String
-        let highlight: Highlight
-        let collateral = collateralText(papers: source.collateralPapers, money: source.collateralMoney)
+        let collateral = collateralText(papers: source.collateralPapers, money: source.collateralMoney, currency: currency)
+        let collect = ShareMoneyRule.collectOnDelivery(total: source.total, deposit: source.deposit, hasPlan: source.hasDepositPlan,
+                                                       stages: source.stages, currency: currency)
+        var entries: [Money] = []
+        func row(_ key: String, _ value: String) { entries.append(.row(Row(label: t.text(key), value: value))) }
+        func noDeposit() { entries.append(.row(Row(label: t.text("share.deposit.label"), value: t.text("share.deposit.none"), muted: true))) }
+        func collectBox() { entries.append(.collect(label: t.text("share.collect"), value: fmt(collect))) }
         if source.isDraft {
-            if source.discount > 0 { rows.append(Row(label: t.text("share.discount"), value: minus(source.discount))) }
+            if source.discount > 0 { row("share.discount", minus(source.discount, currency: currency)) }
+            entries.append(.total(label: t.text("share.subtotal"), value: fmt(source.total), tone: .draft))
             if isRent {
-                if source.deposit > 0 { rows.append(Row(label: t.text("share.draft.deposit"), value: money(source.deposit))) }
-                if let collateral { rows.append(Row(label: t.text("share.collateral"), value: collateral)) }
+                // #1345: Cọc giữ đồ (or "Cọc: Chưa cọc"), Thu khi giao, Thế chân
+                if source.deposit > 0 { row("share.draft.deposit", fmt(source.deposit)) } else { noDeposit() }
+                collectBox()
+                if let collateral { row("share.collateral", collateral) }
             }
-            highlightLabel = t.text("share.subtotal")
-            highlightValue = money(source.total)
-            highlight = .draft
         } else if isRent {
-            // #930: no "Còn phải trả" (it changes with the status); the rent total is the highlight
-            if source.discount > 0 { rows.append(Row(label: t.text("share.discount"), value: minus(source.discount))) }
-            // #1252: with stages the block lists what was collected, so the single "Đã cọc" row goes
-            if source.deposit > 0, plan == nil { rows.append(Row(label: t.text("share.deposit.paid"), value: money(source.deposit))) }
-            if let collateral { rows.append(Row(label: t.text("share.collateral"), value: collateral)) }
-            highlightLabel = t.text("share.rent.total")
-            highlightValue = money(source.total)
-            highlight = .rent
+            // #1345: the order of the order detail. #930: nothing here changes with the status
+            if source.discount > 0 {
+                row("share.subtotal", fmt(subtotal))
+                row("share.discount", minus(source.discount, currency: currency))
+            }
+            entries.append(.total(label: t.text("share.rent.total"), value: fmt(source.total), tone: .rent))
+            if let block = ShareMoneyRule.stageBlock(hasPlan: source.hasDepositPlan, stages: source.stages, currency: currency, text: t.text) {
+                entries.append(.stages(block))
+            } else if source.deposit > 0 {
+                row("share.deposit.paid", fmt(source.deposit))
+            } else {
+                noDeposit()
+            }
+            collectBox()
+            if let collateral { row("share.collateral", collateral) }
         } else {
-            rows.append(Row(label: t.text("share.subtotal"), value: money(subtotal)))
-            if source.discount > 0 { rows.append(Row(label: t.text("share.discount"), value: minus(source.discount))) }
-            highlightLabel = t.text("share.total")
-            highlightValue = money(source.total)
-            highlight = .total
+            row("share.subtotal", fmt(subtotal))
+            if source.discount > 0 { row("share.discount", minus(source.discount, currency: currency)) }
+            entries.append(.total(label: t.text("share.total"), value: fmt(source.total), tone: .total))
         }
 
         var qr: QR?
@@ -249,7 +310,7 @@ struct OrderShareModel: Equatable {
             .joined(separator: " · ")
         let address = source.outletAddress?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        var model = OrderShareModel(
+        let model = OrderShareModel(
             initials: initials(shopName),
             shopName: shopName,
             outletLine: outletLine,
@@ -263,10 +324,7 @@ struct OrderShareModel: Equatable {
             strip: strip,
             itemsHeader: t.text(isRent ? "share.items.rent" : "share.items.sale", count),
             lines: lines,
-            rows: rows,
-            highlightLabel: highlightLabel,
-            highlightValue: highlightValue,
-            highlight: highlight,
+            money: entries,
             note: source.isDraft ? t.text("share.draft.note") : nil,
             qr: qr,
             thanks: t.text("share.thanks", shopName),
@@ -274,17 +332,16 @@ struct OrderShareModel: Equatable {
             madeWith: t.text("share.madeWith"),
             fileName: fileName(source, now: now)
         )
-        model.plan = plan
         return model
     }
 
     /// "CCCD + 2.000.000đ", "CCCD", "2.000.000đ" or nil
-    static func collateralText(papers: String?, money amount: Double) -> String? {
+    static func collateralText(papers: String?, money amount: Double, currency: ShopCurrency = ShopCurrencyStore.current) -> String? {
         let papers = papers?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         switch (papers.isEmpty, amount > 0) {
-        case (false, true): return "\(papers) + \(money(amount))"
+        case (false, true): return "\(papers) + \(money(amount, currency: currency))"
         case (false, false): return papers
-        case (true, true): return money(amount)
+        case (true, true): return money(amount, currency: currency)
         case (true, false): return nil
         }
     }

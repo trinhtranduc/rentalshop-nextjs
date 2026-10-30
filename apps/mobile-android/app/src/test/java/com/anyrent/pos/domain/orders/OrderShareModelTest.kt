@@ -63,6 +63,12 @@ class OrderShareModelTest {
 
     private fun res(text: ShareText) = (text as ShareText.Res).id
 
+    /** #1345: the plain rows of the money part (the order of all the entries is in OrderShareMoneyOrderTest) */
+    private fun OrderShareModel.rows(): List<ShareRow> = money.filterIsInstance<ShareMoney.Row>().map { it.row }
+
+    /** The big box: the rent total, the sale total or the draft estimate */
+    private fun OrderShareModel.highlight(): ShareHighlight = money.filterIsInstance<ShareMoney.Total>().single().highlight
+
     @Test
     fun onlyTheDraftHasAPill() {
         // #930: the image never shows the order status (it goes stale once forwarded)
@@ -131,25 +137,24 @@ class OrderShareModelTest {
                 ShareRow(ShareText.Res(R.string.share_deposit_paid), "300.000đ"),
                 ShareRow(ShareText.Res(R.string.share_collateral), "CCCD + 2.000.000đ"),
             ),
-            m.rows,
+            m.rows(),
         )
-        assertEquals(ShareHighlight(ShareText.Res(R.string.share_rent_total), "1.150.000đ", ShareTone.ACCENT), m.highlight)
+        assertEquals(ShareHighlight(ShareText.Res(R.string.share_rent_total), "1.150.000đ", ShareTone.ACCENT), m.highlight())
         assertNull(m.note)
         fun pay(amount: Double) = PaymentEntry(1, amount, "CASH", "COMPLETED", "PICKUP")
         for (status in listOf("PICKUPED", "RETURNED", "CANCELLED")) {
             val other = OrderShareModel.from(order(status = status, payments = listOf(pay(500_000.0))), shop, vi = true, zone = vn)
-            assertEquals(status, m.rows, other.rows)
-            assertEquals(status, m.highlight, other.highlight)
+            assertEquals(status, m.money, other.money)
         }
     }
 
     @Test
     fun rentDiscountRowAndBareRent() {
         val discounted = OrderShareModel.from(order(total = 1_100_000.0, discount = 50_000.0), shop, vi = true, zone = vn)
-        assertEquals(ShareRow(ShareText.Res(R.string.share_discount), "− 50.000đ"), discounted.rows.first())
-        assertEquals("1.100.000đ", discounted.highlight.value)
+        assertEquals(ShareRow(ShareText.Res(R.string.share_discount), "− 50.000đ"), discounted.rows().first { (it.label as ShareText.Res).id == R.string.share_discount })
+        assertEquals("1.100.000đ", discounted.highlight().value)
         val bare = OrderShareModel.from(order(deposit = 0.0, security = 0.0, papers = null), shop, vi = true, zone = vn)
-        assertTrue(bare.rows.isEmpty())
+        assertTrue(bare.rows().isEmpty())
     }
 
     @Test
@@ -166,9 +171,9 @@ class OrderShareModelTest {
                 ShareRow(ShareText.Res(R.string.share_subtotal), "1.150.000đ"),
                 ShareRow(ShareText.Res(R.string.share_discount), "− 20.000đ"),
             ),
-            m.rows,
+            m.rows(),
         )
-        assertEquals(ShareHighlight(ShareText.Res(R.string.share_total), "400.000đ", ShareTone.GREEN), m.highlight)
+        assertEquals(ShareHighlight(ShareText.Res(R.string.share_total), "400.000đ", ShareTone.GREEN), m.highlight())
     }
 
     @Test
@@ -179,9 +184,9 @@ class OrderShareModelTest {
             base.copy(items = listOf(item("A", 2, 198.0), item("B", 1, 396.0))),
             shop, vi = true, zone = vn,
         )
-        assertEquals(listOf(ShareRow(ShareText.Res(R.string.share_subtotal), "792đ")), m.rows)
+        assertEquals(listOf(ShareRow(ShareText.Res(R.string.share_subtotal), "792đ")), m.rows())
         // The total is the server's, never recomputed from the lines
-        assertEquals(ShareHighlight(ShareText.Res(R.string.share_total), "396đ", ShareTone.GREEN), m.highlight)
+        assertEquals(ShareHighlight(ShareText.Res(R.string.share_total), "396đ", ShareTone.GREEN), m.highlight())
     }
 
     @Test
@@ -254,9 +259,9 @@ class OrderShareModelTest {
                 ShareRow(ShareText.Res(R.string.share_draft_deposit), "300.000đ"),
                 ShareRow(ShareText.Res(R.string.share_collateral), "CCCD + 2.000.000đ"),
             ),
-            m.rows,
+            m.rows(),
         )
-        assertEquals(ShareHighlight(ShareText.Res(R.string.share_draft_estimate), "1.150.000đ", ShareTone.ORANGE), m.highlight)
+        assertEquals(ShareHighlight(ShareText.Res(R.string.share_draft_estimate), "1.150.000đ", ShareTone.ORANGE), m.highlight())
         assertEquals(R.string.share_draft_note, res(m.note!!))
         assertNull(m.qr)
         assertTrue(m.isDraft)
@@ -267,7 +272,7 @@ class OrderShareModelTest {
     fun saleDraftHasNoDaysNorDeposit() {
         val m = draft(sale = true, customer = null)
         assertNull(m.dayStrip)
-        assertTrue(m.rows.isEmpty())
+        assertTrue(m.rows().isEmpty())
         assertEquals(R.string.share_walk_in, res(m.customerName))
         assertEquals(ShareText.Res(R.string.share_items_sale, listOf(3)), m.itemsTitle)
     }

@@ -674,7 +674,8 @@
         "onlyLeft": "Chỉ còn {free} trong lịch này",
         "noneLeft": "Hết trong lịch này",
         "fits": "Còn {free} bộ trong lịch này",
-        "inStock": "Còn {free} trong kho"
+        "inStock": "Còn {free} trong kho",
+        "othersHave": "Chi nhánh khác còn: {list}"
       },
       "loyalty": {
         "use": "Dùng điểm thưởng (khách có {points} điểm)",
