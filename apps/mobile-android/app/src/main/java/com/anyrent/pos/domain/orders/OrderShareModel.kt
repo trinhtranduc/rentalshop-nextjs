@@ -41,6 +41,31 @@ data class ShareLine(val name: String, val quantity: String, val total: String, 
 
 data class ShareRow(val label: ShareText, val value: String)
 
+/** #1345: one stage of the deposit block: name, amount, "20% đơn · 05/10" and "Đã thu" / "Chưa thu" */
+data class ShareStage(val title: ShareText, val amount: String, val detail: ShareText, val status: ShareText)
+
+/** #1345: the money part of the image, top to bottom */
+sealed interface ShareMoney {
+    data class Row(val row: ShareRow) : ShareMoney
+
+    /** A grey row whose value is a label too: "Cọc: Chưa cọc" */
+    data class Muted(val label: ShareText, val value: ShareText) : ShareMoney
+    data class Total(val highlight: ShareHighlight) : ShareMoney
+    data class Stages(val title: ShareText, val stages: List<ShareStage>) : ShareMoney
+    data class Collect(val label: ShareText, val value: String) : ShareMoney
+}
+
+/** #1345: what the customer pays at hand-over, from the plan (not built yet) */
+object ShareMoneyRule {
+    fun collectOnDelivery(
+        total: Double,
+        deposit: Double,
+        hasPlan: Boolean?,
+        stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): Double = -1.0
+}
+
 data class ShareHighlight(val label: ShareText, val value: String, val tone: ShareTone)
 
 data class ShareQr(
@@ -80,6 +105,8 @@ data class OrderShareModel(
     val fileName: String,
     /** #1252: "Thu cọc theo giai đoạn" under the rows of a rental that has stages; null otherwise */
     val plan: com.anyrent.pos.domain.deposit.DepositReceiptBlock? = null,
+    /** #1345: the money part in order (not built yet) */
+    val money: List<ShareMoney> = emptyList(),
 ) {
     val isDraft: Boolean get() = note != null
 
@@ -100,6 +127,7 @@ data class OrderShareModel(
             /** #1252: "Khối 3 ngày + 2 ngày thêm" of a day-block order line (null = none) */
             blockSummary: (com.anyrent.pos.data.model.OrderItem) -> String? = { null },
             now: Instant = Instant.now(),
+            currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
         ): OrderShareModel {
             val summary = order.summary
             val isRent = summary.orderType.equals("RENT", ignoreCase = true)
@@ -203,6 +231,7 @@ data class OrderShareModel(
             /** #1189: the sum of a day-block cart line (null = none) */
             blockFormula: (CartLine) -> String? = { null },
             blockSummary: (CartLine) -> String? = { null },
+            currency: com.anyrent.pos.domain.money.ShopCurrency = com.anyrent.pos.domain.money.ShopMoney.current,
         ): OrderShareModel {
             val today = now.atZone(zone)
             val subtotal = lines.sumOf { it.lineTotal }

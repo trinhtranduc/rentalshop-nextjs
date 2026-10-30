@@ -1503,6 +1503,12 @@
     <string name="share_thanks">Cảm ơn quý khách đã tin chọn %1$s</string>
     <string name="share_made_with">Tạo bằng AnyRent</string>
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
+    <string name="share_collect">Thu khi giao</string>
+    <string name="share_deposit_label">Cọc</string>
+    <string name="share_deposit_none">Chưa cọc</string>
+    <string name="share_stage_paid">Đã thu</string>
+    <string name="share_stage_unpaid">Chưa thu</string>
+    <string name="share_stage_partial">Thu một phần</string>
     <string name="v2_home_search_placeholder">Tìm tên, mã vạch hoặc chụp ảnh</string>
     <string name="v2_home_image_search">Tìm bằng hình</string>
     <!-- #672 image search results -->
