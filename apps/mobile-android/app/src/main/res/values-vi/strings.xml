@@ -2070,6 +2070,8 @@
     <string name="v2_cart_left">Còn %1$d</string>
     <string name="v2_cart_only_left">Chỉ còn %1$d</string>
     <string name="v2_cart_booked_out">Hết đồ</string>
+    <!-- #1353: dưới dòng giỏ thiếu hàng, các chi nhánh khác còn món trong ngày của đơn -->
+    <string name="v2_cart_others_have">Chi nhánh khác còn: %1$s</string>
 
     <!-- #1079 several carts -->
     <string name="v2_cart_multi_title">Giỏ %1$d</string>

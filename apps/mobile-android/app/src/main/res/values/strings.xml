@@ -2098,6 +2098,8 @@
     <string name="v2_cart_left">%1$d left</string>
     <string name="v2_cart_only_left">Only %1$d left</string>
     <string name="v2_cart_booked_out">Booked out</string>
+    <!-- #1353: under a short cart line, the other branches that still have the product on the order's days -->
+    <string name="v2_cart_others_have">Other branches have: %1$s</string>
 
     <!-- #1079 several carts -->
     <string name="v2_cart_multi_title">Cart %1$d</string>

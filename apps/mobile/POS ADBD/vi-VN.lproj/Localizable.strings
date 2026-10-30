@@ -3075,3 +3075,6 @@
 "share.stage.paid" = "Đã thu";
 "share.stage.unpaid" = "Chưa thu";
 "share.stage.partial" = "Thu một phần";
+
+// #1353: dưới dòng giỏ thiếu hàng, các chi nhánh khác còn món trong ngày của đơn
+"products.cart.othersHave" = "Chi nhánh khác còn: %@";

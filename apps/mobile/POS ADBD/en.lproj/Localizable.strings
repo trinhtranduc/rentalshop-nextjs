@@ -3077,3 +3077,6 @@
 "share.stage.paid" = "Collected";
 "share.stage.unpaid" = "Not collected";
 "share.stage.partial" = "Part collected";
+
+// #1353: under a short cart line, the other branches that still have the product on the order's days
+"products.cart.othersHave" = "Other branches have: %@";

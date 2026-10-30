@@ -10,6 +10,7 @@
 
 import UIKit
 import SnapKit
+import Alamofire
 
 final class CartV2ViewController: BaseViewControler {
     /// #973: shown beside the Home grid on iPad (no back button)
@@ -47,6 +48,14 @@ final class CartV2ViewController: BaseViewControler {
     private let editSubmission = CreateOrderSubmission()
     /// #518: lines booked out for the chosen dates, by product (from the batch availability answer)
     private var conflicts: [Int: CartScheduleConflict] = [:]
+    /// #1353: the other branches that still have a short product on the order's days, by product, and the question they answer
+    private var otherBranches: [Int: [OtherBranchStock]] = [:]
+    private var otherBranchesKey = ""
+    /// The question asked last (in flight or answered), so the same one is not asked twice
+    private var otherBranchesAsked = ""
+    /// Bumped on each ask; an older answer is dropped
+    private var otherBranchesGeneration = 0
+    private var otherBranchesRequest: DataRequest?
     private lazy var blockedNotice: UIView = CartOverlapViews.notice("cart.overlap.blocked".localized(), style: .blocked)
     /// #1067: holds the red "Giảm giá không được lớn hơn tổng đơn (X)" notice while the saved discount is above the lines
     private let discountNoticeHost: UIStackView = {
@@ -710,6 +719,13 @@ final class CartV2ViewController: BaseViewControler {
             formula.accessibilityIdentifier = "cart.blockFormula"
             column.addArrangedSubview(formula)
         }
+        // #1353 (mockup C1a): under the "Hết hàng" tag, "Chi nhánh khác còn: Quận 7 (3), Thủ Đức (1)" for the owner, a
+        // manager and a stock keeper; nothing for staff, for a shop with one branch, or while the answer is for other days
+        if let hint = otherBranchesLine(for: item) {
+            let label = V2.label(hint, size: DS.TextSize.secondary, color: DS.Color.primary, lines: 0)
+            label.accessibilityIdentifier = "cart.otherBranches"
+            column.addArrangedSubview(label)
+        }
         column.axis = .vertical
         column.spacing = 6
         column.alignment = .fill
@@ -890,13 +906,17 @@ final class CartV2ViewController: BaseViewControler {
         if isRent {
             guard !requests.isEmpty, let pickup = cart.pickupPlanAt, let ret = cart.returnPlanAt else {
                 clearConflicts()
+                loadOtherBranches()
                 return
             }
             start = pickup
             end = ret
         } else {
             clearConflicts()
-            guard !requests.isEmpty else { return }
+            guard !requests.isEmpty else {
+                loadOtherBranches()
+                return
+            }
             start = Date()
             end = start
         }
@@ -933,6 +953,61 @@ final class CartV2ViewController: BaseViewControler {
                 // The store posts (and the cart redraws) only for lines it changed: draw new conflicts when it did not.
                 // #1056: nothing new = no redraw
                 if conflictsChanged && !posted { self.render() }
+                self.loadOtherBranches()
+            }
+        }
+    }
+
+    // MARK: - Other branches (#1353, mockup C1a)
+
+    /// The question the cart would ask now; "" when it asks nothing (staff, a one-branch shop, no short line, no dates)
+    private func currentOtherBranchesKey() -> String {
+        guard OtherBranchesHint.asks(role: ProductAccess.currentRole, activeOutletCount: CurrentOutlet.shared.outlets.count) else { return "" }
+        return OtherBranchesHint.key(productIds: shortProductIds(), isRent: isRent, pickup: cart.pickupPlanAt,
+                                     returnDate: cart.returnPlanAt, outletId: CurrentOutlet.shared.id, now: Date())
+    }
+
+    private func shortProductIds() -> [Int] {
+        OtherBranchesHint.shortProductIds(items: cart.items, conflictProductIds: isRent ? Set(conflicts.keys) : [])
+    }
+
+    /// The line under a short cart line; only while the answer is for the days, branch and products on screen now
+    private func otherBranchesLine(for item: CartItem) -> String? {
+        guard !otherBranches.isEmpty, otherBranchesKey == currentOtherBranchesKey() else { return nil }
+        return OtherBranchesHint.lineText(otherBranches[item.productId])
+    }
+
+    /// One call for every short product. A failure (network, 403, 404) shows nothing and says nothing; the order is never blocked.
+    private func loadOtherBranches() {
+        let key = currentOtherBranchesKey()
+        guard !key.isEmpty else {
+            otherBranchesGeneration += 1
+            otherBranchesRequest?.cancel()
+            otherBranchesRequest = nil
+            otherBranchesAsked = ""
+            if !otherBranches.isEmpty || !otherBranchesKey.isEmpty {
+                otherBranches = [:]
+                otherBranchesKey = ""
+                render()
+            }
+            return
+        }
+        guard key != otherBranchesAsked,
+              let body = OtherBranchesHint.requestBody(productIds: shortProductIds(), isRent: isRent, pickup: cart.pickupPlanAt,
+                                                       returnDate: cart.returnPlanAt, outletId: CurrentOutlet.shared.id, now: Date())
+        else { return }
+        otherBranchesAsked = key
+        otherBranchesRequest?.cancel()
+        otherBranchesGeneration += 1
+        let token = otherBranchesGeneration
+        otherBranchesRequest = ProductService.shared.loadOtherBranches(body: body) { [weak self] hints in
+            DispatchQueue.main.async {
+                guard let self, token == self.otherBranchesGeneration else { return }
+                self.otherBranchesRequest = nil
+                let changed = hints != self.otherBranches || key != self.otherBranchesKey
+                self.otherBranches = hints
+                self.otherBranchesKey = key
+                if changed { self.render() }
             }
         }
     }

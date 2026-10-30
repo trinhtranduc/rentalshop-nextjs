@@ -427,6 +427,55 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertFalse(listingTicks.element(boundBy: 0).isEnabled, "the tick is dimmed and cannot be changed")
     }
 
+    /// #1353 (#1335 PR 2m, mockup C1a/C1b/C1e): a rental cart for today with E2E_HINT_PRODUCTS (default "Product 1 - Electronics,
+    /// Product 3 - Furniture"; the first is out today at this branch while another branch has it, the second is out everywhere).
+    /// Owner, manager and kho of a shop with other branches read "Chi nhánh khác còn: …" under the first line only; staff and a
+    /// one-branch shop (E2E_HINT_EXPECT=none) read only the "Hết đồ" tag. Another day (tomorrow) has no short line and no hint.
+    func test2cCartOtherBranches() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        let env = ProcessInfo.processInfo.environment
+        let names = (env["E2E_HINT_PRODUCTS"] ?? "Product 1 - Electronics,Product 3 - Furniture").split(separator: ",").map(String.init)
+        let expectHint = (env["E2E_HINT_EXPECT"] ?? (e2e.role == "staff" ? "none" : "show")) == "show"
+        e2e.emptyCart()
+        for name in names where !addFromHome(name) { return XCTFail("could not add \(name)") }
+        guard openCart() else { return XCTFail("cart did not open") }
+        e2e.cartRentToday()
+        sleep(5)
+        let hint = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Chi nhánh khác còn' OR label BEGINSWITH 'Other branches have'"))
+        e2e.note("hints today: \(hint.allElementsBoundByIndex.map(\.label))")
+        e2e.shot("othbr-\(e2e.role)-1-today")
+        if expectHint {
+            XCTAssertEqual(hint.count, 1, "one hint, under the line that another branch can cover")
+            XCTAssertTrue(hint.firstMatch.label.contains("Quận 7 (3)"), "the other branch and its units: \(hint.firstMatch.label)")
+        } else {
+            XCTAssertEqual(hint.count, 0, "no hint for this role or shop")
+        }
+        // Another day: the dates row → tomorrow. The line is not short any more, so the hint is gone.
+        let tomorrow = Calendar.current.component(.day, from: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
+        let chooser = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '→'")).firstMatch
+        if chooser.waitForExistence(timeout: 5) {
+            chooser.tap()
+            sleep(2)
+            e2e.shot("othbr-\(e2e.role)-1b-dates-sheet")
+            let cells = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "\(tomorrow)"))
+            e2e.note("tomorrow \(tomorrow): \(cells.count) elements, hittable \(cells.allElementsBoundByIndex.map(\.isHittable))")
+            let cell = cells.allElementsBoundByIndex.first { $0.isHittable }
+            cell?.tap()
+            sleep(1)
+            e2e.shot("othbr-\(e2e.role)-1c-dates-tapped")
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+            sleep(5)
+        } else {
+            e2e.soft(false, "the dates row to change the day")
+        }
+        e2e.note("hints tomorrow: \(hint.allElementsBoundByIndex.map(\.label))")
+        e2e.shot("othbr-\(e2e.role)-2-tomorrow")
+        XCTAssertEqual(hint.count, 0, "no short line on a free day, so no hint")
+        e2e.goBackOnce()
+        e2e.emptyCart()
+    }
+
     func test2CartRent() throws {
         try e2e.requireFlag("newProducts")
         try e2e.requireRole("merchant")
