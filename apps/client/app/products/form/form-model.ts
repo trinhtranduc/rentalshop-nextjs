@@ -75,6 +75,8 @@ export interface ProductSource {
     outlet?: { id?: number | null } | null;
   }> | null;
   embeddingGeneratedAt?: string | Date | null;
+  /** #830: the other open branches, sent to OUTLET_ADMIN / OUTLET_INVENTORY only */
+  otherOutlets?: unknown[] | null;
 }
 
 export interface OutletLite {
@@ -223,6 +225,16 @@ export function defaultListedOutletId(outlets: OutletLite[], preferredId?: numbe
   const open = outlets.filter((o) => o.isActive !== false);
   const pool = open.length > 0 ? open : outlets;
   return pool.find((o) => o.id === preferredId)?.id ?? pool.find((o) => o.isDefault)?.id ?? pool[0]?.id;
+}
+
+/**
+ * #1341: a branch role is only given its own branch by the outlet list, so it cannot tell a one-branch shop from a
+ * several-branch one. The product can: a row at every open branch (#825) or `otherOutlets` (#830). Several branches = the
+ * greyed "Hiện ở chi nhánh" tick shows on its own row (mockup B3f). A new product (no rows yet) is not several.
+ */
+export function branchShopHasSeveralBranches(p: Pick<ProductSource, 'outletStock' | 'otherOutlets'> | null | undefined): boolean {
+  if (!p) return false;
+  return (p.outletStock?.length ?? 0) > 1 || (p.otherOutlets?.length ?? 0) > 0;
 }
 
 /** #1341: only the owner ticks / unticks "Hiện ở chi nhánh"; the other roles see the ticks greyed out. */

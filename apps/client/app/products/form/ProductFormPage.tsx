@@ -23,6 +23,7 @@ import {
   MAX_PHOTOS,
   PHOTO_ACCEPT,
   buildPayload,
+  branchShopHasSeveralBranches,
   canTickBranches,
   defaultListedOutletId,
   isBranchRole,
@@ -483,9 +484,11 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
   // #1249: a saved day table; leaving "Theo ngày" for "Theo lần" must tell the API to drop it
   const err = (k: FieldKey) => (errors[k] ? t(`form.errors.${errors[k]}`) : undefined);
   const savedPhotos = data.product ? formFromProduct(data.product, [], []).keptImages.length : 0;
-  const multiOutlet = data.outlets.length > 1;
-  // #1341: the "Hiện ở chi nhánh" tick shows when the shop has two or more open branches (a one-branch shop never sees it)
-  const showTicks = data.outlets.filter((o) => o.isActive !== false).length > 1;
+  // #1341: a branch role is only given its own branch by the outlet list, so the product tells whether the shop has several
+  const branchSeesSeveral = branchOutletId != null && isEdit && branchShopHasSeveralBranches(data.product);
+  const multiOutlet = data.outlets.length > 1 || branchSeesSeveral;
+  // the "Hiện ở chi nhánh" tick shows when the shop has two or more open branches (a one-branch shop never sees it)
+  const showTicks = data.outlets.filter((o) => o.isActive !== false).length > 1 || branchSeesSeveral;
   // a branch role sees its own row only (mockup B3f); the owner sees every branch
   const shownOutlets = branchOutletId != null ? data.outlets.filter((o) => o.id === branchOutletId) : data.outlets;
   const currentOutletId = defaultListedOutletId(data.outlets, preferredOutletId);

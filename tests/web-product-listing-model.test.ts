@@ -14,6 +14,7 @@ import {
 import {
   buildPayload,
   canTickBranches,
+  branchShopHasSeveralBranches,
   defaultListedOutletId,
   emptyForm,
   formFromProduct,
@@ -204,5 +205,18 @@ describe('form: the reminder when a branch that still has units is not ticked (n
   it('nothing when the branch is ticked, or when it holds nothing', () => {
     expect(listingReminder({ isListed: true, stock: 4, renting: 2 })).toBeNull();
     expect(listingReminder({ isListed: false, stock: 0, renting: 0 })).toBeNull();
+  });
+});
+
+describe('form: a branch role only gets its own branch from the outlet list, so the form asks the product', () => {
+  it('several branches when the product has a row at more than one branch, or the API sent otherOutlets', () => {
+    expect(branchShopHasSeveralBranches({ outletStock: [{ outlet: { id: 1 } }, { outlet: { id: 3 } }] })).toBe(true);
+    expect(branchShopHasSeveralBranches({ outletStock: [{ outlet: { id: 3 } }], otherOutlets: [{ outletId: 1 }] })).toBe(true);
+  });
+  it('one branch when there is a single row and no other outlet; unknown product (new) is not several', () => {
+    expect(branchShopHasSeveralBranches({ outletStock: [{ outlet: { id: 3 } }] })).toBe(false);
+    expect(branchShopHasSeveralBranches({ outletStock: [{ outlet: { id: 3 } }], otherOutlets: [] })).toBe(false);
+    expect(branchShopHasSeveralBranches(null)).toBe(false);
+    expect(branchShopHasSeveralBranches({})).toBe(false);
   });
 });
