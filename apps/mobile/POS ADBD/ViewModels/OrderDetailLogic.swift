@@ -239,6 +239,12 @@ enum OrderDetailLogic {
                       paidBefore: paid(payments, purpose: "PICKUP"))
     }
 
+    /// #1350 (stub for the red test, returns the old number)
+    static func collectOnDeliveryShown(total: Double, deposit: Double, securityDeposit: Double, payments: [OrderPaymentLine],
+                                       hasPlan: Bool?, stages: [OrderInstallment]?, currency: ShopCurrency) -> Double {
+        handOver(total: total, deposit: deposit, securityDeposit: securityDeposit, payments: payments).due
+    }
+
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,
                             payments: [OrderPaymentLine]) -> ReturnMoney {
         ReturnMoney(lateFee: lateFee, damageFee: damageFee, collateralMoney: securityDeposit,

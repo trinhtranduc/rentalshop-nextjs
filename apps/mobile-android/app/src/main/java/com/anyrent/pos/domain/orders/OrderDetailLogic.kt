@@ -146,6 +146,17 @@ object OrderDetailLogic {
         return HandOverMoney(totalAmount, depositAmount, securityDeposit, paidBefore, due.coerceAtLeast(0.0))
     }
 
+    /** #1350 (stub for the red test, returns the old number) */
+    fun collectOnDeliveryShown(
+        totalAmount: Double,
+        depositAmount: Double,
+        securityDeposit: Double,
+        payments: List<BalancePayment>,
+        hasPlan: Boolean?,
+        stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): Double = handOver(totalAmount, depositAmount, securityDeposit, payments).collectNow
+
     /**
      * What the hand-over sheet sends besides `status` (#427). Both fields are optional: given papers
      * or deposit are sent, a cleared prefilled value is sent empty / 0, and nothing else is sent.
