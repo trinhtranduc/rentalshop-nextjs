@@ -7,7 +7,8 @@
  *   settings-sync-api.js set currency VND|USD
  *   settings-sync-api.js set overlap true|false
  *   settings-sync-api.js set print "<note>" true|false     print note + bank QR of the owner's / staff's own outlet
- *   settings-sync-api.js get currency|overlap|print
+ *   settings-sync-api.js set sharenote true|false          "Hiện ghi chú đơn trên ảnh chia sẻ" (PUT /api/settings/merchant {shareOrderNote}, #1344)
+ *   settings-sync-api.js get currency|overlap|print|sharenote
  *   settings-sync-api.js bank list                         active bank accounts of the default outlet (JSON: id, number, isDefault)
  *   settings-sync-api.js bank create <holder> <number> <bankName> true|false   add an account (#1320 bank cache), prints its id
  *   settings-sync-api.js bank default <id>                 make that account the default of the outlet
@@ -38,6 +39,8 @@ async function call(token, method, path, json) {
   if (verb === 'set' && what === 'currency') console.log(JSON.stringify(await call(token, 'PUT', '/api/settings/currency', { currency: a })));
   else if (verb === 'set' && what === 'overlap') console.log(JSON.stringify(await call(token, 'PUT', '/api/settings/merchant', { allowOverlappingOrders: a === 'true' })));
   else if (verb === 'set' && what === 'print') console.log(JSON.stringify(await call(token, 'PUT', `/api/outlets?outletId=${outlet.id}`, { printNote: a, printBankQr: b === 'true' })));
+  else if (verb === 'set' && what === 'sharenote') console.log(JSON.stringify(await call(token, 'PUT', '/api/settings/merchant', { shareOrderNote: a === 'true' })).slice(0, 160));
+  else if (verb === 'get' && what === 'sharenote') console.log((await call(token, 'GET', '/api/users/profile')).merchant?.shareOrderNote);
   else if (verb === 'get' && what === 'currency') console.log((await call(token, 'GET', '/api/settings/currency')).currency);
   else if (verb === 'get' && what === 'overlap') console.log((await call(token, 'GET', '/api/users/profile')).merchant?.allowOverlappingOrders);
   else if (verb === 'get' && what === 'print') console.log(JSON.stringify({ note: outlet.printNote, qr: outlet.printBankQr }));

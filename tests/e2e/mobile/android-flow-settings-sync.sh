@@ -17,8 +17,13 @@
 #         classic <merchant|manager|staff> (API without newSettings) the old Settings list: store row per role
 #         deposit                          Cọc hidden for manager, staff, kho; shown for the owner (#1310)
 #         overlap <staff|manager>          owner turns "Cho trùng lịch" off / on: the cart of the device follows
+#   Final e2e before the store build (#1359, epic #1309; needs prepare-accounts.sh create + staged for the one-branch shop):
+#         listing <merchant|manager|kho|staff|onebranch>  #1346 "Hiện ở chi nhánh" tick: Home, form, detail, open order of an unticked product
+#         othbr <merchant|manager|kho|staff|onebranch>    #1353 "Chi nhánh khác còn: A (3), B (1)" under a short cart line (one-day and multi-day; staff: no hint, no API call)
+#         sharenote <merchant|manager|staff|kho>          #1354 the switch "Hiện ghi chú đơn trên ảnh chia sẻ" on In & phiếu
+#         share <merchant|manager|staff|kho>              #1345 / #1350 / #1354 staged-deposit order: detail "Thu khi giao", the share image (JPG copied from cache/receipts) with stage 2 unpaid / paid, note switch on / off
 SYNC="node $CHK/settings-sync-api.js"
-which_case="${2:?currency|currency-fg|rows|shopinfo|owner|print|bankcache|deposit|overlap}"
+which_case="${2:?currency|currency-fg|rows|shopinfo|owner|print|bankcache|deposit|overlap|listing|othbr|sharenote|share}"
 who="${3:-staff}"
 tag="[$LANG_E2E settings-sync/$which_case${3:+/$3}]"
 STAFF_EMAIL="${E2E_STAFF_EMAIL:-staff.outlet1@example.com}"; STAFF_PW="${E2E_STAFF_PASSWORD:-staff123}"
@@ -78,6 +83,63 @@ for l in sys.stdin:
     if l.startswith(sys.argv[1] + " |"):
         m = re.search(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", l); print((int(m.group(2)) + int(m.group(4))) // 2 + 12); break' "$(L settings_v2_allow_overlap)")"
   [ -n "$y" ] && "$U" tap "@980,$y" >/dev/null; sleep 4
+}
+
+# ---- final e2e before the store build (#1309): #1346 branch tick, #1353 other-branches hint, #1354 order note on the share image, #1345 / #1350 money order ----
+FIX="node $CHK/order-fixtures-api.js"; SHOTS="$E2E_OUT/shots"; mkdir -p "$SHOTS"
+posts_other() { grep -c "Request received: POST /api/products/other-outlets-availability" "$E2E_OUT/api-$E2E_API_PORT.log" 2>/dev/null; }
+fx_listing() { # E2E Tick An: not shown at branch 1 (stock 5); Tick Het: shown, none left; Tick Hien: shown, 6 left; every one also at branch 3. An order of An exists (made before the untick).
+  sql "update \"Product\" set name='E2E Tick An', \"totalStock\"=8 where id=21; update \"Product\" set name='E2E Tick Het', \"totalStock\"=4 where id=22; update \"Product\" set name='E2E Tick Hien', \"totalStock\"=6 where id=23;
+    update \"OutletStock\" set stock=5, available=5, renting=0, \"isListed\"=true where \"productId\"=21 and \"outletId\"=1; update \"OutletStock\" set stock=3, available=3, renting=0, \"isListed\"=true where \"productId\"=21 and \"outletId\"=3;
+    update \"OutletStock\" set stock=0, available=0, renting=0, \"isListed\"=true where \"productId\"=22 and \"outletId\"=1; update \"OutletStock\" set stock=4, available=4, renting=0, \"isListed\"=true where \"productId\"=22 and \"outletId\"=3;
+    update \"OutletStock\" set stock=6, available=6, renting=0, \"isListed\"=true where \"productId\"=23 and \"outletId\" in (1,3)" >/dev/null
+  if [ ! -s "$E2E_OUT/listing-order.txt" ]; then $FIX multi manager 21 1 6 7 | python3 -I -c 'import sys,json; print(json.load(sys.stdin)["orderNumber"])' > "$E2E_OUT/listing-order.txt"; fi
+  sql "update \"OutletStock\" set \"isListed\"=false where \"productId\"=21 and \"outletId\"=1" >/dev/null
+}
+listed_db() { sql "select \"isListed\" from \"OutletStock\" where \"productId\"=$1 and \"outletId\"=$2"; }
+tick_state() { # tick_state <outletId>: true | false | none (no such row), read from a fresh dump + screenshot: the Compose checkbox has no node, so the pixel inside its box says whether it is filled
+  "$U" dump >/dev/null; adb -s "$SERIAL" exec-out screencap -p > "$E2E_OUT/android/tick.png" 2>/dev/null
+  python3 -I - "$E2E_OUT/android/ui.xml" "product.form.listing.$1" "$E2E_OUT/android/tick.png" <<'PY'
+import re, sys, xml.etree.ElementTree as ET
+from PIL import Image
+root = ET.parse(sys.argv[1]).getroot()
+rows = [n for n in root.iter("node") if n.get("content-desc") == sys.argv[2]]
+if not rows: print("none"); sys.exit()
+m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", rows[0].get("bounds"))
+x1, y1, x2, y2 = map(int, m.groups())
+im = Image.open(sys.argv[3]).convert("RGB")
+# the box is 54 px wide at x 47..101 (1080 px wide screen); the row text may wrap, so look for blue in the box over the row's height
+cy = (y1 + y2) // 2
+# the box is 54 px wide at x 47..101; the row text may wrap, so look inside the box over the row's height.
+# A ticked box is filled (blue, or grey when dimmed), an empty one is white inside its border.
+hits = total = 0
+for y in range(max(y1, cy - 40), min(y2, cy + 40), 4):
+    for x in range(58, 92, 4):
+        r, g, b = im.getpixel((x, y))
+        total += 1
+        if min(r, g, b) < 225: hits += 1
+print("true" if total and hits * 100 // total >= 35 else "false")
+PY
+}
+form_to_ticks() { local i; for i in 1 2 3 4; do "$U" swipe up >/dev/null; done; "$U" has "product.form.listing.1" >/dev/null 2>&1; }   # the box is at the bottom of the form: scroll to the end
+value_after() { # value_after "<exact text>": the text of the node right after it in a fresh dump
+  "$U" dump | python3 -I -c '
+import sys
+rows = [l.rstrip("\n").split(" | ") for l in sys.stdin]
+for i, r in enumerate(rows):
+    if r[0].strip() == sys.argv[1] and i + 1 < len(rows): print(rows[i + 1][0].strip()); break' "$1"
+}
+open_product() { # open_product "<name>" "<short ascii query>": Home search -> the row -> the detail screen (a short query: the keyboard's suggestions garble long ones)
+  to_tabs; go_home; home_search "${2:-$1}"; "$U" tap "$1" 1 >/dev/null; sleep 3
+}
+detail_collect() { # detail_collect: scroll the order detail until the payment section is on screen; DT = its texts, CV = the value after "Thu khi giao" (empty when the row is not shown)
+  local i; for i in 0 1 2 3 4; do DT="$(texts 9000)"; CV="$(value_after "$(L detail_collect_at_hand_over)")"; [ -n "$CV" ] && return 0; "$U" swipe up >/dev/null; done; return 1
+}
+share_image() { # share_image <label>: order detail open -> Thêm thao tác -> Chia sẻ đơn -> the JPG the app wrote (cache/receipts) is copied to SHARE_IMG
+  tap_any "$(L detail_more_actions)"; sleep 2; tap_any "$(L order_sheet_share)"; sleep 7
+  local name; name="$(adb -s "$SERIAL" shell run-as anyrent.shop ls -t cache/receipts 2>/dev/null | head -1 | tr -d '\r')"
+  SHARE_IMG="$SHOTS/share-$1.jpg"; adb -s "$SERIAL" exec-out run-as anyrent.shop cat "cache/receipts/$name" > "$SHARE_IMG" 2>/dev/null
+  "$U" shot "share-$1-chooser" >/dev/null; "$U" back >/dev/null; sleep 2; note "SHARE IMAGE $1: $SHARE_IMG ($(wc -c < "$SHARE_IMG" | tr -d ' ') bytes, app file $name)"
 }
 case "$which_case" in
   currency)  # (a) owner changes the currency; the staff device shows the new unit after reopening the app (#1307)
@@ -244,6 +306,140 @@ PY
     $SYNC set overlap true >/dev/null; restart_app; sleep 8
     t="$(try_cart on)"; echo "$t" | grep -q "$(L v2_cart_overlap_blocked | cut -c1-30)" && fail "$tag overlap ON: the cart still blocks" || pass "$tag overlap ON: the cart no longer blocks (changed back, no stale value)"
     clear_cart ;;
+  sharenote)  # #1354 the switch "Hiện ghi chú đơn trên ảnh chia sẻ" on In & phiếu: the owner flips it (saved at once), the others see it dimmed with "Chỉ chủ shop bật/tắt."
+    flagdb() { sql "select coalesce(settings->>'shareOrderNote','false') from \"Merchant\" where id=1"; }
+    switch_xy() { # centre of the Switch node (content-desc = the title, clickable), scrolling the printer screen until it is on screen
+      local i xy; for i in 0 1 2 3; do
+        xy="$("$U" dump | python3 -I -c '
+import re, sys
+for l in sys.stdin:
+    if l.startswith(" | " + sys.argv[1] + " |") and "(clickable)" in l:
+        m = re.search(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", l); print((int(m.group(1)) + int(m.group(3))) // 2, (int(m.group(2)) + int(m.group(4))) // 2); break' "$(L printer_share_note_title)")"
+        [ -n "$xy" ] && { echo "$xy"; return 0; }; "$U" swipe up >/dev/null
+      done; return 1; }
+    CUR="$(flagdb)"; note "share note flag at start: $CUR"
+    sign_in "$who"; open_printer; XY="$(switch_xy)"; ALL="$(texts 6000)"; shot "sharenote-$who"; "$U" swipe up >/dev/null; ALL="$ALL$(texts 6000)"; "$U" swipe down >/dev/null; XY="$(switch_xy)"   # the caption sits under the row: look one screen further too, then back to the row
+    [ -n "$XY" ] && pass "$tag $who: the switch '$(L printer_share_note_title)' is on In & phiếu" || fail "$tag $who: no switch row on In & phiếu: ${PT:0:300}"
+    if [ "$who" = merchant ]; then
+      echo "$ALL" | grep -Fq "$(L printer_share_note_readonly)" && fail "$tag owner sees the read-only caption" || pass "$tag owner: no read-only caption"
+      [ "$CUR" = false ] && pass "$tag default is OFF (DB)" || note "flag was $CUR at start"
+      "$U" tap "@${XY% *},${XY#* }" >/dev/null; sleep 4; shot sharenote-merchant-on
+      [ "$(flagdb)" = true ] && pass "$tag owner turned it ON on the device (DB true, saved at once)" || fail "$tag owner tapped the switch: DB flag is $(flagdb)"
+      XY="$(switch_xy)"; "$U" tap "@${XY% *},${XY#* }" >/dev/null; sleep 4; shot sharenote-merchant-off
+      [ "$(flagdb)" = false ] && pass "$tag owner turned it OFF again (DB false)" || fail "$tag owner: DB flag stays $(flagdb)"
+    else
+      echo "$ALL" | grep -Fq "$(L printer_share_note_readonly)" && pass "$tag $who: dimmed with '$(L printer_share_note_readonly)'" || fail "$tag $who lacks '$(L printer_share_note_readonly)': ${ALL:0:300}"
+      "$U" tap "@${XY% *},${XY#* }" >/dev/null 2>&1; sleep 3; shot "sharenote-$who-tapped"
+      [ "$(flagdb)" = "$CUR" ] && pass "$tag $who: tapping the switch changes nothing (DB $CUR)" || fail "$tag $who changed the shop flag to $(flagdb)"
+    fi ;;
+  listing)  # #1346 "Hiện ở chi nhánh" tick: <merchant|manager|staff|kho|onebranch> (onebranch = a shop with one branch: no tick at all)
+    fx_listing; LO="$(cat "$E2E_OUT/listing-order.txt")"
+    case "$who" in
+      merchant)
+        sign_in merchant; go_home; home_search "Tick"; T="$(texts 6000)"; shot listing-merchant-home
+        echo "$T" | grep -Fq "E2E Tick An" && pass "$tag owner: the product not shown at the branch is still listed on Home" || fail "$tag owner does not see E2E Tick An: ${T:0:300}"
+        echo "$T" | grep -Fq "$(L products_listing_not_shown)" && pass "$tag owner: its row says '$(L products_listing_not_shown)'" || fail "$tag owner: no '$(L products_listing_not_shown)' label"
+        echo "$T" | grep -Fq "$(L v2_add_to_cart_named "E2E Tick An")" && fail "$tag owner: a + button on the unticked product" || pass "$tag owner: no + button on the unticked product"
+        echo "$T" | grep -Fq "$(L v2_add_to_cart_named "E2E Tick Hien")" && pass "$tag owner: the ticked product has +" || fail "$tag owner: the ticked product has no +"
+        echo "$T" | grep -Fq "$(L v2_stock_none_today)" && pass "$tag owner: ticked product with 0 left shows '$(L v2_stock_none_today)'" || fail "$tag owner: no '$(L v2_stock_none_today)' for E2E Tick Het"
+        # the form: tick An (not blocked, saved), untick again; untick Hien (reminder, saved), tick again
+        "$U" tap "E2E Tick An" 1 >/dev/null; sleep 3; tap_any "$(L v2_detail_edit)"; sleep 4; form_to_ticks; shot listing-merchant-form-an
+        A1="$(tick_state 1)"; A3="$(tick_state 3)"; [ "$A1" = false ] && [ "$A3" = true ] && pass "$tag owner form: branch 1 unticked, branch 3 ticked" || fail "$tag owner form ticks: branch1=$A1 branch3=$A3"
+        "$U" tap "product.form.listing.1" >/dev/null; sleep 1; [ "$(tick_state 1)" = true ] && pass "$tag owner: tapping the row ticks it" || fail "$tag owner: row did not tick ($(tick_state 1))"
+        tap_any "$(L v2_form_save_changes)"; sleep 5; shot listing-merchant-form-an-saved
+        [ "$(listed_db 21 1)" = t ] && pass "$tag owner saved the tick (DB isListed true)" || fail "$tag owner tick not saved: $(listed_db 21 1)"
+        sql "update \"OutletStock\" set \"isListed\"=false where \"productId\"=21 and \"outletId\"=1" >/dev/null
+        to_tabs; open_product "E2E Tick Hien" "Tick%sHien"; tap_any "$(L v2_detail_edit)"; sleep 4; form_to_ticks
+        "$U" tap "product.form.listing.1" >/dev/null; sleep 1; F="$(texts 6000)"; shot listing-merchant-form-hien-untick
+        echo "$F" | grep -Fq "$(L products_listing_reminder_no_rent 6 | cut -c1-30)" && pass "$tag owner: unticking shows the reminder line (units still counted)" || fail "$tag owner: no reminder after unticking: ${F:0:400}"
+        tap_any "$(L v2_form_save_changes)"; sleep 5
+        [ "$(listed_db 23 1)" = f ] && pass "$tag owner: unticking was not blocked and saved (DB isListed false)" || fail "$tag owner: untick not saved: $(listed_db 23 1)"
+        sql "update \"OutletStock\" set \"isListed\"=true where \"productId\"=23 and \"outletId\"=1" >/dev/null
+        # an order that holds the unticked product still opens
+        open_order "$LO"; D="$(texts 6000)"; shot listing-merchant-open-order; echo "$D" | grep -Fq "E2E Tick An" && pass "$tag owner: the open order of the unticked product opens ($LO)" || fail "$tag owner: order $LO did not open with its product: ${D:0:300}" ;;
+      manager|kho)
+        sign_in "$who"; go_home; home_search "Tick"; T="$(texts 6000)"; shot "listing-$who-home"
+        echo "$T" | grep -Fq "E2E Tick An" && fail "$tag $who sees the unticked product on Home" || pass "$tag $who: the unticked product is not on Home"
+        echo "$T" | grep -Fq "E2E Tick Hien" && pass "$tag $who: the ticked product is listed" || fail "$tag $who: E2E Tick Hien missing: ${T:0:300}"
+        echo "$T" | grep -Fq "E2E Tick Het" && echo "$T" | grep -Fq "$(L v2_stock_none_today)" && pass "$tag $who: ticked product with 0 left is listed as '$(L v2_stock_none_today)'" || fail "$tag $who: E2E Tick Het (0 left) not listed as out"
+        "$U" tap "E2E Tick Hien" 1 >/dev/null; sleep 3; tap_any "$(L v2_detail_edit)"; sleep 4; form_to_ticks; F="$(texts 6000)"; shot "listing-$who-form"
+        T1="$(tick_state 1)"; [ "$T1" != none ] && pass "$tag $who: sees its own dimmed tick row (checked=$T1)" || fail "$tag $who: no tick row in the form: ${F:0:300}"
+        echo "$F" | grep -Fq "$(L products_listing_owner_only)" && pass "$tag $who: '$(L products_listing_owner_only)'" || fail "$tag $who: no '$(L products_listing_owner_only)'"
+        "$U" tap "product.form.listing.1" >/dev/null 2>&1; sleep 1; [ "$(tick_state 1)" = "$T1" ] && pass "$tag $who: tapping the tick changes nothing" || fail "$tag $who: the tick moved ($T1 -> $(tick_state 1))"
+        [ "$(listed_db 23 1)" = t ] && pass "$tag $who: DB isListed unchanged" || fail "$tag $who: DB isListed changed"
+        to_tabs; open_order "$LO"; D="$(texts 6000)"; shot "listing-$who-open-order"; echo "$D" | grep -Fq "E2E Tick An" && pass "$tag $who: the open order of the unticked product opens ($LO)" || fail "$tag $who: order $LO did not open: ${D:0:300}" ;;
+      staff)
+        sign_in staff; go_home; home_search "Tick"; T="$(texts 6000)"; shot listing-staff-home
+        echo "$T" | grep -Fq "E2E Tick An" && fail "$tag staff sees the unticked product on Home" || pass "$tag staff: the unticked product is not on Home"
+        echo "$T" | grep -Fq "E2E Tick Hien" && pass "$tag staff: the ticked product is listed" || fail "$tag staff: E2E Tick Hien missing"
+        "$U" tap "E2E Tick Hien" 1 >/dev/null; sleep 3; D="$(texts 6000)"; shot listing-staff-detail
+        echo "$D" | grep -Fq "$(L products_listing_title): " && echo "$D" | grep -Fq "$(L products_listing_owner_only)" && pass "$tag staff: detail has the dimmed line '$(L products_listing_title) ... $(L products_listing_owner_only)'" || fail "$tag staff: no dimmed tick line on the detail: ${D:0:500}"
+        echo "$D" | grep -Fq "$(L v2_detail_edit)" && fail "$tag staff sees Sửa"
+        to_tabs; open_order "$LO"; D="$(texts 6000)"; echo "$D" | grep -Fq "E2E Tick An" && pass "$tag staff: the open order of the unticked product opens ($LO)" || fail "$tag staff: order $LO did not open: ${D:0:300}" ;;
+      onebranch)
+        login_as healthy.owner@e2e-sub.test merchant123 && note "signed in as healthy.owner (one branch)" || { fail "$tag no sign-in"; exit 1; }
+        go_home; home_search "SP%s1"; "$U" tap "E2E SP 1" 1 >/dev/null; sleep 3; tap_any "$(L v2_detail_edit)"; sleep 4; F="$(texts 6000)"; shot listing-onebranch-form
+        echo "$F" | grep -Fq "$(L products_listing_title)" && fail "$tag one-branch shop: the form has a '$(L products_listing_title)' box" || pass "$tag one-branch shop: no tick box in the form"
+        form_to_ticks; [ "$(tick_state 1)" = none ] && pass "$tag one-branch shop: no tick row nodes" ;;
+    esac ;;
+  othbr)  # #1353 "Chi nhánh khác còn: A (3), B (1)" under a short cart line: <merchant|manager|kho|staff|onebranch>
+    O5="$(sql "select id from \"Outlet\" where name='Chi nhanh E2E Ba'")"
+    if [ -z "$O5" ]; then
+      sql "insert into \"Outlet\"(name,\"isDefault\",\"merchantId\",\"updatedAt\") values ('Chi nhanh E2E Ba', false, 1, now())" >/dev/null; O5="$(sql "select id from \"Outlet\" where name='Chi nhanh E2E Ba'")"
+      sql "insert into \"OutletStock\"(\"productId\",\"outletId\",stock,available,renting,\"isListed\",\"updatedAt\") select id, $O5, 0, 0, 0, true, now() from \"Product\" where \"merchantId\"=1 on conflict do nothing" >/dev/null
+    fi
+    sql "update \"Product\" set name='E2E Thieu Hang', \"totalStock\"=5 where id=24; update \"OutletStock\" set stock=1, available=1, renting=0, \"isListed\"=true where \"productId\"=24 and \"outletId\"=1;
+      update \"OutletStock\" set stock=3, available=3, renting=0, \"isListed\"=true where \"productId\"=24 and \"outletId\"=3; update \"OutletStock\" set stock=1, available=1, renting=0, \"isListed\"=true where \"productId\"=24 and \"outletId\"=$O5" >/dev/null
+    if [ ! -s "$E2E_OUT/othbr-order.txt" ]; then $FIX multi manager 24 1 0 1 | python3 -I -c 'import sys,json; print(json.load(sys.stdin)["orderNumber"])' > "$E2E_OUT/othbr-order.txt"; fi
+    HINT="$(L v2_cart_others_have "")"; HINT="${HINT% }"
+    cart_try() { # cart_try <label> <qty> <from> <to> <product>: Home -> add -> cart -> dates -> wait for the hint; CT = texts
+      go_home; clear_cart; home_search "$(echo "$5" | cut -d' ' -f2- | sed 's/ /%s/g')"; add_to_cart "$5" "$2"; open_cart; sleep 2; pick_dates "$3" "$4"; sleep 7; CT="$(texts 6000)"; shot "othbr-$who-$1"
+    }
+    case "$who" in
+      onebranch) login_as healthy.owner@e2e-sub.test merchant123 && note "signed in as healthy.owner (one branch)" || { fail "$tag no sign-in"; exit 1; }
+        N0="$(posts_other)"; cart_try short 6 0 1 "E2E SP 1"
+        echo "$CT" | grep -Fq "$HINT" && fail "$tag one-branch shop: a hint shows" || pass "$tag one-branch shop: no hint under the short line"
+        echo "$CT" | grep -Eq "$(L v2_cart_short_stock 5 | cut -c1-12)|$(L v2_cart_short_rent 5 | cut -c1-12)|$(L v2_cart_out_of_stock)" && pass "$tag one-branch shop: the cart shows its shortage line" || note "one-branch cart: no shortage text found: ${CT:0:300}"
+        note "API lines other-outlets-availability: $N0 -> $(posts_other) (one-branch shop; the app may or may not ask, the API answers [])"; clear_cart ;;
+      merchant|manager|kho|staff)
+        sign_in "$who"; N0="$(posts_other)"
+        cart_try one-day 2 0 1 "E2E Thieu Hang"
+        if [ "$who" = staff ]; then
+          echo "$CT" | grep -Fq "$HINT" && fail "$tag staff sees the hint" || pass "$tag staff: no hint, only the shortage line"
+          echo "$CT" | grep -Eq "$(L v2_cart_short_rent 1 | cut -c1-12)" && pass "$tag staff: the plain shortage line shows" || note "staff cart texts: ${CT:0:300}"
+          N1="$(posts_other)"; [ "$N1" = "$N0" ] && pass "$tag staff: the app did not call other-outlets-availability (API log lines $N0 -> $N1)" || fail "$tag staff: the app called other-outlets-availability ($N0 -> $N1)"
+        else
+          echo "$CT" | grep -Fq "$HINT" && pass "$tag $who: the hint shows under the short line" || fail "$tag $who: no hint '$HINT': ${CT:0:400}"
+          echo "$CT" | grep -Fq "Outlet 2 - Rental Shop Demo (3)" && echo "$CT" | grep -Fq "Chi nhanh E2E Ba (1)" && pass "$tag $who: both other branches with their units" || fail "$tag $who: hint lacks 'Outlet 2 - Rental Shop Demo (3)' / 'Chi nhanh E2E Ba (1)': $(echo "$CT" | grep -o "$HINT[^¦]*")"
+          echo "$CT" | grep -o "Chi nhánh khác còn: [^|¦]*" | head -1 | grep -Eq "^Chi nhánh khác còn: Outlet 2 - Rental Shop Demo \(3\), Chi nhanh E2E Ba \(1\)" && pass "$tag $who: most units first" || note "order of the branches: $(echo "$CT" | grep -o "Chi nhánh khác còn: [^|¦]*" | head -1)"
+        fi
+        clear_cart
+        # a rental of two days (today..tomorrow) whose only unit is held by another order on both days: same hint (not for staff)
+        cart_try multi-day 1 0 1 "E2E Thieu Hang"; N2="$(posts_other)"
+        if [ "$who" = staff ]; then echo "$CT" | grep -Fq "$HINT" && fail "$tag staff sees the hint on a multi-day order" || pass "$tag staff: multi-day order: no hint"; [ "$N2" = "$N0" ] && pass "$tag staff: still no call after the multi-day order" || fail "$tag staff called the API ($N0 -> $N2)"
+        else echo "$CT" | grep -Fq "$HINT" && pass "$tag $who: multi-day order (today..tomorrow, held by order $(cat "$E2E_OUT/othbr-order.txt")): the hint shows" || fail "$tag $who: no hint on the multi-day order: ${CT:0:400}"; fi
+        clear_cart ;;
+    esac ;;
+  share)  # #1345 / #1350 / #1354: the order with a staged deposit on <role>: detail "Thu khi giao", the share image with the stage unpaid then paid, the note switch flipped from "another device"
+    NOTE="Ghi chu don: giao truoc 9h, goi khach truoc khi den, mang theo CCCD goc"
+    # the staged order and the collection of stage 2 come from "another device": never the account that is on this device (a login elsewhere signs it out)
+    ACTOR=manager; COLLECT_ACTOR=manager; [ "$who" = manager ] && ACTOR=merchant && COLLECT_ACTOR=merchant; [ "$who" = staff ] && COLLECT_ACTOR=merchant; [ "$who" = kho ] && COLLECT_ACTOR=merchant
+    flag() { if [ "$who" = merchant ]; then sql "update \"Merchant\" set settings = jsonb_set(coalesce(settings,'{}'::jsonb), '{shareOrderNote}', '$1'::jsonb) where id=1" >/dev/null; else $SYNC set sharenote "$1" >/dev/null; fi; note "flag shareOrderNote=$1 set from another device"; }
+    sql "update \"Merchant\" set currency='VND' where id=1" >/dev/null   # the seed shop is in USD: the money order is read in VND (1.150.000)
+    ORD="$($FIX staged $ACTOR "$NOTE")"; ID="$(echo "$ORD" | python3 -I -c 'import sys,json; print(json.load(sys.stdin)["id"])')"; NUM="$(echo "$ORD" | python3 -I -c 'import sys,json; print(json.load(sys.stdin)["orderNumber"])')"
+    note "order for $who: $ORD"
+    flag false
+    sign_in "$who"
+    open_order "$NUM"; detail_collect; D="$DT"; shot "share-$who-detail-unpaid"
+    echo "$CV" | grep -Fq "575.000" && pass "$tag $who: detail 'Thu khi giao' = 575.000 while stage 2 is unpaid (was: '$CV')" || fail "$tag $who: detail 'Thu khi giao' is '$CV', expected 575.000: ${D:0:900}"
+    BTN="$(echo "$D" | grep -o "$(L detail_hand_over_collect "" | cut -d' ' -f1-3)[^|¦]*" | head -1)"; note "hand-over button text (known, waits for the owner's decision: 920.000 while a stage is unpaid): '$BTN'"
+    share_image "$who-unpaid-noteoff"
+    flag true; tap_any "$(L back)" >/dev/null 2>&1; to_tabs; open_order "$NUM"; share_image "$who-unpaid-noteon"
+    $FIX collect "$ID" $COLLECT_ACTOR >/dev/null && note "stage 2 collected by $COLLECT_ACTOR (API)"
+    to_tabs; restart_app; sleep 8; open_order "$NUM"; detail_collect; D="$DT"; shot "share-$who-detail-paid"
+    echo "$CV" | grep -Fq "575.000" && pass "$tag $who: detail 'Thu khi giao' = 575.000 after stage 2 is collected (was: '$CV')" || fail "$tag $who: after collecting, 'Thu khi giao' is '$CV': ${D:0:900}"
+    BTN="$(echo "$D" | grep -o "$(L detail_hand_over_collect "" | cut -d' ' -f1-3)[^|¦]*" | head -1)"; echo "$BTN" | grep -Fq "575.000" && pass "$tag $who: hand-over button says 575.000 once every stage is collected ('$BTN')" || fail "$tag $who: hand-over button after collecting: '$BTN'"
+    share_image "$who-paid-noteon"; flag false; to_tabs; open_order "$NUM"; share_image "$who-paid-noteoff" ;;
   *) sed -n 1,22p "$0"; exit 64 ;;
 esac
 note "settings-sync $which_case${3:+/$3} done: $FAILS failed"
