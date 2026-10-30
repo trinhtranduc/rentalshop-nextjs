@@ -505,7 +505,8 @@
         "photos": "Photos",
         "pricing": "Rent prices and deposit",
         "stock": "Quantity",
-        "organise": "Category & code"
+        "organise": "Category & code",
+        "stockListing": "Stock and shown at branch"
       },
       "name": "Product name",
       "namePlaceholder": "e.g. Red silk áo dài",
@@ -599,6 +600,17 @@
         "copyLoading": "Loading…",
         "close": "Close",
         "incomplete": "Fill every day and the amount added for each extra day, or keep the last block price."
+      },
+      "listing": {
+        "branch": "Branch",
+        "stock": "Stock",
+        "column": "Shown at branch",
+        "tickOf": "Shown at {outlet}",
+        "ownerOnly": "Only the shop owner can turn this on or off",
+        "current": "selected",
+        "reminder": "{stock} left at this branch ({renting} on rent). They still count in the total but are not offered when creating an order.",
+        "reminderNoRent": "{stock} left at this branch. They still count in the total but are not offered when creating an order.",
+        "saveFailed": "The product was saved, but \"Shown at branch\" could not be saved. Try again."
       }
     },
     "detail": {
@@ -696,6 +708,11 @@
       "previewEmpty": "Select products to preview the labels.",
       "previewMore": "+{count} more labels",
       "printHint": "In the print dialog: pick the label printer, paper size = label size, scale 100%, margins None."
+    },
+    "listing": {
+      "hidden": "Not shown",
+      "shown": "Shown",
+      "totalStock": "Total stock"
     }
   },
   "public": {

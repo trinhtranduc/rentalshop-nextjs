@@ -663,17 +663,70 @@ type NoteRow = { id: number; name: string; saved: string; draft: string; saving:
 /** Where "add a bank account" goes from the Phiếu in hint (#628): Cài đặt tab for an outlet admin, the outlet page for an owner. */
 export type BankLink = { kind: 'tab'; open: () => void } | { kind: 'page' } | null;
 
+/**
+ * #1344 "Hiện ghi chú đơn trên ảnh chia sẻ" (shop-wide, owner only): one switch, saved on tap, same setting as the phone's.
+ * Everyone else sees the row dimmed with "Chỉ chủ shop bật/tắt.". `value` null = the profile is still loading.
+ */
+export function ShareOrderNoteRow({ t, value, canEdit, onChanged }: { t: T; value: boolean | null; canEdit: boolean; onChanged?: () => void }) {
+  const ts = useTranslations('settings');
+  const { toastSuccess, toastError } = useToast();
+  const [on, setOn] = useState(value === true);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setOn(value === true), [value]);
+  const titleId = useId();
+  const hintId = useId();
+  const toggle = async (next: boolean) => {
+    setOn(next);
+    setSaving(true);
+    try {
+      const res = await bookingRequestsApi.setShareOrderNote(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('printer.shareNote'));
+      onChanged?.();
+    } catch (error) {
+      setOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('printer.shareNote'));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className={`flex flex-col gap-2 border-t border-ar-subtle pt-4 ${canEdit ? '' : 'opacity-70'}`} data-share-order-note-setting>
+      <div className="flex min-h-[44px] items-start justify-between gap-3">
+        <span className="flex flex-col gap-1">
+          <span id={titleId} className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-ar-ink">
+            {t('printer.shareNote')}
+            <span className="rounded-full bg-ar-subtle px-2 py-0.5 text-xs font-semibold text-ar-ink-2">{t('printer.shareNoteBadge')}</span>
+          </span>
+          <span id={hintId} className="text-sm text-ar-muted">
+            {t('printer.shareNoteHint')}
+          </span>
+          {!canEdit && <span className="text-sm text-ar-muted">{t('printer.shareNoteReadOnly')}</span>}
+        </span>
+        <Switch checked={on} onChange={toggle} disabled={!canEdit || saving || value === null} labelledBy={titleId} describedBy={hintId} />
+      </div>
+    </div>
+  );
+}
+
 export function ReceiptSection({
   t,
   canEditNote,
   bankLink = null,
   outletId,
+  shareOrderNote,
+  canEditShareOrderNote = false,
+  onShareOrderNoteChanged,
 }: {
   t: T;
   canEditNote: boolean;
   bankLink?: BankLink;
   /** #852: the owner's picked branch; only that branch's note, QR and preview */
   outletId?: number | null;
+  /** #1344 shop switch "Hiện ghi chú đơn trên ảnh chia sẻ": undefined hides the row, null = still loading */
+  shareOrderNote?: boolean | null;
+  canEditShareOrderNote?: boolean;
+  onShareOrderNoteChanged?: () => void;
 }) {
   const to = useTranslations('outlets');
   const ts = useTranslations('settings');
@@ -873,6 +926,10 @@ export function ReceiptSection({
               ))}
             </ul>
           </div>
+        )}
+
+        {shareOrderNote !== undefined && (
+          <ShareOrderNoteRow t={t} value={shareOrderNote} canEdit={canEditShareOrderNote} onChanged={onShareOrderNoteChanged} />
         )}
 
         <div className="flex flex-col gap-2 border-t border-ar-subtle pt-4">
@@ -1249,6 +1306,50 @@ export function LegacyPanel({ title, children }: { title: string; children: Reac
     <section className={`${cardClass} ar-legacy overflow-hidden`}>
       <h2 className="m-0 px-5 pb-1 pt-[18px] text-lg font-bold">{title}</h2>
       <div className="px-2 pb-3 sm:px-3">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * #1314 "Cho tạo đơn khi trùng lịch" (owner only): one switch, saved on tap, same setting as the phone's.
+ * Same card style as "Nhận đặt online".
+ */
+export function OverlapSection({ t, allowed, onChanged }: { t: T; allowed: boolean; onChanged?: () => void }) {
+  const ts = useTranslations('settings');
+  const { toastSuccess, toastError } = useToast();
+  const [on, setOn] = useState(allowed);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setOn(allowed), [allowed]);
+  const titleId = useId();
+  const hintId = useId();
+  const toggle = async (next: boolean) => {
+    setOn(next);
+    setSaving(true);
+    try {
+      const res = await bookingRequestsApi.setAllowOverlappingOrders(next);
+      if (!res.success) throw new Error(res.error || '');
+      toastSuccess(ts('messages.successTitle'), t('overlap.title'));
+      onChanged?.();
+    } catch (error) {
+      setOn(!next);
+      toastError(ts('messages.errorTitle'), error instanceof Error && error.message ? error.message : t('overlap.title'));
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <section className={`${cardClass} px-5 py-4`} data-overlap-setting>
+      <div className="flex min-h-[44px] items-start justify-between gap-3">
+        <span className="flex flex-col gap-1">
+          <h2 id={titleId} className="m-0 text-lg font-bold">
+            {t('overlap.title')}
+          </h2>
+          <span id={hintId} className="text-sm text-ar-muted">
+            {t('overlap.hint')}
+          </span>
+        </span>
+        <Switch checked={on} onChange={toggle} disabled={saving} labelledBy={titleId} describedBy={hintId} />
+      </div>
     </section>
   );
 }

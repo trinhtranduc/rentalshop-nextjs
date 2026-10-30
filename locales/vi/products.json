@@ -505,7 +505,8 @@
         "photos": "Ảnh",
         "pricing": "Giá thuê và tiền cọc",
         "stock": "Số lượng",
-        "organise": "Phân loại & mã"
+        "organise": "Phân loại & mã",
+        "stockListing": "Tồn và hiện ở chi nhánh"
       },
       "name": "Tên sản phẩm",
       "namePlaceholder": "VD: Áo dài lụa đỏ",
@@ -599,6 +600,17 @@
         "copyLoading": "Đang tải…",
         "close": "Đóng",
         "incomplete": "Nhập giá cho mọi ngày và số tiền cộng thêm mỗi ngày, hoặc chọn giữ nguyên giá khối cuối."
+      },
+      "listing": {
+        "branch": "Chi nhánh",
+        "stock": "Tồn",
+        "column": "Hiện ở chi nhánh",
+        "tickOf": "Hiện ở chi nhánh {outlet}",
+        "ownerOnly": "Chỉ chủ shop bật/tắt",
+        "current": "đang chọn",
+        "reminder": "Còn {stock} cái ở chi nhánh này ({renting} đang thuê), vẫn tính vào tổng nhưng không hiện khi tạo đơn.",
+        "reminderNoRent": "Còn {stock} cái ở chi nhánh này, vẫn tính vào tổng nhưng không hiện khi tạo đơn.",
+        "saveFailed": "Đã lưu sản phẩm nhưng chưa lưu được ô Hiện ở chi nhánh. Thử lại."
       }
     },
     "detail": {
@@ -696,6 +708,11 @@
       "previewEmpty": "Chọn sản phẩm để xem trước tem.",
       "previewMore": "+{count} tem nữa",
       "printHint": "Khi in: chọn máy in nhãn, khổ giấy đúng khổ tem, tỉ lệ 100%, lề Không."
+    },
+    "listing": {
+      "hidden": "Chưa hiện",
+      "shown": "Hiện",
+      "totalStock": "Tổng tồn"
     }
   },
   "public": {

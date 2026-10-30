@@ -4,7 +4,8 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
-import { formatDayLabel, pageWindow, rangeOf, PAGE_SIZES, type OrderRow, type RowNote, type RowPay, type Schedule } from '../orders-model';
+import { PageSizeControl } from './page-size-control';
+import { formatDayLabel, pageWindow, rangeOf, type OrderRow, type RowNote, type RowPay, type Schedule } from '../orders-model';
 
 /** `t` from `useTranslations('orders')`, scoped to `web.*` by the caller. */
 export type T = (key: string, values?: Record<string, string | number>) => string;
@@ -378,22 +379,7 @@ export function TableFooter({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ar-subtle px-4 py-3">
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-sm text-ar-muted">
-          {t('footer.show')}
-          <select
-            aria-label={t('footer.perPageLabel')}
-            value={limit}
-            onChange={(e) => onLimit(Number(e.target.value))}
-            className="h-9 cursor-pointer rounded-[10px] border border-ar-line bg-ar-surface pl-2.5 pr-7 text-sm font-semibold text-ar-ink"
-          >
-            {PAGE_SIZES.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-          {t('footer.perPage')}
-        </label>
+        <PageSizeControl limit={limit} onLimit={onLimit} t={t} />
         <span className="text-sm tabular-nums text-ar-muted">{t('footer.range', { from, to, total })}</span>
       </div>
       <nav className="flex gap-1.5" aria-label={t('footer.pages')}>

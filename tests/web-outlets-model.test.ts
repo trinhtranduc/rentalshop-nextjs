@@ -34,7 +34,7 @@ describe('parseOutletParams', () => {
     });
   });
   it('falls back on broken values', () => {
-    expect(parseOutletParams(params('page=-1&limit=25&sortBy=phone&sortOrder=x'))).toEqual({
+    expect(parseOutletParams(params('page=-1&limit=abc&sortBy=phone&sortOrder=x'))).toEqual({
       q: '',
       page: 1,
       limit: 20,

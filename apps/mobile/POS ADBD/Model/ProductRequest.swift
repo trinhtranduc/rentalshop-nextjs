@@ -37,6 +37,15 @@ struct CreateProductRequest: Codable {
 struct OutletStockItem: Codable {
     let outletId: Int
     let stock: Int
+    /// #1346: the owner's "Hiện ở chi nhánh" tick on a new product; nil = not sent (the API ticks the creating branch)
+    var isListed: Bool? = nil
+
+    /// The dictionary the form-data body carries (`isListed` only when set)
+    var formObject: [String: Any] {
+        var object: [String: Any] = ["outletId": outletId, "stock": stock]
+        if let isListed { object["isListed"] = isListed }
+        return object
+    }
 }
 
 // MARK: - Pricing Option Request Model (Phase 1: FIXED + DAILY)
@@ -147,9 +156,11 @@ extension CreateProductRequest {
         pricingType: String? = nil,
         durationConfig: String? = nil,
         pricingOptions: [PricingOptionRequest]? = nil,
-        pricingSchemaVersion: Int? = nil
+        pricingSchemaVersion: Int? = nil,
+        /// #1346: the owner's "Hiện ở chi nhánh" ticks (rows with `isListed`); nil = one row at `outletId`
+        outletStock customStock: [OutletStockItem]? = nil
     ) -> CreateProductRequest {
-        let outletStock = [OutletStockItem(outletId: outletId, stock: totalStock)]
+        let outletStock = customStock ?? [OutletStockItem(outletId: outletId, stock: totalStock)]
 
         return CreateProductRequest(
             name: name,
@@ -434,7 +445,7 @@ extension UpdateProductRequest {
         if let merchantId = merchantId { formData["merchantId"] = merchantId }
         if let outletStock = outletStock {
             // Convert outletStock array to array of dictionaries
-            let outletStockArray = outletStock.map { ["outletId": $0.outletId, "stock": $0.stock] }
+            let outletStockArray = outletStock.map { $0.formObject }
             formData["outletStock"] = outletStockArray
         }
         if let isActive = isActive { formData["isActive"] = isActive }
@@ -469,7 +480,7 @@ extension CreateProductRequest {
         if let merchantId = merchantId { formData["merchantId"] = merchantId }
         
         // Convert outletStock array to array of dictionaries
-        let outletStockArray = outletStock.map { ["outletId": $0.outletId, "stock": $0.stock] }
+        let outletStockArray = outletStock.map { $0.formObject }
         formData["outletStock"] = outletStockArray
         if let images = images, !images.isEmpty { formData["images"] = images }
 

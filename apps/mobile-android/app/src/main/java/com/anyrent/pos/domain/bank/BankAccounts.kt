@@ -34,6 +34,15 @@ data class OutletBankAccount(
 enum class BankAccountProblem { NO_BANK, NO_NUMBER, NO_HOLDER }
 
 object BankAccountRules {
+    /** #1320: how long the account printed on bills is kept before it is loaded again (same 5 minutes as iOS) */
+    const val CACHE_TTL_MS = 300_000L
+
+    /** #1320: whether an account cached at [cachedAtMs] may still be printed at [nowMs]; stale at the limit or when the clock went backwards */
+    fun isCacheFresh(cachedAtMs: Long, nowMs: Long): Boolean {
+        val age = nowMs - cachedAtMs
+        return age >= 0 && age < CACHE_TTL_MS
+    }
+
     /** Bank accounts screen: owners and outlet admins (the API rejects writes from OUTLET_STAFF), as iOS */
     fun canManage(role: String?): Boolean = role == "MERCHANT" || role == "OUTLET_ADMIN"
 

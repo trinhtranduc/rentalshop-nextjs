@@ -14,11 +14,16 @@ class OutletService: BaseService, OutletServiceProtocol {
     
     // MARK: - Get Outlets
     func getOutlets(completion: @escaping ([Outlet]?, NSError?) -> Void) {
+        getOutlets(limit: nil, completion: completion)
+    }
+
+    /// #1313: the owner's list of branches asks for a page big enough for a big shop (the API answers 50 by default)
+    func getOutlets(limit: Int?, completion: @escaping ([Outlet]?, NSError?) -> Void) {
         let path = APIEndpoint.Path.outlets
         
         performGET(
             path: path,
-            parameters: nil,
+            parameters: limit.map { ["limit": $0] },
             responseType: APIOutletsResponse.self,
             context: "OutletService.getOutlets"
         ) { [self] apiResponse, error in

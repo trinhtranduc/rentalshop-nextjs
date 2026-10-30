@@ -4,9 +4,10 @@
  *
  * Each PR that ships a behaviour adds its token here. `installments` (#1199): this client shows the deposit stages of an order and
  * collects them; the server then adds `installments[]` and the stage payments to its responses. `block-pricing` (#1189): this client
- * shows and edits day-block price tables and sends the price of a BLOCK line for the server to check.
+ * shows and edits day-block price tables and sends the price of a BLOCK line for the server to check. `branch-listing` (#1341): this
+ * client shows the "Hiện ở chi nhánh" tick, so the server does not list products for it when it creates an order.
  */
-export const CLIENT_CAPABILITIES: readonly string[] = ['block-pricing', 'installments'];
+export const CLIENT_CAPABILITIES: readonly string[] = ['block-pricing', 'installments', 'branch-listing'];
 
 export const CLIENT_CAPABILITIES_HEADER = 'X-Client-Capabilities';
 

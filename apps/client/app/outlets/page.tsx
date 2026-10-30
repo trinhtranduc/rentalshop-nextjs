@@ -22,6 +22,7 @@ import { Modal } from '../orders/create/parts';
 import { OutletFormDialog, RowMenu, smallBtn } from './parts';
 import {
   EMPTY_OUTLET_FORM,
+  OUTLET_DEFAULT_PAGE_SIZE,
   formatOutletDate,
   nextSort,
   canSeeOutletsPage,
@@ -268,7 +269,8 @@ export default function OutletsPage() {
     );
   }
 
-  const showFooter = !error && total > 0 && (total > limit || page > 1);
+  // #1362: a typed size above the total keeps the footer, so the size can be changed back
+  const showFooter = !error && total > 0 && (total > limit || page > 1 || limit !== OUTLET_DEFAULT_PAGE_SIZE);
   const view = dialog?.kind === 'view' ? dialog.row : null;
 
   return (

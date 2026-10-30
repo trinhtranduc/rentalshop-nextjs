@@ -5,7 +5,7 @@
 //  End-to-end walk through the main features, like a human tester (#395).
 //  Run it with scripts/mobile-e2e/ios-e2e.sh; it reads (via TEST_RUNNER_ prefixing):
 //    E2E_EMAIL, E2E_PASSWORD   the account to log in with
-//    E2E_ROLE                  merchant | staff | inventory (staff runs read-only flows + restrictions; inventory = #682)
+//    E2E_ROLE                  merchant | manager | staff | inventory (manager = Quản lý chi nhánh, OUTLET_ADMIN; staff runs read-only flows + restrictions; inventory = #682)
 //    E2E_FEATURES              comma list of MOBILE_FEATURES that are on; steps for off flags are skipped
 //    E2E_OUT_DIR               where NN-feature-step.png screenshots are written
 //  Test methods are numbered so XCTest runs them in flow order; each one launches the app and logs in
@@ -316,6 +316,164 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(e2e.homeCart.waitForExistence(timeout: 5), "Cart button counts the product after adding it")
         XCTAssertFalse(e2e.floatingCartBar.exists, "#952: no floating cart bar on Home")
         e2e.shot("14-home-cart-button")
+    }
+
+    // MARK: #1346 "Hiện ở chi nhánh"
+
+    private var listingTicks: XCUIElementQuery {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'product.form.listing.'"))
+    }
+
+    /// Scrolls the open product form down until its "Hiện ở chi nhánh" ticks show; false when the form has none
+    private func scrollToListingTicks() -> Bool {
+        for _ in 0..<6 where !listingTicks.firstMatch.exists { app.swipeUp() }
+        return listingTicks.firstMatch.waitForExistence(timeout: 2)
+    }
+
+    private func editOpenProduct() -> Bool {
+        let edit = e2e.button(["Edit product", "Sửa sản phẩm", "Edit", "Sửa"])
+        guard edit.waitForExistence(timeout: 5) else { return false }
+        edit.tap()
+        sleep(2)
+        return true
+    }
+
+    /// #1346: the owner unticks the branch in use in the product form (E2E_LISTING_PRODUCT, default "Product 5 -"), saves, sees the
+    /// row on Home say "Chưa hiện ở chi nhánh này" without a +, then ticks it back. The DB is checked from outside the test.
+    func test1dBranchListingOwner() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let key = ProcessInfo.processInfo.environment["E2E_LISTING_PRODUCT"] ?? "Product 5 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("product \(key) not found") }
+        XCTAssertTrue(editOpenProduct(), "owner sees Edit")
+        if ProcessInfo.processInfo.environment["E2E_EXPECT_NO_TICK"] == "1" { // a shop with one active branch (Basic): no box
+            for _ in 0..<4 { app.swipeUp() }
+            XCTAssertFalse(listingTicks.firstMatch.exists, "a one-branch shop has no 'Hiện ở chi nhánh' box")
+            e2e.shot("37-listing-owner-one-branch-form")
+            e2e.tapIfExists(e2e.button(["Close", "Đóng"]), timeout: 3)
+            e2e.goBackOnce()
+            XCTAssertTrue(e2e.openProduct(named: key))
+            e2e.goBackOnce()
+            e2e.shot("38-listing-owner-one-branch-home")
+            return
+        }
+        guard scrollToListingTicks() else { return XCTFail("the form has no 'Hiện ở chi nhánh' ticks (a shop with 2+ branches?)") }
+        XCTAssertGreaterThanOrEqual(listingTicks.count, 2, "one tick per active branch")
+        app.swipeUp()
+        e2e.shot("30-listing-owner-form-ticked")
+        let first = listingTicks.element(boundBy: 0)
+        XCTAssertEqual(first.value as? String, "1", "the branch in use is ticked")
+        first.tap()
+        sleep(1)
+        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "0", "tapping unticks")
+        app.swipeUp()
+        e2e.shot("31-listing-owner-form-unticked")
+        let save = e2e.button(["Save changes", "Lưu thay đổi"])
+        XCTAssertTrue(save.waitForExistence(timeout: 3))
+        save.tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.goBackOnce()
+        // Home: the row is still there for the owner, marked, with no +
+        XCTAssertTrue(e2e.openProduct(named: key), "owner still finds the unticked product")
+        e2e.goBackOnce()
+        let notShown = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Not shown at this branch' OR label CONTAINS 'Chưa hiện ở chi nhánh này'")).firstMatch
+        e2e.soft(notShown.waitForExistence(timeout: 5), "the unticked row says it is not shown here")
+        e2e.shot("32-listing-owner-home-unlisted")
+        // Tick it back
+        XCTAssertTrue(e2e.openProduct(named: key))
+        XCTAssertTrue(editOpenProduct())
+        guard scrollToListingTicks() else { return XCTFail("ticks missing on the second edit") }
+        XCTAssertEqual(listingTicks.element(boundBy: 0).value as? String, "0", "the untick was saved")
+        listingTicks.element(boundBy: 0).tap()
+        e2e.button(["Save changes", "Lưu thay đổi"]).tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.goBackOnce()
+        e2e.shot("33-listing-owner-home-ticked-back")
+    }
+
+    /// #1346: a branch role (manager, kho, staff) sees the dimmed tick (E2E_LISTING_PRODUCT has rows at 2+ branches), cannot change it,
+    /// and its list holds no product that is unticked at its branch (E2E_HIDDEN_PRODUCT, unticked from outside the test).
+    func test1eBranchListingBranchRole() throws {
+        try e2e.requireFlag("newProducts")
+        if e2e.role == "merchant" { throw XCTSkip("branch roles only") }
+        try e2e.start()
+        let env = ProcessInfo.processInfo.environment
+        if let hidden = env["E2E_HIDDEN_PRODUCT"] {
+            e2e.tapTab(["Home", "Trang chủ"], index: 0)
+            let search = e2e.field(["Search name, barcode or take a photo", "Tìm tên, mã vạch hoặc chụp ảnh", "Name, barcode…", "Tên, mã vạch…"])
+            XCTAssertTrue(search.waitForExistence(timeout: 10))
+            search.tap()
+            search.typeText(hidden + "\n")
+            sleep(3)
+            e2e.soft(!app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", hidden)).firstMatch.exists, "'\(hidden)' is unticked at this branch and not listed")
+            e2e.shot("34-listing-\(e2e.role)-hidden-search")
+        }
+        let key = env["E2E_LISTING_PRODUCT"] ?? "Product 5 -"
+        guard e2e.openProduct(named: key) else { return XCTFail("product \(key) not found") }
+        e2e.shot("35-listing-\(e2e.role)-detail")
+        if e2e.role == "staff" { // staff has no edit form: the dimmed line sits on the detail
+            let line = app.staticTexts.matching(NSPredicate(format: "identifier == 'product.detail.listing'")).firstMatch
+            e2e.soft(line.waitForExistence(timeout: 3), "staff sees the dimmed 'Hiện ở chi nhánh' line on the detail")
+            return
+        }
+        XCTAssertTrue(editOpenProduct(), "\(e2e.role) sees Edit")
+        guard scrollToListingTicks() else { return XCTFail("no dimmed tick in the form") }
+        app.swipeUp()
+        e2e.shot("36-listing-\(e2e.role)-form")
+        XCTAssertEqual(listingTicks.count, 1, "only the own branch")
+        XCTAssertFalse(listingTicks.element(boundBy: 0).isEnabled, "the tick is dimmed and cannot be changed")
+    }
+
+    /// #1353 (#1335 PR 2m, mockup C1a/C1b/C1e): a rental cart for today with E2E_HINT_PRODUCTS (default "Product 1 - Electronics,
+    /// Product 3 - Furniture"; the first is out today at this branch while another branch has it, the second is out everywhere).
+    /// Owner, manager and kho of a shop with other branches read "Chi nhánh khác còn: …" under the first line only; staff and a
+    /// one-branch shop (E2E_HINT_EXPECT=none) read only the "Hết đồ" tag. Another day (tomorrow) has no short line and no hint.
+    func test2cCartOtherBranches() throws {
+        try e2e.requireFlag("newProducts")
+        try e2e.start()
+        let env = ProcessInfo.processInfo.environment
+        let names = (env["E2E_HINT_PRODUCTS"] ?? "Product 1 - Electronics,Product 3 - Furniture").split(separator: ",").map(String.init)
+        let expectHint = (env["E2E_HINT_EXPECT"] ?? (e2e.role == "staff" ? "none" : "show")) == "show"
+        e2e.emptyCart()
+        for name in names where !addFromHome(name) { return XCTFail("could not add \(name)") }
+        guard openCart() else { return XCTFail("cart did not open") }
+        e2e.cartRentToday()
+        sleep(5)
+        let hint = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Chi nhánh khác còn' OR label BEGINSWITH 'Other branches have'"))
+        e2e.note("hints today: \(hint.allElementsBoundByIndex.map(\.label))")
+        e2e.shot("othbr-\(e2e.role)-1-today")
+        if expectHint {
+            XCTAssertEqual(hint.count, 1, "one hint, under the line that another branch can cover")
+            XCTAssertTrue(hint.firstMatch.label.contains("Quận 7 (3)"), "the other branch and its units: \(hint.firstMatch.label)")
+        } else {
+            XCTAssertEqual(hint.count, 0, "no hint for this role or shop")
+        }
+        // Another day: the dates row → tomorrow. The line is not short any more, so the hint is gone.
+        let tomorrow = Calendar.current.component(.day, from: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
+        let chooser = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '→'")).firstMatch
+        if chooser.waitForExistence(timeout: 5) {
+            chooser.tap()
+            sleep(2)
+            e2e.shot("othbr-\(e2e.role)-1b-dates-sheet")
+            let cells = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "\(tomorrow)"))
+            e2e.note("tomorrow \(tomorrow): \(cells.count) elements, hittable \(cells.allElementsBoundByIndex.map(\.isHittable))")
+            let cell = cells.allElementsBoundByIndex.first { $0.isHittable }
+            cell?.tap()
+            sleep(1)
+            e2e.shot("othbr-\(e2e.role)-1c-dates-tapped")
+            e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
+            sleep(5)
+        } else {
+            e2e.soft(false, "the dates row to change the day")
+        }
+        e2e.note("hints tomorrow: \(hint.allElementsBoundByIndex.map(\.label))")
+        e2e.shot("othbr-\(e2e.role)-2-tomorrow")
+        XCTAssertEqual(hint.count, 0, "no short line on a free day, so no hint")
+        e2e.goBackOnce()
+        e2e.emptyCart()
     }
 
     func test2CartRent() throws {
@@ -3205,6 +3363,352 @@ final class AnyRentE2ETests: XCTestCase {
         // The teardown block turns the setting back ON and empties the cart
     }
 
+    // MARK: - #1315 settings sync: the owner changes a setting (over HTTP, as the owner), this device (staff / manager) reads it
+
+    /// The UI test target is built for iOS 12.2: addTeardownBlock needs 13
+    private func onTeardown(_ block: @escaping () -> Void) {
+        if #available(iOS 13.0, *) { addTeardownBlock(block) }
+    }
+
+    /// Home shows prices: the money unit on screen ("đ" or "$")
+    private func moneyMark() -> String {
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        sleep(4)
+        let texts = app.staticTexts.allElementsBoundByIndex.prefix(80).map(\.label)
+        if texts.contains(where: { $0.contains("$") }) { return "USD" }
+        // VND prices have no symbol on the Home rows ("103/lần"): a price line without "$" is VND
+        if texts.contains(where: { $0.contains("đ") || $0.contains("₫") || $0.contains("/lần") || $0.contains("/ngày") }) { return "VND" }
+        return "none"
+    }
+
+    /// (a) #1307: the owner switches the shop currency; after reopening the app this device shows the new unit, and the old one again after switching back
+    func test7qSettingsSyncCurrency() throws {
+        try e2e.requireFlag("newSettings")
+        if e2e.role == "merchant" { throw XCTSkip("run as staff / manager: the owner's API login would end the owner's app session") }
+        try e2e.start()
+        guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+        let start = OwnerAPI.currency() ?? "?"
+        let other = start == "VND" ? "USD" : "VND"
+        onTeardown { _ = OwnerAPI.put("/api/settings/currency", ["currency": start]) }
+        e2e.note("SYNC currency start=\(start) role=\(e2e.role) email=\(e2e.email)")
+        let before = moneyMark(); e2e.shot("sync-cur-1-home-\(start)")
+        XCTAssertEqual(before, start, "this device shows the shop currency \(start) before the change")
+        XCTAssertEqual(OwnerAPI.put("/api/settings/currency", ["currency": other]), 200, "the owner changes the currency")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        let after = moneyMark(); e2e.shot("sync-cur-2-home-\(other)")
+        XCTAssertEqual(after, other, "after reopening, this device shows \(other)")
+        XCTAssertEqual(OwnerAPI.put("/api/settings/currency", ["currency": start]), 200, "the owner changes it back")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        XCTAssertEqual(moneyMark(), start, "changed back: this device shows \(start) again")
+        e2e.shot("sync-cur-3-home-back")
+    }
+
+    /// (b, owner side) the owner edits the note and the QR switch on the printer screen; the API then holds them
+    private func ownerEditsPrintSettings() {
+        let note = "Ghi chu chu shop \(Int(Date().timeIntervalSince1970) % 100000)"
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(2)
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Print & receipts' OR label BEGINSWITH 'In & phiếu'")).firstMatch
+        XCTAssertTrue(e2e.scrollTo(row), "the Print & receipts row")
+        e2e.tapRow(row); sleep(4)
+        e2e.shot("sync-prn-owner-1-printer")
+        let noteView = app.textViews.firstMatch
+        XCTAssertTrue(noteView.waitForExistence(timeout: 8), "the note field")
+        _ = e2e.scrollTo(noteView)
+        let readonly = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Only the shop owner' OR label BEGINSWITH 'Chỉ chủ shop'")).firstMatch
+        XCTAssertFalse(readonly.exists, "the owner has no read-only caption")
+        noteView.tap(); sleep(1)
+        noteView.typeText(note)
+        e2e.hideKeyboard(); sleep(1)
+        let qr = app.switches["printer.bankQr.switch"]
+        _ = e2e.scrollTo(qr)
+        XCTAssertTrue(qr.isEnabled, "the owner can use the QR switch")
+        if qr.value as? String != "1" { qr.tap(); sleep(3) }
+        e2e.shot("sync-prn-owner-2-edited")
+        e2e.goBackOnce(); sleep(2)
+        guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+        let oid = Int(ProcessInfo.processInfo.environment["E2E_OUTLET_ID"] ?? "") ?? 1
+        let saved = OwnerAPI.outletPrint(oid)
+        e2e.note("SYNC owner saved note='\(saved.note)' qr=\(saved.qr)")
+        XCTAssertTrue(saved.note.contains(note), "the server holds the note the owner typed, got '\(saved.note)'")
+        XCTAssertTrue(saved.qr, "the server holds the QR switch ON")
+        _ = OwnerAPI.put("/api/outlets?outletId=\(oid)", ["printNote": "", "printBankQr": false])
+    }
+
+    /// (b) #1308: the owner edits the branch print note + QR; this device reads them on Print & receipts, read-only unless the owner
+    func test7rSettingsSyncPrintNote() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        let isOwner = e2e.role == "merchant"
+        if isOwner { return ownerEditsPrintSettings() }
+        guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+        let outletId = Int(ProcessInfo.processInfo.environment["E2E_OUTLET_ID"] ?? "")
+        XCTAssertNotNil(outletId, "E2E_OUTLET_ID (outlet of the account under test) is not set")
+        guard let oid = outletId else { return }
+        let note = "Ghi chu dong bo \(Int(Date().timeIntervalSince1970) % 100000)"
+        let original = OwnerAPI.outletPrint(oid)
+        onTeardown { _ = OwnerAPI.put("/api/outlets?outletId=\(oid)", ["printNote": original.note, "printBankQr": original.qr]) }
+        XCTAssertEqual(OwnerAPI.put("/api/outlets?outletId=\(oid)", ["printNote": note, "printBankQr": true]), 200, "the owner sets note + QR")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(2)
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Print & receipts' OR label BEGINSWITH 'In & phiếu'")).firstMatch
+        XCTAssertTrue(e2e.scrollTo(row), "the Print & receipts row")
+        e2e.shot("sync-prn-1-settings-\(e2e.role)")
+        e2e.tapRow(row); sleep(4)
+        e2e.shot("sync-prn-2-printer-\(e2e.role)")
+        let noteView = app.textViews.firstMatch
+        XCTAssertTrue(noteView.waitForExistence(timeout: 8), "the note field")
+        _ = e2e.scrollTo(noteView)
+        XCTAssertTrue((noteView.value as? String ?? "").contains(note), "this device shows the owner's note '\(note)', got '\(noteView.value as? String ?? "nil")'")
+        let qr = app.switches["printer.bankQr.switch"]
+        _ = e2e.scrollTo(qr)
+        XCTAssertEqual(qr.value as? String, "1", "the QR switch shows ON")
+        let readonly = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Only the shop owner' OR label BEGINSWITH 'Chỉ chủ shop'")).firstMatch
+        _ = e2e.scrollTo(readonly)
+        if isOwner {
+            XCTAssertFalse(readonly.exists, "the owner has no read-only caption")
+            XCTAssertTrue(qr.isEnabled, "the owner can use the QR switch")
+        } else {
+            XCTAssertTrue(readonly.exists, "a non-owner sees the read-only caption")
+            XCTAssertFalse(qr.isEnabled, "the QR switch is disabled for a non-owner")
+        }
+        e2e.shot("sync-prn-3-printer-bottom-\(e2e.role)")
+        // the receipt: the same note comes from the order's outlet (share image text is not readable here; see the notes)
+        e2e.note("SYNC print: role=\(e2e.role) note shown=\(noteView.value as? String ?? "nil") qr=\(qr.value as? String ?? "nil") readonlyCaption=\(readonly.exists)")
+        XCTAssertEqual(OwnerAPI.put("/api/outlets?outletId=\(oid)", ["printNote": "", "printBankQr": false]), 200, "the owner clears them")
+        e2e.goBackOnce()
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(2)
+        let row2 = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Print & receipts' OR label BEGINSWITH 'In & phiếu'")).firstMatch
+        _ = e2e.scrollTo(row2); e2e.tapRow(row2); sleep(4)
+        let noteAfter = app.textViews.firstMatch
+        _ = noteAfter.waitForExistence(timeout: 8)
+        XCTAssertFalse((noteAfter.value as? String ?? "").contains(note), "changed back: the old note is gone (no stale value)")
+        e2e.shot("sync-prn-4-printer-cleared-\(e2e.role)")
+    }
+
+    /// #1354: "Hiện ghi chú đơn trên ảnh chia sẻ" on In & phiếu. The owner's switch saves at once (the API then holds it).
+    /// Any other role sees it dimmed with "Chỉ chủ shop bật/tắt." and follows the owner's change after the app comes back to
+    /// the front (the app reads the flag at most once a minute, so the test waits 65 s).
+    func test7uShareOrderNoteSwitch() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        let isOwner = e2e.role == "merchant"
+        let toggle = app.switches["printer.shareNote.switch"]
+        let readonly = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Only the shop owner can turn' OR label BEGINSWITH 'Chỉ chủ shop bật/tắt'")).firstMatch
+        let openPrinter: () -> Void = {
+            self.e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(2)
+            let row = self.app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Print & receipts' OR label BEGINSWITH 'In & phiếu'")).firstMatch
+            XCTAssertTrue(self.e2e.scrollTo(row), "the Print & receipts row")
+            self.e2e.tapRow(row); sleep(4)
+            XCTAssertTrue(self.e2e.scrollTo(toggle), "the order-note switch")
+        }
+        if isOwner {
+            openPrinter()
+            XCTAssertTrue(toggle.isEnabled, "the owner can use the switch")
+            XCTAssertFalse(readonly.exists, "the owner has no read-only caption")
+            let before = toggle.value as? String == "1"
+            e2e.shot("share-note-owner-1-before")
+            toggle.tap(); sleep(3)
+            XCTAssertEqual(toggle.value as? String, before ? "0" : "1", "the switch moved")
+            e2e.shot("share-note-owner-2-after")
+            // The HTTP login signs the app out (one session per account): only after the screens
+            guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+            XCTAssertEqual(OwnerAPI.shareOrderNote(), !before, "the API holds the new value")
+            _ = OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": before])
+            return
+        }
+        guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+        let original = OwnerAPI.shareOrderNote() ?? false
+        onTeardown { _ = OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": original]) }
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": false]), 200, "the owner turns it OFF")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        openPrinter()
+        XCTAssertEqual(toggle.value as? String, "0", "OFF for \(e2e.role)")
+        XCTAssertFalse(toggle.isEnabled, "dimmed: \(e2e.role) cannot change it")
+        _ = e2e.scrollTo(readonly)
+        XCTAssertTrue(readonly.exists, "Chỉ chủ shop bật/tắt.")
+        e2e.shot("share-note-\(e2e.role)-1-off")
+        e2e.goBackOnce(); sleep(1)
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": true]), 200, "the owner turns it ON (another device)")
+        sleep(65)
+        XCUIDevice.shared.press(.home); sleep(2)
+        app.activate(); sleep(5)
+        openPrinter()
+        XCTAssertEqual(toggle.value as? String, "1", "ON after the app came back to the front (\(e2e.role))")
+        XCTAssertFalse(toggle.isEnabled)
+        e2e.shot("share-note-\(e2e.role)-2-on-after-foreground")
+        e2e.goBackOnce(); sleep(1)
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["shareOrderNote": false]), 200, "the owner turns it OFF again")
+        sleep(65)
+        XCUIDevice.shared.press(.home); sleep(2)
+        app.activate(); sleep(5)
+        openPrinter()
+        XCTAssertEqual(toggle.value as? String, "0", "OFF again (\(e2e.role))")
+        e2e.shot("share-note-\(e2e.role)-3-off-again")
+    }
+
+    /// (c) #1310: "Cọc" is shown to the shop owner only. Needs the build of PR #1316
+    func test7sSettingsSyncDepositHidden() throws {
+        try e2e.requireFlag("newSettings")
+        guard ProcessInfo.processInfo.environment["E2E_PR1310"] == "1" else { throw XCTSkip("waits for #1310 (PR #1316): run with TEST_RUNNER_E2E_PR1310=1 on a build that has it") }
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(3)
+        e2e.shot("sync-dep-1-settings-\(e2e.role)")
+        let deposit = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Deposit' OR label BEGINSWITH 'Cọc'")).firstMatch
+        for _ in 0..<3 where !deposit.exists { app.swipeUp() }
+        e2e.shot("sync-dep-2-settings-scrolled-\(e2e.role)")
+        if e2e.role == "merchant" { XCTAssertTrue(deposit.exists, "the owner sees the Cọc row") } else { XCTAssertFalse(deposit.exists, "\(e2e.role) does not see the Cọc row") }
+    }
+
+    /// (d) the owner turns "Cho tạo đơn khi trùng lịch" off: this device's cart refuses a product that is fully booked today; on again, it allows it
+    func test7tSettingsSyncOverlapCart() throws {
+        try e2e.requireFlag("newProducts")
+        if e2e.role == "merchant" { throw XCTSkip("run as staff / manager: the owner's API login would end the owner's app session") }
+        try e2e.start()
+        guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+        onTeardown { _ = OwnerAPI.put("/api/settings/merchant", ["allowOverlappingOrders": true]) }
+        let blocked = app.descendants(matching: .any).matching(NSPredicate(format:
+            "label BEGINSWITH 'Cửa hàng không cho tạo đơn trùng lịch' OR label BEGINSWITH 'This shop does not allow overlapping'")).firstMatch
+        let product = "Váy trùng đơn test"  // prepare-accounts.sh staged: 1 in stock, all held today
+        func openCart() -> Bool {
+            e2e.emptyCart()
+            guard e2e.addToCartAndOpen(product: product) else { return false }
+            e2e.cartRentToday(); sleep(3)
+            return true
+        }
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["allowOverlappingOrders": false]), 200, "the owner turns overlap OFF")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        XCTAssertTrue(openCart(), "cart with \(product)")
+        XCTAssertTrue(blocked.waitForExistence(timeout: 10), "OFF: the staff cart shows the blocked notice")
+        let cta = e2e.button(["Create order", "Tạo đơn"])
+        XCTAssertFalse(cta.exists && cta.isEnabled, "OFF: Tạo đơn is disabled")
+        e2e.shot("sync-ovl-1-off-\(e2e.role)")
+        e2e.goBackOnce()
+        XCTAssertEqual(OwnerAPI.put("/api/settings/merchant", ["allowOverlappingOrders": true]), 200, "the owner turns overlap ON")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        XCTAssertTrue(openCart(), "cart with \(product) again")
+        sleep(2)
+        XCTAssertFalse(blocked.exists, "ON: the notice is gone (no stale value)")
+        e2e.shot("sync-ovl-2-on-\(e2e.role)")
+        e2e.emptyCart()
+    }
+
+    /// (c) #1309: the Cọc row is hidden from a staff device (#1310), but its Giỏ still collects the deposit the way the shop chose:
+    /// the owner switches "Cách thu cọc" (one time ↔ staged) over HTTP; after reopening, the cart shows the matching block.
+    func test7vSettingsSyncDepositCart() throws {
+        try e2e.requireFlag("newProducts")
+        if e2e.role == "merchant" { throw XCTSkip("run as staff / manager: the owner's API login would end the owner's app session") }
+        try e2e.start()
+        guard OwnerAPI.login() else { return XCTFail("owner login over HTTP failed") }
+        let before = (OwnerAPI.call("GET", "/api/settings/deposit").body?["data"] as? [String: Any])?["depositMode"] as? String ?? "ONE_TIME"
+        let policy = (OwnerAPI.call("GET", "/api/settings/deposit").body?["data"] as? [String: Any])?["cancellationPolicy"] as? String ?? ""
+        onTeardown { _ = OwnerAPI.put("/api/settings/deposit", ["depositMode": before, "cancellationPolicy": policy]) }
+        let product = "Váy trùng đơn test"
+        // the block title is drawn in capitals and the row may carry its value in the label: match any element, ignoring case
+        let stagedTitle = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'Thu cọc theo giai đoạn' OR label CONTAINS[c] 'Staged deposit'")).firstMatch
+        let oneTime = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'Cọc trả trước' OR label CONTAINS[c] 'Deposit paid now'")).firstMatch
+        func openCart() -> Bool {
+            e2e.emptyCart()
+            guard e2e.addToCartAndOpen(product: product) else { return false }
+            e2e.cartRentToday(); sleep(4)
+            return true
+        }
+        XCTAssertEqual(OwnerAPI.put("/api/settings/deposit", ["depositMode": "STAGED", "cancellationPolicy": policy]), 200, "the owner switches to staged deposit")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        XCTAssertTrue(openCart(), "cart with \(product)")
+        e2e.shot("sync-dep-cart-1-staged-\(e2e.role)")
+        XCTAssertTrue(stagedTitle.waitForExistence(timeout: 8), "STAGED: the staff cart shows Thu cọc theo giai đoạn")
+        XCTAssertFalse(oneTime.exists, "STAGED: no one-time Cọc trả trước row")
+        e2e.goBackOnce()
+        XCTAssertEqual(OwnerAPI.put("/api/settings/deposit", ["depositMode": "ONE_TIME", "cancellationPolicy": policy]), 200, "the owner switches back to one-time deposit")
+        app.terminate(); app.launch(); e2e.settle(seconds: 8)
+        XCTAssertTrue(openCart(), "cart with \(product) again")
+        e2e.shot("sync-dep-cart-2-one-time-\(e2e.role)")
+        XCTAssertTrue(oneTime.waitForExistence(timeout: 8), "ONE_TIME: the staff cart shows Cọc trả trước")
+        XCTAssertFalse(stagedTitle.exists, "ONE_TIME: no staged block (no stale value)")
+        e2e.emptyCart()
+    }
+
+    /// (a, d, owner side) #1309: the OWNER changes the shop currency and "Cho tạo đơn khi trùng lịch" with the app's own screens.
+    /// The owner is signed in on the phone, so nothing here calls the API as the owner; the run reads the database before and
+    /// after. Target comes from TEST_RUNNER_E2E_OWNER_SET: "currency=VND", "currency=USD", "overlap=off", "overlap=on" (comma list).
+    func test7uOwnerChangesSettingsByUI() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.requireRole("merchant")
+        let spec = (ProcessInfo.processInfo.environment["E2E_OWNER_SET"] ?? "")
+            .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        guard !spec.isEmpty else { throw XCTSkip("set TEST_RUNNER_E2E_OWNER_SET, e.g. currency=VND,overlap=off") }
+        try e2e.start()
+        for item in spec {
+            let parts = item.split(separator: "=").map(String.init)
+            guard parts.count == 2 else { return XCTFail("bad spec '\(item)'") }
+            switch parts[0] {
+            case "overlap":
+                XCTAssertEqual(e2e.setOverlapAllowed(parts[1] == "on"), parts[1] == "on", "the owner turns Cho tạo đơn khi trùng lịch \(parts[1]) in Settings")
+                e2e.shot("owner-set-overlap-\(parts[1])")
+            case "currency":
+                e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(2)
+                let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Store Information", "Thông tin cửa hàng"])).firstMatch
+                XCTAssertTrue(row.waitForExistence(timeout: 8), "the Thông tin cửa hàng row")
+                e2e.tapRow(row); sleep(3)
+                let cur = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Currency", "Tiền tệ"])).firstMatch
+                XCTAssertTrue(cur.waitForExistence(timeout: 5), "Tiền tệ row in the shop block")
+                e2e.tapRow(cur); sleep(2)
+                e2e.shot("owner-set-currency-1-sheet")
+                let want = parts[1].uppercased()
+                let choice = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", want)).firstMatch
+                XCTAssertTrue(choice.waitForExistence(timeout: 5), "the \(want) choice in the sheet")
+                choice.tap(); sleep(2)
+                e2e.shot("owner-set-currency-2-confirm")
+                let confirm = app.alerts.firstMatch.buttons.matching(NSPredicate(format: "label CONTAINS %@", want)).firstMatch
+                if confirm.waitForExistence(timeout: 3) { confirm.tap(); sleep(3) } else { e2e.note("no confirm alert: the shop already had \(want)") }
+                e2e.shot("owner-set-currency-3-after")
+                XCTAssertTrue(app.staticTexts[want].waitForExistence(timeout: 5), "the Tiền tệ row now reads \(want)")
+                e2e.goBackOnce()
+                e2e.tapTab(["Home", "Trang chủ"], index: 0); sleep(4)
+                e2e.shot("owner-set-currency-4-home")
+            default:
+                XCTFail("unknown key '\(parts[0])'")
+            }
+        }
+    }
+
+    /// (b, owner side, second branch) #1308: the owner picks ANOTHER branch on In & phiếu and edits its note + QR; the first branch
+    /// keeps its own. Nothing here calls the API as the owner (the phone is signed in as the owner): the run reads the database
+    /// before and after. TEST_RUNNER_E2E_BRANCH_NAME is the branch to pick (default "Outlet 2").
+    func test7wOwnerPrintOtherBranch() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        let branch = ProcessInfo.processInfo.environment["E2E_BRANCH_NAME"] ?? "Outlet 2"
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(2)
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Print & receipts' OR label BEGINSWITH 'In & phiếu'")).firstMatch
+        XCTAssertTrue(e2e.scrollTo(row), "the Print & receipts row")
+        e2e.tapRow(row); sleep(4)
+        let picker = app.buttons["printer.branch.button"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 8), "the owner has the branch picker")
+        e2e.shot("owner-branch-1-first")
+        picker.tap(); sleep(2)
+        e2e.shot("owner-branch-2-sheet")
+        let choice = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", branch)).firstMatch
+        XCTAssertTrue(choice.waitForExistence(timeout: 5), "the sheet lists \(branch)")
+        choice.tap(); sleep(3)
+        XCTAssertTrue(picker.label.contains(branch), "the picker now reads \(branch): '\(picker.label)'")
+        let noteView = app.textViews.firstMatch
+        XCTAssertTrue(noteView.waitForExistence(timeout: 8), "the note field")
+        noteView.tap(); sleep(1)
+        noteView.typeText("Ghi chu chi nhanh hai \(Int(Date().timeIntervalSince1970) % 100000)")
+        e2e.hideKeyboard(); sleep(1)
+        let qr = app.switches["printer.bankQr.switch"]
+        _ = e2e.scrollTo(qr)
+        XCTAssertTrue(qr.isEnabled, "the owner can use the QR switch")
+        if qr.value as? String != "1" { qr.tap(); sleep(3) }
+        e2e.shot("owner-branch-3-edited")
+        let save = e2e.button(["Save", "Lưu"])
+        if save.exists { save.tap(); sleep(3) }
+        e2e.shot("owner-branch-4-saved")
+    }
+
     /// Cart line pricing chip → "Cách tính giá" (#482, board Gio-hang-chon-gia): Theo ngày with a price for this order
     /// only. The line total follows; the catalog price shown in the sheet stays.
     func test7fCartPricingSheet() throws {
@@ -3267,14 +3771,17 @@ final class AnyRentE2ETests: XCTestCase {
             app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
         }
         let isOwner = e2e.role == "merchant"
-        let storeInfo = label(["Store Information", "Thông tin cửa hàng"])
+        let isManager = e2e.role == "manager"  // Quản lý chi nhánh
+        // #1313: the owner's row is "Thông tin cửa hàng", every other role "Thông tin chi nhánh"
+        let storeInfo = isOwner ? label(["Store Information", "Thông tin cửa hàng"]) : label(["Branch Information", "Thông tin chi nhánh"])
         let collect = label(["Deposit", "Cọc"])
         let printing = label(["Print & receipts", "In & phiếu"])
         XCTAssertTrue(storeInfo.waitForExistence(timeout: 8), "Thông tin cửa hàng row")
-        XCTAssertTrue(collect.exists, "Cọc row (every role: read only for staff)")
+        XCTAssertEqual(collect.exists, isOwner, "#1310: the Cọc row is the owner's only")
         XCTAssertTrue(printing.exists, "In & phiếu row")
-        XCTAssertEqual(label(["Currency", "Tiền tệ"]).exists, isOwner, "Tiền tệ row for the owner only")
-        XCTAssertEqual(label(["Bank Accounts", "Tài khoản ngân hàng"]).exists, isOwner, "Tài khoản ngân hàng row for owner / outlet admin only")
+        XCTAssertFalse(label(["Currency", "Tiền tệ"]).exists, "#1313: Tiền tệ is inside Thông tin cửa hàng, not a row of the list")
+        XCTAssertEqual(label(["Bank Accounts", "Tài khoản ngân hàng"]).exists, isOwner || isManager,
+                       "Tài khoản ngân hàng row for owner / outlet admin only (#1319 will make it the owner's only)")
         XCTAssertFalse(label(["Payments", "Thu tiền"]).exists, "no Thu tiền screen any more")
         XCTAssertFalse(label(["Printer", "Máy in"]).exists, "no separate Máy in row")
         XCTAssertFalse(label(["Change Password", "Đổi mật khẩu"]).exists, "Đổi mật khẩu is inside the name card")
@@ -3290,13 +3797,15 @@ final class AnyRentE2ETests: XCTestCase {
         app.swipeDown()
         sleep(1)
 
-        collect.tap()
-        sleep(3)
-        e2e.shot("z3-collect")
-        XCTAssertTrue(app.descendants(matching: .any)["settings.collect.mode"].exists, "Cách thu cọc line")
-        XCTAssertTrue(app.descendants(matching: .any)["deposit.templates.row"].exists, "Mẫu giai đoạn line")
-        XCTAssertTrue(app.descendants(matching: .any)["deposit.policy.row"].exists, "Chính sách huỷ / dời ngày line")
-        e2e.goBackOnce()
+        if isOwner {
+            collect.tap()
+            sleep(3)
+            e2e.shot("z3-collect")
+            XCTAssertTrue(app.descendants(matching: .any)["settings.collect.mode"].exists, "Cách thu cọc line")
+            XCTAssertTrue(app.descendants(matching: .any)["deposit.templates.row"].exists, "Mẫu giai đoạn line")
+            XCTAssertTrue(app.descendants(matching: .any)["deposit.policy.row"].exists, "Chính sách huỷ / dời ngày line")
+            e2e.goBackOnce()
+        }
 
         printing.tap()
         sleep(2)
@@ -3325,6 +3834,67 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         e2e.shot("z7-store-info")
         e2e.goBackOnce()
+    }
+
+    /// #1313 Thông tin cửa hàng / chi nhánh. Owner: shop card + Tiền tệ + branch list, edit the shop phone, edit a branch;
+    /// branch manager: the own branch form; staff / kho: the same form, read only (no Lưu).
+    func test7sShopAndBranchInfo() throws {
+        try e2e.requireFlag("newSettings")
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        func label(_ labels: [String]) -> XCUIElement {
+            app.staticTexts.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+        }
+        let isOwner = e2e.role == "merchant"
+        let row = isOwner ? label(["Store Information", "Thông tin cửa hàng"]) : label(["Branch Information", "Thông tin chi nhánh"])
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "the Settings row for this role")
+        e2e.shot("s1-settings")
+        row.tap()
+        sleep(3)
+        e2e.shot("s2-info")
+        let save = e2e.button(["Save", "Lưu"])
+        if isOwner {
+            XCTAssertTrue(label(["Currency", "Tiền tệ"]).exists, "Tiền tệ row in the shop block")
+            XCTAssertFalse(app.staticTexts["Outlet ID not found"].exists, "no Outlet ID error")
+            let edit = e2e.button(["Edit", "Sửa"])
+            XCTAssertTrue(edit.waitForExistence(timeout: 5), "Sửa on the shop card")
+            edit.tap()
+            sleep(2)
+            e2e.shot("s3-shop-form")
+            XCTAssertFalse(e2e.field(["Website"]).exists, "no Website field")
+            XCTAssertTrue(e2e.type(into: ["Phone Number", "Số điện thoại"], text: "0901234567"), "type the phone")
+            e2e.hideKeyboard()
+            XCTAssertTrue(save.waitForExistence(timeout: 3), "Lưu")
+            save.tap()
+            sleep(3)
+            e2e.shot("s4-after-shop-save")
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '0901234567'")).firstMatch.waitForExistence(timeout: 6),
+                          "the saved phone shows on the shop card")
+            // a branch
+            let branches = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH[c] 'Branches' OR label BEGINSWITH[c] 'Chi nhánh'")).firstMatch
+            XCTAssertTrue(branches.exists, "the branch list header")
+            let firstBranch = app.tables.cells.element(boundBy: 2)
+            XCTAssertTrue(firstBranch.waitForExistence(timeout: 5), "a branch row")
+            firstBranch.tap()
+            sleep(2)
+            e2e.shot("s5-branch-form")
+            XCTAssertTrue(e2e.type(into: ["Phone Number", "Số điện thoại"], text: "0907654321"), "type the branch phone")
+            e2e.hideKeyboard()
+            save.tap()
+            sleep(3)
+            e2e.shot("s6-after-branch-save")
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '0907654321'")).firstMatch.waitForExistence(timeout: 6),
+                          "the saved branch phone shows in the list")
+        } else {
+            XCTAssertTrue(e2e.field(["Branch name", "Tên chi nhánh"]).waitForExistence(timeout: 5), "the own branch form")
+            if e2e.role == "staff" || e2e.role == "inventory" {
+                XCTAssertFalse(save.exists, "staff: no Lưu")
+                XCTAssertTrue(label(["You can only view this.", "Bạn chỉ xem được mục này."]).exists, "view-only note")
+            } else {
+                XCTAssertTrue(save.exists, "branch manager: Lưu")
+            }
+        }
     }
 
     /// Cài đặt → Đổi mật khẩu (#490 #491, board DMK-doi-mat-khau): a bottom sheet; an empty submit shows the error
@@ -3565,9 +4135,9 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         // #1270: Tài khoản ngân hàng is a row of CỬA HÀNG again
         let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Bank Accounts", "Tài khoản ngân hàng"])).firstMatch
-        if e2e.role != "merchant" { // staff and kho (#682) have no bank-account permission
+        if e2e.role != "merchant" { // staff and kho (#682) have no bank-account permission; the branch manager still has it until #1319
             e2e.shot("7k-\(e2e.role)-settings")
-            e2e.soft(!row.exists, "\(e2e.role) does not see Tài khoản ngân hàng")
+            e2e.soft(row.exists == (e2e.role == "manager"), "\(e2e.role): Tài khoản ngân hàng row shown = \(row.exists) (manager only, until #1319)")
             return
         }
         XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in the Store group")
@@ -5452,7 +6022,7 @@ private final class E2E {
         // Skip the "Khách mới" / "New customer" row at the top of the v2 picker.
         let newLabels = ["New customer", "Khách mới"]
         let cell = app.cells.allElementsBoundByIndex.first { cell in
-            cell.frame.minY >= top && cell.isHittable
+            cell.frame.minY.isFinite && cell.frame.minY >= top && cell.isHittable  // an off-screen cell has an infinite frame: isHittable would throw
                 && !newLabels.contains(where: { cell.label.hasPrefix($0) })
                 && !cell.staticTexts.allElementsBoundByIndex.contains(where: { newLabels.contains($0.label) })
         }
@@ -5774,5 +6344,62 @@ private extension XCUIElement {
         // Put the caret at the end first: a plain tap can land mid-text and leave a tail behind.
         coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
         typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 4))
+    }
+}
+
+
+// MARK: - #1315 the shop owner over HTTP (the UI test runs inside the simulator and reaches the local API)
+
+private enum OwnerAPI {
+    static let base = ProcessInfo.processInfo.environment["E2E_API_URL"] ?? "http://localhost:3180"
+    static var token = ""
+
+    @discardableResult
+    static func call(_ method: String, _ path: String, _ json: [String: Any]? = nil, bearer: String? = nil) -> (status: Int, body: [String: Any]?) {
+        guard let url = URL(string: base + path) else { return (-1, nil) }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("10.\(Int.random(in: 1...250)).\(Int.random(in: 1...250)).\(Int.random(in: 1...250))", forHTTPHeaderField: "x-forwarded-for")
+        if let bearer = bearer ?? (token.isEmpty ? nil : token) { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
+        if let json = json {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: json)
+        }
+        var result: (Int, [String: Any]?) = (-1, nil)
+        let done = DispatchSemaphore(value: 0)
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            result = ((response as? HTTPURLResponse)?.statusCode ?? -1, data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] })
+            done.signal()
+        }.resume()
+        _ = done.wait(timeout: .now() + 30)
+        return result
+    }
+
+    static func login() -> Bool {
+        let env = ProcessInfo.processInfo.environment
+        let r = call("POST", "/api/mobile/auth/login", ["email": env["E2E_OWNER_EMAIL"] ?? "merchant1@example.com", "password": env["E2E_OWNER_PASSWORD"] ?? "merchant123", "deviceId": "settings-sync-owner"])
+        token = ((r.body?["data"] as? [String: Any])?["token"] as? String) ?? ""
+        return !token.isEmpty
+    }
+
+    static func put(_ path: String, _ json: [String: Any]) -> Int { call("PUT", path, json).status }
+
+    /// `merchant.shareOrderNote` of GET /api/users/profile (#1354)
+    static func shareOrderNote() -> Bool? {
+        (((call("GET", "/api/users/profile").body?["data"] as? [String: Any])?["merchant"] as? [String: Any])?["shareOrderNote"] as? Bool)
+    }
+
+    static func currency() -> String? { ((call("GET", "/api/settings/currency").body?["data"] as? [String: Any])?["currency"] as? String) }
+
+    private static func outlets() -> [[String: Any]] {
+        let data = call("GET", "/api/outlets?limit=50").body?["data"]
+        if let list = data as? [[String: Any]] { return list }
+        let dict = data as? [String: Any]
+        return (dict?["outlets"] as? [[String: Any]]) ?? (dict?["items"] as? [[String: Any]]) ?? []
+    }
+
+    static func outletPrint(_ id: Int) -> (note: String, qr: Bool) {
+        let row = outlets().first { ($0["id"] as? Int) == id }
+        return ((row?["printNote"] as? String) ?? "", (row?["printBankQr"] as? Bool) ?? false)
     }
 }

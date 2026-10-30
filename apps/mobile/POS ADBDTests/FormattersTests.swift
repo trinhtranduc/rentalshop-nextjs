@@ -98,16 +98,33 @@ final class ShopCurrencyTests: XCTestCase {
         XCTAssertEqual(EntityOrdersLogic.compactMoney(450_000, currency: .vnd), "450.000")
     }
 
+    /// #1307: every shop role reads the shop currency (staff devices followed the owner's change only after a new login)
+    func testEveryShopRoleRefreshesTheCurrency() {
+        for role: Role? in [.merchant, .outletAdmin, .outletStaff, .outletInventory] {
+            XCTAssertTrue(ShopCurrencyLogic.canRefresh(role: role), "\(String(describing: role))")
+        }
+        XCTAssertFalse(ShopCurrencyLogic.canRefresh(role: .admin))
+        // only the owner may change it
+        XCTAssertFalse(ShopCurrencyLogic.canChange(role: .outletStaff))
+    }
+
+    func testRefreshIsLimitedToOncePerMinute() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertTrue(ShopCurrencyLogic.shouldRefresh(role: .outletStaff, lastRefresh: nil, now: now, force: false))
+        XCTAssertFalse(ShopCurrencyLogic.shouldRefresh(role: .outletStaff, lastRefresh: now.addingTimeInterval(-59), now: now, force: false))
+        XCTAssertTrue(ShopCurrencyLogic.shouldRefresh(role: .outletStaff, lastRefresh: now.addingTimeInterval(-60), now: now, force: false))
+        XCTAssertTrue(ShopCurrencyLogic.shouldRefresh(role: .outletStaff, lastRefresh: now.addingTimeInterval(-5), now: now, force: true))
+        XCTAssertFalse(ShopCurrencyLogic.shouldRefresh(role: .admin, lastRefresh: nil, now: now, force: true))
+    }
+
     func testOnlyTheShopOwnerSeesTheRow() {
         XCTAssertTrue(ShopCurrencyLogic.canChange(role: .merchant))
         for role: Role? in [.admin, .outletAdmin, .outletStaff, .outletInventory, nil] {
             XCTAssertFalse(ShopCurrencyLogic.canChange(role: role))
-            let items = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false).flatMap(\.items)
-            XCTAssertFalse(items.contains(.currency))
         }
-        // #1270: "Tiền tệ" is its own row again, right after Thông tin cửa hàng (owner only)
+        // #1313: "Tiền tệ" is a row of Thông tin cửa hàng (owner only), no longer a row of the Settings list
         let merchant = SettingsV2Logic.sections(role: .merchant, permissions: [], hasPlan: false)
-        XCTAssertEqual(Array(merchant[0].items.prefix(2)), [.storeInfo, .currency])
+        XCTAssertEqual(Array(merchant[0].items.prefix(2)), [.storeInfo, .bankAccounts])
     }
 
     func testLabelsAndConfirmText() {

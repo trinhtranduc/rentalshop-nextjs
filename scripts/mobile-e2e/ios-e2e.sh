@@ -6,7 +6,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|staff|inventory] [--only <testMethod>] [--skip <testMethod>]... [--lang vi|en] [--no-stage]
+Usage: scripts/mobile-e2e/ios-e2e.sh [--fresh] [--account merchant|manager|staff|inventory] [--only <testMethod>] [--skip <testMethod>]... [--lang vi|en] [--no-stage]
        scripts/mobile-e2e/ios-e2e.sh --scenario <slug> --role owner|staff|kho [--only <testMethod>] [--lang vi|en]
        scripts/mobile-e2e/ios-e2e.sh --email <e> --password <p> --role merchant|staff|inventory [--label <dir>]
 
@@ -16,14 +16,14 @@ Builds the Development scheme and runs -only-testing:"POS ADBDUITests/AnyRentE2E
 
   --fresh            uninstall the app (com.anyrent.debug) first: onboarding, notification prompt and
                      the 5-minute app-config cache start clean
-  --account          merchant (default), staff or inventory (Nhân viên kho, #682); credentials from env.sh
+  --account          merchant (default), manager (Quản lý chi nhánh, OUTLET_ADMIN), staff or inventory (Nhân viên kho, #682); credentials from env.sh
   --only <method>    run one test method, e.g. testCartRent
   --skip <method>    leave one test method out of a full run (repeatable), e.g. --skip test0AuthFlows: its many logins hit the
                      API's login rate limit (about 10 per 15 minutes per IP) and the flows after it fail to log in
   --scenario <slug>  log in as <slug>.<role>@e2e-sub.test (an account made by prepare-accounts.sh: expired-trial,
                      expired-active, cancelled-ended, paused, past-due, at-limit, healthy); --role owner|staff|kho
                      (default owner). The UI test gets E2E_SCENARIO and runs the test10* subscription flows.
-  --email/--password log in as any account; --role says what the account is (merchant|staff|inventory), --label names
+  --email/--password log in as any account; --role says what the account is (merchant|manager|staff|inventory), --label names
                      the screenshot dir (default: the email's local part)
   --lang vi|en       app language for the run (xcodebuild -testLanguage); default: simulator setting
   --no-stage         skip the staging step. By default a merchant run (seeded merchant1, no --scenario/--email) first runs
@@ -50,7 +50,7 @@ while [ $# -gt 0 ]; do
     -h|--help) usage; exit 0 ;;
     --fresh) FRESH=1 ;;
     --no-stage) STAGE=0 ;;
-    --account) E2E_ACCOUNT="${2:?--account needs merchant|staff|inventory}"; shift ;;
+    --account) E2E_ACCOUNT="${2:?--account needs merchant|manager|staff|inventory}"; shift ;;
     --only) ONLY="${2:?--only needs a test method}"; shift ;;
     --skip) SKIPS+=("-skip-testing:POS ADBDUITests/AnyRentE2ETests/${2:?--skip needs a test method}"); shift ;;
     --scenario) SCENARIO="${2:?--scenario needs a slug}"; shift ;;
@@ -82,7 +82,7 @@ if [ -n "$SCENARIO" ]; then
 fi
 if [ -n "$ARG_EMAIL" ]; then
   [ -n "$ARG_PASSWORD" ] || { echo "--email needs --password" >&2; exit 64; }
-  case "${ROLE_ARG:-}" in merchant|staff|inventory) E2E_ACCOUNT="$ROLE_ARG" ;; esac
+  case "${ROLE_ARG:-}" in merchant|manager|staff|inventory) E2E_ACCOUNT="$ROLE_ARG" ;; esac
   E2E_EMAIL="$ARG_EMAIL"; E2E_PASSWORD="$ARG_PASSWORD"; export E2E_EMAIL E2E_PASSWORD
   LABEL="${LABEL:-${ARG_EMAIL%%@*}}"
 else
@@ -153,6 +153,11 @@ set +e
   TEST_RUNNER_E2E_SCENARIO_ROLE="${ROLE_ARG:-owner}" \
   TEST_RUNNER_E2E_FEATURES="$MOBILE_FEATURES" \
   TEST_RUNNER_E2E_OUT_DIR="$SHOT_DIR" \
+  TEST_RUNNER_E2E_API_URL="$(e2e_api_base_url)" \
+  TEST_RUNNER_E2E_OWNER_EMAIL="${E2E_OWNER_EMAIL:-$E2E_MERCHANT_EMAIL}" \
+  TEST_RUNNER_E2E_OWNER_PASSWORD="${E2E_OWNER_PASSWORD:-$E2E_MERCHANT_PASSWORD}" \
+  TEST_RUNNER_E2E_OUTLET_ID="${E2E_OUTLET_ID:-}" \
+  TEST_RUNNER_E2E_PR1310="${E2E_PR1310:-}" \
   xcodebuild -workspace "POS ADBD.xcworkspace" -scheme Development \
     -destination "platform=iOS Simulator,id=$UDID" \
     -derivedDataPath "$DERIVED" \

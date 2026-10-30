@@ -34,8 +34,9 @@ describe('db.outlets.create (#824)', () => {
     expect(mockPrisma.outlet.create).not.toHaveBeenCalled();
     expect(mockTx.outletStock.createMany).toHaveBeenCalledWith({
       data: [
-        { productId: 11, outletId: 9, stock: 0, available: 0, renting: 0 },
-        { productId: 12, outletId: 9, stock: 0, available: 0, renting: 0 },
+        // #1341: the new branch lists nothing until the owner ticks the products it sells
+        { productId: 11, outletId: 9, stock: 0, available: 0, renting: 0, isListed: false },
+        { productId: 12, outletId: 9, stock: 0, available: 0, renting: 0, isListed: false },
       ],
       skipDuplicates: true,
     });

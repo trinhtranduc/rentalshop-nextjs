@@ -72,6 +72,28 @@ giới hạn khoảng 10 lần / 15 phút / IP.
 - **Known bug** cases assert the correct rule and run as `test.failing` (green while the bug exists). Set
   `BIZ_E2E_SHOW_BUGS=1` to run them as plain tests.
 
+## SS — Cấu hình shop / chi nhánh đồng bộ giữa các vai trò (`settings-sync.e2e.test.js`, #1315, epic #1309)
+
+Tài khoản: chủ shop; quản lý, nhân viên, kho của chi nhánh A; quản lý và nhân viên của chi nhánh B (cùng merchant). `business-e2e.sh` chọn chúng từ DB (`BIZ_E2E_OUTLET_ADMIN_EMAIL`, `_OUTLET_ADMIN_OTHER_`, `_STAFF_OTHER_`). Mỗi ca đổi giá trị, đọc lại bằng vai trò khác, đổi lại rồi đọc lại (không dính cache); afterAll trả cấu hình về như seed. Trạng thái: tự động, 13 ca.
+
+| ID | Ca | Mong đợi |
+|---|---|---|
+| SS-CUR-01 | chủ shop đổi tiền tệ, đổi lại | mọi vai trò, cả hai chi nhánh, đọc `GET /api/settings/currency` thấy giá trị mới mỗi lần |
+| SS-CUR-02 | quản lý / nhân viên / kho PUT tiền tệ | 403 `INSUFFICIENT_PERMISSIONS`, giá trị không đổi |
+| SS-DEP-01 | chủ shop đổi chế độ cọc và chính sách huỷ, đổi lại | mọi vai trò đọc `GET /api/settings/deposit` thấy giá trị mới |
+| SS-DEP-02 | vai trò khác PUT thu cọc | 403 `INSUFFICIENT_PERMISSIONS`, không đổi |
+| SS-OVL-01 | chủ shop bật / tắt `allowOverlappingOrders`, đổi lại | mọi vai trò đọc `merchant.allowOverlappingOrders` ở `GET /api/users/profile` thấy giá trị mới |
+| SS-OVL-02 | vai trò khác PUT `/api/settings/merchant` | 403, không đổi |
+| SS-PRN-01 | chủ shop sửa ghi chú in + QR chi nhánh A | quản lý, nhân viên, kho thấy ở `GET /api/outlets` và `order.outlet` của `GET /api/orders/:id` |
+| SS-PRN-02 | chủ shop sửa chi nhánh B; quản lý A sửa B | A giữ nguyên, B đổi; quản lý A nhận 403 |
+| SS-PRN-03 | nhân viên / kho PUT `/api/outlets` | 403, không đổi |
+| SS-PRN-04 | [hiện tại] quản lý chi nhánh sửa ghi chú in | 200 (quy tắc chủ shop chốt: chỉ chủ shop sửa, API chưa đổi) |
+| SS-BNK-01 | chủ shop thêm tài khoản ngân hàng | trả 201; quản lý, nhân viên, kho đọc thấy; chi nhánh khác không đọc được |
+| SS-BNK-02 | nhân viên / kho thêm tài khoản | 403, không tạo |
+| SS-BNK-03 | [hiện tại] quản lý chi nhánh thêm tài khoản | 201 (quy tắc chủ shop chốt: chỉ chủ shop, cần issue riêng); quản lý chi nhánh khác bị từ chối (404) |
+
+Mobile (đã viết, chưa chạy): xem `tests/e2e/mobile/SETTINGS_SYNC.md`.
+
 ## BF-PROD — Sản phẩm (`products-pricing.e2e.test.js`)
 
 | ID | Case | Steps | Expected |
@@ -783,6 +805,27 @@ Loyalty bật = gói có `loyalty` HOẶC add-on `loyalty` còn hiệu lực. Ch
 | BF-LOYADD-02 | Gói không có loyalty + add-on | hồ sơ + `/api/loyalty/program` trước; mua; tạo chương trình; bán 250.000; bán tiếp 2 cái dùng 10 điểm | trước: `modules` [], 403 `PLAN_UPGRADE_REQUIRED`; thu round(79.000 ÷ 30 × ngày còn); sau: `modules` [loyalty], `featureSources` loyalty theo add-on; 25 điểm; bán tiếp 2 cái (500.000) dùng 10 điểm: giảm 10.000, còn 25 − 10 + 49 = 64 |
 | BF-LOYADD-03 | Tắt từ kỳ sau, hết kỳ | 10 điểm; `PATCH removeAtPeriodEnd`; cho hết kỳ; bán tiếp | đến cuối kỳ vẫn bật, gia hạn chỉ còn giá gói; hết kỳ: `modules` [], 403, không cộng điểm; chương trình và 10 điểm giữ nguyên |
 | BF-LOYADD-04 | Gói có loyalty | không mua add-on; bán 120.000; báo giá / mua add-on | `modules` [loyalty], 12 điểm; 422 `ADDON_FEATURE_IN_PLAN`; `featureSources` loyalty theo gói |
+
+## BF-LIST — Hiện ở chi nhánh (`product-listing.e2e.test.js`, #1341, PR 1 của #1335; chủ shop chốt 2026-10-30)
+
+`OutletStock.isListed`: chi nhánh có bán món hay không. Mỗi describe tự tạo merchant, gói và chi nhánh. Khung header: "app cũ" = không gửi `X-Client-Capabilities`; "app mới" = gửi `branch-listing`.
+
+| ID | Tình huống | Bước | Kỳ vọng |
+|---|---|---|---|
+| BF-LIST-01 | Tạo ở A | chủ shop tạo sản phẩm tồn 5 ở A | dòng A bật (5), dòng B (server thêm) tắt (0) |
+| BF-LIST-02 | Danh sách theo chi nhánh | `listed=true` với kho/nhân viên A, quản lý B, chủ shop `outletId=A/B`; không `listed`; `listed=false` | A thấy; quản lý B không; chủ shop thấy ở A không ở B; không `listed` hoặc `false` vẫn đủ món |
+| BF-LIST-03 | Bật mà tồn 0 | tạo tồn 0 ở A | vẫn có trong `listed=true`; `outletStock[].isListed` đúng ở list và chi tiết |
+| BF-LIST-04 | Chủ shop bật B | `PUT /api/products/listing` | 200, `changed` 1; quản lý B thấy; gửi lại: `changed` 0 |
+| BF-LIST-05 | Vai trò | quản lý B, kho A, nhân viên A gọi tick / bỏ tick | 403 `INSUFFICIENT_PERMISSIONS` kể cả chi nhánh mình; dòng không đổi |
+| BF-LIST-06 | Chi nhánh ngoài shop | chi nhánh của shop khác; chi nhánh đã đóng | 404 `OUTLET_NOT_FOUND` |
+| BF-LIST-07 | Vai trò chi nhánh tạo món | quản lý B tạo, gửi `isListed: false` | dòng B vẫn bật; dòng A tắt |
+| BF-LIST-08 | Chủ shop chọn nhiều chi nhánh | tạo với `isListed` từng dòng | đúng như gửi |
+| BF-LIST-09 | Chi nhánh mới (#824) | tạo chi nhánh C | dòng C của sản phẩm có sẵn tắt; dòng cũ giữ |
+| BF-LIST-10 | Bỏ tick không bị chặn | món còn tồn 4 + 1 đơn mở; bỏ tick A; lấy hàng, trả hàng | 200; tồn không đổi; không còn trong danh sách A; đơn vẫn xem / lấy / trả được |
+| BF-LIST-11 | App cũ tự bật lại | bỏ tick; đơn từ app mới (có token); đơn từ app cũ | app mới: vẫn tắt; app cũ: bật |
+| BF-LIST-12 | PUT từ app cũ | tăng tồn dòng tắt; gửi lại cùng tồn; app mới tăng tồn | tăng: bật; gửi lại: giữ tắt; app mới: giữ tắt |
+| BF-LIST-13 | Shop 1 chi nhánh | `listed=true` | bỏ qua, vẫn đủ món |
+| BF-LIST-14 | Backfill migration | chạy `migration.sql` trong giao dịch rồi ROLLBACK, hai lần | dòng tồn 0 + chưa có đơn tắt; có tồn / đang thuê / từng có đơn bật; sản phẩm không còn dòng bật: dòng id nhỏ nhất bật; sản phẩm xoá mềm không đổi; lần hai giống lần một |
 
 ## WEB (Playwright) — vai trò, gói, tồn, lịch, việc cần làm (`tests/e2e/web/{roles,plan,stock}.web.js`, #727)
 

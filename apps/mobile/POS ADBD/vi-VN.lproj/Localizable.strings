@@ -2299,7 +2299,7 @@
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "Chưa có tài khoản ngân hàng. Bấm + để thêm.";
 "printer.bankQr.title" = "In QR chuyển khoản trên bill";
-"printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.";
+"printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Áp dụng cho chi nhánh này trên mọi máy.";
 "bill.bankQr.title" = "CHUYỂN KHOẢN";
 "bill.bankQr.accountNumber" = "STK: %@";
 
@@ -2386,7 +2386,7 @@
 "share.items.rent" = "Đồ thuê · %d món";
 "share.items.sale" = "Hàng mua · %d món";
 "share.rent.total" = "Tổng tiền thuê";
-"share.deposit.paid" = "Đã đặt cọc";
+"share.deposit.paid" = "Đã cọc";
 "share.collateral" = "Thế chân khi nhận đồ";
 "share.amountDue" = "Còn phải trả";
 "share.subtotal" = "Tạm tính";
@@ -3032,3 +3032,55 @@
 "order.sheet.edit.subtitle" = "Đổi món, ngày thuê, khách";
 "order.sheet.extend.subtitle" = "Thêm ngày thuê, tính thêm tiền";
 "order.sheet.history.subtitle" = "Ai sửa gì, lúc nào";
+"printer.outlet.branch" = "Chi nhánh";
+"printer.outlet.readonly" = "Chỉ chủ shop sửa được ghi chú và QR. Áp dụng cho cả chi nhánh.";
+"printer.outlet.loadFailed" = "Không tải được cài đặt hóa đơn của chi nhánh.";
+
+/* #1313 Thông tin cửa hàng và chi nhánh */
+"Branch Information" = "Thông tin chi nhánh";
+"shopinfo.title.shop" = "Sửa cửa hàng";
+"shopinfo.title.branch" = "Sửa chi nhánh";
+"shopinfo.shopName" = "Tên cửa hàng";
+"shopinfo.branchName" = "Tên chi nhánh";
+"shopinfo.taxId" = "Mã số thuế";
+"shopinfo.taxIdShort" = "MST";
+"shopinfo.ward" = "Phường / Quận";
+"shopinfo.province" = "Tỉnh / Thành phố";
+"shopinfo.belongsTo" = "Thuộc cửa hàng %@";
+"shopinfo.yourBranch" = "Chi nhánh của bạn · thuộc cửa hàng %@";
+"shopinfo.viewOnly" = "Bạn chỉ xem được mục này.";
+"shopinfo.viewOnlyValue" = "Chỉ xem";
+"shopinfo.branches" = "Chi nhánh · %d";
+"shopinfo.tapToEdit" = "bấm để sửa";
+"shopinfo.main" = "Chính";
+"shopinfo.branchCount" = "%d chi nhánh";
+"shopinfo.webHint" = "Thêm hoặc tắt chi nhánh: làm trên web.";
+"shopinfo.addressRequired" = "Vui lòng nhập địa chỉ.";
+
+// #1346 "Hiện ở chi nhánh"
+"products.listing.title" = "Hiện ở chi nhánh";
+"products.listing.ownerOnly" = "Chỉ chủ shop bật/tắt";
+"products.listing.current" = "Đang chọn";
+"products.listing.branchMain" = "%@ (chính)";
+"products.listing.stock" = "Tồn %d";
+"products.listing.stockRent" = "Tồn %d · đang thuê %d";
+"products.listing.reminder" = "Còn %d cái ở chi nhánh này (%d đang thuê), vẫn tính vào tổng nhưng không hiện khi tạo đơn.";
+"products.listing.reminderNoRent" = "Còn %d cái ở chi nhánh này, vẫn tính vào tổng nhưng không hiện khi tạo đơn.";
+"products.listing.saveFailed" = "Đã lưu sản phẩm nhưng chưa lưu được ô Hiện ở chi nhánh. Thử lại.";
+"products.listing.notShown" = "Chưa hiện ở chi nhánh này";
+"products.scan.notListed" = "Chi nhánh này chưa hiện món này";
+"share.collect" = "Thu khi giao";
+"share.deposit.label" = "Cọc";
+"share.deposit.none" = "Chưa cọc";
+"share.stage.paid" = "Đã thu";
+"share.stage.unpaid" = "Chưa thu";
+"share.stage.partial" = "Thu một phần";
+
+/* #1354 Ghi chú đơn trên ảnh chia sẻ */
+"share.orderNote.title" = "Ghi chú";
+"printer.shareNote.title" = "Hiện ghi chú đơn trên ảnh chia sẻ";
+"printer.shareNote.hint" = "Ghi chú của đơn hiện ở cuối ảnh gửi khách, cả ghi chú nội bộ. Áp dụng cho cả shop.";
+"printer.shareNote.readonly" = "Chỉ chủ shop bật/tắt.";
+"printer.shareNote.failed" = "Không lưu được cài đặt. Vui lòng thử lại.";
+// #1353: dưới dòng giỏ thiếu hàng, các chi nhánh khác còn món trong ngày của đơn
+"products.cart.othersHave" = "Chi nhánh khác còn: %@";

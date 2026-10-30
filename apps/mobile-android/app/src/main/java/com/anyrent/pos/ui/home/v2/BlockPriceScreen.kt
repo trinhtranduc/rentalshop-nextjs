@@ -126,7 +126,7 @@ private fun CopyTableDialog(currentProductId: Int?, onDismiss: () -> Unit, onPic
     var products by remember { mutableStateOf<List<Product>?>(null) }
     LaunchedEffect(Unit) {
         products = withContext(Dispatchers.IO) {
-            ProductsV2Api.listProducts(1, 100, null).getOrNull()?.items.orEmpty()
+            ProductsV2Api.listProducts(1, 100, null, applyBranchListing = false).getOrNull()?.items.orEmpty()
                 .filter { it.id != currentProductId && PriceForm.copyTable(it) != null }
         }
     }

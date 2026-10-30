@@ -441,6 +441,7 @@ export function CartLineRow({
   total,
   days,
   status,
+  others,
   onQuantity,
   onMode,
   onPrice,
@@ -454,6 +455,8 @@ export function CartLineRow({
   total: number;
   days: number;
   status: LineStatus;
+  /** #1347 "Quận 7 (3), Thủ Đức (1)": other branches that still have the product on these days (empty: none / not asked) */
+  others?: string;
   onQuantity: (q: number) => void;
   onMode: (mode: string) => void;
   /** #951: 0 = a free line; null = the box was emptied (back to the product's price). */
@@ -642,6 +645,11 @@ export function CartLineRow({
           {status.text}
         </span>
       )}
+      {status && status.kind !== 'ok' && others ? (
+        <span role="status" className="text-sm text-ar-done">
+          {t('editor.cart.othersHave', { list: others })}
+        </span>
+      ) : null}
     </div>
   );
 }

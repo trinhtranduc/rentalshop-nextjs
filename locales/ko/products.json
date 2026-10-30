@@ -157,7 +157,26 @@
         "copyLoading": "불러오는 중…",
         "close": "닫기",
         "incomplete": "모든 날과 하루 추가 금액을 입력하거나 마지막 구간 요금을 유지하세요."
+      },
+      "sections": {
+        "stockListing": "재고 및 매장별 표시"
+      },
+      "listing": {
+        "branch": "매장",
+        "stock": "재고",
+        "column": "이 매장에서 표시",
+        "tickOf": "{outlet}에서 표시",
+        "ownerOnly": "사장님만 켜고 끌 수 있어요",
+        "current": "선택됨",
+        "reminder": "이 매장에 {stock}개 남아 있습니다(대여 중 {renting}개). 총계에는 포함되지만 주문을 만들 때는 표시되지 않습니다.",
+        "reminderNoRent": "이 매장에 {stock}개 남아 있습니다. 총계에는 포함되지만 주문을 만들 때는 표시되지 않습니다.",
+        "saveFailed": "상품은 저장했지만 '이 매장에서 표시'는 저장하지 못했습니다. 다시 시도해 주세요."
       }
+    },
+    "listing": {
+      "hidden": "표시 안 함",
+      "shown": "표시",
+      "totalStock": "총 재고"
     }
   }
 }

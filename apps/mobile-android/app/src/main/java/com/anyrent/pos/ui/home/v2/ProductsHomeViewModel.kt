@@ -34,6 +34,24 @@ object DeletedProducts {
     }
 }
 
+/**
+ * Products saved from the detail screen (#1346, iOS `detail.onSaved`): the list swaps the row in place, so a price, stock
+ * or "Hiện ở chi nhánh" change shows without a reload. The last save per product wins.
+ */
+object SavedProducts {
+    private val _items = MutableStateFlow<Map<Int, Product>>(emptyMap())
+    val items: StateFlow<Map<Int, Product>> = _items.asStateFlow()
+
+    fun add(product: Product) {
+        _items.value = _items.value + (product.id to product)
+    }
+
+    /** The list took them: nothing stale is replayed the next time the list shows */
+    fun clear() {
+        _items.value = emptyMap()
+    }
+}
+
 /** Loads one page (replaceable in tests) */
 fun interface ProductsPageSource {
     suspend fun load(page: Int, query: String?): ApiClient.PageResult<Product>
@@ -112,6 +130,14 @@ class ProductsHomeViewModel(
             products = if (list.any { it.id == product.id }) list.map { if (it.id == product.id) product else it }
             else listOf(product) + list,
         )
+    }
+
+    /** A product saved elsewhere replaces its row when the list has it; the list never grows from it */
+    fun replaceIfPresent(product: Product) {
+        val list = _state.value.products
+        if (list.any { it.id == product.id }) {
+            _state.value = _state.value.copy(products = list.map { if (it.id == product.id) product else it })
+        }
     }
 
     /** Drop a deleted product without a reload */

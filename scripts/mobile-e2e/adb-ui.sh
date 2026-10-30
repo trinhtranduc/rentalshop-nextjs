@@ -36,9 +36,16 @@ adb_s() { "$ADB_BIN" -s "$SERIAL" "$@"; }
 
 dump_xml() {
   mkdir -p "$OUT_DIR"
-  # uiautomator waits for the UI to go idle and can hang on an endless animation: give up after 20 s.
-  perl -e 'alarm shift; exec @ARGV' 20 "$ADB_BIN" -s "$SERIAL" shell uiautomator dump /sdcard/e2e-ui.xml >/dev/null 2>&1 || true
-  adb_s exec-out cat /sdcard/e2e-ui.xml >"$XML"
+  # uiautomator waits for the UI to go idle and can hang on an endless animation (a focused text field's cursor): give up after 20 s.
+  # #1309: remove the old file first, so a timed-out dump is an empty answer and never the previous screen.
+  "$ADB_BIN" -s "$SERIAL" shell rm -f /sdcard/e2e-ui.xml >/dev/null 2>&1 || true
+  # #1309: SIGALRM did not always stop the adb client (a dump hung for minutes under load): kill -9 it from a watchdog.
+  "$ADB_BIN" -s "$SERIAL" shell uiautomator dump /sdcard/e2e-ui.xml >/dev/null 2>&1 &
+  local dump_pid=$! waited=0
+  while kill -0 "$dump_pid" 2>/dev/null && [ "$waited" -lt 20 ]; do sleep 1; waited=$((waited + 1)); done
+  if kill -0 "$dump_pid" 2>/dev/null; then kill -9 "$dump_pid" 2>/dev/null || true; fi
+  wait "$dump_pid" 2>/dev/null || true
+  adb_s exec-out cat /sdcard/e2e-ui.xml >"$XML" 2>/dev/null || : >"$XML"
 }
 
 # find <selector> <n> -> "x y" centre of the n-th matching node

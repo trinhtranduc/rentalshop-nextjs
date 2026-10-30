@@ -144,6 +144,7 @@
     "results": "kết quả",
     "page": "Trang",
     "rowsPerPage": "Số dòng mỗi trang",
+    "pageSizeRange": "Từ 1 đến {max} dòng mỗi trang",
     "itemsPerPage": "Số mục mỗi trang",
     "first": "Đầu",
     "last": "Cuối",

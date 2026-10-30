@@ -9,7 +9,7 @@ import { compressImageTo1MB } from '../../../lib/image-compression';
 import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
-import { zeroStockRowsForOtherOutlets } from '../../../lib/product-branch-rules';
+import { listedOutletForList, listedRowsForCreate, parseListedParam, shopHasSingleActiveOutlet } from '../../../lib/product-listing';
 import { otherActiveOutletsFor, otherOutletStock } from '../../../lib/other-outlet-stock';
 import { z } from 'zod';
 import { productForClient } from '../../../lib/block-pricing-legacy';
@@ -84,6 +84,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       categoryId, 
       outletId: queryOutletId,
       available,
+      listed,
       minPrice,
       maxPrice,
       sortBy,
@@ -132,6 +133,19 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
     const effectiveSortBy = isMobilePlatform ? 'name' : (sortBy as any);
     const effectiveSortOrder = isMobilePlatform ? 'asc' : (sortOrder as any);
 
+    // #1341 "Hiện ở chi nhánh": `listed=true` keeps only the products listed at one branch (a branch role: its own; the
+    // owner: the outletId of the query). A shop with a single active branch ignores it. No `listed` = no change at all.
+    let listedOutletId = listedOutletForList({
+      listed: parseListedParam(listed),
+      role: user.role,
+      userOutletId: userScope.outletId,
+      queryOutletId,
+    });
+    if (listedOutletId && filterMerchantId) {
+      const activeOutlets = await prisma.outlet.count({ where: { merchantId: filterMerchantId, isActive: true } });
+      if (shopHasSingleActiveOutlet(activeOutlets)) listedOutletId = undefined;
+    }
+
     const searchFilters = {
       merchantId: filterMerchantId,
       outletId: filterOutletId,
@@ -144,7 +158,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       sortBy: effectiveSortBy,
       sortOrder: effectiveSortOrder,
       page: page || 1,
-      limit: limit || 50
+      limit: limit || 50,
+      ...(listedOutletId ? { listedOutletId } : {}),
     };
 
     console.log('🔍 Using simplified db.products.search with filters:', searchFilters);
@@ -233,6 +248,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
         return {
           ...stock,
           available: outletEffective,
+          isListed: stock.isListed !== false, // #1341 (a row from before the column reads as listed)
         };
       });
 
@@ -472,7 +488,7 @@ async function commitProductImages(
 async function validateOutletStock(
   outletStock: any[],
   merchantId: number
-): Promise<Array<{ outletId: number; stock: number }>> {
+): Promise<Array<{ outletId: number; stock: number; isListed?: boolean }>> {
   if (!outletStock || !Array.isArray(outletStock) || outletStock.length === 0) {
     throw new Error('OUTLET_STOCK_REQUIRED');
   }
@@ -482,7 +498,7 @@ async function validateOutletStock(
     throw new Error('MERCHANT_NOT_FOUND');
   }
 
-  const validOutletStock = [];
+  const validOutletStock: Array<{ outletId: number; stock: number; isListed?: boolean }> = [];
 
   for (const stock of outletStock) {
     if (!stock.outletId || typeof stock.stock !== 'number') {
@@ -502,6 +518,8 @@ async function validateOutletStock(
     validOutletStock.push({
       outletId: outlet.id,
       stock: stock.stock || 0,
+      // #1341 "Hiện ở chi nhánh" (only an explicit boolean; absent = listed)
+      ...(typeof stock.isListed === 'boolean' ? { isListed: stock.isListed } : {}),
     });
   }
 
@@ -642,13 +660,13 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     const outletStock = await validateOutletStock(outletStockData, merchantId);
     const totalStock = outletStock.reduce((sum, os) => sum + (Number(os.stock) || 0), 0);
 
-    // #825: the new product also gets a 0-stock row at every other active outlet of the shop,
-    // so every branch lists it (stock is entered per branch)
+    // #825: the new product also gets a 0-stock row at every other active outlet of the shop (stock is entered per
+    // branch). #1341: those rows are NOT listed; the rows the caller sent are (the owner can say isListed: false).
     const activeOutlets = await prisma.outlet.findMany({
       where: { merchantId, isActive: true },
       select: { id: true },
     });
-    const zeroStockRows = zeroStockRowsForOtherOutlets(outletStock, activeOutlets.map((o: { id: number }) => o.id));
+    const stockRows = listedRowsForCreate(outletStock, activeOutlets.map((o: { id: number }) => o.id), user.role);
 
     // Commit images to production
     // Use productData.images (after combine) instead of parsed.data.images
@@ -702,11 +720,12 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       ...(parsed.data.pricingSchemaVersion === 2 && { pricingSchemaVersion: 2 }),
       ...(parsed.data.categoryId && { category: { connect: { id: parsed.data.categoryId } } }),
       outletStock: {
-        create: [...outletStock, ...zeroStockRows].map(os => ({
+        create: stockRows.map(os => ({
           outlet: { connect: { id: os.outletId } },
           stock: os.stock,
           available: os.stock,
-          renting: 0
+          renting: 0,
+          isListed: os.isListed
         }))
       }
     });

@@ -9,9 +9,9 @@
 import Foundation
 
 enum SettingsV2Item: Equatable {
-    /// #1270 CỬA HÀNG (plan B): Thông tin cửa hàng, Tiền tệ (owner only), Tài khoản ngân hàng (owner, outlet admin),
-    /// Cọc (screen with two sections), In & phiếu (screen with two sections)
-    case storeInfo, currency, bankAccounts, deposit, printing
+    /// #1270 CỬA HÀNG (plan B): Thông tin cửa hàng (owner; other roles "Thông tin chi nhánh"; the owner's Tiền tệ row is inside, #1313),
+    /// Tài khoản ngân hàng (owner, outlet admin), Cọc (screen with two sections), In & phiếu (screen with two sections)
+    case storeInfo, bankAccounts, deposit, printing
     case categories, customers, users, export
     /// #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản)
     case plan, language, advanced
@@ -39,12 +39,12 @@ enum SettingsV2Logic {
     /// - plan: shown once `subscriptions/status` answered
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
     /// - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
-    /// - the bank accounts line (#622) and the owner's currency (#1145) sit inside Thu tiền / Thông tin cửa hàng
+    /// - the bank accounts line (#622) sits inside Thu tiền; the owner's currency (#1145) inside Thông tin cửa hàng (#1313)
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
         var storeItems: [SettingsV2Item] = [.storeInfo]
-        if ShopCurrencyLogic.canChange(role: role) { storeItems.append(.currency) }
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
-        storeItems += [.deposit, .printing]
+        if ShopDepositLogic.canView(role: role) { storeItems.append(.deposit) }
+        storeItems.append(.printing)
         let store = SettingsV2Section(group: .store, items: storeItems)
 
         var management: [SettingsV2Item] = []
@@ -177,6 +177,7 @@ struct SettingsListTotal: Codable {
         switch item {
         case .customers: return "/api/customers"
         case .users: return "/api/users"
+        case .storeInfo: return "/api/outlets" // #1313: "3 chi nhánh" on the owner's row
         default: return nil
         }
     }
@@ -190,7 +191,7 @@ extension Notification.Name {
 }
 
 /// The shop currency cached on the signed-in user (login `merchant.currency`), refreshed from
-/// GET /api/settings/currency on Cài đặt and changed there by the shop owner
+/// GET /api/settings/currency (Cài đặt, app back in front, Tổng quan; every role) and changed there by the shop owner
 enum ShopCurrencyStore {
     private static var cached: ShopCurrency?
     private static var lastRefresh: Date?
@@ -224,11 +225,9 @@ enum ShopCurrencyStore {
     /// Reads the shop's currency, at most once a minute unless forced (an owner may change it on another device).
     /// Completion runs on the main queue with the value in effect.
     static func refresh(force: Bool = false, completion: ((ShopCurrency) -> Void)? = nil) {
-        guard User.account()?.merchant != nil else {
-            completion?(current)
-            return
-        }
-        if !force, let lastRefresh, Date().timeIntervalSince(lastRefresh) < 60 {
+        // #1307: every shop role reads it (the row is owner-only, the read is not); ADMIN has no shop
+        guard let user = User.account(), user.merchant != nil,
+              ShopCurrencyLogic.shouldRefresh(role: user.role, lastRefresh: lastRefresh, now: Date(), force: force) else {
             completion?(current)
             return
         }
@@ -242,9 +241,25 @@ enum ShopCurrencyStore {
     }
 }
 
+enum ShopDepositLogic {
+    /// #1310 the "Thu cọc" row: the shop owner only (`PUT /api/settings/deposit` is MERCHANT only). Orders still read the mode for every role.
+    static func canView(role: Role?) -> Bool { role == .merchant }
+}
+
 enum ShopCurrencyLogic {
     /// The "Tiền tệ" row: the shop owner only (the API refuses others with 403)
     static func canChange(role: Role?) -> Bool { role == .merchant }
+
+    /// #1307 reading the shop currency: every shop role, so staff follow the owner's change (not ADMIN, who has no shop)
+    static func canRefresh(role: Role?) -> Bool { role != nil && role != .admin }
+
+    /// #1307 read at most once a minute unless forced
+    static func shouldRefresh(role: Role?, lastRefresh: Date?, now: Date, force: Bool) -> Bool {
+        guard canRefresh(role: role) else { return false }
+        if force { return true }
+        guard let lastRefresh else { return true }
+        return now.timeIntervalSince(lastRefresh) >= 60
+    }
 
     /// The example in the confirm: 220000 in the old currency → in the new one ("220.000 → $220,000")
     static func example(from: ShopCurrency, to: ShopCurrency) -> String {

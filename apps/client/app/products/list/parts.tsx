@@ -8,7 +8,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { Skeleton, type Money, type T } from '../../orders/list/parts';
-import type { ProductRow, Selection } from './list-model';
+import type { BranchCell, BranchColumn, ProductRow, Selection } from './list-model';
 
 /** Board icon for a product without a photo. */
 export const PRODUCT_ICON = 'M8 3l4 3 4-3 4 4-3 3v11H7V10L4 7z';
@@ -58,6 +58,18 @@ export function StockCell({ row, t }: { row: ProductRow; t: T }) {
       {s.renting > 0 && <span className="whitespace-nowrap text-sm text-ar-muted">{t('stock.renting', { count: s.renting })}</span>}
       {/* #830: OUTLET_ADMIN / kho only (the API sends otherOutlets to those two roles), read only */}
       {row.otherAvailable != null && <span className="whitespace-nowrap text-sm text-ar-muted">{t('stock.otherOutlets', { count: row.otherAvailable })}</span>}
+    </span>
+  );
+}
+
+/** #1341 one branch of "Tất cả chi nhánh": "Hiện · 8", "Hiện · Hết hàng" or "Chưa hiện" (stock of an unlisted branch is not shown here). */
+export function BranchStockCell({ cell, t }: { cell: BranchCell; t: T }) {
+  if (!cell.listed) return <span className="whitespace-nowrap text-ar-faint">{t('listing.hidden')}</span>;
+  return (
+    <span className="whitespace-nowrap tabular-nums">
+      <span className="text-ar-ink-2">{t('listing.shown')}</span>
+      {' · '}
+      <span className={cell.out ? 'font-semibold text-ar-danger' : 'font-semibold text-ar-done'}>{cell.out ? t('stock.out') : cell.available}</span>
     </span>
   );
 }
@@ -154,6 +166,7 @@ export function ProductsTable({
   canEdit,
   canDelete,
   onDelete,
+  branchColumns,
   t,
   money,
   skeletonRows = 6,
@@ -171,6 +184,8 @@ export function ProductsTable({
   canEdit: boolean;
   canDelete: boolean;
   onDelete: (row: ProductRow) => void;
+  /** #1341 "Tất cả chi nhánh" columns (owner, two or more branches); null = the usual single stock column */
+  branchColumns?: BranchColumn[] | null;
   t: T;
   money: Money;
   skeletonRows?: number;
@@ -217,7 +232,7 @@ export function ProductsTable({
     <div className={loading ? 'opacity-60 transition-opacity' : undefined} aria-busy={loading || undefined}>
       {/* Wide screens: the board's table */}
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[860px] border-collapse text-[15px]">
+        <table className={`w-full border-collapse text-[15px] ${branchColumns ? 'min-w-[1060px]' : 'min-w-[860px]'}`}>
           <thead>
             <tr className="bg-ar-surface-muted text-left">
               {selectable && (
@@ -230,7 +245,16 @@ export function ProductsTable({
               <th scope="col" className={`${th} text-right`}>{t('cols.once')}</th>
               <th scope="col" className={`${th} text-right`}>{t('cols.day')}</th>
               <th scope="col" className={`${th} text-right`}>{t('cols.sale')}</th>
-              <th scope="col" className={th}>{t('cols.today')}</th>
+              {branchColumns ? (
+                <>
+                  {branchColumns.map((c) => (
+                    <th key={c.id} scope="col" className={th}>{c.name}</th>
+                  ))}
+                  <th scope="col" className={`${th} text-right`}>{t('listing.totalStock')}</th>
+                </>
+              ) : (
+                <th scope="col" className={th}>{t('cols.today')}</th>
+              )}
               <th scope="col" className="py-2.5 pl-2 pr-4">
                 <span className="sr-only">{t('cols.actions')}</span>
               </th>
@@ -270,9 +294,20 @@ export function ProductsTable({
                 <td className="px-2 py-2.5 text-right">
                   <PriceCell value={r.prices.sale} money={money} muted />
                 </td>
-                <td className="px-2 py-2.5">
-                  <StockCell row={r} t={t} />
-                </td>
+                {branchColumns && r.branches ? (
+                  <>
+                    {r.branches.map((cell) => (
+                      <td key={cell.outletId} className="px-2 py-2.5">
+                        <BranchStockCell cell={cell} t={t} />
+                      </td>
+                    ))}
+                    <td className="px-2 py-2.5 text-right font-semibold tabular-nums text-ar-ink">{r.branches.reduce((sum, cell) => sum + cell.total, 0)}</td>
+                  </>
+                ) : (
+                  <td className="px-2 py-2.5">
+                    <StockCell row={r} t={t} />
+                  </td>
+                )}
                 <td className="py-2.5 pl-2 pr-4 text-right">{actions(r)}</td>
               </tr>
             ))}
@@ -311,9 +346,20 @@ export function ProductsTable({
                       {t('cols.sale')}: {money(r.prices.sale)}
                     </span>
                   )}
-                  <span className="mt-0.5">
-                    <StockCell row={r} t={t} />
-                  </span>
+                  {branchColumns && r.branches ? (
+                    <span className="mt-0.5 flex flex-col gap-0.5 text-sm">
+                      {r.branches.map((cell, i) => (
+                        <span key={cell.outletId} className="flex gap-2">
+                          <span className="text-ar-muted">{branchColumns[i]?.name}</span>
+                          <BranchStockCell cell={cell} t={t} />
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="mt-0.5">
+                      <StockCell row={r} t={t} />
+                    </span>
+                  )}
                 </span>
               </Link>
               <span className="flex-none">{actions(r)}</span>

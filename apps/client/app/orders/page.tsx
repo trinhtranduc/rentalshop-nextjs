@@ -26,23 +26,27 @@ import { useBranchOptions } from '../dashboard/useBranchOptions';
 import {
   CREATED_PRESETS,
   ORDER_STATUSES,
+  PICKUP_PRESETS,
   ORDERS_TABS,
   SORT_KEYS,
   SORTS,
   addDaysKey,
   buildOpsRows,
   buildOrderRow,
-  createdRange,
+  dateFilterApiParams,
+  dateFilterPatch,
+  dateFilterRange,
   opsCounts,
   parsePage,
+  parseDateFilter,
   parsePageSize,
-  parsePreset,
   parseSort,
   parseStatus,
   parseTab,
   parseType,
   rowBranchName,
   type CreatedPreset,
+  type PickupPreset,
   type OrderRow,
   type OrderRowLike,
   type OrderTypeFilter,
@@ -118,6 +122,10 @@ function useStatusCounts(base: OrderFilters | null, nonce: number): Record<strin
 }
 
 
+/** "dd/mm – dd/mm" shown on a custom-range filter button */
+const rangeLabel = (r: { startDate: string; endDate: string }) =>
+  `${r.startDate.slice(8)}/${r.startDate.slice(5, 7)} – ${r.endDate.slice(8)}/${r.endDate.slice(5, 7)}`;
+
 export default function OrdersPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -136,14 +144,15 @@ export default function OrdersPage() {
   const tab = parseTab(searchParams.get('tab'));
   const status = parseStatus(searchParams.get('status'));
   const type = parseType(searchParams.get('type'));
-  const preset = parsePreset(searchParams.get('created'));
+  // #1369: "Ngày tạo" and "Ngày giao" exclude each other (one `dateField` per request)
+  const { kind: dateKind, preset } = parseDateFilter(searchParams.get('created'), searchParams.get('pickup'));
   const from = searchParams.get('from');
   const to = searchParams.get('to');
   const sort = parseSort(searchParams.get('sort'));
   const page = parsePage(searchParams.get('page'));
   const limit = parsePageSize(searchParams.get('limit'));
   const q = (searchParams.get('q') || '').trim();
-  const range = useMemo(() => createdRange(preset, todayKey, { from, to }), [preset, todayKey, from, to]);
+  const range = useMemo(() => dateFilterRange(dateKind, preset, todayKey, { from, to }), [dateKind, preset, todayKey, from, to]);
 
   // #852: branch picker (MERCHANT with 2+ branches). "Tất cả" = active branches, sent as explicit ids.
   const isMerchant = user?.role === 'MERCHANT';
@@ -197,11 +206,10 @@ export default function OrdersPage() {
     () => ({
       search: q || undefined,
       orderType: (type || undefined) as OrderFilters['orderType'],
-      startDate: range?.startDate,
-      endDate: range?.endDate,
+      ...dateFilterApiParams(dateKind, range),
       outletIds,
     }),
-    [q, type, range, outletIds],
+    [q, type, dateKind, range, outletIds],
   );
   const pageFilters: OrderFilters = useMemo(
     () => ({ ...base, status: (status || undefined) as OrderFilters['status'], page, limit, ...SORTS[sort] }),
@@ -268,7 +276,7 @@ export default function OrdersPage() {
           ? { format: 'excel', orderIds: chosen }
           : {
               format: 'excel',
-              dateField: 'createdAt',
+              dateField: dateKind === 'pickup' ? ('pickupPlanAt' as const) : ('createdAt' as const),
               ...(range ? { period: 'custom' as const, startDate: range.startDate, endDate: range.endDate } : { period: '1year' as const }),
               status: status || undefined,
               orderType: type || undefined,
@@ -417,14 +425,21 @@ export default function OrdersPage() {
                 />
                 <FilterMenu<CreatedPreset>
                   label={t('created.label')}
-                  value={preset}
+                  value={dateKind === 'created' ? (preset as CreatedPreset) : 'any'}
                   options={CREATED_PRESETS.map((v) => ({
                     value: v,
-                    label: v === 'custom' && preset === 'custom' && range ? `${range.startDate.slice(8)}/${range.startDate.slice(5, 7)} – ${range.endDate.slice(8)}/${range.endDate.slice(5, 7)}` : t(`created.${v}`),
+                    label: v === 'custom' && dateKind === 'created' && preset === 'custom' && range ? rangeLabel(range) : t(`created.${v}`),
                   }))}
-                  onChange={(v) =>
-                    update(v === 'custom' ? { created: 'custom', from: draft.from, to: draft.to } : { created: v === 'any' ? null : v, from: null, to: null })
-                  }
+                  onChange={(v) => update(dateFilterPatch('created', v, draft))}
+                />
+                <FilterMenu<PickupPreset>
+                  label={t('pickup.label')}
+                  value={dateKind === 'pickup' ? (preset as PickupPreset) : 'any'}
+                  options={PICKUP_PRESETS.map((v) => ({
+                    value: v,
+                    label: v === 'custom' && dateKind === 'pickup' && preset === 'custom' && range ? rangeLabel(range) : t(`pickup.${v}`),
+                  }))}
+                  onChange={(v) => update(dateFilterPatch('pickup', v, draft))}
                 />
                 <FilterMenu<SortKey>
                   label={t('sort.label')}
@@ -440,11 +455,11 @@ export default function OrdersPage() {
                   from={draft.from}
                   to={draft.to}
                   todayKey={todayKey}
-                  max={todayKey}
+                  max={dateKind === 'created' ? todayKey : undefined}
                   align="end"
-                  ariaLabel={t('created.label')}
+                  ariaLabel={t(dateKind === 'pickup' ? 'pickup.label' : 'created.label')}
                   className="h-9 text-sm sm:w-auto"
-                  onChange={(f, tt) => update({ created: 'custom', from: f, to: tt })}
+                  onChange={(f, tt) => update(dateFilterPatch(dateKind, 'custom', { from: f, to: tt }))}
                 />
               </div>
             )}

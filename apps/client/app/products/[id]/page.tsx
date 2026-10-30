@@ -35,7 +35,7 @@ type Product = ProductLike &
     deposit?: number | null;
     createdAt?: string | null;
     updatedAt?: string | null;
-    outletStock?: Array<{ stock?: number; available?: number; renting?: number; outlet?: { id?: number | null; name?: string | null } | null }> | null;
+    outletStock?: Array<{ stock?: number; available?: number; renting?: number; isListed?: boolean | null; outlet?: { id?: number | null; name?: string | null } | null }> | null;
   };
 
 type State = { kind: 'loading' } | { kind: 'failed' } | { kind: 'notFound' } | { kind: 'ready'; product: Product };
@@ -298,7 +298,11 @@ export default function ProductDetailPage() {
                   <tbody>
                     {rows.map((r, i) => (
                       <tr key={r.outlet?.id ?? i} className="border-t border-ar-subtle">
-                        <td className="py-2.5 pl-5 pr-2 text-ar-ink">{r.outlet?.name || '—'}</td>
+                        <td className="py-2.5 pl-5 pr-2 text-ar-ink">
+                          {r.outlet?.name || '—'}
+                          {/* #1341: a branch that does not list this product (still counted in the sum; only the owner ticks it, in the edit form) */}
+                          {rows.length > 1 && r.isListed === false && <span className="ml-2 rounded-full bg-ar-subtle px-2 py-0.5 text-xs font-medium text-ar-muted">{t('listing.hidden')}</span>}
+                        </td>
                         <td className="px-2 py-2.5 text-right tabular-nums text-ar-ink">{Number(r.stock) || 0}</td>
                         <td className="px-2 py-2.5 text-right font-semibold tabular-nums text-ar-done">{Number(r.available) || 0}</td>
                         <td className="py-2.5 pl-2 pr-5 text-right tabular-nums text-ar-ink-2">{Number(r.renting) || 0}</td>

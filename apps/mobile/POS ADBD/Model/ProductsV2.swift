@@ -215,6 +215,8 @@ enum ProductAddState: Equatable {
     case add
     case inCart(Int)
     case out
+    /// #1346: the owner sees a product the branch in use does not list; no + (the row says why)
+    case notListed
 }
 
 /// The line under the name: the product code and today's free count (no category)
@@ -278,8 +280,9 @@ enum ProductRowLogic {
     }
 
     /// The cart count wins (#677): a product out today that is already in the cart still shows its count
-    static func addState(free: Int, inCart: Int) -> ProductAddState {
+    static func addState(free: Int, inCart: Int, listed: Bool = true) -> ProductAddState {
         if inCart > 0 { return .inCart(inCart) }
+        if !listed { return .notListed }
         return free <= 0 ? .out : .add
     }
 }
@@ -1188,5 +1191,245 @@ enum QuantityEntry {
         guard value.isFinite else { return minimum }
         let n = value >= Double(maximum) ? maximum : Int(value)
         return min(max(n, minimum), maximum)
+    }
+}
+
+// MARK: - "Hiện ở chi nhánh" (#1346, #1335 PR 1m)
+
+/// One line of the "Hiện ở chi nhánh" box: a branch, its stock of this product, and the tick
+struct BranchTickRow: Equatable {
+    let outletId: Int
+    let name: String
+    let isDefault: Bool
+    let stock: Int
+    let renting: Int
+    var listed: Bool
+}
+
+/// A tick that moved: one `PUT /api/products/listing` call
+struct BranchTickChange: Equatable {
+    let outletId: Int
+    let isListed: Bool
+}
+
+/// The line under an unticked branch that still holds units. It never blocks the save.
+struct BranchListingReminder: Equatable {
+    let stock: Int
+    let renting: Int
+
+    var text: String {
+        if renting > 0 { return String(format: "products.listing.reminder".localized(), stock, renting) }
+        return String(format: "products.listing.reminderNoRent".localized(), stock)
+    }
+}
+
+/// Pure rules of the tick on a product at a branch (`OutletStock.isListed`). The API is the real gate
+/// (`PUT /api/products/listing` is MERCHANT only, a branch role gets 403); these only decide what the screens show and ask for.
+enum BranchListing {
+    /// The token this build adds to `X-Client-Capabilities`: the server then stops re-listing products for it
+    static let capabilityToken = "branch-listing"
+    static let listingPath = "/api/products/listing"
+
+    /// Only the shop owner ticks and unticks (the API: `canSetBranchListing`)
+    static func canSet(role: Role?) -> Bool { role == .merchant }
+
+    private static func isBranchRole(_ role: Role?) -> Bool {
+        role == .outletAdmin || role == .outletInventory || role == .outletStaff
+    }
+
+    /// The owner sees the box with two or more active branches. A branch role cannot count the shop's branches (the
+    /// API lists only its own), so it sees the dimmed tick when the product has rows at two or more branches (as the
+    /// web does). A shop with one branch (every Basic shop) has no tick.
+    static func showsTick(role: Role?, activeOutletCount: Int, productOutletRows: Int) -> Bool {
+        if role == .merchant { return activeOutletCount >= 2 }
+        if isBranchRole(role) { return productOutletRows >= 2 }
+        return false
+    }
+
+    /// A branch role asks for `listed=true` (a shop known to have one branch does not: the API would ignore it).
+    /// The owner never does: the owner sees every product and ticks the missing ones.
+    static func sendsListed(role: Role?, activeOutletCount: Int) -> Bool {
+        isBranchRole(role) && activeOutletCount != 1
+    }
+
+    /// Query of the product list, with `listed=true` added when `sendsListed`
+    static func listParams(_ base: [String: Any], role: Role?, activeOutletCount: Int) -> [String: Any] {
+        guard sendsListed(role: role, activeOutletCount: activeOutletCount) else { return base }
+        var params = base
+        params["listed"] = "true"
+        return params
+    }
+
+    /// The row of that branch says listed unless it says `false`. No row, no branch, or an older API: listed.
+    static func isListed(_ product: Product, outletId: Int?) -> Bool {
+        guard let outletId, let row = product.outletStock?.first(where: { $0.outletId == outletId }) else { return true }
+        return row.isListed ?? true
+    }
+
+    /// Does a Home row count as listed at the branch in use? Only the owner of a shop with two or more branches ever sees
+    /// an unlisted row (a branch role asks for `listed=true`; a one-branch shop has no tick, so nothing is hidden there).
+    static func listedForRow(_ product: Product, role: Role?, activeOutletCount: Int, outletId: Int?) -> Bool {
+        guard role == .merchant, activeOutletCount >= 2 else { return true }
+        return isListed(product, outletId: outletId)
+    }
+
+    /// Lines of the owner's box: every active branch. A saved product follows its rows (no row = not listed); a new
+    /// product ticks the branch it is created at.
+    static func rows(outlets: [(id: Int, name: String, isDefault: Bool)], product: Product?, creatingAt: Int?) -> [BranchTickRow] {
+        outlets.map { outlet in
+            let row = product?.outletStock?.first(where: { $0.outletId == outlet.id })
+            let listed = product == nil ? outlet.id == creatingAt : (row?.isListed ?? (row != nil))
+            return BranchTickRow(outletId: outlet.id, name: outlet.name, isDefault: outlet.isDefault,
+                                 stock: row?.stock ?? 0, renting: row?.renting ?? 0, listed: listed)
+        }
+    }
+
+    /// The ticks that moved between the form as opened and as saved
+    static func changes(from original: [BranchTickRow], to current: [BranchTickRow]) -> [BranchTickChange] {
+        let before = Dictionary(original.map { ($0.outletId, $0.listed) }, uniquingKeysWith: { first, _ in first })
+        return current.compactMap { row in
+            guard let was = before[row.outletId], was != row.listed else { return nil }
+            return BranchTickChange(outletId: row.outletId, isListed: row.listed)
+        }
+    }
+
+    /// A reminder only for an unticked branch that still holds units or has some on rent
+    static func reminder(for row: BranchTickRow) -> BranchListingReminder? {
+        guard !row.listed, row.stock > 0 || row.renting > 0 else { return nil }
+        return BranchListingReminder(stock: row.stock, renting: row.renting)
+    }
+
+    /// `outletStock[]` of a new product from the owner's box: the typed quantity at the branch in use (with its tick),
+    /// then a zero row for every other ticked branch. Unticked branches are left out: the API adds them unlisted.
+    static func createStock(rows: [BranchTickRow], quantity: Int, at outletId: Int) -> [OutletStockItem] {
+        let current = rows.first(where: { $0.outletId == outletId })
+        let first = OutletStockItem(outletId: outletId, stock: quantity, isListed: current?.listed ?? true)
+        let others = rows.filter { $0.outletId != outletId && $0.listed }
+            .map { OutletStockItem(outletId: $0.outletId, stock: 0, isListed: true) }
+        return [first] + others
+    }
+
+    /// Body of `PUT /api/products/listing`
+    static func listingBody(outletId: Int, productIds: [Int], isListed: Bool) -> [String: Any] {
+        ["outletId": outletId, "productIds": productIds, "isListed": isListed]
+    }
+}
+
+// MARK: - "Chi nhánh khác còn N" in the cart (#1353, #1347, #1335)
+
+/// One other branch that still has the product on the order's days (`data.results[].outlets[]` of
+/// `POST /api/products/other-outlets-availability`)
+struct OtherBranchStock: Equatable {
+    let outletId: Int
+    let outletName: String
+    let available: Int
+}
+
+/// The answer of the route. Every key is optional: an older or newer API never breaks the cart.
+struct OtherBranchesAnswer: Decodable {
+    struct Entry: Decodable {
+        let productId: Int?
+        let outlets: [Outlet]?
+
+        struct Outlet: Decodable {
+            let outletId: Int?
+            let outletName: String?
+            let available: Int?
+        }
+    }
+
+    let results: [Entry]?
+}
+
+/// Pure rules of the hint under a short cart line: who asks, which lines, the body (shop days), the text. A hint only:
+/// one order is one branch, nothing is moved. The API is the real gate (OUTLET_STAFF gets 403).
+enum OtherBranchesHint {
+    static let path = "/api/products/other-outlets-availability"
+    /// Names shown before "+N" (the line stays one or two lines on a phone)
+    static let maxShown = 3
+
+    /// Owner, branch manager and stock keeper (the API's `canSeeOtherOutlets`, minus the system ADMIN who has no cart)
+    static func canAsk(role: Role?) -> Bool {
+        role == .merchant || role == .outletAdmin || role == .outletInventory
+    }
+
+    /// Whether the cart asks at all. The owner counts the shop's active branches (two or more). A branch role cannot count
+    /// them, so it asks unless the shop is known to have one branch (`BranchListing.sendsListed`): the API answers `[]`
+    /// for a one-branch shop and the cart shows nothing.
+    static func asks(role: Role?, activeOutletCount: Int) -> Bool {
+        guard canAsk(role: role) else { return false }
+        if role == .merchant { return activeOutletCount >= 2 }
+        return BranchListing.sendsListed(role: role, activeOutletCount: activeOutletCount)
+    }
+
+    /// Product ids whose lines are short (fewer free than asked, units of all its lines summed) or booked out by another
+    /// order on those days: once each, ascending. Lines whose availability is not loaded yet are not asked.
+    static func shortProductIds(items: [CartItem], conflictProductIds: Set<Int>) -> [Int] {
+        var ids = conflictProductIds.intersection(Set(items.map { $0.productId }))
+        for item in items where CartV2Logic.shortage(item, in: items) != nil { ids.insert(item.productId) }
+        return ids.sorted()
+    }
+
+    /// The body, or nil when there is nothing to ask (no products, a rental without both days). A rental on one shop
+    /// day sends `date`; on several, the shop-day bounds, the same instants as `batch-availability`.
+    static func requestBody(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> [String: Any]? {
+        guard !productIds.isEmpty else { return nil }
+        var body: [String: Any] = [
+            "products": productIds.map { ["productId": $0, "quantity": 1] },
+            "orderType": isRent ? "RENT" : "SALE"
+        ]
+        if isRent {
+            guard let pickup, let returnDate else { return nil }
+            let first = DayFormatter.key(pickup)
+            if first == DayFormatter.key(returnDate) {
+                body["date"] = first
+            } else {
+                guard let start = pickup.startOfShopDay().dateServerISOString(),
+                      let end = returnDate.endOfShopDay().dateServerISOString() else { return nil }
+                body["startDate"] = start
+                body["endDate"] = end
+            }
+        }
+        if let outletId { body["outletId"] = outletId }
+        return body
+    }
+
+    /// Identifies one question; "" when there is nothing to ask. An answer for another key no longer applies.
+    static func key(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> String {
+        guard requestBody(productIds: productIds, isRent: isRent, pickup: pickup, returnDate: returnDate,
+                          outletId: outletId, now: now) != nil else { return "" }
+        let days = isRent
+            ? [pickup, returnDate].compactMap { $0.map { DayFormatter.key($0) } }.joined(separator: "..")
+            : DayFormatter.key(now)
+        return [isRent ? "RENT" : "SALE", days, outletId.map(String.init) ?? "-", productIds.map(String.init).joined(separator: ",")]
+            .joined(separator: "|")
+    }
+
+    /// The branches by product; products with none are left out
+    static func hints(from answer: OtherBranchesAnswer?) -> [Int: [OtherBranchStock]] {
+        var map: [Int: [OtherBranchStock]] = [:]
+        for entry in answer?.results ?? [] {
+            guard let productId = entry.productId else { continue }
+            let list: [OtherBranchStock] = (entry.outlets ?? []).compactMap { outlet in
+                guard let id = outlet.outletId, let name = outlet.outletName, !name.isEmpty,
+                      let available = outlet.available, available > 0 else { return nil }
+                return OtherBranchStock(outletId: id, outletName: name, available: available)
+            }
+            if !list.isEmpty { map[productId] = list }
+        }
+        return map
+    }
+
+    /// "Quận 7 (3), Thủ Đức (1)" in the order the API sends them (most units first); after `maxShown` names, "+N"
+    static func list(_ outlets: [OtherBranchStock]) -> String {
+        var parts = outlets.prefix(maxShown).map { "\($0.outletName) (\($0.available))" }
+        if outlets.count > maxShown { parts.append("+\(outlets.count - maxShown)") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// "Chi nhánh khác còn: Quận 7 (3), Thủ Đức (1)"; nil when no branch has any
+    static func lineText(_ outlets: [OtherBranchStock]?) -> String? {
+        guard let outlets, !outlets.isEmpty else { return nil }
+        return String(format: "products.cart.othersHave".localized(), list(outlets))
     }
 }

@@ -1939,3 +1939,408 @@ final class QuantityEntryTests: XCTestCase {
         XCTAssertEqual(QuantityEntry.fromPad(1_000_000, minimum: 0), QuantityEntry.maximum)
     }
 }
+
+/// #1346 (#1335 PR 1m) — "Hiện ở chi nhánh": who ticks, who sees the tick, what the list asks for, the reminder, the payloads
+final class BranchListingTests: XCTestCase {
+    private func product(_ json: String) throws -> Product {
+        try JSONDecoder.shared.decode(Product.self, from: json.data(using: .utf8)!)
+    }
+
+    private let outlets: [(id: Int, name: String, isDefault: Bool)] = [
+        (id: 1, name: "Quận 1", isDefault: true), (id: 7, name: "Quận 7", isDefault: false), (id: 9, name: "Thủ Đức", isDefault: false)
+    ]
+
+    // MARK: Who may tick
+
+    func testOnlyTheOwnerTicksAndUnticks() {
+        XCTAssertTrue(BranchListing.canSet(role: .merchant))
+        XCTAssertFalse(BranchListing.canSet(role: .outletAdmin))
+        XCTAssertFalse(BranchListing.canSet(role: .outletInventory))
+        XCTAssertFalse(BranchListing.canSet(role: .outletStaff))
+        XCTAssertFalse(BranchListing.canSet(role: nil))
+    }
+
+    // MARK: Who sees the tick
+
+    func testTheOwnerSeesTheTickWithTwoOrMoreActiveBranches() {
+        XCTAssertTrue(BranchListing.showsTick(role: .merchant, activeOutletCount: 2, productOutletRows: 0))
+        XCTAssertTrue(BranchListing.showsTick(role: .merchant, activeOutletCount: 3, productOutletRows: 3))
+        // One branch (every Basic shop), or outlets not loaded yet: no tick
+        XCTAssertFalse(BranchListing.showsTick(role: .merchant, activeOutletCount: 1, productOutletRows: 1))
+        XCTAssertFalse(BranchListing.showsTick(role: .merchant, activeOutletCount: 0, productOutletRows: 5))
+    }
+
+    func testABranchRoleSeesTheDimmedTickWhenTheProductHasRowsAtTwoBranches() {
+        for role in [Role.outletAdmin, .outletInventory, .outletStaff] {
+            XCTAssertTrue(BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: 2), "\(role)")
+            XCTAssertFalse(BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: 1), "\(role)")
+            XCTAssertFalse(BranchListing.showsTick(role: role, activeOutletCount: 0, productOutletRows: 0), "\(role)")
+        }
+        XCTAssertFalse(BranchListing.showsTick(role: nil, activeOutletCount: 3, productOutletRows: 3))
+    }
+
+    // MARK: What the list asks for
+
+    func testBranchRolesAskForListedProductsOnly() {
+        for role in [Role.outletAdmin, .outletInventory, .outletStaff] {
+            XCTAssertTrue(BranchListing.sendsListed(role: role, activeOutletCount: 0), "\(role)")
+            XCTAssertTrue(BranchListing.sendsListed(role: role, activeOutletCount: 3), "\(role)")
+        }
+    }
+
+    func testTheOwnerNeverSendsListedSoTheOwnerSeesEveryProduct() {
+        XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 3))
+        XCTAssertFalse(BranchListing.sendsListed(role: .merchant, activeOutletCount: 1))
+        XCTAssertFalse(BranchListing.sendsListed(role: nil, activeOutletCount: 3))
+    }
+
+    func testAShopKnownToHaveOneBranchSendsNothing() {
+        XCTAssertFalse(BranchListing.sendsListed(role: .outletStaff, activeOutletCount: 1))
+    }
+
+    func testListParamsAddListedTrueWithoutTouchingTheRest() {
+        let base: [String: Any] = ["page": 1, "limit": 20, "outletId": 7]
+        let staff = BranchListing.listParams(base, role: .outletStaff, activeOutletCount: 0)
+        XCTAssertEqual(staff["listed"] as? String, "true")
+        XCTAssertEqual(staff["page"] as? Int, 1)
+        XCTAssertEqual(staff["limit"] as? Int, 20)
+        XCTAssertEqual(staff["outletId"] as? Int, 7)
+        let owner = BranchListing.listParams(base, role: .merchant, activeOutletCount: 3)
+        XCTAssertNil(owner["listed"])
+        XCTAssertEqual(owner.count, 3)
+    }
+
+    // MARK: The header
+
+    func testTheHeaderDeclaresBranchListing() {
+        XCTAssertEqual(BranchListing.capabilityToken, "branch-listing")
+        XCTAssertTrue(ClientCapabilities.tokens.contains("branch-listing"))
+        XCTAssertTrue(ClientCapabilities.headerValue.contains("branch-listing"))
+        // The older tokens stay
+        XCTAssertTrue(ClientCapabilities.tokens.contains("installments"))
+        XCTAssertTrue(ClientCapabilities.tokens.contains("block-pricing"))
+    }
+
+    // MARK: Is a product listed here
+
+    func testARowIsListedUnlessTheApiSaysFalse() throws {
+        let p = try product(#"{"id":1,"name":"Áo","outletStock":[{"outletId":1,"stock":4,"isListed":false},{"outletId":7,"stock":2,"isListed":true},{"outletId":9,"stock":0}]}"#)
+        XCTAssertFalse(BranchListing.isListed(p, outletId: 1))
+        XCTAssertTrue(BranchListing.isListed(p, outletId: 7))
+        // An older API (no field): listed
+        XCTAssertTrue(BranchListing.isListed(p, outletId: 9))
+        // No row for the branch, or no branch known: nothing to hide
+        XCTAssertTrue(BranchListing.isListed(p, outletId: 42))
+        XCTAssertTrue(BranchListing.isListed(p, outletId: nil))
+        let bare = try product(#"{"id":2,"name":"Khăn"}"#)
+        XCTAssertTrue(BranchListing.isListed(bare, outletId: 7))
+    }
+
+    func testAnUnlistedProductCannotBeAddedButOneAlreadyInTheCartKeepsItsCount() {
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0, listed: false), .notListed)
+        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 0, listed: false), .notListed)
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 2, listed: false), .inCart(2))
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0, listed: true), .add)
+        XCTAssertEqual(ProductRowLogic.addState(free: 0, inCart: 0, listed: true), .out)
+        // The old call keeps working
+        XCTAssertEqual(ProductRowLogic.addState(free: 3, inCart: 0), .add)
+    }
+
+    func testOnlyTheOwnerOfAManyBranchShopSeesAnUnlistedRowAsUnlisted() throws {
+        let p = try product(#"{"id":1,"name":"Áo","outletStock":[{"outletId":7,"stock":4,"isListed":false}]}"#)
+        XCTAssertFalse(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 3, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 3, outletId: 1))
+        // One branch (Basic), outlets not loaded, or a branch role (the list was filtered by the API): never hidden
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 1, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .merchant, activeOutletCount: 0, outletId: 7))
+        XCTAssertTrue(BranchListing.listedForRow(p, role: .outletStaff, activeOutletCount: 0, outletId: 7))
+    }
+
+    // MARK: The reminder when unticking
+
+    func testReminderOnlyWhenUntickedAndSomethingIsLeft() {
+        func row(listed: Bool, stock: Int, renting: Int) -> BranchTickRow {
+            BranchTickRow(outletId: 7, name: "Quận 7", isDefault: false, stock: stock, renting: renting, listed: listed)
+        }
+        XCTAssertEqual(BranchListing.reminder(for: row(listed: false, stock: 4, renting: 2)), BranchListingReminder(stock: 4, renting: 2))
+        XCTAssertEqual(BranchListing.reminder(for: row(listed: false, stock: 4, renting: 0)), BranchListingReminder(stock: 4, renting: 0))
+        XCTAssertEqual(BranchListing.reminder(for: row(listed: false, stock: 0, renting: 2)), BranchListingReminder(stock: 0, renting: 2))
+        // Nothing left (mockup B2c): no line
+        XCTAssertNil(BranchListing.reminder(for: row(listed: false, stock: 0, renting: 0)))
+        // Still ticked: no line
+        XCTAssertNil(BranchListing.reminder(for: row(listed: true, stock: 4, renting: 2)))
+    }
+
+    func testReminderTextNamesTheNumbersAndLeavesOutRentingWhenNone() {
+        let both = BranchListingReminder(stock: 4, renting: 2).text
+        XCTAssertTrue(both.contains("4"))
+        XCTAssertTrue(both.contains("2"))
+        let none = BranchListingReminder(stock: 4, renting: 0).text
+        XCTAssertTrue(none.contains("4"))
+        XCTAssertNotEqual(both, none)
+        XCTAssertFalse(both.contains("products.listing."), "a raw key shows when a string is missing")
+        XCTAssertFalse(none.contains("products.listing."))
+    }
+
+    // MARK: Rows of the form
+
+    func testANewProductTicksTheCreatingBranchOnly() {
+        let rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 7)
+        XCTAssertEqual(rows.map { $0.outletId }, [1, 7, 9])
+        XCTAssertEqual(rows.map { $0.listed }, [false, true, false])
+        XCTAssertEqual(rows.map { $0.name }, ["Quận 1", "Quận 7", "Thủ Đức"])
+        XCTAssertEqual(rows.map { $0.isDefault }, [true, false, false])
+    }
+
+    func testASavedProductFollowsItsRowsAndAMissingRowIsNotListed() throws {
+        let p = try product(#"{"id":12,"name":"Áo dài gấm đỏ","outletStock":[{"outletId":1,"stock":8,"renting":2,"isListed":true},{"outletId":7,"stock":4,"renting":2,"isListed":false}]}"#)
+        let rows = BranchListing.rows(outlets: outlets, product: p, creatingAt: nil)
+        XCTAssertEqual(rows.map { $0.listed }, [true, false, false])
+        XCTAssertEqual(rows.map { $0.stock }, [8, 4, 0])
+        XCTAssertEqual(rows.map { $0.renting }, [2, 2, 0])
+    }
+
+    func testChangesAreOnlyTheTicksThatMoved() {
+        let before = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        var after = before
+        after[0].listed = false
+        after[2].listed = true
+        XCTAssertEqual(BranchListing.changes(from: before, to: after),
+                       [BranchTickChange(outletId: 1, isListed: false), BranchTickChange(outletId: 9, isListed: true)])
+        XCTAssertEqual(BranchListing.changes(from: before, to: before), [])
+    }
+
+    func testCreatingSendsTheTypedStockAtTheCurrentBranchAndZeroRowsForTheOtherTicks() {
+        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        rows[2].listed = true
+        let items = BranchListing.createStock(rows: rows, quantity: 5, at: 1)
+        XCTAssertEqual(items.map { $0.outletId }, [1, 9])
+        XCTAssertEqual(items.map { $0.stock }, [5, 0])
+        XCTAssertEqual(items.map { $0.isListed }, [true, true])
+    }
+
+    func testCreatingWithTheCurrentBranchUntickedStillSendsItsStock() {
+        var rows = BranchListing.rows(outlets: outlets, product: nil, creatingAt: 1)
+        rows[0].listed = false
+        rows[1].listed = true
+        let items = BranchListing.createStock(rows: rows, quantity: 5, at: 1)
+        XCTAssertEqual(items.map { $0.outletId }, [1, 7])
+        XCTAssertEqual(items.map { $0.stock }, [5, 0])
+        XCTAssertEqual(items.map { $0.isListed }, [false, true])
+    }
+
+    // MARK: Requests
+
+    func testAnOutletStockItemSendsIsListedOnlyWhenItIsSet() {
+        XCTAssertEqual(OutletStockItem(outletId: 1, stock: 3).formObject as NSDictionary, ["outletId": 1, "stock": 3] as NSDictionary)
+        XCTAssertEqual(OutletStockItem(outletId: 1, stock: 3, isListed: true).formObject as NSDictionary,
+                       ["outletId": 1, "stock": 3, "isListed": true] as NSDictionary)
+        XCTAssertEqual(OutletStockItem(outletId: 1, stock: 0, isListed: false).formObject["isListed"] as? Bool, false)
+    }
+
+    func testTheListingBodyIsOneBranchAndTheProductIds() {
+        let body = BranchListing.listingBody(outletId: 7, productIds: [12, 13], isListed: false)
+        XCTAssertEqual(body["outletId"] as? Int, 7)
+        XCTAssertEqual(body["productIds"] as? [Int], [12, 13])
+        XCTAssertEqual(body["isListed"] as? Bool, false)
+        XCTAssertEqual(BranchListing.listingPath, "/api/products/listing")
+    }
+}
+
+/// #1353 (#1335 PR 2m) — "Chi nhánh khác còn N" in the cart: who asks, which lines, the body (shop days), the text, the decoding
+final class OtherBranchesHintTests: XCTestCase {
+    private func line(_ productId: Int, qty: Int = 1, available: Int? = nil) -> CartItem {
+        var item = CartItem(productId: productId, productName: "SP \(productId)", barcode: nil, quantity: qty, price: 100_000, deposit: 0,
+                            originalRentPrice: 100_000, originalSalePrice: 900_000)
+        if let available { item.availabilityStatus = AvailabilityStatus(isAvailable: available >= qty, available: available) }
+        return item
+    }
+
+    private func instant(_ iso: String) -> Date {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)!
+    }
+
+    private func stock(_ id: Int, _ name: String, _ available: Int) -> OtherBranchStock {
+        OtherBranchStock(outletId: id, outletName: name, available: available)
+    }
+
+    // MARK: Who asks
+
+    func testOnlyTheOwnerAndTheBranchManagersAndStockKeepersCanAsk() {
+        XCTAssertTrue(OtherBranchesHint.canAsk(role: .merchant))
+        XCTAssertTrue(OtherBranchesHint.canAsk(role: .outletAdmin))
+        XCTAssertTrue(OtherBranchesHint.canAsk(role: .outletInventory))
+        XCTAssertFalse(OtherBranchesHint.canAsk(role: .outletStaff))
+        XCTAssertFalse(OtherBranchesHint.canAsk(role: nil))
+    }
+
+    func testTheOwnerAsksOnlyWithTwoOrMoreActiveBranches() {
+        XCTAssertFalse(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 0))
+        XCTAssertFalse(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 1))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 2))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .merchant, activeOutletCount: 3))
+    }
+
+    func testABranchRoleAsksUnlessTheShopIsKnownToHaveOneBranch() {
+        // A branch role cannot count the shop's branches (count 0); the API answers [] for a one-branch shop
+        XCTAssertTrue(OtherBranchesHint.asks(role: .outletAdmin, activeOutletCount: 0))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .outletInventory, activeOutletCount: 0))
+        XCTAssertTrue(OtherBranchesHint.asks(role: .outletAdmin, activeOutletCount: 3))
+        XCTAssertFalse(OtherBranchesHint.asks(role: .outletAdmin, activeOutletCount: 1))
+    }
+
+    func testStaffNeverAsksWhateverTheBranchCount() {
+        for count in [0, 1, 2, 5] { XCTAssertFalse(OtherBranchesHint.asks(role: .outletStaff, activeOutletCount: count)) }
+        XCTAssertFalse(OtherBranchesHint.asks(role: nil, activeOutletCount: 3))
+    }
+
+    // MARK: Which lines
+
+    func testOnlyLinesShortOfStockAreAsked() {
+        let items = [line(5, qty: 1, available: 0), line(3, qty: 1, available: 4), line(9, qty: 2, available: 1), line(7, qty: 1, available: nil)]
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: []), [5, 9])
+    }
+
+    func testAProductOnSeveralLinesIsAskedOnceAndTheUnitsAreSummed() {
+        // 1 free, two lines of 1 each: together they ask for 2
+        let items = [line(8, qty: 1, available: 1), line(8, qty: 1, available: 1), line(2, qty: 1, available: 0)]
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: []), [2, 8])
+    }
+
+    func testAScheduleConflictCountsAsShortAndNothingIsAskedWhenAllFit() {
+        let items = [line(4, qty: 1, available: 3), line(6, qty: 1, available: 3)]
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: [6]), [6])
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: items, conflictProductIds: []), [])
+        XCTAssertEqual(OtherBranchesHint.shortProductIds(items: [], conflictProductIds: [6]), [])
+    }
+
+    // MARK: Body (shop days)
+
+    func testAOneDayRentalSendsTheShopDay() {
+        // 30/10 in Vietnam = 29/10 17:00Z .. 30/10 16:59:59Z
+        let body = OtherBranchesHint.requestBody(productIds: [5, 9], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                 returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 7, now: Date())
+        XCTAssertEqual(body?["orderType"] as? String, "RENT")
+        XCTAssertEqual(body?["date"] as? String, "2026-10-30")
+        XCTAssertNil(body?["startDate"])
+        XCTAssertNil(body?["endDate"])
+        XCTAssertEqual(body?["outletId"] as? Int, 7)
+        let products = body?["products"] as? [[String: Int]]
+        XCTAssertEqual(products?.map { $0["productId"] }, [5, 9])
+        XCTAssertEqual(products?.map { $0["quantity"] }, [1, 1])
+    }
+
+    func testAManyDayRentalSendsTheShopDayBounds() {
+        // pickup 30/10 07:00 VN (00:00Z), return 31/10 09:00 VN: the days 30..31, not the instants
+        let body = OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: instant("2026-10-30T00:00:00.000Z"),
+                                                 returnDate: instant("2026-10-31T02:00:00.000Z"), outletId: nil, now: Date())
+        XCTAssertNil(body?["date"])
+        XCTAssertEqual(body?["startDate"] as? String, "2026-10-29T17:00:00.000Z")
+        XCTAssertEqual(body?["endDate"] as? String, "2026-10-31T16:59:59.000Z")
+        XCTAssertNil(body?["outletId"])
+    }
+
+    func testTheVietnamMidnightDecidesTheDay() {
+        // 16:59:59Z is still the 29th in Vietnam, 17:00:00Z is the 30th: two different days
+        let across = OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: instant("2026-10-29T16:59:59.000Z"),
+                                                   returnDate: instant("2026-10-29T17:00:00.000Z"), outletId: 1, now: Date())
+        XCTAssertNil(across?["date"])
+        XCTAssertEqual(across?["startDate"] as? String, "2026-10-28T17:00:00.000Z")
+        XCTAssertEqual(across?["endDate"] as? String, "2026-10-30T16:59:59.000Z")
+        // both inside the 30th: one day
+        let same = OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                 returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 1, now: Date())
+        XCTAssertEqual(same?["date"] as? String, "2026-10-30")
+    }
+
+    func testASaleSendsNoDay() {
+        let body = OtherBranchesHint.requestBody(productIds: [5], isRent: false, pickup: nil, returnDate: nil, outletId: 3, now: Date())
+        XCTAssertEqual(body?["orderType"] as? String, "SALE")
+        XCTAssertNil(body?["date"])
+        XCTAssertNil(body?["startDate"])
+        XCTAssertEqual(body?["outletId"] as? Int, 3)
+    }
+
+    func testNothingToAskGivesNoBody() {
+        let day = instant("2026-10-29T17:00:00.000Z")
+        XCTAssertNil(OtherBranchesHint.requestBody(productIds: [], isRent: true, pickup: day, returnDate: day, outletId: 1, now: Date()))
+        XCTAssertNil(OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: nil, returnDate: day, outletId: 1, now: Date()))
+        XCTAssertNil(OtherBranchesHint.requestBody(productIds: [5], isRent: true, pickup: day, returnDate: nil, outletId: 1, now: Date()))
+        XCTAssertEqual(OtherBranchesHint.path, "/api/products/other-outlets-availability")
+    }
+
+    // MARK: Key (an answer for another question no longer applies)
+
+    func testTheKeyFollowsTheShopDaysTheBranchAndTheProducts() {
+        let a = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                      returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 1, now: Date())
+        // another instant of the same shop days: same question
+        let sameDays = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-30T02:00:00.000Z"),
+                                             returnDate: instant("2026-10-30T10:00:00.000Z"), outletId: 1, now: Date())
+        XCTAssertFalse(a.isEmpty)
+        XCTAssertEqual(a, sameDays)
+        let nextDay = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-30T17:00:00.000Z"),
+                                            returnDate: instant("2026-10-31T16:59:59.000Z"), outletId: 1, now: Date())
+        XCTAssertNotEqual(a, nextDay)
+        let otherBranch = OtherBranchesHint.key(productIds: [5, 9], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 7, now: Date())
+        XCTAssertNotEqual(a, otherBranch)
+        let otherProducts = OtherBranchesHint.key(productIds: [5], isRent: true, pickup: instant("2026-10-29T17:00:00.000Z"),
+                                                  returnDate: instant("2026-10-30T16:59:59.000Z"), outletId: 1, now: Date())
+        XCTAssertNotEqual(a, otherProducts)
+        let sale = OtherBranchesHint.key(productIds: [5, 9], isRent: false, pickup: nil, returnDate: nil, outletId: 1, now: Date())
+        XCTAssertNotEqual(a, sale)
+        XCTAssertEqual(OtherBranchesHint.key(productIds: [], isRent: true, pickup: nil, returnDate: nil, outletId: 1, now: Date()), "")
+    }
+
+    // MARK: Text
+
+    func testTheListIsTheNamesAndCountsInTheOrderTheAPISends() {
+        XCTAssertEqual(OtherBranchesHint.list([stock(7, "Quận 7", 3), stock(9, "Thủ Đức", 1)]), "Quận 7 (3), Thủ Đức (1)")
+        XCTAssertEqual(OtherBranchesHint.list([stock(7, "Quận 7", 3)]), "Quận 7 (3)")
+        XCTAssertEqual(OtherBranchesHint.list([]), "")
+    }
+
+    func testAManyBranchListShowsTheFirstThreeAndTheRest() {
+        let many = [stock(2, "A", 5), stock(3, "B", 4), stock(4, "C", 3), stock(5, "D", 2), stock(6, "E", 1)]
+        XCTAssertEqual(OtherBranchesHint.list(many), "A (5), B (4), C (3), +2")
+        XCTAssertEqual(OtherBranchesHint.list(Array(many.prefix(3))), "A (5), B (4), C (3)")
+        XCTAssertEqual(OtherBranchesHint.list(Array(many.prefix(4))), "A (5), B (4), C (3), +1")
+    }
+
+    func testNoBranchMeansNoLine() {
+        XCTAssertNil(OtherBranchesHint.lineText([]))
+        XCTAssertNil(OtherBranchesHint.lineText(nil))
+        let text = OtherBranchesHint.lineText([stock(7, "Quận 7", 3)])
+        XCTAssertNotNil(text)
+        XCTAssertTrue(text?.hasSuffix("Quận 7 (3)") ?? false)
+    }
+
+    // MARK: Decoding (an older or newer API never breaks the cart)
+
+    func testTheAnswerIsReadByProduct() {
+        let json = #"{"results":[{"productId":5,"outlets":[{"outletId":7,"outletName":"Quận 7","available":3},{"outletId":9,"outletName":"Thủ Đức","available":1}]},{"productId":9,"outlets":[]}],"extra":1}"#
+        let answer = try? JSONDecoder.shared.decode(OtherBranchesAnswer.self, from: json.data(using: .utf8)!)
+        let hints = OtherBranchesHint.hints(from: answer)
+        XCTAssertEqual(hints[5]?.map { $0.outletName }, ["Quận 7", "Thủ Đức"])
+        XCTAssertEqual(hints[5]?.map { $0.available }, [3, 1])
+        XCTAssertNil(hints[9])
+    }
+
+    func testMissingKeysAndEmptyAnswersGiveNoHints() {
+        for json in [#"{}"#, #"{"results":[]}"#, #"{"results":[{"productId":5}]}"#, #"{"results":[{"productId":5,"outlets":null}]}"#] {
+            let answer = try? JSONDecoder.shared.decode(OtherBranchesAnswer.self, from: json.data(using: .utf8)!)
+            XCTAssertNotNil(answer, json)
+            XCTAssertTrue(OtherBranchesHint.hints(from: answer).isEmpty, json)
+        }
+        XCTAssertTrue(OtherBranchesHint.hints(from: nil).isEmpty)
+    }
+
+    func testABranchWithoutAnameOrWithNoUnitsIsDropped() {
+        let json = #"{"results":[{"productId":5,"outlets":[{"outletId":7,"available":3},{"outletId":8,"outletName":"Quận 8","available":0},{"outletId":9,"outletName":"Thủ Đức","available":2}]}]}"#
+        let answer = try? JSONDecoder.shared.decode(OtherBranchesAnswer.self, from: json.data(using: .utf8)!)
+        XCTAssertEqual(OtherBranchesHint.hints(from: answer)[5]?.map { $0.outletId }, [9])
+    }
+}

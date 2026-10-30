@@ -381,8 +381,13 @@ final class BlockPricingTests: XCTestCase {
     // MARK: - Header and errors
 
     func testEveryRequestHeaderSetSaysBlockPricing() {
-        XCTAssertEqual(BaseService.jsonHeader.value(for: "X-Client-Capabilities"), "installments, block-pricing")
-        XCTAssertEqual(BaseService.formHeader.value(for: "X-Client-Capabilities"), "installments, block-pricing")
+        // The header lists every token of this build (installments, block-pricing, branch-listing, ...): check the ones this test is about, not the whole string
+        for header in [BaseService.jsonHeader, BaseService.formHeader] {
+            let tokens = (header.value(for: "X-Client-Capabilities") ?? "")
+                .components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            XCTAssertTrue(tokens.contains("block-pricing"), "block-pricing is in \(tokens)")
+            XCTAssertTrue(tokens.contains("installments"), "installments is in \(tokens)")
+        }
     }
 
     func testPriceMismatchKeepsItsCodeAndShowsASentence() throws {

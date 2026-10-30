@@ -52,6 +52,7 @@ import {
   refreshBlockOptions,
 } from './create-model';
 import { allowsOverlap, conflictFromResult, ctaState, dayRangeText, orderListText, type BatchResultLike, type LineConflict } from './schedule-model';
+import { asksOtherOutlets, otherOutletsKey, otherOutletsRequest, otherOutletsText, shortProductIds, type OtherOutlet } from './other-outlets-model';
 import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard, fieldClass, type LineStatus, type StockView } from './parts';
 import { useLoyalty } from './useLoyalty';
 import { confirmView } from './confirm-model';
@@ -117,6 +118,8 @@ function useProductGrid(q: string, outletId: number | null) {
       .searchProducts({
         search: q || undefined,
         outletId: outletId ?? undefined,
+        // #1341 "Hiện ở chi nhánh": a new order only offers the products the branch of the order lists
+        listed: true,
         page,
         limit: PAGE_SIZE,
         sortBy: 'name',
@@ -211,6 +214,35 @@ function useAvailability(ids: number[], orderType: OrderType, pickup: string, re
   return { view, result, refresh };
 }
 
+/**
+ * "Chi nhánh khác còn N" (#1347): for the lines that are short at the order's branch, the other branches that still
+ * have them on the same days. Asked only when `enabled` (owner, manager, stock keeper); an answer for other days,
+ * branch or products is dropped, and a failed call just shows nothing.
+ */
+function useOtherOutlets(input: { productIds: number[]; orderType: OrderType; pickup: string; ret: string; outletId: number | null }, enabled: boolean) {
+  const key = enabled ? otherOutletsKey(input) : '';
+  const [answer, setAnswer] = useState<{ key: string; map: Map<number, OtherOutlet[]> }>({ key: '', map: new Map() });
+  useEffect(() => {
+    if (!key) return;
+    const body = otherOutletsRequest(input);
+    if (!body) return;
+    let live = true;
+    productsApi
+      .checkOtherOutletsAvailability(body)
+      .then((res) => {
+        if (!live || !res.success || !res.data?.results) return;
+        setAnswer({ key, map: new Map(res.data.results.map((r) => [r.productId, r.outlets || []])) });
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+    // `input` is only read through `key`
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return useCallback((productId: number): OtherOutlet[] => (key && answer.key === key ? answer.map.get(productId) || [] : []), [key, answer]);
+}
+
 /** "Cho tạo đơn khi trùng lịch" (#518): the signed-in shop's value, re-read from the profile like iOS. */
 function useOverlapSetting(merchant: unknown) {
   const cached = allowsOverlap(merchant as { allowOverlappingOrders?: boolean | null } | null);
@@ -240,7 +272,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const t = useTranslations('orders.web') as unknown as T;
   const to = useOrderTranslations();
   const money = useFormatCurrency();
-  const { toastSuccess } = useToast();
+  const { toastSuccess, toastError } = useToast();
   const { user } = useAuth();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
   const todayKey = useShopToday();
@@ -462,7 +494,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   }, [resultOf, lines, orderType, pickup, ret, outletId]);
   const cta = ctaState(orderType === 'RENT', conflicts.size, overlap.allowed);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const statusOf = (l: CartLine): LineStatus => {
+  const statusOf = (l: Pick<CartLine, 'productId'>): LineStatus => {
     const c = conflicts.get(l.productId);
     if (c) {
       const range = dayRangeText(c.dayKeys);
@@ -479,6 +511,13 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     if (productQuantity(lines, l.productId) > free) return { kind: 'short', text: free > 0 ? t('editor.cart.onlyLeft', { free }) : t('editor.cart.noneLeft') };
     return { kind: 'ok', text: orderType === 'RENT' ? t('editor.cart.fits', { free }) : t('editor.cart.inStock', { free }) };
   };
+
+  // "Chi nhánh khác còn N" (#1347): only for the lines that are short here, never for staff
+  const shortIds = shortProductIds(lines, (id) => statusOf({ productId: id })?.kind ?? null);
+  const othersOf = useOtherOutlets(
+    { productIds: shortIds, orderType, pickup, ret, outletId },
+    asksOtherOutlets(user?.role, outlets.length, !!user?.outletId),
+  );
 
   // Money
   const base = computeTotals({
@@ -555,6 +594,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         .searchProducts({
           search: text,
           outletId: outletId ?? undefined,
+          listed: true,
           limit: 5,
         } as Parameters<typeof productsApi.searchProducts>[0])
         .catch(() => null);
@@ -563,7 +603,13 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     if (hit) {
       add(hit);
       setSearch('');
+      return;
     }
+    // #1341: a code of a product the shop has but this branch does not list: say so (no button to list it here)
+    const any = await productsApi
+      .searchProducts({ search: text, limit: 5 } as Parameters<typeof productsApi.searchProducts>[0])
+      .catch(() => null);
+    if (any?.success && findByBarcode(listOf<GridProduct>(any.data, 'products'), text)) toastError(t('editor.notListed'));
   };
 
   const addPhotos = async (files: File[]) => {
@@ -964,6 +1010,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
                     minorUnit={minorUnit}
                     days={days}
                     status={statusOf(l)}
+                    others={otherOutletsText(othersOf(l.productId))}
                     onQuantity={(n) => setLines((cur) => setQuantity(cur, l.key, n))}
                     onMode={(mode) => setLines((cur) => selectMode(cur, l.key, mode))}
                     onPrice={(price) => setLines((cur) => setLinePrice(cur, l.key, price, orderType))}

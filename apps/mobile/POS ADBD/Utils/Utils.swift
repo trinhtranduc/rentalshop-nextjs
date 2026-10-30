@@ -158,13 +158,7 @@ class Utils: NSObject {
         return UserDefaults.standard.string(forKey: "IpLabelPrinter") ?? "*** Vui lòng mang theo CMND/BLX khi lấy đồ"
     }
     
-    /// #622: print the default bank account + VietQR at the end of bills (this device only, off by default)
-    class func savePrintBankQr(_ isOn: Bool) {
-        UserDefaults.standard.set(isOn, forKey: "PrintBankQr")
-    }
-    class func loadPrintBankQr() -> Bool {
-        return UserDefaults.standard.bool(forKey: "PrintBankQr")
-    }
+    // #1308: the bank QR switch and the note of a bill are the order's outlet settings (`OutletPrintSettings`), not the device's
 
     // MARK: - Print Method Management
     class func savePrintMethod(method: String) {
@@ -274,4 +268,46 @@ class Utils: NSObject {
         UserDefaults.standard.set(true, forKey: hasCompletedOnboardingKey)
         UserDefaults.standard.synchronize()
     }
+}
+
+/// #1308: the note and the bank QR switch of a bill are the order's outlet settings on the server (`Outlet.printNote`,
+/// `Outlet.printBankQr`), as on the web. Only the owner edits them; paper, printer IP and Bluetooth stay
+/// on the device. Android `OutletPrintSettings`.
+enum OutletPrintSettings {
+    /// The printed note: the outlet's, or nil when blank (no "Note" block; the old default text is gone)
+    static func note(serverNote: String?) -> String? {
+        guard let serverNote, !serverNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return serverNote
+    }
+
+    /// Only an explicit `true` prints the QR; a payload without the field reads as off
+    static func printsBankQr(_ serverValue: Bool?) -> Bool { serverValue == true }
+
+    /// Owner decision: only the shop owner edits the note and the QR here; the outlet admin and staff read the server values (the API itself still lets an outlet admin save his outlet)
+    static func canEdit(role: Role?) -> Bool { role == .merchant }
+
+    /// The note field when Máy in opens: the server note; for someone who can edit, an empty server note and an old
+    /// device note give the device note, to be saved by the owner (never sent on its own)
+    static func prefillNote(serverNote: String?, legacyNote: String?, canEdit: Bool) -> String {
+        if let note = note(serverNote: serverNote) { return note }
+        guard canEdit, let legacy = note(serverNote: legacyNote) else { return "" }
+        return legacy
+    }
+
+    /// First branch shown: the login's own, else the app's current one, else the default, else the first
+    static func initialOutletId(own: Int?, current: Int?, outlets: [(id: Int, isDefault: Bool)]) -> Int? {
+        if let own { return own }
+        if let current, outlets.contains(where: { $0.id == current }) { return current }
+        return (outlets.first { $0.isDefault } ?? outlets.first)?.id
+    }
+
+    /// The old per-device note, only when one was really saved (not the default text that used to print)
+    static var legacyDeviceNote: String? { UserDefaults.standard.string(forKey: "IpLabelPrinter") }
+    static func clearLegacyDeviceValues(includingNote: Bool) {
+        UserDefaults.standard.removeObject(forKey: "PrintBankQr")
+        if includingNote { UserDefaults.standard.removeObject(forKey: "IpLabelPrinter") }
+    }
+
+    /// An Order from the list or the cart has no outlet info: load the detail before printing
+    static func needsDetail(_ order: Order) -> Bool { order.outletPrintBankQr == nil }
 }

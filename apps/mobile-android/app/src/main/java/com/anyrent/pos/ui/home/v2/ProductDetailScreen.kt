@@ -50,6 +50,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -73,6 +75,8 @@ import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.data.UserRole
+import com.anyrent.pos.domain.products.BranchListing
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.ProductsV2Api
@@ -271,6 +275,20 @@ fun ProductDetailScreen(
                     FreeStrip(strip, onOpenCalendar = { onOpenCalendar(current.id) }, modifier = Modifier.padding(top = 4.dp))
                     Text(stringResource(R.string.v2_detail_strip_caption, stripStock ?: 0), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
                 }
+                // #1346: OUTLET_STAFF has no edit form, so the greyed "Hiện ở chi nhánh" line lives here (board B5b); only
+                // when the product has rows at two or more branches (as the web)
+                val ownBranch = CurrentOutlet.id
+                if (PermissionManager.role == UserRole.OUTLET_STAFF && ownBranch != null &&
+                    BranchListing.showsTick(PermissionManager.role, 0, current.outletStock.size)
+                ) {
+                    val mark = if (BranchListing.isListedAt(current, ownBranch)) "☑" else "☐"
+                    Text(
+                        stringResource(R.string.products_listing_title) + ": " + mark + " " + CurrentOutlet.name.orEmpty() + " · " +
+                            stringResource(R.string.products_listing_owner_only),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                        modifier = Modifier.padding(top = 4.dp).alpha(0.6f).testTag("product.detail.listing"),
+                    )
+                }
             }
             Spacer(Modifier.fillMaxWidth().height(8.dp).background(DS.Colors.Background))
 
@@ -383,6 +401,7 @@ fun ProductDetailScreen(
                 onSaved = {
                     showEdit = false
                     product = it
+                    SavedProducts.add(it)
                     reloadKey += 1
                 },
             )

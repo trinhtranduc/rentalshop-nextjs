@@ -42,7 +42,7 @@ class DepositPlanApiTest {
     @Test
     fun `every request carries the installments capability in one header`() {
         api("""{"success":true,"data":{}}""").authedGet("/api/orders")
-        assertEquals("installments,block-pricing", requests.single().header(ClientCapabilities.HEADER_NAME))
+        assertEquals("installments,block-pricing,branch-listing", requests.single().header(ClientCapabilities.HEADER_NAME))
         assertEquals("X-Client-Capabilities", ClientCapabilities.HEADER_NAME)
     }
 

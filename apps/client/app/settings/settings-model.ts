@@ -149,6 +149,34 @@ export function blockOldAppsFlag(merchant: { blockPricing?: { oldApps?: unknown 
   return bp.oldApps === 'block' ? 'block' : 'recompute';
 }
 
+/**
+ * #1314 "Cho tạo đơn khi trùng lịch" (#518): the stored value, or null when the merchant has no such key
+ * (load the profile). Display it with `!== false`, as the order editor does.
+ */
+export function overlapFlag(merchant: { allowOverlappingOrders?: unknown } | null | undefined): boolean | null {
+  const v = merchant?.allowOverlappingOrders;
+  return typeof v === 'boolean' ? v : null;
+}
+
+/** #1314 only the owner changes the overlap switch (API: MERCHANT / ADMIN; the web card is the owner's). */
+export function canChangeOverlap(role?: string | null): boolean {
+  return String(role || '').toUpperCase() === 'MERCHANT';
+}
+
+/**
+ * #1344 "Hiện ghi chú đơn trên ảnh chia sẻ": login has no `shareOrderNote`, only GET /api/users/profile does (every role).
+ * A missing key is unknown (load the profile), never OFF; after the load the API always sends a boolean.
+ */
+export function shareOrderNoteFlag(merchant: { shareOrderNote?: unknown } | null | undefined): boolean | null {
+  const v = merchant?.shareOrderNote;
+  return typeof v === 'boolean' ? v : null;
+}
+
+/** #1344 only the owner changes the switch (API: MERCHANT only, every other role 403); the others see it dimmed. */
+export function canChangeShareOrderNote(role?: string | null): boolean {
+  return String(role || '').toUpperCase() === 'MERCHANT';
+}
+
 /** Public product page and referral sign-up link, from the login payload or the tenant key. */
 export function publicLinks(
   origin: string,
@@ -279,4 +307,26 @@ export function canChangeCurrency(role?: string | null): boolean {
 /** #1145 confirm example: the same amount in both currencies, nothing converted ("220.000 đ → $220,000.00"). */
 export function currencyExample(from: ShopCurrency, to: ShopCurrency, format: (amount: number, currency: ShopCurrency) => string): string {
   return `${format(220000, from)} → ${format(220000, to)}`;
+}
+
+/** #1321 web reads the shop currency again at most this often (page load, tab back in front). */
+export const SHOP_CURRENCY_REFRESH_MS = 60_000;
+
+/**
+ * #1321 Should the shop web read `GET /api/settings/currency` now? Pure: the caller passes the clock.
+ * No for ADMIN / OPS or a user without a merchant (nothing to read); yes when never read, when a minute passed,
+ * or when the clock went backwards.
+ */
+export function shouldRefreshShopCurrency(input: {
+  now: number;
+  role?: string | null;
+  hasMerchant: boolean;
+  lastRefreshAt?: number | null;
+}): boolean {
+  const role = String(input.role || '').toUpperCase();
+  if (!role || role === 'ADMIN' || role === 'OPS' || !input.hasMerchant) return false;
+  const last = input.lastRefreshAt;
+  if (last == null || !Number.isFinite(last)) return true;
+  const age = input.now - last;
+  return age < 0 || age >= SHOP_CURRENCY_REFRESH_MS;
 }

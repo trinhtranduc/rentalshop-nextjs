@@ -5,6 +5,7 @@ import { db, getDefaultBankAccount } from '@rentalshop/database';
 import {API, USER_ROLE} from '@rentalshop/constants';
 import { toPublicUser } from '../../../../lib/user-scope';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
+import { readShareOrderNote } from '../../../../lib/share-order-note-settings';
 import { merchantTimeZoneField } from '../../../../lib/shop-timezone';
 import { merchantDepositField } from '../../../../lib/installments';
 import { activeModuleKeysSafe } from '../../../../lib/merchant-modules';
@@ -82,6 +83,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         showPublicPrice: (userProfile.merchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
         // #1189 "Với app cũ" for day-block prices (additive; 'recompute' when unset)
         blockPricing: { oldApps: readOldAppsMode((userProfile.merchant as { settings?: unknown }).settings) },
+        // #1344 "Hiện ghi chú đơn trên ảnh chia sẻ" (additive; false when unset, readable by every role)
+        shareOrderNote: readShareOrderNote((userProfile.merchant as { settings?: unknown }).settings),
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(userProfile.merchant),
         // #1199 "Cách thu cọc" (additive)

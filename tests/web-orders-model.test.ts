@@ -38,7 +38,8 @@ describe('filters', () => {
     expect(parseStatus('PICKUPED')).toBe('PICKUPED');
     expect(parseStatus('pickuped')).toBe('');
     expect(parsePageSize('50')).toBe(50);
-    expect(parsePageSize('25')).toBe(10);
+    expect(parsePageSize('25')).toBe(25);
+    expect(parsePageSize('0')).toBe(10);
     expect(parsePage('3')).toBe(3);
     expect(parsePage('-1')).toBe(1);
     expect(parseSort('nearest')).toBe('nearest');

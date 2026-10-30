@@ -95,6 +95,23 @@ export interface BatchProductAvailabilityRequest {
   outletId?: number; // Required for MERCHANT and ADMIN roles
 }
 
+/** #1347 POST /api/products/other-outlets-availability: same days as the batch check, for the order's branch. */
+export interface OtherOutletsAvailabilityRequest {
+  products: Array<{ productId: number; quantity?: number }>;
+  orderType?: 'RENT' | 'SALE';
+  startDate?: string;
+  endDate?: string;
+  date?: string;
+  outletId?: number;
+}
+
+export interface OtherOutletsAvailabilityResponse {
+  results: Array<{
+    productId: number;
+    outlets: Array<{ outletId: number; outletName: string; available: number }>;
+  }>;
+}
+
 export interface BatchProductAvailabilityResult extends ProductAvailabilityResponse {
   error?: string;
 }
@@ -161,6 +178,8 @@ export const productsApi = {
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.available !== undefined) params.append('available', filters.available.toString());
+    // #1341 only the products listed at the branch ("Hiện ở chi nhánh"); only `true` is sent
+    if (filters.listed) params.append('listed', 'true');
     if (filters.status) params.append('status', filters.status);
     if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
@@ -337,6 +356,23 @@ export const productsApi = {
   },
 
   /**
+   * #1341 Tick (`isListed: true`) or untick "Hiện ở chi nhánh" for one branch (owner only; PUT /api/products/listing).
+   * Unticking is never refused: stock, units on rent and open orders do not matter.
+   */
+  async setBranchListing(input: { outletId: number; productIds: number[]; isListed: boolean }): Promise<ApiResponse<{
+    outletId: number;
+    isListed: boolean;
+    productIds: number[];
+    changed: number;
+  }>> {
+    const response = await authenticatedFetch(apiUrls.products.listing, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+    return await parseApiResponse<{ outletId: number; isListed: boolean; productIds: number[]; changed: number }>(response);
+  },
+
+  /**
    * Batch delete multiple products
    */
   async batchDeleteProducts(productIds: number[]): Promise<ApiResponse<{
@@ -431,6 +467,20 @@ export const productsApi = {
       body: JSON.stringify(request),
     });
     return await parseApiResponse<BatchProductAvailabilityResponse>(response);
+  },
+
+  /**
+   * #1347 Other open branches that still have each product on the days of an order (a hint, owner / manager / stock
+   * keeper only: OUTLET_STAFF gets 403).
+   */
+  async checkOtherOutletsAvailability(
+    request: OtherOutletsAvailabilityRequest
+  ): Promise<ApiResponse<OtherOutletsAvailabilityResponse>> {
+    const response = await authenticatedFetch(apiUrls.products.otherOutletsAvailability, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+    return await parseApiResponse<OtherOutletsAvailabilityResponse>(response);
   },
 
   /**

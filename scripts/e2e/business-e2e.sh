@@ -71,6 +71,13 @@ export BIZ_E2E_OTHER_MERCHANT_EMAIL="${BIZ_E2E_OTHER_MERCHANT_EMAIL:-$(q "SELECT
 export BIZ_E2E_STAFF_EMAIL="${BIZ_E2E_STAFF_EMAIL:-$(q "SELECT u.email FROM \"User\" u JOIN \"Outlet\" o ON o.id = u.\"outletId\" WHERE u.role = 'OUTLET_STAFF' AND o.\"merchantId\" = $MAIN_MERCHANT_ID ORDER BY o.\"isDefault\" DESC, o.id LIMIT 1")}"
 # #682: Nhân viên kho of the same outlet as staff
 export BIZ_E2E_INVENTORY_EMAIL="${BIZ_E2E_INVENTORY_EMAIL:-$(q "SELECT u.email FROM \"User\" u JOIN \"Outlet\" o ON o.id = u.\"outletId\" WHERE u.role = 'OUTLET_INVENTORY' AND o.\"merchantId\" = $MAIN_MERCHANT_ID ORDER BY o.\"isDefault\" DESC, o.id LIMIT 1")}"
+# #1315: OUTLET_ADMIN of the staff's outlet, plus an OUTLET_ADMIN and an OUTLET_STAFF of another outlet of the same merchant
+OTHER_OUTLET_ID="$(q "SELECT o.id FROM \"Outlet\" o WHERE o.\"merchantId\" = $MAIN_MERCHANT_ID AND o.id <> (SELECT u.\"outletId\" FROM \"User\" u WHERE u.email = '$BIZ_E2E_STAFF_EMAIL') ORDER BY o.id LIMIT 1")"
+export BIZ_E2E_OUTLET_ADMIN_EMAIL="${BIZ_E2E_OUTLET_ADMIN_EMAIL:-$(q "SELECT email FROM \"User\" WHERE role = 'OUTLET_ADMIN' AND \"outletId\" = (SELECT \"outletId\" FROM \"User\" WHERE email = '$BIZ_E2E_STAFF_EMAIL') ORDER BY id LIMIT 1")}"
+if [ -n "$OTHER_OUTLET_ID" ]; then
+  export BIZ_E2E_OUTLET_ADMIN_OTHER_EMAIL="${BIZ_E2E_OUTLET_ADMIN_OTHER_EMAIL:-$(q "SELECT email FROM \"User\" WHERE role = 'OUTLET_ADMIN' AND \"outletId\" = $OTHER_OUTLET_ID ORDER BY id LIMIT 1")}"
+  export BIZ_E2E_STAFF_OTHER_EMAIL="${BIZ_E2E_STAFF_OTHER_EMAIL:-$(q "SELECT email FROM \"User\" WHERE role = 'OUTLET_STAFF' AND \"outletId\" = $OTHER_OUTLET_ID ORDER BY id LIMIT 1")}"
+fi
 echo "== Accounts: merchant $BIZ_E2E_MERCHANT_EMAIL, other merchant $BIZ_E2E_OTHER_MERCHANT_EMAIL, staff $BIZ_E2E_STAFF_EMAIL, inventory $BIZ_E2E_INVENTORY_EMAIL"
 
 api_up() { curl -fsS -m 3 "$BASE/api/health" >/dev/null 2>&1; }

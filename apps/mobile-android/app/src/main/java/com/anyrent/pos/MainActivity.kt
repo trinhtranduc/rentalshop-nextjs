@@ -19,7 +19,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import com.anyrent.pos.data.ApiClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.data.repository.BankAccountRepository
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.appconfig.AppConfigGate
@@ -77,12 +82,20 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         DraftOrderReminder.onAppForegrounded()
+        // #1320: the owner may have changed the bank account on another device or on the web
+        BankAccountRepository.clearPrintCache()
     }
 
     override fun onResume() {
         super.onResume()
         // First check at launch, again each time the app comes back (a minimum version can change meanwhile)
         appConfigViewModel.refresh()
+        // #1307: the owner may have changed the shop currency meanwhile (at most once a minute)
+        if (SessionStore.isLoggedIn) {
+            lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshCurrency() }
+            // #1354: and the owner's "show order note on the shared image" switch (at most once a minute)
+            lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshShareOrderNote() }
+        }
     }
 
     override fun onStop() {

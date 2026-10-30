@@ -484,7 +484,7 @@ export default function UsersPage() {
             </div>
           )}
 
-          {!list.failed && list.total > 0 && (list.total > limit || page > 1) && (
+          {!list.failed && list.total > 0 && (list.total > limit || page > 1 || limit !== 20) && (
             <TableFooter
               page={page}
               limit={limit}

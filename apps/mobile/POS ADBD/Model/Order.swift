@@ -194,6 +194,9 @@ struct Order: Codable {
     // Simplified outlet data
     let outletId: Int
     let outletName: String
+    /// #1308: the order's outlet print settings, set from the detail (`Order.from(detail:)`); nil = not loaded
+    var outletPrintNote: String? = nil
+    var outletPrintBankQr: Bool? = nil
     let merchantId: Int?
     let merchantName: String?
     
@@ -766,6 +769,8 @@ extension Order {
             paymentCount: detail.payments.count,
             totalPaid: totalPaid
         )
+        order.outletPrintNote = detail.outlet.printNote
+        order.outletPrintBankQr = detail.outlet.printBankQr ?? false
         order.installmentPercentCollected = detail.installmentSummary?.percentCollected
         order.hasDepositPlan = detail.hasDepositPlan
         order.stages = detail.installments
@@ -801,6 +806,9 @@ struct OutletDetail: Codable {
     let zipCode: String?
     let country: String?
     let merchant: Merchant
+    /// #1308: what the outlet prints on its bills; nil on a payload without them (older API)
+    var printNote: String? = nil
+    var printBankQr: Bool? = nil
 }
 
 struct UserDetail: Codable {
@@ -1521,16 +1529,17 @@ extension Order {
 
         // Footer for rent orders
         if orderType == .rent {
-            // Add note from printer settings
-            let note = Utils.loadNotePrinter()
-            data.append(PrinterCommand.selectOrCancleBoldModel(1))
-            data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.center.rawValue))
-            data.append("\(("Note".localized().formatStringOriginalCharacter()))\n".data(using: .utf8)!)
-            data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.left.rawValue))
-            data.append(PrinterCommand.selectOrCancleBoldModel(0))
-            data.append("\(note.formatStringOriginalCharacter())\n".data(using: .utf8)!)
-            
-            data.append("------------------------------------------------\n".data(using: .utf8)!)
+            // #1308: the outlet's note (server); no note = no "Note" block
+            if let note = OutletPrintSettings.note(serverNote: outletPrintNote) {
+                data.append(PrinterCommand.selectOrCancleBoldModel(1))
+                data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.center.rawValue))
+                data.append("\(("Note".localized().formatStringOriginalCharacter()))\n".data(using: .utf8)!)
+                data.append(PrinterCommand.selectAlignment(PrinterCommand.Alignment.left.rawValue))
+                data.append(PrinterCommand.selectOrCancleBoldModel(0))
+                data.append("\(note.formatStringOriginalCharacter())\n".data(using: .utf8)!)
+
+                data.append("------------------------------------------------\n".data(using: .utf8)!)
+            }
             
             // Signature lines
             let customerSignature = "Customer Signature".localized().formatStringOriginalCharacter()

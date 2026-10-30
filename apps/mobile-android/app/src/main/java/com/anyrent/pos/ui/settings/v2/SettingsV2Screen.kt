@@ -73,6 +73,7 @@ import com.anyrent.pos.domain.settings.OverlapSetting
 import com.anyrent.pos.domain.settings.PasswordProblem
 import com.anyrent.pos.domain.settings.SettingsGroup
 import com.anyrent.pos.domain.settings.SettingsItem
+import com.anyrent.pos.domain.settings.ShopInfoLogic
 import com.anyrent.pos.domain.settings.SettingsPlan
 import com.anyrent.pos.domain.settings.SettingsRows
 import com.anyrent.pos.print.ThermalPrinter
@@ -156,29 +157,6 @@ fun SettingsV2Screen(
         }
     }
 
-    // #1145 "Tiền tệ": the session's currency; a choice, then a confirm, then PUT /api/settings/currency
-    val currency by SessionStore.currencyFlow.collectAsState()
-    var currencyChoice by remember { mutableStateOf(false) }
-    var currencyTarget by remember { mutableStateOf<ShopCurrency?>(null) }
-    var currencySaving by remember { mutableStateOf(false) }
-    var currencyError by remember { mutableStateOf<String?>(null) }
-    val currencyFailedText = stringResource(R.string.settings_v2_currency_failed)
-
-    fun saveCurrency(target: ShopCurrency) {
-        if (currencySaving) return
-        currencySaving = true
-        scope.launch {
-            val result = withContext(Dispatchers.IO) { ApiClient.get().setCurrency(target) }
-            currencySaving = false
-            currencyTarget = null
-            result.onFailure { failure ->
-                val id = ApiErrorMessages.stringId(AppError.from(failure).code)
-                currencyError = if (id != 0) context.getString(id) else currencyFailedText
-            }
-        }
-    }
-
-
     val prefs = remember { context.getSharedPreferences("anyrent.printer", 0) }
     // #937: unread count on "Thông báo" (moved from the Home bell). #674: follows the inbox and pushes; the server is
     // asked on first show, after a push, and when 10 minutes old
@@ -192,7 +170,8 @@ fun SettingsV2Screen(
     // #388: totals next to Khách hàng / Người dùng, only for the rows this role sees; a failed call shows nothing.
     // #518 overlap switch re-read from the profile. #674: on show, but the view model skips it within 10 minutes.
     LaunchedEffect(role) {
-        settingsVm.onShown(role, OverlapSetting.canEdit(role), sections.flatMap { it.items })
+        // #1313: only the owner's row shows a count (of branches)
+        settingsVm.onShown(role, OverlapSetting.canEdit(role), sections.flatMap { it.items }.filter { it != SettingsItem.STORE_INFO || role == "MERCHANT" })
     }
 
     fun signOut() {
@@ -281,8 +260,11 @@ fun SettingsV2Screen(
             }
             items(section.items, key = { it.name }) { item ->
                 val value = when (item) {
-                    SettingsItem.STORE_INFO -> (SessionStore.outletName ?: SessionStore.merchantName)?.takeIf { it.isNotBlank() }
-                    SettingsItem.CURRENCY -> currency.code
+                    SettingsItem.STORE_INFO -> ShopInfoLogic.rowValue(
+                        role, SessionStore.outletName, counts[item],
+                        countText = { count -> context.getString(R.string.shopinfo_branch_count, count) },
+                        readOnlyText = stringResource(R.string.shopinfo_view_only_value),
+                    )
                     SettingsItem.BANK_ACCOUNTS -> bankCount?.let { stringResource(R.string.settings_v2_collect_accounts, it) }
                     SettingsItem.DEPOSIT -> stringResource(
                         if (depositMode == DepositMode.STAGED) R.string.settings_v2_collect_staged else R.string.settings_v2_collect_one_time,
@@ -298,10 +280,9 @@ fun SettingsV2Screen(
                     SettingsItem.ADVANCED -> stringResource(R.string.settings_v2_advanced_value)
                     else -> null
                 }
-                SettingRow(title = itemTitle(item), value = value, chevron = item != SettingsItem.PLAN) {
+                SettingRow(title = itemTitle(item, role), value = value, chevron = item != SettingsItem.PLAN) {
                     when (item) {
                         SettingsItem.STORE_INFO -> onOpenStore()
-                        SettingsItem.CURRENCY -> currencyChoice = true
                         SettingsItem.BANK_ACCOUNTS -> onOpenBankAccounts()
                         SettingsItem.DEPOSIT -> subPage = SettingsSubPage.DEPOSIT
                         SettingsItem.PRINTING -> onOpenPrinter()
@@ -420,28 +401,6 @@ fun SettingsV2Screen(
         )
     }
     overlapError?.let { message -> AppAlertError(message = message, onDismiss = { overlapError = null }) }
-    if (currencyChoice) {
-        CurrencyChoiceDialog(
-            current = currency,
-            onDismiss = { currencyChoice = false },
-            onPick = { picked ->
-                currencyChoice = false
-                if (picked != currency) currencyTarget = picked
-            },
-        )
-    }
-    currencyTarget?.let { target ->
-        AppAlertConfirm(
-            title = stringResource(R.string.settings_v2_currency_confirm_title, target.code),
-            message = stringResource(R.string.settings_v2_currency_confirm_message, target.code, ShopMoney.example(currency, target)),
-            confirmLabel = stringResource(R.string.settings_v2_currency_confirm_button, target.code),
-            confirmLoading = currencySaving,
-            dismissEnabled = !currencySaving,
-            onDismiss = { currencyTarget = null },
-            onConfirm = { saveCurrency(target) },
-        )
-    }
-    currencyError?.let { message -> AppAlertError(message = message, onDismiss = { currencyError = null }) }
     passwordError?.let { message ->
         AppAlertError(message = message.ifBlank { stringResource(R.string.calendar_v2_error) }, onDismiss = { passwordError = null })
     }
@@ -531,10 +490,10 @@ private fun planText(plan: SettingsPlan): String {
 }
 
 @Composable
-private fun itemTitle(item: SettingsItem): String = stringResource(
+private fun itemTitle(item: SettingsItem, role: String?): String = stringResource(
     when (item) {
-        SettingsItem.STORE_INFO -> R.string.store_info
-        SettingsItem.CURRENCY -> R.string.settings_v2_currency
+        // #1313: like the web, the owner "Thông tin cửa hàng", other roles "Thông tin chi nhánh"
+        SettingsItem.STORE_INFO -> if (ShopInfoLogic.rowTitle(role) == ShopInfoLogic.RowTitle.SHOP) R.string.store_info else R.string.shopinfo_branch_info
         SettingsItem.BANK_ACCOUNTS -> R.string.bank_accounts
         SettingsItem.DEPOSIT -> R.string.settings_v2_deposit
         SettingsItem.PRINTING -> R.string.settings_v2_printing

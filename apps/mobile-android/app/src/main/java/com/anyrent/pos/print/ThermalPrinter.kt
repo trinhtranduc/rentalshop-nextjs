@@ -9,6 +9,7 @@ import com.anyrent.pos.data.CurrentOutlet
 import android.content.SharedPreferences
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.model.OrderDetail
+import com.anyrent.pos.domain.print.OutletPrintSettings
 import com.anyrent.pos.data.repository.BankAccountRepository
 import com.anyrent.pos.domain.bank.OutletBankAccount
 import com.anyrent.pos.domain.bank.VietQr
@@ -110,10 +111,20 @@ object ThermalPrinter {
         order: OrderDetail,
         bankLookup: (Int) -> OutletBankAccount? = BankAccountRepository::printAccount,
     ): Result = runCatching {
-        val account = if (config.printBankQr) lookupBankAccount(order, bankLookup) else null
-        send(config, buildOrderReceipt(config, order, account))
+        val bill = receiptConfig(config, order)
+        val account = if (bill.printBankQr) lookupBankAccount(order, bankLookup) else null
+        send(bill, buildOrderReceipt(bill, order, account))
         Result.Success
     }.getOrElse(::failure)
+
+    /**
+     * #1308: the note and the QR switch of a bill are the order's outlet settings on the server; the device config
+     * keeps only the printer (IP, port, paper)
+     */
+    fun receiptConfig(config: Config, order: OrderDetail): Config = config.copy(
+        note = OutletPrintSettings.note(order.outletPrintNote).orEmpty(),
+        printBankQr = OutletPrintSettings.printsBankQr(order.outletPrintBankQr),
+    )
 
     /** #970: no printer IP saved; [send] throws it before opening a socket */
     private class NotConfigured : IllegalArgumentException("Printer IP required")
@@ -300,13 +311,16 @@ object ThermalPrinter {
             }
 
             if (isRent) {
-                bold(true)
-                alignCenter()
-                text("Note")
-                alignLeft()
-                bold(false)
-                text(config.note)
-                text(divider)
+                // #1308: no note on the outlet = no "Note" block
+                if (config.note.isNotBlank()) {
+                    bold(true)
+                    alignCenter()
+                    text("Note")
+                    alignLeft()
+                    bold(false)
+                    text(config.note)
+                    text(divider)
+                }
                 text("Customer Signature          Store Signature")
                 text("")
                 text("")

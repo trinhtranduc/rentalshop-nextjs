@@ -2301,7 +2301,7 @@
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "No bank account yet. Tap + to add one.";
 "printer.bankQr.title" = "Print transfer QR on bills";
-"printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. This device only.";
+"printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. Applies to this branch on every device.";
 "bill.bankQr.title" = "BANK TRANSFER";
 "bill.bankQr.accountNumber" = "Account: %@";
 
@@ -3034,3 +3034,55 @@
 "order.sheet.edit.subtitle" = "Change items, rental dates, customer";
 "order.sheet.extend.subtitle" = "Add rental days, charge the extra";
 "order.sheet.history.subtitle" = "Who changed what, and when";
+"printer.outlet.branch" = "Branch";
+"printer.outlet.readonly" = "Only the shop owner can change the note and the QR. They apply to the whole branch.";
+"printer.outlet.loadFailed" = "Could not load the branch bill settings.";
+
+/* #1313 Shop and branch information */
+"Branch Information" = "Branch information";
+"shopinfo.title.shop" = "Edit shop";
+"shopinfo.title.branch" = "Edit branch";
+"shopinfo.shopName" = "Shop name";
+"shopinfo.branchName" = "Branch name";
+"shopinfo.taxId" = "Tax ID";
+"shopinfo.taxIdShort" = "Tax ID";
+"shopinfo.ward" = "Ward / District";
+"shopinfo.province" = "Province / City";
+"shopinfo.belongsTo" = "Part of shop %@";
+"shopinfo.yourBranch" = "Your branch · part of shop %@";
+"shopinfo.viewOnly" = "You can only view this.";
+"shopinfo.viewOnlyValue" = "View only";
+"shopinfo.branches" = "Branches · %d";
+"shopinfo.tapToEdit" = "tap to edit";
+"shopinfo.main" = "Main";
+"shopinfo.branchCount" = "%d branches";
+"shopinfo.webHint" = "Add or turn off a branch on the web.";
+"shopinfo.addressRequired" = "Please enter the address.";
+
+// #1346 "Hiện ở chi nhánh"
+"products.listing.title" = "Shown at branch";
+"products.listing.ownerOnly" = "Only the shop owner can turn this on or off";
+"products.listing.current" = "Selected";
+"products.listing.branchMain" = "%@ (main)";
+"products.listing.stock" = "Stock %d";
+"products.listing.stockRent" = "Stock %d · on rent %d";
+"products.listing.reminder" = "%d left at this branch (%d on rent). They still count in the total but are not offered when creating an order.";
+"products.listing.reminderNoRent" = "%d left at this branch. They still count in the total but are not offered when creating an order.";
+"products.listing.saveFailed" = "The product was saved, but \"Shown at branch\" could not be saved. Try again.";
+"products.listing.notShown" = "Not shown at this branch";
+"products.scan.notListed" = "This branch does not show this product";
+"share.collect" = "Collect at hand-over";
+"share.deposit.label" = "Deposit";
+"share.deposit.none" = "No deposit";
+"share.stage.paid" = "Collected";
+"share.stage.unpaid" = "Not collected";
+"share.stage.partial" = "Part collected";
+
+/* #1354 Order note on the shared order image */
+"share.orderNote.title" = "Note";
+"printer.shareNote.title" = "Show order note on the shared image";
+"printer.shareNote.hint" = "The order's note appears at the bottom of the image sent to customers, internal notes included. Applies to the whole shop.";
+"printer.shareNote.readonly" = "Only the shop owner can turn this on or off.";
+"printer.shareNote.failed" = "Could not save the setting. Please try again.";
+// #1353: under a short cart line, the other branches that still have the product on the order's days
+"products.cart.othersHave" = "Other branches have: %@";

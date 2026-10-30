@@ -5,6 +5,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
+import { readShareOrderNote } from '../../../../lib/share-order-note-settings';
 import { isValidTimeZone, merchantTimeZoneField, recordShopTimeZoneChange } from '../../../../lib/shop-timezone';
 import { merchantDepositField } from '../../../../lib/installments';
 
@@ -25,6 +26,10 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  *   INSUFFICIENT_PERMISSIONS otherwise, ADMIN included). Stored in `Merchant.settings.blockPricing.oldApps`, merged into
  *   the other keys of `settings`; any other value is 400 INVALID_INPUT. A body with only that field updates just it.
  *   GET /api/users/profile returns it as `merchant.blockPricing` (additive).
+ * - `shareOrderNote` (#1344, boolean "Hiện ghi chú đơn trên ảnh chia sẻ"): role MERCHANT only (403 INSUFFICIENT_PERMISSIONS
+ *   otherwise, ADMIN included; not a boolean → 400 INVALID_INPUT). Stored in `Merchant.settings.shareOrderNote`, merged into
+ *   the other keys of `settings`. A body with only that field updates just it (no name required). The answer carries
+ *   `shareOrderNote`; GET /api/users/profile returns it as `merchant.shareOrderNote` (additive, false when unset).
  * - `timezone` (#567, IANA id): role MERCHANT only (ADMIN changes it via PUT /api/merchants/[id]; others
  *   403 INSUFFICIENT_PERMISSIONS). Unknown zone → 400 INVALID_TIMEZONE. A body with only the shop settings
  *   updates just those (no name required). A change is written to the audit log (entity Merchant).
@@ -63,7 +68,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       onlineBookingEnabled,
       showPublicPrice,
       timezone,
-      blockPricing
+      blockPricing,
+      shareOrderNote
     } = body;
 
     // #518 "Cho tạo đơn khi trùng lịch": boolean, and only the shop owner (or platform ADMIN) may change it,
@@ -132,6 +138,22 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       }
     }
 
+    // #1344 "Hiện ghi chú đơn trên ảnh chia sẻ": boolean, shop owner only
+    if (shareOrderNote !== undefined) {
+      if (typeof shareOrderNote !== 'boolean') {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_INPUT'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
     // #567 shop time zone: a valid IANA id, and only the shop owner may change it here.
     if (timezone !== undefined) {
       if (!timezoneSchema.safeParse(timezone).success) {
@@ -152,7 +174,7 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     // every other body is the business-info form as before and still needs a name.
     const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
     const settingOnly =
-      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined || blockPricing !== undefined) &&
+      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined || blockPricing !== undefined || shareOrderNote !== undefined) &&
       BUSINESS_FIELDS.every((field) => body[field] === undefined);
 
     // Validate required fields
@@ -236,13 +258,20 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     if (timezone !== undefined) {
       updateData.timezone = timezone;
     }
-    if (blockPricing !== undefined) {
-      // Keep the other keys of `settings` (e.g. installments); only blockPricing.oldApps changes
+    if (blockPricing !== undefined || shareOrderNote !== undefined) {
+      // Keep the other keys of `settings` (e.g. payment); only the key(s) sent change
       const stored = ((dbUser.merchant as { settings?: Record<string, unknown> | null }).settings ?? {}) as Record<string, unknown>;
-      updateData.settings = {
-        ...stored,
-        blockPricing: { ...((stored.blockPricing as Record<string, unknown> | undefined) ?? {}), oldApps: (blockPricing as { oldApps: string }).oldApps },
-      };
+      let nextSettings: Record<string, unknown> = { ...stored };
+      if (blockPricing !== undefined) {
+        nextSettings = {
+          ...nextSettings,
+          blockPricing: { ...((stored.blockPricing as Record<string, unknown> | undefined) ?? {}), oldApps: (blockPricing as { oldApps: string }).oldApps },
+        };
+      }
+      if (shareOrderNote !== undefined) {
+        nextSettings = { ...nextSettings, shareOrderNote };
+      }
+      updateData.settings = nextSettings;
     }
     
     // Only include tenantKey if it's provided (allows clearing tenantKey by passing empty string)
@@ -281,6 +310,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         showPublicPrice: (updatedMerchant as { showPublicPrice?: boolean }).showPublicPrice !== false,
         // #1189 additive; 'recompute' when unset
         blockPricing: { oldApps: readOldAppsMode((updatedMerchant as { settings?: unknown }).settings) },
+        // #1344 additive; false when unset
+        shareOrderNote: readShareOrderNote((updatedMerchant as { settings?: unknown }).settings),
         ...merchantTimeZoneField(updatedMerchant),
         ...merchantDepositField(updatedMerchant),
         isActive: updatedMerchant.isActive,

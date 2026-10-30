@@ -674,7 +674,8 @@
         "onlyLeft": "Only {free} free for these days",
         "noneLeft": "None free for these days",
         "fits": "{free} free for these days",
-        "inStock": "{free} in stock"
+        "inStock": "{free} in stock",
+        "othersHave": "Other branches have: {list}"
       },
       "loyalty": {
         "use": "Use reward points (customer has {points})",
@@ -789,7 +790,8 @@
         "label": "{n}-day block",
         "labelExtra": "{n}-day block + {m} extra days",
         "days": "{n} days"
-      }
+      },
+      "notListed": "This branch does not show this product"
     },
     "tabs": {
       "label": "Order lists",
@@ -822,6 +824,17 @@
       "from": "From",
       "to": "To",
       "apply": "Apply"
+    },
+    "pickup": {
+      "label": "Pickup:",
+      "any": "Any day",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "next7d": "Next 7 days",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "month": "This month",
+      "custom": "Custom"
     },
     "sort": {
       "label": "Sort:",

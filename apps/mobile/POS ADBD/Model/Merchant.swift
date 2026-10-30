@@ -12,24 +12,24 @@ import Foundation
 
 struct Merchant: Codable {
     let id: Int
-    let name: String
+    var name: String
     let email: String?
-    let phone: String?
-    let address: String?
-    let city: String?
-    let state: String?
-    let zipCode: String?
-    let country: String?
+    var phone: String?
+    var address: String?
+    var city: String?
+    var state: String?
+    var zipCode: String?
+    var country: String?
     let businessType: String?
     let businessTags: [String]?
-    let taxId: String?
+    var taxId: String?
     var currency: String?
     let pricingType: String?
     let subscription: Subscription?
     
     // Optional fields from documentation (may not be in login response)
     let website: String?
-    let description: String?
+    var description: String?
     let planId: Int?
     let totalRevenue: Double?
     let lastActiveAt: Date?
@@ -44,5 +44,8 @@ struct Merchant: Codable {
     /// #1199 "Cách thu cọc" (`ONE_TIME` / `STAGED`). Missing (older API or cached login) means unknown: the screens
     /// read GET /api/settings/deposit, and until then it acts as "Thu cọc 1 lần".
     var depositMode: String? = nil
+    /// #1354 "Hiện ghi chú đơn trên ảnh chia sẻ" (`merchant.shareOrderNote` of GET /api/users/profile, #1344). Missing
+    /// (older API, login payload or cached user) means OFF.
+    var shareOrderNote: Bool? = nil
 }
 

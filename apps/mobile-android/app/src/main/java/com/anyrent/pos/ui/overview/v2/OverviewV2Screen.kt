@@ -1,5 +1,8 @@
 package com.anyrent.pos.ui.overview.v2
 
+import com.anyrent.pos.data.ApiClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -164,6 +167,8 @@ fun OverviewV2Screen(
     val state by viewModel.state.collectAsState()
     // #674: back on screen or an order changed: quiet reload only when dirty or 10 minutes old
     LaunchedEffect(Unit) { viewModel.onShown() }
+    // #1307: every role follows the shop currency the owner set (at most once a minute)
+    LaunchedEffect(Unit) { withContext(Dispatchers.IO) { ApiClient.get().refreshCurrency() } }
     LaunchedEffect(Unit) { OrdersChanged.version.drop(1).collect { viewModel.onShown() } }
     var sheet by remember { mutableStateOf<OverviewTileKind?>(null) }
     var showPicker by remember { mutableStateOf(false) }

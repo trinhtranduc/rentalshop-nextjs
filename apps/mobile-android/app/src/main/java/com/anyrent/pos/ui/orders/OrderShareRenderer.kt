@@ -17,6 +17,8 @@ import androidx.core.content.FileProvider
 import com.anyrent.pos.R
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.orders.OrderShareModel
+import com.anyrent.pos.domain.orders.ShareMoney
+import com.anyrent.pos.domain.orders.ShareNoteClip
 import com.anyrent.pos.domain.orders.ShareShop
 import com.anyrent.pos.domain.orders.ShareText
 import com.anyrent.pos.domain.orders.ShareTone
@@ -267,52 +269,91 @@ internal class OrderShareRenderer(private val context: Context, private val mode
         y += 1f
         val rowLabel = paint(15f, regular, body)
         val rowValue = paint(15f, medium, Color.parseColor("#1E293B"))
-        model.rows.forEach { row ->
-            y += 31.5f
-            canvas.text(row.value, rowValue, right, y - 3f, Paint.Align.RIGHT)
-            canvas.text(t(row.label), rowLabel, left, y - 3f, maxWidth = contentWidth - rowValue.measureText(row.value) - 16f)
-        }
-        model.plan?.let { plan ->
-            // #1252: stages of a staged deposit, then what is collected and what is left
-            y += 22f
-            canvas.text(t(plan.title).uppercase(upper), paint(13f, bold, muted, 0.08f), left, y)
-            y += 14f
-            val stageTitle = paint(15f, medium, Color.parseColor("#1E293B"))
-            val stageDetail = paint(13f, regular, muted)
-            plan.stages.forEach { stage ->
-                val amount = OrderShareModel.money(stage.amount)
-                val amountWidth = stageTitle.measureText(amount)
-                canvas.text(amount, stageTitle, right, y + 20f, Paint.Align.RIGHT)
-                y += canvas.block(t(stage.title), stageTitle, left, y, contentWidth - amountWidth - 16f)
-                val detail = listOfNotNull(stage.detail, stage.status).joinToString(" · ") { t(it) }
-                if (detail.isNotEmpty()) y += canvas.block(detail, stageDetail, left, y, contentWidth)
-                y += 8f
+        val mutedLabel = paint(15f, regular, faint)
+        val mutedValue = paint(15f, regular, faint)
+        // #1345: the money part in the order of the order detail: Tạm tính / Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân
+        model.money.forEach { entry ->
+            when (entry) {
+                is ShareMoney.Row -> {
+                    y += 31.5f
+                    canvas.text(entry.row.value, rowValue, right, y - 3f, Paint.Align.RIGHT)
+                    canvas.text(t(entry.row.label), rowLabel, left, y - 3f, maxWidth = contentWidth - rowValue.measureText(entry.row.value) - 16f)
+                }
+                is ShareMoney.Muted -> {
+                    y += 31.5f
+                    val value = t(entry.value)
+                    canvas.text(value, mutedValue, right, y - 3f, Paint.Align.RIGHT)
+                    canvas.text(t(entry.label), mutedLabel, left, y - 3f, maxWidth = contentWidth - mutedValue.measureText(value) - 16f)
+                }
+                is ShareMoney.Stages -> {
+                    // #1252: stages of a staged deposit; #1345: each Đã thu / Chưa thu, no running totals
+                    y += 22f
+                    canvas.text(t(entry.title).uppercase(upper), paint(13f, bold, muted, 0.08f), left, y)
+                    y += 14f
+                    val stageTitle = paint(15f, medium, Color.parseColor("#1E293B"))
+                    val stageDetail = paint(13f, regular, muted)
+                    entry.stages.forEach { stage ->
+                        val amountWidth = stageTitle.measureText(stage.amount)
+                        canvas.text(stage.amount, stageTitle, right, y + 20f, Paint.Align.RIGHT)
+                        y += canvas.block(t(stage.title), stageTitle, left, y, contentWidth - amountWidth - 16f)
+                        val detail = listOf(stage.detail, stage.status).joinToString(" · ") { t(it) }
+                        y += canvas.block(detail, stageDetail, left, y, contentWidth)
+                        y += 8f
+                    }
+                }
+                is ShareMoney.Total -> {
+                    y += 14f
+                    val h = entry.highlight
+                    val (bg, labelColor, valueColor) = when (h.tone) {
+                        ShareTone.GREEN -> Triple(Color.parseColor("#ECFDF5"), Color.parseColor("#047857"), Color.parseColor("#047857"))
+                        ShareTone.ORANGE -> Triple(Color.parseColor("#FFF7ED"), Color.parseColor("#9A3412"), ink)
+                        else -> Triple(Color.parseColor("#EFF6FF"), Color.parseColor("#1E3A8A"), accent)
+                    }
+                    canvas?.drawRoundRect(RectF(left, y, right, y + 61f), 14f, 14f, fill(bg))
+                    val valuePaint = paint(30f, black, valueColor)
+                    canvas.text(h.value, valuePaint, 476f, y + 41f, Paint.Align.RIGHT)
+                    canvas.text(t(h.label), paint(16f, bold, labelColor), 64f, y + 36f, maxWidth = 412f - valuePaint.measureText(h.value) - 12f)
+                    y += 61f
+                }
+                is ShareMoney.Collect -> {
+                    // #1345: the second box, white with a light blue edge: what is paid at hand-over, fixed by the plan
+                    y += 12f
+                    val box = RectF(left, y, right, y + 54f)
+                    canvas?.drawRoundRect(box, 14f, 14f, fill(Color.WHITE))
+                    canvas?.drawRoundRect(
+                        RectF(box.left + 0.75f, box.top + 0.75f, box.right - 0.75f, box.bottom - 0.75f), 14f, 14f,
+                        Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#BFDBFE"); style = Paint.Style.STROKE; strokeWidth = 1.5f },
+                    )
+                    val valuePaint = paint(24f, black, ink)
+                    canvas.text(entry.value, valuePaint, 476f, y + 35f, Paint.Align.RIGHT)
+                    canvas.text(t(entry.label), paint(16f, bold, Color.parseColor("#1E3A8A")), 64f, y + 33f, maxWidth = 412f - valuePaint.measureText(entry.value) - 12f)
+                    y += 54f
+                }
             }
-            val totalLabel = paint(15f, regular, body)
-            val totalValue = paint(15f, bold, Color.parseColor("#1E293B"))
-            listOf(R.string.deposit_card_collected to plan.collected, R.string.deposit_card_remaining to plan.remaining).forEach { (label, value) ->
-                y += 23f
-                val text = OrderShareModel.money(value)
-                canvas.text(text, totalValue, right, y, Paint.Align.RIGHT)
-                canvas.text(context.getString(label), totalLabel, left, y, maxWidth = contentWidth - totalValue.measureText(text) - 16f)
-            }
         }
-        y += 14f
-        val h = model.highlight
-        val (bg, labelColor, valueColor) = when (h.tone) {
-            ShareTone.GREEN -> Triple(Color.parseColor("#ECFDF5"), Color.parseColor("#047857"), Color.parseColor("#047857"))
-            ShareTone.ORANGE -> Triple(Color.parseColor("#FFF7ED"), Color.parseColor("#9A3412"), ink)
-            else -> Triple(Color.parseColor("#EFF6FF"), Color.parseColor("#1E3A8A"), accent)
-        }
-        canvas?.drawRoundRect(RectF(left, y, right, y + 61f), 14f, 14f, fill(bg))
-        val valuePaint = paint(30f, black, valueColor)
-        canvas.text(h.value, valuePaint, 476f, y + 41f, Paint.Align.RIGHT)
-        canvas.text(t(h.label), paint(16f, bold, labelColor), 64f, y + 36f, maxWidth = 412f - valuePaint.measureText(h.value) - 12f)
-        y += 61f
         model.note?.let {
             y += 15f
             y += canvas.block(t(it), paint(14f, regular, body), left, y, contentWidth)
             y += 2f
+        }
+        model.orderNote?.let { block ->
+            // #1354: the order's own note, last of the money part and above the QR and the thanks: "GHI CHÚ" and a grey
+            // box of at most 4 lines, cut with "…" (measured with the font it is drawn in; iOS draws the same)
+            y += 22f
+            canvas.text(t(block.title).uppercase(upper), paint(13f, bold, muted, 0.08f), left, y + 12f)
+            y += 16f + 8f
+            val boxPad = 14f
+            val textPaint = paint(14f, regular, muted)
+            val textWidth = contentWidth - boxPad * 2
+            val lines = ShareNoteClip.lines(block.text) { textPaint.measureText(it) <= textWidth }
+            val metrics = textPaint.fontMetrics
+            val lineHeight = kotlin.math.ceil(metrics.descent - metrics.ascent) + 3f
+            val boxHeight = lines.size * lineHeight + 20f
+            canvas?.drawRoundRect(RectF(left, y, right, y + boxHeight), 12f, 12f, fill(Color.parseColor("#F3F4F6")))
+            lines.forEachIndexed { index, line ->
+                canvas.text(line, textPaint, left + boxPad, y + 10f + index * lineHeight - metrics.ascent)
+            }
+            y += boxHeight
         }
         return y + 17.5f - top
     }

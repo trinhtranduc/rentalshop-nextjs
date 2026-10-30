@@ -168,6 +168,7 @@ final class SettingsV2ViewController: BaseViewControler {
     private func loadCounts() {
         for item in groups.flatMap({ $0.items }) {
             guard let path = SettingsListTotal.path(for: item) else { continue }
+            if item == .storeInfo && user?.role != .merchant { continue } // only the owner's row shows a count (#1313)
             TabsV2APIService.shared.performGET(path: path, parameters: ["limit": 1, "page": 1], responseType: SettingsListTotal.self,
                                      context: "SettingsV2.count") { [weak self] response, _ in
                 DispatchQueue.main.async {
@@ -365,60 +366,10 @@ final class SettingsV2ViewController: BaseViewControler {
     // MARK: - Shop currency (#1145)
 
     private func refreshCurrency() {
-        guard ShopCurrencyLogic.canChange(role: user?.role) else { return }
+        // #1307: every shop role reads it; only the row and the PUT are owner-only
         ShopCurrencyStore.refresh { [weak self] _ in
             guard let self, !ShopCurrencyStore.saving else { return }
             self.listView.reloadData()
-        }
-    }
-
-    /// "VND (đ)" / "USD ($)", the current one checked; another one asks to confirm
-    private func chooseCurrency() {
-        let current = ShopCurrencyStore.current
-        let sheet = UIAlertController(title: "settings.v2.currency".localized(), message: nil, preferredStyle: .actionSheet)
-        for currency in ShopCurrency.allCases {
-            let action = UIAlertAction(title: currency.label, style: .default) { [weak self] _ in
-                guard currency != current else { return }
-                self?.confirmCurrency(currency, from: current)
-            }
-            action.setValue(currency == current, forKey: "checked")
-            sheet.addAction(action)
-        }
-        sheet.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
-        if let popover = sheet.popoverPresentationController {
-            popover.sourceView = view
-            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
-            popover.permittedArrowDirections = []
-        }
-        present(sheet, animated: true)
-    }
-
-    private func confirmCurrency(_ currency: ShopCurrency, from current: ShopCurrency) {
-        let alert = UIAlertController(title: ShopCurrencyLogic.confirmTitle(to: currency),
-                                      message: ShopCurrencyLogic.confirmMessage(from: current, to: currency),
-                                      preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "settings.v2.currency.cancel".localized(), style: .cancel))
-        alert.addAction(UIAlertAction(title: ShopCurrencyLogic.confirmButton(to: currency), style: .default) { [weak self] _ in
-            self?.saveCurrency(currency)
-        })
-        present(alert, animated: true)
-    }
-
-    private func saveCurrency(_ currency: ShopCurrency) {
-        guard !ShopCurrencyStore.saving else { return }
-        ShopCurrencyStore.saving = true
-        TabsV2APIService.shared.setShopCurrency(currency) { [weak self] saved, error in
-            DispatchQueue.main.async {
-                ShopCurrencyStore.saving = false
-                if let saved, error == nil {
-                    ShopCurrencyStore.store(saved)
-                    self?.listView.reloadData()
-                    return
-                }
-                guard let self else { return }
-                let failure = error ?? NSError.errorWithOwnMessage(message: "settings.v2.currency.failed".localized(), domain: "RC")
-                UIAlertController.errorAlert(parent: self, error: failure)
-            }
         }
     }
 
@@ -468,8 +419,7 @@ final class SettingsV2ViewController: BaseViewControler {
 
     private func title(of item: SettingsV2Item) -> String {
         switch item {
-        case .storeInfo: return "Store Information".localized()
-        case .currency: return "settings.v2.currency".localized()
+        case .storeInfo: return ShopInfoLogic.rowTitleKey(role: user?.role).localized()
         case .bankAccounts: return "Bank Accounts".localized()
         case .deposit: return "settings.v2.deposit".localized()
         case .printing: return "settings.v2.printing".localized()
@@ -486,10 +436,9 @@ final class SettingsV2ViewController: BaseViewControler {
     private func value(of item: SettingsV2Item) -> String? {
         switch item {
         case .storeInfo:
-            let name = (user?.storeName ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            return name.isEmpty ? nil : name
-        case .currency:
-            return ShopCurrencyStore.current.rawValue
+            return ShopInfoLogic.rowValue(role: user?.role, branchName: user?.outlet?.name, branchCount: counts[.storeInfo],
+                                          countText: { String(format: "shopinfo.branchCount".localized(), $0) },
+                                          readOnlyText: "shopinfo.viewOnlyValue".localized())
         case .bankAccounts:
             return bankCount.map { String(format: "settings.v2.collect.accounts".localized(), $0) }
         case .deposit:
@@ -518,12 +467,9 @@ final class SettingsV2ViewController: BaseViewControler {
     private func open(_ item: SettingsV2Item) {
         switch item {
         // #459: detail pages in the new style
+        // #1313: the owner gets the shop + branches screen, the branch manager the own branch form, staff the same read-only
         case .storeInfo:
-            let page = AccountViewController()
-            page.v2 = true
-            navigationController?.pushViewController(page, animated: true)
-        case .currency:
-            chooseCurrency()
+            navigationController?.pushViewController(ShopInfoRouter.makeScreen(), animated: true)
         case .bankAccounts:
             let page = BankAccountViewController()
             page.v2 = true

@@ -157,7 +157,26 @@
         "copyLoading": "加载中…",
         "close": "关闭",
         "incomplete": "请填写每一天的价格和每多一天加收的金额，或选择保持最后一档价格。"
+      },
+      "sections": {
+        "stockListing": "库存与门店显示"
+      },
+      "listing": {
+        "branch": "门店",
+        "stock": "库存",
+        "column": "在此门店显示",
+        "tickOf": "在{outlet}显示",
+        "ownerOnly": "仅店主可开关",
+        "current": "当前选择",
+        "reminder": "此门店还有 {stock} 件（{renting} 件出租中），仍计入合计，但创建订单时不会显示。",
+        "reminderNoRent": "此门店还有 {stock} 件，仍计入合计，但创建订单时不会显示。",
+        "saveFailed": "商品已保存，但“在此门店显示”未能保存，请重试。"
       }
+    },
+    "listing": {
+      "hidden": "未显示",
+      "shown": "显示",
+      "totalStock": "库存合计"
     }
   }
 }

@@ -1442,7 +1442,7 @@
     <string name="bank_account_need_number">Please check account number</string>
     <string name="bank_account_need_holder">Please check account holder name</string>
     <string name="printer_bank_qr_title">Print transfer QR on bills</string>
-    <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. This device only.</string>
+    <string name="printer_bank_qr_hint">Prints the shop\'s default bank account and a VietQR code at the end of each bill. Applies to this branch on every device.</string>
     <string name="bill_bank_qr_title">BANK TRANSFER</string>
     <string name="bill_bank_qr_account">Account: %1$s</string>
     <!-- #632 categories from the product form -->
@@ -1529,6 +1529,12 @@
     <string name="share_thanks">Thank you for choosing %1$s</string>
     <string name="share_made_with">Made with AnyRent</string>
     <string name="share_draft_action">Share draft</string>
+    <string name="share_collect">Collect at hand-over</string>
+    <string name="share_deposit_label">Deposit</string>
+    <string name="share_deposit_none">No deposit</string>
+    <string name="share_stage_paid">Collected</string>
+    <string name="share_stage_unpaid">Not collected</string>
+    <string name="share_stage_partial">Part collected</string>
     <string name="v2_home_search_placeholder">Search name, barcode or take a photo</string>
     <string name="v2_home_image_search">Search by photo</string>
     <!-- #672 image search results -->
@@ -2092,6 +2098,8 @@
     <string name="v2_cart_left">%1$d left</string>
     <string name="v2_cart_only_left">Only %1$d left</string>
     <string name="v2_cart_booked_out">Booked out</string>
+    <!-- #1353: under a short cart line, the other branches that still have the product on the order's days -->
+    <string name="v2_cart_others_have">Other branches have: %1$s</string>
 
     <!-- #1079 several carts -->
     <string name="v2_cart_multi_title">Cart %1$d</string>
@@ -2355,4 +2363,47 @@
     <string name="detail_collateral_money_row">Collateral</string>
     <string name="detail_payment_title">PAYMENT</string>
     <string name="detail_rent_total">Rental total</string>
+    <string name="printer_outlet_branch">Branch</string>
+    <string name="printer_outlet_readonly">Only the shop owner can change the note and the QR. They apply to the whole branch.</string>
+    <string name="printer_outlet_load_failed">Could not load the branch bill settings.</string>
+    <string name="printer_outlet_save_failed">Could not save the bill settings.</string>
+    <!-- #1313 Shop and branch information -->
+    <string name="shopinfo_branch_info">Branch information</string>
+    <string name="shopinfo_title_shop">Edit shop</string>
+    <string name="shopinfo_title_branch">Edit branch</string>
+    <string name="shopinfo_shop_name">Shop name</string>
+    <string name="shopinfo_branch_name">Branch name</string>
+    <string name="shopinfo_tax_id">Tax ID</string>
+    <string name="shopinfo_tax_id_short">Tax ID</string>
+    <string name="shopinfo_belongs_to">Part of shop %1$s</string>
+    <string name="shopinfo_your_branch">Your branch · part of shop %1$s</string>
+    <string name="shopinfo_view_only">You can only view this.</string>
+    <string name="shopinfo_view_only_value">View only</string>
+    <string name="shopinfo_branches">Branches · %1$d</string>
+    <string name="shopinfo_tap_to_edit">tap to edit</string>
+    <string name="shopinfo_main">Main</string>
+    <string name="shopinfo_branch_count">%1$d branches</string>
+    <string name="shopinfo_web_hint">Add or turn off a branch on the web.</string>
+    <string name="shopinfo_address_required">Please enter the address.</string>
+    <string name="shopinfo_address_label">Address</string>
+
+    <!-- #1346 "Hiện ở chi nhánh" (iOS products.listing.*) -->
+    <string name="products_listing_title">Shown at branch</string>
+    <string name="products_listing_owner_only">Only the shop owner can turn this on or off</string>
+    <string name="products_listing_current">Selected</string>
+    <string name="products_listing_branch_main">%1$s (main)</string>
+    <string name="products_listing_stock">Stock %1$d</string>
+    <string name="products_listing_stock_rent">Stock %1$d · on rent %2$d</string>
+    <string name="products_listing_reminder">%1$d left at this branch (%2$d on rent). They still count in the total but are not offered when creating an order.</string>
+    <string name="products_listing_reminder_no_rent">%1$d left at this branch. They still count in the total but are not offered when creating an order.</string>
+    <string name="products_listing_save_failed">The product was saved, but \"Shown at branch\" could not be saved. Try again.</string>
+    <string name="products_listing_not_shown">Not shown at this branch</string>
+    <string name="v2_scan_not_listed">This branch does not show this product</string>
+
+    <!-- #1354 Order note on the shared order image -->
+    <string name="share_order_note_title">Note</string>
+    <string name="printer_share_note_title">Show order note on the shared image</string>
+    <string name="printer_share_note_hint">The order\'s note appears at the bottom of the image sent to customers, internal notes included. Applies to the whole shop.</string>
+    <string name="printer_share_note_readonly">Only the shop owner can turn this on or off.</string>
+    <string name="printer_share_note_failed">Could not save the setting. Please try again.</string>
 </resources>

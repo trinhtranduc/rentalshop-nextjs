@@ -87,6 +87,15 @@ export const bookingRequestsApi = {
     return parseApiResponse<{ onlineBookingEnabled?: boolean }>(response);
   },
 
+  /** Settings › "Cho tạo đơn khi trùng lịch" (owner only, #1314); the same field the phone switch saves */
+  async setAllowOverlappingOrders(allowed: boolean) {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify({ allowOverlappingOrders: allowed }),
+    });
+    return parseApiResponse<{ allowOverlappingOrders?: boolean }>(response);
+  },
+
   /** Settings › "Hiện giá trên trang shop" (owner only, #1174) */
   async setShowPublicPrice(enabled: boolean) {
     const response = await authenticatedFetch(apiUrls.settings.merchant, {
@@ -94,6 +103,15 @@ export const bookingRequestsApi = {
       body: JSON.stringify({ showPublicPrice: enabled }),
     });
     return parseApiResponse<{ showPublicPrice?: boolean }>(response);
+  },
+
+  /** Settings › In & phiếu › "Hiện ghi chú đơn trên ảnh chia sẻ" (owner only, #1344); the same field the phone switch saves */
+  async setShareOrderNote(enabled: boolean) {
+    const response = await authenticatedFetch(apiUrls.settings.merchant, {
+      method: 'PUT',
+      body: JSON.stringify({ shareOrderNote: enabled }),
+    });
+    return parseApiResponse<{ shareOrderNote?: boolean }>(response);
   },
 
   /** Settings › "Với app cũ" for day-block prices (owner only, #1189): 'recompute' | 'block' */

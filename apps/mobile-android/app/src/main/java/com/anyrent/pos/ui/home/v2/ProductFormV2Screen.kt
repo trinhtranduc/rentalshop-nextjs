@@ -1,6 +1,11 @@
 package com.anyrent.pos.ui.home.v2
 
 import com.anyrent.pos.data.CurrentOutlet
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.draw.alpha
+import com.anyrent.pos.domain.products.BranchListing
+import com.anyrent.pos.domain.products.BranchOutlet
+import com.anyrent.pos.domain.products.BranchTickRow
 import android.view.WindowManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -58,6 +63,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -167,6 +173,11 @@ fun ProductFormV2Screen(
     val outletId = ProductStock.outletFor(CurrentOutlet.id, initial, merchantOutlets)
     val counts = initial?.let { ProductStock.counts(it, outletId) }
     var quantity by remember { mutableIntStateOf(counts?.total ?: 1) }
+    // #1346 "Hiện ở chi nhánh": the owner's tick per branch, or a branch role's own dimmed row (iOS ProductFormViewController)
+    val isOwner = BranchListing.canSet(PermissionManager.role)
+    val openedTicks = remember { makeTickRows(initial, isOwner) }
+    var tickRows by remember { mutableStateOf(openedTicks) }
+    var tickOriginal by remember { mutableStateOf(openedTicks) }
     val photos = remember {
         mutableStateListOf<FormPhoto>().apply {
             addAll((initial?.images?.ifEmpty { listOfNotNull(initial.imageUrl) } ?: emptyList()).map { FormPhoto.Remote(it) })
@@ -189,6 +200,7 @@ fun ProductFormV2Screen(
     val tooManyPhotos = stringResource(R.string.v2_form_error_photos)
     val barcodeUsed = stringResource(R.string.v2_form_barcode_used)
     val unreadable = stringResource(R.string.v2_form_photo_unreadable)
+    val saveFailed = stringResource(R.string.products_listing_save_failed)
 
     LaunchedEffect(Unit) {
         categories = withContext(Dispatchers.IO) { ApiParity.listCategories().getOrDefault(emptyList()) }
@@ -212,7 +224,7 @@ fun ProductFormV2Screen(
     fun checkBarcode(code: String) {
         if (code.isBlank() || code == initial?.barcode) return
         scope.launch {
-            val page = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code) }
+            val page = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code, applyBranchListing = false) }
             val match = page.getOrNull()?.let { BarcodeMatch.exact(code, it.items) }
             if (barcode == code && match != null && match.id != initial?.id) barcodeWarning = barcodeUsed.format(match.name)
         }
@@ -275,12 +287,35 @@ fun ProductFormV2Screen(
                         } else null,
                         outletId = target,
                         quantity = quantity,
+                        // #1346: the owner's ticks on a new product; a branch role sends one row and the API ticks its branch
+                        createStock = if (initial == null && isOwner && tickRows.isNotEmpty()) BranchListing.createStock(tickRows, quantity, target) else null,
                     )
-                    ProductsV2Api.saveProduct(initial?.id, fields, photos.filterIsInstance<FormPhoto.Remote>().map { it.url }, files).getOrThrow()
+                    val saved = ProductsV2Api.saveProduct(initial?.id, fields, photos.filterIsInstance<FormPhoto.Remote>().map { it.url }, files).getOrThrow()
+                    // #1346: the owner's moved ticks go to PUT /api/products/listing after the product is saved
+                    val moved = if (initial != null && isOwner) BranchListing.changes(tickOriginal, tickRows) else emptyList()
+                    val applied = mutableListOf<com.anyrent.pos.domain.products.BranchTickChange>()
+                    var tickError: String? = null
+                    for (change in moved) {
+                        val r = ProductsV2Api.setBranchListing(change.outletId, saved.id, change.isListed)
+                        if (r.isFailure) { tickError = r.exceptionOrNull()?.message.orEmpty(); break }
+                        applied += change
+                    }
+                    // Read the product again so the list gets the new `isListed`
+                    val product = if (applied.isNotEmpty()) com.anyrent.pos.data.ApiClient.get().getProduct(saved.id).getOrNull() ?: saved else saved
+                    Triple(product, applied.toList(), tickError)
                 }
             }
             loading = false
-            result.onSuccess(onSaved).onFailure { error = it.message }
+            result.onSuccess { (product, applied, tickError) ->
+                // A retry sends only the ticks that are not saved yet
+                tickOriginal = tickOriginal.map { row -> applied.firstOrNull { it.outletId == row.outletId }?.let { row.copy(listed = it.isListed) } ?: row }
+                if (tickError == null) {
+                    onSaved(product)
+                } else {
+                    // The product is saved: the list gets it, the form stays for a retry
+                    error = saveFailed + "\n" + tickError
+                }
+            }.onFailure { error = it.message }
         }
     }
 
@@ -423,6 +458,35 @@ fun ProductFormV2Screen(
                 }
                 V2Stepper(value = quantity, onChange = { quantity = it }, minimum = 0)
             }
+            // #1346 "Hiện ở chi nhánh": the owner ticks; a branch role sees its own row dimmed (hidden for a one-branch shop)
+            if (tickRows.isNotEmpty()) {
+                SectionBand(stringResource(R.string.products_listing_title))
+                tickRows.forEachIndexed { index, row ->
+                    TickRowView(
+                        row = row,
+                        manyRows = tickRows.size > 1,
+                        isNew = initial == null,
+                        isCurrent = row.outletId == CurrentOutlet.id,
+                        enabled = isOwner,
+                        onToggle = { tickRows = tickRows.toMutableList().also { it[index] = row.copy(listed = !row.listed) } },
+                    )
+                }
+                val lines = tickRows.mapNotNull { row -> BranchListing.reminder(row)?.let { row.name to stringResource(it.stringRes, *it.args.toTypedArray()) } }
+                if (lines.isNotEmpty()) {
+                    Text(
+                        if (lines.size > 1) lines.joinToString("\n") { "${it.first}: ${it.second}" } else lines.first().second,
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).testTag("product.form.listing.reminder"),
+                    )
+                }
+                if (!isOwner) {
+                    Text(
+                        stringResource(R.string.products_listing_owner_only),
+                        fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 8.dp),
+                    )
+                }
+            }
             androidx.compose.foundation.layout.Spacer(Modifier.height(24.dp))
         }
         HorizontalDivider(color = DS.Colors.Border)
@@ -478,6 +542,46 @@ fun ProductFormV2Screen(
         }
     }
     error?.let { message -> AppAlertError(message = message, onDismiss = { error = null }) }
+}
+
+/**
+ * Lines of the "Hiện ở chi nhánh" box (iOS `makeTickRows`). Owner: every active branch of the shop. Branch role: its own
+ * branch, only when the product has rows at two or more branches (it cannot count the shop's branches).
+ */
+private fun makeTickRows(product: Product?, isOwner: Boolean): List<BranchTickRow> {
+    val role = PermissionManager.role
+    if (isOwner) {
+        val outlets = CurrentOutlet.outlets.map { BranchOutlet(it.id, it.name, it.isDefault) }
+        if (!BranchListing.showsTick(role, outlets.size, 0)) return emptyList()
+        return BranchListing.rows(outlets, product, CurrentOutlet.id)
+    }
+    val own = CurrentOutlet.id ?: return emptyList()
+    if (product == null || !BranchListing.showsTick(role, 0, product.outletStock.size)) return emptyList()
+    return BranchListing.rows(listOf(BranchOutlet(own, CurrentOutlet.name.orEmpty(), isDefault = false)), product, null)
+}
+
+@Composable
+private fun TickRowView(row: BranchTickRow, manyRows: Boolean, isNew: Boolean, isCurrent: Boolean, enabled: Boolean, onToggle: () -> Unit) {
+    val title = if (row.isDefault && manyRows) stringResource(R.string.products_listing_branch_main, row.name) else row.name
+    val caption = when {
+        !isNew -> if (row.renting > 0) stringResource(R.string.products_listing_stock_rent, row.stock, row.renting)
+        else stringResource(R.string.products_listing_stock, row.stock)
+        isCurrent -> stringResource(R.string.products_listing_current)
+        else -> ""
+    }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .alpha(if (enabled) 1f else 0.5f)
+            .clickable(enabled = enabled, role = Role.Checkbox, onClick = onToggle)
+            .semantics { contentDescription = "product.form.listing.${row.outletId}" }
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Checkbox(checked = row.listed, onCheckedChange = null, enabled = enabled)
+        Text(title, fontSize = DS.TextSize.Body, fontWeight = if (row.listed) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
+        if (caption.isNotEmpty()) Text(caption, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+    }
 }
 
 @Composable

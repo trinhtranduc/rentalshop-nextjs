@@ -751,7 +751,11 @@
       "bankQrHint": "Prints the outlet's default bank account and its VietQR (no amount) above the thank-you line. Saved for the outlet, so the apps use it too.",
       "bankQrNoAccount": "This outlet has no bank account yet.",
       "bankQrAddAccount": "Add a bank account",
-      "bankQrReadOnly": "Only the owner or the outlet manager can change this."
+      "bankQrReadOnly": "Only the owner or the outlet manager can change this.",
+      "shareNote": "Show the order note on the shared order image",
+      "shareNoteHint": "The order's note appears at the bottom of the image sent to customers, internal notes included. Applies to the whole shop.",
+      "shareNoteBadge": "Whole shop",
+      "shareNoteReadOnly": "Only the shop owner can turn this on or off."
     },
     "onlineBooking": {
       "title": "Accept online bookings",
@@ -759,6 +763,10 @@
       "ownerOnly": "Only the shop owner can turn this on or off.",
       "outlets": "Outlets that accept bookings",
       "outletsHint": "Turn off outlets that should not take online bookings."
+    },
+    "overlap": {
+      "title": "Allow overlapping orders",
+      "hint": "When off, an order cannot be created while the items are fully booked on those days."
     },
     "publicPage": {
       "showPrice": "Show prices on the shop page",

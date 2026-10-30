@@ -279,6 +279,7 @@ class User: NSObject, Codable {
         AuthTokenStore.clear()
         UserDefaults.standard.removeObject(forKey: userKey)
         ShopCurrencyStore.userDidChange()
+        ShareOrderNoteStore.userDidSignOut()
         UserDefaults.standard.synchronize()
         print("✅ User reset successfully from UserDefaults")
     }

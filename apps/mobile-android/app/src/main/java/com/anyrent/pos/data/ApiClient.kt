@@ -208,12 +208,49 @@ class ApiClient(
         value
     }
 
+    @Volatile private var lastCurrencyRefreshMs: Long? = null
+
     /** #1145: GET /api/settings/currency (every role); an answer without a currency keeps the cached one */
-    fun refreshCurrency(): Result<com.anyrent.pos.domain.money.ShopCurrency> = runCatching {
+    fun refreshCurrency(force: Boolean = false): Result<com.anyrent.pos.domain.money.ShopCurrency> = runCatching {
+        // #1307: every shop role, at most once a minute (iOS ShopCurrencyStore.refresh)
+        val now = System.currentTimeMillis()
+        if (!com.anyrent.pos.domain.settings.CurrencySetting.shouldRefresh(SessionStore.role, lastCurrencyRefreshMs, now, force)) {
+            return@runCatching SessionStore.currency
+        }
+        lastCurrencyRefreshMs = now
         val json = execute(get("$baseUrl/api/settings/currency"))
         requireSuccess(json)
         val value = com.anyrent.pos.domain.settings.CurrencySetting.fromResponse(json) ?: SessionStore.currency
         SessionStore.currency = value
+        value
+    }
+
+    @Volatile private var lastShareNoteRefreshMs: Long? = null
+
+    /**
+     * #1354: re-reads "Hiện ghi chú đơn trên ảnh chia sẻ" (`merchant.shareOrderNote` of GET /api/users/profile), every shop
+     * role, at most once a minute unless forced (iOS `ShareOrderNoteStore.refresh`, same throttle as the currency). An
+     * answer without a merchant, or one that arrives while a save is on its way, keeps the cached value.
+     */
+    fun refreshShareOrderNote(force: Boolean = false): Result<Boolean> = runCatching {
+        val now = System.currentTimeMillis()
+        if (!com.anyrent.pos.domain.settings.CurrencySetting.shouldRefresh(SessionStore.role, lastShareNoteRefreshMs, now, force)) {
+            return@runCatching SessionStore.shareOrderNote
+        }
+        lastShareNoteRefreshMs = now
+        val json = execute(get("$baseUrl/api/users/profile"))
+        val value = com.anyrent.pos.domain.settings.ShareOrderNoteSetting.fromResponse(json)
+        if (value != null && !SessionStore.shareOrderNoteSaving) SessionStore.shareOrderNote = value
+        SessionStore.shareOrderNote
+    }
+
+    /** #1354: PUT /api/settings/merchant with only the switch (shop owner; others get 403 INSUFFICIENT_PERMISSIONS) */
+    fun setShareOrderNote(on: Boolean): Result<Boolean> = runCatching {
+        val body = com.anyrent.pos.domain.settings.ShareOrderNoteSetting.body(on).toString().toRequestBody(jsonMedia)
+        val json = execute(put("$baseUrl/api/settings/merchant", body))
+        requireSuccess(json)
+        val value = com.anyrent.pos.domain.settings.ShareOrderNoteSetting.fromResponse(json) ?: on
+        SessionStore.shareOrderNote = value
         value
     }
 
@@ -1491,16 +1528,8 @@ class ApiClient(
         note = o.optString("note").ifBlank { o.optString("notes") }.takeIf { it.isNotBlank() },
         embeddingGeneratedAt = o.optString("embeddingGeneratedAt").takeIf { it.isNotBlank() && it != "null" },
         images = productImageUrls(o),
-        outletStock = o.optJSONArray("outletStock")?.let { rows ->
-            (0 until rows.length()).mapNotNull { index ->
-                val row = rows.optJSONObject(index) ?: return@mapNotNull null
-                val outletId = row.optJSONObject("outlet")?.positiveInt("id") ?: row.positiveInt("outletId")
-                    ?: return@mapNotNull null
-                val stock = row.optInt("stock")
-                val renting = row.optInt("renting")
-                ProductOutletStock(outletId, stock, renting, row.optInt("available", (stock - renting).coerceAtLeast(0)))
-            }
-        } ?: emptyList(),
+        // #1346: rows keep `isListed` (missing = listed)
+        outletStock = o.optJSONArray("outletStock")?.let { com.anyrent.pos.domain.products.BranchListing.parseRows(it) } ?: emptyList(),
         effectiveAvailableToday = if (o.has("effectiveAvailableToday") && !o.isNull("effectiveAvailableToday")) {
             o.optInt("effectiveAvailableToday")
         } else {
@@ -1674,6 +1703,9 @@ class ApiClient(
             outletName = root.nullableString("outletName")
                 ?: root.optJSONObject("outlet")?.nullableString("name"),
             outletId = root.positiveInt("outletId") ?: root.optJSONObject("outlet")?.positiveInt("id"),
+            outletPrintNote = root.optJSONObject("outlet")?.nullableString("printNote"),
+            outletPrintBankQr = root.optJSONObject("outlet")?.takeIf { it.has("printBankQr") && !it.isNull("printBankQr") }
+                ?.optBoolean("printBankQr"),
             deposit = com.anyrent.pos.domain.deposit.DepositPlanInfo.fromJson(root),
         )
     }

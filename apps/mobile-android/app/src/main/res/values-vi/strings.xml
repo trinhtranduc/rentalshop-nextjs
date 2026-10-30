@@ -1418,7 +1418,7 @@
     <string name="bank_account_need_number">Vui lòng kiểm tra số tài khoản</string>
     <string name="bank_account_need_holder">Vui lòng kiểm tra tên chủ tài khoản</string>
     <string name="printer_bank_qr_title">In QR chuyển khoản trên bill</string>
-    <string name="printer_bank_qr_hint">In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Chỉ áp dụng trên máy này.</string>
+    <string name="printer_bank_qr_hint">In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Áp dụng cho chi nhánh này trên mọi máy.</string>
     <string name="bill_bank_qr_title">CHUYỂN KHOẢN</string>
     <string name="bill_bank_qr_account">STK: %1$s</string>
     <!-- #632 categories from the product form -->
@@ -1489,7 +1489,7 @@
     <string name="share_items_rent">Đồ thuê · %1$d món</string>
     <string name="share_items_sale">Hàng mua · %1$d món</string>
     <string name="share_rent_total">Tổng tiền thuê</string>
-    <string name="share_deposit_paid">Đã đặt cọc</string>
+    <string name="share_deposit_paid">Đã cọc</string>
     <string name="share_collateral">Thế chân khi nhận đồ</string>
     <string name="share_amount_due">Còn phải trả</string>
     <string name="share_subtotal">Tạm tính</string>
@@ -1503,6 +1503,12 @@
     <string name="share_thanks">Cảm ơn quý khách đã tin chọn %1$s</string>
     <string name="share_made_with">Tạo bằng AnyRent</string>
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
+    <string name="share_collect">Thu khi giao</string>
+    <string name="share_deposit_label">Cọc</string>
+    <string name="share_deposit_none">Chưa cọc</string>
+    <string name="share_stage_paid">Đã thu</string>
+    <string name="share_stage_unpaid">Chưa thu</string>
+    <string name="share_stage_partial">Thu một phần</string>
     <string name="v2_home_search_placeholder">Tìm tên, mã vạch hoặc chụp ảnh</string>
     <string name="v2_home_image_search">Tìm bằng hình</string>
     <!-- #672 image search results -->
@@ -2064,6 +2070,8 @@
     <string name="v2_cart_left">Còn %1$d</string>
     <string name="v2_cart_only_left">Chỉ còn %1$d</string>
     <string name="v2_cart_booked_out">Hết đồ</string>
+    <!-- #1353: dưới dòng giỏ thiếu hàng, các chi nhánh khác còn món trong ngày của đơn -->
+    <string name="v2_cart_others_have">Chi nhánh khác còn: %1$s</string>
 
     <!-- #1079 several carts -->
     <string name="v2_cart_multi_title">Giỏ %1$d</string>
@@ -2325,4 +2333,47 @@
     <string name="detail_collateral_money_row">Thế chân</string>
     <string name="detail_payment_title">THANH TOÁN</string>
     <string name="detail_rent_total">Tổng tiền thuê</string>
+    <string name="printer_outlet_branch">Chi nhánh</string>
+    <string name="printer_outlet_readonly">Chỉ chủ shop sửa được ghi chú và QR. Áp dụng cho cả chi nhánh.</string>
+    <string name="printer_outlet_load_failed">Không tải được cài đặt hóa đơn của chi nhánh.</string>
+    <string name="printer_outlet_save_failed">Không lưu được cài đặt hóa đơn.</string>
+    <!-- #1313 Thông tin cửa hàng và chi nhánh -->
+    <string name="shopinfo_branch_info">Thông tin chi nhánh</string>
+    <string name="shopinfo_title_shop">Sửa cửa hàng</string>
+    <string name="shopinfo_title_branch">Sửa chi nhánh</string>
+    <string name="shopinfo_shop_name">Tên cửa hàng</string>
+    <string name="shopinfo_branch_name">Tên chi nhánh</string>
+    <string name="shopinfo_tax_id">Mã số thuế</string>
+    <string name="shopinfo_tax_id_short">MST</string>
+    <string name="shopinfo_belongs_to">Thuộc cửa hàng %1$s</string>
+    <string name="shopinfo_your_branch">Chi nhánh của bạn · thuộc cửa hàng %1$s</string>
+    <string name="shopinfo_view_only">Bạn chỉ xem được mục này.</string>
+    <string name="shopinfo_view_only_value">Chỉ xem</string>
+    <string name="shopinfo_branches">Chi nhánh · %1$d</string>
+    <string name="shopinfo_tap_to_edit">bấm để sửa</string>
+    <string name="shopinfo_main">Chính</string>
+    <string name="shopinfo_branch_count">%1$d chi nhánh</string>
+    <string name="shopinfo_web_hint">Thêm hoặc tắt chi nhánh: làm trên web.</string>
+    <string name="shopinfo_address_required">Vui lòng nhập địa chỉ.</string>
+    <string name="shopinfo_address_label">Địa chỉ</string>
+
+    <!-- #1346 "Hiện ở chi nhánh" (iOS products.listing.*) -->
+    <string name="products_listing_title">Hiện ở chi nhánh</string>
+    <string name="products_listing_owner_only">Chỉ chủ shop bật/tắt</string>
+    <string name="products_listing_current">Đang chọn</string>
+    <string name="products_listing_branch_main">%1$s (chính)</string>
+    <string name="products_listing_stock">Tồn %1$d</string>
+    <string name="products_listing_stock_rent">Tồn %1$d · đang thuê %2$d</string>
+    <string name="products_listing_reminder">Còn %1$d cái ở chi nhánh này (%2$d đang thuê), vẫn tính vào tổng nhưng không hiện khi tạo đơn.</string>
+    <string name="products_listing_reminder_no_rent">Còn %1$d cái ở chi nhánh này, vẫn tính vào tổng nhưng không hiện khi tạo đơn.</string>
+    <string name="products_listing_save_failed">Đã lưu sản phẩm nhưng chưa lưu được ô Hiện ở chi nhánh. Thử lại.</string>
+    <string name="products_listing_not_shown">Chưa hiện ở chi nhánh này</string>
+    <string name="v2_scan_not_listed">Chi nhánh này chưa hiện món này</string>
+
+    <!-- #1354 Ghi chú đơn trên ảnh chia sẻ -->
+    <string name="share_order_note_title">Ghi chú</string>
+    <string name="printer_share_note_title">Hiện ghi chú đơn trên ảnh chia sẻ</string>
+    <string name="printer_share_note_hint">Ghi chú của đơn hiện ở cuối ảnh gửi khách, cả ghi chú nội bộ. Áp dụng cho cả shop.</string>
+    <string name="printer_share_note_readonly">Chỉ chủ shop bật/tắt.</string>
+    <string name="printer_share_note_failed">Không lưu được cài đặt. Vui lòng thử lại.</string>
 </resources>

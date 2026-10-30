@@ -188,6 +188,9 @@ sealed class AddButtonState {
     object Add : AddButtonState()
     data class InCart(val count: Int) : AddButtonState()
     object Out : AddButtonState()
+
+    /** #1346: the owner sees the product but the branch in use does not list it: no + (the row says why) */
+    object NotListed : AddButtonState()
 }
 
 /** The line under the name: the product code and today's free count (no category) */
@@ -244,8 +247,9 @@ object ProductRowLogic {
     }
 
     /** The cart count wins (#677, iOS `ProductRowLogic.addState`): a product out today that is in the cart shows its count */
-    fun addState(free: Int, inCart: Int): AddButtonState = when {
+    fun addState(free: Int, inCart: Int, listed: Boolean = true): AddButtonState = when {
         inCart > 0 -> AddButtonState.InCart(inCart)
+        !listed -> AddButtonState.NotListed
         free <= 0 -> AddButtonState.Out
         else -> AddButtonState.Add
     }

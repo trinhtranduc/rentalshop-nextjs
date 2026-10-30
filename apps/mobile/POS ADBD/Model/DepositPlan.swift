@@ -13,11 +13,12 @@ import Foundation
 // MARK: - Client capability header
 
 /// Header every request carries so the API sends deposit stages and accepts `paymentPlan` (#1199), sends BLOCK options and checks BLOCK prices (#1189).
+/// `branch-listing` (#1346): this build has the "Hiện ở chi nhánh" tick, so the API does not list a product again when it is put on an order.
 /// Old builds never send it and keep getting the answers they decode today.
 enum ClientCapabilities {
     static let headerName = "X-Client-Capabilities"
     /// One token per feature this build understands; the value is comma separated
-    static let tokens: [String] = ["installments", "block-pricing"]
+    static let tokens: [String] = ["installments", "block-pricing", "branch-listing"]
     static var headerValue: String { tokens.joined(separator: ", ") }
 }
 

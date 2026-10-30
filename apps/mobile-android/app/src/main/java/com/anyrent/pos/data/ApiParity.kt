@@ -112,6 +112,9 @@ object ApiParity {
         val country: String? = null,
         val zipCode: String? = null,
         val description: String? = null,
+        /** #1313 */
+        val isActive: Boolean? = null,
+        val isDefault: Boolean? = null,
     )
 
     fun getOutlet(outletId: Int): Result<OutletInfo> = runCatching {
@@ -133,6 +136,90 @@ object ApiParity {
             zipCode = match.optText("zipCode"),
             description = match.optText("description"),
         )
+    }
+
+    /** #1313: the shop as GET /api/users/profile answers it (`data.merchant`; the login payload shape is also read) */
+    data class MerchantInfo(
+        val name: String,
+        val phone: String?,
+        val taxId: String?,
+        val address: String?,
+        val state: String?,
+        val city: String?,
+        val country: String?,
+        val zipCode: String?,
+        val description: String?,
+    )
+
+    fun getMerchantInfo(): Result<MerchantInfo> = runCatching {
+        val data = ApiClient.get().authedGet("/api/users/profile").optJSONObject("data")
+        val merchant = data?.optJSONObject("merchant") ?: data?.optJSONObject("user")?.optJSONObject("merchant") ?: error("Shop not found")
+        MerchantInfo(
+            name = merchant.optString("name"),
+            phone = merchant.optText("phone"),
+            taxId = merchant.optText("taxId"),
+            address = merchant.optText("address"),
+            state = merchant.optText("state"),
+            city = merchant.optText("city"),
+            country = merchant.optText("country"),
+            zipCode = merchant.optText("zipCode"),
+            description = merchant.optText("description"),
+        )
+    }
+
+    /** #1313: `PUT /api/settings/merchant` with the shop form (MERCHANT; 403 for other roles). An empty text clears a field. */
+    fun updateMerchantInfo(values: Map<String, String>): Result<Unit> = runCatching {
+        val body = JSONObject().apply { values.forEach { (key, value) -> put(key, value) } }.toString().toRequestBody(jsonMedia)
+        ApiClient.get().authedPut("/api/settings/merchant", body)
+        Unit
+    }
+
+    /** #1313: the owner's branches (`limit=200`, the API answers 50 by default); the caller hides closed ones */
+    fun getBranches(): Result<List<OutletInfo>> = runCatching {
+        val data = ApiClient.get().authedGet("/api/outlets?page=1&limit=200").optJSONObject("data") ?: JSONObject()
+        val array = data.optJSONArray("outlets") ?: JSONArray()
+        (0 until array.length()).map { array.getJSONObject(it) }.map { outletInfo(it) }
+    }
+
+    /** #1313: `PUT /api/outlets?outletId=` with name, address, phone (outlet.manage; staff get 403) */
+    fun updateBranch(outletId: Int, values: Map<String, String>): Result<Unit> = runCatching {
+        val body = JSONObject().apply { values.forEach { (key, value) -> put(key, value) } }.toString().toRequestBody(jsonMedia)
+        ApiClient.get().authedPut("/api/outlets?outletId=$outletId", body)
+        Unit
+    }
+
+    private fun outletInfo(match: JSONObject) = OutletInfo(
+        id = match.optInt("id"),
+        name = match.optString("name"),
+        address = match.optText("address"),
+        phone = match.optText("phone"),
+        city = match.optText("city"),
+        state = match.optText("state"),
+        country = match.optText("country"),
+        zipCode = match.optText("zipCode"),
+        description = match.optText("description"),
+        isActive = if (match.has("isActive") && !match.isNull("isActive")) match.optBoolean("isActive") else null,
+        isDefault = if (match.has("isDefault") && !match.isNull("isDefault")) match.optBoolean("isDefault") else null,
+    )
+
+    /** #1308: what the outlet prints on bills (`Outlet.printNote`, `Outlet.printBankQr`) */
+    data class OutletPrint(val note: String?, val bankQr: Boolean)
+
+    fun getOutletPrint(outletId: Int): Result<OutletPrint> = runCatching {
+        val json = ApiClient.get().authedGet("/api/outlets?page=1&limit=50")
+        val array = json.optJSONObject("data")?.optJSONArray("outlets") ?: org.json.JSONArray()
+        val match = (0 until array.length()).map { array.getJSONObject(it) }.firstOrNull { it.optInt("id") == outletId }
+            ?: error("Outlet not found")
+        OutletPrint(note = match.optText("printNote"), bankQr = match.optBoolean("printBankQr", false))
+    }
+
+    /** #1308: `PUT /api/outlets?outletId=` (outlet.manage; staff get 403). A blank note clears it on the server. */
+    fun updateOutletPrint(outletId: Int, note: String?, bankQr: Boolean): Result<Unit> = runCatching {
+        // note null = only the QR switch is sent (the pre-filled old note is not saved on its own)
+        val body = JSONObject().apply { if (note != null) put("printNote", note) }.put("printBankQr", bankQr)
+            .toString().toRequestBody(jsonMedia)
+        ApiClient.get().authedPut("/api/outlets?outletId=$outletId", body)
+        Unit
     }
 
     /** A string field, null when missing, JSON null or blank */
