@@ -2348,4 +2348,17 @@
     <string name="shopinfo_web_hint">Thêm hoặc tắt chi nhánh: làm trên web.</string>
     <string name="shopinfo_address_required">Vui lòng nhập địa chỉ.</string>
     <string name="shopinfo_address_label">Địa chỉ</string>
+
+    <!-- #1346 "Hiện ở chi nhánh" (iOS products.listing.*) -->
+    <string name="products_listing_title">Hiện ở chi nhánh</string>
+    <string name="products_listing_owner_only">Chỉ chủ shop bật/tắt</string>
+    <string name="products_listing_current">Đang chọn</string>
+    <string name="products_listing_branch_main">%1$s (chính)</string>
+    <string name="products_listing_stock">Tồn %1$d</string>
+    <string name="products_listing_stock_rent">Tồn %1$d · đang thuê %2$d</string>
+    <string name="products_listing_reminder">Còn %1$d cái ở chi nhánh này (%2$d đang thuê), vẫn tính vào tổng nhưng không hiện khi tạo đơn.</string>
+    <string name="products_listing_reminder_no_rent">Còn %1$d cái ở chi nhánh này, vẫn tính vào tổng nhưng không hiện khi tạo đơn.</string>
+    <string name="products_listing_save_failed">Đã lưu sản phẩm nhưng chưa lưu được ô Hiện ở chi nhánh. Thử lại.</string>
+    <string name="products_listing_not_shown">Chưa hiện ở chi nhánh này</string>
+    <string name="v2_scan_not_listed">Chi nhánh này chưa hiện món này</string>
 </resources>

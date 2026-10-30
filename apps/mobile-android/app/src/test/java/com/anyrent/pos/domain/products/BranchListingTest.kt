@@ -143,6 +143,17 @@ class BranchListingTest {
         assertEquals(AddButtonState.Add, ProductRowLogic.addState(free = 3, inCart = 0))
     }
 
+    @Test
+    fun onlyTheOwnerOfAManyBranchShopSeesAnUnlistedRowAsUnlisted() {
+        val p = product(ProductOutletStock(7, 4, 0, 4, isListed = false))
+        assertFalse(BranchListing.listedForRow(p, UserRole.MERCHANT, activeOutletCount = 3, outletId = 7))
+        assertTrue(BranchListing.listedForRow(p, UserRole.MERCHANT, activeOutletCount = 3, outletId = 1))
+        // One branch (Basic), outlets not loaded, or a branch role (the list was filtered by the API): never hidden
+        assertTrue(BranchListing.listedForRow(p, UserRole.MERCHANT, activeOutletCount = 1, outletId = 7))
+        assertTrue(BranchListing.listedForRow(p, UserRole.MERCHANT, activeOutletCount = 0, outletId = 7))
+        assertTrue(BranchListing.listedForRow(p, UserRole.OUTLET_STAFF, activeOutletCount = 0, outletId = 7))
+    }
+
     // The reminder when unticking
 
     private fun row(listed: Boolean, stock: Int, renting: Int) =

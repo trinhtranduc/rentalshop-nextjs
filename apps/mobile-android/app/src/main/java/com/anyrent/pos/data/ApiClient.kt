@@ -1499,16 +1499,8 @@ class ApiClient(
         note = o.optString("note").ifBlank { o.optString("notes") }.takeIf { it.isNotBlank() },
         embeddingGeneratedAt = o.optString("embeddingGeneratedAt").takeIf { it.isNotBlank() && it != "null" },
         images = productImageUrls(o),
-        outletStock = o.optJSONArray("outletStock")?.let { rows ->
-            (0 until rows.length()).mapNotNull { index ->
-                val row = rows.optJSONObject(index) ?: return@mapNotNull null
-                val outletId = row.optJSONObject("outlet")?.positiveInt("id") ?: row.positiveInt("outletId")
-                    ?: return@mapNotNull null
-                val stock = row.optInt("stock")
-                val renting = row.optInt("renting")
-                ProductOutletStock(outletId, stock, renting, row.optInt("available", (stock - renting).coerceAtLeast(0)))
-            }
-        } ?: emptyList(),
+        // #1346: rows keep `isListed` (missing = listed)
+        outletStock = o.optJSONArray("outletStock")?.let { com.anyrent.pos.domain.products.BranchListing.parseRows(it) } ?: emptyList(),
         effectiveAvailableToday = if (o.has("effectiveAvailableToday") && !o.isNull("effectiveAvailableToday")) {
             o.optInt("effectiveAvailableToday")
         } else {

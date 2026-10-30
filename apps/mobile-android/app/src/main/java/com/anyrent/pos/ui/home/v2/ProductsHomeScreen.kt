@@ -86,6 +86,7 @@ import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.AddButtonState
 import com.anyrent.pos.domain.products.BarcodeMatch
+import com.anyrent.pos.domain.products.BranchListing
 import com.anyrent.pos.domain.products.ProductAccess
 import com.anyrent.pos.domain.products.ProductImageViewerRequest
 import com.anyrent.pos.domain.products.ProductImages
@@ -138,6 +139,7 @@ fun ProductsHomeScreen(
     var viewer by remember { mutableStateOf<ProductImageViewerRequest?>(null) }
     val listState = rememberLazyListState()
     val notFound = stringResource(R.string.v2_scan_not_found)
+    val notListed = stringResource(R.string.v2_scan_not_listed)
     val added = stringResource(R.string.v2_added_to_cart)
 
     LaunchedEffect(Unit) {
@@ -171,8 +173,17 @@ fun ProductsHomeScreen(
         scope.launch {
             val page = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code) }
             val match = page.getOrNull()?.let { BarcodeMatch.exact(code, it.items) }
-            if (match != null) onOpenProduct(match.id)
-            else Toast.makeText(context, notFound.format(code), Toast.LENGTH_LONG).show()
+            if (match != null) {
+                onOpenProduct(match.id)
+            } else if (BranchListing.sendsListed(PermissionManager.role, CurrentOutlet.outlets.size)) {
+                // #1346: a branch role's list holds only the products ticked at its branch; a code that exists but is not
+                // ticked here says so instead of "not found" (there is no button to turn it on)
+                val all = withContext(Dispatchers.IO) { ProductsV2Api.listProducts(1, 20, code, applyBranchListing = false) }
+                val exists = all.getOrNull()?.let { BarcodeMatch.exact(code, it.items) } != null
+                Toast.makeText(context, if (exists) notListed else notFound.format(code), Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(context, notFound.format(code), Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -277,6 +288,7 @@ fun ProductsHomeScreen(
                                     if (HomeCart.showsAddedToast) Toast.makeText(context, added, Toast.LENGTH_SHORT).show()
                                 },
                                 onRemove = { CartStore.removeOne(product.id) },
+                                listed = BranchListing.listedForRow(product, PermissionManager.role, CurrentOutlet.outlets.size, CurrentOutlet.id),
                             )
                         }
                         if (state.hasMore) {
@@ -384,9 +396,11 @@ internal fun ProductRow(
     onAdd: () -> Unit,
     /** #1099 (iOS #1084/#1090): with it, a product in the cart shows an outlined − n + instead of the solid count */
     onRemove: (() -> Unit)? = null,
+    /** #1346: false only for the owner of a shop with several branches, on a product the branch in use does not list */
+    listed: Boolean = true,
 ) {
     val free = ProductRowLogic.subtitle(product).free
-    val addState = ProductRowLogic.addState(free, inCart)
+    val addState = ProductRowLogic.addState(free, inCart, listed)
     val price = ProductRowLogic.price(product)
     val unitRental = stringResource(R.string.v2_unit_per_rental)
     val unitDay = stringResource(R.string.v2_unit_per_day)
@@ -437,11 +451,17 @@ internal fun ProductRow(
                 }
                 Text(text, maxLines = 2)
                 Text(
-                    "● " + if (free > 0) stringResource(R.string.v2_stock_free, free) else stringResource(R.string.v2_stock_none_today),
+                    "● " + when {
+                        // #1346: the owner sees it; the branch in use does not list it (only the owner ticks it back, in the form)
+                        !listed -> stringResource(R.string.products_listing_not_shown)
+                        free > 0 -> stringResource(R.string.v2_stock_free, free)
+                        else -> stringResource(R.string.v2_stock_none_today)
+                    },
                     fontSize = 13.sp,
                     // #468: the colour carries the state; #1080 (owner): regular weight
                     fontWeight = FontWeight.Normal,
                     color = when {
+                        !listed -> DS.Colors.TextMuted
                         free <= 0 -> V2Colors.Danger
                         free == 1 -> V2Colors.Warn
                         else -> V2Colors.Ok
@@ -482,6 +502,8 @@ internal fun ProductRow(
                         Icon(Icons.Outlined.Add, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Sm))
                     }
                 }
+            } else if (addState is AddButtonState.NotListed) {
+                // #1346: nothing to add; the row still opens the product
             } else {
                 // #671: round, and the same when out today (tapping still adds; "Hết hôm nay" says the rest).
                 // #681: light until the product is in the cart, then solid primary with the count
