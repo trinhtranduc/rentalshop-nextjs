@@ -470,3 +470,213 @@ final class OrderShareImageTests: XCTestCase {
         XCTAssertFalse(String(decoding: none, as: UTF8.self).contains("Giu cho"))
     }
 }
+
+// MARK: - #1345 money order of the share image
+
+/// The money part of the image, top to bottom: Tạm tính, Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân.
+/// Mockup "Ảnh chia sẻ đơn: thứ tự tiền", frames (a)-(g). `flat` prints the model as one line per entry.
+final class OrderShareMoneyOrderTests: XCTestCase {
+    private let vi = ShareLanguage.make(code: "vi-VN")
+    private let en = ShareLanguage.make(code: "en")
+    private let now = ISO8601DateFormatter().date(from: "2026-10-07T07:00:00Z")!
+
+    private func flat(_ model: OrderShareModel) -> [String] {
+        model.money.flatMap { entry -> [String] in
+            switch entry {
+            case .row(let row): return ["\(row.label)|\(row.value)" + (row.muted ? "|muted" : "")]
+            case .total(let label, let value, _): return ["TOTAL \(label)|\(value)"]
+            case .stages(let block): return ["STAGES \(block.title)"] + block.stages.map { "\($0.title)|\($0.amount)|\($0.detail)" }
+            case .collect(let label, let value): return ["COLLECT \(label)|\(value)"]
+            }
+        }
+    }
+
+    private func make(_ source: OrderShareSource, _ language: ShareLanguage? = nil, currency: ShopCurrency = .vnd) -> OrderShareModel {
+        OrderShareModel.make(source, language: language ?? vi, now: now, currency: currency)
+    }
+
+    /// Rental #482113 of the mockups: total 1.150.000, no collateral
+    private func rent(deposit: Double = 0, papers: String? = nil, collateral: Double = 0) -> OrderShareSource {
+        var source = OrderShareImageTests.rent()
+        source.deposit = deposit
+        source.collateralPapers = papers
+        source.collateralMoney = collateral
+        return source
+    }
+
+    /// 20% collected on 05/10, 30% due 06/10 (not collected), the rest 575.000 at hand-over
+    private func stages(second: String = "UPCOMING") -> [OrderInstallment] {
+        [OrderInstallment(key: "i1", label: "Cọc giữ chỗ", percent: 20, amount: 230_000, dueDateKey: "2026-10-05", status: "PAID",
+                          collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: 230_000),
+         OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: 345_000, dueDateKey: "2026-10-06", status: second),
+         OrderInstallment(key: "rest", label: "rest", percent: 50, amount: 575_000, dueDateKey: "2026-10-16", status: "UPCOMING")]
+    }
+
+    private func staged(second: String = "UPCOMING") -> OrderShareSource {
+        var source = rent(deposit: 230_000)
+        source.hasDepositPlan = true
+        source.stages = stages(second: second)
+        return source
+    }
+
+    // MARK: Frames
+
+    func testA_oneDepositThenCollectOnDeliveryThenCollateral() {
+        XCTAssertEqual(flat(make(rent(deposit: 300_000, papers: "CCCD", collateral: 2_000_000))), [
+            "TOTAL Tổng tiền thuê|1.150.000đ",
+            "Đã cọc|300.000đ",
+            "COLLECT Thu khi giao|850.000đ",
+            "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+        ], "the total comes before the deposit; collateral is its own row and is not in 'Thu khi giao'")
+        XCTAssertEqual(flat(make(rent(deposit: 300_000))), [
+            "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Thu khi giao|850.000đ",
+        ])
+    }
+
+    func testB_stagesShowPaidAndUnpaidAndCollectIsTheRest() {
+        XCTAssertEqual(flat(make(staged())), [
+            "TOTAL Tổng tiền thuê|1.150.000đ",
+            "STAGES Thu cọc theo giai đoạn",
+            "1. Cọc giữ chỗ|230.000đ|20% đơn · 05/10 · Đã thu",
+            "2. Cọc trước ngày lấy|345.000đ|30% đơn · hạn 06/10 · Chưa thu",
+            "COLLECT Thu khi giao|575.000đ",
+        ], "no 'Đã thu / Còn phải thu' pair, no 'rest' stage line")
+    }
+
+    func testB_aStageHasOnlyPaidOrUnpaidWhateverTheDayOfTheImage() {
+        // OVERDUE, DUE_TODAY and UPCOMING all read "Chưa thu": 'Trễ N ngày' / 'Hôm nay' change with the day it is looked at
+        let expected = flat(make(staged()))
+        for status in ["OVERDUE", "DUE_TODAY", "UPCOMING"] {
+            XCTAssertEqual(flat(make(staged(second: status))), expected, status)
+        }
+        var partial = staged(second: "PARTIAL")
+        partial.stages?[1] = OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: 200_000, dueDateKey: "2026-10-06",
+                                              status: "PARTIAL", collectedAt: "2026-10-06T03:00:00.000Z", paidAmount: 200_000)
+        let lines = flat(make(partial))
+        XCTAssertTrue(lines.contains("2. Cọc trước ngày lấy|200.000đ|30% đơn · 06/10 · Thu một phần"), "\(lines)")
+    }
+
+    func testC_noDepositSaysSoAndCollectsTheWholeTotal() {
+        XCTAssertEqual(flat(make(rent())), [
+            "TOTAL Tổng tiền thuê|1.150.000đ", "Cọc|Chưa cọc|muted", "COLLECT Thu khi giao|1.150.000đ",
+        ])
+    }
+
+    func testD_discountShowsSubtotalFirstAndDepositIsOnTheDiscountedTotal() {
+        var source = rent(deposit: 300_000)
+        source.items.append(.init(name: "Khăn đóng", quantity: 1, total: 100_000))
+        source.discount = 100_000
+        XCTAssertEqual(flat(make(source)), [
+            "Tạm tính|1.250.000đ", "Giảm giá|− 100.000đ",
+            "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Thu khi giao|850.000đ",
+        ])
+    }
+
+    func testF_saleKeepsSubtotalDiscountTotalAndHasNoDepositOrCollect() {
+        XCTAssertEqual(flat(make(OrderShareImageTests.sale())), [
+            "Tạm tính|420.000đ", "Giảm giá|− 20.000đ", "TOTAL Tổng cộng|400.000đ",
+        ])
+    }
+
+    func testG_draftAddsCollectAndKeepsItsFixedSentence() {
+        let draft = make(OrderShareImageTests.draft())
+        XCTAssertEqual(flat(draft), [
+            "TOTAL Tạm tính|1.150.000đ", "Cọc giữ đồ|300.000đ", "COLLECT Thu khi giao|850.000đ",
+            "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+        ])
+        XCTAssertEqual(draft.note, "Đơn chưa chốt. Shop sẽ xác nhận lịch và giá trước khi giữ đồ.")
+        var discounted = OrderShareImageTests.draft()
+        discounted.discount = 50_000
+        discounted.total = 1_100_000
+        discounted.deposit = 0
+        XCTAssertEqual(flat(make(discounted)), [
+            "Giảm giá|− 50.000đ", "TOTAL Tạm tính|1.100.000đ", "Cọc|Chưa cọc|muted", "COLLECT Thu khi giao|1.100.000đ",
+            "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+        ])
+        var sale = OrderShareImageTests.sale()
+        sale.isDraft = true
+        sale.status = .draft
+        XCTAssertFalse(flat(make(sale)).contains { $0.hasPrefix("COLLECT") }, "a sale draft has nothing to collect later")
+    }
+
+    // MARK: Fixed by the plan, not by the status
+
+    func testCollectOnDeliveryIsTheSameForEveryOrderStatus() {
+        for source in [rent(deposit: 300_000, papers: "CCCD", collateral: 2_000_000), staged(), rent()] {
+            let reserved = flat(make(source))
+            XCTAssertTrue(reserved.contains { $0.hasPrefix("COLLECT") }, "\(reserved)")
+            for status in [OrderStatus.pickuped, .returned, .cancelled] {
+                var other = source
+                other.status = status
+                XCTAssertEqual(flat(make(other)), reserved, "\(status)")
+            }
+        }
+    }
+
+    func testEnglishLabels() {
+        XCTAssertEqual(flat(make(staged(), en)), [
+            "TOTAL Rental total|1.150.000đ",
+            "STAGES Staged deposit",
+            "1. Cọc giữ chỗ|230.000đ|20% of order · 05/10 · Collected",
+            "2. Cọc trước ngày lấy|345.000đ|30% of order · due 06/10 · Not collected",
+            "COLLECT Collect at hand-over|575.000đ",
+        ])
+        XCTAssertEqual(flat(make(rent(), en)), [
+            "TOTAL Rental total|1.150.000đ", "Deposit|No deposit|muted", "COLLECT Collect at hand-over|1.150.000đ",
+        ])
+        XCTAssertEqual(flat(make(rent(deposit: 300_000), en)), [
+            "TOTAL Rental total|1.150.000đ", "Deposit paid|300.000đ", "COLLECT Collect at hand-over|850.000đ",
+        ])
+    }
+
+    func testDollarShopFormatsAndRoundsToCents() {
+        var source = rent(deposit: 300.10)
+        source.total = 1_150.30
+        XCTAssertEqual(flat(make(source, currency: .usd)), [
+            "TOTAL Tổng tiền thuê|" + OrderShareModel.money(1_150.30, currency: .usd),
+            "Đã cọc|" + OrderShareModel.money(300.10, currency: .usd),
+            "COLLECT Thu khi giao|" + OrderShareModel.money(850.2, currency: .usd),
+        ])
+        XCTAssertTrue(OrderShareModel.money(850.2, currency: .usd).contains("$850.20"), OrderShareModel.money(850.2, currency: .usd))
+        XCTAssertEqual(ShareMoneyRule.collectOnDelivery(total: 100.10, deposit: 30.05, hasPlan: nil, stages: nil, currency: .usd), 70.05)
+    }
+
+    // MARK: The pure rule
+
+    func testCollectOnDeliveryRule() {
+        func collect(total: Double = 1_150_000, deposit: Double = 0, plan: Bool? = nil, stages: [OrderInstallment]? = nil) -> Double {
+            ShareMoneyRule.collectOnDelivery(total: total, deposit: deposit, hasPlan: plan, stages: stages, currency: .vnd)
+        }
+        XCTAssertEqual(collect(), 1_150_000, "no deposit: the whole total")
+        XCTAssertEqual(collect(deposit: 300_000), 850_000, "one deposit: total minus it")
+        XCTAssertEqual(collect(deposit: 2_000_000), 0, "never below zero")
+        // With a plan: total minus every stage of the plan, collected or not (here 230.000 + 345.000)
+        XCTAssertEqual(collect(deposit: 230_000, plan: true, stages: stages()), 575_000)
+        // A void stage is not part of the plan; the "rest" stage is what is left, not a deposit
+        var withVoid = stages()
+        withVoid.insert(OrderInstallment(key: "i3", label: "Huỷ", percent: 5, amount: 50_000, dueDateKey: "2026-10-08", status: "VOID"), at: 2)
+        XCTAssertEqual(collect(deposit: 230_000, plan: true, stages: withVoid), 575_000)
+        // A short collection makes the stage worth what was taken (API): the rest grows, the rule follows the stage amounts
+        var short = stages()
+        short[1] = OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: 200_000, dueDateKey: "2026-10-06",
+                                    status: "PARTIAL", collectedAt: "2026-10-06T03:00:00.000Z", paidAmount: 200_000)
+        XCTAssertEqual(collect(deposit: 430_000, plan: true, stages: short), 720_000)
+        // Stages without a plan flag (one-time deposit), or an older API: the single deposit
+        XCTAssertEqual(collect(deposit: 300_000, plan: false, stages: stages()), 850_000)
+        XCTAssertEqual(collect(deposit: 300_000, plan: nil, stages: nil), 850_000)
+        XCTAssertEqual(collect(deposit: 300_000, plan: true, stages: []), 850_000, "a plan with no stage in the answer")
+    }
+
+    /// The finding of #1345: the order detail's "Thu khi giao" (handOver) counts only money already collected, so while
+    /// stage 2 is unpaid it is 920.000, the "Còn phải thu" of the stage card, while the card's own row "Phần còn lại,
+    /// thu khi giao" is 575.000. The image states the plan, so it says 575.000 and the stage 2 line above it says "Chưa thu".
+    func testDetailScreenHandOverCountsUnpaidStagesTheImageDoesNot() {
+        let detail = OrderDetailLogic.handOver(total: 1_150_000, deposit: 230_000, securityDeposit: 0, payments: [])
+        XCTAssertEqual(detail.due, 920_000)
+        XCTAssertEqual(ShareMoneyRule.collectOnDelivery(total: 1_150_000, deposit: 230_000, hasPlan: true, stages: stages(),
+                                                       currency: .vnd), 575_000)
+        // Once stage 2 is collected both agree
+        let both = OrderDetailLogic.handOver(total: 1_150_000, deposit: 575_000, securityDeposit: 0, payments: [])
+        XCTAssertEqual(both.due, 575_000)
+    }
+}

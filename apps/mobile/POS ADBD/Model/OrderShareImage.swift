@@ -28,6 +28,12 @@ struct ShareLanguage {
     func text(_ key: String, _ args: CVarArg...) -> String { String(format: text(key), arguments: args) }
 }
 
+/// #1345: what the customer pays at hand-over, from the plan (not built yet)
+enum ShareMoneyRule {
+    static func collectOnDelivery(total: Double, deposit: Double, hasPlan: Bool?, stages: [OrderInstallment]?,
+                                  currency: ShopCurrency) -> Double { -1 }
+}
+
 /// The facts the image is made from (one order, or the cart before it is an order)
 struct OrderShareSource {
     struct Item: Equatable {
@@ -88,6 +94,28 @@ struct OrderShareModel: Equatable {
     struct Row: Equatable {
         let label: String
         let value: String
+        /// #1345: a grey row ("Cọc: Chưa cọc")
+        var muted: Bool = false
+    }
+
+    /// #1345: one stage of the deposit block, "20% đơn · 05/10 · Đã thu" under its name and amount
+    struct Stage: Equatable {
+        let title: String
+        let amount: String
+        let detail: String
+    }
+
+    struct StageBlock: Equatable {
+        let title: String
+        let stages: [Stage]
+    }
+
+    /// #1345: the money part of the image, top to bottom
+    enum Money: Equatable {
+        case row(Row)
+        case total(label: String, value: String, tone: Highlight)
+        case stages(StageBlock)
+        case collect(label: String, value: String)
     }
 
     struct Strip: Equatable {
@@ -134,6 +162,8 @@ struct OrderShareModel: Equatable {
     let fileName: String
     /// #1252: "Thu cọc theo giai đoạn" under the rows of a rental that has stages; nil otherwise
     var plan: DepositPlanReceipt.Block? = nil
+    /// #1345: the money part in order (not built yet)
+    var money: [Money] = []
 
     // MARK: - Formatting
 
@@ -163,7 +193,7 @@ struct OrderShareModel: Equatable {
 
     /// `bankAccount` is the bill's account (`BillBankQR.pick`); `qrSwitchOn` the "QR chuyển khoản trên hoá đơn" switch
     static func make(_ source: OrderShareSource, language: ShareLanguage = .current, bankAccount: BankAccount? = nil,
-                     qrSwitchOn: Bool = false, now: Date = Date()) -> OrderShareModel {
+                     qrSwitchOn: Bool = false, now: Date = Date(), currency: ShopCurrency = ShopCurrencyStore.current) -> OrderShareModel {
         let t = language
         let day: (Date) -> String = { DayFormatter.short($0, timeZone: Date.shopTimeZone, locale: t.locale) }
         let isRent = source.orderType == .rent
