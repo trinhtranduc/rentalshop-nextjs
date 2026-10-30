@@ -128,6 +128,7 @@
     "results": "结果",
     "page": "页",
     "rowsPerPage": "每页行数",
+    "pageSizeMax": "每页最多 {max} 行",
     "first": "首页",
     "last": "末页",
     "noData": "无数据可显示",

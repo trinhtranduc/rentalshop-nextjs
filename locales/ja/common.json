@@ -128,6 +128,7 @@
     "results": "結果",
     "page": "ページ",
     "rowsPerPage": "ページあたりの行数",
+    "pageSizeMax": "1ページあたり最大{max}行",
     "first": "最初",
     "last": "最後",
     "noData": "表示するデータがありません",
