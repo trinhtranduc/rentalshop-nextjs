@@ -1,6 +1,6 @@
 # Spec — "Khách đưa lúc nhận đồ"
 
-Issue: #1368 · Status: in-progress · Intent: ./intent.md
+Issue: #1368 · Status: done · Intent: ./intent.md
 
 ## Behavior
 

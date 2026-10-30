@@ -1,6 +1,6 @@
 # "Khách đưa lúc nhận đồ" và dòng thế chân cạnh "Thu khi giao" (chi tiết đơn, ảnh chia sẻ)
 
-Issue: #1368 · Author: Trinh Tran · Status: in-progress · Created: 2026-10-30 · Refs #1350, #1345
+Issue: #1368 · Author: Trinh Tran · Status: done · Created: 2026-10-30 · Refs #1350, #1345
 
 ## Problem
 

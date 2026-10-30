@@ -1,6 +1,6 @@
 # Plan — "Khách đưa lúc nhận đồ"
 
-Issue: #1368 · Status: in-progress · Spec: ./spec.md
+Issue: #1368 · Status: done · Spec: ./spec.md
 
 ## Steps
 
@@ -21,3 +21,13 @@ Nút "Giao đồ · thu …" vẫn ghi `handOver.due` khi còn đợt chưa thu 
 ## Rollback
 
 Revert PR; dòng trở lại như #1350.
+
+## Phát hiện (ghi trong PR, không sửa ở đây)
+
+- Khi còn đợt chưa thu, nút "Giao đồ · thu …" vẫn ghi `handOver(...).due` (ví dụ 1.100.000 = 1.000.000 − 200.000 + 300.000), khác dòng "Khách đưa lúc nhận đồ" 800.000. Khi các đợt đã thu hết: nút = dòng 5 = 800.000 (có test và ảnh chụp). Không đổi nút.
+- Đợt PARTIAL (thu thiếu): dòng 5 theo kế hoạch (số đợt `amount`), không gồm phần thiếu của đợt đó.
+- Đã có khoản thu PICKUP trước (`paidBefore > 0`): chi tiết đơn giữ các dòng cũ (hàm trả `nil`).
+
+## Kết quả
+
+Test đỏ trước (iOS 32 lỗi, Android 19 ca), xanh sau (iOS 211 test, Android 1031 test). Ảnh: `~/Documents/AnyRent-shots/handover-cash/`.
