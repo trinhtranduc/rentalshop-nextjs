@@ -1,6 +1,6 @@
 # Spec — Số dòng mỗi trang gõ được
 
-Issue: #1362 · Status: in-progress · Intent: ./intent.md
+Issue: #1362 · Status: done · Intent: ./intent.md
 
 ## Behavior
 

@@ -1,6 +1,6 @@
 # Số dòng mỗi trang gõ được (1 đến 3000)
 
-Issue: #1362 · Author: Claude (agent) · Status: in-progress · Created: 2026-10-30
+Issue: #1362 · Author: Claude (agent) · Status: done · Created: 2026-10-30
 
 ## Problem
 

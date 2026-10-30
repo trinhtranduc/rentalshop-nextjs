@@ -1,6 +1,6 @@
 # Plan — Số dòng mỗi trang gõ được
 
-Issue: #1362 · Status: in-progress · Spec: ./spec.md
+Issue: #1362 · Status: done · Spec: ./spec.md
 
 ## Steps
 
