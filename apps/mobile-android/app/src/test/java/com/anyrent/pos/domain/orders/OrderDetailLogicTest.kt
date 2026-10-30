@@ -7,6 +7,7 @@ import com.anyrent.pos.domain.money.ShopCurrency
 import com.anyrent.pos.ui.orders.v2.shortDay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -379,5 +380,132 @@ class OrderDetailLogicTest {
         assertEquals(575_000.0, shown(deposit = 230_000.0, stages = planStages()), 0.0)
         val sale = OrderDetailLogic.balance("SALE", "RESERVED", 500_000.0, 0.0, 0.0, 0.0, 0.0, emptyList())
         assertEquals(500_000.0, sale.amountDue, 0.0)
+    }
+
+    // ---- #1368 money collateral: rental left, collateral, what the customer hands over ---------------------------------
+
+    /** total 1.000.000: stage 1 200.000 collected, stage 2 300.000 (collected or not), rest 500.000 (iOS `plan1M`) */
+    private fun plan1M(secondPaid: Boolean) = listOf(
+        OrderInstallment("i1", "Cọc giữ chỗ", 20.0, 200_000.0, dueDateKey = "2026-10-05", status = "PAID", collectedAt = "2026-10-05T07:00:00.000Z", paidAmount = 200_000.0, remaining = 0.0),
+        OrderInstallment(
+            "i2", "Cọc trước ngày lấy", 30.0, 300_000.0, dueDateKey = "2026-10-06", status = if (secondPaid) "PAID" else "UPCOMING",
+            collectedAt = if (secondPaid) "2026-10-06T03:00:00.000Z" else null, paidAmount = if (secondPaid) 300_000.0 else 0.0,
+            remaining = if (secondPaid) 0.0 else 300_000.0,
+        ),
+        OrderInstallment("rest", "rest", 50.0, 500_000.0, dueDateKey = "2026-10-16", status = "UPCOMING"),
+    )
+
+    private fun cash(
+        type: String = "RENT",
+        status: String = "RESERVED",
+        total: Double = 1_000_000.0,
+        deposit: Double,
+        collateral: Double = 300_000.0,
+        payments: List<BalancePayment> = emptyList(),
+        plan: Boolean? = true,
+        stages: List<OrderInstallment>?,
+        currency: ShopCurrency = ShopCurrency.VND,
+    ) = OrderDetailLogic.handOverCash(type, status, total, deposit, collateral, payments, plan, stages, currency)
+
+    @Test
+    fun `hand-over cash of the example`() {
+        // stage 2 not collected: the number does not wait for it
+        assertEquals(HandOverCashLines(500_000.0, 300_000.0, 800_000.0), cash(deposit = 200_000.0, stages = plan1M(false)))
+        // stage 2 collected: the three numbers do not move
+        assertEquals(HandOverCashLines(500_000.0, 300_000.0, 800_000.0), cash(deposit = 500_000.0, stages = plan1M(true)))
+    }
+
+    @Test
+    fun `hand-over cash is the same function as the share image`() {
+        val stages = plan1M(false)
+        val lines = cash(deposit = 200_000.0, stages = stages)!!
+        val rest = ShareMoneyRule.collectOnDelivery(1_000_000.0, 200_000.0, true, stages, ShopCurrency.VND)
+        assertEquals(rest, lines.rentalLeft, 0.0)
+        assertEquals(ShareMoneyRule.cashAtHandover(rest, 300_000.0, ShopCurrency.VND)!!, lines.cash, 0.0)
+    }
+
+    @Test
+    fun `hand-over cash equals the hand-over button once every stage is collected`() {
+        for (total in listOf(100_000.0, 900_000.0, 1_000_000.0, 2_333_333.0)) {
+            val first = Math.round(total * 0.2).toDouble()
+            val middle = Math.round(total * 0.3).toDouble()
+            val stages = listOf(
+                OrderInstallment("i1", "A", 20.0, first, dueDateKey = "2026-10-05", status = "PAID", paidAmount = first, remaining = 0.0),
+                OrderInstallment("i2", "B", 30.0, middle, dueDateKey = "2026-10-06", status = "PAID", paidAmount = middle, remaining = 0.0),
+                OrderInstallment("rest", "rest", 50.0, total - first - middle, dueDateKey = "2026-10-16", status = "UPCOMING"),
+            )
+            val button = OrderDetailLogic.handOver(total, first + middle, 300_000.0, emptyList()).collectNow
+            assertEquals("total $total", button, cash(total = total, deposit = first + middle, stages = stages)!!.cash, 0.0)
+        }
+        // a one-time deposit and no deposit: the same
+        val button = OrderDetailLogic.handOver(1_150_000.0, 300_000.0, 500_000.0, emptyList()).collectNow
+        assertEquals(button, cash(total = 1_150_000.0, deposit = 300_000.0, collateral = 500_000.0, plan = false, stages = null)!!.cash, 0.0)
+        assertEquals(
+            OrderDetailLogic.handOver(1_150_000.0, 0.0, 500_000.0, emptyList()).collectNow,
+            cash(total = 1_150_000.0, deposit = 0.0, collateral = 500_000.0, plan = null, stages = null)!!.cash, 0.0,
+        )
+    }
+
+    @Test
+    fun `the hand-over button stays what it was while a stage is uncollected`() {
+        // not changed here: it asks total - collected + collateral (1.100.000), not the 800.000 of the new line
+        assertEquals(1_100_000.0, OrderDetailLogic.handOver(1_000_000.0, 200_000.0, 300_000.0, emptyList()).collectNow, 0.0)
+        assertEquals(
+            1_100_000.0,
+            OrderDetailLogic.balance("RENT", "RESERVED", 1_000_000.0, 200_000.0, 300_000.0, 0.0, 0.0, emptyList()).amountDue, 0.0,
+        )
+        // and the old display rule, kept for the other cases
+        assertEquals(500_000.0, shown(total = 1_000_000.0, deposit = 200_000.0, collateral = 300_000.0, stages = plan1M(false)), 0.0)
+        assertEquals(800_000.0, shown(total = 1_000_000.0, deposit = 500_000.0, collateral = 300_000.0, stages = plan1M(true)), 0.0)
+    }
+
+    @Test
+    fun `hand-over cash needs money collateral`() {
+        assertNull("papers only or none: the old lines", cash(deposit = 200_000.0, collateral = 0.0, stages = plan1M(false)))
+        assertNull(cash(deposit = 200_000.0, collateral = -5.0, stages = plan1M(false)))
+    }
+
+    @Test
+    fun `hand-over cash is only for a rental waiting for pick-up`() {
+        val stages = plan1M(true)
+        for (status in listOf("PICKUPED", "RETURNED", "CANCELLED")) assertNull(status, cash(status = status, deposit = 500_000.0, stages = stages))
+        assertNull(cash(type = "SALE", status = "COMPLETED", deposit = 0.0, stages = null))
+        assertNull(cash(type = "SALE", status = "RESERVED", deposit = 0.0, stages = null))
+        assertNotNull(cash(deposit = 500_000.0, stages = stages))
+    }
+
+    @Test
+    fun `hand-over cash steps aside when a pick-up payment was already taken`() {
+        val taken = listOf(BalancePayment(200_000.0, "COMPLETED", "PICKUP"))
+        assertNull("the detail keeps its 'Đã thu' row and the old number", cash(deposit = 500_000.0, payments = taken, stages = plan1M(true)))
+        // a pending or another kind of payment does not count
+        val other = listOf(BalancePayment(100_000.0, "PENDING", "PICKUP"), BalancePayment(100_000.0, "COMPLETED", "DEPOSIT"))
+        assertNotNull(cash(deposit = 500_000.0, payments = other, stages = plan1M(true)))
+    }
+
+    @Test
+    fun `hand-over cash of one deposit no deposit and a discount`() {
+        assertEquals(
+            HandOverCashLines(850_000.0, 500_000.0, 1_350_000.0),
+            cash(total = 1_150_000.0, deposit = 300_000.0, collateral = 500_000.0, plan = null, stages = null),
+        )
+        assertEquals(
+            HandOverCashLines(1_150_000.0, 500_000.0, 1_650_000.0),
+            cash(total = 1_150_000.0, deposit = 0.0, collateral = 500_000.0, plan = null, stages = null),
+        )
+        // total 900.000 after a discount: 20% = 180.000, 30% = 270.000, rest 450.000
+        val stages = listOf(
+            OrderInstallment("i1", "A", 20.0, 180_000.0, dueDateKey = "2026-10-05", status = "PAID", paidAmount = 180_000.0, remaining = 0.0),
+            OrderInstallment("i2", "B", 30.0, 270_000.0, dueDateKey = "2026-10-06", status = "UPCOMING"),
+            OrderInstallment("rest", "rest", 50.0, 450_000.0, dueDateKey = "2026-10-16", status = "UPCOMING"),
+        )
+        assertEquals(HandOverCashLines(450_000.0, 300_000.0, 750_000.0), cash(total = 900_000.0, deposit = 180_000.0, stages = stages))
+    }
+
+    @Test
+    fun `hand-over cash of a dollar shop rounds to cents`() {
+        val lines = cash(total = 1_150.30, deposit = 300.10, collateral = 100.15, plan = null, stages = null, currency = ShopCurrency.USD)!!
+        assertEquals(850.2, lines.rentalLeft, 0.0001)
+        assertEquals(950.35, lines.cash, 0.0001)
     }
 }

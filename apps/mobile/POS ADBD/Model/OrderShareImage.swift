@@ -45,6 +45,12 @@ enum ShareMoneyRule {
         return DepositPlanMath.roundMoney(max(0, total - taken), currency: currency)
     }
 
+    /// #1368 "Khách đưa lúc nhận đồ": what the customer hands over when taking the items = "Thu khi giao" of the plan plus
+    /// the collateral in money. nil when the collateral is not money (nothing, or papers only): then there is no such line.
+    static func cashAtHandover(collectOnDelivery: Double, collateralMoney: Double, currency: ShopCurrency) -> Double? {
+        nil
+    }
+
     /// "Thu cọc theo giai đoạn": each stage with Đã thu / Chưa thu (never "Trễ N ngày", "Hôm nay"); nil without stages
     static func stageBlock(hasPlan: Bool?, stages: [OrderInstallment]?, currency: ShopCurrency,
                            text: (String) -> String) -> OrderShareModel.StageBlock? {
@@ -277,6 +283,8 @@ struct OrderShareModel: Equatable {
         case total(label: String, value: String, tone: Highlight)
         case stages(StageBlock)
         case collect(label: String, value: String)
+        /// #1368: "Khách đưa lúc nhận đồ", the last box when the collateral is money
+        case cash(label: String, value: String)
     }
 
     struct OrderNote: Equatable {

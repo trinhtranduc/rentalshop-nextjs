@@ -11,6 +11,7 @@ import com.anyrent.pos.domain.deposit.OrderInstallment
 import com.anyrent.pos.domain.money.ShopCurrency
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -60,6 +61,7 @@ class OrderShareMoneyOrderTest {
             is ShareMoney.Stages -> listOf("STAGES ${text(entry.title, vi)}") +
                 entry.stages.map { "${text(it.title, vi)}|${it.amount}|${text(it.detail, vi)} · ${text(it.status, vi)}" }
             is ShareMoney.Collect -> listOf("COLLECT ${text(entry.label, vi)}|${entry.value}")
+            is ShareMoney.Cash -> listOf("CASH ${text(entry.label, vi)}|${entry.value}")
         }
     }
 
@@ -131,8 +133,9 @@ class OrderShareMoneyOrderTest {
             listOf(
                 "TOTAL Tổng tiền thuê|1.150.000đ",
                 "Đã cọc|300.000đ",
-                "COLLECT Thu khi giao|850.000đ",
-                "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+                "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+                "Thế chân, thu khi giao|CCCD + 2.000.000đ",
+                "CASH Khách đưa lúc nhận đồ|2.850.000đ",
             ),
             flat(make(order(deposit = 300_000.0, security = 2_000_000.0, papers = "CCCD"))),
         )
@@ -198,20 +201,188 @@ class OrderShareMoneyOrderTest {
         val d = draft()
         assertEquals(
             listOf(
-                "TOTAL Tạm tính|1.150.000đ", "Cọc giữ đồ|300.000đ", "COLLECT Thu khi giao|850.000đ",
-                "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+                "TOTAL Tạm tính|1.150.000đ", "Cọc giữ đồ|300.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+                "Thế chân, thu khi giao|CCCD + 2.000.000đ", "CASH Khách đưa lúc nhận đồ|2.850.000đ",
             ),
             flat(d),
         )
         assertEquals(R.string.share_draft_note, (d.note as ShareText.Res).id)
         assertEquals(
             listOf(
-                "Giảm giá|− 50.000đ", "TOTAL Tạm tính|1.100.000đ", "Cọc|Chưa cọc|muted", "COLLECT Thu khi giao|1.100.000đ",
-                "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+                "Giảm giá|− 50.000đ", "TOTAL Tạm tính|1.100.000đ", "Cọc|Chưa cọc|muted",
+                "COLLECT Tiền thuê còn lại, thu khi giao|1.100.000đ",
+                "Thế chân, thu khi giao|CCCD + 2.000.000đ", "CASH Khách đưa lúc nhận đồ|3.100.000đ",
             ),
             flat(draft(discount = 50_000.0, deposit = 0.0)),
         )
         assertFalse(flat(draft(sale = true)).any { it.startsWith("COLLECT") })
+    }
+
+    // ---- #1368 money collateral: rental left, collateral, what the customer hands over --------------------------------
+
+    /** The example of the issue: total 1.000.000; stage 1 200.000 collected, stage 2 300.000, rest 500.000; collateral 300.000 */
+    private fun plan1M(second: String = "UPCOMING") = listOf(
+        OrderInstallment("i1", "Cọc giữ chỗ", 20.0, 200_000.0, dueDateKey = "2026-10-05", status = "PAID", collectedAt = "2026-10-05T07:00:00.000Z", paidAmount = 200_000.0, remaining = 0.0),
+        OrderInstallment(
+            "i2", "Cọc trước ngày lấy", 30.0, 300_000.0, dueDateKey = "2026-10-06", status = second,
+            collectedAt = if (second == "PAID") "2026-10-06T03:00:00.000Z" else null,
+            paidAmount = if (second == "PAID") 300_000.0 else 0.0, remaining = if (second == "PAID") 0.0 else 300_000.0,
+        ),
+        OrderInstallment("rest", "rest", 50.0, 500_000.0, dueDateKey = "2026-10-16", status = "UPCOMING"),
+    )
+
+    private fun staged1M(second: String = "UPCOMING", papers: String? = null, security: Double = 300_000.0, status: String = "RESERVED") =
+        order(
+            status = status, total = 1_000_000.0, deposit = if (second == "PAID") 500_000.0 else 200_000.0, security = security, papers = papers,
+            plan = DepositPlanInfo(installments = plan1M(second), hasPlan = true),
+        )
+
+    @Test
+    fun h_stagesWithMoneyCollateralShowRentalLeftCollateralAndCash() {
+        val unpaid = listOf(
+            "TOTAL Tổng tiền thuê|1.000.000đ",
+            "STAGES Thu cọc theo giai đoạn",
+            "1. Cọc giữ chỗ|200.000đ|20% đơn · 05/10 · Đã thu",
+            "2. Cọc trước ngày lấy|300.000đ|30% đơn · hạn 06/10 · Chưa thu",
+            "COLLECT Tiền thuê còn lại, thu khi giao|500.000đ",
+            "Thế chân, thu khi giao|300.000đ",
+            "CASH Khách đưa lúc nhận đồ|800.000đ",
+        )
+        assertEquals(unpaid, flat(make(staged1M())))
+        // stage 2 collected: only its own line changes; the three numbers do not move
+        val paid = unpaid.toMutableList().also { it[3] = "2. Cọc trước ngày lấy|300.000đ|30% đơn · 06/10 · Đã thu" }
+        assertEquals(paid, flat(make(staged1M(second = "PAID"))))
+    }
+
+    @Test
+    fun h_collateralWithPapersKeepsThePapersInTheCollateralRow() {
+        assertEquals(
+            listOf("COLLECT Tiền thuê còn lại, thu khi giao|500.000đ", "Thế chân, thu khi giao|CCCD + 300.000đ", "CASH Khách đưa lúc nhận đồ|800.000đ"),
+            flat(make(staged1M(papers = "CCCD"))).takeLast(3),
+        )
+    }
+
+    @Test
+    fun h_papersOnlyCollateralKeepsTheOldLinesAndAddsNoMoneyLine() {
+        assertEquals(
+            listOf("TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Thu khi giao|850.000đ", "Thế chân khi nhận đồ|CCCD"),
+            flat(make(order(deposit = 300_000.0, papers = "CCCD"))),
+        )
+        assertEquals(
+            listOf("COLLECT Thu khi giao|500.000đ", "Thế chân khi nhận đồ|CCCD"),
+            flat(make(staged1M(papers = "CCCD", security = 0.0))).takeLast(2),
+        )
+    }
+
+    @Test
+    fun h_noCollateralKeepsTheOldLabelAndNoCashLine() {
+        for (o in listOf(order(deposit = 300_000.0), order(), staged1M(security = 0.0))) {
+            val lines = flat(make(o))
+            assertTrue("$lines", lines.any { it.startsWith("COLLECT Thu khi giao|") })
+            assertFalse("$lines", lines.any { it.startsWith("CASH") || it.contains("thu khi giao|") })
+        }
+    }
+
+    @Test
+    fun h_oneDepositNoDepositAndDiscountWithMoneyCollateral() {
+        assertEquals(
+            listOf(
+                "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+                "Thế chân, thu khi giao|500.000đ", "CASH Khách đưa lúc nhận đồ|1.350.000đ",
+            ),
+            flat(make(order(deposit = 300_000.0, security = 500_000.0))),
+        )
+        assertEquals(
+            listOf(
+                "TOTAL Tổng tiền thuê|1.150.000đ", "Cọc|Chưa cọc|muted", "COLLECT Tiền thuê còn lại, thu khi giao|1.150.000đ",
+                "Thế chân, thu khi giao|500.000đ", "CASH Khách đưa lúc nhận đồ|1.650.000đ",
+            ),
+            flat(make(order(security = 500_000.0))),
+        )
+        assertEquals(
+            listOf(
+                "Tạm tính|1.250.000đ", "Giảm giá|− 100.000đ",
+                "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+                "Thế chân, thu khi giao|500.000đ", "CASH Khách đưa lúc nhận đồ|1.350.000đ",
+            ),
+            flat(make(order(deposit = 300_000.0, security = 500_000.0, discount = 100_000.0, extra = listOf(item("Khăn đóng", 1, 100_000.0))))),
+        )
+    }
+
+    @Test
+    fun h_aSaleHasNoCashLineWhateverItCarries() {
+        val sale = order(type = "SALE", status = "COMPLETED", total = 400_000.0, discount = 20_000.0, security = 300_000.0)
+            .copy(items = listOf(item("Khăn voan cô dâu", 1, 180_000.0), item("Hoa cầm tay lụa", 2, 120_000.0)))
+        assertEquals(listOf("Tạm tính|420.000đ", "Giảm giá|− 20.000đ", "TOTAL Tổng cộng|400.000đ"), flat(make(sale)))
+    }
+
+    @Test
+    fun h_theDraftAddsTheSameLinesWhenTheCollateralIsMoney() {
+        val money = draftWith(deposit = 200_000.0, security = 300_000.0, papers = null)
+        assertEquals(
+            listOf(
+                "TOTAL Tạm tính|1.000.000đ", "Cọc giữ đồ|200.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|800.000đ",
+                "Thế chân, thu khi giao|300.000đ", "CASH Khách đưa lúc nhận đồ|1.100.000đ",
+            ),
+            flat(money),
+        )
+        assertEquals(
+            listOf(
+                "TOTAL Tạm tính|1.000.000đ", "Cọc giữ đồ|200.000đ", "COLLECT Thu khi giao|800.000đ", "Thế chân khi nhận đồ|CCCD",
+            ),
+            flat(draftWith(deposit = 200_000.0, security = 0.0, papers = "CCCD")),
+        )
+    }
+
+    private fun draftWith(deposit: Double, security: Double, papers: String?) = OrderShareModel.fromDraft(
+        lines = listOf(CartLine(product(1, "Váy cưới", 1_000_000.0), 1, isSale = false, unitPriceOverride = 1_000_000.0)),
+        customer = null, isSale = false, pickup = LocalDate.of(2026, 10, 7), returnDate = LocalDate.of(2026, 10, 16),
+        discountAmount = 0.0, deposit = deposit, securityDeposit = security, collateralDetails = papers,
+        shop = shop, vi = true, now = now, zone = vn,
+    )
+
+    @Test
+    fun h_theThreeNumbersDoNotChangeWithTheOrderStatus() {
+        val builders: List<(String) -> OrderDetail> = listOf(
+            { s -> staged1M(status = s) },
+            { s -> staged1M(second = "PAID", status = s) },
+            { s -> order(status = s, deposit = 300_000.0, security = 500_000.0, papers = "CCCD") },
+        )
+        for (build in builders) {
+            val reserved = flat(make(build("RESERVED")))
+            assertTrue("$reserved", reserved.any { it.startsWith("CASH") })
+            for (status in listOf("PICKUPED", "RETURNED", "CANCELLED")) assertEquals(status, reserved, flat(make(build(status))))
+        }
+    }
+
+    @Test
+    fun h_englishLabels() {
+        assertEquals(
+            listOf(
+                "COLLECT Rental left, collect at hand-over|500.000đ", "Collateral, collect at hand-over|300.000đ",
+                "CASH Customer pays at hand-over|800.000đ",
+            ),
+            flat(make(staged1M(), vi = false), vi = false).takeLast(3),
+        )
+    }
+
+    @Test
+    fun h_dollarShopRoundsTheCashToCents() {
+        val lines = flat(make(order(total = 1_150.30, deposit = 300.10, security = 100.15), currency = ShopCurrency.USD))
+        assertEquals("COLLECT Tiền thuê còn lại, thu khi giao|${OrderShareModel.money(850.2, ShopCurrency.USD)}", lines[2])
+        assertEquals("Thế chân, thu khi giao|${OrderShareModel.money(100.15, ShopCurrency.USD)}", lines[3])
+        assertEquals("CASH Khách đưa lúc nhận đồ|${OrderShareModel.money(950.35, ShopCurrency.USD)}", lines[4])
+        assertTrue(lines[4], lines[4].contains("$950.35"))
+    }
+
+    @Test
+    fun h_cashAtHandoverRule() {
+        fun cash(rest: Double, collateral: Double, currency: ShopCurrency = ShopCurrency.VND) = ShareMoneyRule.cashAtHandover(rest, collateral, currency)
+        assertEquals(800_000.0, cash(500_000.0, 300_000.0)!!, 0.0)
+        assertEquals(300_000.0, cash(0.0, 300_000.0)!!, 0.0)
+        assertNull("no money collateral: there is no such line", cash(500_000.0, 0.0))
+        assertNull(cash(500_000.0, -1.0))
+        assertEquals(0.3, cash(0.1, 0.2, ShopCurrency.USD)!!, 0.000001)
     }
 
     // ---- fixed by the plan, not by the status --------------------------------------------------------------------

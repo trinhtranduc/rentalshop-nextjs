@@ -53,6 +53,9 @@ sealed interface ShareMoney {
     data class Total(val highlight: ShareHighlight) : ShareMoney
     data class Stages(val title: ShareText, val stages: List<ShareStage>) : ShareMoney
     data class Collect(val label: ShareText, val value: String) : ShareMoney
+
+    /** #1368: "Khách đưa lúc nhận đồ", the last box when the collateral is money */
+    data class Cash(val label: ShareText, val value: String) : ShareMoney
 }
 
 /**
@@ -80,6 +83,16 @@ object ShareMoneyRule {
         val taken = if (explicit.isEmpty()) deposit else explicit.sumOf { it.amount }
         return com.anyrent.pos.domain.deposit.DepositPlanMath.roundMoney(maxOf(0.0, total - taken), currency)
     }
+
+    /**
+     * #1368 "Khách đưa lúc nhận đồ": what the customer hands over when taking the items = "Thu khi giao" of the plan plus
+     * the collateral in money. null when the collateral is not money (nothing, or papers only): then there is no such line.
+     */
+    fun cashAtHandover(
+        collectOnDelivery: Double,
+        collateralMoney: Double,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): Double? = null
 
     /** "Thu cọc theo giai đoạn": each stage with Đã thu / Chưa thu (never "Trễ", "Hôm nay"); null without stages */
     fun stages(

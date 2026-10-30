@@ -3084,3 +3084,6 @@
 "printer.shareNote.failed" = "Không lưu được cài đặt. Vui lòng thử lại.";
 // #1353: dưới dòng giỏ thiếu hàng, các chi nhánh khác còn món trong ngày của đơn
 "products.cart.othersHave" = "Chi nhánh khác còn: %@";
+"share.collect.rentalLeft" = "Tiền thuê còn lại, thu khi giao";
+"share.collateral.collect" = "Thế chân, thu khi giao";
+"share.cashAtHandover" = "Khách đưa lúc nhận đồ";

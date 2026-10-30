@@ -3086,3 +3086,6 @@
 "printer.shareNote.failed" = "Could not save the setting. Please try again.";
 // #1353: under a short cart line, the other branches that still have the product on the order's days
 "products.cart.othersHave" = "Other branches have: %@";
+"share.collect.rentalLeft" = "Rental left, collect at hand-over";
+"share.collateral.collect" = "Collateral, collect at hand-over";
+"share.cashAtHandover" = "Customer pays at hand-over";

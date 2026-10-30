@@ -1530,6 +1530,9 @@
     <string name="share_made_with">Made with AnyRent</string>
     <string name="share_draft_action">Share draft</string>
     <string name="share_collect">Collect at hand-over</string>
+    <string name="share_collect_rental_left">Rental left, collect at hand-over</string>
+    <string name="share_collateral_collect">Collateral, collect at hand-over</string>
+    <string name="share_cash_at_handover">Customer pays at hand-over</string>
     <string name="share_deposit_label">Deposit</string>
     <string name="share_deposit_none">No deposit</string>
     <string name="share_stage_paid">Collected</string>

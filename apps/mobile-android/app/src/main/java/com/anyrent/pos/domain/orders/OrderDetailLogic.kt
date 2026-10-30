@@ -30,6 +30,9 @@ data class HandOverMoney(
     val collectNow: Double,
 )
 
+/** #1368 "Tiền thuê còn lại, thu khi giao" + "Thế chân, thu khi giao" = "Khách đưa lúc nhận đồ" */
+data class HandOverCashLines(val rentalLeft: Double, val collateral: Double, val cash: Double)
+
 /** Return money: late + damage − collateral money − already settled; [net] < 0 is a refund */
 data class ReturnMoney(
     val lateFee: Double,
@@ -166,6 +169,22 @@ object OrderDetailLogic {
         val blocking = ShareMoneyRule.planStages(hasPlan, stages).any { it.amount > 0 && it.paidAmount <= 0 }
         return if (blocking) ShareMoneyRule.collectOnDelivery(totalAmount, depositAmount, hasPlan, stages, currency) else due
     }
+
+    /**
+     * #1368 the three lines of the payment section of a rental waiting for pick-up whose collateral is money (iOS
+     * `handOverCash`); null in every other case.
+     */
+    fun handOverCash(
+        orderType: String,
+        status: String,
+        totalAmount: Double,
+        depositAmount: Double,
+        securityDeposit: Double,
+        payments: List<BalancePayment>,
+        hasPlan: Boolean?,
+        stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): HandOverCashLines? = null
 
     /**
      * What the hand-over sheet sends besides `status` (#427). Both fields are optional: given papers

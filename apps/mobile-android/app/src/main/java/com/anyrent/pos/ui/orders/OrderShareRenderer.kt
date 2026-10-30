@@ -315,6 +315,7 @@ internal class OrderShareRenderer(private val context: Context, private val mode
                     canvas.text(t(h.label), paint(16f, bold, labelColor), 64f, y + 36f, maxWidth = 412f - valuePaint.measureText(h.value) - 12f)
                     y += 61f
                 }
+                is ShareMoney.Cash -> Unit
                 is ShareMoney.Collect -> {
                     // #1345: the second box, white with a light blue edge: what is paid at hand-over, fixed by the plan
                     y += 12f

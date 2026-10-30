@@ -55,6 +55,13 @@ struct HandOverMoney: Equatable {
     var due: Double { max(0, total - deposit + collateralMoney - paidBefore) }
 }
 
+/// #1368 "Tiền thuê còn lại, thu khi giao" + "Thế chân, thu khi giao" = "Khách đưa lúc nhận đồ"
+struct HandOverCashLines: Equatable {
+    let rentalLeft: Double
+    let collateral: Double
+    let cash: Double
+}
+
 /// Return: late + damage − collateral money − completed RETURN_ADJUSTMENT payments (negative = give back)
 struct ReturnMoney: Equatable {
     let lateFee: Double
@@ -250,6 +257,13 @@ enum OrderDetailLogic {
         let blocking = ShareMoneyRule.planStages(hasPlan: hasPlan, stages: stages).contains { $0.amount > 0 && $0.paidAmount <= 0 }
         guard blocking else { return due }
         return ShareMoneyRule.collectOnDelivery(total: total, deposit: deposit, hasPlan: hasPlan, stages: stages, currency: currency)
+    }
+
+    /// #1368 the three lines of the payment section of a rental waiting for pick-up whose collateral is money
+    static func handOverCash(orderType: OrderType, status: OrderStatus, total: Double, deposit: Double, securityDeposit: Double,
+                             payments: [OrderPaymentLine], hasPlan: Bool?, stages: [OrderInstallment]?,
+                             currency: ShopCurrency) -> HandOverCashLines? {
+        nil
     }
 
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,

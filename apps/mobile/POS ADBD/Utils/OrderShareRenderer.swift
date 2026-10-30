@@ -297,6 +297,8 @@ enum OrderShareRenderer {
                        in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
                        align: .right, vCenter: true, shrink: true)
                 y = box.maxY + 12
+            case .cash:
+                break
             case .collect(let label, let value):
                 // #1345: the second box, white with a light blue edge: what is paid at hand-over, fixed by the plan
                 let box = CGRect(x: innerX, y: y, width: innerW, height: 54)
