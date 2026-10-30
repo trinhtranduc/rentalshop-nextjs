@@ -199,19 +199,32 @@ export const customersApi = {
     customerIds?: number[];
     merchantId?: number;
   }): Promise<Blob> {
+    // A selection goes in a JSON body (#1361): thousands of ids in the URL are cut by the proxy (ERR_FAILED)
+    if (params.customerIds && params.customerIds.length > 0) {
+      const posted = await authenticatedFetch(apiUrls.customers.export, {
+        method: 'POST',
+        body: JSON.stringify({
+          customerIds: params.customerIds,
+          ...(params.format ? { format: params.format } : {}),
+          ...(params.period ? { period: params.period } : {}),
+          ...(params.startDate ? { startDate: params.startDate } : {}),
+          ...(params.endDate ? { endDate: params.endDate } : {}),
+          ...(params.merchantId ? { merchantId: params.merchantId } : {}),
+        }),
+      });
+      if (!posted.ok) {
+        throw new Error('Failed to export customers');
+      }
+      return await posted.blob();
+    }
+
+    // By period (no selection): a short URL, the same GET as before
     const queryParams = new URLSearchParams();
     if (params.period) queryParams.append('period', params.period);
     if (params.startDate) queryParams.append('startDate', params.startDate);
     if (params.endDate) queryParams.append('endDate', params.endDate);
     if (params.format) queryParams.append('format', params.format);
     if (params.merchantId) queryParams.append('merchantId', params.merchantId.toString());
-    
-    // Add customer IDs if provided
-    if (params.customerIds && params.customerIds.length > 0) {
-      params.customerIds.forEach(id => {
-        queryParams.append('customerIds', id.toString());
-      });
-    }
 
     const url = `${apiUrls.customers.export}?${queryParams.toString()}`;
     const response = await authenticatedFetch(url);
