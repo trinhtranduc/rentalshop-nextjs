@@ -214,7 +214,8 @@ describe('POST /api/customers/export (#1361)', () => {
       const res: any = await POST(post({ customerIds: [1, 5001], merchantId: 3 }));
       expect(mockSearch.mock.calls[0][0].merchantId).toBe(3);
       expect(header(res)[0]).toBe('Merchant');
-      expect(rowsOf(res).map((r) => r[2])).toEqual(['k5001@x.vn']);
+      const email = header(res).indexOf('Email'); // the Merchant column shifts the others by one
+      expect(rowsOf(res).map((r) => r[email])).toEqual(['k5001@x.vn']);
     });
   });
 
