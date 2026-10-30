@@ -12,7 +12,7 @@ Một shop nhiều chi nhánh dùng chung một danh mục sản phẩm, mỗi c
 - Chi nhánh nào cũng thấy hết mọi món, kể cả món mình không bán (`apps/api/app/api/products/route.ts:645-651`, `packages/database/src/product.ts:298-326`). Shop áo dài có nhiều mẫu riêng từng tiệm thì danh sách dài và lẫn.
 - Không có chỗ nào nói "chi nhánh này có bán món này không". Chỉ đoán từ tồn thì không phân biệt được món bán hết (tồn 0, vẫn cần hiện để nhập lại hoặc sửa) với món chi nhánh không bán.
 - Hết hàng ở chi nhánh này nhưng chi nhánh khác còn: lúc tạo đơn không có gợi ý; điện thoại không xem được tồn chi nhánh khác (`otherOutlets` chỉ có ở web).
-- Không có chuyển hàng giữa chi nhánh; chủ shop sửa tồn tay ở hai chi nhánh. Trang quảng cáo ghi "Chuyển kho giữa các cửa hàng" (`apps/client/app/cho-thue-ao-dai/page.tsx:146`).
+- Không có chuyển hàng giữa chi nhánh; chủ shop sửa tồn tay ở hai chi nhánh (đợt này giữ cách đó). Trang quảng cáo ghi "Chuyển kho giữa các cửa hàng" (`apps/client/app/cho-thue-ao-dai/page.tsx:146`).
 - API gửi thừa cho OUTLET_STAFF số tồn mọi chi nhánh và tổng cả shop; `totalStock` có thể lệch tổng các chi nhánh.
 - Nhập Excel không chọn chi nhánh, không kiểm giới hạn gói.
 
@@ -26,21 +26,20 @@ Kiểm được mà không cần người:
 4. Tắt bị từ chối (409) khi còn hàng đang thuê, còn đơn mở, hoặc còn tồn.
 5. Hết hàng khi tạo đơn: chủ shop, quản lý, kho thấy "chi nhánh khác còn N" kèm tên chi nhánh; nhân viên chỉ thấy "Hết hàng".
 6. OUTLET_STAFF không nhận `outletStock` của chi nhánh khác, `totalStock` hay `available` của cả shop.
-7. "Chuyển sang chi nhánh khác" (nút trong chi tiết sản phẩm, chỉ chủ shop; vai trò khác 403) trừ ở chi nhánh gửi và cộng ở chi nhánh nhận trong một giao dịch, có lịch sử (ai, lúc nào, bao nhiêu).
-8. App cũ trên `main-real` không đổi hành vi (xem `spec.md`, bảng `API compatibility`).
+7. App cũ trên `main-real` không đổi hành vi (xem `spec.md`, bảng `API compatibility`).
 
 ## Affected users and systems
 
 - Vai trò: MERCHANT (chủ shop), OUTLET_ADMIN (quản lý chi nhánh), OUTLET_INVENTORY (kho), OUTLET_STAFF (nhân viên), ADMIN (nhân viên hệ thống, kiểm quyền như hôm nay).
 - Gói: Basic (chỉ điện thoại, 1 chi nhánh) không thấy gì mới. Gói nhiều chi nhánh (Enterprise, hoặc gói có add-on chi nhánh, #826) dùng đầy đủ.
-- Hệ thống: `apps/api` (products, orders, bulk-import, route mới), `prisma/` (cột `OutletStock.isListed`, bảng `StockTransfer`), `apps/client` (danh sách, form, chi tiết, tạo đơn, nhập Excel), iOS `apps/mobile` (chuẩn), Android `apps/mobile-android` (theo sau), `locales/{en,vi,ja,ko,zh}`.
+- Hệ thống: `apps/api` (products, orders, bulk-import, route mới), `prisma/` (cột `OutletStock.isListed`), `apps/client` (danh sách, form, chi tiết, tạo đơn, nhập Excel), iOS `apps/mobile` (chuẩn), Android `apps/mobile-android` (theo sau), `locales/{en,vi,ja,ko,zh}`.
 
 ## Constraints
 
 - Chỉ thêm. Không xoá, đổi tên, đổi kiểu hay đổi nghĩa trường nào app cũ đọc (`AGENTS.md` API compatibility). `totalStock` giữ nghĩa "tổng mọi dòng tồn"; số mới là trường mới.
 - Một sản phẩm, một giá cho cả shop. Một đơn một chi nhánh, không lấy hàng từ hai chi nhánh.
 - Giữ khoá `(productId, outletId)` của `OutletStock` và bất biến của #1305 mục 4.4 (`OutletStock` vẫn là tổng; `totalStock = Σ OutletStock.stock`).
-- Giữ quyền #825 (quản lý và kho cùng quyền sản phẩm; nhân viên không tạo/sửa dùng chung; ghi tồn chỉ chi nhánh mình), trừ "Chuyển sang chi nhánh khác" (ghi sang chi nhánh nhận; ngoại lệ có tên, chỉ chủ shop, xem `spec.md` mục 5).
+- Giữ quyền #825 (quản lý và kho cùng quyền sản phẩm; nhân viên không tạo/sửa dùng chung; ghi tồn chỉ chi nhánh mình), không có ngoại lệ.
 - Migration chỉ thêm; không đụng production (hook `production-gate.sh`); quy tắc backfill phải đọc được bằng truy vấn chỉ đọc.
 - Đơn giản và chuẩn (lời chủ shop). Không phiếu giao nhận, không giá theo chi nhánh, không tồn theo phiếu nhập/xuất ở đợt này.
 - Chủ shop nói "chốt" mockup rồi mới code.
@@ -49,9 +48,8 @@ Kiểm được mà không cần người:
 
 Xem `spec.md` mục 10 (mỗi câu có mặc định). Chủ shop chưa quyết:
 
-- Giữ hay bỏ câu "Chuyển kho giữa các cửa hàng" trên trang quảng cáo (không sửa trong đợt này).
+- Câu quảng cáo "Chuyển kho giữa các cửa hàng" đổi thành câu nào (đề xuất "Quản lý tồn kho từng chi nhánh"; việc nhỏ riêng, không làm trong PR này).
 - Tắt ô tick khi tồn còn > 0.
-- Mở quyền "Chuyển sang chi nhánh khác" cho quản lý/kho: việc sau (chủ shop đã chốt chỉ chủ shop bây giờ).
 
 ## Decision log
 
@@ -60,9 +58,9 @@ Xem `spec.md` mục 10 (mỗi câu có mặc định). Chủ shop chưa quyết:
 - 2026-10-30 — Danh sách và chọn sản phẩm khi tạo đơn của chi nhánh chỉ hiện món đã bật; bật mà tồn 0 vẫn hiện, ghi "Hết hàng"; có nút "Hiện cả sản phẩm chi nhánh chưa có"; chủ shop thấy mọi sản phẩm và tồn từng chi nhánh. (chủ shop)
 - 2026-10-30 — Tắt ô tick chỉ khi chi nhánh không còn hàng đang thuê và không còn đơn mở (RESERVED/PICKUPED). Đề xuất thêm "tồn phải về 0": chờ chủ shop. (chủ shop + đề xuất)
 - 2026-10-30 — Quyền giữ quyết định 11/10 (#825). Nhân viên chỉ thấy chi nhánh mình; chủ shop, quản lý, kho xem được tồn chi nhánh khác (chỉ đọc, cả điện thoại). Bật/tắt ô tick: chủ shop mọi chi nhánh, quản lý và kho chi nhánh mình, nhân viên không. (chủ shop)
-- 2026-10-30 — Thêm bốn việc theo thứ tự: (a) gợi ý "chi nhánh khác còn N" khi hết hàng lúc tạo đơn; (b) API không gửi thừa cho nhân viên, sửa `totalStock` lệch; (c) nhập Excel chọn chi nhánh và kiểm giới hạn gói; (d) "Chuyển sang chi nhánh khác" giữa chi nhánh có lịch sử, không phiếu giao nhận. Câu "Chuyển kho giữa các cửa hàng" trên trang quảng cáo: chủ shop chưa quyết, không sửa. (chủ shop)
+- 2026-10-30 — Thêm ba việc theo thứ tự: (a) gợi ý "chi nhánh khác còn N" khi hết hàng lúc tạo đơn; (b) API không gửi thừa cho nhân viên, sửa `totalStock` lệch; (c) nhập Excel chọn chi nhánh và kiểm giới hạn gói. Câu "Chuyển kho giữa các cửa hàng" trên trang quảng cáo: chủ shop chưa chọn câu thay, không sửa trong PR này. (chủ shop)
 - 2026-10-30 — Gói Basic chỉ điện thoại và 1 chi nhánh: các màn mới ẩn. (chủ shop)
 - 2026-10-30 — Thứ tự với biến thể #1305: giữ khoá `(productId, outletId)`; ô tick ở cấp sản phẩm cha, biến thể theo ô tick của cha; không giả định `totalStock` khác tổng chi nhánh theo cách mâu thuẫn #1305 mục 4.2/4.4. (chủ shop chấp nhận đề xuất)
 
-- 2026-10-30 — Chủ shop chỉnh hướng: ô chọn "Hiện ở chi nhánh" trong form (danh sách chi nhánh có ô tick, nghĩa của tick là `OutletStock.isListed`); "Chuyển sang chi nhánh khác" nằm ngay trong chi tiết sản phẩm (số lượng mặc định = tồn trừ phần đang thuê; chi nhánh nhận tự tick; chuyển hết thì hỏi một câu để chi nhánh gửi bỏ tick); lịch sử chỉ là danh sách ở chi tiết sản phẩm. (chủ shop)
-- 2026-10-30 — Chỉ MERCHANT được chuyển giữa các chi nhánh; quản lý, kho, nhân viên không thấy nút và API trả 403 `INSUFFICIENT_PERMISSIONS`; mở quyền cho vai trò khác là việc sau, kiểm quyền ở một hàm thuần. Tick / bỏ tick vẫn: chủ shop mọi chi nhánh, quản lý/kho chi nhánh mình, nhân viên chỉ xem. (chủ shop)
+- 2026-10-30 — Chủ shop chỉnh hướng: ô chọn "Hiện ở chi nhánh" trong form (danh sách chi nhánh có ô tick, nghĩa của tick là `OutletStock.isListed`); mọi tình huống chặn bỏ tick gộp thành một dòng giải thích. (chủ shop)
+- 2026-10-30 — BỎ HẲN "Chuyển sang chi nhánh khác" / chuyển kho khỏi đợt này (chủ shop chốt): dời hàng bằng ô tick + sửa số lượng (web: sửa tồn mọi chi nhánh trong một lần lưu; điện thoại: từng chi nhánh). Bỏ tick khi tồn > 0: chặn, phải đặt số lượng về 0 trước. Lịch sử thay đổi tồn nếu cần: làm sau cùng hướng phiếu nhập/xuất (`docs/TODO.md`). Tick / bỏ tick vẫn: chủ shop mọi chi nhánh, quản lý/kho chi nhánh mình, nhân viên chỉ xem. (chủ shop)

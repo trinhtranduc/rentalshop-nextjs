@@ -16,15 +16,13 @@ Mỗi mục có một issue con (mở khi bắt đầu), mỗi PR code: `Fixes` 
 | 2m | (a) iOS rồi Android; khối "Tồn chi nhánh khác" trên điện thoại | PR 2 |
 | 3 | (b) Nhân viên không nhận số thừa; `totalStock` đúng; `activeTotalStock` | độc lập, sau PR 1 |
 | 4 | (c) Nhập Excel chọn chi nhánh + giới hạn gói (API + web) | PR 1 |
-| 5 | (d) Chuyển sang chi nhánh khác + lịch sử (API + web) | PR 1 |
-| 5m | (d) iOS rồi Android | PR 5 |
 
 PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 nếu chủ shop muốn vá rò rỉ cho nhân viên trước. Spec biến thể #1305 vào trước hay sau đều được (spec mục 8).
 
 ## PR 1 — Migration và ô tick
 
 1. Mở issue con (feat). Thêm dòng `planned` trong LOG đã có sẵn từ PR spec; đổi chữ khi vào `dev`.
-2. `prisma/schema.prisma`: `OutletStock.isListed Boolean @default(true)` + `@@index([outletId, isListed])`; bảng `StockTransfer` có thể để PR 5 (migration riêng, mỗi migration một việc). Dùng `yarn db:migrate:dev --name outlet_stock_is_listed`, đọc SQL, thêm `UPDATE` backfill (spec mục 7), `yarn db:generate`. Dev trước; production là quyết định của người (hook chặn).
+2. `prisma/schema.prisma`: `OutletStock.isListed Boolean @default(true)` + `@@index([outletId, isListed])`. Dùng `yarn db:migrate:dev --name outlet_stock_is_listed`, đọc SQL, thêm `UPDATE` backfill (spec mục 7), `yarn db:generate`. Dev trước; production là quyết định của người (hook chặn).
 3. Test backfill trên DB e2e riêng (`helpers/subscription.js` world): dòng tồn 0 chưa có đơn → tắt; có tồn / đang thuê / từng có đơn → bật; sản phẩm không còn dòng bật → dòng id nhỏ nhất bật; sản phẩm đã xoá mềm bị bỏ qua.
 4. `apps/api/lib/product-listing.ts` (hàm thuần, test riêng): `listedRowsForCreate`, `canUnlist(row, openOrders)` → lý do, `shopHasSingleActiveOutlet`. Dùng lại `openOrdersByProductAndOutlet` (`product-branch-rules.ts`).
 5. `apps/api/app/api/products/route.ts`: tham số `listed` (zod), truyền xuống `db.products.search` (`packages/database/src/product.ts:306-326`) thêm `isListed: true` vào `outletStock.some`; thêm `isListed` vào `select` (`:395-409`, `:150`); POST: `isListed` tuỳ chọn, dòng zero tắt (`:645-651`, `:704-711`).
@@ -57,17 +55,9 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 2. Web `apps/client/app/products/import/` (`import-model.ts:147-158`, `page.tsx`): chọn chi nhánh khi có từ 2 chi nhánh; ẩn khi 1 chi nhánh.
 3. Test: tab cũ (không `outletId`) vào đúng như hôm nay; chọn chi nhánh khác; role chi nhánh bị ép chi nhánh mình; vượt gói.
 
-## PR 5 — Chuyển sang chi nhánh khác
-
-1. Migration `stock_transfer` (bảng `StockTransfer`, spec mục 6).
-2. `apps/api/app/api/products/transfers/route.ts` (`POST`, `GET`): một `prisma.$transaction`, cập nhật có điều kiện (`updateMany ... where stock - renting >= quantity`) để hai lần gửi cùng lúc không âm tồn; `syncOutletStockAvailable`/`syncProductTotalStock`; ghi lịch sử thay đổi (#519). Kiểm quyền bằng hàm thuần `canTransferStock(role)` (chỉ MERCHANT) đặt ở `apps/api/lib/product-branch-rules.ts` (hoặc `stock-transfer.ts`); vai trò khác 403 `INSUFFICIENT_PERMISSIONS`. `unlistSender` theo spec quy tắc 28.
-3. Web: chi tiết sản phẩm tại một chi nhánh: nút "Chuyển sang chi nhánh khác" (chỉ chủ shop) mở hộp thoại (chi nhánh nhận, số lượng mặc định = tồn trừ đang thuê, ghi chú), câu hỏi "Chuyển hết, bỏ sản phẩm khỏi chi nhánh này?" khi chuyển hết, và danh sách lịch sử cuối trang (không màn riêng).
-4. iOS rồi Android: cùng nút, cùng sheet (5m); chỉ hiện cho chủ shop.
-5. Test tương tranh (hai lần chuyển cùng lúc); không chuyển hàng đang thuê; nhận tự tick; `unlistSender` chỉ có tác dụng khi tồn 0, không đang thuê, không đơn mở; mọi vai trò khác chủ shop nhận 403 (quản lý, kho, nhân viên) ở cả POST và GET; `canTransferStock` có test thuần.
-
 ## Test (tên gợi ý)
 
-- Jest `tests/api/`: `product-listing-rules.test.ts` (hàm thuần), `products-listed-filter.test.ts` (`listed` với từng vai trò, shop 1 chi nhánh bỏ qua), `product-listing-route.test.ts` (quyền, 409 + `data.blocked`, all-or-nothing, gửi lại giá trị hiện tại), `products-auto-list.test.ts` (đơn, PUT tồn > 0, chuyển nhanh), `products-staff-scope.test.ts` (PR 3), `other-outlets-availability.test.ts` (TZ), `bulk-import-outlet.test.ts`, `stock-transfer.test.ts`.
+- Jest `tests/api/`: `product-listing-rules.test.ts` (hàm thuần), `products-listed-filter.test.ts` (`listed` với từng vai trò, shop 1 chi nhánh bỏ qua), `product-listing-route.test.ts` (quyền, 409 + `data.blocked`, all-or-nothing, gửi lại giá trị hiện tại), `products-auto-list.test.ts` (đơn, PUT tồn > 0), `products-staff-scope.test.ts` (PR 3), `other-outlets-availability.test.ts` (TZ), `bulk-import-outlet.test.ts`.
 - **Tương thích cũ-mới** `products-listed-compat.test.ts`: payload thật của app cũ (Android một dòng `outletStock` không `isListed`; iOS `CreateProductRequest`; web cũ gửi mọi chi nhánh stock 0) cho kết quả như trước; GET không `listed` trả đủ sản phẩm; response là siêu tập của response cũ (mọi khoá cũ còn nguyên, cùng kiểu); đọc rồi lưu lại (read then save) không làm tắt món nào và không ghi trùng.
 - Chạy ngày: `TZ=UTC` và `TZ=Asia/Ho_Chi_Minh` cho `other-outlets-availability`.
 - Chuỗi: `locales-valid-json`; kiểm đủ 5 ngôn ngữ cho mọi khoá mới.
@@ -78,7 +68,6 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
   - nhân viên 403 khi bật/tắt/chuyển/gợi ý; quản lý A không bật được chi nhánh B (403 `NO_OUTLET_ACCESS`); kho như quản lý;
   - nhân viên không thấy `outletStock` chi nhánh khác, `totalStock` của shop;
   - gợi ý chi nhánh khác: có tên với chủ shop/quản lý/kho; nhân viên 403;
-  - chuyển sang chi nhánh khác: chủ shop chuyển được, số hai chi nhánh đúng, `totalStock` không đổi, có lịch sử, nhận tự tick, không chuyển quá số rảnh; quản lý, kho, nhân viên nhận 403;
   - đơn tạo từ payload kiểu app cũ cho món tắt → món tự bật;
   - chạy: `scripts/e2e/business-e2e.sh --build --tz "UTC Asia/Ho_Chi_Minh" -- product-listing` trên DB riêng (API-only: chạy nền, báo số liệu).
 - Web UI e2e (có giao diện): Chrome có cửa sổ, bước chậm; iOS `open -a Simulator` với thiết bị phía trước; Android AVD có cửa sổ (không `-no-window`). Dùng `mobile-e2e-local` + `scripts/mobile-e2e` với `E2E_ROOT` (Basic: tài khoản shop 1 chi nhánh thấy không có màn mới).
@@ -90,7 +79,7 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 ## Files (dự kiến)
 
 - `prisma/schema.prisma`, `prisma/migrations/*` — cột, bảng, backfill
-- `apps/api/app/api/products/{route.ts,[id]/route.ts,listing/route.ts,other-outlets-availability/route.ts,transfers/route.ts,bulk-import/route.ts}`, `apps/api/app/api/orders/route.ts`
+- `apps/api/app/api/products/{route.ts,[id]/route.ts,listing/route.ts,other-outlets-availability/route.ts,bulk-import/route.ts}`, `apps/api/app/api/orders/route.ts`
 - `apps/api/lib/{product-listing.ts,product-branch-rules.ts,other-outlet-stock.ts,mobile-app-config.ts}`
 - `packages/database/src/{product.ts,outlet.ts}`, `packages/utils/src/config/api.ts` (+ `*Api`), `packages/validation`, `packages/constants` (mã lỗi)
 - `apps/client/app/products/**`, `apps/client/app/orders/create/**`
@@ -104,14 +93,13 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 - App cũ tạo đơn/ghi tồn cho món tắt: giải bằng tự bật (Q5); cần test "đọc rồi lưu".
 - Nhân viên đa chi nhánh thấy số nhỏ hơn sau PR 3 (riêng tư có chủ ý): kiểm iOS/Android trước, ghi vào PR.
 - `UPDATE` backfill trên bảng lớn: chưa đo; chia lô nếu cần.
-- Chuyển sang chi nhánh khác làm thiếu hàng cho đơn đã đặt ngày sau (không chặn, như sửa tồn tay).
 - Gửi trùng khi mạng chậm: nút khoá khi đang gửi; chưa có khoá chống trùng (có thể thêm nếu thấy cần).
 - Cả hai app điện thoại phải đủ chuỗi lỗi mới (mã lỗi lạ hiện thông điệp API, không phải chuỗi dịch).
 - Production: không chạy migration thật, không gọi `api.anyrent.shop` trong suốt đợt này.
 
 ## Rollback
 
-Gỡ code (revert PR); giữ cột `isListed` và bảng `StockTransfer` (vô hại, mặc định bật). App cũ không đọc cột nên không đổi. Tắt các màn trên điện thoại từ xa bằng `MOBILE_FEATURES` (bỏ khoá `branchProducts`). Dữ liệu `isListed` bị backfill tắt: bật lại bằng `PUT /api/products/listing` hoặc một `UPDATE` thủ công do người chạy.
+Gỡ code (revert PR); giữ cột `isListed` (vô hại, mặc định bật). App cũ không đọc cột nên không đổi. Tắt các màn trên điện thoại từ xa bằng `MOBILE_FEATURES` (bỏ khoá `branchProducts`). Dữ liệu `isListed` bị backfill tắt: bật lại bằng `PUT /api/products/listing` hoặc một `UPDATE` thủ công do người chạy.
 
 
-Việc sau (không thuộc đợt này): mở quyền chuyển cho quản lý/kho; khi đó chỉ sửa `canTransferStock` và thêm ràng buộc chi nhánh gửi.
+Việc sau (không thuộc đợt này): chuyển kho giữa chi nhánh bỏ khỏi đợt này (chủ shop chốt 2026-10-30), dời hàng bằng ô tick + sửa số lượng; lịch sử thay đổi tồn xem cùng hướng phiếu nhập/xuất. Sửa câu quảng cáo "Chuyển kho giữa các cửa hàng" (`cho-thue-ao-dai/page.tsx:146`, đề xuất "Quản lý tồn kho từng chi nhánh") là việc nhỏ riêng.
