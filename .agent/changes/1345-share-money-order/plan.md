@@ -1,0 +1,31 @@
+# Plan — Ảnh chia sẻ đơn: thứ tự phần tiền
+
+Issue: #1345 · Status: done · Spec: ./spec.md
+
+## Steps
+
+1. Test đỏ (commit riêng): iOS `OrderShareImageTests` và Android `OrderShareModelTest`, bảy khung a-g của mockup + công thức + không đổi theo trạng thái. Chạy để thấy đỏ.
+2. Hàm thuần `ShareMoneyRule.collectOnDelivery` (iOS `OrderShareImage.swift`, Android `OrderShareModel.kt`), có test.
+3. Model: thay `rows` / `highlight*` / `plan` bằng danh sách có thứ tự `money` (hàng, ô tổng, khối đợt, ô thu khi giao).
+4. Renderer iOS và Android vẽ theo `money`; ô Thu khi giao viền nhạt; hàng xám cho "Chưa cọc".
+5. Chuỗi en + vi (`mobile-parity`, `i18n-keys` chỉ phần mobile).
+6. Verify: iOS `xcodebuild test -only-testing:POS ADBDTests/OrderShareImageTests`, Android `:app:testDebugUnitTest --tests OrderShareModelTest`, build Android; chụp ảnh từ Simulator với API cục bộ.
+
+## Files
+
+- `apps/mobile/POS ADBD/Model/OrderShareImage.swift`, `Utils/OrderShareRenderer.swift`, `en.lproj` + `vi-VN.lproj/Localizable.strings`, `POS ADBDTests/OrderShareImageTests.swift`
+- `apps/mobile-android/.../domain/orders/OrderShareModel.kt`, `ui/orders/OrderShareRenderer.kt`, `res/values{,-vi}/strings.xml`, `OrderShareModelTest.kt`
+- Không đổi `DepositPlanReceipt` (phiếu in dùng).
+
+## Phát hiện (ghi trong PR, không sửa ở đây)
+
+Chi tiết đơn: Thu khi giao = tổng − `depositAmount` + thế chân − đã thu trước, `depositAmount` chỉ cộng đợt ĐÃ thu (`apps/api/lib/installments.ts:115`). Đơn còn đợt 2 chưa thu: số này = phần còn lại + đợt 2 (+ thế chân), lớn hơn dòng "Phần còn lại, thu khi giao" của thẻ đợt. Đã chạy thật (test thuần, iOS `testDetailScreenHandOverCountsUnpaidStagesTheImageDoesNot`, Android `detailScreenHandOverCountsUnpaidStagesTheImageDoesNot`): tổng 1.150.000, đợt 1 đã thu 230.000, đợt 2 (345.000) chưa thu, rest 575.000 → `HandOverMoney` / `OrderDetailLogic.handOver` ra 920.000, công thức kế hoạch ra 575.000. Cả hai app lệch giống nhau.
+API chặn giao khi còn đợt tường minh chưa thu (400 `INSTALLMENT_UNPAID_AT_PICKUP`, `apps/api/lib/installments.ts:238`), nên đợt 2 luôn được thu TRƯỚC lúc giao: số thu tại lúc giao thật sự là 575.000. Số 920.000 ở mục THANH TOÁN của chi tiết đơn là "còn phải thu tổng" mang nhãn "Thu khi giao". Ảnh chia sẻ dùng công thức kế hoạch (575.000). Đề xuất issue riêng: chi tiết đơn đổi nhãn/số cho khớp thẻ đợt (không sửa trong PR này).
+
+## Risks
+
+App cũ giữ ảnh cũ (không API). Hai app lệch nhau: test cùng số liệu.
+
+## Rollback
+
+Revert PR; ảnh trở lại thứ tự cũ.

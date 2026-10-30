@@ -5,6 +5,7 @@ import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderItem
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.domain.orders.OrderShareModel
+import com.anyrent.pos.domain.orders.ShareMoney
 import com.anyrent.pos.domain.orders.ShareShop
 import com.anyrent.pos.domain.orders.ShareText
 import org.junit.Assert.assertEquals
@@ -83,18 +84,21 @@ class DepositReceiptTest {
 
     @Test
     fun shareImageShowsStagesInsteadOfTheSingleDepositRow() {
+        // #1345: the image lists the explicit stages (no "rest" line, no Đã thu / Còn phải thu); OrderShareMoneyOrderTest has the order
+        fun stagesOf(m: OrderShareModel) = m.money.filterIsInstance<ShareMoney.Stages>()
+        fun hasDepositRow(m: OrderShareModel) = m.money.any { it is ShareMoney.Row && (it.row.label as? ShareText.Res)?.id == R.string.share_deposit_paid }
         val plan = DepositPlanInfo(installments = stages, summary = summary, hasPlan = true)
         val now = Instant.parse("2026-10-07T03:00:00Z")
         val with = OrderShareModel.from(order(plan), shop, vi = true, zone = vn, now = now)
-        assertEquals(3, with.plan!!.stages.size)
-        assertFalse(with.rows.any { (it.label as? ShareText.Res)?.id == R.string.share_deposit_paid })
+        assertEquals(2, stagesOf(with).single().stages.size)
+        assertFalse(hasDepositRow(with))
 
         val without = OrderShareModel.from(order(null), shop, vi = true, zone = vn, now = now)
-        assertNull(without.plan)
-        assertTrue(without.rows.any { (it.label as? ShareText.Res)?.id == R.string.share_deposit_paid })
+        assertTrue(stagesOf(without).isEmpty())
+        assertTrue(hasDepositRow(without))
         // stages without hasDepositPlan, and a sale: nothing
-        assertNull(OrderShareModel.from(order(plan.copy(hasPlan = false)), shop, vi = true, zone = vn, now = now).plan)
-        assertNull(OrderShareModel.from(order(plan, type = "SALE"), shop, vi = true, zone = vn, now = now).plan)
+        assertTrue(stagesOf(OrderShareModel.from(order(plan.copy(hasPlan = false)), shop, vi = true, zone = vn, now = now)).isEmpty())
+        assertTrue(stagesOf(OrderShareModel.from(order(plan, type = "SALE"), shop, vi = true, zone = vn, now = now)).isEmpty())
     }
 
     @Test

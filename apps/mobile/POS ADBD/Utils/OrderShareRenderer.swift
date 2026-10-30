@@ -30,6 +30,7 @@ enum OrderShareRenderer {
         static let itemNote = UIColor(hexString: "92400E")
         static let arrow = UIColor(hexString: "94A3B8")
         static let qrBorder = UIColor(hexString: "CBD5E1")
+        static let collectEdge = UIColor(hexString: "BFDBFE")
     }
 
     private static func font(_ size: CGFloat, _ weight: UIFont.Weight = .regular) -> UIFont {
@@ -250,52 +251,67 @@ enum OrderShareRenderer {
         y += 16
         p.fill(CGRect(x: innerX, y: y, width: innerW, height: 1), radius: 0, color: C.divider)
         y += 13
-        for row in model.rows {
-            let valueFont = font(15, .semibold)
-            let valueW = min(innerW * 0.6, ceil(p.size(row.value, font: valueFont).width))
-            p.text(row.value, font: valueFont, color: UIColor(hexString: "334155"), x: innerX + innerW - valueW, y: y,
-                   width: valueW, align: .right, lines: 1, shrink: true)
-            y += max(p.text(row.label, font: font(15), color: C.muted, x: innerX, y: y, width: innerW - valueW - 12, lines: 2), 19) + 11
+        // #1345: the money part in the order of the order detail: Tạm tính / Giảm giá, Tổng tiền thuê, Cọc, Thu khi giao, Thế chân
+        for entry in model.money {
+            switch entry {
+            case .row(let row):
+                let valueFont = row.muted ? font(15) : font(15, .semibold)
+                let valueColor = row.muted ? C.soft : UIColor(hexString: "334155")
+                let valueW = min(innerW * 0.6, ceil(p.size(row.value, font: valueFont).width))
+                p.text(row.value, font: valueFont, color: valueColor, x: innerX + innerW - valueW, y: y,
+                       width: valueW, align: .right, lines: 1, shrink: true)
+                y += max(p.text(row.label, font: font(15), color: row.muted ? C.soft : C.muted, x: innerX, y: y,
+                                width: innerW - valueW - 12, lines: 2), 19) + 11
+            case .stages(let plan):
+                // #1252: stages of a staged deposit; #1345: each one Đã thu / Chưa thu, no running totals
+                y += 2
+                y += p.text(plan.title.uppercased(with: Locale(identifier: "vi")), font: font(13, .bold), color: C.muted,
+                            x: innerX, y: y, width: innerW, lines: 1, kern: 1.2) + 10
+                for stage in plan.stages {
+                    let amountW = ceil(p.size(stage.amount, font: font(15, .semibold)).width)
+                    p.text(stage.amount, font: font(15, .semibold), color: C.ink, x: innerX, y: y, width: innerW, align: .right, lines: 1)
+                    y += p.text(stage.title, font: font(15, .semibold), color: C.ink, x: innerX, y: y, width: innerW - amountW - 12, lines: 2) + 1
+                    y += p.text(stage.detail, font: font(13), color: C.muted, x: innerX, y: y, width: innerW, lines: 2)
+                    y += 8
+                }
+                y += 3
+            case .total(let label, let value, let tone):
+                y += 4
+                let box = CGRect(x: innerX, y: y, width: innerW, height: 60)
+                let (bg, labelColor, valueColor): (UIColor, UIColor, UIColor) = {
+                    switch tone {
+                    case .rent: return (C.dueBg, UIColor(hexString: "1E3A8A"), C.accent)
+                    case .total: return (C.paidBg, C.paid, C.paid)
+                    case .draft: return (C.draftBg, C.draftText, C.ink)
+                    }
+                }()
+                p.fill(box, radius: 16, color: bg)
+                let valueFont = font(28, .heavy)
+                let valueW = min(innerW * 0.65, ceil(p.size(value, font: valueFont).width))
+                p.text(label, font: font(16, .bold), color: labelColor,
+                       in: CGRect(x: box.minX + 16, y: box.minY, width: box.width - valueW - 44, height: box.height),
+                       align: .left, vCenter: true)
+                p.text(value, font: valueFont, color: valueColor,
+                       in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
+                       align: .right, vCenter: true, shrink: true)
+                y = box.maxY + 12
+            case .collect(let label, let value):
+                // #1345: the second box, white with a light blue edge: what is paid at hand-over, fixed by the plan
+                let box = CGRect(x: innerX, y: y, width: innerW, height: 54)
+                p.fill(box, radius: 16, color: C.collectEdge)
+                p.fill(box.insetBy(dx: 1.5, dy: 1.5), radius: 14.5, color: .white)
+                let valueFont = font(24, .heavy)
+                let valueW = min(innerW * 0.65, ceil(p.size(value, font: valueFont).width))
+                p.text(label, font: font(16, .bold), color: UIColor(hexString: "1E3A8A"),
+                       in: CGRect(x: box.minX + 16, y: box.minY, width: box.width - valueW - 44, height: box.height),
+                       align: .left, vCenter: true)
+                p.text(value, font: valueFont, color: C.ink,
+                       in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
+                       align: .right, vCenter: true, shrink: true)
+                y = box.maxY + 12
+            }
         }
-        if let plan = model.plan {
-            // #1252: stages of a staged deposit, then what is collected and what is left
-            y += 2
-            y += p.text(plan.title.uppercased(with: Locale(identifier: "vi")), font: font(13, .bold), color: C.muted,
-                        x: innerX, y: y, width: innerW, lines: 1, kern: 1.2) + 10
-            for stage in plan.stages {
-                let amount = OrderShareModel.money(stage.amount)
-                let amountW = ceil(p.size(amount, font: font(15, .semibold)).width)
-                p.text(amount, font: font(15, .semibold), color: C.ink, x: innerX, y: y, width: innerW, align: .right, lines: 1)
-                y += p.text(stage.title, font: font(15, .semibold), color: C.ink, x: innerX, y: y, width: innerW - amountW - 12, lines: 2) + 1
-                if let detail = stage.detail { y += p.text(detail, font: font(13), color: C.muted, x: innerX, y: y, width: innerW, lines: 2) }
-                y += 8
-            }
-            for (label, value) in [(plan.collectedLabel, plan.collected), (plan.remainingLabel, plan.remaining)] {
-                let text = OrderShareModel.money(value)
-                let valueW = ceil(p.size(text, font: font(15, .bold)).width)
-                p.text(text, font: font(15, .bold), color: C.ink, x: innerX + innerW - valueW, y: y, width: valueW, align: .right, lines: 1)
-                y += max(p.text(label, font: font(15), color: C.muted, x: innerX, y: y, width: innerW - valueW - 12, lines: 1), 19) + 8
-            }
-        }
-        y += 4
-        let box = CGRect(x: innerX, y: y, width: innerW, height: 60)
-        let (bg, labelColor, valueColor): (UIColor, UIColor, UIColor) = {
-            switch model.highlight {
-            case .rent: return (C.dueBg, UIColor(hexString: "1E3A8A"), C.accent)
-            case .total: return (C.paidBg, C.paid, C.paid)
-            case .draft: return (C.draftBg, C.draftText, C.ink)
-            }
-        }()
-        p.fill(box, radius: 16, color: bg)
-        let valueFont = font(28, .heavy)
-        let valueW = min(innerW * 0.65, ceil(p.size(model.highlightValue, font: valueFont).width))
-        p.text(model.highlightLabel, font: font(16, .bold), color: labelColor,
-               in: CGRect(x: box.minX + 16, y: box.minY, width: box.width - valueW - 44, height: box.height),
-               align: .left, vCenter: true)
-        p.text(model.highlightValue, font: valueFont, color: valueColor,
-               in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
-               align: .right, vCenter: true, shrink: true)
-        y = box.maxY
+        y -= 12
         if let note = model.note {
             y += 12
             y += p.text(note, font: font(14), color: C.muted, x: innerX, y: y, width: innerW, lines: 3)
