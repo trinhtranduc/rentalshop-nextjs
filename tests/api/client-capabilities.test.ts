@@ -35,9 +35,9 @@ describe('getClientCapabilities / hasCapability (#1200)', () => {
 });
 
 describe('web client header (#1200)', () => {
-  it('declares block-pricing (#1189) and installments (#1199), so authenticatedFetch sends the header', () => {
-    expect(CLIENT_CAPABILITIES).toEqual(['block-pricing', 'installments']);
-    expect(clientCapabilitiesHeader()).toEqual({ 'X-Client-Capabilities': 'block-pricing,installments' });
+  it('declares block-pricing (#1189), installments (#1199) and branch-listing (#1341), so authenticatedFetch sends the header', () => {
+    expect(CLIENT_CAPABILITIES).toEqual(['block-pricing', 'installments', 'branch-listing']);
+    expect(clientCapabilitiesHeader()).toEqual({ 'X-Client-Capabilities': 'block-pricing,installments,branch-listing' });
   });
 
   it('sends no header for an empty list', () => {
