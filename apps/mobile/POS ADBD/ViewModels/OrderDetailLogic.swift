@@ -259,11 +259,21 @@ enum OrderDetailLogic {
         return ShareMoneyRule.collectOnDelivery(total: total, deposit: deposit, hasPlan: hasPlan, stages: stages, currency: currency)
     }
 
-    /// #1368 the three lines of the payment section of a rental waiting for pick-up whose collateral is money
+    /// #1368 the three lines of the payment section of a rental waiting for pick-up whose collateral is money: "Tiền thuê
+    /// còn lại, thu khi giao" (the plan's rest, `ShareMoneyRule.collectOnDelivery`, as the image), "Thế chân, thu khi giao"
+    /// and their sum "Khách đưa lúc nhận đồ" (`ShareMoneyRule.cashAtHandover`). nil, so that the old lines show, for every
+    /// other order: sale, other status, no money collateral, or a PICKUP payment already taken (its "Đã thu" row and the
+    /// number after it stay as they are). Display only: `handOver(...).due` of the button and the sheet is untouched.
     static func handOverCash(orderType: OrderType, status: OrderStatus, total: Double, deposit: Double, securityDeposit: Double,
                              payments: [OrderPaymentLine], hasPlan: Bool?, stages: [OrderInstallment]?,
                              currency: ShopCurrency) -> HandOverCashLines? {
-        nil
+        guard orderType == .rent, status == .reserved,
+              paid(payments, purpose: "PICKUP") <= 0 else { return nil }
+        let rentalLeft = ShareMoneyRule.collectOnDelivery(total: total, deposit: deposit, hasPlan: hasPlan, stages: stages,
+                                                          currency: currency)
+        guard let cash = ShareMoneyRule.cashAtHandover(collectOnDelivery: rentalLeft, collateralMoney: securityDeposit,
+                                                       currency: currency) else { return nil }
+        return HandOverCashLines(rentalLeft: rentalLeft, collateral: securityDeposit, cash: cash)
     }
 
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,

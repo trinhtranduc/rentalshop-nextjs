@@ -727,10 +727,21 @@ final class OrderDetailViewController: BaseViewControler {
         if detail.depositAmount > 0 && !hasPlan {
             stack.addArrangedSubview(keyValue("order.detail.deposit".localized(), MoneyFormatter.format(detail.depositAmount), divider: false))
         }
-        if detail.securityDeposit > 0 && !collateralShown {
+        // #1368: a rental waiting for pick-up with a collateral in money says rental left, collateral and what the customer hands over
+        let handOverCash = OrderDetailLogic.handOverCash(
+            orderType: detail.orderType, status: detail.status, total: detail.totalAmount, deposit: detail.depositAmount,
+            securityDeposit: detail.securityDeposit, payments: payments, hasPlan: hasPlan, stages: detail.installments,
+            currency: ShopCurrencyStore.current)
+        if detail.securityDeposit > 0 && !collateralShown && handOverCash == nil {
             stack.addArrangedSubview(keyValue("Collateral money".localized(), "+" + MoneyFormatter.format(detail.securityDeposit), divider: false))
         }
         switch detail.status {
+        case .reserved where handOverCash != nil:
+            if let lines = handOverCash {
+                stack.addArrangedSubview(totalRow("share.collect.rentalLeft".localized(), MoneyFormatter.format(lines.rentalLeft)))
+                stack.addArrangedSubview(keyValue("share.collateral.collect".localized(), MoneyFormatter.format(lines.collateral), divider: false))
+                stack.addArrangedSubview(totalRow("share.cashAtHandover".localized(), MoneyFormatter.format(lines.cash)))
+            }
         case .reserved:
             let money = OrderDetailLogic.handOver(total: detail.totalAmount, deposit: detail.depositAmount,
                                                   securityDeposit: detail.securityDeposit, payments: payments)

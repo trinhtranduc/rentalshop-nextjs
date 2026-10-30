@@ -315,7 +315,15 @@ internal class OrderShareRenderer(private val context: Context, private val mode
                     canvas.text(t(h.label), paint(16f, bold, labelColor), 64f, y + 36f, maxWidth = 412f - valuePaint.measureText(h.value) - 12f)
                     y += 61f
                 }
-                is ShareMoney.Cash -> Unit
+                is ShareMoney.Cash -> {
+                    // #1368: the last box when the collateral is money: rental left + collateral, light blue like the total
+                    y += 12f
+                    canvas?.drawRoundRect(RectF(left, y, right, y + 54f), 14f, 14f, fill(Color.parseColor("#EFF6FF")))
+                    val valuePaint = paint(26f, black, accent)
+                    canvas.text(entry.value, valuePaint, 476f, y + 36f, Paint.Align.RIGHT)
+                    canvas.text(t(entry.label), paint(16f, bold, Color.parseColor("#1E3A8A")), 64f, y + 33f, maxWidth = 412f - valuePaint.measureText(entry.value) - 12f)
+                    y += 54f
+                }
                 is ShareMoney.Collect -> {
                     // #1345: the second box, white with a light blue edge: what is paid at hand-over, fixed by the plan
                     y += 12f

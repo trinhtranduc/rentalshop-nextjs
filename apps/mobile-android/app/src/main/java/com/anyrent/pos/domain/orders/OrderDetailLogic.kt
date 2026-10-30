@@ -172,7 +172,10 @@ object OrderDetailLogic {
 
     /**
      * #1368 the three lines of the payment section of a rental waiting for pick-up whose collateral is money (iOS
-     * `handOverCash`); null in every other case.
+     * `handOverCash`): "Tiền thuê còn lại, thu khi giao" ([ShareMoneyRule.collectOnDelivery], as the image), "Thế chân, thu
+     * khi giao" and their sum "Khách đưa lúc nhận đồ" ([ShareMoneyRule.cashAtHandover]). null, so that the old lines show,
+     * for every other order: sale, other status, no money collateral, or a PICKUP payment already taken. Display only:
+     * `handOver(...).collectNow` of the button, the sheet and the edit sheet is untouched.
      */
     fun handOverCash(
         orderType: String,
@@ -184,7 +187,13 @@ object OrderDetailLogic {
         hasPlan: Boolean?,
         stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
         currency: com.anyrent.pos.domain.money.ShopCurrency,
-    ): HandOverCashLines? = null
+    ): HandOverCashLines? {
+        if (!orderType.equals("RENT", ignoreCase = true) || !status.equals("RESERVED", ignoreCase = true)) return null
+        if (paid(payments, "PICKUP") > 0) return null
+        val rentalLeft = ShareMoneyRule.collectOnDelivery(totalAmount, depositAmount, hasPlan, stages, currency)
+        val cash = ShareMoneyRule.cashAtHandover(rentalLeft, securityDeposit, currency) ?: return null
+        return HandOverCashLines(rentalLeft, securityDeposit, cash)
+    }
 
     /**
      * What the hand-over sheet sends besides `status` (#427). Both fields are optional: given papers

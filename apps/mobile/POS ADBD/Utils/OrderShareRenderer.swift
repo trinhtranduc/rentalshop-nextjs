@@ -297,8 +297,19 @@ enum OrderShareRenderer {
                        in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
                        align: .right, vCenter: true, shrink: true)
                 y = box.maxY + 12
-            case .cash:
-                break
+            case .cash(let label, let value):
+                // #1368: the last box when the collateral is money: rental left + collateral, light blue like the total
+                let box = CGRect(x: innerX, y: y, width: innerW, height: 54)
+                p.fill(box, radius: 16, color: C.dueBg)
+                let valueFont = font(26, .heavy)
+                let valueW = min(innerW * 0.65, ceil(p.size(value, font: valueFont).width))
+                p.text(label, font: font(16, .bold), color: UIColor(hexString: "1E3A8A"),
+                       in: CGRect(x: box.minX + 16, y: box.minY, width: box.width - valueW - 44, height: box.height),
+                       align: .left, vCenter: true)
+                p.text(value, font: valueFont, color: C.accent,
+                       in: CGRect(x: box.maxX - 16 - valueW, y: box.minY, width: valueW, height: box.height),
+                       align: .right, vCenter: true, shrink: true)
+                y = box.maxY + 12
             case .collect(let label, let value):
                 // #1345: the second box, white with a light blue edge: what is paid at hand-over, fixed by the plan
                 let box = CGRect(x: innerX, y: y, width: innerW, height: 54)
