@@ -1,6 +1,6 @@
 # Spec — "Hiện ở chi nhánh" trên điện thoại
 
-Issue: #1346 · Status: in-progress · Intent: ./intent.md · Plan: ./plan.md · Cha: `../1335-multi-outlet-products/spec.md` (quy tắc 1-14, 28)
+Issue: #1346 · Status: in-review · Intent: ./intent.md · Plan: ./plan.md · Cha: `../1335-multi-outlet-products/spec.md` (quy tắc 1-14, 28)
 
 ## Quy tắc (mỗi dòng có test thuần, cùng tên trên iOS `BranchListing` và Android `BranchListing`)
 

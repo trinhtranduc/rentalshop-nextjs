@@ -401,6 +401,7 @@ fun ProductDetailScreen(
                 onSaved = {
                     showEdit = false
                     product = it
+                    SavedProducts.add(it)
                     reloadKey += 1
                 },
             )

@@ -1,6 +1,6 @@
 # Plan — "Hiện ở chi nhánh" trên điện thoại
 
-Issue: #1346 · Status: in-progress · Spec: ./spec.md
+Issue: #1346 · Status: in-review · Spec: ./spec.md
 Skill: `implement-issue`, `mobile-parity`, `api-compat-review` (không đổi API), `i18n-keys` (chuỗi mobile), `bug-fix-tdd` (test trước), `verify-change`, `review-pr`, `mobile-e2e-local`.
 
 ## Thứ tự (một PR, nhiều commit)
@@ -16,7 +16,13 @@ Skill: `implement-issue`, `mobile-parity`, `api-compat-review` (không đổi AP
 
 `Model/ProductsV2.swift` (logic), `Model/Product.swift`, `Model/ProductRequest.swift`, `Model/DepositPlan.swift` (token), `Library/Services/ProductService.swift`, `Library/Services/APIEndpoint.swift`, `ViewModels/ProductsHomeViewModel.swift`, `Viewcontrollers/Products/v2/{ProductsHomeViewController,ProductFormViewController,ProductDetailViewController}.swift`, `en.lproj` + `vi-VN.lproj` `Localizable.strings`, test `POS ADBDTests/{ProductsV2Tests,DepositPlanTests}.swift`.
 
-## Files (Android) — điền khi làm
+## Files (Android)
+
+`domain/products/BranchListing.kt` (logic, mới), `domain/products/ProductRules.kt` (`addState`, `NotListed`), `domain/deposit/DepositPlan.kt` (token), `data/model/Models.kt` (`isListed`), `data/ApiClient.kt` (đọc dòng tồn), `data/ProductsV2Api.kt` (`listed=true`, `setBranchListing`, `createStock`), `ui/home/v2/{ProductsHomeScreen,ProductsHomeViewModel,ProductFormV2Screen,ProductDetailScreen,BlockPriceScreen}.kt`, `res/values{,-vi}/strings.xml`, test `domain/products/BranchListingTest.kt`, `ui/home/v2/ProductsHomeViewModelTest.kt`. Khác iOS: màn chi tiết lưu xong thì danh sách thay dòng tại chỗ (`SavedProducts`), iOS đã có `detail.onSaved`.
+
+## Kiểm trực quan
+
+DB riêng `anyrent_branchtick_e2e` (seed `scripts/mobile-e2e/seed-local.sh`), API cục bộ :3540. iOS: `test1dBranchListingOwner`, `test1eBranchListingBranchRole` trong `AnyRentE2ETests` (chủ shop, quản lý, nhân viên, shop một chi nhánh). Android: emulator riêng, `adb-ui.sh`. Ảnh: `~/AnyRent-builds/e2e-branchtick-shots/`.
 
 ## Rủi ro
 

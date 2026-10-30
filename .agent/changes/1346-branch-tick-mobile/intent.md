@@ -1,6 +1,6 @@
 # Ô tick "Hiện ở chi nhánh" trên iOS và Android (PR 1m của #1335)
 
-Issue: #1346 · Author: Trinh Tran · Status: in-progress · Created: 2026-10-30
+Issue: #1346 · Author: Trinh Tran · Status: in-review · Created: 2026-10-30
 Cha: `.agent/changes/1335-multi-outlet-products/` (intent, spec, plan; mockup tab "Sản phẩm theo chi nhánh": B1, B2, B5, B6)
 
 ## Problem

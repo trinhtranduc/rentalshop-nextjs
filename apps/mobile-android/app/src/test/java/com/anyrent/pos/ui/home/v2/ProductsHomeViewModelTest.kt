@@ -91,4 +91,26 @@ class ProductsHomeViewModelTest {
         advanceUntilIdle()
         assertEquals(4, calls.size)
     }
+
+    /** #1346 — a product saved in the detail screen replaces its row, and never adds one the list does not have */
+    @Test
+    fun `saved product replaces its row only`() = runTest(dispatcher) {
+        val vm = ProductsHomeViewModel(ProductsPageSource { _, _ ->
+            ApiClient.PageResult(listOf(product(1), product(2)), hasMore = false, total = 2)
+        })
+        vm.reload()
+        advanceUntilIdle()
+        val unlisted = product(2).copy(outletStock = listOf(com.anyrent.pos.data.model.ProductOutletStock(7, 4, 0, 4, isListed = false)))
+        vm.replaceIfPresent(unlisted)
+        vm.replaceIfPresent(product(9))
+        assertEquals(listOf(1, 2), vm.state.value.products.map { it.id })
+        assertEquals(listOf(false), vm.state.value.products[1].outletStock.map { it.isListed })
+
+        // The channel from the detail screen: the last save per product wins, and clear() drops what the list took
+        SavedProducts.add(product(2))
+        SavedProducts.add(unlisted)
+        assertEquals(listOf(false), SavedProducts.items.value.getValue(2).outletStock.map { it.isListed })
+        SavedProducts.clear()
+        assertEquals(emptyMap<Int, Product>(), SavedProducts.items.value)
+    }
 }

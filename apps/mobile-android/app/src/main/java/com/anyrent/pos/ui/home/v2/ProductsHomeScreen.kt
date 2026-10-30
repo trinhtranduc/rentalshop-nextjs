@@ -152,6 +152,14 @@ fun ProductsHomeScreen(
     LaunchedEffect(Unit) { CurrentOutlet.version.drop(1).collect { viewModel.reload() } }
     val deleted by DeletedProducts.ids.collectAsState()
     LaunchedEffect(deleted) { deleted.forEach(viewModel::remove) }
+    // #1346: a product edited in the detail screen replaces its row
+    val saved by SavedProducts.items.collectAsState()
+    LaunchedEffect(saved) {
+        if (saved.isNotEmpty()) {
+            saved.values.forEach(viewModel::replaceIfPresent)
+            SavedProducts.clear()
+        }
+    }
     LaunchedEffect(Unit) {
         snapshotFlow { draft }.debounce(300).distinctUntilChanged().collect { viewModel.setQuery(it) }
     }
