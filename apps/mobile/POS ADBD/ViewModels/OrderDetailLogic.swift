@@ -239,10 +239,17 @@ enum OrderDetailLogic {
                       paidBefore: paid(payments, purpose: "PICKUP"))
     }
 
-    /// #1350 (stub for the red test, returns the old number)
+    /// #1350 "Thu khi giao" of the payment section for a rental waiting for pick-up. While a stage of the plan is still
+    /// uncollected the API refuses the hand-over (`INSTALLMENT_UNPAID_AT_PICKUP`), so it is collected first and what the
+    /// customer adds when taking the items is the plan's rest: the same number as the stage card and the share image
+    /// (`ShareMoneyRule.collectOnDelivery`). In every other case it is `handOver(...).due`. Display only: the hand-over
+    /// button and sheet keep asking `handOver(...).due`.
     static func collectOnDeliveryShown(total: Double, deposit: Double, securityDeposit: Double, payments: [OrderPaymentLine],
                                        hasPlan: Bool?, stages: [OrderInstallment]?, currency: ShopCurrency) -> Double {
-        handOver(total: total, deposit: deposit, securityDeposit: securityDeposit, payments: payments).due
+        let due = handOver(total: total, deposit: deposit, securityDeposit: securityDeposit, payments: payments).due
+        let blocking = ShareMoneyRule.planStages(hasPlan: hasPlan, stages: stages).contains { $0.amount > 0 && $0.paidAmount <= 0 }
+        guard blocking else { return due }
+        return ShareMoneyRule.collectOnDelivery(total: total, deposit: deposit, hasPlan: hasPlan, stages: stages, currency: currency)
     }
 
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,

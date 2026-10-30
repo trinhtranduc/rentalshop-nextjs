@@ -873,7 +873,12 @@ private fun DetailBody(
                         if (money.paidBefore > 0) {
                             MoneyRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-money.paidBefore))
                         }
-                        MoneyRow(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(money.collectNow), total = true)
+                        // #1350: with a stage still to collect, the number of the stage card and the share image
+                        val collect = OrderDetailLogic.collectOnDeliveryShown(
+                            summary.totalAmount, summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
+                            detail.deposit?.hasPlan, detail.deposit?.installments, com.anyrent.pos.domain.money.ShopMoney.current,
+                        )
+                        MoneyRow(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(collect), total = true)
                     }
                     "CANCELLED" -> if (keptAmount > 0 && depositCard == null) cancelRows()  // #1199
                     "PICKUPED", "PICKED_UP" -> {
