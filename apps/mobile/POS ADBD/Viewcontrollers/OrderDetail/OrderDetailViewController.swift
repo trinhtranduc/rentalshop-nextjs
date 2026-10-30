@@ -737,7 +737,11 @@ final class OrderDetailViewController: BaseViewControler {
             if money.paidBefore > 0 {
                 stack.addArrangedSubview(keyValue("Already collected".localized(), MoneyFormatter.format(-money.paidBefore), divider: false))
             }
-            stack.addArrangedSubview(totalRow("Collect at hand-over".localized(), MoneyFormatter.format(money.due)))
+            // #1350: with a stage still to collect, the number of the stage card and the share image
+            let collect = OrderDetailLogic.collectOnDeliveryShown(
+                total: detail.totalAmount, deposit: detail.depositAmount, securityDeposit: detail.securityDeposit,
+                payments: payments, hasPlan: hasPlan, stages: detail.installments, currency: ShopCurrencyStore.current)
+            stack.addArrangedSubview(totalRow("Collect at hand-over".localized(), MoneyFormatter.format(collect)))
         case .pickuped:
             let money = OrderDetailLogic.returnMoney(lateFee: detail.lateFee, damageFee: detail.damageFee,
                                                      securityDeposit: detail.securityDeposit, payments: payments)

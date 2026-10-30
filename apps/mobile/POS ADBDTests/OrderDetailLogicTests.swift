@@ -306,6 +306,104 @@ final class OrderDetailLogicTests: XCTestCase {
             XCTAssertNotEqual(key.localized(), key)
         }
     }
+
+    // MARK: #1350 "Thu khi giao" of the order detail follows the plan
+
+    /// 20% / 30% / rest of 1.150.000: stage 1 collected with the booking, stage 2 not yet, the rest at hand-over
+    private func planStages(second: String = "UPCOMING", secondPaid: Double = 0, total: Double = 1_150_000) -> [OrderInstallment] {
+        let first = (total * 0.2).rounded(), middle = (total * 0.3).rounded()
+        return [OrderInstallment(key: "i1", label: "Cọc giữ chỗ", percent: 20, amount: first, dueDateKey: "2026-10-05", status: "PAID",
+                                 collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: first),
+                OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: middle, dueDateKey: "2026-10-06",
+                                 status: second, paidAmount: secondPaid),
+                OrderInstallment(key: "rest", label: "rest", percent: 50, amount: total - first - middle, dueDateKey: "2026-10-16", status: "UPCOMING")]
+    }
+
+    private func shown(total: Double = 1_150_000, deposit: Double, collateral: Double = 0, payments: [OrderPaymentLine] = [],
+                       plan: Bool? = true, stages: [OrderInstallment]?, currency: ShopCurrency = .vnd) -> Double {
+        OrderDetailLogic.collectOnDeliveryShown(total: total, deposit: deposit, securityDeposit: collateral, payments: payments,
+                                                hasPlan: plan, stages: stages, currency: currency)
+    }
+
+    func testCollectOnDeliveryShownIsWhatTheCustomerAddsAtHandOverNotWhatIsStillOwed() {
+        // the example of #1350: stage 1 collected 230.000, stage 2 (345.000) not, rest 575.000
+        XCTAssertEqual(shown(deposit: 230_000, stages: planStages()), 575_000)
+        // and the hand-over suggestion (collectNow) is untouched by this display rule
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 1_150_000, deposit: 230_000, securityDeposit: 0, payments: []).due, 920_000)
+    }
+
+    func testCollectOnDeliveryShownIsTheSameOnceTheStagesAreCollected() {
+        // stage 2 collected: the displayed number does not move, and it equals the hand-over suggestion
+        let stages = planStages(second: "PAID", secondPaid: 345_000)
+        XCTAssertEqual(shown(deposit: 575_000, stages: stages), 575_000)
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 1_150_000, deposit: 575_000, securityDeposit: 0, payments: []).due, 575_000)
+    }
+
+    func testCollectOnDeliveryShownEqualsHandOverWhenEveryStageIsCollected() {
+        for total in [100_000.0, 900_000, 1_150_000, 2_333_333] {
+            let stages = planStages(second: "PAID", secondPaid: (total * 0.3).rounded(), total: total)
+            let deposit = stages.filter { !$0.isRest }.reduce(0) { $0 + $1.paidAmount }
+            let due = OrderDetailLogic.handOver(total: total, deposit: deposit, securityDeposit: 0, payments: []).due
+            XCTAssertEqual(shown(total: total, deposit: deposit, stages: stages), due, "total \(total)")
+        }
+        // thế chân or a PICKUP payment already taken: the hand-over suggestion keeps them, the display too (nothing blocks)
+        let paid = planStages(second: "PAID", secondPaid: 345_000)
+        let held = OrderDetailLogic.handOver(total: 1_150_000, deposit: 575_000, securityDeposit: 500_000, payments: [pickupPaid]).due
+        XCTAssertEqual(shown(deposit: 575_000, collateral: 500_000, payments: [pickupPaid], stages: paid), held)
+    }
+
+    func testCollectOnDeliveryShownOfAOneTimeDepositOrNoDepositIsUnchanged() {
+        XCTAssertEqual(shown(deposit: 300_000, plan: false, stages: nil), 850_000)
+        XCTAssertEqual(shown(deposit: 300_000, plan: nil, stages: nil), 850_000)
+        XCTAssertEqual(shown(deposit: 0, plan: nil, stages: nil), 1_150_000)
+        XCTAssertEqual(shown(deposit: 2_000_000, plan: nil, stages: nil), 0, "never below zero")
+        XCTAssertEqual(shown(deposit: 300_000, plan: true, stages: []), 850_000, "a plan with no stage in the answer")
+        XCTAssertEqual(shown(deposit: 300_000, plan: false, stages: planStages()), 850_000, "stages without the plan flag")
+    }
+
+    func testCollectOnDeliveryShownWithADiscountUsesTheDiscountedTotal() {
+        // total 900.000 after a discount: 20% = 180.000 collected, 30% = 270.000 not yet, rest 450.000
+        XCTAssertEqual(shown(total: 900_000, deposit: 180_000, stages: planStages(total: 900_000)), 450_000)
+    }
+
+    func testCollectOnDeliveryShownDoesNotAddCollateral() {
+        XCTAssertEqual(shown(deposit: 230_000, collateral: 500_000, stages: planStages()), 575_000)
+    }
+
+    func testCollectOnDeliveryShownLeavesAVoidStageOut() {
+        var stages = planStages()
+        // stage 2 voided, a new stage 3 of 100.000 not collected: the plan is 230.000 + 100.000
+        stages[1] = OrderInstallment(key: "i2", label: "Huỷ", percent: 30, amount: 345_000, dueDateKey: "2026-10-06", status: "VOID")
+        stages.insert(OrderInstallment(key: "i3", label: "Cọc 3", percent: 9, amount: 100_000, dueDateKey: "2026-10-08", status: "UPCOMING"), at: 2)
+        XCTAssertEqual(shown(deposit: 230_000, stages: stages), 820_000)
+        // only a void stage left unpaid: nothing blocks, the number is the hand-over suggestion
+        stages.remove(at: 2)
+        XCTAssertEqual(shown(deposit: 230_000, stages: stages), OrderDetailLogic.handOver(total: 1_150_000, deposit: 230_000,
+                                                                                        securityDeposit: 0, payments: []).due)
+    }
+
+    func testCollectOnDeliveryShownOfADollarShopRoundsToCents() {
+        let total = 1_150.30
+        let first = 230.06, middle = 345.09
+        let stages = [OrderInstallment(key: "i1", label: "A", percent: 20, amount: first, dueDateKey: "2026-10-05", status: "PAID", paidAmount: first),
+                      OrderInstallment(key: "i2", label: "B", percent: 30, amount: middle, dueDateKey: "2026-10-06", status: "UPCOMING"),
+                      OrderInstallment(key: "rest", label: "rest", percent: 50, amount: total - first - middle, dueDateKey: "2026-10-16", status: "UPCOMING")]
+        XCTAssertEqual(shown(total: total, deposit: first, stages: stages, currency: .usd), 575.15, accuracy: 0.0001)
+    }
+
+    func testTheOrderStatusDoesNotChangeTheHandOverSuggestionOrTheReturnMoney() {
+        // balance(): RESERVED keeps asking total - collected, PICKUPED is the return money; neither reads the display rule
+        let reserved = OrderDetailLogic.balance(orderType: .rent, status: .reserved, total: 1_150_000, deposit: 230_000,
+                                                securityDeposit: 0, lateFee: 0, damageFee: 0, payments: [])
+        XCTAssertEqual(reserved.amountDue, 920_000)
+        let pickuped = OrderDetailLogic.balance(orderType: .rent, status: .pickuped, total: 1_150_000, deposit: 575_000,
+                                                securityDeposit: 0, lateFee: 0, damageFee: 0, payments: [])
+        XCTAssertEqual(pickuped.amountDue, 0)
+        XCTAssertEqual(shown(deposit: 230_000, stages: planStages()), 575_000, "the rule does not take the status")
+        let sale = OrderDetailLogic.balance(orderType: .sale, status: .reserved, total: 500_000, deposit: 0,
+                                            securityDeposit: 0, lateFee: 0, damageFee: 0, payments: [])
+        XCTAssertEqual(sale.amountDue, 500_000)
+    }
 }
 
 /// #700 — Tạo đơn prints only when a bill printer was saved
