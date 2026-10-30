@@ -53,6 +53,9 @@
       }
     },
     "editor": {
+      "cart": {
+        "othersHave": "他の支店の在庫: {list}"
+      },
       "carts": {
         "label": "カート",
         "title": "カート {n}",

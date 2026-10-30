@@ -674,7 +674,8 @@
         "onlyLeft": "Only {free} free for these days",
         "noneLeft": "None free for these days",
         "fits": "{free} free for these days",
-        "inStock": "{free} in stock"
+        "inStock": "{free} in stock",
+        "othersHave": "Other branches have: {list}"
       },
       "loyalty": {
         "use": "Use reward points (customer has {points})",
