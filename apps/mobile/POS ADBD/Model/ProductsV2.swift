@@ -1315,24 +1315,121 @@ enum BranchListing {
     }
 }
 
-// MARK: - "Chi nhánh khác còn N" in the cart (#1353, #1347) — STUB so the tests compile and fail for the right reason
+// MARK: - "Chi nhánh khác còn N" in the cart (#1353, #1347, #1335)
 
+/// One other branch that still has the product on the order's days (`data.results[].outlets[]` of
+/// `POST /api/products/other-outlets-availability`)
 struct OtherBranchStock: Equatable {
     let outletId: Int
     let outletName: String
     let available: Int
 }
 
-struct OtherBranchesAnswer: Decodable {}
+/// The answer of the route. Every key is optional: an older or newer API never breaks the cart.
+struct OtherBranchesAnswer: Decodable {
+    struct Entry: Decodable {
+        let productId: Int?
+        let outlets: [Outlet]?
 
+        struct Outlet: Decodable {
+            let outletId: Int?
+            let outletName: String?
+            let available: Int?
+        }
+    }
+
+    let results: [Entry]?
+}
+
+/// Pure rules of the hint under a short cart line: who asks, which lines, the body (shop days), the text. A hint only:
+/// one order is one branch, nothing is moved. The API is the real gate (OUTLET_STAFF gets 403).
 enum OtherBranchesHint {
-    static let path = ""
-    static func canAsk(role: Role?) -> Bool { false }
-    static func asks(role: Role?, activeOutletCount: Int) -> Bool { false }
-    static func shortProductIds(items: [CartItem], conflictProductIds: Set<Int>) -> [Int] { [] }
-    static func requestBody(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> [String: Any]? { nil }
-    static func key(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> String { "x" }
-    static func list(_ outlets: [OtherBranchStock]) -> String { "" }
-    static func lineText(_ outlets: [OtherBranchStock]?) -> String? { "" }
-    static func hints(from answer: OtherBranchesAnswer?) -> [Int: [OtherBranchStock]] { [1: []] }
+    static let path = "/api/products/other-outlets-availability"
+    /// Names shown before "+N" (the line stays one or two lines on a phone)
+    static let maxShown = 3
+
+    /// Owner, branch manager and stock keeper (the API's `canSeeOtherOutlets`, minus the system ADMIN who has no cart)
+    static func canAsk(role: Role?) -> Bool {
+        role == .merchant || role == .outletAdmin || role == .outletInventory
+    }
+
+    /// Whether the cart asks at all. The owner counts the shop's active branches (two or more). A branch role cannot count
+    /// them, so it asks unless the shop is known to have one branch (`BranchListing.sendsListed`): the API answers `[]`
+    /// for a one-branch shop and the cart shows nothing.
+    static func asks(role: Role?, activeOutletCount: Int) -> Bool {
+        guard canAsk(role: role) else { return false }
+        if role == .merchant { return activeOutletCount >= 2 }
+        return BranchListing.sendsListed(role: role, activeOutletCount: activeOutletCount)
+    }
+
+    /// Product ids whose lines are short (fewer free than asked, units of all its lines summed) or booked out by another
+    /// order on those days: once each, ascending. Lines whose availability is not loaded yet are not asked.
+    static func shortProductIds(items: [CartItem], conflictProductIds: Set<Int>) -> [Int] {
+        var ids = conflictProductIds.intersection(Set(items.map { $0.productId }))
+        for item in items where CartV2Logic.shortage(item, in: items) != nil { ids.insert(item.productId) }
+        return ids.sorted()
+    }
+
+    /// The body, or nil when there is nothing to ask (no products, a rental without both days). A rental on one shop
+    /// day sends `date`; on several, the shop-day bounds, the same instants as `batch-availability`.
+    static func requestBody(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> [String: Any]? {
+        guard !productIds.isEmpty else { return nil }
+        var body: [String: Any] = [
+            "products": productIds.map { ["productId": $0, "quantity": 1] },
+            "orderType": isRent ? "RENT" : "SALE"
+        ]
+        if isRent {
+            guard let pickup, let returnDate else { return nil }
+            let first = DayFormatter.key(pickup)
+            if first == DayFormatter.key(returnDate) {
+                body["date"] = first
+            } else {
+                guard let start = pickup.startOfShopDay().dateServerISOString(),
+                      let end = returnDate.endOfShopDay().dateServerISOString() else { return nil }
+                body["startDate"] = start
+                body["endDate"] = end
+            }
+        }
+        if let outletId { body["outletId"] = outletId }
+        return body
+    }
+
+    /// Identifies one question; "" when there is nothing to ask. An answer for another key no longer applies.
+    static func key(productIds: [Int], isRent: Bool, pickup: Date?, returnDate: Date?, outletId: Int?, now: Date) -> String {
+        guard requestBody(productIds: productIds, isRent: isRent, pickup: pickup, returnDate: returnDate,
+                          outletId: outletId, now: now) != nil else { return "" }
+        let days = isRent
+            ? [pickup, returnDate].compactMap { $0.map { DayFormatter.key($0) } }.joined(separator: "..")
+            : DayFormatter.key(now)
+        return [isRent ? "RENT" : "SALE", days, outletId.map(String.init) ?? "-", productIds.map(String.init).joined(separator: ",")]
+            .joined(separator: "|")
+    }
+
+    /// The branches by product; products with none are left out
+    static func hints(from answer: OtherBranchesAnswer?) -> [Int: [OtherBranchStock]] {
+        var map: [Int: [OtherBranchStock]] = [:]
+        for entry in answer?.results ?? [] {
+            guard let productId = entry.productId else { continue }
+            let list: [OtherBranchStock] = (entry.outlets ?? []).compactMap { outlet in
+                guard let id = outlet.outletId, let name = outlet.outletName, !name.isEmpty,
+                      let available = outlet.available, available > 0 else { return nil }
+                return OtherBranchStock(outletId: id, outletName: name, available: available)
+            }
+            if !list.isEmpty { map[productId] = list }
+        }
+        return map
+    }
+
+    /// "Quận 7 (3), Thủ Đức (1)" in the order the API sends them (most units first); after `maxShown` names, "+N"
+    static func list(_ outlets: [OtherBranchStock]) -> String {
+        var parts = outlets.prefix(maxShown).map { "\($0.outletName) (\($0.available))" }
+        if outlets.count > maxShown { parts.append("+\(outlets.count - maxShown)") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// "Chi nhánh khác còn: Quận 7 (3), Thủ Đức (1)"; nil when no branch has any
+    static func lineText(_ outlets: [OtherBranchStock]?) -> String? {
+        guard let outlets, !outlets.isEmpty else { return nil }
+        return String(format: "products.cart.othersHave".localized(), list(outlets))
+    }
 }

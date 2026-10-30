@@ -4,6 +4,8 @@ import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.BlockPricing
 import com.anyrent.pos.domain.products.BranchListing
 import com.anyrent.pos.domain.products.BranchOutletStockItem
+import com.anyrent.pos.domain.products.OtherBranchStock
+import com.anyrent.pos.domain.products.OtherBranchesHint
 import com.anyrent.pos.domain.products.PricingOptionInput
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -165,4 +167,14 @@ object ProductsV2Api {
         ApiClient.get().authedPut(BranchListing.LISTING_PATH, body)
         Unit
     }
+
+    /**
+     * `POST /api/products/other-outlets-availability` (#1353, #1347): the other branches that still have each short product
+     * on the order's days. A hint only, so any failure (network, 403 for staff, 404 on an API without the route) is an empty
+     * answer, never an error. A cancelled coroutine still cancels the caller.
+     */
+    fun otherBranches(body: JSONObject): Map<Int, List<OtherBranchStock>> =
+        runCatching {
+            ApiClient.get().authedPost(OtherBranchesHint.PATH, body.toString().toRequestBody("application/json".toMediaType()))
+        }.map { OtherBranchesHint.parse(it) }.getOrDefault(emptyMap())
 }

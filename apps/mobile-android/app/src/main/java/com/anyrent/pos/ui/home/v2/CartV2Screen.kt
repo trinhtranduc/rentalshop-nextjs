@@ -72,7 +72,9 @@ import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.DepositModeStore
+import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.domain.deposit.DepositMode
 import com.anyrent.pos.domain.deposit.DepositPlanMath
 import com.anyrent.pos.ui.deposit.CartStagedSection
@@ -132,6 +134,8 @@ import com.anyrent.pos.ui.common.AppIcons
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import com.anyrent.pos.domain.products.CartV2Icon
+import com.anyrent.pos.domain.products.OtherBranchStock
+import com.anyrent.pos.domain.products.OtherBranchesHint
 
 /**
  * Redesigned cart (#373, flag `newProducts`, boards Gio-hang, Gio-hang-ban): one screen with a Thuê / Bán switch.
@@ -203,6 +207,8 @@ fun CartV2Screen(
 
     // Batch availability of the lines for the chosen dates; #518 also reads which other orders hold them
     var availability by remember { mutableStateOf<Map<Int, ProductAvailability>>(emptyMap()) }
+    // #1353: the question the batch answer above is for (a hint is asked only from an answer for the cart on screen now)
+    var availabilityOf by remember { mutableStateOf<Any?>(null) }
     val available = availability.mapValues { it.value.effectivelyAvailable }
     var showCustomer by remember { mutableStateOf(false) }
     var showDates by remember { mutableStateOf(false) }
@@ -269,7 +275,10 @@ fun CartV2Screen(
                 excludeOrderId = editingOrderId,
             )
         }
-        result.onSuccess { map -> availability = map }
+        result.onSuccess { map ->
+            availability = map
+            availabilityOf = availabilityKey
+        }
     }
 
     // #518 "Cho tạo đơn khi trùng lịch": the shop setting (re-read once per screen, the owner may change it on the
@@ -284,6 +293,30 @@ fun CartV2Screen(
             OverlapWarnings.conflict(line.product.id, line.product.name, productQuantities[line.product.id] ?: line.quantity, availability[line.product.id], pickup, ret)
         }
     }
+    // #1353 (mockup C1a): under a short line, "Chi nhánh khác còn: Quận 7 (3), Thủ Đức (1)" for the owner, a manager and a stock
+    // keeper of a shop with other branches. One call for every short product; the answer applies only to the days, branch and
+    // products asked (a stale one is dropped, as a cancelled call is). Failure, 403 (staff), 404: no line, no error.
+    val askOtherBranches = OtherBranchesHint.asks(PermissionManager.role, CurrentOutlet.outlets.size)
+    val otherDatesChosen = isSale || datesChosen
+    val shortIds = if (askOtherBranches && otherDatesChosen && availabilityOf == availabilityKey) {
+        OtherBranchesHint.shortProductIds(productQuantities, available, overlapConflicts.map { it.productId }.toSet())
+    } else {
+        emptyList()
+    }
+    val otherOutletId = CurrentOutlet.id
+    val otherKey = OtherBranchesHint.key(shortIds, isSale, pickup.takeIf { datesChosen }, ret.takeIf { datesChosen }, otherOutletId, ShopTime.today())
+    var otherAnswer by remember { mutableStateOf<Pair<String, Map<Int, List<OtherBranchStock>>>?>(null) }
+    LaunchedEffect(otherKey) {
+        if (otherKey.isEmpty()) {
+            otherAnswer = null
+            return@LaunchedEffect
+        }
+        val body = OtherBranchesHint.requestBody(shortIds, isSale, pickup.takeIf { datesChosen }, ret.takeIf { datesChosen }, otherOutletId)
+            ?: return@LaunchedEffect
+        val hints = withContext(Dispatchers.IO) { ProductsV2Api.otherBranches(body) }
+        otherAnswer = otherKey to hints
+    }
+    val otherBranches = otherAnswer?.takeIf { it.first == otherKey }?.second.orEmpty()
     val overlapTexts = OverlapWarnings.Texts(
         cartLineOneDay = stringResource(R.string.v2_cart_overlap_one_day),
         cartLineRange = stringResource(R.string.v2_cart_overlap_range),
@@ -553,6 +586,8 @@ fun CartV2Screen(
                         { onOpenCalendar(c.productId, c.from.toString()) }
                     },
                     onOpenProduct = { onOpenCalendar(line.product.id, null) },
+                    otherBranchesText = otherBranches[line.product.id]?.takeIf { it.isNotEmpty() }
+                        ?.let { stringResource(R.string.v2_cart_others_have, OtherBranchesHint.list(it)) },
                     onQuantity = { q -> if (q <= 0) removeLine = line else CartStore.updateQuantity(line.lineId, q) },
                     onOpenPricing = { pricingLineId = line.lineId },
                     onOpenNote = { noteLineId = line.lineId },
@@ -1021,6 +1056,8 @@ private fun ItemRow(
     onOpenOverlap: (() -> Unit)? = null,
     /** #1241 (owner): a tap on "Còn N" / "Hết" opens this product's Lịch trống */
     onOpenProduct: () -> Unit = {},
+    /** #1353 (mockup C1a): "Chi nhánh khác còn: Quận 7 (3), Thủ Đức (1)" under the shortage tag; null = no line */
+    otherBranchesText: String? = null,
     onQuantity: (Int) -> Unit,
     onOpenPricing: () -> Unit,
     onOpenNote: () -> Unit = {},
@@ -1076,6 +1113,12 @@ private fun ItemRow(
                     Text(
                         BlockText.formula(LocalContext.current.resources, detail), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
                         modifier = Modifier.semantics { contentDescription = "cart.blockFormula" },
+                    )
+                }
+                otherBranchesText?.let { text ->
+                    Text(
+                        text, fontSize = DS.TextSize.Secondary, color = DS.Colors.Primary,
+                        modifier = Modifier.semantics { contentDescription = "cart.otherBranches" },
                     )
                 }
                 // #1064: a sale line's "Còn N" is now the pill beside the name (one count per line)
