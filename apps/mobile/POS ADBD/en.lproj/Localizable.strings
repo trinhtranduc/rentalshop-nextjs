@@ -3077,3 +3077,10 @@
 "share.stage.paid" = "Collected";
 "share.stage.unpaid" = "Not collected";
 "share.stage.partial" = "Part collected";
+
+/* #1354 Order note on the shared order image */
+"share.orderNote.title" = "Note";
+"printer.shareNote.title" = "Show order note on the shared image";
+"printer.shareNote.hint" = "The order's note appears at the bottom of the image sent to customers, internal notes included. Applies to the whole shop.";
+"printer.shareNote.readonly" = "Only the shop owner can turn this on or off.";
+"printer.shareNote.failed" = "Could not save the setting. Please try again.";

@@ -927,6 +927,7 @@ final class OrderShareNoteTests: XCTestCase {
         XCTAssertNotNil(flagged.qr)
         let bits = bitmap(OrderShareRenderer.image(flagged))
         let height = bits.height
+        func near(_ a: [UInt8], _ b: [UInt8]) -> Bool { zip(a, b).allSatisfy { abs(Int($0) - Int($1)) <= 2 } }
         func rgb(_ x: Int, _ y: Int) -> [UInt8] { Array(bits.bytes[(y * bits.width + x) * 4..<(y * bits.width + x) * 4 + 3]) }
         // white card rows at x = 36 pt (inside every card), and the rows where the note's grey box (F3F4F6) is at x = 60 pt
         var cards: [ClosedRange<Int>] = []
@@ -936,8 +937,9 @@ final class OrderShareNoteTests: XCTestCase {
             let white = rgb(72, y) == [255, 255, 255]
             if white, start == nil { start = y }
             if !white, let from = start { cards.append(from...(y - 1)); start = nil }
-            if rgb(120, y) == [0xF3, 0xF4, 0xF6] { noteRows.append(y) }
+            if near(rgb(120, y), [0xF3, 0xF4, 0xF6]) { noteRows.append(y) }
         }
+        cards = cards.filter { $0.count > 200 } // the white tile and the title in the blue band are not cards
         XCTAssertEqual(cards.count, 3, "customer card, items card (money and note), QR card: \(cards)")
         guard cards.count == 3, let first = noteRows.first, let last = noteRows.last else { return XCTFail("no note box drawn") }
         XCTAssertTrue(cards[1].contains(first) && cards[1].contains(last), "the note is in the items card: \(cards) \(first)...\(last)")

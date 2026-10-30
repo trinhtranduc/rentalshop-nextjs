@@ -181,6 +181,25 @@ final class TabsV2APIService: BaseService {
         }
     }
 
+    // MARK: - Order note on the shared image (#1354)
+
+    /// `merchant.shareOrderNote` of GET /api/users/profile (missing = false); nil without a merchant
+    @discardableResult
+    func shareOrderNote(completion: @escaping (Bool?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.userProfile) { (body: ShareOrderNoteProfile?, error: NSError?) in
+            completion(body?.flag, error)
+        }
+    }
+
+    /// PUT /api/settings/merchant `{ shareOrderNote }` (MERCHANT only; 403 otherwise). Answers the saved value.
+    @discardableResult
+    func setShareOrderNote(_ on: Bool, completion: @escaping (Bool?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.merchantSettings, method: .put,
+                parameters: ["shareOrderNote": on]) { (body: ShareOrderNoteProfile.Shop?, error: NSError?) in
+            completion(body.map { $0.shareOrderNote ?? on }, error)
+        }
+    }
+
     // MARK: - Shop info (#1313)
 
     /// The shop as PUT /api/settings/merchant answers it (only what the form edits)

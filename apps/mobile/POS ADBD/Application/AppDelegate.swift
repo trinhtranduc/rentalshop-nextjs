@@ -86,6 +86,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         checkAppConfig()
         ShopCurrencyStore.refresh() // #1307 cold start with a saved login
+        ShareOrderNoteStore.refresh() // #1354 the order-note switch, same read as the currency
         
         return true
     }
@@ -127,6 +128,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         checkAppConfig()
         // #1307: the owner may have changed the shop currency meanwhile (at most once a minute)
         ShopCurrencyStore.refresh()
+        // #1354: and the owner's "show order note on the shared image" switch (at most once a minute)
+        ShareOrderNoteStore.refresh()
         // #1320: the owner may have changed the bank account on another device or on the web
         BankAccountService.shared.clearPrintCache()
     }
