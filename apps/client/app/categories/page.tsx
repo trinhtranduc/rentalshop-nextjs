@@ -18,6 +18,7 @@ import { ICONS, ShellIcon } from '../components/shell/Icon';
 import { Skeleton, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
 import { Modal, fieldClass } from '../orders/create/parts';
 import {
+  CATEGORY_DEFAULT_PAGE_SIZE,
   CATEGORY_DESCRIPTION_MAX,
   CATEGORY_FETCH_LIMIT,
   categoryPayload,
@@ -371,7 +372,8 @@ export default function CategoriesPage() {
     </button>
   );
 
-  const showFooter = !error && total > limit;
+  // #1362: a typed size above the total keeps the footer, so the size can be changed back
+  const showFooter = !error && total > 0 && (total > limit || limit !== CATEGORY_DEFAULT_PAGE_SIZE);
 
   return (
     <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">

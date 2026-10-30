@@ -2,6 +2,7 @@
  * Nhân viên list model (#528, board Nhan-vien). Pure: no @rentalshop/utils import, so Jest can
  * load it. Day logic takes an injected `toDayKey` (getLocalDateKey, Vietnam civil day).
  */
+import { PAGE_SIZE_PRESETS, parsePageSize } from '../orders/page-size';
 
 export type StaffRoleTone = 'owner' | 'admin' | 'staff' | 'inventory' | 'other';
 
@@ -19,7 +20,7 @@ export interface StaffLike {
   outletId?: number | null;
 }
 
-export const STAFF_PAGE_SIZES = [10, 20, 50, 100] as const;
+export const STAFF_PAGE_SIZES = PAGE_SIZE_PRESETS;
 
 /** OUTLET_STAFF and Nhân viên kho (#682) have no `users.view`: the page is not for them (same as the hidden nav item). */
 export function canSeeStaffPage(role?: string | null): boolean {
@@ -88,8 +89,7 @@ export function parseStaffPage(value: string | null | undefined): number {
 }
 
 export function parseStaffPageSize(value: string | null | undefined): number {
-  const n = Number(value);
-  return (STAFF_PAGE_SIZES as readonly number[]).includes(n) ? n : 20;
+  return parsePageSize(value, 20);
 }
 
 export interface StaffPage<T> {

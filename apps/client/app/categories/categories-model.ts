@@ -3,7 +3,9 @@
  * `tests/web-categories-model.test.ts` can run them under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 
-export const CATEGORY_PAGE_SIZES = [10, 20, 50, 100] as const;
+import { PAGE_SIZE_PRESETS, parsePageSize } from '../orders/page-size';
+
+export const CATEGORY_PAGE_SIZES = PAGE_SIZE_PRESETS;
 export const CATEGORY_DEFAULT_PAGE_SIZE = 20;
 export const CATEGORY_NAME_MIN = 2;
 export const CATEGORY_NAME_MAX = 50;
@@ -25,13 +27,12 @@ type ParamReader = { get(name: string): string | null };
 /** URL → list params. Unknown or broken values fall back to the defaults (name ↑, page 1, 20 rows). */
 export function parseCategoryParams(params: ParamReader): CategoryParams {
   const page = Math.floor(Number(params.get('page')));
-  const limit = Number(params.get('limit'));
   const sortBy = params.get('sortBy');
   const sortOrder = params.get('sortOrder');
   return {
     q: (params.get('q') || '').trim(),
     page: Number.isFinite(page) && page >= 1 ? page : 1,
-    limit: (CATEGORY_PAGE_SIZES as readonly number[]).includes(limit) ? limit : CATEGORY_DEFAULT_PAGE_SIZE,
+    limit: parsePageSize(params.get('limit'), CATEGORY_DEFAULT_PAGE_SIZE),
     sortBy: sortBy === 'createdAt' ? 'createdAt' : 'name',
     sortOrder: sortOrder === 'desc' ? 'desc' : 'asc',
   };
