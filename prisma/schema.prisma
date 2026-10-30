@@ -352,6 +352,9 @@ model OutletStock {
   stock     Int      @default(0)
   available Int      @default(0)
   renting   Int      @default(0)
+  // #1341 "Hiện ở chi nhánh": does this branch sell the product (list, order picker). Default true: code that creates
+  // a row without it keeps today's behaviour; the server writes false for the zero rows it adds on its own.
+  isListed  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   productId Int
@@ -361,6 +364,7 @@ model OutletStock {
 
   @@unique([productId, outletId])
   @@index([outletId, available])
+  @@index([outletId, isListed])
   @@index([productId])
 }
 

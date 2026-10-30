@@ -1,6 +1,6 @@
 # Plan — Sản phẩm theo chi nhánh: ô tick "Hiện ở chi nhánh" và công cụ tồn nhiều chi nhánh
 
-Issue: #1335 · Status: draft (không code cho tới khi chủ shop nói "chốt" mockup) · Spec: ./spec.md
+Issue: #1335 · Status: in-progress (chủ shop đã chốt mockup 2026-10-30; PR 1 = #1341 đang làm, PR 0 làm riêng) · Spec: ./spec.md
 
 Skill áp dụng: `issue-first` (xong: #1335, spec #1336), `db-migration`, `api-route-standard`, `api-compat-review` (lần 2 trong từng PR), `i18n-keys`, `mobile-parity` (iOS trước, Android theo), `timezone-dates` (chỉ phần (a)), `bug-fix-tdd` (nếu gặp lỗi thật), `verify-change`, `review-pr`, `mobile-e2e-local`.
 
@@ -117,3 +117,18 @@ Gỡ code (revert PR); giữ cột `isListed` (vô hại, mặc định bật). 
 
 
 Việc sau (không thuộc đợt này): chuyển kho giữa chi nhánh bỏ khỏi đợt này (chủ shop chốt 2026-10-30), dời hàng bằng ô tick + sửa số lượng; lịch sử thay đổi tồn xem cùng hướng phiếu nhập/xuất. Sửa câu quảng cáo "Chuyển kho giữa các cửa hàng" (`cho-thue-ao-dai/page.tsx:146`, đề xuất "Quản lý tồn kho từng chi nhánh") là việc nhỏ riêng.
+
+## PR 1 (#1341) — ghi chú khi làm: chỗ lệch so với spec (chọn cách ít thay đổi nhất)
+
+Nhánh `feat/1341-outlet-stock-is-listed`, vào `dev`. Chỗ spec và code thật không khớp, hoặc spec tự mâu thuẫn:
+
+1. **Migration không dùng được `prisma migrate dev`**: lịch sử migration không chạy lại được từ DB trống (`P3006`, migration đầu tiên `20241130094100_add_bank_account_model` cần bảng `Outlet` có sẵn), nên shadow DB lỗi. SQL cột + chỉ mục lấy từ `prisma migrate diff` (schema cũ sang schema mới), viết theo kiểu idempotent (`IF NOT EXISTS`) như các migration gần đây, rồi thêm hai câu `UPDATE` backfill vào CÙNG file. Kiểm bằng cách đẩy schema cũ vào một DB cục bộ riêng bằng `db push`, nạp dữ liệu mẫu và chạy file SQL bằng `psql` hai lần.
+2. **Backfill dùng `stock = 0 AND renting = 0` (câu SQL của spec), không phải "mọi thứ không > 0"**: dòng có tồn hoặc đang thuê ÂM không bị tắt (an toàn hơn). Dòng `id` nhỏ nhất lấy trong MỌI dòng của sản phẩm (kể cả chi nhánh đã đóng), đúng chữ spec; sản phẩm xoá mềm không bị đụng.
+3. **`openOrders` ở chi tiết sản phẩm (quy tắc 3) bỏ**: quy tắc 12 đã bỏ mọi luật chặn nên không còn gì cần số đơn mở; dòng nhắc tính từ `stock`/`renting` có sẵn. `activeTotalStock` (bảng route của spec) là việc của PR 3, không làm ở đây.
+4. **Tự bật khi `PUT /api/products/[id]` (quy tắc 13 ii) thu hẹp**: chỉ bật khi tồn TĂNG và lớn hơn 0 trên dòng đang tắt, và chỉ cho app cũ (không có token). Lý do: app cũ lưu cả sản phẩm; "ghi `stock > 0`" nguyên văn sẽ bật lại món chủ shop vừa bỏ tick chỉ vì một nhân viên mở rồi lưu (vi phạm "app/tab cũ không bao giờ làm một món bỏ tick"). Có test "đọc rồi lưu".
+5. **Tìm kiếm**: lọc `listed` thêm ở `db.products.search` (`simplifiedProducts`, hàm route dùng), bằng điều kiện `AND` riêng (chạy được cho chủ shop, vốn không lọc theo chi nhánh). `searchProducts` cũ (không route nào gọi) giữ nguyên.
+6. **Route**: `PUT /api/products/listing` (bảng tương thích mục 11 của spec có một chỗ ghi `/api/products/[id]/listing`, quy tắc 10 và bảng route ghi `/api/products/listing`; làm theo quy tắc 10). Mã thành công tái dùng `PRODUCT_UPDATED_SUCCESS` (đã có trong `errors.json`), không mã lỗi mới.
+7. **Form web, vai trò chi nhánh**: theo mockup B3f chỉ thấy dòng chi nhánh mình (trước đây thấy cả các chi nhánh khác, ô số lượng khoá); tổng ở góc thẻ chỉ hiện cho chủ shop. Chủ shop xem ô tick của chi nhánh đã đóng ở dạng "—" (không tick được vì route trả 404 cho chi nhánh đóng).
+8. **Cờ app**: `branchProducts` thêm vào `MOBILE_FEATURE_KEYS`; nếu môi trường đặt `MOBILE_FEATURES` bằng danh sách khoá tường minh thì khoá mới TẮT cho tới khi thêm (ví dụ `scripts/mobile-e2e/env.sh` đặt sẵn một danh sách; chưa kiểm biến môi trường thật của dev/production). Không ảnh hưởng PR này (chưa có app đọc).
+9. **LOG**: dòng tổng của #1335 giữ `planned` (các phần sau chưa làm); ba dòng riêng của #1341 ở trạng thái `dev`.
+
