@@ -12,7 +12,7 @@ Mỗi mục có một issue con (mở khi bắt đầu), mỗi PR code: `Fixes` 
 |---|---|---|
 | 0 | **Sửa lỗi trước hết**: route admin `PUT /api/merchants/[id]/products/[productId]` giữ `renting` + `STOCK_BELOW_RENTED` | không phụ thuộc `isListed`, đi trước mọi PR |
 | 1 | Migration + ô tick (API + web) | chủ shop chốt mockup |
-| 1m | Ô tick trên iOS rồi Android | PR 1 trên `dev-api` |
+| 1m | Ô tick trên iOS rồi Android (chủ shop sửa được nếu có màn sửa; vai trò khác chỉ xem) | PR 1 trên `dev-api` |
 | 2 | (a) Gợi ý "chi nhánh khác còn N" (API + web) | PR 1 |
 | 2m | (a) iOS rồi Android | PR 2 |
 | 3 | (b) Nhân viên không nhận số thừa; `totalStock` đúng; `activeTotalStock` | độc lập, sau PR 1 |
@@ -31,14 +31,14 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 1. Mở issue con (feat). Thêm dòng `planned` trong LOG đã có sẵn từ PR spec; đổi chữ khi vào `dev`.
 2. `prisma/schema.prisma`: `OutletStock.isListed Boolean @default(true)` + `@@index([outletId, isListed])`. Dùng `yarn db:migrate:dev --name outlet_stock_is_listed`, đọc SQL, thêm `UPDATE` backfill (spec mục 7), `yarn db:generate`. Dev trước; production là quyết định của người (hook chặn).
 3. Test backfill trên DB e2e riêng (`helpers/subscription.js` world): dòng tồn 0 chưa có đơn → tắt; có tồn / đang thuê / từng có đơn → bật; sản phẩm không còn dòng bật → dòng id nhỏ nhất bật; sản phẩm đã xoá mềm bị bỏ qua.
-4. `apps/api/lib/product-listing.ts` (hàm thuần, test riêng): `listedRowsForCreate`, `shopHasSingleActiveOutlet`, `isOldListingClient(request)` (không có token `branch-listing` trong `X-Client-Capabilities`; thêm token vào `ClientCapability` ở `apps/api/lib/client-capabilities.ts`). Không còn `canUnlist` (bỏ tick không chặn).
+4. `apps/api/lib/product-listing.ts` (hàm thuần, test riêng): `listedRowsForCreate`, `shopHasSingleActiveOutlet`, `canSetBranchListing(role)` (chỉ MERCHANT, ADMIN hệ thống; mở rộng sau, không cấu hình quyền), `isOldListingClient(request)` (không có token `branch-listing` trong `X-Client-Capabilities`; thêm token vào `ClientCapability` ở `apps/api/lib/client-capabilities.ts`). Không còn `canUnlist` (bỏ tick không chặn).
 5. `apps/api/app/api/products/route.ts`: tham số `listed` (zod), truyền xuống `db.products.search` (`packages/database/src/product.ts:306-326`) thêm `isListed: true` vào `outletStock.some`; thêm `isListed` vào `select` (`:395-409`, `:150`); POST: `isListed` tuỳ chọn, dòng zero tắt (`:645-651`, `:704-711`).
-6. `apps/api/app/api/products/listing/route.ts` (mới): `PUT`, `withManagementAuth`-hoặc-tương-đương như route sản phẩm, zod `{ outletId, productIds(1..200), isListed }`, quy tắc 10 và 12 (không điều kiện, không 409); `ResponseBuilder`, `handleApiError`; ghi lịch sử thay đổi sản phẩm (#519).
+6. `apps/api/app/api/products/listing/route.ts` (mới): `PUT`, `canSetBranchListing(role)` sai thì 403 `INSUFFICIENT_PERMISSIONS` (kể cả chi nhánh mình), zod `{ outletId, productIds(1..200), isListed }`, quy tắc 10 và 12 (không điều kiện, không 409); `ResponseBuilder`, `handleApiError`; ghi lịch sử thay đổi sản phẩm (#519).
 7. `apps/api/app/api/products/[id]/route.ts`: `isListed`, `openOrders` trong detail; `holdsStockAt` nới (`product-branch-rules.ts:139`); tự bật khi ghi `stock > 0` (`:644-667`); bỏ qua `isListed` trong PUT.
 8. `apps/api/app/api/orders/route.ts:1281-1311`: tự tick món chưa tick ở chi nhánh của đơn CHỈ khi `isOldListingClient` (một `updateMany`, cùng lúc cập nhật tồn); app/web mới (có token) không tự tick. App/web mới gửi header `X-Client-Capabilities: branch-listing`.
 9. `packages/database/src/outlet.ts:566`: dòng zero cho chi nhánh mới `isListed: false`; `apps/api/app/api/products/bulk-import/route.ts:521-526` dòng zero `isListed: false`.
 10. `apps/api/lib/mobile-app-config.ts`: khoá `branchProducts`.
-11. Web: `apps/client/app/products/list/` (bộ lọc chi nhánh gửi `listed=true`; nút "Hiện cả sản phẩm chi nhánh chưa có"; nhãn "Bán / Chưa bán"; chọn nhiều → "Hiện ở chi nhánh"), `form/ProductFormPage.tsx` + `form-model.ts` (ô "Hiện ở chi nhánh" theo chi nhánh; mặc định chi nhánh đang chọn), `[id]/page.tsx` (bảng chi nhánh + ô tick + dòng nhắc không chặn khi bỏ tick mà còn tồn / đang thuê), `orders/create/` (chọn sản phẩm với `listed=true`; quét mã món chưa bật). Dùng `*Api` trong `packages/utils`, không `fetch` thô. UI dùng chung ở `packages/ui`.
+11. Web: `apps/client/app/products/list/` (bộ lọc chi nhánh gửi `listed=true`; nhãn "Hiện / Chưa hiện" ở danh sách tất cả chi nhánh của chủ shop; KHÔNG có nút "Hiện cả…"), `form/ProductFormPage.tsx` + `form-model.ts` (ô "Hiện ở chi nhánh" theo chi nhánh; mặc định chi nhánh đang chọn; chủ shop sửa được, vai trò khác chỉ xem, mờ, kèm "Chỉ chủ shop bật/tắt"), `[id]/page.tsx` (bảng chi nhánh + ô tick + dòng nhắc không chặn khi bỏ tick mà còn tồn / đang thuê), `orders/create/` (chọn sản phẩm với `listed=true`; quét mã món chưa bật). Dùng `*Api` trong `packages/utils`, không `fetch` thô. UI dùng chung ở `packages/ui`.
 12. `locales/{en,vi,ja,ko,zh}`: `products.json` (chuỗi mục 6 của spec), dòng nhắc "Còn N cái ở chi nhánh này (M đang thuê)…" (không có mã lỗi mới). Sau khi merge `dev`, chạy `cd tests && npx jest locales-valid-json`.
 13. Test (mục "Test" dưới).
 
@@ -72,7 +72,7 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
   - tạo ở chi nhánh A → A thấy (`listed=true`), B không thấy; chủ shop thấy ở cả hai;
   - A hết hàng (tồn 0) vẫn thấy, B bật bằng listing → thấy;
   - bỏ tick khi đang thuê / đơn mở / còn tồn: thành công, đơn đang có vẫn xem/lấy/trả/huỷ/in được, lịch và kiểm trùng lịch không đổi, món không hiện khi tạo đơn mới;
-  - nhân viên 403 khi tick/bỏ tick và khi gọi gợi ý; quản lý A không bật được chi nhánh B (403 `NO_OUTLET_ACCESS`); kho như quản lý;
+  - quản lý, kho, nhân viên 403 `INSUFFICIENT_PERMISSIONS` khi gọi route tick/bỏ tick (kể cả chi nhánh mình) và khi gọi gợi ý (nhân viên); chủ shop tick/bỏ tick được; quản lý tạo sản phẩm vẫn tự tick chi nhánh mình; `canSetBranchListing` có test thuần;
   - nhân viên không thấy `outletStock` chi nhánh khác, `totalStock` của shop;
   - gợi ý chi nhánh khác: có tên với chủ shop/quản lý/kho; nhân viên 403;
   - đơn tạo từ payload kiểu app cũ cho món chưa tick → món tự tick; cùng đơn kèm `branch-listing` → không tự tick; route admin giữ `renting`;
@@ -96,7 +96,7 @@ PR 1 là điều kiện cho mọi PR sau; PR 3 có thể đi sớm hơn PR 2 n�
 
 ## Risks
 
-- Backfill tắt nhầm dòng tồn 0 của món chủ shop mới tạo (spec mục 7, Q6): mức trung bình; có đường quay lại (bật bằng "Hiện cả…"); đếm trước trên dữ liệu thật do người chạy.
+- Backfill tắt nhầm dòng tồn 0 của món chủ shop mới tạo (spec mục 7, Q6): mức trung bình; có đường quay lại (chủ shop tick lại trong form; quản lý/kho không tự bật được); đếm trước trên dữ liệu thật do người chạy.
 - App cũ tạo đơn/ghi tồn cho món tắt: giải bằng tự tick chỉ cho app cũ (Q5, quy tắc 13); cần test "đọc rồi lưu".
 - Nhân viên đa chi nhánh thấy số nhỏ hơn sau PR 3 (riêng tư có chủ ý): kiểm iOS/Android trước, ghi vào PR.
 - `UPDATE` backfill trên bảng lớn: chưa đo; chia lô nếu cần.
