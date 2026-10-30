@@ -468,8 +468,8 @@ describe('POST /api/products — a new product has a row at every active outlet'
     expect(mockPrisma.outlet.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { merchantId: 2, isActive: true } }));
     const rows = mockDb.products.create.mock.calls[0][0].outletStock.create;
     expect(rows).toEqual([
-      { outlet: { connect: { id: 1 } }, stock: 5, available: 5, renting: 0 },
-      { outlet: { connect: { id: 3 } }, stock: 0, available: 0, renting: 0 },
+      { outlet: { connect: { id: 1 } }, stock: 5, available: 5, renting: 0, isListed: true },
+      { outlet: { connect: { id: 3 } }, stock: 0, available: 0, renting: 0, isListed: false },
     ]);
   });
 
@@ -509,8 +509,8 @@ describe('POST /api/products/bulk-import — imported products have a row at eve
     expect(res.status).toBe(200);
     expect(mockPrisma.outlet.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { merchantId: 2, isActive: true } }));
     expect(txCreate.mock.calls[0][0].data.outletStock.create).toEqual([
-      { outletId: 1, stock: 4, available: 4, renting: 0 },
-      { outletId: 3, stock: 0, available: 0, renting: 0 },
+      { outletId: 1, stock: 4, available: 4, renting: 0, isListed: true },
+      { outletId: 3, stock: 0, available: 0, renting: 0, isListed: false },
     ]);
   });
 
