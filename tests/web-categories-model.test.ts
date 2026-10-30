@@ -28,8 +28,8 @@ describe('parseCategoryParams', () => {
       sortOrder: 'desc',
     });
   });
-  it('falls back on broken values (old limit=25, page 0, unknown sort)', () => {
-    expect(parseCategoryParams(params('page=0&limit=25&sortBy=price&sortOrder=up'))).toEqual({
+  it('falls back on broken values (limit=abc, page 0, unknown sort)', () => {
+    expect(parseCategoryParams(params('page=0&limit=abc&sortBy=price&sortOrder=up'))).toEqual({
       q: '',
       page: 1,
       limit: 20,
