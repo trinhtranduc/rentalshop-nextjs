@@ -78,6 +78,8 @@ export interface ApiUrls {
     availability: (id: number) => string;
     availabilityCalendar: (id: number) => string;
     batchAvailability: string;
+    /** #1347 POST: "Chi nhánh khác còn N" for products short at the order's branch */
+    otherOutletsAvailability: string;
     export: string;
   };
   orders: {
@@ -663,6 +665,7 @@ function createApiUrls(): ApiUrls {
       availability: (id: number) => `${base}/api/products/${id}/availability`,
       availabilityCalendar: (id: number) => `${base}/api/products/${id}/availability-calendar`,
       batchAvailability: `${base}/api/products/batch-availability`,
+      otherOutletsAvailability: `${base}/api/products/other-outlets-availability`,
       export: `${base}/api/products/export`,
     },
     orders: {

@@ -53,6 +53,9 @@
       }
     },
     "editor": {
+      "cart": {
+        "othersHave": "다른 지점 재고: {list}"
+      },
       "carts": {
         "label": "장바구니",
         "title": "장바구니 {n}",
