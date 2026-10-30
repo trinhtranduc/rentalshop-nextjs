@@ -89,10 +89,10 @@ export function generateProductSampleFile(): Buffer {
     { header: 'Sale Price', key: 'salePrice', width: 15 },
     { header: 'Cost Price', key: 'costPrice', width: 15 },
     { header: 'Deposit', key: 'deposit', width: 15 },
-    { header: 'Stock', key: 'stock', width: 15 },
-    { header: 'Pricing Type (FIXED/HOURLY/DAILY)', key: 'pricingType', width: 30 },
-    { header: 'Duration Config (JSON string)', key: 'durationConfig', width: 50 }
+    { header: 'Stock', key: 'stock', width: 15 }
   ];
+  // #1338: Pricing Type and Duration Config are not in the sample file. The importer still reads them
+  // from older files (validators.ts, bulk-import/route.ts); without them the product gets null.
 
   const sampleData = [
     {
@@ -104,9 +104,7 @@ export function generateProductSampleFile(): Buffer {
       salePrice: 500,
       costPrice: 300,
       deposit: 100,
-      stock: 10,
-      pricingType: 'FIXED',
-      durationConfig: ''
+      stock: 10
     },
     {
       name: 'Bicycle',
@@ -117,9 +115,7 @@ export function generateProductSampleFile(): Buffer {
       salePrice: 300,
       costPrice: 200,
       deposit: 50,
-      stock: 5,
-      pricingType: 'DAILY',
-      durationConfig: '{"minDuration":1,"maxDuration":30,"defaultDuration":1}'
+      stock: 5
     },
     {
       name: 'Laptop',
@@ -130,9 +126,7 @@ export function generateProductSampleFile(): Buffer {
       salePrice: 800,
       costPrice: 600,
       deposit: 150,
-      stock: 8,
-      pricingType: 'HOURLY',
-      durationConfig: '{"minDuration":1,"maxDuration":24,"defaultDuration":4}'
+      stock: 8
     }
   ];
 
