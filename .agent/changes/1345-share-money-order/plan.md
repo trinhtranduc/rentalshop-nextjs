@@ -1,6 +1,6 @@
 # Plan — Ảnh chia sẻ đơn: thứ tự phần tiền
 
-Issue: #1345 · Status: in-progress · Spec: ./spec.md
+Issue: #1345 · Status: done · Spec: ./spec.md
 
 ## Steps
 
@@ -19,7 +19,8 @@ Issue: #1345 · Status: in-progress · Spec: ./spec.md
 
 ## Phát hiện (ghi trong PR, không sửa ở đây)
 
-Chi tiết đơn: Thu khi giao = tổng − `depositAmount` + thế chân − đã thu trước, `depositAmount` chỉ cộng đợt ĐÃ thu (`apps/api/lib/installments.ts:115`). Đơn còn đợt 2 chưa thu: số này = phần còn lại + đợt 2 (+ thế chân), lớn hơn dòng "Phần còn lại, thu khi giao" của thẻ đợt. Ảnh chia sẻ dùng công thức kế hoạch. Đề xuất issue riêng để chi tiết đơn gọi hai số này bằng hai nhãn khác nhau.
+Chi tiết đơn: Thu khi giao = tổng − `depositAmount` + thế chân − đã thu trước, `depositAmount` chỉ cộng đợt ĐÃ thu (`apps/api/lib/installments.ts:115`). Đơn còn đợt 2 chưa thu: số này = phần còn lại + đợt 2 (+ thế chân), lớn hơn dòng "Phần còn lại, thu khi giao" của thẻ đợt. Đã chạy thật (test thuần, iOS `testDetailScreenHandOverCountsUnpaidStagesTheImageDoesNot`, Android `detailScreenHandOverCountsUnpaidStagesTheImageDoesNot`): tổng 1.150.000, đợt 1 đã thu 230.000, đợt 2 (345.000) chưa thu, rest 575.000 → `HandOverMoney` / `OrderDetailLogic.handOver` ra 920.000, công thức kế hoạch ra 575.000. Cả hai app lệch giống nhau.
+API chặn giao khi còn đợt tường minh chưa thu (400 `INSTALLMENT_UNPAID_AT_PICKUP`, `apps/api/lib/installments.ts:238`), nên đợt 2 luôn được thu TRƯỚC lúc giao: số thu tại lúc giao thật sự là 575.000. Số 920.000 ở mục THANH TOÁN của chi tiết đơn là "còn phải thu tổng" mang nhãn "Thu khi giao". Ảnh chia sẻ dùng công thức kế hoạch (575.000). Đề xuất issue riêng: chi tiết đơn đổi nhãn/số cho khớp thẻ đợt (không sửa trong PR này).
 
 ## Risks
 

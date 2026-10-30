@@ -1,6 +1,6 @@
 # Ảnh chia sẻ đơn: thứ tự phần tiền
 
-Issue: #1345 · Author: Trinh Tran · Status: in-progress · Created: 2026-10-30
+Issue: #1345 · Author: Trinh Tran · Status: done · Created: 2026-10-30
 
 ## Problem
 

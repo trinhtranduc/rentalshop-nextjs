@@ -1,6 +1,6 @@
 # Spec — Ảnh chia sẻ đơn: thứ tự phần tiền
 
-Issue: #1345 · Status: in-progress · Intent: ./intent.md
+Issue: #1345 · Status: done · Intent: ./intent.md
 
 ## Behavior
 
