@@ -523,6 +523,8 @@ export interface OrderFilters {
   productId?: number;
   startDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
   endDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
+  /** #1369: which date `startDate` / `endDate` filter (API default: createdAt) */
+  dateField?: 'createdAt' | 'pickupPlanAt' | 'returnPlanAt';
   search?: string;
   pickupDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
   returnDate?: string; // ISO date string (YYYY-MM-DD or ISO 8601)
