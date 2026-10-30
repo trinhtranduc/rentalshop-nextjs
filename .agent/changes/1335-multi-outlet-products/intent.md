@@ -23,7 +23,7 @@ Kiểm được mà không cần người:
 1. Mỗi cặp (sản phẩm, chi nhánh) có một ô tick `isListed` ("Hiện ở chi nhánh"). API và app dùng đúng cột này, không suy từ tồn.
 2. `GET /api/products?listed=true&outletId=X` chỉ trả món đã bật ở X (kể cả tồn 0); không gửi `listed` thì trả như hôm nay.
 3. Chi nhánh tạo sản phẩm thì bật ở đó; các chi nhánh khác tắt. Chủ shop bật/tắt mọi chi nhánh; quản lý và kho bật/tắt chi nhánh mình; nhân viên không.
-4. Tắt bị từ chối (409) khi còn hàng đang thuê, còn đơn mở, hoặc còn tồn.
+4. Bỏ tick không có luật chặn (chủ shop đồng ý): chỉ ảnh hưởng danh sách và chọn món khi tạo đơn mới; còn tồn hoặc đang thuê thì chỉ hiện một dòng nhắc.
 5. Hết hàng khi tạo đơn: chủ shop, quản lý, kho thấy "chi nhánh khác còn N" kèm tên chi nhánh; nhân viên chỉ thấy "Hết hàng".
 6. OUTLET_STAFF không nhận `outletStock` của chi nhánh khác, `totalStock` hay `available` của cả shop.
 7. App cũ trên `main-real` không đổi hành vi (xem `spec.md`, bảng `API compatibility`).
@@ -64,3 +64,4 @@ Xem `spec.md` mục 10 (mỗi câu có mặc định). Chủ shop chưa quyết:
 
 - 2026-10-30 — Chủ shop chỉnh hướng: ô chọn "Hiện ở chi nhánh" trong form (danh sách chi nhánh có ô tick, nghĩa của tick là `OutletStock.isListed`); mọi tình huống chặn bỏ tick gộp thành một dòng giải thích. (chủ shop)
 - 2026-10-30 — BỎ HẲN "Chuyển sang chi nhánh khác" / chuyển kho khỏi đợt này (chủ shop chốt): dời hàng bằng ô tick + sửa số lượng (web: sửa tồn mọi chi nhánh trong một lần lưu; điện thoại: từng chi nhánh). Bỏ tick khi tồn > 0: chặn, phải đặt số lượng về 0 trước. Lịch sử thay đổi tồn nếu cần: làm sau cùng hướng phiếu nhập/xuất (`docs/TODO.md`). Tick / bỏ tick vẫn: chủ shop mọi chi nhánh, quản lý/kho chi nhánh mình, nhân viên chỉ xem. (chủ shop)
+- 2026-10-30 — Chủ shop đồng ý 4 đề xuất sau kiểm vận hành (`stock-edit-vs-open-orders.md`): (1) ô tick bỏ MỌI luật chặn (không Q1, không `PRODUCT_LISTING_IN_USE`, không khoá), chỉ một dòng nhắc không chặn; tự tick cho đơn app cũ giữ nhưng chỉ app cũ; (2) việc sửa lỗi route admin `PUT /api/merchants/[id]/products/[productId]` (`renting` bị reset) đứng đầu kế hoạch; (3) cảnh báo mềm khi lưu tồn thấp hơn số đã đặt trước (`stockWarnings`); (4) việc sau: tạm ngừng cho thuê theo ngày, lịch sử sửa tồn, rủi ro R3/R4/R5/R7/R8. (chủ shop)
