@@ -3179,3 +3179,10 @@
 "firstRunGuide.settings.row" = "Getting started";
 "firstRunGuide.finish.title" = "First order done";
 "firstRunGuide.finish.body" = "It is now in My Order and Calendar.";
+"firstRunGuide.bubble.productName" = "A name and rental price are enough. Add photos and barcode later.";
+"firstRunGuide.bubble.cartCustomer" = "An order needs a customer. Tap to choose or add one.";
+"firstRunGuide.bubble.pickerNew" = "Your first customer: tap New customer.";
+"firstRunGuide.bubble.newCustomerFields" = "Phone number and name are enough. Then tap Save and select.";
+"firstRunGuide.bubble.cartDates" = "Pick the pickup and return days.";
+"firstRunGuide.bubble.cartCreate" = "All set. Tap Create order.";
+"firstRunGuide.bubble.step" = "Step %d/%d";

@@ -152,6 +152,7 @@ final class CartV2ViewController: BaseViewControler {
         back.setImage(DS.symbol("chevron.left", DS.Icon.lg, weight: .semibold), for: .normal)
         back.tintColor = DS.Color.text
         back.accessibilityLabel = "products.cart.back".localized()
+        back.accessibilityIdentifier = "cart.back"
         back.addTarget(self, action: #selector(goBack), for: .touchUpInside)
         back.isHidden = isPanel
         titleLabel.adjustsFontSizeToFitWidth = true
@@ -206,6 +207,7 @@ final class CartV2ViewController: BaseViewControler {
         let texts = UIStackView(arrangedSubviews: [collectTitle, collectAmount])
         texts.axis = .vertical
         ctaButton.addTarget(self, action: #selector(ctaTapped), for: .touchUpInside)
+        ctaButton.accessibilityIdentifier = "cart.cta"
         // #518 (board GH-trung-tat): the "no overlapping orders" notice sits above the CTA row while it is blocked
         [texts, ctaButton].forEach(ctaRow.addSubview)
         buildEditBar()
@@ -397,6 +399,20 @@ final class CartV2ViewController: BaseViewControler {
         editSaveButton.isEnabled = !blocked
         editSaveButton.backgroundColor = ctaButton.backgroundColor
         editSaveButton.alpha = ctaButton.alpha
+        coachScreenChanged()
+    }
+
+    /// #1394: each render may owe a bubble (a customer was chosen, the dates were picked)
+    private func coachScreenChanged() {
+        FirstRunCoach.shared.screenChanged(self, screen: .cart, cart: CoachCart(
+            hasCustomer: cart.customer != nil, isSale: !isRent,
+            hasDates: CartDateRowLogic.state(pickup: cart.pickupPlanAt, return: cart.returnPlanAt).days != nil,
+            isEditing: cart.isEditMode))
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        coachScreenChanged()
     }
 
     /// #1067: the discount notice (same red box as the overlap block), rebuilt only when its text changes
@@ -588,6 +604,7 @@ final class CartV2ViewController: BaseViewControler {
 
     private func customerRow() -> UIView {
         let row = UIControl()
+        row.accessibilityIdentifier = "cart.customerRow"
         row.addTarget(self, action: #selector(pickCustomer), for: .touchUpInside)
         let customer = cart.customer
         let name = customerName(customer)

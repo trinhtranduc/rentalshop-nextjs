@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,6 +69,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.guide.CoachCart
+import com.anyrent.pos.domain.guide.CoachScreen
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
@@ -536,7 +539,7 @@ fun CartV2Screen(
                 // #952 (owner): calendar icon in a light-blue circle, same size and margin as the customer avatar
                 val dateRow = CartDateRow.state(pickup.takeIf { datesChosen }, ret.takeIf { datesChosen })
                 Row(
-                    Modifier.fillMaxWidth().testTag("cart.datesRow").clickable { showDates = true }.heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+                    Modifier.fillMaxWidth().coachAnchor("cart.datesRow").clickable { showDates = true }.heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -764,7 +767,7 @@ fun CartV2Screen(
                             EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
                         },
                     ),
-                    modifier = Modifier.weight(1.1f).testTag("cart.cta"),
+                    modifier = Modifier.weight(1.1f).coachAnchor("cart.cta"),
                     // #1229: the staged label is short now; one line, 16sp, so it is not clipped on a 360dp phone
                     fontSize = if (staged && stagedCollectNow > 0) 16.sp else 18.sp,
                     singleLine = staged && stagedCollectNow > 0,
@@ -774,6 +777,13 @@ fun CartV2Screen(
             }
         }
     }
+
+    // #1394: over the cart; the run ends with it
+    FirstRunCoachOverlay(
+        CoachScreen.CART,
+        CoachCart(hasCustomer = customer != null, isSale = isSale, hasDates = datesChosen, isEditing = editingOrderId != null),
+    )
+    DisposableEffect(Unit) { onDispose { FirstRunCoach.stop() } }
 
     if (showCustomer && FeatureFlags.isOn(MobileFeature.NEW_CUSTOMERS)) {
         // #387: redesigned picker behind `newCustomers`; sets the customer the same way as the current one
@@ -1021,7 +1031,7 @@ private fun formatDay(date: LocalDate): String = com.anyrent.pos.domain.DayText.
 @Composable
 private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().testTag("cart.customerRow").clickable(onClick = onClick).heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().coachAnchor("cart.customerRow").clickable(onClick = onClick).heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

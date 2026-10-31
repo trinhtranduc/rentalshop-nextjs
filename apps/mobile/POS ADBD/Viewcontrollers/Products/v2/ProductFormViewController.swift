@@ -114,6 +114,11 @@ final class ProductFormViewController: BaseViewControler {
         IQKeyboardManager.shared.enable = false
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        FirstRunCoach.shared.screenChanged(self, screen: .productForm) // #1394
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
@@ -205,7 +210,9 @@ final class ProductFormViewController: BaseViewControler {
         // Name, category, barcode
         configure(nameField, placeholder: "products.form.namePlaceholder".localized(), numeric: false)
         nameField.accessibilityIdentifier = "product.form.name"
-        form.addArrangedSubview(field(title: "products.form.name".localized(), required: true, input: nameField))
+        let nameRow = field(title: "products.form.name".localized(), required: true, input: nameField)
+        nameRow.accessibilityIdentifier = "product.form.nameRow"
+        form.addArrangedSubview(nameRow)
         categoryRow.addTarget(self, action: #selector(pickCategory), for: .touchUpInside)
         form.addArrangedSubview(categoryRow)
         form.addArrangedSubview(V2.divider())

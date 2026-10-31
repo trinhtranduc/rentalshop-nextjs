@@ -168,6 +168,12 @@ class FirstRunGuideTracker(
         return FirstRunGuide.doneSteps(facts)
     }
 
+    /** The shop has a customer: the picker's "first customer" bubble would be wrong */
+    fun hasCustomers(): Boolean {
+        currentShop()
+        return (facts.customerTotal ?: 0) > 0
+    }
+
     /** False while the list has not answered or failed with no rows */
     fun hasProduct(): Boolean {
         currentShop()

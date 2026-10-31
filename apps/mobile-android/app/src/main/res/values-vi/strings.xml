@@ -2473,4 +2473,11 @@
     <string name="first_run_guide_settings_row">Hướng dẫn bắt đầu</string>
     <string name="first_run_guide_finish_title">Xong đơn đầu tiên</string>
     <string name="first_run_guide_finish_body">Đơn đã có ở Đơn hàng và Lịch.</string>
+    <string name="first_run_guide_bubble_product_name">Nhập tên và giá thuê là đủ. Ảnh, mã vạch thêm sau.</string>
+    <string name="first_run_guide_bubble_cart_customer">Đơn cần có khách. Bấm để chọn hoặc thêm mới.</string>
+    <string name="first_run_guide_bubble_picker_new">Khách đầu tiên của shop: bấm Khách mới.</string>
+    <string name="first_run_guide_bubble_new_customer">Số điện thoại và tên là đủ. Xong bấm Lưu và chọn.</string>
+    <string name="first_run_guide_bubble_cart_dates">Chọn ngày lấy và ngày trả.</string>
+    <string name="first_run_guide_bubble_cart_create">Đủ rồi. Bấm Tạo đơn.</string>
+    <string name="first_run_guide_bubble_step">Bước %1$d/%2$d</string>
 </resources>

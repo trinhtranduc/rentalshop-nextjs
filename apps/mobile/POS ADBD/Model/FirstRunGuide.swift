@@ -210,6 +210,9 @@ final class FirstRunGuideTracker {
     /// The rows ticked, for the sheet in Cài đặt
     var doneSteps: Set<FirstRunGuideStep>? { _ = currentShop(); return FirstRunGuide.doneSteps(facts) }
 
+    /// The shop has a customer: the picker's "first customer" bubble would be wrong
+    var hasCustomers: Bool { _ = currentShop(); return (facts.customerTotal ?? 0) > 0 }
+
     /// False while the list has not answered or failed with no rows
     var hasProduct: Bool { _ = currentShop(); return facts.hasProduct == true }
 

@@ -91,6 +91,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.guide.CoachScreen
+import com.anyrent.pos.ui.home.v2.FirstRunCoachOverlay
+import com.anyrent.pos.ui.home.v2.coachAnchor
 import com.anyrent.pos.data.CustomersV2Api
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.UserRole
@@ -147,6 +150,7 @@ fun CustomerPickerSheet(
             onBack = { newCustomer = null },
             onDone = { onPicked(it.toCustomer()) },
         )
+        FirstRunCoachOverlay(CoachScreen.NEW_CUSTOMER) // #1394
         return
     }
     // A fresh list each time the sheet opens (a customer added elsewhere shows up)
@@ -161,6 +165,7 @@ fun CustomerPickerSheet(
         // #952: the pencil follows the rule the customer detail uses
         onEdit = if (CustomerPickerEdit.showsEdit(isPicker = true, role = PermissionManager.role)) { row -> editing = row } else null,
     )
+    FirstRunCoachOverlay(CoachScreen.CUSTOMER_PICKER) // #1394
     editing?.let { row ->
         AppFormSheet(onDismiss = { editing = null }, nested = true) {
             EditCustomerV2Screen(
@@ -341,7 +346,7 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
 private fun NewCustomerRow(onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().testTag("customers.picker.new").clickable(onClick = onClick).semantics { role = Role.Button }
+            Modifier.fillMaxWidth().coachAnchor("customers.picker.new").clickable(onClick = onClick).semantics { role = Role.Button }
                 .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -475,20 +480,23 @@ fun NewCustomerContent(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            FormField(
-                label = stringResource(R.string.customers_v2_phone), value = phone,
-                onValueChange = { phone = it; existing = null; if (problem == CustomerRules.FormProblem.MISSING_PHONE) problem = null },
-                keyboardType = KeyboardType.Phone,
-                tag = "customers.new.phone",
-                error = needPhone.takeIf { problem == CustomerRules.FormProblem.MISSING_PHONE },
-            )
-            FormField(
-                label = stringResource(R.string.customers_v2_name), value = name,
-                onValueChange = { name = it; if (problem == CustomerRules.FormProblem.MISSING_NAME) problem = null },
-                capitalization = KeyboardCapitalization.Words,
-                error = needName.takeIf { problem == CustomerRules.FormProblem.MISSING_NAME },
-                tag = "customers.new.name",
-            )
+            // #1394: the bubble lights the two required fields together
+            Column(Modifier.coachAnchor("customers.new.fields"), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                FormField(
+                    label = stringResource(R.string.customers_v2_phone), value = phone,
+                    onValueChange = { phone = it; existing = null; if (problem == CustomerRules.FormProblem.MISSING_PHONE) problem = null },
+                    keyboardType = KeyboardType.Phone,
+                    tag = "customers.new.phone",
+                    error = needPhone.takeIf { problem == CustomerRules.FormProblem.MISSING_PHONE },
+                )
+                FormField(
+                    label = stringResource(R.string.customers_v2_name), value = name,
+                    onValueChange = { name = it; if (problem == CustomerRules.FormProblem.MISSING_NAME) problem = null },
+                    capitalization = KeyboardCapitalization.Words,
+                    error = needName.takeIf { problem == CustomerRules.FormProblem.MISSING_NAME },
+                    tag = "customers.new.name",
+                )
+            }
             FormField(
                 label = stringResource(R.string.customers_v2_note), optional = stringResource(R.string.customers_v2_optional),
                 value = note, onValueChange = { note = it },
