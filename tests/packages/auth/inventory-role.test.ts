@@ -43,7 +43,8 @@ describe('#682 OUTLET_INVENTORY permissions', () => {
       ...before682,
       ADMIN: withBookings(before682.ADMIN),
       MERCHANT: withBookings(before682.MERCHANT),
-      OUTLET_ADMIN: withBookings(before682.OUTLET_ADMIN),
+      // #1319 (owner 2026-10-29): bank accounts are the shop owner's; the outlet manager keeps bankAccounts.view
+      OUTLET_ADMIN: withBookings(before682.OUTLET_ADMIN.filter((k: string) => k !== 'bankAccounts.manage')),
       OUTLET_STAFF: withBookings(before682.OUTLET_STAFF.filter((k: string) => k !== 'products.create')),
     };
     expect(others).toEqual(expected);

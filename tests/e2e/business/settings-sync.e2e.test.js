@@ -6,8 +6,8 @@
  * Accounts (helpers/api.js): merchant (MERCHANT), outletAdmin / staff / inventory (same outlet A),
  * outletAdminOther / staffOther (another outlet B of the same merchant).
  *
- * Current API behaviour is asserted. Where the owner's target rule (#1308, bank accounts) is stricter, the case name
- * says "[today]" and the comment names the rule that is not built yet.
+ * Current API behaviour is asserted. Where the owner's target rule (#1308, print settings) is stricter, the case name
+ * says "[today]" and the comment names the rule that is not built yet. Bank accounts follow the rule since #1319.
  */
 const { Session, describeE2E, must, request, uniqueName } = require('../helpers/api');
 
@@ -278,15 +278,68 @@ describeE2E('SETTINGS-SYNC shop and outlet settings across roles', () => {
       expect((await bankList(m, outletA)).length).toBe(before);
     });
 
-    test('SS-BNK-03 [today] the manager of the outlet CAN add a bank account (target rule: owner only, needs its own issue); outlet B manager is refused', async () => {
-      const before = (await bankList(m, outletA)).length;
-      const r = await oa.post(base(), account('3'));
+    test('SS-BNK-03 (#1319) the outlet manager cannot add, edit, delete or set the default: 403 INSUFFICIENT_PERMISSIONS, nothing changed; outlet B manager is refused too', async () => {
+      const r = await m.post(base(), { ...account('3'), isDefault: true });
       expect(r.status).toBe(201);
-      created.push(r.body.data.id);
-      expect((await bankList(m, outletA)).some((b) => b.id === r.body.data.id)).toBe(true);
-      const foreign = await oaB.post(base(), account('4'));
-      expect([403, 404]).toContain(foreign.status); // today 404: the outlet is not visible to another outlet's manager
-      expect((await bankList(m, outletA)).length).toBe(before + 1);
+      const id = r.body.data.id;
+      created.push(id);
+      const stateOf = async () => (await bankList(m, outletA)).map((b) => [b.id, b.accountHolderName, b.isDefault]);
+      const before = await stateOf();
+      const other = await m.post(base(), account('4'));
+      expect(other.status).toBe(201);
+      created.push(other.body.data.id);
+      const withOther = await stateOf();
+      expect(withOther.length).toBe(before.length + 1);
+      for (const [name, s] of Object.entries({ outletAdmin: oa, outletAdminOther: oaB })) {
+        for (const [what, res] of [
+          ['add', await s.post(base(), account('5'))],
+          ['edit', await s.put(`${base()}/${id}`, { accountHolderName: 'HACK' })],
+          ['default', await s.put(`${base()}/${other.body.data.id}`, { isDefault: true })],
+          ['delete', await request(s.token, 'DELETE', `${base()}/${id}`)]
+        ]) {
+          expect({ role: name, what, status: res.status, code: res.body?.code }).toEqual({ role: name, what, status: 403, code: 'INSUFFICIENT_PERMISSIONS' });
+        }
+      }
+      expect(await stateOf()).toEqual(withOther);
+    });
+
+    test('SS-BNK-04 (#1319) staff and inventory cannot edit, set the default or delete: 403, nothing changed; they still read the default account for the QR', async () => {
+      const r = await m.post(base(), { ...account('6'), isDefault: true });
+      expect(r.status).toBe(201);
+      const id = r.body.data.id;
+      created.push(id);
+      for (const [name, s] of Object.entries({ staff: st, inventory: inv })) {
+        for (const [what, res] of [
+          ['edit', await s.put(`${base()}/${id}`, { accountHolderName: 'HACK' })],
+          ['default', await s.put(`${base()}/${id}`, { isDefault: false })],
+          ['delete', await request(s.token, 'DELETE', `${base()}/${id}`)]
+        ]) {
+          expect({ role: name, what, status: res.status }).toEqual({ role: name, what, status: 403 });
+        }
+        const def = (await bankList(s, outletA)).find((b) => b.isDefault);
+        expect({ role: name, id: def?.id, holder: def?.accountHolderName }).toEqual({ role: name, id, holder: 'NGUYEN VAN E2E' });
+      }
+    });
+
+    test('SS-BNK-05 (#1319) the owner edits, sets the default and deletes; the manager reads each change', async () => {
+      const a = (await m.post(base(), { ...account('7'), isDefault: true })).body.data;
+      const b = (await m.post(base(), account('8'))).body.data;
+      created.push(a.id, b.id);
+      const edited = await m.put(`${base()}/${a.id}`, { accountHolderName: 'TRAN THI E2E' });
+      expect(edited.status).toBe(200);
+      expect((await bankList(oa, outletA)).find((x) => x.id === a.id).accountHolderName).toBe('TRAN THI E2E');
+      const setDefault = await m.put(`${base()}/${b.id}`, { isDefault: true });
+      expect(setDefault.status).toBe(200);
+      expect((await bankList(oa, outletA)).filter((x) => x.isDefault).map((x) => x.id)).toEqual([b.id]);
+      const gone = await request(m.token, 'DELETE', `${base()}/${a.id}`);
+      expect(gone.status).toBe(200);
+      expect((await bankList(oa, outletA)).some((x) => x.id === a.id)).toBe(false);
+    });
+
+    test('SS-BNK-06 (#1319) login and profile permissions: the manager has bankAccounts.view only, the owner both', async () => {
+      expect(oa.user.permissions).toContain('bankAccounts.view');
+      expect(oa.user.permissions).not.toContain('bankAccounts.manage');
+      expect(m.user.permissions).toEqual(expect.arrayContaining(['bankAccounts.view', 'bankAccounts.manage']));
     });
   });
 });
