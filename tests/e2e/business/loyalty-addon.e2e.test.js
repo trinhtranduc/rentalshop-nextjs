@@ -87,10 +87,11 @@ async function merchantSession(world) {
   return { m, modules: r.body.data.merchant.modules };
 }
 
-/** The owner saves the program; AnyRent switches it on (isActive is Super Admin only, as before). */
+/** The owner saves the rates. #782: buying the add-on already switched the program on, with no second switch. */
 async function startProgram(m, world) {
+  expect(S.sql(`SELECT "isActive" FROM "LoyaltyProgram" WHERE "merchantId" = ${world.merchantId}`)).toBe('t');
   expect((await m.put('/api/loyalty/program', PROGRAM)).status).toBe(200);
-  S.sql(`UPDATE "LoyaltyProgram" SET "isActive" = true WHERE "merchantId" = ${world.merchantId}`);
+  expect(S.sql(`SELECT "isActive" FROM "LoyaltyProgram" WHERE "merchantId" = ${world.merchantId}`)).toBe('t');
 }
 
 async function saleProduct(m, world, price) {
@@ -191,6 +192,29 @@ describeLoy('BF-LOYADD loyalty as a feature add-on (#967)', () => {
     );
     expect(Number(loyaltyRowSql)).toBe(10);
     expect(Number(S.sql(`SELECT count(*) FROM "LoyaltyProgram" WHERE "merchantId" = ${world.merchantId}`))).toBe(1);
+  });
+
+  test('BF-LOYADD-05 #782 bought with no setup at all: default rates earn points on the first sale', async () => {
+    const world = S.createWorld('loy-run', { planId: pricedPlan('loy-run', []) });
+    setPeriod(world.merchantId);
+    expect(created(await buy(world.merchantId))).toBe(true);
+    const { m } = await merchantSession(world);
+    const product = await saleProduct(m, world, 100000);
+    const cust = await customer(m);
+    await sell(m, product, cust);
+    // default program: 1 point per 10.000 ₫
+    expect(await points(m, cust.id)).toBe(10);
+  });
+
+  test('BF-LOYADD-06 #782 Basic: quote and purchase refused (422), nothing written, the program stays off', async () => {
+    const world = S.createWorld('loy-basic', { planId: pricedPlan('basic loy', []) });
+    setPeriod(world.merchantId);
+    const p = await loyaltyRow();
+    const before = Number(S.sql(`SELECT count(*) FROM "PlanLimitAddon" WHERE "merchantId" = ${world.merchantId}`));
+    expect(brief(await (await admin()).get(`/api/merchants/${world.merchantId}/addons/quote?addonPriceId=${p.id}&packs=1`))).toEqual({ status: 422, code: 'ADDON_LOYALTY_NOT_FOR_BASIC' });
+    expect(brief(await buy(world.merchantId))).toEqual({ status: 422, code: 'ADDON_LOYALTY_NOT_FOR_BASIC' });
+    expect(Number(S.sql(`SELECT count(*) FROM "PlanLimitAddon" WHERE "merchantId" = ${world.merchantId}`))).toBe(before);
+    expect(S.sql(`SELECT coalesce((SELECT "isActive"::text FROM "LoyaltyProgram" WHERE "merchantId" = ${world.merchantId}), 'false')`)).toBe('false');
   });
 
   test('BF-LOYADD-04 plan with loyalty: works with no add-on; the add-on is refused (422 ADDON_FEATURE_IN_PLAN)', async () => {
