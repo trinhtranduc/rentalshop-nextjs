@@ -229,9 +229,12 @@ private fun MediumWork(display: TodayWidgetDisplay) {
             Spacer(GlanceModifier.width(6.dp))
             CounterTile(display.counts.returns, display.labels.returnTask, TileColor.TRA, stacked = false, GlanceModifier.defaultWeight())
         }
-        display.lines.forEach { line ->
-            Spacer(GlanceModifier.height(4.dp))
-            JobRow(line, display.labels, GlanceModifier.fillMaxWidth().clickable(openLink(context, line.url)))
+        // A Glance column keeps 10 children and drops the rest without a word: the jobs have their own, or the footer goes
+        Column(GlanceModifier.fillMaxWidth()) {
+            display.lines.forEach { line ->
+                Spacer(GlanceModifier.height(4.dp))
+                JobRow(line, display.labels, GlanceModifier.fillMaxWidth().clickable(openLink(context, line.url)))
+            }
         }
         Spacer(GlanceModifier.defaultWeight())
         Text(display.footerText, style = style(12.sp, R.color.widget_text_muted), maxLines = 1)

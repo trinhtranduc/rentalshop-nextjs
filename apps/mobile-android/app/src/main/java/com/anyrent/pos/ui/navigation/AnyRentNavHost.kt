@@ -230,6 +230,17 @@ fun AnyRentNavHost(
     }
 
     val context = LocalContext.current
+    // #1381: the widget's worker can find the session gone while no screen is up; `sessionExpired` then reaches nobody,
+    // and a recreated activity would restore its old screens with no session
+    LaunchedEffect(rootNavController) {
+        val route = rootNavController.currentDestination?.route
+        if (!SessionStore.isLoggedIn && route != null && !isSignInRoute(route)) {
+            rootNavController.navigate(Routes.Login) {
+                popUpTo(rootNavController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
     LaunchedEffect(rootNavController) {
         SessionStore.sessionExpired.collect { code ->
             // #386: a wrong password is a 401 too; the new login is already on screen and shows it inline,
@@ -1125,6 +1136,11 @@ private fun LaunchedOpenPendingOrder(navController: NavHostController, startOrde
     }
 }
 
+/** The screens of someone not signed in */
+internal fun isSignInRoute(route: String): Boolean =
+    route == Routes.Login || route == Routes.Forgot || route == Routes.ForgotV2 || route == Routes.Register ||
+        route == Routes.EmailSentV2 || route.startsWith("check-email")
+
 /** #1381 the home-screen widget: a job opens its order, the header opens "Việc cần làm". Waits for the sign-in screens to end. */
 @Composable
 private fun LaunchedOpenWidgetLink(navController: NavHostController) {
@@ -1133,16 +1149,7 @@ private fun LaunchedOpenWidgetLink(navController: NavHostController) {
     LaunchedEffect(pending, currentRoute) {
         if (pending == null || !SessionStore.isLoggedIn) return@LaunchedEffect
         val dest = currentRoute ?: return@LaunchedEffect
-        if (dest == Routes.Login ||
-            dest == Routes.Forgot ||
-            dest == Routes.Register ||
-            dest == Routes.Onboarding ||
-            dest.startsWith("check-email") ||
-            dest == Routes.ForgotV2 ||
-            dest == Routes.EmailSentV2
-        ) {
-            return@LaunchedEffect
-        }
+        if (isSignInRoute(dest) || dest == Routes.Onboarding) return@LaunchedEffect
         when (val link = TodayWidgetLinks.consume()) {
             is TodayWidgetLink.Order -> navController.navigate(Routes.orderDetail(link.id))
             TodayWidgetLink.Todo -> {

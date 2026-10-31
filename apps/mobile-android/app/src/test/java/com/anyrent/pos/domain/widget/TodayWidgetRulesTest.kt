@@ -1,5 +1,7 @@
 package com.anyrent.pos.domain.widget
 
+import com.anyrent.pos.ui.navigation.Routes
+import com.anyrent.pos.ui.navigation.isSignInRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -68,6 +70,17 @@ class TodayWidgetRulesTest {
         assertFalse(asked.showsPinButton)
         assertTrue(asked.showsSteps)
         assertTrue(asked.showsNotAskedNote)
+    }
+
+    /** A session the worker found gone: the recreated app goes to sign-in, unless it is already on a sign-in screen */
+    @Test
+    fun signInRoutes() {
+        for (route in listOf(Routes.Login, Routes.Forgot, Routes.ForgotV2, Routes.Register, Routes.EmailSentV2, "check-email/a@b.c")) {
+            assertTrue(route, isSignInRoute(route))
+        }
+        for (route in listOf(Routes.Main, Routes.Onboarding, Routes.Cart, Routes.orderDetail(5))) {
+            assertFalse(route, isSignInRoute(route))
+        }
     }
 
     @Test
