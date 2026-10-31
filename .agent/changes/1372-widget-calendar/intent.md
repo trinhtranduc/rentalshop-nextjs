@@ -54,6 +54,7 @@ Phần 2, lịch hệ thống (làm sau, chưa chốt): đề xuất B1, nút "T
 ## Open questions
 
 - Phần widget: **không còn câu mở**; mọi quyết định (W1 đến W12) đã chốt, xem `spec.md` mục 1a.
+- Thiết kế giàu hơn (Phương án 2, 3): D1, D2, D3 ở `spec.md` mục 1c, chưa chốt.
 - Phần lịch hệ thống (làm sau): L1 và L2 ở `spec.md` mục 1b, chưa chốt.
 
 ## Decision log
@@ -62,3 +63,4 @@ Phần 2, lịch hệ thống (làm sau, chưa chốt): đề xuất B1, nút "T
 - 2026-10-31 — Widget không cần API mới ở bản đầu: app ghi dữ liệu vào App Group (iOS), Android tự tải bằng WorkManager (đã chốt cùng W1 đến W12)
 - 2026-10-31 — Chủ shop chốt phần widget theo mặc định đơn giản nhất: A1 tự hiện (A2 để sau); sheet "Thêm vào widget" chỉ là hướng dẫn (iOS 3 bước; Android `requestPinAppWidget`) và một thẻ gợi ý hiện một lần trong tab Đơn có "Không hỏi lại"; cỡ, số dòng, riêng tư, chạm, vai trò, iPad, trạng thái, làm mới như spec 1a (chủ shop, "chốt theo mặc định")
 - 2026-10-31 — Lịch hệ thống vẫn chờ, làm sau widget (chủ shop)
+- 2026-10-31 — Chủ shop xem mockup thấy "hiện đơn giản quá": thêm Phương án 2 (thẻ có màu) và 3 (cỡ lớn + màn hình khoá) vào mockup và `spec.md` mục 9; Phương án 1 vẫn đang code; chờ chốt D1 (chọn P2/P3), D2 (màu Trả cam hay tím), D3 (hiện số tiền còn thu, đề xuất chưa làm bản đầu)
