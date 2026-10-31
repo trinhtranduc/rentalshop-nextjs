@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_surface">#1C1C1E</color>
+    <color name="widget_text">#F5F5F7</color>
+    <color name="widget_text_muted">#A1A1AA</color>
+    <color name="widget_tile_late">#DC2626</color>
+    <color name="widget_tile_giao">#2563EB</color>
+    <color name="widget_tile_tra">#EA580C</color>
+    <color name="widget_tile_late_off">#66DC2626</color>
+    <color name="widget_tile_giao_off">#662563EB</color>
+    <color name="widget_tile_tra_off">#66EA580C</color>
+    <color name="widget_late_text">#FCA5A5</color>
+    <color name="widget_warning_text">#FDBA74</color>
+    <color name="widget_ring_fill">#60A5FA</color>
+    <color name="widget_ring_track">#3A3A3C</color>
+</resources>

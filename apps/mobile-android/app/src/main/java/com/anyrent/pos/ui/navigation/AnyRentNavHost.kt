@@ -1,5 +1,8 @@
 package com.anyrent.pos.ui.navigation
 
+import com.anyrent.pos.domain.widget.TodayWidgetLink
+import com.anyrent.pos.domain.widget.TodayWidgetLinks
+import com.anyrent.pos.ui.widget.TodayWidgetSync
 import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.ui.home.v2.OutletFallbackDialog
 import kotlinx.coroutines.flow.drop
@@ -794,6 +797,7 @@ fun AnyRentNavHost(
     }
 
     LaunchedOpenDraftCart(rootNavController)
+    LaunchedOpenWidgetLink(rootNavController)
     LaunchedOpenMyShifts(rootNavController)
     LaunchedOpenBookingRequest(rootNavController)
 }
@@ -879,6 +883,8 @@ private fun MainTabs(
     }
 
     LaunchedOpenPendingOrder(rootNavController, startOrderId)
+    // #1381: Main shows after a sign-in too: the widget's file belongs to this account from now on
+    LaunchedEffect(Unit) { TodayWidgetSync.refreshSoon() }
 
     // #828: a merchant's active branches for the Home button; a remembered branch that was turned off falls back to
     // the default and the merchant is told once. A branch change reloads every order and stock view, like an order
@@ -1115,6 +1121,35 @@ private fun LaunchedOpenPendingOrder(navController: NavHostController, startOrde
         if (id != null && SessionStore.isLoggedIn) {
             SessionStore.pendingOrderId = null
             navController.navigate(Routes.orderDetail(id))
+        }
+    }
+}
+
+/** #1381 the home-screen widget: a job opens its order, the header opens "Việc cần làm". Waits for the sign-in screens to end. */
+@Composable
+private fun LaunchedOpenWidgetLink(navController: NavHostController) {
+    val pending by TodayWidgetLinks.pending.collectAsState()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(pending, currentRoute) {
+        if (pending == null || !SessionStore.isLoggedIn) return@LaunchedEffect
+        val dest = currentRoute ?: return@LaunchedEffect
+        if (dest == Routes.Login ||
+            dest == Routes.Forgot ||
+            dest == Routes.Register ||
+            dest == Routes.Onboarding ||
+            dest.startsWith("check-email") ||
+            dest == Routes.ForgotV2 ||
+            dest == Routes.EmailSentV2
+        ) {
+            return@LaunchedEffect
+        }
+        when (val link = TodayWidgetLinks.consume()) {
+            is TodayWidgetLink.Order -> navController.navigate(Routes.orderDetail(link.id))
+            TodayWidgetLink.Todo -> {
+                MainTabRouter.openTodo()
+                navController.popBackStack(Routes.Main, inclusive = false)
+            }
+            null -> Unit
         }
     }
 }

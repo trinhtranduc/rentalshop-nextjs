@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- #1381 widget, design P2: the same colours as iOS TodayWorkWidget.swift. The Trả tile is orange here only (D2). -->
+    <color name="widget_surface">#FFFFFF</color>
+    <color name="widget_text">#0F172A</color>
+    <color name="widget_text_muted">#64748B</color>
+    <color name="widget_tile_late">#B91C1C</color>
+    <color name="widget_tile_giao">#1D4ED8</color>
+    <color name="widget_tile_tra">#C2410C</color>
+    <!-- A counter at 0 is dimmed to 40%, like iOS -->
+    <color name="widget_tile_late_off">#66B91C1C</color>
+    <color name="widget_tile_giao_off">#661D4ED8</color>
+    <color name="widget_tile_tra_off">#66C2410C</color>
+    <color name="widget_late_text">#B91C1C</color>
+    <color name="widget_warning_text">#9A3412</color>
+    <color name="widget_ring_fill">#1D4ED8</color>
+    <color name="widget_ring_track">#E2E8F0</color>
+</resources>

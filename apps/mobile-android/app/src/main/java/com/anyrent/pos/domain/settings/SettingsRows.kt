@@ -12,8 +12,8 @@ enum class SettingsItem {
      */
     STORE_INFO, BANK_ACCOUNTS, DEPOSIT, PRINTING,
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
-    /** #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản) */
-    PLAN, LANGUAGE, ADVANCED,
+    /** #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Widget (#1381), Nâng cao (Thông tin ứng dụng + Xoá tài khoản) */
+    PLAN, LANGUAGE, WIDGET, ADVANCED,
 }
 
 /** #1310 the "Thu cọc" row: the shop owner only (`PUT /api/settings/deposit` is MERCHANT only); orders still read the mode for every role */
@@ -53,7 +53,7 @@ object SettingsRows {
         }
         val account = buildList {
             if (hasPlan && role != "ADMIN") add(SettingsItem.PLAN)
-            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED))
+            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.WIDGET, SettingsItem.ADVANCED))
         }
         return listOf(
             SettingsSection(
