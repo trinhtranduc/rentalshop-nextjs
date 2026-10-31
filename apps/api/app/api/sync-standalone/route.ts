@@ -72,6 +72,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         oldServerData.customers.error = customersResult.error || 'Failed to fetch customers';
       }
     } catch (error: any) {
+      console.error('[sync-standalone] failed:', error);
       oldServerData.customers.error = clientSafeErrorText(error, 'Unknown error fetching customers');
     }
 
@@ -106,6 +107,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
               errors: imageResult.errors || []
             };
           } catch (error: any) {
+            console.error('[sync-standalone] failed:', error);
             oldServerData.products.images[String(productId)] = {
               originalUrls: [],
               downloadedImages: [],
@@ -118,6 +120,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         oldServerData.products.error = productsResult.error || 'Failed to fetch products';
       }
     } catch (error: any) {
+      console.error('[sync-standalone] failed:', error);
       oldServerData.products.error = clientSafeErrorText(error, 'Unknown error fetching products');
     }
 
@@ -137,6 +140,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         oldServerData.orders.error = ordersResult.error || 'Failed to fetch orders';
       }
     } catch (error: any) {
+      console.error('[sync-standalone] failed:', error);
       oldServerData.orders.error = clientSafeErrorText(error, 'Unknown error fetching orders');
     }
 
@@ -283,6 +287,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
             });
           }
         } catch (error: any) {
+          console.error('[sync-standalone] failed:', error);
           preview.errors.push({
             entity: 'customers',
             error: clientSafeErrorText(error, 'Unknown error')
@@ -321,6 +326,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
             });
           }
         } catch (error: any) {
+          console.error('[sync-standalone] failed:', error);
           preview.errors.push({
             entity: 'products',
             error: clientSafeErrorText(error, 'Unknown error')
@@ -356,6 +362,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
             });
           }
         } catch (error: any) {
+          console.error('[sync-standalone] failed:', error);
           preview.errors.push({
             entity: 'orders',
             error: clientSafeErrorText(error, 'Unknown error')
@@ -523,6 +530,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                 
                 stats.customers.created++;
               } catch (error: any) {
+                console.error('[sync-standalone] failed:', error);
                 stats.customers.failed++;
                 const errorEntry = { entity: 'customer', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldCustomer };
                 errorLog.push(errorEntry);
@@ -635,6 +643,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                 
                 stats.products.created++;
               } catch (error: any) {
+                console.error('[sync-standalone] failed:', error);
                 stats.products.failed++;
                 const errorEntry = { entity: 'product', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldProduct };
                 errorLog.push(errorEntry);
@@ -790,6 +799,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
 
                   stats.orders.created++;
                 } catch (error: any) {
+                  console.error('[sync-standalone] failed:', error);
                   stats.orders.failed++;
                   const errorEntry = { entity: 'order', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldOrder };
                   errorLog.push(errorEntry);

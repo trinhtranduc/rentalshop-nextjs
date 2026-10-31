@@ -205,6 +205,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
               
               stats.customers.created++;
             } catch (error: any) {
+              console.error('[sync-standalone/resume] failed:', error);
               stats.customers.failed++;
               const errorEntry = { entity: 'customer', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldCustomer };
               errorLog.push(errorEntry);
@@ -312,6 +313,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
               
               stats.products.created++;
             } catch (error: any) {
+              console.error('[sync-standalone/resume] failed:', error);
               stats.products.failed++;
               const errorEntry = { entity: 'product', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldProduct };
               errorLog.push(errorEntry);
@@ -466,6 +468,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
 
                 stats.orders.created++;
               } catch (error: any) {
+                console.error('[sync-standalone/resume] failed:', error);
                 stats.orders.failed++;
                 const errorEntry = { entity: 'order', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldOrder };
                 errorLog.push(errorEntry);
@@ -527,6 +530,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         })
       );
     } catch (error: any) {
+      console.error('[sync-standalone/resume] failed:', error);
       const syncLogs = syncService.getLogs();
       syncLogs.forEach(log => {
         errorLog.push({

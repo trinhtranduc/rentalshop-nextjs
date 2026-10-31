@@ -380,6 +380,7 @@ async function processImportData(
               }
             });
           } catch (error: any) {
+            console.error('[admin/import-data] failed:', error);
             stats.customers.failed++;
             errorLog.push({
               entity: 'customer',
@@ -525,6 +526,7 @@ async function processImportData(
               }
             });
           } catch (error: any) {
+            console.error('[admin/import-data] failed:', error);
             stats.products.failed++;
             errorLog.push({
               entity: 'product',
@@ -653,6 +655,7 @@ async function processImportData(
                 }
               });
             } catch (error: any) {
+              console.error('[admin/import-data] failed:', error);
               stats.orders.failed++;
               errorLog.push({
                 entity: 'order',
