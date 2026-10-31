@@ -36,6 +36,8 @@
   "ADDON_PRICE_NOT_ON_SALE": "이 애드온은 일시 중지되어 판매할 수 없습니다.",
   "ADDON_FEATURE_ALREADY_ON": "이 매장은 이미 이 기능을 사용 중입니다. 다음 기간부터 끄기로 했다면 다시 추가하지 말고 취소하세요.",
   "ADDON_FEATURE_IN_PLAN": "이 매장의 요금제에 이미 이 기능이 포함되어 있습니다. 애드온이 필요하지 않습니다.",
+  "ADDON_LOYALTY_NOT_FOR_BASIC": "단골 고객 기능은 휴대폰에서 설정할 수 없어 Basic 요금제에는 아직 판매하지 않습니다.",
+  "ADDON_AMOUNT_TOO_LARGE": "애드온 수량이 너무 많습니다. 수량을 줄여 주세요.",
   "ADDON_PRICE_IN_USE": "사용 중인 애드온이라 팩 수량을 바꿀 수 없습니다. 새 항목을 추가하세요.",
   "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "이 매장에는 지점 애드온이 남아 있습니다. 먼저 지점 애드온을 제거한 뒤 다중 지점이 없는 요금제로 변경하세요.",
   "ADDON_ALREADY_ENDED": "이 애드온은 이미 종료되었습니다.",

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { validateAddonDeletion } from '@rentalshop/utils/server';
-import { addonColumnsFor, handleApiError, isAddonEnded, isFeatureAddon, merchantAddonUpdateSchema, ResponseBuilder } from '@rentalshop/utils';
+import { addonColumnsFor, addonUnitsFit, handleApiError, isAddonEnded, isFeatureAddon, merchantAddonUpdateSchema, ResponseBuilder } from '@rentalshop/utils';
 import type { LimitKind } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { checkAddonPurchase, findShop, routeId } from '../../../../../../lib/merchant-addons';
@@ -135,6 +135,9 @@ async function changePacks(
     return NextResponse.json(ResponseBuilder.success('MERCHANT_ADDON_UPDATED', { addon }));
   }
 
+  if (!addonUnitsFit(item.packSize, packs)) {
+    return NextResponse.json(ResponseBuilder.error('ADDON_AMOUNT_TOO_LARGE'), { status: 422 });
+  }
   // More packs: same checks and quote as a purchase of the extra packs
   const extraPacks = packs - current;
   const check = await checkAddonPurchase(merchantId, item.addonPriceId, extraPacks, now);

@@ -654,6 +654,8 @@
       },
       "usageTitle": "Usage",
       "usageHint": "What the shop uses against the plan limits.",
+      "includesAddon": "includes +{count} add-on",
+      "ordersAddonNote": "Orders are counted all-time and do not reset each month. Extra orders that are already used cannot be removed.",
       "overLimit": "Over the limit",
       "unlimited": "Unlimited",
       "usedUnlimited": "{used} · unlimited",

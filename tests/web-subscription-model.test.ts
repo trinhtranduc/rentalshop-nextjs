@@ -191,7 +191,7 @@ describe('real limit with add-ons (#782)', () => {
     expect(tab).toContain('subscription.ordersAddonNote');
     for (const lang of ['en', 'vi', 'ja', 'ko', 'zh']) {
       const json = JSON.parse(fs.readFileSync(path.join(root, `locales/${lang}/settings.json`), 'utf8'));
-      const sub = Object.values(json).map((v: any) => v && v.subscription).find(Boolean) || json.subscription;
+      const sub = json.web.subscription;
       expect(typeof sub.includesAddon).toBe('string');
       expect(sub.includesAddon).toContain('{count}');
       expect(typeof sub.ordersAddonNote).toBe('string');

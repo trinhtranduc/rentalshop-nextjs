@@ -654,6 +654,8 @@
       },
       "usageTitle": "Mức sử dụng",
       "usageHint": "Số đang dùng so với giới hạn của gói.",
+      "includesAddon": "gồm +{count} add-on",
+      "ordersAddonNote": "Số đơn được đếm từ trước đến nay, không tính lại theo tháng. Phần đơn thêm đã dùng thì không gỡ được.",
       "overLimit": "Vượt giới hạn",
       "unlimited": "Không giới hạn",
       "usedUnlimited": "{used} · không giới hạn",
