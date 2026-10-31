@@ -57,6 +57,11 @@ final class CustomersV2ListViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if mode == .pick { FirstRunCoach.shared.screenChanged(self, screen: .customerPicker) } // #1394
+    }
+
     override func setupUI() {
         view.backgroundColor = .white
         let header = UIStackView()

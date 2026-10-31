@@ -3135,3 +3135,10 @@
 "firstRunGuide.settings.row" = "Hướng dẫn bắt đầu";
 "firstRunGuide.finish.title" = "Xong đơn đầu tiên";
 "firstRunGuide.finish.body" = "Đơn đã có ở Đơn hàng và Lịch Thuê.";
+"firstRunGuide.bubble.productName" = "Nhập tên và giá thuê là đủ. Ảnh, mã vạch thêm sau.";
+"firstRunGuide.bubble.cartCustomer" = "Đơn cần có khách. Bấm để chọn hoặc thêm mới.";
+"firstRunGuide.bubble.pickerNew" = "Khách đầu tiên của shop: bấm Khách mới.";
+"firstRunGuide.bubble.newCustomerFields" = "Số điện thoại và tên là đủ. Xong bấm Lưu và chọn.";
+"firstRunGuide.bubble.cartDates" = "Chọn ngày lấy và ngày trả.";
+"firstRunGuide.bubble.cartCreate" = "Đủ rồi. Bấm Tạo đơn.";
+"firstRunGuide.bubble.step" = "Bước %d/%d";

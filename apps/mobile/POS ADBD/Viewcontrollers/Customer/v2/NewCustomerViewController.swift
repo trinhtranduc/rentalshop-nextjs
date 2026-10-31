@@ -73,6 +73,7 @@ final class NewCustomerViewController: BaseViewControler {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if (phoneField.text ?? "").isEmpty { phoneField.becomeFirstResponder() } else { nameField.becomeFirstResponder() }
+        if mode == .pick { FirstRunCoach.shared.screenChanged(self, screen: .newCustomer) } // #1394
     }
 
     override func setupUI() {
@@ -106,9 +107,16 @@ final class NewCustomerViewController: BaseViewControler {
         let hint = V2.label("customers.v2.hint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
 
         buildExistingBox()
-        let form = UIStackView(arrangedSubviews: [
+        // #1394: the bubble lights the two required fields together
+        let required = UIStackView(arrangedSubviews: [
             field("customers.v2.phone".localized(), phoneField),
             field("customers.v2.name".localized(), nameField),
+        ])
+        required.axis = .vertical
+        required.spacing = 16
+        required.accessibilityIdentifier = "customers.new.fields"
+        let form = UIStackView(arrangedSubviews: [
+            required,
             field(nil, noteField, attributedTitle: noteTitle),
             hint,
             existingBox,
