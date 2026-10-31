@@ -8,6 +8,7 @@
 
 import UIKit
 import SnapKit
+import IQKeyboardManagerSwift
 
 // MARK: - Progress card
 
@@ -204,6 +205,7 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
     /// One per sheet: a retry after a lost answer is the same collect for the API
     private let reference = "ios-" + UUID().uuidString
     private var busy = false
+    private var keyboardManagerWasEnabled = true
 
     init(detail: OrderDetail, stage: OrderInstallment, number: Int) {
         self.detail = detail
@@ -216,8 +218,12 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        stack.addArrangedSubview(V2.label(String(format: "deposit.collect.title".localized(), number), size: 20, weight: .bold))
-        let sub = [stage.isRest ? "deposit.rest.label".localized() : stage.label, DepositPlanMath.percentText(stage.percent) + "%"].joined(separator: " · ")
+        let title = V2.sheetTitle("order.sheetTitle.collect".localized())
+        stack.addArrangedSubview(title)
+        stack.setCustomSpacing(DS.Spacing.xs, after: title)
+        // #1395: the stage number moved from the title to this line
+        let stageName = String(format: "deposit.unpaid.row".localized(), number, stage.isRest ? "deposit.rest.label".localized() : stage.label)
+        let sub = [stageName, DepositPlanMath.percentText(stage.percent) + "%"].joined(separator: " · ")
         stack.addArrangedSubview(V2.label(sub, size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0))
 
         amountField.text = MoneyInput.display(stage.remaining > 0 ? stage.remaining : stage.amount)
@@ -244,6 +250,18 @@ final class CollectInstallmentSheet: V2FittingSheet, UITextFieldDelegate {
         confirmButton.accessibilityIdentifier = "deposit.collect.confirm"
         stack.addArrangedSubview(V2FittingSheet.buttons(cancel: cancel, confirm: confirmButton, confirmRatio: 1.6))
         refresh()
+    }
+
+    // #1395: this short sheet rises above the keyboard by itself. IQKeyboardManager pushed its content up, over the title
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
     }
 
     private var amount: Double { MoneyInput.parse(amountField.text) ?? 0 }
@@ -304,7 +322,9 @@ final class UnpaidStagesSheet: V2FittingSheet {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        stack.addArrangedSubview(V2.label("deposit.unpaid.title".localized(), size: 20, weight: .bold, lines: 0))
+        let title = V2.sheetTitle("order.sheetTitle.unpaid".localized())
+        stack.addArrangedSubview(title)
+        stack.setCustomSpacing(DS.Spacing.xs, after: title)
         stack.addArrangedSubview(V2.label("deposit.unpaid.message".localized(), size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0))
         for stage in stages {
             let number = DepositPlanLogic.stageNumber(all, key: stage.key) ?? 0
@@ -360,7 +380,10 @@ final class CancelDepositOrderSheet: V2FittingSheet, UITextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         stack.spacing = 10
-        stack.addArrangedSubview(V2.label(String(format: "deposit.cancel.title".localized(), orderNumber), size: 22, weight: .bold, lines: 0))
+        let title = V2.sheetTitle("order.sheetTitle.cancel".localized())
+        stack.addArrangedSubview(title)
+        stack.setCustomSpacing(DS.Spacing.xs, after: title)
+        stack.addArrangedSubview(V2.label("#\(orderNumber)", size: DS.TextSize.body, color: DS.Color.textMuted))
         if let policy, !policy.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             stack.addArrangedSubview(DepositUI.warningBox(String(format: "deposit.cancel.policy".localized(), policy)))
         }

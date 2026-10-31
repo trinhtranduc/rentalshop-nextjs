@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -225,6 +226,8 @@ private fun DepositSheetFrame(onDismiss: () -> Unit, content: @Composable Column
     ) {
         Column(
             Modifier.fillMaxWidth().semantics { testTagsAsResourceId = true }.navigationBarsPadding()
+                // #1395: on a small phone the buttons stay reachable above the keyboard
+                .imePadding()
                 .verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
@@ -232,7 +235,7 @@ private fun DepositSheetFrame(onDismiss: () -> Unit, content: @Composable Column
     }
 }
 
-/** "Thu giai đoạn N": the amount (up to what the stage still needs); the method is always CASH (#1237) */
+/** "Thu tiền cọc", stage N: the amount (up to what the stage still needs); the method is always CASH (#1237) */
 @Composable
 internal fun CollectInstallmentSheet(
     detail: OrderDetail,
@@ -251,10 +254,13 @@ internal fun CollectInstallmentSheet(
     val amount = amountText.toDoubleOrNull() ?: 0.0
     val valid = amount > 0 && amount <= stage.plannedAmount + 0.000001 && !busy
     DepositSheetFrame(onDismiss = { if (!busy) onDismiss() }) {
-        Text(stringResource(R.string.deposit_collect_title, number), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(
-            listOf(if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label, DepositPlanMath.percentText(stage.percent) + "%").joinToString(" · "),
-            fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted,
+        // #1395: the stage number moved from the title to the line under it
+        OrderSheetTitle(
+            stringResource(R.string.order_sheet_title_collect),
+            listOf(
+                stringResource(R.string.deposit_unpaid_row, number, if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label),
+                DepositPlanMath.percentText(stage.percent) + "%",
+            ).joinToString(" · "),
         )
         OutlinedTextField(
             value = amountText, onValueChange = { amountText = it.filter(Char::isDigit).take(12).trimStart('0'); error = null },
@@ -281,12 +287,11 @@ internal fun CollectInstallmentSheet(
     }
 }
 
-/** "Còn giai đoạn cọc chưa thu": the hand-over waits until these are collected (API: INSTALLMENT_UNPAID_AT_PICKUP) */
+/** "Đợt cọc chưa thu": the hand-over waits until these are collected (API: INSTALLMENT_UNPAID_AT_PICKUP) */
 @Composable
 internal fun UnpaidStagesSheet(unpaid: List<OrderInstallment>, all: List<OrderInstallment>, onDismiss: () -> Unit, onCollect: (OrderInstallment) -> Unit) {
     DepositSheetFrame(onDismiss = onDismiss) {
-        Text(stringResource(R.string.deposit_unpaid_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(stringResource(R.string.deposit_unpaid_message), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+        OrderSheetTitle(stringResource(R.string.order_sheet_title_unpaid), stringResource(R.string.deposit_unpaid_message))
         unpaid.forEach { stage ->
             val number = DepositPlanLogic.stageNumber(all, stage.key) ?: 0
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -302,7 +307,7 @@ internal fun UnpaidStagesSheet(unpaid: List<OrderInstallment>, all: List<OrderIn
     }
 }
 
-/** "Huỷ đơn #N?" with the policy and "Khách đã trả / Tiệm giữ lại / Hoàn cho khách" (staff refund everything) */
+/** "Huỷ đơn" with #N, the policy and "Khách đã trả / Tiệm giữ lại / Hoàn cho khách" (staff refund everything) */
 @Composable
 internal fun CancelDepositOrderSheet(
     orderNumber: String,
@@ -318,7 +323,7 @@ internal fun CancelDepositOrderSheet(
     var note by remember { mutableStateOf("") }
     fun shown(v: Double) = v.toLong().toString()
     DepositSheetFrame(onDismiss = onDismiss) {
-        Text(stringResource(R.string.deposit_cancel_title, orderNumber), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        OrderSheetTitle(stringResource(R.string.order_sheet_title_cancel), "#$orderNumber")
         if (!policy.isNullOrBlank()) DepositWarningBox(stringResource(R.string.deposit_cancel_policy, policy))
         AmountLine(stringResource(R.string.deposit_cancel_paid)) { Text(formatMoneyVnd(collected), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
         AmountLine(stringResource(R.string.deposit_cancel_kept)) {

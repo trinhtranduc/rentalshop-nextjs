@@ -1472,7 +1472,7 @@ final class OrderDetailViewController: BaseViewControler {
 
 // MARK: - ⋯ action sheet (#519, board CT-thao-tac)
 
-/// A close button (no title: the order number is on the screen's top bar, #1297), the everyday rows with a small
+/// The title and a close button (#1395; the order number stays on the screen's top bar, #1297), the everyday rows with a small
 /// description under each name, then the red group apart. A row closes the sheet and then runs its action on the detail screen.
 final class OrderActionSheet: V2FittingSheet {
     struct Row {
@@ -1510,7 +1510,7 @@ final class OrderActionSheet: V2FittingSheet {
         super.viewDidLoad()
         stack.spacing = 0
 
-        let spacer = UIView()
+        let sheetTitle = V2.sheetTitle("order.sheetTitle.actions".localized())
         let close = UIButton(type: .system)
         close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
         close.tintColor = UIColor(hexString: "475569")
@@ -1520,8 +1520,9 @@ final class OrderActionSheet: V2FittingSheet {
         close.accessibilityIdentifier = "order.sheet.close"
         close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         close.snp.makeConstraints { make in make.size.equalTo(36) }
-        let header = UIStackView(arrangedSubviews: [spacer, close])
-        header.alignment = .center
+        close.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let header = UIStackView(arrangedSubviews: [sheetTitle, close])
+        header.alignment = .top
         header.spacing = DS.Spacing.md
         stack.addArrangedSubview(header)
         stack.setCustomSpacing(6, after: header)
@@ -1553,7 +1554,7 @@ final class OrderActionSheet: V2FittingSheet {
         control.addSubview(line)
         line.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(8)
-            make.leading.trailing.equalToSuperview().inset(4)
+            make.leading.trailing.equalToSuperview()
         }
         let divider = V2.divider()
         divider.backgroundColor = UIColor(hexString: "F1F5F9")

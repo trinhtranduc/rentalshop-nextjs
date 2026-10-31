@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.res.pluralStringResource
@@ -36,7 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.orders.OrderDetailLogic
@@ -60,8 +61,8 @@ internal fun HandOverSheet(
     val money = OrderDetailLogic.handOver(s.totalAmount, s.depositAmount, securityDeposit, detail.balancePayments())
     val working = busy
     SheetFrame(onDismiss = { if (!working) onDismiss() }) {
-        SheetTitle(
-            stringResource(R.string.detail_hand_over),
+        OrderSheetTitle(
+            stringResource(R.string.order_sheet_title_hand_over),
             stringResource(
                 R.string.detail_hand_over_subtitle,
                 s.customerName.orEmpty(),
@@ -116,8 +117,8 @@ internal fun CollateralEditSheet(
     var papers by remember { mutableStateOf(detail.collateralDetails.orEmpty()) }
     var depositText by remember { mutableStateOf(detail.securityDeposit.toLong().takeIf { it > 0 }?.toString().orEmpty()) }
     SheetFrame(onDismiss = { if (!busy) onDismiss() }) {
-        SheetTitle(
-            stringResource(R.string.detail_collateral_edit_title),
+        OrderSheetTitle(
+            stringResource(R.string.order_sheet_title_collateral),
             "#${s.orderNumber} · ${s.customerName.orEmpty()}",
         )
         OutlinedTextField(
@@ -165,8 +166,8 @@ internal fun ReturnSheet(
     )
     val working = busy
     SheetFrame(onDismiss = { if (!working) onDismiss() }) {
-        SheetTitle(
-            stringResource(R.string.detail_take_return),
+        OrderSheetTitle(
+            stringResource(R.string.order_sheet_title_return),
             if (lateDays > 0) {
                 pluralStringResource(R.plurals.detail_return_late_subtitle, lateDays, s.customerName.orEmpty(), "#${s.orderNumber}", lateDays)
             } else {
@@ -234,6 +235,8 @@ private fun SheetFrame(onDismiss: () -> Unit, content: @Composable ColumnScope.(
                 // A sheet is its own window: expose test tags as resource ids here too (#448)
                 .semantics { testTagsAsResourceId = true }
                 .navigationBarsPadding()
+                // #1395: on a small phone the buttons stay reachable above the keyboard
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 20.dp),
@@ -243,11 +246,21 @@ private fun SheetFrame(onDismiss: () -> Unit, content: @Composable ColumnScope.(
     }
 }
 
+/**
+ * #1395: the title of an order-detail sheet (iOS `V2.sheetTitle`). One style and place on every sheet: it wraps instead of
+ * clipping; [subtitle] keeps the order or stage number; [trailing] is the ⋯ sheet's close button.
+ */
 @Composable
-private fun SheetTitle(title: String, subtitle: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
-        Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
-        Text(subtitle, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+internal fun OrderSheetTitle(title: String, subtitle: String? = null, trailing: (@Composable () -> Unit)? = null) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(DS.Gap.LineTight)) {
+            Text(
+                title, fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                modifier = Modifier.semantics { heading() },
+            )
+            subtitle?.let { Text(it, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted) }
+        }
+        trailing?.invoke()
     }
 }
 

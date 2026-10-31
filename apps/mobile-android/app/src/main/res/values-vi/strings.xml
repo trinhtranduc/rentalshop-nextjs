@@ -1080,7 +1080,6 @@
     <string name="calendar_v2_fee">phí %1$s</string>
     <string name="v2_product_deleted">Đã xóa sản phẩm</string>
     <string name="extend_rental">Gia hạn</string>
-    <string name="extend_rental_title">Gia hạn thuê</string>
     <string name="extend_rental_current">Đang hẹn trả %1$s</string>
     <plurals name="extend_rental_extra_days">
         <item quantity="other">Thêm %1$d ngày</item>
@@ -2225,15 +2224,12 @@
     <string name="deposit_card_paid_detail">%1$s%% đơn · %2$s</string>
     <string name="deposit_card_due_detail">%1$s%% đơn · hạn %2$s</string>
     <string name="deposit_card_rest_detail">Thu khi giao · %s</string>
-    <string name="deposit_collect_title">Thu giai đoạn %d</string>
     <string name="deposit_collect_confirm">Thu %s</string>
-    <string name="deposit_unpaid_title">Còn giai đoạn cọc chưa thu</string>
     <string name="deposit_unpaid_message">Thu xong các giai đoạn này mới giao đồ được.</string>
     <string name="deposit_unpaid_row">Giai đoạn %1$d · %2$s</string>
     <string name="deposit_void_title">Huỷ khoản thu giai đoạn %d?</string>
     <string name="deposit_void_message">Khoản thu %s sẽ bị huỷ và giai đoạn trở lại chưa thu. Việc này được ghi lại.</string>
     <string name="deposit_void_confirm">Huỷ khoản thu</string>
-    <string name="deposit_cancel_title">Huỷ đơn #%s?</string>
     <string name="deposit_cancel_policy">Chính sách tiệm: %s</string>
     <string name="deposit_cancel_paid">Khách đã trả</string>
     <string name="deposit_cancel_kept">Tiệm giữ lại</string>
@@ -2332,7 +2328,6 @@
     <string name="detail_collateral_card">Giấy tờ &amp; thế chân</string>
     <string name="detail_collateral_edit">Sửa</string>
     <string name="detail_collateral_none">Chưa nhập</string>
-    <string name="detail_collateral_edit_title">Sửa giấy tờ &amp; thế chân</string>
     <string name="detail_collateral_edit_warning">Đổi thế chân sẽ đổi số trả lại khi nhận trả</string>
     <string name="detail_collateral_papers_row">Giấy tờ</string>
     <string name="detail_collateral_money_row">Thế chân</string>
@@ -2422,6 +2417,15 @@
     <string name="widget_preview_late">1 Trễ</string>
     <string name="widget_preview_pickup">3 Giao</string>
     <string name="widget_preview_return">2 Trả</string>
+    <!-- #1395 titles of the order-detail sheets -->
+    <string name="order_sheet_title_actions">Thao tác với đơn</string>
+    <string name="order_sheet_title_hand_over">Giao đồ cho khách</string>
+    <string name="order_sheet_title_return">Nhận trả đồ</string>
+    <string name="order_sheet_title_extend">Gia hạn đơn</string>
+    <string name="order_sheet_title_collateral">Giấy tờ &amp; thế chân</string>
+    <string name="order_sheet_title_collect">Thu tiền cọc</string>
+    <string name="order_sheet_title_unpaid">Đợt cọc chưa thu</string>
+    <string name="order_sheet_title_cancel">Huỷ đơn</string>
     <string name="first_run_guide_title">Bắt đầu: 3 việc</string>
     <string name="first_run_guide_step_product">Thêm sản phẩm đầu tiên</string>
     <string name="first_run_guide_step_customer">Thêm khách hàng</string>
