@@ -810,6 +810,7 @@
     <string name="detail_edit_notes">Edit notes</string>
     <string name="detail_hand_over">Hand over</string>
     <string name="detail_hand_over_collect">Hand over · collect %1$s</string>
+    <string name="detail_stage_unpaid">Deposit stage unpaid</string>
     <string name="detail_take_return">Take return</string>
     <string name="detail_paid_before">Already paid</string>
     <string name="detail_collect_now">Collect now</string>

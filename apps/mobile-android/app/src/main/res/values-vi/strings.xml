@@ -797,6 +797,7 @@
     <string name="detail_edit_notes">Sửa ghi chú</string>
     <string name="detail_hand_over">Giao đồ</string>
     <string name="detail_hand_over_collect">Giao đồ · thu %1$s</string>
+    <string name="detail_stage_unpaid">Còn đợt chưa thu</string>
     <string name="detail_take_return">Nhận trả</string>
     <string name="detail_paid_before">Đã thu trước</string>
     <string name="detail_collect_now">Thu bây giờ</string>
