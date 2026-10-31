@@ -2452,4 +2452,14 @@
     <string name="widget_preview_late">1 Late</string>
     <string name="widget_preview_pickup">3 Out</string>
     <string name="widget_preview_return">2 Back</string>
+    <string name="first_run_guide_title">Get started: 3 steps</string>
+    <string name="first_run_guide_step_product">Add your first product</string>
+    <string name="first_run_guide_step_customer">Add a customer</string>
+    <string name="first_run_guide_step_order">Create your first order</string>
+    <string name="first_run_guide_skip">Skip</string>
+    <string name="first_run_guide_close">Close</string>
+    <string name="first_run_guide_skipped">Hidden. Reopen in Settings › Getting started</string>
+    <string name="first_run_guide_settings_row">Getting started</string>
+    <string name="first_run_guide_finish_title">First order done</string>
+    <string name="first_run_guide_finish_body">It is now in Orders and Calendar.</string>
 </resources>
