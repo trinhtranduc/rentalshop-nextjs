@@ -11,6 +11,13 @@ final class ImageSearchQueryTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(ImageSearchQuery.requestTimeout, 25)
     }
 
+    /// #1384: without the asset the button would be an empty gradient square
+    func testAiScanButtonTokens() {
+        XCTAssertEqual(DS.aiScanIcon?.renderingMode, .alwaysTemplate)
+        XCTAssertEqual(DS.aiScanIcon?.size, CGSize(width: 20, height: 20))
+        XCTAssertEqual(DS.Gradient.aiScan, [UIColor(hexString: "1D4ED8"), UIColor(hexString: "7C3AED")])
+    }
+
     func testTargetSizeKeepsAspectAndCapsLongSide() {
         XCTAssertEqual(ImageSearchQuery.targetSize(for: CGSize(width: 4032, height: 3024)), CGSize(width: 512, height: 384))
         XCTAssertEqual(ImageSearchQuery.targetSize(for: CGSize(width: 3024, height: 4032)), CGSize(width: 384, height: 512))

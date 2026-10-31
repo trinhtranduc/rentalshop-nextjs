@@ -155,8 +155,8 @@ final class ProductsHomeViewController: BaseViewControler {
         searchField.accessibilityLabel = "products.home.searchPlaceholder".localized()
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         searchField.delegate = self
-        // Board SP-dong: barcode scan is an icon inside the field; #651: image search is the solid blue camera button
-        // at the end so users see it (owner chose option B)
+        // Board SP-dong: barcode scan is an icon inside the field; #651: image search is the camera button at the end
+        // so users see it (owner chose option B); #1384: gradient and sparkle
         let scanButton = iconButton("barcode.viewfinder", size: DS.Icon.md, label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
         let photoButton = imageSearchButton()
         let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, scanButton, photoButton])
@@ -236,12 +236,16 @@ final class ProductsHomeViewController: BaseViewControler {
         viewModel.reload()
     }
 
-    /// #651: 38 pt solid accent square with a white camera; the touch area grows to 46 pt
+    /// #651, #1384: 38 pt gradient square with a white camera and sparkle; the touch area grows to 46 pt
     private func imageSearchButton() -> UIButton {
-        let button = HitSlopButton(type: .system)
-        button.setImage(DS.symbol("camera.fill", DS.Icon.sm), for: .normal)
+        let button = ImageSearchButton(type: .system)
+        button.setImage(DS.aiScanIcon, for: .normal)
         button.tintColor = .white
-        button.backgroundColor = DS.Color.primary
+        if let gradient = button.layer as? CAGradientLayer {
+            gradient.colors = DS.Gradient.aiScan.map(\.cgColor)
+            gradient.startPoint = CGPoint(x: 0, y: 0)
+            gradient.endPoint = CGPoint(x: 1, y: 1)
+        }
         button.layer.cornerRadius = 10
         button.accessibilityLabel = "products.home.imageSearch".localized()
         button.addTarget(self, action: #selector(imageSearch), for: .touchUpInside)
@@ -823,7 +827,10 @@ private final class TileTapFilter: NSObject, UIGestureRecognizerDelegate {
 }
 
 /// A button whose touch area reaches 4 pt past its visible bounds (#651: 38 pt button, 46 pt target)
-private final class HitSlopButton: UIButton {
+private final class ImageSearchButton: UIButton {
+    /// The gradient is the button's own layer, so it always matches the bounds and stays under the icon
+    override class var layerClass: AnyClass { CAGradientLayer.self }
+
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         bounds.insetBy(dx: -4, dy: -4).contains(point)
     }
