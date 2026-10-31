@@ -1,6 +1,5 @@
 import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { apiConfig } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 export const dynamic = 'force-dynamic';
