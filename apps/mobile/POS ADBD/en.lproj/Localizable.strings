@@ -3126,3 +3126,14 @@
 "widget.hideNames.title" = "Hide customer names on the widget";
 "widget.hideNames.subtitle" = "Off by default. Turn on if you do not want names shown even while the phone is unlocked. The widget never shows money or phone numbers.";
 "order.detail.stageUnpaid" = "Deposit stage unpaid";
+"firstRunGuide.title" = "Get started: 3 steps";
+"firstRunGuide.step.product" = "Add your first product";
+"firstRunGuide.step.customer" = "Add a customer";
+"firstRunGuide.step.order" = "Create your first order";
+"firstRunGuide.done" = "Done";
+"firstRunGuide.skip" = "Skip";
+"firstRunGuide.close" = "Close";
+"firstRunGuide.skipped" = "Hidden. Reopen in Settings › Getting started";
+"firstRunGuide.settings.row" = "Getting started";
+"firstRunGuide.finish.title" = "First order done";
+"firstRunGuide.finish.body" = "It is now in My Order and Calendar.";
