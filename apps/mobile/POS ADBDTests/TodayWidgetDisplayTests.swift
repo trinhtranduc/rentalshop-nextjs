@@ -2,7 +2,7 @@ import XCTest
 import DraftOrderActivity
 @testable import POS_ADBD
 
-/// #1375 (epic #1372): the "Việc cần làm" widget. What the extension draws comes from one pure function of the file the
+/// #1375 / #1378 (epic #1372): the "Việc cần làm" widget, design P2 (thẻ có màu). What the extension draws comes from one pure function of the file the
 /// app wrote and the instant, so the Vietnam-midnight rule, the states and the links are checked here without a phone.
 ///
 /// Day cases run with the phone set to UTC, Vietnam, Tokyo and Los Angeles (restored after), at the Vietnam midnight
@@ -49,18 +49,19 @@ final class TodayWidgetDisplayTests: XCTestCase {
     private func at(_ text: String) -> Date { ISO8601DateFormatter().date(from: text)! }
 
     private func row(_ id: Int, _ kind: TodayWidgetRow.Kind, late: Int = 0, name: String? = nil, product: String = "Áo dài",
-                     notPrepared: Bool = false) -> TodayWidgetRow {
-        TodayWidgetRow(orderId: id, kind: kind, isLate: late > 0, name: name ?? "Khách \(id)", product: product,
-                       lateDays: late, lateText: late > 0 ? "Trễ \(late) ngày" : "", notPrepared: notPrepared)
+                     more: Int = 0, notPrepared: Bool = false, time: String = "", day: String = "") -> TodayWidgetRow {
+        TodayWidgetRow(orderId: id, kind: kind, isLate: late > 0, name: name ?? "Khách \(id)", product: product, moreCount: more,
+                       lateDays: late, lateText: late > 0 ? "Trễ \(late) ngày" : "", notPrepared: notPrepared,
+                       planTime: time, planDay: day)
     }
 
     private func snapshot(date: String = "2026-10-31", savedAt: String = "2026-10-31T01:12:00Z",
-                          state: TodayWidgetSnapshot.State = .ok, hideNames: Bool = false,
+                          state: TodayWidgetSnapshot.State = .ok, hideNames: Bool = false, done: Int = 4,
                           counts: TodayWidgetCounts = TodayWidgetCounts(late: 1, pickup: 3, returns: 2, tomorrowPickup: 2, tomorrowReturn: 1),
                           rows: [TodayWidgetRow]? = nil) -> TodayWidgetSnapshot {
         let list = rows ?? [row(1, .pickup, late: 2), row(2, .pickup, notPrepared: true), row(3, .returnTask), row(4, .returnTask)]
         return TodayWidgetSnapshot(userId: 7, outletId: 5, date: date, savedAt: at(savedAt), state: state, hideNames: hideNames,
-                                   counts: counts, rows: list, labels: vi)
+                                   done: done, counts: counts, rows: list, labels: vi)
     }
 
     // MARK: Vietnam day
@@ -163,7 +164,7 @@ final class TodayWidgetDisplayTests: XCTestCase {
 
     func testEmptyDayAndTomorrowLine() {
         let counts = TodayWidgetCounts(late: 0, pickup: 0, returns: 0, tomorrowPickup: 2, tomorrowReturn: 1)
-        let display = TodayWidgetDisplay.make(snapshot: snapshot(counts: counts, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 3)
+        let display = TodayWidgetDisplay.make(snapshot: snapshot(done: 0, counts: counts, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 3)
         XCTAssertEqual(display.kind, .empty)
         XCTAssertEqual(display.labels.empty, "Hôm nay chưa có việc")
         XCTAssertEqual(display.tomorrowText, "Mai có 2 giao, 1 trả")
@@ -172,37 +173,76 @@ final class TodayWidgetDisplayTests: XCTestCase {
 
     func testEmptyDayWithoutTomorrowFromAnOlderApi() {
         let older = TodayWidgetCounts(late: 0, pickup: 0, returns: 0)
-        XCTAssertNil(TodayWidgetDisplay.make(snapshot: snapshot(counts: older, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 3).tomorrowText)
+        XCTAssertNil(TodayWidgetDisplay.make(snapshot: snapshot(done: 0, counts: older, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 3).tomorrowText)
         let none = TodayWidgetCounts(late: 0, pickup: 0, returns: 0, tomorrowPickup: 0, tomorrowReturn: 0)
-        XCTAssertNil(TodayWidgetDisplay.make(snapshot: snapshot(counts: none, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 3).tomorrowText)
+        XCTAssertNil(TodayWidgetDisplay.make(snapshot: snapshot(done: 0, counts: none, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 3).tomorrowText)
     }
 
-    // MARK: Rows
+    // MARK: Progress and counters (P2)
 
-    func testMediumShowsThreeRowsAndTheRestAsMore() {
+    func testTheRingIsDoneOverDonePlusWhatIsLeft() {
+        // 4 done, 1 late + 3 to hand over + 2 to take back left: "xong 4/10"
+        let display = TodayWidgetDisplay.make(snapshot: snapshot(done: 4), now: at("2026-10-31T03:00:00Z"), rowLimit: 0)
+        XCTAssertEqual(display.kind, .work)
+        XCTAssertEqual(display.done, 4)
+        XCTAssertEqual(display.total, 10)
+        XCTAssertEqual(display.progressText, "4/10")
+        XCTAssertEqual(display.progress, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(display.labels.doneCaption, "đã xong hôm nay")
+        XCTAssertEqual(display.counts, TodayWidgetCounts(late: 1, pickup: 3, returns: 2, tomorrowPickup: 2, tomorrowReturn: 1))
+    }
+
+    func testNothingDoneYetIsAnEmptyRing() {
+        let display = TodayWidgetDisplay.make(snapshot: snapshot(done: 0), now: at("2026-10-31T03:00:00Z"), rowLimit: 0)
+        XCTAssertEqual(display.progressText, "0/6")
+        XCTAssertEqual(display.progress, 0, accuracy: 0.0001)
+    }
+
+    func testAllDoneNeedsADoneJobAndNothingLeft() {
+        let none = TodayWidgetCounts(late: 0, pickup: 0, returns: 0)
+        let allDone = TodayWidgetDisplay.make(snapshot: snapshot(done: 10, counts: none, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 0)
+        XCTAssertEqual(allDone.kind, .allDone)
+        XCTAssertEqual(allDone.allDoneText, "Xong hết 10/10")
+        XCTAssertEqual(allDone.progress, 1, accuracy: 0.0001)
+        // Nothing done and nothing to do is a quiet day, not "xong hết"
+        let quiet = TodayWidgetDisplay.make(snapshot: snapshot(done: 0, counts: none, rows: []), now: at("2026-10-31T03:00:00Z"), rowLimit: 0)
+        XCTAssertEqual(quiet.kind, .empty)
+        XCTAssertNil(quiet.allDoneText)
+    }
+
+    func testDoneDoesNotChangeTheJobsLeft() {
+        let few = TodayWidgetDisplay.make(snapshot: snapshot(done: 0), now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
+        let many = TodayWidgetDisplay.make(snapshot: snapshot(done: 40), now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
+        XCTAssertEqual(few.counts, many.counts)
+        XCTAssertEqual(few.lines, many.lines)
+        XCTAssertEqual(many.progressText, "40/46")
+    }
+
+    // MARK: Rows (medium shows two, two lines each)
+
+    func testMediumShowsTwoRowsAndTheRestAsMore() {
         let rows = (1...6).map { row($0, $0 <= 2 ? .pickup : .returnTask) }
         let counts = TodayWidgetCounts(late: 1, pickup: 3, returns: 5) // the API counts more than the file keeps
-        let display = TodayWidgetDisplay.make(snapshot: snapshot(counts: counts, rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 3)
+        let display = TodayWidgetDisplay.make(snapshot: snapshot(counts: counts, rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
         XCTAssertEqual(display.kind, .work)
-        XCTAssertEqual(display.lines.map { $0.orderId }, [1, 2, 3])
-        XCTAssertEqual(display.moreText, "+6 việc khác") // 9 jobs, 3 shown
-        XCTAssertEqual(display.counts.pickup, 3)
-        XCTAssertEqual(display.counts.late, 1)
-        XCTAssertEqual(display.counts.returns, 5)
+        XCTAssertEqual(display.lines.map { $0.orderId }, [1, 2])
+        XCTAssertEqual(display.moreText, "+7 việc khác") // 9 jobs, 2 shown
+        XCTAssertEqual(display.footerText, "xong 4/13 · +7 việc khác · cập nhật 08:12")
     }
 
     func testNoMoreLineWhenEverythingIsShown() {
         let counts = TodayWidgetCounts(late: 0, pickup: 1, returns: 1)
         let rows = [row(1, .pickup), row(2, .returnTask)]
-        XCTAssertNil(TodayWidgetDisplay.make(snapshot: snapshot(counts: counts, rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 3).moreText)
+        let display = TodayWidgetDisplay.make(snapshot: snapshot(counts: counts, rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
+        XCTAssertNil(display.moreText)
+        XCTAssertEqual(display.footerText, "xong 4/6 · cập nhật 08:12")
     }
 
-    func testSmallShowsOnlyTheThreeNumbers() {
+    func testSmallShowsNoRows() {
         let display = TodayWidgetDisplay.make(snapshot: snapshot(), now: at("2026-10-31T03:00:00Z"), rowLimit: 0)
         XCTAssertEqual(display.kind, .work)
         XCTAssertTrue(display.lines.isEmpty)
         XCTAssertNil(display.moreText)
-        XCTAssertEqual(display.counts, TodayWidgetCounts(late: 1, pickup: 3, returns: 2, tomorrowPickup: 2, tomorrowReturn: 1))
     }
 
     func testTheFileKeepsAtMostEightRows() {
@@ -212,37 +252,75 @@ final class TodayWidgetDisplayTests: XCTestCase {
         XCTAssertEqual(file.rows.map { $0.orderId }, Array(1...8))
     }
 
-    func testRowTextLateThenNotPreparedThenProduct() {
-        let late = row(1, .pickup, late: 2, product: "Vest", notPrepared: true)
-        let waiting = row(2, .pickup, product: "Vest", notPrepared: true)
-        let product = row(3, .pickup, product: "Vest")
-        let giveBack = row(4, .returnTask, product: "Khăn", notPrepared: true) // a return is never "chưa soạn đồ"
-        let bare = row(5, .returnTask, product: "")
-        XCTAssertEqual(TodayWidgetDisplay.trailing(late, labels: vi), .late("Trễ 2 ngày"))
-        XCTAssertEqual(TodayWidgetDisplay.trailing(waiting, labels: vi), .notPrepared("Chưa soạn đồ"))
-        XCTAssertEqual(TodayWidgetDisplay.trailing(product, labels: vi), .product("Vest"))
-        XCTAssertEqual(TodayWidgetDisplay.trailing(giveBack, labels: vi), .product("Khăn"))
-        XCTAssertEqual(TodayWidgetDisplay.trailing(bare, labels: vi), .none)
-    }
-
-    func testRowTagsAndLinks() {
-        let display = TodayWidgetDisplay.make(snapshot: snapshot(), now: at("2026-10-31T03:00:00Z"), rowLimit: 4)
-        XCTAssertEqual(display.lines.map { $0.tag }, ["Giao", "Giao", "Trả", "Trả"])
-        XCTAssertEqual(display.lines.map { $0.isReturn }, [false, false, true, true])
+    func testChipsAreLateGiaoTra() {
+        let rows = [row(1, .pickup, late: 3), row(2, .returnTask, late: 2), row(3, .pickup), row(4, .returnTask)]
+        let display = TodayWidgetDisplay.make(snapshot: snapshot(rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 4)
+        // A late job is a TRỄ chip whether it is a hand-over or a return; the others are GIAO and TRẢ
+        XCTAssertEqual(display.lines.map { $0.chip }, [.late, .late, .pickup, .returnTask])
+        XCTAssertEqual(display.lines.map { $0.chipText }, ["TRỄ", "TRỄ", "GIAO", "TRẢ"])
         XCTAssertEqual(display.lines[0].url.absoluteString, "anyrent://order/1")
         XCTAssertEqual(display.headerURL.absoluteString, "anyrent://todo")
     }
 
+    func testLine1RightIsLateDaysOrTodayWithTheTimeWhenThereIsOne() {
+        let rows = [row(1, .pickup, late: 3), row(2, .pickup, time: "14:00"), row(3, .returnTask)]
+        let lines = TodayWidgetDisplay.make(snapshot: snapshot(rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 3).lines
+        XCTAssertEqual(lines[0].rightText, "Trễ 3 ngày")
+        XCTAssertTrue(lines[0].rightIsLate)
+        XCTAssertEqual(lines[1].rightText, "Hôm nay · 14:00")
+        XCTAssertFalse(lines[1].rightIsLate)
+        // No real time on the order: only the day
+        XCTAssertEqual(lines[2].rightText, "Hôm nay")
+    }
+
+    func testLine2IsTheFirstProductWithPlusNAndTheWarning() {
+        let rows = [row(1, .pickup, product: "Áo dài gấm đỏ", more: 1, notPrepared: true),
+                    row(2, .returnTask, product: "Vest xanh than"),
+                    row(3, .pickup, late: 3, product: "Áo cưới ren", day: "Lấy 28/10/26"),
+                    row(4, .pickup, product: "", more: 0)]
+        let lines = TodayWidgetDisplay.make(snapshot: snapshot(rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 4).lines
+        XCTAssertEqual(lines[0].productText, "Áo dài gấm đỏ +1")
+        XCTAssertEqual(lines[0].warningText, "Chưa soạn đồ")
+        XCTAssertEqual(lines[1].productText, "Vest xanh than")
+        XCTAssertNil(lines[1].warningText)
+        XCTAssertNil(lines[1].dayText)
+        // A late row shows the day it was due on line 2
+        XCTAssertEqual(lines[2].dayText, "Lấy 28/10/26")
+        XCTAssertNil(lines[2].warningText)
+        XCTAssertEqual(lines[3].productText, "")
+    }
+
+    func testOnlyAHandOverCanHaveTheNotPreparedWarning() {
+        let rows = [row(1, .returnTask, notPrepared: true), row(2, .pickup, late: 1, notPrepared: true)]
+        let lines = TodayWidgetDisplay.make(snapshot: snapshot(rows: rows), now: at("2026-10-31T03:00:00Z"), rowLimit: 2).lines
+        XCTAssertNil(lines[0].warningText, "a return is never chưa soạn đồ")
+        XCTAssertEqual(lines[1].warningText, "Chưa soạn đồ", "a late hand-over still is")
+    }
+
     func testHiddenNamesLeaveNoNameOnTheScreen() {
         let display = TodayWidgetDisplay.make(snapshot: snapshot(hideNames: true, rows: [row(1, .pickup, name: "")]),
-                                              now: at("2026-10-31T03:00:00Z"), rowLimit: 3)
+                                              now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
         XCTAssertTrue(display.hidesNames)
         XCTAssertEqual(display.lines.first?.name, "")
         // Even a file that still carried a name would not show it
         let leaky = TodayWidgetDisplay.make(snapshot: snapshot(hideNames: true, rows: [row(1, .pickup, name: "Hà Gia Bảo")]),
-                                            now: at("2026-10-31T03:00:00Z"), rowLimit: 3)
+                                            now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
         XCTAssertEqual(leaky.lines.first?.name, "")
         XCTAssertEqual(leaky.labels.hiddenName, "chạm để mở")
+    }
+
+    // MARK: Time of day (Vietnam)
+
+    func testTimeOfDayIsEmptyAtTheVietnamMidnightAndOtherwiseHHmm() {
+        inEachZone { zone in
+            XCTAssertEqual(TodayWidgetClock.timeOfDayText(at("2026-10-31T07:00:00Z")), "14:00", zone)
+            XCTAssertEqual(TodayWidgetClock.timeOfDayText(at("2026-10-31T16:59:00Z")), "23:59", zone)
+            // 17:00:00Z is 00:00 in Vietnam: the order has only a day, no time
+            XCTAssertEqual(TodayWidgetClock.timeOfDayText(at("2026-10-30T17:00:00Z")), "", zone)
+            XCTAssertEqual(TodayWidgetClock.timeOfDayText(at("2026-10-31T17:00:00Z")), "", zone)
+            // One minute past midnight is a real time
+            XCTAssertEqual(TodayWidgetClock.timeOfDayText(at("2026-10-30T17:01:00Z")), "00:01", zone)
+        }
     }
 
     // MARK: Links
@@ -309,9 +387,9 @@ final class TodayWidgetDisplayTests: XCTestCase {
     func testTheFileHasNoMoneyPhoneOrTokenKeys() throws {
         let data = try TodayWidgetSnapshot.encoder().encode(snapshot())
         let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-        XCTAssertEqual(Set(json.keys), ["v", "userId", "outletId", "date", "savedAt", "state", "hideNames", "counts", "rows", "labels"])
+        XCTAssertEqual(Set(json.keys), ["v", "userId", "outletId", "date", "savedAt", "state", "hideNames", "done", "counts", "rows", "labels"])
         let rows = json["rows"] as! [[String: Any]]
-        XCTAssertEqual(Set(rows[0].keys), ["orderId", "kind", "isLate", "name", "product", "lateDays", "lateText", "notPrepared"])
+        XCTAssertEqual(Set(rows[0].keys), ["orderId", "kind", "isLate", "name", "product", "moreCount", "lateDays", "lateText", "notPrepared", "planTime", "planDay"])
         let counts = json["counts"] as! [String: Any]
         XCTAssertTrue(Set(counts.keys).isSubset(of: ["late", "pickup", "returns", "tomorrowPickup", "tomorrowReturn"]))
     }

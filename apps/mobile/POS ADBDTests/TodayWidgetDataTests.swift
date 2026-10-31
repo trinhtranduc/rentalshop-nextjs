@@ -2,18 +2,21 @@ import XCTest
 import DraftOrderActivity
 @testable import POS_ADBD
 
-/// #1375 (epic #1372): from the "Việc cần làm" answer of the API to the widget file, and the app-side rules around it
+/// #1375 / #1378 (epic #1372): from the "Việc cần làm" answer of the API to the widget file, and the app-side rules around it
 /// (what an error does, when the one-time hint shows, where the Settings rows sit).
 final class TodayWidgetDataTests: XCTestCase {
     private let vi = TodayWidgetLabels.vietnamese
     private func at(_ text: String) -> Date { ISO8601DateFormatter().date(from: text)! }
 
     private func order(_ id: Int, _ name: String, phone: String = "0912345678", products: String = "Áo dài gấm đỏ",
-                       ready: Bool = false, late: Int = 0) -> String {
-        """
+                       ready: Bool = false, late: Int = 0, items: String? = nil, pickup: String? = nil, ret: String? = nil) -> String {
+        let itemsField = items.map { ", \"items\": \($0)" } ?? ""
+        let pickupField = pickup.map { ", \"pickupPlanAt\": \"\($0)\"" } ?? ""
+        let returnField = ret.map { ", \"returnPlanAt\": \"\($0)\"" } ?? ""
+        return """
         {"id": \(id), "orderNumber": "49\(id)", "customerName": "\(name)", "customerPhone": "\(phone)",
          "isReadyToDeliver": \(ready), "productNames": "\(products)", "totalAmount": 1234567, "amountDue": 654321,
-         "refundDue": 0, "lateDays": \(late), "securityDeposit": 500000}
+         "refundDue": 0, "lateDays": \(late), "securityDeposit": 500000\(itemsField)\(pickupField)\(returnField)}
         """
     }
 
@@ -22,15 +25,16 @@ final class TodayWidgetDataTests: XCTestCase {
     }
 
     private func work(date: String? = "2026-10-31", extra: String = "", tomorrow: Bool = true,
-                      pickups: String? = nil) throws -> TodayWork {
+                      pickups: String? = nil, done: String? = "{\"pickups\": 3, \"returns\": 1}") throws -> TodayWork {
         let dateField = date.map { "\"date\": \"\($0)\"," } ?? ""
+        let doneField = done.map { ", \"doneToday\": \($0)" } ?? ""
         let tomorrowFields = tomorrow ? ", \"tomorrowPickups\": \(group(2, [])), \"tomorrowReturns\": \(group(1, []))" : ""
         let json = """
         {\(dateField)
          "noShows": \(group(1, [order(101, "Hà Gia Bảo", late: 2)])),
          "overdueReturns": \(group(1, [order(102, "Lê Ngọc Lan", products: "Khăn đóng nhung, Áo dài", ready: true, late: 4)])),
          "pickupsToday": \(pickups ?? group(3, [order(103, "Mai Quốc Huy"), order(104, "Phạm Văn An", ready: true)])),
-         "returnsToday": \(group(2, [order(105, "Bùi Thanh Tâm")]))\(tomorrowFields)\(extra)}
+         "returnsToday": \(group(2, [order(105, "Bùi Thanh Tâm")]))\(tomorrowFields)\(doneField)\(extra)}
         """
         return try JSONDecoder.shared.decode(TodayWork.self, from: Data(json.utf8))
     }
@@ -82,10 +86,91 @@ final class TodayWidgetDataTests: XCTestCase {
         XCTAssertFalse(byId[102]!.notPrepared)  // a late return
     }
 
-    func testTheFirstProductIsKept() throws {
+    func testTheFirstProductAndHowManyMoreAreKept() throws {
         let file = build(try work())
-        XCTAssertEqual(file.rows[0].product, "Khăn đóng nhung") // "Khăn đóng nhung, Áo dài"
+        // No `items` in the answer: the joined names are split ("Khăn đóng nhung, Áo dài")
+        XCTAssertEqual(file.rows[0].product, "Khăn đóng nhung")
+        XCTAssertEqual(file.rows[0].moreCount, 1)
         XCTAssertEqual(file.rows[2].product, "Áo dài gấm đỏ")
+        XCTAssertEqual(file.rows[2].moreCount, 0)
+    }
+
+    func testItemsGiveTheFirstNameWithoutItsQuantityAndTheNumberOfOtherItems() throws {
+        let items = """
+        [{"name": "Áo dài gấm đỏ", "quantity": 2}, {"name": "Khăn đóng nhung", "quantity": 1}, {"name": "Vest", "quantity": 1}]
+        """
+        let single = "[{\"name\": \"Áo cưới ren\", \"quantity\": 3}]"
+        let json = group(2, [order(300, "Khách A", items: items), order(301, "Khách B", items: single)])
+        let file = build(try work(pickups: json))
+        let byId = Dictionary(uniqueKeysWithValues: file.rows.map { ($0.orderId, $0) })
+        XCTAssertEqual(byId[300]?.product, "Áo dài gấm đỏ") // not "Áo dài gấm đỏ ×2"
+        XCTAssertEqual(byId[300]?.moreCount, 2)           // two other items
+        XCTAssertEqual(byId[301]?.product, "Áo cưới ren")
+        XCTAssertEqual(byId[301]?.moreCount, 0)           // a quantity of 3 is not "+2"
+    }
+
+    func testAnOrderWithoutProductNamesHasNoProduct() throws {
+        let json = group(1, [order(310, "Khách", products: "")])
+        let file = build(try work(pickups: json))
+        let row = file.rows.first { $0.orderId == 310 }
+        XCTAssertEqual(row?.product, "")
+        XCTAssertEqual(row?.moreCount, 0)
+    }
+
+    // MARK: Done today (P2)
+
+    func testDoneIsPickupsPlusReturnsOfDoneToday() throws {
+        XCTAssertEqual(build(try work(done: "{\"pickups\": 3, \"returns\": 1}")).done, 4)
+        XCTAssertEqual(build(try work(done: "{\"pickups\": 0, \"returns\": 7}")).done, 7)
+    }
+
+    func testAnOlderApiWithoutDoneTodayCountsNothingDone() throws {
+        XCTAssertEqual(build(try work(done: nil)).done, 0)
+        XCTAssertEqual(build(try work(done: "{}")).done, 0)
+        XCTAssertEqual(build(try work(done: "null")).done, 0)
+        XCTAssertEqual(build(try work(done: "{\"pickups\": \"x\"}")).done, 0)
+    }
+
+    // MARK: Time and day of the order (P2)
+
+    func testPlanTimeIsTheVietnamTimeOnlyWhenTheOrderHasOne() throws {
+        // 07:00Z is 14:00 in Vietnam; 17:00Z is the Vietnam midnight: a day without a time
+        let json = group(3, [order(320, "A", pickup: "2026-10-31T07:00:00Z"),
+                             order(321, "B", pickup: "2026-10-30T17:00:00Z"),
+                             order(322, "C")])
+        let file = build(try work(pickups: json))
+        let byId = Dictionary(uniqueKeysWithValues: file.rows.map { ($0.orderId, $0) })
+        XCTAssertEqual(byId[320]?.planTime, "14:00")
+        XCTAssertEqual(byId[321]?.planTime, "")
+        XCTAssertEqual(byId[322]?.planTime, "")
+    }
+
+    func testAReturnUsesItsReturnTimeAndAHandOverItsPickupTime() throws {
+        let pickups = group(1, [order(330, "A", pickup: "2026-10-31T03:30:00Z", ret: "2026-11-05T10:00:00Z")])
+        let returns = group(1, [order(331, "B", pickup: "2026-10-25T03:00:00Z", ret: "2026-10-31T09:15:00Z")])
+        let json = """
+        {"date": "2026-10-31", "noShows": \(group(0, [])), "overdueReturns": \(group(0, [])),
+         "pickupsToday": \(pickups), "returnsToday": \(returns)}
+        """
+        let file = build(try JSONDecoder.shared.decode(TodayWork.self, from: Data(json.utf8)))
+        let byId = Dictionary(uniqueKeysWithValues: file.rows.map { ($0.orderId, $0) })
+        XCTAssertEqual(byId[330]?.planTime, "10:30")
+        XCTAssertEqual(byId[331]?.planTime, "16:15")
+    }
+
+    func testPlanDayIsThePlannedVietnamDayWithItsLabel() throws {
+        // A late hand-over due 28/10 (Vietnam), a late return due 29/10: "Lấy 28/10/26", "Trả 29/10/26"
+        let late = group(1, [order(340, "A", late: 3, pickup: "2026-10-28T03:00:00Z")])
+        let overdue = group(1, [order(341, "B", late: 2, pickup: "2026-10-25T03:00:00Z", ret: "2026-10-29T16:59:59Z")])
+        let json = """
+        {"date": "2026-10-31", "noShows": \(late), "overdueReturns": \(overdue),
+         "pickupsToday": \(group(0, [])), "returnsToday": \(group(0, []))}
+        """
+        let file = build(try JSONDecoder.shared.decode(TodayWork.self, from: Data(json.utf8)))
+        let byId = Dictionary(uniqueKeysWithValues: file.rows.map { ($0.orderId, $0) })
+        XCTAssertEqual(byId[340]?.planDay, "\("orders.chip.pickup".localized()) 28/10/26")
+        // 16:59:59Z is still 29/10 in Vietnam
+        XCTAssertEqual(byId[341]?.planDay, "\("orders.chip.return".localized()) 29/10/26")
     }
 
     func testAtMostEightRowsWhateverTheApiSends() throws {
@@ -132,7 +217,9 @@ final class TodayWidgetDataTests: XCTestCase {
         let text = String(data: try TodayWidgetSnapshot.encoder().encode(build(try work())), encoding: .utf8)!
         XCTAssertFalse(text.contains("0912345678"))
         for money in ["1234567", "654321", "500000"] { XCTAssertFalse(text.contains(money), money) }
-        for key in ["phone", "Phone", "amount", "Amount", "total", "token", "Token", "deposit"] { XCTAssertFalse(text.contains(key), key) }
+        for key in ["phone", "Phone", "amount", "Amount", "total", "token", "Token", "deposit", "price", "Price", "image", "Image"] {
+            XCTAssertFalse(text.contains(key), key)
+        }
     }
 
     func testTheUserAndBranchAreRecordedWithoutLeakingThemToTheRows() throws {
