@@ -4135,9 +4135,32 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         // #1270: Tài khoản ngân hàng is a row of CỬA HÀNG again
         let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Bank Accounts", "Tài khoản ngân hàng"])).firstMatch
-        if e2e.role != "merchant" { // staff and kho (#682) have no bank-account permission; the branch manager still has it until #1319
+        if e2e.role != "merchant" && e2e.role != "manager" { // staff and kho (#682) have no bank-account permission
             e2e.shot("7k-\(e2e.role)-settings")
-            e2e.soft(row.exists == (e2e.role == "manager"), "\(e2e.role): Tài khoản ngân hàng row shown = \(row.exists) (manager only, until #1319)")
+            e2e.soft(!row.exists, "\(e2e.role): no Tài khoản ngân hàng row, shown = \(row.exists)")
+            return
+        }
+        if e2e.role == "manager" { // #1319: the same list, read only (the owner's account from an earlier run may be there)
+            XCTAssertTrue(row.waitForExistence(timeout: 8), "manager: bank accounts row, read only")
+            e2e.shot("7k-manager-settings")
+            row.tap()
+            sleep(3)
+            e2e.shot("7k-manager-bank-list")
+            let add = app.buttons.matching(NSPredicate(format: "label IN %@", ["Add Bank Account", "Thêm tài khoản ngân hàng"])).firstMatch
+            XCTAssertFalse(add.exists, "manager: no add button")
+            let number = app.staticTexts.matching(NSPredicate(format: "label CONTAINS ' · '")).firstMatch
+            if number.exists {
+                number.tap()
+                sleep(2)
+                e2e.shot("7k-manager-after-row-tap")
+                XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label IN %@", ["Save", "Lưu", "Update", "Cập nhật"])).firstMatch.exists, "manager: a row does not open the form")
+                number.swipeLeft()
+                sleep(1)
+                e2e.shot("7k-manager-after-swipe")
+                XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label IN %@", ["Delete", "Xoá", "Xóa"])).firstMatch.exists, "manager: no swipe to delete")
+            } else {
+                XCTAssertFalse(app.staticTexts["Chưa có tài khoản ngân hàng. Bấm + để thêm."].exists, "manager: the empty text does not offer the +")
+            }
             return
         }
         XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in the Store group")

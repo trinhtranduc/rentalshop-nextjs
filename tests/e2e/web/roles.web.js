@@ -322,6 +322,45 @@ async function main() {
       check(id, `${role}: English: Overview / Orders / Products visible, no Vietnamese menu word left, no raw key`, /Overview/.test(all) && /Orders/.test(all) && /Products/.test(all) && vi.length === 0 && !rawBad(all), `vi=${vi} raw=${rawBad(all) && rawBad(all)[0]}`);
     }
 
+    // ---------------------------------------------------------------- WEB-ROLE-31..33 bank accounts: only the owner edits (#1319)
+    {
+      const managerEmail = `${tag}.manager@example.com`;
+      const made = await F.raw(M, 'POST', '/api/users', { email: managerEmail, password: acc.merchant.password, firstName: 'Manager', lastName: tag, role: 'OUTLET_ADMIN', outletId, phone: F.uniquePhone() });
+      if (!made.ok) throw new Error(`create OUTLET_ADMIN: HTTP ${made.status} ${JSON.stringify(made.body).slice(0, 200)}`);
+      const accountNumber = '0123456789';
+      const bankBase = `/api/merchants/${acc.merchantId}/outlets/${outletId}/bank-accounts`;
+      const manager = await F.openSession(browser, { email: managerEmail, password: acc.merchant.password });
+      roles.manager = { ...manager, page: await manager.ctx.newPage() };
+      const { page } = roles.manager;
+      // empty list first: no invitation to add
+      await U.go(page, base, `/outlets/${outletId}/bank-accounts`, { wait: 2000 });
+      const empty = await U.text(page);
+      check('WEB-ROLE-31', 'manager: empty bank accounts page: no add button, no "add an account" sentence', /Chưa có tài khoản ngân hàng/.test(empty) && !/Thêm tài khoản/.test(empty), brief(empty.slice(-200), 200));
+      const added = await F.raw(M, 'POST', bankBase, { accountHolderName: 'NGUYEN VAN A', accountNumber, bankName: 'Vietcombank', bankCode: 'VCB', isDefault: true });
+      await U.go(page, base, `/outlets/${outletId}/bank-accounts`, { wait: 2000 });
+      const listed = await U.text(page);
+      const buttons = await page.locator('main button').allInnerTexts();
+      check('WEB-ROLE-32', 'manager: the page lists the account read only: no Thêm, Sửa, Xoá; API POST, PUT, DELETE are 403 INSUFFICIENT_PERMISSIONS and the account stays', added.status === 201 && /NGUYEN VAN A/.test(listed) && !buttons.some((b) => /Thêm|Sửa|Xoá|Xóa/.test(b)) && await (async () => {
+        const id = added.body.data.id;
+        const tries = [await F.raw(manager.api, 'POST', bankBase, { accountHolderName: 'X', accountNumber: '1234567', bankName: 'Vietcombank' }), await F.raw(manager.api, 'PUT', `${bankBase}/${id}`, { accountHolderName: 'X' }), await F.raw(manager.api, 'DELETE', `${bankBase}/${id}`)];
+        const list = await F.raw(M, 'GET', bankBase);
+        return tries.every((r) => r.status === 403 && r.code === 'INSUFFICIENT_PERMISSIONS') && list.body.data.length === 1 && list.body.data[0].accountHolderName === 'NGUYEN VAN A';
+      })(), `status=${added.status} buttons=${buttons.join('|')} text=${brief(listed.slice(-200), 200)}`);
+      const { page: owner } = roles.merchant;
+      await U.go(owner, base, `/outlets/${outletId}/bank-accounts`, { wait: 2000 });
+      const ownerButtons = await owner.locator('main button').allInnerTexts();
+      check('WEB-ROLE-33', 'owner: same page keeps Thêm, Sửa, Xoá', ['Thêm', 'Sửa', 'Xoá'].every((w) => ownerButtons.some((b) => b.includes(w) || (w === 'Xoá' && b.includes('Xóa')))), ownerButtons.join('|'));
+      await U.go(page, base, '/dashboard?settings=payment', { wait: 2500 });
+      const paymentButtons = await page.locator('[role=dialog] button').allInnerTexts();
+      const payment = await U.text(page);
+      check('WEB-ROLE-34', 'manager: Cài đặt > Thu tiền lists the account with no add, edit or delete control', /NGUYEN VAN A/.test(payment) && !paymentButtons.some((b) => /Thêm tài khoản|^Sửa$|^Xoá$|^Xóa$/.test(b.trim())) && (await page.locator('[role=dialog] table tbody tr td:last-child button').count()) === 0, `buttons=${paymentButtons.join('|').slice(0, 300)}`);
+      await F.raw(M, 'DELETE', `${bankBase}/${added.body.data.id}`);
+      await U.go(page, base, '/dashboard?settings=receipt', { wait: 2500 });
+      const receipt = await U.text(page);
+      const addLinks = await page.locator('[role=dialog] button, [role=dialog] a').allInnerTexts();
+      check('WEB-ROLE-35', 'manager: In & phiếu offers no "Thêm tài khoản ngân hàng" when the branch has no account', !addLinks.some((b) => /Thêm tài khoản ngân hàng/.test(b)), `${addLinks.join('|').slice(0, 300)} text=${brief(receipt.slice(-160), 160)}`);
+    }
+
     // ---------------------------------------------------------------- WEB-DASH: no orders, custom range across months
     await dashChecks(browser, base, check);
   } finally {

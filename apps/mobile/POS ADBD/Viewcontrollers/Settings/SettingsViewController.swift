@@ -139,7 +139,7 @@ class SettingsViewController: BaseViewControler {
             }
             
             // #622: bank accounts for MERCHANT / OUTLET_ADMIN (printed on bills when the printer switch is on)
-            if SettingsV2Logic.canManageBankAccounts(role: User.account()?.role) {
+            if SettingsV2Logic.canViewBankAccounts(role: User.account()?.role) {
                 items.append(.bankAccounts)
             }
             

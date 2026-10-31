@@ -367,7 +367,7 @@ enum SettingsBankCount {
     /// Active bank accounts of the own branch (the owner: the default, else the first, branch). Completion on the
     /// main queue; nil when unknown or the role has no bank accounts.
     static func load(role: Role?, ownOutletId: Int?, completion: @escaping (Int?) -> Void) {
-        guard SettingsV2Logic.canManageBankAccounts(role: role) else { completion(nil); return }
+        guard SettingsV2Logic.canViewBankAccounts(role: role) else { completion(nil); return }
         let count: (Int?) -> Void = { outletId in
             guard let outletId else { completion(nil); return }
             BankAccountService.shared.getBankAccounts(outletId: outletId) { accounts, error in

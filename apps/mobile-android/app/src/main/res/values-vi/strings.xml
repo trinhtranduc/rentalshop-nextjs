@@ -1401,6 +1401,7 @@
     <!-- #622 Tài khoản ngân hàng + VietQR trên bill -->
     <string name="bank_accounts">Tài khoản ngân hàng</string>
     <string name="bank_accounts_empty">Chưa có tài khoản ngân hàng. Bấm + để thêm.</string>
+    <string name="bank_accounts_empty_read_only">Chưa có tài khoản ngân hàng. Chỉ chủ shop thêm được.</string>
     <string name="bank_account_add">Thêm tài khoản ngân hàng</string>
     <string name="bank_account_edit">Sửa tài khoản ngân hàng</string>
     <string name="bank_account_bank">Tên ngân hàng *</string>

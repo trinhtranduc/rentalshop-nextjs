@@ -2298,6 +2298,7 @@
 
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "Chưa có tài khoản ngân hàng. Bấm + để thêm.";
+"bankAccounts.emptyReadOnly" = "Chưa có tài khoản ngân hàng. Chỉ chủ shop thêm được.";
 "printer.bankQr.title" = "In QR chuyển khoản trên bill";
 "printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Áp dụng cho chi nhánh này trên mọi máy.";
 "bill.bankQr.title" = "CHUYỂN KHOẢN";

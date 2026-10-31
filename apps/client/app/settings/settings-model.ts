@@ -30,7 +30,7 @@ export const SETTINGS_TABS: SettingsTabDef[] = [
   { id: 'public-page', group: 'shop', roles: ['MERCHANT'] },
   /**
    * #1259 "Thu tiền": bank accounts (#852, per branch for the owner) + "Cách thu cọc" (#1199, owner only), one tab.
-   * The tab is open to the outlet admin for the bank accounts; the deposit part stays owner only.
+   * The tab is open to the outlet admin to read the bank accounts (#1319: owner edits); the deposit part stays owner only.
    */
   { id: 'payment', group: 'shop', roles: ['MERCHANT', 'OUTLET_ADMIN'] },
   /** "In & phiếu" (#626): paper sizes and previews for every role; the printed note stays owner / outlet admin only. */

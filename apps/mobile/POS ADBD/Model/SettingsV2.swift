@@ -45,7 +45,7 @@ enum SettingsV2Logic {
     static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false,
                          supportsWidget: Bool = false) -> [SettingsV2Section] {
         var storeItems: [SettingsV2Item] = [.storeInfo]
-        if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
+        if canViewBankAccounts(role: role) { storeItems.append(.bankAccounts) }
         if ShopDepositLogic.canView(role: role) { storeItems.append(.deposit) }
         storeItems.append(.printing)
         let store = SettingsV2Section(group: .store, items: storeItems)
@@ -87,9 +87,19 @@ enum SettingsV2Logic {
         count > 0 ? "\(min(count, 99))" : nil
     }
 
-    /// Bank accounts screen (#622): owners and outlet admins; staff only print the account
-    static func canManageBankAccounts(role: Role?) -> Bool {
+    /// Bank accounts screen (#622): owners and outlet admins see it; staff only print the account
+    static func canViewBankAccounts(role: Role?) -> Bool {
         role == .merchant || role == .outletAdmin
+    }
+
+    /// #1319: only the shop owner adds, edits, deletes and sets the default; the API refuses the outlet admin
+    static func canManageBankAccounts(role: Role?) -> Bool {
+        role == .merchant
+    }
+
+    /// #1319: the empty list says "Tap +" only to whoever has the +
+    static func bankAccountsEmptyKey(canManage: Bool) -> String {
+        canManage ? "bankAccounts.empty" : "bankAccounts.emptyReadOnly"
     }
 
     /// "MT" from "Merchant Tran"; one letter for one word; "?" when empty

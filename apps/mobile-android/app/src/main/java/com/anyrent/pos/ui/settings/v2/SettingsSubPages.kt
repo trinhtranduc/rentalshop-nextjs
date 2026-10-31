@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
 /** #1259: active bank accounts of the own branch (the owner: the default, else the first, branch); null when unknown or not for this role */
 internal object SettingsBankCount {
     suspend fun load(role: String?): Int? {
-        if (!com.anyrent.pos.domain.bank.BankAccountRules.canManage(role)) return null
+        if (!com.anyrent.pos.domain.bank.BankAccountRules.canView(role)) return null
         return withContext(Dispatchers.IO) {
             runCatching {
                 val outlet = BankAccountRepository.outlets().firstOrNull() ?: return@runCatching null

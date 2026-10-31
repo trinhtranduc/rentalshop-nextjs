@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
-import { isStaffLikeRole } from '@rentalshop/constants';
+import { isStaffLikeRole, USER_ROLE } from '@rentalshop/constants';
 import { 
   handleApiError, 
   ResponseBuilder,
@@ -91,7 +91,7 @@ export async function GET(
  * PUT /api/merchants/[id]/outlets/[outletId]/bank-accounts/[accountId]
  * Update a bank account
  * 
- * Authorization: ADMIN, MERCHANT, and OUTLET_ADMIN can update bank accounts
+ * Authorization: ADMIN and MERCHANT update bank accounts (#1319: OUTLET_ADMIN and staff only read)
  */
 export async function PUT(
   request: NextRequest,
@@ -115,6 +115,14 @@ export async function PUT(
       if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
+          { status: 403 }
+        );
+      }
+
+      // #1319: only the shop owner (and the platform) writes; the outlet manager reads
+      if (user.role === USER_ROLE.OUTLET_ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
           { status: 403 }
         );
       }
@@ -234,7 +242,7 @@ export async function PUT(
  * DELETE /api/merchants/[id]/outlets/[outletId]/bank-accounts/[accountId]
  * Delete (soft delete) a bank account
  * 
- * Authorization: ADMIN, MERCHANT, and OUTLET_ADMIN can delete bank accounts
+ * Authorization: ADMIN and MERCHANT delete bank accounts (#1319: OUTLET_ADMIN and staff only read)
  */
 export async function DELETE(
   request: NextRequest,
@@ -258,6 +266,14 @@ export async function DELETE(
       if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
+          { status: 403 }
+        );
+      }
+
+      // #1319: only the shop owner (and the platform) writes; the outlet manager reads
+      if (user.role === USER_ROLE.OUTLET_ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
           { status: 403 }
         );
       }

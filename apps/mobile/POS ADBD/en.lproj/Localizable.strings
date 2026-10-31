@@ -2300,6 +2300,7 @@
 
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "No bank account yet. Tap + to add one.";
+"bankAccounts.emptyReadOnly" = "No bank account yet. Only the shop owner can add one.";
 "printer.bankQr.title" = "Print transfer QR on bills";
 "printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. Applies to this branch on every device.";
 "bill.bankQr.title" = "BANK TRANSFER";

@@ -90,7 +90,10 @@ Tài khoản: chủ shop; quản lý, nhân viên, kho của chi nhánh A; quả
 | SS-PRN-04 | [hiện tại] quản lý chi nhánh sửa ghi chú in | 200 (quy tắc chủ shop chốt: chỉ chủ shop sửa, API chưa đổi) |
 | SS-BNK-01 | chủ shop thêm tài khoản ngân hàng | trả 201; quản lý, nhân viên, kho đọc thấy; chi nhánh khác không đọc được |
 | SS-BNK-02 | nhân viên / kho thêm tài khoản | 403, không tạo |
-| SS-BNK-03 | [hiện tại] quản lý chi nhánh thêm tài khoản | 201 (quy tắc chủ shop chốt: chỉ chủ shop, cần issue riêng); quản lý chi nhánh khác bị từ chối (404) |
+| SS-BNK-03 | (#1319) quản lý chi nhánh A và B thêm, sửa, đặt mặc định, xoá | 403 `INSUFFICIENT_PERMISSIONS`, danh sách không đổi |
+| SS-BNK-04 | (#1319) nhân viên / kho sửa, đặt mặc định, xoá | 403, không đổi; vẫn đọc được tài khoản mặc định để in QR |
+| SS-BNK-05 | (#1319) chủ shop sửa, đặt mặc định, xoá | 200; quản lý đọc thấy từng thay đổi |
+| SS-BNK-06 | (#1319) `permissions` lúc đăng nhập | quản lý chỉ có `bankAccounts.view`; chủ shop có cả `bankAccounts.manage` |
 
 Mobile (đã viết, chưa chạy): xem `tests/e2e/mobile/SETTINGS_SYNC.md`.
 
@@ -846,6 +849,7 @@ Kết quả lần chạy đầy đủ `--accounts --headed`: roles 63 đạt / 0
 | WEB-ROLE-06, 07 | Tiền qua URL | mở `?detail=`, `?top=`, khoảng tuỳ chọn | không có số tiền; kỳ bị ép về hôm nay. 06b / 07b: `/dashboard/related` hiện tổng các đơn (hiện trạng, Q3) |
 | WEB-ROLE-08, 09 | Trang quản trị qua URL | /users, /users/add, /users/permissions, /users/role-permissions, /outlets/:id/bank-accounts | thông báo không có quyền, không lộ email, không form; API GET và POST /api/users = 403 |
 | WEB-ROLE-10, 11 | /outlets của staff, kho | mở /outlets, gọi API | chỉ chi nhánh mình; API 403 khi tạo / sửa; nút "Thêm chi nhánh" và "Sửa" phải ẩn (**known #736**: đang hiện) |
+| WEB-ROLE-31..33 | Tài khoản ngân hàng chỉ chủ shop sửa (#1319) | quản lý chi nhánh mở /outlets/:id/bank-accounts, gọi API ghi; chủ shop mở cùng trang | quản lý: danh sách trống không mời thêm, có tài khoản thì chỉ xem (không Thêm, Sửa, Xoá), API 403 `INSUFFICIENT_PERMISSIONS`, không đổi; chủ shop còn đủ nút |
 | WEB-ROLE-12 | Sản phẩm, staff (a..e) | danh sách, chi tiết, URL sửa, API | không Sửa/Xoá/Xuất/Nhập; PUT giá 403 và giá không đổi; URL sửa báo không có quyền; export 403; Thêm sản phẩm chạy |
 | WEB-ROLE-13 | Sản phẩm, kho (a..c) | như trên | hiện Thêm/Nhập/Sửa/Xoá; PUT giá 200; export API 200 trong khi nút bị ẩn (Q1) |
 | WEB-ROLE-14, 15 | Khách và danh mục, staff, kho (a, b) | nút so với API | Xoá khách, Sửa, Nhập chạy. Xuất Excel chỉ hiện nếu API cho xuất (export khách 403 cho cả hai). Danh mục: staff ẩn và 403, kho hiện và 200/201 |
