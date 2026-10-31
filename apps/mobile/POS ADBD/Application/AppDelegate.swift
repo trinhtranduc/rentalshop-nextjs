@@ -11,6 +11,7 @@ import Firebase
 import FirebaseMessaging
 import IQKeyboardManagerSwift
 import AppTrackingTransparency
+import DraftOrderActivity
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -18,11 +19,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey: Any] = [:]) -> Bool {
-        if url.scheme == "anyrent" {
-            DraftOrderReminder.shared.openDraftCart()
-            return true
+        // #1375: by host. anyrent://order/<id> and anyrent://todo come from the home-screen widget; every other
+        // anyrent:// link (the Live Activity's anyrent://draft-cart) still opens the draft cart.
+        guard let link = TodayWidgetLink.parse(url) else { return false }
+        switch link {
+        case .order(let orderId): PushNotificationManager.shared.openOrderDetail(orderId: orderId)
+        case .todo: openTodoTab()
+        case .draftCart: DraftOrderReminder.shared.openDraftCart()
         }
-        return false
+        return true
+    }
+
+    /// anyrent://todo: the Đơn tab on "Việc cần làm" (the sign-in screen first when nobody is signed in)
+    func openTodoTab() {
+        DispatchQueue.main.async {
+            guard User.account() != nil else { return }
+            if !(self.window?.rootViewController is TabbarViewController) {
+                self.loadMainUserView(forceMain: true)
+            }
+            guard let tabBar = self.window?.rootViewController as? TabbarViewController else { return }
+            tabBar.selectedIndex = 1
+            (tabBar.selectedViewController as? UINavigationController)?.popToRootViewController(animated: false)
+            OrdersViewController.requestTodo()
+        }
     }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
@@ -87,6 +106,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         checkAppConfig()
         ShopCurrencyStore.refresh() // #1307 cold start with a saved login
         ShareOrderNoteStore.refresh() // #1354 the order-note switch, same read as the currency
+        TodayWidgetSync.shared.start() // #1375 the home-screen widget file follows the app
         
         return true
     }
@@ -266,6 +286,7 @@ extension AppDelegate {
         }
         window.makeKeyAndVisible()
         PushNotificationManager.shared.consumePendingOrderIfNeeded()
+        TodayWidgetSync.shared.refresh() // #1375 signed in just now, or the app started on the main screen
     }
 
     // MARK: - App config (#370)

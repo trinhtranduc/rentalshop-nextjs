@@ -164,7 +164,7 @@ Dòng `.agent/api-changes/LOG.md`: **không thêm** cho bản mặc định (kh�
 
 | | iOS | Android |
 |---|---|---|
-| Widget | Không xin quyền. Thêm entitlement `com.apple.security.application-groups` cho app **và** extension (`group.com.anyrent`, debug `group.com.anyrent.debug` qua build setting `APP_GROUP_ID`). **Chủ shop phải đăng ký App Group trên Apple Developer và tạo lại provisioning của 4 bundle id** (`com.anyrent`, `com.anyrent.debug`, `com.anyrent.liveactivity`, `com.anyrent.debug.liveactivity`) trước khi lên TestFlight. Simulator không cần. | Không xin quyền. WorkManager tự thêm `RECEIVE_BOOT_COMPLETED` (quyền thường, không hộp thoại). |
+| Widget | Không xin quyền. Thêm entitlement `com.apple.security.application-groups` cho app **và** extension (`group.com.anyrent`, debug dùng chung, qua build setting `APP_GROUP_ID`). **Chủ shop phải đăng ký App Group trên Apple Developer và tạo lại provisioning của 4 bundle id** (`com.anyrent`, `com.anyrent.debug`, `com.anyrent.liveactivity`, `com.anyrent.debug.liveactivity`) trước khi lên TestFlight. Simulator không cần. | Không xin quyền. WorkManager tự thêm `RECEIVE_BOOT_COMPLETED` (quyền thường, không hộp thoại). |
 | Google Play Data safety | | Không đổi: widget chỉ hiện dữ liệu app đã có, không thu thập hay chia sẻ thêm. |
 | Lịch (làm sau) | B1: iOS 17 trở lên cửa sổ thêm sự kiện của hệ thống không cần quyền; iOS 15, 16 có thể cần `NSCalendarsUsageDescription` (Not verified, thử trên Simulator iOS 16). B2 cần `NSCalendarsFullAccessUsageDescription` (iOS 17) / `NSCalendarsUsageDescription`. | B1: Intent `ACTION_INSERT` không cần quyền. B2: `READ_CALENDAR` + `WRITE_CALENDAR` (quyền nhạy cảm, khai Data safety). |
 
