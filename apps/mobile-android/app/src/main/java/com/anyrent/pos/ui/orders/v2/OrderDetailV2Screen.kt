@@ -220,7 +220,8 @@ fun OrderDetailV2Screen(
     val role = SessionStore.role
     val hasPlan = DepositPlanLogic.hasPlan(detail?.deposit)
     // Stages nobody collected block the hand-over: collect them first, then hand over (#1199)
-    val unpaidStages = if (hasPlan && detail?.summary?.status.equals("RESERVED", true)) {
+    val handOverBlocked = DepositPlanLogic.blocksHandOver(detail?.deposit, detail?.summary?.status)
+    val unpaidStages = if (handOverBlocked) {
         DepositPlanLogic.unpaidBeforePickup(detail?.deposit?.installments.orEmpty())
     } else {
         emptyList()
@@ -341,6 +342,7 @@ fun OrderDetailV2Screen(
                 DetailBottomBar(
                     detail = detail,
                     primary = actions!!.primary,
+                    handOverBlocked = handOverBlocked,
                     canCancel = actions.canCancel,
                     busy = state.busy || editing,
                     onHandOver = ::requestHandOver,
@@ -963,6 +965,7 @@ private fun DetailBody(
 private fun DetailBottomBar(
     detail: OrderDetail,
     primary: DetailPrimary,
+    handOverBlocked: Boolean,
     canCancel: Boolean,
     busy: Boolean,
     onHandOver: () -> Unit,
@@ -984,16 +987,28 @@ private fun DetailBottomBar(
             // #930: "In" (no icon) next to Giao đồ / Nhận trả; Sửa đơn and Gia hạn are in the ⋯ sheet
             primary == DetailPrimary.HAND_OVER -> {
                 SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
-                val due = OrderDetailLogic.handOver(
-                    detail.summary.totalAmount, detail.summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
-                ).collectNow
-                PrimaryBarButton(
-                    if (due > 0) stringResource(R.string.detail_hand_over_collect, formatMoneyVnd(due))
-                    else stringResource(R.string.detail_hand_over),
-                    Modifier.weight(2f),
-                    !busy,
-                    onHandOver,
-                )
+                if (handOverBlocked) {
+                    // #1380: the API refuses the hand-over until the stage is collected on the deposit card
+                    Text(
+                        stringResource(R.string.detail_stage_unpaid),
+                        Modifier.weight(2f).height(52.dp).wrapContentHeight(Alignment.CenterVertically).testTag("order.detail.stageUnpaid"),
+                        fontSize = DS.TextSize.Body,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DS.Colors.TextMuted,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                } else {
+                    val due = OrderDetailLogic.handOver(
+                        detail.summary.totalAmount, detail.summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
+                    ).collectNow
+                    PrimaryBarButton(
+                        if (due > 0) stringResource(R.string.detail_hand_over_collect, formatMoneyVnd(due))
+                        else stringResource(R.string.detail_hand_over),
+                        Modifier.weight(2f),
+                        !busy,
+                        onHandOver,
+                    )
+                }
             }
             primary == DetailPrimary.TAKE_RETURN -> {
                 SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
