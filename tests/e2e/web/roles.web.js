@@ -305,24 +305,7 @@ async function main() {
       check(id, `${role}: /loyalty on a plan without the feature: upgrade card, no raw error key (errors.PLAN_UPGRADE_REQUIRED)`, !rawBad(t) && /Professional/.test(t), `raw=${rawBad(t) && rawBad(t)[0]} text=${brief(t.slice(-160), 120)}`);
     }
 
-    // ---------------------------------------------------------------- WEB-ROLE-28 English
-    for (const [id, role] of [['WEB-ROLE-28', 'staff'], ['WEB-ROLE-29', 'kho'], ['WEB-ROLE-30', 'merchant']]) {
-      // single session: a new login replaces the vi one, so the vi context goes away first
-      await roles[role].ctx.close().catch(() => {});
-      const s = await F.openSession(browser, acc[role], { lang: 'en' });
-      roles[role] = { ...s, page: await s.ctx.newPage() };
-      const { page } = roles[role];
-      const parts = [];
-      for (const u of ['/dashboard', '/orders', '/products', '/calendar', '/customers']) {
-        await U.go(page, base, u, { wait: 1800 });
-        parts.push(`## ${u}\n${await U.text(page)}`);
-      }
-      const all = parts.join('\n').replace(/Sản phẩm mẫu|Khách hàng Mẫu/g, '');
-      const vi = ['Tổng quan', 'Đơn hàng', 'Sản phẩm', 'Khách hàng', 'Lịch giao trả', 'Cần giao', 'Tất cả đơn'].filter((w) => all.includes(w));
-      check(id, `${role}: English: Overview / Orders / Products visible, no Vietnamese menu word left, no raw key`, /Overview/.test(all) && /Orders/.test(all) && /Products/.test(all) && vi.length === 0 && !rawBad(all), `vi=${vi} raw=${rawBad(all) && rawBad(all)[0]}`);
-    }
-
-    // ---------------------------------------------------------------- WEB-ROLE-31..33 bank accounts: only the owner edits (#1319)
+    // ---------------------------------------------------------------- WEB-ROLE-31..35 bank accounts: only the owner edits (#1319); before WEB-ROLE-28, whose new logins replace these sessions
     {
       const managerEmail = `${tag}.manager@example.com`;
       const made = await F.raw(M, 'POST', '/api/users', { email: managerEmail, password: acc.merchant.password, firstName: 'Manager', lastName: tag, role: 'OUTLET_ADMIN', outletId, phone: F.uniquePhone() });
@@ -355,10 +338,29 @@ async function main() {
       const payment = await U.text(page);
       check('WEB-ROLE-34', 'manager: Cài đặt > Thu tiền lists the account with no add, edit or delete control', /NGUYEN VAN A/.test(payment) && !paymentButtons.some((b) => /Thêm tài khoản|^Sửa$|^Xoá$|^Xóa$/.test(b.trim())) && (await page.locator('[role=dialog] table tbody tr td:last-child button').count()) === 0, `buttons=${paymentButtons.join('|').slice(0, 300)}`);
       await F.raw(M, 'DELETE', `${bankBase}/${added.body.data.id}`);
+      const qrOn = await F.raw(M, 'PUT', `/api/outlets?outletId=${outletId}`, { printBankQr: true }); // the hint only shows with the bill QR on
       await U.go(page, base, '/dashboard?settings=receipt', { wait: 2500 });
       const receipt = await U.text(page);
       const addLinks = await page.locator('[role=dialog] button, [role=dialog] a').allInnerTexts();
-      check('WEB-ROLE-35', 'manager: In & phiếu offers no "Thêm tài khoản ngân hàng" when the branch has no account', !addLinks.some((b) => /Thêm tài khoản ngân hàng/.test(b)), `${addLinks.join('|').slice(0, 300)} text=${brief(receipt.slice(-160), 160)}`);
+      check('WEB-ROLE-35', 'manager: In & phiếu offers no "Thêm tài khoản ngân hàng" when the branch has no account', qrOn.ok && /Chi nhánh chưa có tài khoản ngân hàng/.test(receipt) && !addLinks.some((b) => /Thêm tài khoản ngân hàng/.test(b)), `qr=${qrOn.status} ${addLinks.join('|').slice(0, 300)} text=${brief(receipt.slice(-160), 160)}`);
+      await F.raw(M, 'PUT', `/api/outlets?outletId=${outletId}`, { printBankQr: false });
+    }
+
+    // ---------------------------------------------------------------- WEB-ROLE-28 English
+    for (const [id, role] of [['WEB-ROLE-28', 'staff'], ['WEB-ROLE-29', 'kho'], ['WEB-ROLE-30', 'merchant']]) {
+      // single session: a new login replaces the vi one, so the vi context goes away first
+      await roles[role].ctx.close().catch(() => {});
+      const s = await F.openSession(browser, acc[role], { lang: 'en' });
+      roles[role] = { ...s, page: await s.ctx.newPage() };
+      const { page } = roles[role];
+      const parts = [];
+      for (const u of ['/dashboard', '/orders', '/products', '/calendar', '/customers']) {
+        await U.go(page, base, u, { wait: 1800 });
+        parts.push(`## ${u}\n${await U.text(page)}`);
+      }
+      const all = parts.join('\n').replace(/Sản phẩm mẫu|Khách hàng Mẫu/g, '');
+      const vi = ['Tổng quan', 'Đơn hàng', 'Sản phẩm', 'Khách hàng', 'Lịch giao trả', 'Cần giao', 'Tất cả đơn'].filter((w) => all.includes(w));
+      check(id, `${role}: English: Overview / Orders / Products visible, no Vietnamese menu word left, no raw key`, /Overview/.test(all) && /Orders/.test(all) && /Products/.test(all) && vi.length === 0 && !rawBad(all), `vi=${vi} raw=${rawBad(all) && rawBad(all)[0]}`);
     }
 
     // ---------------------------------------------------------------- WEB-DASH: no orders, custom range across months
