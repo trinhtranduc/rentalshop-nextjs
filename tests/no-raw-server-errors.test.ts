@@ -228,7 +228,12 @@ const ALLOWED: Array<{ file: string; text: string; why: string }> = [
   { file: 'apps/api/app/api/products/searchByImage/route.ts', text: 'error.message', why: 'message is only logged and tested for "timeout"' },
   { file: 'apps/api/app/api/public/[tenantKey]/search-by-image/route.ts', text: 'err?.message', why: 'message is only logged and tested for "timeout"' },
   { file: 'apps/api/app/api/public/[tenantKey]/search-by-image/route.ts', text: 'err.message', why: 'message is only logged and tested for "timeout"' },
+  { file: 'apps/api/app/api/products/searchByImage/route.ts', text: 'String(error)', why: 'message is only logged and tested for "timeout"' },
+  { file: 'apps/api/app/api/public/[tenantKey]/search-by-image/route.ts', text: 'String(error)', why: 'message is only logged and tested for "timeout"' },
+  { file: 'apps/api/app/api/products/route.ts', text: 'error.message', why: 'ResponseBuilder.error(error.message) sits inside `if (error.message === <known code>)`' },
+  { file: 'apps/api/app/api/auth/helper/page.tsx', text: 'error.message', why: 'a browser page showing its own fetch failure, not a server response' },
   { file: 'apps/api/lib/route-wrapper.ts', text: 'error.message', why: 'errorMessage goes to the request log only; the response is a fixed sentence' },
+  { file: 'apps/api/lib/route-wrapper.ts', text: 'String(error)', why: 'errorMessage goes to the request log only; the response is a fixed sentence' },
 ];
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -243,7 +248,7 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const READS_ONLY = new Set(['includes', 'startsWith', 'endsWith', 'match', 'test', 'toLowerCase', 'toUpperCase', 'slice', 'trim', 'split']);
+const TESTS_TEXT = new Set(['includes', 'startsWith', 'endsWith', 'match', 'test']);
 const COMPARISON = new Set([
   ts.SyntaxKind.EqualsEqualsEqualsToken,
   ts.SyntaxKind.ExclamationEqualsEqualsToken,
@@ -254,14 +259,12 @@ const COMPARISON = new Set([
 function isHarmlessUse(node: ts.Node): boolean {
   for (let cur: ts.Node = node; cur.parent; cur = cur.parent) {
     const parent = cur.parent;
+    // error.message.includes('x') tests the text; error.message.slice(n) would pass it on
+    if (ts.isPropertyAccessExpression(parent) && parent.expression === cur && TESTS_TEXT.has(parent.name.text)) return true;
     if (ts.isCallExpression(parent)) {
       const callee = parent.expression.getText();
       if (/^(console|logger|log)\./.test(callee)) return true;
-      if (ts.isPropertyAccessExpression(parent.expression) && parent.expression.expression === cur && READS_ONLY.has(parent.expression.name.text)) {
-        // error.message.includes('x') is a read, error.message.slice(n) is not unless it is itself only read
-        if (['includes', 'startsWith', 'endsWith', 'match', 'test'].includes(parent.expression.name.text)) return true;
-      }
-      if (ts.isArrayLiteralExpression(parent.expression) || /\.includes$/.test(callee)) return true;
+      if (/\.includes$/.test(callee)) return true;
     }
     if (ts.isBinaryExpression(parent) && COMPARISON.has(parent.operatorToken.kind)) return true;
     if (ts.isTypeOfExpression(parent)) return true;
