@@ -5319,7 +5319,7 @@ final class AnyRentE2ETests: XCTestCase {
         handOver.tap()
         sleep(2)
         e2e.shot("66a-handover-blocked")
-        XCTAssertTrue(textStarting(["Còn giai đoạn cọc chưa thu", "Deposit stages not collected"]).exists, "the unpaid stages sheet shows")
+        XCTAssertTrue(textStarting(["Đợt cọc chưa thu", "Uncollected deposit stages"]).exists, "the unpaid stages sheet shows")
         e2e.button(["Thu giai đoạn 2", "Collect stage 2"]).tap()
         sleep(2)
         e2e.shot("66b-collect-sheet")
