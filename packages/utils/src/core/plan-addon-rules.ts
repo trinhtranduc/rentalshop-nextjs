@@ -30,6 +30,15 @@ export function isMultiBranchPlan(limits: unknown): boolean {
   return outlets !== null && (outlets === -1 || outlets > 1);
 }
 
+/**
+ * #782: the plan is Basic. `Plan` has no tier column and `limits.allowWebAccess` does not separate Basic (true in
+ * production, `apps/client/lib/pricing-format.ts`), so the name decides, by the same rule as the RevenueCat webhook:
+ * contains "basic", any case. A plan renamed without that word is not recognised.
+ */
+export function isBasicPlanName(name: string | null | undefined): boolean {
+  return (name || '').toLowerCase().includes('basic');
+}
+
 interface AddonOutletsState {
   outlets?: number | null;
   isActive?: boolean | null;

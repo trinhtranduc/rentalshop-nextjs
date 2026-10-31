@@ -62,11 +62,19 @@ Each implementation PR adds the `## API compatibility` table and a row in `.agen
 3. **Order blocks.** Orders are counted all-time, not per month (`entity-counts.ts`: every non-deleted order). A +500 block is capacity billed monthly, and once used it cannot be removed (`CANNOT_DELETE_ADDON_LIMIT_EXCEEDED`). Recommended: keep this and tell shops. Alternative: count per month, a platform-wide rule change on its own issue.
 4. **Who can buy loyalty.** Pro and Enterprise include it, so only Trial and Basic can buy (`packages/constants/src/subscription.ts`). Basic has no web, and rates are set only on web `/loyalty`. Android has no earn or redeem screen. Recommended: sell it with a warning in the dialog, and put phone settings on #1309. Alternative: do not sell to Basic until then, which leaves almost no buyers.
 
+**Owner's answers, 2026-10-31 (final, these override the recommendations above):**
+1. Price = list price per unit × typed amount. Admin never types money.
+2. An add-on starts now, is charged for the days left, and renews or ends with the shop's plan. No separate end date.
+3. Order blocks stay all-time capacity, not monthly, and cannot be removed once used. Shown plainly to admin in the dialog and to the shop.
+4. Loyalty is **not** sold to Basic until it can be set up on the phone: hidden from the choices with one line why, and refused by the API (`ADDON_LOYALTY_NOT_FOR_BASIC`). Pro and Enterprise include it, so in practice only Trial can buy.
+
+A plan is Basic when its `name` contains "basic", any case (`isBasicPlanName`). `Plan` has no tier column; `limits.allowWebAccess` does not separate Basic (true in production) and Trial has no web feature either; this is the rule the RevenueCat webhook already uses (`apps/api/app/api/webhooks/revenuecat/route.ts:257-258`). A plan renamed without that word would not be recognised.
+
 ## 6. Not in scope
 
 Merchant self-purchase, payment providers, forecasts, a limit screen on the phone (the phone gets the higher limit at once, with no display), per-shop discounts.
 
-**Found, not fixed here (separate issue recommended):** `POST /api/products/bulk-import`, `POST /api/merchants/[id]/products` (`route.ts:131`) and `POST /api/merchants/[id]/orders` (`route.ts:214`) do not call the limit check, so a shop can pass its limit through them. Installed apps do not call these on `main-real`. Adding the check is a rule change with its own review.
+**Found, not fixed here (#1396):** `POST /api/products/bulk-import`, `POST /api/merchants/[id]/products` (`route.ts:131`) and `POST /api/merchants/[id]/orders` (`route.ts:214`) do not call the limit check, so a shop can pass its limit through them. Installed apps do not call these on `main-real`. Adding the check is a rule change with its own review.
 
 ## 7. Not verified
 

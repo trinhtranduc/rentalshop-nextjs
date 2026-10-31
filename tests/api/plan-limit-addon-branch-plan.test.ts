@@ -180,10 +180,11 @@ describe('admin add-on dialog shows the translated refusal (#826)', () => {
     }
   });
 
-  it('sells outlet add-ons on any plan and can enable loyalty (#1187)', () => {
+  it('sells outlet add-ons on any plan; the free loyalty button is gone, "Tắt" stays (#1187, #782)', () => {
     expect(page).not.toContain("p.limitKind !== 'outlets' || data?.multiBranchPlan");
     expect(page).toContain('merchantModulesApi');
-    expect(page).toContain('enable-loyalty');
+    expect(page).not.toContain('enable-loyalty');
+    expect(page).toContain('disable-loyalty');
     const pricesPage = fs.readFileSync(
       path.resolve(__dirname, '../../apps/admin/app/plans/addon-prices/page.tsx'),
       'utf8'

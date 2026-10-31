@@ -1,6 +1,6 @@
 # Plan (after the owner's "chốt")
 
-0. Reopen #782 with the scope of `spec.md` section 3 and the compat table. Branch `feat/782-addon-amount` from `origin/dev`. Drop nothing from `feat/782-modules` and do not merge it.
+0. Reopen #782 with the scope of `spec.md` section 3 and the compat table. Branch `feat/782-addon-gaps` from `origin/dev`. Drop nothing from `feat/782-modules` and do not merge it.
 1. Failing tests, under `TZ=UTC` and `TZ=Asia/Ho_Chi_Minh`:
    - `packSize = 1`, typed 100: limit +100, quote, renewal keeps +100, more and fewer via `packs`, 100,000 accepted.
    - Loyalty purchase sets `isActive`, in `tests/packages/database/loyalty-addon-db.test.ts` and `tests/e2e/business/loyalty-addon.e2e.test.js` (drop the manual SQL in `startProgram`).
