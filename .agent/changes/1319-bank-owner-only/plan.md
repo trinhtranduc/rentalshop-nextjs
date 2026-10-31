@@ -1,6 +1,6 @@
 # Plan (#1319)
 
-Status: in-progress.
+Status: in-progress (PR open).
 
 1. Đăng rà app cũ lên issue (xong, trước khi code).
 2. Test trước, commit khi còn đỏ: `tests/api/bank-accounts-owner-only.test.ts`, `tests/packages/auth`, `SS-BNK` trong `settings-sync.e2e.test.js`, `BankQRTests.swift`, `BankAccountRulesTest.kt`. Dòng LOG `planned`.
