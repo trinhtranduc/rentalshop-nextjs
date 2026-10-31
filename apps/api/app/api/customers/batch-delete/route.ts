@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError, clientSafeErrorText } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 import { z } from 'zod';
 
@@ -204,7 +204,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
               errors.push({
                 id: customer.id,
                 name: customer.name,
-                error: error.message || 'Failed to soft delete customer',
+                error: clientSafeErrorText(error, 'Failed to soft delete customer'),
               });
               throw error;
             }
@@ -221,7 +221,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
               errors.push({
                 id: customer.id,
                 name: customer.name,
-                error: error.message || 'Failed to hard delete customer',
+                error: clientSafeErrorText(error, 'Failed to hard delete customer'),
               });
               throw error;
             }

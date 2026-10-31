@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       success: false,
       code: 'SYNC_CHECK_FAILED',
         message: 'Sync check failed',
-      error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
+      error: 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

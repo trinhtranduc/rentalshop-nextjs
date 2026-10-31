@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { USER_ROLE } from '@rentalshop/constants';
-import { ResponseBuilder } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { LoyaltyPlanGateError, assertLoyaltyFeature } from '@rentalshop/loyalty';
 
 export async function resolveLoyaltyMerchantId(
@@ -31,6 +31,12 @@ export function loyaltyErrorResponse(error: unknown) {
   }
 
   const message = error instanceof Error ? error.message : 'LOYALTY_ERROR';
+  // #1408 Helpers throw business codes (new Error('INSUFFICIENT_POINTS')). Anything else is exception text, not a code.
+  if (!/^[A-Z][A-Z0-9_]*$/.test(message)) {
+    const { response, statusCode } = handleApiError(error);
+    return NextResponse.json(response, { status: statusCode });
+  }
+
   const status =
     message === 'MERCHANT_ASSOCIATION_REQUIRED' ||
     message === 'MERCHANT_ID_REQUIRED'

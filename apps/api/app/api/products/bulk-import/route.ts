@@ -4,8 +4,7 @@ import { db, prisma } from '@rentalshop/database';
 import { 
   handleApiError, 
   ResponseBuilder,
-  productCreateSchema
-} from '@rentalshop/utils';
+  productCreateSchema, clientSafeErrorText, isTechnicalErrorText } from '@rentalshop/utils';
 import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { z } from 'zod';
 
@@ -45,7 +44,7 @@ const TECHNICAL_ERROR_KEYWORDS = [
  * Check if error message is technical (should be hidden from users)
  */
 function isTechnicalError(message: string): boolean {
-  return TECHNICAL_ERROR_KEYWORDS.some(keyword => message.includes(keyword));
+  return isTechnicalErrorText(message) || TECHNICAL_ERROR_KEYWORDS.some(keyword => message.includes(keyword));
 }
 
 /**
@@ -152,7 +151,7 @@ function formatPrismaError(error: any, productData?: any): string {
     return 'Invalid data format or missing required information';
   }
 
-  return message;
+  return clientSafeErrorText(error, 'Invalid data format or missing required information');
 }
 
 /**
@@ -588,7 +587,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           const match = transactionError.message.match(/Row (\d+): (.+)/);
           if (match) {
             const rowNumber = parseInt(match[1]);
-            const rowError = match[2];
+            const rowError = clientSafeErrorText({ message: match[2] }, errorMessage);
             
             return NextResponse.json(
               ResponseBuilder.success('PRODUCTS_IMPORTED', {
@@ -602,9 +601,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
         }
         
         // Use user-friendly error if not technical
-        if (!isTechnicalError(transactionError.message)) {
-          errorMessage = transactionError.message;
-        }
+        errorMessage = clientSafeErrorText(transactionError, errorMessage);
       }
       
       console.error('Transaction error in bulk import:', {

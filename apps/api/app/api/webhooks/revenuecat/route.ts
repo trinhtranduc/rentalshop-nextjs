@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[RevenueCat Webhook] Error:', error.message, error.stack);
     // Return 200 to prevent RevenueCat from retrying (we log the error)
-    return NextResponse.json({ status: 'error', message: error.message }, { status: 200 });
+    return NextResponse.json({ status: 'error', message: 'Webhook processing failed' }, { status: 200 });
   }
 }
 

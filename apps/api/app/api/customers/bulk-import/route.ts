@@ -4,8 +4,7 @@ import { db, prisma } from '@rentalshop/database';
 import { 
   handleApiError, 
   ResponseBuilder,
-  customerCreateSchema
-} from '@rentalshop/utils';
+  customerCreateSchema, clientSafeErrorText } from '@rentalshop/utils';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
 
@@ -156,31 +155,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
             });
             errorMessage = zodErrors.join('; ');
           } else {
-            // Check if it's a technical error or user-friendly
-            const technicalErrors = [
-              'Invalid value provided',
-              'Expected',
-              'prisma',
-              'Prisma',
-              'invocation',
-              'route.js'
-            ];
-            
-            const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
-            
-            if (isTechnicalError) {
-              // Technical error - use generic message but include field info if available
-              errorMessage = 'Invalid data format or missing required information';
-              
-              // Try to extract field name from error message
-              const fieldMatch = error.message.match(/(?:at|for|field)\s+["']?(\w+)["']?/i);
-              if (fieldMatch) {
-                errorMessage = `Invalid ${fieldMatch[1]} format or missing required information`;
-              }
-            } else {
-              // User-friendly error - use as is
-              errorMessage = error.message;
-            }
+            // #1408 Technical text (Prisma, SQL, paths) never reaches the row report
+            errorMessage = clientSafeErrorText(error, 'Invalid data format or missing required information');
           }
         }
         
@@ -409,26 +385,8 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
             if (error.code === 'P2003') {
               // Foreign key constraint violation
               errorMessage = 'Invalid merchant reference';
-            } else if (error.message) {
-              // Check if it's a technical error or user-friendly
-              const technicalErrors = [
-                'Invalid value provided',
-                'Expected',
-                'prisma',
-                'Prisma',
-                'invocation',
-                'route.js'
-              ];
-              
-              const isTechnicalError = technicalErrors.some(tech => error.message.includes(tech));
-              
-              if (isTechnicalError) {
-                // Technical error - use generic message
-                errorMessage = 'Invalid data format or missing required information';
-              } else {
-                // User-friendly error - use as is
-                errorMessage = error.message;
-              }
+            } else {
+              errorMessage = clientSafeErrorText(error, 'Invalid data format or missing required information');
             }
             
             // Log technical details for debugging
@@ -471,7 +429,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           const match = transactionError.message.match(/Row (\d+): (.+)/);
           if (match) {
             const rowNumber = parseInt(match[1]);
-            const rowError = match[2];
+            const rowError = clientSafeErrorText({ message: match[2] }, errorMessage);
             
             return NextResponse.json(
               ResponseBuilder.success('CUSTOMERS_IMPORTED', {
@@ -484,21 +442,7 @@ export const POST = withPermissions(['customers.manage'])(async (request, { user
           }
         }
         
-        // Check if it's a technical error or user-friendly
-        const technicalErrors = [
-          'Invalid value provided',
-          'Expected',
-          'prisma',
-          'Prisma',
-          'invocation',
-          'route.js'
-        ];
-        
-        const isTechnicalError = technicalErrors.some(tech => transactionError.message.includes(tech));
-        
-        if (!isTechnicalError) {
-          errorMessage = transactionError.message;
-        }
+        errorMessage = clientSafeErrorText(transactionError, errorMessage);
       }
       
       // Log technical details for debugging

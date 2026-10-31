@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { db } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError, downloadProductImagesForSync } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError, downloadProductImagesForSync, clientSafeErrorText } from '@rentalshop/utils';
 import { uploadToS3 } from '@rentalshop/utils/server';
 import { USER_ROLE, ORDER_STATUS } from '@rentalshop/constants';
 import { validateImportData } from '@rentalshop/utils';
@@ -259,7 +259,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
       console.error('Error in background import process:', error);
       db.sync.updateStatus(syncSession.id, {
         status: 'FAILED',
-        errorLog: [{ error: error.message, timestamp: new Date() }]
+        errorLog: [{ error: clientSafeErrorText(error, 'Unknown error'), timestamp: new Date() }]
       });
     });
 
@@ -384,7 +384,7 @@ async function processImportData(
             errorLog.push({
               entity: 'customer',
               row: i + batch.indexOf(customerData),
-              error: error.message
+              error: clientSafeErrorText(error, 'Unknown error')
             });
           }
         }
@@ -461,7 +461,7 @@ async function processImportData(
                         errorLog.push({
                           entity: 'product',
                           row: i + batch.indexOf(productData),
-                          error: `Image upload failed: ${uploadError.message}`
+                          error: `Image upload failed: ${clientSafeErrorText(uploadError, 'storage error')}`
                         });
                       }
                     }
@@ -484,7 +484,7 @@ async function processImportData(
                 errorLog.push({
                   entity: 'product',
                   row: i + batch.indexOf(productData),
-                  error: `Image processing failed: ${imageError.message}`
+                  error: `Image processing failed: ${clientSafeErrorText(imageError, 'processing error')}`
                 });
                 // Continue with product creation even if images fail
               }
@@ -529,7 +529,7 @@ async function processImportData(
             errorLog.push({
               entity: 'product',
               row: i + batch.indexOf(productData),
-              error: error.message
+              error: clientSafeErrorText(error, 'Unknown error')
             });
           }
         }
@@ -657,7 +657,7 @@ async function processImportData(
               errorLog.push({
                 entity: 'order',
                 row: i + batch.indexOf(orderData),
-                error: error.message
+                error: clientSafeErrorText(error, 'Unknown error')
               });
             }
           }
@@ -682,7 +682,7 @@ async function processImportData(
       stats,
       errorLog: [
         ...errorLog,
-        { error: error.message, timestamp: new Date() }
+        { error: clientSafeErrorText(error, 'Unknown error'), timestamp: new Date() }
       ]
     });
   }

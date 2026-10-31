@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { OldServerSyncService, downloadProductImagesForSync, transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils';
+import { OldServerSyncService, downloadProductImagesForSync, transformCustomer, transformProduct, transformOrder, clientSafeErrorText } from '@rentalshop/utils';
 import { db } from '@rentalshop/database';
 import { generateOrderNumber } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
@@ -206,7 +206,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
               stats.customers.created++;
             } catch (error: any) {
               stats.customers.failed++;
-              const errorEntry = { entity: 'customer', index: i, error: error.message, data: oldCustomer };
+              const errorEntry = { entity: 'customer', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldCustomer };
               errorLog.push(errorEntry);
               
               await db.sync.updateStatus(sessionId, {
@@ -224,7 +224,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                   lastError: {
                     entity: 'customer',
                     index: i,
-                    error: error.message,
+                    error: clientSafeErrorText(error, 'Unknown error'),
                     timestamp: new Date()
                   }
                 },
@@ -313,7 +313,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
               stats.products.created++;
             } catch (error: any) {
               stats.products.failed++;
-              const errorEntry = { entity: 'product', index: i, error: error.message, data: oldProduct };
+              const errorEntry = { entity: 'product', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldProduct };
               errorLog.push(errorEntry);
               
               await db.sync.updateStatus(sessionId, {
@@ -331,7 +331,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                   lastError: {
                     entity: 'product',
                     index: i,
-                    error: error.message,
+                    error: clientSafeErrorText(error, 'Unknown error'),
                     timestamp: new Date()
                   }
                 },
@@ -467,7 +467,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                 stats.orders.created++;
               } catch (error: any) {
                 stats.orders.failed++;
-                const errorEntry = { entity: 'order', index: i, error: error.message, data: oldOrder };
+                const errorEntry = { entity: 'order', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldOrder };
                 errorLog.push(errorEntry);
                 
                 await db.sync.updateStatus(sessionId, {
@@ -485,7 +485,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                     lastError: {
                       entity: 'order',
                       index: i,
-                      error: error.message,
+                      error: clientSafeErrorText(error, 'Unknown error'),
                       timestamp: new Date()
                     }
                   },
@@ -542,7 +542,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         stats,
         errorLog: [
           ...errorLog, 
-          { error: error.message || 'Unknown error', timestamp: new Date() }
+          { error: clientSafeErrorText(error, 'Unknown error'), timestamp: new Date() }
         ]
       });
 

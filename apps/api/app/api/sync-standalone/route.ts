@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthRoles } from '@rentalshop/auth/server';
-import { OldServerSyncService, downloadProductImagesForSync, imagesToBase64, transformCustomer, transformProduct, transformOrder } from '@rentalshop/utils';
+import { OldServerSyncService, downloadProductImagesForSync, imagesToBase64, transformCustomer, transformProduct, transformOrder, clientSafeErrorText } from '@rentalshop/utils';
 import { db } from '@rentalshop/database';
 import { generateOrderNumber } from '@rentalshop/database';
 import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
@@ -72,7 +72,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         oldServerData.customers.error = customersResult.error || 'Failed to fetch customers';
       }
     } catch (error: any) {
-      oldServerData.customers.error = error.message || 'Unknown error fetching customers';
+      oldServerData.customers.error = clientSafeErrorText(error, 'Unknown error fetching customers');
     }
 
     // Fetch products - GET doesn't have search params, fetch all
@@ -110,7 +110,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
               originalUrls: [],
               downloadedImages: [],
               readyForUpload: false,
-              errors: [{ url: 'unknown', error: error.message || 'Unknown error' }]
+              errors: [{ url: 'unknown', error: clientSafeErrorText(error, 'Unknown error') }]
             };
           }
         }
@@ -118,7 +118,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         oldServerData.products.error = productsResult.error || 'Failed to fetch products';
       }
     } catch (error: any) {
-      oldServerData.products.error = error.message || 'Unknown error fetching products';
+      oldServerData.products.error = clientSafeErrorText(error, 'Unknown error fetching products');
     }
 
     // Fetch orders
@@ -137,7 +137,7 @@ export const GET = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest,
         oldServerData.orders.error = ordersResult.error || 'Failed to fetch orders';
       }
     } catch (error: any) {
-      oldServerData.orders.error = error.message || 'Unknown error fetching orders';
+      oldServerData.orders.error = clientSafeErrorText(error, 'Unknown error fetching orders');
     }
 
     // Get all logs from sync service
@@ -285,7 +285,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         } catch (error: any) {
           preview.errors.push({
             entity: 'customers',
-            error: error.message || 'Unknown error'
+            error: clientSafeErrorText(error, 'Unknown error')
           });
         }
       }
@@ -323,7 +323,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         } catch (error: any) {
           preview.errors.push({
             entity: 'products',
-            error: error.message || 'Unknown error'
+            error: clientSafeErrorText(error, 'Unknown error')
           });
         }
       }
@@ -358,7 +358,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
         } catch (error: any) {
           preview.errors.push({
             entity: 'orders',
-            error: error.message || 'Unknown error'
+            error: clientSafeErrorText(error, 'Unknown error')
           });
         }
       }
@@ -524,7 +524,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                 stats.customers.created++;
               } catch (error: any) {
                 stats.customers.failed++;
-                const errorEntry = { entity: 'customer', index: i, error: error.message, data: oldCustomer };
+                const errorEntry = { entity: 'customer', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldCustomer };
                 errorLog.push(errorEntry);
                 
                 // Save error to progress for resume
@@ -543,7 +543,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                     lastError: {
                       entity: 'customer',
                       index: i,
-                      error: error.message,
+                      error: clientSafeErrorText(error, 'Unknown error'),
                       timestamp: new Date()
                     }
                   },
@@ -636,7 +636,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                 stats.products.created++;
               } catch (error: any) {
                 stats.products.failed++;
-                const errorEntry = { entity: 'product', index: i, error: error.message, data: oldProduct };
+                const errorEntry = { entity: 'product', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldProduct };
                 errorLog.push(errorEntry);
                 
                 // Save error to progress for resume
@@ -655,7 +655,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                     lastError: {
                       entity: 'product',
                       index: i,
-                      error: error.message,
+                      error: clientSafeErrorText(error, 'Unknown error'),
                       timestamp: new Date()
                     }
                   },
@@ -791,7 +791,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                   stats.orders.created++;
                 } catch (error: any) {
                   stats.orders.failed++;
-                  const errorEntry = { entity: 'order', index: i, error: error.message, data: oldOrder };
+                  const errorEntry = { entity: 'order', index: i, error: clientSafeErrorText(error, 'Unknown error'), data: oldOrder };
                   errorLog.push(errorEntry);
                   
                   // Save error to progress for resume
@@ -810,7 +810,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
                       lastError: {
                         entity: 'order',
                         index: i,
-                        error: error.message,
+                        error: clientSafeErrorText(error, 'Unknown error'),
                         timestamp: new Date()
                       }
                     },
@@ -869,7 +869,7 @@ export const POST = withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest
           stats,
           errorLog: [
             ...errorLog, 
-            { error: error.message || 'Unknown error', timestamp: new Date() }
+            { error: clientSafeErrorText(error, 'Unknown error'), timestamp: new Date() }
           ]
         });
 
