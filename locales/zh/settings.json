@@ -1,5 +1,9 @@
 {
   "web": {
+    "subscription": {
+      "includesAddon": "含附加项 +{count}",
+      "ordersAddonNote": "订单按累计数量计算，不会每月重置。已使用的额外订单无法移除。"
+    },
     "onlineBooking": {
       "title": "接受在线预订",
       "hint": "顾客在您的店铺页面预订，您确认后才会成为订单。",

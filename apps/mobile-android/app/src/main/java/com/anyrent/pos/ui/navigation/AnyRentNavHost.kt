@@ -1065,6 +1065,13 @@ private fun MainTabs(
                         onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
                         onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
                         onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
+                        onOpenHome = {
+                            tabNav.navigate(MainTab.Home.route) {
+                                popUpTo(tabNav.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                         onLoggedOut = {
                             rootNavController.navigate(Routes.Login) {
                                 popUpTo(Routes.Main) { inclusive = true }

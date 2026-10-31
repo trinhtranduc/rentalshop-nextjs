@@ -204,6 +204,7 @@ final class ProductFormViewController: BaseViewControler {
 
         // Name, category, barcode
         configure(nameField, placeholder: "products.form.namePlaceholder".localized(), numeric: false)
+        nameField.accessibilityIdentifier = "product.form.name"
         form.addArrangedSubview(field(title: "products.form.name".localized(), required: true, input: nameField))
         categoryRow.addTarget(self, action: #selector(pickCategory), for: .touchUpInside)
         form.addArrangedSubview(categoryRow)

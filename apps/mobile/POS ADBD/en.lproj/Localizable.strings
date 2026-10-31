@@ -2027,7 +2027,6 @@
 "products.detail.deleteMessage" = "“%@” will no longer be in the product list. Past orders keep its name.";
 "products.detail.deleted" = "Product deleted";
 "order.extend" = "Extend";
-"order.extend.title" = "Extend rental";
 "order.extend.current" = "Due back %@";
 "order.extend.extraDay" = "1 more day";
 "order.extend.extraDays" = "%d more days";
@@ -2897,15 +2896,12 @@
 "deposit.card.paidDetail" = "%@%% of order · %@";
 "deposit.card.dueDetail" = "%@%% of order · due %@";
 "deposit.card.restDetail" = "At hand-over · %@";
-"deposit.collect.title" = "Collect stage %d";
 "deposit.collect.confirm" = "Collect %@";
-"deposit.unpaid.title" = "Deposit stages not collected yet";
 "deposit.unpaid.message" = "Collect these stages before handing over the items.";
 "deposit.unpaid.row" = "Stage %d · %@";
 "deposit.void.title" = "Undo the collection of stage %d?";
 "deposit.void.message" = "The %@ collected is cancelled and the stage is open again. This is logged.";
 "deposit.void.confirm" = "Undo collection";
-"deposit.cancel.title" = "Cancel order #%@?";
 "deposit.cancel.policy" = "Shop policy: %@";
 "deposit.cancel.paid" = "Customer paid";
 "deposit.cancel.kept" = "Shop keeps";
@@ -3020,7 +3016,6 @@
 "order.collateral.card" = "Papers & collateral";
 "order.collateral.edit" = "Edit";
 "order.collateral.none" = "Not entered";
-"order.collateral.editTitle" = "Edit papers & collateral";
 "order.collateral.editWarning" = "Changing the collateral changes the amount to give back at return";
 "order.collateral.papersRow" = "Papers";
 "order.detail.section.payment" = "PAYMENT";
@@ -3164,3 +3159,23 @@
 "onboarding.v2.today.amount3" = "$35";
 "onboarding.v2.today.collect" = "to collect %@";
 "onboarding.v2.today.refund" = "refund $100";
+/* #1395 titles of the order-detail sheets */
+"order.sheetTitle.actions" = "Order actions";
+"order.sheetTitle.handOver" = "Hand over to customer";
+"order.sheetTitle.return" = "Take back items";
+"order.sheetTitle.extend" = "Extend order";
+"order.sheetTitle.collateral" = "Papers & collateral";
+"order.sheetTitle.collect" = "Collect deposit";
+"order.sheetTitle.unpaid" = "Uncollected deposit stages";
+"order.sheetTitle.cancel" = "Cancel order";
+"firstRunGuide.title" = "Get started: 3 steps";
+"firstRunGuide.step.product" = "Add your first product";
+"firstRunGuide.step.customer" = "Add a customer";
+"firstRunGuide.step.order" = "Create your first order";
+"firstRunGuide.done" = "Done";
+"firstRunGuide.skip" = "Skip";
+"firstRunGuide.close" = "Close";
+"firstRunGuide.skipped" = "Hidden. Reopen in Settings › Getting started";
+"firstRunGuide.settings.row" = "Getting started";
+"firstRunGuide.finish.title" = "First order done";
+"firstRunGuide.finish.body" = "It is now in My Order and Calendar.";

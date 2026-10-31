@@ -9,11 +9,20 @@
 import UIKit
 import SnapKit
 import Kingfisher
+import IQKeyboardManagerSwift
 
 final class OrderHandOverSheetViewController: UIViewController, UITextFieldDelegate {
     enum Mode {
         case handOver
         case takeReturn
+
+        /// #1395 the sheet's title; the bottom bar buttons keep "Giao đồ" / "Nhận trả"
+        var titleKey: String {
+            switch self {
+            case .handOver: return "order.sheetTitle.handOver"
+            case .takeReturn: return "order.sheetTitle.return"
+            }
+        }
     }
 
     /// lateFee, damageFee (return sheet)
@@ -48,10 +57,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         super.viewDidLoad()
         view.backgroundColor = DS.Color.surface
 
-        let titleLabel = UILabel()
-        titleLabel.text = mode == .handOver ? "Hand over items".localized() : "Take back items".localized()
-        titleLabel.font = Utils.boldFont(size: 20)
-        titleLabel.textColor = DS.Color.text
+        let titleLabel = V2.sheetTitle(mode.titleKey.localized())
 
         let subtitle = UILabel()
         subtitle.font = Utils.regularFont(size: DS.TextSize.body)
@@ -146,16 +152,17 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         view.addSubview(scroll)
         view.addSubview(buttons)
         content.snp.makeConstraints { make in
-            make.top.bottom.equalTo(scroll.contentLayoutGuide).inset(DS.Spacing.lg)
-            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(DS.Spacing.lg)
+            make.top.equalTo(scroll.contentLayoutGuide).offset(V2.sheetTop)
+            make.bottom.equalTo(scroll.contentLayoutGuide).offset(-DS.Spacing.lg)
+            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(V2.sheetSide)
         }
         scroll.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.sm)
+            make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(buttons.snp.top).offset(-DS.Spacing.sm)
         }
         buttons.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalToSuperview().inset(V2.sheetSide)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-DS.Spacing.md)
         }
         KeyboardDoneBar.attach([lateFeeField, damageFeeField, securityDepositField])
@@ -372,6 +379,7 @@ final class CollateralEditSheetViewController: UIViewController, UITextFieldDele
     private let detail: OrderDetail
     private let papersField = UITextField()
     private let depositField = UITextField()
+    private var keyboardManagerWasEnabled = true
 
     init(detail: OrderDetail) {
         self.detail = detail
@@ -386,10 +394,7 @@ final class CollateralEditSheetViewController: UIViewController, UITextFieldDele
         super.viewDidLoad()
         view.backgroundColor = DS.Color.surface
 
-        let title = UILabel()
-        title.text = "order.collateral.editTitle".localized()
-        title.font = Utils.boldFont(size: 20)
-        title.textColor = DS.Color.text
+        let title = V2.sheetTitle("order.sheetTitle.collateral".localized())
         let subtitle = UILabel()
         subtitle.font = Utils.regularFont(size: DS.TextSize.body)
         subtitle.textColor = DS.Color.textMuted
@@ -424,18 +429,41 @@ final class CollateralEditSheetViewController: UIViewController, UITextFieldDele
         save.accessibilityIdentifier = "collateralEdit.save"
         save.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
 
-        view.addSubview(content)
+        // #1395: scrolls, so the fields and Save never overlap on a small iPhone with the keyboard open
+        let scroll = UIScrollView()
+        scroll.alwaysBounceVertical = true
+        scroll.keyboardDismissMode = .interactive
+        scroll.addSubview(content)
+        view.addSubview(scroll)
         view.addSubview(save)
         content.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.top.equalTo(scroll.contentLayoutGuide).offset(V2.sheetTop)
+            make.bottom.equalTo(scroll.contentLayoutGuide).offset(-DS.Spacing.lg)
+            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(V2.sheetSide)
+        }
+        scroll.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(save.snp.top).offset(-DS.Spacing.sm)
         }
         save.snp.makeConstraints { make in
             make.height.equalTo(52)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalToSuperview().inset(V2.sheetSide)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-DS.Spacing.md)
         }
         KeyboardDoneBar.attach([depositField])
+    }
+
+    // #1395: Save and the scroll already follow the keyboard. IQKeyboardManager pushed the sheet up, over the title
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
     }
 
     private func configure(_ field: UITextField, number: Bool, text: String) {

@@ -1,5 +1,9 @@
 {
   "web": {
+    "subscription": {
+      "includesAddon": "アドオン +{count} を含む",
+      "ordersAddonNote": "注文数は累計で数え、毎月リセットされません。使用済みの追加分は取り消せません。"
+    },
     "onlineBooking": {
       "title": "オンライン予約を受け付ける",
       "hint": "お客様はショップページから予約し、注文になる前にお店が確定します。",

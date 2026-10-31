@@ -376,7 +376,7 @@ fun ProductFormV2Screen(
             )
 
             FormField(stringResource(R.string.v2_form_name), required = true, value = name, onChange = { name = it },
-                placeholder = stringResource(R.string.v2_form_name_placeholder))
+                placeholder = stringResource(R.string.v2_form_name_placeholder), fieldTag = "product.form.name")
             Row(
                 Modifier.fillMaxWidth().clickable { showCategories = true }.heightIn(min = 52.dp).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -414,7 +414,7 @@ fun ProductFormV2Screen(
             if (showsPrices) {
                 SectionBand(stringResource(R.string.v2_form_prices))
                 FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
-                    placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_rental, ShopMoney.symbol()))
+                    fieldTag = "product.form.perRental", placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_rental, ShopMoney.symbol()))
                 FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
                     placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_day, ShopMoney.symbol()))
                 Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -600,6 +600,8 @@ private fun FormField(
     end: androidx.compose.ui.unit.Dp = 16.dp,
     onDone: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    /** #1393: the input's test tag */
+    fieldTag: String? = null,
 ) {
     var hadFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -618,6 +620,7 @@ private fun FormField(
             Box(Modifier.weight(1f)) {
                 if (value.isEmpty()) Text(placeholder, fontSize = DS.TextSize.Input, color = Color(0xFF94A3B8))
                 val fieldModifier = Modifier.fillMaxWidth().semantics { contentDescription = description }
+                    .then(if (fieldTag != null) Modifier.testTag(fieldTag) else Modifier)
                     .onFocusChanged { focus ->
                         if (focus.isFocused) {
                             hadFocus = true

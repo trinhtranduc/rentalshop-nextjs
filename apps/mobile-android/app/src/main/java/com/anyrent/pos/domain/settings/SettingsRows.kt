@@ -14,6 +14,8 @@ enum class SettingsItem {
     CATEGORIES, CUSTOMERS, USERS, EXPORT,
     /** #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Widget (#1381), Nâng cao (Thông tin ứng dụng + Xoá tài khoản) */
     PLAN, LANGUAGE, WIDGET, ADVANCED,
+    /** #1393 "Hướng dẫn bắt đầu": the first-run card in a sheet (owner, shop with no order yet) */
+    FIRST_RUN_GUIDE,
 }
 
 /** #1310 the "Thu cọc" row: the shop owner only (`PUT /api/settings/deposit` is MERCHANT only); orders still read the mode for every role */
@@ -44,7 +46,7 @@ object SettingsRows {
      * - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
      * - the bank accounts line (#622) sits inside Thu tiền; the owner's currency (#1145) inside Thông tin cửa hàng (#1313)
      */
-    fun sections(role: String?, hasPlan: Boolean): List<SettingsSection> {
+    fun sections(role: String?, hasPlan: Boolean, showsGuide: Boolean = false): List<SettingsSection> {
         val management = buildList {
             if (CategoryRules.canAdd(UserRole.from(role))) add(SettingsItem.CATEGORIES)
             add(SettingsItem.CUSTOMERS)
@@ -53,7 +55,9 @@ object SettingsRows {
         }
         val account = buildList {
             if (hasPlan && role != "ADMIN") add(SettingsItem.PLAN)
-            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.WIDGET, SettingsItem.ADVANCED))
+            addAll(listOf(SettingsItem.LANGUAGE, SettingsItem.WIDGET))
+            if (showsGuide) add(SettingsItem.FIRST_RUN_GUIDE) // #1393 under Widget
+            add(SettingsItem.ADVANCED)
         }
         return listOf(
             SettingsSection(

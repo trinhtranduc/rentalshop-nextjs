@@ -10,7 +10,7 @@ Usage: scripts/mobile-e2e/adb-ui.sh <command> [args]
 
 Works on adb -s emulator-$E2E_AVD_PORT (default 5570). Refuses 5554/5556 (vm_pos, vm_kitchen).
 Selectors match a node's text or content-desc exactly; prefix with ~ for a case-insensitive substring
-("~Giao đồ"); @x,y taps raw coordinates.
+("~Giao đồ"); # matches a Compose testTag (the node's resource-id, "#guide.card"); @x,y taps raw coordinates.
 
   dump                    print visible nodes (text | content-desc | bounds); XML kept in $E2E_OUT/android/ui.xml
   has "<sel>"             exit 0 if the selector is on screen, 1 otherwise
@@ -58,10 +58,12 @@ try:
 except Exception:
     sys.exit(1)
 sub = sel.startswith("~")
-needle = sel[1:].casefold() if sub else sel
+tag = sel.startswith("#")
+needle = sel[1:].casefold() if sub else (sel[1:] if tag else sel)
 hits = []
 for n in root.iter("node"):
-    for v in (n.get("text") or "", n.get("content-desc") or ""):
+    values = (n.get("resource-id") or "",) if tag else (n.get("text") or "", n.get("content-desc") or "")
+    for v in values:
         if (sub and needle in v.casefold()) or (not sub and v == needle):
             m = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", n.get("bounds") or "")
             if m:

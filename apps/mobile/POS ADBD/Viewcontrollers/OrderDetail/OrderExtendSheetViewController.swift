@@ -48,7 +48,7 @@ final class OrderExtendSheetViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = DS.Color.surface
 
-        let title = V2.label("order.extend.title".localized(), size: 20, weight: .bold)
+        let title = V2.sheetTitle("order.sheetTitle.extend".localized())
         let current = V2.label(String(format: "order.extend.current".localized(), DayFormatter.short(currentReturn)),
                                size: DS.TextSize.body, color: DS.Color.textMuted, lines: 0)
 
@@ -103,10 +103,14 @@ final class OrderExtendSheetViewController: UIViewController {
         scroll.keyboardDismissMode = .onDrag
         view.addSubview(scroll)
         scroll.addSubview(stack)
-        scroll.snp.makeConstraints { make in make.edges.equalTo(view.safeAreaLayoutGuide) }
+        scroll.snp.makeConstraints { make in
+            make.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            // #1395: the extra rent box and the button stay above the keyboard on a small iPhone
+            make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
+        }
         stack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(DS.Spacing.xl)
-            make.leading.trailing.equalTo(view).inset(DS.Spacing.lg)
+            make.top.equalToSuperview().offset(V2.sheetTop)
+            make.leading.trailing.equalTo(view).inset(V2.sheetSide)
             make.bottom.equalToSuperview().offset(-28)
         }
         refresh()

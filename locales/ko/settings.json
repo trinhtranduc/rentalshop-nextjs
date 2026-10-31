@@ -1,5 +1,9 @@
 {
   "web": {
+    "subscription": {
+      "includesAddon": "애드온 +{count} 포함",
+      "ordersAddonNote": "주문 수는 누적으로 계산되며 매월 초기화되지 않습니다. 이미 사용한 추가분은 제거할 수 없습니다."
+    },
     "onlineBooking": {
       "title": "온라인 예약 받기",
       "hint": "고객이 가게 페이지에서 예약하면, 주문이 되기 전에 가게에서 확정합니다.",

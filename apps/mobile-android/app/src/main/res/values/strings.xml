@@ -1093,7 +1093,6 @@
     <string name="calendar_v2_fee">fee %1$s</string>
     <string name="v2_product_deleted">Product deleted</string>
     <string name="extend_rental">Extend</string>
-    <string name="extend_rental_title">Extend rental</string>
     <string name="extend_rental_current">Due back %1$s</string>
     <plurals name="extend_rental_extra_days">
         <item quantity="one">%1$d more day</item>
@@ -2248,15 +2247,12 @@
     <string name="deposit_card_paid_detail">%1$s%% of order · %2$s</string>
     <string name="deposit_card_due_detail">%1$s%% of order · due %2$s</string>
     <string name="deposit_card_rest_detail">At hand-over · %s</string>
-    <string name="deposit_collect_title">Collect stage %d</string>
     <string name="deposit_collect_confirm">Collect %s</string>
-    <string name="deposit_unpaid_title">Deposit stages not collected yet</string>
     <string name="deposit_unpaid_message">Collect these stages before handing over the items.</string>
     <string name="deposit_unpaid_row">Stage %1$d · %2$s</string>
     <string name="deposit_void_title">Undo the collection of stage %d?</string>
     <string name="deposit_void_message">The %s collected is cancelled and the stage is open again. This is logged.</string>
     <string name="deposit_void_confirm">Undo collection</string>
-    <string name="deposit_cancel_title">Cancel order #%s?</string>
     <string name="deposit_cancel_policy">Shop policy: %s</string>
     <string name="deposit_cancel_paid">Customer paid</string>
     <string name="deposit_cancel_kept">Shop keeps</string>
@@ -2355,7 +2351,6 @@
     <string name="detail_collateral_card">Papers &amp; collateral</string>
     <string name="detail_collateral_edit">Edit</string>
     <string name="detail_collateral_none">Not entered</string>
-    <string name="detail_collateral_edit_title">Edit papers &amp; collateral</string>
     <string name="detail_collateral_edit_warning">Changing the collateral changes the amount to give back at return</string>
     <string name="detail_collateral_papers_row">Papers</string>
     <string name="detail_collateral_money_row">Collateral</string>
@@ -2489,4 +2484,23 @@
     <string name="onboarding_v2_today_amount3">$35</string>
     <string name="onboarding_v2_today_collect">to collect %1$s</string>
     <string name="onboarding_v2_today_refund">refund $100</string>
+    <!-- #1395 titles of the order-detail sheets -->
+    <string name="order_sheet_title_actions">Order actions</string>
+    <string name="order_sheet_title_hand_over">Hand over to customer</string>
+    <string name="order_sheet_title_return">Take back items</string>
+    <string name="order_sheet_title_extend">Extend order</string>
+    <string name="order_sheet_title_collateral">Papers &amp; collateral</string>
+    <string name="order_sheet_title_collect">Collect deposit</string>
+    <string name="order_sheet_title_unpaid">Uncollected deposit stages</string>
+    <string name="order_sheet_title_cancel">Cancel order</string>
+    <string name="first_run_guide_title">Get started: 3 steps</string>
+    <string name="first_run_guide_step_product">Add your first product</string>
+    <string name="first_run_guide_step_customer">Add a customer</string>
+    <string name="first_run_guide_step_order">Create your first order</string>
+    <string name="first_run_guide_skip">Skip</string>
+    <string name="first_run_guide_close">Close</string>
+    <string name="first_run_guide_skipped">Hidden. Reopen in Settings › Getting started</string>
+    <string name="first_run_guide_settings_row">Getting started</string>
+    <string name="first_run_guide_finish_title">First order done</string>
+    <string name="first_run_guide_finish_body">It is now in Orders and Calendar.</string>
 </resources>

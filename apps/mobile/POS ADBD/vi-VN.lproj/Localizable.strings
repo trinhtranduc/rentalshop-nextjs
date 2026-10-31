@@ -2025,7 +2025,6 @@
 "products.detail.deleteMessage" = "“%@” sẽ không còn trong danh sách sản phẩm. Đơn cũ vẫn giữ tên sản phẩm.";
 "products.detail.deleted" = "Đã xóa sản phẩm";
 "order.extend" = "Gia hạn";
-"order.extend.title" = "Gia hạn thuê";
 "order.extend.current" = "Đang hẹn trả %@";
 "order.extend.extraDay" = "Thêm 1 ngày";
 "order.extend.extraDays" = "Thêm %d ngày";
@@ -2895,15 +2894,12 @@
 "deposit.card.paidDetail" = "%@%% đơn · %@";
 "deposit.card.dueDetail" = "%@%% đơn · hạn %@";
 "deposit.card.restDetail" = "Thu khi giao · %@";
-"deposit.collect.title" = "Thu giai đoạn %d";
 "deposit.collect.confirm" = "Thu %@";
-"deposit.unpaid.title" = "Còn giai đoạn cọc chưa thu";
 "deposit.unpaid.message" = "Thu xong các giai đoạn này mới giao đồ được.";
 "deposit.unpaid.row" = "Giai đoạn %d · %@";
 "deposit.void.title" = "Huỷ khoản thu giai đoạn %d?";
 "deposit.void.message" = "Khoản thu %@ sẽ bị huỷ và giai đoạn trở lại chưa thu. Việc này được ghi lại.";
 "deposit.void.confirm" = "Huỷ khoản thu";
-"deposit.cancel.title" = "Huỷ đơn #%@?";
 "deposit.cancel.policy" = "Chính sách tiệm: %@";
 "deposit.cancel.paid" = "Khách đã trả";
 "deposit.cancel.kept" = "Tiệm giữ lại";
@@ -3018,7 +3014,6 @@
 "order.collateral.card" = "Giấy tờ & thế chân";
 "order.collateral.edit" = "Sửa";
 "order.collateral.none" = "Chưa nhập";
-"order.collateral.editTitle" = "Sửa giấy tờ & thế chân";
 "order.collateral.editWarning" = "Đổi thế chân sẽ đổi số trả lại khi nhận trả";
 "order.collateral.papersRow" = "Giấy tờ";
 "order.detail.section.payment" = "THANH TOÁN";
@@ -3162,3 +3157,23 @@
 "onboarding.v2.today.amount3" = "350.000";
 "onboarding.v2.today.collect" = "còn thu %@";
 "onboarding.v2.today.refund" = "trả cọc 1.000.000";
+/* #1395 titles of the order-detail sheets */
+"order.sheetTitle.actions" = "Thao tác với đơn";
+"order.sheetTitle.handOver" = "Giao đồ cho khách";
+"order.sheetTitle.return" = "Nhận trả đồ";
+"order.sheetTitle.extend" = "Gia hạn đơn";
+"order.sheetTitle.collateral" = "Giấy tờ & thế chân";
+"order.sheetTitle.collect" = "Thu tiền cọc";
+"order.sheetTitle.unpaid" = "Đợt cọc chưa thu";
+"order.sheetTitle.cancel" = "Huỷ đơn";
+"firstRunGuide.title" = "Bắt đầu: 3 việc";
+"firstRunGuide.step.product" = "Thêm sản phẩm đầu tiên";
+"firstRunGuide.step.customer" = "Thêm khách hàng";
+"firstRunGuide.step.order" = "Tạo đơn đầu tiên";
+"firstRunGuide.done" = "Đã xong";
+"firstRunGuide.skip" = "Bỏ qua";
+"firstRunGuide.close" = "Đóng";
+"firstRunGuide.skipped" = "Đã ẩn. Mở lại ở Cài đặt › Hướng dẫn bắt đầu";
+"firstRunGuide.settings.row" = "Hướng dẫn bắt đầu";
+"firstRunGuide.finish.title" = "Xong đơn đầu tiên";
+"firstRunGuide.finish.body" = "Đơn đã có ở Đơn hàng và Lịch Thuê.";

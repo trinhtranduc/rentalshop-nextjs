@@ -1,6 +1,6 @@
 # Intent: admin adds extra capacity and paid modules to a shop
 
-Issue: #782 (closed, see spec section 1). Docs issue: #1382. Requirements: #780. Status: waiting for the owner's "chốt" on the mockup tab "★ Admin: add-on theo shop". No code before that.
+Issue: #782 (closed, see spec section 1). Docs issue: #1382. Requirements: #780. Status: in-progress on `feat/782-addon-gaps`; the owner said "chốt" on 2026-10-31 (decisions in spec section 5).
 
 ## What the owner wants
 Admin adds to one shop: (a) extra branches, (b) product-limit blocks, (c) order-limit blocks, (d) the loyalty module (khách thân thiết) as a paid module.

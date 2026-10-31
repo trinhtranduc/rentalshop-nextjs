@@ -346,6 +346,7 @@ fun OrderDetailV2Screen(
                     canCancel = actions.canCancel,
                     busy = state.busy || editing,
                     onHandOver = ::requestHandOver,
+                    onCollectStage = { collecting = it },
                     onReturn = { sheet = DetailSheet.RETURN },
                     onCancel = ::requestCancel,
                     onPrint = { print(detail) },
@@ -969,6 +970,7 @@ private fun DetailBottomBar(
     canCancel: Boolean,
     busy: Boolean,
     onHandOver: () -> Unit,
+    onCollectStage: (OrderInstallment) -> Unit,
     onReturn: () -> Unit,
     onCancel: () -> Unit,
     onPrint: () -> Unit,
@@ -987,8 +989,17 @@ private fun DetailBottomBar(
             // #930: "In" (no icon) next to Giao đồ / Nhận trả; Sửa đơn and Gia hạn are in the ⋯ sheet
             primary == DetailPrimary.HAND_OVER -> {
                 SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
-                if (handOverBlocked) {
-                    // #1380: the API refuses the hand-over until the stage is collected on the deposit card
+                // #1380: the API refuses the hand-over until the stage is collected. #1400: collect it from here
+                val stages = detail.deposit?.installments.orEmpty()
+                val stage = DepositPlanLogic.stageToCollectBeforeHandOver(detail.deposit, detail.summary.status)
+                val number = stage?.let { DepositPlanLogic.stageNumber(stages, it.key) }
+                if (stage != null && number != null) {
+                    PrimaryBarButton(
+                        stringResource(R.string.deposit_card_collect_stage, number),
+                        Modifier.weight(2f).testTag("order.detail.collectStage"),
+                        !busy,
+                    ) { onCollectStage(stage) }
+                } else if (handOverBlocked) {
                     Text(
                         stringResource(R.string.detail_stage_unpaid),
                         Modifier.weight(2f).height(52.dp).wrapContentHeight(Alignment.CenterVertically).testTag("order.detail.stageUnpaid"),

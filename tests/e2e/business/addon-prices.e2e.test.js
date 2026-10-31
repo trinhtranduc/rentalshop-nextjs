@@ -475,6 +475,43 @@ describeAdd('BF-ADD #870 add-ons on renew, extend and change-plan; pack size and
     expect(lastPayment(world.merchantId)).toMatchObject({ amount: Math.round((40000 / 30) * days), type: 'PLAN_CHANGE' });
   });
 
+  test('BF-ADD-22 #782 typed amount on a pack-size-1 row: +100 products at 500 ₫, status shows the real limit, `limits` unchanged', async () => {
+    const world = S.createWorld('add-typed', { planId: pricedPlan('add-typed', { products: 3000, orders: 3000 }) });
+    const { end } = setPeriod(world.merchantId);
+    const row = await createRow({ name: 'Thêm sản phẩm', limitKind: 'products', packSize: 1, monthlyPrice: 500 });
+    const orders = await createRow({ name: 'Thêm đơn', limitKind: 'orders', packSize: 1, monthlyPrice: 100 });
+    const at = new Date();
+    const r = await buy(world.merchantId, row.id, 100);
+    expect(created(r)).toBe(true);
+    expect(r.body.data.addon).toMatchObject({ products: 100, packs: 100, packSize: 1, unitPrice: 500 });
+    expect(r.body.data.quote.amountDue).toBe(Math.round((500 / 30) * 100 * vnDaysBetween(at, end)));
+    expect(created(await buy(world.merchantId, orders.id, 500))).toBe(true);
+
+    const m = await S.login(world.merchant, S.WEB_HEADERS);
+    const status = (await m.get('/api/subscriptions/status')).body.data;
+    expect(status.limits).toMatchObject({ products: 3000, orders: 3000 });
+    expect(status.effectiveLimits).toMatchObject({ products: 3100, orders: 3500 });
+    expect(status.addonLimits).toMatchObject({ products: 100, orders: 500, users: 0 });
+    expect(status.usage.orders).toBe(0);
+
+    // a pack-size-1 row renews at the same amount
+    const shop = (await (await admin()).get(`/api/merchants/${world.merchantId}/addons`)).body.data;
+    expect(shop.addons.find((a) => a.addonPriceId === row.id)).toMatchObject({ renewMonthlyAmount: 50000, renewPacks: 100, renewPackSize: 1 });
+    expect(shop.limits.total).toMatchObject({ products: 3100, orders: 3500 });
+  });
+
+  test('BF-ADD-23 #782 packs maximum is 100,000: 100,000 accepted, 100,001 refused', async () => {
+    const world = S.createWorld('add-max', { planId: pricedPlan('add-max', { products: 3000 }) });
+    setPeriod(world.merchantId);
+    const row = await createRow({ name: 'Thêm sản phẩm', limitKind: 'products', packSize: 1, monthlyPrice: 1 });
+    const count = paymentCount(world.merchantId);
+    expect((await buy(world.merchantId, row.id, 100001)).status).toBe(400);
+    expect(paymentCount(world.merchantId)).toBe(count);
+    const ok = await buy(world.merchantId, row.id, 100000);
+    expect(created(ok)).toBe(true);
+    expect(ok.body.data.addon.products).toBe(100000);
+  });
+
   test('BF-ADD-20 more packs apply now and charge the extra packs; fewer packs wait for the renewal, no refund', async () => {
     const row = await createRow({ name: 'Gói 2 nhân viên', limitKind: 'users', packSize: 2, monthlyPrice: 40000 });
     const world = S.createWorld('add-20', { planId: pricedPlan('add-20', { users: 3 }) });
