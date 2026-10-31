@@ -321,6 +321,12 @@ object DepositPlanLogic {
     fun unpaidBeforePickup(stages: List<OrderInstallment>): List<OrderInstallment> =
         stages.filter { !it.isRest && it.amount > 0 && it.paidAmount <= 0 && it.status != "VOID" }
 
+    /**
+     * #1380: a booked rental of a plan with a stage still uncollected. The API refuses its hand-over, so the bottom bar says
+     * "Còn đợt chưa thu" instead of the Giao đồ button; the stage is collected on the deposit card (open to every role)
+     */
+    fun blocksHandOver(info: DepositPlanInfo?, status: String?): Boolean = false
+
     /** "Thu giai đoạn 2" for `i2`: the 1-based place of the stage */
     fun stageNumber(stages: List<OrderInstallment>, key: String): Int? =
         stages.indexOfFirst { it.key == key }.takeIf { it >= 0 }?.plus(1)
