@@ -357,7 +357,8 @@ final class DepositPlanTests: XCTestCase {
 
     func testStringsExistInBothLanguages() throws {
         let keys = ["deposit.settings.title", "deposit.cart.createAndCollect", "deposit.card.collectStage",
-                    "deposit.cancel.kept", "overview.installments.today", "INSTALLMENT_UNPAID_AT_PICKUP", "CANCEL_AMOUNTS_MISMATCH"]
+                    "deposit.cancel.kept", "overview.installments.today", "INSTALLMENT_UNPAID_AT_PICKUP", "CANCEL_AMOUNTS_MISMATCH",
+                    "order.detail.stageUnpaid"]
         for language in ["en", "vi-VN"] {
             let path = try XCTUnwrap(Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: language))
             let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])

@@ -869,10 +869,18 @@ final class OrderDetailViewController: BaseViewControler {
         let actions = actions(for: detail)
         bottomStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        var buttons: [UIButton] = []
+        var buttons: [UIView] = []
         switch actions.primary {
         case .handOver:
             buttons.append(shortPrintButton())
+            if DepositPlanLogic.blocksHandOver(hasPlan: detail.hasDepositPlan, status: detail.status, stages: detail.installments) {
+                // #1380: the API refuses the hand-over until the stage is collected on the deposit card
+                let line = V2.label("order.detail.stageUnpaid".localized(), size: DS.TextSize.body, weight: .semibold, color: DS.Color.textMuted, lines: 2)
+                line.textAlignment = .center
+                line.accessibilityIdentifier = "order.detail.stageUnpaid"
+                buttons.append(line)
+                break
+            }
             let due = OrderDetailLogic.handOver(total: detail.totalAmount, deposit: detail.depositAmount,
                                                 securityDeposit: detail.securityDeposit, payments: payments).due
             let title = due > 0
