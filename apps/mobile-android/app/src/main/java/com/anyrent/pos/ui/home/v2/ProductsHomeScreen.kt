@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ShoppingBasket
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -256,7 +255,7 @@ fun ProductsHomeScreen(
                             }
                         }
                         FieldIcon(AppIcons.Barcode, stringResource(R.string.camera_scan)) { showScan = true }
-                        // #651: image search is the solid blue camera button at the end (owner chose option B)
+                        // #651: image search is the camera button at the end (owner chose option B); #1384: gradient and sparkle
                         ImageSearchButton(stringResource(R.string.v2_home_image_search)) { showImageSearch = true }
                     }
                 }
@@ -371,7 +370,7 @@ private fun FieldIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
     ) { Icon(icon, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md)) }
 }
 
-/** #651: 38 dp solid accent square with a white camera; the touch area is 48 dp */
+/** #651, #1384: 38 dp gradient square with a white camera and sparkle; the touch area is 48 dp */
 @Composable
 private fun ImageSearchButton(label: String, onClick: () -> Unit) {
     Box(
@@ -382,9 +381,9 @@ private fun ImageSearchButton(label: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(DS.Colors.Primary),
+            Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(DS.Gradients.AiScan),
             contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
+        ) { Icon(AppIcons.AiScan, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
     }
 }
 
