@@ -115,8 +115,8 @@ if only == "all":
     # App Group id per configuration (Debug -> Development scheme, Release -> Production scheme)
     APP_DEBUG, APP_RELEASE = "88E4148921A99B3E00BAF4A1", "88E4148A21A99B3E00BAF4A1"
     EXT_DEBUG, EXT_RELEASE = "A4B110012F1E0101000053", "A4B110012F1E0101000054"
-    for block, group in ((APP_DEBUG, "group.com.anyrent.debug"), (APP_RELEASE, "group.com.anyrent"),
-                         (EXT_DEBUG, "group.com.anyrent.debug"), (EXT_RELEASE, "group.com.anyrent")):
+    for block, group in ((APP_DEBUG, "group.com.anyrent"), (APP_RELEASE, "group.com.anyrent"),
+                         (EXT_DEBUG, "group.com.anyrent"), (EXT_RELEASE, "group.com.anyrent")):
         add_setting(block, "APP_GROUP_ID = %s;" % group, after="API_BASE_URL")
     for block in (EXT_DEBUG, EXT_RELEASE):
         add_setting(block, "CODE_SIGN_ENTITLEMENTS = AnyRentLiveActivity/AnyRentLiveActivity.entitlements;", after="APPLICATION_EXTENSION_API_ONLY")

@@ -3,7 +3,7 @@ import Foundation
 /// The one JSON file in the App Group. The app writes it; the widget only reads it.
 public struct TodayWidgetStore {
     public static let fileName = "today-widget.json"
-    /// Info.plist key of the app and of the extension: the App Group id of the build (`group.com.anyrent[.debug]`)
+    /// Info.plist key of the app and of the extension: the App Group id of the build (`group.com.anyrent`)
     public static let groupInfoKey = "AnyRentAppGroup"
 
     private let directory: URL?
