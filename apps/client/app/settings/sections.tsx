@@ -19,6 +19,7 @@ import { formatShopAmount } from '@rentalshop/utils';
 import { outletBookingRows } from '../orders/online/online-model';
 import { useTheme, type ThemeChoice } from '../providers/ThemeProvider';
 import { usePrintSettings } from '../components/usePrintSettings';
+import { ReadOnlyPrintNotes } from './ReadOnlyPrintNotes';
 import { BillPreview, BillTestPrint, LabelPreview, useLabelTestPrint } from './PrintPreviews';
 import { Switch } from '../users/permissions/parts';
 import { useBillBank } from '../orders/receipt/useBillBank';
@@ -846,59 +847,59 @@ export function ReceiptSection({
           ))}
         </div>
 
-        {canEditNote && (
-          <div className="flex flex-col gap-3 border-t border-ar-subtle pt-4">
-            <span className="text-[15px] font-semibold text-ar-ink">{to('fields.printNote')}</span>
-            <p className="-mt-2 mb-0 text-sm text-ar-muted">{to('fields.printNoteHint')}</p>
-            {failed ? (
-              <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ar-muted">
-                <span>{t('receipt.loadFailed')}</span>
-                <button type="button" onClick={retry} className={smallBtn}>
-                  {t('receipt.retry')}
-                </button>
-              </div>
-            ) : loading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : notes.length === 0 ? (
-              <p className="m-0 text-sm text-ar-muted">{t('receipt.empty')}</p>
-            ) : (
-              <ul className="m-0 flex list-none flex-col gap-5 p-0">
-                {notes.map((n) => {
-                  const dirty = n.draft !== n.saved;
-                  return (
-                    <li key={n.id} className="flex flex-col gap-1.5 border-t border-ar-subtle pt-4 first:border-t-0 first:pt-0">
-                      <label className={labelClass}>
-                        {notes.length > 1 ? n.name : to('fields.printNote')}
-                        <textarea
-                          rows={3}
-                          maxLength={NOTE_MAX}
-                          value={n.draft}
-                          onChange={(e) => patch(n.id, { draft: e.target.value })}
-                          className={`${inputClass} h-auto resize-y py-2.5`}
-                        />
-                      </label>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs tabular-nums text-ar-muted">
-                          {n.draft.length}/{NOTE_MAX}
-                        </span>
-                        <span className="flex gap-2">
-                          {dirty && (
-                            <button type="button" onClick={() => patch(n.id, { draft: n.saved })} disabled={n.saving} className={smallBtn}>
-                              {t('form.cancel')}
-                            </button>
-                          )}
-                          <button type="button" onClick={() => save(n)} disabled={!dirty || n.saving} className={`${primaryBtn} h-9 text-sm`}>
-                            {n.saving ? t('form.saving') : t('form.save')}
+        <div className="flex flex-col gap-3 border-t border-ar-subtle pt-4">
+          <span className="text-[15px] font-semibold text-ar-ink">{to('fields.printNote')}</span>
+          <p className="-mt-2 mb-0 text-sm text-ar-muted">{to('fields.printNoteHint')}</p>
+          {failed ? (
+            <div role="alert" className="flex flex-wrap items-center gap-3 text-sm text-ar-muted">
+              <span>{t('receipt.loadFailed')}</span>
+              <button type="button" onClick={retry} className={smallBtn}>
+                {t('receipt.retry')}
+              </button>
+            </div>
+          ) : loading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : notes.length === 0 ? (
+            <p className="m-0 text-sm text-ar-muted">{t('receipt.empty')}</p>
+          ) : !canEditNote ? (
+            <ReadOnlyPrintNotes notes={notes} fieldLabel={to('fields.printNote')} empty={t('printer.noteEmpty')} explanation={t('printer.noteReadOnly')} />
+          ) : (
+            <ul className="m-0 flex list-none flex-col gap-5 p-0">
+              {notes.map((n) => {
+                const dirty = n.draft !== n.saved;
+                return (
+                  <li key={n.id} className="flex flex-col gap-1.5 border-t border-ar-subtle pt-4 first:border-t-0 first:pt-0">
+                    <label className={labelClass}>
+                      {notes.length > 1 ? n.name : to('fields.printNote')}
+                      <textarea
+                        rows={3}
+                        maxLength={NOTE_MAX}
+                        value={n.draft}
+                        onChange={(e) => patch(n.id, { draft: e.target.value })}
+                        className={`${inputClass} h-auto resize-y py-2.5`}
+                      />
+                    </label>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs tabular-nums text-ar-muted">
+                        {n.draft.length}/{NOTE_MAX}
+                      </span>
+                      <span className="flex gap-2">
+                        {dirty && (
+                          <button type="button" onClick={() => patch(n.id, { draft: n.saved })} disabled={n.saving} className={smallBtn}>
+                            {t('form.cancel')}
                           </button>
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        )}
+                        )}
+                        <button type="button" onClick={() => save(n)} disabled={!dirty || n.saving} className={`${primaryBtn} h-9 text-sm`}>
+                          {n.saving ? t('form.saving') : t('form.save')}
+                        </button>
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
         {rows.length > 0 && (
           <div className="flex flex-col gap-3 border-t border-ar-subtle pt-4" data-bank-qr-setting>
