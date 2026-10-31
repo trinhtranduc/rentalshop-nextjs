@@ -583,4 +583,6 @@ extension Notification.Name {
     static let accessDenied = Notification.Name("accessDenied")
     /// Posted when inbox unread count changes. userInfo["count"] = Int
     static let inboxUnreadCountDidChange = Notification.Name("inboxUnreadCountDidChange")
+    /// #1331: the shop screen read its branch list. userInfo["count"] = Int (open branches)
+    static let shopBranchCountDidChange = Notification.Name("shopBranchCountDidChange")
 }

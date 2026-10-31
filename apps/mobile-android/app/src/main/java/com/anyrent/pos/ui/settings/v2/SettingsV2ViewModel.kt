@@ -33,6 +33,11 @@ interface SettingsV2Source {
     suspend fun refreshCurrency() {}
 }
 
+/** #1331: stub */
+object ShopBranchCount {
+    fun report(count: Int) {}
+}
+
 object ApiSettingsV2Source : SettingsV2Source {
     override suspend fun plan(): SettingsPlan? = withContext(Dispatchers.IO) {
         runCatching {

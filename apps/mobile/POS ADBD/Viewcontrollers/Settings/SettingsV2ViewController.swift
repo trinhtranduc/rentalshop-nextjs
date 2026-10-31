@@ -43,7 +43,7 @@ final class SettingsV2ViewController: BaseViewControler {
     /// #1259: bank accounts of the default branch, for the second text of "Thu tiền" (nil until known)
     private var bankCount: Int?
     /// Totals next to Khách hàng / Người dùng (#388)
-    private var counts: [SettingsV2Item: Int] = [:]
+    private(set) var counts: [SettingsV2Item: Int] = [:]
     /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
     private var lastFetchedAt: Date?
     /// #937: unread count on the "Thông báo" row (moved from the Home bell); follows `.inboxUnreadCountDidChange`
