@@ -44,12 +44,4 @@ public enum TodayWidgetBridge {
             }
         }
     }
-
-    // MARK: Swift 4 friendly entry points (no default arguments, no Swift-only generics)
-
-    public static func makeSnapshot(userId: Int, outletId: Int, date: String, savedAt: Date, hideNames: Bool,
-                                    counts: TodayWidgetCounts, rows: [TodayWidgetRow], labels: TodayWidgetLabels) -> TodayWidgetSnapshot {
-        TodayWidgetSnapshot(userId: userId, outletId: outletId, date: date, savedAt: savedAt, state: .ok,
-                            hideNames: hideNames, counts: counts, rows: rows, labels: labels)
-    }
 }

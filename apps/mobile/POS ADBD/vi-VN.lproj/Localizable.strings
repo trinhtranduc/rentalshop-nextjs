@@ -3093,11 +3093,13 @@
 "widget.description" = "Giao đồ, nhận trả và đơn trễ của hôm nay.";
 "widget.pickup" = "Giao";
 "widget.return" = "Trả";
-"widget.count.pickup" = "giao";
-"widget.count.return" = "trả";
-"widget.count.late" = "trễ";
+"widget.late" = "Trễ";
 "widget.more" = "+%d việc khác";
 "widget.updated" = "cập nhật %@";
+"widget.done" = "xong %d/%d";
+"widget.doneCaption" = "đã xong hôm nay";
+"widget.allDone" = "Xong hết %d/%d";
+"widget.todayAt" = "Hôm nay · %@";
 "widget.empty" = "Hôm nay chưa có việc";
 "widget.tomorrow" = "Mai có %d giao, %d trả";
 "widget.loggedOut" = "Mở AnyRent để đăng nhập";

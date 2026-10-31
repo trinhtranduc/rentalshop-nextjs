@@ -21,14 +21,16 @@ enum TodayWidgetData {
             locale: code.hasPrefix("vi") ? "vi" : "en",
             appName: "AnyRent",
             today: text("Today section"),
+            late: text("widget.late"),
             pickup: text("widget.pickup"),
             returnTask: text("widget.return"),
-            pickupCount: text("widget.count.pickup"),
-            returnCount: text("widget.count.return"),
-            lateCount: text("widget.count.late"),
             notPrepared: text("orders.v2.notPrepared"),
             moreFormat: text("widget.more"),
             updatedFormat: text("widget.updated"),
+            doneFormat: text("widget.done"),
+            doneCaption: text("widget.doneCaption"),
+            allDoneFormat: text("widget.allDone"),
+            todayAtFormat: text("widget.todayAt"),
             empty: text("widget.empty"),
             tomorrowFormat: text("widget.tomorrow"),
             loggedOut: text("widget.loggedOut"),
@@ -43,7 +45,8 @@ enum TodayWidgetData {
     }
 
     /// Late first (most late first, the order of the tab), then the hand-overs, then the returns. A deposit stage
-    /// ("Thu cọc") and tomorrow's jobs are not part of the widget. Counts are the API's, not the cut rows.
+    /// ("Thu cọc") and tomorrow's jobs are not part of the widget. Counts are the API's, not the cut rows; `done` is
+    /// `doneToday` (#1378). No phone, no money, no photo.
     static func snapshot(from work: TodayWork, userId: Int, outletId: Int, hideNames: Bool, now: Date,
                          labels: TodayWidgetLabels) -> TodayWidgetSnapshot {
         let sections = OrdersHomeLogic.todaySections(from: work)
@@ -64,16 +67,21 @@ enum TodayWidgetData {
                                        tomorrowPickup: work.tomorrowPickups?.count, tomorrowReturn: work.tomorrowReturns?.count)
         let dayKey = (work.date?.isEmpty == false ? work.date : nil) ?? TodayWidgetClock.dayKey(now)
         return TodayWidgetSnapshot(userId: userId, outletId: outletId, date: dayKey, savedAt: now, state: .ok,
-                                   hideNames: hideNames, counts: counts, rows: late + today, labels: labels)
+                                   hideNames: hideNames, done: work.doneToday.total, counts: counts, rows: late + today,
+                                   labels: labels)
     }
 
     private static func row(_ job: TodayWorkRow, kind: WorkKind, isLate: Bool, hideNames: Bool) -> TodayWidgetRow {
-        let first = job.productNames.components(separatedBy: ", ").first ?? ""
+        // The job's own planned instant: the pickup of a hand-over, the return of a take-back
+        let planned = kind == .handOver ? job.pickupPlanAt : job.returnPlanAt
+        let word = (kind == .handOver ? "orders.chip.pickup" : "orders.chip.return").localized()
         return TodayWidgetRow(
             orderId: job.id, kind: kind == .handOver ? .pickup : .returnTask, isLate: isLate,
-            name: hideNames ? "" : (job.customerName ?? ""), product: first.trimmingCharacters(in: .whitespaces),
+            name: hideNames ? "" : (job.customerName ?? ""), product: job.firstItemName, moreCount: max(0, job.itemCount - 1),
             lateDays: job.lateDays, lateText: job.lateDays > 0 ? LateText.days(job.lateDays) : "",
-            notPrepared: OrdersHomeLogic.notPreparedApplies(kind: kind, isReadyToDeliver: job.isReadyToDeliver))
+            notPrepared: OrdersHomeLogic.notPreparedApplies(kind: kind, isReadyToDeliver: job.isReadyToDeliver),
+            planTime: planned.map { TodayWidgetClock.timeOfDayText($0) } ?? "",
+            planDay: planned.map { "\(word) \(DayFormatter.dmy($0, timeZone: TodayWidgetClock.timeZone))" } ?? "")
     }
 }
 

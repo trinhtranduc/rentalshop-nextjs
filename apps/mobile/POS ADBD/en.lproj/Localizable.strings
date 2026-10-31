@@ -3093,13 +3093,15 @@
 // #1375: "To do" home-screen widget
 "widget.name" = "To do";
 "widget.description" = "Today's hand-overs, returns and late orders.";
-"widget.pickup" = "Hand over";
-"widget.return" = "Return";
-"widget.count.pickup" = "out";
-"widget.count.return" = "back";
-"widget.count.late" = "late";
+"widget.late" = "Late";
+"widget.pickup" = "Out";
+"widget.return" = "Back";
 "widget.more" = "+%d more";
 "widget.updated" = "updated %@";
+"widget.done" = "done %d/%d";
+"widget.doneCaption" = "done today";
+"widget.allDone" = "All done %d/%d";
+"widget.todayAt" = "Today · %@";
 "widget.empty" = "Nothing to do today";
 "widget.tomorrow" = "Tomorrow: %d out, %d back";
 "widget.loggedOut" = "Open AnyRent to sign in";

@@ -137,7 +137,7 @@ final class WidgetGuideViewController: UIViewController {
         }
     }
 
-    /// A drawing of the small widget (counts only), like the mockup
+    /// A drawing of the small widget (the P2 look: ring text and three coloured counters), like the mockup
     private func previewCard() -> UIView {
         let card = UIView()
         card.backgroundColor = UIColor(hexString: "F8FAFC")
@@ -145,13 +145,15 @@ final class WidgetGuideViewController: UIViewController {
         card.layer.borderWidth = 1
         card.layer.borderColor = DS.Color.border.cgColor
         let labels = TodayWidgetData.labels()
-        let head = V2.label(labels.today, size: DS.TextSize.secondary, weight: .bold)
-        let day = V2.label(TodayWidgetPreview.dayText(), size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        let headRow = UIStackView(arrangedSubviews: [head, UIView(), day])
+        let head = V2.label(String(format: labels.doneFormat, 4, 10), size: DS.TextSize.secondary, weight: .bold)
+        let caption = V2.label(labels.doneCaption, size: DS.TextSize.pill, color: DS.Color.textMuted)
+        let headRow = UIStackView(arrangedSubviews: [head, caption, UIView()])
+        headRow.spacing = DS.Spacing.sm
+        headRow.alignment = .firstBaseline
         let counts = UIStackView(arrangedSubviews: [
-            count(3, labels.pickupCount, "2563EB"), count(2, labels.returnCount, "7C3AED"), count(1, labels.lateCount, "DC2626"),
+            tile(1, labels.late, "B91C1C"), tile(3, labels.pickup, "1D4ED8"), tile(2, labels.returnTask, "C2410C"),
         ])
-        counts.spacing = DS.Spacing.md
+        counts.spacing = DS.Spacing.sm
         counts.distribution = .fillEqually
         let inner = UIStackView(arrangedSubviews: [headRow, counts])
         inner.axis = .vertical
@@ -163,12 +165,16 @@ final class WidgetGuideViewController: UIViewController {
         return card
     }
 
-    private func count(_ number: Int, _ word: String, _ hex: String) -> UIView {
-        let value = V2.label("\(number)", size: 26, weight: .bold, color: UIColor(hexString: hex))
-        let caption = V2.label(word, size: DS.TextSize.secondary, weight: .medium, color: UIColor(hexString: hex))
+    private func tile(_ number: Int, _ word: String, _ hex: String) -> UIView {
+        let value = V2.label("\(number)", size: 22, weight: .bold, color: .white)
+        let caption = V2.label(word, size: DS.TextSize.pill, weight: .bold, color: .white)
         let stack = UIStackView(arrangedSubviews: [value, caption])
         stack.axis = .vertical
-        stack.spacing = 0
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.layoutMargins = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+        stack.backgroundColor = UIColor(hexString: hex)
+        stack.layer.cornerRadius = 10
+        stack.layer.masksToBounds = true
         return stack
     }
 
@@ -193,12 +199,5 @@ final class WidgetGuideViewController: UIViewController {
     @objc private func neverTapped() {
         onNeverAsk?()
         dismiss(animated: true)
-    }
-}
-
-/// The date drawn in the guide's preview: today's Vietnam day as the widget writes it ("31/10")
-enum TodayWidgetPreview {
-    static func dayText(now: Date = Date()) -> String {
-        TodayWidgetClock.dayMonthText(now)
     }
 }

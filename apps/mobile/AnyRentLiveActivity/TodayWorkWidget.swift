@@ -2,7 +2,8 @@ import SwiftUI
 import UIKit
 import WidgetKit
 
-// "Việc cần làm" home-screen widget (#1375, epic #1372). Small: three numbers. Medium: the numbers and three jobs.
+// "Việc cần làm" home-screen widget (#1375, #1378, epic #1372), design P2 "thẻ có màu".
+// Small: a progress ring ("xong 4/10") and three coloured counters. Medium: the counters and two jobs of two lines each.
 //
 // It only reads the file the app wrote into the App Group. No network, no token, no Keychain. What it draws is decided
 // by `TodayWidgetDisplay.make` (pure, tested): a list from an earlier Vietnam day is never shown as today's.
@@ -40,16 +41,14 @@ struct TodayWorkProvider: TimelineProvider {
     static func sample() -> TodayWidgetSnapshot {
         let labels = TodayWidgetLabels.fallback()
         let rows = [
-            TodayWidgetRow(orderId: 1, kind: .pickup, isLate: true, name: "Hà Gia Bảo", product: "Áo dài gấm đỏ", lateDays: 2,
-                           lateText: "", notPrepared: false),
-            TodayWidgetRow(orderId: 2, kind: .pickup, isLate: false, name: "Mai Quốc Huy", product: "Vest", lateDays: 0,
-                           lateText: "", notPrepared: true),
-            TodayWidgetRow(orderId: 3, kind: .returnTask, isLate: false, name: "Bùi Thanh Tâm", product: "Áo dài gấm đỏ", lateDays: 0,
-                           lateText: "", notPrepared: false),
+            TodayWidgetRow(orderId: 1, kind: .pickup, isLate: true, name: "Anh Tâm", product: "Áo cưới ren", moreCount: 0, lateDays: 3,
+                           lateText: "", notPrepared: false, planTime: "", planDay: ""),
+            TodayWidgetRow(orderId: 2, kind: .pickup, isLate: false, name: "Chị Diệu", product: "Áo dài gấm đỏ", moreCount: 1, lateDays: 0,
+                           lateText: "", notPrepared: true, planTime: "14:00", planDay: ""),
         ]
         let now = Date()
         return TodayWidgetSnapshot(userId: 0, outletId: 0, date: TodayWidgetClock.dayKey(now), savedAt: now, state: .ok,
-                                   hideNames: false, counts: TodayWidgetCounts(late: 1, pickup: 3, returns: 2), rows: rows,
+                                   hideNames: false, done: 4, counts: TodayWidgetCounts(late: 1, pickup: 3, returns: 2), rows: rows,
                                    labels: labels)
     }
 }
@@ -77,7 +76,7 @@ struct TodayWorkWidgetView: View {
     let entry: TodayWorkEntry
 
     private var display: TodayWidgetDisplay {
-        TodayWidgetDisplay.make(snapshot: entry.snapshot, now: entry.date, rowLimit: family == .systemMedium ? 3 : 0)
+        TodayWidgetDisplay.make(snapshot: entry.snapshot, now: entry.date, rowLimit: family == .systemMedium ? 2 : 0)
     }
 
     var body: some View {
@@ -92,21 +91,194 @@ struct TodayWorkWidgetView: View {
         switch display.kind {
         case .work:
             if family == .systemMedium {
-                MediumWorkView(display: display, now: entry.date)
+                MediumWorkView(display: display)
             } else {
                 SmallWorkView(display: display)
             }
         case .empty:
-            StateView(display: display, now: entry.date, family: family, headline: display.labels.empty,
-                      detail: display.tomorrowText, footer: display.updatedText)
+            StateView(display: display, family: family, headline: display.labels.empty, detail: display.tomorrowText,
+                      footer: display.updatedText)
+        case .allDone:
+            StateView(display: display, family: family, headline: display.allDoneText ?? "", detail: display.tomorrowText,
+                      footer: display.updatedText, symbol: "checkmark.circle.fill")
         case .stale:
-            StateView(display: display, now: entry.date, family: family, headline: display.labels.stale,
-                      detail: display.staleDetail, footer: nil)
+            StateView(display: display, family: family, headline: display.labels.stale, detail: display.staleDetail, footer: nil)
         case .noAccess:
-            StateView(display: display, now: entry.date, family: family, headline: display.labels.noAccess, detail: nil, footer: nil)
+            StateView(display: display, family: family, headline: display.labels.noAccess, detail: nil, footer: nil)
         case .loggedOut:
-            StateView(display: display, now: entry.date, family: family, headline: display.labels.loggedOut,
-                      detail: display.labels.loggedOutHint, footer: nil, showsDay: false)
+            StateView(display: display, family: family, headline: display.labels.loggedOut, detail: display.labels.loggedOutHint,
+                      footer: nil, showsDay: false)
+        }
+    }
+}
+
+/// Small: the ring, then the three counters
+@available(iOS 16.1, *)
+private struct SmallWorkView: View {
+    let display: TodayWidgetDisplay
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                ProgressRing(progress: display.progress).frame(width: 34, height: 34)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(display.progressText).font(.system(size: 15, weight: .bold)).lineLimit(1)
+                    Text(display.labels.doneCaption).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(2).minimumScaleFactor(0.85)
+                }
+            }
+            HStack(spacing: 4) {
+                CounterTile(number: display.counts.late, word: display.labels.late, fill: .tileLate, icon: nil, stacked: true)
+                CounterTile(number: display.counts.pickup, word: display.labels.pickup, fill: .tileGiao, icon: nil, stacked: true)
+                CounterTile(number: display.counts.returns, word: display.labels.returnTask, fill: .tileTra, icon: nil, stacked: true)
+            }
+            Spacer(minLength: 0)
+            if let updated = display.updatedText {
+                Text(updated).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(1)
+            }
+        }
+    }
+}
+
+/// Medium: the counters in a strip, two jobs of two lines, the footer
+@available(iOS 16.1, *)
+private struct MediumWorkView: View {
+    let display: TodayWidgetDisplay
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                CounterTile(number: display.counts.late, word: display.labels.late, fill: .tileLate, icon: "clock", stacked: false)
+                CounterTile(number: display.counts.pickup, word: display.labels.pickup, fill: .tileGiao, icon: "arrow.up.right", stacked: false)
+                CounterTile(number: display.counts.returns, word: display.labels.returnTask, fill: .tileTra, icon: "arrow.down.left", stacked: false)
+            }
+            VStack(spacing: 4) {
+                ForEach(Array(display.lines.enumerated()), id: \.offset) { _, line in
+                    Link(destination: line.url) { JobRow(line: line, display: display) }
+                }
+            }
+            Spacer(minLength: 0)
+            Text(display.footerText).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(1).minimumScaleFactor(0.85)
+        }
+    }
+}
+
+/// One job: line 1 the chip, the customer and when; line 2 the first item and the warning (or the due day)
+@available(iOS 16.1, *)
+private struct JobRow: View {
+    let line: TodayWidgetDisplay.Line
+    let display: TodayWidgetDisplay
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 6) {
+                KindChip(chip: line.chip, text: line.chipText)
+                if line.name.isEmpty {
+                    Text(display.labels.hiddenName).font(.system(size: 14)).foregroundColor(.secondary).lineLimit(1)
+                } else {
+                    // Blurred by the system when the phone is locked
+                    Text(line.name).font(.system(size: 14, weight: .bold)).lineLimit(1).privacySensitive()
+                }
+                Spacer(minLength: 4)
+                Text(line.rightText)
+                    .font(.system(size: 12, weight: line.rightIsLate ? .bold : .semibold))
+                    .foregroundColor(line.rightIsLate ? .lateText : .secondary)
+                    .lineLimit(1).minimumScaleFactor(0.85)
+            }
+            HStack(spacing: 6) {
+                Text(line.productText).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(1)
+                Spacer(minLength: 4)
+                if let warning = line.warningText {
+                    // Orange text and a warning icon, no background: it must not be mistaken for the TRẢ chip
+                    HStack(spacing: 3) {
+                        Image(systemName: "exclamationmark.triangle").font(.system(size: 11, weight: .bold))
+                        Text(warning).font(.system(size: 12, weight: .bold)).lineLimit(1)
+                    }
+                    .foregroundColor(.warningText)
+                } else if let day = line.dayText {
+                    Text(day).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(1)
+                }
+            }
+            .padding(.leading, 1)
+        }
+    }
+}
+
+@available(iOS 16.1, *)
+private struct KindChip: View {
+    let chip: TodayWidgetDisplay.Chip
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: symbol).font(.system(size: 10, weight: .heavy))
+            Text(text).font(.system(size: 12, weight: .heavy)).lineLimit(1)
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 6).padding(.vertical, 1)
+        .background(RoundedRectangle(cornerRadius: 6).fill(fill))
+    }
+
+    private var symbol: String {
+        switch chip {
+        case .late: return "clock"
+        case .pickup: return "arrow.up.right"
+        case .returnTask: return "arrow.down.left"
+        }
+    }
+
+    private var fill: Color {
+        switch chip {
+        case .late: return .tileLate
+        case .pickup: return .tileGiao
+        case .returnTask: return .tileTra
+        }
+    }
+}
+
+/// A coloured counter: a number and its word on a solid fill; a counter at 0 is dimmed
+@available(iOS 16.1, *)
+private struct CounterTile: View {
+    let number: Int
+    let word: String
+    let fill: Color
+    let icon: String?
+    /// Small widget: number above the word. Medium: icon, number and word in a row.
+    let stacked: Bool
+
+    var body: some View {
+        Group {
+            if stacked {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("\(number)").font(.system(size: 22, weight: .bold)).monospacedDigit()
+                    Text(word).font(.system(size: 12, weight: .bold)).lineLimit(1).minimumScaleFactor(0.8)
+                }
+                .padding(.horizontal, 6).padding(.vertical, 4)
+            } else {
+                HStack(spacing: 4) {
+                    if let icon = icon { Image(systemName: icon).font(.system(size: 11, weight: .heavy)) }
+                    Text("\(number)").font(.system(size: 20, weight: .bold)).monospacedDigit()
+                    Text(word).font(.system(size: 12, weight: .bold)).lineLimit(1)
+                }
+                .padding(.horizontal, 9).padding(.vertical, 3)
+            }
+        }
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10).fill(fill))
+        .opacity(number == 0 ? 0.4 : 1)
+    }
+}
+
+@available(iOS 16.1, *)
+private struct ProgressRing: View {
+    let progress: Double
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(Color.ringTrack, lineWidth: 5)
+            Circle().trim(from: 0, to: CGFloat(progress))
+                .stroke(Color.ringFill, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
         }
     }
 }
@@ -114,143 +286,16 @@ struct TodayWorkWidgetView: View {
 @available(iOS 16.1, *)
 private struct HeaderView: View {
     let display: TodayWidgetDisplay
-    let now: Date
     let family: WidgetFamily
     var showsDay = true
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(display.title).font(.system(size: 13, weight: .bold)).lineLimit(1)
+            Text(display.title).font(.system(size: 14, weight: .bold)).lineLimit(1)
             Spacer(minLength: 4)
             if showsDay {
-                Text(family == .systemMedium ? Self.longDay(now, display.labels) : display.dayText)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                Text(display.dayText).font(.system(size: 12, weight: .semibold)).foregroundColor(.secondary).lineLimit(1)
             }
-        }
-    }
-
-    /// "Thứ Bảy 31/10" in the app's language, Vietnam day
-    static func longDay(_ date: Date, _ labels: TodayWidgetLabels) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: labels.locale)
-        formatter.timeZone = TodayWidgetClock.timeZone
-        formatter.dateFormat = "EEEE dd/MM"
-        let text = formatter.string(from: date)
-        return text.prefix(1).uppercased() + text.dropFirst()
-    }
-}
-
-@available(iOS 16.1, *)
-private struct SmallWorkView: View {
-    let display: TodayWidgetDisplay
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HeaderView(display: display, now: Date(), family: .systemSmall)
-            Spacer(minLength: 0)
-            HStack(alignment: .bottom, spacing: 0) {
-                CountView(number: display.counts.pickup, word: display.labels.pickupCount, color: .giao, big: true)
-                Spacer(minLength: 2)
-                CountView(number: display.counts.returns, word: display.labels.returnCount, color: .tra, big: true)
-                Spacer(minLength: 2)
-                CountView(number: display.counts.late, word: display.labels.lateCount, color: .tre, big: true)
-            }
-            Spacer(minLength: 0)
-        }
-    }
-}
-
-@available(iOS 16.1, *)
-private struct MediumWorkView: View {
-    let display: TodayWidgetDisplay
-    let now: Date
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HeaderView(display: display, now: now, family: .systemMedium)
-            HStack(spacing: 12) {
-                CountView(number: display.counts.pickup, word: display.labels.pickupCount, color: .giao, big: false)
-                CountView(number: display.counts.returns, word: display.labels.returnCount, color: .tra, big: false)
-                CountView(number: display.counts.late, word: display.labels.lateCount, color: .tre, big: false)
-            }
-            VStack(spacing: 0) {
-                ForEach(Array(display.lines.enumerated()), id: \.offset) { _, line in
-                    Link(destination: line.url) { LineView(line: line, display: display) }
-                }
-            }
-            Spacer(minLength: 0)
-            HStack {
-                if let more = display.moreText { Text(more).font(.system(size: 11, weight: .semibold)) }
-                Spacer()
-                if let updated = display.updatedText { Text(updated).font(.system(size: 11)) }
-            }
-            .foregroundColor(.secondary)
-            .lineLimit(1)
-        }
-    }
-}
-
-@available(iOS 16.1, *)
-private struct LineView: View {
-    let line: TodayWidgetDisplay.Line
-    let display: TodayWidgetDisplay
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text(line.tag)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(line.isReturn ? .traTagText : .giaoTagText)
-                .padding(.horizontal, 7).padding(.vertical, 1)
-                .background(RoundedRectangle(cornerRadius: 6).fill(line.isReturn ? Color.traTagFill : Color.giaoTagFill))
-            if line.name.isEmpty {
-                Text(display.labels.hiddenName).font(.system(size: 13)).foregroundColor(.secondary).lineLimit(1)
-            } else {
-                // Blurred by the system when the phone is locked
-                Text(line.name).font(.system(size: 13, weight: .semibold)).lineLimit(1).privacySensitive()
-            }
-            Spacer(minLength: 4)
-            trailing
-        }
-        .frame(height: 25)
-        .overlay(Divider().opacity(0.6), alignment: .top)
-    }
-
-    @ViewBuilder
-    private var trailing: some View {
-        switch line.trailing {
-        case .late(let text):
-            Text(text).font(.system(size: 11.5, weight: .bold)).foregroundColor(.tre).lineLimit(1)
-        case .notPrepared(let text):
-            Text(text).font(.system(size: 11.5, weight: .bold)).foregroundColor(.chuaSoan).lineLimit(1)
-        case .product(let text):
-            Text(text).font(.system(size: 11.5)).foregroundColor(.secondary).lineLimit(1).frame(maxWidth: 110, alignment: .trailing)
-        case .none:
-            EmptyView()
-        }
-    }
-}
-
-@available(iOS 16.1, *)
-private struct CountView: View {
-    let number: Int
-    let word: String
-    let color: Color
-    let big: Bool
-
-    var body: some View {
-        if big {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("\(number)").font(.system(size: 32, weight: .bold)).foregroundColor(color)
-                Text(word).font(.system(size: 12, weight: .semibold)).foregroundColor(color)
-            }
-        } else {
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                Text("\(number)").font(.system(size: 14, weight: .bold))
-                Text(word).font(.system(size: 12, weight: .semibold))
-            }
-            .foregroundColor(color)
         }
     }
 }
@@ -258,24 +303,27 @@ private struct CountView: View {
 @available(iOS 16.1, *)
 private struct StateView: View {
     let display: TodayWidgetDisplay
-    let now: Date
     let family: WidgetFamily
     let headline: String
     let detail: String?
     let footer: String?
     var showsDay = true
+    var symbol: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HeaderView(display: display, now: now, family: family, showsDay: showsDay)
+            HeaderView(display: display, family: family, showsDay: showsDay)
             Spacer(minLength: 0)
-            Text(headline).font(.system(size: family == .systemSmall ? 14 : 16, weight: .bold)).lineLimit(3).minimumScaleFactor(0.8)
+            if let symbol = symbol {
+                Image(systemName: symbol).font(.system(size: 22)).foregroundColor(.ringFill)
+            }
+            Text(headline).font(.system(size: family == .systemSmall ? 15 : 17, weight: .bold)).lineLimit(3).minimumScaleFactor(0.8)
             if let detail = detail {
                 Text(detail).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(2)
             }
             Spacer(minLength: 0)
             if let footer = footer {
-                Text(footer).font(.system(size: 11)).foregroundColor(.secondary).lineLimit(1)
+                Text(footer).font(.system(size: 12)).foregroundColor(.secondary).lineLimit(1)
             }
         }
     }
@@ -301,15 +349,15 @@ private extension Color {
         Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) })
     }
 
-    /// The colours of the tab "Việc cần làm": Giao blue, Trả purple, Trễ red, Chưa soạn đồ orange
-    static let giao = dynamic(light: 0x2563EB, dark: 0x93C5FD)
-    static let tra = dynamic(light: 0x7C3AED, dark: 0xC4B5FD)
-    static let tre = dynamic(light: 0xDC2626, dark: 0xFCA5A5)
-    static let chuaSoan = dynamic(light: 0xC2410C, dark: 0xFDBA74)
-    static let giaoTagText = dynamic(light: 0x1E40AF, dark: 0xBFDBFE)
-    static let giaoTagFill = dynamic(light: 0xDBEAFE, dark: 0x1E3A8A)
-    static let traTagText = dynamic(light: 0x5B21B6, dark: 0xDDD6FE)
-    static let traTagFill = dynamic(light: 0xEDE9FE, dark: 0x4C1D95)
+    /// Kind colours of the P2 design: Trễ red, Giao blue (AnyRent), Trả orange; the counters and the chips share them
+    static let tileLate = dynamic(light: 0xB91C1C, dark: 0xDC2626)
+    static let tileGiao = dynamic(light: 0x1D4ED8, dark: 0x2563EB)
+    static let tileTra = dynamic(light: 0xC2410C, dark: 0xEA580C)
+    /// "Trễ N ngày" and "Chưa soạn đồ" are text colours, not fills
+    static let lateText = dynamic(light: 0xB91C1C, dark: 0xFCA5A5)
+    static let warningText = dynamic(light: 0x9A3412, dark: 0xFDBA74)
+    static let ringFill = dynamic(light: 0x1D4ED8, dark: 0x60A5FA)
+    static let ringTrack = dynamic(light: 0xE2E8F0, dark: 0x3A3A3C)
 }
 
 private extension UIColor {

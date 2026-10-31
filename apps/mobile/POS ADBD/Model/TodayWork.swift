@@ -30,9 +30,12 @@ struct TodayWork: Codable {
     /// shop that collects the deposit at once. Tomorrow's stages (`installmentsDueTomorrow`) are not part of To do.
     var installmentsDue: [InstallmentReminderRow] = []
     var installmentsOverdue: [InstallmentReminderRow] = []
+    /// #1378: hand-overs and returns already done today (`doneToday` of the API: orders picked up / returned today);
+    /// 0 / 0 on an API that does not send it. Only the home-screen widget ("xong N/M") reads it.
+    var doneToday: TodayWorkDone = .zero
 
     enum CodingKeys: String, CodingKey {
-        case date, pickupsToday, returnsToday, overdueReturns, noShows, tomorrowPickups, tomorrowReturns, collateralHeld
+        case date, pickupsToday, returnsToday, overdueReturns, noShows, tomorrowPickups, tomorrowReturns, collateralHeld, doneToday
     }
     /// Read only (the rows are not re-encoded)
     private enum StageKeys: String, CodingKey { case installmentsDue, installmentsOverdue }
@@ -47,10 +50,32 @@ struct TodayWork: Codable {
         tomorrowPickups = try c.decodeIfPresent(TodayWorkGroup.self, forKey: .tomorrowPickups)
         tomorrowReturns = try c.decodeIfPresent(TodayWorkGroup.self, forKey: .tomorrowReturns)
         collateralHeld = (try? c.decodeIfPresent(TodayWorkGroup.self, forKey: .collateralHeld)) ?? nil
+        doneToday = ((try? c.decodeIfPresent(TodayWorkDone.self, forKey: .doneToday)) ?? nil) ?? .zero
         let stages = try decoder.container(keyedBy: StageKeys.self)
         installmentsDue = ((try? stages.decodeIfPresent(InstallmentReminderGroup.self, forKey: .installmentsDue)) ?? nil)?.orders ?? []
         installmentsOverdue = ((try? stages.decodeIfPresent(InstallmentReminderGroup.self, forKey: .installmentsOverdue)) ?? nil)?.orders ?? []
     }
+}
+
+/// `doneToday` of outlet-operations: orders handed over and returned today (packages/database/src/outlet-operations.ts:106)
+struct TodayWorkDone: Codable, Equatable {
+    let pickups: Int
+    let returns: Int
+
+    static let zero = TodayWorkDone(pickups: 0, returns: 0)
+
+    init(pickups: Int, returns: Int) {
+        self.pickups = pickups
+        self.returns = returns
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        pickups = (try? c.decode(Int.self, forKey: .pickups)) ?? 0
+        returns = (try? c.decode(Int.self, forKey: .returns)) ?? 0
+    }
+
+    var total: Int { pickups + returns }
 }
 
 struct TodayWorkGroup: Codable {
@@ -88,6 +113,9 @@ struct TodayWorkRow: Codable {
     var securityDeposit: Double = 0
     /// #1231: a deposit stage row ("Thu cọc"): the stage label ("Cọc 2"); nil on every other row
     var stageLabel: String? = nil
+    /// #1378: the first item's name (no quantity) and how many items the order has, for the home-screen widget
+    var firstItemName: String = ""
+    var itemCount: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case id, orderNumber, customerName, customerPhone, pickupPlanAt, returnPlanAt
@@ -147,6 +175,16 @@ struct TodayWorkRow: Codable {
         productNames = fromItems.isEmpty
             ? ((try? c.decode(String.self, forKey: .productNames)) ?? "")
             : fromItems.joined(separator: ", ")
+        // The widget's "Áo dài gấm đỏ +1": from the items when the API sent them, else from the joined names
+        let names = items.compactMap { $0.name }.filter { !$0.isEmpty }
+        if !names.isEmpty {
+            firstItemName = names[0]
+            itemCount = names.count
+        } else {
+            let parts = productNames.components(separatedBy: ", ").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            firstItemName = parts.first ?? ""
+            itemCount = parts.count
+        }
     }
 
     func encode(to encoder: Encoder) throws {
