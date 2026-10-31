@@ -376,7 +376,8 @@ fun ProductFormV2Screen(
             )
 
             FormField(stringResource(R.string.v2_form_name), required = true, value = name, onChange = { name = it },
-                placeholder = stringResource(R.string.v2_form_name_placeholder), fieldTag = "product.form.name")
+                placeholder = stringResource(R.string.v2_form_name_placeholder), fieldTag = "product.form.name",
+                modifier = Modifier.coachAnchor("product.form.nameRow"))
             Row(
                 Modifier.fillMaxWidth().clickable { showCategories = true }.heightIn(min = 52.dp).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,

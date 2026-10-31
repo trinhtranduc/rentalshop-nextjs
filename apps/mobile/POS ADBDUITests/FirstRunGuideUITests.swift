@@ -2,8 +2,8 @@
 //  FirstRunGuideUITests.swift
 //  POS ADBDUITests
 //
-//  #1393: a new empty shop walks the card: product, customer in the cart, order, finish. The guard against the guide drifting
-//  when screens change. Log in with a shop from scripts/mobile-e2e/new-empty-shop.sh:
+//  #1393, #1394: a new empty shop walks the whole guide: product, customer in the cart, order, finish. The main guard against
+//  bubbles drifting when screens change. Log in with a shop from scripts/mobile-e2e/new-empty-shop.sh:
 //    TEST_RUNNER_E2E_EMAIL=... TEST_RUNNER_E2E_PASSWORD=... TEST_RUNNER_E2E_ROLE=merchant TEST_RUNNER_E2E_OUT_DIR=... \
 //    TEST_RUNNER_E2E_FEATURES=... xcodebuild test -only-testing:"POS ADBDUITests/FirstRunGuideUITests" ...
 //
@@ -55,16 +55,27 @@ final class FirstRunGuideUITests: XCTestCase {
         return row
     }
 
-    func testWalkTheCardOnAnEmptyShop() throws {
+    private func bubble(_ name: String) -> XCUIElement {
+        let text = app.staticTexts["guide.bubble.\(name)"]
+        XCTAssertTrue(text.waitForExistence(timeout: 10), "bubble \(name)")
+        return text
+    }
+
+    /// #1394: the whole guide with its 6 bubbles, in the order of the mockup. A bubble that drifts or goes missing fails here.
+    func testWalkTheWholeGuideOnAnEmptyShop() throws {
         logInToHome()
         count("0/3")
         e2e.shot("guide-01-home-new-shop")
+        XCTAssertFalse(app.buttons["guide.bubble.skip"].exists, "no bubble before a row is tapped")
 
-        // 1. Product: the form opens from the row
+        // Bubble 1: product form. A tap on the dim closes it and leaves the form usable.
         row("product").tap()
+        let first = bubble("productName")
+        e2e.shot("guide-02-bubble-product")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72)).tap()
+        XCTAssertTrue(first.waitForNonExistence(timeout: 3), "a tap on the dim closes the bubble")
         let name = app.textFields["product.form.name"]
-        XCTAssertTrue(name.waitForExistence(timeout: 8), "product form")
-        e2e.shot("guide-02-product-form")
+        XCTAssertTrue(name.exists, "the form stays")
         name.tap()
         name.typeText("Ao cuoi ren")
         let price = app.textFields["product.form.perRental"]
@@ -78,31 +89,74 @@ final class FirstRunGuideUITests: XCTestCase {
         count("1/3")
         e2e.shot("guide-04-home-one-done")
 
-        // 2. Customer, inside the cart: the row puts the product in the cart
+        // Bubble 2: the row puts the product in the cart and lights the customer row
         row("customer").tap()
         XCTAssertTrue(app.buttons["cart.more"].waitForExistence(timeout: 8), "the cart opens")
-        e2e.shot("guide-05-cart")
-        XCTAssertNotNil(e2e.createCustomerInPicker(name: "Lan Anh", phone: E2E.uniquePhone()), "customer made in the cart")
-        e2e.shot("guide-06-cart-customer")
+        _ = bubble("cartCustomer")
+        e2e.shot("guide-05-bubble-cart-customer")
+        let customerRow = app.buttons["cart.customerRow"]
+        XCTAssertTrue(customerRow.isHittable, "the lit control takes the tap")
+        customerRow.tap()
 
-        // 3. Order: dates, then Tạo đơn
-        let dates = e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"])
-        XCTAssertTrue(dates.waitForExistence(timeout: 5), "dates row")
-        dates.tap()
+        // Bubble 3: the picker
+        _ = bubble("pickerNew")
+        e2e.shot("guide-06-bubble-picker")
+        app.cells["customers.picker.new"].tap()
+
+        // Bubble 4: the new customer form, with the keyboard up by itself
+        let fields = bubble("newCustomerFields")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "the form opens the keyboard")
+        e2e.shot("guide-07-bubble-new-customer")
+        XCTAssertLessThan(fields.frame.maxY, app.keyboards.firstMatch.frame.minY, "the bubble sits above the keyboard")
+        XCTAssertTrue(e2e.type(into: ["Phone number", "Số điện thoại"], text: E2E.uniquePhone()), "phone field")
+        XCTAssertTrue(fields.waitForNonExistence(timeout: 3), "typing closes the bubble")
+        XCTAssertTrue(e2e.type(into: ["Full name", "Họ và tên"], text: "Lan Anh"), "name field")
+        e2e.shot("guide-08-new-customer-filled")
+        e2e.button(["Save and select", "Lưu và chọn"]).tap()
+
+        // Bubble 5: back in the cart with the customer, the dates are lit
+        _ = bubble("cartDates")
+        e2e.shot("guide-09-bubble-dates")
+        e2e.element(labelBeginsWith: ["Choose rental dates", "Chọn ngày thuê"]).tap()
         e2e.pickTodayInDateSheet()
         e2e.tapIfExists(e2e.button(["Confirm", "Xác nhận"]), timeout: 3)
-        XCTAssertTrue(e2e.createOrderFromCart(cta: ["Create order", "Tạo đơn"], shotPrefix: "guide-07-order"),
+
+        // Bubble 6: all set
+        _ = bubble("cartCreate")
+        e2e.shot("guide-10-bubble-create")
+        XCTAssertTrue(e2e.createOrderFromCart(cta: ["Create order", "Tạo đơn"], shotPrefix: "guide-11-order"),
                       "order created (last alert: \(e2e.lastAlert ?? "none"))")
-        e2e.goBack()
+        // "Tạo đơn mới" already closes the cart. Not `E2E.goBack`: on Home its edge drag can land on a product row and open it.
+        if app.buttons["cart.back"].waitForExistence(timeout: 2) { app.buttons["cart.back"].tap() }
 
         // Finish, once
         let finish = app.buttons["guide.finish.close"]
         XCTAssertTrue(finish.waitForExistence(timeout: 20), "the finish card shows")
-        e2e.shot("guide-08-finish")
+        e2e.dismissRatingPrompt() // the app's rating prompt can follow the first order
+        e2e.shot("guide-12-finish")
         finish.tap()
         XCTAssertTrue(finish.waitForNonExistence(timeout: 5))
-        e2e.shot("guide-09-home-after-finish")
-        XCTAssertFalse(app.otherElements["guide.card"].exists)
+        e2e.shot("guide-13-home-after-finish")
+        XCTAssertFalse(app.staticTexts["guide.count"].exists)
+    }
+
+    /// #1394: Bỏ qua in a bubble ends the guide and the screen stays usable
+    func testSkipFromABubble() throws {
+        logInToHome()
+        count("0/3")
+        row("product").tap()
+        _ = bubble("productName")
+        app.buttons["guide.bubble.skip"].tap()
+        XCTAssertTrue(app.buttons["guide.bubble.skip"].waitForNonExistence(timeout: 3))
+        let name = app.textFields["product.form.name"]
+        XCTAssertTrue(name.exists, "the form stays usable")
+        name.tap()
+        name.typeText("Vest")
+        e2e.shot("guide-skip-bubble-form")
+        e2e.element(labelBeginsWith: ["Close", "Đóng"], type: .button).tap()
+        e2e.tapIfExists(e2e.button(["Leave", "Thoát", "Discard", "Bỏ", "Yes", "Có"]), timeout: 2)
+        XCTAssertTrue(app.staticTexts["guide.count"].waitForNonExistence(timeout: 5), "the card is hidden")
+        e2e.shot("guide-skip-bubble-home")
     }
 
     func testSkipThenReopenFromSettings() throws {
