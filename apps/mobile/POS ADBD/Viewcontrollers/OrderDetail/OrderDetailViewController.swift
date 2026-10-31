@@ -874,7 +874,16 @@ final class OrderDetailViewController: BaseViewControler {
         case .handOver:
             buttons.append(shortPrintButton())
             if DepositPlanLogic.blocksHandOver(hasPlan: detail.hasDepositPlan, status: detail.status, stages: detail.installments) {
-                // #1380: the API refuses the hand-over until the stage is collected on the deposit card
+                // #1380: the API refuses the hand-over until the stage is collected. #1400: collect it from here
+                let stages = detail.installments ?? []
+                if let stage = DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: detail.hasDepositPlan, status: detail.status, stages: stages),
+                   let number = DepositPlanLogic.stageNumber(stages, key: stage.key) {
+                    let collect = makeButton(title: String(format: "deposit.card.collectStage".localized(), number), style: .primary)
+                    collect.accessibilityIdentifier = "order.detail.collectStage"
+                    collect.addAction(UIAction { [weak self] _ in self?.presentCollect(stage) }, for: .touchUpInside)
+                    buttons.append(collect)
+                    break
+                }
                 let line = V2.label("order.detail.stageUnpaid".localized(), size: DS.TextSize.body, weight: .semibold, color: DS.Color.textMuted, lines: 2)
                 line.textAlignment = .center
                 line.accessibilityIdentifier = "order.detail.stageUnpaid"
