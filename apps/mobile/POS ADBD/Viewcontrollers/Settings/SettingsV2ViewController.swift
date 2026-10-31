@@ -43,7 +43,7 @@ final class SettingsV2ViewController: BaseViewControler {
     /// #1259: bank accounts of the default branch, for the second text of "Thu tiền" (nil until known)
     private var bankCount: Int?
     /// Totals next to Khách hàng / Người dùng (#388)
-    private var counts: [SettingsV2Item: Int] = [:]
+    private(set) var counts: [SettingsV2Item: Int] = [:]
     /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
     private var lastFetchedAt: Date?
     /// #937: unread count on the "Thông báo" row (moved from the Home bell); follows `.inboxUnreadCountDidChange`
@@ -64,6 +64,7 @@ final class SettingsV2ViewController: BaseViewControler {
         super.viewDidLoad()
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(shopBranchCountChanged(_:)), name: .shopBranchCountDidChange, object: nil)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -182,6 +183,13 @@ final class SettingsV2ViewController: BaseViewControler {
                 }
             }
         }
+    }
+
+    /// #1331: the shop screen read its branch list inside the 10 minutes; the row shows the same number
+    @objc private func shopBranchCountChanged(_ note: Notification) {
+        guard let count = note.userInfo?["count"] as? Int, counts[.storeInfo] != count else { return }
+        counts[.storeInfo] = count
+        listView.reloadData()
     }
 
     // MARK: - Thông báo (#937)

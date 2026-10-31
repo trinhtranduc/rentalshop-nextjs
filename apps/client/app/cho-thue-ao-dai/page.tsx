@@ -143,7 +143,7 @@ export default function ChoThueAoDaiPage() {
               <UseCaseCard title="Cửa hàng cho thuê áo dài cưới" items={['Quản lý bộ sưu tập theo mùa', 'Đặt cọc và lịch hẹn thử đồ', 'Theo dõi phụ kiện kèm theo']} />
               <UseCaseCard title="Tiệm cho thuê áo dài truyền thống" items={['Phân loại theo dịp: lễ, tết, sự kiện', 'Quản lý nhiều size cùng mẫu', 'Tính giá thuê theo ngày']} />
               <UseCaseCard title="Studio cho thuê áo dài chụp ảnh" items={['Gói combo áo dài + chụp ảnh', 'Lịch đặt theo slot thời gian', 'Quản lý phụ kiện, mấn, giày']} />
-              <UseCaseCard title="Chuỗi cửa hàng áo dài" items={['Quản lý nhiều chi nhánh', 'Chuyển kho giữa các cửa hàng', 'Báo cáo tổng hợp toàn hệ thống']} />
+              <UseCaseCard title="Chuỗi cửa hàng áo dài" items={['Quản lý nhiều chi nhánh', 'Quản lý tồn kho từng chi nhánh', 'Báo cáo tổng hợp toàn hệ thống']} />
             </div>
           </div>
         </section>

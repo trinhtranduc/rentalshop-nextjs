@@ -2280,6 +2280,81 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("5e-detail-items-scrolled")
     }
 
+    private func openOrder(_ number: String) {
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(2)
+        let search = e2e.ordersSearchField
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
+        search.tap()
+        search.typeText(number)
+        sleep(3)
+        let row = app.cells.firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "order \(number) in the list")
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10))
+        sleep(2)
+    }
+
+    /// #1380: E2E_ORDER_NUMBER = a booked plan order with stages i1 and i2 uncollected. "Còn đợt chưa thu" replaces Giao đồ until
+    /// the last stage is collected on the deposit card, then the hand-over works. Any role.
+    func test5jStageUnpaidHidesHandOver() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        openOrder(number)
+        let line = app.staticTexts["order.detail.stageUnpaid"]
+        let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
+        func collectNext(_ step: String) {
+            let collect = app.buttons["deposit.card.collect"]
+            for _ in 0..<4 where !collect.isHittable { app.swipeUp(); sleep(1) }
+            XCTAssertTrue(collect.isHittable, "Thu giai đoạn N on the card")
+            e2e.shot("5j-\(step)-card")
+            collect.tap()
+            let confirm = app.buttons["deposit.collect.confirm"]
+            XCTAssertTrue(confirm.waitForExistence(timeout: 5), "the collect sheet")
+            confirm.tap()
+            sleep(3)
+        }
+        XCTAssertTrue(line.waitForExistence(timeout: 5), "two stages unpaid: the line shows")
+        XCTAssertFalse(handOver.exists, "two stages unpaid: no Giao đồ")
+        XCTAssertTrue(app.buttons["orderDetail.print"].exists, "In stays")
+        e2e.shot("5j-1-two-unpaid")
+
+        collectNext("2-first")
+        XCTAssertTrue(line.waitForExistence(timeout: 5), "one stage unpaid: the line still shows")
+        XCTAssertFalse(handOver.exists, "one stage unpaid: no Giao đồ")
+        e2e.shot("5j-3-one-unpaid")
+
+        collectNext("4-last")
+        XCTAssertTrue(handOver.waitForExistence(timeout: 8), "all stages collected: Giao đồ is back")
+        XCTAssertFalse(line.exists, "all stages collected: no line")
+        e2e.shot("5j-5-all-collected")
+        handOver.tap()
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)
+        XCTAssertTrue(handed.waitForExistence(timeout: 8), "the hand-over sheet")
+        e2e.shot("5j-6-sheet")
+        handed.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        XCTAssertTrue(e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button).waitForExistence(timeout: 8), "handed over: Nhận trả")
+        e2e.shot("5j-7-handed-over")
+    }
+
+    /// #1380: E2E_CONTROL_ORDER = a booked order without a plan (one "Đã cọc"): Giao đồ as before, no line
+    func test5kNoPlanKeepsHandOver() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        guard let number = ProcessInfo.processInfo.environment["E2E_CONTROL_ORDER"] else { throw XCTSkip("E2E_CONTROL_ORDER not set") }
+        try e2e.start()
+        openOrder(number)
+        XCTAssertTrue(e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button).waitForExistence(timeout: 8), "no plan: Giao đồ")
+        XCTAssertFalse(app.staticTexts["order.detail.stageUnpaid"].exists, "no plan: no line")
+        e2e.shot("5k-no-plan")
+    }
+
     /// #1246: the staged-deposit card on order detail runs edge to edge like the other rows. E2E_ORDER_NUMBER = a plan order.
     func test5gDepositCardWidth() throws {
         try e2e.requireFlag("newOrders")

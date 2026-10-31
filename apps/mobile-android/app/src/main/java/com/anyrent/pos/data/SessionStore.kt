@@ -317,6 +317,8 @@ object SessionStore {
         runCatching { com.anyrent.pos.billing.PurchasesManager.logOut() }
         com.anyrent.pos.push.DraftOrderReminder.cancel()
         CartStore.clear(persistToDisk = false)
+        // #1381: the shop's data leaves the home-screen widget with the session
+        com.anyrent.pos.ui.widget.TodayWidgetSync.signedOut()
     }
 
     /** [code] is the server's 401 code, e.g. SESSION_REPLACED when another device signed in. */

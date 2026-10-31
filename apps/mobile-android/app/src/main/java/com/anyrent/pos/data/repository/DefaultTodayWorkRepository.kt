@@ -41,15 +41,33 @@ internal fun todayWorkFromJson(data: JSONObject): TodayWork {
                 stageLabel = it.label, stageKey = it.key,
             )
         }
+    // #1381 the API's `count` (the rows stop at 50); the rows' number on an answer without it
+    fun count(key: String, rows: List<TodayWorkRow>?): Int? =
+        data.optJSONObject(key)?.let { if (it.has("count") && !it.isNull("count")) it.optInt("count") else rows?.size }
+    val pickups = rows("pickupsToday").orEmpty()
+    val returns = rows("returnsToday").orEmpty()
+    val overdue = rows("overdueReturns").orEmpty()
+    val noShows = rows("noShows").orEmpty()
+    val tomorrowPickups = rows("tomorrowPickups")
+    val tomorrowReturns = rows("tomorrowReturns")
+    val done = data.optJSONObject("doneToday")
     return TodayWork(
-        pickupsToday = rows("pickupsToday").orEmpty(),
-        returnsToday = rows("returnsToday").orEmpty(),
-        overdueReturns = rows("overdueReturns").orEmpty(),
-        noShows = rows("noShows").orEmpty(),
-        tomorrowPickups = rows("tomorrowPickups"),
-        tomorrowReturns = rows("tomorrowReturns"),
+        pickupsToday = pickups,
+        returnsToday = returns,
+        overdueReturns = overdue,
+        noShows = noShows,
+        tomorrowPickups = tomorrowPickups,
+        tomorrowReturns = tomorrowReturns,
         installmentsDue = stages("installmentsDue"),
         installmentsOverdue = stages("installmentsOverdue"),
+        date = if (data.isNull("date")) null else data.optString("date").takeIf { it.isNotBlank() },
+        doneToday = (done?.optInt("pickups", 0) ?: 0) + (done?.optInt("returns", 0) ?: 0),
+        pickupsCount = count("pickupsToday", pickups) ?: pickups.size,
+        returnsCount = count("returnsToday", returns) ?: returns.size,
+        overdueCount = count("overdueReturns", overdue) ?: overdue.size,
+        noShowsCount = count("noShows", noShows) ?: noShows.size,
+        tomorrowPickupsCount = count("tomorrowPickups", tomorrowPickups),
+        tomorrowReturnsCount = count("tomorrowReturns", tomorrowReturns),
     )
 }
 
@@ -68,6 +86,10 @@ private fun todayWorkRowFromJson(o: JSONObject): TodayWorkRow {
         val quantity = item.optInt("quantity", 1)
         if (quantity > 1) "$name ×$quantity" else name
     }
+    // #1381 the widget's "Áo dài gấm đỏ +1": from the items when the API sent them, else from the joined names
+    val itemNames = (0 until (items?.length() ?: 0)).mapNotNull { index ->
+        items?.optJSONObject(index)?.takeUnless { it.isNull("name") }?.optString("name")?.takeIf { it.isNotBlank() }
+    }.ifEmpty { text("productNames").orEmpty().split(", ").map { it.trim() }.filter { it.isNotEmpty() } }
     return TodayWorkRow(
         id = o.optInt("id"),
         orderNumber = o.optString("orderNumber"),
@@ -81,5 +103,7 @@ private fun todayWorkRowFromJson(o: JSONObject): TodayWorkRow {
         amountDue = number("amountDue"),
         refundDue = number("refundDue"),
         lateDays = o.optInt("lateDays", 0),
+        firstItemName = itemNames.firstOrNull().orEmpty(),
+        itemCount = itemNames.size,
     )
 }

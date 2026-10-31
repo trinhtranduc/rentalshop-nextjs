@@ -3125,3 +3125,4 @@
 "widget.settings.row" = "Widget";
 "widget.hideNames.title" = "Hide customer names on the widget";
 "widget.hideNames.subtitle" = "Off by default. Turn on if you do not want names shown even while the phone is unlocked. The widget never shows money or phone numbers.";
+"order.detail.stageUnpaid" = "Deposit stage unpaid";

@@ -18,6 +18,12 @@ enum DS {
         static let divider = UIColor(hexString: "F1F5F9")
     }
 
+    /// Diagonal gradients, top-left to bottom-right (CSS 135deg)
+    enum Gradient {
+        /// #1384: AI image search button. Android `DS.Gradients.AiScan`, web `--ar-ai-gradient`
+        static let aiScan = [UIColor(hexString: "1D4ED8"), UIColor(hexString: "7C3AED")]
+    }
+
     /// Pill colors: `text` on `fill`
     struct Pill {
         let text: UIColor
@@ -111,6 +117,9 @@ enum DS {
     static func symbol(_ name: String, _ size: CGFloat, weight: UIImage.SymbolWeight = .medium) -> UIImage? {
         UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: symbolPointSize(for: size, name: name), weight: weight))
     }
+
+    /// #1384: the mockup's filled camera with a sparkle, 20 pt. A template image: tint it. Android `AppIcons.AiScan`
+    static var aiScanIcon: UIImage? { UIImage(named: "aiScanCamera") }
 
     /// #1061 (owner: "icon đúng mockup"): the mockup's edit icon, Lucide "pen-line" (pencil + underline), drawn from its
     /// 24×24 paths `M12 20h9` and `M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z`, stroke 2.2, round caps and joins, no

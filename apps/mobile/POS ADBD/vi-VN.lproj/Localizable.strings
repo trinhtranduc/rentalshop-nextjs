@@ -3123,3 +3123,4 @@
 "widget.settings.row" = "Widget";
 "widget.hideNames.title" = "Ẩn tên khách trên widget";
 "widget.hideNames.subtitle" = "Mặc định tắt. Bật nếu bạn không muốn hiện tên khách ngay cả khi máy đang mở. Widget không bao giờ hiện tiền hay số điện thoại.";
+"order.detail.stageUnpaid" = "Còn đợt chưa thu";

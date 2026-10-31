@@ -1,5 +1,10 @@
 package com.anyrent.pos.ui.orders.v2
 
+import com.anyrent.pos.domain.widget.TodayWidgetHint
+import com.anyrent.pos.ui.widget.TodayWidgetGuideSheet
+import com.anyrent.pos.ui.widget.TodayWidgetHintCard
+import com.anyrent.pos.ui.widget.TodayWidgetStore
+import com.anyrent.pos.ui.widget.rememberHasTodayWidget
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
@@ -184,6 +189,27 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit, onOpenBookings: () -> Unit = {}
         searchMode = false
     }
 
+    // #1381 the widget's header: "Việc cần làm", out of a search or the sale list
+    val wantsTodo by MainTabRouter.wantsTodo.collectAsState()
+    LaunchedEffect(wantsTodo) {
+        if (!wantsTodo) return@LaunchedEffect
+        MainTabRouter.todoShown()
+        if (searchMode) cancelSearch()
+        rentSegment = OrdersSegment.TODAY
+        if (state.todayAvailable) viewModel.select(OrdersSegment.TODAY)
+        listState.scrollToItem(0)
+    }
+    // #1381 W11: the one-time card, and the guide it opens. It never opens the guide by itself.
+    val hasWidget = rememberHasTodayWidget()
+    var hintDismissed by remember { mutableStateOf(TodayWidgetStore.hintDismissed) }
+    var showWidgetGuide by remember { mutableStateOf(false) }
+    val neverAskWidget = {
+        TodayWidgetStore.hintDismissed = true
+        hintDismissed = true
+    }
+    val showWidgetHint = state.segment == OrdersSegment.TODAY && !searchMode && !state.loading && state.error == null &&
+        TodayWidgetHint.shouldShow(state.todayAvailable, TodayWidgetHint.hasWork(state.widgetCounts), hasWidget, hintDismissed)
+
     // Board text: no Material letter spacing, a line about 1.33× the font size
     ProvideTextStyle(LocalTextStyle.current.copy(letterSpacing = 0.sp, lineHeight = 1.33.em, lineHeightStyle = BoardLineHeight)) {
     Column(Modifier.fillMaxSize().background(DS.Colors.Surface)) {
@@ -263,6 +289,17 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit, onOpenBookings: () -> Unit = {}
             HorizontalDivider(color = DS.Colors.Divider)
         }
 
+        if (showWidgetHint) {
+            state.widgetCounts?.let { counts ->
+                TodayWidgetHintCard(
+                    counts = counts,
+                    onHow = { showWidgetGuide = true },
+                    onDismiss = neverAskWidget,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                )
+            }
+        }
+
         PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = { viewModel.reload(fromPull = true) },
@@ -319,6 +356,9 @@ fun OrdersHomeScreen(onOpenOrder: (Int) -> Unit, onOpenBookings: () -> Unit = {}
         }
     }
 
+    if (showWidgetGuide) {
+        TodayWidgetGuideSheet(onDismiss = { showWidgetGuide = false }, onNeverAsk = neverAskWidget)
+    }
     if (showFilter) {
         FilterSheet(
             initial = state.filter,

@@ -33,7 +33,7 @@ import {
   type ShopForm,
 } from './sections';
 import { DepositSection } from '../installments/DepositSection';
-import { blockOldAppsFlag, canChangeCurrency, canChangeOverlap, canChangeShareOrderNote, groupedTabs, onlineBookingFlag, overlapFlag, settingsOutletChoice, shareOrderNoteFlag, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
+import { blockOldAppsFlag, canChangeCurrency, canChangeOverlap, canChangeShareOrderNote, canEditPrintSettings, groupedTabs, onlineBookingFlag, overlapFlag, settingsOutletChoice, shareOrderNoteFlag, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -449,7 +449,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             {branchSelect}
             <ReceiptSection
               t={t}
-              canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'}
+              canEditNote={canEditPrintSettings(role)}
               outletId={role === 'MERCHANT' ? branchId : undefined}
               shareOrderNote={shareNoteValue}
               canEditShareOrderNote={canChangeShareOrderNote(role)}

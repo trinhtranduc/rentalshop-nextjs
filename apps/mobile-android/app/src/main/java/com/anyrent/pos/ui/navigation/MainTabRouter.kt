@@ -3,7 +3,9 @@ package com.anyrent.pos.ui.navigation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 
 /**
@@ -39,6 +41,20 @@ object MainTabRouter {
     /** iOS swipe “Update Order” → Home tab (cart badge), then open cart route. */
     fun openHome() {
         pendingTab.value = HOME
+    }
+
+    private val _wantsTodo = MutableStateFlow(false)
+
+    /** #1381: the widget's header: the Orders tab should show "Việc cần làm" */
+    val wantsTodo: StateFlow<Boolean> = _wantsTodo.asStateFlow()
+
+    fun openTodo() {
+        _wantsTodo.value = true
+        pendingTab.value = ORDERS
+    }
+
+    fun todoShown() {
+        _wantsTodo.value = false
     }
 
     /** Main switched to [route]: drop the request unless a newer one replaced it. */

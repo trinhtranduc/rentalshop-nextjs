@@ -127,6 +127,14 @@ final class Phase7GapsTests: XCTestCase {
         XCTAssertEqual(String(format: en.localizedString(forKey: "Late %d days", value: nil, table: nil), 3), "3 days late")
     }
 
+    /// #1331: the shop screen read the list inside the 10 minutes, so the row must not keep the older number
+    func testBranchCountFromShopScreenReplacesRowCount() {
+        let settings = SettingsV2ViewController()
+        settings.loadViewIfNeeded()
+        NotificationCenter.default.post(name: .shopBranchCountDidChange, object: nil, userInfo: ["count": 1])
+        XCTAssertEqual(settings.counts[.storeInfo], 1)
+    }
+
     func testListTotalReadsCustomersAndUsersShapes() throws {
         let customers = #"{"success":true,"data":{"customers":[],"total":31,"page":1}}"#
         let users = #"{"success":true,"data":[{"id":1}],"pagination":{"page":1,"limit":1,"total":4}}"#

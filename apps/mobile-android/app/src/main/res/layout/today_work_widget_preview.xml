@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- #1381: the widget picker's preview (Android 12+): the three counters -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp">
+    <TextView style="@style/WidgetPreviewTile" android:background="@drawable/widget_tile_late" android:text="@string/widget_preview_late" />
+    <TextView style="@style/WidgetPreviewTile" android:layout_marginHorizontal="6dp" android:background="@drawable/widget_tile_giao" android:text="@string/widget_preview_pickup" />
+    <TextView style="@style/WidgetPreviewTile" android:background="@drawable/widget_tile_tra" android:text="@string/widget_preview_return" />
+</LinearLayout>
