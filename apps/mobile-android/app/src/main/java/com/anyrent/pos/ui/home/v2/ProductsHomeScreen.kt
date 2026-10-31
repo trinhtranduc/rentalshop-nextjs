@@ -84,6 +84,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.data.FirstRunGuideApp
+import com.anyrent.pos.domain.guide.CoachScreen
 import com.anyrent.pos.domain.guide.FirstRunGuide
 import com.anyrent.pos.domain.guide.FirstRunGuideAction
 import com.anyrent.pos.domain.guide.FirstRunGuideCard
@@ -175,6 +176,7 @@ fun ProductsHomeScreen(
     }
 
     fun runGuide(step: FirstRunGuideStep) {
+        FirstRunCoach.start(step) // #1394: the bubbles run only from here
         when (val action = FirstRunGuide.action(step, guide.hasProduct(), lines.isEmpty())) {
             FirstRunGuideAction.OpenProductForm -> showForm = true
             is FirstRunGuideAction.OpenCart -> {
@@ -395,12 +397,17 @@ fun ProductsHomeScreen(
         AppFormSheet(onDismiss = { showForm = false }, fullScreen = true) {
             ProductFormV2Screen(
                 initial = null,
-                onBack = { showForm = false },
+                onBack = {
+                    showForm = false
+                    FirstRunCoach.stop()
+                },
                 onSaved = {
                     showForm = false
+                    FirstRunCoach.stop()
                     viewModel.replace(it)
                 },
             )
+            FirstRunCoachOverlay(CoachScreen.PRODUCT_FORM) // #1394
         }
     }
     if (showScan) {
