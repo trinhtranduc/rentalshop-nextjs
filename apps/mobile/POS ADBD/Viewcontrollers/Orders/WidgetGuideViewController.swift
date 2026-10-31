@@ -9,6 +9,7 @@
 
 import UIKit
 import SnapKit
+import DraftOrderActivity
 
 /// The small card above "Việc cần làm": shown once, "Không hỏi lại" ends it for good
 final class WidgetHintCardView: UIView {
@@ -195,9 +196,9 @@ final class WidgetGuideViewController: UIViewController {
     }
 }
 
-/// The date drawn in the guide's preview (today's Vietnam day, "31/10")
+/// The date drawn in the guide's preview: today's Vietnam day as the widget writes it ("31/10")
 enum TodayWidgetPreview {
     static func dayText(now: Date = Date()) -> String {
-        DayFormatter.short(now, timeZone: Date.shopTimeZone, locale: Locale.current)
+        TodayWidgetClock.dayMonthText(now)
     }
 }

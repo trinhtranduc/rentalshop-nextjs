@@ -105,6 +105,8 @@ if only == "all":
     add_file("AnyRentLiveActivityBundle.swift", "AnyRentLiveActivity.entitlements", kind="text.plist.entitlements", in_sources=False)
     for name in ("TodayWidgetSnapshot.swift", "TodayWidgetDisplay.swift", "TodayWidgetStore.swift"):
         also_compile(name, "TodayWorkWidget.swift")
+    # UI test that puts the widget on the Simulator home screen (skips unless E2E_WIDGET_SIZE is set)
+    add_file("AnyRentE2ETests.swift", "WidgetHomeScreenUITests.swift")
     # App (Swift 4)
     add_file("TodayWork.swift", "TodayWidgetData.swift")
     add_file("DraftOrderReminder.swift", "TodayWidgetSync.swift")

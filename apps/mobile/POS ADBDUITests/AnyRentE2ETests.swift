@@ -5252,6 +5252,55 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("STAGED FLOW DONE order #\(number)")
     }
 
+    /// #1375 (W11): the one-time "Thêm widget" card above "Việc cần làm", its three-step guide, and "Không hỏi lại".
+    /// The card needs work today and no AnyRent widget on the phone (a fresh install); it is skipped otherwise.
+    func test7kWidgetHintAndGuide() throws {
+        guard #available(iOS 16.1, *) else { throw XCTSkip("no widgets below iOS 16.1: the card never shows there") }
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng", "Orders", "Đơn"], index: 1)
+        sleep(3)
+        let card = app.otherElements["orders.widgetHint"]
+        guard card.waitForExistence(timeout: 10) else { throw XCTSkip("no card: no work today, a widget on the phone, or Không hỏi lại was tapped") }
+        e2e.shot("90-widget-hint-card")
+        app.buttons["orders.widgetHint.how"].tap()
+        XCTAssertTrue(app.otherElements["widget.guide"].waitForExistence(timeout: 6), "the guide opens from Cách thêm")
+        XCTAssertTrue(app.buttons["widget.guide.never"].exists, "the guide from the card offers Không hỏi lại")
+        sleep(1)
+        e2e.shot("91-widget-guide-from-card")
+        app.buttons["widget.guide.ok"].tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 3), "Đã hiểu closes the guide and keeps the card")
+        app.buttons["orders.widgetHint.dismiss"].tap()
+        sleep(1)
+        XCTAssertFalse(card.exists, "Không hỏi lại removes the card")
+        e2e.shot("92-widget-hint-dismissed")
+    }
+
+    /// #1375: Cài đặt > Widget opens the guide at any time (also after Không hỏi lại); "Ẩn tên khách trên widget" is a switch.
+    /// TEST_RUNNER_E2E_WIDGET_HIDE_NAMES=on|off sets the switch (it stays set, so the widget can be photographed).
+    func test7lWidgetSettingsRow() throws {
+        guard #available(iOS 16.1, *) else { throw XCTSkip("no Widget row below iOS 16.1") }
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(2)
+        let row = app.staticTexts["Widget"]
+        XCTAssertTrue(e2e.scrollTo(row), "the Widget row in Cài đặt")
+        e2e.shot("93-settings-widget-row")
+        let toggle = app.switches.matching(NSPredicate(format: "label IN %@",
+            ["Hide customer names on the widget", "Ẩn tên khách trên widget"])).firstMatch
+        XCTAssertTrue(toggle.exists, "the hide-names switch is under the Widget row")
+        e2e.note("hide-names switch before: \(String(describing: toggle.value))") // "0" on a fresh install: off by default
+        if let want = ProcessInfo.processInfo.environment["E2E_WIDGET_HIDE_NAMES"] {
+            if (toggle.value as? String == "1") != (want == "on") { toggle.tap(); sleep(2) }
+            e2e.shot("93b-settings-hide-names-\(want)")
+        }
+        row.tap()
+        XCTAssertTrue(app.otherElements["widget.guide"].waitForExistence(timeout: 6), "the Widget row opens the guide")
+        XCTAssertFalse(app.buttons["widget.guide.never"].exists, "the guide from Settings has no Không hỏi lại")
+        sleep(1)
+        e2e.shot("94-settings-widget-guide")
+        app.buttons["widget.guide.ok"].tap()
+    }
+
     func test9SettingsLogout() throws {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
