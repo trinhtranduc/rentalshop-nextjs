@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */; };
+		F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */; };
 		A1375F895893DD61634B6A82 /* TodayWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */; };
 		A1375FF2ACA4DE7D4F0836DD /* TodayWidgetDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F309BF104D3793F0848 /* TodayWidgetDisplay.swift */; };
 		A1375FFA029BBFFEDDD18115 /* TodayWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F54714323ED511A508A /* TodayWidgetSnapshot.swift */; };
@@ -444,6 +445,7 @@
 
 /* Begin PBXFileReference section */
 		A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetHomeScreenUITests.swift; sourceTree = "<group>"; };
+		F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuideUITests.swift; sourceTree = "<group>"; };
 		A1375F71AA39879CD60CF43C /* WidgetGuideViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetGuideViewController.swift; sourceTree = "<group>"; };
 		A1375FEA49A710668E35B477 /* TodayWidgetSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetSync.swift; sourceTree = "<group>"; };
 		A1375FB5DB4972E11406B404 /* TodayWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetData.swift; sourceTree = "<group>"; };
@@ -1638,6 +1640,7 @@
 				C9B3296F240D6FDE00FEB650 /* Info.plist */,
 				049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */,
 				A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */,
+				F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */,
 			);
 			path = "POS ADBDUITests";
 			sourceTree = "<group>";
@@ -2364,6 +2367,7 @@
 				C9B3297C240D728B00FEB650 /* POS_ADBDUITests.swift in Sources */,
 				021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */,
 				A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */,
+				F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
