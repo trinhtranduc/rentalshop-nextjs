@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D3448A56B3C7654B5E9723A8 /* OnboardingV2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */; };
+		419D80D878DE73F1E2127347 /* OnboardingV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380F46BEEBA5D54F9ADE7AD5 /* OnboardingV2Tests.swift */; };
+		683EE107FC907860800108F5 /* OnboardingV2Stage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA673D0D875731E4D7D5437 /* OnboardingV2Stage.swift */; };
+		CA460D33D5A6CBB473B75A57 /* OnboardingV2Cycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A1C5F159A19EB63E46FF15 /* OnboardingV2Cycle.swift */; };
 		A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */; };
 		F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */; };
 		A1375F895893DD61634B6A82 /* TodayWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */; };
@@ -444,6 +448,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2UITests.swift; sourceTree = "<group>"; };
+		380F46BEEBA5D54F9ADE7AD5 /* OnboardingV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2Tests.swift; sourceTree = "<group>"; };
+		7CA673D0D875731E4D7D5437 /* OnboardingV2Stage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2Stage.swift; sourceTree = "<group>"; };
+		58A1C5F159A19EB63E46FF15 /* OnboardingV2Cycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2Cycle.swift; sourceTree = "<group>"; };
 		A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetHomeScreenUITests.swift; sourceTree = "<group>"; };
 		F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuideUITests.swift; sourceTree = "<group>"; };
 		A1375F71AA39879CD60CF43C /* WidgetGuideViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetGuideViewController.swift; sourceTree = "<group>"; };
@@ -1093,6 +1101,8 @@
 			children = (
 				04F7A0012F70000100A0B1 /* OnboardingViewController.swift */,
 				7AC45E729C448084B4969B27 /* OnboardingV2ViewController.swift */,
+				7CA673D0D875731E4D7D5437 /* OnboardingV2Stage.swift */,
+				58A1C5F159A19EB63E46FF15 /* OnboardingV2Cycle.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -1156,6 +1166,7 @@
 				32451210261D4A00E83FEBAA /* OrderStatusTests.swift */,
 				9D519264475F354D9CEEAC99 /* ProductsV2Tests.swift */,
 				A0BFD44494C2A147ACDF44AF /* BlockPricingTests.swift */,
+				380F46BEEBA5D54F9ADE7AD5 /* OnboardingV2Tests.swift */,
 				6CEC7771A7BBA6686179EC8A /* ChangeHistoryTests.swift */,
 				A640F0000000000000000003 /* OrderShareImageTests.swift */,
 				D997FCA6B1F55406FCF4A271 /* ScheduleConflictTests.swift */,
@@ -1639,6 +1650,7 @@
 				C9B3296D240D6FDE00FEB650 /* POS_ADBDUITests.swift */,
 				C9B3296F240D6FDE00FEB650 /* Info.plist */,
 				049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */,
+				41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */,
 				A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */,
 				F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */,
 			);
@@ -2014,6 +2026,7 @@
 				81725EFBC11C4491BE1358CC /* OrderStatusTests.swift in Sources */,
 				818ADE5C1D452A24842B4EB1 /* ProductsV2Tests.swift in Sources */,
 				5E74715D050E5F0CEB1FAA81 /* BlockPricingTests.swift in Sources */,
+				419D80D878DE73F1E2127347 /* OnboardingV2Tests.swift in Sources */,
 				884E755F9E351B781B16CDB6 /* ChangeHistoryTests.swift in Sources */,
 				A640B0000000000000000003 /* OrderShareImageTests.swift in Sources */,
 				5C397AEAF9C258F71EC2C644 /* ScheduleConflictTests.swift in Sources */,
@@ -2315,6 +2328,8 @@
 				506BFF4372513384679B2314 /* NewCustomerViewController.swift in Sources */,
 				8BC77D064D622C3C87D1C5D9 /* CustomerDetailV2ViewController.swift in Sources */,
 				66D5C9154CEE12049C3B85DD /* OnboardingV2ViewController.swift in Sources */,
+				683EE107FC907860800108F5 /* OnboardingV2Stage.swift in Sources */,
+				CA460D33D5A6CBB473B75A57 /* OnboardingV2Cycle.swift in Sources */,
 				5178DD3B185EF17C227E484C /* EditCustomerViewController.swift in Sources */,
 				55F5BB7EC8A48865B8ABD8E5 /* AuthForms.swift in Sources */,
 				00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */,
@@ -2366,6 +2381,7 @@
 			files = (
 				C9B3297C240D728B00FEB650 /* POS_ADBDUITests.swift in Sources */,
 				021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */,
+				D3448A56B3C7654B5E9723A8 /* OnboardingV2UITests.swift in Sources */,
 				A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */,
 				F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */,
 			);
