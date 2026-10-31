@@ -250,6 +250,11 @@ enum DepositPlanLogic {
         hasPlan == true && status == .reserved && !unpaidBeforePickup(stages ?? []).isEmpty
     }
 
+    /// The stage of the "Thu giai đoạn N" button in the bottom bar while the hand-over is blocked
+    static func stageToCollectBeforeHandOver(hasPlan: Bool?, status: OrderStatus, stages: [OrderInstallment]?) -> OrderInstallment? {
+        nil
+    }
+
     /// "Thu giai đoạn 2" for `i2`, "Thu giai đoạn" for a key that is not a number
     static func stageNumber(_ stages: [OrderInstallment], key: String) -> Int? {
         stages.firstIndex { $0.key == key }.map { $0 + 1 }

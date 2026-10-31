@@ -328,6 +328,9 @@ object DepositPlanLogic {
     fun blocksHandOver(info: DepositPlanInfo?, status: String?): Boolean =
         hasPlan(info) && status.equals("RESERVED", true) && unpaidBeforePickup(info?.installments.orEmpty()).isNotEmpty()
 
+    /** The stage of the "Thu giai đoạn N" button in the bottom bar while the hand-over is blocked */
+    fun stageToCollectBeforeHandOver(info: DepositPlanInfo?, status: String?): OrderInstallment? = null
+
     /** "Thu giai đoạn 2" for `i2`: the 1-based place of the stage */
     fun stageNumber(stages: List<OrderInstallment>, key: String): Int? =
         stages.indexOfFirst { it.key == key }.takeIf { it >= 0 }?.plus(1)
