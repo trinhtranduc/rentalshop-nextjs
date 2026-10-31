@@ -9,7 +9,10 @@ import com.anyrent.pos.domain.settings.SettingsItem
 import com.anyrent.pos.domain.settings.SettingsPlan
 import com.anyrent.pos.domain.settings.SettingsRows
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -33,9 +36,14 @@ interface SettingsV2Source {
     suspend fun refreshCurrency() {}
 }
 
-/** #1331: stub */
+/** #1331: the shop screen read its branch list; the row in Settings shows the same number without waiting for the 10-minute read */
 object ShopBranchCount {
-    fun report(count: Int) {}
+    private val latest = MutableSharedFlow<Int>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val updates: SharedFlow<Int> = latest
+
+    fun report(count: Int) {
+        latest.tryEmit(count)
+    }
 }
 
 object ApiSettingsV2Source : SettingsV2Source {
@@ -72,6 +80,14 @@ class SettingsV2ViewModel(
 
     private var fetchedAt: Instant? = null
     private var fetchedRole: String? = null
+
+    init {
+        viewModelScope.launch {
+            ShopBranchCount.updates.collect { total ->
+                _data.update { it.copy(counts = it.counts + (SettingsItem.STORE_INFO to total)) }
+            }
+        }
+    }
 
     fun onShown(role: String?, canEditOverlap: Boolean, items: List<SettingsItem>) {
         val fresh = role == fetchedRole &&

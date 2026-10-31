@@ -64,6 +64,7 @@ final class SettingsV2ViewController: BaseViewControler {
         super.viewDidLoad()
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(shopBranchCountChanged(_:)), name: .shopBranchCountDidChange, object: nil)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -182,6 +183,13 @@ final class SettingsV2ViewController: BaseViewControler {
                 }
             }
         }
+    }
+
+    /// #1331: the shop screen read its branch list inside the 10 minutes; the row shows the same number
+    @objc private func shopBranchCountChanged(_ note: Notification) {
+        guard let count = note.userInfo?["count"] as? Int, counts[.storeInfo] != count else { return }
+        counts[.storeInfo] = count
+        listView.reloadData()
     }
 
     // MARK: - Thông báo (#937)
