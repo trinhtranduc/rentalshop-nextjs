@@ -1504,6 +1504,9 @@
     <string name="share_made_with">Tạo bằng AnyRent</string>
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
     <string name="share_collect">Thu khi giao</string>
+    <string name="share_collect_rental_left">Tiền thuê còn lại, thu khi giao</string>
+    <string name="share_collateral_collect">Thế chân, thu khi giao</string>
+    <string name="share_cash_at_handover">Khách đưa lúc nhận đồ</string>
     <string name="share_deposit_label">Cọc</string>
     <string name="share_deposit_none">Chưa cọc</string>
     <string name="share_stage_paid">Đã thu</string>

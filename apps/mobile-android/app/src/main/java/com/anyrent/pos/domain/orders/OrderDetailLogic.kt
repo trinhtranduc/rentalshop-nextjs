@@ -30,6 +30,9 @@ data class HandOverMoney(
     val collectNow: Double,
 )
 
+/** #1368 "Tiền thuê còn lại, thu khi giao" + "Thế chân, thu khi giao" = "Khách đưa lúc nhận đồ" */
+data class HandOverCashLines(val rentalLeft: Double, val collateral: Double, val cash: Double)
+
 /** Return money: late + damage − collateral money − already settled; [net] < 0 is a refund */
 data class ReturnMoney(
     val lateFee: Double,
@@ -165,6 +168,31 @@ object OrderDetailLogic {
         val due = handOver(totalAmount, depositAmount, securityDeposit, payments).collectNow
         val blocking = ShareMoneyRule.planStages(hasPlan, stages).any { it.amount > 0 && it.paidAmount <= 0 }
         return if (blocking) ShareMoneyRule.collectOnDelivery(totalAmount, depositAmount, hasPlan, stages, currency) else due
+    }
+
+    /**
+     * #1368 the three lines of the payment section of a rental waiting for pick-up whose collateral is money (iOS
+     * `handOverCash`): "Tiền thuê còn lại, thu khi giao" ([ShareMoneyRule.collectOnDelivery], as the image), "Thế chân, thu
+     * khi giao" and their sum "Khách đưa lúc nhận đồ" ([ShareMoneyRule.cashAtHandover]). null, so that the old lines show,
+     * for every other order: sale, other status, no money collateral, or a PICKUP payment already taken. Display only:
+     * `handOver(...).collectNow` of the button, the sheet and the edit sheet is untouched.
+     */
+    fun handOverCash(
+        orderType: String,
+        status: String,
+        totalAmount: Double,
+        depositAmount: Double,
+        securityDeposit: Double,
+        payments: List<BalancePayment>,
+        hasPlan: Boolean?,
+        stages: List<com.anyrent.pos.domain.deposit.OrderInstallment>?,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): HandOverCashLines? {
+        if (!orderType.equals("RENT", ignoreCase = true) || !status.equals("RESERVED", ignoreCase = true)) return null
+        if (paid(payments, "PICKUP") > 0) return null
+        val rentalLeft = ShareMoneyRule.collectOnDelivery(totalAmount, depositAmount, hasPlan, stages, currency)
+        val cash = ShareMoneyRule.cashAtHandover(rentalLeft, securityDeposit, currency) ?: return null
+        return HandOverCashLines(rentalLeft, securityDeposit, cash)
     }
 
     /**

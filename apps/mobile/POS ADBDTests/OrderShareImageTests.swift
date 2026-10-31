@@ -176,7 +176,7 @@ final class OrderShareImageTests: XCTestCase {
         let rent = model(Self.rent())
         XCTAssertEqual(rent.rows, [
             .init(label: "Đã cọc", value: "300.000đ"),
-            .init(label: "Thế chân khi nhận đồ", value: "CCCD + 2.000.000đ"),
+            .init(label: "Thế chân, thu khi giao", value: "CCCD + 2.000.000đ"),
         ])
         XCTAssertEqual(rent.highlightLabel, "Tổng tiền thuê")
         XCTAssertEqual(rent.highlightValue, "1.150.000đ")
@@ -228,7 +228,7 @@ final class OrderShareImageTests: XCTestCase {
         let draft = model(Self.draft())
         XCTAssertEqual(draft.rows, [
             .init(label: "Cọc giữ đồ", value: "300.000đ"),
-            .init(label: "Thế chân khi nhận đồ", value: "CCCD + 2.000.000đ"),
+            .init(label: "Thế chân, thu khi giao", value: "CCCD + 2.000.000đ"),
         ])
         XCTAssertEqual(draft.highlightLabel, "Tạm tính")
         XCTAssertEqual(draft.highlightValue, "1.150.000đ")
@@ -342,6 +342,10 @@ final class OrderShareImageTests: XCTestCase {
             ("coc-giai-doan-khoi-en", model(Self.stagedRent(plan: true), en)),
             ("tien-chua-coc", model(Self.noDepositRent())),
             ("tien-giam-gia-the-chan", model(Self.discountedRent())),
+            // #1368: the rental left, the collateral in money and what the customer hands over (stage 2 not collected)
+            ("the-chan-tien-giai-doan", model(Self.moneyCollateralRent())),
+            ("the-chan-tien-giai-doan-en", model(Self.moneyCollateralRent(), en)),
+            ("the-chan-tien-mot-lan-coc", model(Self.rent())),
         ]
         for (name, fixture) in fixtures {
             let image = OrderShareRenderer.image(fixture)
@@ -378,6 +382,25 @@ final class OrderShareImageTests: XCTestCase {
             OrderInstallment(key: "rest", label: "rest", percent: 30, amount: 93_000, dueDateKey: "2026-10-16", status: "UPCOMING"),
         ]
         source.stageSummary = InstallmentSummary(planned: 310_000, collected: 93_000, remaining: 217_000, percentCollected: 30)
+        return source
+    }
+
+    /// #1368 total 1.000.000: stage 1 200.000 collected, stage 2 300.000 not, rest 500.000; collateral 300.000 in money
+    static func moneyCollateralRent(secondPaid: Bool = false) -> OrderShareSource {
+        var source = rent()
+        source.total = 1_000_000
+        source.deposit = secondPaid ? 500_000 : 200_000
+        source.collateralPapers = nil
+        source.collateralMoney = 300_000
+        source.hasDepositPlan = true
+        source.stages = [
+            OrderInstallment(key: "i1", label: "Cọc giữ chỗ", percent: 20, amount: 200_000, dueDateKey: "2026-10-05", status: "PAID",
+                             collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: 200_000),
+            OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: 300_000, dueDateKey: "2026-10-06",
+                             status: secondPaid ? "PAID" : "UPCOMING", collectedAt: secondPaid ? "2026-10-06T03:00:00.000Z" : nil,
+                             paidAmount: secondPaid ? 300_000 : 0),
+            OrderInstallment(key: "rest", label: "rest", percent: 50, amount: 500_000, dueDateKey: "2026-10-16", status: "UPCOMING"),
+        ]
         return source
     }
 
@@ -507,6 +530,7 @@ final class OrderShareMoneyOrderTests: XCTestCase {
             case .total(let label, let value, _): return ["TOTAL \(label)|\(value)"]
             case .stages(let block): return ["STAGES \(block.title)"] + block.stages.map { "\($0.title)|\($0.amount)|\($0.detail)" }
             case .collect(let label, let value): return ["COLLECT \(label)|\(value)"]
+            case .cash(let label, let value): return ["CASH \(label)|\(value)"]
             }
         }
     }
@@ -545,9 +569,10 @@ final class OrderShareMoneyOrderTests: XCTestCase {
         XCTAssertEqual(flat(make(rent(deposit: 300_000, papers: "CCCD", collateral: 2_000_000))), [
             "TOTAL Tổng tiền thuê|1.150.000đ",
             "Đã cọc|300.000đ",
-            "COLLECT Thu khi giao|850.000đ",
-            "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
-        ], "the total comes before the deposit; collateral is its own row and is not in 'Thu khi giao'")
+            "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+            "Thế chân, thu khi giao|CCCD + 2.000.000đ",
+            "CASH Khách đưa lúc nhận đồ|2.850.000đ",
+        ], "#1368: the collateral is its own row, not in the rental left; the last box is both")
         XCTAssertEqual(flat(make(rent(deposit: 300_000))), [
             "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Thu khi giao|850.000đ",
         ])
@@ -601,8 +626,8 @@ final class OrderShareMoneyOrderTests: XCTestCase {
     func testG_draftAddsCollectAndKeepsItsFixedSentence() {
         let draft = make(OrderShareImageTests.draft())
         XCTAssertEqual(flat(draft), [
-            "TOTAL Tạm tính|1.150.000đ", "Cọc giữ đồ|300.000đ", "COLLECT Thu khi giao|850.000đ",
-            "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+            "TOTAL Tạm tính|1.150.000đ", "Cọc giữ đồ|300.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+            "Thế chân, thu khi giao|CCCD + 2.000.000đ", "CASH Khách đưa lúc nhận đồ|2.850.000đ",
         ])
         XCTAssertEqual(draft.note, "Đơn chưa chốt. Shop sẽ xác nhận lịch và giá trước khi giữ đồ.")
         var discounted = OrderShareImageTests.draft()
@@ -610,13 +635,158 @@ final class OrderShareMoneyOrderTests: XCTestCase {
         discounted.total = 1_100_000
         discounted.deposit = 0
         XCTAssertEqual(flat(make(discounted)), [
-            "Giảm giá|− 50.000đ", "TOTAL Tạm tính|1.100.000đ", "Cọc|Chưa cọc|muted", "COLLECT Thu khi giao|1.100.000đ",
-            "Thế chân khi nhận đồ|CCCD + 2.000.000đ",
+            "Giảm giá|− 50.000đ", "TOTAL Tạm tính|1.100.000đ", "Cọc|Chưa cọc|muted",
+            "COLLECT Tiền thuê còn lại, thu khi giao|1.100.000đ",
+            "Thế chân, thu khi giao|CCCD + 2.000.000đ", "CASH Khách đưa lúc nhận đồ|3.100.000đ",
         ])
         var sale = OrderShareImageTests.sale()
         sale.isDraft = true
         sale.status = .draft
         XCTAssertFalse(flat(make(sale)).contains { $0.hasPrefix("COLLECT") }, "a sale draft has nothing to collect later")
+    }
+
+    // MARK: #1368 money collateral: rental left, collateral, what the customer hands over
+
+    /// The example of the issue: total 1.000.000; stage 1 200.000 collected, stage 2 300.000, rest 500.000; collateral 300.000
+    private func plan1M(second: String = "UPCOMING") -> [OrderInstallment] {
+        [OrderInstallment(key: "i1", label: "Cọc giữ chỗ", percent: 20, amount: 200_000, dueDateKey: "2026-10-05", status: "PAID",
+                          collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: 200_000),
+         OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: 300_000, dueDateKey: "2026-10-06", status: second,
+                          collectedAt: second == "PAID" ? "2026-10-06T03:00:00.000Z" : nil, paidAmount: second == "PAID" ? 300_000 : 0),
+         OrderInstallment(key: "rest", label: "rest", percent: 50, amount: 500_000, dueDateKey: "2026-10-16", status: "UPCOMING")]
+    }
+
+    private func staged1M(second: String = "UPCOMING", papers: String? = nil, collateral: Double = 300_000) -> OrderShareSource {
+        var source = rent(deposit: second == "PAID" ? 500_000 : 200_000, papers: papers, collateral: collateral)
+        source.total = 1_000_000
+        source.hasDepositPlan = true
+        source.stages = plan1M(second: second)
+        return source
+    }
+
+    func testH_stagesWithMoneyCollateralShowRentalLeftCollateralAndCash() {
+        let unpaid = [
+            "TOTAL Tổng tiền thuê|1.000.000đ",
+            "STAGES Thu cọc theo giai đoạn",
+            "1. Cọc giữ chỗ|200.000đ|20% đơn · 05/10 · Đã thu",
+            "2. Cọc trước ngày lấy|300.000đ|30% đơn · hạn 06/10 · Chưa thu",
+            "COLLECT Tiền thuê còn lại, thu khi giao|500.000đ",
+            "Thế chân, thu khi giao|300.000đ",
+            "CASH Khách đưa lúc nhận đồ|800.000đ",
+        ]
+        XCTAssertEqual(flat(make(staged1M())), unpaid)
+        // stage 2 collected: only its own line changes; the three numbers do not move
+        var paid = unpaid
+        paid[3] = "2. Cọc trước ngày lấy|300.000đ|30% đơn · 06/10 · Đã thu"
+        XCTAssertEqual(flat(make(staged1M(second: "PAID"))), paid)
+    }
+
+    func testH_collateralWithPapersKeepsThePapersInTheCollateralRow() {
+        XCTAssertEqual(flat(make(staged1M(papers: "CCCD"))).suffix(3), [
+            "COLLECT Tiền thuê còn lại, thu khi giao|500.000đ", "Thế chân, thu khi giao|CCCD + 300.000đ",
+            "CASH Khách đưa lúc nhận đồ|800.000đ",
+        ])
+    }
+
+    func testH_papersOnlyCollateralKeepsTheOldLinesAndAddsNoMoneyLine() {
+        XCTAssertEqual(flat(make(rent(deposit: 300_000, papers: "CCCD", collateral: 0))), [
+            "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Thu khi giao|850.000đ", "Thế chân khi nhận đồ|CCCD",
+        ])
+        XCTAssertEqual(flat(make(staged1M(papers: "CCCD", collateral: 0))).suffix(2), [
+            "COLLECT Thu khi giao|500.000đ", "Thế chân khi nhận đồ|CCCD",
+        ])
+    }
+
+    func testH_noCollateralKeepsTheOldLabelAndNoCashLine() {
+        for source in [rent(deposit: 300_000), rent(), staged1M(collateral: 0)] {
+            let lines = flat(make(source))
+            XCTAssertTrue(lines.contains { $0.hasPrefix("COLLECT Thu khi giao|") }, "\(lines)")
+            XCTAssertFalse(lines.contains { $0.hasPrefix("CASH") || $0.contains("thu khi giao|") }, "\(lines)")
+        }
+    }
+
+    func testH_oneDepositNoDepositAndDiscountWithMoneyCollateral() {
+        XCTAssertEqual(flat(make(rent(deposit: 300_000, collateral: 500_000))), [
+            "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+            "Thế chân, thu khi giao|500.000đ", "CASH Khách đưa lúc nhận đồ|1.350.000đ",
+        ])
+        XCTAssertEqual(flat(make(rent(collateral: 500_000))), [
+            "TOTAL Tổng tiền thuê|1.150.000đ", "Cọc|Chưa cọc|muted", "COLLECT Tiền thuê còn lại, thu khi giao|1.150.000đ",
+            "Thế chân, thu khi giao|500.000đ", "CASH Khách đưa lúc nhận đồ|1.650.000đ",
+        ])
+        var discounted = rent(deposit: 300_000, collateral: 500_000)
+        discounted.items.append(.init(name: "Khăn đóng", quantity: 1, total: 100_000))
+        discounted.discount = 100_000
+        XCTAssertEqual(flat(make(discounted)), [
+            "Tạm tính|1.250.000đ", "Giảm giá|− 100.000đ",
+            "TOTAL Tổng tiền thuê|1.150.000đ", "Đã cọc|300.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|850.000đ",
+            "Thế chân, thu khi giao|500.000đ", "CASH Khách đưa lúc nhận đồ|1.350.000đ",
+        ])
+    }
+
+    func testH_aSaleHasNoCashLineWhateverItCarries() {
+        var sale = OrderShareImageTests.sale()
+        sale.collateralMoney = 300_000
+        XCTAssertEqual(flat(make(sale)), ["Tạm tính|420.000đ", "Giảm giá|− 20.000đ", "TOTAL Tổng cộng|400.000đ"])
+    }
+
+    func testH_theDraftAddsTheSameLinesWhenTheCollateralIsMoney() {
+        var draft = OrderShareImageTests.draft()
+        draft.collateralPapers = nil
+        draft.collateralMoney = 300_000
+        draft.deposit = 200_000
+        draft.total = 1_000_000
+        XCTAssertEqual(flat(make(draft)), [
+            "TOTAL Tạm tính|1.000.000đ", "Cọc giữ đồ|200.000đ", "COLLECT Tiền thuê còn lại, thu khi giao|800.000đ",
+            "Thế chân, thu khi giao|300.000đ", "CASH Khách đưa lúc nhận đồ|1.100.000đ",
+        ])
+        draft.collateralMoney = 0
+        draft.collateralPapers = "CCCD"
+        XCTAssertEqual(flat(make(draft)), [
+            "TOTAL Tạm tính|1.000.000đ", "Cọc giữ đồ|200.000đ", "COLLECT Thu khi giao|800.000đ", "Thế chân khi nhận đồ|CCCD",
+        ])
+    }
+
+    func testH_theThreeNumbersDoNotChangeWithTheOrderStatus() {
+        for source in [staged1M(), staged1M(second: "PAID"), rent(deposit: 300_000, papers: "CCCD", collateral: 500_000)] {
+            let reserved = flat(make(source))
+            XCTAssertTrue(reserved.contains { $0.hasPrefix("CASH") }, "\(reserved)")
+            for status in [OrderStatus.pickuped, .returned, .cancelled] {
+                var other = source
+                other.status = status
+                XCTAssertEqual(flat(make(other)), reserved, "\(status)")
+            }
+        }
+    }
+
+    func testH_englishLabels() {
+        XCTAssertEqual(flat(make(staged1M(), en)).suffix(3), [
+            "COLLECT Rental left, collect at hand-over|500.000đ", "Collateral, collect at hand-over|300.000đ",
+            "CASH Customer pays at hand-over|800.000đ",
+        ])
+    }
+
+    func testH_dollarShopRoundsTheCashToCents() {
+        var source = rent(deposit: 300.10, collateral: 100.15)
+        source.total = 1_150.30
+        let lines = flat(make(source, currency: .usd))
+        XCTAssertEqual(lines.suffix(3), [
+            "COLLECT Tiền thuê còn lại, thu khi giao|" + OrderShareModel.money(850.2, currency: .usd),
+            "Thế chân, thu khi giao|" + OrderShareModel.money(100.15, currency: .usd),
+            "CASH Khách đưa lúc nhận đồ|" + OrderShareModel.money(950.35, currency: .usd),
+        ])
+        XCTAssertTrue(lines.last?.contains("$950.35") == true, "\(lines)")
+    }
+
+    func testH_cashAtHandoverRule() {
+        func cash(_ rest: Double, _ collateral: Double, _ currency: ShopCurrency = .vnd) -> Double? {
+            ShareMoneyRule.cashAtHandover(collectOnDelivery: rest, collateralMoney: collateral, currency: currency)
+        }
+        XCTAssertEqual(cash(500_000, 300_000), 800_000)
+        XCTAssertEqual(cash(0, 300_000), 300_000, "everything already taken by the stages: only the collateral")
+        XCTAssertNil(cash(500_000, 0), "no money collateral: there is no such line")
+        XCTAssertNil(cash(500_000, -1))
+        XCTAssertEqual(try XCTUnwrap(cash(0.1, 0.2, .usd)), 0.3, accuracy: 0.000001, "rounded to cents, not 0.30000000000000004")
     }
 
     // MARK: Fixed by the plan, not by the status

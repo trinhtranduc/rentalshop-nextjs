@@ -858,7 +858,13 @@ private fun DetailBody(
                 if (!pickedUp && summary.depositAmount > 0 && depositCard == null) {
                     MoneyRow(stringResource(R.string.detail_deposit), formatMoneyVnd(summary.depositAmount))
                 }
-                if (!pickedUp && detail.securityDeposit > 0) {
+                // #1368: a rental waiting for pick-up with a collateral in money says rental left, collateral and what the customer hands over
+                val handOverCash = OrderDetailLogic.handOverCash(
+                    summary.orderType, summary.status, summary.totalAmount, summary.depositAmount, detail.securityDeposit,
+                    detail.balancePayments(), detail.deposit?.hasPlan, detail.deposit?.installments,
+                    com.anyrent.pos.domain.money.ShopMoney.current,
+                )
+                if (!pickedUp && detail.securityDeposit > 0 && handOverCash == null) {
                     MoneyRow(stringResource(R.string.detail_collateral_money), formatMoneyVnd(detail.securityDeposit))
                 }
                 if (status == "RETURNED") {
@@ -866,7 +872,11 @@ private fun DetailBody(
                     if (detail.damageFee > 0) MoneyRow(stringResource(R.string.damage_fee), formatMoneyVnd(detail.damageFee))
                 }
                 when (status) {
-                    "RESERVED" -> {
+                    "RESERVED" -> if (handOverCash != null) {
+                        MoneyRow(stringResource(R.string.share_collect_rental_left), formatMoneyVnd(handOverCash.rentalLeft), total = true)
+                        MoneyRow(stringResource(R.string.share_collateral_collect), formatMoneyVnd(handOverCash.collateral))
+                        MoneyRow(stringResource(R.string.share_cash_at_handover), formatMoneyVnd(handOverCash.cash), total = true)
+                    } else {
                         val money = OrderDetailLogic.handOver(
                             summary.totalAmount, summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
                         )
