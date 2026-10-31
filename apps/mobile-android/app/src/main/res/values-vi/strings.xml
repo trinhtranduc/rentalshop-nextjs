@@ -2426,4 +2426,14 @@
     <string name="order_sheet_title_collect">Thu tiền cọc</string>
     <string name="order_sheet_title_unpaid">Đợt cọc chưa thu</string>
     <string name="order_sheet_title_cancel">Huỷ đơn</string>
+    <string name="first_run_guide_title">Bắt đầu: 3 việc</string>
+    <string name="first_run_guide_step_product">Thêm sản phẩm đầu tiên</string>
+    <string name="first_run_guide_step_customer">Thêm khách hàng</string>
+    <string name="first_run_guide_step_order">Tạo đơn đầu tiên</string>
+    <string name="first_run_guide_skip">Bỏ qua</string>
+    <string name="first_run_guide_close">Đóng</string>
+    <string name="first_run_guide_skipped">Đã ẩn. Mở lại ở Cài đặt › Hướng dẫn bắt đầu</string>
+    <string name="first_run_guide_settings_row">Hướng dẫn bắt đầu</string>
+    <string name="first_run_guide_finish_title">Xong đơn đầu tiên</string>
+    <string name="first_run_guide_finish_body">Đơn đã có ở Đơn hàng và Lịch.</string>
 </resources>

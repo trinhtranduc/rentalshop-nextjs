@@ -5575,7 +5575,7 @@ final class AnyRentE2ETests: XCTestCase {
 
 // MARK: - Helper (self-contained; does not use POS_ADBDUITests' private helpers)
 
-private final class E2E {
+final class E2E {
     let test: XCTestCase
     let app: XCUIApplication
     let email: String

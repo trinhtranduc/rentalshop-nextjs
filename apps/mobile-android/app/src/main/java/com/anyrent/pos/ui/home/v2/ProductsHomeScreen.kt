@@ -42,7 +42,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -76,7 +79,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.anyrent.pos.data.FirstRunGuideApp
+import com.anyrent.pos.domain.guide.FirstRunGuide
+import com.anyrent.pos.domain.guide.FirstRunGuideAction
+import com.anyrent.pos.domain.guide.FirstRunGuideCard
+import com.anyrent.pos.domain.guide.FirstRunGuideStep
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.R
 import com.anyrent.pos.data.CartStore
@@ -140,6 +151,64 @@ fun ProductsHomeScreen(
     val notFound = stringResource(R.string.v2_scan_not_found)
     val notListed = stringResource(R.string.v2_scan_not_listed)
     val added = stringResource(R.string.v2_added_to_cart)
+    // #1393 "Bắt đầu: 3 việc": the list ticks the product row, the two reads the rest
+    val guide = FirstRunGuideApp.tracker
+    val guideVersion by guide.version.collectAsState()
+    val guideCard = remember(guideVersion, state.query) { guide.card(searching = state.query.isNotBlank()) }
+    val guideSkipped = stringResource(R.string.first_run_guide_skipped)
+    val guideSkipLabel = stringResource(R.string.first_run_guide_skip)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) scope.launch { guide.refresh() }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(state.products, state.loading, state.query, state.error) {
+        if (state.query.isBlank() && !state.loading) {
+            guide.noteProducts(if (state.error != null && state.products.isEmpty()) null else state.products.isNotEmpty())
+        }
+    }
+    LaunchedEffect(guideCard) {
+        if (guideCard is FirstRunGuideCard.Steps) guide.noteCardShown()
+    }
+
+    fun runGuide(step: FirstRunGuideStep) {
+        when (val action = FirstRunGuide.action(step, guide.hasProduct(), lines.isEmpty())) {
+            FirstRunGuideAction.OpenProductForm -> showForm = true
+            is FirstRunGuideAction.OpenCart -> {
+                if (action.addFirstProduct) {
+                    state.products
+                        .firstOrNull { BranchListing.listedForRow(it, PermissionManager.role, CurrentOutlet.outlets.size, CurrentOutlet.id) }
+                        ?.let { CartStore.addProduct(it) }
+                }
+                onOpenCart()
+            }
+        }
+    }
+    // Cài đặt › Hướng dẫn bắt đầu: a row of the sheet was tapped and this tab is in front
+    LaunchedEffect(Unit) {
+        FirstRunGuideApp.pendingStep.collect { step ->
+            if (step != null) {
+                FirstRunGuideApp.pendingStep.value = null
+                runGuide(step)
+            }
+        }
+    }
+    val guideContent: @Composable (Modifier) -> Unit = { modifier ->
+        FirstRunGuideCardView(
+            card = guideCard,
+            dismissLabel = guideSkipLabel,
+            onStep = { runGuide(it) },
+            onDismiss = {
+                guide.skip()
+                Toast.makeText(context, guideSkipped, Toast.LENGTH_LONG).show()
+            },
+            onCloseFinish = { guide.closeFinish() },
+            modifier = modifier,
+        )
+    }
 
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
@@ -272,16 +341,24 @@ fun ProductsHomeScreen(
             ) {
                 when {
                     state.loading && state.products.isEmpty() -> LoadingBox()
-                    state.products.isEmpty() -> Text(
-                        state.error ?: stringResource(if (state.query.isBlank()) R.string.v2_products_empty else R.string.v2_search_empty),
-                        color = DS.Colors.TextMuted,
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                    )
+                    state.products.isEmpty() -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        guideContent(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp))
+                        Text(
+                            state.error ?: stringResource(if (state.query.isBlank()) R.string.v2_products_empty else R.string.v2_search_empty),
+                            color = DS.Colors.TextMuted,
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        )
+                    }
                     else -> LazyColumn(
                         state = listState,
                         contentPadding = PaddingValues(bottom = if (showsCartBar) 96.dp else 16.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
+                        if (guideCard != FirstRunGuideCard.Hidden) {
+                            item(key = "first-run-guide") {
+                                guideContent(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp))
+                            }
+                        }
                         items(state.products, key = { it.id }) { product ->
                             ProductRow(
                                 product = product,

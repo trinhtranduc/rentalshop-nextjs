@@ -407,6 +407,8 @@
   "ADDON_PRICE_NOT_ON_SALE": "This add-on is paused and cannot be sold.",
   "ADDON_FEATURE_ALREADY_ON": "This shop already has this feature. Undo the turn-off instead of adding it again.",
   "ADDON_FEATURE_IN_PLAN": "This shop's plan already includes this feature. No add-on is needed.",
+  "ADDON_LOYALTY_NOT_FOR_BASIC": "Loyalty is not sold on the Basic plan yet, because it cannot be set up on the phone.",
+  "ADDON_AMOUNT_TOO_LARGE": "This add-on amount is too large. Lower the number.",
   "ADDON_PRICE_IN_USE": "Shops use this add-on: its pack size cannot change. Add a new row instead.",
   "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "This shop still has branch add-ons. Remove the branch add-ons first, then switch to a plan without multiple branches.",
   "ADDON_ALREADY_ENDED": "This add-on has already ended.",

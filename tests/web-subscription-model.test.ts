@@ -153,6 +153,52 @@ describe('usage rows (spec 7)', () => {
   });
 });
 
+describe('real limit with add-ons (#782)', () => {
+  const n = (v: number) => new Intl.NumberFormat('vi-VN').format(v);
+  const plan = { outlets: 1, products: 5000, orders: 10000 };
+  const effective = { outlets: 2, users: -1, products: 5100, customers: -1, orders: 10500 };
+  const addons = { outlets: 1, users: 0, products: 100, customers: 0, orders: 500 };
+  const usage = { outlets: 2, users: 1, products: 4980, customers: 3, orders: 9820 };
+
+  it('shows the effective limit, the used orders and what the add-on adds', () => {
+    const rows = usageRows(effective, usage, addons);
+    const products = rows.find((r) => r.key === 'products')!;
+    expect(products).toMatchObject({ used: 4980, limit: 5100, addon: 100, over: false });
+    expect(usageText(products, t, n)).toBe('4.980/5.100');
+    expect(rows.find((r) => r.key === 'orders')).toMatchObject({ used: 9820, limit: 10500, addon: 500 });
+    expect(rows.find((r) => r.key === 'outlets')).toMatchObject({ used: 2, limit: 2, addon: 1, over: false });
+  });
+
+  it('old API (no new fields): plan limits, no add-on line, as today', () => {
+    const rows = usageRows(plan, { outlets: 2, products: 4980 });
+    expect(rows.find((r) => r.key === 'products')).toMatchObject({ limit: 5000, addon: 0 });
+    expect(rows.find((r) => r.key === 'outlets')).toMatchObject({ limit: 1, over: true, addon: 0 });
+  });
+
+  it('an unlimited kind has no add-on line', () => {
+    const rows = usageRows({ products: -1 }, { products: 9 }, { products: 100 });
+    expect(rows[0]).toMatchObject({ limit: null, addon: 0 });
+  });
+
+  it('the tab reads effectiveLimits ?? limits, and has the 5-locale keys', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const root = path.resolve(__dirname, '..');
+    const tab = fs.readFileSync(path.join(root, 'apps/client/app/settings/SubscriptionTab.tsx'), 'utf8');
+    expect(tab).toContain('status.effectiveLimits ?? status.limits');
+    expect(tab).toContain('status.addonLimits');
+    expect(tab).toContain('subscription.includesAddon');
+    expect(tab).toContain('subscription.ordersAddonNote');
+    for (const lang of ['en', 'vi', 'ja', 'ko', 'zh']) {
+      const json = JSON.parse(fs.readFileSync(path.join(root, `locales/${lang}/settings.json`), 'utf8'));
+      const sub = json.web.subscription;
+      expect(typeof sub.includesAddon).toBe('string');
+      expect(sub.includesAddon).toContain('{count}');
+      expect(typeof sub.ordersAddonNote).toBe('string');
+    }
+  });
+});
+
 describe('history (spec 8–10)', () => {
   const at = (iso: string) => ({ timestamp: iso });
   it('maps every known activity type to Vietnamese, never the raw code', () => {

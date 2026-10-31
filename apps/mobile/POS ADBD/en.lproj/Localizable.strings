@@ -3131,3 +3131,14 @@
 "order.sheetTitle.collect" = "Collect deposit";
 "order.sheetTitle.unpaid" = "Uncollected deposit stages";
 "order.sheetTitle.cancel" = "Cancel order";
+"firstRunGuide.title" = "Get started: 3 steps";
+"firstRunGuide.step.product" = "Add your first product";
+"firstRunGuide.step.customer" = "Add a customer";
+"firstRunGuide.step.order" = "Create your first order";
+"firstRunGuide.done" = "Done";
+"firstRunGuide.skip" = "Skip";
+"firstRunGuide.close" = "Close";
+"firstRunGuide.skipped" = "Hidden. Reopen in Settings › Getting started";
+"firstRunGuide.settings.row" = "Getting started";
+"firstRunGuide.finish.title" = "First order done";
+"firstRunGuide.finish.body" = "It is now in My Order and Calendar.";

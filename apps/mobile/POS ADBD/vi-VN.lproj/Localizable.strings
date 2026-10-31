@@ -3129,3 +3129,14 @@
 "order.sheetTitle.collect" = "Thu tiền cọc";
 "order.sheetTitle.unpaid" = "Đợt cọc chưa thu";
 "order.sheetTitle.cancel" = "Huỷ đơn";
+"firstRunGuide.title" = "Bắt đầu: 3 việc";
+"firstRunGuide.step.product" = "Thêm sản phẩm đầu tiên";
+"firstRunGuide.step.customer" = "Thêm khách hàng";
+"firstRunGuide.step.order" = "Tạo đơn đầu tiên";
+"firstRunGuide.done" = "Đã xong";
+"firstRunGuide.skip" = "Bỏ qua";
+"firstRunGuide.close" = "Đóng";
+"firstRunGuide.skipped" = "Đã ẩn. Mở lại ở Cài đặt › Hướng dẫn bắt đầu";
+"firstRunGuide.settings.row" = "Hướng dẫn bắt đầu";
+"firstRunGuide.finish.title" = "Xong đơn đầu tiên";
+"firstRunGuide.finish.body" = "Đơn đã có ở Đơn hàng và Lịch Thuê.";

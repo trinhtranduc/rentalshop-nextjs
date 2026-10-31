@@ -407,6 +407,8 @@
   "ADDON_PRICE_NOT_ON_SALE": "Add-on này đang tạm tắt, không bán mới.",
   "ADDON_FEATURE_ALREADY_ON": "Shop đã có tính năng này. Nếu đang tắt từ kỳ sau, bấm Hoàn tác thay vì thêm lại.",
   "ADDON_FEATURE_IN_PLAN": "Gói của shop đã có tính năng này, không cần thêm add-on.",
+  "ADDON_LOYALTY_NOT_FOR_BASIC": "Khách thân thiết chưa bán cho gói Basic vì chưa cài đặt được trên điện thoại.",
+  "ADDON_AMOUNT_TOO_LARGE": "Số lượng add-on này quá lớn. Hãy giảm số lượng.",
   "ADDON_PRICE_IN_USE": "Đang có shop dùng add-on này nên không đổi được số lượng mỗi gói. Hãy tạo dòng mới.",
   "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "Shop còn add-on chi nhánh. Hãy gỡ add-on chi nhánh trước rồi mới đổi sang gói không có nhiều chi nhánh.",
   "ADDON_ALREADY_ENDED": "Add-on này đã hết hiệu lực.",
