@@ -146,8 +146,28 @@ final class BankQRTests: XCTestCase {
         }
     }
 
+    /// #1319: the outlet admin sees the row and the list; only the shop owner adds, edits, deletes, sets the default
+    func testOnlyTheOwnerManagesBankAccounts() {
+        XCTAssertTrue(SettingsV2Logic.canManageBankAccounts(role: .merchant))
+        for role: Role in [.outletAdmin, .outletStaff, .outletInventory] {
+            XCTAssertFalse(SettingsV2Logic.canManageBankAccounts(role: role), "\(role)")
+        }
+        for role: Role in [.merchant, .outletAdmin] {
+            XCTAssertTrue(SettingsV2Logic.canViewBankAccounts(role: role), "\(role)")
+        }
+        for role: Role in [.outletStaff, .outletInventory] {
+            XCTAssertFalse(SettingsV2Logic.canViewBankAccounts(role: role), "\(role)")
+        }
+    }
+
+    /// #1319: the empty list tells the outlet admin who adds an account, not "Tap +"
+    func testEmptyTextPerRole() {
+        XCTAssertEqual(SettingsV2Logic.bankAccountsEmptyKey(canManage: true), "bankAccounts.empty")
+        XCTAssertEqual(SettingsV2Logic.bankAccountsEmptyKey(canManage: false), "bankAccounts.emptyReadOnly")
+    }
+
     func testNewStringsExistInBothLanguages() throws {
-        let keys = ["bankAccounts.empty", "printer.bankQr.title", "printer.bankQr.hint", "bill.bankQr.title", "bill.bankQr.accountNumber"]
+        let keys = ["bankAccounts.empty", "bankAccounts.emptyReadOnly", "printer.bankQr.title", "printer.bankQr.hint", "bill.bankQr.title", "bill.bankQr.accountNumber"]
         for language in ["en", "vi-VN"] {
             let bundle = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"))))
             for key in keys {

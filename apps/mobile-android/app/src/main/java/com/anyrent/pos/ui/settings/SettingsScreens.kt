@@ -187,7 +187,7 @@ fun SettingsScreen(
             AppCard {
                 SettingsCardRow(Icons.Default.Print, stringResource(R.string.printer_config), onOpenPrinter)
                 // #622: MERCHANT / OUTLET_ADMIN (as iOS)
-                if (BankAccountRules.canManage(SessionStore.role)) {
+                if (BankAccountRules.canView(SessionStore.role)) {
                     HorizontalDivider(Modifier.padding(start = 56.dp))
                     SettingsCardRow(Icons.Default.AccountBalance, stringResource(R.string.bank_accounts), onOpenBankAccounts)
                 }

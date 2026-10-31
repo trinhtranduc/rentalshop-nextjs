@@ -9,7 +9,8 @@
 #   LANG_E2E=vi tests/e2e/mobile/android-flows.sh settings-sync <case> [merchant|manager|staff|kho]
 # Cases:  currency                         staff: API change, app relaunch (the older check)
 #         currency-fg <staff|manager|kho>  #1307 refresh WITHOUT relaunch: app back to the foreground / Overview tab, throttled to 1 minute (waits 2 x 65 s)
-#         rows <merchant|manager|staff|kho>  which Settings rows each role sees (#1310 Cọc, #1313 titles; #1319 bank accounts is noted, not failed)
+#         rows <merchant|manager|staff|kho>  which Settings rows each role sees (#1310 Cọc, #1313 titles, #1319 bank accounts read only for the manager)
+#         bankview <manager>               (#1319) bank accounts screen: the accounts are listed, no add button, a row does not open the form
 #         shopinfo <manager|staff|kho>     "Thông tin chi nhánh": manager edits the own branch, staff / kho read only (#1313)
 #         owner                            the shop owner on the device: shop + branch forms, currency, print note + QR, bills per outlet, overlap switch
 #         print <manager|staff|kho>        note + QR read-only for the role, IP / port set by the role itself, the printed bill (bytes captured) carries the note
@@ -23,7 +24,7 @@
 #         sharenote <merchant|manager|staff|kho>          #1354 the switch "Hiện ghi chú đơn trên ảnh chia sẻ" on In & phiếu
 #         share <merchant|manager|staff|kho>              #1345 / #1350 / #1354 staged-deposit order: detail "Thu khi giao", the share image (JPG copied from cache/receipts) with stage 2 unpaid / paid, note switch on / off
 SYNC="node $CHK/settings-sync-api.js"
-which_case="${2:?currency|currency-fg|rows|shopinfo|owner|print|bankcache|deposit|overlap|listing|othbr|sharenote|share}"
+which_case="${2:?currency|currency-fg|rows|bankview|shopinfo|owner|print|bankcache|deposit|overlap|listing|othbr|sharenote|share}"
 who="${3:-staff}"
 tag="[$LANG_E2E settings-sync/$which_case${3:+/$3}]"
 STAFF_EMAIL="${E2E_STAFF_EMAIL:-staff.outlet1@example.com}"; STAFF_PW="${E2E_STAFF_PASSWORD:-staff123}"
@@ -166,7 +167,7 @@ case "$which_case" in
       t="$(texts 3000)"
       echo "$t" | grep -Eq "$(mark "$to")" && pass "$tag $who shows $to via the $path, no relaunch" || fail "$tag $who still shows the old unit via the $path (#1307): ${t:0:300}"
     done ;;
-  rows)  # which Settings rows a role sees (#1310 Cọc owner only, #1313 titles, #1319 bank accounts still open to the manager)
+  rows)  # which Settings rows a role sees (#1310 Cọc owner only, #1313 titles, #1319 bank accounts read only for the manager)
     sign_in "$who"; S="$(settings_texts)"; shot "rows-$who"; note "ROWS-TEXTS $who: ${S:0:700}"
     case "$who" in
       merchant)
@@ -177,12 +178,19 @@ case "$which_case" in
         expect yes "$S" "$(L shopinfo_branch_info)" "manager: 'Thông tin chi nhánh' row"; expect no "$S" "$(L store_info)" "manager: no 'Thông tin cửa hàng'"
         expect no "$S" "$(L settings_v2_deposit)" "manager: no Cọc row (#1310)"; expect no "$S" "$(L settings_v2_allow_overlap)" "manager: no overlap switch"
         expect yes "$S" "$(L settings_v2_printing)" "manager: In & phiếu row"
-        has "$S" "$(L bank_accounts)" && known 1319 "$tag manager still sees the bank accounts row (rule 'only the owner edits bank accounts' is not built yet)" || pass "$tag manager does not see the bank accounts row (#1319 done)" ;;
+        expect yes "$S" "$(L bank_accounts)" "manager: bank accounts row, read only (#1319)" ;;
       staff|kho)
         expect yes "$S" "$(L shopinfo_branch_info)" "$who: 'Thông tin chi nhánh' row"; expect yes "$S" "$(L shopinfo_view_only_value)" "$who: row value 'Chỉ xem'"
         expect no "$S" "$(L settings_v2_deposit)" "$who: no Cọc row (#1310)"; expect no "$S" "$(L bank_accounts)" "$who: no bank accounts row"
         expect no "$S" "$(L settings_v2_allow_overlap)" "$who: no overlap switch"; expect no "$S" "$(L settings_v2_currency)" "$who: no Tiền tệ row" ;;
     esac ;;
+  bankview)  # (#1319) the manager reads the outlet's accounts; no add button, a row does not open the form
+    sign_in "$who"; open_settings; tap_any "$(L bank_accounts)"; sleep 4; shot "bankview-$who-list"
+    T="$(texts 4000)"
+    echo "$T" | grep -Fq "0123456789" && pass "$tag $who: lists the account" || fail "$tag $who: account 0123456789 not listed: ${T:0:300}"
+    "$U" has "$(L bank_account_add)" >/dev/null 2>&1 && fail "$tag $who: add button is shown" || pass "$tag $who: no add button"
+    tap_any "0123456789 · NGUYEN VAN A"; sleep 3; T2="$(texts 3000)"; shot "bankview-$who-after-tap"
+    echo "$T2" | grep -Fq "$(L bank_account_edit)" && fail "$tag $who: the row opened the form" || pass "$tag $who: a row does not open the form" ;;
   shopinfo)  # (#1313) the branch form per role
     sign_in "$who"; open_settings; tap_any "$(L shopinfo_branch_info)"; sleep 4; F="$(texts 6000)"; shot "shopinfo-$who"
     echo "$F" | grep -Fq "$(L shopinfo_branch_name)" && pass "$tag $who: branch form has the name field" || fail "$tag $who: no name field"; expect yes "$F" "$(L store_v2_phone)" "$who: phone field"

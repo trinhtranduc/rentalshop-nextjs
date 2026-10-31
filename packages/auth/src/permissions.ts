@@ -240,7 +240,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'analytics.export',
     // ❌ NO analytics.view.system (admin only)
     'billing.view',                      // ✅ Can view subscription status and plan limits
-    'bankAccounts.manage', 'bankAccounts.view',
+    'bankAccounts.view',                 // #1319: only the shop owner adds, edits, deletes, sets the default
     'loyalty.view'
   ],
   'OUTLET_STAFF': [

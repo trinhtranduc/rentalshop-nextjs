@@ -661,7 +661,7 @@ type NoteRow = { id: number; name: string; saved: string; draft: string; saving:
  * real-size label preview, and "In thử" for both. Paper sizes are this computer's; the note is the outlet's
  * (saved through the API, owner / outlet admin only).
  */
-/** Where "add a bank account" goes from the Phiếu in hint (#628): Cài đặt tab for an outlet admin, the outlet page for an owner. */
+/** Where "add a bank account" goes from the Phiếu in hint (#628): the Cài đặt tab or the outlet page; null for whoever cannot add one (#1319). */
 export type BankLink = { kind: 'tab'; open: () => void } | { kind: 'page' } | null;
 
 /**

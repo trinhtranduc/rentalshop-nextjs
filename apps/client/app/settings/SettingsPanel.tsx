@@ -420,7 +420,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
           </>
         );
       case 'payment':
-        // #1259 Thu tiền: bank accounts (owner / outlet admin), then "Cách thu cọc" (owner only, as before)
+        // #1259 Thu tiền: bank accounts (owner edits, outlet admin reads, #1319), then "Cách thu cọc" (owner only, as before)
         if (role === 'MERCHANT') {
           // The owner has no outlet of its own: the shared panel reads the picked branch
           if (allBranches === null) return <Skeleton className="h-[320px] w-full" />;
@@ -454,7 +454,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
               shareOrderNote={shareNoteValue}
               canEditShareOrderNote={canChangeShareOrderNote(role)}
               onShareOrderNoteChanged={() => void refreshUser?.()}
-              bankLink={role === 'OUTLET_ADMIN' || role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('payment') } : null}
+              bankLink={role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('payment') } : null}
             />
           </>
         );

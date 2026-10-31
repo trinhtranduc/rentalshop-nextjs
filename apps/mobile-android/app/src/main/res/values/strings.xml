@@ -1426,6 +1426,7 @@
     <!-- #622 Bank accounts + VietQR on bills -->
     <string name="bank_accounts">Bank accounts</string>
     <string name="bank_accounts_empty">No bank account yet. Tap + to add one.</string>
+    <string name="bank_accounts_empty_read_only">No bank account yet. Only the shop owner can add one.</string>
     <string name="bank_account_add">Add bank account</string>
     <string name="bank_account_edit">Edit bank account</string>
     <string name="bank_account_bank">Bank name *</string>

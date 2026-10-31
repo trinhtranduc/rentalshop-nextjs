@@ -7,6 +7,7 @@
 //
 //  #622: the outlet's bank accounts (default first). A MERCHANT login has no outlet of its own, so the screen uses
 //  the default outlet and offers an outlet row when the shop has several.
+//  #1319: the outlet admin gets the same list, read only (no +, no chevron, no form, no swipe to delete).
 //
 
 import Foundation
@@ -39,6 +40,9 @@ class BankAccountViewController: BaseViewControler {
         return table
     }()
 
+    /// #1319: only the shop owner adds, edits, deletes; the outlet admin reads
+    private let canManage = SettingsV2Logic.canManageBankAccounts(role: User.account()?.role)
+
     private lazy var addButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "plus"), for: .normal)
@@ -50,7 +54,7 @@ class BankAccountViewController: BaseViewControler {
 
     private lazy var emptyLabel: UILabel = {
         let label = UILabel()
-        label.text = "bankAccounts.empty".localized()
+        label.text = SettingsV2Logic.bankAccountsEmptyKey(canManage: canManage).localized()
         label.font = Utils.regularFont(size: 15)
         label.textColor = .textSecondary
         label.textAlignment = .center
@@ -103,7 +107,7 @@ class BankAccountViewController: BaseViewControler {
         back.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         let add = CustomersV2UI.iconButton("plus", label: "Add Bank Account".localized(), size: DS.Icon.sm)
         add.addTarget(self, action: #selector(addButtonTapped), for: .touchUpInside)
-        let line = SettingsDetailV2.installHeader(on: view, title: "Bank Accounts".localized(), back: back, trailing: [add])
+        let line = SettingsDetailV2.installHeader(on: view, title: "Bank Accounts".localized(), back: back, trailing: canManage ? [add] : [])
 
         bankAccountsTableView.backgroundColor = .white
         bankAccountsTableView.separatorStyle = .none
@@ -140,7 +144,9 @@ class BankAccountViewController: BaseViewControler {
             hideBackButton: false,
             backAction: .pop
         )
-        navBar.addRightButton(addButton, size: CGSize(width: 44, height: 44))
+        if canManage {
+            navBar.addRightButton(addButton, size: CGSize(width: 44, height: 44))
+        }
     }
 
     // MARK: - Actions
@@ -150,7 +156,7 @@ class BankAccountViewController: BaseViewControler {
     }
 
     private func presentBankAccountForm() {
-        guard let outletId = outletId else { return }
+        guard canManage, let outletId = outletId else { return }
         let formVC = BankAccountFormViewController()
         formVC.bankAccount = selectedBankAccount
         formVC.outletId = outletId
@@ -289,7 +295,7 @@ extension BankAccountViewController: UITableViewDataSource {
 
         if v2 {
             let cell = tableView.dequeueReusableCell(withIdentifier: BankAccountV2Cell.reuseId, for: indexPath)
-            (cell as? BankAccountV2Cell)?.bind(bankAccount)
+            (cell as? BankAccountV2Cell)?.bind(bankAccount, readOnly: !canManage)
             return cell
         }
 
@@ -306,7 +312,8 @@ extension BankAccountViewController: UITableViewDataSource {
         }
 
         cell.contentConfiguration = config
-        cell.accessoryType = .disclosureIndicator
+        cell.accessoryType = canManage ? .disclosureIndicator : .none
+        cell.selectionStyle = canManage ? .default : .none
 
         return cell
     }
@@ -320,12 +327,13 @@ extension BankAccountViewController: UITableViewDelegate {
             chooseOutlet(from: tableView.cellForRow(at: indexPath))
             return
         }
+        guard canManage else { return }
         selectedBankAccount = bankAccounts[indexPath.row]
         presentBankAccountForm()
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard sections[indexPath.section] == .accounts else { return nil }
+        guard canManage, sections[indexPath.section] == .accounts else { return nil }
         let bankAccount = bankAccounts[indexPath.row]
         let delete = UIContextualAction(style: .destructive, title: "Delete".localized()) { [weak self] _, _, done in
             self?.confirmDelete(bankAccount)
@@ -347,13 +355,14 @@ protocol BankAccountFormDelegate: AnyObject {
     func bankAccountFormDidSave()
 }
 
-/// v2 row: bank name (+ "Mặc định" pill), "number · holder", branch, chevron
+/// v2 row: bank name (+ "Mặc định" pill), "number · holder", branch, chevron (none when read only, #1319)
 final class BankAccountV2Cell: UITableViewCell {
     static let reuseId = "BankAccountV2Cell"
     private let nameLabel = V2.label(size: DS.TextSize.body, weight: .bold)
     private let defaultPill = OrderStatusPillLabel()
     private let detailLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
     private let branchLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+    private let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -374,7 +383,6 @@ final class BankAccountV2Cell: UITableViewCell {
         let texts = UIStackView(arrangedSubviews: [nameRow, detailLabel, branchLabel])
         texts.axis = .vertical
         texts.spacing = DS.Gap.lineTight
-        let chevron = UIImageView(image: DS.symbol("chevron.right", DS.Icon.sm))
         chevron.tintColor = UIColor(hexString: "94A3B8")
         chevron.contentMode = .center
         chevron.setContentHuggingPriority(.required, for: .horizontal)
@@ -397,12 +405,14 @@ final class BankAccountV2Cell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func bind(_ account: BankAccount) {
+    func bind(_ account: BankAccount, readOnly: Bool = false) {
         nameLabel.text = account.bankName
         defaultPill.isHidden = account.isDefault != true
         detailLabel.text = "\(account.accountNumber) · \(account.accountHolderName)"
         branchLabel.text = account.branch
         branchLabel.isHidden = (account.branch ?? "").isEmpty
-        accessibilityTraits = UIAccessibilityTraitButton
+        chevron.isHidden = readOnly
+        selectionStyle = readOnly ? .none : .default
+        accessibilityTraits = readOnly ? UIAccessibilityTraitNone : UIAccessibilityTraitButton
     }
 }

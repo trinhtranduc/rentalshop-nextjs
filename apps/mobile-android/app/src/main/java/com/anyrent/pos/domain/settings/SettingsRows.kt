@@ -59,7 +59,7 @@ object SettingsRows {
             SettingsSection(
                 SettingsGroup.STORE,
                 listOf(SettingsItem.STORE_INFO) +
-                    listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canManage(role) }) +
+                    listOfNotNull(SettingsItem.BANK_ACCOUNTS.takeIf { BankAccountRules.canView(role) }) +
                     listOfNotNull(SettingsItem.DEPOSIT.takeIf { DepositSetting.canView(role) }) +
                     listOf(SettingsItem.PRINTING),
             ),

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions, validateMerchantAccess } from '@rentalshop/auth/server';
 import { prisma } from '@rentalshop/database';
-import { isStaffLikeRole } from '@rentalshop/constants';
+import { isStaffLikeRole, USER_ROLE } from '@rentalshop/constants';
 import { 
   handleApiError, 
   ResponseBuilder,
@@ -76,7 +76,7 @@ export async function GET(
  * POST /api/merchants/[id]/outlets/[outletId]/bank-accounts
  * Create a new bank account for an outlet
  * 
- * Authorization: ADMIN, MERCHANT, and OUTLET_ADMIN can create bank accounts
+ * Authorization: ADMIN and MERCHANT create bank accounts (#1319: OUTLET_ADMIN and staff only read)
  */
 export async function POST(
   request: NextRequest,
@@ -92,6 +92,14 @@ export async function POST(
       if (isStaffLikeRole(user.role)) {
         return NextResponse.json(
           ResponseBuilder.error('FORBIDDEN'),
+          { status: 403 }
+        );
+      }
+
+      // #1319: only the shop owner (and the platform) writes; the outlet manager reads
+      if (user.role === USER_ROLE.OUTLET_ADMIN) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
           { status: 403 }
         );
       }

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.repository.BankAccountRepository
 import com.anyrent.pos.data.repository.BankOutlet
+import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.bank.BankAccountProblem
 import com.anyrent.pos.domain.bank.BankAccountRules
 import com.anyrent.pos.domain.bank.OutletBankAccount
@@ -83,11 +84,13 @@ private sealed interface BankForm {
  * #622 Settings → Tài khoản ngân hàng (MERCHANT / OUTLET_ADMIN), iOS `BankAccountViewController` (v2 look):
  * the outlet's active accounts (default first), + to add, a row to edit or delete. A MERCHANT login has no outlet
  * of its own: the default outlet is used and an outlet row appears when the shop has several.
+ * #1319: the outlet admin gets the same list, read only (no +, no chevron, no form).
  */
 @Composable
 fun BankAccountsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val canManage = BankAccountRules.canManage(SessionStore.role)
     var outlets by remember { mutableStateOf<List<BankOutlet>>(emptyList()) }
     var outletId by remember { mutableStateOf<Int?>(null) }
     var accounts by remember { mutableStateOf<List<OutletBankAccount>>(emptyList()) }
@@ -132,10 +135,14 @@ fun BankAccountsScreen(onBack: () -> Unit) {
     SettingsDetailPage(
         title = stringResource(R.string.bank_accounts),
         onBack = onBack,
-        actions = {
-            IconButton(onClick = { if (outletId != null) form = BankForm.New }) {
-                AppIcon(Icons.Outlined.Add, contentDescription = stringResource(R.string.bank_account_add), size = DS.Icon.Sm, tint = DS.Colors.Text)
+        actions = if (canManage) {
+            {
+                IconButton(onClick = { if (outletId != null) form = BankForm.New }) {
+                    AppIcon(Icons.Outlined.Add, contentDescription = stringResource(R.string.bank_account_add), size = DS.Icon.Sm, tint = DS.Colors.Text)
+                }
             }
+        } else {
+            null
         },
     ) {
         LazyColumn(Modifier.fillMaxSize()) {
@@ -150,12 +157,12 @@ fun BankAccountsScreen(onBack: () -> Unit) {
                 }
             }
             items(accounts, key = { it.id }) { account ->
-                BankAccountRow(account) { form = BankForm.Edit(account) }
+                BankAccountRow(account, onClick = if (canManage) ({ form = BankForm.Edit(account) }) else null)
             }
             if (!loading && accounts.isEmpty()) {
                 item(key = "empty") {
                     Text(
-                        stringResource(R.string.bank_accounts_empty), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted,
+                        stringResource(if (canManage) R.string.bank_accounts_empty else R.string.bank_accounts_empty_read_only), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted,
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp),
                     )
                 }
@@ -183,11 +190,11 @@ fun BankAccountsScreen(onBack: () -> Unit) {
     error?.let { AppAlertError(message = it, onDismiss = { error = null }) }
 }
 
-/** Bank name (+ "Mặc định" pill), "number · holder", branch, chevron */
+/** Bank name (+ "Mặc định" pill), "number · holder", branch, chevron; no chevron and no tap when read only (#1319) */
 @Composable
-private fun BankAccountRow(account: OutletBankAccount, onClick: () -> Unit) {
+private fun BankAccountRow(account: OutletBankAccount, onClick: (() -> Unit)?) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -199,7 +206,9 @@ private fun BankAccountRow(account: OutletBankAccount, onClick: () -> Unit) {
             Text("${account.accountNumber} · ${account.accountHolderName}", fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
             account.branch?.let { Text(it, fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted) }
         }
-        Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))
+        if (onClick != null) {
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF94A3B8), modifier = Modifier.size(DS.Icon.Sm))
+        }
     }
     ThinDivider()
 }

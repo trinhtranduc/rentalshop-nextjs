@@ -5,7 +5,7 @@
  * `bankAccountsApi.getBankAccounts / createBankAccount / updateBankAccount / deleteBankAccount`; the
  * add / edit form is the shared BankAccountForm in the shared dialog (dark via `html.ar-shell`).
  * The outlet name in the header comes from GET /api/outlets (the list the Chi nhánh page reads).
- * View needs `bankAccounts.view`, add / edit / delete `bankAccounts.manage` (as before).
+ * View needs `bankAccounts.view`, add / edit / delete `bankAccounts.manage` (#1319: owner, not the outlet admin).
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -207,7 +207,7 @@ export default function OutletBankAccountsPage() {
       return (
         <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
           <p className="m-0 text-[15px] font-semibold">{tb('list.emptyTitle')}</p>
-          <p className="m-0 text-sm text-ar-muted">{tb('list.emptyDescription')}</p>
+          {canManageBankAccounts && <p className="m-0 text-sm text-ar-muted">{tb('list.emptyDescription')}</p>}
         </div>
       );
     return (
