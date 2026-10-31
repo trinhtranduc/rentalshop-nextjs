@@ -701,6 +701,10 @@ final class OrdersHomeViewModel {
     private var hasMore = false
     private var isLoadingMore = false
     private var todayWork: TodayWork?
+    /// #1375 what the "Thêm widget" card says: the API counts of today's hand-overs, returns and late jobs
+    var widgetCounts: (pickup: Int, returns: Int, late: Int)? {
+        todayWork.map { ($0.pickupsToday.count, $0.returnsToday.count, $0.noShows.count + $0.overdueReturns.count) }
+    }
 
     /// What each segment showed last (#674): a segment switch shows it at once, then refreshes only when needed
     private struct Snapshot {

@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1375F895893DD61634B6A82 /* TodayWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */; };
+		A1375FF2ACA4DE7D4F0836DD /* TodayWidgetDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F309BF104D3793F0848 /* TodayWidgetDisplay.swift */; };
+		A1375FFA029BBFFEDDD18115 /* TodayWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F54714323ED511A508A /* TodayWidgetSnapshot.swift */; };
+		A1375F8FD8BA93DC5309BEC7 /* WidgetGuideViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F71AA39879CD60CF43C /* WidgetGuideViewController.swift */; };
+		A1375FEB5D065A568F90FD4C /* TodayWidgetSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FEA49A710668E35B477 /* TodayWidgetSync.swift */; };
+		A1375FF6DB4E00AF5D310FEB /* TodayWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FB5DB4972E11406B404 /* TodayWidgetData.swift */; };
+		A1375F28AB1F5228039E03A9 /* TodayWorkWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FCD63B014E50EEF395E /* TodayWorkWidget.swift */; };
+		A1375F1A2B326CF5F1586F05 /* TodayWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FB607A5CE188742A870 /* TodayWidgetBridge.swift */; };
+		A1375F5BEDA32B7984FCC3B2 /* TodayWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */; };
+		A1375F7BCEE3AC928B209FF0 /* TodayWidgetDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F309BF104D3793F0848 /* TodayWidgetDisplay.swift */; };
+		A1375F5619A0D573C7F38A0E /* TodayWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F54714323ED511A508A /* TodayWidgetSnapshot.swift */; };
 		A1375F6DFFD37ECA692B548E /* TodayWidgetDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */; };
 		A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */; };
 		A909B0000000000000000002 /* Attendance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000001 /* Attendance.swift */; };
@@ -428,6 +439,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1375F71AA39879CD60CF43C /* WidgetGuideViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetGuideViewController.swift; sourceTree = "<group>"; };
+		A1375FEA49A710668E35B477 /* TodayWidgetSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetSync.swift; sourceTree = "<group>"; };
+		A1375FB5DB4972E11406B404 /* TodayWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetData.swift; sourceTree = "<group>"; };
+		A1375FA1E4AE65FAF3B65EE0 /* AnyRentLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AnyRentLiveActivity.entitlements; sourceTree = "<group>"; };
+		A1375FCD63B014E50EEF395E /* TodayWorkWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWorkWidget.swift; sourceTree = "<group>"; };
+		A1375FB607A5CE188742A870 /* TodayWidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetBridge.swift; sourceTree = "<group>"; };
+		A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetStore.swift; sourceTree = "<group>"; };
+		A1375F309BF104D3793F0848 /* TodayWidgetDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDisplay.swift; sourceTree = "<group>"; };
+		A1375F54714323ED511A508A /* TodayWidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetSnapshot.swift; sourceTree = "<group>"; };
 		A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDataTests.swift; sourceTree = "<group>"; };
 		A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDisplayTests.swift; sourceTree = "<group>"; };
 		A909F0000000000000000001 /* Attendance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attendance.swift; sourceTree = "<group>"; };
@@ -906,6 +926,7 @@
 				041CBA192D8E6FFC00C117DF /* FirebaseManager.swift */,
 				04F1A0012F1B0001000A0001 /* PushNotificationManager.swift */,
 				04F1A0112F1B0001000A0011 /* DraftOrderReminder.swift */,
+				A1375FEA49A710668E35B477 /* TodayWidgetSync.swift */,
 				04F1A0212F1B0001000A0021 /* DraftOrderNotificationCard.swift */,
 				04A1B0002F7A000100000001 /* PurchasesManager.swift */,
 			);
@@ -1168,6 +1189,7 @@
 				A1124F000000000000000002 /* BookingRequestsViewController.swift */,
 				A1124F000000000000000003 /* BookingRequestDetailViewController.swift */,
 				15E19ED151DD6F782E5777FB /* OrdersViewController.swift */,
+				A1375F71AA39879CD60CF43C /* WidgetGuideViewController.swift */,
 				C466A2A395154AD70553624A /* OrderRowCell.swift */,
 				8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */,
 			);
@@ -1216,6 +1238,7 @@
 				85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */,
 				670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */,
 				B07CC0B0BF772BE52542D13E /* TodayWork.swift */,
+				A1375FB5DB4972E11406B404 /* TodayWidgetData.swift */,
 				16733093F5AD2CBACB593E6B /* CalendarV2.swift */,
 				64454969BCB62EEB55223203 /* OverviewV2.swift */,
 				A616F0000000000000000001 /* OverviewDashLogic.swift */,
@@ -1550,6 +1573,10 @@
 				A4B110012F1E0101000012 /* DraftOrderLiveActivityView.swift */,
 				A4B110012F1E0101000013 /* DraftOrderLiveActivityWidget.swift */,
 				A4B110012F1E0101000014 /* DraftOrderLiveActivityBridge.swift */,
+				A1375FB607A5CE188742A870 /* TodayWidgetBridge.swift */,
+				A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */,
+				A1375F309BF104D3793F0848 /* TodayWidgetDisplay.swift */,
+				A1375F54714323ED511A508A /* TodayWidgetSnapshot.swift */,
 			);
 			path = DraftOrderActivity;
 			sourceTree = "<group>";
@@ -1558,6 +1585,8 @@
 			isa = PBXGroup;
 			children = (
 				A4B110012F1E0101000015 /* AnyRentLiveActivityBundle.swift */,
+				A1375FA1E4AE65FAF3B65EE0 /* AnyRentLiveActivity.entitlements */,
+				A1375FCD63B014E50EEF395E /* TodayWorkWidget.swift */,
 				A4B110012F1E0101000016 /* Info.plist */,
 			);
 			path = AnyRentLiveActivity;
@@ -2030,6 +2059,7 @@
 				041CBA1B2D8E6FFC00C117DF /* FirebaseManager.swift in Sources */,
 				04F1A0022F1B0001000A0002 /* PushNotificationManager.swift in Sources */,
 				04F1A0122F1B0001000A0012 /* DraftOrderReminder.swift in Sources */,
+				A1375FEB5D065A568F90FD4C /* TodayWidgetSync.swift in Sources */,
 				04F1A0222F1B0001000A0022 /* DraftOrderNotificationCard.swift in Sources */,
 				04A1B0012F7A000100000001 /* PurchasesManager.swift in Sources */,
 				04A1B0112F7A000100000011 /* SubscriptionViewController.swift in Sources */,
@@ -2231,10 +2261,12 @@
 				A632B0000000000000000001 /* CategoryManageViewController.swift in Sources */,
 				4162665B07AA33775A3B5298 /* CartV2ViewController.swift in Sources */,
 				61800AE4201230EA1EED530E /* TodayWork.swift in Sources */,
+				A1375FF6DB4E00AF5D310FEB /* TodayWidgetData.swift in Sources */,
 				6E5F77822E6F01D26CD3E7DC /* OrdersHomeViewModel.swift in Sources */,
 				A1124B000000000000000002 /* BookingRequestsViewController.swift in Sources */,
 				A1124B000000000000000003 /* BookingRequestDetailViewController.swift in Sources */,
 				CAA629059B51AF2EA1F794EE /* OrdersViewController.swift in Sources */,
+				A1375F8FD8BA93DC5309BEC7 /* WidgetGuideViewController.swift in Sources */,
 				E4524B2B978D3134644DADCB /* OrderRowCell.swift in Sources */,
 				F05A9EEA160D9C22272C8D9E /* OrdersFilterSheet.swift in Sources */,
 				C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */,
@@ -2288,6 +2320,10 @@
 			files = (
 				A4B110012F1E0101000001 /* DraftOrderAttributes.swift in Sources */,
 				A4B110012F1E0101000004 /* DraftOrderLiveActivityBridge.swift in Sources */,
+				A1375F1A2B326CF5F1586F05 /* TodayWidgetBridge.swift in Sources */,
+				A1375F5BEDA32B7984FCC3B2 /* TodayWidgetStore.swift in Sources */,
+				A1375F7BCEE3AC928B209FF0 /* TodayWidgetDisplay.swift in Sources */,
+				A1375F5619A0D573C7F38A0E /* TodayWidgetSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2296,6 +2332,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4B110012F1E0101000005 /* AnyRentLiveActivityBundle.swift in Sources */,
+				A1375F28AB1F5228039E03A9 /* TodayWorkWidget.swift in Sources */,
+				A1375F895893DD61634B6A82 /* TodayWidgetStore.swift in Sources */,
+				A1375FF2ACA4DE7D4F0836DD /* TodayWidgetDisplay.swift in Sources */,
+				A1375FFA029BBFFEDDD18115 /* TodayWidgetSnapshot.swift in Sources */,
 				A4B110012F1E010100000E /* DraftOrderAttributes.swift in Sources */,
 				A4B110012F1E010100000F /* DraftOrderLiveActivityView.swift in Sources */,
 				A4B110012F1E0101000010 /* DraftOrderLiveActivityWidget.swift in Sources */,
@@ -2498,6 +2538,7 @@
 			baseConfigurationReference = 003B93F62DB6A075AF2FB1A1 /* Pods-POS ADBD.debug.xcconfig */;
 			buildSettings = {
 				API_BASE_URL = "https://dev-api.anyrent.shop";
+				APP_GROUP_ID = group.com.anyrent.debug;
 				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = anyrent;
 				CODE_SIGN_ENTITLEMENTS = "POS ADBD/POS ADBD.entitlements";
@@ -2579,6 +2620,7 @@
 			baseConfigurationReference = 4AA0DF8499A488FAC04D5D59 /* Pods-POS ADBD.release.xcconfig */;
 			buildSettings = {
 				API_BASE_URL = "https://api.anyrent.shop";
+				APP_GROUP_ID = group.com.anyrent;
 				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = anyrent;
 				CODE_SIGN_ENTITLEMENTS = "POS ADBD/POS ADBD.entitlements";
@@ -2721,7 +2763,9 @@
 		A4B110012F1E0101000053 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_ID = group.com.anyrent.debug;
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AnyRentLiveActivity/AnyRentLiveActivity.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2910202601;
@@ -2747,7 +2791,9 @@
 		A4B110012F1E0101000054 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APP_GROUP_ID = group.com.anyrent;
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AnyRentLiveActivity/AnyRentLiveActivity.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2910202601;

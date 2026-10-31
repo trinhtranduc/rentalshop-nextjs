@@ -53,6 +53,25 @@ def add_file(sibling, name, kind="sourcecode.swift", in_sources=True):
     print("added:", name)
 
 
+def also_compile(name, after_name):
+    """Compile an existing file in one more target: a second build file in the same Sources phase as `after_name`
+    (the extension compiles the shared widget files itself, like it already does for DraftOrderAttributes.swift)"""
+    global text
+    ref = re.search(r"\t\t(\w+) /\* %s \*/ = \{isa = PBXFileReference" % re.escape(name), text).group(1)
+    anchor = re.search(r"\t\t(\w+) /\* %s in Sources \*/ = \{isa = PBXBuildFile" % re.escape(after_name), text).group(1)
+    build = new_id("extension build " + name)
+    if build in text:
+        print("skip (exists): extension", name)
+        return
+    text = text.replace("/* Begin PBXBuildFile section */\n",
+                        "/* Begin PBXBuildFile section */\n\t\t%s /* %s in Sources */ = {isa = PBXBuildFile; fileRef = %s /* %s */; };\n"
+                        % (build, name, ref, name), 1)
+    phase_line = "\t\t\t\t%s /* %s in Sources */,\n" % (anchor, after_name)
+    assert text.count(phase_line) == 1
+    text = text.replace(phase_line, phase_line + "\t\t\t\t%s /* %s in Sources */,\n" % (build, name), 1)
+    print("also compiled in the extension:", name)
+
+
 def add_setting(block_id, line, after=None):
     """Put a build setting into the XCBuildConfiguration `block_id` (once)."""
     global text
@@ -84,6 +103,8 @@ if only == "all":
     # Widget extension
     add_file("AnyRentLiveActivityBundle.swift", "TodayWorkWidget.swift")
     add_file("AnyRentLiveActivityBundle.swift", "AnyRentLiveActivity.entitlements", kind="text.plist.entitlements", in_sources=False)
+    for name in ("TodayWidgetSnapshot.swift", "TodayWidgetDisplay.swift", "TodayWidgetStore.swift"):
+        also_compile(name, "TodayWorkWidget.swift")
     # App (Swift 4)
     add_file("TodayWork.swift", "TodayWidgetData.swift")
     add_file("DraftOrderReminder.swift", "TodayWidgetSync.swift")

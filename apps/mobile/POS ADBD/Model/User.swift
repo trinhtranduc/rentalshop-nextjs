@@ -280,6 +280,7 @@ class User: NSObject, Codable {
         UserDefaults.standard.removeObject(forKey: userKey)
         ShopCurrencyStore.userDidChange()
         ShareOrderNoteStore.userDidSignOut()
+        TodayWidgetSync.shared.userDidSignOut() // #1375 the shop's jobs leave the home-screen widget at once
         UserDefaults.standard.synchronize()
         print("✅ User reset successfully from UserDefaults")
     }

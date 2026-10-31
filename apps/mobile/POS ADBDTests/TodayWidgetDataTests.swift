@@ -153,7 +153,7 @@ final class TodayWidgetDataTests: XCTestCase {
         for (folder, expected) in [("vi-VN", TodayWidgetLabels.vietnamese), ("en", TodayWidgetLabels.english)] {
             let path = try XCTUnwrap(Bundle.main.path(forResource: folder, ofType: "lproj"), folder)
             let bundle = try XCTUnwrap(Bundle(path: path))
-            XCTAssertEqual(TodayWidgetData.labels(bundle: bundle), expected, folder)
+            XCTAssertEqual(TodayWidgetData.labels(bundle: bundle, language: folder), expected, folder)
         }
     }
 
@@ -223,5 +223,36 @@ final class TodayWidgetDataTests: XCTestCase {
         } else {
             XCTFail("account rows: \(items)")
         }
+    }
+
+    /// "Không hỏi lại" ends the card only: the Settings row stays, and it opens the guide (W11)
+    func testDismissingTheCardNeverRemovesTheSettingsRow() {
+        let suite = "widget-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        TodayWidgetHint.dismiss(defaults: defaults)
+        XCTAssertTrue(TodayWidgetHint.isDismissed(defaults: defaults))
+        for role in [Role.merchant, .outletAdmin, .outletStaff, .outletInventory] {
+            let sections = SettingsV2Logic.sections(role: role, permissions: [], hasPlan: false, supportsWidget: true)
+            XCTAssertTrue(sections.flatMap { $0.items }.contains(.widget), "\(role)")
+        }
+        // The row does not read the card's flag, so a widget already on the phone does not hide it either
+        XCTAssertTrue(SettingsV2Logic.sections(role: .merchant, permissions: [], hasPlan: false, supportsWidget: true)
+            .flatMap { $0.items }.contains(.widget))
+    }
+
+    /// The guide opened from Settings has no "Không hỏi lại" (nothing to switch off there); the card's guide has it
+    func testTheGuideFromSettingsOpensWithoutTheNeverAskButton() {
+        let fromSettings = WidgetGuideViewController(offersNeverAsk: false)
+        let fromCard = WidgetGuideViewController(offersNeverAsk: true)
+        _ = fromSettings.view
+        _ = fromCard.view
+        func hasButton(_ id: String, in view: UIView) -> Bool {
+            view.accessibilityIdentifier == id || view.subviews.contains { hasButton(id, in: $0) }
+        }
+        XCTAssertTrue(hasButton("widget.guide.ok", in: fromSettings.view))
+        XCTAssertFalse(hasButton("widget.guide.never", in: fromSettings.view))
+        XCTAssertTrue(hasButton("widget.guide.ok", in: fromCard.view))
+        XCTAssertTrue(hasButton("widget.guide.never", in: fromCard.view))
     }
 }

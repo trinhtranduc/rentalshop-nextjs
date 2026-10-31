@@ -15,6 +15,8 @@ enum SettingsV2Item: Equatable {
     case categories, customers, users, export
     /// #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản)
     case plan, language, advanced
+    /// #1375 "Widget": the guide to add the "Việc cần làm" widget (only where widgets work, iOS 16.1 and later)
+    case widget
 }
 
 struct SettingsV2Section: Equatable {
@@ -40,7 +42,8 @@ enum SettingsV2Logic {
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
     /// - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
     /// - the bank accounts line (#622) sits inside Thu tiền; the owner's currency (#1145) inside Thông tin cửa hàng (#1313)
-    static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
+    static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false,
+                         supportsWidget: Bool = false) -> [SettingsV2Section] {
         var storeItems: [SettingsV2Item] = [.storeInfo]
         if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
         if ShopDepositLogic.canView(role: role) { storeItems.append(.deposit) }
@@ -62,7 +65,9 @@ enum SettingsV2Logic {
 
         var account: [SettingsV2Item] = []
         if hasPlan { account.append(.plan) }
-        account += [.language, .advanced]
+        account.append(.language)
+        if supportsWidget { account.append(.widget) } // #1375 after Ngôn ngữ, before Nâng cao
+        account.append(.advanced)
 
         return [store, SettingsV2Section(group: .management, items: management),
                 SettingsV2Section(group: .account, items: account)]
