@@ -13,3 +13,16 @@ Issue: #1375 · Status: in-progress. Hành vi đánh số 1 đến 15 và dữ l
 
 ## Out of scope
 Android (PR-2), lịch hệ thống (PR-3), widget lớn / màn hình khoá, ghim từng đơn, API, tự làm mới khi chưa mở app.
+
+## P2 · Thẻ có màu (#1378, cùng nhánh, cùng PR)
+
+Chủ shop chọn Phương án 2 (spec 1372 mục 1c, 9). Phần dữ liệu và logic (`DraftOrderActivity/TodayWidget*.swift`, `Model/TodayWidgetData.swift`) tách khỏi views (`AnyRentLiveActivity/TodayWorkWidget.swift`): đổi thiết kế sau này chỉ sửa views.
+
+- Nhỏ: vòng tiến độ "xong N/M" (`done` / (`done` + còn lại)) và 3 ô số Trễ đỏ `B91C1C`, Giao xanh `1D4ED8`, Trả cam `C2410C`. Vừa: dải 3 ô số, 2 việc (mỗi việc 2 dòng), chân "xong N/M · +K việc khác · cập nhật hh:mm".
+- Dòng 1: chip (TRỄ / GIAO / TRẢ, biểu tượng), tên khách, "Trễ N ngày" (đậm đỏ) hoặc "Hôm nay · 14:00" (có giờ) / "Hôm nay". Dòng 2: tên món đầu "+N" và "Chưa soạn đồ" (chữ cam + biểu tượng cảnh báo, không nền, chỉ dòng GIAO); dòng trễ không cảnh báo thì ghi ngày hẹn "Lấy 28/10/26".
+- Snapshot v2 thêm: `done`; mỗi dòng thêm `moreCount`, `planTime`, `planDay`; `product` là tên món đầu không kèm số lượng. Vẫn không token, tiền, SĐT, ảnh.
+- `done` = `doneToday.pickups + doneToday.returns` của `GET /api/analytics/outlet-operations`: `packages/database/src/outlet-operations.ts:86-87,106` (đếm đơn có `pickedUpAt` / `returnedAt` trong ngày VN, không tính CANCELLED), trả ở `apps/api/app/api/analytics/outlet-operations/route.ts:197`; iOS đã đọc ở `Model/OverviewV2.swift:646-652`. Không đổi API. API cũ không có `doneToday` thì `done` = 0.
+- `planTime` rỗng khi giờ VN là 00:00 đúng (cách app lưu đơn chỉ có ngày); `planDay` theo ngày VN.
+- "Xong hết N/N" chỉ khi `done` ≥ 1 và không còn việc; `done` = 0 và không còn việc là "Hôm nay chưa có việc".
+- Ngoài phạm vi: ảnh món, công tắc "còn thu" (D3), cỡ lớn, widget màn hình khoá.
+- Ảnh chụp Simulator của P2: không chụp, theo yêu cầu của chủ shop.
