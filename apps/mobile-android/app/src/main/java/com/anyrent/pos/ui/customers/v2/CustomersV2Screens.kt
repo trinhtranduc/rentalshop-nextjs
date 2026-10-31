@@ -341,7 +341,7 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
 private fun NewCustomerRow(onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button }
+            Modifier.fillMaxWidth().testTag("customers.picker.new").clickable(onClick = onClick).semantics { role = Role.Button }
                 .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -479,6 +479,7 @@ fun NewCustomerContent(
                 label = stringResource(R.string.customers_v2_phone), value = phone,
                 onValueChange = { phone = it; existing = null; if (problem == CustomerRules.FormProblem.MISSING_PHONE) problem = null },
                 keyboardType = KeyboardType.Phone,
+                tag = "customers.new.phone",
                 error = needPhone.takeIf { problem == CustomerRules.FormProblem.MISSING_PHONE },
             )
             FormField(
@@ -486,6 +487,7 @@ fun NewCustomerContent(
                 onValueChange = { name = it; if (problem == CustomerRules.FormProblem.MISSING_NAME) problem = null },
                 capitalization = KeyboardCapitalization.Words,
                 error = needName.takeIf { problem == CustomerRules.FormProblem.MISSING_NAME },
+                tag = "customers.new.name",
             )
             FormField(
                 label = stringResource(R.string.customers_v2_note), optional = stringResource(R.string.customers_v2_optional),
@@ -547,6 +549,8 @@ private fun FormField(
     capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     imeAction: ImeAction = ImeAction.Next,
     error: String? = null,
+    /** #1393: the input's test tag */
+    tag: String? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -568,7 +572,8 @@ private fun FormField(
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = FieldBorder, focusedBorderColor = DS.Colors.Primary),
             textStyle = androidx.compose.ui.text.TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).semantics { contentDescription = label },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).semantics { contentDescription = label }
+                .then(if (tag != null) Modifier.testTag(tag) else Modifier),
         )
     }
 }

@@ -278,6 +278,13 @@ object SessionStore {
         get() = prefs.getBoolean(KEY_ONBOARDING, false)
         set(value) { prefs.edit().putBoolean(KEY_ONBOARDING, value).apply() }
 
+    /** #1393 first-run guide marks; the key carries the shop, and clearAuth leaves them */
+    fun guideMark(key: String): Boolean = prefs.getBoolean(key, false)
+
+    fun setGuideMark(key: String, value: Boolean) {
+        prefs.edit().putBoolean(key, value).apply()
+    }
+
     fun clearAuth() {
         // Keep lastLoginEmail so login screen can prefill like iOS.
         val rememberedEmail = email?.takeIf { it.isNotBlank() } ?: lastLoginEmail

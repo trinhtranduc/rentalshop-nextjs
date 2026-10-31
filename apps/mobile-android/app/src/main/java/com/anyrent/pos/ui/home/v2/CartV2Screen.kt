@@ -536,7 +536,7 @@ fun CartV2Screen(
                 // #952 (owner): calendar icon in a light-blue circle, same size and margin as the customer avatar
                 val dateRow = CartDateRow.state(pickup.takeIf { datesChosen }, ret.takeIf { datesChosen })
                 Row(
-                    Modifier.fillMaxWidth().clickable { showDates = true }.heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+                    Modifier.fillMaxWidth().testTag("cart.datesRow").clickable { showDates = true }.heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -764,7 +764,7 @@ fun CartV2Screen(
                             EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
                         },
                     ),
-                    modifier = Modifier.weight(1.1f),
+                    modifier = Modifier.weight(1.1f).testTag("cart.cta"),
                     // #1229: the staged label is short now; one line, 16sp, so it is not clipped on a 360dp phone
                     fontSize = if (staged && stagedCollectNow > 0) 16.sp else 18.sp,
                     singleLine = staged && stagedCollectNow > 0,
@@ -1021,7 +1021,7 @@ private fun formatDay(date: LocalDate): String = com.anyrent.pos.domain.DayText.
 @Composable
 private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().testTag("cart.customerRow").clickable(onClick = onClick).heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

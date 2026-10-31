@@ -44,6 +44,12 @@ final class ProductsHomeViewController: BaseViewControler {
     private let cartButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
     /// #1079: with 2+ carts open, the cart in use above the tab bar
     private let cartBar = CartSwitchBar()
+    /// #1393: "Bắt đầu: 3 việc", at the top of the list so it scrolls away with it
+    private let guideHeader = UIView()
+    private let guideCard = FirstRunGuideCardView()
+    private var guideOnScreen: FirstRunGuideCard = .hidden
+    private var guideHeaderWidth: CGFloat = 0
+    private var emptyTop: Constraint?
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -62,6 +68,7 @@ final class ProductsHomeViewController: BaseViewControler {
             gridColumns = columns
             list.reloadData()
         }
+        if guideOnScreen != .hidden, list.bounds.width != guideHeaderWidth { layoutGuideHeader() }
     }
 
     // MARK: - Lifecycle
@@ -72,6 +79,7 @@ final class ProductsHomeViewController: BaseViewControler {
         buildHeader()
         buildList()
         bindViewModel()
+        buildGuide()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
@@ -91,6 +99,8 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
         outletButton.refresh()
+        FirstRunGuideTracker.shared.refresh()
+        applyGuide()
         // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
         if stockStale {
             stockStale = false
@@ -109,6 +119,7 @@ final class ProductsHomeViewController: BaseViewControler {
 
     override func startRefresh(_ sender: Any) {
         viewModel.reload()
+        FirstRunGuideTracker.shared.refresh()
         CurrentOutlet.shared.refresh(onFallback: { [weak self] name in
             guard let self else { return }
             OutletSwitcher.showFallback(name, from: self)
@@ -216,7 +227,7 @@ final class ProductsHomeViewController: BaseViewControler {
         emptyLabel.textAlignment = .center
         view.addSubview(emptyLabel)
         emptyLabel.snp.makeConstraints { make in
-            make.top.equalTo(header.snp.bottom).offset(48)
+            emptyTop = make.top.equalTo(header.snp.bottom).offset(Self.emptyTopOffset).constraint
             make.leading.trailing.equalToSuperview().inset(32)
         }
         retryButton.setTitle("Retry".localized(), for: .normal)
@@ -234,6 +245,82 @@ final class ProductsHomeViewController: BaseViewControler {
 
     @objc private func retryTapped() {
         viewModel.reload()
+    }
+
+    // MARK: - First-run guide (#1393)
+
+    private static let emptyTopOffset: CGFloat = 48
+
+    private func buildGuide() {
+        guideHeader.addSubview(guideCard)
+        guideCard.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.bottom.equalToSuperview().offset(-4)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+        guideCard.onStep = { [weak self] step in self?.runGuide(step) }
+        guideCard.onDismiss = { [weak self] in
+            FirstRunGuideTracker.shared.skip()
+            self?.showToast(message: "firstRunGuide.skipped".localized(), duration: 3)
+        }
+        guideCard.onCloseFinish = { FirstRunGuideTracker.shared.closeFinish() }
+        NotificationCenter.default.addObserver(self, selector: #selector(guideChanged), name: FirstRunGuideTracker.didChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(guideRunStep(_:)), name: FirstRunGuideTracker.runStep, object: nil)
+    }
+
+    @objc private func guideChanged() {
+        guard isViewLoaded else { return }
+        applyGuide()
+    }
+
+    /// Cài đặt › Hướng dẫn bắt đầu: a row of the sheet was tapped and this tab is in front
+    @objc private func guideRunStep(_ note: Notification) {
+        guard let raw = note.userInfo?[FirstRunGuideTracker.stepKey] as? Int, let step = FirstRunGuideStep(rawValue: raw) else { return }
+        runGuide(step)
+    }
+
+    /// The list is what ticks the product row: only while not searching and not on its way
+    private func noteProductsForGuide() {
+        guard viewModel.query == nil, !viewModel.isLoading else { return }
+        let failed = viewModel.loadError != nil && viewModel.products.isEmpty
+        FirstRunGuideTracker.shared.noteProducts(failed ? nil : !viewModel.products.isEmpty)
+    }
+
+    private func applyGuide() {
+        let card = FirstRunGuideTracker.shared.card(searching: viewModel.query != nil)
+        if case .steps = card { FirstRunGuideTracker.shared.noteCardShown() }
+        guard card != guideOnScreen else { return }
+        guideOnScreen = card
+        if card == .hidden {
+            list.tableHeaderView = nil
+            emptyTop?.update(offset: Self.emptyTopOffset)
+        } else {
+            guideCard.show(card)
+            layoutGuideHeader()
+        }
+    }
+
+    private func layoutGuideHeader() {
+        let width = list.bounds.width > 0 ? list.bounds.width : view.bounds.width
+        guideHeaderWidth = list.bounds.width
+        let size = guideHeader.systemLayoutSizeFitting(CGSize(width: width, height: UILayoutFittingCompressedSize.height),
+                                                       withHorizontalFittingPriority: .required,
+                                                       verticalFittingPriority: .fittingSizeLevel)
+        guideHeader.frame = CGRect(x: 0, y: 0, width: width, height: size.height)
+        list.tableHeaderView = guideHeader
+        emptyTop?.update(offset: size.height + 44)
+    }
+
+    private func runGuide(_ step: FirstRunGuideStep) {
+        let action = FirstRunGuide.action(for: step, hasProduct: FirstRunGuideTracker.shared.hasProduct,
+                                          cartIsEmpty: CartStore.shared.cart.items.isEmpty)
+        switch action {
+        case .openProductForm:
+            addProduct()
+        case .openCart(let addFirstProduct):
+            if addFirstProduct, let first = viewModel.products.first(where: listedHere) { addToCart(first) }
+            openCart()
+        }
     }
 
     /// #651, #1384: 38 pt gradient square with a white camera and sparkle; the touch area grows to 46 pt
@@ -282,6 +369,8 @@ final class ProductsHomeViewController: BaseViewControler {
                 self.emptyLabel.text = reason
                 self.retryButton.isHidden = false
             }
+            self.noteProductsForGuide()
+            self.applyGuide()
         }
         viewModel.onError = { [weak self] error in
             guard let self else { return }
