@@ -1431,7 +1431,7 @@ struct APIErrorResponse: Codable {
         if let errorCode = errorCode {
             return errorCode.defaultMessage
         }
-        return (message ?? error ?? "An error occurred").localized()
+        return ServerMessageGuard.safe((message ?? error ?? "An error occurred").localized())
     }
     
     /// Get HTTP status code
