@@ -404,3 +404,67 @@ final class AttendanceTests: XCTestCase {
         XCTAssertFalse(copy.message.hasPrefix("attendance."))
     }
 }
+
+/// #1408 A server message goes into an alert only when it reads like a sentence, never SQL, a path or a stack
+final class ServerMessageGuardTests: XCTestCase {
+
+    private let raw = """
+
+    Invalid `t.attendanceScan.findFirst()` invocation in
+    /app/apps/api/.next/server/chunks/1677.js:54:55586
+
+      51 SELECT u."merchantId" AS id FROM "User" u
+    """
+
+    func testTechnicalTextIsDetected() {
+        for text in [raw,
+                     "PrismaClientKnownRequestError: timed out",
+                     "at /srv/node_modules/x/index.js:12:3",
+                     "connect ECONNREFUSED 10.0.0.1:5432",
+                     "SELECT id FROM \"User\"",
+                     String(repeating: "a", count: 401)] {
+            XCTAssertTrue(ServerMessageGuard.looksTechnical(text), text)
+        }
+    }
+
+    func testSentencesStay() {
+        for text in ["Không tìm thấy đơn hàng",
+                     "Please select a product from the list",
+                     "Order 123456 has already been picked up",
+                     "Vui lòng thử lại sau 5 phút."] {
+            XCTAssertFalse(ServerMessageGuard.looksTechnical(text), text)
+            XCTAssertEqual(ServerMessageGuard.safe(text, fallback: "x"), text)
+        }
+    }
+
+    func testSafeUsesTheFallback() {
+        XCTAssertEqual(ServerMessageGuard.safe(raw, fallback: "generic"), "generic")
+    }
+
+    /// The path of the incident: OrderService builds the error from `message`, the alert shows localizedDescription
+    func testAnErrorBuiltFromServerTextNeverCarriesIt() {
+        let plain = NSError.errorWithOwnMessage(message: raw, domain: "RC")
+        XCTAssertFalse(plain.localizedDescription.contains("invocation"))
+        let coded = NSError.errorWithOwnMessage(message: raw, domain: "RC", code: 403)
+        XCTAssertFalse(coded.localizedDescription.contains("SELECT"))
+        XCTAssertEqual(coded.code, 403)
+        let kept = NSError.errorWithOwnMessage(message: "Không tìm thấy đơn hàng", domain: "RC")
+        XCTAssertEqual(kept.localizedDescription, "Không tìm thấy đơn hàng")
+    }
+
+    func testResponseWithoutAKnownCodeNeverCarriesIt() {
+        let response = APIErrorResponse(success: false, code: nil, message: raw, error: nil)
+        XCTAssertFalse(response.localizedMessage.contains("invocation"))
+        XCTAssertFalse(response.toNSError().localizedDescription.contains("chunks"))
+    }
+
+    func testAttendanceShowsItsOwnTryAgainText() {
+        let copy = AttendanceLogic.errorCopy(AttendanceFailure(code: nil, message: raw), outletName: nil)
+        XCTAssertEqual(copy.title, "attendance.error.other.title".localized())
+        XCTAssertEqual(copy.message, "attendance.error.other.message".localized())
+        for code in ["SERVICE_UNAVAILABLE", "DATABASE_ERROR", "INTERNAL_SERVER_ERROR"] {
+            let copy = AttendanceLogic.errorCopy(AttendanceFailure(code: code, message: "Service temporarily unavailable"), outletName: nil)
+            XCTAssertEqual(copy.message, "attendance.error.other.message".localized(), code)
+        }
+    }
+}
