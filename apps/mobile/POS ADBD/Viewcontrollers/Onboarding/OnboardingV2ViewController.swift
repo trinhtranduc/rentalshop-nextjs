@@ -2,57 +2,89 @@
 //  OnboardingV2ViewController.swift
 //  POS ADBD
 //
-//  Redesigned first-login onboarding (#387, flag `newAuth`; style 4A in #466, board DX-Gioi-thieu): three steps under
-//  the dot-grid header, small brand top-left, Bỏ qua top-right, a step icon card, dots and Tiếp / Bắt đầu.
-//  Same "show once" storage as the current onboarding (`Utils.markOnboardingCompleted`). No motion.
+//  First-login onboarding (#387, flag `newAuth`). #1404: three pages that show the app's best features, with one photo
+//  travelling through them (tab "★ 3 trang hướng dẫn", variant A). Same "show once" storage as the current onboarding
+//  (`Utils.markOnboardingCompleted`). The logic lives in `OnboardingV2Cycle.swift`, the picture in `OnboardingV2Stage.swift`.
 //
 
 import UIKit
 import SnapKit
 
-final class OnboardingV2ViewController: BaseViewControler {
-    private enum Glyph { case garment, person, calendar }
+/// CADisplayLink keeps its target alive; this keeps it from keeping the screen alive
+private final class DisplayLinkTarget: NSObject {
+    weak var owner: OnboardingV2ViewController?
 
-    private struct Step {
-        let glyph: Glyph
-        let titleKey: String
-        let bodyKey: String
+    init(owner: OnboardingV2ViewController) {
+        self.owner = owner
     }
 
-    private let steps = [
-        Step(glyph: .garment, titleKey: "onboarding.v2.product.title", bodyKey: "onboarding.v2.product.body"),
-        Step(glyph: .person, titleKey: "onboarding.v2.customer.title", bodyKey: "onboarding.v2.customer.body"),
-        Step(glyph: .calendar, titleKey: "onboarding.v2.order.title", bodyKey: "onboarding.v2.order.body"),
-    ]
-    private var index = 0
+    @objc func tick() {
+        owner?.tick()
+    }
+}
+
+final class OnboardingV2ViewController: BaseViewControler {
+    private var cycle = OnboardingV2Cycle()
+    private var run: OnboardingV2Run?
+    private var runStart: CFTimeInterval = 0
+    private var displayLink: CADisplayLink?
+    private var holdWork: DispatchWorkItem?
+    private var isOnScreen = false
+    private var hasStarted = false
+
+    private var metrics: OnboardingV2Metrics?
+    private var stage: OnboardingV2StageView?
 
     private let skipButton = UIButton(type: .system)
-    private let iconCard = UIView()
-    private let iconView = UIImageView()
-    private let stepLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: DS.Color.primary)
-    private let titleLabel = UILabel()
-    private let bodyLabel = V2.label(size: 16, color: DS.Color.textMuted, lines: 0)
+    private let brand = AuthV2Style.makeBrandBar()
+    private var pageTexts: [UIStackView] = []
+    private var titleLabels: [UILabel] = []
+    private var bodyLabels: [UILabel] = []
+    private let textHost = UIView()
     private let dots = UIStackView()
+    private var dotWidths: [Constraint] = []
     private let primaryButton = UIButton(type: .system)
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        render()
+        renderControls(animated: false)
+        let center = NotificationCenter.default
+        center.addObserver(self, selector: #selector(appWentToBackground), name: .UIApplicationDidEnterBackground, object: nil)
+        center.addObserver(self, selector: #selector(restartCurrentPage), name: .UIApplicationWillEnterForeground, object: nil)
+        center.addObserver(self, selector: #selector(restartCurrentPage), name: .UIAccessibilityReduceMotionStatusDidChange, object: nil)
+    }
+
+    deinit {
+        displayLink?.invalidate()
+        holdWork?.cancel()
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        let rect = iconCard.bounds
-        iconCard.layer.shadowPath = UIBezierPath(roundedRect: rect, cornerRadius: 36).cgPath
+        let next = OnboardingV2Metrics(width: view.bounds.width, height: view.bounds.height,
+                                       safeTop: view.safeAreaInsets.top, safeBottom: view.safeAreaInsets.bottom)
+        guard next != metrics else { return }
+        metrics = next
+        applyLayout(next)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        isOnScreen = true
+        restartCurrentPage()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        isOnScreen = false
+        stopCycle()
     }
 
     override func setupUI() {
         view.backgroundColor = .white
         view.clipsToBounds = true
-
-        AuthV2Style.installDotGrid(in: view)
-        let brand = AuthV2Style.makeBrandBar()
 
         skipButton.setTitle("onboarding.v2.skip".localized(), for: .normal)
         skipButton.setTitleColor(DS.Color.textMuted, for: .normal)
@@ -66,35 +98,38 @@ final class OnboardingV2ViewController: BaseViewControler {
         skipButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 14, bottom: 0, right: 14)
         skipButton.addTarget(self, action: #selector(finish), for: .touchUpInside)
 
-        iconCard.backgroundColor = .white
-        iconCard.layer.cornerRadius = 36
-        iconCard.layer.borderWidth = 1
-        iconCard.layer.borderColor = UIColor(hexString: "E8ECF2").cgColor
-        iconCard.layer.shadowColor = UIColor(hexString: "0F172A").cgColor
-        iconCard.layer.shadowOpacity = 0.10
-        iconCard.layer.shadowRadius = 15
-        iconCard.layer.shadowOffset = CGSize(width: 0, height: 12)
-        iconCard.isAccessibilityElement = false
-        iconView.tintColor = DS.Color.primary
-        iconView.contentMode = .scaleAspectFit
-        iconCard.addSubview(iconView)
-        iconView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(64)
+        for page in OnboardingV2Page.allCases {
+            let title = UILabel()
+            title.numberOfLines = 2
+            title.adjustsFontSizeToFitWidth = true
+            title.minimumScaleFactor = 0.8
+            title.accessibilityTraits = UIAccessibilityTraitHeader
+            title.accessibilityLabel = page.titleKey.localized().replacingOccurrences(of: "\n", with: " ")
+            let body = UILabel()
+            body.numberOfLines = 0
+            let stack = UIStackView(arrangedSubviews: [title, body])
+            stack.axis = .vertical
+            textHost.addSubview(stack)
+            stack.snp.makeConstraints { make in
+                make.top.leading.trailing.equalToSuperview()
+            }
+            pageTexts.append(stack)
+            titleLabels.append(title)
+            bodyLabels.append(body)
         }
-
-        titleLabel.font = Utils.extraBoldFont(size: 28)
-        titleLabel.textColor = DS.Color.text
-        titleLabel.numberOfLines = 0
-        let texts = UIStackView(arrangedSubviews: [stepLabel, titleLabel, bodyLabel])
-        texts.axis = .vertical
-        texts.alignment = .leading
-        texts.spacing = 6
-        texts.setCustomSpacing(10, after: stepLabel)
 
         dots.spacing = 8
         dots.alignment = .center
         dots.isAccessibilityElement = false
+        for _ in OnboardingV2Page.allCases {
+            let dot = UIView()
+            dot.layer.cornerRadius = 4
+            dot.snp.makeConstraints { make in
+                dotWidths.append(make.width.equalTo(8).constraint)
+                make.height.equalTo(8)
+            }
+            dots.addArrangedSubview(dot)
+        }
         primaryButton.setTitleColor(.white, for: .normal)
         primaryButton.titleLabel?.font = Utils.boldFont(size: DS.TextSize.input)
         primaryButton.backgroundColor = DS.Color.primary
@@ -102,37 +137,7 @@ final class OnboardingV2ViewController: BaseViewControler {
         primaryButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 28, bottom: 0, right: 28)
         primaryButton.addTarget(self, action: #selector(primaryTapped), for: .touchUpInside)
 
-        [brand, skipButton, iconCard, texts, dots, primaryButton].forEach(view.addSubview)
-        skipButton.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
-            make.trailing.equalToSuperview().offset(-16)
-            make.height.equalTo(DS.touchTarget)
-        }
-        brand.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(24)
-            make.centerY.equalTo(skipButton)
-        }
-        iconCard.snp.makeConstraints { make in
-            make.top.equalTo(skipButton.snp.bottom).offset(110)
-            make.centerX.equalToSuperview()
-            make.width.height.equalTo(132)
-        }
-        texts.snp.makeConstraints { make in
-            make.top.equalTo(iconCard.snp.bottom).offset(120).priority(.high)
-            make.top.greaterThanOrEqualTo(iconCard.snp.bottom).offset(40)
-            make.leading.trailing.equalToSuperview().inset(28)
-            make.bottom.lessThanOrEqualTo(primaryButton.snp.top).offset(-24)
-        }
-        primaryButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-24)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-24)
-            make.height.equalTo(54)
-        }
-        dots.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(24)
-            make.centerY.equalTo(primaryButton)
-            make.height.equalTo(8)
-        }
+        [textHost, dots, primaryButton, brand, skipButton].forEach(view.addSubview)
 
         let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
         swipeLeft.direction = .left
@@ -141,64 +146,199 @@ final class OnboardingV2ViewController: BaseViewControler {
         [swipeLeft, swipeRight].forEach(view.addGestureRecognizer)
     }
 
-    private func render() {
-        let step = steps[index]
-        let isLast = index == steps.count - 1
-        // Board: hanger (step 1), user (2), calendar (3). `hanger` is iOS 16+; deployment target is 15
-        let name: String
-        switch step.glyph {
-        case .garment: name = UIImage(systemName: "hanger") != nil ? "hanger" : "tshirt"
-        case .person: name = "person"
-        case .calendar: name = "calendar"
+    /// Everything that depends on the screen size. Runs again if the size changes (the stage is rebuilt).
+    private func applyLayout(_ metrics: OnboardingV2Metrics) {
+        stage?.removeFromSuperview()
+        let newStage = OnboardingV2StageView(metrics: metrics)
+        view.insertSubview(newStage, at: 0)
+        newStage.frame = CGRect(x: 0, y: 0, width: metrics.width, height: metrics.stageHeight)
+        newStage.layoutIfNeeded()
+        stage = newStage
+
+        skipButton.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(metrics.topBarTop)
+            make.trailing.equalToSuperview().offset(-16)
+            make.height.equalTo(DS.touchTarget)
         }
-        iconView.image = DS.symbol(name, 64)
-        stepLabel.attributedText = NSAttributedString(
-            string: String(format: "onboarding.v2.step".localized(), index + 1, steps.count).uppercased(),
-            attributes: [NSAttributedString.Key.kern: 0.5])
-        titleLabel.text = step.titleKey.localized()
-        let style = NSMutableParagraphStyle()
-        style.minimumLineHeight = 23
-        bodyLabel.attributedText = NSAttributedString(string: step.bodyKey.localized(), attributes: [
-            NSAttributedString.Key.paragraphStyle: style,
-            NSAttributedString.Key.font: Utils.regularFont(size: 16),
-            NSAttributedString.Key.foregroundColor: DS.Color.textMuted,
-        ])
+        brand.snp.remakeConstraints { make in
+            make.leading.equalToSuperview().offset(24)
+            make.centerY.equalTo(skipButton)
+        }
+        textHost.snp.remakeConstraints { make in
+            make.top.equalToSuperview().offset(metrics.textTop)
+            make.height.equalTo(metrics.textHeight)
+            make.leading.trailing.equalToSuperview().inset(metrics.textInset)
+        }
+        primaryButton.snp.remakeConstraints { make in
+            make.trailing.equalToSuperview().offset(-24)
+            make.top.equalToSuperview().offset(metrics.footerTop)
+            make.height.equalTo(metrics.footerHeight)
+        }
+        dots.snp.remakeConstraints { make in
+            make.leading.equalToSuperview().offset(24)
+            make.centerY.equalTo(primaryButton)
+            make.height.equalTo(8)
+        }
+        for (index, page) in OnboardingV2Page.allCases.enumerated() {
+            let titleStyle = NSMutableParagraphStyle()
+            titleStyle.minimumLineHeight = metrics.titleLine
+            titleStyle.maximumLineHeight = metrics.titleLine
+            titleLabels[index].attributedText = NSAttributedString(string: page.titleKey.localized(), attributes: [
+                NSAttributedString.Key.font: Utils.extraBoldFont(size: metrics.titleSize),
+                NSAttributedString.Key.foregroundColor: DS.Color.text,
+                NSAttributedString.Key.paragraphStyle: titleStyle,
+                NSAttributedString.Key.kern: -0.022 * metrics.titleSize,
+            ])
+            let bodyStyle = NSMutableParagraphStyle()
+            bodyStyle.minimumLineHeight = metrics.bodyLine
+            bodyStyle.maximumLineHeight = metrics.bodyLine
+            bodyLabels[index].attributedText = NSAttributedString(string: page.bodyKey.localized(), attributes: [
+                NSAttributedString.Key.font: Utils.regularFont(size: metrics.bodySize),
+                NSAttributedString.Key.foregroundColor: UIColor(hexString: "64748B"),
+                NSAttributedString.Key.paragraphStyle: bodyStyle,
+            ])
+            pageTexts[index].spacing = metrics.compact ? 5 : 8
+        }
+        renderNow()
+    }
+
+    private func renderControls(animated: Bool) {
+        let isLast = cycle.page == OnboardingV2Cycle.pageCount - 1
         skipButton.isHidden = isLast
         primaryButton.setTitle((isLast ? "onboarding.v2.start" : "onboarding.v2.next").localized(), for: .normal)
-
-        dots.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for i in steps.indices {
-            let dot = UIView()
-            dot.backgroundColor = i == index ? DS.Color.primary : UIColor(hexString: "BFDBFE")
-            dot.layer.cornerRadius = 4
-            dot.snp.makeConstraints { make in
-                make.width.equalTo(i == index ? 24 : 8)
-                make.height.equalTo(8)
+        let update = {
+            for (index, dot) in self.dots.arrangedSubviews.enumerated() {
+                let on = index == self.cycle.page
+                dot.backgroundColor = on ? DS.Color.primary : UIColor(hexString: "BFDBFE")
+                self.dotWidths[index].update(offset: on ? 24 : 8)
             }
-            dots.addArrangedSubview(dot)
+            self.dots.layoutIfNeeded()
         }
-        UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, titleLabel)
+        if animated {
+            UIView.animate(withDuration: 0.3, animations: update)
+        } else {
+            update()
+        }
+    }
+
+    // MARK: - Cycle
+
+    private func play(_ next: OnboardingV2Run) {
+        holdWork?.cancel()
+        holdWork = nil
+        hasStarted = true
+        run = next
+        if next.travelFrom != nil || !next.animated {
+            renderControls(animated: next.animated)
+            UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, titleLabels[next.page])
+        }
+        stage?.beginRun(next)
+        guard next.animated else {
+            stopDisplayLink()
+            renderNow()
+            return
+        }
+        // A repeat starts with the fade from the finished state, before the effect's zero
+        runStart = CACurrentMediaTime() + (next.isRepeat ? OnboardingV2Timing.repeatFade : 0)
+        startDisplayLink()
+        tick()
+    }
+
+    fileprivate func tick() {
+        guard let run, view.window != nil else {
+            stopCycle()
+            return
+        }
+        let t = CACurrentMediaTime() - runStart
+        stage?.render(page: run.page, leaving: run.travelFrom, t: t)
+        renderTexts(page: run.page, leaving: run.travelFrom, t: t)
+        guard t >= OnboardingV2Timing.effect else { return }
+        stopDisplayLink()
+        guard cycle.effectEnded(generation: run.generation) else { return }
+        let generation = run.generation
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, let next = self.cycle.holdEnded(generation: generation) else { return }
+            self.play(next)
+        }
+        holdWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + OnboardingV2Timing.hold, execute: work)
+    }
+
+    /// The state with no clock running. Before the first run that is the effect's start, so nothing pops when it begins.
+    private func renderNow() {
+        let t = hasStarted || UIAccessibilityIsReduceMotionEnabled() ? OnboardingV2Timing.effect : 0
+        stage?.render(page: cycle.page, leaving: nil, t: t)
+        renderTexts(page: cycle.page, leaving: nil, t: t)
+    }
+
+    private func renderTexts(page: Int, leaving: Int?, t: Double) {
+        let fade = leaving == nil ? 1 : CGFloat(OnboardingV2Travel.fade(at: max(0, t)))
+        for (index, stack) in pageTexts.enumerated() {
+            if index == page {
+                stack.alpha = fade
+                stack.transform = CGAffineTransform(translationX: 18 * (1 - fade), y: 0)
+                stack.isHidden = false
+            } else if index == leaving, fade < 1 {
+                stack.alpha = 1 - fade
+                stack.transform = CGAffineTransform(translationX: 18 * fade, y: 0)
+                stack.isHidden = false
+            } else {
+                stack.isHidden = true
+            }
+        }
+    }
+
+    private func startDisplayLink() {
+        guard displayLink == nil else { return }
+        let link = CADisplayLink(target: DisplayLinkTarget(owner: self), selector: #selector(DisplayLinkTarget.tick))
+        link.add(to: .main, forMode: .commonModes)
+        displayLink = link
+    }
+
+    private func stopDisplayLink() {
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+
+    /// Leaving the screen or going to background: no timer survives this
+    private func stopCycle() {
+        cycle.stop()
+        run = nil
+        holdWork?.cancel()
+        holdWork = nil
+        stopDisplayLink()
+        renderNow()
+    }
+
+    @objc private func appWentToBackground() {
+        stopCycle()
+    }
+
+    /// Opening, coming back from background, or Reduce Motion changed: the current page's own effect, no travel
+    @objc private func restartCurrentPage() {
+        guard isOnScreen else { return }
+        play(cycle.start(reduceMotion: UIAccessibilityIsReduceMotionEnabled()))
     }
 
     // MARK: - Actions
 
     @objc private func primaryTapped() {
-        if index == steps.count - 1 {
+        if cycle.page == OnboardingV2Cycle.pageCount - 1 {
             finish()
-        } else {
-            index += 1
-            render()
+        } else if let next = cycle.go(to: cycle.page + 1) {
+            play(next)
         }
     }
 
     @objc private func swiped(_ gesture: UISwipeGestureRecognizer) {
-        let next = gesture.direction == .left ? index + 1 : index - 1
-        guard steps.indices.contains(next) else { return }
-        index = next
-        render()
+        let target = gesture.direction == .left ? cycle.page + 1 : cycle.page - 1
+        guard let next = cycle.go(to: target) else { return }
+        play(next)
     }
 
     @objc private func finish() {
+        isOnScreen = false
+        stopCycle()
         Utils.markOnboardingCompleted()
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
         appDelegate.loadMainUserView(forceMain: true)

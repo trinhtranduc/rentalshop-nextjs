@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import POS_ADBD
 
@@ -300,5 +301,64 @@ final class OnboardingV2Tests: XCTestCase {
         XCTAssertEqual(m.heroRect(page: 2).width, 40)
         XCTAssertEqual(m.titleSize, 24)
         XCTAssertEqual(m.bodySize, 14)
+    }
+
+    func testTheTravelOvershootNeverMakesANegativeCorner() {
+        XCTAssertEqual(OnboardingV2Travel.radius(from: 14, to: 0, travel: 1.05), 0)
+        XCTAssertEqual(OnboardingV2Travel.radius(from: 14, to: 0, travel: 0.5), 7)
+        XCTAssertGreaterThan((1...44).map { OnboardingV2Travel.hero(at: Double($0) / 100) }.max() ?? 0, 1, "the curve really overshoots")
+    }
+
+    // MARK: - The real screen at each size (no clipped text on small phones)
+
+    private func allViews(in view: UIView) -> [UIView] {
+        [view] + view.subviews.flatMap(allViews(in:))
+    }
+
+    /// A label's text fits its frame, after any shrink the label is allowed to do
+    private func clippedLabels(in root: UIView) -> [String] {
+        allViews(in: root).compactMap { $0 as? UILabel }.compactMap { label -> String? in
+            guard label.window != nil, !label.isHidden, let text = label.text, !text.isEmpty else { return nil }
+            let width = label.bounds.width
+            if label.numberOfLines == 1 {
+                let scale = label.adjustsFontSizeToFitWidth ? label.minimumScaleFactor : 1
+                let needed = label.intrinsicContentSize.width * scale
+                return needed <= width + 1 ? nil : "\(text): needs \(needed), has \(width)"
+            }
+            let needed = label.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height
+            return needed <= label.bounds.height + 1 ? nil : "\(text): needs height \(needed), has \(label.bounds.height)"
+        }
+    }
+
+    private func waitForEffect() {
+        RunLoop.main.run(until: Date().addingTimeInterval(OnboardingV2Timing.effect + 0.3))
+    }
+
+    func testNothingIsClippedAtEverySize() throws {
+        for size in [CGSize(width: 320, height: 568), CGSize(width: 375, height: 667), CGSize(width: 440, height: 956)] {
+            let window = UIWindow(frame: CGRect(origin: .zero, size: size))
+            let screen = OnboardingV2ViewController()
+            window.rootViewController = screen
+            window.isHidden = false
+            screen.view.layoutIfNeeded()
+            for page in OnboardingV2Page.allCases {
+                waitForEffect()
+                XCTAssertEqual(clippedLabels(in: screen.view), [], "\(size) page \(page.rawValue + 1)")
+                if let folder = ProcessInfo.processInfo.environment["E2E_OUT_DIR"], !folder.isEmpty {
+                    let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+                        window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                    }
+                    let name = "\(Int(size.width))x\(Int(size.height))-p\(page.rawValue + 1).png"
+                    try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
+                    try image.pngData()?.write(to: URL(fileURLWithPath: "\(folder)/\(name)"))
+                }
+                if page != .calendar {
+                    let next = allViews(in: screen.view).compactMap { $0 as? UIButton }
+                        .first { $0.title(for: .normal) == "onboarding.v2.next".localized() }
+                    try XCTUnwrap(next).sendActions(for: .touchUpInside)
+                }
+            }
+            window.isHidden = true
+        }
     }
 }

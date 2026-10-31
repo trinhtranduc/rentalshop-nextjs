@@ -19,11 +19,13 @@ Domain skills: `mobile-parity`, `mobile-e2e-local`. `timezone-dates` does not ap
 - `apps/mobile/POS ADBD/Assets.xcassets/onboarding_v2_*.imageset` — 5 stand-ins
 - `apps/mobile/POS ADBD/{en,vi-VN}.lproj/Localizable.strings`, `POS ADBD.xcodeproj/project.pbxproj`
 - `apps/mobile/POS ADBDTests/OnboardingV2Tests.swift` — new
+- `apps/mobile/POS ADBDUITests/OnboardingV2UITests.swift` — new: walks the pages on a fresh install (Next, swipes, fast swipes, background, Start, shown once)
 - `apps/mobile-android/.../ui/onboarding/OnboardingV2Screen.kt` — rewrite
 - `apps/mobile-android/.../ui/onboarding/OnboardingV2Cycle.kt`, `OnboardingV2Stage.kt` — new
 - `apps/mobile-android/app/src/main/res/drawable-nodpi/onboarding_v2_*` — 5 stand-ins
 - `apps/mobile-android/app/src/main/res/values{,-vi}/strings.xml`
 - `apps/mobile-android/app/src/test/.../OnboardingV2CycleTest.kt`, `res/Issue1404ResourcesTest.kt` — new
+- `apps/mobile-android/.../ui/auth/v2/AuthV2Style.kt` — `AuthBrandBar` takes an optional name colour (dark pages); default unchanged
 
 ## Verify
 
