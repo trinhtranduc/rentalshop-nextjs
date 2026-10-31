@@ -76,9 +76,8 @@ internal fun OrderActionsSheet(
         Column(
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 20.dp),
         ) {
-            Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                // #1297: no title (the order number is on the screen's top bar), only the close button
-                Spacer(Modifier.weight(1f))
+            // #1395: the title and the close button (the order number stays on the screen's top bar, #1297)
+            OrderSheetTitle(stringResource(R.string.order_sheet_title_actions)) {
                 val closeLabel = stringResource(R.string.close)
                 Box(
                     Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFF1F5F9)).clickable(onClickLabel = closeLabel, onClick = onDismiss),
@@ -87,6 +86,7 @@ internal fun OrderActionsSheet(
                     Icon(Icons.Outlined.Close, contentDescription = closeLabel, tint = DS.Colors.TextMuted, modifier = Modifier.size(18.dp))
                 }
             }
+            Spacer(Modifier.height(6.dp))
             rows.main.forEach { action ->
                 when (action) {
                     OrderActionSheet.Action.PRINT -> ActionRow(stringResource(R.string.order_sheet_print), printerSubtitle) { onAction(action) }
@@ -125,7 +125,7 @@ private fun ActionRow(title: String, subtitle: String?, danger: Boolean = false,
             .clickable(onClick = onClick)
             .semantics { role = Role.Button }
             .heightIn(min = 56.dp)
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // #930: rows without icons, text only
