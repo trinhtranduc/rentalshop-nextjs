@@ -30,6 +30,7 @@ class AnyRentApp : Application() {
             .onFailure { android.util.Log.w(TAG, "RevenueCat init skipped/failed: ${it.message}") }
         PushRegistrar.refreshTokenIfLoggedIn()
         DraftOrderReminder.install()
+        com.anyrent.pos.ui.widget.TodayWidgetSync.install(this)
     }
 
     private fun createNotificationChannels() {

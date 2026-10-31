@@ -128,6 +128,7 @@ fun SettingsV2Screen(
     // #1259: Thu tiền / Nâng cao / Hồ sơ & bảo mật open over the list; the deposit screens open from Thu tiền
     var subPage by rememberSaveable { mutableStateOf<SettingsSubPage?>(null) }
     var depositStart by remember { mutableStateOf<DepositStart?>(null) }
+    var showWidgetGuide by remember { mutableStateOf(false) }
     var collectRefresh by remember { mutableStateOf(0) }
     // #1259: bank accounts of the default branch, read by Thu tiền; shown next to its row (null until known)
     var bankCount by remember { mutableStateOf<Int?>(null) }
@@ -294,8 +295,13 @@ fun SettingsV2Screen(
                         SettingsItem.LANGUAGE -> runCatching {
                             context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
+                        SettingsItem.WIDGET -> showWidgetGuide = true
                         SettingsItem.ADVANCED -> subPage = SettingsSubPage.ADVANCED
                     }
+                }
+                // #1381: the switch of the widget, under its row
+                if (item == SettingsItem.WIDGET) {
+                    HideWidgetNamesRow()
                 }
             }
             // #1259: the owner's overlap switch is the last line of CỬA HÀNG
@@ -315,6 +321,9 @@ fun SettingsV2Screen(
         }
     }
 
+    if (showWidgetGuide) {
+        com.anyrent.pos.ui.widget.TodayWidgetGuideSheet(onDismiss = { showWidgetGuide = false })
+    }
     if (confirmLogout) {
         AppAlertConfirm(
             title = stringResource(R.string.logout),
@@ -453,6 +462,36 @@ internal fun CurrencyChoiceDialog(current: ShopCurrency, onDismiss: () -> Unit, 
     )
 }
 
+/** #1381 "Ẩn tên khách trên widget": a phone's choice, off by default; the widget changes at once */
+@Composable
+private fun HideWidgetNamesRow() {
+    var hidden by remember { mutableStateOf(com.anyrent.pos.ui.widget.TodayWidgetStore.hideNames) }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.widget_hide_names_title), fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+            Text(stringResource(R.string.widget_hide_names_subtitle), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        }
+        androidx.compose.material3.Switch(
+            checked = hidden,
+            onCheckedChange = {
+                hidden = it
+                com.anyrent.pos.ui.widget.TodayWidgetStore.hideNames = it
+                com.anyrent.pos.ui.widget.TodayWidgetSync.hideNamesChanged()
+            },
+            colors = androidx.compose.material3.SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF34C759),
+                checkedBorderColor = Color(0xFF34C759),
+            ),
+        )
+    }
+    ThinDivider()
+}
+
 /** #518 (board CD-trung-lich): title, explanation and a switch that saves at once */
 @Composable
 private fun AllowOverlapRow(checked: Boolean, saving: Boolean, onChange: (Boolean) -> Unit) {
@@ -503,6 +542,7 @@ private fun itemTitle(item: SettingsItem, role: String?): String = stringResourc
         SettingsItem.EXPORT -> R.string.export_data
         SettingsItem.PLAN -> R.string.settings_v2_plan
         SettingsItem.LANGUAGE -> R.string.settings_v2_language
+        SettingsItem.WIDGET -> R.string.widget_settings_row
         SettingsItem.ADVANCED -> R.string.settings_v2_advanced
     },
 )

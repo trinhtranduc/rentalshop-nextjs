@@ -25,6 +25,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.repository.BankAccountRepository
+import com.anyrent.pos.domain.widget.TodayWidgetLink
+import com.anyrent.pos.domain.widget.TodayWidgetLinks
+import com.anyrent.pos.ui.widget.TodayWidgetSync
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.appconfig.AppConfigGate
@@ -56,10 +59,12 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         launchOrderId = intent.getIntExtra(EXTRA_ORDER_ID, -1).takeIf { it > 0 }
-            ?: intent.data?.lastPathSegment?.toIntOrNull()
         if (launchOrderId != null) {
             SessionStore.pendingOrderId = launchOrderId
         }
+        // A recreated activity or a launch from Recents still carries the old link: it was already opened
+        val freshLaunch = savedInstanceState == null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0
+        if (freshLaunch) consumeWidgetLink(intent)
         consumeOpenCartIntent(intent)
         consumeOpenMyShiftsIntent(intent)
         consumeOpenBookingIntent(intent)
@@ -95,6 +100,8 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshCurrency() }
             // #1354: and the owner's "show order note on the shared image" switch (at most once a minute)
             lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshShareOrderNote() }
+            // #1381: the home-screen widget, when one is placed
+            TodayWidgetSync.refreshSoon()
         }
     }
 
@@ -110,9 +117,15 @@ class MainActivity : ComponentActivity() {
         if (orderId != null) {
             SessionStore.pendingOrderId = orderId
         }
+        consumeWidgetLink(intent)
         consumeOpenCartIntent(intent)
         consumeOpenMyShiftsIntent(intent)
         consumeOpenBookingIntent(intent)
+    }
+
+    /** #1381 `anyrent://order/<id>`, `anyrent://todo` (the home-screen widget). The navigation applies it when it can. */
+    private fun consumeWidgetLink(intent: Intent?) {
+        TodayWidgetLink.parse(intent?.dataString)?.let(TodayWidgetLinks::request)
     }
 
     /** #1124: foreground push = our own extra; background push (tray) = FCM's `type` + `bookingRequestId` string extras */
