@@ -246,6 +246,15 @@ class OnboardingV2CycleTest {
     }
 
     @Test
+    fun theTravelOvershootNeverMakesANegativeCorner() {
+        // Found on the emulator: the photo returning to page 1 overshot radius 0 and Compose threw
+        assertEquals(0f, OnboardingV2Travel.radius(14f, 0f, 1.05f))
+        assertEquals(7f, OnboardingV2Travel.radius(14f, 0f, 0.5f), near)
+        val overshoot = (1..44).maxOf { OnboardingV2Travel.hero(it / 100f) }
+        assertTrue("the curve really overshoots", overshoot > 1f)
+    }
+
+    @Test
     fun stageMatchesTheMockupAndLeavesRoomForText() {
         val regular = OnboardingV2Metrics(390f, 844f, 47f, 34f)
         assertFalse(regular.compact)
@@ -267,8 +276,8 @@ class OnboardingV2CycleTest {
 
     @Test
     fun aLargeFontScaleShrinksTheStageNotTheText() {
-        val normal = OnboardingV2Metrics(360f, 800f, 24f, 24f)
-        val large = OnboardingV2Metrics(360f, 800f, 24f, 24f, fontScale = 1.5f)
+        val normal = OnboardingV2Metrics(375f, 667f, 20f, 0f)
+        val large = OnboardingV2Metrics(375f, 667f, 20f, 0f, fontScale = 1.5f)
         assertTrue(large.stageHeight < normal.stageHeight)
         assertTrue(large.textTop + large.textHeight <= large.footerTop)
     }
