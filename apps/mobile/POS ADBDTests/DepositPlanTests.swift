@@ -197,6 +197,35 @@ final class DepositPlanTests: XCTestCase {
         }
     }
 
+    /// The bottom bar's "Thu giai đoạn N" instead of Giao đồ: same stage as the card's button, only while the API would refuse
+    func testStageToCollectBeforeHandOver() {
+        func stage(_ key: String, _ amount: Double, _ status: String = "UPCOMING", paid: Double = 0) -> OrderInstallment {
+            OrderInstallment(key: key, label: key, percent: 10, amount: amount, dueDateKey: nil, status: status, paidAmount: paid)
+        }
+        func pick(_ stages: [OrderInstallment]?, hasPlan: Bool? = true, status: OrderStatus = .reserved) -> String? {
+            DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: hasPlan, status: status, stages: stages)?.key
+        }
+        let rest = stage("rest", 300)
+        XCTAssertEqual(pick([stage("i1", 300), stage("i2", 400), rest]), "i1", "two unpaid: the first")
+        XCTAssertEqual(pick([stage("i1", 300, "PAID", paid: 300), stage("i2", 400), rest]), "i2", "one left: that one")
+        XCTAssertEqual(pick([stage("i1", 300, "OVERDUE"), rest]), "i1", "a late stage")
+        XCTAssertEqual(pick([stage("i1", 100, "PARTIAL", paid: 100), stage("i2", 400), rest]), "i2", "a short-paid stage does not hide the unpaid one")
+        // Every other case keeps Giao đồ
+        XCTAssertNil(pick([stage("i1", 300, "PAID", paid: 300), rest]), "all collected")
+        XCTAssertNil(pick([stage("i1", 100, "PARTIAL", paid: 100), rest]), "short-paid: the API lets it through")
+        XCTAssertNil(pick([stage("i1", 0), rest]), "a stage worth 0")
+        XCTAssertNil(pick([rest]), "only the rest")
+        XCTAssertNil(pick([stage("i1", 300, "VOID"), rest]), "a voided stage")
+        for hasPlan in [false, nil] as [Bool?] {
+            XCTAssertNil(pick([stage("i1", 300), rest], hasPlan: hasPlan), "no plan, including ONE_TIME orders")
+        }
+        XCTAssertNil(pick(nil))
+        XCTAssertNil(pick([]))
+        for status in [OrderStatus.pickuped, .returned, .completed, .cancelled] {
+            XCTAssertNil(pick([stage("i1", 300), rest], status: status), "\(status)")
+        }
+    }
+
     func testUnpaidStagesBlockHandOver() {
         let stages = [
             OrderInstallment(key: "i1", label: "a", percent: 30, amount: 3_600_000, dueDateKey: "2026-10-25", status: "PAID", paidAmount: 3_600_000),

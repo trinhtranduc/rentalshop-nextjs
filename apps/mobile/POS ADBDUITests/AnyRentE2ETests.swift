@@ -2297,40 +2297,40 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
     }
 
-    /// #1380: E2E_ORDER_NUMBER = a booked plan order with stages i1 and i2 uncollected. "Còn đợt chưa thu" replaces Giao đồ until
-    /// the last stage is collected on the deposit card, then the hand-over works. Any role.
+    /// #1380, #1400: E2E_ORDER_NUMBER = a booked plan order with stages i1 and i2 uncollected. The bottom bar's "Thu giai đoạn N"
+    /// replaces Giao đồ until the last stage is collected from it, then the hand-over works. Any role.
     func test5jStageUnpaidHidesHandOver() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")
         guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
         try e2e.start()
         openOrder(number)
-        let line = app.staticTexts["order.detail.stageUnpaid"]
+        let bar = app.buttons["order.detail.collectStage"]
         let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
         func collectNext(_ step: String) {
-            let collect = app.buttons["deposit.card.collect"]
-            for _ in 0..<4 where !collect.isHittable { app.swipeUp(); sleep(1) }
-            XCTAssertTrue(collect.isHittable, "Thu giai đoạn N on the card")
-            e2e.shot("5j-\(step)-card")
-            collect.tap()
+            XCTAssertTrue(bar.isHittable, "Thu giai đoạn N in the bottom bar")
+            e2e.shot("5j-\(step)-bar")
+            bar.tap()
             let confirm = app.buttons["deposit.collect.confirm"]
             XCTAssertTrue(confirm.waitForExistence(timeout: 5), "the collect sheet")
             confirm.tap()
             sleep(3)
         }
-        XCTAssertTrue(line.waitForExistence(timeout: 5), "two stages unpaid: the line shows")
+        XCTAssertTrue(bar.waitForExistence(timeout: 5), "two stages unpaid: the button shows")
+        XCTAssertTrue(["Thu giai đoạn 1", "Collect stage 1"].contains(bar.label), bar.label)
         XCTAssertFalse(handOver.exists, "two stages unpaid: no Giao đồ")
         XCTAssertTrue(app.buttons["orderDetail.print"].exists, "In stays")
         e2e.shot("5j-1-two-unpaid")
 
         collectNext("2-first")
-        XCTAssertTrue(line.waitForExistence(timeout: 5), "one stage unpaid: the line still shows")
+        XCTAssertTrue(bar.waitForExistence(timeout: 5), "one stage unpaid: the next stage's button")
+        XCTAssertTrue(["Thu giai đoạn 2", "Collect stage 2"].contains(bar.label), bar.label)
         XCTAssertFalse(handOver.exists, "one stage unpaid: no Giao đồ")
         e2e.shot("5j-3-one-unpaid")
 
         collectNext("4-last")
         XCTAssertTrue(handOver.waitForExistence(timeout: 8), "all stages collected: Giao đồ is back")
-        XCTAssertFalse(line.exists, "all stages collected: no line")
+        XCTAssertFalse(bar.exists, "all stages collected: no collect button")
         e2e.shot("5j-5-all-collected")
         handOver.tap()
         let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)

@@ -244,10 +244,17 @@ enum DepositPlanLogic {
         stages.filter { !$0.isRest && $0.amount > 0 && $0.paidAmount <= 0 && $0.status != "VOID" }
     }
 
-    /// #1380: a booked rental of a plan with a stage still uncollected. The API refuses its hand-over, so the bottom bar says
-    /// "Còn đợt chưa thu" instead of the Giao đồ button; the stage is collected on the deposit card (open to every role)
+    /// #1380: a booked rental of a plan with a stage still uncollected. The API refuses its hand-over, so the bottom bar has
+    /// "Thu giai đoạn N" (#1400) instead of the Giao đồ button, like the deposit card (open to every role)
     static func blocksHandOver(hasPlan: Bool?, status: OrderStatus, stages: [OrderInstallment]?) -> Bool {
         hasPlan == true && status == .reserved && !unpaidBeforePickup(stages ?? []).isEmpty
+    }
+
+    /// #1400 the stage of the "Thu giai đoạn N" button in the bottom bar while the hand-over is blocked: the card's next stage.
+    /// A plan stays with its order, so this also holds when the shop later switched to ONE_TIME
+    static func stageToCollectBeforeHandOver(hasPlan: Bool?, status: OrderStatus, stages: [OrderInstallment]?) -> OrderInstallment? {
+        guard blocksHandOver(hasPlan: hasPlan, status: status, stages: stages) else { return nil }
+        return nextToCollect(stages ?? [], status: status)
     }
 
     /// "Thu giai đoạn 2" for `i2`, "Thu giai đoạn" for a key that is not a number
