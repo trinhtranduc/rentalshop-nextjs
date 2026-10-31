@@ -177,9 +177,9 @@ export function canChangeShareOrderNote(role?: string | null): boolean {
   return String(role || '').toUpperCase() === 'MERCHANT';
 }
 
-/** #1332 stub until the fix */
-export function canEditPrintSettings(_role?: string | null): boolean {
-  return true;
+/** #1332 only the owner edits the print note and the bank QR; the others read them. */
+export function canEditPrintSettings(role?: string | null): boolean {
+  return String(role || '').toUpperCase() === 'MERCHANT';
 }
 
 /** Public product page and referral sign-up link, from the login payload or the tenant key. */
