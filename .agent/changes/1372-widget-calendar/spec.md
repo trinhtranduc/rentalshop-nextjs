@@ -1,6 +1,6 @@
 # Spec — Widget "Việc cần làm" và đồng bộ lịch hệ thống
 
-Issue: #1372 (docs: #1373) · Status: widget ĐÃ CHỐT (2026-10-31, chủ shop chốt theo mặc định); lịch hệ thống chờ, làm sau · Intent: ./intent.md
+Issue: #1372 (docs: #1373) · Status: widget ĐÃ CHỐT (2026-10-31, Phương án 1 đang code); thiết kế giàu hơn (P2, P3) chờ chọn; lịch hệ thống chờ, làm sau · Intent: ./intent.md
 
 Thứ tự: **Phần 1 widget làm trước** (iOS rồi Android). **Phần 2 lịch hệ thống làm sau, chưa làm, chờ widget xong.**
 
@@ -29,6 +29,16 @@ Thứ tự: **Phần 1 widget làm trước** (iOS rồi Android). **Phần 2 l�
 |---|---|---|
 | L1 | Ngày nào, cách nào? | Ngày lấy và ngày trả, chọn từng cái; từng đơn bằng nút "Thêm vào lịch" ở chi tiết đơn (B1). Không tự đồng bộ (B2), không đăng ký `.ics` (B3) ở đợt đầu. |
 | L2 | Sự kiện trông thế nào, ai dùng? | Cả ngày, không tự đặt nhắc (người dùng chọn trong cửa sổ lịch). Tiêu đề "Giao đồ · Chị Diệu · #490268" / "Nhận trả · …"; ghi chú: món + số đơn + `anyrent://order/<id>`; không SĐT, không tiền, không địa chỉ. Mọi vai trò xem được đơn đều có nút; chỉ với đơn thuê chưa huỷ, chưa trả xong. |
+
+### 1c. Câu hỏi mới về thiết kế widget: CHỜ CHỐT (2026-10-31, sau khi chủ shop xem mockup "hiện đơn giản quá")
+
+Phương án 1 (đã chốt ở 1a) vẫn đang được code. Ba câu dưới đây chỉ ảnh hưởng các PR sau; mặc định đề xuất cho phép bắt đầu không cần chờ.
+
+| # | Câu hỏi | Mặc định đề xuất |
+|---|---|---|
+| D1 | Sau Phương án 1, chọn **Phương án 2 (thẻ có màu)** và/hoặc **Phương án 3 (cỡ lớn + màn hình khoá)**? | Làm Phương án 2 ngay sau P1, không ảnh món. Cỡ lớn (một phần của P3) làm sau P2 nếu thích. Widget màn hình khoá để chủ shop quyết riêng (đổi lại W4 và W5). |
+| D2 | **Màu "Trả"**: cam (theo chủ shop, mockup mới) hay tím (như app hiện nay, `DS.Status.returning`, tab 40)? | Cam cho Trả trên widget như mockup mới (Trễ đỏ, Giao xanh AnyRent, Trả cam), "Chưa soạn đồ" là chữ cam + biểu tượng cảnh báo, không nền, để không lẫn. Nếu chủ shop muốn đồng bộ với app thì đổi Trả sang tím, hoặc đổi app sang cam ở một PR riêng (không nằm trong widget). |
+| D3 | **"Hiện số tiền còn thu"** trên widget? | Chưa làm trong bản đầu. Nếu làm sau: công tắc trong Cài đặt widget, mặc định TẮT, chỉ chủ shop / quản lý (người có quyền xem tiền) thấy công tắc; số tiền chỉ được ghi vào dữ liệu widget khi BẬT; không bao giờ hiện trên widget khoá màn hình; cảnh báo riêng tư trong Cài đặt. |
 
 ## 2. Hiện trạng và khả thi (origin/dev, commit 10096cf45)
 
@@ -173,6 +183,50 @@ Chỉ giữ phương án và câu hỏi (câu 7, 8). Mockup hướng B1 ở tab 
 | API | Không | Không | Có: route + bảng + route công khai |
 
 Ngày trong sự kiện là ngày VN: iOS `isAllDay` dựng từ khoá ngày VN (không từ instant theo múi giờ máy); Android `ALL_DAY` dùng nửa đêm UTC của ngày đó (đặc thù Android). Test ở `16:59:59Z` và `17:00:00Z`.
+
+## 9. Phương án thiết kế widget (mockup: tab "★ Widget: Việc cần làm")
+
+Sau khi xem bản đã chốt, chủ shop thấy "hiện đơn giản quá" và muốn xem bản giàu thông tin hơn. Mockup có 3 phương án, cùng dữ liệu minh hoạ tiệm áo dài, sáng và tối, đủ các trạng thái (trống, xong hết, chưa đăng nhập, cũ, ẩn tên). Chọn ở câu D1.
+
+### 9.1 Quy ước chung cho cả 3 phương án (cập nhật 2026-10-31)
+
+- **Mỗi dòng việc:** nhãn loại việc có **màu và biểu tượng nhỏ** (TRỄ đồng hồ đỏ `B91C1C`, GIAO mũi tên ra xanh AnyRent `1D4ED8`, TRẢ mũi tên vào cam `C2410C`; nền đậm, chữ trắng như tab 45), tên khách, **tên món đầu tiên và số món còn lại** ("Áo dài gấm đỏ +1"), phần phải: "Hôm nay" (kèm giờ nếu có), hoặc **"Trễ N ngày" đậm đỏ** (nhóm Trễ), hoặc "Chưa soạn đồ" (chỉ dòng GIAO, chữ cam + biểu tượng cảnh báo, không nền).
+- **Giờ ("Hôm nay · 14:00"):** chỉ hiện khi đơn có giờ lấy/trả. **Chưa xác minh dữ liệu:** app hiện chỉ hiện ngày (`DayFormatter.dmy`, `OrdersHomeViewModel.swift:442`); `pickupPlanAt` có mang giờ thật hay không cần kiểm trên dữ liệu thật. Nếu không có giờ thì dòng chỉ ghi "Hôm nay".
+- **Tên món:** `TodayWorkRow.productNames` (chuỗi nối) và `items[]` đã có ở API (`route.ts:97,104-107`); snapshot lưu `product` = tên món đầu + `moreCount` (không cần API mới).
+- **Màu Trả cam** là thay đổi so với app và tab 40 (tím): xem câu D2.
+- **Tiền còn thu:** không hiện mặc định (đã chốt). Công tắc "Hiện số tiền còn thu" (mặc định TẮT) chỉ vẽ trong mockup; xem câu D3. Dữ liệu đã có (`amountDue`, `OrdersHomeViewModel.swift:483`), nên không cần API, nhưng số tiền chỉ được ghi vào snapshot khi công tắc BẬT và có test cho cả hai trạng thái.
+- Chữ trong widget không nhỏ hơn 12 (theo bậc chữ của app `DS.TextSize`).
+
+### 9.2 So sánh
+
+| | Phương án 1 · Đơn giản (**đã chốt, đang code**) | Phương án 2 · Thẻ có màu | Phương án 3 · Lớn + màn hình khoá |
+|---|---|---|---|
+| Cỡ | iPhone nhỏ (3 số) + vừa (3 dòng); Android 4×2 (4 dòng) | Như P1 | P2 + iPhone lớn 4×4 (6 đến 8 dòng, nhóm có tiêu đề) + màn hình khoá (tròn, chữ nhật 2 dòng, chữ nhỏ) + Android 4×4 |
+| Nhìn | Nhãn loại việc có biểu tượng, một dòng mỗi việc | Nhỏ: vòng tiến độ "xong 4/10" + 3 ô số lớn (Trễ đỏ, Giao xanh, Trả cam). Vừa: dải 3 ô số + 2 dòng việc (mỗi việc 2 dòng: nhãn, tên, Hôm nay / Trễ N ngày; tên món đầu (+N), Chưa soạn đồ). Android 3 dòng | P2 + nhóm có tiêu đề (biểu tượng + số lượng), mỗi dòng một hàng; khoá màn hình một màu |
+| Ưu | Đã chốt, nhỏ, ít lỗi | Nhìn là biết nhóm nào nhiều; có tiến độ; nhiều thông tin mỗi dòng | Thấy gần hết danh sách không cần mở app; biết số việc ngay trên màn hình khoá |
+| Nhược | Ít thông tin, không có tiến độ | Vừa chỉ còn 2 dòng; nhiều màu; bật tiền/ảnh thì dòng chật | Chiếm chỗ màn hình chính; khoá màn hình nhìn thấy khi chưa mở máy nên chỉ có số; Android không có widget khoá cho điện thoại |
+| Công sức | Nhỏ (đang làm) | Vừa | Lớn (lớn: vừa; khoá: vừa; Android 4×4: vừa) |
+| Dữ liệu snapshot thêm | `product`, `moreCount` | + `done` (từ `doneToday.pickups/returns`, API đã trả sẵn, Android đã đọc ở `OverviewLogic.kt:155-157,380-383`, iOS `OverviewV2.swift:10`; `TodayWork` iOS hiện chưa decode `doneToday`) + `planTime` (nếu có giờ) | Như P2 (+ nhóm). Quy tắc mới: khoá màn hình không bao giờ có tên khách hay tiền |
+| Ảnh món | Không | Tuỳ chọn (P2b): xem 9.3 | Không |
+| API | Không | Không (ảnh: thêm field, tuỳ chọn) | Không |
+| Phải quyết lại | Màu Trả (D2) | Số dòng vừa 3 → 2; ảnh; tiền (D3) | W4 (cỡ), W5 (riêng tư khoá màn hình), W3 (số dòng lớn) |
+| Đề xuất | Giữ, phát hành trước | Làm ngay sau P1, không ảnh | Cỡ lớn sau P2 nếu thích; màn hình khoá để chủ shop quyết riêng |
+
+### 9.3 Ảnh món trong widget (P2b, tuỳ chọn): giới hạn và chi phí
+
+- Widget **không tải mạng** được đáng tin cậy. Ảnh phải do app (iOS) hoặc Worker (Android) tải sẵn, thu nhỏ ~40×40 (khoảng 3KB), lưu file trong App Group (iOS) / thư mục app (Android), snapshot chỉ ghi tên file.
+- `GET /api/analytics/outlet-operations` hiện **không trả ảnh** (items chỉ có `name`, `quantity`: `route.ts:104-107`). Cần **thêm field ảnh** (additive) vào hàng việc, và `packages/database` (`db.outletOperations`) phải chọn ảnh sản phẩm: đây là thay đổi API (chỉ thêm), phải rà tương thích app cũ hai lần và thêm dòng `.agent/api-changes/LOG.md` (status `planned`): `new optional field items[].imageUrl on GET /api/analytics/outlet-operations | old iOS/Android ignore unknown keys (Not verified, đọc Codable ở TodayWork.swift:104-107 và JSON ở TodayWorkModels.kt) | none`.
+- Thêm: bộ nhớ đệm ảnh (đặt tên theo hash URL, giới hạn tổng ~1MB, xoá khi đăng xuất / hết hạn), xử lý ảnh không có / lỗi (biểu tượng áo), tải khi mở app (iOS) hoặc trong Worker (Android).
+- Công sức: vừa đến lớn. **Đề xuất: không làm cùng đợt P2.**
+
+### 9.4 Cài đặt widget (chung)
+
+Mockup: màn "Cài đặt › Widget" có "Ẩn tên khách trên widget" (đã chốt, mặc định tắt), "Hiện số tiền còn thu" (chờ D3, mặc định tắt, chỉ vai trò có quyền xem tiền; nhân viên không thấy dòng), "Cách thêm widget" (mở sheet hướng dẫn, đã chốt W11). Cảnh báo riêng tư khi bật tiền: số tiền nằm trên màn hình chính, ai cầm máy đang mở cũng thấy; iPhone làm mờ khi máy khoá; không bao giờ trên widget khoá màn hình; tắt công tắc hoặc đăng xuất thì xoá tiền khỏi dữ liệu widget.
+
+### 9.5 Test thêm khi làm P2 và P3 (không áp dụng cho P1)
+
+- Snapshot: `done` đúng (`doneToday` thiếu thì 0, "Xong hết" chỉ khi tổng xong ≥ 1 và còn lại 0); `product` + `moreCount` đúng cho đơn một món và nhiều món; `planTime` rỗng khi đơn không có giờ; công tắc tiền TẮT thì JSON không có `amountDue`; khoá màn hình không có tên và tiền.
+- Ảnh chụp thật (xem `plan.md`): P2 nhỏ + vừa, tối và sáng, các trạng thái; P3 lớn và màn hình khoá trên Simulator iOS 16 trở lên.
 
 ## Out of scope
 
