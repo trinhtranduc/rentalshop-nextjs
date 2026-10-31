@@ -620,6 +620,32 @@ export function handleBusinessError(error: any): ApiError {
 }
 
 // ============================================================================
+// EXCEPTION TEXT STAYS ON THE SERVER (#1408)
+// ============================================================================
+
+const TECHNICAL_ERROR_TEXT =
+  /invocation|prisma|\.next\b|\/app\/|chunks\/|node_modules|\.[cm]?[jt]sx?:\d|\n\s+at\s|\$queryRaw|Cannot read propert/i;
+// Upper case only: "please select a product from the list" is a sentence, not SQL
+const TECHNICAL_ERROR_CODE_OR_SQL = /\bSELECT\b[\s\S]*\bFROM\b|\bINSERT INTO\b|\bUPDATE\b[\s\S]*\bSET\b|ECONN[A-Z]+|ETIMEDOUT|ENOTFOUND/;
+const MAX_CLIENT_ERROR_TEXT = 300;
+
+/** True when text looks like a stack, SQL, a path or a driver error rather than a sentence written for a person. */
+export function isTechnicalErrorText(text: unknown): boolean {
+  if (typeof text !== 'string') return true;
+  return text.length > MAX_CLIENT_ERROR_TEXT || TECHNICAL_ERROR_TEXT.test(text) || TECHNICAL_ERROR_CODE_OR_SQL.test(text);
+}
+
+/**
+ * For report rows (bulk import, batch delete, admin sync) where a short business sentence is useful to the reader.
+ * Anything technical becomes `fallback`. Single errors answer through handleApiError, which sends catalog text only.
+ */
+export function clientSafeErrorText(error: unknown, fallback: string): string {
+  const text = (error as { message?: unknown } | null | undefined)?.message;
+  if (typeof text !== 'string' || !text.trim() || isTechnicalErrorText(text)) return fallback;
+  return text;
+}
+
+// ============================================================================
 // GLOBAL ERROR HANDLER - DRY and Comprehensive
 // ============================================================================
 

@@ -44,6 +44,9 @@ function createPrismaClient(): PrismaClientType {
     const url = withPoolParams(process.env.DATABASE_URL);
     const client = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      // #1408 Prisma's default outside production copies the source around the call into error.message (SQL, paths,
+      // bundled code) and names the first query on that line, not the one that failed. Never use it.
+      errorFormat: 'minimal',
       ...(url ? { datasources: { db: { url } } } : {}),
     });
     return client;
