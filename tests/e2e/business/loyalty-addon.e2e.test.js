@@ -222,7 +222,9 @@ describeLoy('BF-LOYADD loyalty as a feature add-on (#967)', () => {
     setPeriod(world.merchantId);
     const { m, modules } = await merchantSession(world);
     expect(modules).toEqual(['loyalty']);
-    await startProgram(m, world);
+    expect((await m.put('/api/loyalty/program', PROGRAM)).status).toBe(200);
+    // a plan that includes loyalty still has its program switched on by AnyRent, as before: nothing was bought
+    S.sql(`UPDATE "LoyaltyProgram" SET "isActive" = true WHERE "merchantId" = ${world.merchantId}`);
     const product = await saleProduct(m, world, 120000);
     const cust = await customer(m);
     await sell(m, product, cust);

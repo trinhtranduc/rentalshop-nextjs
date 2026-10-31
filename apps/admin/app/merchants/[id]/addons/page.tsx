@@ -588,7 +588,7 @@ function PacksEditor({ merchantId, item, busy, onSaved }: { merchantId: number; 
       live = false;
       clearTimeout(t);
     };
-  }, [merchantId, item.addonPriceId, extra]);
+  }, [merchantId, item.addonPriceId, extra, target]);
 
   const unchanged = !(target >= 1) || target > MAX_ADDON_PACKS || target === (item.nextPacks ?? current);
   const save = async () => {
