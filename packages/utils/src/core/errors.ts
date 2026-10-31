@@ -627,7 +627,7 @@ const TECHNICAL_ERROR_TEXT =
   /invocation|prisma|\.next\b|\/app\/|chunks\/|node_modules|\.[cm]?[jt]sx?:\d|\n\s+at\s|\$queryRaw|Cannot read propert/i;
 // Upper case only: "please select a product from the list" is a sentence, not SQL
 const TECHNICAL_ERROR_CODE_OR_SQL = /\bSELECT\b[\s\S]*\bFROM\b|\bINSERT INTO\b|\bUPDATE\b[\s\S]*\bSET\b|ECONN[A-Z]+|ETIMEDOUT|ENOTFOUND/;
-const MAX_CLIENT_ERROR_TEXT = 300;
+const MAX_CLIENT_ERROR_TEXT = 400;
 
 /** True when text looks like a stack, SQL, a path or a driver error rather than a sentence written for a person. */
 export function isTechnicalErrorText(text: unknown): boolean {

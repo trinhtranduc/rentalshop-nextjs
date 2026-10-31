@@ -21,7 +21,7 @@ object ApiErrorMessages {
         }
 
         val cleaned = fallback.trim()
-        if (cleaned.matches(SNAKE_CODE)) {
+        if (cleaned.matches(SNAKE_CODE) || ServerMessageGuard.looksTechnical(cleaned)) {
             return context?.getString(R.string.request_failed) ?: "Request failed"
         }
         return cleaned.ifBlank {

@@ -688,8 +688,13 @@ enum AttendanceLogic {
         case "MODULE_NOT_ENABLED":
             return AttendanceErrorCopy(title: "attendance.error.module.title".localized(),
                                        message: "attendance.error.module.message".localized())
+        case "SERVICE_UNAVAILABLE", "DATABASE_ERROR", "INTERNAL_SERVER_ERROR":
+            // #1408 the server's trouble, not the scan: the shop tries again
+            return AttendanceErrorCopy(title: "attendance.error.other.title".localized(),
+                                       message: "attendance.error.other.message".localized())
         default:
-            let message = (failure.message ?? "").isEmpty ? "attendance.error.other.message".localized() : failure.message ?? ""
+            let tryAgain = "attendance.error.other.message".localized()
+            let message = (failure.message ?? "").isEmpty ? tryAgain : ServerMessageGuard.safe(failure.message ?? "", fallback: tryAgain)
             return AttendanceErrorCopy(title: "attendance.error.other.title".localized(), message: message)
         }
     }

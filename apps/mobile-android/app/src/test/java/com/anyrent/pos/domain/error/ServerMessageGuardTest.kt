@@ -54,6 +54,15 @@ class ServerMessageGuardTest {
     }
 
     @Test
+    fun attendanceServerTroubleSaysTryAgain() {
+        for (code in listOf("SERVICE_UNAVAILABLE", "DATABASE_ERROR", "INTERNAL_SERVER_ERROR")) {
+            val rejection = com.anyrent.pos.domain.attendance.AttendanceLogic.rejection(code, null, "Service temporarily unavailable")
+            assertEquals(com.anyrent.pos.domain.attendance.PunchRejectionKind.OTHER, rejection.kind)
+            assertEquals(null, rejection.message)
+        }
+    }
+
+    @Test
     fun appErrorFromAThrowableNeverCarriesIt() {
         val error = AppError.from(IllegalStateException(raw))
         assertFalse(error.message, error.message.contains("SELECT"))
