@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1375F6DFFD37ECA692B548E /* TodayWidgetDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */; };
+		A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */; };
 		A909B0000000000000000002 /* Attendance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000001 /* Attendance.swift */; };
 		A909B0000000000000000004 /* AttendanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000003 /* AttendanceService.swift */; };
 		A909B0000000000000000006 /* AttendanceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000005 /* AttendanceCard.swift */; };
@@ -426,6 +428,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDataTests.swift; sourceTree = "<group>"; };
+		A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDisplayTests.swift; sourceTree = "<group>"; };
 		A909F0000000000000000001 /* Attendance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attendance.swift; sourceTree = "<group>"; };
 		A909F0000000000000000003 /* AttendanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceService.swift; sourceTree = "<group>"; };
 		A909F0000000000000000005 /* AttendanceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceCard.swift; sourceTree = "<group>"; };
@@ -1151,6 +1155,8 @@
 				C68665233AF9D666CE7E723C /* Phase8Tests.swift */,
 				596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */,
 				4C586DA11827CD4957729E03 /* HandOverCollateralTests.swift */,
+				A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */,
+				A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */,
 			);
 			name = "POS ADBDTests";
 			path = "POS ADBDTests";
@@ -1995,6 +2001,8 @@
 				00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */,
 				596F0A0B0C0D0E0F10111214 /* ShopTimeZoneTests.swift in Sources */,
 				5150715066E3694042E01913 /* HandOverCollateralTests.swift in Sources */,
+				A1375F6DFFD37ECA692B548E /* TodayWidgetDataTests.swift in Sources */,
+				A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
