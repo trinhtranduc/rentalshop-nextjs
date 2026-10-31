@@ -28,7 +28,8 @@ sealed class AppError(
     companion object {
         fun from(throwable: Throwable): AppError {
             if (throwable is AppError) return throwable
-            val message = throwable.message?.takeIf { it.isNotBlank() } ?: "Unexpected error"
+            val message = throwable.message?.takeIf { it.isNotBlank() }
+                ?.let { ServerMessageGuard.safe(it, "Unexpected error") } ?: "Unexpected error"
             return when {
                 message.contains("timeout", ignoreCase = true) ||
                     message.contains("connect", ignoreCase = true) ||

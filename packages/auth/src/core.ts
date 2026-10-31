@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isTokenExpired, verifyTokenSimple } from './jwt';
 import { AuthUser } from './types';
-import { PlanLimitError } from '@rentalshop/utils';
+import { PlanLimitError, ResponseBuilder } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS, USER_ROLE, isOutletRole, isPlatformOpsRole, isSystemLevelUserRole, type UserRole } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
 import type { ClientPlatform } from '@rentalshop/types';
@@ -115,6 +115,12 @@ function createPlatformAccessDeniedResponse(options: {
  * Check if merchant has active subscription
  * Returns error response if subscription is paused, cancelled, or expired
  */
+/** Prisma failure (timeout, pool, connection, schema), recognised by name or `P1234` code, not by its text. */
+function isDatabaseError(error: unknown): boolean {
+  const { name, code } = (error ?? {}) as { name?: unknown; code?: unknown };
+  return (typeof name === 'string' && name.startsWith('PrismaClient')) || (typeof code === 'string' && /^P\d{4}$/.test(code));
+}
+
 async function checkMerchantSubscriptionStatus(merchantId: number, request: NextRequest): Promise<{
   success: boolean;
   response?: NextResponse;
@@ -642,18 +648,20 @@ export async function authenticateRequest(
   } catch (error) {
     console.error('Authentication error:', error);
     
-    // Handle subscription-related errors
+    // #1408 A database failure says nothing about the token or the plan. 401 would sign the user out of both apps.
+    // Prisma's message can hold the bundled source around the call, so the word test below would match it too.
+    if (isDatabaseError(error)) {
+      return {
+        success: false,
+        response: NextResponse.json(ResponseBuilder.error('SERVICE_UNAVAILABLE'), { status: 503 })
+      };
+    }
+
+    // Handle subscription-related errors. The exception text stays in the log above.
     if (error instanceof Error && error.message.includes('subscription')) {
       return {
         success: false,
-        response: NextResponse.json(
-          { 
-            success: false, 
-            message: error.message,
-            code: 'SUBSCRIPTION_ERROR'
-          },
-          { status: API.STATUS.FORBIDDEN }
-        )
+        response: NextResponse.json(ResponseBuilder.error('SUBSCRIPTION_ERROR'), { status: API.STATUS.FORBIDDEN })
       };
     }
 

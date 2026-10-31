@@ -1,6 +1,5 @@
 import { handleApiError } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
-import { apiConfig } from '@rentalshop/utils';
 import {API} from '@rentalshop/constants';
 
 export const dynamic = 'force-dynamic';
@@ -109,7 +108,7 @@ export async function GET(request: NextRequest) {
       success: false,
       code: 'SYNC_CHECK_FAILED',
         message: 'Sync check failed',
-      error: apiConfig.logging.level === 'debug' ? error.message : 'Internal server error'
+      error: 'Internal server error'
     }, { status: API.STATUS.INTERNAL_SERVER_ERROR });
   }
 } 

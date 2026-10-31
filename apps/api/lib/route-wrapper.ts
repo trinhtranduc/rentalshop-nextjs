@@ -53,7 +53,8 @@ export function withRequestLogging(handler: RouteHandler) {
         {
           success: false,
           code: 'INTERNAL_ERROR',
-          message: errorMessage,
+          // #1408 errorMessage goes to the request log below, never to the client
+          message: 'Internal server error',
         },
         { status: 500 }
       );

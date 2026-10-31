@@ -10,6 +10,7 @@ import com.anyrent.pos.domain.availability.AvailabilityRequest
 import com.anyrent.pos.domain.availability.AvailabilityRepository
 import com.anyrent.pos.domain.availability.ProductAvailability
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.error.ServerMessageGuard
 import com.anyrent.pos.domain.orders.OrderPlanDays
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -188,7 +189,7 @@ class DefaultAvailabilityRepository(
                 .firstOrNull { it.optInt("productId") == request.productId }
             if (entry != null && !entry.has("error")) return parseAvailability(entry)
             throw AppError.InvalidResponse(
-                entry?.optString("error")?.takeIf { it.isNotBlank() }
+                entry?.optString("error")?.takeIf { it.isNotBlank() && !ServerMessageGuard.looksTechnical(it) }
                     ?: "Availability response is missing product ${request.productId}",
             )
         }

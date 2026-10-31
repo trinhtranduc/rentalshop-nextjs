@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ [PROXY] Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Proxy error' },
+      { success: false, error: 'Proxy error' },
       {
         status: 500,
         headers: buildCorsHeaders(request)

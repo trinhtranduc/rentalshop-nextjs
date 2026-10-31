@@ -32,7 +32,7 @@ export async function GET(
         { 
           success: false, 
           error: 'Failed to fetch billing cycle',
-          details: error instanceof Error ? error.message : 'Unknown error'
+          details: 'Unknown error'
         },
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
@@ -65,7 +65,7 @@ export async function PUT(
         { 
           success: false, 
           error: 'Failed to update billing cycle',
-          details: error instanceof Error ? error.message : 'Unknown error'
+          details: 'Unknown error'
         },
         { status: API.STATUS.INTERNAL_SERVER_ERROR }
       );
