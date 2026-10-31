@@ -77,6 +77,8 @@ import com.anyrent.pos.data.FirstRunGuideApp
 import com.anyrent.pos.domain.guide.FirstRunGuideCard
 import com.anyrent.pos.domain.guide.FirstRunGuideStep
 import com.anyrent.pos.ui.home.v2.FirstRunGuideCardView
+import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.ExperimentalComposeUiApi
 import com.anyrent.pos.domain.settings.SettingsItem
 import com.anyrent.pos.domain.settings.ShopInfoLogic
 import com.anyrent.pos.domain.settings.SettingsPlan
@@ -103,7 +105,7 @@ import java.util.Locale
 enum class SettingsSubPage { DEPOSIT, ADVANCED, PROFILE }
 
 /** Redesigned settings tab (#374, board Cai-dat), shown when `newSettings` is on: links to the existing screens */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun SettingsV2Screen(
     onOpenStore: () -> Unit,
@@ -341,7 +343,8 @@ fun SettingsV2Screen(
     if (showGuideSheet) {
         guide.doneSteps()?.let { done ->
             ModalBottomSheet(onDismissRequest = { showGuideSheet = false }, containerColor = DS.Colors.Surface) {
-                FirstRunGuideCardView(
+                // A sheet is its own semantics tree: test tags reach uiautomator only when asked here too
+                Box(Modifier.semantics { testTagsAsResourceId = true }) { FirstRunGuideCardView(
                     card = FirstRunGuideCard.Steps(done),
                     dismissLabel = stringResource(R.string.first_run_guide_close),
                     onStep = { step ->
@@ -353,7 +356,7 @@ fun SettingsV2Screen(
                     onDismiss = { showGuideSheet = false },
                     onCloseFinish = {},
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 28.dp),
-                )
+                ) }
             }
         }
     }

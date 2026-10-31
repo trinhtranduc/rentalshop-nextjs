@@ -199,13 +199,19 @@ final class FirstRunGuideSheetViewController: UIViewController {
     var onStep: ((FirstRunGuideStep) -> Void)?
     private let card = FirstRunGuideCardView(dismissTitle: "firstRunGuide.close".localized())
     private let done: Set<FirstRunGuideStep>
+    private static let sheetHeight: CGFloat = 300
 
     init(done: Set<FirstRunGuideStep>) {
         self.done = done
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .pageSheet
         if #available(iOS 15.0, *), let sheet = sheetPresentationController {
-            sheet.detents = [.medium()]
+            // Hugs the card; a small phone keeps it whole
+            if #available(iOS 16.0, *) {
+                sheet.detents = [.custom { _ in Self.sheetHeight }]
+            } else {
+                sheet.detents = [.medium()]
+            }
             sheet.prefersGrabberVisible = true
         }
     }
