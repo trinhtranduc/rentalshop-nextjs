@@ -110,6 +110,18 @@
         "block": "{n}日ブロック",
         "blockExtra": "{n}日ブロック + 追加{m}日",
         "blockDays": "{n}日"
+      },
+      "dialog": {
+        "photos": {
+          "conditionTitle": "状態の写真",
+          "cardTitle": "引き渡し時の写真",
+          "pickupCompare": "引き渡し時の写真",
+          "optional": "任意",
+          "choose": "写真を選択",
+          "uploading": "写真をアップロード中…",
+          "uploadFailed": "{count} 枚の写真をアップロードできませんでした",
+          "retry": "再試行"
+        }
       }
     },
     "installments": {

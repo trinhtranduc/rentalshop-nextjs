@@ -2530,9 +2530,9 @@
     <string name="order_photos_library">Library</string>
     <string name="order_photos_full">That is %1$d photos. Remove one to add another.</string>
     <string name="order_photos_remove">Remove photo</string>
-    <string name="order_photos_at_hand_over">PHOTOS AT HAND-OVER</string>
+    <string name="order_photos_at_hand_over">Photos at hand-over</string>
     <string name="order_photos_add">Add</string>
-    <string name="order_photos_not_uploaded">%1$d photo(s) not uploaded. The order is handed over; the photos are still on this device.</string>
+    <string name="order_photos_not_uploaded">%1$d photo(s) not uploaded</string>
     <string name="order_photos_camera_unavailable">The camera is not available. Allow it in Settings, or pick from the library.</string>
     <string name="order_photos_open_settings">Open Settings</string>
 </resources>

@@ -16,6 +16,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 enum class OrderPhotoUploadState { IDLE, UPLOADING, FAILED }
 
+/** How many photos the warning under the status names. Null while a retry runs, so there is one way to start one. */
+fun OrderPhotoUploadState.failedCount(waiting: Int): Int? =
+    waiting.takeIf { this == OrderPhotoUploadState.FAILED && it > 0 }
+
 /** #1418 sends the queued condition photos of an order. It outlives the detail screen, which only shows its state. */
 class OrderPhotoUploader(
     private val queue: OrderPhotoQueue,

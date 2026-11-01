@@ -25,6 +25,8 @@ export interface PendingFiles {
 }
 
 const NOTE_IMAGE_MAX_MB = 0.18;
+const MAX_NOTE_IMAGES = 5;
+export const NOTE_IMAGE_MAX_MB = 0.18;
 
 const fieldClass =
   'h-11 w-full rounded-[10px] border border-ar-line bg-ar-surface px-3 text-[15px] text-ar-ink placeholder:text-ar-faint disabled:bg-ar-surface-muted disabled:text-ar-muted';
@@ -73,7 +75,7 @@ export function SettingsSummary({
   );
 }
 
-function PendingThumb({ file, onRemove, label }: { file: File; onRemove: () => void; label: string }) {
+export function PendingThumb({ file, onRemove, label }: { file: File; onRemove: () => void; label: string }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     const u = URL.createObjectURL(file);

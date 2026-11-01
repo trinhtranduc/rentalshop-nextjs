@@ -51,6 +51,13 @@ final class OrderPhotoQueueTests: XCTestCase {
         XCTAssertFalse(can(.pickuped, 0, 0, true), "no photos: the detail screen stays as today")
     }
 
+    func testWarningAtTheTopOnlyWhileAnUploadFailed() {
+        XCTAssertEqual(OrderPhotoLogic.failedCount(state: .failed, waiting: 3), 3)
+        XCTAssertNil(OrderPhotoLogic.failedCount(state: .uploading, waiting: 3), "a retry is running: no second way to start one")
+        XCTAssertNil(OrderPhotoLogic.failedCount(state: .idle, waiting: 3))
+        XCTAssertNil(OrderPhotoLogic.failedCount(state: .failed, waiting: 0))
+    }
+
     // MARK: Disk
 
     func testQueueSurvivesANewInstance() throws {

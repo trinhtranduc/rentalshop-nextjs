@@ -15,7 +15,7 @@ sealed interface OrderPhotoDecision {
 
 /** #1418 condition photos of an order: same rule as iOS `OrderPhotoLogic` */
 object OrderPhotoLogic {
-    /** Owner's limit. Note photos keep [OrderDetailLogic.MAX_NOTE_PHOTOS]; the API allows 5 per field. */
+    /** Owner's limit; the API allows 5 per field. */
     const val MAX_PHOTOS = 3
 
     fun canAdd(count: Int): Boolean = count < MAX_PHOTOS

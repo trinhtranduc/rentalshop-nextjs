@@ -1052,6 +1052,16 @@
           "message": "Delete order {number} for good? This cannot be undone.",
           "keep": "Keep",
           "confirm": "Delete order"
+        },
+        "photos": {
+          "conditionTitle": "Condition photos",
+          "cardTitle": "Photos at hand-over",
+          "pickupCompare": "Photos at hand-over",
+          "optional": "Optional",
+          "choose": "Choose photos",
+          "uploading": "Uploading photos…",
+          "uploadFailed": "{count} photos not uploaded",
+          "retry": "Retry"
         }
       }
     },

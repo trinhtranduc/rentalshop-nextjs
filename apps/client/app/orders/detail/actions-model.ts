@@ -89,3 +89,77 @@ export function canCancelOrder(orderType: string | null | undefined, status: str
   if (orderType === 'SALE') return status === 'RESERVED' || status === 'COMPLETED';
   return false;
 }
+
+// ----------------------------------------------------------------------------
+// #1420 condition photos at hand-over (same rule as the phones, #1418). Nothing is captured at return.
+// ----------------------------------------------------------------------------
+
+/** Owner's limit; the API allows 5 per field. */
+export const MAX_CONDITION_PHOTOS = 3;
+
+export const photoRoom = (count: number) => Math.max(0, MAX_CONDITION_PHOTOS - count);
+
+export type PhotoSendDecision = { kind: 'alreadyUploaded' } | { kind: 'noRoom' } | { kind: 'send'; count: number };
+
+/**
+ * Read before sending. A multipart PUT is all or nothing and has no idempotency key, so our own lost request shows as
+ * growth of at least `pending`. Smaller growth came from another device: our photos are still unsent.
+ */
+export function decidePhotoSend(serverCount: number, baseline: number, pending: number): PhotoSendDecision {
+  if (serverCount - baseline >= pending) return { kind: 'alreadyUploaded' };
+  const room = photoRoom(serverCount);
+  return room > 0 ? { kind: 'send', count: Math.min(pending, room) } : { kind: 'noRoom' };
+}
+
+/** "Ảnh khi giao" card: not there at 0 photos, unless photos are on their way in this tab, so a shop not using it sees no change */
+export const showPickupPhotosCard = (serverCount: number, waiting: number) => serverCount > 0 || waiting > 0;
+
+/** "Thêm ảnh" in the card: only while the goods are out. At 0 photos there is no card, as on the phones */
+export function canAddPickupPhotos(status: string, serverCount: number, waiting: boolean): boolean {
+  return status === 'PICKUPED' && !waiting && serverCount > 0 && photoRoom(serverCount) > 0;
+}
+
+/** How many photos the warning above the cards names; null while a retry runs, so there is one way to start one */
+export function uploadWarningCount(job: { files: unknown[]; status: 'uploading' | 'failed' } | undefined | null): number | null {
+  return job?.status === 'failed' ? job.files.length : null;
+}
+
+const imageList = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []);
+
+export interface NoteOrderLike {
+  notes?: string | null;
+  notesImages?: unknown;
+  pickupNotes?: string | null;
+  pickupNotesImages?: unknown;
+  returnNotes?: string | null;
+  returnNotesImages?: unknown;
+  damageNotes?: string | null;
+  damageNotesImages?: unknown;
+}
+
+/**
+ * The groups of the notes card. Hand-over photos have their own card; the pickup note text stays here, and so do the
+ * return and damage texts and photos of old orders.
+ */
+export function buildNoteViews(order: NoteOrderLike, labels: { notes: string; pickup: string; return: string; damage: string }) {
+  const views: { key: string; label: string; text: string; images: string[]; danger?: boolean }[] = [
+    { key: 'notes', label: labels.notes, text: order.notes || '', images: imageList(order.notesImages) },
+    { key: 'pickup', label: labels.pickup, text: order.pickupNotes || '', images: [] },
+    { key: 'return', label: labels.return, text: order.returnNotes || '', images: imageList(order.returnNotesImages) },
+    { key: 'damage', label: labels.damage, text: order.damageNotes || '', images: imageList(order.damageNotesImages), danger: true },
+  ];
+  return views.filter((n) => n.text.trim() || n.images.length > 0);
+}
+
+/**
+ * The PUT that appends hand-over photos: `data={}`, so nothing else of the order changes. The page sends it with
+ * `authenticatedFetch`, not `ordersApi.updateOrder`: `parseApiResponse` raises the global toast on a 4xx, and the warning
+ * above the cards already says it failed. A listener cannot hold that toast back: Chrome fires a window target's
+ * listeners in registration order, capture or not.
+ */
+export function pickupPhotosForm(files: File[]): FormData {
+  const form = new FormData();
+  form.append('data', '{}');
+  files.forEach((file) => form.append('pickupNotesImages', file));
+  return form;
+}

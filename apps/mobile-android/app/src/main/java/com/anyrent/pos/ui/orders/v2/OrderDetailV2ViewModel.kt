@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
-import com.anyrent.pos.data.OrderPhotoUploadState
 import com.anyrent.pos.data.OrderPhotoUploader
 import com.anyrent.pos.data.OrderPhotos
+import com.anyrent.pos.data.failedCount
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.HandOverFields
@@ -102,7 +102,8 @@ data class OrderDetailUiState(
     val pickupCompressing: Int = 0,
     /** Photos of this order waiting on the device (faded on the detail) */
     val pickupWaiting: List<File> = emptyList(),
-    val pickupUploadFailed: Boolean = false,
+    /** A failed upload: how many photos the warning under the status names */
+    val pickupFailedCount: Int? = null,
 )
 
 class OrderDetailV2ViewModel(
@@ -132,8 +133,8 @@ class OrderDetailV2ViewModel(
     private fun syncPhotos() {
         val uploader = photos ?: return
         val waiting = uploader.pending(orderId, OrderPhotoField.PICKUP)?.files.orEmpty()
-        val failed = uploader.state(orderId, OrderPhotoField.PICKUP) == OrderPhotoUploadState.FAILED
-        _state.update { it.copy(pickupWaiting = waiting, pickupUploadFailed = failed) }
+        val failed = uploader.state(orderId, OrderPhotoField.PICKUP).failedCount(waiting.size)
+        _state.update { it.copy(pickupWaiting = waiting, pickupFailedCount = failed) }
     }
 
     /** Opening the order and "Thử lại": photos left from a failed upload or a relaunch go out */

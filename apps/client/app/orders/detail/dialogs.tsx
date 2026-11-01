@@ -8,6 +8,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import type { Money, T } from '../list/parts';
 import { handOverView, parseFee, returnView, type MoneyRow } from './actions-model';
+import { PhotoBlock, PickupPhotosCompare } from './photos';
 import type { OrderDetailLike } from '../orders-model';
 
 const ring = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ar-primary';
@@ -212,12 +213,17 @@ export function HandOverDialog({
   extra,
   ...p
 }: ActionProps & {
-  onConfirm: () => Promise<boolean | void>;
+  /** #1420 the photos chosen go first in memory; the page sends them after the status changed */
+  onConfirm: (photos: File[]) => Promise<boolean | void>;
   /** #1199: deposit stages still unpaid (their money is part of `due`; they are collected first, then the order is handed over) */
   extra?: React.ReactNode;
 }) {
   const { submitting, run } = useSubmit(p.onClose);
   const m = handOverView(p.order);
+  const [photos, setPhotos] = useState<File[]>([]);
+  useEffect(() => {
+    if (!p.open) setPhotos([]);
+  }, [p.open]);
   return (
     <ActionDialog
       open={p.open}
@@ -231,12 +237,13 @@ export function HandOverDialog({
           <button type="button" onClick={p.onClose} disabled={submitting} className={closeBtn}>
             {p.t('detail.dialog.close')}
           </button>
-          <button type="button" onClick={() => run(onConfirm)} disabled={submitting} className={`${okBtn} bg-ar-primary text-ar-on-primary hover:opacity-95`}>
+          <button type="button" onClick={() => run(() => onConfirm(photos))} disabled={submitting} className={`${okBtn} bg-ar-primary text-ar-on-primary hover:opacity-95`}>
             {m.due > 0 ? p.t('detail.dialog.handover.confirm', { amount: p.money(m.due) }) : p.t('detail.dialog.handover.confirmFree')}
           </button>
         </>
       }
     >
+      <PhotoBlock title={p.t('detail.dialog.photos.conditionTitle')} files={photos} onChange={setPhotos} t={p.t} />
       <Items items={p.items} />
       {extra}
       <MoneyBox rows={m.rows} total={{ label: p.t('detail.dialog.result.due'), amount: m.due, tone: 'text-ar-ink' }} t={p.t} money={p.money} />
@@ -252,8 +259,14 @@ const feeInput =
 export function ReturnDialog({
   onConfirm,
   lateDays,
+  pickupPhotos,
   ...p
-}: ActionProps & { lateDays: number; onConfirm: (fees: { lateFee: number; damageFee: number }) => Promise<boolean | void> }) {
+}: ActionProps & {
+  lateDays: number;
+  /** #1420 uploaded at hand-over, to compare; a click opens a new tab */
+  pickupPhotos: string[];
+  onConfirm: (fees: { lateFee: number; damageFee: number }) => Promise<boolean | void>;
+}) {
   const { submitting, run } = useSubmit(p.onClose);
   // Prefilled with the saved fees, like iOS (the API stores lateFee; nothing computes it)
   const savedLate = p.order.lateFee;
@@ -307,6 +320,7 @@ export function ReturnDialog({
       }
     >
       <Items items={p.items} />
+      <PickupPhotosCompare urls={pickupPhotos} t={p.t} />
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={lateId} className="text-sm font-semibold text-ar-ink-2">

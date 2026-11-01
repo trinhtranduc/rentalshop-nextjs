@@ -1052,6 +1052,16 @@
           "message": "Xoá hẳn đơn {number}? Không hoàn tác được.",
           "keep": "Giữ lại",
           "confirm": "Xoá đơn"
+        },
+        "photos": {
+          "conditionTitle": "Ảnh tình trạng đồ",
+          "cardTitle": "Ảnh khi giao",
+          "pickupCompare": "Ảnh khi giao",
+          "optional": "Không bắt buộc",
+          "choose": "Chọn ảnh",
+          "uploading": "Đang tải ảnh…",
+          "uploadFailed": "Chưa tải được {count} ảnh",
+          "retry": "Thử lại"
         }
       }
     },
