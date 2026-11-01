@@ -1,6 +1,6 @@
 # Spec: prompt timing
 
-Issue: #1413 · Status: in-progress
+Issue: #1413 · Status: in-review
 
 No API path changes. Only `apps/mobile` and `apps/mobile-android`.
 

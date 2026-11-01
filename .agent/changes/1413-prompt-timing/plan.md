@@ -1,6 +1,6 @@
 # Plan: prompt timing
 
-Issue: #1413 · Status: in-progress
+Issue: #1413 · Status: in-review
 
 Skills: `bug-fix-tdd`, `mobile-parity`, `verify-change`. No API path changes, so no `api-compat-review` row.
 

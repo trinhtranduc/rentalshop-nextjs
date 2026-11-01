@@ -1,6 +1,6 @@
 # System prompts should not cover onboarding or the first order
 
-Issue: #1413 · Author: Claude · Status: in-progress · Created: 2026-11-01
+Issue: #1413 · Author: Claude · Status: in-review · Created: 2026-11-01
 
 ## Problem
 
