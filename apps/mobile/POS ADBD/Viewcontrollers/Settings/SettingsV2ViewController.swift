@@ -19,8 +19,6 @@ final class SettingsV2ViewController: BaseViewControler {
         case item(SettingsV2Item)
         /// #518 "Cho phép đặt trùng lịch" (board CD-trung-lich), shop owner only; #1259: last line of CỬA HÀNG
         case overlapSwitch
-        /// #1375 "Ẩn tên khách trên widget", right under the Widget row
-        case widgetHideNames
         case logout
     }
 
@@ -432,7 +430,7 @@ final class SettingsV2ViewController: BaseViewControler {
         case .attendance: return [.attendance]
         case .profile: return [.profile]
         case .group(let index):
-            let rows = groups[index].items.flatMap { item -> [Row] in item == .widget ? [.item(item), .widgetHideNames] : [.item(item)] }
+            let rows = groups[index].items.map { Row.item($0) }
             return groups[index].group == .store && showsOverlapSetting ? rows + [.overlapSwitch] : rows
         case .logout: return [.logout]
         }
@@ -611,16 +609,6 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
             cell.onChange = { [weak self] isOn, toggle in self?.setOverlapAllowed(isOn, toggle: toggle) }
             return cell
         }
-        if case .widgetHideNames = row {
-            let cell = tableView.dequeueReusableCell(withIdentifier: SettingsV2SwitchCell.reuseId, for: indexPath) as! SettingsV2SwitchCell
-            cell.configure(title: "widget.hideNames.title".localized(), subtitle: "widget.hideNames.subtitle".localized(),
-                           isOn: TodayWidgetSync.hideNames(), isEnabled: true)
-            cell.onChange = { isOn, _ in
-                TodayWidgetSync.setHideNames(isOn)
-                TodayWidgetSync.shared.hideNamesChanged()
-            }
-            return cell
-        }
         let cell = tableView.dequeueReusableCell(withIdentifier: SettingsV2Cell.reuseId, for: indexPath) as! SettingsV2Cell
         switch row {
         case .profile:
@@ -635,7 +623,7 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
             cell.accessibilityIdentifier = item == .firstRunGuide ? "settings.firstRunGuide" : nil
         case .logout:
             cell.configureLogout("Logout".localized())
-        case .overlapSwitch, .attendance, .widgetHideNames:
+        case .overlapSwitch, .attendance:
             break
         }
         return cell
@@ -647,7 +635,7 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
         case .attendance: break
         case .profile: navigationController?.pushViewController(ProfileSecurityViewController(), animated: true)
         case .item(let item): open(item)
-        case .overlapSwitch, .widgetHideNames: break
+        case .overlapSwitch: break
         case .logout: confirmLogout()
         }
     }

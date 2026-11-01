@@ -3097,7 +3097,6 @@
 "widget.stale" = "Mở app để cập nhật";
 "widget.staleDetail" = "Danh sách lần cuối: %@";
 "widget.yesterday" = "hôm qua";
-"widget.hiddenName" = "chạm để mở";
 "widget.hint.title" = "Thêm widget để thấy việc hôm nay ngay trên màn hình chính";
 "widget.hint.body" = "%d giao, %d trả, %d trễ sẽ hiện không cần mở app.";
 "widget.hint.how" = "Cách thêm";
@@ -3109,8 +3108,6 @@
 "widget.guide.step3" = "Chọn cỡ nhỏ hoặc vừa, bấm Thêm widget.";
 "widget.guide.ok" = "Đã hiểu";
 "widget.settings.row" = "Widget";
-"widget.hideNames.title" = "Ẩn tên khách trên widget";
-"widget.hideNames.subtitle" = "Mặc định tắt. Bật nếu bạn không muốn hiện tên khách ngay cả khi máy đang mở. Widget không bao giờ hiện tiền hay số điện thoại.";
 "order.detail.stageUnpaid" = "Còn đợt chưa thu";
 
 // #1404 three onboarding pages. Fixed sample data, not the shop's currency.

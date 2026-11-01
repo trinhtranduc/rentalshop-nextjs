@@ -10,13 +10,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * The widget's file and its two switches, in the app's private storage (#1381). Separate from `SessionStore`: nothing
- * here is a credential. The switches are per phone and survive a sign-out, like iOS; the file does not.
+ * The widget's file and the hint's flag, in the app's private storage (#1381). Separate from `SessionStore`: nothing
+ * here is a credential. The flag is per phone and survives a sign-out, like iOS; the file does not.
  */
 object TodayWidgetStore : TodayWidgetFile {
     private const val PREFS = "anyrent.todayWidget"
     private const val KEY_SNAPSHOT = "snapshot"
-    private const val KEY_HIDE_NAMES = "hideCustomerNames"
     private const val KEY_HINT_DISMISSED = "hintDismissed"
 
     private var prefs: SharedPreferences? = null
@@ -31,7 +30,7 @@ object TodayWidgetStore : TodayWidgetFile {
 
     fun touch() = _version.update { it + 1 }
 
-    override fun read(): TodayWidgetSnapshot? = TodayWidgetSnapshot.fromJson(prefs?.getString(KEY_SNAPSHOT, null))
+    fun read(): TodayWidgetSnapshot? = TodayWidgetSnapshot.fromJson(prefs?.getString(KEY_SNAPSHOT, null))
 
     override fun write(snapshot: TodayWidgetSnapshot) {
         prefs?.edit()?.putString(KEY_SNAPSHOT, snapshot.toJson())?.apply()
@@ -42,11 +41,6 @@ object TodayWidgetStore : TodayWidgetFile {
         prefs?.edit()?.remove(KEY_SNAPSHOT)?.apply()
         touch()
     }
-
-    /** "Ẩn tên khách trên widget", off by default */
-    var hideNames: Boolean
-        get() = prefs?.getBoolean(KEY_HIDE_NAMES, false) ?: false
-        set(value) { prefs?.edit()?.putBoolean(KEY_HIDE_NAMES, value)?.apply() }
 
     /** "Không hỏi lại": per phone, for good */
     var hintDismissed: Boolean

@@ -2419,7 +2419,6 @@
     <string name="widget_stale">Open the app to update</string>
     <string name="widget_stale_detail">Last list: %1$s</string>
     <string name="widget_yesterday">yesterday</string>
-    <string name="widget_hidden_name">tap to open</string>
     <string name="widget_hint_title">Add the widget to see today\'s jobs on your home screen</string>
     <string name="widget_hint_body">%1$d out, %2$d back, %3$d late will show without opening the app.</string>
     <string name="widget_hint_how">How to add</string>
@@ -2427,8 +2426,6 @@
     <string name="widget_guide_title">Add to widget</string>
     <string name="widget_guide_ok">Got it</string>
     <string name="widget_settings_row">Widget</string>
-    <string name="widget_hide_names_title">Hide customer names on the widget</string>
-    <string name="widget_hide_names_subtitle">Off by default. Turn on if you do not want names shown even while the phone is unlocked. The widget never shows money or phone numbers.</string>
     <string name="widget_guide_subtitle_pin">Today\'s jobs show right on your home screen. The phone will ask whether to place the widget.</string>
     <string name="widget_guide_subtitle_steps">This phone does not let an app place a widget. It takes 3 steps and about 10 seconds.</string>
     <string name="widget_guide_step1">Touch and hold an empty spot on the home screen.</string>

@@ -48,7 +48,7 @@ struct TodayWorkProvider: TimelineProvider {
         ]
         let now = Date()
         return TodayWidgetSnapshot(userId: 0, outletId: 0, date: TodayWidgetClock.dayKey(now), savedAt: now, state: .ok,
-                                   hideNames: false, done: 4, counts: TodayWidgetCounts(late: 1, pickup: 3, returns: 2), rows: rows,
+                                   done: 4, counts: TodayWidgetCounts(late: 1, pickup: 3, returns: 2), rows: rows,
                                    labels: labels)
     }
 }
@@ -153,7 +153,7 @@ private struct MediumWorkView: View {
             }
             VStack(spacing: 4) {
                 ForEach(Array(display.lines.enumerated()), id: \.offset) { _, line in
-                    Link(destination: line.url) { JobRow(line: line, display: display) }
+                    Link(destination: line.url) { JobRow(line: line) }
                 }
             }
             Spacer(minLength: 0)
@@ -166,18 +166,13 @@ private struct MediumWorkView: View {
 @available(iOS 16.1, *)
 private struct JobRow: View {
     let line: TodayWidgetDisplay.Line
-    let display: TodayWidgetDisplay
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 6) {
                 KindChip(chip: line.chip, text: line.chipText)
-                if line.name.isEmpty {
-                    Text(display.labels.hiddenName).font(.system(size: 14)).foregroundColor(.secondary).lineLimit(1)
-                } else {
-                    // Blurred by the system when the phone is locked
-                    Text(line.name).font(.system(size: 14, weight: .bold)).lineLimit(1).privacySensitive()
-                }
+                // Blurred by the system when the phone is locked
+                Text(line.name).font(.system(size: 14, weight: .bold)).lineLimit(1).privacySensitive()
                 Spacer(minLength: 4)
                 Text(line.rightText)
                     .font(.system(size: 12, weight: line.rightIsLate ? .bold : .semibold))

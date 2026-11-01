@@ -46,7 +46,6 @@ object TodayWidgetSync {
         file = TodayWidgetStore,
         userId = { signedInUser() },
         outletId = { CurrentOutlet.id ?: SessionStore.outletId ?: 0 },
-        hideNames = { TodayWidgetStore.hideNames },
     )
 
     private suspend fun loadWork(): Result<TodayWork> =
@@ -93,14 +92,6 @@ object TodayWidgetSync {
     private suspend fun draw(context: Context) {
         TodayWidgetStore.touch()
         runCatching { TodayWorkWidget().updateAll(context) }
-    }
-
-    /** "Ẩn tên khách trên widget" changed */
-    fun hideNamesChanged() {
-        val context = appContext ?: return
-        val rewritten = refresher.hideNamesChanged()
-        scope.launch { draw(context) }
-        if (!rewritten) refreshSoon()
     }
 
     /** Logout, a kicked session, a switch of account (`SessionStore.clearAuth`): the shop's data leaves at once */

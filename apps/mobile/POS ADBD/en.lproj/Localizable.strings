@@ -3099,7 +3099,6 @@
 "widget.stale" = "Open the app to update";
 "widget.staleDetail" = "Last list: %@";
 "widget.yesterday" = "yesterday";
-"widget.hiddenName" = "tap to open";
 "widget.hint.title" = "Add the widget to see today's jobs on your home screen";
 "widget.hint.body" = "%d out, %d back, %d late will show without opening the app.";
 "widget.hint.how" = "How to add";
@@ -3111,8 +3110,6 @@
 "widget.guide.step3" = "Pick the small or the medium size and tap Add Widget.";
 "widget.guide.ok" = "Got it";
 "widget.settings.row" = "Widget";
-"widget.hideNames.title" = "Hide customer names on the widget";
-"widget.hideNames.subtitle" = "Off by default. Turn on if you do not want names shown even while the phone is unlocked. The widget never shows money or phone numbers.";
 "order.detail.stageUnpaid" = "Deposit stage unpaid";
 
 // #1404 three onboarding pages. Fixed sample data, not the shop's currency.

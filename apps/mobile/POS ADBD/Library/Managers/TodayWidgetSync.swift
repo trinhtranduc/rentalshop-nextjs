@@ -6,8 +6,8 @@
 //  only reads it (no network, no token: the refresh token changes on every refresh, a second process refreshing it
 //  could sign the whole phone out).
 //
-//  It writes when the app opens, the branch changes, an order is created / handed over / returned / cancelled, the
-//  customer-name switch changes, and after sign-in. At sign-out the shop's data goes away at once.
+//  It writes when the app opens, the branch changes, an order is created / handed over / returned / cancelled, and
+//  after sign-in. At sign-out the shop's data goes away at once.
 //
 
 import Foundation
@@ -33,26 +33,12 @@ final class TodayWidgetSync {
         return .keep
     }
 
-    // MARK: Ẩn tên khách trên widget
-
-    static let hideNamesKey = "widget.hideCustomerNames"
-
-    static func hideNames(defaults: UserDefaults = .standard) -> Bool {
-        defaults.bool(forKey: hideNamesKey)
-    }
-
-    static func setHideNames(_ hidden: Bool, defaults: UserDefaults = .standard) {
-        defaults.set(hidden, forKey: hideNamesKey)
-    }
-
     // MARK: Refresh
 
     private var started = false
     private var pending: DispatchWorkItem?
     /// Bumped at sign-out and at every request: an answer from before sign-out is dropped
     private var generation = 0
-    private var lastWork: TodayWork?
-    private var lastUserId: Int?
 
     /// Observers; safe to call more than once
     func start() {
@@ -96,28 +82,12 @@ final class TodayWidgetSync {
         switch TodayWidgetSync.outcome(work: work, error: error) {
         case .write:
             guard let work = work else { return }
-            lastWork = work
-            lastUserId = user.id
             TodayWidgetBridge.write(TodayWidgetData.snapshot(from: work, userId: user.id, outletId: outletId,
-                                                             hideNames: TodayWidgetSync.hideNames(), now: now, labels: labels))
+                                                             now: now, labels: labels))
         case .noAccess:
-            lastWork = nil
             TodayWidgetBridge.write(TodayWidgetSnapshot.noAccess(userId: user.id, outletId: outletId, labels: labels, now: now))
         case .keep:
             break
-        }
-    }
-
-    /// The owner flipped "Ẩn tên khách trên widget": rewrite from the last answer, or ask again
-    func hideNamesChanged() {
-        guard let user = User.account() else { return }
-        if let work = lastWork, lastUserId == user.id {
-            TodayWidgetBridge.write(TodayWidgetData.snapshot(from: work, userId: user.id,
-                                                             outletId: CurrentOutlet.shared.id ?? user.outletId ?? 0,
-                                                             hideNames: TodayWidgetSync.hideNames(), now: Date(),
-                                                             labels: TodayWidgetData.labels()))
-        } else {
-            refresh()
         }
     }
 
@@ -125,8 +95,6 @@ final class TodayWidgetSync {
     func userDidSignOut() {
         generation += 1
         pending?.cancel()
-        lastWork = nil
-        lastUserId = nil
         TodayWidgetBridge.signOut(labels: TodayWidgetData.labels())
     }
 }

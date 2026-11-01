@@ -143,7 +143,6 @@ internal fun widgetLabels(context: Context): TodayWidgetLabels {
         stale = text(R.string.widget_stale),
         staleFormat = text(R.string.widget_stale_detail),
         yesterday = text(R.string.widget_yesterday),
-        hiddenName = text(R.string.widget_hidden_name),
         appName = text(R.string.app_name),
         pickupDayWord = text(R.string.orders_chip_pickup),
         returnDayWord = text(R.string.orders_chip_return),
@@ -233,7 +232,7 @@ private fun MediumWork(display: TodayWidgetDisplay) {
         Column(GlanceModifier.fillMaxWidth()) {
             display.lines.forEach { line ->
                 Spacer(GlanceModifier.height(4.dp))
-                JobRow(line, display.labels, GlanceModifier.fillMaxWidth().clickable(openLink(context, line.url)))
+                JobRow(line, GlanceModifier.fillMaxWidth().clickable(openLink(context, line.url)))
             }
         }
         Spacer(GlanceModifier.defaultWeight())
@@ -243,16 +242,12 @@ private fun MediumWork(display: TodayWidgetDisplay) {
 
 /** One job: line 1 the chip, the customer and when; line 2 the first item and the warning (or the due day) */
 @Composable
-private fun JobRow(line: TodayWidgetDisplay.Line, labels: TodayWidgetLabels, modifier: GlanceModifier) {
+private fun JobRow(line: TodayWidgetDisplay.Line, modifier: GlanceModifier) {
     Column(modifier) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             KindChip(line)
             Spacer(GlanceModifier.width(6.dp))
-            if (line.name.isEmpty()) {
-                Text(labels.hiddenName, style = style(14.sp, R.color.widget_text_muted), maxLines = 1, modifier = GlanceModifier.defaultWeight())
-            } else {
-                Text(line.name, style = style(14.sp, weight = FontWeight.Bold), maxLines = 1, modifier = GlanceModifier.defaultWeight())
-            }
+            Text(line.name, style = style(14.sp, weight = FontWeight.Bold), maxLines = 1, modifier = GlanceModifier.defaultWeight())
             Spacer(GlanceModifier.width(4.dp))
             Text(
                 line.rightText,

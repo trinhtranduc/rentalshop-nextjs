@@ -39,8 +39,8 @@ final class TodayWidgetDataTests: XCTestCase {
         return try JSONDecoder.shared.decode(TodayWork.self, from: Data(json.utf8))
     }
 
-    private func build(_ work: TodayWork, hideNames: Bool = false, now: String = "2026-10-31T01:12:00Z") -> TodayWidgetSnapshot {
-        TodayWidgetData.snapshot(from: work, userId: 7, outletId: 5, hideNames: hideNames, now: at(now), labels: vi)
+    private func build(_ work: TodayWork, now: String = "2026-10-31T01:12:00Z") -> TodayWidgetSnapshot {
+        TodayWidgetData.snapshot(from: work, userId: 7, outletId: 5, now: at(now), labels: vi)
     }
 
     // MARK: Snapshot from the API answer
@@ -201,15 +201,14 @@ final class TodayWidgetDataTests: XCTestCase {
         XCTAssertEqual(file.counts.total, 7)
     }
 
-    func testCustomerNamesAreLeftOutWhenTheOwnerSaysSo() throws {
-        let shown = build(try work(), hideNames: false)
-        XCTAssertEqual(shown.rows.map { $0.name }, ["Lê Ngọc Lan", "Hà Gia Bảo", "Mai Quốc Huy", "Phạm Văn An", "Bùi Thanh Tâm"])
-        let hidden = build(try work(), hideNames: true)
-        XCTAssertTrue(hidden.hideNames)
-        XCTAssertTrue(hidden.rows.allSatisfy { $0.name.isEmpty })
-        let text = String(data: try TodayWidgetSnapshot.encoder().encode(hidden), encoding: .utf8)!
-        XCTAssertFalse(text.contains("Gia Bảo"))
-        XCTAssertFalse(text.contains("Ngọc Lan"))
+    /// #1432: the widget always shows the customer name; the file no longer has a switch for it
+    func testTheFileAlwaysHasTheCustomerName() throws {
+        let file = build(try work())
+        XCTAssertEqual(file.rows.map { $0.name }, ["Lê Ngọc Lan", "Hà Gia Bảo", "Mai Quốc Huy", "Phạm Văn An", "Bùi Thanh Tâm"])
+        let text = String(data: try TodayWidgetSnapshot.encoder().encode(file), encoding: .utf8)!
+        XCTAssertTrue(text.contains("Gia Bảo"))
+        XCTAssertFalse(text.contains("hideNames"))
+        XCTAssertFalse(text.contains("hiddenName"))
     }
 
     /// The file holds no phone number and no money, whatever the API row carried
@@ -254,17 +253,6 @@ final class TodayWidgetDataTests: XCTestCase {
         XCTAssertEqual(TodayWidgetSync.outcome(work: nil, error: NSError(domain: "RC", code: 500)), .keep)
         XCTAssertEqual(TodayWidgetSync.outcome(work: nil, error: NSError(domain: "RC", code: 401)), .keep)
         XCTAssertEqual(TodayWidgetSync.outcome(work: nil, error: nil), .keep)
-    }
-
-    func testTheHideNamesSwitchIsOffByDefaultAndRemembered() {
-        let suite = "widget-tests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suite)!
-        defer { defaults.removePersistentDomain(forName: suite) }
-        XCTAssertFalse(TodayWidgetSync.hideNames(defaults: defaults))
-        TodayWidgetSync.setHideNames(true, defaults: defaults)
-        XCTAssertTrue(TodayWidgetSync.hideNames(defaults: defaults))
-        TodayWidgetSync.setHideNames(false, defaults: defaults)
-        XCTAssertFalse(TodayWidgetSync.hideNames(defaults: defaults))
     }
 
     // MARK: The one-time hint (W11)

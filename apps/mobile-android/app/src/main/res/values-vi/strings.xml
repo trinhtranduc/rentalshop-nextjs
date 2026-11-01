@@ -2389,7 +2389,6 @@
     <string name="widget_stale">Mở app để cập nhật</string>
     <string name="widget_stale_detail">Danh sách lần cuối: %1$s</string>
     <string name="widget_yesterday">hôm qua</string>
-    <string name="widget_hidden_name">chạm để mở</string>
     <string name="widget_hint_title">Thêm widget để thấy việc hôm nay ngay trên màn hình chính</string>
     <string name="widget_hint_body">%1$d giao, %2$d trả, %3$d trễ sẽ hiện không cần mở app.</string>
     <string name="widget_hint_how">Cách thêm</string>
@@ -2397,8 +2396,6 @@
     <string name="widget_guide_title">Thêm vào widget</string>
     <string name="widget_guide_ok">Đã hiểu</string>
     <string name="widget_settings_row">Widget</string>
-    <string name="widget_hide_names_title">Ẩn tên khách trên widget</string>
-    <string name="widget_hide_names_subtitle">Mặc định tắt. Bật nếu bạn không muốn hiện tên khách ngay cả khi máy đang mở. Widget không bao giờ hiện tiền hay số điện thoại.</string>
     <string name="widget_guide_subtitle_pin">Việc hôm nay hiện ngay trên màn hình chính. Máy sẽ hỏi bạn có thêm widget không.</string>
     <string name="widget_guide_subtitle_steps">Máy này không cho app tự thêm widget. Làm 3 bước, mất khoảng 10 giây.</string>
     <string name="widget_guide_step1">Giữ lâu một chỗ trống trên màn hình chính.</string>

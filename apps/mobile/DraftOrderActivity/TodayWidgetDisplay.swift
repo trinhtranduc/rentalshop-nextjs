@@ -29,7 +29,7 @@ public struct TodayWidgetDisplay: Equatable {
         public let chip: Chip
         /// "TRỄ", "GIAO", "TRẢ"
         public let chipText: String
-        /// Empty when the owner turned names off: the widget draws `labels.hiddenName` instead
+        /// Empty only when the order has no customer name
         public let name: String
         /// Line 1, right: "Trễ 3 ngày" (late) or "Hôm nay · 14:00" / "Hôm nay"
         public let rightText: String
@@ -63,7 +63,6 @@ public struct TodayWidgetDisplay: Equatable {
     public let tomorrowText: String?
     /// "Danh sách lần cuối: hôm qua 17:40" on the stale state
     public let staleDetail: String?
-    public let hidesNames: Bool
 
     public var progressText: String { "\(done)/\(total)" }
     /// 0...1 for the ring
@@ -86,8 +85,7 @@ public struct TodayWidgetDisplay: Equatable {
         guard let snapshot = snapshot, snapshot.state != .loggedOut else {
             let labels = snapshot?.labels ?? TodayWidgetLabels.fallback()
             return TodayWidgetDisplay(kind: .loggedOut, labels: labels, title: labels.appName, dayText: "", counts: none, done: 0,
-                                      total: 0, lines: [], moreText: nil, updatedText: nil, tomorrowText: nil, staleDetail: nil,
-                                      hidesNames: false)
+                                      total: 0, lines: [], moreText: nil, updatedText: nil, tomorrowText: nil, staleDetail: nil)
         }
         let labels = snapshot.labels
         let done = max(0, snapshot.done)
@@ -96,7 +94,7 @@ public struct TodayWidgetDisplay: Equatable {
         func plain(_ kind: Kind, staleDetail: String? = nil) -> TodayWidgetDisplay {
             TodayWidgetDisplay(kind: kind, labels: labels, title: labels.today, dayText: todayText, counts: counts, done: done,
                                total: total, lines: [], moreText: nil, updatedText: nil, tomorrowText: nil,
-                               staleDetail: staleDetail, hidesNames: snapshot.hideNames)
+                               staleDetail: staleDetail)
         }
         if snapshot.state == .noAccess { return plain(.noAccess) }
         guard snapshot.isFresh(now: now) else {
@@ -107,17 +105,17 @@ public struct TodayWidgetDisplay: Equatable {
             let kind: Kind = done > 0 ? .allDone : .empty
             return TodayWidgetDisplay(kind: kind, labels: labels, title: labels.today, dayText: todayText, counts: counts, done: done,
                                       total: total, lines: [], moreText: nil, updatedText: updated,
-                                      tomorrowText: tomorrowText(counts, labels: labels), staleDetail: nil, hidesNames: snapshot.hideNames)
+                                      tomorrowText: tomorrowText(counts, labels: labels), staleDetail: nil)
         }
-        let shown = snapshot.rows.prefix(max(0, rowLimit)).map { line($0, labels: labels, hideNames: snapshot.hideNames) }
+        let shown = snapshot.rows.prefix(max(0, rowLimit)).map { line($0, labels: labels) }
         let more = max(0, counts.total - shown.count)
         return TodayWidgetDisplay(kind: .work, labels: labels, title: labels.today, dayText: todayText, counts: counts, done: done,
                                   total: total, lines: Array(shown),
                                   moreText: more > 0 && rowLimit > 0 ? String(format: labels.moreFormat, more) : nil,
-                                  updatedText: updated, tomorrowText: nil, staleDetail: nil, hidesNames: snapshot.hideNames)
+                                  updatedText: updated, tomorrowText: nil, staleDetail: nil)
     }
 
-    static func line(_ row: TodayWidgetRow, labels: TodayWidgetLabels, hideNames: Bool) -> Line {
+    static func line(_ row: TodayWidgetRow, labels: TodayWidgetLabels) -> Line {
         let late = row.isLate || row.lateDays > 0
         let chip: Chip = late ? .late : (row.kind == .pickup ? .pickup : .returnTask)
         let chipWord = late ? labels.late : (row.kind == .pickup ? labels.pickup : labels.returnTask)
@@ -130,7 +128,7 @@ public struct TodayWidgetDisplay: Equatable {
         }
         let warning = row.kind == .pickup && row.notPrepared ? labels.notPrepared : nil
         return Line(orderId: row.orderId, chip: chip, chipText: chipWord.uppercased(with: locale),
-                    name: hideNames ? "" : row.name, rightText: right, rightIsLate: late && !row.lateText.isEmpty,
+                    name: row.name, rightText: right, rightIsLate: late && !row.lateText.isEmpty,
                     productText: productText(row), warningText: warning,
                     dayText: late && warning == nil && !row.planDay.isEmpty ? row.planDay : nil,
                     url: TodayWidgetLink.orderURL(row.orderId))
