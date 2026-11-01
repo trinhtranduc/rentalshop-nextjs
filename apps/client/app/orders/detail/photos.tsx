@@ -61,30 +61,17 @@ export function PhotoBlock({ title, files, onChange, t }: { title: string; files
         </span>
         <span className="ml-auto text-[13px] text-ar-muted">{t('detail.dialog.photos.optional')}</span>
       </div>
-      {files.length === 0 ? (
-        <button
-          type="button"
-          disabled={picker.compressing}
-          onClick={picker.open}
-          data-testid="orderPhotos.choose"
-          className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl border-[1.5px] border-ar-primary-ink bg-ar-primary-soft text-[15px] font-semibold text-ar-primary-ink disabled:opacity-60 ${ring}`}
-        >
-          <ShellIcon d={ICONS.plus} size={18} />
-          {picker.compressing ? '…' : t('detail.dialog.photos.choose')}
-        </button>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {files.map((file, i) => (
-            <PendingThumb
-              key={`${file.name}-${file.size}-${i}`}
-              file={file}
-              label={t('detail.settings.removePhoto')}
-              onRemove={() => onChange(files.filter((_, j) => j !== i))}
-            />
-          ))}
-          {room > 0 && <AddTile label={t('detail.settings.addPhoto')} busy={picker.compressing} onClick={picker.open} />}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-2">
+        {files.map((file, i) => (
+          <PendingThumb
+            key={`${file.name}-${file.size}-${i}`}
+            file={file}
+            label={t('detail.settings.removePhoto')}
+            onRemove={() => onChange(files.filter((_, j) => j !== i))}
+          />
+        ))}
+        {room > 0 && <AddTile label={t('detail.settings.addPhoto')} busy={picker.compressing} onClick={picker.open} />}
+      </div>
       {picker.input}
     </div>
   );
