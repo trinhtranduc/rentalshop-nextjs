@@ -17,5 +17,13 @@ phone="09$(printf '%08d' $((stamp % 100000000)))"
 answer="$(curl -fsS -m 30 -X POST "$(e2e_api_base_url)/api/auth/register" -H 'Content-Type: application/json' \
   -d "{\"email\":\"$email\",\"password\":\"$password\",\"firstName\":\"Chu\",\"lastName\":\"Shop\",\"businessName\":\"Shop $stamp\",\"phone\":\"$phone\",\"role\":\"MERCHANT\"}")"
 printf '%s' "$answer" | grep -q '"success":true' || { echo "Register failed: $answer" >&2; exit 1; }
+# #1411: E2E_WITH_CUSTOMER=1: the same shop with one customer, for the guide's shorter walk. Logs in now, before the app does.
+if [ -n "${E2E_WITH_CUSTOMER:-}" ]; then
+  token="$(curl -fsS -m 30 -X POST "$(e2e_api_base_url)/api/auth/login" -H 'Content-Type: application/json' \
+    -d "{\"email\":\"$email\",\"password\":\"$password\"}" | sed -E 's/.*"token":"([^"]+)".*/\1/')"
+  curl -fsS -m 30 -X POST "$(e2e_api_base_url)/api/customers" -H 'Content-Type: application/json' -H "Authorization: Bearer $token" \
+    -d "{\"firstName\":\"Khach\",\"lastName\":\"Co San\",\"phone\":\"08$(printf '%08d' $((stamp % 100000000)))\"}" >/dev/null \
+    || { echo "Could not add the customer" >&2; exit 1; }
+fi
 echo "E2E_EMAIL=$email"
 echo "E2E_PASSWORD=$password"
