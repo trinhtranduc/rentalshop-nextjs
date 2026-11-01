@@ -812,7 +812,6 @@ final class OrderDetailViewController: BaseViewControler {
         let block = InstallmentCardView.make(
             detail: detail, role: User.account()?.role, plan: plan, width: view.bounds.width - 2 * DS.Spacing.lg,
             onEdit: { [weak self] in self?.openPlanEditor() },
-            onCollect: { [weak self] stage in self?.presentCollect(stage) },
             onStage: { [weak self] stage in self?.confirmVoid(stage) })
         let section = UIStackView(arrangedSubviews: [block])
         section.axis = .vertical

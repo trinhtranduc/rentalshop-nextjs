@@ -571,7 +571,8 @@ final class CreatedOrderAutoPrintTests: XCTestCase {
 /// #697 — an order whose creator was deleted (`createdById` SetNull) still opens on iOS
 final class OrderDetailDeletedCreatorTests: XCTestCase {
     /// GET /api/orders/{id} for a local-seed rental after its creator was deleted (createdById/createdBy null)
-    private let payload = #"""
+    private var payload: String { Self.payload }
+    static let payload = #"""
 {"success":true,"data":{"id":132,"orderNumber":"968112","orderType":"RENT","status":"PICKUPED","totalAmount":700000,"depositAmount":0,"securityDeposit":0,"damageFee":0,"lateFee":0,"discountType":null,"discountValue":0,"discountAmount":0,"pickupPlanAt":"2026-10-07T01:00:00.000Z","returnPlanAt":"2026-10-10T05:00:00.000Z","pickedUpAt":null,"returnedAt":null,"rentalDuration":null,"isReadyToDeliver":false,"collateralType":null,"collateralDetails":null,"notes":"e2e-681","notesImages":null,"pickupNotes":null,"pickupNotesImages":null,"returnNotes":null,"returnNotesImages":null,"damageNotes":null,"damageNotesImages":null,"createdAt":"2026-10-08T22:24:51.027Z","updatedAt":"2026-10-08T22:24:51.027Z","outletId":1,"customerId":11,"createdById":null,"customer":{"id":11,"firstName":"William","lastName":"Hernandez","phone":"+1-555-1010","email":"william.hernandez11@example.com","address":"Address 11 for Rental Shop Demo","city":"Example City","state":"Example State","zipCode":"12345","country":"USA","dateOfBirth":null,"notes":null,"createdAt":"2026-10-08T15:22:24.976Z","updatedAt":"2026-10-08T15:22:24.976Z"},"outlet":{"id":1,"name":"Rental Shop Demo - Main Branch","address":"123 Main Street","phone":"+1-555-0100","city":"New York","state":"NY","zipCode":"10001","country":"United States","isActive":true,"printNote":null,"printBankQr":false,"merchant":{"id":1,"name":"Rental Shop Demo","email":"merchant1@example.com","phone":"+1-555-0100","address":"123 Main Street","city":"New York","state":"NY","zipCode":"10001","country":"United States","businessType":"EQUIPMENT","pricingType":"DAILY","taxId":"12-3456789","currency":"USD"}},"createdBy":null,"orderItems":[{"id":265,"productId":28,"productName":"Product 28 - Art Supplies","productBarcode":"BAR000028","productImages":[],"quantity":7,"unitPrice":100000,"totalPrice":700000,"deposit":0,"notes":null,"rentalDays":null,"pricingType":null,"pricingOptionId":null,"product":{"id":28,"name":"Product 28 - Art Supplies","barcode":"BAR000028","images":[],"rentPrice":53,"deposit":33}}],"payments":[],"itemCount":1,"paymentCount":0,"totalPaid":0,"timeline":[]},"code":"ORDER_RETRIEVED_SUCCESS","message":"Order retrieved successfully"}
 """#
 
@@ -804,6 +805,71 @@ final class OrderMoneyBlockTests: XCTestCase {
 
     func testABookedOrderWithNothingLeftKeepsThuKhiGiao() {
         XCTAssertEqual(block(deposit: 1_150_000).lines.last, .collectAtHandOver(0), "Thu khi giao 0 keeps its line, as before and as drawn")
+    }
+
+    // MARK: #1441 one "Thu giai đoạn N", in the bar
+
+    private func detail(_ status: String, _ stages: [OrderInstallment]) throws -> OrderDetail {
+        let rows = try String(decoding: JSONEncoder().encode(stages), as: UTF8.self)
+        let json = OrderDetailDeletedCreatorTests.payload
+            .replacingOccurrences(of: #""status":"PICKUPED""#, with: "\"status\":\"\(status)\"")
+            .replacingOccurrences(of: #""createdBy":null"#, with: "\"createdBy\":null,\"hasDepositPlan\":true,\"installments\":\(rows)")
+        let detail = try XCTUnwrap(JSONDecoder.shared.decode(APIResponse<OrderDetail>.self, from: Data(json.utf8)).data)
+        XCTAssertTrue(DepositPlanLogic.hasPlan(detail))
+        return detail
+    }
+
+    private func ids(_ view: UIView) -> [String] {
+        [view.accessibilityIdentifier].compactMap { $0 } + view.subviews.flatMap(ids)
+    }
+
+    /// The block never has the button; "Sửa" (or "Xem" for staff) stays on a booked order, for every role and every stage state
+    func testTheBlockHasNoCollectButtonAndKeepsEdit() throws {
+        let twoUnpaid = [stage("i1", 230_000), stage("i2", 345_000), stage("rest", 575_000)]
+        let late = [stage("i1", 230_000, "OVERDUE"), stage("rest", 920_000)]
+        let cases: [(String, [OrderInstallment])] = [("RESERVED", twoUnpaid), ("RESERVED", oneUnpaid), ("RESERVED", late), ("RESERVED", partCollected),
+                                                     ("RESERVED", bothCollected), ("PICKUPED", allCollected), ("CANCELLED", oneUnpaid)]
+        for role in [Role.merchant, .outletAdmin, .outletStaff, .outletInventory] {
+            for (status, stages) in cases {
+                let order = try detail(status, stages)
+                let plan = OrderMoneyPlan(shownKeys: stages.map(\.key), percent: 20, collected: 230_000, remaining: 920_000)
+                let block = InstallmentCardView.make(detail: order, role: role, plan: plan, width: 400, onEdit: {}, onStage: { _ in })
+                let found = ids(block)
+                XCTAssertFalse(found.contains("deposit.card.collect"), "\(role) \(status) \(stages.map(\.status)): no Thu giai đoạn N in the block")
+                XCTAssertEqual(found.contains("deposit.card.edit"), status == "RESERVED", "\(role) \(status): Sửa on a booked order")
+                XCTAssertTrue(found.contains("deposit.card"))
+            }
+        }
+    }
+
+    /// Nobody is left without a way to collect: every stage that can be collected is the bar's stage, whatever the role
+    func testTheBarOffersEveryStageThatCanBeCollected() {
+        let lists: [[OrderInstallment]] = [
+            [stage("i1", 230_000), stage("i2", 345_000), stage("rest", 575_000)],
+            oneUnpaid,
+            [stage("i1", 230_000, "OVERDUE"), stage("rest", 920_000)],
+            [stage("i1", 100_000, "PARTIAL", paid: 100_000, planned: 230_000), stage("i2", 345_000), stage("rest", 705_000)],
+            [stage("i1", 230_000, "VOID"), stage("i2", 345_000), stage("rest", 805_000)],
+            [stage("i1", 0), stage("i2", 345_000), stage("rest", 805_000)],
+        ]
+        for stages in lists {
+            let next = DepositPlanLogic.nextToCollect(stages, status: .reserved)
+            XCTAssertNotNil(next)
+            // The plan is the order's own: the shop's mode today (ONE_TIME) is not an input of this rule
+            XCTAssertEqual(DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: true, status: .reserved, stages: stages)?.key, next?.key)
+        }
+        for canManage in [true, false] {
+            XCTAssertEqual(OrderDetailLogic.actions(orderType: .rent, status: .reserved, canManageOrders: canManage, canDeleteCancelled: canManage).primary, .handOver,
+                           "The hand-over bar does not depend on a permission")
+        }
+        for stages in [bothCollected, allCollected, [stage("rest", 1_150_000)]] {
+            XCTAssertNil(DepositPlanLogic.nextToCollect(stages, status: .reserved), "Nothing to collect: Giao đồ")
+            XCTAssertNil(DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: true, status: .reserved, stages: stages))
+        }
+        for status in [OrderStatus.pickuped, .returned, .cancelled] {
+            XCTAssertNil(DepositPlanLogic.nextToCollect(oneUnpaid, status: status), "Only a booked order collects")
+            XCTAssertNil(DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: true, status: status, stages: oneUnpaid))
+        }
     }
 
     /// Chữ số đều cột: every digit is as wide as another in the amounts of the block

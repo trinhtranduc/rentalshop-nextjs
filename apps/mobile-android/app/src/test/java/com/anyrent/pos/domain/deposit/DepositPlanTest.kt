@@ -132,7 +132,7 @@ class DepositPlanTest {
         }
     }
 
-    /** The bottom bar's "Thu giai đoạn N" instead of Giao đồ: same stage as the card's button, only while the API would refuse */
+    /** The bottom bar's "Thu giai đoạn N" instead of Giao đồ: the next stage to collect, only while the API would refuse */
     @Test
     fun `stageToCollectBeforeHandOver is the next stage only while the hand-over is blocked`() {
         fun stage(key: String, amount: Double, status: String = "UPCOMING", paid: Double = 0.0) =
