@@ -3,7 +3,7 @@
  * day-block text of `@rentalshop/utils`, #1189) so it is unit-tested under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  *
  * Content and order follow the iOS receipt (`Order.toPrintData`, plus the thế chân / giấy tờ /
- * phí hư hại rows of the iOS shared receipt). Days are Vietnam civil days, times Vietnam time.
+ * phụ phí rows of the iOS shared receipt). Days are Vietnam civil days, times Vietnam time.
  */
 
 import { blockLineText, blockSnapshotOf, type BlockSnapshotLike } from '@rentalshop/utils';

@@ -82,8 +82,8 @@ async function main() {
     },
     'Thực thu': {
       tileApi: r.cashCollected,
-      rows: { 'Cọc khi tạo đơn': [cb.deposits], 'Thu khi giao, bán': [cb.pickupAndSale], 'Phí hư hỏng, trễ': [cb.fees], 'Hoàn đơn huỷ': [-(cb.refunds || 0)], 'Thế chân nhận − trả': [(flow.received || 0) - (flow.returned || 0)], 'Thực thu': [r.cashCollected] },
-      sum: (v) => (v['Cọc khi tạo đơn'] ?? 0) + (v['Thu khi giao, bán'] ?? 0) + (v['Phí hư hỏng, trễ'] ?? 0) + (v['Hoàn đơn huỷ'] ?? 0) + (v['Thế chân nhận − trả'] ?? 0)
+      rows: { 'Cọc khi tạo đơn': [cb.deposits], 'Thu khi giao, bán': [cb.pickupAndSale], 'Phụ phí, trễ': [cb.fees], 'Hoàn đơn huỷ': [-(cb.refunds || 0)], 'Thế chân nhận − trả': [(flow.received || 0) - (flow.returned || 0)], 'Thực thu': [r.cashCollected] },
+      sum: (v) => (v['Cọc khi tạo đơn'] ?? 0) + (v['Thu khi giao, bán'] ?? 0) + (v['Phụ phí, trễ'] ?? 0) + (v['Hoàn đơn huỷ'] ?? 0) + (v['Thế chân nhận − trả'] ?? 0)
     },
     'Còn phải thu': {
       tileApi: r.outstanding,

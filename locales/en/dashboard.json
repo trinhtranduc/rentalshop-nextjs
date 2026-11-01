@@ -149,7 +149,7 @@
       "title": "Security deposits & fees",
       "feesToday": "Fees taken today",
       "orders": "{count, plural, one {# order} other {# orders}}",
-      "feesBreakdown": "Late {late} · Damage {damage}",
+      "feesBreakdown": "Late {late} · Extra {damage}",
       "held": "Security deposits held",
       "heldHint": "From {count} rentals out, given back when the item returns",
       "backToday": "Back to customers today",
@@ -268,7 +268,7 @@
     "money": {
       "deposits": "Deposits at order",
       "pickupAndSale": "Paid at pickup, sales",
-      "fees": "Damage and late fees",
+      "fees": "Extra and late fees",
       "refunds": "Refunds on cancelled",
       "collectedTotal": "Collected",
       "atPickup": "Due when the customer picks up",
@@ -378,13 +378,13 @@
         "deposit": "Deposit collected",
         "pickup": "Collected at pickup",
         "sameDay": "Rented and returned the same day",
-        "damageFee": "Damage fee collected",
+        "damageFee": "Extra fee collected",
         "depositRefund": "Deposit refunded",
         "nothing": "Nothing to settle",
         "rentCancelled": "Order cancelled, refunded",
         "returnCollected": "Collected at return",
         "futurePickup": "Expected at pickup",
-        "futureDamageFee": "Expected damage fee at return",
+        "futureDamageFee": "Expected extra fee at return",
         "futureRefund": "Expected deposit refund at return",
         "futureNothing": "Nothing expected at return"
       }
