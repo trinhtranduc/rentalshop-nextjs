@@ -301,7 +301,11 @@ final class OrderDetailViewController: BaseViewControler {
                 extras.addArrangedSubview(readyToDeliverRow(detail))
             }
         }
-        if !extras.arrangedSubviews.isEmpty { column.addArrangedSubview(padded(extras, top: DS.Spacing.sm, bottom: 0)) }
+        if !extras.arrangedSubviews.isEmpty {
+            // The warning is a filled box: it does not touch the band under it (the switch row has its own air)
+            let warned = extras.arrangedSubviews.last?.accessibilityIdentifier == "order.detail.pickupPhotos.retry"
+            column.addArrangedSubview(padded(extras, top: DS.Spacing.sm, bottom: warned ? DS.Spacing.sm : 0))
+        }
         return column
     }
 

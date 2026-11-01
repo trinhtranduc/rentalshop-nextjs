@@ -382,7 +382,7 @@ fun OrderDetailV2Screen(
                     )
                     // #1418 the photos are often below the first screen; a failed upload is told here
                     state.pickupFailedCount?.let { failed ->
-                        Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)) {
+                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                             OrderPhotoWarning(failed, "order.detail.pickupPhotos", vm::retryPickupPhotos)
                         }
                     }
