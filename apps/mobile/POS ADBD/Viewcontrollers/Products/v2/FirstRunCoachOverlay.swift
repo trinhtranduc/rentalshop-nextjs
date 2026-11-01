@@ -42,6 +42,8 @@ final class FirstRunCoach {
     private var request = 0
     /// The form said to get out of the way: its duplicate-phone box is on screen
     private var paused = false
+    private weak var cartHost: UIViewController?
+    private var cartState: CoachCart?
 
     func start(action: FirstRunGuideAction, home: UIViewController) {
         stop()
@@ -70,10 +72,20 @@ final class FirstRunCoach {
 
     /// A screen came to the front, or changed. Waits for what is on top of it to leave.
     func screenChanged(_ host: UIViewController, screen: CoachScreen, cart: CoachCart? = nil) {
+        if screen == .cart {
+            cartHost = host
+            cartState = cart
+        }
         if paused && screen != .newCustomer { paused = false } // the duplicate box's form has left
         guard run != nil, !paused else { return }
         request += 1
         show(on: host, screen: screen, cart: cart, token: request, attempt: 0)
+    }
+
+    /// The customer sheet was closed without choosing anyone: the cart under it did not change and does not appear again, so it is asked here
+    func sheetOverCartClosed() {
+        guard let cartHost else { return }
+        screenChanged(cartHost, screen: .cart, cart: cartState)
     }
 
     /// The form's own message needs the screen (duplicate phone)
