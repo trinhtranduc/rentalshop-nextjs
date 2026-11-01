@@ -477,7 +477,7 @@ final class FirstRunGuideUITests: XCTestCase {
         XCTAssertFalse(app.buttons["guide.hide"].exists, "already hidden")
         e2e.shot("guide-hide-04-sheet-hidden")
         app.buttons["guide.cta"].tap()
-        XCTAssertTrue(app.textFields["product.form.name"].waitForExistence(timeout: 8), "the button runs the step on Home")
+        _ = bubble("productPhoto") // the button runs the step on Home
         app.buttons["guide.bubble.exit"].tap()
         count("0/3")
         e2e.shot("guide-hide-05-card-back")
