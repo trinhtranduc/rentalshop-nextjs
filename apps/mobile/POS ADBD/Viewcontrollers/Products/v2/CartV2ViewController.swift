@@ -415,6 +415,13 @@ final class CartV2ViewController: BaseViewControler {
         coachScreenChanged()
     }
 
+    /// #1411: back to Home: the run is over, the next one starts from a row. Not from Home's own appearing: a row in the Settings
+    /// sheet starts a run while switching to the Home tab.
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isMovingFromParent { FirstRunCoach.shared.stop() }
+    }
+
     /// #1067: the discount notice (same red box as the overlap block), rebuilt only when its text changes
     // MARK: - Thu cọc theo giai đoạn (#1199, mockup m5)
 
