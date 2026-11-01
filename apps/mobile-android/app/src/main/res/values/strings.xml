@@ -2497,9 +2497,7 @@
     <string name="first_run_guide_step_product">Add your first product</string>
     <string name="first_run_guide_step_customer">Add a customer</string>
     <string name="first_run_guide_step_order">Create your first order</string>
-    <string name="first_run_guide_skip">Skip</string>
     <string name="first_run_guide_close">Close</string>
-    <string name="first_run_guide_skipped">Hidden. Reopen in Settings › Getting started</string>
     <string name="first_run_guide_settings_row">Getting started</string>
     <string name="first_run_guide_finish_title">First order done</string>
     <string name="first_run_guide_finish_body">It is now in Orders and Calendar.</string>
@@ -2510,4 +2508,12 @@
     <string name="first_run_guide_bubble_cart_dates">Pick the pickup and return days.</string>
     <string name="first_run_guide_bubble_cart_create">All set. Tap Create order.</string>
     <string name="first_run_guide_bubble_step">Step %1$d/%2$d</string>
+    <string name="first_run_guide_go_product">Add product →</string>
+    <string name="first_run_guide_go_customer">Add customer →</string>
+    <string name="first_run_guide_go_order">Create order →</string>
+    <string name="first_run_guide_later">Later</string>
+    <string name="first_run_guide_collapsed_title">Get started</string>
+    <string name="first_run_guide_hide">Hide guide</string>
+    <string name="first_run_guide_hide_confirm">Hide the guide? Reopen it in Settings.</string>
+    <string name="first_run_guide_hide_action">Hide</string>
 </resources>

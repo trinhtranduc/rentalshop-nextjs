@@ -156,8 +156,6 @@ fun ProductsHomeScreen(
     val guide = FirstRunGuideApp.tracker
     val guideVersion by guide.version.collectAsState()
     val guideCard = remember(guideVersion, state.query) { guide.card(searching = state.query.isNotBlank()) }
-    val guideSkipped = stringResource(R.string.first_run_guide_skipped)
-    val guideSkipLabel = stringResource(R.string.first_run_guide_skip)
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -172,7 +170,7 @@ fun ProductsHomeScreen(
         }
     }
     LaunchedEffect(guideCard) {
-        if (guideCard is FirstRunGuideCard.Steps) guide.noteCardShown()
+        if (guideCard is FirstRunGuideCard.Steps || guideCard is FirstRunGuideCard.Collapsed) guide.noteCardShown()
     }
 
     fun runGuide(step: FirstRunGuideStep) {
@@ -201,12 +199,9 @@ fun ProductsHomeScreen(
     val guideContent: @Composable (Modifier) -> Unit = { modifier ->
         FirstRunGuideCardView(
             card = guideCard,
-            dismissLabel = guideSkipLabel,
+            foot = FirstRunGuideFoot.Home(onLater = { guide.collapse() }), // #1410: nothing is said, the slim row is the answer
             onStep = { runGuide(it) },
-            onDismiss = {
-                guide.skip()
-                Toast.makeText(context, guideSkipped, Toast.LENGTH_LONG).show()
-            },
+            onExpand = { guide.expand() },
             onCloseFinish = { guide.closeFinish() },
             modifier = modifier,
         )

@@ -77,6 +77,7 @@ import com.anyrent.pos.data.FirstRunGuideApp
 import com.anyrent.pos.domain.guide.FirstRunGuideCard
 import com.anyrent.pos.domain.guide.FirstRunGuideStep
 import com.anyrent.pos.ui.home.v2.FirstRunGuideCardView
+import com.anyrent.pos.ui.home.v2.FirstRunGuideFoot
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.ExperimentalComposeUiApi
 import com.anyrent.pos.domain.settings.SettingsItem
@@ -180,6 +181,7 @@ fun SettingsV2Screen(
     val guideVersion by guide.version.collectAsState()
     val guideDoneCount = remember(guideVersion, role) { guide.settingsDoneCount() }
     var showGuideSheet by remember { mutableStateOf(false) }
+    var confirmGuideHide by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { guide.refresh(forSettings = true) }
     val sections = SettingsRows.sections(role, hasPlan = plan != null, showsGuide = guideDoneCount != null)
     LaunchedEffect(role, collectRefresh) { SettingsBankCount.load(role)?.let { bankCount = it } }
@@ -346,19 +348,36 @@ fun SettingsV2Screen(
                 // A sheet is its own semantics tree: test tags reach uiautomator only when asked here too
                 Box(Modifier.semantics { testTagsAsResourceId = true }) { FirstRunGuideCardView(
                     card = FirstRunGuideCard.Steps(done),
-                    dismissLabel = stringResource(R.string.first_run_guide_close),
+                    foot = FirstRunGuideFoot.Sheet(
+                        onClose = { showGuideSheet = false },
+                        onHide = if (guide.isShownOnHome()) ({ confirmGuideHide = true }) else null, // #1410: the only way to hide it
+                    ),
                     onStep = { step ->
                         showGuideSheet = false
-                        guide.clearSkip()
+                        guide.reopen()
                         FirstRunGuideApp.pendingStep.value = step
                         onOpenHome()
                     },
-                    onDismiss = { showGuideSheet = false },
+                    onExpand = {},
                     onCloseFinish = {},
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 28.dp),
                 ) }
             }
         }
+    }
+    if (confirmGuideHide) {
+        AppAlertConfirm(
+            title = stringResource(R.string.first_run_guide_hide_confirm),
+            message = "",
+            confirmLabel = stringResource(R.string.first_run_guide_hide_action),
+            destructive = true,
+            onDismiss = { confirmGuideHide = false },
+            onConfirm = {
+                confirmGuideHide = false
+                showGuideSheet = false
+                guide.skip()
+            },
+        )
     }
     if (showWidgetGuide) {
         com.anyrent.pos.ui.widget.TodayWidgetGuideSheet(onDismiss = { showWidgetGuide = false })
