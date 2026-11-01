@@ -293,6 +293,24 @@ if [ "${1:-walk}" = back ]; then
   tap "#guide.bubble.exit"
   need "the card" "1/3" 20
   shot guide-back-03-card
+  # Thoát with something typed, from inside the sheet: asks, then goes all the way to the card
+  tap "#guide.cta"
+  need "customer row bubble" "#guide.bubble.cart_customer"
+  tap "#cart.customerRow"
+  need "picker bubble" "#guide.bubble.new_customer"
+  tap "#customers.picker.new"
+  need "form" "#customers.new.phone"
+  tap "#customers.new.phone"
+  ui type "0912"
+  sleep 1
+  hide_keyboard
+  tap "#guide.bubble.exit"
+  sleep 1
+  first_of "Bỏ" "Discard" >/dev/null || miss "discard"
+  sleep 2
+  need "the card" "1/3" 20
+  if ui has "#customers.new.phone"; then miss "the sheet should be gone"; fi
+  shot guide-back-04-card-after-discard
   echo "misses: $MISSES"
   exit "$MISSES"
 fi
