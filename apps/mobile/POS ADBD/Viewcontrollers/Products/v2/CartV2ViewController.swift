@@ -419,7 +419,7 @@ final class CartV2ViewController: BaseViewControler {
     /// sheet starts a run while switching to the Home tab.
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        if isMovingFromParent { FirstRunCoach.shared.stop() }
+        if isMovingFromParentViewController { FirstRunCoach.shared.stop() }
     }
 
     /// #1067: the discount notice (same red box as the overlap block), rebuilt only when its text changes
