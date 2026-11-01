@@ -281,6 +281,7 @@ final class FirstRunGuideUITests: XCTestCase {
         let discard = e2e.button(["Discard", "Bỏ"])
         XCTAssertTrue(discard.waitForExistence(timeout: 3), "a form with content asks")
         discard.tap()
+        XCTAssertTrue(app.buttons["customers.new.save"].waitForNonExistence(timeout: 5), "the sheet is gone")
         count("1/3")
         XCTAssertFalse(app.buttons["guide.bubble.next"].exists)
         e2e.shot("guide-back-02-card")
