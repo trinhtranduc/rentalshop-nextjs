@@ -153,7 +153,7 @@ pick_seeded_photo() { # GetContent runs the system picker, out of the app
   if ui has "~can only access the photos" || ui has "~chỉ có thể truy cập"; then miss "the seeded photo in the picker"; ui back; sleep 1; fi
 }
 add_with_normal_form() { # the + on Home, outside the guide: no photo, no price
-  first_of "Thêm sản phẩm" "Add product" >/dev/null || miss "+ on Home"
+  first_of "~Sản phẩm mới" "~New product" >/dev/null || miss "+ on Home"
   need "the form" "#product.form.name" 20
   if ui has "#guide.bubble.next.off"; then miss "the guide runs only from the card"; fi
   tap "#product.form.name"
@@ -237,6 +237,24 @@ if [ "${1:-walk}" = sale ]; then
   need "customer row bubble" "#guide.bubble.cart_customer"
   counter "5/8"
   shot guide-sale-01-cart
+  tap "#cart.customerRow"
+  need "picker bubble" "#guide.bubble.new_customer"
+  counter "6/8"
+  tap "#customers.picker.new"
+  need "form" "#customers.new.phone"
+  tap "#customers.new.phone"
+  ui type "09$(date +%s | tail -c 9)"
+  sleep 1
+  tap "#customers.new.name"
+  ui type "Lan%sAnh"
+  sleep 2
+  next_on "new customer"
+  need "bubble 7" "#guide.bubble.new_customer_save"
+  counter "7/8"
+  tap "#customers.new.save"
+  need "create bubble, no dates" "#guide.bubble.cart_create" 20
+  counter "8/8"
+  shot guide-sale-02-create
   echo "misses: $MISSES"
   exit "$MISSES"
 fi
