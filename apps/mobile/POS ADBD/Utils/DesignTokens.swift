@@ -121,6 +121,9 @@ enum DS {
     /// #1384: the mockup's filled camera with a sparkle, 20 pt. A template image: tint it. Android `AppIcons.AiScan`
     static var aiScanIcon: UIImage? { UIImage(named: "aiScanCamera") }
 
+    /// #1438: the camera of the note editor's add tile, and of the hand-over photo block and its add tile. Android `AddPhotoIcon`
+    static var addPhotoIcon: UIImage? { symbol("camera", Icon.lg) }
+
     /// #1061 (owner: "icon đúng mockup"): the mockup's edit icon, Lucide "pen-line" (pencil + underline), drawn from its
     /// 24×24 paths `M12 20h9` and `M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z`, stroke 2.2, round caps and joins, no
     /// fill. SF `pencil.line` needs iOS 17 (the app targets 15). A template image: tint it. Android `AppIcons.EditLine`

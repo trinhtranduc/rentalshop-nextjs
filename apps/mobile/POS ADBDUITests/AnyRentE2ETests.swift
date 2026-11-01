@@ -5594,11 +5594,14 @@ final class AnyRentE2ETests: XCTestCase {
     }
 
     private func pickPhoto(expect count: Int) {
-        let library = app.buttons["orderPhotos.library"]
-        XCTAssertTrue(library.waitForExistence(timeout: 5), "Thư viện")
+        let add = app.buttons["orderPhotos.add"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5), "Thêm")
+        add.tap()
+        let library = e2e.button(["Photo Library", "Thư viện ảnh"])
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Library in the source menu")
         library.tap()
         // The picker covers the sheet once it is up; the first open of a run can take a while
-        for _ in 0..<20 where library.exists && library.isHittable { usleep(500_000) }
+        for _ in 0..<20 where add.exists && add.isHittable { usleep(500_000) }
         sleep(2)
         // The library runs in another process, so its cells are not reachable as elements: a tap on the spot of the
         // second cell of the first row, the photo added last but one with `simctl addmedia`
@@ -5661,11 +5664,9 @@ final class AnyRentE2ETests: XCTestCase {
         pickPhoto(expect: 2)
         pickPhoto(expect: 3)
         e2e.shot("photos-03-sheet-3of3")
-        XCTAssertFalse(app.buttons["orderPhotos.library"].exists, "3/3 hides the add control")
-        XCTAssertFalse(app.buttons["orderPhotos.camera"].exists, "3/3 hides the add control")
-        XCTAssertTrue(app.staticTexts["orderPhotos.full"].exists, "Đủ 3 ảnh…")
+        XCTAssertFalse(app.buttons["orderPhotos.add"].exists, "3/3 hides the tile")
         app.buttons["orderPhotos.remove.2"].tap()
-        XCTAssertTrue(app.buttons["orderPhotos.library"].waitForExistence(timeout: 3), "× brings the buttons back")
+        XCTAssertTrue(app.buttons["orderPhotos.add"].waitForExistence(timeout: 3), "× brings the tile back")
         e2e.shot("photos-04-sheet-after-remove")
         pickPhoto(expect: 3)
         confirmHandOver()
@@ -5823,13 +5824,18 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         openOrder(photoOrders[0])
         openHandOverSheet()
-        app.buttons["orderPhotos.camera"].tap()
+        app.buttons["orderPhotos.add"].tap()
+        let camera = e2e.button(["Camera", "Máy ảnh"])
+        XCTAssertTrue(camera.waitForExistence(timeout: 5), "Camera in the source menu")
+        e2e.shot("photos-59-source-menu")
+        camera.tap()
         sleep(2)
         e2e.shot("photos-60-camera-unavailable")
         let settings = app.alerts.buttons["Mở Cài đặt"]
         XCTAssertTrue(settings.waitForExistence(timeout: 5), "Camera message offers Settings")
-        app.alerts.buttons.element(boundBy: 1).tap()
-        XCTAssertTrue(app.buttons["orderPhotos.library"].isHittable, "The library still works")
+        app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Cancel", "Hủy", "Huỷ"])).firstMatch.tap()
+        sleep(1)
+        XCTAssertTrue(app.buttons["orderPhotos.add"].isHittable, "The library still works")
         pickPhoto(expect: 1)
         confirmHandOver()
         waitPhotoTitle(1)
@@ -5839,8 +5845,8 @@ final class AnyRentE2ETests: XCTestCase {
         scrollToPhotos()
         e2e.shot("photos-61-detail-with-add")
         add.tap()
-        let library = app.sheets.buttons.element(boundBy: 1)
-        XCTAssertTrue(library.waitForExistence(timeout: 5), "Camera / library")
+        let library = e2e.button(["Photo Library", "Thư viện ảnh"])
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Library / camera")
         library.tap()
         sleep(4)
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.625)).tap()
@@ -5908,8 +5914,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(title.label.hasSuffix("· 3"), "All three: \(title.label)")
         sleep(1)
         e2e.shot("photos-80-return-sheet-3")
-        XCTAssertFalse(app.buttons["orderPhotos.camera"].exists, "No capture at return")
-        XCTAssertFalse(app.buttons["orderPhotos.library"].exists, "No capture at return")
+        XCTAssertFalse(app.buttons["orderPhotos.add"].exists, "No capture at return")
         XCTAssertFalse(app.buttons["order.return.pickupPhotos.add"].exists, "No add at return")
         XCTAssertFalse(app.buttons["orderPhotos.remove.0"].exists, "Read only")
         let tile = app.buttons.matching(NSPredicate(format: "label == %@", "Ảnh tình trạng đồ")).firstMatch

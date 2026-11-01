@@ -30,11 +30,11 @@ final class OrderPhotoPicker: NSObject, UIImagePickerControllerDelegate, UINavig
         present(.photoLibrary)
     }
 
-    /// Camera / library / cancel, as the note editor
+    /// Library / camera / cancel, as the note editor. The camera stays listed when it cannot open: `openCamera` says why
     func chooseSource(from source: UIView) {
         let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Camera".localized(), style: .default) { [weak self] _ in self?.openCamera() })
         alert.addAction(UIAlertAction(title: "Photo Library".localized(), style: .default) { [weak self] _ in self?.openLibrary() })
+        alert.addAction(UIAlertAction(title: "Camera".localized(), style: .default) { [weak self] _ in self?.openCamera() })
         alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
         alert.popoverPresentationController?.sourceView = source
         alert.popoverPresentationController?.sourceRect = source.bounds
@@ -88,7 +88,7 @@ private final class RemovePhotoButton: UIButton {
     }
 }
 
-/// The block of the hand-over sheet: photos chosen so far, × to drop one, and the two buttons until 3/3
+/// The block of the hand-over sheet: photos chosen so far, × to drop one, and beside them the note editor's "Thêm" tile until 3/3 (#1438)
 final class OrderPhotoBlockView: UIStackView {
     private(set) var photos: [Data]
     var onChange: (() -> Void)?
@@ -96,13 +96,10 @@ final class OrderPhotoBlockView: UIStackView {
     private let picker = OrderPhotoPicker()
     private let countLabel = V2.label(size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
     private let tiles = UIStackView()
-    private let buttons = UIStackView()
-    private let cameraButton = UIButton(type: .system)
-    private let libraryButton = UIButton(type: .system)
-    private let fullLabel = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+    private let addTile = AddPhotoTile.make()
     private var compressing = 0
 
-    private static let tileSize: CGFloat = 64
+    private static let tileSize = AddPhotoTile.size
 
     init(photos: [Data], presenter: UIViewController) {
         self.photos = photos
@@ -144,39 +141,18 @@ final class OrderPhotoBlockView: UIStackView {
         header.spacing = DS.Spacing.sm
 
         tiles.axis = .horizontal
-        tiles.spacing = DS.Spacing.sm
+        tiles.spacing = DS.Spacing.md
         tiles.alignment = .center
 
-        style(cameraButton, symbol: "camera", primary: true)
-        cameraButton.accessibilityIdentifier = "orderPhotos.camera"
-        cameraButton.addAction(UIAction { [weak self] _ in self?.picker.openCamera() }, for: .touchUpInside)
-        style(libraryButton, symbol: "photo", primary: false)
-        libraryButton.setTitle(" " + "order.photos.library".localized(), for: .normal)
-        libraryButton.accessibilityIdentifier = "orderPhotos.library"
-        libraryButton.addAction(UIAction { [weak self] _ in self?.picker.openLibrary() }, for: .touchUpInside)
-        buttons.addArrangedSubview(cameraButton)
-        buttons.addArrangedSubview(libraryButton)
-        buttons.spacing = DS.Spacing.sm
-        libraryButton.snp.makeConstraints { make in make.width.equalTo(cameraButton).multipliedBy(0.58) }
+        addTile.accessibilityIdentifier = "orderPhotos.add"
+        addTile.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            self.window?.endEditing(true)
+            self.picker.chooseSource(from: self.addTile)
+        }, for: .touchUpInside)
 
-        fullLabel.text = String(format: "order.photos.full".localized(), OrderPhotoLogic.maxPhotos)
-        fullLabel.accessibilityIdentifier = "orderPhotos.full"
-
-        [header, tiles, buttons, fullLabel].forEach(addArrangedSubview)
+        [header, tiles].forEach(addArrangedSubview)
         setCustomSpacing(DS.Spacing.md, after: header)
-    }
-
-    private func style(_ button: UIButton, symbol: String, primary: Bool) {
-        button.setImage(DS.symbol(symbol, primary ? 20 : 18), for: .normal)
-        button.titleLabel?.font = Utils.boldFont(size: primary ? DS.TextSize.input : DS.TextSize.body)
-        button.titleLabel?.adjustsFontSizeToFitWidth = true
-        button.titleLabel?.minimumScaleFactor = 0.8
-        button.tintColor = primary ? DS.Color.primary : DS.Color.text
-        button.backgroundColor = primary ? UIColor(hexString: "EFF6FF") : .white
-        button.layer.cornerRadius = 14
-        button.layer.borderWidth = primary ? 1.5 : 1
-        button.layer.borderColor = (primary ? DS.Color.primary : V2.border).cgColor
-        button.snp.makeConstraints { make in make.height.equalTo(52) }
     }
 
     private func render() {
@@ -185,12 +161,8 @@ final class OrderPhotoBlockView: UIStackView {
         tiles.arrangedSubviews.forEach { $0.removeFromSuperview() }
         photos.enumerated().forEach { index, data in tiles.addArrangedSubview(tile(index: index, data: data)) }
         (0..<compressing).forEach { _ in tiles.addArrangedSubview(compressingTile()) }
-        if used > 0 { tiles.addArrangedSubview(UIView()) }
-        tiles.isHidden = used == 0
-        let canAdd = OrderPhotoLogic.canAdd(count: used)
-        buttons.isHidden = !canAdd
-        fullLabel.isHidden = canAdd
-        cameraButton.setTitle(" " + (used == 0 ? "order.photos.take" : "order.photos.takeMore").localized(), for: .normal)
+        if OrderPhotoLogic.canAdd(count: used) { tiles.addArrangedSubview(addTile) }
+        tiles.addArrangedSubview(UIView())
     }
 
     private func tile(index: Int, data: Data) -> UIView {
@@ -318,7 +290,7 @@ enum OrderPhotoSection {
 
     private static func addTile(id: String, onAdd: @escaping (UIView) -> Void) -> UIView {
         var config = UIButton.Configuration.plain()
-        config.image = DS.symbol("camera", 22)
+        config.image = DS.addPhotoIcon
         config.imagePlacement = .top
         config.imagePadding = 2
         config.title = "notes.v2.add".localized()

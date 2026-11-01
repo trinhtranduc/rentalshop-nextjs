@@ -514,8 +514,7 @@ fun OrderDetailV2Screen(
                     OrderPhotoBlock(
                         photos = state.pickupDraft,
                         compressing = state.pickupCompressing,
-                        onCamera = ::openPhotoCamera,
-                        onLibrary = ::openPhotoLibrary,
+                        onAdd = { photoChooseSource = true },
                         onRemove = vm::removePickupDraft,
                         onPreview = { previewImage = it },
                     )

@@ -1,10 +1,11 @@
 package com.anyrent.pos.ui.orders.v2
 
 import com.anyrent.pos.domain.orders.OrderActionSheet.Action
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** #1438: the icon of each row of the ⋯ sheet */
+/** #1438: the icon of each row of the ⋯ sheet, and the one camera of the note editor and the hand-over photo block */
 class OrderActionsSheetIconsTest {
     @Test
     fun `every sheet row has its outlined icon`() {
@@ -20,5 +21,11 @@ class OrderActionsSheetIconsTest {
         )
         assertEquals(Action.entries.toSet(), expected.keys)
         expected.forEach { (action, name) -> assertEquals(action.name, name, orderActionIcon(action).name) }
+    }
+
+    @Test
+    fun `the hand-over photo block draws the note editor camera`() {
+        assertEquals("Outlined.PhotoCamera", AddPhotoIcon.name)
+        assertEquals(22.dp, AddPhotoIconSize)
     }
 }
