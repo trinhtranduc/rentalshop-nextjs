@@ -58,6 +58,13 @@ final class OrderPhotoQueueTests: XCTestCase {
         XCTAssertNil(OrderPhotoLogic.failedCount(state: .failed, waiting: 0))
     }
 
+    /// #1419 the return sheet only shows photos; with none it stays as it was
+    func testReturnSheetShowsPhotosOnlyWhenThereAreAny() {
+        XCTAssertFalse(OrderPhotoLogic.returnSheetShowsPhotos(serverCount: 0, waiting: 0))
+        XCTAssertTrue(OrderPhotoLogic.returnSheetShowsPhotos(serverCount: 2, waiting: 0))
+        XCTAssertTrue(OrderPhotoLogic.returnSheetShowsPhotos(serverCount: 0, waiting: 1))
+    }
+
     // MARK: Disk
 
     func testQueueSurvivesANewInstance() throws {

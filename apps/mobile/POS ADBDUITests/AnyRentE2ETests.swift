@@ -5866,6 +5866,49 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("photos-63-no-papers-section")
     }
 
+    /// #1419 `E2E_PHOTO_ORDERS`: an order out with 3 hand-over photos, then one out with none. Read only; confirming sends no photo.
+    func testPhotos10ReturnSheetShowsHandOverPhotos() throws {
+        try e2e.start()
+        let orders = photoOrders
+        openOrder(orders[0])
+        let takeBack = e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button)
+        XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "Nhận trả")
+        takeBack.tap()
+        let title = app.staticTexts["order.return.pickupPhotos.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 6), "Photos on the return sheet")
+        XCTAssertTrue(title.label.hasSuffix("· 3"), "All three: \(title.label)")
+        sleep(1)
+        e2e.shot("photos-80-return-sheet-3")
+        XCTAssertFalse(app.buttons["orderPhotos.camera"].exists, "No capture at return")
+        XCTAssertFalse(app.buttons["orderPhotos.library"].exists, "No capture at return")
+        XCTAssertFalse(app.buttons["order.return.pickupPhotos.add"].exists, "No add at return")
+        XCTAssertFalse(app.buttons["orderPhotos.remove.0"].exists, "Read only")
+        let tile = app.buttons.matching(NSPredicate(format: "label == %@", "Ảnh tình trạng đồ")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 3), "A tile")
+        tile.tap()
+        sleep(2)
+        e2e.shot("photos-81-return-photo-large")
+        app.swipeDown()
+        let close = app.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "Đóng", "Xmark", "Hủy"])).firstMatch
+        if close.exists { close.tap() }
+        sleep(1)
+        if !title.isHittable { app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.07)).tap() }
+        sleep(1)
+        let confirm = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "Confirm")
+        confirm.tap()
+        sleep(3)
+        e2e.shot("photos-82-after-return")
+        app.terminate()
+        try e2e.start()
+        openOrder(orders[1])
+        XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "Nhận trả")
+        takeBack.tap()
+        sleep(2)
+        XCTAssertFalse(title.exists, "No photos: no row")
+        e2e.shot("photos-83-return-sheet-no-photos")
+    }
+
     /// One photo with the account of `E2E_ROLE`: each role that can hand over
     func testPhotos06RoleHandsOverWithAPhoto() throws {
         try e2e.start()
