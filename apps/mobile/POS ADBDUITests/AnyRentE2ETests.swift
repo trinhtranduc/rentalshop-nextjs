@@ -5567,6 +5567,106 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("booking-09-orders-no-count")
     }
 
+    // MARK: - #1435 the money block of a rental
+
+    /// Brings "THANH TOÁN" near the top of the screen, so that the whole block shows
+    private func scrollPaymentToTop() {
+        let heading = e2e.element(labelBeginsWith: ["THANH TOÁN", "PAYMENT"], type: .staticText)
+        XCTAssertTrue(heading.waitForExistence(timeout: 8), "THANH TOÁN")
+        for _ in 0..<6 {
+            let distance = heading.frame.minY - 110
+            guard distance > 12 else { break }
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.8))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -min(distance, 400))), withVelocity: .slow, thenHoldForDuration: 0.4)
+        }
+        sleep(1)
+    }
+
+    /// `E2E_MONEY_ORDERS`: the orders of the 9 cases of the approved mockup (tab "odmoney"), in order. One screenshot and the lines of
+    /// each. The two "Thu giai đoạn N" buttons open the same sheet of the same stage and "Sửa" still opens the plan. Nothing is saved.
+    func testOrderMoney01NineCases() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        let orders = (ProcessInfo.processInfo.environment["E2E_MONEY_ORDERS"] ?? "").split(separator: ",").map(String.init)
+        guard orders.count >= 9 else { throw XCTSkip("E2E_MONEY_ORDERS has fewer than 9 orders") }
+        func text(_ labels: [String]) -> XCUIElement { e2e.element(labelBeginsWith: labels, type: .staticText) }
+        let rest = app.descendants(matching: .any)["deposit.stage.rest"]
+        let inBlock = app.buttons["deposit.card.collect"]
+        let inBar = app.buttons["order.detail.collectStage"]
+        // exact: "Thu khi giao · 02/11" is the sub-line of the last stage
+        let collect = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Thu khi giao", "Collect at hand-over"])).firstMatch
+        let cash = text(["Khách đưa lúc nhận đồ", "Customer pays at hand-over"])
+        let oldLeft = text(["Tiền thuê còn lại, thu khi giao", "Rental left, collect at hand-over"])
+        let oldCollateral = text(["Thế chân, thu khi giao", "Collateral, collect at hand-over"])
+        let remaining = text(["Còn phải thu", "Still to collect"])
+        let deposit = text(["Đã cọc", "Deposit paid"])
+        let giveBack = text(["Khi nhận trả: trả khách", "At return: give back"])
+        let stages = app.descendants(matching: .any)["deposit.card"]
+
+        for (index, number) in orders.prefix(9).enumerated() {
+            let id = index + 1
+            if index > 0 { app.terminate() }
+            try e2e.start()
+            openOrder(number)
+            scrollPaymentToTop()
+            e2e.shot("money-case\(id)")
+            print("E2E_NOTE: MONEY case \(id) block height \(app.descendants(matching: .any)["order.detail.paymentSection"].frame.height)")
+            XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Tạm tính", "Subtotal"])).count, 1, "case \(id): one Tạm tính")
+            XCTAssertEqual(stages.exists, [3, 4, 7, 8, 9].contains(id), "case \(id): the stages")
+            XCTAssertEqual(deposit.exists, [2, 5, 6].contains(id), "case \(id): Đã cọc")
+            XCTAssertEqual(collect.exists, [1, 2, 3, 7, 8].contains(id), "case \(id): Thu khi giao")
+            XCTAssertEqual(cash.exists, id == 4, "case \(id): Khách đưa lúc nhận đồ")
+            XCTAssertFalse(oldLeft.exists, "case \(id): the three lines became one")
+            XCTAssertFalse(oldCollateral.exists, "case \(id): the three lines became one")
+            XCTAssertEqual(rest.exists, id == 9, "case \(id): the last stage")
+            XCTAssertEqual(remaining.exists, [3, 4, 9].contains(id), "case \(id): Còn phải thu")
+            XCTAssertEqual(inBlock.exists, [3, 4].contains(id), "case \(id): Thu giai đoạn N in the block")
+            XCTAssertEqual(inBar.exists, [3, 4].contains(id), "case \(id): Thu giai đoạn N in the bar")
+            XCTAssertEqual(giveBack.exists, id == 5, "case \(id): Khi nhận trả")
+            if id == 3 {
+                XCTAssertEqual(inBlock.label, inBar.label, "the same stage")
+                for button in [inBlock, inBar] {
+                    button.tap()
+                    let amount = app.textFields["deposit.collect.amount"]
+                    XCTAssertTrue(amount.waitForExistence(timeout: 5), "the collect sheet")
+                    XCTAssertTrue(["345.000", "345,000"].contains((amount.value as? String) ?? ""), "stage 2 is the one to collect")
+                    e2e.button(["Hủy", "Huỷ", "Cancel"]).tap()
+                    sleep(1)
+                }
+                let edit = app.buttons["deposit.card.edit"]
+                XCTAssertTrue(edit.exists, "Sửa")
+                edit.tap()
+                XCTAssertTrue(app.buttons["deposit.plan.save"].waitForExistence(timeout: 5), "the plan editor")
+                e2e.goBackOnce()
+            }
+            if id == 4 {
+                XCTAssertTrue(text(["tiền thuê 575.000 + thế chân 300.000", "rental 575,000 + collateral 300,000", "rental 575.000 + collateral 300.000"]).exists, "the sub-line")
+            }
+        }
+    }
+
+    /// `E2E_MONEY_EXTRA`: a sale, then rentals outside the 9 cases (long amounts, a late stage, cancelled keeping money). A sale keeps its
+    /// rows; long amounts wrap on a small phone. One look at each. Nothing is saved.
+    func testOrderMoney02SaleAndOthers() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        let orders = (ProcessInfo.processInfo.environment["E2E_MONEY_EXTRA"] ?? "").split(separator: ",").map(String.init)
+        guard let sale = orders.first else { throw XCTSkip("E2E_MONEY_EXTRA is not set") }
+        try e2e.start()
+        openOrder(sale)
+        for _ in 0..<2 { app.swipeUp() }
+        sleep(1)
+        e2e.shot("money-sale")
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Tạm tính", "Subtotal"])).count, 1, "A sale keeps Tạm tính")
+        for (index, number) in orders.dropFirst().enumerated() {
+            app.terminate()
+            try e2e.start()
+            openOrder(number)
+            scrollPaymentToTop()
+            e2e.shot("money-other\(index + 1)")
+        }
+    }
+
     // MARK: - #1418 condition photos at hand-over
 
     /// Run through ios-e2e.sh --only testPhotos…; `E2E_PHOTO_ORDERS` lists RESERVED rent orders of the account. A local

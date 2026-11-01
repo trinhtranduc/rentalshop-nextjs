@@ -62,6 +62,59 @@ struct HandOverCashLines: Equatable {
     let cash: Double
 }
 
+/// #1435 a line of the money block of a rental (approved mockup, tab "odmoney"), in the order it is drawn. Which lines show, not
+/// how much: every amount comes from `ShareMoneyRule` and the rules of `OrderDetailLogic`.
+enum OrderMoneyLine: Equatable {
+    case subtotal(Double)
+    case discount(Double)
+    case rentalTotal(Double)
+    /// "Đã cọc": a single deposit, not stages
+    case depositPaid(Double)
+    /// `OrderMoneyBlock.plan` is drawn here
+    case stages
+    case cancelKept(Double)
+    case cancelRefund(Double)
+    case collateralMoney(Double)
+    case alreadyCollected(Double)
+    case lateFee(Double)
+    case damageFee(Double)
+    /// "Thu khi giao"
+    case collectAtHandOver(Double)
+    /// "Khách đưa lúc nhận đồ" and "tiền thuê + thế chân" under it
+    case cashAtHandOver(HandOverCashLines)
+    case giveBackAtReturn(Double)
+    case collectAtReturn(Double)
+
+    /// The amount due now: label 15 bold, amount 20 bold
+    var isLarge: Bool {
+        switch self {
+        case .collectAtHandOver, .cashAtHandOver, .giveBackAtReturn, .collectAtReturn: return true
+        default: return false
+        }
+    }
+}
+
+/// #1435 the stages inside the block
+struct OrderMoneyPlan: Equatable {
+    /// The stages drawn. The uncollected last stage of a booked order is not one of them: it is in the amount due
+    let shownKeys: [String]
+    let percent: Double
+    let collected: Double
+    /// "Còn phải thu"; nil when it equals the amount due
+    let remaining: Double?
+}
+
+/// #1435 the money block of a rental
+struct OrderMoneyBlock: Equatable {
+    let lines: [OrderMoneyLine]
+    /// "Khi nhận trả" when it closes the papers & collateral section instead of the block
+    let returnLine: OrderMoneyLine?
+    let plan: OrderMoneyPlan?
+
+    /// Only the amount due now is large; a finished order has none
+    var hasLargeFigure: Bool { (lines + [returnLine].compactMap { $0 }).contains { $0.isLarge } }
+}
+
 /// Return: late + damage − collateral money − completed RETURN_ADJUSTMENT payments (negative = give back)
 struct ReturnMoney: Equatable {
     let lateFee: Double
@@ -275,6 +328,79 @@ enum OrderDetailLogic {
         guard let cash = ShareMoneyRule.cashAtHandover(collectOnDelivery: rentalLeft, collateralMoney: securityDeposit,
                                                        currency: currency) else { return nil }
         return HandOverCashLines(rentalLeft: rentalLeft, collateral: securityDeposit, cash: cash)
+    }
+
+    /// #1435 which lines the money block of a rental shows, in order (approved mockup, tab "odmoney"). Display only: every amount
+    /// comes from `handOver`, `collectOnDeliveryShown`, `handOverCash` and `returnMoney`, and the hand-over button, the sheets and
+    /// the share image keep asking those rules themselves.
+    static func moneyBlock(status: OrderStatus, subtotal: Double, discount: Double, total: Double, deposit: Double,
+                           securityDeposit: Double, lateFee: Double, damageFee: Double, payments: [OrderPaymentLine],
+                           hasPlan: Bool, stages: [OrderInstallment]?, summary: InstallmentSummary?, collateralShown: Bool,
+                           cancelKept: Double?, currency: ShopCurrency) -> OrderMoneyBlock {
+        let cash = handOverCash(orderType: .rent, status: status, total: total, deposit: deposit, securityDeposit: securityDeposit,
+                                payments: payments, hasPlan: hasPlan, stages: stages, currency: currency)
+        var cancelRows: [OrderMoneyLine] = []
+        if let cancelKept, cancelKept > 0, status == .cancelled {
+            cancelRows = [.cancelKept(cancelKept), .cancelRefund(max(0, (summary?.collected ?? 0) - cancelKept))]
+        }
+
+        var lines: [OrderMoneyLine] = [.subtotal(subtotal)]
+        if discount > 0 { lines.append(.discount(discount)) }
+        lines.append(.rentalTotal(total))
+        // #1199: the stages replace the single deposit line
+        if deposit > 0 && !hasPlan { lines.append(.depositPaid(deposit)) }
+        if hasPlan {
+            lines.append(.stages)
+            lines += cancelRows // the shop kept / gave back lines read under the stages (H4 of the mockup)
+        }
+        // the collateral section carries the money (and "Khi nhận trả") when it shows
+        if securityDeposit > 0 && !collateralShown && cash == nil { lines.append(.collateralMoney(securityDeposit)) }
+
+        var returnLine: OrderMoneyLine?
+        var amountDue: Double?
+        switch status {
+        case .reserved:
+            if let cash {
+                amountDue = cash.rentalLeft
+                lines.append(.cashAtHandOver(cash))
+            } else {
+                let money = handOver(total: total, deposit: deposit, securityDeposit: securityDeposit, payments: payments)
+                if money.paidBefore > 0 { lines.append(.alreadyCollected(money.paidBefore)) }
+                let collect = collectOnDeliveryShown(total: total, deposit: deposit, securityDeposit: securityDeposit, payments: payments,
+                                                     hasPlan: hasPlan, stages: stages, currency: currency)
+                amountDue = collect
+                lines.append(.collectAtHandOver(collect))
+            }
+        case .pickuped:
+            let money = returnMoney(lateFee: lateFee, damageFee: damageFee, securityDeposit: securityDeposit, payments: payments)
+            if lateFee > 0 { lines.append(.lateFee(lateFee)) }
+            if damageFee > 0 { lines.append(.damageFee(damageFee)) }
+            var row: OrderMoneyLine?
+            if money.refund > 0 {
+                row = .giveBackAtReturn(money.refund)
+            } else if money.collect > 0 {
+                row = .collectAtReturn(money.collect)
+            }
+            if let row {
+                if collateralShown { returnLine = row } else { lines.append(row) }
+            }
+        default:
+            if !hasPlan { lines += cancelRows }
+            if lateFee > 0 { lines.append(.lateFee(lateFee)) }
+            if damageFee > 0 { lines.append(.damageFee(damageFee)) }
+        }
+
+        var plan: OrderMoneyPlan?
+        if hasPlan {
+            let all = stages ?? []
+            let collected = summary?.collected ?? all.reduce(0) { $0 + $1.paidAmount }
+            let remaining = max(0, (summary?.planned ?? all.reduce(0) { $0 + $1.amount }) - collected)
+            plan = OrderMoneyPlan(shownKeys: all.filter { !($0.isRest && !$0.isPaid && status == .reserved) }.map(\.key),
+                                  percent: summary?.percentCollected ?? 0,
+                                  collected: collected,
+                                  remaining: amountDue.map { abs($0 - remaining) < 0.005 } == true ? nil : remaining)
+        }
+        return OrderMoneyBlock(lines: lines, returnLine: returnLine, plan: plan)
     }
 
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,

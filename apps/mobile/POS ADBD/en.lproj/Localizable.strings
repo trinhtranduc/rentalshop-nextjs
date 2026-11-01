@@ -3209,3 +3209,6 @@
 "order.photos.notUploaded" = "%d photo(s) not uploaded";
 "order.photos.cameraUnavailable" = "The camera is not available. Allow it in Settings, or pick from the library.";
 "order.photos.openSettings" = "Open Settings";
+
+/* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
+"order.detail.cashBreakdown" = "rental %@ + collateral %@";

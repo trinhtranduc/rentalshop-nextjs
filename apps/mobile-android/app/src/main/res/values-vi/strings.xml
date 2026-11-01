@@ -2502,4 +2502,6 @@
     <string name="order_photos_not_uploaded">Chưa tải được %1$d ảnh</string>
     <string name="order_photos_camera_unavailable">Chưa dùng được máy ảnh. Mở Cài đặt để cấp quyền, hoặc chọn từ Thư viện.</string>
     <string name="order_photos_open_settings">Mở Cài đặt</string>
+    <!-- #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail -->
+    <string name="detail_cash_breakdown">tiền thuê %1$s + thế chân %2$s</string>
 </resources>

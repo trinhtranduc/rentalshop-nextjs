@@ -3207,3 +3207,6 @@
 "order.photos.notUploaded" = "Chưa tải được %d ảnh";
 "order.photos.cameraUnavailable" = "Chưa dùng được máy ảnh. Mở Cài đặt để cấp quyền, hoặc chọn từ Thư viện.";
 "order.photos.openSettings" = "Mở Cài đặt";
+
+/* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
+"order.detail.cashBreakdown" = "tiền thuê %@ + thế chân %@";

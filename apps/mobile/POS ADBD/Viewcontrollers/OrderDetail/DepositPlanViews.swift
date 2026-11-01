@@ -2,15 +2,71 @@
 //  DepositPlanViews.swift
 //  POS ADBD
 //
-//  Order detail of a "Thu cọc theo giai đoạn" order (#1199, mockups m6, m7, m9, m10): the progress card, "Thu giai
-//  đoạn N", the stages still unpaid at hand-over, the cancel sheet with the kept amount, and the plan editor.
+//  Order detail of a "Thu cọc theo giai đoạn" order (#1199, mockups m6, m7, m9, m10): the money block and its stages (#1435), "Thu
+//  giai đoạn N", the stages still unpaid at hand-over, the cancel sheet with the kept amount, and the plan editor.
 //
 
 import UIKit
 import SnapKit
 import IQKeyboardManagerSwift
+import CoreText
 
-// MARK: - Progress card
+// MARK: - Money block (#1435)
+
+/// The rows of the money block of a rental (approved mockup, tab "odmoney"). Labels 15 regular grey; amounts 15 regular black,
+/// right-aligned, tabular digits; "Tổng tiền thuê" 15 bold; only the amount due now label 15 bold, amount 20 bold; sub-lines 14.
+enum OrderMoneyViews {
+    /// Every digit as wide as another, so that the amounts line up
+    static func tabular(_ font: UIFont) -> UIFont {
+        let feature: [UIFontDescriptor.FeatureKey: Int] = [.type: kNumberSpacingType, .selector: kMonospacedNumbersSelector]
+        return UIFont(descriptor: font.fontDescriptor.addingAttributes([.featureSettings: [feature]]), size: font.pointSize)
+    }
+
+    private static func amount(_ text: String, size: CGFloat, bold: Bool) -> UILabel {
+        let label = V2.label(text, size: size, weight: bold ? .bold : .regular)
+        label.font = tabular(label.font)
+        label.textAlignment = .right
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        return label
+    }
+
+    /// The label wraps, never "…"
+    static func row(_ title: String, _ value: String, bold: Bool = false) -> UIView {
+        let left = DepositUI.wrapLabel(title, size: DS.TextSize.body, weight: bold ? .bold : .regular, color: bold ? DS.Color.text : DS.Color.textMuted)
+        let line = UIStackView(arrangedSubviews: [left, amount(value, size: DS.TextSize.body, bold: bold)])
+        line.spacing = DS.Spacing.md
+        line.alignment = .center
+        line.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(30) }
+        return line
+    }
+
+    /// The amount due now, the only large figure, with an optional line under it. `afterDivider`: right under a row's own line
+    static func due(_ title: String, _ value: String, sub: String? = nil, afterDivider: Bool = false) -> UIView {
+        let rule = UIView()
+        rule.backgroundColor = UIColor(hexString: "E2E8F0")
+        rule.snp.makeConstraints { make in make.height.equalTo(1) }
+        let line = UIStackView(arrangedSubviews: [DepositUI.wrapLabel(title, size: DS.TextSize.body, weight: .bold),
+                                                  amount(value, size: DS.TextSize.amount, bold: true)])
+        line.spacing = DS.Spacing.md
+        line.alignment = .firstBaseline
+        let column = UIStackView(arrangedSubviews: [rule, line])
+        column.axis = .vertical
+        column.setCustomSpacing(8, after: rule)
+        if let sub {
+            let label = DepositUI.wrapLabel(sub, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            label.font = tabular(label.font)
+            column.addArrangedSubview(label)
+            column.setCustomSpacing(2, after: line)
+        }
+        let holder = UIView()
+        holder.addSubview(column)
+        column.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: afterDivider ? 0 : 4, left: 0, bottom: 4, right: 0)) }
+        return holder
+    }
+}
+
+// MARK: - Stages
 
 enum InstallmentCardView {
     /// Chip text and colours of a stage
@@ -62,86 +118,130 @@ enum InstallmentCardView {
         return String(format: "deposit.card.dueDetail".localized(), percent, DepositUI.dayText(stage.dueDateKey))
     }
 
-    /// The card. `onEdit` is "Sửa" / "Xem"; `onCollect` is the blue button; `onStage` a tap on a stage row.
-    static func make(detail: OrderDetail, role: Role?, onEdit: @escaping () -> Void, onCollect: @escaping (OrderInstallment) -> Void,
-                     onStage: @escaping (OrderInstallment) -> Void) -> UIView {
+    /// The stages inside THANH TOÁN, before the amount due (#1435, approved mockup, tab "odmoney"). `plan` says which stages show and
+    /// whether "Còn phải thu" does. `onEdit` is "Sửa" / "Xem"; `onCollect` is the light button (the bar has the same one, #1401);
+    /// `onStage` a tap on a stage row. `width` is what the block has, for the line of the two totals.
+    static func make(detail: OrderDetail, role: Role?, plan: OrderMoneyPlan, width: CGFloat, onEdit: @escaping () -> Void,
+                     onCollect: @escaping (OrderInstallment) -> Void, onStage: @escaping (OrderInstallment) -> Void) -> UIView {
         let stages = detail.installments ?? []
-        let summary = detail.installmentSummary
-        let percent = summary?.percentCollected ?? 0
-        let collected = summary?.collected ?? stages.reduce(0) { $0 + $1.paidAmount }
-        let planned = summary?.planned ?? stages.reduce(0) { $0 + $1.amount }
         let reserved = detail.status == .reserved
 
-        let title = DepositUI.wrapLabel("deposit.card.title".localized().uppercased(), size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
-        let badge = DepositUI.pill(String(format: "deposit.badge.collected".localized(), DepositPlanMath.percentText(percent)), DS.Status.done)
-        badge.accessibilityIdentifier = "deposit.card.badge"
+        let title = DepositUI.wrapLabel("deposit.card.title".localized(), size: DS.TextSize.body, color: DS.Color.textMuted)
         title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        var head: [UIView] = [title, UIView(), badge]
+        let headRow = UIStackView(arrangedSubviews: [title])
+        headRow.spacing = DS.Spacing.md
+        headRow.alignment = .center
+        headRow.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(30) }
+        var editButton: UIButton?
         if reserved {
             let edit = UIButton(type: .system)
             edit.setTitle((DepositPlanLogic.canEditPlan(role: role) ? "deposit.card.edit" : "deposit.card.view").localized(), for: .normal)
             edit.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+            edit.tintColor = DS.Color.primary // one blue with "Sửa" of the papers
             edit.addAction(UIAction { _ in onEdit() }, for: .touchUpInside)
             edit.accessibilityIdentifier = "deposit.card.edit"
             edit.setContentCompressionResistancePriority(.required, for: .horizontal)
             edit.setContentHuggingPriority(.required, for: .horizontal)
-            head.append(edit)
+            headRow.addArrangedSubview(edit)
+            editButton = edit
         }
-        let headRow = UIStackView(arrangedSubviews: head)
-        headRow.spacing = 10
-        headRow.alignment = .center
 
         let track = UIView()
         track.backgroundColor = UIColor(hexString: "E2E8F0")
-        track.layer.cornerRadius = 4
+        track.layer.cornerRadius = 2
+        track.isUserInteractionEnabled = false
         let fill = UIView()
         fill.backgroundColor = UIColor(hexString: "10B981")
-        fill.layer.cornerRadius = 4
+        fill.layer.cornerRadius = 2
         track.addSubview(fill)
-        track.snp.makeConstraints { make in make.height.equalTo(8) }
+        track.snp.makeConstraints { make in make.height.equalTo(4) }
         fill.snp.makeConstraints { make in
             make.leading.top.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(min(1, max(0.0001, percent / 100)))
+            make.width.equalToSuperview().multipliedBy(min(1, max(0.0001, plan.percent / 100)))
         }
 
-        func money(_ title: String, _ amount: Double, align: NSTextAlignment) -> UIView {
-            let t = V2.label(title, size: DS.TextSize.secondary, color: DS.Color.textMuted)
-            let v = V2.label(MoneyFormatter.format(amount), size: DS.TextSize.input, weight: .bold)
-            t.textAlignment = align
-            v.textAlignment = align
-            let s = UIStackView(arrangedSubviews: [t, v])
-            s.axis = .vertical
-            return s
-        }
-        let totals = UIStackView(arrangedSubviews: [money("deposit.card.collected".localized(), collected, align: .left),
-                                                    money("deposit.card.remaining".localized(), max(0, planned - collected), align: .right)])
-        totals.distribution = .fillEqually
-
+        let totals = collectedLine(plan, width: width)
         let card = UIStackView(arrangedSubviews: [headRow, track, totals])
         card.axis = .vertical
-        card.spacing = 10
+        card.setCustomSpacing(2, after: headRow)
+        card.setCustomSpacing(6, after: track)
+        card.setCustomSpacing(2, after: totals)
 
-        for (index, stage) in stages.enumerated() {
-            card.addArrangedSubview(V2.divider())
+        for (index, stage) in stages.enumerated() where plan.shownKeys.contains(stage.key) {
             card.addArrangedSubview(stageRow(stage, number: index + 1, tappable: reserved && stage.isPaid && DepositPlanLogic.canVoid(role: role),
                                              onTap: onStage))
         }
         if reserved, let next = DepositPlanLogic.nextToCollect(stages, status: detail.status),
            let number = DepositPlanLogic.stageNumber(stages, key: next.key) {
-            let button = V2.primaryButton(String(format: "deposit.card.collectStage".localized(), number))
+            // Light: the bar under the screen has the solid one for the same stage
+            let button = UIButton(type: .system)
+            button.setTitle(String(format: "deposit.card.collectStage".localized(), number), for: .normal)
+            button.setTitleColor(DS.Color.primary, for: .normal)
+            button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
+            button.backgroundColor = UIColor(hexString: "EFF6FF")
             button.layer.cornerRadius = 10
-            button.snp.remakeConstraints { make in make.height.equalTo(46) }
+            button.snp.makeConstraints { make in make.height.equalTo(44) }
             button.addAction(UIAction { _ in onCollect(next) }, for: .touchUpInside)
             button.accessibilityIdentifier = "deposit.card.collect"
-            card.addArrangedSubview(button)
+            let box = UIView()
+            box.addSubview(button)
+            button.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)) }
+            card.addArrangedSubview(box)
         }
 
-        // #1246: no frame. A section like "ITEMS", as wide as the other rows (the parent stack insets by DS.Spacing.lg)
-        let holder = UIView()
-        holder.addSubview(card)
-        card.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)) }
+        let rule = V2.divider()
+        let column = UIStackView(arrangedSubviews: [rule, card])
+        column.axis = .vertical
+        column.setCustomSpacing(2, after: rule)
+        let holder = StagesBlockView(edit: editButton)
+        holder.addSubview(column)
+        column.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 0, bottom: 0, right: 0)) }
         holder.accessibilityIdentifier = "deposit.card"
         return holder
+    }
+
+    /// "Sửa" sits in a 30pt row, as drawn, and keeps a finger-size target
+    private final class StagesBlockView: UIView {
+        private let edit: UIButton?
+
+        init(edit: UIButton?) {
+            self.edit = edit
+            super.init(frame: .zero)
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            if let edit, edit.convert(edit.bounds, to: self).insetBy(dx: -8, dy: -7).contains(point) { return edit }
+            return super.hitTest(point, with: event)
+        }
+    }
+
+    /// "Đã thu 20% · 230.000" and "Còn phải thu 920.000": one line when they fit, else the second goes under, right-aligned
+    private static func collectedLine(_ plan: OrderMoneyPlan, width: CGFloat) -> UIView {
+        func part(_ text: String, _ value: Double) -> UILabel {
+            let label = DepositUI.wrapLabel(nil, size: DS.TextSize.secondary, color: DS.Color.textMuted)
+            label.font = OrderMoneyViews.tabular(label.font)
+            let attributed = NSMutableAttributedString(string: text, attributes: [.font: label.font as Any, .foregroundColor: DS.Color.textMuted])
+            attributed.append(NSAttributedString(string: MoneyFormatter.format(value), attributes: [.font: label.font as Any, .foregroundColor: DS.Color.text]))
+            label.attributedText = attributed
+            return label
+        }
+        let collected = part(String(format: "deposit.badge.collected".localized(), DepositPlanMath.percentText(plan.percent)) + " · ", plan.collected)
+        collected.accessibilityIdentifier = "deposit.card.badge"
+        guard let remaining = plan.remaining else { return collected }
+        let rest = part("deposit.card.remaining".localized() + " ", remaining)
+        rest.textAlignment = .right
+        let fits = collected.intrinsicContentSize.width + DS.Spacing.md + rest.intrinsicContentSize.width <= width
+        if fits {
+            collected.numberOfLines = 1
+            rest.numberOfLines = 1
+            collected.setContentHuggingPriority(.required, for: .horizontal)
+        }
+        let line = UIStackView(arrangedSubviews: [collected, rest])
+        line.axis = fits ? .horizontal : .vertical
+        line.spacing = fits ? DS.Spacing.md : 2
+        return line
     }
 
     private static func stageRow(_ stage: OrderInstallment, number: Int, tappable: Bool, onTap: @escaping (OrderInstallment) -> Void) -> UIView {
@@ -149,25 +249,32 @@ enum InstallmentCardView {
         let paid = stage.isPaid
         let late = stage.status == "OVERDUE"
         circle.backgroundColor = paid ? UIColor(hexString: "10B981") : (late ? UIColor(hexString: "FEE2E2") : UIColor(hexString: "EFF6FF"))
-        circle.layer.cornerRadius = 12
-        let glyph = V2.label(paid ? "✓" : (late ? "!" : "\(number)"), size: DS.TextSize.pill, weight: .bold,
+        circle.layer.cornerRadius = 11
+        let glyph = V2.label(paid ? "✓" : (late ? "!" : "\(number)"), size: DS.TextSize.secondary, weight: .bold,
                              color: paid ? .white : (late ? UIColor(hexString: "B91C1C") : DS.Color.primary))
         circle.addSubview(glyph)
         glyph.snp.makeConstraints { make in make.center.equalToSuperview() }
-        circle.snp.makeConstraints { make in make.size.equalTo(24) }
+        circle.snp.makeConstraints { make in make.size.equalTo(22) }
         let name = DepositUI.wrapLabel(stage.isRest ? "deposit.rest.label".localized() : stage.label, size: DS.TextSize.body)
-        let sub = DepositUI.wrapLabel(subtitle(stage), size: DS.TextSize.pill, color: DS.Color.textMuted)
+        let sub = DepositUI.wrapLabel(subtitle(stage), size: DS.TextSize.secondary, color: DS.Color.textMuted)
         let texts = UIStackView(arrangedSubviews: [name, sub])
         texts.axis = .vertical
         texts.spacing = 2
-        let (chipText, chipColors) = chip(stage)
-        let amount = V2.label(MoneyFormatter.format(stage.amount), size: DS.TextSize.body, weight: .bold)
+        let (word, colors) = chip(stage)
+        let amount = V2.label(MoneyFormatter.format(stage.amount), size: DS.TextSize.body)
+        amount.font = OrderMoneyViews.tabular(amount.font)
         amount.textAlignment = .right
-        let right = UIStackView(arrangedSubviews: [amount, DepositUI.pill(chipText, chipColors)])
+        // the word says paid or not, never the colour alone
+        let status = V2.label(word, size: DS.TextSize.secondary, weight: .bold, color: colors.text == DS.Status.handOver.text ? DS.Color.primary : colors.text)
+        status.textAlignment = .right
+        [amount, status].forEach { label in
+            label.setContentCompressionResistancePriority(.required, for: .horizontal)
+            label.setContentHuggingPriority(.required, for: .horizontal)
+        }
+        let right = UIStackView(arrangedSubviews: [amount, status])
         right.axis = .vertical
         right.alignment = .trailing
-        right.spacing = 3
-        right.setContentCompressionResistancePriority(.required, for: .horizontal)
+        right.spacing = 2
         let line = UIStackView(arrangedSubviews: [circle, texts, right])
         line.spacing = 10
         line.alignment = .center
@@ -183,7 +290,7 @@ enum InstallmentCardView {
             band.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 2, left: -8, bottom: 2, right: -8)) }
         }
         row.addSubview(line)
-        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)) }
+        line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 0, bottom: 6, right: 0)) }
         row.accessibilityIdentifier = "deposit.stage.\(stage.key)"
         if tappable { row.addAction(UIAction { _ in onTap(stage) }, for: .touchUpInside) }
         return row
