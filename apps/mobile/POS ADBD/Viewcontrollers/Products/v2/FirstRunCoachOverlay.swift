@@ -34,6 +34,7 @@ final class FirstRunCoach {
     private var run: CoachRun?
     private var passed = Set<CoachBubble>()
     private var customersExist = false
+    private var isSale = false
     /// Home, to come back to on Thoát
     private weak var home: UIViewController?
     private weak var overlay: FirstRunCoachOverlayView?
@@ -52,6 +53,7 @@ final class FirstRunCoach {
     func stop() {
         run = nil
         passed = []
+        isSale = false
         paused = false
         request += 1
         overlay?.removeFromSuperview()
@@ -146,8 +148,10 @@ final class FirstRunCoach {
         overlay = view
     }
 
+    /// The picker and the customer form have no cart of their own: the counter keeps what the cart last said
     private func plan(cart: CoachCart?) -> CoachPlan {
-        CoachPlan(customersExist: customersExist, isSale: cart?.isSale ?? false)
+        if let cart { isSale = cart.isSale }
+        return CoachPlan(customersExist: customersExist, isSale: isSale)
     }
 
     /// Thoát hướng dẫn: back to the card, the guide goes on. A form with content asks first.
