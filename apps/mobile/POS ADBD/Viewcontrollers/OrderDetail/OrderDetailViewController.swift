@@ -218,9 +218,7 @@ final class OrderDetailViewController: BaseViewControler {
         contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         // #1285 (mockup 1b): status, customer, items, payment, deposit stages, papers & collateral, notes; an 8pt band
         // between sections, each flat and edge to edge
-        var sections: [UIView] = [statusSection(detail)]
-        if let photos = pickupPhotosSection(detail) { sections.append(photos) } // #1418
-        sections += [customerSection(detail, order: order), itemsSection(detail)]
+        var sections: [UIView] = [statusSection(detail), customerSection(detail, order: order), itemsSection(detail)]
         sections.append(contentsOf: moneySections(detail))
         if let notes = notesSection(detail) { sections.append(notes) }
         for (index, section) in sections.enumerated() {
@@ -469,7 +467,18 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     /// "GIẤY TỜ & THẾ CHÂN" (#1279) on a picked-up rental; without `orders.update` only the papers line, when there is one
+    /// #1418: the hand-over photos sit under the papers and collateral. An order without that section gets the photos
+    /// alone, under their own small heading; an order without photos looks as before.
     private func collateralBlock(_ detail: OrderDetail, returnRow: UIView?) -> UIView? {
+        let papers = papersBlock(detail, returnRow: returnRow)
+        guard let photos = pickupPhotosSection(detail) else { return papers }
+        guard let papers else { return photos }
+        let column = UIStackView(arrangedSubviews: [papers, photos])
+        column.axis = .vertical
+        return column
+    }
+
+    private func papersBlock(_ detail: OrderDetail, returnRow: UIView?) -> UIView? {
         guard detail.orderType == .rent else { return nil }
         if OrderDetailLogic.canEditCollateral(orderType: detail.orderType, status: detail.status,
                                               canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {
@@ -823,7 +832,7 @@ final class OrderDetailViewController: BaseViewControler {
         return sections
     }
 
-    /// #1418 "ẢNH KHI GIAO · N": nothing at all while the order has no photos
+    /// #1418 "Ảnh khi giao · N": nothing at all while the order has no photos
     private func pickupPhotosSection(_ detail: OrderDetail) -> UIView? {
         let uploader = OrderPhotoUploader.shared
         let urls = absoluteURLs(detail.pickupNotesImages)

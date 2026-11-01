@@ -10,7 +10,7 @@
 8. Queue survives relaunch; opening the order retries it.
 9. Before every send the order is read again; growth of at least the pending count clears the queue with no resend. Otherwise send at most `3 - server count`; no room clears the queue.
 10. Queue is per user + shop + order: another user or shop on the device never sees or sends it; logout does not send it. The same user sees it again after login.
-11. Detail shows section "ẢNH KHI GIAO · N" under the status block when N>0, tap opens large; "Thêm" while PICKUPED, N<3, nothing pending, and the user has `orders.update`. No delete anywhere.
+11. Detail shows "ẢNH KHI GIAO · N" at the end of "Giấy tờ & thế chân" when N>0, or alone with that heading when the order has no such section; tap opens large; "Thêm" while PICKUPED, N<3, nothing pending, and the user has `orders.update`. No delete anywhere.
 12. iOS keeps `UpdateOrderRequest` free of these fields. Android parses `pickupNotesImages` additively: missing, null, null elements and non-array values all give an empty or filtered list.
 13. Camera denied: message with a way to Settings; library and confirm still work.
 

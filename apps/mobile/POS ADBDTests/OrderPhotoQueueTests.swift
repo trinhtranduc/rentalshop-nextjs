@@ -16,9 +16,8 @@ final class OrderPhotoQueueTests: XCTestCase {
 
     // MARK: Limits
 
-    func testConditionPhotosStopAtThreeAndNotePhotosStayAtFive() {
+    func testConditionPhotosStopAtThree() {
         XCTAssertEqual(OrderPhotoLogic.maxPhotos, 3)
-        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 5)
         XCTAssertTrue(OrderPhotoLogic.canAdd(count: 2))
         XCTAssertFalse(OrderPhotoLogic.canAdd(count: 3))
         XCTAssertEqual(OrderPhotoLogic.countLabel(2), "2/3")

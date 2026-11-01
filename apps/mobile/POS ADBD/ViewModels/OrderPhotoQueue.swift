@@ -20,7 +20,7 @@ enum OrderPhotoField: String {
 }
 
 enum OrderPhotoLogic {
-    /// Owner's limit for condition photos. Note photos keep `OrderDetailLogic.maxNotePhotos`; the API allows 5 per field.
+    /// Owner's limit for condition photos; the API allows 5 per field.
     static let maxPhotos = 3
 
     enum SendDecision: Equatable {

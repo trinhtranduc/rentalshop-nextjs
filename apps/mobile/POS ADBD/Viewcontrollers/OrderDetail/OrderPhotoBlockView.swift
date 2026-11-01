@@ -250,7 +250,8 @@ enum OrderPhotoSection {
         column.spacing = DS.Spacing.sm
         column.accessibilityIdentifier = id
 
-        let label = V2.label("\(title) · \(urls.count + waiting.count)", size: DS.TextSize.secondary, weight: .bold, color: DS.Color.textMuted)
+        // An ordinary row of the papers section, like "Khi nhận trả": not a section title
+        let label = V2.label("\(title) · \(urls.count + waiting.count)", size: DS.TextSize.body, color: DS.Color.textMuted)
         label.accessibilityIdentifier = id + ".title"
         label.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(38) }
         column.addArrangedSubview(label)
