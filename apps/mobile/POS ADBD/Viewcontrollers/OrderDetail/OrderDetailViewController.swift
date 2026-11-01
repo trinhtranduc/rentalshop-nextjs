@@ -1545,7 +1545,8 @@ final class OrderDetailViewController: BaseViewControler {
 // MARK: - ⋯ action sheet (#519, board CT-thao-tac)
 
 /// The title and a close button (#1395; the order number stays on the screen's top bar, #1297), the everyday rows with a small
-/// description under each name, then the red group apart. A row closes the sheet and then runs its action on the detail screen.
+/// description under each name and a small icon left of it (#1438), then the red group apart. A row closes the sheet and then runs
+/// its action on the detail screen.
 final class OrderActionSheet: V2FittingSheet {
     struct Row {
         let action: OrderSheetAction
@@ -1575,6 +1576,20 @@ final class OrderActionSheet: V2FittingSheet {
         case .history: return "order.sheet.history".localized()
         case .cancel: return "order.sheet.cancel".localized()
         case .delete: return "order.sheet.delete".localized()
+        }
+    }
+
+    /// #1438: the SF Symbol left of a row's title. Android `orderActionIcon`
+    static func symbol(of action: OrderSheetAction) -> String {
+        switch action {
+        case .print: return "printer"
+        case .share: return "square.and.arrow.up"
+        case .notes: return "note.text"
+        case .edit: return "pencil"
+        case .extend: return "calendar.badge.plus"
+        case .history: return "clock.arrow.circlepath"
+        case .cancel: return "xmark.circle"
+        case .delete: return "trash"
         }
     }
 
@@ -1616,17 +1631,32 @@ final class OrderActionSheet: V2FittingSheet {
         let danger = row.action.isDestructive
         let control = UIControl()
 
+        let muted = UIColor(hexString: "475569")
         let title = V2.label(row.title, size: 16, weight: .medium, color: danger ? V2.danger : DS.Color.text, lines: 2)
-        let subtitle = V2.label(row.subtitle, size: DS.TextSize.secondary, color: UIColor(hexString: "475569"), lines: 2)
+        let subtitle = V2.label(row.subtitle, size: DS.TextSize.secondary, color: muted, lines: 2)
         subtitle.isHidden = (row.subtitle ?? "").isEmpty
-        // #930: rows without icons, text only
         let line = UIStackView(arrangedSubviews: [title, subtitle])
         line.axis = .vertical
         line.isUserInteractionEnabled = false
         control.addSubview(line)
+        // #1438: decorative, centred on the title's first line; the control is the one accessibility element.
+        // One neutral colour, except the red of the Cancel and Delete rows' text
+        // `pencil` is one thin diagonal that draws a quarter smaller than the others at the same point size.
+        // Zero insets and the 2 pt below: measured, the glyphs then sit within 0.5 pt of the title's cap-height middle.
+        let glyph = row.action == .edit ? DS.Icon.md * 1.25 : DS.Icon.md
+        let icon = UIImageView(image: DS.symbol(Self.symbol(of: row.action), glyph, weight: .light)?.withAlignmentRectInsets(.zero))
+        icon.tintColor = danger ? V2.danger : muted
+        icon.contentMode = .center
+        control.addSubview(icon)
+        icon.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.size.equalTo(DS.Icon.md)
+            make.centerY.equalTo(title.snp.firstBaseline).offset(-title.font.capHeight / 2 + 2)
+        }
         line.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(8)
-            make.leading.trailing.equalToSuperview()
+            make.leading.equalTo(icon.snp.trailing).offset(12)
+            make.trailing.equalToSuperview()
         }
         let divider = V2.divider()
         divider.backgroundColor = UIColor(hexString: "F1F5F9")

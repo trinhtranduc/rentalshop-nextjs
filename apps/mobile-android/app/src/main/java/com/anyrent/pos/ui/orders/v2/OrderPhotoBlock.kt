@@ -7,7 +7,6 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -25,9 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,14 +62,17 @@ import java.io.File
 import java.util.concurrent.Executors
 
 private val TileSize = 64.dp
+private val BlockTileSize = 72.dp
 
-/** #1418 layout A: photos chosen so far, × to drop one, the two buttons until 3/3 (iOS `OrderPhotoBlockView`) */
+/**
+ * #1418 layout A: photos chosen so far, × to drop one. #1438: beside them the note editor's "Thêm" tile until 3/3; it opens
+ * the camera / library chooser of the detail ([onAdd]). iOS `OrderPhotoBlockView`
+ */
 @Composable
 internal fun OrderPhotoBlock(
     photos: List<ByteArray>,
     compressing: Int,
-    onCamera: () -> Unit,
-    onLibrary: () -> Unit,
+    onAdd: () -> Unit,
     onRemove: (Int) -> Unit,
     onPreview: (ByteArray) -> Unit,
 ) {
@@ -87,88 +87,43 @@ internal fun OrderPhotoBlock(
                 modifier = Modifier.testTag("orderPhotos.count"),
             )
         }
-        if (used > 0) {
-            Row(Modifier.padding(top = 6.dp, end = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                photos.forEachIndexed { index, bytes ->
-                    Box {
-                        Thumb(bytes, TileSize) { onPreview(bytes) }
-                        val remove = stringResource(R.string.order_photos_remove)
-                        Box(
-                            Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = 6.dp, y = (-6).dp)
-                                .size(24.dp)
-                                .background(DS.Colors.Text, CircleShape)
-                                .border(1.dp, Color.White, CircleShape)
-                                .clickable { onRemove(index) }
-                                .testTag("orderPhotos.remove.$index")
-                                .semantics { contentDescription = remove },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Outlined.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                        }
+        Row(Modifier.padding(top = 6.dp, end = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            photos.forEachIndexed { index, bytes ->
+                Box {
+                    Thumb(bytes, BlockTileSize) { onPreview(bytes) }
+                    val remove = stringResource(R.string.order_photos_remove)
+                    Box(
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 6.dp, y = (-6).dp)
+                            .size(24.dp)
+                            .background(DS.Colors.Text, CircleShape)
+                            .border(1.dp, Color.White, CircleShape)
+                            .clickable { onRemove(index) }
+                            .testTag("orderPhotos.remove.$index")
+                            .semantics { contentDescription = remove },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Outlined.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                     }
                 }
-                repeat(compressing) {
-                    Box(
-                        Modifier.size(TileSize).background(Color(0xFFE2E8F0), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) { CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) }
-                }
             }
-        }
-        if (OrderPhotoLogic.canAdd(used)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PhotoButton(
-                    stringResource(if (used == 0) R.string.order_photos_take else R.string.order_photos_take_more),
-                    Icons.Outlined.CameraAlt, primary = true, tag = "orderPhotos.camera",
-                    modifier = Modifier.weight(2f), onClick = onCamera,
-                )
-                PhotoButton(
-                    stringResource(R.string.order_photos_library), Icons.Outlined.Image, primary = false, tag = "orderPhotos.library",
-                    modifier = Modifier.weight(1.15f), onClick = onLibrary,
-                )
+            repeat(compressing) {
+                Box(
+                    Modifier.size(BlockTileSize).background(Color(0xFFE2E8F0), RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center,
+                ) { CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) }
             }
-        } else {
-            Text(
-                stringResource(R.string.order_photos_full, OrderPhotoLogic.MAX_PHOTOS),
-                fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted,
-                modifier = Modifier.testTag("orderPhotos.full"),
-            )
+            if (OrderPhotoLogic.canAdd(used)) {
+                Box(Modifier.testTag("orderPhotos.add")) { AddTile(onAdd) }
+            }
         }
     }
 }
 
-@Composable
-private fun PhotoButton(
-    text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    primary: Boolean,
-    tag: String,
-    modifier: Modifier,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(14.dp)
-    val tint = if (primary) DS.Colors.Primary else DS.Colors.Text
-    Row(
-        modifier
-            .height(52.dp)
-            .background(if (primary) Color(0xFFEFF6FF) else Color.White, shape)
-            .border(BorderStroke(if (primary) 1.5.dp else 1.dp, if (primary) DS.Colors.Primary else Color(0xFFCBD5E1)), shape)
-            .clickable(onClick = onClick)
-            .testTag(tag)
-            .padding(horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
-        Text(
-            text, color = tint, fontWeight = FontWeight.Bold, maxLines = 1,
-            fontSize = if (primary) DS.TextSize.Input else DS.TextSize.Body,
-            modifier = Modifier.padding(start = 6.dp),
-        )
-    }
-}
+/** #1438: the camera of the note editor's add tile and of the detail's add tile. iOS `DS.addPhotoIcon` */
+internal val AddPhotoIcon: androidx.compose.ui.graphics.vector.ImageVector get() = Icons.Outlined.PhotoCamera
+internal val AddPhotoIconSize = DS.Icon.Lg
 
 /** "Ảnh khi giao · N" and the tiles: the same row on the order detail and, read only, on the return sheet (#1419) */
 @Composable
@@ -216,7 +171,7 @@ internal fun OrderPhotoTiles(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(22.dp))
+                Icon(AddPhotoIcon, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(AddPhotoIconSize))
                 Text(stringResource(R.string.order_photos_add), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Primary)
             }
         }

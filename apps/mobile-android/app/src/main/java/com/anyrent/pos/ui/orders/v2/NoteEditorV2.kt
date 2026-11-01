@@ -29,7 +29,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -250,7 +249,7 @@ internal fun AddTile(onAdd: () -> Unit, size: androidx.compose.ui.unit.Dp = 72.d
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(Icons.Outlined.PhotoCamera, contentDescription = stringResource(R.string.add_photos), tint = DS.Colors.Primary, modifier = Modifier.size(DS.Icon.Lg))
+        Icon(AddPhotoIcon, contentDescription = stringResource(R.string.add_photos), tint = DS.Colors.Primary, modifier = Modifier.size(AddPhotoIconSize))
         Spacer(Modifier.height(2.dp))
         Text(stringResource(R.string.notes_v2_add), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
     }

@@ -31,11 +31,11 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
     private let ring = UIView()
     private let tilesStack = UIStackView()
     private let countLabel = V2.label(size: DS.TextSize.secondary, color: UIColor(hexString: "64748B"))
-    private let addButton = UIButton(type: .custom)
+    private let addButton = AddPhotoTile.make()
     private var tileImages: [Int: UIImageView] = [:]
     private var keyboardManagerWasEnabled = true
 
-    private static let tileSize: CGFloat = 72
+    private static let tileSize = AddPhotoTile.size
     private static let tilesPerRow = 4
 
     /// `newImages`: photos not uploaded yet (the cart's). `maxPhotos` 0 hides the photo block.
@@ -210,28 +210,7 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
         tilesStack.spacing = DS.Spacing.md
         tilesStack.alignment = .leading
 
-        var config = UIButton.Configuration.plain()
-        config.image = DS.symbol("camera", DS.Icon.lg)
-        config.imagePlacement = .top
-        config.imagePadding = 2
-        config.title = "notes.v2.add".localized()
-        config.baseForegroundColor = DS.Color.primary
-        config.contentInsets = .zero
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-            var outgoing = incoming
-            outgoing.font = Utils.boldFont(size: DS.TextSize.secondary)
-            return outgoing
-        }
-        addButton.configuration = config
-        addButton.backgroundColor = V2.sectionFill
-        addButton.layer.cornerRadius = DS.Radius.card
-        addButton.accessibilityLabel = "Add photos".localized()
         addButton.addTarget(self, action: #selector(addTapped), for: .touchUpInside)
-        addButton.snp.makeConstraints { make in make.size.equalTo(Self.tileSize) }
-        let dashed = DashedBorderView()
-        dashed.isUserInteractionEnabled = false
-        addButton.addSubview(dashed)
-        dashed.snp.makeConstraints { make in make.edges.equalToSuperview() }
 
         let hint = V2.label("notes.v2.photoHint".localized(), size: DS.TextSize.secondary, color: UIColor(hexString: "64748B"), lines: 0)
 
@@ -393,6 +372,37 @@ final class OrderNotesEditorViewController: UIViewController, UIImagePickerContr
         dismiss(animated: true) { [onSave] in
             onSave?(text, kept, added)
         }
+    }
+}
+
+/// The dashed "Thêm" tile, the camera over the word: the note editor and the hand-over photo block (#1438). Android `AddTile`
+enum AddPhotoTile {
+    static let size: CGFloat = 72
+
+    static func make() -> UIButton {
+        var config = UIButton.Configuration.plain()
+        config.image = DS.addPhotoIcon
+        config.imagePlacement = .top
+        config.imagePadding = 2
+        config.title = "notes.v2.add".localized()
+        config.baseForegroundColor = DS.Color.primary
+        config.contentInsets = .zero
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = Utils.boldFont(size: DS.TextSize.secondary)
+            return outgoing
+        }
+        let tile = UIButton(type: .custom)
+        tile.configuration = config
+        tile.backgroundColor = V2.sectionFill
+        tile.layer.cornerRadius = DS.Radius.card
+        tile.accessibilityLabel = "Add photos".localized()
+        tile.snp.makeConstraints { make in make.size.equalTo(size) }
+        let dashed = DashedBorderView()
+        dashed.isUserInteractionEnabled = false
+        tile.addSubview(dashed)
+        dashed.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        return tile
     }
 }
 
