@@ -101,8 +101,8 @@ final class OrderDetailLogicTests: XCTestCase {
     // MARK: Notes payload
 
     func testNotesUnchangedPhotosSendOnlyNewFiles() {
-        let plan = OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 2)
-        XCTAssertEqual(plan, NotesSavePlan(keptURLs: nil, newCount: 2))
+        let plan = OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 1)
+        XCTAssertEqual(plan, NotesSavePlan(keptURLs: nil, newCount: 1))
     }
 
     func testNotesRemovedPhotoSendsKeptUrls() {
@@ -111,10 +111,20 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertEqual(OrderDetailLogic.notesPlan(original: ["a"], kept: [], newCount: 0), NotesSavePlan(keptURLs: [], newCount: 0))
     }
 
-    func testNotesAllowAtMostFivePhotos() {
-        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 5)
-        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 3))
-        XCTAssertNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 4))
+    func testNotesAllowAtMostThreePhotos() {
+        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 3)
+        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 1))
+        XCTAssertNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 2))
+    }
+
+    /// #1425 an order from before the limit keeps its photos and stays editable
+    func testOldOrderAboveTheLimitCanStillBeSaved() {
+        let five = ["a", "b", "c", "d", "e"]
+        XCTAssertEqual(OrderDetailLogic.notesPlan(original: five, kept: five, newCount: 0), NotesSavePlan(keptURLs: nil, newCount: 0), "text only")
+        XCTAssertEqual(OrderDetailLogic.notesPlan(original: five, kept: ["a", "b", "c", "d"], newCount: 0),
+                       NotesSavePlan(keptURLs: ["a", "b", "c", "d"], newCount: 0), "remove one, still above")
+        XCTAssertNil(OrderDetailLogic.notesPlan(original: five, kept: ["a", "b", "c"], newCount: 1), "adding must fit")
+        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: five, kept: ["a", "b"], newCount: 1))
     }
 
     // MARK: Status change errors

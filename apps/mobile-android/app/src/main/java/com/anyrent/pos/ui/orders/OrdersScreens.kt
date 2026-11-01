@@ -1462,7 +1462,7 @@ fun OrderDetailScreen(orderId: Int, onBack: () -> Unit) {
                             )
                             if (order.notesImages.isNotEmpty()) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    order.notesImages.take(MAX_NOTE_IMAGES).forEach { url ->
+                                    order.notesImages.forEach { url -> // #1425 an old order may hold more than the limit: show them all
                                         AsyncImage(
                                             model = url,
                                             contentDescription = stringResource(R.string.notes),

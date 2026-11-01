@@ -137,7 +137,7 @@ internal fun NoteEditorV2(
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.notes_v2_photos), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, color = DS.Colors.Text, modifier = Modifier.weight(1f))
-                            Text(stringResource(R.string.detail_photos_count, count, max), fontSize = DS.TextSize.Secondary, color = Color(0xFF64748B))
+                            Text(if (NoteEditorLogic.showsLimit(count, max)) stringResource(R.string.detail_photos_count, count, max) else stringResource(R.string.v2_order_note_photos, count), fontSize = DS.TextSize.Secondary, color = Color(0xFF64748B))
                         }
                         FlowRow(
                             Modifier.padding(top = 6.dp),

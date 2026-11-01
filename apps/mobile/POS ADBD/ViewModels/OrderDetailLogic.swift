@@ -125,7 +125,8 @@ struct OrderHeaderCustomer: Equatable {
 }
 
 enum OrderDetailLogic {
-    static let maxNotePhotos = 5
+    /// #1425 note photos. The API keeps accepting 5 for installed apps; an order that already holds more stays as it is
+    static let maxNotePhotos = 3
 
     /// "Tạm tính" / "Tiền hàng" of a sale (#939): the item lines, as Android, the web and the printed bill. The total
     /// is the server's `totalAmount`; old data where lines − discount ≠ total still shows each number as stored.
@@ -300,9 +301,10 @@ enum OrderDetailLogic {
         }
     }
 
-    /// nil when more than `maxNotePhotos` photos would be kept
+    /// nil when new photos would take the order above `maxNotePhotos`. An old order already above it can still change
+    /// its text and remove photos (#1425)
     static func notesPlan(original: [String], kept: [String], newCount: Int) -> NotesSavePlan? {
-        guard kept.count + newCount <= maxNotePhotos else { return nil }
+        guard newCount == 0 || kept.count + newCount <= maxNotePhotos else { return nil }
         return NotesSavePlan(keptURLs: kept == original ? nil : kept, newCount: newCount)
     }
 

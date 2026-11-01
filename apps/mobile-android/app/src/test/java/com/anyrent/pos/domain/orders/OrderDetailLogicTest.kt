@@ -129,9 +129,9 @@ class OrderDetailLogicTest {
 
     @Test
     fun `notes with removed photos send kept urls as json then new files as multipart`() {
-        val steps = OrderDetailLogic.notesPlan("hi", listOf("a", "b", "c"), listOf("a", "c"), 2)
+        val steps = OrderDetailLogic.notesPlan("hi", listOf("a", "b", "c"), listOf("a", "c"), 1)
         assertEquals(
-            listOf(NotesStep.Json("hi", listOf("a", "c")), NotesStep.Upload(null, 2)),
+            listOf(NotesStep.Json("hi", listOf("a", "c")), NotesStep.Upload(null, 1)),
             steps,
         )
         assertEquals(
@@ -153,14 +153,27 @@ class OrderDetailLogicTest {
     }
 
     @Test
-    fun `notes reject more than five photos or unknown urls`() {
-        assertNull(OrderDetailLogic.notesPlan("", listOf("a", "b", "c"), listOf("a", "b", "c"), 3))
+    fun `notes reject more than three photos or unknown urls`() {
+        assertNull(OrderDetailLogic.notesPlan("", listOf("a", "b"), listOf("a", "b"), 2))
         assertEquals(
-            listOf(NotesStep.Upload("", 2)),
-            OrderDetailLogic.notesPlan("", listOf("a", "b", "c"), listOf("a", "b", "c"), 2),
+            listOf(NotesStep.Upload("", 1)),
+            OrderDetailLogic.notesPlan("", listOf("a", "b"), listOf("a", "b"), 1),
         )
         assertNull(OrderDetailLogic.notesPlan("", listOf("a"), listOf("x"), 0))
-        assertEquals(5, OrderDetailLogic.MAX_NOTE_PHOTOS)
+        assertEquals(3, OrderDetailLogic.MAX_NOTE_PHOTOS)
+    }
+
+    /** #1425 an order from before the limit keeps its photos and stays editable */
+    @Test
+    fun `old order above the limit can still be saved`() {
+        val five = listOf("a", "b", "c", "d", "e")
+        assertEquals("text only", listOf(NotesStep.Json("hi", null)), OrderDetailLogic.notesPlan("hi", five, five, 0))
+        assertEquals(
+            "remove one, still above",
+            listOf(NotesStep.Json("hi", listOf("a", "b", "c", "d"))),
+            OrderDetailLogic.notesPlan("hi", five, listOf("a", "b", "c", "d"), 0),
+        )
+        assertNull("adding must fit", OrderDetailLogic.notesPlan("hi", five, listOf("a", "b", "c"), 1))
     }
 
     @Test

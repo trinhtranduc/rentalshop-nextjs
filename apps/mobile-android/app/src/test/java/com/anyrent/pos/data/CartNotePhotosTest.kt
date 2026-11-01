@@ -20,9 +20,9 @@ class CartNotePhotosTest {
 
     private fun file(name: String): File = tmp.newFile(name).also { it.writeBytes(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 1)) }
 
-    @Test fun cartKeepsAtMostFivePhotos() {
+    @Test fun cartKeepsAtMostThreePhotos() {
         CartStore.setNoteImageFiles((1..7).map { file("p$it.jpg") })
-        assertEquals(5, CartStore.noteImageFiles.value.size)
+        assertEquals(3, CartStore.noteImageFiles.value.size)
         assertEquals("p1.jpg", CartStore.noteImageFiles.value.first().name)
     }
 

@@ -5,6 +5,15 @@
  */
 import { dayKeyOf, handOverMoney, returnMoney, type OrderDetailLike, type ToDayKey } from '../orders-model';
 
+/**
+ * #1425 note photos on an order, here and on create order. The API keeps accepting 5 for installed apps; an order that
+ * already holds more stays as it is, and its photos can still be removed.
+ */
+export const MAX_NOTE_IMAGES = 3;
+
+/** "2/3"; above the limit only the count, since "5/3" reads like a bug */
+export const noteCountLabel = (count: number) => (count > MAX_NOTE_IMAGES ? String(count) : `${count}/${MAX_NOTE_IMAGES}`);
+
 export type HandOverRowKey = 'orderTotal' | 'depositPaid' | 'collateralMoney' | 'paidBefore';
 export type ReturnRowKey = 'fees' | 'collateralHeld' | 'settledBefore';
 
