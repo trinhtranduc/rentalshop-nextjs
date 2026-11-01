@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -87,6 +88,8 @@ object FirstRunCoach {
         private set
     var customersExist by mutableStateOf(false)
         private set
+    /** The picker and the customer form have no cart of their own: the counter keeps what the cart last said */
+    var isSale by mutableStateOf(false)
 
     /** What the form on screen says about its current step; the forms set these on every change */
     var formValid by mutableStateOf(emptySet<CoachBubble>())
@@ -112,6 +115,7 @@ object FirstRunCoach {
     fun stop() {
         run = null
         passed = emptySet()
+        isSale = false
         paused = false
         formValid = emptySet()
         formHasInput = false
@@ -184,6 +188,7 @@ private val Dim = Color(0xA80F172A)
 @Composable
 fun FirstRunCoachOverlay(screen: CoachScreen, cart: CoachCart? = null, covered: Boolean = false) {
     val coach = FirstRunCoach
+    if (cart != null) SideEffect { coach.isSale = cart.isSale }
     val current = FirstRunCoachRules.next(coach.run, screen, coach.passed, cart, coach.customersExist)
     if (current == null || covered || coach.paused) return
     val rect = coach.anchors[current.anchor(screen)]
@@ -296,7 +301,7 @@ fun FirstRunCoachOverlay(screen: CoachScreen, cart: CoachCart? = null, covered: 
             Text(stringResource(textOf(current)), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White, lineHeight = 20.sp)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    CoachPlan(coach.customersExist, cart?.isSale ?: false).counter(current).orEmpty(),
+                    CoachPlan(coach.customersExist, coach.isSale).counter(current).orEmpty(),
                     fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.92f),
                     modifier = Modifier.testTag("guide.bubble.counter"),
                 )
