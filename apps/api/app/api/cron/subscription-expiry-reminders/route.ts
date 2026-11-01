@@ -194,7 +194,7 @@ async function processDayBucket(
         ...base,
         recipients,
         status: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Unknown error',
       });
     }
   }

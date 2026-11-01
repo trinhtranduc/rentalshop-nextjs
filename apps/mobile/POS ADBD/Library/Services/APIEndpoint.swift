@@ -10,13 +10,13 @@ enum ValidationStringMessage: String {
 extension NSError {
     class func errorWithOwnMessage(message: String, domain: String) -> NSError {
         var dict = [String: AnyObject]()
-        dict[NSLocalizedDescriptionKey] = message as AnyObject?
+        dict[NSLocalizedDescriptionKey] = ServerMessageGuard.safe(message) as AnyObject?
 
         return NSError(domain: domain, code: 1000, userInfo: dict)
     }
     class func errorWithOwnMessage(message: String, domain: String, code: Int) -> NSError {
         var dict = [String: AnyObject]()
-        dict[NSLocalizedDescriptionKey] = message as AnyObject?
+        dict[NSLocalizedDescriptionKey] = ServerMessageGuard.safe(message) as AnyObject?
 
         return NSError(domain: domain, code: code, userInfo: dict)
     }

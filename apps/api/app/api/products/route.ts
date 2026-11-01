@@ -33,15 +33,9 @@ function buildAuditContext(request: NextRequest, user: { id: number; email: stri
   };
 }
 
-function buildImageUploadErrorResponse(detail?: string) {
-  const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
-  return NextResponse.json(
-    {
-      ...base,
-      error: detail || base.error
-    },
-    { status: 500 }
-  );
+function buildImageUploadErrorResponse() {
+  // #1408 The S3 or storage detail stays in the log; message and error are the catalog sentence.
+  return NextResponse.json(ResponseBuilder.error('UPLOAD_IMAGE_FAILED'), { status: 500 });
 }
 
 /**
@@ -808,8 +802,7 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
     }
     
     if (typeof error.message === 'string' && error.message.startsWith(IMAGE_UPLOAD_ERROR_PREFIX)) {
-      const detail = error.message.slice(IMAGE_UPLOAD_ERROR_PREFIX.length).trim();
-      return buildImageUploadErrorResponse(detail);
+      return buildImageUploadErrorResponse();
     }
 
     if (error.message === 'IMAGE_UPLOAD_FAILED') {

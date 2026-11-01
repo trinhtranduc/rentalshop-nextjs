@@ -41,6 +41,28 @@ enum APIErrorText {
     }
 }
 
+/// #1408 Installed apps must not show a server exception (SQL, paths, stack) even if the API ever sends one.
+/// One rule for every place a server message is shown; Android has the same in `ServerMessageGuard.kt`.
+enum ServerMessageGuard {
+    private static let maxLength = 400
+    private static let markers = ["invocation", "prisma", ".next", "/app/", "chunks/", "node_modules", "$queryraw", "cannot read propert"]
+    /// Upper case only: "please select a product from the list" is a sentence, not SQL
+    private static let patterns = [#"\bSELECT\b[\s\S]*\bFROM\b|\bINSERT INTO\b|\bUPDATE\b[\s\S]*\bSET\b|ECONN[A-Z]+|ETIMEDOUT|ENOTFOUND"#,
+                                   #"\.[cm]?[jt]sx?:\d|\n\s+at\s"#]
+
+    static func looksTechnical(_ text: String) -> Bool {
+        if text.count > maxLength { return true }
+        let lower = text.lowercased()
+        if markers.contains(where: { lower.contains($0) }) { return true }
+        return patterns.contains { text.range(of: $0, options: .regularExpression) != nil }
+    }
+
+    /// `text` when it reads like a sentence, else the app's own generic error
+    static func safe(_ text: String, fallback: @autoclosure () -> String = "Something went wrong".localized()) -> String {
+        looksTechnical(text) ? fallback() : text
+    }
+}
+
 /// API Error Codes - Matches backend ErrorCode enum
 enum APIErrorCode: String, Codable, CaseIterable {
     // MARK: - Authentication & Authorization
@@ -1409,7 +1431,7 @@ struct APIErrorResponse: Codable {
         if let errorCode = errorCode {
             return errorCode.defaultMessage
         }
-        return (message ?? error ?? "An error occurred").localized()
+        return ServerMessageGuard.safe((message ?? error ?? "An error occurred").localized())
     }
     
     /// Get HTTP status code

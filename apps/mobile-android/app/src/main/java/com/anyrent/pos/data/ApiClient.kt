@@ -309,7 +309,7 @@ class ApiClient(
             .toRequestBody(jsonMedia)
         val json = execute(post("/api/mobile/notifications/register-device", body))
         if (!json.optBoolean("success", true)) {
-            error(json.optString("message").ifBlank { "Device registration failed" })
+            error(json.errorMessage().ifBlank { "Device registration failed" })
         }
     }
 
@@ -853,7 +853,7 @@ class ApiClient(
                     JSONObject(body).optString("message")
                         .ifBlank { JSONObject(body).optString("error") }
                 }.getOrNull()?.takeIf { it.isNotBlank() }
-                error(apiMessage ?: "Download failed (${response.code})")
+                error(apiMessage?.let { ApiErrorMessages.resolve(AnyRentApp.instance, null, it) } ?: "Download failed (${response.code})")
             }
             return response.body?.bytes() ?: ByteArray(0)
         }

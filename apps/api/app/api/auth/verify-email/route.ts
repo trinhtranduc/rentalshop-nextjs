@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db, verifyEmailByToken } from '@rentalshop/database';
 import { generateToken } from '@rentalshop/auth/server';
-import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { handleApiError, ResponseBuilder, clientSafeErrorText } from '@rentalshop/utils';
 
 const verifyEmailSchema = z.object({
   token: z.string().min(1, 'Token is required'),
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
     console.error('Email verification error:', error);
     
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-    const errorMessage = error.message || 'Lỗi xác thực email';
+    const errorMessage = clientSafeErrorText(error, 'Lỗi xác thực email');
     return NextResponse.redirect(
       `${clientUrl}/verify-email?error=${encodeURIComponent(errorMessage)}`
     );

@@ -93,7 +93,6 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
 
   } catch (error) {
     console.error('Error fetching merchants:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       ResponseBuilder.error('FETCH_MERCHANTS_FAILED'),
       { status: API.STATUS.INTERNAL_SERVER_ERROR }

@@ -6,6 +6,7 @@ import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.StaffUser
+import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.ExtensionUpdate
 import com.anyrent.pos.domain.orders.NotesStep
@@ -55,7 +56,7 @@ object ApiParity {
             .toRequestBody(jsonMedia)
         val json = ApiClient.get().publicPost("/api/auth/register", body)
         if (json.has("success") && !json.optBoolean("success")) {
-            error(json.optString("message").ifBlank { "Registration failed" })
+            error(ApiErrorMessages.resolve(AnyRentApp.instance, json.optString("code"), json.optString("message").ifBlank { "Registration failed" }))
         }
     }
 

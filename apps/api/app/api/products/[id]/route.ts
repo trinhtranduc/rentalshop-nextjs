@@ -27,15 +27,9 @@ import { otherActiveOutletsFor, otherOutletStock } from '../../../../lib/other-o
 import { changedSharedFields, heldOutletsLabel, holdsOrListsAt, holdsStockAt, otherOutletsHolding, sharedFieldsLockedFor } from '../../../../lib/product-branch-rules';
 import { autoListOutletIdsForStockWrite, isOldListingClient } from '../../../../lib/product-listing';
 
-function buildImageUploadErrorResponse(detail?: string) {
-  const base = ResponseBuilder.error('IMAGE_UPLOAD_FAILED');
-  return NextResponse.json(
-    {
-      ...base,
-      error: detail || base.error
-    },
-    { status: 500 }
-  );
+function buildImageUploadErrorResponse() {
+  // #1408 The S3 or storage detail stays in the log; message and error are the catalog sentence.
+  return NextResponse.json(ResponseBuilder.error('UPLOAD_IMAGE_FAILED'), { status: 500 });
 }
 
 function buildAuditContext(request: NextRequest, user: { id: number; email: string; role: string }, userScope: { merchantId?: number; outletId?: number }) {
@@ -507,7 +501,7 @@ export async function PUT(
           
           if (!uploadResult.success || !uploadResult.data) {
             console.error(`❌ Failed to upload ${fakeFile.name}:`, uploadResult.error);
-            return buildImageUploadErrorResponse(uploadResult.error);
+            return buildImageUploadErrorResponse();
           }
           
           uploadedFiles.push(uploadResult.data.url);
@@ -771,7 +765,7 @@ export async function PUT(
                 }
               } catch (error) {
                 console.error(`❌ Error deleting orphaned image ${imageUrl}:`, error);
-                return { success: false, key: imageUrl, error: error instanceof Error ? error.message : 'Unknown error' };
+                return { success: false, key: imageUrl, error: 'Unknown error' };
               }
             });
             
