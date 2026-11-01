@@ -405,14 +405,7 @@ fun OrderDetailV2Screen(
                         onEditCollateral = if (canEditCollateral) ({ sheet = DetailSheet.COLLATERAL }) else null,
                         pickupPhotos = if (detail.pickupNotesImages.isNotEmpty() || state.pickupWaiting.isNotEmpty()) {
                             {
-                                val photoCount = detail.pickupNotesImages.size + state.pickupWaiting.size
-                                Text(
-                                    "${stringResource(R.string.order_photos_at_hand_over)} · $photoCount",
-                                    // An ordinary row of the papers section, like "Khi nhận trả": not a section title
-                                    fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted,
-                                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp).testTag("order.detail.pickupPhotos.title"),
-                                )
-                                OrderPhotoTiles(
+                                OrderPickupPhotosRow(
                                     urls = detail.pickupNotesImages,
                                     waiting = state.pickupWaiting,
                                     id = "order.detail.pickupPhotos",
@@ -549,6 +542,19 @@ fun OrderDetailV2Screen(
             DetailSheet.RETURN -> ReturnSheet(
                 detail = detail,
                 busy = state.busy,
+                // #1419 read only, the same row as on the order detail
+                comparePhotos = if (OrderPhotoLogic.returnSheetShowsPhotos(detail.pickupNotesImages.size, state.pickupWaiting.size)) {
+                    {
+                        OrderPickupPhotosRow(
+                            urls = detail.pickupNotesImages,
+                            waiting = state.pickupWaiting,
+                            id = "order.return.pickupPhotos",
+                            onPreview = { previewImage = it },
+                        )
+                    }
+                } else {
+                    null
+                },
                 onDismiss = { sheet = null },
                 onConfirm = { late, damage, onError ->
                     vm.takeReturn(

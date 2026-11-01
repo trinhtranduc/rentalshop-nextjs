@@ -15,6 +15,14 @@ class OrderPhotoLogicTest {
         assertEquals("2/3", OrderPhotoLogic.countLabel(2))
     }
 
+    /** #1419 the return sheet only shows photos; with none it stays as it was */
+    @Test
+    fun returnSheetShowsPhotosOnlyWhenThereAreAny() {
+        assertFalse(OrderPhotoLogic.returnSheetShowsPhotos(serverCount = 0, waiting = 0))
+        assertTrue(OrderPhotoLogic.returnSheetShowsPhotos(serverCount = 2, waiting = 0))
+        assertTrue(OrderPhotoLogic.returnSheetShowsPhotos(serverCount = 0, waiting = 1))
+    }
+
     @Test
     fun aLostReplyIsNotSentAgain() {
         assertEquals(OrderPhotoDecision.AlreadyUploaded, OrderPhotoLogic.decide(3, 0, 3))

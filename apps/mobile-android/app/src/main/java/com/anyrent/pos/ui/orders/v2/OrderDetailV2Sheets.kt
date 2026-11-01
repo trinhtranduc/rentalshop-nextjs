@@ -156,6 +156,8 @@ internal fun CollateralEditSheet(
 internal fun ReturnSheet(
     detail: OrderDetail,
     busy: Boolean,
+    /** #1419 the hand-over photos, to compare; null shows the sheet as it was */
+    comparePhotos: (@Composable () -> Unit)? = null,
     onDismiss: () -> Unit,
     onConfirm: (lateFee: Double, damageFee: Double, onError: (String) -> Unit) -> Unit,
 ) {
@@ -185,6 +187,7 @@ internal fun ReturnSheet(
             },
         )
         SheetItems(detail)
+        comparePhotos?.let { Column { it() } }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             FeeField(
                 if (lateDays > 0) pluralStringResource(R.plurals.detail_late_fee_days, lateDays, lateDays) else stringResource(R.string.detail_late_fee),
