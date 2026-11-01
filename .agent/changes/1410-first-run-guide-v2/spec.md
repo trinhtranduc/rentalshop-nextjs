@@ -37,3 +37,8 @@ No API change. Same two GETs as #1393. One new local key per shop: `firstRunGuid
 - [ ] Behaviors 7–15 unit tested where pure (`FirstRunCoachTests`, `FirstRunCoachTest`)
 - [ ] The walk fills every required field, photo included, on a shop from `POST /api/auth/register`, in VI and EN, on iPhone SE and a large iPhone, and on an AVD
 - [ ] A photo-less, 0đ product still saves from the normal form
+
+## Notes from the walk
+
+- iOS: the new customer form hides its nav bar, so it has no edge swipe today. Its way out is pulling the sheet down, or Thoát. Pulling the sheet returns to the cart's bubble. Android's back button goes through the sheet the same way.
+- Local runs: photos need `scripts/mobile-e2e/fake-s3.mjs`. The camera-denied line can't run on a Simulator, which has no camera.
