@@ -110,6 +110,18 @@
         "block": "{n}일 블록",
         "blockExtra": "{n}일 블록 + 추가 {m}일",
         "blockDays": "{n}일"
+      },
+      "dialog": {
+        "photos": {
+          "conditionTitle": "상태 사진",
+          "cardTitle": "인도 시 사진",
+          "pickupCompare": "인도 시 사진",
+          "optional": "선택 사항",
+          "choose": "사진 선택",
+          "uploading": "사진 업로드 중…",
+          "uploadFailed": "사진 {count}장을 업로드하지 못했습니다",
+          "retry": "다시 시도"
+        }
       }
     },
     "installments": {
