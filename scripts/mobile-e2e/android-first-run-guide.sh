@@ -46,7 +46,10 @@ sleep 3
 # Login, then the intro pages.
 ui wait "~Email" 25 >/dev/null || miss "login screen"
 ui tap "Email" 2 >/dev/null 2>&1 || ui tap "~Email" >/dev/null
-sleep 1; ui type "$E2E_EMAIL"; sleep 1; hide_keyboard
+sleep 1; ui type "$E2E_EMAIL"; sleep 1
+# adb input drops text when the machine is busy: the whole address must be there before going on
+for _ in 1 2 3; do ui has "$E2E_EMAIL" && break; ui clear; sleep 1; ui type "$E2E_EMAIL"; sleep 2; done
+hide_keyboard
 ui tap "Mật khẩu" 2 >/dev/null 2>&1 || ui tap "Password" 2 >/dev/null 2>&1 || ui tap "~Password" >/dev/null 2>&1 || ui tap "~Mật khẩu" >/dev/null
 sleep 1; ui type "$E2E_PASSWORD"; sleep 1; hide_keyboard
 first_of "Đăng nhập" "Sign in" "Log in" >/dev/null || miss "login button"
