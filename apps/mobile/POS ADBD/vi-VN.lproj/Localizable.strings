@@ -3171,9 +3171,7 @@
 "firstRunGuide.step.customer" = "Thêm khách hàng";
 "firstRunGuide.step.order" = "Tạo đơn đầu tiên";
 "firstRunGuide.done" = "Đã xong";
-"firstRunGuide.skip" = "Bỏ qua";
 "firstRunGuide.close" = "Đóng";
-"firstRunGuide.skipped" = "Đã ẩn. Mở lại ở Cài đặt › Hướng dẫn bắt đầu";
 "firstRunGuide.settings.row" = "Hướng dẫn bắt đầu";
 "firstRunGuide.finish.title" = "Xong đơn đầu tiên";
 "firstRunGuide.finish.body" = "Đơn đã có ở Đơn hàng và Lịch Thuê.";
@@ -3184,3 +3182,12 @@
 "firstRunGuide.bubble.cartDates" = "Chọn ngày lấy và ngày trả.";
 "firstRunGuide.bubble.cartCreate" = "Đủ rồi. Bấm Tạo đơn.";
 "firstRunGuide.bubble.step" = "Bước %d/%d";
+
+"firstRunGuide.go.product" = "Thêm sản phẩm →";
+"firstRunGuide.go.customer" = "Thêm khách hàng →";
+"firstRunGuide.go.order" = "Tạo đơn →";
+"firstRunGuide.later" = "Để sau";
+"firstRunGuide.collapsed.title" = "Bắt đầu";
+"firstRunGuide.hide" = "Ẩn hướng dẫn";
+"firstRunGuide.hide.confirm" = "Ẩn hướng dẫn? Mở lại trong Cài đặt.";
+"firstRunGuide.hide.action" = "Ẩn";

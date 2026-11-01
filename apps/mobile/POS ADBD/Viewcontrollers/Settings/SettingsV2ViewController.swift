@@ -536,12 +536,12 @@ final class SettingsV2ViewController: BaseViewControler {
         }
     }
 
-    /// #1393: the card in a sheet. A row brings the guide back and runs that step on Home.
+    /// #1393: the card in a sheet. A row brings the guide back and runs that step on Home. #1410: hiding the guide lives here.
     private func openFirstRunGuide() {
         guard let done = FirstRunGuideTracker.shared.doneSteps else { return }
-        let sheet = FirstRunGuideSheetViewController(done: done)
+        let sheet = FirstRunGuideSheetViewController(done: done, canHide: FirstRunGuideTracker.shared.isShownOnHome)
         sheet.onStep = { [weak self] step in
-            FirstRunGuideTracker.shared.clearSkip()
+            FirstRunGuideTracker.shared.reopen()
             self?.dismiss(animated: true) {
                 guard let tabs = self?.tabBarController else { return }
                 (tabs.viewControllers?.first as? UINavigationController)?.popToRootViewController(animated: false)

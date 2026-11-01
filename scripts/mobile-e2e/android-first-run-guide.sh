@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# #1393, #1394: a new empty shop walks the whole first-run guide on Android: product, customer in the cart, order, finish.
+# #1393, #1394, #1410: a new empty shop walks the whole first-run guide on Android: product, customer in the cart, order, finish.
 # The main guard against bubbles drifting when screens change (iOS: FirstRunGuideUITests). Needs a local API and a booted
 # window-mode emulator ($E2E_AVD_PORT), with the debug APK built with -PapiBaseUrl. Exit code = number of misses.
-# Usage: android-first-run-guide.sh [walk|skip|skip-bubble]
+# Usage: android-first-run-guide.sh [walk|later|hide]
 set -uo pipefail
 # shellcheck source=env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env.sh"
@@ -43,10 +43,13 @@ activity="$(adb_s shell cmd package resolve-activity --brief -c android.intent.c
 adb_s shell am start -W -n "$activity" >/dev/null
 sleep 3
 
-# Login, then the intro pages. The card has its own Bỏ qua, so the intro is left before the card can show.
+# Login, then the intro pages.
 ui wait "~Email" 25 >/dev/null || miss "login screen"
 ui tap "Email" 2 >/dev/null 2>&1 || ui tap "~Email" >/dev/null
-sleep 1; ui type "$E2E_EMAIL"; sleep 1; hide_keyboard
+sleep 1; ui type "$E2E_EMAIL"; sleep 1
+# adb input drops text when the machine is busy: the whole address must be there before going on
+for _ in 1 2 3; do ui has "$E2E_EMAIL" && break; ui clear; sleep 1; ui type "$E2E_EMAIL"; sleep 2; done
+hide_keyboard
 ui tap "Mật khẩu" 2 >/dev/null 2>&1 || ui tap "Password" 2 >/dev/null 2>&1 || ui tap "~Password" >/dev/null 2>&1 || ui tap "~Mật khẩu" >/dev/null
 sleep 1; ui type "$E2E_PASSWORD"; sleep 1; hide_keyboard
 first_of "Đăng nhập" "Sign in" "Log in" >/dev/null || miss "login button"
@@ -61,54 +64,63 @@ shot guide-01-home-new-shop
 
 if ui has "#guide.bubble.skip"; then miss "no bubble before a row is tapped"; fi
 
-# skip-bubble: Bỏ qua in a bubble ends the guide, the form stays usable
-if [ "${1:-walk}" = skip-bubble ]; then
-  tap "#guide.row.product"
-  need "bubble" "#guide.bubble.product_name"
-  shot guide-skip-bubble-shown
-  tap "#guide.bubble.skip"
-  sleep 1
-  if ui has "#guide.bubble.product_name"; then miss "Bỏ qua should close the bubble"; fi
-  need "the form stays" "#product.form.name"
-  tap "#product.form.name"
-  ui type "Vest"
-  sleep 1
-  shot guide-skip-bubble-form
-  hide_keyboard
-  first_of "Lưu sản phẩm" "Save product" >/dev/null || miss "save product"
-  sleep 3
-  if ui has "#guide.card"; then miss "the card should stay hidden"; fi
-  shot guide-skip-bubble-home
+# later: Để sau collapses, the slim row stays after a restart and reopens the card (#1410)
+if [ "${1:-walk}" = later ]; then
+  if ui has "#guide.dismiss" || ui has "Bỏ qua" || ui has "Skip"; then miss "Bỏ qua left the card"; fi
+  need "the blue button" "#guide.cta"
+  shot guide-card-01-new
+  tap "#guide.later"
+  need "slim row" "#guide.slim"
+  if ui has "#guide.cta"; then miss "Để sau should collapse the card"; fi
+  shot guide-card-02-slim
+  adb_s shell am force-stop "$PKG"
+  adb_s shell am start -W -n "$activity" >/dev/null
+  need "slim row after a restart" "#guide.slim" 25
+  tap "#guide.slim"
+  need "the card is back" "#guide.cta"
+  shot guide-card-03-back
   echo "misses: $MISSES"
   exit "$MISSES"
 fi
 
-# skip: Bỏ qua, then back through Cài đặt › Hướng dẫn bắt đầu
-if [ "${1:-walk}" = skip ]; then
-  tap "#guide.dismiss"
-  sleep 1
-  shot guide-skip-01-home
-  if ui has "#guide.card"; then miss "Bỏ qua should hide the card"; fi
+# hide: only from Cài đặt, with its confirm; the row brings the guide back (#1410)
+if [ "${1:-walk}" = hide ]; then
+  tap "#guide.later"
+  need "slim row" "#guide.slim"
   first_of "Cài đặt" "Settings" >/dev/null || miss "settings tab"
   sleep 2
   for _ in 1 2 3 4; do ui has "#settings.firstRunGuide" && break; ui swipe up; done
-  shot guide-skip-02-settings
   tap "#settings.firstRunGuide"
   need "card in a sheet" "#guide.card"
-  shot guide-skip-03-sheet
-  tap "#guide.row.product"
-  need "the row runs the step on Home" "#product.form.name" 20
-  shot guide-skip-04-form
+  shot guide-hide-01-sheet
+  tap "#guide.hide"
+  sleep 1
+  shot guide-hide-02-confirm
+  first_of "Ẩn" "Hide" >/dev/null || miss "confirm hide"
+  sleep 2
+  first_of "Trang chủ" "Home" >/dev/null || miss "home tab"
+  sleep 2
+  if ui has "#guide.slim" || ui has "#guide.card"; then miss "hidden: no slim row, no card"; fi
+  shot guide-hide-03-home
+  first_of "Cài đặt" "Settings" >/dev/null || miss "settings tab"
+  sleep 2
+  for _ in 1 2 3 4; do ui has "#settings.firstRunGuide" && break; ui swipe up; done
+  tap "#settings.firstRunGuide"
+  need "card in a sheet" "#guide.card"
+  if ui has "#guide.hide"; then miss "already hidden"; fi
+  shot guide-hide-04-sheet-hidden
+  tap "#guide.cta"
+  need "the button runs the step on Home" "#product.form.name" 20
   ui back
   sleep 2
-  need "card back on Home" "0/3" 20
-  shot guide-skip-05-card-back
+  need "card back on Home" "#guide.cta" 20
+  shot guide-hide-05-card-back
   echo "misses: $MISSES"
   exit "$MISSES"
 fi
 
 # 1. Product
-tap "#guide.row.product"
+tap "#guide.cta"
 need "bubble 1: product form" "#guide.bubble.product_name"
 shot guide-02-bubble-product
 # A tap on the dim closes the bubble and leaves the form usable
@@ -132,7 +144,7 @@ need "one step done" "1/3" 20
 shot guide-04-home-one-done
 
 # 2. Customer, inside the cart
-tap "#guide.row.customer"
+tap "#guide.cta"
 need "cart opens" "#cart.more"
 need "bubble 2: customer row" "#guide.bubble.cart_customer"
 shot guide-05-bubble-cart-customer

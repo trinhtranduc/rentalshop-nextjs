@@ -268,7 +268,7 @@ final class FirstRunGuideTests: XCTestCase {
         guide.noteProducts(false)
         guide.refresh()
         guide.skip()
-        guide.clearSkip()
+        guide.reopen()
         XCTAssertEqual(guide.card(searching: false), .steps(done: []))
     }
 
@@ -282,6 +282,131 @@ final class FirstRunGuideTests: XCTestCase {
         guide.refresh(forSettings: true)
         XCTAssertEqual(guide.card(searching: false), .hidden)
         XCTAssertNil(guide.settingsDoneCount)
+    }
+
+    // MARK: - Để sau (#1410)
+
+    func testLaterCollapsesToTheSlimRowAndStaysAfterARelaunch() {
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        XCTAssertEqual(guide.card(searching: false), .collapsed(done: []))
+        XCTAssertTrue(FirstRunGuideStore(defaults: defaults).marks(merchantId: 1).collapsed)
+        let relaunched = tracker()
+        relaunched.noteProducts(false)
+        relaunched.refresh()
+        XCTAssertEqual(relaunched.card(searching: false), .collapsed(done: []))
+    }
+
+    func testTheSlimRowKeepsCounting() {
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        let calls = source.orderCalls
+        guide.noteProducts(true)
+        source.customers = 1
+        guide.refresh()
+        XCTAssertEqual(source.orderCalls, calls + 1, "a collapsed guide still reads")
+        XCTAssertEqual(guide.card(searching: false), .collapsed(done: [.product, .customer]))
+    }
+
+    func testTheSlimRowReopensTheCard() {
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        guide.expand()
+        XCTAssertEqual(guide.card(searching: false), .steps(done: []))
+        XCTAssertFalse(FirstRunGuideStore(defaults: defaults).marks(merchantId: 1).collapsed)
+    }
+
+    func testTheSlimRowHidesWhileSearching() {
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        XCTAssertEqual(guide.card(searching: true), .hidden)
+    }
+
+    func testCollapseDoesNotSkipAndSettingsRowStays() {
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        XCTAssertFalse(FirstRunGuideStore(defaults: defaults).marks(merchantId: 1).skipped, "skipped is only set from Settings")
+        XCTAssertEqual(guide.settingsDoneCount, 0)
+    }
+
+    func testCollapseIsPerShop() {
+        XCTAssertEqual(FirstRunGuideStore.key("collapsed", merchantId: 42), "firstRunGuide.collapsed.42")
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        context.merchantId = 2
+        let other = tracker()
+        other.noteProducts(false)
+        other.refresh()
+        XCTAssertEqual(other.card(searching: false), .steps(done: []))
+    }
+
+    func testTheFirstOrderEndsTheSlimRow() {
+        let guide = tracker()
+        guide.noteProducts(true)
+        guide.refresh()
+        guide.noteCardShown()
+        guide.collapse()
+        source.orders = 1
+        guide.refresh()
+        XCTAssertEqual(guide.card(searching: false), .finished, "the slim row earns the finish card too")
+        guide.closeFinish()
+        XCTAssertEqual(guide.card(searching: false), .hidden)
+    }
+
+    func testHidingFromSettingsTakesTheSlimRowToo() {
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        guide.skip()
+        XCTAssertEqual(guide.card(searching: false), .hidden)
+        XCTAssertEqual(guide.settingsDoneCount, 0, "the Settings row brings it back")
+    }
+
+    func testReopeningFromSettingsClearsTheSkipAndTheCollapse() {
+        let guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        guide.skip()
+        guide.reopen()
+        XCTAssertEqual(guide.card(searching: false), .steps(done: []), "a run from Settings returns to the card")
+    }
+
+    // MARK: - Card (#1410)
+
+    func testBounceOnlyOnceAndNotUnderReduceMotion() {
+        XCTAssertTrue(FirstRunGuide.bounces(reduceMotion: false, alreadyBounced: false))
+        XCTAssertFalse(FirstRunGuide.bounces(reduceMotion: false, alreadyBounced: true))
+        XCTAssertFalse(FirstRunGuide.bounces(reduceMotion: true, alreadyBounced: false))
+    }
+
+    func testEveryStepHasItsButtonAndNoSkipStringIsLeft() throws {
+        for code in ["en", "vi-VN"] {
+            let bundle = try XCTUnwrap(Bundle(for: FirstRunGuideTracker.self).path(forResource: code, ofType: "lproj").flatMap(Bundle.init(path:)))
+            let text = { (key: String) in bundle.localizedString(forKey: key, value: "MISSING", table: nil) }
+            for step in FirstRunGuideStep.allCases {
+                XCTAssertTrue(text(FirstRunGuideCardView.buttonKey(of: step)).hasSuffix("→"), "\(code) \(step)")
+            }
+            for key in ["firstRunGuide.later", "firstRunGuide.collapsed.title", "firstRunGuide.hide",
+                        "firstRunGuide.hide.confirm", "firstRunGuide.hide.action"] {
+                XCTAssertNotEqual(text(key), "MISSING", "\(code) \(key)")
+            }
+            XCTAssertEqual(text("firstRunGuide.skip"), "MISSING", "Bỏ qua left the guide")
+            XCTAssertEqual(text("firstRunGuide.skipped"), "MISSING", "the toast left the guide")
+        }
     }
 
     // MARK: - Shop change

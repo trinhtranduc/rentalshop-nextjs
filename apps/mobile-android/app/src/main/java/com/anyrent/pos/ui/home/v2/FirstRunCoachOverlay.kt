@@ -1,6 +1,5 @@
 package com.anyrent.pos.ui.home.v2
 
-import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,7 +50,6 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -150,14 +148,12 @@ fun FirstRunCoachOverlay(screen: CoachScreen, cart: CoachCart? = null) {
     if (rect == null) return
 
     val density = LocalDensity.current
-    val context = LocalContext.current
     var origin by remember { mutableStateOf(Offset.Zero) }
     var boxHeight by remember { mutableStateOf(0) }
     var boxWidth by remember { mutableStateOf(0) }
     var cardHeight by remember(current) { mutableStateOf(0) }
     val top = WindowInsets.statusBars.getTop(density)
     val bottomInset = maxOf(WindowInsets.navigationBars.getBottom(density), WindowInsets.ime.getBottom(density))
-    val skippedText = stringResource(R.string.first_run_guide_skipped)
     val inset = with(density) { 4.dp.toPx() }
     val hole = Rect(
         rect.left - origin.x - inset, rect.top - origin.y - inset,
@@ -225,15 +221,11 @@ fun FirstRunCoachOverlay(screen: CoachScreen, cart: CoachCart? = null) {
                     fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.88f), modifier = Modifier.weight(1f),
                 )
                 Text(
-                    stringResource(R.string.first_run_guide_skip),
+                    stringResource(R.string.first_run_guide_later),
                     fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White,
                     modifier = Modifier
                         .testTag("guide.bubble.skip")
-                        .clickable {
-                            FirstRunCoach.stop()
-                            FirstRunGuideApp.tracker.skip()
-                            Toast.makeText(context, skippedText, Toast.LENGTH_LONG).show()
-                        }
+                        .clickable { FirstRunCoach.stop() } // #1410: ends this run only; the guide itself is hidden from Cài đặt
                         .heightIn(min = 32.dp)
                         .padding(start = 8.dp, end = 2.dp, top = 8.dp, bottom = 8.dp),
                 )

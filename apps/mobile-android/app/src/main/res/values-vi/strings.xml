@@ -2467,9 +2467,7 @@
     <string name="first_run_guide_step_product">Thêm sản phẩm đầu tiên</string>
     <string name="first_run_guide_step_customer">Thêm khách hàng</string>
     <string name="first_run_guide_step_order">Tạo đơn đầu tiên</string>
-    <string name="first_run_guide_skip">Bỏ qua</string>
     <string name="first_run_guide_close">Đóng</string>
-    <string name="first_run_guide_skipped">Đã ẩn. Mở lại ở Cài đặt › Hướng dẫn bắt đầu</string>
     <string name="first_run_guide_settings_row">Hướng dẫn bắt đầu</string>
     <string name="first_run_guide_finish_title">Xong đơn đầu tiên</string>
     <string name="first_run_guide_finish_body">Đơn đã có ở Đơn hàng và Lịch.</string>
@@ -2480,4 +2478,12 @@
     <string name="first_run_guide_bubble_cart_dates">Chọn ngày lấy và ngày trả.</string>
     <string name="first_run_guide_bubble_cart_create">Đủ rồi. Bấm Tạo đơn.</string>
     <string name="first_run_guide_bubble_step">Bước %1$d/%2$d</string>
+    <string name="first_run_guide_go_product">Thêm sản phẩm →</string>
+    <string name="first_run_guide_go_customer">Thêm khách hàng →</string>
+    <string name="first_run_guide_go_order">Tạo đơn →</string>
+    <string name="first_run_guide_later">Để sau</string>
+    <string name="first_run_guide_collapsed_title">Bắt đầu</string>
+    <string name="first_run_guide_hide">Ẩn hướng dẫn</string>
+    <string name="first_run_guide_hide_confirm">Ẩn hướng dẫn? Mở lại trong Cài đặt.</string>
+    <string name="first_run_guide_hide_action">Ẩn</string>
 </resources>

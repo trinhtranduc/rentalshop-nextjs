@@ -2,7 +2,7 @@
 //  FirstRunGuideUITests.swift
 //  POS ADBDUITests
 //
-//  #1393, #1394: a new empty shop walks the whole guide: product, customer in the cart, order, finish. The main guard against
+//  #1393, #1394, #1410: a new empty shop walks the whole guide: product, customer in the cart, order, finish. The main guard against
 //  bubbles drifting when screens change. Log in with a shop from scripts/mobile-e2e/new-empty-shop.sh:
 //    TEST_RUNNER_E2E_EMAIL=... TEST_RUNNER_E2E_PASSWORD=... TEST_RUNNER_E2E_ROLE=merchant TEST_RUNNER_E2E_OUT_DIR=... \
 //    TEST_RUNNER_E2E_FEATURES=... xcodebuild test -only-testing:"POS ADBDUITests/FirstRunGuideUITests" ...
@@ -24,7 +24,7 @@ final class FirstRunGuideUITests: XCTestCase {
         try FileManager.default.createDirectory(atPath: e2e.outDir, withIntermediateDirectories: true)
     }
 
-    /// `E2E.start` taps every "Bỏ qua", which on a new shop would also be the card's. Past the intro pages only.
+    /// Past the intro pages only: `E2E.start` does more than a new shop needs.
     private func logInToHome() {
         app.launch()
         if app.secureTextFields.firstMatch.waitForExistence(timeout: 10) {
@@ -66,10 +66,10 @@ final class FirstRunGuideUITests: XCTestCase {
         logInToHome()
         count("0/3")
         e2e.shot("guide-01-home-new-shop")
-        XCTAssertFalse(app.buttons["guide.bubble.skip"].exists, "no bubble before a row is tapped")
+        XCTAssertFalse(app.buttons["guide.bubble.skip"].exists, "no bubble before the button is tapped")
 
         // Bubble 1: product form. A tap on the dim closes it and leaves the form usable.
-        row("product").tap()
+        app.buttons["guide.cta"].tap()
         let first = bubble("productName")
         e2e.shot("guide-02-bubble-product")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72)).tap()
@@ -90,7 +90,7 @@ final class FirstRunGuideUITests: XCTestCase {
         e2e.shot("guide-04-home-one-done")
 
         // Bubble 2: the row puts the product in the cart and lights the customer row
-        row("customer").tap()
+        app.buttons["guide.cta"].tap()
         XCTAssertTrue(app.buttons["cart.more"].waitForExistence(timeout: 8), "the cart opens")
         _ = bubble("cartCustomer")
         e2e.shot("guide-05-bubble-cart-customer")
@@ -140,49 +140,67 @@ final class FirstRunGuideUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["guide.count"].exists)
     }
 
-    /// #1394: Bỏ qua in a bubble ends the guide and the screen stays usable
-    func testSkipFromABubble() throws {
+    /// #1410: Để sau only collapses: the slim row stays, keeps its place after a relaunch and reopens the card
+    func testLaterCollapsesAndTheSlimRowReopensTheCard() throws {
         logInToHome()
         count("0/3")
-        row("product").tap()
-        _ = bubble("productName")
-        app.buttons["guide.bubble.skip"].tap()
-        XCTAssertTrue(app.buttons["guide.bubble.skip"].waitForNonExistence(timeout: 3))
-        let name = app.textFields["product.form.name"]
-        XCTAssertTrue(name.exists, "the form stays usable")
-        name.tap()
-        name.typeText("Vest")
-        e2e.shot("guide-skip-bubble-form")
-        e2e.element(labelBeginsWith: ["Close", "Đóng"], type: .button).tap()
-        e2e.tapIfExists(e2e.button(["Leave", "Thoát", "Discard", "Bỏ", "Yes", "Có"]), timeout: 2)
-        XCTAssertTrue(app.staticTexts["guide.count"].waitForNonExistence(timeout: 5), "the card is hidden")
-        e2e.shot("guide-skip-bubble-home")
+        e2e.shot("guide-card-01-new")
+        XCTAssertFalse(app.buttons["guide.dismiss"].exists, "Bỏ qua left the card")
+        XCTAssertFalse(e2e.button(["Skip", "Bỏ qua"]).exists, "Bỏ qua left the card")
+        XCTAssertTrue(app.buttons["guide.cta"].isHittable, "the blue button")
+
+        app.buttons["guide.later"].tap()
+        let slim = app.buttons["guide.slim"]
+        XCTAssertTrue(slim.waitForExistence(timeout: 5), "Để sau leaves the slim row")
+        XCTAssertTrue(slim.label.hasSuffix("0/3"), slim.label)
+        XCTAssertFalse(app.buttons["guide.cta"].exists)
+        e2e.shot("guide-card-02-slim")
+
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(slim.waitForExistence(timeout: 20), "still collapsed after a relaunch")
+        slim.tap()
+        count("0/3")
+        XCTAssertFalse(slim.exists)
     }
 
-    func testSkipThenReopenFromSettings() throws {
+    /// #1410: hiding is only from Cài đặt, with its confirm; the row stays and brings the guide back
+    func testHideFromSettingsThenReopen() throws {
         logInToHome()
         count("0/3")
-        let dismiss = app.buttons["guide.dismiss"]
-        XCTAssertTrue(dismiss.waitForExistence(timeout: 5))
-        dismiss.tap()
-        XCTAssertTrue(app.staticTexts["guide.count"].waitForNonExistence(timeout: 5), "Bỏ qua hides the card")
-        e2e.shot("guide-skip-01-home")
+        app.buttons["guide.later"].tap()
+        XCTAssertTrue(app.buttons["guide.slim"].waitForExistence(timeout: 5))
 
-        e2e.tapTab(["Setting", "Cài đặt"], index: 4)
-        let settingsRow = app.cells["settings.firstRunGuide"]
+        openGuideSheet()
+        e2e.shot("guide-hide-01-sheet")
+        app.buttons["guide.hide"].tap()
+        let hide = e2e.button(["Hide", "Ẩn"])
+        XCTAssertTrue(hide.waitForExistence(timeout: 3), "the one-line confirm")
+        e2e.shot("guide-hide-02-confirm")
+        hide.tap()
+        XCTAssertTrue(app.otherElements["guide.sheet"].waitForNonExistence(timeout: 5))
+
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        XCTAssertTrue(app.buttons["guide.slim"].waitForNonExistence(timeout: 5), "hidden: no slim row")
+        XCTAssertFalse(app.staticTexts["guide.count"].exists, "hidden: no card")
+        e2e.shot("guide-hide-03-home")
+
+        openGuideSheet()
+        XCTAssertFalse(app.buttons["guide.hide"].exists, "already hidden")
+        e2e.shot("guide-hide-04-sheet-hidden")
+        app.buttons["guide.cta"].tap()
+        XCTAssertTrue(app.textFields["product.form.name"].waitForExistence(timeout: 8), "the button runs the step on Home")
+        e2e.element(labelBeginsWith: ["Close", "Đóng"], type: .button).tap()
+        count("0/3")
+        e2e.shot("guide-hide-05-card-back")
+    }
+
+    private func openGuideSheet() {
+        e2e.tapTab(["Settings", "Setting", "Cài đặt"], index: 4)
+        let settingsRow = app.cells["settings.firstRunGuide"].firstMatch
         for _ in 0..<4 where !(settingsRow.exists && settingsRow.isHittable) { app.swipeUp(); sleep(1) }
-        XCTAssertTrue(settingsRow.waitForExistence(timeout: 10), "the Settings row stays after a skip")
-        e2e.shot("guide-skip-02-settings")
+        XCTAssertTrue(settingsRow.waitForExistence(timeout: 10), "the Settings row")
         settingsRow.tap()
         XCTAssertTrue(app.staticTexts["guide.count"].waitForExistence(timeout: 5), "the card in a sheet")
-        e2e.shot("guide-skip-03-sheet")
-        row("product").tap()
-        XCTAssertTrue(app.textFields["product.form.name"].waitForExistence(timeout: 8), "the row runs the step on Home")
-        e2e.shot("guide-skip-04-form")
-        XCTAssertTrue(e2e.element(labelBeginsWith: ["Close", "Đóng", "Cancel", "Hủy", "Back", "Quay lại"], type: .button).exists)
-        e2e.element(labelBeginsWith: ["Close", "Đóng", "Cancel", "Hủy", "Back", "Quay lại"], type: .button).tap()
-        e2e.tapIfExists(e2e.button(["Leave", "Thoát", "Discard", "Bỏ"]), timeout: 2)
-        count("0/3")
-        e2e.shot("guide-skip-05-card-back")
     }
 }

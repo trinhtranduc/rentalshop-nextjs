@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * #1393: the card "Bắt đầu: 3 việc" on Home for a new shop's owner. Pure rules plus a small tracker: no API change, the
+ * #1393, #1410: the card "Bắt đầu: 3 việc" on Home for a new shop's owner. Pure rules plus a small tracker: no API change, the
  * ticks come from data the app can already read. Same rules as iOS `FirstRunGuide.swift`.
  */
 enum class FirstRunGuideStep { PRODUCT, CUSTOMER, ORDER }
@@ -19,8 +19,10 @@ data class FirstRunGuideFacts(
 
 /** Per phone and per shop */
 data class FirstRunGuideMarks(
-    /** Bỏ qua */
+    /** Hidden from Cài đặt, the only place that sets it (#1410) */
     val skipped: Boolean = false,
+    /** Để sau: the slim row in place of the card */
+    val collapsed: Boolean = false,
     /** This phone showed the steps card, so the first order earns the finish card */
     val seen: Boolean = false,
     /** The shop has an order: the guide is over and no more calls are made */
@@ -32,6 +34,8 @@ data class FirstRunGuideMarks(
 sealed interface FirstRunGuideCard {
     data object Hidden : FirstRunGuideCard
     data class Steps(val done: Set<FirstRunGuideStep>) : FirstRunGuideCard
+    /** "Bắt đầu n/3 ›" */
+    data class Collapsed(val done: Set<FirstRunGuideStep>) : FirstRunGuideCard
     data object Finished : FirstRunGuideCard
 }
 
@@ -67,7 +71,8 @@ object FirstRunGuide {
         if (!audience || searching) return FirstRunGuideCard.Hidden
         if (marks.finishPending) return FirstRunGuideCard.Finished
         if (marks.done || marks.skipped) return FirstRunGuideCard.Hidden
-        return doneSteps(facts)?.let { FirstRunGuideCard.Steps(it) } ?: FirstRunGuideCard.Hidden
+        val done = doneSteps(facts) ?: return FirstRunGuideCard.Hidden
+        return if (marks.collapsed) FirstRunGuideCard.Collapsed(done) else FirstRunGuideCard.Steps(done)
     }
 
     /** The "n/3" of the Settings row; null hides the row. A skip keeps the row: it is how the guide comes back. */
@@ -81,6 +86,9 @@ object FirstRunGuide {
         if (total <= 0 || marks.done) return marks
         return marks.copy(done = true, finishPending = marks.seen && !marks.skipped)
     }
+
+    /** The card's button bounces once when it first appears, and not at all with animations off */
+    fun bounces(animatorScale: Float, alreadyBounced: Boolean): Boolean = animatorScale > 0f && !alreadyBounced
 
     /** A row of the card. The customer and order rows work in the cart, so the cart needs a product first. */
     fun action(step: FirstRunGuideStep, hasProduct: Boolean, cartIsEmpty: Boolean): FirstRunGuideAction =
@@ -99,6 +107,7 @@ interface FirstRunGuideStorage {
 class FirstRunGuideStore(private val storage: FirstRunGuideStorage) {
     fun marks(merchantId: Int) = FirstRunGuideMarks(
         skipped = storage.get(key("skipped", merchantId)),
+        collapsed = storage.get(key("collapsed", merchantId)),
         seen = storage.get(key("seen", merchantId)),
         done = storage.get(key("done", merchantId)),
         finishPending = storage.get(key("finishPending", merchantId)),
@@ -106,6 +115,7 @@ class FirstRunGuideStore(private val storage: FirstRunGuideStorage) {
 
     fun save(marks: FirstRunGuideMarks, merchantId: Int) {
         storage.set(key("skipped", merchantId), marks.skipped)
+        storage.set(key("collapsed", merchantId), marks.collapsed)
         storage.set(key("seen", merchantId), marks.seen)
         storage.set(key("done", merchantId), marks.done)
         storage.set(key("finishPending", merchantId), marks.finishPending)
@@ -162,6 +172,9 @@ class FirstRunGuideTracker(
 
     fun settingsDoneCount(): Int? = FirstRunGuide.settingsDoneCount(isAudience, marks(), facts)
 
+    /** Not hidden yet: the sheet in Cài đặt offers "Ẩn hướng dẫn" only then */
+    fun isShownOnHome(): Boolean = !marks().skipped
+
     /** The rows ticked, for the sheet in Cài đặt */
     fun doneSteps(): Set<FirstRunGuideStep>? {
         currentShop()
@@ -216,13 +229,27 @@ class FirstRunGuideTracker(
     /** The steps card reached the screen */
     fun noteCardShown() = update { it.copy(seen = true) }
 
+    /** "Ẩn hướng dẫn" in Cài đặt, after its confirm. Nothing else calls this. */
     fun skip() {
         update { it.copy(skipped = true) }
         publish()
     }
 
-    fun clearSkip() {
-        update { it.copy(skipped = false) }
+    /** Để sau on the card */
+    fun collapse() {
+        update { it.copy(collapsed = true) }
+        publish()
+    }
+
+    /** A tap on the slim row */
+    fun expand() {
+        update { it.copy(collapsed = false) }
+        publish()
+    }
+
+    /** A row of the sheet in Cài đặt: the guide is back, and leaving a run returns to the card */
+    fun reopen() {
+        update { it.copy(skipped = false, collapsed = false) }
         publish()
     }
 

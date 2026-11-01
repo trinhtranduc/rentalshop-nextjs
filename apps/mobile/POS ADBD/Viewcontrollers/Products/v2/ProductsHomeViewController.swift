@@ -118,6 +118,11 @@ final class ProductsHomeViewController: BaseViewControler {
         viewModel.refreshQuietly()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        bounceGuideIfInFront()
+    }
+
     override func startRefresh(_ sender: Any) {
         viewModel.reload()
         FirstRunGuideTracker.shared.refresh()
@@ -260,10 +265,8 @@ final class ProductsHomeViewController: BaseViewControler {
             make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
         }
         guideCard.onStep = { [weak self] step in self?.runGuide(step) }
-        guideCard.onDismiss = { [weak self] in
-            FirstRunGuideTracker.shared.skip()
-            self?.showToast(message: "firstRunGuide.skipped".localized(), duration: 3)
-        }
+        guideCard.onLater = { FirstRunGuideTracker.shared.collapse() } // #1410: nothing is said, the slim row is the answer
+        guideCard.onExpand = { FirstRunGuideTracker.shared.expand() }
         guideCard.onCloseFinish = { FirstRunGuideTracker.shared.closeFinish() }
         NotificationCenter.default.addObserver(self, selector: #selector(guideChanged), name: FirstRunGuideTracker.didChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(guideRunStep(_:)), name: FirstRunGuideTracker.runStep, object: nil)
@@ -299,6 +302,13 @@ final class ProductsHomeViewController: BaseViewControler {
             guideCard.show(card)
             layoutGuideHeader()
         }
+        bounceGuideIfInFront()
+    }
+
+    /// #1410: not while the intro pages or anything else covers Home, or the one bounce is wasted
+    private func bounceGuideIfInFront() {
+        guard guideOnScreen != .hidden, view.window != nil, presentedViewController == nil else { return }
+        guideCard.bounceOnce()
     }
 
     private func layoutGuideHeader() {

@@ -286,7 +286,7 @@ class FirstRunGuideTest {
         guide.noteProducts(false)
         guide.refresh()
         guide.skip()
-        guide.clearSkip()
+        guide.reopen()
         assertEquals(FirstRunGuideCard.Steps(emptySet()), guide.card(searching = false))
     }
 
@@ -304,6 +304,125 @@ class FirstRunGuideTest {
     }
 
     // Shop change
+
+    // Để sau (#1410)
+
+    @Test
+    fun `later collapses to the slim row and stays after a relaunch`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        assertEquals(FirstRunGuideCard.Collapsed(emptySet()), guide.card(searching = false))
+        assertTrue(FirstRunGuideStore(storage).marks(1).collapsed)
+        val relaunched = tracker()
+        relaunched.noteProducts(false)
+        relaunched.refresh()
+        assertEquals(FirstRunGuideCard.Collapsed(emptySet()), relaunched.card(searching = false))
+    }
+
+    @Test
+    fun `the slim row keeps counting`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        val calls = source.orderCalls
+        guide.noteProducts(true)
+        source.customers = 1
+        guide.refresh()
+        assertEquals(calls + 1, source.orderCalls)
+        assertEquals(FirstRunGuideCard.Collapsed(setOf(FirstRunGuideStep.PRODUCT, FirstRunGuideStep.CUSTOMER)), guide.card(searching = false))
+    }
+
+    @Test
+    fun `the slim row reopens the card`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        guide.expand()
+        assertEquals(FirstRunGuideCard.Steps(emptySet()), guide.card(searching = false))
+        assertFalse(FirstRunGuideStore(storage).marks(1).collapsed)
+    }
+
+    @Test
+    fun `the slim row hides while searching`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        assertEquals(FirstRunGuideCard.Hidden, guide.card(searching = true))
+    }
+
+    @Test
+    fun `collapse does not skip and the settings row stays`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        assertFalse(FirstRunGuideStore(storage).marks(1).skipped)
+        assertEquals(0, guide.settingsDoneCount())
+    }
+
+    @Test
+    fun `collapse is per shop`() = runBlocking {
+        assertEquals("firstRunGuide.collapsed.42", FirstRunGuideStore.key("collapsed", 42))
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        merchantId = 2
+        val other = tracker()
+        other.noteProducts(false)
+        other.refresh()
+        assertEquals(FirstRunGuideCard.Steps(emptySet()), other.card(searching = false))
+    }
+
+    @Test
+    fun `the first order ends the slim row`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(true)
+        guide.refresh()
+        guide.noteCardShown()
+        guide.collapse()
+        source.orders = 1
+        guide.refresh()
+        assertEquals(FirstRunGuideCard.Finished, guide.card(searching = false))
+        guide.closeFinish()
+        assertEquals(FirstRunGuideCard.Hidden, guide.card(searching = false))
+    }
+
+    @Test
+    fun `hiding from settings takes the slim row too`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        guide.skip()
+        assertEquals(FirstRunGuideCard.Hidden, guide.card(searching = false))
+        assertEquals(0, guide.settingsDoneCount())
+    }
+
+    @Test
+    fun `reopening from settings clears the skip and the collapse`() = runBlocking {
+        val guide = tracker()
+        guide.noteProducts(false)
+        guide.refresh()
+        guide.collapse()
+        guide.skip()
+        guide.reopen()
+        assertEquals(FirstRunGuideCard.Steps(emptySet()), guide.card(searching = false))
+    }
+
+    // Card (#1410)
+
+    @Test
+    fun `bounce only once and not with animations off`() {
+        assertTrue(FirstRunGuide.bounces(animatorScale = 1f, alreadyBounced = false))
+        assertFalse(FirstRunGuide.bounces(animatorScale = 1f, alreadyBounced = true))
+        assertFalse(FirstRunGuide.bounces(animatorScale = 0f, alreadyBounced = false))
+    }
 
     @Test
     fun `another shop does not inherit facts`() = runBlocking {
