@@ -41,8 +41,6 @@ public struct TodayWidgetLabels: Codable, Equatable {
     /// "Danh sách lần cuối: %@"
     public var staleFormat: String
     public var yesterday: String
-    /// Shown in place of the customer name when the owner turned names off
-    public var hiddenName: String
     public var displayName: String
     public var displayDescription: String
 
@@ -50,7 +48,7 @@ public struct TodayWidgetLabels: Codable, Equatable {
                 notPrepared: String, moreFormat: String, updatedFormat: String, doneFormat: String, doneCaption: String,
                 allDoneFormat: String, todayAtFormat: String, empty: String, tomorrowFormat: String, loggedOut: String,
                 loggedOutHint: String, noAccess: String, stale: String, staleFormat: String, yesterday: String,
-                hiddenName: String, displayName: String, displayDescription: String) {
+                displayName: String, displayDescription: String) {
         self.locale = locale
         self.appName = appName
         self.today = today
@@ -72,7 +70,6 @@ public struct TodayWidgetLabels: Codable, Equatable {
         self.stale = stale
         self.staleFormat = staleFormat
         self.yesterday = yesterday
-        self.hiddenName = hiddenName
         self.displayName = displayName
         self.displayDescription = displayDescription
     }
@@ -84,7 +81,7 @@ public struct TodayWidgetLabels: Codable, Equatable {
         empty: "Hôm nay chưa có việc", tomorrowFormat: "Mai có %d giao, %d trả", loggedOut: "Mở AnyRent để đăng nhập",
         loggedOutHint: "Việc cần làm sẽ hiện ở đây", noAccess: "Tài khoản này không có Việc cần làm",
         stale: "Mở app để cập nhật", staleFormat: "Danh sách lần cuối: %@", yesterday: "hôm qua",
-        hiddenName: "chạm để mở", displayName: "Việc cần làm",
+        displayName: "Việc cần làm",
         displayDescription: "Giao đồ, nhận trả và đơn trễ của hôm nay.")
 
     public static let english = TodayWidgetLabels(
@@ -94,7 +91,7 @@ public struct TodayWidgetLabels: Codable, Equatable {
         empty: "Nothing to do today", tomorrowFormat: "Tomorrow: %d out, %d back", loggedOut: "Open AnyRent to sign in",
         loggedOutHint: "Your to-do list will show here", noAccess: "This account has no To do list",
         stale: "Open the app to update", staleFormat: "Last list: %@", yesterday: "yesterday",
-        hiddenName: "tap to open", displayName: "To do",
+        displayName: "To do",
         displayDescription: "Today's hand-overs, returns and late orders.")
 
     /// The fallback for a phone with no file yet: Vietnamese unless the phone is set to another language
@@ -123,7 +120,7 @@ public struct TodayWidgetCounts: Codable, Equatable {
     public var total: Int { late + pickup + returns }
 }
 
-/// One job of the day. No phone, no money, no photo. `name` is empty when the owner turned customer names off.
+/// One job of the day. No phone, no money, no photo. `name` is empty only when the order has no customer name.
 public struct TodayWidgetRow: Codable, Equatable {
     public enum Kind: String, Codable { case pickup, returnTask = "return" }
 
@@ -182,14 +179,13 @@ public struct TodayWidgetSnapshot: Codable, Equatable {
     public var date: String
     public var savedAt: Date
     public var state: State
-    public var hideNames: Bool
     /// Hand-overs and returns already done today (`doneToday.pickups + doneToday.returns` of the API)
     public var done: Int
     public var counts: TodayWidgetCounts
     public var rows: [TodayWidgetRow]
     public var labels: TodayWidgetLabels
 
-    public init(userId: Int, outletId: Int, date: String, savedAt: Date, state: State, hideNames: Bool, done: Int,
+    public init(userId: Int, outletId: Int, date: String, savedAt: Date, state: State, done: Int,
                 counts: TodayWidgetCounts, rows: [TodayWidgetRow], labels: TodayWidgetLabels) {
         self.v = TodayWidgetSnapshot.currentVersion
         self.userId = userId
@@ -197,7 +193,6 @@ public struct TodayWidgetSnapshot: Codable, Equatable {
         self.date = date
         self.savedAt = savedAt
         self.state = state
-        self.hideNames = hideNames
         self.done = done
         self.counts = counts
         self.rows = Array(rows.prefix(TodayWidgetSnapshot.maxRows))
@@ -207,14 +202,14 @@ public struct TodayWidgetSnapshot: Codable, Equatable {
     /// Sign-out: nothing of the shop, only the texts, so the widget can say "Mở AnyRent để đăng nhập" in the app's language
     public static func loggedOut(labels: TodayWidgetLabels, now: Date = Date()) -> TodayWidgetSnapshot {
         TodayWidgetSnapshot(userId: 0, outletId: 0, date: TodayWidgetClock.dayKey(now), savedAt: now, state: .loggedOut,
-                            hideNames: false, done: 0, counts: TodayWidgetCounts(late: 0, pickup: 0, returns: 0), rows: [],
+                            done: 0, counts: TodayWidgetCounts(late: 0, pickup: 0, returns: 0), rows: [],
                             labels: labels)
     }
 
     /// 403: the account has no "Việc cần làm"
     public static func noAccess(userId: Int, outletId: Int, labels: TodayWidgetLabels, now: Date = Date()) -> TodayWidgetSnapshot {
         TodayWidgetSnapshot(userId: userId, outletId: outletId, date: TodayWidgetClock.dayKey(now), savedAt: now,
-                            state: .noAccess, hideNames: false, done: 0, counts: TodayWidgetCounts(late: 0, pickup: 0, returns: 0),
+                            state: .noAccess, done: 0, counts: TodayWidgetCounts(late: 0, pickup: 0, returns: 0),
                             rows: [], labels: labels)
     }
 
