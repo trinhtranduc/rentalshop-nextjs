@@ -67,6 +67,10 @@ sealed interface OrderMoneyLine {
     data class CashAtHandOver(val lines: HandOverCashLines) : OrderMoneyLine
     data class GiveBackAtReturn(val amount: Double) : OrderMoneyLine
     data class CollectAtReturn(val amount: Double) : OrderMoneyLine
+
+    /** The amount due now: label 15 bold, amount 20 bold */
+    val isLarge: Boolean
+        get() = this is CollectAtHandOver || this is CashAtHandOver || this is GiveBackAtReturn || (this is CollectAtReturn && amount > 0)
 }
 
 /** #1435 the stages inside the block */
@@ -86,7 +90,9 @@ data class OrderMoneyBlock(
     val returnLine: OrderMoneyLine?,
     val plan: OrderMoneyPlan?,
 ) {
-    val hasLargeFigure: Boolean get() = false
+    /** Only the amount due now is large; a finished order has none (Android's "thu thêm 0" stays a plain line) */
+    val hasLargeFigure: Boolean
+        get() = (lines + listOfNotNull(returnLine)).any { it.isLarge }
 }
 
 /** Return money: late + damage − collateral money − already settled; [net] < 0 is a refund */
@@ -291,7 +297,12 @@ object OrderDetailLogic {
     fun collateralEditFields(papers: String, securityDeposit: Double, currentPapers: String?, currentDeposit: Double) =
         handOverFields(papers, securityDeposit, currentPapers, currentDeposit)
 
-    /** #1435 which lines show (stub, the tests fail on it) */
+    /**
+     * #1435 which lines the money block of a rental shows, in order (approved mockup, tab "odmoney", iOS `moneyBlock`). Display
+     * only: every amount comes from [handOver], [collectOnDeliveryShown], [handOverCash] and [returnMoney], and the hand-over
+     * button, the sheets and the share image keep asking those rules themselves. Android keeps its own lines on a rented order:
+     * no "Đã cọc", and "Trả lại thế chân", "Đã thanh toán trước".
+     */
     fun moneyBlock(
         status: String,
         subtotal: Double,
@@ -306,7 +317,73 @@ object OrderDetailLogic {
         collateralShown: Boolean,
         cancelKept: Double?,
         currency: com.anyrent.pos.domain.money.ShopCurrency,
-    ): OrderMoneyBlock = OrderMoneyBlock(emptyList(), null, null)
+    ): OrderMoneyBlock {
+        val st = status.uppercase().let { if (it == "PICKED_UP") "PICKUPED" else it }
+        val pickedUp = st == "PICKUPED"
+        val hasPlan = com.anyrent.pos.domain.deposit.DepositPlanLogic.hasPlan(info)
+        val stages = info?.installments.orEmpty()
+        val cash = handOverCash("RENT", st, total, deposit, securityDeposit, payments, info?.hasPlan, info?.installments, currency)
+        val kept = if (st == "CANCELLED") cancelKept ?: 0.0 else 0.0
+        val cancelRows = if (kept > 0) {
+            listOf(OrderMoneyLine.CancelKept(kept), OrderMoneyLine.CancelRefund(maxOf(0.0, (info?.summary?.collected ?: 0.0) - kept)))
+        } else {
+            emptyList()
+        }
+
+        val lines = mutableListOf<OrderMoneyLine>(OrderMoneyLine.Subtotal(subtotal))
+        if (discount > 0) lines += OrderMoneyLine.Discount(discount)
+        lines += OrderMoneyLine.RentalTotal(total)
+        // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
+        if (!pickedUp && deposit > 0 && !hasPlan) lines += OrderMoneyLine.DepositPaid(deposit)
+        if (hasPlan) {
+            lines += OrderMoneyLine.Stages
+            lines += cancelRows // the shop kept / gave back lines read under the stages
+        }
+        if (!pickedUp && securityDeposit > 0 && cash == null) lines += OrderMoneyLine.CollateralMoney(securityDeposit)
+
+        var returnLine: OrderMoneyLine? = null
+        var amountDue: Double? = null
+        when (st) {
+            "RESERVED" -> if (cash != null) {
+                amountDue = cash.rentalLeft
+                lines += OrderMoneyLine.CashAtHandOver(cash)
+            } else {
+                val money = handOver(total, deposit, securityDeposit, payments)
+                if (money.paidBefore > 0) lines += OrderMoneyLine.AlreadyCollected(money.paidBefore)
+                val collect = collectOnDeliveryShown(total, deposit, securityDeposit, payments, info?.hasPlan, info?.installments, currency)
+                amountDue = collect
+                lines += OrderMoneyLine.CollectAtHandOver(collect)
+            }
+            "RETURNED" -> {
+                if (lateFee > 0) lines += OrderMoneyLine.LateFee(lateFee)
+                if (damageFee > 0) lines += OrderMoneyLine.DamageFee(damageFee)
+            }
+            "CANCELLED" -> if (!hasPlan) lines += cancelRows
+            "PICKUPED" -> {
+                val money = returnMoney(lateFee, damageFee, securityDeposit, payments)
+                if (money.lateFee > 0) lines += OrderMoneyLine.LateFee(money.lateFee)
+                if (money.damageFee > 0) lines += OrderMoneyLine.DamageFee(money.damageFee)
+                if (money.collateralMoney > 0) lines += OrderMoneyLine.CollateralBack(money.collateralMoney)
+                if (money.settledBefore > 0) lines += OrderMoneyLine.SettledBefore(money.settledBefore)
+                val line = if (money.refund > 0) OrderMoneyLine.GiveBackAtReturn(money.refund) else OrderMoneyLine.CollectAtReturn(money.collect)
+                if (collateralShown) returnLine = line else lines += line
+            }
+        }
+
+        val plan = if (hasPlan) {
+            val collected = info?.summary?.collected ?: stages.sumOf { it.paidAmount }
+            val remaining = maxOf(0.0, (info?.summary?.planned ?: stages.sumOf { it.amount }) - collected)
+            OrderMoneyPlan(
+                shownKeys = stages.filterNot { it.isRest && !it.isPaid && st == "RESERVED" }.map { it.key },
+                percent = info?.summary?.percentCollected ?: 0.0,
+                collected = collected,
+                remaining = remaining.takeUnless { value -> amountDue?.let { kotlin.math.abs(value - it) < 0.005 } == true },
+            )
+        } else {
+            null
+        }
+        return OrderMoneyBlock(lines, returnLine, plan)
+    }
 
     fun returnMoney(
         lateFee: Double,
