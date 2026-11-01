@@ -2471,13 +2471,6 @@
     <string name="first_run_guide_settings_row">Hướng dẫn bắt đầu</string>
     <string name="first_run_guide_finish_title">Xong đơn đầu tiên</string>
     <string name="first_run_guide_finish_body">Đơn đã có ở Đơn hàng và Lịch.</string>
-    <string name="first_run_guide_bubble_product_name">Nhập tên và giá thuê là đủ. Ảnh, mã vạch thêm sau.</string>
-    <string name="first_run_guide_bubble_cart_customer">Đơn cần có khách. Bấm để chọn hoặc thêm mới.</string>
-    <string name="first_run_guide_bubble_picker_new">Khách đầu tiên của shop: bấm Khách mới.</string>
-    <string name="first_run_guide_bubble_new_customer">Số điện thoại và tên là đủ. Xong bấm Lưu và chọn.</string>
-    <string name="first_run_guide_bubble_cart_dates">Chọn ngày lấy và ngày trả.</string>
-    <string name="first_run_guide_bubble_cart_create">Đủ rồi. Bấm Tạo đơn.</string>
-    <string name="first_run_guide_bubble_step">Bước %1$d/%2$d</string>
     <string name="first_run_guide_go_product">Thêm sản phẩm →</string>
     <string name="first_run_guide_go_customer">Thêm khách hàng →</string>
     <string name="first_run_guide_go_order">Tạo đơn →</string>
@@ -2486,4 +2479,17 @@
     <string name="first_run_guide_hide">Ẩn hướng dẫn</string>
     <string name="first_run_guide_hide_confirm">Ẩn hướng dẫn? Mở lại trong Cài đặt.</string>
     <string name="first_run_guide_hide_action">Ẩn</string>
+    <string name="first_run_guide_bubble_product_photo">Chọn ảnh sản phẩm. Ảnh giúp tìm bằng chụp ảnh.</string>
+    <string name="first_run_guide_bubble_product_name">Nhập tên sản phẩm.</string>
+    <string name="first_run_guide_bubble_product_price">Nhập giá thuê, theo lần hoặc theo ngày.</string>
+    <string name="first_run_guide_bubble_product_save">Đủ rồi. Bấm Lưu sản phẩm.</string>
+    <string name="first_run_guide_bubble_cart_customer">Đơn cần có khách. Bấm để chọn hoặc thêm mới.</string>
+    <string name="first_run_guide_bubble_new_customer">Bấm Khách mới, nhập SĐT và tên</string>
+    <string name="first_run_guide_bubble_new_customer_save">Bấm Lưu và chọn.</string>
+    <string name="first_run_guide_bubble_cart_dates">Chọn ngày lấy và ngày trả.</string>
+    <string name="first_run_guide_bubble_cart_create">Đủ rồi. Bấm Tạo đơn.</string>
+    <string name="first_run_guide_next">Tiếp</string>
+    <string name="first_run_guide_exit">Thoát hướng dẫn</string>
+    <string name="first_run_guide_exit_discard">Bỏ nội dung đang nhập?</string>
+    <string name="first_run_guide_exit_discard_action">Bỏ</string>
 </resources>

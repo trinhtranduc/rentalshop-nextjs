@@ -174,8 +174,9 @@ fun ProductsHomeScreen(
     }
 
     fun runGuide(step: FirstRunGuideStep) {
-        FirstRunCoach.start(step) // #1394: the bubbles run only from here
-        when (val action = FirstRunGuide.action(step, guide.hasProduct(), lines.isEmpty())) {
+        val action = FirstRunGuide.action(step, guide.hasProduct(), lines.isEmpty())
+        FirstRunCoach.start(action) // #1394: the bubbles run only from here
+        when (action) {
             FirstRunGuideAction.OpenProductForm -> showForm = true
             is FirstRunGuideAction.OpenCart -> {
                 if (action.addFirstProduct) {
@@ -210,6 +211,8 @@ fun ProductsHomeScreen(
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
     }
+    // #1412: Thoát hướng dẫn from the product form: back to the card
+    LaunchedEffect(Unit) { FirstRunCoach.exits.collect { showForm = false } }
     // #677: "Còn N" / "Hết hôm nay" follow a created or edited order (quiet: no spinner, same rows and scroll)
     // The view model keeps the version it reflects, so a change made while this screen was away counts too.
     LaunchedEffect(Unit) { OrdersChanged.version.collect { viewModel.onOrdersVersion(it) } }
@@ -389,7 +392,10 @@ fun ProductsHomeScreen(
     }
 
     if (showForm) {
-        AppFormSheet(onDismiss = { showForm = false }, fullScreen = true) {
+        AppFormSheet(onDismiss = {
+            showForm = false
+            FirstRunCoach.stop() // the system back button: not blocked, the run is over
+        }, fullScreen = true) {
             ProductFormV2Screen(
                 initial = null,
                 onBack = {
