@@ -216,8 +216,8 @@ final class OrderDetailViewController: BaseViewControler {
         customNavBar?.title = String(format: OrderDetailLogic.titleKey(orderType: detail.orderType).localized(),
                                      detail.orderNumber)
         contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        // #1285 (mockup 1b): status, customer, items, payment, deposit stages, papers & collateral, notes; an 8pt band
-        // between sections, each flat and edge to edge
+        // #1285 (mockup 1b), #1435: status, customer, items, payment with the deposit stages, papers & collateral, notes; an 8pt
+        // band between sections, each flat and edge to edge
         var sections: [UIView] = [statusSection(detail), customerSection(detail, order: order), itemsSection(detail)]
         sections.append(contentsOf: moneySections(detail))
         if let notes = notesSection(detail) { sections.append(notes) }
@@ -641,11 +641,17 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
-    /// Mockup 1b: "MÓN · N" (N counts the lines), the rows of style B, and "Tạm tính" under them
+    /// Mockup 1b: "MÓN · N" (N counts the lines), the rows of style B, and on a sale "Tạm tính" under them. #1435: a rental has
+    /// "Tạm tính" at the top of THANH TOÁN, so its last row has no line under it
     private func itemsSection(_ detail: OrderDetail) -> UIView {
-        var rows = detail.orderItems.map { itemRow($0, orderType: detail.orderType) }
-        let subtotal = OrderDetailLogic.saleSubtotal(itemTotals: detail.orderItems.map(\.totalPrice))
-        rows.append(keyValue("Subtotal".localized(), MoneyFormatter.format(subtotal), divider: false))
+        let isSale = detail.orderType == .sale
+        var rows = detail.orderItems.enumerated().map { index, item in
+            itemRow(item, orderType: detail.orderType, divider: isSale || index < detail.orderItems.count - 1)
+        }
+        if isSale {
+            let subtotal = OrderDetailLogic.saleSubtotal(itemTotals: detail.orderItems.map(\.totalPrice))
+            rows.append(keyValue("Subtotal".localized(), MoneyFormatter.format(subtotal), divider: false))
+        }
         let section = titledSection(String(format: "ITEMS · %d".localized(), detail.orderItems.count), rows)
         section.accessibilityIdentifier = "order.detail.itemsSection"
         return section
@@ -653,7 +659,7 @@ final class OrderDetailViewController: BaseViewControler {
 
     /// Mockup 1b, style B: a 36pt photo, the name with the line total at the right, "SL × giá" under the name (a day
     /// block adds its sum, "120.000 (3 ngày) + 2 × 20.000"), and the item note in the yellow box (#891) as the last line
-    private func itemRow(_ item: OrderItem, orderType: OrderType) -> UIView {
+    private func itemRow(_ item: OrderItem, orderType: OrderType, divider: Bool) -> UIView {
         let image = UIImageView()
         image.contentMode = .scaleAspectFill
         image.clipsToBounds = true
@@ -704,7 +710,7 @@ final class OrderDetailViewController: BaseViewControler {
         row.spacing = DS.Spacing.md
         row.isLayoutMarginsRelativeArrangement = true
         row.layoutMargins = UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
-        return withDivider(row)
+        return divider ? withDivider(row) : row
     }
 
     /// Board D2: the item note on a light yellow box with a note icon, so it does not read as part of the name
@@ -732,8 +738,8 @@ final class OrderDetailViewController: BaseViewControler {
         return box
     }
 
-    /// Mockup 1b: "THANH TOÁN" (discount, total and the rows of the order's state), then the deposit stages and the
-    /// papers & collateral section when the order has them
+    /// Mockup 1b, #1435 (approved mockup, tab "odmoney"): "THANH TOÁN" is one block with the subtotal, discount, total, the deposit
+    /// stages and the amount due. Then the papers & collateral section when the order has it. A sale keeps its own rows.
     private func moneySections(_ detail: OrderDetail) -> [UIView] {
         let stack = UIStackView()
         stack.axis = .vertical
@@ -756,94 +762,62 @@ final class OrderDetailViewController: BaseViewControler {
             return [titledSection(paymentTitle, [stack], id: "order.detail.paymentSection")]
         }
 
-        if discount > 0 {
-            stack.addArrangedSubview(keyValue("Discount".localized(), MoneyFormatter.format(-discount), divider: false))
-        }
-        stack.addArrangedSubview(totalRow("order.detail.rentTotal".localized(), MoneyFormatter.format(detail.totalAmount)))
-        // #1199: the stages replace the single "Cọc" row
-        let hasPlan = DepositPlanLogic.hasPlan(detail)
-        // the collateral section carries the money (and "Khi nhận trả") when it shows
         let collateralShown = OrderDetailLogic.canEditCollateral(orderType: detail.orderType, status: detail.status,
                                                                  canUpdateOrders: PermissionManager.shared.hasPermission("orders.update"))
-        var returnRow: UIView?
-        var underPlan: [UIView] = []
-        if detail.depositAmount > 0 && !hasPlan {
-            stack.addArrangedSubview(keyValue("order.detail.deposit".localized(), MoneyFormatter.format(detail.depositAmount), divider: false))
-        }
-        // #1368: a rental waiting for pick-up with a collateral in money says rental left, collateral and what the customer hands over
-        let handOverCash = OrderDetailLogic.handOverCash(
-            orderType: detail.orderType, status: detail.status, total: detail.totalAmount, deposit: detail.depositAmount,
-            securityDeposit: detail.securityDeposit, payments: payments, hasPlan: hasPlan, stages: detail.installments,
-            currency: ShopCurrencyStore.current)
-        if detail.securityDeposit > 0 && !collateralShown && handOverCash == nil {
-            stack.addArrangedSubview(keyValue("Collateral money".localized(), "+" + MoneyFormatter.format(detail.securityDeposit), divider: false))
-        }
-        switch detail.status {
-        case .reserved where handOverCash != nil:
-            if let lines = handOverCash {
-                stack.addArrangedSubview(totalRow("share.collect.rentalLeft".localized(), MoneyFormatter.format(lines.rentalLeft)))
-                stack.addArrangedSubview(keyValue("share.collateral.collect".localized(), MoneyFormatter.format(lines.collateral), divider: false))
-                stack.addArrangedSubview(totalRow("share.cashAtHandover".localized(), MoneyFormatter.format(lines.cash)))
-            }
-        case .reserved:
-            let money = OrderDetailLogic.handOver(total: detail.totalAmount, deposit: detail.depositAmount,
-                                                  securityDeposit: detail.securityDeposit, payments: payments)
-            if money.paidBefore > 0 {
-                stack.addArrangedSubview(keyValue("Already collected".localized(), MoneyFormatter.format(-money.paidBefore), divider: false))
-            }
-            // #1350: with a stage still to collect, the number of the stage card and the share image
-            let collect = OrderDetailLogic.collectOnDeliveryShown(
-                total: detail.totalAmount, deposit: detail.depositAmount, securityDeposit: detail.securityDeposit,
-                payments: payments, hasPlan: hasPlan, stages: detail.installments, currency: ShopCurrencyStore.current)
-            stack.addArrangedSubview(totalRow("Collect at hand-over".localized(), MoneyFormatter.format(collect)))
-        case .pickuped:
-            let money = OrderDetailLogic.returnMoney(lateFee: detail.lateFee, damageFee: detail.damageFee,
-                                                     securityDeposit: detail.securityDeposit, payments: payments)
-            if detail.lateFee > 0 {
-                stack.addArrangedSubview(keyValue("Late fee".localized(), "+" + MoneyFormatter.format(detail.lateFee), divider: false))
-            }
-            if detail.damageFee > 0 {
-                stack.addArrangedSubview(keyValue("Damage fee".localized(), "+" + MoneyFormatter.format(detail.damageFee), divider: false))
-            }
-            var row: UIView?
-            if money.refund > 0 {
-                row = totalRow("At return: give back".localized(), MoneyFormatter.format(money.refund))
-            } else if money.collect > 0 {
-                row = totalRow("At return: collect".localized(), MoneyFormatter.format(money.collect))
-            }
-            if let row { if collateralShown { returnRow = row } else { stack.addArrangedSubview(row) } }
-        default:
-            // the shop kept / gave back lines read under the deposit stages (H4 of the mockup)
-            var cancelRows: [UIView] = []
-            if let kept = detail.cancelKeptAmount, kept > 0, detail.status == .cancelled {
-                let collected = detail.installmentSummary?.collected ?? 0
-                cancelRows.append(keyValue("deposit.cancel.kept".localized(), MoneyFormatter.format(kept), divider: false))
-                cancelRows.append(keyValue("deposit.cancel.refund".localized(), MoneyFormatter.format(max(0, collected - kept)), divider: false))
-            }
-            if hasPlan { underPlan = cancelRows } else { cancelRows.forEach { stack.addArrangedSubview($0) } }
-            if detail.lateFee > 0 {
-                stack.addArrangedSubview(keyValue("Late fee".localized(), MoneyFormatter.format(detail.lateFee), divider: false))
-            }
-            if detail.damageFee > 0 {
-                stack.addArrangedSubview(keyValue("Damage fee".localized(), MoneyFormatter.format(detail.damageFee), divider: false))
-            }
-        }
+        let block = OrderDetailLogic.moneyBlock(
+            status: detail.status,
+            subtotal: OrderDetailLogic.saleSubtotal(itemTotals: detail.orderItems.map(\.totalPrice)),
+            discount: discount, total: detail.totalAmount, deposit: detail.depositAmount, securityDeposit: detail.securityDeposit,
+            lateFee: detail.lateFee, damageFee: detail.damageFee, payments: payments, hasPlan: DepositPlanLogic.hasPlan(detail),
+            stages: detail.installments, summary: detail.installmentSummary, collateralShown: collateralShown,
+            cancelKept: detail.cancelKeptAmount, currency: ShopCurrencyStore.current)
+        block.lines.forEach { stack.addArrangedSubview(moneyLine($0, detail: detail, plan: block.plan)) }
         var sections = [titledSection(paymentTitle, [stack], id: "order.detail.paymentSection")]
-        if hasPlan {
-            // #1265 / #1285: the stages are a section of their own, right under the payment
-            let card = InstallmentCardView.make(
-                detail: detail, role: User.account()?.role,
-                onEdit: { [weak self] in self?.openPlanEditor() },
-                onCollect: { [weak self] stage in self?.presentCollect(stage) },
-                onStage: { [weak self] stage in self?.confirmVoid(stage) })
-            let column = UIStackView(arrangedSubviews: [card] + underPlan)
-            column.axis = .vertical
-            let section = padded(column, top: 0, bottom: 0)
-            section.accessibilityIdentifier = "deposit.section"
-            sections.append(section)
-        }
+        // #1285: "Khi nhận trả" closes the papers & collateral section
+        let returnRow = block.returnLine.map { moneyLine($0, detail: detail, plan: block.plan, afterDivider: true) }
         if let collateral = collateralBlock(detail, returnRow: returnRow) { sections.append(collateral) }
         return sections
+    }
+
+    /// #1435 one line of the money block of a rental
+    private func moneyLine(_ line: OrderMoneyLine, detail: OrderDetail, plan: OrderMoneyPlan?, afterDivider: Bool = false) -> UIView {
+        func money(_ amount: Double) -> String { MoneyFormatter.format(amount) }
+        // on a rented order the fees still add to what is settled at return
+        func fee(_ amount: Double) -> String { detail.status == .pickuped ? "+" + money(amount) : money(amount) }
+        switch line {
+        case .subtotal(let amount): return OrderMoneyViews.row("Subtotal".localized(), money(amount))
+        case .discount(let amount): return OrderMoneyViews.row("Discount".localized(), money(-amount))
+        case .rentalTotal(let amount): return OrderMoneyViews.row("order.detail.rentTotal".localized(), money(amount), bold: true)
+        case .depositPaid(let amount): return OrderMoneyViews.row("share.deposit.paid".localized(), money(amount))
+        case .stages: return stagesBlock(detail, plan: plan)
+        case .cancelKept(let amount): return OrderMoneyViews.row("deposit.cancel.kept".localized(), money(amount))
+        case .cancelRefund(let amount): return OrderMoneyViews.row("deposit.cancel.refund".localized(), money(amount))
+        case .collateralMoney(let amount): return OrderMoneyViews.row("Collateral money".localized(), "+" + money(amount))
+        case .alreadyCollected(let amount): return OrderMoneyViews.row("Already collected".localized(), money(-amount))
+        case .lateFee(let amount): return OrderMoneyViews.row("Late fee".localized(), fee(amount))
+        case .damageFee(let amount): return OrderMoneyViews.row("Damage fee".localized(), fee(amount))
+        case .collectAtHandOver(let amount): return OrderMoneyViews.due("Collect at hand-over".localized(), money(amount))
+        case .cashAtHandOver(let lines):
+            return OrderMoneyViews.due("share.cashAtHandover".localized(), money(lines.cash),
+                                       sub: String(format: "order.detail.cashBreakdown".localized(), money(lines.rentalLeft), money(lines.collateral)))
+        case .giveBackAtReturn(let amount):
+            return OrderMoneyViews.due("At return: give back".localized(), money(amount), afterDivider: afterDivider)
+        case .collectAtReturn(let amount):
+            return OrderMoneyViews.due("At return: collect".localized(), money(amount), afterDivider: afterDivider)
+        }
+    }
+
+    private func stagesBlock(_ detail: OrderDetail, plan: OrderMoneyPlan?) -> UIView {
+        guard let plan else { return UIView() }
+        let block = InstallmentCardView.make(
+            detail: detail, role: User.account()?.role, plan: plan, width: view.bounds.width - 2 * DS.Spacing.lg,
+            onEdit: { [weak self] in self?.openPlanEditor() },
+            onCollect: { [weak self] stage in self?.presentCollect(stage) },
+            onStage: { [weak self] stage in self?.confirmVoid(stage) })
+        let section = UIStackView(arrangedSubviews: [block])
+        section.axis = .vertical
+        section.accessibilityIdentifier = "deposit.section"
+        return section
     }
 
     /// #1418 "Ảnh khi giao · N": nothing at all while the order has no photos
