@@ -2,8 +2,8 @@
 //  FirstRunCoach.swift
 //  POS ADBD
 //
-//  #1394: the bubbles of the first-run guide: 6 bubbles on 4 screens, run only after a row of the card is tapped. The order
-//  is a pure rule here; the screens only say which one they are. Android: `domain/guide/FirstRunCoach.kt`.
+//  #1394, #1411: the walk of the first-run guide: 9 bubbles on 4 screens, run only after a row of the card is tapped. What comes
+//  next and how far along it is are pure rules here; the screens only say which one they are. Android: `domain/guide/FirstRunCoach.kt`.
 //
 
 import Foundation
@@ -13,78 +13,128 @@ enum CoachScreen: Equatable {
 }
 
 enum CoachBubble: String, CaseIterable, Equatable {
-    case productName, cartCustomer, pickerNew, newCustomerFields, cartDates, cartCreate
+    case productPhoto, productName, productPrice, productSave, cartCustomer, newCustomer, newCustomerSave, cartDates, cartCreate
 
-    /// `accessibilityIdentifier` of the control the bubble lights; a missing one skips the bubble
-    var anchor: String {
+    /// `accessibilityIdentifier` of the control the bubble lights; a missing one skips the bubble.
+    /// Bubble 6 has two places: Khách mới on the picker, then the phone and name on the form.
+    func anchor(on screen: CoachScreen) -> String {
         switch self {
+        case .productPhoto: return "product.form.photos"
         case .productName: return "product.form.nameRow"
+        case .productPrice: return "product.form.prices"
+        case .productSave: return "product.form.save"
         case .cartCustomer: return "cart.customerRow"
-        case .pickerNew: return "customers.picker.new"
-        case .newCustomerFields: return "customers.new.fields"
+        case .newCustomer: return screen == .customerPicker ? "customers.picker.new" : "customers.new.fields"
+        case .newCustomerSave: return "customers.new.save"
         case .cartDates: return "cart.datesRow"
         case .cartCreate: return "cart.cta"
         }
     }
 
-    /// "Bước n/3": the row of the card it belongs to
-    var step: Int {
+    var textKey: String { "firstRunGuide.bubble.\(rawValue)" }
+
+    /// A button at the bottom of the screen, so its bubble goes above; the others below when there is room
+    var prefersAbove: Bool { self == .cartCreate || self == .productSave || self == .newCustomerSave }
+
+    /// Tiếp goes on from here. On every other bubble the user taps the real control and Tiếp never acts for them.
+    func nextAdvances(on screen: CoachScreen) -> Bool {
         switch self {
-        case .productName: return 1
-        case .cartCustomer, .pickerNew, .newCustomerFields: return 2
-        case .cartDates, .cartCreate: return 3
+        case .productPhoto, .productName, .productPrice: return true
+        case .newCustomer: return screen == .newCustomer
+        default: return false
+        }
+    }
+}
+
+/// The bubbles this shop and order will see. Read from the state, nothing is stored.
+struct CoachPlan: Equatable {
+    /// Read when the run starts: the customer just created in this run must not change the counter
+    var customersExist = false
+    var isSale = false
+
+    var bubbles: [CoachBubble] {
+        CoachBubble.allCases.filter { bubble in
+            switch bubble {
+            case .newCustomer, .newCustomerSave: return !customersExist // picks from the list
+            case .cartDates: return !isSale // a sale has no dates
+            default: return true
+            }
         }
     }
 
-    var textKey: String { "firstRunGuide.bubble.\(rawValue)" }
-
-    /// The Tạo đơn button sits at the bottom, so its bubble goes above; the others below when there is room
-    var prefersAbove: Bool { self == .cartCreate }
+    /// "n/9"
+    func counter(_ bubble: CoachBubble) -> String? {
+        bubbles.firstIndex(of: bubble).map { "\($0 + 1)/\(bubbles.count)" }
+    }
 }
 
-/// What a row of the card started: the product row only has its form, the customer and order rows are one run in the cart
+/// What a row of the card started: the product form only, or the one run in the cart
 enum CoachRun: Equatable {
     case product, order
 
-    init(step: FirstRunGuideStep) {
-        self = step == .product ? .product : .order
+    init(action: FirstRunGuideAction) {
+        self = action == .openProductForm ? .product : .order
     }
 }
 
 struct CoachCart: Equatable {
+    let isEmpty: Bool
     let hasCustomer: Bool
     let isSale: Bool
     let hasDates: Bool
     let isEditing: Bool
 }
 
+/// Tapping "Máy ảnh" while the guide waits for a photo
+enum CoachCameraRoute: Equatable {
+    case open, ask, denied
+}
+
 enum FirstRunCoachRules {
-    /// The bubble this screen owes, or nil. Each bubble shows once in a run: closing it by the dim area does not bring it back.
-    /// - customersExist: "Khách đầu tiên của shop" would be wrong then, the owner picks from the list
-    static func next(run: CoachRun?, screen: CoachScreen, shown: Set<CoachBubble>, cart: CoachCart? = nil,
+    /// The bubble this screen owes, or nil.
+    /// - passed: moved on with Tiếp, or skipped because its control is gone. The cart asks its data, so going back and forth resumes.
+    static func next(run: CoachRun?, screen: CoachScreen, passed: Set<CoachBubble>, cart: CoachCart? = nil,
                      customersExist: Bool = false, isPad: Bool = false) -> CoachBubble? {
         guard let run, !isPad else { return nil }
-        let wanted: CoachBubble?
+        let wanted: [CoachBubble]
         switch (run, screen) {
         case (.product, .productForm):
-            wanted = .productName
+            wanted = [.productPhoto, .productName, .productPrice, .productSave]
         case (.order, .cart):
-            wanted = cartBubble(cart)
+            wanted = cartBubbles(cart)
         case (.order, .customerPicker):
-            wanted = customersExist ? nil : .pickerNew
+            wanted = customersExist ? [] : [.newCustomer]
         case (.order, .newCustomer):
-            wanted = .newCustomerFields
+            wanted = customersExist ? [] : [.newCustomer, .newCustomerSave]
         default:
-            wanted = nil
+            wanted = []
         }
-        guard let wanted, !shown.contains(wanted) else { return nil }
+        return wanted.first { !passed.contains($0) }
+    }
+
+    private static func cartBubbles(_ cart: CoachCart?) -> [CoachBubble] {
+        guard let cart, !cart.isEditing, !cart.isEmpty else { return [] } // empty: the order was just created
+        var wanted: [CoachBubble] = []
+        if !cart.hasCustomer { wanted.append(.cartCustomer) }
+        if !cart.isSale && !cart.hasDates { wanted.append(.cartDates) }
+        wanted.append(.cartCreate)
         return wanted
     }
 
-    private static func cartBubble(_ cart: CoachCart?) -> CoachBubble? {
-        guard let cart, !cart.isEditing else { return nil }
-        if !cart.hasCustomer { return .cartCustomer }
-        if !cart.isSale && !cart.hasDates { return .cartDates } // a sale has no dates
-        return .cartCreate
+    // MARK: - Tiếp
+
+    /// Inside the guide only; the normal form keeps saving without a photo
+    static func photoIsValid(count: Int) -> Bool { count >= 1 }
+
+    /// Inside the guide only; the normal form keeps saving 0đ
+    static func priceIsValid(perRental: Double?, perDay: Double?) -> Bool {
+        (perRental ?? 0) > 0 || (perDay ?? 0) > 0
+    }
+
+    // MARK: - Camera
+
+    static func cameraRoute(authorized: Bool, undetermined: Bool) -> CoachCameraRoute {
+        if authorized { return .open }
+        return undetermined ? .ask : .denied
     }
 }

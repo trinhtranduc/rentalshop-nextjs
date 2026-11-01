@@ -3177,13 +3177,6 @@
 "firstRunGuide.settings.row" = "Getting started";
 "firstRunGuide.finish.title" = "First order done";
 "firstRunGuide.finish.body" = "It is now in My Order and Calendar.";
-"firstRunGuide.bubble.productName" = "A name and rental price are enough. Add photos and barcode later.";
-"firstRunGuide.bubble.cartCustomer" = "An order needs a customer. Tap to choose or add one.";
-"firstRunGuide.bubble.pickerNew" = "Your first customer: tap New customer.";
-"firstRunGuide.bubble.newCustomerFields" = "Phone number and name are enough. Then tap Save and select.";
-"firstRunGuide.bubble.cartDates" = "Pick the pickup and return days.";
-"firstRunGuide.bubble.cartCreate" = "All set. Tap Create order.";
-"firstRunGuide.bubble.step" = "Step %d/%d";
 
 "firstRunGuide.go.product" = "Add product →";
 "firstRunGuide.go.customer" = "Add customer →";
@@ -3193,3 +3186,17 @@
 "firstRunGuide.hide" = "Hide guide";
 "firstRunGuide.hide.confirm" = "Hide the guide? Reopen it in Settings.";
 "firstRunGuide.hide.action" = "Hide";
+
+"firstRunGuide.bubble.productPhoto" = "Add a product photo. It powers search by photo.";
+"firstRunGuide.bubble.productName" = "Enter the product name.";
+"firstRunGuide.bubble.productPrice" = "Enter a rental price, per rental or per day.";
+"firstRunGuide.bubble.productSave" = "All set. Tap Save product.";
+"firstRunGuide.bubble.cartCustomer" = "An order needs a customer. Tap to choose or add one.";
+"firstRunGuide.bubble.newCustomer" = "Tap New customer, enter phone and name";
+"firstRunGuide.bubble.newCustomerSave" = "Tap Save and select.";
+"firstRunGuide.bubble.cartDates" = "Pick the pickup and return days.";
+"firstRunGuide.bubble.cartCreate" = "All set. Tap Create order.";
+"firstRunGuide.next" = "Next";
+"firstRunGuide.exit" = "Exit guide";
+"firstRunGuide.exit.discard" = "Discard what you entered?";
+"firstRunGuide.exit.discard.action" = "Discard";
