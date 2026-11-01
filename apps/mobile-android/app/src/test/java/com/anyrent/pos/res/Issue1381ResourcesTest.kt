@@ -32,11 +32,10 @@ class Issue1381ResourcesTest {
         "widget_all_done" to "widget.allDone", "widget_today_at" to "widget.todayAt", "widget_empty" to "widget.empty",
         "widget_tomorrow" to "widget.tomorrow", "widget_logged_out" to "widget.loggedOut",
         "widget_logged_out_hint" to "widget.loggedOutHint", "widget_no_access" to "widget.noAccess", "widget_stale" to "widget.stale",
-        "widget_stale_detail" to "widget.staleDetail", "widget_yesterday" to "widget.yesterday", "widget_hidden_name" to "widget.hiddenName",
+        "widget_stale_detail" to "widget.staleDetail", "widget_yesterday" to "widget.yesterday",
         "widget_hint_title" to "widget.hint.title", "widget_hint_body" to "widget.hint.body", "widget_hint_how" to "widget.hint.how",
         "widget_dismiss" to "widget.dismiss", "widget_guide_title" to "widget.guide.title", "widget_guide_ok" to "widget.guide.ok",
-        "widget_settings_row" to "widget.settings.row", "widget_hide_names_title" to "widget.hideNames.title",
-        "widget_hide_names_subtitle" to "widget.hideNames.subtitle",
+        "widget_settings_row" to "widget.settings.row",
     )
 
     /** `%1$d`, `%2$s` to the iOS `%d`, `%@` */

@@ -10,7 +10,7 @@ internal val viLabels = TodayWidgetLabels(
     empty = "Hôm nay chưa có việc", tomorrowFormat = "Mai có %1\$d giao, %2\$d trả",
     loggedOut = "Mở AnyRent để đăng nhập", loggedOutHint = "Việc cần làm sẽ hiện ở đây",
     noAccess = "Tài khoản này không có Việc cần làm", stale = "Mở app để cập nhật", staleFormat = "Danh sách lần cuối: %1\$s",
-    yesterday = "hôm qua", hiddenName = "chạm để mở", appName = "AnyRent", pickupDayWord = "Lấy", returnDayWord = "Trả",
+    yesterday = "hôm qua", appName = "AnyRent", pickupDayWord = "Lấy", returnDayWord = "Trả",
     lateDays = { "Trễ $it ngày" },
 )
 
@@ -31,9 +31,8 @@ internal fun snapshot(
     date: String = "2026-10-31",
     savedAt: Instant = Instant.parse("2026-10-31T01:12:00Z"),
     state: TodayWidgetSnapshot.State = TodayWidgetSnapshot.State.OK,
-    hideNames: Boolean = false,
     done: Int = 0,
     counts: TodayWidgetCounts = TodayWidgetCounts(0, 0, 0),
     rows: List<TodayWidgetRow> = emptyList(),
     userId: Int = 7,
-) = TodayWidgetSnapshot(userId, 5, date, savedAt, state, hideNames, done, counts, rows)
+) = TodayWidgetSnapshot(userId, 5, date, savedAt, state, done, counts, rows)

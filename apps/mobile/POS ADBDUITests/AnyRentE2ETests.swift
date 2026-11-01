@@ -1656,7 +1656,7 @@ final class AnyRentE2ETests: XCTestCase {
         }
         sleep(4)
         let tiles = ["Giá trị đơn mới", "Thực thu", "Còn phải thu", "Thế chân"]
-        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phí hư hỏng, trễ", "Hoàn đơn huỷ", "Thế chân nhận − trả",
+        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phụ phí, trễ", "Hoàn đơn huỷ", "Thế chân nhận − trả",
                         "Thực thu", "Sẽ thu khi khách lấy đồ", "Quá ngày lấy, chưa thu", "Đã nhận", "Đã trả lại khách",
                         "Sẽ nhận khi giao", "Đang giữ, sẽ trả lại"]
         for (index, title) in tiles.enumerated() {
@@ -1723,7 +1723,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("RELATED REASONS english=\(english) | \(texts.prefix(24))")
         if english {
             let vietnamese = ["Thu tiền cọc", "Thu tiền khi lấy hàng", "Hoàn tiền cọc", "Đơn bán được tạo", "Đơn hủy (hoàn lại)",
-                              "Thu phí hư hỏng", "Thuê và trả trong cùng ngày"]
+                              "Thu phí hư hỏng", "Thu phụ phí", "Thuê và trả trong cùng ngày"]
             XCTAssertTrue(texts.filter { vietnamese.contains($0) }.isEmpty, "#757 Vietnamese reasons in the English app: \(texts)")
         }
     }
@@ -5373,8 +5373,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("92-widget-hint-dismissed")
     }
 
-    /// #1375: Cài đặt > Widget opens the guide at any time (also after Không hỏi lại); "Ẩn tên khách trên widget" is a switch.
-    /// TEST_RUNNER_E2E_WIDGET_HIDE_NAMES=on|off sets the switch (it stays set, so the widget can be photographed).
+    /// #1375: Cài đặt > Widget opens the guide at any time (also after Không hỏi lại).
+    /// #1432: "Ẩn tên khách trên widget" is gone.
     func test7lWidgetSettingsRow() throws {
         guard #available(iOS 16.1, *) else { throw XCTSkip("no Widget row below iOS 16.1") }
         try e2e.start()
@@ -5385,12 +5385,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("93-settings-widget-row")
         let toggle = app.switches.matching(NSPredicate(format: "label IN %@",
             ["Hide customer names on the widget", "Ẩn tên khách trên widget"])).firstMatch
-        XCTAssertTrue(toggle.exists, "the hide-names switch is under the Widget row")
-        e2e.note("hide-names switch before: \(String(describing: toggle.value))") // "0" on a fresh install: off by default
-        if let want = ProcessInfo.processInfo.environment["E2E_WIDGET_HIDE_NAMES"] {
-            if (toggle.value as? String == "1") != (want == "on") { toggle.tap(); sleep(2) }
-            e2e.shot("93b-settings-hide-names-\(want)")
-        }
+        XCTAssertFalse(toggle.exists, "no hide-names switch under the Widget row")
         row.tap()
         XCTAssertTrue(app.otherElements["widget.guide"].waitForExistence(timeout: 6), "the Widget row opens the guide")
         XCTAssertFalse(app.buttons["widget.guide.never"].exists, "the guide from Settings has no Không hỏi lại")

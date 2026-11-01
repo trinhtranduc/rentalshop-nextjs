@@ -16,8 +16,8 @@ import java.time.Instant
 class TodayWidgetDataTest {
     private val now = Instant.parse("2026-10-31T02:00:00Z")
 
-    private fun make(work: TodayWork, hideNames: Boolean = false) =
-        TodayWidgetData.snapshot(work, userId = 7, outletId = 5, hideNames = hideNames, now = now)
+    private fun make(work: TodayWork) =
+        TodayWidgetData.snapshot(work, userId = 7, outletId = 5, now = now)
 
     private val full = TodayWork(
         date = "2026-10-31",
@@ -92,7 +92,7 @@ class TodayWidgetDataTest {
     @Test
     fun theDayIsTheApisAndFallsBackToTheVietnamDay() {
         assertEquals("2026-10-31", make(full).date)
-        assertEquals("2026-11-01", TodayWidgetData.snapshot(TodayWork(), 7, 5, false, Instant.parse("2026-10-31T17:00:00Z")).date)
+        assertEquals("2026-11-01", TodayWidgetData.snapshot(TodayWork(), 7, 5, Instant.parse("2026-10-31T17:00:00Z")).date)
     }
 
     @Test
@@ -122,20 +122,24 @@ class TodayWidgetDataTest {
         assertEquals("28/10/26", late.planDay)
     }
 
+    /** #1432: the widget always shows the customer name; the file no longer has a switch for it */
     @Test
-    fun hideNamesRemovesTheNameFromTheFile() {
-        val s = make(full, hideNames = true)
-        assertTrue(s.hideNames)
-        assertTrue(s.rows.all { it.name.isEmpty() })
-        assertFalse(s.toJson().contains("Diệu"))
-        assertEquals("Áo dài gấm đỏ", s.rows.first { it.orderId == 11 }.product)
+    fun theFileAlwaysHasTheCustomerName() {
+        val s = make(full)
+        assertEquals("Chị Diệu", s.rows.first { it.orderId == 11 }.name)
+        val json = JSONObject(s.toJson())
+        assertTrue(json.getJSONArray("rows").getJSONObject(0).getString("name").isNotEmpty())
+        assertFalse(json.has("hideNames"))
     }
 
     @Test
-    fun withoutNamesStripsAnExistingFile() {
-        val s = make(full).withoutNames()
-        assertTrue(s.hideNames)
-        assertTrue(s.rows.all { it.name.isEmpty() })
+    fun anOrderWithNoCustomerHasAnEmptyName() {
+        val walkIn = TodayWork(
+            date = "2026-10-31",
+            pickupsToday = listOf(TodayWorkRow(id = 1, orderNumber = "1", customerName = null, firstItemName = "Áo", itemCount = 1)),
+            pickupsCount = 1,
+        )
+        assertEquals("", make(walkIn).rows.single().name)
     }
 
     @Test
@@ -169,6 +173,31 @@ class TodayWidgetDataTest {
         assertNull(TodayWidgetSnapshot.fromJson("not json"))
         assertNull(TodayWidgetSnapshot.fromJson("{}"))
         assertNull(TodayWidgetSnapshot.fromJson(make(full).toJson().replace("\"v\":1", "\"v\":999")))
+    }
+
+    /** #1432: the widget has only been on dev builds, whose files still carry `hideNames` */
+    private fun oldFile(hideNames: Boolean, name: String) = """
+        {"v":1,"userId":7,"outletId":5,"date":"2026-10-31","savedAt":"2026-10-31T01:12:00Z","state":"ok",
+         "hideNames":$hideNames,"done":4,
+         "counts":{"late":1,"pickup":3,"return":2,"tomorrowPickup":2,"tomorrowReturn":1},
+         "rows":[{"orderId":490268,"kind":"pickup","isLate":false,"name":"$name","product":"Áo dài gấm đỏ","moreCount":1,
+                  "lateDays":0,"notPrepared":true,"planTime":"14:00","planDay":"31/10/26"}]}
+    """.trimIndent()
+
+    @Test
+    fun aFileFromAnEarlierDevBuildStillReads() {
+        val shown = TodayWidgetSnapshot.fromJson(oldFile(hideNames = false, name = "Chị Diệu"))
+        assertNotNull("hideNames false", shown)
+        assertEquals("Chị Diệu", shown!!.rows.single().name)
+        assertEquals(490268, shown.rows.single().orderId)
+        assertEquals(6, shown.counts.total)
+        assertEquals(4, shown.done)
+
+        // A phone that had the switch on: the file reads, the name stays empty until the next write
+        val hidden = TodayWidgetSnapshot.fromJson(oldFile(hideNames = true, name = ""))
+        assertNotNull("hideNames true", hidden)
+        assertEquals("", hidden!!.rows.single().name)
+        assertEquals("Áo dài gấm đỏ", hidden.rows.single().product)
     }
 
     // --- The API answer ---

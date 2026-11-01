@@ -491,7 +491,7 @@
 "Deposit" = "Tiền cọc";
 "Document" = "Giấy tờ";
 "Security Deposit" = "Tiền thế chân";
-"Damage Fee" = "Phí hư hỏng";
+"Damage Fee" = "Phụ phí";
 "Collect" = "Thu";
 "Collect Deposit" = "Thu tiền cọc";
 "Please collect the deposit amount from the customer." = "Vui lòng thu tiền cọc từ khách hàng.";
@@ -805,7 +805,7 @@
 "orders_unit" = "đơn";
 "currency_VND" = "VND";
 "Overview_Info_Title" = "Tổng quan";
-"Overview_Info_TotalRevenue" = "Tổng tiền thu vào trong kỳ (sau khi trừ các khoản đã hoàn). Gồm: tiền cọc đặt đơn, tiền thuê khi lấy hàng, tiền bán, phí hư hỏng thu thêm. Trừ đi: tiền hoàn khi hủy đơn, tiền trả cọc khi khách trả hàng. Có thể âm nếu trong kỳ hoàn nhiều hơn thu (ví dụ nhiều đơn hủy hoặc trả hàng hoàn cọc).";
+"Overview_Info_TotalRevenue" = "Tổng tiền thu vào trong kỳ (sau khi trừ các khoản đã hoàn). Gồm: tiền cọc đặt đơn, tiền thuê khi lấy hàng, tiền bán, phụ phí. Trừ đi: tiền hoàn khi hủy đơn, tiền trả cọc khi khách trả hàng. Có thể âm nếu trong kỳ hoàn nhiều hơn thu (ví dụ nhiều đơn hủy hoặc trả hàng hoàn cọc).";
 "Overview_Info_TotalOrders" = "(Chỉ daily) Tổng số dòng trong danh sách đơn — mỗi dòng là một đơn hoặc một giao dịch doanh thu; một đơn có thể có nhiều dòng nếu nhiều giao dịch trong kỳ.";
 "Overview_Info_CollateralReceived" = "Tiền cọc (thế chân) đang giữ — tổng cọc của các đơn thuê đã lấy hàng, chưa trả. Chỉ tính đơn thuê đã lấy hàng, và tính theo ngày lấy hàng rơi vào kỳ. Cho biết bạn đang nắm bao nhiêu tiền cọc của khách (tài sản nợ khách, cần trả khi họ trả hàng).";
 "Overview_Info_CollateralExpected" = "Tiền thế chân dự kiến trả — Số tiền cọc bạn sẽ hoàn lại khách trong kỳ. Chỉ tính đơn thuê đang cho mượn (khách đã lấy hàng, đang giữ cọc) có lịch trả hàng nằm trong kỳ. Khi khách trả hàng đúng kỳ, bạn sẽ trả lại từng khoản tiền cọc (thế chân) đó. Giúp chuẩn bị thanh khoản (biết trong kỳ cần trả bao nhiêu tiền cọc).";
@@ -1033,7 +1033,7 @@
 "Deposit:" = "Tiền cọc:";
 "Security Deposit:" = "Tiền thế chân:";
 "To Collect:" = "Cần thu:";
-"Damage Fee:" = "Phí hư hỏng:";
+"Damage Fee:" = "Phụ phí:";
 "Date check:" = "Ngày kiểm tra:";
 "Change Customer" = "Đổi Khách Hàng";
 "Remove Customer" = "Xóa Khách Hàng";
@@ -1721,7 +1721,7 @@
 "Already collected" = "Đã thu trước";
 "Collect at hand-over" = "Thu khi giao";
 "Late fee" = "Phí trễ";
-"Damage fee" = "Phí hư hỏng";
+"Damage fee" = "Phụ phí";
 "At return: give back" = "Khi nhận trả: trả khách";
 "At return: collect" = "Khi nhận trả: thu thêm";
 "NOTES" = "GHI CHÚ";
@@ -1736,7 +1736,7 @@
 "Keep collateral: %@" = "Giữ thế chân: %@";
 "Collect now" = "Thu bây giờ";
 "Handed over · collect %@" = "Đã lấy · thu %@";
-"Late + damage fees" = "Phí trễ + hư hỏng";
+"Late + damage fees" = "Phí trễ + phụ phí";
 "Collateral money held" = "Thế chân đang giữ";
 "Already settled" = "Đã thanh toán trước";
 "Give back to customer" = "Trả lại khách";
@@ -1808,7 +1808,7 @@
 "overview.v2.seeDetails" = "xem chi tiết";
 "overview.v2.detail.body" = "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.";
 "overview.v2.detail.pickupAndSale" = "Thu khi giao đồ, bán hàng";
-"overview.v2.detail.fees" = "Phí hư hỏng, trễ hạn";
+"overview.v2.detail.fees" = "Phụ phí, trễ hạn";
 "overview.v2.detail.refunds" = "Hoàn tiền đơn huỷ";
 "overview.v2.detail.collateralNote" = "Không tính vào thực thu vì sẽ trả lại khách.";
 "overview.v2.detail.note" = "Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.";
@@ -2192,7 +2192,7 @@
 "history.field.discountType" = "Kiểu giảm giá";
 "history.field.discountValue" = "Mức giảm";
 "history.field.discountAmount" = "Tiền giảm";
-"history.field.damageFee" = "Phí hư hỏng";
+"history.field.damageFee" = "Phụ phí";
 "history.field.lateFee" = "Phí trễ hạn";
 "history.field.collateralType" = "Loại thế chân";
 "history.field.collateralDetails" = "Thế chân";
@@ -2270,7 +2270,7 @@
 "overview.dash.detail.sale" = "Bán";
 "overview.dash.money.deposits" = "Cọc khi tạo đơn";
 "overview.dash.money.pickupAndSale" = "Thu khi giao, bán";
-"overview.dash.money.fees" = "Phí hư hỏng, trễ";
+"overview.dash.money.fees" = "Phụ phí, trễ";
 "overview.dash.money.refunds" = "Hoàn đơn huỷ";
 "overview.dash.money.atPickup" = "Sẽ thu khi khách lấy đồ";
 "overview.dash.money.overduePickup" = "Quá ngày lấy, chưa thu";
@@ -2441,13 +2441,13 @@
 "overview.related.event.deposit" = "Thu tiền cọc";
 "overview.related.event.pickup" = "Thu tiền khi lấy hàng";
 "overview.related.event.sameDay" = "Thuê và trả trong cùng ngày";
-"overview.related.event.damageFee" = "Thu phí hư hỏng";
+"overview.related.event.damageFee" = "Thu phụ phí";
 "overview.related.event.depositRefund" = "Hoàn tiền cọc";
 "overview.related.event.nothing" = "Không có phát sinh";
 "overview.related.event.rentCancelled" = "Đơn hủy (hoàn lại)";
 "overview.related.event.returnCollected" = "Thu khi trả hàng";
 "overview.related.event.futurePickup" = "Doanh thu dự kiến khi lấy hàng";
-"overview.related.event.futureDamageFee" = "Dự kiến thu phí hư hỏng khi trả hàng";
+"overview.related.event.futureDamageFee" = "Dự kiến thu phụ phí khi trả hàng";
 "overview.related.event.futureRefund" = "Dự kiến hoàn tiền cọc khi trả hàng";
 "overview.related.event.futureNothing" = "Dự kiến không có phát sinh khi trả hàng";
 
@@ -3097,7 +3097,6 @@
 "widget.stale" = "Mở app để cập nhật";
 "widget.staleDetail" = "Danh sách lần cuối: %@";
 "widget.yesterday" = "hôm qua";
-"widget.hiddenName" = "chạm để mở";
 "widget.hint.title" = "Thêm widget để thấy việc hôm nay ngay trên màn hình chính";
 "widget.hint.body" = "%d giao, %d trả, %d trễ sẽ hiện không cần mở app.";
 "widget.hint.how" = "Cách thêm";
@@ -3109,8 +3108,6 @@
 "widget.guide.step3" = "Chọn cỡ nhỏ hoặc vừa, bấm Thêm widget.";
 "widget.guide.ok" = "Đã hiểu";
 "widget.settings.row" = "Widget";
-"widget.hideNames.title" = "Ẩn tên khách trên widget";
-"widget.hideNames.subtitle" = "Mặc định tắt. Bật nếu bạn không muốn hiện tên khách ngay cả khi máy đang mở. Widget không bao giờ hiện tiền hay số điện thoại.";
 "order.detail.stageUnpaid" = "Còn đợt chưa thu";
 
 // #1404 three onboarding pages. Fixed sample data, not the shop's currency.

@@ -389,7 +389,7 @@
     <string name="discount_percent">Discount %</string>
     <string name="select_rental_period">Select rental period</string>
     <string name="deposit_collateral_details">Deposit &amp; Collateral Details</string>
-    <string name="damage_fee">Damage Fee</string>
+    <string name="damage_fee">Extra Fee</string>
     <string name="edit_collateral">Edit collateral details</string>
     <string name="order_notes">Order notes</string>
     <string name="add_notes_hint">Add order notes here…</string>
@@ -816,7 +816,7 @@
     <string name="detail_collect_now">Collect now</string>
     <string name="detail_handed_over">Picked up</string>
     <string name="detail_handed_over_collect">Picked up · collect %1$s</string>
-    <string name="detail_fees">Late + damage fees</string>
+    <string name="detail_fees">Late + extra fees</string>
     <string name="detail_collateral_held">Collateral held</string>
     <string name="detail_settled_before">Already settled</string>
     <string name="detail_give_back">Give back</string>
@@ -1190,7 +1190,7 @@
     <string name="overview_v2_info_cancelled">Refunds for cancelled orders</string>
     <string name="overview_v2_info_collateral">Not in real income because it goes back to the customer.</string>
     <string name="overview_v2_info_note">Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.</string>
-    <string name="overview_v2_info_fees">Damage and late fees</string>
+    <string name="overview_v2_info_fees">Extra and late fees</string>
     <string name="overview_v2_new_order_value">New order value</string>
     <string name="overview_v2_vs_previous_period">vs previous period</string>
     <string name="overview_v2_outstanding_sub">From new orders</string>
@@ -1372,7 +1372,7 @@
         <item>discountType|Discount type</item>
         <item>discountValue|Discount value</item>
         <item>discountAmount|Discount</item>
-        <item>damageFee|Damage fee</item>
+        <item>damageFee|Extra fee</item>
         <item>lateFee|Late fee</item>
         <item>collateralType|Collateral type</item>
         <item>collateralDetails|Collateral</item>
@@ -1562,13 +1562,13 @@
     <string name="overview_v2_event_deposit">Deposit collected</string>
     <string name="overview_v2_event_pickup">Collected at pickup</string>
     <string name="overview_v2_event_same_day">Rented and returned the same day</string>
-    <string name="overview_v2_event_damage_fee">Damage fee collected</string>
+    <string name="overview_v2_event_damage_fee">Extra fee collected</string>
     <string name="overview_v2_event_deposit_refund">Deposit refunded</string>
     <string name="overview_v2_event_nothing">Nothing to settle</string>
     <string name="overview_v2_event_rent_cancelled">Order cancelled, refunded</string>
     <string name="overview_v2_event_return_collected">Collected at return</string>
     <string name="overview_v2_event_future_pickup">Expected at pickup</string>
-    <string name="overview_v2_event_future_damage_fee">Expected damage fee at return</string>
+    <string name="overview_v2_event_future_damage_fee">Expected extra fee at return</string>
     <string name="overview_v2_event_future_refund">Expected deposit refund at return</string>
     <string name="overview_v2_event_future_nothing">Nothing expected at return</string>
     <string name="overview_v2_related_owes">To collect at pickup</string>
@@ -1615,7 +1615,7 @@
     <string name="overview_dash_vs_previous_period">vs previous period</string>
     <string name="overview_dash_money_deposits">Deposits at order</string>
     <string name="overview_dash_money_pickup_and_sale">Paid at pickup, sales</string>
-    <string name="overview_dash_money_fees">Damage and late fees</string>
+    <string name="overview_dash_money_fees">Extra and late fees</string>
     <string name="overview_dash_money_refunds">Refunds on cancelled</string>
     <string name="overview_dash_money_collateral_net">Collateral in − out</string>
     <string name="overview_dash_money_at_pickup">Due when the customer picks up</string>
@@ -2419,7 +2419,6 @@
     <string name="widget_stale">Open the app to update</string>
     <string name="widget_stale_detail">Last list: %1$s</string>
     <string name="widget_yesterday">yesterday</string>
-    <string name="widget_hidden_name">tap to open</string>
     <string name="widget_hint_title">Add the widget to see today\'s jobs on your home screen</string>
     <string name="widget_hint_body">%1$d out, %2$d back, %3$d late will show without opening the app.</string>
     <string name="widget_hint_how">How to add</string>
@@ -2427,8 +2426,6 @@
     <string name="widget_guide_title">Add to widget</string>
     <string name="widget_guide_ok">Got it</string>
     <string name="widget_settings_row">Widget</string>
-    <string name="widget_hide_names_title">Hide customer names on the widget</string>
-    <string name="widget_hide_names_subtitle">Off by default. Turn on if you do not want names shown even while the phone is unlocked. The widget never shows money or phone numbers.</string>
     <string name="widget_guide_subtitle_pin">Today\'s jobs show right on your home screen. The phone will ask whether to place the widget.</string>
     <string name="widget_guide_subtitle_steps">This phone does not let an app place a widget. It takes 3 steps and about 10 seconds.</string>
     <string name="widget_guide_step1">Touch and hold an empty spot on the home screen.</string>

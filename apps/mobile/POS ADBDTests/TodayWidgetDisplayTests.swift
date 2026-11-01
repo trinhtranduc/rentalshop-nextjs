@@ -56,11 +56,11 @@ final class TodayWidgetDisplayTests: XCTestCase {
     }
 
     private func snapshot(date: String = "2026-10-31", savedAt: String = "2026-10-31T01:12:00Z",
-                          state: TodayWidgetSnapshot.State = .ok, hideNames: Bool = false, done: Int = 4,
+                          state: TodayWidgetSnapshot.State = .ok, done: Int = 4,
                           counts: TodayWidgetCounts = TodayWidgetCounts(late: 1, pickup: 3, returns: 2, tomorrowPickup: 2, tomorrowReturn: 1),
                           rows: [TodayWidgetRow]? = nil) -> TodayWidgetSnapshot {
         let list = rows ?? [row(1, .pickup, late: 2), row(2, .pickup, notPrepared: true), row(3, .returnTask), row(4, .returnTask)]
-        return TodayWidgetSnapshot(userId: 7, outletId: 5, date: date, savedAt: at(savedAt), state: state, hideNames: hideNames,
+        return TodayWidgetSnapshot(userId: 7, outletId: 5, date: date, savedAt: at(savedAt), state: state,
                                    done: done, counts: counts, rows: list, labels: vi)
     }
 
@@ -297,16 +297,15 @@ final class TodayWidgetDisplayTests: XCTestCase {
         XCTAssertEqual(lines[1].warningText, "Chưa soạn đồ", "a late hand-over still is")
     }
 
-    func testHiddenNamesLeaveNoNameOnTheScreen() {
-        let display = TodayWidgetDisplay.make(snapshot: snapshot(hideNames: true, rows: [row(1, .pickup, name: "")]),
-                                              now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
-        XCTAssertTrue(display.hidesNames)
-        XCTAssertEqual(display.lines.first?.name, "")
-        // Even a file that still carried a name would not show it
-        let leaky = TodayWidgetDisplay.make(snapshot: snapshot(hideNames: true, rows: [row(1, .pickup, name: "Hà Gia Bảo")]),
+    /// #1432: there is no way to hide a name; a row with none stays empty, with no placeholder
+    func testTheLineShowsTheNameOfTheRow() {
+        let named = TodayWidgetDisplay.make(snapshot: snapshot(rows: [row(1, .pickup, name: "Hà Gia Bảo")]),
                                             now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
-        XCTAssertEqual(leaky.lines.first?.name, "")
-        XCTAssertEqual(leaky.labels.hiddenName, "chạm để mở")
+        XCTAssertEqual(named.lines.first?.name, "Hà Gia Bảo")
+        let noName = TodayWidgetDisplay.make(snapshot: snapshot(rows: [row(1, .pickup, name: "")]),
+                                             now: at("2026-10-31T03:00:00Z"), rowLimit: 2)
+        XCTAssertEqual(noName.lines.first?.name, "")
+        XCTAssertEqual(noName.lines.first?.productText, "Áo dài")
     }
 
     // MARK: Time of day (Vietnam)
@@ -376,6 +375,50 @@ final class TodayWidgetDisplayTests: XCTestCase {
         XCTAssertNil(store.read())
     }
 
+    /// #1432: the widget has only been on dev builds, whose files still carry `hideNames` and `labels.hiddenName`.
+    /// Such a file must read as it is: an unreadable file would turn the widget into "sign in" until the next write.
+    private func oldFile(hideNames: Bool, name: String) -> String {
+        """
+        {"counts":{"late":1,"pickup":3,"returns":2,"tomorrowPickup":2,"tomorrowReturn":1},"date":"2026-10-31","done":4,\
+        "hideNames":\(hideNames),\
+        "labels":{"allDoneFormat":"Xong hết %d/%d","appName":"AnyRent","displayDescription":"Giao đồ, nhận trả và đơn trễ của hôm nay.",\
+        "displayName":"Việc cần làm","doneCaption":"đã xong hôm nay","doneFormat":"xong %d/%d","empty":"Hôm nay chưa có việc",\
+        "hiddenName":"chạm để mở","late":"Trễ","locale":"vi","loggedOut":"Mở AnyRent để đăng nhập",\
+        "loggedOutHint":"Việc cần làm sẽ hiện ở đây","moreFormat":"+%d việc khác","noAccess":"Tài khoản này không có Việc cần làm",\
+        "notPrepared":"Chưa soạn đồ","pickup":"Giao","returnTask":"Trả","stale":"Mở app để cập nhật",\
+        "staleFormat":"Danh sách lần cuối: %@","today":"Hôm nay","todayAtFormat":"Hôm nay · %@",\
+        "tomorrowFormat":"Mai có %d giao, %d trả","updatedFormat":"cập nhật %@","yesterday":"hôm qua"},\
+        "outletId":5,\
+        "rows":[{"isLate":false,"kind":"pickup","lateDays":0,"lateText":"","moreCount":1,"name":"\(name)","notPrepared":true,\
+        "orderId":490268,"planDay":"Lấy 31/10/26","planTime":"14:00","product":"Áo dài gấm đỏ"}],\
+        "savedAt":"2026-10-31T01:12:00Z","state":"ok","userId":7,"v":2}
+        """
+    }
+
+    func testAFileFromAnEarlierDevBuildStillReads() throws {
+        let directory = tempDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = TodayWidgetStore(directory: directory)
+        let file = directory.appendingPathComponent(TodayWidgetStore.fileName)
+
+        try Data(oldFile(hideNames: false, name: "Chị Diệu").utf8).write(to: file)
+        let shown = try XCTUnwrap(store.read(), "hideNames false")
+        XCTAssertEqual(shown.rows.first?.name, "Chị Diệu")
+        XCTAssertEqual(shown.rows.first?.orderId, 490268)
+        XCTAssertEqual(shown.counts.total, 6)
+        XCTAssertEqual(shown.done, 4)
+        XCTAssertEqual(shown.labels.empty, "Hôm nay chưa có việc")
+        let line = TodayWidgetDisplay.make(snapshot: shown, now: at("2026-10-31T03:00:00Z"), rowLimit: 2).lines.first
+        XCTAssertEqual(line?.name, "Chị Diệu")
+
+        // A phone that had the switch on: the file reads, the name stays empty until the next write
+        try Data(oldFile(hideNames: true, name: "").utf8).write(to: file)
+        let hidden = try XCTUnwrap(store.read(), "hideNames true")
+        XCTAssertEqual(TodayWidgetDisplay.make(snapshot: hidden, now: at("2026-10-31T03:00:00Z"), rowLimit: 2).kind, .work)
+        XCTAssertEqual(hidden.rows.first?.name, "")
+        XCTAssertEqual(hidden.rows.first?.product, "Áo dài gấm đỏ")
+    }
+
     func testAStoreWithoutAnAppGroupDoesNothing() {
         // A directory-less store (an unsigned build) neither crashes nor pretends to save
         let store = TodayWidgetStore(directory: URL(fileURLWithPath: "/nonexistent-\(UUID().uuidString)"))
@@ -387,7 +430,7 @@ final class TodayWidgetDisplayTests: XCTestCase {
     func testTheFileHasNoMoneyPhoneOrTokenKeys() throws {
         let data = try TodayWidgetSnapshot.encoder().encode(snapshot())
         let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-        XCTAssertEqual(Set(json.keys), ["v", "userId", "outletId", "date", "savedAt", "state", "hideNames", "done", "counts", "rows", "labels"])
+        XCTAssertEqual(Set(json.keys), ["v", "userId", "outletId", "date", "savedAt", "state", "done", "counts", "rows", "labels"])
         let rows = json["rows"] as! [[String: Any]]
         XCTAssertEqual(Set(rows[0].keys), ["orderId", "kind", "isLate", "name", "product", "moreCount", "lateDays", "lateText", "notPrepared", "planTime", "planDay"])
         let counts = json["counts"] as! [String: Any]

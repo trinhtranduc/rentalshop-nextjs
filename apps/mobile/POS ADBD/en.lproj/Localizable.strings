@@ -493,7 +493,7 @@
 "Collect" = "Collect";
 "Document" = "Collateral Details";
 "Security Deposit" = "Security Deposit";
-"Damage Fee" = "Damage Fee";
+"Damage Fee" = "Extra Fee";
 "Collect Deposit" = "Collect Deposit";
 "Please collect the deposit amount from the customer." = "Please collect the deposit amount from the customer.";
 "Collect Remaining Payment" = "Collect Remaining Payment";
@@ -807,7 +807,7 @@
 "orders_unit" = "orders";
 "currency_VND" = "VND";
 "Overview_Info_Title" = "Overview";
-"Overview_Info_TotalRevenue" = "Total cash collected in the period (after deducting refunds). Includes: order deposits, rental on pickup, sales, damage fees. Excludes: refunds on cancellation, deposit refund when customer returns. Can be negative if refunds in the period exceed collections (e.g. many cancellations or returns).";
+"Overview_Info_TotalRevenue" = "Total cash collected in the period (after deducting refunds). Includes: order deposits, rental on pickup, sales, extra fees. Excludes: refunds on cancellation, deposit refund when customer returns. Can be negative if refunds in the period exceed collections (e.g. many cancellations or returns).";
 "Overview_Info_TotalOrders" = "(Daily only) Total number of rows in the order list — each row is one order or one revenue transaction; one order can have multiple rows if multiple transactions in the period.";
 "Overview_Info_CollateralReceived" = "Collateral (security deposit) currently held — total deposit for rental orders that are picked up and not yet returned. Only counts orders picked up in the period (by pickup date). Shows how much customer deposit you are holding (liability to refund when they return).";
 "Overview_Info_CollateralExpected" = "Expected collateral to refund — Amount of deposit you will refund to customers in the period. Only counts rental orders currently out (customer has picked up, you are holding the deposit) with return plan date in the period. When customers return in that period, you refund each securityDeposit. Helps with liquidity planning (how much deposit you need to pay back in the period).";
@@ -1036,7 +1036,7 @@
 "Deposit:" = "Deposit:";
 "Security Deposit:" = "Security Deposit:";
 "To Collect:" = "To Collect:";
-"Damage Fee:" = "Damage Fee:";
+"Damage Fee:" = "Extra Fee:";
 "Date check:" = "Date check:";
 "Change Customer" = "Change Customer";
 "Remove Customer" = "Remove Customer";
@@ -1723,7 +1723,7 @@
 "Already collected" = "Already collected";
 "Collect at hand-over" = "Collect at hand-over";
 "Late fee" = "Late fee";
-"Damage fee" = "Damage fee";
+"Damage fee" = "Extra fee";
 "At return: give back" = "At return: give back";
 "At return: collect" = "At return: collect";
 "NOTES" = "NOTES";
@@ -1738,7 +1738,7 @@
 "Keep collateral: %@" = "Keep collateral: %@";
 "Collect now" = "Collect now";
 "Handed over · collect %@" = "Picked up · collect %@";
-"Late + damage fees" = "Late + damage fees";
+"Late + damage fees" = "Late + extra fees";
 "Collateral money held" = "Collateral money held";
 "Already settled" = "Already settled";
 "Give back to customer" = "Give back to customer";
@@ -1810,7 +1810,7 @@
 "overview.v2.seeDetails" = "see details";
 "overview.v2.detail.body" = "Money customers actually paid the store, counted on the day it was received.";
 "overview.v2.detail.pickupAndSale" = "Paid at hand-over and sales";
-"overview.v2.detail.fees" = "Damage and late fees";
+"overview.v2.detail.fees" = "Extra and late fees";
 "overview.v2.detail.refunds" = "Refunds of cancelled orders";
 "overview.v2.detail.collateralNote" = "Not in real income because it goes back to the customer.";
 "overview.v2.detail.note" = "Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.";
@@ -2194,7 +2194,7 @@
 "history.field.discountType" = "Discount type";
 "history.field.discountValue" = "Discount";
 "history.field.discountAmount" = "Discount amount";
-"history.field.damageFee" = "Damage fee";
+"history.field.damageFee" = "Extra fee";
 "history.field.lateFee" = "Late fee";
 "history.field.collateralType" = "Collateral type";
 "history.field.collateralDetails" = "Collateral";
@@ -2272,7 +2272,7 @@
 "overview.dash.detail.sale" = "Sales";
 "overview.dash.money.deposits" = "Deposits at order";
 "overview.dash.money.pickupAndSale" = "Paid at pickup, sales";
-"overview.dash.money.fees" = "Damage and late fees";
+"overview.dash.money.fees" = "Extra and late fees";
 "overview.dash.money.refunds" = "Refunds on cancelled";
 "overview.dash.money.atPickup" = "Due when the customer picks up";
 "overview.dash.money.overduePickup" = "Past pickup date, unpaid";
@@ -2443,13 +2443,13 @@
 "overview.related.event.deposit" = "Deposit collected";
 "overview.related.event.pickup" = "Collected at pickup";
 "overview.related.event.sameDay" = "Rented and returned the same day";
-"overview.related.event.damageFee" = "Damage fee collected";
+"overview.related.event.damageFee" = "Extra fee collected";
 "overview.related.event.depositRefund" = "Deposit refunded";
 "overview.related.event.nothing" = "Nothing to settle";
 "overview.related.event.rentCancelled" = "Order cancelled, refunded";
 "overview.related.event.returnCollected" = "Collected at return";
 "overview.related.event.futurePickup" = "Expected at pickup";
-"overview.related.event.futureDamageFee" = "Expected damage fee at return";
+"overview.related.event.futureDamageFee" = "Expected extra fee at return";
 "overview.related.event.futureRefund" = "Expected deposit refund at return";
 "overview.related.event.futureNothing" = "Nothing expected at return";
 
@@ -3099,7 +3099,6 @@
 "widget.stale" = "Open the app to update";
 "widget.staleDetail" = "Last list: %@";
 "widget.yesterday" = "yesterday";
-"widget.hiddenName" = "tap to open";
 "widget.hint.title" = "Add the widget to see today's jobs on your home screen";
 "widget.hint.body" = "%d out, %d back, %d late will show without opening the app.";
 "widget.hint.how" = "How to add";
@@ -3111,8 +3110,6 @@
 "widget.guide.step3" = "Pick the small or the medium size and tap Add Widget.";
 "widget.guide.ok" = "Got it";
 "widget.settings.row" = "Widget";
-"widget.hideNames.title" = "Hide customer names on the widget";
-"widget.hideNames.subtitle" = "Off by default. Turn on if you do not want names shown even while the phone is unlocked. The widget never shows money or phone numbers.";
 "order.detail.stageUnpaid" = "Deposit stage unpaid";
 
 // #1404 three onboarding pages. Fixed sample data, not the shop's currency.

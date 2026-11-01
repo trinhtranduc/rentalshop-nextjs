@@ -442,7 +442,9 @@ enum RelatedEventReason: String, CaseIterable {
 
     var localizedKey: String { "overview.related.event.\(rawValue)" }
 
-    /// The API's own sentences (`revenue-calculator.ts`), so a `RENT_RETURN` or a `MULTIPLE` part maps exactly
+    /// The API's own sentences (`revenue-calculator.ts`), so a `RENT_RETURN` or a `MULTIPLE` part maps exactly.
+    /// Match keys only, never reword them: the API sends them and installed apps match on them. The screen shows
+    /// `localizedKey`, so "Thu phí hư hỏng" appears as "Thu phụ phí" (#1433).
     static let knownDescriptions: [String: RelatedEventReason] = [
         "Đơn bán được tạo": .saleCreated, "Đơn bán bị hủy (hoàn lại)": .saleCancelled, "Thu tiền cọc": .deposit,
         "Thu tiền khi lấy hàng": .pickup, "Thuê và trả trong cùng ngày": .sameDay, "Thu phí hư hỏng": .damageFee,

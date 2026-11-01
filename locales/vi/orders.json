@@ -50,15 +50,15 @@
     "subtotal": "Tạm tính",
     "grandTotal": "Tổng cộng",
     "securityDeposit": "Tiền thế chấp",
-    "damageFee": "Phí hư hỏng",
+    "damageFee": "Phụ phí",
     "collateralType": "Loại thế chấp",
     "collateralDetails": "Chi tiết thế chấp",
     "collateralImage": "Hình ảnh giấy tờ bảo đảm",
     "uploadImage": "Tải lên hình ảnh giấy tờ",
     "collateralImageHint": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác. Định dạng hỗ trợ: JPEG, PNG, WebP. Kích thước tối đa: 5MB",
     "tooltips": {
-      "damageFee": "Phí bồi thường thiệt hại khi sản phẩm bị hư hỏng, mất mát hoặc trả muộn trong quá trình khách hàng thuê",
-      "securityDeposit": "Số tiền cọc khách hàng phải đặt khi nhận hàng. Số tiền này sẽ được hoàn lại sau khi trả hàng, trừ đi phí hư hỏng (nếu có)",
+      "damageFee": "Khoản thu thêm khi sản phẩm bị hư hỏng, mất mát hoặc trả muộn trong quá trình khách hàng thuê",
+      "securityDeposit": "Số tiền cọc khách hàng phải đặt khi nhận hàng. Số tiền này sẽ được hoàn lại sau khi trả hàng, trừ đi phụ phí (nếu có)",
       "collateralType": "Loại giấy tờ tùy thân khách hàng để lại làm thế chấp (CMND/CCCD/ID, Bằng lái xe/Driver License, Hộ chiếu/Passport, hoặc loại khác)",
       "collateralDetails": "Thông tin chi tiết về giấy tờ thế chấp (số CMND/CCCD/ID, số bằng lái/Driver License, số hộ chiếu/Passport, hoặc thông tin khác tùy theo loại)",
       "collateralImage": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác để xác minh"
@@ -484,7 +484,7 @@
     },
     "depositPaid": "Đã đặt cọc",
     "securityDeposit": "Thế chấp",
-    "damageFee": "Phí hư hỏng",
+    "damageFee": "Phụ phí",
     "lateFee": "Phí trễ hạn",
     "securityBack": "Trả lại thế chấp",
     "holdCollateral": "Giữ thêm",
@@ -966,7 +966,7 @@
         "returnBtnRefund": "Nhận trả · hoàn {amount}",
         "returnBtnFree": "Nhận trả",
         "pickupHelp": "Mở hộp xác nhận: số tiền thu và thế chân nhận.",
-        "returnHelp": "Mở hộp xác nhận: phí hư hỏng, tiền thu thêm hoặc hoàn lại.",
+        "returnHelp": "Mở hộp xác nhận: phụ phí, tiền thu thêm hoặc hoàn lại.",
         "lateHelp": "Nên gọi khách trước."
       },
       "pay": {
@@ -982,7 +982,7 @@
         "paidBefore": "Đã thu trước",
         "settledBefore": "Đã thanh toán trước",
         "lateFee": "Phí trễ",
-        "damageFee": "Phí hư hỏng",
+        "damageFee": "Phụ phí",
         "collectAtPickup": "Thu khi giao",
         "returnRefund": "Khi nhận trả: trả khách",
         "returnCollect": "Khi nhận trả: thu thêm",
@@ -1022,14 +1022,14 @@
           "confirmFree": "Xác nhận nhận trả",
           "lateFee": "Phí trễ",
           "lateFeeDays": "Phí trễ ({days} ngày)",
-          "damageFee": "Phí hư hỏng"
+          "damageFee": "Phụ phí"
         },
         "rows": {
           "orderTotal": "Tổng đơn hàng",
           "depositPaid": "Đã cọc khi đặt",
           "collateralMoney": "Thế chân thu thêm",
           "paidBefore": "Đã thu trước",
-          "fees": "Phí trễ + hư hỏng",
+          "fees": "Phí trễ + phụ phí",
           "collateralHeld": "Thế chân đang giữ",
           "settledBefore": "Đã thanh toán trước"
         },
@@ -1081,7 +1081,7 @@
         "noDeposit": "Không cọc",
         "securityDeposit": "Thế chân",
         "collateral": "Giấy tờ thế chân",
-        "damageFee": "Phí hư hại",
+        "damageFee": "Phụ phí",
         "rentDate": "Ngày thuê",
         "returnDate": "Ngày trả",
         "createdAt": "Ngày tạo"

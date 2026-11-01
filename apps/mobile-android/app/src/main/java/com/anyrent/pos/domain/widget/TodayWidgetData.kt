@@ -25,33 +25,32 @@ object TodayWidgetData {
         tomorrowReturn = work.tomorrowReturnsCount,
     )
 
-    fun snapshot(work: TodayWork, userId: Int, outletId: Int, hideNames: Boolean, now: Instant): TodayWidgetSnapshot {
+    fun snapshot(work: TodayWork, userId: Int, outletId: Int, now: Instant): TodayWidgetSnapshot {
         val sections = OrdersHomeLogic.todaySections(work)
         fun rows(kind: SectionKind, isLate: Boolean) = sections.filter { it.kind == kind }.flatMap { it.rows }
             .filterIsInstance<OrdersRow.Work>()
             .filter { it.kind != WorkKind.COLLECT }
-            .map { row(it.row, it.kind, isLate, hideNames) }
+            .map { row(it.row, it.kind, isLate) }
         return TodayWidgetSnapshot(
             userId = userId,
             outletId = outletId,
             date = work.date?.takeIf { it.isNotBlank() } ?: TodayWidgetClock.dayKey(now),
             savedAt = now,
             state = TodayWidgetSnapshot.State.OK,
-            hideNames = hideNames,
             done = work.doneToday,
             counts = counts(work),
             rows = (rows(SectionKind.LATE, isLate = true) + rows(SectionKind.TODAY, isLate = false)).take(TodayWidgetSnapshot.MAX_ROWS),
         )
     }
 
-    private fun row(job: TodayWorkRow, kind: WorkKind, isLate: Boolean, hideNames: Boolean): TodayWidgetRow {
+    private fun row(job: TodayWorkRow, kind: WorkKind, isLate: Boolean): TodayWidgetRow {
         // The job's own planned instant: the pickup of a hand-over, the return of a take-back
         val planned = if (kind == WorkKind.HAND_OVER) job.pickupPlanAt else job.returnPlanAt
         return TodayWidgetRow(
             orderId = job.id,
             kind = if (kind == WorkKind.HAND_OVER) TodayWidgetRow.Kind.PICKUP else TodayWidgetRow.Kind.RETURN,
             isLate = isLate,
-            name = if (hideNames) "" else job.customerName.orEmpty(),
+            name = job.customerName.orEmpty(),
             product = job.firstItemName,
             moreCount = (job.itemCount - 1).coerceAtLeast(0),
             lateDays = job.lateDays,

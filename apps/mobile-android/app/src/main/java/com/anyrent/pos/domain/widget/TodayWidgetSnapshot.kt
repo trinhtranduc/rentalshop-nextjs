@@ -21,7 +21,7 @@ data class TodayWidgetCounts(
     val total: Int get() = late + pickup + returns
 }
 
-/** One job of the day. `name` is empty when the owner turned customer names off. */
+/** One job of the day. `name` is empty only when the order has no customer name. */
 data class TodayWidgetRow(
     /** Public numeric order id (never the database id): `anyrent://order/<orderId>` */
     val orderId: Int,
@@ -50,7 +50,6 @@ data class TodayWidgetSnapshot(
     val date: String,
     val savedAt: Instant,
     val state: State,
-    val hideNames: Boolean,
     /** Hand-overs and returns already done today (`doneToday.pickups + doneToday.returns` of the API) */
     val done: Int,
     val counts: TodayWidgetCounts,
@@ -62,8 +61,6 @@ data class TodayWidgetSnapshot(
     /** The list is only today's while its Vietnam day is the Vietnam day of [now] (never the UTC day) */
     fun isFresh(now: Instant): Boolean = date == TodayWidgetClock.dayKey(now)
 
-    fun withoutNames(): TodayWidgetSnapshot = copy(hideNames = true, rows = rows.map { it.copy(name = "") })
-
     fun toJson(): String = JSONObject()
         .put("v", CURRENT_VERSION)
         .put("userId", userId)
@@ -71,7 +68,6 @@ data class TodayWidgetSnapshot(
         .put("date", date)
         .put("savedAt", savedAt.toString())
         .put("state", state.raw)
-        .put("hideNames", hideNames)
         .put("done", done)
         .put(
             "counts",
@@ -104,7 +100,7 @@ data class TodayWidgetSnapshot(
 
         /** 403: the account has no "Việc cần làm" */
         fun noAccess(userId: Int, outletId: Int, now: Instant) = TodayWidgetSnapshot(
-            userId, outletId, TodayWidgetClock.dayKey(now), now, State.NO_ACCESS, hideNames = false, done = 0,
+            userId, outletId, TodayWidgetClock.dayKey(now), now, State.NO_ACCESS, done = 0,
             counts = TodayWidgetCounts(0, 0, 0), rows = emptyList(),
         )
 
@@ -121,7 +117,6 @@ data class TodayWidgetSnapshot(
                 date = o.getString("date"),
                 savedAt = Instant.parse(o.getString("savedAt")),
                 state = State.entries.first { it.raw == o.getString("state") },
-                hideNames = o.getBoolean("hideNames"),
                 done = o.getInt("done"),
                 counts = TodayWidgetCounts(
                     counts.getInt("late"), counts.getInt("pickup"), counts.getInt("return"),

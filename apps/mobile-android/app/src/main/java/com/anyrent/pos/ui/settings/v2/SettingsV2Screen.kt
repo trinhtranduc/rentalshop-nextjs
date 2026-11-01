@@ -320,10 +320,6 @@ fun SettingsV2Screen(
                         SettingsItem.FIRST_RUN_GUIDE -> showGuideSheet = true
                     }
                 } }
-                // #1381: the switch of the widget, under its row
-                if (item == SettingsItem.WIDGET) {
-                    HideWidgetNamesRow()
-                }
             }
             // #1259: the owner's overlap switch is the last line of CỬA HÀNG
             if (section.group == SettingsGroup.STORE && OverlapSetting.canEdit(role)) {
@@ -518,36 +514,6 @@ internal fun CurrencyChoiceDialog(current: ShopCurrency, onDismiss: () -> Unit, 
             androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
-}
-
-/** #1381 "Ẩn tên khách trên widget": a phone's choice, off by default; the widget changes at once */
-@Composable
-private fun HideWidgetNamesRow() {
-    var hidden by remember { mutableStateOf(com.anyrent.pos.ui.widget.TodayWidgetStore.hideNames) }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(stringResource(R.string.widget_hide_names_title), fontSize = DS.TextSize.Body, color = DS.Colors.Text)
-            Text(stringResource(R.string.widget_hide_names_subtitle), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-        }
-        androidx.compose.material3.Switch(
-            checked = hidden,
-            onCheckedChange = {
-                hidden = it
-                com.anyrent.pos.ui.widget.TodayWidgetStore.hideNames = it
-                com.anyrent.pos.ui.widget.TodayWidgetSync.hideNamesChanged()
-            },
-            colors = androidx.compose.material3.SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF34C759),
-                checkedBorderColor = Color(0xFF34C759),
-            ),
-        )
-    }
-    ThinDivider()
 }
 
 /** #518 (board CD-trung-lich): title, explanation and a switch that saves at once */
