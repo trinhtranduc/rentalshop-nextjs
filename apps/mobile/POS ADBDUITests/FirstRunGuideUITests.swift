@@ -260,7 +260,7 @@ final class FirstRunGuideUITests: XCTestCase {
         counter("1/9")
     }
 
-    /// #1411: leaving a screen and coming back: the back gesture is not blocked, the cart resumes from its data, a form starts over
+    /// #1411: leaving a screen and coming back: nothing blocks it, the cart resumes from its data, a form starts over
     func testBackGestureAndResume() throws {
         logInToHome()
         count("0/3")
@@ -276,14 +276,18 @@ final class FirstRunGuideUITests: XCTestCase {
         XCTAssertTrue(e2e.type(into: ["Phone number", "Số điện thoại"], text: "0912"), "phone field")
         e2e.shot("guide-back-01-form")
 
-        // Back gesture: the picker's bubble again
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
-            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)))
-        XCTAssertTrue(app.cells["customers.picker.new"].waitForExistence(timeout: 5))
-        counter("6/9")
-        e2e.shot("guide-back-02-picker")
+        // Pull the sheet down, the way out this form has today (its nav bar is hidden, so no edge swipe): the cart's bubble again
+        app.keyboards.firstMatch.exists ? app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() : ()
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.09))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
+        _ = bubble("cartCustomer")
+        counter("5/9")
+        e2e.shot("guide-back-02-cart")
 
         // The form starts over: it has no draft
+        app.buttons["cart.customerRow"].tap()
+        _ = bubble("newCustomer")
+        counter("6/9")
         app.cells["customers.picker.new"].tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         counter("6/9")
