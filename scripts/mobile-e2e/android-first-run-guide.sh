@@ -66,7 +66,7 @@ for _ in $(seq 1 25); do
   sleep 1
 done
 
-need "card on a new shop" "0/3" 20
+need "card on a new shop" "$([ -n "${E2E_WITH_CUSTOMER:-}" ] && echo 1/3 || echo 0/3)" 20
 shot guide-01-home-new-shop
 
 if ui has "#guide.bubble.exit"; then miss "no bubble before a row is tapped"; fi
@@ -117,7 +117,7 @@ if [ "${1:-walk}" = hide ]; then
   if ui has "#guide.hide"; then miss "already hidden"; fi
   shot guide-hide-04-sheet-hidden
   tap "#guide.cta"
-  need "the button runs the step on Home" "#product.form.name" 20
+  need "the button runs the step on Home" "#guide.bubble.product_photo" 20
   ui back
   sleep 2
   need "card back on Home" "#guide.cta" 20
