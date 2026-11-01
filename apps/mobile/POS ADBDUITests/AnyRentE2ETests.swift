@@ -5888,6 +5888,8 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(3)
         XCTAssertFalse(app.alerts.firstMatch.exists, "No limit error")
         e2e.shot("notes-04-after-save")
+    }
+
     /// An order with photos and no papers section (returned, no papers): the photos stand alone, with no word about collateral
     func testPhotos09PhotosWithoutPapersSection() throws {
         try e2e.start()
