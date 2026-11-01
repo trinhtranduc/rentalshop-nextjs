@@ -1,6 +1,5 @@
 package com.anyrent.pos.ui.orders.v2
 
-import android.annotation.SuppressLint
 import android.content.Context
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -32,7 +31,6 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -231,7 +229,6 @@ internal fun OrderPhotoTiles(
  * Full-screen camera of a condition photo: CameraX, as the image search (`ImageSearchScreen`). A shot goes straight to
  * the block, where × drops a bad one, so there is no review step. [onCaptured] gets a file in the cache.
  */
-@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 internal fun OrderPhotoCamera(onDismiss: () -> Unit, onCaptured: (File) -> Unit, onError: (String) -> Unit) {
     val context = LocalContext.current
@@ -253,7 +250,11 @@ internal fun OrderPhotoCamera(onDismiss: () -> Unit, onCaptured: (File) -> Unit,
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
-                    val view = PreviewView(ctx).apply { scaleType = PreviewView.ScaleType.FILL_CENTER }
+                    val view = PreviewView(ctx).apply {
+                        scaleType = PreviewView.ScaleType.FILL_CENTER
+                        // A SurfaceView sits behind its window, under this dialog's black background
+                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                    }
                     val future = ProcessCameraProvider.getInstance(ctx)
                     future.addListener({
                         val provider = future.get()

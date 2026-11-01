@@ -5571,6 +5571,289 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(!app.staticTexts["orders.booking.count"].exists, "no red count when nothing waits")
         e2e.shot("booking-09-orders-no-count")
     }
+
+    // MARK: - #1418 condition photos at hand-over
+
+    /// Run through ios-e2e.sh --only testPhotos…; `E2E_PHOTO_ORDERS` lists RESERVED rent orders of the account. A local
+    /// proxy in front of the API reads the flag files in `E2E_PHOTO_FLAGS` (fail-multipart, drop-next-multipart, fail-status-once).
+    private var photoOrders: [String] {
+        (ProcessInfo.processInfo.environment["E2E_PHOTO_ORDERS"] ?? "").split(separator: ",").map(String.init)
+    }
+
+    private func photoFlag(_ name: String, on: Bool) {
+        let dir = ProcessInfo.processInfo.environment["E2E_PHOTO_FLAGS"] ?? "/tmp/wt-photos"
+        let path = dir + "/" + name
+        if on {
+            FileManager.default.createFile(atPath: path, contents: Data())
+        } else {
+            try? FileManager.default.removeItem(atPath: path)
+        }
+    }
+
+    private func openHandOverSheet() {
+        let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
+        XCTAssertTrue(handOver.waitForExistence(timeout: 12), "RESERVED rent order shows Giao đồ")
+        handOver.tap()
+        XCTAssertTrue(app.otherElements["orderPhotos"].firstMatch.waitForExistence(timeout: 2)
+            || app.staticTexts["orderPhotos.count"].waitForExistence(timeout: 6), "Photo block in the sheet")
+    }
+
+    private func pickPhoto(expect count: Int) {
+        let library = app.buttons["orderPhotos.library"]
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Thư viện")
+        library.tap()
+        // The picker covers the sheet once it is up; the first open of a run can take a while
+        for _ in 0..<20 where library.exists && library.isHittable { usleep(500_000) }
+        sleep(2)
+        // The library runs in another process, so its cells are not reachable as elements: a tap on the spot of the
+        // second cell of the first row, the photo added last but one with `simctl addmedia`
+        e2e.shot("photos-library")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.625)).tap()
+        let label = app.staticTexts["orderPhotos.count"]
+        let done = NSPredicate(format: "label == %@", "\(count)/3")
+        expectation(for: done, evaluatedWith: label)
+        waitForExpectations(timeout: 15)
+    }
+
+    private func confirmHandOver() {
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)
+        XCTAssertTrue(handed.waitForExistence(timeout: 5), "Confirm button")
+        XCTAssertTrue(handed.isEnabled, "Confirm is always active")
+        handed.tap()
+    }
+
+    private func waitPhotoTitle(_ count: Int, timeout: TimeInterval = 20) {
+        let title = app.staticTexts["order.detail.pickupPhotos.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: timeout), "Photo section on the detail")
+        expectation(for: NSPredicate(format: "label ENDSWITH %@", "· \(count)"), evaluatedWith: title)
+        waitForExpectations(timeout: timeout)
+    }
+
+    private func photosFailedLine(exists: Bool, timeout: TimeInterval = 25) {
+        let failed = app.staticTexts["order.detail.pickupPhotos.failed"]
+        if exists {
+            XCTAssertTrue(failed.waitForExistence(timeout: timeout), "Chưa tải được…")
+        } else {
+            expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: failed)
+            waitForExpectations(timeout: timeout)
+        }
+    }
+
+    func testPhotos01ThreePhotosAndZero() throws {
+        try e2e.start()
+        let orders = photoOrders
+        openOrder(orders[0])
+        openHandOverSheet()
+        e2e.shot("photos-01-sheet-empty")
+        // Keyboard: the field and the buttons stay above it, the title stays on screen
+        let papers = app.textFields["handOver.papers"]
+        if papers.waitForExistence(timeout: 3) {
+            papers.tap()
+            sleep(1)
+            e2e.shot("photos-02-sheet-keyboard")
+            XCTAssertTrue(e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button).isHittable, "Confirm above the keyboard")
+            papers.typeText("\n")
+            sleep(1)
+        }
+        pickPhoto(expect: 1)
+        pickPhoto(expect: 2)
+        pickPhoto(expect: 3)
+        e2e.shot("photos-03-sheet-3of3")
+        XCTAssertFalse(app.buttons["orderPhotos.library"].exists, "3/3 hides the add control")
+        XCTAssertFalse(app.buttons["orderPhotos.camera"].exists, "3/3 hides the add control")
+        XCTAssertTrue(app.staticTexts["orderPhotos.full"].exists, "Đủ 3 ảnh…")
+        app.buttons["orderPhotos.remove.2"].tap()
+        XCTAssertTrue(app.buttons["orderPhotos.library"].waitForExistence(timeout: 3), "× brings the buttons back")
+        e2e.shot("photos-04-sheet-after-remove")
+        pickPhoto(expect: 3)
+        confirmHandOver()
+        waitPhotoTitle(3)
+        photosFailedLine(exists: false)
+        sleep(2)
+        e2e.shot("photos-05-detail-3")
+        XCTAssertFalse(app.buttons["order.detail.pickupPhotos.add"].exists, "3/3 hides Thêm on the detail")
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        openOrder(orders[1])
+        openHandOverSheet()
+        confirmHandOver()
+        sleep(3)
+        XCTAssertFalse(app.staticTexts["order.detail.pickupPhotos.title"].exists, "No photos: no new section")
+        e2e.shot("photos-06-detail-0")
+    }
+
+    func testPhotos02FailureRetryAndRelaunch() throws {
+        defer { photoFlag("fail-multipart", on: false) }
+        try e2e.start()
+        photoFlag("fail-multipart", on: true)
+        let orders = photoOrders
+        openOrder(orders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        pickPhoto(expect: 2)
+        pickPhoto(expect: 3)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        e2e.shot("photos-10-upload-failed")
+        waitPhotoTitle(3)
+        // Still failing: Thử lại keeps the line, the order stays handed over
+        app.buttons["order.detail.pickupPhotos.retry"].tap()
+        sleep(3)
+        photosFailedLine(exists: true)
+        // Relaunch with the photos still pending and the upload still failing
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        openOrder(orders[0])
+        photosFailedLine(exists: true)
+        e2e.shot("photos-11-after-relaunch-still-failing")
+        // Relaunch once more: the network is back, opening the order sends them by itself
+        photoFlag("fail-multipart", on: false)
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        openOrder(orders[0])
+        photosFailedLine(exists: false)
+        waitPhotoTitle(3)
+        sleep(2)
+        e2e.shot("photos-12-after-relaunch-uploaded")
+        // Thử lại path, on a second order
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        photoFlag("fail-multipart", on: true)
+        openOrder(orders[1])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        photoFlag("fail-multipart", on: false)
+        app.buttons["order.detail.pickupPhotos.retry"].tap()
+        photosFailedLine(exists: false)
+        waitPhotoTitle(1)
+        sleep(2)
+        e2e.shot("photos-13-retry-uploaded-with-add")
+        XCTAssertTrue(app.buttons["order.detail.pickupPhotos.add"].exists, "1/3: Thêm is there while the goods are out")
+    }
+
+    /// A second login on the same device must not see or send the first login's photos; they come back to the first.
+    func testPhotos03LogoutWithPendingUpload() throws {
+        defer { photoFlag("fail-multipart", on: false) }
+        let env = ProcessInfo.processInfo.environment
+        try e2e.start()
+        photoFlag("fail-multipart", on: true)
+        let order = photoOrders[0]
+        openOrder(order)
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        app.terminate()
+        try e2e.start()
+        e2e.logout()
+        photoFlag("fail-multipart", on: false)
+        e2e.login(email: env["E2E_OTHER_EMAIL"] ?? "", password: env["E2E_OTHER_PASSWORD"] ?? "")
+        e2e.settle(seconds: 25)
+        openOrder(order)
+        sleep(4)
+        XCTAssertFalse(app.staticTexts["order.detail.pickupPhotos.title"].exists, "The other login sees nothing")
+        e2e.shot("photos-20-other-login-sees-nothing")
+        app.terminate()
+        try e2e.start()
+        e2e.logout()
+        e2e.login(email: e2e.email, password: e2e.password)
+        e2e.settle(seconds: 25)
+        openOrder(order)
+        waitPhotoTitle(1)
+        photosFailedLine(exists: false)
+        sleep(2)
+        e2e.shot("photos-21-same-login-uploaded")
+    }
+
+    func testPhotos04LostReplyDoesNotDouble() throws {
+        defer { photoFlag("drop-next-multipart", on: false) }
+        try e2e.start()
+        photoFlag("drop-next-multipart", on: true)
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        e2e.shot("photos-30-lost-reply")
+        app.buttons["order.detail.pickupPhotos.retry"].tap()
+        photosFailedLine(exists: false)
+        waitPhotoTitle(1)
+        sleep(2)
+        e2e.shot("photos-31-lost-reply-one-photo")
+    }
+
+    func testPhotos05NoNetworkAtConfirmKeepsPhotos() throws {
+        defer { photoFlag("fail-status-once", on: false) }
+        try e2e.start()
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        pickPhoto(expect: 2)
+        photoFlag("fail-status-once", on: true)
+        confirmHandOver()
+        let ok = e2e.button(["OK", "Ok", "Đồng ý"])
+        XCTAssertTrue(ok.waitForExistence(timeout: 15), "Error at confirm")
+        e2e.shot("photos-40-no-network-error")
+        ok.tap()
+        sleep(2)
+        openHandOverSheet()
+        let label = app.staticTexts["orderPhotos.count"]
+        XCTAssertEqual(label.label, "2/3", "Chosen photos are kept")
+        e2e.shot("photos-41-photos-kept")
+        confirmHandOver()
+        waitPhotoTitle(2)
+    }
+
+    /// "Thêm" on the detail of an order out with one photo; the camera message. Run after
+    /// `xcrun simctl privacy <udid> revoke camera com.anyrent.debug`.
+    func testPhotos07AddLaterAndNoCamera() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        app.buttons["orderPhotos.camera"].tap()
+        sleep(2)
+        e2e.shot("photos-60-camera-unavailable")
+        let settings = app.alerts.buttons["Mở Cài đặt"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 5), "Camera message offers Settings")
+        app.alerts.buttons.element(boundBy: 1).tap()
+        XCTAssertTrue(app.buttons["orderPhotos.library"].isHittable, "The library still works")
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        waitPhotoTitle(1)
+        sleep(2)
+        let add = app.buttons["order.detail.pickupPhotos.add"]
+        XCTAssertTrue(add.waitForExistence(timeout: 8), "Thêm")
+        e2e.shot("photos-61-detail-with-add")
+        add.tap()
+        let library = app.sheets.buttons.element(boundBy: 1)
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Camera / library")
+        library.tap()
+        sleep(4)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.625)).tap()
+        waitPhotoTitle(2, timeout: 25)
+        photosFailedLine(exists: false)
+        sleep(2)
+        e2e.shot("photos-62-added-later")
+    }
+
+    /// One photo with the account of `E2E_ROLE`: each role that can hand over
+    func testPhotos06RoleHandsOverWithAPhoto() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        waitPhotoTitle(1)
+        photosFailedLine(exists: false)
+        sleep(2)
+        e2e.shot("photos-50-role-\(e2e.role)")
+    }
 }
 
 // MARK: - Helper (self-contained; does not use POS_ADBDUITests' private helpers)

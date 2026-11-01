@@ -395,15 +395,29 @@ object ApiParity {
      * changes, so a failure here never touches a hand-over.
      */
     fun uploadOrderPhotos(id: Int, field: com.anyrent.pos.domain.orders.OrderPhotoField, photos: List<ByteArray>): Result<Unit> = runCatching {
+        photos.forEach(::requireJpeg)
+        ApiClient.get().authedMultipartPut("/api/orders/$id", orderPhotosBody(field, photos))
+        Unit
+    }
+
+    /**
+     * One shot: OkHttp otherwise sends a request again by itself when a reused connection drops before the reply. This PUT
+     * appends and has no idempotency key, so that would store the photos twice; the uploader reads the order and decides.
+     */
+    internal fun orderPhotosBody(field: com.anyrent.pos.domain.orders.OrderPhotoField, photos: List<ByteArray>): okhttp3.RequestBody {
         val multipart = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("data", "{}")
         photos.forEachIndexed { index, bytes ->
-            requireJpeg(bytes)
             multipart.addFormDataPart(field.apiName, "${field.apiName}_$index.jpg", bytes.toRequestBody(imageMedia))
         }
-        ApiClient.get().authedMultipartPut("/api/orders/$id", multipart.build())
-        Unit
+        val body = multipart.build()
+        return object : okhttp3.RequestBody() {
+            override fun contentType() = body.contentType()
+            override fun contentLength() = body.contentLength()
+            override fun writeTo(sink: okio.BufferedSink) = body.writeTo(sink)
+            override fun isOneShot() = true
+        }
     }
 
     // iOS OrderService: add photos → multipart PUT (field "data" + "notesImages"). Never /api/upload/image.

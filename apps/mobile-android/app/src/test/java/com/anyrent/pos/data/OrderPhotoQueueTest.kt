@@ -153,6 +153,18 @@ class OrderPhotoQueueTest {
     }
 
     @Test
+    fun photoRequestIsNeverRepeatedByOkHttpAndCarriesOnlyThePhotos() {
+        val body = ApiParity.orderPhotosBody(field, listOf(photo, photo))
+        assertTrue("a silent retry would store the photos twice", body.isOneShot())
+        val sink = okio.Buffer()
+        body.writeTo(sink)
+        val sent = sink.readUtf8()
+        assertEquals(2, Regex("name=\"pickupNotesImages\"").findAll(sent).count())
+        assertTrue(sent.contains("name=\"data\""))
+        assertTrue(sent.contains("{}"))
+    }
+
+    @Test
     fun parsingToleratesEveryShape() {
         fun urls(json: String) = JSONObject(json).photoUrls("pickupNotesImages")
         assertEquals(emptyList<String>(), urls("""{}"""))
