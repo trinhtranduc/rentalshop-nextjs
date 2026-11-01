@@ -2535,4 +2535,6 @@
     <string name="order_photos_not_uploaded">%1$d photo(s) not uploaded</string>
     <string name="order_photos_camera_unavailable">The camera is not available. Allow it in Settings, or pick from the library.</string>
     <string name="order_photos_open_settings">Open Settings</string>
+    <!-- #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail -->
+    <string name="detail_cash_breakdown">rental %1$s + collateral %2$s</string>
 </resources>
