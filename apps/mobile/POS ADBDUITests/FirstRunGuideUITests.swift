@@ -276,31 +276,37 @@ final class FirstRunGuideUITests: XCTestCase {
         XCTAssertTrue(e2e.type(into: ["Phone number", "Số điện thoại"], text: "0912"), "phone field")
         e2e.shot("guide-back-01-form")
 
-        // Pull the sheet down, the way out this form has today (its nav bar is hidden, so no edge swipe): the cart's bubble again
-        app.keyboards.firstMatch.exists ? app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() : ()
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.09))
+        // Thoát with something typed asks, and from inside the sheet goes all the way to the card. The cart keeps its line.
+        app.buttons["guide.bubble.exit"].tap()
+        let discard = e2e.button(["Discard", "Bỏ"])
+        XCTAssertTrue(discard.waitForExistence(timeout: 3), "a form with content asks")
+        discard.tap()
+        count("1/3")
+        XCTAssertFalse(app.buttons["guide.bubble.next"].exists)
+        e2e.shot("guide-back-02-card")
+
+        // The cart resumes from its data
+        app.buttons["guide.cta"].tap()
+        _ = bubble("cartCustomer")
+        counter("5/9")
+        app.buttons["cart.customerRow"].tap()
+        _ = bubble("newCustomer")
+        e2e.shot("guide-back-03-picker")
+
+        // Pull the picker's sheet down: nothing blocks it, and the cart's bubble is there again
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08))
             .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
         _ = bubble("cartCustomer")
         counter("5/9")
-        e2e.shot("guide-back-02-cart")
+        e2e.shot("guide-back-04-cart-again")
 
         // The form starts over: it has no draft
         app.buttons["cart.customerRow"].tap()
         _ = bubble("newCustomer")
-        counter("6/9")
         app.cells["customers.picker.new"].tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         counter("6/9")
         XCTAssertEqual(next().value as? String, "off", "nothing kept")
-
-        // Thoát from inside a sheet, on a form with nothing typed: back to the card, the cart keeps its line
-        app.buttons["guide.bubble.exit"].tap()
-        count("1/3")
-        XCTAssertFalse(app.buttons["guide.bubble.next"].exists)
-        e2e.shot("guide-back-03-card")
-        app.buttons["guide.cta"].tap()
-        _ = bubble("cartCustomer")
-        counter("5/9")
     }
 
     /// #1411: the phone belongs to a customer that arrived after the run started (needs TEST_RUNNER_E2E_DUP_PHONE and a helper that adds it
