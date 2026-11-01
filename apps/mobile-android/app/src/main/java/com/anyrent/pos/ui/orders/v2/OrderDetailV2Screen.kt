@@ -380,6 +380,12 @@ fun OrderDetailV2Screen(
                             null
                         },
                     )
+                    // #1418 the photos are often below the first screen; a failed upload is told here
+                    state.pickupFailedCount?.let { failed ->
+                        Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)) {
+                            OrderPhotoWarning(failed, "order.detail.pickupPhotos", vm::retryPickupPhotos)
+                        }
+                    }
                     DetailBody(
                         detail,
                         depositCard = if (hasPlan) {
@@ -409,7 +415,6 @@ fun OrderDetailV2Screen(
                                 OrderPhotoTiles(
                                     urls = detail.pickupNotesImages,
                                     waiting = state.pickupWaiting,
-                                    failed = state.pickupUploadFailed,
                                     id = "order.detail.pickupPhotos",
                                     onPreview = { previewImage = it },
                                     onAdd = if (OrderPhotoLogic.canAddLater(
@@ -421,7 +426,6 @@ fun OrderDetailV2Screen(
                                     } else {
                                         null
                                     },
-                                    onRetry = vm::retryPickupPhotos,
                                 )
                             }
                         } else {

@@ -43,6 +43,11 @@ enum OrderPhotoLogic {
         return room > 0 ? .send(count: min(pending, room)) : .noRoom
     }
 
+    /// How many photos the warning under the status names. Nil while a retry runs, so there is one way to start one.
+    static func failedCount(state: OrderPhotoUploader.State, waiting: Int) -> Int? {
+        state == .failed && waiting > 0 ? waiting : nil
+    }
+
     /// "Thêm" on the order detail: only while the goods are out, and not when the block would be new on the screen
     static func canAddLater(status: OrderStatus, serverCount: Int, pendingCount: Int, canUpdateOrders: Bool) -> Bool {
         status == .pickuped && canUpdateOrders && pendingCount == 0 && serverCount > 0 && canAdd(count: serverCount)

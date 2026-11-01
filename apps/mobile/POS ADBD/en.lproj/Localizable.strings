@@ -3209,6 +3209,6 @@
 "order.photos.library" = "Library";
 "order.photos.full" = "That is %d photos. Remove one to add another.";
 "order.photos.atHandOver" = "Photos at hand-over";
-"order.photos.notUploaded" = "%d photo(s) not uploaded. The order is handed over; the photos are still on this device.";
+"order.photos.notUploaded" = "%d photo(s) not uploaded";
 "order.photos.cameraUnavailable" = "The camera is not available. Allow it in Settings, or pick from the library.";
 "order.photos.openSettings" = "Open Settings";

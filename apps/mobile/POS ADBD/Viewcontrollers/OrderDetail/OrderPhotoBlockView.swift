@@ -240,11 +240,11 @@ final class OrderPhotoBlockView: UIStackView {
     }
 }
 
-/// The section of the order detail: uploaded photos, those still waiting (faded), "Thêm" and the failure line.
-/// There is no delete: an uploaded photo stays.
+/// The row of the order detail: uploaded photos, those still waiting (faded) and "Thêm". There is no delete: an uploaded
+/// photo stays. A failed upload is told once, at the top of the screen (`warningLine`).
 enum OrderPhotoSection {
-    static func content(title: String, urls: [String], waiting: [Data], failed: Bool, id: String,
-                        onOpen: @escaping (UIImage) -> Void, onAdd: ((UIView) -> Void)?, onRetry: @escaping () -> Void) -> UIView {
+    static func content(title: String, urls: [String], waiting: [Data], id: String,
+                        onOpen: @escaping (UIImage) -> Void, onAdd: ((UIView) -> Void)?) -> UIView {
         let column = UIStackView()
         column.axis = .vertical
         column.spacing = DS.Spacing.sm
@@ -275,9 +275,30 @@ enum OrderPhotoSection {
         if let onAdd { row.addArrangedSubview(addTile(id: id, onAdd: onAdd)) }
         row.addArrangedSubview(UIView())
         column.addArrangedSubview(row)
-
-        if failed { column.addArrangedSubview(failure(count: waiting.count, id: id, onRetry: onRetry)) }
         return column
+    }
+
+    /// "Chưa tải được N ảnh · Thử lại" under the status: the photos are often below the first screen, this is not. A tap retries.
+    static func warningLine(count: Int, id: String, onRetry: @escaping () -> Void) -> UIView {
+        let text = NSMutableAttributedString(string: String(format: "order.photos.notUploaded".localized(), count) + " · ", attributes: [
+            NSAttributedString.Key.font: Utils.regularFont(size: DS.TextSize.secondary),
+            NSAttributedString.Key.foregroundColor: V2.warn,
+        ])
+        text.append(NSAttributedString(string: "Retry".localized(), attributes: [
+            NSAttributedString.Key.font: Utils.boldFont(size: DS.TextSize.secondary),
+            NSAttributedString.Key.foregroundColor: DS.Color.primary,
+        ]))
+        let line = UIButton(type: .custom)
+        line.setAttributedTitle(text, for: .normal)
+        line.titleLabel?.numberOfLines = 0
+        line.contentHorizontalAlignment = .left
+        line.contentEdgeInsets = UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12)
+        line.backgroundColor = UIColor(hexString: "FFEDD5")
+        line.layer.cornerRadius = 10
+        line.accessibilityIdentifier = id + ".retry"
+        line.addAction(UIAction { _ in onRetry() }, for: .touchUpInside)
+        line.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        return line
     }
 
     private static func thumb(onOpen: @escaping (UIImage) -> Void) -> UIButton {
@@ -320,27 +341,5 @@ enum OrderPhotoSection {
         }, for: .touchUpInside)
         add.snp.makeConstraints { make in make.size.equalTo(64) }
         return add
-    }
-
-    private static func failure(count: Int, id: String, onRetry: @escaping () -> Void) -> UIView {
-        let text = V2.label(String(format: "order.photos.notUploaded".localized(), count), size: DS.TextSize.secondary, color: V2.warn, lines: 0)
-        text.accessibilityIdentifier = id + ".failed"
-        let retry = UIButton(type: .system)
-        retry.setTitle("Retry".localized(), for: .normal)
-        retry.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
-        retry.tintColor = DS.Color.primary
-        retry.accessibilityIdentifier = id + ".retry"
-        retry.setContentCompressionResistancePriority(.required, for: .horizontal)
-        retry.setContentHuggingPriority(.required, for: .horizontal)
-        retry.addAction(UIAction { _ in onRetry() }, for: .touchUpInside)
-        retry.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
-        let row = UIStackView(arrangedSubviews: [text, retry])
-        row.alignment = .center
-        row.spacing = DS.Spacing.md
-        row.isLayoutMarginsRelativeArrangement = true
-        row.layoutMargins = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
-        row.backgroundColor = UIColor(hexString: "FFEDD5")
-        row.layer.cornerRadius = 10
-        return row
     }
 }

@@ -3207,6 +3207,6 @@
 "order.photos.library" = "Thư viện";
 "order.photos.full" = "Đủ %d ảnh. Bỏ một ảnh để thêm ảnh khác.";
 "order.photos.atHandOver" = "Ảnh khi giao";
-"order.photos.notUploaded" = "Chưa tải được %d ảnh. Đơn đã giao xong, ảnh vẫn trên máy.";
+"order.photos.notUploaded" = "Chưa tải được %d ảnh";
 "order.photos.cameraUnavailable" = "Chưa dùng được máy ảnh. Mở Cài đặt để cấp quyền, hoặc chọn từ Thư viện.";
 "order.photos.openSettings" = "Mở Cài đặt";

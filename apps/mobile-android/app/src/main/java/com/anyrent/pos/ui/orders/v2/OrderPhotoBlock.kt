@@ -32,7 +32,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -49,7 +48,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -169,60 +171,59 @@ private fun PhotoButton(
 }
 
 /**
- * The section of the order detail: uploaded photos, those still waiting (faded), "Thêm" and the failure line.
- * There is no delete: an uploaded photo stays.
+ * The row of the order detail: uploaded photos, those still waiting (faded) and "Thêm". There is no delete: an uploaded
+ * photo stays. A failed upload is told once, at the top of the screen ([OrderPhotoWarning]).
  */
 @Composable
 internal fun OrderPhotoTiles(
     urls: List<String>,
     waiting: List<File>,
-    failed: Boolean,
     id: String,
     onPreview: (Any) -> Unit,
     onAdd: (() -> Unit)?,
-    onRetry: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            urls.forEach { url -> Thumb(url, TileSize) { onPreview(url) } }
-            waiting.forEach { file ->
-                Box(Modifier.alpha(0.45f).testTag("$id.waiting")) { Thumb(file, TileSize) { onPreview(file) } }
-            }
-            onAdd?.let { add ->
-                Column(
-                    Modifier
-                        .size(TileSize)
-                        .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
-                        .border(1.dp, Color(0xFF93C5FD), RoundedCornerShape(10.dp))
-                        .clickable(onClick = add)
-                        .testTag("$id.add"),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(22.dp))
-                    Text(stringResource(R.string.order_photos_add), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Primary)
-                }
-            }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        urls.forEach { url -> Thumb(url, TileSize) { onPreview(url) } }
+        waiting.forEach { file ->
+            Box(Modifier.alpha(0.45f).testTag("$id.waiting")) { Thumb(file, TileSize) { onPreview(file) } }
         }
-        if (failed) {
-            Row(
+        onAdd?.let { add ->
+            Column(
                 Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFFEDD5), RoundedCornerShape(10.dp))
-                    .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .size(TileSize)
+                    .background(Color(0xFFEFF6FF), RoundedCornerShape(10.dp))
+                    .border(1.dp, Color(0xFF93C5FD), RoundedCornerShape(10.dp))
+                    .clickable(onClick = add)
+                    .testTag("$id.add"),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                Text(
-                    stringResource(R.string.order_photos_not_uploaded, waiting.size),
-                    fontSize = DS.TextSize.Secondary, color = Color(0xFF9A3412),
-                    modifier = Modifier.weight(1f).testTag("$id.failed"),
-                )
-                TextButton(onClick = onRetry, modifier = Modifier.testTag("$id.retry")) {
-                    Text(stringResource(R.string.retry), fontWeight = FontWeight.Bold)
-                }
+                Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = DS.Colors.Primary, modifier = Modifier.size(22.dp))
+                Text(stringResource(R.string.order_photos_add), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Primary)
             }
         }
     }
+}
+
+/** "Chưa tải được N ảnh · Thử lại" under the status: the photos are often below the first screen, this is not. A tap retries. */
+@Composable
+internal fun OrderPhotoWarning(count: Int, id: String, onRetry: () -> Unit) {
+    val text = stringResource(R.string.order_photos_not_uploaded, count)
+    val retry = stringResource(R.string.retry)
+    Text(
+        buildAnnotatedString {
+            append("$text · ")
+            withStyle(SpanStyle(color = DS.Colors.Primary, fontWeight = FontWeight.Bold)) { append(retry) }
+        },
+        fontSize = DS.TextSize.Secondary,
+        color = Color(0xFF9A3412),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFFFEDD5), RoundedCornerShape(10.dp))
+            .clickable(onClick = onRetry)
+            .testTag("$id.retry")
+            .padding(horizontal = 12.dp, vertical = 14.dp),
+    )
 }
 
 /**

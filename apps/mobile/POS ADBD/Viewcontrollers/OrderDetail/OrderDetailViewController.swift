@@ -279,6 +279,14 @@ final class OrderDetailViewController: BaseViewControler {
         if OrderDetailLogic.showsLateBanner && late > 0 {
             extras.addArrangedSubview(lateBanner(detail, days: late))
         }
+        // #1418 the photos are often below the first screen; a failed upload is told here
+        if let failed = OrderPhotoLogic.failedCount(state: OrderPhotoUploader.shared.state(orderId: orderId, field: .pickup),
+                                                    waiting: OrderPhotoUploader.shared.pending(orderId: orderId, field: .pickup)?.files.count ?? 0) {
+            extras.addArrangedSubview(OrderPhotoSection.warningLine(count: failed, id: "order.detail.pickupPhotos") { [weak self] in
+                guard let self else { return }
+                OrderPhotoUploader.shared.resume(orderId: self.orderId, field: .pickup)
+            })
+        }
         if detail.orderType == .rent {
             // #643: the steps carry the dates; the row stays only where there are no steps (cancelled)
             if let from = detail.pickupPlanAt, let to = detail.returnPlanAt,
@@ -842,14 +850,9 @@ final class OrderDetailViewController: BaseViewControler {
         let canAdd = OrderPhotoLogic.canAddLater(status: detail.status, serverCount: urls.count, pendingCount: waiting.count,
                                                  canUpdateOrders: PermissionManager.shared.hasPermission("orders.update"))
         let content = OrderPhotoSection.content(
-            title: "order.photos.atHandOver".localized(), urls: urls, waiting: waiting,
-            failed: uploader.state(orderId: orderId, field: .pickup) == .failed, id: "order.detail.pickupPhotos",
+            title: "order.photos.atHandOver".localized(), urls: urls, waiting: waiting, id: "order.detail.pickupPhotos",
             onOpen: { [weak self] image in self?.showFullScreen(image) },
-            onAdd: canAdd ? { [weak self] source in self?.addPhotoPicker.chooseSource(from: source) } : nil,
-            onRetry: { [weak self] in
-                guard let self else { return }
-                OrderPhotoUploader.shared.resume(orderId: self.orderId, field: .pickup)
-            })
+            onAdd: canAdd ? { [weak self] source in self?.addPhotoPicker.chooseSource(from: source) } : nil)
         return padded(content, top: 0, bottom: DS.Spacing.md)
     }
 

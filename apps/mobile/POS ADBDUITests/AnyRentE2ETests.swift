@@ -5637,7 +5637,7 @@ final class AnyRentE2ETests: XCTestCase {
     }
 
     private func photosFailedLine(exists: Bool, timeout: TimeInterval = 25) {
-        let failed = app.staticTexts["order.detail.pickupPhotos.failed"]
+        let failed = app.buttons["order.detail.pickupPhotos.retry"]
         if exists {
             XCTAssertTrue(failed.waitForExistence(timeout: timeout), "Chưa tải được…")
         } else {
@@ -5703,7 +5703,6 @@ final class AnyRentE2ETests: XCTestCase {
         pickPhoto(expect: 3)
         confirmHandOver()
         photosFailedLine(exists: true)
-        scrollToPhotos()
         e2e.shot("photos-10-upload-failed")
         waitPhotoTitle(3)
         // Still failing: Thử lại keeps the line, the order stays handed over
@@ -5716,7 +5715,6 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         openOrder(orders[0])
         photosFailedLine(exists: true)
-        scrollToPhotos()
         e2e.shot("photos-11-after-relaunch-still-failing")
         // Relaunch once more: the network is back, opening the order sends them by itself
         photoFlag("fail-multipart", on: false)
@@ -5740,7 +5738,6 @@ final class AnyRentE2ETests: XCTestCase {
         confirmHandOver()
         photosFailedLine(exists: true)
         photoFlag("fail-multipart", on: false)
-        scrollToPhotos()
         app.buttons["order.detail.pickupPhotos.retry"].tap()
         photosFailedLine(exists: false)
         waitPhotoTitle(1)
@@ -5794,7 +5791,6 @@ final class AnyRentE2ETests: XCTestCase {
         pickPhoto(expect: 1)
         confirmHandOver()
         photosFailedLine(exists: true)
-        scrollToPhotos()
         e2e.shot("photos-30-lost-reply")
         app.buttons["order.detail.pickupPhotos.retry"].tap()
         photosFailedLine(exists: false)
