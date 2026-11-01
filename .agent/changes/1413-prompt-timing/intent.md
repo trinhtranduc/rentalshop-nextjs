@@ -25,3 +25,6 @@ iOS and Android apps. No API path changes, no web, no migration.
 
 - 2026-11-01 — Threshold 5 orders, owner decision. Total comes from `GET /api/orders?limit=1`, the read the guide already uses. Cancelled orders count, same as the guide.
 - 2026-11-01 — Android has no in-app review (no Play review dependency, no `ReviewManager`): rating change is iOS only.
+- 2026-11-01 — iOS `start()` keeps every registration for an allowed status. What it used to do with no question on screen (`requestAuthorization` answered at once, `granted` true) is now `getNotificationSettings`, same `registerForRemoteNotifications`.
+- 2026-11-01 — Android asks once per install. Older versions re-asked each launch after one "no"; a user with the rationale flag counts as answered.
+- 2026-11-01 — Seen and left alone: iOS's own "Save Password?" sheet can show over onboarding page 1 after a login. It is not the app's prompt and is out of scope; for the owner to decide.

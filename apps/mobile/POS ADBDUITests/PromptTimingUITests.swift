@@ -92,6 +92,31 @@ final class PromptTimingUITests: XCTestCase {
         e2e.shot("ios-06-relaunch-answered-no-prompt")
     }
 
+    /// A widget link opens the tabs with onboarding still to do: no question there. The next launch shows the pages, then asks.
+    func testAWidgetLinkDuringOnboardingAsksNothing() throws {
+        guard #available(iOS 16.4, *) else { throw XCTSkip("needs XCUIApplication.open") }
+        app.launch()
+        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 30), "a fresh install starts at login")
+        e2e.login(email: e2e.email, password: e2e.password)
+        waitForFirstPage()
+
+        app.open(try XCTUnwrap(URL(string: "anyrent://todo")))
+        XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 20), "the link opens the tabs")
+        assertNoQuestion(for: 4, "on the orders tab")
+        e2e.tapTab(["Home", "Trang chủ"], index: 0)
+        assertNoQuestion(for: 6, "on Home with onboarding still to do")
+        e2e.shot("ios-09-widget-link-home-no-prompt")
+
+        app.terminate()
+        app.launch()
+        waitForFirstPage()
+        assertNoQuestion(for: 3, "on page 1")
+        e2e.button(["Skip", "Bỏ qua"]).tap()
+        XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 30))
+        XCTAssertTrue(question.waitForExistence(timeout: 15), "the question comes once onboarding is over")
+        e2e.shot("ios-10-after-skip-home-prompt")
+    }
+
     /// One more order from Home, for a run that checks `hasRequestedAppRating` from outside. E2E_ORDER_SHOT names the stills.
     func testOneMoreOrder() throws {
         let name = ProcessInfo.processInfo.environment["E2E_ORDER_SHOT"] ?? ""
