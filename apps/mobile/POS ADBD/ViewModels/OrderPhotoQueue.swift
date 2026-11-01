@@ -43,6 +43,11 @@ enum OrderPhotoLogic {
         return room > 0 ? .send(count: min(pending, room)) : .noRoom
     }
 
+    /// #1419 the return sheet only shows the hand-over photos; with none it stays as it was
+    static func returnSheetShowsPhotos(serverCount: Int, waiting: Int) -> Bool {
+        serverCount + waiting > 0
+    }
+
     /// How many photos the warning under the status names. Nil while a retry runs, so there is one way to start one.
     static func failedCount(state: OrderPhotoUploader.State, waiting: Int) -> Int? {
         state == .failed && waiting > 0 ? waiting : nil

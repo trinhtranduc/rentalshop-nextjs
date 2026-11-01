@@ -170,6 +170,24 @@ private fun PhotoButton(
     }
 }
 
+/** "Ảnh khi giao · N" and the tiles: the same row on the order detail and, read only, on the return sheet (#1419) */
+@Composable
+internal fun OrderPickupPhotosRow(
+    urls: List<String>,
+    waiting: List<File>,
+    id: String,
+    onPreview: (Any) -> Unit,
+    onAdd: (() -> Unit)? = null,
+) {
+    // An ordinary row of the papers section, like "Khi nhận trả": not a section title
+    Text(
+        "${stringResource(R.string.order_photos_at_hand_over)} · ${urls.size + waiting.size}",
+        fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted,
+        modifier = Modifier.padding(top = 12.dp, bottom = 8.dp).testTag("$id.title"),
+    )
+    OrderPhotoTiles(urls = urls, waiting = waiting, id = id, onPreview = onPreview, onAdd = onAdd)
+}
+
 /**
  * The row of the order detail: uploaded photos, those still waiting (faded) and "Thêm". There is no delete: an uploaded
  * photo stays. A failed upload is told once, at the top of the screen ([OrderPhotoWarning]).

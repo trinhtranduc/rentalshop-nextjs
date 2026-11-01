@@ -41,15 +41,20 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
     private let moneyStack = UIStackView()
     private let confirmButton = UIButton(type: .system)
     private let initialPhotos: [Data]
+    /// #1419 the hand-over photos on the return sheet, read only
+    private let comparePhotoURLs: [String]
+    private let comparePhotosWaiting: [Data]
     private var photoBlock: OrderPhotoBlockView?
     private var keyboardManagerWasEnabled = true
 
     /// `photos`: chosen before a confirm that failed, so nothing has to be taken again (#1418)
-    init(mode: Mode, detail: OrderDetail, lateDays: Int, photos: [Data] = []) {
+    init(mode: Mode, detail: OrderDetail, lateDays: Int, photos: [Data] = [], comparePhotoURLs: [String] = [], comparePhotosWaiting: [Data] = []) {
         self.mode = mode
         self.detail = detail
         self.lateDays = lateDays
         initialPhotos = photos
+        self.comparePhotoURLs = comparePhotoURLs
+        self.comparePhotosWaiting = comparePhotosWaiting
         payments = detail.payments.map { OrderPaymentLine(amount: $0.amount, status: $0.status, notes: $0.notes) }
         super.init(nibName: nil, bundle: nil)
     }
@@ -79,6 +84,17 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         if mode == .takeReturn {
             for item in detail.orderItems {
                 content.addArrangedSubview(itemRow(item))
+            }
+            if OrderPhotoLogic.returnSheetShowsPhotos(serverCount: comparePhotoURLs.count, waiting: comparePhotosWaiting.count) {
+                content.addArrangedSubview(OrderPhotoSection.content(
+                    title: "order.photos.atHandOver".localized(), urls: comparePhotoURLs, waiting: comparePhotosWaiting,
+                    id: "order.return.pickupPhotos",
+                    onOpen: { [weak self] image in
+                        let viewer = NoteImagePreviewViewController(image: image)
+                        viewer.modalPresentationStyle = .fullScreen
+                        self?.present(viewer, animated: true)
+                    },
+                    onAdd: nil))
             }
         }
 

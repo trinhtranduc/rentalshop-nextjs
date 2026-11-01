@@ -32,6 +32,9 @@ object OrderPhotoLogic {
         return if (room > 0) OrderPhotoDecision.Send(minOf(pending, room)) else OrderPhotoDecision.NoRoom
     }
 
+    /** #1419 the return sheet only shows the hand-over photos; with none it stays as it was */
+    fun returnSheetShowsPhotos(serverCount: Int, waiting: Int): Boolean = serverCount + waiting > 0
+
     /** "Thêm" on the order detail: only while the goods are out, and not when the block would be new on the screen */
     fun canAddLater(status: String?, serverCount: Int, pendingCount: Int, canUpdateOrders: Boolean): Boolean =
         status.equals("PICKUPED", ignoreCase = true) && canUpdateOrders && pendingCount == 0 &&

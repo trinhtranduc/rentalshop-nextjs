@@ -1108,8 +1108,14 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func presentSheet(_ mode: OrderHandOverSheetViewController.Mode) {
         guard let detail else { return }
+        // #1419 at return the hand-over photos are shown to compare, the same as the row on this screen
+        let compareURLs = mode == .takeReturn ? absoluteURLs(detail.pickupNotesImages) : []
+        let compareWaiting = mode == .takeReturn
+            ? OrderPhotoUploader.shared.pending(orderId: orderId, field: .pickup)?.files.compactMap { try? Data(contentsOf: $0) } ?? []
+            : []
         let sheet = OrderHandOverSheetViewController(mode: mode, detail: detail, lateDays: lateDays(for: detail),
-                                                     photos: mode == .handOver ? handOverPhotoDraft : [])
+                                                     photos: mode == .handOver ? handOverPhotoDraft : [],
+                                                     comparePhotoURLs: compareURLs, comparePhotosWaiting: compareWaiting)
         sheet.onConfirm = { [weak self] lateFee, damageFee in
             self?.confirm(mode, lateFee: lateFee, damageFee: damageFee)
         }
@@ -1117,8 +1123,10 @@ final class OrderDetailViewController: BaseViewControler {
             self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit, photos: photos)
         }
         if let presentation = sheet.sheetPresentationController {
-            // #1418: the hand-over sheet opens tall, so the photo buttons and the money show together (layout A2)
-            presentation.detents = mode == .handOver ? [.large()] : [.medium()]
+            // #1418: the hand-over sheet opens tall, so the photo buttons and the money show together (layout A2).
+            // #1419: the return sheet too when it has photos; without them it stays as it was
+            let tall = mode == .handOver || OrderPhotoLogic.returnSheetShowsPhotos(serverCount: compareURLs.count, waiting: compareWaiting.count)
+            presentation.detents = tall ? [.large()] : [.medium()]
             presentation.prefersGrabberVisible = true
             presentation.preferredCornerRadius = 24
         }
