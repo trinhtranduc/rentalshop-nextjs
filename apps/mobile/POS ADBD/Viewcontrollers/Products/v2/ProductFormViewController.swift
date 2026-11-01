@@ -102,6 +102,7 @@ final class ProductFormViewController: BaseViewControler {
         if userOutletId == nil { loadOutlets() }
         let tap = UITapGestureRecognizer(target: self, action: #selector(endEditing))
         tap.cancelsTouchesInView = false
+        tap.delegate = self // #1411
         view.addGestureRecognizer(tap)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow),
                                                name: NSNotification.Name.UIKeyboardDidShow, object: nil)
@@ -940,6 +941,18 @@ extension ProductFormViewController: FirstRunCoachForm {
     func coachOpenPhotoLibrary() {
         picker.sourceType = .photoLibrary
         present(picker, animated: true)
+    }
+}
+
+extension ProductFormViewController: UIGestureRecognizerDelegate {
+    /// #1411: a touch on the guide's bubble is not a tap outside a field: it would close the keyboard Tiếp has just moved to the next field
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var view = touch.view
+        while let current = view {
+            if current is FirstRunCoachOverlayView { return false }
+            view = current.superview
+        }
+        return true
     }
 }
 
