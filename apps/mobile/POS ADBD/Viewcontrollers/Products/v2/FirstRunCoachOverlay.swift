@@ -157,21 +157,27 @@ final class FirstRunCoach {
 
     /// Thoát hướng dẫn: back to the card, the guide goes on. A form with content asks first.
     private func exit(from host: UIViewController) {
-        guard (host as? FirstRunCoachForm)?.coachHasInput == true else { return leave() }
+        guard (host as? FirstRunCoachForm)?.coachHasInput == true else { return leave(from: host) }
         let alert = UIAlertController(title: "firstRunGuide.exit.discard".localized(), message: nil, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Cancel".localized(), style: .cancel))
-        alert.addAction(UIAlertAction(title: "firstRunGuide.exit.discard.action".localized(), style: .destructive) { [weak self] _ in
-            self?.leave()
+        alert.addAction(UIAlertAction(title: "firstRunGuide.exit.discard.action".localized(), style: .destructive) { [weak self, weak host] _ in
+            // The alert is still leaving: a dismiss of what is under it now would be dropped
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                guard let host else { return }
+                self?.leave(from: host)
+            }
         })
         host.present(alert, animated: true)
     }
 
-    private func leave() {
+    /// Closes what is presented over Home (the product form, the customer picker's sheet), then the cart
+    private func leave(from host: UIViewController) {
         let home = self.home
         stop()
-        let backToCard = { home?.navigationController?.popToRootViewController(animated: true) ; return }
-        if let root = home?.view.window?.rootViewController, root.presentedViewController != nil {
-            root.dismiss(animated: true, completion: backToCard)
+        host.view.endEditing(true)
+        let backToCard = { _ = home?.navigationController?.popToRootViewController(animated: true) }
+        if let presenter = (host.navigationController ?? host).presentingViewController {
+            presenter.dismiss(animated: true, completion: backToCard)
         } else {
             backToCard()
         }
