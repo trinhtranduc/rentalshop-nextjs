@@ -28,7 +28,7 @@ AnyRent giúp tiệm cho thuê làm việc hằng ngày:
 - **Khách hàng:** lưu tên, điện thoại, lịch sử thuê.
 - **Link catalog công khai (mọi gói):** gửi link cho khách xem mẫu và giá, khách không cần đăng nhập.
 - **Báo cáo:** doanh thu, hiệu suất (đầy đủ hơn trên web).
-- **Nhiều nhân viên / chi nhánh:** tùy hạn mức gói; thêm thì tính phụ phí.
+- **Nhiều nhân viên / chi nhánh:** tùy hạn mức gói; cần thêm thì mua dịch vụ thêm.
 
 App điện thoại (iPhone và Android): tạo đơn, khách, kho, lịch, tìm kiếm, thông báo đơn và ngày trả.
 
@@ -44,7 +44,7 @@ Trang bảng giá (luôn đúng hơn số nhớ trong chat): https://www.anyrent
 
 Có dùng thử **14 ngày**. Sau đó trả theo tháng. Thanh toán dài hạn trên landing: 3 tháng không giảm, 6 tháng giảm 5%, 12 tháng giảm 10%.
 
-Giá gói đang bán (Việt Nam, mỗi tháng, chưa kể phụ phí):
+Giá gói đang bán (Việt Nam, mỗi tháng, chưa kể dịch vụ thêm):
 
 | Gói | Giá | App điện thoại | Quản lý trên web |
 |---|---|---|---|
@@ -58,7 +58,7 @@ Hạn mức đang bán (nếu khách hỏi chi tiết; nếu lệch với trang 
 - **Chuyên nghiệp:** 5.000 sản phẩm, 10.000 khách, 3 người dùng, 1 chi nhánh, 10.000 đơn.
 - **Doanh nghiệp:** không giới hạn; giá theo thỏa thuận.
 
-**Phụ phí** (ngoài hạn mức gói, tính theo tháng):
+**Dịch vụ thêm** (ngoài hạn mức gói, tính theo tháng):
 
 - Thêm người dùng: **30.000 ₫/tháng** / tài khoản.
 - Thêm chi nhánh: tính thêm phí. Không nêu số cụ thể — mời liên hệ.
@@ -66,7 +66,7 @@ Hạn mức đang bán (nếu khách hỏi chi tiết; nếu lệch với trang 
 
 Không bán “truy cập API”. Đừng nói AnyRent có API cho khách tự gắn.
 
-Nâng gói được bất cứ lúc nào. Vượt hạn mức thì nâng gói hoặc mua phụ phí; hệ thống báo khi gần chạm hạn.
+Nâng gói được bất cứ lúc nào. Vượt hạn mức thì nâng gói hoặc mua dịch vụ thêm; hệ thống báo khi gần chạm hạn.
 
 ---
 
