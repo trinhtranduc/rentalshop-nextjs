@@ -894,6 +894,9 @@ private fun MainTabs(
     }
 
     LaunchedOpenPendingOrder(rootNavController, startOrderId)
+    // #1413: the notification question waits for Home, with nothing on top of the tabs
+    val rootEntry by rootNavController.currentBackStackEntryAsState()
+    AskNotificationPermissionOnHome(homeInFront = rootEntry?.destination?.route == Routes.Main && current == MainTab.Home.route)
     // #1381: Main shows after a sign-in too: the widget's file belongs to this account from now on
     LaunchedEffect(Unit) { TodayWidgetSync.refreshSoon() }
 

@@ -121,6 +121,7 @@ final class ProductsHomeViewController: BaseViewControler {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         bounceGuideIfInFront()
+        PushNotificationManager.shared.homeDidAppear(self) // #1413
     }
 
     override func startRefresh(_ sender: Any) {

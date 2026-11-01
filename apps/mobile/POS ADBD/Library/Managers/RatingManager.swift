@@ -11,72 +11,73 @@ import StoreKit
 import UIKit
 
 /// Manager to handle app rating requests
-/// Shows rating popup when user creates their first order
+/// #1413: asks once, from the shop's 5th order on, outside the first-run guide (`RatingPromptRule`).
+/// Apple decides whether the sheet actually appears.
 class RatingManager {
-    
-    static let shared = RatingManager()
-    
+
+    static let shared = RatingManager(
+        defaults: .standard,
+        orderTotal: { LiveFirstRunGuideDataSource().orderTotal(completion: $0) },
+        merchantId: { User.current()?.merchantId },
+        coachRunning: { FirstRunCoach.shared.isRunning },
+        presentReview: RatingManager.presentReviewSheet
+    )
+
     // MARK: - UserDefaults Keys
     private let hasRequestedRatingKey = "hasRequestedAppRating"
-    
-    // MARK: - Private Init
-    private init() {}
-    
+
+    private let defaults: UserDefaults
+    private let orderTotal: (@escaping (Int?) -> Void) -> Void
+    private let merchantId: () -> Int?
+    private let coachRunning: () -> Bool
+    /// True when the request reached StoreKit
+    private let presentReview: (UIViewController?) -> Bool
+    private var isReading = false
+
+    init(defaults: UserDefaults,
+         orderTotal: @escaping (@escaping (Int?) -> Void) -> Void,
+         merchantId: @escaping () -> Int?,
+         coachRunning: @escaping () -> Bool,
+         presentReview: @escaping (UIViewController?) -> Bool) {
+        self.defaults = defaults
+        self.orderTotal = orderTotal
+        self.merchantId = merchantId
+        self.coachRunning = coachRunning
+        self.presentReview = presentReview
+    }
+
     // MARK: - Public Methods
-    
+
     /// Check if rating has been requested before
     var hasRequestedRating: Bool {
-        return UserDefaults.standard.bool(forKey: hasRequestedRatingKey)
+        return defaults.bool(forKey: hasRequestedRatingKey)
     }
-    
-    /// Request rating from user
-    /// This should be called when user completes their first order
+
+    /// Call when the user completed an order. Once asked there is no more reading; a failed read shows nothing.
     /// - Parameter viewController: The view controller to present the rating from (usually the current view controller)
     func requestRatingIfNeeded(from viewController: UIViewController? = nil) {
-        // Check if we've already requested rating
-        guard !hasRequestedRating else {
-            print("ℹ️ Rating already requested, skipping...")
-            return
+        guard !hasRequestedRating, !isReading else { return }
+        isReading = true
+        orderTotal { [weak self, weak viewController] total in
+            guard let self else { return }
+            self.isReading = false
+            guard self.shouldRequest(orderTotal: total), self.presentReview(viewController) else { return }
+            self.defaults.set(true, forKey: self.hasRequestedRatingKey)
         }
-        
-        // Use SKStoreReviewController to request rating
-        // This is Apple's recommended way to request app ratings
-        // It shows a native iOS rating dialog that doesn't interrupt user flow
-        if #available(iOS 14.0, *) {
-            // iOS 14+ - can request from any window scene
-            if let windowScene = UIApplication.shared.connectedScenes
-                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                SKStoreReviewController.requestReview(in: windowScene)
-                markRatingRequested()
-            } else {
-                // Fallback: try to get window scene from view controller
-                if let viewController = viewController,
-                   let windowScene = viewController.view.window?.windowScene {
-                    SKStoreReviewController.requestReview(in: windowScene)
-                    markRatingRequested()
-                }
-            }
-        } else {
-            // iOS 10.3 - 13: requestReview() can be called from anywhere
-            SKStoreReviewController.requestReview()
-            markRatingRequested()
-        }
-        
-        print("✅ Rating request shown to user")
     }
-    
-    /// Mark that rating has been requested (so we don't show it again)
-    private func markRatingRequested() {
-        UserDefaults.standard.set(true, forKey: hasRequestedRatingKey)
-        UserDefaults.standard.synchronize()
-        print("✅ Rating request marked as completed")
+
+    private func shouldRequest(orderTotal: Int?) -> Bool {
+        guard let shop = merchantId() else { return false } // signed out meanwhile
+        return RatingPromptRule.shouldRequest(alreadyRequested: hasRequestedRating,
+                                              orderTotal: orderTotal,
+                                              guideMarks: FirstRunGuideStore(defaults: defaults).marks(merchantId: shop),
+                                              coachRunning: coachRunning())
     }
-    
-    /// Reset rating request status (for testing purposes)
-    func resetRatingRequest() {
-        UserDefaults.standard.removeObject(forKey: hasRequestedRatingKey)
-        UserDefaults.standard.synchronize()
-        print("🔄 Rating request status reset")
+
+    private static func presentReviewSheet(from viewController: UIViewController?) -> Bool {
+        let scene = UIApplication.shared.connectedScenes.first { $0.activationState == .foregroundActive } as? UIWindowScene
+        guard let windowScene = scene ?? viewController?.view.window?.windowScene else { return false }
+        SKStoreReviewController.requestReview(in: windowScene)
+        return true
     }
 }
-

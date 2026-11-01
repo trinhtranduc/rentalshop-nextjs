@@ -1,15 +1,11 @@
 package com.anyrent.pos
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +13,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.anyrent.pos.data.ApiClient
@@ -44,9 +39,6 @@ class MainActivity : ComponentActivity() {
         AppConfigViewModel.Factory((application as AnyRentApp).container.appConfigRepository, BuildConfig.VERSION_NAME)
     }
 
-    private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
-
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -68,7 +60,6 @@ class MainActivity : ComponentActivity() {
         consumeOpenCartIntent(intent)
         consumeOpenMyShiftsIntent(intent)
         consumeOpenBookingIntent(intent)
-        requestNotificationPermissionIfNeeded()
         if (SessionStore.isLoggedIn) {
             PushRegistrar.refreshTokenIfLoggedIn()
         }
@@ -158,15 +149,6 @@ class MainActivity : ComponentActivity() {
             intent?.getBooleanExtra(EXTRA_OPEN_CART, false) == true
         ) {
             DraftOrderReminder.requestOpenCart()
-        }
-    }
-
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 

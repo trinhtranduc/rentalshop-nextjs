@@ -15,6 +15,8 @@ final class FirstRunCoach {
     static let shared = FirstRunCoach()
 
     private var run: CoachRun?
+    /// #1413: no rating prompt during a run
+    var isRunning: Bool { run != nil }
     private var shown = Set<CoachBubble>()
     private weak var overlay: FirstRunCoachOverlayView?
     /// Bumped on every request; a retry of an older one stops

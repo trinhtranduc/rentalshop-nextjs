@@ -253,6 +253,7 @@ class MainViewController: BaseViewControler {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        PushNotificationManager.shared.homeDidAppear(self) // #1413
         tableView?.reloadData()
         view.bringSubview(toFront: floatingAISearchButton)
         floatingAISearchButton.layoutIfNeeded()

@@ -69,3 +69,117 @@ final class PromptTimingTests: XCTestCase {
         XCTAssertFalse(NotificationPromptRule.registersAtStart(.notDetermined), "no question at start: Home asks, then registers")
     }
 }
+
+/// #1413: `RatingManager` reads the total, asks once, and stays quiet on a failure.
+final class RatingManagerFlowTests: XCTestCase {
+    private var defaults: UserDefaults!
+    private var suite: String!
+    private var total: Int? = 5
+    private var reads = 0
+    private var reviews = 0
+    private var coach = false
+    private var heldAnswer: ((Int?) -> Void)?
+    private var hold = false
+
+    override func setUp() {
+        super.setUp()
+        suite = "RatingManagerFlowTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suite)
+        total = 5
+        reads = 0
+        reviews = 0
+        coach = false
+        heldAnswer = nil
+        hold = false
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suite)
+        super.tearDown()
+    }
+
+    private func manager(reaches: Bool = true) -> RatingManager {
+        RatingManager(defaults: defaults,
+                      orderTotal: { [unowned self] answer in
+                          reads += 1
+                          if hold { heldAnswer = answer } else { answer(total) }
+                      },
+                      merchantId: { 7 },
+                      coachRunning: { [unowned self] in coach },
+                      presentReview: { [unowned self] _ in
+                          reviews += 1
+                          return reaches
+                      })
+    }
+
+    func testTheFirstOrderDoesNotAsk() {
+        total = 1
+        let rating = manager()
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reviews, 0)
+        XCTAssertFalse(rating.hasRequestedRating, "still to be asked later")
+    }
+
+    func testTheFifthOrderAsksOnceAndStopsReading() {
+        let rating = manager()
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reviews, 1)
+        XCTAssertTrue(rating.hasRequestedRating)
+        XCTAssertEqual(defaults.object(forKey: "hasRequestedAppRating") as? Bool, true, "the key old installs already have")
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reads, 1, "no read after the request")
+        XCTAssertEqual(reviews, 1)
+    }
+
+    func testSomeoneAlreadyAskedIsNotAskedAndNothingIsRead() {
+        defaults.set(true, forKey: "hasRequestedAppRating")
+        manager().requestRatingIfNeeded()
+        XCTAssertEqual(reads, 0)
+        XCTAssertEqual(reviews, 0)
+    }
+
+    func testAFailedReadShowsNothingAndTheNextOrderReadsAgain() {
+        total = nil
+        let rating = manager()
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reviews, 0)
+        XCTAssertFalse(rating.hasRequestedRating)
+        total = 5
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reviews, 1)
+    }
+
+    func testNoRequestWhileTheGuideRuns() {
+        coach = true
+        manager().requestRatingIfNeeded()
+        XCTAssertEqual(reviews, 0)
+    }
+
+    func testThePendingFinishCardWaitsThenClosingItAllowsTheNextOrder() {
+        let store = FirstRunGuideStore(defaults: defaults)
+        store.save(FirstRunGuideMarks(done: true, finishPending: true), merchantId: 7)
+        let rating = manager()
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reviews, 0)
+        store.save(FirstRunGuideMarks(done: true, finishPending: false), merchantId: 7)
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reviews, 1)
+    }
+
+    func testOneReadAtATime() {
+        hold = true
+        let rating = manager()
+        rating.requestRatingIfNeeded()
+        rating.requestRatingIfNeeded()
+        XCTAssertEqual(reads, 1)
+        heldAnswer?(5)
+        XCTAssertEqual(reviews, 1)
+    }
+
+    /// No window scene: nothing reached StoreKit, so the mark stays off and a later order may still ask
+    func testNotMarkedWhenTheRequestCouldNotBeMade() {
+        let rating = manager(reaches: false)
+        rating.requestRatingIfNeeded()
+        XCTAssertFalse(rating.hasRequestedRating)
+    }
+}

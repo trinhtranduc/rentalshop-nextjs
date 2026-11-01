@@ -13,6 +13,7 @@
 		CA460D33D5A6CBB473B75A57 /* OnboardingV2Cycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A1C5F159A19EB63E46FF15 /* OnboardingV2Cycle.swift */; };
 		A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */; };
 		F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */; };
+		F1A6141300000000000000A3 /* PromptTimingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5141300000000000000A3 /* PromptTimingUITests.swift */; };
 		A1375F895893DD61634B6A82 /* TodayWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */; };
 		A1375FF2ACA4DE7D4F0836DD /* TodayWidgetDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F309BF104D3793F0848 /* TodayWidgetDisplay.swift */; };
 		A1375FFA029BBFFEDDD18115 /* TodayWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F54714323ED511A508A /* TodayWidgetSnapshot.swift */; };
@@ -459,6 +460,7 @@
 		58A1C5F159A19EB63E46FF15 /* OnboardingV2Cycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2Cycle.swift; sourceTree = "<group>"; };
 		A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetHomeScreenUITests.swift; sourceTree = "<group>"; };
 		F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuideUITests.swift; sourceTree = "<group>"; };
+		F1A5141300000000000000A3 /* PromptTimingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTimingUITests.swift; sourceTree = "<group>"; };
 		A1375F71AA39879CD60CF43C /* WidgetGuideViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetGuideViewController.swift; sourceTree = "<group>"; };
 		A1375FEA49A710668E35B477 /* TodayWidgetSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetSync.swift; sourceTree = "<group>"; };
 		A1375FB5DB4972E11406B404 /* TodayWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetData.swift; sourceTree = "<group>"; };
@@ -1668,6 +1670,7 @@
 				41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */,
 				A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */,
 				F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */,
+				F1A5141300000000000000A3 /* PromptTimingUITests.swift */,
 			);
 			path = "POS ADBDUITests";
 			sourceTree = "<group>";
@@ -2404,6 +2407,7 @@
 				D3448A56B3C7654B5E9723A8 /* OnboardingV2UITests.swift in Sources */,
 				A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */,
 				F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */,
+				F1A6141300000000000000A3 /* PromptTimingUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
