@@ -333,6 +333,9 @@ sealed class ProductFormIssue {
 }
 
 object ProductFormValidator {
+    /** The form's rule for a name; the first-run guide's Tiếp asks the same */
+    fun isNameValid(name: String): Boolean = name.isNotBlank()
+
     const val MAX_PHOTOS = 5
 
     fun validate(input: ProductFormInput): List<ProductFormIssue> {
