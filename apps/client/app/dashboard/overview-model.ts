@@ -837,7 +837,11 @@ export interface RelatedReason {
   text: string;
 }
 
-/** The API's own sentences (`revenue-calculator.ts`), so a RENT_RETURN or a MULTIPLE part maps exactly */
+/**
+ * The API's own sentences (`revenue-calculator.ts`), so a RENT_RETURN or a MULTIPLE part maps exactly.
+ * Match keys only, never reword them: the API sends them and installed apps match on them. The screen shows
+ * `home.related.event.<key>`, so "Thu phí hư hỏng" appears as "Thu phụ phí" (#1433).
+ */
 const KNOWN_EVENT_TEXT: Record<string, string> = {
   'Đơn bán được tạo': 'saleCreated',
   'Đơn bán bị hủy (hoàn lại)': 'saleCancelled',

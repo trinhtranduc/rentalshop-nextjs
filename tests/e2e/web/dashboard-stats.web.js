@@ -149,11 +149,11 @@ async function checkPeriod(ctx, api, p, check) {
       rows: {
         'Cọc khi tạo đơn': cb.deposits,
         'Thu khi giao, bán': cb.pickupAndSale,
-        'Phí hư hỏng, trễ hạn': cb.fees,
+        'Phụ phí, trễ hạn': cb.fees,
         'Hoàn tiền đơn huỷ': -(cb.refunds || 0),
         'Thế chân nhận − trả': (flow.received || 0) - (flow.returned || 0)
       },
-      sum: (v) => v['Cọc khi tạo đơn'] + v['Thu khi giao, bán'] + v['Phí hư hỏng, trễ hạn'] + v['Hoàn tiền đơn huỷ'] + v['Thế chân nhận − trả'],
+      sum: (v) => v['Cọc khi tạo đơn'] + v['Thu khi giao, bán'] + v['Phụ phí, trễ hạn'] + v['Hoàn tiền đơn huỷ'] + v['Thế chân nhận − trả'],
       headline: r.cashCollected
     },
     {

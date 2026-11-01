@@ -149,7 +149,7 @@
       "title": "Thế chấp & phí",
       "feesToday": "Phí đã thu hôm nay",
       "orders": "{count} đơn",
-      "feesBreakdown": "Trễ hạn {late} · Hư hỏng {damage}",
+      "feesBreakdown": "Trễ hạn {late} · Phụ phí {damage}",
       "held": "Đang giữ thế chấp",
       "heldHint": "Của {count} đơn đang thuê, trả lại khi khách trả đồ",
       "backToday": "Trả lại khách hôm nay",
@@ -268,7 +268,7 @@
     "money": {
       "deposits": "Cọc khi tạo đơn",
       "pickupAndSale": "Thu khi giao, bán",
-      "fees": "Phí hư hỏng, trễ hạn",
+      "fees": "Phụ phí, trễ hạn",
       "refunds": "Hoàn tiền đơn huỷ",
       "collectedTotal": "Thực thu",
       "atPickup": "Sẽ thu khi khách lấy đồ",
@@ -378,13 +378,13 @@
         "deposit": "Thu tiền cọc",
         "pickup": "Thu tiền khi lấy hàng",
         "sameDay": "Thuê và trả trong cùng ngày",
-        "damageFee": "Thu phí hư hỏng",
+        "damageFee": "Thu phụ phí",
         "depositRefund": "Hoàn tiền cọc",
         "nothing": "Không có phát sinh",
         "rentCancelled": "Đơn hủy (hoàn lại)",
         "returnCollected": "Thu khi trả hàng",
         "futurePickup": "Doanh thu dự kiến khi lấy hàng",
-        "futureDamageFee": "Dự kiến thu phí hư hỏng khi trả hàng",
+        "futureDamageFee": "Dự kiến thu phụ phí khi trả hàng",
         "futureRefund": "Dự kiến hoàn tiền cọc khi trả hàng",
         "futureNothing": "Dự kiến không có phát sinh khi trả hàng"
       }

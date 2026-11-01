@@ -394,7 +394,7 @@ async function main() {
       check('ORD-13 API: RETURNED, returnedAt set', o.status === 'RETURNED' && !!o.returnedAt, `${o.status} ${o.returnedAt}`);
       check('ORD-13 API: lateFee 10.000 and damageFee 30.000 as typed', o.lateFee === 10000 && o.damageFee === 30000, `${o.lateFee} ${o.damageFee}`);
       const t = await H.bodyText(page);
-      check('ORD-13 page shows "Đã trả" and the fees', /Đã trả/.test(t) && /Phí trễ/.test(t) && /Phí hư hỏng/.test(t), t.slice(-500));
+      check('ORD-13 page shows "Đã trả" and the fees', /Đã trả/.test(t) && /Phí trễ/.test(t) && /Phụ phí/.test(t), t.slice(-500));
     }, sp);
 
     await H.runCase('WEB-UI-ORD-14', 'Huỷ đơn: "Giữ đơn" keeps it, "Huỷ đơn" cancels (API CANCELLED, stock freed)', async () => {
