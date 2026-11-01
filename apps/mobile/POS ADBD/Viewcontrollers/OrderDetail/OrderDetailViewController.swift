@@ -231,11 +231,13 @@ final class OrderDetailViewController: BaseViewControler {
         renderActions(detail)
     }
 
-    /// Same names and values as Android `SectionDividerColor` / `NoteBoxFill` / `NoteBoxInk` (OrderDetailV2Screen.kt).
-    /// The app is locked to Light (Info.plist UIUserInterfaceStyle), so there is no dark variant (#1A2436 / #1E293B / #CBD5E1 in the mockup).
-    private static let sectionDividerColor = UIColor(hexString: "EEF0F4")
-    private static let noteFillColor = UIColor(hexString: "F3F4F6")
-    private static let noteInkColor = UIColor(hexString: "475569")
+    /// Same names and values as Android (OrderDetailV2Screen.kt). The app is locked to Light (Info.plist
+    /// UIUserInterfaceStyle), so there is no dark variant. #1430: the owner took the warm note colours back; the band stays.
+    static let sectionDividerColor = UIColor(hexString: "EEF0F4")
+    static let itemNoteFillColor = UIColor(hexString: "FFF7E6")
+    static let itemNoteInkColor = UIColor(hexString: "7A4A00")
+    static let notesFillColor = UIColor(hexString: "FFFBEB")
+    static let notesInkColor = UIColor(hexString: "78350F")
 
     /// The 8pt band between two sections (mockup: #EEF0F4, owner level 2)
     private func sectionBand() -> UIView {
@@ -707,7 +709,7 @@ final class OrderDetailViewController: BaseViewControler {
 
     /// Board D2: the item note on a light yellow box with a note icon, so it does not read as part of the name
     private func noteBox(_ note: String) -> UIView {
-        let ink = Self.noteInkColor
+        let ink = Self.itemNoteInkColor
         let icon = UIImageView(image: DS.symbol("note.text", 14, weight: .semibold))
         icon.tintColor = ink
         icon.setContentHuggingPriority(.required, for: .horizontal)
@@ -723,7 +725,7 @@ final class OrderDetailViewController: BaseViewControler {
         line.alignment = .firstBaseline
         line.spacing = 8
         let box = UIView()
-        box.backgroundColor = Self.noteFillColor
+        box.backgroundColor = Self.itemNoteFillColor
         box.layer.cornerRadius = 10
         box.addSubview(line)
         line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)) }
@@ -892,13 +894,13 @@ final class OrderDetailViewController: BaseViewControler {
             box.spacing = DS.Spacing.sm
             box.isLayoutMarginsRelativeArrangement = true
             box.layoutMargins = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-            box.backgroundColor = Self.noteFillColor
+            box.backgroundColor = Self.notesFillColor
             box.layer.cornerRadius = 10
             if !text.isEmpty {
                 let label = UILabel()
                 label.numberOfLines = 0
                 label.font = Utils.regularFont(size: DS.TextSize.body)
-                label.textColor = Self.noteInkColor
+                label.textColor = Self.notesInkColor
                 label.text = text
                 box.addArrangedSubview(label)
             }
