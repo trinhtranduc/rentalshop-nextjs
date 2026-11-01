@@ -10,6 +10,12 @@ import UIKit
 import SnapKit
 import IQKeyboardManagerSwift
 
+// MARK: - Money block (#1435)
+
+enum OrderMoneyViews {
+    static func tabular(_ font: UIFont) -> UIFont { font }
+}
+
 // MARK: - Progress card
 
 enum InstallmentCardView {

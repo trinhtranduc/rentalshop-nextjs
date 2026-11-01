@@ -62,6 +62,50 @@ struct HandOverCashLines: Equatable {
     let cash: Double
 }
 
+/// #1435 a line of the money block of a rental (approved mockup, tab "odmoney"), in the order it is drawn. Which lines show, not
+/// how much: every amount comes from `ShareMoneyRule` and the rules of `OrderDetailLogic`.
+enum OrderMoneyLine: Equatable {
+    case subtotal(Double)
+    case discount(Double)
+    case rentalTotal(Double)
+    /// "Đã cọc": a single deposit, not stages
+    case depositPaid(Double)
+    /// `OrderMoneyBlock.plan` is drawn here
+    case stages
+    case cancelKept(Double)
+    case cancelRefund(Double)
+    case collateralMoney(Double)
+    case alreadyCollected(Double)
+    case lateFee(Double)
+    case damageFee(Double)
+    /// "Thu khi giao"
+    case collectAtHandOver(Double)
+    /// "Khách đưa lúc nhận đồ" and "tiền thuê + thế chân" under it
+    case cashAtHandOver(HandOverCashLines)
+    case giveBackAtReturn(Double)
+    case collectAtReturn(Double)
+}
+
+/// #1435 the stages inside the block
+struct OrderMoneyPlan: Equatable {
+    /// The stages drawn. The uncollected last stage of a booked order is not one of them: it is in the amount due
+    let shownKeys: [String]
+    let percent: Double
+    let collected: Double
+    /// "Còn phải thu"; nil when it equals the amount due
+    let remaining: Double?
+}
+
+/// #1435 the money block of a rental
+struct OrderMoneyBlock: Equatable {
+    let lines: [OrderMoneyLine]
+    /// "Khi nhận trả" when it closes the papers & collateral section instead of the block
+    let returnLine: OrderMoneyLine?
+    let plan: OrderMoneyPlan?
+
+    var hasLargeFigure: Bool { false }
+}
+
 /// Return: late + damage − collateral money − completed RETURN_ADJUSTMENT payments (negative = give back)
 struct ReturnMoney: Equatable {
     let lateFee: Double
@@ -275,6 +319,14 @@ enum OrderDetailLogic {
         guard let cash = ShareMoneyRule.cashAtHandover(collectOnDelivery: rentalLeft, collateralMoney: securityDeposit,
                                                        currency: currency) else { return nil }
         return HandOverCashLines(rentalLeft: rentalLeft, collateral: securityDeposit, cash: cash)
+    }
+
+    /// #1435 which lines show (stub)
+    static func moneyBlock(status: OrderStatus, subtotal: Double, discount: Double, total: Double, deposit: Double,
+                           securityDeposit: Double, lateFee: Double, damageFee: Double, payments: [OrderPaymentLine],
+                           hasPlan: Bool, stages: [OrderInstallment]?, summary: InstallmentSummary?, collateralShown: Bool,
+                           cancelKept: Double?, currency: ShopCurrency) -> OrderMoneyBlock {
+        OrderMoneyBlock(lines: [], returnLine: nil, plan: nil)
     }
 
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,

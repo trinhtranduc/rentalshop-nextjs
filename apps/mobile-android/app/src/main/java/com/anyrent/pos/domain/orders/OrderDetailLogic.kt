@@ -33,6 +33,62 @@ data class HandOverMoney(
 /** #1368 "Tiền thuê còn lại, thu khi giao" + "Thế chân, thu khi giao" = "Khách đưa lúc nhận đồ" */
 data class HandOverCashLines(val rentalLeft: Double, val collateral: Double, val cash: Double)
 
+/**
+ * #1435 a line of the money block of a rental (approved mockup, tab "odmoney"), in the order it is drawn. Which lines show, not
+ * how much: every amount comes from [ShareMoneyRule] and the rules of [OrderDetailLogic].
+ */
+sealed interface OrderMoneyLine {
+    data class Subtotal(val amount: Double) : OrderMoneyLine
+    data class Discount(val amount: Double) : OrderMoneyLine
+    data class RentalTotal(val amount: Double) : OrderMoneyLine
+
+    /** "Đã cọc": a single deposit, not stages */
+    data class DepositPaid(val amount: Double) : OrderMoneyLine
+
+    /** [OrderMoneyBlock.plan] is drawn here */
+    data object Stages : OrderMoneyLine
+    data class CancelKept(val amount: Double) : OrderMoneyLine
+    data class CancelRefund(val amount: Double) : OrderMoneyLine
+    data class CollateralMoney(val amount: Double) : OrderMoneyLine
+    data class AlreadyCollected(val amount: Double) : OrderMoneyLine
+    data class LateFee(val amount: Double) : OrderMoneyLine
+    data class DamageFee(val amount: Double) : OrderMoneyLine
+
+    /** "Trả lại thế chân" of a rented order */
+    data class CollateralBack(val amount: Double) : OrderMoneyLine
+
+    /** "Đã thanh toán trước" of a rented order */
+    data class SettledBefore(val amount: Double) : OrderMoneyLine
+
+    /** "Thu khi giao" */
+    data class CollectAtHandOver(val amount: Double) : OrderMoneyLine
+
+    /** "Khách đưa lúc nhận đồ" and "tiền thuê + thế chân" under it */
+    data class CashAtHandOver(val lines: HandOverCashLines) : OrderMoneyLine
+    data class GiveBackAtReturn(val amount: Double) : OrderMoneyLine
+    data class CollectAtReturn(val amount: Double) : OrderMoneyLine
+}
+
+/** #1435 the stages inside the block */
+data class OrderMoneyPlan(
+    /** The stages drawn. The uncollected last stage of a booked order is not one of them: it is in the amount due */
+    val shownKeys: List<String>,
+    val percent: Double,
+    val collected: Double,
+    /** "Còn phải thu"; null when it equals the amount due */
+    val remaining: Double?,
+)
+
+/** #1435 the money block of a rental */
+data class OrderMoneyBlock(
+    val lines: List<OrderMoneyLine>,
+    /** "Khi nhận trả" when it closes the papers & collateral section instead of the block */
+    val returnLine: OrderMoneyLine?,
+    val plan: OrderMoneyPlan?,
+) {
+    val hasLargeFigure: Boolean get() = false
+}
+
 /** Return money: late + damage − collateral money − already settled; [net] < 0 is a refund */
 data class ReturnMoney(
     val lateFee: Double,
@@ -234,6 +290,23 @@ object OrderDetailLogic {
     /** #1279 body of `PUT /api/orders/{id}` from the edit sheet: the hand-over fields, no status */
     fun collateralEditFields(papers: String, securityDeposit: Double, currentPapers: String?, currentDeposit: Double) =
         handOverFields(papers, securityDeposit, currentPapers, currentDeposit)
+
+    /** #1435 which lines show (stub, the tests fail on it) */
+    fun moneyBlock(
+        status: String,
+        subtotal: Double,
+        discount: Double,
+        total: Double,
+        deposit: Double,
+        securityDeposit: Double,
+        lateFee: Double,
+        damageFee: Double,
+        payments: List<BalancePayment>,
+        info: com.anyrent.pos.domain.deposit.DepositPlanInfo?,
+        collateralShown: Boolean,
+        cancelKept: Double?,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): OrderMoneyBlock = OrderMoneyBlock(emptyList(), null, null)
 
     fun returnMoney(
         lateFee: Double,
