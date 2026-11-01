@@ -165,6 +165,14 @@ class OrderPhotoQueueTest {
     }
 
     @Test
+    fun warningAtTheTopOnlyWhileAnUploadFailed() {
+        assertEquals(3, OrderPhotoUploadState.FAILED.failedCount(waiting = 3))
+        assertNull("a retry is running: no second way to start one", OrderPhotoUploadState.UPLOADING.failedCount(waiting = 3))
+        assertNull(OrderPhotoUploadState.IDLE.failedCount(waiting = 3))
+        assertNull(OrderPhotoUploadState.FAILED.failedCount(waiting = 0))
+    }
+
+    @Test
     fun parsingToleratesEveryShape() {
         fun urls(json: String) = JSONObject(json).photoUrls("pickupNotesImages")
         assertEquals(emptyList<String>(), urls("""{}"""))
