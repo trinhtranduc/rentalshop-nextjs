@@ -140,6 +140,7 @@ final class FirstRunGuideUITests: XCTestCase {
         counter("3/9")
         XCTAssertEqual(next().value as? String, "off")
         let price = app.textFields["product.form.perRental"]
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "the cursor moved here") // the keyboard is changing to digits
         XCTAssertTrue(price.isHittable, "the form scrolled to the price")
         XCTAssertLessThan(next().frame.maxY, app.keyboards.firstMatch.frame.minY, "the bubble sits above the keyboard")
         price.typeText("0")
