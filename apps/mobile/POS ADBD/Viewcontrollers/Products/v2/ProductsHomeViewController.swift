@@ -99,7 +99,6 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
         outletButton.refresh()
-        FirstRunCoach.shared.stop() // back from the cart: the run is over, the next one starts from a row
         FirstRunGuideTracker.shared.refresh()
         applyGuide()
         // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
