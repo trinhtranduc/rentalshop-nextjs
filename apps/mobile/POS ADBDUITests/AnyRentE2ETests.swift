@@ -6157,6 +6157,11 @@ final class E2E {
             return nil
         }
         row.tap()
+        return pickVisibleCustomer()
+    }
+
+    /// The picker is open: choose the first customer. Returns the name shown on the row.
+    func pickVisibleCustomer() -> String? {
         // The v2 picker uses a text field ("Name or phone number"), the old one a search field.
         let v2Search = field(["Name or phone number", "Tên hoặc số điện thoại"])
         let search = v2Search.waitForExistence(timeout: 8) ? v2Search : app.searchFields.firstMatch
