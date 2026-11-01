@@ -23,6 +23,8 @@ Thứ tự: **Phần 1 widget làm trước** (iOS rồi Android). **Phần 2 l�
 | W11 | A3: gợi ý thêm widget | Sheet "Thêm vào widget" **chỉ là hướng dẫn**: iPhone hiện 3 bước (giữ lâu màn hình chính, bấm +, chọn AnyRent, chọn cỡ) vì iOS **không có API** cho app tự thêm widget; Android có nút "Thêm widget" gọi `AppWidgetManager.requestPinAppWidget` (API 26+, đúng minSdk 26), launcher không hỗ trợ (`isRequestPinAppWidgetSupported` = false) thì hiện hướng dẫn như iPhone. Kèm **một thẻ gợi ý nhỏ trong tab Đơn, hiện một lần**, có "Cách thêm" và "Không hỏi lại"; **không** hỏi mỗi lần có việc mới, **không** bật sheet tự động. Thẻ chỉ hiện khi hôm nay có việc, máy chưa có widget (iOS `WidgetCenter.getCurrentConfigurations`, Android `getAppWidgetIds` rỗng) và chưa bấm "Không hỏi lại" (cờ lưu theo máy). Dòng "Widget" trong Cài đặt mở lại sheet bất cứ lúc nào. |
 | W12 | API | Không cần API mới (mục 6). |
 
+**2026-11-01 (#1432):** chủ shop bỏ công tắc "Ẩn tên khách trên widget" ("không cần"): widget luôn hiện tên khách, file không còn `hideNames`; mọi chỗ khác trong spec này nhắc đến công tắc (W5, mục 4.12, 5, 9.4) không còn hiệu lực.
+
 ### 1b. Lịch hệ thống: CHƯA CHỐT, làm sau widget (chưa làm, chờ widget xong)
 
 | # | Câu hỏi | Mặc định đề xuất |
