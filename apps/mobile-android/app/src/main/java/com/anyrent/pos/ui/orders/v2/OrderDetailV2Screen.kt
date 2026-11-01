@@ -946,11 +946,13 @@ private fun headerNoteText(note: OrderDetailHeader.Note): String {
     return listOfNotNull(days, due).joinToString(" · ")
 }
 
-// Same names and values as iOS `sectionDividerColor` / `noteFillColor` / `noteInkColor`.
-// This screen uses fixed light colours like iOS (locked to Light), so there is no dark variant.
-private val SectionDividerColor = Color(0xFFEEF0F4)
-private val NoteBoxFill = Color(0xFFF3F4F6)
-private val NoteBoxInk = Color(0xFF475569)
+// Same names and values as iOS (OrderDetailViewController.swift). This screen uses fixed light colours like iOS (locked to
+// Light), so there is no dark variant. #1430: the owner took the warm note colours back; the band stays.
+internal val SectionDividerColor = Color(0xFFEEF0F4)
+internal val ItemNoteFill = Color(0xFFFFF7E6)
+internal val ItemNoteInk = Color(0xFF7A4A00)
+internal val NotesFill = Color(0xFFFFFBEB)
+internal val NotesInk = Color(0xFF78350F)
 
 /** The 8dp band between two sections (mockup: #EEF0F4, owner level 2; iOS `sectionBand`) */
 @Composable
@@ -1117,12 +1119,12 @@ private fun DetailBody(
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .background(NoteBoxFill, RoundedCornerShape(10.dp))
+                        .background(NotesFill, RoundedCornerShape(10.dp))
                         .clickable(onClick = onEditNotes)
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    note?.let { Text(it, fontSize = DS.TextSize.Body, color = NoteBoxInk) }
+                    note?.let { Text(it, fontSize = DS.TextSize.Body, color = NotesInk) }
                     if (detail.notesImages.isNotEmpty()) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             detail.notesImages.forEach { url -> Thumb(url, 48.dp) { onPreview(url) } }
@@ -1415,16 +1417,16 @@ private fun ItemRow(item: OrderItem, orderType: String) {
     HorizontalDivider(color = DS.Colors.Divider)
 }
 
-/** Board D2: the item note on a light grey box with a pencil, so it does not read as part of the name */
+/** Board D2: the item note on a light yellow box with a pencil, so it does not read as part of the name */
 @Composable
 private fun ItemNoteBox(note: String) {
-    val ink = NoteBoxInk
+    val ink = ItemNoteInk
     val label = stringResource(R.string.v2_item_note_label)
     Row(
         Modifier
             .padding(top = 2.dp)
             .fillMaxWidth()
-            .background(NoteBoxFill, RoundedCornerShape(10.dp))
+            .background(ItemNoteFill, RoundedCornerShape(10.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp)
             .semantics(mergeDescendants = true) { contentDescription = "$label: $note" },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
