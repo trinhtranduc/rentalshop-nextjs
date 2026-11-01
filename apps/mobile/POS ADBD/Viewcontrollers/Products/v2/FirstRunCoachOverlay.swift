@@ -510,3 +510,8 @@ private final class FirstRunCoachLinkProxy: NSObject {
         overlay.follow()
     }
 }
+
+extension FirstRunCoach {
+    /// #1413: no rating prompt during a run
+    var isRunning: Bool { run != nil }
+}

@@ -65,7 +65,7 @@ final class OnboardingV2UITests: XCTestCase {
             sleep(1)
         }
         XCTAssertTrue(next.exists, "The onboarding pages open after the first login")
-        // The notification prompt comes up over page 1, a moment after login
+        // A "save password" sheet can come up over page 1, a moment after login (#1413: the notification prompt no longer does)
         for _ in 0..<6 {
             dismissPrompts()
             sleep(1)

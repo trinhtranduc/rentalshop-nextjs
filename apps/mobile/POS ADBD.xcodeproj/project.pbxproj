@@ -13,6 +13,7 @@
 		CA460D33D5A6CBB473B75A57 /* OnboardingV2Cycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A1C5F159A19EB63E46FF15 /* OnboardingV2Cycle.swift */; };
 		A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */; };
 		F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */; };
+		F1A6141300000000000000A3 /* PromptTimingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5141300000000000000A3 /* PromptTimingUITests.swift */; };
 		A1375F895893DD61634B6A82 /* TodayWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F42410FFF0A7F2BEFA3 /* TodayWidgetStore.swift */; };
 		A1375FF2ACA4DE7D4F0836DD /* TodayWidgetDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F309BF104D3793F0848 /* TodayWidgetDisplay.swift */; };
 		A1375FFA029BBFFEDDD18115 /* TodayWidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F54714323ED511A508A /* TodayWidgetSnapshot.swift */; };
@@ -27,6 +28,7 @@
 		A1375F6DFFD37ECA692B548E /* TodayWidgetDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */; };
 		A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */; };
 		F1A6B7381CB1B6B07942590E /* FirstRunGuideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5B7381CB1B6B07942590E /* FirstRunGuideTests.swift */; };
+		F1A6141300000000000000A2 /* PromptTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5141300000000000000A2 /* PromptTimingTests.swift */; };
 		F1A69D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A59D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift */; };
 		A909B0000000000000000002 /* Attendance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000001 /* Attendance.swift */; };
 		A909B0000000000000000004 /* AttendanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000003 /* AttendanceService.swift */; };
@@ -260,6 +262,7 @@
 		75C21D317F5521D9A9958865 /* CustomersV2ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */; };
 		763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */; };
 		F1A67DBECD4E994AB47B82B5 /* FirstRunGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A57DBECD4E994AB47B82B5 /* FirstRunGuide.swift */; };
+		F1A6141300000000000000A1 /* PromptTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5141300000000000000A1 /* PromptTiming.swift */; };
 		F1A6E1114F02A9DBB08660EB /* FirstRunCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */; };
 		2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */; };
 		780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B854361D12543F58020DE847 /* Foundation.framework */; };
@@ -457,6 +460,7 @@
 		58A1C5F159A19EB63E46FF15 /* OnboardingV2Cycle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2Cycle.swift; sourceTree = "<group>"; };
 		A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetHomeScreenUITests.swift; sourceTree = "<group>"; };
 		F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuideUITests.swift; sourceTree = "<group>"; };
+		F1A5141300000000000000A3 /* PromptTimingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTimingUITests.swift; sourceTree = "<group>"; };
 		A1375F71AA39879CD60CF43C /* WidgetGuideViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetGuideViewController.swift; sourceTree = "<group>"; };
 		A1375FEA49A710668E35B477 /* TodayWidgetSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetSync.swift; sourceTree = "<group>"; };
 		A1375FB5DB4972E11406B404 /* TodayWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetData.swift; sourceTree = "<group>"; };
@@ -469,6 +473,7 @@
 		A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDataTests.swift; sourceTree = "<group>"; };
 		A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDisplayTests.swift; sourceTree = "<group>"; };
 		F1A5B7381CB1B6B07942590E /* FirstRunGuideTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuideTests.swift; sourceTree = "<group>"; };
+		F1A5141300000000000000A2 /* PromptTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTimingTests.swift; sourceTree = "<group>"; };
 		F1A59D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunCoachTests.swift; sourceTree = "<group>"; };
 		A909F0000000000000000001 /* Attendance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attendance.swift; sourceTree = "<group>"; };
 		A909F0000000000000000003 /* AttendanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceService.swift; sourceTree = "<group>"; };
@@ -706,6 +711,7 @@
 		8210E114D956D8BD0882BAFA /* OrdersFilterSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrdersFilterSheet.swift; sourceTree = "<group>"; };
 		85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2.swift; sourceTree = "<group>"; };
 		F1A57DBECD4E994AB47B82B5 /* FirstRunGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuide.swift; sourceTree = "<group>"; };
+		F1A5141300000000000000A1 /* PromptTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTiming.swift; sourceTree = "<group>"; };
 		F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunCoach.swift; sourceTree = "<group>"; };
 		670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPricing.swift; sourceTree = "<group>"; };
 		86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderExtendSheetViewController.swift; sourceTree = "<group>"; };
@@ -1208,6 +1214,7 @@
 				A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */,
 				A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */,
 				F1A5B7381CB1B6B07942590E /* FirstRunGuideTests.swift */,
+				F1A5141300000000000000A2 /* PromptTimingTests.swift */,
 				F1A59D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift */,
 			);
 			name = "POS ADBDTests";
@@ -1268,6 +1275,7 @@
 				F6706E2463CE1CB252AE6E19 /* DepositPlan.swift */,
 				85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */,
 				F1A57DBECD4E994AB47B82B5 /* FirstRunGuide.swift */,
+				F1A5141300000000000000A1 /* PromptTiming.swift */,
 				F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */,
 				670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */,
 				B07CC0B0BF772BE52542D13E /* TodayWork.swift */,
@@ -1662,6 +1670,7 @@
 				41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */,
 				A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */,
 				F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */,
+				F1A5141300000000000000A3 /* PromptTimingUITests.swift */,
 			);
 			path = "POS ADBDUITests";
 			sourceTree = "<group>";
@@ -2070,6 +2079,7 @@
 				A1375F6DFFD37ECA692B548E /* TodayWidgetDataTests.swift in Sources */,
 				A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */,
 				F1A6B7381CB1B6B07942590E /* FirstRunGuideTests.swift in Sources */,
+				F1A6141300000000000000A2 /* PromptTimingTests.swift in Sources */,
 				F1A69D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2288,6 +2298,7 @@
 				D40FB2637C62BD90BAE52C00 /* UpdateRequiredViewController.swift in Sources */,
 				763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */,
 				F1A67DBECD4E994AB47B82B5 /* FirstRunGuide.swift in Sources */,
+				F1A6141300000000000000A1 /* PromptTiming.swift in Sources */,
 				F1A6E1114F02A9DBB08660EB /* FirstRunCoach.swift in Sources */,
 				2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */,
 				9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */,
@@ -2396,6 +2407,7 @@
 				D3448A56B3C7654B5E9723A8 /* OnboardingV2UITests.swift in Sources */,
 				A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */,
 				F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */,
+				F1A6141300000000000000A3 /* PromptTimingUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

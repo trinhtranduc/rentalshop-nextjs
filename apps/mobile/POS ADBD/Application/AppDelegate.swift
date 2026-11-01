@@ -57,7 +57,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // RevenueCat (MERCHANT IAP) — no-op if REVENUECAT_API_KEY empty
         PurchasesManager.configure()
         
-        // Push notifications (FCM) — request permission + register token when logged in
+        // Push notifications (FCM) — register token when logged in. #1413: the permission question is on Home
         if User.account() != nil {
             PushNotificationManager.shared.start()
         }

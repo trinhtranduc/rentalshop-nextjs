@@ -38,6 +38,7 @@ object SessionStore {
     private const val KEY_DEVICE_ID = "deviceId"
     private const val KEY_PENDING_ORDER_ID = "pendingOrderId"
     private const val KEY_ONBOARDING = "onboardingDone"
+    private const val KEY_NOTIFICATION_ASKED = "notificationPermissionAsked"
     private const val KEY_APP_CONFIG = "appConfig"
     /** #518 shop setting "Cho tạo đơn khi trùng lịch"; absent = ON */
     private const val KEY_ALLOW_OVERLAP = "allowOverlappingOrders"
@@ -277,6 +278,11 @@ object SessionStore {
     var onboardingDone: Boolean
         get() = prefs.getBoolean(KEY_ONBOARDING, false)
         set(value) { prefs.edit().putBoolean(KEY_ONBOARDING, value).apply() }
+
+    /** #1413 the notification question was put on Home; clearAuth leaves it: the answer belongs to the install */
+    var notificationPermissionAsked: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFICATION_ASKED, false)
+        set(value) { prefs.edit().putBoolean(KEY_NOTIFICATION_ASKED, value).apply() }
 
     /** #1393 first-run guide marks; the key carries the shop, and clearAuth leaves them */
     fun guideMark(key: String): Boolean = prefs.getBoolean(key, false)
