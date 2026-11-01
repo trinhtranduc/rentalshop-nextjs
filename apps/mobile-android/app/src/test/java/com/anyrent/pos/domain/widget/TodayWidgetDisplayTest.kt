@@ -152,7 +152,7 @@ class TodayWidgetDisplayTest {
 
     @Test
     fun aLateRowIsTheLateChipWithItsDays() {
-        val line = TodayWidgetDisplay.line(row(isLate = true, lateDays = 3, planDay = "28/10/26"), viLabels, hideNames = false)
+        val line = TodayWidgetDisplay.line(row(isLate = true, lateDays = 3, planDay = "28/10/26"), viLabels)
         assertEquals(TodayWidgetDisplay.Chip.LATE, line.chip)
         assertEquals("TRỄ", line.chipText)
         assertEquals("Trễ 3 ngày", line.rightText)
@@ -163,19 +163,19 @@ class TodayWidgetDisplayTest {
     @Test
     fun aLateReturnSaysItsReturnDay() {
         val line = TodayWidgetDisplay.line(
-            row(kind = TodayWidgetRow.Kind.RETURN, isLate = true, lateDays = 1, planDay = "30/10/26"), viLabels, hideNames = false,
+            row(kind = TodayWidgetRow.Kind.RETURN, isLate = true, lateDays = 1, planDay = "30/10/26"), viLabels,
         )
         assertEquals("Trả 30/10/26", line.dayText)
     }
 
     @Test
     fun todayRowsSayTodayWithTheTimeOnlyWhenThereIsOne() {
-        val withTime = TodayWidgetDisplay.line(row(planTime = "14:00"), viLabels, hideNames = false)
+        val withTime = TodayWidgetDisplay.line(row(planTime = "14:00"), viLabels)
         assertEquals("GIAO", withTime.chipText)
         assertEquals(TodayWidgetDisplay.Chip.PICKUP, withTime.chip)
         assertEquals("Hôm nay · 14:00", withTime.rightText)
         assertFalse(withTime.rightIsLate)
-        val back = TodayWidgetDisplay.line(row(kind = TodayWidgetRow.Kind.RETURN), viLabels, hideNames = false)
+        val back = TodayWidgetDisplay.line(row(kind = TodayWidgetRow.Kind.RETURN), viLabels)
         assertEquals("TRẢ", back.chipText)
         assertEquals(TodayWidgetDisplay.Chip.RETURN, back.chip)
         assertEquals("Hôm nay", back.rightText)
@@ -183,29 +183,31 @@ class TodayWidgetDisplayTest {
 
     @Test
     fun notPreparedOnlyOnAHandOverAndItBeatsTheDay() {
-        val out = TodayWidgetDisplay.line(row(notPrepared = true, isLate = true, lateDays = 1, planDay = "30/10/26"), viLabels, false)
+        val out = TodayWidgetDisplay.line(row(notPrepared = true, isLate = true, lateDays = 1, planDay = "30/10/26"), viLabels)
         assertEquals("Chưa soạn đồ", out.warningText)
         assertNull(out.dayText)
-        assertNull(TodayWidgetDisplay.line(row(kind = TodayWidgetRow.Kind.RETURN, notPrepared = true), viLabels, false).warningText)
+        assertNull(TodayWidgetDisplay.line(row(kind = TodayWidgetRow.Kind.RETURN, notPrepared = true), viLabels).warningText)
     }
 
     @Test
     fun productWithTheCountOfTheOthers() {
-        assertEquals("Áo dài gấm đỏ +1", TodayWidgetDisplay.line(row(moreCount = 1), viLabels, false).productText)
-        assertEquals("Áo dài gấm đỏ", TodayWidgetDisplay.line(row(), viLabels, false).productText)
-        assertEquals("", TodayWidgetDisplay.line(row(product = "", moreCount = 2), viLabels, false).productText)
+        assertEquals("Áo dài gấm đỏ +1", TodayWidgetDisplay.line(row(moreCount = 1), viLabels).productText)
+        assertEquals("Áo dài gấm đỏ", TodayWidgetDisplay.line(row(), viLabels).productText)
+        assertEquals("", TodayWidgetDisplay.line(row(product = "", moreCount = 2), viLabels).productText)
     }
 
+    /** #1432: there is no way to hide a name; a row with none stays empty, with no placeholder */
     @Test
-    fun hiddenNamesDoNotReachTheLine() {
-        val line = TodayWidgetDisplay.line(row(name = "Chị Diệu"), viLabels, hideNames = true)
-        assertEquals("", line.name)
-        assertEquals("Áo dài gấm đỏ", line.productText)
+    fun theLineShowsTheNameOfTheRow() {
+        assertEquals("Chị Diệu", TodayWidgetDisplay.line(row(name = "Chị Diệu"), viLabels).name)
+        val noName = TodayWidgetDisplay.line(row(name = ""), viLabels)
+        assertEquals("", noName.name)
+        assertEquals("Áo dài gấm đỏ", noName.productText)
     }
 
     @Test
     fun theLinkOfARowIsItsNumericOrder() {
-        assertEquals("anyrent://order/490268", TodayWidgetDisplay.line(row(), viLabels, false).url)
+        assertEquals("anyrent://order/490268", TodayWidgetDisplay.line(row(), viLabels).url)
         assertEquals("anyrent://todo", TodayWidgetLink.TODO_URL)
     }
 

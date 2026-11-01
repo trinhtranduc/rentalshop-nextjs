@@ -24,7 +24,6 @@ data class TodayWidgetLabels(
     val stale: String,
     val staleFormat: String,
     val yesterday: String,
-    val hiddenName: String,
     val appName: String,
     val pickupDayWord: String,
     val returnDayWord: String,
@@ -51,7 +50,6 @@ data class TodayWidgetDisplay(
     val updatedText: String? = null,
     val tomorrowText: String? = null,
     val staleDetail: String? = null,
-    val hidesNames: Boolean = false,
 ) {
     enum class Kind { LOGGED_OUT, NO_ACCESS, STALE, EMPTY, ALL_DONE, WORK }
 
@@ -63,7 +61,7 @@ data class TodayWidgetDisplay(
         val chip: Chip,
         /** "TRỄ", "GIAO", "TRẢ" */
         val chipText: String,
-        /** Empty when names are off: the widget draws `labels.hiddenName` */
+        /** Empty only when the order has no customer name */
         val name: String,
         /** Line 1, right: "Trễ 3 ngày" or "Hôm nay · 14:00" / "Hôm nay" */
         val rightText: String,
@@ -108,9 +106,7 @@ data class TodayWidgetDisplay(
             val done = snapshot.done.coerceAtLeast(0)
             val counts = snapshot.counts
             val total = done + counts.total
-            val base = TodayWidgetDisplay(
-                Kind.WORK, labels, labels.today, today, counts, done, total, hidesNames = snapshot.hideNames,
-            )
+            val base = TodayWidgetDisplay(Kind.WORK, labels, labels.today, today, counts, done, total)
             if (snapshot.state == TodayWidgetSnapshot.State.NO_ACCESS) return base.copy(kind = Kind.NO_ACCESS)
             if (!snapshot.isFresh(now)) {
                 return base.copy(
@@ -126,7 +122,7 @@ data class TodayWidgetDisplay(
                     tomorrowText = tomorrowText(counts, labels),
                 )
             }
-            val shown = snapshot.rows.take(rowLimit.coerceAtLeast(0)).map { line(it, labels, snapshot.hideNames) }
+            val shown = snapshot.rows.take(rowLimit.coerceAtLeast(0)).map { line(it, labels) }
             val more = (counts.total - shown.size).coerceAtLeast(0)
             return base.copy(
                 lines = shown,
@@ -135,7 +131,7 @@ data class TodayWidgetDisplay(
             )
         }
 
-        fun line(row: TodayWidgetRow, labels: TodayWidgetLabels, hideNames: Boolean): Line {
+        fun line(row: TodayWidgetRow, labels: TodayWidgetLabels): Line {
             val late = row.isLate || row.lateDays > 0
             val pickup = row.kind == TodayWidgetRow.Kind.PICKUP
             val chip = when {
@@ -164,7 +160,7 @@ data class TodayWidgetDisplay(
                 orderId = row.orderId,
                 chip = chip,
                 chipText = word.uppercase(Locale.ROOT),
-                name = if (hideNames) "" else row.name,
+                name = row.name,
                 rightText = right,
                 rightIsLate = hasLateText,
                 productText = productText(row),

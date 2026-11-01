@@ -5,7 +5,6 @@ import com.anyrent.pos.domain.orders.TodayWork
 import com.anyrent.pos.domain.orders.TodayWorkRow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,14 +13,12 @@ import java.time.Instant
 /** #1381: the refresh the worker and the app share; no Android here (the worker is a thin wrapper) */
 class TodayWidgetRefresherTest {
     private class FakeStore(var file: TodayWidgetSnapshot? = null) : TodayWidgetFile {
-        override fun read() = file
         override fun write(snapshot: TodayWidgetSnapshot) { file = snapshot }
         override fun clear() { file = null }
     }
 
     private val store = FakeStore()
     private var user: Int? = 7
-    private var hide = false
     private var calls = 0
     private var answer: suspend () -> Result<TodayWork> = { Result.success(work) }
     private val work = TodayWork(
@@ -35,7 +32,6 @@ class TodayWidgetRefresherTest {
         file = store,
         userId = { user },
         outletId = { 5 },
-        hideNames = { hide },
         now = { Instant.parse("2026-10-31T02:00:00Z") },
     )
 
@@ -45,6 +41,7 @@ class TodayWidgetRefresherTest {
         assertEquals(TodayWidgetSnapshot.State.OK, store.file?.state)
         assertEquals(7, store.file?.userId)
         assertEquals(5, store.file?.outletId)
+        assertEquals("Chị Diệu", store.file?.rows?.single()?.name)
     }
 
     @Test
@@ -102,33 +99,5 @@ class TodayWidgetRefresherTest {
         store.file = snapshot()
         refresher.signedOut()
         assertNull(store.file)
-    }
-
-    @Test
-    fun theNameSwitchRewritesFromTheLastAnswerWithNoNetwork() = runTest {
-        refresher.refresh()
-        assertEquals(1, calls)
-        hide = true
-        assertTrue(refresher.hideNamesChanged())
-        assertEquals("", store.file?.rows?.single()?.name)
-        hide = false
-        assertTrue(refresher.hideNamesChanged())
-        assertEquals("Chị Diệu", store.file?.rows?.single()?.name)
-        assertEquals(1, calls)
-    }
-
-    @Test
-    fun theNameSwitchWithNoLastAnswerStripsTheFileAndAsksForARefresh() {
-        store.file = snapshot(rows = listOf(row(name = "Chị Diệu")))
-        hide = true
-        assertFalse(refresher.hideNamesChanged())
-        assertEquals("", store.file?.rows?.single()?.name)
-    }
-
-    @Test
-    fun theLastAnswerOfAnotherAccountIsNotReused() = runTest {
-        refresher.refresh()
-        user = 8
-        assertFalse(refresher.hideNamesChanged())
     }
 }
