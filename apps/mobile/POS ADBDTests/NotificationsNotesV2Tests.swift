@@ -129,14 +129,21 @@ final class NotificationsNotesV2Tests: XCTestCase {
 
     // MARK: Note editor photos
 
-    func testPhotoLimitIsFive() {
-        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 5)
+    func testPhotoLimitIsThree() {
+        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 3)
         XCTAssertTrue(NoteEditorLogic.canAdd(count: 0))
-        XCTAssertTrue(NoteEditorLogic.canAdd(count: 4))
+        XCTAssertTrue(NoteEditorLogic.canAdd(count: 2))
+        XCTAssertFalse(NoteEditorLogic.canAdd(count: 3))
         XCTAssertFalse(NoteEditorLogic.canAdd(count: 5))
-        XCTAssertFalse(NoteEditorLogic.canAdd(count: 6))
-        XCTAssertEqual(NoteEditorLogic.remaining(count: 2), 3)
+        XCTAssertEqual(NoteEditorLogic.remaining(count: 2), 1)
         XCTAssertEqual(NoteEditorLogic.remaining(count: 7), 0)
+    }
+
+    /// #1425 "5/3" reads like a bug: an old order above the limit shows only its count
+    func testCountLabelAboveTheLimit() {
+        XCTAssertEqual(NoteEditorLogic.countLabel(count: 2), String(format: "%d/%d photos".localized(), 2, 3))
+        XCTAssertEqual(NoteEditorLogic.countLabel(count: 3), String(format: "%d/%d photos".localized(), 3, 3))
+        XCTAssertEqual(NoteEditorLogic.countLabel(count: 5), String(format: "cart.orderNote.photos".localized(), 5))
     }
 
     func testCartEditorHasNoPhotos() {

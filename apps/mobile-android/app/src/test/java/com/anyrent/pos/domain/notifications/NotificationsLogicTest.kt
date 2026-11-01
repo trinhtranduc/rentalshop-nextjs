@@ -111,14 +111,20 @@ class NotificationsLogicTest {
 
     // Note editor photos
 
-    @Test fun photoLimitIsFive() {
-        assertEquals(5, OrderDetailLogic.MAX_NOTE_PHOTOS)
+    @Test fun photoLimitIsThree() {
+        assertEquals(3, OrderDetailLogic.MAX_NOTE_PHOTOS)
         assertTrue(NoteEditorLogic.canAdd(0))
-        assertTrue(NoteEditorLogic.canAdd(4))
+        assertTrue(NoteEditorLogic.canAdd(2))
+        assertFalse(NoteEditorLogic.canAdd(3))
         assertFalse(NoteEditorLogic.canAdd(5))
-        assertFalse(NoteEditorLogic.canAdd(6))
-        assertEquals(3, NoteEditorLogic.remaining(2))
+        assertEquals(1, NoteEditorLogic.remaining(2))
         assertEquals(0, NoteEditorLogic.remaining(7))
+    }
+
+    /** #1425 "5/3" reads like a bug: an old order above the limit shows only its count */
+    @Test fun countShowsTheLimitOnlyUpToIt() {
+        assertTrue(NoteEditorLogic.showsLimit(3))
+        assertFalse(NoteEditorLogic.showsLimit(5))
     }
 
     @Test fun cartEditorHasNoPhotos() {

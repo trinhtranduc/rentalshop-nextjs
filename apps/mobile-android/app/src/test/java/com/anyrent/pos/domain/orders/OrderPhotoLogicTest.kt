@@ -8,9 +8,8 @@ import org.junit.Test
 /** #1418 same cases as iOS `OrderPhotoQueueTests` */
 class OrderPhotoLogicTest {
     @Test
-    fun conditionPhotosStopAtThreeAndNotePhotosStayAtFive() {
+    fun conditionPhotosStopAtThree() {
         assertEquals(3, OrderPhotoLogic.MAX_PHOTOS)
-        assertEquals(5, OrderDetailLogic.MAX_NOTE_PHOTOS)
         assertTrue(OrderPhotoLogic.canAdd(2))
         assertFalse(OrderPhotoLogic.canAdd(3))
         assertEquals("2/3", OrderPhotoLogic.countLabel(2))

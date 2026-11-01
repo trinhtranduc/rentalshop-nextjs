@@ -160,7 +160,20 @@ class OrderDetailLogicTest {
             OrderDetailLogic.notesPlan("", listOf("a", "b", "c"), listOf("a", "b", "c"), 2),
         )
         assertNull(OrderDetailLogic.notesPlan("", listOf("a"), listOf("x"), 0))
-        assertEquals(5, OrderDetailLogic.MAX_NOTE_PHOTOS)
+        assertEquals(3, OrderDetailLogic.MAX_NOTE_PHOTOS)
+    }
+
+    /** #1425 an order from before the limit keeps its photos and stays editable */
+    @Test
+    fun `old order above the limit can still be saved`() {
+        val five = listOf("a", "b", "c", "d", "e")
+        assertEquals("text only", listOf(NotesStep.Json("hi", null)), OrderDetailLogic.notesPlan("hi", five, five, 0))
+        assertEquals(
+            "remove one, still above",
+            listOf(NotesStep.Json("hi", listOf("a", "b", "c", "d"))),
+            OrderDetailLogic.notesPlan("hi", five, listOf("a", "b", "c", "d"), 0),
+        )
+        assertNull("adding must fit", OrderDetailLogic.notesPlan("hi", five, listOf("a", "b", "c"), 1))
     }
 
     @Test
