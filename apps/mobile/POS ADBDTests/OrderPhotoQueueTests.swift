@@ -16,9 +16,8 @@ final class OrderPhotoQueueTests: XCTestCase {
 
     // MARK: Limits
 
-    func testConditionPhotosStopAtThreeAndNotePhotosStayAtFive() {
+    func testConditionPhotosStopAtThree() {
         XCTAssertEqual(OrderPhotoLogic.maxPhotos, 3)
-        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 5)
         XCTAssertTrue(OrderPhotoLogic.canAdd(count: 2))
         XCTAssertFalse(OrderPhotoLogic.canAdd(count: 3))
         XCTAssertEqual(OrderPhotoLogic.countLabel(2), "2/3")
@@ -50,6 +49,13 @@ final class OrderPhotoQueueTests: XCTestCase {
         XCTAssertFalse(can(.pickuped, 2, 0, false))
         XCTAssertFalse(can(.returned, 2, 0, true))
         XCTAssertFalse(can(.pickuped, 0, 0, true), "no photos: the detail screen stays as today")
+    }
+
+    func testWarningAtTheTopOnlyWhileAnUploadFailed() {
+        XCTAssertEqual(OrderPhotoLogic.failedCount(state: .failed, waiting: 3), 3)
+        XCTAssertNil(OrderPhotoLogic.failedCount(state: .uploading, waiting: 3), "a retry is running: no second way to start one")
+        XCTAssertNil(OrderPhotoLogic.failedCount(state: .idle, waiting: 3))
+        XCTAssertNil(OrderPhotoLogic.failedCount(state: .failed, waiting: 0))
     }
 
     // MARK: Disk

@@ -20,7 +20,7 @@ enum OrderPhotoField: String {
 }
 
 enum OrderPhotoLogic {
-    /// Owner's limit for condition photos. Note photos keep `OrderDetailLogic.maxNotePhotos`; the API allows 5 per field.
+    /// Owner's limit for condition photos; the API allows 5 per field.
     static let maxPhotos = 3
 
     enum SendDecision: Equatable {
@@ -41,6 +41,11 @@ enum OrderPhotoLogic {
         if serverCount - baseline >= pending { return .alreadyUploaded }
         let room = maxPhotos - serverCount
         return room > 0 ? .send(count: min(pending, room)) : .noRoom
+    }
+
+    /// How many photos the warning under the status names. Nil while a retry runs, so there is one way to start one.
+    static func failedCount(state: OrderPhotoUploader.State, waiting: Int) -> Int? {
+        state == .failed && waiting > 0 ? waiting : nil
     }
 
     /// "Thêm" on the order detail: only while the goods are out, and not when the block would be new on the screen

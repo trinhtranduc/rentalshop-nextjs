@@ -5629,8 +5629,15 @@ final class AnyRentE2ETests: XCTestCase {
         waitForExpectations(timeout: timeout)
     }
 
+    /// The photos sit under the papers and collateral, usually below the first screen
+    private func scrollToPhotos() {
+        let title = app.staticTexts["order.detail.pickupPhotos.title"]
+        for _ in 0..<6 where !(title.exists && title.isHittable) { app.swipeUp() }
+        sleep(1)
+    }
+
     private func photosFailedLine(exists: Bool, timeout: TimeInterval = 25) {
-        let failed = app.staticTexts["order.detail.pickupPhotos.failed"]
+        let failed = app.buttons["order.detail.pickupPhotos.retry"]
         if exists {
             XCTAssertTrue(failed.waitForExistence(timeout: timeout), "Chưa tải được…")
         } else {
@@ -5670,6 +5677,7 @@ final class AnyRentE2ETests: XCTestCase {
         waitPhotoTitle(3)
         photosFailedLine(exists: false)
         sleep(2)
+        scrollToPhotos()
         e2e.shot("photos-05-detail-3")
         XCTAssertFalse(app.buttons["order.detail.pickupPhotos.add"].exists, "3/3 hides Thêm on the detail")
         app.terminate()
@@ -5717,6 +5725,7 @@ final class AnyRentE2ETests: XCTestCase {
         photosFailedLine(exists: false)
         waitPhotoTitle(3)
         sleep(2)
+        scrollToPhotos()
         e2e.shot("photos-12-after-relaunch-uploaded")
         // Thử lại path, on a second order
         app.terminate()
@@ -5733,6 +5742,7 @@ final class AnyRentE2ETests: XCTestCase {
         photosFailedLine(exists: false)
         waitPhotoTitle(1)
         sleep(2)
+        scrollToPhotos()
         e2e.shot("photos-13-retry-uploaded-with-add")
         XCTAssertTrue(app.buttons["order.detail.pickupPhotos.add"].exists, "1/3: Thêm is there while the goods are out")
     }
@@ -5768,6 +5778,7 @@ final class AnyRentE2ETests: XCTestCase {
         waitPhotoTitle(1)
         photosFailedLine(exists: false)
         sleep(2)
+        scrollToPhotos()
         e2e.shot("photos-21-same-login-uploaded")
     }
 
@@ -5785,6 +5796,7 @@ final class AnyRentE2ETests: XCTestCase {
         photosFailedLine(exists: false)
         waitPhotoTitle(1)
         sleep(2)
+        scrollToPhotos()
         e2e.shot("photos-31-lost-reply-one-photo")
     }
 
@@ -5829,6 +5841,7 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(2)
         let add = app.buttons["order.detail.pickupPhotos.add"]
         XCTAssertTrue(add.waitForExistence(timeout: 8), "Thêm")
+        scrollToPhotos()
         e2e.shot("photos-61-detail-with-add")
         add.tap()
         let library = app.sheets.buttons.element(boundBy: 1)
@@ -5839,7 +5852,18 @@ final class AnyRentE2ETests: XCTestCase {
         waitPhotoTitle(2, timeout: 25)
         photosFailedLine(exists: false)
         sleep(2)
+        scrollToPhotos()
         e2e.shot("photos-62-added-later")
+    }
+
+    /// An order with photos and no papers section (returned, no papers): the photos stand alone, with no word about collateral
+    func testPhotos09PhotosWithoutPapersSection() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        waitPhotoTitle(1)
+        XCTAssertFalse(app.otherElements["order.detail.collateralSection"].exists, "No papers section on this order")
+        scrollToPhotos()
+        e2e.shot("photos-63-no-papers-section")
     }
 
     /// One photo with the account of `E2E_ROLE`: each role that can hand over
@@ -5852,6 +5876,11 @@ final class AnyRentE2ETests: XCTestCase {
         waitPhotoTitle(1)
         photosFailedLine(exists: false)
         sleep(2)
+        scrollToPhotos()
+        let papers = app.otherElements["order.detail.collateralSection"]
+        if papers.exists {
+            XCTAssertGreaterThanOrEqual(app.staticTexts["order.detail.pickupPhotos.title"].frame.minY, papers.frame.maxY - 1, "Photos sit under the papers")
+        }
         e2e.shot("photos-50-role-\(e2e.role)")
     }
 }

@@ -2500,9 +2500,9 @@
     <string name="order_photos_library">Thư viện</string>
     <string name="order_photos_full">Đủ %1$d ảnh. Bỏ một ảnh để thêm ảnh khác.</string>
     <string name="order_photos_remove">Bỏ ảnh</string>
-    <string name="order_photos_at_hand_over">ẢNH KHI GIAO</string>
+    <string name="order_photos_at_hand_over">Ảnh khi giao</string>
     <string name="order_photos_add">Thêm</string>
-    <string name="order_photos_not_uploaded">Chưa tải được %1$d ảnh. Đơn đã giao xong, ảnh vẫn trên máy.</string>
+    <string name="order_photos_not_uploaded">Chưa tải được %1$d ảnh</string>
     <string name="order_photos_camera_unavailable">Chưa dùng được máy ảnh. Mở Cài đặt để cấp quyền, hoặc chọn từ Thư viện.</string>
     <string name="order_photos_open_settings">Mở Cài đặt</string>
 </resources>

@@ -380,27 +380,10 @@ fun OrderDetailV2Screen(
                             null
                         },
                     )
-                    if (detail.pickupNotesImages.isNotEmpty() || state.pickupWaiting.isNotEmpty()) {
-                        SectionBand()
-                        val photoCount = detail.pickupNotesImages.size + state.pickupWaiting.size
-                        DetailSection("${stringResource(R.string.order_photos_at_hand_over)} · $photoCount", "order.detail.pickupPhotos") {
-                            OrderPhotoTiles(
-                                urls = detail.pickupNotesImages,
-                                waiting = state.pickupWaiting,
-                                failed = state.pickupUploadFailed,
-                                id = "order.detail.pickupPhotos",
-                                onPreview = { previewImage = it },
-                                onAdd = if (OrderPhotoLogic.canAddLater(
-                                        detail.summary.status, detail.pickupNotesImages.size,
-                                        state.pickupWaiting.size, PermissionManager.canUpdateOrders(),
-                                    )
-                                ) {
-                                    { photoChooseSource = true }
-                                } else {
-                                    null
-                                },
-                                onRetry = vm::retryPickupPhotos,
-                            )
+                    // #1418 the photos are often below the first screen; a failed upload is told here
+                    state.pickupFailedCount?.let { failed ->
+                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            OrderPhotoWarning(failed, "order.detail.pickupPhotos", vm::retryPickupPhotos)
                         }
                     }
                     DetailBody(
@@ -420,6 +403,34 @@ fun OrderDetailV2Screen(
                         onPreview = { previewImage = it },
                         onEditNotes = { openNotes(detail) },
                         onEditCollateral = if (canEditCollateral) ({ sheet = DetailSheet.COLLATERAL }) else null,
+                        pickupPhotos = if (detail.pickupNotesImages.isNotEmpty() || state.pickupWaiting.isNotEmpty()) {
+                            {
+                                val photoCount = detail.pickupNotesImages.size + state.pickupWaiting.size
+                                Text(
+                                    "${stringResource(R.string.order_photos_at_hand_over)} · $photoCount",
+                                    // An ordinary row of the papers section, like "Khi nhận trả": not a section title
+                                    fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted,
+                                    modifier = Modifier.padding(top = 12.dp, bottom = 8.dp).testTag("order.detail.pickupPhotos.title"),
+                                )
+                                OrderPhotoTiles(
+                                    urls = detail.pickupNotesImages,
+                                    waiting = state.pickupWaiting,
+                                    id = "order.detail.pickupPhotos",
+                                    onPreview = { previewImage = it },
+                                    onAdd = if (OrderPhotoLogic.canAddLater(
+                                            detail.summary.status, detail.pickupNotesImages.size,
+                                            state.pickupWaiting.size, PermissionManager.canUpdateOrders(),
+                                        )
+                                    ) {
+                                        { photoChooseSource = true }
+                                    } else {
+                                        null
+                                    },
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                     Spacer(Modifier.height(24.dp))
                 }
@@ -957,6 +968,8 @@ private fun DetailBody(
     onPreview: (Any) -> Unit,
     onEditNotes: () -> Unit,
     onEditCollateral: (() -> Unit)? = null,
+    /** #1418 the hand-over photos; null while the order has none */
+    pickupPhotos: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     val summary = detail.summary
     val isRent = summary.orderType.equals("RENT", ignoreCase = true)
@@ -1070,17 +1083,25 @@ private fun DetailBody(
                 if (keptAmount > 0) cancelRows()
             }
         }
+        // #1418: the hand-over photos sit under the papers and collateral. An order without that section gets the photos
+        // alone, under their own small heading; an order without photos looks as before.
+        val papers = detail.collateralDetails?.takeIf { it.isNotBlank() }
         if (isRent && onEditCollateral != null) {
             SectionBand()
             DetailSection(null) {
                 CollateralSection(detail, onEditCollateral)
                 if (returnMoney != null) returnRow()
+                pickupPhotos?.invoke(this)
             }
-        } else if (isRent) {
-            detail.collateralDetails?.takeIf { it.isNotBlank() }?.let {
-                SectionBand()
-                DetailSection(null) { InfoRow(stringResource(R.string.collateral), it) }
+        } else if (isRent && papers != null) {
+            SectionBand()
+            DetailSection(null) {
+                InfoRow(stringResource(R.string.collateral), papers)
+                pickupPhotos?.invoke(this)
             }
+        } else if (pickupPhotos != null) {
+            SectionBand()
+            DetailSection(null) { pickupPhotos() }
         }
 
         val note = summary.notes?.takeIf { it.isNotBlank() }
