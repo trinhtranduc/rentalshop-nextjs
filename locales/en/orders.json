@@ -57,7 +57,7 @@
     "uploadImage": "Upload Security Document",
     "collateralImageHint": "Upload an image of ID card, passport, or other security document. Supported formats: JPEG, PNG, WebP. Max size: 5MB",
     "tooltips": {
-      "damageFee": "Extra charge when products are damaged, lost, or returned late during rental",
+      "damageFee": "Extra charge when products are damaged or lost during rental",
       "securityDeposit": "Amount of deposit customer must pay when receiving goods. This amount will be refunded after return, minus extra fee (if any)",
       "collateralType": "Type of identification document customer leaves as collateral (ID Card, Driver License, Passport, or Other)",
       "collateralDetails": "Detailed information about collateral document (ID number, Driver License number, Passport number, or other information depending on type)",
