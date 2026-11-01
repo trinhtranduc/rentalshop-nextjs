@@ -99,7 +99,6 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
         outletButton.refresh()
-        FirstRunCoach.shared.stop() // back from the cart: the run is over, the next one starts from a row
         FirstRunGuideTracker.shared.refresh()
         applyGuide()
         // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
@@ -324,9 +323,9 @@ final class ProductsHomeViewController: BaseViewControler {
     }
 
     private func runGuide(_ step: FirstRunGuideStep) {
-        FirstRunCoach.shared.start(step) // #1394: the bubbles run only from here
         let action = FirstRunGuide.action(for: step, hasProduct: FirstRunGuideTracker.shared.hasProduct,
                                           cartIsEmpty: CartStore.shared.cart.items.isEmpty)
+        FirstRunCoach.shared.start(action: action, home: self) // #1394: the bubbles run only from here
         switch action {
         case .openProductForm:
             addProduct()
@@ -427,6 +426,7 @@ final class ProductsHomeViewController: BaseViewControler {
     @objc private func addProduct() {
         let form = ProductFormViewController(product: nil)
         form.onSaved = { [weak self] product in
+            FirstRunCoach.shared.stop() // #1411: this form covers Home without taking it off screen
             self?.viewModel.replace(product)
         }
         V2.presentForm(form, from: self)

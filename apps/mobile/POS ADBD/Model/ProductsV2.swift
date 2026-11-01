@@ -431,9 +431,14 @@ enum ProductFormIssue: Equatable {
 enum ProductFormValidator {
     static let maxPhotos = 5
 
+    /// The form's rule for a name; the first-run guide's Tiếp asks the same
+    static func isNameValid(_ name: String) -> Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     static func validate(_ input: ProductFormInput) -> [ProductFormIssue] {
         var issues: [ProductFormIssue] = []
-        if input.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if !isNameValid(input.name) {
             issues.append(.nameRequired)
         }
         var amounts = [input.deposit]

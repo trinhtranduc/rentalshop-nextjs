@@ -94,6 +94,7 @@ final class ProductFormViewController: BaseViewControler {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
+        FirstRunCoach.shared.formOpened(.productForm)
         buildLayout()
         fill()
         loadTickRows()
@@ -101,6 +102,7 @@ final class ProductFormViewController: BaseViewControler {
         if userOutletId == nil { loadOutlets() }
         let tap = UITapGestureRecognizer(target: self, action: #selector(endEditing))
         tap.cancelsTouchesInView = false
+        tap.delegate = self // #1411
         view.addGestureRecognizer(tap)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow),
                                                name: NSNotification.Name.UIKeyboardDidShow, object: nil)
@@ -116,7 +118,7 @@ final class ProductFormViewController: BaseViewControler {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        FirstRunCoach.shared.screenChanged(self, screen: .productForm) // #1394
+        FirstRunCoach.shared.screenChanged(self, screen: .productForm) // #1394, #1411
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -167,6 +169,7 @@ final class ProductFormViewController: BaseViewControler {
         bottom.addSubview(bottomLine)
         let save = V2.primaryButton((isEdit ? "products.form.saveChanges" : "products.form.save").localized())
         save.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        save.accessibilityIdentifier = "product.form.save"
         bottom.addSubview(save)
         view.addSubview(bottom)
         bottom.snp.makeConstraints { make in make.leading.trailing.bottom.equalToSuperview() }
@@ -203,6 +206,7 @@ final class ProductFormViewController: BaseViewControler {
             make.height.equalTo(84)
         }
         photoScroll.snp.makeConstraints { make in make.height.equalTo(104) }
+        photoStrip.accessibilityIdentifier = "product.form.photos"
         form.addArrangedSubview(photoScroll)
         form.addArrangedSubview(padded(V2.label(String(format: "products.form.photosHint".localized(), ProductFormValidator.maxPhotos), // board SP-sua: hint stays 12/400
                                                 size: DS.TextSize.pill, color: DS.Color.textMuted, lines: 0), top: 0, bottom: 6))
@@ -243,12 +247,17 @@ final class ProductFormViewController: BaseViewControler {
             form.addArrangedSubview(V2.sectionHeader("products.form.prices".localized()))
             configure(perRentalField, placeholder: "0", numeric: true)
             perRentalField.accessibilityIdentifier = "product.form.perRental"
-            form.addArrangedSubview(field(title: "products.form.perRental".localized(), required: false, input: perRentalField,
-                                          unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.once".localized()))
+            let perRentalRow = field(title: "products.form.perRental".localized(), required: false, input: perRentalField,
+                                     unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.once".localized())
             configure(perDayField, placeholder: "0", numeric: true)
             perDayField.accessibilityIdentifier = "product.form.perDay"
-            form.addArrangedSubview(field(title: "products.form.perDay".localized(), required: false, input: perDayField,
-                                          unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.day".localized()))
+            let perDayRow = field(title: "products.form.perDay".localized(), required: false, input: perDayField,
+                                  unit: MoneyFormatter.unitLabel(daily: false) + " " + "products.form.unit.day".localized())
+            // #1411: the price bubble lights the two together
+            let prices = UIStackView(arrangedSubviews: [perRentalRow, perDayRow])
+            prices.axis = .vertical
+            prices.accessibilityIdentifier = "product.form.prices"
+            form.addArrangedSubview(prices)
             form.addArrangedSubview(blockRow())
             renderBlock()
             configure(saleField, placeholder: "products.form.notForSale".localized(), numeric: true)
@@ -650,7 +659,7 @@ final class ProductFormViewController: BaseViewControler {
         let sheet = UIAlertController(title: "Select Image Source".localized(), message: nil, preferredStyle: .actionSheet)
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
             sheet.addAction(UIAlertAction(title: "Camera".localized(), style: .default) { [weak self] _ in
-                guard let self else { return }
+                guard let self, self.coachAllowsCamera() else { return }
                 self.picker.sourceType = .camera
                 self.present(self.picker, animated: true)
             })
@@ -664,6 +673,33 @@ final class ProductFormViewController: BaseViewControler {
         sheet.popoverPresentationController?.sourceView = sender
         sheet.popoverPresentationController?.sourceRect = sender.bounds
         present(sheet, animated: true)
+    }
+
+    /// #1411: only while the guide waits for a photo. A denied camera says so in the bubble, instead of the picker's black screen.
+    /// True: open the camera as the form always does.
+    private func coachAllowsCamera() -> Bool {
+        guard FirstRunCoach.shared.isShowing(.productPhoto) else { return true }
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch FirstRunCoachRules.cameraRoute(authorized: status == .authorized, undetermined: status == .notDetermined) {
+        case .open:
+            return true
+        case .denied:
+            FirstRunCoach.shared.showCameraDenied()
+            return false
+        case .ask:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if granted {
+                        self.picker.sourceType = .camera
+                        self.present(self.picker, animated: true)
+                    } else {
+                        FirstRunCoach.shared.showCameraDenied()
+                    }
+                }
+            }
+            return false
+        }
     }
 
     /// #632: the category screen in pick mode (search, + add, ⋯ rename / delete by role); a tap picks and comes back
@@ -868,6 +904,55 @@ final class ProductFormViewController: BaseViewControler {
             )
             ProductService.shared.createProduct(request: request, images: newImages, completion: completion)
         }
+    }
+}
+
+// MARK: - First-run guide (#1411)
+
+extension ProductFormViewController: FirstRunCoachForm {
+    func coachIsValid(_ bubble: CoachBubble) -> Bool {
+        switch bubble {
+        case .productPhoto:
+            return FirstRunCoachRules.photoIsValid(count: photos.count)
+        case .productName:
+            return ProductFormValidator.isNameValid(nameField.text ?? "")
+        case .productPrice:
+            return FirstRunCoachRules.priceIsValid(perRental: MoneyInput.parse(perRentalField.text), perDay: MoneyInput.parse(perDayField.text))
+        default:
+            return false
+        }
+    }
+
+    /// The barcode fills itself and the quantity starts at 1: neither is something the owner typed
+    var coachHasInput: Bool {
+        let typed = [nameField, perRentalField, perDayField, saleField, depositField, costField].contains { !($0.text ?? "").isEmpty }
+        return typed || !photos.isEmpty || categoryId != nil || quantityStepper.value != 1
+    }
+
+    func coachWillShow(_ bubble: CoachBubble) {
+        switch bubble {
+        case .productName: nameField.becomeFirstResponder()
+        case .productPrice: perRentalField.becomeFirstResponder()
+        case .productSave: view.endEditing(true)
+        default: break
+        }
+    }
+
+    func coachOpenPhotoLibrary() {
+        picker.sourceType = .photoLibrary
+        present(picker, animated: true)
+    }
+}
+
+extension ProductFormViewController: UIGestureRecognizerDelegate {
+    /// #1411: a touch on the guide's bubble is not a tap outside a field: it would close the keyboard Tiếp has just moved to the next field
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var view = touch.view
+        while let current = view {
+            if current is FirstRunCoachOverlayView { return false }
+            view = current.superview
+        }
+        return true
     }
 }
 

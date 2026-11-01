@@ -405,7 +405,7 @@ final class CartV2ViewController: BaseViewControler {
     /// #1394: each render may owe a bubble (a customer was chosen, the dates were picked)
     private func coachScreenChanged() {
         FirstRunCoach.shared.screenChanged(self, screen: .cart, cart: CoachCart(
-            hasCustomer: cart.customer != nil, isSale: !isRent,
+            isEmpty: cart.items.isEmpty, hasCustomer: cart.customer != nil, isSale: !isRent,
             hasDates: CartDateRowLogic.state(pickup: cart.pickupPlanAt, return: cart.returnPlanAt).days != nil,
             isEditing: cart.isEditMode))
     }
@@ -413,6 +413,13 @@ final class CartV2ViewController: BaseViewControler {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         coachScreenChanged()
+    }
+
+    /// #1411: back to Home: the run is over, the next one starts from a row. Not from Home's own appearing: a row in the Settings
+    /// sheet starts a run while switching to the Home tab.
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isMovingFromParentViewController { FirstRunCoach.shared.stop() }
     }
 
     /// #1067: the discount notice (same red box as the overlap block), rebuilt only when its text changes
@@ -1399,6 +1406,7 @@ final class CartV2ViewController: BaseViewControler {
             OrderListViewModel.shared.setNeedsRefresh()
         }
         OrdersChangeSignal.post() // #674
+        FirstRunCoach.shared.stop() // #1411: the walk ends with the order
         // #973 iPad panel: the empty cart closes its panel, so Home (still on screen) shows "Đã tạo đơn"
         if isPanel, let home = parent, let navigationController {
             CartStore.shared.resetCart()

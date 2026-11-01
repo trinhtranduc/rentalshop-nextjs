@@ -46,6 +46,7 @@ final class NewCustomerViewController: BaseViewControler {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        if mode == .pick { FirstRunCoach.shared.formOpened(.newCustomer) }
         setupUI()
         // Same prefill as the current form: digits go to the phone, anything else to the name
         if !prefill.isEmpty {
@@ -73,7 +74,7 @@ final class NewCustomerViewController: BaseViewControler {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if (phoneField.text ?? "").isEmpty { phoneField.becomeFirstResponder() } else { nameField.becomeFirstResponder() }
-        if mode == .pick { FirstRunCoach.shared.screenChanged(self, screen: .newCustomer) } // #1394
+        if mode == .pick { FirstRunCoach.shared.screenChanged(self, screen: .newCustomer) } // #1394, #1411
     }
 
     override func setupUI() {
@@ -107,7 +108,7 @@ final class NewCustomerViewController: BaseViewControler {
         let hint = V2.label("customers.v2.hint".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
 
         buildExistingBox()
-        // #1394: the bubble lights the two required fields together
+        // #1394, #1411: the bubble lights the two required fields together
         let required = UIStackView(arrangedSubviews: [
             field("customers.v2.phone".localized(), phoneField),
             field("customers.v2.name".localized(), nameField),
@@ -128,6 +129,7 @@ final class NewCustomerViewController: BaseViewControler {
         scroll.keyboardDismissMode = .interactive
         scroll.addSubview(form)
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
+        saveButton.accessibilityIdentifier = "customers.new.save"
         [header, scroll, saveButton].forEach(view.addSubview)
         header.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
@@ -216,7 +218,10 @@ final class NewCustomerViewController: BaseViewControler {
 
     @objc private func fieldsChanged() {
         // A changed phone needs a new check
-        if existing != nil { showExisting(nil) }
+        if existing != nil {
+            showExisting(nil)
+            FirstRunCoach.shared.resume(self, screen: .newCustomer) // #1411
+        }
     }
 
     @objc private func useExistingTapped() {
@@ -245,6 +250,7 @@ final class NewCustomerViewController: BaseViewControler {
                 case .created(let customer):
                     self.onDone?(customer)
                 case .existing(let customer):
+                    FirstRunCoach.shared.pause() // #1411: the box says what to do, the bubble must not cover it
                     self.showExisting(customer)
                 case .failed(let error):
                     UIAlertController.errorAlert(parent: self, error: error)
@@ -252,6 +258,21 @@ final class NewCustomerViewController: BaseViewControler {
             }
         }
     }
+}
+
+// MARK: - First-run guide (#1411)
+
+extension NewCustomerViewController: FirstRunCoachForm {
+    /// The form's own rule, no other
+    func coachIsValid(_ bubble: CoachBubble) -> Bool {
+        bubble == .newCustomer && CustomersV2Logic.validate(name: nameField.text ?? "", phone: phoneField.text ?? "") == nil
+    }
+
+    var coachHasInput: Bool {
+        [phoneField, nameField, noteField].contains { !($0.text ?? "").isEmpty }
+    }
+
+    func coachWillShow(_ bubble: CoachBubble) {}
 }
 
 extension NewCustomerViewController: UITextFieldDelegate {
