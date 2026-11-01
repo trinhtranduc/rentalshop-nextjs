@@ -17,7 +17,7 @@ import {
   useToast,
 } from '@rentalshop/ui';
 import { useAuth, useCommonTranslations, useDedupedApi, useOrderTranslations, usePermissions } from '@rentalshop/hooks';
-import { blockLineText, blockSnapshotOf, getLocalDateKey, installmentsApi, ordersApi, type BlockSnapshotLike } from '@rentalshop/utils';
+import { apiUrls, authenticatedFetch, blockLineText, blockSnapshotOf, getLocalDateKey, installmentsApi, ordersApi, type BlockSnapshotLike } from '@rentalshop/utils';
 import { useShopToday } from '../../hooks/useShopToday';
 import type { OrderWithDetails } from '@rentalshop/types';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
@@ -60,7 +60,7 @@ import {
   scheduleRange,
   showPickupPhotosCard,
   uploadWarningCount,
-  withoutApiErrorToast,
+  pickupPhotosForm,
 } from '../detail/actions-model';
 import { PhotoUploadWarning, PickupPhotosCard } from '../detail/photos';
 import { InstallmentsCard } from '../../installments/InstallmentsCard';
@@ -311,15 +311,13 @@ export default function OrderDetailPage() {
     if (files.length === 0) return;
     setPhotoJob({ files, baseline, status: 'uploading' });
     try {
-      const fresh = await withoutApiErrorToast(() => ordersApi.getOrderByNumber(orderNumber));
-      if (!fresh.success || !fresh.data) throw new Error('read failed');
-      const held = images((fresh.data as unknown as AnyOrder).pickupNotesImages).length;
+      const read = await authenticatedFetch(apiUrls.orders.getByNumber(orderNumber));
+      if (!read.ok) throw new Error('read failed');
+      const held = images(((await read.json()) as { data?: AnyOrder }).data?.pickupNotesImages).length;
       const decision = decidePhotoSend(held, baseline, files.length);
       if (decision.kind === 'send') {
-        const res = await withoutApiErrorToast(() =>
-          ordersApi.updateOrder(order.id, {} as UpdateInput, { pickupNotesImages: files.slice(0, decision.count) }),
-        );
-        if (!res.success) throw new Error('upload failed');
+        const sent = await authenticatedFetch(apiUrls.orders.update(order.id), { method: 'PUT', body: pickupPhotosForm(files.slice(0, decision.count)) });
+        if (!sent.ok) throw new Error('upload failed');
       }
       setPhotoJob(null);
       await refetch();

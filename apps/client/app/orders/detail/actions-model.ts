@@ -143,19 +143,14 @@ export function buildNoteViews(order: NoteOrderLike, labels: { notes: string; pi
 }
 
 /**
- * The warning above the cards tells a failed upload, so a 4xx must not also raise the toast of useGlobalErrorHandler.
- * A capture listener runs before it on the window. 5xx and network errors throw without an event. A subscription error
- * still goes through: it opens its own dialog.
+ * The PUT that appends hand-over photos: `data={}`, so nothing else of the order changes. The page sends it with
+ * `authenticatedFetch`, not `ordersApi.updateOrder`: `parseApiResponse` raises the global toast on a 4xx, and the warning
+ * above the cards already says it failed. A listener cannot hold that toast back: Chrome fires a window target's
+ * listeners in registration order, capture or not.
  */
-export async function withoutApiErrorToast<R>(run: () => Promise<R>, target: EventTarget = window): Promise<R> {
-  const stop = (event: Event) => {
-    const code = String((event as CustomEvent<{ code?: string }>).detail?.code ?? '');
-    if (!/SUBSCRIPTION|TRIAL_EXPIRED|PLAN_LIMIT/.test(code)) event.stopImmediatePropagation();
-  };
-  target.addEventListener('api-error', stop, { capture: true });
-  try {
-    return await run();
-  } finally {
-    target.removeEventListener('api-error', stop, { capture: true });
-  }
+export function pickupPhotosForm(files: File[]): FormData {
+  const form = new FormData();
+  form.append('data', '{}');
+  files.forEach((file) => form.append('pickupNotesImages', file));
+  return form;
 }
