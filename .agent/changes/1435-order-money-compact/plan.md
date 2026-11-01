@@ -10,7 +10,8 @@ Issue: #1435 · Status: accepted · Spec: ./spec.md
 3. iOS view: `moneySections` draws the lines; `InstallmentCardView.make` becomes the block inside THANH TOÁN; "Tạm tính" leaves `itemsSection` for rentals.
 4. Android view: `DetailBody` draws the lines with its own `MoneyBlockRow` / `MoneyBlockDue`; `InstallmentCard` redrawn; `MoneyRow` and the sheets unchanged.
 5. One string for the sub-line (`order.detail.cashBreakdown`, `detail_cash_breakdown`), `en` + `vi`.
-6. UI test `testOrderMoneyCases`: opens the 9 seeded orders and takes a screenshot of each. Same by adb on Android.
+6. UI tests `testOrderMoney01NineCases` and `testOrderMoney02SaleAndOthers` (`TEST_RUNNER_E2E_MONEY_ORDERS`, `TEST_RUNNER_E2E_MONEY_EXTRA`): open the seeded
+   orders, assert the lines and take a screenshot of each. Same by adb on Android, as the app has no committed UI test.
 7. Skills: `mobile-parity`, `i18n-keys`, `verify-change`, `mobile-e2e-local`.
 
 ## Verify
@@ -34,7 +35,7 @@ git diff origin/dev --stat -- '*OrderShareRenderer*' '*PrinterManager*' '*Deposi
 - `apps/mobile-android/.../domain/orders/OrderDetailLogic.kt` — the same rules
 - `apps/mobile-android/.../ui/orders/v2/OrderDetailV2Screen.kt`, `DepositPlanViews.kt` — draws the block
 - `apps/mobile-android/app/src/main/res/values{,-vi}/strings.xml` — one string
-- `apps/mobile-android/.../domain/orders/OrderMoneyBlockTest.kt` — tests
+- `apps/mobile-android/app/src/test/.../domain/orders/OrderMoneyBlockTest.kt` — tests
 
 ## Risks
 

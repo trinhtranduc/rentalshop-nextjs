@@ -41,3 +41,5 @@ Every role that opens a rental's detail. iOS and Android. No API, web or databas
 - 2026-11-01 — Owner approved the new version. Both "Thu giai đoạn N" buttons stay; share image and receipts stay; "Tạm tính" stays
   even with no discount; the last stage merges into the amount due; "Còn phải thu" hides only when it equals the amount due (owner).
 - 2026-11-01 — Android's zero "Khi nhận trả: thu thêm 0" stays as a line but plain, because a finished order has no large figure (agent, listed in the PR).
+- 2026-11-01 — Android's "Giấy tờ" and "Thế chân" values go from 17 semibold to 15 regular, as iOS and the tab's font list (agent).
+- 2026-11-01 — A rental's last item row loses its bottom line, as drawn: "Tạm tính" is no longer under it (agent).
