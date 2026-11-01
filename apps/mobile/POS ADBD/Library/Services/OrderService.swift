@@ -36,6 +36,34 @@ class OrderService: BaseService, OrderServiceProtocol {
         }
     }
 
+    /// #1418 parts of the condition photos of an order
+    static func photoParts(_ photos: [Data], field: OrderPhotoField) -> [NotesImagePart] {
+        photos.enumerated().map { index, data in
+            NotesImagePart(name: field.rawValue, fileName: "\(field.rawValue)_\(index).jpg", mimeType: "image/jpeg", data: data)
+        }
+    }
+
+    /// #1418 `PUT /api/orders/{id}` with `data={}` and the photos: the API appends them to the list. Nothing else of the
+    /// order changes, so a failure here never touches a hand-over. The reply is read only for its status: on a doubt the
+    /// uploader reads the order again before it sends anything.
+    func uploadOrderPhotos(orderId: Int, field: OrderPhotoField, photos: [Data], completion: @escaping (Bool) -> Void) {
+        let parts = OrderService.photoParts(photos, field: field)
+        AuthSession.shared.upload(
+            multipartFormData: { form in
+                form.append(Data("{}".utf8), withName: "data")
+                for part in parts {
+                    form.append(part.data, withName: part.name, fileName: part.fileName, mimeType: part.mimeType)
+                }
+            },
+            to: APIEndpoint.currentBaseURL + "\(APIEndpoint.Path.orders)/\(orderId)",
+            method: .put,
+            headers: BaseService.formHeader
+        )
+        .responseData { response in
+            completion((200..<300).contains(response.response?.statusCode ?? 0))
+        }
+    }
+
     private func uploadOrderRequest<Request: Encodable>(
         path: String,
         request: Request,

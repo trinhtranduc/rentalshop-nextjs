@@ -29,6 +29,9 @@ final class OrderDetailViewController: BaseViewControler {
     private var savingReady = false
     /// "6 lần thay đổi · gần nhất 15:10 hôm nay" under "Lịch sử thay đổi" in the ⋯ sheet (#519); nil until loaded
     private var historySummary: String?
+    /// #1418 photos chosen on a hand-over whose status call failed: the sheet opens with them again
+    private var handOverPhotoDraft: [Data] = []
+    private let addPhotoPicker = OrderPhotoPicker()
 
     init(orderId: Int) {
         self.orderId = orderId
@@ -60,7 +63,20 @@ final class OrderDetailViewController: BaseViewControler {
         buildLayout()
         // #1145: the owner changed the shop currency: money is redrawn
         NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(photosChanged(_:)), name: .orderPhotosDidChange, object: nil)
+        addPhotoPicker.presenter = self
+        addPhotoPicker.onPicked = { [weak self] data in self?.addPickupPhoto(data) }
         load()
+    }
+
+    /// #1418 an upload moved on: redraw; once it is through, read the order for the new photos
+    @objc private func photosChanged(_ note: Notification) {
+        guard isViewLoaded, note.object as? Int == orderId else { return }
+        if note.userInfo?["finished"] as? Bool == true {
+            load()
+        } else {
+            render()
+        }
     }
 
     @objc private func currencyChanged() {
@@ -141,6 +157,8 @@ final class OrderDetailViewController: BaseViewControler {
                     self.stateView.isHidden = true
                     self.render()
                     self.loadHistorySummary()
+                    // #1418 photos left from a failed upload or a relaunch go out when the order opens
+                    OrderPhotoUploader.shared.resume(orderId: self.orderId, field: .pickup)
                     if self.checkUnpaidAfterLoad {
                         self.checkUnpaidAfterLoad = false
                         _ = self.presentUnpaidIfNeeded(then: nil)
@@ -200,7 +218,9 @@ final class OrderDetailViewController: BaseViewControler {
         contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         // #1285 (mockup 1b): status, customer, items, payment, deposit stages, papers & collateral, notes; an 8pt band
         // between sections, each flat and edge to edge
-        var sections: [UIView] = [statusSection(detail), customerSection(detail, order: order), itemsSection(detail)]
+        var sections: [UIView] = [statusSection(detail)]
+        if let photos = pickupPhotosSection(detail) { sections.append(photos) } // #1418
+        sections += [customerSection(detail, order: order), itemsSection(detail)]
         sections.append(contentsOf: moneySections(detail))
         if let notes = notesSection(detail) { sections.append(notes) }
         for (index, section) in sections.enumerated() {
@@ -803,6 +823,36 @@ final class OrderDetailViewController: BaseViewControler {
         return sections
     }
 
+    /// #1418 "ẢNH KHI GIAO · N": nothing at all while the order has no photos
+    private func pickupPhotosSection(_ detail: OrderDetail) -> UIView? {
+        let uploader = OrderPhotoUploader.shared
+        let urls = absoluteURLs(detail.pickupNotesImages)
+        let entry = uploader.pending(orderId: orderId, field: .pickup)
+        let waiting = entry?.files.compactMap { try? Data(contentsOf: $0) } ?? []
+        guard !urls.isEmpty || !waiting.isEmpty else { return nil }
+        let canAdd = OrderPhotoLogic.canAddLater(status: detail.status, serverCount: urls.count, pendingCount: waiting.count,
+                                                 canUpdateOrders: PermissionManager.shared.hasPermission("orders.update"))
+        let content = OrderPhotoSection.content(
+            title: "order.photos.atHandOver".localized(), urls: urls, waiting: waiting,
+            failed: uploader.state(orderId: orderId, field: .pickup) == .failed, id: "order.detail.pickupPhotos",
+            onOpen: { [weak self] image in self?.showFullScreen(image) },
+            onAdd: canAdd ? { [weak self] source in self?.addPhotoPicker.chooseSource(from: source) } : nil,
+            onRetry: { [weak self] in
+                guard let self else { return }
+                OrderPhotoUploader.shared.resume(orderId: self.orderId, field: .pickup)
+            })
+        return padded(content, top: 0, bottom: DS.Spacing.md)
+    }
+
+    /// "Thêm" on the detail: the photo is queued at once, like those of the sheet
+    private func addPickupPhoto(_ data: Data?) {
+        guard let data, let detail else { return }
+        let baseline = OrderPhotoField.pickup.serverCount(in: detail)
+        guard OrderPhotoLogic.canAdd(count: baseline) else { return }
+        OrderPhotoUploader.shared.add(orderId: orderId, field: .pickup, baseline: baseline, photos: [data])
+        render()
+    }
+
     private func notesSection(_ detail: OrderDetail) -> UIView? {
         let text = detail.notes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let urls = noteImageURLs(detail)
@@ -1042,15 +1092,17 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func presentSheet(_ mode: OrderHandOverSheetViewController.Mode) {
         guard let detail else { return }
-        let sheet = OrderHandOverSheetViewController(mode: mode, detail: detail, lateDays: lateDays(for: detail))
+        let sheet = OrderHandOverSheetViewController(mode: mode, detail: detail, lateDays: lateDays(for: detail),
+                                                     photos: mode == .handOver ? handOverPhotoDraft : [])
         sheet.onConfirm = { [weak self] lateFee, damageFee in
             self?.confirm(mode, lateFee: lateFee, damageFee: damageFee)
         }
-        sheet.onHandOver = { [weak self] papers, securityDeposit in
-            self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit)
+        sheet.onHandOver = { [weak self] papers, securityDeposit, photos in
+            self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit, photos: photos)
         }
         if let presentation = sheet.sheetPresentationController {
-            presentation.detents = [.medium()]
+            // #1418: the hand-over sheet opens tall, so the photo buttons and the money show together (layout A2)
+            presentation.detents = mode == .handOver ? [.large()] : [.medium()]
             presentation.prefersGrabberVisible = true
             presentation.preferredCornerRadius = 24
         }
@@ -1080,8 +1132,9 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     /// RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427)
-    private func confirmHandOver(papers: String, securityDeposit: Double) {
+    private func confirmHandOver(papers: String, securityDeposit: Double, photos: [Data]) {
         guard let viewModel = orderViewModel else { return }
+        let baseline = detail.map(OrderPhotoField.pickup.serverCount(in:)) ?? 0
         showProgressText(text: "Updating...".localized())
         viewModel.handOver(papers: papers, securityDeposit: securityDeposit) { [weak self] result in
             DispatchQueue.main.async {
@@ -1089,8 +1142,14 @@ final class OrderDetailViewController: BaseViewControler {
                 self.hideProgress()
                 switch result {
                 case .success:
+                    // #1418 the status went through; the photos follow on their own and cannot undo it
+                    self.handOverPhotoDraft = []
+                    if !photos.isEmpty {
+                        OrderPhotoUploader.shared.add(orderId: self.orderId, field: .pickup, baseline: baseline, photos: photos)
+                    }
                     self.didChangeOrder(viewModel.currentOrder)
                 case .failure(let error):
+                    self.handOverPhotoDraft = photos
                     self.handleStatusError(error as NSError)
                 }
             }
@@ -1325,8 +1384,12 @@ final class OrderDetailViewController: BaseViewControler {
     // MARK: - Helpers
 
     private func noteImageURLs(_ detail: OrderDetail) -> [String] {
+        absoluteURLs(detail.notesImages)
+    }
+
+    private func absoluteURLs(_ paths: [String]?) -> [String] {
         let base = APIEndpoint.currentBaseURL
-        return (detail.notesImages ?? []).map { path in
+        return (paths ?? []).map { path in
             path.hasPrefix("http") ? path : (base.hasSuffix("/") ? base + path : base + "/" + path)
         }
     }

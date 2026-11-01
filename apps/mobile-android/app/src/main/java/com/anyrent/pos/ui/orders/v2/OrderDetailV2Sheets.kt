@@ -51,7 +51,10 @@ internal fun HandOverSheet(
     detail: OrderDetail,
     busy: Boolean,
     onDismiss: () -> Unit,
+    /** "Hủy": drops the photos chosen. Tapping outside keeps them for when the sheet opens again */
+    onCancel: () -> Unit,
     onConfirm: (papers: String, securityDeposit: Double) -> Unit,
+    photoBlock: @Composable () -> Unit,
 ) {
     val s = detail.summary
     // Optional papers and security deposit, prefilled from the order (#427)
@@ -70,6 +73,8 @@ internal fun HandOverSheet(
                 "${shortDay(s.pickupPlanAt)} → ${shortDay(s.returnPlanAt)}",
             ),
         )
+        // #1418 layout A: the photo block is always there, above the fields
+        photoBlock()
         OutlinedTextField(
             value = papers,
             onValueChange = { papers = it.take(200) },
@@ -98,7 +103,7 @@ internal fun HandOverSheet(
                 stringResource(R.string.detail_handed_over)
             },
             enabled = !working,
-            onDismiss = onDismiss,
+            onDismiss = onCancel,
             onConfirm = { onConfirm(papers, securityDeposit) },
         )
     }

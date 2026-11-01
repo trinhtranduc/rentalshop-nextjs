@@ -390,6 +390,22 @@ object ApiParity {
         Unit
     }
 
+    /**
+     * #1418 condition photos: multipart PUT with `data={}`; the API appends them to the list. Nothing else of the order
+     * changes, so a failure here never touches a hand-over.
+     */
+    fun uploadOrderPhotos(id: Int, field: com.anyrent.pos.domain.orders.OrderPhotoField, photos: List<ByteArray>): Result<Unit> = runCatching {
+        val multipart = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("data", "{}")
+        photos.forEachIndexed { index, bytes ->
+            requireJpeg(bytes)
+            multipart.addFormDataPart(field.apiName, "${field.apiName}_$index.jpg", bytes.toRequestBody(imageMedia))
+        }
+        ApiClient.get().authedMultipartPut("/api/orders/$id", multipart.build())
+        Unit
+    }
+
     // iOS OrderService: add photos → multipart PUT (field "data" + "notesImages"). Never /api/upload/image.
     private fun uploadNoteImages(id: Int, data: JSONObject, noteImages: List<ByteArray>) {
         val tempFiles = noteImages.mapIndexed { index, bytes ->

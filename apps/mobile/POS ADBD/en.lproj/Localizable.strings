@@ -3200,3 +3200,15 @@
 "firstRunGuide.exit" = "Exit guide";
 "firstRunGuide.exit.discard" = "Discard what you entered?";
 "firstRunGuide.exit.discard.action" = "Discard";
+
+/* #1418 condition photos at hand-over */
+"order.photos.title" = "Condition photos";
+"order.photos.optional" = "Optional";
+"order.photos.take" = "Take a photo";
+"order.photos.takeMore" = "Take more";
+"order.photos.library" = "Library";
+"order.photos.full" = "That is %d photos. Remove one to add another.";
+"order.photos.atHandOver" = "PHOTOS AT HAND-OVER";
+"order.photos.notUploaded" = "%d photo(s) not uploaded. The order is handed over; the photos are still on this device.";
+"order.photos.cameraUnavailable" = "The camera is not available. Allow it in Settings, or pick from the library.";
+"order.photos.openSettings" = "Open Settings";
