@@ -5,10 +5,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.data.OrderPhotoUploadState
+import com.anyrent.pos.data.OrderPhotoUploader
+import com.anyrent.pos.data.OrderPhotos
 import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.HandOverFields
 import com.anyrent.pos.domain.orders.OrderDetailLogic
+import com.anyrent.pos.domain.orders.OrderPhotoField
+import com.anyrent.pos.domain.orders.OrderPhotoLogic
 import com.anyrent.pos.domain.orders.StatusErrorOutcome
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /** Order reads and writes of the detail screen; replaceable in tests */
 interface OrderDetailSource {
@@ -90,11 +96,19 @@ data class OrderDetailUiState(
     val statusError: StatusErrorOutcome? = null,
     /** The "Sẵn sàng giao" switch is saving (#470) */
     val savingReady: Boolean = false,
+    /** #1418 photos chosen in the hand-over sheet, kept when a confirm fails so nothing has to be taken again */
+    val pickupDraft: List<ByteArray> = emptyList(),
+    /** Photos being compressed for the sheet */
+    val pickupCompressing: Int = 0,
+    /** Photos of this order waiting on the device (faded on the detail) */
+    val pickupWaiting: List<File> = emptyList(),
+    val pickupUploadFailed: Boolean = false,
 )
 
 class OrderDetailV2ViewModel(
     private val orderId: Int,
     private val source: OrderDetailSource,
+    private val photos: OrderPhotoUploader? = OrderPhotos.uploader,
     /** #674: tells Orders, Calendar and Overview that an order changed */
     private val ordersChanged: () -> Unit = OrdersChanged::notifyChanged,
 ) : ViewModel() {
@@ -103,6 +117,52 @@ class OrderDetailV2ViewModel(
 
     init {
         load()
+        // #1418 an upload moved on: redraw; once it is through, read the order for the new photos
+        photos?.let { uploader ->
+            viewModelScope.launch {
+                uploader.changes.collect { change ->
+                    if (change.orderId != orderId) return@collect
+                    syncPhotos()
+                    if (change.finished) reload()
+                }
+            }
+        }
+    }
+
+    private fun syncPhotos() {
+        val uploader = photos ?: return
+        val waiting = uploader.pending(orderId, OrderPhotoField.PICKUP)?.files.orEmpty()
+        val failed = uploader.state(orderId, OrderPhotoField.PICKUP) == OrderPhotoUploadState.FAILED
+        _state.update { it.copy(pickupWaiting = waiting, pickupUploadFailed = failed) }
+    }
+
+    /** Opening the order and "Thử lại": photos left from a failed upload or a relaunch go out */
+    fun retryPickupPhotos() {
+        photos?.resume(orderId, OrderPhotoField.PICKUP)
+        syncPhotos()
+    }
+
+    fun pickupPhotoCompressing(count: Int) = _state.update { it.copy(pickupCompressing = it.pickupCompressing + count) }
+
+    /** The sheet's photos; [count] compressions finished */
+    fun addPickupDraft(bytes: List<ByteArray>, count: Int) = _state.update {
+        val room = OrderPhotoLogic.MAX_PHOTOS - it.pickupDraft.size
+        it.copy(pickupDraft = it.pickupDraft + bytes.take(room), pickupCompressing = (it.pickupCompressing - count).coerceAtLeast(0))
+    }
+
+    fun removePickupDraft(index: Int) = _state.update {
+        it.copy(pickupDraft = it.pickupDraft.filterIndexed { i, _ -> i != index })
+    }
+
+    fun clearPickupDraft() = _state.update { it.copy(pickupDraft = emptyList()) }
+
+    /** "Thêm" on the detail: queued at once, like the photos of the sheet */
+    fun addPickupPhotosNow(bytes: List<ByteArray>) {
+        val baseline = _state.value.detail?.pickupNotesImages?.size ?: return
+        val room = OrderPhotoLogic.MAX_PHOTOS - baseline
+        if (room <= 0) return
+        photos?.add(orderId, OrderPhotoField.PICKUP, baseline, bytes.take(room))
+        syncPhotos()
     }
 
     fun load() {
@@ -119,6 +179,7 @@ class OrderDetailV2ViewModel(
                 loadError = result.exceptionOrNull()?.let { e -> AppError.from(e).message },
             )
         }
+        if (result.isSuccess) retryPickupPhotos()
         return result.getOrNull()
     }
 
@@ -142,8 +203,18 @@ class OrderDetailV2ViewModel(
     }
 
     /** Hand-over: papers and deposit are optional; empty fields still hand the order over (#427) */
-    fun handOver(fields: HandOverFields, onDone: (Boolean) -> Unit = {}) =
-        runStatusChange(onDone) { source.handOver(orderId, fields) }
+    fun handOver(fields: HandOverFields, onDone: (Boolean) -> Unit = {}) {
+        val baseline = _state.value.detail?.pickupNotesImages?.size ?: 0
+        runStatusChange(onDone) {
+            source.handOver(orderId, fields).onSuccess {
+                // #1418 the status went through; the photos follow on their own and cannot undo it
+                val chosen = _state.value.pickupDraft
+                if (chosen.isNotEmpty()) photos?.add(orderId, OrderPhotoField.PICKUP, baseline, chosen)
+                clearPickupDraft()
+                syncPhotos()
+            }
+        }
+    }
 
     /** #1279: edit papers and collateral of a picked-up order; the money at return is read again from the reloaded order */
     fun saveCollateral(fields: HandOverFields, onDone: (Boolean) -> Unit = {}) =

@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CAE68530A1E20B24206301E3 /* OrderPhotoQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968130FB36FE4D7D2CC57B28 /* OrderPhotoQueueTests.swift */; };
+		6952FD83AC5D7B4103675005 /* OrderPhotoBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE10C4D4802321992F01C9BC /* OrderPhotoBlockView.swift */; };
+		115060855F2816FEAF2B81A9 /* OrderPhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A019316F6099719560EF50F1 /* OrderPhotoUploader.swift */; };
+		8DF8C3B32D84E4C2AB079077 /* OrderPhotoQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1255D91FCC7324439B3BCA6B /* OrderPhotoQueue.swift */; };
 		D3448A56B3C7654B5E9723A8 /* OnboardingV2UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */; };
 		419D80D878DE73F1E2127347 /* OnboardingV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 380F46BEEBA5D54F9ADE7AD5 /* OnboardingV2Tests.swift */; };
 		683EE107FC907860800108F5 /* OnboardingV2Stage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA673D0D875731E4D7D5437 /* OnboardingV2Stage.swift */; };
@@ -454,6 +458,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		968130FB36FE4D7D2CC57B28 /* OrderPhotoQueueTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderPhotoQueueTests.swift; sourceTree = "<group>"; };
+		AE10C4D4802321992F01C9BC /* OrderPhotoBlockView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderPhotoBlockView.swift; sourceTree = "<group>"; };
+		A019316F6099719560EF50F1 /* OrderPhotoUploader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderPhotoUploader.swift; sourceTree = "<group>"; };
+		1255D91FCC7324439B3BCA6B /* OrderPhotoQueue.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderPhotoQueue.swift; sourceTree = "<group>"; };
 		41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2UITests.swift; sourceTree = "<group>"; };
 		380F46BEEBA5D54F9ADE7AD5 /* OnboardingV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2Tests.swift; sourceTree = "<group>"; };
 		7CA673D0D875731E4D7D5437 /* OnboardingV2Stage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingV2Stage.swift; sourceTree = "<group>"; };
@@ -931,6 +939,7 @@
 				C1697F13243E7541ADEAAB50 /* ProductsHomeViewModel.swift */,
 				EEC2131EDA307319F8FEF01A /* OrdersHomeViewModel.swift */,
 				97A239865E25E4A1881D5490 /* OrderDetailLogic.swift */,
+				1255D91FCC7324439B3BCA6B /* OrderPhotoQueue.swift */,
 				A4770477F0000000000000A1 /* NotificationsLogic.swift */,
 				1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */,
 			);
@@ -982,6 +991,7 @@
 				3440A0012F1E010100000001 /* AuthSession.swift */,
 				048838D02D7727AF00069256 /* CustomerService.swift */,
 				048838D12D7727AF00069256 /* OrderService.swift */,
+				A019316F6099719560EF50F1 /* OrderPhotoUploader.swift */,
 				048839B02D79F11900069257 /* LoyaltyService.swift */,
 				048838D22D7727AF00069256 /* ProductService.swift */,
 				04F1B0012F1C0101000A0002 /* NotificationService.swift */,
@@ -1211,6 +1221,7 @@
 				C68665233AF9D666CE7E723C /* Phase8Tests.swift */,
 				596F0A0B0C0D0E0F10111213 /* ShopTimeZoneTests.swift */,
 				4C586DA11827CD4957729E03 /* HandOverCollateralTests.swift */,
+				968130FB36FE4D7D2CC57B28 /* OrderPhotoQueueTests.swift */,
 				A1375F80BBC1025DCC0A8403 /* TodayWidgetDataTests.swift */,
 				A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */,
 				F1A5B7381CB1B6B07942590E /* FirstRunGuideTests.swift */,
@@ -1718,6 +1729,7 @@
 				76E4F7C981E5B64123490A28 /* ChangeHistoryViewController.swift */,
 				C9367C6A8E46FBD6E66F5AA3 /* DepositPlanViews.swift */,
 				D6969A376C493FC010DEDC4C /* OrderHandOverSheetViewController.swift */,
+				AE10C4D4802321992F01C9BC /* OrderPhotoBlockView.swift */,
 				D714A13623A8B00A6B44C89A /* OrderNotesEditorViewController.swift */,
 				86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */,
 			);
@@ -2076,6 +2088,7 @@
 				00EF0CF904875201BCA178D4 /* Phase8Tests.swift in Sources */,
 				596F0A0B0C0D0E0F10111214 /* ShopTimeZoneTests.swift in Sources */,
 				5150715066E3694042E01913 /* HandOverCollateralTests.swift in Sources */,
+				CAE68530A1E20B24206301E3 /* OrderPhotoQueueTests.swift in Sources */,
 				A1375F6DFFD37ECA692B548E /* TodayWidgetDataTests.swift in Sources */,
 				A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */,
 				F1A6B7381CB1B6B07942590E /* FirstRunGuideTests.swift in Sources */,
@@ -2206,6 +2219,7 @@
 				048838D52D7727AF00069256 /* BaseService.swift in Sources */,
 				3440A0012F1E010100000002 /* AuthSession.swift in Sources */,
 				048838D62D7727AF00069256 /* OrderService.swift in Sources */,
+				115060855F2816FEAF2B81A9 /* OrderPhotoUploader.swift in Sources */,
 				048839B12D79F11900069257 /* LoyaltyService.swift in Sources */,
 				040330E92EA88EF5003BC33E /* Plan.swift in Sources */,
 				04A82A792EE7CC2C00E55F9C /* CountryPickerViewController.swift in Sources */,
@@ -2328,8 +2342,10 @@
 				1443F833E4528F38190DA006 /* ChangeHistoryViewController.swift in Sources */,
 				DC151A022668627837350D95 /* DepositPlanViews.swift in Sources */,
 				AA9021E44147211AC95B9428 /* OrderHandOverSheetViewController.swift in Sources */,
+				6952FD83AC5D7B4103675005 /* OrderPhotoBlockView.swift in Sources */,
 				8A39F78725ED5C8A1BA0B7C3 /* OrderNotesEditorViewController.swift in Sources */,
 				ABA08DE04E0DEDEFA62B9FC1 /* OrderDetailLogic.swift in Sources */,
+				8DF8C3B32D84E4C2AB079077 /* OrderPhotoQueue.swift in Sources */,
 				A4770477B0000000000000A1 /* NotificationsLogic.swift in Sources */,
 				6DF35D462195744CA6E88339 /* CalendarV2.swift in Sources */,
 				372335F213185EFD8AC37259 /* OverviewV2.swift in Sources */,

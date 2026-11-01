@@ -20,6 +20,7 @@ class AnyRentApp : Application() {
         super.onCreate()
         instance = this
         SessionStore.init(this)
+        com.anyrent.pos.data.OrderPhotos.init(this)
         CurrentOutlet.init(this)
         CartStore.init(this)
         CartStore.restoreFromDisk()

@@ -27,8 +27,8 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
     /// lateFee, damageFee (return sheet)
     var onConfirm: ((Double, Double) -> Void)?
-    /// papers, security deposit (hand-over sheet); both may be empty (#427)
-    var onHandOver: ((String, Double) -> Void)?
+    /// papers, security deposit (hand-over sheet), both may be empty (#427); condition photos, optional (#1418)
+    var onHandOver: ((String, Double, [Data]) -> Void)?
 
     private let mode: Mode
     private let detail: OrderDetail
@@ -40,11 +40,16 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
     private let securityDepositField = UITextField()
     private let moneyStack = UIStackView()
     private let confirmButton = UIButton(type: .system)
+    private let initialPhotos: [Data]
+    private var photoBlock: OrderPhotoBlockView?
+    private var keyboardManagerWasEnabled = true
 
-    init(mode: Mode, detail: OrderDetail, lateDays: Int) {
+    /// `photos`: chosen before a confirm that failed, so nothing has to be taken again (#1418)
+    init(mode: Mode, detail: OrderDetail, lateDays: Int, photos: [Data] = []) {
         self.mode = mode
         self.detail = detail
         self.lateDays = lateDays
+        initialPhotos = photos
         payments = detail.payments.map { OrderPaymentLine(amount: $0.amount, status: $0.status, notes: $0.notes) }
         super.init(nibName: nil, bundle: nil)
     }
@@ -78,6 +83,14 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         }
 
         if mode == .handOver {
+            // #1418 layout A: the photo block is always there, above the fields
+            let block = OrderPhotoBlockView(photos: initialPhotos, presenter: self)
+            block.onChange = { [weak self] in self?.photosChanged() }
+            photoBlock = block
+            content.addArrangedSubview(block)
+            content.setCustomSpacing(DS.Spacing.md, after: subtitle)
+            content.setCustomSpacing(DS.Spacing.md, after: block)
+            photosChanged()
             // Optional papers and security deposit, prefilled from the order (#427)
             let papers = feeField(papersField, title: "order.handOver.papers".localized(), value: 0)
             papersField.keyboardType = .default
@@ -167,6 +180,24 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         }
         KeyboardDoneBar.attach([lateFeeField, damageFeeField, securityDepositField])
         renderMoney()
+    }
+
+    // #1418: this sheet now opens tall. Buttons and scroll follow the keyboard (#1395); IQKeyboardManager would push the
+    // whole sheet up, over the title, as it did on the collateral sheet
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
+    }
+
+    /// With photos chosen, a swipe down does not drop them by accident; "Hủy" still does
+    private func photosChanged() {
+        isModalInPresentation = !(photoBlock?.photos.isEmpty ?? true)
     }
 
     // MARK: - Money
@@ -357,8 +388,9 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         if mode == .handOver {
             let papers = papersField.text ?? ""
             let deposit = enteredSecurityDeposit
+            let photos = photoBlock?.photos ?? []
             dismiss(animated: true) { [onHandOver] in
-                onHandOver?(papers, deposit)
+                onHandOver?(papers, deposit, photos)
             }
             return
         }

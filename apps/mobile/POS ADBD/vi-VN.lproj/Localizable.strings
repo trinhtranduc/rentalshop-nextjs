@@ -3198,3 +3198,15 @@
 "firstRunGuide.exit" = "Thoát hướng dẫn";
 "firstRunGuide.exit.discard" = "Bỏ nội dung đang nhập?";
 "firstRunGuide.exit.discard.action" = "Bỏ";
+
+/* #1418 ảnh tình trạng đồ khi giao */
+"order.photos.title" = "Ảnh tình trạng đồ";
+"order.photos.optional" = "Không bắt buộc";
+"order.photos.take" = "Chụp ảnh đồ";
+"order.photos.takeMore" = "Chụp thêm";
+"order.photos.library" = "Thư viện";
+"order.photos.full" = "Đủ %d ảnh. Bỏ một ảnh để thêm ảnh khác.";
+"order.photos.atHandOver" = "ẢNH KHI GIAO";
+"order.photos.notUploaded" = "Chưa tải được %d ảnh. Đơn đã giao xong, ảnh vẫn trên máy.";
+"order.photos.cameraUnavailable" = "Chưa dùng được máy ảnh. Mở Cài đặt để cấp quyền, hoặc chọn từ Thư viện.";
+"order.photos.openSettings" = "Mở Cài đặt";

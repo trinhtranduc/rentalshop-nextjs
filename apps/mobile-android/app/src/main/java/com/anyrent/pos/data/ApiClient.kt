@@ -1697,6 +1697,7 @@ class ApiClient(
             notesImages = root.optJSONArray("notesImages")?.let { images ->
                 (0 until images.length()).mapNotNull { images.optString(it).takeIf(String::isNotBlank) }
             }.orEmpty(),
+            pickupNotesImages = root.photoUrls("pickupNotesImages"),
             discountType = root.nullableString("discountType"),
             discountValue = root.safeDouble("discountValue"),
             discountAmount = root.safeDouble("discountAmount"),

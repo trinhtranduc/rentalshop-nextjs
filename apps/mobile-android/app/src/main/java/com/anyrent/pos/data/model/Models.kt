@@ -163,6 +163,8 @@ data class OrderDetail(
     val lateFee: Double = 0.0,
     val collateralDetails: String? = null,
     val notesImages: List<String> = emptyList(),
+    /** #1418 condition photos at hand-over; read only, never sent back in an ordinary update */
+    val pickupNotesImages: List<String> = emptyList(),
     /** From API — used for receipt discount label (amount vs percentage). */
     val discountType: String? = null,
     val discountValue: Double = 0.0,

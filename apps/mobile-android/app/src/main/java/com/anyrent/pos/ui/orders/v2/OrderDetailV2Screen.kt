@@ -1,7 +1,10 @@
 package com.anyrent.pos.ui.orders.v2
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +49,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import com.anyrent.pos.domain.orders.OrderPhotoLogic
+import androidx.core.content.ContextCompat
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -174,6 +181,11 @@ fun OrderDetailV2Screen(
     var notesFiles by remember { mutableStateOf<List<File>>(emptyList()) }
     var notesPicking by remember { mutableStateOf(false) }
     var notesError by remember { mutableStateOf<String?>(null) }
+    // #1418 condition photos: picker round-trips and the camera
+    var photoPicking by remember { mutableStateOf(false) }
+    var photoCamera by remember { mutableStateOf(false) }
+    var photoCameraDenied by remember { mutableStateOf(false) }
+    var photoChooseSource by remember { mutableStateOf(false) }
 
     fun toast(text: String?) {
         if (!text.isNullOrBlank()) Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -189,6 +201,55 @@ fun OrderDetailV2Screen(
             }
             notesFiles = notesFiles + copied
         }
+    }
+
+    /** Compressed like note photos (~180 KB, 1920 px): into the open sheet, or queued at once from "Thêm" on the detail */
+    fun takePickupPhotos(load: suspend () -> List<File>, count: Int) {
+        val inSheet = sheet == DetailSheet.HAND_OVER
+        if (inSheet) vm.pickupPhotoCompressing(count)
+        scope.launch {
+            val bytes = withContext(Dispatchers.IO) {
+                load().mapNotNull { file ->
+                    try {
+                        runCatching { fileToNotesJpegBytes(file) }.getOrNull()
+                    } finally {
+                        runCatching { file.delete() }
+                    }
+                }
+            }
+            if (inSheet) vm.addPickupDraft(bytes, count) else vm.addPickupPhotosNow(bytes)
+        }
+    }
+
+    val photoLibrary = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        photoPicking = false
+        val taken = if (sheet == DetailSheet.HAND_OVER) {
+            state.pickupDraft.size + state.pickupCompressing
+        } else {
+            state.detail?.pickupNotesImages?.size ?: 0
+        }
+        val chosen = uris.take((OrderPhotoLogic.MAX_PHOTOS - taken).coerceAtLeast(0))
+        if (chosen.isEmpty()) return@rememberLauncherForActivityResult
+        takePickupPhotos({ chosen.mapNotNull { runCatching { context.copyUriToCacheFile(it) }.getOrNull() } }, chosen.size)
+    }
+
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        photoPicking = false
+        if (granted) photoCamera = true else photoCameraDenied = true
+    }
+
+    fun openPhotoCamera() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            photoCamera = true
+        } else {
+            photoPicking = true
+            cameraPermission.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    fun openPhotoLibrary() {
+        photoPicking = true
+        photoLibrary.launch("image/*")
     }
 
     fun print(detail: OrderDetail) {
@@ -319,6 +380,29 @@ fun OrderDetailV2Screen(
                             null
                         },
                     )
+                    if (detail.pickupNotesImages.isNotEmpty() || state.pickupWaiting.isNotEmpty()) {
+                        SectionBand()
+                        val photoCount = detail.pickupNotesImages.size + state.pickupWaiting.size
+                        DetailSection("${stringResource(R.string.order_photos_at_hand_over)} · $photoCount", "order.detail.pickupPhotos") {
+                            OrderPhotoTiles(
+                                urls = detail.pickupNotesImages,
+                                waiting = state.pickupWaiting,
+                                failed = state.pickupUploadFailed,
+                                id = "order.detail.pickupPhotos",
+                                onPreview = { previewImage = it },
+                                onAdd = if (OrderPhotoLogic.canAddLater(
+                                        detail.summary.status, detail.pickupNotesImages.size,
+                                        state.pickupWaiting.size, PermissionManager.canUpdateOrders(),
+                                    )
+                                ) {
+                                    { photoChooseSource = true }
+                                } else {
+                                    null
+                                },
+                                onRetry = vm::retryPickupPhotos,
+                            )
+                        }
+                    }
                     DetailBody(
                         detail,
                         depositCard = if (hasPlan) {
@@ -417,7 +501,21 @@ fun OrderDetailV2Screen(
             DetailSheet.HAND_OVER -> HandOverSheet(
                 detail = detail,
                 busy = state.busy,
-                onDismiss = { sheet = null },
+                onDismiss = { if (!photoPicking) sheet = null },
+                onCancel = {
+                    vm.clearPickupDraft()
+                    sheet = null
+                },
+                photoBlock = {
+                    OrderPhotoBlock(
+                        photos = state.pickupDraft,
+                        compressing = state.pickupCompressing,
+                        onCamera = ::openPhotoCamera,
+                        onLibrary = ::openPhotoLibrary,
+                        onRemove = vm::removePickupDraft,
+                        onPreview = { previewImage = it },
+                    )
+                },
                 onConfirm = { papers, securityDeposit ->
                     // Papers and deposit are optional (#427)
                     val fields = OrderDetailLogic.handOverFields(
@@ -603,6 +701,53 @@ fun OrderDetailV2Screen(
                         if (fresh != null && DepositPlanLogic.unpaidBeforePickup(fresh.deposit?.installments.orEmpty()).isNotEmpty()) showUnpaid = true
                     }
                 }
+            },
+        )
+    }
+    if (photoCamera) {
+        OrderPhotoCamera(
+            onDismiss = { photoCamera = false },
+            onCaptured = { file ->
+                photoCamera = false
+                takePickupPhotos({ listOf(file) }, 1)
+            },
+            onError = { message ->
+                photoCamera = false
+                toast(message)
+            },
+        )
+    }
+    if (photoCameraDenied) {
+        AlertDialog(
+            onDismissRequest = { photoCameraDenied = false },
+            text = { Text(stringResource(R.string.order_photos_camera_unavailable)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    photoCameraDenied = false
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
+                    )
+                }) { Text(stringResource(R.string.order_photos_open_settings)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { photoCameraDenied = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+    if (photoChooseSource) {
+        AlertDialog(
+            onDismissRequest = { photoChooseSource = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    photoChooseSource = false
+                    openPhotoCamera()
+                }) { Text(stringResource(R.string.order_photos_take)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    photoChooseSource = false
+                    openPhotoLibrary()
+                }) { Text(stringResource(R.string.order_photos_library)) }
             },
         )
     }
