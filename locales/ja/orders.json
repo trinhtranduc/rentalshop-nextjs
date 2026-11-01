@@ -114,12 +114,12 @@
       "dialog": {
         "photos": {
           "conditionTitle": "状態の写真",
-          "returnTitle": "返却時の写真",
+          "cardTitle": "引き渡し時の写真",
           "pickupCompare": "引き渡し時の写真",
           "optional": "任意",
           "choose": "写真を選択",
           "uploading": "写真をアップロード中…",
-          "uploadFailed": "{count} 枚の写真をアップロードできませんでした。注文には影響ありません。",
+          "uploadFailed": "{count} 枚の写真をアップロードできませんでした",
           "retry": "再試行"
         }
       }

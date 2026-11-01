@@ -82,13 +82,11 @@ export function canCancelOrder(orderType: string | null | undefined, status: str
 }
 
 // ----------------------------------------------------------------------------
-// #1420 condition photos at hand-over and return (same rule as the phones, #1418)
+// #1420 condition photos at hand-over (same rule as the phones, #1418). Nothing is captured at return.
 // ----------------------------------------------------------------------------
 
-/** Owner's limit per stage. Note photos keep `MAX_NOTE_IMAGES` (settings.tsx); the API allows 5 per field. */
+/** Owner's limit; the API allows 5 per field. */
 export const MAX_CONDITION_PHOTOS = 3;
-
-export type PhotoStage = 'pickup' | 'return';
 
 export const photoRoom = (count: number) => Math.max(0, MAX_CONDITION_PHOTOS - count);
 
@@ -104,13 +102,48 @@ export function decidePhotoSend(serverCount: number, baseline: number, pending: 
   return room > 0 ? { kind: 'send', count: Math.min(pending, room) } : { kind: 'noRoom' };
 }
 
-/** "Thêm ảnh" in the notes card: only while the goods are out */
+/** "Ảnh khi giao" card: not there at 0 photos, unless photos are on their way in this tab, so a shop not using it sees no change */
+export const showPickupPhotosCard = (serverCount: number, waiting: number) => serverCount > 0 || waiting > 0;
+
+/** "Thêm ảnh" in the card: only while the goods are out. At 0 photos there is no card, as on the phones */
 export function canAddPickupPhotos(status: string, serverCount: number, waiting: boolean): boolean {
-  return status === 'PICKUPED' && !waiting && photoRoom(serverCount) > 0;
+  return status === 'PICKUPED' && !waiting && serverCount > 0 && photoRoom(serverCount) > 0;
+}
+
+/** How many photos the warning above the cards names; null while a retry runs, so there is one way to start one */
+export function uploadWarningCount(job: { files: unknown[]; status: 'uploading' | 'failed' } | undefined | null): number | null {
+  return job?.status === 'failed' ? job.files.length : null;
+}
+
+const imageList = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []);
+
+export interface NoteOrderLike {
+  notes?: string | null;
+  notesImages?: unknown;
+  pickupNotes?: string | null;
+  pickupNotesImages?: unknown;
+  returnNotes?: string | null;
+  returnNotesImages?: unknown;
+  damageNotes?: string | null;
+  damageNotesImages?: unknown;
 }
 
 /**
- * The notes card shows a failed upload with Thử lại, so a 4xx must not also raise the toast of useGlobalErrorHandler.
+ * The groups of the notes card. Hand-over photos have their own card; the pickup note text stays here, and so do the
+ * return and damage texts and photos of old orders.
+ */
+export function buildNoteViews(order: NoteOrderLike, labels: { notes: string; pickup: string; return: string; damage: string }) {
+  const views: { key: string; label: string; text: string; images: string[]; danger?: boolean }[] = [
+    { key: 'notes', label: labels.notes, text: order.notes || '', images: imageList(order.notesImages) },
+    { key: 'pickup', label: labels.pickup, text: order.pickupNotes || '', images: [] },
+    { key: 'return', label: labels.return, text: order.returnNotes || '', images: imageList(order.returnNotesImages) },
+    { key: 'damage', label: labels.damage, text: order.damageNotes || '', images: imageList(order.damageNotesImages), danger: true },
+  ];
+  return views.filter((n) => n.text.trim() || n.images.length > 0);
+}
+
+/**
+ * The warning above the cards tells a failed upload, so a 4xx must not also raise the toast of useGlobalErrorHandler.
  * A capture listener runs before it on the window. 5xx and network errors throw without an event. A subscription error
  * still goes through: it opens its own dialog.
  */

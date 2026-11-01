@@ -114,12 +114,12 @@
       "dialog": {
         "photos": {
           "conditionTitle": "状况照片",
-          "returnTitle": "归还时照片",
+          "cardTitle": "交付时照片",
           "pickupCompare": "交付时照片",
           "optional": "可选",
           "choose": "选择照片",
           "uploading": "正在上传照片…",
-          "uploadFailed": "{count} 张照片未能上传。订单不受影响。",
+          "uploadFailed": "{count} 张照片未能上传",
           "retry": "重试"
         }
       }

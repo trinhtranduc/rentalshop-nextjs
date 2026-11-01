@@ -1055,12 +1055,12 @@
         },
         "photos": {
           "conditionTitle": "Ảnh tình trạng đồ",
-          "returnTitle": "Ảnh lúc trả",
+          "cardTitle": "Ảnh khi giao",
           "pickupCompare": "Ảnh lúc giao",
           "optional": "Không bắt buộc",
           "choose": "Chọn ảnh",
           "uploading": "Đang tải ảnh…",
-          "uploadFailed": "Chưa tải được {count} ảnh. Đơn không bị ảnh hưởng.",
+          "uploadFailed": "Chưa tải được {count} ảnh",
           "retry": "Thử lại"
         }
       }

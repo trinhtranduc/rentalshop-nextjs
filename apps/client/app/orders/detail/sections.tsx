@@ -16,7 +16,6 @@ import {
   type ToDayKey,
 } from '../orders-model';
 import { Skeleton, cardClass, outlineBtn, type Money, type T } from '../list/parts';
-import { AddPhotoTile } from './photos';
 
 const h2Class = 'm-0 text-lg font-bold text-ar-ink';
 
@@ -180,29 +179,6 @@ export interface NoteView {
   text: string;
   images: string[];
   danger?: boolean;
-  /** #1420 photos on their way (only in this browser tab) */
-  waiting?: File[];
-  uploading?: boolean;
-  failed?: boolean;
-  onRetry?: () => void;
-  /** "Thêm ảnh": how many more can go; 0 hides it */
-  addRoom?: number;
-  onAddPhotos?: (files: File[]) => void;
-}
-
-function WaitingPhoto({ file }: { file: File }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    const u = URL.createObjectURL(file);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [file]);
-  return (
-    <span className="block h-[72px] w-[72px] overflow-hidden rounded-[10px] border border-ar-line bg-ar-subtle opacity-45" data-testid="orderPhotos.waiting">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {url && <img src={url} alt="" className="h-full w-full object-cover" />}
-    </span>
-  );
 }
 
 export function NotesCard({ notes, onEdit, t }: { notes: NoteView[]; onEdit: (() => void) | null; t: T }) {
@@ -224,7 +200,7 @@ export function NotesCard({ notes, onEdit, t }: { notes: NoteView[]; onEdit: (()
           <div key={n.key} className="flex flex-col gap-2">
             {notes.length > 1 || n.key !== 'notes' ? <span className="text-xs font-bold uppercase tracking-[0.06em] text-ar-muted">{n.label}</span> : null}
             {n.text && <p className={`m-0 whitespace-pre-wrap text-[15px] leading-[23px] ${n.danger ? 'text-ar-danger' : 'text-ar-ink'}`}>{n.text}</p>}
-            {(n.images.length > 0 || !!n.waiting?.length || !!n.addRoom) && (
+            {n.images.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {n.images.map((url) => {
                   photo += 1;
@@ -242,17 +218,6 @@ export function NotesCard({ notes, onEdit, t }: { notes: NoteView[]; onEdit: (()
                     </a>
                   );
                 })}
-                {n.waiting?.map((file, i) => <WaitingPhoto key={`${file.name}-${i}`} file={file} />)}
-                {!!n.addRoom && n.onAddPhotos && <AddPhotoTile room={n.addRoom} onFiles={n.onAddPhotos} t={t} />}
-              </div>
-            )}
-            {n.uploading && <p className="m-0 text-sm text-ar-muted" data-testid="orderPhotos.uploading">{t('detail.dialog.photos.uploading')}</p>}
-            {n.failed && (
-              <div className="flex items-center gap-2.5 rounded-[10px] bg-ar-late-bg px-3 py-1.5 text-sm text-ar-late" role="alert" data-testid="orderPhotos.failed">
-                <span className="min-w-0 flex-1">{t('detail.dialog.photos.uploadFailed', { count: n.waiting?.length ?? 0 })}</span>
-                <button type="button" onClick={n.onRetry} className="h-9 flex-none rounded-lg px-2 text-[15px] font-semibold text-ar-primary-ink hover:bg-ar-subtle" data-testid="orderPhotos.retry">
-                  {t('detail.dialog.photos.retry')}
-                </button>
               </div>
             )}
           </div>

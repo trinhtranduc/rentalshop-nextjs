@@ -8,7 +8,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import type { Money, T } from '../list/parts';
 import { handOverView, parseFee, returnView, type MoneyRow } from './actions-model';
-import { PhotoBlock } from './photos';
+import { PhotoBlock, PickupPhotosCompare } from './photos';
 import type { OrderDetailLike } from '../orders-model';
 
 const ring = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ar-primary';
@@ -263,9 +263,9 @@ export function ReturnDialog({
   ...p
 }: ActionProps & {
   lateDays: number;
-  /** #1420 uploaded at hand-over, to compare; a click opens a new tab as in the notes card */
+  /** #1420 uploaded at hand-over, to compare; a click opens a new tab */
   pickupPhotos: string[];
-  onConfirm: (fees: { lateFee: number; damageFee: number }, photos: File[]) => Promise<boolean | void>;
+  onConfirm: (fees: { lateFee: number; damageFee: number }) => Promise<boolean | void>;
 }) {
   const { submitting, run } = useSubmit(p.onClose);
   // Prefilled with the saved fees, like iOS (the API stores lateFee; nothing computes it)
@@ -273,10 +273,6 @@ export function ReturnDialog({
   const savedDamage = p.order.damageFee;
   const [late, setLate] = useState(() => feeState(savedLate));
   const [damage, setDamage] = useState(() => feeState(savedDamage));
-  const [photos, setPhotos] = useState<File[]>([]);
-  useEffect(() => {
-    if (!p.open) setPhotos([]);
-  }, [p.open]);
   useEffect(() => {
     if (!p.open) return;
     setLate(feeState(savedLate));
@@ -314,7 +310,7 @@ export function ReturnDialog({
           </button>
           <button
             type="button"
-            onClick={() => run(() => onConfirm(fees, photos))}
+            onClick={() => run(() => onConfirm(fees))}
             disabled={submitting}
             className={`${okBtn} bg-ar-primary text-ar-on-primary hover:opacity-95`}
           >
@@ -324,22 +320,7 @@ export function ReturnDialog({
       }
     >
       <Items items={p.items} />
-      {pickupPhotos.length > 0 && (
-        <div className="flex min-w-0 flex-col gap-2" data-testid="orderPhotos.compare">
-          <span className="text-sm font-semibold text-ar-ink-2">
-            {p.t('detail.dialog.photos.pickupCompare')} <span className="font-normal tabular-nums text-ar-muted">({pickupPhotos.length})</span>
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {pickupPhotos.map((url) => (
-              <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block h-[72px] w-[72px] overflow-hidden rounded-[10px] border border-ar-line bg-ar-subtle hover:opacity-90">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-      <PhotoBlock title={p.t('detail.dialog.photos.returnTitle')} files={photos} onChange={setPhotos} t={p.t} />
+      <PickupPhotosCompare urls={pickupPhotos} t={p.t} />
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={lateId} className="text-sm font-semibold text-ar-ink-2">

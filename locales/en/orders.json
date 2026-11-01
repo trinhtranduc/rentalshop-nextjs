@@ -1055,12 +1055,12 @@
         },
         "photos": {
           "conditionTitle": "Condition photos",
-          "returnTitle": "Photos at return",
+          "cardTitle": "Photos at hand-over",
           "pickupCompare": "Photos at hand-over",
           "optional": "Optional",
           "choose": "Choose photos",
           "uploading": "Uploading photos…",
-          "uploadFailed": "{count} photos not uploaded. The order is not affected.",
+          "uploadFailed": "{count} photos not uploaded",
           "retry": "Retry"
         }
       }

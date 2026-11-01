@@ -50,7 +50,19 @@ import {
 import { SettingsEditor, SettingsSummary, type PendingFiles, type SettingsForm } from '../detail/settings';
 import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { DangerDialog, HandOverDialog, ReturnDialog, type DialogItem } from '../detail/dialogs';
-import { canAddPickupPhotos, canCancelOrder, decidePhotoSend, photoRoom, returnFeesUpdate, scheduleRange, withoutApiErrorToast, type PhotoStage } from '../detail/actions-model';
+import {
+  buildNoteViews,
+  canAddPickupPhotos,
+  canCancelOrder,
+  decidePhotoSend,
+  photoRoom,
+  returnFeesUpdate,
+  scheduleRange,
+  showPickupPhotosCard,
+  uploadWarningCount,
+  withoutApiErrorToast,
+} from '../detail/actions-model';
+import { PhotoUploadWarning, PickupPhotosCard } from '../detail/photos';
 import { InstallmentsCard } from '../../installments/InstallmentsCard';
 import { CancelWithKeptDialog, CollectDialog, EditPlanDialog, UnpaidStages } from '../../installments/InstallmentDialogs';
 import { canEditPlan, cancelView, newReference, unpaidAtPickup, type OrderInstallment, type PlanOrderLike } from '../../installments/installments-model';
@@ -166,7 +178,7 @@ export default function OrderDetailPage() {
     };
   }, [orderId, orderStamp]);
   const settingsRef = useRef<HTMLDivElement>(null);
-  const [photoJobs, setPhotoJobs] = useState<Partial<Record<PhotoStage, PhotoJob>>>({});
+  const [photoJob, setPhotoJob] = useState<PhotoJob | null>(null);
 
   if (loading && !order) return <DetailSkeleton />;
 
@@ -243,57 +255,13 @@ export default function OrderDetailPage() {
     };
   });
 
-  // Status first, photos after: a photo failure can never block the hand-over. No key on this PUT, so read before sending.
-  const sendPhotos = async (stage: PhotoStage, files: File[], baseline: number) => {
-    if (files.length === 0) return;
-    setPhotoJobs((jobs) => ({ ...jobs, [stage]: { files, baseline, status: 'uploading' } }));
-    try {
-      const fresh = await withoutApiErrorToast(() => ordersApi.getOrderByNumber(orderNumber));
-      if (!fresh.success || !fresh.data) throw new Error('read failed');
-      const held = fresh.data as unknown as AnyOrder;
-      const serverCount = images(stage === 'pickup' ? held.pickupNotesImages : held.returnNotesImages).length;
-      const decision = decidePhotoSend(serverCount, baseline, files.length);
-      if (decision.kind === 'send') {
-        const chosen = files.slice(0, decision.count);
-        const res = await withoutApiErrorToast(() =>
-          ordersApi.updateOrder(order.id, {} as UpdateInput, stage === 'pickup' ? { pickupNotesImages: chosen } : { returnNotesImages: chosen }),
-        );
-        if (!res.success) throw new Error('upload failed');
-      }
-      setPhotoJobs((jobs) => ({ ...jobs, [stage]: undefined }));
-      await refetch();
-    } catch {
-      // The notes card shows it, with Thử lại
-      setPhotoJobs((jobs) => ({ ...jobs, [stage]: { files, baseline, status: 'failed' } }));
-    }
-  };
-  const photoJobView = (stage: PhotoStage) => {
-    const job = photoJobs[stage];
-    if (!job) return {};
-    return {
-      waiting: job.files,
-      uploading: job.status === 'uploading',
-      failed: job.status === 'failed',
-      onRetry: () => void sendPhotos(stage, job.files, job.baseline),
-    };
-  };
-
-  const notes: NoteView[] = (
-    [
-      { key: 'notes', label: t('detail.notes.general'), text: order.notes || '', images: images(order.notesImages) },
-      {
-        key: 'pickup',
-        label: t('detail.notes.pickup'),
-        text: order.pickupNotes || '',
-        images: images(order.pickupNotesImages),
-        ...photoJobView('pickup'),
-        addRoom: canAddPickupPhotos(status, images(order.pickupNotesImages).length, !!photoJobs.pickup) ? photoRoom(images(order.pickupNotesImages).length) : 0,
-        onAddPhotos: (files: File[]) => void sendPhotos('pickup', files, images(order.pickupNotesImages).length),
-      },
-      { key: 'return', label: t('detail.notes.return'), text: order.returnNotes || '', images: images(order.returnNotesImages), ...photoJobView('return') },
-      { key: 'damage', label: t('detail.notes.damage'), text: order.damageNotes || '', images: images(order.damageNotesImages), danger: true },
-    ] as NoteView[]
-  ).filter((n) => n.text.trim() || n.images.length > 0 || !!n.waiting?.length || !!n.addRoom);
+  const notes: NoteView[] = buildNoteViews(order, {
+    notes: t('detail.notes.general'),
+    pickup: t('detail.notes.pickup'),
+    return: t('detail.notes.return'),
+    damage: t('detail.notes.damage'),
+  });
+  const pickupPhotos = images(order.pickupNotesImages);
 
   const code = collateralKey(settings.collateralType);
   const collateralLabel = code && code !== 'OTHER' ? to(`detailSettings.collateral.${code}`) : '';
@@ -338,27 +306,46 @@ export default function OrderDetailPage() {
     if (!res.success && (res as { code?: string }).code === 'INSTALLMENT_UNPAID_AT_PICKUP') await refetch();
     return res;
   };
-  /** The dialog stays open with its photos when the status did not change */
-  const changeStatusKeepingPhotos = async (call: () => Promise<{ success: boolean }>) => {
-    setBusy(true);
+  // Status first, photos after: a photo failure can never block the hand-over. No key on this PUT, so read before sending.
+  const sendPhotos = async (files: File[], baseline: number) => {
+    if (files.length === 0) return;
+    setPhotoJob({ files, baseline, status: 'uploading' });
     try {
-      const res = await call();
-      await done(res.success);
-      return res.success;
+      const fresh = await withoutApiErrorToast(() => ordersApi.getOrderByNumber(orderNumber));
+      if (!fresh.success || !fresh.data) throw new Error('read failed');
+      const held = images((fresh.data as unknown as AnyOrder).pickupNotesImages).length;
+      const decision = decidePhotoSend(held, baseline, files.length);
+      if (decision.kind === 'send') {
+        const res = await withoutApiErrorToast(() =>
+          ordersApi.updateOrder(order.id, {} as UpdateInput, { pickupNotesImages: files.slice(0, decision.count) }),
+        );
+        if (!res.success) throw new Error('upload failed');
+      }
+      setPhotoJob(null);
+      await refetch();
     } catch {
-      // A 5xx or a lost network throws without an api-error event, so no toast would say so
-      toastError(to('messages.updateFailed'));
-      return false;
-    } finally {
-      setBusy(false);
+      // PhotoUploadWarning says so, with Thử lại
+      setPhotoJob({ files, baseline, status: 'failed' });
     }
   };
+
   const confirmPickup = async (photos: File[]) => {
-    const baseline = images(order.pickupNotesImages).length;
+    const baseline = pickupPhotos.length;
     if (unpaid.length === 0) {
-      const ok = await changeStatusKeepingPhotos(pickup);
-      if (ok) void sendPhotos('pickup', photos, baseline);
-      return ok;
+      // The dialog stays open with its photos when the status did not change
+      setBusy(true);
+      try {
+        const res = await pickup();
+        await done(res.success);
+        if (res.success) void sendPhotos(photos, baseline);
+        return res.success;
+      } catch {
+        // A 5xx or a lost network throws without an api-error event, so no toast would say so
+        toastError(to('messages.updateFailed'));
+        return false;
+      } finally {
+        setBusy(false);
+      }
     }
     // #1199: the stages nobody collected are collected first (same method), then the order is handed over
     setBusy(true);
@@ -375,17 +362,16 @@ export default function OrderDetailPage() {
       if (!res.success) return false;
       handoverRefs.current = {};
       await done(true);
-      void sendPhotos('pickup', photos, baseline);
+      void sendPhotos(photos, baseline);
     } catch {
-      // useGlobalErrorHandler shows the API error
+      toastError(to('messages.updateFailed'));
       return false;
     } finally {
       setBusy(false);
     }
   };
-  const confirmReturn = async (fees: { lateFee: number; damageFee: number }, photos: File[]) => {
-    const baseline = images(order.returnNotesImages).length;
-    const ok = await changeStatusKeepingPhotos(async () => {
+  const confirmReturn = (fees: { lateFee: number; damageFee: number }) =>
+    changeStatus(async () => {
       // returnOrder only changes the status: like iOS, PUT both fees first when either was changed
       const update = returnFeesUpdate(order, fees);
       if (update) {
@@ -395,9 +381,6 @@ export default function OrderDetailPage() {
       }
       return ordersApi.returnOrder(order.id);
     });
-    if (ok) void sendPhotos('return', photos, baseline);
-    return ok;
-  };
 
   const toggleReady = async (value: boolean) => {
     setReady(value);
@@ -492,6 +475,10 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      {uploadWarningCount(photoJob) !== null && photoJob && (
+        <PhotoUploadWarning count={photoJob.files.length} onRetry={() => void sendPhotos(photoJob.files, photoJob.baseline)} t={t} />
+      )}
+
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex min-w-0 flex-[2_1_560px] flex-col gap-4">
           <ProgressCard steps={steps} weekdays={weekdays} t={t} />
@@ -504,6 +491,16 @@ export default function OrderDetailPage() {
             t={t}
             money={money}
           />
+          {showPickupPhotosCard(pickupPhotos.length, photoJob?.files.length ?? 0) && (
+            <PickupPhotosCard
+              urls={pickupPhotos}
+              waiting={photoJob?.files ?? []}
+              uploading={photoJob?.status === 'uploading'}
+              addRoom={canAddPickupPhotos(status, pickupPhotos.length, !!photoJob) ? photoRoom(pickupPhotos.length) : 0}
+              onAddPhotos={(files) => void sendPhotos(files, pickupPhotos.length)}
+              t={t}
+            />
+          )}
           {editing ? (
             <div ref={settingsRef} className="scroll-mt-4">
               <SettingsEditor
@@ -578,7 +575,7 @@ export default function OrderDetailPage() {
         items={dialogItems}
         papers={papers}
         lateDays={lateDays}
-        pickupPhotos={images(order.pickupNotesImages)}
+        pickupPhotos={pickupPhotos}
         onConfirm={confirmReturn}
         t={t}
         money={money}
