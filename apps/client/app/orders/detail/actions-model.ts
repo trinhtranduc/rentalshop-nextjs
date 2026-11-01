@@ -80,3 +80,49 @@ export function canCancelOrder(orderType: string | null | undefined, status: str
   if (orderType === 'SALE') return status === 'RESERVED' || status === 'COMPLETED';
   return false;
 }
+
+// ----------------------------------------------------------------------------
+// #1420 condition photos at hand-over and return (same rule as the phones, #1418)
+// ----------------------------------------------------------------------------
+
+/** Owner's limit per stage. Note photos keep `MAX_NOTE_IMAGES` (settings.tsx); the API allows 5 per field. */
+export const MAX_CONDITION_PHOTOS = 3;
+
+export type PhotoStage = 'pickup' | 'return';
+
+export const photoRoom = (count: number) => Math.max(0, MAX_CONDITION_PHOTOS - count);
+
+export type PhotoSendDecision = { kind: 'alreadyUploaded' } | { kind: 'noRoom' } | { kind: 'send'; count: number };
+
+/**
+ * Read before sending. A multipart PUT is all or nothing and has no idempotency key, so our own lost request shows as
+ * growth of at least `pending`. Smaller growth came from another device: our photos are still unsent.
+ */
+export function decidePhotoSend(serverCount: number, baseline: number, pending: number): PhotoSendDecision {
+  if (serverCount - baseline >= pending) return { kind: 'alreadyUploaded' };
+  const room = photoRoom(serverCount);
+  return room > 0 ? { kind: 'send', count: Math.min(pending, room) } : { kind: 'noRoom' };
+}
+
+/** "Thêm ảnh" in the notes card: only while the goods are out */
+export function canAddPickupPhotos(status: string, serverCount: number, waiting: boolean): boolean {
+  return status === 'PICKUPED' && !waiting && photoRoom(serverCount) > 0;
+}
+
+/**
+ * The notes card shows a failed upload with Thử lại, so a 4xx must not also raise the toast of useGlobalErrorHandler.
+ * A capture listener runs before it on the window. 5xx and network errors throw without an event. A subscription error
+ * still goes through: it opens its own dialog.
+ */
+export async function withoutApiErrorToast<R>(run: () => Promise<R>, target: EventTarget = window): Promise<R> {
+  const stop = (event: Event) => {
+    const code = String((event as CustomEvent<{ code?: string }>).detail?.code ?? '');
+    if (!/SUBSCRIPTION|TRIAL_EXPIRED|PLAN_LIMIT/.test(code)) event.stopImmediatePropagation();
+  };
+  target.addEventListener('api-error', stop, { capture: true });
+  try {
+    return await run();
+  } finally {
+    target.removeEventListener('api-error', stop, { capture: true });
+  }
+}

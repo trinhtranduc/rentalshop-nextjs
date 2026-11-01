@@ -110,6 +110,18 @@
         "block": "{n} 天档",
         "blockExtra": "{n} 天档 + 额外 {m} 天",
         "blockDays": "{n} 天"
+      },
+      "dialog": {
+        "photos": {
+          "conditionTitle": "状况照片",
+          "returnTitle": "归还时照片",
+          "pickupCompare": "交付时照片",
+          "optional": "可选",
+          "choose": "选择照片",
+          "uploading": "正在上传照片…",
+          "uploadFailed": "{count} 张照片未能上传。订单不受影响。",
+          "retry": "重试"
+        }
       }
     },
     "installments": {

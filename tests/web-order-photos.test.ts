@@ -61,9 +61,12 @@ describe('withoutApiErrorToast', () => {
   it('hides a failed upload from the global handler, and only while it runs', async () => {
     const target = new EventTarget();
     const seen: string[] = [];
-    // Registered first, as the layout's useGlobalErrorHandler is
-    target.addEventListener('api-error', (e) => seen.push((e as unknown as { detail: { code: string } }).detail.code));
-    await withoutApiErrorToast(async () => fire(target, 'IMAGE_VALIDATION_FAILED'), target);
+    // A browser runs a capture listener first even on a target added later (checked in headed Chrome on the order page).
+    // Node's EventTarget keeps insertion order, so here the handler comes second.
+    await withoutApiErrorToast(async () => {
+      target.addEventListener('api-error', (e) => seen.push((e as unknown as { detail: { code: string } }).detail.code));
+      fire(target, 'IMAGE_VALIDATION_FAILED');
+    }, target);
     expect(seen).toEqual([]);
     fire(target, 'OTHER');
     expect(seen).toEqual(['OTHER']);
