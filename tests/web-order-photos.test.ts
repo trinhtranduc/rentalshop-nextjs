@@ -10,9 +10,9 @@ import {
   canAddPickupPhotos,
   decidePhotoSend,
   photoRoom,
+  pickupPhotosForm,
   showPickupPhotosCard,
   uploadWarningCount,
-  withoutApiErrorToast,
 } from '../apps/client/app/orders/detail/actions-model';
 
 const read = (path: string) => readFileSync(join(__dirname, '..', path), 'utf8');
@@ -109,38 +109,22 @@ describe('buildNoteViews', () => {
   });
 });
 
-describe('withoutApiErrorToast', () => {
-  const fire = (target: EventTarget, code: string) => target.dispatchEvent(Object.assign(new Event('api-error'), { detail: { code } }));
-
-  it('hides a failed upload from the global handler, and only while it runs', async () => {
-    const target = new EventTarget();
-    const seen: string[] = [];
-    // A browser runs a capture listener first even on a target added later (checked in headed Chrome on the order page).
-    // Node's EventTarget keeps insertion order, so here the handler comes second.
-    await withoutApiErrorToast(async () => {
-      target.addEventListener('api-error', (e) => seen.push((e as unknown as { detail: { code: string } }).detail.code));
-      fire(target, 'IMAGE_VALIDATION_FAILED');
-    }, target);
-    expect(seen).toEqual([]);
-    fire(target, 'OTHER');
-    expect(seen).toEqual(['OTHER']);
+describe('pickupPhotosForm', () => {
+  it('sends data={} and the photos: nothing else of the order changes', () => {
+    const a = new File(['a'], 'a.jpg', { type: 'image/jpeg' });
+    const b = new File(['b'], 'b.jpg', { type: 'image/jpeg' });
+    const form = pickupPhotosForm([a, b]);
+    expect(form.get('data')).toBe('{}');
+    expect(form.getAll('pickupNotesImages').map((f) => (f as File).name)).toEqual(['a.jpg', 'b.jpg']);
+    expect([...form.keys()].sort()).toEqual(['data', 'pickupNotesImages', 'pickupNotesImages']);
   });
+});
 
-  it('a subscription error still reaches it', async () => {
-    const target = new EventTarget();
-    const seen: string[] = [];
-    target.addEventListener('api-error', (e) => seen.push((e as unknown as { detail: { code: string } }).detail.code));
-    await withoutApiErrorToast(async () => fire(target, 'SUBSCRIPTION_EXPIRED'), target);
-    expect(seen).toEqual(['SUBSCRIPTION_EXPIRED']);
-  });
-
-  it('removes itself when the upload throws', async () => {
-    const target = new EventTarget();
-    const seen: string[] = [];
-    target.addEventListener('api-error', () => seen.push('x'));
-    await expect(withoutApiErrorToast(async () => { throw new Error('5xx'); }, target)).rejects.toThrow('5xx');
-    fire(target, 'OTHER');
-    expect(seen).toEqual(['x']);
+describe('one message for a failed upload', () => {
+  it('the upload does not go through parseApiResponse, which raises the global toast on a 4xx', () => {
+    const page = read('apps/client/app/orders/[id]/page.tsx');
+    expect(page).toMatch(/authenticatedFetch\(/);
+    expect(page).not.toMatch(/pickupNotesImages: files/);
   });
 });
 
