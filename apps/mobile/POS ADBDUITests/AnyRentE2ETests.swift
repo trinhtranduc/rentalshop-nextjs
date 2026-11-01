@@ -5842,6 +5842,40 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("photos-62-added-later")
     }
 
+    /// #1425 `E2E_PHOTO_ORDERS` = an order holding 5 note photos (set up in the database). All show; no add until under 3;
+    /// the text saves and photos can be removed without a limit error.
+    func testNotes01OldOrderWithFivePhotos() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        e2e.orderMoreButton.tap()
+        let notesRow = e2e.element(labelBeginsWith: ["Ghi chú", "Notes"], type: .button)
+        XCTAssertTrue(notesRow.waitForExistence(timeout: 5), "Ghi chú in the ⋯ sheet")
+        notesRow.tap()
+        let count = app.staticTexts.matching(NSPredicate(format: "label == '5 ảnh' OR label == '5 photos'")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 6), "Above the limit: only the count")
+        e2e.shot("notes-01-editor-5-photos")
+        let add = app.buttons.matching(NSPredicate(format: "label == 'Thêm ảnh' OR label == 'Add photos'")).firstMatch
+        XCTAssertFalse(add.exists, "No add above the limit")
+        let remove = app.buttons.matching(NSPredicate(format: "label == 'Xóa ảnh' OR label == 'Xoá ảnh' OR label == 'Remove photo'"))
+        XCTAssertEqual(remove.count, 5, "All five show")
+        remove.firstMatch.tap()
+        sleep(1)
+        XCTAssertFalse(add.exists, "4 photos: still no add")
+        remove.firstMatch.tap()
+        sleep(1)
+        XCTAssertFalse(add.exists, "3 photos: still no add")
+        let save = e2e.button(["Lưu ghi chú", "Save note"])
+        XCTAssertTrue(save.waitForExistence(timeout: 3), "Save")
+        e2e.shot("notes-02-editor-3-photos")
+        remove.firstMatch.tap()
+        XCTAssertTrue(add.waitForExistence(timeout: 3), "2 photos: add is back")
+        e2e.shot("notes-03-editor-2-photos")
+        save.tap()
+        sleep(3)
+        XCTAssertFalse(app.alerts.firstMatch.exists, "No limit error")
+        e2e.shot("notes-04-after-save")
+    }
+
     /// One photo with the account of `E2E_ROLE`: each role that can hand over
     func testPhotos06RoleHandsOverWithAPhoto() throws {
         try e2e.start()

@@ -129,9 +129,9 @@ class OrderDetailLogicTest {
 
     @Test
     fun `notes with removed photos send kept urls as json then new files as multipart`() {
-        val steps = OrderDetailLogic.notesPlan("hi", listOf("a", "b", "c"), listOf("a", "c"), 2)
+        val steps = OrderDetailLogic.notesPlan("hi", listOf("a", "b", "c"), listOf("a", "c"), 1)
         assertEquals(
-            listOf(NotesStep.Json("hi", listOf("a", "c")), NotesStep.Upload(null, 2)),
+            listOf(NotesStep.Json("hi", listOf("a", "c")), NotesStep.Upload(null, 1)),
             steps,
         )
         assertEquals(
@@ -153,11 +153,11 @@ class OrderDetailLogicTest {
     }
 
     @Test
-    fun `notes reject more than five photos or unknown urls`() {
-        assertNull(OrderDetailLogic.notesPlan("", listOf("a", "b", "c"), listOf("a", "b", "c"), 3))
+    fun `notes reject more than three photos or unknown urls`() {
+        assertNull(OrderDetailLogic.notesPlan("", listOf("a", "b"), listOf("a", "b"), 2))
         assertEquals(
-            listOf(NotesStep.Upload("", 2)),
-            OrderDetailLogic.notesPlan("", listOf("a", "b", "c"), listOf("a", "b", "c"), 2),
+            listOf(NotesStep.Upload("", 1)),
+            OrderDetailLogic.notesPlan("", listOf("a", "b"), listOf("a", "b"), 1),
         )
         assertNull(OrderDetailLogic.notesPlan("", listOf("a"), listOf("x"), 0))
         assertEquals(3, OrderDetailLogic.MAX_NOTE_PHOTOS)

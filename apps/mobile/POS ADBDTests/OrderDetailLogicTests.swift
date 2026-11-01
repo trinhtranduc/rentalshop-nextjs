@@ -101,8 +101,8 @@ final class OrderDetailLogicTests: XCTestCase {
     // MARK: Notes payload
 
     func testNotesUnchangedPhotosSendOnlyNewFiles() {
-        let plan = OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 2)
-        XCTAssertEqual(plan, NotesSavePlan(keptURLs: nil, newCount: 2))
+        let plan = OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 1)
+        XCTAssertEqual(plan, NotesSavePlan(keptURLs: nil, newCount: 1))
     }
 
     func testNotesRemovedPhotoSendsKeptUrls() {

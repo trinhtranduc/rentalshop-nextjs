@@ -110,6 +110,9 @@ object NoteEditorLogic {
     /** How many photos a pick may still add */
     fun remaining(count: Int, max: Int = MAX): Int = (max - count).coerceAtLeast(0)
 
+    /** "2/3 ảnh"; above the limit only the count, since "5/3" reads like a bug (#1425) */
+    fun showsLimit(count: Int, max: Int = MAX): Boolean = count <= max
+
     /** "#0057" after "Ghi chú"; null without an order number (cart) */
     fun titleSuffix(orderNumber: String?): String? =
         orderNumber?.takeIf { it.isNotEmpty() }?.let { "#" + (it.substringAfterLast('-').ifEmpty { it }) }

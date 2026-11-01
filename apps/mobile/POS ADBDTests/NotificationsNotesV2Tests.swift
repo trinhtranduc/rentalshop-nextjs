@@ -152,16 +152,16 @@ final class NotificationsNotesV2Tests: XCTestCase {
     }
 
     func testCountLabelAndTitleSuffix() {
-        XCTAssertEqual(NoteEditorLogic.countLabel(count: 2), String(format: "%d/%d photos".localized(), 2, 5))
+        XCTAssertEqual(NoteEditorLogic.countLabel(count: 2), String(format: "%d/%d photos".localized(), 2, 3))
         XCTAssertEqual(NoteEditorLogic.titleSuffix(orderNumber: "ORD-3-0057"), "#0057")
         XCTAssertEqual(NoteEditorLogic.titleSuffix(orderNumber: "1234"), "#1234")
         XCTAssertNil(NoteEditorLogic.titleSuffix(orderNumber: nil))
         XCTAssertNil(NoteEditorLogic.titleSuffix(orderNumber: ""))
     }
 
-    func testSaveKeepsFivePhotoPlan() {
-        // The editor never lets a 6th photo through; the save plan rejects it anyway
-        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a"], newCount: 4))
-        XCTAssertNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 4))
+    func testSaveKeepsThreePhotoPlan() {
+        // The editor never lets a 4th photo through; the save plan rejects it anyway
+        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a"], newCount: 2))
+        XCTAssertNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 2))
     }
 }

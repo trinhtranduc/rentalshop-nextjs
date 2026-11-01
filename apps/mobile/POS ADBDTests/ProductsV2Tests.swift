@@ -312,7 +312,7 @@ final class ProductsV2Tests: XCTestCase {
 
     /// #1043: the order note uses the item note sheet: photos (#480) only on a new order, and its own strings
     func testOrderNoteSheetPhotosAndStrings() throws {
-        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: false), 5)
+        XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: false), 3)
         XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: false), OrderDetailLogic.maxNotePhotos)
         XCTAssertEqual(CartV2Logic.orderNoteMaxPhotos(editMode: true), 0, "editing an order stays text only")
         // the cart entry shows the order note on one line, like an item note

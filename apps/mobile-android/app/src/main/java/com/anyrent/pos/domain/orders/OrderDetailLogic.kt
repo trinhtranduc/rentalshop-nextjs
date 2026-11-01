@@ -70,7 +70,8 @@ data class StatusErrorOutcome(val code: String?, val message: String, val reload
 
 object OrderDetailLogic {
     /** Note photos per order on the new detail (`MAX_ORDER_NOTE_IMAGES`) */
-    const val MAX_NOTE_PHOTOS = 5
+    /** #1425 note photos. The API keeps accepting 5 for installed apps; an order that already holds more stays as it is */
+    const val MAX_NOTE_PHOTOS = 3
 
     /**
      * "Tạm tính" / "Tiền hàng" of a sale (#939): the item lines, as iOS, the web and the printed bill. The total is
@@ -248,7 +249,8 @@ object OrderDetailLogic {
     /**
      * Requests for saving notes: removed photos → JSON with the kept URLs first, then new files as multipart
      * (the API appends uploads to what is stored). Text goes with the first request.
-     * Null when [kept] + [newFileCount] is over [max] or [kept] holds a URL that was not on the order.
+     * Null when new photos would take the order over [max] or [kept] holds a URL that was not on the order. An old order
+     * already over [max] can still change its text and remove photos (#1425).
      */
     fun notesPlan(
         notes: String?,
@@ -257,7 +259,7 @@ object OrderDetailLogic {
         newFileCount: Int,
         max: Int = MAX_NOTE_PHOTOS,
     ): List<NotesStep>? {
-        if (kept.size + newFileCount > max || !original.containsAll(kept)) return null
+        if ((newFileCount > 0 && kept.size + newFileCount > max) || !original.containsAll(kept)) return null
         val photosRemoved = kept != original
         return when {
             photosRemoved && newFileCount > 0 -> listOf(NotesStep.Json(notes, kept), NotesStep.Upload(null, newFileCount))
