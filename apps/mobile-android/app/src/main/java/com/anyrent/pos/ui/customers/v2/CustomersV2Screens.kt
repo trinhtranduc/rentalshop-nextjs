@@ -463,11 +463,14 @@ fun NewCustomerContent(
     val scroll = rememberScrollState()
     var scrollTop by remember { mutableStateOf(0f) }
     // #1412: the guide's step 6 asks the form's own rule, no other; the duplicate box needs the screen, so the bubble leaves
+    val coachValid = if (CustomerRules.validate(name, phone) == null) setOf(CoachBubble.NEW_CUSTOMER) else emptySet()
+    val coachHasInput = listOf(phone, name, note).any { it.isNotEmpty() }
+    val coachPaused = existing != null
     SideEffect {
         if (pickMode && FirstRunCoach.run != null) {
-            FirstRunCoach.formValid = if (CustomerRules.validate(name, phone) == null) setOf(CoachBubble.NEW_CUSTOMER) else emptySet()
-            FirstRunCoach.formHasInput = listOf(phone, name, note).any { it.isNotEmpty() }
-            FirstRunCoach.paused = existing != null
+            FirstRunCoach.formValid = coachValid
+            FirstRunCoach.formHasInput = coachHasInput
+            FirstRunCoach.paused = coachPaused
         }
     }
     DisposableEffect(Unit) { onDispose { FirstRunCoach.formClosed(CoachScreen.NEW_CUSTOMER) } }

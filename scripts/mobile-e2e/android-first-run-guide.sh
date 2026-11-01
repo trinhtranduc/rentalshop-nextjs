@@ -3,7 +3,7 @@
 # The main guard against bubbles drifting when screens change (iOS: FirstRunGuideUITests). Needs a local API and a booted
 # window-mode emulator ($E2E_AVD_PORT), with the debug APK built with -PapiBaseUrl. Exit code = number of misses.
 # Product photos need fake-s3.mjs and AWS_ENDPOINT_URL on the API. E2E_LANG=vi runs the app in Vietnamese.
-# Usage: android-first-run-guide.sh [walk|later|hide|exit|customers|sale]
+# Usage: android-first-run-guide.sh [walk|later|hide|exit|customers|sale|back|dup]
 set -uo pipefail
 # shellcheck source=env.sh
 . "$(dirname "${BASH_SOURCE[0]}")/env.sh"
@@ -136,12 +136,21 @@ dim_tap() { # a tap on the dim only flashes the ring
   ui tap "@$(( ${size%x*} / 2 )),$(( ${size#*x} * 72 / 100 ))" >/dev/null
   sleep 1
 }
-pick_seeded_photo() { # GetContent runs the system picker, out of the app: the seeded file by name, else the first cell
+pick_seeded_photo() { # GetContent runs the system picker, out of the app
   first_of "Thêm ảnh" "Add photo" >/dev/null || miss "add photo tile"
   sleep 4
   shot "${1:-guide}-picker"
-  ui tap "~guide-seed" >/dev/null 2>&1 || miss "the seeded photo in the picker"
-  sleep 4
+  # Android's photo picker: its cells say "Photo taken on ...". Its sheet can open half or full height, so a place in each is the fallback.
+  ui tap "~Photo taken" >/dev/null 2>&1 || ui tap "~Ảnh chụp" >/dev/null 2>&1 || true
+  sleep 3
+  local size at
+  size="$(adb_s shell wm size | awk -F': ' '/Physical/{print $2}' | tr -d '\r')"
+  for at in 34 66; do
+    ui has "~can only access the photos" || ui has "~chỉ có thể truy cập" || break
+    ui tap "@$(( ${size%x*} * 16 / 100 )),$(( ${size#*x} * at / 100 ))" >/dev/null
+    sleep 4
+  done
+  if ui has "~can only access the photos" || ui has "~chỉ có thể truy cập"; then miss "the seeded photo in the picker"; ui back; sleep 1; fi
 }
 add_with_normal_form() { # the + on Home, outside the guide: no photo, no price
   first_of "Thêm sản phẩm" "Add product" >/dev/null || miss "+ on Home"
@@ -228,6 +237,78 @@ if [ "${1:-walk}" = sale ]; then
   need "customer row bubble" "#guide.bubble.cart_customer"
   counter "5/8"
   shot guide-sale-01-cart
+  echo "misses: $MISSES"
+  exit "$MISSES"
+fi
+
+# back: the system back button is not blocked; the cart resumes from its data, a form starts over
+if [ "${1:-walk}" = back ]; then
+  add_with_normal_form
+  need "one done" "1/3" 20
+  tap "#guide.cta"
+  need "customer row bubble" "#guide.bubble.cart_customer"
+  tap "#cart.customerRow"
+  need "picker bubble" "#guide.bubble.new_customer"
+  tap "#customers.picker.new"
+  need "form" "#customers.new.phone"
+  tap "#customers.new.phone"
+  ui type "0912"
+  sleep 1
+  hide_keyboard
+  ui back
+  sleep 2
+  need "back resumes on the cart or the picker" "~/9"
+  shot guide-back-01-after-back
+  if ui has "#customers.picker.new"; then
+    tap "#customers.picker.new"
+    need "the form again" "#customers.new.phone"
+    next_off "the form starts over"
+    hide_keyboard
+    ui back
+    sleep 2
+    ui has "#customers.picker.new" && ui back
+    sleep 2
+  fi
+  need "the cart's bubble again" "#guide.bubble.cart_customer"
+  counter "5/9"
+  shot guide-back-02-cart
+  tap "#guide.bubble.exit"
+  need "the card" "1/3" 20
+  shot guide-back-03-card
+  echo "misses: $MISSES"
+  exit "$MISSES"
+fi
+
+# dup: the phone belongs to a customer that arrived after the run started. The real box shows, the bubble leaves, "Chọn khách này" goes on.
+if [ "${1:-walk}" = dup ]; then
+  add_with_normal_form
+  need "one done" "1/3" 20
+  tap "#guide.cta"
+  need "customer row bubble" "#guide.bubble.cart_customer"
+  tap "#cart.customerRow"
+  need "picker bubble" "#guide.bubble.new_customer"
+  phone="0966$(date +%s | tail -c 7)"
+  psql "$E2E_DATABASE_URL" -qc "insert into \"Customer\"(\"firstName\",phone,\"merchantId\",\"updatedAt\") select 'Khach Cu','$phone',\"merchantId\",now() from \"User\" where email='$E2E_EMAIL'" || miss "add the customer"
+  tap "#customers.picker.new"
+  need "form" "#customers.new.phone"
+  tap "#customers.new.phone"
+  ui type "$phone"
+  sleep 1
+  tap "#customers.new.name"
+  ui type "Lan%sAnh"
+  sleep 2
+  next_on "new customer"
+  need "bubble 7" "#guide.bubble.new_customer_save"
+  tap "#customers.new.save"
+  sleep 4
+  if ui has "#guide.bubble.new_customer_save"; then miss "the bubble should not cover the box"; fi
+  shot guide-dup-01-box
+  hide_keyboard
+  ui swipe up
+  first_of "Chọn khách này" "Select this customer" >/dev/null || miss "the box's button"
+  need "dates bubble" "#guide.bubble.cart_dates" 20
+  counter "8/9"
+  shot guide-dup-02-dates
   echo "misses: $MISSES"
   exit "$MISSES"
 fi
