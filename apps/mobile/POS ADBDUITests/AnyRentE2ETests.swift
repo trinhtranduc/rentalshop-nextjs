@@ -5943,6 +5943,19 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("photos-83-return-sheet-no-photos")
     }
 
+    /// #1430 one look at the warm note colours, next to the photo row. `E2E_PHOTO_ORDERS`: an order with item notes, a note and photos
+    func testNotes02WarmNoteColours() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        for _ in 0..<1 { app.swipeUp() }
+        sleep(1)
+        e2e.shot("notes-10-item-note")
+        scrollToPhotos()
+        for _ in 0..<2 { app.swipeUp() }
+        sleep(1)
+        e2e.shot("notes-11-notes-section")
+    }
+
     /// One photo with the account of `E2E_ROLE`: each role that can hand over
     func testPhotos06RoleHandsOverWithAPhoto() throws {
         try e2e.start()

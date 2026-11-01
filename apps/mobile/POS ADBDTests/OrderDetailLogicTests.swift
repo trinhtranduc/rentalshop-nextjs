@@ -98,6 +98,16 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertTrue(balance(.sale, .completed) == (600_000, 0))
     }
 
+    // MARK: Note colours (#1430)
+
+    func testWarmNoteColoursAndTheBandStays() {
+        XCTAssertEqual(OrderDetailViewController.itemNoteFillColor, UIColor(hexString: "FFF7E6"))
+        XCTAssertEqual(OrderDetailViewController.itemNoteInkColor, UIColor(hexString: "7A4A00"))
+        XCTAssertEqual(OrderDetailViewController.notesFillColor, UIColor(hexString: "FFFBEB"))
+        XCTAssertEqual(OrderDetailViewController.notesInkColor, UIColor(hexString: "78350F"))
+        XCTAssertEqual(OrderDetailViewController.sectionDividerColor, UIColor(hexString: "EEF0F4"))
+    }
+
     // MARK: Notes payload
 
     func testNotesUnchangedPhotosSendOnlyNewFiles() {
