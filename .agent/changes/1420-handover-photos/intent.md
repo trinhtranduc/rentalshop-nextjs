@@ -1,28 +1,31 @@
-# Photos at hand-over and return (web)
+# Hand-over photos on the web
 
 Issue: #1420 · Author: Claude · Status: in-review · Created: 2026-11-01
 
 ## Problem
 
-The merchant web shows `pickupNotesImages` and `returnNotesImages` in the notes card, but nothing on the web can add them. Evidence of the goods' condition must work on web as on the phones.
+The merchant web shows `pickupNotesImages` in the notes card, but nothing on the web can add them. Evidence of the goods' condition must work on web as on the phones.
 
 ## Proposed outcome
 
-The hand-over and return dialogs have a photo block (layout A): "Chọn ảnh", maximum 3. The status changes first, then the photos go in a separate `ordersApi.updateOrder(id, {}, files)`.
+The hand-over dialog has a photo block (layout A): "Chọn ảnh", maximum 3. The status changes first, then the photos go in a separate PUT. The order page has its own card "Ảnh khi giao". The return dialog only shows those photos.
 
 ## Affected users and systems
 
-`apps/client` and `locales`. No change under `apps/api`, `prisma` or API packages (`packages/utils` is only called).
+`apps/client` and `locales`. No change under `apps/api`, `prisma` or API packages.
 
 ## Constraints (owner's final decisions)
 
-- Optional; confirm always active. Maximum 3 at hand-over and 3 at return; 3/3 hides the add tile. API limit stays 5. `MAX_NOTE_IMAGES` stays 5.
+- Optional; confirm always active. Maximum 3; 3/3 hides the add tile. API limit stays 5.
 - Uploaded photos cannot be deleted. Before confirming, × removes a chosen photo.
+- No capture at return. Return dialog is read only; no `returnNotesImages` upload.
+- Only `pickupNotesImages` move to the card. Pickup note text and old return and damage notes stay in the notes card.
+- Card hidden at 0 photos unless photos are on their way in this tab. Add tile only while PICKUPED with 1 or 2 photos, as on the phones.
 - Compression: reuse `detail/settings.tsx` (0.18 MB, 1920 px).
-- Photos stay in memory only; closing the tab loses them, the order is not affected. Reopen and press "Thêm ảnh".
+- Photos stay in memory only; closing the tab loses them, the order is not affected.
 
 ## Decision log
 
-- A failed status call now keeps the dialog open so the chosen photos are not lost (today it closes). A thrown 5xx or network error reaches no global toast, so this path shows one toast itself.
-- `useGlobalErrorHandler`: a 4xx of the upload would toast and also show the inline line. While the upload runs, a capture listener on `api-error` stops the toast, except subscription errors. 5xx and network errors throw without an event, so they were never double.
-- Web "Thêm ảnh" also shows at 0 photos while PICKUPED: the tab's answer to "closed the tab" needs it. The notes card is already a place for this; phones keep no new section at 0 photos.
+- The upload uses `authenticatedFetch`, not `ordersApi.updateOrder`: `parseApiResponse` raises the global toast on a 4xx, and the warning already says it failed. A capture listener was tried and does not work: Chrome fires a window target's listeners in registration order.
+- A failed status call keeps the dialog open so the chosen photos are not lost. A thrown 5xx or network error reaches no global toast, so this path shows one itself.
+- Chrome repeats a request by itself when a reused connection drops before the reply, so a lost reply there can store photos twice. JavaScript cannot turn this off; fixing it needs an idempotency key on the API, out of scope here.
