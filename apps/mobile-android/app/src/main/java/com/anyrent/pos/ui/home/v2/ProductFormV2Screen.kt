@@ -334,16 +334,19 @@ fun ProductFormV2Screen(
 
     // #1412: what the guide asks of this form, and where its cursor goes. Only while a run is on: the normal form has no such rules.
     val coachBubble = FirstRunCoachRules.next(FirstRunCoach.run, CoachScreen.PRODUCT_FORM, FirstRunCoach.passed)
+    // Read here, not inside SideEffect: only a read in composition brings this function back when a photo is added
+    val coachValid = buildSet {
+        if (FirstRunCoachRules.photoIsValid(photos.size)) add(CoachBubble.PRODUCT_PHOTO)
+        if (ProductFormValidator.isNameValid(name)) add(CoachBubble.PRODUCT_NAME)
+        if (FirstRunCoachRules.priceIsValid(MoneyInput.parse(perRental), MoneyInput.parse(perDay))) add(CoachBubble.PRODUCT_PRICE)
+    }
+    // The barcode fills itself and the quantity starts at 1: neither is something the owner typed
+    val coachHasInput = listOf(name, perRental, perDay, sale, deposit, cost).any { it.isNotEmpty() } ||
+        photos.isNotEmpty() || categoryId != null || quantity != 1
     SideEffect {
         if (coachBubble != null) {
-            FirstRunCoach.formValid = buildSet {
-                if (FirstRunCoachRules.photoIsValid(photos.size)) add(CoachBubble.PRODUCT_PHOTO)
-                if (ProductFormValidator.isNameValid(name)) add(CoachBubble.PRODUCT_NAME)
-                if (FirstRunCoachRules.priceIsValid(MoneyInput.parse(perRental), MoneyInput.parse(perDay))) add(CoachBubble.PRODUCT_PRICE)
-            }
-            // The barcode fills itself and the quantity starts at 1: neither is something the owner typed
-            FirstRunCoach.formHasInput = listOf(name, perRental, perDay, sale, deposit, cost).any { it.isNotEmpty() } ||
-                photos.isNotEmpty() || categoryId != null || quantity != 1
+            FirstRunCoach.formValid = coachValid
+            FirstRunCoach.formHasInput = coachHasInput
         }
     }
     val coachFocus = LocalFocusManager.current

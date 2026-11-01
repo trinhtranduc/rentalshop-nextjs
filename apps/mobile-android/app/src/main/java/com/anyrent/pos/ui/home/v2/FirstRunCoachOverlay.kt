@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +55,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -162,8 +162,9 @@ fun CoachScroll(screen: CoachScreen, scroll: ScrollState, viewportTop: Float) {
     val bubble = FirstRunCoachRules.next(FirstRunCoach.run, screen, FirstRunCoach.passed, customersExist = FirstRunCoach.customersExist)
     val density = LocalDensity.current
     val ime = WindowInsets.ime.getBottom(density)
-    LaunchedEffect(bubble, FirstRunCoach.pointTick, ime) {
-        val tag = bubble?.anchor(screen) ?: return@LaunchedEffect
+    val placed = viewportTop > 0f // before its first layout the form's top is not known
+    LaunchedEffect(bubble, FirstRunCoach.pointTick, ime, placed) {
+        val tag = bubble?.anchor(screen)?.takeIf { placed } ?: return@LaunchedEffect
         delay(120) // the form has laid out for the keyboard
         val rect = FirstRunCoach.anchors[tag] ?: return@LaunchedEffect
         if (tag == "product.form.save" || tag == "customers.new.save") return@LaunchedEffect // outside the scroll
@@ -219,8 +220,11 @@ fun FirstRunCoachOverlay(screen: CoachScreen, cart: CoachCart? = null, covered: 
             ringAlpha.snapTo(1f)
         }
     }
-    val top = WindowInsets.statusBars.getTop(density)
-    val bottomInset = maxOf(WindowInsets.navigationBars.getBottom(density), WindowInsets.ime.getBottom(density))
+    val view = LocalView.current
+    val navigationBar = WindowInsets.navigationBars.getBottom(density)
+    // Read so the bubble moves with the keyboard. The inset alone cannot say where the keyboard is: a sheet or a form that already
+    // shrank for it would count it twice and push the bubble over the control.
+    @Suppress("UNUSED_VARIABLE") val keyboard = WindowInsets.ime.getBottom(density)
     val inset = with(density) { 4.dp.toPx() }
     val hole = Rect(
         rect.left - origin.x - inset, rect.top - origin.y - inset,
@@ -256,11 +260,14 @@ fun FirstRunCoachOverlay(screen: CoachScreen, cart: CoachCart? = null, covered: 
 
         val margin = with(density) { 16.dp.toPx() }
         val gap = with(density) { 11.dp.toPx() }
-        val floor = h - bottomInset
+        val visible = android.graphics.Rect().also(view::getWindowVisibleDisplayFrame)
+        val onScreen = IntArray(2).also(view::getLocationOnScreen)
+        val floor = minOf(h - navigationBar, (visible.bottom - onScreen[1]).toFloat() - origin.y)
+        val top = (visible.top - onScreen[1] - origin.y).coerceAtLeast(0f)
         val roomBelow = floor - hole.bottom - gap
         val roomAbove = hole.top - gap - top
         val above = if (current.prefersAbove) roomAbove >= cardHeight || roomAbove > roomBelow else roomBelow < cardHeight && roomAbove > roomBelow
-        val y = (if (above) hole.top - gap - cardHeight else hole.bottom + gap).coerceAtMost(floor - cardHeight).coerceAtLeast(top.toFloat())
+        val y = (if (above) hole.top - gap - cardHeight else hole.bottom + gap).coerceAtMost(floor - cardHeight).coerceAtLeast(top)
         val widthPx = (w - 2 * margin).coerceAtLeast(0f)
         // Under the control: its centre when narrow, near the left edge like the mockup when it is wide
         val arrowX = if (hole.width < widthPx * 0.6f) hole.center.x else margin + with(density) { 31.dp.toPx() }
