@@ -413,7 +413,9 @@ final class FirstRunGuideUITests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 8))
         name.tap()
         name.typeText("Vest")
-        app.buttons["product.form.save"].tap()
+        let save = app.buttons["product.form.save"]
+        save.tap()
+        if !save.waitForNonExistence(timeout: 3), save.exists { save.tap() } // the first tap may only close the keyboard
     }
 
     /// #1411: the normal form outside the guide keeps its rules: no photo, no price, it saves
