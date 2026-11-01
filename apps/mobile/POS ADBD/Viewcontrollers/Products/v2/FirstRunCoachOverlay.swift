@@ -70,6 +70,7 @@ final class FirstRunCoach {
 
     /// A screen came to the front, or changed. Waits for what is on top of it to leave.
     func screenChanged(_ host: UIViewController, screen: CoachScreen, cart: CoachCart? = nil) {
+        if paused && screen != .newCustomer { paused = false } // the duplicate box's form has left
         guard run != nil, !paused else { return }
         request += 1
         show(on: host, screen: screen, cart: cart, token: request, attempt: 0)
