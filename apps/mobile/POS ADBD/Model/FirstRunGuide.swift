@@ -2,7 +2,7 @@
 //  FirstRunGuide.swift
 //  POS ADBD
 //
-//  #1393: the card "Bắt đầu: 3 việc" on Home for a new shop's owner. Pure rules plus a small tracker: no API change, the
+//  #1393, #1410: the card "Bắt đầu: 3 việc" on Home for a new shop's owner. Pure rules plus a small tracker: no API change, the
 //  ticks come from data the app can already read. Android: `domain/guide/FirstRunGuide.kt`.
 //
 
@@ -21,8 +21,10 @@ struct FirstRunGuideFacts: Equatable {
 
 /// Per phone and per shop
 struct FirstRunGuideMarks: Equatable {
-    /// Bỏ qua
+    /// Hidden from Cài đặt, the only place that sets it (#1410)
     var skipped = false
+    /// Để sau: the slim row in place of the card
+    var collapsed = false
     /// This phone showed the steps card, so the first order earns the finish card
     var seen = false
     /// The shop has an order: the guide is over and no more calls are made
@@ -34,6 +36,8 @@ struct FirstRunGuideMarks: Equatable {
 enum FirstRunGuideCard: Equatable {
     case hidden
     case steps(done: Set<FirstRunGuideStep>)
+    /// "Bắt đầu n/3 ›"
+    case collapsed(done: Set<FirstRunGuideStep>)
     case finished
 }
 
@@ -68,7 +72,7 @@ enum FirstRunGuide {
         guard audience, !searching else { return .hidden }
         if marks.finishPending { return .finished }
         guard !marks.done, !marks.skipped, let done = doneSteps(facts) else { return .hidden }
-        return .steps(done: done)
+        return marks.collapsed ? .collapsed(done: done) : .steps(done: done)
     }
 
     /// The "n/3" of the Settings row; nil hides the row. A skip keeps the row: it is how the guide comes back.
@@ -84,6 +88,11 @@ enum FirstRunGuide {
         next.done = true
         next.finishPending = marks.seen && !marks.skipped
         return next
+    }
+
+    /// The card's button bounces once when it first appears, and not at all under Reduce Motion
+    static func bounces(reduceMotion: Bool, alreadyBounced: Bool) -> Bool {
+        !reduceMotion && !alreadyBounced
     }
 
     /// A row of the card. The customer and order rows work in the cart, so the cart needs a product first.
@@ -103,12 +112,13 @@ struct FirstRunGuideStore {
 
     func marks(merchantId: Int) -> FirstRunGuideMarks {
         let read = { (name: String) in defaults.bool(forKey: Self.key(name, merchantId: merchantId)) }
-        return FirstRunGuideMarks(skipped: read("skipped"), seen: read("seen"), done: read("done"), finishPending: read("finishPending"))
+        return FirstRunGuideMarks(skipped: read("skipped"), collapsed: read("collapsed"), seen: read("seen"), done: read("done"), finishPending: read("finishPending"))
     }
 
     func save(_ marks: FirstRunGuideMarks, merchantId: Int) {
         let write = { (name: String, value: Bool) in defaults.set(value, forKey: Self.key(name, merchantId: merchantId)) }
         write("skipped", marks.skipped)
+        write("collapsed", marks.collapsed)
         write("seen", marks.seen)
         write("done", marks.done)
         write("finishPending", marks.finishPending)
@@ -207,6 +217,9 @@ final class FirstRunGuideTracker {
         FirstRunGuide.settingsDoneCount(audience: isAudience, marks: marks, facts: facts)
     }
 
+    /// Not hidden yet: the sheet in Cài đặt offers "Ẩn hướng dẫn" only then
+    var isShownOnHome: Bool { !marks.skipped }
+
     /// The rows ticked, for the sheet in Cài đặt
     var doneSteps: Set<FirstRunGuideStep>? { _ = currentShop(); return FirstRunGuide.doneSteps(facts) }
 
@@ -272,13 +285,30 @@ final class FirstRunGuideTracker {
         update { $0.seen = true }
     }
 
+    /// "Ẩn hướng dẫn" in Cài đặt, after its confirm. Nothing else calls this.
     func skip() {
         update { $0.skipped = true }
         publish()
     }
 
-    func clearSkip() {
-        update { $0.skipped = false }
+    /// Để sau on the card
+    func collapse() {
+        update { $0.collapsed = true }
+        publish()
+    }
+
+    /// A tap on the slim row
+    func expand() {
+        update { $0.collapsed = false }
+        publish()
+    }
+
+    /// A row of the sheet in Cài đặt: the guide is back, and leaving a run returns to the card
+    func reopen() {
+        update {
+            $0.skipped = false
+            $0.collapsed = false
+        }
         publish()
     }
 

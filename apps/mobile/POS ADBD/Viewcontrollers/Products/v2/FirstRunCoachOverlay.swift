@@ -67,11 +67,7 @@ final class FirstRunCoach {
         overlay?.removeFromSuperview()
         shown.insert(bubble)
         let view = FirstRunCoachOverlayView(bubble: bubble, anchor: anchor, host: host)
-        view.onSkip = { [weak self, weak host] in
-            self?.stop()
-            FirstRunGuideTracker.shared.skip()
-            (host as? BaseViewControler)?.showToast(message: "firstRunGuide.skipped".localized(), duration: 3)
-        }
+        view.onSkip = { [weak self] in self?.stop() } // #1410: ends this run only; the guide itself is hidden from Cài đặt
         host.view.addSubview(view)
         view.frame = host.view.bounds
         view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -145,7 +141,7 @@ final class FirstRunCoachOverlayView: UIView {
         let stepLabel = V2.label(String(format: "firstRunGuide.bubble.step".localized(), bubble.step, FirstRunGuideStep.allCases.count),
                                  size: 13, weight: .medium, color: UIColor.white.withAlphaComponent(0.88))
         let skip = UIButton(type: .system)
-        skip.setTitle("firstRunGuide.skip".localized(), for: .normal)
+        skip.setTitle("firstRunGuide.later".localized(), for: .normal)
         skip.titleLabel?.font = Utils.boldFont(size: 13)
         skip.setTitleColor(.white, for: .normal)
         skip.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 2)
