@@ -24,8 +24,6 @@ export interface PendingFiles {
   notesImages?: File[];
 }
 
-const NOTE_IMAGE_MAX_MB = 0.18;
-const MAX_NOTE_IMAGES = 5;
 export const NOTE_IMAGE_MAX_MB = 0.18;
 
 const fieldClass =
