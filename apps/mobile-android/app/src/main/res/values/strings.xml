@@ -2501,13 +2501,6 @@
     <string name="first_run_guide_settings_row">Getting started</string>
     <string name="first_run_guide_finish_title">First order done</string>
     <string name="first_run_guide_finish_body">It is now in Orders and Calendar.</string>
-    <string name="first_run_guide_bubble_product_name">A name and rental price are enough. Add photos and barcode later.</string>
-    <string name="first_run_guide_bubble_cart_customer">An order needs a customer. Tap to choose or add one.</string>
-    <string name="first_run_guide_bubble_picker_new">Your first customer: tap New customer.</string>
-    <string name="first_run_guide_bubble_new_customer">Phone number and name are enough. Then tap Save and select.</string>
-    <string name="first_run_guide_bubble_cart_dates">Pick the pickup and return days.</string>
-    <string name="first_run_guide_bubble_cart_create">All set. Tap Create order.</string>
-    <string name="first_run_guide_bubble_step">Step %1$d/%2$d</string>
     <string name="first_run_guide_go_product">Add product →</string>
     <string name="first_run_guide_go_customer">Add customer →</string>
     <string name="first_run_guide_go_order">Create order →</string>
@@ -2516,4 +2509,17 @@
     <string name="first_run_guide_hide">Hide guide</string>
     <string name="first_run_guide_hide_confirm">Hide the guide? Reopen it in Settings.</string>
     <string name="first_run_guide_hide_action">Hide</string>
+    <string name="first_run_guide_bubble_product_photo">Add a product photo. It powers search by photo.</string>
+    <string name="first_run_guide_bubble_product_name">Enter the product name.</string>
+    <string name="first_run_guide_bubble_product_price">Enter a rental price, per rental or per day.</string>
+    <string name="first_run_guide_bubble_product_save">All set. Tap Save product.</string>
+    <string name="first_run_guide_bubble_cart_customer">An order needs a customer. Tap to choose or add one.</string>
+    <string name="first_run_guide_bubble_new_customer">Tap New customer, enter phone and name</string>
+    <string name="first_run_guide_bubble_new_customer_save">Tap Save and select.</string>
+    <string name="first_run_guide_bubble_cart_dates">Pick the pickup and return days.</string>
+    <string name="first_run_guide_bubble_cart_create">All set. Tap Create order.</string>
+    <string name="first_run_guide_next">Next</string>
+    <string name="first_run_guide_exit">Exit guide</string>
+    <string name="first_run_guide_exit_discard">Discard what you entered?</string>
+    <string name="first_run_guide_exit_discard_action">Discard</string>
 </resources>

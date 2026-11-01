@@ -781,9 +781,18 @@ fun CartV2Screen(
     // #1394: over the cart; the run ends with it
     FirstRunCoachOverlay(
         CoachScreen.CART,
-        CoachCart(hasCustomer = customer != null, isSale = isSale, hasDates = datesChosen, isEditing = editingOrderId != null),
+        CoachCart(isEmpty = lines.isEmpty(), hasCustomer = customer != null, isSale = isSale, hasDates = datesChosen, isEditing = editingOrderId != null),
+        // #1412: a sheet of the cart is on top; the confirm sheet has no bubble
+        covered = showCustomer || showDates || confirmSheet != null || createdSheet != null || editSheet != null,
     )
     DisposableEffect(Unit) { onDispose { FirstRunCoach.stop() } }
+    // #1412: Thoát hướng dẫn: the card is on Home. The cart keeps its content.
+    LaunchedEffect(Unit) {
+        FirstRunCoach.exits.collect {
+            showCustomer = false
+            onBack()
+        }
+    }
 
     if (showCustomer && FeatureFlags.isOn(MobileFeature.NEW_CUSTOMERS)) {
         // #387: redesigned picker behind `newCustomers`; sets the customer the same way as the current one

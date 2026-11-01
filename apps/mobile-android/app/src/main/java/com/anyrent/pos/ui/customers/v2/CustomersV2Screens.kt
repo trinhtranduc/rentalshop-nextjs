@@ -91,7 +91,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.guide.CoachBubble
 import com.anyrent.pos.domain.guide.CoachScreen
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import com.anyrent.pos.ui.home.v2.CoachScroll
+import com.anyrent.pos.ui.home.v2.FirstRunCoach
 import com.anyrent.pos.ui.home.v2.FirstRunCoachOverlay
 import com.anyrent.pos.ui.home.v2.coachAnchor
 import com.anyrent.pos.data.CustomersV2Api
@@ -453,6 +460,18 @@ fun NewCustomerContent(
     val flow = remember { NewCustomerFlow() }
     val needPhone = stringResource(R.string.customers_v2_need_phone)
     val needName = stringResource(R.string.customers_v2_need_name)
+    val scroll = rememberScrollState()
+    var scrollTop by remember { mutableStateOf(0f) }
+    // #1412: the guide's step 6 asks the form's own rule, no other; the duplicate box needs the screen, so the bubble leaves
+    SideEffect {
+        if (pickMode && FirstRunCoach.run != null) {
+            FirstRunCoach.formValid = if (CustomerRules.validate(name, phone) == null) setOf(CoachBubble.NEW_CUSTOMER) else emptySet()
+            FirstRunCoach.formHasInput = listOf(phone, name, note).any { it.isNotEmpty() }
+            FirstRunCoach.paused = existing != null
+        }
+    }
+    DisposableEffect(Unit) { onDispose { FirstRunCoach.formClosed(CoachScreen.NEW_CUSTOMER) } }
+    if (pickMode) CoachScroll(CoachScreen.NEW_CUSTOMER, scroll, scrollTop)
 
     fun save() {
         problem = CustomerRules.validate(name, phone)
@@ -477,7 +496,7 @@ fun NewCustomerContent(
                 modifier = Modifier.semantics { heading() })
         }
         Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { scrollTop = it.positionInWindow().y }.verticalScroll(scroll).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // #1394: the bubble lights the two required fields together
@@ -536,7 +555,7 @@ fun NewCustomerContent(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)) {
+        Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp).coachAnchor("customers.new.save")) {
             PrimaryButton(
                 text = stringResource(if (pickMode) R.string.customers_v2_save_and_pick else R.string.save),
                 enabled = !saving, loading = saving, onClick = ::save,
