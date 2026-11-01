@@ -1656,7 +1656,7 @@ final class AnyRentE2ETests: XCTestCase {
         }
         sleep(4)
         let tiles = ["Giá trị đơn mới", "Thực thu", "Còn phải thu", "Thế chân"]
-        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phí hư hỏng, trễ", "Hoàn đơn huỷ", "Thế chân nhận − trả",
+        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phụ phí, trễ", "Hoàn đơn huỷ", "Thế chân nhận − trả",
                         "Thực thu", "Sẽ thu khi khách lấy đồ", "Quá ngày lấy, chưa thu", "Đã nhận", "Đã trả lại khách",
                         "Sẽ nhận khi giao", "Đang giữ, sẽ trả lại"]
         for (index, title) in tiles.enumerated() {
@@ -1723,7 +1723,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("RELATED REASONS english=\(english) | \(texts.prefix(24))")
         if english {
             let vietnamese = ["Thu tiền cọc", "Thu tiền khi lấy hàng", "Hoàn tiền cọc", "Đơn bán được tạo", "Đơn hủy (hoàn lại)",
-                              "Thu phí hư hỏng", "Thuê và trả trong cùng ngày"]
+                              "Thu phí hư hỏng", "Thu phụ phí", "Thuê và trả trong cùng ngày"]
             XCTAssertTrue(texts.filter { vietnamese.contains($0) }.isEmpty, "#757 Vietnamese reasons in the English app: \(texts)")
         }
     }

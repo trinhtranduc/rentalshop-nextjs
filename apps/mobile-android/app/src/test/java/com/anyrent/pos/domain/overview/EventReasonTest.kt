@@ -39,6 +39,16 @@ class EventReasonTest {
         assertEquals(listOf(EventReason.DEPOSIT, null), reasons("MULTIPLE", "Thu tiền cọc + Lạ", 300.0))
     }
 
+    /** #1433: the API keeps these sentences for installed apps; this build still knows them, and shows "Phụ phí" */
+    @Test
+    fun apiDamageSentencesAreStillKnown() {
+        assertEquals(listOf(EventReason.FUTURE_DAMAGE_FEE), reasons("RENT_FUTURE_RETURN", "Ước tính thu phí hư hỏng khi trả hàng", 50.0))
+        assertEquals(
+            listOf(EventReason.PICKUP, EventReason.DAMAGE_FEE),
+            reasons("MULTIPLE", "Thu tiền khi lấy hàng + Thu phí hư hỏng", 150.0),
+        )
+    }
+
     @Test
     fun unknownTypeKeepsTheApiText() {
         val parts = EventReason.parts("SOMETHING_NEW", "Văn bản", 1.0)

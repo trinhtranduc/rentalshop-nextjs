@@ -287,7 +287,7 @@ final class CalendarOverviewSettingsV2Tests: XCTestCase {
             "overview.v2.collateralHeld": "Thế chân đang giữ",
             "overview.v2.detail.body": "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.",
             "overview.v2.detail.pickupAndSale": "Thu khi giao đồ, bán hàng",
-            "overview.v2.detail.fees": "Phí hư hỏng, trễ hạn",
+            "overview.v2.detail.fees": "Phụ phí, trễ hạn",
             "overview.v2.detail.refunds": "Hoàn tiền đơn huỷ",
             "overview.v2.detail.collateralNote": "Không tính vào thực thu vì sẽ trả lại khách.",
             "overview.v2.detail.note": "Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.",

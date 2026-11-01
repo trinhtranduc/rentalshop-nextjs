@@ -260,6 +260,29 @@ final class OverviewDashLogicTests: XCTestCase {
         XCTAssertEqual(RelatedEventReason.text(revenueType: "NEW_TYPE", description: "Văn bản", revenue: 1), "Văn bản")
     }
 
+    /// #1433: the API keeps its sentences for installed apps; this build still knows them and shows the new label.
+    func testApiDamageSentencesShowAsPhuPhi() throws {
+        let en = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj"))))
+        let vi = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "vi-VN", ofType: "lproj"))))
+        func text(_ bundle: Bundle, _ type: String, _ description: String) -> String {
+            RelatedEventReason.text(revenueType: type, description: description, revenue: 50) {
+                bundle.localizedString(forKey: $0, value: nil, table: nil)
+            }
+        }
+        XCTAssertEqual(text(vi, "RENT_RETURN", "Thu phí hư hỏng"), "Thu phụ phí")
+        XCTAssertEqual(text(en, "RENT_RETURN", "Thu phí hư hỏng"), "Extra fee collected")
+        XCTAssertEqual(text(vi, "RENT_FUTURE_RETURN", "Ước tính thu phí hư hỏng khi trả hàng"), "Dự kiến thu phụ phí khi trả hàng")
+        XCTAssertEqual(text(en, "RENT_FUTURE_RETURN", "Ước tính thu phí hư hỏng khi trả hàng"), "Expected extra fee at return")
+        XCTAssertEqual(text(vi, "MULTIPLE", "Thu tiền khi lấy hàng + Thu phí hư hỏng"), "Thu tiền khi lấy hàng + Thu phụ phí")
+        let path = try XCTUnwrap(vi.path(forResource: "Localizable", ofType: "strings"))
+        let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
+        XCTAssertEqual(table.filter { $0.value.lowercased().contains("phí hư hỏng") || $0.value.lowercased().contains("phí hư hại") }.keys.sorted(), [])
+        for key in ["Damage Fee", "Damage fee", "history.field.damageFee"] {
+            XCTAssertEqual(table[key], "Phụ phí", key)
+        }
+        XCTAssertEqual(table["Late + damage fees"], "Phí trễ + phụ phí")
+    }
+
     /// #758: a paused / cancelled / past-due subscription reads in the app language; an unknown plan code is generic
     func testSubscriptionCodesHaveASentenceInEnglishAndVietnamese() throws {
         let en = try XCTUnwrap(Bundle(path: try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj"))))

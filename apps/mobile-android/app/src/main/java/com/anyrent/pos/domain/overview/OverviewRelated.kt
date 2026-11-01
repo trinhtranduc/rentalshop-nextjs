@@ -108,7 +108,11 @@ enum class EventReason(@StringRes val res: Int) {
     ;
 
     companion object {
-        /** The API's sentences (`revenue-calculator.ts`) */
+        /**
+         * The API's sentences (`revenue-calculator.ts`). Match keys only, never reword them: the API sends them and
+         * installed apps match on them. The screen shows the string resource, so "Thu phí hư hỏng" appears as
+         * "Thu phụ phí" (#1433).
+         */
         private val known = mapOf(
             "Đơn bán được tạo" to SALE_CREATED, "Đơn bán bị hủy (hoàn lại)" to SALE_CANCELLED,
             "Thu tiền cọc" to DEPOSIT, "Thu tiền khi lấy hàng" to PICKUP, "Thuê và trả trong cùng ngày" to SAME_DAY,
