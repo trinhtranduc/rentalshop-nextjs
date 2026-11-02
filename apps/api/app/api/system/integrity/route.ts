@@ -126,13 +126,14 @@ async function checkOrderCustomerIntegrity(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'order_customer_integrity',
       status: 'fail',
       code: 'CHECK_ORDER_CUSTOMER_INTEGRITY_FAILED',
         message: 'Failed to check order-customer integrity',
       severity: 'high',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }
@@ -165,13 +166,14 @@ async function checkOrderProductIntegrity(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'order_product_integrity',
       status: 'fail',
       code: 'CHECK_ORDER_PRODUCT_INTEGRITY_FAILED',
         message: 'Failed to check order-product integrity',
       severity: 'high',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }
@@ -204,13 +206,14 @@ async function checkUserOutletIntegrity(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'user_outlet_integrity',
       status: 'fail',
       code: 'CHECK_USER_OUTLET_INTEGRITY_FAILED',
         message: 'Failed to check user-outlet integrity',
       severity: 'high',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }
@@ -269,13 +272,14 @@ async function checkProductStockConsistency(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'product_stock_consistency',
       status: 'fail',
       code: 'CHECK_PRODUCT_STOCK_FAILED',
         message: 'Failed to check product stock consistency',
       severity: 'high',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }
@@ -308,13 +312,14 @@ async function checkPaymentOrderIntegrity(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'payment_order_integrity',
       status: 'fail',
       code: 'CHECK_PAYMENT_ORDER_INTEGRITY_FAILED',
         message: 'Failed to check payment-order integrity',
       severity: 'high',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }
@@ -358,13 +363,14 @@ async function checkAuditLogCompleteness(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'audit_log_completeness',
       status: 'fail',
       code: 'CHECK_AUDIT_LOG_FAILED',
         message: 'Failed to check audit log completeness',
       severity: 'medium',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }
@@ -405,13 +411,14 @@ async function checkDataConsistency(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'data_consistency',
       status: 'fail',
       code: 'CHECK_DATA_CONSISTENCY_FAILED',
         message: 'Failed to check data consistency',
       severity: 'medium',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }
@@ -444,13 +451,14 @@ async function checkOrphanedRecords(checks: IntegrityCheck[]) {
       });
     }
   } catch (error) {
+    console.error('[system/integrity] check failed:', error);
     checks.push({
       name: 'orphaned_records',
       status: 'fail',
       code: 'CHECK_ORPHANED_RECORDS_FAILED',
         message: 'Failed to check for orphaned records',
       severity: 'medium',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     });
   }
 }

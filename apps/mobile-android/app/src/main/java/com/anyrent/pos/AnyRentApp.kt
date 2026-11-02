@@ -20,6 +20,7 @@ class AnyRentApp : Application() {
         super.onCreate()
         instance = this
         SessionStore.init(this)
+        com.anyrent.pos.data.OrderPhotos.init(this)
         CurrentOutlet.init(this)
         CartStore.init(this)
         CartStore.restoreFromDisk()
@@ -30,6 +31,7 @@ class AnyRentApp : Application() {
             .onFailure { android.util.Log.w(TAG, "RevenueCat init skipped/failed: ${it.message}") }
         PushRegistrar.refreshTokenIfLoggedIn()
         DraftOrderReminder.install()
+        com.anyrent.pos.ui.widget.TodayWidgetSync.install(this)
     }
 
     private fun createNotificationChannels() {

@@ -46,7 +46,7 @@ import coil.compose.AsyncImage
 import com.anyrent.pos.R
 
 /** Max photos allowed on an order note (iOS `maxAttachmentCount` parity). */
-const val MAX_NOTE_IMAGES = 5
+const val MAX_NOTE_IMAGES = com.anyrent.pos.domain.orders.OrderDetailLogic.MAX_NOTE_PHOTOS
 
 private const val MAX_ZOOM = 4f
 private const val DOUBLE_TAP_ZOOM = 2.5f

@@ -109,6 +109,11 @@ first_of() { # tap the first selector that is on screen
 mkdir -p "$OUT_DIR"
 sleep 3
 step 00-launch
+# #1455: on a fresh install the pages come first, then login.
+if ui wait "Bỏ qua" 8 || ui has "Skip"; then
+  step 01-onboarding
+  first_of "Bỏ qua" "Skip" || true
+fi
 # Login. v2 (newAuth): each field's content-desc is its label, and the label text above it matches too,
 # so the field is the 2nd match. Old screen: tap the placeholder.
 login_field() { # login_field <v2 label vi> <v2 label en> <old placeholder vi> <old placeholder en>
@@ -124,9 +129,11 @@ if ui wait "~Email" 15 || ui has "Nhập email" || ui has "Enter your email"; th
   first_of "Đăng nhập" "Sign in" "Log in" || echo "MISS  login button"
   step 01-login-submitted
 fi
-# Onboarding comes after the first login.
-if ui wait "Bỏ qua" 8 || ui has "Skip"; then
-  step 02-onboarding
+# A login goes straight to Home: never the pages after it (#1455).
+sleep 4
+if ui has "Bỏ qua" || ui has "Skip"; then
+  echo "MISS  the pages came after login"; MISSES=$((MISSES + 1))
+  step 02-onboarding-after-login
   first_of "Bỏ qua" "Skip" || true
 fi
 # Relaunch once so the app-config flags apply.

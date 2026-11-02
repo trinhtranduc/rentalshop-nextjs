@@ -72,8 +72,8 @@ scripts/mobile-e2e/adb-ui.sh dump | tap "~Giao đồ" | shot 20-detail-handover 
   Soft checks print `E2E_NOTE: SOFT CHECK FAILED …` in the log instead of failing.
 - A merchant run first runs `prepare-accounts.sh staged` (three products on merchant1 for `test8cOverlapTagAndRoleSheet`
   and `test8dCartLines`; idempotent, a failure only warns). `--no-stage` skips it.
-- The test handles the notification prompt ("Don’t Allow" / "Không cho phép") and onboarding ("Skip" / "Bỏ qua"),
-  logs in, and relaunches once so app-config flags apply.
+- The test gets past the pages ("Skip" / "Bỏ qua", before login on a fresh install, #1455), logs in, handles the
+  notification prompt ("Don’t Allow" / "Không cho phép"), and relaunches once so app-config flags apply.
 - Android debug builds take `-PapiBaseUrl=http://10.0.2.2:<port>` (no edit to `build.gradle.kts`); the debug network
   config already allows cleartext to `10.0.2.2`. `adb input text` cannot type Vietnamese: search with ASCII.
 - Look at every screenshot: `sips -Z 900 <png> --out <small.png>`, then Read it. A green test with a wrong screen is a bug.

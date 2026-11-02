@@ -8,8 +8,13 @@ import { prisma } from './client';
 import type { AddonPrice, Payment, PlanLimitAddon } from '@prisma/client';
 import type { AddonPriceCreateInput, AddonPriceUpdateInput, AddonQuote, AddonRenewalLine, LimitKind } from '@rentalshop/utils';
 import { addonColumnsFor, isFeatureAddon, LIMIT_KINDS } from '@rentalshop/utils';
+import { MODULE_KEY } from '@rentalshop/constants';
+import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
 const LIMIT_KIND_SET = new Set<string>(LIMIT_KINDS);
+
+/** #782: "+100" on a `packSize = 1` row (the typed amount), "× 2" on an older row with a larger pack. */
+const amountText = (packSize: number, packs: number) => (packSize === 1 ? `+${packs}` : `× ${packs}`);
 
 /** Items that still count: switched on and not past their end. */
 const notEnded = (now: Date) => ({ isActive: true, OR: [{ endsAt: null }, { endsAt: { gt: now } }] });
@@ -109,7 +114,7 @@ export const simplifiedMerchantAddons = {
         data: {
           merchantId: input.merchantId,
           ...columns,
-          notes: feature ? addonPrice.name : `${addonPrice.name} × ${packs}`,
+          notes: feature ? addonPrice.name : `${addonPrice.name} ${amountText(addonPrice.packSize, packs)}`,
           isActive: true,
           addonPriceId: addonPrice.id,
           name: addonPrice.name,
@@ -124,6 +129,11 @@ export const simplifiedMerchantAddons = {
       // add-on off later really ends the module
       if (featureKey) {
         await tx.merchantModule.updateMany({ where: { merchantId: input.merchantId, key: featureKey, enabled: true }, data: { enabled: false } });
+      }
+      // #782: buying loyalty runs the program at once: earning stops while `isActive` is false, and admin has no second switch to find
+      if (featureKey === MODULE_KEY.LOYALTY) {
+        await provisionDefaultLoyaltyProgram(tx as any, input.merchantId);
+        await tx.loyaltyProgram.update({ where: { merchantId: input.merchantId }, data: { isActive: true } });
       }
       let payment: Payment | null = null;
       if (quote.amountDue > 0) {
@@ -140,7 +150,7 @@ export const simplifiedMerchantAddons = {
             reference: input.reference || undefined,
             description: feature
               ? `Add-on: ${addonPrice.name} (tính năng), còn ${quote.remainingDays} ngày`
-              : `Add-on: ${addonPrice.name} × ${packs} (+${packs * addonPrice.packSize} ${addonPrice.limitKind}), còn ${quote.remainingDays} ngày`,
+              : `Add-on: ${addonPrice.name} ${amountText(addonPrice.packSize, packs)}${addonPrice.packSize === 1 ? ` ${addonPrice.limitKind}` : ` (+${packs * addonPrice.packSize} ${addonPrice.limitKind})`}, còn ${quote.remainingDays} ngày`,
             metadata: JSON.stringify({ addonId: addon.id, addonPriceId: addonPrice.id, packs: feature ? 1 : packs, unitPrice: addonPrice.monthlyPrice, ...(featureKey ? { featureKey } : {}), ...quote }),
             processedAt: method === 'STRIPE' ? new Date() : null,
             processedBy: input.createdBy,

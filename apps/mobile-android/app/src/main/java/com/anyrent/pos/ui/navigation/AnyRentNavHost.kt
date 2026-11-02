@@ -1,5 +1,8 @@
 package com.anyrent.pos.ui.navigation
 
+import com.anyrent.pos.domain.widget.TodayWidgetLink
+import com.anyrent.pos.domain.widget.TodayWidgetLinks
+import com.anyrent.pos.ui.widget.TodayWidgetSync
 import com.anyrent.pos.data.CurrentOutlet
 import com.anyrent.pos.ui.home.v2.OutletFallbackDialog
 import kotlinx.coroutines.flow.drop
@@ -64,6 +67,7 @@ import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.auth.CheckEmailScreen
 import com.anyrent.pos.ui.auth.ForgotPasswordScreen
 import com.anyrent.pos.ui.auth.LoginScreen
+import com.anyrent.pos.domain.appstart.AppStartRoute
 import com.anyrent.pos.ui.auth.OnboardingScreen
 import com.anyrent.pos.ui.auth.RegisterStoreScreen
 import com.anyrent.pos.ui.auth.v2.EmailSentV2Screen
@@ -211,22 +215,29 @@ fun AnyRentNavHost(
     startOrderId: Int? = null,
     rootNavController: NavHostController = rememberNavController(),
 ) {
-    // iOS: onboarding after first successful login (loadMainUserView), not before login.
-    val start = when {
-        SessionStore.isLoggedIn && !SessionStore.onboardingDone -> Routes.Onboarding
-        SessionStore.isLoggedIn -> Routes.Main
-        else -> Routes.Login
-    }
+    // #1455: the pages come before login at first launch; the rule is in `AppStartRoute`, as on iOS. Decided once: the flag
+    // changes on the first screens, and a NavHost whose start changes starts over.
+    val start = remember { startRoute(AppStartRoute.Moment.LAUNCH) }
 
     fun navigateAfterLogin() {
-        val dest = if (SessionStore.onboardingDone) Routes.Main else Routes.Onboarding
-        rootNavController.navigate(dest) {
+        rootNavController.navigate(startRoute(AppStartRoute.Moment.LOGGED_IN)) {
             popUpTo(Routes.Login) { inclusive = true }
             launchSingleTop = true
         }
     }
 
     val context = LocalContext.current
+    // #1381: the widget's worker can find the session gone while no screen is up; `sessionExpired` then reaches nobody,
+    // and a recreated activity would restore its old screens with no session
+    LaunchedEffect(rootNavController) {
+        val route = rootNavController.currentDestination?.route
+        if (!SessionStore.isLoggedIn && route != null && !showsWithoutSession(route)) {
+            rootNavController.navigate(Routes.Login) {
+                popUpTo(rootNavController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
     LaunchedEffect(rootNavController) {
         SessionStore.sessionExpired.collect { code ->
             // #386: a wrong password is a 401 too; the new login is already on screen and shows it inline,
@@ -663,14 +674,15 @@ fun AnyRentNavHost(
         }
         composable(Routes.Onboarding) {
             val finish = {
-                SessionStore.onboardingDone = true
-                rootNavController.navigate(Routes.Main) {
+                rootNavController.navigate(startRoute(AppStartRoute.Moment.ONBOARDING_FINISHED)) {
                     popUpTo(Routes.Onboarding) { inclusive = true }
                     launchSingleTop = true
                 }
             }
-            // #387: redesigned onboarding behind `newAuth`; same "show once" storage
-            if (FeatureFlags.isOn(MobileFeature.NEW_AUTH)) {
+            // #387: redesigned onboarding behind `newAuth`; same "show once" storage. #1455: chosen once when the pages open, so a
+            // config landing while they are up never swaps them. A fresh install has no config yet: unset is on, the new pages.
+            val newAuth = remember { isNewAuthOn() }
+            if (newAuth) {
                 OnboardingV2Screen(onFinished = finish)
                 return@composable
             }
@@ -794,6 +806,7 @@ fun AnyRentNavHost(
     }
 
     LaunchedOpenDraftCart(rootNavController)
+    LaunchedOpenWidgetLink(rootNavController)
     LaunchedOpenMyShifts(rootNavController)
     LaunchedOpenBookingRequest(rootNavController)
 }
@@ -879,6 +892,11 @@ private fun MainTabs(
     }
 
     LaunchedOpenPendingOrder(rootNavController, startOrderId)
+    // #1413: the notification question waits for Home, with nothing on top of the tabs
+    val rootEntry by rootNavController.currentBackStackEntryAsState()
+    AskNotificationPermissionOnHome(homeInFront = rootEntry?.destination?.route == Routes.Main && current == MainTab.Home.route)
+    // #1381: Main shows after a sign-in too: the widget's file belongs to this account from now on
+    LaunchedEffect(Unit) { TodayWidgetSync.refreshSoon() }
 
     // #828: a merchant's active branches for the Home button; a remembered branch that was turned off falls back to
     // the default and the merchant is told once. A branch change reloads every order and stock view, like an order
@@ -1048,6 +1066,13 @@ private fun MainTabs(
                         onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
                         onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
                         onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
+                        onOpenHome = {
+                            tabNav.navigate(MainTab.Home.route) {
+                                popUpTo(tabNav.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                         onLoggedOut = {
                             rootNavController.navigate(Routes.Login) {
                                 popUpTo(Routes.Main) { inclusive = true }
@@ -1115,6 +1140,44 @@ private fun LaunchedOpenPendingOrder(navController: NavHostController, startOrde
         if (id != null && SessionStore.isLoggedIn) {
             SessionStore.pendingOrderId = null
             navController.navigate(Routes.orderDetail(id))
+        }
+    }
+}
+
+/** The screens of someone not signed in */
+internal fun isSignInRoute(route: String): Boolean =
+    route == Routes.Login || route == Routes.Forgot || route == Routes.ForgotV2 || route == Routes.Register ||
+        route == Routes.EmailSentV2 || route.startsWith("check-email")
+
+/** #1455: what may stay on screen with no session: the sign-in screens and the first-launch pages */
+internal fun showsWithoutSession(route: String): Boolean = isSignInRoute(route) || route == Routes.Onboarding
+
+/** #1455: where a moment leads, from what this install has stored now */
+private fun startRoute(moment: AppStartRoute.Moment): String {
+    if (AppStartRoute.endsOnboarding(moment)) SessionStore.onboardingDone = true
+    return when (AppStartRoute.next(moment, SessionStore.isLoggedIn, SessionStore.onboardingDone)) {
+        AppStartRoute.ONBOARDING -> Routes.Onboarding
+        AppStartRoute.LOGIN -> Routes.Login
+        AppStartRoute.MAIN -> Routes.Main
+    }
+}
+
+/** #1381 the home-screen widget: a job opens its order, the header opens "Việc cần làm". Waits for the sign-in screens to end. */
+@Composable
+private fun LaunchedOpenWidgetLink(navController: NavHostController) {
+    val pending by TodayWidgetLinks.pending.collectAsState()
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    LaunchedEffect(pending, currentRoute) {
+        if (pending == null || !SessionStore.isLoggedIn) return@LaunchedEffect
+        val dest = currentRoute ?: return@LaunchedEffect
+        if (isSignInRoute(dest) || dest == Routes.Onboarding) return@LaunchedEffect
+        when (val link = TodayWidgetLinks.consume()) {
+            is TodayWidgetLink.Order -> navController.navigate(Routes.orderDetail(link.id))
+            TodayWidgetLink.Todo -> {
+                MainTabRouter.openTodo()
+                navController.popBackStack(Routes.Main, inclusive = false)
+            }
+            null -> Unit
         }
     }
 }

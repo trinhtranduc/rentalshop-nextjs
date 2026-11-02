@@ -57,6 +57,7 @@ import { CartLineRow, CustomerDialog, DaysDialog, Modal, MoneyInput, ProductCard
 import { useLoyalty } from './useLoyalty';
 import { confirmView } from './confirm-model';
 import { CreateConfirmDialog } from './ConfirmDialog';
+import { MAX_NOTE_IMAGES } from '../detail/actions-model';
 import { CartTabs } from './CartTabs';
 import { useDraftCarts } from './useDraftCarts';
 import { blankCart, type DraftCart } from './cart-store';
@@ -76,7 +77,6 @@ import {
 } from '../../installments/installments-model';
 
 const PAGE_SIZE = 60;
-const MAX_NOTE_IMAGES = 5;
 
 type GridProduct = ProductLike;
 type OutletLite = {

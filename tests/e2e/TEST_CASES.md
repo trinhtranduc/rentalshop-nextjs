@@ -90,7 +90,10 @@ Tài khoản: chủ shop; quản lý, nhân viên, kho của chi nhánh A; quả
 | SS-PRN-04 | [hiện tại] quản lý chi nhánh sửa ghi chú in | 200 (quy tắc chủ shop chốt: chỉ chủ shop sửa, API chưa đổi) |
 | SS-BNK-01 | chủ shop thêm tài khoản ngân hàng | trả 201; quản lý, nhân viên, kho đọc thấy; chi nhánh khác không đọc được |
 | SS-BNK-02 | nhân viên / kho thêm tài khoản | 403, không tạo |
-| SS-BNK-03 | [hiện tại] quản lý chi nhánh thêm tài khoản | 201 (quy tắc chủ shop chốt: chỉ chủ shop, cần issue riêng); quản lý chi nhánh khác bị từ chối (404) |
+| SS-BNK-03 | (#1319) quản lý chi nhánh A và B thêm, sửa, đặt mặc định, xoá | 403 `INSUFFICIENT_PERMISSIONS`, danh sách không đổi |
+| SS-BNK-04 | (#1319) nhân viên / kho sửa, đặt mặc định, xoá | 403, không đổi; vẫn đọc được tài khoản mặc định để in QR |
+| SS-BNK-05 | (#1319) chủ shop sửa, đặt mặc định, xoá | 200; quản lý đọc thấy từng thay đổi |
+| SS-BNK-06 | (#1319) `permissions` lúc đăng nhập | quản lý chỉ có `bankAccounts.view`; chủ shop có cả `bankAccounts.manage` |
 
 Mobile (đã viết, chưa chạy): xem `tests/e2e/mobile/SETTINGS_SYNC.md`.
 
@@ -781,6 +784,8 @@ bằng psql: còn khoảng 21 trên 30 ngày Việt Nam. Số tiền mong đợi
 | BF-ADD-19 | Đổi gói từ dùng thử (#870) | TRIAL gói 0 ₫ + add-on user 30.000; đổi sang gói 399.000 | `addonPeriodPrice` 30.000, `addonCreditValue` 0; Payment `PLAN_CHANGE` 429.000; ACTIVE |
 | BF-ADD-20 | Tăng / giảm số gói (#870) | 1 gói +2 user; `PATCH packs: 3`; `PATCH packs: 1`; gia hạn | tăng: thu ngay round(40.000 ÷ 30 × 2 × ngày còn), cột users 6, giới hạn 9; giảm: không thu, `nextPacks` 1, giới hạn vẫn 9, xem trước gia hạn add-on 40.000; sau gia hạn packs 1, users 2, giới hạn 5 |
 | BF-ADD-21 | Kỳ dài hơn một chu kỳ (#870) | kỳ tháng đã gia hạn thêm, còn 60 ngày; mua 1 gói 40.000 | thu round(40.000 ÷ 30 × ngày còn) = 80.000 khi còn 60 ngày; Payment `PLAN_CHANGE` đúng số đó |
+| BF-ADD-22 | #782 Gõ số trên dòng packSize 1 | +100 sản phẩm giá 500, +500 đơn giá 100; đọc `GET /api/subscriptions/status`; xem gia hạn | `limits` giữ số của gói; `effectiveLimits` 3.100 / 3.500; `addonLimits` +100 / +500; `usage.orders` có; gia hạn giữ +100 |
+| BF-ADD-23 | #782 Tối đa `packs` | mua 100.001 rồi 100.000 | 400 và không có payment; rồi 201, +100.000 |
 
 ## BF-FEAT — Chấm công bán như add-on tính năng (`feature-addon.e2e.test.js`, #943; chủ shop chốt 2026-10-13)
 
@@ -805,6 +810,8 @@ Loyalty bật = gói có `loyalty` HOẶC add-on `loyalty` còn hiệu lực. Ch
 | BF-LOYADD-02 | Gói không có loyalty + add-on | hồ sơ + `/api/loyalty/program` trước; mua; tạo chương trình; bán 250.000; bán tiếp 2 cái dùng 10 điểm | trước: `modules` [], 403 `PLAN_UPGRADE_REQUIRED`; thu round(79.000 ÷ 30 × ngày còn); sau: `modules` [loyalty], `featureSources` loyalty theo add-on; 25 điểm; bán tiếp 2 cái (500.000) dùng 10 điểm: giảm 10.000, còn 25 − 10 + 49 = 64 |
 | BF-LOYADD-03 | Tắt từ kỳ sau, hết kỳ | 10 điểm; `PATCH removeAtPeriodEnd`; cho hết kỳ; bán tiếp | đến cuối kỳ vẫn bật, gia hạn chỉ còn giá gói; hết kỳ: `modules` [], 403, không cộng điểm; chương trình và 10 điểm giữ nguyên |
 | BF-LOYADD-04 | Gói có loyalty | không mua add-on; bán 120.000; báo giá / mua add-on | `modules` [loyalty], 12 điểm; 422 `ADDON_FEATURE_IN_PLAN`; `featureSources` loyalty theo gói |
+| BF-LOYADD-05 | #782 Mua xong là chạy | mua add-on, không chỉnh gì; bán 100.000 | `isActive` true sau khi mua, 10 điểm theo tỉ lệ mặc định |
+| BF-LOYADD-06 | #782 Gói Basic | báo giá / mua add-on Khách thân thiết | 422 `ADDON_LOYALTY_NOT_FOR_BASIC`, không ghi gì, chương trình vẫn tắt |
 
 ## BF-LIST — Hiện ở chi nhánh (`product-listing.e2e.test.js`, #1341, PR 1 của #1335; chủ shop chốt 2026-10-30)
 
@@ -846,6 +853,7 @@ Kết quả lần chạy đầy đủ `--accounts --headed`: roles 63 đạt / 0
 | WEB-ROLE-06, 07 | Tiền qua URL | mở `?detail=`, `?top=`, khoảng tuỳ chọn | không có số tiền; kỳ bị ép về hôm nay. 06b / 07b: `/dashboard/related` hiện tổng các đơn (hiện trạng, Q3) |
 | WEB-ROLE-08, 09 | Trang quản trị qua URL | /users, /users/add, /users/permissions, /users/role-permissions, /outlets/:id/bank-accounts | thông báo không có quyền, không lộ email, không form; API GET và POST /api/users = 403 |
 | WEB-ROLE-10, 11 | /outlets của staff, kho | mở /outlets, gọi API | chỉ chi nhánh mình; API 403 khi tạo / sửa; nút "Thêm chi nhánh" và "Sửa" phải ẩn (**known #736**: đang hiện) |
+| WEB-ROLE-31..35 | Tài khoản ngân hàng chỉ chủ shop sửa (#1319) | quản lý chi nhánh mở /outlets/:id/bank-accounts, gọi API ghi; chủ shop mở cùng trang | quản lý: danh sách trống không mời thêm, có tài khoản thì chỉ xem (không Thêm, Sửa, Xoá), Cài đặt > Thu tiền và In & phiếu không có nút thêm, sửa, xoá; API 403 `INSUFFICIENT_PERMISSIONS`, không đổi; chủ shop còn đủ nút |
 | WEB-ROLE-12 | Sản phẩm, staff (a..e) | danh sách, chi tiết, URL sửa, API | không Sửa/Xoá/Xuất/Nhập; PUT giá 403 và giá không đổi; URL sửa báo không có quyền; export 403; Thêm sản phẩm chạy |
 | WEB-ROLE-13 | Sản phẩm, kho (a..c) | như trên | hiện Thêm/Nhập/Sửa/Xoá; PUT giá 200; export API 200 trong khi nút bị ẩn (Q1) |
 | WEB-ROLE-14, 15 | Khách và danh mục, staff, kho (a, b) | nút so với API | Xoá khách, Sửa, Nhập chạy. Xuất Excel chỉ hiện nếu API cho xuất (export khách 403 cho cả hai). Danh mục: staff ẩn và 403, kho hiện và 200/201 |

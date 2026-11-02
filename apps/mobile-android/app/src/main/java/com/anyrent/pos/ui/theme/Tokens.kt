@@ -1,5 +1,6 @@
 package com.anyrent.pos.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -16,6 +17,12 @@ object DS {
         val Background = Color(0xFFF3F4F6)
         val Border = Color(0xFFE5E7EB)
         val Divider = Color(0xFFF1F5F9)
+    }
+
+    /** Diagonal gradients, top-left to bottom-right (iOS `DS.Gradient`) */
+    object Gradients {
+        /** #1384: AI image search button. Web `--ar-ai-gradient` */
+        val AiScan = Brush.linearGradient(listOf(Color(0xFF1D4ED8), Color(0xFF7C3AED)))
     }
 
     /** Pill colors: [text] on [fill] */

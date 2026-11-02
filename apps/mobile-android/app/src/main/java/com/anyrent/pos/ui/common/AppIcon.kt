@@ -42,6 +42,20 @@ object AppIcons {
         strokeIcon("EditLine", "M12 20h9", "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z", strokeWidth = 2.2f)
     }
 
+    /** #1384: the mockup's filled camera with a sparkle (iOS `DS.aiScanIcon`) */
+    val AiScan: ImageVector by lazy {
+        ImageVector.Builder(name = "AiScan", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
+            .addPath(
+                pathData = PathParser().parsePathString(
+                    "M8.2 6a2 2 0 0 0-1.7 1L5.7 8.3H4.5A2.5 2.5 0 0 0 2 10.8v7.7A2.5 2.5 0 0 0 4.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-5.3h-2v5.3a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-7.7a.5.5 0 0 1 .5-.5h2.3l1.4-2.3H13V6Z" +
+                        "M11 11.3a3.3 3.3 0 1 1 0 6.6a3.3 3.3 0 1 1 0-6.6Z" +
+                        "M18.5 1.5l1.2 3.3 3.3 1.2-3.3 1.2-1.2 3.3-1.2-3.3L14 6l3.3-1.2Z",
+                ).toNodes(),
+                fill = SolidColor(Color.Black),
+            )
+            .build()
+    }
+
     private fun strokeIcon(name: String, vararg paths: String, strokeWidth: Float = 2f): ImageVector =
         ImageVector.Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
             .apply {

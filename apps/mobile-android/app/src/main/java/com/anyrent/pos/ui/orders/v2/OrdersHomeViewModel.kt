@@ -77,6 +77,8 @@ data class OrdersHomeState(
     val total: Int? = null,
     /** Red badge of "Việc cần làm", kept while another list shows */
     val todayBadge: Int = 0,
+    /** #1381 late, hand-overs and returns of today, for the widget card; null until "Việc cần làm" loaded */
+    val widgetCounts: com.anyrent.pos.domain.widget.TodayWidgetCounts? = null,
 ) {
     val isSearching get() = OrdersHomeLogic.isSearch(query)
 }
@@ -343,6 +345,7 @@ class OrdersHomeViewModel(
                         loading = false,
                         refreshing = false,
                         todayBadge = OrdersBoardLogic.badgeCount(sections),
+                        widgetCounts = com.anyrent.pos.domain.widget.TodayWidgetData.counts(work),
                     )
                 }
                 markLoaded(key, version)

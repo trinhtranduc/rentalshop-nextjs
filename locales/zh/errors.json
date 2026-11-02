@@ -36,6 +36,8 @@
   "ADDON_PRICE_NOT_ON_SALE": "该附加包已暂停，不能再售。",
   "ADDON_FEATURE_ALREADY_ON": "该店铺已有此功能。如已设置下期关闭，请撤销而不是重新添加。",
   "ADDON_FEATURE_IN_PLAN": "该店铺的套餐已包含此功能，无需添加附加项。",
+  "ADDON_LOYALTY_NOT_FOR_BASIC": "会员积分功能暂时无法在手机上设置，因此暂不向 Basic 套餐销售。",
+  "ADDON_AMOUNT_TOO_LARGE": "此附加项数量过大，请减少数量。",
   "ADDON_PRICE_IN_USE": "已有店铺在使用该附加包，不能修改每包数量。请新增一行。",
   "PLAN_CHANGE_REMOVE_OUTLET_ADDONS": "该店铺仍有分店附加包。请先移除分店附加包，再切换到不含多分店的套餐。",
   "ADDON_ALREADY_ENDED": "该附加包已结束。",

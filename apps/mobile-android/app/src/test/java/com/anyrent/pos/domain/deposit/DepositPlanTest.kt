@@ -102,6 +102,62 @@ class DepositPlanTest {
         assertNull(DepositPlanLogic.listBadgePercent("RENT", "RESERVED", hasPlan = null, apiPercent = 40.0)) // an older API sends no flag
     }
 
+    /** #1380: the Giao đồ button gives way to "Còn đợt chưa thu" exactly when the API would refuse the hand-over */
+    @Test
+    fun `blocksHandOver only for an unpaid explicit stage of a booked plan order`() {
+        fun stage(key: String, amount: Double, status: String = "UPCOMING", paid: Double = 0.0) =
+            OrderInstallment(key, key, 10.0, amount, status = status, paidAmount = paid)
+        fun plan(vararg stages: OrderInstallment) = DepositPlanInfo(hasPlan = true, installments = stages.toList())
+        val unpaid = plan(stage("i1", 300.0, "PAID", 300.0), stage("i2", 400.0), stage("rest", 300.0))
+        assertTrue(DepositPlanLogic.blocksHandOver(unpaid, "RESERVED"))
+        assertTrue(DepositPlanLogic.blocksHandOver(plan(stage("i1", 300.0, "OVERDUE"), stage("rest", 700.0)), "RESERVED"))
+        assertTrue("status is matched like the screen does", DepositPlanLogic.blocksHandOver(unpaid, "reserved"))
+
+        // Every stage collected, or a stage short-paid: the API lets it through
+        assertFalse(DepositPlanLogic.blocksHandOver(plan(stage("i1", 300.0, "PAID", 300.0), stage("rest", 700.0)), "RESERVED"))
+        assertFalse(DepositPlanLogic.blocksHandOver(plan(stage("i1", 100.0, "PARTIAL", 100.0), stage("rest", 900.0)), "RESERVED"))
+        // Nothing to collect: a stage worth 0, or only the rest (collected at hand-over)
+        assertFalse(DepositPlanLogic.blocksHandOver(plan(stage("i1", 0.0), stage("rest", 1000.0)), "RESERVED"))
+        assertFalse(DepositPlanLogic.blocksHandOver(plan(stage("rest", 1000.0)), "RESERVED"))
+
+        // No plan: a shop with one "Đã cọc", no deposit, an old order, or a response without the plan fields
+        assertFalse(DepositPlanLogic.blocksHandOver(unpaid.copy(hasPlan = false), "RESERVED"))
+        assertFalse(DepositPlanLogic.blocksHandOver(unpaid.copy(hasPlan = null), "RESERVED"))
+        assertFalse(DepositPlanLogic.blocksHandOver(null, "RESERVED"))
+        assertFalse(DepositPlanLogic.blocksHandOver(plan(), "RESERVED"))
+
+        // Not waiting for pick-up
+        listOf("PICKUPED", "RETURNED", "COMPLETED", "CANCELLED", null).forEach {
+            assertFalse("$it", DepositPlanLogic.blocksHandOver(unpaid, it))
+        }
+    }
+
+    /** The bottom bar's "Thu giai đoạn N" instead of Giao đồ: the next stage to collect, only while the API would refuse */
+    @Test
+    fun `stageToCollectBeforeHandOver is the next stage only while the hand-over is blocked`() {
+        fun stage(key: String, amount: Double, status: String = "UPCOMING", paid: Double = 0.0) =
+            OrderInstallment(key, key, 10.0, amount, status = status, paidAmount = paid)
+        fun plan(vararg stages: OrderInstallment) = DepositPlanInfo(hasPlan = true, installments = stages.toList())
+        fun pick(info: DepositPlanInfo?, status: String? = "RESERVED") = DepositPlanLogic.stageToCollectBeforeHandOver(info, status)?.key
+        val rest = stage("rest", 300.0)
+        assertEquals("two unpaid: the first", "i1", pick(plan(stage("i1", 300.0), stage("i2", 400.0), rest)))
+        assertEquals("one left: that one", "i2", pick(plan(stage("i1", 300.0, "PAID", 300.0), stage("i2", 400.0), rest)))
+        assertEquals("a late stage", "i1", pick(plan(stage("i1", 300.0, "OVERDUE"), rest)))
+        assertEquals("a short-paid stage does not hide the unpaid one", "i2", pick(plan(stage("i1", 100.0, "PARTIAL", 100.0), stage("i2", 400.0), rest)))
+        // Every other case keeps Giao đồ
+        assertNull("all collected", pick(plan(stage("i1", 300.0, "PAID", 300.0), rest)))
+        assertNull("short-paid: the API lets it through", pick(plan(stage("i1", 100.0, "PARTIAL", 100.0), rest)))
+        assertNull("a stage worth 0", pick(plan(stage("i1", 0.0), rest)))
+        assertNull("only the rest", pick(plan(rest)))
+        assertNull("a voided stage", pick(plan(stage("i1", 300.0, "VOID"), rest)))
+        assertNull("no plan, including ONE_TIME orders", pick(plan(stage("i1", 300.0), rest).copy(hasPlan = false)))
+        assertNull(pick(null))
+        assertNull(pick(plan()))
+        listOf("PICKUPED", "RETURNED", "COMPLETED", "CANCELLED", null).forEach {
+            assertNull("$it", pick(plan(stage("i1", 300.0), rest), it))
+        }
+    }
+
     @Test
     fun `an old order payload has no deposit part`() {
         val info = DepositPlanInfo.fromJson(JSONObject("""{"id":1,"orderNumber":"123456","depositAmount":2000000}"""))

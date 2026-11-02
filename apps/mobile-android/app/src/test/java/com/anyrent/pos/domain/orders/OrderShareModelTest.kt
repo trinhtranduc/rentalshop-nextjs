@@ -135,7 +135,7 @@ class OrderShareModelTest {
         assertEquals(
             listOf(
                 ShareRow(ShareText.Res(R.string.share_deposit_paid), "300.000đ"),
-                ShareRow(ShareText.Res(R.string.share_collateral), "CCCD + 2.000.000đ"),
+                ShareRow(ShareText.Res(R.string.share_collateral_collect), "CCCD + 2.000.000đ"),
             ),
             m.rows(),
         )
@@ -257,7 +257,7 @@ class OrderShareModelTest {
         assertEquals(
             listOf(
                 ShareRow(ShareText.Res(R.string.share_draft_deposit), "300.000đ"),
-                ShareRow(ShareText.Res(R.string.share_collateral), "CCCD + 2.000.000đ"),
+                ShareRow(ShareText.Res(R.string.share_collateral_collect), "CCCD + 2.000.000đ"),
             ),
             m.rows(),
         )

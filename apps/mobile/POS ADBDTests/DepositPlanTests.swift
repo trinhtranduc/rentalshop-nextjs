@@ -166,6 +166,66 @@ final class DepositPlanTests: XCTestCase {
         XCTAssertTrue(DepositPlanLogic.unpaidBeforePickup(stages).isEmpty)
     }
 
+    /// #1380: the Giao đồ button gives way to "Còn đợt chưa thu" exactly when the API would refuse the hand-over
+    func testBlocksHandOverOnlyForAnUnpaidExplicitStageOfABookedPlanOrder() {
+        func stage(_ key: String, _ amount: Double, _ status: String = "UPCOMING", paid: Double = 0) -> OrderInstallment {
+            OrderInstallment(key: key, label: key, percent: 10, amount: amount, dueDateKey: "2026-11-10", status: status, paidAmount: paid)
+        }
+        let unpaid = [stage("i1", 300, "PAID", paid: 300), stage("i2", 400), stage("rest", 300)]
+        XCTAssertTrue(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: unpaid))
+        XCTAssertTrue(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: [stage("i1", 300, "OVERDUE"), stage("rest", 700)]),
+                      "a late stage is still uncollected")
+
+        // Every stage collected, or a stage short-paid: the API lets it through
+        XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: [stage("i1", 300, "PAID", paid: 300), stage("rest", 700)]))
+        XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: [stage("i1", 100, "PARTIAL", paid: 100), stage("rest", 900)]))
+        // Nothing to collect: a stage worth 0, or only the rest (collected at hand-over)
+        XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: [stage("i1", 0), stage("rest", 1000)]))
+        XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: [stage("rest", 1000)]))
+
+        // No plan: a shop with one "Đã cọc", no deposit, an old order, or a response without the plan fields
+        for hasPlan in [false, nil] as [Bool?] {
+            XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: hasPlan, status: .reserved, stages: unpaid))
+        }
+        XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: nil, status: .reserved, stages: nil))
+        XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: nil))
+        XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: true, status: .reserved, stages: []))
+
+        // Not waiting for pick-up
+        for status in [OrderStatus.pickuped, .returned, .completed, .cancelled] {
+            XCTAssertFalse(DepositPlanLogic.blocksHandOver(hasPlan: true, status: status, stages: unpaid), "\(status)")
+        }
+    }
+
+    /// The bottom bar's "Thu giai đoạn N" instead of Giao đồ: the next stage to collect, only while the API would refuse
+    func testStageToCollectBeforeHandOver() {
+        func stage(_ key: String, _ amount: Double, _ status: String = "UPCOMING", paid: Double = 0) -> OrderInstallment {
+            OrderInstallment(key: key, label: key, percent: 10, amount: amount, dueDateKey: nil, status: status, paidAmount: paid)
+        }
+        func pick(_ stages: [OrderInstallment]?, hasPlan: Bool? = true, status: OrderStatus = .reserved) -> String? {
+            DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: hasPlan, status: status, stages: stages)?.key
+        }
+        let rest = stage("rest", 300)
+        XCTAssertEqual(pick([stage("i1", 300), stage("i2", 400), rest]), "i1", "two unpaid: the first")
+        XCTAssertEqual(pick([stage("i1", 300, "PAID", paid: 300), stage("i2", 400), rest]), "i2", "one left: that one")
+        XCTAssertEqual(pick([stage("i1", 300, "OVERDUE"), rest]), "i1", "a late stage")
+        XCTAssertEqual(pick([stage("i1", 100, "PARTIAL", paid: 100), stage("i2", 400), rest]), "i2", "a short-paid stage does not hide the unpaid one")
+        // Every other case keeps Giao đồ
+        XCTAssertNil(pick([stage("i1", 300, "PAID", paid: 300), rest]), "all collected")
+        XCTAssertNil(pick([stage("i1", 100, "PARTIAL", paid: 100), rest]), "short-paid: the API lets it through")
+        XCTAssertNil(pick([stage("i1", 0), rest]), "a stage worth 0")
+        XCTAssertNil(pick([rest]), "only the rest")
+        XCTAssertNil(pick([stage("i1", 300, "VOID"), rest]), "a voided stage")
+        for hasPlan in [false, nil] as [Bool?] {
+            XCTAssertNil(pick([stage("i1", 300), rest], hasPlan: hasPlan), "no plan, including ONE_TIME orders")
+        }
+        XCTAssertNil(pick(nil))
+        XCTAssertNil(pick([]))
+        for status in [OrderStatus.pickuped, .returned, .completed, .cancelled] {
+            XCTAssertNil(pick([stage("i1", 300), rest], status: status), "\(status)")
+        }
+    }
+
     func testUnpaidStagesBlockHandOver() {
         let stages = [
             OrderInstallment(key: "i1", label: "a", percent: 30, amount: 3_600_000, dueDateKey: "2026-10-25", status: "PAID", paidAmount: 3_600_000),
@@ -326,7 +386,8 @@ final class DepositPlanTests: XCTestCase {
 
     func testStringsExistInBothLanguages() throws {
         let keys = ["deposit.settings.title", "deposit.cart.createAndCollect", "deposit.card.collectStage",
-                    "deposit.cancel.kept", "overview.installments.today", "INSTALLMENT_UNPAID_AT_PICKUP", "CANCEL_AMOUNTS_MISMATCH"]
+                    "deposit.cancel.kept", "overview.installments.today", "INSTALLMENT_UNPAID_AT_PICKUP", "CANCEL_AMOUNTS_MISMATCH",
+                    "order.detail.stageUnpaid"]
         for language in ["en", "vi-VN"] {
             let path = try XCTUnwrap(Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: language))
             let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])

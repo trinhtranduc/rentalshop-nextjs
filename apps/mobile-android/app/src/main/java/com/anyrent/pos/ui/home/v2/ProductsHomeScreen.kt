@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ShoppingBasket
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -43,7 +42,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -77,7 +79,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.anyrent.pos.data.FirstRunGuideApp
+import com.anyrent.pos.domain.guide.CoachScreen
+import com.anyrent.pos.domain.guide.FirstRunGuide
+import com.anyrent.pos.domain.guide.FirstRunGuideAction
+import com.anyrent.pos.domain.guide.FirstRunGuideCard
+import com.anyrent.pos.domain.guide.FirstRunGuideStep
 import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.R
 import com.anyrent.pos.data.CartStore
@@ -141,10 +152,67 @@ fun ProductsHomeScreen(
     val notFound = stringResource(R.string.v2_scan_not_found)
     val notListed = stringResource(R.string.v2_scan_not_listed)
     val added = stringResource(R.string.v2_added_to_cart)
+    // #1393 "Bắt đầu: 3 việc": the list ticks the product row, the two reads the rest
+    val guide = FirstRunGuideApp.tracker
+    val guideVersion by guide.version.collectAsState()
+    val guideCard = remember(guideVersion, state.query) { guide.card(searching = state.query.isNotBlank()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) scope.launch { guide.refresh() }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(state.products, state.loading, state.query, state.error) {
+        if (state.query.isBlank() && !state.loading) {
+            guide.noteProducts(if (state.error != null && state.products.isEmpty()) null else state.products.isNotEmpty())
+        }
+    }
+    LaunchedEffect(guideCard) {
+        if (guideCard is FirstRunGuideCard.Steps || guideCard is FirstRunGuideCard.Collapsed) guide.noteCardShown()
+    }
+
+    fun runGuide(step: FirstRunGuideStep) {
+        val action = FirstRunGuide.action(step, guide.hasProduct(), lines.isEmpty())
+        FirstRunCoach.start(action) // #1394: the bubbles run only from here
+        when (action) {
+            FirstRunGuideAction.OpenProductForm -> showForm = true
+            is FirstRunGuideAction.OpenCart -> {
+                if (action.addFirstProduct) {
+                    state.products
+                        .firstOrNull { BranchListing.listedForRow(it, PermissionManager.role, CurrentOutlet.outlets.size, CurrentOutlet.id) }
+                        ?.let { CartStore.addProduct(it) }
+                }
+                onOpenCart()
+            }
+        }
+    }
+    // Cài đặt › Hướng dẫn bắt đầu: a row of the sheet was tapped and this tab is in front
+    LaunchedEffect(Unit) {
+        FirstRunGuideApp.pendingStep.collect { step ->
+            if (step != null) {
+                FirstRunGuideApp.pendingStep.value = null
+                runGuide(step)
+            }
+        }
+    }
+    val guideContent: @Composable (Modifier) -> Unit = { modifier ->
+        FirstRunGuideCardView(
+            card = guideCard,
+            foot = FirstRunGuideFoot.Home(onLater = { guide.collapse() }), // #1410: nothing is said, the slim row is the answer
+            onStep = { runGuide(it) },
+            onExpand = { guide.expand() },
+            onCloseFinish = { guide.closeFinish() },
+            modifier = modifier,
+        )
+    }
 
     LaunchedEffect(Unit) {
         if (state.products.isEmpty()) viewModel.reload()
     }
+    // #1412: Thoát hướng dẫn from the product form: back to the card
+    LaunchedEffect(Unit) { FirstRunCoach.exits.collect { showForm = false } }
     // #677: "Còn N" / "Hết hôm nay" follow a created or edited order (quiet: no spinner, same rows and scroll)
     // The view model keeps the version it reflects, so a change made while this screen was away counts too.
     LaunchedEffect(Unit) { OrdersChanged.version.collect { viewModel.onOrdersVersion(it) } }
@@ -256,7 +324,7 @@ fun ProductsHomeScreen(
                             }
                         }
                         FieldIcon(AppIcons.Barcode, stringResource(R.string.camera_scan)) { showScan = true }
-                        // #651: image search is the solid blue camera button at the end (owner chose option B)
+                        // #651: image search is the camera button at the end (owner chose option B); #1384: gradient and sparkle
                         ImageSearchButton(stringResource(R.string.v2_home_image_search)) { showImageSearch = true }
                     }
                 }
@@ -273,16 +341,24 @@ fun ProductsHomeScreen(
             ) {
                 when {
                     state.loading && state.products.isEmpty() -> LoadingBox()
-                    state.products.isEmpty() -> Text(
-                        state.error ?: stringResource(if (state.query.isBlank()) R.string.v2_products_empty else R.string.v2_search_empty),
-                        color = DS.Colors.TextMuted,
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                    )
+                    state.products.isEmpty() -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                        guideContent(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp))
+                        Text(
+                            state.error ?: stringResource(if (state.query.isBlank()) R.string.v2_products_empty else R.string.v2_search_empty),
+                            color = DS.Colors.TextMuted,
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        )
+                    }
                     else -> LazyColumn(
                         state = listState,
                         contentPadding = PaddingValues(bottom = if (showsCartBar) 96.dp else 16.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
+                        if (guideCard != FirstRunGuideCard.Hidden) {
+                            item(key = "first-run-guide") {
+                                guideContent(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp))
+                            }
+                        }
                         items(state.products, key = { it.id }) { product ->
                             ProductRow(
                                 product = product,
@@ -316,15 +392,23 @@ fun ProductsHomeScreen(
     }
 
     if (showForm) {
-        AppFormSheet(onDismiss = { showForm = false }, fullScreen = true) {
+        AppFormSheet(onDismiss = {
+            showForm = false
+            FirstRunCoach.stop() // the system back button: not blocked, the run is over
+        }, fullScreen = true) {
             ProductFormV2Screen(
                 initial = null,
-                onBack = { showForm = false },
+                onBack = {
+                    showForm = false
+                    FirstRunCoach.stop()
+                },
                 onSaved = {
                     showForm = false
+                    FirstRunCoach.stop()
                     viewModel.replace(it)
                 },
             )
+            FirstRunCoachOverlay(CoachScreen.PRODUCT_FORM) // #1394
         }
     }
     if (showScan) {
@@ -371,7 +455,7 @@ private fun FieldIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
     ) { Icon(icon, contentDescription = null, tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md)) }
 }
 
-/** #651: 38 dp solid accent square with a white camera; the touch area is 48 dp */
+/** #651, #1384: 38 dp gradient square with a white camera and sparkle; the touch area is 48 dp */
 @Composable
 private fun ImageSearchButton(label: String, onClick: () -> Unit) {
     Box(
@@ -382,9 +466,9 @@ private fun ImageSearchButton(label: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(DS.Colors.Primary),
+            Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(DS.Gradients.AiScan),
             contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
+        ) { Icon(AppIcons.AiScan, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
     }
 }
 

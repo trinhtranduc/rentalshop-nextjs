@@ -1656,7 +1656,7 @@ final class AnyRentE2ETests: XCTestCase {
         }
         sleep(4)
         let tiles = ["Giá trị đơn mới", "Thực thu", "Còn phải thu", "Thế chân"]
-        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phí hư hỏng, trễ", "Hoàn đơn huỷ", "Thế chân nhận − trả",
+        let rowNames = ["Đơn mới", "Cho thuê", "Bán", "Cọc khi tạo đơn", "Thu khi giao, bán", "Phụ phí, trễ", "Hoàn đơn huỷ", "Thế chân nhận − trả",
                         "Thực thu", "Sẽ thu khi khách lấy đồ", "Quá ngày lấy, chưa thu", "Đã nhận", "Đã trả lại khách",
                         "Sẽ nhận khi giao", "Đang giữ, sẽ trả lại"]
         for (index, title) in tiles.enumerated() {
@@ -1723,7 +1723,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("RELATED REASONS english=\(english) | \(texts.prefix(24))")
         if english {
             let vietnamese = ["Thu tiền cọc", "Thu tiền khi lấy hàng", "Hoàn tiền cọc", "Đơn bán được tạo", "Đơn hủy (hoàn lại)",
-                              "Thu phí hư hỏng", "Thuê và trả trong cùng ngày"]
+                              "Thu phí hư hỏng", "Thu phụ phí", "Thuê và trả trong cùng ngày"]
             XCTAssertTrue(texts.filter { vietnamese.contains($0) }.isEmpty, "#757 Vietnamese reasons in the English app: \(texts)")
         }
     }
@@ -2278,6 +2278,97 @@ final class AnyRentE2ETests: XCTestCase {
         if !note.exists { app.swipeUp(); sleep(1) }
         e2e.soft(app.staticTexts["orderDetail.item.note"].exists, "the item note shows on order detail")
         e2e.shot("5e-detail-items-scrolled")
+    }
+
+    private func openOrder(_ number: String) {
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        sleep(2)
+        e2e.tapIfExists(e2e.button(["All orders", "Tất cả đơn"]), timeout: 5)
+        sleep(2)
+        let search = e2e.ordersSearchField
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "Orders search field")
+        search.tap()
+        search.typeText(number)
+        sleep(3)
+        let row = app.cells.firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "order \(number) in the list")
+        e2e.tapRow(row)
+        XCTAssertTrue(e2e.orderMoreButton.waitForExistence(timeout: 10))
+        sleep(2)
+    }
+
+    /// #1380, #1400: E2E_ORDER_NUMBER = a booked plan order with stages i1 and i2 uncollected. The bottom bar's "Thu giai đoạn N"
+    /// replaces Giao đồ until the last stage is collected from it, then the hand-over works. Any role.
+    /// #1441: that is the only "Thu giai đoạn N"; the money block keeps "Sửa" ("Xem" for staff).
+    func test5jStageUnpaidHidesHandOver() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        openOrder(number)
+        let bar = app.buttons["order.detail.collectStage"]
+        let inBlock = app.buttons["deposit.card.collect"]
+        let edit = app.buttons["deposit.card.edit"]
+        let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
+        func collectNext(_ step: String) {
+            XCTAssertTrue(bar.isHittable, "Thu giai đoạn N in the bottom bar")
+            e2e.shot("5j-\(step)-bar")
+            bar.tap()
+            let confirm = app.buttons["deposit.collect.confirm"]
+            XCTAssertTrue(confirm.waitForExistence(timeout: 5), "the collect sheet")
+            confirm.tap()
+            sleep(3)
+        }
+        XCTAssertTrue(bar.waitForExistence(timeout: 5), "two stages unpaid: the button shows")
+        XCTAssertTrue(["Thu giai đoạn 1", "Collect stage 1"].contains(bar.label), bar.label)
+        XCTAssertFalse(handOver.exists, "two stages unpaid: no Giao đồ")
+        XCTAssertTrue(app.buttons["orderDetail.print"].exists, "In stays")
+        e2e.shot("5j-1-two-unpaid")
+        scrollPaymentToTop()
+        XCTAssertTrue(edit.exists, "Sửa stays in the block")
+        XCTAssertFalse(inBlock.exists, "two stages unpaid: no Thu giai đoạn N in the block")
+        XCTAssertTrue(bar.isHittable, "two stages unpaid: the bar stays under the block")
+        e2e.shot("5j-1b-block-no-collect")
+
+        collectNext("2-first")
+        XCTAssertTrue(bar.waitForExistence(timeout: 5), "one stage unpaid: the next stage's button")
+        XCTAssertTrue(["Thu giai đoạn 2", "Collect stage 2"].contains(bar.label), bar.label)
+        XCTAssertFalse(handOver.exists, "one stage unpaid: no Giao đồ")
+        XCTAssertFalse(inBlock.exists, "one stage unpaid: no Thu giai đoạn N in the block")
+        XCTAssertTrue(edit.exists, "one stage unpaid: Sửa stays")
+        e2e.shot("5j-3-one-unpaid")
+
+        collectNext("4-last")
+        XCTAssertTrue(handOver.waitForExistence(timeout: 8), "all stages collected: Giao đồ is back")
+        XCTAssertFalse(bar.exists, "all stages collected: no collect button")
+        XCTAssertFalse(inBlock.exists, "all stages collected: none in the block either")
+        e2e.shot("5j-5-all-collected")
+        handOver.tap()
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)
+        XCTAssertTrue(handed.waitForExistence(timeout: 8), "the hand-over sheet")
+        e2e.shot("5j-6-sheet")
+        handed.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        XCTAssertTrue(e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button).waitForExistence(timeout: 8), "handed over: Nhận trả")
+        e2e.shot("5j-7-handed-over")
+    }
+
+    /// #1380: E2E_CONTROL_ORDER = a booked order without a plan (one "Đã cọc"): Giao đồ as before, no line.
+    /// #1441: no "Thu giai đoạn N" anywhere, neither in the bar nor in the block.
+    func test5kNoPlanKeepsHandOver() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        guard let number = ProcessInfo.processInfo.environment["E2E_CONTROL_ORDER"] else { throw XCTSkip("E2E_CONTROL_ORDER not set") }
+        try e2e.start()
+        openOrder(number)
+        XCTAssertTrue(e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button).waitForExistence(timeout: 8), "no plan: Giao đồ")
+        XCTAssertFalse(app.staticTexts["order.detail.stageUnpaid"].exists, "no plan: no line")
+        XCTAssertFalse(app.buttons["order.detail.collectStage"].exists, "no plan: no Thu giai đoạn N in the bar")
+        scrollPaymentToTop()
+        XCTAssertFalse(app.buttons["deposit.card.collect"].exists, "no plan: no Thu giai đoạn N in the block")
+        XCTAssertFalse(app.buttons["deposit.card.edit"].exists, "no plan: no Sửa")
+        e2e.shot("5k-no-plan")
     }
 
     /// #1246: the staged-deposit card on order detail runs edge to edge like the other rows. E2E_ORDER_NUMBER = a plan order.
@@ -4135,9 +4226,32 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         // #1270: Tài khoản ngân hàng is a row of CỬA HÀNG again
         let row = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Bank Accounts", "Tài khoản ngân hàng"])).firstMatch
-        if e2e.role != "merchant" { // staff and kho (#682) have no bank-account permission; the branch manager still has it until #1319
+        if e2e.role != "merchant" && e2e.role != "manager" { // staff and kho (#682) have no bank-account permission
             e2e.shot("7k-\(e2e.role)-settings")
-            e2e.soft(row.exists == (e2e.role == "manager"), "\(e2e.role): Tài khoản ngân hàng row shown = \(row.exists) (manager only, until #1319)")
+            e2e.soft(!row.exists, "\(e2e.role): no Tài khoản ngân hàng row, shown = \(row.exists)")
+            return
+        }
+        if e2e.role == "manager" { // #1319: the same list, read only (the owner's account from an earlier run may be there)
+            XCTAssertTrue(row.waitForExistence(timeout: 8), "manager: bank accounts row, read only")
+            e2e.shot("7k-manager-settings")
+            row.tap()
+            sleep(3)
+            e2e.shot("7k-manager-bank-list")
+            let add = app.buttons.matching(NSPredicate(format: "label IN %@", ["Add Bank Account", "Thêm tài khoản ngân hàng"])).firstMatch
+            XCTAssertFalse(add.exists, "manager: no add button")
+            let number = app.staticTexts.matching(NSPredicate(format: "label CONTAINS ' · '")).firstMatch
+            if number.exists {
+                number.tap()
+                sleep(2)
+                e2e.shot("7k-manager-after-row-tap")
+                XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label IN %@", ["Save", "Lưu", "Update", "Cập nhật"])).firstMatch.exists, "manager: a row does not open the form")
+                number.swipeLeft()
+                sleep(1)
+                e2e.shot("7k-manager-after-swipe")
+                XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label IN %@", ["Delete", "Xoá", "Xóa"])).firstMatch.exists, "manager: no swipe to delete")
+            } else {
+                XCTAssertFalse(app.staticTexts["Chưa có tài khoản ngân hàng. Bấm + để thêm."].exists, "manager: the empty text does not offer the +")
+            }
             return
         }
         XCTAssertTrue(row.waitForExistence(timeout: 8), "Bank accounts row in the Store group")
@@ -5205,7 +5319,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Đã thu ' OR label CONTAINS 'Collected '")).firstMatch.exists,
                  "the order row shows Đã thu")
 
-        // 5. Back to the detail: edit the plan, hand-over blocked, collect stage 2, hand-over sheet
+        // 5. Back to the detail: edit the plan, hand-over blocked (#1400: the bar offers stage 2 instead of Giao đồ), collect stage 2, hand-over sheet
         let orderRow = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", number)).firstMatch
         if orderRow.waitForExistence(timeout: 5) { orderRow.tap() } else { return XCTFail("order #\(number) not in the list") }
         sleep(3)
@@ -5217,20 +5331,27 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
         sleep(1)
         let handOver = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Giao đồ' OR label BEGINSWITH 'Hand over'")).firstMatch
-        XCTAssertTrue(handOver.waitForExistence(timeout: 5), "Giao đồ button")
-        handOver.tap()
-        sleep(2)
+        let collectInBar = app.buttons["order.detail.collectStage"]
+        XCTAssertTrue(collectInBar.waitForExistence(timeout: 5), "stage 2 is unpaid: the bar offers it")
+        XCTAssertTrue(["Thu giai đoạn 2", "Collect stage 2"].contains(collectInBar.label), collectInBar.label)
+        XCTAssertFalse(handOver.exists, "stage 2 is unpaid: the hand-over is blocked")
+        XCTAssertFalse(app.buttons["deposit.card.collect"].exists, "#1441: only the bar has the button")
         e2e.shot("66a-handover-blocked")
-        XCTAssertTrue(textStarting(["Còn giai đoạn cọc chưa thu", "Deposit stages not collected"]).exists, "the unpaid stages sheet shows")
-        e2e.button(["Thu giai đoạn 2", "Collect stage 2"]).tap()
-        sleep(2)
+        collectInBar.tap()
+        let confirmCollect = app.buttons["deposit.collect.confirm"]
+        XCTAssertTrue(confirmCollect.waitForExistence(timeout: 5), "the collect sheet")
+        sleep(1)
         e2e.shot("66b-collect-sheet")
-        let confirmCollect = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thu ' OR label BEGINSWITH 'Collect '")).allElementsBoundByIndex
-            .filter { $0.isHittable }.max { $0.frame.minY < $1.frame.minY }
-        confirmCollect?.tap()
+        confirmCollect.tap()
         sleep(4)
-        e2e.shot("66c-after-collect-handover-sheet")
-        // the hand-over sheet follows by itself: close it without handing over
+        e2e.shot("66c-after-collect")
+        // every stage is collected: the bar has Giao đồ again and its sheet opens; close it without handing over
+        XCTAssertTrue(handOver.waitForExistence(timeout: 8), "all stages collected: Giao đồ is back")
+        XCTAssertFalse(collectInBar.exists, "all stages collected: nothing left to collect")
+        handOver.tap()
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)
+        XCTAssertTrue(handed.waitForExistence(timeout: 8), "the hand-over sheet")
+        e2e.shot("66c-handover-sheet")
         e2e.tapIfExists(e2e.button(["Cancel", "Hủy", "Huỷ", "Close", "Đóng"]), timeout: 3)
         sleep(2)
         e2e.shot("66d-detail-stage-2-collected")
@@ -5250,6 +5371,50 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(4)
         e2e.shot("67c-detail-cancelled")
         e2e.note("STAGED FLOW DONE order #\(number)")
+    }
+
+    /// #1375 (W11): the one-time "Thêm widget" card above "Việc cần làm", its three-step guide, and "Không hỏi lại".
+    /// The card needs work today and no AnyRent widget on the phone (a fresh install); it is skipped otherwise.
+    func test7kWidgetHintAndGuide() throws {
+        guard #available(iOS 16.1, *) else { throw XCTSkip("no widgets below iOS 16.1: the card never shows there") }
+        try e2e.start()
+        e2e.tapTab(["My Order", "Đơn hàng", "Orders", "Đơn"], index: 1)
+        sleep(3)
+        let card = app.otherElements["orders.widgetHint"]
+        guard card.waitForExistence(timeout: 10) else { throw XCTSkip("no card: no work today, a widget on the phone, or Không hỏi lại was tapped") }
+        e2e.shot("90-widget-hint-card")
+        app.buttons["orders.widgetHint.how"].tap()
+        XCTAssertTrue(app.otherElements["widget.guide"].waitForExistence(timeout: 6), "the guide opens from Cách thêm")
+        XCTAssertTrue(app.buttons["widget.guide.never"].exists, "the guide from the card offers Không hỏi lại")
+        sleep(1)
+        e2e.shot("91-widget-guide-from-card")
+        app.buttons["widget.guide.ok"].tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 3), "Đã hiểu closes the guide and keeps the card")
+        app.buttons["orders.widgetHint.dismiss"].tap()
+        sleep(1)
+        XCTAssertFalse(card.exists, "Không hỏi lại removes the card")
+        e2e.shot("92-widget-hint-dismissed")
+    }
+
+    /// #1375: Cài đặt > Widget opens the guide at any time (also after Không hỏi lại).
+    /// #1432: "Ẩn tên khách trên widget" is gone.
+    func test7lWidgetSettingsRow() throws {
+        guard #available(iOS 16.1, *) else { throw XCTSkip("no Widget row below iOS 16.1") }
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(2)
+        let row = app.staticTexts["Widget"]
+        XCTAssertTrue(e2e.scrollTo(row), "the Widget row in Cài đặt")
+        e2e.shot("93-settings-widget-row")
+        let toggle = app.switches.matching(NSPredicate(format: "label IN %@",
+            ["Hide customer names on the widget", "Ẩn tên khách trên widget"])).firstMatch
+        XCTAssertFalse(toggle.exists, "no hide-names switch under the Widget row")
+        row.tap()
+        XCTAssertTrue(app.otherElements["widget.guide"].waitForExistence(timeout: 6), "the Widget row opens the guide")
+        XCTAssertFalse(app.buttons["widget.guide.never"].exists, "the guide from Settings has no Không hỏi lại")
+        sleep(1)
+        e2e.shot("94-settings-widget-guide")
+        app.buttons["widget.guide.ok"].tap()
     }
 
     func test9SettingsLogout() throws {
@@ -5424,11 +5589,524 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(!app.staticTexts["orders.booking.count"].exists, "no red count when nothing waits")
         e2e.shot("booking-09-orders-no-count")
     }
+
+    // MARK: - #1435 the money block of a rental
+
+    /// Brings "THANH TOÁN" near the top of the screen, so that the whole block shows
+    private func scrollPaymentToTop() {
+        let heading = e2e.element(labelBeginsWith: ["THANH TOÁN", "PAYMENT"], type: .staticText)
+        XCTAssertTrue(heading.waitForExistence(timeout: 8), "THANH TOÁN")
+        for _ in 0..<6 {
+            let distance = heading.frame.minY - 110
+            guard distance > 12 else { break }
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.8))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -min(distance, 400))), withVelocity: .slow, thenHoldForDuration: 0.4)
+        }
+        sleep(1)
+    }
+
+    /// `E2E_MONEY_ORDERS`: the orders of the 9 cases of the approved mockup (tab "odmoney"), in order. One screenshot and the lines of
+    /// each. #1441: "Thu giai đoạn N" is only in the bar, it opens the sheet of the right stage, and "Sửa" still opens the plan. Nothing is saved.
+    func testOrderMoney01NineCases() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        let orders = (ProcessInfo.processInfo.environment["E2E_MONEY_ORDERS"] ?? "").split(separator: ",").map(String.init)
+        guard orders.count >= 9 else { throw XCTSkip("E2E_MONEY_ORDERS has fewer than 9 orders") }
+        func text(_ labels: [String]) -> XCUIElement { e2e.element(labelBeginsWith: labels, type: .staticText) }
+        let rest = app.descendants(matching: .any)["deposit.stage.rest"]
+        let inBlock = app.buttons["deposit.card.collect"]
+        let inBar = app.buttons["order.detail.collectStage"]
+        // exact: "Thu khi giao · 02/11" is the sub-line of the last stage
+        let collect = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Thu khi giao", "Collect at hand-over"])).firstMatch
+        let cash = text(["Khách đưa lúc nhận đồ", "Customer pays at hand-over"])
+        let oldLeft = text(["Tiền thuê còn lại, thu khi giao", "Rental left, collect at hand-over"])
+        let oldCollateral = text(["Thế chân, thu khi giao", "Collateral, collect at hand-over"])
+        let remaining = text(["Còn phải thu", "Still to collect"])
+        let deposit = text(["Đã cọc", "Deposit paid"])
+        let giveBack = text(["Khi nhận trả: trả khách", "At return: give back"])
+        let stages = app.descendants(matching: .any)["deposit.card"]
+
+        for (index, number) in orders.prefix(9).enumerated() {
+            let id = index + 1
+            if index > 0 { app.terminate() }
+            try e2e.start()
+            openOrder(number)
+            scrollPaymentToTop()
+            e2e.shot("money-case\(id)")
+            print("E2E_NOTE: MONEY case \(id) block height \(app.descendants(matching: .any)["order.detail.paymentSection"].frame.height)")
+            XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Tạm tính", "Subtotal"])).count, 1, "case \(id): one Tạm tính")
+            XCTAssertEqual(stages.exists, [3, 4, 7, 8, 9].contains(id), "case \(id): the stages")
+            XCTAssertEqual(deposit.exists, [2, 5, 6].contains(id), "case \(id): Đã cọc")
+            XCTAssertEqual(collect.exists, [1, 2, 3, 7, 8].contains(id), "case \(id): Thu khi giao")
+            XCTAssertEqual(cash.exists, id == 4, "case \(id): Khách đưa lúc nhận đồ")
+            XCTAssertFalse(oldLeft.exists, "case \(id): the three lines became one")
+            XCTAssertFalse(oldCollateral.exists, "case \(id): the three lines became one")
+            XCTAssertEqual(rest.exists, id == 9, "case \(id): the last stage")
+            XCTAssertEqual(remaining.exists, [3, 4, 9].contains(id), "case \(id): Còn phải thu")
+            XCTAssertFalse(inBlock.exists, "case \(id): no Thu giai đoạn N in the block")
+            XCTAssertEqual(inBar.exists, [3, 4].contains(id), "case \(id): Thu giai đoạn N in the bar")
+            XCTAssertEqual(giveBack.exists, id == 5, "case \(id): Khi nhận trả")
+            if id == 3 {
+                XCTAssertTrue(["Thu giai đoạn 2", "Collect stage 2"].contains(inBar.label), inBar.label)
+                inBar.tap()
+                let amount = app.textFields["deposit.collect.amount"]
+                XCTAssertTrue(amount.waitForExistence(timeout: 5), "the collect sheet")
+                XCTAssertTrue(["345.000", "345,000"].contains((amount.value as? String) ?? ""), "stage 2 is the one to collect")
+                e2e.button(["Hủy", "Huỷ", "Cancel"]).tap()
+                sleep(1)
+                let edit = app.buttons["deposit.card.edit"]
+                XCTAssertTrue(edit.exists, "Sửa")
+                edit.tap()
+                XCTAssertTrue(app.buttons["deposit.plan.save"].waitForExistence(timeout: 5), "the plan editor")
+                e2e.goBackOnce()
+            }
+            if id == 4 {
+                XCTAssertTrue(text(["tiền thuê 575.000 + thế chân 300.000", "rental 575,000 + collateral 300,000", "rental 575.000 + collateral 300.000"]).exists, "the sub-line")
+            }
+        }
+    }
+
+    /// `E2E_MONEY_EXTRA`: a sale, then rentals outside the 9 cases (long amounts, a late stage, cancelled keeping money). A sale keeps its
+    /// rows; long amounts wrap on a small phone. One look at each. Nothing is saved.
+    /// #1441: no "Thu giai đoạn N" in any block. Every booked plan order of this list has a stage to collect: the bar offers it, also when it is late.
+    func testOrderMoney02SaleAndOthers() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        let orders = (ProcessInfo.processInfo.environment["E2E_MONEY_EXTRA"] ?? "").split(separator: ",").map(String.init)
+        guard let sale = orders.first else { throw XCTSkip("E2E_MONEY_EXTRA is not set") }
+        try e2e.start()
+        openOrder(sale)
+        for _ in 0..<2 { app.swipeUp() }
+        sleep(1)
+        e2e.shot("money-sale")
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Tạm tính", "Subtotal"])).count, 1, "A sale keeps Tạm tính")
+        let inBlock = app.buttons["deposit.card.collect"]
+        let inBar = app.buttons["order.detail.collectStage"]
+        XCTAssertFalse(inBlock.exists, "a sale: no Thu giai đoạn N in the block")
+        XCTAssertFalse(inBar.exists, "a sale: no Thu giai đoạn N in the bar")
+        for (index, number) in orders.dropFirst().enumerated() {
+            app.terminate()
+            try e2e.start()
+            openOrder(number)
+            scrollPaymentToTop()
+            e2e.shot("money-other\(index + 1)")
+            XCTAssertFalse(inBlock.exists, "order \(number): no Thu giai đoạn N in the block")
+            // "Sửa" shows only on a booked order
+            XCTAssertEqual(inBar.exists, app.buttons["deposit.card.edit"].exists, "order \(number): a booked plan order has the button in the bar, the others do not")
+        }
+    }
+
+    // MARK: - #1418 condition photos at hand-over
+
+    /// Run through ios-e2e.sh --only testPhotos…; `E2E_PHOTO_ORDERS` lists RESERVED rent orders of the account. A local
+    /// proxy in front of the API reads the flag files in `E2E_PHOTO_FLAGS` (fail-multipart, drop-next-multipart, fail-status-once).
+    private var photoOrders: [String] {
+        (ProcessInfo.processInfo.environment["E2E_PHOTO_ORDERS"] ?? "").split(separator: ",").map(String.init)
+    }
+
+    private func photoFlag(_ name: String, on: Bool) {
+        let dir = ProcessInfo.processInfo.environment["E2E_PHOTO_FLAGS"] ?? "/tmp/wt-photos"
+        let path = dir + "/" + name
+        if on {
+            FileManager.default.createFile(atPath: path, contents: Data())
+        } else {
+            try? FileManager.default.removeItem(atPath: path)
+        }
+    }
+
+    private func openHandOverSheet() {
+        let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
+        XCTAssertTrue(handOver.waitForExistence(timeout: 12), "RESERVED rent order shows Giao đồ")
+        handOver.tap()
+        XCTAssertTrue(app.otherElements["orderPhotos"].firstMatch.waitForExistence(timeout: 2)
+            || app.staticTexts["orderPhotos.count"].waitForExistence(timeout: 6), "Photo block in the sheet")
+    }
+
+    private func pickPhoto(expect count: Int) {
+        let add = app.buttons["orderPhotos.add"]
+        XCTAssertTrue(add.waitForExistence(timeout: 5), "Thêm")
+        add.tap()
+        let library = e2e.button(["Photo Library", "Thư viện ảnh"])
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Library in the source menu")
+        library.tap()
+        // The picker covers the sheet once it is up; the first open of a run can take a while
+        for _ in 0..<20 where add.exists && add.isHittable { usleep(500_000) }
+        sleep(2)
+        // The library runs in another process, so its cells are not reachable as elements: a tap on the spot of the
+        // second cell of the first row, the photo added last but one with `simctl addmedia`
+        e2e.shot("photos-library")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.625)).tap()
+        let label = app.staticTexts["orderPhotos.count"]
+        let done = NSPredicate(format: "label == %@", "\(count)/3")
+        expectation(for: done, evaluatedWith: label)
+        waitForExpectations(timeout: 15)
+    }
+
+    private func confirmHandOver() {
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)
+        XCTAssertTrue(handed.waitForExistence(timeout: 5), "Confirm button")
+        XCTAssertTrue(handed.isEnabled, "Confirm is always active")
+        handed.tap()
+    }
+
+    private func waitPhotoTitle(_ count: Int, timeout: TimeInterval = 20) {
+        let title = app.staticTexts["order.detail.pickupPhotos.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: timeout), "Photo section on the detail")
+        expectation(for: NSPredicate(format: "label ENDSWITH %@", "· \(count)"), evaluatedWith: title)
+        waitForExpectations(timeout: timeout)
+    }
+
+    /// The photos sit under the papers and collateral, usually below the first screen
+    private func scrollToPhotos() {
+        let title = app.staticTexts["order.detail.pickupPhotos.title"]
+        for _ in 0..<6 where !(title.exists && title.isHittable) { app.swipeUp() }
+        sleep(1)
+    }
+
+    private func photosFailedLine(exists: Bool, timeout: TimeInterval = 25) {
+        let failed = app.buttons["order.detail.pickupPhotos.retry"]
+        if exists {
+            XCTAssertTrue(failed.waitForExistence(timeout: timeout), "Chưa tải được…")
+        } else {
+            expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: failed)
+            waitForExpectations(timeout: timeout)
+        }
+    }
+
+    func testPhotos01ThreePhotosAndZero() throws {
+        try e2e.start()
+        let orders = photoOrders
+        openOrder(orders[0])
+        openHandOverSheet()
+        e2e.shot("photos-01-sheet-empty")
+        // Keyboard: the field and the buttons stay above it, the title stays on screen
+        let papers = app.textFields["handOver.papers"]
+        if papers.waitForExistence(timeout: 3) {
+            papers.tap()
+            sleep(1)
+            e2e.shot("photos-02-sheet-keyboard")
+            XCTAssertTrue(e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button).isHittable, "Confirm above the keyboard")
+            papers.typeText("\n")
+            sleep(1)
+        }
+        pickPhoto(expect: 1)
+        pickPhoto(expect: 2)
+        pickPhoto(expect: 3)
+        e2e.shot("photos-03-sheet-3of3")
+        XCTAssertFalse(app.buttons["orderPhotos.add"].exists, "3/3 hides the tile")
+        app.buttons["orderPhotos.remove.2"].tap()
+        XCTAssertTrue(app.buttons["orderPhotos.add"].waitForExistence(timeout: 3), "× brings the tile back")
+        e2e.shot("photos-04-sheet-after-remove")
+        pickPhoto(expect: 3)
+        confirmHandOver()
+        waitPhotoTitle(3)
+        photosFailedLine(exists: false)
+        sleep(2)
+        scrollToPhotos()
+        e2e.shot("photos-05-detail-3")
+        XCTAssertFalse(app.buttons["order.detail.pickupPhotos.add"].exists, "3/3 hides Thêm on the detail")
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        openOrder(orders[1])
+        openHandOverSheet()
+        confirmHandOver()
+        sleep(3)
+        XCTAssertFalse(app.staticTexts["order.detail.pickupPhotos.title"].exists, "No photos: no new section")
+        e2e.shot("photos-06-detail-0")
+    }
+
+    func testPhotos02FailureRetryAndRelaunch() throws {
+        defer { photoFlag("fail-multipart", on: false) }
+        try e2e.start()
+        photoFlag("fail-multipart", on: true)
+        let orders = photoOrders
+        openOrder(orders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        pickPhoto(expect: 2)
+        pickPhoto(expect: 3)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        e2e.shot("photos-10-upload-failed")
+        waitPhotoTitle(3)
+        // Still failing: Thử lại keeps the line, the order stays handed over
+        app.buttons["order.detail.pickupPhotos.retry"].tap()
+        sleep(3)
+        photosFailedLine(exists: true)
+        // Relaunch with the photos still pending and the upload still failing
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        openOrder(orders[0])
+        photosFailedLine(exists: true)
+        e2e.shot("photos-11-after-relaunch-still-failing")
+        // Relaunch once more: the network is back, opening the order sends them by itself
+        photoFlag("fail-multipart", on: false)
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        openOrder(orders[0])
+        photosFailedLine(exists: false)
+        waitPhotoTitle(3)
+        sleep(2)
+        scrollToPhotos()
+        e2e.shot("photos-12-after-relaunch-uploaded")
+        // Thử lại path, on a second order
+        app.terminate()
+        app.launch()
+        try e2e.start()
+        photoFlag("fail-multipart", on: true)
+        openOrder(orders[1])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        photoFlag("fail-multipart", on: false)
+        app.buttons["order.detail.pickupPhotos.retry"].tap()
+        photosFailedLine(exists: false)
+        waitPhotoTitle(1)
+        sleep(2)
+        scrollToPhotos()
+        e2e.shot("photos-13-retry-uploaded-with-add")
+        XCTAssertTrue(app.buttons["order.detail.pickupPhotos.add"].exists, "1/3: Thêm is there while the goods are out")
+    }
+
+    /// A second login on the same device must not see or send the first login's photos; they come back to the first.
+    func testPhotos03LogoutWithPendingUpload() throws {
+        defer { photoFlag("fail-multipart", on: false) }
+        let env = ProcessInfo.processInfo.environment
+        try e2e.start()
+        photoFlag("fail-multipart", on: true)
+        let order = photoOrders[0]
+        openOrder(order)
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        app.terminate()
+        try e2e.start()
+        e2e.logout()
+        photoFlag("fail-multipart", on: false)
+        e2e.login(email: env["E2E_OTHER_EMAIL"] ?? "", password: env["E2E_OTHER_PASSWORD"] ?? "")
+        e2e.settle(seconds: 25)
+        openOrder(order)
+        sleep(4)
+        XCTAssertFalse(app.staticTexts["order.detail.pickupPhotos.title"].exists, "The other login sees nothing")
+        e2e.shot("photos-20-other-login-sees-nothing")
+        app.terminate()
+        try e2e.start()
+        e2e.logout()
+        e2e.login(email: e2e.email, password: e2e.password)
+        e2e.settle(seconds: 25)
+        openOrder(order)
+        waitPhotoTitle(1)
+        photosFailedLine(exists: false)
+        sleep(2)
+        scrollToPhotos()
+        e2e.shot("photos-21-same-login-uploaded")
+    }
+
+    func testPhotos04LostReplyDoesNotDouble() throws {
+        defer { photoFlag("drop-next-multipart", on: false) }
+        try e2e.start()
+        photoFlag("drop-next-multipart", on: true)
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        photosFailedLine(exists: true)
+        e2e.shot("photos-30-lost-reply")
+        app.buttons["order.detail.pickupPhotos.retry"].tap()
+        photosFailedLine(exists: false)
+        waitPhotoTitle(1)
+        sleep(2)
+        scrollToPhotos()
+        e2e.shot("photos-31-lost-reply-one-photo")
+    }
+
+    func testPhotos05NoNetworkAtConfirmKeepsPhotos() throws {
+        defer { photoFlag("fail-status-once", on: false) }
+        try e2e.start()
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        pickPhoto(expect: 2)
+        photoFlag("fail-status-once", on: true)
+        confirmHandOver()
+        let ok = e2e.button(["OK", "Ok", "Đồng ý"])
+        XCTAssertTrue(ok.waitForExistence(timeout: 15), "Error at confirm")
+        e2e.shot("photos-40-no-network-error")
+        ok.tap()
+        sleep(2)
+        openHandOverSheet()
+        let label = app.staticTexts["orderPhotos.count"]
+        XCTAssertEqual(label.label, "2/3", "Chosen photos are kept")
+        e2e.shot("photos-41-photos-kept")
+        confirmHandOver()
+        waitPhotoTitle(2)
+    }
+
+    /// "Thêm" on the detail of an order out with one photo; the camera message. Run after
+    /// `xcrun simctl privacy <udid> revoke camera com.anyrent.debug`.
+    func testPhotos07AddLaterAndNoCamera() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        app.buttons["orderPhotos.add"].tap()
+        let camera = e2e.button(["Camera", "Máy ảnh"])
+        XCTAssertTrue(camera.waitForExistence(timeout: 5), "Camera in the source menu")
+        e2e.shot("photos-59-source-menu")
+        camera.tap()
+        sleep(2)
+        e2e.shot("photos-60-camera-unavailable")
+        let settings = app.alerts.buttons["Mở Cài đặt"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 5), "Camera message offers Settings")
+        app.alerts.buttons.matching(NSPredicate(format: "label IN %@", ["Cancel", "Hủy", "Huỷ"])).firstMatch.tap()
+        sleep(1)
+        XCTAssertTrue(app.buttons["orderPhotos.add"].isHittable, "The library still works")
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        waitPhotoTitle(1)
+        sleep(2)
+        let add = app.buttons["order.detail.pickupPhotos.add"]
+        XCTAssertTrue(add.waitForExistence(timeout: 8), "Thêm")
+        scrollToPhotos()
+        e2e.shot("photos-61-detail-with-add")
+        add.tap()
+        let library = e2e.button(["Photo Library", "Thư viện ảnh"])
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Library / camera")
+        library.tap()
+        sleep(4)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.625)).tap()
+        waitPhotoTitle(2, timeout: 25)
+        photosFailedLine(exists: false)
+        sleep(2)
+        scrollToPhotos()
+        e2e.shot("photos-62-added-later")
+    }
+
+    /// #1425 `E2E_PHOTO_ORDERS` = an order holding 5 note photos (set up in the database). All show; no add until under 3;
+    /// the text saves and photos can be removed without a limit error.
+    func testNotes01OldOrderWithFivePhotos() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        e2e.orderMoreButton.tap()
+        let notesRow = e2e.element(labelBeginsWith: ["Ghi chú", "Notes"], type: .button)
+        XCTAssertTrue(notesRow.waitForExistence(timeout: 5), "Ghi chú in the ⋯ sheet")
+        notesRow.tap()
+        let count = app.staticTexts.matching(NSPredicate(format: "label == '5 ảnh' OR label == '5 photos'")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 6), "Above the limit: only the count")
+        e2e.shot("notes-01-editor-5-photos")
+        let add = app.buttons.matching(NSPredicate(format: "label == 'Thêm ảnh' OR label == 'Add photos'")).firstMatch
+        XCTAssertFalse(add.exists, "No add above the limit")
+        let remove = app.buttons.matching(NSPredicate(format: "label == 'Xóa ảnh' OR label == 'Xoá ảnh' OR label == 'Remove photo'"))
+        XCTAssertEqual(remove.count, 5, "All five show")
+        remove.firstMatch.tap()
+        sleep(1)
+        XCTAssertFalse(add.exists, "4 photos: still no add")
+        remove.firstMatch.tap()
+        sleep(1)
+        XCTAssertFalse(add.exists, "3 photos: still no add")
+        let save = e2e.button(["Lưu ghi chú", "Save note"])
+        XCTAssertTrue(save.waitForExistence(timeout: 3), "Save")
+        e2e.shot("notes-02-editor-3-photos")
+        remove.firstMatch.tap()
+        XCTAssertTrue(add.waitForExistence(timeout: 3), "2 photos: add is back")
+        e2e.shot("notes-03-editor-2-photos")
+        save.tap()
+        sleep(3)
+        XCTAssertFalse(app.alerts.firstMatch.exists, "No limit error")
+        e2e.shot("notes-04-after-save")
+    }
+
+    /// An order with photos and no papers section (returned, no papers): the photos stand alone, with no word about collateral
+    func testPhotos09PhotosWithoutPapersSection() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        waitPhotoTitle(1)
+        XCTAssertFalse(app.otherElements["order.detail.collateralSection"].exists, "No papers section on this order")
+        scrollToPhotos()
+        e2e.shot("photos-63-no-papers-section")
+    }
+
+    /// #1419 `E2E_PHOTO_ORDERS`: an order out with 3 hand-over photos, then one out with none. Read only; confirming sends no photo.
+    func testPhotos10ReturnSheetShowsHandOverPhotos() throws {
+        try e2e.start()
+        let orders = photoOrders
+        openOrder(orders[0])
+        let takeBack = e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button)
+        XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "Nhận trả")
+        takeBack.tap()
+        let title = app.staticTexts["order.return.pickupPhotos.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 6), "Photos on the return sheet")
+        XCTAssertTrue(title.label.hasSuffix("· 3"), "All three: \(title.label)")
+        sleep(1)
+        e2e.shot("photos-80-return-sheet-3")
+        XCTAssertFalse(app.buttons["orderPhotos.add"].exists, "No capture at return")
+        XCTAssertFalse(app.buttons["order.return.pickupPhotos.add"].exists, "No add at return")
+        XCTAssertFalse(app.buttons["orderPhotos.remove.0"].exists, "Read only")
+        let tile = app.buttons.matching(NSPredicate(format: "label == %@", "Ảnh tình trạng đồ")).firstMatch
+        XCTAssertTrue(tile.waitForExistence(timeout: 3), "A tile")
+        tile.tap()
+        sleep(2)
+        e2e.shot("photos-81-return-photo-large")
+        app.swipeDown()
+        let close = app.buttons.matching(NSPredicate(format: "label IN %@", ["Close", "Đóng", "Xmark", "Hủy"])).firstMatch
+        if close.exists { close.tap() }
+        sleep(1)
+        if !title.isHittable { app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.07)).tap() }
+        sleep(1)
+        let confirm = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "Confirm")
+        confirm.tap()
+        sleep(3)
+        e2e.shot("photos-82-after-return")
+        app.terminate()
+        try e2e.start()
+        openOrder(orders[1])
+        XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "Nhận trả")
+        takeBack.tap()
+        sleep(2)
+        XCTAssertFalse(title.exists, "No photos: no row")
+        e2e.shot("photos-83-return-sheet-no-photos")
+    }
+
+    /// #1430 one look at the warm note colours, next to the photo row. `E2E_PHOTO_ORDERS`: an order with item notes, a note and photos
+    func testNotes02WarmNoteColours() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        for _ in 0..<1 { app.swipeUp() }
+        sleep(1)
+        e2e.shot("notes-10-item-note")
+        scrollToPhotos()
+        for _ in 0..<2 { app.swipeUp() }
+        sleep(1)
+        e2e.shot("notes-11-notes-section")
+    }
+
+    /// One photo with the account of `E2E_ROLE`: each role that can hand over
+    func testPhotos06RoleHandsOverWithAPhoto() throws {
+        try e2e.start()
+        openOrder(photoOrders[0])
+        openHandOverSheet()
+        pickPhoto(expect: 1)
+        confirmHandOver()
+        waitPhotoTitle(1)
+        photosFailedLine(exists: false)
+        sleep(2)
+        scrollToPhotos()
+        let papers = app.otherElements["order.detail.collateralSection"]
+        if papers.exists {
+            XCTAssertGreaterThanOrEqual(app.staticTexts["order.detail.pickupPhotos.title"].frame.minY, papers.frame.maxY - 1, "Photos sit under the papers")
+        }
+        e2e.shot("photos-50-role-\(e2e.role)")
+    }
 }
 
 // MARK: - Helper (self-contained; does not use POS_ADBDUITests' private helpers)
 
-private final class E2E {
+final class E2E {
     let test: XCTestCase
     let app: XCUIApplication
     let email: String
@@ -5539,7 +6217,7 @@ private final class E2E {
                 break
             }
         }
-        // notification prompt / onboarding, then give the first requests time to fail or succeed
+        // notification prompt / the pages of someone signed in, then give the first requests time to fail or succeed
         let deadline = Date().addingTimeInterval(14)
         while Date() < deadline {
             dismissSystemAlert()
@@ -5567,8 +6245,8 @@ private final class E2E {
 
     // MARK: Launch + login
 
-    /// Launch, log in when needed, get past the notification prompt and onboarding, and relaunch once so
-    /// app-config flags apply.
+    /// Launch, get past the pages (#1455: before login on a fresh install), log in when needed, get past the
+    /// notification prompt, and relaunch once so app-config flags apply.
     func start() throws {
         rotateIfPad()
         app.launch()
@@ -5599,14 +6277,21 @@ private final class E2E {
         }
     }
 
-    private func isLoginScreen(timeout: TimeInterval) -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
+    /// True once the login form is up. #1455: a fresh install opens on the pages, so it gets past them on the way.
+    func isLoginScreen(timeout: TimeInterval) -> Bool {
+        var deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if app.secureTextFields.firstMatch.exists { return true }
             if tabBar.exists && !app.alerts.firstMatch.exists { return false }
             dismissSystemAlert()
             // "Signed in on another device" (single-session API) shows an app alert, then the login form.
             if app.alerts.firstMatch.exists { dismissAlerts() }
+            let skip = button(["Skip", "Bỏ qua"])
+            if skip.exists && skip.isHittable {
+                shot("00-onboarding", attachOnly: true)
+                skip.tap()
+                deadline = Date().addingTimeInterval(timeout)
+            }
             sleep(1)
         }
         return app.secureTextFields.firstMatch.exists
@@ -5639,7 +6324,8 @@ private final class E2E {
         loginButton.tap()
     }
 
-    /// Tap through the notification prompt and onboarding until the tab bar has been stable for a moment.
+    /// Tap through the notification prompt and the pages (a signed-in install that never saw them; a fresh one has them
+    /// before login) until the tab bar has been stable for a moment.
     func settle(seconds: TimeInterval) {
         let deadline = Date().addingTimeInterval(seconds)
         var quiet = 0
@@ -6010,6 +6696,11 @@ private final class E2E {
             return nil
         }
         row.tap()
+        return pickVisibleCustomer()
+    }
+
+    /// The picker is open: choose the first customer. Returns the name shown on the row.
+    func pickVisibleCustomer() -> String? {
         // The v2 picker uses a text field ("Name or phone number"), the old one a search field.
         let v2Search = field(["Name or phone number", "Tên hoặc số điện thoại"])
         let search = v2Search.waitForExistence(timeout: 8) ? v2Search : app.searchFields.firstMatch

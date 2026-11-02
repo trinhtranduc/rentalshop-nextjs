@@ -14,7 +14,7 @@ extension UIAlertController{
     class func errorAlert(parent: UIViewController? , error: Error, handler:((UIAlertAction?) -> Void)? = nil){
         let alert = UIAlertController(
             title: "Error".localized(),
-            message: error.localizedDescription.localized(),
+            message: ServerMessageGuard.safe(error.localizedDescription.localized()),
             preferredStyle: UIAlertControllerStyle.alert
         )
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default, handler:handler))
@@ -27,7 +27,7 @@ extension UIAlertController{
       class func alert(parent: UIViewController? ,title:String, message:String, handler:((UIAlertAction?) -> Void)? = nil){
 //          Analytics.logEvent("Error", parameters: ["username" : Account.account()?.userName ?? "","message": message])
        
-        let alert = UIAlertController(title:title, message:message, preferredStyle: UIAlertControllerStyle.alert)
+        let alert = UIAlertController(title:title, message:ServerMessageGuard.safe(message), preferredStyle: UIAlertControllerStyle.alert)
         alert.addAction(UIAlertAction(title: "OK".localized(), style: .default, handler:handler))
         if parent != nil{
             parent!.present(alert, animated: true, completion: nil)

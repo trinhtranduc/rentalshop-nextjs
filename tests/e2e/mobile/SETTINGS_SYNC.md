@@ -65,7 +65,7 @@ Quản lý chi nhánh chạy bằng `--account manager` (OUTLET_ADMIN, `admin.ou
 | Cho trùng lịch: chủ shop đổi bằng giao diện | `test7uOwnerChangesSettingsByUI` (`overlap=off`), `test7eOverlapSetting` | ĐẠT | | | |
 | Cho trùng lịch: Giỏ khoá/mở | `test7tSettingsSyncOverlapCart` | bỏ qua (phiên) | ĐẠT | ĐẠT | ĐẠT |
 | Thông tin cửa hàng / chi nhánh (#1313) | `test7sShopAndBranchInfo`, `test7zCompactSettings` | ĐẠT | ĐẠT | ĐẠT | ĐẠT |
-| Tài khoản ngân hàng: dòng hiện | `test7kBankAccounts` | ĐẠT | hiện (#1319 chưa làm) | ẩn | ẩn |
+| Tài khoản ngân hàng: dòng hiện (#1319: quản lý chỉ xem) | `test7kBankAccounts` | ĐẠT (sửa được) | ĐẠT (chỉ xem) | ẩn | ẩn |
 | IP máy in theo máy | `test7oPrinterIPKeyboard` | | ĐẠT | ĐẠT | ĐẠT |
 
 Dữ liệu hoá đơn của máy không phải chủ shop (không đọc chữ trong ảnh): `SettingsSyncBillTests` (unit test chạy trong app, đăng nhập bằng `AuthenticationService`, tải đơn bằng `OrderService`, kiểm byte in `Order.toPrintData` và `OrderShareModel`):

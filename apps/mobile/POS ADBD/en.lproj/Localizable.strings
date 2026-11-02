@@ -493,7 +493,7 @@
 "Collect" = "Collect";
 "Document" = "Collateral Details";
 "Security Deposit" = "Security Deposit";
-"Damage Fee" = "Damage Fee";
+"Damage Fee" = "Extra Fee";
 "Collect Deposit" = "Collect Deposit";
 "Please collect the deposit amount from the customer." = "Please collect the deposit amount from the customer.";
 "Collect Remaining Payment" = "Collect Remaining Payment";
@@ -807,7 +807,7 @@
 "orders_unit" = "orders";
 "currency_VND" = "VND";
 "Overview_Info_Title" = "Overview";
-"Overview_Info_TotalRevenue" = "Total cash collected in the period (after deducting refunds). Includes: order deposits, rental on pickup, sales, damage fees. Excludes: refunds on cancellation, deposit refund when customer returns. Can be negative if refunds in the period exceed collections (e.g. many cancellations or returns).";
+"Overview_Info_TotalRevenue" = "Total cash collected in the period (after deducting refunds). Includes: order deposits, rental on pickup, sales, extra fees. Excludes: refunds on cancellation, deposit refund when customer returns. Can be negative if refunds in the period exceed collections (e.g. many cancellations or returns).";
 "Overview_Info_TotalOrders" = "(Daily only) Total number of rows in the order list — each row is one order or one revenue transaction; one order can have multiple rows if multiple transactions in the period.";
 "Overview_Info_CollateralReceived" = "Collateral (security deposit) currently held — total deposit for rental orders that are picked up and not yet returned. Only counts orders picked up in the period (by pickup date). Shows how much customer deposit you are holding (liability to refund when they return).";
 "Overview_Info_CollateralExpected" = "Expected collateral to refund — Amount of deposit you will refund to customers in the period. Only counts rental orders currently out (customer has picked up, you are holding the deposit) with return plan date in the period. When customers return in that period, you refund each securityDeposit. Helps with liquidity planning (how much deposit you need to pay back in the period).";
@@ -1036,7 +1036,7 @@
 "Deposit:" = "Deposit:";
 "Security Deposit:" = "Security Deposit:";
 "To Collect:" = "To Collect:";
-"Damage Fee:" = "Damage Fee:";
+"Damage Fee:" = "Extra Fee:";
 "Date check:" = "Date check:";
 "Change Customer" = "Change Customer";
 "Remove Customer" = "Remove Customer";
@@ -1723,7 +1723,7 @@
 "Already collected" = "Already collected";
 "Collect at hand-over" = "Collect at hand-over";
 "Late fee" = "Late fee";
-"Damage fee" = "Damage fee";
+"Damage fee" = "Extra fee";
 "At return: give back" = "At return: give back";
 "At return: collect" = "At return: collect";
 "NOTES" = "NOTES";
@@ -1738,7 +1738,7 @@
 "Keep collateral: %@" = "Keep collateral: %@";
 "Collect now" = "Collect now";
 "Handed over · collect %@" = "Picked up · collect %@";
-"Late + damage fees" = "Late + damage fees";
+"Late + damage fees" = "Late + extra fees";
 "Collateral money held" = "Collateral money held";
 "Already settled" = "Already settled";
 "Give back to customer" = "Give back to customer";
@@ -1810,7 +1810,7 @@
 "overview.v2.seeDetails" = "see details";
 "overview.v2.detail.body" = "Money customers actually paid the store, counted on the day it was received.";
 "overview.v2.detail.pickupAndSale" = "Paid at hand-over and sales";
-"overview.v2.detail.fees" = "Damage and late fees";
+"overview.v2.detail.fees" = "Extra and late fees";
 "overview.v2.detail.refunds" = "Refunds of cancelled orders";
 "overview.v2.detail.collateralNote" = "Not in real income because it goes back to the customer.";
 "overview.v2.detail.note" = "Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.";
@@ -1892,13 +1892,6 @@
 "customers.v2.recentOrders" = "Recent orders";
 "customers.v2.noOrders" = "No orders yet";
 "customers.v2.createOrder" = "Create order for this customer";
-"onboarding.v2.step" = "Step %d/%d";
-"onboarding.v2.product.title" = "Add rental items";
-"onboarding.v2.product.body" = "Add a photo, price and stock. Your team finds it by search or scan when creating an order.";
-"onboarding.v2.customer.title" = "Save customers";
-"onboarding.v2.customer.body" = "Save a customer once and reuse them for every rental and sale.";
-"onboarding.v2.order.title" = "Create orders";
-"onboarding.v2.order.body" = "Pick a customer, add items, set the dates and finish in a few taps.";
 "onboarding.v2.skip" = "Skip";
 "onboarding.v2.next" = "Next";
 "onboarding.v2.start" = "Get started";
@@ -2034,7 +2027,6 @@
 "products.detail.deleteMessage" = "“%@” will no longer be in the product list. Past orders keep its name.";
 "products.detail.deleted" = "Product deleted";
 "order.extend" = "Extend";
-"order.extend.title" = "Extend rental";
 "order.extend.current" = "Due back %@";
 "order.extend.extraDay" = "1 more day";
 "order.extend.extraDays" = "%d more days";
@@ -2202,7 +2194,7 @@
 "history.field.discountType" = "Discount type";
 "history.field.discountValue" = "Discount";
 "history.field.discountAmount" = "Discount amount";
-"history.field.damageFee" = "Damage fee";
+"history.field.damageFee" = "Extra fee";
 "history.field.lateFee" = "Late fee";
 "history.field.collateralType" = "Collateral type";
 "history.field.collateralDetails" = "Collateral";
@@ -2280,7 +2272,7 @@
 "overview.dash.detail.sale" = "Sales";
 "overview.dash.money.deposits" = "Deposits at order";
 "overview.dash.money.pickupAndSale" = "Paid at pickup, sales";
-"overview.dash.money.fees" = "Damage and late fees";
+"overview.dash.money.fees" = "Extra and late fees";
 "overview.dash.money.refunds" = "Refunds on cancelled";
 "overview.dash.money.atPickup" = "Due when the customer picks up";
 "overview.dash.money.overduePickup" = "Past pickup date, unpaid";
@@ -2300,6 +2292,7 @@
 
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "No bank account yet. Tap + to add one.";
+"bankAccounts.emptyReadOnly" = "No bank account yet. Only the shop owner can add one.";
 "printer.bankQr.title" = "Print transfer QR on bills";
 "printer.bankQr.hint" = "Prints the shop's default bank account and a VietQR code at the end of each bill. Applies to this branch on every device.";
 "bill.bankQr.title" = "BANK TRANSFER";
@@ -2450,13 +2443,13 @@
 "overview.related.event.deposit" = "Deposit collected";
 "overview.related.event.pickup" = "Collected at pickup";
 "overview.related.event.sameDay" = "Rented and returned the same day";
-"overview.related.event.damageFee" = "Damage fee collected";
+"overview.related.event.damageFee" = "Extra fee collected";
 "overview.related.event.depositRefund" = "Deposit refunded";
 "overview.related.event.nothing" = "Nothing to settle";
 "overview.related.event.rentCancelled" = "Order cancelled, refunded";
 "overview.related.event.returnCollected" = "Collected at return";
 "overview.related.event.futurePickup" = "Expected at pickup";
-"overview.related.event.futureDamageFee" = "Expected damage fee at return";
+"overview.related.event.futureDamageFee" = "Expected extra fee at return";
 "overview.related.event.futureRefund" = "Expected deposit refund at return";
 "overview.related.event.futureNothing" = "Nothing expected at return";
 
@@ -2903,15 +2896,12 @@
 "deposit.card.paidDetail" = "%@%% of order · %@";
 "deposit.card.dueDetail" = "%@%% of order · due %@";
 "deposit.card.restDetail" = "At hand-over · %@";
-"deposit.collect.title" = "Collect stage %d";
 "deposit.collect.confirm" = "Collect %@";
-"deposit.unpaid.title" = "Deposit stages not collected yet";
 "deposit.unpaid.message" = "Collect these stages before handing over the items.";
 "deposit.unpaid.row" = "Stage %d · %@";
 "deposit.void.title" = "Undo the collection of stage %d?";
 "deposit.void.message" = "The %@ collected is cancelled and the stage is open again. This is logged.";
 "deposit.void.confirm" = "Undo collection";
-"deposit.cancel.title" = "Cancel order #%@?";
 "deposit.cancel.policy" = "Shop policy: %@";
 "deposit.cancel.paid" = "Customer paid";
 "deposit.cancel.kept" = "Shop keeps";
@@ -3026,7 +3016,6 @@
 "order.collateral.card" = "Papers & collateral";
 "order.collateral.edit" = "Edit";
 "order.collateral.none" = "Not entered";
-"order.collateral.editTitle" = "Edit papers & collateral";
 "order.collateral.editWarning" = "Changing the collateral changes the amount to give back at return";
 "order.collateral.papersRow" = "Papers";
 "order.detail.section.payment" = "PAYMENT";
@@ -3086,3 +3075,140 @@
 "printer.shareNote.failed" = "Could not save the setting. Please try again.";
 // #1353: under a short cart line, the other branches that still have the product on the order's days
 "products.cart.othersHave" = "Other branches have: %@";
+"share.collect.rentalLeft" = "Rental left, collect at hand-over";
+"share.collateral.collect" = "Collateral, collect at hand-over";
+"share.cashAtHandover" = "Customer pays at hand-over";
+
+// #1375: "To do" home-screen widget
+"widget.name" = "To do";
+"widget.description" = "Today's hand-overs, returns and late orders.";
+"widget.late" = "Late";
+"widget.pickup" = "Out";
+"widget.return" = "Back";
+"widget.more" = "+%d more";
+"widget.updated" = "updated %@";
+"widget.done" = "done %d/%d";
+"widget.doneCaption" = "done today";
+"widget.allDone" = "All done %d/%d";
+"widget.todayAt" = "Today · %@";
+"widget.empty" = "Nothing to do today";
+"widget.tomorrow" = "Tomorrow: %d out, %d back";
+"widget.loggedOut" = "Open AnyRent to sign in";
+"widget.loggedOutHint" = "Your to-do list will show here";
+"widget.noAccess" = "This account has no To do list";
+"widget.stale" = "Open the app to update";
+"widget.staleDetail" = "Last list: %@";
+"widget.yesterday" = "yesterday";
+"widget.hint.title" = "Add the widget to see today's jobs on your home screen";
+"widget.hint.body" = "%d out, %d back, %d late will show without opening the app.";
+"widget.hint.how" = "How to add";
+"widget.dismiss" = "Don't ask again";
+"widget.guide.title" = "Add to widget";
+"widget.guide.subtitle" = "iPhone does not let an app add a widget. It takes 3 steps and about 10 seconds.";
+"widget.guide.step1" = "Touch and hold an empty spot on the home screen until the icons wiggle.";
+"widget.guide.step2" = "Tap + at the top, then choose AnyRent.";
+"widget.guide.step3" = "Pick the small or the medium size and tap Add Widget.";
+"widget.guide.ok" = "Got it";
+"widget.settings.row" = "Widget";
+"order.detail.stageUnpaid" = "Deposit stage unpaid";
+
+// #1404 three onboarding pages. Fixed sample data, not the shop's currency.
+"onboarding.v2.p1.title" = "Forgot the name?\nJust snap it.";
+"onboarding.v2.p1.body" = "AI finds any item with a photo in your stock.";
+"onboarding.v2.p2.title" = "Double-booked?\nYou'll know first.";
+"onboarding.v2.p2.body" = "See which item is out on which day.";
+"onboarding.v2.p3.title" = "Who's due today?\nOpen Calendar.";
+"onboarding.v2.p3.body" = "What's left to collect shows on each order.";
+"onboarding.v2.sample.lang" = "en";
+"onboarding.v2.scan.count" = "3 similar products";
+"onboarding.v2.scan.from" = "From your photo";
+"onboarding.v2.scan.dress1" = "Lace wedding dress";
+"onboarding.v2.scan.dress1.meta" = "2 in stock · $120/rental";
+"onboarding.v2.scan.dress2" = "Long-train lace dress";
+"onboarding.v2.scan.dress2.meta" = "2 in stock · $150/rental";
+"onboarding.v2.scan.dress3" = "Mermaid wedding dress";
+"onboarding.v2.scan.dress3.meta" = "1 in stock · $120/rental";
+"onboarding.v2.cal.title" = "New order: dress + suit";
+"onboarding.v2.cal.subtitle" = "Free days for the suit · 10/2026";
+"onboarding.v2.cal.mon" = "Mon";
+"onboarding.v2.cal.tue" = "Tue";
+"onboarding.v2.cal.wed" = "Wed";
+"onboarding.v2.cal.thu" = "Thu";
+"onboarding.v2.cal.fri" = "Fri";
+"onboarding.v2.cal.sat" = "Sat";
+"onboarding.v2.cal.sun" = "Sun";
+"onboarding.v2.cal.out" = "Out";
+"onboarding.v2.cal.chip.booked" = "Suit · #496958";
+"onboarding.v2.cal.chip.new" = "Suit · new order";
+"onboarding.v2.warn.body" = "Royal blue suit is 1 short on 08/10 (rented in order #496958).";
+"onboarding.v2.today.head" = "TODAY · WED 07/10";
+"onboarding.v2.today.count" = "2 pickups · 1 return";
+"onboarding.v2.today.pickup" = "Pickup";
+"onboarding.v2.today.return" = "Return";
+"onboarding.v2.today.name1" = "Emma Lee";
+"onboarding.v2.today.item1" = "Dress · back 09/10";
+"onboarding.v2.today.amount1" = "$120";
+"onboarding.v2.today.name2" = "Dan Reed";
+"onboarding.v2.today.item2" = "Suit · back 08/10";
+"onboarding.v2.today.amount2" = "$45";
+"onboarding.v2.today.name3" = "Sue Lane";
+"onboarding.v2.today.item3" = "Camera · back today";
+"onboarding.v2.today.amount3" = "$35";
+"onboarding.v2.today.collect" = "to collect %@";
+"onboarding.v2.today.refund" = "refund $100";
+/* #1395 titles of the order-detail sheets */
+"order.sheetTitle.actions" = "Order actions";
+"order.sheetTitle.handOver" = "Hand over to customer";
+"order.sheetTitle.return" = "Take back items";
+"order.sheetTitle.extend" = "Extend order";
+"order.sheetTitle.collateral" = "Papers & collateral";
+"order.sheetTitle.collect" = "Collect deposit";
+"order.sheetTitle.unpaid" = "Uncollected deposit stages";
+"order.sheetTitle.cancel" = "Cancel order";
+"firstRunGuide.title" = "Get started: 3 steps";
+"firstRunGuide.step.product" = "Add your first product";
+"firstRunGuide.step.customer" = "Add a customer";
+"firstRunGuide.step.order" = "Create your first order";
+"firstRunGuide.done" = "Done";
+"firstRunGuide.close" = "Close";
+"firstRunGuide.settings.row" = "Getting started";
+"firstRunGuide.finish.title" = "First order done";
+"firstRunGuide.finish.body" = "It is now in My Order and Calendar.";
+
+"firstRunGuide.go.product" = "Add product →";
+"firstRunGuide.go.customer" = "Add customer →";
+"firstRunGuide.go.order" = "Create order →";
+"firstRunGuide.later" = "Later";
+"firstRunGuide.collapsed.title" = "Get started";
+"firstRunGuide.hide" = "Hide guide";
+"firstRunGuide.hide.confirm" = "Hide the guide? Reopen it in Settings.";
+"firstRunGuide.hide.action" = "Hide";
+
+"firstRunGuide.bubble.productPhoto" = "Add a product photo. It powers search by photo.";
+"firstRunGuide.bubble.productName" = "Enter the product name.";
+"firstRunGuide.bubble.productPrice" = "Enter a rental price, per rental or per day.";
+"firstRunGuide.bubble.productSave" = "All set. Tap Save product.";
+"firstRunGuide.bubble.cartCustomer" = "An order needs a customer. Tap to choose or add one.";
+"firstRunGuide.bubble.newCustomer" = "Tap New customer, enter phone and name";
+"firstRunGuide.bubble.newCustomerSave" = "Tap Save and select.";
+"firstRunGuide.bubble.cartDates" = "Pick the pickup and return days.";
+"firstRunGuide.bubble.cartCreate" = "All set. Tap Create order.";
+"firstRunGuide.next" = "Next";
+"firstRunGuide.exit" = "Exit guide";
+"firstRunGuide.exit.discard" = "Discard what you entered?";
+"firstRunGuide.exit.discard.action" = "Discard";
+
+/* #1418 condition photos at hand-over */
+"order.photos.title" = "Condition photos";
+"order.photos.optional" = "Optional";
+"order.photos.take" = "Take a photo";
+"order.photos.takeMore" = "Take more";
+"order.photos.library" = "Library";
+"order.photos.full" = "That is %d photos. Remove one to add another.";
+"order.photos.atHandOver" = "Photos at hand-over";
+"order.photos.notUploaded" = "%d photo(s) not uploaded";
+"order.photos.cameraUnavailable" = "The camera is not available. Allow it in Settings, or pick from the library.";
+"order.photos.openSettings" = "Open Settings";
+
+/* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
+"order.detail.cashBreakdown" = "rental %@ + collateral %@";

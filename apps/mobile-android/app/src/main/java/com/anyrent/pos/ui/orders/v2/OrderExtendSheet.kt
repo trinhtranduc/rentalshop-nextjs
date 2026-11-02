@@ -1,16 +1,14 @@
 package com.anyrent.pos.ui.orders.v2
 
 import com.anyrent.pos.data.CurrentOutlet
-import androidx.compose.foundation.background
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -29,14 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
 import com.anyrent.pos.data.SessionStore
@@ -115,17 +111,17 @@ fun OrderExtendSheet(detail: OrderDetail, onDismiss: () -> Unit, onExtended: (Lo
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = DS.Colors.Surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            Box(Modifier.padding(top = 8.dp).size(width = 40.dp, height = 5.dp).background(Color(0xFFCBD5E1), RoundedCornerShape(999.dp)))
-        },
     ) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 28.dp),
+            // #1395: on a small phone the rent box and the button stay reachable above the keyboard
+            Modifier.fillMaxWidth().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(stringResource(R.string.extend_rental_title), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DS.Colors.Text)
-            Text(stringResource(R.string.extend_rental_current, dayText(current)), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+            OrderSheetTitle(
+                stringResource(R.string.order_sheet_title_extend),
+                stringResource(R.string.extend_rental_current, dayText(current)),
+            )
             AppRangeCalendar(range, Modifier.fillMaxWidth().height(420.dp))
             if (window != null && chosen != null) {
                 val extra = RentalExtension.extraDays(current, chosen)

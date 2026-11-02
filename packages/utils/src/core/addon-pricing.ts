@@ -10,6 +10,7 @@ import { calculateSubscriptionPrice } from './pricing-calculator';
  * A row of the price list (`AddonPrice`) adds one limit kind: `packSize` units per pack, `monthlyPrice` VND per pack
  * per month. A shop's item (`PlanLimitAddon`) stores `packSize × packs` in the column of its kind, so the limit check
  * keeps summing the five columns. Money is whole VND; days are Vietnam civil days.
+ * #782: `packSize = 1` means "price of one unit": the number admin types goes in `packs` (+100 products = 100 packs).
  */
 
 export const LIMIT_KINDS = ['outlets', 'users', 'products', 'customers', 'orders'] as const;
@@ -20,6 +21,16 @@ export type AddonColumns = Record<LimitKind, number>;
 export const FEATURE_KIND = 'feature' as const;
 export const ADDON_KINDS = [...LIMIT_KINDS, FEATURE_KIND] as const;
 export type AddonKind = (typeof ADDON_KINDS)[number];
+
+/** #782: most packs on one item: +100,000 products on a `packSize = 1` row. */
+export const MAX_ADDON_PACKS = 100_000;
+/** The kind columns of `PlanLimitAddon` are 32-bit `Int`. */
+const MAX_ADDON_UNITS = 2_147_483_647;
+
+/** `packSize × packs` fits the kind column. Only a very large old pack size × a large number can overflow it. */
+export function addonUnitsFit(packSize: number, packs: number): boolean {
+  return Math.max(0, Math.floor(packSize)) * Math.max(0, Math.floor(packs)) <= MAX_ADDON_UNITS;
+}
 
 const emptyColumns = (): AddonColumns => ({ outlets: 0, users: 0, products: 0, customers: 0, orders: 0 });
 
@@ -250,7 +261,7 @@ export const addonPriceUpdateSchema = z
 export const merchantAddonCreateSchema = z
   .object({
     addonPriceId: z.coerce.number().int().positive(),
-    packs: z.coerce.number().int().min(1).max(1000),
+    packs: z.coerce.number().int().min(1).max(MAX_ADDON_PACKS),
     /** #943: cash as in the mockup ("Tiền mặt"); recorded PENDING like a transfer */
     method: z.enum(['TRANSFER', 'STRIPE', 'CASH']).optional(),
     transactionId: z.string().trim().max(200).optional(),
@@ -262,7 +273,7 @@ export const merchantAddonCreateSchema = z
 export const merchantAddonUpdateSchema = z
   .object({
     removeAtPeriodEnd: z.boolean().optional(),
-    packs: z.coerce.number().int().min(1).max(1000).optional(),
+    packs: z.coerce.number().int().min(1).max(MAX_ADDON_PACKS).optional(),
     method: z.enum(['TRANSFER', 'STRIPE']).optional(),
     transactionId: z.string().trim().max(200).optional(),
     reference: z.string().trim().max(200).optional(),
@@ -272,7 +283,7 @@ export const merchantAddonUpdateSchema = z
 
 export const addonQuoteQuerySchema = z.object({
   addonPriceId: z.coerce.number().int().positive(),
-  packs: z.coerce.number().int().min(1).max(1000),
+  packs: z.coerce.number().int().min(1).max(MAX_ADDON_PACKS),
 });
 
 export type AddonPriceCreateInput = z.output<typeof addonPriceCreateSchema>;

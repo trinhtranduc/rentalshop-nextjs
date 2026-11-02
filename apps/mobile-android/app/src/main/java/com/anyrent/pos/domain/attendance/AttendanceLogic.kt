@@ -205,6 +205,8 @@ object AttendanceLogic {
         "ATTENDANCE_NOT_CONFIGURED" -> PunchRejection(PunchRejectionKind.NOT_CONFIGURED)
         "MODULE_NOT_ENABLED" -> PunchRejection(PunchRejectionKind.MODULE_OFF)
         "ATTENDANCE_NOT_REQUIRED" -> PunchRejection(PunchRejectionKind.NOT_REQUIRED)
+        // #1408 the server's trouble, not the scan: no message, so the card says to try again (as iOS)
+        "SERVICE_UNAVAILABLE", "DATABASE_ERROR", "INTERNAL_SERVER_ERROR" -> PunchRejection(PunchRejectionKind.OTHER)
         else -> PunchRejection(PunchRejectionKind.OTHER, message = message)
     }
 

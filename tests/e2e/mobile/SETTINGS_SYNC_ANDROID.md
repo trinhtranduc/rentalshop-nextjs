@@ -19,7 +19,7 @@ Giới hạn đăng nhập của API là 10 lần / 15 phút theo IP: khi `login
 
 | Ca | Chủ shop | Quản lý CN | Nhân viên | Kho | Cách kiểm |
 |---|---|---|---|---|---|
-| Dòng Cài đặt theo vai trò (`rows`) | ĐẠT | ĐẠT (ghi nhận #1319) | ĐẠT | ĐẠT | văn bản màn hình |
+| Dòng Cài đặt theo vai trò (`rows`) | ĐẠT | ĐẠT | ĐẠT | ĐẠT | văn bản màn hình |
 | Cọc ẩn với vai trò khác chủ shop (#1310) | ĐẠT (thấy) | ĐẠT (ẩn) | ĐẠT (ẩn) | ĐẠT (ẩn) | `rows` |
 | Tiền tệ: chủ shop đổi bằng giao diện (#1313) | ĐẠT | - | - | - | DB |
 | Tiền tệ: máy khác thấy khi về foreground / vào Tổng quan, > 1 phút (#1307) | - | ĐẠT (Tổng quan) | ĐẠT (foreground) | ĐẠT (foreground) | `currency-fg`, đổi VND ↔ USD hai chiều |
@@ -37,7 +37,7 @@ Bảng chỉ ghi ca đã chạy xong; mỗi ca có dòng `PASS` / `FAIL` trong `
 
 ## Phát hiện và hành vi bất ngờ
 
-- **#1319 vẫn mở** (như chủ shop đã ghi nhận): quản lý chi nhánh thấy dòng "Tài khoản ngân hàng" (`2 tài khoản`).
+- **#1319 đã làm:** quản lý chi nhánh thấy dòng "Tài khoản ngân hàng" (`2 tài khoản`), vào là màn chỉ xem (`bankview`).
 - **Số chi nhánh trên dòng Cài đặt đếm cả chi nhánh đã tắt**: chủ shop có 2 chi nhánh, tắt 1 thì dòng "Thông tin cửa hàng" vẫn ghi "2 chi nhánh" còn màn trong ghi "CHI NHÁNH · 1" (`SettingsRows.countPath` gọi `/api/outlets?limit=1&page=1`, `total` gồm cả chi nhánh tắt). Nhỏ, không chặn bản store.
 - Dòng Cọc trên Android tên là "Cọc" (không phải "Thu cọc"); công tắc "Cho tạo đơn khi trùng lịch" không có node chữ cho tester (script bấm theo toạ độ).
 - Màn Máy in của quản lý hiện một lần "Không tải được cài đặt hóa đơn của chi nhánh." ngay sau khi đăng nhập (đọc sau 3 giây), đọc lại ở lần sau thì có đủ; không tái hiện trong 3 lần chạy tiếp theo (quản lý, nhân viên, kho). Ghi nhận, chưa có bước tái hiện chắc chắn.

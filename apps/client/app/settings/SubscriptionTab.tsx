@@ -94,7 +94,7 @@ export function SubscriptionTab({ status, load, onRetry, onUpgrade, onExtend }: 
 
   const tag = subscriptionTag(status);
   const expiry = expiryLine(status, tag, toKey, weekdays, t);
-  const usage = usageRows(status.limits, status.usage);
+  const usage = usageRows(status.effectiveLimits ?? status.limits, status.usage, status.addonLimits);
   const expiryTone = tag === 'expired' ? 'text-ar-danger' : tag === 'expiring' ? 'text-ar-unprepared' : 'text-ar-ink-2';
   const note = tag === 'expired' ? t('subscription.expiredNote') : status.cancelAtPeriodEnd || tag === 'cancelled' ? t('subscription.cancelNote') : '';
   const actions =
@@ -145,7 +145,10 @@ export function SubscriptionTab({ status, load, onRetry, onUpgrade, onExtend }: 
             {usage.map((row) => (
               <li key={row.key} className="flex flex-col gap-1.5">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[15px] text-ar-ink-2">{t(`subscription.usage.${row.key}`)}</span>
+                  <span className="flex flex-col text-[15px] text-ar-ink-2">
+                    {t(`subscription.usage.${row.key}`)}
+                    {row.addon > 0 && <small className="text-xs text-ar-muted">{t('subscription.includesAddon', { count: n(row.addon) })}</small>}
+                  </span>
                   <span className={`text-[15px] font-semibold tabular-nums ${row.over ? 'text-ar-danger' : 'text-ar-ink'}`}>{usageText(row, t, n)}</span>
                 </div>
                 {row.pct != null && (
@@ -154,6 +157,7 @@ export function SubscriptionTab({ status, load, onRetry, onUpgrade, onExtend }: 
                   </span>
                 )}
                 {row.over && <span className="text-xs font-semibold text-ar-danger">{t('subscription.overLimit')}</span>}
+                {row.key === 'orders' && row.addon > 0 && <span className="text-xs text-ar-muted">{t('subscription.ordersAddonNote')}</span>}
               </li>
             ))}
           </ul>

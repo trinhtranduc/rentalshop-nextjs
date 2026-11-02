@@ -45,6 +45,13 @@ enum ShareMoneyRule {
         return DepositPlanMath.roundMoney(max(0, total - taken), currency: currency)
     }
 
+    /// #1368 "Khách đưa lúc nhận đồ": what the customer hands over when taking the items = "Thu khi giao" of the plan plus
+    /// the collateral in money. nil when the collateral is not money (nothing, or papers only): then there is no such line.
+    static func cashAtHandover(collectOnDelivery: Double, collateralMoney: Double, currency: ShopCurrency) -> Double? {
+        guard collateralMoney > 0 else { return nil }
+        return DepositPlanMath.roundMoney(collectOnDelivery + collateralMoney, currency: currency)
+    }
+
     /// "Thu cọc theo giai đoạn": each stage with Đã thu / Chưa thu (never "Trễ N ngày", "Hôm nay"); nil without stages
     static func stageBlock(hasPlan: Bool?, stages: [OrderInstallment]?, currency: ShopCurrency,
                            text: (String) -> String) -> OrderShareModel.StageBlock? {
@@ -277,6 +284,8 @@ struct OrderShareModel: Equatable {
         case total(label: String, value: String, tone: Highlight)
         case stages(StageBlock)
         case collect(label: String, value: String)
+        /// #1368: "Khách đưa lúc nhận đồ", the last box when the collateral is money
+        case cash(label: String, value: String)
     }
 
     struct OrderNote: Equatable {
@@ -399,7 +408,20 @@ struct OrderShareModel: Equatable {
         var entries: [Money] = []
         func row(_ key: String, _ value: String) { entries.append(.row(Row(label: t.text(key), value: value))) }
         func noDeposit() { entries.append(.row(Row(label: t.text("share.deposit.label"), value: t.text("share.deposit.none"), muted: true))) }
-        func collectBox() { entries.append(.collect(label: t.text("share.collect"), value: fmt(collect))) }
+        // #1368: with a collateral in money the box says what is left of the rental, and the collateral and the cash follow
+        let cash = ShareMoneyRule.cashAtHandover(collectOnDelivery: collect, collateralMoney: source.collateralMoney, currency: currency)
+        func collectBox() {
+            entries.append(.collect(label: t.text(cash == nil ? "share.collect" : "share.collect.rentalLeft"), value: fmt(collect)))
+        }
+        func collateralRows() {
+            guard let collateral else { return }
+            if let cash {
+                row("share.collateral.collect", collateral)
+                entries.append(.cash(label: t.text("share.cashAtHandover"), value: fmt(cash)))
+            } else {
+                row("share.collateral", collateral)
+            }
+        }
         if source.isDraft {
             if source.discount > 0 { row("share.discount", minus(source.discount, currency: currency)) }
             entries.append(.total(label: t.text("share.subtotal"), value: fmt(source.total), tone: .draft))
@@ -407,7 +429,7 @@ struct OrderShareModel: Equatable {
                 // #1345: Cọc giữ đồ (or "Cọc: Chưa cọc"), Thu khi giao, Thế chân
                 if source.deposit > 0 { row("share.draft.deposit", fmt(source.deposit)) } else { noDeposit() }
                 collectBox()
-                if let collateral { row("share.collateral", collateral) }
+                collateralRows()
             }
         } else if isRent {
             // #1345: the order of the order detail. #930: nothing here changes with the status
@@ -424,7 +446,7 @@ struct OrderShareModel: Equatable {
                 noDeposit()
             }
             collectBox()
-            if let collateral { row("share.collateral", collateral) }
+            collateralRows()
         } else {
             row("share.subtotal", fmt(subtotal))
             if source.discount > 0 { row("share.discount", minus(source.discount, currency: currency)) }

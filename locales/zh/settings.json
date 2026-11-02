@@ -1,5 +1,9 @@
 {
   "web": {
+    "subscription": {
+      "includesAddon": "含附加项 +{count}",
+      "ordersAddonNote": "订单按累计数量计算，不会每月重置。已使用的额外订单无法移除。"
+    },
     "onlineBooking": {
       "title": "接受在线预订",
       "hint": "顾客在您的店铺页面预订，您确认后才会成为订单。",
@@ -8,6 +12,9 @@
       "outletsHint": "关闭不接受在线预订的门店。"
     },
     "printer": {
+      "bankQrReadOnly": "只有店主可以更改此设置。",
+      "noteReadOnly": "只有店主可以修改备注和二维码。适用于整个门店。",
+      "noteEmpty": "暂无备注",
       "shareNote": "在分享的订单图片上显示订单备注",
       "shareNoteHint": "订单备注会显示在发给客户的图片底部，内部备注也会显示。适用于整个店铺。",
       "shareNoteBadge": "整个店铺",

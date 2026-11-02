@@ -118,6 +118,7 @@ final class ShopInfoViewController: BaseViewControler {
                 BranchRow(id: $0.id, name: $0.name, isActive: $0.isActive, isDefault: $0.isDefault)
             })
             self.branches = rows
+            NotificationCenter.default.post(name: .shopBranchCountDidChange, object: nil, userInfo: ["count": rows.count])
             self.loaded = true
             self.table.reloadData()
         }

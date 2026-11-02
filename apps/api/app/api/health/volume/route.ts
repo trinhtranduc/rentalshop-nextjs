@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         console.log('✅ Directory created');
       }
     } catch (error) {
-      results.errors.push(`Directory check failed: ${error.message}`);
+      results.errors.push('Directory check failed');
       console.error('❌ Directory check failed:', error);
     }
 
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         results.checks.fileWrite = true;
         console.log('✅ File write successful');
       } catch (error) {
-        results.errors.push(`File write failed: ${error.message}`);
+        results.errors.push('File write failed');
         console.error('❌ File write failed:', error);
       }
     }
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
           console.error('❌ File content mismatch');
         }
       } catch (error) {
-        results.errors.push(`File read failed: ${error.message}`);
+        results.errors.push('File read failed');
         console.error('❌ File read failed:', error);
       }
     }
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         };
         console.log('✅ File persistence confirmed');
       } catch (error) {
-        results.errors.push(`File stats failed: ${error.message}`);
+        results.errors.push('File stats failed');
         console.error('❌ File stats failed:', error);
       }
     }
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       results.directoryContents = files;
       console.log('📁 Directory contents:', files);
     } catch (error) {
-      results.errors.push(`Directory listing failed: ${error.message}`);
+      results.errors.push('Directory listing failed');
       console.error('❌ Directory listing failed:', error);
     }
 
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error: 'Volume check failed',
         code: 'VOLUME_CHECK_FAILED'
       },
       { status: 500 }

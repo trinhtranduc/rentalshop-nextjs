@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,6 +69,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.AnyRentApp
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.guide.CoachCart
+import com.anyrent.pos.domain.guide.CoachScreen
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartOrderSubmit
 import com.anyrent.pos.data.CartStore
@@ -536,7 +539,7 @@ fun CartV2Screen(
                 // #952 (owner): calendar icon in a light-blue circle, same size and margin as the customer avatar
                 val dateRow = CartDateRow.state(pickup.takeIf { datesChosen }, ret.takeIf { datesChosen })
                 Row(
-                    Modifier.fillMaxWidth().clickable { showDates = true }.heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+                    Modifier.fillMaxWidth().coachAnchor("cart.datesRow").clickable { showDates = true }.heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -764,7 +767,7 @@ fun CartV2Screen(
                             EditOrderSheet.CtaLabel.CREATE -> R.string.v2_cart_create
                         },
                     ),
-                    modifier = Modifier.weight(1.1f),
+                    modifier = Modifier.weight(1.1f).coachAnchor("cart.cta"),
                     // #1229: the staged label is short now; one line, 16sp, so it is not clipped on a 360dp phone
                     fontSize = if (staged && stagedCollectNow > 0) 16.sp else 18.sp,
                     singleLine = staged && stagedCollectNow > 0,
@@ -772,6 +775,22 @@ fun CartV2Screen(
                     onClick = ::onCta,
                 )
             }
+        }
+    }
+
+    // #1394: over the cart; the run ends with it
+    FirstRunCoachOverlay(
+        CoachScreen.CART,
+        CoachCart(isEmpty = lines.isEmpty(), hasCustomer = customer != null, isSale = isSale, hasDates = datesChosen, isEditing = editingOrderId != null),
+        // #1412: a sheet of the cart is on top; the confirm sheet has no bubble
+        covered = showCustomer || showDates || confirmSheet != null || createdSheet != null || editSheet != null,
+    )
+    DisposableEffect(Unit) { onDispose { FirstRunCoach.stop() } }
+    // #1412: Thoát hướng dẫn: the card is on Home. The cart keeps its content.
+    LaunchedEffect(Unit) {
+        FirstRunCoach.exits.collect {
+            showCustomer = false
+            onBack()
         }
     }
 
@@ -1021,7 +1040,7 @@ private fun formatDay(date: LocalDate): String = com.anyrent.pos.domain.DayText.
 @Composable
 private fun CustomerRow(name: String?, phone: String?, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxWidth().coachAnchor("cart.customerRow").clickable(onClick = onClick).heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

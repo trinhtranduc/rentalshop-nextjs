@@ -53,6 +53,28 @@ export function featureLabel(featureKey: string | null | undefined): string {
   return `Tính năng · ${f?.name ?? featureKey ?? '—'}`;
 }
 
-export function appliesTo(kind: string): string {
-  return kind === 'outlets' ? 'Chỉ gói nhiều chi nhánh (Enterprise)' : 'Mọi gói';
+/** #1187 extra branches sell on any plan. #782 loyalty: not where the plan has it, and not on Basic for now. */
+export function appliesTo(kind: string, featureKey?: string | null): string {
+  return isFeatureKind(kind) && featureKey === 'loyalty' ? 'Gói chưa có sẵn tính năng, trừ Basic' : 'Mọi gói';
+}
+
+type RowLike = { limitKind?: string | null; packSize?: number | null };
+const unitOf = (kind: string | null | undefined) => (kind && kind in KIND_UNIT ? KIND_UNIT[kind as LimitKind] : '');
+
+/** #782: a limit row with pack size 1 is priced per unit, and admin types the amount. Older rows keep packs. */
+export const isUnitRow = (row: RowLike) => !isFeatureKind(row.limitKind) && row.packSize === 1;
+
+/** "Số sản phẩm cộng thêm" on a unit row, "Số gói" on an older pack row. */
+export const amountLabel = (row: RowLike) => (isUnitRow(row) ? `Số ${unitOf(row.limitKind)} cộng thêm` : 'Số gói');
+
+/** "100 sản phẩm" on a unit row, "2 gói" on an older pack row. */
+export function amountText(row: RowLike, amount: number): string {
+  const n = new Intl.NumberFormat('vi-VN').format(amount);
+  return isUnitRow(row) ? `${n} ${unitOf(row.limitKind)}` : `${n} gói`;
+}
+
+/** What one price of the row buys: "tháng", "sản phẩm", "gói 100 sản phẩm". */
+export function priceUnit(row: RowLike): string {
+  if (isFeatureKind(row.limitKind)) return 'tháng';
+  return isUnitRow(row) ? unitOf(row.limitKind) : `gói ${row.packSize} ${unitOf(row.limitKind)}`;
 }

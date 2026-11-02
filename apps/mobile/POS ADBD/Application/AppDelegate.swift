@@ -11,6 +11,7 @@ import Firebase
 import FirebaseMessaging
 import IQKeyboardManagerSwift
 import AppTrackingTransparency
+import DraftOrderActivity
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -18,11 +19,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey: Any] = [:]) -> Bool {
-        if url.scheme == "anyrent" {
-            DraftOrderReminder.shared.openDraftCart()
-            return true
+        // #1375: by host. anyrent://order/<id> and anyrent://todo come from the home-screen widget; every other
+        // anyrent:// link (the Live Activity's anyrent://draft-cart) still opens the draft cart.
+        guard let link = TodayWidgetLink.parse(url) else { return false }
+        switch link {
+        case .order(let orderId): PushNotificationManager.shared.openOrderDetail(orderId: orderId)
+        case .todo: openTodoTab()
+        case .draftCart: DraftOrderReminder.shared.openDraftCart()
         }
-        return false
+        return true
+    }
+
+    /// anyrent://todo: the Đơn tab on "Việc cần làm" (the sign-in screen first when nobody is signed in)
+    func openTodoTab() {
+        DispatchQueue.main.async {
+            guard User.account() != nil else { return }
+            if !(self.window?.rootViewController is TabbarViewController) {
+                self.loadMainUserView()
+            }
+            guard let tabBar = self.window?.rootViewController as? TabbarViewController else { return }
+            tabBar.selectedIndex = 1
+            (tabBar.selectedViewController as? UINavigationController)?.popToRootViewController(animated: false)
+            OrdersViewController.requestTodo()
+        }
     }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
@@ -38,7 +57,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // RevenueCat (MERCHANT IAP) — no-op if REVENUECAT_API_KEY empty
         PurchasesManager.configure()
         
-        // Push notifications (FCM) — request permission + register token when logged in
+        // Push notifications (FCM) — register token when logged in. #1413: the permission question is on Home
         if User.account() != nil {
             PushNotificationManager.shared.start()
         }
@@ -68,15 +87,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Load appropriate view based on user status; a build below the minimum version stays blocked (#370)
         if let cached = AppConfigService.shared.cached, cached.updateRequired(currentVersion: AppVersion.current) {
             showUpdateRequired(storeUrl: cached.ios.storeUrl)
-        } else if let user = User.account() {
-            // Log user login event
-            FirebaseManager.shared.logUserLogin(
-                userId: String(user.id),
-                role: user.role.rawValue
-            )
-            self.loadMainUserView()
         } else {
-            self.loadLogin()
+            if let user = User.account() {
+                // Log user login event
+                FirebaseManager.shared.logUserLogin(
+                    userId: String(user.id),
+                    role: user.role.rawValue
+                )
+            }
+            route(after: .launch)
         }
 
         // Cold start from notification tap
@@ -87,6 +106,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         checkAppConfig()
         ShopCurrencyStore.refresh() // #1307 cold start with a saved login
         ShareOrderNoteStore.refresh() // #1354 the order-note switch, same read as the currency
+        TodayWidgetSync.shared.start() // #1375 the home-screen widget file follows the app
         
         return true
     }
@@ -199,14 +219,31 @@ extension AppDelegate {
         }
     }
     
+    /// #1455: the screen a moment leads to, from what this install has stored now
+    func route(after moment: AppStartRoute.Moment) {
+        if AppStartRoute.endsOnboarding(moment) { Utils.markOnboardingCompleted() }
+        switch AppStartRoute.next(after: moment, signedIn: User.account() != nil, onboardingDone: Utils.hasCompletedOnboarding()) {
+        case .onboarding: loadOnboarding()
+        case .login: loadLogin()
+        case .main: loadMainUserView()
+        }
+    }
+
+    private func loadOnboarding() {
+        guard !AppConfigGate.isBlocked else { return }
+        // #387: redesigned onboarding behind `newAuth`; same "show once" storage. #1455: a fresh install has no config yet, `isOn` says
+        // on (unset is on), so the new pages. A config that lands while they are up changes the flags, never this screen.
+        window?.rootViewController = FeatureFlags.shared.isOn(.newAuth) ? OnboardingV2ViewController() : OnboardingViewController()
+        window?.makeKeyAndVisible()
+    }
+
     func loadLogin() {
         guard !AppConfigGate.isBlocked else { return }
         // #386: the redesigned auth screens behind `newAuth`, read from the cached app config
         let loginViewController: UIViewController = FeatureFlags.shared.isOn(.newAuth) ? LoginV2ViewController() : LoginViewController()
         let navigationController = UINavigationController.init(rootViewController: loginViewController)
         navigationController.isNavigationBarHidden = true
-        window?.rootViewController = navigationController
-        window?.makeKeyAndVisible()
+        setRoot(navigationController)
     }
     
     func logout() {
@@ -235,37 +272,35 @@ extension AppDelegate {
         }
     }
     
-    func loadMainUserView(forceMain: Bool = false) {
+    /// The tabs. Which screen comes first is `route(after:)`; a push or a widget link with the pages still to do comes here directly.
+    func loadMainUserView() {
         guard !AppConfigGate.isBlocked else { return }
-        if !forceMain && !Utils.hasCompletedOnboarding() {
-            // #387: redesigned onboarding behind `newAuth`; same "show once" storage
-            window?.rootViewController = FeatureFlags.shared.isOn(.newAuth) ? OnboardingV2ViewController() : OnboardingViewController()
-            window?.makeKeyAndVisible()
-            return
-        }
-        
+
         // Restore draft cart before the tab bar loads. InfoMain writes rent/sale
         // on appear; doing that against an empty in-memory cart used to wipe disk.
         CartStore.shared.restoreFromDisk()
 
-        let tabBar = TabbarViewController()
+        setRoot(TabbarViewController())
+        PushNotificationManager.shared.consumePendingOrderIfNeeded()
+        TodayWidgetSync.shared.refresh() // #1375 signed in just now, or the app started on the main screen
+    }
+
+    /// Cross-dissolve when leaving onboarding: to the tabs, so their heavy first load doesn't feel like a freeze on the tab bar buttons,
+    /// and to login (#1455), so the pages don't cut away.
+    private func setRoot(_ root: UIViewController) {
         guard let window else { return }
-        
-        // Cross-dissolve when leaving onboarding so the heavy first tab load
-        // doesn't feel like a freeze on the tab bar buttons.
-        if forceMain, window.rootViewController is OnboardingViewController || window.rootViewController is OnboardingV2ViewController {
+        if window.rootViewController is OnboardingViewController || window.rootViewController is OnboardingV2ViewController {
             UIView.transition(
                 with: window,
                 duration: 0.25,
                 options: [.transitionCrossDissolve, .allowAnimatedContent]
             ) {
-                window.rootViewController = tabBar
+                window.rootViewController = root
             }
         } else {
-            window.rootViewController = tabBar
+            window.rootViewController = root
         }
         window.makeKeyAndVisible()
-        PushNotificationManager.shared.consumePendingOrderIfNeeded()
     }
 
     // MARK: - App config (#370)
@@ -281,7 +316,7 @@ extension AppDelegate {
             } else if AppConfigGate.isBlocked {
                 // The minimum went back down: open the app as usual
                 AppConfigGate.isBlocked = false
-                if User.account() != nil { self.loadMainUserView() } else { self.loadLogin() }
+                self.route(after: .launch)
             }
         }
     }

@@ -20,6 +20,9 @@ data class TodayWorkRow(
     val stageLabel: String? = null,
     /** #1231: the stage key (`i1`, `i2`), so two stages of one order keep distinct row keys */
     val stageKey: String? = null,
+    /** #1381 the widget's "Áo dài gấm đỏ +1": the first item name (no quantity) and how many item lines the order has */
+    val firstItemName: String = "",
+    val itemCount: Int = 0,
 )
 
 data class TodayWork(
@@ -33,6 +36,17 @@ data class TodayWork(
     /** #1231: deposit stages due today / late (only for a client that sends `installments`). Tomorrow's are not To do. */
     val installmentsDue: List<TodayWorkRow> = emptyList(),
     val installmentsOverdue: List<TodayWorkRow> = emptyList(),
+    /** #1381 the answer's Vietnam day (`YYYY-MM-DD`); null on an API that does not send it */
+    val date: String? = null,
+    /** #1381 `doneToday.pickups + doneToday.returns`; 0 on an API that does not send it. Only the widget ("xong N/M") reads it. */
+    val doneToday: Int = 0,
+    /** #1381 the API's `count` of each group: the rows are cut at 50, the widget shows the real number */
+    val pickupsCount: Int = pickupsToday.size,
+    val returnsCount: Int = returnsToday.size,
+    val overdueCount: Int = overdueReturns.size,
+    val noShowsCount: Int = noShows.size,
+    val tomorrowPickupsCount: Int? = tomorrowPickups?.size,
+    val tomorrowReturnsCount: Int? = tomorrowReturns?.size,
 )
 
 interface TodayWorkRepository {

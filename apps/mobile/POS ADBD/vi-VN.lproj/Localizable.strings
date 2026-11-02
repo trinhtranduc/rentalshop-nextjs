@@ -491,7 +491,7 @@
 "Deposit" = "Tiền cọc";
 "Document" = "Giấy tờ";
 "Security Deposit" = "Tiền thế chân";
-"Damage Fee" = "Phí hư hỏng";
+"Damage Fee" = "Phụ phí";
 "Collect" = "Thu";
 "Collect Deposit" = "Thu tiền cọc";
 "Please collect the deposit amount from the customer." = "Vui lòng thu tiền cọc từ khách hàng.";
@@ -805,7 +805,7 @@
 "orders_unit" = "đơn";
 "currency_VND" = "VND";
 "Overview_Info_Title" = "Tổng quan";
-"Overview_Info_TotalRevenue" = "Tổng tiền thu vào trong kỳ (sau khi trừ các khoản đã hoàn). Gồm: tiền cọc đặt đơn, tiền thuê khi lấy hàng, tiền bán, phí hư hỏng thu thêm. Trừ đi: tiền hoàn khi hủy đơn, tiền trả cọc khi khách trả hàng. Có thể âm nếu trong kỳ hoàn nhiều hơn thu (ví dụ nhiều đơn hủy hoặc trả hàng hoàn cọc).";
+"Overview_Info_TotalRevenue" = "Tổng tiền thu vào trong kỳ (sau khi trừ các khoản đã hoàn). Gồm: tiền cọc đặt đơn, tiền thuê khi lấy hàng, tiền bán, phụ phí. Trừ đi: tiền hoàn khi hủy đơn, tiền trả cọc khi khách trả hàng. Có thể âm nếu trong kỳ hoàn nhiều hơn thu (ví dụ nhiều đơn hủy hoặc trả hàng hoàn cọc).";
 "Overview_Info_TotalOrders" = "(Chỉ daily) Tổng số dòng trong danh sách đơn — mỗi dòng là một đơn hoặc một giao dịch doanh thu; một đơn có thể có nhiều dòng nếu nhiều giao dịch trong kỳ.";
 "Overview_Info_CollateralReceived" = "Tiền cọc (thế chân) đang giữ — tổng cọc của các đơn thuê đã lấy hàng, chưa trả. Chỉ tính đơn thuê đã lấy hàng, và tính theo ngày lấy hàng rơi vào kỳ. Cho biết bạn đang nắm bao nhiêu tiền cọc của khách (tài sản nợ khách, cần trả khi họ trả hàng).";
 "Overview_Info_CollateralExpected" = "Tiền thế chân dự kiến trả — Số tiền cọc bạn sẽ hoàn lại khách trong kỳ. Chỉ tính đơn thuê đang cho mượn (khách đã lấy hàng, đang giữ cọc) có lịch trả hàng nằm trong kỳ. Khi khách trả hàng đúng kỳ, bạn sẽ trả lại từng khoản tiền cọc (thế chân) đó. Giúp chuẩn bị thanh khoản (biết trong kỳ cần trả bao nhiêu tiền cọc).";
@@ -1033,7 +1033,7 @@
 "Deposit:" = "Tiền cọc:";
 "Security Deposit:" = "Tiền thế chân:";
 "To Collect:" = "Cần thu:";
-"Damage Fee:" = "Phí hư hỏng:";
+"Damage Fee:" = "Phụ phí:";
 "Date check:" = "Ngày kiểm tra:";
 "Change Customer" = "Đổi Khách Hàng";
 "Remove Customer" = "Xóa Khách Hàng";
@@ -1721,7 +1721,7 @@
 "Already collected" = "Đã thu trước";
 "Collect at hand-over" = "Thu khi giao";
 "Late fee" = "Phí trễ";
-"Damage fee" = "Phí hư hỏng";
+"Damage fee" = "Phụ phí";
 "At return: give back" = "Khi nhận trả: trả khách";
 "At return: collect" = "Khi nhận trả: thu thêm";
 "NOTES" = "GHI CHÚ";
@@ -1736,7 +1736,7 @@
 "Keep collateral: %@" = "Giữ thế chân: %@";
 "Collect now" = "Thu bây giờ";
 "Handed over · collect %@" = "Đã lấy · thu %@";
-"Late + damage fees" = "Phí trễ + hư hỏng";
+"Late + damage fees" = "Phí trễ + phụ phí";
 "Collateral money held" = "Thế chân đang giữ";
 "Already settled" = "Đã thanh toán trước";
 "Give back to customer" = "Trả lại khách";
@@ -1808,7 +1808,7 @@
 "overview.v2.seeDetails" = "xem chi tiết";
 "overview.v2.detail.body" = "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.";
 "overview.v2.detail.pickupAndSale" = "Thu khi giao đồ, bán hàng";
-"overview.v2.detail.fees" = "Phí hư hỏng, trễ hạn";
+"overview.v2.detail.fees" = "Phụ phí, trễ hạn";
 "overview.v2.detail.refunds" = "Hoàn tiền đơn huỷ";
 "overview.v2.detail.collateralNote" = "Không tính vào thực thu vì sẽ trả lại khách.";
 "overview.v2.detail.note" = "Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.";
@@ -1890,13 +1890,6 @@
 "customers.v2.recentOrders" = "Đơn gần đây";
 "customers.v2.noOrders" = "Chưa có đơn";
 "customers.v2.createOrder" = "Tạo đơn cho khách này";
-"onboarding.v2.step" = "Bước %d/%d";
-"onboarding.v2.product.title" = "Thêm đồ cho thuê";
-"onboarding.v2.product.body" = "Chụp ảnh, đặt giá và số lượng. Nhân viên tìm hoặc quét mã là thấy ngay khi tạo đơn.";
-"onboarding.v2.customer.title" = "Lưu khách hàng";
-"onboarding.v2.customer.body" = "Lưu khách một lần, dùng lại cho mọi đơn thuê và đơn bán.";
-"onboarding.v2.order.title" = "Tạo đơn";
-"onboarding.v2.order.body" = "Chọn khách, thêm đồ, chọn ngày thuê và xong đơn trong vài chạm.";
 "onboarding.v2.skip" = "Bỏ qua";
 "onboarding.v2.next" = "Tiếp";
 "onboarding.v2.start" = "Bắt đầu";
@@ -2032,7 +2025,6 @@
 "products.detail.deleteMessage" = "“%@” sẽ không còn trong danh sách sản phẩm. Đơn cũ vẫn giữ tên sản phẩm.";
 "products.detail.deleted" = "Đã xóa sản phẩm";
 "order.extend" = "Gia hạn";
-"order.extend.title" = "Gia hạn thuê";
 "order.extend.current" = "Đang hẹn trả %@";
 "order.extend.extraDay" = "Thêm 1 ngày";
 "order.extend.extraDays" = "Thêm %d ngày";
@@ -2200,7 +2192,7 @@
 "history.field.discountType" = "Kiểu giảm giá";
 "history.field.discountValue" = "Mức giảm";
 "history.field.discountAmount" = "Tiền giảm";
-"history.field.damageFee" = "Phí hư hỏng";
+"history.field.damageFee" = "Phụ phí";
 "history.field.lateFee" = "Phí trễ hạn";
 "history.field.collateralType" = "Loại thế chân";
 "history.field.collateralDetails" = "Thế chân";
@@ -2278,7 +2270,7 @@
 "overview.dash.detail.sale" = "Bán";
 "overview.dash.money.deposits" = "Cọc khi tạo đơn";
 "overview.dash.money.pickupAndSale" = "Thu khi giao, bán";
-"overview.dash.money.fees" = "Phí hư hỏng, trễ";
+"overview.dash.money.fees" = "Phụ phí, trễ";
 "overview.dash.money.refunds" = "Hoàn đơn huỷ";
 "overview.dash.money.atPickup" = "Sẽ thu khi khách lấy đồ";
 "overview.dash.money.overduePickup" = "Quá ngày lấy, chưa thu";
@@ -2298,6 +2290,7 @@
 
 // MARK: - #622 Bank accounts + VietQR on bills
 "bankAccounts.empty" = "Chưa có tài khoản ngân hàng. Bấm + để thêm.";
+"bankAccounts.emptyReadOnly" = "Chưa có tài khoản ngân hàng. Chỉ chủ shop thêm được.";
 "printer.bankQr.title" = "In QR chuyển khoản trên bill";
 "printer.bankQr.hint" = "In tài khoản ngân hàng mặc định của cửa hàng và mã VietQR ở cuối bill. Áp dụng cho chi nhánh này trên mọi máy.";
 "bill.bankQr.title" = "CHUYỂN KHOẢN";
@@ -2448,13 +2441,13 @@
 "overview.related.event.deposit" = "Thu tiền cọc";
 "overview.related.event.pickup" = "Thu tiền khi lấy hàng";
 "overview.related.event.sameDay" = "Thuê và trả trong cùng ngày";
-"overview.related.event.damageFee" = "Thu phí hư hỏng";
+"overview.related.event.damageFee" = "Thu phụ phí";
 "overview.related.event.depositRefund" = "Hoàn tiền cọc";
 "overview.related.event.nothing" = "Không có phát sinh";
 "overview.related.event.rentCancelled" = "Đơn hủy (hoàn lại)";
 "overview.related.event.returnCollected" = "Thu khi trả hàng";
 "overview.related.event.futurePickup" = "Doanh thu dự kiến khi lấy hàng";
-"overview.related.event.futureDamageFee" = "Dự kiến thu phí hư hỏng khi trả hàng";
+"overview.related.event.futureDamageFee" = "Dự kiến thu phụ phí khi trả hàng";
 "overview.related.event.futureRefund" = "Dự kiến hoàn tiền cọc khi trả hàng";
 "overview.related.event.futureNothing" = "Dự kiến không có phát sinh khi trả hàng";
 
@@ -2901,15 +2894,12 @@
 "deposit.card.paidDetail" = "%@%% đơn · %@";
 "deposit.card.dueDetail" = "%@%% đơn · hạn %@";
 "deposit.card.restDetail" = "Thu khi giao · %@";
-"deposit.collect.title" = "Thu giai đoạn %d";
 "deposit.collect.confirm" = "Thu %@";
-"deposit.unpaid.title" = "Còn giai đoạn cọc chưa thu";
 "deposit.unpaid.message" = "Thu xong các giai đoạn này mới giao đồ được.";
 "deposit.unpaid.row" = "Giai đoạn %d · %@";
 "deposit.void.title" = "Huỷ khoản thu giai đoạn %d?";
 "deposit.void.message" = "Khoản thu %@ sẽ bị huỷ và giai đoạn trở lại chưa thu. Việc này được ghi lại.";
 "deposit.void.confirm" = "Huỷ khoản thu";
-"deposit.cancel.title" = "Huỷ đơn #%@?";
 "deposit.cancel.policy" = "Chính sách tiệm: %@";
 "deposit.cancel.paid" = "Khách đã trả";
 "deposit.cancel.kept" = "Tiệm giữ lại";
@@ -3024,7 +3014,6 @@
 "order.collateral.card" = "Giấy tờ & thế chân";
 "order.collateral.edit" = "Sửa";
 "order.collateral.none" = "Chưa nhập";
-"order.collateral.editTitle" = "Sửa giấy tờ & thế chân";
 "order.collateral.editWarning" = "Đổi thế chân sẽ đổi số trả lại khi nhận trả";
 "order.collateral.papersRow" = "Giấy tờ";
 "order.detail.section.payment" = "THANH TOÁN";
@@ -3084,3 +3073,140 @@
 "printer.shareNote.failed" = "Không lưu được cài đặt. Vui lòng thử lại.";
 // #1353: dưới dòng giỏ thiếu hàng, các chi nhánh khác còn món trong ngày của đơn
 "products.cart.othersHave" = "Chi nhánh khác còn: %@";
+"share.collect.rentalLeft" = "Tiền thuê còn lại, thu khi giao";
+"share.collateral.collect" = "Thế chân, thu khi giao";
+"share.cashAtHandover" = "Khách đưa lúc nhận đồ";
+
+// #1375: widget "Việc cần làm" trên màn hình chính
+"widget.name" = "Việc cần làm";
+"widget.description" = "Giao đồ, nhận trả và đơn trễ của hôm nay.";
+"widget.pickup" = "Giao";
+"widget.return" = "Trả";
+"widget.late" = "Trễ";
+"widget.more" = "+%d việc khác";
+"widget.updated" = "cập nhật %@";
+"widget.done" = "xong %d/%d";
+"widget.doneCaption" = "đã xong hôm nay";
+"widget.allDone" = "Xong hết %d/%d";
+"widget.todayAt" = "Hôm nay · %@";
+"widget.empty" = "Hôm nay chưa có việc";
+"widget.tomorrow" = "Mai có %d giao, %d trả";
+"widget.loggedOut" = "Mở AnyRent để đăng nhập";
+"widget.loggedOutHint" = "Việc cần làm sẽ hiện ở đây";
+"widget.noAccess" = "Tài khoản này không có Việc cần làm";
+"widget.stale" = "Mở app để cập nhật";
+"widget.staleDetail" = "Danh sách lần cuối: %@";
+"widget.yesterday" = "hôm qua";
+"widget.hint.title" = "Thêm widget để thấy việc hôm nay ngay trên màn hình chính";
+"widget.hint.body" = "%d giao, %d trả, %d trễ sẽ hiện không cần mở app.";
+"widget.hint.how" = "Cách thêm";
+"widget.dismiss" = "Không hỏi lại";
+"widget.guide.title" = "Thêm vào widget";
+"widget.guide.subtitle" = "iPhone không cho app tự thêm widget. Làm 3 bước, mất khoảng 10 giây.";
+"widget.guide.step1" = "Giữ lâu một chỗ trống trên màn hình chính cho đến khi các icon rung.";
+"widget.guide.step2" = "Bấm dấu + ở góc trên, chọn AnyRent.";
+"widget.guide.step3" = "Chọn cỡ nhỏ hoặc vừa, bấm Thêm widget.";
+"widget.guide.ok" = "Đã hiểu";
+"widget.settings.row" = "Widget";
+"order.detail.stageUnpaid" = "Còn đợt chưa thu";
+
+// #1404 three onboarding pages. Fixed sample data, not the shop's currency.
+"onboarding.v2.p1.title" = "Quên tên đồ?\nChụp là ra.";
+"onboarding.v2.p1.body" = "Đồ đã có ảnh trong kho là AI tìm được.";
+"onboarding.v2.p2.title" = "Trùng lịch,\napp báo trước.";
+"onboarding.v2.p2.body" = "Món nào hết ngày nào, nhìn là biết.";
+"onboarding.v2.p3.title" = "Giao ai, trả ai?\nMở Lịch là thấy.";
+"onboarding.v2.p3.body" = "Còn thu bao nhiêu cũng hiện ngay trên đơn.";
+"onboarding.v2.sample.lang" = "vi";
+"onboarding.v2.scan.count" = "3 sản phẩm giống";
+"onboarding.v2.scan.from" = "Từ ảnh bạn vừa chụp";
+"onboarding.v2.scan.dress1" = "Áo cưới ren dài tay";
+"onboarding.v2.scan.dress1.meta" = "Còn 2 · 1.200.000/lần";
+"onboarding.v2.scan.dress2" = "Áo cưới đuôi dài ren";
+"onboarding.v2.scan.dress2.meta" = "Còn 2 · 1.500.000/lần";
+"onboarding.v2.scan.dress3" = "Áo cưới đuôi cá";
+"onboarding.v2.scan.dress3.meta" = "Còn 1 · 1.200.000/lần";
+"onboarding.v2.cal.title" = "Đơn mới: Áo cưới + Vest";
+"onboarding.v2.cal.subtitle" = "Lịch trống của Vest · 10/2026";
+"onboarding.v2.cal.mon" = "T2";
+"onboarding.v2.cal.tue" = "T3";
+"onboarding.v2.cal.wed" = "T4";
+"onboarding.v2.cal.thu" = "T5";
+"onboarding.v2.cal.fri" = "T6";
+"onboarding.v2.cal.sat" = "T7";
+"onboarding.v2.cal.sun" = "CN";
+"onboarding.v2.cal.out" = "Hết";
+"onboarding.v2.cal.chip.booked" = "Vest · #496958";
+"onboarding.v2.cal.chip.new" = "Vest · đơn mới";
+"onboarding.v2.warn.body" = "Vest xanh hoàng gia thiếu 1 bộ ngày 08/10 (đã thuê ở đơn #496958).";
+"onboarding.v2.today.head" = "HÔM NAY · T4 07/10";
+"onboarding.v2.today.count" = "giao 2 · trả 1";
+"onboarding.v2.today.pickup" = "Giao";
+"onboarding.v2.today.return" = "Trả";
+"onboarding.v2.today.name1" = "Lê Gia Bảo";
+"onboarding.v2.today.item1" = "Áo cưới · trả 09/10";
+"onboarding.v2.today.amount1" = "1.200.000";
+"onboarding.v2.today.name2" = "Tạ Thu Hà";
+"onboarding.v2.today.item2" = "Vest · trả 08/10";
+"onboarding.v2.today.amount2" = "420.000";
+"onboarding.v2.today.name3" = "Khánh Linh";
+"onboarding.v2.today.item3" = "Máy ảnh · trả hôm nay";
+"onboarding.v2.today.amount3" = "350.000";
+"onboarding.v2.today.collect" = "còn thu %@";
+"onboarding.v2.today.refund" = "trả cọc 1.000.000";
+/* #1395 titles of the order-detail sheets */
+"order.sheetTitle.actions" = "Thao tác với đơn";
+"order.sheetTitle.handOver" = "Giao đồ cho khách";
+"order.sheetTitle.return" = "Nhận trả đồ";
+"order.sheetTitle.extend" = "Gia hạn đơn";
+"order.sheetTitle.collateral" = "Giấy tờ & thế chân";
+"order.sheetTitle.collect" = "Thu tiền cọc";
+"order.sheetTitle.unpaid" = "Đợt cọc chưa thu";
+"order.sheetTitle.cancel" = "Huỷ đơn";
+"firstRunGuide.title" = "Bắt đầu: 3 việc";
+"firstRunGuide.step.product" = "Thêm sản phẩm đầu tiên";
+"firstRunGuide.step.customer" = "Thêm khách hàng";
+"firstRunGuide.step.order" = "Tạo đơn đầu tiên";
+"firstRunGuide.done" = "Đã xong";
+"firstRunGuide.close" = "Đóng";
+"firstRunGuide.settings.row" = "Hướng dẫn bắt đầu";
+"firstRunGuide.finish.title" = "Xong đơn đầu tiên";
+"firstRunGuide.finish.body" = "Đơn đã có ở Đơn hàng và Lịch Thuê.";
+
+"firstRunGuide.go.product" = "Thêm sản phẩm →";
+"firstRunGuide.go.customer" = "Thêm khách hàng →";
+"firstRunGuide.go.order" = "Tạo đơn →";
+"firstRunGuide.later" = "Để sau";
+"firstRunGuide.collapsed.title" = "Bắt đầu";
+"firstRunGuide.hide" = "Ẩn hướng dẫn";
+"firstRunGuide.hide.confirm" = "Ẩn hướng dẫn? Mở lại trong Cài đặt.";
+"firstRunGuide.hide.action" = "Ẩn";
+
+"firstRunGuide.bubble.productPhoto" = "Chọn ảnh sản phẩm. Ảnh giúp tìm bằng chụp ảnh.";
+"firstRunGuide.bubble.productName" = "Nhập tên sản phẩm.";
+"firstRunGuide.bubble.productPrice" = "Nhập giá thuê, theo lần hoặc theo ngày.";
+"firstRunGuide.bubble.productSave" = "Đủ rồi. Bấm Lưu sản phẩm.";
+"firstRunGuide.bubble.cartCustomer" = "Đơn cần có khách. Bấm để chọn hoặc thêm mới.";
+"firstRunGuide.bubble.newCustomer" = "Bấm Khách mới, nhập SĐT và tên";
+"firstRunGuide.bubble.newCustomerSave" = "Bấm Lưu và chọn.";
+"firstRunGuide.bubble.cartDates" = "Chọn ngày lấy và ngày trả.";
+"firstRunGuide.bubble.cartCreate" = "Đủ rồi. Bấm Tạo đơn.";
+"firstRunGuide.next" = "Tiếp";
+"firstRunGuide.exit" = "Thoát hướng dẫn";
+"firstRunGuide.exit.discard" = "Bỏ nội dung đang nhập?";
+"firstRunGuide.exit.discard.action" = "Bỏ";
+
+/* #1418 ảnh tình trạng đồ khi giao */
+"order.photos.title" = "Ảnh tình trạng đồ";
+"order.photos.optional" = "Không bắt buộc";
+"order.photos.take" = "Chụp ảnh đồ";
+"order.photos.takeMore" = "Chụp thêm";
+"order.photos.library" = "Thư viện";
+"order.photos.full" = "Đủ %d ảnh. Bỏ một ảnh để thêm ảnh khác.";
+"order.photos.atHandOver" = "Ảnh khi giao";
+"order.photos.notUploaded" = "Chưa tải được %d ảnh";
+"order.photos.cameraUnavailable" = "Chưa dùng được máy ảnh. Mở Cài đặt để cấp quyền, hoặc chọn từ Thư viện.";
+"order.photos.openSettings" = "Mở Cài đặt";
+
+/* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
+"order.detail.cashBreakdown" = "tiền thuê %@ + thế chân %@";

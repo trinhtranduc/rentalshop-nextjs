@@ -13,9 +13,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,7 +52,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,13 +69,13 @@ import com.anyrent.pos.domain.deposit.DepositPlanMath
 import com.anyrent.pos.domain.deposit.OrderInstallment
 import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.orders.OrderMoneyPlan
 import com.anyrent.pos.ui.common.AppPrimaryButton
 import com.anyrent.pos.ui.common.formatMoneyVnd
 import com.anyrent.pos.ui.common.toLocalDateUtc
 import com.anyrent.pos.ui.common.toUtcMillis
 import com.anyrent.pos.ui.deposit.DepositFullScreen
 import com.anyrent.pos.ui.deposit.DepositNote
-import com.anyrent.pos.ui.deposit.DepositPill
 import com.anyrent.pos.ui.deposit.DepositWarningBox
 import com.anyrent.pos.ui.deposit.installmentChip
 import com.anyrent.pos.ui.home.v2.SectionBand
@@ -109,65 +113,85 @@ private fun stageSubtitle(stage: OrderInstallment): String {
     }
 }
 
-/** The card. [onEdit] is "Sửa" / "Xem"; [onCollect] is the blue button; [onStage] a tap on a paid stage (owner: void it). */
+/**
+ * The stages inside THANH TOÁN, before the amount due (#1435, approved mockup, tab "odmoney"). [plan] says which stages show and
+ * whether "Còn phải thu" does. [onEdit] is "Sửa" / "Xem"; [onStage] a tap on a paid stage (owner: void it). "Thu giai đoạn N" is
+ * only in the bar under the screen (#1441).
+ */
 @Composable
 internal fun InstallmentCard(
     detail: OrderDetail,
     role: String?,
+    plan: OrderMoneyPlan,
     onEdit: () -> Unit,
-    onCollect: (OrderInstallment) -> Unit,
     onStage: (OrderInstallment) -> Unit,
 ) {
     val info = detail.deposit ?: return
     val stages = info.installments.orEmpty()
-    val summary = info.summary
-    val percent = summary?.percentCollected ?: 0.0
-    val collected = summary?.collected ?: stages.sumOf { it.paidAmount }
-    val planned = summary?.planned ?: stages.sumOf { it.amount }
     val reserved = detail.summary.status.equals("RESERVED", true)
     val today = ShopTime.today().toString()
-    Column(
-        Modifier.fillMaxWidth().padding(vertical = 12.dp) // #1246: no frame; #1265: inside its own band-to-band section
-            .testTag("deposit.card"),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.deposit_card_title).uppercase(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
-            DepositPill(stringResource(R.string.deposit_badge_collected, DepositPlanMath.percentText(percent)), DS.Status.Done, Modifier.testTag("deposit.card.badge"))
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp).testTag("deposit.card")) {
+        HorizontalDividerLine()
+        Row(
+            Modifier.fillMaxWidth().padding(top = 2.dp).heightIn(min = 30.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(R.string.deposit_card_title), style = moneyTextStyle(), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted, modifier = Modifier.weight(1f))
             if (reserved) {
                 Text(
                     stringResource(if (DepositPlanLogic.canEditPlan(role)) R.string.deposit_card_edit else R.string.deposit_card_view),
-                    fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
-                    modifier = Modifier.clickable(onClick = onEdit).heightIn(min = 44.dp).wrapContentHeight(Alignment.CenterVertically).padding(horizontal = 4.dp).testTag("deposit.card.edit"),
+                    style = moneyTextStyle(), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Primary,
+                    modifier = Modifier.clickable(onClick = onEdit).padding(start = 4.dp, top = 4.dp, bottom = 4.dp).testTag("deposit.card.edit"),
                 )
             }
         }
-        Box(Modifier.fillMaxWidth().height(8.dp).background(CardBorder, RoundedCornerShape(4.dp))) {
-            Box(Modifier.fillMaxHeight().fillMaxWidth((percent / 100).coerceIn(0.0001, 1.0).toFloat()).background(Green, RoundedCornerShape(4.dp)))
+        Box(Modifier.padding(top = 2.dp, bottom = 6.dp).fillMaxWidth().height(4.dp).background(CardBorder, RoundedCornerShape(2.dp))) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth((plan.percent / 100).coerceIn(0.0001, 1.0).toFloat()).background(Green, RoundedCornerShape(2.dp)))
         }
-        Row(Modifier.fillMaxWidth()) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.deposit_card_collected), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                Text(formatMoneyVnd(collected), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold)
-            }
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                Text(stringResource(R.string.deposit_card_remaining), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
-                Text(formatMoneyVnd(maxOf(0.0, planned - collected)), fontSize = DS.TextSize.Name, fontWeight = FontWeight.Bold)
-            }
-        }
+        CollectedLine(plan)
         stages.forEachIndexed { index, stage ->
-            HorizontalDividerLine()
-            StageRow(stage, index + 1, today, tappable = reserved && stage.isPaid && DepositPlanLogic.canVoid(role), onTap = { onStage(stage) })
+            if (stage.key in plan.shownKeys) {
+                StageRow(stage, index + 1, today, tappable = reserved && stage.isPaid && DepositPlanLogic.canVoid(role), onTap = { onStage(stage) })
+            }
         }
-        val next = if (reserved) DepositPlanLogic.nextToCollect(stages, detail.summary.status) else null
-        val number = next?.let { DepositPlanLogic.stageNumber(stages, it.key) }
-        if (next != null && number != null) {
-            Button(
-                onClick = { onCollect(next) },
-                modifier = Modifier.fillMaxWidth().height(46.dp).testTag("deposit.card.collect"),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Primary),
-            ) { Text(stringResource(R.string.deposit_card_collect_stage, number), fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold) }
+    }
+}
+
+/** "Đã thu 20% · 230.000" and "Còn phải thu 920.000": one line when they fit, else the second goes under, right-aligned */
+@Composable
+private fun CollectedLine(plan: OrderMoneyPlan) {
+    val muted = DS.Colors.TextMuted
+    @Composable
+    fun part(text: String, amount: String, tag: String?) {
+        Text(
+            buildAnnotatedString {
+                append(text)
+                withStyle(SpanStyle(color = DS.Colors.Text)) { append(amount) }
+            },
+            style = moneyTextStyle(tabular = true), fontSize = DS.TextSize.Secondary, color = muted,
+            modifier = if (tag != null) Modifier.testTag(tag) else Modifier,
+        )
+    }
+    Layout(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
+        content = {
+            part(stringResource(R.string.deposit_badge_collected, DepositPlanMath.percentText(plan.percent)) + " · ", formatMoneyVnd(plan.collected), "deposit.card.badge")
+            plan.remaining?.let { part(stringResource(R.string.deposit_card_remaining) + " ", formatMoneyVnd(it), null) }
+        },
+    ) { measurables, constraints ->
+        val loose = constraints.copy(minWidth = 0)
+        val first = measurables[0].measure(loose)
+        val second = measurables.getOrNull(1)?.measure(loose)
+        val sameLine = second == null || first.width + 12.dp.roundToPx() + second.width <= constraints.maxWidth
+        val height = when {
+            second == null -> first.height
+            sameLine -> maxOf(first.height, second.height)
+            else -> first.height + 2.dp.roundToPx() + second.height
+        }
+        layout(constraints.maxWidth, height) {
+            first.place(0, 0)
+            second?.place(constraints.maxWidth - second.width, if (sameLine) 0 else first.height + 2.dp.roundToPx())
         }
     }
 }
@@ -180,7 +204,7 @@ private fun HorizontalDividerLine() {
 @Composable
 private fun StageRow(stage: OrderInstallment, number: Int, today: String, tappable: Boolean, onTap: () -> Unit) {
     val paid = stage.isPaid
-    val (chipText, chipColors) = installmentChip(stage, today)
+    val (word, chipColors) = installmentChip(stage, today)
     val late = stage.status == "OVERDUE"
     // a late stage stands out with a soft red band that bleeds 8dp past the text column
     val band = if (late) {
@@ -193,21 +217,24 @@ private fun StageRow(stage: OrderInstallment, number: Int, today: String, tappab
         Modifier
     }
     Row(
-        Modifier.fillMaxWidth().then(band).then(if (tappable) Modifier.clickable(onClick = onTap) else Modifier).padding(vertical = 10.dp).testTag("deposit.stage.${stage.key}"),
+        Modifier.fillMaxWidth().then(band).then(if (tappable) Modifier.clickable(onClick = onTap) else Modifier).padding(vertical = 6.dp).testTag("deposit.stage.${stage.key}"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(24.dp).background(if (paid) Green else if (late) Color(0xFFFEE2E2) else Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
-            Text(if (paid) "✓" else if (late) "!" else "$number", fontSize = DS.TextSize.Pill, fontWeight = FontWeight.Bold,
-                color = if (paid) Color.White else if (late) Color(0xFFB91C1C) else DS.Colors.Primary)
+        Box(Modifier.size(22.dp).background(if (paid) Green else if (late) Color(0xFFFEE2E2) else Color(0xFFEFF6FF), CircleShape), contentAlignment = Alignment.Center) {
+            Text(
+                if (paid) "✓" else if (late) "!" else "$number", style = moneyTextStyle(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold,
+                color = if (paid) Color.White else if (late) Color(0xFFB91C1C) else DS.Colors.Primary,
+            )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label, fontSize = DS.TextSize.Body)
-            Text(stageSubtitle(stage), fontSize = DS.TextSize.Pill, color = DS.Colors.TextMuted)
+            Text(if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label, style = moneyTextStyle(), fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+            Text(stageSubtitle(stage), style = moneyTextStyle(), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
         }
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(formatMoneyVnd(stage.amount), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold)
-            DepositPill(chipText, chipColors)
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(formatMoneyVnd(stage.amount), style = moneyTextStyle(tabular = true), fontSize = DS.TextSize.Body, color = DS.Colors.Text)
+            // the word says paid or not, never the colour alone
+            Text(word, style = moneyTextStyle(), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold, color = if (chipColors == DS.Status.HandOver) DS.Colors.Primary else chipColors.text)
         }
     }
 }
@@ -225,6 +252,8 @@ private fun DepositSheetFrame(onDismiss: () -> Unit, content: @Composable Column
     ) {
         Column(
             Modifier.fillMaxWidth().semantics { testTagsAsResourceId = true }.navigationBarsPadding()
+                // #1395: on a small phone the buttons stay reachable above the keyboard
+                .imePadding()
                 .verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
@@ -232,7 +261,7 @@ private fun DepositSheetFrame(onDismiss: () -> Unit, content: @Composable Column
     }
 }
 
-/** "Thu giai đoạn N": the amount (up to what the stage still needs); the method is always CASH (#1237) */
+/** "Thu tiền cọc", stage N: the amount (up to what the stage still needs); the method is always CASH (#1237) */
 @Composable
 internal fun CollectInstallmentSheet(
     detail: OrderDetail,
@@ -251,10 +280,13 @@ internal fun CollectInstallmentSheet(
     val amount = amountText.toDoubleOrNull() ?: 0.0
     val valid = amount > 0 && amount <= stage.plannedAmount + 0.000001 && !busy
     DepositSheetFrame(onDismiss = { if (!busy) onDismiss() }) {
-        Text(stringResource(R.string.deposit_collect_title, number), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(
-            listOf(if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label, DepositPlanMath.percentText(stage.percent) + "%").joinToString(" · "),
-            fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted,
+        // #1395: the stage number moved from the title to the line under it
+        OrderSheetTitle(
+            stringResource(R.string.order_sheet_title_collect),
+            listOf(
+                stringResource(R.string.deposit_unpaid_row, number, if (stage.isRest) stringResource(R.string.deposit_rest_label) else stage.label),
+                DepositPlanMath.percentText(stage.percent) + "%",
+            ).joinToString(" · "),
         )
         OutlinedTextField(
             value = amountText, onValueChange = { amountText = it.filter(Char::isDigit).take(12).trimStart('0'); error = null },
@@ -281,12 +313,11 @@ internal fun CollectInstallmentSheet(
     }
 }
 
-/** "Còn giai đoạn cọc chưa thu": the hand-over waits until these are collected (API: INSTALLMENT_UNPAID_AT_PICKUP) */
+/** "Đợt cọc chưa thu": the hand-over waits until these are collected (API: INSTALLMENT_UNPAID_AT_PICKUP) */
 @Composable
 internal fun UnpaidStagesSheet(unpaid: List<OrderInstallment>, all: List<OrderInstallment>, onDismiss: () -> Unit, onCollect: (OrderInstallment) -> Unit) {
     DepositSheetFrame(onDismiss = onDismiss) {
-        Text(stringResource(R.string.deposit_unpaid_title), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text(stringResource(R.string.deposit_unpaid_message), fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+        OrderSheetTitle(stringResource(R.string.order_sheet_title_unpaid), stringResource(R.string.deposit_unpaid_message))
         unpaid.forEach { stage ->
             val number = DepositPlanLogic.stageNumber(all, stage.key) ?: 0
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -302,7 +333,7 @@ internal fun UnpaidStagesSheet(unpaid: List<OrderInstallment>, all: List<OrderIn
     }
 }
 
-/** "Huỷ đơn #N?" with the policy and "Khách đã trả / Tiệm giữ lại / Hoàn cho khách" (staff refund everything) */
+/** "Huỷ đơn" with #N, the policy and "Khách đã trả / Tiệm giữ lại / Hoàn cho khách" (staff refund everything) */
 @Composable
 internal fun CancelDepositOrderSheet(
     orderNumber: String,
@@ -318,7 +349,7 @@ internal fun CancelDepositOrderSheet(
     var note by remember { mutableStateOf("") }
     fun shown(v: Double) = v.toLong().toString()
     DepositSheetFrame(onDismiss = onDismiss) {
-        Text(stringResource(R.string.deposit_cancel_title, orderNumber), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        OrderSheetTitle(stringResource(R.string.order_sheet_title_cancel), "#$orderNumber")
         if (!policy.isNullOrBlank()) DepositWarningBox(stringResource(R.string.deposit_cancel_policy, policy))
         AmountLine(stringResource(R.string.deposit_cancel_paid)) { Text(formatMoneyVnd(collected), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
         AmountLine(stringResource(R.string.deposit_cancel_kept)) {

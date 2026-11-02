@@ -25,7 +25,6 @@
 .ar-addons .note { background: #fef3c7; color: #78350f; border-left: 3px solid #f59e0b; border-radius: 8px; padding: 10px 12px;
   font-size: 13px; line-height: 1.5; }
 .ar-addons .rules { display: grid; gap: 6px; margin: 0; padding-left: 18px; color: rgb(var(--ar-muted)); font-size: 13px; line-height: 1.5; }
-.ar-addons .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 .ar-addons .kv { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 13px; align-items: center; }
 .ar-addons .kv .tot { font-weight: 700; font-size: 15px; border-top: 1px solid rgb(var(--ar-line)); padding-top: 8px; }
 .ar-addons .field { display: grid; gap: 6px; font-size: 13px; }
@@ -47,6 +46,7 @@
   border-bottom: 1px solid rgb(var(--ar-line-soft)); font-size: 13px; }
 .ar-addons .item:last-child { border-bottom: 0; padding-bottom: 0; }
 .ar-addons .item .actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.ar-addons .item small { display: block; color: rgb(var(--ar-muted)); font-size: 12px; margin-top: 2px; }
 .ar-addons .limits td, .ar-addons .limits th { padding: 8px 10px; }
 .ar-addons .limits table { min-width: 0; }
 .ar-addons-cmp { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 13px; background: rgb(var(--ar-surface-muted));
@@ -55,7 +55,6 @@
 .ar-addons-note { background: #fef3c7; color: #78350f; border-left: 3px solid #f59e0b; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
 
 @media (max-width: 860px) {
-  .ar-addons .grid2 { grid-template-columns: 1fr; }
   .ar-addons .btn { min-height: 44px; }
 }
 /* inside the dialog the field box draws the border, not the bare input (forms.css styles .ar-dialog inputs) */

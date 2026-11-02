@@ -33,7 +33,7 @@ import {
   type ShopForm,
 } from './sections';
 import { DepositSection } from '../installments/DepositSection';
-import { blockOldAppsFlag, canChangeCurrency, canChangeOverlap, canChangeShareOrderNote, groupedTabs, onlineBookingFlag, overlapFlag, settingsOutletChoice, shareOrderNoteFlag, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
+import { blockOldAppsFlag, canChangeCurrency, canChangeOverlap, canChangeShareOrderNote, canEditPrintSettings, groupedTabs, onlineBookingFlag, overlapFlag, settingsOutletChoice, shareOrderNoteFlag, shopCurrency, showPublicPriceFlag, tabsForRole, type SettingsTab } from './settings-model';
 import { useBranchOptions } from '../dashboard/useBranchOptions';
 import type { BranchOption } from '../dashboard/branch-model';
 import type { SubscriptionLoad } from './SubscriptionTab';
@@ -420,7 +420,7 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
           </>
         );
       case 'payment':
-        // #1259 Thu tiền: bank accounts (owner / outlet admin), then "Cách thu cọc" (owner only, as before)
+        // #1259 Thu tiền: bank accounts (owner edits, outlet admin reads, #1319), then "Cách thu cọc" (owner only, as before)
         if (role === 'MERCHANT') {
           // The owner has no outlet of its own: the shared panel reads the picked branch
           if (allBranches === null) return <Skeleton className="h-[320px] w-full" />;
@@ -449,12 +449,12 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
             {branchSelect}
             <ReceiptSection
               t={t}
-              canEditNote={role === 'MERCHANT' || role === 'OUTLET_ADMIN'}
+              canEditNote={canEditPrintSettings(role)}
               outletId={role === 'MERCHANT' ? branchId : undefined}
               shareOrderNote={shareNoteValue}
               canEditShareOrderNote={canChangeShareOrderNote(role)}
               onShareOrderNoteChanged={() => void refreshUser?.()}
-              bankLink={role === 'OUTLET_ADMIN' || role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('payment') } : null}
+              bankLink={role === 'MERCHANT' ? { kind: 'tab', open: () => onTab('payment') } : null}
             />
           </>
         );

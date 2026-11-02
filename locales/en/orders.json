@@ -50,15 +50,15 @@
     "subtotal": "Subtotal",
     "grandTotal": "Grand Total",
     "securityDeposit": "Security Deposit",
-    "damageFee": "Damage Fee",
+    "damageFee": "Extra Fee",
     "collateralType": "Collateral Type",
     "collateralDetails": "Collateral Details",
     "collateralImage": "Security Document Image",
     "uploadImage": "Upload Security Document",
     "collateralImageHint": "Upload an image of ID card, passport, or other security document. Supported formats: JPEG, PNG, WebP. Max size: 5MB",
     "tooltips": {
-      "damageFee": "Fee for damage compensation when products are damaged, lost, or returned late during rental",
-      "securityDeposit": "Amount of deposit customer must pay when receiving goods. This amount will be refunded after return, minus damage fee (if any)",
+      "damageFee": "Extra charge when products are damaged or lost during rental",
+      "securityDeposit": "Amount of deposit customer must pay when receiving goods. This amount will be refunded after return, minus extra fee (if any)",
       "collateralType": "Type of identification document customer leaves as collateral (ID Card, Driver License, Passport, or Other)",
       "collateralDetails": "Detailed information about collateral document (ID number, Driver License number, Passport number, or other information depending on type)",
       "collateralImage": "Upload an image of ID card, passport, or other security document for verification"
@@ -484,7 +484,7 @@
     },
     "depositPaid": "Deposit paid",
     "securityDeposit": "Security deposit",
-    "damageFee": "Damage fee",
+    "damageFee": "Extra fee",
     "lateFee": "Late fee",
     "securityBack": "Security deposit back",
     "holdCollateral": "Also hold",
@@ -966,7 +966,7 @@
         "returnBtnRefund": "Take back · refund {amount}",
         "returnBtnFree": "Take back",
         "pickupHelp": "Opens the confirmation: amount to collect and collateral received.",
-        "returnHelp": "Opens the confirmation: damage fee, amount to collect or refund.",
+        "returnHelp": "Opens the confirmation: extra fee, amount to collect or refund.",
         "lateHelp": "Call the customer first."
       },
       "pay": {
@@ -982,7 +982,7 @@
         "paidBefore": "Already collected",
         "settledBefore": "Already settled",
         "lateFee": "Late fee",
-        "damageFee": "Damage fee",
+        "damageFee": "Extra fee",
         "collectAtPickup": "Collect at hand-over",
         "returnRefund": "At return: give back",
         "returnCollect": "At return: collect",
@@ -1022,14 +1022,14 @@
           "confirmFree": "Confirm return",
           "lateFee": "Late fee",
           "lateFeeDays": "Late fee ({days} days)",
-          "damageFee": "Damage fee"
+          "damageFee": "Extra fee"
         },
         "rows": {
           "orderTotal": "Order total",
           "depositPaid": "Deposit paid at booking",
           "collateralMoney": "Collateral money",
           "paidBefore": "Already collected",
-          "fees": "Late + damage fees",
+          "fees": "Late + extra fees",
           "collateralHeld": "Collateral money held",
           "settledBefore": "Already settled"
         },
@@ -1052,6 +1052,16 @@
           "message": "Delete order {number} for good? This cannot be undone.",
           "keep": "Keep",
           "confirm": "Delete order"
+        },
+        "photos": {
+          "conditionTitle": "Condition photos",
+          "cardTitle": "Photos at hand-over",
+          "pickupCompare": "Photos at hand-over",
+          "optional": "Optional",
+          "choose": "Choose photos",
+          "uploading": "Uploading photos…",
+          "uploadFailed": "{count} photos not uploaded",
+          "retry": "Retry"
         }
       }
     },
@@ -1071,7 +1081,7 @@
         "noDeposit": "No deposit",
         "securityDeposit": "Security deposit",
         "collateral": "Collateral",
-        "damageFee": "Damage fee",
+        "damageFee": "Extra fee",
         "rentDate": "Rent date",
         "returnDate": "Return date",
         "createdAt": "Created"

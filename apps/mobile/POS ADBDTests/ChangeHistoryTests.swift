@@ -441,6 +441,18 @@ final class ChangeHistoryTests: XCTestCase {
         XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.share, .notes, .history], destructive: []))
     }
 
+    /// #1438: the icon of each row, and that the symbol exists on this iOS
+    func testEverySheetRowHasItsIcon() {
+        let expected: [(OrderSheetAction, String)] = [
+            (.print, "printer"), (.notes, "note.text"), (.history, "clock.arrow.circlepath"), (.edit, "pencil"),
+            (.extend, "calendar.badge.plus"), (.share, "square.and.arrow.up"), (.cancel, "xmark.circle"), (.delete, "trash"),
+        ]
+        for (action, symbol) in expected {
+            XCTAssertEqual(OrderActionSheet.symbol(of: action), symbol)
+            XCTAssertNotNil(UIImage(systemName: symbol), symbol)
+        }
+    }
+
     func testOnlyOwnersAndOutletAdminsSeeHistory() {
         for role in ["ADMIN", "OPS", "MERCHANT", "OUTLET_ADMIN", "merchant", " OUTLET_ADMIN "] {
             XCTAssertTrue(ChangeHistoryLogic.canView(role), role)

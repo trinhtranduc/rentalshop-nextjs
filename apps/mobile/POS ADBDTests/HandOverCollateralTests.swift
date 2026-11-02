@@ -101,6 +101,50 @@ final class PickupSheetNoItemsTests: XCTestCase {
         XCTAssertTrue(texts.contains("order.handOver.deposit".localized()), "security deposit field stays")
     }
 
+    // MARK: - #1395 sheet titles
+
+    func testHandOverAndReturnSheetsShowTheirOwnTitle() throws {
+        XCTAssertEqual(OrderHandOverSheetViewController.Mode.handOver.titleKey, "order.sheetTitle.handOver")
+        XCTAssertEqual(OrderHandOverSheetViewController.Mode.takeReturn.titleKey, "order.sheetTitle.return")
+        let handOver = try sheetTexts(.handOver)
+        let takeBack = try sheetTexts(.takeReturn)
+        XCTAssertTrue(handOver.contains("order.sheetTitle.handOver".localized()))
+        XCTAssertFalse(handOver.contains("order.sheetTitle.return".localized()))
+        XCTAssertTrue(takeBack.contains("order.sheetTitle.return".localized()))
+        XCTAssertFalse(takeBack.contains("order.sheetTitle.handOver".localized()))
+    }
+
+    func testApprovedTitleTexts() throws {
+        let approved: [String: (vi: String, en: String)] = [
+            "order.sheetTitle.actions": ("Thao tác với đơn", "Order actions"),
+            "order.sheetTitle.handOver": ("Giao đồ cho khách", "Hand over to customer"),
+            "order.sheetTitle.return": ("Nhận trả đồ", "Take back items"),
+            "order.sheetTitle.extend": ("Gia hạn đơn", "Extend order"),
+            "order.sheetTitle.collateral": ("Giấy tờ & thế chân", "Papers & collateral"),
+            "order.sheetTitle.collect": ("Thu tiền cọc", "Collect deposit"),
+            "order.sheetTitle.unpaid": ("Đợt cọc chưa thu", "Uncollected deposit stages"),
+            "order.sheetTitle.cancel": ("Huỷ đơn", "Cancel order"),
+        ]
+        func bundle(_ language: String) throws -> Bundle {
+            let path = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"), language)
+            return try XCTUnwrap(Bundle(path: path))
+        }
+        let vi = try bundle("vi-VN")
+        let en = try bundle("en")
+        for (key, text) in approved {
+            XCTAssertEqual(vi.localizedString(forKey: key, value: nil, table: nil), text.vi)
+            XCTAssertEqual(en.localizedString(forKey: key, value: nil, table: nil), text.en)
+        }
+    }
+
+    func testLongSheetTitleWrapsInsteadOfClipping() {
+        let long = String(repeating: "Uncollected deposit stages ", count: 3)
+        let title = V2.sheetTitle(long)
+        XCTAssertEqual(title.numberOfLines, 0)
+        let oneLine = title.font.lineHeight
+        XCTAssertGreaterThan(title.sizeThatFits(CGSize(width: 280, height: CGFloat.greatestFiniteMagnitude)).height, oneLine * 1.5)
+    }
+
     func testReturnSheetStillShowsItems() throws {
         let texts = try sheetTexts(.takeReturn)
         XCTAssertTrue(texts.contains("Ao dai gam do"))

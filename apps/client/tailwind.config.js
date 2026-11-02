@@ -58,6 +58,10 @@ module.exports = {
           'chart-red': ar('chart-red'),
         },
       },
+      backgroundImage: {
+        ...(base.theme.extend.backgroundImage || {}),
+        'ar-ai-scan': 'var(--ar-ai-scan)',
+      },
       boxShadow: {
         ...(base.theme.extend.boxShadow || {}),
         ar: 'var(--ar-shadow)',

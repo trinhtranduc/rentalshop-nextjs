@@ -80,7 +80,10 @@ internal fun ShopAndBranchesScreen(onBack: () -> Unit) {
         val profile = withContext(Dispatchers.IO) { ApiParity.getMerchantInfo() }
         val list = withContext(Dispatchers.IO) { ApiParity.getBranches() }
         profile.onSuccess { shop = it; SessionStore.merchantName = it.name }
-        list.onSuccess { branches = it }
+        list.onSuccess { outlets ->
+            branches = outlets
+            ShopBranchCount.report(ShopInfoLogic.branchRows(outlets.map { BranchRow(it.id, it.name, it.isActive, it.isDefault) }).size)
+        }
         loadError = (profile.exceptionOrNull() ?: list.exceptionOrNull())?.let { failure ->
             val id = ApiErrorMessages.stringId(AppError.from(failure).code)
             if (id != 0) context.getString(id) else failure.message

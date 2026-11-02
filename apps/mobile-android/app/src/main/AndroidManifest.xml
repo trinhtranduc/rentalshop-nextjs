@@ -36,8 +36,25 @@
                 <data
                     android:host="order"
                     android:scheme="anyrent" />
+                <!-- #1381: the widget's header opens "Việc cần làm" -->
+                <data
+                    android:host="todo"
+                    android:scheme="anyrent" />
             </intent-filter>
         </activity>
+
+        <!-- #1381: "Việc cần làm" home-screen widget. Same process as the app; it holds no token. -->
+        <receiver
+            android:name=".ui.widget.TodayWorkWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_work_widget_info" />
+        </receiver>
 
         <service
             android:name=".push.AnyRentFirebaseMessagingService"

@@ -9,6 +9,7 @@
 import UIKit
 import SnapKit
 import IQKeyboardManagerSwift
+import DraftOrderActivity
 
 final class SettingsV2ViewController: BaseViewControler {
     private enum Row {
@@ -40,7 +41,7 @@ final class SettingsV2ViewController: BaseViewControler {
     /// #1259: bank accounts of the default branch, for the second text of "Thu tiền" (nil until known)
     private var bankCount: Int?
     /// Totals next to Khách hàng / Người dùng (#388)
-    private var counts: [SettingsV2Item: Int] = [:]
+    private(set) var counts: [SettingsV2Item: Int] = [:]
     /// #674: plan, counts and the overlap switch are fetched on the first appear, then at most every 10 minutes
     private var lastFetchedAt: Date?
     /// #937: unread count on the "Thông báo" row (moved from the Home bell); follows `.inboxUnreadCountDidChange`
@@ -61,12 +62,21 @@ final class SettingsV2ViewController: BaseViewControler {
         super.viewDidLoad()
         setupUI()
         NotificationCenter.default.addObserver(self, selector: #selector(inboxCountChanged(_:)), name: .inboxUnreadCountDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(shopBranchCountChanged(_:)), name: .shopBranchCountDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(guideChanged), name: FirstRunGuideTracker.didChange, object: nil)
+    }
+
+    /// #1393: the "n/3" of Hướng dẫn bắt đầu, or the row leaves
+    @objc private func guideChanged() {
+        guard isViewLoaded else { return }
+        rebuild()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
         rebuild()
+        FirstRunGuideTracker.shared.refresh(forSettings: true)
         refreshAttendance()
         startAttendanceTimer()
         // #674/#937: the server is asked on first show and when 10 min old; the inbox signal keeps it current
@@ -149,7 +159,9 @@ final class SettingsV2ViewController: BaseViewControler {
         let role = user?.role
         let hasPlan = plan != nil && role != .admin
         groups = SettingsV2Logic.sections(role: role, permissions: user?.permissions ?? [], hasPlan: hasPlan,
-                                          showsCustomers: FeatureFlags.shared.isOn(.newCustomers))
+                                          showsCustomers: FeatureFlags.shared.isOn(.newCustomers),
+                                          supportsWidget: TodayWidgetBridge.isSupported,
+                                          showsGuide: FirstRunGuideTracker.shared.settingsDoneCount != nil)
         listView.reloadData()
     }
 
@@ -178,6 +190,13 @@ final class SettingsV2ViewController: BaseViewControler {
                 }
             }
         }
+    }
+
+    /// #1331: the shop screen read its branch list inside the 10 minutes; the row shows the same number
+    @objc private func shopBranchCountChanged(_ note: Notification) {
+        guard let count = note.userInfo?["count"] as? Int, counts[.storeInfo] != count else { return }
+        counts[.storeInfo] = count
+        listView.reloadData()
     }
 
     // MARK: - Thông báo (#937)
@@ -430,6 +449,8 @@ final class SettingsV2ViewController: BaseViewControler {
         case .plan: return "settings.v2.plan".localized()
         case .language: return "settings.v2.language".localized()
         case .advanced: return "settings.v2.advanced".localized()
+        case .widget: return "widget.settings.row".localized()
+        case .firstRunGuide: return "firstRunGuide.settings.row".localized()
         }
     }
 
@@ -457,6 +478,8 @@ final class SettingsV2ViewController: BaseViewControler {
             return locale.localizedString(forLanguageCode: code)?.capitalized(with: locale)
         case .advanced:
             return "settings.v2.advanced.value".localized()
+        case .firstRunGuide:
+            return FirstRunGuideTracker.shared.settingsDoneCount.map { "\($0)/\(FirstRunGuideStep.allCases.count)" }
         default:
             return nil
         }
@@ -504,7 +527,28 @@ final class SettingsV2ViewController: BaseViewControler {
             }
         case .advanced:
             navigationController?.pushViewController(AdvancedSettingsViewController(), animated: true)
+        case .widget:
+            present(WidgetGuideViewController(offersNeverAsk: false), animated: true)
+        case .firstRunGuide:
+            openFirstRunGuide()
         }
+    }
+
+    /// #1393: the card in a sheet. A row brings the guide back and runs that step on Home. #1410: hiding the guide lives here.
+    private func openFirstRunGuide() {
+        guard let done = FirstRunGuideTracker.shared.doneSteps else { return }
+        let sheet = FirstRunGuideSheetViewController(done: done, canHide: FirstRunGuideTracker.shared.isShownOnHome)
+        sheet.onStep = { [weak self] step in
+            FirstRunGuideTracker.shared.reopen()
+            self?.dismiss(animated: true) {
+                guard let tabs = self?.tabBarController else { return }
+                (tabs.viewControllers?.first as? UINavigationController)?.popToRootViewController(animated: false)
+                tabs.selectedIndex = 0
+                NotificationCenter.default.post(name: FirstRunGuideTracker.runStep, object: nil,
+                                                userInfo: [FirstRunGuideTracker.stepKey: step.rawValue])
+            }
+        }
+        present(sheet, animated: true)
     }
 
     private func confirmLogout() {
@@ -576,6 +620,7 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
         case .item(let item):
             cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan,
                            badge: nil)
+            cell.accessibilityIdentifier = item == .firstRunGuide ? "settings.firstRunGuide" : nil
         case .logout:
             cell.configureLogout("Logout".localized())
         case .overlapSwitch, .attendance:

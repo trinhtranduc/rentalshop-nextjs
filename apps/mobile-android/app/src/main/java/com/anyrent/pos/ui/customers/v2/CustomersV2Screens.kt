@@ -91,6 +91,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.guide.CoachBubble
+import com.anyrent.pos.domain.guide.CoachScreen
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import com.anyrent.pos.ui.home.v2.CoachScroll
+import com.anyrent.pos.ui.home.v2.FirstRunCoach
+import com.anyrent.pos.ui.home.v2.FirstRunCoachOverlay
+import com.anyrent.pos.ui.home.v2.coachAnchor
 import com.anyrent.pos.data.CustomersV2Api
 import com.anyrent.pos.data.PermissionManager
 import com.anyrent.pos.data.UserRole
@@ -147,6 +157,7 @@ fun CustomerPickerSheet(
             onBack = { newCustomer = null },
             onDone = { onPicked(it.toCustomer()) },
         )
+        FirstRunCoachOverlay(CoachScreen.NEW_CUSTOMER) // #1394
         return
     }
     // A fresh list each time the sheet opens (a customer added elsewhere shows up)
@@ -161,6 +172,7 @@ fun CustomerPickerSheet(
         // #952: the pencil follows the rule the customer detail uses
         onEdit = if (CustomerPickerEdit.showsEdit(isPicker = true, role = PermissionManager.role)) { row -> editing = row } else null,
     )
+    FirstRunCoachOverlay(CoachScreen.CUSTOMER_PICKER) // #1394
     editing?.let { row ->
         AppFormSheet(onDismiss = { editing = null }, nested = true) {
             EditCustomerV2Screen(
@@ -341,7 +353,7 @@ private fun SearchBox(value: String, onValueChange: (String) -> Unit, modifier: 
 private fun NewCustomerRow(onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().clickable(onClick = onClick).semantics { role = Role.Button }
+            Modifier.fillMaxWidth().coachAnchor("customers.picker.new").clickable(onClick = onClick).semantics { role = Role.Button }
                 .heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -448,6 +460,21 @@ fun NewCustomerContent(
     val flow = remember { NewCustomerFlow() }
     val needPhone = stringResource(R.string.customers_v2_need_phone)
     val needName = stringResource(R.string.customers_v2_need_name)
+    val scroll = rememberScrollState()
+    var scrollTop by remember { mutableStateOf(0f) }
+    // #1412: the guide's step 6 asks the form's own rule, no other; the duplicate box needs the screen, so the bubble leaves
+    val coachValid = if (CustomerRules.validate(name, phone) == null) setOf(CoachBubble.NEW_CUSTOMER) else emptySet()
+    val coachHasInput = listOf(phone, name, note).any { it.isNotEmpty() }
+    val coachPaused = existing != null
+    SideEffect {
+        if (pickMode && FirstRunCoach.run != null) {
+            FirstRunCoach.formValid = coachValid
+            FirstRunCoach.formHasInput = coachHasInput
+            FirstRunCoach.paused = coachPaused
+        }
+    }
+    DisposableEffect(Unit) { onDispose { FirstRunCoach.formClosed(CoachScreen.NEW_CUSTOMER) } }
+    if (pickMode) CoachScroll(CoachScreen.NEW_CUSTOMER, scroll, scrollTop)
 
     fun save() {
         problem = CustomerRules.validate(name, phone)
@@ -472,21 +499,26 @@ fun NewCustomerContent(
                 modifier = Modifier.semantics { heading() })
         }
         Column(
-            Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.weight(1f).fillMaxWidth().onGloballyPositioned { scrollTop = it.positionInWindow().y }.verticalScroll(scroll).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            FormField(
-                label = stringResource(R.string.customers_v2_phone), value = phone,
-                onValueChange = { phone = it; existing = null; if (problem == CustomerRules.FormProblem.MISSING_PHONE) problem = null },
-                keyboardType = KeyboardType.Phone,
-                error = needPhone.takeIf { problem == CustomerRules.FormProblem.MISSING_PHONE },
-            )
-            FormField(
-                label = stringResource(R.string.customers_v2_name), value = name,
-                onValueChange = { name = it; if (problem == CustomerRules.FormProblem.MISSING_NAME) problem = null },
-                capitalization = KeyboardCapitalization.Words,
-                error = needName.takeIf { problem == CustomerRules.FormProblem.MISSING_NAME },
-            )
+            // #1394: the bubble lights the two required fields together
+            Column(Modifier.coachAnchor("customers.new.fields"), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                FormField(
+                    label = stringResource(R.string.customers_v2_phone), value = phone,
+                    onValueChange = { phone = it; existing = null; if (problem == CustomerRules.FormProblem.MISSING_PHONE) problem = null },
+                    keyboardType = KeyboardType.Phone,
+                    tag = "customers.new.phone",
+                    error = needPhone.takeIf { problem == CustomerRules.FormProblem.MISSING_PHONE },
+                )
+                FormField(
+                    label = stringResource(R.string.customers_v2_name), value = name,
+                    onValueChange = { name = it; if (problem == CustomerRules.FormProblem.MISSING_NAME) problem = null },
+                    capitalization = KeyboardCapitalization.Words,
+                    error = needName.takeIf { problem == CustomerRules.FormProblem.MISSING_NAME },
+                    tag = "customers.new.name",
+                )
+            }
             FormField(
                 label = stringResource(R.string.customers_v2_note), optional = stringResource(R.string.customers_v2_optional),
                 value = note, onValueChange = { note = it },
@@ -526,7 +558,7 @@ fun NewCustomerContent(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)) {
+        Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp).coachAnchor("customers.new.save")) {
             PrimaryButton(
                 text = stringResource(if (pickMode) R.string.customers_v2_save_and_pick else R.string.save),
                 enabled = !saving, loading = saving, onClick = ::save,
@@ -547,6 +579,8 @@ private fun FormField(
     capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     imeAction: ImeAction = ImeAction.Next,
     error: String? = null,
+    /** #1393: the input's test tag */
+    tag: String? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -568,7 +602,8 @@ private fun FormField(
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = FieldBorder, focusedBorderColor = DS.Colors.Primary),
             textStyle = androidx.compose.ui.text.TextStyle(fontSize = DS.TextSize.Input, color = DS.Colors.Text),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).semantics { contentDescription = label },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).semantics { contentDescription = label }
+                .then(if (tag != null) Modifier.testTag(tag) else Modifier),
         )
     }
 }

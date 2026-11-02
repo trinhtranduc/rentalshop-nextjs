@@ -1,15 +1,11 @@
 package com.anyrent.pos
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +13,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.anyrent.pos.data.ApiClient
@@ -25,6 +20,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.data.repository.BankAccountRepository
+import com.anyrent.pos.domain.widget.TodayWidgetLink
+import com.anyrent.pos.domain.widget.TodayWidgetLinks
+import com.anyrent.pos.ui.widget.TodayWidgetSync
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.appconfig.AppConfigGate
@@ -41,9 +39,6 @@ class MainActivity : ComponentActivity() {
         AppConfigViewModel.Factory((application as AnyRentApp).container.appConfigRepository, BuildConfig.VERSION_NAME)
     }
 
-    private val notificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op */ }
-
     @OptIn(ExperimentalComposeUiApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -56,14 +51,15 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         launchOrderId = intent.getIntExtra(EXTRA_ORDER_ID, -1).takeIf { it > 0 }
-            ?: intent.data?.lastPathSegment?.toIntOrNull()
         if (launchOrderId != null) {
             SessionStore.pendingOrderId = launchOrderId
         }
+        // A recreated activity or a launch from Recents still carries the old link: it was already opened
+        val freshLaunch = savedInstanceState == null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0
+        if (freshLaunch) consumeWidgetLink(intent)
         consumeOpenCartIntent(intent)
         consumeOpenMyShiftsIntent(intent)
         consumeOpenBookingIntent(intent)
-        requestNotificationPermissionIfNeeded()
         if (SessionStore.isLoggedIn) {
             PushRegistrar.refreshTokenIfLoggedIn()
         }
@@ -95,6 +91,8 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshCurrency() }
             // #1354: and the owner's "show order note on the shared image" switch (at most once a minute)
             lifecycleScope.launch(Dispatchers.IO) { ApiClient.get().refreshShareOrderNote() }
+            // #1381: the home-screen widget, when one is placed
+            TodayWidgetSync.refreshSoon()
         }
     }
 
@@ -110,9 +108,15 @@ class MainActivity : ComponentActivity() {
         if (orderId != null) {
             SessionStore.pendingOrderId = orderId
         }
+        consumeWidgetLink(intent)
         consumeOpenCartIntent(intent)
         consumeOpenMyShiftsIntent(intent)
         consumeOpenBookingIntent(intent)
+    }
+
+    /** #1381 `anyrent://order/<id>`, `anyrent://todo` (the home-screen widget). The navigation applies it when it can. */
+    private fun consumeWidgetLink(intent: Intent?) {
+        TodayWidgetLink.parse(intent?.dataString)?.let(TodayWidgetLinks::request)
     }
 
     /** #1124: foreground push = our own extra; background push (tray) = FCM's `type` + `bookingRequestId` string extras */
@@ -145,15 +149,6 @@ class MainActivity : ComponentActivity() {
             intent?.getBooleanExtra(EXTRA_OPEN_CART, false) == true
         ) {
             DraftOrderReminder.requestOpenCart()
-        }
-    }
-
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 

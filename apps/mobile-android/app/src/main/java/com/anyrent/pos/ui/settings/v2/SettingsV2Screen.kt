@@ -72,6 +72,14 @@ import com.anyrent.pos.domain.money.ShopMoney
 import com.anyrent.pos.domain.settings.OverlapSetting
 import com.anyrent.pos.domain.settings.PasswordProblem
 import com.anyrent.pos.domain.settings.SettingsGroup
+import androidx.compose.material3.ModalBottomSheet
+import com.anyrent.pos.data.FirstRunGuideApp
+import com.anyrent.pos.domain.guide.FirstRunGuideCard
+import com.anyrent.pos.domain.guide.FirstRunGuideStep
+import com.anyrent.pos.ui.home.v2.FirstRunGuideCardView
+import com.anyrent.pos.ui.home.v2.FirstRunGuideFoot
+import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.ExperimentalComposeUiApi
 import com.anyrent.pos.domain.settings.SettingsItem
 import com.anyrent.pos.domain.settings.ShopInfoLogic
 import com.anyrent.pos.domain.settings.SettingsPlan
@@ -98,6 +106,7 @@ import java.util.Locale
 enum class SettingsSubPage { DEPOSIT, ADVANCED, PROFILE }
 
 /** Redesigned settings tab (#374, board Cai-dat), shown when `newSettings` is on: links to the existing screens */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun SettingsV2Screen(
     onOpenStore: () -> Unit,
@@ -111,6 +120,8 @@ fun SettingsV2Screen(
     onOpenInbox: () -> Unit = {},
     onOpenAttendance: () -> Unit = {},
     onOpenMyShifts: () -> Unit = {},
+    /** #1393: a row of the guide sheet: go to Home, which runs the step */
+    onOpenHome: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -128,6 +139,7 @@ fun SettingsV2Screen(
     // #1259: Thu tiền / Nâng cao / Hồ sơ & bảo mật open over the list; the deposit screens open from Thu tiền
     var subPage by rememberSaveable { mutableStateOf<SettingsSubPage?>(null) }
     var depositStart by remember { mutableStateOf<DepositStart?>(null) }
+    var showWidgetGuide by remember { mutableStateOf(false) }
     var collectRefresh by remember { mutableStateOf(0) }
     // #1259: bank accounts of the default branch, read by Thu tiền; shown next to its row (null until known)
     var bankCount by remember { mutableStateOf<Int?>(null) }
@@ -164,7 +176,14 @@ fun SettingsV2Screen(
     LaunchedEffect(Unit) {
         com.anyrent.pos.ui.inbox.InboxUnread.invalidations.collect { com.anyrent.pos.ui.inbox.InboxUnread.refreshIfNeeded() }
     }
-    val sections = SettingsRows.sections(role, hasPlan = plan != null)
+    // #1393: "n/3" on Hướng dẫn bắt đầu; the row leaves when the shop has an order or a read failed
+    val guide = FirstRunGuideApp.tracker
+    val guideVersion by guide.version.collectAsState()
+    val guideDoneCount = remember(guideVersion, role) { guide.settingsDoneCount() }
+    var showGuideSheet by remember { mutableStateOf(false) }
+    var confirmGuideHide by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { guide.refresh(forSettings = true) }
+    val sections = SettingsRows.sections(role, hasPlan = plan != null, showsGuide = guideDoneCount != null)
     LaunchedEffect(role, collectRefresh) { SettingsBankCount.load(role)?.let { bankCount = it } }
 
     // #388: totals next to Khách hàng / Người dùng, only for the rows this role sees; a failed call shows nothing.
@@ -278,9 +297,11 @@ fun SettingsV2Screen(
                     SettingsItem.PLAN -> plan?.let { planText(it) }
                     SettingsItem.LANGUAGE -> Locale.getDefault().let { it.getDisplayLanguage(it).replaceFirstChar { c -> c.titlecase(it) } }
                     SettingsItem.ADVANCED -> stringResource(R.string.settings_v2_advanced_value)
+                    SettingsItem.FIRST_RUN_GUIDE -> guideDoneCount?.let { "$it/${FirstRunGuideStep.entries.size}" }
                     else -> null
                 }
-                SettingRow(title = itemTitle(item, role), value = value, chevron = item != SettingsItem.PLAN) {
+                val rowTag = if (item == SettingsItem.FIRST_RUN_GUIDE) Modifier.testTag("settings.firstRunGuide") else Modifier
+                Box(rowTag) { SettingRow(title = itemTitle(item, role), value = value, chevron = item != SettingsItem.PLAN) {
                     when (item) {
                         SettingsItem.STORE_INFO -> onOpenStore()
                         SettingsItem.BANK_ACCOUNTS -> onOpenBankAccounts()
@@ -294,9 +315,11 @@ fun SettingsV2Screen(
                         SettingsItem.LANGUAGE -> runCatching {
                             context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
+                        SettingsItem.WIDGET -> showWidgetGuide = true
                         SettingsItem.ADVANCED -> subPage = SettingsSubPage.ADVANCED
+                        SettingsItem.FIRST_RUN_GUIDE -> showGuideSheet = true
                     }
-                }
+                } }
             }
             // #1259: the owner's overlap switch is the last line of CỬA HÀNG
             if (section.group == SettingsGroup.STORE && OverlapSetting.canEdit(role)) {
@@ -315,6 +338,46 @@ fun SettingsV2Screen(
         }
     }
 
+    if (showGuideSheet) {
+        guide.doneSteps()?.let { done ->
+            ModalBottomSheet(onDismissRequest = { showGuideSheet = false }, containerColor = DS.Colors.Surface) {
+                // A sheet is its own semantics tree: test tags reach uiautomator only when asked here too
+                Box(Modifier.semantics { testTagsAsResourceId = true }) { FirstRunGuideCardView(
+                    card = FirstRunGuideCard.Steps(done),
+                    foot = FirstRunGuideFoot.Sheet(
+                        onClose = { showGuideSheet = false },
+                        onHide = if (guide.isShownOnHome()) ({ confirmGuideHide = true }) else null, // #1410: the only way to hide it
+                    ),
+                    onStep = { step ->
+                        showGuideSheet = false
+                        guide.reopen()
+                        FirstRunGuideApp.pendingStep.value = step
+                        onOpenHome()
+                    },
+                    onExpand = {},
+                    onCloseFinish = {},
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 28.dp),
+                ) }
+            }
+        }
+    }
+    if (confirmGuideHide) {
+        AppAlertConfirm(
+            title = stringResource(R.string.first_run_guide_hide_confirm),
+            message = "",
+            confirmLabel = stringResource(R.string.first_run_guide_hide_action),
+            destructive = true,
+            onDismiss = { confirmGuideHide = false },
+            onConfirm = {
+                confirmGuideHide = false
+                showGuideSheet = false
+                guide.skip()
+            },
+        )
+    }
+    if (showWidgetGuide) {
+        com.anyrent.pos.ui.widget.TodayWidgetGuideSheet(onDismiss = { showWidgetGuide = false })
+    }
     if (confirmLogout) {
         AppAlertConfirm(
             title = stringResource(R.string.logout),
@@ -503,6 +566,8 @@ private fun itemTitle(item: SettingsItem, role: String?): String = stringResourc
         SettingsItem.EXPORT -> R.string.export_data
         SettingsItem.PLAN -> R.string.settings_v2_plan
         SettingsItem.LANGUAGE -> R.string.settings_v2_language
+        SettingsItem.WIDGET -> R.string.widget_settings_row
+        SettingsItem.FIRST_RUN_GUIDE -> R.string.first_run_guide_settings_row
         SettingsItem.ADVANCED -> R.string.settings_v2_advanced
     },
 )

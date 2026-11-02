@@ -9,17 +9,26 @@
 import UIKit
 import SnapKit
 import Kingfisher
+import IQKeyboardManagerSwift
 
 final class OrderHandOverSheetViewController: UIViewController, UITextFieldDelegate {
     enum Mode {
         case handOver
         case takeReturn
+
+        /// #1395 the sheet's title; the bottom bar buttons keep "Giao đồ" / "Nhận trả"
+        var titleKey: String {
+            switch self {
+            case .handOver: return "order.sheetTitle.handOver"
+            case .takeReturn: return "order.sheetTitle.return"
+            }
+        }
     }
 
     /// lateFee, damageFee (return sheet)
     var onConfirm: ((Double, Double) -> Void)?
-    /// papers, security deposit (hand-over sheet); both may be empty (#427)
-    var onHandOver: ((String, Double) -> Void)?
+    /// papers, security deposit (hand-over sheet), both may be empty (#427); condition photos, optional (#1418)
+    var onHandOver: ((String, Double, [Data]) -> Void)?
 
     private let mode: Mode
     private let detail: OrderDetail
@@ -31,11 +40,21 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
     private let securityDepositField = UITextField()
     private let moneyStack = UIStackView()
     private let confirmButton = UIButton(type: .system)
+    private let initialPhotos: [Data]
+    /// #1419 the hand-over photos on the return sheet, read only
+    private let comparePhotoURLs: [String]
+    private let comparePhotosWaiting: [Data]
+    private var photoBlock: OrderPhotoBlockView?
+    private var keyboardManagerWasEnabled = true
 
-    init(mode: Mode, detail: OrderDetail, lateDays: Int) {
+    /// `photos`: chosen before a confirm that failed, so nothing has to be taken again (#1418)
+    init(mode: Mode, detail: OrderDetail, lateDays: Int, photos: [Data] = [], comparePhotoURLs: [String] = [], comparePhotosWaiting: [Data] = []) {
         self.mode = mode
         self.detail = detail
         self.lateDays = lateDays
+        initialPhotos = photos
+        self.comparePhotoURLs = comparePhotoURLs
+        self.comparePhotosWaiting = comparePhotosWaiting
         payments = detail.payments.map { OrderPaymentLine(amount: $0.amount, status: $0.status, notes: $0.notes) }
         super.init(nibName: nil, bundle: nil)
     }
@@ -48,10 +67,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         super.viewDidLoad()
         view.backgroundColor = DS.Color.surface
 
-        let titleLabel = UILabel()
-        titleLabel.text = mode == .handOver ? "Hand over items".localized() : "Take back items".localized()
-        titleLabel.font = Utils.boldFont(size: 20)
-        titleLabel.textColor = DS.Color.text
+        let titleLabel = V2.sheetTitle(mode.titleKey.localized())
 
         let subtitle = UILabel()
         subtitle.font = Utils.regularFont(size: DS.TextSize.body)
@@ -69,9 +85,28 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
             for item in detail.orderItems {
                 content.addArrangedSubview(itemRow(item))
             }
+            if OrderPhotoLogic.returnSheetShowsPhotos(serverCount: comparePhotoURLs.count, waiting: comparePhotosWaiting.count) {
+                content.addArrangedSubview(OrderPhotoSection.content(
+                    title: "order.photos.atHandOver".localized(), urls: comparePhotoURLs, waiting: comparePhotosWaiting,
+                    id: "order.return.pickupPhotos",
+                    onOpen: { [weak self] image in
+                        let viewer = NoteImagePreviewViewController(image: image)
+                        viewer.modalPresentationStyle = .fullScreen
+                        self?.present(viewer, animated: true)
+                    },
+                    onAdd: nil))
+            }
         }
 
         if mode == .handOver {
+            // #1418 layout A: the photo block is always there, above the fields
+            let block = OrderPhotoBlockView(photos: initialPhotos, presenter: self)
+            block.onChange = { [weak self] in self?.photosChanged() }
+            photoBlock = block
+            content.addArrangedSubview(block)
+            content.setCustomSpacing(DS.Spacing.md, after: subtitle)
+            content.setCustomSpacing(DS.Spacing.md, after: block)
+            photosChanged()
             // Optional papers and security deposit, prefilled from the order (#427)
             let papers = feeField(papersField, title: "order.handOver.papers".localized(), value: 0)
             papersField.keyboardType = .default
@@ -146,20 +181,39 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         view.addSubview(scroll)
         view.addSubview(buttons)
         content.snp.makeConstraints { make in
-            make.top.bottom.equalTo(scroll.contentLayoutGuide).inset(DS.Spacing.lg)
-            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(DS.Spacing.lg)
+            make.top.equalTo(scroll.contentLayoutGuide).offset(V2.sheetTop)
+            make.bottom.equalTo(scroll.contentLayoutGuide).offset(-DS.Spacing.lg)
+            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(V2.sheetSide)
         }
         scroll.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.sm)
+            make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(buttons.snp.top).offset(-DS.Spacing.sm)
         }
         buttons.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalToSuperview().inset(V2.sheetSide)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-DS.Spacing.md)
         }
         KeyboardDoneBar.attach([lateFeeField, damageFeeField, securityDepositField])
         renderMoney()
+    }
+
+    // #1418: this sheet now opens tall. Buttons and scroll follow the keyboard (#1395); IQKeyboardManager would push the
+    // whole sheet up, over the title, as it did on the collateral sheet
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
+    }
+
+    /// With photos chosen, a swipe down does not drop them by accident; "Hủy" still does
+    private func photosChanged() {
+        isModalInPresentation = !(photoBlock?.photos.isEmpty ?? true)
     }
 
     // MARK: - Money
@@ -350,8 +404,9 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         if mode == .handOver {
             let papers = papersField.text ?? ""
             let deposit = enteredSecurityDeposit
+            let photos = photoBlock?.photos ?? []
             dismiss(animated: true) { [onHandOver] in
-                onHandOver?(papers, deposit)
+                onHandOver?(papers, deposit, photos)
             }
             return
         }
@@ -372,6 +427,7 @@ final class CollateralEditSheetViewController: UIViewController, UITextFieldDele
     private let detail: OrderDetail
     private let papersField = UITextField()
     private let depositField = UITextField()
+    private var keyboardManagerWasEnabled = true
 
     init(detail: OrderDetail) {
         self.detail = detail
@@ -386,10 +442,7 @@ final class CollateralEditSheetViewController: UIViewController, UITextFieldDele
         super.viewDidLoad()
         view.backgroundColor = DS.Color.surface
 
-        let title = UILabel()
-        title.text = "order.collateral.editTitle".localized()
-        title.font = Utils.boldFont(size: 20)
-        title.textColor = DS.Color.text
+        let title = V2.sheetTitle("order.sheetTitle.collateral".localized())
         let subtitle = UILabel()
         subtitle.font = Utils.regularFont(size: DS.TextSize.body)
         subtitle.textColor = DS.Color.textMuted
@@ -424,18 +477,41 @@ final class CollateralEditSheetViewController: UIViewController, UITextFieldDele
         save.accessibilityIdentifier = "collateralEdit.save"
         save.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
 
-        view.addSubview(content)
+        // #1395: scrolls, so the fields and Save never overlap on a small iPhone with the keyboard open
+        let scroll = UIScrollView()
+        scroll.alwaysBounceVertical = true
+        scroll.keyboardDismissMode = .interactive
+        scroll.addSubview(content)
+        view.addSubview(scroll)
         view.addSubview(save)
         content.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(DS.Spacing.lg)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.top.equalTo(scroll.contentLayoutGuide).offset(V2.sheetTop)
+            make.bottom.equalTo(scroll.contentLayoutGuide).offset(-DS.Spacing.lg)
+            make.leading.trailing.equalTo(scroll.frameLayoutGuide).inset(V2.sheetSide)
+        }
+        scroll.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(save.snp.top).offset(-DS.Spacing.sm)
         }
         save.snp.makeConstraints { make in
             make.height.equalTo(52)
-            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+            make.leading.trailing.equalToSuperview().inset(V2.sheetSide)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-DS.Spacing.md)
         }
         KeyboardDoneBar.attach([depositField])
+    }
+
+    // #1395: Save and the scroll already follow the keyboard. IQKeyboardManager pushed the sheet up, over the title
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        keyboardManagerWasEnabled = IQKeyboardManager.shared.enable
+        IQKeyboardManager.shared.enable = false
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        IQKeyboardManager.shared.enable = keyboardManagerWasEnabled
     }
 
     private func configure(_ field: UITextField, number: Bool, text: String) {

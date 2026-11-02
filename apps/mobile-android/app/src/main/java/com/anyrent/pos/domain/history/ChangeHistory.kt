@@ -481,7 +481,7 @@ object ChangeHistory {
         "discountType" to "Kiểu giảm giá",
         "discountValue" to "Mức giảm",
         "discountAmount" to "Giảm giá",
-        "damageFee" to "Phí hư hỏng",
+        "damageFee" to "Phụ phí",
         "lateFee" to "Phí trả trễ",
         "collateralType" to "Loại thế chân",
         "collateralDetails" to "Thế chân",

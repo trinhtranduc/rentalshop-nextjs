@@ -31,7 +31,7 @@ class Issue484ResourcesTest {
         "overview_v2_info_body" to "Tiền khách thực trả cho cửa hàng, tính theo ngày nhận tiền.",
         "overview_v2_info_deposit" to "Cọc khi tạo đơn",
         "overview_v2_info_remaining" to "Thu khi giao đồ, bán hàng",
-        "overview_v2_info_fees" to "Phí hư hỏng, trễ hạn",
+        "overview_v2_info_fees" to "Phụ phí, trễ hạn",
         "overview_v2_info_cancelled" to "Hoàn tiền đơn huỷ",
         "overview_v2_info_note" to "Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.",
         "close" to "Đóng",
@@ -96,6 +96,23 @@ class Issue484ResourcesTest {
     fun explanationSaysCollateralIsNotCounted() {
         val vi = strings("values-vi")
         assertEquals("Không tính vào thực thu vì sẽ trả lại khách.", vi["overview_v2_info_collateral"])
+    }
+
+    /** #1433: "Phí hư hỏng" is "Phụ phí" on every screen, "Extra fee" in English; only the labels changed */
+    @Test
+    fun damageFeeIsPhuPhi() {
+        val vi = strings("values-vi")
+        val en = strings("values")
+        assertEquals(emptySet<String>(), vi.filterValues { it.contains("phí hư hỏng", ignoreCase = true) }.keys)
+        assertEquals(emptySet<String>(), en.filterValues { it.contains("damage fee", ignoreCase = true) }.keys)
+        assertEquals("Phụ phí", vi["damage_fee"])
+        assertEquals("Phí trễ + phụ phí", vi["detail_fees"])
+        assertEquals("Phụ phí, trễ", vi["overview_dash_money_fees"])
+        assertEquals("Thu phụ phí", vi["overview_v2_event_damage_fee"])
+        assertEquals("Dự kiến thu phụ phí khi trả hàng", vi["overview_v2_event_future_damage_fee"])
+        assertEquals("Extra Fee", en["damage_fee"])
+        assertEquals("Late + extra fees", en["detail_fees"])
+        assertEquals("Extra fee collected", en["overview_v2_event_damage_fee"])
     }
 
     /** #492: the security deposit is "thế chân" in every Vietnamese string, never "thế chấp" */

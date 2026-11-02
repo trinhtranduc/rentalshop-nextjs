@@ -20,6 +20,17 @@ export function ShellIcon({ d, size = 20, className }: { d: string; size?: numbe
   );
 }
 
+/** #1384: filled camera with a sparkle, the AI image search button (iOS `DS.aiScanIcon`, Android `AppIcons.AiScan`). */
+export function AiScanIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8.2 6a2 2 0 0 0-1.7 1L5.7 8.3H4.5A2.5 2.5 0 0 0 2 10.8v7.7A2.5 2.5 0 0 0 4.5 21h13a2.5 2.5 0 0 0 2.5-2.5v-5.3h-2v5.3a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-7.7a.5.5 0 0 1 .5-.5h2.3l1.4-2.3H13V6Z" />
+      <circle cx="11" cy="14.6" r="3.3" />
+      <path d="M18.5 1.5l1.2 3.3 3.3 1.2-3.3 1.2-1.2 3.3-1.2-3.3L14 6l3.3-1.2Z" />
+    </svg>
+  );
+}
+
 export const ICONS = {
   plus: 'M12 5v14M5 12h14',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5',

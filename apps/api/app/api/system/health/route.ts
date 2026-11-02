@@ -53,11 +53,12 @@ export async function GET(request: NextRequest) {
         }
       });
     } catch (error) {
+      console.error('[system/health] check failed:', error);
       checks.push({
         name: 'database',
         status: 'unhealthy',
         responseTime: Date.now() - dbStartTime,
-        error: error instanceof Error ? error.message : 'Database connection failed'
+        error: 'Database connection failed'
       });
     }
 
@@ -88,11 +89,12 @@ export async function GET(request: NextRequest) {
         }
       });
     } catch (error) {
+      console.error('[system/health] check failed:', error);
       checks.push({
         name: 'external_services',
         status: 'degraded',
         responseTime: Date.now() - externalStartTime,
-        error: error instanceof Error ? error.message : 'External services check failed'
+        error: 'External services check failed'
       });
     }
 
@@ -164,7 +166,7 @@ export async function GET(request: NextRequest) {
         name: 'system',
         status: 'unhealthy',
         responseTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'System health check failed'
+        error: 'System health check failed'
       }],
       performance: {
         memory: { used: 0, total: 0, percentage: 0 },

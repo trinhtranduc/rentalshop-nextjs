@@ -45,6 +45,17 @@ enum V2 {
         return label
     }
 
+    /// #1395: where a sheet's first line starts, on every sheet of the order detail
+    static let sheetTop: CGFloat = 28
+    static let sheetSide: CGFloat = 20
+
+    /// #1395: the title of a sheet. One style everywhere; wraps instead of clipping long English
+    static func sheetTitle(_ text: String) -> UILabel {
+        let title = label(text, size: DS.TextSize.amount, weight: .bold, lines: 0)
+        title.accessibilityTraits = UIAccessibilityTraitHeader
+        return title
+    }
+
     /// Grey band with an upper-case title ("GIÁ", "KHO", "TIỀN")
     static func sectionHeader(_ title: String, trailing: UIView? = nil) -> UIView {
         let view = UIView()
@@ -501,18 +512,18 @@ class V2FittingSheet: UIViewController {
         stack.spacing = 14
         view.addSubview(stack)
         stack.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(28)
-            make.leading.trailing.equalToSuperview().inset(20)
+            make.top.equalToSuperview().offset(V2.sheetTop)
+            make.leading.trailing.equalToSuperview().inset(V2.sheetSide)
         }
     }
 
     private func fittingHeight() -> CGFloat {
         loadViewIfNeeded()
-        let width = (view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width) - 40
+        let width = (view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width) - 2 * V2.sheetSide
         let size = stack.systemLayoutSizeFitting(CGSize(width: width, height: 0),
                                                  withHorizontalFittingPriority: .required,
                                                  verticalFittingPriority: .fittingSizeLevel)
-        return 28 + size.height + 24
+        return V2.sheetTop + size.height + 24
     }
 
     static func buttons(cancel: UIButton, confirm: UIButton, confirmRatio: CGFloat) -> UIStackView {

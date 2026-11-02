@@ -1,7 +1,10 @@
 package com.anyrent.pos.ui.orders.v2
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,11 +44,16 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import com.anyrent.pos.domain.orders.OrderPhotoLogic
+import androidx.core.content.ContextCompat
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -93,6 +101,8 @@ import com.anyrent.pos.domain.orders.DetailPrimary
 import com.anyrent.pos.domain.orders.OrderActionSheet
 import com.anyrent.pos.domain.orders.OrderDetailHeader
 import com.anyrent.pos.domain.orders.OrderDetailLogic
+import com.anyrent.pos.domain.orders.OrderMoneyLine
+import com.anyrent.pos.domain.orders.OrderMoneyPlan
 import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.ui.history.changeHistoryTexts
@@ -174,6 +184,11 @@ fun OrderDetailV2Screen(
     var notesFiles by remember { mutableStateOf<List<File>>(emptyList()) }
     var notesPicking by remember { mutableStateOf(false) }
     var notesError by remember { mutableStateOf<String?>(null) }
+    // #1418 condition photos: picker round-trips and the camera
+    var photoPicking by remember { mutableStateOf(false) }
+    var photoCamera by remember { mutableStateOf(false) }
+    var photoCameraDenied by remember { mutableStateOf(false) }
+    var photoChooseSource by remember { mutableStateOf(false) }
 
     fun toast(text: String?) {
         if (!text.isNullOrBlank()) Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -189,6 +204,55 @@ fun OrderDetailV2Screen(
             }
             notesFiles = notesFiles + copied
         }
+    }
+
+    /** Compressed like note photos (~180 KB, 1920 px): into the open sheet, or queued at once from "Thêm" on the detail */
+    fun takePickupPhotos(load: suspend () -> List<File>, count: Int) {
+        val inSheet = sheet == DetailSheet.HAND_OVER
+        if (inSheet) vm.pickupPhotoCompressing(count)
+        scope.launch {
+            val bytes = withContext(Dispatchers.IO) {
+                load().mapNotNull { file ->
+                    try {
+                        runCatching { fileToNotesJpegBytes(file) }.getOrNull()
+                    } finally {
+                        runCatching { file.delete() }
+                    }
+                }
+            }
+            if (inSheet) vm.addPickupDraft(bytes, count) else vm.addPickupPhotosNow(bytes)
+        }
+    }
+
+    val photoLibrary = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        photoPicking = false
+        val taken = if (sheet == DetailSheet.HAND_OVER) {
+            state.pickupDraft.size + state.pickupCompressing
+        } else {
+            state.detail?.pickupNotesImages?.size ?: 0
+        }
+        val chosen = uris.take((OrderPhotoLogic.MAX_PHOTOS - taken).coerceAtLeast(0))
+        if (chosen.isEmpty()) return@rememberLauncherForActivityResult
+        takePickupPhotos({ chosen.mapNotNull { runCatching { context.copyUriToCacheFile(it) }.getOrNull() } }, chosen.size)
+    }
+
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        photoPicking = false
+        if (granted) photoCamera = true else photoCameraDenied = true
+    }
+
+    fun openPhotoCamera() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            photoCamera = true
+        } else {
+            photoPicking = true
+            cameraPermission.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    fun openPhotoLibrary() {
+        photoPicking = true
+        photoLibrary.launch("image/*")
     }
 
     fun print(detail: OrderDetail) {
@@ -220,7 +284,8 @@ fun OrderDetailV2Screen(
     val role = SessionStore.role
     val hasPlan = DepositPlanLogic.hasPlan(detail?.deposit)
     // Stages nobody collected block the hand-over: collect them first, then hand over (#1199)
-    val unpaidStages = if (hasPlan && detail?.summary?.status.equals("RESERVED", true)) {
+    val handOverBlocked = DepositPlanLogic.blocksHandOver(detail?.deposit, detail?.summary?.status)
+    val unpaidStages = if (handOverBlocked) {
         DepositPlanLogic.unpaidBeforePickup(detail?.deposit?.installments.orEmpty())
     } else {
         emptyList()
@@ -318,14 +383,19 @@ fun OrderDetailV2Screen(
                             null
                         },
                     )
+                    // #1418 the photos are often below the first screen; a failed upload is told here
+                    state.pickupFailedCount?.let { failed ->
+                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            OrderPhotoWarning(failed, "order.detail.pickupPhotos", vm::retryPickupPhotos)
+                        }
+                    }
                     DetailBody(
                         detail,
                         depositCard = if (hasPlan) {
-                            {
+                            { plan ->
                                 InstallmentCard(
-                                    detail, role,
+                                    detail, role, plan,
                                     onEdit = { editingPlan = true },
-                                    onCollect = { collecting = it },
                                     onStage = { voiding = it },
                                 )
                             }
@@ -335,15 +405,38 @@ fun OrderDetailV2Screen(
                         onPreview = { previewImage = it },
                         onEditNotes = { openNotes(detail) },
                         onEditCollateral = if (canEditCollateral) ({ sheet = DetailSheet.COLLATERAL }) else null,
+                        pickupPhotos = if (detail.pickupNotesImages.isNotEmpty() || state.pickupWaiting.isNotEmpty()) {
+                            {
+                                OrderPickupPhotosRow(
+                                    urls = detail.pickupNotesImages,
+                                    waiting = state.pickupWaiting,
+                                    id = "order.detail.pickupPhotos",
+                                    onPreview = { previewImage = it },
+                                    onAdd = if (OrderPhotoLogic.canAddLater(
+                                            detail.summary.status, detail.pickupNotesImages.size,
+                                            state.pickupWaiting.size, PermissionManager.canUpdateOrders(),
+                                        )
+                                    ) {
+                                        { photoChooseSource = true }
+                                    } else {
+                                        null
+                                    },
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                     Spacer(Modifier.height(24.dp))
                 }
                 DetailBottomBar(
                     detail = detail,
                     primary = actions!!.primary,
+                    handOverBlocked = handOverBlocked,
                     canCancel = actions.canCancel,
                     busy = state.busy || editing,
                     onHandOver = ::requestHandOver,
+                    onCollectStage = { collecting = it },
                     onReturn = { sheet = DetailSheet.RETURN },
                     onCancel = ::requestCancel,
                     onPrint = { print(detail) },
@@ -414,7 +507,20 @@ fun OrderDetailV2Screen(
             DetailSheet.HAND_OVER -> HandOverSheet(
                 detail = detail,
                 busy = state.busy,
-                onDismiss = { sheet = null },
+                onDismiss = { if (!photoPicking) sheet = null },
+                onCancel = {
+                    vm.clearPickupDraft()
+                    sheet = null
+                },
+                photoBlock = {
+                    OrderPhotoBlock(
+                        photos = state.pickupDraft,
+                        compressing = state.pickupCompressing,
+                        onAdd = { photoChooseSource = true },
+                        onRemove = vm::removePickupDraft,
+                        onPreview = { previewImage = it },
+                    )
+                },
                 onConfirm = { papers, securityDeposit ->
                     // Papers and deposit are optional (#427)
                     val fields = OrderDetailLogic.handOverFields(
@@ -437,6 +543,19 @@ fun OrderDetailV2Screen(
             DetailSheet.RETURN -> ReturnSheet(
                 detail = detail,
                 busy = state.busy,
+                // #1419 read only, the same row as on the order detail
+                comparePhotos = if (OrderPhotoLogic.returnSheetShowsPhotos(detail.pickupNotesImages.size, state.pickupWaiting.size)) {
+                    {
+                        OrderPickupPhotosRow(
+                            urls = detail.pickupNotesImages,
+                            waiting = state.pickupWaiting,
+                            id = "order.return.pickupPhotos",
+                            onPreview = { previewImage = it },
+                        )
+                    }
+                } else {
+                    null
+                },
                 onDismiss = { sheet = null },
                 onConfirm = { late, damage, onError ->
                     vm.takeReturn(
@@ -600,6 +719,53 @@ fun OrderDetailV2Screen(
                         if (fresh != null && DepositPlanLogic.unpaidBeforePickup(fresh.deposit?.installments.orEmpty()).isNotEmpty()) showUnpaid = true
                     }
                 }
+            },
+        )
+    }
+    if (photoCamera) {
+        OrderPhotoCamera(
+            onDismiss = { photoCamera = false },
+            onCaptured = { file ->
+                photoCamera = false
+                takePickupPhotos({ listOf(file) }, 1)
+            },
+            onError = { message ->
+                photoCamera = false
+                toast(message)
+            },
+        )
+    }
+    if (photoCameraDenied) {
+        AlertDialog(
+            onDismissRequest = { photoCameraDenied = false },
+            text = { Text(stringResource(R.string.order_photos_camera_unavailable)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    photoCameraDenied = false
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
+                    )
+                }) { Text(stringResource(R.string.order_photos_open_settings)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { photoCameraDenied = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+    if (photoChooseSource) {
+        AlertDialog(
+            onDismissRequest = { photoChooseSource = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    photoChooseSource = false
+                    openPhotoCamera()
+                }) { Text(stringResource(R.string.order_photos_take)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    photoChooseSource = false
+                    openPhotoLibrary()
+                }) { Text(stringResource(R.string.order_photos_library)) }
             },
         )
     }
@@ -781,11 +947,13 @@ private fun headerNoteText(note: OrderDetailHeader.Note): String {
     return listOfNotNull(days, due).joinToString(" · ")
 }
 
-// Same names and values as iOS `sectionDividerColor` / `noteFillColor` / `noteInkColor`.
-// This screen uses fixed light colours like iOS (locked to Light), so there is no dark variant.
-private val SectionDividerColor = Color(0xFFEEF0F4)
-private val NoteBoxFill = Color(0xFFF3F4F6)
-private val NoteBoxInk = Color(0xFF475569)
+// Same names and values as iOS (OrderDetailViewController.swift). This screen uses fixed light colours like iOS (locked to
+// Light), so there is no dark variant. #1430: the owner took the warm note colours back; the band stays.
+internal val SectionDividerColor = Color(0xFFEEF0F4)
+internal val ItemNoteFill = Color(0xFFFFF7E6)
+internal val ItemNoteInk = Color(0xFF7A4A00)
+internal val NotesFill = Color(0xFFFFFBEB)
+internal val NotesInk = Color(0xFF78350F)
 
 /** The 8dp band between two sections (mockup: #EEF0F4, owner level 2; iOS `sectionBand`) */
 @Composable
@@ -805,10 +973,12 @@ private fun DetailSection(title: String?, tag: String? = null, content: @Composa
 @Composable
 private fun DetailBody(
     detail: OrderDetail,
-    depositCard: (@Composable () -> Unit)?,
+    depositCard: (@Composable (OrderMoneyPlan) -> Unit)?,
     onPreview: (Any) -> Unit,
     onEditNotes: () -> Unit,
     onEditCollateral: (() -> Unit)? = null,
+    /** #1418 the hand-over photos; null while the order has none */
+    pickupPhotos: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     val summary = detail.summary
     val isRent = summary.orderType.equals("RENT", ignoreCase = true)
@@ -820,74 +990,33 @@ private fun DetailBody(
         DetailSection(stringResource(R.string.customer).uppercase(), "order.detail.customerSection") { CustomerSection(detail) }
         SectionBand()
         DetailSection(stringResource(R.string.detail_items_count, detail.items.size), "order.detail.itemsSection") {
-            detail.items.forEach { ItemRow(it, summary.orderType) }
-            MoneyRow(stringResource(R.string.subtotal), formatMoneyVnd(OrderDetailLogic.saleSubtotal(detail.items)))
+            // #1435: a rental has "Tạm tính" at the top of THANH TOÁN, so its last row has no line under it
+            detail.items.forEachIndexed { index, item -> ItemRow(item, summary.orderType, divider = !isRent || index < detail.items.lastIndex) }
+            if (!isRent) MoneyRow(stringResource(R.string.subtotal), formatMoneyVnd(OrderDetailLogic.saleSubtotal(detail.items)))
         }
         SectionBand()
 
-        // the last "Khi nhận trả" row moves under the papers & collateral section when that shows (iOS `returnRow`);
-        // the shop kept / gave back rows move under the deposit stages (computed here, not inside the section lambdas)
-        val returnMoney = if (isRent && pickedUp) {
-            OrderDetailLogic.returnMoney(detail.lateFee, detail.damageFee, detail.securityDeposit, detail.balancePayments())
+        // #1435 (approved mockup, tab "odmoney"): one block. The last "Khi nhận trả" line moves under the papers & collateral
+        // section when that shows (iOS `returnLine`); the shop kept / gave back lines read under the stages
+        val block = if (isRent) {
+            OrderDetailLogic.moneyBlock(
+                summary.status, OrderDetailLogic.saleSubtotal(detail.items), detail.discountAmount, summary.totalAmount, summary.depositAmount,
+                detail.securityDeposit, detail.lateFee, detail.damageFee, detail.balancePayments(), detail.deposit,
+                onEditCollateral != null, summary.cancelKeptAmount, com.anyrent.pos.domain.money.ShopMoney.current,
+            )
         } else {
             null
         }
-        val returnRow: @Composable () -> Unit = {
-            if (returnMoney != null) {
-                if (returnMoney.refund > 0) {
-                    MoneyRow(stringResource(R.string.detail_on_return_refund), formatMoneyVnd(returnMoney.refund), total = true)
-                } else {
-                    MoneyRow(stringResource(R.string.detail_on_return_collect), formatMoneyVnd(returnMoney.collect), total = true)
-                }
-            }
-        }
-        val keptAmount = if (status == "CANCELLED") summary.cancelKeptAmount ?: 0.0 else 0.0
-        val cancelRows: @Composable () -> Unit = {
-            MoneyRow(stringResource(R.string.deposit_cancel_kept), formatMoneyVnd(keptAmount))
-            MoneyRow(
-                stringResource(R.string.deposit_cancel_refund),
-                formatMoneyVnd(maxOf(0.0, (detail.deposit?.summary?.collected ?: 0.0) - keptAmount)),
-            )
-        }
         DetailSection(stringResource(R.string.detail_payment_title), "order.detail.paymentSection") {
-            if (isRent) {
-                if (detail.discountAmount > 0) MoneyRow(stringResource(R.string.discount), formatMoneyVnd(-detail.discountAmount))
-                MoneyRow(stringResource(R.string.detail_rent_total), formatMoneyVnd(summary.totalAmount), total = true)
-                // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
-                // #1199: the stages replace the single "Cọc" row
-                if (!pickedUp && summary.depositAmount > 0 && depositCard == null) {
-                    MoneyRow(stringResource(R.string.detail_deposit), formatMoneyVnd(summary.depositAmount))
-                }
-                if (!pickedUp && detail.securityDeposit > 0) {
-                    MoneyRow(stringResource(R.string.detail_collateral_money), formatMoneyVnd(detail.securityDeposit))
-                }
-                if (status == "RETURNED") {
-                    if (detail.lateFee > 0) MoneyRow(stringResource(R.string.detail_late_fee), formatMoneyVnd(detail.lateFee))
-                    if (detail.damageFee > 0) MoneyRow(stringResource(R.string.damage_fee), formatMoneyVnd(detail.damageFee))
-                }
-                when (status) {
-                    "RESERVED" -> {
-                        val money = OrderDetailLogic.handOver(
-                            summary.totalAmount, summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
-                        )
-                        if (money.paidBefore > 0) {
-                            MoneyRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-money.paidBefore))
+            if (block != null) {
+                block.lines.forEach { line ->
+                    if (line == OrderMoneyLine.Stages) {
+                        val plan = block.plan
+                        if (plan != null && depositCard != null) {
+                            Column(Modifier.fillMaxWidth().testTag("deposit.section")) { depositCard(plan) }
                         }
-                        // #1350: with a stage still to collect, the number of the stage card and the share image
-                        val collect = OrderDetailLogic.collectOnDeliveryShown(
-                            summary.totalAmount, summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
-                            detail.deposit?.hasPlan, detail.deposit?.installments, com.anyrent.pos.domain.money.ShopMoney.current,
-                        )
-                        MoneyRow(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(collect), total = true)
-                    }
-                    "CANCELLED" -> if (keptAmount > 0 && depositCard == null) cancelRows()  // #1199
-                    "PICKUPED", "PICKED_UP" -> {
-                        val money = returnMoney!!
-                        if (money.lateFee > 0) MoneyRow(stringResource(R.string.detail_late_fee), "+" + formatMoneyVnd(money.lateFee), valueColor = DS.Status.Late.text)
-                        if (money.damageFee > 0) MoneyRow(stringResource(R.string.damage_fee), "+" + formatMoneyVnd(money.damageFee), valueColor = DS.Status.Late.text)
-                        if (money.collateralMoney > 0) MoneyRow(stringResource(R.string.detail_return_collateral), formatMoneyVnd(-money.collateralMoney))
-                        if (money.settledBefore > 0) MoneyRow(stringResource(R.string.detail_settled_before), formatMoneyVnd(-money.settledBefore))
-                        if (onEditCollateral == null) returnRow()
+                    } else {
+                        MoneyBlockLine(line, pickedUp)
                     }
                 }
             } else {
@@ -905,24 +1034,25 @@ private fun DetailBody(
                 }
             }
         }
-        if (isRent && depositCard != null) {
-            SectionBand()
-            DetailSection(null, "deposit.section") {
-                depositCard()
-                if (keptAmount > 0) cancelRows()
-            }
-        }
+        // #1418: the hand-over photos sit under the papers and collateral. An order without that section gets the photos
+        // alone, under their own small heading; an order without photos looks as before.
+        val papers = detail.collateralDetails?.takeIf { it.isNotBlank() }
         if (isRent && onEditCollateral != null) {
             SectionBand()
             DetailSection(null) {
                 CollateralSection(detail, onEditCollateral)
-                if (returnMoney != null) returnRow()
+                block?.returnLine?.let { MoneyBlockLine(it, pickedUp, afterDivider = true) }
+                pickupPhotos?.invoke(this)
             }
-        } else if (isRent) {
-            detail.collateralDetails?.takeIf { it.isNotBlank() }?.let {
-                SectionBand()
-                DetailSection(null) { InfoRow(stringResource(R.string.collateral), it) }
+        } else if (isRent && papers != null) {
+            SectionBand()
+            DetailSection(null) {
+                InfoRow(stringResource(R.string.collateral), papers)
+                pickupPhotos?.invoke(this)
             }
+        } else if (pickupPhotos != null) {
+            SectionBand()
+            DetailSection(null) { pickupPhotos() }
         }
 
         val note = summary.notes?.takeIf { it.isNotBlank() }
@@ -932,12 +1062,12 @@ private fun DetailBody(
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .background(NoteBoxFill, RoundedCornerShape(10.dp))
+                        .background(NotesFill, RoundedCornerShape(10.dp))
                         .clickable(onClick = onEditNotes)
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    note?.let { Text(it, fontSize = DS.TextSize.Body, color = NoteBoxInk) }
+                    note?.let { Text(it, fontSize = DS.TextSize.Body, color = NotesInk) }
                     if (detail.notesImages.isNotEmpty()) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             detail.notesImages.forEach { url -> Thumb(url, 48.dp) { onPreview(url) } }
@@ -953,9 +1083,11 @@ private fun DetailBody(
 private fun DetailBottomBar(
     detail: OrderDetail,
     primary: DetailPrimary,
+    handOverBlocked: Boolean,
     canCancel: Boolean,
     busy: Boolean,
     onHandOver: () -> Unit,
+    onCollectStage: (OrderInstallment) -> Unit,
     onReturn: () -> Unit,
     onCancel: () -> Unit,
     onPrint: () -> Unit,
@@ -974,16 +1106,37 @@ private fun DetailBottomBar(
             // #930: "In" (no icon) next to Giao đồ / Nhận trả; Sửa đơn and Gia hạn are in the ⋯ sheet
             primary == DetailPrimary.HAND_OVER -> {
                 SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
-                val due = OrderDetailLogic.handOver(
-                    detail.summary.totalAmount, detail.summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
-                ).collectNow
-                PrimaryBarButton(
-                    if (due > 0) stringResource(R.string.detail_hand_over_collect, formatMoneyVnd(due))
-                    else stringResource(R.string.detail_hand_over),
-                    Modifier.weight(2f),
-                    !busy,
-                    onHandOver,
-                )
+                // #1380: the API refuses the hand-over until the stage is collected. #1400: collect it from here
+                val stages = detail.deposit?.installments.orEmpty()
+                val stage = DepositPlanLogic.stageToCollectBeforeHandOver(detail.deposit, detail.summary.status)
+                val number = stage?.let { DepositPlanLogic.stageNumber(stages, it.key) }
+                if (stage != null && number != null) {
+                    PrimaryBarButton(
+                        stringResource(R.string.deposit_card_collect_stage, number),
+                        Modifier.weight(2f).testTag("order.detail.collectStage"),
+                        !busy,
+                    ) { onCollectStage(stage) }
+                } else if (handOverBlocked) {
+                    Text(
+                        stringResource(R.string.detail_stage_unpaid),
+                        Modifier.weight(2f).height(52.dp).wrapContentHeight(Alignment.CenterVertically).testTag("order.detail.stageUnpaid"),
+                        fontSize = DS.TextSize.Body,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DS.Colors.TextMuted,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                } else {
+                    val due = OrderDetailLogic.handOver(
+                        detail.summary.totalAmount, detail.summary.depositAmount, detail.securityDeposit, detail.balancePayments(),
+                    ).collectNow
+                    PrimaryBarButton(
+                        if (due > 0) stringResource(R.string.detail_hand_over_collect, formatMoneyVnd(due))
+                        else stringResource(R.string.detail_hand_over),
+                        Modifier.weight(2f),
+                        !busy,
+                        onHandOver,
+                    )
+                }
             }
             primary == DetailPrimary.TAKE_RETURN -> {
                 SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
@@ -1076,10 +1229,10 @@ private fun InfoRow(label: String, value: String) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(label, fontSize = DS.TextSize.Body, color = DS.Colors.TextMuted)
+        // #1435: iOS `keyValue`, not 17 semibold
         Text(
             value,
-            fontSize = DS.TextSize.Name,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = DS.TextSize.Body,
             color = DS.Colors.Text,
             modifier = Modifier.weight(1f),
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
@@ -1155,6 +1308,90 @@ internal fun MoneyRow(label: String, value: String, total: Boolean = false, valu
     }
 }
 
+/**
+ * #1435 the text of the money block: Inter with its own line height, so the block is as tall as on iOS. [tabular] for amounts:
+ * every digit as wide as another.
+ */
+@Composable
+internal fun moneyTextStyle(tabular: Boolean = false) = LocalTextStyle.current.copy(
+    lineHeight = androidx.compose.ui.unit.TextUnit.Unspecified,
+    fontFeatureSettings = if (tabular) "tnum" else null,
+)
+
+/** #1435 a line of the money block of a rental. On a rented order the fees are red with a "+", Android's own */
+@Composable
+private fun MoneyBlockLine(line: OrderMoneyLine, pickedUp: Boolean, afterDivider: Boolean = false) {
+    val late = DS.Status.Late.text
+    when (line) {
+        is OrderMoneyLine.Subtotal -> MoneyBlockRow(stringResource(R.string.subtotal), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.Discount -> MoneyBlockRow(stringResource(R.string.discount), formatMoneyVnd(-line.amount))
+        is OrderMoneyLine.RentalTotal -> MoneyBlockRow(stringResource(R.string.detail_rent_total), formatMoneyVnd(line.amount), bold = true)
+        is OrderMoneyLine.DepositPaid -> MoneyBlockRow(stringResource(R.string.share_deposit_paid), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.CancelKept -> MoneyBlockRow(stringResource(R.string.deposit_cancel_kept), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.CancelRefund -> MoneyBlockRow(stringResource(R.string.deposit_cancel_refund), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.CollateralMoney -> MoneyBlockRow(stringResource(R.string.detail_collateral_money), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.AlreadyCollected -> MoneyBlockRow(stringResource(R.string.detail_paid_before), formatMoneyVnd(-line.amount))
+        is OrderMoneyLine.LateFee ->
+            if (pickedUp) MoneyBlockRow(stringResource(R.string.detail_late_fee), "+" + formatMoneyVnd(line.amount), valueColor = late)
+            else MoneyBlockRow(stringResource(R.string.detail_late_fee), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.DamageFee ->
+            if (pickedUp) MoneyBlockRow(stringResource(R.string.damage_fee), "+" + formatMoneyVnd(line.amount), valueColor = late)
+            else MoneyBlockRow(stringResource(R.string.damage_fee), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.CollateralBack -> MoneyBlockRow(stringResource(R.string.detail_return_collateral), formatMoneyVnd(-line.amount))
+        is OrderMoneyLine.SettledBefore -> MoneyBlockRow(stringResource(R.string.detail_settled_before), formatMoneyVnd(-line.amount))
+        is OrderMoneyLine.CollectAtHandOver -> MoneyBlockDue(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(line.amount))
+        is OrderMoneyLine.CashAtHandOver -> MoneyBlockDue(
+            stringResource(R.string.share_cash_at_handover),
+            formatMoneyVnd(line.lines.cash),
+            stringResource(R.string.detail_cash_breakdown, formatMoneyVnd(line.lines.rentalLeft), formatMoneyVnd(line.lines.collateral)),
+        )
+        is OrderMoneyLine.GiveBackAtReturn -> MoneyBlockDue(stringResource(R.string.detail_on_return_refund), formatMoneyVnd(line.amount), afterDivider = afterDivider)
+        is OrderMoneyLine.CollectAtReturn ->
+            if (line.isLarge) MoneyBlockDue(stringResource(R.string.detail_on_return_collect), formatMoneyVnd(line.amount), afterDivider = afterDivider)
+            else MoneyBlockRow(stringResource(R.string.detail_on_return_collect), formatMoneyVnd(line.amount))
+        OrderMoneyLine.Stages -> Unit // drawn by the caller, which holds the stages
+    }
+}
+
+/** #1435 label 15 grey, amount 15 black, tabular digits; bold for "Tổng tiền thuê". Its own function: [MoneyRow] belongs to the sheets too */
+@Composable
+private fun MoneyBlockRow(label: String, value: String, bold: Boolean = false, valueColor: Color = DS.Colors.Text) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 30.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            label, style = moneyTextStyle(), fontSize = DS.TextSize.Body,
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            color = if (bold) DS.Colors.Text else DS.Colors.TextMuted,
+            modifier = Modifier.weight(1f),
+        )
+        Text(value, style = moneyTextStyle(tabular = true), fontSize = DS.TextSize.Body, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, color = valueColor)
+    }
+}
+
+/** #1435 the amount due now, the only large figure: label 15 bold, amount 20 bold, and a 14 line under them. The label wraps, never "…" */
+@Composable
+private fun MoneyBlockDue(label: String, value: String, sub: String? = null, afterDivider: Boolean = false) {
+    Column(Modifier.fillMaxWidth().padding(top = if (afterDivider) 0.dp else 4.dp)) {
+        HorizontalDivider(color = Color(0xFFE2E8F0))
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = if (sub == null) 4.dp else 0.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                label, style = moneyTextStyle(), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                modifier = Modifier.weight(1f).alignByBaseline(),
+            )
+            Text(
+                value, style = moneyTextStyle(tabular = true), fontSize = DS.TextSize.Amount, fontWeight = FontWeight.Bold, color = DS.Colors.Text,
+                modifier = Modifier.alignByBaseline(),
+            )
+        }
+        if (sub != null) {
+            Text(sub, style = moneyTextStyle(tabular = true), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted, modifier = Modifier.padding(top = 2.dp, bottom = 4.dp))
+        }
+    }
+}
+
 /** Bottom line of an order detail item: "1 × 400.000đ × 3 ngày" (days only for a daily rent); the total sits at the right of the name */
 @Composable
 private fun orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType: String?, rentalDays: Int, isSale: Boolean): String {
@@ -1170,7 +1407,7 @@ private fun orderItemQuantityLine(quantity: Int, unitPrice: Double, pricingType:
  * (a day block adds its sum, "120.000 (3 ngày) + 2 × 20.000"), and the item note in the yellow box (#891) as the last line
  */
 @Composable
-private fun ItemRow(item: OrderItem, orderType: String) {
+private fun ItemRow(item: OrderItem, orderType: String, divider: Boolean) {
     val isRent = orderType.equals("RENT", ignoreCase = true)
     val block = if (isRent) item.blockDetailLines(LocalContext.current.resources) else null
     Row(
@@ -1204,19 +1441,19 @@ private fun ItemRow(item: OrderItem, orderType: String) {
             CartV2Logic.noteText(item.note)?.let { note -> ItemNoteBox(note) }
         }
     }
-    HorizontalDivider(color = DS.Colors.Divider)
+    if (divider) HorizontalDivider(color = DS.Colors.Divider)
 }
 
-/** Board D2: the item note on a light grey box with a pencil, so it does not read as part of the name */
+/** Board D2: the item note on a light yellow box with a pencil, so it does not read as part of the name */
 @Composable
 private fun ItemNoteBox(note: String) {
-    val ink = NoteBoxInk
+    val ink = ItemNoteInk
     val label = stringResource(R.string.v2_item_note_label)
     Row(
         Modifier
             .padding(top = 2.dp)
             .fillMaxWidth()
-            .background(NoteBoxFill, RoundedCornerShape(10.dp))
+            .background(ItemNoteFill, RoundedCornerShape(10.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp)
             .semantics(mergeDescendants = true) { contentDescription = "$label: $note" },
         horizontalArrangement = Arrangement.spacedBy(8.dp),

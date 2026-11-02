@@ -15,6 +15,10 @@ enum SettingsV2Item: Equatable {
     case categories, customers, users, export
     /// #1259 TÀI KHOẢN: Gói dịch vụ, Ngôn ngữ, Nâng cao (Thông tin ứng dụng + Xoá tài khoản)
     case plan, language, advanced
+    /// #1375 "Widget": the guide to add the "Việc cần làm" widget (only where widgets work, iOS 16.1 and later)
+    case widget
+    /// #1393 "Hướng dẫn bắt đầu": the first-run card in a sheet (owner, shop with no order yet)
+    case firstRunGuide
 }
 
 struct SettingsV2Section: Equatable {
@@ -40,9 +44,10 @@ enum SettingsV2Logic {
     /// - categories (#632): whoever may add one (`CategoryRules.canAdd`: MERCHANT, OUTLET_ADMIN); never OUTLET_STAFF
     /// - notifications (#937): not a row any more; the bell at the top right of Cài đặt (every role, with the unread badge)
     /// - the bank accounts line (#622) sits inside Thu tiền; the owner's currency (#1145) inside Thông tin cửa hàng (#1313)
-    static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false) -> [SettingsV2Section] {
+    static func sections(role: Role?, permissions: [String], hasPlan: Bool, showsCustomers: Bool = false,
+                         supportsWidget: Bool = false, showsGuide: Bool = false) -> [SettingsV2Section] {
         var storeItems: [SettingsV2Item] = [.storeInfo]
-        if canManageBankAccounts(role: role) { storeItems.append(.bankAccounts) }
+        if canViewBankAccounts(role: role) { storeItems.append(.bankAccounts) }
         if ShopDepositLogic.canView(role: role) { storeItems.append(.deposit) }
         storeItems.append(.printing)
         let store = SettingsV2Section(group: .store, items: storeItems)
@@ -62,7 +67,10 @@ enum SettingsV2Logic {
 
         var account: [SettingsV2Item] = []
         if hasPlan { account.append(.plan) }
-        account += [.language, .advanced]
+        account.append(.language)
+        if supportsWidget { account.append(.widget) } // #1375 after Ngôn ngữ, before Nâng cao
+        if showsGuide { account.append(.firstRunGuide) } // #1393 under Widget
+        account.append(.advanced)
 
         return [store, SettingsV2Section(group: .management, items: management),
                 SettingsV2Section(group: .account, items: account)]
@@ -82,9 +90,19 @@ enum SettingsV2Logic {
         count > 0 ? "\(min(count, 99))" : nil
     }
 
-    /// Bank accounts screen (#622): owners and outlet admins; staff only print the account
-    static func canManageBankAccounts(role: Role?) -> Bool {
+    /// Bank accounts screen (#622): owners and outlet admins see it; staff only print the account
+    static func canViewBankAccounts(role: Role?) -> Bool {
         role == .merchant || role == .outletAdmin
+    }
+
+    /// #1319: only the shop owner adds, edits, deletes and sets the default; the API refuses the outlet admin
+    static func canManageBankAccounts(role: Role?) -> Bool {
+        role == .merchant
+    }
+
+    /// #1319: the empty list says "Tap +" only to whoever has the +
+    static func bankAccountsEmptyKey(canManage: Bool) -> String {
+        canManage ? "bankAccounts.empty" : "bankAccounts.emptyReadOnly"
     }
 
     /// "MT" from "Merchant Tran"; one letter for one word; "?" when empty

@@ -13,7 +13,7 @@ import { ImageSearchDialog, useFormatCurrency, useToast } from '@rentalshop/ui';
 import { useApiError, useAuth, useCanExportData, useOutletsData, usePermissions } from '@rentalshop/hooks';
 import { categoriesApi, formatDateKeyInTimeZone, productsApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import type { Product, ProductFilters } from '@rentalshop/types';
-import { ICONS, ShellIcon } from '../components/shell/Icon';
+import { AiScanIcon, ICONS, ShellIcon } from '../components/shell/Icon';
 import { FilterMenu, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
 import { Modal } from '../orders/create/parts';
 import { ProductsTable, SelectionBar } from './list/parts';
@@ -42,7 +42,6 @@ import { sharedFieldsLockedFor, roleMayCreateProducts } from './form/form-model'
 
 /** Board icon paths that the shell icon set does not have. */
 const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
-const CAMERA_ICON = 'M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z';
 
 /** Most ids the export / delete of "all matching" collects (API page cap). */
 const MAX_COLLECT = 3000;
@@ -431,8 +430,8 @@ export default function ProductsPage() {
               className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ar-ink outline-none placeholder:text-ar-faint"
             />
           </label>
-          <button type="button" onClick={() => setImageOpen(true)} className="flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-ar-line bg-ar-surface px-3 text-sm text-ar-ink hover:bg-ar-subtle">
-            <ShellIcon d={CAMERA_ICON} size={16} />
+          <button type="button" onClick={() => setImageOpen(true)} className="flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-ar-ai-scan px-3 text-sm font-semibold text-ar-on-primary hover:opacity-95">
+            <AiScanIcon size={16} />
             {t('imageSearch.open')}
           </button>
           <div role="group" aria-label={t('category.label')} className="flex min-w-0 max-w-full flex-1 gap-2 overflow-x-auto pr-6 [mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)]">

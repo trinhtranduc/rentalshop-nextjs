@@ -43,8 +43,11 @@ object BankAccountRules {
         return age >= 0 && age < CACHE_TTL_MS
     }
 
-    /** Bank accounts screen: owners and outlet admins (the API rejects writes from OUTLET_STAFF), as iOS */
-    fun canManage(role: String?): Boolean = role == "MERCHANT" || role == "OUTLET_ADMIN"
+    /** Bank accounts screen: owners and outlet admins see it; staff only print the account, as iOS */
+    fun canView(role: String?): Boolean = role == "MERCHANT" || role == "OUTLET_ADMIN"
+
+    /** #1319: only the shop owner adds, edits, deletes and sets the default; the API refuses the outlet admin */
+    fun canManage(role: String?): Boolean = role == "MERCHANT"
 
     /** The account printed on bills: the default active one, else the first active one */
     fun pick(accounts: List<OutletBankAccount>): OutletBankAccount? {

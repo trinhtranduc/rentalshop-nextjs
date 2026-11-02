@@ -464,6 +464,8 @@ a:focus-visible {
   --ar-primary-ink: 29 78 216;
   --ar-primary-soft: 239 246 255;
   --ar-on-primary: 255 255 255;
+  /* #1384: AI image search button, same in both themes. iOS `DS.Gradient.aiScan`, Android `DS.Gradients.AiScan` */
+  --ar-ai-scan: linear-gradient(135deg, #1d4ed8, #7c3aed);
   --ar-danger: 185 28 28;
   --ar-danger-soft: 254 226 226;
   --ar-unread: 248 251 255;

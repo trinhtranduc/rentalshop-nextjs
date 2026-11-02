@@ -27,6 +27,10 @@ export interface SubscriptionStatus {
   billingInterval?: string | null;
   billingIntervalCount?: number | null;
   limits?: Record<string, number | null | undefined> | null;
+  /** #782: plan + add-ons, what the API really enforces. Missing on a read failure: use `limits`. */
+  effectiveLimits?: Record<string, number | null | undefined> | null;
+  /** #782: what the add-ons add, per kind. */
+  addonLimits?: Record<string, number | null | undefined> | null;
   usage?: Record<string, number | null | undefined> | null;
 }
 
@@ -130,10 +134,16 @@ export interface UsageRow {
   over: boolean;
   /** 0–100 bar fill; null = no bar. */
   pct: number | null;
+  /** #782: how much of the limit comes from add-ons; 0 = none, or the kind is unlimited. */
+  addon: number;
 }
 
-/** Plan limits vs usage; a key with no limit at all is not shown. */
-export function usageRows(limits: SubscriptionStatus['limits'], usage: SubscriptionStatus['usage']): UsageRow[] {
+/** Limits vs usage; a key with no limit at all is not shown. `addonLimits` only feeds the "includes +N add-on" line. */
+export function usageRows(
+  limits: SubscriptionStatus['limits'],
+  usage: SubscriptionStatus['usage'],
+  addonLimits?: SubscriptionStatus['addonLimits']
+): UsageRow[] {
   const rows: UsageRow[] = [];
   for (const key of USAGE_KEYS) {
     const raw = num(limits?.[key]);
@@ -142,7 +152,8 @@ export function usageRows(limits: SubscriptionStatus['limits'], usage: Subscript
     const used = num(usage?.[key]);
     const over = limit != null && used != null && used > limit;
     const pct = limit != null && used != null ? (limit === 0 ? (used > 0 ? 100 : 0) : Math.min(100, Math.round((used / limit) * 100))) : null;
-    rows.push({ key, used, limit, over, pct });
+    const addon = limit == null ? 0 : Math.max(0, num(addonLimits?.[key]) ?? 0);
+    rows.push({ key, used, limit, over, pct, addon });
   }
   return rows;
 }

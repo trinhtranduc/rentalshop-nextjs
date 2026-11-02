@@ -2,6 +2,7 @@ package com.anyrent.pos.ui.settings
 
 import com.anyrent.pos.domain.settings.SettingsItem
 import com.anyrent.pos.domain.settings.SettingsPlan
+import com.anyrent.pos.ui.settings.v2.ShopBranchCount
 import com.anyrent.pos.ui.settings.v2.SettingsV2Source
 import com.anyrent.pos.ui.settings.v2.SettingsV2ViewModel
 import kotlinx.coroutines.Dispatchers
@@ -87,5 +88,20 @@ class SettingsV2ViewModelTest {
         assertEquals("within 10 minutes: nothing", 1, source.currencies)
         vm.onShown("ADMIN", canEditOverlap = false, items = emptyList()); advanceUntilIdle()
         assertEquals(1, source.currencies)
+    }
+
+    /** #1331: the shop screen read the list inside the 10 minutes, so the row must not keep the older number */
+    @Test
+    fun `branch count from the shop screen replaces the row count without another read`() = runTest(dispatcher) {
+        val source = FakeSource()
+        val vm = SettingsV2ViewModel(source) { Instant.parse("2026-10-08T03:00:00Z") }
+        vm.onShown("MERCHANT", canEditOverlap = true, items = listOf(SettingsItem.STORE_INFO)); advanceUntilIdle()
+        assertEquals(12, vm.data.value.counts[SettingsItem.STORE_INFO])
+        val reads = source.counts
+
+        ShopBranchCount.report(1); advanceUntilIdle()
+
+        assertEquals(1, vm.data.value.counts[SettingsItem.STORE_INFO])
+        assertEquals("no extra request", reads, source.counts)
     }
 }

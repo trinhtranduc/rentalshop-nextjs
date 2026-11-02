@@ -22,7 +22,7 @@ import { narrowOrderOutlets } from '../../../../lib/order-outlet-ids';
  *
  * Column layout matches the merchant order spreadsheet:
  * Mã đơn hàng | NV tạo đơn | Ngày thuê | Ngày lấy | Ngày trả | Cọc | Tiền thế chân |
- * Tổng đơn | Giảm giá | Loại giảm | Số điện thoại KH | Tên khách | Tiền đền bù |
+ * Tổng đơn | Giảm giá | Loại giảm | Số điện thoại KH | Tên khách | Phụ phí |
  * Cọc giấy tờ | Trạng thái đơn | Ghi chú
  *
  * Authorization: roles with 'orders.export' (ADMIN, MERCHANT, OUTLET_ADMIN).
@@ -229,7 +229,7 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
       { header: 'Loại giảm', key: 'discountType', width: 12 },
       { header: 'Số điện thoại KH', key: 'customerPhone', width: 16 },
       { header: 'Tên khách', key: 'customerName', width: 22 },
-      { header: 'Tiền đền bù', key: 'damageFee', width: 12 },
+      { header: 'Phụ phí', key: 'damageFee', width: 12 },
       { header: 'Cọc giấy tờ', key: 'collateral', width: 16 },
       { header: 'Trạng thái đơn', key: 'orderStatus', width: 16 },
       { header: 'Ghi chú', key: 'notes', width: 30 },

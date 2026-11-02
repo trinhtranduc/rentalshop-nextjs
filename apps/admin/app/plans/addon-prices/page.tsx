@@ -18,7 +18,9 @@ import {
   featureLabel,
   formatVnd,
   isFeatureKind,
+  isUnitRow,
   plusLabel,
+  priceUnit,
 } from '../../components/addon-labels';
 
 /** Dialog surface of the admin forms (#802): full screen on a phone. */
@@ -32,6 +34,7 @@ const grouped = (v: string) => (v === '' ? '' : new Intl.NumberFormat('vi-VN').f
 
 /**
  * Plans → Add-on prices (#850). Each row = one limit kind + pack size + VND price per pack per month.
+ * #782: a new limit row defaults to pack size 1: the price of one unit, and admin types the amount for each shop.
  * ADMIN adds and edits; OPS only reads. A new price applies to new purchases and later renewals.
  */
 export default function AddonPricesPage() {
@@ -122,6 +125,7 @@ export default function AddonPricesPage() {
   const open = creating || !!editing;
   const draftFeature = isFeatureKind(draft.limitKind);
   const unit = draftFeature ? '' : KIND_UNIT[draft.limitKind as LimitKind];
+  const draftUnit = isUnitRow({ limitKind: draft.limitKind, packSize: Number(draft.packSize) });
   const priceChanged = editing && draft.monthlyPrice !== '' && Number(draft.monthlyPrice) !== editing.monthlyPrice;
 
   return (
@@ -131,7 +135,7 @@ export default function AddonPricesPage() {
         <div className="head">
           <div>
             <h1>Add-on prices</h1>
-            <p>Giá mỗi gói mỗi tháng (VND). Shop mua giữa kỳ thì trả theo số ngày còn lại. Tính năng (Chấm công, Khách thân thiết) bật/tắt, không số gói.</p>
+            <p>Giá 1 đơn vị mỗi tháng (VND), admin gõ số lượng khi thêm cho shop. Shop mua giữa kỳ thì trả theo số ngày còn lại. Tính năng (Chấm công, Khách thân thiết) bật/tắt, không có số lượng.</p>
           </div>
           {canEdit && (
             <button className="btn pri" type="button" onClick={openCreate}>
@@ -175,16 +179,9 @@ export default function AddonPricesPage() {
                   <td>{isFeatureKind(row.limitKind) ? `${featureLabel(row.featureKey)} (bật/tắt)` : plusLabel(row.limitKind, row.packSize)}</td>
                   <td className="num">
                     <span className="price">{formatVnd(row.monthlyPrice)}</span>{' '}
-                    <span className="unit">
-                      /{' '}
-                      {isFeatureKind(row.limitKind)
-                        ? 'tháng'
-                        : row.packSize === 1
-                          ? KIND_UNIT[row.limitKind as LimitKind]
-                          : `gói ${row.packSize} ${KIND_UNIT[row.limitKind as LimitKind]}`}
-                    </span>
+                    <span className="unit">/ {priceUnit(row)}</span>
                   </td>
-                  <td>{appliesTo(row.limitKind)}</td>
+                  <td>{appliesTo(row.limitKind, row.featureKey)}</td>
                   <td>{row.shopsUsing} shop</td>
                   <td>
                     <span className={`pill ${row.isActive ? 'on' : 'off'}`}>{row.isActive ? 'Đang bán' : 'Tạm tắt'}</span>
@@ -203,9 +200,9 @@ export default function AddonPricesPage() {
         </div>
 
         <div className="note">
-          <b>Mỗi dòng cộng một loại giới hạn, với số lượng mỗi gói và giá riêng.</b> Cùng một loại có thể có nhiều gói, ví dụ
-          1 user 30.000 ₫ và gói 2 user 40.000 ₫. Shop muốn thêm cả user lẫn chi nhánh thì mua hai dòng. &quot;Tạm tắt&quot;
-          nghĩa là ngừng bán mới, shop đang dùng vẫn giữ đến hết kỳ.
+          <b>Mỗi dòng cộng một loại giới hạn.</b> Để &quot;Mỗi gói cộng thêm&quot; là 1 thì giá là giá 1 đơn vị và admin gõ số
+          lượng khi thêm cho shop, ví dụ 500 ₫ / sản phẩm × 100. Dòng cũ có gói lớn hơn vẫn chạy như trước. Shop muốn thêm cả user
+          lẫn chi nhánh thì mua hai dòng. &quot;Tạm tắt&quot; nghĩa là ngừng bán mới, shop đang dùng vẫn giữ đến hết kỳ.
         </div>
         <ul className="rules">
           <li>Đổi giá chỉ áp dụng từ lần mua hoặc gia hạn sau. Kỳ shop đã trả giữ nguyên giá cũ.</li>
@@ -285,11 +282,12 @@ export default function AddonPricesPage() {
                   />
                   <span>{unit}</span>
                 </div>
+                {draftUnit && <span className="muted">Để 1: đây là giá cho 1 {unit}, admin gõ số lượng khi thêm cho shop.</span>}
                 {editing && editing.shopsUsing > 0 && <span className="muted">{editing.shopsUsing} shop đang dùng, áp dụng từ kỳ gia hạn sau</span>}
               </div>
               )}
               <div className="field">
-                <label htmlFor="ap-price">{draftFeature ? 'Giá mỗi tháng' : 'Giá mỗi gói mỗi tháng'}</label>
+                <label htmlFor="ap-price">{draftFeature ? 'Giá mỗi tháng' : draftUnit ? `Giá cho 1 ${unit} mỗi tháng` : 'Giá mỗi gói mỗi tháng'}</label>
                 <div className="input">
                   <input
                     id="ap-price"
@@ -297,7 +295,7 @@ export default function AddonPricesPage() {
                     value={grouped(draft.monthlyPrice)}
                     onChange={(e) => setDraft({ ...draft, monthlyPrice: digits(e.target.value) })}
                   />
-                  <span>{draftFeature ? '₫ / tháng' : '₫ / gói / tháng'}</span>
+                  <span>{draftFeature ? '₫ / tháng' : draftUnit ? `₫ / ${unit} / tháng` : '₫ / gói / tháng'}</span>
                 </div>
               </div>
               <label className="muted" style={{ display: 'flex', gap: 8, alignItems: 'center', minHeight: 44 }}>

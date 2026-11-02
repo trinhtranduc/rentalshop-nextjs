@@ -10,6 +10,8 @@ final class PushNotificationManager: NSObject {
 
     private let deviceIdKey = "anyrent.deviceId"
     private var pendingOrderId: Int?
+    /// The system question is on screen
+    private var isAsking = false
 
     private override init() {
         super.init()
@@ -27,19 +29,47 @@ final class PushNotificationManager: NSObject {
     /// Call after FirebaseApp.configure() and when user is logged in.
     /// Do NOT fetch FCM token here — wait until APNs device token is set
     /// (`AppDelegate.didRegisterForRemoteNotifications` → `didReceiveAPNsToken`).
+    /// #1413: the question moved to Home (`homeDidAppear`). Whoever already allowed registers here, as before.
     func start() {
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
         DraftOrderReminder.shared.registerCategory()
 
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-            if let error = error {
-                print("⚠️ Push permission error: \(error.localizedDescription)")
-            }
-            print("📲 Push permission granted: \(granted)")
-            guard granted else { return }
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let status = NotificationPromptRule.Status(settings.authorizationStatus)
+            print("📲 Push permission status: \(status)")
+            guard NotificationPromptRule.registersAtStart(status) else { return }
             DispatchQueue.main.async {
                 UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
+    }
+
+    /// #1413: Home reached the screen. The one place that asks: never over onboarding, and never again after an answer.
+    func homeDidAppear(_ home: UIViewController) {
+        guard !isAsking else { return }
+        let tabBar = home.tabBarController
+        let stack = tabBar?.selectedViewController as? UINavigationController
+        let homeInFront = tabBar?.selectedIndex == 0 && stack?.viewControllers.count == 1 && tabBar?.presentedViewController == nil
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                guard NotificationPromptRule.asksOnHome(status: NotificationPromptRule.Status(settings.authorizationStatus),
+                                                         signedIn: User.account() != nil,
+                                                         onboardingDone: Utils.hasCompletedOnboarding(),
+                                                         homeInFront: homeInFront,
+                                                         appBlocked: AppConfigGate.isBlocked),
+                      !self.isAsking else { return }
+                self.isAsking = true
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+                    if let error = error {
+                        print("⚠️ Push permission error: \(error.localizedDescription)")
+                    }
+                    print("📲 Push permission granted: \(granted)")
+                    DispatchQueue.main.async {
+                        self.isAsking = false
+                        if granted { UIApplication.shared.registerForRemoteNotifications() }
+                    }
+                }
             }
         }
     }
@@ -153,7 +183,7 @@ final class PushNotificationManager: NSObject {
             // Ensure main UI is showing
             if !(appDelegate.window?.rootViewController is TabbarViewController) {
                 self.pendingOrderId = orderId
-                appDelegate.loadMainUserView(forceMain: true)
+                appDelegate.loadMainUserView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     self.consumePendingOrderIfNeeded()
                 }
@@ -169,7 +199,7 @@ final class PushNotificationManager: NSObject {
         DispatchQueue.main.async {
             guard User.account() != nil, let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
             if !(appDelegate.window?.rootViewController is TabbarViewController) {
-                appDelegate.loadMainUserView(forceMain: true)
+                appDelegate.loadMainUserView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.pushMyShifts() }
                 return
             }
@@ -182,7 +212,7 @@ final class PushNotificationManager: NSObject {
         DispatchQueue.main.async {
             guard User.account() != nil, let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
             if !(appDelegate.window?.rootViewController is TabbarViewController) {
-                appDelegate.loadMainUserView(forceMain: true)
+                appDelegate.loadMainUserView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.pushBookingRequest(id: id) }
                 return
             }

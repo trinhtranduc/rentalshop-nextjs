@@ -6,6 +6,7 @@ import com.anyrent.pos.data.model.OrderDetail
 import com.anyrent.pos.data.model.OrderSummary
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.data.model.StaffUser
+import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.ExtensionUpdate
 import com.anyrent.pos.domain.orders.NotesStep
@@ -55,7 +56,7 @@ object ApiParity {
             .toRequestBody(jsonMedia)
         val json = ApiClient.get().publicPost("/api/auth/register", body)
         if (json.has("success") && !json.optBoolean("success")) {
-            error(json.optString("message").ifBlank { "Registration failed" })
+            error(ApiErrorMessages.resolve(AnyRentApp.instance, json.optString("code"), json.optString("message").ifBlank { "Registration failed" }))
         }
     }
 
@@ -387,6 +388,36 @@ object ApiParity {
         val data = JSONObject().put("lateFee", lateFee).put("damageFee", damageFee)
         ApiClient.get().authedPut("/api/orders/$id", data.toString().toRequestBody(jsonMedia))
         Unit
+    }
+
+    /**
+     * #1418 condition photos: multipart PUT with `data={}`; the API appends them to the list. Nothing else of the order
+     * changes, so a failure here never touches a hand-over.
+     */
+    fun uploadOrderPhotos(id: Int, field: com.anyrent.pos.domain.orders.OrderPhotoField, photos: List<ByteArray>): Result<Unit> = runCatching {
+        photos.forEach(::requireJpeg)
+        ApiClient.get().authedMultipartPut("/api/orders/$id", orderPhotosBody(field, photos))
+        Unit
+    }
+
+    /**
+     * One shot: OkHttp otherwise sends a request again by itself when a reused connection drops before the reply. This PUT
+     * appends and has no idempotency key, so that would store the photos twice; the uploader reads the order and decides.
+     */
+    internal fun orderPhotosBody(field: com.anyrent.pos.domain.orders.OrderPhotoField, photos: List<ByteArray>): okhttp3.RequestBody {
+        val multipart = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("data", "{}")
+        photos.forEachIndexed { index, bytes ->
+            multipart.addFormDataPart(field.apiName, "${field.apiName}_$index.jpg", bytes.toRequestBody(imageMedia))
+        }
+        val body = multipart.build()
+        return object : okhttp3.RequestBody() {
+            override fun contentType() = body.contentType()
+            override fun contentLength() = body.contentLength()
+            override fun writeTo(sink: okio.BufferedSink) = body.writeTo(sink)
+            override fun isOneShot() = true
+        }
     }
 
     // iOS OrderService: add photos → multipart PUT (field "data" + "notesImages"). Never /api/upload/image.

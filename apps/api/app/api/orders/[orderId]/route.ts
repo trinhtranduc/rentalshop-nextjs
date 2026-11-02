@@ -490,9 +490,8 @@ export const PUT = async (
                 : raw.includes('Invalid file type') || raw.includes('File size')
                   ? 'IMAGE_VALIDATION_FAILED'
                   : 'NOTES_IMAGES_UPLOAD_FAILED';
-            const base = ResponseBuilder.error(code);
             return NextResponse.json(
-              { ...base, error: raw || base.error },
+              ResponseBuilder.error(code),
               { status: code === 'NOTES_IMAGES_UPLOAD_FAILED' || code === 'IMAGE_UPLOAD_FAILED' ? 500 : 400 }
             );
           }

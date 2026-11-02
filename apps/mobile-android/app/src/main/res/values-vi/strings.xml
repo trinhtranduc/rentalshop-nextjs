@@ -387,7 +387,7 @@
     <string name="discount_percent">Giảm theo %</string>
     <string name="select_rental_period">Chọn thời gian thuê</string>
     <string name="deposit_collateral_details">Đặt cọc &amp; Tài sản thế chân</string>
-    <string name="damage_fee">Phí hư hỏng</string>
+    <string name="damage_fee">Phụ phí</string>
     <string name="edit_collateral">Sửa thông tin thế chân</string>
     <string name="order_notes">Ghi chú đơn hàng</string>
     <string name="add_notes_hint">Nhập nội dung ghi chú…</string>
@@ -797,12 +797,13 @@
     <string name="detail_edit_notes">Sửa ghi chú</string>
     <string name="detail_hand_over">Giao đồ</string>
     <string name="detail_hand_over_collect">Giao đồ · thu %1$s</string>
+    <string name="detail_stage_unpaid">Còn đợt chưa thu</string>
     <string name="detail_take_return">Nhận trả</string>
     <string name="detail_paid_before">Đã thu trước</string>
     <string name="detail_collect_now">Thu bây giờ</string>
     <string name="detail_handed_over">Đã lấy</string>
     <string name="detail_handed_over_collect">Đã lấy · thu %1$s</string>
-    <string name="detail_fees">Phí trễ + hư hỏng</string>
+    <string name="detail_fees">Phí trễ + phụ phí</string>
     <string name="detail_collateral_held">Thế chân đang giữ</string>
     <string name="detail_settled_before">Đã thanh toán trước</string>
     <string name="detail_give_back">Trả lại khách</string>
@@ -917,13 +918,6 @@
     <string name="customers_v2_recent_orders">Đơn gần đây</string>
     <string name="customers_v2_no_orders">Chưa có đơn</string>
     <string name="customers_v2_create_order">Tạo đơn cho khách này</string>
-    <string name="onboarding_v2_step">Bước %1$d/%2$d</string>
-    <string name="onboarding_v2_product_title">Thêm đồ cho thuê</string>
-    <string name="onboarding_v2_product_body">Chụp ảnh, đặt giá và số lượng. Nhân viên tìm hoặc quét mã là thấy ngay khi tạo đơn.</string>
-    <string name="onboarding_v2_customer_title">Lưu khách hàng</string>
-    <string name="onboarding_v2_customer_body">Lưu khách một lần, dùng lại cho mọi đơn thuê và đơn bán.</string>
-    <string name="onboarding_v2_order_title">Tạo đơn</string>
-    <string name="onboarding_v2_order_body">Chọn khách, thêm đồ, chọn ngày thuê và xong đơn trong vài chạm.</string>
     <string name="onboarding_v2_skip">Bỏ qua</string>
     <string name="onboarding_v2_next">Tiếp</string>
     <string name="onboarding_v2_start">Bắt đầu</string>
@@ -1079,7 +1073,6 @@
     <string name="calendar_v2_fee">phí %1$s</string>
     <string name="v2_product_deleted">Đã xóa sản phẩm</string>
     <string name="extend_rental">Gia hạn</string>
-    <string name="extend_rental_title">Gia hạn thuê</string>
     <string name="extend_rental_current">Đang hẹn trả %1$s</string>
     <plurals name="extend_rental_extra_days">
         <item quantity="other">Thêm %1$d ngày</item>
@@ -1176,7 +1169,7 @@
     <string name="overview_v2_info_cancelled">Hoàn tiền đơn huỷ</string>
     <string name="overview_v2_info_collateral">Không tính vào thực thu vì sẽ trả lại khách.</string>
     <string name="overview_v2_info_note">Tổng giá trị đơn là tiền các đơn tạo trong kỳ, kể cả phần chưa trả; Còn phải thu là phần chưa trả đó.</string>
-    <string name="overview_v2_info_fees">Phí hư hỏng, trễ hạn</string>
+    <string name="overview_v2_info_fees">Phụ phí, trễ hạn</string>
     <string name="overview_v2_new_order_value">Tổng giá trị đơn mới</string>
     <string name="overview_v2_vs_previous_period">so với kỳ trước</string>
     <string name="overview_v2_outstanding_sub">Của các đơn mới</string>
@@ -1355,7 +1348,7 @@
         <item>discountType|Kiểu giảm giá</item>
         <item>discountValue|Mức giảm</item>
         <item>discountAmount|Giảm giá</item>
-        <item>damageFee|Phí hư hỏng</item>
+        <item>damageFee|Phụ phí</item>
         <item>lateFee|Phí trả trễ</item>
         <item>collateralType|Loại thế chân</item>
         <item>collateralDetails|Thế chân</item>
@@ -1401,6 +1394,7 @@
     <!-- #622 Tài khoản ngân hàng + VietQR trên bill -->
     <string name="bank_accounts">Tài khoản ngân hàng</string>
     <string name="bank_accounts_empty">Chưa có tài khoản ngân hàng. Bấm + để thêm.</string>
+    <string name="bank_accounts_empty_read_only">Chưa có tài khoản ngân hàng. Chỉ chủ shop thêm được.</string>
     <string name="bank_account_add">Thêm tài khoản ngân hàng</string>
     <string name="bank_account_edit">Sửa tài khoản ngân hàng</string>
     <string name="bank_account_bank">Tên ngân hàng *</string>
@@ -1504,6 +1498,9 @@
     <string name="share_made_with">Tạo bằng AnyRent</string>
     <string name="share_draft_action">Chia sẻ đơn nháp</string>
     <string name="share_collect">Thu khi giao</string>
+    <string name="share_collect_rental_left">Tiền thuê còn lại, thu khi giao</string>
+    <string name="share_collateral_collect">Thế chân, thu khi giao</string>
+    <string name="share_cash_at_handover">Khách đưa lúc nhận đồ</string>
     <string name="share_deposit_label">Cọc</string>
     <string name="share_deposit_none">Chưa cọc</string>
     <string name="share_stage_paid">Đã thu</string>
@@ -1538,13 +1535,13 @@
     <string name="overview_v2_event_deposit">Thu tiền cọc</string>
     <string name="overview_v2_event_pickup">Thu tiền khi lấy hàng</string>
     <string name="overview_v2_event_same_day">Thuê và trả trong cùng ngày</string>
-    <string name="overview_v2_event_damage_fee">Thu phí hư hỏng</string>
+    <string name="overview_v2_event_damage_fee">Thu phụ phí</string>
     <string name="overview_v2_event_deposit_refund">Hoàn tiền cọc</string>
     <string name="overview_v2_event_nothing">Không có phát sinh</string>
     <string name="overview_v2_event_rent_cancelled">Đơn hủy (hoàn lại)</string>
     <string name="overview_v2_event_return_collected">Thu khi trả hàng</string>
     <string name="overview_v2_event_future_pickup">Doanh thu dự kiến khi lấy hàng</string>
-    <string name="overview_v2_event_future_damage_fee">Dự kiến thu phí hư hỏng khi trả hàng</string>
+    <string name="overview_v2_event_future_damage_fee">Dự kiến thu phụ phí khi trả hàng</string>
     <string name="overview_v2_event_future_refund">Dự kiến hoàn tiền cọc khi trả hàng</string>
     <string name="overview_v2_event_future_nothing">Dự kiến không có phát sinh khi trả hàng</string>
     <string name="overview_v2_related_owes">Sẽ thu khi khách lấy đồ</string>
@@ -1591,7 +1588,7 @@
     <string name="overview_dash_vs_previous_period">so với kỳ trước</string>
     <string name="overview_dash_money_deposits">Cọc khi tạo đơn</string>
     <string name="overview_dash_money_pickup_and_sale">Thu khi giao, bán</string>
-    <string name="overview_dash_money_fees">Phí hư hỏng, trễ</string>
+    <string name="overview_dash_money_fees">Phụ phí, trễ</string>
     <string name="overview_dash_money_refunds">Hoàn đơn huỷ</string>
     <string name="overview_dash_money_collateral_net">Thế chân nhận − trả</string>
     <string name="overview_dash_money_at_pickup">Sẽ thu khi khách lấy đồ</string>
@@ -2220,15 +2217,12 @@
     <string name="deposit_card_paid_detail">%1$s%% đơn · %2$s</string>
     <string name="deposit_card_due_detail">%1$s%% đơn · hạn %2$s</string>
     <string name="deposit_card_rest_detail">Thu khi giao · %s</string>
-    <string name="deposit_collect_title">Thu giai đoạn %d</string>
     <string name="deposit_collect_confirm">Thu %s</string>
-    <string name="deposit_unpaid_title">Còn giai đoạn cọc chưa thu</string>
     <string name="deposit_unpaid_message">Thu xong các giai đoạn này mới giao đồ được.</string>
     <string name="deposit_unpaid_row">Giai đoạn %1$d · %2$s</string>
     <string name="deposit_void_title">Huỷ khoản thu giai đoạn %d?</string>
     <string name="deposit_void_message">Khoản thu %s sẽ bị huỷ và giai đoạn trở lại chưa thu. Việc này được ghi lại.</string>
     <string name="deposit_void_confirm">Huỷ khoản thu</string>
-    <string name="deposit_cancel_title">Huỷ đơn #%s?</string>
     <string name="deposit_cancel_policy">Chính sách tiệm: %s</string>
     <string name="deposit_cancel_paid">Khách đã trả</string>
     <string name="deposit_cancel_kept">Tiệm giữ lại</string>
@@ -2327,7 +2321,6 @@
     <string name="detail_collateral_card">Giấy tờ &amp; thế chân</string>
     <string name="detail_collateral_edit">Sửa</string>
     <string name="detail_collateral_none">Chưa nhập</string>
-    <string name="detail_collateral_edit_title">Sửa giấy tờ &amp; thế chân</string>
     <string name="detail_collateral_edit_warning">Đổi thế chân sẽ đổi số trả lại khi nhận trả</string>
     <string name="detail_collateral_papers_row">Giấy tờ</string>
     <string name="detail_collateral_money_row">Thế chân</string>
@@ -2376,4 +2369,139 @@
     <string name="printer_share_note_hint">Ghi chú của đơn hiện ở cuối ảnh gửi khách, cả ghi chú nội bộ. Áp dụng cho cả shop.</string>
     <string name="printer_share_note_readonly">Chỉ chủ shop bật/tắt.</string>
     <string name="printer_share_note_failed">Không lưu được cài đặt. Vui lòng thử lại.</string>
+    <!-- #1381: "Việc cần làm" home-screen widget (the same words as iOS widget.*) -->
+    <string name="widget_name">Việc cần làm</string>
+    <string name="widget_description">Giao đồ, nhận trả và đơn trễ của hôm nay.</string>
+    <string name="widget_late">Trễ</string>
+    <string name="widget_pickup">Giao</string>
+    <string name="widget_return">Trả</string>
+    <string name="widget_more">+%1$d việc khác</string>
+    <string name="widget_updated">cập nhật %1$s</string>
+    <string name="widget_done">xong %1$d/%2$d</string>
+    <string name="widget_done_caption">đã xong hôm nay</string>
+    <string name="widget_all_done">Xong hết %1$d/%2$d</string>
+    <string name="widget_today_at">Hôm nay · %1$s</string>
+    <string name="widget_empty">Hôm nay chưa có việc</string>
+    <string name="widget_tomorrow">Mai có %1$d giao, %2$d trả</string>
+    <string name="widget_logged_out">Mở AnyRent để đăng nhập</string>
+    <string name="widget_logged_out_hint">Việc cần làm sẽ hiện ở đây</string>
+    <string name="widget_no_access">Tài khoản này không có Việc cần làm</string>
+    <string name="widget_stale">Mở app để cập nhật</string>
+    <string name="widget_stale_detail">Danh sách lần cuối: %1$s</string>
+    <string name="widget_yesterday">hôm qua</string>
+    <string name="widget_hint_title">Thêm widget để thấy việc hôm nay ngay trên màn hình chính</string>
+    <string name="widget_hint_body">%1$d giao, %2$d trả, %3$d trễ sẽ hiện không cần mở app.</string>
+    <string name="widget_hint_how">Cách thêm</string>
+    <string name="widget_dismiss">Không hỏi lại</string>
+    <string name="widget_guide_title">Thêm vào widget</string>
+    <string name="widget_guide_ok">Đã hiểu</string>
+    <string name="widget_settings_row">Widget</string>
+    <string name="widget_guide_subtitle_pin">Việc hôm nay hiện ngay trên màn hình chính. Máy sẽ hỏi bạn có thêm widget không.</string>
+    <string name="widget_guide_subtitle_steps">Máy này không cho app tự thêm widget. Làm 3 bước, mất khoảng 10 giây.</string>
+    <string name="widget_guide_step1">Giữ lâu một chỗ trống trên màn hình chính.</string>
+    <string name="widget_guide_step2">Chọn Widget, tìm AnyRent.</string>
+    <string name="widget_guide_step3">Giữ widget Việc cần làm rồi kéo ra màn hình chính.</string>
+    <string name="widget_guide_add">Thêm widget</string>
+    <string name="widget_guide_not_asked">Máy không hỏi hoặc chưa thấy widget? Làm theo các bước sau.</string>
+    <string name="widget_refresh">Làm mới</string>
+    <string name="widget_preview_late">1 Trễ</string>
+    <string name="widget_preview_pickup">3 Giao</string>
+    <string name="widget_preview_return">2 Trả</string>
+    <!-- #1404 three onboarding pages. Fixed sample data, not the shop's currency. -->
+    <string name="onboarding_v2_p1_title">Quên tên đồ?\nChụp là ra.</string>
+    <string name="onboarding_v2_p1_body">Đồ đã có ảnh trong kho là AI tìm được.</string>
+    <string name="onboarding_v2_p2_title">Trùng lịch,\napp báo trước.</string>
+    <string name="onboarding_v2_p2_body">Món nào hết ngày nào, nhìn là biết.</string>
+    <string name="onboarding_v2_p3_title">Giao ai, trả ai?\nMở Lịch là thấy.</string>
+    <string name="onboarding_v2_p3_body">Còn thu bao nhiêu cũng hiện ngay trên đơn.</string>
+    <string name="onboarding_v2_sample_lang">vi</string>
+    <string name="onboarding_v2_scan_count">3 sản phẩm giống</string>
+    <string name="onboarding_v2_scan_from">Từ ảnh bạn vừa chụp</string>
+    <string name="onboarding_v2_scan_dress1">Áo cưới ren dài tay</string>
+    <string name="onboarding_v2_scan_dress1_meta">Còn 2 · 1.200.000/lần</string>
+    <string name="onboarding_v2_scan_dress2">Áo cưới đuôi dài ren</string>
+    <string name="onboarding_v2_scan_dress2_meta">Còn 2 · 1.500.000/lần</string>
+    <string name="onboarding_v2_scan_dress3">Áo cưới đuôi cá</string>
+    <string name="onboarding_v2_scan_dress3_meta">Còn 1 · 1.200.000/lần</string>
+    <string name="onboarding_v2_cal_title">Đơn mới: Áo cưới + Vest</string>
+    <string name="onboarding_v2_cal_subtitle">Lịch trống của Vest · 10/2026</string>
+    <string name="onboarding_v2_cal_mon">T2</string>
+    <string name="onboarding_v2_cal_tue">T3</string>
+    <string name="onboarding_v2_cal_wed">T4</string>
+    <string name="onboarding_v2_cal_thu">T5</string>
+    <string name="onboarding_v2_cal_fri">T6</string>
+    <string name="onboarding_v2_cal_sat">T7</string>
+    <string name="onboarding_v2_cal_sun">CN</string>
+    <string name="onboarding_v2_cal_out">Hết</string>
+    <string name="onboarding_v2_cal_chip_booked">Vest · #496958</string>
+    <string name="onboarding_v2_cal_chip_new">Vest · đơn mới</string>
+    <string name="onboarding_v2_warn_body">Vest xanh hoàng gia thiếu 1 bộ ngày 08/10 (đã thuê ở đơn #496958).</string>
+    <string name="onboarding_v2_today_head">HÔM NAY · T4 07/10</string>
+    <string name="onboarding_v2_today_count">giao 2 · trả 1</string>
+    <string name="onboarding_v2_today_pickup">Giao</string>
+    <string name="onboarding_v2_today_return">Trả</string>
+    <string name="onboarding_v2_today_name1">Lê Gia Bảo</string>
+    <string name="onboarding_v2_today_item1">Áo cưới · trả 09/10</string>
+    <string name="onboarding_v2_today_amount1">1.200.000</string>
+    <string name="onboarding_v2_today_name2">Tạ Thu Hà</string>
+    <string name="onboarding_v2_today_item2">Vest · trả 08/10</string>
+    <string name="onboarding_v2_today_amount2">420.000</string>
+    <string name="onboarding_v2_today_name3">Khánh Linh</string>
+    <string name="onboarding_v2_today_item3">Máy ảnh · trả hôm nay</string>
+    <string name="onboarding_v2_today_amount3">350.000</string>
+    <string name="onboarding_v2_today_collect">còn thu %1$s</string>
+    <string name="onboarding_v2_today_refund">trả cọc 1.000.000</string>
+    <!-- #1395 titles of the order-detail sheets -->
+    <string name="order_sheet_title_actions">Thao tác với đơn</string>
+    <string name="order_sheet_title_hand_over">Giao đồ cho khách</string>
+    <string name="order_sheet_title_return">Nhận trả đồ</string>
+    <string name="order_sheet_title_extend">Gia hạn đơn</string>
+    <string name="order_sheet_title_collateral">Giấy tờ &amp; thế chân</string>
+    <string name="order_sheet_title_collect">Thu tiền cọc</string>
+    <string name="order_sheet_title_unpaid">Đợt cọc chưa thu</string>
+    <string name="order_sheet_title_cancel">Huỷ đơn</string>
+    <string name="first_run_guide_title">Bắt đầu: 3 việc</string>
+    <string name="first_run_guide_step_product">Thêm sản phẩm đầu tiên</string>
+    <string name="first_run_guide_step_customer">Thêm khách hàng</string>
+    <string name="first_run_guide_step_order">Tạo đơn đầu tiên</string>
+    <string name="first_run_guide_close">Đóng</string>
+    <string name="first_run_guide_settings_row">Hướng dẫn bắt đầu</string>
+    <string name="first_run_guide_finish_title">Xong đơn đầu tiên</string>
+    <string name="first_run_guide_finish_body">Đơn đã có ở Đơn hàng và Lịch.</string>
+    <string name="first_run_guide_go_product">Thêm sản phẩm →</string>
+    <string name="first_run_guide_go_customer">Thêm khách hàng →</string>
+    <string name="first_run_guide_go_order">Tạo đơn →</string>
+    <string name="first_run_guide_later">Để sau</string>
+    <string name="first_run_guide_collapsed_title">Bắt đầu</string>
+    <string name="first_run_guide_hide">Ẩn hướng dẫn</string>
+    <string name="first_run_guide_hide_confirm">Ẩn hướng dẫn? Mở lại trong Cài đặt.</string>
+    <string name="first_run_guide_hide_action">Ẩn</string>
+    <string name="first_run_guide_bubble_product_photo">Chọn ảnh sản phẩm. Ảnh giúp tìm bằng chụp ảnh.</string>
+    <string name="first_run_guide_bubble_product_name">Nhập tên sản phẩm.</string>
+    <string name="first_run_guide_bubble_product_price">Nhập giá thuê, theo lần hoặc theo ngày.</string>
+    <string name="first_run_guide_bubble_product_save">Đủ rồi. Bấm Lưu sản phẩm.</string>
+    <string name="first_run_guide_bubble_cart_customer">Đơn cần có khách. Bấm để chọn hoặc thêm mới.</string>
+    <string name="first_run_guide_bubble_new_customer">Bấm Khách mới, nhập SĐT và tên</string>
+    <string name="first_run_guide_bubble_new_customer_save">Bấm Lưu và chọn.</string>
+    <string name="first_run_guide_bubble_cart_dates">Chọn ngày lấy và ngày trả.</string>
+    <string name="first_run_guide_bubble_cart_create">Đủ rồi. Bấm Tạo đơn.</string>
+    <string name="first_run_guide_next">Tiếp</string>
+    <string name="first_run_guide_exit">Thoát hướng dẫn</string>
+    <string name="first_run_guide_exit_discard">Bỏ nội dung đang nhập?</string>
+    <string name="first_run_guide_exit_discard_action">Bỏ</string>
+    <!-- #1418 condition photos -->
+    <string name="order_photos_title">Ảnh tình trạng đồ</string>
+    <string name="order_photos_optional">Không bắt buộc</string>
+    <string name="order_photos_take">Chụp ảnh đồ</string>
+    <string name="order_photos_take_more">Chụp thêm</string>
+    <string name="order_photos_library">Thư viện</string>
+    <string name="order_photos_full">Đủ %1$d ảnh. Bỏ một ảnh để thêm ảnh khác.</string>
+    <string name="order_photos_remove">Bỏ ảnh</string>
+    <string name="order_photos_at_hand_over">Ảnh khi giao</string>
+    <string name="order_photos_add">Thêm</string>
+    <string name="order_photos_not_uploaded">Chưa tải được %1$d ảnh</string>
+    <string name="order_photos_camera_unavailable">Chưa dùng được máy ảnh. Mở Cài đặt để cấp quyền, hoặc chọn từ Thư viện.</string>
+    <string name="order_photos_open_settings">Mở Cài đặt</string>
+    <!-- #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail -->
+    <string name="detail_cash_breakdown">tiền thuê %1$s + thế chân %2$s</string>
 </resources>

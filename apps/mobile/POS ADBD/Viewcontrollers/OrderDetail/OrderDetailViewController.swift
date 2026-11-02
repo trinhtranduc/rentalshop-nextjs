@@ -29,6 +29,9 @@ final class OrderDetailViewController: BaseViewControler {
     private var savingReady = false
     /// "6 lần thay đổi · gần nhất 15:10 hôm nay" under "Lịch sử thay đổi" in the ⋯ sheet (#519); nil until loaded
     private var historySummary: String?
+    /// #1418 photos chosen on a hand-over whose status call failed: the sheet opens with them again
+    private var handOverPhotoDraft: [Data] = []
+    private let addPhotoPicker = OrderPhotoPicker()
 
     init(orderId: Int) {
         self.orderId = orderId
@@ -60,7 +63,20 @@ final class OrderDetailViewController: BaseViewControler {
         buildLayout()
         // #1145: the owner changed the shop currency: money is redrawn
         NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(photosChanged(_:)), name: .orderPhotosDidChange, object: nil)
+        addPhotoPicker.presenter = self
+        addPhotoPicker.onPicked = { [weak self] data in self?.addPickupPhoto(data) }
         load()
+    }
+
+    /// #1418 an upload moved on: redraw; once it is through, read the order for the new photos
+    @objc private func photosChanged(_ note: Notification) {
+        guard isViewLoaded, note.object as? Int == orderId else { return }
+        if note.userInfo?["finished"] as? Bool == true {
+            load()
+        } else {
+            render()
+        }
     }
 
     @objc private func currencyChanged() {
@@ -141,6 +157,8 @@ final class OrderDetailViewController: BaseViewControler {
                     self.stateView.isHidden = true
                     self.render()
                     self.loadHistorySummary()
+                    // #1418 photos left from a failed upload or a relaunch go out when the order opens
+                    OrderPhotoUploader.shared.resume(orderId: self.orderId, field: .pickup)
                     if self.checkUnpaidAfterLoad {
                         self.checkUnpaidAfterLoad = false
                         _ = self.presentUnpaidIfNeeded(then: nil)
@@ -198,8 +216,8 @@ final class OrderDetailViewController: BaseViewControler {
         customNavBar?.title = String(format: OrderDetailLogic.titleKey(orderType: detail.orderType).localized(),
                                      detail.orderNumber)
         contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        // #1285 (mockup 1b): status, customer, items, payment, deposit stages, papers & collateral, notes; an 8pt band
-        // between sections, each flat and edge to edge
+        // #1285 (mockup 1b), #1435: status, customer, items, payment with the deposit stages, papers & collateral, notes; an 8pt
+        // band between sections, each flat and edge to edge
         var sections: [UIView] = [statusSection(detail), customerSection(detail, order: order), itemsSection(detail)]
         sections.append(contentsOf: moneySections(detail))
         if let notes = notesSection(detail) { sections.append(notes) }
@@ -213,11 +231,13 @@ final class OrderDetailViewController: BaseViewControler {
         renderActions(detail)
     }
 
-    /// Same names and values as Android `SectionDividerColor` / `NoteBoxFill` / `NoteBoxInk` (OrderDetailV2Screen.kt).
-    /// The app is locked to Light (Info.plist UIUserInterfaceStyle), so there is no dark variant (#1A2436 / #1E293B / #CBD5E1 in the mockup).
-    private static let sectionDividerColor = UIColor(hexString: "EEF0F4")
-    private static let noteFillColor = UIColor(hexString: "F3F4F6")
-    private static let noteInkColor = UIColor(hexString: "475569")
+    /// Same names and values as Android (OrderDetailV2Screen.kt). The app is locked to Light (Info.plist
+    /// UIUserInterfaceStyle), so there is no dark variant. #1430: the owner took the warm note colours back; the band stays.
+    static let sectionDividerColor = UIColor(hexString: "EEF0F4")
+    static let itemNoteFillColor = UIColor(hexString: "FFF7E6")
+    static let itemNoteInkColor = UIColor(hexString: "7A4A00")
+    static let notesFillColor = UIColor(hexString: "FFFBEB")
+    static let notesInkColor = UIColor(hexString: "78350F")
 
     /// The 8pt band between two sections (mockup: #EEF0F4, owner level 2)
     private func sectionBand() -> UIView {
@@ -261,6 +281,14 @@ final class OrderDetailViewController: BaseViewControler {
         if OrderDetailLogic.showsLateBanner && late > 0 {
             extras.addArrangedSubview(lateBanner(detail, days: late))
         }
+        // #1418 the photos are often below the first screen; a failed upload is told here
+        if let failed = OrderPhotoLogic.failedCount(state: OrderPhotoUploader.shared.state(orderId: orderId, field: .pickup),
+                                                    waiting: OrderPhotoUploader.shared.pending(orderId: orderId, field: .pickup)?.files.count ?? 0) {
+            extras.addArrangedSubview(OrderPhotoSection.warningLine(count: failed, id: "order.detail.pickupPhotos") { [weak self] in
+                guard let self else { return }
+                OrderPhotoUploader.shared.resume(orderId: self.orderId, field: .pickup)
+            })
+        }
         if detail.orderType == .rent {
             // #643: the steps carry the dates; the row stays only where there are no steps (cancelled)
             if let from = detail.pickupPlanAt, let to = detail.returnPlanAt,
@@ -275,7 +303,11 @@ final class OrderDetailViewController: BaseViewControler {
                 extras.addArrangedSubview(readyToDeliverRow(detail))
             }
         }
-        if !extras.arrangedSubviews.isEmpty { column.addArrangedSubview(padded(extras, top: DS.Spacing.sm, bottom: 0)) }
+        if !extras.arrangedSubviews.isEmpty {
+            // The warning is a filled box: it does not touch the band under it (the switch row has its own air)
+            let warned = extras.arrangedSubviews.last?.accessibilityIdentifier == "order.detail.pickupPhotos.retry"
+            column.addArrangedSubview(padded(extras, top: DS.Spacing.sm, bottom: warned ? DS.Spacing.sm : 0))
+        }
         return column
     }
 
@@ -449,7 +481,18 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     /// "GIẤY TỜ & THẾ CHÂN" (#1279) on a picked-up rental; without `orders.update` only the papers line, when there is one
+    /// #1418: the hand-over photos sit under the papers and collateral. An order without that section gets the photos
+    /// alone, under their own small heading; an order without photos looks as before.
     private func collateralBlock(_ detail: OrderDetail, returnRow: UIView?) -> UIView? {
+        let papers = papersBlock(detail, returnRow: returnRow)
+        guard let photos = pickupPhotosSection(detail) else { return papers }
+        guard let papers else { return photos }
+        let column = UIStackView(arrangedSubviews: [papers, photos])
+        column.axis = .vertical
+        return column
+    }
+
+    private func papersBlock(_ detail: OrderDetail, returnRow: UIView?) -> UIView? {
         guard detail.orderType == .rent else { return nil }
         if OrderDetailLogic.canEditCollateral(orderType: detail.orderType, status: detail.status,
                                               canUpdateOrders: PermissionManager.shared.hasPermission("orders.update")) {
@@ -598,11 +641,17 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
-    /// Mockup 1b: "MÓN · N" (N counts the lines), the rows of style B, and "Tạm tính" under them
+    /// Mockup 1b: "MÓN · N" (N counts the lines), the rows of style B, and on a sale "Tạm tính" under them. #1435: a rental has
+    /// "Tạm tính" at the top of THANH TOÁN, so its last row has no line under it
     private func itemsSection(_ detail: OrderDetail) -> UIView {
-        var rows = detail.orderItems.map { itemRow($0, orderType: detail.orderType) }
-        let subtotal = OrderDetailLogic.saleSubtotal(itemTotals: detail.orderItems.map(\.totalPrice))
-        rows.append(keyValue("Subtotal".localized(), MoneyFormatter.format(subtotal), divider: false))
+        let isSale = detail.orderType == .sale
+        var rows = detail.orderItems.enumerated().map { index, item in
+            itemRow(item, orderType: detail.orderType, divider: isSale || index < detail.orderItems.count - 1)
+        }
+        if isSale {
+            let subtotal = OrderDetailLogic.saleSubtotal(itemTotals: detail.orderItems.map(\.totalPrice))
+            rows.append(keyValue("Subtotal".localized(), MoneyFormatter.format(subtotal), divider: false))
+        }
         let section = titledSection(String(format: "ITEMS · %d".localized(), detail.orderItems.count), rows)
         section.accessibilityIdentifier = "order.detail.itemsSection"
         return section
@@ -610,7 +659,7 @@ final class OrderDetailViewController: BaseViewControler {
 
     /// Mockup 1b, style B: a 36pt photo, the name with the line total at the right, "SL × giá" under the name (a day
     /// block adds its sum, "120.000 (3 ngày) + 2 × 20.000"), and the item note in the yellow box (#891) as the last line
-    private func itemRow(_ item: OrderItem, orderType: OrderType) -> UIView {
+    private func itemRow(_ item: OrderItem, orderType: OrderType, divider: Bool) -> UIView {
         let image = UIImageView()
         image.contentMode = .scaleAspectFill
         image.clipsToBounds = true
@@ -661,12 +710,12 @@ final class OrderDetailViewController: BaseViewControler {
         row.spacing = DS.Spacing.md
         row.isLayoutMarginsRelativeArrangement = true
         row.layoutMargins = UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
-        return withDivider(row)
+        return divider ? withDivider(row) : row
     }
 
     /// Board D2: the item note on a light yellow box with a note icon, so it does not read as part of the name
     private func noteBox(_ note: String) -> UIView {
-        let ink = Self.noteInkColor
+        let ink = Self.itemNoteInkColor
         let icon = UIImageView(image: DS.symbol("note.text", 14, weight: .semibold))
         icon.tintColor = ink
         icon.setContentHuggingPriority(.required, for: .horizontal)
@@ -682,15 +731,15 @@ final class OrderDetailViewController: BaseViewControler {
         line.alignment = .firstBaseline
         line.spacing = 8
         let box = UIView()
-        box.backgroundColor = Self.noteFillColor
+        box.backgroundColor = Self.itemNoteFillColor
         box.layer.cornerRadius = 10
         box.addSubview(line)
         line.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)) }
         return box
     }
 
-    /// Mockup 1b: "THANH TOÁN" (discount, total and the rows of the order's state), then the deposit stages and the
-    /// papers & collateral section when the order has them
+    /// Mockup 1b, #1435 (approved mockup, tab "odmoney"): "THANH TOÁN" is one block with the subtotal, discount, total, the deposit
+    /// stages and the amount due. Then the papers & collateral section when the order has it. A sale keeps its own rows.
     private func moneySections(_ detail: OrderDetail) -> [UIView] {
         let stack = UIStackView()
         stack.axis = .vertical
@@ -713,83 +762,86 @@ final class OrderDetailViewController: BaseViewControler {
             return [titledSection(paymentTitle, [stack], id: "order.detail.paymentSection")]
         }
 
-        if discount > 0 {
-            stack.addArrangedSubview(keyValue("Discount".localized(), MoneyFormatter.format(-discount), divider: false))
-        }
-        stack.addArrangedSubview(totalRow("order.detail.rentTotal".localized(), MoneyFormatter.format(detail.totalAmount)))
-        // #1199: the stages replace the single "Cọc" row
-        let hasPlan = DepositPlanLogic.hasPlan(detail)
-        // the collateral section carries the money (and "Khi nhận trả") when it shows
         let collateralShown = OrderDetailLogic.canEditCollateral(orderType: detail.orderType, status: detail.status,
                                                                  canUpdateOrders: PermissionManager.shared.hasPermission("orders.update"))
-        var returnRow: UIView?
-        var underPlan: [UIView] = []
-        if detail.depositAmount > 0 && !hasPlan {
-            stack.addArrangedSubview(keyValue("order.detail.deposit".localized(), MoneyFormatter.format(detail.depositAmount), divider: false))
-        }
-        if detail.securityDeposit > 0 && !collateralShown {
-            stack.addArrangedSubview(keyValue("Collateral money".localized(), "+" + MoneyFormatter.format(detail.securityDeposit), divider: false))
-        }
-        switch detail.status {
-        case .reserved:
-            let money = OrderDetailLogic.handOver(total: detail.totalAmount, deposit: detail.depositAmount,
-                                                  securityDeposit: detail.securityDeposit, payments: payments)
-            if money.paidBefore > 0 {
-                stack.addArrangedSubview(keyValue("Already collected".localized(), MoneyFormatter.format(-money.paidBefore), divider: false))
-            }
-            // #1350: with a stage still to collect, the number of the stage card and the share image
-            let collect = OrderDetailLogic.collectOnDeliveryShown(
-                total: detail.totalAmount, deposit: detail.depositAmount, securityDeposit: detail.securityDeposit,
-                payments: payments, hasPlan: hasPlan, stages: detail.installments, currency: ShopCurrencyStore.current)
-            stack.addArrangedSubview(totalRow("Collect at hand-over".localized(), MoneyFormatter.format(collect)))
-        case .pickuped:
-            let money = OrderDetailLogic.returnMoney(lateFee: detail.lateFee, damageFee: detail.damageFee,
-                                                     securityDeposit: detail.securityDeposit, payments: payments)
-            if detail.lateFee > 0 {
-                stack.addArrangedSubview(keyValue("Late fee".localized(), "+" + MoneyFormatter.format(detail.lateFee), divider: false))
-            }
-            if detail.damageFee > 0 {
-                stack.addArrangedSubview(keyValue("Damage fee".localized(), "+" + MoneyFormatter.format(detail.damageFee), divider: false))
-            }
-            var row: UIView?
-            if money.refund > 0 {
-                row = totalRow("At return: give back".localized(), MoneyFormatter.format(money.refund))
-            } else if money.collect > 0 {
-                row = totalRow("At return: collect".localized(), MoneyFormatter.format(money.collect))
-            }
-            if let row { if collateralShown { returnRow = row } else { stack.addArrangedSubview(row) } }
-        default:
-            // the shop kept / gave back lines read under the deposit stages (H4 of the mockup)
-            var cancelRows: [UIView] = []
-            if let kept = detail.cancelKeptAmount, kept > 0, detail.status == .cancelled {
-                let collected = detail.installmentSummary?.collected ?? 0
-                cancelRows.append(keyValue("deposit.cancel.kept".localized(), MoneyFormatter.format(kept), divider: false))
-                cancelRows.append(keyValue("deposit.cancel.refund".localized(), MoneyFormatter.format(max(0, collected - kept)), divider: false))
-            }
-            if hasPlan { underPlan = cancelRows } else { cancelRows.forEach { stack.addArrangedSubview($0) } }
-            if detail.lateFee > 0 {
-                stack.addArrangedSubview(keyValue("Late fee".localized(), MoneyFormatter.format(detail.lateFee), divider: false))
-            }
-            if detail.damageFee > 0 {
-                stack.addArrangedSubview(keyValue("Damage fee".localized(), MoneyFormatter.format(detail.damageFee), divider: false))
-            }
-        }
+        let block = OrderDetailLogic.moneyBlock(
+            status: detail.status,
+            subtotal: OrderDetailLogic.saleSubtotal(itemTotals: detail.orderItems.map(\.totalPrice)),
+            discount: discount, total: detail.totalAmount, deposit: detail.depositAmount, securityDeposit: detail.securityDeposit,
+            lateFee: detail.lateFee, damageFee: detail.damageFee, payments: payments, hasPlan: DepositPlanLogic.hasPlan(detail),
+            stages: detail.installments, summary: detail.installmentSummary, collateralShown: collateralShown,
+            cancelKept: detail.cancelKeptAmount, currency: ShopCurrencyStore.current)
+        block.lines.forEach { stack.addArrangedSubview(moneyLine($0, detail: detail, plan: block.plan)) }
         var sections = [titledSection(paymentTitle, [stack], id: "order.detail.paymentSection")]
-        if hasPlan {
-            // #1265 / #1285: the stages are a section of their own, right under the payment
-            let card = InstallmentCardView.make(
-                detail: detail, role: User.account()?.role,
-                onEdit: { [weak self] in self?.openPlanEditor() },
-                onCollect: { [weak self] stage in self?.presentCollect(stage) },
-                onStage: { [weak self] stage in self?.confirmVoid(stage) })
-            let column = UIStackView(arrangedSubviews: [card] + underPlan)
-            column.axis = .vertical
-            let section = padded(column, top: 0, bottom: 0)
-            section.accessibilityIdentifier = "deposit.section"
-            sections.append(section)
-        }
+        // #1285: "Khi nhận trả" closes the papers & collateral section
+        let returnRow = block.returnLine.map { moneyLine($0, detail: detail, plan: block.plan, afterDivider: true) }
         if let collateral = collateralBlock(detail, returnRow: returnRow) { sections.append(collateral) }
         return sections
+    }
+
+    /// #1435 one line of the money block of a rental
+    private func moneyLine(_ line: OrderMoneyLine, detail: OrderDetail, plan: OrderMoneyPlan?, afterDivider: Bool = false) -> UIView {
+        func money(_ amount: Double) -> String { MoneyFormatter.format(amount) }
+        // on a rented order the fees still add to what is settled at return
+        func fee(_ amount: Double) -> String { detail.status == .pickuped ? "+" + money(amount) : money(amount) }
+        switch line {
+        case .subtotal(let amount): return OrderMoneyViews.row("Subtotal".localized(), money(amount))
+        case .discount(let amount): return OrderMoneyViews.row("Discount".localized(), money(-amount))
+        case .rentalTotal(let amount): return OrderMoneyViews.row("order.detail.rentTotal".localized(), money(amount), bold: true)
+        case .depositPaid(let amount): return OrderMoneyViews.row("share.deposit.paid".localized(), money(amount))
+        case .stages: return stagesBlock(detail, plan: plan)
+        case .cancelKept(let amount): return OrderMoneyViews.row("deposit.cancel.kept".localized(), money(amount))
+        case .cancelRefund(let amount): return OrderMoneyViews.row("deposit.cancel.refund".localized(), money(amount))
+        case .collateralMoney(let amount): return OrderMoneyViews.row("Collateral money".localized(), "+" + money(amount))
+        case .alreadyCollected(let amount): return OrderMoneyViews.row("Already collected".localized(), money(-amount))
+        case .lateFee(let amount): return OrderMoneyViews.row("Late fee".localized(), fee(amount))
+        case .damageFee(let amount): return OrderMoneyViews.row("Damage fee".localized(), fee(amount))
+        case .collectAtHandOver(let amount): return OrderMoneyViews.due("Collect at hand-over".localized(), money(amount))
+        case .cashAtHandOver(let lines):
+            return OrderMoneyViews.due("share.cashAtHandover".localized(), money(lines.cash),
+                                       sub: String(format: "order.detail.cashBreakdown".localized(), money(lines.rentalLeft), money(lines.collateral)))
+        case .giveBackAtReturn(let amount):
+            return OrderMoneyViews.due("At return: give back".localized(), money(amount), afterDivider: afterDivider)
+        case .collectAtReturn(let amount):
+            return OrderMoneyViews.due("At return: collect".localized(), money(amount), afterDivider: afterDivider)
+        }
+    }
+
+    private func stagesBlock(_ detail: OrderDetail, plan: OrderMoneyPlan?) -> UIView {
+        guard let plan else { return UIView() }
+        let block = InstallmentCardView.make(
+            detail: detail, role: User.account()?.role, plan: plan, width: view.bounds.width - 2 * DS.Spacing.lg,
+            onEdit: { [weak self] in self?.openPlanEditor() },
+            onStage: { [weak self] stage in self?.confirmVoid(stage) })
+        let section = UIStackView(arrangedSubviews: [block])
+        section.axis = .vertical
+        section.accessibilityIdentifier = "deposit.section"
+        return section
+    }
+
+    /// #1418 "Ảnh khi giao · N": nothing at all while the order has no photos
+    private func pickupPhotosSection(_ detail: OrderDetail) -> UIView? {
+        let uploader = OrderPhotoUploader.shared
+        let urls = absoluteURLs(detail.pickupNotesImages)
+        let entry = uploader.pending(orderId: orderId, field: .pickup)
+        let waiting = entry?.files.compactMap { try? Data(contentsOf: $0) } ?? []
+        guard !urls.isEmpty || !waiting.isEmpty else { return nil }
+        let canAdd = OrderPhotoLogic.canAddLater(status: detail.status, serverCount: urls.count, pendingCount: waiting.count,
+                                                 canUpdateOrders: PermissionManager.shared.hasPermission("orders.update"))
+        let content = OrderPhotoSection.content(
+            title: "order.photos.atHandOver".localized(), urls: urls, waiting: waiting, id: "order.detail.pickupPhotos",
+            onOpen: { [weak self] image in self?.showFullScreen(image) },
+            onAdd: canAdd ? { [weak self] source in self?.addPhotoPicker.chooseSource(from: source) } : nil)
+        return padded(content, top: 0, bottom: DS.Spacing.md)
+    }
+
+    /// "Thêm" on the detail: the photo is queued at once, like those of the sheet
+    private func addPickupPhoto(_ data: Data?) {
+        guard let data, let detail else { return }
+        let baseline = OrderPhotoField.pickup.serverCount(in: detail)
+        guard OrderPhotoLogic.canAdd(count: baseline) else { return }
+        OrderPhotoUploader.shared.add(orderId: orderId, field: .pickup, baseline: baseline, photos: [data])
+        render()
     }
 
     private func notesSection(_ detail: OrderDetail) -> UIView? {
@@ -815,13 +867,13 @@ final class OrderDetailViewController: BaseViewControler {
             box.spacing = DS.Spacing.sm
             box.isLayoutMarginsRelativeArrangement = true
             box.layoutMargins = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-            box.backgroundColor = Self.noteFillColor
+            box.backgroundColor = Self.notesFillColor
             box.layer.cornerRadius = 10
             if !text.isEmpty {
                 let label = UILabel()
                 label.numberOfLines = 0
                 label.font = Utils.regularFont(size: DS.TextSize.body)
-                label.textColor = Self.noteInkColor
+                label.textColor = Self.notesInkColor
                 label.text = text
                 box.addArrangedSubview(label)
             }
@@ -858,10 +910,27 @@ final class OrderDetailViewController: BaseViewControler {
         let actions = actions(for: detail)
         bottomStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        var buttons: [UIButton] = []
+        var buttons: [UIView] = []
         switch actions.primary {
         case .handOver:
             buttons.append(shortPrintButton())
+            if DepositPlanLogic.blocksHandOver(hasPlan: detail.hasDepositPlan, status: detail.status, stages: detail.installments) {
+                // #1380: the API refuses the hand-over until the stage is collected. #1400: collect it from here
+                let stages = detail.installments ?? []
+                if let stage = DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: detail.hasDepositPlan, status: detail.status, stages: stages),
+                   let number = DepositPlanLogic.stageNumber(stages, key: stage.key) {
+                    let collect = makeButton(title: String(format: "deposit.card.collectStage".localized(), number), style: .primary)
+                    collect.accessibilityIdentifier = "order.detail.collectStage"
+                    collect.addAction(UIAction { [weak self] _ in self?.presentCollect(stage) }, for: .touchUpInside)
+                    buttons.append(collect)
+                    break
+                }
+                let line = V2.label("order.detail.stageUnpaid".localized(), size: DS.TextSize.body, weight: .semibold, color: DS.Color.textMuted, lines: 2)
+                line.textAlignment = .center
+                line.accessibilityIdentifier = "order.detail.stageUnpaid"
+                buttons.append(line)
+                break
+            }
             let due = OrderDetailLogic.handOver(total: detail.totalAmount, deposit: detail.depositAmount,
                                                 securityDeposit: detail.securityDeposit, payments: payments).due
             let title = due > 0
@@ -1014,15 +1083,25 @@ final class OrderDetailViewController: BaseViewControler {
 
     private func presentSheet(_ mode: OrderHandOverSheetViewController.Mode) {
         guard let detail else { return }
-        let sheet = OrderHandOverSheetViewController(mode: mode, detail: detail, lateDays: lateDays(for: detail))
+        // #1419 at return the hand-over photos are shown to compare, the same as the row on this screen
+        let compareURLs = mode == .takeReturn ? absoluteURLs(detail.pickupNotesImages) : []
+        let compareWaiting = mode == .takeReturn
+            ? OrderPhotoUploader.shared.pending(orderId: orderId, field: .pickup)?.files.compactMap { try? Data(contentsOf: $0) } ?? []
+            : []
+        let sheet = OrderHandOverSheetViewController(mode: mode, detail: detail, lateDays: lateDays(for: detail),
+                                                     photos: mode == .handOver ? handOverPhotoDraft : [],
+                                                     comparePhotoURLs: compareURLs, comparePhotosWaiting: compareWaiting)
         sheet.onConfirm = { [weak self] lateFee, damageFee in
             self?.confirm(mode, lateFee: lateFee, damageFee: damageFee)
         }
-        sheet.onHandOver = { [weak self] papers, securityDeposit in
-            self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit)
+        sheet.onHandOver = { [weak self] papers, securityDeposit, photos in
+            self?.confirmHandOver(papers: papers, securityDeposit: securityDeposit, photos: photos)
         }
         if let presentation = sheet.sheetPresentationController {
-            presentation.detents = [.medium()]
+            // #1418: the hand-over sheet opens tall, so the photo buttons and the money show together (layout A2).
+            // #1419: the return sheet too when it has photos; without them it stays as it was
+            let tall = mode == .handOver || OrderPhotoLogic.returnSheetShowsPhotos(serverCount: compareURLs.count, waiting: compareWaiting.count)
+            presentation.detents = tall ? [.large()] : [.medium()]
             presentation.prefersGrabberVisible = true
             presentation.preferredCornerRadius = 24
         }
@@ -1052,8 +1131,9 @@ final class OrderDetailViewController: BaseViewControler {
     }
 
     /// RESERVED → PICKUPED with the optional papers / security deposit of the sheet (#427)
-    private func confirmHandOver(papers: String, securityDeposit: Double) {
+    private func confirmHandOver(papers: String, securityDeposit: Double, photos: [Data]) {
         guard let viewModel = orderViewModel else { return }
+        let baseline = detail.map(OrderPhotoField.pickup.serverCount(in:)) ?? 0
         showProgressText(text: "Updating...".localized())
         viewModel.handOver(papers: papers, securityDeposit: securityDeposit) { [weak self] result in
             DispatchQueue.main.async {
@@ -1061,8 +1141,14 @@ final class OrderDetailViewController: BaseViewControler {
                 self.hideProgress()
                 switch result {
                 case .success:
+                    // #1418 the status went through; the photos follow on their own and cannot undo it
+                    self.handOverPhotoDraft = []
+                    if !photos.isEmpty {
+                        OrderPhotoUploader.shared.add(orderId: self.orderId, field: .pickup, baseline: baseline, photos: photos)
+                    }
                     self.didChangeOrder(viewModel.currentOrder)
                 case .failure(let error):
+                    self.handOverPhotoDraft = photos
                     self.handleStatusError(error as NSError)
                 }
             }
@@ -1297,8 +1383,12 @@ final class OrderDetailViewController: BaseViewControler {
     // MARK: - Helpers
 
     private func noteImageURLs(_ detail: OrderDetail) -> [String] {
+        absoluteURLs(detail.notesImages)
+    }
+
+    private func absoluteURLs(_ paths: [String]?) -> [String] {
         let base = APIEndpoint.currentBaseURL
-        return (detail.notesImages ?? []).map { path in
+        return (paths ?? []).map { path in
             path.hasPrefix("http") ? path : (base.hasSuffix("/") ? base + path : base + "/" + path)
         }
     }
@@ -1453,8 +1543,9 @@ final class OrderDetailViewController: BaseViewControler {
 
 // MARK: - ⋯ action sheet (#519, board CT-thao-tac)
 
-/// A close button (no title: the order number is on the screen's top bar, #1297), the everyday rows with a small
-/// description under each name, then the red group apart. A row closes the sheet and then runs its action on the detail screen.
+/// The title and a close button (#1395; the order number stays on the screen's top bar, #1297), the everyday rows with a small
+/// description under each name and a small icon left of it (#1438), then the red group apart. A row closes the sheet and then runs
+/// its action on the detail screen.
 final class OrderActionSheet: V2FittingSheet {
     struct Row {
         let action: OrderSheetAction
@@ -1487,11 +1578,25 @@ final class OrderActionSheet: V2FittingSheet {
         }
     }
 
+    /// #1438: the SF Symbol left of a row's title. Android `orderActionIcon`
+    static func symbol(of action: OrderSheetAction) -> String {
+        switch action {
+        case .print: return "printer"
+        case .share: return "square.and.arrow.up"
+        case .notes: return "note.text"
+        case .edit: return "pencil"
+        case .extend: return "calendar.badge.plus"
+        case .history: return "clock.arrow.circlepath"
+        case .cancel: return "xmark.circle"
+        case .delete: return "trash"
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         stack.spacing = 0
 
-        let spacer = UIView()
+        let sheetTitle = V2.sheetTitle("order.sheetTitle.actions".localized())
         let close = UIButton(type: .system)
         close.setImage(DS.symbol("xmark", 16, weight: .bold), for: .normal)
         close.tintColor = UIColor(hexString: "475569")
@@ -1501,8 +1606,9 @@ final class OrderActionSheet: V2FittingSheet {
         close.accessibilityIdentifier = "order.sheet.close"
         close.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         close.snp.makeConstraints { make in make.size.equalTo(36) }
-        let header = UIStackView(arrangedSubviews: [spacer, close])
-        header.alignment = .center
+        close.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let header = UIStackView(arrangedSubviews: [sheetTitle, close])
+        header.alignment = .top
         header.spacing = DS.Spacing.md
         stack.addArrangedSubview(header)
         stack.setCustomSpacing(6, after: header)
@@ -1524,17 +1630,32 @@ final class OrderActionSheet: V2FittingSheet {
         let danger = row.action.isDestructive
         let control = UIControl()
 
+        let muted = UIColor(hexString: "475569")
         let title = V2.label(row.title, size: 16, weight: .medium, color: danger ? V2.danger : DS.Color.text, lines: 2)
-        let subtitle = V2.label(row.subtitle, size: DS.TextSize.secondary, color: UIColor(hexString: "475569"), lines: 2)
+        let subtitle = V2.label(row.subtitle, size: DS.TextSize.secondary, color: muted, lines: 2)
         subtitle.isHidden = (row.subtitle ?? "").isEmpty
-        // #930: rows without icons, text only
         let line = UIStackView(arrangedSubviews: [title, subtitle])
         line.axis = .vertical
         line.isUserInteractionEnabled = false
         control.addSubview(line)
+        // #1438: decorative, centred on the title's first line; the control is the one accessibility element.
+        // One neutral colour, except the red of the Cancel and Delete rows' text
+        // `pencil` is one thin diagonal that draws a quarter smaller than the others at the same point size.
+        // Zero insets and the 2 pt below: measured, the glyphs then sit within 0.5 pt of the title's cap-height middle.
+        let glyph = row.action == .edit ? DS.Icon.md * 1.25 : DS.Icon.md
+        let icon = UIImageView(image: DS.symbol(Self.symbol(of: row.action), glyph, weight: .light)?.withAlignmentRectInsets(.zero))
+        icon.tintColor = danger ? V2.danger : muted
+        icon.contentMode = .center
+        control.addSubview(icon)
+        icon.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.size.equalTo(DS.Icon.md)
+            make.centerY.equalTo(title.snp.firstBaseline).offset(-title.font.capHeight / 2 + 2)
+        }
         line.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(8)
-            make.leading.trailing.equalToSuperview().inset(4)
+            make.leading.equalTo(icon.snp.trailing).offset(12)
+            make.trailing.equalToSuperview()
         }
         let divider = V2.divider()
         divider.backgroundColor = UIColor(hexString: "F1F5F9")

@@ -3,7 +3,7 @@
 //  POS ADBD
 //
 //  #386 — board Dang-nhap (flag `newAuth`), style 4A in #466 (board DX-Dang-nhap). The sign-in itself is the one of `LoginViewController`:
-//  `AuthenticationService.login`, `User.save`, purchases sync, push start, then `loadMainUserView`.
+//  `AuthenticationService.login`, `User.save`, purchases sync, push start, then `route(after: .loggedIn)`.
 //
 
 import UIKit
@@ -113,7 +113,7 @@ final class LoginV2ViewController: BaseViewControler {
                 User.save(user: user)
                 PurchasesManager.syncFromCurrentUser()
                 PushNotificationManager.shared.start()
-                appDelegate.loadMainUserView()
+                appDelegate.route(after: .loggedIn)
             }
         }
     }

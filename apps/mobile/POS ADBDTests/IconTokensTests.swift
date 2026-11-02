@@ -17,6 +17,34 @@ final class IconTokensTests: XCTestCase {
         XCTAssertEqual(DS.symbolPointSize(for: 16), 12.5)
     }
 
+    private func button(_ id: String, in view: UIView) -> UIButton? {
+        if view.accessibilityIdentifier == id { return view as? UIButton }
+        return view.subviews.lazy.compactMap { self.button(id, in: $0) }.first
+    }
+
+    /// #1438: the hand-over block shows the note editor's one tile beside the photos until 3/3, and no other photo button
+    func testHandOverBlockShowsTheNoteTileUntilFull() throws {
+        let photo = try XCTUnwrap(UIImage(systemName: "photo")?.pngData())
+        for count in 0...2 {
+            let block = OrderPhotoBlockView(photos: Array(repeating: photo, count: count), presenter: UIViewController())
+            let tile = try XCTUnwrap(button("orderPhotos.add", in: block), "\(count) photos")
+            XCTAssertEqual(tile.configuration?.image, DS.symbol("camera", DS.Icon.lg))
+            XCTAssertEqual(tile.configuration?.title, "notes.v2.add".localized())
+            XCTAssertEqual(tile.accessibilityLabel, AddPhotoTile.make().accessibilityLabel)
+            XCTAssertNil(button("orderPhotos.camera", in: block))
+            XCTAssertNil(button("orderPhotos.library", in: block))
+        }
+        let full = OrderPhotoBlockView(photos: Array(repeating: photo, count: 3), presenter: UIViewController())
+        XCTAssertNil(button("orderPhotos.add", in: full), "3/3 hides the tile")
+        XCTAssertNotNil(button("orderPhotos.remove.2", in: full), "× stays")
+    }
+
+    /// #1438: the "Thêm" tile of the order detail draws the same camera
+    func testDetailAddTileDrawsTheNoteCamera() {
+        let row = OrderPhotoSection.content(title: "", urls: [], waiting: [], id: "t", onOpen: { _ in }, onAdd: { _ in })
+        XCTAssertEqual(button("t.add", in: row)?.configuration?.image, DS.addPhotoIcon)
+    }
+
     func testWideGlyphsGetTheirOpticalCorrection() {
         XCTAssertEqual(DS.symbolPointSize(for: DS.Icon.md, name: "camera"), 12.5)
         XCTAssertEqual(DS.symbolPointSize(for: DS.Icon.md, name: "camera.fill"), 12.5)

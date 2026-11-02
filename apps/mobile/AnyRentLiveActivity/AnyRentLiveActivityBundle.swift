@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct AnyRentLiveActivityBundle: WidgetBundle {
     var body: some Widget {
+        TodayWorkWidget()
         DraftOrderLiveActivityWidget()
     }
 }

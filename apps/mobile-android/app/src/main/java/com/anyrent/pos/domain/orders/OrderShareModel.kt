@@ -53,6 +53,9 @@ sealed interface ShareMoney {
     data class Total(val highlight: ShareHighlight) : ShareMoney
     data class Stages(val title: ShareText, val stages: List<ShareStage>) : ShareMoney
     data class Collect(val label: ShareText, val value: String) : ShareMoney
+
+    /** #1368: "Khách đưa lúc nhận đồ", the last box when the collateral is money */
+    data class Cash(val label: ShareText, val value: String) : ShareMoney
 }
 
 /**
@@ -79,6 +82,20 @@ object ShareMoneyRule {
         val explicit = planStages(hasPlan, stages)
         val taken = if (explicit.isEmpty()) deposit else explicit.sumOf { it.amount }
         return com.anyrent.pos.domain.deposit.DepositPlanMath.roundMoney(maxOf(0.0, total - taken), currency)
+    }
+
+    /**
+     * #1368 "Khách đưa lúc nhận đồ": what the customer hands over when taking the items = "Thu khi giao" of the plan plus
+     * the collateral in money. null when the collateral is not money (nothing, or papers only): then there is no such line.
+     */
+    fun cashAtHandover(
+        collectOnDelivery: Double,
+        collateralMoney: Double,
+        currency: com.anyrent.pos.domain.money.ShopCurrency,
+    ): Double? = if (collateralMoney > 0) {
+        com.anyrent.pos.domain.deposit.DepositPlanMath.roundMoney(collectOnDelivery + collateralMoney, currency)
+    } else {
+        null
     }
 
     /** "Thu cọc theo giai đoạn": each stage with Đã thu / Chưa thu (never "Trễ", "Hôm nay"); null without stages */
@@ -207,8 +224,19 @@ data class OrderShareModel(
                 val collect = ShareMoneyRule.collectOnDelivery(
                     summary.totalAmount, summary.depositAmount, order.deposit?.hasPlan, order.deposit?.installments, currency,
                 )
-                entries += ShareMoney.Collect(ShareText.Res(R.string.share_collect), money(collect, currency))
-                collateral(order.collateralDetails, order.securityDeposit, currency)?.let { row(R.string.share_collateral, it) }
+                // #1368: with a collateral in money the box says what is left of the rental, and the collateral and the cash follow
+                val cash = ShareMoneyRule.cashAtHandover(collect, order.securityDeposit, currency)
+                entries += ShareMoney.Collect(
+                    ShareText.Res(if (cash == null) R.string.share_collect else R.string.share_collect_rental_left), money(collect, currency),
+                )
+                collateral(order.collateralDetails, order.securityDeposit, currency)?.let {
+                    if (cash != null) {
+                        row(R.string.share_collateral_collect, it)
+                        entries += ShareMoney.Cash(ShareText.Res(R.string.share_cash_at_handover), money(cash, currency))
+                    } else {
+                        row(R.string.share_collateral, it)
+                    }
+                }
             } else {
                 row(R.string.share_subtotal, money(OrderDetailLogic.saleSubtotal(order.items), currency))
                 if (order.discountAmount > 0) row(R.string.share_discount, minus(order.discountAmount, currency))
@@ -308,12 +336,18 @@ data class OrderShareModel(
                 } else {
                     ShareMoney.Muted(ShareText.Res(R.string.share_deposit_label), ShareText.Res(R.string.share_deposit_none))
                 }
+                val collect = ShareMoneyRule.collectOnDelivery(total, deposit, null, null, currency)
+                val cash = ShareMoneyRule.cashAtHandover(collect, securityDeposit, currency)
                 entries += ShareMoney.Collect(
-                    ShareText.Res(R.string.share_collect),
-                    money(ShareMoneyRule.collectOnDelivery(total, deposit, null, null, currency), currency),
+                    ShareText.Res(if (cash == null) R.string.share_collect else R.string.share_collect_rental_left), money(collect, currency),
                 )
                 collateral(collateralDetails, securityDeposit, currency)?.let {
-                    entries += ShareMoney.Row(ShareRow(ShareText.Res(R.string.share_collateral), it))
+                    if (cash != null) {
+                        entries += ShareMoney.Row(ShareRow(ShareText.Res(R.string.share_collateral_collect), it))
+                        entries += ShareMoney.Cash(ShareText.Res(R.string.share_cash_at_handover), money(cash, currency))
+                    } else {
+                        entries += ShareMoney.Row(ShareRow(ShareText.Res(R.string.share_collateral), it))
+                    }
                 }
             }
             val strip = if (!isSale && pickup != null && returnDate != null) {

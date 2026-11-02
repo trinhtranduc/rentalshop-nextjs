@@ -142,7 +142,7 @@ fun AuthBrandHeader() {
 
 /** Top-bar brand: 32dp mark + "AnyRent" 17sp */
 @Composable
-fun AuthBrandBar(modifier: Modifier = Modifier) {
+fun AuthBrandBar(modifier: Modifier = Modifier, nameColor: Color = AuthV2Style.Wordmark) {
     val name = stringResource(R.string.app_name)
     Row(
         modifier.semantics(mergeDescendants = true) { contentDescription = name },
@@ -150,7 +150,7 @@ fun AuthBrandBar(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         BrandMark(32.dp, 9.dp, shadow = false)
-        Text(name, color = AuthV2Style.Wordmark, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+        Text(name, color = nameColor, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
 

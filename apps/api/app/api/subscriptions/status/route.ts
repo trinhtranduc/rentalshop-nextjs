@@ -3,6 +3,7 @@ import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { civilDaysBetween, handleApiError, ResponseBuilder } from '@rentalshop/utils';
+import { getPlanLimitsInfo } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
 
 /**
@@ -23,6 +24,20 @@ import { API } from '@rentalshop/constants';
  * **requireActiveSubscription: false** — Merchants must still read status when subscription
  * is expired/paused (banner, renew CTA). JWT + permission checks remain enforced.
  */
+/**
+ * #782: the limits the API really enforces (plan + add-ons) and the order count. New fields only; `limits` stays the
+ * plan's numbers for installed apps. A read failure → null, so the answer is what it was before.
+ */
+async function realLimits(merchantId: number) {
+  try {
+    const info = await getPlanLimitsInfo(merchantId);
+    return { effectiveLimits: info.planLimits, addonLimits: info.addonLimits, ordersUsed: info.currentCounts.orders };
+  } catch (error) {
+    console.error('Error reading the effective plan limits:', error);
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   return withPermissions(['billing.view', 'analytics.view'], {
     requireActiveSubscription: false,
@@ -165,6 +180,8 @@ export async function GET(request: NextRequest) {
       // BUILD CLEAN RESPONSE STRUCTURE (EXPERT-LEVEL SIMPLICITY)
       // ============================================================================
       
+      const real = await realLimits(merchant.id);
+
       const subscriptionStatus = {
         // ============================================================================
         // MERCHANT INFO
@@ -225,11 +242,13 @@ export async function GET(request: NextRequest) {
         // PLAN LIMITS & USAGE
         // ============================================================================
         limits: plan?.limits ? JSON.parse(plan.limits) : {},
+        ...(real ? { effectiveLimits: real.effectiveLimits, addonLimits: real.addonLimits } : {}),
         usage: {
           outlets: merchant._count?.outlets || 0,
           users: merchant._count?.users || 0,
           products: merchant._count?.products || 0,
-          customers: merchant._count?.customers || 0
+          customers: merchant._count?.customers || 0,
+          ...(real ? { orders: real.ordersUsed } : {})
         },
         
         // ============================================================================

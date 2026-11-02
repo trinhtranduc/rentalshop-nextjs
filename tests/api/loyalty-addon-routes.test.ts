@@ -4,7 +4,8 @@
  * - Buy: same quote (79.000 ÷ 30 × days left); a shop whose plan already includes loyalty → 422 ADDON_FEATURE_IN_PLAN
  *   (no double charge), quote and purchase alike.
  * - GET adds `featureSources` (plan / add-on per module) for the admin label.
- * - Admin can also enable loyalty via PUT /modules/loyalty (#1187).
+ * - Admin can also enable loyalty via PUT /modules/loyalty (#1187, route kept; #782 removed the free button).
+ * - #782: not sold to Basic, see addon-typed-amount-routes.test.ts; the shop here is on another plan without loyalty.
  */
 jest.mock('next/server', () => ({
   NextRequest: jest.fn(),
@@ -68,7 +69,7 @@ const shop = (features: string, status = 'ACTIVE') => ({
   name: 'Shop',
   subscription: {
     id: 70, status, currentPeriodStart: periodStart, currentPeriodEnd: periodEnd, interval: 'month', intervalCount: 1,
-    plan: { id: 1, name: 'Basic', basePrice: 199000, limits: JSON.stringify(SINGLE), features },
+    plan: { id: 1, name: 'Trial', basePrice: 199000, limits: JSON.stringify(SINGLE), features },
   },
 });
 const loyaltyRow = { id: 6, name: 'Khách thân thiết', limitKind: 'feature', featureKey: 'loyalty', packSize: 1, monthlyPrice: 79000, isActive: true };

@@ -150,9 +150,9 @@ enum NoteEditorLogic {
         Swift.max(0, max - count)
     }
 
-    /// "2/5 ảnh"
+    /// "2/3 ảnh"; above the limit only the count, since "5/3" reads like a bug (#1425)
     static func countLabel(count: Int, max: Int = OrderDetailLogic.maxNotePhotos) -> String {
-        String(format: "%d/%d photos".localized(), count, max)
+        count > max ? String(format: "cart.orderNote.photos".localized(), count) : String(format: "%d/%d photos".localized(), count, max)
     }
 
     /// ~180KB JPEG of a note photo, as the old create/detail screens send (#435); the API compresses again

@@ -57,6 +57,17 @@ final class CustomersV2ListViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if mode == .pick { FirstRunCoach.shared.screenChanged(self, screen: .customerPicker) } // #1394
+    }
+
+    /// #1411: pulled down or closed with nobody chosen
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if mode == .pick, navigationController?.isBeingDismissed == true { FirstRunCoach.shared.sheetOverCartClosed() }
+    }
+
     override func setupUI() {
         view.backgroundColor = .white
         let header = UIStackView()

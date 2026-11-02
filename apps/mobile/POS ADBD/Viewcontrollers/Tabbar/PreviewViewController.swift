@@ -1706,7 +1706,7 @@ class PreviewViewController: BaseViewControler {
                 }
                 
                 if order.damageFee > 0 {
-                    let damageLabel = makeBilingualAttributedText(vietnamese: "Phí Hư Hại", english: "Damage Fee", mainFont: bodyFont, englishFont: smallFont, color: primaryColor, includeColon: true)
+                    let damageLabel = makeBilingualAttributedText(vietnamese: "Phụ Phí", english: "Extra Fee", mainFont: bodyFont, englishFont: smallFont, color: primaryColor, includeColon: true)
                     let damageValue = makePlainAttributedText(order.damageFee.formatStringInCommon(), font: bodyFont, color: primaryColor)
                     yPosition += drawSummaryRow(label: damageLabel, value: damageValue, y: yPosition, in: context) + rowSpacing
                 }

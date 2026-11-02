@@ -73,10 +73,12 @@ class VietQrTest {
     }
 
     @Test
-    fun onlyOwnersAndOutletAdminsManage() {
+    fun onlyMerchantManages() {
         assertTrue(BankAccountRules.canManage("MERCHANT"))
-        assertTrue(BankAccountRules.canManage("OUTLET_ADMIN"))
+        assertFalse(BankAccountRules.canManage("OUTLET_ADMIN"))
         assertFalse(BankAccountRules.canManage("OUTLET_STAFF"))
+        assertFalse(BankAccountRules.canManage("ADMIN"))
+        assertFalse(BankAccountRules.canManage("OPS"))
         assertFalse(BankAccountRules.canManage(null))
     }
 

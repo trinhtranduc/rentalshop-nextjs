@@ -389,7 +389,7 @@
     <string name="discount_percent">Discount %</string>
     <string name="select_rental_period">Select rental period</string>
     <string name="deposit_collateral_details">Deposit &amp; Collateral Details</string>
-    <string name="damage_fee">Damage Fee</string>
+    <string name="damage_fee">Extra Fee</string>
     <string name="edit_collateral">Edit collateral details</string>
     <string name="order_notes">Order notes</string>
     <string name="add_notes_hint">Add order notes here…</string>
@@ -810,12 +810,13 @@
     <string name="detail_edit_notes">Edit notes</string>
     <string name="detail_hand_over">Hand over</string>
     <string name="detail_hand_over_collect">Hand over · collect %1$s</string>
+    <string name="detail_stage_unpaid">Deposit stage unpaid</string>
     <string name="detail_take_return">Take return</string>
     <string name="detail_paid_before">Already paid</string>
     <string name="detail_collect_now">Collect now</string>
     <string name="detail_handed_over">Picked up</string>
     <string name="detail_handed_over_collect">Picked up · collect %1$s</string>
-    <string name="detail_fees">Late + damage fees</string>
+    <string name="detail_fees">Late + extra fees</string>
     <string name="detail_collateral_held">Collateral held</string>
     <string name="detail_settled_before">Already settled</string>
     <string name="detail_give_back">Give back</string>
@@ -932,13 +933,6 @@
     <string name="customers_v2_recent_orders">Recent orders</string>
     <string name="customers_v2_no_orders">No orders yet</string>
     <string name="customers_v2_create_order">Create order for this customer</string>
-    <string name="onboarding_v2_step">Step %1$d/%2$d</string>
-    <string name="onboarding_v2_product_title">Add rental items</string>
-    <string name="onboarding_v2_product_body">Add a photo, price and stock. Your team finds it by search or scan when creating an order.</string>
-    <string name="onboarding_v2_customer_title">Save customers</string>
-    <string name="onboarding_v2_customer_body">Save a customer once and reuse them for every rental and sale.</string>
-    <string name="onboarding_v2_order_title">Create orders</string>
-    <string name="onboarding_v2_order_body">Pick a customer, add items, set the dates and finish in a few taps.</string>
     <string name="onboarding_v2_skip">Skip</string>
     <string name="onboarding_v2_next">Next</string>
     <string name="onboarding_v2_start">Get started</string>
@@ -1099,7 +1093,6 @@
     <string name="calendar_v2_fee">fee %1$s</string>
     <string name="v2_product_deleted">Product deleted</string>
     <string name="extend_rental">Extend</string>
-    <string name="extend_rental_title">Extend rental</string>
     <string name="extend_rental_current">Due back %1$s</string>
     <plurals name="extend_rental_extra_days">
         <item quantity="one">%1$d more day</item>
@@ -1197,7 +1190,7 @@
     <string name="overview_v2_info_cancelled">Refunds for cancelled orders</string>
     <string name="overview_v2_info_collateral">Not in real income because it goes back to the customer.</string>
     <string name="overview_v2_info_note">Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.</string>
-    <string name="overview_v2_info_fees">Damage and late fees</string>
+    <string name="overview_v2_info_fees">Extra and late fees</string>
     <string name="overview_v2_new_order_value">New order value</string>
     <string name="overview_v2_vs_previous_period">vs previous period</string>
     <string name="overview_v2_outstanding_sub">From new orders</string>
@@ -1379,7 +1372,7 @@
         <item>discountType|Discount type</item>
         <item>discountValue|Discount value</item>
         <item>discountAmount|Discount</item>
-        <item>damageFee|Damage fee</item>
+        <item>damageFee|Extra fee</item>
         <item>lateFee|Late fee</item>
         <item>collateralType|Collateral type</item>
         <item>collateralDetails|Collateral</item>
@@ -1425,6 +1418,7 @@
     <!-- #622 Bank accounts + VietQR on bills -->
     <string name="bank_accounts">Bank accounts</string>
     <string name="bank_accounts_empty">No bank account yet. Tap + to add one.</string>
+    <string name="bank_accounts_empty_read_only">No bank account yet. Only the shop owner can add one.</string>
     <string name="bank_account_add">Add bank account</string>
     <string name="bank_account_edit">Edit bank account</string>
     <string name="bank_account_bank">Bank name *</string>
@@ -1530,6 +1524,9 @@
     <string name="share_made_with">Made with AnyRent</string>
     <string name="share_draft_action">Share draft</string>
     <string name="share_collect">Collect at hand-over</string>
+    <string name="share_collect_rental_left">Rental left, collect at hand-over</string>
+    <string name="share_collateral_collect">Collateral, collect at hand-over</string>
+    <string name="share_cash_at_handover">Customer pays at hand-over</string>
     <string name="share_deposit_label">Deposit</string>
     <string name="share_deposit_none">No deposit</string>
     <string name="share_stage_paid">Collected</string>
@@ -1565,13 +1562,13 @@
     <string name="overview_v2_event_deposit">Deposit collected</string>
     <string name="overview_v2_event_pickup">Collected at pickup</string>
     <string name="overview_v2_event_same_day">Rented and returned the same day</string>
-    <string name="overview_v2_event_damage_fee">Damage fee collected</string>
+    <string name="overview_v2_event_damage_fee">Extra fee collected</string>
     <string name="overview_v2_event_deposit_refund">Deposit refunded</string>
     <string name="overview_v2_event_nothing">Nothing to settle</string>
     <string name="overview_v2_event_rent_cancelled">Order cancelled, refunded</string>
     <string name="overview_v2_event_return_collected">Collected at return</string>
     <string name="overview_v2_event_future_pickup">Expected at pickup</string>
-    <string name="overview_v2_event_future_damage_fee">Expected damage fee at return</string>
+    <string name="overview_v2_event_future_damage_fee">Expected extra fee at return</string>
     <string name="overview_v2_event_future_refund">Expected deposit refund at return</string>
     <string name="overview_v2_event_future_nothing">Nothing expected at return</string>
     <string name="overview_v2_related_owes">To collect at pickup</string>
@@ -1618,7 +1615,7 @@
     <string name="overview_dash_vs_previous_period">vs previous period</string>
     <string name="overview_dash_money_deposits">Deposits at order</string>
     <string name="overview_dash_money_pickup_and_sale">Paid at pickup, sales</string>
-    <string name="overview_dash_money_fees">Damage and late fees</string>
+    <string name="overview_dash_money_fees">Extra and late fees</string>
     <string name="overview_dash_money_refunds">Refunds on cancelled</string>
     <string name="overview_dash_money_collateral_net">Collateral in − out</string>
     <string name="overview_dash_money_at_pickup">Due when the customer picks up</string>
@@ -2250,15 +2247,12 @@
     <string name="deposit_card_paid_detail">%1$s%% of order · %2$s</string>
     <string name="deposit_card_due_detail">%1$s%% of order · due %2$s</string>
     <string name="deposit_card_rest_detail">At hand-over · %s</string>
-    <string name="deposit_collect_title">Collect stage %d</string>
     <string name="deposit_collect_confirm">Collect %s</string>
-    <string name="deposit_unpaid_title">Deposit stages not collected yet</string>
     <string name="deposit_unpaid_message">Collect these stages before handing over the items.</string>
     <string name="deposit_unpaid_row">Stage %1$d · %2$s</string>
     <string name="deposit_void_title">Undo the collection of stage %d?</string>
     <string name="deposit_void_message">The %s collected is cancelled and the stage is open again. This is logged.</string>
     <string name="deposit_void_confirm">Undo collection</string>
-    <string name="deposit_cancel_title">Cancel order #%s?</string>
     <string name="deposit_cancel_policy">Shop policy: %s</string>
     <string name="deposit_cancel_paid">Customer paid</string>
     <string name="deposit_cancel_kept">Shop keeps</string>
@@ -2357,7 +2351,6 @@
     <string name="detail_collateral_card">Papers &amp; collateral</string>
     <string name="detail_collateral_edit">Edit</string>
     <string name="detail_collateral_none">Not entered</string>
-    <string name="detail_collateral_edit_title">Edit papers &amp; collateral</string>
     <string name="detail_collateral_edit_warning">Changing the collateral changes the amount to give back at return</string>
     <string name="detail_collateral_papers_row">Papers</string>
     <string name="detail_collateral_money_row">Collateral</string>
@@ -2406,4 +2399,139 @@
     <string name="printer_share_note_hint">The order\'s note appears at the bottom of the image sent to customers, internal notes included. Applies to the whole shop.</string>
     <string name="printer_share_note_readonly">Only the shop owner can turn this on or off.</string>
     <string name="printer_share_note_failed">Could not save the setting. Please try again.</string>
+    <!-- #1381: "Việc cần làm" home-screen widget (the same words as iOS widget.*) -->
+    <string name="widget_name">To do</string>
+    <string name="widget_description">Today\'s hand-overs, returns and late orders.</string>
+    <string name="widget_late">Late</string>
+    <string name="widget_pickup">Out</string>
+    <string name="widget_return">Back</string>
+    <string name="widget_more">+%1$d more</string>
+    <string name="widget_updated">updated %1$s</string>
+    <string name="widget_done">done %1$d/%2$d</string>
+    <string name="widget_done_caption">done today</string>
+    <string name="widget_all_done">All done %1$d/%2$d</string>
+    <string name="widget_today_at">Today · %1$s</string>
+    <string name="widget_empty">Nothing to do today</string>
+    <string name="widget_tomorrow">Tomorrow: %1$d out, %2$d back</string>
+    <string name="widget_logged_out">Open AnyRent to sign in</string>
+    <string name="widget_logged_out_hint">Your to-do list will show here</string>
+    <string name="widget_no_access">This account has no To do list</string>
+    <string name="widget_stale">Open the app to update</string>
+    <string name="widget_stale_detail">Last list: %1$s</string>
+    <string name="widget_yesterday">yesterday</string>
+    <string name="widget_hint_title">Add the widget to see today\'s jobs on your home screen</string>
+    <string name="widget_hint_body">%1$d out, %2$d back, %3$d late will show without opening the app.</string>
+    <string name="widget_hint_how">How to add</string>
+    <string name="widget_dismiss">Don\'t ask again</string>
+    <string name="widget_guide_title">Add to widget</string>
+    <string name="widget_guide_ok">Got it</string>
+    <string name="widget_settings_row">Widget</string>
+    <string name="widget_guide_subtitle_pin">Today\'s jobs show right on your home screen. The phone will ask whether to place the widget.</string>
+    <string name="widget_guide_subtitle_steps">This phone does not let an app place a widget. It takes 3 steps and about 10 seconds.</string>
+    <string name="widget_guide_step1">Touch and hold an empty spot on the home screen.</string>
+    <string name="widget_guide_step2">Choose Widgets, then find AnyRent.</string>
+    <string name="widget_guide_step3">Hold the To do widget and drag it onto the home screen.</string>
+    <string name="widget_guide_add">Add widget</string>
+    <string name="widget_guide_not_asked">Phone did not ask, or no widget yet? Follow these steps.</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_preview_late">1 Late</string>
+    <string name="widget_preview_pickup">3 Out</string>
+    <string name="widget_preview_return">2 Back</string>
+    <!-- #1404 three onboarding pages. Fixed sample data, not the shop's currency. -->
+    <string name="onboarding_v2_p1_title">Forgot the name?\nJust snap it.</string>
+    <string name="onboarding_v2_p1_body">AI finds any item with a photo in your stock.</string>
+    <string name="onboarding_v2_p2_title">Double-booked?\nYou\'ll know first.</string>
+    <string name="onboarding_v2_p2_body">See which item is out on which day.</string>
+    <string name="onboarding_v2_p3_title">Who\'s due today?\nOpen Calendar.</string>
+    <string name="onboarding_v2_p3_body">What\'s left to collect shows on each order.</string>
+    <string name="onboarding_v2_sample_lang">en</string>
+    <string name="onboarding_v2_scan_count">3 similar products</string>
+    <string name="onboarding_v2_scan_from">From your photo</string>
+    <string name="onboarding_v2_scan_dress1">Lace wedding dress</string>
+    <string name="onboarding_v2_scan_dress1_meta">2 in stock · $120/rental</string>
+    <string name="onboarding_v2_scan_dress2">Long-train lace dress</string>
+    <string name="onboarding_v2_scan_dress2_meta">2 in stock · $150/rental</string>
+    <string name="onboarding_v2_scan_dress3">Mermaid wedding dress</string>
+    <string name="onboarding_v2_scan_dress3_meta">1 in stock · $120/rental</string>
+    <string name="onboarding_v2_cal_title">New order: dress + suit</string>
+    <string name="onboarding_v2_cal_subtitle">Free days for the suit · 10/2026</string>
+    <string name="onboarding_v2_cal_mon">Mon</string>
+    <string name="onboarding_v2_cal_tue">Tue</string>
+    <string name="onboarding_v2_cal_wed">Wed</string>
+    <string name="onboarding_v2_cal_thu">Thu</string>
+    <string name="onboarding_v2_cal_fri">Fri</string>
+    <string name="onboarding_v2_cal_sat">Sat</string>
+    <string name="onboarding_v2_cal_sun">Sun</string>
+    <string name="onboarding_v2_cal_out">Out</string>
+    <string name="onboarding_v2_cal_chip_booked">Suit · #496958</string>
+    <string name="onboarding_v2_cal_chip_new">Suit · new order</string>
+    <string name="onboarding_v2_warn_body">Royal blue suit is 1 short on 08/10 (rented in order #496958).</string>
+    <string name="onboarding_v2_today_head">TODAY · WED 07/10</string>
+    <string name="onboarding_v2_today_count">2 pickups · 1 return</string>
+    <string name="onboarding_v2_today_pickup">Pickup</string>
+    <string name="onboarding_v2_today_return">Return</string>
+    <string name="onboarding_v2_today_name1">Emma Lee</string>
+    <string name="onboarding_v2_today_item1">Dress · back 09/10</string>
+    <string name="onboarding_v2_today_amount1">$120</string>
+    <string name="onboarding_v2_today_name2">Dan Reed</string>
+    <string name="onboarding_v2_today_item2">Suit · back 08/10</string>
+    <string name="onboarding_v2_today_amount2">$45</string>
+    <string name="onboarding_v2_today_name3">Sue Lane</string>
+    <string name="onboarding_v2_today_item3">Camera · back today</string>
+    <string name="onboarding_v2_today_amount3">$35</string>
+    <string name="onboarding_v2_today_collect">to collect %1$s</string>
+    <string name="onboarding_v2_today_refund">refund $100</string>
+    <!-- #1395 titles of the order-detail sheets -->
+    <string name="order_sheet_title_actions">Order actions</string>
+    <string name="order_sheet_title_hand_over">Hand over to customer</string>
+    <string name="order_sheet_title_return">Take back items</string>
+    <string name="order_sheet_title_extend">Extend order</string>
+    <string name="order_sheet_title_collateral">Papers &amp; collateral</string>
+    <string name="order_sheet_title_collect">Collect deposit</string>
+    <string name="order_sheet_title_unpaid">Uncollected deposit stages</string>
+    <string name="order_sheet_title_cancel">Cancel order</string>
+    <string name="first_run_guide_title">Get started: 3 steps</string>
+    <string name="first_run_guide_step_product">Add your first product</string>
+    <string name="first_run_guide_step_customer">Add a customer</string>
+    <string name="first_run_guide_step_order">Create your first order</string>
+    <string name="first_run_guide_close">Close</string>
+    <string name="first_run_guide_settings_row">Getting started</string>
+    <string name="first_run_guide_finish_title">First order done</string>
+    <string name="first_run_guide_finish_body">It is now in Orders and Calendar.</string>
+    <string name="first_run_guide_go_product">Add product →</string>
+    <string name="first_run_guide_go_customer">Add customer →</string>
+    <string name="first_run_guide_go_order">Create order →</string>
+    <string name="first_run_guide_later">Later</string>
+    <string name="first_run_guide_collapsed_title">Get started</string>
+    <string name="first_run_guide_hide">Hide guide</string>
+    <string name="first_run_guide_hide_confirm">Hide the guide? Reopen it in Settings.</string>
+    <string name="first_run_guide_hide_action">Hide</string>
+    <string name="first_run_guide_bubble_product_photo">Add a product photo. It powers search by photo.</string>
+    <string name="first_run_guide_bubble_product_name">Enter the product name.</string>
+    <string name="first_run_guide_bubble_product_price">Enter a rental price, per rental or per day.</string>
+    <string name="first_run_guide_bubble_product_save">All set. Tap Save product.</string>
+    <string name="first_run_guide_bubble_cart_customer">An order needs a customer. Tap to choose or add one.</string>
+    <string name="first_run_guide_bubble_new_customer">Tap New customer, enter phone and name</string>
+    <string name="first_run_guide_bubble_new_customer_save">Tap Save and select.</string>
+    <string name="first_run_guide_bubble_cart_dates">Pick the pickup and return days.</string>
+    <string name="first_run_guide_bubble_cart_create">All set. Tap Create order.</string>
+    <string name="first_run_guide_next">Next</string>
+    <string name="first_run_guide_exit">Exit guide</string>
+    <string name="first_run_guide_exit_discard">Discard what you entered?</string>
+    <string name="first_run_guide_exit_discard_action">Discard</string>
+    <!-- #1418 condition photos -->
+    <string name="order_photos_title">Condition photos</string>
+    <string name="order_photos_optional">Optional</string>
+    <string name="order_photos_take">Take a photo</string>
+    <string name="order_photos_take_more">Take more</string>
+    <string name="order_photos_library">Library</string>
+    <string name="order_photos_full">That is %1$d photos. Remove one to add another.</string>
+    <string name="order_photos_remove">Remove photo</string>
+    <string name="order_photos_at_hand_over">Photos at hand-over</string>
+    <string name="order_photos_add">Add</string>
+    <string name="order_photos_not_uploaded">%1$d photo(s) not uploaded</string>
+    <string name="order_photos_camera_unavailable">The camera is not available. Allow it in Settings, or pick from the library.</string>
+    <string name="order_photos_open_settings">Open Settings</string>
+    <!-- #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail -->
+    <string name="detail_cash_breakdown">rental %1$s + collateral %2$s</string>
 </resources>

@@ -176,6 +176,7 @@ final class NewCustomerRowCell: UITableViewCell {
 
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
+        accessibilityIdentifier = "customers.picker.new"
         dash.strokeColor = DS.Color.primary.cgColor
         dash.fillColor = UIColor.clear.cgColor
         dash.lineWidth = 1.5

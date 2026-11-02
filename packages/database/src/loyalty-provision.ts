@@ -4,7 +4,8 @@
  * Kept in @rentalshop/database (not @rentalshop/loyalty) so registration can
  * run inside the same Prisma transaction without a circular package dependency.
  *
- * Super Admin enables the program later via isActive; merchants configure rates/tiers.
+ * Super Admin enables the program later via isActive; #782 buying the loyalty add-on enables it too
+ * (`merchantAddons.add`). Merchants configure rates/tiers.
  */
 
 export const DEFAULT_LOYALTY_PROGRAM_NAME = 'Chương trình khách hàng thân thiết';
@@ -61,7 +62,7 @@ export async function provisionDefaultLoyaltyProgram(
     data: {
       merchantId,
       name: DEFAULT_LOYALTY_PROGRAM_NAME,
-      // Always start inactive — only Super Admin enables the program.
+      // Always start inactive — Super Admin or a loyalty add-on purchase (#782) enables the program.
       isActive: false,
     },
   });

@@ -40,6 +40,8 @@ export enum ErrorCode {
   ADDON_PRICE_NOT_ON_SALE = 'ADDON_PRICE_NOT_ON_SALE',
   ADDON_FEATURE_ALREADY_ON = 'ADDON_FEATURE_ALREADY_ON',
   ADDON_FEATURE_IN_PLAN = 'ADDON_FEATURE_IN_PLAN',
+  ADDON_LOYALTY_NOT_FOR_BASIC = 'ADDON_LOYALTY_NOT_FOR_BASIC',
+  ADDON_AMOUNT_TOO_LARGE = 'ADDON_AMOUNT_TOO_LARGE',
   ADDON_PRICE_IN_USE = 'ADDON_PRICE_IN_USE',
   PLAN_CHANGE_REMOVE_OUTLET_ADDONS = 'PLAN_CHANGE_REMOVE_OUTLET_ADDONS',
   ADDON_ALREADY_ENDED = 'ADDON_ALREADY_ENDED',
@@ -149,6 +151,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCode.ADDON_PRICE_NOT_ON_SALE]: "This add-on is paused and cannot be sold",
   [ErrorCode.ADDON_FEATURE_ALREADY_ON]: "This shop already has this feature add-on",
   [ErrorCode.ADDON_FEATURE_IN_PLAN]: "This shop's plan already includes this feature",
+  [ErrorCode.ADDON_LOYALTY_NOT_FOR_BASIC]: 'Loyalty is not sold on the Basic plan yet',
+  [ErrorCode.ADDON_AMOUNT_TOO_LARGE]: 'This add-on amount is too large',
   [ErrorCode.ADDON_PRICE_IN_USE]: "Shops use this add-on: its pack size cannot change. Add a new row instead",
   [ErrorCode.PLAN_CHANGE_REMOVE_OUTLET_ADDONS]: "This shop still has branch add-ons. Remove them first, then switch to a plan without multiple branches",
   [ErrorCode.ADDON_ALREADY_ENDED]: "This add-on has already ended",
@@ -243,6 +247,8 @@ export const ERROR_STATUS_CODES: Record<ErrorCode, number> = {
   [ErrorCode.ADDON_PRICE_NOT_ON_SALE]: 422,
   [ErrorCode.ADDON_FEATURE_ALREADY_ON]: 422,
   [ErrorCode.ADDON_FEATURE_IN_PLAN]: 422,
+  [ErrorCode.ADDON_LOYALTY_NOT_FOR_BASIC]: 422,
+  [ErrorCode.ADDON_AMOUNT_TOO_LARGE]: 422,
   [ErrorCode.ADDON_PRICE_IN_USE]: 422,
   [ErrorCode.PLAN_CHANGE_REMOVE_OUTLET_ADDONS]: 422,
   [ErrorCode.ADDON_ALREADY_ENDED]: 422,
@@ -611,6 +617,32 @@ export function handleBusinessError(error: any): ApiError {
   }
   
   return new ApiError(ErrorCode.BUSINESS_RULE_VIOLATION);
+}
+
+// ============================================================================
+// EXCEPTION TEXT STAYS ON THE SERVER (#1408)
+// ============================================================================
+
+const TECHNICAL_ERROR_TEXT =
+  /invocation|prisma|\.next\b|\/app\/|chunks\/|node_modules|\.[cm]?[jt]sx?:\d|\n\s+at\s|\$queryRaw|Cannot read propert/i;
+// Upper case only: "please select a product from the list" is a sentence, not SQL
+const TECHNICAL_ERROR_CODE_OR_SQL = /\bSELECT\b[\s\S]*\bFROM\b|\bINSERT INTO\b|\bUPDATE\b[\s\S]*\bSET\b|ECONN[A-Z]+|ETIMEDOUT|ENOTFOUND/;
+const MAX_CLIENT_ERROR_TEXT = 400;
+
+/** True when text looks like a stack, SQL, a path or a driver error rather than a sentence written for a person. */
+export function isTechnicalErrorText(text: unknown): boolean {
+  if (typeof text !== 'string') return true;
+  return text.length > MAX_CLIENT_ERROR_TEXT || TECHNICAL_ERROR_TEXT.test(text) || TECHNICAL_ERROR_CODE_OR_SQL.test(text);
+}
+
+/**
+ * For report rows (bulk import, batch delete, admin sync) where a short business sentence is useful to the reader.
+ * Anything technical becomes `fallback`. Single errors answer through handleApiError, which sends catalog text only.
+ */
+export function clientSafeErrorText(error: unknown, fallback: string): string {
+  const text = (error as { message?: unknown } | null | undefined)?.message;
+  if (typeof text !== 'string' || !text.trim() || isTechnicalErrorText(text)) return fallback;
+  return text;
 }
 
 // ============================================================================

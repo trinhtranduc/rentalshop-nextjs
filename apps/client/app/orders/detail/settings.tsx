@@ -9,6 +9,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { compressImage } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { cardClass, outlineBtn, primaryBtn, type Money, type T } from '../list/parts';
+import { MAX_NOTE_IMAGES, noteCountLabel } from './actions-model';
 
 export interface SettingsForm {
   damageFee: number;
@@ -23,8 +24,7 @@ export interface PendingFiles {
   notesImages?: File[];
 }
 
-const MAX_NOTE_IMAGES = 5;
-const NOTE_IMAGE_MAX_MB = 0.18;
+export const NOTE_IMAGE_MAX_MB = 0.18;
 
 const fieldClass =
   'h-11 w-full rounded-[10px] border border-ar-line bg-ar-surface px-3 text-[15px] text-ar-ink placeholder:text-ar-faint disabled:bg-ar-surface-muted disabled:text-ar-muted';
@@ -73,7 +73,7 @@ export function SettingsSummary({
   );
 }
 
-function PendingThumb({ file, onRemove, label }: { file: File; onRemove: () => void; label: string }) {
+export function PendingThumb({ file, onRemove, label }: { file: File; onRemove: () => void; label: string }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     const u = URL.createObjectURL(file);
@@ -171,7 +171,7 @@ export function SettingsEditor({
 
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-semibold text-ar-ink-2">
-          {t('detail.settings.photos')} <span className="font-normal text-ar-muted">({photoCount}/{MAX_NOTE_IMAGES})</span>
+          {t('detail.settings.photos')} <span className="font-normal text-ar-muted">({noteCountLabel(photoCount)})</span>
         </span>
         <div className="flex flex-wrap gap-2">
           {form.notesImages.map((url) => (

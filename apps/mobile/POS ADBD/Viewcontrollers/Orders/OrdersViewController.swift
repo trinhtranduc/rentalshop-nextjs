@@ -11,6 +11,7 @@ import SnapKit
 import QRCodeReader
 import AVFoundation
 import AudioToolbox
+import DraftOrderActivity
 
 final class OrdersViewController: BaseViewControler {
     private static let chipBorder = UIColor(hexString: "E2E8F0")
@@ -48,6 +49,18 @@ final class OrdersViewController: BaseViewControler {
     private let searchSummaryLabel = UILabel()
     private let listView = UITableView(frame: .zero, style: .plain)
     private let stateView = OrdersStateView()
+    /// #1375 the one-time "Thêm widget" card above "Việc cần làm"; `hasWidget` is nil until the system answers
+    private let widgetHint = WidgetHintCardView()
+    private let widgetHintBox = UIView()
+    private var hasWidget: Bool?
+    /// #1375 `anyrent://todo` from the widget: the tab opens on "Việc cần làm" (set before the tab exists, used once)
+    private static var wantsTodo = false
+    private static let todoRequested = Notification.Name("ordersTodoRequested")
+
+    static func requestTodo() {
+        wantsTodo = true
+        NotificationCenter.default.post(name: todoRequested, object: nil)
+    }
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -69,6 +82,7 @@ final class OrdersViewController: BaseViewControler {
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
         // #1145: the owner changed the shop currency: money is redrawn
         NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(consumeTodoRequest), name: OrdersViewController.todoRequested, object: nil)
         viewModel.reload()
     }
 
@@ -83,6 +97,62 @@ final class OrdersViewController: BaseViewControler {
         // #674: back from a detail or the tab again: a quiet refresh only when an order changed or the list is old
         viewModel.refreshIfNeeded()
         refreshBookingButton()
+        refreshWidgetPresence()
+        consumeTodoRequest()
+    }
+
+    /// #1375 open on "Việc cần làm" when the widget asked for it
+    @objc private func consumeTodoRequest() {
+        guard OrdersViewController.wantsTodo, isViewLoaded else { return }
+        OrdersViewController.wantsTodo = false
+        if isSearchMode { cancelSearchTapped() }
+        if viewModel.todayAvailable { viewModel.select(.today) }
+        listView.setContentOffset(.zero, animated: false)
+    }
+
+    // MARK: - Widget hint (#1375, W11)
+
+    private func refreshWidgetPresence() {
+        guard TodayWidgetBridge.isSupported, !TodayWidgetHint.isDismissed() else { return }
+        TodayWidgetBridge.hasWidget { [weak self] present in
+            DispatchQueue.main.async {
+                self?.hasWidget = present
+                self?.updateWidgetHint()
+            }
+        }
+    }
+
+    /// Only on "Việc cần làm", when there is work today, no AnyRent widget on the phone and "Không hỏi lại" was not tapped
+    private func updateWidgetHint() {
+        let counts = viewModel.widgetCounts
+        let hasWork = counts.map { $0.pickup + $0.returns + $0.late > 0 } ?? false
+        let show = viewModel.segment == .today && !isSearchMode && viewModel.state == .loaded
+            && TodayWidgetHint.shouldShow(supported: TodayWidgetBridge.isSupported, todayAvailable: viewModel.todayAvailable,
+                                          hasWork: hasWork, hasWidget: hasWidget, dismissed: TodayWidgetHint.isDismissed())
+        widgetHintBox.isHidden = !show
+        if show, let counts = counts { widgetHint.configure(pickup: counts.pickup, returns: counts.returns, late: counts.late) }
+    }
+
+    private func buildWidgetHint() {
+        widgetHintBox.addSubview(widgetHint)
+        widgetHint.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: DS.Spacing.lg, bottom: DS.Spacing.sm, right: DS.Spacing.lg))
+        }
+        widgetHintBox.isHidden = true
+        widgetHint.onHowTapped = { [weak self] in self?.showWidgetGuide() }
+        widgetHint.onDismissTapped = { [weak self] in
+            TodayWidgetHint.dismiss()
+            self?.updateWidgetHint()
+        }
+    }
+
+    private func showWidgetGuide() {
+        let guide = WidgetGuideViewController(offersNeverAsk: true)
+        guide.onNeverAsk = { [weak self] in
+            TodayWidgetHint.dismiss()
+            self?.updateWidgetHint()
+        }
+        present(guide, animated: true)
     }
 
     /// #674: an order was created or changed somewhere; refresh now when on screen, else on the next appear
@@ -182,7 +252,8 @@ final class OrdersViewController: BaseViewControler {
         listView.contentInset.bottom = DS.Spacing.lg
         stateView.onRetry = { [weak self] in self?.viewModel.reload() }
 
-        let column = UIStackView(arrangedSubviews: [header, listControls, searchSummary])
+        buildWidgetHint()
+        let column = UIStackView(arrangedSubviews: [header, listControls, widgetHintBox, searchSummary])
         column.axis = .vertical
         view.addSubview(column)
         view.addSubview(listView)
@@ -418,6 +489,7 @@ final class OrdersViewController: BaseViewControler {
         todaySegment.isSelected = viewModel.segment == .today
         allSegment.isSelected = viewModel.segment == .rent
         todaySegment.badge = viewModel.todayBadge > 0 ? "\(viewModel.todayBadge)" : nil
+        updateWidgetHint()
 
         for (index, chip) in chipButtons.enumerated() {
             let selected = Self.statuses[index] == viewModel.filter.status

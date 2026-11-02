@@ -1,5 +1,14 @@
 package com.anyrent.pos.ui.home.v2
 
+import kotlinx.coroutines.delay
+import com.anyrent.pos.domain.guide.FirstRunCoachRules
+import com.anyrent.pos.domain.guide.CoachScreen
+import com.anyrent.pos.domain.guide.CoachBubble
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.runtime.SideEffect
 import com.anyrent.pos.data.CurrentOutlet
 import androidx.compose.material3.Checkbox
 import androidx.compose.ui.draw.alpha
@@ -178,6 +187,10 @@ fun ProductFormV2Screen(
     val openedTicks = remember { makeTickRows(initial, isOwner) }
     var tickRows by remember { mutableStateOf(openedTicks) }
     var tickOriginal by remember { mutableStateOf(openedTicks) }
+    val nameFocus = remember { FocusRequester() }
+    val priceFocus = remember { FocusRequester() }
+    val formScroll = rememberScrollState()
+    var formTop by remember { mutableStateOf(0f) }
     val photos = remember {
         mutableStateListOf<FormPhoto>().apply {
             addAll((initial?.images?.ifEmpty { listOfNotNull(initial.imageUrl) } ?: emptyList()).map { FormPhoto.Remote(it) })
@@ -319,6 +332,36 @@ fun ProductFormV2Screen(
         }
     }
 
+    // #1412: what the guide asks of this form, and where its cursor goes. Only while a run is on: the normal form has no such rules.
+    val coachBubble = FirstRunCoachRules.next(FirstRunCoach.run, CoachScreen.PRODUCT_FORM, FirstRunCoach.passed)
+    // Read here, not inside SideEffect: only a read in composition brings this function back when a photo is added
+    val coachValid = buildSet {
+        if (FirstRunCoachRules.photoIsValid(photos.size)) add(CoachBubble.PRODUCT_PHOTO)
+        if (ProductFormValidator.isNameValid(name)) add(CoachBubble.PRODUCT_NAME)
+        if (FirstRunCoachRules.priceIsValid(MoneyInput.parse(perRental), MoneyInput.parse(perDay))) add(CoachBubble.PRODUCT_PRICE)
+    }
+    // The barcode fills itself and the quantity starts at 1: neither is something the owner typed
+    val coachHasInput = listOf(name, perRental, perDay, sale, deposit, cost).any { it.isNotEmpty() } ||
+        photos.isNotEmpty() || categoryId != null || quantity != 1
+    SideEffect {
+        if (coachBubble != null) {
+            FirstRunCoach.formValid = coachValid
+            FirstRunCoach.formHasInput = coachHasInput
+        }
+    }
+    val coachFocus = LocalFocusManager.current
+    LaunchedEffect(coachBubble) {
+        delay(150) // the field is laid out
+        when (coachBubble) {
+            CoachBubble.PRODUCT_NAME -> runCatching { nameFocus.requestFocus() }
+            CoachBubble.PRODUCT_PRICE -> runCatching { priceFocus.requestFocus() }
+            CoachBubble.PRODUCT_SAVE -> coachFocus.clearFocus()
+            else -> Unit
+        }
+    }
+    DisposableEffect(Unit) { onDispose { FirstRunCoach.formClosed(CoachScreen.PRODUCT_FORM) } }
+    CoachScroll(CoachScreen.PRODUCT_FORM, formScroll, formTop)
+
     // imePadding on the whole screen keeps the save bar above the keyboard (#461)
     Column(Modifier.fillMaxSize().background(Color.White).statusBarsPadding().imePadding()) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -329,9 +372,10 @@ fun ProductFormV2Screen(
             )
         }
         HorizontalDivider(color = DS.Colors.Border)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Column(Modifier.weight(1f).onGloballyPositioned { formTop = it.positionInWindow().y }.verticalScroll(formScroll)) {
             // Photos
             LazyRow(
+                modifier = Modifier.coachAnchor("product.form.photos"),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -376,7 +420,8 @@ fun ProductFormV2Screen(
             )
 
             FormField(stringResource(R.string.v2_form_name), required = true, value = name, onChange = { name = it },
-                placeholder = stringResource(R.string.v2_form_name_placeholder))
+                placeholder = stringResource(R.string.v2_form_name_placeholder), fieldTag = "product.form.name",
+                modifier = Modifier.coachAnchor("product.form.nameRow"), focusRequester = nameFocus)
             Row(
                 Modifier.fillMaxWidth().clickable { showCategories = true }.heightIn(min = 52.dp).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -413,10 +458,13 @@ fun ProductFormV2Screen(
 
             if (showsPrices) {
                 SectionBand(stringResource(R.string.v2_form_prices))
-                FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
-                    placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_rental, ShopMoney.symbol()))
-                FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
-                    placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_day, ShopMoney.symbol()))
+                // #1412: the price bubble lights the two together
+                Column(Modifier.fillMaxWidth().coachAnchor("product.form.prices")) {
+                    FormField(stringResource(R.string.v2_form_per_rental), value = perRental, onChange = { perRental = MoneyInput.display(MoneyInput.parse(it)) },
+                        fieldTag = "product.form.perRental", placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_rental, ShopMoney.symbol()), focusRequester = priceFocus)
+                    FormField(stringResource(R.string.v2_form_per_day), value = perDay, onChange = { perDay = MoneyInput.display(MoneyInput.parse(it)) },
+                        fieldTag = "product.form.perDay", placeholder = "0", numeric = true, modifier = Modifier.fillMaxWidth(), unit = stringResource(R.string.v2_form_unit_per_day, ShopMoney.symbol()))
+                }
                 Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(stringResource(R.string.v2_form_per_block), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.Bold)
                     val res = LocalContext.current.resources
@@ -493,7 +541,7 @@ fun ProductFormV2Screen(
         Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp)) {
             AppPrimaryButton(
                 stringResource(if (initial == null) R.string.v2_form_save else R.string.v2_form_save_changes),
-                onClick = ::save, enabled = !loading, loading = loading, modifier = Modifier.fillMaxWidth(),
+                onClick = ::save, enabled = !loading, loading = loading, modifier = Modifier.fillMaxWidth().coachAnchor("product.form.save"),
             )
         }
     }
@@ -600,6 +648,10 @@ private fun FormField(
     end: androidx.compose.ui.unit.Dp = 16.dp,
     onDone: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    /** #1393: the input's test tag */
+    fieldTag: String? = null,
+    /** #1412: the guide moves the cursor here */
+    focusRequester: FocusRequester? = null,
 ) {
     var hadFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -618,6 +670,8 @@ private fun FormField(
             Box(Modifier.weight(1f)) {
                 if (value.isEmpty()) Text(placeholder, fontSize = DS.TextSize.Input, color = Color(0xFF94A3B8))
                 val fieldModifier = Modifier.fillMaxWidth().semantics { contentDescription = description }
+                    .then(if (fieldTag != null) Modifier.testTag(fieldTag) else Modifier)
+                    .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
                     .onFocusChanged { focus ->
                         if (focus.isFocused) {
                             hadFocus = true

@@ -98,11 +98,21 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertTrue(balance(.sale, .completed) == (600_000, 0))
     }
 
+    // MARK: Note colours (#1430)
+
+    func testWarmNoteColoursAndTheBandStays() {
+        XCTAssertEqual(OrderDetailViewController.itemNoteFillColor, UIColor(hexString: "FFF7E6"))
+        XCTAssertEqual(OrderDetailViewController.itemNoteInkColor, UIColor(hexString: "7A4A00"))
+        XCTAssertEqual(OrderDetailViewController.notesFillColor, UIColor(hexString: "FFFBEB"))
+        XCTAssertEqual(OrderDetailViewController.notesInkColor, UIColor(hexString: "78350F"))
+        XCTAssertEqual(OrderDetailViewController.sectionDividerColor, UIColor(hexString: "EEF0F4"))
+    }
+
     // MARK: Notes payload
 
     func testNotesUnchangedPhotosSendOnlyNewFiles() {
-        let plan = OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 2)
-        XCTAssertEqual(plan, NotesSavePlan(keptURLs: nil, newCount: 2))
+        let plan = OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 1)
+        XCTAssertEqual(plan, NotesSavePlan(keptURLs: nil, newCount: 1))
     }
 
     func testNotesRemovedPhotoSendsKeptUrls() {
@@ -111,10 +121,20 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertEqual(OrderDetailLogic.notesPlan(original: ["a"], kept: [], newCount: 0), NotesSavePlan(keptURLs: [], newCount: 0))
     }
 
-    func testNotesAllowAtMostFivePhotos() {
-        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 5)
-        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 3))
-        XCTAssertNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 4))
+    func testNotesAllowAtMostThreePhotos() {
+        XCTAssertEqual(OrderDetailLogic.maxNotePhotos, 3)
+        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 1))
+        XCTAssertNil(OrderDetailLogic.notesPlan(original: ["a", "b"], kept: ["a", "b"], newCount: 2))
+    }
+
+    /// #1425 an order from before the limit keeps its photos and stays editable
+    func testOldOrderAboveTheLimitCanStillBeSaved() {
+        let five = ["a", "b", "c", "d", "e"]
+        XCTAssertEqual(OrderDetailLogic.notesPlan(original: five, kept: five, newCount: 0), NotesSavePlan(keptURLs: nil, newCount: 0), "text only")
+        XCTAssertEqual(OrderDetailLogic.notesPlan(original: five, kept: ["a", "b", "c", "d"], newCount: 0),
+                       NotesSavePlan(keptURLs: ["a", "b", "c", "d"], newCount: 0), "remove one, still above")
+        XCTAssertNil(OrderDetailLogic.notesPlan(original: five, kept: ["a", "b", "c"], newCount: 1), "adding must fit")
+        XCTAssertNotNil(OrderDetailLogic.notesPlan(original: five, kept: ["a", "b"], newCount: 1))
     }
 
     // MARK: Status change errors
@@ -404,6 +424,139 @@ final class OrderDetailLogicTests: XCTestCase {
                                             securityDeposit: 0, lateFee: 0, damageFee: 0, payments: [])
         XCTAssertEqual(sale.amountDue, 500_000)
     }
+
+    // MARK: #1368 money collateral: rental left, collateral, what the customer hands over
+
+    /// total 1.000.000: stage 1 200.000 collected, stage 2 300.000 (collected or not), rest 500.000
+    private func plan1M(secondPaid: Bool) -> [OrderInstallment] {
+        [OrderInstallment(key: "i1", label: "Cọc giữ chỗ", percent: 20, amount: 200_000, dueDateKey: "2026-10-05", status: "PAID",
+                          collectedAt: "2026-10-05T07:00:00.000Z", paidAmount: 200_000),
+         OrderInstallment(key: "i2", label: "Cọc trước ngày lấy", percent: 30, amount: 300_000, dueDateKey: "2026-10-06",
+                          status: secondPaid ? "PAID" : "UPCOMING", collectedAt: secondPaid ? "2026-10-06T03:00:00.000Z" : nil,
+                          paidAmount: secondPaid ? 300_000 : 0),
+         OrderInstallment(key: "rest", label: "rest", percent: 50, amount: 500_000, dueDateKey: "2026-10-16", status: "UPCOMING")]
+    }
+
+    private func cash(type: OrderType = .rent, status: OrderStatus = .reserved, total: Double = 1_000_000, deposit: Double,
+                      collateral: Double = 300_000, payments: [OrderPaymentLine] = [], plan: Bool? = true,
+                      stages: [OrderInstallment]?, currency: ShopCurrency = .vnd) -> HandOverCashLines? {
+        OrderDetailLogic.handOverCash(orderType: type, status: status, total: total, deposit: deposit, securityDeposit: collateral,
+                                      payments: payments, hasPlan: plan, stages: stages, currency: currency)
+    }
+
+    func testHandOverCashOfTheExample() {
+        // stage 2 not collected: the number does not wait for it
+        XCTAssertEqual(cash(deposit: 200_000, stages: plan1M(secondPaid: false)),
+                       HandOverCashLines(rentalLeft: 500_000, collateral: 300_000, cash: 800_000))
+        // stage 2 collected: the three numbers do not move
+        XCTAssertEqual(cash(deposit: 500_000, stages: plan1M(secondPaid: true)),
+                       HandOverCashLines(rentalLeft: 500_000, collateral: 300_000, cash: 800_000))
+    }
+
+    func testHandOverCashIsTheSameFunctionAsTheShareImage() {
+        let stages = plan1M(secondPaid: false)
+        guard let lines = cash(deposit: 200_000, stages: stages) else { return XCTFail("no hand-over cash lines") }
+        let rest = ShareMoneyRule.collectOnDelivery(total: 1_000_000, deposit: 200_000, hasPlan: true, stages: stages, currency: .vnd)
+        XCTAssertEqual(lines.rentalLeft, rest)
+        XCTAssertEqual(lines.cash, ShareMoneyRule.cashAtHandover(collectOnDelivery: rest, collateralMoney: 300_000, currency: .vnd))
+        // and the image says the same numbers
+        var source = OrderShareImageTests.rent()
+        source.total = 1_000_000
+        source.deposit = 200_000
+        source.collateralPapers = nil
+        source.collateralMoney = 300_000
+        source.hasDepositPlan = true
+        source.stages = stages
+        let model = OrderShareModel.make(source, language: ShareLanguage.make(code: "vi-VN"), now: Date(), currency: .vnd)
+        var seen: [String] = []
+        for entry in model.money {
+            switch entry {
+            case .collect(_, let value), .cash(_, let value): seen.append(value)
+            case .row(let row) where row.label == "Thế chân, thu khi giao": seen.append(row.value)
+            default: break
+            }
+        }
+        XCTAssertEqual(seen, [OrderShareModel.money(lines.rentalLeft, currency: .vnd), OrderShareModel.money(lines.collateral, currency: .vnd),
+                              OrderShareModel.money(lines.cash, currency: .vnd)])
+    }
+
+    func testHandOverCashEqualsTheHandOverButtonOnceEveryStageIsCollected() {
+        for total in [100_000.0, 900_000, 1_000_000, 2_333_333] {
+            let first = (total * 0.2).rounded(), middle = (total * 0.3).rounded()
+            let stages = [OrderInstallment(key: "i1", label: "A", percent: 20, amount: first, dueDateKey: "2026-10-05", status: "PAID", paidAmount: first),
+                          OrderInstallment(key: "i2", label: "B", percent: 30, amount: middle, dueDateKey: "2026-10-06", status: "PAID", paidAmount: middle),
+                          OrderInstallment(key: "rest", label: "rest", percent: 50, amount: total - first - middle, dueDateKey: "2026-10-16", status: "UPCOMING")]
+            let deposit = first + middle
+            let button = OrderDetailLogic.handOver(total: total, deposit: deposit, securityDeposit: 300_000, payments: []).due
+            XCTAssertEqual(cash(total: total, deposit: deposit, stages: stages)?.cash, button, "total \(total)")
+        }
+        // a one-time deposit: the same
+        let button = OrderDetailLogic.handOver(total: 1_150_000, deposit: 300_000, securityDeposit: 500_000, payments: []).due
+        XCTAssertEqual(cash(total: 1_150_000, deposit: 300_000, collateral: 500_000, plan: false, stages: nil)?.cash, button)
+        XCTAssertEqual(cash(total: 1_150_000, deposit: 0, collateral: 500_000, plan: nil, stages: nil)?.cash,
+                       OrderDetailLogic.handOver(total: 1_150_000, deposit: 0, securityDeposit: 500_000, payments: []).due)
+    }
+
+    func testTheHandOverButtonStaysWhatItWasWhileAStageIsUncollected() {
+        // not changed here: it asks total - collected + collateral (1.100.000), not the 800.000 of the new line
+        let money = OrderDetailLogic.handOver(total: 1_000_000, deposit: 200_000, securityDeposit: 300_000, payments: [])
+        XCTAssertEqual(money.due, 1_100_000)
+        XCTAssertEqual(OrderDetailLogic.balance(orderType: .rent, status: .reserved, total: 1_000_000, deposit: 200_000,
+                                                securityDeposit: 300_000, lateFee: 0, damageFee: 0, payments: []).amountDue, 1_100_000)
+        // and the old display rule, kept for the other cases
+        XCTAssertEqual(shown(total: 1_000_000, deposit: 200_000, collateral: 300_000, stages: plan1M(secondPaid: false)), 500_000)
+        XCTAssertEqual(shown(total: 1_000_000, deposit: 500_000, collateral: 300_000, stages: plan1M(secondPaid: true)), 800_000)
+    }
+
+    func testHandOverCashNeedsMoneyCollateral() {
+        XCTAssertNil(cash(deposit: 200_000, collateral: 0, stages: plan1M(secondPaid: false)), "papers only or none: the old lines")
+        XCTAssertNil(cash(deposit: 200_000, collateral: -5, stages: plan1M(secondPaid: false)))
+    }
+
+    func testHandOverCashIsOnlyForARentalWaitingForPickUp() {
+        let stages = plan1M(secondPaid: true)
+        for status in [OrderStatus.pickuped, .returned, .cancelled] {
+            XCTAssertNil(cash(status: status, deposit: 500_000, stages: stages), "\(status)")
+        }
+        XCTAssertNil(cash(type: .sale, status: .completed, deposit: 0, stages: nil))
+        XCTAssertNil(cash(type: .sale, status: .reserved, deposit: 0, stages: nil))
+        XCTAssertNotNil(cash(deposit: 500_000, stages: stages))
+    }
+
+    func testHandOverCashStepsAsideWhenAPickUpPaymentWasAlreadyTaken() {
+        let taken = OrderPaymentLine(amount: 200_000, status: "COMPLETED", notes: "PICKUP")
+        XCTAssertNil(cash(deposit: 500_000, payments: [taken], stages: plan1M(secondPaid: true)),
+                     "the detail keeps its 'Đã thu' row and the old number")
+        // a pending or another kind of payment does not count
+        let other = [OrderPaymentLine(amount: 100_000, status: "PENDING", notes: "PICKUP"),
+                     OrderPaymentLine(amount: 100_000, status: "COMPLETED", notes: "DEPOSIT")]
+        XCTAssertNotNil(cash(deposit: 500_000, payments: other, stages: plan1M(secondPaid: true)))
+    }
+
+    func testHandOverCashOfOneDepositNoDepositAndDiscount() {
+        XCTAssertEqual(cash(total: 1_150_000, deposit: 300_000, collateral: 500_000, plan: nil, stages: nil),
+                       HandOverCashLines(rentalLeft: 850_000, collateral: 500_000, cash: 1_350_000))
+        XCTAssertEqual(cash(total: 1_150_000, deposit: 0, collateral: 500_000, plan: nil, stages: nil),
+                       HandOverCashLines(rentalLeft: 1_150_000, collateral: 500_000, cash: 1_650_000))
+        // total 900.000 after a discount: 20% = 180.000, 30% = 270.000, rest 450.000
+        let first = 180_000.0, middle = 270_000.0
+        let stages = [OrderInstallment(key: "i1", label: "A", percent: 20, amount: first, dueDateKey: "2026-10-05", status: "PAID", paidAmount: first),
+                      OrderInstallment(key: "i2", label: "B", percent: 30, amount: middle, dueDateKey: "2026-10-06", status: "UPCOMING"),
+                      OrderInstallment(key: "rest", label: "rest", percent: 50, amount: 450_000, dueDateKey: "2026-10-16", status: "UPCOMING")]
+        XCTAssertEqual(cash(total: 900_000, deposit: first, stages: stages), HandOverCashLines(rentalLeft: 450_000, collateral: 300_000, cash: 750_000))
+    }
+
+    func testHandOverCashOfADollarShopRoundsToCents() {
+        let lines = cash(total: 1_150.30, deposit: 300.10, collateral: 100.15, plan: nil, stages: nil, currency: .usd)
+        XCTAssertEqual(try XCTUnwrap(lines).rentalLeft, 850.2, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(lines).cash, 950.35, accuracy: 0.0001)
+    }
+
+    func testTheNewLabelsResolveInBothLanguages() {
+        for key in ["share.collect.rentalLeft", "share.collateral.collect", "share.cashAtHandover"] {
+            XCTAssertNotEqual(key.localized(), key, key)
+        }
+    }
 }
 
 /// #700 — Tạo đơn prints only when a bill printer was saved
@@ -418,7 +571,8 @@ final class CreatedOrderAutoPrintTests: XCTestCase {
 /// #697 — an order whose creator was deleted (`createdById` SetNull) still opens on iOS
 final class OrderDetailDeletedCreatorTests: XCTestCase {
     /// GET /api/orders/{id} for a local-seed rental after its creator was deleted (createdById/createdBy null)
-    private let payload = #"""
+    private var payload: String { Self.payload }
+    static let payload = #"""
 {"success":true,"data":{"id":132,"orderNumber":"968112","orderType":"RENT","status":"PICKUPED","totalAmount":700000,"depositAmount":0,"securityDeposit":0,"damageFee":0,"lateFee":0,"discountType":null,"discountValue":0,"discountAmount":0,"pickupPlanAt":"2026-10-07T01:00:00.000Z","returnPlanAt":"2026-10-10T05:00:00.000Z","pickedUpAt":null,"returnedAt":null,"rentalDuration":null,"isReadyToDeliver":false,"collateralType":null,"collateralDetails":null,"notes":"e2e-681","notesImages":null,"pickupNotes":null,"pickupNotesImages":null,"returnNotes":null,"returnNotesImages":null,"damageNotes":null,"damageNotesImages":null,"createdAt":"2026-10-08T22:24:51.027Z","updatedAt":"2026-10-08T22:24:51.027Z","outletId":1,"customerId":11,"createdById":null,"customer":{"id":11,"firstName":"William","lastName":"Hernandez","phone":"+1-555-1010","email":"william.hernandez11@example.com","address":"Address 11 for Rental Shop Demo","city":"Example City","state":"Example State","zipCode":"12345","country":"USA","dateOfBirth":null,"notes":null,"createdAt":"2026-10-08T15:22:24.976Z","updatedAt":"2026-10-08T15:22:24.976Z"},"outlet":{"id":1,"name":"Rental Shop Demo - Main Branch","address":"123 Main Street","phone":"+1-555-0100","city":"New York","state":"NY","zipCode":"10001","country":"United States","isActive":true,"printNote":null,"printBankQr":false,"merchant":{"id":1,"name":"Rental Shop Demo","email":"merchant1@example.com","phone":"+1-555-0100","address":"123 Main Street","city":"New York","state":"NY","zipCode":"10001","country":"United States","businessType":"EQUIPMENT","pricingType":"DAILY","taxId":"12-3456789","currency":"USD"}},"createdBy":null,"orderItems":[{"id":265,"productId":28,"productName":"Product 28 - Art Supplies","productBarcode":"BAR000028","productImages":[],"quantity":7,"unitPrice":100000,"totalPrice":700000,"deposit":0,"notes":null,"rentalDays":null,"pricingType":null,"pricingOptionId":null,"product":{"id":28,"name":"Product 28 - Art Supplies","barcode":"BAR000028","images":[],"rentPrice":53,"deposit":33}}],"payments":[],"itemCount":1,"paymentCount":0,"totalPaid":0,"timeline":[]},"code":"ORDER_RETRIEVED_SUCCESS","message":"Order retrieved successfully"}
 """#
 
@@ -500,5 +654,240 @@ final class OrderDetailDeletedCreatorTests: XCTestCase {
                                             securityDeposit: 500_000, lateFee: 0, damageFee: 0, payments: [])
         XCTAssertEqual(none.refundDue, 0)
         XCTAssertEqual(held.refundDue, 500_000)
+    }
+}
+
+/// #1435 the money block of a rental: which lines show in each of the 9 cases of the approved mockup (tab "odmoney"). Same
+/// figures as the tab. Presentation only: every amount comes from `ShareMoneyRule` and `OrderDetailLogic`.
+final class OrderMoneyBlockTests: XCTestCase {
+    private let sub = 1_250_000.0, off = 100_000.0, total = 1_150_000.0
+
+    private func stage(_ key: String, _ amount: Double, _ status: String = "UPCOMING", paid: Double = 0, planned: Double? = nil) -> OrderInstallment {
+        OrderInstallment(key: key, label: key, percent: amount / 1_150_000 * 100, amount: amount, plannedAmount: planned, remaining: paid > 0 ? 0 : amount,
+                         dueDateKey: "2026-11-01", status: status, paidAmount: paid)
+    }
+
+    private var oneUnpaid: [OrderInstallment] {
+        [stage("i1", 230_000, "PAID", paid: 230_000), stage("i2", 345_000), stage("rest", 575_000)]
+    }
+    private var partCollected: [OrderInstallment] {
+        [stage("i1", 230_000, "PAID", paid: 230_000), stage("i2", 100_000, "PARTIAL", paid: 100_000, planned: 345_000), stage("rest", 820_000)]
+    }
+    private var bothCollected: [OrderInstallment] {
+        [stage("i1", 230_000, "PAID", paid: 230_000), stage("i2", 345_000, "PAID", paid: 345_000), stage("rest", 575_000)]
+    }
+    private var allCollected: [OrderInstallment] {
+        [stage("i1", 230_000, "PAID", paid: 230_000), stage("i2", 345_000, "PAID", paid: 345_000), stage("rest", 575_000, "PAID", paid: 575_000)]
+    }
+
+    private func block(_ status: OrderStatus = .reserved, subtotal: Double? = nil, discount: Double? = nil, deposit: Double = 0, collateral: Double = 0,
+                       late: Double = 0, damage: Double = 0, payments: [OrderPaymentLine] = [], stages: [OrderInstallment]? = nil,
+                       collateralShown: Bool? = nil, cancelKept: Double? = nil) -> OrderMoneyBlock {
+        let collected = (stages ?? []).reduce(0) { $0 + $1.paidAmount }
+        let planned = (stages ?? []).reduce(0) { $0 + $1.amount }
+        let summary = stages.map { _ in
+            InstallmentSummary(planned: planned, collected: collected, remaining: max(0, planned - collected), percentCollected: (collected / 1_150_000 * 10_000).rounded() / 100)
+        }
+        return OrderDetailLogic.moneyBlock(status: status, subtotal: subtotal ?? sub, discount: discount ?? off, total: total, deposit: deposit,
+                                           securityDeposit: collateral, lateFee: late, damageFee: damage, payments: payments,
+                                           hasPlan: stages != nil, stages: stages, summary: summary,
+                                           collateralShown: collateralShown ?? (status == .pickuped), cancelKept: cancelKept, currency: .vnd)
+    }
+
+    private var head: [OrderMoneyLine] { [.subtotal(sub), .discount(off), .rentalTotal(total)] }
+
+    func testCase1NoDepositOneItem() {
+        let result = block(subtotal: total, discount: 0)
+        XCTAssertEqual(result.lines, [.subtotal(total), .rentalTotal(total), .collectAtHandOver(total)], "No discount: Tạm tính stays, no Giảm giá")
+        XCTAssertNil(result.plan)
+        XCTAssertTrue(result.hasLargeFigure)
+    }
+
+    func testCase2SingleDeposit() {
+        XCTAssertEqual(block(deposit: 230_000).lines, head + [.depositPaid(230_000), .collectAtHandOver(920_000)])
+    }
+
+    func testCase3StagedOneUnpaid() {
+        let result = block(deposit: 230_000, stages: oneUnpaid)
+        XCTAssertEqual(result.lines, head + [.stages, .collectAtHandOver(575_000)], "No Đã cọc with stages")
+        XCTAssertEqual(result.plan?.shownKeys, ["i1", "i2"], "The uncollected last stage is in the amount due")
+        XCTAssertEqual(result.plan?.remaining, 920_000, "Còn phải thu differs from the amount due: it shows")
+        XCTAssertEqual(result.plan?.collected, 230_000)
+        XCTAssertEqual(result.plan?.percent, 20)
+    }
+
+    func testCase4StagesAndMoneyCollateral() {
+        let result = block(deposit: 230_000, collateral: 300_000, stages: oneUnpaid)
+        XCTAssertEqual(result.lines, head + [.stages, .cashAtHandOver(HandOverCashLines(rentalLeft: 575_000, collateral: 300_000, cash: 875_000))],
+                       "One line, no Tiền thế chân and no Thu khi giao")
+        XCTAssertEqual(result.plan?.shownKeys, ["i1", "i2"])
+        XCTAssertEqual(result.plan?.remaining, 920_000)
+    }
+
+    func testCase5RentedWithFees() {
+        let result = block(.pickuped, deposit: 230_000, collateral: 300_000, late: 100_000, damage: 50_000)
+        XCTAssertEqual(result.lines, head + [.depositPaid(230_000), .lateFee(100_000), .damageFee(50_000)], "iOS keeps Đã cọc on a rented order")
+        XCTAssertEqual(result.returnLine, .giveBackAtReturn(150_000), "Khi nhận trả moves under the papers")
+    }
+
+    func testCase6ReturnedWithFeesHasNoLargeFigure() {
+        let result = block(.returned, deposit: 230_000, collateral: 300_000, late: 100_000, damage: 50_000)
+        XCTAssertEqual(result.lines, head + [.depositPaid(230_000), .collateralMoney(300_000), .lateFee(100_000), .damageFee(50_000)])
+        XCTAssertNil(result.returnLine)
+        XCTAssertFalse(result.hasLargeFigure, "A finished order has no large figure")
+    }
+
+    func testCase7PartCollectedStageHidesStillToCollect() {
+        let result = block(deposit: 330_000, stages: partCollected)
+        XCTAssertEqual(result.lines, head + [.stages, .collectAtHandOver(820_000)])
+        XCTAssertEqual(result.plan?.shownKeys, ["i1", "i2"])
+        XCTAssertNil(result.plan?.remaining, "820.000 is the amount due: Còn phải thu hides")
+    }
+
+    func testCase8AllStagesCollectedHidesStillToCollect() {
+        let result = block(deposit: 575_000, stages: bothCollected)
+        XCTAssertEqual(result.lines, head + [.stages, .collectAtHandOver(575_000)])
+        XCTAssertEqual(result.plan?.shownKeys, ["i1", "i2"])
+        XCTAssertNil(result.plan?.remaining)
+    }
+
+    func testCase9RentedAllCollected() {
+        let result = block(.pickuped, deposit: 575_000, stages: allCollected)
+        XCTAssertEqual(result.lines, head + [.stages], "No amount due")
+        XCTAssertEqual(result.plan?.shownKeys, ["i1", "i2", "rest"], "After hand-over the last stage is a normal stage")
+        XCTAssertEqual(result.plan?.remaining, 0, "There is no amount due to equal: Còn phải thu 0 shows, as drawn")
+        XCTAssertNil(result.returnLine)
+        XCTAssertFalse(result.hasLargeFigure)
+    }
+
+    /// "Các đợt cộng số phải thu đúng bằng Tổng tiền thuê" of the tab
+    func testStagesPlusTheAmountDueAreTheRentalTotal() {
+        for (stages, deposit) in [(oneUnpaid, 230_000.0), (bothCollected, 575_000), (partCollected, 330_000)] {
+            let result = block(deposit: deposit, stages: stages)
+            let shown = stages.filter { result.plan?.shownKeys.contains($0.key) == true }.reduce(0) { $0 + $1.amount }
+            guard case .collectAtHandOver(let due)? = result.lines.last else { return XCTFail("\(result.lines)") }
+            XCTAssertEqual(shown + due, total)
+        }
+    }
+
+    func testStagesAndCollateralHideOnlyWhenTheRentalPartEqualsStillToCollect() {
+        let result = block(deposit: 575_000, collateral: 300_000, stages: bothCollected)
+        XCTAssertEqual(result.lines, head + [.stages, .cashAtHandOver(HandOverCashLines(rentalLeft: 575_000, collateral: 300_000, cash: 875_000))])
+        XCTAssertNil(result.plan?.remaining, "575.000 is the rental part of the amount due")
+    }
+
+    func testABookedLastStageShowsAgainOnceCollected() {
+        let result = block(deposit: 1_150_000, stages: allCollected)
+        XCTAssertEqual(result.plan?.shownKeys, ["i1", "i2", "rest"])
+    }
+
+    func testAPickupPaymentKeepsItsLinesBeforeTheAmountDue() {
+        let payments = [OrderPaymentLine(amount: 100_000, status: "COMPLETED", notes: "PICKUP")]
+        let result = block(deposit: 230_000, collateral: 300_000, payments: payments)
+        XCTAssertEqual(result.lines, head + [.depositPaid(230_000), .collateralMoney(300_000), .alreadyCollected(100_000), .collectAtHandOver(1_120_000)],
+                       "A PICKUP payment already taken: not the one line, as #1368")
+    }
+
+    func testARentedOrderWithoutTheCollateralSectionKeepsTheReturnLineInTheBlock() {
+        let result = block(.pickuped, collateral: 300_000, collateralShown: false)
+        XCTAssertEqual(result.lines, head + [.collateralMoney(300_000), .giveBackAtReturn(300_000)])
+        XCTAssertNil(result.returnLine)
+    }
+
+    func testACancelledOrderKeepsItsLinesAndTheRestStage() {
+        let staged = block(.cancelled, deposit: 230_000, collateral: 300_000, stages: oneUnpaid, cancelKept: 100_000)
+        XCTAssertEqual(staged.lines, head + [.stages, .cancelKept(100_000), .cancelRefund(130_000), .collateralMoney(300_000)], "The kept lines read under the stages")
+        XCTAssertEqual(staged.plan?.shownKeys, ["i1", "i2", "rest"], "Only a booked order merges the last stage")
+        XCTAssertFalse(staged.hasLargeFigure)
+        let single = block(.cancelled, deposit: 230_000, cancelKept: 100_000)
+        XCTAssertEqual(single.lines, head + [.depositPaid(230_000), .cancelKept(100_000), .cancelRefund(0)], "No stages: as before")
+    }
+
+    func testABookedOrderWithNothingLeftKeepsThuKhiGiao() {
+        XCTAssertEqual(block(deposit: 1_150_000).lines.last, .collectAtHandOver(0), "Thu khi giao 0 keeps its line, as before and as drawn")
+    }
+
+    // MARK: #1441 one "Thu giai đoạn N", in the bar
+
+    private func detail(_ status: String, _ stages: [OrderInstallment]) throws -> OrderDetail {
+        let rows = try String(decoding: JSONEncoder().encode(stages), as: UTF8.self)
+        let json = OrderDetailDeletedCreatorTests.payload
+            .replacingOccurrences(of: #""status":"PICKUPED""#, with: "\"status\":\"\(status)\"")
+            .replacingOccurrences(of: #""createdBy":null"#, with: "\"createdBy\":null,\"hasDepositPlan\":true,\"installments\":\(rows)")
+        let detail = try XCTUnwrap(JSONDecoder.shared.decode(APIResponse<OrderDetail>.self, from: Data(json.utf8)).data)
+        XCTAssertTrue(DepositPlanLogic.hasPlan(detail))
+        return detail
+    }
+
+    private func ids(_ view: UIView) -> [String] {
+        [view.accessibilityIdentifier].compactMap { $0 } + view.subviews.flatMap(ids)
+    }
+
+    /// The block never has the button; "Sửa" (or "Xem" for staff) stays on a booked order, for every role and every stage state
+    func testTheBlockHasNoCollectButtonAndKeepsEdit() throws {
+        let twoUnpaid = [stage("i1", 230_000), stage("i2", 345_000), stage("rest", 575_000)]
+        let late = [stage("i1", 230_000, "OVERDUE"), stage("rest", 920_000)]
+        let cases: [(String, [OrderInstallment])] = [("RESERVED", twoUnpaid), ("RESERVED", oneUnpaid), ("RESERVED", late), ("RESERVED", partCollected),
+                                                     ("RESERVED", bothCollected), ("PICKUPED", allCollected), ("CANCELLED", oneUnpaid)]
+        for role in [Role.merchant, .outletAdmin, .outletStaff, .outletInventory] {
+            for (status, stages) in cases {
+                let order = try detail(status, stages)
+                let plan = OrderMoneyPlan(shownKeys: stages.map(\.key), percent: 20, collected: 230_000, remaining: 920_000)
+                let block = InstallmentCardView.make(detail: order, role: role, plan: plan, width: 400, onEdit: {}, onStage: { _ in })
+                let found = ids(block)
+                XCTAssertFalse(found.contains("deposit.card.collect"), "\(role) \(status) \(stages.map(\.status)): no Thu giai đoạn N in the block")
+                XCTAssertEqual(found.contains("deposit.card.edit"), status == "RESERVED", "\(role) \(status): Sửa on a booked order")
+                XCTAssertTrue(found.contains("deposit.card"))
+            }
+        }
+    }
+
+    /// Nobody is left without a way to collect: every stage that can be collected is the bar's stage, whatever the role
+    func testTheBarOffersEveryStageThatCanBeCollected() {
+        let lists: [[OrderInstallment]] = [
+            [stage("i1", 230_000), stage("i2", 345_000), stage("rest", 575_000)],
+            oneUnpaid,
+            [stage("i1", 230_000, "OVERDUE"), stage("rest", 920_000)],
+            [stage("i1", 100_000, "PARTIAL", paid: 100_000, planned: 230_000), stage("i2", 345_000), stage("rest", 705_000)],
+            [stage("i1", 230_000, "VOID"), stage("i2", 345_000), stage("rest", 805_000)],
+            [stage("i1", 0), stage("i2", 345_000), stage("rest", 805_000)],
+        ]
+        for stages in lists {
+            let next = DepositPlanLogic.nextToCollect(stages, status: .reserved)
+            XCTAssertNotNil(next)
+            // The plan is the order's own: the shop's mode today (ONE_TIME) is not an input of this rule
+            XCTAssertEqual(DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: true, status: .reserved, stages: stages)?.key, next?.key)
+        }
+        for canManage in [true, false] {
+            XCTAssertEqual(OrderDetailLogic.actions(orderType: .rent, status: .reserved, canManageOrders: canManage, canDeleteCancelled: canManage).primary, .handOver,
+                           "The hand-over bar does not depend on a permission")
+        }
+        for stages in [bothCollected, allCollected, [stage("rest", 1_150_000)]] {
+            XCTAssertNil(DepositPlanLogic.nextToCollect(stages, status: .reserved), "Nothing to collect: Giao đồ")
+            XCTAssertNil(DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: true, status: .reserved, stages: stages))
+        }
+        for status in [OrderStatus.pickuped, .returned, .cancelled] {
+            XCTAssertNil(DepositPlanLogic.nextToCollect(oneUnpaid, status: status), "Only a booked order collects")
+            XCTAssertNil(DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: true, status: status, stages: oneUnpaid))
+        }
+    }
+
+    /// Chữ số đều cột: every digit is as wide as another in the amounts of the block
+    func testAmountsUseTabularDigits() {
+        for font in [Utils.regularFont(size: 15), Utils.boldFont(size: 15), Utils.boldFont(size: 20)] {
+            let tabular = OrderMoneyViews.tabular(font)
+            let narrow = ("111.111" as NSString).size(withAttributes: [.font: tabular]).width
+            let wide = ("888.888" as NSString).size(withAttributes: [.font: tabular]).width
+            XCTAssertEqual(narrow, wide, accuracy: 0.01, font.fontName)
+        }
+    }
+
+    /// The sub-line of "Khách đưa lúc nhận đồ"
+    func testBreakdownStringInBothLanguages() {
+        for (language, expected) in [("vi-VN", "tiền thuê 575.000 + thế chân 300.000"), ("en", "rental 575.000 + collateral 300.000")] {
+            let bundle = Bundle(path: Bundle.main.path(forResource: language, ofType: "lproj") ?? "")
+            let format = bundle?.localizedString(forKey: "order.detail.cashBreakdown", value: nil, table: nil) ?? ""
+            XCTAssertEqual(String(format: format, "575.000", "300.000"), expected)
+        }
     }
 }

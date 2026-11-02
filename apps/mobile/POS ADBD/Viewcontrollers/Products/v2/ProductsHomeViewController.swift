@@ -44,6 +44,12 @@ final class ProductsHomeViewController: BaseViewControler {
     private let cartButton = BadgeButton(frame: CGRect(x: 0, y: 0, width: 44, height: 44))
     /// #1079: with 2+ carts open, the cart in use above the tab bar
     private let cartBar = CartSwitchBar()
+    /// #1393: "Bắt đầu: 3 việc", at the top of the list so it scrolls away with it
+    private let guideHeader = UIView()
+    private let guideCard = FirstRunGuideCardView()
+    private var guideOnScreen: FirstRunGuideCard = .hidden
+    private var guideHeaderWidth: CGFloat = 0
+    private var emptyTop: Constraint?
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -62,6 +68,7 @@ final class ProductsHomeViewController: BaseViewControler {
             gridColumns = columns
             list.reloadData()
         }
+        if guideOnScreen != .hidden, list.bounds.width != guideHeaderWidth { layoutGuideHeader() }
     }
 
     // MARK: - Lifecycle
@@ -72,6 +79,7 @@ final class ProductsHomeViewController: BaseViewControler {
         buildHeader()
         buildList()
         bindViewModel()
+        buildGuide()
         NotificationCenter.default.addObserver(self, selector: #selector(cartChanged), name: .cartStoreDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(ordersChanged), name: OrdersChangeSignal.name, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
@@ -91,6 +99,8 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
         outletButton.refresh()
+        FirstRunGuideTracker.shared.refresh()
+        applyGuide()
         // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
         if stockStale {
             stockStale = false
@@ -107,8 +117,15 @@ final class ProductsHomeViewController: BaseViewControler {
         viewModel.refreshQuietly()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        bounceGuideIfInFront()
+        PushNotificationManager.shared.homeDidAppear(self) // #1413
+    }
+
     override func startRefresh(_ sender: Any) {
         viewModel.reload()
+        FirstRunGuideTracker.shared.refresh()
         CurrentOutlet.shared.refresh(onFallback: { [weak self] name in
             guard let self else { return }
             OutletSwitcher.showFallback(name, from: self)
@@ -155,8 +172,8 @@ final class ProductsHomeViewController: BaseViewControler {
         searchField.accessibilityLabel = "products.home.searchPlaceholder".localized()
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
         searchField.delegate = self
-        // Board SP-dong: barcode scan is an icon inside the field; #651: image search is the solid blue camera button
-        // at the end so users see it (owner chose option B)
+        // Board SP-dong: barcode scan is an icon inside the field; #651: image search is the camera button at the end
+        // so users see it (owner chose option B); #1384: gradient and sparkle
         let scanButton = iconButton("barcode.viewfinder", size: DS.Icon.md, label: "common.action.scanBarcode".localized(), action: #selector(scanBarcode))
         let photoButton = imageSearchButton()
         let fieldRow = UIStackView(arrangedSubviews: [glass, searchField, scanButton, photoButton])
@@ -216,7 +233,7 @@ final class ProductsHomeViewController: BaseViewControler {
         emptyLabel.textAlignment = .center
         view.addSubview(emptyLabel)
         emptyLabel.snp.makeConstraints { make in
-            make.top.equalTo(header.snp.bottom).offset(48)
+            emptyTop = make.top.equalTo(header.snp.bottom).offset(Self.emptyTopOffset).constraint
             make.leading.trailing.equalToSuperview().inset(32)
         }
         retryButton.setTitle("Retry".localized(), for: .normal)
@@ -236,12 +253,98 @@ final class ProductsHomeViewController: BaseViewControler {
         viewModel.reload()
     }
 
-    /// #651: 38 pt solid accent square with a white camera; the touch area grows to 46 pt
+    // MARK: - First-run guide (#1393)
+
+    private static let emptyTopOffset: CGFloat = 48
+
+    private func buildGuide() {
+        guideHeader.addSubview(guideCard)
+        guideCard.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(12)
+            make.bottom.equalToSuperview().offset(-4)
+            make.leading.trailing.equalToSuperview().inset(DS.Spacing.lg)
+        }
+        guideCard.onStep = { [weak self] step in self?.runGuide(step) }
+        guideCard.onLater = { FirstRunGuideTracker.shared.collapse() } // #1410: nothing is said, the slim row is the answer
+        guideCard.onExpand = { FirstRunGuideTracker.shared.expand() }
+        guideCard.onCloseFinish = { FirstRunGuideTracker.shared.closeFinish() }
+        NotificationCenter.default.addObserver(self, selector: #selector(guideChanged), name: FirstRunGuideTracker.didChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(guideRunStep(_:)), name: FirstRunGuideTracker.runStep, object: nil)
+    }
+
+    @objc private func guideChanged() {
+        guard isViewLoaded else { return }
+        applyGuide()
+    }
+
+    /// Cài đặt › Hướng dẫn bắt đầu: a row of the sheet was tapped and this tab is in front
+    @objc private func guideRunStep(_ note: Notification) {
+        guard let raw = note.userInfo?[FirstRunGuideTracker.stepKey] as? Int, let step = FirstRunGuideStep(rawValue: raw) else { return }
+        runGuide(step)
+    }
+
+    /// The list is what ticks the product row: only while not searching and not on its way
+    private func noteProductsForGuide() {
+        guard viewModel.query == nil, !viewModel.isLoading else { return }
+        let failed = viewModel.loadError != nil && viewModel.products.isEmpty
+        FirstRunGuideTracker.shared.noteProducts(failed ? nil : !viewModel.products.isEmpty)
+    }
+
+    private func applyGuide() {
+        let card = FirstRunGuideTracker.shared.card(searching: viewModel.query != nil)
+        if case .steps = card { FirstRunGuideTracker.shared.noteCardShown() }
+        guard card != guideOnScreen else { return }
+        guideOnScreen = card
+        if card == .hidden {
+            list.tableHeaderView = nil
+            emptyTop?.update(offset: Self.emptyTopOffset)
+        } else {
+            guideCard.show(card)
+            layoutGuideHeader()
+        }
+        bounceGuideIfInFront()
+    }
+
+    /// #1410: not while the intro pages or anything else covers Home, or the one bounce is wasted
+    private func bounceGuideIfInFront() {
+        guard guideOnScreen != .hidden, view.window != nil, presentedViewController == nil else { return }
+        guideCard.bounceOnce()
+    }
+
+    private func layoutGuideHeader() {
+        let width = list.bounds.width > 0 ? list.bounds.width : view.bounds.width
+        guideHeaderWidth = list.bounds.width
+        let size = guideHeader.systemLayoutSizeFitting(CGSize(width: width, height: UILayoutFittingCompressedSize.height),
+                                                       withHorizontalFittingPriority: .required,
+                                                       verticalFittingPriority: .fittingSizeLevel)
+        guideHeader.frame = CGRect(x: 0, y: 0, width: width, height: size.height)
+        list.tableHeaderView = guideHeader
+        emptyTop?.update(offset: size.height + 44)
+    }
+
+    private func runGuide(_ step: FirstRunGuideStep) {
+        let action = FirstRunGuide.action(for: step, hasProduct: FirstRunGuideTracker.shared.hasProduct,
+                                          cartIsEmpty: CartStore.shared.cart.items.isEmpty)
+        FirstRunCoach.shared.start(action: action, home: self) // #1394: the bubbles run only from here
+        switch action {
+        case .openProductForm:
+            addProduct()
+        case .openCart(let addFirstProduct):
+            if addFirstProduct, let first = viewModel.products.first(where: listedHere) { addToCart(first) }
+            openCart()
+        }
+    }
+
+    /// #651, #1384: 38 pt gradient square with a white camera and sparkle; the touch area grows to 46 pt
     private func imageSearchButton() -> UIButton {
-        let button = HitSlopButton(type: .system)
-        button.setImage(DS.symbol("camera.fill", DS.Icon.sm), for: .normal)
+        let button = ImageSearchButton(type: .system)
+        button.setImage(DS.aiScanIcon, for: .normal)
         button.tintColor = .white
-        button.backgroundColor = DS.Color.primary
+        if let gradient = button.layer as? CAGradientLayer {
+            gradient.colors = DS.Gradient.aiScan.map(\.cgColor)
+            gradient.startPoint = CGPoint(x: 0, y: 0)
+            gradient.endPoint = CGPoint(x: 1, y: 1)
+        }
         button.layer.cornerRadius = 10
         button.accessibilityLabel = "products.home.imageSearch".localized()
         button.addTarget(self, action: #selector(imageSearch), for: .touchUpInside)
@@ -278,6 +381,8 @@ final class ProductsHomeViewController: BaseViewControler {
                 self.emptyLabel.text = reason
                 self.retryButton.isHidden = false
             }
+            self.noteProductsForGuide()
+            self.applyGuide()
         }
         viewModel.onError = { [weak self] error in
             guard let self else { return }
@@ -321,6 +426,7 @@ final class ProductsHomeViewController: BaseViewControler {
     @objc private func addProduct() {
         let form = ProductFormViewController(product: nil)
         form.onSaved = { [weak self] product in
+            FirstRunCoach.shared.stop() // #1411: this form covers Home without taking it off screen
             self?.viewModel.replace(product)
         }
         V2.presentForm(form, from: self)
@@ -823,7 +929,10 @@ private final class TileTapFilter: NSObject, UIGestureRecognizerDelegate {
 }
 
 /// A button whose touch area reaches 4 pt past its visible bounds (#651: 38 pt button, 46 pt target)
-private final class HitSlopButton: UIButton {
+private final class ImageSearchButton: UIButton {
+    /// The gradient is the button's own layer, so it always matches the bounds and stays under the icon
+    override class var layerClass: AnyClass { CAGradientLayer.self }
+
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         bounds.insetBy(dx: -4, dy: -4).contains(point)
     }

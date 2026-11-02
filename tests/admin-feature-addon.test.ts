@@ -26,6 +26,6 @@ describe('admin feature add-on (#943)', () => {
     expect(page).toContain('Không hoàn tiền');
     expect(page).toContain('Mã giao dịch');
     expect(page).toContain('Tiền mặt');
-    expect(page).toMatch(/data-testid="addon-confirm"/);
+    expect(page).toMatch(/data-testid="addon-dialog"/); // #782: one dialog, no second confirm
   });
 });

@@ -21,14 +21,14 @@ class SettingsRowsTest {
             merchant[0].items,
         )
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), merchant[1].items)
-        assertEquals(listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.ADVANCED), merchant[2].items)
-        assertEquals(11, merchant.sumOf { it.items.size })
+        assertEquals(listOf(SettingsItem.PLAN, SettingsItem.LANGUAGE, SettingsItem.WIDGET, SettingsItem.ADVANCED), merchant[2].items)
+        assertEquals(12, merchant.sumOf { it.items.size })
 
         // Outlet admin: bank accounts yes
         val outletAdmin = SettingsRows.sections("OUTLET_ADMIN", hasPlan = false)
         assertEquals(listOf(SettingsItem.STORE_INFO, SettingsItem.BANK_ACCOUNTS, SettingsItem.PRINTING), outletAdmin[0].items)
         assertEquals(listOf(SettingsItem.CATEGORIES, SettingsItem.CUSTOMERS, SettingsItem.USERS, SettingsItem.EXPORT), outletAdmin[1].items)
-        assertEquals(listOf(SettingsItem.LANGUAGE, SettingsItem.ADVANCED), outletAdmin[2].items)
+        assertEquals(listOf(SettingsItem.LANGUAGE, SettingsItem.WIDGET, SettingsItem.ADVANCED), outletAdmin[2].items)
 
         // Staff: no currency, no bank accounts; no Thu cọc (#1310)
         val staff = SettingsRows.sections("OUTLET_STAFF", hasPlan = true)

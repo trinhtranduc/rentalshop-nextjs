@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withPermissions } from '@rentalshop/auth/server';
 import { db, prisma } from '@rentalshop/database';
-import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
+import { ResponseBuilder, handleApiError, clientSafeErrorText } from '@rentalshop/utils';
 import { API, USER_ROLE, ORDER_STATUS, isStaffLikeRole } from '@rentalshop/constants';
 import { z } from 'zod';
 
@@ -170,7 +170,7 @@ export const POST = withPermissions(['orders.manage'])(async (request, { user, u
               errors.push({
                 id: order.id,
                 orderNumber: order.orderNumber,
-                error: error.message || 'Failed to delete order',
+                error: clientSafeErrorText(error, 'Failed to delete order'),
               });
               // If any order fails, throw to rollback transaction
               throw error;

@@ -30,8 +30,8 @@ android {
         applicationId = "anyrent.shop"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "0.1.11"
+        versionCode = 14
+        versionName = "0.1.12"
 
         // Overridden per buildType below.
         buildConfigField("String", "API_BASE_URL", "\"https://dev-api.anyrent.shop\"")
@@ -109,6 +109,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    // #1381 "Việc cần làm" home-screen widget and its background refresh
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.zxing:core:3.5.3")

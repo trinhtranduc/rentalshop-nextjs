@@ -60,7 +60,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
@@ -933,7 +936,7 @@ fun AppOverflowMenuAnchor(
  * - [nested]: second 90% card as a Dialog because Compose cannot stack two
  *   ModalBottomSheets (add/edit customer on top of the cart picker).
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun AppFormSheet(
     onDismiss: () -> Unit,
@@ -941,6 +944,8 @@ fun AppFormSheet(
     nested: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    // A Dialog is its own semantics tree: test tags reach uiautomator as resource ids only when asked here too
+    val tagged: @Composable () -> Unit = { Box(Modifier.semantics { testTagsAsResourceId = true }) { content() } }
     if (fullScreen) {
         Dialog(
             onDismissRequest = onDismiss,
@@ -954,7 +959,7 @@ fun AppFormSheet(
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.surface,
             ) {
-                content()
+                tagged()
             }
         }
         return
@@ -1013,7 +1018,7 @@ fun AppFormSheet(
                     Column(Modifier.fillMaxSize()) {
                         grabber()
                         Box(Modifier.fillMaxWidth().weight(1f)) {
-                            content()
+                            tagged()
                         }
                     }
                 }
@@ -1039,7 +1044,7 @@ fun AppFormSheet(
                 .fillMaxWidth()
                 .height(pageSheetHeight),
         ) {
-            content()
+            tagged()
         }
     }
 }

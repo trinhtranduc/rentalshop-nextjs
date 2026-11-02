@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { planModuleKeys } from '@rentalshop/constants';
+import { MODULE_KEY, planModuleKeys } from '@rentalshop/constants';
 import { db } from '@rentalshop/database';
-import { calculateAddonQuote, isFeatureAddon, ResponseBuilder } from '@rentalshop/utils';
+import { addonUnitsFit, calculateAddonQuote, isBasicPlanName, isFeatureAddon, ResponseBuilder } from '@rentalshop/utils';
 import type { AddonQuote } from '@rentalshop/utils';
 
 /**
@@ -86,6 +86,11 @@ export async function checkAddonPurchase(merchantId: number, addonPriceId: numbe
   if (feature && addonPrice.featureKey && planModuleKeys(subscription.plan?.features).includes(addonPrice.featureKey)) {
     return fail('ADDON_FEATURE_IN_PLAN', 422);
   }
+  // #782 (owner): loyalty is not sold to Basic until it can be set up on the phone
+  if (feature && addonPrice.featureKey === MODULE_KEY.LOYALTY && isBasicPlanName(subscription.plan?.name)) {
+    return fail('ADDON_LOYALTY_NOT_FOR_BASIC', 422);
+  }
+  if (!feature && !addonUnitsFit(addonPrice.packSize, packs)) return fail('ADDON_AMOUNT_TOO_LARGE', 422);
   if (feature && addonPrice.featureKey && (await db.merchantAddons.findActiveFeature(merchantId, addonPrice.featureKey))) {
     return fail('ADDON_FEATURE_ALREADY_ON', 422);
   }
