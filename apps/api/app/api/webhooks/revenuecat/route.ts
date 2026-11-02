@@ -21,7 +21,8 @@ import { planHistory } from '../../../../lib/plan-renewal-history';
  * #1459:
  * - the plan follows the store product (Basic or Professional, `apps/api/lib/plan-renewal.ts`) on INITIAL_PURCHASE,
  *   RENEWAL and an upgrading PRODUCT_CHANGE; a RENEWAL of a purchase recorded before #1459 keeps the plan;
- * - refund (CANCELLATION + CUSTOMER_SUPPORT) ends access, BILLING_ISSUE is flagged, the real amount is stored;
+ * - refund (CANCELLATION + CUSTOMER_SUPPORT) ends access (status EXPIRED, so the owner can buy again), BILLING_ISSUE is
+ *   flagged, the real amount is stored;
  * - each `event.id` runs once (`BillingWebhookEvent`); a processing error releases it and answers 500 so RevenueCat retries;
  * - history rows are plain Vietnamese.
  */
@@ -353,10 +354,12 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent): P
     }
     const refundedAt = eventTime(event);
     const end = refundedAt < sub.currentPeriodEnd ? refundedAt : sub.currentPeriodEnd;
+    // EXPIRED, not CANCELLED: a CANCELLED shop whose period ended gets 403 SUBSCRIPTION_CANCELLED ("contact support")
+    // from authenticateRequest; an EXPIRED one gets SUBSCRIPTION_EXPIRED and may buy again in the app
     await db.prisma.subscription.update({
       where: { merchantId },
       data: {
-        status: 'CANCELLED',
+        status: 'EXPIRED',
         currentPeriodEnd: end,
         autoRenew: false,
         cancelAtPeriodEnd: true,

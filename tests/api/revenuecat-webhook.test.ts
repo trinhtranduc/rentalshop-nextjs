@@ -310,7 +310,8 @@ describe('CANCELLATION, UNCANCELLATION, refund, billing issue, expiration', () =
   it('refund (CUSTOMER_SUPPORT): access ends at the refund, payment refunded', async () => {
     const refundAt = '2026-11-05T05:00:00.000Z';
     await send(event('CANCELLATION', { cancel_reason: 'CUSTOMER_SUPPORT', transaction_id: 'tx-1', event_timestamp_ms: MS(refundAt) }));
-    expect(sub()).toMatchObject({ status: 'CANCELLED', autoRenew: false, cancelAtPeriodEnd: true });
+    // EXPIRED (renewable in the app), not CANCELLED ("contact support" 403 SUBSCRIPTION_CANCELLED)
+    expect(sub()).toMatchObject({ status: 'EXPIRED', autoRenew: false, cancelAtPeriodEnd: true, cancelReason: 'REFUND' });
     expect(sub().currentPeriodEnd.toISOString()).toBe(refundAt);
     expect(store.payments[0].status).toBe('REFUNDED');
     expect(lastActivity()).toMatchObject({ type: 'IAP_REFUND', description: 'App Store đã hoàn tiền. Gói dừng từ 05/11/2026.' });
