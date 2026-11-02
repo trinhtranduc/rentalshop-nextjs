@@ -1,0 +1,207 @@
+import XCTest
+@testable import POS_ADBD
+
+/// #1459 Gói dịch vụ: the words and numbers the plan screens show. The rule of what may be bought is the server's
+/// (`canRenew`, `canUpgrade`, `purchasablePlanIds`); these tests pin how the app reads it. Same cases on Android
+/// (`PlanRenewalTest.kt`), contract in .agent/changes/1459-plan-renewal/mobile.md.
+final class PlanRenewalLogicTests: XCTestCase {
+    private let basicProducts = PlanStoreProducts(semiAnnual: "anyrent_merchant_semi_annual", annual: "anyrent_merchant_annual")
+    private let proProducts = PlanStoreProducts(semiAnnual: "anyrent_professional_semi_annual", annual: "anyrent_professional_annual")
+    /// 2026-11-02 10:00 in Vietnam
+    private let now = ISO8601DateFormatter().date(from: "2026-11-02T03:00:00Z")!
+
+    private func status(_ json: String) throws -> PlanStatus {
+        try JSONDecoder().decode(PlanStatus.self, from: Data(json.utf8))
+    }
+
+    // MARK: Decoding
+
+    func testStatusDecodesTheNewFieldsAndToleratesAnOlderApi() throws {
+        let new = try status("""
+        {"planId":2,"planName":"Basic","status":"ACTIVE","dbStatus":"ACTIVE","daysRemaining":5,
+         "currentPeriodEnd":"2026-11-07T03:00:00.000Z","billingAmount":1799000,"billingCurrency":"VND",
+         "billingChannel":"APP_STORE","autoRenew":false,"billingIssue":true,"storeProductId":"anyrent_merchant_annual",
+         "planTier":"basic","canRenew":true,"canUpgrade":true,"purchasablePlanIds":[2,3],"renewWindowDays":7,
+         "limits":{"outlets":1,"users":2,"products":2000,"allowWebAccess":true},"features":["Mobile app access"]}
+        """)
+        XCTAssertEqual(new.purchasable, [2, 3])
+        XCTAssertEqual(new.billingIssue, true)
+        XCTAssertEqual(new.limits, PlanLimits(outlets: 1, users: 2, products: 2000))
+        XCTAssertEqual(new.periodEnd, ISO8601DateFormatter().date(from: "2026-11-07T03:00:00Z"))
+
+        let old = try status(#"{"planName":"Basic","status":"ACTIVE","daysRemaining":20,"currentPeriodEnd":"2026-11-22T03:00:00Z"}"#)
+        XCTAssertEqual(old.purchasable, [])
+        XCTAssertNil(old.canRenew)
+        XCTAssertEqual(old.window, 7)
+    }
+
+    func testPlansDecodeLimitsAndFeaturesSentAsJsonStrings() throws {
+        let json = """
+        [{"id":2,"name":"Basic","isPopular":false,"sortOrder":1,"limits":"{\\"users\\":2,\\"products\\":2000,\\"outlets\\":1}",
+          "features":"[\\"Mobile app access\\"]","storeProductIds":{"semiAnnual":"anyrent_merchant_semi_annual","annual":"anyrent_merchant_annual"}},
+         {"id":3,"name":"Professional","isPopular":true,"sortOrder":2,"limits":"{\\"users\\":4,\\"products\\":5000}",
+          "features":"[\\"All Basic features\\",\\"Web dashboard access\\"]","storeProductIds":{"semiAnnual":"anyrent_professional_semi_annual","annual":"anyrent_professional_annual"}},
+         {"id":4,"name":"Enterprise","isPopular":false,"sortOrder":3,"limits":"{}","features":"[]","storeProductIds":null}]
+        """
+        let plans = try JSONDecoder().decode([PlanOption].self, from: Data(json.utf8))
+        XCTAssertEqual(plans.map(\.tierRank), [1, 2, 0])
+        XCTAssertEqual(plans[0].limits, PlanLimits(outlets: 1, users: 2, products: 2000))
+        XCTAssertTrue(plans[1].isPopular)
+        XCTAssertTrue(PlanRenewalLogic.hasWeb(plans[1].features))
+        XCTAssertFalse(PlanRenewalLogic.hasWeb(plans[0].features))
+        XCTAssertNil(plans[2].storeProductIds)
+    }
+
+    // MARK: Words
+
+    func testTrialShowsDungThuNeverTheRawValue() {
+        XCTAssertEqual(PlanRenewalLogic.displayPlanName("Basic", isTrial: true), "plan.trial".localized())
+        XCTAssertEqual(PlanRenewalLogic.displayPlanName("Trial", isTrial: false), "plan.trial".localized())
+        XCTAssertEqual(PlanRenewalLogic.displayPlanName("Professional", isTrial: false), "Professional")
+        XCTAssertNotEqual("plan.trial".localized(), "plan.trial")
+    }
+
+    func testStatusLineDaysLeftLastDayAndValidUntil() {
+        var s = PlanStatus(status: "ACTIVE", daysRemaining: 13, currentPeriodEnd: "2026-11-15T03:00:00Z")
+        XCTAssertEqual(PlanRenewalLogic.statusLine(s), .daysLeft(end: "15/11/2026", days: 13))
+        s.daysRemaining = 0
+        XCTAssertEqual(PlanRenewalLogic.statusLine(s), .lastDay(end: "15/11/2026"))
+        XCTAssertEqual(PlanRenewalLogic.statusLine(s, renewed: true), .validUntil(end: "15/11/2026"))
+        s.autoRenew = true
+        XCTAssertEqual(PlanRenewalLogic.statusLine(s), .validUntil(end: "15/11/2026"))
+    }
+
+    func testDayIsTheVietnamDay() {
+        // 16:59:59Z is still 2 Nov in Vietnam; 17:00Z is 3 Nov
+        XCTAssertEqual(PlanRenewalLogic.day(ISO8601DateFormatter().date(from: "2026-11-02T16:59:59Z")!), "02/11/2026")
+        XCTAssertEqual(PlanRenewalLogic.day(ISO8601DateFormatter().date(from: "2026-11-02T17:00:00Z")!), "03/11/2026")
+    }
+
+    func testIncludesLine() {
+        let basic = PlanLimits(outlets: 1, users: 2, products: 2000)
+        XCTAssertEqual(PlanRenewalLogic.includes(limits: basic, features: ["Mobile app access"], withOutlets: false),
+                       ["plan.feature.phone".localized(), String(format: "plan.feature.users".localized(), 2),
+                        String(format: "plan.feature.products".localized(), "2.000")].joined(separator: " · "))
+        let pro = PlanRenewalLogic.includes(limits: PlanLimits(outlets: 1, users: 4, products: 5000),
+                                            features: ["Web dashboard access"], withOutlets: true)
+        XCTAssertTrue(pro.hasPrefix("plan.feature.phoneWeb".localized()))
+        XCTAssertTrue(pro.contains(String(format: "plan.feature.outlets".localized(), 1)))
+        XCTAssertTrue(pro.contains("5.000"))
+    }
+
+    // MARK: Money
+
+    func testMonthlyExactAndApproximate() {
+        XCTAssertEqual(PlanRenewalLogic.monthly(total: 999_000, months: 6, currencyCode: "VND"), .init(amount: 166_500, approximate: false))
+        XCTAssertEqual(PlanRenewalLogic.monthly(total: 1_799_000, months: 12, currencyCode: "VND"), .init(amount: 150_000, approximate: true))
+        XCTAssertEqual(PlanRenewalLogic.monthly(total: 2_399_000, months: 12, currencyCode: "VND"), .init(amount: 200_000, approximate: true))
+        XCTAssertEqual(PlanRenewalLogic.monthly(total: Decimal(string: "59.99")!, months: 12, currencyCode: "USD"),
+                       .init(amount: Decimal(string: "5")!, approximate: true))
+    }
+
+    func testSavingsAgainstTwoSixMonthPeriods() {
+        XCTAssertEqual(PlanRenewalLogic.savingsPercent(semiAnnual: 999_000, annual: 1_799_000), 10)
+        XCTAssertEqual(PlanRenewalLogic.savingsPercent(semiAnnual: 1_299_000, annual: 2_399_000), 8)
+        XCTAssertNil(PlanRenewalLogic.savingsPercent(semiAnnual: 900_000, annual: 1_800_000))
+    }
+
+    // MARK: Buying
+
+    func testPurchaseKind() {
+        typealias L = PlanRenewalLogic
+        XCTAssertEqual(L.purchaseKind(selectedPlanId: 2, selectedRank: 1, currentPlanId: 2, currentRank: 1, isTrial: false), .renew)
+        XCTAssertEqual(L.purchaseKind(selectedPlanId: 3, selectedRank: 2, currentPlanId: 2, currentRank: 1, isTrial: false), .upgrade)
+        XCTAssertEqual(L.purchaseKind(selectedPlanId: 2, selectedRank: 1, currentPlanId: 3, currentRank: 2, isTrial: false), .buy)
+        // Trial: buying the plan the trial runs on is a purchase, not a renewal
+        XCTAssertEqual(L.purchaseKind(selectedPlanId: 2, selectedRank: 1, currentPlanId: 2, currentRank: 1, isTrial: true), .buy)
+        // Trial plan (no tier): every plan is a purchase
+        XCTAssertEqual(L.purchaseKind(selectedPlanId: 3, selectedRank: 2, currentPlanId: 1, currentRank: 0, isTrial: true), .buy)
+    }
+
+    func testButtonTitles() {
+        XCTAssertEqual(PlanRenewalLogic.buttonTitle(kind: .renew, planName: "Basic", months: 12, amount: "1.799.000 ₫"),
+                       String(format: "plan.button.renew".localized(), "plan.months12".localized(), "1.799.000 ₫"))
+        XCTAssertEqual(PlanRenewalLogic.buttonTitle(kind: .upgrade, planName: "Professional", months: 12, amount: "2.399.000 ₫"),
+                       String(format: "plan.button.upgrade".localized(), "Professional", "plan.months12".localized(), "2.399.000 ₫"))
+        XCTAssertEqual(PlanRenewalLogic.buttonTitle(kind: .buy, planName: "Basic", months: 6, amount: "999.000 ₫"),
+                       String(format: "plan.button.buy".localized(), "Basic", "plan.months6".localized(), "999.000 ₫"))
+    }
+
+    func testNewPeriodEndIsTodayPlusMonthsOnTheVietnamDayClamped() {
+        XCTAssertEqual(PlanRenewalLogic.day(PlanRenewalLogic.newPeriodEnd(now: now, months: 12)), "02/11/2027")
+        XCTAssertEqual(PlanRenewalLogic.day(PlanRenewalLogic.newPeriodEnd(now: now, months: 6)), "02/05/2027")
+        // 31 Jan 2027 23:30 in Vietnam (16:30Z) + 1 month → 28 Feb
+        let endOfJan = ISO8601DateFormatter().date(from: "2027-01-31T16:30:00Z")!
+        XCTAssertEqual(PlanRenewalLogic.day(PlanRenewalLogic.newPeriodEnd(now: endOfJan, months: 1)), "28/02/2027")
+        // 17:00Z on 30 Nov is already 1 Dec in Vietnam: + 6 months → 1 Jun
+        let vnDecember = ISO8601DateFormatter().date(from: "2026-11-30T17:00:00Z")!
+        XCTAssertEqual(PlanRenewalLogic.day(PlanRenewalLogic.newPeriodEnd(now: vnDecember, months: 6)), "01/06/2027")
+        XCTAssertEqual(PlanRenewalLogic.disclosure(now: now, months: 12, amount: "1.799.000 ₫"),
+                       String(format: "plan.disclosure".localized(), "02/11/2027", 12, "1.799.000 ₫"))
+    }
+
+    func testDefaultPlanIsTheCurrentOneWhenPurchasableElseTheFirst() {
+        let plans = [PlanOption(id: 2, name: "Basic", storeProductIds: basicProducts),
+                     PlanOption(id: 3, name: "Professional", isPopular: true, storeProductIds: proProducts)]
+        XCTAssertEqual(PlanRenewalLogic.defaultPlanId(plans: plans, status: PlanStatus(planId: 2, purchasablePlanIds: [2, 3])), 2)
+        XCTAssertEqual(PlanRenewalLogic.defaultPlanId(plans: plans, status: PlanStatus(planId: 2, purchasablePlanIds: [3])), 3)
+        XCTAssertNil(PlanRenewalLogic.defaultPlanId(plans: plans, status: PlanStatus(planId: 3, purchasablePlanIds: [])))
+    }
+
+    // MARK: Screens
+
+    func testScreenMode() {
+        typealias L = PlanRenewalLogic
+        let active = PlanStatus(status: "ACTIVE", purchasablePlanIds: [3])
+        XCTAssertEqual(L.mode(isOwner: true, status: active, storeHasProducts: true), .purchase)
+        XCTAssertEqual(L.mode(isOwner: true, status: active, storeHasProducts: false), .storeUnavailable)
+        XCTAssertEqual(L.mode(isOwner: true, status: PlanStatus(status: "ACTIVE", autoRenew: true), storeHasProducts: true), .autoRenewing)
+        XCTAssertEqual(L.mode(isOwner: true, status: PlanStatus(status: "ACTIVE", purchasablePlanIds: []), storeHasProducts: true), .nothingToBuy)
+        let expired = PlanStatus(status: "EXPIRED", autoRenew: true, purchasablePlanIds: [2, 3])
+        XCTAssertEqual(L.mode(isOwner: true, status: expired, storeHasProducts: true), .expiredOwner)
+        // Android build without a RevenueCat key: no store products, still a screen with Thử lại / Đăng xuất
+        XCTAssertEqual(L.mode(isOwner: true, status: expired, storeHasProducts: false), .storeUnavailable)
+        XCTAssertEqual(L.mode(isOwner: false, status: expired, storeHasProducts: true), .expiredStaff)
+    }
+
+    func testHomeLineOnlyForTheOwnerInsideTheWindow() {
+        typealias L = PlanRenewalLogic
+        let open = PlanStatus(status: "ACTIVE", daysRemaining: 5, autoRenew: false, canRenew: true, renewWindowDays: 7)
+        XCTAssertEqual(L.homeLine(isOwner: true, status: open), String(format: "plan.home.daysLeft".localized(), 5))
+        var lastDay = open
+        lastDay.daysRemaining = 0
+        XCTAssertEqual(L.homeLine(isOwner: true, status: lastDay), "plan.home.lastDay".localized())
+        XCTAssertNil(L.homeLine(isOwner: false, status: open))
+        var far = open
+        far.daysRemaining = 8
+        XCTAssertNil(L.homeLine(isOwner: true, status: far))
+        var autoRenew = open
+        autoRenew.autoRenew = true
+        XCTAssertNil(L.homeLine(isOwner: true, status: autoRenew))
+        var closed = open
+        closed.canRenew = false
+        XCTAssertNil(L.homeLine(isOwner: true, status: closed))
+        XCTAssertNil(L.homeLine(isOwner: true, status: PlanStatus(status: "EXPIRED", daysRemaining: nil, canRenew: true)))
+    }
+
+    func testPeriodOverAndConfirmation() {
+        typealias L = PlanRenewalLogic
+        XCTAssertTrue(L.isPeriodOver(ISO8601DateFormatter().date(from: "2026-11-02T02:59:59Z"), now: now))
+        XCTAssertFalse(L.isPeriodOver(ISO8601DateFormatter().date(from: "2026-11-02T03:00:01Z"), now: now))
+        XCTAssertFalse(L.isPeriodOver(nil, now: now))
+
+        let before = PlanStatus(planId: 2, status: "ACTIVE", currentPeriodEnd: "2026-11-07T03:00:00Z")
+        XCTAssertFalse(L.confirmed(before: before, after: before))
+        XCTAssertTrue(L.confirmed(before: before, after: PlanStatus(planId: 2, status: "ACTIVE", currentPeriodEnd: "2027-11-02T03:00:00Z")))
+        XCTAssertTrue(L.confirmed(before: before, after: PlanStatus(planId: 3, status: "ACTIVE", currentPeriodEnd: "2026-11-07T03:00:00Z")))
+        let expired = PlanStatus(planId: 2, status: "EXPIRED", currentPeriodEnd: "2026-10-31T03:00:00Z")
+        XCTAssertFalse(L.confirmed(before: expired, after: expired))
+        XCTAssertTrue(L.confirmed(before: expired, after: PlanStatus(planId: 2, status: "ACTIVE", currentPeriodEnd: "2027-11-02T03:00:00Z")))
+    }
+
+    func testGooglePlayIdsMatchWithoutTheBasePlan() {
+        XCTAssertEqual(PlanRenewalLogic.baseProductId("anyrent_merchant_annual:annual"), "anyrent_merchant_annual")
+        XCTAssertEqual(PlanRenewalLogic.baseProductId("anyrent_professional_annual"), "anyrent_professional_annual")
+        XCTAssertNil(PlanRenewalLogic.baseProductId(nil))
+    }
+}

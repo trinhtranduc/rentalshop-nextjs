@@ -3210,3 +3210,54 @@
 
 /* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
 "order.detail.cashBreakdown" = "tiền thuê %@ + thế chân %@";
+
+/* #1459 Gói dịch vụ: gia hạn / nâng gói trong app, màn hết hạn, dòng ở Trang chủ */
+"plan.title" = "Gói dịch vụ";
+"plan.current" = "Đang dùng";
+"plan.trial" = "Dùng thử";
+"plan.expiresDaysLeft" = "Hết hạn %@ · còn %d ngày";
+"plan.expiresLastDay" = "Hết hạn %@ · ngày cuối";
+"plan.validUntil" = "Dùng đến %@";
+"plan.includes" = "Gồm: %@";
+"plan.feature.phone" = "app điện thoại";
+"plan.feature.phoneWeb" = "app + web";
+"plan.feature.users" = "%d người dùng";
+"plan.feature.outlets" = "%d chi nhánh";
+"plan.feature.products" = "%@ sản phẩm";
+"plan.section.plan" = "Chọn gói";
+"plan.section.period" = "Chọn kỳ gia hạn";
+"plan.popular" = "Phổ biến";
+"plan.months6" = "6 tháng";
+"plan.months12" = "12 tháng";
+"plan.perMonth" = "%@/tháng";
+"plan.perMonthApprox" = "≈%@/tháng";
+"plan.savings" = "ít hơn %d%% so với 2 kỳ 6 tháng";
+"plan.button.renew" = "Gia hạn %@ · %@";
+"plan.button.upgrade" = "Nâng lên %@ · %@ · %@";
+"plan.button.buy" = "Mua gói %@ · %@ · %@";
+"plan.confirming" = "Đang xác nhận thanh toán…";
+"plan.disclosure" = "Kỳ mới tính từ hôm nay, dùng đến %@. Tự gia hạn mỗi %d tháng (%@) đến khi huỷ.";
+"plan.manage" = "Quản lý / huỷ gói";
+"plan.restore" = "Khôi phục giao dịch";
+"plan.terms" = "Điều khoản sử dụng";
+"plan.privacy" = "Chính sách bảo mật";
+"plan.section.autoRenew" = "Tự gia hạn";
+"plan.autoRenewOn" = "Tự gia hạn ngày %@ · %@";
+"plan.autoRenewOnDate" = "Tự gia hạn ngày %@";
+"plan.renewLater" = "Gia hạn được khi còn %d ngày.";
+"plan.currentRenewLater" = "Đang dùng · gia hạn được khi còn %d ngày";
+"plan.billingIssue" = "Chưa thu được tiền gia hạn. Mở Quản lý / huỷ gói để kiểm tra cách thanh toán.";
+"plan.storeUnavailable" = "Chưa mua được gói trong ứng dụng trên bản này.";
+"plan.retry" = "Thử lại";
+"plan.notConfirmed" = "Chưa nhận được xác nhận.";
+"plan.renewedUntil" = "Đã gia hạn đến %@.";
+"plan.restored" = "Đã khôi phục giao dịch.";
+"plan.nothingToRestore" = "Không tìm thấy gói đã mua để khôi phục.";
+"plan.loadError" = "Không tải được thông tin gói.";
+"plan.expired.title" = "Gói của shop đã hết hạn";
+"plan.expired.line" = "%@ · hết hạn %@. Dữ liệu của shop vẫn được giữ.";
+"plan.expired.askOwner" = "Nhờ chủ shop gia hạn.";
+"plan.logout" = "Đăng xuất";
+"plan.home.daysLeft" = "Gói còn %d ngày";
+"plan.home.lastDay" = "Gói hết hạn hôm nay";
+"plan.home.renew" = "Gia hạn";

@@ -222,6 +222,8 @@ extension AppDelegate {
     /// #1455: the screen a moment leads to, from what this install has stored now
     func route(after moment: AppStartRoute.Moment) {
         if AppStartRoute.endsOnboarding(moment) { Utils.markOnboardingCompleted() }
+        // #1459: the login answer says when the shop's period ends
+        if moment == .loggedIn { SubscriptionGate.shared.rememberLogin(User.account()) }
         switch AppStartRoute.next(after: moment, signedIn: User.account() != nil, onboardingDone: Utils.hasCompletedOnboarding()) {
         case .onboarding: loadOnboarding()
         case .login: loadLogin()
@@ -253,6 +255,7 @@ extension AppDelegate {
                 FirebaseManager.shared.logUserLogout(userId: String(user.id))
             }
             PurchasesManager.logOut()
+            SubscriptionGate.shared.clear()
             DraftOrderReminder.shared.cancel()
             User.reset()
             Utils.removePreference()
@@ -275,14 +278,40 @@ extension AppDelegate {
     /// The tabs. Which screen comes first is `route(after:)`; a push or a widget link with the pages still to do comes here directly.
     func loadMainUserView() {
         guard !AppConfigGate.isBlocked else { return }
+        // #1459: a shop whose period has ended gets the plan screen, not tabs full of 403 errors
+        if SubscriptionGate.shared.knownExpired() {
+            showExpiredPlan()
+            return
+        }
 
         // Restore draft cart before the tab bar loads. InfoMain writes rent/sale
         // on appear; doing that against an empty in-memory cart used to wipe disk.
         CartStore.shared.restoreFromDisk()
 
+        SubscriptionGate.shared.isShowingExpired = false
         setRoot(TabbarViewController())
         PushNotificationManager.shared.consumePendingOrderIfNeeded()
         TodayWidgetSync.shared.refresh() // #1375 signed in just now, or the app started on the main screen
+        SubscriptionGate.shared.verifyInBackground()
+    }
+
+    /// #1459 "Gói của shop đã hết hạn": the owner renews there, staff ask the owner. No back; Đăng xuất at the bottom.
+    func showExpiredPlan() {
+        guard !AppConfigGate.isBlocked, User.account() != nil, !SubscriptionGate.shared.isShowingExpired else { return }
+        SubscriptionGate.shared.isShowingExpired = true
+        window?.rootViewController?.dismiss(animated: false)
+        let navigation = UINavigationController(rootViewController: SubscriptionViewController(context: .expired))
+        navigation.isNavigationBarHidden = true
+        setRoot(navigation)
+    }
+
+    /// The period runs again: Home, with "Đã gia hạn đến …" when the payment was just confirmed
+    func leaveExpiredPlan(banner: String?) {
+        SubscriptionGate.shared.isShowingExpired = false
+        loadMainUserView()
+        if let banner {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { PlanBanner.show(banner) }
+        }
     }
 
     /// Cross-dissolve when leaving onboarding: to the tabs, so their heavy first load doesn't feel like a freeze on the tab bar buttons,

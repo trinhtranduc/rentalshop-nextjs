@@ -1,11 +1,7 @@
 {
   "identifier" : "AnyRentSubscriptions",
-  "nonRenewingSubscriptions" : [
-
-  ],
-  "products" : [
-
-  ],
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
   "settings" : {
     "_failTransactionsEnabled" : false,
     "_storeKitErrors" : [
@@ -21,23 +17,24 @@
       "id" : "anyrent_basic_group",
       "localizations" : [
         {
-          "description" : "Gói gia hạn Basic cho cửa hàng thuê",
-          "displayName" : "AnyRent Basic",
+          "description" : "Gói AnyRent cho cửa hàng cho thuê",
+          "displayName" : "AnyRent",
           "locale" : "vi_VN"
+        },
+        {
+          "description" : "AnyRent plan for rental shops",
+          "displayName" : "AnyRent",
+          "locale" : "en_US"
         }
       ],
-      "name" : "AnyRent Basic",
+      "name" : "AnyRent",
       "subscriptions" : [
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
+          "adHocOffers" : [],
+          "codeOffers" : [],
           "displayPrice" : "999000",
           "familyShareable" : false,
-          "groupNumber" : 1,
+          "groupNumber" : 2,
           "internalID" : "anyrent_semi_annual_local",
           "introductoryOffer" : null,
           "localizations" : [
@@ -57,17 +54,11 @@
           "referenceName" : "AnyRent Basic 6 Months",
           "subscriptionGroupID" : "anyrent_basic_group",
           "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
+          "winbackOffers" : []
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
+          "adHocOffers" : [],
+          "codeOffers" : [],
           "displayPrice" : "1799000",
           "familyShareable" : false,
           "groupNumber" : 2,
@@ -90,9 +81,61 @@
           "referenceName" : "AnyRent Basic 12 Months",
           "subscriptionGroupID" : "anyrent_basic_group",
           "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
+          "winbackOffers" : []
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "1299000",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "anyrent_pro_semi_annual_local",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Gia hạn AnyRent Professional 6 tháng",
+              "displayName" : "6 tháng",
+              "locale" : "vi_VN"
+            },
+            {
+              "description" : "Renew AnyRent Professional for 6 months",
+              "displayName" : "6 months",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "anyrent_professional_semi_annual",
+          "recurringSubscriptionPeriod" : "P6M",
+          "referenceName" : "AnyRent Professional 6 Months",
+          "subscriptionGroupID" : "anyrent_basic_group",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "2399000",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "anyrent_pro_annual_local",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Gia hạn AnyRent Professional 12 tháng",
+              "displayName" : "12 tháng",
+              "locale" : "vi_VN"
+            },
+            {
+              "description" : "Renew AnyRent Professional for 12 months",
+              "displayName" : "12 months",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "anyrent_professional_annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "AnyRent Professional 12 Months",
+          "subscriptionGroupID" : "anyrent_basic_group",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : []
         }
       ]
     }

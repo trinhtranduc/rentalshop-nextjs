@@ -120,6 +120,8 @@ enum APIEndpoint {
 
         // Subscriptions
         static let subscriptionsStatus = "/api/subscriptions/status"
+        /// #1459 plans sold in the app (`storeProductIds`, `isPopular`); MERCHANT, open to expired shops
+        static let plans = "/api/plans"
         
         // Outlets
         static let outlets = "/api/outlets"
