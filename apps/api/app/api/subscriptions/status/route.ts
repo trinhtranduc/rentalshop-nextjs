@@ -5,6 +5,7 @@ import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { civilDaysBetween, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { getPlanLimitsInfo } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
+import { inAppPlans, normaliseChannel, renewalOffer, storeProduct, type InAppPlan } from '../../../../lib/plan-renewal';
 
 /**
  * GET /api/subscriptions/status
@@ -36,6 +37,50 @@ async function realLimits(merchantId: number) {
     console.error('Error reading the effective plan limits:', error);
     return null;
   }
+}
+
+/** #1459: plans sold in the apps (Basic, Professional). A read failure → [] (nothing to buy), the rest of the answer as before. */
+async function inAppPlansSafe(): Promise<InAppPlan[]> {
+  try {
+    const plans = await db.prisma.plan.findMany({
+      where: { isActive: true, deletedAt: null },
+      select: { id: true, name: true, isActive: true, deletedAt: true },
+    });
+    return inAppPlans(plans);
+  } catch (error) {
+    console.error('Error reading the in-app plans:', error);
+    return [];
+  }
+}
+
+/**
+ * #1459 renewal fields (new keys only; installed apps ignore them). The rule is `renewalOffer` in lib/plan-renewal.ts:
+ * same plan when ≤ 7 Vietnam days are left, during the trial or after expiry; a higher plan any time; nothing while the
+ * store or Lemon Squeezy renews automatically.
+ */
+async function renewalFields(subscription: any, plan: any, now: Date) {
+  const offer = renewalOffer(
+    {
+      dbStatus: subscription.status,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      planId: plan?.id ?? subscription.planId,
+      planName: plan?.name,
+      autoRenew: subscription.autoRenew,
+      now,
+    },
+    await inAppPlansSafe()
+  );
+  return {
+    billingChannel: normaliseChannel(subscription.billingChannel),
+    autoRenew: offer.autoRenew,
+    billingIssue: !!subscription.billingIssueAt,
+    storeProductId: storeProduct(subscription.storeProductId)?.id ?? null,
+    planTier: offer.planTier,
+    canRenew: offer.canRenew,
+    canUpgrade: offer.canUpgrade,
+    purchasablePlanIds: offer.purchasablePlanIds,
+    renewWindowDays: offer.renewWindowDays,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -181,6 +226,7 @@ export async function GET(request: NextRequest) {
       // ============================================================================
       
       const real = await realLimits(merchant.id);
+      const renewal = await renewalFields(subscription, plan, now);
 
       const subscriptionStatus = {
         // ============================================================================
@@ -254,7 +300,12 @@ export async function GET(request: NextRequest) {
         // ============================================================================
         // PLAN FEATURES
         // ============================================================================
-        features: plan?.features ? JSON.parse(plan.features) : []
+        features: plan?.features ? JSON.parse(plan.features) : [],
+
+        // ============================================================================
+        // #1459 RENEWAL IN THE APPS (new keys; old keys above keep their meaning)
+        // ============================================================================
+        ...renewal,
       };
 
       return NextResponse.json(ResponseBuilder.success('SUBSCRIPTION_STATUS_RETRIEVED', subscriptionStatus));

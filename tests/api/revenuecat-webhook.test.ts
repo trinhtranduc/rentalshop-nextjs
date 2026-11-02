@@ -145,6 +145,7 @@ const sub = () => store.subscriptions.find((s) => s.merchantId === 7)!;
 const lastActivity = () => store.activities[store.activities.length - 1];
 
 beforeEach(() => {
+  eventSeq = 0;
   process.env.REVENUECAT_WEBHOOK_SECRET = SECRET;
   store.merchants = [{ id: 7 }];
   store.plans = [

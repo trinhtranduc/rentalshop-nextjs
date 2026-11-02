@@ -644,6 +644,16 @@ model Subscription {
   period               Int                    @default(1)
   discount             Float                  @default(0)
   savings              Float                  @default(0)
+  /// #1459 how the plan is paid: APP_STORE | PLAY_STORE | LEMON | MANUAL. Null = set before #1459 (admin / manual).
+  billingChannel       String?
+  /// #1459 store product of the current period (App Store product id = Google Play subscription id)
+  storeProductId       String?
+  /// #1459 the store's original transaction id (RevenueCat `original_transaction_id`)
+  storeOriginalTransactionId String?
+  /// #1459 the store or Lemon Squeezy renews at the period end (off after a cancel, refund or expiry)
+  autoRenew            Boolean                @default(false)
+  /// #1459 the store could not charge the renewal; cleared by the next renewal
+  billingIssueAt       DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
   payments             Payment[]
@@ -671,6 +681,22 @@ model SubscriptionActivity {
 
   @@index([subscriptionId])
   @@index([type])
+  @@index([createdAt])
+}
+
+/// #1459 billing webhook events already processed (RevenueCat `event.id`), so a resent event changes nothing.
+/// Internal only: never exposed by the API.
+model BillingWebhookEvent {
+  id         Int      @id @default(autoincrement())
+  /// REVENUECAT (LEMON in phase 2)
+  provider   String
+  eventId    String
+  eventType  String
+  merchantId Int?
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, eventId])
+  @@index([merchantId])
   @@index([createdAt])
 }
 

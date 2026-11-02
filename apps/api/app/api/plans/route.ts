@@ -4,10 +4,13 @@ import { withAuthRoles } from '@rentalshop/auth/server';
 import { planCreateSchema, handleApiError } from '@rentalshop/utils';
 import type { PlanCreateInput } from '@rentalshop/types';
 import { USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
+import { storeProductIdsForPlanName } from '../../../lib/plan-renewal';
 
 /**
  * GET: ADMIN (full catalog + inactive) | MERCHANT (active plans only, for upgrade/checkout).
  * requireActiveSubscription: false so expired merchants can still load plans to renew.
+ * #1459: each plan adds `storeProductIds` ({ semiAnnual, annual } App Store / Google Play ids; null when the plan is
+ * not sold in the apps). New key only.
  */
 export const GET = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT], { requireActiveSubscription: false })(
   async (request: NextRequest, { user }) => {
@@ -54,7 +57,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT], { 
     return NextResponse.json({
       success: true,
       data: {
-        plans: result.data,
+        plans: result.data.map((plan: any) => ({ ...plan, storeProductIds: storeProductIdsForPlanName(plan?.name) })),
         total: result.total,
         page: resultPage,
         limit: resultLimit,
