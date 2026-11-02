@@ -183,7 +183,7 @@ final class PushNotificationManager: NSObject {
             // Ensure main UI is showing
             if !(appDelegate.window?.rootViewController is TabbarViewController) {
                 self.pendingOrderId = orderId
-                appDelegate.loadMainUserView(forceMain: true)
+                appDelegate.loadMainUserView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     self.consumePendingOrderIfNeeded()
                 }
@@ -199,7 +199,7 @@ final class PushNotificationManager: NSObject {
         DispatchQueue.main.async {
             guard User.account() != nil, let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
             if !(appDelegate.window?.rootViewController is TabbarViewController) {
-                appDelegate.loadMainUserView(forceMain: true)
+                appDelegate.loadMainUserView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.pushMyShifts() }
                 return
             }
@@ -212,7 +212,7 @@ final class PushNotificationManager: NSObject {
         DispatchQueue.main.async {
             guard User.account() != nil, let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
             if !(appDelegate.window?.rootViewController is TabbarViewController) {
-                appDelegate.loadMainUserView(forceMain: true)
+                appDelegate.loadMainUserView()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { self.pushBookingRequest(id: id) }
                 return
             }

@@ -351,7 +351,7 @@ class LoginViewController: BaseViewControler {
                 User.save(user: user)
                 PurchasesManager.syncFromCurrentUser()
                 PushNotificationManager.shared.start()
-                appDelegate.loadMainUserView()
+                appDelegate.route(after: .loggedIn)
             }
         }
     }
