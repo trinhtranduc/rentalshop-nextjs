@@ -313,7 +313,7 @@ fun SubscriptionScreen(
                             Text(" · " + stringResource(if (s.isTrial) R.string.plan_trial else R.string.plan_current), fontSize = 16.sp, color = PlanColors.Muted)
                         }
                         s.currentPeriodEnd?.let { end ->
-                            val line = if (renewed) PlanStatusLine.ValidUntil(PlanRenewal.vnDate(end)) else PlanRenewal.statusLine(s.daysRemaining, end)
+                            val line = PlanRenewal.statusLine(s.daysRemaining, end, renewed = renewed, autoRenew = s.autoRenew)
                             Text(statusText(line), fontSize = 14.sp, color = PlanColors.Muted)
                         }
                         if (s.billingIssue) {

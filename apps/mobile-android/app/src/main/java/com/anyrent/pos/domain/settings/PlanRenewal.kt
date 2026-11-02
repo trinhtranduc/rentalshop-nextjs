@@ -90,9 +90,11 @@ object PlanRenewal {
     /** dd/MM/yyyy of the Vietnam day of an instant */
     fun vnDate(instant: Instant): String = DAY.format(instant.atZone(ZONE))
 
-    fun statusLine(daysRemaining: Int?, end: Instant): PlanStatusLine {
+    /** As iOS `PlanRenewalLogic.statusLine`: "Dùng đến …" once renewed or while the store renews by itself */
+    fun statusLine(daysRemaining: Int?, end: Instant, renewed: Boolean = false, autoRenew: Boolean = false): PlanStatusLine {
         val date = vnDate(end)
-        return if (daysRemaining == null || daysRemaining > 0) PlanStatusLine.DaysLeft(date, daysRemaining ?: 0) else PlanStatusLine.LastDay(date)
+        if (renewed || autoRenew || daysRemaining == null) return PlanStatusLine.ValidUntil(date)
+        return if (daysRemaining > 0) PlanStatusLine.DaysLeft(date, daysRemaining) else PlanStatusLine.LastDay(date)
     }
 
     /** Store price per month: exact when it divides, else rounded (1.000 ₫, or 0.01 in other currencies) and marked "≈" */

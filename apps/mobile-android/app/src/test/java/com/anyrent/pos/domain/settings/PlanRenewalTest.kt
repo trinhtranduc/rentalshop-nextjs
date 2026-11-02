@@ -45,6 +45,10 @@ class PlanRenewalTest {
         val end = Instant.parse("2026-11-15T16:00:00Z") // 15/11 23:00 VN
         assertEquals(PlanStatusLine.DaysLeft("15/11/2026", 13), PlanRenewal.statusLine(13, end))
         assertEquals(PlanStatusLine.LastDay("15/11/2026"), PlanRenewal.statusLine(0, end))
+        // as iOS: "Dùng đến …" once renewed, while the store renews by itself, or without a day count
+        assertEquals(PlanStatusLine.ValidUntil("15/11/2026"), PlanRenewal.statusLine(0, end, renewed = true))
+        assertEquals(PlanStatusLine.ValidUntil("15/11/2026"), PlanRenewal.statusLine(13, end, autoRenew = true))
+        assertEquals(PlanStatusLine.ValidUntil("15/11/2026"), PlanRenewal.statusLine(null, end))
         // 16:59:59Z is still 15/11 in Vietnam, 17:00Z is 16/11
         assertEquals("15/11/2026", PlanRenewal.vnDate(Instant.parse("2026-11-15T16:59:59Z")))
         assertEquals("16/11/2026", PlanRenewal.vnDate(Instant.parse("2026-11-15T17:00:00Z")))

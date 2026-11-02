@@ -87,6 +87,7 @@ android_boot() {
       -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_6 >/dev/null
   fi
   # With a window (visible run): never -no-window
+  # The first boot creates a 6 GB (sparse) data partition and refuses to start with less than ~7.2 GB free
   nohup "$SDK/emulator/emulator" -avd "$E2E_AVD" -port "$E2E_AVD_PORT" -no-snapshot-save -no-audio -no-boot-anim \
     >"$AOUT/emulator.log" 2>&1 &
   "$ADB" -s "$SERIAL" wait-for-device
@@ -110,12 +111,14 @@ android_launch() {
 android_fresh() {
   "$ADB" -s "$SERIAL" uninstall "$PKG" >/dev/null 2>&1 || true
   "$ADB" -s "$SERIAL" install -r -g "$APK" >/dev/null
+  # The checks read the Vietnamese screens: the app runs in Vietnamese whatever the emulator's language
+  "$ADB" -s "$SERIAL" shell cmd locale set-app-locales "$PKG" --locales vi-VN >/dev/null 2>&1 || true
   android_launch
 }
 
 android_login() { # android_login <email> <password>
   sleep 3
-  if "$UI" wait "Bỏ qua" 10; then "$UI" tap "Bỏ qua" || true; fi
+  if "$UI" wait "Bỏ qua" 10; then "$UI" tap "Bỏ qua" || true; elif "$UI" has "Skip"; then "$UI" tap "Skip" || true; fi
   "$UI" wait "~Email" 20 || { echo "MISS  login screen"; return 1; }
   "$UI" tap "Email" 2 2>/dev/null || "$UI" tap "~Email"
   sleep 1; "$UI" clear; "$UI" type "$1"; sleep 1; "$UI" back || true
