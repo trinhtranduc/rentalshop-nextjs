@@ -99,7 +99,8 @@ build_api() {
   cp -R node_modules/.prisma/client apps/api/node_modules/.prisma/client
   # The build rewrites tracked dist files; keep the working tree clean.
   local f
-  git ls-files -m -- 'packages/*/dist' | while IFS= read -r f; do git checkout -- "$f"; done
+  # The trailing /* matters: a pathspec with a wildcard must match the whole path, so 'packages/*/dist' matches no file.
+  git ls-files -m -- 'packages/*/dist/*' | while IFS= read -r f; do git checkout -- "$f"; done
 }
 
 start() {

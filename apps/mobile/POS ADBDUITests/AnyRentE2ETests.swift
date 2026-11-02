@@ -2299,6 +2299,7 @@ final class AnyRentE2ETests: XCTestCase {
 
     /// #1380, #1400: E2E_ORDER_NUMBER = a booked plan order with stages i1 and i2 uncollected. The bottom bar's "Thu giai đoạn N"
     /// replaces Giao đồ until the last stage is collected from it, then the hand-over works. Any role.
+    /// #1441: that is the only "Thu giai đoạn N"; the money block keeps "Sửa" ("Xem" for staff).
     func test5jStageUnpaidHidesHandOver() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")
@@ -2306,6 +2307,8 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         openOrder(number)
         let bar = app.buttons["order.detail.collectStage"]
+        let inBlock = app.buttons["deposit.card.collect"]
+        let edit = app.buttons["deposit.card.edit"]
         let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
         func collectNext(_ step: String) {
             XCTAssertTrue(bar.isHittable, "Thu giai đoạn N in the bottom bar")
@@ -2321,16 +2324,24 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertFalse(handOver.exists, "two stages unpaid: no Giao đồ")
         XCTAssertTrue(app.buttons["orderDetail.print"].exists, "In stays")
         e2e.shot("5j-1-two-unpaid")
+        scrollPaymentToTop()
+        XCTAssertTrue(edit.exists, "Sửa stays in the block")
+        XCTAssertFalse(inBlock.exists, "two stages unpaid: no Thu giai đoạn N in the block")
+        XCTAssertTrue(bar.isHittable, "two stages unpaid: the bar stays under the block")
+        e2e.shot("5j-1b-block-no-collect")
 
         collectNext("2-first")
         XCTAssertTrue(bar.waitForExistence(timeout: 5), "one stage unpaid: the next stage's button")
         XCTAssertTrue(["Thu giai đoạn 2", "Collect stage 2"].contains(bar.label), bar.label)
         XCTAssertFalse(handOver.exists, "one stage unpaid: no Giao đồ")
+        XCTAssertFalse(inBlock.exists, "one stage unpaid: no Thu giai đoạn N in the block")
+        XCTAssertTrue(edit.exists, "one stage unpaid: Sửa stays")
         e2e.shot("5j-3-one-unpaid")
 
         collectNext("4-last")
         XCTAssertTrue(handOver.waitForExistence(timeout: 8), "all stages collected: Giao đồ is back")
         XCTAssertFalse(bar.exists, "all stages collected: no collect button")
+        XCTAssertFalse(inBlock.exists, "all stages collected: none in the block either")
         e2e.shot("5j-5-all-collected")
         handOver.tap()
         let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)
@@ -2343,7 +2354,8 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.shot("5j-7-handed-over")
     }
 
-    /// #1380: E2E_CONTROL_ORDER = a booked order without a plan (one "Đã cọc"): Giao đồ as before, no line
+    /// #1380: E2E_CONTROL_ORDER = a booked order without a plan (one "Đã cọc"): Giao đồ as before, no line.
+    /// #1441: no "Thu giai đoạn N" anywhere, neither in the bar nor in the block.
     func test5kNoPlanKeepsHandOver() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")
@@ -2352,6 +2364,10 @@ final class AnyRentE2ETests: XCTestCase {
         openOrder(number)
         XCTAssertTrue(e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button).waitForExistence(timeout: 8), "no plan: Giao đồ")
         XCTAssertFalse(app.staticTexts["order.detail.stageUnpaid"].exists, "no plan: no line")
+        XCTAssertFalse(app.buttons["order.detail.collectStage"].exists, "no plan: no Thu giai đoạn N in the bar")
+        scrollPaymentToTop()
+        XCTAssertFalse(app.buttons["deposit.card.collect"].exists, "no plan: no Thu giai đoạn N in the block")
+        XCTAssertFalse(app.buttons["deposit.card.edit"].exists, "no plan: no Sửa")
         e2e.shot("5k-no-plan")
     }
 
@@ -5303,7 +5319,7 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.soft(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Đã thu ' OR label CONTAINS 'Collected '")).firstMatch.exists,
                  "the order row shows Đã thu")
 
-        // 5. Back to the detail: edit the plan, hand-over blocked, collect stage 2, hand-over sheet
+        // 5. Back to the detail: edit the plan, hand-over blocked (#1400: the bar offers stage 2 instead of Giao đồ), collect stage 2, hand-over sheet
         let orderRow = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", number)).firstMatch
         if orderRow.waitForExistence(timeout: 5) { orderRow.tap() } else { return XCTFail("order #\(number) not in the list") }
         sleep(3)
@@ -5315,20 +5331,27 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.goBackOnce()
         sleep(1)
         let handOver = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Giao đồ' OR label BEGINSWITH 'Hand over'")).firstMatch
-        XCTAssertTrue(handOver.waitForExistence(timeout: 5), "Giao đồ button")
-        handOver.tap()
-        sleep(2)
+        let collectInBar = app.buttons["order.detail.collectStage"]
+        XCTAssertTrue(collectInBar.waitForExistence(timeout: 5), "stage 2 is unpaid: the bar offers it")
+        XCTAssertTrue(["Thu giai đoạn 2", "Collect stage 2"].contains(collectInBar.label), collectInBar.label)
+        XCTAssertFalse(handOver.exists, "stage 2 is unpaid: the hand-over is blocked")
+        XCTAssertFalse(app.buttons["deposit.card.collect"].exists, "#1441: only the bar has the button")
         e2e.shot("66a-handover-blocked")
-        XCTAssertTrue(textStarting(["Đợt cọc chưa thu", "Uncollected deposit stages"]).exists, "the unpaid stages sheet shows")
-        e2e.button(["Thu giai đoạn 2", "Collect stage 2"]).tap()
-        sleep(2)
+        collectInBar.tap()
+        let confirmCollect = app.buttons["deposit.collect.confirm"]
+        XCTAssertTrue(confirmCollect.waitForExistence(timeout: 5), "the collect sheet")
+        sleep(1)
         e2e.shot("66b-collect-sheet")
-        let confirmCollect = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Thu ' OR label BEGINSWITH 'Collect '")).allElementsBoundByIndex
-            .filter { $0.isHittable }.max { $0.frame.minY < $1.frame.minY }
-        confirmCollect?.tap()
+        confirmCollect.tap()
         sleep(4)
-        e2e.shot("66c-after-collect-handover-sheet")
-        // the hand-over sheet follows by itself: close it without handing over
+        e2e.shot("66c-after-collect")
+        // every stage is collected: the bar has Giao đồ again and its sheet opens; close it without handing over
+        XCTAssertTrue(handOver.waitForExistence(timeout: 8), "all stages collected: Giao đồ is back")
+        XCTAssertFalse(collectInBar.exists, "all stages collected: nothing left to collect")
+        handOver.tap()
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)
+        XCTAssertTrue(handed.waitForExistence(timeout: 8), "the hand-over sheet")
+        e2e.shot("66c-handover-sheet")
         e2e.tapIfExists(e2e.button(["Cancel", "Hủy", "Huỷ", "Close", "Đóng"]), timeout: 3)
         sleep(2)
         e2e.shot("66d-detail-stage-2-collected")
@@ -5583,7 +5606,7 @@ final class AnyRentE2ETests: XCTestCase {
     }
 
     /// `E2E_MONEY_ORDERS`: the orders of the 9 cases of the approved mockup (tab "odmoney"), in order. One screenshot and the lines of
-    /// each. The two "Thu giai đoạn N" buttons open the same sheet of the same stage and "Sửa" still opens the plan. Nothing is saved.
+    /// each. #1441: "Thu giai đoạn N" is only in the bar, it opens the sheet of the right stage, and "Sửa" still opens the plan. Nothing is saved.
     func testOrderMoney01NineCases() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")
@@ -5620,19 +5643,17 @@ final class AnyRentE2ETests: XCTestCase {
             XCTAssertFalse(oldCollateral.exists, "case \(id): the three lines became one")
             XCTAssertEqual(rest.exists, id == 9, "case \(id): the last stage")
             XCTAssertEqual(remaining.exists, [3, 4, 9].contains(id), "case \(id): Còn phải thu")
-            XCTAssertEqual(inBlock.exists, [3, 4].contains(id), "case \(id): Thu giai đoạn N in the block")
+            XCTAssertFalse(inBlock.exists, "case \(id): no Thu giai đoạn N in the block")
             XCTAssertEqual(inBar.exists, [3, 4].contains(id), "case \(id): Thu giai đoạn N in the bar")
             XCTAssertEqual(giveBack.exists, id == 5, "case \(id): Khi nhận trả")
             if id == 3 {
-                XCTAssertEqual(inBlock.label, inBar.label, "the same stage")
-                for button in [inBlock, inBar] {
-                    button.tap()
-                    let amount = app.textFields["deposit.collect.amount"]
-                    XCTAssertTrue(amount.waitForExistence(timeout: 5), "the collect sheet")
-                    XCTAssertTrue(["345.000", "345,000"].contains((amount.value as? String) ?? ""), "stage 2 is the one to collect")
-                    e2e.button(["Hủy", "Huỷ", "Cancel"]).tap()
-                    sleep(1)
-                }
+                XCTAssertTrue(["Thu giai đoạn 2", "Collect stage 2"].contains(inBar.label), inBar.label)
+                inBar.tap()
+                let amount = app.textFields["deposit.collect.amount"]
+                XCTAssertTrue(amount.waitForExistence(timeout: 5), "the collect sheet")
+                XCTAssertTrue(["345.000", "345,000"].contains((amount.value as? String) ?? ""), "stage 2 is the one to collect")
+                e2e.button(["Hủy", "Huỷ", "Cancel"]).tap()
+                sleep(1)
                 let edit = app.buttons["deposit.card.edit"]
                 XCTAssertTrue(edit.exists, "Sửa")
                 edit.tap()
@@ -5647,6 +5668,7 @@ final class AnyRentE2ETests: XCTestCase {
 
     /// `E2E_MONEY_EXTRA`: a sale, then rentals outside the 9 cases (long amounts, a late stage, cancelled keeping money). A sale keeps its
     /// rows; long amounts wrap on a small phone. One look at each. Nothing is saved.
+    /// #1441: no "Thu giai đoạn N" in any block. Every booked plan order of this list has a stage to collect: the bar offers it, also when it is late.
     func testOrderMoney02SaleAndOthers() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")
@@ -5658,12 +5680,19 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(1)
         e2e.shot("money-sale")
         XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Tạm tính", "Subtotal"])).count, 1, "A sale keeps Tạm tính")
+        let inBlock = app.buttons["deposit.card.collect"]
+        let inBar = app.buttons["order.detail.collectStage"]
+        XCTAssertFalse(inBlock.exists, "a sale: no Thu giai đoạn N in the block")
+        XCTAssertFalse(inBar.exists, "a sale: no Thu giai đoạn N in the bar")
         for (index, number) in orders.dropFirst().enumerated() {
             app.terminate()
             try e2e.start()
             openOrder(number)
             scrollPaymentToTop()
             e2e.shot("money-other\(index + 1)")
+            XCTAssertFalse(inBlock.exists, "order \(number): no Thu giai đoạn N in the block")
+            // "Sửa" shows only on a booked order
+            XCTAssertEqual(inBar.exists, app.buttons["deposit.card.edit"].exists, "order \(number): a booked plan order has the button in the bar, the others do not")
         }
     }
 

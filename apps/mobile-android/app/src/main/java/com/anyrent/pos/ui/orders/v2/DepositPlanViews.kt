@@ -115,8 +115,8 @@ private fun stageSubtitle(stage: OrderInstallment): String {
 
 /**
  * The stages inside THANH TOÁN, before the amount due (#1435, approved mockup, tab "odmoney"). [plan] says which stages show and
- * whether "Còn phải thu" does. [onEdit] is "Sửa" / "Xem"; [onCollect] is the light button (the bar has the same one, #1401);
- * [onStage] a tap on a paid stage (owner: void it).
+ * whether "Còn phải thu" does. [onEdit] is "Sửa" / "Xem"; [onStage] a tap on a paid stage (owner: void it). "Thu giai đoạn N" is
+ * only in the bar under the screen (#1441).
  */
 @Composable
 internal fun InstallmentCard(
@@ -124,7 +124,6 @@ internal fun InstallmentCard(
     role: String?,
     plan: OrderMoneyPlan,
     onEdit: () -> Unit,
-    onCollect: (OrderInstallment) -> Unit,
     onStage: (OrderInstallment) -> Unit,
 ) {
     val info = detail.deposit ?: return
@@ -155,16 +154,6 @@ internal fun InstallmentCard(
             if (stage.key in plan.shownKeys) {
                 StageRow(stage, index + 1, today, tappable = reserved && stage.isPaid && DepositPlanLogic.canVoid(role), onTap = { onStage(stage) })
             }
-        }
-        val next = if (reserved) DepositPlanLogic.nextToCollect(stages, detail.summary.status) else null
-        val number = next?.let { DepositPlanLogic.stageNumber(stages, it.key) }
-        if (next != null && number != null) {
-            Button(
-                onClick = { onCollect(next) },
-                modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth().height(44.dp).testTag("deposit.card.collect"),
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEFF6FF), contentColor = DS.Colors.Primary),
-            ) { Text(stringResource(R.string.deposit_card_collect_stage, number), style = moneyTextStyle(), fontSize = DS.TextSize.Body, fontWeight = FontWeight.Bold) }
         }
     }
 }

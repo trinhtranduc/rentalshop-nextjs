@@ -1,6 +1,7 @@
 package com.anyrent.pos.domain.orders
 
 import com.anyrent.pos.domain.deposit.DepositPlanInfo
+import com.anyrent.pos.domain.deposit.DepositPlanLogic
 import com.anyrent.pos.domain.deposit.InstallmentSummary
 import com.anyrent.pos.domain.deposit.OrderInstallment
 import com.anyrent.pos.domain.money.ShopCurrency
@@ -9,6 +10,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 /**
  * #1435 the money block of a rental: which lines show in each of the 9 cases of the approved mockup (tab "odmoney"). Same
@@ -225,5 +227,47 @@ class OrderMoneyBlockTest {
     @Test
     fun `a booked order with nothing left keeps Thu khi giao`() {
         assertEquals(OrderMoneyLine.CollectAtHandOver(0.0), block(deposit = 1_150_000.0).lines.last())
+    }
+
+    /** #1441: one "Thu giai đoạn N", in the bar under the screen. The block keeps "Sửa". */
+    @Test
+    fun `the block has no collect button and keeps Sua, the bar has the button`() {
+        val block = File("src/main/java/com/anyrent/pos/ui/orders/v2/DepositPlanViews.kt").readText()
+        val screen = File("src/main/java/com/anyrent/pos/ui/orders/v2/OrderDetailV2Screen.kt").readText()
+        assertFalse("No Thu giai đoạn N in the block", block.contains("deposit.card.collect"))
+        assertFalse("InstallmentCard has no collect callback", block.substringAfter("internal fun InstallmentCard(").substringBefore(") {").contains("onCollect"))
+        assertTrue("Sửa stays", block.contains("deposit.card.edit"))
+        assertTrue("The bar has it", screen.contains("order.detail.collectStage"))
+    }
+
+    /** #1441: nobody is left without a way to collect: every stage that can be collected is the bar's stage, whatever the role */
+    @Test
+    fun `the bar offers every stage that can be collected`() {
+        val lists = listOf(
+            listOf(stage("i1", 230_000.0), stage("i2", 345_000.0), stage("rest", 575_000.0)),
+            oneUnpaid,
+            listOf(stage("i1", 230_000.0, "OVERDUE"), stage("rest", 920_000.0)),
+            listOf(stage("i1", 100_000.0, "PARTIAL", 100_000.0, planned = 230_000.0), stage("i2", 345_000.0), stage("rest", 705_000.0)),
+            listOf(stage("i1", 230_000.0, "VOID"), stage("i2", 345_000.0), stage("rest", 805_000.0)),
+            listOf(stage("i1", 0.0), stage("i2", 345_000.0), stage("rest", 805_000.0)),
+        )
+        for (stages in lists) {
+            val next = DepositPlanLogic.nextToCollect(stages, "RESERVED")
+            assertTrue(next != null)
+            // The plan is the order's own: the shop's mode today (ONE_TIME) is not an input of this rule
+            val info = DepositPlanInfo(installments = stages, hasPlan = true)
+            assertEquals(next, DepositPlanLogic.stageToCollectBeforeHandOver(info, "RESERVED"))
+        }
+        for (canManage in listOf(true, false)) {
+            assertEquals("The hand-over bar does not depend on a permission", DetailPrimary.HAND_OVER, OrderDetailLogic.actions("RENT", "RESERVED", canManage, canManage).primary)
+        }
+        for (stages in listOf(bothCollected, allCollected, listOf(stage("rest", 1_150_000.0)))) {
+            assertNull("Nothing to collect: Giao đồ", DepositPlanLogic.nextToCollect(stages, "RESERVED"))
+            assertNull(DepositPlanLogic.stageToCollectBeforeHandOver(DepositPlanInfo(installments = stages, hasPlan = true), "RESERVED"))
+        }
+        for (status in listOf("PICKUPED", "RETURNED", "CANCELLED")) {
+            assertNull("Only a booked order collects", DepositPlanLogic.nextToCollect(oneUnpaid, status))
+            assertNull(DepositPlanLogic.stageToCollectBeforeHandOver(DepositPlanInfo(installments = oneUnpaid, hasPlan = true), status))
+        }
     }
 }

@@ -396,7 +396,6 @@ fun OrderDetailV2Screen(
                                 InstallmentCard(
                                     detail, role, plan,
                                     onEdit = { editingPlan = true },
-                                    onCollect = { collecting = it },
                                     onStage = { voiding = it },
                                 )
                             }

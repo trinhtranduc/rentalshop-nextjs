@@ -119,10 +119,10 @@ enum InstallmentCardView {
     }
 
     /// The stages inside THANH TOÁN, before the amount due (#1435, approved mockup, tab "odmoney"). `plan` says which stages show and
-    /// whether "Còn phải thu" does. `onEdit` is "Sửa" / "Xem"; `onCollect` is the light button (the bar has the same one, #1401);
-    /// `onStage` a tap on a stage row. `width` is what the block has, for the line of the two totals.
+    /// whether "Còn phải thu" does. `onEdit` is "Sửa" / "Xem"; `onStage` a tap on a stage row. `width` is what the block has, for the
+    /// line of the two totals. "Thu giai đoạn N" is only in the bar under the screen (#1441).
     static func make(detail: OrderDetail, role: Role?, plan: OrderMoneyPlan, width: CGFloat, onEdit: @escaping () -> Void,
-                     onCollect: @escaping (OrderInstallment) -> Void, onStage: @escaping (OrderInstallment) -> Void) -> UIView {
+                     onStage: @escaping (OrderInstallment) -> Void) -> UIView {
         let stages = detail.installments ?? []
         let reserved = detail.status == .reserved
 
@@ -170,23 +170,6 @@ enum InstallmentCardView {
         for (index, stage) in stages.enumerated() where plan.shownKeys.contains(stage.key) {
             card.addArrangedSubview(stageRow(stage, number: index + 1, tappable: reserved && stage.isPaid && DepositPlanLogic.canVoid(role: role),
                                              onTap: onStage))
-        }
-        if reserved, let next = DepositPlanLogic.nextToCollect(stages, status: detail.status),
-           let number = DepositPlanLogic.stageNumber(stages, key: next.key) {
-            // Light: the bar under the screen has the solid one for the same stage
-            let button = UIButton(type: .system)
-            button.setTitle(String(format: "deposit.card.collectStage".localized(), number), for: .normal)
-            button.setTitleColor(DS.Color.primary, for: .normal)
-            button.titleLabel?.font = Utils.boldFont(size: DS.TextSize.body)
-            button.backgroundColor = UIColor(hexString: "EFF6FF")
-            button.layer.cornerRadius = 10
-            button.snp.makeConstraints { make in make.height.equalTo(44) }
-            button.addAction(UIAction { _ in onCollect(next) }, for: .touchUpInside)
-            button.accessibilityIdentifier = "deposit.card.collect"
-            let box = UIView()
-            box.addSubview(button)
-            button.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 4, left: 0, bottom: 4, right: 0)) }
-            card.addArrangedSubview(box)
         }
 
         let rule = V2.divider()

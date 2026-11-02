@@ -197,7 +197,7 @@ final class DepositPlanTests: XCTestCase {
         }
     }
 
-    /// The bottom bar's "Thu giai đoạn N" instead of Giao đồ: same stage as the card's button, only while the API would refuse
+    /// The bottom bar's "Thu giai đoạn N" instead of Giao đồ: the next stage to collect, only while the API would refuse
     func testStageToCollectBeforeHandOver() {
         func stage(_ key: String, _ amount: Double, _ status: String = "UPCOMING", paid: Double = 0) -> OrderInstallment {
             OrderInstallment(key: key, label: key, percent: 10, amount: amount, dueDateKey: nil, status: status, paidAmount: paid)
