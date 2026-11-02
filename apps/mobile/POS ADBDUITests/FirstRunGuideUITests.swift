@@ -38,7 +38,8 @@ final class FirstRunGuideUITests: XCTestCase {
             sleep(1)
         }
         XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 5), "tab bar after login")
-        e2e.dismissSystemAlert()
+        // "Save password?" and the notification question now come up on Home, one after the other
+        e2e.settle(seconds: 15)
     }
 
     private func count(_ text: String) {
