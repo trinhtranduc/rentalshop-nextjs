@@ -5,5 +5,6 @@
    - Prisma failure during authentication: 503 `SERVICE_UNAVAILABLE`, no raw text.
    - Another exception that mentions "subscription": 403 `SUBSCRIPTION_ERROR`, catalog sentence.
    - Manager bank writes: 403 `INSUFFICIENT_PERMISSIONS`.
+   - Failed S3 upload on `POST /api/upload/image`, `PUT /api/orders/[orderId]`, `POST /api/products`, `PUT /api/products/[id]`: no S3 text in `error`; the two product routes move to `UPLOAD_IMAGE_FAILED`.
 3. Green under `TZ=UTC` and `TZ=Asia/Ho_Chi_Minh`. The golden file is the same when generated in either zone.
 4. `LOG.md` has a row for the `UPLOAD_IMAGE_FAILED` code.

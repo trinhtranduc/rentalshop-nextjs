@@ -35,8 +35,11 @@ export function loadRoute(
   routeDir: string,
   holder: StoreHolder,
   root = THIS_ROOT,
-  /** #1450: run the real `withPermissions` / `authenticateRequest` of that tree instead of passing the user through */
-  options: { realAuth?: boolean } = {}
+  /**
+   * #1450: `realAuth` runs the real `withPermissions` / `authenticateRequest` of that tree instead of passing the
+   * user through; `uploadError` is the text a failed S3 upload reports.
+   */
+  options: { realAuth?: boolean; uploadError?: string } = {}
 ): Record<string, any> {
   const pkg = (name: string) => path.join(root, 'packages', name, 'src');
   const lib = (name: string) => path.join(root, 'apps/api/lib', name);
@@ -74,7 +77,7 @@ export function loadRoute(
     checkPlanLimitIfNeeded: async () => null,
     getSubscriptionError: async () => null,
     createAuditHelper: () => ({ logCreate: async () => undefined, logUpdate: async () => undefined }),
-    uploadToS3: async () => ({ success: false }),
+    uploadToS3: async () => ({ success: false, ...(options.uploadError ? { error: options.uploadError } : {}) }),
     commitStagingFiles: async () => ({ success: true, committedKeys: [] }),
     // growth-metrics (revenue mapping characterization, #1199)
     percentChange: jest.requireActual(path.join(pkg('utils'), 'analytics/period-report')).percentChange,
@@ -90,8 +93,11 @@ export function loadRoute(
     compressImageTo1MB: async (b: Buffer) => b,
     bodyExceedsNoteImageLimit: () => false,
     exceedsNoteImageLimit: () => false,
+    noteImageCount: (images: unknown) => (Array.isArray(images) ? images.length : 0),
   }));
   jest.doMock(lib('push-notifications'), () => ({ notifyOutletOrderEvent: () => undefined }));
+  // Its rate limiter starts an interval on load, which keeps a single-file jest run from exiting
+  jest.doMock('@rentalshop/middleware', () => ({ searchRateLimiter: () => null }));
 
   return require(path.join(root, 'apps/api/app/api', routeDir, 'route'));
 }
