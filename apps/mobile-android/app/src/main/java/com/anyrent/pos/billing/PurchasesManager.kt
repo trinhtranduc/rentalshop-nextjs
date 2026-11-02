@@ -12,7 +12,9 @@ import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 import com.revenuecat.purchases.PurchasesError
+import com.revenuecat.purchases.getCustomerInfoWith
 import com.revenuecat.purchases.getOfferingsWith
+import com.revenuecat.purchases.models.GoogleReplacementMode
 import com.revenuecat.purchases.logInWith
 import com.revenuecat.purchases.logOutWith
 import com.revenuecat.purchases.purchaseWith
@@ -26,10 +28,14 @@ data class RenewPackage(
     val priceLabel: String,
     /** Store price in currency major units (from amountMicros). */
     val priceAmount: Double,
+    /** #1459 ISO code of the store price ("VND", "USD") */
+    val currencyCode: String = "VND",
 )
 
 /**
  * RevenueCat wrapper for MERCHANT subscription renewals (6m / 12m via Store IAP).
+ * #1459: Basic and Professional (four products). Google Play may name a product `id:basePlan`; matching uses the part
+ * before ":". Without `REVENUECAT_ANDROID_API_KEY` nothing is configured and every call fails softly.
  *
  * App User ID = `merchant_{publicId}` so webhooks can map to our Subscription row.
  * Non-merchant roles never log in to Purchases.
@@ -40,6 +46,19 @@ object PurchasesManager {
     /** Play / App Store product ids — must match RevenueCat + store consoles. */
     const val PRODUCT_SEMI_ANNUAL = "anyrent_merchant_semi_annual"
     const val PRODUCT_ANNUAL = "anyrent_merchant_annual"
+    /** #1459 Professional, sold on the phone too (owner chose B on 2026-11-02) */
+    const val PRODUCT_PRO_SEMI_ANNUAL = "anyrent_professional_semi_annual"
+    const val PRODUCT_PRO_ANNUAL = "anyrent_professional_annual"
+    val ALL_PRODUCTS = listOf(PRODUCT_SEMI_ANNUAL, PRODUCT_ANNUAL, PRODUCT_PRO_SEMI_ANNUAL, PRODUCT_PRO_ANNUAL)
+
+    /** `anyrent_merchant_annual:annual` → `anyrent_merchant_annual` */
+    fun baseId(id: String): String = id.substringBefore(':')
+
+    /** Play subscription center, on the product when known (Google Play policy: a manage / cancel link) */
+    fun manageUrl(packageName: String, productId: String?): String {
+        val base = "https://play.google.com/store/account/subscriptions?package=$packageName"
+        return productId?.takeIf { it.isNotBlank() }?.let { "$base&sku=${baseId(it)}" } ?: base
+    }
 
     @Volatile
     private var configured = false
@@ -123,17 +142,17 @@ object PurchasesManager {
                     }
                     val byId = LinkedHashMap<String, Package>()
                     for (pkg in allPackages) {
-                        byId.putIfAbsent(pkg.product.id, pkg)
+                        byId.putIfAbsent(baseId(pkg.product.id), pkg)
                     }
                     packageByProductId = byId
-                    val orderedIds = listOf(PRODUCT_SEMI_ANNUAL, PRODUCT_ANNUAL)
-                    val renew = orderedIds.mapNotNull { id ->
+                    val renew = ALL_PRODUCTS.mapNotNull { id ->
                         val pkg = byId[id] ?: return@mapNotNull null
                         RenewPackage(
                             productId = id,
                             title = titleForProduct(id),
                             priceLabel = pkg.product.price.formatted,
                             priceAmount = pkg.product.price.amountMicros / 1_000_000.0,
+                            currencyCode = pkg.product.price.currencyCode,
                         )
                     }
                     cont.resume(Result.success(renew))
@@ -141,13 +160,39 @@ object PurchasesManager {
             )
         }
 
-    suspend fun purchase(activity: Activity, productId: String): Result<CustomerInfo> =
+    /** Active store subscriptions of this customer (base product ids); empty when unknown */
+    suspend fun activeProductIds(): Set<String> =
+        suspendCancellableCoroutine { cont ->
+            if (!configured) {
+                cont.resume(emptySet())
+                return@suspendCancellableCoroutine
+            }
+            Purchases.sharedInstance.getCustomerInfoWith(
+                onError = { error ->
+                    Log.e(TAG, "getCustomerInfo failed: ${error.message}")
+                    cont.resume(emptySet())
+                },
+                onSuccess = { info -> cont.resume(info.activeSubscriptions.map(::baseId).toSet()) },
+            )
+        }
+
+    /**
+     * #1459: buying Professional (or the other period) while a Play subscription to another of our products is still active
+     * replaces it at once, so Google never runs two subscriptions. CHARGE_FULL_PRICE: the new period starts today
+     * (the disclosure says so) and Google adds the unused time of the old one.
+     */
+    suspend fun purchase(activity: Activity, productId: String): Result<CustomerInfo> {
+        val replaced = activeProductIds().firstOrNull { it in ALL_PRODUCTS && it != baseId(productId) }
+        return purchase(activity, productId, replaced)
+    }
+
+    private suspend fun purchase(activity: Activity, productId: String, oldProductId: String?): Result<CustomerInfo> =
         suspendCancellableCoroutine { cont ->
             if (!configured) {
                 cont.resume(Result.failure(IllegalStateException("Purchases not configured")))
                 return@suspendCancellableCoroutine
             }
-            val pkg = packageByProductId[productId]
+            val pkg = packageByProductId[baseId(productId)]
             if (pkg == null) {
                 cont.resume(
                     Result.failure(
@@ -156,7 +201,12 @@ object PurchasesManager {
                 )
                 return@suspendCancellableCoroutine
             }
-            val params = PurchaseParams.Builder(activity, pkg).build()
+            val params = PurchaseParams.Builder(activity, pkg).apply {
+                if (oldProductId != null) {
+                    oldProductId(oldProductId)
+                    googleReplacementMode(GoogleReplacementMode.CHARGE_FULL_PRICE)
+                }
+            }.build()
             Purchases.sharedInstance.purchaseWith(
                 params,
                 onError = { error, userCancelled ->
@@ -193,10 +243,13 @@ object PurchasesManager {
         }
 
     private fun titleForProduct(productId: String): String = when (productId) {
-        PRODUCT_SEMI_ANNUAL -> "6 months"
-        PRODUCT_ANNUAL -> "12 months"
+        PRODUCT_SEMI_ANNUAL, PRODUCT_PRO_SEMI_ANNUAL -> "6 months"
+        PRODUCT_ANNUAL, PRODUCT_PRO_ANNUAL -> "12 months"
         else -> productId
     }
+
+    /** Months of one of our products (6 or 12), from its id */
+    fun monthsOf(productId: String): Int = if (baseId(productId).endsWith("semi_annual")) 6 else 12
 }
 
 class PurchaseCancelledException : Exception("Purchase cancelled")

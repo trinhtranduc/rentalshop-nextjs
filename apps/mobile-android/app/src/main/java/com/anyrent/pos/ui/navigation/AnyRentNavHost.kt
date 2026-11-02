@@ -63,6 +63,7 @@ import com.anyrent.pos.domain.error.ApiErrorMessages
 import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.data.PlanRenewalStore
 import com.anyrent.pos.push.DraftOrderReminder
 import com.anyrent.pos.ui.auth.CheckEmailScreen
 import com.anyrent.pos.ui.auth.ForgotPasswordScreen
@@ -169,6 +170,8 @@ object Routes {
     const val Bookings = "bookings"
     const val BookingDetail = "booking/{requestId}"
     const val Subscription = "subscription"
+    /** #1459 the plan ended: one screen in place of the app (owner pays, others ask the owner); no back */
+    const val SubscriptionExpired = "subscription-expired"
     // #373 redesigned products and cart (flag newProducts)
     const val ProductDetailV2 = "product-v2/{productId}"
     // #642 "Lịch trống" month screen opened from the new product detail (the old availability route stays)
@@ -217,10 +220,11 @@ fun AnyRentNavHost(
 ) {
     // #1455: the pages come before login at first launch; the rule is in `AppStartRoute`, as on iOS. Decided once: the flag
     // changes on the first screens, and a NavHost whose start changes starts over.
-    val start = remember { startRoute(AppStartRoute.Moment.LAUNCH) }
+    // #1459: a saved plan end in the past opens the expired screen first (it reads the status and goes on when active)
+    val start = remember { planGate(startRoute(AppStartRoute.Moment.LAUNCH)) }
 
     fun navigateAfterLogin() {
-        rootNavController.navigate(startRoute(AppStartRoute.Moment.LOGGED_IN)) {
+        rootNavController.navigate(planGate(startRoute(AppStartRoute.Moment.LOGGED_IN))) {
             popUpTo(Routes.Login) { inclusive = true }
             launchSingleTop = true
         }
@@ -254,7 +258,38 @@ fun AnyRentNavHost(
         }
     }
 
+    // #1459: any call answered 403 SUBSCRIPTION_PERIOD_ENDED: the expired screen replaces the app (no error on every screen)
+    LaunchedEffect(rootNavController) {
+        PlanRenewalStore.ended.collect {
+            val route = rootNavController.currentDestination?.route ?: return@collect
+            if (!SessionStore.isLoggedIn || route == Routes.SubscriptionExpired || showsWithoutSession(route)) return@collect
+            rootNavController.navigate(Routes.SubscriptionExpired) {
+                popUpTo(rootNavController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     NavHost(navController = rootNavController, startDestination = start) {
+        composable(Routes.SubscriptionExpired) {
+            SubscriptionScreen(
+                onBack = {},
+                expiredGate = true,
+                onActive = { notice ->
+                    notice?.let(PlanRenewalStore::postNotice)
+                    rootNavController.navigate(Routes.Main) {
+                        popUpTo(rootNavController.graph.id) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onLoggedOut = {
+                    rootNavController.navigate(Routes.Login) {
+                        popUpTo(rootNavController.graph.id) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
         composable(Routes.Login) {
             // #386: redesigned auth behind `newAuth`, from the cached app config (before any login); a first
             // fetch that lands while the splash is up still applies
@@ -694,7 +729,14 @@ fun AnyRentNavHost(
             StoreInfoScreen(onBack = { rootNavController.popBackStack() }, v2 = MobileFeature.NEW_SETTINGS in features)
         }
         composable(Routes.Subscription) {
-            SubscriptionScreen(onBack = { rootNavController.popBackStack() })
+            SubscriptionScreen(
+                onBack = { rootNavController.popBackStack() },
+                onLoggedOut = {
+                    rootNavController.navigate(Routes.Login) {
+                        popUpTo(rootNavController.graph.id) { inclusive = true }
+                    }
+                },
+            )
         }
         composable(Routes.Customers) {
             // #387: redesigned list behind `newCustomers`
@@ -905,6 +947,10 @@ private fun MainTabs(
     LaunchedEffect(Unit) { CurrentOutlet.version.drop(1).collect { OrdersChanged.notifyChanged() } }
     OutletFallbackDialog()
 
+    // #1459 "Đã gia hạn đến …" after paying on the expired screen: a short snackbar on Home, no celebration
+    val planNotice = remember { androidx.compose.material3.SnackbarHostState() }
+    LaunchedEffect(Unit) { PlanRenewalStore.consumeNotice()?.let { planNotice.showSnackbar(it) } }
+
     LaunchedEffect(Unit) {
         MainTabRouter.selectTab.collect { route ->
             tabNav.navigate(route) {
@@ -918,6 +964,7 @@ private fun MainTabs(
     }
 
     Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(planNotice) },
         bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -986,6 +1033,7 @@ private fun MainTabs(
                     ProductsHomeScreen(
                         onOpenProduct = { id -> rootNavController.navigate(Routes.productDetailV2(id)) },
                         onOpenCart = { rootNavController.navigate(Routes.CartV2) },
+                        onOpenSubscription = { rootNavController.navigate(Routes.Subscription) { launchSingleTop = true } },
                     )
                 } else {
                     HomeScreen(
@@ -1066,6 +1114,7 @@ private fun MainTabs(
                         onOpenBankAccounts = { rootNavController.navigate(Routes.BankAccounts) },
                         onOpenAttendance = { rootNavController.navigate(Routes.Attendance) { launchSingleTop = true } },
                         onOpenMyShifts = { rootNavController.navigate(Routes.MyShifts) },
+                        onOpenSubscription = { rootNavController.navigate(Routes.Subscription) { launchSingleTop = true } },
                         onOpenHome = {
                             tabNav.navigate(MainTab.Home.route) {
                                 popUpTo(tabNav.graph.findStartDestination().id) { saveState = true }
@@ -1151,6 +1200,10 @@ internal fun isSignInRoute(route: String): Boolean =
 
 /** #1455: what may stay on screen with no session: the sign-in screens and the first-launch pages */
 internal fun showsWithoutSession(route: String): Boolean = isSignInRoute(route) || route == Routes.Onboarding
+
+/** #1459: Main becomes the expired screen when the plan's saved end is in the past (login or the last status read) */
+private fun planGate(route: String): String =
+    if (route == Routes.Main && SessionStore.isLoggedIn && PlanRenewalStore.periodOverFromCache()) Routes.SubscriptionExpired else route
 
 /** #1455: where a moment leads, from what this install has stored now */
 private fun startRoute(moment: AppStartRoute.Moment): String {

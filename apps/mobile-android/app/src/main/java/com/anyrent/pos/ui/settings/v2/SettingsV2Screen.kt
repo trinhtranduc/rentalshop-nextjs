@@ -122,6 +122,8 @@ fun SettingsV2Screen(
     onOpenMyShifts: () -> Unit = {},
     /** #1393: a row of the guide sheet: go to Home, which runs the step */
     onOpenHome: () -> Unit = {},
+    /** #1459 Gói dịch vụ (shop owner only; other roles keep the read-only row) */
+    onOpenSubscription: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -301,7 +303,10 @@ fun SettingsV2Screen(
                     else -> null
                 }
                 val rowTag = if (item == SettingsItem.FIRST_RUN_GUIDE) Modifier.testTag("settings.firstRunGuide") else Modifier
-                Box(rowTag) { SettingRow(title = itemTitle(item, role), value = value, chevron = item != SettingsItem.PLAN) {
+                val rowTagged = if (item == SettingsItem.PLAN) Modifier.testTag("settings.plan") else rowTag
+                // #1459: the plan row opens Gói dịch vụ for the shop owner; it stays a read-only line for other roles
+                val opensPlan = item == SettingsItem.PLAN && role == "MERCHANT"
+                Box(rowTagged) { SettingRow(title = itemTitle(item, role), value = value, chevron = item != SettingsItem.PLAN || opensPlan) {
                     when (item) {
                         SettingsItem.STORE_INFO -> onOpenStore()
                         SettingsItem.BANK_ACCOUNTS -> onOpenBankAccounts()
@@ -311,7 +316,7 @@ fun SettingsV2Screen(
                         SettingsItem.CUSTOMERS -> onOpenCustomers()
                         SettingsItem.USERS -> onOpenUsers()
                         SettingsItem.EXPORT -> onOpenExport()
-                        SettingsItem.PLAN -> Unit
+                        SettingsItem.PLAN -> if (opensPlan) onOpenSubscription()
                         SettingsItem.LANGUAGE -> runCatching {
                             context.startActivity(Intent(Settings.ACTION_LOCALE_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }

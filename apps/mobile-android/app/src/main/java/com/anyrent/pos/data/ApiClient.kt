@@ -117,6 +117,9 @@ class ApiClient(
         SessionStore.currency = profile.currency
         // #1199: a login without `merchant.depositMode` leaves it unknown; the screens read GET /api/settings/deposit
         SessionStore.depositMode = profile.depositMode
+        // #1459: the plan's end, so this sign-in (and a later cold start) can open the expired screen first
+        SessionStore.planPeriodEnd = user.optJSONObject("merchant")?.optJSONObject("subscription")
+            ?.takeIf { it.has("currentPeriodEnd") && !it.isNull("currentPeriodEnd") }?.optString("currentPeriodEnd")
         com.anyrent.pos.billing.PurchasesManager.syncFromSession()
         CartStore.restoreFromDisk()
         profile
@@ -1217,6 +1220,17 @@ class ApiClient(
         )
     }
 
+    /** #1459 GET /api/subscriptions/status with the renewal fields (open to expired shops, every shop role) */
+    fun subscriptionRenewalStatus(): Result<com.anyrent.pos.domain.settings.PlanRenewalStatus> = runCatching {
+        val json = authedGet("/api/subscriptions/status")
+        com.anyrent.pos.domain.settings.PlanRenewal.statusFromJson(json.optJSONObject("data") ?: JSONObject())
+    }
+
+    /** #1459 GET /api/plans (MERCHANT, open to expired shops): the plans sold in the app, with their store products */
+    fun inAppPlans(): Result<List<com.anyrent.pos.domain.settings.InAppPlan>> = runCatching {
+        com.anyrent.pos.domain.settings.PlanRenewal.inAppPlansFromJson(authedGet("/api/plans"))
+    }
+
     /** Public `GET /api/mobile/app-config`: minimum app version and which new screens are on (#370) */
     fun appConfig(): Result<AppConfig> = runCatching {
         val json = execute(get("$baseUrl/api/mobile/app-config", authed = false))
@@ -1279,6 +1293,10 @@ class ApiClient(
                         json.errorMessage().ifBlank { "Your session has expired" },
                         code,
                     )
+                }
+                // #1459: the plan ended: one full screen (owner pays, staff ask the owner) instead of an error on every screen
+                if (response.code == 403 && request.header("Authorization") != null && json.errorCode() == CODE_SUBSCRIPTION_PERIOD_ENDED) {
+                    PlanRenewalStore.notifyEnded()
                 }
                 if (!response.isSuccessful) {
                     logApi("HTTP ${response.code} ${request.method} ${request.url}: ${raw.take(600)}")
@@ -1881,6 +1899,7 @@ class ApiClient(
         }
 
         private const val CODE_TOKEN_EXPIRED = "TOKEN_EXPIRED"
+        const val CODE_SUBSCRIPTION_PERIOD_ENDED = "SUBSCRIPTION_PERIOD_ENDED"
 
         private fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
