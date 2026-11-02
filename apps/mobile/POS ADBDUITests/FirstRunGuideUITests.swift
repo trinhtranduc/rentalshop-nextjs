@@ -24,21 +24,22 @@ final class FirstRunGuideUITests: XCTestCase {
         try FileManager.default.createDirectory(atPath: e2e.outDir, withIntermediateDirectories: true)
     }
 
-    /// Past the intro pages only: `E2E.start` does more than a new shop needs.
+    /// The intro pages (first, on a fresh install: #1455), then login: `E2E.start` does more than a new shop needs. No pages after the login.
     private func logInToHome() {
         app.launch()
-        if app.secureTextFields.firstMatch.waitForExistence(timeout: 10) {
+        if e2e.isLoginScreen(timeout: 15) {
             e2e.login(email: e2e.email, password: e2e.password)
         }
+        let skip = e2e.button(["Skip", "Bỏ qua"])
         let deadline = Date().addingTimeInterval(40)
         while Date() < deadline, !e2e.tabBar.exists {
             e2e.dismissSystemAlert()
-            let skip = e2e.button(["Skip", "Bỏ qua"])
-            if skip.exists && skip.isHittable { skip.tap() }
+            XCTAssertFalse(skip.exists, "no pages after the login")
             sleep(1)
         }
         XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 5), "tab bar after login")
-        e2e.dismissSystemAlert()
+        // "Save password?" and the notification question now come up on Home, one after the other
+        e2e.settle(seconds: 15)
     }
 
     private func count(_ text: String) {

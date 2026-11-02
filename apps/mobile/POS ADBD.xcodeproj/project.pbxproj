@@ -33,6 +33,7 @@
 		A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */; };
 		F1A6B7381CB1B6B07942590E /* FirstRunGuideTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5B7381CB1B6B07942590E /* FirstRunGuideTests.swift */; };
 		F1A6141300000000000000A2 /* PromptTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5141300000000000000A2 /* PromptTimingTests.swift */; };
+		F1A6145500000000000000A2 /* AppStartRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5145500000000000000A2 /* AppStartRouteTests.swift */; };
 		F1A69D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A59D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift */; };
 		A909B0000000000000000002 /* Attendance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000001 /* Attendance.swift */; };
 		A909B0000000000000000004 /* AttendanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A909F0000000000000000003 /* AttendanceService.swift */; };
@@ -267,6 +268,7 @@
 		763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */; };
 		F1A67DBECD4E994AB47B82B5 /* FirstRunGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A57DBECD4E994AB47B82B5 /* FirstRunGuide.swift */; };
 		F1A6141300000000000000A1 /* PromptTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5141300000000000000A1 /* PromptTiming.swift */; };
+		F1A6145500000000000000A1 /* AppStartRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5145500000000000000A1 /* AppStartRoute.swift */; };
 		F1A6E1114F02A9DBB08660EB /* FirstRunCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */; };
 		2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */; };
 		780386B06493ECFA69CB2577 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B854361D12543F58020DE847 /* Foundation.framework */; };
@@ -482,6 +484,7 @@
 		A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidgetDisplayTests.swift; sourceTree = "<group>"; };
 		F1A5B7381CB1B6B07942590E /* FirstRunGuideTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuideTests.swift; sourceTree = "<group>"; };
 		F1A5141300000000000000A2 /* PromptTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTimingTests.swift; sourceTree = "<group>"; };
+		F1A5145500000000000000A2 /* AppStartRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStartRouteTests.swift; sourceTree = "<group>"; };
 		F1A59D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunCoachTests.swift; sourceTree = "<group>"; };
 		A909F0000000000000000001 /* Attendance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Attendance.swift; sourceTree = "<group>"; };
 		A909F0000000000000000003 /* AttendanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendanceService.swift; sourceTree = "<group>"; };
@@ -720,6 +723,7 @@
 		85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProductsV2.swift; sourceTree = "<group>"; };
 		F1A57DBECD4E994AB47B82B5 /* FirstRunGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuide.swift; sourceTree = "<group>"; };
 		F1A5141300000000000000A1 /* PromptTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTiming.swift; sourceTree = "<group>"; };
+		F1A5145500000000000000A1 /* AppStartRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStartRoute.swift; sourceTree = "<group>"; };
 		F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunCoach.swift; sourceTree = "<group>"; };
 		670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlockPricing.swift; sourceTree = "<group>"; };
 		86280F425E9CFE10BADD903B /* OrderExtendSheetViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderExtendSheetViewController.swift; sourceTree = "<group>"; };
@@ -1226,6 +1230,7 @@
 				A1375F1BBABD57B735929913 /* TodayWidgetDisplayTests.swift */,
 				F1A5B7381CB1B6B07942590E /* FirstRunGuideTests.swift */,
 				F1A5141300000000000000A2 /* PromptTimingTests.swift */,
+				F1A5145500000000000000A2 /* AppStartRouteTests.swift */,
 				F1A59D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift */,
 			);
 			name = "POS ADBDTests";
@@ -1287,6 +1292,7 @@
 				85867A1E3DF9C5AFA1F237F2 /* ProductsV2.swift */,
 				F1A57DBECD4E994AB47B82B5 /* FirstRunGuide.swift */,
 				F1A5141300000000000000A1 /* PromptTiming.swift */,
+				F1A5145500000000000000A1 /* AppStartRoute.swift */,
 				F1A5E1114F02A9DBB08660EB /* FirstRunCoach.swift */,
 				670B7FA34C073AFBF963CEA7 /* BlockPricing.swift */,
 				B07CC0B0BF772BE52542D13E /* TodayWork.swift */,
@@ -2093,6 +2099,7 @@
 				A1375FFAE8BAB624A7F80024 /* TodayWidgetDisplayTests.swift in Sources */,
 				F1A6B7381CB1B6B07942590E /* FirstRunGuideTests.swift in Sources */,
 				F1A6141300000000000000A2 /* PromptTimingTests.swift in Sources */,
+				F1A6145500000000000000A2 /* AppStartRouteTests.swift in Sources */,
 				F1A69D6E28C3DFDA24187C5D /* FirstRunCoachTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2313,6 +2320,7 @@
 				763EAE27EC11863A93AF72CA /* ProductsV2.swift in Sources */,
 				F1A67DBECD4E994AB47B82B5 /* FirstRunGuide.swift in Sources */,
 				F1A6141300000000000000A1 /* PromptTiming.swift in Sources */,
+				F1A6145500000000000000A1 /* AppStartRoute.swift in Sources */,
 				F1A6E1114F02A9DBB08660EB /* FirstRunCoach.swift in Sources */,
 				2543C36694AE4244E84EA1A2 /* BlockPricing.swift in Sources */,
 				9385935FF10F75C67D1265EA /* ProductsHomeViewModel.swift in Sources */,

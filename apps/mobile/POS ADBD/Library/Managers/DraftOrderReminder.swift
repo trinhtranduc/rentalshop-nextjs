@@ -153,7 +153,7 @@ final class DraftOrderReminder {
             guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
 
             if !(appDelegate.window?.rootViewController is TabbarViewController) {
-                appDelegate.loadMainUserView(forceMain: true)
+                appDelegate.loadMainUserView()
             }
 
             guard let tabBar = appDelegate.window?.rootViewController as? TabbarViewController else {

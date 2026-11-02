@@ -2,7 +2,7 @@
 //  OnboardingViewController.swift
 //  POS ADBD
 //
-//  First-login onboarding: create product → customer → order.
+//  First-launch onboarding, before login since #1455: create product → customer → order.
 //
 
 import UIKit
@@ -170,9 +170,8 @@ final class OnboardingViewController: BaseViewControler {
     }
 
     @objc private func finishOnboarding() {
-        Utils.markOnboardingCompleted()
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
-        appDelegate.loadMainUserView(forceMain: true)
+        appDelegate.route(after: .onboardingFinished)
     }
 }
 

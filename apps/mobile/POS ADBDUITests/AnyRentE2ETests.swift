@@ -6217,7 +6217,7 @@ final class E2E {
                 break
             }
         }
-        // notification prompt / onboarding, then give the first requests time to fail or succeed
+        // notification prompt / the pages of someone signed in, then give the first requests time to fail or succeed
         let deadline = Date().addingTimeInterval(14)
         while Date() < deadline {
             dismissSystemAlert()
@@ -6245,8 +6245,8 @@ final class E2E {
 
     // MARK: Launch + login
 
-    /// Launch, log in when needed, get past the notification prompt and onboarding, and relaunch once so
-    /// app-config flags apply.
+    /// Launch, get past the pages (#1455: before login on a fresh install), log in when needed, get past the
+    /// notification prompt, and relaunch once so app-config flags apply.
     func start() throws {
         rotateIfPad()
         app.launch()
@@ -6277,14 +6277,21 @@ final class E2E {
         }
     }
 
-    private func isLoginScreen(timeout: TimeInterval) -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
+    /// True once the login form is up. #1455: a fresh install opens on the pages, so it gets past them on the way.
+    func isLoginScreen(timeout: TimeInterval) -> Bool {
+        var deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if app.secureTextFields.firstMatch.exists { return true }
             if tabBar.exists && !app.alerts.firstMatch.exists { return false }
             dismissSystemAlert()
             // "Signed in on another device" (single-session API) shows an app alert, then the login form.
             if app.alerts.firstMatch.exists { dismissAlerts() }
+            let skip = button(["Skip", "Bỏ qua"])
+            if skip.exists && skip.isHittable {
+                shot("00-onboarding", attachOnly: true)
+                skip.tap()
+                deadline = Date().addingTimeInterval(timeout)
+            }
             sleep(1)
         }
         return app.secureTextFields.firstMatch.exists
@@ -6317,7 +6324,8 @@ final class E2E {
         loginButton.tap()
     }
 
-    /// Tap through the notification prompt and onboarding until the tab bar has been stable for a moment.
+    /// Tap through the notification prompt and the pages (a signed-in install that never saw them; a fresh one has them
+    /// before login) until the tab bar has been stable for a moment.
     func settle(seconds: TimeInterval) {
         let deadline = Date().addingTimeInterval(seconds)
         var quiet = 0

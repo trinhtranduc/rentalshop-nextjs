@@ -75,7 +75,7 @@ private val PageTexts = listOf(
 )
 
 /**
- * First-login onboarding (#387, flag `newAuth`). #1404: three pages that show the app's best features, with one photo
+ * First-launch onboarding (#387, flag `newAuth`), before login since #1455. #1404: three pages that show the app's best features, with one photo
  * travelling through them (tab "★ 3 trang hướng dẫn", variant A). The caller keeps the "show once" storage
  * (`SessionStore.onboardingDone`). The logic lives in `OnboardingV2Cycle.kt`, the picture in `OnboardingV2Stage.kt`.
  */

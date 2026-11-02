@@ -2,7 +2,7 @@
 //  OnboardingV2ViewController.swift
 //  POS ADBD
 //
-//  First-login onboarding (#387, flag `newAuth`). #1404: three pages that show the app's best features, with one photo
+//  First-launch onboarding (#387, flag `newAuth`), before login since #1455. #1404: three pages that show the app's best features, with one photo
 //  travelling through them (tab "★ 3 trang hướng dẫn", variant A). Same "show once" storage as the current onboarding
 //  (`Utils.markOnboardingCompleted`). The logic lives in `OnboardingV2Cycle.swift`, the picture in `OnboardingV2Stage.swift`.
 //
@@ -339,8 +339,7 @@ final class OnboardingV2ViewController: BaseViewControler {
     @objc private func finish() {
         isOnScreen = false
         stopCycle()
-        Utils.markOnboardingCompleted()
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
-        appDelegate.loadMainUserView(forceMain: true)
+        appDelegate.route(after: .onboardingFinished)
     }
 }
