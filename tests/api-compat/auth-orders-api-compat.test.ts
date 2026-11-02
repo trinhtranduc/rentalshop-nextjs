@@ -10,6 +10,9 @@
  * - #1409 another exception whose text holds "subscription": still 403 `SUBSCRIPTION_ERROR`, the catalog sentence
  *   replaces the exception text.
  * - #1392 an outlet manager writing a bank account: 200 / 201 becomes 403 `INSUFFICIENT_PERMISSIONS`.
+ * - #1409 a failed image upload: `error` no longer holds the S3 text. `POST /api/upload/image` and the order notes keep
+ *   `code` and `message`; `POST /api/products` and `PUT /api/products/[id]` also move from `IMAGE_UPLOAD_FAILED` to
+ *   `UPLOAD_IMAGE_FAILED`. Both codes have a sentence in every installed app and no client branches on either.
  * - Added fields: none.
  *
  * Runs the same under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
@@ -24,10 +27,12 @@ let now: Record<string, any>;
 const DB_FAILURE_503 = ['authPrismaFailureWithSubscriptionWord', 'authPrismaFailurePlain', 'authPrismaFailureNoCode', 'sessionReadPrismaFailure'];
 const CATALOG_TEXT_ONLY = ['authOtherErrorWithSubscriptionWord'];
 const MANAGER_WRITES = ['bankCreateManager', 'bankUpdateManager', 'bankSetDefaultManager', 'bankDeleteManager'];
-const CHANGED = [...DB_FAILURE_503, ...CATALOG_TEXT_ONLY, ...MANAGER_WRITES];
+const UPLOAD_SAME_CODE = ['uploadImageS3Failure', 'orderNotesS3Failure'];
+const UPLOAD_NEW_CODE = ['productCreateS3Failure', 'productUpdateS3Failure'];
+const CHANGED = [...DB_FAILURE_503, ...CATALOG_TEXT_ONLY, ...MANAGER_WRITES, ...UPLOAD_SAME_CODE, ...UPLOAD_NEW_CODE];
 const unchanged = Object.keys(golden).filter((name) => !CHANGED.includes(name));
 
-const RAW_TEXT = ['invocation', 'prisma', 'SELECT', '/app/', '.next', 'chunks', 'attendanceScan', 'subscription:d'];
+const RAW_TEXT = ['invocation', 'prisma', 'SELECT', '/app/', '.next', 'chunks', 'attendanceScan', 'subscription:d', 'AccessDenied'];
 const expectNoRawText = (body: unknown) => {
   const text = JSON.stringify(body).toLowerCase();
   for (const marker of RAW_TEXT) expect(text).not.toContain(marker.toLowerCase());
@@ -102,6 +107,27 @@ describe('#1392 bank accounts', () => {
     expect(now[name].body.data).toBeUndefined();
     // `APIBankAccountResponse` (`Model/BankAccount.swift`): every field but `success` is optional; the `error` is a String
     expect(typeof now[name].body.error).toBe('string');
+  });
+});
+
+describe('#1409 failed image upload', () => {
+  it.each([...UPLOAD_SAME_CODE, ...UPLOAD_NEW_CODE])('%s: main-real sent the S3 text, today it does not', (name) => {
+    expect(JSON.stringify(before[name].body)).toContain('AccessDenied');
+    expect(now[name].status).toBe(before[name].status);
+    expect(now[name].body.success).toBe(false);
+    expect(typeof now[name].body.error).toBe('string');
+    expectNoRawText(now[name].body);
+  });
+
+  it.each(UPLOAD_SAME_CODE)('%s keeps code and message', (name) => {
+    expect(now[name].body.code).toBe(before[name].body.code);
+    expect(now[name].body.message).toBe(before[name].body.message);
+  });
+
+  it.each(UPLOAD_NEW_CODE)('%s: IMAGE_UPLOAD_FAILED becomes UPLOAD_IMAGE_FAILED', (name) => {
+    expect(before[name].body.code).toBe('IMAGE_UPLOAD_FAILED');
+    expect(now[name].body.code).toBe('UPLOAD_IMAGE_FAILED');
+    expect(now[name].status).toBe(500);
   });
 });
 

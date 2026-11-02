@@ -1,5 +1,6 @@
 /**
- * Scenarios for the auth + GET /api/orders compatibility test (#1450, for the release that carries #1409 and #1392).
+ * Scenarios for the auth + GET /api/orders compatibility test (#1450, for the release that carries #1409 and #1392),
+ * plus the bank account writes and the failed image uploads those two PRs changed.
  *
  * The real route, the real `withPermissions`, `authenticateRequest` and `validateMerchantAccess` are loaded from a
  * source tree. Only I/O is replaced: `db` and `prisma` answer from the tables below. `db.orders.findManyLightweight`
@@ -144,6 +145,64 @@ async function ordersGet(root: string, world: World, role: Role, query: string, 
   return { status: answer.status, body: answer.body, ...(filters.length ? { filters } : {}) };
 }
 
+/** What S3 reported in the failure these answers used to copy into `error` */
+export const RAW_S3_TEXT = 'AccessDenied: bucket anyrent-images-pro at /app/apps/api/.next/server/chunks/238.js:54:55586';
+
+const JPEG = (() => {
+  const bytes = new Uint8Array(400);
+  bytes.set([0xff, 0xd8, 0xff, 0xe0]);
+  return bytes;
+})();
+const PHOTO = { name: 'a.jpg', type: 'image/jpeg', size: JPEG.length, arrayBuffer: async () => JPEG.buffer };
+
+/** A multipart request as the routes read it: `get` and `getAll`, nothing else */
+function formRequest(url: string, authorization: string, fields: Record<string, unknown[]>) {
+  return {
+    ...request(url, { headers: { authorization, 'content-type': 'multipart/form-data; boundary=x' } }),
+    formData: async () => ({
+      get: (name: string) => fields[name]?.[0] ?? null,
+      getAll: (name: string) => fields[name] ?? [],
+    }),
+  };
+}
+
+const EXISTING_PRODUCT = {
+  id: 11, name: 'Áo dài đỏ', merchant: { id: 1 }, outletStock: [{ outletId: 2, stock: 3, renting: 0, isListed: true, outlet: { id: 2 } }],
+};
+const EXISTING_ORDER = { id: 501, status: 'RESERVED', orderType: 'RENT', outletId: 2, notesImages: [], pickupNotesImages: [] };
+
+type UploadCall = 'uploadImage' | 'productCreate' | 'productUpdate' | 'orderNotes';
+
+/** The upload fails in S3, so nothing past the upload runs: every route stops at its error answer */
+async function uploadCall(root: string, call: UploadCall): Promise<Answer> {
+  const holder = makeHolder({}, 'MERCHANT', []);
+  holder.db.products = { findById: async () => EXISTING_PRODUCT };
+  holder.db.orders.findById = async () => EXISTING_ORDER;
+  const options = { realAuth: true, uploadError: RAW_S3_TEXT };
+  const authorization = bearer('MERCHANT');
+  const data = JSON.stringify({ name: 'Áo dài đỏ', categoryId: 1, rentPrice: 100000, outletStock: [{ outletId: 2, stock: 1 }] });
+  const run = async (): Promise<any> => {
+    if (call === 'uploadImage') {
+      return loadRoute('upload/image', holder, root, options).POST(formRequest('/api/upload/image', authorization, { image: [PHOTO] }));
+    }
+    if (call === 'productCreate') {
+      return loadRoute('products', holder, root, options).POST(formRequest('/api/products', authorization, { data: [data], images: [PHOTO] }));
+    }
+    if (call === 'productUpdate') {
+      return loadRoute('products/[id]', holder, root, options).PUT(
+        formRequest('/api/products/11', authorization, { data: [JSON.stringify({ name: 'Áo dài đỏ' })], images: [PHOTO] }),
+        { params: { id: '11' } }
+      );
+    }
+    return loadRoute('orders/[orderId]', holder, root, options).PUT(
+      formRequest('/api/orders/501', authorization, { data: ['{}'], notesImages: [PHOTO] }),
+      { params: { orderId: '501' } }
+    );
+  };
+  const answer = await run();
+  return { status: answer.status, body: answer.body };
+}
+
 type BankCall = 'list' | 'create' | 'update' | 'setDefault' | 'remove';
 
 async function bankCall(root: string, role: Role, call: BankCall): Promise<Answer> {
@@ -217,6 +276,12 @@ export async function runAuthOrdersScenarios(root = THIS_ROOT): Promise<Record<s
     bankUpdateManager: () => bankCall(root, 'OUTLET_ADMIN', 'update'),
     bankSetDefaultManager: () => bankCall(root, 'OUTLET_ADMIN', 'setDefault'),
     bankDeleteManager: () => bankCall(root, 'OUTLET_ADMIN', 'remove'),
+
+    // ---- #1409, changed on purpose: a failed upload no longer sends the S3 text
+    uploadImageS3Failure: () => uploadCall(root, 'uploadImage'),
+    orderNotesS3Failure: () => uploadCall(root, 'orderNotes'),
+    productCreateS3Failure: () => uploadCall(root, 'productCreate'),
+    productUpdateS3Failure: () => uploadCall(root, 'productUpdate'),
   };
 
   const results: Record<string, Answer> = {};
