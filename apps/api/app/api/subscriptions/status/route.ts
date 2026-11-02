@@ -58,7 +58,21 @@ async function inAppPlansSafe(): Promise<InAppPlan[]> {
  * same plan when ≤ 7 Vietnam days are left, during the trial or after expiry; a higher plan any time; nothing while the
  * store or Lemon Squeezy renews automatically.
  */
-async function renewalFields(subscription: any, plan: any, now: Date) {
+interface RenewalSubscriptionRow {
+  status?: string | null;
+  currentPeriodEnd?: Date | string | null;
+  planId?: number | null;
+  autoRenew?: boolean | null;
+  billingChannel?: string | null;
+  billingIssueAt?: Date | string | null;
+  storeProductId?: string | null;
+}
+
+async function renewalFields(
+  subscription: RenewalSubscriptionRow,
+  plan: { id?: number | null; name?: string | null } | null | undefined,
+  now: Date
+) {
   const offer = renewalOffer(
     {
       dbStatus: subscription.status,

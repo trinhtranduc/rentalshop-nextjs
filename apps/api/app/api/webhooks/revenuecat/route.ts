@@ -127,8 +127,8 @@ async function claimEvent(event: RevenueCatEvent, merchantId: number | null): Pr
       data: { provider: PROVIDER, eventId: String(event.id), eventType: String(event.type), merchantId },
     });
     return row.id;
-  } catch (error: any) {
-    if (error?.code === 'P2002') return 'duplicate';
+  } catch (error: unknown) {
+    if ((error as { code?: string } | null)?.code === 'P2002') return 'duplicate';
     throw error;
   }
 }
@@ -286,9 +286,9 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
       data: {
         amount,
         currency,
-        method: (channel === 'PLAY_STORE' ? 'IAP_GOOGLE' : channel === 'APP_STORE' ? 'IAP_APPLE' : 'MANUAL') as any,
-        type: 'SUBSCRIPTION_PAYMENT' as any,
-        status: 'COMPLETED' as any,
+        method: channel === 'PLAY_STORE' ? 'IAP_GOOGLE' : channel === 'APP_STORE' ? 'IAP_APPLE' : 'MANUAL',
+        type: 'SUBSCRIPTION_PAYMENT',
+        status: 'COMPLETED',
         subscriptionId: subscription.id,
         merchantId,
         reference: event.transaction_id || null,
@@ -345,7 +345,7 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent): P
     if (event.transaction_id) {
       await db.prisma.payment.updateMany({
         where: { transactionId: event.transaction_id, merchantId },
-        data: { status: 'REFUNDED' as any },
+        data: { status: 'REFUNDED' },
       });
     }
     if (!current) {

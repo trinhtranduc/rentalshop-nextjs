@@ -16,7 +16,9 @@ describe(`migration ${NAME}`, () => {
 
   it('sorts after the migrations it follows', () => {
     const names = fs.readdirSync(DIR).filter((n) => /^\d{14}_/.test(n)).sort();
-    expect(names[names.length - 1]).toBe(NAME);
+    // #1459 added a later migration: this one only has to come after the ones it builds on
+    expect(names.indexOf(NAME)).toBeGreaterThan(names.indexOf('20261026090000_order_deposit_plan'));
+    expect(names.indexOf('20261026090000_order_deposit_plan')).toBeGreaterThanOrEqual(0);
   });
 
   it('adds the column with a default and the index, both idempotent', () => {

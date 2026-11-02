@@ -57,7 +57,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES, USER_ROLE.MERCHANT], { 
     return NextResponse.json({
       success: true,
       data: {
-        plans: result.data.map((plan: any) => ({ ...plan, storeProductIds: storeProductIdsForPlanName(plan?.name) })),
+        plans: result.data.map((plan: { name?: string | null }) => ({ ...plan, storeProductIds: storeProductIdsForPlanName(plan?.name) })),
         total: result.total,
         page: resultPage,
         limit: resultLimit,
