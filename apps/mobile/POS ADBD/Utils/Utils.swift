@@ -257,7 +257,7 @@ class Utils: NSObject {
         return UserDefaults.standard.bool(forKey: "HideFinancialDataForStaff")
     }
 
-    // MARK: - First-login onboarding
+    // MARK: - First-launch onboarding (#1455: before login)
     private static let hasCompletedOnboardingKey = "HasCompletedOnboarding"
 
     class func hasCompletedOnboarding() -> Bool {
