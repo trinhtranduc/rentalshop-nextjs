@@ -40,17 +40,9 @@ final class OnboardingV2UITests: XCTestCase {
         }
     }
 
+    /// The form keeps the last email: `E2E.login` empties the field first
     private func logIn() throws {
-        let email = app.textFields.firstMatch
-        XCTAssertTrue(email.waitForExistence(timeout: 30), "Login form")
-        email.tap()
-        email.typeText(try XCTUnwrap(env["E2E_EMAIL"]))
-        let password = app.secureTextFields.firstMatch
-        password.tap()
-        password.typeText(try XCTUnwrap(env["E2E_PASSWORD"]))
-        let login = app.buttons.matching(NSPredicate(format: "label IN %@", ["Login", "Đăng nhập", "Log in"])).firstMatch
-        if !login.isHittable { app.tap() }
-        login.tap()
+        e2e.login(email: e2e.email, password: e2e.password)
     }
 
     private var loginForm: XCUIElement { app.secureTextFields.firstMatch }
@@ -217,21 +209,22 @@ final class OnboardingV2UITests: XCTestCase {
     }
 
     /// #1455: links on a fresh install, with nobody signed in: no crash, no skipped login. An order link waits for the login, as it always did.
-    /// E2E_LINK_ORDER_ID, E2E_LINK_ORDER_NUMBER: an order of the account that logs in.
+    /// E2E_LINK_ORDER_ID, E2E_LINK_ORDER_NUMBER: an order of the account that logs in. Run after `simctl install`: the link starts the app,
+    /// and `app.open` would not do: it restarts a running app, and what it was keeping goes with it.
     func testLinksOnAFreshInstallWaitForLogin() throws {
-        guard #available(iOS 16.4, *) else { throw XCTSkip("needs XCUIApplication.open") }
+        guard #available(iOS 16.4, *) else { throw XCTSkip("needs XCUIDevice.system.open") }
         guard let orderId = env["E2E_LINK_ORDER_ID"], let number = env["E2E_LINK_ORDER_NUMBER"] else { throw XCTSkip("set TEST_RUNNER_E2E_LINK_ORDER_ID and _NUMBER") }
 
         // Cold start from an order link
-        app.open(try XCTUnwrap(URL(string: "anyrent://order/\(orderId)")))
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "anyrent://order/\(orderId)")))
         XCTAssertTrue(nextButton.waitForExistence(timeout: 30), "the pages, not the order")
         XCTAssertFalse(tabs.exists, "no tabs without a login")
         still("link-01-order-link-cold-pages")
 
         // More links while the pages are up
         for link in ["anyrent://todo", "anyrent://draft-cart"] {
-            app.open(try XCTUnwrap(URL(string: link)))
-            sleep(2)
+            XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: link)))
+            sleep(3)
             XCTAssertTrue(nextButton.exists, "\(link) leaves the pages up")
             XCTAssertFalse(tabs.exists, "\(link): no tabs without a login")
         }
@@ -241,8 +234,8 @@ final class OnboardingV2UITests: XCTestCase {
         XCTAssertTrue(loginForm.waitForExistence(timeout: 20), "login after the pages")
 
         // A link on the login screen
-        app.open(try XCTUnwrap(URL(string: "anyrent://todo")))
-        sleep(2)
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "anyrent://todo")))
+        sleep(3)
         XCTAssertTrue(loginForm.exists, "the link leaves login up")
         XCTAssertFalse(tabs.exists)
         still("link-03-login")
@@ -250,7 +243,12 @@ final class OnboardingV2UITests: XCTestCase {
         try logIn()
         waitForTabs("Home after login")
         let order = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", number)).firstMatch
-        XCTAssertTrue(order.waitForExistence(timeout: 20), "the order of the first link opens after login")
+        let deadline = Date().addingTimeInterval(20)
+        while !order.exists, Date() < deadline {
+            dismissPrompts()
+            sleep(1)
+        }
+        XCTAssertTrue(order.exists, "the order of the first link opens after login")
         still("link-04-order-after-login")
     }
 
@@ -280,12 +278,8 @@ final class OnboardingV2UITests: XCTestCase {
     func testASessionEndingOnAPageGoesToLoginThenHome() throws {
         guard env["E2E_SESSION_ENDED_ON_A_PAGE"] == "1" else { throw XCTSkip("needs an older build stopped on a page, and a second login") }
         app.launch()
-        XCTAssertTrue(skipButton.waitForExistence(timeout: 30), "the pages, signed in")
-        still("session-01-pages")
-        // The first reads of the launch get the 401
-        let deadline = Date().addingTimeInterval(30)
-        while !loginForm.exists, Date() < deadline { sleep(1) }
-        XCTAssertTrue(loginForm.exists, "the ended session opens login")
+        // The pages come up and the first reads of the launch get the 401: on a local API that can be before a test sees them
+        XCTAssertTrue(loginForm.waitForExistence(timeout: 30), "the ended session opens login")
         still("session-02-login-with-reason")
         e2e.dismissAlerts()
         XCTAssertFalse(nextButton.exists, "no pages over login")
