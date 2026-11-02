@@ -58,6 +58,12 @@ describe('#1433 label on web', () => {
     expect(en.d.home.related.event.futureDamageFee).toBe('Expected extra fee at return');
   });
 
+  // #1442: the late fee is its own line, so "trả muộn" does not belong in this tooltip (ja, ko, zh: no key, next test)
+  it('the tooltip of the fee does not talk about returning late', () => {
+    expect(json('locales/vi/orders.json').amount.tooltips.damageFee).toBe('Khoản thu thêm khi sản phẩm bị hư hỏng hoặc mất mát trong quá trình khách hàng thuê');
+    expect(json('locales/en/orders.json').amount.tooltips.damageFee).toBe('Extra charge when products are damaged or lost during rental');
+  });
+
   it('ja, ko and zh have no text of their own for it, so they show the English label', () => {
     for (const lang of ['ja', 'ko', 'zh']) {
       expect(scalars(json(`locales/${lang}/orders.json`)).filter(([key]) => /damageFee|\.fees$/.test(key))).toEqual([]);
