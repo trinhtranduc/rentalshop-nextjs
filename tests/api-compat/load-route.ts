@@ -31,7 +31,13 @@ function optionalActual(file: string): Record<string, any> {
   }
 }
 
-export function loadRoute(routeDir: string, holder: StoreHolder, root = THIS_ROOT): Record<string, any> {
+export function loadRoute(
+  routeDir: string,
+  holder: StoreHolder,
+  root = THIS_ROOT,
+  /** #1450: run the real `withPermissions` / `authenticateRequest` of that tree instead of passing the user through */
+  options: { realAuth?: boolean } = {}
+): Record<string, any> {
   const pkg = (name: string) => path.join(root, 'packages', name, 'src');
   const lib = (name: string) => path.join(root, 'apps/api/lib', name);
 
@@ -42,9 +48,11 @@ export function loadRoute(routeDir: string, holder: StoreHolder, root = THIS_ROO
     },
     NextRequest: class {},
   }));
-  jest.doMock('@rentalshop/auth/server', () => ({
-    withPermissions: () => (handler: any) => handler,
-  }));
+  jest.doMock('@rentalshop/auth/server', () =>
+    options.realAuth
+      ? { ...jest.requireActual(path.join(pkg('auth'), 'core')), ...jest.requireActual(path.join(pkg('auth'), 'unified-auth')) }
+      : { withPermissions: () => (handler: any) => handler }
+  );
   jest.doMock('@rentalshop/database', () => ({
     get db() {
       return holder.db;
@@ -64,6 +72,7 @@ export function loadRoute(routeDir: string, holder: StoreHolder, root = THIS_ROO
   jest.doMock('@rentalshop/utils', () => jest.requireActual(pkg('utils')));
   jest.doMock('@rentalshop/utils/server', () => ({
     checkPlanLimitIfNeeded: async () => null,
+    getSubscriptionError: async () => null,
     createAuditHelper: () => ({ logCreate: async () => undefined, logUpdate: async () => undefined }),
     uploadToS3: async () => ({ success: false }),
     commitStagingFiles: async () => ({ success: true, committedKeys: [] }),
