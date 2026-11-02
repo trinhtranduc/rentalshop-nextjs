@@ -50,7 +50,9 @@ activity="$(adb_s shell cmd package resolve-activity --brief -c android.intent.c
 adb_s shell am start -W -n "$activity" >/dev/null
 sleep 3
 
-# Login, then the intro pages.
+# The intro pages come first on a fresh install (#1455), then login.
+for _ in $(seq 1 25); do if ui has "Bỏ qua" || ui has "Skip"; then break; fi; sleep 1; done
+first_of "Bỏ qua" "Skip" >/dev/null || miss "the pages on a fresh install"
 ui wait "~Email" 25 >/dev/null || miss "login screen"
 ui tap "Email" 2 >/dev/null 2>&1 || ui tap "~Email" >/dev/null
 sleep 1; ui type "$E2E_EMAIL"; sleep 1
@@ -62,7 +64,7 @@ sleep 1; ui type "$E2E_PASSWORD"; sleep 1; hide_keyboard
 first_of "Đăng nhập" "Sign in" "Log in" >/dev/null || miss "login button"
 for _ in $(seq 1 25); do
   if ui has "#guide.count"; then break; fi
-  if first_of "Bỏ qua" "Skip" >/dev/null; then sleep 2; fi
+  if ui has "Bỏ qua" || ui has "Skip"; then miss "the pages came after login"; break; fi
   sleep 1
 done
 

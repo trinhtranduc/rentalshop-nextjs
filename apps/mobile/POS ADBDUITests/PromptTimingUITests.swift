@@ -2,7 +2,7 @@
 //  PromptTimingUITests.swift
 //  POS ADBDUITests
 //
-//  #1413: the notification question stays off onboarding and comes on Home, once. Needs a fresh install, a clean simulator
+//  #1413: the notification question stays off onboarding and login (#1455: the pages come first) and comes on Home, once. Needs a fresh install, a clean simulator
 //  (the answer survives a reinstall only by erasing the device) and a shop from scripts/mobile-e2e/new-empty-shop.sh:
 //    TEST_RUNNER_E2E_EMAIL=... TEST_RUNNER_E2E_PASSWORD=... TEST_RUNNER_E2E_ROLE=merchant TEST_RUNNER_E2E_OUT_DIR=... \
 //    TEST_RUNNER_E2E_FEATURES=... xcodebuild test -only-testing:"POS ADBDUITests/PromptTimingUITests" ...
@@ -48,17 +48,29 @@ final class PromptTimingUITests: XCTestCase {
         XCTAssertTrue(nextPage.exists, "onboarding page 1")
     }
 
+    private var loginForm: XCUIElement { app.secureTextFields.firstMatch }
+
+    /// Signed in with the pages still to do: what an update on a page leaves behind. The argument beats the stored flag while it is passed.
+    private func signInWithThePagesStillToDo() {
+        app.launchArguments += ["-HasCompletedOnboarding", "NO"]
+        app.launch()
+        waitForFirstPage()
+        e2e.button(["Skip", "Bỏ qua"]).tap()
+        XCTAssertTrue(loginForm.waitForExistence(timeout: 30), "login after the pages")
+        e2e.login(email: e2e.email, password: e2e.password)
+        XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 30), "the tabs after login")
+        assertNoQuestion(for: 4, "while the pages are still to do")
+        app.terminate()
+        app.launch()
+    }
+
     func testTheQuestionWaitsForHomeAndIsAskedOnce() throws {
         app.launch()
-        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 30), "a fresh install starts at login")
-        assertNoQuestion(for: 3, "on the login screen")
-        e2e.login(email: e2e.email, password: e2e.password)
-
         waitForFirstPage()
         assertNoQuestion(for: 6, "on onboarding page 1")
         e2e.shot("ios-01-onboarding-page1-no-prompt")
 
-        // Relaunch, signed in, with onboarding still to do
+        // Relaunch, signed out, with onboarding still to do
         app.terminate()
         app.launch()
         waitForFirstPage()
@@ -73,7 +85,12 @@ final class PromptTimingUITests: XCTestCase {
         e2e.shot("ios-04-onboarding-page3-no-prompt")
         e2e.button(["Get started", "Bắt đầu"]).tap()
 
-        XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 30), "Home after the last page")
+        XCTAssertTrue(loginForm.waitForExistence(timeout: 30), "login after the last page")
+        assertNoQuestion(for: 3, "on the login screen")
+        e2e.shot("ios-04b-login-no-prompt")
+        e2e.login(email: e2e.email, password: e2e.password)
+
+        XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 30), "Home after login")
         XCTAssertTrue(question.waitForExistence(timeout: 15), "the question comes on Home")
         e2e.shot("ios-05-home-prompt")
         let allow = question.buttons.matching(NSPredicate(format: "label IN %@", ["Allow", "Cho phép"])).firstMatch
@@ -95,9 +112,7 @@ final class PromptTimingUITests: XCTestCase {
     /// A widget link opens the tabs with onboarding still to do: no question there. The next launch shows the pages, then asks.
     func testAWidgetLinkDuringOnboardingAsksNothing() throws {
         guard #available(iOS 16.4, *) else { throw XCTSkip("needs XCUIApplication.open") }
-        app.launch()
-        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 30), "a fresh install starts at login")
-        e2e.login(email: e2e.email, password: e2e.password)
+        signInWithThePagesStillToDo()
         waitForFirstPage()
 
         app.open(try XCTUnwrap(URL(string: "anyrent://todo")))
@@ -112,6 +127,12 @@ final class PromptTimingUITests: XCTestCase {
         waitForFirstPage()
         assertNoQuestion(for: 3, "on page 1")
         e2e.button(["Skip", "Bỏ qua"]).tap()
+        XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 30))
+
+        // The stored flag takes over without the argument
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-HasCompletedOnboarding" || $0 == "NO" }
+        app.launch()
         XCTAssertTrue(e2e.tabBar.waitForExistence(timeout: 30))
         XCTAssertTrue(question.waitForExistence(timeout: 15), "the question comes once onboarding is over")
         e2e.shot("ios-10-after-skip-home-prompt")

@@ -141,6 +141,10 @@ class POS_ADBDUITests: XCTestCase {
     private func loginIfNeeded(app: XCUIApplication, email: String, password: String) {
         if waitForMainShell(app: app) { return }
 
+        // #1455: a fresh install opens on the pages, login comes after them
+        let skip = app.buttons.matching(NSPredicate(format: "label IN %@", ["Skip", "Bỏ qua"])).firstMatch
+        if skip.exists && skip.isHittable { skip.tap() }
+
         let emailField = app.textFields.matching(
             NSPredicate(format: "label CONTAINS[c] 'email' OR placeholderValue CONTAINS[c] 'email'")
         ).firstMatch
