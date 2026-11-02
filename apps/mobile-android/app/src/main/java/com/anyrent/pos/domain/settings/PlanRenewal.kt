@@ -196,6 +196,17 @@ object PlanRenewal {
         return laterEnd || (after.planId != null && after.planId != before.planId) || before.isExpired
     }
 
+    /**
+     * 403 codes of a shop whose period ended: SUBSCRIPTION_EXPIRED (what `authenticateRequest` answers today),
+     * SUBSCRIPTION_PERIOD_ENDED (the later subscription check), SUBSCRIPTION_CANCELLED (a cancelled period that ended).
+     * Not SUBSCRIPTION_PAUSED: that one is the admin's ("contact support").
+     */
+    val PERIOD_ENDED_CODES = setOf("SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED")
+
+    /** An authorised request answered 403 with a period-ended code: the expired screen opens (iOS `SubscriptionGate.opensGate`) */
+    fun opensGate(statusCode: Int?, code: String?, sentAuthorization: Boolean): Boolean =
+        statusCode == 403 && sentAuthorization && code in PERIOD_ENDED_CODES
+
     fun screenMode(role: String?, status: PlanRenewalStatus, storeAvailable: Boolean): PlanScreenMode = when {
         status.isExpired -> if (role == "MERCHANT") PlanScreenMode.EXPIRED_OWNER else PlanScreenMode.EXPIRED_STAFF
         role != "MERCHANT" -> PlanScreenMode.NOTHING_TO_BUY

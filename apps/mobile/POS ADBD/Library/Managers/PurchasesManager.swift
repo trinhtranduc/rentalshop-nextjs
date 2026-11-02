@@ -6,9 +6,9 @@
 //  App User ID = merchant_{merchantId} so the RevenueCat webhook maps the purchase to the shop's Subscription.
 //  Products come from the server (`storeProductIds` of GET /api/plans); prices from the store, never from the app.
 //
-//  DEBUG e2e runs (#1459): with `E2E_STOREKIT_PATH` in the launch environment the app loads that .storekit file into an
-//  SKTestSession (storefront VNM) and buys through StoreKit directly; the test then sends the RevenueCat webhook to the
-//  local API. Release builds never take that path.
+//  e2e runs (#1459): the hosted test PlanRenewalHostedE2ETests opens an SKTestSession in the app process (storefront VNM)
+//  and sets `E2EStoreKit.isActive`; the app then buys through StoreKit directly and the test sends the RevenueCat webhook
+//  to the local API. Nothing in the app turns it on.
 //
 
 import Foundation
@@ -39,7 +39,6 @@ enum PurchasesManager {
     static var isConfigured: Bool { configured || E2EStoreKit.isActive }
 
     static func configure() {
-        E2EStoreKit.startIfRequested()
         let apiKey = Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_API_KEY") as? String
         let trimmed = apiKey?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !trimmed.isEmpty, !trimmed.hasPrefix("$(") else {
@@ -190,44 +189,13 @@ enum PurchasesManager {
     }
 }
 
-// MARK: - DEBUG e2e: StoreKit test session inside the app (#1459)
+// MARK: - e2e: StoreKit directly, under a test's SKTestSession (#1459)
 
-/// UI tests do not apply the scheme's StoreKit file, so an e2e run hands the app the file's path and the app opens an
-/// SKTestSession itself (storefront VNM, no dialogs). StoreKitTest is loaded at run time: it ships with the simulator
-/// runtime, not with the app.
+/// SKTestSession only works in an XCTest process, so the e2e test runs hosted in the app: it opens the session (the
+/// .storekit file, storefront VNM, no dialogs) and sets `isActive`. Products, purchase and restore then go to StoreKit
+/// directly instead of RevenueCat; the server learns the payment from the webhook the test sends.
 enum E2EStoreKit {
-    private(set) static var isActive = false
-    private static var session: NSObject?
-
-    static func startIfRequested() {
-        #if DEBUG
-        guard !isActive, let path = ProcessInfo.processInfo.environment["E2E_STOREKIT_PATH"], !path.isEmpty else { return }
-        guard dlopen("/Developer/Library/Frameworks/StoreKitTest.framework/StoreKitTest", RTLD_NOW) != nil
-                || dlopen("/System/Library/Frameworks/StoreKitTest.framework/StoreKitTest", RTLD_NOW) != nil,
-              let cls = NSClassFromString("SKTestSession") as? NSObject.Type else {
-            NSLog("[E2EStoreKit] StoreKitTest not available")
-            return
-        }
-        typealias InitWithURL = @convention(c) (AnyObject, Selector, NSURL, UnsafeMutablePointer<NSError?>?) -> AnyObject?
-        let selector = NSSelectorFromString("initWithContentsOfURL:error:")
-        guard let method = class_getInstanceMethod(cls, selector),
-              let allocated = (cls as AnyObject).perform(NSSelectorFromString("alloc"))?.takeUnretainedValue() else { return }
-        var error: NSError?
-        let initialise = unsafeBitCast(method_getImplementation(method), to: InitWithURL.self)
-        guard let created = initialise(allocated, selector, URL(fileURLWithPath: path) as NSURL, &error) as? NSObject else {
-            NSLog("[E2EStoreKit] SKTestSession failed: \(error?.localizedDescription ?? "-")")
-            return
-        }
-        created.setValue(ProcessInfo.processInfo.environment["E2E_STOREKIT_STOREFRONT"] ?? "VNM", forKey: "storefront")
-        created.setValue(true, forKey: "disableDialogs")
-        if ProcessInfo.processInfo.environment["E2E_STOREKIT_KEEP"] != "1" {
-            _ = created.perform(NSSelectorFromString("clearTransactions"))
-        }
-        session = created
-        isActive = true
-        NSLog("[E2EStoreKit] SKTestSession on, storefront \(created.value(forKey: "storefront") ?? "-")")
-        #endif
-    }
+    static var isActive = false
 
     static func products(ids: [String], completion: @escaping ([PlanStoreProduct]) -> Void) {
         guard #available(iOS 15.0, *) else { return completion([]) }

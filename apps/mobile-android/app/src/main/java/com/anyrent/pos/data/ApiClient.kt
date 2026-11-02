@@ -21,6 +21,7 @@ import com.anyrent.pos.data.model.UserProfile
 import com.anyrent.pos.data.repository.appConfigFromJson
 import com.anyrent.pos.domain.appconfig.AppConfig
 import com.anyrent.pos.domain.error.ApiErrorMessages
+import com.anyrent.pos.domain.settings.PlanRenewal
 import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.history.ChangeHistory
 import com.anyrent.pos.domain.orders.HandOverFields
@@ -1295,7 +1296,7 @@ class ApiClient(
                     )
                 }
                 // #1459: the plan ended: one full screen (owner pays, staff ask the owner) instead of an error on every screen
-                if (response.code == 403 && request.header("Authorization") != null && json.errorCode() == CODE_SUBSCRIPTION_PERIOD_ENDED) {
+                if (PlanRenewal.opensGate(response.code, json.errorCode(), request.header("Authorization") != null)) {
                     PlanRenewalStore.notifyEnded()
                 }
                 if (!response.isSuccessful) {
@@ -1899,7 +1900,6 @@ class ApiClient(
         }
 
         private const val CODE_TOKEN_EXPIRED = "TOKEN_EXPIRED"
-        const val CODE_SUBSCRIPTION_PERIOD_ENDED = "SUBSCRIPTION_PERIOD_ENDED"
 
         private fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)

@@ -258,7 +258,7 @@ fun AnyRentNavHost(
         }
     }
 
-    // #1459: any call answered 403 SUBSCRIPTION_PERIOD_ENDED: the expired screen replaces the app (no error on every screen)
+    // #1459: any call answered 403 SUBSCRIPTION_EXPIRED / _PERIOD_ENDED / _CANCELLED: the expired screen replaces the app (no error on every screen)
     LaunchedEffect(rootNavController) {
         PlanRenewalStore.ended.collect {
             val route = rootNavController.currentDestination?.route ?: return@collect

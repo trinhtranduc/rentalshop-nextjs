@@ -16,7 +16,7 @@ import java.time.Instant
 
 /**
  * #1459 the shop's plan as the app knows it: the last GET /api/subscriptions/status (Home line, Settings),
- * the expired signal (403 `SUBSCRIPTION_PERIOD_ENDED` from any call), and the one-line notice after a renewal.
+ * the expired signal (403 `SUBSCRIPTION_EXPIRED` / `_PERIOD_ENDED` / `_CANCELLED` from any call), and the one-line notice after a renewal.
  */
 object PlanRenewalStore {
     private val _status = MutableStateFlow<PlanRenewalStatus?>(null)
@@ -34,7 +34,7 @@ object PlanRenewalStore {
 
     private val TTL: Duration = Duration.ofMinutes(10)
 
-    /** Called by ApiClient on a 403 SUBSCRIPTION_PERIOD_ENDED; many screens fail at once, one signal every 3 s */
+    /** Called by ApiClient on a 403 SUBSCRIPTION_EXPIRED / _PERIOD_ENDED / _CANCELLED; many screens fail at once, one signal every 3 s */
     fun notifyEnded() {
         val now = System.currentTimeMillis()
         if (now - lastEndedAt < 3_000) return

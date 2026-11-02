@@ -174,4 +174,16 @@ class PlanRenewalTest {
         assertEquals("2.000", PlanRenewal.groupNumber(2000, "vi"))
         assertEquals("2,000", PlanRenewal.groupNumber(2000, "en"))
     }
+
+    @Test
+    fun gateOpensOnEveryPeriodEndedCodeOfAnAuthorisedRequest() {
+        for (code in listOf("SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED")) {
+            assertTrue(code, PlanRenewal.opensGate(403, code, sentAuthorization = true))
+            assertFalse("no token: $code", PlanRenewal.opensGate(403, code, sentAuthorization = false))
+        }
+        assertFalse("paused is the admin's", PlanRenewal.opensGate(403, "SUBSCRIPTION_PAUSED", sentAuthorization = true))
+        assertFalse(PlanRenewal.opensGate(403, "INSUFFICIENT_PERMISSIONS", sentAuthorization = true))
+        assertFalse(PlanRenewal.opensGate(401, "SUBSCRIPTION_EXPIRED", sentAuthorization = true))
+        assertFalse(PlanRenewal.opensGate(403, null, sentAuthorization = true))
+    }
 }

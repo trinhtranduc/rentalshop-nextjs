@@ -204,4 +204,17 @@ final class PlanRenewalLogicTests: XCTestCase {
         XCTAssertEqual(PlanRenewalLogic.baseProductId("anyrent_professional_annual"), "anyrent_professional_annual")
         XCTAssertNil(PlanRenewalLogic.baseProductId(nil))
     }
+
+    func testGateOpensOnEveryPeriodEndedCodeOfAnAuthorisedRequest() {
+        typealias G = SubscriptionGate
+        for code in ["SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED"] {
+            XCTAssertTrue(G.opensGate(statusCode: 403, code: code, sentAuthorization: true), code)
+            XCTAssertFalse(G.opensGate(statusCode: 403, code: code, sentAuthorization: false), "no token: \(code)")
+            XCTAssertTrue(G.isPeriodEndedError(NSError(domain: "RC", code: 403, userInfo: [NSError.apiCodeKey: code])))
+        }
+        XCTAssertFalse(G.opensGate(statusCode: 403, code: "SUBSCRIPTION_PAUSED", sentAuthorization: true), "paused is the admin's")
+        XCTAssertFalse(G.opensGate(statusCode: 403, code: "INSUFFICIENT_PERMISSIONS", sentAuthorization: true))
+        XCTAssertFalse(G.opensGate(statusCode: 401, code: "SUBSCRIPTION_EXPIRED", sentAuthorization: true))
+        XCTAssertFalse(G.isPeriodEndedError(NSError(domain: "RC", code: 403)))
+    }
 }

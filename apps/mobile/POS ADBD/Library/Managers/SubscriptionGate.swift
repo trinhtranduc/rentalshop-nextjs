@@ -2,11 +2,12 @@
 //  SubscriptionGate.swift
 //  POS ADBD
 //
-//  #1459 An expired shop can still sign in, but nearly every call answers 403 SUBSCRIPTION_PERIOD_ENDED. Instead of an
+//  #1459 An expired shop can still sign in, but nearly every call answers 403 (SUBSCRIPTION_EXPIRED). Instead of an
 //  error on each screen the app shows one screen ("Gói của shop đã hết hạn"):
 //  - after login, when the login's period end has passed;
 //  - at launch, when the last known period end has passed (then a status read decides);
-//  - on any 403 SUBSCRIPTION_PERIOD_ENDED.
+//  - on any 403 that says the period ended: SUBSCRIPTION_EXPIRED (what `authenticateRequest` answers today),
+//    SUBSCRIPTION_PERIOD_ENDED (the later subscription check) or SUBSCRIPTION_CANCELLED (a cancelled period that ended).
 //  The gate only calls GET /api/subscriptions/status, GET /api/plans (owner) and logout, all open to expired shops.
 //
 
@@ -16,7 +17,8 @@ final class SubscriptionGate {
     static let shared = SubscriptionGate()
     /// A payment was confirmed or the plan changed: Home hides or redraws its "Còn N ngày" line
     static let planDidChange = Notification.Name("planDidChange")
-    static let periodEndedCode = "SUBSCRIPTION_PERIOD_ENDED"
+    /// 403 codes of a shop whose period ended (not PAUSED: that one is the admin's, "contact support")
+    static let periodEndedCodes: Set<String> = ["SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED"]
 
     private let defaults: UserDefaults
     private static let endKey = "plan.periodEnd.v1"
@@ -71,7 +73,7 @@ final class SubscriptionGate {
 
     // MARK: - Signals
 
-    /// A request answered 403 SUBSCRIPTION_PERIOD_ENDED
+    /// A request answered 403 with one of `periodEndedCodes`
     func periodEnded() {
         DispatchQueue.main.async { appDelegate.showExpiredPlan() }
     }
@@ -87,11 +89,11 @@ final class SubscriptionGate {
 
     /// The per-screen alert for this code is not shown: the gate says it once
     static func isPeriodEndedError(_ error: Error) -> Bool {
-        (error as NSError).userInfo[NSError.apiCodeKey] as? String == periodEndedCode
+        ((error as NSError).userInfo[NSError.apiCodeKey] as? String).map(periodEndedCodes.contains) ?? false
     }
 
-    /// Pure: does this answer open the gate (an authorised request, 403, SUBSCRIPTION_PERIOD_ENDED)
+    /// Pure: does this answer open the gate (an authorised request, 403, a period-ended code)
     static func opensGate(statusCode: Int?, code: String?, sentAuthorization: Bool) -> Bool {
-        statusCode == 403 && sentAuthorization && code == periodEndedCode
+        statusCode == 403 && sentAuthorization && code.map(periodEndedCodes.contains) == true
     }
 }

@@ -62,7 +62,13 @@ section "Thiết kế đơn giản · theo research" plus sections 1, 1b and 2; 
 - 2026-11-02 — A `RENEWAL` on a row without `storeProductId` (purchase recorded before this change) keeps the current
   plan, so an old in-app Basic purchase never drops a Professional shop at its next renewal (agent).
 - 2026-11-02 — Refund = RevenueCat `CANCELLATION` with `cancel_reason: CUSTOMER_SUPPORT`: access ends at the event time
-  (`currentPeriodEnd`), status `CANCELLED`, the matching payment row becomes `REFUNDED` (agent).
+  (`currentPeriodEnd`), status `EXPIRED` (not `CANCELLED`, which `authenticateRequest` answers with 403
+  `SUBSCRIPTION_CANCELLED` "contact support"), the matching payment row becomes `REFUNDED` (agent).
+- 2026-11-02 — Found in the e2e run: an expired shop gets 403 `SUBSCRIPTION_EXPIRED` from `authenticateRequest`
+  (`packages/auth/src/core.ts`), not `SUBSCRIPTION_PERIOD_ENDED`; the apps open the gate on `SUBSCRIPTION_EXPIRED`,
+  `SUBSCRIPTION_PERIOD_ENDED` and `SUBSCRIPTION_CANCELLED` (agent).
+- 2026-11-02 — SKTestSession aborts outside an XCTest process, so the iOS purchase e2e runs hosted in the app
+  (`PlanRenewalHostedE2ETests`); the real-login gate and staff checks are XCUITests (`PlanRenewalE2ETests`) (agent).
 - 2026-11-02 — A processing error answers 500 (was 200) so RevenueCat retries; the event id is released first, so the
   retry runs once (agent).
 - 2026-11-02 — New Settings: the plan row opens the screen for the owner only; other roles keep today's read-only row.

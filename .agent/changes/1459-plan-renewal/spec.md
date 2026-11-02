@@ -37,7 +37,7 @@ Issue: #1459 · Status: accepted · Intent: ./intent.md
    row (amount > 0), one Vietnamese history row. A `RENEWAL` on a row with no `storeProductId` keeps the plan.
 9. `PRODUCT_CHANGE` to a higher tier switches the plan at once; to a lower or equal tier only logs "từ kỳ sau".
 10. `CANCELLATION` with `cancel_reason` `CUSTOMER_SUPPORT` (refund): `currentPeriodEnd` = event time (never later than
-    before), status CANCELLED, `autoRenew` false, the payment with that `transaction_id` becomes REFUNDED. Any other
+    before), status EXPIRED (so the owner may buy again; CANCELLED would answer 403 "contact support"), `autoRenew` false, the payment with that `transaction_id` becomes REFUNDED. Any other
     `CANCELLATION`: `cancelAtPeriodEnd` true, `autoRenew` false, period unchanged.
 11. `UNCANCELLATION`: `autoRenew` true, cancellation cleared. `BILLING_ISSUE`: status PAST_DUE, `billingIssueAt` set,
     access unchanged. `EXPIRATION`: `autoRenew` false; status EXPIRED only after the period ended (as today).
@@ -79,7 +79,8 @@ Issue: #1459 · Status: accepted · Intent: ./intent.md
     `https://play.google.com/store/account/subscriptions?package=anyrent.shop` (with `sku` when known).
     Terms `https://www.anyrent.shop/terms`, privacy `https://www.anyrent.shop/privacy`.
 27. Expired screen (no back button) appears after login when the login says the period ended, at launch when the saved
-    period end passed or status says EXPIRED, and on any 403 `SUBSCRIPTION_PERIOD_ENDED`:
+    period end passed or status says EXPIRED, and on any 403 `SUBSCRIPTION_EXPIRED` (what `authenticateRequest` answers
+    today), `SUBSCRIPTION_PERIOD_ENDED` or `SUBSCRIPTION_CANCELLED` (not `SUBSCRIPTION_PAUSED`):
     - owner: "Gói của shop đã hết hạn" (black), "{Gói} · hết hạn {dd/mm/yyyy}. Dữ liệu của shop vẫn được giữ.", the plan
       chooser of 17–19, links, Đăng xuất; paid and confirmed → Home with the "Đã gia hạn đến …" banner / snackbar.
     - other roles: same two lines, "Nhờ chủ shop gia hạn.", Thử lại (reads status; active → Home), Đăng xuất.

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		993BD015E01AE4EE4F6A6F82 /* PlanRenewalHostedE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4ED619BF08779C2C3187FC8 /* PlanRenewalHostedE2ETests.swift */; };
+		7FB3DE778C3A7DCD15F915AB /* PlanRenewalE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E1F5D895D53314E6A54FCA /* PlanRenewalE2ETests.swift */; };
 		140D408356E6BD768C2F93B5 /* SubscriptionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DCFCE563C0BC0EE2A0F9FF /* SubscriptionGate.swift */; };
 		D3D8E4D922F4FE015F68DFD1 /* PlanRenewal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A55693525D5863A79A8DD4 /* PlanRenewal.swift */; };
 		0015AEBDB67EF352963B304A /* PlanRenewalLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A26E0DABFC61480DEAA3B60 /* PlanRenewalLogicTests.swift */; };
@@ -463,6 +465,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A4ED619BF08779C2C3187FC8 /* PlanRenewalHostedE2ETests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewalHostedE2ETests.swift; sourceTree = "<group>"; };
+		74E1F5D895D53314E6A54FCA /* PlanRenewalE2ETests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewalE2ETests.swift; sourceTree = "<group>"; };
 		55DCFCE563C0BC0EE2A0F9FF /* SubscriptionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionGate.swift; sourceTree = "<group>"; };
 		71A55693525D5863A79A8DD4 /* PlanRenewal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewal.swift; sourceTree = "<group>"; };
 		5A26E0DABFC61480DEAA3B60 /* PlanRenewalLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewalLogicTests.swift; sourceTree = "<group>"; };
@@ -1209,6 +1213,7 @@
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				A674F0000000000000000002 /* RefreshPolicyTests.swift */,
 				5A26E0DABFC61480DEAA3B60 /* PlanRenewalLogicTests.swift */,
+				A4ED619BF08779C2C3187FC8 /* PlanRenewalHostedE2ETests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
 				9700A0022E9F000100970001 /* PrinterSetupTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
@@ -1693,6 +1698,7 @@
 				C9B3296D240D6FDE00FEB650 /* POS_ADBDUITests.swift */,
 				C9B3296F240D6FDE00FEB650 /* Info.plist */,
 				049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */,
+				74E1F5D895D53314E6A54FCA /* PlanRenewalE2ETests.swift */,
 				41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */,
 				A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */,
 				F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */,
@@ -2080,6 +2086,7 @@
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				A674B0000000000000000002 /* RefreshPolicyTests.swift in Sources */,
 				0015AEBDB67EF352963B304A /* PlanRenewalLogicTests.swift in Sources */,
+				993BD015E01AE4EE4F6A6F82 /* PlanRenewalHostedE2ETests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
 				9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
@@ -2440,6 +2447,7 @@
 			files = (
 				C9B3297C240D728B00FEB650 /* POS_ADBDUITests.swift in Sources */,
 				021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */,
+				7FB3DE778C3A7DCD15F915AB /* PlanRenewalE2ETests.swift in Sources */,
 				D3448A56B3C7654B5E9723A8 /* OnboardingV2UITests.swift in Sources */,
 				A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */,
 				F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */,
