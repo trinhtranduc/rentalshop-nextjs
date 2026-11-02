@@ -2,6 +2,7 @@ package com.anyrent.pos.domain.widget
 
 import com.anyrent.pos.ui.navigation.Routes
 import com.anyrent.pos.ui.navigation.isSignInRoute
+import com.anyrent.pos.ui.navigation.showsWithoutSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -80,6 +81,17 @@ class TodayWidgetRulesTest {
         }
         for (route in listOf(Routes.Main, Routes.Onboarding, Routes.Cart, Routes.orderDetail(5))) {
             assertFalse(route, isSignInRoute(route))
+        }
+    }
+
+    /** #1455: the first-launch pages stay up with no session, or a fresh install would jump over them. Everything else still goes to sign-in. */
+    @Test
+    fun onlySignInRoutesAndThePagesStayWithoutASession() {
+        assertTrue(showsWithoutSession(Routes.Onboarding))
+        assertTrue(showsWithoutSession(Routes.Login))
+        assertTrue(showsWithoutSession("check-email/a@b.c"))
+        for (route in listOf(Routes.Main, Routes.Cart, Routes.orderDetail(5))) {
+            assertFalse(route, showsWithoutSession(route))
         }
     }
 
