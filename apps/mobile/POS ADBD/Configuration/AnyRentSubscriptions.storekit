@@ -10,7 +10,9 @@
         "enabled" : false,
         "name" : "Load Products"
       }
-    ]
+    ],
+    "_locale" : "vi_VN",
+    "_storefront" : "VNM"
   },
   "subscriptionGroups" : [
     {

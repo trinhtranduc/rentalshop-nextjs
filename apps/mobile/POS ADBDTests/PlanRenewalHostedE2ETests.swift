@@ -40,6 +40,16 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         try FileManager.default.createDirectory(atPath: outDir, withIntermediateDirectories: true)
     }
 
+    /// Leave the app signed out and on RevenueCat again: other unit tests read the signed-in shop (its currency)
+    override class func tearDown() {
+        if session != nil {
+            E2EStoreKit.isActive = false
+            appDelegate.logout()
+            RunLoop.main.run(until: Date().addingTimeInterval(2))
+        }
+        super.tearDown()
+    }
+
     private var outDir: String { env["E2E_OUT_DIR"] ?? NSTemporaryDirectory() }
     private var window: UIWindow { appDelegate.window! }
 
@@ -51,6 +61,7 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         shot("plan-01-home-line")
         line.sendActions(for: .touchUpInside)
         _ = try waitForView("plan.buy", 30) as UIButton
+        spin(0.8) // the push animation
         XCTAssertNotNil(view("plan.row.basic") as ChoiceRow?, "Basic row")
         XCTAssertNotNil(view("plan.row.professional") as ChoiceRow?, "Professional row (upgrade)")
         shot("plan-02-owner-active")
