@@ -1,0 +1,1089 @@
+{
+  "listAsMerchant": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": {
+        "orders": [
+          {
+            "id": 501,
+            "orderNumber": "730005",
+            "orderType": "RENT",
+            "status": "RESERVED",
+            "outletId": 2,
+            "customerId": 101,
+            "totalAmount": 450000,
+            "depositAmount": 100000,
+            "securityDeposit": 500000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-10T02:00:00.000Z",
+            "returnPlanAt": "2026-10-12T02:00:00.000Z",
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-07T02:00:00.000Z",
+            "updatedAt": "2026-10-07T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Nguyễn Lan",
+            "customerPhone": "0901234567",
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 1,
+                "productId": 11,
+                "productName": "Áo dài đỏ",
+                "quantity": 1,
+                "unitPrice": 450000,
+                "totalPrice": 450000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 850000,
+            "refundDue": 0
+          },
+          {
+            "id": 502,
+            "orderNumber": "730006",
+            "orderType": "RENT",
+            "status": "PICKUPED",
+            "outletId": 2,
+            "customerId": 102,
+            "totalAmount": 300000,
+            "depositAmount": 0,
+            "securityDeposit": 200000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+            "returnPlanAt": "2026-10-09T02:00:00.000Z",
+            "pickedUpAt": "2026-10-06T03:00:00.000Z",
+            "returnedAt": null,
+            "createdAt": "2026-10-05T02:00:00.000Z",
+            "updatedAt": "2026-10-06T03:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Trần Mai",
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 2,
+                "productId": 12,
+                "productName": "Váy cưới",
+                "quantity": 2,
+                "unitPrice": 150000,
+                "totalPrice": 300000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 200000
+          },
+          {
+            "id": 503,
+            "orderNumber": "730007",
+            "orderType": "SALE",
+            "status": "COMPLETED",
+            "outletId": 2,
+            "customerId": null,
+            "totalAmount": 120000,
+            "depositAmount": 0,
+            "securityDeposit": 0,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": null,
+            "returnPlanAt": null,
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-04T02:00:00.000Z",
+            "updatedAt": "2026-10-04T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": null,
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 3,
+                "productId": 13,
+                "productName": "Khăn voan",
+                "quantity": 1,
+                "unitPrice": 120000,
+                "totalPrice": 120000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 0
+          }
+        ],
+        "total": 3,
+        "page": 1,
+        "limit": 50,
+        "offset": 0,
+        "hasMore": false,
+        "totalPages": 1
+      },
+      "code": "ORDERS_FOUND",
+      "message": "Found 3 orders"
+    },
+    "filters": [
+      {
+        "page": 1,
+        "limit": 50,
+        "sortBy": "createdAt",
+        "sortOrder": "desc",
+        "merchantId": 1,
+        "includeInstallments": false,
+        "includeDepositPlan": false
+      }
+    ]
+  },
+  "listAsOutletStaff": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": {
+        "orders": [
+          {
+            "id": 501,
+            "orderNumber": "730005",
+            "orderType": "RENT",
+            "status": "RESERVED",
+            "outletId": 2,
+            "customerId": 101,
+            "totalAmount": 450000,
+            "depositAmount": 100000,
+            "securityDeposit": 500000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-10T02:00:00.000Z",
+            "returnPlanAt": "2026-10-12T02:00:00.000Z",
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-07T02:00:00.000Z",
+            "updatedAt": "2026-10-07T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Nguyễn Lan",
+            "customerPhone": "0901234567",
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 1,
+                "productId": 11,
+                "productName": "Áo dài đỏ",
+                "quantity": 1,
+                "unitPrice": 450000,
+                "totalPrice": 450000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 850000,
+            "refundDue": 0
+          },
+          {
+            "id": 502,
+            "orderNumber": "730006",
+            "orderType": "RENT",
+            "status": "PICKUPED",
+            "outletId": 2,
+            "customerId": 102,
+            "totalAmount": 300000,
+            "depositAmount": 0,
+            "securityDeposit": 200000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+            "returnPlanAt": "2026-10-09T02:00:00.000Z",
+            "pickedUpAt": "2026-10-06T03:00:00.000Z",
+            "returnedAt": null,
+            "createdAt": "2026-10-05T02:00:00.000Z",
+            "updatedAt": "2026-10-06T03:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Trần Mai",
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 2,
+                "productId": 12,
+                "productName": "Váy cưới",
+                "quantity": 2,
+                "unitPrice": 150000,
+                "totalPrice": 300000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 200000
+          },
+          {
+            "id": 503,
+            "orderNumber": "730007",
+            "orderType": "SALE",
+            "status": "COMPLETED",
+            "outletId": 2,
+            "customerId": null,
+            "totalAmount": 120000,
+            "depositAmount": 0,
+            "securityDeposit": 0,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": null,
+            "returnPlanAt": null,
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-04T02:00:00.000Z",
+            "updatedAt": "2026-10-04T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": null,
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 3,
+                "productId": 13,
+                "productName": "Khăn voan",
+                "quantity": 1,
+                "unitPrice": 120000,
+                "totalPrice": 120000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 0
+          }
+        ],
+        "total": 3,
+        "page": 1,
+        "limit": 50,
+        "offset": 0,
+        "hasMore": false,
+        "totalPages": 1
+      },
+      "code": "ORDERS_FOUND",
+      "message": "Found 3 orders"
+    },
+    "filters": [
+      {
+        "page": 1,
+        "limit": 50,
+        "sortBy": "createdAt",
+        "sortOrder": "desc",
+        "merchantId": 1,
+        "outletId": 2,
+        "includeInstallments": false,
+        "includeDepositPlan": false
+      }
+    ]
+  },
+  "listIosSearch": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": {
+        "orders": [
+          {
+            "id": 501,
+            "orderNumber": "730005",
+            "orderType": "RENT",
+            "status": "RESERVED",
+            "outletId": 2,
+            "customerId": 101,
+            "totalAmount": 450000,
+            "depositAmount": 100000,
+            "securityDeposit": 500000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-10T02:00:00.000Z",
+            "returnPlanAt": "2026-10-12T02:00:00.000Z",
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-07T02:00:00.000Z",
+            "updatedAt": "2026-10-07T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Nguyễn Lan",
+            "customerPhone": "0901234567",
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 1,
+                "productId": 11,
+                "productName": "Áo dài đỏ",
+                "quantity": 1,
+                "unitPrice": 450000,
+                "totalPrice": 450000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 850000,
+            "refundDue": 0
+          },
+          {
+            "id": 502,
+            "orderNumber": "730006",
+            "orderType": "RENT",
+            "status": "PICKUPED",
+            "outletId": 2,
+            "customerId": 102,
+            "totalAmount": 300000,
+            "depositAmount": 0,
+            "securityDeposit": 200000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+            "returnPlanAt": "2026-10-09T02:00:00.000Z",
+            "pickedUpAt": "2026-10-06T03:00:00.000Z",
+            "returnedAt": null,
+            "createdAt": "2026-10-05T02:00:00.000Z",
+            "updatedAt": "2026-10-06T03:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Trần Mai",
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 2,
+                "productId": 12,
+                "productName": "Váy cưới",
+                "quantity": 2,
+                "unitPrice": 150000,
+                "totalPrice": 300000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 200000
+          },
+          {
+            "id": 503,
+            "orderNumber": "730007",
+            "orderType": "SALE",
+            "status": "COMPLETED",
+            "outletId": 2,
+            "customerId": null,
+            "totalAmount": 120000,
+            "depositAmount": 0,
+            "securityDeposit": 0,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": null,
+            "returnPlanAt": null,
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-04T02:00:00.000Z",
+            "updatedAt": "2026-10-04T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": null,
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 3,
+                "productId": 13,
+                "productName": "Khăn voan",
+                "quantity": 1,
+                "unitPrice": 120000,
+                "totalPrice": 120000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 0
+          }
+        ],
+        "total": 3,
+        "page": 2,
+        "limit": 1,
+        "offset": 1,
+        "hasMore": true,
+        "totalPages": 3
+      },
+      "code": "ORDERS_FOUND",
+      "message": "Found 3 orders"
+    },
+    "filters": [
+      {
+        "orderType": "RENT",
+        "status": "RESERVED",
+        "startDate": "1999-12-31T17:00:00.000Z",
+        "exactDateRange": true,
+        "q": "lan",
+        "page": 2,
+        "limit": 1,
+        "sortBy": "createdAt",
+        "sortOrder": "desc",
+        "merchantId": 1,
+        "outletId": 2,
+        "includeInstallments": false,
+        "includeDepositPlan": false
+      }
+    ]
+  },
+  "listAndroidPickupDay": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "data": {
+        "orders": [
+          {
+            "id": 501,
+            "orderNumber": "730005",
+            "orderType": "RENT",
+            "status": "RESERVED",
+            "outletId": 2,
+            "customerId": 101,
+            "totalAmount": 450000,
+            "depositAmount": 100000,
+            "securityDeposit": 500000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-10T02:00:00.000Z",
+            "returnPlanAt": "2026-10-12T02:00:00.000Z",
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-07T02:00:00.000Z",
+            "updatedAt": "2026-10-07T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Nguyễn Lan",
+            "customerPhone": "0901234567",
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 1,
+                "productId": 11,
+                "productName": "Áo dài đỏ",
+                "quantity": 1,
+                "unitPrice": 450000,
+                "totalPrice": 450000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 850000,
+            "refundDue": 0
+          },
+          {
+            "id": 502,
+            "orderNumber": "730006",
+            "orderType": "RENT",
+            "status": "PICKUPED",
+            "outletId": 2,
+            "customerId": 102,
+            "totalAmount": 300000,
+            "depositAmount": 0,
+            "securityDeposit": 200000,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": "2026-10-06T02:00:00.000Z",
+            "returnPlanAt": "2026-10-09T02:00:00.000Z",
+            "pickedUpAt": "2026-10-06T03:00:00.000Z",
+            "returnedAt": null,
+            "createdAt": "2026-10-05T02:00:00.000Z",
+            "updatedAt": "2026-10-06T03:00:00.000Z",
+            "deletedAt": null,
+            "customerName": "Trần Mai",
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 2,
+                "productId": 12,
+                "productName": "Váy cưới",
+                "quantity": 2,
+                "unitPrice": 150000,
+                "totalPrice": 300000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 200000
+          },
+          {
+            "id": 503,
+            "orderNumber": "730007",
+            "orderType": "SALE",
+            "status": "COMPLETED",
+            "outletId": 2,
+            "customerId": null,
+            "totalAmount": 120000,
+            "depositAmount": 0,
+            "securityDeposit": 0,
+            "damageFee": 0,
+            "lateFee": 0,
+            "discountAmount": 0,
+            "pickupPlanAt": null,
+            "returnPlanAt": null,
+            "pickedUpAt": null,
+            "returnedAt": null,
+            "createdAt": "2026-10-04T02:00:00.000Z",
+            "updatedAt": "2026-10-04T02:00:00.000Z",
+            "deletedAt": null,
+            "customerName": null,
+            "customerPhone": null,
+            "outletName": "Chi nhánh 1",
+            "createdByName": "Minh",
+            "orderItems": [
+              {
+                "id": 3,
+                "productId": 13,
+                "productName": "Khăn voan",
+                "quantity": 1,
+                "unitPrice": 120000,
+                "totalPrice": 120000,
+                "deposit": 0
+              }
+            ],
+            "amountDue": 0,
+            "refundDue": 0
+          }
+        ],
+        "total": 3,
+        "page": 1,
+        "limit": 50,
+        "offset": 0,
+        "hasMore": false,
+        "totalPages": 1
+      },
+      "code": "ORDERS_FOUND",
+      "message": "Found 3 orders"
+    },
+    "filters": [
+      {
+        "startDate": "2026-10-07T17:00:00.000Z",
+        "endDate": "2026-10-08T16:59:59.999Z",
+        "exactDateRange": true,
+        "dateField": "pickupPlanAt",
+        "page": 1,
+        "limit": 50,
+        "sortBy": "createdAt",
+        "sortOrder": "desc",
+        "merchantId": 1,
+        "outletId": 2,
+        "includeInstallments": false,
+        "includeDepositPlan": false
+      }
+    ]
+  },
+  "listBadLimit": {
+    "status": 400,
+    "body": {
+      "success": false,
+      "code": "VALIDATION_ERROR",
+      "message": "Xác thực dữ liệu thất bại",
+      "error": "Xác thực dữ liệu thất bại"
+    }
+  },
+  "listBadTimeZone": {
+    "status": 400,
+    "body": {
+      "success": false,
+      "code": "INVALID_QUERY",
+      "message": "Tham số truy vấn không hợp lệ",
+      "error": "Tham số truy vấn không hợp lệ"
+    }
+  },
+  "listHandlerDbFailure": {
+    "status": 503,
+    "body": {
+      "success": false,
+      "code": "SERVICE_UNAVAILABLE",
+      "message": "Dịch vụ tạm thời không khả dụng",
+      "error": "Dịch vụ tạm thời không khả dụng"
+    },
+    "filters": [
+      {
+        "page": 1,
+        "limit": 50,
+        "sortBy": "createdAt",
+        "sortOrder": "desc",
+        "merchantId": 1,
+        "outletId": 2,
+        "includeInstallments": false,
+        "includeDepositPlan": false
+      }
+    ]
+  },
+  "noToken": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "ACCESS_TOKEN_REQUIRED",
+      "message": "Access token required"
+    }
+  },
+  "garbageToken": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "INVALID_TOKEN",
+      "message": "Invalid token"
+    }
+  },
+  "expiredToken": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "TOKEN_EXPIRED",
+      "message": "Your login has expired. Please login again."
+    }
+  },
+  "accountDeactivated": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "ACCOUNT_DEACTIVATED",
+      "message": "Your account has been deactivated. Please contact an administrator."
+    }
+  },
+  "accountGone": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "ACCOUNT_DEACTIVATED",
+      "message": "Your account has been deactivated. Please contact an administrator."
+    }
+  },
+  "outletDeactivated": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "OUTLET_DEACTIVATED",
+      "message": "This branch has been deactivated. Please contact the shop owner."
+    }
+  },
+  "passwordChanged": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "TOKEN_INVALIDATED",
+      "message": "Your session has expired due to password change. Please login again."
+    }
+  },
+  "permissionsChanged": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "TOKEN_INVALIDATED",
+      "message": "Your session has expired due to permissions change. Please login again."
+    }
+  },
+  "sessionReplaced": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "SESSION_REPLACED",
+      "message": "Your account was signed in on another device. Please login again."
+    }
+  },
+  "sessionExpired": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "SESSION_EXPIRED",
+      "message": "Your session has expired. Please login again."
+    }
+  },
+  "merchantGone": {
+    "status": 404,
+    "body": {
+      "success": false,
+      "message": "Merchant not found",
+      "code": "MERCHANT_NOT_FOUND"
+    }
+  },
+  "noSubscription": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "message": "No active subscription found. Please subscribe to continue.",
+      "code": "NO_SUBSCRIPTION",
+      "details": {
+        "merchantId": 1,
+        "merchantName": "Tiệm Áo Dài"
+      }
+    }
+  },
+  "subscriptionPaused": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "message": "Your subscription is paused. Please contact support to reactivate.",
+      "code": "SUBSCRIPTION_PAUSED",
+      "details": {
+        "status": "PAUSED",
+        "merchantId": 1,
+        "merchantName": "Tiệm Áo Dài"
+      }
+    }
+  },
+  "subscriptionCancelledEnded": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "message": "Your subscription has been cancelled. Please contact support to reactivate.",
+      "code": "SUBSCRIPTION_CANCELLED",
+      "details": {
+        "status": "CANCELLED",
+        "merchantId": 1,
+        "merchantName": "Tiệm Áo Dài"
+      }
+    }
+  },
+  "subscriptionCheckDbFailure": {
+    "status": 500,
+    "body": {
+      "success": false,
+      "message": "Failed to verify subscription status",
+      "code": "SUBSCRIPTION_CHECK_FAILED"
+    }
+  },
+  "authOtherError": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "AUTHENTICATION_FAILED",
+      "message": "Authentication failed"
+    }
+  },
+  "authPrismaFailureWithSubscriptionWord": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "message": "\nInvalid `t.attendanceScan.findFirst()` invocation in\n/app/apps/api/.next/server/chunks/238.js:54:55586\n\n  51 SELECT u.\"merchantId\" AS id FROM \"User\" u\n  subscription:d\nTimed out fetching a new connection from the connection pool.",
+      "code": "SUBSCRIPTION_ERROR"
+    }
+  },
+  "authPrismaFailurePlain": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "AUTHENTICATION_FAILED",
+      "message": "Authentication failed"
+    }
+  },
+  "authPrismaFailureNoCode": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "AUTHENTICATION_FAILED",
+      "message": "Authentication failed"
+    }
+  },
+  "sessionReadPrismaFailure": {
+    "status": 401,
+    "body": {
+      "success": false,
+      "code": "AUTHENTICATION_FAILED",
+      "message": "Authentication failed"
+    }
+  },
+  "authOtherErrorWithSubscriptionWord": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "message": "the subscription row failed at /app/x.js",
+      "code": "SUBSCRIPTION_ERROR"
+    }
+  },
+  "bankListMerchant": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNTS_FOUND",
+      "message": "Thành công",
+      "data": [
+        {
+          "id": 7,
+          "outletId": 2,
+          "accountHolderName": "NGUYEN VAN A",
+          "accountNumber": "0123456789",
+          "bankName": "Vietcombank",
+          "bankCode": "VCB",
+          "branch": null,
+          "isDefault": true,
+          "isActive": true,
+          "qrCode": "qr",
+          "notes": null,
+          "createdAt": "2026-10-01T02:00:00.000Z",
+          "updatedAt": "2026-10-01T02:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "bankListManager": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNTS_FOUND",
+      "message": "Thành công",
+      "data": [
+        {
+          "id": 7,
+          "outletId": 2,
+          "accountHolderName": "NGUYEN VAN A",
+          "accountNumber": "0123456789",
+          "bankName": "Vietcombank",
+          "bankCode": "VCB",
+          "branch": null,
+          "isDefault": true,
+          "isActive": true,
+          "qrCode": "qr",
+          "notes": null,
+          "createdAt": "2026-10-01T02:00:00.000Z",
+          "updatedAt": "2026-10-01T02:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "bankListStaff": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNTS_FOUND",
+      "message": "Thành công",
+      "data": [
+        {
+          "id": 7,
+          "outletId": 2,
+          "accountHolderName": "NGUYEN VAN A",
+          "accountNumber": "0123456789",
+          "bankName": "Vietcombank",
+          "bankCode": "VCB",
+          "branch": null,
+          "isDefault": true,
+          "isActive": true,
+          "qrCode": "qr",
+          "notes": null,
+          "createdAt": "2026-10-01T02:00:00.000Z",
+          "updatedAt": "2026-10-01T02:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "bankCreateMerchant": {
+    "status": 201,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_CREATED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 8,
+        "outletId": 2,
+        "accountHolderName": "NGUYEN VAN A",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "970436",
+        "isDefault": true,
+        "isActive": true,
+        "qrCode": "0123456789|NGUYEN VAN A|970436",
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  },
+  "bankUpdateMerchant": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_UPDATED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 7,
+        "outletId": 2,
+        "accountHolderName": "TRAN THI B",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "VCB",
+        "branch": null,
+        "isDefault": true,
+        "isActive": true,
+        "qrCode": "0123456789|TRAN THI B|VCB",
+        "notes": null,
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  },
+  "bankSetDefaultMerchant": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_UPDATED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 7,
+        "outletId": 2,
+        "accountHolderName": "NGUYEN VAN A",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "VCB",
+        "branch": null,
+        "isDefault": true,
+        "isActive": true,
+        "qrCode": "qr",
+        "notes": null,
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  },
+  "bankDeleteMerchant": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_DELETED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 7,
+        "outletId": 2,
+        "accountHolderName": "NGUYEN VAN A",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "VCB",
+        "branch": null,
+        "isDefault": true,
+        "isActive": false,
+        "qrCode": "qr",
+        "notes": null,
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  },
+  "bankCreateStaff": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "code": "FORBIDDEN",
+      "message": "Truy cập bị từ chối",
+      "error": "Truy cập bị từ chối"
+    }
+  },
+  "bankUpdateStaff": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "code": "FORBIDDEN",
+      "message": "Truy cập bị từ chối",
+      "error": "Truy cập bị từ chối"
+    }
+  },
+  "bankDeleteStaff": {
+    "status": 403,
+    "body": {
+      "success": false,
+      "code": "FORBIDDEN",
+      "message": "Truy cập bị từ chối",
+      "error": "Truy cập bị từ chối"
+    }
+  },
+  "bankCreateManager": {
+    "status": 201,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_CREATED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 8,
+        "outletId": 2,
+        "accountHolderName": "NGUYEN VAN A",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "970436",
+        "isDefault": true,
+        "isActive": true,
+        "qrCode": "0123456789|NGUYEN VAN A|970436",
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  },
+  "bankUpdateManager": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_UPDATED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 7,
+        "outletId": 2,
+        "accountHolderName": "TRAN THI B",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "VCB",
+        "branch": null,
+        "isDefault": true,
+        "isActive": true,
+        "qrCode": "0123456789|TRAN THI B|VCB",
+        "notes": null,
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  },
+  "bankSetDefaultManager": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_UPDATED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 7,
+        "outletId": 2,
+        "accountHolderName": "NGUYEN VAN A",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "VCB",
+        "branch": null,
+        "isDefault": true,
+        "isActive": true,
+        "qrCode": "qr",
+        "notes": null,
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  },
+  "bankDeleteManager": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "code": "BANK_ACCOUNT_DELETED_SUCCESS",
+      "message": "Thành công",
+      "data": {
+        "id": 7,
+        "outletId": 2,
+        "accountHolderName": "NGUYEN VAN A",
+        "accountNumber": "0123456789",
+        "bankName": "Vietcombank",
+        "bankCode": "VCB",
+        "branch": null,
+        "isDefault": true,
+        "isActive": false,
+        "qrCode": "qr",
+        "notes": null,
+        "createdAt": "2026-10-01T02:00:00.000Z",
+        "updatedAt": "2026-10-01T02:00:00.000Z"
+      }
+    }
+  }
+}
