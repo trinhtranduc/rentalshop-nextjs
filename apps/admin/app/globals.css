@@ -602,6 +602,8 @@ a {
   --ar-primary-ink: 29 78 216;
   --ar-primary-soft: 239 246 255;
   --ar-on-primary: 255 255 255;
+  /* #1449: same as the portal (#802); the admin app has no AI image search button */
+  --ar-ai-scan: linear-gradient(135deg, #1d4ed8, #7c3aed);
   --ar-danger: 185 28 28;
   --ar-danger-soft: 254 226 226;
   --ar-unread: 248 251 255;
