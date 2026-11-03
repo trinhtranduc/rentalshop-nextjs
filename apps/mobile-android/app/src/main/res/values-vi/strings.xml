@@ -2554,4 +2554,5 @@
     <string name="plan_home_days_left">Gói còn %1$d ngày</string>
     <string name="plan_home_last_day">Gói hết hạn hôm nay</string>
     <string name="plan_home_renew">Gia hạn</string>
+    <string name="plan_payment_issue_title">Chưa thu được tiền gói</string>
 </resources>

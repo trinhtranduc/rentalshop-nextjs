@@ -39,7 +39,15 @@ data class PlanRenewalStatus(
     val outlets: Int?,
     val products: Int?,
     val hasWeb: Boolean,
-)
+    /**
+     * Stored PAST_DUE while the period runs: the API answers 403 SUBSCRIPTION_PAST_DUE everywhere (Lemon / Stripe, or a
+     * store row from before #1459; store billing issues no longer set it)
+     */
+    val isPastDue: Boolean = false,
+) {
+    /** The rest of the API refuses this shop: the plan gate stays up (iOS `PlanStatus.isBlocked`) */
+    val isBlocked: Boolean get() = isExpired || isPastDue
+}
 
 data class PlanStoreProducts(val semiAnnual: String, val annual: String)
 
@@ -58,7 +66,11 @@ data class InAppPlan(
 
 enum class PlanPurchaseKind { RENEW, UPGRADE, BUY }
 
-enum class PlanScreenMode { PURCHASE, AUTO_RENEWING, NOTHING_TO_BUY, STORE_UNAVAILABLE, EXPIRED_OWNER, EXPIRED_STAFF }
+enum class PlanScreenMode {
+    PURCHASE, AUTO_RENEWING, NOTHING_TO_BUY, STORE_UNAVAILABLE, EXPIRED_OWNER, EXPIRED_STAFF,
+    /** PAST_DUE: the owner fixes the payment where the plan is billed (Quản lý / huỷ gói), nothing to buy here */
+    PAYMENT_ISSUE_OWNER,
+}
 
 sealed interface PlanStatusLine {
     /** "Hết hạn 15/11/2026 · còn 13 ngày" */
@@ -200,16 +212,18 @@ object PlanRenewal {
 
     /**
      * 403 codes of a shop whose period ended: SUBSCRIPTION_EXPIRED (what `authenticateRequest` answers today),
-     * SUBSCRIPTION_PERIOD_ENDED (the later subscription check), SUBSCRIPTION_CANCELLED (a cancelled period that ended).
+     * SUBSCRIPTION_PERIOD_ENDED (the later subscription check), SUBSCRIPTION_CANCELLED (a cancelled period that ended),
+     * SUBSCRIPTION_PAST_DUE (a payment problem the API blocks on: the owner reaches Quản lý / huỷ gói).
      * Not SUBSCRIPTION_PAUSED: that one is the admin's ("contact support").
      */
-    val PERIOD_ENDED_CODES = setOf("SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED")
+    val PERIOD_ENDED_CODES = setOf("SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED", "SUBSCRIPTION_PAST_DUE")
 
     /** An authorised request answered 403 with a period-ended code: the expired screen opens (iOS `SubscriptionGate.opensGate`) */
     fun opensGate(statusCode: Int?, code: String?, sentAuthorization: Boolean): Boolean =
         statusCode == 403 && sentAuthorization && code in PERIOD_ENDED_CODES
 
     fun screenMode(role: String?, status: PlanRenewalStatus, storeAvailable: Boolean): PlanScreenMode = when {
+        status.isPastDue -> if (role == "MERCHANT") PlanScreenMode.PAYMENT_ISSUE_OWNER else PlanScreenMode.EXPIRED_STAFF
         status.isExpired -> if (role == "MERCHANT") PlanScreenMode.EXPIRED_OWNER else PlanScreenMode.EXPIRED_STAFF
         role != "MERCHANT" -> PlanScreenMode.NOTHING_TO_BUY
         status.autoRenew -> PlanScreenMode.AUTO_RENEWING
@@ -247,6 +261,8 @@ object PlanRenewal {
             outlets = limitOf(limits, "outlets"),
             products = limitOf(limits, "products"),
             hasWeb = hasWebDashboard(features),
+            isPastDue = data.optString("dbStatus").equals("PAST_DUE", ignoreCase = true) &&
+                !data.optString("status").equals("EXPIRED", ignoreCase = true),
         )
     }
 

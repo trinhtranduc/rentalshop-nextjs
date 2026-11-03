@@ -94,6 +94,11 @@ struct PlanStatus: Decodable, Equatable {
 
     var isExpired: Bool { status?.uppercased() == "EXPIRED" }
     var isTrial: Bool { dbStatus?.uppercased() == "TRIAL" }
+    /// Stored PAST_DUE while the period runs: the API answers 403 SUBSCRIPTION_PAST_DUE everywhere (Lemon / Stripe, or a
+    /// store row from before #1459; store billing issues no longer set it)
+    var isPastDue: Bool { dbStatus?.uppercased() == "PAST_DUE" && !isExpired }
+    /// The rest of the API refuses this shop: the gate stays up
+    var isBlocked: Bool { isExpired || isPastDue }
     var periodEnd: Date? { PlanRenewalLogic.parseInstant(currentPeriodEnd) }
     var purchasable: [Int] { purchasablePlanIds ?? [] }
     var window: Int { renewWindowDays ?? PlanRenewalLogic.defaultRenewWindowDays }
@@ -421,11 +426,14 @@ enum PlanRenewalLogic {
 
     enum Mode: Equatable {
         case purchase, autoRenewing, nothingToBuy, storeUnavailable, expiredOwner, expiredStaff
+        /// PAST_DUE: the owner fixes the payment where the plan is billed (Quản lý / huỷ gói), nothing to buy here
+        case paymentIssueOwner
     }
 
     /// What the plan screen shows. `storeHasProducts`: the store answered with at least one product.
     static func mode(isOwner: Bool, status: PlanStatus, storeHasProducts: Bool) -> Mode {
         if !isOwner { return .expiredStaff }
+        if status.isPastDue { return .paymentIssueOwner }
         if status.isExpired { return storeHasProducts && !status.purchasable.isEmpty ? .expiredOwner : .storeUnavailable }
         if status.autoRenew == true { return .autoRenewing }
         if status.purchasable.isEmpty { return .nothingToBuy }

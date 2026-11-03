@@ -207,7 +207,7 @@ final class PlanRenewalLogicTests: XCTestCase {
 
     func testGateOpensOnEveryPeriodEndedCodeOfAnAuthorisedRequest() {
         typealias G = SubscriptionGate
-        for code in ["SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED"] {
+        for code in ["SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED", "SUBSCRIPTION_PAST_DUE"] {
             XCTAssertTrue(G.opensGate(statusCode: 403, code: code, sentAuthorization: true), code)
             XCTAssertFalse(G.opensGate(statusCode: 403, code: code, sentAuthorization: false), "no token: \(code)")
             XCTAssertTrue(G.isPeriodEndedError(NSError(domain: "RC", code: 403, userInfo: [NSError.apiCodeKey: code])))
@@ -216,5 +216,25 @@ final class PlanRenewalLogicTests: XCTestCase {
         XCTAssertFalse(G.opensGate(statusCode: 403, code: "INSUFFICIENT_PERMISSIONS", sentAuthorization: true))
         XCTAssertFalse(G.opensGate(statusCode: 401, code: "SUBSCRIPTION_EXPIRED", sentAuthorization: true))
         XCTAssertFalse(G.isPeriodEndedError(NSError(domain: "RC", code: 403)))
+    }
+
+    /// A PAST_DUE shop (Lemon / Stripe, or a store row from before #1459) is blocked by the API while its period runs:
+    /// the gate stays up, the owner gets Quản lý / huỷ gói (nothing to buy, no double billing), staff ask the owner
+    func testPastDueKeepsTheGateWithoutAPlanToBuy() {
+        typealias L = PlanRenewalLogic
+        let pastDue = PlanStatus(status: "ACTIVE", dbStatus: "PAST_DUE", daysRemaining: 10, billingIssue: true, purchasablePlanIds: [3])
+        XCTAssertTrue(pastDue.isPastDue)
+        XCTAssertTrue(pastDue.isBlocked)
+        XCTAssertEqual(L.mode(isOwner: true, status: pastDue, storeHasProducts: true), .paymentIssueOwner)
+        XCTAssertEqual(L.mode(isOwner: false, status: pastDue, storeHasProducts: true), .expiredStaff)
+        // A store billing issue keeps ACTIVE (#1459): not blocked, the plan screen shows the payment line
+        let storeIssue = PlanStatus(status: "ACTIVE", dbStatus: "ACTIVE", daysRemaining: 10, billingIssue: true, purchasablePlanIds: [3])
+        XCTAssertFalse(storeIssue.isBlocked)
+        XCTAssertEqual(L.mode(isOwner: true, status: storeIssue, storeHasProducts: true), .purchase)
+        // Expired wins over PAST_DUE
+        let ended = PlanStatus(status: "EXPIRED", dbStatus: "PAST_DUE", purchasablePlanIds: [2, 3])
+        XCTAssertFalse(ended.isPastDue)
+        XCTAssertTrue(ended.isBlocked)
+        XCTAssertEqual(L.mode(isOwner: true, status: ended, storeHasProducts: true), .expiredOwner)
     }
 }

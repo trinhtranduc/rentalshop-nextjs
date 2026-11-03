@@ -139,7 +139,7 @@ final class SubscriptionViewController: BaseViewControler {
     private func finishLoading() {
         spinner.stopAnimating()
         // The gate is up but the period runs again (paid on another device, or the admin extended it)
-        if context == .expired, let status, !status.isExpired {
+        if context == .expired, let status, !status.isBlocked {
             appDelegate.leaveExpiredPlan(banner: nil)
             return
         }
@@ -176,11 +176,17 @@ final class SubscriptionViewController: BaseViewControler {
             }
             return
         }
-        let mode = context == .expired || status.isExpired
-            ? PlanRenewalLogic.mode(isOwner: isOwner, status: PlanStatus.expired(from: status), storeHasProducts: storeHasProducts)
-            : PlanRenewalLogic.mode(isOwner: isOwner, status: status, storeHasProducts: storeHasProducts)
+        // A payment problem the API blocks on (PAST_DUE, Lemon / Stripe) is not an ended period: no plan to buy here
+        let modeStatus = !status.isPastDue && (context == .expired || status.isExpired) ? PlanStatus.expired(from: status) : status
+        let mode = PlanRenewalLogic.mode(isOwner: isOwner, status: modeStatus, storeHasProducts: storeHasProducts)
 
-        if context == .expired || status.isExpired { addExpiredHeader(status) } else { addStatusCard(status, includes: mode != .purchase) }
+        if status.isPastDue {
+            addExpiredHeader(status, title: "plan.paymentIssue.title")
+        } else if context == .expired || status.isExpired {
+            addExpiredHeader(status)
+        } else {
+            addStatusCard(status, includes: mode != .purchase)
+        }
 
         switch mode {
         case .purchase, .expiredOwner:
@@ -198,6 +204,9 @@ final class SubscriptionViewController: BaseViewControler {
             addMessage("plan.storeUnavailable".localized())
             addRetryButton()
             addFooterLinks(manage: false, restore: false)
+        case .paymentIssueOwner:
+            addRetryButton()
+            addFooterLinks(manage: true, restore: false)
         case .expiredStaff:
             addMessage("plan.expired.askOwner".localized())
             addRetryButton()
@@ -235,14 +244,24 @@ final class SubscriptionViewController: BaseViewControler {
     }
 
     /// "Gói của shop đã hết hạn" (black), "Basic · hết hạn 31/10/2026. Dữ liệu của shop vẫn được giữ."
-    private func addExpiredHeader(_ status: PlanStatus?) {
+    /// "Gói của shop đã hết hạn" (or "Chưa thu được tiền gói" when the API blocks a payment problem), the plan line, and the
+    /// payment line when the store or Lemon Squeezy could not charge
+    private func addExpiredHeader(_ status: PlanStatus?, title key: String = "plan.expired.title") {
         let card = Self.card()
-        let title = Self.label("plan.expired.title".localized(), size: DS.TextSize.name, color: DS.Color.text, weight: .bold, id: "plan.expired.title")
+        let title = Self.label(key.localized(), size: DS.TextSize.name, color: DS.Color.text, weight: .bold, id: "plan.expired.title")
         var lines: [UIView] = [title]
-        if let status, let end = status.periodEnd {
+        if let status, status.isPastDue {
+            let name = PlanRenewalLogic.displayPlanName(status.planName, isTrial: status.isTrial)
+            if let text = PlanRenewalLogic.text(PlanRenewalLogic.statusLine(status)) {
+                lines.append(Self.label("\(name) · \(text)", size: DS.TextSize.body, color: DS.Color.textMuted))
+            }
+        } else if let status, let end = status.periodEnd {
             let name = PlanRenewalLogic.displayPlanName(status.planName, isTrial: status.isTrial)
             lines.append(Self.label(String(format: "plan.expired.line".localized(), name, PlanRenewalLogic.day(end)),
                                     size: DS.TextSize.body, color: DS.Color.textMuted))
+        }
+        if status?.billingIssue == true || status?.isPastDue == true {
+            lines.append(Self.label("plan.billingIssue".localized(), size: DS.TextSize.secondary, color: DS.Color.text, id: "plan.billingIssue"))
         }
         card.addRows(lines)
         stack.addArrangedSubview(spacer(16))
@@ -528,7 +547,7 @@ final class SubscriptionViewController: BaseViewControler {
         if context == .expired {
             SubscriptionAPIService.shared.planStatus { [weak self] fresh, _ in
                 guard let self else { return }
-                if let fresh, !fresh.isExpired {
+                if let fresh, !fresh.isBlocked {
                     appDelegate.leaveExpiredPlan(banner: nil)
                 } else {
                     if let fresh { self.status = fresh }

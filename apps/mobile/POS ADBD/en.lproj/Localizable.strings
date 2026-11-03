@@ -3263,3 +3263,4 @@
 "plan.home.daysLeft" = "Plan: %d days left";
 "plan.home.lastDay" = "Plan expires today";
 "plan.home.renew" = "Renew";
+"plan.paymentIssue.title" = "The plan payment did not go through";

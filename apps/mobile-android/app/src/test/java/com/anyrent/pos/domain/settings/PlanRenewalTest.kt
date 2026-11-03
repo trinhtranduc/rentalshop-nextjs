@@ -181,7 +181,7 @@ class PlanRenewalTest {
 
     @Test
     fun gateOpensOnEveryPeriodEndedCodeOfAnAuthorisedRequest() {
-        for (code in listOf("SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED")) {
+        for (code in listOf("SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED", "SUBSCRIPTION_PAST_DUE")) {
             assertTrue(code, PlanRenewal.opensGate(403, code, sentAuthorization = true))
             assertFalse("no token: $code", PlanRenewal.opensGate(403, code, sentAuthorization = false))
         }
@@ -189,5 +189,24 @@ class PlanRenewalTest {
         assertFalse(PlanRenewal.opensGate(403, "INSUFFICIENT_PERMISSIONS", sentAuthorization = true))
         assertFalse(PlanRenewal.opensGate(401, "SUBSCRIPTION_EXPIRED", sentAuthorization = true))
         assertFalse(PlanRenewal.opensGate(403, null, sentAuthorization = true))
+    }
+
+    @Test
+    fun pastDueKeepsTheGateWithoutAPlanToBuy() {
+        fun status(json: String) = PlanRenewal.statusFromJson(JSONObject(json))
+        val pastDue = status("""{"planId":2,"planName":"Basic","status":"ACTIVE","dbStatus":"PAST_DUE","daysRemaining":10,"billingIssue":true,"purchasablePlanIds":[3]}""")
+        assertTrue(pastDue.isPastDue)
+        assertTrue(pastDue.isBlocked)
+        assertEquals(PlanScreenMode.PAYMENT_ISSUE_OWNER, PlanRenewal.screenMode("MERCHANT", pastDue, storeAvailable = true))
+        assertEquals(PlanScreenMode.EXPIRED_STAFF, PlanRenewal.screenMode("OUTLET_STAFF", pastDue, storeAvailable = true))
+        // A store billing issue keeps ACTIVE (#1459): not blocked, the plan screen shows the payment line
+        val storeIssue = status("""{"planId":2,"planName":"Basic","status":"ACTIVE","dbStatus":"ACTIVE","daysRemaining":10,"billingIssue":true,"purchasablePlanIds":[3]}""")
+        assertFalse(storeIssue.isBlocked)
+        assertEquals(PlanScreenMode.PURCHASE, PlanRenewal.screenMode("MERCHANT", storeIssue, storeAvailable = true))
+        // Expired wins over PAST_DUE
+        val ended = status("""{"planId":2,"planName":"Basic","status":"EXPIRED","dbStatus":"PAST_DUE","purchasablePlanIds":[2,3]}""")
+        assertFalse(ended.isPastDue)
+        assertTrue(ended.isBlocked)
+        assertEquals(PlanScreenMode.EXPIRED_OWNER, PlanRenewal.screenMode("MERCHANT", ended, storeAvailable = true))
     }
 }

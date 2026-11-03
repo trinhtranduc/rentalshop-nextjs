@@ -7,7 +7,8 @@
 //  - after login, when the login's period end has passed;
 //  - at launch, when the last known period end has passed (then a status read decides);
 //  - on any 403 that says the period ended: SUBSCRIPTION_EXPIRED (what `authenticateRequest` answers today),
-//    SUBSCRIPTION_PERIOD_ENDED (the later subscription check) or SUBSCRIPTION_CANCELLED (a cancelled period that ended).
+//    SUBSCRIPTION_PERIOD_ENDED (the later subscription check), SUBSCRIPTION_CANCELLED (a cancelled period that ended) or
+//    SUBSCRIPTION_PAST_DUE (a payment problem the API blocks on).
 //  The gate only calls GET /api/subscriptions/status, GET /api/plans (owner) and logout, all open to expired shops.
 //
 
@@ -17,8 +18,9 @@ final class SubscriptionGate {
     static let shared = SubscriptionGate()
     /// A payment was confirmed or the plan changed: Home hides or redraws its "Còn N ngày" line
     static let planDidChange = Notification.Name("planDidChange")
-    /// 403 codes of a shop whose period ended (not PAUSED: that one is the admin's, "contact support")
-    static let periodEndedCodes: Set<String> = ["SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED"]
+    /// 403 codes that open the plan screen: the period ended, or a payment problem the API blocks on (PAST_DUE: the owner
+    /// reaches Quản lý / huỷ gói, staff "Nhờ chủ shop gia hạn."). Not PAUSED: that one is the admin's, "contact support".
+    static let periodEndedCodes: Set<String> = ["SUBSCRIPTION_EXPIRED", "SUBSCRIPTION_PERIOD_ENDED", "SUBSCRIPTION_CANCELLED", "SUBSCRIPTION_PAST_DUE"]
 
     private let defaults: UserDefaults
     private static let endKey = "plan.periodEnd.v1"
@@ -82,7 +84,7 @@ final class SubscriptionGate {
     func verifyInBackground() {
         guard let user = User.account(), user.role != .admin, user.merchantId != nil else { return }
         SubscriptionAPIService.shared.planStatus { status, _ in
-            guard let status, status.isExpired else { return }
+            guard let status, status.isBlocked else { return }
             appDelegate.showExpiredPlan()
         }
     }

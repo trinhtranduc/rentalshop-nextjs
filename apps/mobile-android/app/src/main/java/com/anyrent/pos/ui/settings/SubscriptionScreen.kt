@@ -152,7 +152,7 @@ fun SubscriptionScreen(
             if (s != null) {
                 status = s
                 PlanRenewalStore.store(s)
-                if (expiredGate && !s.isExpired) {
+                if (expiredGate && !s.isBlocked) {
                     loading = false
                     onActive(null)
                     return@launch
@@ -298,13 +298,25 @@ fun SubscriptionScreen(
 
             // Status first (mockup): plan, days left; on the expired screen the black title and the end day
             Card(Modifier.padding(top = 10.dp).testTag("plan.status")) {
-                if (s.isExpired) {
+                if (s.isPastDue) {
+                    // A payment problem the API blocks on (PAST_DUE): the plan runs, the charge failed
+                    PlanRow {
+                        Text(stringResource(R.string.plan_payment_issue_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = PlanColors.Text)
+                        s.currentPeriodEnd?.let { end ->
+                            Text(planName + " · " + statusText(PlanRenewal.statusLine(s.daysRemaining, end)), fontSize = 14.sp, color = PlanColors.Muted)
+                        }
+                        Text(stringResource(R.string.plan_billing_issue), fontSize = 14.sp, color = PlanColors.Text2)
+                    }
+                } else if (s.isExpired) {
                     PlanRow {
                         Text(stringResource(R.string.plan_expired_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = PlanColors.Text)
                         Text(
                             stringResource(R.string.plan_expired_line, planName, s.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "—"),
                             fontSize = 14.sp, color = PlanColors.Muted,
                         )
+                        if (s.billingIssue) {
+                            Text(stringResource(R.string.plan_billing_issue), fontSize = 14.sp, color = PlanColors.Text2)
+                        }
                     }
                 } else {
                     PlanRow {
@@ -333,6 +345,16 @@ fun SubscriptionScreen(
             }
 
             when (mode) {
+                PlanScreenMode.PAYMENT_ISSUE_OWNER -> {
+                    PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry"), enabled = !loading) { reload() }
+                    ManageRestoreLinks(
+                        onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
+                        onRestore = { restore() },
+                        restoreEnabled = false,
+                    )
+                    LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
+                    if (expiredGate) LogoutLink { signOut() }
+                }
                 PlanScreenMode.EXPIRED_STAFF -> {
                     Text(
                         stringResource(R.string.plan_expired_ask_owner), fontSize = 14.sp, color = PlanColors.Text2,

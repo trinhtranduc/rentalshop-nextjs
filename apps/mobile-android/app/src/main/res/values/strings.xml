@@ -2584,4 +2584,5 @@
     <string name="plan_home_days_left">Plan: %1$d days left</string>
     <string name="plan_home_last_day">Plan expires today</string>
     <string name="plan_home_renew">Renew</string>
+    <string name="plan_payment_issue_title">The plan payment did not go through</string>
 </resources>

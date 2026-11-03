@@ -3261,3 +3261,4 @@
 "plan.home.daysLeft" = "Gói còn %d ngày";
 "plan.home.lastDay" = "Gói hết hạn hôm nay";
 "plan.home.renew" = "Gia hạn";
+"plan.paymentIssue.title" = "Chưa thu được tiền gói";
