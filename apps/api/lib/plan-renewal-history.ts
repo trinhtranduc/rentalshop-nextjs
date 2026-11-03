@@ -54,6 +54,10 @@ export const planHistory = {
         : ` Gói vẫn dùng đến ${vnDate(until)}.`
       : ''),
   expired: () => 'Gói đã hết hạn.',
+  transferIn: (channel: BillingChannel, end: Date) =>
+    `Gói ${storeName(channel)} được chuyển từ shop khác sang shop này. Dùng đến ${vnDate(end)}.`,
+  transferOut: (channel: BillingChannel, end: Date) =>
+    `Gói ${storeName(channel)} đã chuyển sang shop khác. Shop này vẫn dùng đến ${vnDate(end)}, không tự gia hạn nữa.`,
   expirationIgnored: (end: Date) => `Cửa hàng ứng dụng báo hết hạn nhưng gói vẫn dùng đến ${vnDate(end)}.`,
   otherProductEvent: (channel: BillingChannel) => `${storeName(channel)} báo thay đổi của gói trước. Gói hiện tại không đổi.`,
   /** Payment row: "Gói Basic 12 tháng — gia hạn (App Store)" */

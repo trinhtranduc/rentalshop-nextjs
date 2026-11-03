@@ -66,6 +66,12 @@ interface RevenueCatEvent {
   transaction_id?: string;
   original_transaction_id?: string;
   takehome_percentage?: number;
+  /** Ids of the same customer (A4): the purchase may have been made before the app logged in */
+  original_app_user_id?: string;
+  aliases?: string[];
+  /** TRANSFER */
+  transferred_from?: string[];
+  transferred_to?: string[];
   /** BILLING_ISSUE with the store's grace period on: access lasts until then */
   grace_period_expiration_at_ms?: number;
   expiration_reason?: string;
@@ -109,7 +115,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'ignored', reason: 'invalid_payload' }, { status: 400 });
   }
 
-  const merchantId = parseMerchantId(event.app_user_id);
+  const merchantId = resolveMerchantId(event);
   console.log(`[RevenueCat Webhook] ${event.type}`, {
     id: event.id,
     merchantId,
@@ -192,6 +198,8 @@ async function handleEvent(merchantId: number, event: RevenueCatEvent): Promise<
       return handleExpiration(merchantId, event);
     case 'BILLING_ISSUE':
       return handleBillingIssue(merchantId, event);
+    case 'TRANSFER':
+      return handleTransfer(merchantId, event);
     default:
       return `ignored_${String(event.type).toLowerCase()}`;
   }
@@ -213,6 +221,22 @@ function parseMerchantId(appUserId: string | undefined): number | null {
   if (!id.startsWith(prefix)) return null;
   const rest = id.slice(prefix.length);
   return /^\d+$/.test(rest) ? parseInt(rest, 10) : null;
+}
+
+/**
+ * A4: the shop of an event: `app_user_id`, then `original_app_user_id`, then `aliases` (a purchase made before the app
+ * logged in is aliased to `merchant_<id>` later). TRANSFER: the shop it moves to. RevenueCat setting to use: Transfer
+ * behavior "Keep with original App User ID" (then no TRANSFER happens).
+ */
+function resolveMerchantId(event: RevenueCatEvent): number | null {
+  const ids = event.type === 'TRANSFER'
+    ? event.transferred_to ?? []
+    : [event.app_user_id, event.original_app_user_id, ...(event.aliases ?? [])];
+  for (const id of ids) {
+    const merchantId = parseMerchantId(id);
+    if (merchantId) return merchantId;
+  }
+  return null;
 }
 
 /**
@@ -521,5 +545,50 @@ async function handleBillingIssue(merchantId: number, event: RevenueCatEvent): P
     event,
     { gracePeriodExpiresAt: graceEnd?.toISOString() ?? null, extendedTo: extendTo?.toISOString() ?? null },
   );
+  return 'ok';
+}
+
+/**
+ * A4 TRANSFER: the store subscription now belongs to another shop (a restore on another account with RevenueCat's
+ * "Transfer to new App User ID"). The receiving shop gets the paid plan and period; the old shop keeps the days it has but
+ * stops renewing through the store. Nothing to move when the old owner is anonymous or not on a store plan.
+ */
+async function handleTransfer(toMerchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const fromId = (event.transferred_from ?? []).map(parseMerchantId).find((id): id is number => !!id && id !== toMerchantId);
+  const from = fromId ? await findSubscription(fromId) : null;
+  if (!fromId || !from || !from.storeProductId || (from.billingChannel !== 'APP_STORE' && from.billingChannel !== 'PLAY_STORE')) {
+    return 'ignored_transfer_nothing_to_move';
+  }
+  const merchant = await db.prisma.merchant.findUnique({ where: { id: toMerchantId }, select: { id: true } });
+  if (!merchant) return 'ignored_unknown_merchant';
+  const channel = from.billingChannel as BillingChannel;
+  const moved = {
+    planId: from.planId,
+    status: 'ACTIVE',
+    currentPeriodStart: from.currentPeriodStart,
+    currentPeriodEnd: from.currentPeriodEnd,
+    amount: from.amount,
+    currency: from.currency,
+    interval: from.interval,
+    intervalCount: from.intervalCount,
+    cancelAtPeriodEnd: from.cancelAtPeriodEnd,
+    canceledAt: from.canceledAt,
+    cancelReason: from.cancelReason,
+    billingChannel: channel,
+    storeProductId: from.storeProductId,
+    storeOriginalTransactionId: from.storeOriginalTransactionId,
+    autoRenew: from.autoRenew,
+    billingIssueAt: from.billingIssueAt,
+  };
+  const existing = await findSubscription(toMerchantId);
+  const to = existing
+    ? await db.prisma.subscription.update({ where: { merchantId: toMerchantId }, data: { ...moved, updatedAt: new Date() } })
+    : await db.prisma.subscription.create({ data: { merchantId: toMerchantId, ...moved } });
+  await db.prisma.subscription.update({
+    where: { merchantId: fromId },
+    data: { autoRenew: false, storeProductId: null, storeOriginalTransactionId: null, billingChannel: 'MANUAL', updatedAt: new Date() },
+  });
+  await logActivity(to.id, 'IAP_TRANSFER', planHistory.transferIn(channel, from.currentPeriodEnd), event, { fromMerchantId: fromId });
+  await logActivity(from.id, 'IAP_TRANSFER', planHistory.transferOut(channel, from.currentPeriodEnd), event, { toMerchantId });
   return 'ok';
 }
