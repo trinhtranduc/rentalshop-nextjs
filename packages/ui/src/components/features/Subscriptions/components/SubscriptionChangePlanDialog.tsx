@@ -223,8 +223,8 @@ export function SubscriptionChangePlanDialog({
     };
   };
 
-  // Same calculation as the API's changePlan (#779): credit for the unused Vietnam days of the current period,
-  // new cycle price from the new plan, new period starts now and runs one cycle of calendar months.
+  // Same calculation as the API's changePlan (#1470): the new plan starts now; while the plan still runs the period ends
+  // at the current end + one cycle (the days left move to the new plan, no money credit); expired = now + one cycle.
   const oldInterval = storedBillingInterval(
     (subscription as any).interval ?? subscription.billingInterval,
     (subscription as any).intervalCount
@@ -417,22 +417,16 @@ export function SubscriptionChangePlanDialog({
                             <span>New cycle price ({selectedPlan.name}{selectedCycle ? `, ${selectedCycle.label}` : ''}):</span>
                             <span className="font-medium">{formatCurrency(planChange.newPlanPeriodPrice, newCurrency)}</span>
                           </div>
-                          <div className="flex justify-between text-green-700">
-                            <span>
-                              Credit for {planChange.remainingDays} unused day{planChange.remainingDays !== 1 ? 's' : ''} of {planChange.oldPlanPeriodDays} ({currentPlan?.name || 'current plan'}):
-                            </span>
-                            <span className="font-medium">-{formatCurrency(planChange.remainingCreditValue, oldCurrency)}</span>
-                          </div>
+                          {!planChange.expired && (
+                            <div className="flex justify-between text-green-700" data-testid="days-carried">
+                              <span>Days left of {currentPlan?.name || 'the current plan'}, carried to the new plan:</span>
+                              <span className="font-medium">{planChange.remainingDays} day{planChange.remainingDays !== 1 ? 's' : ''}</span>
+                            </div>
+                          )}
                           {planChange.addonPeriodPrice > 0 && (
                             <div className="flex justify-between">
                               <span>Add-ons (new cycle):</span>
                               <span className="font-medium">{formatCurrency(planChange.addonPeriodPrice, newCurrency)}</span>
-                            </div>
-                          )}
-                          {planChange.addonCreditValue > 0 && (
-                            <div className="flex justify-between text-green-700">
-                              <span>Add-on credit for unused days:</span>
-                              <span className="font-medium">-{formatCurrency(planChange.addonCreditValue, oldCurrency)}</span>
                             </div>
                           )}
                           <div className="flex justify-between pt-1 border-t font-semibold text-sm">

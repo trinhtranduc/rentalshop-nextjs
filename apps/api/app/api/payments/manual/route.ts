@@ -75,9 +75,12 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
     if (validatedData.extendSubscription && merchant.subscription && validatedData.monthsToExtend) {
       const currentSubscription = merchant.subscription;
       if (currentSubscription.currentPeriodEnd) {
-        // Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
+        // From the current end while the plan still runs, from now once it has ended (#1470, owner rule; it always took
+        // the old end). Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
+        const now = new Date();
+        const currentEnd = new Date(currentSubscription.currentPeriodEnd);
         const newEndDate = addMonthsInTimeZone(
-          new Date(currentSubscription.currentPeriodEnd),
+          currentEnd.getTime() > now.getTime() ? currentEnd : now,
           validatedData.monthsToExtend
         );
 
