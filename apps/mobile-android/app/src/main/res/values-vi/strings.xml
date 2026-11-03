@@ -2534,8 +2534,8 @@
     <string name="plan_disclosure_credit">Kỳ mới tính từ hôm nay, dùng đến %1$s. Tự gia hạn mỗi %2$d tháng (%3$s), lần trừ tiền tới ngày %4$s, đến khi huỷ.</string>
     <string name="plan_manage">Quản lý / huỷ gói</string>
     <string name="plan_restore">Khôi phục giao dịch</string>
-    <string name="plan_terms">Điều khoản sử dụng</string>
-    <string name="plan_privacy">Chính sách bảo mật</string>
+    <string name="plan_terms">Điều khoản</string>
+    <string name="plan_privacy">Bảo mật</string>
     <string name="plan_section_auto_renew">Tự gia hạn</string>
     <string name="plan_auto_renew_on">Tự gia hạn ngày %1$s · %2$s</string>
     <string name="plan_auto_renew_on_date">Tự gia hạn ngày %1$s</string>
@@ -2562,4 +2562,7 @@
     <string name="plan_reenable_button">Bật lại tự gia hạn</string>
     <string name="plan_confirming_hint">Thường mất vài giây, có thể đến một phút.</string>
     <string name="plan_current_auto_renew">Đang dùng · tự gia hạn ngày %1$s</string>
+    <!-- #1464: the store kept this Google account's plan; short bottom links -->
+    <string name="plan_store_has_plan">Tài khoản Google Play này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.</string>
+    <string name="plan_restore_short">Khôi phục</string>
 </resources>

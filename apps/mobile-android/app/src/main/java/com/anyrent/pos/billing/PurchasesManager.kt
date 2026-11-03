@@ -162,6 +162,12 @@ object PurchasesManager {
     fun hasMerchantEntitlement(info: CustomerInfo): Boolean =
         info.entitlements[ENTITLEMENT_MERCHANT]?.isActive == true
 
+    /** #1464: the purchase answered with the entitlement still on another product: the store kept the current plan */
+    fun storeKeptPlan(info: CustomerInfo, boughtProductId: String): Boolean {
+        val entitlement = info.entitlements[ENTITLEMENT_MERCHANT]
+        return PlanRenewal.storeKeptCurrentPlan(boughtProductId, entitlement?.isActive == true, entitlement?.productIdentifier)
+    }
+
     suspend fun getRenewPackages(): Result<List<RenewPackage>> {
         if (configured && !ensureLoggedIn()) return Result.failure(StoreAccountNotReadyException())
         return loadPackages()
@@ -264,7 +270,11 @@ object PurchasesManager {
                     }
                 },
                 onSuccess = { _, customerInfo ->
-                    Log.i(TAG, "purchase ok active=${customerInfo.entitlements.active.keys}")
+                    Log.i(
+                        TAG,
+                        "purchase ok active=${customerInfo.entitlements.active.keys} " +
+                            "product=${customerInfo.entitlements[ENTITLEMENT_MERCHANT]?.productIdentifier}",
+                    )
                     cont.resume(Result.success(customerInfo))
                 },
             )
