@@ -21,8 +21,8 @@ import { planHistory } from '../../../../lib/plan-renewal-history';
  * #1459:
  * - the plan follows the store product (Basic or Professional, `apps/api/lib/plan-renewal.ts`) on INITIAL_PURCHASE,
  *   RENEWAL and an upgrading PRODUCT_CHANGE; a RENEWAL of a purchase recorded before #1459 keeps the plan;
- * - refund (CANCELLATION + CUSTOMER_SUPPORT) ends access (status EXPIRED, so the owner can buy again), BILLING_ISSUE is
- *   flagged, the real amount is stored;
+ * - refund (CANCELLATION + CUSTOMER_SUPPORT) ends access (status EXPIRED, so the owner can buy again); BILLING_ISSUE is
+ *   flagged and keeps access until the period (and the store's grace) ends; the real amount is stored;
  * - each `event.id` runs once (`BillingWebhookEvent`); a processing error releases it and answers 500 so RevenueCat retries;
  * - history rows are plain Vietnamese.
  */
@@ -61,6 +61,9 @@ interface RevenueCatEvent {
   transaction_id?: string;
   original_transaction_id?: string;
   takehome_percentage?: number;
+  /** BILLING_ISSUE with the store's grace period on: access lasts until then */
+  grace_period_expiration_at_ms?: number;
+  expiration_reason?: string;
 }
 
 interface RevenueCatWebhookPayload {
@@ -324,12 +327,15 @@ async function handleProductChange(merchantId: number, event: RevenueCatEvent): 
     // Upgrades apply at once on the App Store and Google Play; the following RENEWAL brings the new period
     await db.prisma.subscription.update({
       where: { merchantId },
-      data: { planId: plan.id, storeProductId: target.id, billingChannel: channel, updatedAt: new Date() },
+      data: { planId: plan.id, storeProductId: target.id, billingChannel: channel, billingIssueAt: null, updatedAt: new Date() },
     });
     await logActivity(sub.id, 'IAP_PRODUCT_CHANGE', planHistory.upgrade(plan.name, target.months, channel, sub.currentPeriodEnd), event);
     return 'ok';
   }
   // Same or lower tier: the store switches at the next renewal, whose RENEWAL event changes the plan
+  if (sub.billingIssueAt) {
+    await db.prisma.subscription.update({ where: { merchantId }, data: { billingIssueAt: null, updatedAt: new Date() } });
+  }
   await logActivity(sub.id, 'IAP_PRODUCT_CHANGE', planHistory.changeNextPeriod(plan.name, target.months, channel), event);
   return 'ok_next_period';
 }
@@ -396,7 +402,7 @@ async function handleUncancellation(merchantId: number, event: RevenueCatEvent):
   const channel = channelFromStore(event.store);
   await db.prisma.subscription.update({
     where: { merchantId },
-    data: { autoRenew: true, cancelAtPeriodEnd: false, canceledAt: null, cancelReason: null, updatedAt: new Date() },
+    data: { autoRenew: true, cancelAtPeriodEnd: false, canceledAt: null, cancelReason: null, billingIssueAt: null, updatedAt: new Date() },
   });
   await logActivity(sub.id, 'IAP_UNCANCELLATION', planHistory.uncancel(channel), event);
   return 'ok';
@@ -427,15 +433,36 @@ async function handleExpiration(merchantId: number, event: RevenueCatEvent): Pro
   return 'ok';
 }
 
+/**
+ * "Trừ tiền lỗi: vẫn dùng tới hết kỳ" (owner, 2026-11-02). The store retries the charge; the shop keeps access until
+ * the period ends, plus the store's grace period when the owner turned it on (`grace_period_expiration_at_ms`).
+ * Store channels never become PAST_DUE here: authenticateRequest blocks PAST_DUE on every route at once. The status stays
+ * as it is (a row left PAST_DUE by the old webhook becomes ACTIVE again) and auto-renew stays as it was; the next
+ * RENEWAL / UNCANCELLATION / PRODUCT_CHANGE clears the flag, and EXPIRATION ends access when the grace runs out unpaid.
+ */
 async function handleBillingIssue(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
   const sub = await findSubscription(merchantId);
   if (!sub) return 'ignored_no_subscription';
   const channel = channelFromStore(event.store);
-  // Access stays: the store retries the charge for days (grace period)
+  const isStore = channel === 'APP_STORE' || channel === 'PLAY_STORE';
+  const graceEnd = event.grace_period_expiration_at_ms ? new Date(event.grace_period_expiration_at_ms) : null;
+  const extendTo = graceEnd && graceEnd > sub.currentPeriodEnd ? graceEnd : null;
   await db.prisma.subscription.update({
     where: { merchantId },
-    data: { status: 'PAST_DUE', billingIssueAt: eventTime(event), updatedAt: new Date() },
+    data: {
+      billingIssueAt: eventTime(event),
+      ...(extendTo ? { currentPeriodEnd: extendTo } : {}),
+      // Other stores RevenueCat may report keep the old rule (PAST_DUE); phase 2 decides for Lemon / Stripe
+      ...(isStore ? (sub.status === 'PAST_DUE' ? { status: 'ACTIVE' } : {}) : { status: 'PAST_DUE' }),
+      updatedAt: new Date(),
+    },
   });
-  await logActivity(sub.id, 'IAP_BILLING_ISSUE', planHistory.billingIssue(channel), event);
+  await logActivity(
+    sub.id,
+    'IAP_BILLING_ISSUE',
+    planHistory.billingIssue(channel, extendTo ?? (isStore ? sub.currentPeriodEnd : null), !!extendTo),
+    event,
+    { gracePeriodExpiresAt: graceEnd?.toISOString() ?? null, extendedTo: extendTo?.toISOString() ?? null },
+  );
   return 'ok';
 }

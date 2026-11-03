@@ -323,7 +323,7 @@ describe('CANCELLATION, UNCANCELLATION, refund, billing issue, expiration', () =
     expect(sub().autoRenew).toBe(true);
     expect(sub().billingIssueAt).toBeInstanceOf(Date);
     expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
-    expect(lastActivity().description).toBe('App Store chưa thu được tiền gia hạn. Chủ shop cần kiểm tra cách thanh toán.');
+    expect(lastActivity().description).toBe('App Store chưa thu được tiền gia hạn. Chủ shop cần kiểm tra cách thanh toán. Gói vẫn dùng đến 02/11/2027.');
   });
 
   it('expiration before the period end is logged only; auto-renew goes off', async () => {

@@ -45,8 +45,14 @@ export const planHistory = {
   uncancel: (channel: BillingChannel) => `Đã bật lại tự gia hạn trên ${storeName(channel)}.`,
   refund: (channel: BillingChannel, end: Date) => `${storeName(channel)} đã hoàn tiền. Gói dừng từ ${vnDate(end)}.`,
   refundOtherProduct: (channel: BillingChannel) => `${storeName(channel)} đã hoàn tiền một lần trả trước. Gói hiện tại không đổi.`,
-  billingIssue: (channel: BillingChannel) =>
-    `${storeName(channel)} chưa thu được tiền gia hạn. Chủ shop cần kiểm tra cách thanh toán.`,
+  /** "App Store chưa thu được tiền gia hạn. … Gói vẫn dùng đến 08/11/2026." / "… cho dùng thêm đến … trong lúc thu lại." */
+  billingIssue: (channel: BillingChannel, until?: Date | null, grace = false) =>
+    `${storeName(channel)} chưa thu được tiền gia hạn. Chủ shop cần kiểm tra cách thanh toán.` +
+    (until
+      ? grace
+        ? ` ${storeName(channel)} cho dùng thêm đến ${vnDate(until)} trong lúc thu lại.`
+        : ` Gói vẫn dùng đến ${vnDate(until)}.`
+      : ''),
   expired: () => 'Gói đã hết hạn.',
   expirationIgnored: (end: Date) => `Cửa hàng ứng dụng báo hết hạn nhưng gói vẫn dùng đến ${vnDate(end)}.`,
   otherProductEvent: (channel: BillingChannel) => `${storeName(channel)} báo thay đổi của gói trước. Gói hiện tại không đổi.`,
