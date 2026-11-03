@@ -76,6 +76,20 @@ export function deviceStoreFromHeaders(headers: { get(name: string): string | nu
   return null;
 }
 
+/**
+ * A3 REVENUECAT_SANDBOX_MERCHANT_IDS: comma-separated merchant ids, e.g. `2` or `2,5`. The id is the number in
+ * `merchant_<id>`, which is Merchant.id (the ID column of the admin Merchants list). Spaces are trimmed; anything that is
+ * not a whole positive number is ignored.
+ */
+export function parseSandboxMerchantIds(raw: string | null | undefined): number[] {
+  return String(raw ?? '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => /^\d+$/.test(part))
+    .map((part) => parseInt(part, 10))
+    .filter((id) => id > 0);
+}
+
 export function normaliseChannel(raw: string | null | undefined): BillingChannel {
   return raw === 'APP_STORE' || raw === 'PLAY_STORE' || raw === 'LEMON' ? raw : 'MANUAL';
 }

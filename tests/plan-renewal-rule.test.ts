@@ -9,6 +9,7 @@ import {
   channelFromStore,
   deviceStoreFromHeaders,
   inAppPlans,
+  parseSandboxMerchantIds,
   planTierFromName,
   renewalOffer,
   storeProduct,
@@ -178,3 +179,19 @@ describe('store subscribers on their own store (A5, A6)', () => {
   });
 });
 
+
+describe('REVENUECAT_SANDBOX_MERCHANT_IDS (A3; production sets 2 = the App Review demo shop)', () => {
+  it('a comma list of merchant ids (the number in merchant_<id> = Merchant.id in admin), spaces trimmed', () => {
+    expect(parseSandboxMerchantIds(undefined)).toEqual([]);
+    expect(parseSandboxMerchantIds('')).toEqual([]);
+    expect(parseSandboxMerchantIds('2')).toEqual([2]);
+    expect(parseSandboxMerchantIds('2, 5')).toEqual([2, 5]);
+    expect(parseSandboxMerchantIds(' 2 ,5 ,')).toEqual([2, 5]);
+  });
+
+  it('garbage is ignored, never read as a number', () => {
+    expect(parseSandboxMerchantIds('abc')).toEqual([]);
+    expect(parseSandboxMerchantIds('2abc, merchant_5, -3, 4.5, cl9x0abc')).toEqual([]);
+    expect(parseSandboxMerchantIds('2;5')).toEqual([]);
+  });
+});

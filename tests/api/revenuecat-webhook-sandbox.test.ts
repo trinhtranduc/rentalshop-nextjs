@@ -69,4 +69,20 @@ describe('sandbox and environments (A3)', () => {
     expect(prod.body.status).toMatch(/^ignored/);
     expect(sub().planId).toBe(3);
   });
+
+  it('production value REVENUECAT_SANDBOX_MERCHANT_IDS=2: merchant_2 (the demo shop) is accepted, merchant_7 is not', async () => {
+    process.env.REVENUECAT_SANDBOX_MERCHANT_IDS = '2';
+    store.merchants.push({ id: 2 });
+    const demo = await send(POST, sandbox({ app_user_id: 'merchant_2' }));
+    expect(demo.status).toBe(200);
+    expect(store.subscriptions.find((s) => s.merchantId === 2)).toMatchObject({ planId: 2 });
+    const shop = await send(POST, sandbox());
+    expect(shop.body.status).toBe('ignored_sandbox');
+  });
+
+  it('a garbage allow-list accepts nobody', async () => {
+    process.env.REVENUECAT_SANDBOX_MERCHANT_IDS = '7abc';
+    expect((await send(POST, sandbox())).body.status).toBe('ignored_sandbox');
+  });
 });
+

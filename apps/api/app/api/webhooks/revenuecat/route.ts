@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { addMonthsInTimeZone, handleApiError } from '@rentalshop/utils';
 import {
   channelFromStore,
+  parseSandboxMerchantIds,
   planTierFromName,
   storeProduct,
   tierRank,
@@ -276,11 +277,8 @@ function resolveMerchantId(event: RevenueCatEvent): number | null {
  */
 function sandboxAllowed(merchantId: number): boolean {
   if (appUserPrefix() !== 'merchant_') return true;
-  return (process.env.REVENUECAT_SANDBOX_MERCHANT_IDS || '')
-    .split(',')
-    .map((v) => parseInt(v.trim(), 10))
-    .filter((n) => Number.isFinite(n))
-    .includes(merchantId);
+  // The same number as in merchant_<id> (Merchant.id, the admin ID column), e.g. REVENUECAT_SANDBOX_MERCHANT_IDS=2 or 2,5
+  return parseSandboxMerchantIds(process.env.REVENUECAT_SANDBOX_MERCHANT_IDS).includes(merchantId);
 }
 
 /** Active, not deleted plan of a tier ("Basic", "Professional") */
