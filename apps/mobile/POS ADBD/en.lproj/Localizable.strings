@@ -3264,3 +3264,8 @@
 "plan.home.lastDay" = "Plan expires today";
 "plan.home.renew" = "Renew";
 "plan.paymentIssue.title" = "The plan payment did not go through";
+"plan.accountNotReady" = "Could not connect the purchase account. Try again in a moment.";
+"plan.reenable.line" = "Auto-renew is off. The plan runs until %@.";
+"plan.reenable.button" = "Turn auto-renew back on";
+"plan.confirmingHint" = "Usually a few seconds, up to a minute.";
+"plan.currentAutoRenew" = "Current · renews on %@";

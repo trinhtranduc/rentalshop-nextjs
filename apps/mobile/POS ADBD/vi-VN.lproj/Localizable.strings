@@ -3262,3 +3262,8 @@
 "plan.home.lastDay" = "Gói hết hạn hôm nay";
 "plan.home.renew" = "Gia hạn";
 "plan.paymentIssue.title" = "Chưa thu được tiền gói";
+"plan.accountNotReady" = "Chưa kết nối được tài khoản mua hàng. Thử lại sau giây lát.";
+"plan.reenable.line" = "Tự gia hạn đang tắt. Gói dùng đến %@.";
+"plan.reenable.button" = "Bật lại tự gia hạn";
+"plan.confirmingHint" = "Thường mất vài giây, có thể đến một phút.";
+"plan.currentAutoRenew" = "Đang dùng · tự gia hạn ngày %@";

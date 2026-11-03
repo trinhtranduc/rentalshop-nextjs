@@ -237,4 +237,48 @@ final class PlanRenewalLogicTests: XCTestCase {
         XCTAssertTrue(ended.isBlocked)
         XCTAssertEqual(L.mode(isOwner: true, status: ended, storeHasProducts: true), .expiredOwner)
     }
+
+    // MARK: Audit fixes (A1, A3a, A5, A6, A12)
+
+    /// A3a: only builds on the production API buy as merchant_<id>; any other API uses dev_merchant_<id>
+    func testAppUserIdUsesTheDevPrefixOffProduction() {
+        XCTAssertEqual(PlanRenewalLogic.appUserId(merchantId: 7, apiBaseURL: "https://api.anyrent.shop"), "merchant_7")
+        XCTAssertEqual(PlanRenewalLogic.appUserId(merchantId: 7, apiBaseURL: "https://api.anyrent.shop/"), "merchant_7")
+        XCTAssertEqual(PlanRenewalLogic.appUserId(merchantId: 7, apiBaseURL: "https://dev-api.anyrent.shop"), "dev_merchant_7")
+        XCTAssertEqual(PlanRenewalLogic.appUserId(merchantId: 7, apiBaseURL: "http://localhost:3459"), "dev_merchant_7")
+    }
+
+    /// A1: the store sheet opens only when RevenueCat is logged in as this shop
+    func testStoreAccountReadyOnlyForTheExpectedId() {
+        typealias L = PlanRenewalLogic
+        XCTAssertTrue(L.storeAccountReady(current: "merchant_7", expected: "merchant_7"))
+        XCTAssertFalse(L.storeAccountReady(current: "$RCAnonymousID:abc", expected: "merchant_7"))
+        XCTAssertFalse(L.storeAccountReady(current: "merchant_8", expected: "merchant_7"))
+        XCTAssertFalse(L.storeAccountReady(current: nil, expected: "merchant_7"))
+        XCTAssertFalse(L.storeAccountReady(current: "merchant_7", expected: nil))
+        XCTAssertFalse(L.storeAccountReady(current: "", expected: ""))
+    }
+
+    /// A5: upgrade while auto-renewing on this store; A6: re-enable instead of buying the same product
+    func testUpgradeWhileAutoRenewingAndReenable() throws {
+        typealias L = PlanRenewalLogic
+        let upgrade = PlanStatus(status: "ACTIVE", autoRenew: true, purchasablePlanIds: [3])
+        XCTAssertEqual(L.mode(isOwner: true, status: upgrade, storeHasProducts: true), .purchase)
+        XCTAssertEqual(L.mode(isOwner: true, status: upgrade, storeHasProducts: false), .autoRenewing)
+        XCTAssertEqual(L.mode(isOwner: true, status: PlanStatus(status: "ACTIVE", autoRenew: true, purchasablePlanIds: []), storeHasProducts: true), .autoRenewing)
+        let reenableOnly = PlanStatus(status: "ACTIVE", autoRenew: false, purchasablePlanIds: [], reenableAutoRenew: true)
+        XCTAssertEqual(L.mode(isOwner: true, status: reenableOnly, storeHasProducts: true), .reenableOnly)
+        let reenableAndUpgrade = PlanStatus(status: "ACTIVE", autoRenew: false, purchasablePlanIds: [3], reenableAutoRenew: true)
+        XCTAssertEqual(L.mode(isOwner: true, status: reenableAndUpgrade, storeHasProducts: true), .purchase)
+        let decoded = try status(#"{"status":"ACTIVE","reenableAutoRenew":true,"purchasablePlanIds":[]}"#)
+        XCTAssertEqual(decoded.reenableAutoRenew, true)
+        XCTAssertNil(try status(#"{"status":"ACTIVE"}"#).reenableAutoRenew)
+    }
+
+    /// A12: about a minute for the webhook before the slow state
+    func testConfirmationWaitsAboutAMinute() {
+        XCTAssertEqual(PlanConfirmation.timeout, 60)
+        XCTAssertEqual(PlanConfirmation.interval, 2)
+    }
 }
+

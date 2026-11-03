@@ -35,18 +35,21 @@ struct PlanStatus: Decodable, Equatable {
     var renewWindowDays: Int?
     var limits: PlanLimits?
     var features: [String]?
+    /// A6: a store plan on this device's store with auto-renew off: offer "Bật lại tự gia hạn", not the same product
+    var reenableAutoRenew: Bool?
 
     enum CodingKeys: String, CodingKey {
         case planId, planName, status, dbStatus, daysRemaining, currentPeriodEnd, billingAmount, billingCurrency
         case billingChannel, autoRenew, billingIssue, storeProductId, planTier, canRenew, canUpgrade, purchasablePlanIds
-        case renewWindowDays, limits, features
+        case renewWindowDays, limits, features, reenableAutoRenew
     }
 
     init(planId: Int? = nil, planName: String? = nil, status: String? = nil, dbStatus: String? = nil,
          daysRemaining: Int? = nil, currentPeriodEnd: String? = nil, billingAmount: Double? = nil,
          billingCurrency: String? = nil, billingChannel: String? = nil, autoRenew: Bool? = nil, billingIssue: Bool? = nil,
          storeProductId: String? = nil, planTier: String? = nil, canRenew: Bool? = nil, canUpgrade: Bool? = nil,
-         purchasablePlanIds: [Int]? = nil, renewWindowDays: Int? = nil, limits: PlanLimits? = nil, features: [String]? = nil) {
+         purchasablePlanIds: [Int]? = nil, renewWindowDays: Int? = nil, limits: PlanLimits? = nil, features: [String]? = nil,
+         reenableAutoRenew: Bool? = nil) {
         self.planId = planId
         self.planName = planName
         self.status = status
@@ -66,6 +69,7 @@ struct PlanStatus: Decodable, Equatable {
         self.renewWindowDays = renewWindowDays
         self.limits = limits
         self.features = features
+        self.reenableAutoRenew = reenableAutoRenew
     }
 
     init(from decoder: Decoder) throws {
@@ -90,6 +94,7 @@ struct PlanStatus: Decodable, Equatable {
         renewWindowDays = opt(Int.self, .renewWindowDays)
         limits = opt(PlanLimits.self, .limits)
         features = PlanFeatures.decode(c, .features)
+        reenableAutoRenew = opt(Bool.self, .reenableAutoRenew)
     }
 
     var isExpired: Bool { status?.uppercased() == "EXPIRED" }
@@ -230,6 +235,19 @@ enum PlanRenewalLogic {
     static let allProductIds = ["anyrent_merchant_semi_annual", "anyrent_merchant_annual",
                                 "anyrent_professional_semi_annual", "anyrent_professional_annual"]
     static let vietnam = TimeZone(identifier: "Asia/Ho_Chi_Minh")!
+
+    /// A3a: `merchant_<id>` only for builds on the production API; any other API (dev, local) uses `dev_merchant_<id>`, so a
+    /// sandbox purchase on a test build never lands on a production shop with the same number
+    static func appUserId(merchantId: Int, apiBaseURL: String) -> String {
+        let host = URL(string: apiBaseURL)?.host?.lowercased() ?? ""
+        return host == "api.anyrent.shop" ? "merchant_\(merchantId)" : "dev_merchant_\(merchantId)"
+    }
+
+    /// A1: RevenueCat is logged in as this shop (never anonymous, never another shop)
+    static func storeAccountReady(current: String?, expected: String?) -> Bool {
+        guard let expected, !expected.isEmpty else { return false }
+        return current == expected
+    }
 
     /// Google Play ids may carry ":basePlan"; App Store ids never do
     static func baseProductId(_ id: String?) -> String? {
@@ -428,6 +446,8 @@ enum PlanRenewalLogic {
         case purchase, autoRenewing, nothingToBuy, storeUnavailable, expiredOwner, expiredStaff
         /// PAST_DUE: the owner fixes the payment where the plan is billed (Quản lý / huỷ gói), nothing to buy here
         case paymentIssueOwner
+        /// A6: auto-renew is off on this store and nothing else to buy: only "Bật lại tự gia hạn"
+        case reenableOnly
     }
 
     /// What the plan screen shows. `storeHasProducts`: the store answered with at least one product.
@@ -435,9 +455,14 @@ enum PlanRenewalLogic {
         if !isOwner { return .expiredStaff }
         if status.isPastDue { return .paymentIssueOwner }
         if status.isExpired { return storeHasProducts && !status.purchasable.isEmpty ? .expiredOwner : .storeUnavailable }
-        if status.autoRenew == true { return .autoRenewing }
-        if status.purchasable.isEmpty { return .nothingToBuy }
-        return storeHasProducts ? .purchase : .storeUnavailable
+        if status.purchasable.isEmpty {
+            if status.autoRenew == true { return .autoRenewing }
+            if status.reenableAutoRenew == true { return .reenableOnly }
+            return .nothingToBuy
+        }
+        // A5: an auto-renewing shop may upgrade through its own store; without store products it sees its auto-renew card
+        if !storeHasProducts { return status.autoRenew == true ? .autoRenewing : .storeUnavailable }
+        return .purchase
     }
 
     /// Home line for the owner: only when the renew rule opened (≤ 7 days, not auto-renewing) and the period runs

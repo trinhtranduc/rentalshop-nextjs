@@ -3,7 +3,9 @@
 //  POS ADBD
 //
 //  RevenueCat wrapper for the owner's plan (#1459: Basic and Professional, 6 / 12 months via StoreKit).
-//  App User ID = merchant_{merchantId} so the RevenueCat webhook maps the purchase to the shop's Subscription.
+//  App User ID = merchant_{merchantId} on the production API (dev_merchant_{merchantId} on any other API, A3a) so the
+//  RevenueCat webhook maps the purchase to the shop's Subscription. A1: products, purchase and restore wait until RevenueCat
+//  is logged in as that id and refuse otherwise (a purchase on an anonymous id would never reach the shop).
 //  Products come from the server (`storeProductIds` of GET /api/plans); prices from the store, never from the app.
 //
 //  e2e runs (#1459): the hosted test PlanRenewalHostedE2ETests opens an SKTestSession in the app process (storefront VNM)
@@ -70,9 +72,29 @@ enum PurchasesManager {
         logInMerchant(merchantId: merchantId)
     }
 
+    /// The app user id of the signed-in owner (A3a: dev_merchant_ off the production API); nil for other roles
+    static func expectedAppUserId() -> String? {
+        guard let user = User.account(), user.role == .merchant, let merchantId = user.merchantId, merchantId > 0 else { return nil }
+        return PlanRenewalLogic.appUserId(merchantId: merchantId, apiBaseURL: APIEndpoint.currentBaseURL)
+    }
+
+    /// A1: RevenueCat is logged in as this shop before the store is touched: logIn up to 3 times, 1 s apart
+    static func ensureLoggedIn(attempt: Int = 1, completion: @escaping (Bool) -> Void) {
+        guard configured, let expected = expectedAppUserId() else { return completion(false) }
+        if PlanRenewalLogic.storeAccountReady(current: Purchases.shared.appUserID, expected: expected) { return completion(true) }
+        Purchases.shared.logIn(expected) { _, _, error in
+            DispatchQueue.main.async {
+                if PlanRenewalLogic.storeAccountReady(current: Purchases.shared.appUserID, expected: expected) { return completion(true) }
+                NSLog("[PurchasesManager] logIn attempt \(attempt) failed: \(error?.localizedDescription ?? "other id")")
+                guard attempt < 3 else { return completion(false) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { ensureLoggedIn(attempt: attempt + 1, completion: completion) }
+            }
+        }
+    }
+
     static func logInMerchant(merchantId: Int) {
         guard configured else { return }
-        let appUserId = "merchant_\(merchantId)"
+        let appUserId = PlanRenewalLogic.appUserId(merchantId: merchantId, apiBaseURL: APIEndpoint.currentBaseURL)
         Purchases.shared.logIn(appUserId) { customerInfo, created, error in
             if let error {
                 NSLog("[PurchasesManager] logIn failed: \(error.localizedDescription)")
@@ -101,15 +123,23 @@ enum PurchasesManager {
 
     // MARK: - Products
 
-    /// Store products for these ids, in the store's currency. An empty list when the store is not set up.
-    static func products(ids: [String], completion: @escaping ([PlanStoreProduct]) -> Void) {
+    /// Store products for these ids, in the store's currency. An empty list when the store is not set up; `accountReady`
+    /// false when RevenueCat could not log in as this shop (A1: the screen says so and offers Thử lại).
+    static func products(ids: [String], completion: @escaping (_ products: [PlanStoreProduct], _ accountReady: Bool) -> Void) {
         let unique = Array(Set(ids.compactMap { PlanRenewalLogic.baseProductId($0) }))
-        guard !unique.isEmpty else { return completion([]) }
+        guard !unique.isEmpty else { return completion([], true) }
         if E2EStoreKit.isActive {
-            E2EStoreKit.products(ids: unique, completion: completion)
+            E2EStoreKit.products(ids: unique) { completion($0, true) }
             return
         }
-        guard configured else { return completion([]) }
+        guard configured else { return completion([], true) }
+        ensureLoggedIn { ready in
+            guard ready else { return completion([], false) }
+            loadProducts(unique) { completion($0, true) }
+        }
+    }
+
+    private static func loadProducts(_ unique: [String], completion: @escaping ([PlanStoreProduct]) -> Void) {
         Purchases.shared.getProducts(unique) { products in
             for product in products { productsById[product.productIdentifier] = product }
             NSLog("[PurchasesManager] products: \(products.map { "\($0.productIdentifier)=\($0.localizedPriceString)" })")
@@ -136,15 +166,19 @@ enum PurchasesManager {
         guard configured, let product = productsById[productId] else {
             return completion(.failed("plan.storeUnavailable".localized()))
         }
-        Purchases.shared.purchase(product: product) { _, customerInfo, error, userCancelled in
-            DispatchQueue.main.async {
-                if userCancelled { return completion(.cancelled) }
-                if let error {
-                    NSLog("[PurchasesManager] purchase failed: \(error.localizedDescription)")
-                    return completion(.failed(error.localizedDescription))
+        ensureLoggedIn { ready in
+            // A1: never buy on an anonymous or another shop's id
+            guard ready else { return completion(.failed("plan.accountNotReady".localized())) }
+            Purchases.shared.purchase(product: product) { _, customerInfo, error, userCancelled in
+                DispatchQueue.main.async {
+                    if userCancelled { return completion(.cancelled) }
+                    if let error {
+                        NSLog("[PurchasesManager] purchase failed: \(error.localizedDescription)")
+                        return completion(.failed(error.localizedDescription))
+                    }
+                    NSLog("[PurchasesManager] purchase ok active=\(customerInfo?.entitlements.active.keys.joined(separator: ",") ?? "")")
+                    completion(.purchased)
                 }
-                NSLog("[PurchasesManager] purchase ok active=\(customerInfo?.entitlements.active.keys.joined(separator: ",") ?? "")")
-                completion(.purchased)
             }
         }
     }
@@ -156,13 +190,16 @@ enum PurchasesManager {
             return
         }
         guard configured else { return completion(.failed("plan.storeUnavailable".localized())) }
-        Purchases.shared.restorePurchases { customerInfo, error in
-            DispatchQueue.main.async {
-                if let error {
-                    NSLog("[PurchasesManager] restore failed: \(error.localizedDescription)")
-                    return completion(.failed(error.localizedDescription))
+        ensureLoggedIn { ready in
+            guard ready else { return completion(.failed("plan.accountNotReady".localized())) }
+            Purchases.shared.restorePurchases { customerInfo, error in
+                DispatchQueue.main.async {
+                    if let error {
+                        NSLog("[PurchasesManager] restore failed: \(error.localizedDescription)")
+                        return completion(.failed(error.localizedDescription))
+                    }
+                    completion(customerInfo.map(hasMerchantEntitlement) == true ? .purchased : .cancelled)
                 }
-                completion(customerInfo.map(hasMerchantEntitlement) == true ? .purchased : .cancelled)
             }
         }
     }
