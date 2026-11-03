@@ -5,7 +5,7 @@ import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { civilDaysBetween, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { getPlanLimitsInfo } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
-import { inAppPlans, normaliseChannel, renewalOffer, storeProduct, type InAppPlan } from '../../../../lib/plan-renewal';
+import { deviceStoreFromHeaders, inAppPlans, normaliseChannel, renewalOffer, storeProduct, type InAppPlan } from '../../../../lib/plan-renewal';
 
 /**
  * GET /api/subscriptions/status
@@ -71,7 +71,8 @@ interface RenewalSubscriptionRow {
 async function renewalFields(
   subscription: RenewalSubscriptionRow,
   plan: { id?: number | null; name?: string | null } | null | undefined,
-  now: Date
+  now: Date,
+  deviceStore: 'APP_STORE' | 'PLAY_STORE' | null
 ) {
   const offer = renewalOffer(
     {
@@ -80,6 +81,8 @@ async function renewalFields(
       planId: plan?.id ?? subscription.planId,
       planName: plan?.name,
       autoRenew: subscription.autoRenew,
+      billingChannel: subscription.billingChannel,
+      deviceStore,
       now,
     },
     await inAppPlansSafe()
@@ -94,6 +97,7 @@ async function renewalFields(
     canUpgrade: offer.canUpgrade,
     purchasablePlanIds: offer.purchasablePlanIds,
     renewWindowDays: offer.renewWindowDays,
+    reenableAutoRenew: offer.reenableAutoRenew,
   };
 }
 
@@ -240,7 +244,7 @@ export async function GET(request: NextRequest) {
       // ============================================================================
       
       const real = await realLimits(merchant.id);
-      const renewal = await renewalFields(subscription, plan, now);
+      const renewal = await renewalFields(subscription, plan, now, deviceStoreFromHeaders(request.headers));
 
       const subscriptionStatus = {
         // ============================================================================

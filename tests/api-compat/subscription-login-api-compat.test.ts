@@ -14,6 +14,7 @@ let now: Record<string, any>;
 
 const ADDED_STATUS_KEYS = [
   'billingChannel', 'autoRenew', 'billingIssue', 'storeProductId', 'planTier', 'canRenew', 'canUpgrade', 'purchasablePlanIds', 'renewWindowDays',
+  'reenableAutoRenew',
 ];
 
 beforeAll(async () => {

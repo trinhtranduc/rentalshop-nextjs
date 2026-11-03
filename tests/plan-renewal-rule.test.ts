@@ -7,6 +7,7 @@ import { describe, expect, it } from '@jest/globals';
 import {
   RENEW_WINDOW_DAYS,
   channelFromStore,
+  deviceStoreFromHeaders,
   inAppPlans,
   planTierFromName,
   renewalOffer,
@@ -134,3 +135,46 @@ describe('renewalOffer (#1459)', () => {
     });
   });
 });
+
+describe('store subscribers on their own store (A5, A6)', () => {
+  const store = (over: Partial<Parameters<typeof renewalOffer>[0]> = {}) =>
+    renewalOffer(
+      { dbStatus: 'ACTIVE', currentPeriodEnd: endIn(3), planId: 2, planName: 'Basic', autoRenew: true, billingChannel: 'APP_STORE', deviceStore: 'APP_STORE', now: NOW, ...over },
+      PLANS,
+    );
+
+  it('A5 auto-renewing on this device\'s store: the upgrade is offered, the same plan is not', () => {
+    expect(store()).toMatchObject({ autoRenew: true, canRenew: false, canUpgrade: true, purchasablePlanIds: [3], reenableAutoRenew: false });
+    expect(store({ billingChannel: 'PLAY_STORE', deviceStore: 'PLAY_STORE' })).toMatchObject({ purchasablePlanIds: [3] });
+  });
+
+  it('A5 auto-renewing on another store (or Lemon, or an unknown device): nothing, never two subscriptions', () => {
+    expect(store({ deviceStore: 'PLAY_STORE' })).toMatchObject({ canUpgrade: false, purchasablePlanIds: [] });
+    expect(store({ deviceStore: null })).toMatchObject({ purchasablePlanIds: [] });
+    expect(store({ billingChannel: 'LEMON' })).toMatchObject({ purchasablePlanIds: [] });
+  });
+
+  it('A6 store plan with auto-renew off, this device\'s store: "Bật lại tự gia hạn" instead of buying the same product; upgrade stays', () => {
+    expect(store({ autoRenew: false })).toMatchObject({ reenableAutoRenew: true, canRenew: false, canUpgrade: true, purchasablePlanIds: [3] });
+    // far from the end too: turning auto-renew back on is always possible
+    expect(store({ autoRenew: false, currentPeriodEnd: endIn(40) })).toMatchObject({ reenableAutoRenew: true, purchasablePlanIds: [3] });
+    // Professional: nothing to buy, only re-enable
+    expect(store({ autoRenew: false, planId: 3, planName: 'Professional' })).toMatchObject({ reenableAutoRenew: true, purchasablePlanIds: [] });
+  });
+
+  it('A6 does not apply on another store, to manual plans, or after the period ended', () => {
+    expect(store({ autoRenew: false, deviceStore: 'PLAY_STORE' })).toMatchObject({ reenableAutoRenew: false, canRenew: true, purchasablePlanIds: [2, 3] });
+    expect(store({ autoRenew: false, billingChannel: 'MANUAL' })).toMatchObject({ reenableAutoRenew: false, canRenew: true });
+    expect(store({ autoRenew: false, currentPeriodEnd: new Date('2026-10-30T00:00:00Z') })).toMatchObject({
+      expired: true, reenableAutoRenew: false, canRenew: true, purchasablePlanIds: [2, 3],
+    });
+  });
+
+  it('deviceStoreFromHeaders: iOS → APP_STORE, Android → PLAY_STORE, else none', () => {
+    const h = (map: Record<string, string>) => ({ get: (k: string) => map[k.toLowerCase()] ?? null });
+    expect(deviceStoreFromHeaders(h({ 'x-device-type': 'ios' }))).toBe('APP_STORE');
+    expect(deviceStoreFromHeaders(h({ 'x-device-type': 'android' }))).toBe('PLAY_STORE');
+    expect(deviceStoreFromHeaders(h({}))).toBeNull();
+  });
+});
+
