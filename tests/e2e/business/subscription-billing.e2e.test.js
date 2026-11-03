@@ -5,8 +5,8 @@
  *  - price = plan monthly price × cycle months, discount monthly 0 %, quarterly 0 %, semi-annual 5 %, annual 10 %;
  *  - renew, not expired: the new period continues from the current end (days left kept);
  *  - renew, expired: the new period starts at renewal time;
- *  - upgrade mid-period: credit for the unused Vietnam civil days of the old period, new period from now,
- *    one cycle of calendar months (31 Jan + 1 month = 28 Feb).
+ *  - upgrade mid-period (#1470, owner 2026-11-03, replaced the #779 credit): the new plan applies now, the period
+ *    ends at the current end + one cycle of calendar months (days left kept, no money credit; 31 Jan + 1 month = 28 Feb).
  * Expected numbers and dates are computed here, independently of the code under test.
  * Every describe makes its own merchant and plans (helpers/subscription.js); nothing touches the seeded merchants.
  * Run: scripts/e2e/business-e2e.sh -- subscription-billing   (needs E2E_API_URL + a local E2E_DATABASE_URL).
@@ -230,7 +230,7 @@ describeBill('BF-BILL extend preview: priced from the plan, expired counts from 
 // C. Change plan (BF-BILL-09 .. 11)
 // ============================================================================================================
 
-describeBill('BF-BILL change plan: credit for unused days, new period from now, cycle fields stored', () => {
+describeBill('BF-BILL change plan: days left kept (end = current end + cycle), full new price, cycle fields stored', () => {
   let world;
   let subId;
   let basic;
@@ -243,7 +243,7 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     subId = row(world.merchantId).id;
   });
 
-  test('BF-BILL-09 Basic 100,000 → Pro 300,000 mid-period: due = 300,000 − unused days × 100,000 / period days', async () => {
+  test('BF-BILL-09 Basic 100,000 → Pro 300,000 mid-period: due = 300,000, the plan starts now, ends at the old end + 1 month', async () => {
     const now = Date.now();
     const start = new Date(now - 9 * DAY_MS);
     const end = new Date(now + 22 * DAY_MS);
@@ -255,28 +255,29 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     expect({ status: r.status, code: r.body?.code }).toEqual({ status: 200, code: 'PLAN_CHANGED_SUCCESS' });
 
     const remaining = vnDaysBetween(new Date(before), end);
-    const credit = (remaining / periodDays) * MONTHLY;
+    expect(remaining).toBeLessThanOrEqual(periodDays);
     const pc = r.body.data.planChange;
     expect(pc.remainingDays).toBe(remaining);
-    expect(pc.remainingCreditValue).toBeCloseTo(credit, 2);
-    expect(pc.amountDue).toBeCloseTo(MONTHLY * 3 - credit, 2);
+    expect(pc.remainingCreditValue).toBe(0);
+    expect(pc.amountDue).toBeCloseTo(MONTHLY * 3, 2);
     expect(pc.currency).toBe('VND');
 
     const s = row(world.merchantId);
     expect(s).toMatchObject({ planId: pro, amount: MONTHLY * 3, currency: 'VND', interval: 'monthly', intervalCount: 1, period: 1, discount: 0 });
     expect(Math.abs(Date.parse(s.start) - before)).toBeLessThan(60000);
-    expect(s.end).toBe(iso(addMonthsVn(s.start, 1)));
+    expect(s.end).toBe(iso(addMonthsVn(end, 1)));
   });
 
   test('BF-BILL-10 quarterly: the new period is 3 calendar months (not 90 × 24h), stored as 3 months', async () => {
     const now = Date.now();
-    setPeriod(world.merchantId, { start: new Date(now - 5 * DAY_MS), end: new Date(now + 25 * DAY_MS), planId: basic });
+    const end = new Date(now + 25 * DAY_MS);
+    setPeriod(world.merchantId, { start: new Date(now - 5 * DAY_MS), end, planId: basic });
     const a = await admin();
     const r = await a.post(`/api/subscriptions/${subId}/change-plan`, { planId: pro, billingInterval: 'quarterly', method: 'TRANSFER', transactionId: 'FT-BILL-1' });
     expect(r.status).toBe(200);
     const s = row(world.merchantId);
     expect(s).toMatchObject({ interval: 'quarterly', intervalCount: 3, period: 3, amount: MONTHLY * 3 * 3 });
-    expect(s.end).toBe(iso(addMonthsVn(s.start, 3)));
+    expect(s.end).toBe(iso(addMonthsVn(end, 3)));
   });
 
   test('BF-BILL-12 the admin merchant page (PUT /api/merchants/[id]/plan): the server prices it, a client total is ignored', async () => {
@@ -292,9 +293,9 @@ describeBill('BF-BILL change plan: credit for unused days, new period from now, 
     expect(r.status).toBe(200);
     const s = row(world.merchantId);
     expect(s).toMatchObject({ planId: pro, amount: MONTHLY * 3 * 12 * 0.9, discount: 10, interval: 'annual', intervalCount: 12, currency: 'VND' });
-    expect(s.end).toBe(iso(addMonthsVn(s.start, 12)));
-    const credit = (vnDaysBetween(new Date(before), end) / vnDaysBetween(start, end)) * MONTHLY;
-    expect(r.body.data.planChange.amountDue).toBeCloseTo(MONTHLY * 3 * 12 * 0.9 - credit, 2);
+    expect(s.end).toBe(iso(addMonthsVn(end, 12)));
+    expect(Math.abs(Date.parse(s.start) - before)).toBeLessThan(60000);
+    expect(r.body.data.planChange.amountDue).toBeCloseTo(MONTHLY * 3 * 12 * 0.9, 2);
   });
 
   test("BF-BILL-11 another merchant cannot change this subscription's plan: 403, nothing written", async () => {

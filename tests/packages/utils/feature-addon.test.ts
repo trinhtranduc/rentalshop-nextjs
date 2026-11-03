@@ -115,7 +115,8 @@ describe('feature add-on: money (#943)', () => {
     expect(resolveActiveModules(source(after), after)).toEqual([]);
   });
 
-  it('change-plan: the paid feature is credited for the days left (99.000 × 18 ÷ 30 = 59.400), 0 in trial', () => {
+  // #1470 (owner 2026-11-03): an upgrade keeps the days left as days (period from the current end), so no add-on credit
+  it('change-plan: the paid feature keeps its days left (no credit), the new cycle charges it; 0 credit in trial too', () => {
     const base = {
       subscription: { currentPeriodStart: start, currentPeriodEnd: end, billingInterval: 'monthly', plan: { basePrice: 399000 } } as any,
       newPlan: { basePrice: 599000 },
@@ -126,7 +127,9 @@ describe('feature add-on: money (#943)', () => {
     };
     const paid = calculatePlanChangeTotal(base);
     expect(paid.addonPeriodPrice).toBe(99000);
-    expect(Math.round(paid.addonCreditValue)).toBe(59400);
+    expect(paid.addonCreditValue).toBe(0);
+    expect(paid.newPeriodEnd.toISOString()).toBe('2026-12-10T17:00:00.000Z'); // 11 Nov VN + 1 month = 11 Dec VN
+    expect(paid.totalDue).toBe(599000 + 99000);
     const trial = calculatePlanChangeTotal({ ...base, subscription: { ...base.subscription, status: 'TRIAL' } });
     expect(trial.addonCreditValue).toBe(0);
   });
