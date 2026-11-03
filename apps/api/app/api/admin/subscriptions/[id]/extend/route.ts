@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
+import { MANUAL_BILLING } from '../../../../../../lib/plan-renewal';
 
 const extendSchema = z.object({
   months: z.number().int().min(1).max(24),
@@ -87,6 +88,7 @@ export async function POST(
           cancelAtPeriodEnd: false,
           canceledAt: null,
           cancelReason: null,
+          ...MANUAL_BILLING, // #1459 A10: extended by the admin, no store subscription any more
           // Keep billing info consistent (single source of truth)
           interval: intervalValue,
           intervalCount: 1,

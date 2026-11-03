@@ -105,6 +105,12 @@ describe('POST /api/subscriptions/[id]/renew (#779)', () => {
     expect(mockTx.payment.create.mock.calls[1][0].data.amount).toBeCloseTo(165.3, 2);
   });
 
+  it('#1459 A10: a renewal recorded here is manual: no store channel, product or auto-renew left', async () => {
+    await call({ ...base, duration: 1 });
+    const data = mockTx.subscription.update.mock.calls[0][0].data;
+    expect(data).toMatchObject({ billingChannel: 'MANUAL', autoRenew: false, storeProductId: null, billingIssueAt: null });
+  });
+
   it('not expired: the new period continues from the current end (days left kept)', async () => {
     await call({ ...base, duration: 1 });
     const data = mockTx.subscription.update.mock.calls[0][0].data;

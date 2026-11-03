@@ -4,6 +4,7 @@ import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { addonRenewalLines, calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
+import { MANUAL_BILLING } from '../../../../../lib/plan-renewal';
 
 /**
  * POST /api/subscriptions/[id]/renew
@@ -128,6 +129,7 @@ export async function POST(
             period: renewal.months,
             discount: renewal.discountPercent,
             status: SUBSCRIPTION_STATUS.ACTIVE as any,
+            ...MANUAL_BILLING, // #1459 A10: renewed by hand (admin, SePay transfer), no store subscription any more
             updatedAt: new Date()
           },
           include: {

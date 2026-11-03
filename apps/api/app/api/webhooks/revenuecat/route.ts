@@ -466,9 +466,14 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent): P
         data: { status: 'REFUNDED' },
       });
     }
-    if (!current) {
-      await logActivity(sub.id, 'IAP_REFUND', planHistory.refundOtherProduct(channel), event);
-      return 'ok_other_product';
+    // A10: only the refund of the period in use ends access (its expiration is the current period end, within a day);
+    // a refund of an earlier period, of another product, or without an expiration only marks the payment
+    const refundedExpiry = event.expiration_at_ms ?? null;
+    const currentPeriod =
+      current && refundedExpiry !== null && Math.abs(refundedExpiry - sub.currentPeriodEnd.getTime()) <= 24 * 60 * 60 * 1000;
+    if (!currentPeriod) {
+      await logActivity(sub.id, 'IAP_REFUND', planHistory.refundOtherProduct(channel), event, { refundedExpiry });
+      return 'ok_other_period';
     }
     const refundedAt = eventTime(event);
     const end = refundedAt < sub.currentPeriodEnd ? refundedAt : sub.currentPeriodEnd;

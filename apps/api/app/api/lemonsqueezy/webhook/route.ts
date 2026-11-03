@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
         const cancelledFlag = sub?.attributes?.cancelled === true;
         const channelFields = {
           billingChannel: 'LEMON',
+          storeProductId: null,
           autoRenew: (mappedStatus === 'ACTIVE' || mappedStatus === 'TRIAL') && !cancelledFlag,
           billingIssueAt: mappedStatus === 'PAST_DUE' ? new Date() : null,
         };

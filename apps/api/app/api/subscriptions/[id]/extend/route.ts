@@ -19,6 +19,7 @@ import {
 } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
+import { MANUAL_BILLING } from '../../../../../lib/plan-renewal';
 
 /**
  * POST /api/subscriptions/[id]/extend - Extend subscription
@@ -169,6 +170,7 @@ async function handleExtendSubscription(
       cancelAtPeriodEnd: false,
       canceledAt: null,
       cancelReason: null,
+      ...MANUAL_BILLING, // #1459 A10: extended by hand, no store subscription any more
       updatedAt: new Date()
     };
     

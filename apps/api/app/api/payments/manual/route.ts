@@ -9,6 +9,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, USER_ROLE, PAYMENT_STATUS, PLATFORM_OPS_ROLES} from '@rentalshop/constants';
+import { MANUAL_BILLING } from '../../../../lib/plan-renewal';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
@@ -82,6 +83,7 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
 
         await db.subscriptions.update(currentSubscription.id, {
           currentPeriodEnd: newEndDate,
+          ...MANUAL_BILLING, // #1459 A10: paid by hand, no store subscription any more
           updatedAt: new Date()
         });
       }

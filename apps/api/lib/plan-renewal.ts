@@ -72,6 +72,12 @@ export function normaliseChannel(raw: string | null | undefined): BillingChannel
   return raw === 'APP_STORE' || raw === 'PLAY_STORE' || raw === 'LEMON' ? raw : 'MANUAL';
 }
 
+/**
+ * A10: a renewal recorded by the admin, a manual payment or a SePay transfer: the shop is not on a store subscription any
+ * more (the store fields would make the apps and the refund handling act on a subscription that no longer pays).
+ */
+export const MANUAL_BILLING = { billingChannel: 'MANUAL', autoRenew: false, storeProductId: null, billingIssueAt: null } as const;
+
 export interface InAppPlan {
   id: number;
   tier: PlanTier;
