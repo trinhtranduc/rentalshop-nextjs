@@ -317,9 +317,10 @@ describe('CANCELLATION, UNCANCELLATION, refund, billing issue, expiration', () =
     expect(lastActivity()).toMatchObject({ type: 'IAP_REFUND', description: 'App Store đã hoàn tiền. Gói dừng từ 05/11/2026.' });
   });
 
-  it('billing issue: PAST_DUE and flagged, access unchanged', async () => {
+  it('billing issue: flagged, status stays ACTIVE (PAST_DUE would lock the shop out), access unchanged', async () => {
     await send(event('BILLING_ISSUE'));
-    expect(sub().status).toBe('PAST_DUE');
+    expect(sub().status).toBe('ACTIVE');
+    expect(sub().autoRenew).toBe(true);
     expect(sub().billingIssueAt).toBeInstanceOf(Date);
     expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
     expect(lastActivity().description).toBe('App Store chưa thu được tiền gia hạn. Chủ shop cần kiểm tra cách thanh toán.');
