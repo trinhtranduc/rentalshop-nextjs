@@ -343,11 +343,19 @@ describe('CANCELLATION, UNCANCELLATION, refund, billing issue, expiration', () =
     expect(lastActivity()).toMatchObject({ type: 'IAP_EXPIRATION', description: 'Gói đã hết hạn.' });
   });
 
-  it('a cancel or expiration of an older product (after an upgrade) does not turn auto-renew off', async () => {
-    await send(event('PRODUCT_CHANGE', { new_product_id: 'anyrent_professional_annual' }));
-    await send(event('RENEWAL', { product_id: 'anyrent_professional_annual' }));
-    await send(event('CANCELLATION', { product_id: 'anyrent_merchant_annual', cancel_reason: 'UNSUBSCRIBE' }));
-    await send(event('EXPIRATION', { product_id: 'anyrent_merchant_annual' }));
+  // #1466: on the App Store the same original transaction id is the same subscription after an upgrade, so its cancel or
+  // expiration applies (revenuecat-webhook-cancel-after-upgrade.test.ts). Google Play starts a new order id on a product
+  // change: there the replaced product's events do not touch the new plan.
+  it('Google Play: a cancel or expiration of the replaced product (old order id) after an upgrade does not turn auto-renew off', async () => {
+    const play = { store: 'PLAY_STORE' };
+    await send(event('INITIAL_PURCHASE', { ...play, product_id: 'anyrent_merchant_annual:annual', original_transaction_id: 'GPA.1111' }));
+    await send(event('PRODUCT_CHANGE', {
+      ...play, product_id: 'anyrent_merchant_annual:annual', new_product_id: 'anyrent_professional_annual:annual', original_transaction_id: 'GPA.1111',
+    }));
+    await send(event('CANCELLATION', { ...play, product_id: 'anyrent_merchant_annual:annual', original_transaction_id: 'GPA.1111', cancel_reason: 'UNSUBSCRIBE' }));
     expect(sub()).toMatchObject({ planId: 3, autoRenew: true, cancelAtPeriodEnd: false });
+    await send(event('INITIAL_PURCHASE', { ...play, product_id: 'anyrent_professional_annual:annual', original_transaction_id: 'GPA.2222' }));
+    await send(event('EXPIRATION', { ...play, product_id: 'anyrent_merchant_annual:annual', original_transaction_id: 'GPA.1111' }));
+    expect(sub()).toMatchObject({ planId: 3, autoRenew: true, cancelAtPeriodEnd: false, storeOriginalTransactionId: 'GPA.2222' });
   });
 });
