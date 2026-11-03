@@ -29,6 +29,7 @@ import { planHistory } from '../../../../lib/plan-renewal-history';
  *   flagged and keeps access until the period (and the store's grace) ends; the real amount is stored;
  * - each `event.id` runs once (`BillingWebhookEvent`); a processing error or an event not applied (`ignored_*`) releases it;
  *   a processing error and "no plan for this tier" answer 500 so RevenueCat retries;
+ * - an event older than the last one applied (`lastStoreEventAt`) is skipped (A8);
  * - history rows are plain Vietnamese.
  */
 
@@ -139,8 +140,12 @@ export async function POST(request: NextRequest) {
     } else if (event.environment === 'SANDBOX' && !sandboxAllowed(merchantId)) {
       console.warn(`[RevenueCat Webhook] Sandbox ${event.type} for merchant ${merchantId} ignored (not in REVENUECAT_SANDBOX_MERCHANT_IDS)`);
       outcome = 'ignored_sandbox';
+    } else if (await isStale(merchantId, event)) {
+      // A8: an older event retried after a newer one (an old RENEWAL after a CANCELLATION) changes nothing
+      outcome = 'stale';
     } else {
       outcome = await handleEvent(merchantId, event);
+      if (outcome.startsWith('ok')) await markApplied(merchantId, event);
     }
     // Not applied: give the event id back, so RevenueCat's retry or a manual resend can run it later (A9)
     if (outcome.startsWith('ignored_')) await releaseEvent(claim);
@@ -214,6 +219,30 @@ async function handleEvent(merchantId: number, event: RevenueCatEvent): Promise<
  */
 function appUserPrefix(): string {
   return (process.env.REVENUECAT_APP_USER_ID_PREFIX || '').trim() || 'merchant_';
+}
+
+/** Store events whose order matters (A8) */
+const ORDERED_EVENTS = new Set([
+  'INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'CANCELLATION', 'UNCANCELLATION', 'EXPIRATION', 'BILLING_ISSUE',
+  'SUBSCRIPTION_EXTENDED', 'TRANSFER',
+]);
+
+/** A8: the event is older than the last store event applied to this shop */
+async function isStale(merchantId: number, event: RevenueCatEvent): Promise<boolean> {
+  if (!ORDERED_EVENTS.has(event.type) || !event.event_timestamp_ms) return false;
+  const row = await db.prisma.subscription.findUnique({ where: { merchantId }, select: { lastStoreEventAt: true } });
+  const last = row?.lastStoreEventAt ? new Date(row.lastStoreEventAt).getTime() : null;
+  return last !== null && event.event_timestamp_ms < last;
+}
+
+async function markApplied(merchantId: number, event: RevenueCatEvent) {
+  if (!ORDERED_EVENTS.has(event.type) || !event.event_timestamp_ms) return;
+  const row = await db.prisma.subscription.findUnique({ where: { merchantId }, select: { lastStoreEventAt: true } });
+  if (!row) return;
+  const last = row.lastStoreEventAt ? new Date(row.lastStoreEventAt).getTime() : null;
+  if (last === null || event.event_timestamp_ms >= last) {
+    await db.prisma.subscription.update({ where: { merchantId }, data: { lastStoreEventAt: new Date(event.event_timestamp_ms) } });
+  }
 }
 
 function parseMerchantId(appUserId: string | undefined): number | null {

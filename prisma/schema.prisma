@@ -654,6 +654,8 @@ model Subscription {
   autoRenew            Boolean                @default(false)
   /// #1459 the store could not charge the renewal; cleared by the next renewal
   billingIssueAt       DateTime?
+  /// #1459 time of the last store event applied (RevenueCat event_timestamp_ms); older events are skipped
+  lastStoreEventAt     DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
   payments             Payment[]

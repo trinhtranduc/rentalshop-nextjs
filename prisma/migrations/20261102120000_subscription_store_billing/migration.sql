@@ -6,6 +6,8 @@ ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "storeProductId" TE
 ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "storeOriginalTransactionId" TEXT;
 ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "autoRenew" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "billingIssueAt" TIMESTAMP(3);
+-- Time of the last store event applied (RevenueCat event_timestamp_ms): an older event retried later is skipped.
+ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "lastStoreEventAt" TIMESTAMP(3);
 
 -- Billing webhook events already processed (RevenueCat event.id): a resent event changes nothing.
 CREATE TABLE IF NOT EXISTS "public"."BillingWebhookEvent" (
