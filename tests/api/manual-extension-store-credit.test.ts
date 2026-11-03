@@ -14,10 +14,12 @@ jest.mock('@rentalshop/auth/server', () => ({
   withPermissions: () => (handler: any) => (request: any) => handler(request, ctx),
 }));
 
-const mockPrisma = {
+const mockPrisma: any = {
   subscription: { findUnique: jest.fn(), update: jest.fn() },
   payment: { create: jest.fn() },
   subscriptionActivity: { create: jest.fn() },
+  // #1462 the route writes in one transaction; the callback gets the same client
+  $transaction: jest.fn(async (fn: (tx: any) => Promise<any>) => fn(mockPrisma)),
 };
 jest.mock('@rentalshop/database', () => ({ db: { prisma: mockPrisma }, prisma: mockPrisma }));
 jest.mock('@rentalshop/utils', () => ({
