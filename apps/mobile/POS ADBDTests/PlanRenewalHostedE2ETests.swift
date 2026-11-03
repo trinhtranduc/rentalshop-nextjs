@@ -74,7 +74,11 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         _ = try waitForView("plan.banner.text", 30) as UILabel
         shot("plan-05-renewed-banner")
         _ = try waitForView("plan.autoRenew", 20) as UILabel
-        XCTAssertNil(view("plan.buy") as UIButton?, "No buy button while the store renews by itself")
+        // A5: renewing on this phone's store, the same plan is never offered again; the upgrade may be
+        if let buy = view("plan.buy") as UIButton? {
+            let title = buy.title(for: .normal) ?? ""
+            XCTAssertTrue(title.contains("Professional"), "Only the upgrade while auto-renewing: \(title)")
+        }
         spin(4.5) // the banner goes away by itself
         shot("plan-06-auto-renewing")
     }
