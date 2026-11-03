@@ -6,7 +6,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.time.Instant
+import javax.xml.parsers.DocumentBuilderFactory
 
 /** #1459 plan renewal: the same cases as iOS `PlanRenewalLogicTests` (mobile.md "Pure logic") */
 class PlanRenewalTest {
@@ -322,6 +324,66 @@ class PlanRenewalTest {
         assertNull(older.storeRenewsAt)
         assertNull(json("storeRenewsAt" to null).storeRenewsAt)
         assertEquals("05/11/2027", PlanRenewal.vnDate(PlanRenewal.autoRenewDate(older)!!))
+    }
+
+    // ─── #1464 the store already has a plan; compact links (as iOS PlanRenewalLogicTests) ───
+
+    private fun strings(folder: String): Map<String, String> {
+        val file = listOf("src/main/res/$folder/strings.xml", "app/src/main/res/$folder/strings.xml").map(::File).first { it.exists() }
+        val nodes = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file).documentElement.getElementsByTagName("string")
+        return (0 until nodes.length).map { nodes.item(it) as org.w3c.dom.Element }.associate { it.getAttribute("name") to it.textContent }
+    }
+
+    /** The store kept the current plan and moves the bought one to the next renewal: the entitlement stays on the old product */
+    @Test
+    fun storeKeptTheCurrentPlanWhenTheEntitlementIsOnAnotherProduct() {
+        assertTrue(PlanRenewal.storeKeptCurrentPlan("anyrent_merchant_annual", true, "anyrent_merchant_semi_annual"))
+        assertTrue(PlanRenewal.storeKeptCurrentPlan("anyrent_merchant_annual", true, "anyrent_professional_annual"))
+        // a new period on the bought product (a renewal, a replacement Google applies at once)
+        assertFalse(PlanRenewal.storeKeptCurrentPlan("anyrent_merchant_annual", true, "anyrent_merchant_annual"))
+        assertFalse(PlanRenewal.storeKeptCurrentPlan("anyrent_professional_annual", true, "anyrent_professional_annual"))
+        // a Google Play base plan is the same product
+        assertFalse(PlanRenewal.storeKeptCurrentPlan("anyrent_merchant_annual", true, "anyrent_merchant_annual:annual"))
+        assertFalse(PlanRenewal.storeKeptCurrentPlan("anyrent_merchant_annual:annual", true, "anyrent_merchant_annual"))
+        // nothing active, or no product known: the usual wait and message
+        assertFalse(PlanRenewal.storeKeptCurrentPlan("anyrent_merchant_annual", false, "anyrent_merchant_semi_annual"))
+        assertFalse(PlanRenewal.storeKeptCurrentPlan("anyrent_merchant_annual", true, null))
+    }
+
+    @Test
+    fun slowStateSaysTheStoreHasAPlanOnlyThen() {
+        assertEquals(PlanSlowMessage.STORE_HAS_PLAN, PlanRenewal.slowMessage(storeKeptPlan = true))
+        assertEquals(PlanSlowMessage.NOT_CONFIRMED, PlanRenewal.slowMessage(storeKeptPlan = false))
+        assertEquals("Tài khoản Google Play này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.", strings("values-vi")["plan_store_has_plan"])
+        assertEquals("This Google Play account already has a plan. The new period starts at the next renewal.", strings("values")["plan_store_has_plan"])
+        assertEquals("Chưa nhận được xác nhận.", strings("values-vi")["plan_not_confirmed"])
+    }
+
+    /** "Quản lý / huỷ gói" only for a plan Google Play bills (auto-renew on or off); trial, MANUAL, LEMON, App Store: restore only */
+    @Test
+    fun manageLinkOnlyForAPlanBilledByGooglePlay() {
+        assertEquals(PlanFooterLinks.MANAGE_AND_RESTORE, PlanRenewal.footerLinks(json("billingChannel" to "PLAY_STORE", "autoRenew" to true)))
+        assertEquals(PlanFooterLinks.MANAGE_AND_RESTORE, PlanRenewal.footerLinks(json("billingChannel" to "PLAY_STORE", "autoRenew" to false)))
+        assertEquals(PlanFooterLinks.MANAGE_AND_RESTORE, PlanRenewal.footerLinks(json("status" to "EXPIRED", "billingChannel" to "PLAY_STORE")))
+        for (channel in listOf("MANUAL", "LEMON", "APP_STORE", null)) {
+            assertEquals("$channel", PlanFooterLinks.RESTORE_ONLY, PlanRenewal.footerLinks(json("billingChannel" to channel)))
+            assertEquals("$channel", PlanFooterLinks.RESTORE_ONLY, PlanRenewal.footerLinks(json("status" to "EXPIRED", "billingChannel" to channel)))
+        }
+        assertEquals(PlanFooterLinks.RESTORE_ONLY, PlanRenewal.footerLinks(json("dbStatus" to "TRIAL", "billingChannel" to "MANUAL")))
+    }
+
+    /** At most two small lines: "Quản lý / huỷ gói · Khôi phục" or "Khôi phục giao dịch", then "Điều khoản · Bảo mật" */
+    @Test
+    fun footerLabelsAreShort() {
+        val vi = strings("values-vi")
+        val en = strings("values")
+        assertEquals("Khôi phục", vi["plan_restore_short"])
+        assertEquals("Khôi phục giao dịch", vi["plan_restore"])
+        assertEquals("Điều khoản", vi["plan_terms"])
+        assertEquals("Bảo mật", vi["plan_privacy"])
+        assertEquals("Restore", en["plan_restore_short"])
+        assertEquals("Terms", en["plan_terms"])
+        assertEquals("Privacy", en["plan_privacy"])
     }
 }
 
