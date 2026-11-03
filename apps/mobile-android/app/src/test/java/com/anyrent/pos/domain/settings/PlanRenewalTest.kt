@@ -256,5 +256,72 @@ class PlanRenewalTest {
         assertEquals(60_000L, PlanRenewal.CONFIRM_TIMEOUT_MS)
         assertEquals(2_000L, PlanRenewal.CONFIRM_INTERVAL_MS)
     }
+
+    // ─── A13 renewal credit: a renewal continues from the old end, the days left are never lost ───
+
+    /** 2026-11-03 10:00 in Vietnam */
+    private val renewNow = Instant.parse("2026-11-03T03:00:00Z")
+
+    private fun json(vararg pairs: Pair<String, Any?>): PlanRenewalStatus {
+        val o = JSONObject().put("planId", 2).put("planName", "Basic").put("status", "ACTIVE").put("dbStatus", "ACTIVE")
+        pairs.forEach { (k, v) -> o.put(k, v ?: JSONObject.NULL) }
+        return PlanRenewal.statusFromJson(o)
+    }
+
+    /** Owner example: the plan ends 05/11/2026, 12 months bought on 03/11/2026 → 05/11/2027; the store charges 03/11/2027 */
+    @Test
+    fun disclosureContinuesFromTheOldEnd() {
+        val manual = json("daysRemaining" to 2, "currentPeriodEnd" to "2026-11-05T16:59:59.999Z", "billingChannel" to "MANUAL")
+        assertEquals(PlanDisclosure.Continues("05/11/2026", "05/11/2027", "03/11/2027"), PlanRenewal.disclosure(renewNow, 12, manual))
+        // trial days are kept too (6 months: 03/05/2027 + 10 days)
+        val trial = json("planId" to 1, "dbStatus" to "TRIAL", "daysRemaining" to 10, "currentPeriodEnd" to "2026-11-13T03:00:00Z")
+        assertEquals(PlanDisclosure.Continues("13/11/2026", "13/05/2027", "03/05/2027"), PlanRenewal.disclosure(renewNow, 6, trial))
+        // bought on the App Store, auto-renew off there, renewed on Android: a new Google Play subscription
+        val otherStore = json(
+            "daysRemaining" to 3, "currentPeriodEnd" to "2026-11-06T03:00:00Z", "billingChannel" to "APP_STORE",
+            "autoRenew" to false, "storeProductId" to "anyrent_merchant_annual",
+        )
+        assertEquals(PlanDisclosure.Continues("06/11/2026", "06/11/2027", "03/11/2027"), PlanRenewal.disclosure(renewNow, 12, otherStore))
+        // vi words as the owner wrote them
+        val vi = "Hạn mới tính tiếp từ %1\$s, dùng đến %2\$s. Tự gia hạn mỗi %3\$d tháng (%4\$s), lần trừ tiền tới ngày %5\$s, đến khi huỷ."
+        val d = PlanRenewal.disclosure(renewNow, 12, manual) as PlanDisclosure.Continues
+        assertEquals(
+            "Hạn mới tính tiếp từ 05/11/2026, dùng đến 05/11/2027. Tự gia hạn mỗi 12 tháng (1.799.000 ₫), lần trừ tiền tới ngày 03/11/2027, đến khi huỷ.",
+            String.format(vi, d.from, d.end, 12, "1.799.000 ₫", d.charge),
+        )
+    }
+
+    @Test
+    fun disclosureStartsTodayOnceExpired() {
+        val expired = json("status" to "EXPIRED", "currentPeriodEnd" to "2026-10-31T03:00:00Z", "billingChannel" to "MANUAL")
+        assertEquals(PlanDisclosure.StartsToday("03/11/2027"), PlanRenewal.disclosure(renewNow, 12, expired))
+        assertEquals(PlanDisclosure.StartsToday("03/11/2027"), PlanRenewal.disclosure(renewNow, 12, null))
+    }
+
+    /** An upgrade in the store that bills the plan: Google Play prorates its own days, only the credit carries over */
+    @Test
+    fun disclosureForAnUpgradeInTheSameStore() {
+        val withCredit = json(
+            "currentPeriodEnd" to "2026-12-05T03:00:00Z", "billingChannel" to "PLAY_STORE", "autoRenew" to true,
+            "storeProductId" to "anyrent_merchant_annual", "storeRenewsAt" to "2026-12-03T03:00:00Z",
+        )
+        assertEquals(PlanDisclosure.WithCredit("05/11/2027", "03/11/2027"), PlanRenewal.disclosure(renewNow, 12, withCredit))
+        val noCredit = withCredit.copy(storeRenewsAt = Instant.parse("2026-12-05T03:00:00Z"))
+        assertEquals(PlanDisclosure.StartsToday("03/11/2027"), PlanRenewal.disclosure(renewNow, 12, noCredit))
+    }
+
+    /** The auto-renew row shows the store's charge date; "Dùng đến" stays the period end (they differ with a credit) */
+    @Test
+    fun autoRenewRowUsesTheStoreChargeDate() {
+        val s = json("autoRenew" to true, "currentPeriodEnd" to "2027-11-05T16:59:59.999Z", "storeRenewsAt" to "2027-11-03T03:00:00.000Z")
+        assertEquals(Instant.parse("2027-11-03T03:00:00Z"), s.storeRenewsAt)
+        assertEquals("03/11/2027", PlanRenewal.vnDate(PlanRenewal.autoRenewDate(s)!!))
+        assertEquals(PlanStatusLine.ValidUntil("05/11/2027"), PlanRenewal.statusLine(s.daysRemaining, s.currentPeriodEnd!!, autoRenew = s.autoRenew))
+        // an API without the field (or null): the period end, as before
+        val older = json("autoRenew" to true, "currentPeriodEnd" to "2027-11-05T16:59:59.999Z")
+        assertNull(older.storeRenewsAt)
+        assertNull(json("storeRenewsAt" to null).storeRenewsAt)
+        assertEquals("05/11/2027", PlanRenewal.vnDate(PlanRenewal.autoRenewDate(older)!!))
+    }
 }
 

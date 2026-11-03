@@ -49,6 +49,11 @@ data class PlanRenewalStatus(
      * Google Play, so the screen offers "Bật lại tự gia hạn" (the Play subscriptions page) instead. Missing (older API) = false.
      */
     val reenableAutoRenew: Boolean = false,
+    /**
+     * A13: the store's next charge (store expiration). Access runs to `currentPeriodEnd` = this + the days the shop had
+     * left when the store plan started. Null while nothing auto-renews, or from an older API.
+     */
+    val storeRenewsAt: Instant? = null,
 ) {
     /** The rest of the API refuses this shop: the plan gate stays up (iOS `PlanStatus.isBlocked`) */
     val isBlocked: Boolean get() = isExpired || isPastDue
@@ -89,6 +94,16 @@ sealed interface PlanStatusLine {
 }
 
 data class MonthlyPrice(val amount: Double, val approx: Boolean)
+
+/** A13 the words under the buy button (iOS `PlanRenewalLogic.disclosure`); dates are dd/MM/yyyy Vietnam days */
+sealed interface PlanDisclosure {
+    /** "Kỳ mới tính từ hôm nay, dùng đến <end>. Tự gia hạn mỗi … đến khi huỷ." (nothing left, or no credit) */
+    data class StartsToday(val end: String) : PlanDisclosure
+    /** "Hạn mới tính tiếp từ <from>, dùng đến <end>. Tự gia hạn mỗi …, lần trừ tiền tới ngày <charge>, đến khi huỷ." */
+    data class Continues(val from: String, val end: String, val charge: String) : PlanDisclosure
+    /** An upgrade in the store that bills the plan, with a credit: "Kỳ mới tính từ hôm nay, dùng đến <end>. …, lần trừ tiền tới ngày <charge>, …" */
+    data class WithCredit(val end: String, val charge: String) : PlanDisclosure
+}
 
 object PlanRenewal {
     val ZONE: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
@@ -216,6 +231,36 @@ object PlanRenewal {
     /** End of a period bought now: today's Vietnam day + months, the day clamped to the month (31/01 + 1 → 28/02) */
     fun newPeriodEnd(now: Instant, months: Int): String = DAY.format(now.atZone(ZONE).toLocalDate().plusMonths(months.toLong()))
 
+    /** A13: the store charges again on today + months (Vietnam calendar, the day clamped), at this time of day */
+    fun chargeInstant(now: Instant, months: Int): Instant = now.atZone(ZONE).plusMonths(months.toLong()).toInstant()
+
+    /**
+     * A13 "Gia hạn sớm không mất ngày": the days left continue after the new store period (server rule in
+     * apps/api/lib/plan-renewal.ts `storeCreditForPurchase`).
+     * - nothing left (expired, no end): starts today;
+     * - days left and a new store subscription (trial, manual, the other store): continues from the old end, the store
+     *   charges on today + months;
+     * - an upgrade in the store that bills the plan (it prorates its own days): only the credit carries
+     *   (`currentPeriodEnd − storeRenewsAt`); none known → starts today.
+     */
+    fun disclosure(now: Instant, months: Int, status: PlanRenewalStatus?, deviceStore: String = "PLAY_STORE"): PlanDisclosure {
+        val charge = chargeInstant(now, months)
+        val end = status?.currentPeriodEnd
+        if (status == null || status.isExpired || end == null || !end.isAfter(now)) return PlanDisclosure.StartsToday(vnDate(charge))
+        val sameStore = status.billingChannel == deviceStore && status.storeProductId != null
+        if (sameStore) {
+            val credit = status.storeRenewsAt?.let { maxOf(0L, end.toEpochMilli() - it.toEpochMilli()) } ?: 0L
+            val withCredit = charge.plusMillis(credit)
+            return if (vnDate(withCredit) == vnDate(charge)) PlanDisclosure.StartsToday(vnDate(charge))
+            else PlanDisclosure.WithCredit(vnDate(withCredit), vnDate(charge))
+        }
+        val left = end.toEpochMilli() - now.toEpochMilli()
+        return PlanDisclosure.Continues(vnDate(end), vnDate(charge.plusMillis(left)), vnDate(charge))
+    }
+
+    /** A13: the date on the auto-renew row: the store's charge (`storeRenewsAt`), else the period end (an older API) */
+    fun autoRenewDate(status: PlanRenewalStatus): Instant? = status.storeRenewsAt ?: status.currentPeriodEnd
+
     /** Days for the Home line "Gói còn N ngày" (owner, renew offered, 0..window days left); null hides it */
     fun homeLineDays(role: String?, status: PlanRenewalStatus?): Int? {
         if (role != "MERCHANT" || status == null || status.isExpired || !status.canRenew) return null
@@ -293,6 +338,7 @@ object PlanRenewal {
             isPastDue = data.optString("dbStatus").equals("PAST_DUE", ignoreCase = true) &&
                 !data.optString("status").equals("EXPIRED", ignoreCase = true),
             reenableAutoRenew = data.optBoolean("reenableAutoRenew", false),
+            storeRenewsAt = parseInstant(if (data.isNull("storeRenewsAt")) null else data.optString("storeRenewsAt")),
         )
     }
 

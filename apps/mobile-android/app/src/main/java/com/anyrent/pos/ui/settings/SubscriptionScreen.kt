@@ -63,6 +63,7 @@ import com.anyrent.pos.data.ApiClient
 import com.anyrent.pos.data.PlanRenewalStore
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.settings.InAppPlan
+import com.anyrent.pos.domain.settings.PlanDisclosure
 import com.anyrent.pos.domain.settings.PlanRenewal
 import com.anyrent.pos.domain.settings.PlanRenewalStatus
 import com.anyrent.pos.domain.settings.PlanScreenMode
@@ -409,7 +410,8 @@ fun SubscriptionScreen(
                 PlanScreenMode.AUTO_RENEWING -> {
                     SectionHeader(stringResource(R.string.plan_section_auto_renew))
                     Card {
-                        val endText = s.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "—"
+                        // A13: the store's charge date; "Dùng đến" above stays the period end (later with a credit)
+                        val endText = PlanRenewal.autoRenewDate(s)?.let(PlanRenewal::vnDate) ?: "—"
                         val amount = autoRenewAmount(s, packages)
                         PlanRow {
                             Text(
@@ -455,7 +457,7 @@ fun SubscriptionScreen(
                                     subtitle = when {
                                         buyable -> includesText(plan.hasWeb, plan.users, null, plan.products, language, withOutlets = false)
                                         // A5: upgrading while the store renews this plan
-                                        s.autoRenew -> stringResource(R.string.plan_current_auto_renew, s.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "—")
+                                        s.autoRenew -> stringResource(R.string.plan_current_auto_renew, PlanRenewal.autoRenewDate(s)?.let(PlanRenewal::vnDate) ?: "—")
                                         else -> stringResource(R.string.plan_current_renew_later, s.renewWindowDays)
                                     },
                                     onSelect = { selectedPlanId = plan.id },
@@ -517,9 +519,15 @@ fun SubscriptionScreen(
                                     )
                                 }
                             }
-                            // Apple / Google: the renewal terms right under the button, normal contrast
+                            // Apple / Google: the renewal terms right under the button, normal contrast. A13: the days left
+                            // continue after the new period (the expired screen starts today)
+                            val disclosureText = when (val d = PlanRenewal.disclosure(Instant.now(), months, s.takeUnless { expiredGate })) {
+                                is PlanDisclosure.StartsToday -> stringResource(R.string.plan_disclosure, d.end, months, amountText)
+                                is PlanDisclosure.Continues -> stringResource(R.string.plan_disclosure_carry, d.from, d.end, months, amountText, d.charge)
+                                is PlanDisclosure.WithCredit -> stringResource(R.string.plan_disclosure_credit, d.end, months, amountText, d.charge)
+                            }
                             Text(
-                                stringResource(R.string.plan_disclosure, PlanRenewal.newPeriodEnd(Instant.now(), months), months, amountText),
+                                disclosureText,
                                 fontSize = 14.sp, lineHeight = 19.sp, color = PlanColors.Text2,
                                 modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp).testTag("plan.disclosure"),
                             )

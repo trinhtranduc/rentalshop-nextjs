@@ -2530,6 +2530,8 @@
     <string name="plan_button_buy">Mua gói %1$s · %2$s · %3$s</string>
     <string name="plan_confirming">Đang xác nhận thanh toán…</string>
     <string name="plan_disclosure">Kỳ mới tính từ hôm nay, dùng đến %1$s. Tự gia hạn mỗi %2$d tháng (%3$s) đến khi huỷ.</string>
+    <string name="plan_disclosure_carry">Hạn mới tính tiếp từ %1$s, dùng đến %2$s. Tự gia hạn mỗi %3$d tháng (%4$s), lần trừ tiền tới ngày %5$s, đến khi huỷ.</string>
+    <string name="plan_disclosure_credit">Kỳ mới tính từ hôm nay, dùng đến %1$s. Tự gia hạn mỗi %2$d tháng (%3$s), lần trừ tiền tới ngày %4$s, đến khi huỷ.</string>
     <string name="plan_manage">Quản lý / huỷ gói</string>
     <string name="plan_restore">Khôi phục giao dịch</string>
     <string name="plan_terms">Điều khoản sử dụng</string>
