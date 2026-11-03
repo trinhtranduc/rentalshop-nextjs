@@ -300,10 +300,22 @@ async function findSubscription(merchantId: number) {
   return db.prisma.subscription.findUnique({ where: { merchantId }, include: { plan: true } });
 }
 
-/** Same product as the one the shop pays for now (a stored row without a product counts as the same) */
-function isCurrentProduct(sub: { storeProductId?: string | null }, productId: string | undefined): boolean {
+/**
+ * The event is about the store subscription the shop pays for now (a stored row without a product counts as the same).
+ * #1466 App Store: Apple keeps the original transaction id across upgrades, downgrades and crossgrades in a subscription
+ * group, and a CANCELLATION / EXPIRATION / refund after an upgrade may still name the product from before it; with both
+ * ids known, the id decides. Google Play starts a new order id (RevenueCat's original transaction id) on every product
+ * change, so there, and when an id is missing, the product decides.
+ */
+function isCurrentSubscription(
+  sub: { storeProductId?: string | null; storeOriginalTransactionId?: string | null },
+  event: Pick<RevenueCatEvent, 'store' | 'product_id' | 'original_transaction_id'>,
+): boolean {
   if (!sub.storeProductId) return true;
-  return storeProduct(productId)?.id === sub.storeProductId;
+  if (channelFromStore(event.store) === 'APP_STORE' && event.original_transaction_id && sub.storeOriginalTransactionId) {
+    return String(event.original_transaction_id) === sub.storeOriginalTransactionId;
+  }
+  return storeProduct(event.product_id)?.id === sub.storeProductId;
 }
 
 function eventTime(event: RevenueCatEvent): Date {
@@ -466,7 +478,7 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent): P
   const sub = await findSubscription(merchantId);
   if (!sub) return 'ignored_no_subscription';
   const channel = channelFromStore(event.store);
-  const current = isCurrentProduct(sub, event.product_id);
+  const current = isCurrentSubscription(sub, event);
 
   if (event.cancel_reason === 'CUSTOMER_SUPPORT') {
     // Refund: the payment is returned and, for the product in use, access ends now
@@ -477,8 +489,8 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent): P
       });
     }
     // A10: only the refund of the period in use changes access (its expiration is the store expiry = current period end
-    // − credit, within a day); a refund of an earlier period, of another product, or without an expiration only marks
-    // the payment
+    // − credit, within a day); a refund of an earlier period, of another subscription (#1466), or without an expiration
+    // only marks the payment
     const credit = creditMs(sub);
     const refundedExpiry = event.expiration_at_ms ?? null;
     const storeEnd = sub.currentPeriodEnd.getTime() - credit;
@@ -565,7 +577,7 @@ async function handleExpiration(merchantId: number, event: RevenueCatEvent): Pro
   const sub = await findSubscription(merchantId);
   if (!sub) return 'ignored_no_subscription';
   const channel: BillingChannel = channelFromStore(event.store);
-  if (!isCurrentProduct(sub, event.product_id)) {
+  if (!isCurrentSubscription(sub, event)) {
     await logActivity(sub.id, 'IAP_EXPIRATION_IGNORED', planHistory.otherProductEvent(channel), event, { reason: 'other_product' });
     return 'ok_other_product';
   }
@@ -676,7 +688,7 @@ async function handleExtended(merchantId: number, event: RevenueCatEvent): Promi
   const sub = await findSubscription(merchantId);
   if (!sub) return 'ignored_no_subscription';
   const channel = channelFromStore(event.store);
-  if (!isCurrentProduct(sub, event.product_id)) {
+  if (!isCurrentSubscription(sub, event)) {
     await logActivity(sub.id, 'IAP_EXTENDED', planHistory.otherProductEvent(channel), event, { reason: 'other_product' });
     return 'ok_other_product';
   }
