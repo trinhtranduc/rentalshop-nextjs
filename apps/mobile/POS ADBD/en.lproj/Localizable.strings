@@ -3241,8 +3241,8 @@
 "plan.disclosure" = "The new period starts today and runs until %@. Renews every %d months (%@) until cancelled.";
 "plan.manage" = "Manage / cancel";
 "plan.restore" = "Restore purchases";
-"plan.terms" = "Terms of Use";
-"plan.privacy" = "Privacy Policy";
+"plan.terms" = "Terms";
+"plan.privacy" = "Privacy";
 "plan.section.autoRenew" = "Auto-renew";
 "plan.autoRenewOn" = "Renews on %@ · %@";
 "plan.autoRenewOnDate" = "Renews on %@";
@@ -3272,3 +3272,6 @@
 /* #1459 A13: a renewal continues from the old end */
 "plan.disclosureCarry" = "The new period continues from %1$@ and runs until %2$@. Renews every %3$d months (%4$@), next charge on %5$@, until cancelled.";
 "plan.disclosureCredit" = "The new period starts today and runs until %1$@. Renews every %2$d months (%3$@), next charge on %4$@, until cancelled.";
+/* #1464: the store kept this Apple ID's plan; short bottom links */
+"plan.storeHasPlan" = "This Apple ID already has a plan. The new period starts at the next renewal.";
+"plan.restoreShort" = "Restore";

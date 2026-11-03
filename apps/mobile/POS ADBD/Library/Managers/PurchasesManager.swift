@@ -21,6 +21,8 @@ import UIKit
 /// Outcome of a store purchase or restore, as the plan screen needs it
 enum PlanStoreResult {
     case purchased
+    /// #1464: the purchase went through but this Apple ID's plan stays until its renewal (only a purchase answers this)
+    case storeKeptPlan
     case cancelled
     case failed(String)
 }
@@ -176,8 +178,12 @@ enum PurchasesManager {
                         NSLog("[PurchasesManager] purchase failed: \(error.localizedDescription)")
                         return completion(.failed(error.localizedDescription))
                     }
-                    NSLog("[PurchasesManager] purchase ok active=\(customerInfo?.entitlements.active.keys.joined(separator: ",") ?? "")")
-                    completion(.purchased)
+                    let entitlement = customerInfo?.entitlements[entitlementMerchant]
+                    NSLog("[PurchasesManager] purchase ok active=\(customerInfo?.entitlements.active.keys.joined(separator: ",") ?? "") product=\(entitlement?.productIdentifier ?? "-")")
+                    // #1464: Apple kept the current plan (the bought one starts at the next renewal)
+                    let kept = PlanRenewalLogic.storeKeptCurrentPlan(boughtProductId: productId, entitlementActive: entitlement?.isActive == true,
+                                                                     entitlementProductId: entitlement?.productIdentifier)
+                    completion(kept ? .storeKeptPlan : .purchased)
                 }
             }
         }

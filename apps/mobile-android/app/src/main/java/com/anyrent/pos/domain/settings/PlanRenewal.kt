@@ -84,6 +84,17 @@ enum class PlanScreenMode {
     REENABLE_ONLY,
 }
 
+/** #1464 the line of the slow state (iOS `PlanRenewalLogic.slowMessage`) */
+enum class PlanSlowMessage {
+    /** "Chưa nhận được xác nhận." */
+    NOT_CONFIRMED,
+    /** "Tài khoản Google Play này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới." */
+    STORE_HAS_PLAN,
+}
+
+/** #1464 bottom links: "Quản lý / huỷ gói · Khôi phục" or "Khôi phục giao dịch" (iOS `PlanRenewalLogic.FooterLinks`) */
+enum class PlanFooterLinks { MANAGE_AND_RESTORE, RESTORE_ONLY }
+
 sealed interface PlanStatusLine {
     /** "Hết hạn 15/11/2026 · còn 13 ngày" */
     data class DaysLeft(val date: String, val days: Int) : PlanStatusLine
@@ -281,6 +292,27 @@ object PlanRenewal {
             (after.currentPeriodEnd != null && after.currentPeriodEnd.isAfter(before.currentPeriodEnd))
         return laterEnd || (after.planId != null && after.planId != before.planId) || before.isExpired
     }
+
+    /**
+     * #1464: the store kept the plan this account already has and starts the bought one at the next renewal: the purchase
+     * answers with `merchant_subscription` still on another product. Nothing active or no product known → false.
+     */
+    fun storeKeptCurrentPlan(boughtProductId: String, entitlementActive: Boolean, entitlementProductId: String?): Boolean {
+        if (!entitlementActive) return false
+        val active = baseProductId(entitlementProductId) ?: return false
+        val bought = baseProductId(boughtProductId) ?: return false
+        return active != bought
+    }
+
+    fun slowMessage(storeKeptPlan: Boolean): PlanSlowMessage =
+        if (storeKeptPlan) PlanSlowMessage.STORE_HAS_PLAN else PlanSlowMessage.NOT_CONFIRMED
+
+    /**
+     * #1464: "Quản lý / huỷ gói" only for a plan this device's store bills, auto-renew on or off; a trial, MANUAL, LEMON or
+     * the other store has nothing to manage on the Play subscriptions page
+     */
+    fun footerLinks(status: PlanRenewalStatus, deviceStore: String = "PLAY_STORE"): PlanFooterLinks =
+        if (status.billingChannel.equals(deviceStore, ignoreCase = true)) PlanFooterLinks.MANAGE_AND_RESTORE else PlanFooterLinks.RESTORE_ONLY
 
     /**
      * 403 codes of a shop whose period ended: SUBSCRIPTION_EXPIRED (what `authenticateRequest` answers today),

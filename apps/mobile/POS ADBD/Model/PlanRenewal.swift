@@ -507,4 +507,34 @@ enum PlanRenewalLogic {
         if before.isExpired { return true }
         return before.planId != nil && after.planId != before.planId
     }
+
+    // MARK: #1464 the store already has a plan; bottom links
+
+    /// The store kept the plan this account already has and starts the bought one at the next renewal (Apple: another
+    /// period in the same group, or a downgrade): the purchase answers with `merchant_subscription` still on another
+    /// product. Nothing active or no product known → false (the usual wait and words).
+    static func storeKeptCurrentPlan(boughtProductId: String, entitlementActive: Bool, entitlementProductId: String?) -> Bool {
+        guard entitlementActive, let active = baseProductId(entitlementProductId), let bought = baseProductId(boughtProductId) else {
+            return false
+        }
+        return active != bought
+    }
+
+    /// The line of the slow state: "Apple ID này đang có gói. …" after such a purchase, else "Chưa nhận được xác nhận."
+    static func slowMessage(storeKeptPlan: Bool) -> String {
+        (storeKeptPlan ? "plan.storeHasPlan" : "plan.notConfirmed").localized()
+    }
+
+    enum FooterLinks: Equatable { case manageAndRestore, restoreOnly }
+
+    /// "Quản lý / huỷ gói" only for a plan this device's store bills, auto-renew on or off; a trial, MANUAL, LEMON or the
+    /// other store has nothing to manage in Apple's sheet
+    static func footerLinks(_ status: PlanStatus, deviceStore: String = "APP_STORE") -> FooterLinks {
+        status.billingChannel?.uppercased() == deviceStore ? .manageAndRestore : .restoreOnly
+    }
+
+    /// "Quản lý / huỷ gói · Khôi phục", or "Khôi phục giao dịch" on its own
+    static func restoreTitle(_ links: FooterLinks) -> String {
+        (links == .manageAndRestore ? "plan.restoreShort" : "plan.restore").localized()
+    }
 }

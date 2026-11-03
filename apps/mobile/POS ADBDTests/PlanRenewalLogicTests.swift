@@ -340,5 +340,77 @@ final class PlanRenewalLogicTests: XCTestCase {
         XCTAssertNil(older.storeRenewsAt)
         XCTAssertEqual(L.autoRenewDate(older).map(L.day), "05/11/2027")
     }
+
+    // MARK: #1464 the store already has a plan; compact links
+
+    /// One locale's sentence from the app bundle
+    private func sentence(_ key: String, _ localization: String) -> String? {
+        guard let path = Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: localization),
+              let table = NSDictionary(contentsOfFile: path) as? [String: String] else { return nil }
+        return table[key]
+    }
+
+    /// Apple keeps the current plan and moves the bought one to the next renewal (another period in the same group, or a
+    /// downgrade): the purchase answers with merchant_subscription still on the old product (dev, 2026-11-03)
+    func testStoreKeptTheCurrentPlanWhenTheEntitlementIsOnAnotherProduct() {
+        typealias L = PlanRenewalLogic
+        XCTAssertTrue(L.storeKeptCurrentPlan(boughtProductId: "anyrent_merchant_annual", entitlementActive: true,
+                                             entitlementProductId: "anyrent_merchant_semi_annual"))
+        XCTAssertTrue(L.storeKeptCurrentPlan(boughtProductId: "anyrent_merchant_annual", entitlementActive: true,
+                                             entitlementProductId: "anyrent_professional_annual"))
+        // A new period on the bought product (a renewal, an upgrade Apple applies at once)
+        XCTAssertFalse(L.storeKeptCurrentPlan(boughtProductId: "anyrent_merchant_annual", entitlementActive: true,
+                                              entitlementProductId: "anyrent_merchant_annual"))
+        XCTAssertFalse(L.storeKeptCurrentPlan(boughtProductId: "anyrent_professional_annual", entitlementActive: true,
+                                              entitlementProductId: "anyrent_professional_annual"))
+        // A Google Play base plan is the same product
+        XCTAssertFalse(L.storeKeptCurrentPlan(boughtProductId: "anyrent_merchant_annual", entitlementActive: true,
+                                              entitlementProductId: "anyrent_merchant_annual:annual"))
+        // Nothing active, or no product known: the usual wait and message
+        XCTAssertFalse(L.storeKeptCurrentPlan(boughtProductId: "anyrent_merchant_annual", entitlementActive: false,
+                                              entitlementProductId: "anyrent_merchant_semi_annual"))
+        XCTAssertFalse(L.storeKeptCurrentPlan(boughtProductId: "anyrent_merchant_annual", entitlementActive: true,
+                                              entitlementProductId: nil))
+    }
+
+    /// The slow state names the store's plan only after such a purchase; otherwise "Chưa nhận được xác nhận."
+    func testSlowStateSaysTheStoreHasAPlanOnlyThen() {
+        typealias L = PlanRenewalLogic
+        XCTAssertEqual(L.slowMessage(storeKeptPlan: true), "plan.storeHasPlan".localized())
+        XCTAssertEqual(L.slowMessage(storeKeptPlan: false), "plan.notConfirmed".localized())
+        XCTAssertEqual(sentence("plan.storeHasPlan", "vi-VN"), "Apple ID này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.")
+        XCTAssertEqual(sentence("plan.storeHasPlan", "en"), "This Apple ID already has a plan. The new period starts at the next renewal.")
+        XCTAssertEqual(sentence("plan.notConfirmed", "vi-VN"), "Chưa nhận được xác nhận.")
+    }
+
+    /// "Quản lý / huỷ gói" only for a plan the App Store bills (auto-renew on or off); trial, MANUAL, LEMON and Google Play
+    /// shops have nothing to manage in Apple's sheet
+    func testManageLinkOnlyForAPlanBilledByTheAppStore() {
+        typealias L = PlanRenewalLogic
+        XCTAssertEqual(L.footerLinks(PlanStatus(status: "ACTIVE", billingChannel: "APP_STORE", autoRenew: true)), .manageAndRestore)
+        XCTAssertEqual(L.footerLinks(PlanStatus(status: "ACTIVE", billingChannel: "APP_STORE", autoRenew: false)), .manageAndRestore)
+        XCTAssertEqual(L.footerLinks(PlanStatus(status: "EXPIRED", billingChannel: "APP_STORE")), .manageAndRestore)
+        for channel in ["MANUAL", "LEMON", "PLAY_STORE", nil] as [String?] {
+            XCTAssertEqual(L.footerLinks(PlanStatus(status: "ACTIVE", billingChannel: channel)), .restoreOnly, channel ?? "no channel")
+            XCTAssertEqual(L.footerLinks(PlanStatus(status: "EXPIRED", billingChannel: channel)), .restoreOnly, channel ?? "no channel")
+        }
+        XCTAssertEqual(L.footerLinks(PlanStatus(status: "ACTIVE", dbStatus: "TRIAL", billingChannel: "MANUAL")), .restoreOnly)
+    }
+
+    /// At most two small lines: "Quản lý / huỷ gói · Khôi phục" or "Khôi phục giao dịch", then "Điều khoản · Bảo mật"
+    func testFooterLabelsAreShort() {
+        typealias L = PlanRenewalLogic
+        XCTAssertEqual(L.restoreTitle(.manageAndRestore), "plan.restoreShort".localized())
+        XCTAssertEqual(L.restoreTitle(.restoreOnly), "plan.restore".localized())
+        XCTAssertEqual(sentence("plan.restoreShort", "vi-VN"), "Khôi phục")
+        XCTAssertEqual(sentence("plan.restore", "vi-VN"), "Khôi phục giao dịch")
+        XCTAssertEqual(sentence("plan.terms", "vi-VN"), "Điều khoản")
+        XCTAssertEqual(sentence("plan.privacy", "vi-VN"), "Bảo mật")
+        XCTAssertEqual(sentence("plan.restoreShort", "en"), "Restore")
+        XCTAssertEqual(sentence("plan.terms", "en"), "Terms")
+        XCTAssertEqual(sentence("plan.privacy", "en"), "Privacy")
+        XCTAssertEqual(AppLegalLinks.termsURL, "https://www.anyrent.shop/terms")
+        XCTAssertEqual(AppLegalLinks.privacyURL, "https://www.anyrent.shop/privacy")
+    }
 }
 

@@ -3239,8 +3239,8 @@
 "plan.disclosure" = "Kỳ mới tính từ hôm nay, dùng đến %@. Tự gia hạn mỗi %d tháng (%@) đến khi huỷ.";
 "plan.manage" = "Quản lý / huỷ gói";
 "plan.restore" = "Khôi phục giao dịch";
-"plan.terms" = "Điều khoản sử dụng";
-"plan.privacy" = "Chính sách bảo mật";
+"plan.terms" = "Điều khoản";
+"plan.privacy" = "Bảo mật";
 "plan.section.autoRenew" = "Tự gia hạn";
 "plan.autoRenewOn" = "Tự gia hạn ngày %@ · %@";
 "plan.autoRenewOnDate" = "Tự gia hạn ngày %@";
@@ -3270,3 +3270,6 @@
 /* #1459 A13: gia hạn sớm không mất ngày */
 "plan.disclosureCarry" = "Hạn mới tính tiếp từ %1$@, dùng đến %2$@. Tự gia hạn mỗi %3$d tháng (%4$@), lần trừ tiền tới ngày %5$@, đến khi huỷ.";
 "plan.disclosureCredit" = "Kỳ mới tính từ hôm nay, dùng đến %1$@. Tự gia hạn mỗi %2$d tháng (%3$@), lần trừ tiền tới ngày %4$@, đến khi huỷ.";
+/* #1464: the store kept this Apple ID's plan; short bottom links */
+"plan.storeHasPlan" = "Apple ID này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.";
+"plan.restoreShort" = "Khôi phục";

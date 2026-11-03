@@ -64,9 +64,11 @@ import com.anyrent.pos.data.PlanRenewalStore
 import com.anyrent.pos.data.SessionStore
 import com.anyrent.pos.domain.settings.InAppPlan
 import com.anyrent.pos.domain.settings.PlanDisclosure
+import com.anyrent.pos.domain.settings.PlanFooterLinks
 import com.anyrent.pos.domain.settings.PlanRenewal
 import com.anyrent.pos.domain.settings.PlanRenewalStatus
 import com.anyrent.pos.domain.settings.PlanScreenMode
+import com.anyrent.pos.domain.settings.PlanSlowMessage
 import com.anyrent.pos.domain.settings.PlanStatusLine
 import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.ui.common.LoadingBox
@@ -134,6 +136,8 @@ fun SubscriptionScreen(
     var renewed by remember { mutableStateOf(false) }
     /** A1: RevenueCat could not log in as this shop: no buying or restoring, "Chưa kết nối được tài khoản…" + Thử lại */
     var accountNotReady by remember { mutableStateOf(false) }
+    /** #1464: the last purchase left this Google account's plan until its renewal (the slow state says so) */
+    var storeKeptPlan by remember { mutableStateOf(false) }
 
     val storeAvailable = PurchasesManager.isConfigured() && packages.isNotEmpty()
     val renewedUntilTemplate = stringResource(R.string.plan_renewed_until)
@@ -211,12 +215,17 @@ fun SubscriptionScreen(
         val act = activity ?: return
         if (busy || phase == ConfirmPhase.CONFIRMING) return
         val before = status
+        storeKeptPlan = false
         scope.launch {
             busy = true
             val result = PurchasesManager.purchase(act, productId)
             busy = false
             result
-                .onSuccess { confirm(before) }
+                .onSuccess { info ->
+                    // #1464: same wait (the server may still move); the slow state then names the store's plan
+                    storeKeptPlan = PurchasesManager.storeKeptPlan(info, productId)
+                    confirm(before)
+                }
                 .onFailure { err ->
                     if (err is PurchaseCancelledException) return@onFailure
                     if (err is StoreAccountNotReadyException) accountNotReady = true
@@ -228,6 +237,7 @@ fun SubscriptionScreen(
     fun restore() {
         if (busy || !PurchasesManager.isConfigured()) return
         val before = status
+        storeKeptPlan = false
         scope.launch {
             busy = true
             val result = PurchasesManager.restore()
@@ -314,6 +324,8 @@ fun SubscriptionScreen(
                 return@Column
             }
             val mode = PlanRenewal.screenMode(role, s, storeAvailable)
+            // #1464: "Quản lý / huỷ gói · Khôi phục" only for a plan Google Play bills, else "Khôi phục giao dịch"
+            val links = PlanRenewal.footerLinks(s)
             val trialLabel = stringResource(R.string.plan_trial)
             val planName = PlanRenewal.displayPlanName(s.planName, s.isTrial, trialLabel)
 
@@ -382,7 +394,8 @@ fun SubscriptionScreen(
 
             when (mode) {
                 PlanScreenMode.REENABLE_ONLY -> {
-                    ManageRestoreLinks(
+                    FooterLinks(
+                        links,
                         onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
                         onRestore = { restore() },
                         restoreEnabled = PurchasesManager.isConfigured(),
@@ -391,7 +404,9 @@ fun SubscriptionScreen(
                 }
                 PlanScreenMode.PAYMENT_ISSUE_OWNER -> {
                     PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry"), enabled = !loading) { reload() }
-                    ManageRestoreLinks(
+                    // The payment line points to Quản lý / huỷ gói: kept here whatever the channel
+                    FooterLinks(
+                        PlanFooterLinks.MANAGE_AND_RESTORE,
                         onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
                         onRestore = { restore() },
                         restoreEnabled = false,
@@ -421,13 +436,14 @@ fun SubscriptionScreen(
                                 modifier = Modifier.testTag("plan.autoRenew"),
                             )
                         }
-                        RowDivider()
-                        LinkRow(stringResource(R.string.plan_manage), Modifier.testTag("plan.manage")) {
-                            open(PurchasesManager.manageUrl(context.packageName, s.storeProductId))
-                        }
-                        RowDivider()
-                        LinkRow(stringResource(R.string.plan_restore), Modifier.testTag("plan.restore"), enabled = PurchasesManager.isConfigured()) { restore() }
                     }
+                    // #1464: Quản lý / huỷ gói and Khôi phục in the bottom links, once (as iOS)
+                    FooterLinks(
+                        links,
+                        onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
+                        onRestore = { restore() },
+                        restoreEnabled = PurchasesManager.isConfigured(),
+                    )
                     LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
                 }
                 PlanScreenMode.NOTHING_TO_BUY -> {
@@ -435,7 +451,8 @@ fun SubscriptionScreen(
                         stringResource(R.string.plan_renew_later, s.renewWindowDays), fontSize = 14.sp, color = PlanColors.Text2,
                         modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp).testTag("plan.renewLater"),
                     )
-                    ManageRestoreLinks(
+                    FooterLinks(
+                        links,
                         onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
                         onRestore = { restore() },
                         restoreEnabled = PurchasesManager.isConfigured(),
@@ -499,9 +516,13 @@ fun SubscriptionScreen(
                                 stringResource(R.string.plan_button_renew), stringResource(R.string.plan_button_upgrade), stringResource(R.string.plan_button_buy),
                             )
                             if (phase == ConfirmPhase.SLOW) {
+                                // #1464: after a purchase Google Play kept for the next renewal, a calm line instead
+                                val storeHasPlan = PlanRenewal.slowMessage(storeKeptPlan) == PlanSlowMessage.STORE_HAS_PLAN
                                 Text(
-                                    stringResource(R.string.plan_not_confirmed), fontSize = 14.sp, color = PlanColors.Text2,
-                                    modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp).testTag("plan.notConfirmed"),
+                                    stringResource(if (storeHasPlan) R.string.plan_store_has_plan else R.string.plan_not_confirmed),
+                                    fontSize = 14.sp, color = PlanColors.Text2,
+                                    modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp)
+                                        .testTag(if (storeHasPlan) "plan.storeHasPlan" else "plan.notConfirmed"),
                                 )
                                 PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry")) { confirm(confirmBase) }
                             } else {
@@ -537,7 +558,8 @@ fun SubscriptionScreen(
                     } else {
                         UnavailableBlock(loading, accountNotReady) { reload() }
                     }
-                    ManageRestoreLinks(
+                    FooterLinks(
+                        links,
                         onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
                         onRestore = { restore() },
                         restoreEnabled = PurchasesManager.isConfigured() && phase != ConfirmPhase.CONFIRMING,
@@ -710,30 +732,24 @@ private fun UnavailableBlock(loading: Boolean, accountNotReady: Boolean, onRetry
     PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry"), enabled = !loading) { onRetry() }
 }
 
+/** #1464: "Quản lý / huỷ gói · Khôi phục" (a plan Google Play bills) or "Khôi phục giao dịch" on its own */
 @Composable
-private fun LinkRow(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    Text(
-        text,
-        fontSize = 16.sp,
-        color = if (enabled) PlanColors.Primary else PlanColors.Muted,
-        modifier = modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 13.dp),
-    )
-}
-
-@Composable
-private fun ManageRestoreLinks(onManage: () -> Unit, onRestore: () -> Unit, restoreEnabled: Boolean) {
+private fun FooterLinks(links: PlanFooterLinks, onManage: () -> Unit, onRestore: () -> Unit, restoreEnabled: Boolean) {
+    val manage = links == PlanFooterLinks.MANAGE_AND_RESTORE
     Row(
         Modifier.fillMaxWidth().padding(top = 8.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (manage) {
+            Text(
+                stringResource(R.string.plan_manage), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = PlanColors.Primary,
+                modifier = Modifier.clickable(onClick = onManage).padding(horizontal = 4.dp, vertical = 12.dp).testTag("plan.manage"),
+            )
+            Text(" · ", fontSize = 14.sp, color = PlanColors.Muted)
+        }
         Text(
-            stringResource(R.string.plan_manage), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = PlanColors.Primary,
-            modifier = Modifier.clickable(onClick = onManage).padding(horizontal = 4.dp, vertical = 12.dp).testTag("plan.manage"),
-        )
-        Text(" · ", fontSize = 14.sp, color = PlanColors.Muted)
-        Text(
-            stringResource(R.string.plan_restore), fontSize = 14.sp, fontWeight = FontWeight.Medium,
+            stringResource(if (manage) R.string.plan_restore_short else R.string.plan_restore), fontSize = 14.sp, fontWeight = FontWeight.Medium,
             color = if (restoreEnabled) PlanColors.Primary else PlanColors.Muted,
             modifier = Modifier.clickable(enabled = restoreEnabled, onClick = onRestore).padding(horizontal = 4.dp, vertical = 12.dp).testTag("plan.restore"),
         )

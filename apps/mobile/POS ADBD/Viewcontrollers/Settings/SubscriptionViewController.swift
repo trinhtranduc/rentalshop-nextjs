@@ -31,6 +31,8 @@ final class SubscriptionViewController: BaseViewControler {
     private var loading = false
     /// The answer before a purchase or restore; the server confirmed once it moved (`PlanRenewalLogic.confirmed`)
     private var statusBeforePayment: PlanStatus?
+    /// #1464: the last purchase left this Apple ID's plan in place until its renewal (the slow state says so)
+    private var storeKeptPlan = false
     private var renewedThisVisit = false
     /// A1: RevenueCat is logged in as this shop (false: the screen asks to try again)
     private var storeAccountReady = true
@@ -193,6 +195,8 @@ final class SubscriptionViewController: BaseViewControler {
             if status.reenableAutoRenew == true { addReenable(status) }
         }
 
+        // #1464: "Quản lý / huỷ gói · Khôi phục" only for a plan the App Store bills, else "Khôi phục giao dịch"
+        let links = PlanRenewalLogic.footerLinks(status)
         switch mode {
         case .purchase, .expiredOwner:
             // A5: an auto-renewing shop upgrading through its store sees its renewal first
@@ -200,15 +204,15 @@ final class SubscriptionViewController: BaseViewControler {
             addPlanChooser(status)
             addPeriodChooser()
             addBuyButton(status)
-            addFooterLinks(manage: true, restore: true)
+            addFooterLinks(links)
         case .autoRenewing:
             addAutoRenew(status)
-            addFooterLinks(manage: false, restore: true)
+            addFooterLinks(links)
         case .nothingToBuy:
             addMessage(String(format: "plan.renewLater".localized(), status.window))
-            addFooterLinks(manage: true, restore: true)
+            addFooterLinks(links)
         case .reenableOnly:
-            addFooterLinks(manage: false, restore: true)
+            addFooterLinks(links)
         case .storeUnavailable:
             addMessage((storeAccountReady ? "plan.storeUnavailable" : "plan.accountNotReady").localized())
             addRetryButton()
@@ -376,9 +380,11 @@ final class SubscriptionViewController: BaseViewControler {
                                                            id: "plan.confirmingHint"), by: 4))
         }
         if phase == .slow {
+            // #1464: after a purchase Apple kept for the next renewal, a calm line instead of "Chưa nhận được xác nhận."
             stack.addArrangedSubview(spacer(12))
-            stack.addArrangedSubview(Self.inset(Self.label("plan.notConfirmed".localized(), size: DS.TextSize.body, color: DS.Color.text,
-                                                           weight: .bold, id: "plan.notConfirmed"), by: 4))
+            stack.addArrangedSubview(Self.inset(Self.label(PlanRenewalLogic.slowMessage(storeKeptPlan: storeKeptPlan), size: DS.TextSize.body,
+                                                           color: DS.Color.text, weight: storeKeptPlan ? .regular : .bold,
+                                                           id: storeKeptPlan ? "plan.storeHasPlan" : "plan.notConfirmed"), by: 4))
             addRetryButton(action: #selector(retryConfirmation))
         }
     }
@@ -396,8 +402,8 @@ final class SubscriptionViewController: BaseViewControler {
         stack.addArrangedSubview(card)
     }
 
-    /// "TỰ GIA HẠN": "Tự gia hạn ngày 02/11/2027 · 1.799.000 ₫", then Quản lý / huỷ gói. A13: the store's charge date;
-    /// "Dùng đến" above stays the period end (later when the shop had days left)
+    /// "TỰ GIA HẠN": "Tự gia hạn ngày 02/11/2027 · 1.799.000 ₫". A13: the store's charge date; "Dùng đến" above stays the
+    /// period end (later when the shop had days left). #1464: Quản lý / huỷ gói is in the bottom links, once
     private func addAutoRenew(_ status: PlanStatus) {
         addSectionHeader("plan.section.autoRenew".localized())
         let card = Self.card(padded: false)
@@ -406,10 +412,7 @@ final class SubscriptionViewController: BaseViewControler {
         let text = amount.map { String(format: "plan.autoRenewOn".localized(), date, $0) }
             ?? String(format: "plan.autoRenewOnDate".localized(), date)
         let line = Self.inset(Self.label(text, size: DS.TextSize.body, color: DS.Color.text, id: "plan.autoRenew"), by: 16, vertical: 13)
-        let manage = Self.linkButton("plan.manage".localized(), id: "plan.manage")
-        manage.contentHorizontalAlignment = .leading
-        manage.addTarget(self, action: #selector(manageTapped), for: .touchUpInside)
-        card.addRows([line, Self.inset(manage, by: 16, vertical: 4)], separators: true)
+        card.addRows([line], separators: true)
         stack.addArrangedSubview(card)
     }
 
@@ -432,7 +435,12 @@ final class SubscriptionViewController: BaseViewControler {
         stack.addArrangedSubview(button)
     }
 
-    /// "Quản lý / huỷ gói · Khôi phục giao dịch", then "Điều khoản sử dụng · Chính sách bảo mật"
+    /// #1464 at most two small lines: "Quản lý / huỷ gói · Khôi phục" (a plan the App Store bills) or "Khôi phục giao dịch"
+    private func addFooterLinks(_ links: PlanRenewalLogic.FooterLinks) {
+        addFooterLinks(manage: links == .manageAndRestore, restore: true)
+    }
+
+    /// "Quản lý / huỷ gói · Khôi phục" (or one of them), then "Điều khoản · Bảo mật"
     private func addFooterLinks(manage: Bool, restore: Bool) {
         var first: [UIButton] = []
         if manage {
@@ -441,7 +449,7 @@ final class SubscriptionViewController: BaseViewControler {
             first.append(button)
         }
         if restore {
-            let button = Self.linkButton("plan.restore".localized(), id: "plan.restore")
+            let button = Self.linkButton(PlanRenewalLogic.restoreTitle(manage ? .manageAndRestore : .restoreOnly), id: "plan.restore")
             button.addTarget(self, action: #selector(restoreTapped), for: .touchUpInside)
             first.append(button)
         }
@@ -488,12 +496,17 @@ final class SubscriptionViewController: BaseViewControler {
         guard phase == .idle || phase == .slow, let plan = selectedPlan,
               let product = product(for: plan, months: selectedMonths) else { return }
         statusBeforePayment = status
+        storeKeptPlan = false
         phase = .busy
         render()
         PurchasesManager.purchase(productId: product.productId) { [weak self] result in
             guard let self else { return }
             switch result {
             case .purchased:
+                self.startConfirming()
+            case .storeKeptPlan:
+                // #1464: same wait (the server may still move); the slow state then names the Apple ID's plan
+                self.storeKeptPlan = true
                 self.startConfirming()
             case .cancelled:
                 self.phase = .idle
@@ -509,12 +522,13 @@ final class SubscriptionViewController: BaseViewControler {
     @objc private func restoreTapped() {
         guard phase != .confirming else { return }
         statusBeforePayment = status
+        storeKeptPlan = false
         phase = .busy
         render()
         PurchasesManager.restore { [weak self] result in
             guard let self else { return }
             switch result {
-            case .purchased:
+            case .purchased, .storeKeptPlan:
                 // The store has an active AnyRent subscription; the server may already know it, or learn it from the webhook
                 SubscriptionAPIService.shared.planStatus { [weak self] fresh, _ in
                     guard let self else { return }
