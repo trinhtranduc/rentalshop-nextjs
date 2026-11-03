@@ -43,10 +43,13 @@ describe('merchant resolution and TRANSFER (A4)', () => {
       amount: 0, currency: 'VND', cancelAtPeriodEnd: false, autoRenew: false, billingChannel: null, storeProductId: null, billingIssueAt: null, lastStoreEventAt: null,
     });
     const end7 = sub(7).currentPeriodEnd.getTime();
-    const res = await send(POST, { ...event('TRANSFER'), app_user_id: undefined, product_id: undefined, transferred_from: ['merchant_7'], transferred_to: ['merchant_8'] });
+    const trialEnd8 = sub(8).currentPeriodEnd.getTime();
+    const ev = event('TRANSFER');
+    const res = await send(POST, { ...ev, app_user_id: undefined, product_id: undefined, transferred_from: ['merchant_7'], transferred_to: ['merchant_8'] });
     expect(res.status).toBe(200);
     expect(sub(8)).toMatchObject({ planId: 2, status: 'ACTIVE', billingChannel: 'APP_STORE', storeProductId: 'anyrent_merchant_annual', autoRenew: true });
-    expect(sub(8).currentPeriodEnd.getTime()).toBe(end7);
+    // A13: the store period + the 2 trial days shop 8 had left
+    expect(sub(8).currentPeriodEnd.getTime()).toBe(end7 + (trialEnd8 - ev.event_timestamp_ms));
     expect(sub(7)).toMatchObject({ autoRenew: false, storeProductId: null, billingChannel: 'MANUAL' });
     expect(store.activities.map((a) => a.type)).toEqual(['IAP_TRANSFER', 'IAP_TRANSFER']);
   });

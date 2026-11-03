@@ -36,7 +36,7 @@ export const fakePrisma = {
     },
     create: async ({ data }: any) => {
       if (store.subscriptions.some((s) => s.merchantId === data.merchantId)) throw uniqueError();
-      const row = { id: nextId++, cancelAtPeriodEnd: false, autoRenew: false, lastStoreEventAt: null, ...data };
+      const row = { id: nextId++, cancelAtPeriodEnd: false, autoRenew: false, lastStoreEventAt: null, storeBonusMs: null, ...data };
       store.subscriptions.push(row);
       return { ...row };
     },
@@ -82,7 +82,7 @@ export function reset() {
       currentPeriodStart: new Date(Date.now() - 360 * DAY), currentPeriodEnd: new Date(Date.now() + 5 * DAY),
       cancelAtPeriodEnd: false, canceledAt: null, cancelReason: null,
       billingChannel: 'APP_STORE', storeProductId: 'anyrent_merchant_annual', storeOriginalTransactionId: 'otx-7', autoRenew: true,
-      billingIssueAt: null, lastStoreEventAt: null,
+      billingIssueAt: null, lastStoreEventAt: null, storeBonusMs: null,
     },
   ];
   store.activities = [];

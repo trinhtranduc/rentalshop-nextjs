@@ -95,10 +95,98 @@ export function normaliseChannel(raw: string | null | undefined): BillingChannel
 }
 
 /**
- * A10: a renewal recorded by the admin, a manual payment or a SePay transfer: the shop is not on a store subscription any
- * more (the store fields would make the apps and the refund handling act on a subscription that no longer pays).
+ * A10: a renewal recorded by the admin, a manual payment or a SePay transfer when no store plan runs: the shop is not on a
+ * store subscription any more (the store fields would make the apps and the refund handling act on a subscription that no
+ * longer pays). With a store plan running, `manualExtensionBilling` adds the time to the credit instead (A13).
  */
 export const MANUAL_BILLING = { billingChannel: 'MANUAL', autoRenew: false, storeProductId: null, billingIssueAt: null } as const;
+
+// ─── A13 renewal credit (owner, 2026-11-03) ─────────────────────────────────
+// "A renewal always starts from the old expiry, never from today; the shop must not lose remaining days" (trial included).
+// The store bills on its own dates; the shop keeps a constant credit on top: currentPeriodEnd = store expiration +
+// storeBonusMs. Phase 2 (Lemon Squeezy) uses the same model.
+
+/** The fields of a subscription row the credit rules read */
+export interface CreditRow {
+  status?: string | null;
+  currentPeriodEnd?: Date | string | null;
+  billingChannel?: string | null;
+  storeProductId?: string | null;
+  autoRenew?: boolean | null;
+  storeBonusMs?: number | null;
+  billingIssueAt?: Date | string | null;
+}
+
+export function isStoreChannel(channel: string | null | undefined): channel is 'APP_STORE' | 'PLAY_STORE' {
+  return channel === 'APP_STORE' || channel === 'PLAY_STORE';
+}
+
+/** The stored credit in ms (null or negative = none) */
+export function creditMs(row: Pick<CreditRow, 'storeBonusMs'> | null | undefined): number {
+  const value = Number(row?.storeBonusMs ?? 0);
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+}
+
+function endMs(row: CreditRow | null | undefined): number | null {
+  if (!row?.currentPeriodEnd) return null;
+  const ms = new Date(row.currentPeriodEnd).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/**
+ * The credit a store purchase or renewal carries (A13 designs 1 and 3):
+ * - nothing left at the purchase (expired, a resubscribe after the end): 0;
+ * - the same store subscription going on (a renewal; an upgrade or new product in the same store, which prorates its own
+ *   days): the credit it had, capped at what is left (a renewal charged late used some of it);
+ * - a new store subscription (first purchase, after a manual / trial / Lemon period, on the other store): the days left.
+ */
+export function storeCreditForPurchase(existing: CreditRow | null | undefined, channel: string, purchasedAt: Date): number {
+  const end = endMs(existing);
+  if (!existing || end === null) return 0;
+  const left = Math.max(0, end - purchasedAt.getTime());
+  if (left === 0) return 0;
+  const sameStore = isStoreChannel(existing.billingChannel) && existing.billingChannel === channel && !!existing.storeProductId;
+  return sameStore ? Math.min(creditMs(existing), left) : left;
+}
+
+/** A store plan (App Store / Google Play) still in its period: auto-renewing, or auto-renew off but not ended */
+export function isRunningStoreSubscription(row: CreditRow | null | undefined, now: Date = new Date()): boolean {
+  const end = endMs(row);
+  return (
+    !!row && isStoreChannel(row.billingChannel) && !!row.storeProductId && String(row.status ?? '').toUpperCase() !== 'EXPIRED' &&
+    end !== null && end > now.getTime()
+  );
+}
+
+/**
+ * What an extension by the admin, a manual payment or a SePay transfer writes (A13 design 5, corrects A10):
+ * - a store plan still running: the extra time joins the credit; channel, auto-renew, product, start, price and the cancel
+ *   fields stay as the store set them, so the next store date keeps the extension;
+ * - otherwise (A10): the shop is manual, with no store fields and no credit.
+ */
+export function manualExtensionBilling(
+  row: CreditRow,
+  newEnd: Date,
+  now: Date = new Date()
+):
+  | { keepsStore: true; data: { currentPeriodEnd: Date; storeBonusMs: number } }
+  | { keepsStore: false; data: typeof MANUAL_BILLING & { currentPeriodEnd: Date; storeBonusMs: null } } {
+  if (isRunningStoreSubscription(row, now)) {
+    const added = Math.max(0, newEnd.getTime() - (endMs(row) ?? newEnd.getTime()));
+    return { keepsStore: true, data: { currentPeriodEnd: newEnd, storeBonusMs: creditMs(row) + added } };
+  }
+  return { keepsStore: false, data: { currentPeriodEnd: newEnd, ...MANUAL_BILLING, storeBonusMs: null } };
+}
+
+/**
+ * The store's next charge (A13 design 7, `storeRenewsAt` in GET /api/subscriptions/status) = store expiration =
+ * currentPeriodEnd − credit, while a store plan auto-renews; null otherwise (and during a billing issue, while the store
+ * retries).
+ */
+export function storeRenewsAt(row: CreditRow | null | undefined, now: Date = new Date()): Date | null {
+  if (!row || row.autoRenew !== true || row.billingIssueAt || !isRunningStoreSubscription(row, now)) return null;
+  return new Date((endMs(row) as number) - creditMs(row));
+}
 
 export interface InAppPlan {
   id: number;

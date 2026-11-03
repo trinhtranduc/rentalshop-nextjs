@@ -4,8 +4,10 @@ import { db } from '@rentalshop/database';
 import { addMonthsInTimeZone, handleApiError } from '@rentalshop/utils';
 import {
   channelFromStore,
+  creditMs,
   parseSandboxMerchantIds,
   planTierFromName,
+  storeCreditForPurchase,
   storeProduct,
   tierRank,
   type BillingChannel,
@@ -31,6 +33,9 @@ import { planHistory } from '../../../../lib/plan-renewal-history';
  * - each `event.id` runs once (`BillingWebhookEvent`); a processing error or an event not applied (`ignored_*`) releases it;
  *   a processing error and "no plan for this tier" answer 500 so RevenueCat retries;
  * - an event older than the last one applied (`lastStoreEventAt`) is skipped (A8);
+ * - A13 renewal credit: a purchase that starts a store subscription keeps the days the shop had left
+ *   (`storeBonusMs = old end − purchased_at`); every store date is `store expiration + storeBonusMs`; an upgrade in the
+ *   same store keeps the credit; a refund goes back to the paid period's start + credit (`lib/plan-renewal.ts`);
  * - history rows are plain Vietnamese.
  */
 
@@ -348,13 +353,17 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
   const planName = keepPlan ? existing!.plan?.name ?? targetPlan.name : targetPlan.name;
 
   const purchasedAt = event.purchased_at_ms ? new Date(event.purchased_at_ms) : new Date();
-  let expiresAt: Date;
+  let storeExpiresAt: Date;
   if (event.environment === 'SANDBOX' || !event.expiration_at_ms) {
     // Sandbox periods are minutes long: keep the real duration (calendar months on the Vietnam day, #588)
-    expiresAt = addMonthsInTimeZone(purchasedAt, product.months);
+    storeExpiresAt = addMonthsInTimeZone(purchasedAt, product.months);
   } else {
-    expiresAt = new Date(event.expiration_at_ms);
+    storeExpiresAt = new Date(event.expiration_at_ms);
   }
+  // A13: the days the shop had left continue after the store period (a new store subscription), or the credit it already
+  // had carries on (a renewal or an upgrade in the same store, which prorates its own days)
+  const credit = storeCreditForPurchase(existing, channel, purchasedAt);
+  const expiresAt = new Date(storeExpiresAt.getTime() + credit);
 
   const amount = event.price_in_purchased_currency && event.price_in_purchased_currency > 0 ? event.price_in_purchased_currency : 0;
   const currency = event.currency || 'VND';
@@ -375,6 +384,7 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
     storeOriginalTransactionId: event.original_transaction_id ?? existing?.storeOriginalTransactionId ?? null,
     autoRenew: true,
     billingIssueAt: null,
+    storeBonusMs: credit > 0 ? credit : null,
   };
 
   const subscription = existing
@@ -387,6 +397,8 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
   await logActivity(subscription.id, isRenewal ? 'IAP_RENEWAL' : 'IAP_INITIAL_PURCHASE', text, event, {
     purchasedAt: purchasedAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
+    storeExpiresAt: storeExpiresAt.toISOString(),
+    creditMs: credit,
     price: amount || null,
     currency,
     renewal_number: event.renewal_number ?? null,
@@ -464,16 +476,42 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent): P
         data: { status: 'REFUNDED' },
       });
     }
-    // A10: only the refund of the period in use ends access (its expiration is the current period end, within a day);
-    // a refund of an earlier period, of another product, or without an expiration only marks the payment
+    // A10: only the refund of the period in use changes access (its expiration is the store expiry = current period end
+    // − credit, within a day); a refund of an earlier period, of another product, or without an expiration only marks
+    // the payment
+    const credit = creditMs(sub);
     const refundedExpiry = event.expiration_at_ms ?? null;
-    const currentPeriod =
-      current && refundedExpiry !== null && Math.abs(refundedExpiry - sub.currentPeriodEnd.getTime()) <= 24 * 60 * 60 * 1000;
+    const storeEnd = sub.currentPeriodEnd.getTime() - credit;
+    const currentPeriod = current && refundedExpiry !== null && Math.abs(refundedExpiry - storeEnd) <= 24 * 60 * 60 * 1000;
     if (!currentPeriod) {
       await logActivity(sub.id, 'IAP_REFUND', planHistory.refundOtherProduct(channel), event, { refundedExpiry });
       return 'ok_other_period';
     }
     const refundedAt = eventTime(event);
+    // A13 design 4: back to the end the shop had before this paid period = its start + credit (the first store purchase:
+    // the old end, trial or manual days included). Still ahead: the shop keeps those days, off the store
+    const periodStart = sub.currentPeriodStart ? new Date(sub.currentPeriodStart).getTime() : refundedAt.getTime();
+    const before = periodStart + credit;
+    if (before > refundedAt.getTime()) {
+      const keptTo = new Date(before);
+      await db.prisma.subscription.update({
+        where: { merchantId },
+        data: {
+          currentPeriodEnd: keptTo,
+          autoRenew: false,
+          cancelAtPeriodEnd: true,
+          canceledAt: refundedAt,
+          cancelReason: 'REFUND',
+          billingChannel: 'MANUAL',
+          storeProductId: null,
+          storeBonusMs: null,
+          billingIssueAt: null,
+          updatedAt: new Date(),
+        },
+      });
+      await logActivity(sub.id, 'IAP_REFUND', planHistory.refundKeepsDays(channel, keptTo), event, { cancelReason: event.cancel_reason, keptTo: keptTo.toISOString() });
+      return 'ok_refund_kept_days';
+    }
     const end = refundedAt < sub.currentPeriodEnd ? refundedAt : sub.currentPeriodEnd;
     // EXPIRED, not CANCELLED: a CANCELLED shop whose period ended gets 403 SUBSCRIPTION_CANCELLED ("contact support")
     // from authenticateRequest; an EXPIRED one gets SUBSCRIPTION_EXPIRED and may buy again in the app
@@ -561,7 +599,9 @@ async function handleBillingIssue(merchantId: number, event: RevenueCatEvent): P
   const channel = channelFromStore(event.store);
   const isStore = channel === 'APP_STORE' || channel === 'PLAY_STORE';
   const graceEnd = event.grace_period_expiration_at_ms ? new Date(event.grace_period_expiration_at_ms) : null;
-  const extendTo = graceEnd && graceEnd > sub.currentPeriodEnd ? graceEnd : null;
+  // A13: the store's grace end + the shop's credit
+  const graceAccess = graceEnd ? new Date(graceEnd.getTime() + creditMs(sub)) : null;
+  const extendTo = graceAccess && graceAccess > sub.currentPeriodEnd ? graceAccess : null;
   await db.prisma.subscription.update({
     where: { merchantId },
     data: {
@@ -596,11 +636,16 @@ async function handleTransfer(toMerchantId: number, event: RevenueCatEvent): Pro
   const merchant = await db.prisma.merchant.findUnique({ where: { id: toMerchantId }, select: { id: true } });
   if (!merchant) return 'ignored_unknown_merchant';
   const channel = from.billingChannel as BillingChannel;
+  const existing = await findSubscription(toMerchantId);
+  // A13: the store's expiry (without the old shop's credit) + the days the receiving shop had left
+  const storeEnd = from.currentPeriodEnd.getTime() - creditMs(from);
+  const toCredit = existing ? Math.max(0, existing.currentPeriodEnd.getTime() - eventTime(event).getTime()) : 0;
   const moved = {
     planId: from.planId,
     status: 'ACTIVE',
     currentPeriodStart: from.currentPeriodStart,
-    currentPeriodEnd: from.currentPeriodEnd,
+    currentPeriodEnd: new Date(storeEnd + toCredit),
+    storeBonusMs: toCredit > 0 ? toCredit : null,
     amount: from.amount,
     currency: from.currency,
     interval: from.interval,
@@ -614,15 +659,14 @@ async function handleTransfer(toMerchantId: number, event: RevenueCatEvent): Pro
     autoRenew: from.autoRenew,
     billingIssueAt: from.billingIssueAt,
   };
-  const existing = await findSubscription(toMerchantId);
   const to = existing
     ? await db.prisma.subscription.update({ where: { merchantId: toMerchantId }, data: { ...moved, updatedAt: new Date() } })
     : await db.prisma.subscription.create({ data: { merchantId: toMerchantId, ...moved } });
   await db.prisma.subscription.update({
     where: { merchantId: fromId },
-    data: { autoRenew: false, storeProductId: null, storeOriginalTransactionId: null, billingChannel: 'MANUAL', updatedAt: new Date() },
+    data: { autoRenew: false, storeProductId: null, storeOriginalTransactionId: null, billingChannel: 'MANUAL', storeBonusMs: null, updatedAt: new Date() },
   });
-  await logActivity(to.id, 'IAP_TRANSFER', planHistory.transferIn(channel, from.currentPeriodEnd), event, { fromMerchantId: fromId });
+  await logActivity(to.id, 'IAP_TRANSFER', planHistory.transferIn(channel, moved.currentPeriodEnd), event, { fromMerchantId: fromId });
   await logActivity(from.id, 'IAP_TRANSFER', planHistory.transferOut(channel, from.currentPeriodEnd), event, { toMerchantId });
   return 'ok';
 }
@@ -637,7 +681,8 @@ async function handleExtended(merchantId: number, event: RevenueCatEvent): Promi
     return 'ok_other_product';
   }
   if (!event.expiration_at_ms) return 'ignored_no_expiration';
-  const extended = new Date(event.expiration_at_ms);
+  // A13: the store's new expiration + the shop's credit
+  const extended = new Date(event.expiration_at_ms + creditMs(sub));
   const end = extended > sub.currentPeriodEnd ? extended : sub.currentPeriodEnd;
   if (extended > sub.currentPeriodEnd) {
     await db.prisma.subscription.update({ where: { merchantId }, data: { currentPeriodEnd: extended, updatedAt: new Date() } });

@@ -8,6 +8,8 @@ ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "autoRenew" BOOLEAN
 ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "billingIssueAt" TIMESTAMP(3);
 -- Time of the last store event applied (RevenueCat event_timestamp_ms): an older event retried later is skipped.
 ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "lastStoreEventAt" TIMESTAMP(3);
+-- A13: days the shop had left when the store plan started (+ admin extensions), in ms; period end = store expiry + this.
+ALTER TABLE "public"."Subscription" ADD COLUMN IF NOT EXISTS "storeBonusMs" DOUBLE PRECISION;
 
 -- Billing webhook events already processed (RevenueCat event.id): a resent event changes nothing.
 CREATE TABLE IF NOT EXISTS "public"."BillingWebhookEvent" (

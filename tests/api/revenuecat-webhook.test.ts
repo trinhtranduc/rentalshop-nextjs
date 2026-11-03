@@ -109,6 +109,8 @@ const MS = (iso: string) => Date.parse(iso);
 // 2026-11-02 09:00 VN
 const PURCHASED = '2026-11-02T02:00:00.000Z';
 const EXPIRES = '2027-11-02T02:00:00.000Z';
+// A13: the trial below ends 2026-11-03 00:00 UTC; its 22 h left continue after the store period
+const ACCESS = '2027-11-03T00:00:00.000Z';
 
 let eventSeq = 0;
 function event(type: string, over: Row = {}): Row {
@@ -194,10 +196,10 @@ describe('INITIAL_PURCHASE / RENEWAL', () => {
       cancelAtPeriodEnd: false,
     });
     expect(sub().currentPeriodStart.toISOString()).toBe(PURCHASED);
-    expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
+    expect(sub().currentPeriodEnd.toISOString()).toBe(ACCESS);
     expect(store.payments).toHaveLength(1);
     expect(store.payments[0]).toMatchObject({ amount: 1799000, currency: 'VND', method: 'IAP_APPLE', status: 'COMPLETED', transactionId: 'tx-1' });
-    expect(lastActivity()).toMatchObject({ type: 'IAP_INITIAL_PURCHASE', description: 'Mua gói Basic 12 tháng qua App Store. Dùng đến 02/11/2027.' });
+    expect(lastActivity()).toMatchObject({ type: 'IAP_INITIAL_PURCHASE', description: 'Mua gói Basic 12 tháng qua App Store. Dùng đến 03/11/2027.' });
   });
 
   it('Professional product on Google Play (base plan suffix) sets Professional', async () => {
@@ -206,7 +208,7 @@ describe('INITIAL_PURCHASE / RENEWAL', () => {
       planId: 3, billingChannel: 'PLAY_STORE', storeProductId: 'anyrent_professional_semi_annual', interval: 'semi_annual', amount: 1299000,
     });
     expect(store.payments[0].method).toBe('IAP_GOOGLE');
-    expect(lastActivity().description).toBe('Mua gói Professional 6 tháng qua Google Play. Dùng đến 02/11/2027.');
+    expect(lastActivity().description).toBe('Mua gói Professional 6 tháng qua Google Play. Dùng đến 03/11/2027.');
   });
 
   it('renewal moves the period, clears a billing issue, keeps one payment per event', async () => {
@@ -215,16 +217,16 @@ describe('INITIAL_PURCHASE / RENEWAL', () => {
     expect(sub().billingIssueAt).toBeInstanceOf(Date);
     await send(event('RENEWAL', { purchased_at_ms: MS(EXPIRES), expiration_at_ms: MS('2028-11-02T02:00:00.000Z') }));
     expect(sub()).toMatchObject({ status: 'ACTIVE', billingIssueAt: null, autoRenew: true, planId: 2 });
-    expect(sub().currentPeriodEnd.toISOString()).toBe('2028-11-02T02:00:00.000Z');
+    expect(sub().currentPeriodEnd.toISOString()).toBe('2028-11-03T00:00:00.000Z');
     expect(store.payments).toHaveLength(2);
-    expect(lastActivity()).toMatchObject({ type: 'IAP_RENEWAL', description: 'Tự gia hạn gói Basic 12 tháng qua App Store. Dùng đến 02/11/2028.' });
+    expect(lastActivity()).toMatchObject({ type: 'IAP_RENEWAL', description: 'Tự gia hạn gói Basic 12 tháng qua App Store. Dùng đến 03/11/2028.' });
   });
 
   it('a renewal of a purchase recorded before #1459 (no storeProductId) keeps the plan', async () => {
     Object.assign(sub(), { planId: 3, status: 'ACTIVE' });
     await send(event('RENEWAL'));
     expect(sub()).toMatchObject({ planId: 3, storeProductId: 'anyrent_merchant_annual', status: 'ACTIVE' });
-    expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
+    expect(sub().currentPeriodEnd.toISOString()).toBe(ACCESS);
   });
 
   it('creates the subscription when the shop has none, with the real amount', async () => {
@@ -237,7 +239,7 @@ describe('INITIAL_PURCHASE / RENEWAL', () => {
     process.env.REVENUECAT_SANDBOX_MERCHANT_IDS = '7';
     await send(event('INITIAL_PURCHASE', { environment: 'SANDBOX', expiration_at_ms: MS('2026-11-02T02:05:00.000Z') }));
     delete process.env.REVENUECAT_SANDBOX_MERCHANT_IDS;
-    expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
+    expect(sub().currentPeriodEnd.toISOString()).toBe(ACCESS);
   });
 
   it('unknown product, invalid user id or unknown merchant: 200 ignored, subscription untouched', async () => {
@@ -281,7 +283,7 @@ describe('PRODUCT_CHANGE', () => {
   it('Basic → Professional switches the plan at once', async () => {
     await send(event('PRODUCT_CHANGE', { new_product_id: 'anyrent_professional_annual', price_in_purchased_currency: 2399000 }));
     expect(sub()).toMatchObject({ planId: 3, storeProductId: 'anyrent_professional_annual' });
-    expect(lastActivity()).toMatchObject({ type: 'IAP_PRODUCT_CHANGE', description: 'Nâng lên gói Professional 12 tháng qua App Store. Dùng đến 02/11/2027.' });
+    expect(lastActivity()).toMatchObject({ type: 'IAP_PRODUCT_CHANGE', description: 'Nâng lên gói Professional 12 tháng qua App Store. Dùng đến 03/11/2027.' });
   });
 
   it('Professional → Basic waits for the next renewal', async () => {
@@ -302,8 +304,8 @@ describe('CANCELLATION, UNCANCELLATION, refund, billing issue, expiration', () =
   it('cancel: auto-renew off, access until the period end', async () => {
     await send(event('CANCELLATION', { cancel_reason: 'UNSUBSCRIBE' }));
     expect(sub()).toMatchObject({ autoRenew: false, cancelAtPeriodEnd: true, status: 'ACTIVE' });
-    expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
-    expect(lastActivity().description).toBe('Đã tắt tự gia hạn trên App Store. Gói vẫn dùng đến 02/11/2027.');
+    expect(sub().currentPeriodEnd.toISOString()).toBe(ACCESS);
+    expect(lastActivity().description).toBe('Đã tắt tự gia hạn trên App Store. Gói vẫn dùng đến 03/11/2027.');
     await send(event('UNCANCELLATION'));
     expect(sub()).toMatchObject({ autoRenew: true, cancelAtPeriodEnd: false, canceledAt: null });
     expect(lastActivity().description).toBe('Đã bật lại tự gia hạn trên App Store.');
@@ -324,8 +326,8 @@ describe('CANCELLATION, UNCANCELLATION, refund, billing issue, expiration', () =
     expect(sub().status).toBe('ACTIVE');
     expect(sub().autoRenew).toBe(true);
     expect(sub().billingIssueAt).toBeInstanceOf(Date);
-    expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
-    expect(lastActivity().description).toBe('App Store chưa thu được tiền gia hạn. Chủ shop cần kiểm tra cách thanh toán. Gói vẫn dùng đến 02/11/2027.');
+    expect(sub().currentPeriodEnd.toISOString()).toBe(ACCESS);
+    expect(lastActivity().description).toBe('App Store chưa thu được tiền gia hạn. Chủ shop cần kiểm tra cách thanh toán. Gói vẫn dùng đến 03/11/2027.');
   });
 
   it('expiration before the period end is logged only; auto-renew goes off', async () => {
