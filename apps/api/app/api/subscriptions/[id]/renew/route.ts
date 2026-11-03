@@ -4,7 +4,7 @@ import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { addonRenewalLines, calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
-import { MANUAL_BILLING } from '../../../../../lib/plan-renewal';
+import { manualExtensionBilling } from '../../../../../lib/plan-renewal';
 
 /**
  * POST /api/subscriptions/[id]/renew
@@ -116,22 +116,26 @@ export async function POST(
         // #850: renewed add-ons take today's list price; the others end at the old period end
         await db.merchantAddons.applyRenewal(tx, addonRenewal.lines, existing.currentPeriodEnd ? new Date(existing.currentPeriodEnd) : null, renewNow);
 
+        // #1459 A13: a store plan still running stays on the store (start, price and cycle are the store's) and the
+        // months join its credit; otherwise (A10) the renewal is manual
+        const billing = manualExtensionBilling(existing, renewal.periodEnd);
         // Update subscription period
         const updatedSubscription = await tx.subscription.update({
           where: { id: subscriptionId },
-          data: {
-            currentPeriodStart: renewal.periodStart,
-            currentPeriodEnd: renewal.periodEnd,
-            // the plan price of the cycle, as before #850 (add-ons are in the payment, not in this field)
-            amount: renewal.planPrice,
-            interval: renewal.interval,
-            intervalCount: renewal.months,
-            period: renewal.months,
-            discount: renewal.discountPercent,
-            status: SUBSCRIPTION_STATUS.ACTIVE as any,
-            ...MANUAL_BILLING, // #1459 A10: renewed by hand (admin, SePay transfer), no store subscription any more
-            updatedAt: new Date()
-          },
+          data: billing.keepsStore
+            ? { ...billing.data, updatedAt: new Date() }
+            : {
+                currentPeriodStart: renewal.periodStart,
+                // the plan price of the cycle, as before #850 (add-ons are in the payment, not in this field)
+                amount: renewal.planPrice,
+                interval: renewal.interval,
+                intervalCount: renewal.months,
+                period: renewal.months,
+                discount: renewal.discountPercent,
+                status: SUBSCRIPTION_STATUS.ACTIVE as any,
+                ...billing.data,
+                updatedAt: new Date()
+              },
           include: {
             merchant: {
               select: {

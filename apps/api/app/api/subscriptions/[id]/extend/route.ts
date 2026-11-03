@@ -19,7 +19,7 @@ import {
 } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_TYPE, USER_ROLE } from '@rentalshop/constants';
 import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
-import { MANUAL_BILLING } from '../../../../../lib/plan-renewal';
+import { manualExtensionBilling } from '../../../../../lib/plan-renewal';
 
 /**
  * POST /api/subscriptions/[id]/extend - Extend subscription
@@ -164,15 +164,19 @@ async function handleExtendSubscription(
     
     // An extension moves the end date only: the cycle and the price of the plan stay (#785; it used to rewrite
     // `interval` from the number of days, so an annual plan extended by 10 days became "monthly").
-    const updateData = {
-      currentPeriodEnd: endDate,
-      status: 'ACTIVE',
-      cancelAtPeriodEnd: false,
-      canceledAt: null,
-      cancelReason: null,
-      ...MANUAL_BILLING, // #1459 A10: extended by hand, no store subscription any more
-      updatedAt: new Date()
-    };
+    // #1459 A13: a store plan still running stays on the store (channel, auto-renew, cancel fields) and the extra days
+    // join its credit; otherwise (A10) the shop is manual
+    const billing = manualExtensionBilling(subscription, endDate);
+    const updateData = billing.keepsStore
+      ? { ...billing.data, updatedAt: new Date() }
+      : {
+          status: 'ACTIVE',
+          cancelAtPeriodEnd: false,
+          canceledAt: null,
+          cancelReason: null,
+          ...billing.data,
+          updatedAt: new Date()
+        };
     
     // Only "Payment Received" is money the shop paid: it leaves a Payment. The other methods (Manual / Admin
     // extension, Compensation) are free grants and leave none (#785).
