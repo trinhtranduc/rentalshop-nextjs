@@ -50,6 +50,24 @@ Issue: #1459 · Status: accepted · Intent: ./intent.md
 14. History text is plain Vietnamese with VN dates, e.g. "Gia hạn gói Basic 12 tháng qua App Store. Dùng đến
     02/11/2027." No product ids or SDK names.
 
+### Audit fixes (2026-11-03)
+
+14a. A2: without `REVENUECAT_WEBHOOK_SECRET` the webhook answers 503 and logs; the header must be exactly
+     `Bearer <secret>` (constant-time compare).
+14b. A3: `REVENUECAT_APP_USER_ID_PREFIX` (unset = `merchant_`, production; the dev API sets `dev_merchant_`): each API only
+     serves its own prefix. Production takes SANDBOX events only for `REVENUECAT_SANDBOX_MERCHANT_IDS` (comma list of
+     Merchant.id, e.g. `2` or `2,5`, spaces trimmed, garbage ignored). Sandbox events never write a payment.
+14c. A4: the shop comes from `app_user_id`, then `original_app_user_id`, then `aliases`; TRANSFER moves the store plan to
+     the receiving shop (the old shop keeps its days, stops renewing).
+14d. A7: SUBSCRIPTION_EXTENDED moves `currentPeriodEnd` to the new expiration (never shorter).
+14e. A8: `Subscription.lastStoreEventAt`; an event older than it is skipped (`stale`).
+14f. A9: an `ignored_*` event releases its id; "no active plan for the tier" answers 500.
+14g. A10: a refund ends access only when the refunded expiration is within a day of `currentPeriodEnd`; manual renewals
+     (`payments/manual`, admin extend, `subscriptions/[id]/extend`, `subscriptions/[id]/renew`) set MANUAL / no auto-renew /
+     no store product.
+14h. A5, A6: the status reads the device store from `X-Device-Type`; auto-renewing on that store → higher plans offered;
+     auto-renew off on that store → `reenableAutoRenew` true and the same plan not purchasable.
+
 ### Lemon Squeezy webhook
 
 15. `subscription_*` events also write `billingChannel` LEMON, `autoRenew` (active and not cancelled) and
