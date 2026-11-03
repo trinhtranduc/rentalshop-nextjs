@@ -68,12 +68,20 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         tap("plan.period.12")
         let buy: UIButton = try waitForView("plan.buy", 10)
         XCTAssertTrue(buy.title(for: .normal)?.contains("12") == true, "Button names the period: \(buy.title(for: .normal) ?? "")")
-        XCTAssertNotNil(view("plan.disclosure") as UILabel?, "Disclosure under the button")
+        // A13: 5 days left: the new period continues from the old end; the store charges today + 12 months
+        let chargeDay = PlanRenewalLogic.day(PlanRenewalLogic.newPeriodEnd(now: Date(), months: 12))
+        let disclosure = (view("plan.disclosure") as UILabel?)?.text ?? ""
+        XCTAssertTrue(disclosure.contains(chargeDay), "Disclosure names the charge day \(chargeDay): \(disclosure)")
+        XCTAssertTrue(disclosure.hasPrefix(String("plan.disclosureCarry".localized().prefix(12))), "Continues from the old end: \(disclosure)")
         shot("plan-03-twelve-months")
         try buyAndConfirm(type: "RENEWAL", productId: "anyrent_merchant_annual", price: 1_799_000, months: 12, shot: "plan-04")
         _ = try waitForView("plan.banner.text", 30) as UILabel
         shot("plan-05-renewed-banner")
-        _ = try waitForView("plan.autoRenew", 20) as UILabel
+        let autoRenew: UILabel = try waitForView("plan.autoRenew", 20)
+        // A13: "Tự gia hạn ngày <today + 12 months>" while "Dùng đến" is 5 days later
+        XCTAssertTrue(autoRenew.text?.contains(chargeDay) == true, "Auto-renew row: \(autoRenew.text ?? "")")
+        let statusLine = (view("plan.status") as UILabel?)?.text ?? ""
+        XCTAssertFalse(statusLine.contains(chargeDay), "Dùng đến keeps the 5 days: \(statusLine)")
         // A5: renewing on this phone's store, the same plan is never offered again; the upgrade may be
         if let buy = view("plan.buy") as UIButton? {
             let title = buy.title(for: .normal) ?? ""
@@ -83,8 +91,8 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         shot("plan-06-auto-renewing")
     }
 
+    /// Runs from the expired state (runner step owner-buy-restore). A13: a refund of test 1's renewal would give the 5 days back
     func test2ExpiredOwnerBuysProfessionalAfterLogin() throws {
-        try postWebhook(type: "CANCELLATION", productId: "anyrent_merchant_annual", price: 1_799_000, months: 12, extra: ["cancel_reason": "CUSTOMER_SUPPORT"])
         signIn()
         let title: UILabel = try waitForView("plan.expired.title", 30)
         XCTAssertNotNil(title)
@@ -102,7 +110,9 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         shot("plan-14-home-renewed")
     }
 
+    /// Refund of test 2's Professional purchase (bought with nothing left): access ends now (same run as test 2)
     func test3ExpiredOwnerRestores() throws {
+        signIn() // the Professional shop of test 2 opens Home
         try postWebhook(type: "CANCELLATION", productId: "anyrent_professional_annual", price: 2_399_000, months: 12, extra: ["cancel_reason": "CUSTOMER_SUPPORT"])
         // Any call the expired shop makes now answers 403 SUBSCRIPTION_PERIOD_ENDED: one gate, no alert per screen
         TabsV2APIService.shared.request("/api/products", parameters: ["limit": 1, "page": 1]) { (_: SettingsListTotal?, _: NSError?) in }

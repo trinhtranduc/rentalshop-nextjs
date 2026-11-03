@@ -9,8 +9,10 @@ usage() {
   cat <<'EOF'
 Usage: scripts/mobile-e2e/plan-renewal-e2e.sh ios [step…] | state <active5|expired> | --help
 
-ios       runs the iOS steps in order (default all): owner-purchases (hosted: renew 12 months from Home, refund →
-          gate after login → buy Professional, refund → 403 gate → restore), owner-gate (real login), staff-retry
+ios       runs the iOS steps in order (default all): owner-renew (hosted: 5 days left, renew 12 months from Home; the
+          days continue after the new period, A13), owner-buy-restore (expired → gate after login → buy Professional,
+          then refund of that purchase → 403 gate → restore, one StoreKit session), owner-gate (real login),
+          staff-retry. owner-purchases = owner-renew owner-buy-restore
 android   boots $E2E_AVD with a window, builds debug against the local API, then: owner Home line → plan screen (no
           store key) → webhook → Thử lại; Settings row; 403 → expired screen → Thử lại; expired at launch; staff
           (NO_BUILD=1 skips the gradle build)
@@ -42,17 +44,20 @@ set_state() {
   psql "$E2E_DATABASE_URL" -qc "UPDATE \"Subscription\" SET \"planId\" = (SELECT id FROM \"Plan\" WHERE name = 'Basic'),
     status = 'ACTIVE', \"currentPeriodStart\" = now() - interval '360 days', \"currentPeriodEnd\" = $end,
     \"autoRenew\" = false, \"billingChannel\" = NULL, \"storeProductId\" = NULL, \"billingIssueAt\" = NULL,
+    \"storeBonusMs\" = NULL, \"lastStoreEventAt\" = NULL,
     \"cancelAtPeriodEnd\" = false, \"canceledAt\" = NULL, \"trialStart\" = NULL, \"trialEnd\" = NULL
     WHERE \"merchantId\" = $id"
   psql "$E2E_DATABASE_URL" -tAc "SELECT 'merchant ' || \"merchantId\" || ': plan ' || \"planId\" || ', ends ' || \"currentPeriodEnd\" FROM \"Subscription\" WHERE \"merchantId\" = $id"
 }
 
 run_ios() {
-  local step="$1" method account fresh bundle cls
+  local step="$1" method account fresh bundle cls skip=""
   case "$step" in
-    # Hosted in the app (SKTestSession needs an XCTest process): renew, refund + gate after login + buy Professional,
-    # refund + 403 gate + restore, in one run
-    owner-purchases) bundle="POS ADBDTests"; cls=PlanRenewalHostedE2ETests; method=""; account=merchant; fresh=1; set_state active5 ;;
+    # Hosted in the app (SKTestSession needs an XCTest process). A13: a refund of a purchase made with days left gives
+    # those days back, so the expired steps start from the expired state; test 3 refunds test 2's purchase
+    owner-renew) bundle="POS ADBDTests"; cls=PlanRenewalHostedE2ETests; method=test1OwnerRenews12MonthsFromHome; account=merchant; fresh=1; set_state active5 ;;
+    # test 3 restores test 2's StoreKit purchase: both in one run (one StoreKit test session)
+    owner-buy-restore) bundle="POS ADBDTests"; cls=PlanRenewalHostedE2ETests; method=""; skip=test1OwnerRenews12MonthsFromHome; account=merchant; fresh=1; set_state expired ;;
     owner-gate) bundle="POS ADBDUITests"; cls=PlanRenewalE2ETests; method=testOwnerGateAfterLogin; account=merchant; fresh=1; set_state expired ;;
     staff-retry) bundle="POS ADBDUITests"; cls=PlanRenewalE2ETests; method=testStaffExpiredRetries; account=staff; fresh=1; set_state expired ;;
     *) echo "unknown step $step" >&2; exit 64 ;;
@@ -63,6 +68,7 @@ run_ios() {
   export TEST_RUNNER_E2E_STOREKIT_PATH="$E2E_ROOT/apps/mobile/POS ADBD/Configuration/AnyRentSubscriptions.storekit"
   local args=(--account "$account" --label "plan-$step" --lang vi --no-stage)
   [ -n "$method" ] && args+=(--only "$method")
+  [ -n "$skip" ] && args+=(--skip "$skip")
   [ "$fresh" = 1 ] && args+=(--fresh)
   "$(dirname "${BASH_SOURCE[0]}")/ios-e2e.sh" "${args[@]}"
 }
@@ -162,6 +168,15 @@ run_android() {
   post_webhook RENEWAL anyrent_merchant_annual 1799000
   "$UI" tap "#plan.retry" 2>/dev/null || "$UI" tap "Thử lại"; sleep 4
   check "A auto-renewing state after the server got the payment" "$UI" wait "~Tự gia hạn ngày" 20
+  # A13: the 5 days left continue after the store period: "Dùng đến" = store day + 5, the auto-renew row = store day
+  local days
+  days="$(psql "$E2E_DATABASE_URL" -tAc "SELECT to_char((\"currentPeriodEnd\" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY') || ' ' ||
+    to_char(((\"currentPeriodEnd\" - make_interval(secs => COALESCE(\"storeBonusMs\", 0) / 1000)) AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY')
+    FROM \"Subscription\" WHERE \"merchantId\" = $(merchant_id)")"
+  echo "A13 access end / store charge: $days"
+  check "A13 credit kept: access end differs from the store charge day" test "${days% *}" != "${days#* }"
+  check "A13 status card: Dùng đến <access end>" "$UI" has "~Dùng đến ${days% *}"
+  check "A13 auto-renew row: Tự gia hạn ngày <store charge>" "$UI" has "~Tự gia hạn ngày ${days#* }"
   "$UI" shot a-03-auto-renewing >/dev/null
   "$UI" back || true; sleep 1
   # Settings row (owner)
@@ -208,8 +223,11 @@ case "${1:-}" in
   state) set_state "${2:?state active5|expired}" ;;
   ios)
     shift
-    steps=("$@")
-    [ ${#steps[@]} -eq 0 ] && steps=(owner-purchases owner-gate staff-retry)
+    steps=()
+    for s in "$@"; do
+      if [ "$s" = owner-purchases ]; then steps+=(owner-renew owner-buy-restore); else steps+=("$s"); fi
+    done
+    [ ${#steps[@]} -eq 0 ] && steps=(owner-renew owner-buy-restore owner-gate staff-retry)
     status=0
     for s in "${steps[@]}"; do run_ios "$s" || status=1; done
     exit "$status"
