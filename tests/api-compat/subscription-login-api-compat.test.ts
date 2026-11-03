@@ -14,7 +14,7 @@ let now: Record<string, any>;
 
 const ADDED_STATUS_KEYS = [
   'billingChannel', 'autoRenew', 'billingIssue', 'storeProductId', 'planTier', 'canRenew', 'canUpgrade', 'purchasablePlanIds', 'renewWindowDays',
-  'reenableAutoRenew',
+  'reenableAutoRenew', 'storeRenewsAt',
 ];
 
 beforeAll(async () => {
@@ -78,6 +78,14 @@ describe('the new fields answer the renewal rule', () => {
     expect(data('appStoreAutoRenew')).toMatchObject({
       billingChannel: 'APP_STORE', autoRenew: true, storeProductId: 'anyrent_merchant_annual', canRenew: false, canUpgrade: false, purchasablePlanIds: [],
     });
+  });
+
+  it('A13 storeRenewsAt: the store charge date (end − credit) while auto-renewing, null otherwise', () => {
+    const d = data('appStoreAutoRenew');
+    expect(new Date(d.storeRenewsAt).getTime()).toBe(new Date(d.currentPeriodEnd).getTime() - 2 * 86400000);
+    expect(data('activeBasic20Days').storeRenewsAt).toBeNull();
+    expect(data('cancelledProfessional').storeRenewsAt).toBeNull();
+    expect(data('expiredBasic').storeRenewsAt).toBeNull();
   });
 
   it('Professional with 40 days and cancelled auto-renew: nothing to buy yet', () => {

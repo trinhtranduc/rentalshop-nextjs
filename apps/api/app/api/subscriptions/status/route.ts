@@ -5,7 +5,7 @@ import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { civilDaysBetween, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { getPlanLimitsInfo } from '@rentalshop/utils/server';
 import { API } from '@rentalshop/constants';
-import { deviceStoreFromHeaders, inAppPlans, normaliseChannel, renewalOffer, storeProduct, type InAppPlan } from '../../../../lib/plan-renewal';
+import { deviceStoreFromHeaders, inAppPlans, normaliseChannel, renewalOffer, storeProduct, storeRenewsAt, type InAppPlan } from '../../../../lib/plan-renewal';
 
 /**
  * GET /api/subscriptions/status
@@ -66,6 +66,7 @@ interface RenewalSubscriptionRow {
   billingChannel?: string | null;
   billingIssueAt?: Date | string | null;
   storeProductId?: string | null;
+  storeBonusMs?: number | null;
 }
 
 async function renewalFields(
@@ -98,6 +99,8 @@ async function renewalFields(
     purchasablePlanIds: offer.purchasablePlanIds,
     renewWindowDays: offer.renewWindowDays,
     reenableAutoRenew: offer.reenableAutoRenew,
+    // A13: the store's next charge (store expiration); access runs to currentPeriodEnd = this + the shop's credit
+    storeRenewsAt: storeRenewsAt(subscription, now)?.toISOString() ?? null,
   };
 }
 

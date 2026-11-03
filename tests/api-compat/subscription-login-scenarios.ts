@@ -50,7 +50,7 @@ const WORLDS: Record<string, World> = {
   },
   appStoreAutoRenew: {
     role: 'MERCHANT',
-    subscription: sub({ billingChannel: 'APP_STORE', storeProductId: 'anyrent_merchant_annual', autoRenew: true, currentPeriodEnd: day(3) }),
+    subscription: sub({ billingChannel: 'APP_STORE', storeProductId: 'anyrent_merchant_annual', autoRenew: true, currentPeriodEnd: day(3), storeBonusMs: 2 * 86400000 }),
   },
   staffExpired: { role: 'OUTLET_STAFF', subscription: sub({ currentPeriodEnd: day(-1) }) },
   managerActive: { role: 'OUTLET_ADMIN', subscription: sub() },
