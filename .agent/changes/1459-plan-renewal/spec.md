@@ -39,8 +39,12 @@ Issue: #1459 · Status: accepted · Intent: ./intent.md
 10. `CANCELLATION` with `cancel_reason` `CUSTOMER_SUPPORT` (refund): `currentPeriodEnd` = event time (never later than
     before), status EXPIRED (so the owner may buy again; CANCELLED would answer 403 "contact support"), `autoRenew` false, the payment with that `transaction_id` becomes REFUNDED. Any other
     `CANCELLATION`: `cancelAtPeriodEnd` true, `autoRenew` false, period unchanged.
-11. `UNCANCELLATION`: `autoRenew` true, cancellation cleared. `BILLING_ISSUE`: status PAST_DUE, `billingIssueAt` set,
-    access unchanged. `EXPIRATION`: `autoRenew` false; status EXPIRED only after the period ended (as today).
+11. `UNCANCELLATION`: `autoRenew` true, cancellation and billing issue cleared. `BILLING_ISSUE` from the App Store or
+    Google Play ("trừ tiền lỗi: vẫn dùng tới hết kỳ"): `billingIssueAt` set, status unchanged (never PAST_DUE, which
+    `authenticateRequest` blocks on every route; an old PAST_DUE row becomes ACTIVE), auto-renew unchanged, and
+    `grace_period_expiration_at_ms` later than `currentPeriodEnd` extends it. RENEWAL / UNCANCELLATION / PRODUCT_CHANGE
+    clear the flag. Other RevenueCat stores keep PAST_DUE. `EXPIRATION`: `autoRenew` false; status EXPIRED only after the
+    period ended (as today).
 12. Unknown product, unknown `app_user_id` or unknown merchant: 200 `ignored`, nothing written except the event id.
 13. A processing error releases the event id and answers 500 so RevenueCat retries.
 14. History text is plain Vietnamese with VN dates, e.g. "Gia hạn gói Basic 12 tháng qua App Store. Dùng đến
@@ -80,7 +84,9 @@ Issue: #1459 · Status: accepted · Intent: ./intent.md
     Terms `https://www.anyrent.shop/terms`, privacy `https://www.anyrent.shop/privacy`.
 27. Expired screen (no back button) appears after login when the login says the period ended, at launch when the saved
     period end passed or status says EXPIRED, and on any 403 `SUBSCRIPTION_EXPIRED` (what `authenticateRequest` answers
-    today), `SUBSCRIPTION_PERIOD_ENDED` or `SUBSCRIPTION_CANCELLED` (not `SUBSCRIPTION_PAUSED`):
+    today), `SUBSCRIPTION_PERIOD_ENDED`, `SUBSCRIPTION_CANCELLED` or `SUBSCRIPTION_PAST_DUE` (not `SUBSCRIPTION_PAUSED`).
+    A PAST_DUE shop (Lemon / Stripe) gets "Chưa thu được tiền gói" with the payment line, Thử lại and Quản lý / huỷ gói
+    (nothing to buy); staff ask the owner; the gate stays up while the status says PAST_DUE:
     - owner: "Gói của shop đã hết hạn" (black), "{Gói} · hết hạn {dd/mm/yyyy}. Dữ liệu của shop vẫn được giữ.", the plan
       chooser of 17–19, links, Đăng xuất; paid and confirmed → Home with the "Đã gia hạn đến …" banner / snackbar.
     - other roles: same two lines, "Nhờ chủ shop gia hạn.", Thử lại (reads status; active → Home), Đăng xuất.

@@ -77,3 +77,8 @@ section "Thiết kế đơn giản · theo research" plus sections 1, 1b and 2; 
   not alarmed (agent).
 - 2026-11-02 — Lemon Squeezy webhook: only records the channel, auto-renew and billing issue in this phase; its refund,
   idempotency and amount work is phase 2 (agent).
+- 2026-11-03 — "Trừ tiền lỗi: vẫn dùng tới hết kỳ" (coordinator, from the owner's decision): a store BILLING_ISSUE keeps
+  the subscription ACTIVE (no PAST_DUE), sets `billingIssueAt`, extends access to the store's grace period
+  (`grace_period_expiration_at_ms`); RENEWAL / UNCANCELLATION / PRODUCT_CHANGE clear it; EXPIRATION ends access. The apps
+  also open the gate on 403 `SUBSCRIPTION_PAST_DUE` (Lemon / Stripe): owner Quản lý / huỷ gói, staff "Nhờ chủ shop gia
+  hạn."; `core.ts` PAST_DUE blocking unchanged for those channels (phase 2).

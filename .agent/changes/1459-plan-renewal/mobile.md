@@ -111,8 +111,12 @@ Expired screen: no back button; title black; "Đăng xuất" centred at the bott
 ## Flow
 
 - Expired gate: after login (login's `merchant.subscription.currentPeriodEnd` < now), at launch (cached end < now, then a
-  status read; ACTIVE → tabs), on any 403 `SUBSCRIPTION_EXPIRED`, `SUBSCRIPTION_PERIOD_ENDED` or `SUBSCRIPTION_CANCELLED`
-  (one gate, no per-screen alert for those codes; `SUBSCRIPTION_PAUSED` stays the admin's message).
+  status read; ACTIVE → tabs), on any 403 `SUBSCRIPTION_EXPIRED`, `SUBSCRIPTION_PERIOD_ENDED`, `SUBSCRIPTION_CANCELLED`
+  or `SUBSCRIPTION_PAST_DUE` (one gate, no per-screen alert for those codes; `SUBSCRIPTION_PAUSED` stays the admin's
+  message). The gate leaves only when the status is neither expired nor PAST_DUE (`isBlocked`). PAST_DUE (`dbStatus`,
+  period running): owner "Chưa thu được tiền gói" (`plan.paymentIssue.title` / `plan_payment_issue_title`), the payment
+  line, Thử lại, Quản lý / huỷ gói, no plan to buy; staff "Nhờ chủ shop gia hạn.". The expired header also shows the
+  payment line when `billingIssue` is true.
 - Purchase: store sheet → poll status every 2 s for 20 s until `confirmed` → banner / snackbar "Đã gia hạn đến …"; in
   the expired mode go to Home and show it there. Timeout → "Chưa nhận được xác nhận." + Thử lại (poll again) +
   Khôi phục giao dịch.
