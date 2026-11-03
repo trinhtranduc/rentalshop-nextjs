@@ -25,7 +25,8 @@ import { planHistory } from '../../../../lib/plan-renewal-history';
  *   RENEWAL and an upgrading PRODUCT_CHANGE; a RENEWAL of a purchase recorded before #1459 keeps the plan;
  * - refund (CANCELLATION + CUSTOMER_SUPPORT) ends access (status EXPIRED, so the owner can buy again); BILLING_ISSUE is
  *   flagged and keeps access until the period (and the store's grace) ends; the real amount is stored;
- * - each `event.id` runs once (`BillingWebhookEvent`); a processing error releases it and answers 500 so RevenueCat retries;
+ * - each `event.id` runs once (`BillingWebhookEvent`); a processing error or an event not applied (`ignored_*`) releases it;
+ *   a processing error and "no plan for this tier" answer 500 so RevenueCat retries;
  * - history rows are plain Vietnamese.
  */
 
@@ -125,6 +126,10 @@ export async function POST(request: NextRequest) {
   // 3. Handle
   try {
     const outcome = merchantId ? await handleEvent(merchantId, event) : 'ignored_invalid_app_user_id';
+    // Not applied: give the event id back, so RevenueCat's retry or a manual resend can run it later (A9)
+    if (outcome.startsWith('ignored_')) await releaseEvent(claim);
+    // No active plan for the product's tier is our configuration problem: 500 makes RevenueCat retry
+    if (outcome === 'ignored_no_plan') return NextResponse.json({ status: outcome }, { status: 500 });
     return NextResponse.json({ status: outcome });
   } catch (error) {
     console.error('[RevenueCat Webhook] Error:', (error as Error)?.message, (error as Error)?.stack);
@@ -244,14 +249,15 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
   const existing = await findSubscription(merchantId);
   const targetPlan = await planForTier(product.tier);
   const isRenewal = event.type === 'RENEWAL';
-  // A renewal of a purchase recorded before #1459 (no product stored) keeps the plan, as the webhook did then
-  const keepPlan = !!existing && (!targetPlan || (isRenewal && !existing.storeProductId));
-  if (!existing && !targetPlan) {
+  // No active plan for the product's tier: never record the purchase on another plan; 500, RevenueCat retries (A9)
+  if (!targetPlan) {
     console.error(`[RevenueCat Webhook] No active ${product.tier} plan for merchant ${merchantId}`);
     return 'ignored_no_plan';
   }
-  const planId = keepPlan ? existing!.planId : targetPlan!.id;
-  const planName = keepPlan ? existing!.plan?.name ?? targetPlan?.name ?? 'Basic' : targetPlan!.name;
+  // A renewal of a purchase recorded before #1459 (no product stored) keeps the plan, as the webhook did then
+  const keepPlan = !!existing && isRenewal && !existing.storeProductId;
+  const planId = keepPlan ? existing!.planId : targetPlan.id;
+  const planName = keepPlan ? existing!.plan?.name ?? targetPlan.name : targetPlan.name;
 
   const purchasedAt = event.purchased_at_ms ? new Date(event.purchased_at_ms) : new Date();
   let expiresAt: Date;
