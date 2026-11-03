@@ -328,17 +328,21 @@ final class PlanRenewalLogicTests: XCTestCase {
                        String(format: "plan.disclosure".localized(), "03/11/2027", 12, "2.399.000 ₫"))
     }
 
-    /// The auto-renew row shows the store's charge date; "Dùng đến" stays the period end (they differ with a credit)
-    func testAutoRenewRowUsesTheStoreChargeDate() throws {
+    /// #1466: while the store renews, the status card says "Dùng đến <period end>" (later than the store's charge with a
+    /// credit); there is no auto-renew card, and its sentences are gone from both languages
+    func testAutoRenewingShowsOnlyTheStatusCard() throws {
         typealias L = PlanRenewalLogic
         let decoded = try status(#"{"status":"ACTIVE","autoRenew":true,"currentPeriodEnd":"2027-11-05T16:59:59.999Z","storeRenewsAt":"2027-11-03T03:00:00.000Z"}"#)
         XCTAssertEqual(decoded.storeRenewsAt, "2027-11-03T03:00:00.000Z")
-        XCTAssertEqual(L.autoRenewDate(decoded).map(L.day), "03/11/2027")
         XCTAssertEqual(L.statusLine(decoded), .validUntil(end: "05/11/2027"))
-        // An API without the field: the period end, as before
-        let older = try status(#"{"status":"ACTIVE","autoRenew":true,"currentPeriodEnd":"2027-11-05T16:59:59.999Z"}"#)
-        XCTAssertNil(older.storeRenewsAt)
-        XCTAssertEqual(L.autoRenewDate(older).map(L.day), "05/11/2027")
+        XCTAssertEqual(L.mode(isOwner: true, status: decoded, storeHasProducts: false), .autoRenewing)
+        for localization in ["vi-VN", "en"] {
+            for key in ["plan.section.autoRenew", "plan.autoRenewOn", "plan.autoRenewOnDate", "plan.currentAutoRenew"] {
+                XCTAssertNil(sentence(key, localization), "\(key) removed (\(localization))")
+            }
+        }
+        // CHỌN GÓI, the current plan's row while the store renews it
+        XCTAssertEqual(sentence("plan.current", "vi-VN"), "Đang dùng")
     }
 
     // MARK: #1464 the store already has a plan; compact links

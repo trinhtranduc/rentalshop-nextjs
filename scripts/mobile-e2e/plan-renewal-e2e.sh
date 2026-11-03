@@ -167,8 +167,8 @@ run_android() {
   "$UI" shot a-02-plan-no-store >/dev/null
   post_webhook RENEWAL anyrent_merchant_annual 1799000
   "$UI" tap "#plan.retry" 2>/dev/null || "$UI" tap "Thử lại"; sleep 4
-  check "A auto-renewing state after the server got the payment" "$UI" wait "~Tự gia hạn ngày" 20
-  # A13: the 5 days left continue after the store period: "Dùng đến" = store day + 5, the auto-renew row = store day
+  check "A auto-renewing state after the server got the payment" "$UI" wait "~Dùng đến" 20
+  # A13: the 5 days left continue after the store period: "Dùng đến" = store day + 5. #1466: no auto-renew card
   local days
   days="$(psql "$E2E_DATABASE_URL" -tAc "SELECT to_char((\"currentPeriodEnd\" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY') || ' ' ||
     to_char(((\"currentPeriodEnd\" - make_interval(secs => COALESCE(\"storeBonusMs\", 0) / 1000)) AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM/YYYY')
@@ -176,7 +176,8 @@ run_android() {
   echo "A13 access end / store charge: $days"
   check "A13 credit kept: access end differs from the store charge day" test "${days% *}" != "${days#* }"
   check "A13 status card: Dùng đến <access end>" "$UI" has "~Dùng đến ${days% *}"
-  check "A13 auto-renew row: Tự gia hạn ngày <store charge>" "$UI" has "~Tự gia hạn ngày ${days#* }"
+  check "#1466 no auto-renew card" bash -c "! '$UI' has '~Tự gia hạn ngày'"
+  check "#1466 Quản lý / huỷ gói in the footer" "$UI" has "~Quản lý / huỷ gói"
   "$UI" shot a-03-auto-renewing >/dev/null
   "$UI" back || true; sleep 1
   # Settings row (owner)

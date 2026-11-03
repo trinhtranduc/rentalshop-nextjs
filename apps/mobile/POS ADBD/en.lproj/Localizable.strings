@@ -3243,9 +3243,6 @@
 "plan.restore" = "Restore purchases";
 "plan.terms" = "Terms";
 "plan.privacy" = "Privacy";
-"plan.section.autoRenew" = "Auto-renew";
-"plan.autoRenewOn" = "Renews on %@ · %@";
-"plan.autoRenewOnDate" = "Renews on %@";
 "plan.renewLater" = "You can renew when %d days are left.";
 "plan.currentRenewLater" = "Current · renew when %d days are left";
 "plan.billingIssue" = "The renewal payment failed. Open Manage / cancel to check your payment method.";
@@ -3268,7 +3265,6 @@
 "plan.reenable.line" = "Auto-renew is off. The plan runs until %@.";
 "plan.reenable.button" = "Turn auto-renew back on";
 "plan.confirmingHint" = "Usually a few seconds, up to a minute.";
-"plan.currentAutoRenew" = "Current · renews on %@";
 /* #1459 A13: a renewal continues from the old end */
 "plan.disclosureCarry" = "The new period continues from %1$@ and runs until %2$@. Renews every %3$d months (%4$@), next charge on %5$@, until cancelled.";
 "plan.disclosureCredit" = "The new period starts today and runs until %1$@. Renews every %2$d months (%3$@), next charge on %4$@, until cancelled.";

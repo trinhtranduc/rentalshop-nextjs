@@ -77,11 +77,13 @@ final class PlanRenewalHostedE2ETests: XCTestCase {
         try buyAndConfirm(type: "RENEWAL", productId: "anyrent_merchant_annual", price: 1_799_000, months: 12, shot: "plan-04")
         _ = try waitForView("plan.banner.text", 30) as UILabel
         shot("plan-05-renewed-banner")
-        let autoRenew: UILabel = try waitForView("plan.autoRenew", 20)
-        // A13: "Tự gia hạn ngày <today + 12 months>" while "Dùng đến" is 5 days later
-        XCTAssertTrue(autoRenew.text?.contains(chargeDay) == true, "Auto-renew row: \(autoRenew.text ?? "")")
-        let statusLine = (view("plan.status") as UILabel?)?.text ?? ""
+        // #1466: no auto-renew card; the status card says "Dùng đến …", 5 days after the store's charge day (A13)
+        let validUntilPrefix = String("plan.validUntil".localized().prefix(8))
+        let statusLabel: UILabel = try waitForView("plan.status", 20) { $0.text?.hasPrefix(validUntilPrefix) == true }
+        let statusLine = statusLabel.text ?? ""
         XCTAssertFalse(statusLine.contains(chargeDay), "Dùng đến keeps the 5 days: \(statusLine)")
+        XCTAssertNil(view("plan.autoRenew") as UILabel?, "No auto-renew card")
+        XCTAssertNotNil(view("plan.manage") as UIButton?, "Quản lý / huỷ gói in the footer")
         // A5: renewing on this phone's store, the same plan is never offered again; the upgrade may be
         if let buy = view("plan.buy") as UIButton? {
             let title = buy.title(for: .normal) ?? ""

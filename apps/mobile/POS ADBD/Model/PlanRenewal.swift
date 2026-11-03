@@ -455,11 +455,6 @@ enum PlanRenewalLogic {
         return String(format: "plan.disclosureCarry".localized(), day(end), day(charge.addingTimeInterval(left)), months, amount, day(charge))
     }
 
-    /// A13: the date on the auto-renew row: the store's charge (`storeRenewsAt`), else the period end (an older API)
-    static func autoRenewDate(_ status: PlanStatus) -> Date? {
-        parseInstant(status.storeRenewsAt) ?? status.periodEnd
-    }
-
     /// Which plan is chosen first: the current plan when it may be bought, else the cheapest purchasable one
     static func defaultPlanId(plans: [PlanOption], status: PlanStatus) -> Int? {
         let purchasable = plans.filter { status.purchasable.contains($0.id) }
