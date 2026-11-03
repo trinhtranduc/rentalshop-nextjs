@@ -3269,3 +3269,6 @@
 "plan.reenable.button" = "Turn auto-renew back on";
 "plan.confirmingHint" = "Usually a few seconds, up to a minute.";
 "plan.currentAutoRenew" = "Current · renews on %@";
+/* #1459 A13: a renewal continues from the old end */
+"plan.disclosureCarry" = "The new period continues from %1$@ and runs until %2$@. Renews every %3$d months (%4$@), next charge on %5$@, until cancelled.";
+"plan.disclosureCredit" = "The new period starts today and runs until %1$@. Renews every %2$d months (%3$@), next charge on %4$@, until cancelled.";

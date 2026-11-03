@@ -280,5 +280,65 @@ final class PlanRenewalLogicTests: XCTestCase {
         XCTAssertEqual(PlanConfirmation.timeout, 60)
         XCTAssertEqual(PlanConfirmation.interval, 2)
     }
+
+    // MARK: A13 renewal credit: a renewal continues from the old end, the days left are never lost
+
+    /// 2026-11-03 10:00 in Vietnam
+    private let renewNow = ISO8601DateFormatter().date(from: "2026-11-03T03:00:00Z")!
+    private let price = "1.799.000 ₫"
+
+    /// Owner example: the plan ends 05/11/2026, 12 months bought on 03/11/2026 → 05/11/2027; the store charges 03/11/2027
+    func testDisclosureContinuesFromTheOldEnd() {
+        typealias L = PlanRenewalLogic
+        let manual = PlanStatus(planId: 2, status: "ACTIVE", dbStatus: "ACTIVE", daysRemaining: 2,
+                                currentPeriodEnd: "2026-11-05T16:59:59.999Z", billingChannel: "MANUAL")
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 12, amount: price, status: manual),
+                       String(format: "plan.disclosureCarry".localized(), "05/11/2026", "05/11/2027", 12, price, "03/11/2027"))
+        // Trial days are kept too (6 months: 03/05/2027 + 10 days)
+        let trial = PlanStatus(planId: 1, status: "ACTIVE", dbStatus: "TRIAL", daysRemaining: 10, currentPeriodEnd: "2026-11-13T03:00:00Z")
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 6, amount: "999.000 ₫", status: trial),
+                       String(format: "plan.disclosureCarry".localized(), "13/11/2026", "13/05/2027", 6, "999.000 ₫", "03/05/2027"))
+        // A plan bought on Google Play, auto-renew off there, renewed on the iPhone: a new App Store subscription
+        let otherStore = PlanStatus(planId: 2, status: "ACTIVE", daysRemaining: 3, currentPeriodEnd: "2026-11-06T03:00:00Z",
+                                    billingChannel: "PLAY_STORE", autoRenew: false, storeProductId: "anyrent_merchant_annual")
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 12, amount: price, status: otherStore),
+                       String(format: "plan.disclosureCarry".localized(), "06/11/2026", "06/11/2027", 12, price, "03/11/2027"))
+    }
+
+    func testDisclosureStartsTodayOnceExpired() {
+        typealias L = PlanRenewalLogic
+        let expired = PlanStatus(planId: 2, status: "EXPIRED", currentPeriodEnd: "2026-10-31T03:00:00Z", billingChannel: "MANUAL")
+        let today = String(format: "plan.disclosure".localized(), "03/11/2027", 12, price)
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 12, amount: price, status: expired), today)
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 12, amount: price, status: nil), today)
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 12, amount: price), today)
+    }
+
+    /// An upgrade in the store that bills the plan: the store prorates its own days, only the credit carries over
+    func testDisclosureForAnUpgradeInTheSameStore() {
+        typealias L = PlanRenewalLogic
+        let withCredit = PlanStatus(planId: 2, status: "ACTIVE", currentPeriodEnd: "2026-12-05T03:00:00Z", billingChannel: "APP_STORE",
+                                    autoRenew: true, storeProductId: "anyrent_merchant_annual", purchasablePlanIds: [3],
+                                    storeRenewsAt: "2026-12-03T03:00:00Z")
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 12, amount: "2.399.000 ₫", status: withCredit),
+                       String(format: "plan.disclosureCredit".localized(), "05/11/2027", 12, "2.399.000 ₫", "03/11/2027"))
+        var noCredit = withCredit
+        noCredit.storeRenewsAt = "2026-12-05T03:00:00Z"
+        XCTAssertEqual(L.disclosure(now: renewNow, months: 12, amount: "2.399.000 ₫", status: noCredit),
+                       String(format: "plan.disclosure".localized(), "03/11/2027", 12, "2.399.000 ₫"))
+    }
+
+    /// The auto-renew row shows the store's charge date; "Dùng đến" stays the period end (they differ with a credit)
+    func testAutoRenewRowUsesTheStoreChargeDate() throws {
+        typealias L = PlanRenewalLogic
+        let decoded = try status(#"{"status":"ACTIVE","autoRenew":true,"currentPeriodEnd":"2027-11-05T16:59:59.999Z","storeRenewsAt":"2027-11-03T03:00:00.000Z"}"#)
+        XCTAssertEqual(decoded.storeRenewsAt, "2027-11-03T03:00:00.000Z")
+        XCTAssertEqual(L.autoRenewDate(decoded).map(L.day), "03/11/2027")
+        XCTAssertEqual(L.statusLine(decoded), .validUntil(end: "05/11/2027"))
+        // An API without the field: the period end, as before
+        let older = try status(#"{"status":"ACTIVE","autoRenew":true,"currentPeriodEnd":"2027-11-05T16:59:59.999Z"}"#)
+        XCTAssertNil(older.storeRenewsAt)
+        XCTAssertEqual(L.autoRenewDate(older).map(L.day), "05/11/2027")
+    }
 }
 

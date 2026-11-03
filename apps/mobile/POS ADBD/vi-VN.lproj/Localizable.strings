@@ -3267,3 +3267,6 @@
 "plan.reenable.button" = "Bật lại tự gia hạn";
 "plan.confirmingHint" = "Thường mất vài giây, có thể đến một phút.";
 "plan.currentAutoRenew" = "Đang dùng · tự gia hạn ngày %@";
+/* #1459 A13: gia hạn sớm không mất ngày */
+"plan.disclosureCarry" = "Hạn mới tính tiếp từ %1$@, dùng đến %2$@. Tự gia hạn mỗi %3$d tháng (%4$@), lần trừ tiền tới ngày %5$@, đến khi huỷ.";
+"plan.disclosureCredit" = "Kỳ mới tính từ hôm nay, dùng đến %1$@. Tự gia hạn mỗi %2$d tháng (%3$@), lần trừ tiền tới ngày %4$@, đến khi huỷ.";

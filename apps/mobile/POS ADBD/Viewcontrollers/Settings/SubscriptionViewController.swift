@@ -288,7 +288,7 @@ final class SubscriptionViewController: BaseViewControler {
             let subtitle = enabled
                 ? PlanRenewalLogic.includes(limits: plan.limits, features: plan.features, withOutlets: false)
                 : status.autoRenew == true
-                    ? String(format: "plan.currentAutoRenew".localized(), status.periodEnd.map(PlanRenewalLogic.day) ?? "—")
+                    ? String(format: "plan.currentAutoRenew".localized(), PlanRenewalLogic.autoRenewDate(status).map(PlanRenewalLogic.day) ?? "—")
                     : String(format: "plan.currentRenewLater".localized(), status.window)
             let row = ChoiceRow(title: plan.name, pill: plan.isPopular ? "plan.popular".localized() : nil, subtitle: subtitle,
                                 amount: nil, selected: enabled && plan.id == selectedPlanId, enabled: enabled)
@@ -362,7 +362,10 @@ final class SubscriptionViewController: BaseViewControler {
         button.addTarget(self, action: #selector(buyTapped), for: .touchUpInside)
         stack.addArrangedSubview(spacer(16))
         stack.addArrangedSubview(button)
-        let disclosure = Self.label(PlanRenewalLogic.disclosure(now: Date(), months: selectedMonths, amount: product.priceText),
+        // A13: the days left continue after the new period; the expired screen starts today
+        let disclosureText = PlanRenewalLogic.disclosure(now: Date(), months: selectedMonths, amount: product.priceText,
+                                                         status: context == .expired ? nil : status)
+        let disclosure = Self.label(disclosureText,
                                     size: DS.TextSize.secondary, color: DS.Color.text, id: "plan.disclosure")
         stack.addArrangedSubview(spacer(10))
         stack.addArrangedSubview(Self.inset(disclosure, by: 4))
@@ -393,11 +396,12 @@ final class SubscriptionViewController: BaseViewControler {
         stack.addArrangedSubview(card)
     }
 
-    /// "TỰ GIA HẠN": "Tự gia hạn ngày 02/11/2027 · 1.799.000 ₫", then Quản lý / huỷ gói
+    /// "TỰ GIA HẠN": "Tự gia hạn ngày 02/11/2027 · 1.799.000 ₫", then Quản lý / huỷ gói. A13: the store's charge date;
+    /// "Dùng đến" above stays the period end (later when the shop had days left)
     private func addAutoRenew(_ status: PlanStatus) {
         addSectionHeader("plan.section.autoRenew".localized())
         let card = Self.card(padded: false)
-        let date = status.periodEnd.map(PlanRenewalLogic.day) ?? "—"
+        let date = PlanRenewalLogic.autoRenewDate(status).map(PlanRenewalLogic.day) ?? "—"
         let amount = autoRenewAmount(status)
         let text = amount.map { String(format: "plan.autoRenewOn".localized(), date, $0) }
             ?? String(format: "plan.autoRenewOnDate".localized(), date)

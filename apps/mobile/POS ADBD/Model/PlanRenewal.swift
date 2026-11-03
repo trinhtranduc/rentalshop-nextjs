@@ -37,11 +37,14 @@ struct PlanStatus: Decodable, Equatable {
     var features: [String]?
     /// A6: a store plan on this device's store with auto-renew off: offer "Bật lại tự gia hạn", not the same product
     var reenableAutoRenew: Bool?
+    /// A13: the store's next charge (store expiration). Access runs to `currentPeriodEnd` = this + the days the shop had
+    /// left when the store plan started. Nil while nothing auto-renews, or from an older API.
+    var storeRenewsAt: String?
 
     enum CodingKeys: String, CodingKey {
         case planId, planName, status, dbStatus, daysRemaining, currentPeriodEnd, billingAmount, billingCurrency
         case billingChannel, autoRenew, billingIssue, storeProductId, planTier, canRenew, canUpgrade, purchasablePlanIds
-        case renewWindowDays, limits, features, reenableAutoRenew
+        case renewWindowDays, limits, features, reenableAutoRenew, storeRenewsAt
     }
 
     init(planId: Int? = nil, planName: String? = nil, status: String? = nil, dbStatus: String? = nil,
@@ -49,7 +52,7 @@ struct PlanStatus: Decodable, Equatable {
          billingCurrency: String? = nil, billingChannel: String? = nil, autoRenew: Bool? = nil, billingIssue: Bool? = nil,
          storeProductId: String? = nil, planTier: String? = nil, canRenew: Bool? = nil, canUpgrade: Bool? = nil,
          purchasablePlanIds: [Int]? = nil, renewWindowDays: Int? = nil, limits: PlanLimits? = nil, features: [String]? = nil,
-         reenableAutoRenew: Bool? = nil) {
+         reenableAutoRenew: Bool? = nil, storeRenewsAt: String? = nil) {
         self.planId = planId
         self.planName = planName
         self.status = status
@@ -70,6 +73,7 @@ struct PlanStatus: Decodable, Equatable {
         self.limits = limits
         self.features = features
         self.reenableAutoRenew = reenableAutoRenew
+        self.storeRenewsAt = storeRenewsAt
     }
 
     init(from decoder: Decoder) throws {
@@ -95,6 +99,7 @@ struct PlanStatus: Decodable, Equatable {
         limits = opt(PlanLimits.self, .limits)
         features = PlanFeatures.decode(c, .features)
         reenableAutoRenew = opt(Bool.self, .reenableAutoRenew)
+        storeRenewsAt = opt(String.self, .storeRenewsAt)
     }
 
     var isExpired: Bool { status?.uppercased() == "EXPIRED" }
@@ -428,9 +433,31 @@ enum PlanRenewalLogic {
         }
     }
 
-    /// "Kỳ mới tính từ hôm nay, dùng đến 02/11/2027. Tự gia hạn mỗi 12 tháng (1.799.000 ₫) đến khi huỷ."
-    static func disclosure(now: Date, months: Int, amount: String) -> String {
-        String(format: "plan.disclosure".localized(), day(newPeriodEnd(now: now, months: months)), months, amount)
+    /// A13 "Gia hạn sớm không mất ngày": the words under the buy button. The days left continue after the new store period
+    /// (server rule `storeCreditForPurchase` in apps/api/lib/plan-renewal.ts; Android `PlanRenewal.disclosure`):
+    /// - nothing left (expired, no end, no status): "Kỳ mới tính từ hôm nay, dùng đến 03/11/2027. Tự gia hạn mỗi 12 tháng
+    ///   (1.799.000 ₫) đến khi huỷ.";
+    /// - days left and a new store subscription (trial, manual, the other store): "Hạn mới tính tiếp từ 05/11/2026, dùng đến
+    ///   05/11/2027. Tự gia hạn mỗi 12 tháng (1.799.000 ₫), lần trừ tiền tới ngày 03/11/2027, đến khi huỷ.";
+    /// - an upgrade in the store that bills the plan (it prorates its own days): only the credit carries
+    ///   (`currentPeriodEnd − storeRenewsAt`); none known → the first text.
+    static func disclosure(now: Date, months: Int, amount: String, status: PlanStatus? = nil, deviceStore: String = "APP_STORE") -> String {
+        let charge = newPeriodEnd(now: now, months: months)
+        let startsToday = String(format: "plan.disclosure".localized(), day(charge), months, amount)
+        guard let status = status, !status.isExpired, let end = status.periodEnd, end > now else { return startsToday }
+        if status.billingChannel == deviceStore && status.storeProductId != nil {
+            let credit = parseInstant(status.storeRenewsAt).map { max(0, end.timeIntervalSince($0)) } ?? 0
+            let withCredit = charge.addingTimeInterval(credit)
+            if day(withCredit) == day(charge) { return startsToday }
+            return String(format: "plan.disclosureCredit".localized(), day(withCredit), months, amount, day(charge))
+        }
+        let left = end.timeIntervalSince(now)
+        return String(format: "plan.disclosureCarry".localized(), day(end), day(charge.addingTimeInterval(left)), months, amount, day(charge))
+    }
+
+    /// A13: the date on the auto-renew row: the store's charge (`storeRenewsAt`), else the period end (an older API)
+    static func autoRenewDate(_ status: PlanStatus) -> Date? {
+        parseInstant(status.storeRenewsAt) ?? status.periodEnd
     }
 
     /// Which plan is chosen first: the current plan when it may be bought, else the cheapest purchasable one
