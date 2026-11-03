@@ -233,8 +233,10 @@ describe('INITIAL_PURCHASE / RENEWAL', () => {
     expect(sub()).toMatchObject({ planId: 2, amount: 1799000, billingChannel: 'APP_STORE', autoRenew: true });
   });
 
-  it('sandbox keeps the real duration (purchase + 12 months on the Vietnam day)', async () => {
+  it('sandbox (allow-listed demo shop, A3) keeps the real duration (purchase + 12 months on the Vietnam day)', async () => {
+    process.env.REVENUECAT_SANDBOX_MERCHANT_IDS = '7';
     await send(event('INITIAL_PURCHASE', { environment: 'SANDBOX', expiration_at_ms: MS('2026-11-02T02:05:00.000Z') }));
+    delete process.env.REVENUECAT_SANDBOX_MERCHANT_IDS;
     expect(sub().currentPeriodEnd.toISOString()).toBe(EXPIRES);
   });
 

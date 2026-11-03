@@ -18,7 +18,9 @@ import { planHistory } from '../../../../lib/plan-renewal-history';
  * Receives subscription events from RevenueCat (App Store, Google Play). Server to server; no app calls it.
  * Auth: RevenueCat's "Authorization header value" must be the literal `Bearer <REVENUECAT_WEBHOOK_SECRET>`; compared in
  * constant time. Without the env var every event is refused with 503 (and logged), never accepted unauthenticated.
- * App User ID format: "merchant_{merchantId}" (set by PurchasesManager.logInMerchant on iOS and Android).
+ * App User ID format: "merchant_{merchantId}" on the production API, "dev_merchant_{merchantId}" from builds on another API
+ * (PurchasesManager on iOS and Android); REVENUECAT_APP_USER_ID_PREFIX picks which one this API serves (A3).
+ * Sandbox events: dev API always; production API only for REVENUECAT_SANDBOX_MERCHANT_IDS; never a payment row.
  *
  * #1459:
  * - the plan follows the store product (Basic or Professional, `apps/api/lib/plan-renewal.ts`) on INITIAL_PURCHASE,
@@ -125,7 +127,15 @@ export async function POST(request: NextRequest) {
 
   // 3. Handle
   try {
-    const outcome = merchantId ? await handleEvent(merchantId, event) : 'ignored_invalid_app_user_id';
+    let outcome: Outcome;
+    if (!merchantId) {
+      outcome = 'ignored_invalid_app_user_id';
+    } else if (event.environment === 'SANDBOX' && !sandboxAllowed(merchantId)) {
+      console.warn(`[RevenueCat Webhook] Sandbox ${event.type} for merchant ${merchantId} ignored (not in REVENUECAT_SANDBOX_MERCHANT_IDS)`);
+      outcome = 'ignored_sandbox';
+    } else {
+      outcome = await handleEvent(merchantId, event);
+    }
     // Not applied: give the event id back, so RevenueCat's retry or a manual resend can run it later (A9)
     if (outcome.startsWith('ignored_')) await releaseEvent(claim);
     // No active plan for the product's tier is our configuration problem: 500 makes RevenueCat retry
@@ -187,10 +197,35 @@ async function handleEvent(merchantId: number, event: RevenueCatEvent): Promise<
   }
 }
 
+/**
+ * A3: the app user id prefix this API serves. Production (unset): `merchant_<id>`, what store builds on the production
+ * API use. The dev API sets REVENUECAT_APP_USER_ID_PREFIX=dev_merchant_ (builds on a non-production API log in as
+ * `dev_merchant_<id>`), so dev and production shops with the same number never touch each other.
+ */
+function appUserPrefix(): string {
+  return (process.env.REVENUECAT_APP_USER_ID_PREFIX || '').trim() || 'merchant_';
+}
+
 function parseMerchantId(appUserId: string | undefined): number | null {
-  // "merchant_32"; anonymous ids ("$RCAnonymousID:…") are skipped
-  const match = String(appUserId ?? '').match(/^merchant_(\d+)$/);
-  return match ? parseInt(match[1], 10) : null;
+  // "merchant_32" (or "dev_merchant_32" on the dev API); anonymous ids ("$RCAnonymousID:…") and the other environment's ids are skipped
+  const id = String(appUserId ?? '');
+  const prefix = appUserPrefix();
+  if (!id.startsWith(prefix)) return null;
+  const rest = id.slice(prefix.length);
+  return /^\d+$/.test(rest) ? parseInt(rest, 10) : null;
+}
+
+/**
+ * A3: sandbox purchases (dev builds, TestFlight, App Review) never change a real shop. The dev API takes them all; the
+ * production API only for the merchant ids in REVENUECAT_SANDBOX_MERCHANT_IDS (comma list, e.g. the App Review demo shop).
+ */
+function sandboxAllowed(merchantId: number): boolean {
+  if (appUserPrefix() !== 'merchant_') return true;
+  return (process.env.REVENUECAT_SANDBOX_MERCHANT_IDS || '')
+    .split(',')
+    .map((v) => parseInt(v.trim(), 10))
+    .filter((n) => Number.isFinite(n))
+    .includes(merchantId);
 }
 
 /** Active, not deleted plan of a tier ("Basic", "Professional") */
@@ -305,7 +340,8 @@ async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEven
     period_type: event.period_type ?? null,
   });
 
-  if (amount > 0) {
+  // A3: a sandbox purchase is not money: no payment row
+  if (amount > 0 && event.environment !== 'SANDBOX') {
     await db.prisma.payment.create({
       data: {
         amount,
