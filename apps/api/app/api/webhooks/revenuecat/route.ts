@@ -200,6 +200,8 @@ async function handleEvent(merchantId: number, event: RevenueCatEvent): Promise<
       return handleBillingIssue(merchantId, event);
     case 'TRANSFER':
       return handleTransfer(merchantId, event);
+    case 'SUBSCRIPTION_EXTENDED':
+      return handleExtended(merchantId, event);
     default:
       return `ignored_${String(event.type).toLowerCase()}`;
   }
@@ -590,5 +592,24 @@ async function handleTransfer(toMerchantId: number, event: RevenueCatEvent): Pro
   });
   await logActivity(to.id, 'IAP_TRANSFER', planHistory.transferIn(channel, from.currentPeriodEnd), event, { fromMerchantId: fromId });
   await logActivity(from.id, 'IAP_TRANSFER', planHistory.transferOut(channel, from.currentPeriodEnd), event, { toMerchantId });
+  return 'ok';
+}
+
+/** A7 SUBSCRIPTION_EXTENDED (a deferred Google Play renewal, an App Store extension): the period runs to the new expiration */
+async function handleExtended(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const sub = await findSubscription(merchantId);
+  if (!sub) return 'ignored_no_subscription';
+  const channel = channelFromStore(event.store);
+  if (!isCurrentProduct(sub, event.product_id)) {
+    await logActivity(sub.id, 'IAP_EXTENDED', planHistory.otherProductEvent(channel), event, { reason: 'other_product' });
+    return 'ok_other_product';
+  }
+  if (!event.expiration_at_ms) return 'ignored_no_expiration';
+  const extended = new Date(event.expiration_at_ms);
+  const end = extended > sub.currentPeriodEnd ? extended : sub.currentPeriodEnd;
+  if (extended > sub.currentPeriodEnd) {
+    await db.prisma.subscription.update({ where: { merchantId }, data: { currentPeriodEnd: extended, updatedAt: new Date() } });
+  }
+  await logActivity(sub.id, 'IAP_EXTENDED', planHistory.extended(channel, end), event, { expiresAt: extended.toISOString() });
   return 'ok';
 }

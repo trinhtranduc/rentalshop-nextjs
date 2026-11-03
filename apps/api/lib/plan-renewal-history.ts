@@ -54,6 +54,8 @@ export const planHistory = {
         : ` Gói vẫn dùng đến ${vnDate(until)}.`
       : ''),
   expired: () => 'Gói đã hết hạn.',
+  /** "Google Play gia hạn thêm, gói dùng đến 12/12/2026." (a deferred renewal, an App Store extension) */
+  extended: (channel: BillingChannel, end: Date) => `${storeName(channel)} gia hạn thêm, gói dùng đến ${vnDate(end)}.`,
   transferIn: (channel: BillingChannel, end: Date) =>
     `Gói ${storeName(channel)} được chuyển từ shop khác sang shop này. Dùng đến ${vnDate(end)}.`,
   transferOut: (channel: BillingChannel, end: Date) =>
