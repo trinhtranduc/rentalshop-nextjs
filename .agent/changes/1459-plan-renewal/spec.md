@@ -68,6 +68,34 @@ Issue: #1459 · Status: accepted · Intent: ./intent.md
 14h. A5, A6: the status reads the device store from `X-Device-Type`; auto-renewing on that store → higher plans offered;
      auto-renew off on that store → `reenableAutoRenew` true and the same plan not purchasable.
 
+### A13 renewal credit (owner, 2026-11-03): "Gia hạn sớm không mất ngày"
+
+A renewal always continues from the old end, never from today; the shop never loses the days it has left, trial days
+included. Plan ends 05/11/2026, 12 months bought on 03/11/2026 → access to 05/11/2027 (the store charges 03/11/2027).
+Rules in `apps/api/lib/plan-renewal.ts`.
+
+14i. `Subscription.storeBonusMs` (Float ms, nullable; extends the unapplied migration 20261102120000). Every store date
+     is `currentPeriodEnd = store expiration + storeBonusMs`.
+14j. A store purchase or renewal carries a credit (`storeCreditForPurchase`): nothing left at the purchase → 0; the same
+     store subscription going on (same channel with a store product: a renewal, an upgrade in that store, which prorates
+     its own days) → its credit, capped at what is left (a renewal charged late after a retry used some of it); a new
+     store subscription (first purchase, after a manual / trial / Lemon period, on the other store) → the days left
+     (`old end − purchased_at`).
+14k. RENEWAL, PRODUCT_CHANGE, SUBSCRIPTION_EXTENDED, UNCANCELLATION keep the offset; BILLING_ISSUE extends to the grace
+     end + credit; EXPIRATION at the store expiry leaves access until store expiry + credit (status EXPIRED only after it).
+14l. Refund of the period in use (matched on the store expiry = end − credit): back to the paid period's start + credit
+     (the first store purchase: the old end, trial / manual days included). Still ahead → the shop keeps those days off
+     the store (MANUAL, no auto-renew, no store product, no credit; history "… đã hoàn tiền. Shop dùng tiếp các ngày còn
+     lại đến …"); passed → access ends now, EXPIRED (A10).
+14m. Manual extensions (admin, manual payment, SePay renew, `subscriptions/[id]/extend`) while a store plan still runs
+     (store channel, store product, not EXPIRED, end ahead; auto-renew on or off): the extra time joins `storeBonusMs`;
+     channel, auto-renew, product, start, price and cancel fields stay. No store plan running → A10 (MANUAL, credit
+     cleared). This corrects A10 (`manualExtensionBilling`).
+14n. TRANSFER: the receiving shop gets the store expiry (without the old shop's credit) + its own days left.
+14o. `GET /api/subscriptions/status` adds `storeRenewsAt`: the store's next charge (= end − credit) while a store plan
+     auto-renews without a billing issue, else null. Additive.
+14p. Phase 2 (Lemon Squeezy) uses the same credit model; not built here.
+
 ### Lemon Squeezy webhook
 
 15. `subscription_*` events also write `billingChannel` LEMON, `autoRenew` (active and not cancelled) and
@@ -123,7 +151,10 @@ a staff read-only plan screen outside the expired state.
 - Migration `subscription_store_billing`: `Subscription.billingChannel TEXT NULL`, `storeProductId TEXT NULL`,
   `storeOriginalTransactionId TEXT NULL`, `autoRenew BOOLEAN NOT NULL DEFAULT false`, `billingIssueAt TIMESTAMP(3) NULL`;
   table `BillingWebhookEvent (id, provider, eventId, eventType, merchantId, createdAt)` unique (provider, eventId).
-- Status adds the fields of 4 for MERCHANT and outlet roles (same scope as today). Plans add `storeProductIds`.
+- Same migration (A8, A13, not applied anywhere yet): `Subscription.lastStoreEventAt TIMESTAMP(3) NULL`,
+  `storeBonusMs DOUBLE PRECISION NULL` (Float: a full row stays JSON-serialisable; Int would stop at 24.8 days).
+- Status adds the fields of 4 for MERCHANT and outlet roles (same scope as today), `reenableAutoRenew` (A6) and
+  `storeRenewsAt` (A13). Plans add `storeProductIds`.
 - Webhooks are server-to-server; no app reads them.
 
 ## Acceptance

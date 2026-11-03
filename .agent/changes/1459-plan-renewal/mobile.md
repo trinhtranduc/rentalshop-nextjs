@@ -156,3 +156,26 @@ New strings (vi / en):
 | reenable.button | Bật lại tự gia hạn | Turn auto-renew back on |
 | confirmingHint | Thường mất vài giây, có thể đến một phút. | Usually a few seconds, up to a minute. |
 | currentAutoRenew | Đang dùng · tự gia hạn ngày %@ | Current · renews on %@ |
+
+## A13 renewal credit (2026-11-03): "Gia hạn sớm không mất ngày"
+
+- **Status field `storeRenewsAt`** (optional, ISO, null / missing on older APIs): the store's next charge while a store
+  plan auto-renews. Access still runs to `currentPeriodEnd` (= `storeRenewsAt` + the shop's credit).
+- **Auto-renew row:** "Tự gia hạn ngày <storeRenewsAt> · price" (fallback: `currentPeriodEnd`); the status card keeps
+  "Dùng đến <currentPeriodEnd>". With a credit the two dates differ; without one they are the same as before. The plan
+  row subtitle `plan.currentAutoRenew` uses the same date.
+- **Disclosure under the buy button** (pure `disclosure(now, months, amount/status)`; charge = today's Vietnam day +
+  months):
+  - expired, no end, or the expired gate → `plan.disclosure` "Kỳ mới tính từ hôm nay, dùng đến <charge>. …";
+  - days left and the purchase starts a new store subscription (trial, manual, Lemon, the other store) →
+    `plan.disclosureCarry` with from = old end, end = charge + (old end − now), charge;
+  - days left and an upgrade in the store that bills the plan (`billingChannel` = this device's store and a
+    `storeProductId`) → credit = `currentPeriodEnd − storeRenewsAt` (0 when unknown); end = charge + credit;
+    `plan.disclosureCredit` when the end day differs from the charge day, else `plan.disclosure`.
+- Unit tests on both platforms: owner example, trial, other store, expired, same-store upgrade with and without credit,
+  auto-renew row date, decoding with and without the field.
+
+| Key (iOS `plan.*`, Android `plan_*`) | vi | en |
+|---|---|---|
+| disclosureCarry | Hạn mới tính tiếp từ %1$@, dùng đến %2$@. Tự gia hạn mỗi %3$d tháng (%4$@), lần trừ tiền tới ngày %5$@, đến khi huỷ. | The new period continues from %1$@ and runs until %2$@. Renews every %3$d months (%4$@), next charge on %5$@, until cancelled. |
+| disclosureCredit | Kỳ mới tính từ hôm nay, dùng đến %1$@. Tự gia hạn mỗi %2$d tháng (%3$@), lần trừ tiền tới ngày %4$@, đến khi huỷ. | The new period starts today and runs until %1$@. Renews every %2$d months (%3$@), next charge on %4$@, until cancelled. |

@@ -82,3 +82,11 @@ section "Thiết kế đơn giản · theo research" plus sections 1, 1b and 2; 
   (`grace_period_expiration_at_ms`); RENEWAL / UNCANCELLATION / PRODUCT_CHANGE clear it; EXPIRATION ends access. The apps
   also open the gate on 403 `SUBSCRIPTION_PAST_DUE` (Lemon / Stripe): owner Quản lý / huỷ gói, staff "Nhờ chủ shop gia
   hạn."; `core.ts` PAST_DUE blocking unchanged for those channels (phase 2).
+- 2026-11-03 — A13 "Gia hạn sớm không mất ngày: hạn mới cộng tiếp từ ngày hết hạn cũ" (owner, via coordinator): a
+  constant credit `storeBonusMs` on top of the store's dates; the first store purchase keeps the days left (trial
+  included); same-store upgrades keep only the existing credit; refunds go back to the period start + credit; manual
+  extensions while a store plan runs join the credit (corrects A10); status `storeRenewsAt`. Lemon phase 2 same model.
+- 2026-11-03 — A13 detail (agent): "a store plan still runs" = store channel + product + period ahead, whether
+  auto-renew is on or off, so an extension given while auto-renew is off survives "Bật lại tự gia hạn". `storeRenewsAt`
+  only while auto-renewing (null with auto-renew off or a billing issue). A same-store upgrade with auto-renew off shows
+  the "starts today" disclosure (the credit is not exposed then); the server still keeps the credit.
