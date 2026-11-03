@@ -423,20 +423,7 @@ fun SubscriptionScreen(
                     LogoutLink { signOut() }
                 }
                 PlanScreenMode.AUTO_RENEWING -> {
-                    SectionHeader(stringResource(R.string.plan_section_auto_renew))
-                    Card {
-                        // A13: the store's charge date; "Dùng đến" above stays the period end (later with a credit)
-                        val endText = PlanRenewal.autoRenewDate(s)?.let(PlanRenewal::vnDate) ?: "—"
-                        val amount = autoRenewAmount(s, packages)
-                        PlanRow {
-                            Text(
-                                if (amount != null) stringResource(R.string.plan_auto_renew_on, endText, amount)
-                                else stringResource(R.string.plan_auto_renew_on_date, endText),
-                                fontSize = 16.sp, color = PlanColors.Text,
-                                modifier = Modifier.testTag("plan.autoRenew"),
-                            )
-                        }
-                    }
+                    // #1466: no auto-renew card (as iOS); the store's page (Quản lý / huỷ gói) shows the renewal.
                     // #1464: Quản lý / huỷ gói and Khôi phục in the bottom links, once (as iOS)
                     FooterLinks(
                         links,
@@ -473,8 +460,8 @@ fun SubscriptionScreen(
                                     enabled = buyable && phase != ConfirmPhase.CONFIRMING,
                                     subtitle = when {
                                         buyable -> includesText(plan.hasWeb, plan.users, null, plan.products, language, withOutlets = false)
-                                        // A5: upgrading while the store renews this plan
-                                        s.autoRenew -> stringResource(R.string.plan_current_auto_renew, PlanRenewal.autoRenewDate(s)?.let(PlanRenewal::vnDate) ?: "—")
+                                        // A5: upgrading while the store renews this plan: "Đang dùng" only (#1466)
+                                        s.autoRenew -> stringResource(R.string.plan_current)
                                         else -> stringResource(R.string.plan_current_renew_later, s.renewWindowDays)
                                     },
                                     onSelect = { selectedPlanId = plan.id },
@@ -592,12 +579,6 @@ private fun includesText(hasWeb: Boolean, users: Int?, outlets: Int?, products: 
 /** VND as "1.799.000 ₫"; other currencies as the store writes them */
 private fun amountLabel(pkg: RenewPackage): String =
     if (PlanRenewal.isVnd(pkg.currencyCode)) PlanRenewal.formatAmount(pkg.priceAmount, "VND") else pkg.priceLabel
-
-private fun autoRenewAmount(s: PlanRenewalStatus, packages: Map<String, RenewPackage>): String? {
-    s.storeProductId?.let { packages[it] }?.let { return amountLabel(it) }
-    val amount = s.billingAmount?.takeIf { it > 0 } ?: return null
-    return PlanRenewal.formatAmount(amount, s.billingCurrency)
-}
 
 @Composable
 private fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit) {

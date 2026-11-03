@@ -269,9 +269,6 @@ object PlanRenewal {
         return PlanDisclosure.Continues(vnDate(end), vnDate(charge.plusMillis(left)), vnDate(charge))
     }
 
-    /** A13: the date on the auto-renew row: the store's charge (`storeRenewsAt`), else the period end (an older API) */
-    fun autoRenewDate(status: PlanRenewalStatus): Instant? = status.storeRenewsAt ?: status.currentPeriodEnd
-
     /** Days for the Home line "Gói còn N ngày" (owner, renew offered, 0..window days left); null hides it */
     fun homeLineDays(role: String?, status: PlanRenewalStatus?): Int? {
         if (role != "MERCHANT" || status == null || status.isExpired || !status.canRenew) return null

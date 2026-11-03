@@ -128,7 +128,7 @@ final class SubscriptionViewController: BaseViewControler {
                 self.plans = newPlans.filter { $0.storeProductIds != nil }.sorted { ($0.sortOrder, $0.id) < ($1.sortOrder, $1.id) }
             }
             let ids = self.plans.compactMap(\.storeProductIds).flatMap { [$0.semiAnnual, $0.annual] }
-            guard self.isOwner, !ids.isEmpty, let status = self.status, !status.purchasable.isEmpty || status.autoRenew == true else {
+            guard self.isOwner, !ids.isEmpty, let status = self.status, !status.purchasable.isEmpty else {
                 self.finishLoading()
                 return
             }
@@ -199,14 +199,12 @@ final class SubscriptionViewController: BaseViewControler {
         let links = PlanRenewalLogic.footerLinks(status)
         switch mode {
         case .purchase, .expiredOwner:
-            // A5: an auto-renewing shop upgrading through its store sees its renewal first
-            if status.autoRenew == true && !status.isExpired { addAutoRenew(status) }
             addPlanChooser(status)
             addPeriodChooser()
             addBuyButton(status)
             addFooterLinks(links)
         case .autoRenewing:
-            addAutoRenew(status)
+            // #1466: no auto-renew card; the store's sheet (Quản lý / huỷ gói) shows the renewal
             addFooterLinks(links)
         case .nothingToBuy:
             addMessage(String(format: "plan.renewLater".localized(), status.window))
@@ -289,10 +287,11 @@ final class SubscriptionViewController: BaseViewControler {
         var rows: [UIView] = []
         for plan in visible {
             let enabled = status.purchasable.contains(plan.id)
+            // A5: upgrading while the store renews this plan: "Đang dùng" only (#1466)
             let subtitle = enabled
                 ? PlanRenewalLogic.includes(limits: plan.limits, features: plan.features, withOutlets: false)
                 : status.autoRenew == true
-                    ? String(format: "plan.currentAutoRenew".localized(), PlanRenewalLogic.autoRenewDate(status).map(PlanRenewalLogic.day) ?? "—")
+                    ? "plan.current".localized()
                     : String(format: "plan.currentRenewLater".localized(), status.window)
             let row = ChoiceRow(title: plan.name, pill: plan.isPopular ? "plan.popular".localized() : nil, subtitle: subtitle,
                                 amount: nil, selected: enabled && plan.id == selectedPlanId, enabled: enabled)
@@ -400,27 +399,6 @@ final class SubscriptionViewController: BaseViewControler {
         card.addRows([line, Self.inset(button, by: 16, vertical: 4)], separators: true)
         stack.addArrangedSubview(spacer(16))
         stack.addArrangedSubview(card)
-    }
-
-    /// "TỰ GIA HẠN": "Tự gia hạn ngày 02/11/2027 · 1.799.000 ₫". A13: the store's charge date; "Dùng đến" above stays the
-    /// period end (later when the shop had days left). #1464: Quản lý / huỷ gói is in the bottom links, once
-    private func addAutoRenew(_ status: PlanStatus) {
-        addSectionHeader("plan.section.autoRenew".localized())
-        let card = Self.card(padded: false)
-        let date = PlanRenewalLogic.autoRenewDate(status).map(PlanRenewalLogic.day) ?? "—"
-        let amount = autoRenewAmount(status)
-        let text = amount.map { String(format: "plan.autoRenewOn".localized(), date, $0) }
-            ?? String(format: "plan.autoRenewOnDate".localized(), date)
-        let line = Self.inset(Self.label(text, size: DS.TextSize.body, color: DS.Color.text, id: "plan.autoRenew"), by: 16, vertical: 13)
-        card.addRows([line], separators: true)
-        stack.addArrangedSubview(card)
-    }
-
-    private func autoRenewAmount(_ status: PlanStatus) -> String? {
-        if let id = PlanRenewalLogic.baseProductId(status.storeProductId), let product = products[id] { return product.priceText }
-        guard let amount = status.billingAmount, amount > 0 else { return nil }
-        if (status.billingCurrency ?? "VND").uppercased() == "VND" { return PlanRenewalLogic.groupThousands(Int(amount.rounded())) + " ₫" }
-        return String(format: "%.2f %@", amount, status.billingCurrency ?? "")
     }
 
     private func addMessage(_ text: String) {

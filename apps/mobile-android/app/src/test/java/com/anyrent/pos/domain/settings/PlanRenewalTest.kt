@@ -312,18 +312,27 @@ class PlanRenewalTest {
         assertEquals(PlanDisclosure.StartsToday("03/11/2027"), PlanRenewal.disclosure(renewNow, 12, noCredit))
     }
 
-    /** The auto-renew row shows the store's charge date; "Dùng đến" stays the period end (they differ with a credit) */
+    /**
+     * #1466 (as iOS): while the store renews, the status card says "Dùng đến <period end>" (later than the store's charge
+     * with a credit); there is no auto-renew card, and its sentences are gone from both languages
+     */
     @Test
-    fun autoRenewRowUsesTheStoreChargeDate() {
+    fun autoRenewingShowsOnlyTheStatusCard() {
         val s = json("autoRenew" to true, "currentPeriodEnd" to "2027-11-05T16:59:59.999Z", "storeRenewsAt" to "2027-11-03T03:00:00.000Z")
         assertEquals(Instant.parse("2027-11-03T03:00:00Z"), s.storeRenewsAt)
-        assertEquals("03/11/2027", PlanRenewal.vnDate(PlanRenewal.autoRenewDate(s)!!))
         assertEquals(PlanStatusLine.ValidUntil("05/11/2027"), PlanRenewal.statusLine(s.daysRemaining, s.currentPeriodEnd!!, autoRenew = s.autoRenew))
-        // an API without the field (or null): the period end, as before
-        val older = json("autoRenew" to true, "currentPeriodEnd" to "2027-11-05T16:59:59.999Z")
-        assertNull(older.storeRenewsAt)
+        assertEquals(PlanScreenMode.AUTO_RENEWING, PlanRenewal.screenMode("MERCHANT", s, storeAvailable = false))
+        // an API without the field (or null) still decodes
+        assertNull(json("autoRenew" to true, "currentPeriodEnd" to "2027-11-05T16:59:59.999Z").storeRenewsAt)
         assertNull(json("storeRenewsAt" to null).storeRenewsAt)
-        assertEquals("05/11/2027", PlanRenewal.vnDate(PlanRenewal.autoRenewDate(older)!!))
+        for (folder in listOf("values-vi", "values")) {
+            val table = strings(folder)
+            for (key in listOf("plan_section_auto_renew", "plan_auto_renew_on", "plan_auto_renew_on_date", "plan_current_auto_renew")) {
+                assertNull("$key removed ($folder)", table[key])
+            }
+        }
+        // CHỌN GÓI, the current plan's row while the store renews it
+        assertEquals("Đang dùng", strings("values-vi")["plan_current"])
     }
 
     // ─── #1464 the store already has a plan; compact links (as iOS PlanRenewalLogicTests) ───
