@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { addMonthsInTimeZone, handleApiError } from '@rentalshop/utils';
@@ -15,7 +16,8 @@ import { planHistory } from '../../../../lib/plan-renewal-history';
  * POST /api/webhooks/revenuecat
  *
  * Receives subscription events from RevenueCat (App Store, Google Play). Server to server; no app calls it.
- * Auth: `Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>` when the secret is set.
+ * Auth: RevenueCat's "Authorization header value" must be the literal `Bearer <REVENUECAT_WEBHOOK_SECRET>`; compared in
+ * constant time. Without the env var every event is refused with 503 (and logged), never accepted unauthenticated.
  * App User ID format: "merchant_{merchantId}" (set by PurchasesManager.logInMerchant on iOS and Android).
  *
  * #1459:
@@ -73,10 +75,23 @@ interface RevenueCatWebhookPayload {
 
 type Outcome = string;
 
+export const runtime = 'nodejs';
+
+/** `Authorization: Bearer <secret>`, compared in constant time */
+function authorised(header: string | null, secret: string): boolean {
+  const expected = Buffer.from(`Bearer ${secret}`, 'utf8');
+  const received = Buffer.from(header ?? '', 'utf8');
+  return received.length === expected.length && timingSafeEqual(received, expected);
+}
+
 export async function POST(request: NextRequest) {
-  // 1. Authenticity
+  // 1. Authenticity: no secret configured = refuse everything (RevenueCat retries once it is set)
   const webhookSecret = process.env.REVENUECAT_WEBHOOK_SECRET;
-  if (webhookSecret && request.headers.get('authorization') !== `Bearer ${webhookSecret}`) {
+  if (!webhookSecret) {
+    console.error('[RevenueCat Webhook] REVENUECAT_WEBHOOK_SECRET is not set: event refused');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+  }
+  if (!authorised(request.headers.get('authorization'), webhookSecret)) {
     console.error('[RevenueCat Webhook] Invalid authorization header');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
