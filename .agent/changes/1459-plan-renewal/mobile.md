@@ -125,3 +125,34 @@ Expired screen: no back button; title black; "Đăng xuất" centred at the bott
   is known.
 - Android Play upgrade: when the shop holds an active Play subscription to another of the four products, pass it as
   `oldProductId` with an immediate replacement mode so Google does not open a second subscription.
+
+## Audit fixes (2026-11-03): A1, A3a, A5, A6, A11, A12
+
+- **A3a app user id:** `merchant_<merchantId>` only when the app talks to the production API (host `api.anyrent.shop`);
+  any other API (dev-api, a local API) uses `dev_merchant_<merchantId>`. Pure helper `appUserId(merchantId, apiBaseUrl)`.
+- **A1 RevenueCat login is awaited:** before loading products, purchase and restore, the manager makes sure
+  `appUserID` is the expected id: `logIn(expected)` up to 3 tries (1 s apart), then compares. When it is not the expected
+  id it refuses (no store sheet) and the screen says `plan.accountNotReady` with Thử lại. Pure helper
+  `storeAccountReady(current, expected)` = expected not empty and equal. The e2e StoreKit path (iOS) skips the check.
+- **A5 upgrade while auto-renewing:** the status may now list higher plans while `autoRenew` is true (only when the
+  plan renews on the device's own store; the server decides from `X-Device-Type`). Mode: auto-renewing with purchasable
+  plans and store products → purchase (upgrade only). The current plan row is disabled with
+  `plan.currentAutoRenew` "Đang dùng · tự gia hạn ngày %@".
+- **A6 re-enable:** new optional status field `reenableAutoRenew`. When true, after the status card show a card:
+  `plan.reenable.line` "Tự gia hạn đang tắt. Gói dùng đến %@." and a button `plan.reenable.button` "Bật lại tự gia hạn"
+  that opens the manage page (iOS Apple sheet, Android Play subscriptions link). No disclosure for that. If no plan is
+  purchasable, mode `reenableOnly` (no "Gia hạn được khi còn 7 ngày." line); else purchase mode for the upgrade.
+- **A11 Android restore:** after a successful restore read the status first (as iOS): not expired → done (settings: the
+  short "Đã khôi phục giao dịch." notice; expired gate: leave to Home with the renewed notice); still expired → confirming.
+- **A12 wait ~60 s:** confirmation polls every 2 s for 60 s; while confirming, a calm line under the button
+  `plan.confirmingHint` "Thường mất vài giây, có thể đến một phút."; then the existing slow state.
+
+New strings (vi / en):
+
+| Key (iOS `plan.*`, Android `plan_*`) | vi | en |
+|---|---|---|
+| accountNotReady | Chưa kết nối được tài khoản mua hàng. Thử lại sau giây lát. | Could not connect the purchase account. Try again in a moment. |
+| reenable.line | Tự gia hạn đang tắt. Gói dùng đến %@. | Auto-renew is off. The plan runs until %@. |
+| reenable.button | Bật lại tự gia hạn | Turn auto-renew back on |
+| confirmingHint | Thường mất vài giây, có thể đến một phút. | Usually a few seconds, up to a minute. |
+| currentAutoRenew | Đang dùng · tự gia hạn ngày %@ | Current · renews on %@ |
