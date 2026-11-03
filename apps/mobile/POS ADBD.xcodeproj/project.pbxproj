@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		993BD015E01AE4EE4F6A6F82 /* PlanRenewalHostedE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4ED619BF08779C2C3187FC8 /* PlanRenewalHostedE2ETests.swift */; };
+		7FB3DE778C3A7DCD15F915AB /* PlanRenewalE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E1F5D895D53314E6A54FCA /* PlanRenewalE2ETests.swift */; };
+		140D408356E6BD768C2F93B5 /* SubscriptionGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55DCFCE563C0BC0EE2A0F9FF /* SubscriptionGate.swift */; };
+		D3D8E4D922F4FE015F68DFD1 /* PlanRenewal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A55693525D5863A79A8DD4 /* PlanRenewal.swift */; };
+		0015AEBDB67EF352963B304A /* PlanRenewalLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A26E0DABFC61480DEAA3B60 /* PlanRenewalLogicTests.swift */; };
 		CAE68530A1E20B24206301E3 /* OrderPhotoQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968130FB36FE4D7D2CC57B28 /* OrderPhotoQueueTests.swift */; };
 		6952FD83AC5D7B4103675005 /* OrderPhotoBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE10C4D4802321992F01C9BC /* OrderPhotoBlockView.swift */; };
 		115060855F2816FEAF2B81A9 /* OrderPhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A019316F6099719560EF50F1 /* OrderPhotoUploader.swift */; };
@@ -460,6 +465,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A4ED619BF08779C2C3187FC8 /* PlanRenewalHostedE2ETests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewalHostedE2ETests.swift; sourceTree = "<group>"; };
+		74E1F5D895D53314E6A54FCA /* PlanRenewalE2ETests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewalE2ETests.swift; sourceTree = "<group>"; };
+		55DCFCE563C0BC0EE2A0F9FF /* SubscriptionGate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionGate.swift; sourceTree = "<group>"; };
+		71A55693525D5863A79A8DD4 /* PlanRenewal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewal.swift; sourceTree = "<group>"; };
+		5A26E0DABFC61480DEAA3B60 /* PlanRenewalLogicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanRenewalLogicTests.swift; sourceTree = "<group>"; };
 		968130FB36FE4D7D2CC57B28 /* OrderPhotoQueueTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderPhotoQueueTests.swift; sourceTree = "<group>"; };
 		AE10C4D4802321992F01C9BC /* OrderPhotoBlockView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderPhotoBlockView.swift; sourceTree = "<group>"; };
 		A019316F6099719560EF50F1 /* OrderPhotoUploader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OrderPhotoUploader.swift; sourceTree = "<group>"; };
@@ -972,6 +982,7 @@
 				A1375FEA49A710668E35B477 /* TodayWidgetSync.swift */,
 				04F1A0212F1B0001000A0021 /* DraftOrderNotificationCard.swift */,
 				04A1B0002F7A000100000001 /* PurchasesManager.swift */,
+				55DCFCE563C0BC0EE2A0F9FF /* SubscriptionGate.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -1201,6 +1212,8 @@
 				A973F0000000000000000002 /* PadLayoutTests.swift */,
 				42DC389596269843419D1B18 /* OrdersHomeTests.swift */,
 				A674F0000000000000000002 /* RefreshPolicyTests.swift */,
+				5A26E0DABFC61480DEAA3B60 /* PlanRenewalLogicTests.swift */,
+				A4ED619BF08779C2C3187FC8 /* PlanRenewalHostedE2ETests.swift */,
 				5C6A976F81FD6AC8A27871A3 /* OrderDetailLogicTests.swift */,
 				9700A0022E9F000100970001 /* PrinterSetupTests.swift */,
 				A4770477F0000000000000A3 /* NotificationsNotesV2Tests.swift */,
@@ -1301,6 +1314,7 @@
 				64454969BCB62EEB55223203 /* OverviewV2.swift */,
 				A616F0000000000000000001 /* OverviewDashLogic.swift */,
 				44906268638CD53C3E41AD39 /* SettingsV2.swift */,
+				71A55693525D5863A79A8DD4 /* PlanRenewal.swift */,
 				A1313F0000000000000000001 /* ShopInfo.swift */,
 				B86ED4966C5BBE6B97650E67 /* CustomersV2.swift */,
 				09DFF664402F310DBDA0C7DD /* AuthForms.swift */,
@@ -1684,6 +1698,7 @@
 				C9B3296D240D6FDE00FEB650 /* POS_ADBDUITests.swift */,
 				C9B3296F240D6FDE00FEB650 /* Info.plist */,
 				049FD91D14FBBCBC493F334A /* AnyRentE2ETests.swift */,
+				74E1F5D895D53314E6A54FCA /* PlanRenewalE2ETests.swift */,
 				41C05195E91C7CD02367D5AE /* OnboardingV2UITests.swift */,
 				A1375FE1048256EC4BD439C4 /* WidgetHomeScreenUITests.swift */,
 				F1A5CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift */,
@@ -2070,6 +2085,8 @@
 				A973B0000000000000000002 /* PadLayoutTests.swift in Sources */,
 				EEC26920309A69A20A3E8457 /* OrdersHomeTests.swift in Sources */,
 				A674B0000000000000000002 /* RefreshPolicyTests.swift in Sources */,
+				0015AEBDB67EF352963B304A /* PlanRenewalLogicTests.swift in Sources */,
+				993BD015E01AE4EE4F6A6F82 /* PlanRenewalHostedE2ETests.swift in Sources */,
 				0690D73C5F9F5F3E680CC0B6 /* OrderDetailLogicTests.swift in Sources */,
 				9700A0012E9F000100970001 /* PrinterSetupTests.swift in Sources */,
 				A4770477B0000000000000A3 /* NotificationsNotesV2Tests.swift in Sources */,
@@ -2131,6 +2148,7 @@
 				A1375FEB5D065A568F90FD4C /* TodayWidgetSync.swift in Sources */,
 				04F1A0222F1B0001000A0022 /* DraftOrderNotificationCard.swift in Sources */,
 				04A1B0012F7A000100000001 /* PurchasesManager.swift in Sources */,
+				140D408356E6BD768C2F93B5 /* SubscriptionGate.swift in Sources */,
 				04A1B0112F7A000100000011 /* SubscriptionViewController.swift in Sources */,
 				04A1B0112F7A000100000013 /* SubscriptionAPIService.swift in Sources */,
 				04A1B0112F7A000100000015 /* SubscriptionStatusInfo.swift in Sources */,
@@ -2359,6 +2377,7 @@
 				372335F213185EFD8AC37259 /* OverviewV2.swift in Sources */,
 				A616B0000000000000000001 /* OverviewDashLogic.swift in Sources */,
 				6F7DAC80E945C7A8AF3FD213 /* SettingsV2.swift in Sources */,
+				D3D8E4D922F4FE015F68DFD1 /* PlanRenewal.swift in Sources */,
 				A1313B0000000000000000001 /* ShopInfo.swift in Sources */,
 				17D94F202A30DC7679117E26 /* TabsV2APIService.swift in Sources */,
 				3FE6EF29B28557A9BC1F3E2C /* CalendarV2ViewController.swift in Sources */,
@@ -2428,6 +2447,7 @@
 			files = (
 				C9B3297C240D728B00FEB650 /* POS_ADBDUITests.swift in Sources */,
 				021E8ADE276F818FA77670D8 /* AnyRentE2ETests.swift in Sources */,
+				7FB3DE778C3A7DCD15F915AB /* PlanRenewalE2ETests.swift in Sources */,
 				D3448A56B3C7654B5E9723A8 /* OnboardingV2UITests.swift in Sources */,
 				A1375FA2B5B51194FC62EB4E /* WidgetHomeScreenUITests.swift in Sources */,
 				F1A6CB7ABC3FCA55692B4E52 /* FirstRunGuideUITests.swift in Sources */,

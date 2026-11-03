@@ -126,6 +126,16 @@ export async function POST(request: NextRequest) {
         const planId = custom.planId;
         if (!planId) break;
 
+        // #1459: how the shop pays (read by the apps through GET /api/subscriptions/status). Lemon renews an active,
+        // not cancelled subscription; past_due is a failed charge. Refunds and idempotency are phase 2.
+        const cancelledFlag = sub?.attributes?.cancelled === true;
+        const channelFields = {
+          billingChannel: 'LEMON',
+          storeProductId: null,
+          autoRenew: (mappedStatus === 'ACTIVE' || mappedStatus === 'TRIAL') && !cancelledFlag,
+          billingIssueAt: mappedStatus === 'PAST_DUE' ? new Date() : null,
+        };
+
         await db.prisma.subscription.upsert({
           where: { merchantId },
           create: {
@@ -145,6 +155,7 @@ export async function POST(request: NextRequest) {
             period: 1,
             discount: 0,
             savings: 0,
+            ...channelFields,
           } as any,
           update: {
             planId,
@@ -154,6 +165,7 @@ export async function POST(request: NextRequest) {
             currentPeriodEnd,
             interval: billingIntervalRaw === 'monthly' ? 'monthly' : billingIntervalRaw,
             intervalCount: months,
+            ...channelFields,
             updatedAt: new Date(),
           } as any,
         });

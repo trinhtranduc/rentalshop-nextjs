@@ -520,7 +520,9 @@ final class SettingsV2ViewController: BaseViewControler {
             page.v2 = true
             navigationController?.pushViewController(page, animated: true)
         case .plan:
-            break
+            // #1459: the owner opens Gói dịch vụ; other roles keep the read-only row
+            guard user?.role == .merchant else { break }
+            navigationController?.pushViewController(SubscriptionViewController(), animated: true)
         case .language:
             if let url = URL(string: UIApplicationOpenSettingsURLString) {
                 UIApplication.shared.open(url)
@@ -618,9 +620,9 @@ extension SettingsV2ViewController: UITableViewDataSource, UITableViewDelegate {
             cell.configureProfile(name: name.isEmpty ? (user?.email ?? "—") : name, subtitle: subtitle,
                                   initials: SettingsV2Logic.initials(name))
         case .item(let item):
-            cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan,
+            cell.configure(title: title(of: item), value: value(of: item), showsChevron: item != .plan || user?.role == .merchant,
                            badge: nil)
-            cell.accessibilityIdentifier = item == .firstRunGuide ? "settings.firstRunGuide" : nil
+            cell.accessibilityIdentifier = item == .firstRunGuide ? "settings.firstRunGuide" : item == .plan ? "settings.plan" : nil
         case .logout:
             cell.configureLogout("Logout".localized())
         case .overlapSwitch, .attendance:

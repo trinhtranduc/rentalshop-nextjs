@@ -320,6 +320,13 @@ final class AuthEventMonitor: EventMonitor {
 
     /// Sees only the final response: a request the interceptor retried reports the retry's result.
     func requestDidFinish(_ request: Request) {
+        // #1459: the shop's period ended (403 SUBSCRIPTION_EXPIRED / _PERIOD_ENDED / _CANCELLED): one screen, not an error per screen
+        let statusCode = request.response?.statusCode
+        if SubscriptionGate.opensGate(statusCode: statusCode,
+                                      code: statusCode == 403 ? AuthResponsePolicy.errorCode(in: (request as? DataRequest)?.data) : nil,
+                                      sentAuthorization: request.request?.value(forHTTPHeaderField: "Authorization") != nil) {
+            SubscriptionGate.shared.periodEnded()
+        }
         let action = AuthResponsePolicy.action(
             statusCode: request.response?.statusCode,
             code: AuthResponsePolicy.errorCode(in: (request as? DataRequest)?.data),

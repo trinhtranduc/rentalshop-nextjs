@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
+import { manualExtensionBilling } from '../../../../../../lib/plan-renewal';
 
 const extendSchema = z.object({
   months: z.number().int().min(1).max(24),
@@ -76,24 +77,29 @@ export async function POST(
       // Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
       const newPeriodEnd = addMonthsInTimeZone(new Date(currentEnd), months);
 
+      // #1459 A13: a store plan still running stays on the store (channel, auto-renew, start, price, cancel fields);
+      // the months join its credit, so the next store renewal keeps them. Otherwise (A10) the shop is manual.
+      const billing = manualExtensionBilling(subscription, newPeriodEnd, now);
       // Update subscription — update billing info to match manual extension
       const intervalValue = months <= 1 ? 'monthly' : months <= 3 ? 'quarterly' : months <= 6 ? 'semi_annual' : 'annual';
       const updated = await db.prisma.subscription.update({
         where: { id: subscriptionId },
-        data: {
-          status: 'ACTIVE',
-          currentPeriodEnd: newPeriodEnd,
-          currentPeriodStart: subscription.status === 'EXPIRED' ? now : subscription.currentPeriodStart,
-          cancelAtPeriodEnd: false,
-          canceledAt: null,
-          cancelReason: null,
-          // Keep billing info consistent (single source of truth)
-          interval: intervalValue,
-          intervalCount: 1,
-          // Update amount if provided (0 = free promo, positive = paid)
-          ...(paidAmount !== undefined && { amount: paidAmount }),
-          ...(paidCurrency && { currency: paidCurrency }),
-        },
+        data: billing.keepsStore
+          ? billing.data
+          : {
+              status: 'ACTIVE',
+              currentPeriodStart: subscription.status === 'EXPIRED' ? now : subscription.currentPeriodStart,
+              cancelAtPeriodEnd: false,
+              canceledAt: null,
+              cancelReason: null,
+              ...billing.data,
+              // Keep billing info consistent (single source of truth)
+              interval: intervalValue,
+              intervalCount: 1,
+              // Update amount if provided (0 = free promo, positive = paid)
+              ...(paidAmount !== undefined && { amount: paidAmount }),
+              ...(paidCurrency && { currency: paidCurrency }),
+            },
       });
 
       // Create Payment record if amount > 0

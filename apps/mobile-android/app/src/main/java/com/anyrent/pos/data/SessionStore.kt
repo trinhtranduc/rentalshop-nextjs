@@ -51,6 +51,8 @@ object SessionStore {
     private const val KEY_DEPOSIT_MODE = "merchantDepositMode"
     /** #1354 "Hiện ghi chú đơn trên ảnh chia sẻ" (`merchant.shareOrderNote` of GET /api/users/profile); absent = OFF */
     private const val KEY_SHARE_ORDER_NOTE = "shareOrderNote"
+    /** #1459 end of the shop's plan period (login `merchant.subscription.currentPeriodEnd`, then every status read), ISO */
+    private const val KEY_PLAN_PERIOD_END = "planPeriodEnd"
 
     private lateinit var prefs: SharedPreferences
     /** Emits the server's 401 code (e.g. SESSION_REPLACED) so the UI can say why the user was signed out. */
@@ -279,6 +281,11 @@ object SessionStore {
         get() = prefs.getBoolean(KEY_ONBOARDING, false)
         set(value) { prefs.edit().putBoolean(KEY_ONBOARDING, value).apply() }
 
+    /** #1459 end of the plan period as last known (ISO); a cold start with it in the past opens the expired screen first */
+    var planPeriodEnd: String?
+        get() = if (isReady) prefs.getString(KEY_PLAN_PERIOD_END, null) else null
+        set(value) { if (isReady) prefs.edit().putString(KEY_PLAN_PERIOD_END, value).apply() }
+
     /** #1413 the notification question was put on Home; clearAuth leaves it: the answer belongs to the install */
     var notificationPermissionAsked: Boolean
         get() = prefs.getBoolean(KEY_NOTIFICATION_ASKED, false)
@@ -317,6 +324,7 @@ object SessionStore {
             .remove(KEY_CURRENCY)
             .remove(KEY_DEPOSIT_MODE)
             .remove(KEY_SHARE_ORDER_NOTE)
+            .remove(KEY_PLAN_PERIOD_END)
             .apply()
         _shareOrderNote.value = false
         _depositMode.value = null
@@ -328,6 +336,7 @@ object SessionStore {
             lastLoginEmail = rememberedEmail
         }
         runCatching { com.anyrent.pos.billing.PurchasesManager.logOut() }
+        PlanRenewalStore.reset() // #1459
         com.anyrent.pos.push.DraftOrderReminder.cancel()
         CartStore.clear(persistToDisk = false)
         // #1381: the shop's data leaves the home-screen widget with the session

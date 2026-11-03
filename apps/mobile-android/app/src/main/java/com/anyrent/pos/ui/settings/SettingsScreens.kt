@@ -100,9 +100,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Temporary: hide plan / renew UI until billing is ready to ship. */
-private const val SHOWS_SUBSCRIPTION_RENEWAL = false
-
 @Composable
 fun SettingsScreen(
     onOpenUsers: () -> Unit,
@@ -164,7 +161,8 @@ fun SettingsScreen(
             SectionLabel(stringResource(R.string.account))
             AppCard {
                 SettingsCardRow(Icons.Default.Store, stringResource(R.string.store_info), onOpenStore)
-                if (SHOWS_SUBSCRIPTION_RENEWAL && SessionStore.role == "MERCHANT") {
+                // #1459: Gói dịch vụ is back for the shop owner (renew / upgrade in the app)
+                if (SessionStore.role == "MERCHANT") {
                     HorizontalDivider(Modifier.padding(start = 56.dp))
                     SettingsCardRow(
                         Icons.Default.CardMembership,

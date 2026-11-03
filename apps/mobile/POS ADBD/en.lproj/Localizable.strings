@@ -3212,3 +3212,63 @@
 
 /* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
 "order.detail.cashBreakdown" = "rental %@ + collateral %@";
+
+/* #1459 Gói dịch vụ: renew / upgrade in the app, expired screen, Home line */
+"plan.title" = "Subscription";
+"plan.current" = "Current";
+"plan.trial" = "Trial";
+"plan.expiresDaysLeft" = "Expires %@ · %d days left";
+"plan.expiresLastDay" = "Expires %@ · last day";
+"plan.validUntil" = "Valid until %@";
+"plan.includes" = "Includes: %@";
+"plan.feature.phone" = "phone app";
+"plan.feature.phoneWeb" = "app + web";
+"plan.feature.users" = "%d users";
+"plan.feature.outlets" = "%d branches";
+"plan.feature.products" = "%@ products";
+"plan.section.plan" = "Choose a plan";
+"plan.section.period" = "Choose a period";
+"plan.popular" = "Popular";
+"plan.months6" = "6 months";
+"plan.months12" = "12 months";
+"plan.perMonth" = "%@/month";
+"plan.perMonthApprox" = "≈%@/month";
+"plan.savings" = "%d%% less than two 6-month periods";
+"plan.button.renew" = "Renew %@ · %@";
+"plan.button.upgrade" = "Upgrade to %@ · %@ · %@";
+"plan.button.buy" = "Buy %@ · %@ · %@";
+"plan.confirming" = "Confirming payment…";
+"plan.disclosure" = "The new period starts today and runs until %@. Renews every %d months (%@) until cancelled.";
+"plan.manage" = "Manage / cancel";
+"plan.restore" = "Restore purchases";
+"plan.terms" = "Terms of Use";
+"plan.privacy" = "Privacy Policy";
+"plan.section.autoRenew" = "Auto-renew";
+"plan.autoRenewOn" = "Renews on %@ · %@";
+"plan.autoRenewOnDate" = "Renews on %@";
+"plan.renewLater" = "You can renew when %d days are left.";
+"plan.currentRenewLater" = "Current · renew when %d days are left";
+"plan.billingIssue" = "The renewal payment failed. Open Manage / cancel to check your payment method.";
+"plan.storeUnavailable" = "In-app purchase is not available in this version.";
+"plan.retry" = "Try again";
+"plan.notConfirmed" = "Payment not confirmed yet.";
+"plan.renewedUntil" = "Renewed until %@.";
+"plan.restored" = "Purchases restored.";
+"plan.nothingToRestore" = "No purchase found to restore.";
+"plan.loadError" = "Could not load the plan.";
+"plan.expired.title" = "Your shop's plan has expired";
+"plan.expired.line" = "%@ · expired %@. Your shop's data is kept.";
+"plan.expired.askOwner" = "Ask the shop owner to renew.";
+"plan.logout" = "Log out";
+"plan.home.daysLeft" = "Plan: %d days left";
+"plan.home.lastDay" = "Plan expires today";
+"plan.home.renew" = "Renew";
+"plan.paymentIssue.title" = "The plan payment did not go through";
+"plan.accountNotReady" = "Could not connect the purchase account. Try again in a moment.";
+"plan.reenable.line" = "Auto-renew is off. The plan runs until %@.";
+"plan.reenable.button" = "Turn auto-renew back on";
+"plan.confirmingHint" = "Usually a few seconds, up to a minute.";
+"plan.currentAutoRenew" = "Current · renews on %@";
+/* #1459 A13: a renewal continues from the old end */
+"plan.disclosureCarry" = "The new period continues from %1$@ and runs until %2$@. Renews every %3$d months (%4$@), next charge on %5$@, until cancelled.";
+"plan.disclosureCredit" = "The new period starts today and runs until %1$@. Renews every %2$d months (%3$@), next charge on %4$@, until cancelled.";

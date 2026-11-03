@@ -9,6 +9,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, USER_ROLE, PAYMENT_STATUS, PLATFORM_OPS_ROLES} from '@rentalshop/constants';
+import { manualExtensionBilling } from '../../../../lib/plan-renewal';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
@@ -80,8 +81,11 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
           validatedData.monthsToExtend
         );
 
+        // #1459 A10 / A13: a store plan still running keeps its store fields and the months join its credit;
+        // otherwise the shop is manual
+        const billing = manualExtensionBilling(currentSubscription, newEndDate);
         await db.subscriptions.update(currentSubscription.id, {
-          currentPeriodEnd: newEndDate,
+          ...billing.data,
           updatedAt: new Date()
         });
       }

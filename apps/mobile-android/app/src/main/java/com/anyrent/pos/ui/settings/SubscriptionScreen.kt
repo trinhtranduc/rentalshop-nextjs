@@ -1,7 +1,8 @@
 package com.anyrent.pos.ui.settings
 
 import android.app.Activity
-import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,27 +10,32 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,426 +48,722 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.billing.PurchaseCancelledException
+import com.anyrent.pos.billing.StoreAccountNotReadyException
 import com.anyrent.pos.billing.PurchasesManager
 import com.anyrent.pos.billing.RenewPackage
 import com.anyrent.pos.data.ApiClient
-import com.anyrent.pos.data.model.SubscriptionStatus
+import com.anyrent.pos.data.PlanRenewalStore
+import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.settings.InAppPlan
+import com.anyrent.pos.domain.settings.PlanDisclosure
+import com.anyrent.pos.domain.settings.PlanRenewal
+import com.anyrent.pos.domain.settings.PlanRenewalStatus
+import com.anyrent.pos.domain.settings.PlanScreenMode
+import com.anyrent.pos.domain.settings.PlanStatusLine
+import com.anyrent.pos.push.PushRegistrar
 import com.anyrent.pos.ui.common.LoadingBox
-import com.anyrent.pos.ui.common.SectionLabel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.util.Locale
 
+/** Colours of the approved calm design (mockup "Thiết kế đơn giản", Android): grey page, white cards, colour only on choices */
+private object PlanColors {
+    val Page = Color(0xFFF6F6F7)
+    val Card = Color.White
+    val CardBorder = Color(0xFFE7E8EC)
+    val RowLine = Color(0xFFEEF0F3)
+    val Text = Color(0xFF1C1C1E)
+    val Text2 = Color(0xFF44474E)
+    val Muted = Color(0xFF666A73)
+    val Primary = Color(0xFF2454F4)
+    val PrimaryBusy = Color(0xFF6F8BF7)
+    val PillBg = Color(0xFFE6ECFE)
+}
+
+private const val TERMS_URL = "https://www.anyrent.shop/terms"
+private const val PRIVACY_URL = "https://www.anyrent.shop/privacy"
+
+/** A12: poll GET /api/subscriptions/status every 2 s for about a minute after the store says paid (mobile.md "Flow") */
+private const val CONFIRM_POLLS = (PlanRenewal.CONFIRM_TIMEOUT_MS / PlanRenewal.CONFIRM_INTERVAL_MS).toInt()
+private const val CONFIRM_INTERVAL_MS = PlanRenewal.CONFIRM_INTERVAL_MS
+
+private enum class ConfirmPhase { IDLE, CONFIRMING, SLOW }
+
+/**
+ * #1459 Gói dịch vụ (owner) and the expired screen (every role).
+ * - [expiredGate]: shown in place of the app while the plan has ended: no back, "Đăng xuất"; the owner pays here, others
+ *   ask the owner and try again. [onActive] runs once the plan is active again (with the "Đã gia hạn đến …" text when paid).
+ * - Otherwise the screen from Cài đặt (MERCHANT only).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SubscriptionScreen(onBack: () -> Unit) {
+fun SubscriptionScreen(
+    onBack: () -> Unit,
+    expiredGate: Boolean = false,
+    onActive: (notice: String?) -> Unit = {},
+    onLoggedOut: () -> Unit = {},
+) {
     val context = LocalContext.current
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+    val role = SessionStore.role
+    val language = remember { Locale.getDefault().language }
 
     var loading by remember { mutableStateOf(true) }
-    var purchasing by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf<SubscriptionStatus?>(null) }
-    var statusError by remember { mutableStateOf<String?>(null) }
-    var packages by remember { mutableStateOf<List<RenewPackage>>(emptyList()) }
-    var packagesError by remember { mutableStateOf<String?>(null) }
-    var selectedProductId by remember { mutableStateOf<String?>(null) }
+    var status by remember { mutableStateOf<PlanRenewalStatus?>(null) }
+    var plans by remember { mutableStateOf<List<InAppPlan>>(emptyList()) }
+    var packages by remember { mutableStateOf<Map<String, RenewPackage>>(emptyMap()) }
+    var selectedPlanId by remember { mutableStateOf<Int?>(null) }
+    var selectedMonths by remember { mutableStateOf(12) }
+    var phase by remember { mutableStateOf(ConfirmPhase.IDLE) }
+    var busy by remember { mutableStateOf(false) }
+    var confirmBase by remember { mutableStateOf<PlanRenewalStatus?>(null) }
+    /** After a confirmed renewal the card says "Dùng đến …" (mockup "Trả xong · đã gia hạn") */
+    var renewed by remember { mutableStateOf(false) }
+    /** A1: RevenueCat could not log in as this shop: no buying or restoring, "Chưa kết nối được tài khoản…" + Thử lại */
+    var accountNotReady by remember { mutableStateOf(false) }
 
-    val annualSavingsPercent = remember(packages) { annualSavingsPercentVsTwoSemiAnnual(packages) }
+    val storeAvailable = PurchasesManager.isConfigured() && packages.isNotEmpty()
+    val renewedUntilTemplate = stringResource(R.string.plan_renewed_until)
+    val restoredText = stringResource(R.string.plan_restored)
+    val nothingToRestoreText = stringResource(R.string.plan_nothing_to_restore)
+    val loadErrorText = stringResource(R.string.plan_load_error)
+    val accountNotReadyText = stringResource(R.string.plan_account_not_ready)
+
+    fun pickDefaults(s: PlanRenewalStatus, list: List<InAppPlan>) {
+        val buyable = list.filter { it.id in s.purchasablePlanIds }
+        if (selectedPlanId == null || buyable.none { it.id == selectedPlanId }) {
+            // The plan in use when it can be renewed, else the first one that can be bought (the upgrade)
+            selectedPlanId = buyable.firstOrNull { it.id == s.planId }?.id ?: buyable.firstOrNull()?.id
+        }
+    }
 
     fun reload() {
         scope.launch {
             loading = true
-            statusError = null
-            packagesError = null
-            val statusResult = withContext(Dispatchers.IO) {
-                ApiClient.get().getSubscriptionStatus()
+            val s = withContext(Dispatchers.IO) { ApiClient.get().subscriptionRenewalStatus().getOrNull() }
+            if (s != null) {
+                status = s
+                PlanRenewalStore.store(s)
+                if (expiredGate && !s.isBlocked) {
+                    loading = false
+                    onActive(null)
+                    return@launch
+                }
             }
-            statusResult
-                .onSuccess { status = it }
-                .onFailure { statusError = it.message ?: context.getString(R.string.subscription_status_error) }
-
-            if (PurchasesManager.isConfigured()) {
-                val offerings = PurchasesManager.getRenewPackages()
-                offerings
-                    .onSuccess { list ->
-                        packages = list
-                        if (selectedProductId == null || list.none { it.productId == selectedProductId }) {
-                            selectedProductId = list.firstOrNull()?.productId
-                        }
-                    }
-                    .onFailure {
-                        packagesError = it.message ?: context.getString(R.string.subscription_offerings_error)
-                        packages = emptyList()
-                    }
-            } else {
-                packagesError = context.getString(R.string.subscription_sdk_not_configured)
-                packages = emptyList()
+            if (role == "MERCHANT" && s != null) {
+                plans = withContext(Dispatchers.IO) { ApiClient.get().inAppPlans().getOrNull() }.orEmpty()
+                if (PurchasesManager.isConfigured()) {
+                    val loaded = PurchasesManager.getRenewPackages()
+                    accountNotReady = loaded.exceptionOrNull() is StoreAccountNotReadyException
+                    packages = loaded.getOrNull().orEmpty().associateBy { it.productId }
+                }
+                pickDefaults(s, plans)
             }
             loading = false
+        }
+    }
+
+    fun done(after: PlanRenewalStatus) {
+        PlanRenewalStore.store(after)
+        status = after
+        phase = ConfirmPhase.IDLE
+        renewed = true
+        val text = String.format(renewedUntilTemplate, after.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "")
+        if (expiredGate) {
+            onActive(text)
+        } else {
+            scope.launch { snackbar.showSnackbar(text) }
+            pickDefaults(after, plans)
+        }
+    }
+
+    /** The store took the money: wait for the server (webhook) to move the period or the plan */
+    fun confirm(before: PlanRenewalStatus?) {
+        confirmBase = before
+        phase = ConfirmPhase.CONFIRMING
+        scope.launch {
+            repeat(CONFIRM_POLLS) {
+                delay(CONFIRM_INTERVAL_MS)
+                val after = withContext(Dispatchers.IO) { ApiClient.get().subscriptionRenewalStatus().getOrNull() }
+                if (after != null && PlanRenewal.confirmed(before, after)) {
+                    done(after)
+                    return@launch
+                }
+            }
+            phase = ConfirmPhase.SLOW
+        }
+    }
+
+    fun buy(productId: String) {
+        val act = activity ?: return
+        if (busy || phase == ConfirmPhase.CONFIRMING) return
+        val before = status
+        scope.launch {
+            busy = true
+            val result = PurchasesManager.purchase(act, productId)
+            busy = false
+            result
+                .onSuccess { confirm(before) }
+                .onFailure { err ->
+                    if (err is PurchaseCancelledException) return@onFailure
+                    if (err is StoreAccountNotReadyException) accountNotReady = true
+                    snackbar.showSnackbar(if (err is StoreAccountNotReadyException) accountNotReadyText else err.message ?: loadErrorText)
+                }
+        }
+    }
+
+    fun restore() {
+        if (busy || !PurchasesManager.isConfigured()) return
+        val before = status
+        scope.launch {
+            busy = true
+            val result = PurchasesManager.restore()
+            busy = false
+            result
+                .onSuccess { info ->
+                    if (!PurchasesManager.hasMerchantEntitlement(info)) {
+                        snackbar.showSnackbar(nothingToRestoreText)
+                        return@onSuccess
+                    }
+                    // A11 (as iOS): the server may already know the purchase; wait for the webhook only if it does not
+                    val fresh = withContext(Dispatchers.IO) { ApiClient.get().subscriptionRenewalStatus().getOrNull() }
+                    when {
+                        fresh == null || fresh.isExpired -> confirm(before)
+                        expiredGate -> done(fresh)
+                        else -> {
+                            PlanRenewalStore.store(fresh)
+                            status = fresh
+                            pickDefaults(fresh, plans)
+                            snackbar.showSnackbar(restoredText)
+                        }
+                    }
+                }
+                .onFailure { err ->
+                    if (err is StoreAccountNotReadyException) accountNotReady = true
+                    snackbar.showSnackbar(if (err is StoreAccountNotReadyException) accountNotReadyText else err.message ?: loadErrorText)
+                }
+        }
+    }
+
+    fun open(url: String) {
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    }
+
+    fun signOut() {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                PushRegistrar.unregister()
+                ApiClient.get().logout()
+            }
+            SessionStore.clearAuth()
+            onLoggedOut()
         }
     }
 
     LaunchedEffect(Unit) { reload() }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = PlanColors.Page,
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.subscription),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                },
+                title = { Text(stringResource(R.string.plan_title), fontSize = 20.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                        )
+                    if (!expiredGate) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                        }
                     }
                 },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
             )
         },
     ) { padding ->
-        if (loading && status == null) {
-            Box(Modifier.padding(padding).fillMaxSize()) {
-                LoadingBox()
-            }
+        val s = status
+        if (loading && s == null) {
+            Box(Modifier.padding(padding).fillMaxSize()) { LoadingBox() }
             return@Scaffold
         }
-
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(top = 8.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+                .padding(top = 4.dp, bottom = 24.dp)
+                .widthIn(max = 640.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionLabel(stringResource(R.string.subscription_current))
-                SubscriptionCard {
-                    if (statusError != null && status == null) {
+            if (s == null) {
+                // Could not read the plan: say so, keep Thử lại (and Đăng xuất on the expired screen)
+                Text(loadErrorText, fontSize = 14.sp, color = PlanColors.Text2, modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp))
+                PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry")) { reload() }
+                if (expiredGate) LogoutLink { signOut() }
+                return@Column
+            }
+            val mode = PlanRenewal.screenMode(role, s, storeAvailable)
+            val trialLabel = stringResource(R.string.plan_trial)
+            val planName = PlanRenewal.displayPlanName(s.planName, s.isTrial, trialLabel)
+
+            // Status first (mockup): plan, days left; on the expired screen the black title and the end day
+            Card(Modifier.padding(top = 10.dp).testTag("plan.status")) {
+                if (s.isPastDue) {
+                    // A payment problem the API blocks on (PAST_DUE): the plan runs, the charge failed
+                    PlanRow {
+                        Text(stringResource(R.string.plan_payment_issue_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = PlanColors.Text)
+                        s.currentPeriodEnd?.let { end ->
+                            Text(planName + " · " + statusText(PlanRenewal.statusLine(s.daysRemaining, end)), fontSize = 14.sp, color = PlanColors.Muted)
+                        }
+                        Text(stringResource(R.string.plan_billing_issue), fontSize = 14.sp, color = PlanColors.Text2)
+                    }
+                } else if (s.isExpired) {
+                    PlanRow {
+                        Text(stringResource(R.string.plan_expired_title), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = PlanColors.Text)
                         Text(
-                            statusError!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium,
+                            stringResource(R.string.plan_expired_line, planName, s.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "—"),
+                            fontSize = 14.sp, color = PlanColors.Muted,
                         )
-                    } else {
-                        val s = status
-                        StatusRow(
-                            stringResource(R.string.subscription_plan),
-                            s?.planName ?: "—",
-                        )
-                        StatusRow(
-                            stringResource(R.string.subscription_status_label),
-                            s?.status ?: "—",
-                            valueColor = statusValueColor(s?.status),
-                        )
-                        StatusRow(
-                            stringResource(R.string.subscription_expires),
-                            formatPeriodEnd(s?.currentPeriodEnd)
-                                ?: stringResource(R.string.subscription_no_period),
-                        )
-                        StatusRow(
-                            stringResource(R.string.subscription_days_remaining),
-                            s?.daysRemaining?.toString() ?: "—",
-                        )
-                        s?.statusReason?.takeIf { it.isNotBlank() }?.let { reason ->
+                        if (s.billingIssue) {
+                            Text(stringResource(R.string.plan_billing_issue), fontSize = 14.sp, color = PlanColors.Text2)
+                        }
+                    }
+                } else {
+                    PlanRow {
+                        Row {
+                            Text(planName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PlanColors.Text)
+                            Text(" · " + stringResource(if (s.isTrial) R.string.plan_trial else R.string.plan_current), fontSize = 16.sp, color = PlanColors.Muted)
+                        }
+                        s.currentPeriodEnd?.let { end ->
+                            val line = PlanRenewal.statusLine(s.daysRemaining, end, renewed = renewed, autoRenew = s.autoRenew)
+                            Text(statusText(line), fontSize = 14.sp, color = PlanColors.Muted)
+                        }
+                        if (s.billingIssue) {
+                            Text(stringResource(R.string.plan_billing_issue), fontSize = 14.sp, color = PlanColors.Text2)
+                        }
+                    }
+                    if (mode == PlanScreenMode.AUTO_RENEWING || mode == PlanScreenMode.NOTHING_TO_BUY || mode == PlanScreenMode.REENABLE_ONLY) {
+                        RowDivider()
+                        PlanRow {
                             Text(
-                                reason,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                stringResource(R.string.plan_includes, includesText(s.hasWeb, s.users, s.outlets, s.products, language, withOutlets = true)),
+                                fontSize = 14.sp, color = PlanColors.Text2,
                             )
                         }
                     }
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionLabel(stringResource(R.string.subscription_choose_plan))
-                if (packagesError != null && packages.isEmpty()) {
-                    SubscriptionCard {
+            // A6: a store plan with auto-renew off on Google Play: turn it back on in the store (never re-buy the same product)
+            if (s.reenableAutoRenew && !s.isBlocked && role == "MERCHANT") {
+                Card(Modifier.padding(top = 10.dp).testTag("plan.reenable")) {
+                    PlanRow {
                         Text(
-                            packagesErrorFriendlyMessage(packagesError),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                } else {
-                    packages.forEach { pkg ->
-                        PlanOptionCard(
-                            pkg = pkg,
-                            selected = pkg.productId == selectedProductId,
-                            annualSavingsPercent = annualSavingsPercent,
-                            onSelect = { selectedProductId = pkg.productId },
+                            stringResource(R.string.plan_reenable_line, s.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "—"),
+                            fontSize = 14.sp, color = PlanColors.Text2,
                         )
                     }
                 }
+                PrimaryButton(stringResource(R.string.plan_reenable_button), Modifier.testTag("plan.reenableButton")) {
+                    open(PurchasesManager.manageUrl(context.packageName, s.storeProductId))
+                }
             }
 
-            Button(
-                onClick = {
-                    val productId = selectedProductId ?: return@Button
-                    val act = activity
-                    if (act == null) {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.subscription_purchase_error),
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                        return@Button
+            when (mode) {
+                PlanScreenMode.REENABLE_ONLY -> {
+                    ManageRestoreLinks(
+                        onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
+                        onRestore = { restore() },
+                        restoreEnabled = PurchasesManager.isConfigured(),
+                    )
+                    LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
+                }
+                PlanScreenMode.PAYMENT_ISSUE_OWNER -> {
+                    PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry"), enabled = !loading) { reload() }
+                    ManageRestoreLinks(
+                        onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
+                        onRestore = { restore() },
+                        restoreEnabled = false,
+                    )
+                    LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
+                    if (expiredGate) LogoutLink { signOut() }
+                }
+                PlanScreenMode.EXPIRED_STAFF -> {
+                    Text(
+                        stringResource(R.string.plan_expired_ask_owner), fontSize = 14.sp, color = PlanColors.Text2,
+                        modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp).testTag("plan.askOwner"),
+                    )
+                    PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry"), enabled = !loading) { reload() }
+                    LogoutLink { signOut() }
+                }
+                PlanScreenMode.AUTO_RENEWING -> {
+                    SectionHeader(stringResource(R.string.plan_section_auto_renew))
+                    Card {
+                        // A13: the store's charge date; "Dùng đến" above stays the period end (later with a credit)
+                        val endText = PlanRenewal.autoRenewDate(s)?.let(PlanRenewal::vnDate) ?: "—"
+                        val amount = autoRenewAmount(s, packages)
+                        PlanRow {
+                            Text(
+                                if (amount != null) stringResource(R.string.plan_auto_renew_on, endText, amount)
+                                else stringResource(R.string.plan_auto_renew_on_date, endText),
+                                fontSize = 16.sp, color = PlanColors.Text,
+                                modifier = Modifier.testTag("plan.autoRenew"),
+                            )
+                        }
+                        RowDivider()
+                        LinkRow(stringResource(R.string.plan_manage), Modifier.testTag("plan.manage")) {
+                            open(PurchasesManager.manageUrl(context.packageName, s.storeProductId))
+                        }
+                        RowDivider()
+                        LinkRow(stringResource(R.string.plan_restore), Modifier.testTag("plan.restore"), enabled = PurchasesManager.isConfigured()) { restore() }
                     }
-                    scope.launch {
-                        purchasing = true
-                        val result = PurchasesManager.purchase(act, productId)
-                        purchasing = false
-                        result
-                            .onSuccess {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(R.string.subscription_purchase_success),
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                                reload()
+                    LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
+                }
+                PlanScreenMode.NOTHING_TO_BUY -> {
+                    Text(
+                        stringResource(R.string.plan_renew_later, s.renewWindowDays), fontSize = 14.sp, color = PlanColors.Text2,
+                        modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp).testTag("plan.renewLater"),
+                    )
+                    ManageRestoreLinks(
+                        onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
+                        onRestore = { restore() },
+                        restoreEnabled = PurchasesManager.isConfigured(),
+                    )
+                    LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
+                }
+                PlanScreenMode.STORE_UNAVAILABLE, PlanScreenMode.PURCHASE, PlanScreenMode.EXPIRED_OWNER -> {
+                    val shown = plans.filter { it.id in s.purchasablePlanIds || it.id == s.planId }
+                    if (storeAvailable && s.purchasablePlanIds.isNotEmpty() && shown.isNotEmpty()) {
+                        SectionHeader(stringResource(R.string.plan_section_plan))
+                        Card {
+                            shown.forEachIndexed { index, plan ->
+                                if (index > 0) RowDivider()
+                                val buyable = plan.id in s.purchasablePlanIds
+                                PlanChoiceRow(
+                                    plan = plan,
+                                    selected = plan.id == selectedPlanId,
+                                    enabled = buyable && phase != ConfirmPhase.CONFIRMING,
+                                    subtitle = when {
+                                        buyable -> includesText(plan.hasWeb, plan.users, null, plan.products, language, withOutlets = false)
+                                        // A5: upgrading while the store renews this plan
+                                        s.autoRenew -> stringResource(R.string.plan_current_auto_renew, PlanRenewal.autoRenewDate(s)?.let(PlanRenewal::vnDate) ?: "—")
+                                        else -> stringResource(R.string.plan_current_renew_later, s.renewWindowDays)
+                                    },
+                                    onSelect = { selectedPlanId = plan.id },
+                                )
                             }
-                            .onFailure { err ->
-                                if (err is PurchaseCancelledException) return@onFailure
-                                Toast.makeText(
-                                    context,
-                                    err.message ?: context.getString(R.string.subscription_purchase_error),
-                                    Toast.LENGTH_LONG,
-                                ).show()
+                        }
+                        val selected = shown.firstOrNull { it.id == selectedPlanId }
+                        val semi = selected?.let { packages[it.storeProducts.semiAnnual] }
+                        val annual = selected?.let { packages[it.storeProducts.annual] }
+                        if (selected != null && (semi != null || annual != null)) {
+                            val months = when {
+                                selectedMonths == 12 && annual == null -> 6
+                                selectedMonths == 6 && semi == null -> 12
+                                else -> selectedMonths
                             }
-                    }
-                },
-                enabled = !purchasing && !loading && selectedProductId != null && packages.isNotEmpty(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
-            ) {
-                Text(
-                    if (purchasing) {
-                        stringResource(R.string.subscription_processing)
-                    } else {
-                        stringResource(R.string.subscription_renew)
-                    },
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            TextButton(
-                onClick = {
-                    scope.launch {
-                        purchasing = true
-                        val result = PurchasesManager.restore()
-                        purchasing = false
-                        result
-                            .onSuccess { info ->
-                                val msg = if (PurchasesManager.hasMerchantEntitlement(info)) {
-                                    context.getString(R.string.subscription_restore_success)
-                                } else {
-                                    context.getString(R.string.subscription_restore_none)
+                            SectionHeader(stringResource(R.string.plan_section_period))
+                            Card {
+                                val savings = if (semi != null && annual != null) PlanRenewal.savingsPercent(semi.priceAmount, annual.priceAmount) else null
+                                listOfNotNull(semi?.let { 6 to it }, annual?.let { 12 to it }).forEachIndexed { index, (m, pkg) ->
+                                    if (index > 0) RowDivider()
+                                    PeriodRow(
+                                        months = m,
+                                        pkg = pkg,
+                                        savings = if (m == 12) savings else null,
+                                        selected = months == m,
+                                        enabled = phase != ConfirmPhase.CONFIRMING,
+                                        onSelect = { selectedMonths = m },
+                                    )
                                 }
-                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                                reload()
                             }
-                            .onFailure { err ->
-                                Toast.makeText(
-                                    context,
-                                    err.message ?: context.getString(R.string.subscription_purchase_error),
-                                    Toast.LENGTH_LONG,
-                                ).show()
+                            val pkg = (if (months == 6) semi else annual)!!
+                            val kind = PlanRenewal.purchaseKind(
+                                selected.id, s.planId, PlanRenewal.tierRank(selected.storeProducts), PlanRenewal.tierRank(s.planTier), s.isTrial,
+                            )
+                            val amountText = amountLabel(pkg)
+                            val periodText = stringResource(if (months == 6) R.string.plan_months6 else R.string.plan_months12)
+                            val title = PlanRenewal.buttonTitle(
+                                kind, selected.name, periodText, amountText,
+                                stringResource(R.string.plan_button_renew), stringResource(R.string.plan_button_upgrade), stringResource(R.string.plan_button_buy),
+                            )
+                            if (phase == ConfirmPhase.SLOW) {
+                                Text(
+                                    stringResource(R.string.plan_not_confirmed), fontSize = 14.sp, color = PlanColors.Text2,
+                                    modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp).testTag("plan.notConfirmed"),
+                                )
+                                PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry")) { confirm(confirmBase) }
+                            } else {
+                                PrimaryButton(
+                                    if (phase == ConfirmPhase.CONFIRMING) stringResource(R.string.plan_confirming) else title,
+                                    Modifier.testTag("plan.buy"),
+                                    busy = phase == ConfirmPhase.CONFIRMING || busy,
+                                    enabled = phase == ConfirmPhase.IDLE && !busy,
+                                ) { buy(pkg.productId) }
+                                if (phase == ConfirmPhase.CONFIRMING) {
+                                    // A12: a calm line while the store tells the server (up to a minute)
+                                    Text(
+                                        stringResource(R.string.plan_confirming_hint), fontSize = 14.sp, color = PlanColors.Muted,
+                                        modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp).testTag("plan.confirmingHint"),
+                                    )
+                                }
                             }
+                            // Apple / Google: the renewal terms right under the button, normal contrast. A13: the days left
+                            // continue after the new period (the expired screen starts today)
+                            val disclosureText = when (val d = PlanRenewal.disclosure(Instant.now(), months, s.takeUnless { expiredGate })) {
+                                is PlanDisclosure.StartsToday -> stringResource(R.string.plan_disclosure, d.end, months, amountText)
+                                is PlanDisclosure.Continues -> stringResource(R.string.plan_disclosure_carry, d.from, d.end, months, amountText, d.charge)
+                                is PlanDisclosure.WithCredit -> stringResource(R.string.plan_disclosure_credit, d.end, months, amountText, d.charge)
+                            }
+                            Text(
+                                disclosureText,
+                                fontSize = 14.sp, lineHeight = 19.sp, color = PlanColors.Text2,
+                                modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp).testTag("plan.disclosure"),
+                            )
+                        } else {
+                            UnavailableBlock(loading, accountNotReady) { reload() }
+                        }
+                    } else {
+                        UnavailableBlock(loading, accountNotReady) { reload() }
                     }
-                },
-                enabled = !purchasing && PurchasesManager.isConfigured(),
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) {
-                Text(
-                    stringResource(R.string.subscription_restore),
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                    ManageRestoreLinks(
+                        onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
+                        onRestore = { restore() },
+                        restoreEnabled = PurchasesManager.isConfigured() && phase != ConfirmPhase.CONFIRMING,
+                    )
+                    LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
+                    if (mode == PlanScreenMode.EXPIRED_OWNER) LogoutLink { signOut() }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SubscriptionCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
+private fun statusText(line: PlanStatusLine): String = when (line) {
+    is PlanStatusLine.DaysLeft -> stringResource(R.string.plan_expires_days_left, line.date, line.days)
+    is PlanStatusLine.LastDay -> stringResource(R.string.plan_expires_last_day, line.date)
+    is PlanStatusLine.ValidUntil -> stringResource(R.string.plan_valid_until, line.date)
+}
+
+/** "app điện thoại · 2 người dùng · 1 chi nhánh · 2.000 sản phẩm" (outlets only on the "Gồm:" line) */
+@Composable
+private fun includesText(hasWeb: Boolean, users: Int?, outlets: Int?, products: Int?, language: String, withOutlets: Boolean): String {
+    val parts = mutableListOf(stringResource(if (hasWeb) R.string.plan_feature_phone_web else R.string.plan_feature_phone))
+    users?.takeIf { it > 0 }?.let { parts += stringResource(R.string.plan_feature_users, it) }
+    if (withOutlets) outlets?.takeIf { it > 0 }?.let { parts += stringResource(R.string.plan_feature_outlets, it) }
+    products?.takeIf { it > 0 }?.let { parts += stringResource(R.string.plan_feature_products, PlanRenewal.groupNumber(it, language)) }
+    return parts.joinToString(" · ")
+}
+
+/** VND as "1.799.000 ₫"; other currencies as the store writes them */
+private fun amountLabel(pkg: RenewPackage): String =
+    if (PlanRenewal.isVnd(pkg.currencyCode)) PlanRenewal.formatAmount(pkg.priceAmount, "VND") else pkg.priceLabel
+
+private fun autoRenewAmount(s: PlanRenewalStatus, packages: Map<String, RenewPackage>): String? {
+    s.storeProductId?.let { packages[it] }?.let { return amountLabel(it) }
+    val amount = s.billingAmount?.takeIf { it > 0 } ?: return null
+    return PlanRenewal.formatAmount(amount, s.billingCurrency)
+}
+
+@Composable
+private fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                shape = RoundedCornerShape(12.dp),
-            )
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        content()
+            .background(PlanColors.Card)
+            .border(1.dp, PlanColors.CardBorder, RoundedCornerShape(12.dp)),
+    ) { content() }
+}
+
+@Composable
+private fun PlanRow(content: @Composable () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) { content() }
+}
+
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(color = PlanColors.RowLine)
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text.uppercase(),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Medium,
+        letterSpacing = 0.6.sp,
+        color = PlanColors.Muted,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp),
+    )
+}
+
+@Composable
+private fun Radio(selected: Boolean, enabled: Boolean) {
+    val ring = if (selected) PlanColors.Primary else PlanColors.Muted.copy(alpha = if (enabled) 1f else 0.4f)
+    Box(Modifier.size(20.dp).border(2.dp, ring, CircleShape), contentAlignment = Alignment.Center) {
+        if (selected) Box(Modifier.size(10.dp).clip(CircleShape).background(PlanColors.Primary))
     }
 }
 
 @Composable
-private fun PlanOptionCard(
-    pkg: RenewPackage,
-    selected: Boolean,
-    annualSavingsPercent: Int?,
-    onSelect: () -> Unit,
-) {
-    val borderColor = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outlineVariant
-    }
-    val borderWidth = if (selected) 2.dp else 1.dp
-
+private fun PlanChoiceRow(plan: InAppPlan, selected: Boolean, enabled: Boolean, subtitle: String, onSelect: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
-            .clickable(onClick = onSelect)
-            .padding(horizontal = 14.dp, vertical = 14.dp)
-            .heightIn(min = 72.dp),
+            .clickable(enabled = enabled, onClick = onSelect)
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .testTag("plan.row.${plan.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Radio(selected, enabled)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(plan.name, fontSize = 16.sp, color = if (enabled) PlanColors.Text else PlanColors.Muted)
+                if (plan.isPopular) {
+                    Spacer(Modifier.size(6.dp))
+                    Text(
+                        stringResource(R.string.plan_popular),
+                        fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = PlanColors.Primary,
+                        modifier = Modifier.clip(RoundedCornerShape(99.dp)).background(PlanColors.PillBg).padding(horizontal = 8.dp, vertical = 1.dp),
+                    )
+                }
+            }
+            Text(subtitle, fontSize = 13.sp, color = PlanColors.Muted)
+        }
+    }
+}
+
+@Composable
+private fun PeriodRow(months: Int, pkg: RenewPackage, savings: Int?, selected: Boolean, enabled: Boolean, onSelect: () -> Unit) {
+    val monthly = PlanRenewal.monthly(pkg.priceAmount, months, pkg.currencyCode)
+    val monthlyText = PlanRenewal.formatAmount(monthly.amount, pkg.currencyCode)
+    val perMonth = stringResource(if (monthly.approx) R.string.plan_per_month_approx else R.string.plan_per_month, monthlyText)
+    val sub = if (savings != null) perMonth + " · " + stringResource(R.string.plan_savings, savings) else perMonth
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onSelect)
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .testTag("plan.period.$months"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Radio(selected, enabled)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(if (months == 6) R.string.plan_months6 else R.string.plan_months12), fontSize = 16.sp, color = PlanColors.Text)
+            Text(sub, fontSize = 13.sp, color = PlanColors.Muted)
+        }
+        // The billed amount is the most prominent price (Apple "Billing amount", Google Play policy)
+        Text(amountLabel(pkg), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = PlanColors.Text)
+    }
+}
+
+@Composable
+private fun PrimaryButton(text: String, modifier: Modifier = Modifier, busy: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 52.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = PlanColors.Primary,
+            disabledContainerColor = if (busy) PlanColors.PrimaryBusy else PlanColors.Primary.copy(alpha = 0.5f),
+            disabledContentColor = Color.White,
+        ),
+    ) {
+        if (busy) {
+            CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+            Spacer(Modifier.size(10.dp))
+        }
+        Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+    }
+}
+
+/** No RevenueCat key, or the store gave no products: say so, keep Thử lại (#1459, Android builds have no key today) */
+@Composable
+private fun UnavailableBlock(loading: Boolean, accountNotReady: Boolean, onRetry: () -> Unit) {
+    // A1: RevenueCat could not log in as this shop: a short retry message instead of "not available in this version"
+    Text(
+        stringResource(if (accountNotReady) R.string.plan_account_not_ready else R.string.plan_store_unavailable),
+        fontSize = 14.sp, color = PlanColors.Text2,
+        modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp).testTag("plan.storeUnavailable"),
+    )
+    PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry"), enabled = !loading) { onRetry() }
+}
+
+@Composable
+private fun LinkRow(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+    Text(
+        text,
+        fontSize = 16.sp,
+        color = if (enabled) PlanColors.Primary else PlanColors.Muted,
+        modifier = modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 13.dp),
+    )
+}
+
+@Composable
+private fun ManageRestoreLinks(onManage: () -> Unit, onRestore: () -> Unit, restoreEnabled: Boolean) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                localizedPlanTitle(pkg),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = if (selected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-            )
-            Text(
-                pkg.priceLabel,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            if (pkg.productId == PurchasesManager.PRODUCT_ANNUAL && annualSavingsPercent != null) {
-                Text(
-                    stringResource(
-                        R.string.subscription_save_vs_semi_annual,
-                        annualSavingsPercent,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
-        Icon(
-            imageVector = if (selected) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
-            contentDescription = null,
-            tint = if (selected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
+        Text(
+            stringResource(R.string.plan_manage), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = PlanColors.Primary,
+            modifier = Modifier.clickable(onClick = onManage).padding(horizontal = 4.dp, vertical = 12.dp).testTag("plan.manage"),
+        )
+        Text(" · ", fontSize = 14.sp, color = PlanColors.Muted)
+        Text(
+            stringResource(R.string.plan_restore), fontSize = 14.sp, fontWeight = FontWeight.Medium,
+            color = if (restoreEnabled) PlanColors.Primary else PlanColors.Muted,
+            modifier = Modifier.clickable(enabled = restoreEnabled, onClick = onRestore).padding(horizontal = 4.dp, vertical = 12.dp).testTag("plan.restore"),
         )
     }
 }
 
 @Composable
-private fun StatusRow(
-    label: String,
-    value: String,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface,
-) {
+private fun LegalLinks(onTerms: () -> Unit, onPrivacy: () -> Unit) {
     Row(
         Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            stringResource(R.string.plan_terms), fontSize = 13.sp, color = PlanColors.Primary,
+            modifier = Modifier.clickable(onClick = onTerms).padding(horizontal = 4.dp, vertical = 8.dp).testTag("plan.terms"),
         )
+        Text(" · ", fontSize = 13.sp, color = PlanColors.Muted)
         Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = valueColor,
+            stringResource(R.string.plan_privacy), fontSize = 13.sp, color = PlanColors.Primary,
+            modifier = Modifier.clickable(onClick = onPrivacy).padding(horizontal = 4.dp, vertical = 8.dp).testTag("plan.privacy"),
         )
     }
 }
 
 @Composable
-private fun localizedPlanTitle(pkg: RenewPackage): String = when (pkg.productId) {
-    PurchasesManager.PRODUCT_SEMI_ANNUAL -> stringResource(R.string.subscription_plan_6_months)
-    PurchasesManager.PRODUCT_ANNUAL -> stringResource(R.string.subscription_plan_12_months)
-    else -> pkg.title
-}
-
-@Composable
-private fun statusValueColor(status: String?): Color {
-    if (status?.uppercase()?.contains("ACTIVE") == true) {
-        return Color(0xFF2E7D32)
-    }
-    return MaterialTheme.colorScheme.onSurface
-}
-
-private fun formatPeriodEnd(iso: String?): String? {
-    if (iso.isNullOrBlank()) return null
-    return runCatching {
-        val instant = Instant.parse(iso)
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-            .withZone(ZoneId.systemDefault())
-            .format(instant)
-    }.getOrElse { iso }
-}
-
-@Composable
-private fun packagesErrorFriendlyMessage(raw: String?): String {
-    if (raw.isNullOrBlank()) return stringResource(R.string.subscription_no_plans)
-    val lower = raw.lowercase()
-    return if (
-        "offerings" in lower ||
-        "app store connect" in lower ||
-        "storekit" in lower ||
-        "configuration" in lower
-    ) {
-        stringResource(R.string.subscription_plans_store_pending)
-    } else {
-        raw
-    }
-}
-
-private fun annualSavingsPercentVsTwoSemiAnnual(packages: List<RenewPackage>): Int? {
-    val semi = packages.find { it.productId == PurchasesManager.PRODUCT_SEMI_ANNUAL } ?: return null
-    val annual = packages.find { it.productId == PurchasesManager.PRODUCT_ANNUAL } ?: return null
-    if (semi.priceAmount <= 0.0) return null
-    val twoSemi = semi.priceAmount * 2.0
-    if (twoSemi <= annual.priceAmount) return null
-    return kotlin.math.round((twoSemi - annual.priceAmount) / twoSemi * 100.0).toInt()
+private fun LogoutLink(onClick: () -> Unit) {
+    Text(
+        stringResource(R.string.plan_logout),
+        fontSize = 14.sp, fontWeight = FontWeight.Medium, color = PlanColors.Text2, textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp).clickable(onClick = onClick).padding(vertical = 12.dp).testTag("plan.logout"),
+    )
 }

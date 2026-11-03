@@ -12,6 +12,8 @@ import UIKit
 
 extension UIAlertController{
     class func errorAlert(parent: UIViewController? , error: Error, handler:((UIAlertAction?) -> Void)? = nil){
+        // #1459: an ended plan opens the "Gói của shop đã hết hạn" screen; no alert on the screen behind it
+        if SubscriptionGate.isPeriodEndedError(error) { return }
         let alert = UIAlertController(
             title: "Error".localized(),
             message: ServerMessageGuard.safe(error.localizedDescription.localized()),
