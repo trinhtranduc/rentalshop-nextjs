@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anyrent.pos.R
 import com.anyrent.pos.billing.PurchaseCancelledException
+import com.anyrent.pos.billing.StoreAccountNotReadyException
 import com.anyrent.pos.billing.PurchasesManager
 import com.anyrent.pos.billing.RenewPackage
 import com.anyrent.pos.data.ApiClient
@@ -92,9 +93,9 @@ private object PlanColors {
 private const val TERMS_URL = "https://www.anyrent.shop/terms"
 private const val PRIVACY_URL = "https://www.anyrent.shop/privacy"
 
-/** Poll GET /api/subscriptions/status every 2 s for 20 s after the store says paid (mobile.md "Flow") */
-private const val CONFIRM_POLLS = 10
-private const val CONFIRM_INTERVAL_MS = 2_000L
+/** A12: poll GET /api/subscriptions/status every 2 s for about a minute after the store says paid (mobile.md "Flow") */
+private const val CONFIRM_POLLS = (PlanRenewal.CONFIRM_TIMEOUT_MS / PlanRenewal.CONFIRM_INTERVAL_MS).toInt()
+private const val CONFIRM_INTERVAL_MS = PlanRenewal.CONFIRM_INTERVAL_MS
 
 private enum class ConfirmPhase { IDLE, CONFIRMING, SLOW }
 
@@ -130,12 +131,15 @@ fun SubscriptionScreen(
     var confirmBase by remember { mutableStateOf<PlanRenewalStatus?>(null) }
     /** After a confirmed renewal the card says "Dùng đến …" (mockup "Trả xong · đã gia hạn") */
     var renewed by remember { mutableStateOf(false) }
+    /** A1: RevenueCat could not log in as this shop: no buying or restoring, "Chưa kết nối được tài khoản…" + Thử lại */
+    var accountNotReady by remember { mutableStateOf(false) }
 
     val storeAvailable = PurchasesManager.isConfigured() && packages.isNotEmpty()
     val renewedUntilTemplate = stringResource(R.string.plan_renewed_until)
     val restoredText = stringResource(R.string.plan_restored)
     val nothingToRestoreText = stringResource(R.string.plan_nothing_to_restore)
     val loadErrorText = stringResource(R.string.plan_load_error)
+    val accountNotReadyText = stringResource(R.string.plan_account_not_ready)
 
     fun pickDefaults(s: PlanRenewalStatus, list: List<InAppPlan>) {
         val buyable = list.filter { it.id in s.purchasablePlanIds }
@@ -161,7 +165,9 @@ fun SubscriptionScreen(
             if (role == "MERCHANT" && s != null) {
                 plans = withContext(Dispatchers.IO) { ApiClient.get().inAppPlans().getOrNull() }.orEmpty()
                 if (PurchasesManager.isConfigured()) {
-                    packages = PurchasesManager.getRenewPackages().getOrNull().orEmpty().associateBy { it.productId }
+                    val loaded = PurchasesManager.getRenewPackages()
+                    accountNotReady = loaded.exceptionOrNull() is StoreAccountNotReadyException
+                    packages = loaded.getOrNull().orEmpty().associateBy { it.productId }
                 }
                 pickDefaults(s, plans)
             }
@@ -212,7 +218,8 @@ fun SubscriptionScreen(
                 .onSuccess { confirm(before) }
                 .onFailure { err ->
                     if (err is PurchaseCancelledException) return@onFailure
-                    snackbar.showSnackbar(err.message ?: loadErrorText)
+                    if (err is StoreAccountNotReadyException) accountNotReady = true
+                    snackbar.showSnackbar(if (err is StoreAccountNotReadyException) accountNotReadyText else err.message ?: loadErrorText)
                 }
         }
     }
@@ -226,14 +233,27 @@ fun SubscriptionScreen(
             busy = false
             result
                 .onSuccess { info ->
-                    if (PurchasesManager.hasMerchantEntitlement(info)) {
-                        snackbar.showSnackbar(restoredText)
-                        confirm(before)
-                    } else {
+                    if (!PurchasesManager.hasMerchantEntitlement(info)) {
                         snackbar.showSnackbar(nothingToRestoreText)
+                        return@onSuccess
+                    }
+                    // A11 (as iOS): the server may already know the purchase; wait for the webhook only if it does not
+                    val fresh = withContext(Dispatchers.IO) { ApiClient.get().subscriptionRenewalStatus().getOrNull() }
+                    when {
+                        fresh == null || fresh.isExpired -> confirm(before)
+                        expiredGate -> done(fresh)
+                        else -> {
+                            PlanRenewalStore.store(fresh)
+                            status = fresh
+                            pickDefaults(fresh, plans)
+                            snackbar.showSnackbar(restoredText)
+                        }
                     }
                 }
-                .onFailure { err -> snackbar.showSnackbar(err.message ?: loadErrorText) }
+                .onFailure { err ->
+                    if (err is StoreAccountNotReadyException) accountNotReady = true
+                    snackbar.showSnackbar(if (err is StoreAccountNotReadyException) accountNotReadyText else err.message ?: loadErrorText)
+                }
         }
     }
 
@@ -332,7 +352,7 @@ fun SubscriptionScreen(
                             Text(stringResource(R.string.plan_billing_issue), fontSize = 14.sp, color = PlanColors.Text2)
                         }
                     }
-                    if (mode == PlanScreenMode.AUTO_RENEWING || mode == PlanScreenMode.NOTHING_TO_BUY) {
+                    if (mode == PlanScreenMode.AUTO_RENEWING || mode == PlanScreenMode.NOTHING_TO_BUY || mode == PlanScreenMode.REENABLE_ONLY) {
                         RowDivider()
                         PlanRow {
                             Text(
@@ -344,7 +364,30 @@ fun SubscriptionScreen(
                 }
             }
 
+            // A6: a store plan with auto-renew off on Google Play: turn it back on in the store (never re-buy the same product)
+            if (s.reenableAutoRenew && !s.isBlocked && role == "MERCHANT") {
+                Card(Modifier.padding(top = 10.dp).testTag("plan.reenable")) {
+                    PlanRow {
+                        Text(
+                            stringResource(R.string.plan_reenable_line, s.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "—"),
+                            fontSize = 14.sp, color = PlanColors.Text2,
+                        )
+                    }
+                }
+                PrimaryButton(stringResource(R.string.plan_reenable_button), Modifier.testTag("plan.reenableButton")) {
+                    open(PurchasesManager.manageUrl(context.packageName, s.storeProductId))
+                }
+            }
+
             when (mode) {
+                PlanScreenMode.REENABLE_ONLY -> {
+                    ManageRestoreLinks(
+                        onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
+                        onRestore = { restore() },
+                        restoreEnabled = PurchasesManager.isConfigured(),
+                    )
+                    LegalLinks(onTerms = { open(TERMS_URL) }, onPrivacy = { open(PRIVACY_URL) })
+                }
                 PlanScreenMode.PAYMENT_ISSUE_OWNER -> {
                     PrimaryButton(stringResource(R.string.plan_retry), Modifier.testTag("plan.retry"), enabled = !loading) { reload() }
                     ManageRestoreLinks(
@@ -409,8 +452,12 @@ fun SubscriptionScreen(
                                     plan = plan,
                                     selected = plan.id == selectedPlanId,
                                     enabled = buyable && phase != ConfirmPhase.CONFIRMING,
-                                    subtitle = if (buyable) includesText(plan.hasWeb, plan.users, null, plan.products, language, withOutlets = false)
-                                    else stringResource(R.string.plan_current_renew_later, s.renewWindowDays),
+                                    subtitle = when {
+                                        buyable -> includesText(plan.hasWeb, plan.users, null, plan.products, language, withOutlets = false)
+                                        // A5: upgrading while the store renews this plan
+                                        s.autoRenew -> stringResource(R.string.plan_current_auto_renew, s.currentPeriodEnd?.let(PlanRenewal::vnDate) ?: "—")
+                                        else -> stringResource(R.string.plan_current_renew_later, s.renewWindowDays)
+                                    },
                                     onSelect = { selectedPlanId = plan.id },
                                 )
                             }
@@ -462,6 +509,13 @@ fun SubscriptionScreen(
                                     busy = phase == ConfirmPhase.CONFIRMING || busy,
                                     enabled = phase == ConfirmPhase.IDLE && !busy,
                                 ) { buy(pkg.productId) }
+                                if (phase == ConfirmPhase.CONFIRMING) {
+                                    // A12: a calm line while the store tells the server (up to a minute)
+                                    Text(
+                                        stringResource(R.string.plan_confirming_hint), fontSize = 14.sp, color = PlanColors.Muted,
+                                        modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp).testTag("plan.confirmingHint"),
+                                    )
+                                }
                             }
                             // Apple / Google: the renewal terms right under the button, normal contrast
                             Text(
@@ -470,10 +524,10 @@ fun SubscriptionScreen(
                                 modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp).testTag("plan.disclosure"),
                             )
                         } else {
-                            UnavailableBlock(loading) { reload() }
+                            UnavailableBlock(loading, accountNotReady) { reload() }
                         }
                     } else {
-                        UnavailableBlock(loading) { reload() }
+                        UnavailableBlock(loading, accountNotReady) { reload() }
                     }
                     ManageRestoreLinks(
                         onManage = { open(PurchasesManager.manageUrl(context.packageName, s.storeProductId)) },
@@ -638,9 +692,10 @@ private fun PrimaryButton(text: String, modifier: Modifier = Modifier, busy: Boo
 
 /** No RevenueCat key, or the store gave no products: say so, keep Thử lại (#1459, Android builds have no key today) */
 @Composable
-private fun UnavailableBlock(loading: Boolean, onRetry: () -> Unit) {
+private fun UnavailableBlock(loading: Boolean, accountNotReady: Boolean, onRetry: () -> Unit) {
+    // A1: RevenueCat could not log in as this shop: a short retry message instead of "not available in this version"
     Text(
-        stringResource(R.string.plan_store_unavailable),
+        stringResource(if (accountNotReady) R.string.plan_account_not_ready else R.string.plan_store_unavailable),
         fontSize = 14.sp, color = PlanColors.Text2,
         modifier = Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp).testTag("plan.storeUnavailable"),
     )

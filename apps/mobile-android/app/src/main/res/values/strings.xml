@@ -2585,4 +2585,9 @@
     <string name="plan_home_last_day">Plan expires today</string>
     <string name="plan_home_renew">Renew</string>
     <string name="plan_payment_issue_title">The plan payment did not go through</string>
+    <string name="plan_account_not_ready">Could not connect the purchase account. Try again in a moment.</string>
+    <string name="plan_reenable_line">Auto-renew is off. The plan runs until %1$s.</string>
+    <string name="plan_reenable_button">Turn auto-renew back on</string>
+    <string name="plan_confirming_hint">Usually a few seconds, up to a minute.</string>
+    <string name="plan_current_auto_renew">Current · renews on %1$s</string>
 </resources>

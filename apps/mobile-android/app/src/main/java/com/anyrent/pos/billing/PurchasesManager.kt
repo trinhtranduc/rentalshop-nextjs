@@ -5,6 +5,7 @@ import android.app.Application
 import android.util.Log
 import com.anyrent.pos.BuildConfig
 import com.anyrent.pos.data.SessionStore
+import com.anyrent.pos.domain.settings.PlanRenewal
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Package
@@ -20,6 +21,7 @@ import com.revenuecat.purchases.logOutWith
 import com.revenuecat.purchases.purchaseWith
 import com.revenuecat.purchases.restorePurchasesWith
 import kotlin.coroutines.resume
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 data class RenewPackage(
@@ -37,8 +39,10 @@ data class RenewPackage(
  * #1459: Basic and Professional (four products). Google Play may name a product `id:basePlan`; matching uses the part
  * before ":". Without `REVENUECAT_ANDROID_API_KEY` nothing is configured and every call fails softly.
  *
- * App User ID = `merchant_{publicId}` so webhooks can map to our Subscription row.
- * Non-merchant roles never log in to Purchases.
+ * App User ID = `merchant_{merchantId}` on the production API, `dev_merchant_{merchantId}` on any other API (A3a), so the
+ * webhook maps the purchase to the right Subscription row. Non-merchant roles never log in to Purchases.
+ * A1: products, purchase and restore first make sure RevenueCat is logged in as this shop ([ensureLoggedIn]); otherwise
+ * a purchase could land on an anonymous id the server never maps to a shop.
  */
 object PurchasesManager {
     private const val TAG = "PurchasesManager"
@@ -97,9 +101,45 @@ object PurchasesManager {
         }
     }
 
+    /** A3a: the RevenueCat id of the signed-in owner on this API; null for other roles */
+    fun expectedAppUserId(): String? {
+        val merchantId = SessionStore.merchantId ?: return null
+        if (SessionStore.role != "MERCHANT" || merchantId <= 0) return null
+        return PlanRenewal.appUserId(merchantId, BuildConfig.API_BASE_URL)
+    }
+
+    /**
+     * A1: RevenueCat is logged in as this shop (up to 3 tries, 1 s apart). False when it is not configured, the user is not
+     * the owner, or the log-in keeps failing: the screen then refuses to buy or restore ("Chưa kết nối được tài khoản…").
+     */
+    suspend fun ensureLoggedIn(): Boolean {
+        if (!configured) return false
+        val expected = expectedAppUserId() ?: return false
+        repeat(3) { attempt ->
+            if (PlanRenewal.storeAccountReady(Purchases.sharedInstance.appUserID, expected)) return true
+            awaitLogIn(expected)
+            if (PlanRenewal.storeAccountReady(Purchases.sharedInstance.appUserID, expected)) return true
+            if (attempt < 2) delay(1_000L)
+        }
+        Log.e(TAG, "RevenueCat is not logged in as the shop; purchase refused")
+        return false
+    }
+
+    private suspend fun awaitLogIn(appUserId: String): Boolean =
+        suspendCancellableCoroutine { cont ->
+            Purchases.sharedInstance.logInWith(
+                appUserId,
+                onError = { error ->
+                    Log.e(TAG, "logIn failed: ${error.message}")
+                    cont.resume(false)
+                },
+                onSuccess = { _, _ -> cont.resume(true) },
+            )
+        }
+
     fun logInMerchant(merchantId: Int) {
         if (!configured) return
-        val appUserId = "merchant_$merchantId"
+        val appUserId = PlanRenewal.appUserId(merchantId, BuildConfig.API_BASE_URL)
         Purchases.sharedInstance.logInWith(
             appUserId,
             onError = { error -> Log.e(TAG, "logIn failed: ${error.message}") },
@@ -122,7 +162,12 @@ object PurchasesManager {
     fun hasMerchantEntitlement(info: CustomerInfo): Boolean =
         info.entitlements[ENTITLEMENT_MERCHANT]?.isActive == true
 
-    suspend fun getRenewPackages(): Result<List<RenewPackage>> =
+    suspend fun getRenewPackages(): Result<List<RenewPackage>> {
+        if (configured && !ensureLoggedIn()) return Result.failure(StoreAccountNotReadyException())
+        return loadPackages()
+    }
+
+    private suspend fun loadPackages(): Result<List<RenewPackage>> =
         suspendCancellableCoroutine { cont ->
             if (!configured) {
                 cont.resume(Result.failure(IllegalStateException("Purchases not configured")))
@@ -182,6 +227,7 @@ object PurchasesManager {
      * (the disclosure says so) and Google adds the unused time of the old one.
      */
     suspend fun purchase(activity: Activity, productId: String): Result<CustomerInfo> {
+        if (configured && !ensureLoggedIn()) return Result.failure(StoreAccountNotReadyException())
         val replaced = activeProductIds().firstOrNull { it in ALL_PRODUCTS && it != baseId(productId) }
         return purchase(activity, productId, replaced)
     }
@@ -224,7 +270,12 @@ object PurchasesManager {
             )
         }
 
-    suspend fun restore(): Result<CustomerInfo> =
+    suspend fun restore(): Result<CustomerInfo> {
+        if (configured && !ensureLoggedIn()) return Result.failure(StoreAccountNotReadyException())
+        return restoreNow()
+    }
+
+    private suspend fun restoreNow(): Result<CustomerInfo> =
         suspendCancellableCoroutine { cont ->
             if (!configured) {
                 cont.resume(Result.failure(IllegalStateException("Purchases not configured")))
@@ -253,6 +304,9 @@ object PurchasesManager {
 }
 
 class PurchaseCancelledException : Exception("Purchase cancelled")
+
+/** A1: RevenueCat is not logged in as this shop; nothing was bought or restored */
+class StoreAccountNotReadyException : Exception("Store account not ready")
 
 class PurchasesException(val purchasesError: PurchasesError) :
     Exception(purchasesError.message)

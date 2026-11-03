@@ -2555,4 +2555,9 @@
     <string name="plan_home_last_day">Gói hết hạn hôm nay</string>
     <string name="plan_home_renew">Gia hạn</string>
     <string name="plan_payment_issue_title">Chưa thu được tiền gói</string>
+    <string name="plan_account_not_ready">Chưa kết nối được tài khoản mua hàng. Thử lại sau giây lát.</string>
+    <string name="plan_reenable_line">Tự gia hạn đang tắt. Gói dùng đến %1$s.</string>
+    <string name="plan_reenable_button">Bật lại tự gia hạn</string>
+    <string name="plan_confirming_hint">Thường mất vài giây, có thể đến một phút.</string>
+    <string name="plan_current_auto_renew">Đang dùng · tự gia hạn ngày %1$s</string>
 </resources>

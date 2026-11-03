@@ -44,6 +44,11 @@ data class PlanRenewalStatus(
      * store row from before #1459; store billing issues no longer set it)
      */
     val isPastDue: Boolean = false,
+    /**
+     * A6: a store plan on this device's store with auto-renew off: buying the same product would fail as already owned on
+     * Google Play, so the screen offers "Bật lại tự gia hạn" (the Play subscriptions page) instead. Missing (older API) = false.
+     */
+    val reenableAutoRenew: Boolean = false,
 ) {
     /** The rest of the API refuses this shop: the plan gate stays up (iOS `PlanStatus.isBlocked`) */
     val isBlocked: Boolean get() = isExpired || isPastDue
@@ -70,6 +75,8 @@ enum class PlanScreenMode {
     PURCHASE, AUTO_RENEWING, NOTHING_TO_BUY, STORE_UNAVAILABLE, EXPIRED_OWNER, EXPIRED_STAFF,
     /** PAST_DUE: the owner fixes the payment where the plan is billed (Quản lý / huỷ gói), nothing to buy here */
     PAYMENT_ISSUE_OWNER,
+    /** A6: auto-renew is off on this store and nothing can be bought: only "Bật lại tự gia hạn" */
+    REENABLE_ONLY,
 }
 
 sealed interface PlanStatusLine {
@@ -89,6 +96,26 @@ object PlanRenewal {
 
     /** Renew window when an older API does not say (`renewWindowDays`) */
     const val DEFAULT_WINDOW_DAYS = 7
+
+    /** A12: after the store took the payment, the status is read every 2 s for about a minute (then the slow state) */
+    const val CONFIRM_INTERVAL_MS = 2_000L
+    const val CONFIRM_TIMEOUT_MS = 60_000L
+
+    /** A3a: the production API host; any other API (dev-api, a local API) uses `dev_merchant_<id>` */
+    private const val PRODUCTION_API_HOST = "api.anyrent.shop"
+
+    /**
+     * A3a: RevenueCat app user id. `merchant_<id>` only on the production API, else `dev_merchant_<id>`, so a sandbox
+     * purchase from a dev build never reaches a production shop with the same number.
+     */
+    fun appUserId(merchantId: Int, apiBaseUrl: String): String {
+        val host = runCatching { java.net.URI(apiBaseUrl.trim()).host }.getOrNull()?.lowercase()
+        return if (host == PRODUCTION_API_HOST) "merchant_$merchantId" else "dev_merchant_$merchantId"
+    }
+
+    /** A1: purchases and restores run only while RevenueCat is logged in as this shop */
+    fun storeAccountReady(current: String?, expected: String?): Boolean =
+        !expected.isNullOrBlank() && current == expected
 
     const val BASIC_ANNUAL = "anyrent_merchant_annual"
     const val PROFESSIONAL_ANNUAL = "anyrent_professional_annual"
@@ -226,7 +253,9 @@ object PlanRenewal {
         status.isPastDue -> if (role == "MERCHANT") PlanScreenMode.PAYMENT_ISSUE_OWNER else PlanScreenMode.EXPIRED_STAFF
         status.isExpired -> if (role == "MERCHANT") PlanScreenMode.EXPIRED_OWNER else PlanScreenMode.EXPIRED_STAFF
         role != "MERCHANT" -> PlanScreenMode.NOTHING_TO_BUY
-        status.autoRenew -> PlanScreenMode.AUTO_RENEWING
+        // A5: the upgrade while auto-renewing (the server lists it only for this device's store)
+        status.autoRenew -> if (status.purchasablePlanIds.isNotEmpty() && storeAvailable) PlanScreenMode.PURCHASE else PlanScreenMode.AUTO_RENEWING
+        status.reenableAutoRenew && status.purchasablePlanIds.isEmpty() -> PlanScreenMode.REENABLE_ONLY
         status.purchasablePlanIds.isNotEmpty() -> if (storeAvailable) PlanScreenMode.PURCHASE else PlanScreenMode.STORE_UNAVAILABLE
         else -> PlanScreenMode.NOTHING_TO_BUY
     }
@@ -263,6 +292,7 @@ object PlanRenewal {
             hasWeb = hasWebDashboard(features),
             isPastDue = data.optString("dbStatus").equals("PAST_DUE", ignoreCase = true) &&
                 !data.optString("status").equals("EXPIRED", ignoreCase = true),
+            reenableAutoRenew = data.optBoolean("reenableAutoRenew", false),
         )
     }
 

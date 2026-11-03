@@ -209,4 +209,52 @@ class PlanRenewalTest {
         assertTrue(ended.isBlocked)
         assertEquals(PlanScreenMode.EXPIRED_OWNER, PlanRenewal.screenMode("MERCHANT", ended, storeAvailable = true))
     }
+
+    // ─── Audit fixes (2026-11-03): A1, A3a, A5, A6, A12 ────────────────────
+
+    @Test
+    fun appUserIdPrefixFollowsTheApiHost() {
+        assertEquals("merchant_7", PlanRenewal.appUserId(7, "https://api.anyrent.shop"))
+        assertEquals("merchant_7", PlanRenewal.appUserId(7, "https://api.anyrent.shop/"))
+        assertEquals("dev_merchant_7", PlanRenewal.appUserId(7, "https://dev-api.anyrent.shop"))
+        assertEquals("dev_merchant_7", PlanRenewal.appUserId(7, "http://10.0.2.2:3459"))
+        assertEquals("dev_merchant_7", PlanRenewal.appUserId(7, ""))
+    }
+
+    @Test
+    fun storeAccountReadyOnlyForTheExpectedId() {
+        assertFalse(PlanRenewal.storeAccountReady(null, "merchant_7"))
+        assertFalse(PlanRenewal.storeAccountReady("merchant_7", null))
+        assertFalse(PlanRenewal.storeAccountReady("", ""))
+        assertFalse(PlanRenewal.storeAccountReady("\$RCAnonymousID:abc", "merchant_7"))
+        assertFalse(PlanRenewal.storeAccountReady("dev_merchant_7", "merchant_7"))
+        assertTrue(PlanRenewal.storeAccountReady("merchant_7", "merchant_7"))
+    }
+
+    @Test
+    fun upgradeWhileAutoRenewingAndReenable() {
+        // A5: auto-renewing with a higher plan on offer and store products: purchase (upgrade only)
+        assertEquals(PlanScreenMode.PURCHASE, PlanRenewal.screenMode("MERCHANT", status(autoRenew = true, purchasable = listOf(3)), true))
+        assertEquals(PlanScreenMode.AUTO_RENEWING, PlanRenewal.screenMode("MERCHANT", status(autoRenew = true, purchasable = listOf(3)), false))
+        assertEquals(PlanScreenMode.AUTO_RENEWING, PlanRenewal.screenMode("MERCHANT", status(autoRenew = true, purchasable = emptyList()), true))
+        // A6: re-enable in the store, nothing to buy
+        val reenable = PlanRenewal.statusFromJson(
+            JSONObject().put("planId", 3).put("planName", "Professional").put("status", "ACTIVE").put("dbStatus", "ACTIVE")
+                .put("daysRemaining", 4).put("currentPeriodEnd", "2026-11-06T03:00:00.000Z").put("autoRenew", false)
+                .put("billingChannel", "PLAY_STORE").put("reenableAutoRenew", true).put("purchasablePlanIds", org.json.JSONArray()),
+        )
+        assertTrue(reenable.reenableAutoRenew)
+        assertEquals(PlanScreenMode.REENABLE_ONLY, PlanRenewal.screenMode("MERCHANT", reenable, true))
+        // with an upgrade on offer: purchase, the card is shown above it
+        assertEquals(PlanScreenMode.PURCHASE, PlanRenewal.screenMode("MERCHANT", reenable.copy(purchasablePlanIds = listOf(4)), true))
+        // an older API without the field
+        assertFalse(status().reenableAutoRenew)
+    }
+
+    @Test
+    fun confirmationWaitsAboutAMinute() {
+        assertEquals(60_000L, PlanRenewal.CONFIRM_TIMEOUT_MS)
+        assertEquals(2_000L, PlanRenewal.CONFIRM_INTERVAL_MS)
+    }
 }
+
