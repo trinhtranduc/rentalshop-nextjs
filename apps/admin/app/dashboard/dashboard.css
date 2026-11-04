@@ -85,7 +85,7 @@
 .ar-rev-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-variant-numeric: tabular-nums; }
 .ar-rev-table th { text-align: left; font-size: 12px; font-weight: 600; color: rgb(var(--ar-muted)); padding: 8px; border-bottom: 1px solid rgb(var(--ar-line)); white-space: nowrap; }
 .ar-rev-table td { padding: 8px; border-bottom: 1px solid rgb(var(--ar-line-soft)); vertical-align: middle; color: rgb(var(--ar-ink)); }
-.ar-rev-table .n { text-align: right; }
+.ar-rev-table .n { text-align: right; white-space: nowrap; }
 .ar-rev-table .zero { color: rgb(var(--ar-faint)); }
 .ar-rev-table tr.sel td { background: rgb(var(--ar-primary-soft)); font-weight: 600; }
 .ar-rev-table tr.fut td { color: rgb(var(--ar-faint)); }
