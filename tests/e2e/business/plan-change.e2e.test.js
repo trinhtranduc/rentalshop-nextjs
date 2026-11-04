@@ -4,7 +4,8 @@
  * Owner rules (2026-10-11):
  *  - A plan is changed only in a new period (the subscription has ended, or a trial turns paid).
  *  - A merchant never changes plan in the middle of a period.
- *  - Admin: in the middle of a period only an upgrade (credit for the unused days); a downgrade only in a new period.
+ *  - Admin: in the middle of a period only an upgrade; a downgrade only in a new period. An upgrade keeps the days left
+ *    as days of the new plan (end = current end + cycle) and costs the full new price (#1470, owner 2026-11-03).
  *  - An upgrade and an extension paid by the shop leave a Payment with the amount.
  * Expected numbers and dates are computed here, independently of the code under test.
  * Every describe makes its own merchant and plans (helpers/subscription.js).
@@ -103,19 +104,19 @@ describePlan('BF-PLAN rules: no change in the middle of a period for a merchant;
     expect(paymentsOf(w.merchantId)).toBe('');
   });
 
-  test('BF-PLAN-03 an admin upgrade in the middle of a period writes a Payment of 300,000 − credit and changes the plan', async () => {
+  test('BF-PLAN-03 an admin upgrade in the middle of a period writes a Payment of 300,000 (days left kept) and changes the plan', async () => {
     const w = newWorld('plan-03');
     const { start, end } = midPeriod();
     setPeriod(w.merchantId, { start, end, planId: basic });
     const a = await admin();
-    const before = Date.now();
     const r = await a.post(changeUrl(w), { planId: pro, billingInterval: 'monthly', ...payBody });
     expect({ status: r.status, code: r.body?.code }).toEqual({ status: 200, code: 'PLAN_CHANGED_SUCCESS' });
-    const credit = (vnDaysBetween(new Date(before), end) / vnDaysBetween(start, end)) * BASIC;
-    const due = Math.round(PRO - credit);
-    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${due}:PENDING:TRANSFER`);
-    expect(r.body.data.planChange.amountDue).toBeCloseTo(PRO - credit, 2);
-    expect(subRow(w.merchantId)).toMatchObject({ planId: pro, status: 'ACTIVE' });
+    expect(vnDaysBetween(start, end)).toBeGreaterThan(0);
+    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${PRO}:PENDING:TRANSFER`);
+    expect(r.body.data.planChange.amountDue).toBeCloseTo(PRO, 2);
+    const s = subRow(w.merchantId);
+    expect(s).toMatchObject({ planId: pro, status: 'ACTIVE' });
+    expect(Date.parse(s.end)).toBeGreaterThan(end.getTime() + 27 * DAY_MS); // the old end + 1 month
   });
 
   test('BF-PLAN-04 an admin downgrade in the middle of a period: 422 DOWNGRADE_ONLY_AT_NEW_PERIOD, nothing written', async () => {
@@ -192,11 +193,10 @@ describePlan('BF-PLAN merchant plan route (PUT /api/merchants/[id]/plan) follows
     const { start, end } = midPeriod();
     setPeriod(w.merchantId, { start, end, planId: basic });
     const a = await admin();
-    const before = Date.now();
     const r = await a.put(`/api/merchants/${w.merchantId}/plan`, { planId: pro, billingInterval: 'annual', totalPrice: 1, discount: 50, ...payBody });
     expect(r.status).toBe(200);
-    const credit = (vnDaysBetween(new Date(before), end) / vnDaysBetween(start, end)) * BASIC;
-    const due = Math.round(PRO * 12 * 0.9 - credit);
+    expect(vnDaysBetween(start, end)).toBeGreaterThan(0);
+    const due = Math.round(PRO * 12 * 0.9);
     expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${due}:PENDING:TRANSFER`);
     expect(subRow(w.merchantId)).toMatchObject({ planId: pro, amount: PRO * 12 * 0.9 });
   });
