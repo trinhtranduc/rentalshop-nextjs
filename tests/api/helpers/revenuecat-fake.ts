@@ -16,7 +16,10 @@ export const store: {
 let nextId = 1000;
 const uniqueError = () => Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
 const matches = (row: Row, where: Row = {}) =>
-  Object.entries(where).every(([k, v]) => (v && typeof v === 'object' && !(v instanceof Date) ? true : row[k] === v));
+  Object.entries(where).every(([k, v]) => {
+    if (v && typeof v === 'object' && !(v instanceof Date)) return 'not' in v ? row[k] !== v.not : true; // #1482: `{ not }`
+    return row[k] === v;
+  });
 const withPlan = (row: Row | undefined, include?: any) =>
   row ? { ...row, ...(include?.plan ? { plan: store.plans.find((p) => p.id === row.planId) ?? null } : {}) } : null;
 
