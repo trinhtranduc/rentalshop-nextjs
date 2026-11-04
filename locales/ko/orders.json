@@ -2,6 +2,7 @@
   "web": {
     "pickup": {
       "label": "인도일:",
+      "hint": "인도일: 예정일 또는 실제일",
       "any": "모든 날",
       "today": "오늘",
       "tomorrow": "내일",
