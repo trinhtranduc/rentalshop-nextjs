@@ -483,9 +483,10 @@ async function handleCancellation(merchantId: number, event: RevenueCatEvent): P
   if (event.cancel_reason === 'CUSTOMER_SUPPORT') {
     // Refund: the payment is returned and, for the product in use, access ends now
     if (event.transaction_id) {
+      // #1482: the refund is dated (the admin revenue report shows it in this month); a repeated event keeps the first date
       await db.prisma.payment.updateMany({
-        where: { transactionId: event.transaction_id, merchantId },
-        data: { status: 'REFUNDED' },
+        where: { transactionId: event.transaction_id, merchantId, status: { not: 'REFUNDED' } },
+        data: { status: 'REFUNDED', refundedAt: eventTime(event) },
       });
     }
     // A10: only the refund of the period in use changes access (its expiration is the store expiry = current period end

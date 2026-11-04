@@ -42,12 +42,6 @@ function toInstant(value: string | Date | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-/** True when the instant is inside the window (Vietnam day bounds, inclusive). */
-export function inDashboardWindow(value: string | Date | null | undefined, window: DashboardWindow): boolean {
-  const instant = toInstant(value);
-  return !!instant && instant >= window.start && instant <= window.end;
-}
-
 const pad2 = (value: number) => String(value).padStart(2, '0');
 
 /** Vietnam hour (`00`..`23`), day (`YYYY-MM-DD`) or month (`YYYY-MM`) of an instant. */
