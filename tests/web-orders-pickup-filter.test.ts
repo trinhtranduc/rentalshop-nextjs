@@ -91,9 +91,9 @@ describe('only one date filter at a time', () => {
 });
 
 describe('API params of the date filter', () => {
-  it('pickup asks for dateField=pickupPlanAt with the Vietnam day keys', () => {
+  it('pickup asks for dateField=pickupDay (planned or actual pickup day) with the Vietnam day keys', () => {
     const range = dateFilterRange('pickup', 'tomorrow', TODAY);
-    expect(dateFilterApiParams('pickup', range)).toEqual({ dateField: 'pickupPlanAt', startDate: '2026-10-31', endDate: '2026-10-31' });
+    expect(dateFilterApiParams('pickup', range)).toEqual({ dateField: 'pickupDay', startDate: '2026-10-31', endDate: '2026-10-31' });
   });
   it('created keeps the old request (no dateField)', () => {
     const range = dateFilterRange('created', '7d', TODAY);
@@ -105,7 +105,7 @@ describe('API params of the date filter', () => {
   });
   it('custom range through the same helper', () => {
     const range = dateFilterRange('pickup', 'custom', TODAY, { from: '2026-11-09', to: '2026-11-01' });
-    expect(dateFilterApiParams('pickup', range)).toEqual({ dateField: 'pickupPlanAt', startDate: '2026-11-01', endDate: '2026-11-09' });
+    expect(dateFilterApiParams('pickup', range)).toEqual({ dateField: 'pickupDay', startDate: '2026-11-01', endDate: '2026-11-09' });
   });
 });
 
