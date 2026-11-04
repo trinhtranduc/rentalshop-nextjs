@@ -322,7 +322,8 @@ export const ordersQuerySchema = z.object({
   endDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }).optional(),
   // Snapshot drill-down: new = createdAt, pickup = pickedUpAt, return = returnedAt, cancelled = updatedAt.
   // Planned ranges (#389): pickupPlanAt / returnPlanAt, startDate/endDate as Vietnam day keys.
-  dateField: z.enum(['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt', 'pickupPlanAt', 'returnPlanAt']).optional(),
+  // pickupDay (#1472): planned OR actual pickup day (the web "Ngày giao").
+  dateField: z.enum(['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt', 'pickupPlanAt', 'returnPlanAt', 'pickupDay']).optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   merchantId: z.coerce.number().int().positive().optional(),

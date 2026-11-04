@@ -317,6 +317,27 @@ describe('orders export = list (API-9 / WEB-1)', () => {
     expect(res.headers['Content-Disposition']).toContain('orders-export-2026-10-03.csv');
   });
 
+  it('dateField=pickupDay: planned OR actual pickup day in the period (#1472)', async () => {
+    await ordersExportGET(
+      req('/api/orders/export?format=csv&period=custom&startDate=2026-10-02&endDate=2026-10-02&dateField=pickupDay')
+    );
+    const where = mockPrisma.order.findMany.mock.calls[0][0].where;
+    expect(where.OR).toEqual([{ pickupPlanAt: vnDay('2026-10-02') }, { pickedUpAt: vnDay('2026-10-02') }]);
+    expect(where).not.toHaveProperty('createdAt');
+    expect(where).not.toHaveProperty('pickupPlanAt');
+    expect(where.deletedAt).toBeNull();
+  });
+
+  it('dateField=pickupPlanAt keeps its old meaning (#1472)', async () => {
+    await ordersExportGET(
+      req('/api/orders/export?format=csv&period=custom&startDate=2026-10-02&endDate=2026-10-02&dateField=pickupPlanAt')
+    );
+    const where = mockPrisma.order.findMany.mock.calls[0][0].where;
+    expect(where.pickupPlanAt).toEqual(vnDay('2026-10-02'));
+    expect(where).not.toHaveProperty('OR');
+    expect(where).not.toHaveProperty('pickedUpAt');
+  });
+
   it('cells show Vietnam time', async () => {
     mockPrisma.order.findMany.mockResolvedValue([
       { orderNumber: '123456', orderType: 'RENT', status: 'RESERVED', createdAt: new Date('2026-10-01T17:30:00Z'), pickupPlanAt: new Date('2026-10-01T17:00:00Z'), returnPlanAt: new Date('2026-10-03T16:59:59Z') },

@@ -4,7 +4,9 @@
  * - otherwise: whole UTC days (previous behaviour, still used by other callers).
  */
 // pickupPlanAt / returnPlanAt: planned-date ranges for the mobile filter sheet (#389)
-export const ORDER_DATE_FILTER_FIELDS = ['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt', 'pickupPlanAt', 'returnPlanAt'] as const;
+// pickupDay (#1472): the web "Ngày giao" = planned OR actual pickup day (pickupPlanAt or pickedUpAt in the range);
+// it is its own value so that pickupPlanAt keeps its meaning for installed apps
+export const ORDER_DATE_FILTER_FIELDS = ['createdAt', 'pickedUpAt', 'returnedAt', 'updatedAt', 'pickupPlanAt', 'returnPlanAt', 'pickupDay'] as const;
 type OrderDateFilterField = (typeof ORDER_DATE_FILTER_FIELDS)[number];
 
 const utcDayStart = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
@@ -25,5 +27,15 @@ export function applyOrderDateRange(
   if (startDate && !Number.isNaN(startDate.getTime())) range.gte = exact ? startDate : utcDayStart(startDate);
   if (endDate && !Number.isNaN(endDate.getTime())) range.lte = exact ? endDate : utcDayEnd(endDate);
   if (field !== 'createdAt' && field !== 'updatedAt') range.not = null;
+  if (field === 'pickupDay') {
+    // Appended to AND: the list also uses `where.OR` for search, which a top-level OR would replace. A row
+    // matching both columns is still one row (this is a row filter, not a join), and NULL never matches a range.
+    const existing = where.AND;
+    where.AND = [
+      ...(Array.isArray(existing) ? existing : existing ? [existing] : []),
+      { OR: [{ pickupPlanAt: { ...range } }, { pickedUpAt: { ...range } }] },
+    ];
+    return;
+  }
   where[field] = range;
 }

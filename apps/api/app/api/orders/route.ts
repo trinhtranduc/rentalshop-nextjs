@@ -105,8 +105,9 @@ function buildAuditContext(request: NextRequest, user: { id: number; email: stri
  *
  * #389 (additive): rows carry `amountDue` / `refundDue` (computeOrderBalance); `sortBy=nearestTask` lists late
  * tasks, then the nearest planned pickup/return, then closed orders; `dateField=pickupPlanAt|returnPlanAt` filters
- * planned dates by civil days (startDate/endDate). Indexed: (status, outletId), (pickupPlanAt, returnPlanAt),
- * Payment (orderId, status).
+ * planned dates by civil days (startDate/endDate); `dateField=pickupDay` (#1472, web) = planned OR actual pickup day
+ * (`pickedUpAt` has no index: the OR is filtered inside the outlet scope). Indexed: (status, outletId),
+ * (pickupPlanAt, returnPlanAt), Payment (orderId, status).
  * 
  * Authorization: All roles with 'orders.view' permission can access
  * - Automatically includes: ADMIN, MERCHANT, OUTLET_ADMIN, OUTLET_STAFF
