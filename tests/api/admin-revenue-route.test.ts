@@ -126,11 +126,13 @@ describe('query', () => {
   });
 });
 
+const PLAN_TYPES = ['SUBSCRIPTION_PAYMENT', 'PLAN_EXTENSION', 'PLAN_CHANGE'];
+
 describe('what is read', () => {
-  it('only SUBSCRIPTION_PAYMENT rows, COMPLETED or REFUNDED, bounded by Vietnam days of the year', async () => {
+  it('plan money types (subscription payment, manual extension, add-on / plan change), COMPLETED or REFUNDED, bounded by Vietnam days of the year', async () => {
     await call('?month=2026-11');
     const received = calls[0];
-    expect(received.where.type).toEqual({ in: ['SUBSCRIPTION_PAYMENT'] });
+    expect(received.where.type).toEqual({ in: PLAN_TYPES });
     expect(received.where.status).toEqual({ in: ['COMPLETED', 'REFUNDED'] });
     const [byProcessed, byCreated] = received.where.OR;
     expect(byProcessed.processedAt.gte.toISOString()).toBe('2025-12-31T17:00:00.000Z');
@@ -139,19 +141,55 @@ describe('what is read', () => {
     expect(byCreated.createdAt.gte.toISOString()).toBe('2025-12-31T17:00:00.000Z');
     const refunds = calls[1];
     expect(refunds.where.status).toBe('REFUNDED');
-    expect(refunds.where.type).toEqual({ in: ['SUBSCRIPTION_PAYMENT'] });
+    expect(refunds.where.type).toEqual({ in: PLAN_TYPES });
   });
 
-  it('ORDER_PAYMENT, PLAN_CHANGE and pending / failed rows are not in the answer', async () => {
+  it('ORDER_PAYMENT and pending / failed / cancelled rows are not in the answer', async () => {
     store.payments = [
       pay({ amount: 10 }),
       pay({ type: 'ORDER_PAYMENT', amount: 1000 }),
-      pay({ type: 'PLAN_CHANGE', amount: 2000 }),
       pay({ status: 'PENDING', amount: 4000 }),
       pay({ status: 'FAILED', amount: 8000 }),
+      pay({ status: 'CANCELLED', amount: 16000 }),
     ];
     const res = await call('?month=2026-11');
     expect(res.body.data.received).toMatchObject({ total: 10, count: 1 });
+  });
+
+  it('a COMPLETED PLAN_EXTENSION (admin Extend, manual money) on 03/11 Vietnam time counts in November', async () => {
+    store.payments = [pay({ type: 'PLAN_EXTENSION', method: 'MANUAL', amount: 600000, at: '2026-11-02T17:30:00.000Z' })];
+    const res = await call('?month=2026-11');
+    expect(res.body.data.received).toMatchObject({ total: 600000, count: 1 });
+    expect(res.body.data.daily.find((d: any) => d.date === '2026-11-03')).toMatchObject({ total: 600000, count: 1 });
+    expect(res.body.data.byChannel.find((c: any) => c.channel === 'TRANSFER')).toMatchObject({ total: 600000, count: 1 });
+  });
+
+  it('a COMPLETED PLAN_CHANGE (add-on paid by card) counts; a PENDING PLAN_CHANGE does not, even with a processedAt', async () => {
+    store.payments = [
+      pay({ type: 'PLAN_CHANGE', method: 'STRIPE', amount: 70000 }),
+      pay({ type: 'PLAN_CHANGE', method: 'TRANSFER', status: 'PENDING', amount: 90000 }), // awaits confirmation, processedAt set by `paymentDate`
+      pay({ type: 'PLAN_CHANGE', method: 'TRANSFER', status: 'PENDING', amount: 5000, processedAt: null }),
+    ];
+    const res = await call('?month=2026-11');
+    expect(res.body.data.received).toMatchObject({ total: 70000, count: 1 });
+    expect(res.body.data.byChannel.find((c: any) => c.channel === 'CARD')).toMatchObject({ total: 70000, count: 1 });
+  });
+
+  it('a COMPLETED PLAN_CHANGE without processedAt falls back to createdAt', async () => {
+    store.payments = [pay({ type: 'PLAN_CHANGE', method: 'STRIPE', amount: 70000, processedAt: null, createdAt: new Date('2026-11-01T04:00:00.000Z') })];
+    const res = await call('?month=2026-11');
+    expect(res.body.data.daily.find((d: any) => d.date === '2026-11-01')).toMatchObject({ total: 70000, count: 1 });
+  });
+
+  it('the refund line takes the same types: a refunded PLAN_EXTENSION shows, a refunded ORDER_PAYMENT does not', async () => {
+    store.payments = [
+      pay({ type: 'PLAN_EXTENSION', method: 'MANUAL', status: 'REFUNDED', amount: 300000, at: '2026-10-10T05:00:00.000Z', refundedAt: new Date('2026-11-03T05:00:00.000Z') }),
+      pay({ type: 'ORDER_PAYMENT', method: 'CASH', status: 'REFUNDED', amount: 111111, at: '2026-10-10T05:00:00.000Z', refundedAt: new Date('2026-11-03T05:00:00.000Z') }),
+    ];
+    const res = await call('?month=2026-11');
+    expect(res.body.data.refunds).toEqual({ total: 300000, count: 1 });
+    const oct = await call('?month=2026-10');
+    expect(oct.body.data.received).toMatchObject({ total: 300000, count: 1 }); // still received in October
   });
 });
 
@@ -199,6 +237,17 @@ describe('answer', () => {
     const earlier = calls[2];
     expect(earlier.distinct).toEqual(['merchantId']);
     expect(earlier.where.merchantId).toEqual({ in: expect.arrayContaining([1, 2]) });
+  });
+
+  it('"new" is the first received payment of a shop whatever its type', async () => {
+    store.payments = [
+      pay({ at: '2025-06-02T05:00:00.000Z', merchantId: 1, type: 'PLAN_EXTENSION', method: 'MANUAL' }), // shop 1 paid before 2026 by a manual extension
+      pay({ at: '2026-11-02T05:00:00.000Z', merchantId: 1 }), // so this subscription payment is a renewal
+      pay({ at: '2026-11-03T05:00:00.000Z', merchantId: 2, type: 'PLAN_EXTENSION', method: 'MANUAL' }), // first payment of shop 2, of type PLAN_EXTENSION
+    ];
+    const res = await call('?month=2026-11');
+    expect(res.body.data.received).toMatchObject({ count: 2, newCount: 1, renewalCount: 1 });
+    expect(calls[2].where.type).toEqual({ in: PLAN_TYPES });
   });
 
   it('an empty month answers 200 with zeros (the UI shows its empty state)', async () => {

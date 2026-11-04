@@ -10,6 +10,7 @@ jest.mock('@rentalshop/utils', () => ({
 }));
 
 import {
+  REVENUE_PAYMENT_TYPES,
   buildRevenueReport,
   channelOfMethod,
   parseRevenueQuery,
@@ -43,6 +44,13 @@ const NOV = parseRevenueQuery({ month: '2026-11' })!;
 const TODAY = '2026-11-04';
 const report = (received: RevenuePaymentRow[], refunded: RevenuePaymentRow[] = [], query = NOV, earlier: number[] = []) =>
   buildRevenueReport({ query, todayKey: TODAY, received, refunded, earlierMerchantIds: new Set(earlier) });
+
+describe('plan money types', () => {
+  it('subscription payments, manual extensions (PLAN_EXTENSION) and add-on / plan changes (PLAN_CHANGE); never order payments', () => {
+    expect([...REVENUE_PAYMENT_TYPES].sort()).toEqual(['PLAN_CHANGE', 'PLAN_EXTENSION', 'SUBSCRIPTION_PAYMENT']);
+    expect(REVENUE_PAYMENT_TYPES).not.toContain('ORDER_PAYMENT');
+  });
+});
 
 describe('query and ranges', () => {
   it('reads month=YYYY-MM or year=YYYY, nothing else', () => {

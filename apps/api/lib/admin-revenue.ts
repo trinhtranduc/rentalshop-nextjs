@@ -10,8 +10,13 @@ import { getLocalDateKey, getUtcRangeForDateKeys } from '@rentalshop/utils';
  * Pure functions (no database), so the unit tests stay fast.
  */
 
-/** Payment types that are plan money. `PLAN_EXTENSION` / `PLAN_CHANGE` are left out on purpose (owner rule, see spec). */
-export const REVENUE_PAYMENT_TYPES = ['SUBSCRIPTION_PAYMENT'] as const;
+/**
+ * Payment types that are plan money: the store / card / manual subscription payment, the manual extension of the admin
+ * Extend modal (`PLAN_EXTENSION`, how bank transfers are recorded) and add-on / plan-change payments (`PLAN_CHANGE`).
+ * Never `ORDER_PAYMENT` (a shop's own order money). Only COMPLETED (or REFUNDED) rows count, so a PLAN_CHANGE that still
+ * awaits confirmation (PENDING) is left out.
+ */
+export const REVENUE_PAYMENT_TYPES = ['SUBSCRIPTION_PAYMENT', 'PLAN_EXTENSION', 'PLAN_CHANGE'] as const;
 /** A refunded payment was received once. PENDING, FAILED and CANCELLED never count. */
 export const RECEIVED_STATUSES = ['COMPLETED', 'REFUNDED'] as const;
 export const FIRST_REVENUE_YEAR = 2020;

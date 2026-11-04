@@ -455,7 +455,7 @@
       "OTHER": "Khác"
     },
     "total": "Tổng",
-    "channelNote": "Chỉ tính thanh toán VND đã nhận (khoản sau này được hoàn tiền vẫn nằm trong tháng nhận).",
+    "channelNote": "Chỉ tính thanh toán VND đã nhận, gồm gia hạn tay và add-on (khoản sau này được hoàn tiền vẫn nằm trong tháng nhận).",
     "monthsTitle": "Các tháng năm {year}",
     "exportCsv": "Xuất CSV",
     "csvDone": "Đã tải {file}",
@@ -473,7 +473,7 @@
     "payments": "Thanh toán",
     "newShops": "Đăng ký mới",
     "renewals": "Gia hạn",
-    "monthsNote": "Mới = thanh toán đầu tiên của shop. Gia hạn = các lần sau. Chỉ VND.",
+    "monthsNote": "Mới = thanh toán đầu tiên của shop. Gia hạn = các lần sau. Chỉ VND. Gồm gia hạn tay và add-on.",
     "latestTitle": "Thanh toán gần nhất",
     "viewAll": "Xem tất cả",
     "noPayments": "Chưa có thanh toán.",
