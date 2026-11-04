@@ -63,12 +63,15 @@ describe('calculateExtensionTotal with add-ons (#870)', () => {
 describe('calculatePlanChangeTotal with add-ons (#870)', () => {
   const subscription = { currentPeriodStart: start, currentPeriodEnd: end, billingInterval: 'monthly', plan: { basePrice: 300000 } } as any;
 
-  it('due = new plan + add-on cycle − plan credit − add-on credit for the paid days left', () => {
+  // #1470 (owner 2026-11-03): the days left are kept as days (period from the current end): no plan or add-on credit
+  it('due = new plan + add-on cycle; the 18 paid days left are kept, not credited', () => {
     const c = calculatePlanChangeTotal({ subscription, newPlan: { basePrice: 399000 }, selectedInterval: 'quarterly', addonMonthlyTotal: 40000, paidAddonMonthlyTotal: 30000, now });
     const addonCycle = calculateSubscriptionPrice({ basePrice: 40000 } as any, 'quarterly');
     expect(c.addonPeriodPrice).toBe(addonCycle);
-    expect(c.addonCreditValue).toBeCloseTo((18 / 30) * 30000, 6);
-    expect(c.totalDue).toBeCloseTo(c.newPlanPeriodPrice + addonCycle - c.remainingCreditValue - c.addonCreditValue, 6);
+    expect(c.remainingDays).toBe(18);
+    expect(c.remainingCreditValue).toBe(0);
+    expect(c.addonCreditValue).toBe(0);
+    expect(c.totalDue).toBeCloseTo(c.newPlanPeriodPrice + addonCycle, 6);
   });
 
   it('a trial shop gets no add-on credit (nothing was paid)', () => {
