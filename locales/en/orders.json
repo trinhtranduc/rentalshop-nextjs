@@ -827,6 +827,7 @@
     },
     "pickup": {
       "label": "Pickup:",
+      "hint": "Pickup day: planned or actual",
       "any": "Any day",
       "today": "Today",
       "tomorrow": "Tomorrow",

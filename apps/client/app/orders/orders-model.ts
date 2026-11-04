@@ -120,7 +120,8 @@ export function parsePreset(raw: string | null | undefined): CreatedPreset {
   return (CREATED_PRESETS as string[]).includes(raw || '') ? (raw as CreatedPreset) : 'any';
 }
 
-// #1369: "Ngày giao" = planned pickup day (`pickupPlanAt`). The API takes one `dateField` per request,
+// #1369: "Ngày giao" = pickup day. #1472: planned OR actual (`dateField=pickupDay`), so an order delivered on another
+// day than planned shows under the day it was delivered. The API takes one `dateField` per request,
 // so it excludes "Ngày tạo": the URL carries one of `created=` / `pickup=` (custom days share `from` / `to`).
 export type PickupPreset = 'any' | 'today' | 'tomorrow' | 'next7d' | '7d' | '30d' | 'month' | 'custom';
 export const PICKUP_PRESETS: PickupPreset[] = ['any', 'today', 'tomorrow', 'next7d', '7d', '30d', 'month', 'custom'];
@@ -168,14 +169,14 @@ export function dateFilterRange(
   return kind === 'pickup' ? pickupRange(parsePickupPreset(preset), todayKey, custom) : createdRange(parsePreset(preset), todayKey, custom);
 }
 
-/** Filters sent to GET /api/orders. Pickup adds `dateField=pickupPlanAt`; created keeps the old request. */
+/** Filters sent to GET /api/orders. Pickup adds `dateField=pickupDay`; created keeps the old request. */
 export function dateFilterApiParams(
   kind: DateFilterKind,
   range: DateRange | null,
-): { dateField?: 'pickupPlanAt'; startDate?: string; endDate?: string } {
+): { dateField?: 'pickupDay'; startDate?: string; endDate?: string } {
   if (!range) return {};
   return kind === 'pickup'
-    ? { dateField: 'pickupPlanAt', startDate: range.startDate, endDate: range.endDate }
+    ? { dateField: 'pickupDay', startDate: range.startDate, endDate: range.endDate }
     : { startDate: range.startDate, endDate: range.endDate };
 }
 

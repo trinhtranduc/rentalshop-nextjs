@@ -827,6 +827,7 @@
     },
     "pickup": {
       "label": "Ngày giao:",
+      "hint": "Ngày giao: dự kiến hoặc thực tế",
       "any": "Mọi ngày",
       "today": "Hôm nay",
       "tomorrow": "Ngày mai",

@@ -276,7 +276,7 @@ export default function OrdersPage() {
           ? { format: 'excel', orderIds: chosen }
           : {
               format: 'excel',
-              dateField: dateKind === 'pickup' ? ('pickupPlanAt' as const) : ('createdAt' as const),
+              dateField: dateKind === 'pickup' ? ('pickupDay' as const) : ('createdAt' as const),
               ...(range ? { period: 'custom' as const, startDate: range.startDate, endDate: range.endDate } : { period: '1year' as const }),
               status: status || undefined,
               orderType: type || undefined,
@@ -434,6 +434,7 @@ export default function OrdersPage() {
                 />
                 <FilterMenu<PickupPreset>
                   label={t('pickup.label')}
+                  hint={t('pickup.hint')}
                   value={dateKind === 'pickup' ? (preset as PickupPreset) : 'any'}
                   options={PICKUP_PRESETS.map((v) => ({
                     value: v,
