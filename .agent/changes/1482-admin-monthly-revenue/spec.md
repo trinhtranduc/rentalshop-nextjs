@@ -1,6 +1,6 @@
 # Spec — Admin monthly revenue
 
-Issue: #1482 · Status: accepted · Intent: ./intent.md
+Issue: #1482 · Status: in-progress · Intent: ./intent.md
 
 ## Behavior
 
@@ -55,7 +55,9 @@ Admin UI (Dashboard):
     (Tháng, Doanh thu, Thanh toán, Đăng ký mới, Gia hạn; click a month to select it; future months disabled) with
     CSV export (also refund columns), the latest 10 payments (Ngày, Shop, Gói, Kênh, Số tiền, Trạng thái) with a
     link to the existing Payments page, loading skeleton, empty state, error state.
-18. VND shows without a "$" prefix. Strings come from `locales/*/dashboard.json` (`revenue.*`) in vi, en, ja, ko, zh.
+18. VND shows without a "$" prefix. Strings come from `locales/{en,vi}/dashboard.json` (`revenue.*`; the admin loads only en and vi,
+    and `tests/phu-phi-wording.test.ts` keeps `ja`, `ko`, `zh` without a `dashboard.json`). The success code
+    `ADMIN_REVENUE_SUCCESS` is in `errors.json` of all five languages.
 19. The old "Subscription Revenue" chart is gone with `calculateSubscriptionRevenueData`, the `$` chart component,
     `inDashboardWindow`, the unused `subscriptions` fetch and the `subscriptionStats.totalRevenue` field. Tiles,
     rankings, new-merchant chart and the today / month / year switch work as before.
@@ -89,9 +91,9 @@ Auth: `withAuthRoles([...PLATFORM_OPS_ROLES])`. No merchant scope (platform data
 
 ## Acceptance
 
-- [ ] Each behavior line has a test (`tests/api/admin-revenue-*.test.ts`, `tests/packages/admin/dashboard-revenue-model.test.ts`)
-- [ ] Jest green in `TZ=UTC` and `TZ=Asia/Ho_Chi_Minh`
-- [ ] iOS and Android: not called, shown by `git grep origin/main-real` (compat table)
-- [ ] New strings in vi, en, ja, ko, zh
-- [ ] Cancelled / failed payments do not count; Vietnam civil days; roles hold
-- [ ] Screenshots: month with data, "Cả năm", empty month
+- [x] Each behavior line has a test (`tests/api/admin-revenue-*.test.ts`, `tests/packages/admin/dashboard-revenue-model.test.ts`)
+- [x] Jest green in `TZ=UTC` and `TZ=Asia/Ho_Chi_Minh`
+- [x] iOS and Android: not called, shown by `git grep origin/main-real` (compat table)
+- [x] New strings in en and vi (`dashboard.json`), the code in all five `errors.json`
+- [x] Cancelled / failed payments do not count; Vietnam civil days; roles hold
+- [x] Screenshots: month with data, "Cả năm", empty month

@@ -1,6 +1,6 @@
 # Plan — Admin monthly revenue
 
-Issue: #1482 · Status: accepted · Spec: ./spec.md
+Issue: #1482 · Status: in-progress · Spec: ./spec.md
 
 ## Steps
 

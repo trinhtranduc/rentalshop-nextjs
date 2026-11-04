@@ -1,6 +1,6 @@
 # Admin dashboard: monthly revenue of plan payments
 
-Issue: #1482 · Author: Trinh Tran (with Claude) · Status: accepted · Created: 2026-11-04
+Issue: #1482 · Author: Trinh Tran (with Claude) · Status: in-progress · Created: 2026-11-04
 
 ## Problem
 
@@ -40,3 +40,5 @@ comparison with the previous period, daily bars, a by-channel table, a 12-month 
 - 2026-11-04 — VND total counts VND payments only; other currencies get their own line, "chưa quy đổi" (owner)
 - 2026-11-04 — Only `type = SUBSCRIPTION_PAYMENT` counts, as the owner wrote. `PLAN_EXTENSION` ("Payment Received" in `subscriptions/[id]/extend`) and `PLAN_CHANGE` rows are not counted; one constant in `apps/api/lib/admin-revenue.ts` changes that (agent, flagged to the owner)
 - 2026-11-04 — Channel `STRIPE` is grouped with `LEMON_SQUEEZY` under "Thẻ"; `PAYPAL` / `CHECK` go to "Khác", shown only when non-zero (agent)
+- 2026-11-04 — `ja`, `ko`, `zh` get no `dashboard.json`: `tests/phu-phi-wording.test.ts` requires them to stay without one and the admin loads only en and vi. Only the error code goes into their `errors.json` (agent, flagged to the owner)
+- 2026-11-04 — an old refund without `refundedAt` is dated by `updatedAt`; no data backfill in the migration (agent)
