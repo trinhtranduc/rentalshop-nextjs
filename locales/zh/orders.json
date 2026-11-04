@@ -2,6 +2,7 @@
   "web": {
     "pickup": {
       "label": "取货日:",
+      "hint": "取货日:预计或实际",
       "any": "全部日期",
       "today": "今天",
       "tomorrow": "明天",

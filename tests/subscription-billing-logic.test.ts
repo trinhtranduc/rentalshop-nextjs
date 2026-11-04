@@ -1,7 +1,8 @@
 import { calculateExtensionTotal, calculatePlanChangeTotal } from '../packages/utils/src/core/subscription-billing-calculations';
 
 describe('Subscription billing logic (pure, no API)', () => {
-  it('Basic (remaining) -> Pro should subtract remaining credit', () => {
+  // #1470 (owner 2026-11-03): an upgrade keeps the days left as days (period from the current end), no money credit
+  it('Basic (remaining) -> Pro charges the full Pro price and keeps the remaining days', () => {
     const now = new Date('2026-03-10T00:00:00.000Z');
     const periodStart = new Date('2026-03-01T00:00:00.000Z');
     const periodEnd = new Date('2026-04-01T00:00:00.000Z');
@@ -19,15 +20,15 @@ describe('Subscription billing logic (pure, no API)', () => {
       now,
     });
 
-    // Remaining ~22 days out of 31 -> credit ~ (22/31)*50k ≈ 35,483.87
-    // New plan price = 100k -> due ≈ 64,516.13
+    // ~22 days left are kept: the period ends at the current end + 1 month, the full 100k is due
     expect(result.newPlanPeriodPrice).toBeCloseTo(100_000, 5);
     expect(result.oldPlanPeriodPrice).toBeCloseTo(50_000, 5);
-    expect(result.totalDue).toBeGreaterThan(60_000);
-    expect(result.totalDue).toBeLessThan(70_000);
+    expect(result.remainingCreditValue).toBe(0);
+    expect(result.totalDue).toBeCloseTo(100_000, 5);
+    expect(result.newPeriodEnd.toISOString()).toBe('2026-05-01T00:00:00.000Z');
   });
 
-  it('Basic (remaining) -> Basic quarterly should charge quarterly minus remaining credit', () => {
+  it('Basic (remaining) -> Basic quarterly charges the full quarter from the current end', () => {
     const now = new Date('2026-03-10T00:00:00.000Z');
     const periodStart = new Date('2026-03-01T00:00:00.000Z');
     const periodEnd = new Date('2026-04-01T00:00:00.000Z');
@@ -45,8 +46,8 @@ describe('Subscription billing logic (pure, no API)', () => {
     });
 
     expect(result.newPlanPeriodPrice).toBeCloseTo(150_000, 5); // 3 months, 0% discount
-    expect(result.totalDue).toBeGreaterThan(110_000);
-    expect(result.totalDue).toBeLessThan(150_000);
+    expect(result.totalDue).toBeCloseTo(150_000, 5);
+    expect(result.newPeriodEnd.toISOString()).toBe('2026-07-01T00:00:00.000Z');
   });
 
   it('Extend should use selected interval price (quarterly) and interval day-count', () => {

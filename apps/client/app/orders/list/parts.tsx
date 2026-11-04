@@ -284,11 +284,14 @@ export function OrdersTable({
 
 export function FilterMenu<V extends string>({
   label,
+  hint,
   value,
   options,
   onChange,
 }: {
   label: string;
+  /** tooltip of the button (#1472: "Ngày giao: dự kiến hoặc thực tế") */
+  hint?: string;
   value: V;
   options: Array<{ value: V; label: string }>;
   onChange: (value: V) => void;
@@ -321,6 +324,7 @@ export function FilterMenu<V extends string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={id}
+        title={hint}
         onClick={() => setOpen((o) => !o)}
         className="flex h-9 items-center gap-1 whitespace-nowrap rounded-[10px] border border-ar-line bg-ar-surface pl-3 pr-2.5 text-sm text-ar-ink hover:bg-ar-subtle"
       >

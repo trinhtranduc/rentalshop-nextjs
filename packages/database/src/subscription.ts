@@ -476,9 +476,21 @@ export async function getPlanById(planId: number): Promise<Plan | null> {
 // SUBSCRIPTION ACTIONS
 // ============================================================================
 
-/** Who changes the plan and how the shop paid. `actorRole` is required: the plan rules are applied here, for every caller. */
+/**
+ * What a manual change writes to the billing fields for a new end: `manualExtensionBilling` (apps/api/lib/plan-renewal.ts,
+ * #1459 A13 / A10). A store plan still running keeps its store fields and the added time joins `storeBonusMs`; otherwise
+ * the shop is billed manually. Passed in by the routes so the one rule stays in the API lib.
+ */
+export type ManualPeriodBilling = (
+  row: any,
+  newEnd: Date,
+  now?: Date
+) => { keepsStore: boolean; data: Record<string, unknown> };
+
+/** Who changes the plan and how the shop paid. `actorRole` and `billing` are required: the rules are applied here, for every caller. */
 export interface ChangePlanOptions {
   actorRole: string;
+  billing: ManualPeriodBilling;
   payment?: {
     method?: string;
     transactionId?: string;
@@ -551,9 +563,9 @@ export async function changePlan(
   const breakdown = getPricingBreakdown(convertedPlan, billingInterval);
   const amount = breakdown.finalPrice;
 
-  // Owner rule (#779): credit for the unused Vietnam civil days of the old period, new period from now,
-  // one cycle of calendar months (was now + 30/90/180/365 × 24h and no credit).
-  // #870: plus the add-ons for the new cycle, minus the unused paid add-on days (none for a trial).
+  // Owner rule (#1470, 2026-11-03; replaces the #779 credit): the new plan applies now; while the plan still runs (a trial
+  // too) the period ends at the current end + one cycle, so the days left are kept as days, not paid back; expired = from
+  // now. Calendar months on the Vietnam day. #870: plus the add-ons for the new cycle.
   const planChange = calculatePlanChangeTotal({
     subscription: {
       currentPeriodStart: subscription.currentPeriodStart,
@@ -571,7 +583,7 @@ export async function changePlan(
   const newPeriodStart = planChange.newPeriodStart;
   const newPeriodEnd = planChange.newPeriodEnd;
 
-  // What the shop pays now: the new cycle price minus the credit for the unused days (#779). VND has no decimals.
+  // What the shop pays now: the new cycle price + add-ons (#1470: no credit, the days are kept). VND has no decimals.
   const currency = plan.currency || subscription.currency;
   const amountDue = currency === 'VND' ? Math.round(planChange.totalDue) : Math.round(planChange.totalDue * 100) / 100;
   const pay = options.payment ?? {};
@@ -581,23 +593,32 @@ export async function changePlan(
   }
   // A trial turned into a paid plan is ACTIVE from now (it used to stay TRIAL: the route tested `trialDays > 0`).
   const trialBecomesPaid = String(subscription.status).toUpperCase() === 'TRIAL' && plan.basePrice > 0;
+  // #1459 A13 / A10, as renew and extend: a store plan still running keeps its store fields, start, price and cycle, and
+  // the added time joins its credit; otherwise the shop is billed manually
+  const billing = options.billing(subscription, newPeriodEnd, now);
 
   const updatedSubscription = await prisma.$transaction(async (tx) => {
     const updated = await tx.subscription.update({
       where: { merchantId: subscription.merchantId },
-      data: {
-        planId: plan.id,
-        interval: billingInterval,
-        intervalCount: breakdown.totalMonths,
-        period: breakdown.totalMonths,
-        discount: breakdown.discount,
-        amount: amount,
-        currency,
-        currentPeriodStart: newPeriodStart,
-        currentPeriodEnd: newPeriodEnd,
-        ...(trialBecomesPaid ? { status: SUBSCRIPTION_STATUS.ACTIVE } : {}),
-        updatedAt: new Date()
-      },
+      data: billing.keepsStore
+        ? {
+            planId: plan.id,
+            ...billing.data,
+            updatedAt: new Date()
+          }
+        : {
+            planId: plan.id,
+            interval: billingInterval,
+            intervalCount: breakdown.totalMonths,
+            period: breakdown.totalMonths,
+            discount: breakdown.discount,
+            amount: amount,
+            currency,
+            currentPeriodStart: newPeriodStart,
+            ...(trialBecomesPaid ? { status: SUBSCRIPTION_STATUS.ACTIVE } : {}),
+            ...billing.data,
+            updatedAt: new Date()
+          },
       include: {
         merchant: {
           select: {
@@ -695,7 +716,7 @@ export async function changePlan(
       daysRemaining: civilDaysBetween(new Date(), updatedSubscription.currentPeriodEnd), // VN civil days (#588)
       nextBillingDate: updatedSubscription.currentPeriodEnd
     },
-    // What this change costs now: new cycle price minus the credit for unused days (#779, additive)
+    // What this change costs now: new cycle price + add-ons (#779, additive; #1470: the credits are 0, the days are kept)
     planChange: {
       oldPlanPeriodPrice: planChange.oldPlanPeriodPrice,
       oldPlanPeriodDays: planChange.oldPlanPeriodDays,

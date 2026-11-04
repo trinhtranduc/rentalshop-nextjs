@@ -2,7 +2,8 @@
  * #779: one formula for renewal and plan-change price and dates (owner rules of 2026-10-11).
  * - Renew expired: new period starts now. Renew early: continues from the current end (days left kept).
  * - Price = plan (+ addons) for the cycle, discounts monthly 0%, quarterly 0%, semi-annual 5%, annual 10%.
- * - Upgrade: credit for unused Vietnam civil days, new period starts now, calendar months.
+ * - Upgrade (#1470, owner 2026-11-03, replaces the #779 credit): the new plan applies now, the period ends at the current
+ *   end + the cycle (days left kept, no money credit); expired: from now. Calendar months.
  * Must give the same answers under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import {
@@ -100,7 +101,7 @@ describe('calculateRenewalTotal: dates', () => {
   });
 });
 
-describe('calculatePlanChangeTotal: upgrade credit and new period', () => {
+describe('calculatePlanChangeTotal: upgrade keeps the days left, new period', () => {
   // Period 1 Mar VN → 1 Apr VN (31 civil days), now 10 Mar VN: 9 used, 22 left.
   const subscription = {
     currentPeriodStart: new Date('2026-02-28T17:00:00Z'),
@@ -110,18 +111,18 @@ describe('calculatePlanChangeTotal: upgrade credit and new period', () => {
   } as any;
   const now = new Date('2026-03-10T03:00:00Z');
 
-  it('Basic 10$ → Pro 30$ with 22/31 days left: credit 7.10, due 22.90', () => {
+  it('Basic 10$ → Pro 30$ with 22/31 days left: the 22 days are kept, no credit, due 30', () => {
     const r = calculatePlanChangeTotal({ subscription, newPlan: { basePrice: 30 }, selectedInterval: 'monthly', now });
     expect(r.usedDays).toBe(9);
     expect(r.remainingDays).toBe(22);
-    expect(r.remainingCreditValue).toBeCloseTo(7.1, 2);
-    expect(r.totalDue).toBeCloseTo(22.9, 2);
+    expect(r.remainingCreditValue).toBe(0);
+    expect(r.totalDue).toBeCloseTo(30, 2);
   });
 
-  it('the new period starts now and lasts one cycle by calendar months', () => {
+  it('the new plan starts now; the period ends at the current end + one cycle of calendar months', () => {
     const r = calculatePlanChangeTotal({ subscription, newPlan: { basePrice: 30 }, selectedInterval: 'quarterly', now });
     expect(iso(r.newPeriodStart)).toBe(iso(now));
-    expect(iso(r.newPeriodEnd)).toBe('2026-06-10T03:00:00.000Z');
+    expect(iso(r.newPeriodEnd)).toBe('2026-06-30T17:00:00.000Z'); // 1 Apr VN + 3 months = 1 Jul VN
     expect(r.newPlanPeriodPrice).toBeCloseTo(90, 2);
   });
 

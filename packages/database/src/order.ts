@@ -1837,7 +1837,9 @@ export const simplifiedOrders = {
       
       // Combine outlet filter with search conditions using AND
       if (outletFilter) {
+        // keep what the date filter put in AND (#1472)
         where.AND = [
+          ...(Array.isArray(where.AND) ? where.AND : []),
           outletFilter,
           { OR: searchConditions }
         ];

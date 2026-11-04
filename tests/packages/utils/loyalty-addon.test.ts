@@ -127,7 +127,8 @@ describe('loyalty add-on money (#967, the #943 rules)', () => {
     expect(monthlyTotal).toBe(0);
   });
 
-  it('change-plan: the paid loyalty add-on is credited for the days left (79.000 × 18 ÷ 30 = 47.400)', () => {
+  // #1470 (owner 2026-11-03): an upgrade keeps the 18 days left as days, so the add-on gets no credit
+  it('change-plan: the paid loyalty add-on keeps its days left (no credit) and is charged for the new cycle', () => {
     const r = calculatePlanChangeTotal({
       subscription: { currentPeriodStart: start, currentPeriodEnd: end, billingInterval: 'monthly', plan: { basePrice: 199000 } } as any,
       newPlan: { basePrice: 399000 },
@@ -136,6 +137,7 @@ describe('loyalty add-on money (#967, the #943 rules)', () => {
       paidAddonMonthlyTotal: 79000,
       now,
     });
-    expect(Math.round(r.addonCreditValue)).toBe(47400);
+    expect(r.addonCreditValue).toBe(0);
+    expect(r.totalDue).toBe(399000 + 79000);
   });
 });

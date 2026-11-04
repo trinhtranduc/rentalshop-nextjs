@@ -140,6 +140,23 @@ describe('GET /api/orders phase 8 (#389)', () => {
     });
   });
 
+  // #1472: the web "Ngày giao" = planned OR actual pickup day, as its own value; the old values are unchanged
+  it('dateField=pickupDay reaches the query with the Vietnam day bounds (#1472)', async () => {
+    const res: any = await GET(req('?dateField=pickupDay&startDate=2026-11-03&endDate=2026-11-03'));
+    expect(res.status).toBe(200);
+    expect(filters()).toMatchObject({
+      dateField: 'pickupDay',
+      startDate: new Date('2026-11-02T17:00:00.000Z'),
+      endDate: new Date('2026-11-03T16:59:59.999Z'),
+      exactDateRange: true,
+    });
+  });
+
+  it('still rejects an unknown dateField (#1472)', async () => {
+    const res: any = await GET(req('?dateField=pickupDays&startDate=2026-11-03&endDate=2026-11-03'));
+    expect(res.status).toBe(400);
+  });
+
   it('keeps the old meaning without the new params (createdAt default sort, no dateField)', async () => {
     await GET(req('?startDate=2026-10-04&endDate=2026-10-04'));
     expect(filters()).toMatchObject({ sortBy: 'createdAt', sortOrder: 'desc', dateField: undefined });

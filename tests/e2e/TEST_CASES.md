@@ -438,7 +438,7 @@ Each case runs for every client flavour: `web`, `app`, `appStoreIosOrderCheck`, 
 
 ## BF-BILL — Gia hạn, extend, đổi gói: giá và ngày (`subscription-billing.e2e.test.js`, #779)
 
-Quy tắc chủ shop chốt 2026-10-11: giá = giá tháng của gói × số tháng, chiết khấu tháng 0 %, quý 0 %, 6 tháng 5 %, năm 10 %; gia hạn khi còn hạn nối tiếp hạn cũ, khi đã hết hạn tính từ lúc gia hạn; đổi gói trừ credit ngày chưa dùng (ngày Việt Nam), kỳ mới từ bây giờ theo tháng lịch. Mỗi nhóm tự tạo merchant và gói (giá VND), không đụng merchant seed.
+Quy tắc chủ shop chốt 2026-10-11: giá = giá tháng của gói × số tháng, chiết khấu tháng 0 %, quý 0 %, 6 tháng 5 %, năm 10 %; gia hạn khi còn hạn nối tiếp hạn cũ, khi đã hết hạn tính từ lúc gia hạn; đổi gói khi còn hạn: gói mới áp dụng ngay, hạn mới = hạn cũ + chu kỳ (giữ ngày còn lại, không trừ credit; #1470, chủ shop chốt 2026-11-03), hết hạn thì từ bây giờ; tháng lịch theo ngày Việt Nam. Mỗi nhóm tự tạo merchant và gói (giá VND), không đụng merchant seed.
 
 | ID | Ca | Mong đợi |
 |---|---|---|
@@ -450,26 +450,26 @@ Quy tắc chủ shop chốt 2026-10-11: giá = giá tháng của gói × số th
 | BF-BILL-06 | Merchant khác gia hạn | 403, không ghi gì |
 | BF-BILL-07 | Xem trước extend thêm 1 tháng lịch | 100.000 VND (trước: 0, VND mặc định) |
 | BF-BILL-08 | Xem trước extend khi đã hết hạn 20 ngày | Số ngày tính từ hôm nay |
-| BF-BILL-09 | Basic 100.000 → Pro 300.000 giữa kỳ | Cần thu = 300.000 − ngày còn lại × 100.000 / số ngày kỳ; kỳ mới từ bây giờ + 1 tháng lịch |
-| BF-BILL-10 | Đổi gói theo quý | Kỳ 3 tháng lịch (không phải 90 × 24 giờ); lưu 3 tháng |
+| BF-BILL-09 | Basic 100.000 → Pro 300.000 giữa kỳ | Cần thu đủ 300.000 (`remainingCreditValue` 0); gói mới từ bây giờ, hạn = hạn cũ + 1 tháng lịch |
+| BF-BILL-10 | Đổi gói theo quý | Hạn = hạn cũ + 3 tháng lịch (không phải 90 × 24 giờ); lưu 3 tháng |
 | BF-BILL-11 | Merchant khác đổi gói | 403, không ghi gì |
-| BF-BILL-12 | Trang merchant của admin (`PUT /api/merchants/[id]/plan`) gửi `totalPrice: 1`, `discount: 50` | Server tự tính: lưu giá năm của Pro, chiết khấu 10 %; trả `planChange.amountDue` |
+| BF-BILL-12 | Trang merchant của admin (`PUT /api/merchants/[id]/plan`) gửi `totalPrice: 1`, `discount: 50` | Server tự tính: lưu giá năm của Pro, chiết khấu 10 %; `planChange.amountDue` = giá năm đủ; hạn = hạn cũ + 12 tháng |
 
 ## BF-PLAN — Đổi gói chỉ ở kỳ mới, ghi nhận tiền nâng cấp và extend (`plan-change.e2e.test.js`, #785)
 
-Quy tắc chủ shop chốt 2026-10-11: gói chỉ đổi ở **kỳ mới** (subscription đã hết hạn, hoặc dùng thử chuyển sang gói trả phí). Merchant không đổi gói giữa kỳ. Admin giữa kỳ chỉ **nâng cấp** (trừ credit ngày chưa dùng); **hạ cấp** chỉ ở kỳ mới. Nâng cấp và extend có thu tiền thì ghi `Payment`. Mỗi nhóm tự tạo merchant và gói (giá VND).
+Quy tắc chủ shop chốt 2026-10-11: gói chỉ đổi ở **kỳ mới** (subscription đã hết hạn, hoặc dùng thử chuyển sang gói trả phí). Merchant không đổi gói giữa kỳ. Admin giữa kỳ chỉ **nâng cấp** (gói mới áp dụng ngay, ngày còn lại giữ thành ngày của gói mới, thu đủ giá gói mới; #1470); **hạ cấp** chỉ ở kỳ mới. Nâng cấp và extend có thu tiền thì ghi `Payment`. Mỗi nhóm tự tạo merchant và gói (giá VND).
 
 | ID | Ca | Mong đợi |
 |---|---|---|
 | BF-PLAN-01 | Merchant đổi gói giữa kỳ | 403 `PLAN_CHANGE_ONLY_AT_NEW_PERIOD`, không ghi gì |
 | BF-PLAN-02 | Admin nâng cấp giữa kỳ, thiếu phương thức và mã giao dịch | 400 `PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED`, không ghi gì |
-| BF-PLAN-03 | Admin nâng cấp giữa kỳ Basic 100.000 → Pro 300.000 | Ghi `PLAN_CHANGE` = 300.000 − credit ngày còn lại; đổi gói; ACTIVE |
+| BF-PLAN-03 | Admin nâng cấp giữa kỳ Basic 100.000 → Pro 300.000 | Ghi `PLAN_CHANGE` = 300.000 (không credit); đổi gói; ACTIVE; hạn = hạn cũ + 1 tháng |
 | BF-PLAN-04 | Admin hạ cấp giữa kỳ (Pro → Basic, Pro → Lite) | 422 `DOWNGRADE_ONLY_AT_NEW_PERIOD`, không ghi gì |
 | BF-PLAN-05 | Merchant đổi gói sau khi hết hạn, kể cả hạ cấp | Cho phép; thu đủ giá gói mới (không credit); kỳ mới từ bây giờ |
 | BF-PLAN-06 | Dùng thử chuyển sang gói trả phí | Trạng thái ACTIVE (trước đó giữ TRIAL) |
 | BF-PLAN-07 | Đổi sang gói miễn phí sau khi hết hạn | Không cần phương thức, không ghi `Payment` |
 | BF-PLAN-08 | `PUT /api/merchants/[id]/plan`: merchant giữa kỳ | 403 `PLAN_CHANGE_ONLY_AT_NEW_PERIOD` |
-| BF-PLAN-09 | Cùng route, admin nâng cấp, client gửi `totalPrice: 1` | Server tự tính (giá năm Pro 10 %), ghi `Payment` = giá − credit |
+| BF-PLAN-09 | Cùng route, admin nâng cấp, client gửi `totalPrice: 1` | Server tự tính (giá năm Pro 10 %), ghi `Payment` = giá năm đủ |
 | BF-PLAN-10 | Cùng route, thiếu phương thức và mã giao dịch | 400, không ghi gì |
 | BF-PLAN-11 | Extend "Payment Received" có số tiền | Ghi `PLAN_EXTENSION`; dời hạn; chu kỳ năm và giá giữ nguyên |
 | BF-PLAN-12 | Extend miễn phí (Manual, Admin, Compensation) | Dời hạn, không ghi `Payment` |

@@ -32,7 +32,8 @@ import { narrowOrderOutlets } from '../../../../lib/order-outlet-ids';
  * - period: '1month' | '3months' | '6months' | '1year' | 'custom'
  * - startDate / endDate: ISO string (required for custom period)
  * - status / orderType: optional filters
- * - dateField: 'createdAt' (default) | 'pickupPlanAt' | 'returnPlanAt'
+ * - dateField: 'createdAt' (default) | 'pickupPlanAt' | 'returnPlanAt' | 'pickupDay' (#1472: planned OR actual pickup day,
+ *   same meaning as GET /api/orders; the others are unchanged)
  * - outletIds (#852): `1,3`, MERCHANT only, some of its outlets (another shop's → 403)
  */
 
@@ -146,6 +147,11 @@ export const GET = withPermissions(['orders.export'])(async (request, { user, us
         where.pickupPlanAt = { gte: startDate, lte: endDate };
       } else if (dateField === 'returnPlanAt') {
         where.returnPlanAt = { gte: startDate, lte: endDate };
+      } else if (dateField === 'pickupDay') {
+        where.OR = [
+          { pickupPlanAt: { gte: startDate, lte: endDate } },
+          { pickedUpAt: { gte: startDate, lte: endDate } },
+        ];
       }
     }
 

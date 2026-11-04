@@ -3,6 +3,7 @@ import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles, validateMerchantAccess } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, normalizeBillingInterval } from '@rentalshop/utils';
 import { API, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
+import { manualExtensionBilling } from '../../../../../lib/plan-renewal';
 
 /**
  * GET /api/merchants/[id]/plan
@@ -114,6 +115,8 @@ export async function PUT(
           normalizedBillingInterval as any,
           {
             actorRole: user.role,
+            // #1470: the period keeps the days left; a running store plan keeps A13 (time joins the credit)
+            billing: manualExtensionBilling,
             payment: {
               method: body.method,
               transactionId: body.transactionId,

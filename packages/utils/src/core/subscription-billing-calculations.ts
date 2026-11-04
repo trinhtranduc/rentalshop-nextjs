@@ -7,16 +7,22 @@ export interface PlanChangeCalculation {
   oldPlanPeriodPrice: number;
   oldPlanPeriodDays: number;
   usedDays: number;
+  /** Vietnam days left of the current period: they carry over to the new plan (#1470). */
   remainingDays: number;
+  /** Money credit for the days left: always 0 since #1470 (the days are kept instead); kept for old readers. */
   remainingCreditValue: number;
   newPlanPeriodPrice: number;
   /** #870: the shop's renewed add-ons for the new cycle (cycle discount), 0 without add-ons. */
   addonPeriodPrice: number;
-  /** #870: unused paid add-on days of the old period (0 for a trial: nothing was paid). */
+  /** Add-on credit for the days left: always 0 since #1470 (the add-ons keep their days); kept for old readers. */
   addonCreditValue: number;
+  /** New cycle price + add-ons for the cycle. */
   totalDue: number;
-  /** New period: starts now, one cycle of calendar months on the Vietnam day (#779). */
+  /** The current period had ended (or had no end) at `now`. */
+  expired: boolean;
+  /** The new plan applies now. */
   newPeriodStart: Date;
+  /** Current end + one cycle while the plan still runs, else now + one cycle; calendar months on the Vietnam day. */
   newPeriodEnd: Date;
 }
 
@@ -67,10 +73,15 @@ function intervalMonths(interval: BillingInterval): number {
 }
 
 /**
- * Calculate total due for changing plan, using the same credit logic as UI:
- * totalDue = max(0, newPlanPriceForSelectedInterval + addonPeriodPrice - remainingCreditFromOldPeriod - addonCredit)
- * #870: `addonMonthlyTotal` = the shop's renewed add-ons per month (today's price); `paidAddonMonthlyTotal` = what the
- * current period's add-ons were bought at (credited for the days left, not for a trial).
+ * Price and new period of a plan change (#1470, owner 2026-11-03; same rule as the in-app renewal credit A13):
+ * - the new plan applies now (`newPeriodStart` = now);
+ * - plan still running (end after `now`, a trial included): the period ends at the current end + one cycle, so the days
+ *   left become days of the new plan; they are not paid back as money (#779 started every change now and credited them);
+ * - expired (end at or before `now`, or no end): the period ends at now + one cycle;
+ * - calendar months on the Vietnam day (31 Jan + 1 = 28 Feb);
+ * - due = the new plan for the cycle + the shop's add-ons for the cycle (#870: `addonMonthlyTotal`, today's price).
+ * `paidAddonMonthlyTotal` and `status` are still accepted; no credit is computed from them any more.
+ * The admin change-plan dialog shows this same result, so it matches what changePlan() writes.
  */
 export function calculatePlanChangeTotal(params: {
   subscription: Pick<Subscription, 'currentPeriodStart' | 'currentPeriodEnd' | 'billingInterval'> & { plan: Pick<Plan, 'basePrice'>; status?: string | null };
@@ -95,32 +106,29 @@ export function calculatePlanChangeTotal(params: {
   const remainingDays = Math.max(0, Math.min(oldPlanPeriodDays, daysBetween(now, currentPeriodEnd)));
 
   const oldPlanPeriodPrice = calculateSubscriptionPrice(oldPlan as any, oldInterval as any);
-  const remainingCreditValue =
-    remainingDays > 0 ? (remainingDays / oldPlanPeriodDays) * oldPlanPeriodPrice : 0;
 
   const newPlanPeriodPrice = calculateSubscriptionPrice(newPlan as any, selectedInterval as any);
   const addonMonthly = Math.max(0, Number(params.addonMonthlyTotal) || 0);
-  const paidAddonMonthly = Math.max(0, Number(params.paidAddonMonthlyTotal) || 0);
   const addonPeriodPrice = addonMonthly > 0 ? calculateSubscriptionPrice({ basePrice: addonMonthly } as any, selectedInterval as any) : 0;
-  const trial = String(params.subscription.status ?? '').toUpperCase() === 'TRIAL';
-  const addonCreditValue =
-    !trial && remainingDays > 0 && paidAddonMonthly > 0
-      ? (remainingDays / oldPlanPeriodDays) * calculateSubscriptionPrice({ basePrice: paidAddonMonthly } as any, oldInterval as any)
-      : 0;
-  const totalDue = Math.max(0, newPlanPeriodPrice + addonPeriodPrice - remainingCreditValue - addonCreditValue);
+  const totalDue = Math.max(0, newPlanPeriodPrice + addonPeriodPrice);
+
+  // Same "still running" test as calculateRenewalTotal: the days left are kept by starting the cycle at the current end
+  const expired = Number.isNaN(currentPeriodEnd.getTime()) || currentPeriodEnd.getTime() <= now.getTime();
+  const cycleFrom = expired ? now : currentPeriodEnd;
 
   return {
     oldPlanPeriodPrice,
     oldPlanPeriodDays,
     usedDays,
     remainingDays,
-    remainingCreditValue,
+    remainingCreditValue: 0,
     newPlanPeriodPrice,
     addonPeriodPrice,
-    addonCreditValue,
+    addonCreditValue: 0,
     totalDue,
+    expired,
     newPeriodStart: now,
-    newPeriodEnd: addMonthsInTimeZone(now, intervalMonths(selectedInterval)),
+    newPeriodEnd: addMonthsInTimeZone(cycleFrom, intervalMonths(selectedInterval)),
   };
 }
 
