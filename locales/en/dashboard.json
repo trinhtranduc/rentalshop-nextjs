@@ -455,7 +455,7 @@
       "OTHER": "Other"
     },
     "total": "Total",
-    "channelNote": "VND payments received only (a payment refunded later stays in the month it was received).",
+    "channelNote": "VND payments received only, including manual extensions and add-ons (a payment refunded later stays in the month it was received).",
     "monthsTitle": "Months of {year}",
     "exportCsv": "Export CSV",
     "csvDone": "Downloaded {file}",
@@ -473,7 +473,7 @@
     "payments": "Payments",
     "newShops": "New",
     "renewals": "Renewals",
-    "monthsNote": "New = the shop's first payment. Renewal = the later ones. VND only.",
+    "monthsNote": "New = the shop's first payment. Renewal = the later ones. VND only. Includes manual extensions and add-ons.",
     "latestTitle": "Latest payments",
     "viewAll": "View all",
     "noPayments": "No payments yet.",

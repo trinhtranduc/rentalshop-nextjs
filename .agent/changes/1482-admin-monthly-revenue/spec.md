@@ -6,8 +6,11 @@ Issue: #1482 · Status: in-progress · Intent: ./intent.md
 
 Counting rules (API `GET /api/admin/revenue/monthly`):
 
-1. A payment counts as **received** when `type = SUBSCRIPTION_PAYMENT` and `status` is `COMPLETED` or `REFUNDED`
-   (a refunded payment was received once and stays in its original month). `PENDING`, `FAILED`, `CANCELLED` never count.
+1. A payment counts as **received** when `type` is `SUBSCRIPTION_PAYMENT`, `PLAN_EXTENSION` (the admin Extend modal, how manual and
+   bank-transfer money is recorded) or `PLAN_CHANGE` (add-ons, plan changes), and `status` is `COMPLETED` or `REFUNDED`
+   (a refunded payment was received once and stays in its original month). `PENDING`, `FAILED`, `CANCELLED` never count, so a
+   `PLAN_CHANGE` that awaits confirmation is left out. `ORDER_PAYMENT` never counts. The same type list applies to the refund line
+   and to the lookup of earlier payments for "new".
 2. Its date is `processedAt`; when `processedAt` is null it falls back to `createdAt`. The month and the day are the
    Vietnam civil day of that instant (`getLocalDateKey`; range by `getUtcRangeForDateKeys`). A payment at 00:30 Vietnam
    time on 03/11 (17:30Z on 02/11) belongs to 03/11.
@@ -21,7 +24,7 @@ Counting rules (API `GET /api/admin/revenue/monthly`):
    `CASH` = `TRANSFER`, `LEMON_SQUEEZY` / `STRIPE` = `CARD`, anything else (`PAYPAL`, `CHECK`) = `OTHER`.
    `byChannel` lists the four main channels always (zero filled) and `OTHER` only when non-zero; it sums to `received.total`.
 6. **New vs renewal**: a received VND payment is "new" when it is the first received payment of its shop (by date, then
-   id; any currency counts as earlier); every later one is "renewal". A payment without a shop is a renewal.
+   id; any currency and any plan type count as earlier); every later one is "renewal". A payment without a shop is a renewal.
    Query: the payments of the range, plus one `findMany` of `distinct merchantId` of earlier payments for the shops in the range.
 7. `?month=YYYY-MM` returns that month: `daily` (every Vietnam day of the month, zero filled), previous-month
    `previous.daily`, the by-channel table, `latest` (10 newest payments of the month) and the 12 months of that year in
@@ -65,7 +68,7 @@ Admin UI (Dashboard):
 ## Out of scope
 
 - Converting USD to VND. Dating old refunds (they use `updatedAt`). A backfill of old `processedAt` / `merchantId`.
-- Counting `PLAN_EXTENSION` / `PLAN_CHANGE`. Changing the existing `GET /api/payments` list. iOS and Android.
+- Changing the existing `GET /api/payments` list. iOS and Android.
 - Fixing `payments/manual` accepting `BANK_TRANSFER` / `CREDIT_CARD`, which the `PaymentMethod` enum does not have (noted for the owner).
 
 ## API and data

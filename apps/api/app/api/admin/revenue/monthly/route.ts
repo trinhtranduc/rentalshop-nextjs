@@ -37,7 +37,7 @@ const querySchema = z.object({
 /**
  * GET /api/admin/revenue/monthly?month=YYYY-MM | ?year=YYYY   (#1482)
  *
- * Money received from plan payments for the admin Dashboard block "Doanh thu gói dịch vụ": VND total, daily series
+ * Money received from plan payments (subscription payments, manual extensions, add-on / plan changes) for the admin Dashboard block "Doanh thu gói dịch vụ": VND total, daily series
  * (Vietnam civil days), by channel, the 12 months of the year, the latest 10 payments, other currencies on their own
  * line, and the refunds of the period (dated by `refundedAt`, never subtracted from the total).
  *

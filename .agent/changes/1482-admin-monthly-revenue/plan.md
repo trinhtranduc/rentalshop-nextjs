@@ -36,7 +36,7 @@ Issue: #1482 · Status: in-progress · Spec: ./spec.md
 
 - Migration: additive nullable column and an index on a small table.
 - Old refunded rows have no `refundedAt`: they fall back to `updatedAt` (documented).
-- `PLAN_EXTENSION` payments are not counted (owner's rule); one constant to change.
+- `PLAN_CHANGE` rows count only when COMPLETED; a PENDING one (add-on awaiting confirmation) is excluded by the status filter.
 - The route reads one year of payment rows in memory (hundreds to a few thousand rows).
 
 ## Rollback
