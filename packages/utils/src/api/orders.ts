@@ -243,7 +243,7 @@ export const ordersApi = {
     startDate?: string;
     endDate?: string;
     format?: 'excel' | 'csv';
-    dateField?: 'createdAt' | 'pickupPlanAt' | 'returnPlanAt';
+    dateField?: 'createdAt' | 'pickupPlanAt' | 'returnPlanAt' | 'pickupDay';
     status?: string;
     orderType?: string;
     orderIds?: number[]; // Export specific orders by IDs
