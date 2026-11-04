@@ -165,10 +165,10 @@ describe('dateField=pickupDay (#1472): planned OR actual pickup day', () => {
   });
 
   it('works together with search, with or without the merchant filter (the search OR stays)', async () => {
-    // order numbers are 1000<id>0: "10010" -> id 1, "10020" -> id 2, ...
-    expect(ids(await list('pickupDay', '2026-11-03', '2026-11-03', { q: '10010' }))).toEqual([1]);
-    expect(ids(await list('pickupDay', '2026-11-03', '2026-11-03', { q: '10040' }))).toEqual([]);
-    expect(ids(await list('pickupDay', '2026-11-03', '2026-11-03', { q: '10020', merchantId: undefined }))).toEqual([2]);
+    // order numbers are 1000<id>0: "100010" -> id 1, "100020" -> id 2, ...
+    expect(ids(await list('pickupDay', '2026-11-03', '2026-11-03', { q: '100010' }))).toEqual([1]);
+    expect(ids(await list('pickupDay', '2026-11-03', '2026-11-03', { q: '100040' }))).toEqual([]);
+    expect(ids(await list('pickupDay', '2026-11-03', '2026-11-03', { q: '100020', merchantId: undefined }))).toEqual([2]);
   });
 
   it('sortBy=nearestTask keeps the date filter on every query of the page', async () => {
