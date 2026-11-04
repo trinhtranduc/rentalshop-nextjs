@@ -4,6 +4,7 @@ import { withAuthRoles } from '@rentalshop/auth/server';
 import { ApiError, ErrorCode, handleApiError } from '@rentalshop/utils';
 import { API, PLATFORM_OPS_ROLES, SUBSCRIPTION_STATUS } from '@rentalshop/constants';
 import { pickEditableSubscriptionFields } from '../../../../lib/subscription-update';
+import { manualExtensionBilling } from '../../../../lib/plan-renewal';
 
 /**
  * GET /api/subscriptions/[id]
@@ -85,6 +86,8 @@ export async function PUT(
           billingInterval as any,
           {
             actorRole: user.role,
+            // #1470: the period keeps the days left; a running store plan keeps A13 (time joins the credit)
+            billing: manualExtensionBilling,
             payment: {
               method: body.method,
               transactionId: body.transactionId,
