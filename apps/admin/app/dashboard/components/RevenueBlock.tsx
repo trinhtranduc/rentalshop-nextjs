@@ -117,7 +117,8 @@ export function RevenueBlock() {
   const periodText = selection.mode === 'year' ? t('yearLabel', { year }) : t('monthLabel', { month: monthNum, year });
 
   // the data on screen belongs to the selection only when the API answered for it
-  const fresh = !!data && !loading && (data.scope === 'year' ? selection.mode === 'year' : data.month === (selection as any).month);
+  const fresh =
+    !!data && !loading && (data.scope === 'year' ? selection.mode === 'year' : selection.mode === 'month' && data.month === selection.month);
 
   const comparisonText = (c: Comparison): React.ReactNode => {
     if (c.kind === 'year') {

@@ -13,6 +13,22 @@ import {
   type RevenuePaymentRow,
 } from '../../../../../lib/admin-revenue';
 
+/** The columns read from `Payment`, plus the shop name and the plan name. */
+interface PaymentDbRow {
+  id: number;
+  amount: number;
+  currency: string;
+  method: string;
+  status: string;
+  processedAt: Date | null;
+  createdAt: Date;
+  refundedAt: Date | null;
+  updatedAt: Date;
+  merchantId: number | null;
+  merchant?: { id: number; name: string } | null;
+  subscription?: { plan: { name: string } | null } | null;
+}
+
 const querySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
   year: z.string().regex(/^\d{4}$/).optional(),
@@ -52,7 +68,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
       ],
     };
 
-    const rows: any[] = await db.prisma.payment.findMany({
+    const rows: PaymentDbRow[] = await db.prisma.payment.findMany({
       where: receivedWhere,
       select: {
         id: true, amount: true, currency: true, method: true, status: true,
@@ -62,7 +78,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
       },
     });
 
-    const refundRows: any[] = await db.prisma.payment.findMany({
+    const refundRows: PaymentDbRow[] = await db.prisma.payment.findMany({
       where: {
         type,
         status: 'REFUNDED',
@@ -93,7 +109,7 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
         })
       : [];
 
-    const toRow = (r: any): RevenuePaymentRow => ({
+    const toRow = (r: PaymentDbRow): RevenuePaymentRow => ({
       id: r.id,
       amount: r.amount,
       currency: r.currency,
