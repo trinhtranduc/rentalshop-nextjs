@@ -28,9 +28,10 @@ import {
 } from '@rentalshop/ui';
 import './dashboard.css';
 import { SegmentedControl, MetricTile, ChartCard } from './components/DashboardTiles';
+import { RevenueBlock } from './components/RevenueBlock';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { analyticsApi, formatInShopZone } from '@rentalshop/utils';
-import { getDashboardWindow, bucketByShopPeriod, groupCountsByShopPeriod, inDashboardWindow, type DashboardWindow } from './dashboard-buckets';
+import { getDashboardWindow, bucketByShopPeriod, groupCountsByShopPeriod, type DashboardWindow } from './dashboard-buckets';
 import { DASHBOARD_MERCHANT_HREFS } from './subscription-stats';
 import { useAuth, useDashboardTranslations, useCommonTranslations } from '@rentalshop/hooks';
 import type { TopProduct, TopOutlet } from '@rentalshop/types';
@@ -88,16 +89,6 @@ interface MerchantTrend {
   activeMerchants: number;
 }
 
-interface SubscriptionRevenueData {
-  period: string;
-  actual: number;
-}
-
-interface SubscriptionRevenueChartProps {
-  data: SubscriptionRevenueData[];
-  loading?: boolean;
-}
-
 interface MerchantsRegistrationData {
   period: string;
   actual: number;
@@ -113,69 +104,6 @@ const highlightFill = (period: string, rows: { period: string }[], token: string
   const today = formatInShopZone(new Date(), 'en', { month: 'short', day: 'numeric' });
   const hasToday = rows.some((r) => r.period === today);
   return `rgb(var(--ar-${token}) / ${!hasToday || period === today ? 1 : 0.45})`;
-};
-
-const SubscriptionRevenueChart: React.FC<SubscriptionRevenueChartProps> = ({ data, loading = false }) => {
-  if (loading) {
-    return (
-      <div className="h-64 flex items-center justify-center">
-        <div className="text-gray-500">Loading chart data...</div>
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="h-64 flex items-center justify-center">
-        <div className="text-gray-500">No data available</div>
-      </div>
-    );
-  }
-
-  // Transform data for Recharts
-  const chartData = data.map(item => ({
-    period: item.period,
-    'Subscription Revenue': item.actual,
-  }));
-
-  // Custom tooltip formatter
-  const formatTooltip = (value: number, name: string) => [
-    `$${value.toLocaleString()}`,
-    name
-  ];
-
-  return (
-    <ResponsiveContainer width="100%" height={320}>
-      <BarChart data={chartData} margin={{ top: 20, right: 16, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--ar-line))" />
-        <XAxis 
-          dataKey="period" 
-          tick={{ fontSize: 12, fill: 'rgb(var(--ar-muted))' }}
-          angle={-45}
-          textAnchor="end"
-          height={80}
-        />
-        <YAxis 
-          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-          tick={{ fontSize: 12, fill: 'rgb(var(--ar-muted))' }}
-        />
-        <Tooltip 
-          formatter={formatTooltip}
-          labelStyle={{ color: 'rgb(var(--ar-ink-2))' }}
-        />
-        <Bar 
-          dataKey="Subscription Revenue" 
-          fill="rgb(var(--ar-chart-blue))" 
-          radius={[4, 4, 0, 0]}
-          name="Subscription Revenue"
-        >
-          {chartData.map((row) => (
-            <Cell key={row.period} fill={highlightFill(row.period, chartData, 'chart-blue')} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
-  );
 };
 
 const MerchantsRegistrationChart: React.FC<MerchantsRegistrationChartProps> = ({ data, loading = false }) => {
@@ -260,7 +188,6 @@ export default function AdminDashboard() {
   const [merchantTrends, setMerchantTrends] = useState<MerchantTrend[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
-  const [subscriptionRevenueData, setSubscriptionRevenueData] = useState<any[]>([]);
   const [merchantsRegistrationData, setMerchantsRegistrationData] = useState<any[]>([]);
   const [ordersData, setOrdersData] = useState<any[]>([]);
   const [newMerchants, setNewMerchants] = useState<any[]>([]);
@@ -283,8 +210,7 @@ export default function AdminDashboard() {
     enterpriseAll: 0,
     basicExpired: 0,
     proExpired: 0,
-    enterpriseExpired: 0,
-    totalRevenue: 0
+    enterpriseExpired: 0
   });
   const [growthMetrics, setGrowthMetrics] = useState({
     customerGrowth: 0,
@@ -307,14 +233,6 @@ export default function AdminDashboard() {
   }, [currentPathname, router, searchParams]);
 
   // Chart data on Vietnam hours / days / months, whatever the browser zone (#578 ADM-7)
-  const calculateSubscriptionRevenueData = (subscriptions: any[], dashWindow: DashboardWindow) =>
-    bucketByShopPeriod(
-      subscriptions.filter((s: any) => ['active', 'trial'].includes(String(s.status).toLowerCase())),
-      dashWindow,
-      (s: any) => s.createdAt,
-      (s: any) => s.amount || 0
-    );
-
   const calculateMerchantsRegistrationData = (merchants: any[], dashWindow: DashboardWindow) =>
     bucketByShopPeriod(merchants, dashWindow, (m: any) => m.createdAt, () => 1);
 
@@ -343,7 +261,6 @@ export default function AdminDashboard() {
         revenueResponse,
         ordersResponse,
         merchantsResponse,
-        subscriptionsResponse,
         growthMetricsResponse,
         tileTotals,
       ] = await Promise.all([
@@ -352,7 +269,6 @@ export default function AdminDashboard() {
         analyticsApi.getIncomeAnalytics(filters),
         analyticsApi.getOrderAnalytics(filters),
         import('@rentalshop/utils').then(({ merchantsApi }) => merchantsApi.getMerchants()),
-        import('@rentalshop/utils').then(({ subscriptionsApi }) => subscriptionsApi.search({ limit: 1000 })),
         analyticsApi.getGrowthMetrics(filters),
         import('@rentalshop/utils').then(async ({ merchantsApi }) => {
           const totalOf = async (status?: string, plan?: string) => {
@@ -463,22 +379,9 @@ export default function AdminDashboard() {
         setMerchantsRegistrationData(merchantsRegistrationChartData);
       }
 
-      const subsData = subscriptionsResponse.success ? (subscriptionsResponse.data as any) : null;
-      const subscriptions = Array.isArray(subsData) ? subsData : subsData?.data || [];
       if (tileTotals) {
-        setSubscriptionStats({
-          ...tileTotals,
-          totalRevenue: subscriptions
-            .filter((s: any) => {
-              const status = String(s.status).toLowerCase();
-              return inDashboardWindow(s.createdAt, dashWindow) && ['active', 'trial'].includes(status);
-            })
-            .reduce((sum: number, s: any) => sum + (s.amount || 0), 0)
-        });
+        setSubscriptionStats(tileTotals);
       }
-
-      const subscriptionRevenueChartData = calculateSubscriptionRevenueData(subscriptions, dashWindow);
-      setSubscriptionRevenueData(subscriptionRevenueChartData);
     } catch (error) {
       console.error('Error fetching system metrics:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch system metrics';
@@ -699,17 +602,16 @@ export default function AdminDashboard() {
           <MetricTile testId="dash-tile-cancelled" title="Cancelled" value={subscriptionStats.cancelled} pill="Churned" tone="neutral" href={DASHBOARD_MERCHANT_HREFS.cancelled} />
         </div>
 
-        {/* Revenue & Orders Charts */}
+        {/* Plan revenue received per month / year (#1482) and new merchants */}
         {user?.role !== 'OUTLET_STAFF' && user?.role !== 'OUTLET_INVENTORY' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
-            <ChartCard title="Subscription Revenue by Creation Date" legend={[{ label: 'Subscription Revenue', color: 'rgb(var(--ar-chart-blue))' }, { label: 'Today', color: 'rgb(var(--ar-chart-blue) / 0.45)' }]}>
-              <SubscriptionRevenueChart data={subscriptionRevenueData} loading={loading} />
-            </ChartCard>
-
-            <ChartCard title="Total Merchants Registered" legend={[{ label: 'Merchants Registered', color: 'rgb(var(--ar-chart-violet))' }]}>
-              <MerchantsRegistrationChart data={merchantsRegistrationData} loading={loading} />
-            </ChartCard>
-          </div>
+          <>
+            <RevenueBlock />
+            <div className="mb-8">
+              <ChartCard title="Total Merchants Registered" legend={[{ label: 'Merchants Registered', color: 'rgb(var(--ar-chart-violet))' }]}>
+                <MerchantsRegistrationChart data={merchantsRegistrationData} loading={loading} />
+              </ChartCard>
+            </div>
+          </>
         )}
 
         {/* Top shops by revenue + top products per shop for the selected period */}
