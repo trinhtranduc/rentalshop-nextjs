@@ -1,54 +1,46 @@
+import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
-import { addMonthsInTimeZone } from '@rentalshop/utils';
+import { addMonthsInTimeZone, handleApiError } from '@rentalshop/utils';
+import {
+  channelFromStore,
+  creditMs,
+  parseSandboxMerchantIds,
+  planTierFromName,
+  storeCreditForPurchase,
+  storeProduct,
+  tierRank,
+  type BillingChannel,
+  type PlanTier,
+} from '../../../../lib/plan-renewal';
+import { planHistory } from '../../../../lib/plan-renewal-history';
 
 /**
  * POST /api/webhooks/revenuecat
- * 
- * Receives webhook events from RevenueCat when subscription status changes.
- * Events: INITIAL_PURCHASE, RENEWAL, EXPIRATION, CANCELLATION, etc.
- * 
- * Auth: RevenueCat sends a shared secret in the Authorization header.
- * Configure REVENUECAT_WEBHOOK_SECRET in env.
- * 
- * App User ID format: "merchant_{merchantId}" (set by PurchasesManager.logInMerchant)
+ *
+ * Receives subscription events from RevenueCat (App Store, Google Play). Server to server; no app calls it.
+ * Auth: RevenueCat's "Authorization header value" must be the literal `Bearer <REVENUECAT_WEBHOOK_SECRET>`; compared in
+ * constant time. Without the env var every event is refused with 503 (and logged), never accepted unauthenticated.
+ * App User ID format: "merchant_{merchantId}" on the production API, "dev_merchant_{merchantId}" from builds on another API
+ * (PurchasesManager on iOS and Android); REVENUECAT_APP_USER_ID_PREFIX picks which one this API serves (A3).
+ * Sandbox events: dev API always; production API only for REVENUECAT_SANDBOX_MERCHANT_IDS; never a payment row.
+ *
+ * #1459:
+ * - the plan follows the store product (Basic or Professional, `apps/api/lib/plan-renewal.ts`) on INITIAL_PURCHASE,
+ *   RENEWAL and an upgrading PRODUCT_CHANGE; a RENEWAL of a purchase recorded before #1459 keeps the plan;
+ * - refund (CANCELLATION + CUSTOMER_SUPPORT) ends access (status EXPIRED, so the owner can buy again); BILLING_ISSUE is
+ *   flagged and keeps access until the period (and the store's grace) ends; the real amount is stored;
+ * - each `event.id` runs once (`BillingWebhookEvent`); a processing error or an event not applied (`ignored_*`) releases it;
+ *   a processing error and "no plan for this tier" answer 500 so RevenueCat retries;
+ * - an event older than the last one applied (`lastStoreEventAt`) is skipped (A8);
+ * - A13 renewal credit: a purchase that starts a store subscription keeps the days the shop had left
+ *   (`storeBonusMs = old end − purchased_at`); every store date is `store expiration + storeBonusMs`; an upgrade in the
+ *   same store keeps the credit; a refund goes back to the paid period's start + credit (`lib/plan-renewal.ts`);
+ * - history rows are plain Vietnamese.
  */
 
-// Product ID → plan duration mapping
-const PRODUCT_DURATION: Record<string, { months: number; planName: string }> = {
-  'anyrent_merchant_semi_annual': { months: 6, planName: 'basic' },
-  'anyrent_merchant_annual': { months: 12, planName: 'basic' },
-};
+const PROVIDER = 'REVENUECAT';
 
-/** Plain-language activity text for merchant history (no product ids / SDK names). */
-function userFacingActivityDescription(
-  kind: 'subscribe' | 'renew' | 'expire' | 'cancel' | 'uncancel' | 'billing_issue',
-  productId: string,
-  extra?: string,
-): string {
-  const months = PRODUCT_DURATION[productId]?.months;
-  const planLabel =
-    months === 6 ? 'Basic — 6 months' : months === 12 ? 'Basic — 12 months' : 'Basic';
-
-  switch (kind) {
-    case 'subscribe':
-      return `Subscribed to ${planLabel}`;
-    case 'renew':
-      return `Renewed ${planLabel}`;
-    case 'expire':
-      return 'Subscription expired';
-    case 'cancel':
-      return extra ? `Cancellation scheduled: ${extra}` : 'Cancellation scheduled';
-    case 'uncancel':
-      return 'Cancellation withdrawn — subscription stays active';
-    case 'billing_issue':
-      return 'Payment issue detected — please update payment method';
-    default:
-      return 'Subscription updated';
-  }
-}
-
-// RevenueCat event types we handle
 type RevenueCatEventType =
   | 'INITIAL_PURCHASE'
   | 'RENEWAL'
@@ -57,426 +49,657 @@ type RevenueCatEventType =
   | 'UNCANCELLATION'
   | 'EXPIRATION'
   | 'BILLING_ISSUE'
-  | 'SUBSCRIBER_ALIAS';
+  | 'SUBSCRIBER_ALIAS'
+  | string;
 
 interface RevenueCatEvent {
+  id?: string;
   type: RevenueCatEventType;
   app_user_id: string; // "merchant_32"
-  product_id: string; // "anyrent_merchant_semi_annual"
+  product_id: string; // "anyrent_merchant_semi_annual" (Play: may carry ":base-plan")
+  new_product_id?: string; // PRODUCT_CHANGE
   entitlement_ids?: string[];
   purchased_at_ms?: number;
   expiration_at_ms?: number;
   event_timestamp_ms?: number;
   store?: string;
   environment?: string;
-  is_family_share?: boolean;
-  original_app_user_id?: string;
-  aliases?: string[];
-  period_type?: string; // "NORMAL" | "TRIAL" | "INTRO"
+  period_type?: string;
   cancel_reason?: string;
-  // Payment info
   price?: number;
   price_in_purchased_currency?: number;
   currency?: string;
   renewal_number?: number;
   transaction_id?: string;
+  original_transaction_id?: string;
   takehome_percentage?: number;
+  /** Ids of the same customer (A4): the purchase may have been made before the app logged in */
+  original_app_user_id?: string;
+  aliases?: string[];
+  /** TRANSFER */
+  transferred_from?: string[];
+  transferred_to?: string[];
+  /** BILLING_ISSUE with the store's grace period on: access lasts until then */
+  grace_period_expiration_at_ms?: number;
+  expiration_reason?: string;
 }
 
 interface RevenueCatWebhookPayload {
-  api_version: string;
-  event: RevenueCatEvent;
+  api_version?: string;
+  event?: RevenueCatEvent;
+}
+
+type Outcome = string;
+
+export const runtime = 'nodejs';
+
+/** `Authorization: Bearer <secret>`, compared in constant time */
+function authorised(header: string | null, secret: string): boolean {
+  const expected = Buffer.from(`Bearer ${secret}`, 'utf8');
+  const received = Buffer.from(header ?? '', 'utf8');
+  return received.length === expected.length && timingSafeEqual(received, expected);
 }
 
 export async function POST(request: NextRequest) {
+  // 1. Authenticity: no secret configured = refuse everything (RevenueCat retries once it is set)
+  const webhookSecret = process.env.REVENUECAT_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('[RevenueCat Webhook] REVENUECAT_WEBHOOK_SECRET is not set: event refused');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+  }
+  if (!authorised(request.headers.get('authorization'), webhookSecret)) {
+    console.error('[RevenueCat Webhook] Invalid authorization header');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let event: RevenueCatEvent | undefined;
   try {
-    // 1. Verify webhook authenticity
-    const authHeader = request.headers.get('authorization');
-    const webhookSecret = process.env.REVENUECAT_WEBHOOK_SECRET;
-    
-    if (webhookSecret) {
-      const expectedAuth = `Bearer ${webhookSecret}`;
-      if (authHeader !== expectedAuth) {
-        console.error('[RevenueCat Webhook] Invalid authorization header');
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
+    event = ((await request.json()) as RevenueCatWebhookPayload)?.event;
+  } catch {
+    event = undefined;
+  }
+  if (!event || !event.type) {
+    return NextResponse.json({ status: 'ignored', reason: 'invalid_payload' }, { status: 400 });
+  }
 
-    // 2. Parse payload
-    const payload: RevenueCatWebhookPayload = await request.json();
-    const { event } = payload;
-    
-    console.log(`[RevenueCat Webhook] Received event: ${event.type}`, {
-      app_user_id: event.app_user_id,
-      product_id: event.product_id,
-      environment: event.environment,
-      expiration_at_ms: event.expiration_at_ms,
-    });
+  const merchantId = resolveMerchantId(event);
+  console.log(`[RevenueCat Webhook] ${event.type}`, {
+    id: event.id,
+    merchantId,
+    product_id: event.product_id,
+    new_product_id: event.new_product_id,
+    store: event.store,
+    environment: event.environment,
+  });
 
-    // Skip sandbox events in production (optional)
-    // if (event.environment === 'SANDBOX' && process.env.NODE_ENV === 'production') {
-    //   return NextResponse.json({ status: 'skipped_sandbox' });
-    // }
+  // 2. Once per event id
+  const claim = await claimEvent(event, merchantId);
+  if (claim === 'duplicate') {
+    return NextResponse.json({ status: 'duplicate' });
+  }
 
-    // 3. Extract merchantId from app_user_id ("merchant_32" → 32)
-    const merchantId = parseMerchantId(event.app_user_id);
+  // 3. Handle
+  try {
+    let outcome: Outcome;
     if (!merchantId) {
-      console.error(`[RevenueCat Webhook] Cannot parse merchantId from: ${event.app_user_id}`);
-      return NextResponse.json({ status: 'ignored', reason: 'invalid_app_user_id' });
+      outcome = 'ignored_invalid_app_user_id';
+    } else if (event.environment === 'SANDBOX' && !sandboxAllowed(merchantId)) {
+      console.warn(`[RevenueCat Webhook] Sandbox ${event.type} for merchant ${merchantId} ignored (not in REVENUECAT_SANDBOX_MERCHANT_IDS)`);
+      outcome = 'ignored_sandbox';
+    } else if (await isStale(merchantId, event)) {
+      // A8: an older event retried after a newer one (an old RENEWAL after a CANCELLATION) changes nothing
+      outcome = 'stale';
+    } else {
+      outcome = await handleEvent(merchantId, event);
+      if (outcome.startsWith('ok')) await markApplied(merchantId, event);
     }
-
-    // 4. Handle event
-    switch (event.type) {
-      case 'INITIAL_PURCHASE':
-      case 'RENEWAL':
-        await handlePurchaseOrRenewal(merchantId, event);
-        break;
-
-      case 'EXPIRATION':
-        await handleExpiration(merchantId, event);
-        break;
-
-      case 'CANCELLATION':
-        await handleCancellation(merchantId, event);
-        break;
-
-      case 'UNCANCELLATION':
-        await handleUncancellation(merchantId, event);
-        break;
-
-      case 'BILLING_ISSUE':
-        await handleBillingIssue(merchantId, event);
-        break;
-
-      default:
-        console.log(`[RevenueCat Webhook] Unhandled event type: ${event.type}`);
-    }
-
-    return NextResponse.json({ status: 'ok' });
-
-  } catch (error: any) {
-    console.error('[RevenueCat Webhook] Error:', error.message, error.stack);
-    // Return 200 to prevent RevenueCat from retrying (we log the error)
-    return NextResponse.json({ status: 'error', message: 'Webhook processing failed' }, { status: 200 });
+    // Not applied: give the event id back, so RevenueCat's retry or a manual resend can run it later (A9)
+    if (outcome.startsWith('ignored_')) await releaseEvent(claim);
+    // No active plan for the product's tier is our configuration problem: 500 makes RevenueCat retry
+    if (outcome === 'ignored_no_plan') return NextResponse.json({ status: outcome }, { status: 500 });
+    return NextResponse.json({ status: outcome });
+  } catch (error) {
+    console.error('[RevenueCat Webhook] Error:', (error as Error)?.message, (error as Error)?.stack);
+    await releaseEvent(claim);
+    // 500 so RevenueCat retries; the released event id lets the retry run once
+    const { response } = handleApiError(error);
+    return NextResponse.json(response, { status: 500 });
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Idempotency ─────────────────────────────────────────────────────────────
 
-function parseMerchantId(appUserId: string): number | null {
-  // Format: "merchant_32" or "$RCAnonymousID:..." (skip anonymous)
-  const match = appUserId.match(/^merchant_(\d+)$/);
-  return match ? parseInt(match[1], 10) : null;
+/** Records the event id; 'duplicate' when it was already processed, null when the event has no id. */
+async function claimEvent(event: RevenueCatEvent, merchantId: number | null): Promise<number | null | 'duplicate'> {
+  if (!event.id) return null;
+  try {
+    const row = await db.prisma.billingWebhookEvent.create({
+      data: { provider: PROVIDER, eventId: String(event.id), eventType: String(event.type), merchantId },
+    });
+    return row.id;
+  } catch (error: unknown) {
+    if ((error as { code?: string } | null)?.code === 'P2002') return 'duplicate';
+    throw error;
+  }
 }
 
-async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEvent) {
-  const productConfig = PRODUCT_DURATION[event.product_id];
-  if (!productConfig) {
+async function releaseEvent(claim: number | null | 'duplicate') {
+  if (typeof claim !== 'number') return;
+  try {
+    await db.prisma.billingWebhookEvent.delete({ where: { id: claim } });
+  } catch (error) {
+    console.error('[RevenueCat Webhook] Could not release the event id', error);
+  }
+}
+
+// ─── Events ──────────────────────────────────────────────────────────────────
+
+async function handleEvent(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  switch (event.type) {
+    case 'INITIAL_PURCHASE':
+    case 'RENEWAL':
+      return handlePurchaseOrRenewal(merchantId, event);
+    case 'PRODUCT_CHANGE':
+      return handleProductChange(merchantId, event);
+    case 'CANCELLATION':
+      return handleCancellation(merchantId, event);
+    case 'UNCANCELLATION':
+      return handleUncancellation(merchantId, event);
+    case 'EXPIRATION':
+      return handleExpiration(merchantId, event);
+    case 'BILLING_ISSUE':
+      return handleBillingIssue(merchantId, event);
+    case 'TRANSFER':
+      return handleTransfer(merchantId, event);
+    case 'SUBSCRIPTION_EXTENDED':
+      return handleExtended(merchantId, event);
+    default:
+      return `ignored_${String(event.type).toLowerCase()}`;
+  }
+}
+
+/**
+ * A3: the app user id prefix this API serves. Production (unset): `merchant_<id>`, what store builds on the production
+ * API use. The dev API sets REVENUECAT_APP_USER_ID_PREFIX=dev_merchant_ (builds on a non-production API log in as
+ * `dev_merchant_<id>`), so dev and production shops with the same number never touch each other.
+ */
+function appUserPrefix(): string {
+  return (process.env.REVENUECAT_APP_USER_ID_PREFIX || '').trim() || 'merchant_';
+}
+
+/** Store events whose order matters (A8) */
+const ORDERED_EVENTS = new Set([
+  'INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'CANCELLATION', 'UNCANCELLATION', 'EXPIRATION', 'BILLING_ISSUE',
+  'SUBSCRIPTION_EXTENDED', 'TRANSFER',
+]);
+
+/** A8: the event is older than the last store event applied to this shop */
+async function isStale(merchantId: number, event: RevenueCatEvent): Promise<boolean> {
+  if (!ORDERED_EVENTS.has(event.type) || !event.event_timestamp_ms) return false;
+  const row = await db.prisma.subscription.findUnique({ where: { merchantId }, select: { lastStoreEventAt: true } });
+  const last = row?.lastStoreEventAt ? new Date(row.lastStoreEventAt).getTime() : null;
+  return last !== null && event.event_timestamp_ms < last;
+}
+
+async function markApplied(merchantId: number, event: RevenueCatEvent) {
+  if (!ORDERED_EVENTS.has(event.type) || !event.event_timestamp_ms) return;
+  const row = await db.prisma.subscription.findUnique({ where: { merchantId }, select: { lastStoreEventAt: true } });
+  if (!row) return;
+  const last = row.lastStoreEventAt ? new Date(row.lastStoreEventAt).getTime() : null;
+  if (last === null || event.event_timestamp_ms >= last) {
+    await db.prisma.subscription.update({ where: { merchantId }, data: { lastStoreEventAt: new Date(event.event_timestamp_ms) } });
+  }
+}
+
+function parseMerchantId(appUserId: string | undefined): number | null {
+  // "merchant_32" (or "dev_merchant_32" on the dev API); anonymous ids ("$RCAnonymousID:…") and the other environment's ids are skipped
+  const id = String(appUserId ?? '');
+  const prefix = appUserPrefix();
+  if (!id.startsWith(prefix)) return null;
+  const rest = id.slice(prefix.length);
+  return /^\d+$/.test(rest) ? parseInt(rest, 10) : null;
+}
+
+/**
+ * A4: the shop of an event: `app_user_id`, then `original_app_user_id`, then `aliases` (a purchase made before the app
+ * logged in is aliased to `merchant_<id>` later). TRANSFER: the shop it moves to. RevenueCat setting to use: Transfer
+ * behavior "Keep with original App User ID" (then no TRANSFER happens).
+ */
+function resolveMerchantId(event: RevenueCatEvent): number | null {
+  const ids = event.type === 'TRANSFER'
+    ? event.transferred_to ?? []
+    : [event.app_user_id, event.original_app_user_id, ...(event.aliases ?? [])];
+  for (const id of ids) {
+    const merchantId = parseMerchantId(id);
+    if (merchantId) return merchantId;
+  }
+  return null;
+}
+
+/**
+ * A3: sandbox purchases (dev builds, TestFlight, App Review) never change a real shop. The dev API takes them all; the
+ * production API only for the merchant ids in REVENUECAT_SANDBOX_MERCHANT_IDS (comma list, e.g. the App Review demo shop).
+ */
+function sandboxAllowed(merchantId: number): boolean {
+  if (appUserPrefix() !== 'merchant_') return true;
+  // The same number as in merchant_<id> (Merchant.id, the admin ID column), e.g. REVENUECAT_SANDBOX_MERCHANT_IDS=2 or 2,5
+  return parseSandboxMerchantIds(process.env.REVENUECAT_SANDBOX_MERCHANT_IDS).includes(merchantId);
+}
+
+/** Active, not deleted plan of a tier ("Basic", "Professional") */
+async function planForTier(tier: PlanTier): Promise<{ id: number; name: string } | null> {
+  const plans = await db.prisma.plan.findMany({
+    where: { isActive: true, deletedAt: null },
+    select: { id: true, name: true },
+    orderBy: { id: 'asc' },
+  });
+  return plans.find((p: { name: string }) => planTierFromName(p.name) === tier) ?? null;
+}
+
+async function findSubscription(merchantId: number) {
+  return db.prisma.subscription.findUnique({ where: { merchantId }, include: { plan: true } });
+}
+
+/**
+ * The event is about the store subscription the shop pays for now (a stored row without a product counts as the same).
+ * #1466 App Store: Apple keeps the original transaction id across upgrades, downgrades and crossgrades in a subscription
+ * group, and a CANCELLATION / EXPIRATION / refund after an upgrade may still name the product from before it; with both
+ * ids known, the id decides. Google Play starts a new order id (RevenueCat's original transaction id) on every product
+ * change, so there, and when an id is missing, the product decides.
+ */
+function isCurrentSubscription(
+  sub: { storeProductId?: string | null; storeOriginalTransactionId?: string | null },
+  event: Pick<RevenueCatEvent, 'store' | 'product_id' | 'original_transaction_id'>,
+): boolean {
+  if (!sub.storeProductId) return true;
+  if (channelFromStore(event.store) === 'APP_STORE' && event.original_transaction_id && sub.storeOriginalTransactionId) {
+    return String(event.original_transaction_id) === sub.storeOriginalTransactionId;
+  }
+  return storeProduct(event.product_id)?.id === sub.storeProductId;
+}
+
+function eventTime(event: RevenueCatEvent): Date {
+  return event.event_timestamp_ms ? new Date(event.event_timestamp_ms) : new Date();
+}
+
+async function logActivity(subscriptionId: number, type: string, description: string, event: RevenueCatEvent, extra: Record<string, unknown> = {}) {
+  await db.prisma.subscriptionActivity.create({
+    data: {
+      subscriptionId,
+      type,
+      description,
+      metadata: JSON.stringify({
+        eventId: event.id ?? null,
+        productId: event.product_id,
+        newProductId: event.new_product_id ?? null,
+        store: event.store ?? null,
+        environment: event.environment ?? null,
+        transactionId: event.transaction_id ?? null,
+        ...extra,
+      }),
+    },
+  });
+}
+
+async function handlePurchaseOrRenewal(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const product = storeProduct(event.product_id);
+  if (!product) {
     console.warn(`[RevenueCat Webhook] Unknown product_id: ${event.product_id}`);
-    return;
+    return 'ignored_unknown_product';
   }
+  const merchant = await db.prisma.merchant.findUnique({ where: { id: merchantId }, select: { id: true } });
+  if (!merchant) return 'ignored_unknown_merchant';
 
-  const now = new Date();
-  const purchasedAt = event.purchased_at_ms ? new Date(event.purchased_at_ms) : now;
-  let expiresAt: Date;
-  if (event.environment === 'SANDBOX') {
-    // SANDBOX: Always use real duration (sandbox expiration is accelerated: 6mo = 30min)
-    expiresAt = addMonths(purchasedAt, productConfig.months);
-    console.log(`[RevenueCat Webhook] SANDBOX: Using real duration ${productConfig.months} months (ignoring sandbox expiration)`);
-  } else if (event.expiration_at_ms) {
-    // PRODUCTION: Use actual expiration from Apple/Google
-    expiresAt = new Date(event.expiration_at_ms);
+  const channel = channelFromStore(event.store);
+  const existing = await findSubscription(merchantId);
+  const targetPlan = await planForTier(product.tier);
+  const isRenewal = event.type === 'RENEWAL';
+  // No active plan for the product's tier: never record the purchase on another plan; 500, RevenueCat retries (A9)
+  if (!targetPlan) {
+    console.error(`[RevenueCat Webhook] No active ${product.tier} plan for merchant ${merchantId}`);
+    return 'ignored_no_plan';
+  }
+  // A renewal of a purchase recorded before #1459 (no product stored) keeps the plan, as the webhook did then
+  const keepPlan = !!existing && isRenewal && !existing.storeProductId;
+  const planId = keepPlan ? existing!.planId : targetPlan.id;
+  const planName = keepPlan ? existing!.plan?.name ?? targetPlan.name : targetPlan.name;
+
+  const purchasedAt = event.purchased_at_ms ? new Date(event.purchased_at_ms) : new Date();
+  let storeExpiresAt: Date;
+  if (event.environment === 'SANDBOX' || !event.expiration_at_ms) {
+    // Sandbox periods are minutes long: keep the real duration (calendar months on the Vietnam day, #588)
+    storeExpiresAt = addMonthsInTimeZone(purchasedAt, product.months);
   } else {
-    // Fallback: calculate from purchase date
-    expiresAt = addMonths(purchasedAt, productConfig.months);
+    storeExpiresAt = new Date(event.expiration_at_ms);
   }
+  // A13: the days the shop had left continue after the store period (a new store subscription), or the credit it already
+  // had carries on (a renewal or an upgrade in the same store, which prorates its own days)
+  const credit = storeCreditForPurchase(existing, channel, purchasedAt);
+  const expiresAt = new Date(storeExpiresAt.getTime() + credit);
 
-  console.log(`[RevenueCat Webhook] Purchase/Renewal for merchant ${merchantId}:`, {
-    productId: event.product_id,
+  const amount = event.price_in_purchased_currency && event.price_in_purchased_currency > 0 ? event.price_in_purchased_currency : 0;
+  const currency = event.currency || 'VND';
+  const billing = {
+    planId,
+    status: 'ACTIVE',
+    currentPeriodStart: purchasedAt,
+    currentPeriodEnd: expiresAt,
+    cancelAtPeriodEnd: false,
+    canceledAt: null,
+    cancelReason: null,
+    amount,
+    currency,
+    interval: product.months === 6 ? 'semi_annual' : 'annual',
+    intervalCount: 1,
+    billingChannel: channel,
+    storeProductId: product.id,
+    storeOriginalTransactionId: event.original_transaction_id ?? existing?.storeOriginalTransactionId ?? null,
+    autoRenew: true,
+    billingIssueAt: null,
+    storeBonusMs: credit > 0 ? credit : null,
+  };
+
+  const subscription = existing
+    ? await db.prisma.subscription.update({ where: { merchantId }, data: { ...billing, updatedAt: new Date() } })
+    : await db.prisma.subscription.create({ data: { merchantId, ...billing } });
+
+  const text = isRenewal
+    ? planHistory.renewal(planName, product.months, channel, expiresAt)
+    : planHistory.purchase(planName, product.months, channel, expiresAt);
+  await logActivity(subscription.id, isRenewal ? 'IAP_RENEWAL' : 'IAP_INITIAL_PURCHASE', text, event, {
     purchasedAt: purchasedAt.toISOString(),
     expiresAt: expiresAt.toISOString(),
-    months: productConfig.months,
-    environment: event.environment,
-    purchased_at_ms: event.purchased_at_ms,
-    expiration_at_ms: event.expiration_at_ms,
+    storeExpiresAt: storeExpiresAt.toISOString(),
+    creditMs: credit,
+    price: amount || null,
+    currency,
+    renewal_number: event.renewal_number ?? null,
+    period_type: event.period_type ?? null,
   });
 
-  // Find or create subscription
-  const subscription = await db.prisma.subscription.findUnique({
-    where: { merchantId },
-  });
-
-  if (subscription) {
-    // Update existing subscription
-    await db.prisma.subscription.update({
-      where: { merchantId },
-      data: {
-        status: 'ACTIVE',
-        currentPeriodStart: purchasedAt,
-        currentPeriodEnd: expiresAt,
-        cancelAtPeriodEnd: false,
-        canceledAt: null,
-        cancelReason: null,
-        // Update billing info from IAP event
-        amount: event.price_in_purchased_currency || 0,
-        currency: event.currency || 'VND',
-        interval: productConfig.months === 6 ? 'semi_annual' : 'annual',
-        intervalCount: 1,
-        updatedAt: now,
-      },
-    });
-
-    // Log activity
-    await db.prisma.subscriptionActivity.create({
-      data: {
-        subscriptionId: subscription.id,
-        type: event.type === 'INITIAL_PURCHASE' ? 'IAP_INITIAL_PURCHASE' : 'IAP_RENEWAL',
-        description: userFacingActivityDescription(
-          event.type === 'INITIAL_PURCHASE' ? 'subscribe' : 'renew',
-          event.product_id,
-        ),
-        metadata: JSON.stringify({
-          productId: event.product_id,
-          store: event.store,
-          environment: event.environment,
-          purchasedAt: purchasedAt.toISOString(),
-          expiresAt: expiresAt.toISOString(),
-          raw_purchased_at_ms: event.purchased_at_ms || null,
-          raw_expiration_at_ms: event.expiration_at_ms || null,
-          period_type: event.period_type || null,
-          price: event.price_in_purchased_currency || null,
-          currency: event.currency || null,
-          renewal_number: event.renewal_number || null,
-          transaction_id: event.transaction_id || null,
-          takehome_percentage: event.takehome_percentage || null,
-        }),
-      },
-    });
-  } else {
-    // Find basic plan
-    const plan = await db.prisma.plan.findFirst({
-      where: { name: { contains: 'basic', mode: 'insensitive' } },
-    });
-
-    if (!plan) {
-      console.error(`[RevenueCat Webhook] No basic plan found for merchant ${merchantId}`);
-      return;
-    }
-
-    // Create new subscription
-    const newSub = await db.prisma.subscription.create({
-      data: {
-        merchantId,
-        planId: plan.id,
-        status: 'ACTIVE',
-        currentPeriodStart: purchasedAt,
-        currentPeriodEnd: expiresAt,
-        amount: 0, // Apple handles payment
-        currency: 'VND',
-        interval: productConfig.months === 6 ? 'semi_annual' : 'annual',
-        intervalCount: 1,
-      },
-    });
-
-    await db.prisma.subscriptionActivity.create({
-      data: {
-        subscriptionId: newSub.id,
-        type: 'IAP_INITIAL_PURCHASE',
-        description: userFacingActivityDescription('subscribe', event.product_id),
-        metadata: JSON.stringify({
-          productId: event.product_id,
-          store: event.store,
-          environment: event.environment,
-        }),
-      },
-    });
-  }
-
-  console.log(`[RevenueCat Webhook] ✅ Subscription updated for merchant ${merchantId}: ACTIVE until ${expiresAt.toISOString()}`);
-
-  // Create Payment record for tracking revenue
-  const subId = subscription?.id || (await db.prisma.subscription.findUnique({ where: { merchantId } }))?.id;
-  if (subId && event.price_in_purchased_currency && event.price_in_purchased_currency > 0) {
-    const paymentMethod = event.store === 'APP_STORE' ? 'IAP_APPLE' : event.store === 'PLAY_STORE' ? 'IAP_GOOGLE' : 'MANUAL';
-    const planTitle = productConfig.months === 6 ? 'Basic — 6 months' : 'Basic — 12 months';
-    const storeLabel = event.store === 'APP_STORE' ? 'App Store' : event.store === 'PLAY_STORE' ? 'Google Play' : 'in-app';
+  // A3: a sandbox purchase is not money: no payment row
+  if (amount > 0 && event.environment !== 'SANDBOX') {
     await db.prisma.payment.create({
       data: {
-        amount: event.price_in_purchased_currency,
-        currency: event.currency || 'VND',
-        method: paymentMethod as any,
-        type: 'SUBSCRIPTION_PAYMENT' as any,
-        status: 'COMPLETED' as any,
-        subscriptionId: subId,
+        amount,
+        currency,
+        method: channel === 'PLAY_STORE' ? 'IAP_GOOGLE' : channel === 'APP_STORE' ? 'IAP_APPLE' : 'MANUAL',
+        type: 'SUBSCRIPTION_PAYMENT',
+        status: 'COMPLETED',
+        subscriptionId: subscription.id,
         merchantId,
         reference: event.transaction_id || null,
         transactionId: event.transaction_id || null,
         invoiceNumber: event.transaction_id || null,
-        description: `${planTitle} — ${event.type === 'INITIAL_PURCHASE' ? 'new subscription' : 'renewal'} (${storeLabel})`,
+        description: planHistory.payment(planName, product.months, channel, isRenewal),
         notes: event.environment === 'SANDBOX' ? 'Sandbox test purchase' : null,
         processedAt: purchasedAt,
         metadata: JSON.stringify({
           store: event.store,
           environment: event.environment,
+          productId: product.id,
           renewal_number: event.renewal_number,
           takehome_percentage: event.takehome_percentage,
-          product_display_name: (event as any).product_display_name,
         }),
       },
     });
-    console.log(`[RevenueCat Webhook] 💰 Payment record created: ${event.price_in_purchased_currency} ${event.currency} via ${paymentMethod}`);
   }
+
+  return 'ok';
 }
 
-async function handleExpiration(merchantId: number, event: RevenueCatEvent) {
-  const subscription = await db.prisma.subscription.findUnique({
-    where: { merchantId },
-  });
+async function handleProductChange(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const target = storeProduct(event.new_product_id);
+  const sub = await findSubscription(merchantId);
+  if (!target || !sub) return 'ignored_product_change';
+  const channel = channelFromStore(event.store);
+  const currentTier = planTierFromName(sub.plan?.name);
+  const plan = await planForTier(target.tier);
+  if (!plan) return 'ignored_no_plan';
 
-  if (!subscription) return;
+  if (tierRank(target.tier) > tierRank(currentTier)) {
+    // Upgrades apply at once on the App Store and Google Play; the following RENEWAL brings the new period
+    await db.prisma.subscription.update({
+      where: { merchantId },
+      data: { planId: plan.id, storeProductId: target.id, billingChannel: channel, billingIssueAt: null, updatedAt: new Date() },
+    });
+    await logActivity(sub.id, 'IAP_PRODUCT_CHANGE', planHistory.upgrade(plan.name, target.months, channel, sub.currentPeriodEnd), event);
+    return 'ok';
+  }
+  // Same or lower tier: the store switches at the next renewal, whose RENEWAL event changes the plan
+  if (sub.billingIssueAt) {
+    await db.prisma.subscription.update({ where: { merchantId }, data: { billingIssueAt: null, updatedAt: new Date() } });
+  }
+  await logActivity(sub.id, 'IAP_PRODUCT_CHANGE', planHistory.changeNextPeriod(plan.name, target.months, channel), event);
+  return 'ok_next_period';
+}
 
-  // Only mark EXPIRED if currentPeriodEnd has actually passed.
-  // In sandbox, EXPIRATION events fire immediately after cancel but the period
-  // we set (6 months from purchase) hasn't ended yet.
-  const now = new Date();
-  if (subscription.currentPeriodEnd > now) {
-    console.log(`[RevenueCat Webhook] ⚠️ EXPIRATION event for merchant ${merchantId} ignored: period end ${subscription.currentPeriodEnd.toISOString()} > now. Subscription still active.`);
-    // Log activity but don't change status
-    await db.prisma.subscriptionActivity.create({
+async function handleCancellation(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const sub = await findSubscription(merchantId);
+  if (!sub) return 'ignored_no_subscription';
+  const channel = channelFromStore(event.store);
+  const current = isCurrentSubscription(sub, event);
+
+  if (event.cancel_reason === 'CUSTOMER_SUPPORT') {
+    // Refund: the payment is returned and, for the product in use, access ends now
+    if (event.transaction_id) {
+      // #1482: the refund is dated (the admin revenue report shows it in this month); a repeated event keeps the first date
+      await db.prisma.payment.updateMany({
+        where: { transactionId: event.transaction_id, merchantId, status: { not: 'REFUNDED' } },
+        data: { status: 'REFUNDED', refundedAt: eventTime(event) },
+      });
+    }
+    // A10: only the refund of the period in use changes access (its expiration is the store expiry = current period end
+    // − credit, within a day); a refund of an earlier period, of another subscription (#1466), or without an expiration
+    // only marks the payment
+    const credit = creditMs(sub);
+    const refundedExpiry = event.expiration_at_ms ?? null;
+    const storeEnd = sub.currentPeriodEnd.getTime() - credit;
+    const currentPeriod = current && refundedExpiry !== null && Math.abs(refundedExpiry - storeEnd) <= 24 * 60 * 60 * 1000;
+    if (!currentPeriod) {
+      await logActivity(sub.id, 'IAP_REFUND', planHistory.refundOtherProduct(channel), event, { refundedExpiry });
+      return 'ok_other_period';
+    }
+    const refundedAt = eventTime(event);
+    // A13 design 4: back to the end the shop had before this paid period = its start + credit (the first store purchase:
+    // the old end, trial or manual days included). Still ahead: the shop keeps those days, off the store
+    const periodStart = sub.currentPeriodStart ? new Date(sub.currentPeriodStart).getTime() : refundedAt.getTime();
+    const before = periodStart + credit;
+    if (before > refundedAt.getTime()) {
+      const keptTo = new Date(before);
+      await db.prisma.subscription.update({
+        where: { merchantId },
+        data: {
+          currentPeriodEnd: keptTo,
+          autoRenew: false,
+          cancelAtPeriodEnd: true,
+          canceledAt: refundedAt,
+          cancelReason: 'REFUND',
+          billingChannel: 'MANUAL',
+          storeProductId: null,
+          storeBonusMs: null,
+          billingIssueAt: null,
+          updatedAt: new Date(),
+        },
+      });
+      await logActivity(sub.id, 'IAP_REFUND', planHistory.refundKeepsDays(channel, keptTo), event, { cancelReason: event.cancel_reason, keptTo: keptTo.toISOString() });
+      return 'ok_refund_kept_days';
+    }
+    const end = refundedAt < sub.currentPeriodEnd ? refundedAt : sub.currentPeriodEnd;
+    // EXPIRED, not CANCELLED: a CANCELLED shop whose period ended gets 403 SUBSCRIPTION_CANCELLED ("contact support")
+    // from authenticateRequest; an EXPIRED one gets SUBSCRIPTION_EXPIRED and may buy again in the app
+    await db.prisma.subscription.update({
+      where: { merchantId },
       data: {
-        subscriptionId: subscription.id,
-        type: 'IAP_EXPIRATION_IGNORED',
-        description: `Period still active — expiration ignored until ${subscription.currentPeriodEnd.toISOString()}`,
-        metadata: JSON.stringify({
-          productId: event.product_id,
-          expirationAtMs: event.expiration_at_ms,
-          currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
-          reason: 'period_not_ended',
-        }),
+        status: 'EXPIRED',
+        currentPeriodEnd: end,
+        autoRenew: false,
+        cancelAtPeriodEnd: true,
+        canceledAt: refundedAt,
+        cancelReason: 'REFUND',
+        updatedAt: new Date(),
       },
     });
-    return;
+    await logActivity(sub.id, 'IAP_REFUND', planHistory.refund(channel, end), event, { cancelReason: event.cancel_reason });
+    return 'ok';
   }
 
+  if (!current) {
+    await logActivity(sub.id, 'IAP_CANCELLATION', planHistory.otherProductEvent(channel), event, { cancelReason: event.cancel_reason ?? null });
+    return 'ok_other_product';
+  }
   await db.prisma.subscription.update({
     where: { merchantId },
     data: {
-      status: 'EXPIRED',
-      updatedAt: now,
-    },
-  });
-
-  await db.prisma.subscriptionActivity.create({
-    data: {
-      subscriptionId: subscription.id,
-      type: 'IAP_EXPIRATION',
-      description: userFacingActivityDescription('expire', event.product_id),
-      metadata: JSON.stringify({
-        productId: event.product_id,
-        expirationAtMs: event.expiration_at_ms,
-      }),
-    },
-  });
-
-  console.log(`[RevenueCat Webhook] ⚠️ Subscription expired for merchant ${merchantId}`);
-}
-
-async function handleCancellation(merchantId: number, event: RevenueCatEvent) {
-  const subscription = await db.prisma.subscription.findUnique({
-    where: { merchantId },
-  });
-
-  if (!subscription) return;
-
-  await db.prisma.subscription.update({
-    where: { merchantId },
-    data: {
+      autoRenew: false,
       cancelAtPeriodEnd: true,
-      canceledAt: new Date(),
-      cancelReason: event.cancel_reason || 'User cancelled via App Store',
+      canceledAt: eventTime(event),
+      cancelReason: event.cancel_reason || 'UNSUBSCRIBE',
       updatedAt: new Date(),
     },
   });
-
-  await db.prisma.subscriptionActivity.create({
-    data: {
-      subscriptionId: subscription.id,
-      type: 'IAP_CANCELLATION',
-      description: userFacingActivityDescription(
-        'cancel',
-        event.product_id,
-        event.cancel_reason || undefined,
-      ),
-      metadata: JSON.stringify({
-        productId: event.product_id,
-        cancelReason: event.cancel_reason,
-      }),
-    },
-  });
-
-  console.log(`[RevenueCat Webhook] ⚠️ Subscription cancelled for merchant ${merchantId} (will expire at period end)`);
+  await logActivity(sub.id, 'IAP_CANCELLATION', planHistory.cancel(channel, sub.currentPeriodEnd), event, { cancelReason: event.cancel_reason ?? null });
+  return 'ok';
 }
 
-async function handleUncancellation(merchantId: number, event: RevenueCatEvent) {
-  const subscription = await db.prisma.subscription.findUnique({
+async function handleUncancellation(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const sub = await findSubscription(merchantId);
+  if (!sub) return 'ignored_no_subscription';
+  const channel = channelFromStore(event.store);
+  await db.prisma.subscription.update({
     where: { merchantId },
+    data: { autoRenew: true, cancelAtPeriodEnd: false, canceledAt: null, cancelReason: null, billingIssueAt: null, updatedAt: new Date() },
   });
+  await logActivity(sub.id, 'IAP_UNCANCELLATION', planHistory.uncancel(channel), event);
+  return 'ok';
+}
 
-  if (!subscription) return;
+async function handleExpiration(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const sub = await findSubscription(merchantId);
+  if (!sub) return 'ignored_no_subscription';
+  const channel: BillingChannel = channelFromStore(event.store);
+  if (!isCurrentSubscription(sub, event)) {
+    await logActivity(sub.id, 'IAP_EXPIRATION_IGNORED', planHistory.otherProductEvent(channel), event, { reason: 'other_product' });
+    return 'ok_other_product';
+  }
+  // Only EXPIRED once our period has really ended (sandbox expirations come after minutes)
+  if (sub.currentPeriodEnd > new Date()) {
+    await db.prisma.subscription.update({ where: { merchantId }, data: { autoRenew: false, updatedAt: new Date() } });
+    await logActivity(sub.id, 'IAP_EXPIRATION_IGNORED', planHistory.expirationIgnored(sub.currentPeriodEnd), event, {
+      reason: 'period_not_ended',
+      currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+    });
+    return 'ok_period_not_ended';
+  }
+  await db.prisma.subscription.update({
+    where: { merchantId },
+    data: { status: 'EXPIRED', autoRenew: false, updatedAt: new Date() },
+  });
+  await logActivity(sub.id, 'IAP_EXPIRATION', planHistory.expired(), event);
+  return 'ok';
+}
 
+/**
+ * "Trừ tiền lỗi: vẫn dùng tới hết kỳ" (owner, 2026-11-02). The store retries the charge; the shop keeps access until
+ * the period ends, plus the store's grace period when the owner turned it on (`grace_period_expiration_at_ms`).
+ * Store channels never become PAST_DUE here: authenticateRequest blocks PAST_DUE on every route at once. The status stays
+ * as it is (a row left PAST_DUE by the old webhook becomes ACTIVE again) and auto-renew stays as it was; the next
+ * RENEWAL / UNCANCELLATION / PRODUCT_CHANGE clears the flag, and EXPIRATION ends access when the grace runs out unpaid.
+ */
+async function handleBillingIssue(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const sub = await findSubscription(merchantId);
+  if (!sub) return 'ignored_no_subscription';
+  const channel = channelFromStore(event.store);
+  const isStore = channel === 'APP_STORE' || channel === 'PLAY_STORE';
+  const graceEnd = event.grace_period_expiration_at_ms ? new Date(event.grace_period_expiration_at_ms) : null;
+  // A13: the store's grace end + the shop's credit
+  const graceAccess = graceEnd ? new Date(graceEnd.getTime() + creditMs(sub)) : null;
+  const extendTo = graceAccess && graceAccess > sub.currentPeriodEnd ? graceAccess : null;
   await db.prisma.subscription.update({
     where: { merchantId },
     data: {
-      cancelAtPeriodEnd: false,
-      canceledAt: null,
-      cancelReason: null,
+      billingIssueAt: eventTime(event),
+      ...(extendTo ? { currentPeriodEnd: extendTo } : {}),
+      // Other stores RevenueCat may report keep the old rule (PAST_DUE); phase 2 decides for Lemon / Stripe
+      ...(isStore ? (sub.status === 'PAST_DUE' ? { status: 'ACTIVE' } : {}) : { status: 'PAST_DUE' }),
       updatedAt: new Date(),
     },
   });
-
-  await db.prisma.subscriptionActivity.create({
-    data: {
-      subscriptionId: subscription.id,
-      type: 'IAP_UNCANCELLATION',
-      description: userFacingActivityDescription('uncancel', event.product_id),
-    },
-  });
-
-  console.log(`[RevenueCat Webhook] ✅ Subscription uncancelled for merchant ${merchantId}`);
+  await logActivity(
+    sub.id,
+    'IAP_BILLING_ISSUE',
+    planHistory.billingIssue(channel, extendTo ?? (isStore ? sub.currentPeriodEnd : null), !!extendTo),
+    event,
+    { gracePeriodExpiresAt: graceEnd?.toISOString() ?? null, extendedTo: extendTo?.toISOString() ?? null },
+  );
+  return 'ok';
 }
 
-async function handleBillingIssue(merchantId: number, event: RevenueCatEvent) {
-  const subscription = await db.prisma.subscription.findUnique({
-    where: { merchantId },
-  });
-
-  if (!subscription) return;
-
-  // Don't expire immediately — Apple retries billing for ~16 days
+/**
+ * A4 TRANSFER: the store subscription now belongs to another shop (a restore on another account with RevenueCat's
+ * "Transfer to new App User ID"). The receiving shop gets the paid plan and period; the old shop keeps the days it has but
+ * stops renewing through the store. Nothing to move when the old owner is anonymous or not on a store plan.
+ */
+async function handleTransfer(toMerchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const fromId = (event.transferred_from ?? []).map(parseMerchantId).find((id): id is number => !!id && id !== toMerchantId);
+  const from = fromId ? await findSubscription(fromId) : null;
+  if (!fromId || !from || !from.storeProductId || (from.billingChannel !== 'APP_STORE' && from.billingChannel !== 'PLAY_STORE')) {
+    return 'ignored_transfer_nothing_to_move';
+  }
+  const merchant = await db.prisma.merchant.findUnique({ where: { id: toMerchantId }, select: { id: true } });
+  if (!merchant) return 'ignored_unknown_merchant';
+  const channel = from.billingChannel as BillingChannel;
+  const existing = await findSubscription(toMerchantId);
+  // A13: the store's expiry (without the old shop's credit) + the days the receiving shop had left
+  const storeEnd = from.currentPeriodEnd.getTime() - creditMs(from);
+  const toCredit = existing ? Math.max(0, existing.currentPeriodEnd.getTime() - eventTime(event).getTime()) : 0;
+  const moved = {
+    planId: from.planId,
+    status: 'ACTIVE',
+    currentPeriodStart: from.currentPeriodStart,
+    currentPeriodEnd: new Date(storeEnd + toCredit),
+    storeBonusMs: toCredit > 0 ? toCredit : null,
+    amount: from.amount,
+    currency: from.currency,
+    interval: from.interval,
+    intervalCount: from.intervalCount,
+    cancelAtPeriodEnd: from.cancelAtPeriodEnd,
+    canceledAt: from.canceledAt,
+    cancelReason: from.cancelReason,
+    billingChannel: channel,
+    storeProductId: from.storeProductId,
+    storeOriginalTransactionId: from.storeOriginalTransactionId,
+    autoRenew: from.autoRenew,
+    billingIssueAt: from.billingIssueAt,
+  };
+  const to = existing
+    ? await db.prisma.subscription.update({ where: { merchantId: toMerchantId }, data: { ...moved, updatedAt: new Date() } })
+    : await db.prisma.subscription.create({ data: { merchantId: toMerchantId, ...moved } });
   await db.prisma.subscription.update({
-    where: { merchantId },
-    data: {
-      status: 'PAST_DUE',
-      updatedAt: new Date(),
-    },
+    where: { merchantId: fromId },
+    data: { autoRenew: false, storeProductId: null, storeOriginalTransactionId: null, billingChannel: 'MANUAL', storeBonusMs: null, updatedAt: new Date() },
   });
-
-  await db.prisma.subscriptionActivity.create({
-    data: {
-      subscriptionId: subscription.id,
-      type: 'IAP_BILLING_ISSUE',
-      description: userFacingActivityDescription('billing_issue', event.product_id),
-      metadata: JSON.stringify({
-        productId: event.product_id,
-        store: event.store,
-      }),
-    },
-  });
-
-  console.log(`[RevenueCat Webhook] ⚠️ Billing issue for merchant ${merchantId}`);
+  await logActivity(to.id, 'IAP_TRANSFER', planHistory.transferIn(channel, moved.currentPeriodEnd), event, { fromMerchantId: fromId });
+  await logActivity(from.id, 'IAP_TRANSFER', planHistory.transferOut(channel, from.currentPeriodEnd), event, { toMerchantId });
+  return 'ok';
 }
 
-/** Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588). */
-function addMonths(date: Date, months: number): Date {
-  return addMonthsInTimeZone(date, months);
+/** A7 SUBSCRIPTION_EXTENDED (a deferred Google Play renewal, an App Store extension): the period runs to the new expiration */
+async function handleExtended(merchantId: number, event: RevenueCatEvent): Promise<Outcome> {
+  const sub = await findSubscription(merchantId);
+  if (!sub) return 'ignored_no_subscription';
+  const channel = channelFromStore(event.store);
+  if (!isCurrentSubscription(sub, event)) {
+    await logActivity(sub.id, 'IAP_EXTENDED', planHistory.otherProductEvent(channel), event, { reason: 'other_product' });
+    return 'ok_other_product';
+  }
+  if (!event.expiration_at_ms) return 'ignored_no_expiration';
+  // A13: the store's new expiration + the shop's credit
+  const extended = new Date(event.expiration_at_ms + creditMs(sub));
+  const end = extended > sub.currentPeriodEnd ? extended : sub.currentPeriodEnd;
+  if (extended > sub.currentPeriodEnd) {
+    await db.prisma.subscription.update({ where: { merchantId }, data: { currentPeriodEnd: extended, updatedAt: new Date() } });
+  }
+  await logActivity(sub.id, 'IAP_EXTENDED', planHistory.extended(channel, end), event, { expiresAt: extended.toISOString() });
+  return 'ok';
 }

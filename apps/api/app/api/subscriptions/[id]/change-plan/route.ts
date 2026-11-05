@@ -3,6 +3,7 @@ import { db, changePlan } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder, normalizeBillingInterval } from '@rentalshop/utils';
 import { API, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
+import { manualExtensionBilling } from '../../../../../lib/plan-renewal';
 
 /**
  * Handler for changing subscription plan
@@ -67,6 +68,8 @@ async function handleChangePlan(
       // The rules (who, when) and the Payment of the amount due are applied inside changePlan (#785)
       const updatedSubscription = await changePlan(subscriptionId, planId, billingInterval as any, {
         actorRole: user.role,
+        // #1470: the period keeps the days left; a running store plan keeps A13 (time joins the credit)
+        billing: manualExtensionBilling,
         payment: {
           method: body.method,
           transactionId: body.transactionId,

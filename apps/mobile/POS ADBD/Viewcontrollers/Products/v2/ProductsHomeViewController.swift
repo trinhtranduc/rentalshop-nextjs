@@ -50,6 +50,9 @@ final class ProductsHomeViewController: BaseViewControler {
     private var guideOnScreen: FirstRunGuideCard = .hidden
     private var guideHeaderWidth: CGFloat = 0
     private var emptyTop: Constraint?
+    /// #1459 owner: "Gói còn 3 ngày · Gia hạn" once the renew window opened (≤ 7 days, not auto-renewing); opens Gói dịch vụ
+    private let planLine = UIButton(type: .system)
+    private var planLineLoadedAt: Date?
 
     private lazy var reader: QRCodeReaderViewController = {
         let builder = QRCodeReaderViewControllerBuilder {
@@ -85,7 +88,45 @@ final class ProductsHomeViewController: BaseViewControler {
         NotificationCenter.default.addObserver(self, selector: #selector(outletChanged), name: .currentOutletDidChange, object: nil)
         // #1145: the owner changed the shop currency: money is redrawn
         NotificationCenter.default.addObserver(self, selector: #selector(currencyChanged), name: .shopCurrencyDidChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(planChanged), name: SubscriptionGate.planDidChange, object: nil)
         viewModel.reload()
+    }
+
+    // MARK: - Plan line (#1459)
+
+    @objc private func planChanged() {
+        refreshPlanLine(force: true)
+    }
+
+    /// The owner's status, at most every 10 minutes (and after a payment)
+    private func refreshPlanLine(force: Bool = false) {
+        guard User.account()?.role == .merchant else {
+            planLine.isHidden = true
+            return
+        }
+        guard RefreshPolicy.shouldReload(dirty: force, lastLoadedAt: planLineLoadedAt, now: Date(), ttl: RefreshPolicy.summaryTTL) else { return }
+        planLineLoadedAt = Date()
+        SubscriptionAPIService.shared.planStatus { [weak self] status, _ in
+            guard let self else { return }
+            guard let status else { return }
+            guard let text = PlanRenewalLogic.homeLine(isOwner: true, status: status) else {
+                self.planLine.isHidden = true
+                return
+            }
+            let title = NSMutableAttributedString(string: text + " · ", attributes: [
+                .font: Utils.regularFont(size: DS.TextSize.secondary), .foregroundColor: DS.Color.text,
+            ])
+            title.append(NSAttributedString(string: "plan.home.renew".localized(), attributes: [
+                .font: Utils.boldFont(size: DS.TextSize.secondary), .foregroundColor: DS.Color.primary,
+            ]))
+            self.planLine.setAttributedTitle(title, for: .normal)
+            self.planLine.accessibilityLabel = text + ", " + "plan.home.renew".localized()
+            self.planLine.isHidden = false
+        }
+    }
+
+    @objc private func openPlan() {
+        navigationController?.pushViewController(SubscriptionViewController(), animated: true)
     }
 
     /// #828: products and stock of the branch now in use
@@ -99,6 +140,7 @@ final class ProductsHomeViewController: BaseViewControler {
         navigationController?.setNavigationBarHidden(true, animated: false)
         updateCartBar()
         outletButton.refresh()
+        refreshPlanLine()
         FirstRunGuideTracker.shared.refresh()
         applyGuide()
         // #677: an order was created or edited since the rows loaded: their stock is refreshed quietly
@@ -192,9 +234,15 @@ final class ProductsHomeViewController: BaseViewControler {
         }
         searchBox.snp.makeConstraints { make in make.height.equalTo(48) }
 
-        let column = UIStackView(arrangedSubviews: [topRow, searchBox])
+        planLine.isHidden = true
+        planLine.contentHorizontalAlignment = .leading
+        planLine.accessibilityIdentifier = "home.planLine"
+        planLine.addTarget(self, action: #selector(openPlan), for: .touchUpInside)
+        planLine.snp.makeConstraints { make in make.height.equalTo(28) }
+        let column = UIStackView(arrangedSubviews: [topRow, planLine, searchBox])
         column.axis = .vertical
         column.spacing = 12
+        column.setCustomSpacing(4, after: planLine)
         header.backgroundColor = .white
         header.addSubview(column)
         let bottomLine = V2.divider()

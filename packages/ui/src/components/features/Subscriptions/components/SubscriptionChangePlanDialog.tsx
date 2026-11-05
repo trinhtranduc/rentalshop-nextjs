@@ -223,7 +223,7 @@ export function SubscriptionChangePlanDialog({
     };
   };
 
-  // Same calculation as the API's changePlan (#1474): the new plan starts now; while the plan still runs the period ends
+  // Same calculation as the API's changePlan (#1470): the new plan starts now; while the plan still runs the period ends
   // at the current end + one cycle (the days left move to the new plan, no money credit); expired = now + one cycle.
   const oldInterval = storedBillingInterval(
     (subscription as any).interval ?? subscription.billingInterval,

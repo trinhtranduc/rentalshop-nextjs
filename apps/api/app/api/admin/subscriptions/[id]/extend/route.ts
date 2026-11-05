@@ -4,6 +4,7 @@ import { db } from '@rentalshop/database';
 import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { USER_ROLE } from '@rentalshop/constants';
 import { z } from 'zod';
+import { manualExtensionBilling } from '../../../../../../lib/plan-renewal';
 
 const extendSchema = z.object({
   months: z.number().int().min(1).max(24),
@@ -76,58 +77,69 @@ export async function POST(
       // Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
       const newPeriodEnd = addMonthsInTimeZone(new Date(currentEnd), months);
 
+      // #1459 A13: a store plan still running stays on the store (channel, auto-renew, start, price, cancel fields);
+      // the months join its credit, so the next store renewal keeps them. Otherwise (A10) the shop is manual.
+      const billing = manualExtensionBilling(subscription, newPeriodEnd, now);
       // Update subscription — update billing info to match manual extension
       const intervalValue = months <= 1 ? 'monthly' : months <= 3 ? 'quarterly' : months <= 6 ? 'semi_annual' : 'annual';
-      const updated = await db.prisma.subscription.update({
-        where: { id: subscriptionId },
-        data: {
-          status: 'ACTIVE',
-          currentPeriodEnd: newPeriodEnd,
-          currentPeriodStart: subscription.status === 'EXPIRED' ? now : subscription.currentPeriodStart,
-          cancelAtPeriodEnd: false,
-          canceledAt: null,
-          cancelReason: null,
-          // Keep billing info consistent (single source of truth)
-          interval: intervalValue,
-          intervalCount: 1,
-          // Update amount if provided (0 = free promo, positive = paid)
-          ...(paidAmount !== undefined && { amount: paidAmount }),
-          ...(paidCurrency && { currency: paidCurrency }),
-        },
-      });
+      // #1462 one transaction: a failed payment or activity write must not leave the extension saved on its own
+      const updated = await db.prisma.$transaction(async (tx) => {
+        const row = await tx.subscription.update({
+          where: { id: subscriptionId },
+          data: billing.keepsStore
+            ? billing.data
+            : {
+                status: 'ACTIVE',
+                currentPeriodStart: subscription.status === 'EXPIRED' ? now : subscription.currentPeriodStart,
+                cancelAtPeriodEnd: false,
+                canceledAt: null,
+                cancelReason: null,
+                ...billing.data,
+                // Keep billing info consistent (single source of truth)
+                interval: intervalValue,
+                intervalCount: 1,
+                // Update amount if provided (0 = free promo, positive = paid)
+                ...(paidAmount !== undefined && { amount: paidAmount }),
+                ...(paidCurrency && { currency: paidCurrency }),
+              },
+        });
 
-      // Create Payment record if amount > 0
-      if (paidAmount && paidAmount > 0) {
-        await db.prisma.payment.create({
+        // Create Payment record if amount > 0
+        if (paidAmount && paidAmount > 0) {
+          await tx.payment.create({
+            data: {
+              amount: paidAmount,
+              currency: paidCurrency || 'VND',
+              method: (paymentSource === 'TRANSFER' ? 'TRANSFER' : paymentSource === 'CASH' ? 'CASH' : 'MANUAL') as any,
+              type: 'SUBSCRIPTION_PAYMENT' as any,
+              status: 'COMPLETED' as any,
+              subscriptionId,
+              // #1462 was an undeclared `merchantId` (ReferenceError after the update had been saved)
+              merchantId: subscription.merchantId,
+              description: `Manual extension ${months} month(s): ${reason}`,
+              processedAt: now,
+            },
+          });
+        }
+
+        // Log activity
+        await tx.subscriptionActivity.create({
           data: {
-            amount: paidAmount,
-            currency: paidCurrency || 'VND',
-            method: (paymentSource === 'TRANSFER' ? 'TRANSFER' : paymentSource === 'CASH' ? 'CASH' : 'MANUAL') as any,
-            type: 'SUBSCRIPTION_PAYMENT' as any,
-            status: 'COMPLETED' as any,
             subscriptionId,
-            merchantId,
-            description: `Manual extension ${months} month(s): ${reason}`,
-            processedAt: now,
+            type: 'MANUAL_EXTENSION',
+            description: `Extended ${months} month(s) by admin: ${reason}`,
+            performedBy: user.id,
+            reason,
+            metadata: JSON.stringify({
+              months,
+              previousEnd: subscription.currentPeriodEnd.toISOString(),
+              newEnd: newPeriodEnd.toISOString(),
+              previousStatus: subscription.status,
+            }),
           },
         });
-      }
 
-      // Log activity
-      await db.prisma.subscriptionActivity.create({
-        data: {
-          subscriptionId,
-          type: 'MANUAL_EXTENSION',
-          description: `Extended ${months} month(s) by admin: ${reason}`,
-          performedBy: user.id,
-          reason,
-          metadata: JSON.stringify({
-            months,
-            previousEnd: subscription.currentPeriodEnd.toISOString(),
-            newEnd: newPeriodEnd.toISOString(),
-            previousStatus: subscription.status,
-          }),
-        },
+        return row;
       });
 
       return NextResponse.json(

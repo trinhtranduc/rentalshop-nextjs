@@ -39,6 +39,10 @@ Result bundle: $E2E_OUT/ios/<account>.xcresult. Exit code is xcodebuild's.
 EOF
 }
 
+# #1459: another test class (e.g. PlanRenewalE2ETests), or a hosted one in "POS ADBDTests" (E2E_TEST_BUNDLE); default the walk-through
+TEST_CLASS="${E2E_TEST_CLASS:-AnyRentE2ETests}"
+TEST_BUNDLE="${E2E_TEST_BUNDLE:-POS ADBDUITests}"
+TEST_MODULE="${TEST_BUNDLE// /_}"
 FRESH=0
 STAGE=1
 ONLY=""
@@ -52,7 +56,7 @@ while [ $# -gt 0 ]; do
     --no-stage) STAGE=0 ;;
     --account) E2E_ACCOUNT="${2:?--account needs merchant|manager|staff|inventory}"; shift ;;
     --only) ONLY="${2:?--only needs a test method}"; shift ;;
-    --skip) SKIPS+=("-skip-testing:POS ADBDUITests/AnyRentE2ETests/${2:?--skip needs a test method}"); shift ;;
+    --skip) SKIPS+=("-skip-testing:$TEST_BUNDLE/$TEST_CLASS/${2:?--skip needs a test method}"); shift ;;
     --scenario) SCENARIO="${2:?--scenario needs a slug}"; shift ;;
     --role) ROLE_ARG="${2:?--role needs a role}"; shift ;;
     --email) ARG_EMAIL="${2:?--email needs a value}"; shift ;;
@@ -136,7 +140,7 @@ fi
 
 [ -d "$MOBILE_DIR/Pods" ] || (cd "$MOBILE_DIR" && pod install)
 
-TARGET="POS ADBDUITests/AnyRentE2ETests"
+TARGET="$TEST_BUNDLE/$TEST_CLASS"
 [ -n "$ONLY" ] && TARGET="$TARGET/$ONLY"
 
 echo "Account: $E2E_EMAIL ($E2E_ACCOUNT, label $LABEL)  API: $(e2e_api_base_url)  Features: $MOBILE_FEATURES"
@@ -174,15 +178,15 @@ set -e
 
 echo
 echo "Results ($LABEL):"
-grep -E "^Test Case '-\[POS_ADBDUITests\.AnyRentE2ETests test[A-Za-z0-9_]+\]' (passed|failed|skipped)" "$LOG" \
-  | sed -E "s/^Test Case '-\[POS_ADBDUITests\.AnyRentE2ETests (test[A-Za-z0-9_]+)\]' ([a-z]+) \(([0-9.]+) seconds\)\./  \2  \1  (\3 s)/" || true
-echo "  passed: $(grep -cE "^Test Case .*AnyRentE2ETests.*' passed" "$LOG" || true)" \
-  " failed: $(grep -cE "^Test Case .*AnyRentE2ETests.*' failed" "$LOG" || true)" \
-  " skipped: $(grep -cE "^Test Case .*AnyRentE2ETests.*' skipped" "$LOG" || true)"
-FAILS="$(grep -E "error: -\[POS_ADBDUITests\.AnyRentE2ETests" "$LOG" || true)"
+grep -E "^Test Case '-\[$TEST_MODULE\.$TEST_CLASS test[A-Za-z0-9_]+\]' (passed|failed|skipped)" "$LOG" \
+  | sed -E "s/^Test Case '-\[$TEST_MODULE\.$TEST_CLASS (test[A-Za-z0-9_]+)\]' ([a-z]+) \(([0-9.]+) seconds\)\./  \2  \1  (\3 s)/" || true
+echo "  passed: $(grep -cE "^Test Case .*$TEST_CLASS.*' passed" "$LOG" || true)" \
+  " failed: $(grep -cE "^Test Case .*$TEST_CLASS.*' failed" "$LOG" || true)" \
+  " skipped: $(grep -cE "^Test Case .*$TEST_CLASS.*' skipped" "$LOG" || true)"
+FAILS="$(grep -E "error: -\[$TEST_MODULE\.$TEST_CLASS" "$LOG" || true)"
 if [ -n "$FAILS" ]; then
   echo "Failures:"
-  printf '%s\n' "$FAILS" | sed -E 's#^.*/AnyRentE2ETests\.swift:#  line #' | head -40
+  printf '%s\n' "$FAILS" | sed -E "s#^.*/$TEST_CLASS\.swift:#  line #" | head -40
 fi
 if ! grep -q "^Test Case" "$LOG"; then
   echo "No tests ran. Last log lines:"

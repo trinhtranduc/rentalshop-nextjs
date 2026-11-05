@@ -7,14 +7,14 @@ export interface PlanChangeCalculation {
   oldPlanPeriodPrice: number;
   oldPlanPeriodDays: number;
   usedDays: number;
-  /** Vietnam days left of the current period: they carry over to the new plan (#1474). */
+  /** Vietnam days left of the current period: they carry over to the new plan (#1470). */
   remainingDays: number;
-  /** Money credit for the days left: always 0 since #1474 (the days are kept instead); kept for old readers. */
+  /** Money credit for the days left: always 0 since #1470 (the days are kept instead); kept for old readers. */
   remainingCreditValue: number;
   newPlanPeriodPrice: number;
   /** #870: the shop's renewed add-ons for the new cycle (cycle discount), 0 without add-ons. */
   addonPeriodPrice: number;
-  /** Add-on credit for the days left: always 0 since #1474 (the add-ons keep their days); kept for old readers. */
+  /** Add-on credit for the days left: always 0 since #1470 (the add-ons keep their days); kept for old readers. */
   addonCreditValue: number;
   /** New cycle price + add-ons for the cycle. */
   totalDue: number;
@@ -73,7 +73,7 @@ function intervalMonths(interval: BillingInterval): number {
 }
 
 /**
- * Price and new period of a plan change (#1474, owner 2026-11-03; the same rule as #1474 on dev):
+ * Price and new period of a plan change (#1470, owner 2026-11-03; same rule as the in-app renewal credit A13):
  * - the new plan applies now (`newPeriodStart` = now);
  * - plan still running (end after `now`, a trial included): the period ends at the current end + one cycle, so the days
  *   left become days of the new plan; they are not paid back as money (#779 started every change now and credited them);

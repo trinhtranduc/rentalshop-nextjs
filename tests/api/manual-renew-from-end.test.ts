@@ -2,9 +2,9 @@
  * #1470 (owner, 2026-11-03): "khi tôi gia hạn hay nâng cấp manual thì nó không tính từ ngày kết thúc. ví dụ 5/11 hết hạn
  * mà gia hạn từ 3/11 thì nó tính từ 3/11".
  *
- * Rule: while the plan still runs, renewal, extension and upgrade count from the current end; an upgrade applies the
- * new plan now and the days left become days of the new plan (no money credit); expired = from now; calendar months on
- * the Vietnam day. Hotfix on main-real: no store credit (storeBonusMs / manualExtensionBilling exist only on dev).
+ * Rule (same as the in-app credit rule A13): while the plan still runs, renewal, extension and upgrade count from the
+ * current end; an upgrade applies the new plan now and the days left become days of the new plan (no money credit);
+ * expired = from now; calendar months on the Vietnam day. A running store plan keeps A13 (the time joins storeBonusMs).
  *
  * Example used everywhere: plan ends 05/11/2026 (VN), the admin acts on 03/11/2026 (VN), 12 months → ends 05/11/2027.
  * Run under TZ=UTC and TZ=Asia/Ho_Chi_Minh: the answers must not change.
@@ -74,12 +74,14 @@ jest.mock('@rentalshop/utils', () => ({
 import { addMonthsInTimeZone } from '../../packages/utils/src/core/billing-dates';
 import { formatDateKeyInTimeZone } from '../../packages/utils/src/core/date-range';
 import { calculatePlanChangeTotal, calculateRenewalTotal } from '../../packages/utils/src/core/subscription-billing-calculations';
+import { manualExtensionBilling } from '../../apps/api/lib/plan-renewal';
 import { extensionEndKeyForMonths } from '../../packages/ui/src/components/features/Subscriptions/components/subscription-dates';
 import { POST as changePlanRoute } from '../../apps/api/app/api/subscriptions/[id]/change-plan/route';
 import { PUT as updateSubscriptionRoute } from '../../apps/api/app/api/subscriptions/[id]/route';
 import { PUT as merchantPlanRoute } from '../../apps/api/app/api/merchants/[id]/plan/route';
 import { POST as manualPaymentRoute } from '../../apps/api/app/api/payments/manual/route';
 
+const DAY = 86400000;
 const NOW = new Date('2026-11-03T03:00:00.000Z'); // 03/11/2026 10:00 VN
 const END = new Date('2026-11-05T16:59:59.999Z'); // 05/11/2026 23:59:59.999 VN (how an extension stores an end)
 const NEW_END = '2027-11-05T16:59:59.999Z'; // 05/11/2027, same wall time
@@ -110,6 +112,11 @@ function subscriptionRow(over: Record<string, unknown> = {}) {
     currentPeriodStart: START,
     currentPeriodEnd: END,
     cancelAtPeriodEnd: false,
+    billingChannel: 'MANUAL',
+    storeProductId: null,
+    autoRenew: false,
+    storeBonusMs: null,
+    billingIssueAt: null,
     merchant: { id: 5, name: 'Tiệm Áo Dài', email: null },
     plan: BASIC,
     ...over,
@@ -187,7 +194,7 @@ describe('changePlan() writes the period from the current end', () => {
 
   it('Basic → Professional, 12 months, on 03/11 of a plan ending 05/11: ends 05/11/2027, Payment = full annual price', async () => {
     given(subscriptionRow(), PRO);
-    const result = await changePlan(70, 2, 'annual', { actorRole: 'ADMIN', payment: pay });
+    const result = await changePlan(70, 2, 'annual', { actorRole: 'ADMIN', payment: pay, billing: manualExtensionBilling });
     const data = written();
     expect(vnDay(data.currentPeriodEnd)).toBe('2027-11-05');
     expect(data.currentPeriodEnd.toISOString()).toBe(NEW_END);
@@ -199,7 +206,7 @@ describe('changePlan() writes the period from the current end', () => {
 
   it('a trial still running → Basic: from the trial end, ACTIVE now', async () => {
     given(subscriptionRow({ status: 'TRIAL', planId: 9, plan: TRIAL, amount: 0, currentPeriodStart: new Date('2026-10-22T03:00:00Z') }), BASIC);
-    await changePlan(70, 1, 'annual', { actorRole: 'ADMIN', payment: pay });
+    await changePlan(70, 1, 'annual', { actorRole: 'ADMIN', payment: pay, billing: manualExtensionBilling });
     const data = written();
     expect(data.currentPeriodEnd.toISOString()).toBe(NEW_END);
     expect(data.status).toBe('ACTIVE');
@@ -208,10 +215,31 @@ describe('changePlan() writes the period from the current end', () => {
 
   it('expired: from now (03/11/2027)', async () => {
     given(subscriptionRow({ currentPeriodEnd: new Date('2026-11-01T16:59:59.999Z') }), PRO);
-    await changePlan(70, 2, 'annual', { actorRole: 'ADMIN', payment: pay });
+    await changePlan(70, 2, 'annual', { actorRole: 'ADMIN', payment: pay, billing: manualExtensionBilling });
     const data = written();
     expect(data.currentPeriodStart.toISOString()).toBe(NOW.toISOString());
     expect(data.currentPeriodEnd.toISOString()).toBe(addMonthsInTimeZone(NOW, 12).toISOString());
+  });
+
+  it('A13: a running App Store plan keeps its store fields; the 12 months join storeBonusMs', async () => {
+    given(
+      subscriptionRow({ billingChannel: 'APP_STORE', storeProductId: 'anyrent_merchant_annual', autoRenew: true, storeBonusMs: 2 * DAY }),
+      PRO
+    );
+    await changePlan(70, 2, 'annual', { actorRole: 'ADMIN', payment: pay, billing: manualExtensionBilling });
+    const data = written();
+    expect(data.planId).toBe(2);
+    expect(data.currentPeriodEnd.toISOString()).toBe(NEW_END);
+    expect(data.storeBonusMs).toBe(2 * DAY + (Date.parse(NEW_END) - END.getTime()));
+    for (const key of ['billingChannel', 'autoRenew', 'storeProductId', 'currentPeriodStart', 'amount', 'interval']) {
+      expect(data).not.toHaveProperty(key);
+    }
+  });
+
+  it('A10: no store plan running: the plan change is manual billing, no credit kept', async () => {
+    given(subscriptionRow({ billingChannel: 'PLAY_STORE', storeProductId: 'anyrent_merchant_annual', status: 'EXPIRED', currentPeriodEnd: new Date('2026-11-01T16:59:59.999Z'), storeBonusMs: DAY }), PRO);
+    await changePlan(70, 2, 'annual', { actorRole: 'ADMIN', payment: pay, billing: manualExtensionBilling });
+    expect(written()).toMatchObject({ billingChannel: 'MANUAL', autoRenew: false, storeProductId: null, billingIssueAt: null, storeBonusMs: null });
   });
 });
 
@@ -246,7 +274,7 @@ describe('admin paths that change the plan count from the current end', () => {
 describe('POST /api/payments/manual with extendSubscription', () => {
   const body = { merchantId: 5, planId: 1, amount: 199000, currency: 'VND', method: 'BANK_TRANSFER', extendSubscription: true, monthsToExtend: 12 };
   const merchantWith = (subscription: Record<string, unknown>) =>
-    mockDb.merchants.findById.mockResolvedValue({ id: 5, name: 'Tiệm Áo Dài', subscription: { id: 70, status: 'ACTIVE', ...subscription } });
+    mockDb.merchants.findById.mockResolvedValue({ id: 5, name: 'Tiệm Áo Dài', subscription: { id: 70, status: 'ACTIVE', billingChannel: 'MANUAL', ...subscription } });
   const updated = () => mockDb.subscriptions.update.mock.calls[0][1];
 
   beforeEach(() => mockDb.plans.findById.mockResolvedValue(BASIC));

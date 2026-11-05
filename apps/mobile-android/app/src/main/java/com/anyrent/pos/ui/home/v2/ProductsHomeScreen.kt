@@ -93,6 +93,8 @@ import com.anyrent.pos.ui.navigation.OrdersChanged
 import com.anyrent.pos.R
 import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.PermissionManager
+import com.anyrent.pos.data.PlanRenewalStore
+import com.anyrent.pos.domain.settings.PlanRenewal
 import com.anyrent.pos.data.ProductsV2Api
 import com.anyrent.pos.data.model.Product
 import com.anyrent.pos.domain.products.AddButtonState
@@ -130,6 +132,8 @@ import kotlinx.coroutines.withContext
 fun ProductsHomeScreen(
     onOpenProduct: (Int) -> Unit,
     onOpenCart: () -> Unit,
+    /** #1459 the owner's "Gói còn N ngày · Gia hạn" line opens Gói dịch vụ */
+    onOpenSubscription: () -> Unit = {},
     viewModel: ProductsHomeViewModel = viewModel(factory = ProductsHomeViewModel.Factory()),
 ) {
     val state by viewModel.state.collectAsState()
@@ -159,7 +163,11 @@ fun ProductsHomeScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) scope.launch { guide.refresh() }
+            if (event == Lifecycle.Event.ON_RESUME) {
+                scope.launch { guide.refresh() }
+                // #1459: the plan status for the Home line, read at most every 10 minutes (owner only)
+                if (com.anyrent.pos.data.SessionStore.role == "MERCHANT") scope.launch { PlanRenewalStore.refresh() }
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -330,6 +338,7 @@ fun ProductsHomeScreen(
                 }
             }
             HorizontalDivider(color = DS.Colors.Border, modifier = Modifier.padding(top = 12.dp))
+            PlanDaysLeftLine(onOpenSubscription)
 
             PullToRefreshBox(
                 isRefreshing = state.refreshing,
@@ -624,4 +633,29 @@ internal fun ProductRow(
 internal object HomeCart {
     const val showsFloatingBar = false
     const val showsAddedToast = false
+}
+
+/**
+ * #1459: one calm line for the shop owner when the plan can be renewed (0..7 Vietnam days left, not renewing on its own):
+ * "Gói còn 5 ngày · Gia hạn" ("Gói hết hạn hôm nay · Gia hạn" on the last day). The rule is the server's `canRenew`.
+ */
+@Composable
+private fun PlanDaysLeftLine(onOpen: () -> Unit) {
+    val planStatus by PlanRenewalStore.status.collectAsState()
+    val days = PlanRenewal.homeLineDays(com.anyrent.pos.data.SessionStore.role, planStatus) ?: return
+    val text = if (days == 0) stringResource(R.string.plan_home_last_day) else stringResource(R.string.plan_home_days_left, days)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpen)
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .testTag("home.planLine"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text, fontSize = DS.TextSize.Secondary, color = DS.Colors.Text)
+        Text(" · ", fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
+        Text(stringResource(R.string.plan_home_renew), fontSize = DS.TextSize.Secondary, fontWeight = FontWeight.SemiBold, color = DS.Colors.Primary)
+    }
+    HorizontalDivider(color = DS.Colors.Border)
 }

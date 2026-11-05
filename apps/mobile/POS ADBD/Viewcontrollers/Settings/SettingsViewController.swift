@@ -99,8 +99,7 @@ class SettingsViewController: BaseViewControler {
         }
     }
     
-    /// Temporary: hide plan / renew UI until billing is ready to ship.
-    /// Flip to `true` to restore the Settings row, header plan badge, and Subscription screen.
+    /// The header plan badge (raw status colours) stays off; #1459 shows the plan on the Gói dịch vụ screen instead.
     private static let showsSubscriptionRenewal = false
 
     // Helper method to get items for a section based on user permissions
@@ -108,8 +107,8 @@ class SettingsViewController: BaseViewControler {
         switch section {
         case .account:
             var items: [SettingsItem] = [.account]
-            // MERCHANT-only: in-app subscription renew via RevenueCat
-            if Self.showsSubscriptionRenewal, User.account()?.role == .merchant {
+            // #1459 MERCHANT-only: Gói dịch vụ (renew / upgrade through the App Store)
+            if User.account()?.role == .merchant {
                 items.append(.subscription)
             }
             // Show user management if user has users.manage permission

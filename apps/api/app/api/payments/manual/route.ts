@@ -9,6 +9,7 @@ import { db } from '@rentalshop/database';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { addMonthsInTimeZone, handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {API, USER_ROLE, PAYMENT_STATUS, PLATFORM_OPS_ROLES} from '@rentalshop/constants';
+import { manualExtensionBilling } from '../../../../lib/plan-renewal';
 
 // Manual payment creation schema
 const createManualPaymentSchema = z.object({
@@ -60,13 +61,16 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
     // Create payment record using simplified database API
     const payment = await db.payments.create({
       amount: validatedData.amount,
+      // #1482: the revenue report needs the currency, the shop and the date of a manual payment
+      currency: validatedData.currency.toUpperCase(),
       method: validatedData.method,
       type: 'SUBSCRIPTION_PAYMENT',
       status: PAYMENT_STATUS.COMPLETED, // Manual payments are immediately completed
       reference: validatedData.invoiceNumber || `MANUAL-${Date.now()}`,
       notes: validatedData.description || `Manual payment for ${plan.name}`,
-      // merchantId: merchant.id, // TODO: Add merchantId field to PaymentCreateInput type
-      // subscriptionId: merchant.subscription?.id, // TODO: Add subscriptionId field to PaymentCreateInput type
+      merchantId: merchant.id,
+      ...(merchant.subscription?.id ? { subscriptionId: merchant.subscription.id } : {}),
+      processedAt: new Date(),
       processedBy: user.id
     });
 
@@ -74,7 +78,7 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
     if (validatedData.extendSubscription && merchant.subscription && validatedData.monthsToExtend) {
       const currentSubscription = merchant.subscription;
       if (currentSubscription.currentPeriodEnd) {
-        // From the current end while the plan still runs, from now once it has ended (#1474, owner rule; it always took
+        // From the current end while the plan still runs, from now once it has ended (#1470, owner rule; it always took
         // the old end). Calendar months on the Vietnam day, clamped (31 Jan + 1 = 28/29 Feb) (#588)
         const now = new Date();
         const currentEnd = new Date(currentSubscription.currentPeriodEnd);
@@ -83,8 +87,11 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
           validatedData.monthsToExtend
         );
 
+        // #1459 A10 / A13: a store plan still running keeps its store fields and the months join its credit;
+        // otherwise the shop is manual
+        const billing = manualExtensionBilling(currentSubscription, newEndDate);
         await db.subscriptions.update(currentSubscription.id, {
-          currentPeriodEnd: newEndDate,
+          ...billing.data,
           updatedAt: new Date()
         });
       }

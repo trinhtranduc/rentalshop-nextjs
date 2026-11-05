@@ -105,6 +105,24 @@ describe('POST /api/subscriptions/[id]/renew (#779)', () => {
     expect(mockTx.payment.create.mock.calls[1][0].data.amount).toBeCloseTo(165.3, 2);
   });
 
+  it('#1459 A10: a renewal recorded here is manual: no store channel, product or auto-renew left', async () => {
+    await call({ ...base, duration: 1 });
+    const data = mockTx.subscription.update.mock.calls[0][0].data;
+    expect(data).toMatchObject({ billingChannel: 'MANUAL', autoRenew: false, storeProductId: null, billingIssueAt: null });
+  });
+
+  it('#1459 A13: an auto-renewing store plan stays on the store; the months join the credit, start and price stay', async () => {
+    givenSubscription({ billingChannel: 'APP_STORE', storeProductId: 'anyrent_merchant_annual', autoRenew: true, storeBonusMs: 86400000, status: 'ACTIVE' });
+    await call({ ...base, duration: 1 });
+    const data = mockTx.subscription.update.mock.calls[0][0].data;
+    expect(data.currentPeriodEnd.toISOString()).toBe('2026-11-21T16:59:59.999Z');
+    expect(data.storeBonusMs).toBe(86400000 + (Date.parse('2026-11-21T16:59:59.999Z') - Date.parse('2026-10-21T16:59:59.999Z')));
+    for (const key of ['billingChannel', 'autoRenew', 'storeProductId', 'currentPeriodStart', 'amount', 'interval']) {
+      expect(data).not.toHaveProperty(key);
+    }
+    expect(mockTx.payment.create).toHaveBeenCalledTimes(1);
+  });
+
   it('not expired: the new period continues from the current end (days left kept)', async () => {
     await call({ ...base, duration: 1 });
     const data = mockTx.subscription.update.mock.calls[0][0].data;
