@@ -61,13 +61,16 @@ export const POST = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextR
     // Create payment record using simplified database API
     const payment = await db.payments.create({
       amount: validatedData.amount,
+      // #1482: the revenue report needs the currency, the shop and the date of a manual payment
+      currency: validatedData.currency.toUpperCase(),
       method: validatedData.method,
       type: 'SUBSCRIPTION_PAYMENT',
       status: PAYMENT_STATUS.COMPLETED, // Manual payments are immediately completed
       reference: validatedData.invoiceNumber || `MANUAL-${Date.now()}`,
       notes: validatedData.description || `Manual payment for ${plan.name}`,
-      // merchantId: merchant.id, // TODO: Add merchantId field to PaymentCreateInput type
-      // subscriptionId: merchant.subscription?.id, // TODO: Add subscriptionId field to PaymentCreateInput type
+      merchantId: merchant.id,
+      ...(merchant.subscription?.id ? { subscriptionId: merchant.subscription.id } : {}),
+      processedAt: new Date(),
       processedBy: user.id
     });
 

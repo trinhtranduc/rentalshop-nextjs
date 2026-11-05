@@ -520,6 +520,8 @@ model Payment {
   failureReason  String?
   metadata       String?
   processedAt    DateTime?
+  /// #1482 when the payment became REFUNDED (RevenueCat refund event time); null for other payments and for refunds made before this column
+  refundedAt     DateTime?
   processedBy    String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -541,6 +543,7 @@ model Payment {
   @@index([method])
   @@index([currency])
   @@index([status, processedAt])
+  @@index([status, refundedAt])
 }
 
 model Plan {

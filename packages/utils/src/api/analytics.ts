@@ -305,6 +305,18 @@ export const analyticsApi = {
   },
 
   /**
+   * #1482 admin: money received from plan payments, for `month` (YYYY-MM) or `year` (YYYY). ADMIN / OPS only.
+   * `data` is the report built by `apps/api/lib/admin-revenue.ts`.
+   */
+  async getAdminMonthlyRevenue(selection: { month: string } | { year: number }): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if ('month' in selection) params.set('month', selection.month);
+    else params.set('year', String(selection.year));
+    const response = await authenticatedFetch(`${apiUrls.analytics.adminRevenueMonthly}?${params.toString()}`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /**
    * Get top customers
    */
   async getTopCustomers(filters?: AnalyticsFilters): Promise<ApiResponse<any>> {

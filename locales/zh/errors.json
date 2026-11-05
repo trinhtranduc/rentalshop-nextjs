@@ -109,5 +109,6 @@
   "INSTALLMENT_LOYALTY_UNSUPPORTED": "分阶段收押金的订单不能使用积分。",
   "DEPOSIT_SETTINGS_INVALID": "押金设置无效。每个模板 1 到 3 个阶段，百分比之和不超过 100，模板最多 10 个。",
   "CANCEL_AMOUNTS_MISMATCH": "保留的金额超过已收金额，或金额无效。",
-  "CANCELLED_ORDER_KEEPS_AMOUNT": "已取消但保留了款项的订单需保留在历史记录中，无法删除。"
+  "CANCELLED_ORDER_KEEPS_AMOUNT": "已取消但保留了款项的订单需保留在历史记录中，无法删除。",
+  "ADMIN_REVENUE_SUCCESS": "已获取收入"
 }
