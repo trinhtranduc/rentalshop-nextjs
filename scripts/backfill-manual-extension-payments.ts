@@ -4,8 +4,10 @@
  * "Plan revenue" block counts them in the right month.
  *
  * Step 1 (read only):   tsx scripts/backfill-manual-extension-payments.ts plan --out manual-extensions.csv
- *   Lists every extension activity that has no Payment. Review the CSV: `include` is "yes" for the ready rows; set it to
- *   "yes" and fill `amount` where the money was received, empty it where the extension was free. Nothing is written.
+ *   Lists every extension activity that has no Payment. Review the CSV: `include` is "yes" for the ready rows (the amount
+ *   is the one stored with the extension); the admin-route rows have no stored amount, so `amount` is an ESTIMATE from the
+ *   current Subscription (else the plan price) and `include` is empty: set "yes" where the money was received, fix `amount` if it was another price,
+ *   leave empty where the extension was free. Nothing is written.
  * Step 2 (writes):      tsx scripts/backfill-manual-extension-payments.ts apply --csv manual-extensions.csv [--confirm-write]
  *   Without --confirm-write it only prints what it would insert. Each Payment: PLAN_EXTENSION / COMPLETED / MANUAL,
  *   processedAt = the activity time, transactionId `backfill-1486-act-<activityId>` (so a second run inserts nothing).
@@ -46,7 +48,7 @@ async function load() {
   const subscriptionIds = [...new Set(activities.map((a) => a.subscriptionId))];
   const subscriptions = await prisma.subscription.findMany({
     where: { id: { in: subscriptionIds } },
-    select: { id: true, merchantId: true, currency: true, merchant: { select: { name: true } } },
+    select: { id: true, merchantId: true, currency: true, amount: true, period: true, merchant: { select: { name: true } }, plan: { select: { basePrice: true } } },
   });
   const payments = await prisma.payment.findMany({
     where: { subscriptionId: { in: subscriptionIds }, type: { in: ['SUBSCRIPTION_PAYMENT', 'PLAN_EXTENSION', 'PLAN_CHANGE'] as any }, status: { in: ['COMPLETED', 'REFUNDED'] as any } },
@@ -54,7 +56,7 @@ async function load() {
   });
   return {
     activities,
-    subscriptions: subscriptions.map((s) => ({ id: s.id, merchantId: s.merchantId, currency: s.currency, merchantName: s.merchant?.name ?? null })),
+    subscriptions: subscriptions.map((s) => ({ id: s.id, merchantId: s.merchantId, currency: s.currency, amount: s.amount, period: s.period, merchantName: s.merchant?.name ?? null, planBasePrice: s.plan?.basePrice ?? null })),
     payments,
   };
 }
@@ -68,7 +70,7 @@ async function plan() {
   const skipped = candidates.filter((c) => c.status === 'skip');
   const reasons = new Map<string, number>();
   for (const c of skipped) reasons.set(c.reason, (reasons.get(c.reason) ?? 0) + 1);
-  console.log(`activities: ${candidates.length} | ready: ${count('ready')} | needs amount: ${count('needs-amount')} | skipped: ${skipped.length}`);
+  console.log(`activities: ${candidates.length} | ready: ${count('ready')} | estimated: ${count('estimated')} | needs amount: ${count('needs-amount')} | skipped: ${skipped.length}`);
   for (const [reason, n] of reasons) console.log(`  skipped ${n}: ${reason}`);
   console.log(`written: ${out} (nothing was written to the database)`);
 }

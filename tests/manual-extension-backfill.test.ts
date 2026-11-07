@@ -1,7 +1,7 @@
 /**
  * #1486: rules of the back-fill of Payments for manual plan extensions (scripts/lib/manual-extension-backfill.ts).
  */
-import { approvedRows, parseCsv, planBackfill, toCsv, transactionIdOf, type ActivityRow } from '../scripts/lib/manual-extension-backfill';
+import { estimateFromSubscription, estimateAmount, approvedRows, parseCsv, planBackfill, toCsv, transactionIdOf, type ActivityRow } from '../scripts/lib/manual-extension-backfill';
 
 const at = (iso: string) => new Date(iso);
 const subs = [{ id: 7, merchantId: 70, currency: 'VND', merchantName: 'Shop, "A"' }];
@@ -33,9 +33,46 @@ describe('planBackfill', () => {
     expect(run([panel(5, { method: 'MANUAL_EXTENSION', amount: 0 }), panel(6, { method: 'MANUAL_EXTENSION' })].map((a) => a)).map((c) => c.status)).toEqual(['skip', 'skip']);
   });
 
-  it('the admin route stores no amount: needs an amount', () => {
+  it('the admin route stores no amount and the plan price is unknown: needs an amount', () => {
     const admin: ActivityRow = { id: 8, subscriptionId: 7, type: 'MANUAL_EXTENSION', metadata: JSON.stringify({ months: 1 }), createdAt: at('2026-10-01T00:00:00.000Z') };
     expect(run([admin])[0]).toMatchObject({ status: 'needs-amount', amount: null, source: 'admin' });
+  });
+
+  it('the admin route with dates and a plan price: an estimate, never ready (the owner confirms it)', () => {
+    const admin: ActivityRow = {
+      id: 13, subscriptionId: 7, type: 'MANUAL_EXTENSION', createdAt: at('2026-10-01T00:00:00.000Z'),
+      metadata: JSON.stringify({ months: 1, previousEnd: '2026-10-10T16:59:59.000Z', newEnd: '2026-11-10T16:59:59.000Z' }),
+    };
+    const [c] = planBackfill({ activities: [admin], subscriptions: [{ ...subs[0], planBasePrice: 300000 }], payments: [] });
+    expect(c.status).toBe('estimated');
+    expect(c.amount).toBe(300000);
+    expect(toCsv([c]).split('\n')[1].startsWith(',')).toBe(true); // include left empty
+  });
+
+  it('the current Subscription wins over the plan price: an annual price of 1.080.000 for a 1-month extension', () => {
+    const admin: ActivityRow = {
+      id: 14, subscriptionId: 7, type: 'MANUAL_EXTENSION', createdAt: at('2026-10-01T00:00:00.000Z'),
+      metadata: JSON.stringify({ months: 1, previousEnd: '2026-01-10T16:59:59.000Z', newEnd: '2026-02-10T16:59:59.000Z' }),
+    };
+    const sub = { ...subs[0], amount: 1080000, period: 12, planBasePrice: 999999 };
+    const [c] = planBackfill({ activities: [admin], subscriptions: [sub], payments: [] });
+    expect(c.status).toBe('estimated');
+    expect(c.amount).toBe(Math.round((1080000 * 31) / 365));
+    expect(c.reason).toContain('current subscription');
+  });
+
+  it('estimateFromSubscription: one full cycle is the cycle price; no price or dates give null', () => {
+    const cycle = { previousEnd: '2026-01-10T16:59:59.000Z', newEnd: '2026-02-10T16:59:59.000Z' };
+    expect(estimateFromSubscription(cycle, 300000, 1)).toBe(300000);
+    expect(estimateFromSubscription(cycle, 0, 1)).toBeNull();
+    expect(estimateFromSubscription({}, 300000, 1)).toBeNull();
+  });
+
+  it('estimateAmount: a year is the annual price (10% off), missing dates or price give null', () => {
+    const dates = { previousEnd: '2026-01-10T16:59:59.000Z', newEnd: '2027-01-10T16:59:59.000Z' };
+    expect(estimateAmount({ months: 12, ...dates }, 100000)).toBe(1080000);
+    expect(estimateAmount({ months: 12 }, 100000)).toBeNull();
+    expect(estimateAmount({ months: 1, ...dates }, 0)).toBeNull();
   });
 
   it('an extension that already has a Payment at that time is skipped; a Payment of another day is not', () => {

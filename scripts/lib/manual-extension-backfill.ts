@@ -5,8 +5,13 @@
  * Sources (SubscriptionActivity):
  * - `subscription_extended` (POST /api/subscriptions/[id]/extend): metadata has `method`, `amount` (the price of the dialog,
  *   a typed one or the calculated one), `newEndDate`.
- * - `MANUAL_EXTENSION` (POST /api/admin/subscriptions/[id]/extend): metadata has months / dates only, no amount.
+ * - `MANUAL_EXTENSION` (POST /api/admin/subscriptions/[id]/extend): metadata has months / dates only, no amount. The price
+ *   is then estimated, first from the shop's current Subscription (its `amount` is the price of one cycle of `period`
+ *   months: amount x extension days / cycle days), else the way the Extend dialog calculates it from the plan price.
+ *   It is today's price, not the one of that day: an estimate, never "ready", the owner confirms it.
  */
+import { calculateExtensionTotal } from '../../packages/utils/src/core/subscription-billing-calculations';
+import { addMonthsInTimeZone, civilDaysBetween } from '../../packages/utils/src/core/billing-dates';
 
 export const BACKFILL_ISSUE = 1486;
 export const TRANSACTION_PREFIX = `backfill-${BACKFILL_ISSUE}-act-`;
@@ -32,6 +37,11 @@ export interface SubscriptionRow {
   merchantId: number;
   currency: string | null;
   merchantName?: string | null;
+  /** Current Subscription: `amount` is the price of one cycle of `period` months (an annual plan: the whole year) */
+  amount?: number | null;
+  period?: number | null;
+  /** Plan price per month today (Plan.basePrice); used only to estimate an amount the activity did not store */
+  planBasePrice?: number | null;
 }
 
 export interface ExistingPaymentRow {
@@ -41,7 +51,7 @@ export interface ExistingPaymentRow {
   createdAt: Date;
 }
 
-export type CandidateStatus = 'ready' | 'needs-amount' | 'skip';
+export type CandidateStatus = 'ready' | 'estimated' | 'needs-amount' | 'skip';
 
 export interface Candidate {
   activityId: number;
@@ -69,6 +79,38 @@ export function parseMetadata(raw: string | null): Record<string, any> {
 
 export function transactionIdOf(activityId: number): string {
   return `${TRANSACTION_PREFIX}${activityId}`;
+}
+
+/** Interval the admin route writes for `months` (same mapping as the route) */
+const intervalOfMonths = (months: number) => (months <= 1 ? 'monthly' : months <= 3 ? 'quarterly' : months <= 6 ? 'semi_annual' : 'annual');
+
+/** Price of an extension from the plan price, as the dialog calculates it; null when the dates or the price are missing. */
+export function estimateAmount(meta: Record<string, any>, planBasePrice: number | null | undefined): number | null {
+  const previousEnd = meta.previousEnd ? new Date(meta.previousEnd) : null;
+  const newEnd = meta.newEnd ? new Date(meta.newEnd) : null;
+  const months = Number(meta.months);
+  if (!previousEnd || !newEnd || Number.isNaN(previousEnd.getTime()) || Number.isNaN(newEnd.getTime())) return null;
+  if (!planBasePrice || planBasePrice <= 0 || !Number.isFinite(months) || months <= 0) return null;
+  const { totalDue } = calculateExtensionTotal({
+    oldEndDate: previousEnd,
+    newEndDate: newEnd,
+    plan: { basePrice: planBasePrice },
+    selectedInterval: intervalOfMonths(months),
+  });
+  return Number.isFinite(totalDue) && totalDue > 0 ? Math.round(totalDue) : null;
+}
+
+/** Price of an extension from the shop's current Subscription: its cycle price x extension days / cycle days. */
+export function estimateFromSubscription(meta: Record<string, any>, amount: number | null | undefined, period: number | null | undefined): number | null {
+  const previousEnd = meta.previousEnd ? new Date(meta.previousEnd) : null;
+  const newEnd = meta.newEnd ? new Date(meta.newEnd) : null;
+  const cycleMonths = Number(period) > 0 ? Number(period) : 1;
+  if (!previousEnd || !newEnd || Number.isNaN(previousEnd.getTime()) || Number.isNaN(newEnd.getTime())) return null;
+  if (!amount || amount <= 0) return null;
+  const days = civilDaysBetween(previousEnd, newEnd);
+  const cycleDays = civilDaysBetween(previousEnd, addMonthsInTimeZone(previousEnd, cycleMonths));
+  if (days <= 0 || cycleDays <= 0) return null;
+  return Math.round((amount * days) / cycleDays);
 }
 
 const near = (a: Date, b: Date) => Math.abs(a.getTime() - b.getTime()) <= SAME_EVENT_WINDOW_MS;
@@ -121,7 +163,21 @@ export function planBackfill(input: {
       }
       // admin route: the activity never stored the amount (an amount only in the Payment, which the route failed to write)
       if (amount !== null && amount > 0) return { ...base, status: 'ready', reason: 'admin route, amount in the activity' };
-      return { ...base, status: 'needs-amount', reason: 'admin route stores no amount: fill it in, or leave it out if it was free' };
+      const fromSubscription = estimateFromSubscription(meta, sub.amount, sub.period);
+      const fromPlan = fromSubscription === null ? estimateAmount(meta, sub.planBasePrice) : null;
+      const estimate = fromSubscription ?? fromPlan;
+      if (estimate !== null) {
+        const source = fromSubscription !== null
+          ? `the current subscription (${sub.amount} per ${sub.period || 1} month cycle)`
+          : `the plan price (${sub.planBasePrice}/month)`;
+        return {
+          ...base,
+          amount: estimate,
+          status: 'estimated',
+          reason: `admin route stores no amount: estimated from ${source} for ${meta.months} month(s); set include=yes if it was paid, change the amount if it was not this price`,
+        };
+      }
+      return { ...base, status: 'needs-amount', reason: 'admin route stores no amount and no estimate (no plan price or dates): fill it in, or leave it out if it was free' };
     });
 }
 
