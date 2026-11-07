@@ -150,7 +150,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const { id } = await Promise.resolve(params);
-  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }: { user?: { id?: number; email?: string | null } }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, { user }: { user?: { id?: number; email?: string | null; role?: string } }) => {
     try {
       const merchantId = routeId(id);
       if (!merchantId) return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
@@ -171,6 +171,7 @@ export async function POST(
         transactionId: parsed.data.transactionId,
         reference: parsed.data.reference,
         createdBy: user?.email || (user?.id ? String(user.id) : undefined),
+        actorRole: user?.role,
       });
       return NextResponse.json(
         ResponseBuilder.success('MERCHANT_ADDON_ADDED', { addon: result.addon, payment: result.payment, quote: check.quote }),

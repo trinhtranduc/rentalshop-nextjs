@@ -8,7 +8,7 @@ import { prisma } from './client';
 import type { AddonPrice, Payment, PlanLimitAddon } from '@prisma/client';
 import type { AddonPriceCreateInput, AddonPriceUpdateInput, AddonQuote, AddonRenewalLine, LimitKind } from '@rentalshop/utils';
 import { addonColumnsFor, isFeatureAddon, LIMIT_KINDS } from '@rentalshop/utils';
-import { MODULE_KEY } from '@rentalshop/constants';
+import { MODULE_KEY, planPaymentState } from '@rentalshop/constants';
 import { provisionDefaultLoyaltyProgram } from './loyalty-provision';
 
 const LIMIT_KIND_SET = new Set<string>(LIMIT_KINDS);
@@ -82,6 +82,8 @@ export interface AddMerchantAddonInput {
   transactionId?: string;
   reference?: string;
   createdBy?: string;
+  /** #1486: role of the user who enters the payment (staff entering a transfer / cash payment = money received) */
+  actorRole?: string;
 }
 
 export const simplifiedMerchantAddons = {
@@ -145,14 +147,14 @@ export const simplifiedMerchantAddons = {
             currency: 'VND',
             method: method as any,
             type: 'PLAN_CHANGE' as any,
-            status: (method === 'STRIPE' ? 'COMPLETED' : 'PENDING') as any,
+            status: planPaymentState({ method, actorRole: input.actorRole }).status as any,
             transactionId: input.transactionId || undefined,
             reference: input.reference || undefined,
             description: feature
               ? `Add-on: ${addonPrice.name} (tính năng), còn ${quote.remainingDays} ngày`
               : `Add-on: ${addonPrice.name} ${amountText(addonPrice.packSize, packs)}${addonPrice.packSize === 1 ? ` ${addonPrice.limitKind}` : ` (+${packs * addonPrice.packSize} ${addonPrice.limitKind})`}, còn ${quote.remainingDays} ngày`,
             metadata: JSON.stringify({ addonId: addon.id, addonPriceId: addonPrice.id, packs: feature ? 1 : packs, unitPrice: addonPrice.monthlyPrice, ...(featureKey ? { featureKey } : {}), ...quote }),
-            processedAt: method === 'STRIPE' ? new Date() : null,
+            processedAt: planPaymentState({ method, actorRole: input.actorRole }).processedAt,
             processedBy: input.createdBy,
           },
         });
@@ -180,6 +182,7 @@ export const simplifiedMerchantAddons = {
     transactionId?: string;
     reference?: string;
     createdBy?: string;
+    actorRole?: string;
   }) => {
     const method = input.method || 'TRANSFER';
     return prisma.$transaction(async (tx) => {
@@ -197,12 +200,12 @@ export const simplifiedMerchantAddons = {
             currency: 'VND',
             method: method as any,
             type: 'PLAN_CHANGE' as any,
-            status: (method === 'STRIPE' ? 'COMPLETED' : 'PENDING') as any,
+            status: planPaymentState({ method, actorRole: input.actorRole }).status as any,
             transactionId: input.transactionId || undefined,
             reference: input.reference || undefined,
             description: `Add-on: ${input.name} +${input.extraPacks} gói (${input.packs} gói), còn ${input.quote.remainingDays} ngày`,
             metadata: JSON.stringify({ addonId: input.itemId, addonPriceId: input.addonPriceId, packs: input.packs, extraPacks: input.extraPacks, unitPrice: input.unitPrice, ...input.quote }),
-            processedAt: method === 'STRIPE' ? new Date() : null,
+            processedAt: planPaymentState({ method, actorRole: input.actorRole }).processedAt,
             processedBy: input.createdBy,
           },
         });

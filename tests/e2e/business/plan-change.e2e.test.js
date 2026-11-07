@@ -112,7 +112,7 @@ describePlan('BF-PLAN rules: no change in the middle of a period for a merchant;
     const r = await a.post(changeUrl(w), { planId: pro, billingInterval: 'monthly', ...payBody });
     expect({ status: r.status, code: r.body?.code }).toEqual({ status: 200, code: 'PLAN_CHANGED_SUCCESS' });
     expect(vnDaysBetween(start, end)).toBeGreaterThan(0);
-    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${PRO}:PENDING:TRANSFER`);
+    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${PRO}:COMPLETED:TRANSFER`); // #1486: an admin records money received
     expect(r.body.data.planChange.amountDue).toBeCloseTo(PRO, 2);
     const s = subRow(w.merchantId);
     expect(s).toMatchObject({ planId: pro, status: 'ACTIVE' });
@@ -139,7 +139,7 @@ describePlan('BF-PLAN rules: no change in the middle of a period for a merchant;
     const before = Date.now();
     const r = await m.post(changeUrl(w), { planId: basic, billingInterval: 'monthly', ...payBody });
     expect({ status: r.status, code: r.body?.code }).toEqual({ status: 200, code: 'PLAN_CHANGED_SUCCESS' });
-    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${BASIC}:PENDING:TRANSFER`); // no credit: the old period is over
+    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${BASIC}:PENDING:TRANSFER`); // no credit: the old period is over; a merchant's own transfer awaits staff (#1486)
     const s = subRow(w.merchantId);
     expect(s.planId).toBe(basic);
     expect(Date.parse(s.end)).toBeGreaterThan(before + 27 * DAY_MS);
@@ -197,7 +197,7 @@ describePlan('BF-PLAN merchant plan route (PUT /api/merchants/[id]/plan) follows
     expect(r.status).toBe(200);
     expect(vnDaysBetween(start, end)).toBeGreaterThan(0);
     const due = Math.round(PRO * 12 * 0.9);
-    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${due}:PENDING:TRANSFER`);
+    expect(paymentsOf(w.merchantId)).toBe(`PLAN_CHANGE:${due}:COMPLETED:TRANSFER`); // #1486
     expect(subRow(w.merchantId)).toMatchObject({ planId: pro, amount: PRO * 12 * 0.9 });
   });
 

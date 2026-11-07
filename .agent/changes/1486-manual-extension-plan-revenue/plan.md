@@ -9,6 +9,8 @@ Issue: #1486 · Status: in-progress · Spec: ./spec.md
 3. `SubscriptionExtendDialogEnhanced.tsx`: "Not charged" only for `FREE_METHODS`; new note under Method.
 4. `tests/e2e/business/plan-change.e2e.test.js` BF-PLAN-12 expects one Payment for the Manual extension.
 5. Row in `.agent/api-changes/LOG.md`.
+5b. `planPaymentState` in `packages/constants/src/status.ts`; used by `changePlan` (`packages/database/src/subscription.ts`), the renew route and the add-on `add` / `addPacks` (`packages/database/src/addon-price.ts`, actor role from the two add-on routes).
+5c. Script `pending` / `complete` commands: list and confirm the old PENDING plan payments, owner reviewed.
 6. Verify: `cd tests && npx jest api/addon-renewal-rules-routes api/admin-extend-paid-payment api/manual-extension-store-credit admin-dialogs-forms admin-renew-mobile-footer`.
 
 ## Files
