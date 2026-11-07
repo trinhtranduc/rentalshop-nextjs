@@ -137,6 +137,41 @@ describe('work tabs', () => {
   });
 });
 
+/** #1490: a deposit above the rent is held to the return; same numbers as tests/api/order-balance.test.ts and the apps */
+describe('deposit above the rent (#1490)', () => {
+  const rent = (patch: Record<string, unknown>) =>
+    ({ id: 9, orderNumber: '1', orderType: 'RENT', status: 'RESERVED', totalAmount: 100_000, depositAmount: 300_000, securityDeposit: 0, ...patch }) as any;
+  const balance = (patch: Record<string, unknown>) => orderBalance(rent(patch));
+
+  it('hand-over: the deposit above the rent never eats the collateral', () => {
+    expect(balance({ securityDeposit: 500_000 })).toEqual({ amountDue: 500_000, refundDue: 0 });
+    expect(balance({})).toEqual({ amountDue: 0, refundDue: 0 });
+    expect(balance({ securityDeposit: 500_000, payments: [{ amount: 500_000, status: 'COMPLETED', notes: 'PICKUP' }] })).toEqual({ amountDue: 0, refundDue: 0 });
+    // case 1: deposit below the order, unchanged
+    expect(balance({ totalAmount: 300_000, depositAmount: 100_000, securityDeposit: 500_000 })).toEqual({ amountDue: 700_000, refundDue: 0 });
+  });
+
+  it('return: the excess deposit goes back with the collateral, fees come off it', () => {
+    const picked = (patch: Record<string, unknown>) => balance({ status: 'PICKUPED', ...patch });
+    expect(picked({ securityDeposit: 500_000 })).toEqual({ amountDue: 0, refundDue: 700_000 });
+    expect(picked({ securityDeposit: 500_000, lateFee: 50_000 })).toEqual({ amountDue: 0, refundDue: 650_000 });
+    expect(picked({})).toEqual({ amountDue: 0, refundDue: 200_000 });
+    expect(picked({ lateFee: 50_000 })).toEqual({ amountDue: 0, refundDue: 150_000 });
+    expect(picked({ lateFee: 250_000 })).toEqual({ amountDue: 50_000, refundDue: 0 });
+    // case 1 and every deposit up to the rent: unchanged
+    expect(picked({ totalAmount: 300_000, depositAmount: 100_000, securityDeposit: 500_000 })).toEqual({ amountDue: 0, refundDue: 500_000 });
+    expect(picked({ totalAmount: 300_000, depositAmount: 100_000, securityDeposit: 500_000, lateFee: 50_000 })).toEqual({ amountDue: 0, refundDue: 450_000 });
+    expect(picked({ depositAmount: 100_000 })).toEqual({ amountDue: 0, refundDue: 0 });
+  });
+
+  it('the payment card names the excess deposit at return', () => {
+    const card = buildPaySummary(rent({ status: 'PICKUPED', securityDeposit: 500_000 }));
+    expect(card.rows).toContainEqual({ key: 'excessDeposit', amount: 200_000 });
+    expect(card.total).toEqual({ key: 'returnRefund', amount: 700_000 });
+    expect(buildPaySummary(rent({ status: 'PICKUPED', depositAmount: 100_000 })).rows.map((r) => r.key)).not.toContain('excessDeposit');
+  });
+});
+
 describe('order page', () => {
   const base = {
     id: 9,

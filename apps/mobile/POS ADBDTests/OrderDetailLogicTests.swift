@@ -98,6 +98,45 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertTrue(balance(.sale, .completed) == (600_000, 0))
     }
 
+    // MARK: Deposit above the rent (#1490), same numbers as tests/api/order-balance.test.ts
+
+    func testDepositAboveTheRentDoesNotEatTheCollateralAtHandOver() {
+        // case 2: rent 100.000, deposit 300.000, collateral 500.000
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 100_000, deposit: 300_000, securityDeposit: 500_000, payments: []).due, 500_000)
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 100_000, deposit: 300_000, securityDeposit: 0, payments: []).due, 0)
+        let collected = OrderPaymentLine(amount: 500_000, status: "COMPLETED", notes: "PICKUP")
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 100_000, deposit: 300_000, securityDeposit: 500_000, payments: [collected]).due, 0)
+        // case 1: deposit below the order, unchanged
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 300_000, deposit: 100_000, securityDeposit: 500_000, payments: []).due, 700_000)
+    }
+
+    func testReturnGivesBackTheExcessDepositWithTheCollateralMinusFees() {
+        func refund(_ late: Double, collateral: Double, deposit: Double, total: Double) -> (collect: Double, refund: Double) {
+            let money = OrderDetailLogic.returnMoney(lateFee: late, damageFee: 0, securityDeposit: collateral, payments: [],
+                                                     deposit: deposit, total: total)
+            return (money.collect, money.refund)
+        }
+        // case 2 with collateral
+        XCTAssertTrue(refund(0, collateral: 500_000, deposit: 300_000, total: 100_000) == (0, 700_000))
+        XCTAssertTrue(refund(50_000, collateral: 500_000, deposit: 300_000, total: 100_000) == (0, 650_000))
+        // case 2 without collateral
+        XCTAssertTrue(refund(0, collateral: 0, deposit: 300_000, total: 100_000) == (0, 200_000))
+        XCTAssertTrue(refund(50_000, collateral: 0, deposit: 300_000, total: 100_000) == (0, 150_000))
+        XCTAssertTrue(refund(250_000, collateral: 0, deposit: 300_000, total: 100_000) == (50_000, 0))
+        // case 1 and every deposit up to the rent: unchanged
+        XCTAssertTrue(refund(0, collateral: 500_000, deposit: 100_000, total: 300_000) == (0, 500_000))
+        XCTAssertTrue(refund(50_000, collateral: 500_000, deposit: 100_000, total: 300_000) == (0, 450_000))
+        XCTAssertTrue(refund(0, collateral: 0, deposit: 100_000, total: 100_000) == (0, 0))
+        XCTAssertTrue(refund(0, collateral: 200_000, deposit: 50_000, total: 100_000) == (0, 200_000))
+    }
+
+    func testBalanceUsesTheExcessDepositAtReturn() {
+        let result = OrderDetailLogic.balance(orderType: .rent, status: .pickuped, total: 100_000, deposit: 300_000,
+                                              securityDeposit: 500_000, lateFee: 0, damageFee: 0, payments: [])
+        XCTAssertEqual(result.amountDue, 0)
+        XCTAssertEqual(result.refundDue, 700_000)
+    }
+
     // MARK: Note colours (#1430)
 
     func testWarmNoteColoursAndTheBandStays() {

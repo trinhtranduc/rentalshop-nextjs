@@ -12,7 +12,7 @@ const rent = (extra: Record<string, unknown>) => ({ id: 1, orderNumber: '1', ord
 const pay = (notes: string, amount: number, status = 'COMPLETED') => ({ notes, amount, status });
 
 describe('handOverView', () => {
-  it('owner case: total 68, cọc 96, thế chân 96 → thu bây giờ 68, rows in iOS order', () => {
+  it('owner case: total 68, cọc 96, thế chân 96 → thu bây giờ 96 (#1490: the deposit above the rent does not eat the thế chân), rows in iOS order', () => {
     const o = rent({ totalAmount: 68, depositAmount: 96, securityDeposit: 96 });
     const m = handOverView(o);
     expect(m.rows).toEqual([
@@ -20,7 +20,7 @@ describe('handOverView', () => {
       { key: 'depositPaid', amount: 96 },
       { key: 'collateralMoney', amount: 96 },
     ]);
-    expect(m.due).toBe(68);
+    expect(m.due).toBe(96);
     expect(m.due).toBe(orderBalance(o).amountDue);
   });
 

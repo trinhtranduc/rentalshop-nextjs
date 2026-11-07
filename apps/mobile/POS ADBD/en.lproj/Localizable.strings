@@ -3271,3 +3271,5 @@
 /* #1464: the store kept this Apple ID's plan; short bottom links */
 "plan.storeHasPlan" = "This Apple ID already has a plan. The new period starts at the next renewal.";
 "plan.restoreShort" = "Restore";
+
+"Deposit above the rent" = "Deposit above the rent";

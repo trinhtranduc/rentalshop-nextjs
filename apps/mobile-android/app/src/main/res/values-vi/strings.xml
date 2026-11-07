@@ -2561,4 +2561,5 @@
     <!-- #1464: the store kept this Google account's plan; short bottom links -->
     <string name="plan_store_has_plan">Tài khoản Google Play này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.</string>
     <string name="plan_restore_short">Khôi phục</string>
+    <string name="detail_excess_deposit">Cọc dư so với tiền thuê</string>
 </resources>

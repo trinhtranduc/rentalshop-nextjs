@@ -114,6 +114,43 @@ class OrderDetailLogicTest {
         assertEquals(50_000.0, collect.settledBefore, 0.0)
     }
 
+    // #1490: deposit above the rent, same numbers as tests/api/order-balance.test.ts
+
+    @Test
+    fun `a deposit above the rent does not eat the collateral at hand-over`() {
+        // case 2: rent 100.000, deposit 300.000, collateral 500.000
+        assertEquals(500_000.0, OrderDetailLogic.handOver(100_000.0, 300_000.0, 500_000.0, emptyList()).collectNow, 0.0)
+        assertEquals(0.0, OrderDetailLogic.handOver(100_000.0, 300_000.0, 0.0, emptyList()).collectNow, 0.0)
+        val collected = listOf(BalancePayment(500_000.0, "COMPLETED", "PICKUP"))
+        assertEquals(0.0, OrderDetailLogic.handOver(100_000.0, 300_000.0, 500_000.0, collected).collectNow, 0.0)
+        // case 1: deposit below the order, unchanged
+        assertEquals(700_000.0, OrderDetailLogic.handOver(300_000.0, 100_000.0, 500_000.0, emptyList()).collectNow, 0.0)
+    }
+
+    @Test
+    fun `return gives back the excess deposit with the collateral minus fees`() {
+        fun r(late: Double, collateral: Double, deposit: Double, total: Double) =
+            OrderDetailLogic.returnMoney(late, 0.0, collateral, emptyList(), deposit, total).let { (it.collect + 0.0) to (it.refund + 0.0) } // + 0.0: no -0.0
+        // case 2 with collateral
+        assertEquals(0.0 to 700_000.0, r(0.0, 500_000.0, 300_000.0, 100_000.0))
+        assertEquals(0.0 to 650_000.0, r(50_000.0, 500_000.0, 300_000.0, 100_000.0))
+        // case 2 without collateral
+        assertEquals(0.0 to 200_000.0, r(0.0, 0.0, 300_000.0, 100_000.0))
+        assertEquals(0.0 to 150_000.0, r(50_000.0, 0.0, 300_000.0, 100_000.0))
+        assertEquals(50_000.0 to 0.0, r(250_000.0, 0.0, 300_000.0, 100_000.0))
+        // case 1 and every deposit up to the rent: unchanged
+        assertEquals(0.0 to 500_000.0, r(0.0, 500_000.0, 100_000.0, 300_000.0))
+        assertEquals(0.0 to 450_000.0, r(50_000.0, 500_000.0, 100_000.0, 300_000.0))
+        assertEquals(0.0 to 0.0, r(0.0, 0.0, 100_000.0, 100_000.0))
+        assertEquals(0.0 to 200_000.0, r(0.0, 200_000.0, 50_000.0, 100_000.0))
+    }
+
+    @Test
+    fun `balance uses the excess deposit at return`() {
+        val b = OrderDetailLogic.balance("RENT", "PICKUPED", 100_000.0, 300_000.0, 500_000.0, 0.0, 0.0, emptyList())
+        assertEquals(OrderBalance(0.0, 700_000.0), b)
+    }
+
     @Test
     fun `balance matches computeOrderBalance by type and status`() {
         fun b(type: String, status: String) = OrderDetailLogic.balance(

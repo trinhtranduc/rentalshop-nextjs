@@ -442,7 +442,7 @@ export interface HandOverMoney {
   deposit: number;
   collateral: number;
   paidBefore: number;
-  /** Thu khi giao: total − deposit + thế chân − completed PICKUP payments, never below 0 */
+  /** Thu khi giao: max(0, total − deposit) + thế chân − completed PICKUP payments, never below 0 (#1490: a deposit above the rent never eats the thế chân) */
   due: number;
 }
 
@@ -451,7 +451,7 @@ export function handOverMoney(o: OrderDetailLike): HandOverMoney {
   const deposit = pos(o.depositAmount);
   const collateral = pos(o.securityDeposit);
   const paidBefore = paidOf(o, 'PICKUP');
-  return { total, deposit, collateral, paidBefore, due: Math.max(0, total - deposit + collateral - paidBefore) };
+  return { total, deposit, collateral, paidBefore, due: Math.max(0, Math.max(0, total - deposit) + collateral - paidBefore) };
 }
 
 export interface ReturnMoney {
@@ -459,7 +459,9 @@ export interface ReturnMoney {
   damageFee: number;
   collateral: number;
   settledBefore: number;
-  /** late + damage − thế chân − completed RETURN_ADJUSTMENT payments; negative = give back */
+  /** #1490: the deposit above the rent, held since booking and given back at return; 0 for a deposit up to the rent */
+  excessDeposit: number;
+  /** late + damage − thế chân − completed RETURN_ADJUSTMENT payments − excess deposit; negative = give back */
   net: number;
   collect: number;
   refund: number;
@@ -471,8 +473,9 @@ export function returnMoney(o: OrderDetailLike, fees?: { lateFee?: number; damag
   const damageFee = pos(fees?.damageFee ?? o.damageFee);
   const collateral = pos(o.securityDeposit);
   const settledBefore = paidOf(o, 'RETURN_ADJUSTMENT');
-  const net = lateFee + damageFee - collateral - settledBefore;
-  return { lateFee, damageFee, collateral, settledBefore, net, collect: Math.max(0, net), refund: Math.max(0, -net) };
+  const excessDeposit = Math.max(0, pos(o.depositAmount) - pos(o.totalAmount));
+  const net = lateFee + damageFee - collateral - settledBefore - excessDeposit;
+  return { lateFee, damageFee, collateral, settledBefore, excessDeposit, net, collect: Math.max(0, net), refund: Math.max(0, -net) };
 }
 
 /** Same rule as the API (`apps/api/lib/order-balance.ts`), so the page and the list agree. */
@@ -552,6 +555,7 @@ export type PayRowKey =
   | 'collateral'
   | 'paidBefore'
   | 'settledBefore'
+  | 'excessDeposit'
   | 'lateFee'
   | 'damageFee';
 
@@ -608,6 +612,7 @@ export function buildPaySummary(o: OrderDetailLike): PaySummary {
   if (o.status === 'PICKUPED') {
     const m = returnMoney(o);
     if (m.settledBefore > 0) rows.push({ key: 'settledBefore', amount: m.settledBefore });
+    if (m.excessDeposit > 0) rows.push({ key: 'excessDeposit', amount: m.excessDeposit });
     const t = m.refund > 0 ? { key: 'returnRefund' as const, amount: m.refund } : m.collect > 0 ? { key: 'returnCollect' as const, amount: m.collect } : null;
     return { rows, total: t, discount, struck: false };
   }

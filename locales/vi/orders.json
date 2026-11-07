@@ -982,6 +982,7 @@
         "collateral": "Tiền thế chân",
         "paidBefore": "Đã thu trước",
         "settledBefore": "Đã thanh toán trước",
+        "excessDeposit": "Cọc dư so với tiền thuê",
         "lateFee": "Phí trễ",
         "damageFee": "Phụ phí",
         "collectAtPickup": "Thu khi giao",
@@ -1032,7 +1033,8 @@
           "paidBefore": "Đã thu trước",
           "fees": "Phí trễ + phụ phí",
           "collateralHeld": "Thế chân đang giữ",
-          "settledBefore": "Đã thanh toán trước"
+          "settledBefore": "Đã thanh toán trước",
+          "excessDeposit": "Cọc dư so với tiền thuê"
         },
         "result": {
           "due": "Thu bây giờ",

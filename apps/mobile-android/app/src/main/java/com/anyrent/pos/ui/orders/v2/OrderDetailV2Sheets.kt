@@ -167,7 +167,7 @@ internal fun ReturnSheet(
     var error by remember { mutableStateOf<String?>(null) }
     val late = lateText.toDoubleOrNull() ?: 0.0
     val damage = damageText.toDoubleOrNull() ?: 0.0
-    val money = OrderDetailLogic.returnMoney(late, damage, detail.securityDeposit, detail.balancePayments())
+    val money = OrderDetailLogic.returnMoney(late, damage, detail.securityDeposit, detail.balancePayments(), s.depositAmount, s.totalAmount)
     val lateDays = OrdersHomeLogic.lateDays(
         s.orderType, s.status, OrdersHomeLogic.parseInstant(s.pickupPlanAt), OrdersHomeLogic.parseInstant(s.returnPlanAt),
     )
@@ -201,6 +201,7 @@ internal fun ReturnSheet(
             MoneyRow(stringResource(R.string.detail_fees), formatMoneyVnd(money.fees))
             if (money.collateralMoney > 0) MoneyRow(stringResource(R.string.detail_collateral_held), formatMoneyVnd(-money.collateralMoney))
             if (money.settledBefore > 0) MoneyRow(stringResource(R.string.detail_settled_before), formatMoneyVnd(-money.settledBefore))
+            if (money.excessDeposit > 0) MoneyRow(stringResource(R.string.detail_excess_deposit), formatMoneyVnd(-money.excessDeposit))
             if (money.refund > 0) {
                 MoneyRow(stringResource(R.string.detail_give_back), formatMoneyVnd(money.refund), total = true, valueColor = DS.Status.Done.text)
             } else {
