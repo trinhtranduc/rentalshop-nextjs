@@ -53,3 +53,52 @@ describe('computeOrderBalance (#362)', () => {
     expect(computeOrderBalance({ ...order, securityDeposit: 700000 })).toEqual({ amountDue: 0, refundDue: 500000 });
   });
 });
+
+/**
+ * #1490 — the deposit (cọc) is held from booking to return. At hand-over the rent is `max(0, total - deposit)`, so a deposit
+ * above the rent never eats into the collateral; at return the excess deposit goes back with the collateral, minus fees.
+ */
+describe('computeOrderBalance with a deposit above the rent (#1490)', () => {
+  const reserved = (total: number, deposit: number, collateral: number, payments: ReturnType<typeof paid>[] = []) =>
+    computeOrderBalance({ orderType: 'RENT', status: 'RESERVED', totalAmount: total, depositAmount: deposit, securityDeposit: collateral, payments });
+  const picked = (total: number, deposit: number, collateral: number, fee = 0, extra: Record<string, unknown> = {}) =>
+    computeOrderBalance({ orderType: 'RENT', status: 'PICKUPED', totalAmount: total, depositAmount: deposit, securityDeposit: collateral, lateFee: fee, damageFee: 0, payments: [], ...extra });
+
+  it('case 1 (deposit below the order): 300.000 rent, 100.000 deposit, 500.000 collateral, unchanged', () => {
+    expect(reserved(300000, 100000, 500000)).toEqual({ amountDue: 700000, refundDue: 0 });
+    expect(picked(300000, 100000, 500000)).toEqual({ amountDue: 0, refundDue: 500000 });
+    expect(picked(300000, 100000, 500000, 50000)).toEqual({ amountDue: 0, refundDue: 450000 });
+  });
+
+  it('case 2 (deposit above the order): 100.000 rent, 300.000 deposit, 500.000 collateral', () => {
+    expect(reserved(100000, 300000, 500000)).toEqual({ amountDue: 500000, refundDue: 0 });
+    expect(picked(100000, 300000, 500000)).toEqual({ amountDue: 0, refundDue: 700000 });
+    expect(picked(100000, 300000, 500000, 50000)).toEqual({ amountDue: 0, refundDue: 650000 });
+  });
+
+  it('case 2: the collateral collected at hand-over is not asked for again', () => {
+    expect(reserved(100000, 300000, 500000, [paid(500000, 'PICKUP')])).toEqual({ amountDue: 0, refundDue: 0 });
+  });
+
+  it('case 2 without collateral: nothing at hand-over, the excess deposit comes back at return', () => {
+    expect(reserved(100000, 300000, 0)).toEqual({ amountDue: 0, refundDue: 0 });
+    expect(picked(100000, 300000, 0)).toEqual({ amountDue: 0, refundDue: 200000 });
+    expect(picked(100000, 300000, 0, 50000)).toEqual({ amountDue: 0, refundDue: 150000 });
+    expect(picked(100000, 300000, 0, 250000)).toEqual({ amountDue: 50000, refundDue: 0 });
+  });
+
+  it('a deposit equal to or below the rent behaves as before', () => {
+    expect(reserved(100000, 100000, 0)).toEqual({ amountDue: 0, refundDue: 0 });
+    expect(picked(100000, 100000, 0)).toEqual({ amountDue: 0, refundDue: 0 });
+    expect(reserved(100000, 50000, 0)).toEqual({ amountDue: 50000, refundDue: 0 });
+    expect(reserved(100000, 50000, 200000)).toEqual({ amountDue: 250000, refundDue: 0 });
+    expect(picked(100000, 50000, 200000)).toEqual({ amountDue: 0, refundDue: 200000 });
+    expect(reserved(100000, 0, 0)).toEqual({ amountDue: 100000, refundDue: 0 });
+    expect(picked(100000, 0, 0)).toEqual({ amountDue: 0, refundDue: 0 });
+  });
+
+  it('an extended rental: the excess deposit pays part of the extra rent', () => {
+    // pickup total 100.000, extended to 500.000 (extra 400.000), deposit 300.000 (excess 200.000): 200.000 due
+    expect(picked(500000, 300000, 0, 0, { pickupTotalAmount: 100000 })).toEqual({ amountDue: 200000, refundDue: 0 });
+  });
+});
