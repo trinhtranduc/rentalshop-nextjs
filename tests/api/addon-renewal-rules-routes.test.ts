@@ -171,6 +171,57 @@ describe('extend counts the renewed add-ons', () => {
   });
 });
 
+describe('extend: which methods leave a Payment (counts in the admin Plan revenue)', () => {
+  const now = Date.now();
+  const sub = { id: 7, merchantId: 5, planId: 1, currency: 'VND', interval: 'month', intervalCount: 1, currentPeriodStart: new Date(now - 10 * DAY), currentPeriodEnd: new Date(now + 20 * DAY), plan: { id: 1, name: 'P', basePrice: 300000, currency: 'VND' } };
+  const newEnd = () => new Date(sub.currentPeriodEnd.getTime() + 15 * DAY).toISOString();
+  const post = (body: Record<string, unknown>) =>
+    extend(req({ newEndDate: newEnd(), sendEmail: false, ...body }, 'http://x/api/subscriptions/7/extend'), { params: { id: '7' } }) as any;
+
+  beforeEach(() => {
+    mockTx.payment.create.mockClear();
+    mockDb.subscriptions.findById.mockResolvedValue(sub);
+    mockDb.merchantAddons.renewalItems.mockResolvedValue({ items: [], catalog: new Map() });
+  });
+
+  it('Manual Extension with a typed amount writes a PLAN_EXTENSION Payment of that amount', async () => {
+    const res = await post({ method: 'MANUAL_EXTENSION', amount: 500000 });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.payment.create.mock.calls[0][0].data).toMatchObject({ type: 'PLAN_EXTENSION', status: 'COMPLETED', amount: 500000, merchantId: 5 });
+  });
+
+  it('Manual Extension without an amount (auto-calculated) writes no Payment', async () => {
+    const res = await post({ method: 'MANUAL_EXTENSION' });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create).not.toHaveBeenCalled();
+  });
+
+  it('a method left out defaults to Manual Extension: no amount, no Payment', async () => {
+    const res = await post({});
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create).not.toHaveBeenCalled();
+  });
+
+  it('Manual Extension with amount 0 writes no Payment', async () => {
+    const res = await post({ method: 'MANUAL_EXTENSION', amount: 0 });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create).not.toHaveBeenCalled();
+  });
+
+  it.each(['ADMIN_EXTENSION', 'COMPENSATION'])('%s stays free even with an amount', async (method) => {
+    const res = await post({ method, amount: 500000 });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create).not.toHaveBeenCalled();
+  });
+
+  it('Payment Received with a typed amount still writes the Payment', async () => {
+    const res = await post({ method: 'PAYMENT_RECEIVED', amount: 400000 });
+    expect(res.status).toBe(200);
+    expect(mockTx.payment.create.mock.calls[0][0].data).toMatchObject({ type: 'PLAN_EXTENSION', amount: 400000 });
+  });
+});
+
 describe('wiring (#870)', () => {
   it.each(['en', 'vi', 'ja', 'ko', 'zh'])('locales/%s/errors.json has PLAN_CHANGE_REMOVE_OUTLET_ADDONS', (lang) => {
     expect(JSON.stringify(JSON.parse(read(`locales/${lang}/errors.json`)))).toContain('"PLAN_CHANGE_REMOVE_OUTLET_ADDONS"');
