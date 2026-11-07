@@ -64,6 +64,7 @@ import {
 } from '../detail/actions-model';
 import { PhotoUploadWarning, PickupPhotosCard } from '../detail/photos';
 import { InstallmentsCard } from '../../installments/InstallmentsCard';
+import { CancelOutcomeCard } from '../../installments/CancelOutcomeCard';
 import { CancelWithKeptDialog, CollectDialog, EditPlanDialog, UnpaidStages } from '../../installments/InstallmentDialogs';
 import { canEditPlan, cancelView, newReference, unpaidAtPickup, type OrderInstallment, type PlanOrderLike } from '../../installments/installments-model';
 
@@ -539,6 +540,7 @@ export default function OrderDetailPage() {
             onEdit={() => setPlanOpen(true)}
             onVoid={setVoidStage}
           />
+          <CancelOutcomeCard order={planOrder} td={td} money={money} />
           <PaymentCard summary={pay} t={t} money={money} />
           {settingsOpen && (
             <SettingsSummary settings={settings} collateralLabel={collateralLabel} onEdit={editNotes} t={t} to={to as unknown as T} money={money} />

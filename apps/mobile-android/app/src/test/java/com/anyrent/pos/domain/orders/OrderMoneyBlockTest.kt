@@ -218,8 +218,8 @@ class OrderMoneyBlockTest {
         assertFalse(staged.hasLargeFigure)
         val single = block("CANCELLED", deposit = 230_000.0, cancelKept = 100_000.0)
         assertEquals(
-            "No stages: as before",
-            head + listOf(OrderMoneyLine.DepositPaid(230_000.0), OrderMoneyLine.CancelKept(100_000.0), OrderMoneyLine.CancelRefund(0.0)),
+            "#1491 no stages: the fee is kept inside the single deposit, the rest goes back",
+            head + listOf(OrderMoneyLine.DepositPaid(230_000.0), OrderMoneyLine.CancelKept(100_000.0), OrderMoneyLine.CancelRefund(130_000.0)),
             single.lines,
         )
     }

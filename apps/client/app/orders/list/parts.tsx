@@ -62,7 +62,9 @@ export function PayText({ pay, t, money }: { pay: RowPay | null; t: T; money: Mo
         ? 'text-ar-unprepared'
         : pay.kind === 'refund'
           ? 'text-ar-renting'
-          : 'text-ar-muted';
+          : pay.kind === 'kept'
+            ? 'text-ar-done'
+            : 'text-ar-muted';
   const text = pay.kind === 'noRevenue' ? t('pay.noRevenue') : t(`pay.${pay.kind}`, { amount: money(pay.amount) });
   return <span className={`whitespace-nowrap text-sm tabular-nums ${cls}`}>{text}</span>;
 }

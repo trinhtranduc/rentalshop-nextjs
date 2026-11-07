@@ -303,6 +303,24 @@ object DepositPlanLogic {
     /** Shop owner and outlet admin may keep part of the money when cancelling; staff refund everything */
     fun canKeepOnCancel(role: String?): Boolean = role == "MERCHANT" || role == "OUTLET_ADMIN"
 
+    /**
+     * #1491 what the cancel sheet is about, or null for the plain confirm: the collected stages of a plan order, or the single
+     * deposit of a RENT order without a plan that was not handed over (only for the roles that may keep money).
+     */
+    fun cancelSheetCollected(
+        hasPlan: Boolean,
+        planCollected: Double,
+        orderType: String,
+        status: String,
+        depositAmount: Double,
+        role: String?,
+    ): Double? {
+        if (hasPlan) return planCollected.takeIf { it > 0 }
+        if (orderType.uppercase() != "RENT" || status.uppercase() != "RESERVED") return null
+        if (!canKeepOnCancel(role)) return null
+        return depositAmount.takeIf { it > 0 }
+    }
+
     /** Only the shop owner changes "Cách thu cọc" (the API answers 403 to every other role) */
     fun canEditSettings(role: String?): Boolean = role == "MERCHANT"
 

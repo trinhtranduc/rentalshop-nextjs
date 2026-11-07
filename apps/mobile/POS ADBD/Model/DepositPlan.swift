@@ -224,6 +224,15 @@ enum DepositPlanLogic {
     /// Shop owner and outlet admin may keep part of the money when cancelling; staff refund everything
     static func canKeepOnCancel(role: Role?) -> Bool { role == .merchant || role == .outletAdmin }
 
+    /// #1491 what the cancel sheet is about, or nil for the plain confirm: the collected stages of a plan order, or the single
+    /// deposit of a RENT order without a plan that was not handed over (only for the roles that may keep money)
+    static func cancelSheetCollected(hasPlan: Bool, planCollected: Double, orderType: OrderType, status: OrderStatus,
+                                     depositAmount: Double, role: Role?) -> Double? {
+        if hasPlan { return planCollected > 0 ? planCollected : nil }
+        guard orderType == .rent, status == .reserved, canKeepOnCancel(role: role) else { return nil }
+        return depositAmount > 0 ? depositAmount : nil
+    }
+
     /// Staff take cash or bank transfer only
     static func collectMethods(role: Role?) -> [String] {
         (role?.isStaffLike ?? false) ? ["CASH", "TRANSFER"] : ["CASH", "TRANSFER", "CHECK"]

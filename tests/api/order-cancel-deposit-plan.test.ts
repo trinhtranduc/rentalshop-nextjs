@@ -176,16 +176,24 @@ describe.each([
     expect(fake.orders.get(10).cancelKeptAmount).toBe(0);
   });
 
-  it('an order without a plan: kept must be 0 (nothing was collected in stages); a plain cancel is as before', async () => {
+  it('an order without a plan (#1491): a fee is kept inside the deposit, above it is refused, a plain cancel is as before', async () => {
     setup([], planOrder({ depositPlan: null, depositAmount: 500_000 }));
-    const bad: any = await call({ cancelKeptAmount: 100 });
+    const bad: any = await call({ cancelKeptAmount: 600_000 });
     expect(bad.status).toBe(400);
     expect(bad.body.code).toBe('CANCEL_AMOUNTS_MISMATCH');
+    setup([], planOrder({ depositPlan: null, depositAmount: 500_000 }));
+    expect(((await call({ cancelKeptAmount: 100_000 })) as any).status).toBe(200);
+    expect(fake.payments).toHaveLength(0);
+    expect(fake.orders.get(10).depositAmount).toBe(500_000);
+    expect(fake.orders.get(10).cancelKeptAmount).toBe(100_000);
     setup([], planOrder({ depositPlan: null, depositAmount: 500_000 }));
     expect(((await call({})) as any).status).toBe(200);
     expect(fake.payments).toHaveLength(0);
     expect(fake.orders.get(10).depositAmount).toBe(500_000);
     expect(fake.orders.get(10).cancelKeptAmount).toBeUndefined();
+    // handed over: nothing can be kept
+    setup([], planOrder({ depositPlan: null, depositAmount: 500_000, status: 'PICKUPED' }));
+    expect(((await call({ cancelKeptAmount: 100 })) as any).status).toBe(400);
   });
 
   it('the cancellation amounts never reach the update of other fields', async () => {

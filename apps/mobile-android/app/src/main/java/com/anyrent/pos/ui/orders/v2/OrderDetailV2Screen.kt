@@ -293,9 +293,15 @@ fun OrderDetailV2Screen(
     fun requestHandOver() {
         if (unpaidStages.isNotEmpty()) showUnpaid = true else sheet = DetailSheet.HAND_OVER
     }
-    // An order with collected stages is cancelled in the sheet "Khách đã trả / Tiệm giữ lại / Hoàn cho khách"
+    // An order with collected stages is cancelled in the sheet "Khách đã trả / Tiệm giữ lại / Hoàn cho khách"; #1491 so is a
+    // RENT order without a plan that was not handed over, with its single deposit
+    fun cancelCollected(): Double? = detail?.let {
+        DepositPlanLogic.cancelSheetCollected(
+            hasPlan, it.deposit?.summary?.collected ?: 0.0, it.summary.orderType, it.summary.status, it.summary.depositAmount, role,
+        )
+    }
     fun requestCancel() {
-        if (hasPlan && (detail?.deposit?.summary?.collected ?: 0.0) > 0) cancelSheet = true else confirmCancel = true
+        if (cancelCollected() != null) cancelSheet = true else confirmCancel = true
     }
     val actions = detail?.let {
         OrderDetailLogic.actions(
@@ -659,7 +665,7 @@ fun OrderDetailV2Screen(
         if (cancelSheet) {
             CancelDepositOrderSheet(
                 orderNumber = OrdersBoardLogic.shortNumber(detail.summary.orderNumber),
-                collected = detail.deposit?.summary?.collected ?: 0.0,
+                collected = cancelCollected() ?: 0.0,
                 policy = detail.deposit?.policy ?: DepositModeStore.latest.value?.cancellationPolicy,
                 canKeep = DepositPlanLogic.canKeepOnCancel(role),
                 onDismiss = { cancelSheet = false },
