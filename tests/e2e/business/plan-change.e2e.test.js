@@ -244,7 +244,7 @@ describePlan('BF-PLAN extend: moves the end date only; a Payment only when the p
     expect({ interval: after.interval, intervalCount: after.intervalCount, amount: after.amount }).toEqual({ interval: 'annual', intervalCount: 12, amount: BASIC * 12 * 0.9 });
   });
 
-  test('BF-PLAN-12 a free grant (Manual / Admin extension, Compensation) moves the end and writes no Payment', async () => {
+  test('BF-PLAN-12 Manual Extension with a typed amount writes a Payment; Admin extension and Compensation stay free', async () => {
     const w = annualWorld('plan-12');
     const a = await admin();
     const id = subRow(w.merchantId).id;
@@ -252,7 +252,7 @@ describePlan('BF-PLAN extend: moves the end date only; a Payment only when the p
       const r = await a.post(`/api/subscriptions/${id}/extend`, { newEndDate: newEnd(30 + 10 * (i + 1)), amount: 40000, method, sendEmail: false });
       expect(r.status).toBe(200);
     }
-    expect(paymentsOf(w.merchantId)).toBe('');
+    expect(paymentsOf(w.merchantId)).toBe('PLAN_EXTENSION:40000:COMPLETED:MANUAL');
     expect(subRow(w.merchantId)).toMatchObject({ interval: 'annual', intervalCount: 12 });
   });
 

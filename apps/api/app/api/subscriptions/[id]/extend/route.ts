@@ -178,9 +178,15 @@ async function handleExtendSubscription(
           updatedAt: new Date()
         };
     
-    // Only "Payment Received" is money the shop paid: it leaves a Payment. The other methods (Manual / Admin
-    // extension, Compensation) are free grants and leave none (#785).
-    const paymentReceived = method === 'PAYMENT_RECEIVED' && calculatedAmount > 0;
+    // Money the shop paid leaves a Payment (a PLAN_EXTENSION row, so it counts in the admin Plan revenue):
+    // - "Payment Received": the amount, typed or auto-calculated.
+    // - "Manual Extension" (a bank transfer the admin records by hand): only an amount the admin typed. An amount
+    //   that was left out and auto-calculated is a suggestion, not money received, so it never becomes revenue.
+    // Admin extension and Compensation stay free grants and leave none (#785).
+    const amountTyped = amount !== undefined && amount !== null;
+    const paymentReceived =
+      calculatedAmount > 0 &&
+      (method === 'PAYMENT_RECEIVED' || (method === 'MANUAL_EXTENSION' && amountTyped));
     await prisma.$transaction(async (tx) => {
       await tx.subscription.update({ where: { id: subscriptionId }, data: updateData });
       // #870: continuing add-ons take today's price and pack size; marked / paused ones end at the old end
