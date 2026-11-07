@@ -32,6 +32,15 @@ beforeEach(() => {
   tx.payment.create.mockImplementation(async ({ data }: any) => ({ id: 1, ...data }));
 });
 
+describe('merchantAddons.add: payment state by who enters it (#1486)', () => {
+  it('an admin entering a cash payment records money received: COMPLETED, processed now', async () => {
+    await simplifiedMerchantAddons.add({ merchantId: 7, subscriptionId: 70, addonPrice: row, packs: 1, quote, method: 'CASH', transactionId: 'T2', actorRole: 'ADMIN' });
+    const pay = tx.payment.create.mock.calls[0][0].data;
+    expect(pay).toMatchObject({ type: 'PLAN_CHANGE', status: 'COMPLETED', method: 'CASH' });
+    expect(pay.processedAt).toBeInstanceOf(Date);
+  });
+});
+
 describe('merchantAddons.add for a feature (#943)', () => {
   it('writes the feature item (no limit columns, packs 1), the 59.400 payment, and switches the legacy row off', async () => {
     await simplifiedMerchantAddons.add({ merchantId: 7, subscriptionId: 70, addonPrice: row, packs: 1, quote, method: 'CASH', transactionId: 'T1' });

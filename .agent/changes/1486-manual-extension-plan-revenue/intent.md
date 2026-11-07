@@ -9,6 +9,10 @@ The admin Extend dialog defaults to Method "Manual Extension". `POST /api/subscr
 admin typed leaves no Payment and the Dashboard block "Plan revenue" (`apps/api/lib/admin-revenue.ts`, #1482) does not count it.
 The owner records bank transfers this way and sees revenue lower than the money received.
 
+The same gap exists for a manual upgrade, a manual add-on and a manual renewal: their Payment is written `PENDING` unless the
+method is STRIPE (`packages/database/src/subscription.ts:645`, `addon-price.ts:149,199`, `renew/route.ts:107`), and the Plan revenue counts
+`COMPLETED` / `REFUNDED` only (`apps/api/lib/admin-revenue.ts`). Nothing in the code moves them to `COMPLETED`.
+
 ## Proposed outcome
 
 A `MANUAL_EXTENSION` request with an `amount` > 0 writes a `PLAN_EXTENSION` / `COMPLETED` Payment, counted by `GET /api/admin/revenue/monthly`
@@ -30,4 +34,5 @@ The dialog always sends `amount` (pre-filled with the calculated price): the adm
 
 ## Decision log
 
+- 2026-11-07 — A transfer / manual / cash plan payment entered by ADMIN / OPS is money received: `COMPLETED` at the payment date; a merchant's own transfer stays `PENDING` (owner: "theo bạn đề xuất")
 - 2026-11-07 — Manual Extension counts only when the admin sent an amount, never for an auto-calculated one (owner: "manual cũng cần tính doanh thu như các gia hạn tự động")

@@ -11,6 +11,13 @@
  * Step 2 (writes):      tsx scripts/backfill-manual-extension-payments.ts apply --csv manual-extensions.csv [--confirm-write]
  *   Without --confirm-write it only prints what it would insert. Each Payment: PLAN_EXTENSION / COMPLETED / MANUAL,
  *   processedAt = the activity time, transactionId `backfill-1486-act-<activityId>` (so a second run inserts nothing).
+ *
+ * Pending plan payments (an upgrade, an add-on or a renewal by transfer / manual / cash was written PENDING before #1486,
+ * so the Plan revenue left it out):
+ *   tsx scripts/backfill-manual-extension-payments.ts pending --out pending-payments.csv      (read only)
+ *   tsx scripts/backfill-manual-extension-payments.ts complete --csv pending-payments.csv [--confirm-write]
+ *   `include` is empty: set "yes" where the money was received. `complete` sets status COMPLETED and processedAt (kept, else
+ *   the creation time = the payment date), only for rows still PENDING.
  * Uses DATABASE_URL from the environment; the database host is printed before anything is read or written.
  */
 import { PrismaClient } from '@prisma/client';
@@ -18,8 +25,12 @@ import * as fs from 'fs';
 import {
   ACTIVITY_TYPES,
   TRANSACTION_PREFIX,
+  PENDING_METHODS,
+  PENDING_TYPES,
+  approvedPaymentIds,
   approvedRows,
   parseCsv,
+  pendingToCsv,
   planBackfill,
   toCsv,
   transactionIdOf,
@@ -120,12 +131,53 @@ async function apply() {
   console.log(`${write ? 'inserted' : 'would insert'} ${inserted} payment(s), total ${total}. ${write ? '' : 'Add --confirm-write to write.'}`);
 }
 
+async function pending() {
+  const out = flag('--out') || 'pending-payments.csv';
+  const rows = await prisma.payment.findMany({
+    where: { status: 'PENDING' as any, type: { in: PENDING_TYPES as any }, method: { in: PENDING_METHODS as any } },
+    orderBy: { id: 'asc' },
+    select: {
+      id: true, merchantId: true, type: true, method: true, amount: true, currency: true, processedAt: true, createdAt: true,
+      processedBy: true, transactionId: true, description: true, merchant: { select: { name: true } },
+    },
+  });
+  fs.writeFileSync(out, pendingToCsv(rows.map((r) => ({ ...r, type: String(r.type), method: String(r.method), merchantName: r.merchant?.name ?? null }))));
+  console.log(`pending plan payments: ${rows.length}; written: ${out} (nothing was written to the database)`);
+}
+
+async function complete() {
+  const file = flag('--csv');
+  if (!file) throw new Error('complete needs --csv <reviewed file>');
+  const write = args.includes('--confirm-write');
+  const { ids, problems } = approvedPaymentIds(parseCsv(fs.readFileSync(file, 'utf8')));
+  if (problems.length) {
+    console.error('Fix the CSV first:\n  ' + problems.join('\n  '));
+    process.exit(1);
+  }
+  let done = 0;
+  for (const id of ids) {
+    const row = await prisma.payment.findUnique({ where: { id }, select: { id: true, status: true, type: true, method: true, amount: true, processedAt: true, createdAt: true } });
+    if (!row || String(row.status) !== 'PENDING' || !PENDING_TYPES.includes(String(row.type)) || !PENDING_METHODS.includes(String(row.method))) {
+      console.log(`skip payment ${id}: not a pending plan payment`);
+      continue;
+    }
+    const at = row.processedAt ?? row.createdAt;
+    if (!write) { console.log(`would complete: payment ${id} ${row.amount} at ${at.toISOString()}`); done++; continue; }
+    const result = await prisma.payment.updateMany({ where: { id, status: 'PENDING' as any }, data: { status: 'COMPLETED' as any, processedAt: at } });
+    console.log(result.count ? `completed: payment ${id} ${row.amount} at ${at.toISOString()}` : `skip payment ${id}: changed meanwhile`);
+    done += result.count;
+  }
+  console.log(`${write ? 'completed' : 'would complete'} ${done} payment(s). ${write ? '' : 'Add --confirm-write to write.'}`);
+}
+
 async function main() {
   console.log(`database: ${describeDatabase()}  (transaction ids: ${TRANSACTION_PREFIX}<activityId>)`);
   if (command === 'plan') await plan();
   else if (command === 'apply') await apply();
+  else if (command === 'pending') await pending();
+  else if (command === 'complete') await complete();
   else {
-    console.error('usage: plan --out <file.csv> | apply --csv <file.csv> [--confirm-write]');
+    console.error('usage: plan --out <file.csv> | apply --csv <file.csv> [--confirm-write] | pending --out <file.csv> | complete --csv <file.csv> [--confirm-write]');
     process.exit(1);
   }
 }

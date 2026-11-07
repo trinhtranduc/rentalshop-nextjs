@@ -75,6 +75,28 @@ export const PAYMENT_TYPE = {
 
 export type PaymentType = typeof PAYMENT_TYPE[keyof typeof PAYMENT_TYPE];
 
+/**
+ * #1486: the state of a plan payment (upgrade, add-on, renewal) written when it is recorded.
+ * - Card (STRIPE): COMPLETED now (the charge went through).
+ * - Platform staff (ADMIN / OPS) entering a TRANSFER / MANUAL / CASH payment: COMPLETED at `paymentDate` (else now). The
+ *   staff member records money the shop paid, so it counts in the admin Plan revenue (which counts COMPLETED only).
+ * - Anything else (a shop saying it paid by transfer): PENDING until staff confirm; not revenue yet.
+ */
+export function planPaymentState(input: {
+  method?: string | null;
+  actorRole?: string | null;
+  paymentDate?: Date | null;
+  now?: Date;
+}): { status: 'COMPLETED' | 'PENDING'; processedAt: Date | null } {
+  const now = input.now ?? new Date();
+  if (input.method === 'STRIPE') return { status: 'COMPLETED', processedAt: now };
+  const staff = input.actorRole === USER_ROLE.ADMIN || input.actorRole === USER_ROLE.OPS;
+  if (staff && (input.method === 'TRANSFER' || input.method === 'MANUAL' || input.method === 'CASH')) {
+    return { status: 'COMPLETED', processedAt: input.paymentDate ?? now };
+  }
+  return { status: 'PENDING', processedAt: input.paymentDate ?? null };
+}
+
 // ============================================================================
 // ORDER TYPES
 // ============================================================================

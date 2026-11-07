@@ -27,7 +27,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; addonId: string }> | { id: string; addonId: string } }
 ) {
   const { id, addonId } = await Promise.resolve(params);
-  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, ctx?: { user?: { id?: number; email?: string | null } }) => {
+  return withAuthRoles([USER_ROLE.ADMIN])(async (request: NextRequest, ctx?: { user?: { id?: number; email?: string | null; role?: string } }) => {
     try {
       const merchantId = routeId(id);
       const itemId = routeId(addonId);
@@ -44,7 +44,7 @@ export async function PATCH(
         // #943: a feature add-on is on/off, it has no packs
         if (isFeatureAddon(item)) return NextResponse.json(ResponseBuilder.error('INVALID_INPUT'), { status: 400 });
         const user = ctx?.user;
-        return changePacks(merchantId, item, parsed.data, user?.email || (user?.id ? String(user.id) : undefined));
+        return changePacks(merchantId, item, parsed.data, user?.email || (user?.id ? String(user.id) : undefined), user?.role);
       }
 
       const merchant = await findShop(merchantId);
@@ -108,7 +108,8 @@ async function changePacks(
   merchantId: number,
   item: ShopAddonItem,
   body: { packs?: number; method?: 'TRANSFER' | 'STRIPE'; transactionId?: string; reference?: string },
-  createdBy?: string
+  createdBy?: string,
+  actorRole?: string
 ) {
   const now = new Date();
   const packs = body.packs as number;
@@ -157,6 +158,7 @@ async function changePacks(
     transactionId: body.transactionId,
     reference: body.reference,
     createdBy,
+    actorRole,
   });
   return NextResponse.json(ResponseBuilder.success('MERCHANT_ADDON_UPDATED', { addon, payment, quote: check.quote }));
 }

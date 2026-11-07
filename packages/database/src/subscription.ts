@@ -6,7 +6,7 @@ import { prisma } from './client';
 import { applySubscriptionListWhere } from './subscription-list-where';
 import { simplifiedMerchantAddons } from './addon-price';
 import { ApiError, ErrorCode, addonRenewalLines, outletAddonsBlockPlan, canChangePlan, calculatePlanChangeTotal, calculateSubscriptionPrice, civilDaysBetween, getPricingBreakdown, storedBillingInterval, normalizeStartDate, normalizeEndDate, sendPlanChangeEmail, sendSubscriptionRenewalEmail, sendSubscriptionStatusChangeEmail } from '@rentalshop/utils';
-import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS } from '@rentalshop/constants';
+import { SUBSCRIPTION_STATUS, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, planPaymentState } from '@rentalshop/constants';
 import type { 
   Subscription, 
   Plan, 
@@ -633,7 +633,8 @@ export async function changePlan(
     // #870: continuing add-ons take today's price and pack size; marked / paused ones end at the old period end
     await simplifiedMerchantAddons.applyRenewal(tx, addonRenewal.lines, subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null, now);
     if (amountDue > 0) {
-      const paid = pay.method === PAYMENT_METHOD.STRIPE;
+      // #1486: staff entering a transfer / manual payment record money received (COMPLETED, dated paymentDate)
+      const state = planPaymentState({ method: pay.method, actorRole: options.actorRole, paymentDate: pay.paymentDate });
       await tx.payment.create({
         data: {
           subscriptionId: subscription.id,
@@ -642,11 +643,11 @@ export async function changePlan(
           currency,
           method: pay.method as any,
           type: PAYMENT_TYPE.PLAN_CHANGE as any,
-          status: (paid ? PAYMENT_STATUS.COMPLETED : PAYMENT_STATUS.PENDING) as any,
+          status: state.status as any,
           transactionId: pay.transactionId,
           reference: pay.reference || undefined,
           description: pay.description || `${oldPlanName} → ${plan.name} (${billingInterval})`,
-          processedAt: paid ? new Date() : pay.paymentDate ?? null,
+          processedAt: state.processedAt,
           createdAt: pay.paymentDate ?? new Date(),
         },
       });

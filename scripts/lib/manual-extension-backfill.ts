@@ -247,3 +247,50 @@ export function approvedRows(csvRows: Record<string, string>[]): { rows: Approve
   }
   return { rows, problems };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Pending plan payments (upgrade, add-on, renewal by transfer / manual / cash written as PENDING before #1486)
+// ---------------------------------------------------------------------------------------------------------------
+
+export const PENDING_TYPES = ['PLAN_CHANGE', 'SUBSCRIPTION_PAYMENT', 'PLAN_EXTENSION'];
+export const PENDING_METHODS = ['TRANSFER', 'MANUAL', 'CASH'];
+export const PENDING_CSV_HEADER = ['include', 'paymentId', 'merchantId', 'merchant', 'type', 'method', 'amount', 'currency', 'dateVN', 'processedBy', 'transactionId', 'description'];
+
+export interface PendingPaymentRow {
+  id: number;
+  merchantId: number | null;
+  merchantName?: string | null;
+  type: string;
+  method: string;
+  amount: number;
+  currency: string;
+  processedAt: Date | null;
+  createdAt: Date;
+  processedBy: string | null;
+  transactionId: string | null;
+  description: string | null;
+}
+
+/** CSV of the pending plan payments; `include` is left empty: the owner marks the ones whose money was received. */
+export function pendingToCsv(rows: PendingPaymentRow[]): string {
+  const lines = rows.map((r) =>
+    ['', r.id, r.merchantId, r.merchantName ?? '', r.type, r.method, r.amount, r.currency, vnDate(r.processedAt ?? r.createdAt), r.processedBy ?? '', r.transactionId ?? '', r.description ?? '']
+      .map(csvCell)
+      .join(',')
+  );
+  return [PENDING_CSV_HEADER.join(','), ...lines].join('\n') + '\n';
+}
+
+/** Payment ids the owner marked (`include` yes / y / 1 / true), without duplicates. */
+export function approvedPaymentIds(csvRows: Record<string, string>[]): { ids: number[]; problems: string[] } {
+  const ids: number[] = [];
+  const problems: string[] = [];
+  for (const r of csvRows) {
+    if (!['yes', 'y', '1', 'true'].includes((r.include || '').toLowerCase())) continue;
+    const id = Number(r.paymentId);
+    if (!Number.isInteger(id) || id <= 0) { problems.push(`bad paymentId "${r.paymentId}"`); continue; }
+    if (ids.includes(id)) { problems.push(`payment ${id} appears twice`); continue; }
+    ids.push(id);
+  }
+  return { ids, problems };
+}

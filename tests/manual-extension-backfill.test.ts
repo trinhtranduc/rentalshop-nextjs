@@ -1,7 +1,7 @@
 /**
  * #1486: rules of the back-fill of Payments for manual plan extensions (scripts/lib/manual-extension-backfill.ts).
  */
-import { estimateFromSubscription, estimateAmount, approvedRows, parseCsv, planBackfill, toCsv, transactionIdOf, type ActivityRow } from '../scripts/lib/manual-extension-backfill';
+import { approvedPaymentIds, pendingToCsv, estimateFromSubscription, estimateAmount, approvedRows, parseCsv, planBackfill, toCsv, transactionIdOf, type ActivityRow } from '../scripts/lib/manual-extension-backfill';
 
 const at = (iso: string) => new Date(iso);
 const subs = [{ id: 7, merchantId: 70, currency: 'VND', merchantName: 'Shop, "A"' }];
@@ -111,5 +111,22 @@ describe('csv', () => {
     ]);
     expect(rows).toEqual([{ activityId: 1, amount: 500000 }]);
     expect(problems).toHaveLength(3);
+  });
+});
+
+describe('pending plan payments', () => {
+  const row = { id: 31, merchantId: 70, merchantName: 'Shop, "A"', type: 'PLAN_CHANGE', method: 'TRANSFER', amount: 300000, currency: 'VND', processedAt: null, createdAt: at('2026-10-20T03:00:00.000Z'), processedBy: 'admin@x', transactionId: 'FT1', description: 'Basic → Pro' };
+
+  it('exports every row with include empty, dated by processedAt else createdAt (Vietnam time)', () => {
+    const [r] = parseCsv(pendingToCsv([row]));
+    expect(r).toMatchObject({ include: '', paymentId: '31', merchant: 'Shop, "A"', type: 'PLAN_CHANGE', amount: '300000', dateVN: '2026-10-20 10:00' });
+  });
+
+  it('approvedPaymentIds keeps the marked rows once and reports bad ones', () => {
+    const { ids, problems } = approvedPaymentIds([
+      { include: 'yes', paymentId: '31' }, { include: '', paymentId: '32' }, { include: 'y', paymentId: 'x' }, { include: '1', paymentId: '31' },
+    ]);
+    expect(ids).toEqual([31]);
+    expect(problems).toHaveLength(2);
   });
 });
