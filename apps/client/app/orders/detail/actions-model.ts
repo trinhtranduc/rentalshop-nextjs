@@ -15,7 +15,7 @@ export const MAX_NOTE_IMAGES = 3;
 export const noteCountLabel = (count: number) => (count > MAX_NOTE_IMAGES ? String(count) : `${count}/${MAX_NOTE_IMAGES}`);
 
 export type HandOverRowKey = 'orderTotal' | 'depositPaid' | 'collateralMoney' | 'paidBefore';
-export type ReturnRowKey = 'fees' | 'collateralHeld' | 'settledBefore';
+export type ReturnRowKey = 'fees' | 'collateralHeld' | 'settledBefore' | 'excessDeposit';
 
 export interface MoneyRow<K extends string> {
   key: K;
@@ -50,6 +50,7 @@ export function returnView(o: OrderDetailLike, fees: { lateFee: number; damageFe
   const rows: MoneyRow<ReturnRowKey>[] = [{ key: 'fees', amount: m.lateFee + m.damageFee }];
   if (m.collateral > 0) rows.push({ key: 'collateralHeld', amount: m.collateral });
   if (m.settledBefore > 0) rows.push({ key: 'settledBefore', amount: m.settledBefore });
+  if (m.excessDeposit > 0) rows.push({ key: 'excessDeposit', amount: m.excessDeposit });
   const result: ReturnResult = m.refund > 0 ? { kind: 'refund', amount: m.refund } : m.collect > 0 ? { kind: 'collect', amount: m.collect } : { kind: 'nothing', amount: 0 };
   return { rows, result };
 }

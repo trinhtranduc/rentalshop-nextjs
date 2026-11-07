@@ -3269,3 +3269,5 @@
 /* #1464: the store kept this Apple ID's plan; short bottom links */
 "plan.storeHasPlan" = "Apple ID này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.";
 "plan.restoreShort" = "Khôi phục";
+
+"Deposit above the rent" = "Cọc dư so với tiền thuê";

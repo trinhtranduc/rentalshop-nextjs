@@ -2591,4 +2591,5 @@
     <!-- #1464: the store kept this Google account's plan; short bottom links -->
     <string name="plan_store_has_plan">This Google Play account already has a plan. The new period starts at the next renewal.</string>
     <string name="plan_restore_short">Restore</string>
+    <string name="detail_excess_deposit">Deposit above the rent</string>
 </resources>
