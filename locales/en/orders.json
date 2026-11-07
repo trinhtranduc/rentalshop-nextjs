@@ -878,7 +878,8 @@
       "due": "to collect {amount}",
       "fee": "+ late fee {amount}",
       "refund": "refund {amount}",
-      "noRevenue": "no revenue"
+      "noRevenue": "no revenue",
+      "kept": "kept {amount}"
     },
     "empty": {
       "all": "No orders match these filters.",
@@ -990,7 +991,8 @@
         "saleCollected": "Collected",
         "saleTotal": "Order total",
         "saleDue": "To collect",
-        "noRevenue": "No revenue"
+        "noRevenue": "No revenue",
+        "cancelKept": "Revenue (fee kept)"
       },
       "settings": {
         "title": "Notes, collateral and fees",

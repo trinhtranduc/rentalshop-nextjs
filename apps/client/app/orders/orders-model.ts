@@ -224,6 +224,8 @@ export function rangeOf(page: number, limit: number, total: number): { from: num
 export interface OrderRowLike {
   id: number;
   orderNumber: string;
+  /** #1491: what the shop kept when it cancelled (a fee inside the deposit); null / 0 = everything went back */
+  cancelKeptAmount?: Num;
   orderType?: string | null;
   status?: string | null;
   customerName?: string | null;
@@ -262,6 +264,7 @@ export type RowPay =
   | { kind: 'due'; amount: number; urgent: boolean }
   | { kind: 'fee'; amount: number }
   | { kind: 'refund'; amount: number }
+  | { kind: 'kept'; amount: number }
   | { kind: 'noRevenue' };
 
 export interface OrderRow {
@@ -308,7 +311,7 @@ export function buildOrderRow(o: OrderRowLike, todayKey: string, toDayKey: ToDay
   if (status === 'CANCELLED') {
     const day = key(o.updatedAt) || key(o.createdAt);
     schedule = day ? { kind: 'cancelled', day } : null;
-    pay = { kind: 'noRevenue' };
+    pay = pos(o.cancelKeptAmount) > 0 ? { kind: 'kept', amount: pos(o.cancelKeptAmount) } : { kind: 'noRevenue' };
   } else if (isSale) {
     const day = key(o.createdAt);
     schedule = day ? { kind: 'sale', day } : null;
@@ -555,7 +558,7 @@ export type PayRowKey =
   | 'lateFee'
   | 'damageFee';
 
-export type PayTotalKey = 'collectAtPickup' | 'returnRefund' | 'returnCollect' | 'saleCollected' | 'saleTotal' | 'saleDue' | 'noRevenue';
+export type PayTotalKey = 'collectAtPickup' | 'returnRefund' | 'returnCollect' | 'saleCollected' | 'saleTotal' | 'saleDue' | 'noRevenue' | 'cancelKept';
 
 export interface PayRow {
   key: PayRowKey;
@@ -611,7 +614,9 @@ export function buildPaySummary(o: OrderDetailLike): PaySummary {
     const t = m.refund > 0 ? { key: 'returnRefund' as const, amount: m.refund } : m.collect > 0 ? { key: 'returnCollect' as const, amount: m.collect } : null;
     return { rows, total: t, discount, struck: false };
   }
-  return { rows, total: cancelled ? { key: 'noRevenue', amount: null } : null, discount, struck: cancelled };
+  // #1491: a cancelled order that kept a fee has that fee as revenue
+  const keptFee = cancelled ? pos(o.cancelKeptAmount) : 0;
+  return { rows, total: cancelled ? (keptFee > 0 ? { key: 'cancelKept', amount: keptFee } : { key: 'noRevenue', amount: null }) : null, discount, struck: cancelled };
 }
 
 /** #670: who did a step; `staff` adds "(nhân viên)" */

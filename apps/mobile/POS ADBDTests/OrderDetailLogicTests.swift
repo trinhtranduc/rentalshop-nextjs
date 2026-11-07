@@ -800,7 +800,8 @@ final class OrderMoneyBlockTests: XCTestCase {
         XCTAssertEqual(staged.plan?.shownKeys, ["i1", "i2", "rest"], "Only a booked order merges the last stage")
         XCTAssertFalse(staged.hasLargeFigure)
         let single = block(.cancelled, deposit: 230_000, cancelKept: 100_000)
-        XCTAssertEqual(single.lines, head + [.depositPaid(230_000), .cancelKept(100_000), .cancelRefund(0)], "No stages: as before")
+        XCTAssertEqual(single.lines, head + [.depositPaid(230_000), .cancelKept(100_000), .cancelRefund(130_000)],
+                       "#1491 no stages: the fee is kept inside the single deposit, the rest goes back")
     }
 
     func testABookedOrderWithNothingLeftKeepsThuKhiGiao() {

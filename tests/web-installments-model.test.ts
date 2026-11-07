@@ -332,10 +332,53 @@ describe('cancel: customer paid / shop keeps / refund', () => {
     expect(cancelView(order(), 'OUTLET_STAFF', 1_800_000)).toMatchObject({ show: true, kept: 0, refund: 3_600_000, canEditKept: false });
   });
 
-  it('the plain dialog stays for an order without a plan, nothing collected, or one already handed over', () => {
-    expect(cancelView(order({ hasDepositPlan: false }), 'MERCHANT', 0).show).toBe(false);
+  it('the plain dialog stays for an order with nothing collected, or one already handed over', () => {
     expect(cancelView(order({ depositAmount: 0 }), 'MERCHANT', 0).show).toBe(false);
     expect(cancelView(order({ status: 'PICKUPED' }), 'MERCHANT', 0).show).toBe(false);
+    expect(cancelView(order({ hasDepositPlan: false, depositAmount: 0 }), 'MERCHANT', 0).show).toBe(false);
+  });
+});
+
+/** #1491: an order WITHOUT a deposit plan, not handed over: the owner types the fee the shop keeps inside the deposit */
+describe('cancel an order without a deposit plan (#1491)', () => {
+  const plain = (patch: Partial<PlanOrderLike> = {}) =>
+    order({ hasDepositPlan: false, installments: null, installmentSummary: null, totalAmount: 300_000, depositAmount: 300_000, ...patch });
+
+  it('case A: deposit 300.000, fee 100.000 -> the shop keeps 100.000, 200.000 goes back', () => {
+    expect(cancelView(plain(), 'MERCHANT', 100_000)).toMatchObject({ show: true, paid: 300_000, kept: 100_000, refund: 200_000, canEditKept: true });
+    expect(cancelView(plain(), 'OUTLET_ADMIN', 100_000)).toMatchObject({ kept: 100_000, refund: 200_000 });
+  });
+
+  it('case B: deposit 100.000, fee 100.000 -> nothing goes back', () => {
+    expect(cancelView(plain({ depositAmount: 100_000 }), 'MERCHANT', 100_000)).toMatchObject({ kept: 100_000, refund: 0 });
+  });
+
+  it('case C: a fee above the deposit is cut to the deposit (the field never allows more)', () => {
+    expect(cancelView(plain({ depositAmount: 100_000 }), 'MERCHANT', 300_000)).toMatchObject({ kept: 100_000, refund: 0 });
+  });
+
+  it('case D: fee 0 -> everything goes back, as before', () => {
+    expect(cancelView(plain(), 'MERCHANT', 0)).toMatchObject({ kept: 0, refund: 300_000 });
+  });
+
+  it('staff see the plain confirm dialog (they cannot keep money), the owner and the outlet admin see the fee dialog', () => {
+    expect(cancelView(plain(), 'OUTLET_STAFF', 100_000).show).toBe(false);
+    expect(cancelView(plain(), 'MERCHANT', 0).show).toBe(true);
+    expect(cancelView(plain(), 'OUTLET_ADMIN', 0).show).toBe(true);
+  });
+
+  it('no dialog for an order with nothing collected, a hand-over, or a sale', () => {
+    expect(cancelView(plain({ depositAmount: 0 }), 'MERCHANT', 0).show).toBe(false);
+    expect(cancelView(plain({ status: 'PICKUPED' }), 'MERCHANT', 0).show).toBe(false);
+    expect(cancelView(plain({ orderType: 'SALE', status: 'COMPLETED' }), 'MERCHANT', 0).show).toBe(false);
+  });
+
+  it('a cancelled order that kept a fee shows what the shop kept and what went back', () => {
+    expect(cancelledOutcome(plain({ status: 'CANCELLED', cancelKeptAmount: 100_000 }))).toEqual({ kept: 100_000, refund: 200_000 });
+    expect(cancelledOutcome(plain({ status: 'CANCELLED', depositAmount: 100_000, cancelKeptAmount: 100_000 }))).toEqual({ kept: 100_000, refund: 0 });
+    expect(cancelledOutcome(plain({ status: 'CANCELLED', cancelKeptAmount: 0 }))).toBeNull();
+    expect(cancelledOutcome(plain({ status: 'CANCELLED', cancelKeptAmount: null }))).toBeNull();
+    expect(cancelledOutcome(plain({ status: 'RESERVED', cancelKeptAmount: 100_000 }))).toBeNull();
   });
 });
 
@@ -418,10 +461,14 @@ describe('#1253 a cancelled order shows what the shop kept and what went back', 
     expect(cancelledOutcome({ ...cancelled, cancelKeptAmount: 3_600_000 })).toEqual({ kept: 3_600_000, refund: 0 });
   });
 
-  it('nothing to show when the shop kept nothing, the order is not cancelled, or has no plan', () => {
+  it('nothing to show when the shop kept nothing or the order is not cancelled', () => {
     expect(cancelledOutcome({ ...cancelled, cancelKeptAmount: 0 })).toBeNull();
     expect(cancelledOutcome({ ...cancelled, cancelKeptAmount: null })).toBeNull();
     expect(cancelledOutcome({ ...cancelled, status: 'RESERVED' })).toBeNull();
-    expect(cancelledOutcome({ ...cancelled, hasDepositPlan: false })).toBeNull();
+  });
+
+  it('an order without a plan that kept a fee shows it too (#1491), a sale never does', () => {
+    expect(cancelledOutcome({ ...cancelled, hasDepositPlan: false, installments: null, installmentSummary: null, depositAmount: 300_000, cancelKeptAmount: 100_000 })).toEqual({ kept: 100_000, refund: 200_000 });
+    expect(cancelledOutcome({ ...cancelled, hasDepositPlan: false, orderType: 'SALE', depositAmount: 300_000, cancelKeptAmount: 100_000 })).toBeNull();
   });
 });
