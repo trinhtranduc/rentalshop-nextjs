@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * WEB-CANCEL-FEE (#1491): an order without a deposit plan that was not handed over is cancelled from the order page in the
- * dialog "Khách đã trả / Tiệm giữ lại / Hoàn cho khách". The owner types the fee, the refund follows, and the cancelled order
+ * dialog "Khách đã trả / Phụ thu / Hoàn cho khách". The owner types the fee, the refund follows, and the cancelled order
  * shows what the shop kept and what went back. Numbers are the cases the owner approved (2026-11-07).
  * Needs WEB_E2E_ORDER_ID (the order's API id) and WEB_E2E_ORDER_NUMBER (its number, the page URL is /orders/<number>): a booked
  * RENT order without a plan, rent 300.000, deposit 300.000 (merchant of WEB_E2E_EMAIL).
@@ -34,7 +34,7 @@ async function main() {
       await paid.waitFor({ timeout: 15000 });
       check('the fee dialog opens for an order without a plan', true);
       check('Khách đã trả shows the deposit 300.000', digits(await paid.textContent()) === '300000', await paid.textContent());
-      const kept = page.getByLabel('Tiệm giữ lại').first();
+      const kept = page.getByLabel('Phụ thu').first();
       await kept.fill('100000');
       await kept.blur();
       await page.waitForTimeout(400);
@@ -54,7 +54,7 @@ async function main() {
       await card.waitFor({ timeout: 20000 });
       await H.settle(page);
       await shot(page, 'web-cancel-3-cancelled');
-      check('the cancelled order shows Tiệm giữ lại 100.000', digits(await card.locator('[data-cancel-kept]').textContent()) === '100000');
+      check('the cancelled order shows Phụ thu 100.000', digits(await card.locator('[data-cancel-kept]').textContent()) === '100000');
       check('the cancelled order shows Hoàn cho khách 200.000', digits(await card.locator('[data-cancel-refunded]').textContent()) === '200000');
       const pay = (await page.locator('main').innerText()).replace(/\s+/g, ' ');
       check('the payment card says the fee is revenue (not "Không tính doanh thu")', /Doanh thu \(phụ thu giữ lại\)/.test(pay) && !/Không tính doanh thu/.test(pay), pay.slice(0, 200));

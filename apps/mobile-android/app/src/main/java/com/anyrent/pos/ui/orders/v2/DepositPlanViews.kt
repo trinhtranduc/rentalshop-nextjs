@@ -38,6 +38,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -345,26 +346,26 @@ internal fun CancelDepositOrderSheet(
 ) {
     var amounts by remember { mutableStateOf(DepositPlanLogic.CancelAmounts.keeping(0.0, collected)) }
     var keptText by remember { mutableStateOf("") }
-    var refundText by remember { mutableStateOf(collected.toLong().toString()) }
     var note by remember { mutableStateOf("") }
-    fun shown(v: Double) = v.toLong().toString()
+    // #1496 the surcharge box takes the focus on its own, so the owner sees where to type
+    val keptFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    LaunchedEffect(Unit) { if (canKeep) keptFocus.requestFocus() }
     DepositSheetFrame(onDismiss = onDismiss) {
         OrderSheetTitle(stringResource(R.string.order_sheet_title_cancel), "#$orderNumber")
         if (!policy.isNullOrBlank()) DepositWarningBox(stringResource(R.string.deposit_cancel_policy, policy))
         AmountLine(stringResource(R.string.deposit_cancel_paid)) { Text(formatMoneyVnd(collected), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
         AmountLine(stringResource(R.string.deposit_cancel_kept)) {
-            AmountField(keptText, canKeep, "deposit.cancel.kept") { text ->
+            AmountField(keptText, canKeep, "deposit.cancel.kept", keptFocus.takeIf { canKeep }) { text ->
                 keptText = text
                 amounts = DepositPlanLogic.CancelAmounts.keeping(text.toDoubleOrNull() ?: 0.0, collected)
-                refundText = shown(amounts.refund)
             }
         }
+        // "Hoàn cho khách" is worked out from the surcharge: a read-only line (#1496)
         AmountLine(stringResource(R.string.deposit_cancel_refund)) {
-            AmountField(refundText, canKeep, "deposit.cancel.refund") { text ->
-                refundText = text
-                amounts = DepositPlanLogic.CancelAmounts.refunding(text.toDoubleOrNull() ?: 0.0, collected)
-                keptText = amounts.kept.takeIf { it > 0 }?.let(::shown).orEmpty()
-            }
+            Text(
+                formatMoneyVnd(amounts.refund), fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.testTag("deposit.cancel.refund"),
+            )
         }
         if (canKeep) {
             Text(stringResource(R.string.deposit_cancel_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
@@ -395,14 +396,20 @@ private fun AmountLine(label: String, right: @Composable () -> Unit) {
 }
 
 @Composable
-private fun AmountField(value: String, enabled: Boolean, tag: String, onChange: (String) -> Unit) {
+private fun AmountField(
+    value: String,
+    enabled: Boolean,
+    tag: String,
+    focus: androidx.compose.ui.focus.FocusRequester? = null,
+    onChange: (String) -> Unit,
+) {
     OutlinedTextField(
         value = value, onValueChange = { onChange(it.filter(Char::isDigit).take(12).trimStart('0')) }, enabled = enabled, singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         visualTransformation = com.anyrent.pos.ui.deposit.MoneyGrouping,
         textStyle = androidx.compose.ui.text.TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.End),
         placeholder = { Text("0", modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.End) },
-        modifier = Modifier.width(160.dp).testTag(tag),
+        modifier = Modifier.width(160.dp).testTag(tag).let { if (focus != null) it.focusRequester(focus) else it },
     )
 }
 
