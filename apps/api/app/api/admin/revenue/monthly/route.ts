@@ -11,7 +11,16 @@ import {
   parseRevenueQuery,
   revenueFetchRange,
   type RevenuePaymentRow,
+  type RevenueQuery,
 } from '../../../../../lib/admin-revenue';
+import {
+  ESTIMATE_ACTIVITY_TYPES,
+  SAME_EVENT_WINDOW_MS,
+  buildEstimatedRevenue,
+  type EstimateActivityRow,
+  type EstimatePaymentRow,
+  type EstimateSubscriptionRow,
+} from '../../../../../lib/admin-revenue-estimate';
 
 /** The columns read from `Payment`, plus the shop name and the plan name. */
 interface PaymentDbRow {
@@ -27,6 +36,69 @@ interface PaymentDbRow {
   merchantId: number | null;
   merchant?: { id: number; name: string } | null;
   subscription?: { plan: { name: string } | null } | null;
+}
+
+/**
+ * #1505: the old plan revenue that has no (COMPLETED) Payment row, estimated at read time from the activity log. Nothing is written.
+ * Reads the extension / plan-change activities of the range, the plan payments around them (to not count an event twice, and the
+ * hand-entered PENDING ones from before hotfix #1486), and the subscriptions of those activities (price per cycle).
+ */
+async function loadEstimatedRevenue(query: RevenueQuery, start: Date, end: Date) {
+  const widenedStart = new Date(start.getTime() - SAME_EVENT_WINDOW_MS);
+  const widenedEnd = new Date(end.getTime() + SAME_EVENT_WINDOW_MS);
+  const activityRows: (EstimateActivityRow & {
+    subscription: {
+      id: number; merchantId: number; currency: string | null; amount: number | null; period: number | null;
+      merchant: { name: string } | null; plan: { basePrice: number | null } | null;
+    } | null;
+  })[] = await db.prisma.subscriptionActivity.findMany({
+    where: { type: { in: [...ESTIMATE_ACTIVITY_TYPES] }, createdAt: { gte: start, lte: end } },
+    select: {
+      id: true, subscriptionId: true, type: true, metadata: true, createdAt: true,
+      subscription: {
+        select: {
+          id: true, merchantId: true, currency: true, amount: true, period: true,
+          merchant: { select: { name: true } },
+          plan: { select: { basePrice: true } },
+        },
+      },
+    },
+  });
+  const paymentRows: (EstimatePaymentRow & { merchant?: { name: string } | null })[] = await db.prisma.payment.findMany({
+    where: {
+      type: { in: [...REVENUE_PAYMENT_TYPES] },
+      OR: [
+        { createdAt: { gte: widenedStart, lte: widenedEnd } },
+        { processedAt: { gte: widenedStart, lte: widenedEnd } },
+      ],
+    },
+    select: {
+      id: true, subscriptionId: true, merchantId: true, type: true, method: true, status: true, amount: true, currency: true,
+      transactionId: true, processedAt: true, createdAt: true,
+      merchant: { select: { name: true } },
+    },
+  });
+
+  const subscriptions = new Map<number, EstimateSubscriptionRow>();
+  for (const a of activityRows) {
+    const s = a.subscription;
+    if (!s || subscriptions.has(s.id)) continue;
+    subscriptions.set(s.id, {
+      id: s.id,
+      merchantId: s.merchantId,
+      merchantName: s.merchant?.name ?? null,
+      currency: s.currency,
+      amount: s.amount,
+      period: s.period,
+      planBasePrice: s.plan?.basePrice ?? null,
+    });
+  }
+  return buildEstimatedRevenue({
+    query,
+    activities: activityRows.map((a) => ({ id: a.id, subscriptionId: a.subscriptionId, type: a.type, metadata: a.metadata, createdAt: a.createdAt })),
+    subscriptions: [...subscriptions.values()],
+    payments: paymentRows.map(({ merchant, ...p }) => ({ ...p, merchantName: merchant?.name ?? null })),
+  });
 }
 
 const querySchema = z.object({
@@ -124,6 +196,8 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
       planName: r.subscription?.plan?.name ?? null,
     });
 
+    const estimated = await loadEstimatedRevenue(query, start, end);
+
     const report = buildRevenueReport({
       query,
       todayKey: getLocalDateKey(new Date()),
@@ -132,7 +206,8 @@ export const GET = withAuthRoles([...PLATFORM_OPS_ROLES])(async (request: NextRe
       earlierMerchantIds: new Set(earlier.map((e) => e.merchantId).filter((id): id is number => id != null)),
     });
 
-    return NextResponse.json(ResponseBuilder.success('ADMIN_REVENUE_SUCCESS', report));
+    // #1505: additive `estimated`; `received` and the rest above are unchanged and never include it
+    return NextResponse.json(ResponseBuilder.success('ADMIN_REVENUE_SUCCESS', { ...report, estimated }));
   } catch (error) {
     const { response, statusCode } = handleApiError(error);
     return NextResponse.json(response, { status: statusCode });
