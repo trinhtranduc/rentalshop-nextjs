@@ -6,6 +6,7 @@ import { ORDER_STATUS, ORDER_TYPE, USER_ROLE, isOutletRole } from '@rentalshop/c
 import { handleApiError, ResponseBuilder, formatFullName, calculateOrderRevenueByStatus, toRevenueOrderData } from '@rentalshop/utils';
 import { API } from '@rentalshop/constants';
 import { shopToday } from '../../../../lib/report-days';
+import { COUNTS_IN_REVENUE_WHERE } from '@rentalshop/utils/server';
 
 /**
  * GET /api/analytics/dashboard - Get dashboard analytics
@@ -127,12 +128,13 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
       db.orders.getStats(orderWhereClause),
       
       // Total revenue based on order status and type
-      // ✅ Exclude CANCELLED orders from revenue calculation
+      // Cancelled orders do not count, except one that kept a fee: its revenue is that fee (#1500)
       db.orders.search({
         includeRevenuePlan: true,
         where: {
           ...orderWhereClause,
-          status: { not: ORDER_STATUS.CANCELLED } // Exclude cancelled orders
+          status: undefined,
+          AND: [COUNTS_IN_REVENUE_WHERE]
         },
         select: {
           id: true,
@@ -144,6 +146,7 @@ export const GET = withPermissions(['analytics.view.dashboard'])(async (request,
           damageFee: true,
           lateFee: true,
           pickupTotalAmount: true,
+          cancelKeptAmount: true,
           createdAt: true,
           pickedUpAt: true,
           returnedAt: true,

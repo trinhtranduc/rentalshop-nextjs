@@ -210,6 +210,14 @@ export async function resolveAnalyticsOutletFilter(
   return null;
 }
 
+/**
+ * #1500 orders that count in revenue rankings and the dashboard total: every order that is not cancelled, plus a cancelled
+ * order that kept a fee (phụ thu, #1491), whose revenue is that fee. Pass it as `AND: [COUNTS_IN_REVENUE_WHERE]`.
+ */
+export const COUNTS_IN_REVENUE_WHERE = {
+  OR: [{ status: { not: ORDER_STATUS.CANCELLED as any } }, { cancelKeptAmount: { gt: 0 } }]
+};
+
 export async function computeTopOutletsRanking(
   prisma: PrismaClient,
   params: {
@@ -221,29 +229,38 @@ export async function computeTopOutletsRanking(
   }
 ): Promise<RankingPage<TopOutletRank>> {
   const { outletFilter, rangeStart, rangeEnd, page = 1, limit = 5 } = params;
-  const grouped = await prisma.order.groupBy({
-    by: ['outletId'],
-    where: {
-      ...outletFilter,
-      deletedAt: null,
-      status: { not: ORDER_STATUS.CANCELLED as any },
-      createdAt: { gte: rangeStart, lte: rangeEnd }
-    },
-    _count: { _all: true },
-    _sum: { totalAmount: true }
-  });
+  const inRange = { ...outletFilter, deletedAt: null, createdAt: { gte: rangeStart, lte: rangeEnd } };
+  const [grouped, keptGrouped] = await Promise.all([
+    prisma.order.groupBy({
+      by: ['outletId'],
+      where: { ...inRange, status: { not: ORDER_STATUS.CANCELLED as any } },
+      _count: { _all: true },
+      _sum: { totalAmount: true }
+    }),
+    // #1500 a cancelled order that kept a fee counts for its outlet with that fee
+    prisma.order.groupBy({
+      by: ['outletId'],
+      where: { ...inRange, status: ORDER_STATUS.CANCELLED as any, cancelKeptAmount: { gt: 0 } },
+      _count: { _all: true },
+      _sum: { cancelKeptAmount: true }
+    })
+  ]);
 
-  if (grouped.length === 0) {
+  const byOutlet = new Map<number, { outletId: number; orderCount: number; totalRevenue: number }>();
+  for (const row of grouped) {
+    byOutlet.set(row.outletId, { outletId: row.outletId, orderCount: row._count._all, totalRevenue: row._sum.totalAmount || 0 });
+  }
+  for (const row of keptGrouped) {
+    const entry = byOutlet.get(row.outletId) || { outletId: row.outletId, orderCount: 0, totalRevenue: 0 };
+    entry.orderCount += row._count._all;
+    entry.totalRevenue += row._sum.cancelKeptAmount || 0;
+    byOutlet.set(row.outletId, entry);
+  }
+  if (byOutlet.size === 0) {
     return paginateRanked<TopOutletRank>([], page, limit);
   }
 
-  const rankedGroups = grouped
-    .map((row) => ({
-      outletId: row.outletId,
-      orderCount: row._count._all,
-      totalRevenue: row._sum.totalAmount || 0
-    }))
-    .sort((a, b) => b.totalRevenue - a.totalRevenue || b.orderCount - a.orderCount);
+  const rankedGroups = [...byOutlet.values()].sort((a, b) => b.totalRevenue - a.totalRevenue || b.orderCount - a.orderCount);
 
   const pageSlice = paginateRanked(rankedGroups, page, limit);
   const outlets = await prisma.outlet.findMany({
