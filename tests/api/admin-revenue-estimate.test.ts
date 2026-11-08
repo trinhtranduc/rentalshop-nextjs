@@ -5,6 +5,7 @@
  */
 jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/date-range'),
+  ...jest.requireActual('../../packages/utils/src/core/plan-extension-estimate'),
   getLocalDateKey: jest.requireActual('../../packages/utils/src/core/date').getLocalDateKey,
 }));
 
