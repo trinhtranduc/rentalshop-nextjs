@@ -48,6 +48,9 @@ interface SubscriptionExtendDialogEnhancedProps {
   loading?: boolean;
 }
 
+/** Methods that grant the time for free: no Payment, nothing in the Plan revenue */
+const FREE_METHODS = ['ADMIN_EXTENSION', 'COMPENSATION'];
+
 const EXTENSION_METHODS = [
   { value: 'MANUAL_EXTENSION', label: 'Manual Extension' },
   { value: 'PAYMENT_RECEIVED', label: 'Payment Received' },
@@ -378,7 +381,7 @@ export function SubscriptionExtendDialogEnhanced({
                 <div className="space-y-1.5 max-md:order-3">
                   <Label htmlFor="extensionPrice" className="text-xs font-medium">
                     Extension Price *
-                    {method !== 'PAYMENT_RECEIVED' && (
+                    {FREE_METHODS.includes(method) && (
                       <span className="ml-2 text-[10px] font-normal text-muted-foreground">Not charged</span>
                     )}
                   </Label>
@@ -467,7 +470,7 @@ export function SubscriptionExtendDialogEnhanced({
               <div className="space-y-1.5">
                 <Label htmlFor="extensionPrice" className="text-xs font-medium">
                   Extension Price *
-                  {method !== 'PAYMENT_RECEIVED' && (
+                  {FREE_METHODS.includes(method) && (
                     <span className="ml-2 text-[10px] font-normal text-muted-foreground">Not charged</span>
                   )}
                 </Label>
@@ -570,7 +573,7 @@ export function SubscriptionExtendDialogEnhanced({
                 ))}
               </select>
               <p className="text-[11px] leading-snug text-muted-foreground">
-                Only “Payment Received” records a payment. The other methods are free extensions.
+                “Payment Received” and “Manual Extension” record the Extension Price as a payment (it counts in Plan revenue). “Admin Extension” and “Compensation” are free.
               </p>
             </div>
             <div className="space-y-1.5">

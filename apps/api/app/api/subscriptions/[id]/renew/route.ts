@@ -3,7 +3,7 @@ import { db, prisma } from '@rentalshop/database';
 import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { addonRenewalLines, calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
-import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES } from '@rentalshop/constants';
+import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, planPaymentState } from '@rentalshop/constants';
 import { manualExtensionBilling } from '../../../../../lib/plan-renewal';
 
 /**
@@ -94,6 +94,8 @@ export async function POST(
       const renewalAmount = renewal.totalDue;
 
       // Use database transaction to ensure atomicity
+      // #1486: staff entering a transfer payment record money received (COMPLETED, dated paymentDate)
+      const paymentState = planPaymentState({ method, actorRole: user.role, paymentDate: paymentDate ? new Date(paymentDate) : null });
       const result = await prisma.$transaction(async (tx: any) => {
         // Create payment record
         const payment = await tx.payment.create({
@@ -104,11 +106,11 @@ export async function POST(
             currency: existing.currency || existingPlan?.currency || 'VND',
             method: method as any,
             type: PAYMENT_TYPE.SUBSCRIPTION_PAYMENT as any,
-            status: method === PAYMENT_METHOD.STRIPE ? PAYMENT_STATUS.COMPLETED as any : PAYMENT_STATUS.PENDING as any,
+            status: paymentState.status as any,
             transactionId: transactionId,
             reference: reference || undefined,
             description: description || `${duration} month${duration > 1 ? 's' : ''} subscription renewal${renewedAddons.length ? ` + ${renewedAddons.length} add-on` : ''}`,
-            processedAt: method === PAYMENT_METHOD.STRIPE ? new Date() : (paymentDate ? new Date(paymentDate) : null),
+            processedAt: paymentState.processedAt,
             createdAt: paymentDate ? new Date(paymentDate) : new Date()
           }
         });
