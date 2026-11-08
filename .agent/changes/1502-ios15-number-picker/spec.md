@@ -13,5 +13,6 @@ Bố cục bên trong hộp thoại, chuỗi, API.
 
 ## Acceptance
 
-- [x] iOS 16+ chạy như cũ (UI test cart giảm giá trên iOS 26: `test8lCartDiscountCap`)
+- [x] Build iOS và test đơn vị `DepositPlanTests` + `OrderDetailLogicTests` (85 xanh); nhánh iOS 16+ không đổi dòng nào
+- [ ] UI test giảm giá trên iOS hiện có: chưa chạy lại sau thay đổi này
 - [ ] iOS 15 trên iPad: chờ chủ shop xác nhận (máy dev không có runtime iOS 15)
