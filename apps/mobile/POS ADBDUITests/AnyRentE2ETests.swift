@@ -1435,6 +1435,40 @@ final class AnyRentE2ETests: XCTestCase {
     }
 
 
+    /// #1490: E2E_ORDER_NUMBER = a booked rent without a plan: rent 100.000, deposit 300.000, collateral money 500.000 at booking.
+    /// Hand-over asks 500.000 (not 300.000); at return the sheet shows the excess deposit and gives back 700.000.
+    func test5nDepositOverRentReturn() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        func digits(_ text: String) -> String { text.filter(\.isNumber) }
+        openOrder(number)
+        let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
+        XCTAssertTrue(handOver.waitForExistence(timeout: 10), "RESERVED rent order shows Giao đồ")
+        e2e.shot("5n-1-detail-reserved")
+        handOver.tap()
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)  // "Đã lấy · thu 500.000"
+        XCTAssertTrue(handed.waitForExistence(timeout: 8), "Giao đồ sheet has a confirm button")
+        e2e.shot("5n-2-handover-sheet")
+        XCTAssertTrue(digits(handed.label).contains("500000"), "#1490 hand-over asks 500.000, not 300.000: \(handed.label)")
+        handed.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        e2e.shot("5n-3-pickuped")
+        let takeBack = e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button)
+        XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "After hand-over the order offers Nhận trả")
+        takeBack.tap()
+        let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)  // "Đã nhận · hoàn 700.000"
+        XCTAssertTrue(taken.waitForExistence(timeout: 8), "Nhận trả sheet has a confirm button")
+        e2e.shot("5n-4-return-sheet")
+        XCTAssertTrue(digits(taken.label).contains("700000"), "#1490 return gives back 700.000 (500.000 collateral + 200.000 excess deposit): \(taken.label)")
+        let excess = app.staticTexts.matching(NSPredicate(format: "label == 'Deposit above the rent' OR label == 'Cọc dư so với tiền thuê'")).firstMatch
+        XCTAssertTrue(excess.exists, "#1490 the sheet shows the excess deposit row")
+        e2e.note("DEPOSIT OVER RENT DONE order #\(number)")
+    }
+
     func test0AuthFlows() throws {
         try e2e.requireFlag("newAuth")
         app.launch()

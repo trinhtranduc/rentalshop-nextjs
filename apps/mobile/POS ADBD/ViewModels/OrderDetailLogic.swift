@@ -45,14 +45,15 @@ struct OrderPaymentLine: Codable, Equatable {
     let notes: String?
 }
 
-/// Hand-over: total − deposit + collateral money − completed PICKUP payments
+/// Hand-over: max(0, total − deposit) + collateral money − completed PICKUP payments (#1490: a deposit above the rent never
+/// eats into the collateral)
 struct HandOverMoney: Equatable {
     let total: Double
     let deposit: Double
     let collateralMoney: Double
     let paidBefore: Double
 
-    var due: Double { max(0, total - deposit + collateralMoney - paidBefore) }
+    var due: Double { max(0, max(0, total - deposit) + collateralMoney - paidBefore) }
 }
 
 /// #1368 "Tiền thuê còn lại, thu khi giao" + "Thế chân, thu khi giao" = "Khách đưa lúc nhận đồ"
@@ -115,15 +116,17 @@ struct OrderMoneyBlock: Equatable {
     var hasLargeFigure: Bool { (lines + [returnLine].compactMap { $0 }).contains { $0.isLarge } }
 }
 
-/// Return: late + damage − collateral money − completed RETURN_ADJUSTMENT payments (negative = give back)
+/// Return: late + damage − collateral money − completed RETURN_ADJUSTMENT payments − the excess deposit (#1490); negative = give back
 struct ReturnMoney: Equatable {
     let lateFee: Double
     let damageFee: Double
     let collateralMoney: Double
     let settledBefore: Double
+    /// #1490 deposit above the rent, held since booking; 0 for a deposit up to the rent
+    var excessDeposit: Double = 0
 
     var fees: Double { lateFee + damageFee }
-    var net: Double { fees - collateralMoney - settledBefore }
+    var net: Double { fees - collateralMoney - settledBefore - excessDeposit }
     var collect: Double { max(0, net) }
     var refund: Double { max(0, -net) }
 }
@@ -372,7 +375,8 @@ enum OrderDetailLogic {
                 lines.append(.collectAtHandOver(collect))
             }
         case .pickuped:
-            let money = returnMoney(lateFee: lateFee, damageFee: damageFee, securityDeposit: securityDeposit, payments: payments)
+            let money = returnMoney(lateFee: lateFee, damageFee: damageFee, securityDeposit: securityDeposit, payments: payments,
+                                    deposit: deposit, total: total)
             if lateFee > 0 { lines.append(.lateFee(lateFee)) }
             if damageFee > 0 { lines.append(.damageFee(damageFee)) }
             var row: OrderMoneyLine?
@@ -404,9 +408,10 @@ enum OrderDetailLogic {
     }
 
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,
-                            payments: [OrderPaymentLine]) -> ReturnMoney {
+                            payments: [OrderPaymentLine], deposit: Double = 0, total: Double = 0) -> ReturnMoney {
         ReturnMoney(lateFee: lateFee, damageFee: damageFee, collateralMoney: securityDeposit,
-                    settledBefore: paid(payments, purpose: "RETURN_ADJUSTMENT"))
+                    settledBefore: paid(payments, purpose: "RETURN_ADJUSTMENT"),
+                    excessDeposit: max(0, deposit - total))
     }
 
     /// `amountDue` / `refundDue` of `computeOrderBalance`
@@ -420,7 +425,7 @@ enum OrderDetailLogic {
             return (handOver(total: total, deposit: deposit, securityDeposit: securityDeposit, payments: payments).due, 0)
         case (.rent, .pickuped):
             let money = returnMoney(lateFee: lateFee, damageFee: damageFee, securityDeposit: securityDeposit,
-                                    payments: payments)
+                                    payments: payments, deposit: deposit, total: total)
             return (money.collect, money.refund)
         default:
             return (0, 0)

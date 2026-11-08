@@ -249,13 +249,17 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
             confirmButton.setTitle(title, for: .normal)
         case .takeReturn:
             let money = OrderDetailLogic.returnMoney(lateFee: enteredLateFee, damageFee: enteredDamageFee,
-                                                     securityDeposit: detail.securityDeposit, payments: payments)
+                                                     securityDeposit: detail.securityDeposit, payments: payments,
+                                                     deposit: detail.depositAmount, total: detail.totalAmount)
             moneyStack.addArrangedSubview(row("Late + damage fees".localized(), MoneyFormatter.format(money.fees)))
             if money.collateralMoney > 0 {
                 moneyStack.addArrangedSubview(row("Collateral money held".localized(), MoneyFormatter.format(-money.collateralMoney)))
             }
             if money.settledBefore > 0 {
                 moneyStack.addArrangedSubview(row("Already settled".localized(), MoneyFormatter.format(-money.settledBefore)))
+            }
+            if money.excessDeposit > 0 {
+                moneyStack.addArrangedSubview(row("Deposit above the rent".localized(), MoneyFormatter.format(-money.excessDeposit)))
             }
             let title: String
             if money.refund > 0 {

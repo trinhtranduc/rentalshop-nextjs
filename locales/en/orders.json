@@ -982,6 +982,7 @@
         "collateral": "Collateral money",
         "paidBefore": "Already collected",
         "settledBefore": "Already settled",
+        "excessDeposit": "Deposit above the rent",
         "lateFee": "Late fee",
         "damageFee": "Extra fee",
         "collectAtPickup": "Collect at hand-over",
@@ -1032,7 +1033,8 @@
           "paidBefore": "Already collected",
           "fees": "Late + extra fees",
           "collateralHeld": "Collateral money held",
-          "settledBefore": "Already settled"
+          "settledBefore": "Already settled",
+          "excessDeposit": "Deposit above the rent"
         },
         "result": {
           "due": "Collect now",
