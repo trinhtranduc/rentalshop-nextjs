@@ -53,8 +53,8 @@ function setPeriod(merchantId, { start = new Date(Date.now() - 9 * DAY_MS), end 
 
 const subscriptionId = (merchantId) => Number(S.sql(`SELECT id FROM "Subscription" WHERE "merchantId" = ${merchantId}`));
 const lastPayment = (merchantId) => {
-  const [amount, type, description] = S.sql(`SELECT amount || '|' || type || '|' || coalesce(description, '') FROM "Payment" WHERE "merchantId" = ${merchantId} ORDER BY id DESC LIMIT 1`).split('|');
-  return { amount: Number(amount), type, description };
+  const [amount, type, description, status] = S.sql(`SELECT amount || '|' || type || '|' || coalesce(description, '') || '|' || status FROM "Payment" WHERE "merchantId" = ${merchantId} ORDER BY id DESC LIMIT 1`).split('|');
+  return { amount: Number(amount), type, description, status };
 };
 const paymentCount = (merchantId) => Number(S.sql(`SELECT count(*) FROM "Payment" WHERE "merchantId" = ${merchantId}`));
 
@@ -172,7 +172,7 @@ describeAdd('BF-ADD buy mid-period: price × packs × days left ÷ days, the lim
     expect(r.body.data.quote.amountDue).toBe(expected);
     expect(r.body.data.addon).toMatchObject({ limitKind: 'users', packSize: 2, packs: 1, unitPrice: 40000, users: 2 });
     expect(paymentCount(world.merchantId)).toBe(payments + 1);
-    expect(lastPayment(world.merchantId)).toMatchObject({ amount: expected, type: 'PLAN_CHANGE' });
+    expect(lastPayment(world.merchantId)).toMatchObject({ amount: expected, type: 'PLAN_CHANGE', status: 'COMPLETED' }); // #1486: the admin records money received
 
     expect(created(await m.post('/api/users', userBody(world)))).toBe(true);
     expect(created(await m.post('/api/users', userBody(world)))).toBe(true);
@@ -313,6 +313,7 @@ describeAdd('BF-ADD price edits, removal at period end, renewal total', () => {
     expect(r.body.data.renewal).toMatchObject({ planPrice: PLAN_PRICE, addonPrice: 64000, totalDue: PLAN_PRICE + 64000 });
     expect(r.body.data.subscription.amount).toBe(PLAN_PRICE);
     expect(lastPayment(world.merchantId).amount).toBe(PLAN_PRICE + 64000);
+    expect(lastPayment(world.merchantId)).toMatchObject({ type: 'SUBSCRIPTION_PAYMENT', status: 'COMPLETED' }); // #1486
     const ids = (r.body.data.addons || []).map((x) => x.id);
     expect(ids).toEqual([u.id]);
     expect(Number(S.sql(`SELECT "unitPrice" FROM "PlanLimitAddon" WHERE id = ${u.id}`))).toBe(32000);
@@ -373,6 +374,7 @@ describeAdd('BF-ADD #870 add-ons on renew, extend and change-plan; pack size and
     const r = await (await admin()).post(`/api/subscriptions/${subscriptionId(world.merchantId)}/renew`, { method: 'TRANSFER', duration: 1, transactionId: `E2E-15-${Date.now()}` });
     expect(r.status).toBe(200);
     expect(lastPayment(world.merchantId).amount).toBe(PLAN_PRICE + 40000);
+    expect(lastPayment(world.merchantId)).toMatchObject({ type: 'SUBSCRIPTION_PAYMENT', status: 'COMPLETED' }); // #1486: an admin renewal counts as revenue
     expect(r.body.data.subscription.status).toBe('ACTIVE');
   });
 
@@ -396,7 +398,7 @@ describeAdd('BF-ADD #870 add-ons on renew, extend and change-plan; pack size and
 
     const r = await a.post(`/api/subscriptions/${sid}/extend`, { newEndDate: newEnd, method: 'PAYMENT_RECEIVED', sendEmail: false });
     expect(r.status).toBe(200);
-    expect(lastPayment(world.merchantId)).toMatchObject({ type: 'PLAN_EXTENSION' });
+    expect(lastPayment(world.merchantId)).toMatchObject({ type: 'PLAN_EXTENSION', status: 'COMPLETED' });
     expect(lastPayment(world.merchantId).amount).toBeCloseTo(d.totalPrice, 1);
   });
 
@@ -455,7 +457,7 @@ describeAdd('BF-ADD #870 add-ons on renew, extend and change-plan; pack size and
     });
     expect(r.status).toBe(200);
     expect(r.body.data.planChange).toMatchObject({ addonPeriodPrice: 30000, addonCreditValue: 0 });
-    expect(lastPayment(world.merchantId)).toMatchObject({ amount: PLAN_PRICE + 30000, type: 'PLAN_CHANGE' });
+    expect(lastPayment(world.merchantId)).toMatchObject({ amount: PLAN_PRICE + 30000, type: 'PLAN_CHANGE', status: 'COMPLETED' }); // #1486
     expect(subRow(world.merchantId).status).toBe('ACTIVE');
   });
 
