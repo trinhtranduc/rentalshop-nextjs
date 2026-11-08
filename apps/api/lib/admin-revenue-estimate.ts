@@ -18,14 +18,16 @@ const BACKFILL_TRANSACTION_PREFIX = 'backfill-1486-act-';
 
 export const EXTENSION_ACTIVITY_TYPES = ['subscription_extended', 'MANUAL_EXTENSION'] as const;
 export const PLAN_CHANGE_ACTIVITY_TYPES = ['subscription_plan_changed', 'plan_changed'] as const;
-export const ESTIMATE_ACTIVITY_TYPES = [...EXTENSION_ACTIVITY_TYPES, ...PLAN_CHANGE_ACTIVITY_TYPES];
+/** #1511: a subscription created by hand (POST /api/subscriptions) writes this activity with the plan price and no Payment. */
+export const CREATED_ACTIVITY_TYPE = 'subscription_created';
+export const ESTIMATE_ACTIVITY_TYPES = [...EXTENSION_ACTIVITY_TYPES, ...PLAN_CHANGE_ACTIVITY_TYPES, CREATED_ACTIVITY_TYPE];
 /** Payment types of plan money, and the methods a staff member enters by hand (they were stored PENDING before #1486). */
 export const PENDING_PLAN_TYPES = ['SUBSCRIPTION_PAYMENT', 'PLAN_EXTENSION', 'PLAN_CHANGE'];
 export const PENDING_PLAN_METHODS = ['TRANSFER', 'MANUAL', 'CASH'];
 /** A free grant by design. */
 const FREE_METHODS = ['ADMIN_EXTENSION', 'COMPENSATION'];
 
-export type EstimateKind = 'EXTENSION' | 'PLAN_CHANGE' | 'PENDING_PAYMENT';
+export type EstimateKind = 'EXTENSION' | 'PLAN_CHANGE' | 'NEW_SUBSCRIPTION' | 'PENDING_PAYMENT';
 
 export interface EstimateActivityRow {
   id: number;
@@ -132,6 +134,9 @@ export function buildEstimatedRevenue(input: {
     if (!sub || !isVnd(sub.currency)) continue;
     if (transactionIds.has(`${BACKFILL_TRANSACTION_PREFIX}${a.id}`)) continue;
     if ((bySub.get(a.subscriptionId) ?? []).some((p) => near(p.processedAt ?? p.createdAt, a.createdAt))) continue;
+    // #1511: from hotfix #1486 on, every extension that took money wrote a Payment. An extension activity without one took none
+    // (an auto-calculated amount nobody typed, or a free grant): the Payment table is the truth, not the activity.
+    if (a.createdAt.getTime() >= PENDING_COUNTS_BEFORE.getTime() && (EXTENSION_ACTIVITY_TYPES as readonly string[]).includes(a.type)) continue;
     const meta = parseMetadata(a.metadata);
     const merchant = { id: sub.merchantId, name: sub.merchantName ?? '' };
 
@@ -146,6 +151,13 @@ export function buildEstimatedRevenue(input: {
       const amount = positive(meta.amount) ?? estimateAdminExtension(meta, sub);
       if (amount === null) continue;
       events.push({ at: a.createdAt, merchant, kind: 'EXTENSION', amount });
+    } else if (a.type === CREATED_ACTIVITY_TYPE) {
+      // The log does not say whether a hand-made subscription was paid or granted: a trial counts nothing, a free method counts nothing.
+      const status = String(meta.status || '').toUpperCase();
+      const amount = positive(meta.amount);
+      if (status === 'TRIAL' || amount === null) continue;
+      if (meta.currency && !isVnd(String(meta.currency))) continue;
+      events.push({ at: a.createdAt, merchant, kind: 'NEW_SUBSCRIPTION', amount });
     } else if ((PLAN_CHANGE_ACTIVITY_TYPES as readonly string[]).includes(a.type)) {
       const planChange = meta.planChange && typeof meta.planChange === 'object' ? meta.planChange : {};
       const amount = positive(planChange.amountDueRounded) ?? positive(planChange.amountDue);

@@ -486,7 +486,7 @@
     "error": "Không tải được doanh thu.",
     "retry": "Thử lại",
     "estimateTitle": "Ước tính: {amount}",
-    "estimateDetail": "{count} lần gia hạn tay hoặc nâng gói chưa có dòng thanh toán, tính vào ngày phát sinh. Không cộng vào tổng ở trên.",
+    "estimateDetail": "{count} lần gia hạn tay, nâng gói hoặc tạo gói tay chưa có dòng thanh toán, tính vào ngày phát sinh. Không cộng vào tổng ở trên.",
     "estimateColumn": "Ước tính"
   }
 }

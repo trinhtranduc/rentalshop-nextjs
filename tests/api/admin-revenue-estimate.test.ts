@@ -147,6 +147,59 @@ describe('buildEstimatedRevenue', () => {
     expect(r.total).toBe(0);
   });
 
+  // ---- #1511 ----
+  const created = (subscriptionId: number, meta: Record<string, unknown>, when: string): EstimateActivityRow => ({
+    id: ++seq, subscriptionId, type: 'subscription_created', metadata: JSON.stringify(meta), createdAt: at(when),
+  });
+
+  it('#1511 Case J: a subscription made by hand, not a trial, with an amount, is counted on the day it was created', () => {
+    const r = run({ activities: [created(7, { status: 'ACTIVE', amount: 79000, currency: 'VND' }, '2026-04-10T03:00:00.000Z')] });
+    expect(month(r, '2026-04')).toMatchObject({ total: 79000, count: 1 });
+    expect(r.items[0]).toMatchObject({ dateKey: '2026-04-10', kind: 'NEW_SUBSCRIPTION', amount: 79000, merchant: { id: 70, name: 'Shop A' } });
+  });
+
+  it.each([
+    ['a trial', { status: 'TRIAL', amount: 79000, currency: 'VND' }],
+    ['a trial in lower case', { status: 'trial', amount: 79000, currency: 'VND' }],
+    ['no amount', { status: 'ACTIVE', currency: 'VND' }],
+    ['amount 0', { status: 'ACTIVE', amount: 0, currency: 'VND' }],
+    ['another currency', { status: 'ACTIVE', amount: 10, currency: 'USD' }],
+  ])('#1511 Case K: a created subscription that is %s counts nothing', (_name, meta) => {
+    expect(run({ activities: [created(7, meta, '2026-04-10T03:00:00.000Z')] }).total).toBe(0);
+  });
+
+  it('#1511 a created subscription with a payment within 5 minutes is the real one: not estimated again', () => {
+    const r = run({
+      activities: [created(7, { status: 'ACTIVE', amount: 79000, currency: 'VND' }, '2026-04-10T03:00:00.000Z')],
+      payments: [pay({ when: '2026-04-10T03:01:00.000Z', status: 'COMPLETED', type: 'SUBSCRIPTION_PAYMENT', amount: 79000 })],
+    });
+    expect(r.total).toBe(0);
+  });
+
+  it('#1511 Case L: an extension activity from the hotfix (07/11 14:37 VN) on, with no Payment, took no money: not counted', () => {
+    const justBefore = new Date(PENDING_COUNTS_BEFORE.getTime() - 60 * 1000).toISOString();
+    const atHotfix = PENDING_COUNTS_BEFORE.toISOString();
+    const r = run({
+      activities: [
+        panel(7, { method: 'MANUAL_EXTENSION', amount: 100000 }, justBefore),
+        panel(7, { method: 'MANUAL_EXTENSION', amount: 100000 }, atHotfix),
+        admin(7, 1, '2026-11-09T03:00:00.000Z'),
+      ],
+    });
+    expect(r.total).toBe(100000);
+    expect(r.count).toBe(1);
+  });
+
+  it('#1511 the hotfix cut-off does not touch plan changes or a created subscription', () => {
+    const r = run({
+      activities: [
+        change(7, { amountDueRounded: 50000 }, '2026-11-09T03:00:00.000Z'),
+        created(7, { status: 'ACTIVE', amount: 79000, currency: 'VND' }, '2026-11-09T04:00:00.000Z'),
+      ],
+    });
+    expect(month(r, '2026-11')).toMatchObject({ total: 129000, count: 2 });
+  });
+
   it('Case D / other currencies: a USD shop is left out; a trial extension without an amount is 0', () => {
     const r = run({
       activities: [panel(9, { method: 'MANUAL_EXTENSION', amount: 10 }, '2026-09-10T03:00:00.000Z'), panel(7, { method: 'MANUAL_EXTENSION' }, '2026-09-11T03:00:00.000Z')],
