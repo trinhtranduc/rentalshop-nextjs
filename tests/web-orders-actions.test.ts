@@ -4,7 +4,7 @@
  * Day logic must hold under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import { describe, expect, it } from '@jest/globals';
-import { canCancelOrder, handOverView, parseFee, returnFeesUpdate, returnView, scheduleRange } from '../apps/client/app/orders/detail/actions-model';
+import { canCancelOrder, dialogFocusSelector, handOverView, parseFee, returnFeesUpdate, returnView, scheduleRange } from '../apps/client/app/orders/detail/actions-model';
 import { orderBalance } from '../apps/client/app/orders/orders-model';
 import { getLocalDateKey } from '../packages/utils/src/core/date';
 
@@ -80,6 +80,16 @@ describe('returnView', () => {
 
   it('a negative or bad fee counts as 0', () => {
     expect(returnView(picked({}), { lateFee: -5, damageFee: Number.NaN }).result).toEqual({ kind: 'nothing', amount: 0 });
+  });
+});
+
+describe('dialogFocusSelector (#1498: the cancel dialog does not focus the surcharge box)', () => {
+  it('a dialog with inputs focuses its first input, as before', () => {
+    expect(dialogFocusSelector()).toBe('input, [data-autofocus]');
+    expect(dialogFocusSelector('input')).toBe('input, [data-autofocus]');
+  });
+  it('the cancel dialog asks for the safe button, so nothing is typed into and no keyboard opens', () => {
+    expect(dialogFocusSelector('button')).toBe('[data-autofocus]');
   });
 });
 

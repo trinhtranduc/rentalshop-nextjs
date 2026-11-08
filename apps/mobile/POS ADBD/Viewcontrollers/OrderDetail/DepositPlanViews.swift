@@ -501,12 +501,6 @@ final class CancelDepositOrderSheet: V2FittingSheet, UITextFieldDelegate {
         show()
     }
 
-    /// #1496 the surcharge box opens on its own, so the owner sees where to type (not for a role that cannot keep money)
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        if canKeep, amounts.kept == 0 { keptField.becomeFirstResponder() }
-    }
-
     private func configure(_ field: UITextField, id: String) {
         field.font = Utils.boldFont(size: 17)
         field.textAlignment = .right

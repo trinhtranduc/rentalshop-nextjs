@@ -9,6 +9,13 @@ import { dayKeyOf, handOverMoney, returnMoney, type OrderDetailLike, type ToDayK
  * #1425 note photos on an order, here and on create order. The API keeps accepting 5 for installed apps; an order that
  * already holds more stays as it is, and its photos can still be removed.
  */
+/**
+ * #1498 what a dialog focuses when it opens: its first input (as before), or only the element marked `data-autofocus`
+ * (the safe button) when `initialFocus` is `button`, as the cancel dialog asks so that no keyboard opens by itself.
+ */
+export const dialogFocusSelector = (initialFocus: 'input' | 'button' = 'input'): string =>
+  initialFocus === 'button' ? '[data-autofocus]' : 'input, [data-autofocus]';
+
 export const MAX_NOTE_IMAGES = 3;
 
 /** "2/3"; above the limit only the count, since "5/3" reads like a bug */
