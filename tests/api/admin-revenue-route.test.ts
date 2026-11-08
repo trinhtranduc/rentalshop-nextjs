@@ -299,10 +299,10 @@ describe('estimated (#1505)', () => {
     expect(res.body.data.estimated.months).toHaveLength(12);
   });
 
-  it('reads only the extension and plan-change activities of the Vietnam year', async () => {
+  it('reads only the extension, plan-change and created-subscription activities of the Vietnam year', async () => {
     await call('?month=2026-11');
     const read = calls.find((c) => c.where?.type?.in?.includes('MANUAL_EXTENSION'));
-    expect(read.where.type.in.sort()).toEqual(['MANUAL_EXTENSION', 'plan_changed', 'subscription_extended', 'subscription_plan_changed']);
+    expect(read.where.type.in.sort()).toEqual(['MANUAL_EXTENSION', 'plan_changed', 'subscription_created', 'subscription_extended', 'subscription_plan_changed']);
     expect(read.where.createdAt.gte.toISOString()).toBe('2025-12-31T17:00:00.000Z');
     expect(read.where.createdAt.lte.toISOString()).toBe('2026-12-31T16:59:59.999Z');
   });
