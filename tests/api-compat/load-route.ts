@@ -81,6 +81,8 @@ export function loadRoute(
     commitStagingFiles: async () => ({ success: true, committedKeys: [] }),
     // growth-metrics (revenue mapping characterization, #1199)
     percentChange: jest.requireActual(path.join(pkg('utils'), 'analytics/period-report')).percentChange,
+    // #1500: orders that count in revenue rankings (cancelled ones count only when they kept a fee)
+    COUNTS_IN_REVENUE_WHERE: jest.requireActual(path.join(pkg('utils'), 'analytics/period-report')).COUNTS_IN_REVENUE_WHERE,
     // deposit plans (#1199); an older tree has no such file and no route that asks for it
     ...optionalActual(path.join(pkg('utils'), 'analytics/future-installments')),
   }));

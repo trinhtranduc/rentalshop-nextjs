@@ -31,6 +31,35 @@ function withoutPlanQueries(scenario: Record<string, any>) {
   };
 }
 
+/**
+ * #1500 top customers and the dashboard also count a cancelled order that kept a fee: their query swaps
+ * `status: { not: CANCELLED }` for `AND: [{ OR: [not cancelled, cancelKeptAmount > 0] }]` and the dashboard also selects
+ * `cancelKeptAmount`. This puts the recorded old shape back so every other part is still compared to the golden.
+ */
+function withoutCancelFeeQuery(scenario: Record<string, any>) {
+  const isCountsMarker = (v: any) => v && typeof v === 'object' && Array.isArray(v.OR) && v.OR.some((m: any) => m && m.cancelKeptAmount);
+  const fix = (value: any): any => {
+    if (Array.isArray(value)) return value.map(fix);
+    if (value && typeof value === 'object') {
+      const out: Record<string, any> = {};
+      for (const [k, v] of Object.entries(value)) {
+        if (k === 'AND' && Array.isArray(v) && v.length === 1 && isCountsMarker(v[0])) {
+          out.status = { not: 'CANCELLED' };
+        } else if (k === 'cancelKeptAmount' && v === true) {
+          continue;
+        } else if (k === 'status' && v === undefined) {
+          continue;
+        } else {
+          out[k] = fix(v);
+        }
+      }
+      return out;
+    }
+    return value;
+  };
+  return { ...scenario, queries: scenario.queries.map(fix) };
+}
+
 beforeAll(async () => {
   freezeClock(NOW);
   now = await runRevenueMappingScenarios();
@@ -43,7 +72,7 @@ describe('revenue routes: same response and same queries as before the refactor'
   });
 
   it.each(Object.keys(golden))('%s: same status, body and Prisma where as before', (scenario) => {
-    expect(withoutPlanQueries(now[scenario])).toEqual(before[scenario]);
+    expect(withoutCancelFeeQuery(withoutPlanQueries(now[scenario]))).toEqual(before[scenario]);
   });
 
   it.each(Object.keys(golden))('%s: answered 200 (the scenario is not an error path)', (scenario) => {
