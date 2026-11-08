@@ -5407,6 +5407,38 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("STAGED FLOW DONE order #\(number)")
     }
 
+    /// #1491: E2E_ORDER_NUMBER = a booked rent without a plan, deposit 300.000 of 300.000. The cancel sheet opens for it (owner),
+    /// the fee 100.000 is typed, the refund reads 200.000, and the cancelled order shows what the shop kept and gave back.
+    func test5oCancelWithFee() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        func digits(_ text: String) -> String { text.filter(\.isNumber) }
+        openOrder(number)
+        e2e.shot("5o-1-detail-reserved")
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Cancel order", "Hủy đơn", "Huỷ đơn"]), "⋯ → Huỷ đơn")
+        sleep(2)
+        let kept = app.textFields["deposit.cancel.kept"]
+        XCTAssertTrue(kept.waitForExistence(timeout: 5), "#1491 the cancel sheet opens for an order without a plan")
+        e2e.shot("5o-2-cancel-sheet")
+        kept.tap()
+        kept.typeText("100000")
+        e2e.hideKeyboard()
+        let refund = app.textFields["deposit.cancel.refund"]
+        XCTAssertEqual(digits((refund.value as? String) ?? ""), "200000", "refund = deposit 300.000 - fee 100.000")
+        e2e.shot("5o-3-fee-typed")
+        e2e.button(["Xác nhận huỷ", "Confirm cancel"]).tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.shot("5o-4-detail-cancelled")
+        let amounts = app.staticTexts.allElementsBoundByIndex.map { digits($0.label) }
+        XCTAssertTrue(amounts.contains("100000"), "#1491 the cancelled order shows what the shop kept (100.000)")
+        XCTAssertTrue(amounts.contains("200000"), "#1491 the cancelled order shows what went back (200.000)")
+        e2e.note("CANCEL WITH FEE DONE order #\(number)")
+    }
+
     /// #1375 (W11): the one-time "Thêm widget" card above "Việc cần làm", its three-step guide, and "Không hỏi lại".
     /// The card needs work today and no AnyRent widget on the phone (a fresh install); it is skipped otherwise.
     func test7kWidgetHintAndGuide() throws {

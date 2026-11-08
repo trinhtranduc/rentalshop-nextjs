@@ -248,10 +248,13 @@ export const percentCollected = (o: PlanOrderLike): number => Math.round(o.insta
 
 /** #1253: a cancelled order that kept money: what the shop kept and what went back (collected - kept); null otherwise */
 export function cancelledOutcome(o: PlanOrderLike): { kept: number; refund: number } | null {
-  if (o.status !== 'CANCELLED' || !hasPlan(o)) return null;
+  if (o.status !== 'CANCELLED') return null;
   const kept = o.cancelKeptAmount ?? 0;
   if (!(kept > 0)) return null;
-  return { kept, refund: Math.max(0, (o.installmentSummary?.collected ?? 0) - kept) };
+  // #1491: an order without a plan collected its single deposit; it stays on the order after the cancel
+  const collected = hasPlan(o) ? (o.installmentSummary?.collected ?? 0) : Math.max(0, o.depositAmount ?? 0);
+  if (!hasPlan(o) && o.orderType === 'SALE') return null;
+  return { kept, refund: Math.max(0, collected - kept) };
 }
 
 export const isOpenRental = (o: PlanOrderLike) => o.orderType === 'RENT' && o.status === 'RESERVED';
@@ -398,7 +401,9 @@ export interface CancelView {
 /** Khách đã trả / Tiệm giữ lại / Hoàn cho khách. Staff cannot keep anything: the customer gets it all back. */
 export function cancelView(o: PlanOrderLike, role: string | null | undefined, keptInput: number): CancelView {
   const paid = Math.max(0, o.depositAmount ?? 0);
-  const show = hasPlan(o) && isOpenRental(o) && paid > 0;
+  // #1491: an order without a plan keeps a fee inside its single deposit; only roles that may keep money get the dialog, the
+  // others keep the plain confirm (as before)
+  const show = isOpenRental(o) && paid > 0 && (hasPlan(o) || canChooseKeptRole(role));
   const canEditKept = show && canChooseKeptRole(role);
   const kept = canEditKept ? Math.min(paid, Math.max(0, Number.isFinite(keptInput) ? keptInput : 0)) : 0;
   return { show, paid, kept, refund: Math.max(0, paid - kept), canEditKept };

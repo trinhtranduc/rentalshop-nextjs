@@ -344,7 +344,9 @@ enum OrderDetailLogic {
                                 payments: payments, hasPlan: hasPlan, stages: stages, currency: currency)
         var cancelRows: [OrderMoneyLine] = []
         if let cancelKept, cancelKept > 0, status == .cancelled {
-            cancelRows = [.cancelKept(cancelKept), .cancelRefund(max(0, (summary?.collected ?? 0) - cancelKept))]
+            // #1491: an order without a plan collected its single deposit
+            let collected = hasPlan ? (summary?.collected ?? 0) : deposit
+            cancelRows = [.cancelKept(cancelKept), .cancelRefund(max(0, collected - cancelKept))]
         }
 
         var lines: [OrderMoneyLine] = [.subtotal(subtotal)]

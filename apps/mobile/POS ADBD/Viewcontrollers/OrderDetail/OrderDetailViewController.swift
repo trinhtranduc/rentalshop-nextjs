@@ -1173,8 +1173,11 @@ final class OrderDetailViewController: BaseViewControler {
 
     @objc private func cancelTapped() {
         // #1199: an order with collected stages: "Khách đã trả / Tiệm giữ lại / Hoàn cho khách"
-        if let detail, DepositPlanLogic.hasPlan(detail), (detail.installmentSummary?.collected ?? 0) > 0 {
-            presentCancelSheet(detail)
+        // #1491: so is a RENT order without a plan that was not handed over, with its single deposit
+        if let detail, let collected = DepositPlanLogic.cancelSheetCollected(
+            hasPlan: DepositPlanLogic.hasPlan(detail), planCollected: detail.installmentSummary?.collected ?? 0,
+            orderType: detail.orderType, status: detail.status, depositAmount: detail.depositAmount, role: User.account()?.role) {
+            presentCancelSheet(detail, collected: collected)
             return
         }
         UIAlertController.alert(
@@ -1352,10 +1355,10 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
-    private func presentCancelSheet(_ detail: OrderDetail) {
+    private func presentCancelSheet(_ detail: OrderDetail, collected: Double) {
         guard presentedViewController == nil else { return }
         let sheet = CancelDepositOrderSheet(orderNumber: OrdersHomeLogic.shortNumber(detail.orderNumber),
-                                            collected: detail.installmentSummary?.collected ?? 0,
+                                            collected: collected,
                                             policy: detail.depositPlanPolicy ?? DepositModeStore.latest?.cancellationPolicy,
                                             canKeep: DepositPlanLogic.canKeepOnCancel(role: User.account()?.role))
         sheet.onConfirm = { [weak self, weak sheet] kept, note in

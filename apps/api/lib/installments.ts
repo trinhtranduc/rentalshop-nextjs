@@ -413,6 +413,8 @@ export interface PlanCancellation {
   refund: number;
   /** The client sent no amount: everything goes back (old apps) */
   refundedAll: boolean;
+  /** #1491: an order without a deposit plan that was not handed over; the fee is only stored (no payment rows) */
+  plain?: boolean;
   note?: string;
 }
 
@@ -447,12 +449,20 @@ export async function planCancellation(
   if (!args.request.ok) return { error: { code: 'CANCEL_AMOUNTS_MISMATCH', status: 400 } };
   const { keptAmount, note } = args.request.value;
   const hasPlan = parseDepositPlan(args.order.depositPlan) != null;
-  const collected = hasPlan ? await collectedForCancel(client, args.order.id) : 0;
+  // #1491: a RENT order that was not handed over and has no plan can keep a fee inside its deposit
+  const plain = !hasPlan && args.order.orderType === 'RENT' && args.order.status === 'RESERVED';
+  const collected = hasPlan ? await collectedForCancel(client, args.order.id) : plain ? Math.max(0, args.order.depositAmount || 0) : 0;
   if (keptAmount !== undefined && keptAmount > 0) {
     if (!CANCEL_KEEP_ROLES.includes(args.role)) return { error: { code: 'INSTALLMENT_FORBIDDEN_ROLE', status: 403 } };
     if (keptAmount > collected + 1e-9) return { error: { code: 'CANCEL_AMOUNTS_MISMATCH', status: 400 } };
   }
-  if (!hasPlan) return { plan: null };
+  if (!hasPlan) {
+    // no fee (old apps, fee 0, staff): nothing to record, everything goes back as before
+    if (!plain || !(keptAmount !== undefined && keptAmount > 0)) return { plan: null };
+    const fee = Math.round(keptAmount * 10000) / 10000;
+    const back = Math.max(0, Math.round((collected - fee) * 10000) / 10000);
+    return { plan: { collected, kept: fee, refund: back, refundedAll: false, plain: true, ...(note ? { note } : {}) } };
+  }
   const kept = Math.round((keptAmount ?? 0) * 10000) / 10000;
   const refund = Math.max(0, Math.round((collected - kept) * 10000) / 10000);
   return { plan: { collected, kept, refund, refundedAll: keptAmount === undefined, ...(note ? { note } : {}) } };
@@ -474,8 +484,14 @@ export async function recordPlanCancellation(
       await lockOrderRow(tx, orderId);
       // #1253: two requests that cancel the same order both planned before the status changed. Only this function
       // writes `cancelKeptAmount`, and CANCELLED is final, so a number there means the amounts are already recorded.
-      const current = await tx.order.findUnique({ where: { id: orderId }, select: { cancelKeptAmount: true } });
+      const current = await tx.order.findUnique({ where: { id: orderId }, select: { cancelKeptAmount: true, depositAmount: true } });
       if (current?.cancelKeptAmount != null) return;
+      if (plan.plain) {
+        // #1491: revenue reads the fee from the order; no payment rows, and depositAmount stays what was collected
+        const feeKept = Math.min(plan.kept, Math.max(0, current?.depositAmount || 0));
+        await tx.order.update({ where: { id: orderId }, data: { cancelKeptAmount: feeKept, cancelledAt: at } });
+        return;
+      }
       // what is still collected right now (a stage collected after the plan was made goes back too)
       const collectedNow = await collectedForCancel(tx, orderId);
       const kept = Math.min(plan.kept, collectedNow);

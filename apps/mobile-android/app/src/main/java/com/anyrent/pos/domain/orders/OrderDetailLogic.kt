@@ -328,7 +328,9 @@ object OrderDetailLogic {
         val cash = handOverCash("RENT", st, total, deposit, securityDeposit, payments, info?.hasPlan, info?.installments, currency)
         val kept = if (st == "CANCELLED") cancelKept ?: 0.0 else 0.0
         val cancelRows = if (kept > 0) {
-            listOf(OrderMoneyLine.CancelKept(kept), OrderMoneyLine.CancelRefund(maxOf(0.0, (info?.summary?.collected ?: 0.0) - kept)))
+            // #1491: an order without a plan collected its single deposit
+            val collected = if (hasPlan) info?.summary?.collected ?: 0.0 else deposit
+            listOf(OrderMoneyLine.CancelKept(kept), OrderMoneyLine.CancelRefund(maxOf(0.0, collected - kept)))
         } else {
             emptyList()
         }

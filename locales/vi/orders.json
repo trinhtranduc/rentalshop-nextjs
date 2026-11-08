@@ -878,7 +878,8 @@
       "due": "còn thu {amount}",
       "fee": "+ phí trễ {amount}",
       "refund": "hoàn cọc {amount}",
-      "noRevenue": "không tính doanh thu"
+      "noRevenue": "không tính doanh thu",
+      "kept": "giữ lại {amount}"
     },
     "empty": {
       "all": "Không có đơn nào khớp bộ lọc.",
@@ -991,7 +992,8 @@
         "saleCollected": "Đã thu",
         "saleTotal": "Tổng đơn hàng",
         "saleDue": "Còn thu",
-        "noRevenue": "Không tính doanh thu"
+        "noRevenue": "Không tính doanh thu",
+        "cancelKept": "Doanh thu (phụ thu giữ lại)"
       },
       "settings": {
         "title": "Ghi chú, thế chấp và phí",

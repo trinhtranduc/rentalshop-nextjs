@@ -382,6 +382,25 @@ final class DepositPlanTests: XCTestCase {
         XCTAssertTrue(DepositPlanLogic.collectMethods(role: .merchant).contains("CHECK"))
     }
 
+    // MARK: #1491 the cancel sheet for an order without a plan, same numbers as tests/api/cancel-fee.test.ts
+
+    func testCancelSheetAsksAboutTheSingleDepositOfAnOrderNotHandedOver() {
+        func collected(plan: Bool = false, planCollected: Double = 0, _ type: OrderType = .rent, _ status: OrderStatus = .reserved,
+                       deposit: Double = 300_000, role: Role? = .merchant) -> Double? {
+            DepositPlanLogic.cancelSheetCollected(hasPlan: plan, planCollected: planCollected, orderType: type, status: status,
+                                                  depositAmount: deposit, role: role)
+        }
+        XCTAssertEqual(collected(), 300_000)
+        XCTAssertEqual(collected(role: .outletAdmin), 300_000)
+        XCTAssertNil(collected(role: .outletStaff), "staff cannot keep money: the plain confirm")
+        XCTAssertNil(collected(deposit: 0), "nothing collected: the plain confirm")
+        XCTAssertNil(collected(.rent, .pickuped), "handed over: the plain confirm")
+        XCTAssertNil(collected(.sale, .completed))
+        // a plan order is asked about its collected stages, for every role, as before
+        XCTAssertEqual(collected(plan: true, planCollected: 3_600_000, role: .outletStaff), 3_600_000)
+        XCTAssertNil(collected(plan: true, planCollected: 0))
+    }
+
     // MARK: Strings
 
     func testStringsExistInBothLanguages() throws {

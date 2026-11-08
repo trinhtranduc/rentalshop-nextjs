@@ -96,6 +96,13 @@ describe('list rows', () => {
     expect(late.pay).toEqual({ kind: 'fee', amount: 320_000 });
   });
 
+  it('#1491 a cancelled order that kept a fee shows what the shop kept, not "no revenue"', () => {
+    const kept = row({ orderType: 'RENT', status: 'CANCELLED', updatedAt: at('2026-09-29'), cancelKeptAmount: 100_000 });
+    expect(kept.pay).toEqual({ kind: 'kept', amount: 100_000 });
+    expect(row({ orderType: 'RENT', status: 'CANCELLED', updatedAt: at('2026-09-29'), cancelKeptAmount: 0 }).pay).toEqual({ kind: 'noRevenue' });
+    expect(row({ orderType: 'RENT', status: 'CANCELLED', updatedAt: at('2026-09-29') }).pay).toEqual({ kind: 'noRevenue' });
+  });
+
   it('returned, sale and cancelled', () => {
     expect(row({ orderType: 'RENT', status: 'RETURNED', returnedAt: at('2026-10-02', 20) }).schedule).toEqual({ kind: 'returned', day: '2026-10-02' });
     const sale = row({ orderType: 'SALE', status: 'COMPLETED', createdAt: at('2026-10-03') });
@@ -249,6 +256,8 @@ describe('order page', () => {
     expect(returned.total).toBeNull();
     expect(returned.discount).toBe(20_000);
     expect(buildPaySummary({ ...base, status: 'CANCELLED' })).toMatchObject({ total: { key: 'noRevenue', amount: null }, struck: true });
+    // #1491: the fee kept is the revenue of the cancelled order
+    expect(buildPaySummary({ ...base, status: 'CANCELLED', depositAmount: 300_000, cancelKeptAmount: 100_000 })).toMatchObject({ total: { key: 'cancelKept', amount: 100_000 }, struck: true });
     const sale = { ...base, orderType: 'SALE', securityDeposit: 0, discountAmount: 50_000, orderItems: [{ quantity: 2, unitPrice: 175_000 }] };
     expect(buildPaySummary({ ...sale, status: 'COMPLETED' })).toMatchObject({
       rows: [{ key: 'goodsTotal', amount: 350_000 }, { key: 'discount', amount: 50_000 }],

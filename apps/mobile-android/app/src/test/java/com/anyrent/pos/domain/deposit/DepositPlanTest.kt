@@ -301,6 +301,29 @@ class DepositPlanTest {
         assertEquals(listOf("CASH", "TRANSFER", "CHECK"), DepositPlanLogic.collectMethods(staffLike = false))
     }
 
+    // #1491 the cancel sheet for an order without a plan, same numbers as tests/api/cancel-fee.test.ts
+
+    @Test
+    fun `cancel sheet asks about the single deposit of an order not handed over`() {
+        fun collected(
+            plan: Boolean = false,
+            planCollected: Double = 0.0,
+            type: String = "RENT",
+            status: String = "RESERVED",
+            deposit: Double = 300_000.0,
+            role: String? = "MERCHANT",
+        ) = DepositPlanLogic.cancelSheetCollected(plan, planCollected, type, status, deposit, role)
+        assertEquals(300_000.0, collected()!!, 0.0)
+        assertEquals(300_000.0, collected(role = "OUTLET_ADMIN")!!, 0.0)
+        assertNull("staff cannot keep money: the plain confirm", collected(role = "OUTLET_STAFF"))
+        assertNull("nothing collected: the plain confirm", collected(deposit = 0.0))
+        assertNull("handed over: the plain confirm", collected(status = "PICKUPED"))
+        assertNull(collected(type = "SALE", status = "COMPLETED"))
+        // a plan order is asked about its collected stages, for every role, as before
+        assertEquals(3_600_000.0, collected(plan = true, planCollected = 3_600_000.0, role = "OUTLET_STAFF")!!, 0.0)
+        assertNull(collected(plan = true, planCollected = 0.0))
+    }
+
     @Test
     fun `collecting and the hand-over guard`() {
         val stages = listOf(

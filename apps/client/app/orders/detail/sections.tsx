@@ -333,7 +333,7 @@ export function PaymentCard({ summary, t, money }: { summary: PaySummary; t: T; 
       ? 'text-ar-unprepared'
       : total?.key === 'returnRefund'
         ? 'text-ar-renting'
-        : total?.key === 'saleCollected'
+        : total?.key === 'saleCollected' || total?.key === 'cancelKept'
           ? 'text-ar-done'
           : 'text-ar-muted';
   const amountTone = summary.struck ? 'text-ar-muted line-through' : 'text-ar-ink';
