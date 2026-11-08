@@ -7,7 +7,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import type { Money, T } from '../list/parts';
-import { handOverView, parseFee, returnView, type MoneyRow } from './actions-model';
+import { dialogFocusSelector, handOverView, parseFee, returnView, type MoneyRow } from './actions-model';
 import { PhotoBlock, PickupPhotosCompare } from './photos';
 import type { OrderDetailLike } from '../orders-model';
 
@@ -24,6 +24,7 @@ export function ActionDialog({
   busy,
   children,
   footer,
+  initialFocus,
 }: {
   open: boolean;
   title: string;
@@ -33,6 +34,8 @@ export function ActionDialog({
   busy?: boolean;
   children?: React.ReactNode;
   footer: React.ReactNode;
+  /** #1498 `button`: focus the safe button, not the first input (no keyboard opens by itself) */
+  initialFocus?: 'input' | 'button';
 }) {
   const id = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -63,7 +66,7 @@ export function ActionDialog({
       }
     };
     document.addEventListener('keydown', onKey);
-    const first = panelRef.current?.querySelector<HTMLElement>('input, [data-autofocus]');
+    const first = panelRef.current?.querySelector<HTMLElement>(dialogFocusSelector(initialFocus));
     (first || panelRef.current)?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
