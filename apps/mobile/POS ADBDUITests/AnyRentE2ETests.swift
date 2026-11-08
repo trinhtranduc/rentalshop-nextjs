@@ -1382,7 +1382,7 @@ final class AnyRentE2ETests: XCTestCase {
             let takeBack = e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button)
             XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "After hand-over the order offers Nhận trả")
             takeBack.tap()
-            let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)
+            let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận", "Give back", "Trả khách", "Collect more", "Thu thêm"], type: .button)
             XCTAssertTrue(taken.waitForExistence(timeout: 8), "Nhận trả sheet has a confirm button")
             e2e.shot("53-detail-return-sheet")
             taken.tap()
@@ -1460,7 +1460,7 @@ final class AnyRentE2ETests: XCTestCase {
         let takeBack = e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button)
         XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "After hand-over the order offers Nhận trả")
         takeBack.tap()
-        let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)  // "Đã nhận · hoàn 700.000"
+        let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận", "Give back", "Trả khách", "Collect more", "Thu thêm"], type: .button)  // "Trả khách 700.000"
         XCTAssertTrue(taken.waitForExistence(timeout: 8), "Nhận trả sheet has a confirm button")
         e2e.shot("5n-4-return-sheet")
         XCTAssertTrue(digits(taken.label).contains("700000"), "#1490 return gives back 700.000 (500.000 collateral + 200.000 excess deposit): \(taken.label)")
@@ -6123,7 +6123,7 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(1)
         if !title.isHittable { app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.07)).tap() }
         sleep(1)
-        let confirm = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)
+        let confirm = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận", "Give back", "Trả khách", "Collect more", "Thu thêm"], type: .button)
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "Confirm")
         confirm.tap()
         sleep(3)

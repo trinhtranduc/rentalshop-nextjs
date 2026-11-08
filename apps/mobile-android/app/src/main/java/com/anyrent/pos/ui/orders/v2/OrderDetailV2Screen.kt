@@ -1341,8 +1341,9 @@ private fun MoneyBlockLine(line: OrderMoneyLine, pickedUp: Boolean, afterDivider
             if (pickedUp) MoneyBlockRow(stringResource(R.string.detail_late_fee), "+" + formatMoneyVnd(line.amount), valueColor = late)
             else MoneyBlockRow(stringResource(R.string.detail_late_fee), formatMoneyVnd(line.amount))
         is OrderMoneyLine.DamageFee ->
-            if (pickedUp) MoneyBlockRow(stringResource(R.string.damage_fee), "+" + formatMoneyVnd(line.amount), valueColor = late)
-            else MoneyBlockRow(stringResource(R.string.damage_fee), formatMoneyVnd(line.amount))
+            // #1494: the extra fee is the "Phụ thu"
+            if (pickedUp) MoneyBlockRow(stringResource(R.string.surcharge), "+" + formatMoneyVnd(line.amount), valueColor = late)
+            else MoneyBlockRow(stringResource(R.string.surcharge), formatMoneyVnd(line.amount))
         is OrderMoneyLine.CollateralBack -> MoneyBlockRow(stringResource(R.string.detail_return_collateral), formatMoneyVnd(-line.amount))
         is OrderMoneyLine.SettledBefore -> MoneyBlockRow(stringResource(R.string.detail_settled_before), formatMoneyVnd(-line.amount))
         is OrderMoneyLine.CollectAtHandOver -> MoneyBlockDue(stringResource(R.string.detail_collect_at_hand_over), formatMoneyVnd(line.amount))

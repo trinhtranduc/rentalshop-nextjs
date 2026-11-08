@@ -822,8 +822,8 @@
     <string name="detail_give_back">Give back</string>
     <string name="detail_collect_more">Collect</string>
     <string name="detail_received">Received</string>
-    <string name="detail_received_refund">Received · give back %1$s</string>
-    <string name="detail_received_collect">Received · collect %1$s</string>
+    <string name="detail_received_refund">Give back %1$s</string>
+    <string name="detail_received_collect">Collect more %1$s</string>
     <plurals name="detail_late_fee_days">
         <item quantity="one">Late fee (%1$d day)</item>
         <item quantity="other">Late fee (%1$d days)</item>
@@ -2592,4 +2592,5 @@
     <string name="plan_store_has_plan">This Google Play account already has a plan. The new period starts at the next renewal.</string>
     <string name="plan_restore_short">Restore</string>
     <string name="detail_excess_deposit">Deposit above the rent</string>
+    <string name="surcharge">Surcharge</string>
 </resources>

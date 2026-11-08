@@ -3271,3 +3271,6 @@
 "plan.restoreShort" = "Khôi phục";
 
 "Deposit above the rent" = "Cọc dư so với tiền thuê";
+"Give back %@" = "Trả khách %@";
+"Collect more %@" = "Thu thêm %@";
+"Surcharge" = "Phụ thu";

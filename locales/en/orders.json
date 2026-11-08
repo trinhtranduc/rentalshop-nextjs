@@ -985,7 +985,7 @@
         "settledBefore": "Already settled",
         "excessDeposit": "Deposit above the rent",
         "lateFee": "Late fee",
-        "damageFee": "Extra fee",
+        "damageFee": "Surcharge",
         "collectAtPickup": "Collect at hand-over",
         "returnRefund": "At return: give back",
         "returnCollect": "At return: collect",
@@ -1021,19 +1021,20 @@
         },
         "takeBack": {
           "title": "Take back items",
-          "confirmCollect": "Take back · collect {amount}",
-          "confirmRefund": "Take back · give back {amount}",
+          "confirmCollect": "Collect more {amount}",
+          "confirmRefund": "Give back {amount}",
           "confirmFree": "Confirm return",
           "lateFee": "Late fee",
           "lateFeeDays": "Late fee ({days} days)",
-          "damageFee": "Extra fee"
+          "damageFee": "Surcharge",
+          "surcharge": "Surcharge"
         },
         "rows": {
           "orderTotal": "Order total",
           "depositPaid": "Deposit paid at booking",
           "collateralMoney": "Collateral money",
           "paidBefore": "Already collected",
-          "fees": "Late + extra fees",
+          "fees": "Surcharge",
           "collateralHeld": "Collateral money held",
           "settledBefore": "Already settled",
           "excessDeposit": "Deposit above the rent"

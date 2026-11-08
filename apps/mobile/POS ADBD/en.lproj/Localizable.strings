@@ -3273,3 +3273,6 @@
 "plan.restoreShort" = "Restore";
 
 "Deposit above the rent" = "Deposit above the rent";
+"Give back %@" = "Give back %@";
+"Collect more %@" = "Collect more %@";
+"Surcharge" = "Surcharge";

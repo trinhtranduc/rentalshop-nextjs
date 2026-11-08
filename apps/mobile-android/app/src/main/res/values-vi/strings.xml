@@ -809,8 +809,8 @@
     <string name="detail_give_back">Trả lại khách</string>
     <string name="detail_collect_more">Thu thêm</string>
     <string name="detail_received">Đã nhận</string>
-    <string name="detail_received_refund">Đã nhận · trả %1$s</string>
-    <string name="detail_received_collect">Đã nhận · thu %1$s</string>
+    <string name="detail_received_refund">Trả khách %1$s</string>
+    <string name="detail_received_collect">Thu thêm %1$s</string>
     <plurals name="detail_late_fee_days">
         <item quantity="other">Phí trễ (%1$d ngày)</item>
     </plurals>
@@ -2562,4 +2562,5 @@
     <string name="plan_store_has_plan">Tài khoản Google Play này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.</string>
     <string name="plan_restore_short">Khôi phục</string>
     <string name="detail_excess_deposit">Cọc dư so với tiền thuê</string>
+    <string name="surcharge">Phụ thu</string>
 </resources>

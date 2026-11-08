@@ -409,6 +409,15 @@ enum OrderDetailLogic {
         return OrderMoneyBlock(lines: lines, returnLine: returnLine, plan: plan)
     }
 
+    /// #1494 one "Phụ thu" instead of "Phí trễ" + "Phụ phí": the field starts at the saved total
+    static func surchargeShown(lateFee: Double, damageFee: Double) -> Double { lateFee + damageFee }
+
+    /// #1494 what a save of the one field sends: nil when the typed total equals the saved total (nothing to send, an old
+    /// order keeps its two fields), else everything in `damageFee` with `lateFee` 0 (the sum, as old apps read it, is the same)
+    static func surchargeUpdate(typed: Double, savedLateFee: Double, savedDamageFee: Double) -> (lateFee: Double, damageFee: Double)? {
+        typed == savedLateFee + savedDamageFee ? nil : (0, typed)
+    }
+
     static func returnMoney(lateFee: Double, damageFee: Double, securityDeposit: Double,
                             payments: [OrderPaymentLine], deposit: Double = 0, total: Double = 0) -> ReturnMoney {
         ReturnMoney(lateFee: lateFee, damageFee: damageFee, collateralMoney: securityDeposit,

@@ -83,16 +83,17 @@ describe('returnView', () => {
   });
 });
 
-describe('returnFeesUpdate (iOS confirm: PUT both fees when either changed)', () => {
-  it('nothing changed → no PUT', () => {
-    expect(returnFeesUpdate({ lateFee: 50, damageFee: 0 }, { lateFee: 50, damageFee: 0 })).toBeNull();
+describe('returnFeesUpdate (#1494: one "Phụ thu", saved only when the total changed)', () => {
+  it('same total → no PUT, an old order keeps its late fee and extra fee apart', () => {
+    expect(returnFeesUpdate({ lateFee: 50, damageFee: 0 }, { lateFee: 0, damageFee: 50 })).toBeNull();
+    expect(returnFeesUpdate({ lateFee: 30, damageFee: 20 }, { lateFee: 0, damageFee: 50 })).toBeNull();
     expect(returnFeesUpdate({ lateFee: null, damageFee: undefined }, { lateFee: 0, damageFee: 0 })).toBeNull();
   });
-  it('damage changed → both fees', () => {
+  it('a different total → everything in damageFee, lateFee 0', () => {
     expect(returnFeesUpdate({ lateFee: 0, damageFee: 0 }, { lateFee: 0, damageFee: 25 })).toEqual({ damageFee: 25, lateFee: 0 });
-  });
-  it('late fee changed → both fees', () => {
-    expect(returnFeesUpdate({ lateFee: 0, damageFee: 10 }, { lateFee: 150, damageFee: 10 })).toEqual({ damageFee: 10, lateFee: 150 });
+    expect(returnFeesUpdate({ lateFee: 30, damageFee: 20 }, { lateFee: 0, damageFee: 80 })).toEqual({ damageFee: 80, lateFee: 0 });
+    expect(returnFeesUpdate({ lateFee: 0, damageFee: 10 }, { lateFee: 150, damageFee: 10 })).toEqual({ damageFee: 160, lateFee: 0 });
+    expect(returnFeesUpdate({ lateFee: 0, damageFee: 50 }, { lateFee: 0, damageFee: 0 })).toEqual({ damageFee: 0, lateFee: 0 });
   });
 });
 

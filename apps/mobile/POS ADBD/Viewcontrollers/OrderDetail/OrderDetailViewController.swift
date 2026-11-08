@@ -795,7 +795,7 @@ final class OrderDetailViewController: BaseViewControler {
         case .collateralMoney(let amount): return OrderMoneyViews.row("Collateral money".localized(), "+" + money(amount))
         case .alreadyCollected(let amount): return OrderMoneyViews.row("Already collected".localized(), money(-amount))
         case .lateFee(let amount): return OrderMoneyViews.row("Late fee".localized(), fee(amount))
-        case .damageFee(let amount): return OrderMoneyViews.row("Damage fee".localized(), fee(amount))
+        case .damageFee(let amount): return OrderMoneyViews.row("Surcharge".localized(), fee(amount)) // #1494: the extra fee is the "Phụ thu"
         case .collectAtHandOver(let amount): return OrderMoneyViews.due("Collect at hand-over".localized(), money(amount))
         case .cashAtHandOver(let lines):
             return OrderMoneyViews.due("share.cashAtHandover".localized(), money(lines.cash),
@@ -1111,12 +1111,15 @@ final class OrderDetailViewController: BaseViewControler {
     private func confirm(_ mode: OrderHandOverSheetViewController.Mode, lateFee: Double, damageFee: Double) {
         guard let detail, let viewModel = orderViewModel else { return }
         showProgressText(text: "Updating...".localized())
-        let feesChanged = mode == .takeReturn && (lateFee != detail.lateFee || damageFee != detail.damageFee)
-        guard feesChanged else {
+        // #1494 one "Phụ thu": saved only when the total changed, then as damageFee with lateFee 0
+        let update = mode == .takeReturn
+            ? OrderDetailLogic.surchargeUpdate(typed: lateFee + damageFee, savedLateFee: detail.lateFee, savedDamageFee: detail.damageFee)
+            : nil
+        guard let update else {
             changeStatus(with: viewModel)
             return
         }
-        let request = UpdateOrderRequest(damageFee: damageFee, lateFee: lateFee)
+        let request = UpdateOrderRequest(damageFee: update.damageFee, lateFee: update.lateFee)
         OrderService.shared.updateOrder(orderId: detail.id, request: request) { [weak self] updated, error in
             DispatchQueue.main.async {
                 guard let self else { return }
