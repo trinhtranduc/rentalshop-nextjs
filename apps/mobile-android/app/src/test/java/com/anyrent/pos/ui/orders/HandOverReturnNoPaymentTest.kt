@@ -62,6 +62,31 @@ class HandOverReturnNoPaymentTest {
         assertEquals(listOf("fees:20.0:5.0", "status:RETURNED"), source.writes)
     }
 
+    // #1494 one "Phụ thu": an old order keeps its late fee and extra fee apart until the total changes
+    @Test
+    fun `return with the same surcharge total as the saved two fees sends only RETURNED`() = runTest(dispatcher) {
+        val source = RecordingSource(savedLate = 30.0, savedDamage = 20.0)
+        val vm = OrderDetailV2ViewModel(7, source)
+        advanceUntilIdle()
+
+        vm.takeReturn(lateFee = 0.0, damageFee = 50.0, onError = {}) {}
+        advanceUntilIdle()
+
+        assertEquals(listOf("status:RETURNED"), source.writes)
+    }
+
+    @Test
+    fun `return with a different surcharge total saves it as the extra fee then sends RETURNED`() = runTest(dispatcher) {
+        val source = RecordingSource(savedLate = 30.0, savedDamage = 20.0)
+        val vm = OrderDetailV2ViewModel(7, source)
+        advanceUntilIdle()
+
+        vm.takeReturn(lateFee = 0.0, damageFee = 80.0, onError = {}) {}
+        advanceUntilIdle()
+
+        assertEquals(listOf("fees:0.0:80.0", "status:RETURNED"), source.writes)
+    }
+
     @Test
     fun `return with unchanged fees sends only RETURNED`() = runTest(dispatcher) {
         val source = RecordingSource()
@@ -86,7 +111,7 @@ class HandOverReturnNoPaymentTest {
         }
     }
 
-    private class RecordingSource : OrderDetailSource {
+    private class RecordingSource(private val savedLate: Double = 0.0, private val savedDamage: Double = 0.0) : OrderDetailSource {
         val writes = mutableListOf<String>()
 
         override suspend fun load(id: Int): Result<OrderDetail> = Result.success(
@@ -99,6 +124,8 @@ class HandOverReturnNoPaymentTest {
                 items = emptyList(),
                 customerId = null,
                 payments = emptyList(),
+                lateFee = savedLate,
+                damageFee = savedDamage,
             ),
         )
 

@@ -242,7 +242,8 @@ class OrderDetailV2ViewModel(
         if (_state.value.busy) return
         val current = _state.value.detail
         viewModelScope.launch {
-            if (current == null || lateFee != current.lateFee || damageFee != current.damageFee) {
+            // #1494 one "Phụ thu": saved only when the total changed (an old order keeps its late fee and extra fee apart)
+            if (current == null || lateFee + damageFee != current.lateFee + current.damageFee) {
                 saveFees(lateFee, damageFee).exceptionOrNull()?.let {
                     onError(it)
                     return@launch

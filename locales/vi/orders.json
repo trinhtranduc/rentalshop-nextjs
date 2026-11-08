@@ -984,7 +984,7 @@
         "settledBefore": "Đã thanh toán trước",
         "excessDeposit": "Cọc dư so với tiền thuê",
         "lateFee": "Phí trễ",
-        "damageFee": "Phụ phí",
+        "damageFee": "Phụ thu",
         "collectAtPickup": "Thu khi giao",
         "returnRefund": "Khi nhận trả: trả khách",
         "returnCollect": "Khi nhận trả: thu thêm",
@@ -1019,19 +1019,20 @@
         },
         "takeBack": {
           "title": "Nhận trả đồ",
-          "confirmCollect": "Nhận trả · thu {amount}",
-          "confirmRefund": "Nhận trả · trả khách {amount}",
+          "confirmCollect": "Thu thêm {amount}",
+          "confirmRefund": "Trả khách {amount}",
           "confirmFree": "Xác nhận nhận trả",
           "lateFee": "Phí trễ",
           "lateFeeDays": "Phí trễ ({days} ngày)",
-          "damageFee": "Phụ phí"
+          "damageFee": "Phụ thu",
+          "surcharge": "Phụ thu"
         },
         "rows": {
           "orderTotal": "Tổng đơn hàng",
           "depositPaid": "Đã cọc khi đặt",
           "collateralMoney": "Thế chân thu thêm",
           "paidBefore": "Đã thu trước",
-          "fees": "Phí trễ + phụ phí",
+          "fees": "Phụ thu",
           "collateralHeld": "Thế chân đang giữ",
           "settledBefore": "Đã thanh toán trước",
           "excessDeposit": "Cọc dư so với tiền thuê"

@@ -137,6 +137,23 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertEqual(result.refundDue, 700_000)
     }
 
+    // MARK: One "Phụ thu" instead of "Phí trễ" + "Phụ phí" (#1494)
+
+    func testTheSurchargeFieldStartsAtTheSavedTotalAndSavesOnlyWhenItChanged() {
+        XCTAssertEqual(OrderDetailLogic.surchargeShown(lateFee: 30_000, damageFee: 20_000), 50_000)
+        XCTAssertEqual(OrderDetailLogic.surchargeShown(lateFee: 0, damageFee: 0), 0)
+        // unchanged total: nothing to send, an old order keeps its two fields
+        XCTAssertNil(OrderDetailLogic.surchargeUpdate(typed: 50_000, savedLateFee: 30_000, savedDamageFee: 20_000))
+        XCTAssertNil(OrderDetailLogic.surchargeUpdate(typed: 0, savedLateFee: 0, savedDamageFee: 0))
+        // changed total: everything goes into damageFee, lateFee 0 (the sum old apps read is the typed one)
+        let more = OrderDetailLogic.surchargeUpdate(typed: 80_000, savedLateFee: 30_000, savedDamageFee: 20_000)
+        XCTAssertEqual(more?.lateFee, 0)
+        XCTAssertEqual(more?.damageFee, 80_000)
+        let cleared = OrderDetailLogic.surchargeUpdate(typed: 0, savedLateFee: 0, savedDamageFee: 50_000)
+        XCTAssertEqual(cleared?.lateFee, 0)
+        XCTAssertEqual(cleared?.damageFee, 0)
+    }
+
     // MARK: Note colours (#1430)
 
     func testWarmNoteColoursAndTheBandStays() {

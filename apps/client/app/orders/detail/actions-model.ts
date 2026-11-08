@@ -62,15 +62,16 @@ export function parseFee(raw: string): { text: string; value: number } {
 }
 
 /**
- * What to save before RETURNED, as iOS `OrderDetailViewController.confirm`: when the late or damage fee
- * typed differs from the saved one, PUT both; otherwise nothing.
+ * What to save before RETURNED, as iOS `OrderDetailViewController.confirm` (#1494 one "Phụ thu"): when the typed total
+ * differs from the saved late + damage fees, PUT it all as `damageFee` with `lateFee` 0; otherwise nothing (an old order
+ * keeps its two fees apart).
  */
 export function returnFeesUpdate(
   saved: { lateFee?: number | null; damageFee?: number | null },
   typed: { lateFee: number; damageFee: number },
 ): { damageFee: number; lateFee: number } | null {
-  const changed = typed.lateFee !== (saved.lateFee || 0) || typed.damageFee !== (saved.damageFee || 0);
-  return changed ? { damageFee: typed.damageFee, lateFee: typed.lateFee } : null;
+  const total = typed.lateFee + typed.damageFee;
+  return total !== (saved.lateFee || 0) + (saved.damageFee || 0) ? { damageFee: total, lateFee: 0 } : null;
 }
 
 /** Pickup and return plan days (Vietnam civil days) for the dialog subtitle. */
