@@ -354,8 +354,11 @@ extension NumberPickerViewController {
                     },
                 ]
             } else {
-                sheet.detents = [.medium()]
-                sheet.selectedDetentIdentifier = .medium
+                // #1502 before iOS 16 a sheet has no height of its own, only medium (half the screen) and large. Half of an iPad
+                // in landscape (~400pt) is less than the ~475-557pt the keypad needs, so Confirm covered the `%` / amount
+                // choice. Large shows everything.
+                sheet.detents = [.large()]
+                sheet.selectedDetentIdentifier = .large
             }
             sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 16

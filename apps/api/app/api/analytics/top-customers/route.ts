@@ -7,6 +7,7 @@ import { handleApiError, ResponseBuilder, getOrderRevenueEvents, withoutCollater
 import { API } from '@rentalshop/constants';
 import { lastShopDays, readReportRange } from '../../../../lib/report-days';
 import { narrowAnalyticsOutletFilter } from '../../../../lib/analytics-outlets';
+import { COUNTS_IN_REVENUE_WHERE } from '@rentalshop/utils/server';
 
 /**
  * GET /api/analytics/top-customers - Get top-performing customers
@@ -94,7 +95,10 @@ export const GET = withPermissions(['analytics.view.customers'])(async (request,
     const allOrders = await prisma.order.findMany({
       where: {
         ...orderWhereClause,
-        status: { not: ORDER_STATUS.CANCELLED }, // Exclude cancelled orders from revenue
+        // Cancelled orders do not count, except one that kept a fee: its revenue is that fee (#1500). The base clause
+        // lists the four live statuses, so the status is taken out of it here and COUNTS_IN_REVENUE_WHERE decides.
+        status: undefined,
+        AND: [COUNTS_IN_REVENUE_WHERE],
         deletedAt: null // Exclude soft-deleted orders
       },
       select: {

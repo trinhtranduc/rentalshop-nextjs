@@ -38,6 +38,8 @@ interface RevenueData {
   previous: { month: string; daily: { date: string; total: number; count: number }[] } | null;
   byChannel: { channel: string; total: number; count: number }[];
   months: RevenueMonth[];
+  /** #1505: old plan money with no Payment row, estimated from the activity log; never part of `received` (absent on an older API) */
+  estimated?: { total: number; count: number; months: { month: string; total: number; count: number }[] };
   latest: {
     id: number;
     at: string;
@@ -230,6 +232,8 @@ export function RevenueBlock() {
   const heights = barHeights(points.map((p) => p.value), top);
   const empty = data.received.count === 0 && data.refunds.count === 0 && data.otherCurrencies.length === 0;
   const hovered = hover !== null ? points[hover] : null;
+  const estimated = data.estimated;
+  const estimateOf = (month: string) => estimated?.months.find((m) => m.month === month)?.total ?? 0;
 
   return (
     <>
@@ -253,6 +257,13 @@ export function RevenueBlock() {
             </small>
           </div>
         ))}
+
+        {estimated && estimated.count > 0 && (
+          <div className="ar-rev-other" data-testid="revenue-estimated">
+            <b>{t('estimateTitle', { amount: money(estimated.total) })}</b>
+            <small>{t('estimateDetail', { count: estimated.count })}</small>
+          </div>
+        )}
 
         <div className="ar-rev-legend"><i />{isYear ? t('legendMonth') : t('legendDay')}</div>
         <div className="ar-rev-plot" data-testid="revenue-plot" onMouseLeave={() => setHover(null)}>
@@ -330,6 +341,7 @@ export function RevenueBlock() {
                 <tr>
                   <th>{t('month')}</th><th className="n">{t('revenue')}</th><th className="n">{t('payments')}</th>
                   <th className="n">{t('newShops')}</th><th className="n">{t('renewals')}</th>
+                  {estimated && <th className="n">{t('estimateColumn')}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -344,13 +356,14 @@ export function RevenueBlock() {
                         </button>
                       </td>
                       {future ? (
-                        <><td className="n">—</td><td className="n">—</td><td className="n">—</td><td className="n">—</td></>
+                        <><td className="n">—</td><td className="n">—</td><td className="n">—</td><td className="n">—</td>{estimated && <td className="n">—</td>}</>
                       ) : (
                         <>
                           <td className={`n${m.total ? '' : ' zero'}`}>{money(m.total)}</td>
                           <td className={`n${m.count ? '' : ' zero'}`}>{m.count}</td>
                           <td className={`n${m.count ? '' : ' zero'}`}>{m.newCount}</td>
                           <td className={`n${m.count ? '' : ' zero'}`}>{m.renewalCount}</td>
+                          {estimated && <td className={`n${estimateOf(m.month) ? '' : ' zero'}`}>{money(estimateOf(m.month))}</td>}
                         </>
                       )}
                     </tr>
@@ -362,6 +375,7 @@ export function RevenueBlock() {
                   <td className="n">{data.months.reduce((s, m) => s + m.count, 0)}</td>
                   <td className="n">{data.months.reduce((s, m) => s + m.newCount, 0)}</td>
                   <td className="n">{data.months.reduce((s, m) => s + m.renewalCount, 0)}</td>
+                  {estimated && <td className="n">{money(estimated.months.reduce((s, m) => s + m.total, 0))}</td>}
                 </tr>
               </tbody>
             </table>

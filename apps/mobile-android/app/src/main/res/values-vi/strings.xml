@@ -809,8 +809,8 @@
     <string name="detail_give_back">Trả lại khách</string>
     <string name="detail_collect_more">Thu thêm</string>
     <string name="detail_received">Đã nhận</string>
-    <string name="detail_received_refund">Đã nhận · trả %1$s</string>
-    <string name="detail_received_collect">Đã nhận · thu %1$s</string>
+    <string name="detail_received_refund">Trả khách %1$s</string>
+    <string name="detail_received_collect">Thu thêm %1$s</string>
     <plurals name="detail_late_fee_days">
         <item quantity="other">Phí trễ (%1$d ngày)</item>
     </plurals>
@@ -2225,9 +2225,9 @@
     <string name="deposit_void_confirm">Huỷ khoản thu</string>
     <string name="deposit_cancel_policy">Chính sách tiệm: %s</string>
     <string name="deposit_cancel_paid">Khách đã trả</string>
-    <string name="deposit_cancel_kept">Tiệm giữ lại</string>
+    <string name="deposit_cancel_kept">Phụ thu</string>
     <string name="deposit_cancel_refund">Hoàn cho khách</string>
-    <string name="deposit_cancel_hint">Sửa được số giữ lại / hoàn nếu tiệm đồng ý khác.</string>
+    <string name="deposit_cancel_hint">Phụ thu là phần tiệm giữ lại trong tiền cọc, phần còn lại hoàn cho khách.</string>
     <string name="deposit_cancel_staff_hint">Nhân viên huỷ đơn sẽ hoàn lại toàn bộ tiền đã thu.</string>
     <string name="deposit_cancel_note">Ghi chú (không bắt buộc)</string>
     <string name="deposit_cancel_confirm">Xác nhận huỷ</string>
@@ -2561,4 +2561,6 @@
     <!-- #1464: the store kept this Google account's plan; short bottom links -->
     <string name="plan_store_has_plan">Tài khoản Google Play này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.</string>
     <string name="plan_restore_short">Khôi phục</string>
+    <string name="detail_excess_deposit">Cọc dư so với tiền thuê</string>
+    <string name="surcharge">Phụ thu</string>
 </resources>

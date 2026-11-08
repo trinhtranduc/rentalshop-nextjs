@@ -20,7 +20,7 @@ jest.mock('@rentalshop/auth/server', () => ({
 }));
 
 type Row = Record<string, any>;
-const store: { payments: Row[]; merchants: Row[] } = { payments: [], merchants: [] };
+const store: { payments: Row[]; merchants: Row[]; activities: Row[] } = { payments: [], merchants: [], activities: [] };
 const calls: any[] = [];
 
 /** Just enough of Prisma's `where` for the shapes the route sends: field equals / in / not / gte / lte / lt, OR. */
@@ -45,6 +45,13 @@ const test = (row: Row, where: Row = {}): boolean =>
 jest.mock('@rentalshop/database', () => ({
   db: {
     prisma: {
+      // #1505: the activity log read for the estimate
+      subscriptionActivity: {
+        findMany: async (args: any) => {
+          calls.push(args);
+          return store.activities.filter((a) => test(a, args.where));
+        },
+      },
       payment: {
         findMany: async (args: any) => {
           calls.push(args);
@@ -66,6 +73,7 @@ jest.mock('@rentalshop/database', () => ({
 
 jest.mock('@rentalshop/utils', () => ({
   ...jest.requireActual('../../packages/utils/src/core/date-range'),
+  ...jest.requireActual('../../packages/utils/src/core/plan-extension-estimate'),
   getLocalDateKey: jest.requireActual('../../packages/utils/src/core/date').getLocalDateKey,
   ResponseBuilder: {
     error: (code: string) => ({ success: false, code, message: code, error: code }),
@@ -94,6 +102,7 @@ const call = (qs: string, role = 'ADMIN') => (GET as any)({ url: `http://x/api/a
 beforeEach(() => {
   jest.useFakeTimers().setSystemTime(NOW);
   store.payments = [];
+  store.activities = [];
   store.merchants = [{ id: 1, name: 'Shop A' }, { id: 2, name: 'Shop B' }];
   calls.length = 0;
 });
@@ -255,5 +264,46 @@ describe('answer', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.received).toEqual({ total: 0, count: 0, newCount: 0, renewalCount: 0 });
     expect(res.body.data.latest).toEqual([]);
+  });
+});
+
+describe('estimated (#1505)', () => {
+  const activity = (over: Row = {}): Row => ({
+    id: 900, subscriptionId: 7, type: 'subscription_extended', createdAt: new Date('2026-08-05T03:00:00.000Z'),
+    metadata: JSON.stringify({ method: 'MANUAL_EXTENSION', amount: 237000 }),
+    subscription: { id: 7, merchantId: 1, currency: 'VND', amount: 79000, period: 1, merchant: { name: 'Shop A' }, plan: { basePrice: 79000 } },
+    ...over,
+  });
+
+  it('an old manual extension without a Payment shows in `estimated`, never in `received`', async () => {
+    store.activities = [activity()];
+    const res = await call('?year=2026');
+    expect(res.status).toBe(200);
+    expect(res.body.data.received.total).toBe(0);
+    expect(res.body.data.estimated.total).toBe(237000);
+    expect(res.body.data.estimated.months.find((m: Row) => m.month === '2026-08')).toMatchObject({ total: 237000, count: 1 });
+    expect(res.body.data.estimated.items[0]).toMatchObject({ dateKey: '2026-08-05', kind: 'EXTENSION', merchant: { id: 1, name: 'Shop A' } });
+  });
+
+  it('the same extension with a real Payment is counted once, in `received`', async () => {
+    store.activities = [activity()];
+    store.payments = [pay({ type: 'PLAN_EXTENSION', method: 'MANUAL', amount: 237000, subscriptionId: 7, at: '2026-08-05T03:00:30.000Z' })];
+    const res = await call('?year=2026');
+    expect(res.body.data.received.total).toBe(237000);
+    expect(res.body.data.estimated.total).toBe(0);
+  });
+
+  it('answers an empty estimate when there is nothing old to estimate', async () => {
+    const res = await call('?month=2026-11');
+    expect(res.body.data.estimated).toMatchObject({ total: 0, count: 0, items: [] });
+    expect(res.body.data.estimated.months).toHaveLength(12);
+  });
+
+  it('reads only the extension and plan-change activities of the Vietnam year', async () => {
+    await call('?month=2026-11');
+    const read = calls.find((c) => c.where?.type?.in?.includes('MANUAL_EXTENSION'));
+    expect(read.where.type.in.sort()).toEqual(['MANUAL_EXTENSION', 'plan_changed', 'subscription_extended', 'subscription_plan_changed']);
+    expect(read.where.createdAt.gte.toISOString()).toBe('2025-12-31T17:00:00.000Z');
+    expect(read.where.createdAt.lte.toISOString()).toBe('2026-12-31T16:59:59.999Z');
   });
 });

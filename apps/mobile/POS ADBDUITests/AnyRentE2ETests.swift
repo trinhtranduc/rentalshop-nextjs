@@ -1382,7 +1382,7 @@ final class AnyRentE2ETests: XCTestCase {
             let takeBack = e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button)
             XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "After hand-over the order offers Nhận trả")
             takeBack.tap()
-            let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)
+            let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận", "Give back", "Trả khách", "Collect more", "Thu thêm"], type: .button)
             XCTAssertTrue(taken.waitForExistence(timeout: 8), "Nhận trả sheet has a confirm button")
             e2e.shot("53-detail-return-sheet")
             taken.tap()
@@ -1434,6 +1434,40 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(cancelled, "Found and cancelled a sale order")
     }
 
+
+    /// #1490: E2E_ORDER_NUMBER = a booked rent without a plan: rent 100.000, deposit 300.000, collateral money 500.000 at booking.
+    /// Hand-over asks 500.000 (not 300.000); at return the sheet shows the excess deposit and gives back 700.000.
+    func test5nDepositOverRentReturn() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        func digits(_ text: String) -> String { text.filter(\.isNumber) }
+        openOrder(number)
+        let handOver = e2e.element(labelBeginsWith: ["Hand over", "Giao đồ"], type: .button)
+        XCTAssertTrue(handOver.waitForExistence(timeout: 10), "RESERVED rent order shows Giao đồ")
+        e2e.shot("5n-1-detail-reserved")
+        handOver.tap()
+        let handed = e2e.element(labelBeginsWith: ["Handed over", "Đã lấy", "Đã giao"], type: .button)  // "Đã lấy · thu 500.000"
+        XCTAssertTrue(handed.waitForExistence(timeout: 8), "Giao đồ sheet has a confirm button")
+        e2e.shot("5n-2-handover-sheet")
+        XCTAssertTrue(digits(handed.label).contains("500000"), "#1490 hand-over asks 500.000, not 300.000: \(handed.label)")
+        handed.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        e2e.shot("5n-3-pickuped")
+        let takeBack = e2e.element(labelBeginsWith: ["Take back", "Nhận trả"], type: .button)
+        XCTAssertTrue(takeBack.waitForExistence(timeout: 10), "After hand-over the order offers Nhận trả")
+        takeBack.tap()
+        let taken = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận", "Give back", "Trả khách", "Collect more", "Thu thêm"], type: .button)  // "Trả khách 700.000"
+        XCTAssertTrue(taken.waitForExistence(timeout: 8), "Nhận trả sheet has a confirm button")
+        e2e.shot("5n-4-return-sheet")
+        XCTAssertTrue(digits(taken.label).contains("700000"), "#1490 return gives back 700.000 (500.000 collateral + 200.000 excess deposit): \(taken.label)")
+        let excess = app.staticTexts.matching(NSPredicate(format: "label == 'Deposit above the rent' OR label == 'Cọc dư so với tiền thuê'")).firstMatch
+        XCTAssertTrue(excess.exists, "#1490 the sheet shows the excess deposit row")
+        e2e.note("DEPOSIT OVER RENT DONE order #\(number)")
+    }
 
     func test0AuthFlows() throws {
         try e2e.requireFlag("newAuth")
@@ -5373,6 +5407,38 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.note("STAGED FLOW DONE order #\(number)")
     }
 
+    /// #1491: E2E_ORDER_NUMBER = a booked rent without a plan, deposit 300.000 of 300.000. The cancel sheet opens for it (owner),
+    /// the fee 100.000 is typed, the refund reads 200.000, and the cancelled order shows what the shop kept and gave back.
+    func test5oCancelWithFee() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        guard let number = ProcessInfo.processInfo.environment["E2E_ORDER_NUMBER"] else { throw XCTSkip("E2E_ORDER_NUMBER not set") }
+        try e2e.start()
+        func digits(_ text: String) -> String { text.filter(\.isNumber) }
+        openOrder(number)
+        e2e.shot("5o-1-detail-reserved")
+        XCTAssertTrue(e2e.tapOrderSheetRow(["Cancel order", "Hủy đơn", "Huỷ đơn"]), "⋯ → Huỷ đơn")
+        sleep(2)
+        let kept = app.textFields["deposit.cancel.kept"]
+        XCTAssertTrue(kept.waitForExistence(timeout: 5), "#1491 the cancel sheet opens for an order without a plan")
+        e2e.shot("5o-2-cancel-sheet")
+        kept.tap()
+        kept.typeText("100000")
+        e2e.hideKeyboard()
+        let refund = app.textFields["deposit.cancel.refund"]
+        XCTAssertEqual(digits((refund.value as? String) ?? ""), "200000", "refund = deposit 300.000 - fee 100.000")
+        e2e.shot("5o-3-fee-typed")
+        e2e.button(["Xác nhận huỷ", "Confirm cancel"]).tap()
+        sleep(4)
+        e2e.dismissAlerts()
+        e2e.shot("5o-4-detail-cancelled")
+        let amounts = app.staticTexts.allElementsBoundByIndex.map { digits($0.label) }
+        XCTAssertTrue(amounts.contains("100000"), "#1491 the cancelled order shows what the shop kept (100.000)")
+        XCTAssertTrue(amounts.contains("200000"), "#1491 the cancelled order shows what went back (200.000)")
+        e2e.note("CANCEL WITH FEE DONE order #\(number)")
+    }
+
     /// #1375 (W11): the one-time "Thêm widget" card above "Việc cần làm", its three-step guide, and "Không hỏi lại".
     /// The card needs work today and no AnyRent widget on the phone (a fresh install); it is skipped otherwise.
     func test7kWidgetHintAndGuide() throws {
@@ -6057,7 +6123,7 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(1)
         if !title.isHittable { app.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.07)).tap() }
         sleep(1)
-        let confirm = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận"], type: .button)
+        let confirm = e2e.element(labelBeginsWith: ["Taken back", "Đã nhận", "Give back", "Trả khách", "Collect more", "Thu thêm"], type: .button)
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "Confirm")
         confirm.tap()
         sleep(3)

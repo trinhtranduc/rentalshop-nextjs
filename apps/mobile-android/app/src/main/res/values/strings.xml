@@ -822,8 +822,8 @@
     <string name="detail_give_back">Give back</string>
     <string name="detail_collect_more">Collect</string>
     <string name="detail_received">Received</string>
-    <string name="detail_received_refund">Received · give back %1$s</string>
-    <string name="detail_received_collect">Received · collect %1$s</string>
+    <string name="detail_received_refund">Give back %1$s</string>
+    <string name="detail_received_collect">Collect more %1$s</string>
     <plurals name="detail_late_fee_days">
         <item quantity="one">Late fee (%1$d day)</item>
         <item quantity="other">Late fee (%1$d days)</item>
@@ -2255,9 +2255,9 @@
     <string name="deposit_void_confirm">Undo collection</string>
     <string name="deposit_cancel_policy">Shop policy: %s</string>
     <string name="deposit_cancel_paid">Customer paid</string>
-    <string name="deposit_cancel_kept">Shop keeps</string>
+    <string name="deposit_cancel_kept">Surcharge</string>
     <string name="deposit_cancel_refund">Refund to customer</string>
-    <string name="deposit_cancel_hint">You can change what is kept / refunded if the shop agrees otherwise.</string>
+    <string name="deposit_cancel_hint">The surcharge is what the shop keeps from the deposit; the rest is refunded to the customer.</string>
     <string name="deposit_cancel_staff_hint">When staff cancel, everything collected is refunded.</string>
     <string name="deposit_cancel_note">Note (optional)</string>
     <string name="deposit_cancel_confirm">Confirm cancel</string>
@@ -2591,4 +2591,6 @@
     <!-- #1464: the store kept this Google account's plan; short bottom links -->
     <string name="plan_store_has_plan">This Google Play account already has a plan. The new period starts at the next renewal.</string>
     <string name="plan_restore_short">Restore</string>
+    <string name="detail_excess_deposit">Deposit above the rent</string>
+    <string name="surcharge">Surcharge</string>
 </resources>

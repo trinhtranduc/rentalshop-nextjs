@@ -25,7 +25,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         }
     }
 
-    /// lateFee, damageFee (return sheet)
+    /// lateFee, damageFee (return sheet): the one "Phụ thu" is sent as damageFee with lateFee 0 (#1494)
     var onConfirm: ((Double, Double) -> Void)?
     /// papers, security deposit (hand-over sheet), both may be empty (#427); condition photos, optional (#1418)
     var onHandOver: ((String, Double, [Data]) -> Void)?
@@ -34,8 +34,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
     private let detail: OrderDetail
     private let payments: [OrderPaymentLine]
     private let lateDays: Int
-    private let lateFeeField = UITextField()
-    private let damageFeeField = UITextField()
+    private let surchargeField = UITextField()
     private let papersField = UITextField()
     private let securityDepositField = UITextField()
     private let moneyStack = UIStackView()
@@ -125,14 +124,10 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
         }
 
         if mode == .takeReturn {
-            let fees = UIStackView(arrangedSubviews: [
-                feeField(lateFeeField, title: lateDays > 0 ? PluralText.format("Late fee (%d days)", count: lateDays, lateDays) : "Late fee".localized(), value: detail.lateFee),
-                feeField(damageFeeField, title: "Damage fee".localized(), value: detail.damageFee),
-            ])
-            fees.axis = .horizontal
-            fees.spacing = DS.Spacing.md
-            fees.distribution = .fillEqually
-            content.addArrangedSubview(fees)
+            // #1494 one field: the late fee and the extra fee are both a "Phụ thu" (the days late are in the subtitle)
+            let surcharge = feeField(surchargeField, title: "Surcharge".localized(),
+                                     value: OrderDetailLogic.surchargeShown(lateFee: detail.lateFee, damageFee: detail.damageFee))
+            content.addArrangedSubview(surcharge)
             content.setCustomSpacing(DS.Spacing.md, after: content.arrangedSubviews[content.arrangedSubviews.count - 2])
         }
 
@@ -194,7 +189,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
             make.leading.trailing.equalToSuperview().inset(V2.sheetSide)
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top).offset(-DS.Spacing.md)
         }
-        KeyboardDoneBar.attach([lateFeeField, damageFeeField, securityDepositField])
+        KeyboardDoneBar.attach([surchargeField, securityDepositField])
         renderMoney()
     }
 
@@ -218,8 +213,7 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
 
     // MARK: - Money
 
-    private var enteredLateFee: Double { Self.amount(from: lateFeeField.text) }
-    private var enteredDamageFee: Double { Self.amount(from: damageFeeField.text) }
+    private var enteredSurcharge: Double { Self.amount(from: surchargeField.text) }
     private var enteredSecurityDeposit: Double { Self.amount(from: securityDepositField.text) }
 
     static func amount(from text: String?) -> Double {
@@ -248,22 +242,26 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
                 : "Handed over".localized()
             confirmButton.setTitle(title, for: .normal)
         case .takeReturn:
-            let money = OrderDetailLogic.returnMoney(lateFee: enteredLateFee, damageFee: enteredDamageFee,
-                                                     securityDeposit: detail.securityDeposit, payments: payments)
-            moneyStack.addArrangedSubview(row("Late + damage fees".localized(), MoneyFormatter.format(money.fees)))
+            let money = OrderDetailLogic.returnMoney(lateFee: 0, damageFee: enteredSurcharge,
+                                                     securityDeposit: detail.securityDeposit, payments: payments,
+                                                     deposit: detail.depositAmount, total: detail.totalAmount)
+            moneyStack.addArrangedSubview(row("Surcharge".localized(), MoneyFormatter.format(money.fees)))
             if money.collateralMoney > 0 {
                 moneyStack.addArrangedSubview(row("Collateral money held".localized(), MoneyFormatter.format(-money.collateralMoney)))
             }
             if money.settledBefore > 0 {
                 moneyStack.addArrangedSubview(row("Already settled".localized(), MoneyFormatter.format(-money.settledBefore)))
             }
+            if money.excessDeposit > 0 {
+                moneyStack.addArrangedSubview(row("Deposit above the rent".localized(), MoneyFormatter.format(-money.excessDeposit)))
+            }
             let title: String
             if money.refund > 0 {
                 moneyStack.addArrangedSubview(totalRow("Give back to customer".localized(), MoneyFormatter.format(money.refund), color: DS.Status.done.text))
-                title = String(format: "Taken back · give back %@".localized(), MoneyFormatter.format(money.refund))
+                title = String(format: "Give back %@".localized(), MoneyFormatter.format(money.refund))
             } else if money.collect > 0 {
                 moneyStack.addArrangedSubview(totalRow("Collect more".localized(), MoneyFormatter.format(money.collect), color: DS.Color.text))
-                title = String(format: "Taken back · collect %@".localized(), MoneyFormatter.format(money.collect))
+                title = String(format: "Collect more %@".localized(), MoneyFormatter.format(money.collect))
             } else {
                 moneyStack.addArrangedSubview(totalRow("Nothing to settle".localized(), MoneyFormatter.format(0), color: DS.Color.text))
                 title = "Taken back".localized()
@@ -410,10 +408,9 @@ final class OrderHandOverSheetViewController: UIViewController, UITextFieldDeleg
             }
             return
         }
-        let late = enteredLateFee
-        let damage = enteredDamageFee
+        let surcharge = enteredSurcharge
         dismiss(animated: true) { [onConfirm] in
-            onConfirm?(late, damage)
+            onConfirm?(0, surcharge)
         }
     }
 }

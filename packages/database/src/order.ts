@@ -1859,6 +1859,7 @@ export const simplifiedOrders = {
       totalAmount: true,
       pickupTotalAmount: true,
       depositAmount: true,
+      cancelKeptAmount: true, // #1491: a cancelled order's row shows what the shop kept
       securityDeposit: true,
       damageFee: true,
       lateFee: true,
@@ -2021,6 +2022,7 @@ export const simplifiedOrders = {
       totalAmount: order.totalAmount,
       pickupTotalAmount: order.pickupTotalAmount ?? null,
       depositAmount: order.depositAmount,
+      cancelKeptAmount: order.cancelKeptAmount ?? null, // #1491
       securityDeposit: order.securityDeposit,
       damageFee: order.damageFee,
       lateFee: order.lateFee,

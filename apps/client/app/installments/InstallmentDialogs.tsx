@@ -398,6 +398,7 @@ export function CancelWithKeptDialog({
       onClose={onClose}
       closeLabel={closeLabel}
       busy={busy}
+      initialFocus="button"
       footer={
         <>
           <button type="button" data-autofocus onClick={onClose} disabled={busy} className={`${closeBtn} flex-1 sm:flex-none`}>

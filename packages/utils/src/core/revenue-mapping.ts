@@ -134,6 +134,8 @@ export function toRevenueOrderData(order: RevenueOrderRow): OrderRevenueData {
     pickupPlanAt: order.pickupPlanAt,
     returnPlanAt: order.returnPlanAt,
     updatedAt: order.updatedAt,
+    // #1491: the fee kept by an order without a plan (a plan order keeps it in `plan.keptAmount`)
+    ...(order.cancelKeptAmount != null ? { cancelKeptAmount: order.cancelKeptAmount } : {}),
     ...(plan ? { plan, cancelledAt: order.cancelledAt } : {})
   };
 }

@@ -98,6 +98,62 @@ final class OrderDetailLogicTests: XCTestCase {
         XCTAssertTrue(balance(.sale, .completed) == (600_000, 0))
     }
 
+    // MARK: Deposit above the rent (#1490), same numbers as tests/api/order-balance.test.ts
+
+    func testDepositAboveTheRentDoesNotEatTheCollateralAtHandOver() {
+        // case 2: rent 100.000, deposit 300.000, collateral 500.000
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 100_000, deposit: 300_000, securityDeposit: 500_000, payments: []).due, 500_000)
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 100_000, deposit: 300_000, securityDeposit: 0, payments: []).due, 0)
+        let collected = OrderPaymentLine(amount: 500_000, status: "COMPLETED", notes: "PICKUP")
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 100_000, deposit: 300_000, securityDeposit: 500_000, payments: [collected]).due, 0)
+        // case 1: deposit below the order, unchanged
+        XCTAssertEqual(OrderDetailLogic.handOver(total: 300_000, deposit: 100_000, securityDeposit: 500_000, payments: []).due, 700_000)
+    }
+
+    func testReturnGivesBackTheExcessDepositWithTheCollateralMinusFees() {
+        func refund(_ late: Double, collateral: Double, deposit: Double, total: Double) -> (collect: Double, refund: Double) {
+            let money = OrderDetailLogic.returnMoney(lateFee: late, damageFee: 0, securityDeposit: collateral, payments: [],
+                                                     deposit: deposit, total: total)
+            return (money.collect, money.refund)
+        }
+        // case 2 with collateral
+        XCTAssertTrue(refund(0, collateral: 500_000, deposit: 300_000, total: 100_000) == (0, 700_000))
+        XCTAssertTrue(refund(50_000, collateral: 500_000, deposit: 300_000, total: 100_000) == (0, 650_000))
+        // case 2 without collateral
+        XCTAssertTrue(refund(0, collateral: 0, deposit: 300_000, total: 100_000) == (0, 200_000))
+        XCTAssertTrue(refund(50_000, collateral: 0, deposit: 300_000, total: 100_000) == (0, 150_000))
+        XCTAssertTrue(refund(250_000, collateral: 0, deposit: 300_000, total: 100_000) == (50_000, 0))
+        // case 1 and every deposit up to the rent: unchanged
+        XCTAssertTrue(refund(0, collateral: 500_000, deposit: 100_000, total: 300_000) == (0, 500_000))
+        XCTAssertTrue(refund(50_000, collateral: 500_000, deposit: 100_000, total: 300_000) == (0, 450_000))
+        XCTAssertTrue(refund(0, collateral: 0, deposit: 100_000, total: 100_000) == (0, 0))
+        XCTAssertTrue(refund(0, collateral: 200_000, deposit: 50_000, total: 100_000) == (0, 200_000))
+    }
+
+    func testBalanceUsesTheExcessDepositAtReturn() {
+        let result = OrderDetailLogic.balance(orderType: .rent, status: .pickuped, total: 100_000, deposit: 300_000,
+                                              securityDeposit: 500_000, lateFee: 0, damageFee: 0, payments: [])
+        XCTAssertEqual(result.amountDue, 0)
+        XCTAssertEqual(result.refundDue, 700_000)
+    }
+
+    // MARK: One "Phụ thu" instead of "Phí trễ" + "Phụ phí" (#1494)
+
+    func testTheSurchargeFieldStartsAtTheSavedTotalAndSavesOnlyWhenItChanged() {
+        XCTAssertEqual(OrderDetailLogic.surchargeShown(lateFee: 30_000, damageFee: 20_000), 50_000)
+        XCTAssertEqual(OrderDetailLogic.surchargeShown(lateFee: 0, damageFee: 0), 0)
+        // unchanged total: nothing to send, an old order keeps its two fields
+        XCTAssertNil(OrderDetailLogic.surchargeUpdate(typed: 50_000, savedLateFee: 30_000, savedDamageFee: 20_000))
+        XCTAssertNil(OrderDetailLogic.surchargeUpdate(typed: 0, savedLateFee: 0, savedDamageFee: 0))
+        // changed total: everything goes into damageFee, lateFee 0 (the sum old apps read is the typed one)
+        let more = OrderDetailLogic.surchargeUpdate(typed: 80_000, savedLateFee: 30_000, savedDamageFee: 20_000)
+        XCTAssertEqual(more?.lateFee, 0)
+        XCTAssertEqual(more?.damageFee, 80_000)
+        let cleared = OrderDetailLogic.surchargeUpdate(typed: 0, savedLateFee: 0, savedDamageFee: 50_000)
+        XCTAssertEqual(cleared?.lateFee, 0)
+        XCTAssertEqual(cleared?.damageFee, 0)
+    }
+
     // MARK: Note colours (#1430)
 
     func testWarmNoteColoursAndTheBandStays() {
@@ -800,7 +856,8 @@ final class OrderMoneyBlockTests: XCTestCase {
         XCTAssertEqual(staged.plan?.shownKeys, ["i1", "i2", "rest"], "Only a booked order merges the last stage")
         XCTAssertFalse(staged.hasLargeFigure)
         let single = block(.cancelled, deposit: 230_000, cancelKept: 100_000)
-        XCTAssertEqual(single.lines, head + [.depositPaid(230_000), .cancelKept(100_000), .cancelRefund(0)], "No stages: as before")
+        XCTAssertEqual(single.lines, head + [.depositPaid(230_000), .cancelKept(100_000), .cancelRefund(130_000)],
+                       "#1491 no stages: the fee is kept inside the single deposit, the rest goes back")
     }
 
     func testABookedOrderWithNothingLeftKeepsThuKhiGiao() {

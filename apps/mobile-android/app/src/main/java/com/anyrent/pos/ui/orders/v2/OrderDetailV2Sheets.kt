@@ -162,12 +162,11 @@ internal fun ReturnSheet(
     onConfirm: (lateFee: Double, damageFee: Double, onError: (String) -> Unit) -> Unit,
 ) {
     val s = detail.summary
-    var lateText by remember { mutableStateOf(detail.lateFee.toLong().takeIf { it > 0 }?.toString().orEmpty()) }
-    var damageText by remember { mutableStateOf(detail.damageFee.toLong().takeIf { it > 0 }?.toString().orEmpty()) }
+    // #1494 one "Phụ thu" instead of "Phí trễ" + "Phụ phí": it starts at the saved total and is sent as damageFee with lateFee 0
+    var surchargeText by remember { mutableStateOf((detail.lateFee + detail.damageFee).toLong().takeIf { it > 0 }?.toString().orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
-    val late = lateText.toDoubleOrNull() ?: 0.0
-    val damage = damageText.toDoubleOrNull() ?: 0.0
-    val money = OrderDetailLogic.returnMoney(late, damage, detail.securityDeposit, detail.balancePayments())
+    val surcharge = surchargeText.toDoubleOrNull() ?: 0.0
+    val money = OrderDetailLogic.returnMoney(0.0, surcharge, detail.securityDeposit, detail.balancePayments(), s.depositAmount, s.totalAmount)
     val lateDays = OrdersHomeLogic.lateDays(
         s.orderType, s.status, OrdersHomeLogic.parseInstant(s.pickupPlanAt), OrdersHomeLogic.parseInstant(s.returnPlanAt),
     )
@@ -188,19 +187,12 @@ internal fun ReturnSheet(
         )
         SheetItems(detail)
         comparePhotos?.let { Column { it() } }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            FeeField(
-                if (lateDays > 0) pluralStringResource(R.plurals.detail_late_fee_days, lateDays, lateDays) else stringResource(R.string.detail_late_fee),
-                lateText,
-                { lateText = it },
-                Modifier.weight(1f),
-            )
-            FeeField(stringResource(R.string.damage_fee), damageText, { damageText = it }, Modifier.weight(1f))
-        }
+        FeeField(stringResource(R.string.surcharge), surchargeText, { surchargeText = it }, Modifier.fillMaxWidth())
         MoneyBox {
-            MoneyRow(stringResource(R.string.detail_fees), formatMoneyVnd(money.fees))
+            MoneyRow(stringResource(R.string.surcharge), formatMoneyVnd(money.fees))
             if (money.collateralMoney > 0) MoneyRow(stringResource(R.string.detail_collateral_held), formatMoneyVnd(-money.collateralMoney))
             if (money.settledBefore > 0) MoneyRow(stringResource(R.string.detail_settled_before), formatMoneyVnd(-money.settledBefore))
+            if (money.excessDeposit > 0) MoneyRow(stringResource(R.string.detail_excess_deposit), formatMoneyVnd(-money.excessDeposit))
             if (money.refund > 0) {
                 MoneyRow(stringResource(R.string.detail_give_back), formatMoneyVnd(money.refund), total = true, valueColor = DS.Status.Done.text)
             } else {
@@ -222,7 +214,7 @@ internal fun ReturnSheet(
             onDismiss = onDismiss,
             onConfirm = {
                 error = null
-                onConfirm(late, damage) { error = it }
+                onConfirm(0.0, surcharge) { error = it }
             },
         )
     }

@@ -7,7 +7,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import type { Money, T } from '../list/parts';
-import { handOverView, parseFee, returnView, type MoneyRow } from './actions-model';
+import { dialogFocusSelector, handOverView, parseFee, returnView, type MoneyRow } from './actions-model';
 import { PhotoBlock, PickupPhotosCompare } from './photos';
 import type { OrderDetailLike } from '../orders-model';
 
@@ -24,6 +24,7 @@ export function ActionDialog({
   busy,
   children,
   footer,
+  initialFocus,
 }: {
   open: boolean;
   title: string;
@@ -33,6 +34,8 @@ export function ActionDialog({
   busy?: boolean;
   children?: React.ReactNode;
   footer: React.ReactNode;
+  /** #1498 `button`: focus the safe button, not the first input (no keyboard opens by itself) */
+  initialFocus?: 'input' | 'button';
 }) {
   const id = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -63,7 +66,7 @@ export function ActionDialog({
       }
     };
     document.addEventListener('keydown', onKey);
-    const first = panelRef.current?.querySelector<HTMLElement>('input, [data-autofocus]');
+    const first = panelRef.current?.querySelector<HTMLElement>(dialogFocusSelector(initialFocus));
     (first || panelRef.current)?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
@@ -268,17 +271,14 @@ export function ReturnDialog({
   onConfirm: (fees: { lateFee: number; damageFee: number }) => Promise<boolean | void>;
 }) {
   const { submitting, run } = useSubmit(p.onClose);
-  // Prefilled with the saved fees, like iOS (the API stores lateFee; nothing computes it)
-  const savedLate = p.order.lateFee;
-  const savedDamage = p.order.damageFee;
-  const [late, setLate] = useState(() => feeState(savedLate));
-  const [damage, setDamage] = useState(() => feeState(savedDamage));
+  // #1494 one "Phụ thu": prefilled with the saved late fee + extra fee, sent as the extra fee (lateFee 0)
+  const savedSurcharge = (Number(p.order.lateFee) || 0) + (Number(p.order.damageFee) || 0);
+  const [surcharge, setSurcharge] = useState(() => feeState(savedSurcharge));
   useEffect(() => {
     if (!p.open) return;
-    setLate(feeState(savedLate));
-    setDamage(feeState(savedDamage));
-  }, [p.open, savedLate, savedDamage]);
-  const fees = { lateFee: late.value, damageFee: damage.value };
+    setSurcharge(feeState(savedSurcharge));
+  }, [p.open, savedSurcharge]);
+  const fees = { lateFee: 0, damageFee: surcharge.value };
   const m = returnView(p.order, fees);
   const r = m.result;
   const total =
@@ -293,8 +293,7 @@ export function ReturnDialog({
       : r.kind === 'collect'
         ? p.t('detail.dialog.takeBack.confirmCollect', { amount: p.money(r.amount) })
         : p.t('detail.dialog.takeBack.confirmFree');
-  const lateId = useId();
-  const damageId = useId();
+  const surchargeId = useId();
   return (
     <ActionDialog
       open={p.open}
@@ -321,19 +320,11 @@ export function ReturnDialog({
     >
       <Items items={p.items} />
       <PickupPhotosCompare urls={pickupPhotos} t={p.t} />
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={lateId} className="text-sm font-semibold text-ar-ink-2">
-            {lateDays > 0 ? p.t('detail.dialog.takeBack.lateFeeDays', { days: lateDays }) : p.t('detail.dialog.takeBack.lateFee')}
-          </label>
-          <input id={lateId} inputMode="decimal" autoComplete="off" value={late.text} placeholder="0" onChange={(e) => setLate(parseFee(e.target.value))} className={feeInput} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={damageId} className="text-sm font-semibold text-ar-ink-2">
-            {p.t('detail.dialog.takeBack.damageFee')}
-          </label>
-          <input id={damageId} inputMode="decimal" autoComplete="off" value={damage.text} placeholder="0" onChange={(e) => setDamage(parseFee(e.target.value))} className={feeInput} />
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={surchargeId} className="text-sm font-semibold text-ar-ink-2">
+          {p.t('detail.dialog.takeBack.surcharge')}
+        </label>
+        <input id={surchargeId} inputMode="decimal" autoComplete="off" value={surcharge.text} placeholder="0" onChange={(e) => setSurcharge(parseFee(e.target.value))} className={feeInput} />
       </div>
       <MoneyBox rows={m.rows} total={total} t={p.t} money={p.money} />
       <Papers label={p.t('detail.dialog.papersReturn')} text={p.papers} />

@@ -21,7 +21,7 @@ data class BalancePayment(val amount: Double, val status: String?, val notes: St
 
 data class OrderBalance(val amountDue: Double, val refundDue: Double)
 
-/** Hand-over money: total − deposit + collateral money − paid at pickup */
+/** Hand-over money: max(0, total − deposit) + collateral money − paid at pickup (#1490) */
 data class HandOverMoney(
     val total: Double,
     val deposit: Double,
@@ -95,13 +95,15 @@ data class OrderMoneyBlock(
         get() = (lines + listOfNotNull(returnLine)).any { it.isLarge }
 }
 
-/** Return money: late + damage − collateral money − already settled; [net] < 0 is a refund */
+/** Return money: late + damage − collateral money − already settled − excess deposit (#1490); [net] < 0 is a refund */
 data class ReturnMoney(
     val lateFee: Double,
     val damageFee: Double,
     val collateralMoney: Double,
     val settledBefore: Double,
     val net: Double,
+    /** #1490 deposit above the rent, held since booking; 0 for a deposit up to the rent */
+    val excessDeposit: Double = 0.0,
 ) {
     val fees: Double get() = lateFee + damageFee
     val collect: Double get() = net.coerceAtLeast(0.0)
@@ -195,7 +197,7 @@ object OrderDetailLogic {
             return OrderBalance(handOver(totalAmount, depositAmount, securityDeposit, payments).collectNow, 0.0)
         }
         if (type == "RENT" && st == "PICKUPED") {
-            val r = returnMoney(lateFee, damageFee, securityDeposit, payments)
+            val r = returnMoney(lateFee, damageFee, securityDeposit, payments, depositAmount, totalAmount)
             return OrderBalance(r.collect, r.refund)
         }
         return OrderBalance(0.0, 0.0)
@@ -208,7 +210,8 @@ object OrderDetailLogic {
         payments: List<BalancePayment>,
     ): HandOverMoney {
         val paidBefore = paid(payments, "PICKUP")
-        val due = totalAmount - depositAmount + securityDeposit - paidBefore
+        // #1490: a deposit above the rent never eats into the collateral
+        val due = (totalAmount - depositAmount).coerceAtLeast(0.0) + securityDeposit - paidBefore
         return HandOverMoney(totalAmount, depositAmount, securityDeposit, paidBefore, due.coerceAtLeast(0.0))
     }
 
@@ -325,7 +328,9 @@ object OrderDetailLogic {
         val cash = handOverCash("RENT", st, total, deposit, securityDeposit, payments, info?.hasPlan, info?.installments, currency)
         val kept = if (st == "CANCELLED") cancelKept ?: 0.0 else 0.0
         val cancelRows = if (kept > 0) {
-            listOf(OrderMoneyLine.CancelKept(kept), OrderMoneyLine.CancelRefund(maxOf(0.0, (info?.summary?.collected ?: 0.0) - kept)))
+            // #1491: an order without a plan collected its single deposit
+            val collected = if (hasPlan) info?.summary?.collected ?: 0.0 else deposit
+            listOf(OrderMoneyLine.CancelKept(kept), OrderMoneyLine.CancelRefund(maxOf(0.0, collected - kept)))
         } else {
             emptyList()
         }
@@ -334,7 +339,8 @@ object OrderDetailLogic {
         if (discount > 0) lines += OrderMoneyLine.Discount(discount)
         lines += OrderMoneyLine.RentalTotal(total)
         // Picked up: the return lines below already settle deposit and collateral (board CT-qua-han)
-        if (!pickedUp && deposit > 0 && !hasPlan) lines += OrderMoneyLine.DepositPaid(deposit)
+        // #1490: a deposit above the rent still shows after pick-up, so the refund at return can be read
+        if ((!pickedUp || deposit > total) && deposit > 0 && !hasPlan) lines += OrderMoneyLine.DepositPaid(deposit)
         if (hasPlan) {
             lines += OrderMoneyLine.Stages
             lines += cancelRows // the shop kept / gave back lines read under the stages
@@ -360,7 +366,7 @@ object OrderDetailLogic {
             }
             "CANCELLED" -> if (!hasPlan) lines += cancelRows
             "PICKUPED" -> {
-                val money = returnMoney(lateFee, damageFee, securityDeposit, payments)
+                val money = returnMoney(lateFee, damageFee, securityDeposit, payments, deposit, total)
                 if (money.lateFee > 0) lines += OrderMoneyLine.LateFee(money.lateFee)
                 if (money.damageFee > 0) lines += OrderMoneyLine.DamageFee(money.damageFee)
                 if (money.collateralMoney > 0) lines += OrderMoneyLine.CollateralBack(money.collateralMoney)
@@ -390,10 +396,13 @@ object OrderDetailLogic {
         damageFee: Double,
         securityDeposit: Double,
         payments: List<BalancePayment>,
+        deposit: Double = 0.0,
+        total: Double = 0.0,
     ): ReturnMoney {
         val settled = paid(payments, "RETURN_ADJUSTMENT")
-        val net = damageFee + lateFee - securityDeposit - settled
-        return ReturnMoney(lateFee, damageFee, securityDeposit, settled, net)
+        val excess = (deposit - total).coerceAtLeast(0.0)
+        val net = damageFee + lateFee - securityDeposit - settled - excess
+        return ReturnMoney(lateFee, damageFee, securityDeposit, settled, net, excess)
     }
 
     /**

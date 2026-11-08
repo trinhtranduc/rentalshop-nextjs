@@ -503,15 +503,36 @@ final class CancelDepositOrderSheet: V2FittingSheet, UITextFieldDelegate {
 
     private func configure(_ field: UITextField, id: String) {
         field.font = Utils.boldFont(size: 17)
-        field.textColor = canKeep ? DS.Color.primary : DS.Color.text
         field.textAlignment = .right
         field.keyboardType = .numberPad
-        field.isEnabled = canKeep
         field.accessibilityIdentifier = id
+        guard field === keptField else {
+            // "Hoàn cho khách" is worked out from the surcharge: a read-only line (#1496)
+            field.textColor = DS.Color.text
+            field.isUserInteractionEnabled = false
+            return
+        }
+        field.textColor = canKeep ? DS.Color.primary : DS.Color.text
+        field.isEnabled = canKeep
+        if canKeep { styleAsInput(field) }
         field.addTarget(self, action: #selector(changed(_:)), for: .editingChanged)
         // a tap selects the number, so typing replaces it (a "0" left in front would turn 1800000 into 18000000)
         field.addAction(UIAction { [weak field] _ in DispatchQueue.main.async { field?.selectAll(nil) } }, for: .editingDidBegin)
         KeyboardDoneBar.attach([field])
+    }
+
+    /// #1496 a box with a border and a faint "0", so the surcharge reads as something to type into
+    private func styleAsInput(_ field: UITextField) {
+        field.placeholder = "0"
+        field.backgroundColor = UIColor(hexString: "F1F5F9")
+        field.layer.cornerRadius = 10
+        field.layer.borderWidth = 1.5
+        field.layer.borderColor = DS.Color.primary.withAlphaComponent(0.6).cgColor
+        for side in [true, false] {
+            let pad = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 1))
+            if side { field.leftView = pad; field.leftViewMode = .always } else { field.rightView = pad; field.rightViewMode = .always }
+        }
+        field.snp.makeConstraints { make in make.height.equalTo(44) }
     }
 
     private func row(_ title: String, field: UITextField?, value: String?) -> UIView {
@@ -530,7 +551,7 @@ final class CancelDepositOrderSheet: V2FittingSheet, UITextFieldDelegate {
     }
 
     private func show() {
-        keptField.text = MoneyInput.display(amounts.kept)
+        keptField.text = amounts.kept > 0 ? MoneyInput.display(amounts.kept) : "" // empty at 0: the box shows its faint "0" (#1496)
         refundField.text = MoneyInput.display(amounts.refund)
         confirmButton.isEnabled = amounts.isValid
         confirmButton.alpha = amounts.isValid ? 1 : 0.5

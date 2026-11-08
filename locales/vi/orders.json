@@ -878,7 +878,8 @@
       "due": "còn thu {amount}",
       "fee": "+ phí trễ {amount}",
       "refund": "hoàn cọc {amount}",
-      "noRevenue": "không tính doanh thu"
+      "noRevenue": "không tính doanh thu",
+      "kept": "giữ lại {amount}"
     },
     "empty": {
       "all": "Không có đơn nào khớp bộ lọc.",
@@ -982,15 +983,17 @@
         "collateral": "Tiền thế chân",
         "paidBefore": "Đã thu trước",
         "settledBefore": "Đã thanh toán trước",
+        "excessDeposit": "Cọc dư so với tiền thuê",
         "lateFee": "Phí trễ",
-        "damageFee": "Phụ phí",
+        "damageFee": "Phụ thu",
         "collectAtPickup": "Thu khi giao",
         "returnRefund": "Khi nhận trả: trả khách",
         "returnCollect": "Khi nhận trả: thu thêm",
         "saleCollected": "Đã thu",
         "saleTotal": "Tổng đơn hàng",
         "saleDue": "Còn thu",
-        "noRevenue": "Không tính doanh thu"
+        "noRevenue": "Không tính doanh thu",
+        "cancelKept": "Phụ thu"
       },
       "settings": {
         "title": "Ghi chú, thế chấp và phí",
@@ -1018,21 +1021,23 @@
         },
         "takeBack": {
           "title": "Nhận trả đồ",
-          "confirmCollect": "Nhận trả · thu {amount}",
-          "confirmRefund": "Nhận trả · trả khách {amount}",
+          "confirmCollect": "Thu thêm {amount}",
+          "confirmRefund": "Trả khách {amount}",
           "confirmFree": "Xác nhận nhận trả",
           "lateFee": "Phí trễ",
           "lateFeeDays": "Phí trễ ({days} ngày)",
-          "damageFee": "Phụ phí"
+          "damageFee": "Phụ thu",
+          "surcharge": "Phụ thu"
         },
         "rows": {
           "orderTotal": "Tổng đơn hàng",
           "depositPaid": "Đã cọc khi đặt",
           "collateralMoney": "Thế chân thu thêm",
           "paidBefore": "Đã thu trước",
-          "fees": "Phí trễ + phụ phí",
+          "fees": "Phụ thu",
           "collateralHeld": "Thế chân đang giữ",
-          "settledBefore": "Đã thanh toán trước"
+          "settledBefore": "Đã thanh toán trước",
+          "excessDeposit": "Cọc dư so với tiền thuê"
         },
         "result": {
           "due": "Thu bây giờ",
@@ -1242,8 +1247,8 @@
       "cancelPaid": "Khách đã trả",
       "cancelKept": "Tiệm giữ lại",
       "cancelRefund": "Hoàn cho khách",
-      "cancelHint": "Số hoàn = Khách đã trả trừ Tiệm giữ lại. Chỉ sửa khi tiệm đồng ý khác với chính sách.",
-      "cancelHintStaff": "Nhân viên hoàn toàn bộ số khách đã trả. Chủ shop hoặc quản lý chi nhánh quyết định số tiệm giữ lại.",
+      "cancelHint": "Số hoàn = Khách đã trả trừ phụ thu. Phụ thu là phần tiệm giữ lại trong tiền cọc.",
+      "cancelHintStaff": "Nhân viên hoàn toàn bộ số khách đã trả. Chủ shop hoặc quản lý chi nhánh quyết định phụ thu.",
       "policyLine": "Chính sách tiệm: {policy}",
       "dueTodayTitle": "Cần thu hôm nay",
       "dueSoonTitle": "Sắp đến hạn",

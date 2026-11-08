@@ -4,7 +4,7 @@
  * Day logic must hold under TZ=UTC and TZ=Asia/Ho_Chi_Minh.
  */
 import { describe, expect, it } from '@jest/globals';
-import { canCancelOrder, handOverView, parseFee, returnFeesUpdate, returnView, scheduleRange } from '../apps/client/app/orders/detail/actions-model';
+import { canCancelOrder, dialogFocusSelector, handOverView, parseFee, returnFeesUpdate, returnView, scheduleRange } from '../apps/client/app/orders/detail/actions-model';
 import { orderBalance } from '../apps/client/app/orders/orders-model';
 import { getLocalDateKey } from '../packages/utils/src/core/date';
 
@@ -12,7 +12,7 @@ const rent = (extra: Record<string, unknown>) => ({ id: 1, orderNumber: '1', ord
 const pay = (notes: string, amount: number, status = 'COMPLETED') => ({ notes, amount, status });
 
 describe('handOverView', () => {
-  it('owner case: total 68, cọc 96, thế chân 96 → thu bây giờ 68, rows in iOS order', () => {
+  it('owner case: total 68, cọc 96, thế chân 96 → thu bây giờ 96 (#1490: the deposit above the rent does not eat the thế chân), rows in iOS order', () => {
     const o = rent({ totalAmount: 68, depositAmount: 96, securityDeposit: 96 });
     const m = handOverView(o);
     expect(m.rows).toEqual([
@@ -20,7 +20,7 @@ describe('handOverView', () => {
       { key: 'depositPaid', amount: 96 },
       { key: 'collateralMoney', amount: 96 },
     ]);
-    expect(m.due).toBe(68);
+    expect(m.due).toBe(96);
     expect(m.due).toBe(orderBalance(o).amountDue);
   });
 
@@ -83,16 +83,27 @@ describe('returnView', () => {
   });
 });
 
-describe('returnFeesUpdate (iOS confirm: PUT both fees when either changed)', () => {
-  it('nothing changed → no PUT', () => {
-    expect(returnFeesUpdate({ lateFee: 50, damageFee: 0 }, { lateFee: 50, damageFee: 0 })).toBeNull();
+describe('dialogFocusSelector (#1498: the cancel dialog does not focus the surcharge box)', () => {
+  it('a dialog with inputs focuses its first input, as before', () => {
+    expect(dialogFocusSelector()).toBe('input, [data-autofocus]');
+    expect(dialogFocusSelector('input')).toBe('input, [data-autofocus]');
+  });
+  it('the cancel dialog asks for the safe button, so nothing is typed into and no keyboard opens', () => {
+    expect(dialogFocusSelector('button')).toBe('[data-autofocus]');
+  });
+});
+
+describe('returnFeesUpdate (#1494: one "Phụ thu", saved only when the total changed)', () => {
+  it('same total → no PUT, an old order keeps its late fee and extra fee apart', () => {
+    expect(returnFeesUpdate({ lateFee: 50, damageFee: 0 }, { lateFee: 0, damageFee: 50 })).toBeNull();
+    expect(returnFeesUpdate({ lateFee: 30, damageFee: 20 }, { lateFee: 0, damageFee: 50 })).toBeNull();
     expect(returnFeesUpdate({ lateFee: null, damageFee: undefined }, { lateFee: 0, damageFee: 0 })).toBeNull();
   });
-  it('damage changed → both fees', () => {
+  it('a different total → everything in damageFee, lateFee 0', () => {
     expect(returnFeesUpdate({ lateFee: 0, damageFee: 0 }, { lateFee: 0, damageFee: 25 })).toEqual({ damageFee: 25, lateFee: 0 });
-  });
-  it('late fee changed → both fees', () => {
-    expect(returnFeesUpdate({ lateFee: 0, damageFee: 10 }, { lateFee: 150, damageFee: 10 })).toEqual({ damageFee: 10, lateFee: 150 });
+    expect(returnFeesUpdate({ lateFee: 30, damageFee: 20 }, { lateFee: 0, damageFee: 80 })).toEqual({ damageFee: 80, lateFee: 0 });
+    expect(returnFeesUpdate({ lateFee: 0, damageFee: 10 }, { lateFee: 150, damageFee: 10 })).toEqual({ damageFee: 160, lateFee: 0 });
+    expect(returnFeesUpdate({ lateFee: 0, damageFee: 50 }, { lateFee: 0, damageFee: 0 })).toEqual({ damageFee: 0, lateFee: 0 });
   });
 });
 

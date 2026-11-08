@@ -878,7 +878,8 @@
       "due": "to collect {amount}",
       "fee": "+ late fee {amount}",
       "refund": "refund {amount}",
-      "noRevenue": "no revenue"
+      "noRevenue": "no revenue",
+      "kept": "kept {amount}"
     },
     "empty": {
       "all": "No orders match these filters.",
@@ -982,15 +983,17 @@
         "collateral": "Collateral money",
         "paidBefore": "Already collected",
         "settledBefore": "Already settled",
+        "excessDeposit": "Deposit above the rent",
         "lateFee": "Late fee",
-        "damageFee": "Extra fee",
+        "damageFee": "Surcharge",
         "collectAtPickup": "Collect at hand-over",
         "returnRefund": "At return: give back",
         "returnCollect": "At return: collect",
         "saleCollected": "Collected",
         "saleTotal": "Order total",
         "saleDue": "To collect",
-        "noRevenue": "No revenue"
+        "noRevenue": "No revenue",
+        "cancelKept": "Surcharge"
       },
       "settings": {
         "title": "Notes, collateral and fees",
@@ -1018,21 +1021,23 @@
         },
         "takeBack": {
           "title": "Take back items",
-          "confirmCollect": "Take back · collect {amount}",
-          "confirmRefund": "Take back · give back {amount}",
+          "confirmCollect": "Collect more {amount}",
+          "confirmRefund": "Give back {amount}",
           "confirmFree": "Confirm return",
           "lateFee": "Late fee",
           "lateFeeDays": "Late fee ({days} days)",
-          "damageFee": "Extra fee"
+          "damageFee": "Surcharge",
+          "surcharge": "Surcharge"
         },
         "rows": {
           "orderTotal": "Order total",
           "depositPaid": "Deposit paid at booking",
           "collateralMoney": "Collateral money",
           "paidBefore": "Already collected",
-          "fees": "Late + extra fees",
+          "fees": "Surcharge",
           "collateralHeld": "Collateral money held",
-          "settledBefore": "Already settled"
+          "settledBefore": "Already settled",
+          "excessDeposit": "Deposit above the rent"
         },
         "result": {
           "due": "Collect now",
@@ -1242,8 +1247,8 @@
       "cancelPaid": "Customer paid",
       "cancelKept": "Shop keeps",
       "cancelRefund": "Refund to customer",
-      "cancelHint": "Refund = Customer paid minus Shop keeps. Change it only when the shop agrees to something other than its policy.",
-      "cancelHintStaff": "Staff refund everything the customer paid. The owner or branch manager decides what the shop keeps.",
+      "cancelHint": "Refund = Customer paid minus the surcharge. The surcharge is what the shop keeps from the deposit.",
+      "cancelHintStaff": "Staff refund everything the customer paid. The owner or branch manager decides the surcharge.",
       "policyLine": "Shop policy: {policy}",
       "dueTodayTitle": "To collect today",
       "dueSoonTitle": "Due soon",

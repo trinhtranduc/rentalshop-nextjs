@@ -345,9 +345,7 @@ internal fun CancelDepositOrderSheet(
 ) {
     var amounts by remember { mutableStateOf(DepositPlanLogic.CancelAmounts.keeping(0.0, collected)) }
     var keptText by remember { mutableStateOf("") }
-    var refundText by remember { mutableStateOf(collected.toLong().toString()) }
     var note by remember { mutableStateOf("") }
-    fun shown(v: Double) = v.toLong().toString()
     DepositSheetFrame(onDismiss = onDismiss) {
         OrderSheetTitle(stringResource(R.string.order_sheet_title_cancel), "#$orderNumber")
         if (!policy.isNullOrBlank()) DepositWarningBox(stringResource(R.string.deposit_cancel_policy, policy))
@@ -356,15 +354,14 @@ internal fun CancelDepositOrderSheet(
             AmountField(keptText, canKeep, "deposit.cancel.kept") { text ->
                 keptText = text
                 amounts = DepositPlanLogic.CancelAmounts.keeping(text.toDoubleOrNull() ?: 0.0, collected)
-                refundText = shown(amounts.refund)
             }
         }
+        // "Hoàn cho khách" is worked out from the surcharge: a read-only line (#1496)
         AmountLine(stringResource(R.string.deposit_cancel_refund)) {
-            AmountField(refundText, canKeep, "deposit.cancel.refund") { text ->
-                refundText = text
-                amounts = DepositPlanLogic.CancelAmounts.refunding(text.toDoubleOrNull() ?: 0.0, collected)
-                keptText = amounts.kept.takeIf { it > 0 }?.let(::shown).orEmpty()
-            }
+            Text(
+                formatMoneyVnd(amounts.refund), fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.testTag("deposit.cancel.refund"),
+            )
         }
         if (canKeep) {
             Text(stringResource(R.string.deposit_cancel_hint), fontSize = DS.TextSize.Secondary, color = DS.Colors.TextMuted)
@@ -395,7 +392,12 @@ private fun AmountLine(label: String, right: @Composable () -> Unit) {
 }
 
 @Composable
-private fun AmountField(value: String, enabled: Boolean, tag: String, onChange: (String) -> Unit) {
+private fun AmountField(
+    value: String,
+    enabled: Boolean,
+    tag: String,
+    onChange: (String) -> Unit,
+) {
     OutlinedTextField(
         value = value, onValueChange = { onChange(it.filter(Char::isDigit).take(12).trimStart('0')) }, enabled = enabled, singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

@@ -2904,9 +2904,9 @@
 "deposit.void.confirm" = "Undo collection";
 "deposit.cancel.policy" = "Shop policy: %@";
 "deposit.cancel.paid" = "Customer paid";
-"deposit.cancel.kept" = "Shop keeps";
+"deposit.cancel.kept" = "Surcharge";
 "deposit.cancel.refund" = "Refund to customer";
-"deposit.cancel.hint" = "You can change what is kept / refunded if the shop agrees otherwise.";
+"deposit.cancel.hint" = "The surcharge is what the shop keeps from the deposit; the rest is refunded to the customer.";
 "deposit.cancel.staffHint" = "When staff cancel, everything collected is refunded.";
 "deposit.cancel.note" = "Note (optional)";
 "deposit.cancel.confirm" = "Confirm cancel";
@@ -3271,3 +3271,8 @@
 /* #1464: the store kept this Apple ID's plan; short bottom links */
 "plan.storeHasPlan" = "This Apple ID already has a plan. The new period starts at the next renewal.";
 "plan.restoreShort" = "Restore";
+
+"Deposit above the rent" = "Deposit above the rent";
+"Give back %@" = "Give back %@";
+"Collect more %@" = "Collect more %@";
+"Surcharge" = "Surcharge";

@@ -13,7 +13,7 @@
  *    - Same day pickup: totalAmount + securityDeposit (KHÔNG trừ depositAmount)
  *    - Different day: totalAmount - depositAmount + securityDeposit (trừ depositAmount vì đã thu riêng)
  * 4. RENT - RETURNED: totalAmount + damageFee (đơn đã hoàn tất, tính tổng doanh thu thực tế)
- * 5. CANCELLED: revenue = 0 (hoàn lại toàn bộ đã thu)
+ * 5. CANCELLED: revenue = 0 (hoàn lại toàn bộ đã thu), or the fee the shop kept inside the deposit (#1491)
  * 
  * THEO DATES (getOrderRevenueEvents):
  * - Phân bổ revenue theo từng event (deposit, pickup, return) theo ngày
@@ -72,6 +72,11 @@ export interface OrderRevenueData {
   updatedAt?: Date | string | null;
   /** When the order was cancelled (#1199); the cancel refund is an event of this day. Missing = `updatedAt`. */
   cancelledAt?: Date | string | null;
+  /**
+   * #1491: what the shop kept when it cancelled an order that was not handed over and has no deposit plan (a fee inside the
+   * deposit); null / missing = everything went back. A deposit plan order keeps it in `plan.keptAmount`.
+   */
+  cancelKeptAmount?: number | null;
   /**
    * #1199: money of a deposit plan, only on orders that have one (`toRevenueOrderData` builds it). Missing = the
    * order is calculated exactly as before the plan existed.
@@ -342,10 +347,13 @@ export function getOrderRevenueEvents(
         totalCollected = depositAmount;
       }
 
+      // #1491: the fee the shop kept stays on the days it was collected; only the rest goes back
+      const refund = totalCollected - Math.min(Math.max(0, order.cancelKeptAmount || 0), totalCollected);
+
       // Create negative event to refund
-      if (totalCollected > 0) {
+      if (refund > 0) {
         events.push({
-          revenue: -totalCollected,
+          revenue: -refund,
           date: updatedAt,
           description: 'Đơn hủy (hoàn lại)',
           revenueType: 'RENT_CANCELLED'
@@ -995,7 +1003,8 @@ export function calculateOrderRevenueByStatus(order: OrderRevenueData): number {
       return (order.totalAmount || 0) + (order.damageFee || 0) + (order.lateFee || 0);
 
     case ORDER_STATUS.CANCELLED:
-      return 0; // Cancelled = refunded
+      // #1491: the fee kept inside the deposit (never above it); 0 = refunded, as before
+      return Math.min(Math.max(0, order.cancelKeptAmount || 0), order.depositAmount || 0);
 
     default:
       return 0;

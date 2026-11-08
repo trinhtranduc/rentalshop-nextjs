@@ -2902,9 +2902,9 @@
 "deposit.void.confirm" = "Huỷ khoản thu";
 "deposit.cancel.policy" = "Chính sách tiệm: %@";
 "deposit.cancel.paid" = "Khách đã trả";
-"deposit.cancel.kept" = "Tiệm giữ lại";
+"deposit.cancel.kept" = "Phụ thu";
 "deposit.cancel.refund" = "Hoàn cho khách";
-"deposit.cancel.hint" = "Sửa được số giữ lại / hoàn nếu tiệm đồng ý khác.";
+"deposit.cancel.hint" = "Phụ thu là phần tiệm giữ lại trong tiền cọc, phần còn lại hoàn cho khách.";
 "deposit.cancel.staffHint" = "Nhân viên huỷ đơn sẽ hoàn lại toàn bộ tiền đã thu.";
 "deposit.cancel.note" = "Ghi chú (không bắt buộc)";
 "deposit.cancel.confirm" = "Xác nhận huỷ";
@@ -3269,3 +3269,8 @@
 /* #1464: the store kept this Apple ID's plan; short bottom links */
 "plan.storeHasPlan" = "Apple ID này đang có gói. Kỳ mới bắt đầu từ lần gia hạn tới.";
 "plan.restoreShort" = "Khôi phục";
+
+"Deposit above the rent" = "Cọc dư so với tiền thuê";
+"Give back %@" = "Trả khách %@";
+"Collect more %@" = "Thu thêm %@";
+"Surcharge" = "Phụ thu";
