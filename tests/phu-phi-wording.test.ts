@@ -45,15 +45,16 @@ describe('#1433 label on web', () => {
   it('both languages name the fee in every place it is shown', () => {
     const vi = { o: json('locales/vi/orders.json'), d: json('locales/vi/dashboard.json') };
     const en = { o: json('locales/en/orders.json'), d: json('locales/en/dashboard.json') };
+    // #1494: the web return dialog has one field, "Phụ thu" (late + extra fee); the other places keep "Phụ phí"
     expect([vi.o.amount.damageFee, vi.o.detailMoney.damageFee, vi.o.web.detail.pay.damageFee, vi.o.web.detail.dialog.takeBack.damageFee, vi.o.web.receipt.rows.damageFee])
-      .toEqual(Array(5).fill('Phụ phí'));
-    expect(vi.o.web.detail.dialog.rows.fees).toBe('Phí trễ + phụ phí');
+      .toEqual(['Phụ phí', 'Phụ phí', 'Phụ thu', 'Phụ thu', 'Phụ phí']);
+    expect(vi.o.web.detail.dialog.rows.fees).toBe('Phụ thu'); // #1494: one field at return
     expect(vi.d.home.money.fees).toBe('Phụ phí, trễ hạn');
     expect(vi.d.operations.cash.feesBreakdown).toBe('Trễ hạn {late} · Phụ phí {damage}');
     expect(vi.d.home.related.event.damageFee).toBe('Thu phụ phí');
     expect(vi.d.home.related.event.futureDamageFee).toBe('Dự kiến thu phụ phí khi trả hàng');
     expect(en.o.web.receipt.rows.damageFee).toBe('Extra fee');
-    expect(en.o.web.detail.dialog.rows.fees).toBe('Late + extra fees');
+    expect(en.o.web.detail.dialog.rows.fees).toBe('Surcharge'); // #1494
     expect(en.d.home.related.event.damageFee).toBe('Extra fee collected');
     expect(en.d.home.related.event.futureDamageFee).toBe('Expected extra fee at return');
   });
