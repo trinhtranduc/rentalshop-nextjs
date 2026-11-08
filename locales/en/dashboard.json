@@ -484,6 +484,9 @@
     "statusCompleted": "Completed",
     "statusRefunded": "Refunded",
     "error": "Could not load revenue.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "estimateTitle": "Estimated: {amount}",
+    "estimateDetail": "{count, plural, one {# manual extension or plan change} other {# manual extensions or plan changes}} without a payment row, counted on the day it happened. Not added to the total above.",
+    "estimateColumn": "Estimated"
   }
 }
