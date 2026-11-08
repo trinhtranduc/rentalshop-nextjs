@@ -90,7 +90,7 @@ const positive = (value: unknown): number | null => {
 };
 
 /** Price of an admin-route extension, which stores months and dates but no amount. */
-function estimateAdminExtension(meta: Record<string, any>, sub: EstimateSubscriptionRow): number | null {
+function estimateAdminExtension(meta: Record<string, unknown>, sub: EstimateSubscriptionRow): number | null {
   const months = Number(meta.months);
   const cycle = Number(sub.period) > 0 ? Number(sub.period) : 1;
   const cyclePrice = positive(sub.amount);

@@ -95,7 +95,7 @@ async function loadEstimatedRevenue(query: RevenueQuery, start: Date, end: Date)
   }
   return buildEstimatedRevenue({
     query,
-    activities: activityRows.map(({ subscription: _subscription, ...a }) => a),
+    activities: activityRows.map((a) => ({ id: a.id, subscriptionId: a.subscriptionId, type: a.type, metadata: a.metadata, createdAt: a.createdAt })),
     subscriptions: [...subscriptions.values()],
     payments: paymentRows.map(({ merchant, ...p }) => ({ ...p, merchantName: merchant?.name ?? null })),
   });
