@@ -2255,9 +2255,9 @@
     <string name="deposit_void_confirm">Undo collection</string>
     <string name="deposit_cancel_policy">Shop policy: %s</string>
     <string name="deposit_cancel_paid">Customer paid</string>
-    <string name="deposit_cancel_kept">Shop keeps</string>
+    <string name="deposit_cancel_kept">Surcharge</string>
     <string name="deposit_cancel_refund">Refund to customer</string>
-    <string name="deposit_cancel_hint">You can change what is kept / refunded if the shop agrees otherwise.</string>
+    <string name="deposit_cancel_hint">The surcharge is what the shop keeps from the deposit; the rest is refunded to the customer.</string>
     <string name="deposit_cancel_staff_hint">When staff cancel, everything collected is refunded.</string>
     <string name="deposit_cancel_note">Note (optional)</string>
     <string name="deposit_cancel_confirm">Confirm cancel</string>

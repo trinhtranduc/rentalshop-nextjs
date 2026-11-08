@@ -993,7 +993,7 @@
         "saleTotal": "Order total",
         "saleDue": "To collect",
         "noRevenue": "No revenue",
-        "cancelKept": "Revenue (fee kept)"
+        "cancelKept": "Surcharge"
       },
       "settings": {
         "title": "Notes, collateral and fees",
@@ -1246,8 +1246,8 @@
       "cancelPaid": "Customer paid",
       "cancelKept": "Shop keeps",
       "cancelRefund": "Refund to customer",
-      "cancelHint": "Refund = Customer paid minus Shop keeps. Change it only when the shop agrees to something other than its policy.",
-      "cancelHintStaff": "Staff refund everything the customer paid. The owner or branch manager decides what the shop keeps.",
+      "cancelHint": "Refund = Customer paid minus the surcharge. The surcharge is what the shop keeps from the deposit.",
+      "cancelHintStaff": "Staff refund everything the customer paid. The owner or branch manager decides the surcharge.",
       "policyLine": "Shop policy: {policy}",
       "dueTodayTitle": "To collect today",
       "dueSoonTitle": "Due soon",

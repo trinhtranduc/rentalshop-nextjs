@@ -993,7 +993,7 @@
         "saleTotal": "Tổng đơn hàng",
         "saleDue": "Còn thu",
         "noRevenue": "Không tính doanh thu",
-        "cancelKept": "Doanh thu (phụ thu giữ lại)"
+        "cancelKept": "Phụ thu"
       },
       "settings": {
         "title": "Ghi chú, thế chấp và phí",
@@ -1246,8 +1246,8 @@
       "cancelPaid": "Khách đã trả",
       "cancelKept": "Tiệm giữ lại",
       "cancelRefund": "Hoàn cho khách",
-      "cancelHint": "Số hoàn = Khách đã trả trừ Tiệm giữ lại. Chỉ sửa khi tiệm đồng ý khác với chính sách.",
-      "cancelHintStaff": "Nhân viên hoàn toàn bộ số khách đã trả. Chủ shop hoặc quản lý chi nhánh quyết định số tiệm giữ lại.",
+      "cancelHint": "Số hoàn = Khách đã trả trừ phụ thu. Phụ thu là phần tiệm giữ lại trong tiền cọc.",
+      "cancelHintStaff": "Nhân viên hoàn toàn bộ số khách đã trả. Chủ shop hoặc quản lý chi nhánh quyết định phụ thu.",
       "policyLine": "Chính sách tiệm: {policy}",
       "dueTodayTitle": "Cần thu hôm nay",
       "dueSoonTitle": "Sắp đến hạn",

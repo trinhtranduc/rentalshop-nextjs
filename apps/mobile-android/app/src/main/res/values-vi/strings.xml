@@ -2225,9 +2225,9 @@
     <string name="deposit_void_confirm">Huỷ khoản thu</string>
     <string name="deposit_cancel_policy">Chính sách tiệm: %s</string>
     <string name="deposit_cancel_paid">Khách đã trả</string>
-    <string name="deposit_cancel_kept">Tiệm giữ lại</string>
+    <string name="deposit_cancel_kept">Phụ thu</string>
     <string name="deposit_cancel_refund">Hoàn cho khách</string>
-    <string name="deposit_cancel_hint">Sửa được số giữ lại / hoàn nếu tiệm đồng ý khác.</string>
+    <string name="deposit_cancel_hint">Phụ thu là phần tiệm giữ lại trong tiền cọc, phần còn lại hoàn cho khách.</string>
     <string name="deposit_cancel_staff_hint">Nhân viên huỷ đơn sẽ hoàn lại toàn bộ tiền đã thu.</string>
     <string name="deposit_cancel_note">Ghi chú (không bắt buộc)</string>
     <string name="deposit_cancel_confirm">Xác nhận huỷ</string>
