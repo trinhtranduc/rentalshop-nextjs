@@ -21,7 +21,7 @@ Mỗi nền tảng một PR vào `dev` (web trước vì không cần build app)
    1. Test đơn vị: dựng giỏ ca 1–5, `CartStore.startReorderCart` ca 6–8, `OrderActionSheet.rows` có REORDER.
    2. `CartStore.startReorderCart` (như `startBookingCart`), `OrderActionSheet.Action.REORDER`, `OrderActionsSheet.kt` dòng và icon, tải sản phẩm, mở `Routes.cart()`.
    3. `strings.xml` (cùng ngôn ngữ với iOS).
-4. **Thứ tự dòng trong sheet** (iOS và Android, cùng PR của nền tảng): theo phương án chủ shop chọn ở mockup; thêm test `OrderDetailLogic.sheetActions` / `OrderActionSheet.rows` cho thứ tự mới.
+4. **Bố cục điện thoại D** (iOS và Android, cùng PR của nền tảng): hàng 3 nút dưới khối trạng thái; `sheetActions` / `OrderActionSheet.rows` bỏ Chia sẻ và Ghi chú (chỉ Sửa đơn, Gia hạn, Lịch sử, đỏ); ẩn nút ⋯ khi sheet trống; thêm icon cho nút thanh dưới. Test `OrderDetailLogic.sheetActions` / `OrderActionSheet.rows` và một test cho hàng nút (quyền, số ghi chú).
 5. Xác minh: `cd tests && yarn test <reorder>` (TZ=UTC và TZ=Asia/Ho_Chi_Minh), `yarn lint`, `yarn type-check`; iOS `xcodebuild … test`; Android `./gradlew :app:testDebugUnitTest :app:assembleDebug`;
    chạy `mobile-e2e-local` (đặt lại một đơn thuê và một đơn bán trên API local), mở cửa sổ Simulator / AVD / Chrome để chủ shop xem.
 6. `.agent/api-changes/LOG.md`: không có dòng mới (không đổi API); ghi rõ trong mục "API compatibility" của mỗi PR: "No API change".
@@ -31,7 +31,8 @@ Mỗi nền tảng một PR vào `dev` (web trước vì không cần build app)
 - Giá đổi so với đơn cũ: chủ shop đã chọn giá hiện tại; nhân viên thấy giá mới ngay trong giỏ.
 - Nhiều lần tải sản phẩm khi bấm (một lần mỗi dòng): chậm với đơn nhiều món; hiện chờ có vòng quay như "Xác nhận đơn online". Giới hạn số dòng của đơn thường dưới 20.
 - Đủ 10 giỏ: bị chặn, báo như hiện nay.
-- Sheet ⋯ chật hơn: xem tab mockup, vị trí chờ chủ shop chốt.
+- Màn chi tiết cao thêm khoảng 66 pt ở đầu; đã duyệt trong mockup (phương án D).
+- Nút ⋯ ẩn khi sheet trống: kiểm tra bằng test.
 
 ## Rollback
 

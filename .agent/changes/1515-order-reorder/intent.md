@@ -34,3 +34,4 @@ Người có quyền tạo đơn: `MERCHANT`, `OUTLET_ADMIN`, `OUTLET_STAFF` (v�
 - 2026-11-09 — Làm cả ba nền tảng (web, iOS, Android). (chủ shop)
 - 2026-11-09 — Ngày lấy / ngày trả để trống cả hai; đơn thuê thì hỏi chọn ngày như một đơn thuê mới. (chủ shop)
 - 2026-11-09 — Giá lấy theo giá hiện tại của sản phẩm. Lấy: loại đơn, khách, món, số lượng, ghi chú. Không lấy: giảm giá, cọc, thế chấp, khoản đã thu, thanh toán, ảnh, trạng thái, mã đơn. (chủ shop)
+- 2026-11-09 — Vị trí trên điện thoại: phương án D của tab mockup "Sheet ⋯ chi tiết đơn". Màn chi tiết đơn có hàng 3 nút dưới khối trạng thái: **Đặt lại** (icon nhân bản), **Chia sẻ**, **Ghi chú · N**. Sheet ⋯ chỉ còn việc sửa đơn: Sửa đơn, Gia hạn, Lịch sử, rồi dòng đỏ (Huỷ / Xoá). Web giữ dòng đầu menu ⋯. (chủ shop)

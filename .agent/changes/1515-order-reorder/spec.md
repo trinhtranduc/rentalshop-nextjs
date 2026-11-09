@@ -2,9 +2,19 @@
 
 Issue: #1515 · Status: accepted · Intent: ./intent.md
 
+## Bố cục trên điện thoại (iOS, Android) — phương án D
+
+- Hàng 3 nút nằm ngay dưới khối trạng thái của màn chi tiết đơn, cao 44 pt, icon cạnh chữ: **Đặt lại** (chữ xanh, icon nhân bản), **Chia sẻ**, **Ghi chú** (thêm " · N" khi có N ghi chú hoặc ảnh; không có thì chỉ "Ghi chú").
+- Đặt lại chỉ hiện khi có `orders.create`; thiếu quyền thì còn 2 nút. Chia sẻ và Ghi chú luôn hiện (như hôm nay).
+- Sheet ⋯ "Thao tác với đơn" bỏ Chia sẻ và Ghi chú; còn: Sửa đơn, Gia hạn, Lịch sử (như quy tắc hiện nay, chỉ dòng được phép), rồi nhóm đỏ Huỷ / Xoá. Một nhóm cách nhóm đỏ một khoảng trống.
+- Sheet không còn dòng nào (ví dụ nhân viên, đơn đã trả) thì không hiện nút ⋯.
+- Thanh nút dưới (In, Giao / Nhận trả, Huỷ đơn bán) giữ nguyên chức năng; thêm icon: In (máy in), Nhận trả (hộp mũi tên xuống). Icon Giao hàng, Huỷ, đã có sẵn thì giữ.
+- Icon: Đặt lại dùng kiểu nhân bản (hai ô vuông chồng), nét 1.5, cùng bộ với các icon của sheet.
+- Android làm y hệt iOS.
+
 ## Behavior
 
-1. Chi tiết đơn có hành động **Đặt lại đơn** ("Tạo giỏ mới giống đơn này"). iOS và Android: một dòng trong sheet ⋯ "Thao tác với đơn". Web: dòng đầu menu ⋯.
+1. Chi tiết đơn có hành động **Đặt lại đơn** ("Tạo giỏ mới giống đơn này"). iOS và Android: nút đầu của hàng 3 nút trên màn chi tiết đơn (xem mục "Bố cục trên điện thoại"). Web: dòng đầu menu ⋯.
    Hiện ở **mọi trạng thái** đơn (kể cả đã trả, đã huỷ), cho đơn thuê và đơn bán. Chỉ hiện cho người có quyền tạo đơn (`orders.create`).
 2. Bấm: tải đơn (đã có sẵn ở màn chi tiết), tải sản phẩm của từng dòng, dựng một giỏ rồi mở màn giỏ (web: trang Tạo đơn). Không gọi API ghi.
 3. Giỏ mới có:
@@ -49,4 +59,5 @@ Không đổi. Đọc `GET` chi tiết đơn và `GET` sản phẩm có sẵn; t
 - [ ] Hàm dựng giỏ (web `reorder-model`, iOS `ReorderCartBuilder`, Android `ReorderCart`) qua đủ ca 1–5 bằng test đơn vị.
 - [ ] Mở giỏ: ca 6–8 qua test đơn vị của `CartStore` / `cart-store`.
 - [ ] Web, iOS (Simulator có cửa sổ), Android (AVD có cửa sổ): đặt lại một đơn thuê và một đơn bán, tạo đơn xong thấy đúng khách, món, giá hiện tại, ngày đã chọn.
-- [ ] Vị trí trong sheet theo mockup chủ shop chọn.
+- [ ] Bố cục điện thoại đúng phương án D (mục "Bố cục trên điện thoại"), có test đơn vị cho từng ca.
+- [ ] Test tích hợp API thật (local): `tests/e2e/business/order-reorder.e2e.test.js` (dựng body từ đơn cũ, giá hiện tại, `POST /api/orders`) và web UI e2e `tests/e2e/web/reorder.web.js`.
