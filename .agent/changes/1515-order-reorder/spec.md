@@ -11,10 +11,11 @@ Issue: #1515 · Status: accepted · Intent: ./intent.md
    - **loại đơn** như đơn cũ (thuê / bán);
    - **khách** như đơn cũ (khách lẻ thì không có khách);
    - **ghi chú** của đơn (văn bản; không có ảnh ghi chú);
-   - **từng món và số lượng**, giá theo **giá hiện tại của sản phẩm** (thuê: giá thuê; bán: giá bán), như thêm món vào giỏ.
+   - **từng món và số lượng**, giá theo **giá hiện tại của sản phẩm** (thuê: giá thuê; bán: giá bán), như thêm món vào giỏ, kèm **ghi chú của từng món** nếu có;
+     số ngày thuê của món tính lại theo ngày shop chọn sau, không lấy `rentalDays` của đơn cũ.
 4. Giỏ mới **không có**: ngày lấy, ngày trả (để trống cả hai; đơn thuê thì mở hộp chọn ngày như một đơn thuê mới), giảm giá, cọc, thế chấp, kế hoạch thu cọc theo giai đoạn,
    khoản đã thu, thanh toán, ảnh, trạng thái, mã đơn, liên kết đơn online. Không có chế độ "đang sửa đơn": tạo đơn là `POST /api/orders` như đơn thường.
-5. Món không còn tải được (đã xoá, không còn quyền xem): **bỏ khỏi giỏ**, và báo một câu "N món không còn bán, đã bỏ khỏi giỏ". Còn món khác thì vẫn mở giỏ.
+5. Món không còn tải được (dòng đơn không còn `productId`, sản phẩm đã xoá, hoặc không còn quyền xem): **bỏ khỏi giỏ**, và báo một câu "N món không còn bán, đã bỏ khỏi giỏ". Còn món khác thì vẫn mở giỏ.
    Hết món thì **không mở giỏ**, chỉ báo "Không còn món nào để đặt lại".
 6. Mở giỏ: giỏ đang dùng có món (hoặc có khách) thì mở **giỏ mới bên cạnh**, giỏ cũ giữ nguyên. Giỏ đang dùng trống thì dùng luôn giỏ đó. Đã đủ 10 giỏ và giỏ đang dùng có món:
    báo như "Xác nhận đơn online" (`cart.multi.limit`), không làm gì khác.
