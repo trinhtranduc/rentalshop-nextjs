@@ -3274,3 +3274,13 @@
 "Give back %@" = "Trả khách %@";
 "Collect more %@" = "Thu thêm %@";
 "Surcharge" = "Phụ thu";
+
+/* #1515 Đặt lại đơn: hàng nút dưới khối trạng thái ở chi tiết đơn */
+"order.quick.reorder" = "Đặt lại";
+"order.quick.share" = "Chia sẻ";
+"order.quick.notes" = "Ghi chú";
+"order.quick.notesCount" = "Ghi chú · %d";
+"order.reorder.skipped" = "%d món không còn bán, đã bỏ khỏi giỏ";
+"order.reorder.empty" = "Không còn món nào để đặt lại";
+"order.reorder.limit" = "Đang mở 10 giỏ. Đóng bớt một giỏ rồi đặt lại.";
+"order.reorder.failed" = "Không đọc được đơn để đặt lại";

@@ -3276,3 +3276,13 @@
 "Give back %@" = "Give back %@";
 "Collect more %@" = "Collect more %@";
 "Surcharge" = "Surcharge";
+
+/* #1515 Reorder: the button row under the status block on the order detail */
+"order.quick.reorder" = "Reorder";
+"order.quick.share" = "Share";
+"order.quick.notes" = "Notes";
+"order.quick.notesCount" = "Notes · %d";
+"order.reorder.skipped" = "%d items are no longer sold and were left out of the cart";
+"order.reorder.empty" = "No items left to reorder";
+"order.reorder.limit" = "10 carts are open. Close one before reordering.";
+"order.reorder.failed" = "Could not read the order to reorder";
