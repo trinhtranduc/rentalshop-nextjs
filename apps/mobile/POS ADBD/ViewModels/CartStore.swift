@@ -91,6 +91,13 @@ final class CartStore {
         return true
     }
 
+    /// #1515 "Đặt lại" an order: the same rule as an online booking (#1124): a draft in the cart in use keeps its cart and
+    /// the reorder gets a new one, an empty cart is replaced. False when no cart is free (10 carts are open).
+    @discardableResult
+    func startReorderCart(_ cart: Cart, notify: Bool = true) -> Bool {
+        startBookingCart(cart, notify: notify)
+    }
+
     /// The cart in use is done (order created, cart cleared): it closes and the next one is used.
     /// `persistToDisk: false` is a logout / test reset: every cart is dropped from memory.
     func resetCart(notify: Bool = true, persistToDisk: Bool = true) {

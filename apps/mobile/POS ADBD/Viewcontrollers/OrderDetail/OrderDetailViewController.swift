@@ -308,7 +308,52 @@ final class OrderDetailViewController: BaseViewControler {
             let warned = extras.arrangedSubviews.last?.accessibilityIdentifier == "order.detail.pickupPhotos.retry"
             column.addArrangedSubview(padded(extras, top: DS.Spacing.sm, bottom: warned ? DS.Spacing.sm : 0))
         }
+        // #1515 (layout D): Đặt lại, Chia sẻ, Ghi chú under the status block
+        column.addArrangedSubview(padded(quickRow(detail), top: DS.Spacing.sm, bottom: DS.Spacing.sm))
         return column
+    }
+
+    /// #1515 (layout D): the row of buttons under the status block. Đặt lại (blue, only with orders.create), Chia sẻ, Ghi chú
+    /// (with the number of notes and photos). The ⋯ sheet keeps only the work on the order itself.
+    private func quickRow(_ detail: OrderDetail) -> UIView {
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.spacing = DS.Spacing.sm
+        row.distribution = .fillEqually
+        for action in OrderDetailLogic.quickButtons(canCreateOrders: PermissionManager.shared.canCreateOrders()) {
+            let title: String
+            let id: String
+            switch action {
+            case .reorder: (title, id) = ("order.quick.reorder".localized(), "order.detail.reorder")
+            case .share: (title, id) = ("order.quick.share".localized(), "order.detail.share")
+            default:
+                let count = OrderDetailLogic.notesCount(text: detail.notes, photoCount: noteImageURLs(detail).count)
+                title = count > 0 ? String(format: "order.quick.notesCount".localized(), count) : "order.quick.notes".localized()
+                id = "order.detail.notes"
+            }
+            let button = makeButton(title: title, style: .outline, symbol: OrderActionSheet.symbol(of: action))
+            // Mockup D: Đặt lại is blue and bold (text and icon); Chia sẻ and Ghi chú have dark medium text, a grey icon;
+            // every border is the light line (#E2E8F0), not the heavier outline of the bottom bar
+            let emphasized = action == .reorder
+            var config = button.configuration ?? .plain()
+            config.titleLineBreakMode = .byTruncatingTail
+            config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6)
+            config.background.cornerRadius = 12
+            config.background.strokeColor = UIColor(hexString: "E2E8F0")
+            config.baseForegroundColor = emphasized ? DS.Color.primary : DS.Color.text
+            config.imageColorTransformer = UIConfigurationColorTransformer { _ in emphasized ? DS.Color.primary : DS.Color.textMuted }
+            config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+                var updated = attributes
+                updated.font = emphasized ? Utils.boldFont(size: DS.TextSize.secondary) : Utils.mediumFont(size: DS.TextSize.secondary)
+                return updated
+            }
+            button.configuration = config
+            button.accessibilityIdentifier = id
+            button.addAction(UIAction { [weak self] _ in self?.perform(action) }, for: .touchUpInside)
+            button.snp.makeConstraints { make in make.height.equalTo(44) }
+            row.addArrangedSubview(button)
+        }
+        return row
     }
 
     /// Mockup 1b: section "KHÁCH HÀNG", the bold name, the phone under it (tap dials) and a call icon at the right
@@ -909,6 +954,9 @@ final class OrderDetailViewController: BaseViewControler {
     private func renderActions(_ detail: OrderDetail) {
         let actions = actions(for: detail)
         bottomStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        // #1515: no row in the sheet (a staff member on a returned order) = no ⋯
+        moreButton.isHidden = !OrderDetailLogic.showsMore(OrderDetailLogic.sheetActions(
+            actions, orderType: detail.orderType, canExtend: canExtend(detail), canViewHistory: ChangeHistoryLogic.currentUserCanView))
 
         var buttons: [UIView] = []
         switch actions.primary {
@@ -919,7 +967,7 @@ final class OrderDetailViewController: BaseViewControler {
                 let stages = detail.installments ?? []
                 if let stage = DepositPlanLogic.stageToCollectBeforeHandOver(hasPlan: detail.hasDepositPlan, status: detail.status, stages: stages),
                    let number = DepositPlanLogic.stageNumber(stages, key: stage.key) {
-                    let collect = makeButton(title: String(format: "deposit.card.collectStage".localized(), number), style: .primary)
+                    let collect = makeButton(title: String(format: "deposit.card.collectStage".localized(), number), style: .primary, symbol: "banknote")
                     collect.accessibilityIdentifier = "order.detail.collectStage"
                     collect.addAction(UIAction { [weak self] _ in self?.presentCollect(stage) }, for: .touchUpInside)
                     buttons.append(collect)
@@ -936,21 +984,21 @@ final class OrderDetailViewController: BaseViewControler {
             let title = due > 0
                 ? String(format: "Hand over · collect %@".localized(), MoneyFormatter.format(due))
                 : "Hand over items".localized()
-            let primary = makeButton(title: title, style: .primary)
+            let primary = makeButton(title: title, style: .primary, symbol: "tray.and.arrow.up")
             primary.addTarget(self, action: #selector(handOverTapped), for: .touchUpInside)
             buttons.append(primary)
         case .takeReturn:
             buttons.append(shortPrintButton())
-            let primary = makeButton(title: "Take back items".localized(), style: .primary)
+            let primary = makeButton(title: "Take back items".localized(), style: .primary, symbol: "tray.and.arrow.down")
             primary.addTarget(self, action: #selector(takeReturnTapped), for: .touchUpInside)
             buttons.append(primary)
         case .none:
             if detail.orderType == .sale && actions.canCancel {
-                let cancel = makeButton(title: "Cancel order".localized(), style: .destructive)
+                let cancel = makeButton(title: "Cancel order".localized(), style: .destructive, symbol: "xmark.circle")
                 cancel.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
                 buttons.append(cancel)
             }
-            let print = makeButton(title: "Print receipt".localized(), style: buttons.isEmpty ? .outline : .primary)
+            let print = makeButton(title: "Print receipt".localized(), style: buttons.isEmpty ? .outline : .primary, symbol: "printer")
             print.addTarget(self, action: #selector(printTapped), for: .touchUpInside)
             buttons.append(print)
         }
@@ -963,9 +1011,9 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
-    /// #930: "In" (no icon) next to Giao đồ / Nhận trả; Edit and Extend are in the ⋯ sheet
+    /// #930: "In" (with the printer icon, #1515) next to Giao đồ / Nhận trả; Edit and Extend are in the ⋯ sheet
     private func shortPrintButton() -> UIButton {
-        let print = makeButton(title: "Print".localized(), style: .outline)
+        let print = makeButton(title: "Print".localized(), style: .outline, symbol: "printer")
         print.accessibilityIdentifier = "orderDetail.print"
         print.addTarget(self, action: #selector(printTapped), for: .touchUpInside)
         return print
@@ -1006,6 +1054,8 @@ final class OrderDetailViewController: BaseViewControler {
             return "order.sheet.edit.subtitle".localized()
         case .extend:
             return "order.sheet.extend.subtitle".localized()
+        case .reorder:
+            return nil
         }
     }
 
@@ -1020,6 +1070,7 @@ final class OrderDetailViewController: BaseViewControler {
         case .history: openHistory()
         case .cancel: cancelTapped()
         case .delete: deleteTapped()
+        case .reorder: reorderTapped()
         }
     }
 
@@ -1045,10 +1096,49 @@ final class OrderDetailViewController: BaseViewControler {
         }
     }
 
+    /// #1515 "Đặt lại": the products of the lines (today's prices) → a new cart beside any draft → the cart screen
+    private func reorderTapped() {
+        guard let detail, presentedViewController == nil else { return }
+        showProgressText(text: nil)
+        var products: [Int: Product] = [:]
+        let group = DispatchGroup()
+        for id in Set(detail.orderItems.compactMap(\.productId).filter { $0 > 0 }) {
+            group.enter()
+            ProductService.shared.loadProduct(productId: id) { product, _ in
+                DispatchQueue.main.async {
+                    if let product { products[id] = product }
+                    group.leave()
+                }
+            }
+        }
+        group.notify(queue: .main) { [weak self] in
+            guard let self else { return }
+            self.hideProgress()
+            let built = ReorderCartBuilder.cart(from: detail, products: products)
+            guard let cart = built.cart else {
+                self.showToast(message: "order.reorder.empty".localized())
+                return
+            }
+            guard CartStore.shared.startReorderCart(cart) else {
+                let alert = UIAlertController(title: nil, message: "order.reorder.limit".localized(), preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                self.present(alert, animated: true)
+                return
+            }
+            let cartScreen = CartV2ViewController()
+            cartScreen.hidesBottomBarWhenPushed = true
+            self.navigationController?.pushViewController(cartScreen, animated: true)
+            if built.skipped > 0 {
+                cartScreen.view.layoutIfNeeded()
+                cartScreen.showToast(message: String(format: "order.reorder.skipped".localized(), built.skipped))
+            }
+        }
+    }
+
     /// #640: the share image (order detail with its payments, the bill's VietQR), then the share sheet
     private func shareTapped() {
         guard let detail else { return }
-        OrderSharePresenter.share(OrderShareSource(detail: detail), from: self, sourceView: moreButton)
+        OrderSharePresenter.share(OrderShareSource(detail: detail), from: self, sourceView: view)
     }
 
     @objc private func editOrderTapped() {
@@ -1581,6 +1671,7 @@ final class OrderActionSheet: V2FittingSheet {
         case .history: return "order.sheet.history".localized()
         case .cancel: return "order.sheet.cancel".localized()
         case .delete: return "order.sheet.delete".localized()
+        case .reorder: return "order.quick.reorder".localized()
         }
     }
 
@@ -1595,6 +1686,7 @@ final class OrderActionSheet: V2FittingSheet {
         case .history: return "clock.arrow.circlepath"
         case .cancel: return "xmark.circle"
         case .delete: return "trash"
+        case .reorder: return "square.on.square"
         }
     }
 

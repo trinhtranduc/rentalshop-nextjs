@@ -2495,21 +2495,72 @@ final class AnyRentE2ETests: XCTestCase {
 
         // A booked rental: the bottom bar has In + Giao đồ (#930); Sửa đơn is in the sheet
         guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
-        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
-                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Edit order", "Sửa đơn"],
-                                   ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"], ["Reorder", "Đặt lại"], ["Share", "Chia sẻ"]],
+                        onScreenPrefixes: [["Hand over", "Giao đồ"], ["Notes", "Ghi chú"]],
+                        expected: [["Edit order", "Sửa đơn"], ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], absent: [["Extend", "Gia hạn"]],
                         shotPrefix: "47a-order-sheet-booked")
         e2e.goBack()
 
         // A renting order: In + Nhận trả on screen; Gia hạn in the sheet
         guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
-        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Take back", "Nhận trả"]],
-                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Extend", "Gia hạn"],
-                                   ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"], ["Reorder", "Đặt lại"], ["Share", "Chia sẻ"]],
+                        onScreenPrefixes: [["Take back", "Nhận trả"], ["Notes", "Ghi chú"]],
+                        expected: [["Extend", "Gia hạn"], ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47b-order-sheet-renting")
         XCTAssertFalse(e2e.button(["Edit order", "Sửa đơn"]).exists, "A renting order is not editable: no Sửa đơn in the sheet")
         e2e.goBack()
+    }
+
+    /// #1515 "Đặt lại" (layout D): Đặt lại, Chia sẻ and Ghi chú are a row under the status block; Đặt lại opens a new cart
+    /// with the lines of the order (the cart screen has quantity buttons); the shop's order is not changed.
+    func test5eOrderReorder() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
+        let reorder = app.buttons["order.detail.reorder"]
+        let share = app.buttons["order.detail.share"]
+        let notes = app.buttons["order.detail.notes"]
+        XCTAssertTrue(reorder.waitForExistence(timeout: 10), "Đặt lại is under the status block")
+        XCTAssertTrue(share.exists && notes.exists, "Chia sẻ and Ghi chú are in the same row")
+        if reorder.exists && share.exists && notes.exists {
+            XCTAssertEqual(reorder.frame.minY, share.frame.minY, accuracy: 1, "one row")
+            XCTAssertLessThan(reorder.frame.maxX, share.frame.minX + 1, "Đặt lại first, then Chia sẻ")
+            XCTAssertLessThan(share.frame.maxX, notes.frame.minX + 1, "then Ghi chú")
+            XCTAssertGreaterThanOrEqual(reorder.frame.height, 43, "44 pt tall")
+        }
+        e2e.shot("47c-reorder-detail")
+        reorder.tap()
+        XCTAssertTrue(e2e.button(["Thêm 1", "One more"]).waitForExistence(timeout: 15), "the new cart has the order's lines")
+        sleep(1)
+        e2e.shot("47d-reorder-cart")
+        // A rent cart asks for the days like a new rental; pick today and create the order
+        e2e.cartRentToday()
+        XCTAssertTrue(e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "47e-reorder-rent-created"),
+                      "the reordered rent cart creates an order (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.note("REORDER rent order created")
+
+        // A sale: the cart is a sale cart, no days
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        let sale = e2e.saleModeButton
+        guard sale.waitForExistence(timeout: 5) else { return XCTFail("Đơn bán switch") }
+        sale.tap()
+        sleep(2)
+        let row = app.cells.firstMatch
+        guard row.waitForExistence(timeout: 8) else { return XCTFail("No sale to open") }
+        e2e.tapRow(row)
+        let saleReorder = app.buttons["order.detail.reorder"]
+        XCTAssertTrue(saleReorder.waitForExistence(timeout: 10), "a sale order has Đặt lại too")
+        for _ in 0..<10 where !saleReorder.isHittable { sleep(1) }
+        e2e.shot("47f-reorder-sale-detail")
+        saleReorder.tap()
+        XCTAssertTrue(e2e.button(["Thêm 1", "One more"]).waitForExistence(timeout: 15), "the sale cart has the order's lines")
+        e2e.shot("47g-reorder-sale-cart")
+        XCTAssertTrue(e2e.createOrderFromCart(cta: ["Sell & collect", "Bán & thu tiền"], shotPrefix: "47h-reorder-sale-created"),
+                      "the reordered sale cart creates an order (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.note("REORDER sale order created")
     }
 
     /// Opens ⋯ on the open detail and checks the sheet against the buttons the screen shows
@@ -6940,6 +6991,16 @@ final class E2E {
     /// ⋯ → one row of the sheet (the sheet closes, then the row's action runs)
     @discardableResult
     func tapOrderSheetRow(_ labels: [String]) -> Bool {
+        // #1515 (layout D): Chia sẻ and Ghi chú are buttons under the status block now, not rows of the sheet
+        let quick = ["Share order": "order.detail.share", "Chia sẻ đơn": "order.detail.share",
+                     "Notes": "order.detail.notes", "Ghi chú": "order.detail.notes"]
+        if let id = labels.compactMap({ quick[$0] }).first {
+            let button = app.buttons[id]
+            guard button.waitForExistence(timeout: 10) else { note("button \(id) missing"); return false }
+            button.tap()
+            sleep(2)
+            return true
+        }
         guard openOrderSheet() else { return false }
         let row = button(labels)
         guard row.waitForExistence(timeout: 3) else { note("sheet row \(labels) missing"); return false }
