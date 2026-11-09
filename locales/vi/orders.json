@@ -590,6 +590,12 @@
         "deleteMessage": "{name} có {count} món. Các món sẽ bị xoá.",
         "delete": "Xoá"
       },
+      "reorder": {
+        "skipped": "{count} món không còn bán, đã bỏ khỏi giỏ",
+        "empty": "Không còn món nào để đặt lại",
+        "limit": "Đang mở 10 giỏ. Đóng bớt một giỏ rồi đặt lại.",
+        "failed": "Không đọc được đơn để đặt lại"
+      },
       "title": "Tạo đơn",
       "editTitle": "Sửa đơn #{number}",
       "backToOrder": "Về đơn #{number}",
@@ -906,6 +912,7 @@
       "by": "bởi {name}",
       "print": "In phiếu",
       "edit": "Sửa đơn",
+      "reorder": "Đặt lại đơn",
       "more": "Thêm thao tác",
       "cancel": "Huỷ đơn",
       "delete": "Xoá đơn",

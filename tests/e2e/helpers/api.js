@@ -153,6 +153,9 @@ class Session {
   patch(path, json) {
     return request(this.token, 'PATCH', path, { json });
   }
+  delete(path) {
+    return request(this.token, 'DELETE', path);
+  }
   postForm(path, data, headers) {
     return request(this.token, 'POST', path, { form: { data: JSON.stringify(data) }, headers });
   }

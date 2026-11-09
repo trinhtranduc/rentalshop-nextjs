@@ -590,6 +590,12 @@
         "deleteMessage": "{name} has {count} items. They will be removed.",
         "delete": "Delete"
       },
+      "reorder": {
+        "skipped": "{count, plural, one {# item is no longer sold and was left out of the cart} other {# items are no longer sold and were left out of the cart}}",
+        "empty": "No items left to reorder",
+        "limit": "10 carts are open. Close one, then reorder.",
+        "failed": "Could not read the order to reorder"
+      },
       "title": "New order",
       "editTitle": "Edit order #{number}",
       "backToOrder": "Back to order #{number}",
@@ -906,6 +912,7 @@
       "by": "by {name}",
       "print": "Print",
       "edit": "Edit order",
+      "reorder": "Reorder",
       "more": "More actions",
       "cancel": "Cancel order",
       "delete": "Delete order",

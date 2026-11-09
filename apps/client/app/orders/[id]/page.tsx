@@ -118,7 +118,7 @@ export default function OrderDetailPage() {
   const money = useFormatCurrency();
   const { toastSuccess, toastError } = useToast();
   const { user } = useAuth();
-  const { canDeleteOrders, canManageOrders } = usePermissions();
+  const { canCreateOrders, canDeleteOrders, canManageOrders } = usePermissions();
 
   const td = useCallback((key: string, values?: Record<string, string | number>) => t(`installments.${key}`, values), [t]);
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
@@ -431,6 +431,8 @@ export default function OrderDetailPage() {
   }));
 
   const menu = [
+    // #1515 a new cart like this order; every status, anyone who may create orders
+    ...(canCreateOrders ? [{ label: t('detail.reorder'), onSelect: () => router.push(`/orders/create?reorder=${encodeURIComponent(order.orderNumber)}`) }] : []),
     ...(canCancel ? [{ label: t('detail.cancel'), onSelect: () => setConfirm('cancel'), danger: true }] : []),
     ...(canDelete ? [{ label: t('detail.delete'), onSelect: () => setConfirm('delete'), danger: true }] : []),
   ];

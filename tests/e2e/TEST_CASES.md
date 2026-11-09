@@ -960,6 +960,23 @@ scripts/e2e/web-e2e.sh --ui          # hoặc --ui orders,customers (một khu v
 
 Không tự động được: thêm / sửa / xoá người dùng và thêm chi nhánh (bị chặn bởi giới hạn gói của merchant seed: chỉ kiểm thông báo giới hạn và khoá / mở khoá một người dùng seed); thanh toán gia hạn gói thật; cấu hình khách thân thiết (chương trình tắt, chỉ Super Admin bật); tải ảnh lên và hộp thoại in của trình duyệt (in được giả lập); đổi mật khẩu và xoá tài khoản thật; email quên mật khẩu và token đặt lại hợp lệ; bài blog đơn (không có bài); bản build production (`next build`).
 
+## REORDER — "Đặt lại đơn" (#1515)
+
+API thật (`tests/e2e/business/order-reorder.e2e.test.js`, dựng body như client rồi `POST /api/orders`):
+
+- **BF-REORDER-01** Đơn thuê có giảm giá, cọc, thế chân, ghi chú, ghi chú dòng: đơn mới cùng khách, món, số lượng, ghi chú, chi nhánh; giá hiện tại (sau khi tăng giá); không giảm giá, cọc, thế chân; đơn cũ không đổi.
+- **BF-REORDER-02** Đơn đã huỷ đọc được và đặt lại được.
+- **BF-REORDER-03** Đơn bán: món đúng, giá bán hiện tại, không giảm giá.
+- **BF-REORDER-04** Sản phẩm đã xoá: đơn cũ vẫn đọc được, sản phẩm không tải được nên client bỏ dòng đó.
+
+Web UI (`tests/e2e/web/reorder.web.js`, `scripts/e2e/web-e2e.sh --reorder`):
+
+- **WEB-REORDER-01** Thuê: ⋯ → Đặt lại đơn mở giỏ giống đơn (khách, món, ghi chú dòng, giá hiện tại, không giảm giá, chưa có ngày), chọn ngày, tạo đơn, đọc lại bằng API.
+- **WEB-REORDER-02** Bán: giỏ ở tab Bán, không hỏi ngày, tạo đơn.
+- **WEB-REORDER-03** Đơn đã huỷ cũng có "Đặt lại đơn".
+- **WEB-REORDER-04** Một sản phẩm đã xoá: bỏ khỏi giỏ, báo "1 món không còn bán, đã bỏ khỏi giỏ".
+- **WEB-REORDER-05** Hết món: báo "Không còn món nào để đặt lại", quay lại trang đơn, không mở giỏ.
+
 ## MOB — Mobile (iOS XCUITest + Android adb) (#727)
 
 **Trạng thái:** Android đã chạy hết các luồng trên emulator (231 đạt, 0 fail, xem bảng; 3 known bug). iOS đã chạy lại các luồng mới và 7 test cũ đã sửa; số liệu khớp API, lỗi tìm được là #753 #754 #532 #533 (đã sửa trong PR #766). Bảng iOS bên dưới là của lượt cũ và chưa cập nhật từng dòng. Cột Android trong bảng: "đạt" nghĩa là đã chạy ở lượt cuối.

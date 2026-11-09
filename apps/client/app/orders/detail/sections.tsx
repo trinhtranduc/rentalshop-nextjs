@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import {
@@ -49,9 +49,10 @@ export function ActionMenu({ label, items }: { label: string; items: Array<{ lab
       </button>
       {open && (
         <div role="menu" className="absolute right-0 z-30 mt-1 min-w-[180px] rounded-xl border border-ar-line-soft bg-ar-surface p-1 shadow-ar">
-          {items.map((item) => (
+          {items.map((item, index) => (
+            <Fragment key={item.label}>
+              {index > 0 && item.danger && !items[index - 1].danger && <div role="separator" className="my-1 h-px bg-ar-line-soft" />}
             <button
-              key={item.label}
               type="button"
               role="menuitem"
               onClick={() => {
@@ -62,6 +63,7 @@ export function ActionMenu({ label, items }: { label: string; items: Array<{ lab
             >
               {item.label}
             </button>
+            </Fragment>
           ))}
         </div>
       )}
