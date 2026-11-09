@@ -13,7 +13,10 @@ object OrderActionSheet {
     enum class Action { PRINT, NOTES, HISTORY, EDIT, EXTEND, SHARE, CANCEL, DELETE }
 
     /** [main] then the red group [danger] (empty = no red group) */
-    data class Rows(val main: List<Action>, val danger: List<Action>)
+    data class Rows(val main: List<Action>, val danger: List<Action>) {
+        /** #1515: nothing to list, so the header hides ⋯ */
+        val isEmpty: Boolean get() = main.isEmpty() && danger.isEmpty()
+    }
 
     /** Buttons the detail's bottom bar shows (same branches as `DetailBottomBar`) */
     fun onScreen(actions: DetailActions, isSale: Boolean, canExtend: Boolean): Set<Action> = when {
@@ -22,13 +25,13 @@ object OrderActionSheet {
         else -> setOf(Action.PRINT)
     }
 
-    /** #670: HISTORY only when [canViewHistory] (not OUTLET_STAFF). #930: the iOS order (Print, Share, Notes, Edit, Extend, History) */
+    /**
+     * #670: HISTORY only when [canViewHistory] (not OUTLET_STAFF). #1515 layout D: Print is on the bottom bar, Share and
+     * Notes are buttons under the status block, so the sheet keeps only Edit, Extend, History, then the red group.
+     */
     fun rows(actions: DetailActions, isSale: Boolean, canExtend: Boolean, canViewHistory: Boolean = true): Rows {
         val shown = onScreen(actions, isSale, canExtend)
         val main = buildList {
-            add(Action.PRINT)
-            add(Action.SHARE)
-            add(Action.NOTES)
             if (actions.canEdit) add(Action.EDIT)
             if (canExtend) add(Action.EXTEND)
             if (canViewHistory) add(Action.HISTORY)
