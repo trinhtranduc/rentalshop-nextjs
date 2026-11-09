@@ -416,6 +416,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           const res = await ordersApi.getOrderByNumber(reorderNo);
           if (!res.success || !res.data) {
             toastError(t('editor.reorder.failed'));
+            router.replace('/orders');
             return;
           }
           const start = reorderStart(res.data as unknown as OrderLike, getLocalDateKey);
@@ -430,6 +431,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
           const { lines, skipped } = reorderLines(start.items, loaded, start.orderType);
           if (lines.length === 0) {
             toastError(t('editor.reorder.empty'));
+            router.replace(`/orders/${reorderNo}`); // nothing to cart: back to the order, not an empty editor
             return;
           }
           // like a booking link (#1293): the cart in use when it is empty, else a new cart (none at the limit)
@@ -448,12 +450,15 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
             notes: start.notes,
             notesOpen: start.notes !== '',
             bookingRequestId: null,
+            // an owner sees every branch: the new order stays in the old order's branch (a branch user keeps their own)
+            ...(start.outletId && !user?.outletId ? { outletId: start.outletId } : {}),
           });
           if (start.orderType === 'RENT') setDaysOpen(true);
           const left = skipped + start.unreadable;
           if (left > 0) toastWarning(t('editor.reorder.skipped', { count: left }));
         } catch {
           toastError(t('editor.reorder.failed'));
+          router.replace('/orders');
         }
       })();
       return;
@@ -504,7 +509,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         })
         .catch(() => undefined);
     }
-  }, [editing, user?.outletId, store, t, toastError, toastWarning]);
+  }, [editing, user?.outletId, store, t, toastError, toastWarning, router]);
 
   const hydrated = useRef(false);
   useEffect(() => {

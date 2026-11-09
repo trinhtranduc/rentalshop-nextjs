@@ -49,14 +49,15 @@ describe('reorderStart (what the order gives the new cart)', () => {
       orderType: 'RENT',
       customer: { id: 7, name: 'An Nguyễn', phone: '0901234567' },
       notes: 'Giao trước 8h',
+      outletId: 3, // the branch of the old order: an owner sees every branch on the web
       items: [
         { productId: 11, quantity: 1, notes: 'Đã sửa gấu' },
         { productId: 12, quantity: 2, notes: '' },
       ],
       unreadable: 0,
     });
-    // dates, discount, deposit, collateral, outlet, order id are not in the result at all
-    expect(Object.keys(s).sort()).toEqual(['customer', 'items', 'notes', 'orderType', 'unreadable']);
+    // dates, discount, deposit, collateral, order id are not in the result at all
+    expect(Object.keys(s).sort()).toEqual(['customer', 'items', 'notes', 'orderType', 'outletId', 'unreadable']);
   });
 
   it('Case 2: a sale order to a walk-in keeps its type and has no customer', () => {
@@ -120,5 +121,12 @@ describe('reorderLines (the cart lines, priced today)', () => {
     const { lines } = reorderLines(two, [vayA, vayA], 'RENT');
     expect(lines.map((l) => [l.productId, l.notes])).toEqual([[11, ''], [11, 'tặng']]);
     expect(lines[0].key).not.toBe(lines[1].key);
+  });
+});
+
+describe('reorderStart keeps the branch of the order', () => {
+  it('Case 10: outletId comes from outletId or outlet.id; an order without a branch gives null', () => {
+    expect(reorderStart({ ...rentOrder, outletId: undefined, outlet: { id: 9 } }, vnKey).outletId).toBe(9);
+    expect(reorderStart({ ...rentOrder, outletId: undefined, outlet: undefined }, vnKey).outletId).toBeNull();
   });
 });

@@ -16,6 +16,8 @@ export interface ReorderStart {
   orderType: OrderType;
   customer: CustomerPick | null;
   notes: string;
+  /** the branch of the old order (null when it has none) */
+  outletId: number | null;
   items: ReorderItem[];
   /** order lines that no longer name a product (the product was deleted): not carried over */
   unreadable: number;
@@ -27,6 +29,7 @@ export function reorderStart(order: OrderLike, toDayKey: (v: string | Date) => s
     orderType: draft.orderType,
     customer: draft.customer,
     notes: draft.notes,
+    outletId: draft.outletId,
     items: draft.lines.map((l) => ({ productId: l.productId, quantity: l.quantity, notes: l.notes })),
     unreadable: (order.orderItems || []).length - draft.lines.length,
   };

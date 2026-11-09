@@ -20,6 +20,7 @@ Issue: #1515 · Status: accepted · Intent: ./intent.md
 3. Giỏ mới có:
    - **loại đơn** như đơn cũ (thuê / bán);
    - **khách** như đơn cũ (khách lẻ thì không có khách);
+   - **chi nhánh** như đơn cũ (web, chủ shop nhiều chi nhánh xem được mọi chi nhánh); người dùng gắn một chi nhánh thì giữ chi nhánh của mình. Điện thoại: chủ shop đã chọn chi nhánh lúc đăng nhập nên chỉ thấy đơn của chi nhánh đó, giỏ mới ở đúng chi nhánh đang chọn;
    - **ghi chú** của đơn (văn bản; không có ảnh ghi chú);
    - **từng món và số lượng**, giá theo **giá hiện tại của sản phẩm** (thuê: giá thuê; bán: giá bán), như thêm món vào giỏ, kèm **ghi chú của từng món** nếu có;
      số ngày thuê của món tính lại theo ngày shop chọn sau, không lấy `rentalDays` của đơn cũ.
