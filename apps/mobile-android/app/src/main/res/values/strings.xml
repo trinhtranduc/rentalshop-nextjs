@@ -2593,4 +2593,17 @@
     <string name="plan_restore_short">Restore</string>
     <string name="detail_excess_deposit">Deposit above the rent</string>
     <string name="surcharge">Surcharge</string>
+    <!-- #1515 reorder an order -->
+    <string name="order_reorder">Reorder</string>
+    <string name="order_reorder_hint">Make a new cart like this order</string>
+    <string name="order_quick_share">Share</string>
+    <string name="order_quick_notes">Notes</string>
+    <string name="order_quick_notes_count">Notes · %1$d</string>
+    <plurals name="order_reorder_skipped">
+        <item quantity="one">%1$d item is no longer sold and was left out of the cart</item>
+        <item quantity="other">%1$d items are no longer sold and were left out of the cart</item>
+    </plurals>
+    <string name="order_reorder_empty">No item left to reorder</string>
+    <string name="order_reorder_limit">10 carts are open. Close one, then reorder.</string>
+    <string name="order_reorder_failed">Could not read the order to reorder</string>
 </resources>
