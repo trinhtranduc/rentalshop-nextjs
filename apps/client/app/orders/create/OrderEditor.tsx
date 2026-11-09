@@ -15,6 +15,7 @@ import { ReceiptPreviewModal } from '../receipt/ReceiptDialog';
 import { useAuth, useOrderTranslations } from '@rentalshop/hooks';
 import { bookingRequestsApi, compressImage, currencyMinorUnit, getLocalDateKey, ordersApi, outletsApi, productsApi, profileApi, SHOP_TIMEZONE } from '@rentalshop/utils';
 import { draftFromBooking } from '../online/online-model';
+import { reorderLines, reorderStart } from './reorder-model';
 import { useShopToday } from '../../hooks/useShopToday';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { formatDayLabel } from '../orders-model';
@@ -272,7 +273,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
   const t = useTranslations('orders.web') as unknown as T;
   const to = useOrderTranslations();
   const money = useFormatCurrency();
-  const { toastSuccess, toastError } = useToast();
+  const { toastSuccess, toastError, toastWarning } = useToast();
   const { user } = useAuth();
   const weekdays = useMemo(() => t('weekdays').split(','), [t]);
   const todayKey = useShopToday();
@@ -406,6 +407,57 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
     const outlet = Number(params.get('outletId'));
     const booking = Number(params.get('bookingRequestId'));
     const productId = Number(params.get('productId'));
+    // #1515 Chi tiết đơn > Đặt lại: ?reorder=<order number> starts a cart from that order
+    const reorderNo = (params.get('reorder') || '').trim();
+    if (reorderNo) {
+      window.history.replaceState(window.history.state, '', window.location.pathname);
+      void (async () => {
+        try {
+          const res = await ordersApi.getOrderByNumber(reorderNo);
+          if (!res.success || !res.data) {
+            toastError(t('editor.reorder.failed'));
+            return;
+          }
+          const start = reorderStart(res.data as unknown as OrderLike, getLocalDateKey);
+          const loaded = await Promise.all(
+            start.items.map((i) =>
+              productsApi
+                .getProduct(i.productId)
+                .then((r) => (r.success && r.data ? (r.data as unknown as ProductLike) : null))
+                .catch(() => null),
+            ),
+          );
+          const { lines, skipped } = reorderLines(start.items, loaded, start.orderType);
+          if (lines.length === 0) {
+            toastError(t('editor.reorder.empty'));
+            return;
+          }
+          // like a booking link (#1293): the cart in use when it is empty, else a new cart (none at the limit)
+          const open = store.active;
+          const target = open.lines.length > 0 ? store.add() : open.id;
+          if (!target) {
+            toastError(t('editor.reorder.limit'));
+            return;
+          }
+          store.patch(target, {
+            orderType: start.orderType,
+            pickup: '',
+            ret: '',
+            customer: start.customer,
+            lines,
+            notes: start.notes,
+            notesOpen: start.notes !== '',
+            bookingRequestId: null,
+          });
+          if (start.orderType === 'RENT') setDaysOpen(true);
+          const left = skipped + start.unreadable;
+          if (left > 0) toastWarning(t('editor.reorder.skipped', { count: left }));
+        } catch {
+          toastError(t('editor.reorder.failed'));
+        }
+      })();
+      return;
+    }
     const fromLink = hasDays || booking > 0 || productId > 0;
     // #1293: a link opens in the cart in use when it is empty, else in a new cart (none at the limit: leave the page as it is)
     const current = store.active;
@@ -452,7 +504,7 @@ export function OrderEditor({ order }: { order?: OrderLike & { id: number; order
         })
         .catch(() => undefined);
     }
-  }, [editing, user?.outletId, store]);
+  }, [editing, user?.outletId, store, t, toastError, toastWarning]);
 
   const hydrated = useRef(false);
   useEffect(() => {
