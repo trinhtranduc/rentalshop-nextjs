@@ -1293,7 +1293,7 @@ private fun QuickActionRow(buttons: List<ReorderCart.Quick>, notesCount: Int, bu
                     .weight(1f)
                     .height(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .border(1.dp, DS.Colors.Border, RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp)) // mockup token #E2E8F0, lighter than DS.Colors.Border
                     .clickable(enabled = !busy, role = androidx.compose.ui.semantics.Role.Button) { onClick(quick) }
                     .testTag("order.detail.quick.${quick.name.lowercase()}"),
                 horizontalArrangement = Arrangement.Center,
