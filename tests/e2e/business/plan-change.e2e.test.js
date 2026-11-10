@@ -256,6 +256,20 @@ describePlan('BF-PLAN extend: moves the end date only; a Payment only when the p
     expect(subRow(w.merchantId)).toMatchObject({ interval: 'annual', intervalCount: 12 });
   });
 
+  test('BF-PLAN-18 an admin renewal by transfer is money received (COMPLETED); a merchant\'s own renewal by transfer stays PENDING (#1486)', async () => {
+    const adminWorld = annualWorld('plan-18a');
+    const a = await admin();
+    const r1 = await a.post(`/api/subscriptions/${subRow(adminWorld.merchantId).id}/renew`, { method: 'TRANSFER', duration: 1, transactionId: `E2E-18A-${Date.now()}` });
+    expect(r1.status).toBe(200);
+    expect(paymentsOf(adminWorld.merchantId)).toMatch(/^SUBSCRIPTION_PAYMENT:[\d.]+:COMPLETED:TRANSFER$/);
+
+    const own = annualWorld('plan-18b');
+    const m = await S.login(own.merchant);
+    const r2 = await m.post(`/api/subscriptions/${subRow(own.merchantId).id}/renew`, { method: 'TRANSFER', duration: 1, transactionId: `E2E-18B-${Date.now()}` });
+    expect(r2.status).toBe(200);
+    expect(paymentsOf(own.merchantId)).toMatch(/^SUBSCRIPTION_PAYMENT:[\d.]+:PENDING:TRANSFER$/);
+  });
+
   test('BF-PLAN-13 extending an annual plan by 10 days does not turn it into a monthly plan', async () => {
     const w = annualWorld('plan-13');
     const a = await admin();
