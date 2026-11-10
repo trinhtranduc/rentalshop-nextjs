@@ -88,7 +88,7 @@ final class OrdersViewController: BaseViewControler {
 
     /// #828: Việc cần làm, Tất cả đơn and Đơn bán of the branch chosen on Home
     @objc private func outletChanged() {
-        viewModel.reload()
+        viewModel.outletDidChange()
     }
 
     override func viewWillAppear(_ animated: Bool) {

@@ -771,6 +771,11 @@ final class OrdersHomeViewModel {
         }
     }
 
+    /// #1525: the merchant switched branch. Today this only reloads the segment on screen.
+    func outletDidChange() {
+        reload()
+    }
+
     // MARK: Input
 
     func select(_ newSegment: OrdersSegment) {
