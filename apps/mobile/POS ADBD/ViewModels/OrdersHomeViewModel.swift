@@ -771,6 +771,14 @@ final class OrdersHomeViewModel {
         }
     }
 
+    /// #1525: the merchant switched branch. Every list is dirty and the snapshots of the old branch are dropped, so
+    /// no segment shows its old rows; the segment on screen loads at once (the others when they are selected).
+    func outletDidChange() {
+        markDirty()
+        snapshots.removeAll()
+        reload()
+    }
+
     // MARK: Input
 
     func select(_ newSegment: OrdersSegment) {
