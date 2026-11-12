@@ -214,3 +214,23 @@ describe('getOutletOperations collateral (#494)', () => {
     expect(staff.collateralHeld).toBeNull();
   });
 });
+
+// #1527: the rows carry the order note and the item notes for the shop web
+describe('getOutletOperations notes (#1527)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPrisma.order.findMany.mockResolvedValue([]);
+    mockPrisma.order.count.mockResolvedValue(0);
+    mockPrisma.order.aggregate.mockResolvedValue({ _sum: { depositAmount: 0, securityDeposit: 0, lateFee: 0, damageFee: 0 }, _count: { _all: 0 } });
+  });
+
+  it('selects the order note and the item notes on every list', async () => {
+    await getOutletOperations({ outletIds: [1], start, end, soonEnd, includeCash: false });
+    const selects = mockPrisma.order.findMany.mock.calls.map(([args]: any[]) => args.select).filter(Boolean);
+    expect(selects.length).toBeGreaterThan(0);
+    for (const select of selects) {
+      expect(select.notes).toBe(true);
+      expect(select.orderItems.select.notes).toBe(true);
+    }
+  });
+});
