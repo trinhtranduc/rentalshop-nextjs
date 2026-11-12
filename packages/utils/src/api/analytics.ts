@@ -22,8 +22,10 @@ export interface OutletOperationsOrder {
   refundDue?: number;
   /** Days past the planned hand-over or return; a note, not a status (#362) */
   lateDays?: number;
-  /** Items with their order snapshot name (#362) */
-  items?: { name: string | null; quantity: number }[];
+  /** #1527: the order note, trimmed; null when there is none */
+  notes?: string | null;
+  /** Items with their order snapshot name (#362) and their note (#1527) */
+  items?: { name: string | null; quantity: number; notes?: string | null }[];
 }
 
 /** #1199, only for a client that sends `X-Client-Capabilities: installments`: one deposit stage waiting to be collected */

@@ -386,6 +386,9 @@ export interface OpsOrderLike {
   refundDue?: number;
   lateDays?: number;
   daysOverdue?: number;
+  /** #1527: the order note and the item notes (absent from an older API) */
+  notes?: string | null;
+  items?: { name: string | null; quantity?: number; notes?: string | null }[];
 }
 
 interface OpsListLike {
@@ -464,6 +467,25 @@ export interface TodayRow {
   stage: number | null;
   stageLabel: string | null;
   money: { kind: 'collect' | 'refund' | 'fee'; amount: number } | null;
+  /** #1527: the order note, shown under the row; null when there is none */
+  notes: string | null;
+  /** #1527: the items that have a note, in item order ("Áo dài đỏ (M): bóp eo 2 cm") */
+  itemNotes: { name: string; notes: string }[];
+}
+
+/** #1527: empty or blank is no note */
+function noteText(value: string | null | undefined): string | null {
+  return value?.trim() || null;
+}
+
+/** #1527: the row shows a note block (order note or an item note) */
+export function rowHasNotes(row: TodayRow): boolean {
+  return row.notes !== null || row.itemNotes.length > 0;
+}
+
+/** #1527: rows with a note from index `from` on: the "K có ghi chú" of "+N đơn nữa" */
+export function notedRowCount(rows: TodayRow[], from: number): number {
+  return rows.slice(from).filter(rowHasNotes).length;
 }
 
 /**
@@ -496,6 +518,11 @@ export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => st
       stage: null,
       stageLabel: null,
       money,
+      notes: noteText(order.notes),
+      itemNotes: (order.items ?? []).flatMap((item) => {
+        const text = noteText(item.notes);
+        return text ? [{ name: item.name?.trim() ?? '', notes: text }] : [];
+      }),
     });
   };
   // #1231: one row per deposit stage due today or late (most late first); an order's pickup row and stage rows are different tasks
@@ -515,6 +542,8 @@ export function buildTodayRows(ops: OutletOpsLike, toDayKey: (iso: string) => st
       stage: /^i(\d)$/.test(r.key) ? Number(r.key.slice(1)) : null,
       stageLabel: r.label || null,
       money: { kind: 'collect', amount: r.remaining },
+      notes: null,
+      itemNotes: [],
     });
   };
   ops.pickupsToday.orders.forEach((o) => push(o, 'pickup', false));

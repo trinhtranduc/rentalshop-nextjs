@@ -34,7 +34,9 @@ const orderRowSelect = {
     select: { amount: true, status: true, notes: true },
   },
   customer: { select: { firstName: true, lastName: true, phone: true } },
-  orderItems: { select: { quantity: true, productName: true, product: { select: { name: true } } } },
+  // #1527: the shop web shows the order note and the item notes in "Đơn cần làm hôm nay"
+  notes: true,
+  orderItems: { select: { quantity: true, productName: true, notes: true, product: { select: { name: true } } } },
 } as const;
 
 export interface OutletOperationsQuery {

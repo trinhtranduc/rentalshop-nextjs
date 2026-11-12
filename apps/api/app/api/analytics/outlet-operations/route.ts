@@ -71,8 +71,14 @@ type OperationsRow = {
   damageFee?: number | null;
   payments?: { amount: number | null; status: string | null; notes: string | null }[];
   customer: { firstName: string | null; lastName: string | null; phone: string | null } | null;
-  orderItems: { quantity: number; productName?: string | null; product: { name: string } | null }[];
+  notes?: string | null;
+  orderItems: { quantity: number; productName?: string | null; notes?: string | null; product: { name: string } | null }[];
 };
+
+/** #1527: a note as the shop web shows it; empty or blank is no note */
+function noteOf(value: string | null | undefined): string | null {
+  return value?.trim() || null;
+}
 
 function toRow(order: OperationsRow, todayKey: string, keyOf: (instant: Date) => string, withOverdue = false) {
   // Days past the planned hand-over (still RESERVED) or return (still PICKUPED); a note, not a status
@@ -101,9 +107,12 @@ function toRow(order: OperationsRow, todayKey: string, keyOf: (instant: Date) =>
     // Mobile "Việc cần làm" (#362)
     ...computeOrderBalance(order),
     lateDays,
+    // #1527 (additive): the order note and each item's note, for "Đơn cần làm hôm nay" on the shop web
+    notes: noteOf(order.notes),
     items: order.orderItems.map((item) => ({
       name: item.productName || item.product?.name || null,
       quantity: item.quantity || 0,
+      notes: noteOf(item.notes),
     })),
   };
 }

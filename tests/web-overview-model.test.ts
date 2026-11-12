@@ -7,6 +7,8 @@ import {
   buildKpis,
   buildMoney,
   buildTodayRows,
+  notedRowCount,
+  rowHasNotes,
   buildTodayWork,
   chartBars,
   chartRange,
@@ -451,6 +453,71 @@ describe('#1273 Thế chân in two sections', () => {
       const json = JSON.parse(readFileSync(join(__dirname, '..', 'locales', lang, 'dashboard.json'), 'utf8'));
       const related = (json.home ?? json).related;
       for (const k of keys) expect(`${lang} ${k} ${typeof related[k]}`).toBe(`${lang} ${k} string`);
+    }
+  });
+});
+
+// #1527: notes of the orders in "Đơn cần làm hôm nay"
+describe('today rows carry the order and item notes (#1527)', () => {
+  const base = { pickupPlanAt: null, returnPlanAt: null, isReadyToDeliver: true };
+  const ops: OutletOpsLike = {
+    date: '2026-11-12',
+    pickupsToday: {
+      count: 2,
+      orders: [
+        {
+          id: 1,
+          orderNumber: '482913',
+          customerName: 'Nguyễn Thu Hà',
+          ...base,
+          notes: 'Khách lấy lúc 17h, gọi trước 30 phút.',
+          items: [
+            { name: 'Áo cưới đuôi cá', quantity: 1, notes: 'ủi lại phần đuôi' },
+            { name: 'Vest đen', quantity: 1, notes: null },
+          ],
+        },
+        // an API without the notes fields (old tab, stale server): no notes
+        { id: 2, orderNumber: '503127', customerName: 'Trần Minh Khoa', ...base },
+      ],
+    },
+    returnsToday: {
+      count: 1,
+      orders: [{ id: 3, orderNumber: '398244', customerName: 'Phạm Gia Bảo', ...base, notes: '   ', items: [{ name: 'Áo dài đỏ (M)', quantity: 1, notes: ' bóp eo 2 cm ' }] }],
+    },
+    overdueReturns: { count: 0, orders: [] },
+    noShows: { count: 0, orders: [] },
+    doneToday: { pickups: 0, returns: 0 },
+    installmentsDue: {
+      count: 1,
+      orders: [{ orderId: 4, orderNumber: '104', customerName: 'Lan', key: 'i2', label: 'Cọc', remaining: 1_000_000, lateDays: 0 }],
+    },
+  };
+
+  it('order note, then the items that have a note; blank notes are none', () => {
+    const rows = buildTodayRows(ops, getLocalDateKey);
+    expect(rows.map((r) => [r.id, r.kind, r.notes, r.itemNotes])).toEqual([
+      [1, 'pickup', 'Khách lấy lúc 17h, gọi trước 30 phút.', [{ name: 'Áo cưới đuôi cá', notes: 'ủi lại phần đuôi' }]],
+      [2, 'pickup', null, []],
+      [3, 'return', null, [{ name: 'Áo dài đỏ (M)', notes: 'bóp eo 2 cm' }]],
+      [4, 'installment', null, []],
+    ]);
+    expect(rows.map(rowHasNotes)).toEqual([true, false, true, false]);
+  });
+
+  it('counts the rows with notes after the shown ones, for "+N đơn nữa · K có ghi chú"', () => {
+    const rows = buildTodayRows(ops, getLocalDateKey);
+    expect(notedRowCount(rows, 0)).toBe(2);
+    expect(notedRowCount(rows, 1)).toBe(1);
+    expect(notedRowCount(rows, 3)).toBe(0);
+    expect(notedRowCount(rows, 5)).toBe(0);
+  });
+
+  it('has the strings in en and vi (ja, ko, zh load the en dashboard file)', () => {
+    for (const lang of ['en', 'vi']) {
+      const json = JSON.parse(readFileSync(join(__dirname, '..', 'locales', lang, 'dashboard.json'), 'utf8'));
+      const orders = json.home.orders;
+      expect(`${lang} ${typeof orders.notesLabel}`).toBe(`${lang} string`);
+      expect(orders.moreNotes).toContain('{count}');
     }
   });
 });
