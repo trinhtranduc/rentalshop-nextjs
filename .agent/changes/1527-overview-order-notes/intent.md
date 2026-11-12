@@ -1,6 +1,6 @@
 # Order notes in Tổng quan › Đơn cần làm hôm nay (web)
 
-Issue: #1527 · Author: Claude (with the owner) · Status: in-progress · Created: 2026-11-12
+Issue: #1527 · Author: Claude (with the owner) · Status: in-review (PR #1528) · Created: 2026-11-12
 
 ## Problem
 

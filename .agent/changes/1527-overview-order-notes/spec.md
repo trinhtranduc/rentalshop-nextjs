@@ -1,6 +1,6 @@
 # Spec — Order notes in Tổng quan › Đơn cần làm hôm nay (web)
 
-Issue: #1527 · Status: in-progress · Intent: ./intent.md
+Issue: #1527 · Status: in-review (PR #1528) · Intent: ./intent.md
 
 ## Behavior
 

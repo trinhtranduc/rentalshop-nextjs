@@ -1,6 +1,6 @@
 # Plan — Order notes in Tổng quan › Đơn cần làm hôm nay (web)
 
-Issue: #1527 · Status: in-progress · Spec: ./spec.md
+Issue: #1527 · Status: in-review (PR #1528) · Spec: ./spec.md
 
 ## Steps
 
