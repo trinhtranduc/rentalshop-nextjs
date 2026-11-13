@@ -18,7 +18,6 @@ jest.mock('@rentalshop/utils', () => ({
 }));
 
 import { simplifiedUsers } from '../../../packages/database/src/user';
-import { findById as findMerchantById } from '../../../packages/database/src/merchant';
 
 describe('db.users.findByEmail selects merchant.language (#1539)', () => {
   it('merchant select is id, name and language', async () => {
@@ -28,15 +27,6 @@ describe('db.users.findByEmail selects merchant.language (#1539)', () => {
     expect(args.select.merchant).toEqual({ select: { id: true, name: true, language: true } });
     expect(args.select.outlet).toEqual({ select: { id: true, name: true, isActive: true } });
     expect(args.select.password).toBe(true);
-  });
-});
-
-describe('db.merchants.findById selects language (#1539, login payload)', () => {
-  it('language is selected next to currency', async () => {
-    await findMerchantById(2);
-    const select = mockMerchantFindUnique.mock.calls[0][0].select;
-    expect(select.language).toBe(true);
-    expect(select.currency).toBe(true);
   });
 });
 

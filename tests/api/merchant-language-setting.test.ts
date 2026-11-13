@@ -150,19 +150,11 @@ describe('profile carries merchant.language (#1539)', () => {
   });
 });
 
-describe('login payload carries merchant.language (#1539)', () => {
-  const login = async (merchantExtra: any) => {
-    mockDb.merchants.findById.mockResolvedValue({ ...MERCHANT_ROW, currency: 'USD', subscription: null, ...merchantExtra });
+describe('the login answer is not touched (#1459 golden): Settings reads the profile instead', () => {
+  it('no language key in the login merchant', async () => {
+    mockDb.merchants.findById.mockResolvedValue({ ...MERCHANT_ROW, currency: 'USD', subscription: null, language: 'en' });
     const user: any = { id: 10, email: 'u@x', firstName: 'A', lastName: 'B', role: 'MERCHANT', merchantId: 2, outletId: null, emailVerified: true };
     const res: any = await buildAuthLoginSuccessResponse(req(), user, {});
-    return res.body.data.user.merchant;
-  };
-
-  it('en when stored; vi when empty or missing; old keys kept', async () => {
-    expect((await login({ language: 'en' })).language).toBe('en');
-    expect((await login({ language: null })).language).toBe('vi');
-    const m = await login({});
-    expect(m.language).toBe('vi');
-    expect(m).toEqual(expect.objectContaining({ id: 2, name: 'Shop', tenantKey: 'shop', currency: 'USD' }));
+    expect(res.body.data.user.merchant).not.toHaveProperty('language');
   });
 });
