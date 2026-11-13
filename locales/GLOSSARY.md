@@ -52,9 +52,9 @@ Rules for every language:
 | Giá bán | Sale price | 販売価格 | 판매 가격 | 售价 | |
 | theo lần / theo ngày | per rental / per day | 1回あたり / 1日あたり | 1회당 / 1일당 | 每次 / 每天 | |
 | Tiền cọc, đặt cọc | Deposit | 内金 | 예약금 | 定金 | paid in advance, **counts toward the rent** |
-| Thế chân / Thế chấp / Tiền thế chấp | Security deposit | 保証金 | 보증금 | 押金 | money held, **given back at return** |
-| Giấy tờ thế chấp (`collateralType`) | ID held | 身分証の預かり | 신분증 보관 | 抵押证件 | papers held until the return |
-| Trả thế chân | Return security deposit | 保証金返却 | 보증금 반환 | 退押金 | |
+| Thế chân, tiền thế chân | Security deposit | 保証金 | 보증금 | 保证金 | money held, **given back at return**. Owner (2026-11-13): other languages say "guarantee money" (tiền đảm bảo); Vietnamese always says **thế chân**, never "thế chấp" |
+| Giấy tờ thế chân (`collateralType`) | Security document | 預かり書類 | 보관 서류 | 押证件 | ID card, licence, passport held until the return |
+| Trả thế chân | Return security deposit | 保証金返却 | 보증금 반환 | 退还保证金 | |
 | Phụ thu | Surcharge | 追加料金 | 추가 요금 | 附加费 | extra charge (late, damage…) |
 | Giảm giá | Discount | 割引 | 할인 | 折扣 | |
 | Còn lại | Amount due | 残金 | 잔금 | 尾款 | what the customer still owes |
