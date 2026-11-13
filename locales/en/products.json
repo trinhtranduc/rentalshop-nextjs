@@ -334,7 +334,11 @@
     },
     "category": {
       "label": "Category",
-      "all": "All"
+      "all": "All",
+      "allCategories": "All categories",
+      "many": "{count} categories",
+      "search": "Search categories",
+      "none": "No matching category"
     },
     "outlet": {
       "label": "Outlet",

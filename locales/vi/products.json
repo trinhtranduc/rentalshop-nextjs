@@ -334,7 +334,11 @@
     },
     "category": {
       "label": "Danh mục",
-      "all": "Tất cả"
+      "all": "Tất cả",
+      "allCategories": "Tất cả danh mục",
+      "many": "{count} danh mục",
+      "search": "Tìm danh mục",
+      "none": "Không có danh mục phù hợp"
     },
     "outlet": {
       "label": "Chi nhánh",
