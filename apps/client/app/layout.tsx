@@ -16,7 +16,7 @@ import { headers } from 'next/headers';
 import { appLocaleFor, type AppLocale } from '../lib/public-content/shop-locale';
 import { shopMessages } from '../lib/public-content/shop-messages';
 import { isPublicLocale, type PublicLocale } from '@rentalshop/constants';
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, Be_Vietnam_Pro } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import ClientLayout from './components/ClientLayout'
@@ -102,6 +102,11 @@ const beVietnam = Be_Vietnam_Pro({
   variable: '--font-be-vietnam',
   display: 'swap',
 })
+
+// #1531: Next 14 reads themeColor from the viewport export; in metadata it only logs a warning on every page
+export const viewport: Viewport = {
+  themeColor: '#3b82f6',
+};
 
 // Generate metadata based on locale
 export async function generateMetadata(): Promise<Metadata> {
@@ -210,7 +215,6 @@ export async function generateMetadata(): Promise<Metadata> {
         ],
       },
       manifest: '/manifest.json',
-      themeColor: '#3b82f6',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
@@ -315,7 +319,6 @@ export async function generateMetadata(): Promise<Metadata> {
         ],
       },
       manifest: '/manifest.json',
-      themeColor: '#3b82f6',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
@@ -420,7 +423,6 @@ export async function generateMetadata(): Promise<Metadata> {
         ],
       },
       manifest: '/manifest.json',
-      themeColor: '#3b82f6',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
@@ -525,7 +527,6 @@ export async function generateMetadata(): Promise<Metadata> {
         ],
       },
       manifest: '/manifest.json',
-      themeColor: '#3b82f6',
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',
@@ -634,7 +635,6 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
   },
   manifest: '/manifest.json',
-  themeColor: '#3b82f6',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
