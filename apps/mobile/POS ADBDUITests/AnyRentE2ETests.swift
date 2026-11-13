@@ -1553,6 +1553,111 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.backToLogin()
     }
 
+    /// #1541 sign-up step 1: Quốc gia (search, pick Hoa Kỳ) turns Ngôn ngữ into English and Tiền tệ into USD; the shop is
+    /// created with the phone's time zone (launched with TZ=America/Los_Angeles). Merchant run only: it creates a shop.
+    /// The run prints `E2E_NOTE: signup1541 <email>` so the DB row can be checked (country, language, currency, timezone).
+    func test0cSignupCountry() throws {
+        try e2e.requireFlag("newAuth")
+        guard e2e.role == "merchant" else { throw XCTSkip("creates a shop: merchant run only") }
+        app.launchEnvironment["TZ"] = "America/Los_Angeles"
+        app.launch()
+        e2e.settle(seconds: 4)
+        if app.tabBars.firstMatch.waitForExistence(timeout: 4) { e2e.logout() }
+        let create = e2e.button(["Create a new shop", "Tạo cửa hàng mới"])
+        XCTAssertTrue(create.waitForExistence(timeout: 15), "Create a new shop link")
+        create.tap()
+        let stamp = Int(Date().timeIntervalSince1970) % 100_000_000
+        XCTAssertTrue(e2e.type(into: ["Shop name", "Tên cửa hàng"], text: "E2E US Shop \(stamp)"), "Shop name field")
+        _ = e2e.type(into: ["Phone number", "Số điện thoại"], text: E2E.uniquePhone())
+        _ = e2e.type(into: ["Address", "Địa chỉ"], text: "100 Main St, Seattle")
+        e2e.hideKeyboard()
+        let country = app.buttons["signupCountry"], language = app.buttons["signupLanguage"], currency = app.buttons["signupCurrency"]
+        for _ in 0..<3 where !(country.exists && country.isHittable) { app.swipeUp() }
+        XCTAssertTrue(country.waitForExistence(timeout: 5), "Quốc gia field on step 1")
+        let value = { (el: XCUIElement) in (el.value as? String) ?? "" }
+        XCTAssertTrue(["Việt Nam", "Vietnam"].contains(value(country)), "default country is Việt Nam, got \(value(country))")
+        XCTAssertTrue(value(currency).hasPrefix("VND"), "default currency VND, got \(value(currency))")
+        XCTAssertTrue(["Tiếng Việt"].contains(value(language)), "default language Tiếng Việt, got \(value(language))")
+        e2e.shot("c1-signup-defaults")
+        country.tap()
+        let search = app.descendants(matching: .any)["countrySearch"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "country search field")
+        search.tap()
+        search.typeText("united")
+        sleep(1)
+        e2e.shot("c2-country-search")
+        let us = app.cells["country-US"]
+        XCTAssertTrue(us.waitForExistence(timeout: 5), "United States / Hoa Kỳ in the results")
+        us.tap()
+        XCTAssertTrue(country.waitForExistence(timeout: 5), "back on step 1")
+        sleep(1)
+        XCTAssertTrue(["Hoa Kỳ", "United States"].contains(value(country)), "country reads Hoa Kỳ, got \(value(country))")
+        XCTAssertEqual(value(language), "English", "language follows the country")
+        XCTAssertTrue(value(currency).hasPrefix("USD"), "currency follows the country, got \(value(currency))")
+        e2e.shot("c3-signup-us")
+        let next = e2e.button(["Continue", "Tiếp tục"])
+        for _ in 0..<3 where !(next.exists && next.isHittable) { app.swipeUp() }
+        next.tap()
+        XCTAssertTrue(e2e.type(into: ["Full name", "Họ và tên"], text: "E2E US Owner"), "Owner step opens")
+        let email = "e2e1541+\(stamp)@example.com"
+        _ = e2e.type(into: ["Email"], text: email)
+        let showToggles = app.buttons.matching(NSPredicate(format: "label IN %@", ["Show password", "Hiện mật khẩu"]))
+        for _ in 0..<2 where showToggles.firstMatch.exists { showToggles.firstMatch.tap() }
+        let typedNew = e2e.type(into: ["Password", "Mật khẩu"], text: "e2e123456")
+        let typedConfirm = e2e.type(into: ["Re-enter password", "Nhập lại mật khẩu"], text: "e2e123456")
+        if !(typedNew && typedConfirm) {
+            let secure = app.secureTextFields
+            if secure.count >= 2 {
+                e2e.typeSecure(secure.element(boundBy: 0), "e2e123456")
+                e2e.typeSecure(secure.element(boundBy: 1), "e2e123456")
+            }
+        }
+        e2e.hideKeyboard()
+        let terms = app.descendants(matching: .any).matching(NSPredicate(
+            format: "label BEGINSWITH 'Please accept the Privacy Policy' OR label BEGINSWITH 'Vui lòng'")).firstMatch
+        for _ in 0..<2 where !(terms.exists && terms.isHittable) { app.swipeUp() }
+        if terms.waitForExistence(timeout: 3) { terms.tap() } else { e2e.note("terms checkbox not found") }
+        let createShop = e2e.button(["Create shop", "Tạo cửa hàng"])
+        for _ in 0..<3 where !(createShop.exists && createShop.isHittable) { app.swipeUp() }
+        createShop.tap()
+        let verify = e2e.element(labelBeginsWith: ["Check your email", "Kiểm tra email"])
+        XCTAssertTrue(verify.waitForExistence(timeout: 20),
+                      "Sign-up ends on the activation email screen (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.note("signup1541 \(email)")
+        e2e.shot("c4-signup-email-sent")
+        e2e.backToLogin()
+    }
+
+    /// #1541 Thông tin cửa hàng → Ngôn ngữ email (owner): pick the other language, the row shows it.
+    /// Prints `E2E_NOTE: emailLanguage <before> -> <after>` for the DB check.
+    func test0dEmailLanguageSetting() throws {
+        try e2e.requireFlag("newSettings")
+        guard e2e.role == "merchant" else { throw XCTSkip("owner only") }
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        let info = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Store Information", "Thông tin cửa hàng"])).firstMatch
+        XCTAssertTrue(info.waitForExistence(timeout: 8), "the Thông tin cửa hàng row")
+        e2e.tapRow(info)
+        sleep(3)
+        let row = app.descendants(matching: .any)["emailLanguage"]
+        for _ in 0..<3 where !(row.exists && row.isHittable) { app.swipeUp() }
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "Ngôn ngữ email row for the owner")
+        let before = app.staticTexts["English"].exists ? "English" : "Tiếng Việt"
+        let after = before == "English" ? "Tiếng Việt" : "English"
+        e2e.shot("e1-store-info-email-language")
+        row.tap()
+        let choice = app.buttons[after]
+        XCTAssertTrue(choice.waitForExistence(timeout: 5), "\(after) in the sheet")
+        e2e.shot("e2-email-language-sheet")
+        choice.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        XCTAssertTrue(app.staticTexts[after].waitForExistence(timeout: 8), "the row now reads \(after)")
+        e2e.note("emailLanguage \(before) -> \(after)")
+        e2e.shot("e3-email-language-saved")
+    }
+
     func test5bOrderExtendEditPrint() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")

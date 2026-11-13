@@ -2606,4 +2606,13 @@
     <string name="order_reorder_empty">No item left to reorder</string>
     <string name="order_reorder_limit">10 carts are open. Close one, then reorder.</string>
     <string name="order_reorder_failed">Could not read the order to reorder</string>
+    <!-- #1539 (app) sign-up country / language / currency, Settings "Ngôn ngữ email" -->
+    <string name="signup_country">Country</string>
+    <string name="signup_language">Language</string>
+    <string name="signup_currency">Currency</string>
+    <string name="signup_country_search">Search country</string>
+    <string name="signup_country_empty">No matching country</string>
+    <string name="signup_language_currency_hint">The language is used for emails and sample data. You can change both later in Settings.</string>
+    <string name="settings_email_language">Email language</string>
+    <string name="settings_email_language_hint">Verification, password reset and plan emails are sent in this language.</string>
 </resources>
