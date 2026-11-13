@@ -167,7 +167,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
     (showsBooking && bookingFlag === null) ||
     (tab === 'receipt' && shareNoteValue === null) ||
     (tab === 'public-page' && priceFlag === null) ||
-    (tab === 'merchant' && role === 'MERCHANT' && (oldAppsFlag === null || overlapValue === null));
+    // #1539 a user stored before merchant.language existed: read the profile once
+    (tab === 'merchant' && role === 'MERCHANT' && (oldAppsFlag === null || overlapValue === null || merchant.language === undefined));
   const profileLoaded = useRef(false);
   useEffect(() => {
     if (!needsProfile || !user?.merchant || profileLoaded.current) return;

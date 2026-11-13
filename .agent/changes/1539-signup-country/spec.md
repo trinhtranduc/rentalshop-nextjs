@@ -31,7 +31,8 @@ Status: accepted
     (Tiếng Việt / English), **Tiền tệ** (VND / USD).
 12. Đổi quốc gia: Việt Nam → Tiếng Việt + VND; nước khác → English + USD. Sau đó sửa Ngôn ngữ / Tiền tệ được.
 13. Gửi lên API `country` (tên tiếng Anh, như Cài đặt và shop đang có), `language`, `currency`, `locale` (như cũ).
-14. Đăng ký xong: ngôn ngữ web (`NEXT_LOCALE` + `user_language_preference`) = ngôn ngữ đã chọn.
+14. Đăng ký xong: ngôn ngữ web (`NEXT_LOCALE` + `user_language_preference`) = ngôn ngữ đã chọn; khác ngôn ngữ trang thì tải lại cả trang
+    để trang kế tiếp (xác thực email / dashboard) hiện đúng ngôn ngữ. Dữ liệu đăng nhập có `merchant.language` (thêm).
 
 ## Web — Cài đặt
 

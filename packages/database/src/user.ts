@@ -416,6 +416,7 @@ export const simplifiedUsers = {
             tenantKey: true, // Include tenantKey for referral code
             allowOverlappingOrders: true, // #518 shop setting for GET /api/users/profile
             timezone: true, // #567 shop time zone for GET /api/users/profile
+            language: true, // #1539 shop language for emails, GET /api/users/profile
             onlineBookingEnabled: true, // #1124 online booking switch for GET /api/users/profile
             ...({ showPublicPrice: true } as object), // #1174 public catalogue prices (column after migrate)
             settings: true, // #1189/#1199 shop settings JSON (depositMode reaches the client with the profile)

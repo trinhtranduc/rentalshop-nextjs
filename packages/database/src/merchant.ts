@@ -95,6 +95,7 @@ export async function findById(id: number) {
       pricingConfig: true,
       taxId: true,
       currency: true,
+      language: true, // #1539 shop language for emails (login payload)
       tenantKey: true, // Include tenantKey for public product links
       allowOverlappingOrders: true, // #518 shop setting (POST /api/orders, login payload)
       timezone: true, // #567 shop time zone (login payload, GET /api/merchants/[id])

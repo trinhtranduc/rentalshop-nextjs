@@ -11,7 +11,12 @@ let ctx: any;
 jest.mock('@rentalshop/auth/server', () => ({
   withPermissions: () => (handler: any) => (request: any) => handler(request, ctx),
   withAnyAuth: (handler: any) => (request: any) => handler(request, ctx),
+  generateToken: jest.fn(() => 'web-token'),
+  generateMobileToken: jest.fn(() => 'mobile-token'),
+  generateRefreshableToken: jest.fn(() => 'refreshable'),
+  getUserPermissions: jest.fn(async () => []),
 }));
+jest.mock('@rentalshop/auth', () => ({ ROLE_PERMISSIONS: {} }));
 
 const mockDb: any = {
   users: { findById: jest.fn() },
@@ -19,7 +24,11 @@ const mockDb: any = {
     findById: jest.fn(),
     findByTenantKey: jest.fn(async () => null),
     update: jest.fn(),
+    ensureTenantKey: jest.fn(async () => 'shop'),
   },
+  outlets: { findById: jest.fn() },
+  sessions: { createUserSession: jest.fn(async () => ({ sessionId: 's1' })) },
+  refreshTokens: { create: jest.fn() },
 };
 jest.mock('@rentalshop/database', () => ({ db: mockDb, prisma: {}, getDefaultBankAccount: async () => null }));
 jest.mock('@rentalshop/utils', () => ({
@@ -32,6 +41,7 @@ jest.mock('@rentalshop/utils', () => ({
 
 import { PUT as putMerchantSettings } from '../../apps/api/app/api/settings/merchant/route';
 import { GET as getProfile } from '../../apps/api/app/api/users/profile/route';
+import { buildAuthLoginSuccessResponse } from '../../apps/api/lib/build-auth-login-response';
 
 const as = (role: string, extra: any = {}) => ({
   user: { id: 10, role, email: 'u@x', merchantId: 2, ...extra },
@@ -137,5 +147,22 @@ describe('profile carries merchant.language (#1539)', () => {
     expect(m.name).toBe('Shop');
     expect(m.tenantKey).toBe('shop');
     expect(m.email).toBe('shop@x');
+  });
+});
+
+describe('login payload carries merchant.language (#1539)', () => {
+  const login = async (merchantExtra: any) => {
+    mockDb.merchants.findById.mockResolvedValue({ ...MERCHANT_ROW, currency: 'USD', subscription: null, ...merchantExtra });
+    const user: any = { id: 10, email: 'u@x', firstName: 'A', lastName: 'B', role: 'MERCHANT', merchantId: 2, outletId: null, emailVerified: true };
+    const res: any = await buildAuthLoginSuccessResponse(req(), user, {});
+    return res.body.data.user.merchant;
+  };
+
+  it('en when stored; vi when empty or missing; old keys kept', async () => {
+    expect((await login({ language: 'en' })).language).toBe('en');
+    expect((await login({ language: null })).language).toBe('vi');
+    const m = await login({});
+    expect(m.language).toBe('vi');
+    expect(m).toEqual(expect.objectContaining({ id: 2, name: 'Shop', tenantKey: 'shop', currency: 'USD' }));
   });
 });

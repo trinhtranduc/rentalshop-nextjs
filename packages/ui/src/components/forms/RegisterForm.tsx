@@ -256,7 +256,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           setGoogleIdToken(null);
           setCurrentStep(1);
           setAccountData({});
-          if (onNavigate) {
+          if (values.language !== locale && typeof window !== 'undefined') {
+            // #1539 the root layout reads NEXT_LOCALE only on a full load
+            window.location.assign('/dashboard');
+          } else if (onNavigate) {
             onNavigate('/dashboard');
           } else {
             router.replace('/dashboard');
@@ -313,7 +316,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         );
 
         const redirectUrl = `/email-verification?email=${encodeURIComponent(userEmail || registrationData.email)}`;
-        if (onNavigate) {
+        if (registrationData.language !== locale && typeof window !== 'undefined') {
+          // #1539 the root layout reads NEXT_LOCALE only on a full load
+          window.location.assign(redirectUrl);
+        } else if (onNavigate) {
           onNavigate(redirectUrl);
         } else {
           router.replace(redirectUrl);

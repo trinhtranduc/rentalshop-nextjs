@@ -3,7 +3,7 @@ import { db } from '@rentalshop/database';
 import { ROLE_PERMISSIONS } from '@rentalshop/auth';
 import { generateToken, generateMobileToken, generateRefreshableToken, getUserPermissions } from '@rentalshop/auth/server';
 import { ResponseBuilder } from '@rentalshop/utils';
-import { USER_ROLE, isOutletRole } from '@rentalshop/constants';
+import { USER_ROLE, isOutletRole, shopLanguage } from '@rentalshop/constants';
 import { detectPlatform } from './platform-detector';
 import { detectClientPlatform } from './client-platform';
 import { merchantTimeZoneField } from './shop-timezone';
@@ -102,6 +102,8 @@ export async function buildAuthLoginSuccessResponse(
         pricingType: merchant.pricingType || undefined,
         taxId: merchant.taxId || undefined,
         currency: (merchant as any).currency || 'USD',
+        // #1539 shop language for emails (additive; 'vi' when unset)
+        language: shopLanguage((merchant as { language?: unknown }).language),
         // Older merchants have no key; give them one so the product link and referral code exist
         tenantKey: (merchant as any).tenantKey || (await db.merchants.ensureTenantKey(merchant.id)) || undefined,
         // #518 "Cho tạo đơn khi trùng lịch" (additive; true = no availability check on save)
