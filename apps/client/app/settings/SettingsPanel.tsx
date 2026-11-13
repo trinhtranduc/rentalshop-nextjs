@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
 import { BankAccountSection, useCurrency, useToast } from '@rentalshop/ui';
 import { merchantsApi, settingsApi, subscriptionsApi } from '@rentalshop/utils';
+import { shopLanguage } from '@rentalshop/constants';
 import { SettingsSubscriptionMerchantActions } from '../components/SettingsSubscriptionMerchantActions';
 import { Skeleton, type T } from '../orders/list/parts';
 import { ICONS, ShellIcon } from '../components/shell/Icon';
@@ -189,6 +190,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
     description: str(merchant.description),
     // #1145 "Tiền tệ" (owner only)
     ...(canChangeCurrency(role) ? { currency: shopCurrency(merchant.currency) } : {}),
+    // #1539 "Ngôn ngữ email" (owner only, like the currency)
+    ...(canChangeCurrency(role) ? { language: shopLanguage(merchant.language) } : {}),
   };
 
   const saveMerchant = async (form: ShopForm) => {
@@ -230,6 +233,8 @@ export function SettingsPanel({ tab, onTab, onClose, titleId, outletParam = null
       taxId: info.taxId || '',
       tenantKey: info.tenantKey || '',
       description: info.description || '',
+      // #1539 owner only (the API answers 403 for other roles)
+      ...(info.language ? { language: info.language } : {}),
     };
     try {
       const res = await settingsApi.updateMerchantInfo(payload);

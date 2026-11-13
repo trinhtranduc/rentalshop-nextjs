@@ -9,7 +9,7 @@ import React, { useEffect, useId, useMemo, useState, useTransition } from 'react
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { COUNTRIES } from '@rentalshop/constants';
+import { COUNTRIES, SHOP_LANGUAGES, type ShopLanguage } from '@rentalshop/constants';
 import { useToast } from '@rentalshop/ui';
 import { authApi, bookingRequestsApi, outletsApi, usersApi } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
@@ -90,6 +90,8 @@ export interface ShopForm {
   pricingType?: string;
   /** #1145 shop currency (owner only; amounts are never converted) */
   currency?: ShopCurrency;
+  /** #1539 shop language for emails (owner only) */
+  language?: ShopLanguage;
 }
 
 export function ShopInfoSection({
@@ -201,6 +203,31 @@ export function ShopInfoSection({
                   ))}
                 </div>
                 <p className="m-0 text-sm text-ar-muted">{t('form.currencyHint')}</p>
+              </div>
+            )}
+            {showCurrency && initial.language && (
+              <div className="flex flex-col gap-1.5">
+                <span id={`${listId}-lang`} className={labelClass}>
+                  {t('form.emailLanguage')}
+                </span>
+                <div role="radiogroup" aria-labelledby={`${listId}-lang`} className="inline-flex w-fit rounded-xl border border-ar-line bg-ar-surface-muted p-1">
+                  {SHOP_LANGUAGES.map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.language === l}
+                      data-email-language={l}
+                      onClick={() => setForm((f) => ({ ...f, language: l }))}
+                      className={`h-10 min-w-[112px] rounded-[10px] px-4 text-[15px] font-semibold ${
+                        form.language === l ? 'bg-ar-surface text-ar-primary-ink shadow-sm ring-1 ring-ar-primary' : 'text-ar-ink-2 hover:bg-ar-subtle'
+                      }`}
+                    >
+                      {l === 'vi' ? 'Tiếng Việt' : 'English'}
+                    </button>
+                  ))}
+                </div>
+                <p className="m-0 text-sm text-ar-muted">{t('form.emailLanguageHint')}</p>
               </div>
             )}
             {/* #1140: rarely used fields, closed by default. Mã URL moved to Trang shop công khai (still sent unchanged). */}

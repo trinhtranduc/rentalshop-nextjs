@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Gift } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Gift, Globe, Languages, Coins } from "lucide-react";
 import { authApi, isValidEmail, decodeGoogleCredentialPayload, storeAuthData } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
-  PRICING_TYPE_OPTIONS
+  PRICING_TYPE_OPTIONS,
+  countryEnglishName,
+  countryOptions,
+  signupDefaults,
+  type ShopLanguage,
 } from "@rentalshop/constants";
 import { 
   Button, 
@@ -52,6 +56,20 @@ interface RegisterFormData {
   role: 'MERCHANT';
   // Optional referral code
   referralCode?: string;
+  // #1539 country (ISO code; sent as its English name), shop language and currency
+  countryCode: string;
+  language: ShopLanguage;
+  currency: 'VND' | 'USD';
+}
+
+/** #1539 the web speaks the shop language after sign-up (same keys as Settings → Ngôn ngữ). */
+function applyShopLanguageOnWeb(language: ShopLanguage) {
+  try {
+    window.localStorage.setItem('user_language_preference', language);
+  } catch {
+    // Private mode: the cookie is enough.
+  }
+  document.cookie = `NEXT_LOCALE=${language};path=/;max-age=31536000;SameSite=Lax`;
 }
 
 interface RegisterFormProps {
@@ -167,6 +185,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       acceptTermsAndPrivacy: false,
       role: 'MERCHANT',
       referralCode: referralCode || "",
+      // #1539 default country Vietnam → Tiếng Việt + VND
+      countryCode: 'VN',
+      ...signupDefaults('VN'),
     },
     enableReinitialize: true,
     validationSchema,
@@ -208,6 +229,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             address: values.address || undefined,
             referralCode: values.referralCode?.trim() || referralCode || undefined,
             locale: signupLocale,
+            country: countryEnglishName(values.countryCode),
+            language: values.language,
+            currency: values.currency,
           });
           clearTimeout(timeoutId);
           if (!result.success) {
@@ -221,6 +245,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           }
           storeAuthData(payload.token, payload.user);
           if (typeof window !== 'undefined') {
+            applyShopLanguageOnWeb(values.language);
             window.dispatchEvent(new Event('auth-storage-change'));
           }
           toastSuccess(
@@ -261,6 +286,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           address: values.address || '',
           referralCode: values.referralCode?.trim() || referralCode || undefined,
           locale: signupLocale,
+          country: countryEnglishName(values.countryCode),
+          language: values.language,
+          currency: values.currency,
         };
 
         const result = await authApi.register(registrationData);
@@ -274,6 +302,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         const userEmail =
           resultData?.user?.email || completeData.login || registrationData.email;
 
+        if (typeof window !== 'undefined') applyShopLanguageOnWeb(registrationData.language);
         formik.resetForm();
         setCurrentStep(1);
         setAccountData({});
@@ -316,6 +345,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     isShop
       ? `${shopFieldClass(invalid)} ${extra}`
       : `pl-10 ${extra} ${invalid ? 'border-red-500' : ''}`;
+  // #1539 native selects: phones get their own picker, typing a letter jumps in the long country list
+  const selectCls = isShop
+    ? `${shopFieldClass(false)} pr-2`
+    : 'flex h-10 w-full rounded-md border border-gray-300 bg-white pl-10 pr-2 text-sm';
+  const countries = useMemo(() => countryOptions(locale || 'vi'), [locale]);
   const primaryCls = isShop
     ? shopPrimaryButtonClass
     : 'w-full bg-blue-700 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200';
@@ -582,6 +616,74 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                       <p className="text-red-500 text-sm">{formik.errors.address}</p>
                     )}
                   </div>
+
+                  {/* #1539 Country → language + currency (Vietnam → Tiếng Việt + VND, other → English + USD), both editable */}
+                  <div className="space-y-2">
+                    <label htmlFor="countryCode" className={labelCls}>
+                      {t('register.country')}
+                    </label>
+                    <div className="relative">
+                      <Globe className={iconCls} aria-hidden="true" />
+                      <select
+                        id="countryCode"
+                        name="countryCode"
+                        data-signup-country
+                        value={formik.values.countryCode}
+                        onChange={(e) => {
+                          const code = e.target.value;
+                          void formik.setValues({ ...formik.values, countryCode: code, ...signupDefaults(code) });
+                        }}
+                        className={selectCls}
+                      >
+                        {countries.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="min-w-0 space-y-2">
+                      <label htmlFor="language" className={labelCls}>
+                        {t('register.language')}
+                      </label>
+                      <div className="relative">
+                        <Languages className={iconCls} aria-hidden="true" />
+                        <select
+                          id="language"
+                          name="language"
+                          data-signup-language
+                          value={formik.values.language}
+                          onChange={formik.handleChange}
+                          className={selectCls}
+                        >
+                          <option value="vi">Tiếng Việt</option>
+                          <option value="en">English</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="min-w-0 space-y-2">
+                      <label htmlFor="currency" className={labelCls}>
+                        {t('register.currency')}
+                      </label>
+                      <div className="relative">
+                        <Coins className={iconCls} aria-hidden="true" />
+                        <select
+                          id="currency"
+                          name="currency"
+                          data-signup-currency
+                          value={formik.values.currency}
+                          onChange={formik.handleChange}
+                          className={selectCls}
+                        >
+                          <option value="VND">VND (đ)</option>
+                          <option value="USD">USD ($)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="m-0 text-xs text-gray-500">{t('register.languageCurrencyHint')}</p>
 
                   {/* Referral Code Field (optional) */}
                   <div className="space-y-2">

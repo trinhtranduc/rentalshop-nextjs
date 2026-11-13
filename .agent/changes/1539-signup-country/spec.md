@@ -20,8 +20,8 @@ Status: accepted
 
 ## Email
 
-9. `sendVerificationEmail` và `sendPasswordResetEmail` nhận `locale` (tuỳ chọn): `en` → tiêu đề và nội dung tiếng Anh;
-   khác / không có → tiếng Việt như hiện nay.
+9. `sendVerificationEmail` và `sendPasswordResetEmail` nhận `locale` (tuỳ chọn): `en` → tiêu đề và nội dung tiếng Anh
+   (ja / ko / zh có bản dịch riêng); không có / lạ → tiếng Việt như hiện nay.
 10. Quên mật khẩu, gửi lại email xác thực (2 route), cron nhắc hết hạn, gia hạn, kéo dài gói: gửi theo `language` của shop
     người nhận; không có shop hoặc trống → tiếng Việt.
 
@@ -30,7 +30,7 @@ Status: accepted
 11. Có ô **Quốc gia** (mặc định Việt Nam, danh sách mọi nước theo tên ngôn ngữ trang, Việt Nam đứng đầu), **Ngôn ngữ**
     (Tiếng Việt / English), **Tiền tệ** (VND / USD).
 12. Đổi quốc gia: Việt Nam → Tiếng Việt + VND; nước khác → English + USD. Sau đó sửa Ngôn ngữ / Tiền tệ được.
-13. Gửi lên API `country` (mã 2 chữ), `language`, `currency`, `locale` (như cũ).
+13. Gửi lên API `country` (tên tiếng Anh, như Cài đặt và shop đang có), `language`, `currency`, `locale` (như cũ).
 14. Đăng ký xong: ngôn ngữ web (`NEXT_LOCALE` + `user_language_preference`) = ngôn ngữ đã chọn.
 
 ## Web — Cài đặt

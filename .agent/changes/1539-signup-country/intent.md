@@ -41,4 +41,5 @@ gia hạn, kéo dài), `packages/utils` email, `packages/ui` RegisterForm, `apps
 
 - 2026-11-13 — owner chọn: web trước; một ô Ngôn ngữ cho tất cả; đổi Ngôn ngữ email trong Cài đặt web; cột mới `Merchant.language`.
 - 2026-11-13 — quốc gia mặc định Việt Nam theo lời owner ("default là việt nam còn lại tiếng anh"), kể cả khi trang đang tiếng Anh.
-- 2026-11-13 — quốc gia lưu mã ISO 2 chữ (`VN`, `US`) vào `Merchant.country` và `Outlet.country` (cột đã có; `resolveOnboardingLocaleFromContext` đọc mã).
+- 2026-11-13 — quốc gia lưu **tên tiếng Anh** (`Vietnam`, `United States`) vào `Merchant.country` và `Outlet.country`, như shop đang có và ô Quốc gia trong Cài đặt (datalist `COUNTRIES`). Ô chọn dùng mã ISO, hiện tên theo ngôn ngữ trang (`Intl.DisplayNames`), danh sách 249 nước.
+- 2026-11-13 — email xác thực / đặt lại mật khẩu có bản dịch trong cả 5 file `email.json` (luật `i18n-keys`); shop chỉ lưu `vi` / `en`.

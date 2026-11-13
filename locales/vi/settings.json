@@ -556,7 +556,9 @@
       "currencyHint": "Cách hiện giá trên web và trang shop. Số tiền không tự quy đổi.",
       "currencyConfirmTitle": "Đổi tiền tệ sang {code}?",
       "currencyConfirmBody": "Mọi giá trên web và trang shop sẽ hiện bằng {code}. Số tiền giữ nguyên, không quy đổi ({example}).",
-      "currencyConfirmOk": "Đổi sang {code}"
+      "currencyConfirmOk": "Đổi sang {code}",
+      "emailLanguage": "Ngôn ngữ email",
+      "emailLanguageHint": "Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này."
     },
     "outlets": {
       "title": "Chi nhánh",
