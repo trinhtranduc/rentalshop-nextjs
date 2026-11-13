@@ -23,6 +23,7 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Globe } from 'lucide-react';
+import { enabledAppLanguages } from '@rentalshop/constants';
 
 type SupportedLocale = 'en' | 'vi' | 'zh' | 'ko' | 'ja';
 type PublicLocale = SupportedLocale | 'ru' | 'zh-TW' | 'fr' | 'de' | 'th' | 'id' | 'es';
@@ -47,11 +48,10 @@ const publicLanguages: Array<{ code: PublicLocale; label: string; flag: string }
   { code: 'es', label: 'ES', flag: '🇪🇸' },
 ];
 
-// Basic languages (for other pages)
-const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = [
-  { code: 'vi', label: 'VI', flag: '🇻🇳' },
-  { code: 'en', label: 'EN', flag: '🇺🇸' },
-];
+// #1554 the shop pages list the app languages that are on (packages/constants app-languages; today VI / EN)
+const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = enabledAppLanguages().map(
+  ({ code, label, flag }) => ({ code, label, flag })
+);
 
 interface LanguageSwitcherProps {
   variant?: 'default' | 'compact';

@@ -22,6 +22,9 @@
   "currentUserInformation": "Current User Information",
   "activeUsersInfo": "Active users can log in and access the system. Inactive users are suspended.",
   "created": "Created",
+  "label": {
+    "loading": "Loading..."
+  },
   "fields": {
     "id": "ID",
     "name": "Name",
