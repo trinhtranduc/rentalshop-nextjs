@@ -491,7 +491,7 @@
 "Grand Total" = "Grand Total";
 "Deposit" = "Deposit";
 "Collect" = "Collect";
-"Document" = "Collateral Details";
+"Document" = "Security Document Details";
 "Security Deposit" = "Security Deposit";
 "Damage Fee" = "Extra Fee";
 "Collect Deposit" = "Collect Deposit";
@@ -798,10 +798,10 @@
 "Total Days" = "Total Days";
 "New Orders" = "New Orders";
 "Deposit Refund" = "Deposit Refund";
-"Total Collateral" = "Total Collateral";
-"Collateral Plan" = "Collateral Plan";
-"Collateral (received)" = "Collateral (received)";
-"Collateral (return)" = "Collateral (return)";
+"Total Collateral" = "Total Security Deposit";
+"Collateral Plan" = "Security Deposit Plan";
+"Collateral (received)" = "Security deposit (received)";
+"Collateral (return)" = "Security deposit (return)";
 "No orders for this day" = "No orders for this day";
 "Try another date" = "Try another date";
 "orders_unit" = "orders";
@@ -809,8 +809,8 @@
 "Overview_Info_Title" = "Overview";
 "Overview_Info_TotalRevenue" = "Total cash collected in the period (after deducting refunds). Includes: order deposits, rental on pickup, sales, extra fees. Excludes: refunds on cancellation, deposit refund when customer returns. Can be negative if refunds in the period exceed collections (e.g. many cancellations or returns).";
 "Overview_Info_TotalOrders" = "(Daily only) Total number of rows in the order list — each row is one order or one revenue transaction; one order can have multiple rows if multiple transactions in the period.";
-"Overview_Info_CollateralReceived" = "Collateral (security deposit) currently held — total deposit for rental orders that are picked up and not yet returned. Only counts orders picked up in the period (by pickup date). Shows how much customer deposit you are holding (liability to refund when they return).";
-"Overview_Info_CollateralExpected" = "Expected collateral to refund — Amount of deposit you will refund to customers in the period. Only counts rental orders currently out (customer has picked up, you are holding the deposit) with return plan date in the period. When customers return in that period, you refund each securityDeposit. Helps with liquidity planning (how much deposit you need to pay back in the period).";
+"Overview_Info_CollateralReceived" = "Security deposit currently held — total deposit for rental orders that are picked up and not yet returned. Only counts orders picked up in the period (by pickup date). Shows how much customer deposit you are holding (liability to refund when they return).";
+"Overview_Info_CollateralExpected" = "Expected security deposit to refund — Amount of deposit you will refund to customers in the period. Only counts rental orders currently out (customer has picked up, you are holding the deposit) with return plan date in the period. When customers return in that period, you refund each securityDeposit. Helps with liquidity planning (how much deposit you need to pay back in the period).";
 "Overview_Mode_Daily" = "Daily";
 "Overview_Mode_Yearly" = "Yearly";
 "Report_Period_Today" = "Today";
@@ -886,7 +886,7 @@
 "Customer Information" = "Customer Information";
 "Outlet & Staff Information" = "Outlet & Staff Information";
 "Date Information" = "Date Information";
-"Deposit & Collateral Details" = "Deposit & Collateral Details";
+"Deposit & Collateral Details" = "Deposit & Security Deposit Details";
 "Summary" = "Summary";
 "Information" = "Information";
 
@@ -1709,7 +1709,7 @@
 "%d days" = "%d days";
 "%d days.one" = "%d day";
 "Handed over" = "Picked up";
-"Collateral" = "Collateral";
+"Collateral" = "Security deposit";
 "Sale date" = "Sale date";
 "Sale price %@" = "Sale price %@";
 "%@/day × %d days" = "%@/day × %d days";
@@ -1719,7 +1719,7 @@
 "To collect" = "To collect";
 "Total (discount %@)" = "Total (discount %@)";
 "Deposit paid at booking" = "Deposit paid at booking";
-"Collateral money" = "Collateral money";
+"Collateral money" = "Security deposit";
 "Already collected" = "Already collected";
 "Collect at hand-over" = "Collect at hand-over";
 "Late fee" = "Late fee";
@@ -1735,11 +1735,11 @@
 "Cancel order" = "Cancel order";
 "Late fee (%d days)" = "Late fee (%d days)";
 "Late fee (%d days).one" = "Late fee (%d day)";
-"Keep collateral: %@" = "Keep collateral: %@";
+"Keep collateral: %@" = "Keep security deposit: %@";
 "Collect now" = "Collect now";
 "Handed over · collect %@" = "Picked up · collect %@";
 "Late + damage fees" = "Late + extra fees";
-"Collateral money held" = "Collateral money held";
+"Collateral money held" = "Security deposit held";
 "Already settled" = "Already settled";
 "Give back to customer" = "Give back to customer";
 "Taken back · give back %@" = "Taken back · give back %@";
@@ -1815,15 +1815,15 @@
 "overview.v2.detail.collateralNote" = "Not in real income because it goes back to the customer.";
 "overview.v2.detail.note" = "Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.";
 "overview.v2.detail.close" = "Close";
-"overview.v2.excludesCollateral" = "Excludes collateral";
-"overview.v2.collateral" = "Collateral";
+"overview.v2.excludesCollateral" = "Excludes security deposit";
+"overview.v2.collateral" = "Security deposit";
 "overview.v2.received.title" = "Money received";
-"overview.v2.received.caption" = "All money received, collateral included";
+"overview.v2.received.caption" = "All money received, security deposit included";
 "overview.v2.received.collectedNote" = "The store's money";
 "overview.v2.received.collateralNote" = "Held for the customer, to be handed back";
 "overview.v2.received.collateralIn" = "Received at hand-over";
 "overview.v2.received.collateralOut" = "Handed back when returned";
-"overview.v2.received.upcoming" = "UPCOMING COLLATERAL";
+"overview.v2.received.upcoming" = "UPCOMING SECURITY DEPOSIT";
 "overview.v2.received.upcomingNote" = "not counted in any figure";
 "overview.v2.received.toReturn" = "To hand back";
 "overview.v2.received.toReturnOrders" = "%d orders rented out";
@@ -1831,7 +1831,7 @@
 "overview.v2.received.toCollect" = "To receive at hand-over";
 "overview.v2.received.toCollectOrders" = "%d orders not picked up";
 "overview.v2.received.toCollectOrders.one" = "%d order not picked up";
-"overview.v2.outstandingDetail.body" = "The unpaid part of the orders created in the period. Collateral is not counted here.";
+"overview.v2.outstandingDetail.body" = "The unpaid part of the orders created in the period. Security deposit is not counted here.";
 "overview.v2.outstandingDetail.atPickup" = "To collect at pickup";
 "overview.v2.outstandingDetail.atPickupOrders" = "%d orders · pickup from today";
 "overview.v2.outstandingDetail.atPickupOrders.one" = "%d order · pickup from today";
@@ -2190,14 +2190,14 @@
 "history.field.returnedAt" = "Returned";
 "history.field.totalAmount" = "Order total";
 "history.field.depositAmount" = "Prepaid deposit";
-"history.field.securityDeposit" = "Collateral money";
+"history.field.securityDeposit" = "Security deposit";
 "history.field.discountType" = "Discount type";
 "history.field.discountValue" = "Discount";
 "history.field.discountAmount" = "Discount amount";
 "history.field.damageFee" = "Extra fee";
 "history.field.lateFee" = "Late fee";
-"history.field.collateralType" = "Collateral type";
-"history.field.collateralDetails" = "Collateral";
+"history.field.collateralType" = "Security document type";
+"history.field.collateralDetails" = "Security document details";
 "history.field.pickupNotes" = "Hand-over note";
 "history.field.returnNotes" = "Return note";
 "history.field.damageNotes" = "Damage note";
@@ -2244,7 +2244,7 @@
 "overview.dash.kpi.orderValue" = "New order value";
 "overview.dash.kpi.collected" = "Collected";
 "overview.dash.kpi.outstanding" = "Still to collect";
-"overview.dash.kpi.collateral" = "Collateral";
+"overview.dash.kpi.collateral" = "Security deposit";
 "overview.dash.chip.new" = "New";
 "overview.dash.chip.up" = "▲ %d%%";
 "overview.dash.chip.down" = "▼ %d%%";
@@ -2382,7 +2382,7 @@
 "share.items.sale" = "Items bought · %d";
 "share.rent.total" = "Rental total";
 "share.deposit.paid" = "Deposit paid";
-"share.collateral" = "Collateral at pickup";
+"share.collateral" = "Security deposit at pickup";
 "share.amountDue" = "Amount due";
 "share.subtotal" = "Subtotal";
 "share.discount" = "Discount";
@@ -2416,15 +2416,15 @@
 "order.detail.deposit" = "Deposit";
 "overview.related.created" = "Created in the period";
 "overview.related.cancelled" = "Cancelled, not counted";
-"overview.related.collateralIn" = "Collateral received at hand-over";
-"overview.related.collateralOut" = "Collateral returned";
+"overview.related.collateralIn" = "Security deposit received at hand-over";
+"overview.related.collateralOut" = "Security deposit returned";
 "overview.related.total" = "Total of the rows";
 "overview.related.empty" = "No orders in this period.";
-"overview.dash.money.collateralNet" = "Collateral in − out";
+"overview.dash.money.collateralNet" = "Security deposit in − out";
 "overview.dash.rule.orderValue" = "Total of the orders created in the period, by creation day. Cancelled orders are not counted.";
-"overview.dash.rule.collected" = "Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.";
+"overview.dash.rule.collected" = "Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus security deposit received minus security deposit returned.";
 "overview.dash.rule.outstanding" = "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.";
-"overview.dash.rule.collateral" = "Collateral received at hand-over minus collateral handed back at return, in the period.";
+"overview.dash.rule.collateral" = "Security deposit received at hand-over minus security deposit handed back at return, in the period.";
 "overview.related.owes" = "To collect at pickup";
 "overview.dash.chip.newOrders" = "%d new orders";
 "SUBSCRIPTION_EXPIRED" = "Subscription has expired";
@@ -2562,7 +2562,7 @@
 "attendance.error.notRequired.title" = "You do not need to clock in";
 "attendance.error.notRequired.message" = "The shop has not picked you to clock in at this branch. Ask the shop owner if needed.";
 /* #938 Thế chân related list: an order whose collateral is held now */
-"overview.related.collateralHeld" = "Collateral held now";
+"overview.related.collateralHeld" = "Security deposit held now";
 /* #949 QR of another outlet: %1$@ = the code's outlet, %2$@ = the person's outlets */
 "attendance.error.wrongOutlet.messageDetail" = "This code is for %1$@. You clock in at %2$@.";
 
@@ -3001,22 +3001,22 @@
 /* #1273 Thế chân: two sections */
 "overview.related.collateral.note" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.";
 "overview.related.collateral.note.period" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.";
-"overview.related.collateral.held.title" = "Collateral held";
-"overview.related.collateral.held.hint" = "Collateral the shop holds for orders not yet returned.";
+"overview.related.collateral.held.title" = "Security deposit held";
+"overview.related.collateral.held.hint" = "Security deposit the shop holds for orders not yet returned.";
 "overview.related.collateral.held.total" = "Total held: %@ · %d orders";
 "overview.related.collateral.flow.title" = "Moved today (%@)";
 "overview.related.collateral.flow.title.period" = "Moved in the period (%@)";
-"overview.related.collateral.flow.hint" = "Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.";
-"overview.related.collateral.flow.hint.period" = "Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.hint" = "Security deposit that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.hint.period" = "Security deposit that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.";
 "overview.related.collateral.flow.in" = "Received at hand-over: %@ (%d orders)";
 "overview.related.collateral.flow.out" = "Returned at return: %@ (%d orders)";
 "overview.related.collateral.flow.net" = "Shop holds more today: %@";
 "overview.related.collateral.flow.net.period" = "Shop holds more in the period: %@";
 "overview.related.collateral.held.row" = "Of an order not yet returned";
-"order.collateral.card" = "Papers & collateral";
+"order.collateral.card" = "Papers & security deposit";
 "order.collateral.edit" = "Edit";
 "order.collateral.none" = "Not entered";
-"order.collateral.editWarning" = "Changing the collateral changes the amount to give back at return";
+"order.collateral.editWarning" = "Changing the security deposit changes the amount to give back at return";
 "order.collateral.papersRow" = "Papers";
 "order.detail.section.payment" = "PAYMENT";
 "order.detail.rentTotal" = "Rental total";
@@ -3076,7 +3076,7 @@
 // #1353: under a short cart line, the other branches that still have the product on the order's days
 "products.cart.othersHave" = "Other branches have: %@";
 "share.collect.rentalLeft" = "Rental left, collect at hand-over";
-"share.collateral.collect" = "Collateral, collect at hand-over";
+"share.collateral.collect" = "Security deposit, collect at hand-over";
 "share.cashAtHandover" = "Customer pays at hand-over";
 
 // #1375: "To do" home-screen widget
@@ -3161,7 +3161,7 @@
 "order.sheetTitle.handOver" = "Hand over to customer";
 "order.sheetTitle.return" = "Take back items";
 "order.sheetTitle.extend" = "Extend order";
-"order.sheetTitle.collateral" = "Papers & collateral";
+"order.sheetTitle.collateral" = "Papers & security deposit";
 "order.sheetTitle.collect" = "Collect deposit";
 "order.sheetTitle.unpaid" = "Uncollected deposit stages";
 "order.sheetTitle.cancel" = "Cancel order";
@@ -3211,7 +3211,7 @@
 "order.photos.openSettings" = "Open Settings";
 
 /* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
-"order.detail.cashBreakdown" = "rental %@ + collateral %@";
+"order.detail.cashBreakdown" = "rental %@ + security deposit %@";
 
 /* #1459 Gói dịch vụ: renew / upgrade in the app, expired screen, Home line */
 "plan.title" = "Subscription";

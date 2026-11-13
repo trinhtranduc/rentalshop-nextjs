@@ -160,7 +160,7 @@
     <string name="return_date">Return date</string>
     <string name="discount">Discount</string>
     <string name="security_deposit">Security deposit</string>
-    <string name="collateral">Collateral details</string>
+    <string name="collateral">Security document details</string>
     <string name="print_receipt">Print receipt</string>
     <string name="payment_qr">Payment QR</string>
     <string name="ready_to_deliver">Ready to deliver</string>
@@ -267,8 +267,8 @@
     <string name="collect_payment_description">Please collect the amount from the customer.</string>
     <string name="collect_remaining_payment_description">Please collect the remaining payment from the customer.</string>
     <string name="collect_deposit_description">Please collect the deposit amount from the customer.</string>
-    <string name="collect_collateral_documents">Collect collateral documents</string>
-    <string name="return_collateral_documents">Return collateral documents</string>
+    <string name="collect_collateral_documents">Collect security documents</string>
+    <string name="return_collateral_documents">Return security documents</string>
     <string name="payment_method">Payment method</string>
     <string name="payment_method_cash">Cash</string>
     <string name="payment_method_transfer">Bank transfer</string>
@@ -388,9 +388,9 @@
     <string name="discount_amount">Discount amount</string>
     <string name="discount_percent">Discount %</string>
     <string name="select_rental_period">Select rental period</string>
-    <string name="deposit_collateral_details">Deposit &amp; Collateral Details</string>
+    <string name="deposit_collateral_details">Deposit &amp; Security Document Details</string>
     <string name="damage_fee">Extra Fee</string>
-    <string name="edit_collateral">Edit collateral details</string>
+    <string name="edit_collateral">Edit security document details</string>
     <string name="order_notes">Order notes</string>
     <string name="add_notes_hint">Add order notes here…</string>
     <string name="add_photos">Add photos</string>
@@ -798,10 +798,10 @@
     <string name="detail_money">MONEY</string>
     <string name="detail_total_discount">Total (discount %1$s)</string>
     <string name="detail_deposit_paid">Deposit paid</string>
-    <string name="detail_collateral_money">Collateral money</string>
+    <string name="detail_collateral_money">Security deposit</string>
     <string name="detail_collect_at_hand_over">Collect at hand-over</string>
     <string name="detail_late_fee">Late fee</string>
-    <string name="detail_return_collateral">Collateral back</string>
+    <string name="detail_return_collateral">Security deposit back</string>
     <string name="detail_on_return_refund">On return: give back</string>
     <string name="detail_on_return_collect">On return: collect</string>
     <string name="detail_goods">Goods</string>
@@ -817,7 +817,7 @@
     <string name="detail_handed_over">Picked up</string>
     <string name="detail_handed_over_collect">Picked up · collect %1$s</string>
     <string name="detail_fees">Late + extra fees</string>
-    <string name="detail_collateral_held">Collateral held</string>
+    <string name="detail_collateral_held">Security deposit held</string>
     <string name="detail_settled_before">Already settled</string>
     <string name="detail_give_back">Give back</string>
     <string name="detail_collect_more">Collect</string>
@@ -1120,7 +1120,7 @@
     <string name="v2_review_info">Information</string>
     <string name="v2_review_dates">Date Information</string>
     <string name="v2_review_products">Products</string>
-    <string name="v2_review_deposit_papers">Deposit &amp; Collateral Details</string>
+    <string name="v2_review_deposit_papers">Deposit &amp; Security Document Details</string>
     <string name="v2_review_deposit">Deposit</string>
     <string name="v2_review_papers">Document</string>
     <string name="v2_review_security_deposit">Security Deposit</string>
@@ -1128,7 +1128,7 @@
     <string name="v2_review_collect_deposit_text">Please collect the deposit amount from the customer.</string>
     <string name="v2_review_collect_payment">Collect Payment</string>
     <string name="v2_review_collect_payment_text">Please collect the full payment amount from the customer.</string>
-    <string name="v2_review_collect_papers">Collect Collateral Documents</string>
+    <string name="v2_review_collect_papers">Collect security documents</string>
     <string name="v2_review_cancel">Cancel</string>
     <string name="v2_review_confirm">Confirm</string>
 
@@ -1195,22 +1195,22 @@
     <string name="overview_v2_vs_previous_period">vs previous period</string>
     <string name="overview_v2_outstanding_sub">From new orders</string>
     <string name="overview_v2_collected_tile_accessibility">Real income %1$s, see details</string>
-    <string name="overview_v2_collected_excludes_collateral">Excludes collateral</string>
+    <string name="overview_v2_collected_excludes_collateral">Excludes security deposit</string>
     <string name="overview_v2_received_title">Money received</string>
-    <string name="overview_v2_received_total">Total received, collateral included</string>
+    <string name="overview_v2_received_total">Total received, security deposit included</string>
     <string name="overview_v2_collected_shop">The shop\'s money</string>
-    <string name="overview_v2_collateral">Collateral</string>
+    <string name="overview_v2_collateral">Security deposit</string>
     <string name="overview_v2_collateral_sub">Held for customers, to be returned</string>
     <string name="overview_v2_collateral_received">Received at pickup</string>
     <string name="overview_v2_collateral_returned">Returned when items came back</string>
-    <string name="overview_v2_collateral_upcoming">UPCOMING COLLATERAL</string>
+    <string name="overview_v2_collateral_upcoming">UPCOMING SECURITY DEPOSIT</string>
     <string name="overview_v2_collateral_upcoming_note">not counted in any figure</string>
     <string name="overview_v2_collateral_to_return">To return to customers</string>
     <string name="overview_v2_collateral_to_return_orders">%1$d orders rented out</string>
     <string name="overview_v2_collateral_to_collect">To receive at pickup</string>
     <string name="overview_v2_collateral_to_collect_orders">%1$d orders not picked up</string>
     <string name="overview_v2_outstanding_tile_accessibility">Still to collect %1$s, see details</string>
-    <string name="overview_v2_outstanding_body">The unpaid part of orders created in the period. Collateral is not counted here.</string>
+    <string name="overview_v2_outstanding_body">The unpaid part of orders created in the period. Security deposit is not counted here.</string>
     <string name="overview_v2_outstanding_at_pickup">To collect when customers pick up</string>
     <string name="overview_v2_outstanding_at_pickup_orders">%1$d orders · pickup from today</string>
     <string name="overview_v2_outstanding_overdue">Past pickup date, not collected</string>
@@ -1374,8 +1374,8 @@
         <item>discountAmount|Discount</item>
         <item>damageFee|Extra fee</item>
         <item>lateFee|Late fee</item>
-        <item>collateralType|Collateral type</item>
-        <item>collateralDetails|Collateral</item>
+        <item>collateralType|Security document type</item>
+        <item>collateralDetails|Security document details</item>
         <item>pickupNotes|Pickup notes</item>
         <item>returnNotes|Return notes</item>
         <item>damageNotes|Damage notes</item>
@@ -1510,7 +1510,7 @@
     <string name="share_items_sale">Items bought · %1$d</string>
     <string name="share_rent_total">Rental total</string>
     <string name="share_deposit_paid">Deposit paid</string>
-    <string name="share_collateral">Collateral at pickup</string>
+    <string name="share_collateral">Security deposit at pickup</string>
     <string name="share_amount_due">Still to pay</string>
     <string name="share_subtotal">Subtotal</string>
     <string name="share_discount">Discount</string>
@@ -1525,7 +1525,7 @@
     <string name="share_draft_action">Share draft</string>
     <string name="share_collect">Collect at hand-over</string>
     <string name="share_collect_rental_left">Rental left, collect at hand-over</string>
-    <string name="share_collateral_collect">Collateral, collect at hand-over</string>
+    <string name="share_collateral_collect">Security deposit, collect at hand-over</string>
     <string name="share_cash_at_handover">Customer pays at hand-over</string>
     <string name="share_deposit_label">Deposit</string>
     <string name="share_deposit_none">No deposit</string>
@@ -1550,7 +1550,7 @@
     <string name="image_search_tip_photo">The product needs a photo in your list</string>
     <string name="detail_nav_title">Order %1$s</string>
     <string name="detail_deposit">Deposit</string>
-    <string name="overview_v2_rule_received">Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.</string>
+    <string name="overview_v2_rule_received">Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus security deposit received minus security deposit returned.</string>
     <string name="overview_v2_new_orders_count">%1$d new orders</string>
     <string name="overview_v2_related_view">See the orders behind it →</string>
     <string name="overview_v2_related_total">Total of the rows</string>
@@ -1572,10 +1572,10 @@
     <string name="overview_v2_event_future_refund">Expected deposit refund at return</string>
     <string name="overview_v2_event_future_nothing">Nothing expected at return</string>
     <string name="overview_v2_related_owes">To collect at pickup</string>
-    <string name="overview_v2_related_collateral_in">Collateral received at hand-over</string>
-    <string name="overview_v2_related_collateral_out">Collateral returned</string>
-    <string name="overview_v2_related_collateral_held">Collateral held now</string>
-    <string name="overview_v2_collected_includes_collateral">Collateral included</string>
+    <string name="overview_v2_related_collateral_in">Security deposit received at hand-over</string>
+    <string name="overview_v2_related_collateral_out">Security deposit returned</string>
+    <string name="overview_v2_related_collateral_held">Security deposit held now</string>
+    <string name="overview_v2_collected_includes_collateral">Security deposit included</string>
     <!-- #725 Overview in the iOS layout (iOS overview.dash.*) -->
     <string name="overview_dash_period_today">Today</string>
     <string name="overview_dash_period_last7">7 days</string>
@@ -1584,7 +1584,7 @@
     <string name="overview_dash_kpi_order_value">New order value</string>
     <string name="overview_dash_kpi_collected">Collected</string>
     <string name="overview_dash_kpi_outstanding">Still to collect</string>
-    <string name="overview_dash_kpi_collateral">Collateral</string>
+    <string name="overview_dash_kpi_collateral">Security deposit</string>
     <string name="overview_dash_chip_new">New</string>
     <string name="overview_dash_chip_up">▲ %1$d%%</string>
     <string name="overview_dash_chip_down">▼ %1$d%%</string>
@@ -1617,7 +1617,7 @@
     <string name="overview_dash_money_pickup_and_sale">Paid at pickup, sales</string>
     <string name="overview_dash_money_fees">Extra and late fees</string>
     <string name="overview_dash_money_refunds">Refunds on cancelled</string>
-    <string name="overview_dash_money_collateral_net">Collateral in − out</string>
+    <string name="overview_dash_money_collateral_net">Security deposit in − out</string>
     <string name="overview_dash_money_at_pickup">Due when the customer picks up</string>
     <string name="overview_dash_money_overdue_pickup">Past pickup date, unpaid</string>
     <string name="overview_dash_today_title">Today</string>
@@ -1631,9 +1631,9 @@
     <string name="overview_dash_top_empty">Nothing in this period yet.</string>
     <string name="overview_dash_top_view_all">View all</string>
     <string name="overview_dash_rule_order_value">Total of the orders created in the period, by creation day. Cancelled orders are not counted.</string>
-    <string name="overview_dash_rule_collected">Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.</string>
+    <string name="overview_dash_rule_collected">Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus security deposit received minus security deposit returned.</string>
     <string name="overview_dash_rule_outstanding">Part of the period\'s orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.</string>
-    <string name="overview_dash_rule_collateral">Collateral received at hand-over minus collateral handed back at return, in the period.</string>
+    <string name="overview_dash_rule_collateral">Security deposit received at hand-over minus security deposit handed back at return, in the period.</string>
     <plurals name="overview_dash_orders">
         <item quantity="one">%1$d order</item>
         <item quantity="other">%1$d orders</item>
@@ -2336,24 +2336,24 @@
     <!-- #1273 Thế chân: two sections -->
     <string name="overview_v2_related_collateral_note">The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.</string>
     <string name="overview_v2_related_collateral_note_period">The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.</string>
-    <string name="overview_v2_related_collateral_held_title">Collateral held</string>
-    <string name="overview_v2_related_collateral_held_hint">Collateral the shop holds for orders not yet returned.</string>
+    <string name="overview_v2_related_collateral_held_title">Security deposit held</string>
+    <string name="overview_v2_related_collateral_held_hint">Security deposit the shop holds for orders not yet returned.</string>
     <string name="overview_v2_related_collateral_held_total">Total held: %1$s · %2$d orders</string>
     <string name="overview_v2_related_collateral_flow_title">Moved today (%1$s)</string>
     <string name="overview_v2_related_collateral_flow_title_period">Moved in the period (%1$s)</string>
-    <string name="overview_v2_related_collateral_flow_hint">Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.</string>
-    <string name="overview_v2_related_collateral_flow_hint_period">Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.</string>
+    <string name="overview_v2_related_collateral_flow_hint">Security deposit that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.</string>
+    <string name="overview_v2_related_collateral_flow_hint_period">Security deposit that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.</string>
     <string name="overview_v2_related_collateral_flow_in">Received at hand-over: %1$s (%2$d orders)</string>
     <string name="overview_v2_related_collateral_flow_out">Returned at return: %1$s (%2$d orders)</string>
     <string name="overview_v2_related_collateral_flow_net">Shop holds more today: %1$s</string>
     <string name="overview_v2_related_collateral_flow_net_period">Shop holds more in the period: %1$s</string>
     <string name="overview_v2_related_collateral_held_row">Of an order not yet returned</string>
-    <string name="detail_collateral_card">Papers &amp; collateral</string>
+    <string name="detail_collateral_card">Papers &amp; security deposit</string>
     <string name="detail_collateral_edit">Edit</string>
     <string name="detail_collateral_none">Not entered</string>
-    <string name="detail_collateral_edit_warning">Changing the collateral changes the amount to give back at return</string>
+    <string name="detail_collateral_edit_warning">Changing the security deposit changes the amount to give back at return</string>
     <string name="detail_collateral_papers_row">Papers</string>
-    <string name="detail_collateral_money_row">Collateral</string>
+    <string name="detail_collateral_money_row">Security deposit</string>
     <string name="detail_payment_title">PAYMENT</string>
     <string name="detail_rent_total">Rental total</string>
     <string name="printer_outlet_branch">Branch</string>
@@ -2486,7 +2486,7 @@
     <string name="order_sheet_title_hand_over">Hand over to customer</string>
     <string name="order_sheet_title_return">Take back items</string>
     <string name="order_sheet_title_extend">Extend order</string>
-    <string name="order_sheet_title_collateral">Papers &amp; collateral</string>
+    <string name="order_sheet_title_collateral">Papers &amp; security deposit</string>
     <string name="order_sheet_title_collect">Collect deposit</string>
     <string name="order_sheet_title_unpaid">Uncollected deposit stages</string>
     <string name="order_sheet_title_cancel">Cancel order</string>
@@ -2533,7 +2533,7 @@
     <string name="order_photos_camera_unavailable">The camera is not available. Allow it in Settings, or pick from the library.</string>
     <string name="order_photos_open_settings">Open Settings</string>
     <!-- #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail -->
-    <string name="detail_cash_breakdown">rental %1$s + collateral %2$s</string>
+    <string name="detail_cash_breakdown">rental %1$s + security deposit %2$s</string>
     <!-- #1459 Gói dịch vụ: renew / upgrade in the app, expired screen, Home line (mobile.md) -->
     <string name="plan_title">Subscription</string>
     <string name="plan_current">Current</string>
