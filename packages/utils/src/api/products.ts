@@ -484,12 +484,13 @@ export const productsApi = {
   },
 
   /**
-   * Bulk import products
+   * Bulk import products. #1533: `outletId` = the branch the file's stock belongs to; rows may carry
+   * `outlets: [{ outletId, stock }]` (the branches ticked "Hiện"). Without both, the API behaves as before.
    */
-  async bulkImport(products: any[]): Promise<ApiResponse> {
+  async bulkImport(products: any[], options?: { outletId?: number }): Promise<ApiResponse> {
     const response = await authenticatedFetch(apiUrls.products.bulkImport, {
       method: 'POST',
-      body: JSON.stringify({ products }),
+      body: JSON.stringify(options?.outletId ? { products, outletId: options.outletId } : { products }),
     });
     return await parseApiResponse<ApiResponse>(response);
   },

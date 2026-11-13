@@ -5,19 +5,21 @@
  * → result. The file is read with `xlsx` (the library behind the old import dialog's parser) so the
  * table keeps the file's own row numbers and Vietnamese headers; checks live in ./import-model
  * (unit-tested). Saves through `productsApi.bulkImport` (max 3000 rows, the API's cap).
+ * #1533: with 2+ branches the shop picks the branch of the file's quantity and sets "Hiện" + quantity per branch
+ * (./import-branches, unit-tested).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useToast } from '@rentalshop/ui';
 import { useAuth, usePermissions } from '@rentalshop/hooks';
-import { categoriesApi, productsApi } from '@rentalshop/utils';
+import { isOutletRole } from '@rentalshop/constants';
+import { categoriesApi, outletsApi, productsApi } from '@rentalshop/utils';
 import { ICONS, ShellIcon } from '../../components/shell/Icon';
 import { Skeleton, cardClass, outlineBtn, primaryBtn, type T } from '../../orders/list/parts';
 import {
   MAX_IMPORT_ROWS,
   TABLE_FIELDS,
-  buildImport,
   checkSheet,
   orderRows,
   readOutcome,
@@ -27,6 +29,21 @@ import {
   type FileProblem,
   type ImportOutcome,
 } from './import-model';
+import {
+  buildBranchImport,
+  copyColumn,
+  defaultCells,
+  importBranchMode,
+  readByOutlet,
+  rowHasBranch,
+  setQty,
+  toggleCell,
+  turnColumnOn,
+  type BranchImportOptions,
+  type Cells,
+  type ImportOutlet,
+  type OutletResult,
+} from './import-branches';
 
 type Step = 'choose' | 'check' | 'result';
 const STEPS: Step[] = ['choose', 'check', 'result'];
@@ -63,8 +80,64 @@ function saveBlob(blob: Blob, name: string) {
 export default function ImportProductsPage() {
   const t = useTranslations('products.web.import') as unknown as T;
   const { toastError } = useToast();
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { canManageProducts } = usePermissions();
+
+  // #1533 branches: the owner picks from the shop's active branches; a branch role imports into its own branch only
+  const typedUser = user as unknown as {
+    role?: string;
+    merchantId?: number;
+    merchant?: { id?: number };
+    outletId?: number;
+    outlet?: { id?: number; name?: string };
+  } | null;
+  const merchantId = Number(typedUser?.merchant?.id || typedUser?.merchantId) || null;
+  const branchRole = isOutletRole(typedUser?.role);
+  const ownOutletId = Number(typedUser?.outlet?.id || typedUser?.outletId) || null;
+  const ownOutletName = typedUser?.outlet?.name || '';
+  const [outlets, setOutlets] = useState<ImportOutlet[] | null>(null);
+  useEffect(() => {
+    if (branchRole || !merchantId) return;
+    let cancelled = false;
+    outletsApi
+      .getOutletsByMerchant(merchantId)
+      .then((res) => {
+        if (cancelled) return;
+        const list = ((res.data as { outlets?: ImportOutlet[] } | undefined)?.outlets || []).map((o) => ({
+          id: Number(o.id),
+          name: String(o.name || ''),
+          isDefault: o.isDefault ?? null,
+          isActive: o.isActive ?? null,
+        }));
+        setOutlets(res.success ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setOutlets([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [branchRole, merchantId]);
+  const mode = useMemo(
+    () =>
+      importBranchMode({
+        branchRole,
+        ownOutlet: ownOutletId ? { id: ownOutletId, name: ownOutletName } : null,
+        outlets: outlets ?? [],
+      }),
+    [branchRole, ownOutletId, ownOutletName, outlets],
+  );
+  /** Branch columns of the table (none: one "Số lượng" column as before). */
+  const columns: Array<{ id: number; name: string }> = useMemo(
+    () => (mode.kind === 'pick' ? mode.outlets.map((o) => ({ id: o.id, name: o.name })) : mode.kind === 'own' ? [mode.outlet] : []),
+    [mode],
+  );
+  const [pickedTarget, setPickedTarget] = useState<number | null>(null);
+  const target = mode.kind === 'own' ? mode.outlet.id : mode.kind === 'pick' ? pickedTarget ?? mode.target : null;
+  const branchName = (id: number) => columns.find((c) => c.id === id)?.name || `#${id}`;
+  const [cells, setCells] = useState<Cells>({});
+  const [byOutlet, setByOutlet] = useState<OutletResult[] | null>(null);
+  const [updated, setUpdated] = useState(0);
 
   // Category names, for "Danh mục chưa có" (the API rejects the whole file on an unknown category)
   const categoriesRef = useRef<Promise<string[]> | null>(null);
@@ -105,9 +178,19 @@ export default function ImportProductsPage() {
     setChecked(null);
     setChosen(new Set());
     setOutcome(null);
+    setByOutlet(null);
+    setUpdated(0);
     setRequestError(null);
     if (inputRef.current) inputRef.current.value = '';
   };
+
+  // #1533: a new file or another branch for the file's quantity: every cell back to its default
+  const columnKey = columns.map((c) => c.id).join(',');
+  useEffect(() => {
+    if (!checked || target === null) return setCells({});
+    setCells(defaultCells(checked.rows, columns.map((c) => c.id), target));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- columns change only with columnKey
+  }, [checked, target, columnKey]);
 
   const takeFile = async (f: File | undefined | null) => {
     if (!f) return;
@@ -148,19 +231,32 @@ export default function ImportProductsPage() {
   };
 
   const validRows = useMemo(() => (checked ? checked.rows.filter((r) => r.payload) : []), [checked]);
-  const chosenCount = validRows.filter((r) => chosen.has(r.row)).length;
   const viewRows = useMemo(() => (checked ? orderRows(checked.rows, errorsFirst) : []), [checked, errorsFirst]);
   const hasUnknownCategory = !!checked?.rows.some((r) => r.errors.some((e) => e.code === 'categoryUnknown'));
+  const byBranch = columns.length > 0 && target !== null;
+  const importOptions: BranchImportOptions = byBranch
+    ? { kind: 'cells', target: target as number, outletIds: columns.map((c) => c.id), cells }
+    : { kind: 'single', outletId: mode.kind === 'single' ? mode.outletId : null };
+  const plan = useMemo(() => (checked ? buildBranchImport(checked.rows, chosen, importOptions) : null), [checked, chosen, cells, target, columnKey, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** Rows that will be sent (chosen, valid, at least one branch on). */
+  const chosenCount = plan ? plan.body.products.length : 0;
+  const chosenValid = validRows.filter((r) => chosen.has(r.row)).length;
+  /** Table columns from the file; with branch columns, "Số lượng" moves into them. */
+  const fields = byBranch ? TABLE_FIELDS.filter((f) => f !== 'stock') : TABLE_FIELDS;
 
   const runImport = async () => {
-    if (!checked || chosenCount === 0) return;
-    const { items, fileRows } = buildImport(checked.rows, chosen);
+    if (!checked || !plan || chosenCount === 0) return;
+    const { body, fileRows } = plan;
     setImporting(true);
     setRequestError(null);
     try {
-      const res = await productsApi.bulkImport(items);
-      if (res.success) setOutcome(readOutcome(res.data, fileRows));
-      else setRequestError(res.message || res.error || '');
+      const res = await productsApi.bulkImport(body.products, body.outletId ? { outletId: body.outletId } : undefined);
+      if (res.success) {
+        setOutcome(readOutcome(res.data, fileRows));
+        setByOutlet(readByOutlet(res.data));
+        const u = (res.data as { updated?: unknown } | undefined)?.updated;
+        setUpdated(typeof u === 'number' && u > 0 ? u : 0);
+      } else setRequestError(res.message || res.error || '');
     } catch (e) {
       setRequestError(e instanceof Error ? e.message : '');
     } finally {
@@ -329,6 +425,48 @@ export default function ImportProductsPage() {
             </p>
           )}
 
+          {byBranch && target !== null && (
+            <div data-import-branch className="flex flex-col gap-3 border-b border-ar-subtle bg-ar-primary-soft/40 px-4 py-3.5">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <label htmlFor="import-branch" className="text-xs font-bold uppercase tracking-[0.06em] text-ar-muted">
+                  {t('branch.label')}
+                </label>
+                {mode.kind === 'pick' ? (
+                  <select
+                    id="import-branch"
+                    value={target}
+                    onChange={(e) => setPickedTarget(Number(e.target.value))}
+                    className="h-10 min-w-[200px] rounded-[10px] border border-ar-line bg-ar-surface px-3 text-[15px] font-semibold text-ar-ink"
+                  >
+                    {columns.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span id="import-branch" className="inline-flex h-10 items-center rounded-[10px] bg-ar-subtle px-3 text-[15px] font-semibold text-ar-ink-2">
+                    {t('branch.locked', { name: branchName(target) })}
+                  </span>
+                )}
+                <span className="min-w-0 flex-[1_1_320px] text-sm text-ar-ink-2">
+                  {mode.kind === 'pick' ? t('branch.hint', { name: branchName(target) }) : t('branch.lockedHint')}
+                </span>
+              </div>
+              <p className="m-0 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-ar-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <input type="checkbox" checked readOnly tabIndex={-1} aria-hidden="true" className={`${checkbox} pointer-events-none`} />
+                  {t('legend.on')}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <input type="checkbox" checked={false} readOnly tabIndex={-1} aria-hidden="true" className={`${checkbox} pointer-events-none`} />
+                  {t('legend.off')}
+                </span>
+                <span>{t('legend.zero')}</span>
+              </p>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] border-collapse text-[15px]">
               <thead>
@@ -337,16 +475,34 @@ export default function ImportProductsPage() {
                     <input
                       type="checkbox"
                       aria-label={t('selectValid')}
-                      checked={validRows.length > 0 && chosenCount === validRows.length}
+                      checked={validRows.length > 0 && chosenValid === validRows.length}
                       disabled={validRows.length === 0}
-                      onChange={() => setChosen(chosenCount === validRows.length ? new Set() : new Set(validRows.map((r) => r.row)))}
+                      onChange={() => setChosen(chosenValid === validRows.length ? new Set() : new Set(validRows.map((r) => r.row)))}
                       className={checkbox}
                     />
                   </th>
                   <th scope="col" className={th}>{t('cols.row')}</th>
-                  {TABLE_FIELDS.map((f) => (
+                  {fields.map((f) => (
                     <th key={f} scope="col" className={th}>{t(`cols.${f}`)}</th>
                   ))}
+                  {byBranch &&
+                    target !== null &&
+                    columns.map((c) => (
+                      <th key={`outlet-${c.id}`} scope="col" data-branch-col={c.id} className="border-l border-ar-subtle bg-ar-primary-soft/40 px-2 py-2.5 text-left align-bottom">
+                        <span className="block whitespace-nowrap text-[13px] font-bold text-ar-ink">{c.name}</span>
+                        {c.id === target && <span className="block whitespace-nowrap text-xs font-medium text-ar-muted">{t('col.fromFile')}</span>}
+                        <span className="mt-1 flex flex-wrap gap-x-2 text-xs font-semibold">
+                          <button type="button" onClick={() => setCells((cs) => turnColumnOn(cs, c.id))} className="whitespace-nowrap text-ar-primary hover:underline">
+                            {t('col.allOn')}
+                          </button>
+                          {c.id !== target && (
+                            <button type="button" onClick={() => setCells((cs) => copyColumn(cs, target, c.id))} className="whitespace-nowrap text-ar-primary hover:underline">
+                              {t('col.copy', { name: branchName(target) })}
+                            </button>
+                          )}
+                        </span>
+                      </th>
+                    ))}
                   <th scope="col" className={`${th} pr-4`}>{t('cols.check')}</th>
                 </tr>
               </thead>
@@ -354,6 +510,7 @@ export default function ImportProductsPage() {
                 {viewRows.slice(0, shown).map((r) => {
                   const bad = r.errors.length > 0;
                   const badFields = new Set(r.errors.map((e) => e.field));
+                  const noBranch = !bad && byBranch && chosen.has(r.row) && !!cells[r.row] && !rowHasBranch(cells, r.row);
                   return (
                     <tr key={r.row} className={`border-t border-ar-subtle ${bad ? 'bg-ar-danger-soft/30' : ''}`}>
                       <td className="py-2.5 pl-4">
@@ -374,7 +531,7 @@ export default function ImportProductsPage() {
                         />
                       </td>
                       <td className="px-2 py-2.5 tabular-nums text-ar-muted">{r.row}</td>
-                      {TABLE_FIELDS.map((f) => {
+                      {fields.map((f) => {
                         const v = r.values[f];
                         const cls = badFields.has(f) ? 'bg-ar-danger-soft font-semibold text-ar-danger' : v ? 'text-ar-ink' : 'text-ar-faint';
                         return (
@@ -383,8 +540,44 @@ export default function ImportProductsPage() {
                           </td>
                         );
                       })}
+                      {byBranch &&
+                        columns.map((c) => {
+                          const cell = cells[r.row]?.[c.id];
+                          return (
+                            <td key={`outlet-${c.id}`} className="border-l border-ar-subtle bg-ar-primary-soft/20 px-2 py-1.5">
+                              {cell ? (
+                                <span className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    aria-label={t('cell.show', { name: c.name, row: r.row })}
+                                    checked={cell.on}
+                                    onChange={() => setCells((cs) => toggleCell(cs, r.row, c.id))}
+                                    className={checkbox}
+                                  />
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={0}
+                                    step={1}
+                                    aria-label={t('cell.qty', { name: c.name, row: r.row })}
+                                    disabled={!cell.on}
+                                    value={cell.on ? cell.qty : ''}
+                                    placeholder="—"
+                                    onChange={(e) => setCells((cs) => setQty(cs, r.row, c.id, e.target.value === '' ? 0 : Number(e.target.value)))}
+                                    className="h-9 w-[72px] rounded-lg border border-ar-line bg-ar-surface px-2 text-right tabular-nums text-ar-ink disabled:border-dashed disabled:bg-ar-subtle disabled:text-ar-faint"
+                                  />
+                                  {cell.on && cell.qty === 0 && <span className="whitespace-nowrap text-xs text-ar-muted">{t('cell.outOfStock')}</span>}
+                                </span>
+                              ) : (
+                                <span className="text-ar-faint">—</span>
+                              )}
+                            </td>
+                          );
+                        })}
                       <td className="py-2.5 pl-2 pr-4">
-                        <span className={`whitespace-nowrap text-sm font-semibold ${bad ? 'text-ar-danger' : 'text-ar-done'}`}>{bad ? errorText(r) : t('ok')}</span>
+                        <span className={`whitespace-nowrap text-sm font-semibold ${bad || noBranch ? 'text-ar-danger' : 'text-ar-done'}`}>
+                          {bad ? errorText(r) : noBranch ? t('error.noBranch') : t('ok')}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -418,12 +611,14 @@ export default function ImportProductsPage() {
 
       {step === 'result' && (
         <section className={`${cardClass} flex flex-col gap-4 p-4 sm:p-6`} aria-live="polite">
-          {outcome && outcome.imported > 0 ? (
+          {outcome && (outcome.imported > 0 || updated > 0) ? (
             <div className="flex items-center gap-3">
               <span aria-hidden="true" className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-ar-done-bg text-ar-done">
                 <ShellIcon d="M5 12l5 5 9-10" size={22} />
               </span>
-              <h2 className="m-0 text-xl font-bold">{t('result.done', { count: outcome.imported })}</h2>
+              <h2 className="m-0 text-xl font-bold">
+                {outcome.imported > 0 ? t('result.done', { count: outcome.imported }) : t('result.updatedOnly', { count: updated })}
+              </h2>
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -434,7 +629,26 @@ export default function ImportProductsPage() {
             </div>
           )}
           {requestError && <p className="m-0 text-[15px] text-ar-danger">{requestError}</p>}
-          {outcome && outcome.skipped > 0 && <p className="m-0 text-[15px] text-ar-ink-2">{t('result.skipped', { count: outcome.skipped })}</p>}
+          {outcome && outcome.imported > 0 && updated > 0 && <p className="m-0 text-[15px] text-ar-ink-2">{t('result.updated', { count: updated })}</p>}
+          {outcome && outcome.skipped > 0 && (
+            <p className="m-0 text-[15px] text-ar-ink-2">{t(byOutlet ? 'result.skippedBranch' : 'result.skipped', { count: outcome.skipped })}</p>
+          )}
+          {byOutlet && byOutlet.some((o) => o.listed > 0 || o.skipped > 0) && (
+            <div data-import-by-outlet className="grid max-w-[720px] grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+              {byOutlet
+                .filter((o) => o.listed > 0 || o.skipped > 0)
+                .map((o) => (
+                  <div key={o.outletId} className="rounded-xl border border-ar-line-soft px-4 py-3">
+                    <h3 className="m-0 mb-1 text-[15px] font-bold text-ar-ink">{branchName(o.outletId)}</h3>
+                    <p className="m-0 text-[15px] text-ar-ink-2">
+                      {t('result.branchListed', { count: o.listed })}
+                      {o.outOfStock > 0 && ` · ${t('result.branchOutOfStock', { count: o.outOfStock })}`}
+                    </p>
+                    {o.skipped > 0 && <p className="m-0 text-[15px] text-ar-ink-2">{t('result.branchSkipped', { count: o.skipped })}</p>}
+                  </div>
+                ))}
+            </div>
+          )}
           {outcome && outcome.imported === 0 && outcome.errors.length > 0 && (
             <p className="m-0 text-[15px] text-ar-ink-2">{t('result.rejected', { count: outcome.errors.length })}</p>
           )}
