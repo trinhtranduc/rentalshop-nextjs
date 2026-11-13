@@ -5,15 +5,14 @@ import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Gift, Globe, Languages, Coins } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Gift, Globe } from "lucide-react";
 import { authApi, isValidEmail, decodeGoogleCredentialPayload, storeAuthData } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
   PRICING_TYPE_OPTIONS,
   countryEnglishName,
   countryOptions,
-  signupDefaults,
-  type ShopLanguage,
+  signupShopPrefs,
 } from "@rentalshop/constants";
 import { 
   Button, 
@@ -56,20 +55,8 @@ interface RegisterFormData {
   role: 'MERCHANT';
   // Optional referral code
   referralCode?: string;
-  // #1539 country (ISO code; sent as its English name), shop language and currency
+  // #1539 country (ISO code; sent as its English name). #1545 the language follows the page, the currency the country
   countryCode: string;
-  language: ShopLanguage;
-  currency: 'VND' | 'USD';
-}
-
-/** #1539 the web speaks the shop language after sign-up (same keys as Settings → Ngôn ngữ). */
-function applyShopLanguageOnWeb(language: ShopLanguage) {
-  try {
-    window.localStorage.setItem('user_language_preference', language);
-  } catch {
-    // Private mode: the cookie is enough.
-  }
-  document.cookie = `NEXT_LOCALE=${language};path=/;max-age=31536000;SameSite=Lax`;
 }
 
 interface RegisterFormProps {
@@ -185,9 +172,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       acceptTermsAndPrivacy: false,
       role: 'MERCHANT',
       referralCode: referralCode || "",
-      // #1539 default country Vietnam → Tiếng Việt + VND
+      // #1539 default country Vietnam
       countryCode: 'VN',
-      ...signupDefaults('VN'),
     },
     enableReinitialize: true,
     validationSchema,
@@ -218,6 +204,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         const timeoutId = setTimeout(() => {
           setIsSubmitting(false);
         }, 10000);
+        // #1545 shop language = the page language, currency = the country
+        const prefs = signupShopPrefs(locale, values.countryCode);
 
         if (googleIdToken) {
           const result = await authApi.registerMerchantGoogle({
@@ -230,8 +218,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             referralCode: values.referralCode?.trim() || referralCode || undefined,
             locale: signupLocale,
             country: countryEnglishName(values.countryCode),
-            language: values.language,
-            currency: values.currency,
+            language: prefs.language,
+            currency: prefs.currency,
           });
           clearTimeout(timeoutId);
           if (!result.success) {
@@ -245,7 +233,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           }
           storeAuthData(payload.token, payload.user);
           if (typeof window !== 'undefined') {
-            applyShopLanguageOnWeb(values.language);
             window.dispatchEvent(new Event('auth-storage-change'));
           }
           toastSuccess(
@@ -256,10 +243,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           setGoogleIdToken(null);
           setCurrentStep(1);
           setAccountData({});
-          if (values.language !== locale && typeof window !== 'undefined') {
-            // #1539 the root layout reads NEXT_LOCALE only on a full load
-            window.location.assign('/dashboard');
-          } else if (onNavigate) {
+          if (onNavigate) {
             onNavigate('/dashboard');
           } else {
             router.replace('/dashboard');
@@ -290,8 +274,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           referralCode: values.referralCode?.trim() || referralCode || undefined,
           locale: signupLocale,
           country: countryEnglishName(values.countryCode),
-          language: values.language,
-          currency: values.currency,
+          language: prefs.language,
+          currency: prefs.currency,
         };
 
         const result = await authApi.register(registrationData);
@@ -305,7 +289,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         const userEmail =
           resultData?.user?.email || completeData.login || registrationData.email;
 
-        if (typeof window !== 'undefined') applyShopLanguageOnWeb(registrationData.language);
         formik.resetForm();
         setCurrentStep(1);
         setAccountData({});
@@ -316,10 +299,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         );
 
         const redirectUrl = `/email-verification?email=${encodeURIComponent(userEmail || registrationData.email)}`;
-        if (registrationData.language !== locale && typeof window !== 'undefined') {
-          // #1539 the root layout reads NEXT_LOCALE only on a full load
-          window.location.assign(redirectUrl);
-        } else if (onNavigate) {
+        if (onNavigate) {
           onNavigate(redirectUrl);
         } else {
           router.replace(redirectUrl);
@@ -623,7 +603,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                     )}
                   </div>
 
-                  {/* #1539 Country → language + currency (Vietnam → Tiếng Việt + VND, other → English + USD), both editable */}
+                  {/* #1539 Country. #1545 the only field: currency by country, language = the page; both changed later in Settings */}
                   <div className="space-y-2">
                     <label htmlFor="countryCode" className={labelCls}>
                       {t('register.country')}
@@ -635,10 +615,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         name="countryCode"
                         data-signup-country
                         value={formik.values.countryCode}
-                        onChange={(e) => {
-                          const code = e.target.value;
-                          void formik.setValues({ ...formik.values, countryCode: code, ...signupDefaults(code) });
-                        }}
+                        onChange={(e) => void formik.setFieldValue('countryCode', e.target.value)}
                         className={selectCls}
                       >
                         {countries.map((c) => (
@@ -648,48 +625,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                         ))}
                       </select>
                     </div>
+                    <p data-signup-country-hint className="m-0 text-xs text-gray-500">
+                      {t('register.countryHint', { currency: signupShopPrefs(locale, formik.values.countryCode).currency })}
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="min-w-0 space-y-2">
-                      <label htmlFor="language" className={labelCls}>
-                        {t('register.language')}
-                      </label>
-                      <div className="relative">
-                        <Languages className={iconCls} aria-hidden="true" />
-                        <select
-                          id="language"
-                          name="language"
-                          data-signup-language
-                          value={formik.values.language}
-                          onChange={formik.handleChange}
-                          className={selectCls}
-                        >
-                          <option value="vi">Tiếng Việt</option>
-                          <option value="en">English</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="min-w-0 space-y-2">
-                      <label htmlFor="currency" className={labelCls}>
-                        {t('register.currency')}
-                      </label>
-                      <div className="relative">
-                        <Coins className={iconCls} aria-hidden="true" />
-                        <select
-                          id="currency"
-                          name="currency"
-                          data-signup-currency
-                          value={formik.values.currency}
-                          onChange={formik.handleChange}
-                          className={selectCls}
-                        >
-                          <option value="VND">VND (đ)</option>
-                          <option value="USD">USD ($)</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="m-0 text-xs text-gray-500">{t('register.languageCurrencyHint')}</p>
 
                   {/* Referral Code Field (optional) */}
                   <div className="space-y-2">

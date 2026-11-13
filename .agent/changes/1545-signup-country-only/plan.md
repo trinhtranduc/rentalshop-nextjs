@@ -4,11 +4,10 @@ Status: in-progress
 
 1. Test trước (commit riêng, phải fail):
    - `tests/web-signup-prefs.test.ts`: `signupShopPrefs`; RegisterForm không còn ô ngôn ngữ / tiền tệ, có hint, không ghi NEXT_LOCALE;
-     `register.countryHint` có ở 5 locale; ShopAuthPage hiện LanguageSwitcher trên điện thoại.
+     `register.countryHint` có ở 5 locale; ShopAuthPage vẫn có LanguageSwitcher cho màn rộng và điện thoại.
    - iOS `AuthFormsTests`, Android `SignupCountryTest` / `RegisterBodyTest` / resource test: request theo ngôn ngữ app + quốc gia.
 2. `packages/constants/src/shop-language.ts`: `signupShopPrefs`, bỏ `signupDefaults`.
 3. `packages/ui/src/components/forms/RegisterForm.tsx`: bỏ 2 ô, thêm hint, payload từ `signupShopPrefs(locale, countryCode)`, bỏ `applyShopLanguageOnWeb` và reload.
-   `packages/ui/src/components/forms/auth-shop.tsx`: LanguageSwitcher ở mọi bề rộng.
    `locales/*/auth.json`: thêm `register.countryHint`, bỏ `register.language`, `register.currency`, `register.languageCurrencyHint` (không còn dùng).
 4. iOS: `Model/AuthForms.swift`, `RegisterStoreV2ViewController.swift`, `Localizable.strings` (en, vi), UI test `test0cSignupCountry`.
 5. Android: `domain/auth/AuthForms.kt`, `SignupCountries.kt`, `ApiParity.kt`, `AuthV2Screens.kt`, strings vi/en.

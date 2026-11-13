@@ -16,7 +16,7 @@ dữ liệu mẫu tiếng Việt, và web đổi sang tiếng Việt sau khi đ�
 - **Ngôn ngữ shop = ngôn ngữ đang hiện**: trang đăng ký trên web, ngôn ngữ app trên điện thoại. Tiếng Việt → `vi`, ngôn ngữ khác → `en`.
 - **Tiền tệ = theo quốc gia**: Việt Nam → VND, nước khác → USD.
 - Dưới ô Quốc gia có một dòng: "Tiền tệ VND · Email tiếng Việt · đổi được trong Cài đặt." / "Currency USD · Emails in English · change in Settings."
-- Web: nút đổi ngôn ngữ hiện cả trên điện thoại (trước chỉ hiện trên màn rộng). Sau đăng ký web giữ ngôn ngữ đang xem, không tải lại.
+- Web: trang đăng ký đã có nút đổi ngôn ngữ (màn rộng: góc trên phải; điện thoại: chân trang, #510), giữ nguyên. Sau đăng ký web giữ ngôn ngữ đang xem, không tải lại.
 - Đổi sau trong Cài đặt: Tiền tệ, Ngôn ngữ email (đã có trên web và app).
 
 ## Affected users and systems

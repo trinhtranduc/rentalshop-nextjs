@@ -108,12 +108,14 @@ describe('sign-up form asks only the country (#1545)', () => {
     expect(form).not.toContain('window.location.assign');
   });
 
-  it('the language switcher of the sign-up and login pages shows at phone width too', () => {
-    const line = shell.split('\n').find((l) => l.includes('<LanguageSwitcher'));
-    expect(line).toBeDefined();
-    const wrapper = shell.slice(0, shell.indexOf('<LanguageSwitcher'));
-    const cls = wrapper.slice(wrapper.lastIndexOf('className="')).split('"')[1];
-    expect(cls.split(' ')).not.toContain('hidden');
+  it('the sign-up page keeps a language switch at every width (desktop top right, phone footer)', () => {
+    const wrappers = shell
+      .split('\n')
+      .map((l, i, all) => (l.includes('<LanguageSwitcher') ? all[i - 1] : null))
+      .filter((l): l is string => l !== null);
+    expect(wrappers).toHaveLength(2);
+    expect(wrappers.some((l) => l.includes('lg:block'))).toBe(true);
+    expect(wrappers.some((l) => l.includes('lg:hidden'))).toBe(true);
   });
 
   it.each(['vi', 'en', 'ja', 'ko', 'zh'])('%s: register.countryHint has {currency}; the removed keys are gone', (lang) => {

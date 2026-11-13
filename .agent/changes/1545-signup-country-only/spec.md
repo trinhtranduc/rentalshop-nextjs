@@ -11,7 +11,7 @@ Status: in-progress
    `currency` = `VND` khi Việt Nam, `USD` khi nước khác; `country` = tên tiếng Anh; `locale` như cũ.
    Hàm chung `signupShopPrefs(pageLocale, countryCode)` trong `@rentalshop/constants` (thay `signupDefaults`).
 4. Sau đăng ký web không ghi `NEXT_LOCALE` / `user_language_preference` và không tải lại trang để đổi ngôn ngữ.
-5. `ShopAuthPage` (đăng nhập, đăng ký): nút đổi ngôn ngữ hiện ở mọi bề rộng (điện thoại: góc trên phải).
+5. `ShopAuthPage` (đăng nhập, đăng ký) giữ nút đổi ngôn ngữ ở mọi bề rộng như đã có (màn rộng: góc trên phải; điện thoại: chân trang). Không đổi.
 6. iOS, bước "Cửa hàng": chỉ còn hàng Quốc gia (`signupCountry`); không còn `signupLanguage`, `signupCurrency`;
    thêm nhãn `signupCountryHint` ("Tiền tệ VND · Email tiếng Việt · đổi được trong Cài đặt." / "Currency USD · Emails in English · change in Settings.").
    Request: `language` = ngôn ngữ app (vi → `vi`, khác → `en`), `currency` theo quốc gia, `timezone` = múi giờ máy.
