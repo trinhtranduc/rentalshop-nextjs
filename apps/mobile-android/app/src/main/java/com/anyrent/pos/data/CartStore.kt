@@ -858,6 +858,35 @@ object CartStore {
         return true
     }
 
+    /**
+     * #1515 "Đặt lại": a cart like an old order at today's prices (the product's rent or sale price, like adding it):
+     * type, customer, notes, each line's quantity and note. No dates (a rent cart asks for the days), discount, deposit,
+     * collateral or payments. A product that did not load is left out and counted. The cart in use with a draft stays
+     * and the reorder gets its own cart; an empty one is used; at the cart limit nothing changes. iOS `startReorderCart`.
+     */
+    fun startReorderCart(plan: com.anyrent.pos.domain.orders.ReorderCart.Plan, products: Map<Int, Product>): com.anyrent.pos.domain.orders.ReorderCart.Result {
+        val loaded = plan.items.filter { products[it.productId] != null }
+        val skipped = plan.unreadable + plan.items.size - loaded.size
+        if (loaded.isEmpty()) return com.anyrent.pos.domain.orders.ReorderCart.Result(com.anyrent.pos.domain.orders.ReorderCart.Status.EMPTY, skipped)
+        if (hasDraftContent() || _bookingRequestId.value != null) {
+            if (slots.size >= MAX_CARTS) return com.anyrent.pos.domain.orders.ReorderCart.Result(com.anyrent.pos.domain.orders.ReorderCart.Status.LIMIT, skipped)
+            returnNumber = slots[activeIdx].number
+            captureActive()
+            slots.add(Slot(nextNumber()))
+            activeIdx = slots.size - 1
+        }
+        resetActiveState()
+        _orderType.value = plan.orderType
+        _customer.value = plan.customer
+        _notes.value = plan.notes
+        loaded.forEach { item ->
+            addProduct(products.getValue(item.productId), item.quantity)
+            _lines.value.lastOrNull()?.let { line -> if (item.note != null) updateNote(line.lineId, item.note) }
+        }
+        persistToDisk()
+        return com.anyrent.pos.domain.orders.ReorderCart.Result(com.anyrent.pos.domain.orders.ReorderCart.Status.OPENED, skipped)
+    }
+
     fun persistToDisk() {
         bump()
         if (!persistEnabled || !::prefs.isInitialized) return

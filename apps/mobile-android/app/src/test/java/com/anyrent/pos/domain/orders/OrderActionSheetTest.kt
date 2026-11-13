@@ -31,9 +31,9 @@ class OrderActionSheetTest {
     }
 
     @Test fun reservedRentalBoard() {
-        // Bottom bar: In + Giao đồ → the sheet (iOS order): Share, Notes, Edit, History, red Huỷ đơn
+        // #1515 layout D: Chia sẻ and Ghi chú moved to the row on the screen; the sheet keeps Edit, History, red Huỷ đơn
         val r = rows("RENT", "RESERVED")
-        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.EDIT, Action.HISTORY), r.main)
+        assertEquals(listOf(Action.EDIT, Action.HISTORY), r.main)
         assertEquals(listOf(Action.CANCEL), r.danger)
     }
 
@@ -44,18 +44,19 @@ class OrderActionSheetTest {
             assertTrue("$type $status", Action.HISTORY !in r.main)
         }
         val r = OrderActionSheet.rows(OrderDetailLogic.actions("RENT", "RESERVED", false, false), isSale = false, canExtend = false, canViewHistory = false)
-        assertEquals(listOf(Action.SHARE, Action.NOTES), r.main)
+        assertTrue(r.main.isEmpty())
+        assertTrue(r.isEmpty)
     }
 
     @Test fun reservedRentalWithoutEditRightGetsNoEditAnywhere() {
         val r = rows("RENT", "RESERVED", manage = false)
-        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), r.main)
+        assertEquals(listOf(Action.HISTORY), r.main)
         assertTrue(r.danger.isEmpty())
     }
 
     @Test fun pickedUpRentalWithExtendInTheSheet() {
         val r = rows("RENT", "PICKUPED", canExtend = true)
-        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.EXTEND, Action.HISTORY), r.main)
+        assertEquals(listOf(Action.EXTEND, Action.HISTORY), r.main)
         assertEquals(listOf(Action.CANCEL), r.danger)
     }
 
@@ -66,10 +67,10 @@ class OrderActionSheetTest {
 
     @Test fun finishedOrdersPrintAtTheBottom() {
         val returned = rows("RENT", "RETURNED")
-        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), returned.main)
+        assertEquals(listOf(Action.HISTORY), returned.main)
         assertTrue(returned.danger.isEmpty())
         val cancelled = rows("RENT", "CANCELLED")
-        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), cancelled.main)
+        assertEquals(listOf(Action.HISTORY), cancelled.main)
         assertEquals(listOf(Action.DELETE), cancelled.danger)
         assertTrue(rows("RENT", "CANCELLED", deleteCancelled = false).danger.isEmpty())
     }
@@ -77,14 +78,27 @@ class OrderActionSheetTest {
     @Test fun completedSaleHasCancelAndPrintOnScreen() {
         // Bar: Huỷ đơn + In hoá đơn; Sửa đơn is not on the bar, so the sheet offers it
         val r = rows("SALE", "COMPLETED")
-        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.EDIT, Action.HISTORY), r.main)
+        assertEquals(listOf(Action.EDIT, Action.HISTORY), r.main)
         assertTrue(r.danger.isEmpty())
     }
 
     @Test fun saleWithoutManageRightPrintsAtTheBottom() {
         val r = rows("SALE", "COMPLETED", manage = false)
-        assertEquals(listOf(Action.SHARE, Action.NOTES, Action.HISTORY), r.main)
+        assertEquals(listOf(Action.HISTORY), r.main)
         assertTrue(r.danger.isEmpty())
+    }
+
+    @Test fun `the sheet never offers Share, Notes or Print any more`() {
+        for (type in listOf("RENT", "SALE")) for (status in listOf("RESERVED", "PICKUPED", "RETURNED", "COMPLETED", "CANCELLED")) {
+            val r = rows(type, status, canExtend = status == "PICKUPED")
+            assertTrue("$type $status", r.main.none { it == Action.SHARE || it == Action.NOTES || it == Action.PRINT })
+        }
+    }
+
+    @Test fun `a staff member on a returned order has an empty sheet, so the dots button is hidden`() {
+        val r = OrderActionSheet.rows(OrderDetailLogic.actions("RENT", "RETURNED", false, false), isSale = false, canExtend = false, canViewHistory = false)
+        assertTrue(r.isEmpty)
+        assertTrue(!rows("RENT", "RETURNED").isEmpty) // the owner still has History
     }
 
     @Test fun notesSubtitle() {

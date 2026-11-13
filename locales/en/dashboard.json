@@ -288,7 +288,9 @@
       "refund": "refund {amount}",
       "fee": "+ fees {amount}",
       "empty": "Nothing to hand over or take back today.",
-      "more": "+{count} more"
+      "more": "+{count} more",
+      "moreNotes": "{count} with notes",
+      "notesLabel": "Notes"
     },
     "top": {
       "title": "Most rented",

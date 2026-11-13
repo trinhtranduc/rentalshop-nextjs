@@ -30,6 +30,7 @@ export * from './subscription';
 export * from './pricing';
 export * from './countries';
 export * from './currency';
+export * from './shop-language';
 export * from './brand';
 export * from './modules';
 

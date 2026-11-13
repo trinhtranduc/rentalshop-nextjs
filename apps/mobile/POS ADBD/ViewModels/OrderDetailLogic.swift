@@ -27,6 +27,8 @@ struct OrderDetailActions: Equatable {
 /// A row of the ⋯ sheet (#519, board CT-thao-tac)
 enum OrderSheetAction: Equatable {
     case print, share, notes, edit, extend, history
+    /// #1515: "Đặt lại" lives in the button row under the status block, never in the ⋯ sheet
+    case reorder
     case cancel, delete
 
     var isDestructive: Bool { self == .cancel || self == .delete }
@@ -232,13 +234,24 @@ enum OrderDetailLogic {
         }
     }
 
-    /// Only what has no button on the screen: Print (unless the bottom bar has it), Share (#639, always), Notes,
-    /// Edit / Extend when allowed and not on screen, History; then Cancel / Delete when allowed and not on screen
+    /// #1515 (layout D): the row under the status block. Đặt lại (only with orders.create), Chia sẻ (#639, always), Ghi chú.
+    static func quickButtons(canCreateOrders: Bool) -> [OrderSheetAction] {
+        (canCreateOrders ? [.reorder] : []) + [.share, .notes]
+    }
+
+    /// "Ghi chú · N" on the quick button: the order's note text counts 1, plus one per photo; nothing yet = no number
+    static func notesCount(text: String?, photoCount: Int) -> Int {
+        let hasText = !(text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return (hasText ? 1 : 0) + max(0, photoCount)
+    }
+
+    /// Only the work on the order itself (#1515, layout D: Đặt lại, Chia sẻ and Ghi chú are buttons on the screen):
+    /// Edit / Extend when allowed, History; then Cancel / Delete when allowed and not on screen.
     /// #670: History only when [canViewHistory] (not OUTLET_STAFF)
     static func sheetActions(_ actions: OrderDetailActions, orderType: OrderType, canExtend: Bool,
                              canViewHistory: Bool = true) -> OrderSheetActions {
         let onScreen = bottomButtons(actions, orderType: orderType, canExtend: canExtend)
-        var candidates: [OrderSheetAction] = [.print, .share, .notes]
+        var candidates: [OrderSheetAction] = []
         if actions.canEdit { candidates.append(.edit) }
         if canExtend { candidates.append(.extend) }
         if canViewHistory { candidates.append(.history) }
@@ -247,6 +260,11 @@ enum OrderDetailLogic {
         if actions.canDelete { danger.append(.delete) }
         return OrderSheetActions(main: candidates.filter { !onScreen.contains($0) },
                                  destructive: danger.filter { !onScreen.contains($0) })
+    }
+
+    /// #1515: a sheet with no row (a staff member on a returned order) gets no ⋯ button
+    static func showsMore(_ sheet: OrderSheetActions) -> Bool {
+        !sheet.main.isEmpty || !sheet.destructive.isEmpty
     }
 
     /// "Có 1 ghi chú · 2 ảnh", "Có 2 ảnh"; "Thêm ghi chú" when there is none

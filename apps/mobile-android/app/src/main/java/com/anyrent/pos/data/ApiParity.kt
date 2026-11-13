@@ -11,6 +11,8 @@ import com.anyrent.pos.domain.error.AppError
 import com.anyrent.pos.domain.orders.ExtensionUpdate
 import com.anyrent.pos.domain.orders.NotesStep
 import com.anyrent.pos.domain.orders.OrderDetailLogic
+import com.anyrent.pos.domain.settings.EmailLanguageSetting
+import com.anyrent.pos.domain.settings.ShopLanguage
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.Request
@@ -36,7 +38,34 @@ object ApiParity {
         storeName: String,
         address: String,
         businessTags: List<String> = listOf("OTHER"),
+        country: String? = null,
+        language: String? = null,
+        currency: String? = null,
+        timezone: String? = null,
     ): Result<Unit> = runCatching {
+        val body = registerBody(email, password, fullName, phone, storeName, address, businessTags, country, language, currency, timezone)
+            .toString()
+            .toRequestBody(jsonMedia)
+        val json = ApiClient.get().publicPost("/api/auth/register", body)
+        if (json.has("success") && !json.optBoolean("success")) {
+            error(ApiErrorMessages.resolve(AnyRentApp.instance, json.optString("code"), json.optString("message").ifBlank { "Registration failed" }))
+        }
+    }
+
+    /** Body of `POST /api/auth/register`; #1539 (app) adds country, language, currency, timezone when given (the old screen sends none) */
+    internal fun registerBody(
+        email: String,
+        password: String,
+        fullName: String,
+        phone: String,
+        storeName: String,
+        address: String,
+        businessTags: List<String>,
+        country: String? = null,
+        language: String? = null,
+        currency: String? = null,
+        timezone: String? = null,
+    ): JSONObject {
         val parts = fullName.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
         val first = parts.firstOrNull() ?: fullName
         val last = parts.drop(1).joinToString(" ")
@@ -52,12 +81,11 @@ object ApiParity {
             .put("address", address)
             .put("businessTags", JSONArray(businessTags))
             .put("pricingType", "FIXED")
-            .toString()
-            .toRequestBody(jsonMedia)
-        val json = ApiClient.get().publicPost("/api/auth/register", body)
-        if (json.has("success") && !json.optBoolean("success")) {
-            error(ApiErrorMessages.resolve(AnyRentApp.instance, json.optString("code"), json.optString("message").ifBlank { "Registration failed" }))
-        }
+        if (country != null) body.put("country", country)
+        if (language != null) body.put("language", language)
+        if (currency != null) body.put("currency", currency)
+        if (timezone != null) body.put("timezone", timezone)
+        return body
     }
 
     fun resendVerification(email: String): Result<Unit> = runCatching {
@@ -150,6 +178,8 @@ object ApiParity {
         val country: String?,
         val zipCode: String?,
         val description: String?,
+        /** #1539 (app) "Ngôn ngữ email"; null when the API does not send `merchant.language` (row hidden) */
+        val language: ShopLanguage? = null,
     )
 
     fun getMerchantInfo(): Result<MerchantInfo> = runCatching {
@@ -165,7 +195,14 @@ object ApiParity {
             country = merchant.optText("country"),
             zipCode = merchant.optText("zipCode"),
             description = merchant.optText("description"),
+            language = EmailLanguageSetting.fromMerchant(merchant),
         )
+    }
+
+    /** #1539 (app) `PUT /api/settings/merchant { language }` (MERCHANT; 403 otherwise); the language the API stored */
+    fun setEmailLanguage(language: ShopLanguage): Result<ShopLanguage> = runCatching {
+        val body = EmailLanguageSetting.body(language).toString().toRequestBody(jsonMedia)
+        EmailLanguageSetting.fromResponse(ApiClient.get().authedPut("/api/settings/merchant", body)) ?: language
     }
 
     /** #1313: `PUT /api/settings/merchant` with the shop form (MERCHANT; 403 for other roles). An empty text clears a field. */

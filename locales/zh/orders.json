@@ -79,6 +79,12 @@
         "deleteMessage": "{name}有 {count} 件商品。这些商品将被删除。",
         "delete": "删除"
       },
+      "reorder": {
+        "skipped": "{count} 件商品已下架，未加入购物车",
+        "empty": "没有可再次下单的商品",
+        "limit": "已打开 10 个购物车。请先关闭一个再重试。",
+        "failed": "无法读取订单，不能再次下单"
+      },
       "option": {
         "BLOCK": "按天数档位 · {price}"
       },

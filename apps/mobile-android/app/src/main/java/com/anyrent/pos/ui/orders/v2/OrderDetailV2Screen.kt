@@ -34,7 +34,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.MoveToInbox
+import androidx.compose.material.icons.outlined.Print
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.anyrent.pos.domain.orders.ReorderCart
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.StickyNote2
@@ -84,6 +90,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.anyrent.pos.R
 import com.anyrent.pos.data.ApiParity
+import com.anyrent.pos.data.CartStore
 import com.anyrent.pos.data.DepositModeStore
 import com.anyrent.pos.data.DepositPlanApi
 import com.anyrent.pos.data.PermissionManager
@@ -324,6 +331,41 @@ fun OrderDetailV2Screen(
         OrderDetailLogic.showsReadyToDeliver(it.summary.orderType, it.summary.status, PermissionManager.canUpdateOrders())
     } == true
 
+    // #1515: the sheet rows are known up front so ⋯ is hidden when nothing is left in the sheet
+    val canViewHistory = remember { PermissionManager.canViewChangeHistory() }
+    val sheetRows = if (detail != null && actions != null) {
+        OrderActionSheet.rows(actions, detail.summary.orderType.equals("SALE", ignoreCase = true), canExtend, canViewHistory)
+    } else {
+        null
+    }
+    val canReorder = remember { ReorderCart.canReorder(SessionStore.permissions, SessionStore.role) }
+    var reordering by remember { mutableStateOf(false) }
+    // Đặt lại: the order is already here; load each product, build a cart like it at today's prices, open the cart
+    fun reorder(order: OrderDetail) {
+        if (reordering) return
+        reordering = true
+        scope.launch {
+            val plan = ReorderCart.plan(order)
+            val products = withContext(Dispatchers.IO) {
+                plan.items.map { it.productId }.distinct()
+                    .mapNotNull { id -> ApiClient.get().getProduct(id).getOrNull()?.let { id to it } }
+                    .toMap()
+            }
+            val result = CartStore.startReorderCart(plan, products)
+            reordering = false
+            when (result.status) {
+                ReorderCart.Status.EMPTY -> toast(context.getString(R.string.order_reorder_empty))
+                ReorderCart.Status.LIMIT -> toast(context.getString(R.string.order_reorder_limit))
+                ReorderCart.Status.OPENED -> {
+                    if (result.skipped > 0) {
+                        toast(context.resources.getQuantityString(R.plurals.order_reorder_skipped, result.skipped, result.skipped))
+                    }
+                    onEditInCart()
+                }
+            }
+        }
+    }
+
     Column(Modifier.fillMaxSize().background(DS.Colors.Surface).statusBarsPadding()) {
         // Top bar: back, order code, ⋯ (#519: the printer icon moved into the ⋯ sheet)
         Row(
@@ -350,7 +392,7 @@ fun OrderDetailV2Screen(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (detail != null && actions != null) {
+            if (detail != null && actions != null && sheetRows?.isEmpty == false) {
                 // #519 (board CT-thao-tac): only ⋯ in the header; it opens the action sheet
                 IconButton(onClick = { menuOpen = true }) {
                     Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.detail_more_actions), tint = DS.Colors.Text, modifier = Modifier.size(DS.Icon.Md))
@@ -387,6 +429,19 @@ fun OrderDetailV2Screen(
                             }
                         } else {
                             null
+                        },
+                    )
+                    QuickActionRow(
+                        buttons = ReorderCart.quickButtons(canReorder),
+                        notesCount = ReorderCart.notesCount(detail.summary.notes, detail.notesImages.size),
+                        busy = reordering || state.busy || editing,
+                        onClick = { quick ->
+                            when (quick) {
+                                ReorderCart.Quick.REORDER -> reorder(detail)
+                                ReorderCart.Quick.SHARE ->
+                                    scope.launch { runCatching { shareOrderReceipt(context, detail) }.onFailure { toast(it.message) } }
+                                ReorderCart.Quick.NOTES -> openNotes(detail)
+                            }
                         },
                     )
                     // #1418 the photos are often below the first screen; a failed upload is told here
@@ -452,9 +507,7 @@ fun OrderDetailV2Screen(
     }
 
     if (menuOpen && detail != null && actions != null) {
-        val isSale = detail.summary.orderType.equals("SALE", ignoreCase = true)
-        val canViewHistory = remember { PermissionManager.canViewChangeHistory() }
-        val rows = OrderActionSheet.rows(actions, isSale, canExtend, canViewHistory)
+        val rows = sheetRows ?: OrderActionSheet.Rows(emptyList(), emptyList())
         val historyTexts = remember { changeHistoryTexts(context.resources) }
         LaunchedEffect(orderId) {
             // #670: the API answers 403 to OUTLET_STAFF; no request, no row
@@ -1111,7 +1164,7 @@ private fun DetailBottomBar(
         when {
             // #930: "In" (no icon) next to Giao đồ / Nhận trả; Sửa đơn and Gia hạn are in the ⋯ sheet
             primary == DetailPrimary.HAND_OVER -> {
-                SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
+                SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, false, Icons.Outlined.Print, onPrint)
                 // #1380: the API refuses the hand-over until the stage is collected. #1400: collect it from here
                 val stages = detail.deposit?.installments.orEmpty()
                 val stage = DepositPlanLogic.stageToCollectBeforeHandOver(detail.deposit, detail.summary.status)
@@ -1145,20 +1198,25 @@ private fun DetailBottomBar(
                 }
             }
             primary == DetailPrimary.TAKE_RETURN -> {
-                SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, onClick = onPrint)
-                PrimaryBarButton(stringResource(R.string.detail_take_return), Modifier.weight(2f), !busy, onReturn)
+                SecondaryBarButton(stringResource(R.string.print), Modifier.weight(1f), true, false, Icons.Outlined.Print, onPrint)
+                PrimaryBarButton(stringResource(R.string.detail_take_return), Modifier.weight(2f), !busy, Icons.Outlined.MoveToInbox, onReturn)
             }
             isSale && canCancel -> {
                 SecondaryBarButton(stringResource(R.string.cancel_order), Modifier.weight(1f), !busy, destructive = true, onClick = onCancel)
-                PrimaryBarButton(stringResource(R.string.detail_print_receipt), Modifier.weight(2f), true, onPrint)
+                PrimaryBarButton(stringResource(R.string.detail_print_receipt), Modifier.weight(2f), true, Icons.Outlined.Print, onPrint)
             }
-            else -> PrimaryBarButton(stringResource(R.string.detail_print_receipt), Modifier.weight(1f), true, onPrint)
+            else -> PrimaryBarButton(stringResource(R.string.detail_print_receipt), Modifier.weight(1f), true, Icons.Outlined.Print, onPrint)
         }
     }
 }
 
 @Composable
-internal fun PrimaryBarButton(text: String, modifier: Modifier, enabled: Boolean, onClick: () -> Unit) {
+internal fun PrimaryBarButton(text: String, modifier: Modifier, enabled: Boolean, onClick: () -> Unit) =
+    PrimaryBarButton(text, modifier, enabled, null, onClick)
+
+/** #1515: the same button with an icon left of the label */
+@Composable
+internal fun PrimaryBarButton(text: String, modifier: Modifier, enabled: Boolean, icon: ImageVector?, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -1167,6 +1225,11 @@ internal fun PrimaryBarButton(text: String, modifier: Modifier, enabled: Boolean
         colors = ButtonDefaults.buttonColors(containerColor = DS.Colors.Primary),
         contentPadding = PaddingValues(horizontal = 12.dp),
     ) {
+        // #1515: an icon left of the label when given (Nhận trả, In hoá đơn); decorative, the text says it
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+        }
         // #1243: "Giao đồ · thu 12.345.678" wraps to a second line on a small phone; the amount is never cut
         Text(text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
@@ -1179,6 +1242,17 @@ internal fun SecondaryBarButton(
     enabled: Boolean,
     destructive: Boolean = false,
     onClick: () -> Unit,
+) = SecondaryBarButton(text, modifier, enabled, destructive, null, onClick)
+
+/** #1515: the same button with an icon left of the label */
+@Composable
+internal fun SecondaryBarButton(
+    text: String,
+    modifier: Modifier,
+    enabled: Boolean,
+    destructive: Boolean,
+    icon: ImageVector?,
+    onClick: () -> Unit,
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -1190,7 +1264,50 @@ internal fun SecondaryBarButton(
             contentColor = if (destructive) DS.Status.Late.text else DS.Colors.Text,
         ),
     ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+        }
         Text(text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** #1515 layout D: Đặt lại (blue, only with orders.create), Chia sẻ, Ghi chú · N under the status block, 44 dp tall */
+@Composable
+private fun QuickActionRow(buttons: List<ReorderCart.Quick>, notesCount: Int, busy: Boolean, onClick: (ReorderCart.Quick) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        buttons.forEach { quick ->
+            val (icon, label) = when (quick) {
+                ReorderCart.Quick.REORDER -> Icons.Outlined.ContentCopy to stringResource(R.string.order_reorder)
+                ReorderCart.Quick.SHARE -> Icons.Outlined.Share to stringResource(R.string.order_quick_share)
+                ReorderCart.Quick.NOTES -> Icons.Outlined.StickyNote2 to
+                    if (notesCount > 0) stringResource(R.string.order_quick_notes_count, notesCount) else stringResource(R.string.order_quick_notes)
+            }
+            val tint = if (quick == ReorderCart.Quick.REORDER) DS.Colors.Primary else DS.Colors.Text
+            val iconTint = if (quick == ReorderCart.Quick.REORDER) DS.Colors.Primary else DS.Colors.TextMuted
+            Row(
+                Modifier
+                    .weight(1f)
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(12.dp)) // mockup token #E2E8F0, lighter than DS.Colors.Border
+                    .clickable(enabled = !busy, role = androidx.compose.ui.semantics.Role.Button) { onClick(quick) }
+                    .testTag("order.detail.quick.${quick.name.lowercase()}"),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    label, color = tint, fontSize = DS.TextSize.Secondary,
+                    fontWeight = if (quick == ReorderCart.Quick.REORDER) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 

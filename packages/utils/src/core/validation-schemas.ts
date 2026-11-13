@@ -75,6 +75,10 @@ export const registerSchema = z.object({
   country: z.string().min(2, 'Please select a valid country').optional(),
   // Sign-up UI language (en, vi, ja, zh-TW…): onboarding seed copy (en* → en, else vi) and shop currency (#1143)
   locale: z.string().trim().max(20).optional(),
+  // #1539 shop language picked on the form (emails, seed copy); wins over `locale`
+  language: z.enum(['vi', 'en']).optional(),
+  // #1539 shop currency picked on the form; unset → from `language`, else #1143
+  currency: z.enum(['VND', 'USD']).optional(),
   // For outlet staff registration
   merchantCode: z.string().optional(),
   outletCode: z.string().optional(),
@@ -128,6 +132,9 @@ export const merchantGoogleRegisterSchema = z.object({
   country: z.string().min(2, 'Please select a valid country').optional(),
   // Sign-up UI language, as in registerSchema (#1143)
   locale: z.string().trim().max(20).optional(),
+  // #1539 as in registerSchema
+  language: z.enum(['vi', 'en']).optional(),
+  currency: z.enum(['VND', 'USD']).optional(),
 });
 
 export const loginGoogleSchema = z.object({
@@ -228,6 +235,8 @@ export const productUpdateSchema = productBaseSchema.partial().extend({
 export const productsQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(),
   categoryId: z.coerce.number().int().positive().optional(),
+  // #1536 several categories, ids separated by commas ("3,7"); read with parseIdList, junk ids are dropped
+  categoryIds: z.string().optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   merchantId: z.coerce.number().int().positive().optional(),

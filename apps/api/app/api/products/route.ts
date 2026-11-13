@@ -17,6 +17,7 @@ import {
   batchTodayEffectiveAvailability,
   resolveProductListAvailabilityOutletId,
 } from '../../../lib/product-list-effective-availability';
+import { parseIdList } from '../../../lib/id-list';
 
 const IMAGE_UPLOAD_ERROR_PREFIX = 'IMAGE_UPLOAD_FAILED::';
 
@@ -76,6 +77,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       search, 
       merchantId: queryMerchantId,
       categoryId, 
+      categoryIds: categoryIdsParam,
       outletId: queryOutletId,
       available,
       listed,
@@ -140,6 +142,7 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       if (shopHasSingleActiveOutlet(activeOutlets)) listedOutletId = undefined;
     }
 
+    const categoryIds = parseIdList(categoryIdsParam);
     const searchFilters = {
       merchantId: filterMerchantId,
       outletId: filterOutletId,
@@ -154,6 +157,8 @@ export const GET = withPermissions(['products.view'])(async (request, { user, us
       page: page || 1,
       limit: limit || 50,
       ...(listedOutletId ? { listedOutletId } : {}),
+      // #1536 several categories; absent = the same filters as before
+      ...(categoryIds.length > 0 ? { categoryIds } : {}),
     };
 
     console.log('🔍 Using simplified db.products.search with filters:', searchFilters);

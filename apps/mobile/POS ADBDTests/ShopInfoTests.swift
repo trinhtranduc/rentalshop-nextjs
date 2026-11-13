@@ -114,4 +114,36 @@ final class ShopInfoTests: XCTestCase {
         XCTAssertEqual(value(.outletStaff), "Chỉ xem")
         XCTAssertEqual(value(.outletInventory), "Chỉ xem")
     }
+
+    // MARK: - Ngôn ngữ email (#1539 (app))
+
+    func testEmailLanguageOnlyForTheOwnerWhenTheProfileSendsIt() {
+        XCTAssertEqual(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: "en"), .en)
+        XCTAssertEqual(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: "vi"), .vi)
+        XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: nil), "older API: hidden")
+        XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: "ja"))
+        for role in [Role.outletAdmin, .outletStaff, .outletInventory, .admin] {
+            XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: role, profileLanguage: "en"), "\(role)")
+        }
+        XCTAssertNil(EmailLanguageLogic.visibleLanguage(role: nil, profileLanguage: "en"))
+    }
+
+    func testProfileWithoutLanguageHidesTheRow() throws {
+        let old = try JSONDecoder.shared.decode(TabsV2APIService.MerchantInfoBody.self,
+                                                from: Data(#"{"name":"Shop A","currency":"VND"}"#.utf8))
+        XCTAssertNil(old.language)
+        XCTAssertEqual(ShopInfoLogic.shopRows(emailLanguage: EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: old.language)),
+                       [.shop, .currency])
+
+        let new = try JSONDecoder.shared.decode(TabsV2APIService.MerchantInfoBody.self,
+                                                from: Data(#"{"name":"Shop A","language":"en"}"#.utf8))
+        XCTAssertEqual(new.language, "en")
+        XCTAssertEqual(ShopInfoLogic.shopRows(emailLanguage: EmailLanguageLogic.visibleLanguage(role: .merchant, profileLanguage: new.language)),
+                       [.shop, .currency, .emailLanguage], "right after Tiền tệ")
+    }
+
+    func testEmailLanguageBodyOnlyCarriesTheLanguage() {
+        XCTAssertEqual(EmailLanguageLogic.body(.en) as? [String: String], ["language": "en"])
+        XCTAssertEqual(EmailLanguageLogic.body(.vi) as? [String: String], ["language": "vi"])
+    }
 }

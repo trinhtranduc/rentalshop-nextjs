@@ -288,7 +288,9 @@
       "refund": "hoàn cọc {amount}",
       "fee": "+ phí {amount}",
       "empty": "Hôm nay không có đơn cần giao hay nhận trả.",
-      "more": "+{count} đơn nữa"
+      "more": "+{count} đơn nữa",
+      "moreNotes": "{count} có ghi chú",
+      "notesLabel": "Ghi chú"
     },
     "top": {
       "title": "Thuê nhiều nhất",

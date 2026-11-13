@@ -92,11 +92,12 @@ describe('outlet-operations for "Việc cần làm" (#362)', () => {
     expect(noShow).toEqual(expect.objectContaining({
       orderNumber: 'ORD-001-0053', customerName: 'Mai Thảo', productNames: 'Áo dài trắng (mới)', itemCount: 2,
       amountDue: 600000, refundDue: 0, lateDays: 2,
-      items: [{ name: 'Áo dài trắng', quantity: 2 }],
+      // #1527: each item also carries its note (null here)
+      items: [{ name: 'Áo dài trắng', quantity: 2, notes: null }],
     }));
     const overdue = res.body.data.overdueReturns.orders[0];
     expect(overdue).toEqual(expect.objectContaining({ daysOverdue: 2, lateDays: 2, amountDue: 0, refundDue: 500000 }));
-    expect(overdue.items).toEqual([{ name: 'Vest xám', quantity: 1 }]);
+    expect(overdue.items).toEqual([{ name: 'Vest xám', quantity: 1, notes: null }]);
     expect(res.body.data.tomorrowPickups).toEqual({ count: 0, orders: [] });
     expect(res.body.data.tomorrow).toEqual({ pickups: 0, returns: 0 });
   });

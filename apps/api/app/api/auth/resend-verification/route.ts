@@ -4,6 +4,7 @@ import { db, resendVerificationToken } from '@rentalshop/database';
 import { sendVerificationEmail } from '@rentalshop/utils';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { createRateLimiter } from '@rentalshop/middleware';
+import { shopLanguage } from '@rentalshop/constants';
 
 const resendVerificationSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -83,7 +84,9 @@ export async function POST(request: NextRequest) {
     const emailResult = await sendVerificationEmail(
       user.email,
       userName,
-      verification.token
+      verification.token,
+      // #1539 in the shop language (no shop / unset: Vietnamese)
+      shopLanguage((user.merchant as { language?: unknown } | null | undefined)?.language)
     );
 
     console.log('📬 [Resend Verification] Email result:', {

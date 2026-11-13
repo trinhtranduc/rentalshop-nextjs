@@ -6,11 +6,14 @@
  */
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { FileText } from 'lucide-react';
 import {
   chartBars,
   formatDayLabel,
   initials,
+  notedRowCount,
   progressPercent,
+  rowHasNotes,
   topBars,
   topCustomerBars,
   type TopBar,
@@ -510,6 +513,28 @@ export function TodayCard({
 
 const MAX_ROWS = 5;
 
+/** #1527: the order note, then "<product>: <note>" per item; each at most 2 lines (the order page has the full text) */
+function RowNotes({ row, t }: { row: TodayRow; t: T }) {
+  return (
+    <span
+      data-todo-notes
+      className="flex min-w-0 items-start gap-2 rounded-lg bg-ar-unprepared-bg/50 px-2.5 py-1.5 text-[13px] leading-5 text-ar-ink-2 [grid-column:1/-1] sm:[grid-column:2/-1]"
+    >
+      <FileText aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 flex-none text-ar-chart-amber" />
+      <span className="sr-only">{t('home.orders.notesLabel')}: </span>
+      <span className="flex min-w-0 flex-col">
+        {row.notes && <span className="line-clamp-2 break-words">{row.notes}</span>}
+        {row.itemNotes.map((item, i) => (
+          <span key={`${item.name}-${i}`} className="line-clamp-2 break-words">
+            {item.name && <span className="font-semibold text-ar-ink">{item.name}: </span>}
+            {item.notes}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
 export function TodayOrders({
   rows,
   loading,
@@ -527,6 +552,8 @@ export function TodayOrders({
 }) {
   const shown = rows.slice(0, MAX_ROWS);
   const more = rows.length - shown.length;
+  // #1527: notes of the rows not shown, so "+N đơn nữa" says they are there
+  const moreNotes = notedRowCount(rows, MAX_ROWS);
   return (
     <section className={`${cardClass} flex min-w-0 flex-[2_1_560px] flex-col px-[22px] py-5`}>
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -564,7 +591,7 @@ export function TodayOrders({
               <li key={`${r.kind}-${r.id}-${r.stage ?? ''}`} className="border-t border-ar-line-soft" data-todo-kind={r.kind}>
                 <Link
                   href={`/orders/${r.orderNumber}`}
-                  className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 py-2.5 text-ar-ink no-underline hover:bg-ar-surface-muted sm:grid-cols-[36px_minmax(0,1fr)_auto_auto]"
+                  className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-2.5 text-ar-ink no-underline hover:bg-ar-surface-muted sm:grid-cols-[36px_minmax(0,1fr)_auto_auto]"
                 >
                   <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-ar-subtle text-[13px] font-semibold text-ar-ink-2">
                     {initials(r.customerName)}
@@ -579,14 +606,22 @@ export function TodayOrders({
                   </span>
                   {tagEl('hidden sm:inline-flex')}
                   <span className="whitespace-nowrap text-right text-sm font-semibold tabular-nums sm:min-w-[92px]">{amount}</span>
+                  {rowHasNotes(r) && <RowNotes row={r} t={t} />}
                 </Link>
               </li>
             );
           })}
           {more > 0 && (
             <li className="border-t border-ar-line-soft pt-2.5">
-              <Link href="/orders" className="text-[13px] text-ar-muted no-underline hover:underline">
+              <Link href="/orders" className="inline-flex flex-wrap items-center gap-x-1.5 text-[13px] text-ar-muted no-underline hover:underline">
                 {t('home.orders.more', { count: more })}
+                {moreNotes > 0 && (
+                  <span data-todo-more-notes className="inline-flex items-center gap-1 text-ar-ink-2">
+                    <span aria-hidden="true">·</span>
+                    <FileText aria-hidden="true" className="h-3.5 w-3.5 text-ar-chart-amber" />
+                    {t('home.orders.moreNotes', { count: moreNotes })}
+                  </span>
+                )}
               </Link>
             </li>
           )}

@@ -4,6 +4,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { db, createPasswordResetToken } from '@rentalshop/database';
 import { sendPasswordResetEmail } from '@rentalshop/utils';
 import { passwordResetRateLimiter } from '@rentalshop/middleware';
+import { shopLanguage } from '@rentalshop/constants';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -115,7 +116,9 @@ export async function POST(request: NextRequest) {
       const emailResult = await sendPasswordResetEmail(
         user.email,
         userName,
-        passwordReset.token
+        passwordReset.token,
+        // #1539 in the shop language (no shop / unset: Vietnamese)
+        shopLanguage((user.merchant as { language?: unknown } | null | undefined)?.language)
       );
 
       console.log('📬 [Forget Password] Email result:', {

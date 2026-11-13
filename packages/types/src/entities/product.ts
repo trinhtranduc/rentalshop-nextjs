@@ -364,6 +364,8 @@ export interface ProductSearchFilter {
   q?: string;           // Search query parameter (consistent with orders)
   merchantId?: number;  // Changed from string to number
   categoryId?: number;  // Changed from string to number
+  /** #1536 products of any of these categories; wins over categoryId (web sends it only for 2+ categories) */
+  categoryIds?: number[];
   outletId?: number;    // Added outletId for filtering by outlet
   search?: string;      // Keep for backward compatibility
   page?: number;

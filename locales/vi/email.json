@@ -136,5 +136,26 @@
       "TRANSFER": "Chuyển khoản ngân hàng",
       "CASH": "Tiền mặt"
     }
+  },
+  "accountEmail": {
+    "tagline": "Hệ thống quản lý cho thuê",
+    "hello": "Xin chào",
+    "linkHint": "Nếu nút không hoạt động, bạn có thể sao chép và dán liên kết sau vào trình duyệt của mình:",
+    "noteLabel": "Lưu ý:",
+    "rights": "Tất cả các quyền được bảo lưu."
+  },
+  "verification": {
+    "subject": "Xác thực email của bạn - AnyRent",
+    "title": "Xác thực email của bạn",
+    "intro": "Cảm ơn bạn đã đăng ký tài khoản tại AnyRent! Để hoàn tất quá trình đăng ký và kích hoạt tài khoản của bạn, vui lòng xác thực địa chỉ email của bạn bằng cách nhấp vào nút bên dưới:",
+    "button": "Xác thực email",
+    "note": "Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không tạo tài khoản này, vui lòng bỏ qua email này."
+  },
+  "passwordReset": {
+    "subject": "Đặt lại mật khẩu của bạn - AnyRent",
+    "title": "Đặt lại mật khẩu của bạn",
+    "intro": "Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại AnyRent. Để tạo mật khẩu mới, vui lòng nhấp vào nút bên dưới:",
+    "button": "Đặt lại mật khẩu",
+    "note": "Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này và mật khẩu của bạn sẽ không thay đổi."
   }
 }

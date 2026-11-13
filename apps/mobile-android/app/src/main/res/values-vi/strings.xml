@@ -2563,4 +2563,25 @@
     <string name="plan_restore_short">Khôi phục</string>
     <string name="detail_excess_deposit">Cọc dư so với tiền thuê</string>
     <string name="surcharge">Phụ thu</string>
+    <!-- #1515 đặt lại đơn -->
+    <string name="order_reorder">Đặt lại</string>
+    <string name="order_reorder_hint">Tạo giỏ mới giống đơn này</string>
+    <string name="order_quick_share">Chia sẻ</string>
+    <string name="order_quick_notes">Ghi chú</string>
+    <string name="order_quick_notes_count">Ghi chú · %1$d</string>
+    <plurals name="order_reorder_skipped">
+        <item quantity="other">%1$d món không còn bán, đã bỏ khỏi giỏ</item>
+    </plurals>
+    <string name="order_reorder_empty">Không còn món nào để đặt lại</string>
+    <string name="order_reorder_limit">Đang mở 10 giỏ. Đóng bớt một giỏ rồi đặt lại.</string>
+    <string name="order_reorder_failed">Không đọc được đơn để đặt lại</string>
+    <!-- #1539 (app) sign-up country / language / currency, Settings "Ngôn ngữ email" -->
+    <string name="signup_country">Quốc gia</string>
+    <string name="signup_language">Ngôn ngữ</string>
+    <string name="signup_currency">Tiền tệ</string>
+    <string name="signup_country_search">Tìm quốc gia</string>
+    <string name="signup_country_empty">Không có quốc gia phù hợp</string>
+    <string name="signup_language_currency_hint">Ngôn ngữ dùng cho email và dữ liệu mẫu. Cả hai đổi được sau trong Cài đặt.</string>
+    <string name="settings_email_language">Ngôn ngữ email</string>
+    <string name="settings_email_language_hint">Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.</string>
 </resources>

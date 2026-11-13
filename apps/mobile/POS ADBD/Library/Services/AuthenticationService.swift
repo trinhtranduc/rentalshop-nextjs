@@ -4,7 +4,7 @@ import SwiftyJSON
 protocol AuthenticationServiceProtocol {
     func login(emailUser: String, passwordUser: String, completion: @escaping (_ user: User?, _ error: NSError?) -> Void)
     func logout(completion: @escaping (_ success: Bool, _ error: NSError?) -> Void)
-    func createAccount(loginName: String, password: String, storeName: String, address: String, name: String, phone: String, businessTags: [String], completion: @escaping (_ user: User?, _ error: NSError?) -> Void)
+    func createAccount(loginName: String, password: String, storeName: String, address: String, name: String, phone: String, businessTags: [String], country: String?, language: String?, currency: String?, timezone: String?, completion: @escaping (_ user: User?, _ error: NSError?) -> Void)
     func accountDeletion(completion: @escaping (_ success: Bool, _ error: NSError?) -> Void)
     func validateAccount(completion: @escaping (_ error: NSError?) -> Void)
     func resendVerification(email: String, completion: @escaping (_ success: Bool, _ error: NSError?) -> Void)
@@ -145,41 +145,18 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
         name: String,
         phone: String,
         businessTags: [String] = ["OTHER"],
+        country: String? = nil,
+        language: String? = nil,
+        currency: String? = nil,
+        timezone: String? = nil,
         completion: @escaping (User?, NSError?) -> Void
     ) {
         let path = APIEndpoint.Path.register
         let fullURL = APIEndpoint.currentBaseURL + path
         
-        // Split name into firstName and lastName
-        // If only one word, use it for firstName and set lastName to empty string
-        // If multiple words, first word is firstName, rest is lastName
-        let nameComponents = name.trimmingCharacters(in: .whitespaces).components(separatedBy: " ").filter { !$0.isEmpty }
-        let firstName = nameComponents.first ?? name
-        let lastName = nameComponents.count > 1 ? nameComponents.dropFirst().joined(separator: " ") : ""
-        
-        // Niche tags — server derives businessType from these
-        let allowedTags: Set<String> = [
-            "AO_DAI", "COSTUME", "WEDDING_DRESS", "EQUIPMENT", "VEHICLE", "FILM_EQUIPMENT", "OTHER"
-        ]
-        let resolvedTags = businessTags
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
-            .filter { allowedTags.contains($0) }
-        let tagsPayload = resolvedTags.isEmpty ? ["OTHER"] : Array(Set(resolvedTags))
-        
-        // Updated request format according to API documentation
-        let params: [String: Any] = [
-            "firstName": firstName,
-            "lastName": lastName, // Can be empty string if user only entered one name
-            "email": loginName,
-            "password": password,
-            "phone": phone,
-            "role": "MERCHANT",
-            "businessName": storeName,
-            "outletName": storeName,
-            "address": address,
-            "businessTags": tagsPayload,
-            "pricingType": "FIXED"
-        ]
+        let params = Self.registerParameters(loginName: loginName, password: password, storeName: storeName, address: address,
+                                             name: name, phone: phone, businessTags: businessTags, country: country,
+                                             language: language, currency: currency, timezone: timezone)
         
         print("📡 Register Request - URL: \(fullURL)")
         print("📡 Register Params: \(params)")
@@ -277,6 +254,48 @@ class AuthenticationService: BaseService, AuthenticationServiceProtocol {
             }
     }
     
+    /// Body of POST /api/auth/register. #1539 (app): `country`, `language`, `currency`, `timezone` only when given
+    /// (the old create-store screen sends none of them).
+    static func registerParameters(loginName: String, password: String, storeName: String, address: String, name: String,
+                                   phone: String, businessTags: [String], country: String? = nil, language: String? = nil,
+                                   currency: String? = nil, timezone: String? = nil) -> [String: Any] {
+        // Split name into firstName and lastName
+        // If only one word, use it for firstName and set lastName to empty string
+        // If multiple words, first word is firstName, rest is lastName
+        let nameComponents = name.trimmingCharacters(in: .whitespaces).components(separatedBy: " ").filter { !$0.isEmpty }
+        let firstName = nameComponents.first ?? name
+        let lastName = nameComponents.count > 1 ? nameComponents.dropFirst().joined(separator: " ") : ""
+        
+        // Niche tags — server derives businessType from these
+        let allowedTags: Set<String> = [
+            "AO_DAI", "COSTUME", "WEDDING_DRESS", "EQUIPMENT", "VEHICLE", "FILM_EQUIPMENT", "OTHER"
+        ]
+        let resolvedTags = businessTags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
+            .filter { allowedTags.contains($0) }
+        let tagsPayload = resolvedTags.isEmpty ? ["OTHER"] : Array(Set(resolvedTags))
+        
+        // Updated request format according to API documentation
+        var params: [String: Any] = [
+            "firstName": firstName,
+            "lastName": lastName, // Can be empty string if user only entered one name
+            "email": loginName,
+            "password": password,
+            "phone": phone,
+            "role": "MERCHANT",
+            "businessName": storeName,
+            "outletName": storeName,
+            "address": address,
+            "businessTags": tagsPayload,
+            "pricingType": "FIXED"
+        ]
+        let extra = ["country": country, "language": language, "currency": currency, "timezone": timezone]
+        for (key, value) in extra {
+            if let value, !value.isEmpty { params[key] = value }
+        }
+        return params
+    }
+
     func accountDeletion(completion: @escaping (Bool, NSError?) -> Void) {
         let path = APIEndpoint.currentBaseURL + APIEndpoint.Path.accountDeletion
         let fullURL = path.hasPrefix("http") ? path : APIEndpoint.currentBaseURL + path

@@ -175,7 +175,9 @@ export const productsApi = {
     
     if (filters.search) params.append('q', filters.search); // Use 'q' parameter like orders
     if (filters.merchantId) params.append('merchantId', filters.merchantId.toString()); // Filter by merchant
-    if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
+    // #1536 several categories as categoryIds=3,7; one category stays categoryId (also understood by an older API)
+    if (filters.categoryIds && filters.categoryIds.length > 0) params.append('categoryIds', filters.categoryIds.join(','));
+    else if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
     if (filters.outletId) params.append('outletId', filters.outletId.toString());
     if (filters.available !== undefined) params.append('available', filters.available.toString());
     // #1341 only the products listed at the branch ("Hiện ở chi nhánh"); only `true` is sent
@@ -484,12 +486,13 @@ export const productsApi = {
   },
 
   /**
-   * Bulk import products
+   * Bulk import products. #1533: `outletId` = the branch the file's stock belongs to; rows may carry
+   * `outlets: [{ outletId, stock }]` (the branches ticked "Hiện"). Without both, the API behaves as before.
    */
-  async bulkImport(products: any[]): Promise<ApiResponse> {
+  async bulkImport(products: any[], options?: { outletId?: number }): Promise<ApiResponse> {
     const response = await authenticatedFetch(apiUrls.products.bulkImport, {
       method: 'POST',
-      body: JSON.stringify({ products }),
+      body: JSON.stringify(options?.outletId ? { products, outletId: options.outletId } : { products }),
     });
     return await parseApiResponse<ApiResponse>(response);
   },

@@ -39,6 +39,14 @@ struct BranchRow: Equatable {
 enum ShopFormProblem: Equatable { case nameRequired, addressRequired }
 
 enum ShopInfoLogic {
+    /// #1539 (app): rows of the CỬA HÀNG block
+    enum ShopRow: Equatable { case shop, currency, emailLanguage }
+
+    /// The shop card, Tiền tệ, then Ngôn ngữ email when it is shown
+    static func shopRows(emailLanguage: SignupLanguage?) -> [ShopRow] {
+        emailLanguage == nil ? [.shop, .currency] : [.shop, .currency, .emailLanguage]
+    }
+
     /// What the Settings row opens
     enum Destination: Equatable {
         /// MERCHANT: the shop card and the list of branches
@@ -142,4 +150,18 @@ enum ShopInfoLogic {
     }
 
     private static func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+}
+
+/// #1539 (app): "Ngôn ngữ email" in Thông tin cửa hàng (verification, password reset and plan emails)
+enum EmailLanguageLogic {
+    /// The owner sees it once GET /api/users/profile sends `merchant.language`; older APIs do not, so it stays hidden
+    static func visibleLanguage(role: Role?, profileLanguage: String?) -> SignupLanguage? {
+        guard role == .merchant else { return nil }
+        return SignupLanguage.parse(profileLanguage)
+    }
+
+    /// PUT /api/settings/merchant with only the language
+    static func body(_ language: SignupLanguage) -> [String: Any] {
+        ["language": language.rawValue]
+    }
 }

@@ -1553,6 +1553,111 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.backToLogin()
     }
 
+    /// #1541 sign-up step 1: Quốc gia (search, pick Hoa Kỳ) turns Ngôn ngữ into English and Tiền tệ into USD; the shop is
+    /// created with the phone's time zone (launched with TZ=America/Los_Angeles). Merchant run only: it creates a shop.
+    /// The run prints `E2E_NOTE: signup1541 <email>` so the DB row can be checked (country, language, currency, timezone).
+    func test0cSignupCountry() throws {
+        try e2e.requireFlag("newAuth")
+        guard e2e.role == "merchant" else { throw XCTSkip("creates a shop: merchant run only") }
+        app.launchEnvironment["TZ"] = "America/Los_Angeles"
+        app.launch()
+        e2e.settle(seconds: 4)
+        if app.tabBars.firstMatch.waitForExistence(timeout: 4) { e2e.logout() }
+        let create = e2e.button(["Create a new shop", "Tạo cửa hàng mới"])
+        XCTAssertTrue(create.waitForExistence(timeout: 15), "Create a new shop link")
+        create.tap()
+        let stamp = Int(Date().timeIntervalSince1970) % 100_000_000
+        XCTAssertTrue(e2e.type(into: ["Shop name", "Tên cửa hàng"], text: "E2E US Shop \(stamp)"), "Shop name field")
+        _ = e2e.type(into: ["Phone number", "Số điện thoại"], text: E2E.uniquePhone())
+        _ = e2e.type(into: ["Address", "Địa chỉ"], text: "100 Main St, Seattle")
+        e2e.hideKeyboard()
+        let country = app.buttons["signupCountry"], language = app.buttons["signupLanguage"], currency = app.buttons["signupCurrency"]
+        for _ in 0..<3 where !(country.exists && country.isHittable) { app.swipeUp() }
+        XCTAssertTrue(country.waitForExistence(timeout: 5), "Quốc gia field on step 1")
+        let value = { (el: XCUIElement) in (el.value as? String) ?? "" }
+        XCTAssertTrue(["Việt Nam", "Vietnam"].contains(value(country)), "default country is Việt Nam, got \(value(country))")
+        XCTAssertTrue(value(currency).hasPrefix("VND"), "default currency VND, got \(value(currency))")
+        XCTAssertTrue(["Tiếng Việt"].contains(value(language)), "default language Tiếng Việt, got \(value(language))")
+        e2e.shot("c1-signup-defaults")
+        country.tap()
+        let search = app.descendants(matching: .any)["countrySearch"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "country search field")
+        search.tap()
+        search.typeText("united")
+        sleep(1)
+        e2e.shot("c2-country-search")
+        let us = app.cells["country-US"]
+        XCTAssertTrue(us.waitForExistence(timeout: 5), "United States / Hoa Kỳ in the results")
+        us.tap()
+        XCTAssertTrue(country.waitForExistence(timeout: 5), "back on step 1")
+        sleep(1)
+        XCTAssertTrue(["Hoa Kỳ", "United States"].contains(value(country)), "country reads Hoa Kỳ, got \(value(country))")
+        XCTAssertEqual(value(language), "English", "language follows the country")
+        XCTAssertTrue(value(currency).hasPrefix("USD"), "currency follows the country, got \(value(currency))")
+        e2e.shot("c3-signup-us")
+        let next = e2e.button(["Continue", "Tiếp tục"])
+        for _ in 0..<3 where !(next.exists && next.isHittable) { app.swipeUp() }
+        next.tap()
+        XCTAssertTrue(e2e.type(into: ["Full name", "Họ và tên"], text: "E2E US Owner"), "Owner step opens")
+        let email = "e2e1541+\(stamp)@example.com"
+        _ = e2e.type(into: ["Email"], text: email)
+        let showToggles = app.buttons.matching(NSPredicate(format: "label IN %@", ["Show password", "Hiện mật khẩu"]))
+        for _ in 0..<2 where showToggles.firstMatch.exists { showToggles.firstMatch.tap() }
+        let typedNew = e2e.type(into: ["Password", "Mật khẩu"], text: "e2e123456")
+        let typedConfirm = e2e.type(into: ["Re-enter password", "Nhập lại mật khẩu"], text: "e2e123456")
+        if !(typedNew && typedConfirm) {
+            let secure = app.secureTextFields
+            if secure.count >= 2 {
+                e2e.typeSecure(secure.element(boundBy: 0), "e2e123456")
+                e2e.typeSecure(secure.element(boundBy: 1), "e2e123456")
+            }
+        }
+        e2e.hideKeyboard()
+        let terms = app.descendants(matching: .any).matching(NSPredicate(
+            format: "label BEGINSWITH 'Please accept the Privacy Policy' OR label BEGINSWITH 'Vui lòng'")).firstMatch
+        for _ in 0..<2 where !(terms.exists && terms.isHittable) { app.swipeUp() }
+        if terms.waitForExistence(timeout: 3) { terms.tap() } else { e2e.note("terms checkbox not found") }
+        let createShop = e2e.button(["Create shop", "Tạo cửa hàng"])
+        for _ in 0..<3 where !(createShop.exists && createShop.isHittable) { app.swipeUp() }
+        createShop.tap()
+        let verify = e2e.element(labelBeginsWith: ["Check your email", "Kiểm tra email"])
+        XCTAssertTrue(verify.waitForExistence(timeout: 20),
+                      "Sign-up ends on the activation email screen (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.note("signup1541 \(email)")
+        e2e.shot("c4-signup-email-sent")
+        e2e.backToLogin()
+    }
+
+    /// #1541 Thông tin cửa hàng → Ngôn ngữ email (owner): pick the other language, the row shows it.
+    /// Prints `E2E_NOTE: emailLanguage <before> -> <after>` for the DB check.
+    func test0dEmailLanguageSetting() throws {
+        try e2e.requireFlag("newSettings")
+        guard e2e.role == "merchant" else { throw XCTSkip("owner only") }
+        try e2e.start()
+        e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
+        sleep(3)
+        let info = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Store Information", "Thông tin cửa hàng"])).firstMatch
+        XCTAssertTrue(info.waitForExistence(timeout: 8), "the Thông tin cửa hàng row")
+        e2e.tapRow(info)
+        sleep(3)
+        let row = app.descendants(matching: .any)["emailLanguage"]
+        for _ in 0..<3 where !(row.exists && row.isHittable) { app.swipeUp() }
+        XCTAssertTrue(row.waitForExistence(timeout: 8), "Ngôn ngữ email row for the owner")
+        let before = app.staticTexts["English"].exists ? "English" : "Tiếng Việt"
+        let after = before == "English" ? "Tiếng Việt" : "English"
+        e2e.shot("e1-store-info-email-language")
+        row.tap()
+        let choice = app.buttons[after]
+        XCTAssertTrue(choice.waitForExistence(timeout: 5), "\(after) in the sheet")
+        e2e.shot("e2-email-language-sheet")
+        choice.tap()
+        sleep(3)
+        e2e.dismissAlerts()
+        XCTAssertTrue(app.staticTexts[after].waitForExistence(timeout: 8), "the row now reads \(after)")
+        e2e.note("emailLanguage \(before) -> \(after)")
+        e2e.shot("e3-email-language-saved")
+    }
+
     func test5bOrderExtendEditPrint() throws {
         try e2e.requireFlag("newOrders")
         try e2e.requireFlag("newOrderDetail")
@@ -2495,21 +2600,72 @@ final class AnyRentE2ETests: XCTestCase {
 
         // A booked rental: the bottom bar has In + Giao đồ (#930); Sửa đơn is in the sheet
         guard e2e.openFirstOrder(chip: ["Booked", "Đã đặt"]) else { return XCTFail("No booked order to open") }
-        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Hand over", "Giao đồ"]],
-                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Edit order", "Sửa đơn"],
-                                   ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"], ["Reorder", "Đặt lại"], ["Share", "Chia sẻ"]],
+                        onScreenPrefixes: [["Hand over", "Giao đồ"], ["Notes", "Ghi chú"]],
+                        expected: [["Edit order", "Sửa đơn"], ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], absent: [["Extend", "Gia hạn"]],
                         shotPrefix: "47a-order-sheet-booked")
         e2e.goBack()
 
         // A renting order: In + Nhận trả on screen; Gia hạn in the sheet
         guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
-        checkOrderSheet(onScreen: [["Print", "In"]], onScreenPrefixes: [["Take back", "Nhận trả"]],
-                        expected: [["Share order", "Chia sẻ đơn"], ["Notes", "Ghi chú"], ["Extend", "Gia hạn"],
-                                   ["Change history", "Lịch sử thay đổi"]],
+        checkOrderSheet(onScreen: [["Print", "In"], ["Reorder", "Đặt lại"], ["Share", "Chia sẻ"]],
+                        onScreenPrefixes: [["Take back", "Nhận trả"], ["Notes", "Ghi chú"]],
+                        expected: [["Extend", "Gia hạn"], ["Change history", "Lịch sử thay đổi"]],
                         destructive: ["Cancel order", "Huỷ đơn"], shotPrefix: "47b-order-sheet-renting")
         XCTAssertFalse(e2e.button(["Edit order", "Sửa đơn"]).exists, "A renting order is not editable: no Sửa đơn in the sheet")
         e2e.goBack()
+    }
+
+    /// #1515 "Đặt lại" (layout D): Đặt lại, Chia sẻ and Ghi chú are a row under the status block; Đặt lại opens a new cart
+    /// with the lines of the order (the cart screen has quantity buttons); the shop's order is not changed.
+    func test5eOrderReorder() throws {
+        try e2e.requireFlag("newOrders")
+        try e2e.requireFlag("newOrderDetail")
+        try e2e.requireRole("merchant")
+        try e2e.start()
+        guard e2e.openFirstOrder(chip: ["Renting", "Đang thuê"]) else { return XCTFail("No renting order to open") }
+        let reorder = app.buttons["order.detail.reorder"]
+        let share = app.buttons["order.detail.share"]
+        let notes = app.buttons["order.detail.notes"]
+        XCTAssertTrue(reorder.waitForExistence(timeout: 10), "Đặt lại is under the status block")
+        XCTAssertTrue(share.exists && notes.exists, "Chia sẻ and Ghi chú are in the same row")
+        if reorder.exists && share.exists && notes.exists {
+            XCTAssertEqual(reorder.frame.minY, share.frame.minY, accuracy: 1, "one row")
+            XCTAssertLessThan(reorder.frame.maxX, share.frame.minX + 1, "Đặt lại first, then Chia sẻ")
+            XCTAssertLessThan(share.frame.maxX, notes.frame.minX + 1, "then Ghi chú")
+            XCTAssertGreaterThanOrEqual(reorder.frame.height, 43, "44 pt tall")
+        }
+        e2e.shot("47c-reorder-detail")
+        reorder.tap()
+        XCTAssertTrue(e2e.button(["Thêm 1", "One more"]).waitForExistence(timeout: 15), "the new cart has the order's lines")
+        sleep(1)
+        e2e.shot("47d-reorder-cart")
+        // A rent cart asks for the days like a new rental; pick today and create the order
+        e2e.cartRentToday()
+        XCTAssertTrue(e2e.createOrderFromCart(cta: E2E.rentCta, shotPrefix: "47e-reorder-rent-created"),
+                      "the reordered rent cart creates an order (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.note("REORDER rent order created")
+
+        // A sale: the cart is a sale cart, no days
+        e2e.tapTab(["My Order", "Đơn hàng"], index: 1)
+        let sale = e2e.saleModeButton
+        guard sale.waitForExistence(timeout: 5) else { return XCTFail("Đơn bán switch") }
+        sale.tap()
+        sleep(2)
+        let row = app.cells.firstMatch
+        guard row.waitForExistence(timeout: 8) else { return XCTFail("No sale to open") }
+        e2e.tapRow(row)
+        let saleReorder = app.buttons["order.detail.reorder"]
+        XCTAssertTrue(saleReorder.waitForExistence(timeout: 10), "a sale order has Đặt lại too")
+        for _ in 0..<10 where !saleReorder.isHittable { sleep(1) }
+        e2e.shot("47f-reorder-sale-detail")
+        saleReorder.tap()
+        XCTAssertTrue(e2e.button(["Thêm 1", "One more"]).waitForExistence(timeout: 15), "the sale cart has the order's lines")
+        e2e.shot("47g-reorder-sale-cart")
+        XCTAssertTrue(e2e.createOrderFromCart(cta: ["Sell & collect", "Bán & thu tiền"], shotPrefix: "47h-reorder-sale-created"),
+                      "the reordered sale cart creates an order (last alert: \(e2e.lastAlert ?? "none"))")
+        e2e.note("REORDER sale order created")
     }
 
     /// Opens ⋯ on the open detail and checks the sheet against the buttons the screen shows
@@ -6940,6 +7096,16 @@ final class E2E {
     /// ⋯ → one row of the sheet (the sheet closes, then the row's action runs)
     @discardableResult
     func tapOrderSheetRow(_ labels: [String]) -> Bool {
+        // #1515 (layout D): Chia sẻ and Ghi chú are buttons under the status block now, not rows of the sheet
+        let quick = ["Share order": "order.detail.share", "Chia sẻ đơn": "order.detail.share",
+                     "Notes": "order.detail.notes", "Ghi chú": "order.detail.notes"]
+        if let id = labels.compactMap({ quick[$0] }).first {
+            let button = app.buttons[id]
+            guard button.waitForExistence(timeout: 10) else { note("button \(id) missing"); return false }
+            button.tap()
+            sleep(2)
+            return true
+        }
         guard openOrderSheet() else { return false }
         let row = button(labels)
         guard row.waitForExistence(timeout: 3) else { note("sheet row \(labels) missing"); return false }

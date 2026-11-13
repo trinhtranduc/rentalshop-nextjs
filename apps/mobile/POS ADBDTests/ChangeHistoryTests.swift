@@ -419,26 +419,60 @@ final class ChangeHistoryTests: XCTestCase {
         XCTAssertEqual(bar(.sale, .completed, manage: false), [.print])
     }
 
+    /// #1515 layout D: Chia sẻ and Ghi chú are buttons under the status block, not rows of the sheet
+    func testShareAndNotesAreNotInTheSheet() {
+        for type in OrderType.allCases {
+            for status in [OrderStatus.reserved, .pickuped, .returned, .completed, .cancelled] {
+                let listed = sheet(type, status, canExtend: true)
+                XCTAssertFalse((listed.main + listed.destructive).contains(.share), "\(type) \(status)")
+                XCTAssertFalse((listed.main + listed.destructive).contains(.notes), "\(type) \(status)")
+                XCTAssertFalse((listed.main + listed.destructive).contains(.reorder), "\(type) \(status)")
+            }
+        }
+    }
+
+    func testQuickButtonsFollowThePermissionToCreateOrders() {
+        XCTAssertEqual(OrderDetailLogic.quickButtons(canCreateOrders: true), [.reorder, .share, .notes])
+        XCTAssertEqual(OrderDetailLogic.quickButtons(canCreateOrders: false), [.share, .notes])
+    }
+
+    func testNotesCountIsTextPlusPhotos() {
+        XCTAssertEqual(OrderDetailLogic.notesCount(text: nil, photoCount: 0), 0)
+        XCTAssertEqual(OrderDetailLogic.notesCount(text: "  ", photoCount: 0), 0)
+        XCTAssertEqual(OrderDetailLogic.notesCount(text: "Giao sớm", photoCount: 0), 1)
+        XCTAssertEqual(OrderDetailLogic.notesCount(text: nil, photoCount: 2), 2)
+        XCTAssertEqual(OrderDetailLogic.notesCount(text: "Giao sớm", photoCount: 2), 3)
+    }
+
+    func testMoreButtonHidesWhenTheSheetIsEmpty() {
+        // a staff member on a returned order: nothing to edit, extend, see in history or cancel
+        let actions = OrderDetailLogic.actions(orderType: .rent, status: .returned, canManageOrders: false, canDeleteCancelled: false)
+        let none = OrderDetailLogic.sheetActions(actions, orderType: .rent, canExtend: false, canViewHistory: false)
+        XCTAssertFalse(OrderDetailLogic.showsMore(none))
+        XCTAssertTrue(OrderDetailLogic.showsMore(sheet(.rent, .returned)))
+        XCTAssertTrue(OrderDetailLogic.showsMore(sheet(.rent, .cancelled)))
+    }
+
     func testReservedRentalSheetHasEditNotPrint() {
-        XCTAssertEqual(sheet(.rent, .reserved), OrderSheetActions(main: [.share, .notes, .edit, .history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .reserved), OrderSheetActions(main: [.edit, .history], destructive: [.cancel]))
     }
 
     func testRentingSheetHasExtendNotPrint() {
-        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: true), OrderSheetActions(main: [.share, .notes, .extend, .history], destructive: [.cancel]))
-        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: false), OrderSheetActions(main: [.share, .notes, .history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: true), OrderSheetActions(main: [.extend, .history], destructive: [.cancel]))
+        XCTAssertEqual(sheet(.rent, .pickuped, canExtend: false), OrderSheetActions(main: [.history], destructive: [.cancel]))
     }
 
     func testCompletedSaleKeepsPrintAndCancelOnScreen() {
-        XCTAssertEqual(sheet(.sale, .completed), OrderSheetActions(main: [.share, .notes, .edit, .history], destructive: []))
+        XCTAssertEqual(sheet(.sale, .completed), OrderSheetActions(main: [.edit, .history], destructive: []))
     }
 
     func testReturnedAndCancelledOrders() {
-        XCTAssertEqual(sheet(.rent, .returned), OrderSheetActions(main: [.share, .notes, .history], destructive: []))
-        XCTAssertEqual(sheet(.rent, .cancelled), OrderSheetActions(main: [.share, .notes, .history], destructive: [.delete]))
+        XCTAssertEqual(sheet(.rent, .returned), OrderSheetActions(main: [.history], destructive: []))
+        XCTAssertEqual(sheet(.rent, .cancelled), OrderSheetActions(main: [.history], destructive: [.delete]))
     }
 
     func testStaffWithoutOrderRightsGetsNoEditOrCancel() {
-        XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.share, .notes, .history], destructive: []))
+        XCTAssertEqual(sheet(.rent, .reserved, manage: false), OrderSheetActions(main: [.history], destructive: []))
     }
 
     /// #1438: the icon of each row, and that the symbol exists on this iOS
@@ -446,6 +480,7 @@ final class ChangeHistoryTests: XCTestCase {
         let expected: [(OrderSheetAction, String)] = [
             (.print, "printer"), (.notes, "note.text"), (.history, "clock.arrow.circlepath"), (.edit, "pencil"),
             (.extend, "calendar.badge.plus"), (.share, "square.and.arrow.up"), (.cancel, "xmark.circle"), (.delete, "trash"),
+            (.reorder, "square.on.square"),
         ]
         for (action, symbol) in expected {
             XCTAssertEqual(OrderActionSheet.symbol(of: action), symbol)
@@ -474,7 +509,7 @@ final class ChangeHistoryTests: XCTestCase {
         }
         XCTAssertEqual(OrderDetailLogic.sheetActions(
             OrderDetailLogic.actions(orderType: .rent, status: .reserved, canManageOrders: false, canDeleteCancelled: false),
-            orderType: .rent, canExtend: false, canViewHistory: false), OrderSheetActions(main: [.share, .notes], destructive: []))
+            orderType: .rent, canExtend: false, canViewHistory: false), OrderSheetActions(main: [], destructive: []))
     }
 
     func testSheetNeverRepeatsABottomButton() {

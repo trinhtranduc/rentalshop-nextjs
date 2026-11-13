@@ -692,6 +692,38 @@ final class OrdersHomeTests: XCTestCase {
         XCTAssertFalse(model.isDirty)
     }
 
+    /// #1525: after a branch change no segment may show rows of the old branch
+    func testOutletChangeReloadsTheSegmentOnScreenWithASpinner() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1, 2])
+
+        model.outletDidChange()
+        XCTAssertEqual(source.orderCalls.count, 2, "one request for the segment on screen")
+        XCTAssertEqual(model.state, .loading, "spinner, not the old branch's rows")
+        XCTAssertTrue(ids(model).isEmpty)
+    }
+
+    func testOutletChangeDropsTheOtherSegmentsOldRows() {
+        let source = FakeSource()
+        let model = OrdersHomeViewModel(dataSource: source)
+        model.select(.rent)
+        source.completeOrders(at: 0, ids: [1, 2])
+        model.select(.sale)
+        source.completeOrders(at: 1, ids: [7])
+
+        model.outletDidChange() // sale is on screen
+        source.completeOrders(at: 2, ids: [70])
+        XCTAssertEqual(ids(model), [70])
+
+        model.select(.rent)
+        XCTAssertEqual(source.orderCalls.count, 4, "rent loads again")
+        XCTAssertEqual(source.orderCalls.last?.orderType, .rent)
+        XCTAssertTrue(ids(model).isEmpty, "the old branch's rent rows are not shown")
+        XCTAssertEqual(model.state, .loading)
+    }
+
     func testAppearReloadsOnlyWhenDirtyOrStale() {
         let source = FakeSource()
         let clock = Clock()

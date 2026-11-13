@@ -9,6 +9,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 usage() {
   cat <<'EOF'
 Usage: scripts/e2e/web-e2e.sh [--tz "Asia/Ho_Chi_Minh UTC America/Los_Angeles"] [--case WEB-RT-01,...] [--headed] [--show-bugs]
+       scripts/e2e/web-e2e.sh --reorder   (WEB-REORDER #1515: order page ⋯ → Đặt lại đơn → cart → create, needs a shop with orders.create)
        scripts/e2e/web-e2e.sh --roles | --plan | --stock | --accounts [--only WEB-ROLE-04,WEB-SUB-02] [--headed]
 
 For each browser time zone and case: open /orders/create, click the pickup and return days, add a fresh test product,
@@ -67,6 +68,7 @@ while [ $# -gt 0 ]; do
     --roles) SUITES+=(roles.web.js) ;;
     --plan) SUITES+=(plan.web.js) ;;
     --stock) SUITES+=(stock.web.js) ;;
+    --reorder) SUITES+=(reorder.web.js) ;;
     --accounts) SUITES+=(roles.web.js plan.web.js stock.web.js) ;;
     # --- WEB-UI (#727): the rest of the shop web, one file per area: --ui (all) or --ui orders[,customers,...]
     --ui)

@@ -25,6 +25,62 @@ export function parseId(raw: string | null | undefined): number | undefined {
   return Number.isInteger(n) && n > 0 ? n : undefined;
 }
 
+/**
+ * #1536 `category=3,7` → [3, 7] (the old `category=3` → [3]): positive whole numbers, first occurrence kept, junk dropped.
+ */
+export function parseCategoryIds(raw: string | null | undefined): number[] {
+  if (!raw) return [];
+  const out: number[] = [];
+  for (const part of raw.split(',')) {
+    const t = part.trim();
+    if (!/^\d+$/.test(t)) continue;
+    const n = Number(t);
+    if (Number.isSafeInteger(n) && n > 0 && !out.includes(n)) out.push(n);
+  }
+  return out;
+}
+
+/** URL value for the picked categories; null removes `category`. */
+export function categoryParam(ids: number[]): string | null {
+  return ids.length > 0 ? ids.join(',') : null;
+}
+
+export function toggleCategory(ids: number[], id: number): number[] {
+  return ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+}
+
+/** The one category for photo search ("Tìm bằng ảnh" takes a single category), else undefined. */
+export function singleCategory(ids: number[]): number | undefined {
+  return ids.length === 1 ? ids[0] : undefined;
+}
+
+export interface CategoryOption {
+  id: number;
+  name: string;
+  count: number | null;
+}
+
+/** What the "Danh mục" button says: Tất cả, the name of the one picked, or "N danh mục". */
+export function categoryButtonLabel(ids: number[], list: CategoryOption[]): { kind: 'all' } | { kind: 'one'; name: string } | { kind: 'many'; count: number } {
+  if (ids.length === 0) return { kind: 'all' };
+  const one = ids.length === 1 ? list.find((c) => c.id === ids[0]) : undefined;
+  return one ? { kind: 'one', name: one.name } : { kind: 'many', count: ids.length };
+}
+
+const fold = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase()
+    .trim();
+
+/** Categories whose name contains the typed text, ignoring accents and case. */
+export function matchCategories<C extends { name: string }>(list: C[], term: string): C[] {
+  const t = fold(term);
+  return t ? list.filter((c) => fold(c.name).includes(t)) : list;
+}
+
 export const SORTS = {
   name: { sortBy: 'name', sortOrder: 'asc' },
   newest: { sortBy: 'createdAt', sortOrder: 'desc' },
@@ -40,7 +96,8 @@ export function parseSort(raw: string | null | undefined): SortKey {
 
 export interface ListQuery {
   q: string;
-  categoryId?: number;
+  /** #1536 picked categories, in the order they were picked; [] = all */
+  categoryIds: number[];
   outletId?: number;
   sort: SortKey;
   page: number;
@@ -50,7 +107,7 @@ export interface ListQuery {
 export function parseListQuery(get: (key: string) => string | null): ListQuery {
   return {
     q: (get('q') || '').trim(),
-    categoryId: parseId(get('category')),
+    categoryIds: parseCategoryIds(get('category')),
     outletId: parseId(get('outlet')),
     sort: parseSort(get('sort')),
     page: parsePage(get('page')),
@@ -65,7 +122,9 @@ export function parseListQuery(get: (key: string) => string | null): ListQuery {
 export function toApiFilters(query: ListQuery, opts?: { listed?: boolean }) {
   return {
     search: query.q || undefined,
-    categoryId: query.categoryId,
+    // #1536 one category stays `categoryId` (an older API understands it); several go as `categoryIds`
+    categoryId: query.categoryIds.length === 1 ? query.categoryIds[0] : undefined,
+    ...(query.categoryIds.length > 1 ? { categoryIds: query.categoryIds } : {}),
     outletId: query.outletId,
     page: query.page,
     limit: query.limit,
@@ -108,7 +167,7 @@ export function branchColumnsFor(
 
 /** Same filters without paging, used to count or collect every matching product. */
 export function filterKey(query: ListQuery): string {
-  return JSON.stringify([query.q, query.categoryId ?? null, query.outletId ?? null]);
+  return JSON.stringify([query.q, query.categoryIds, query.outletId ?? null]);
 }
 
 // ----------------------------------------------------------------------------

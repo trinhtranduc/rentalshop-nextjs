@@ -30,8 +30,8 @@ android {
         applicationId = "anyrent.shop"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "0.1.12"
+        versionCode = 15
+        versionName = "0.1.13"
 
         // Overridden per buildType below.
         buildConfigField("String", "API_BASE_URL", "\"https://dev-api.anyrent.shop\"")

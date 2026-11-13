@@ -7,6 +7,17 @@ import {
   productCreateSchema, clientSafeErrorText, isTechnicalErrorText } from '@rentalshop/utils';
 import { API, USER_ROLE, isOutletRole } from '@rentalshop/constants';
 import { z } from 'zod';
+import {
+  OutletTallies,
+  existingProductWrites,
+  newProductStockRows,
+  readRowOutlets,
+  rowBranches,
+  unknownOutletIds,
+  usesBranches,
+  type BranchQty,
+} from '../../../../lib/import-branch-plan';
+import { RowResults } from '../../../../lib/import-row-results';
 
 const MAX_IMPORT_ROWS = 3000;
 
@@ -14,7 +25,9 @@ const bulkImportSchema = z.object({
   products: z
     .array(z.any())
     .min(1, 'At least one product is required')
-    .max(MAX_IMPORT_ROWS, `Maximum allowed is ${MAX_IMPORT_ROWS} rows`)
+    .max(MAX_IMPORT_ROWS, `Maximum allowed is ${MAX_IMPORT_ROWS} rows`),
+  // #1533: the branch the file's stock belongs to (optional; without it and without `products[].outlets`, as before)
+  outletId: z.number().int().positive().optional(),
 });
 
 // ============================================================================
@@ -344,6 +357,28 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // #1341: the import branch lists what it imports; every other active branch gets a 0 row that is NOT listed
     const otherOutletIds = Array.from(new Set<number>(activeOutlets.map((o: { id: number }) => o.id))).filter((id) => id !== outlet.id);
 
+    // #1533: the caller names the branches (`outletId` on the body, `outlets` on a row): stock and "Hiện" per branch.
+    // A branch role only ever writes its own outlet; the owner may only name active outlets of the shop.
+    const branchMode = usesBranches(parsed.data.outletId, products);
+    const activeIds: number[] = Array.from(new Set<number>(activeOutlets.map((o: { id: number }) => o.id)));
+    const ownOutletId: number | null = isOutletRole(user.role) ? Number(userScope.outletId) : null;
+    // Outlets a new product gets a stock row at
+    const stockOutletIds = ownOutletId !== null && !activeIds.includes(ownOutletId) ? [ownOutletId, ...activeIds] : activeIds;
+    const bodyOutletId: number | null = ownOutletId ?? parsed.data.outletId ?? null;
+    if (branchMode && ownOutletId === null) {
+      const named: number[] = parsed.data.outletId !== undefined ? [parsed.data.outletId] : [];
+      for (const p of products) {
+        const rowOutlets = readRowOutlets(p?.outlets);
+        if (Array.isArray(rowOutlets)) named.push(...rowOutlets.map((o) => o.outletId));
+      }
+      if (unknownOutletIds(named, activeIds).length > 0) {
+        return NextResponse.json(ResponseBuilder.error('OUTLET_NOT_FOUND'), { status: 404 });
+      }
+    }
+    const tallies = new OutletTallies(stockOutletIds);
+    // #1535: one entry per product sent, returned as `rows`
+    const rowResults = new RowResults(products.length);
+
     // Build category map
     const categories = await db.categories.search({ merchantId, limit: 1000 });
     const categoryMap = new Map<string, number>();
@@ -359,7 +394,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // STEP 1: Validate ALL products BEFORE transaction (all-or-nothing)
     // ========================================================================
     const validationErrors: Array<{ row: number; error: string }> = [];
-    const validatedProducts: Array<{ rowNumber: number; data: any; categoryId: number }> = [];
+    // `branches`: #1533 the ticked branches of the row (empty when the call does not name branches)
+    const validatedProducts: Array<{ rowNumber: number; data: any; categoryId: number; branches: BranchQty[] }> = [];
 
       for (let i = 0; i < products.length; i++) {
         const productData = products[i];
@@ -405,10 +441,25 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           continue;
         }
 
+        let branches: BranchQty[] = [];
+        if (branchMode) {
+          const rowOutlets = readRowOutlets(productData?.outlets);
+          if (rowOutlets === 'invalid') {
+            validationErrors.push({ row: rowNumber, error: 'outlets: each branch needs an outlet and a whole quantity of 0 or more' });
+            continue;
+          }
+          branches = rowBranches({ rowOutlets, rowStock: Number(validated.data.totalStock) || 0, bodyOutletId, ownOutletId });
+          if (branches.length === 0) {
+            validationErrors.push({ row: rowNumber, error: 'Choose at least one branch for this product' });
+            continue;
+          }
+        }
+
         validatedProducts.push({
           rowNumber,
           data: validated.data,
-          categoryId
+          categoryId,
+          branches
         });
       } catch (error: any) {
         const errorMessage = formatPrismaError(error, productData);
@@ -426,12 +477,14 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
 
     // If ANY validation errors, return errors WITHOUT importing (all-or-nothing)
     if (validationErrors.length > 0) {
+      for (const e of validationErrors) rowResults.set({ row: e.row, status: 'failed', error: e.error });
       return NextResponse.json(
         ResponseBuilder.success('PRODUCTS_IMPORTED', {
           imported: 0,
           failed: validationErrors.length,
           total: products.length,
-          errors: validationErrors
+          errors: validationErrors,
+          rows: rowResults.toJSON()
         })
       );
     }
@@ -440,6 +493,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // STEP 2: Check for duplicates and filter them out
     // ========================================================================
     const productsToImport: typeof validatedProducts = [];
+    // #1533: existing products (same barcode) that get stock at branches where they have none
+    const productsToUpdate: Array<{ rowNumber: number; productId: number; write: Array<BranchQty & { renting: number }>; skippedOutlets: number[] }> = [];
     const skipped: Array<{ row: number; reason: string }> = [];
 
     for (const validatedProduct of validatedProducts) {
@@ -451,10 +506,32 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
             where: {
               merchantId: merchant.id,
               barcode: validatedProduct.data.barcode.trim()
-            }
+            },
+            ...(branchMode
+              ? { select: { id: true, name: true, deletedAt: true, outletStock: { select: { outletId: true, stock: true, renting: true } } } }
+              : {})
           });
 
           if (existingProduct) {
+            // #1533: a live product gets stock at the ticked branches that hold none; a branch with stock is left alone
+            if (branchMode && !existingProduct.deletedAt) {
+              const current: Array<{ outletId: number; stock: number; renting?: number | null }> =
+                (existingProduct as { outletStock?: Array<{ outletId: number; stock: number; renting?: number | null }> }).outletStock || [];
+              const { write, skipped: holding } = existingProductWrites(validatedProduct.branches, current);
+              tallies.skipped(holding);
+              if (write.length > 0) {
+                productsToUpdate.push({
+                  rowNumber: validatedProduct.rowNumber,
+                  productId: existingProduct.id,
+                  write: write.map((b) => ({ ...b, renting: Number(current.find((c) => c.outletId === b.outletId)?.renting) || 0 })),
+                  skippedOutlets: holding,
+                });
+                continue;
+              }
+              rowResults.duplicate(validatedProduct.rowNumber, existingProduct, holding);
+            } else {
+              rowResults.duplicate(validatedProduct.rowNumber, existingProduct);
+            }
             skipped.push({
               row: validatedProduct.rowNumber,
               reason: 'Product with this barcode already exists'
@@ -469,19 +546,22 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           row: validatedProduct.rowNumber,
           reason: 'Failed to check duplicate'
         });
+        rowResults.set({ row: validatedProduct.rowNumber, status: 'failed', error: 'Failed to check duplicate' });
         console.error(`Error checking duplicate for product at row ${validatedProduct.rowNumber}:`, error);
       }
     }
 
     // If all products are duplicates, return early
-    if (productsToImport.length === 0) {
+    if (productsToImport.length === 0 && productsToUpdate.length === 0) {
       return NextResponse.json(
         ResponseBuilder.success('PRODUCTS_IMPORTED', {
           imported: 0,
           skipped: skipped.length,
           failed: 0,
           total: products.length,
-          errors: []
+          errors: [],
+          ...(branchMode ? { updated: 0, byOutlet: tallies.toJSON() } : {}),
+          rows: rowResults.toJSON()
         })
       );
     }
@@ -491,13 +571,30 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
     // ========================================================================
     try {
       // Calculate timeout based on number of products (60 seconds per 1000 products, min 30s)
-      const estimatedTimeout = Math.max(30000, Math.ceil((productsToImport.length / 1000) * 60000));
-      
+      const estimatedTimeout = Math.max(30000, Math.ceil(((productsToImport.length + productsToUpdate.length) / 1000) * 60000));
+
       const results = await prisma.$transaction(async (tx: any) => {
         const imported: any[] = [];
         const transactionSkipped: Array<{ row: number; reason: string }> = [];
+        let updated = 0;
 
         for (const validatedProduct of productsToImport) {
+          // #1533: ticked branches listed with their stock, every other outlet an unlisted 0 row
+          const stockRows = branchMode
+            ? newProductStockRows(validatedProduct.branches, stockOutletIds)
+            : [
+                {
+                  outletId: outlet.id,
+                  stock: validatedProduct.data.totalStock || 0,
+                  available: validatedProduct.data.totalStock || 0,
+                  renting: 0,
+                  isListed: true
+                },
+                ...otherOutletIds.map((outletId) => ({ outletId, stock: 0, available: 0, renting: 0, isListed: false }))
+              ];
+          const totalStock = branchMode
+            ? validatedProduct.branches.reduce((sum, b) => sum + b.stock, 0)
+            : validatedProduct.data.totalStock || 0;
           try {
             // Create product without include to improve performance
           const product = await tx.product.create({
@@ -505,7 +602,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
                 name: validatedProduct.data.name,
                 description: validatedProduct.data.description || null,
                 barcode: validatedProduct.data.barcode || null,
-                totalStock: validatedProduct.data.totalStock || 0,
+                totalStock,
                 rentPrice: validatedProduct.data.rentPrice,
                 salePrice: validatedProduct.data.salePrice || null,
                 costPrice: validatedProduct.data.costPrice || null,
@@ -515,16 +612,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
               merchantId: merchant.id,
                 categoryId: validatedProduct.categoryId,
               outletStock: {
-                create: [
-                  {
-                    outletId: outlet.id,
-                    stock: validatedProduct.data.totalStock || 0,
-                    available: validatedProduct.data.totalStock || 0,
-                    renting: 0,
-                    isListed: true
-                  },
-                  ...otherOutletIds.map((outletId) => ({ outletId, stock: 0, available: 0, renting: 0, isListed: false }))
-                ]
+                create: stockRows
               }
             },
               select: {
@@ -534,6 +622,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           });
 
           imported.push(product);
+          rowResults.set({ row: validatedProduct.rowNumber, status: 'created' });
+          if (branchMode) tallies.listed(validatedProduct.branches);
         } catch (error: any) {
             // If duplicate (P2002), skip and continue instead of throwing
             if (error.code === 'P2002') {
@@ -542,6 +632,7 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
                 row: validatedProduct.rowNumber,
                 reason: 'Product with this barcode already exists'
               });
+              rowResults.duplicate(validatedProduct.rowNumber, null);
               console.log(`Skipping duplicate product at row ${validatedProduct.rowNumber}`);
               continue; // Skip this product and continue with next
             }
@@ -559,7 +650,31 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           }
         }
 
-        return { imported, skipped: transactionSkipped };
+        // #1533: existing products: stock at the ticked branches that held none, listed; totalStock = sum of every row
+        for (const update of productsToUpdate) {
+          try {
+            for (const b of update.write) {
+              const available = Math.max(0, b.stock - b.renting);
+              await tx.outletStock.upsert({
+                where: { productId_outletId: { productId: update.productId, outletId: b.outletId } },
+                create: { productId: update.productId, outletId: b.outletId, stock: b.stock, available, renting: 0, isListed: true },
+                update: { stock: b.stock, available, isListed: true },
+              });
+            }
+            const sum = await tx.outletStock.aggregate({ where: { productId: update.productId }, _sum: { stock: true } });
+            await tx.product.update({ where: { id: update.productId }, data: { totalStock: sum?._sum?.stock ?? 0 } });
+          } catch (error: unknown) {
+            const errorMessage = formatPrismaError(error);
+            const e = error as { message?: string; code?: string };
+            console.error(`Error adding branch stock at row ${update.rowNumber}:`, { message: e.message, code: e.code });
+            throw new Error(`Row ${update.rowNumber}: ${errorMessage}`);
+          }
+          updated += 1;
+          rowResults.set({ row: update.rowNumber, status: 'updated', outlets: update.write.map((b) => b.outletId), skippedOutlets: update.skippedOutlets });
+          tallies.listed(update.write);
+        }
+
+        return { imported, skipped: transactionSkipped, updated };
       }, {
         maxWait: 10000, // Wait up to 10 seconds to acquire transaction lock
         timeout: estimatedTimeout // Dynamic timeout based on product count
@@ -574,11 +689,14 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           skipped: allSkipped.length,
           failed: 0,
           total: products.length,
-          errors: []
+          errors: [],
+          ...(branchMode ? { updated: results.updated, byOutlet: tallies.toJSON() } : {}),
+          rows: rowResults.toJSON()
         })
       );
     } catch (transactionError: any) {
       // Transaction failed - rollback occurred automatically
+      rowResults.rollback();
       let errorMessage = 'Failed to import products. Transaction rolled back.';
       
       if (transactionError.message) {
@@ -588,13 +706,15 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           if (match) {
             const rowNumber = parseInt(match[1]);
             const rowError = clientSafeErrorText({ message: match[2] }, errorMessage);
+            rowResults.set({ row: rowNumber, status: 'failed', error: rowError });
             
             return NextResponse.json(
               ResponseBuilder.success('PRODUCTS_IMPORTED', {
                 imported: 0,
                 failed: 1,
                 total: products.length,
-                errors: [{ row: rowNumber, error: rowError }]
+                errors: [{ row: rowNumber, error: rowError }],
+                rows: rowResults.toJSON()
               })
             );
           }
@@ -615,7 +735,8 @@ export const POST = withPermissions(['products.manage'])(async (request, { user,
           imported: 0,
           failed: products.length,
         total: products.length,
-          errors: [{ row: 1, error: errorMessage }]
+          errors: [{ row: 1, error: errorMessage }],
+          rows: rowResults.toJSON()
       })
     );
     }

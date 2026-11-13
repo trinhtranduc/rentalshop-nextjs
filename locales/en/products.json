@@ -334,7 +334,11 @@
     },
     "category": {
       "label": "Category",
-      "all": "All"
+      "all": "All",
+      "allCategories": "All categories",
+      "many": "{count} categories",
+      "search": "Search categories",
+      "none": "No matching category"
     },
     "outlet": {
       "label": "Outlet",
@@ -472,7 +476,8 @@
         "priceInvalid": "Invalid price",
         "stockInvalid": "Invalid quantity",
         "categoryUnknown": "Category does not exist",
-        "barcodeDuplicate": "Same barcode as row {row}"
+        "barcodeDuplicate": "Same barcode as row {row}",
+        "noBranch": "Tick at least one branch"
       },
       "categoryHint": "Unknown category: create it on the Categories page first, or leave it empty to use the default category.",
       "openCategories": "Open Categories",
@@ -492,7 +497,63 @@
         "rowLabel": "Row {row}",
         "failed": "Import failed",
         "toList": "View products",
-        "again": "Import another file"
+        "again": "Import another file",
+        "updated": "{count} existing products got stock at branches that had none",
+        "updatedOnly": "Added stock to {count} existing products",
+        "skippedBranch": "{count} rows skipped: the product already has stock at the chosen branches",
+        "branchListed": "{count} products shown at the branch",
+        "branchOutOfStock": "{count} out of stock",
+        "branchSkipped": "{count} skipped: already in stock"
+      },
+      "branch": {
+        "label": "File quantities belong to",
+        "hint": "New products show only at {name}. To sell them at another branch too, tick Show in that branch column and enter a quantity.",
+        "locked": "{name} (your branch)",
+        "lockedHint": "You can only import into your branch."
+      },
+      "legend": {
+        "on": "Shown at the branch",
+        "off": "Not shown",
+        "zero": "Quantity 0 = sold here, out of stock"
+      },
+      "col": {
+        "fromFile": "quantity from the file",
+        "allOn": "Tick all",
+        "copy": "Copy quantities from {name}"
+      },
+      "cell": {
+        "show": "Show at {name}, row {row}",
+        "qty": "Quantity at {name}, row {row}",
+        "outOfStock": "out of stock"
+      },
+      "rows": {
+        "statsLabel": "Results by status",
+        "all": "All rows",
+        "kind": {
+          "created": "Created",
+          "updated": "Stock added",
+          "duplicate": "Duplicate barcode",
+          "failed": "Error",
+          "skipped": "Not imported"
+        },
+        "noName": "(no name)",
+        "barcode": "Barcode {code}",
+        "qty": "Quantity {count}",
+        "added": "Stock added: {list}",
+        "keptBranches": "skipped {names} (already in stock)",
+        "exists": "“{name}” already uses this barcode",
+        "existsNoName": "Barcode already in the shop",
+        "hasStockAt": "already in stock at {names}",
+        "deleted": "Barcode of a deleted product “{name}”",
+        "deletedNoName": "Barcode of a deleted product",
+        "unchosen": "Not selected",
+        "noBranch": "No branch turned on",
+        "blocked": "Not imported because another row has an error",
+        "shortQty": "Stock {count} · {branches} branches",
+        "shortAdded": "+{count} at branches without stock",
+        "shortExists": "Already exists: {name}",
+        "shortDeleted": "Barcode of a deleted product",
+        "more": "Details for row {row}"
       }
     },
     "form": {

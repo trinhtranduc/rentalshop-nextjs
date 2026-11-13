@@ -213,6 +213,8 @@ final class TabsV2APIService: BaseService {
         let country: String?
         let taxId: String?
         let description: String?
+        /// #1539 (app): email language "vi" / "en"; older APIs do not send it
+        let language: String?
     }
 
     private struct ProfileShop: Decodable {
@@ -231,6 +233,15 @@ final class TabsV2APIService: BaseService {
     @discardableResult
     func updateMerchantInfo(_ values: [String: Any], completion: @escaping (MerchantInfoBody?, NSError?) -> Void) -> DataRequest {
         request(APIEndpoint.Path.merchantSettings, method: .put, parameters: values, completion: completion)
+    }
+
+    /// #1539 (app): PUT /api/settings/merchant `{ language }` (MERCHANT only; 403 otherwise). Answers the saved value.
+    @discardableResult
+    func setEmailLanguage(_ language: SignupLanguage, completion: @escaping (SignupLanguage?, NSError?) -> Void) -> DataRequest {
+        request(APIEndpoint.Path.merchantSettings, method: .put,
+                parameters: EmailLanguageLogic.body(language)) { (body: MerchantInfoBody?, error: NSError?) in
+            completion(body.map { SignupLanguage.parse($0.language) ?? language }, error)
+        }
     }
 
     // MARK: - Shop currency (#1145)
