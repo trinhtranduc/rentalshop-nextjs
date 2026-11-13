@@ -2608,11 +2608,11 @@
     <string name="order_reorder_failed">Could not read the order to reorder</string>
     <!-- #1539 (app) sign-up country / language / currency, Settings "Ngôn ngữ email" -->
     <string name="signup_country">Country</string>
-    <string name="signup_language">Language</string>
-    <string name="signup_currency">Currency</string>
     <string name="signup_country_search">Search country</string>
     <string name="signup_country_empty">No matching country</string>
-    <string name="signup_language_currency_hint">The language is used for emails and sample data. You can change both later in Settings.</string>
+    <string name="signup_country_hint">Currency %1$s · Emails in English · change in Settings.</string>
+    <!-- #1545 the language of the strings on screen ("en" here, "vi" in values-vi): the shop language sent at sign-up -->
+    <string name="signup_app_language">en</string>
     <string name="settings_email_language">Email language</string>
     <string name="settings_email_language_hint">Verification, password reset and plan emails are sent in this language.</string>
 </resources>
