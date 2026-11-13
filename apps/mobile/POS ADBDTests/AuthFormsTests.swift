@@ -118,7 +118,7 @@ final class AuthFormsTests: XCTestCase {
 
         XCTAssertTrue(draft.storeErrors.isEmpty)
         XCTAssertTrue(draft.ownerErrors.isEmpty)
-        XCTAssertEqual(draft.request(timezone: "Asia/Ho_Chi_Minh"), RegisterRequest(
+        XCTAssertEqual(draft.request(timezone: "Asia/Ho_Chi_Minh", appLanguage: "vi"), RegisterRequest(
             loginName: "lan@aodaiminhchau.vn",
             password: "matkhau123",
             storeName: "Áo dài Minh Châu",
@@ -164,66 +164,71 @@ final class AuthFormsTests: XCTestCase {
         XCTAssertTrue(cooldown.canResend(now: t0.addingTimeInterval(60)))
     }
 
-    // MARK: - Country, language, currency (#1539 (app))
+    // MARK: - Country; language from the app, currency from the country (#1545)
 
-    func testDraftDefaultsToVietnamVietnameseVnd() {
+    func testDraftDefaultsToVietnamVnd() {
         let draft = RegisterDraft()
         XCTAssertEqual(draft.countryCode, "VN")
-        XCTAssertEqual(draft.language, .vi)
         XCTAssertEqual(draft.currency, .vnd)
     }
 
-    func testCountryDefaults() {
-        XCTAssertEqual(SignupCountries.defaults(for: "VN").language, .vi)
-        XCTAssertEqual(SignupCountries.defaults(for: "VN").currency, .vnd)
-        XCTAssertEqual(SignupCountries.defaults(for: "vn").language, .vi)
+    func testCurrencyFollowsTheCountry() {
+        XCTAssertEqual(SignupCountries.currency(for: "VN"), .vnd)
+        XCTAssertEqual(SignupCountries.currency(for: "vn"), .vnd)
         for code in ["US", "JP", "HK", "FR"] {
-            XCTAssertEqual(SignupCountries.defaults(for: code).language, .en, code)
-            XCTAssertEqual(SignupCountries.defaults(for: code).currency, .usd, code)
+            XCTAssertEqual(SignupCountries.currency(for: code), .usd, code)
         }
     }
 
-    func testPickingACountryResetsLanguageAndCurrencyUntilTheCountryChangesAgain() {
+    func testPickingACountrySetsTheCodeAndTheCurrencyFollows() {
         var draft = RegisterDraft()
         draft.selectCountry("US")
         XCTAssertEqual(draft.countryCode, "US")
-        XCTAssertEqual(draft.language, .en)
         XCTAssertEqual(draft.currency, .usd)
 
-        draft.language = .vi
-        draft.currency = .vnd
+        draft.selectCountry("jp")
+        XCTAssertEqual(draft.countryCode, "JP")
+        XCTAssertEqual(draft.currency, .usd)
+
+        draft.selectCountry("vn")
+        XCTAssertEqual(draft.countryCode, "VN")
+        XCTAssertEqual(draft.currency, .vnd)
+    }
+
+    func testShopLanguageFollowsTheAppLanguageNotTheCountry() {
+        var draft = RegisterDraft()
+        var request = draft.request(timezone: "Asia/Ho_Chi_Minh", appLanguage: "en")
+        XCTAssertEqual(request.language, "en", "English app + Việt Nam → English emails")
+        XCTAssertEqual(request.currency, "VND", "currency still follows Việt Nam")
+
         draft.selectCountry("US")
-        XCTAssertEqual(draft.language, .vi, "the same country keeps the manual choice")
-        XCTAssertEqual(draft.currency, .vnd)
+        request = draft.request(timezone: "America/New_York", appLanguage: "vi")
+        XCTAssertEqual(request.language, "vi", "Vietnamese app + Hoa Kỳ → Vietnamese emails")
+        XCTAssertEqual(request.currency, "USD")
 
-        draft.selectCountry("JP")
-        XCTAssertEqual(draft.language, .en)
-        XCTAssertEqual(draft.currency, .usd)
-
-        draft.currency = .vnd
-        draft.selectCountry("VN")
-        XCTAssertEqual(draft.language, .vi)
-        XCTAssertEqual(draft.currency, .vnd)
+        XCTAssertEqual(draft.request(timezone: "UTC", appLanguage: "vi-VN").language, "vi")
+        XCTAssertEqual(draft.request(timezone: "UTC", appLanguage: "VI").language, "vi")
+        XCTAssertEqual(draft.request(timezone: "UTC", appLanguage: "ja").language, "en", "any other language → en")
+        XCTAssertEqual(draft.request(timezone: "UTC", appLanguage: "").language, "en")
     }
 
     func testRequestSendsEnglishCountryNameLanguageCurrencyAndTimezone() {
         var draft = RegisterDraft()
-        var request = draft.request(timezone: "Asia/Ho_Chi_Minh")
+        var request = draft.request(timezone: "Asia/Ho_Chi_Minh", appLanguage: "vi")
         XCTAssertEqual(request.country, "Vietnam")
         XCTAssertEqual(request.language, "vi")
         XCTAssertEqual(request.currency, "VND")
         XCTAssertEqual(request.timezone, "Asia/Ho_Chi_Minh")
 
         draft.selectCountry("US")
-        request = draft.request(timezone: "America/New_York")
+        request = draft.request(timezone: "America/New_York", appLanguage: "en")
         XCTAssertEqual(request.country, "United States")
         XCTAssertEqual(request.language, "en")
         XCTAssertEqual(request.currency, "USD")
         XCTAssertEqual(request.timezone, "America/New_York")
 
         draft.selectCountry("JP")
-        draft.language = .vi
-        request = draft.request(timezone: "Asia/Tokyo")
+        request = draft.request(timezone: "Asia/Tokyo", appLanguage: "vi")
         XCTAssertEqual(request.country, "Japan")
         XCTAssertEqual(request.language, "vi")
         XCTAssertEqual(request.currency, "USD")
@@ -233,8 +238,11 @@ final class AuthFormsTests: XCTestCase {
         XCTAssertEqual(draft.request(timezone: "Asia/Hong_Kong").country, "Hong Kong")
     }
 
-    func testRequestWithoutArgumentUsesThePhoneTimeZone() {
-        XCTAssertEqual(RegisterDraft().request.timezone, TimeZone.current.identifier)
+    func testRequestWithoutArgumentsUsesThePhoneTimeZoneAndTheAppLanguage() {
+        let request = RegisterDraft().request
+        XCTAssertEqual(request.timezone, TimeZone.current.identifier)
+        XCTAssertEqual(request.language, SignupCountries.appLanguage)
+        XCTAssertEqual(RegisterDraft().request(timezone: "UTC").language, SignupCountries.appLanguage)
     }
 
     func testRegisterBodyKeepsOldFieldsAndAddsTheNewOnes() throws {
@@ -350,19 +358,33 @@ final class AuthFormsTests: XCTestCase {
         return root.subviews.lazy.compactMap { self.view(id, in: $0) as T? }.first
     }
 
-    func testStepOneHasCountryLanguageAndCurrency() throws {
+    /// #1545: step 1 asks only Quốc gia; a hint under it names the currency and the email language
+    func testStepOneHasOnlyCountryAndItsHint() throws {
         let screen = RegisterStoreV2ViewController()
         screen.loadViewIfNeeded()
         let country: UIButton = try XCTUnwrap(view("signupCountry", in: screen.view))
         XCTAssertEqual(country.accessibilityValue, SignupCountries.name("VN", language: SignupCountries.appLanguage))
-        let language: UIButton = try XCTUnwrap(view("signupLanguage", in: screen.view))
-        XCTAssertTrue(language.showsMenuAsPrimaryAction)
-        XCTAssertEqual(language.accessibilityValue, "Tiếng Việt")
-        XCTAssertEqual(language.menu?.children.map(\.title), ["Tiếng Việt", "English"])
-        let currency: UIButton = try XCTUnwrap(view("signupCurrency", in: screen.view))
-        XCTAssertTrue(currency.showsMenuAsPrimaryAction)
-        XCTAssertEqual(currency.accessibilityValue, "VND (đ)")
-        XCTAssertEqual(currency.menu?.children.map(\.title), ["VND (đ)", "USD ($)"])
+        XCTAssertNil(view("signupLanguage", in: screen.view) as UIView?, "no Ngôn ngữ field")
+        XCTAssertNil(view("signupCurrency", in: screen.view) as UIView?, "no Tiền tệ field")
+        let hint: UILabel = try XCTUnwrap(view("signupCountryHint", in: screen.view))
+        XCTAssertEqual(hint.text, String(format: "authv2.countryHint".localized(), "VND"))
+        XCTAssertTrue(hint.text?.contains("VND") == true, hint.text ?? "nil")
+    }
+
+    /// #1545: the hint text in both languages; the email part is fixed by the app language
+    func testCountryHintCopyInBothLanguages() throws {
+        func strings(_ language: String) throws -> [String: String] {
+            var url = URL(fileURLWithPath: #filePath)
+            for _ in 0..<2 { url.deleteLastPathComponent() }
+            url.appendPathComponent("POS ADBD/\(language).lproj/Localizable.strings")
+            return try XCTUnwrap(NSDictionary(contentsOf: url) as? [String: String])
+        }
+        let vi = try XCTUnwrap(strings("vi-VN")["authv2.countryHint"])
+        let en = try XCTUnwrap(strings("en")["authv2.countryHint"])
+        XCTAssertEqual(String(format: vi, "VND"), "Tiền tệ VND · Email tiếng Việt · đổi được trong Cài đặt.")
+        XCTAssertEqual(String(format: vi, "USD"), "Tiền tệ USD · Email tiếng Việt · đổi được trong Cài đặt.")
+        XCTAssertEqual(String(format: en, "USD"), "Currency USD · Emails in English · change in Settings.")
+        XCTAssertEqual(String(format: en, "VND"), "Currency VND · Emails in English · change in Settings.")
     }
 
     func testCountryPickerListsVietnamFirstAndFilters() throws {

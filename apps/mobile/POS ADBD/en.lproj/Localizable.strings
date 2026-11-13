@@ -3286,11 +3286,9 @@
 "order.reorder.empty" = "No items left to reorder";
 "order.reorder.limit" = "10 carts are open. Close one before reordering.";
 "order.reorder.failed" = "Could not read the order to reorder";
-/* #1539 (app): sign-up country / language / currency, email language in Store Information */
+/* #1539 (app): sign-up country, email language in Store Information. #1545: only the country; the hint names the currency (%@ = VND / USD) */
 "authv2.country" = "Country";
-"authv2.language" = "Language";
-"authv2.currency" = "Currency";
-"authv2.localeHint" = "The language is used for emails and sample data. You can change both later in Settings.";
+"authv2.countryHint" = "Currency %@ · Emails in English · change in Settings.";
 "authv2.country.search" = "Search country";
 "authv2.country.empty" = "No matching country";
 "shopinfo.emailLanguage" = "Email language";

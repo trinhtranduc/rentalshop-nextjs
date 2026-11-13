@@ -47,16 +47,13 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
-import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -64,8 +61,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
@@ -98,7 +93,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -140,9 +134,6 @@ import com.anyrent.pos.domain.auth.RegisterDraftState
 import com.anyrent.pos.domain.auth.SignupCountries
 import com.anyrent.pos.domain.auth.ResendCooldown
 import com.anyrent.pos.domain.error.AppError
-import com.anyrent.pos.domain.money.ShopCurrency
-import com.anyrent.pos.domain.money.ShopMoney
-import com.anyrent.pos.domain.settings.ShopLanguage
 import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.push.PushRegistrar
 import kotlinx.coroutines.Dispatchers
@@ -550,7 +541,10 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val errorText = rememberErrorText()
-    val appLocale = SignupCountries.appLocale(LocalConfiguration.current.locales[0])
+    // #1545 the language of the strings on screen (values / values-vi), not locales[0]: a phone listing French then
+    // Vietnamese shows Vietnamese strings, so the hint says "Email tiếng Việt" and the request sends vi (as iOS)
+    val appLanguage = Locale.forLanguageTag(stringResource(R.string.signup_app_language))
+    val appLocale = SignupCountries.appLocale(appLanguage)
 
     fun clear(field: AuthField) {
         if (field in errors) errors = errors - field
@@ -571,7 +565,8 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
             step = 2
             return
         }
-        val request = draft.request()
+        // #1545 shop language = the app language, currency = the country, device time zone
+        val request = draft.request(appLanguage = appLanguage)
         loading = true
         scope.launch {
             // Same call as the current sign-up
@@ -647,45 +642,22 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
                 )
-                // #1539 (app) Quốc gia → Ngôn ngữ + Tiền tệ (Việt Nam → Tiếng Việt + VND, other → English + USD), both editable
-                AuthPickerField(
-                    label = stringResource(R.string.signup_country),
-                    value = remember(draft.countryCode, appLocale) { SignupCountries.displayName(draft.countryCode, appLocale) },
-                    icon = Icons.Outlined.Public,
-                    trailing = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                    tag = "signupCountry",
-                    onClick = { countryPicker = true },
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        AuthDropdownField(
-                            label = stringResource(R.string.signup_language),
-                            options = ShopLanguage.entries,
-                            selected = draft.language,
-                            optionLabel = { it.nativeName },
-                            optionTag = { "signupLanguage-${it.code}" },
-                            icon = Icons.Outlined.Translate,
-                            tag = "signupLanguage",
-                            modifier = Modifier.weight(1f),
-                            onPick = { draft = draft.copy(language = it) },
-                        )
-                        AuthDropdownField(
-                            label = stringResource(R.string.signup_currency),
-                            options = ShopCurrency.entries,
-                            selected = draft.currency,
-                            optionLabel = { ShopMoney.label(it) },
-                            optionTag = { "signupCurrency-${it.code}" },
-                            icon = Icons.Outlined.Payments,
-                            tag = "signupCurrency",
-                            modifier = Modifier.weight(1f),
-                            onPick = { draft = draft.copy(currency = it) },
-                        )
-                    }
+                // #1539 (app) Quốc gia; #1545 the only question: currency follows it, the email language is the app's
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AuthPickerField(
+                        label = stringResource(R.string.signup_country),
+                        value = remember(draft.countryCode, appLocale) { SignupCountries.displayName(draft.countryCode, appLocale) },
+                        icon = Icons.Outlined.Public,
+                        trailing = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                        tag = "signupCountry",
+                        onClick = { countryPicker = true },
+                    )
                     Text(
-                        stringResource(R.string.signup_language_currency_hint),
+                        stringResource(R.string.signup_country_hint, draft.currency.code),
                         color = AuthV2Style.TextMuted,
                         fontSize = DS.TextSize.Secondary,
                         lineHeight = 18.sp,
+                        modifier = Modifier.testTag("signupCountryHint"),
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -827,61 +799,6 @@ private fun AuthPickerField(
                 }
             }
             menu()
-        }
-    }
-}
-
-/** Half-width field with a drop-down of [options] (Ngôn ngữ, Tiền tệ) */
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun <T> AuthDropdownField(
-    label: String,
-    options: List<T>,
-    selected: T,
-    optionLabel: (T) -> String,
-    optionTag: (T) -> String,
-    icon: ImageVector,
-    tag: String,
-    modifier: Modifier = Modifier,
-    onPick: (T) -> Unit,
-) {
-    var open by remember { mutableStateOf(false) }
-    AuthPickerField(
-        label = label,
-        value = optionLabel(selected),
-        icon = icon,
-        trailing = Icons.Outlined.KeyboardArrowDown,
-        tag = tag,
-        modifier = modifier,
-        onClick = { open = true },
-    ) {
-        DropdownMenu(
-            expanded = open,
-            onDismissRequest = { open = false },
-            containerColor = AuthV2Style.FieldBackground,
-            // A popup is its own semantics tree: tags reach uiautomator only when asked here too
-            modifier = Modifier.semantics { testTagsAsResourceId = true },
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            optionLabel(option),
-                            color = AuthV2Style.Text,
-                            fontSize = DS.TextSize.Input,
-                            fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal,
-                        )
-                    },
-                    trailingIcon = if (option == selected) {
-                        { AppIcon(Icons.Outlined.Check, contentDescription = null, size = DS.Icon.Md, tint = AuthV2Style.Primary) }
-                    } else null,
-                    onClick = {
-                        open = false
-                        onPick(option)
-                    },
-                    modifier = Modifier.heightIn(min = 48.dp).testTag(optionTag(option)),
-                )
-            }
         }
     }
 }

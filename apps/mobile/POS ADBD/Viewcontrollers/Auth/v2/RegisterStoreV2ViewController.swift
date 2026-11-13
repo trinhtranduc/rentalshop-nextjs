@@ -32,10 +32,9 @@ final class RegisterStoreV2ViewController: BaseViewControler {
     private let addressField = AuthV2Field(title: "authv2.address".localized(), icon: "mappin.and.ellipse", placeholder: "authv2.address.placeholder".localized())
     private let chipFlow = AuthV2ChipFlow()
     private var chips: [AuthV2Chip] = []
-    // #1539 (app): Quốc gia, then Ngôn ngữ + Tiền tệ side by side
+    // #1545: only Quốc gia; the hint under it names the currency (from the country) and the email language (the app's)
     private let countryField = AuthV2SelectField(title: "authv2.country".localized(), icon: "globe")
-    private let languageField = AuthV2SelectField(title: "authv2.language".localized(), icon: "character.bubble", chevron: "chevron.down")
-    private let currencyField = AuthV2SelectField(title: "authv2.currency".localized(), icon: "banknote", chevron: "chevron.down")
+    private let countryHint = UILabel()
 
     // Step 2
     private let nameField = AuthV2Field(title: "authv2.fullName".localized(), icon: "person", placeholder: "authv2.fullName.placeholder".localized())
@@ -127,66 +126,38 @@ final class RegisterStoreV2ViewController: BaseViewControler {
         tagsStack.axis = .vertical
         tagsStack.spacing = 10
 
-        let localeRow = makeLocaleRow()
-        let localeHint = UILabel()
-        localeHint.text = "authv2.localeHint".localized()
-        localeHint.font = Utils.regularFont(size: DS.TextSize.secondary)
-        localeHint.textColor = AuthV2Style.textMuted
-        localeHint.numberOfLines = 0
+        countryField.button.accessibilityIdentifier = "signupCountry"
+        countryField.button.addTarget(self, action: #selector(countryTapped), for: .touchUpInside)
+        countryHint.accessibilityIdentifier = "signupCountryHint"
+        countryHint.font = Utils.regularFont(size: DS.TextSize.secondary)
+        countryHint.textColor = AuthV2Style.textMuted
+        countryHint.numberOfLines = 0
+        updateCountry()
 
         let stack = UIStackView(arrangedSubviews: [
             authV2TitleBlock(title: "authv2.store.title".localized(), subtitle: "authv2.store.subtitle".localized()),
-            storeNameField, phoneField, addressField, countryField, localeRow, localeHint, tagsStack
+            storeNameField, phoneField, addressField, countryField, countryHint, tagsStack
         ])
         stack.axis = .vertical
         stack.spacing = 14
         stack.setCustomSpacing(16, after: stack.arrangedSubviews[0])
-        stack.setCustomSpacing(6, after: localeRow)
-        stack.setCustomSpacing(18, after: localeHint)
+        stack.setCustomSpacing(6, after: countryField)
+        stack.setCustomSpacing(18, after: countryHint)
         return stack
     }
 
-    /// #1539 (app): Quốc gia opens the country list; Ngôn ngữ and Tiền tệ are menus
-    private func makeLocaleRow() -> UIStackView {
-        countryField.button.accessibilityIdentifier = "signupCountry"
-        countryField.button.addTarget(self, action: #selector(countryTapped), for: .touchUpInside)
-        languageField.button.accessibilityIdentifier = "signupLanguage"
-        languageField.button.showsMenuAsPrimaryAction = true
-        currencyField.button.accessibilityIdentifier = "signupCurrency"
-        currencyField.button.showsMenuAsPrimaryAction = true
-        updateLocaleFields()
-
-        let row = UIStackView(arrangedSubviews: [languageField, currencyField])
-        row.axis = .horizontal
-        row.distribution = .fillEqually
-        row.alignment = .top
-        row.spacing = 12
-        return row
-    }
-
-    private func updateLocaleFields() {
+    /// #1545: the country name, and the hint "Tiền tệ VND · Email tiếng Việt · …" (currency from the country)
+    private func updateCountry() {
         countryField.value = SignupCountries.name(draft.countryCode, language: SignupCountries.appLanguage)
-        languageField.value = draft.language.label
-        currencyField.value = draft.currency.label
-        languageField.button.menu = UIMenu(title: "", children: SignupLanguage.allCases.map { language in
-            UIAction(title: language.label, state: language == draft.language ? .on : .off) { [weak self] _ in
-                self?.draft.language = language
-                self?.updateLocaleFields()
-            }
-        })
-        currencyField.button.menu = UIMenu(title: "", children: ShopCurrency.allCases.map { currency in
-            UIAction(title: currency.label, state: currency == draft.currency ? .on : .off) { [weak self] _ in
-                self?.draft.currency = currency
-                self?.updateLocaleFields()
-            }
-        })
+        countryHint.text = String(format: "authv2.countryHint".localized(), draft.currency.rawValue)
     }
 
+    /// #1539 (app): Quốc gia opens the country list
     @objc private func countryTapped() {
         view.endEditing(true)
         let picker = CountryPickerV2ViewController(selected: draft.countryCode) { [weak self] code in
             self?.draft.selectCountry(code)
-            self?.updateLocaleFields()
+            self?.updateCountry()
         }
         navigationController?.pushViewController(picker, animated: true)
     }

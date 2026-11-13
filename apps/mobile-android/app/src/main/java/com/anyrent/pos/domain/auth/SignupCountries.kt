@@ -38,6 +38,15 @@ object SignupCountries {
     /** The app speaks Vietnamese or English (res/values-vi, res/values) */
     fun appLocale(system: Locale): Locale = if (system.language == "vi") Locale.forLanguageTag("vi") else Locale.ENGLISH
 
+    /** #1545 the shop (email) language at sign-up is the app language: Vietnamese → vi, any other → en (web `signupShopPrefs`) */
+    fun shopLanguage(appLanguage: Locale): ShopLanguage = if (appLanguage.language == "vi") ShopLanguage.VI else ShopLanguage.EN
+
+    /** #1545 the shop currency at sign-up: Việt Nam → VND, any other country → USD (web `signupShopPrefs`) */
+    fun currencyFor(code: String?): ShopCurrency {
+        val upper = code?.trim()?.uppercase(Locale.ROOT).orEmpty()
+        return if (upper.isEmpty() || upper == DEFAULT_CODE) ShopCurrency.VND else ShopCurrency.USD
+    }
+
     /** `country` sent at sign-up: the CLDR English name ("Vietnam", "United States"), HK "Hong Kong"; else the code */
     fun englishName(code: String): String {
         val upper = code.trim().uppercase(Locale.ROOT)
@@ -78,18 +87,4 @@ object SignupCountries {
 
     private fun regionName(code: String, locale: Locale): String? =
         runCatching { Locale.Builder().setRegion(code).build().getDisplayCountry(locale) }.getOrNull()?.takeIf { it.isNotBlank() && it != code }
-}
-
-/** #1539 (app) language and currency a country starts with: Việt Nam → vi + VND, any other → en + USD (web `signupDefaults`) */
-data class SignupDefaults(val language: ShopLanguage, val currency: ShopCurrency) {
-    companion object {
-        fun forCountry(code: String?): SignupDefaults {
-            val upper = code?.trim()?.uppercase(Locale.ROOT).orEmpty()
-            return if (upper.isEmpty() || upper == SignupCountries.DEFAULT_CODE) {
-                SignupDefaults(ShopLanguage.VI, ShopCurrency.VND)
-            } else {
-                SignupDefaults(ShopLanguage.EN, ShopCurrency.USD)
-            }
-        }
-    }
 }

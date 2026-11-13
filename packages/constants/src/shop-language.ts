@@ -16,8 +16,18 @@ export function shopLanguage(value: unknown): ShopLanguage {
   return value === 'en' ? 'en' : 'vi';
 }
 
-/** Sign-up defaults of a country code: Vietnam (or none picked yet) → Tiếng Việt + VND; any other → English + USD. */
-export function signupDefaults(countryCode: string | null | undefined): { language: ShopLanguage; currency: 'VND' | 'USD' } {
+/**
+ * #1545 what sign-up sends: the shop language is the language the page is in (Vietnamese → vi, any other → en;
+ * none = the web default, Vietnamese); the currency follows the country (Vietnam or none picked → VND, any other → USD).
+ */
+export function signupShopPrefs(
+  pageLocale: string | null | undefined,
+  countryCode: string | null | undefined
+): { language: ShopLanguage; currency: 'VND' | 'USD' } {
+  const page = (pageLocale ?? '').trim().toLowerCase();
   const code = (countryCode ?? '').trim().toUpperCase();
-  return code === '' || code === 'VN' ? { language: 'vi', currency: 'VND' } : { language: 'en', currency: 'USD' };
+  return {
+    language: page === '' || page === 'vi' || page.startsWith('vi-') ? 'vi' : 'en',
+    currency: code === '' || code === 'VN' ? 'VND' : 'USD',
+  };
 }

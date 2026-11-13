@@ -1553,8 +1553,9 @@ final class AnyRentE2ETests: XCTestCase {
         e2e.backToLogin()
     }
 
-    /// #1541 sign-up step 1: Quốc gia (search, pick Hoa Kỳ) turns Ngôn ngữ into English and Tiền tệ into USD; the shop is
-    /// created with the phone's time zone (launched with TZ=America/Los_Angeles). Merchant run only: it creates a shop.
+    /// #1541 / #1545 sign-up step 1: only Quốc gia (no Ngôn ngữ / Tiền tệ fields). Picking Hoa Kỳ turns the hint under it
+    /// to USD; the shop language is the app language (not the country's) and the shop is created with the phone's time
+    /// zone (launched with TZ=America/Los_Angeles). Merchant run only: it creates a shop.
     /// The run prints `E2E_NOTE: signup1541 <email>` so the DB row can be checked (country, language, currency, timezone).
     func test0cSignupCountry() throws {
         try e2e.requireFlag("newAuth")
@@ -1571,13 +1572,15 @@ final class AnyRentE2ETests: XCTestCase {
         _ = e2e.type(into: ["Phone number", "Số điện thoại"], text: E2E.uniquePhone())
         _ = e2e.type(into: ["Address", "Địa chỉ"], text: "100 Main St, Seattle")
         e2e.hideKeyboard()
-        let country = app.buttons["signupCountry"], language = app.buttons["signupLanguage"], currency = app.buttons["signupCurrency"]
+        let country = app.buttons["signupCountry"], hint = app.staticTexts["signupCountryHint"]
         for _ in 0..<3 where !(country.exists && country.isHittable) { app.swipeUp() }
         XCTAssertTrue(country.waitForExistence(timeout: 5), "Quốc gia field on step 1")
         let value = { (el: XCUIElement) in (el.value as? String) ?? "" }
         XCTAssertTrue(["Việt Nam", "Vietnam"].contains(value(country)), "default country is Việt Nam, got \(value(country))")
-        XCTAssertTrue(value(currency).hasPrefix("VND"), "default currency VND, got \(value(currency))")
-        XCTAssertTrue(["Tiếng Việt"].contains(value(language)), "default language Tiếng Việt, got \(value(language))")
+        XCTAssertFalse(app.buttons["signupLanguage"].exists, "no Ngôn ngữ field (#1545)")
+        XCTAssertFalse(app.buttons["signupCurrency"].exists, "no Tiền tệ field (#1545)")
+        XCTAssertTrue(hint.waitForExistence(timeout: 3), "hint under Quốc gia")
+        XCTAssertTrue(hint.label.contains("VND"), "default hint names VND, got \(hint.label)")
         e2e.shot("c1-signup-defaults")
         country.tap()
         let search = app.descendants(matching: .any)["countrySearch"]
@@ -1592,8 +1595,8 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(country.waitForExistence(timeout: 5), "back on step 1")
         sleep(1)
         XCTAssertTrue(["Hoa Kỳ", "United States"].contains(value(country)), "country reads Hoa Kỳ, got \(value(country))")
-        XCTAssertEqual(value(language), "English", "language follows the country")
-        XCTAssertTrue(value(currency).hasPrefix("USD"), "currency follows the country, got \(value(currency))")
+        XCTAssertTrue(hint.label.contains("USD"), "the hint's currency follows the country, got \(hint.label)")
+        XCTAssertFalse(hint.label.contains("VND"), "no VND left in the hint, got \(hint.label)")
         e2e.shot("c3-signup-us")
         let next = e2e.button(["Continue", "Tiếp tục"])
         for _ in 0..<3 where !(next.exists && next.isHittable) { app.swipeUp() }
