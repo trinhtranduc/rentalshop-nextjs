@@ -1,6 +1,6 @@
 # Plan — #1535
 
-Status: in-progress
+Status: in-review
 
 1. Test trước (fail):
    - `tests/api/bulk-import-branches.test.ts`: thêm `describe('rows per product (#1535)')` cho hành vi 1-9; sửa 2 assert `toEqual` của đường cũ để gồm `rows`.

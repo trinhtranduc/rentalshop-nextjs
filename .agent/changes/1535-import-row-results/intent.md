@@ -1,6 +1,6 @@
 # Kết quả nhập Excel: số liệu và từng dòng (web)
 
-Issue: #1535 · Author: Claude (chủ shop yêu cầu 13/11) · Status: in-progress · Created: 2026-11-13 · Follows: #1533
+Issue: #1535 · Author: Claude (chủ shop yêu cầu 13/11) · Status: in-review · Created: 2026-11-13 · Follows: #1533
 
 ## Problem
 

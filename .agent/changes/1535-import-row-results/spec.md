@@ -1,6 +1,6 @@
 # Spec — #1535
 
-Status: in-progress
+Status: in-review
 
 ## API (`POST /api/products/bulk-import`)
 
