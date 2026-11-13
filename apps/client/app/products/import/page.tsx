@@ -68,7 +68,7 @@ const checkbox = 'h-[18px] w-[18px] cursor-pointer accent-ar-primary disabled:cu
 const KIND_TONE: Record<ResultKind, { badge: string; num: string }> = {
   created: { badge: 'bg-ar-done-bg text-ar-done', num: 'text-ar-done' },
   updated: { badge: 'bg-ar-done-bg text-ar-done', num: 'text-ar-done' },
-  duplicate: { badge: 'bg-ar-late-bg text-ar-late', num: 'text-ar-late' },
+  duplicate: { badge: 'bg-ar-unprepared-bg text-ar-unprepared', num: 'text-ar-unprepared' },
   failed: { badge: 'bg-ar-danger-soft text-ar-danger', num: 'text-ar-danger' },
   skipped: { badge: 'bg-ar-subtle text-ar-ink-2', num: 'text-ar-ink' },
 };
