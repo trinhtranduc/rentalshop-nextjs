@@ -1,7 +1,6 @@
 package com.anyrent.pos.domain.auth
 
 import com.anyrent.pos.domain.money.ShopCurrency
-import com.anyrent.pos.domain.settings.ShopLanguage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -9,58 +8,67 @@ import java.io.File
 import java.text.Collator
 import java.util.Locale
 
-/** #1539 (app) — sign-up country, language and currency: defaults, list, search, request, saved state */
+/**
+ * #1539 (app) — sign-up country list, search, request, saved state.
+ * #1545 — only Quốc gia is asked: currency follows the country, the shop language follows the app language.
+ */
 class SignupCountryTest {
+    private val vi = Locale.forLanguageTag("vi")
+    private val viVN = Locale.forLanguageTag("vi-VN")
 
     // Defaults
 
     @Test
-    fun newDraftIsVietnamVietnameseVnd() {
+    fun newDraftIsVietnamVnd() {
         val draft = RegisterDraft()
         assertEquals("VN", draft.countryCode)
-        assertEquals(ShopLanguage.VI, draft.language)
         assertEquals(ShopCurrency.VND, draft.currency)
     }
 
     @Test
-    fun countryDefaults() {
-        assertEquals(SignupDefaults(ShopLanguage.VI, ShopCurrency.VND), SignupDefaults.forCountry("VN"))
-        assertEquals(SignupDefaults(ShopLanguage.VI, ShopCurrency.VND), SignupDefaults.forCountry(" vn "))
-        assertEquals(SignupDefaults(ShopLanguage.EN, ShopCurrency.USD), SignupDefaults.forCountry("US"))
-        assertEquals(SignupDefaults(ShopLanguage.EN, ShopCurrency.USD), SignupDefaults.forCountry("JP"))
+    fun currencyFollowsTheCountry() {
+        assertEquals(ShopCurrency.VND, SignupCountries.currencyFor("VN"))
+        assertEquals(ShopCurrency.VND, SignupCountries.currencyFor(" vn "))
+        assertEquals(ShopCurrency.USD, SignupCountries.currencyFor("US"))
+        assertEquals(ShopCurrency.USD, SignupCountries.currencyFor("JP"))
+        assertEquals(ShopCurrency.USD, SignupCountries.currencyFor("gb"))
     }
 
     @Test
-    fun pickingACountryResetsLanguageAndCurrency() {
-        val us = RegisterDraft().withCountry("US")
-        assertEquals("US", us.countryCode)
-        assertEquals(ShopLanguage.EN, us.language)
+    fun pickingACountryOnlySetsTheCode() {
+        val typed = RegisterDraft(storeName = "Tux Rental", phone = "0901234567", address = "1 Main St")
+        val us = typed.withCountry("US")
+        assertEquals(typed.copy(countryCode = "US"), us)
         assertEquals(ShopCurrency.USD, us.currency)
 
-        val jp = us.withCountry("JP")
-        assertEquals(ShopLanguage.EN, jp.language)
+        val jp = us.withCountry(" jp ")
+        assertEquals("JP", jp.countryCode)
         assertEquals(ShopCurrency.USD, jp.currency)
 
         val vn = jp.withCountry("VN")
-        assertEquals(ShopLanguage.VI, vn.language)
+        assertEquals(typed, vn)
         assertEquals(ShopCurrency.VND, vn.currency)
     }
 
-    @Test
-    fun manualChoiceStaysUntilTheCountryChanges() {
-        val us = RegisterDraft().withCountry("US").copy(language = ShopLanguage.VI, currency = ShopCurrency.VND)
-        val typed = us.copy(storeName = "Tux Rental", phone = "0901234567", address = "1 Main St")
-        assertEquals(ShopLanguage.VI, typed.language)
-        assertEquals(ShopCurrency.VND, typed.currency)
-        // The same country again changes nothing
-        assertEquals(typed, typed.withCountry("US"))
-        // Another country resets both
-        val jp = typed.withCountry("JP")
-        assertEquals(ShopLanguage.EN, jp.language)
-        assertEquals(ShopCurrency.USD, jp.currency)
-    }
-
     // Request
+
+    @Test
+    fun languageFollowsTheAppAndCurrencyTheCountry() {
+        // App in Vietnamese, shop in the United States: Vietnamese emails, USD
+        val viUs = RegisterDraft().withCountry("US").request(timeZone = "America/New_York", appLanguage = vi)
+        assertEquals("vi", viUs.language)
+        assertEquals("USD", viUs.currency)
+        assertEquals("United States", viUs.country)
+        // App in English, shop in Việt Nam: English emails, VND
+        val enVn = RegisterDraft().request(timeZone = "Asia/Ho_Chi_Minh", appLanguage = Locale.US)
+        assertEquals("en", enVn.language)
+        assertEquals("VND", enVn.currency)
+        assertEquals("Vietnam", enVn.country)
+        // vi-VN is Vietnamese; any other app language is English
+        assertEquals("vi", RegisterDraft().request(timeZone = "Asia/Ho_Chi_Minh", appLanguage = viVN).language)
+        assertEquals("en", RegisterDraft().request(timeZone = "Europe/Paris", appLanguage = Locale.FRANCE).language)
+        assertEquals("en", RegisterDraft().withCountry("JP").request(timeZone = "Asia/Tokyo", appLanguage = Locale.JAPAN).language)
+    }
 
     @Test
     fun requestCarriesCountryLanguageCurrencyAndTimezone() {
@@ -89,17 +97,26 @@ class SignupCountryTest {
                 currency = "USD",
                 timezone = "America/New_York",
             ),
-            draft.request(timeZone = "America/New_York"),
+            draft.request(timeZone = "America/New_York", appLanguage = Locale.ENGLISH),
         )
     }
 
     @Test
-    fun requestDefaultsToVietnamAndTheDeviceTimezone() {
-        val request = RegisterDraft().request()
-        assertEquals("Vietnam", request.country)
-        assertEquals("vi", request.language)
-        assertEquals("VND", request.currency)
-        assertEquals(java.util.TimeZone.getDefault().id, request.timezone)
+    fun requestDefaultsToVietnamTheDeviceTimezoneAndTheAppLanguage() {
+        val saved = Locale.getDefault()
+        try {
+            Locale.setDefault(viVN)
+            val request = RegisterDraft().request()
+            assertEquals("Vietnam", request.country)
+            assertEquals("vi", request.language)
+            assertEquals("VND", request.currency)
+            assertEquals(java.util.TimeZone.getDefault().id, request.timezone)
+
+            Locale.setDefault(Locale.US)
+            assertEquals("en", RegisterDraft().request().language)
+        } finally {
+            Locale.setDefault(saved)
+        }
     }
 
     @Test
@@ -195,12 +212,30 @@ class SignupCountryTest {
     // Saved state (step 2 → step 1, rotation)
 
     @Test
-    fun savedStateKeepsCountryLanguageAndCurrency() {
-        val draft = RegisterDraft(storeName = "Tux", tags = setOf("COSTUME", "VEHICLE"), termsAccepted = true)
-            .withCountry("US")
-            .copy(language = ShopLanguage.VI)
+    fun savedStateKeepsTheCountry() {
+        val draft = RegisterDraft(storeName = "Tux", tags = setOf("COSTUME", "VEHICLE"), termsAccepted = true).withCountry("US")
         assertEquals(draft, RegisterDraftState.restore(RegisterDraftState.save(draft)))
         assertEquals(RegisterDraft(), RegisterDraftState.restore(RegisterDraftState.save(RegisterDraft())))
+    }
+
+    /** A list saved by the #1541 build also has language and currency: they are ignored, currency follows the country */
+    @Test
+    fun stateSavedWithLanguageAndCurrencyRestoresTheCountry() {
+        val base = listOf("Tux", "0901234567", "1 Main", arrayListOf("OTHER"), "John", "j@t.com", "secret12", "secret12", true)
+        val us = RegisterDraftState.restore(base + listOf("US", "vi", "VND"))
+        assertEquals("Tux", us.storeName)
+        assertEquals("US", us.countryCode)
+        assertEquals(ShopCurrency.USD, us.currency)
+        assertEquals(
+            RegisterDraft(
+                storeName = "Tux", phone = "0901234567", address = "1 Main", fullName = "John", email = "j@t.com",
+                password = "secret12", confirmPassword = "secret12", termsAccepted = true, countryCode = "US",
+            ),
+            us,
+        )
+        val vn = RegisterDraftState.restore(base + listOf("VN", "en", "USD"))
+        assertEquals("VN", vn.countryCode)
+        assertEquals(ShopCurrency.VND, vn.currency)
     }
 
     @Test
@@ -209,7 +244,6 @@ class SignupCountryTest {
         val draft = RegisterDraftState.restore(old)
         assertEquals("Tux", draft.storeName)
         assertEquals("VN", draft.countryCode)
-        assertEquals(ShopLanguage.VI, draft.language)
         assertEquals(ShopCurrency.VND, draft.currency)
     }
 }
