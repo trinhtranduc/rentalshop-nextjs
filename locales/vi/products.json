@@ -544,7 +544,12 @@
         "deletedNoName": "Mã vạch của một sản phẩm đã xoá",
         "unchosen": "Không chọn nhập",
         "noBranch": "Chưa bật chi nhánh nào",
-        "blocked": "Chưa nhập vì có dòng khác bị lỗi"
+        "blocked": "Chưa nhập vì có dòng khác bị lỗi",
+        "shortQty": "Tồn {count} · {branches} chi nhánh",
+        "shortAdded": "+{count} tồn ở chi nhánh chưa có hàng",
+        "shortExists": "Đã có: {name}",
+        "shortDeleted": "Mã của sản phẩm đã xoá",
+        "more": "Xem chi tiết dòng {row}"
       }
     },
     "form": {
