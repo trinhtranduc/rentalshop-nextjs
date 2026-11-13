@@ -1,6 +1,6 @@
 # Spec — đăng ký chỉ hỏi Quốc gia
 
-Status: in-progress
+Status: in-review
 
 1. Web, bước 2 (cửa hàng): ô Quốc gia `[data-signup-country]` giữ nguyên (mặc định Việt Nam, 249 nước, Việt Nam đầu).
    Không còn `[data-signup-language]`, `[data-signup-currency]` và dòng `register.languageCurrencyHint`.
@@ -18,6 +18,7 @@ Status: in-progress
 7. Android giống iOS (testTag `signupCountry`, `signupCountryHint`; không còn `signupLanguage*`, `signupCurrency*`).
    Trạng thái lưu (quay lại bước 1, xoay máy) vẫn khôi phục được trạng thái cũ có thêm ngôn ngữ / tiền tệ.
 8. API, Cài đặt (Tiền tệ, Ngôn ngữ email) không đổi.
+9. Bước 2 đăng ký web không còn khối "Free Trial Includes"; bỏ 4 khoá `register.freeTrialIncludes`, `fullAccessToAllFeatures`, `mobileAppAccess`, `noCreditCardRequired`.
 
 ## Out of scope
 

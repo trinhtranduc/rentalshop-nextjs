@@ -1,6 +1,6 @@
 # Đăng ký chỉ hỏi Quốc gia; ngôn ngữ theo trang / app, tiền tệ theo quốc gia
 
-Issue: #1545 · Author: agent · Status: in-progress · Created: 2026-11-13
+Issue: #1545 · Author: agent · Status: in-review · Created: 2026-11-13
 
 ## Problem
 
@@ -33,3 +33,4 @@ Chủ shop mới đăng ký (`MERCHANT`). `client` (`packages/ui` RegisterForm, 
 
 - 2026-11-13 Chủ sản phẩm: bỏ ô Ngôn ngữ (chỉ còn Quốc gia + Tiền tệ). Sau khi xem các trang khác: bỏ luôn ô Tiền tệ, ngôn ngữ và tiền tệ đổi sau trong Cài đặt.
 - 2026-11-13 Chủ sản phẩm đồng ý: ngôn ngữ theo ngôn ngữ trang / app (không theo quốc gia), tiền tệ theo quốc gia.
+- 2026-11-13 Chủ sản phẩm: bỏ khối "Free Trial Includes" (Dùng thử 14 ngày, Full access…, Mobile app access) ở bước 2 đăng ký web.

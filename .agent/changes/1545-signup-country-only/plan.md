@@ -1,6 +1,6 @@
 # Plan — #1545
 
-Status: in-progress
+Status: in-review
 
 1. Test trước (commit riêng, phải fail):
    - `tests/web-signup-prefs.test.ts`: `signupShopPrefs`; RegisterForm không còn ô ngôn ngữ / tiền tệ, có hint, không ghi NEXT_LOCALE;
