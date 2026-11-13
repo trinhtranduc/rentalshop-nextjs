@@ -3,7 +3,6 @@
 // ============================================================================
 // CustomerForm is exported from features/Customers to avoid conflicts
 export { ProductForm } from './ProductForm';
-export { OrderForm } from './OrderForm';
 export { CreateOrderForm, TestEqualHeightColumns } from './CreateOrderForm';
 export { PlanForm } from './PlanForm';
 export { PostForm } from './PostForm';
