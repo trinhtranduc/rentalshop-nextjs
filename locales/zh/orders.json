@@ -133,8 +133,8 @@
     },
     "installments": {
       "paidBadge": "已收 {percent}%",
-      "createTitle": "分阶段收取定金",
-      "template": "定金模板",
+      "createTitle": "分阶段收取订金",
+      "template": "订金模板",
       "today": "今天",
       "todayChip": "今天",
       "dueOn": "截止 {day}",
@@ -201,7 +201,7 @@
         "afterCreate": "下单后 {days} 天"
       },
       "restShort": "取货时收余款",
-      "unpaidTitle": "还有定金阶段未收",
+      "unpaidTitle": "还有订金阶段未收",
       "unpaidHint": "请先收取这些阶段，再交付物品。",
       "unpaidTotal": "交付前需收取：{amount}",
       "voidTitle": "撤销这笔收款？",
