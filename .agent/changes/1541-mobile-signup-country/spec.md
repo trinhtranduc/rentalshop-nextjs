@@ -1,6 +1,6 @@
 # Spec — app đăng ký quốc gia / ngôn ngữ / tiền tệ
 
-Status: accepted
+Status: in-review
 
 1. Bước "Cửa hàng", sau Địa chỉ, trước "Bạn cho thuê gì": Quốc gia, rồi một hàng Ngôn ngữ + Tiền tệ, rồi dòng ghi chú
    "Ngôn ngữ dùng cho email và dữ liệu mẫu. Cả hai đổi được sau trong Cài đặt."

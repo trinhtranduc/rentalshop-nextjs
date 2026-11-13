@@ -1,6 +1,6 @@
 # Plan — app đăng ký quốc gia / ngôn ngữ / tiền tệ
 
-Status: accepted
+Status: in-review
 
 1. Test trước (fail): iOS `POS ADBDTests/AuthFormsTests.swift` (+ test Cài đặt nếu có model) — mặc định, đổi nước, payload,
    tên tiếng Anh, danh sách 249 / VN đầu / tìm; Android `app/src/test/.../AuthFormsTest*` tương tự.

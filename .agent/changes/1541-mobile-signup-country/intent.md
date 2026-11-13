@@ -1,6 +1,6 @@
 # App iOS / Android: đăng ký chọn quốc gia, ngôn ngữ, tiền tệ; Ngôn ngữ email trong Cài đặt
 
-Issue: #1541 · Author: Trinh Tran · Status: accepted · Created: 2026-11-13
+Issue: #1541 · Author: Trinh Tran · Status: in-review · Created: 2026-11-13
 
 ## Problem
 
@@ -23,3 +23,4 @@ Không đổi API. iOS là chuẩn, Android theo iOS. App mới gặp API cũ: �
 
 - 2026-11-13 — owner: "làm luôn" phần app sau mockup #1539; giữ mặc định Việt Nam và dòng ghi chú như web.
 - 2026-11-13 — tên tiếng Anh của nước: tên CLDR tiếng Anh, riêng HK → "Hong Kong", CN → "China", MO, IO, GS như tên web lưu (Node / Chrome).
+- 2026-11-13 — iOS và Android làm song song; Android theo iOS ở danh sách tên tiếng Anh (5 mã ghi đè) và tìm nước theo cả tên tiếng Anh.
