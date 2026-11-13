@@ -488,15 +488,20 @@ export default function ImportProductsPage() {
                   {byBranch &&
                     target !== null &&
                     columns.map((c) => (
-                      <th key={`outlet-${c.id}`} scope="col" data-branch-col={c.id} className="border-l border-ar-subtle bg-ar-primary-soft/40 px-2 py-2.5 text-left align-bottom">
-                        <span className="block whitespace-nowrap text-[13px] font-bold text-ar-ink">{c.name}</span>
-                        {c.id === target && <span className="block whitespace-nowrap text-xs font-medium text-ar-muted">{t('col.fromFile')}</span>}
-                        <span className="mt-1 flex flex-wrap gap-x-2 text-xs font-semibold">
-                          <button type="button" onClick={() => setCells((cs) => turnColumnOn(cs, c.id))} className="whitespace-nowrap text-ar-primary hover:underline">
+                      <th
+                        key={`outlet-${c.id}`}
+                        scope="col"
+                        data-branch-col={c.id}
+                        className="min-w-[150px] max-w-[200px] border-l border-ar-subtle bg-ar-primary-soft/40 px-2 py-2.5 text-left align-bottom"
+                      >
+                        <span className="block break-words text-[13px] font-bold leading-snug text-ar-ink">{c.name}</span>
+                        {c.id === target && <span className="block text-xs font-medium text-ar-muted">{t('col.fromFile')}</span>}
+                        <span className="mt-1 flex flex-wrap gap-x-2 text-xs font-semibold leading-snug">
+                          <button type="button" onClick={() => setCells((cs) => turnColumnOn(cs, c.id))} className="text-left text-ar-primary hover:underline">
                             {t('col.allOn')}
                           </button>
                           {c.id !== target && (
-                            <button type="button" onClick={() => setCells((cs) => copyColumn(cs, target, c.id))} className="whitespace-nowrap text-ar-primary hover:underline">
+                            <button type="button" onClick={() => setCells((cs) => copyColumn(cs, target, c.id))} className="text-left text-ar-primary hover:underline">
                               {t('col.copy', { name: branchName(target) })}
                             </button>
                           )}
