@@ -44,7 +44,8 @@ export default function MerchantOrdersPage() {
   const status = searchParams.get('status') || '';
   const orderType = searchParams.get('type') || '';
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '20');
+  // #1521: rows per page typed in the pager (1 to 3000, like every list); a bad `?limit=` falls back to 20
+  const limit = Math.min(3000, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
   const sortBy = searchParams.get('sortBy') || 'createdAt';
   const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc';
   
@@ -242,6 +243,11 @@ export default function MerchantOrdersPage() {
     updateURL({ page: newPage });
   }, [updateURL]);
 
+  // #1521: a new page size starts again from page 1
+  const handleLimitChange = useCallback((newLimit: number) => {
+    updateURL({ limit: newLimit, page: 1 });
+  }, [updateURL]);
+
   const handleSort = useCallback((column: string) => {
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
     updateURL({ sortBy: column, sortOrder: newSortOrder, page: 1 });
@@ -387,6 +393,7 @@ export default function MerchantOrdersPage() {
             onClearFilters={handleClearFilters}
             onOrderAction={handleOrderAction}
             onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
             onSort={handleSort}
             onSelectionChange={setSelectedOrderIds}
             onBatchDelete={handleBatchDelete}
