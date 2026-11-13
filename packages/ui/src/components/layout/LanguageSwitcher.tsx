@@ -90,8 +90,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   useEffect(() => {
     if (publicLocale) return;
     if (!isLandingPage && ['zh', 'ko', 'ja'].includes(currentLocale)) {
-      // Auto-switch to Vietnamese (default) when on non-landing page
-      const fallbackLocale: SupportedLocale = 'vi';
+      // #1551 English, like any other non-Vietnamese language (appLocaleFor, the shop language at sign-up, #1545)
+      const fallbackLocale: SupportedLocale = 'en';
       document.cookie = `NEXT_LOCALE=${fallbackLocale};path=/;max-age=31536000;SameSite=Lax`;
       if (typeof window !== 'undefined') {
         localStorage.setItem('user_language_preference', fallbackLocale);
