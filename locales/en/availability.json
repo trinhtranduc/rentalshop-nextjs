@@ -22,7 +22,7 @@
   },
   "product": {
     "rentPrice": "Rent price",
-    "deposit": "Deposit",
+    "deposit": "Booking deposit",
     "category": "Category"
   },
   "checking": "Checking availability…",

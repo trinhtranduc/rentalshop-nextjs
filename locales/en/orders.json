@@ -46,7 +46,7 @@
   },
   "amount": {
     "total": "Total",
-    "deposit": "Deposit",
+    "deposit": "Booking deposit",
     "subtotal": "Subtotal",
     "grandTotal": "Grand Total",
     "securityDeposit": "Security Deposit",
@@ -58,7 +58,7 @@
     "collateralImageHint": "Upload an image of ID card, passport, or other security document. Supported formats: JPEG, PNG, WebP. Max size: 5MB",
     "tooltips": {
       "damageFee": "Extra charge when products are damaged or lost during rental",
-      "securityDeposit": "Amount of deposit customer must pay when receiving goods. This amount will be refunded after return, minus extra fee (if any)",
+      "securityDeposit": "Security deposit the customer pays when receiving the items. It is refunded after the return, minus any extra fee.",
       "collateralType": "Type of identification document customer leaves as a security document (ID Card, Driver License, Passport, or Other)",
       "collateralDetails": "Detailed information about security document (ID number, Driver License number, Passport number, or other information depending on type)",
       "collateralImage": "Upload an image of ID card, passport, or other security document for verification"
@@ -127,7 +127,7 @@
   "payment": {
     "subtotal": "Subtotal",
     "discount": "Discount",
-    "deposit": "Deposit",
+    "deposit": "Booking deposit",
     "tax": "Tax",
     "total": "Total Amount",
     "amountPaid": "Amount Paid",
@@ -149,7 +149,7 @@
     "amount": "Amount",
     "content": "Content",
     "transferDescription": "Payment for order {orderNumber}",
-    "transferDescriptionDeposit": "Deposit collection for order {orderNumber}",
+    "transferDescriptionDeposit": "Booking deposit collection for order {orderNumber}",
     "transferDescriptionRemaining": "Remaining amount collection for order {orderNumber}",
     "transferDescriptionRemainingAndCollateral": "Remaining amount and security deposit collection for order {orderNumber}",
     "showQRCode": "Show QR Code",
@@ -254,7 +254,7 @@
     "cancel": "Cancel",
     "resetSelection": "Reset Selection",
     "removeProduct": "Remove product",
-    "deposit": "Deposit",
+    "deposit": "Booking deposit",
     "product": "Product",
     "unknownProduct": "Unknown Product",
     "clearSelectedCustomer": "Clear selected customer",
@@ -280,7 +280,7 @@
     "notSelected": "Not selected",
     "totalPrice": "Total Price",
     "additionalInformation": "Additional Information",
-    "enterDepositAmount": "Enter deposit amount...",
+    "enterDepositAmount": "Enter booking deposit amount...",
     "quantity": "Quantity",
     "unitPrice": "Unit Price",
     "addNotesForItem": "Add notes for this item...",
@@ -357,7 +357,7 @@
     "lifetimeRevenue": "Lifetime revenue",
     "completedOrders": "Completed Orders",
     "avgOrder": "avg order",
-    "totalDeposits": "Total Deposits",
+    "totalDeposits": "Total Booking Deposits",
     "averageOrderValue": "Average Order Value",
     "overdueRentals": "Overdue Rentals",
     "revenueMetrics": "Revenue Metrics"
@@ -367,7 +367,7 @@
     "from": "From",
     "to": "To",
     "subtotal": "Subtotal",
-    "deposit": "Deposit",
+    "deposit": "Booking deposit",
     "grandTotal": "Grand Total",
     "orderRequirements": "Order Requirements",
     "discount": "Discount",
@@ -388,8 +388,8 @@
     "printDescription": "Create PDF file and send to printer",
     "order": "Order",
     "customer": "Customer",
-    "deposit": "Deposit",
-    "noDeposit": "NO DEPOSIT",
+    "deposit": "Booking deposit",
+    "noDeposit": "NO BOOKING DEPOSIT",
     "createdDate": "Created Date",
     "rentDate": "Rent Date",
     "returnDate": "Return Date",
@@ -415,14 +415,14 @@
     },
     "timesDays": "× {days} days",
     "pricingMethod": "Pricing",
-    "depositPerUnit": "Deposit per unit",
+    "depositPerUnit": "Booking deposit per unit",
     "itemNote": "Item note",
     "moreOptions": "Options for {name}",
     "remove": "Remove {name}",
     "quantity": "Quantity",
     "unitPrice": "Unit price",
     "lineTotal": "Line total",
-    "depositLine": "Deposit {amount}",
+    "depositLine": "Booking deposit {amount}",
     "avail": {
       "free": "{free}/{total} free",
       "short": "Short {count} · {free} free",
@@ -435,7 +435,7 @@
       "RENT": "Rent",
       "SALE": "Sale"
     },
-    "depositAuto": "Added up from the items’ deposits; you can change it.",
+    "depositAuto": "Added up from the items’ booking deposits; you can change it.",
     "summary": {
       "rentTotal": "Rental",
       "saleTotal": "Goods",
@@ -482,7 +482,7 @@
       "sale": "To collect",
       "done": "Nothing more to collect"
     },
-    "depositPaid": "Deposit paid",
+    "depositPaid": "Booking deposit paid",
     "securityDeposit": "Security deposit",
     "damageFee": "Extra fee",
     "lateFee": "Late fee",
@@ -525,7 +525,7 @@
   },
   "detailItems": {
     "title": "Items",
-    "depositEach": "deposit {amount}/unit"
+    "depositEach": "booking deposit {amount}/unit"
   },
   "detailNotes": {
     "title": "Notes",
@@ -707,7 +707,7 @@
         "add": "Add",
         "loyalty": "Reward points",
         "total": "Order total",
-        "deposit": "Deposit now",
+        "deposit": "Booking deposit now",
         "security": "Security at pickup",
         "dueAtPickup": "Due at pickup",
         "includesSecurity": "Includes security {amount}",
@@ -734,7 +734,7 @@
       },
       "submit": {
         "create": "Create order",
-        "withDeposit": "Create order · take {amount} deposit",
+        "withDeposit": "Create order · take {amount} booking deposit",
         "save": "Save changes"
       },
       "pricing": {
@@ -777,7 +777,7 @@
         "range": "{range} · {days, plural, one {# day} other {# days}}",
         "items": "Items",
         "days": "{days, plural, one {# day} other {# days}}",
-        "collectDeposit": "Collect deposit now",
+        "collectDeposit": "Collect booking deposit now",
         "collectSale": "Collect now",
         "sell": "Sell & collect"
       },
@@ -984,13 +984,13 @@
         "orderTotalDiscount": "Total (discount {amount})",
         "goodsTotal": "Goods total",
         "discount": "Discount",
-        "depositPaid": "Deposit paid at booking",
+        "depositPaid": "Booking deposit paid at booking",
         "collateralMoney": "Security deposit",
         "collateralHeld": "Security deposit held",
         "collateral": "Security deposit",
         "paidBefore": "Already collected",
         "settledBefore": "Already settled",
-        "excessDeposit": "Deposit above the rent",
+        "excessDeposit": "Booking deposit above the rent",
         "lateFee": "Late fee",
         "damageFee": "Surcharge",
         "collectAtPickup": "Collect at hand-over",
@@ -1038,13 +1038,13 @@
         },
         "rows": {
           "orderTotal": "Order total",
-          "depositPaid": "Deposit paid at booking",
+          "depositPaid": "Booking deposit paid at booking",
           "collateralMoney": "Security deposit",
           "paidBefore": "Already collected",
           "fees": "Surcharge",
           "collateralHeld": "Security deposit held",
           "settledBefore": "Already settled",
-          "excessDeposit": "Deposit above the rent"
+          "excessDeposit": "Booking deposit above the rent"
         },
         "result": {
           "due": "Collect now",
@@ -1090,8 +1090,8 @@
       "customer": "Customer",
       "walkIn": "Walk-in customer",
       "rows": {
-        "deposit": "Deposit",
-        "noDeposit": "No deposit",
+        "deposit": "Booking deposit",
+        "noDeposit": "No booking deposit",
         "securityDeposit": "Security deposit",
         "collateral": "Security deposit",
         "damageFee": "Extra fee",
@@ -1176,8 +1176,8 @@
     },
     "installments": {
       "paidBadge": "{percent}% paid",
-      "createTitle": "Deposit in stages",
-      "template": "Deposit template",
+      "createTitle": "Booking deposit in stages",
+      "template": "Booking deposit template",
       "today": "today",
       "todayChip": "Today",
       "dueOn": "due {day}",
@@ -1244,7 +1244,7 @@
         "afterCreate": "{days} days after booking"
       },
       "restShort": "Remainder at pick-up",
-      "unpaidTitle": "A deposit stage is still unpaid",
+      "unpaidTitle": "A booking deposit stage is still unpaid",
       "unpaidHint": "Collect these stages first, then hand over the items.",
       "unpaidTotal": "To collect before hand-over: {amount}",
       "voidTitle": "Cancel this collection?",
@@ -1254,7 +1254,7 @@
       "cancelPaid": "Customer paid",
       "cancelKept": "Shop keeps",
       "cancelRefund": "Refund to customer",
-      "cancelHint": "Refund = Customer paid minus the surcharge. The surcharge is what the shop keeps from the deposit.",
+      "cancelHint": "Refund = Customer paid minus the surcharge. The surcharge is what the shop keeps from the booking deposit.",
       "cancelHintStaff": "Staff refund everything the customer paid. The owner or branch manager decides the surcharge.",
       "policyLine": "Shop policy: {policy}",
       "dueTodayTitle": "To collect today",
