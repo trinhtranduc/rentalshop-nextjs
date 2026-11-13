@@ -54,10 +54,9 @@ Status: accepted
 
 18. Chữ cho tiền theo `locales/GLOSSARY.md`: cọc = 内金 / 예약금 / 订金 / Booking deposit; thế chân = 保証金 / 보증금 / 押金 / Security deposit.
     Không dùng 手付金, 계약금, 定金 (luật "mất cọc / trả gấp đôi"), không dùng 保证金 cho khách. Test `glossary-legal-words` chặn.
-19. **Giấy tờ thế chân ở Hàn và Trung:** giữ thẻ căn cước của khách là phạm luật. Khi bật `ko` hoặc `zh`:
-    - màn "giấy tờ thế chân" chỉ ghi loại và số giấy tờ, gọi là 신분증 확인 / 证件登记;
-    - không có chữ nào bảo nhân viên giữ thẻ.
-    Anh duyệt trước khi bật.
+19. **Giấy tờ thế chân:** giữ như hiện tại (chủ sản phẩm, 13/11/2026: việc giữ giấy tờ tuỳ từng shop; app vẫn có
+    "Giấy tờ", CCCD, GPLX và các bước giữ / trả giấy tờ). Bản dịch dùng chữ trung tính (身分証 / 신분증 / 证件).
+    Ghi chú: ở Hàn và Trung giữ thẻ căn cước của khách là phạm luật (`locales/GLOSSARY.md`, Markets); xem lại với anh trước khi bật `ko` / `zh`.
 
 ## Out of scope
 

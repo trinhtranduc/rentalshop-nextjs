@@ -54,7 +54,7 @@ Rules for every language:
 | theo lần / theo ngày | per rental / per day | 1回あたり / 1日あたり | 1회당 / 1일당 | 每次 / 每天 | |
 | Tiền cọc, đặt cọc | Booking deposit (files: Deposit, being renamed) | 内金 | 예약금 | 订金 | paid in advance, **counts toward the rent**. Never 手付金 (ja), 계약금 (ko), 定金 (zh): each carries a legal "lose it / pay back double" rule |
 | Thế chân, tiền thế chân | Security deposit | 保証金 (softer: 預かり金) | 보증금 | 押金 | money held, **given back at return**. Owner (2026-11-13): other languages say guarantee money (tiền đảm bảo); Vietnamese always says **thế chân**, never "thế chấp". zh: 押金, not 保证金 (on Chinese platforms 保证金 is the seller's own bond); owner agreed 2026-11-13 |
-| Giấy tờ thế chân (`collateralType`) | Security document | 身分証明書の確認 | 신분증 확인 | 证件登记 | Vietnam: papers held until the return. **Korea and China: keeping a customer's ID card is illegal** (see Markets); there the label means "ID checked and recorded". Japan / English: shops show ID, they do not keep it |
+| Giấy tờ thế chân (`collateralType`; vi labels: Giấy tờ, CCCD, GPLX) | Security document | 身分証 | 신분증 | 证件 | papers the customer shows or leaves. **Whether a shop keeps them is up to the shop** (owner, 2026-11-13); the app keeps today's steps. Use neutral words, not "checked only" or "held". Legal notes for Korea and China under Markets |
 | Trả thế chân | Return security deposit | 保証金返却 | 보증금 반환 | 退押金 | |
 | Phụ thu | Surcharge | 追加料金 | 추가 요금 | 附加费 | extra charge (late, damage…) |
 | Phí trễ hạn | Late fee | 延滞料 | 연체료 | 超期费 | |
