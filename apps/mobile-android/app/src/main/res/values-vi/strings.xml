@@ -158,7 +158,7 @@
     <string name="pickup_date">Ngày nhận</string>
     <string name="return_date">Ngày trả</string>
     <string name="discount">Giảm giá</string>
-    <string name="security_deposit">Cọc đảm bảo</string>
+    <string name="security_deposit">Tiền thế chân</string>
     <string name="collateral">Tài sản thế chân</string>
     <string name="print_receipt">In hóa đơn</string>
     <string name="payment_qr">QR thanh toán</string>

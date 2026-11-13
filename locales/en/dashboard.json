@@ -143,7 +143,7 @@
     "items": "{count, plural, one {# item} other {# items}}",
     "pickup": "Pickup",
     "return": "Return",
-    "deposit": "Deposit",
+    "deposit": "Booking deposit",
     "more": "+{count} more in Orders",
     "cash": {
       "title": "Security deposits & fees",
@@ -166,15 +166,15 @@
       "new": "New",
       "revenue": "Revenue",
       "newOrders": "New orders",
-      "depositRefund": "Deposits refunded",
-      "depositRefundTooltip": "Deposits returned to customers in the period. Shown as negative bars on the revenue chart.",
+      "depositRefund": "Booking deposits refunded",
+      "depositRefundTooltip": "Booking deposits returned to customers in the period. Shown as negative bars on the revenue chart.",
       "cancelled": "Cancelled orders",
       "cancelledTooltip": "Orders moved to cancelled during the period",
       "netRevenue": "Net cash in",
-      "netRevenueTooltip": "Money collected in the period after refunds for cancelled orders and returned deposits. Can be negative.",
+      "netRevenueTooltip": "Money collected in the period after refunds for cancelled orders and returned booking deposits. Can be negative.",
       "ordersTrend": "New orders, last 7 days: {values}",
       "netCashToday": "Net cash in today",
-      "netCashTodayTooltip": "Deposits on new orders, balance and security deposit at hand-over, fees at return; minus deposits given back and refunds."
+      "netCashTodayTooltip": "Booking deposits on new orders, balance and security deposit at hand-over, fees at return; minus security deposits given back and refunds for cancelled orders."
     },
     "chips": {
       "all": "All",
@@ -252,7 +252,7 @@
       "tip": "{day}: {value}",
       "tipForecast": "{day}: {value} · {forecast} more expected",
       "total": "Total",
-      "upcomingInstallments": "Staged deposits coming up: {amount} ({count})"
+      "upcomingInstallments": "Staged booking deposits coming up: {amount} ({count})"
     },
     "today": {
       "title": "Today",
@@ -266,7 +266,7 @@
       "tomorrowCounts": "Hand over {pickups} · Return {returns}"
     },
     "money": {
-      "deposits": "Deposits at order",
+      "deposits": "Booking deposits at order",
       "pickupAndSale": "Paid at pickup, sales",
       "fees": "Extra and late fees",
       "refunds": "Refunds on cancelled",
@@ -281,8 +281,8 @@
       "viewAll": "View all",
       "pickupTag": "Hand over",
       "returnTag": "Take back",
-      "installmentTag": "Deposit due",
-      "stage": "Deposit {n}",
+      "installmentTag": "Booking deposit due",
+      "stage": "Booking deposit {n}",
       "late": "{days} days late",
       "collect": "{amount}",
       "refund": "refund {amount}",
@@ -335,8 +335,8 @@
       "hatchNote": "Hatched bars: upcoming, not in the numbers above.",
       "rule": {
         "orderValue": "Total of the orders created in the period, by creation day. Cancelled orders are not counted.",
-        "collected": "Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus security deposit received minus security deposit returned.",
-        "outstanding": "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.",
+        "collected": "Money held from the period: booking deposits, rent on hand-over, sales, extra fees, minus refunds, plus security deposit received minus security deposit returned.",
+        "outstanding": "Part of the period's orders not collected yet: a booked rental is its total minus the booking deposit; an unfinished sale is its whole total.",
         "collateral": "Security deposit received at hand-over minus security deposit handed back at return, in the period."
       }
     },
@@ -377,17 +377,17 @@
       "event": {
         "saleCreated": "Sale created",
         "saleCancelled": "Sale cancelled, refunded",
-        "deposit": "Deposit collected",
+        "deposit": "Booking deposit collected",
         "pickup": "Collected at pickup",
         "sameDay": "Rented and returned the same day",
         "damageFee": "Extra fee collected",
-        "depositRefund": "Deposit refunded",
+        "depositRefund": "Booking deposit refunded",
         "nothing": "Nothing to settle",
         "rentCancelled": "Order cancelled, refunded",
         "returnCollected": "Collected at return",
         "futurePickup": "Expected at pickup",
         "futureDamageFee": "Expected extra fee at return",
-        "futureRefund": "Expected deposit refund at return",
+        "futureRefund": "Expected booking deposit refund at return",
         "futureNothing": "Nothing expected at return"
       }
     },

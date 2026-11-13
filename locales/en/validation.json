@@ -108,8 +108,8 @@
       "required": "Role is required"
     },
     "deposit": {
-      "nonNegative": "Deposit must be non-negative",
-      "cannotBeNegative": "Deposit is required and cannot be negative"
+      "nonNegative": "Booking deposit must be non-negative",
+      "cannotBeNegative": "Booking deposit is required and cannot be negative"
     },
     "merchantId": {
       "required": "Merchant ID is required"

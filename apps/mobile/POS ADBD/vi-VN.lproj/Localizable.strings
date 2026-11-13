@@ -807,8 +807,8 @@
 "Overview_Info_Title" = "Tổng quan";
 "Overview_Info_TotalRevenue" = "Tổng tiền thu vào trong kỳ (sau khi trừ các khoản đã hoàn). Gồm: tiền cọc đặt đơn, tiền thuê khi lấy hàng, tiền bán, phụ phí. Trừ đi: tiền hoàn khi hủy đơn, tiền trả cọc khi khách trả hàng. Có thể âm nếu trong kỳ hoàn nhiều hơn thu (ví dụ nhiều đơn hủy hoặc trả hàng hoàn cọc).";
 "Overview_Info_TotalOrders" = "(Chỉ daily) Tổng số dòng trong danh sách đơn — mỗi dòng là một đơn hoặc một giao dịch doanh thu; một đơn có thể có nhiều dòng nếu nhiều giao dịch trong kỳ.";
-"Overview_Info_CollateralReceived" = "Tiền cọc (thế chân) đang giữ — tổng cọc của các đơn thuê đã lấy hàng, chưa trả. Chỉ tính đơn thuê đã lấy hàng, và tính theo ngày lấy hàng rơi vào kỳ. Cho biết bạn đang nắm bao nhiêu tiền cọc của khách (tài sản nợ khách, cần trả khi họ trả hàng).";
-"Overview_Info_CollateralExpected" = "Tiền thế chân dự kiến trả — Số tiền cọc bạn sẽ hoàn lại khách trong kỳ. Chỉ tính đơn thuê đang cho mượn (khách đã lấy hàng, đang giữ cọc) có lịch trả hàng nằm trong kỳ. Khi khách trả hàng đúng kỳ, bạn sẽ trả lại từng khoản tiền cọc (thế chân) đó. Giúp chuẩn bị thanh khoản (biết trong kỳ cần trả bao nhiêu tiền cọc).";
+"Overview_Info_CollateralReceived" = "Tiền thế chân đang giữ — tổng thế chân của các đơn thuê đã lấy hàng, chưa trả. Chỉ tính đơn thuê đã lấy hàng, và tính theo ngày lấy hàng rơi vào kỳ. Cho biết bạn đang giữ bao nhiêu tiền thế chân của khách (khoản phải trả lại khi khách trả hàng).";
+"Overview_Info_CollateralExpected" = "Tiền thế chân dự kiến trả — Số tiền thế chân bạn sẽ trả lại khách trong kỳ. Chỉ tính đơn thuê đang cho mượn (khách đã lấy hàng, bạn đang giữ thế chân) có lịch trả hàng nằm trong kỳ. Khi khách trả hàng đúng kỳ, bạn trả lại từng khoản thế chân đó. Giúp chuẩn bị tiền (biết trong kỳ cần trả bao nhiêu thế chân).";
 "Overview_Mode_Daily" = "Theo ngày";
 "Overview_Mode_Yearly" = "Theo năm";
 "Report_Period_Today" = "Hôm nay";
@@ -825,8 +825,8 @@
 "Report_DateRange_To" = "Đến";
 "Report_Summary_Revenue" = "Doanh thu";
 "Report_Summary_Orders" = "Đơn hàng";
-"Report_Summary_DepositHeld" = "Cọc đang giữ";
-"Report_Summary_DepositDue" = "Cọc cần trả";
+"Report_Summary_DepositHeld" = "Thế chân đang giữ";
+"Report_Summary_DepositDue" = "Thế chân cần trả";
 "Report_Summary_Reserved" = "Đơn thuê mới";
 "Report_Summary_AveragePerDay" = "TB/ngày";
 "Report_Summary_Change" = "Biến động";

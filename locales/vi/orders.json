@@ -58,7 +58,7 @@
     "collateralImageHint": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác. Định dạng hỗ trợ: JPEG, PNG, WebP. Kích thước tối đa: 5MB",
     "tooltips": {
       "damageFee": "Khoản thu thêm khi sản phẩm bị hư hỏng hoặc mất mát trong quá trình khách hàng thuê",
-      "securityDeposit": "Số tiền cọc khách hàng phải đặt khi nhận hàng. Số tiền này sẽ được hoàn lại sau khi trả hàng, trừ đi phụ phí (nếu có)",
+      "securityDeposit": "Số tiền thế chân khách đưa khi nhận hàng. Số tiền này được trả lại sau khi trả hàng, trừ phụ phí (nếu có).",
       "collateralType": "Loại giấy tờ tùy thân khách hàng để lại làm thế chân (CMND/CCCD/ID, Bằng lái xe/Driver License, Hộ chiếu/Passport, hoặc loại khác)",
       "collateralDetails": "Thông tin chi tiết về giấy tờ thế chân (số CMND/CCCD/ID, số bằng lái/Driver License, số hộ chiếu/Passport, hoặc thông tin khác tùy theo loại)",
       "collateralImage": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác để xác minh"

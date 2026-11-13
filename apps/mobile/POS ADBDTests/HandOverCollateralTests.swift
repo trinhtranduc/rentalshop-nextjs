@@ -121,8 +121,8 @@ final class PickupSheetNoItemsTests: XCTestCase {
             "order.sheetTitle.return": ("Nhận trả đồ", "Take back items"),
             "order.sheetTitle.extend": ("Gia hạn đơn", "Extend order"),
             "order.sheetTitle.collateral": ("Giấy tờ & thế chân", "Papers & security deposit"),
-            "order.sheetTitle.collect": ("Thu tiền cọc", "Collect deposit"),
-            "order.sheetTitle.unpaid": ("Đợt cọc chưa thu", "Uncollected deposit stages"),
+            "order.sheetTitle.collect": ("Thu tiền cọc", "Collect booking deposit"),
+            "order.sheetTitle.unpaid": ("Đợt cọc chưa thu", "Uncollected booking deposit stages"),
             "order.sheetTitle.cancel": ("Huỷ đơn", "Cancel order"),
         ]
         func bundle(_ language: String) throws -> Bundle {

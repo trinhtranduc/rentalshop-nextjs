@@ -406,7 +406,7 @@ class OrderShareMoneyOrderTest {
         assertEquals(
             listOf(
                 "TOTAL Rental total|1.150.000đ",
-                "STAGES Staged deposit",
+                "STAGES Staged booking deposit",
                 "1. Cọc giữ chỗ|230.000đ|20% of order · 05/10 · Collected",
                 "2. Cọc trước ngày lấy|345.000đ|30% of order · due 06/10 · Not collected",
                 "COLLECT Collect at hand-over|575.000đ",
@@ -414,10 +414,10 @@ class OrderShareMoneyOrderTest {
             flat(make(staged(), vi = false), vi = false),
         )
         assertEquals(
-            listOf("TOTAL Rental total|1.150.000đ", "Deposit|No deposit|muted", "COLLECT Collect at hand-over|1.150.000đ"),
+            listOf("TOTAL Rental total|1.150.000đ", "Booking deposit|No booking deposit|muted", "COLLECT Collect at hand-over|1.150.000đ"),
             flat(make(order(), vi = false), vi = false),
         )
-        assertEquals("Deposit paid|300.000đ", flat(make(order(deposit = 300_000.0), vi = false), vi = false)[1])
+        assertEquals("Booking deposit paid|300.000đ", flat(make(order(deposit = 300_000.0), vi = false), vi = false)[1])
     }
 
     @Test
