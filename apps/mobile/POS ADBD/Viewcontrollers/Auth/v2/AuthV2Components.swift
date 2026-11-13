@@ -493,3 +493,77 @@ extension BaseViewControler {
         view.isUserInteractionEnabled = !loading
     }
 }
+
+/// #1539 (app): label above and a 52pt box like `AuthV2Field`, showing a value instead of a text field. The box is
+/// `button`: a tap target (Quốc gia) or a menu (Ngôn ngữ, Tiền tệ).
+final class AuthV2SelectField: UIView {
+    let button = UIButton(type: .custom)
+    private let titleLabel = UILabel()
+    private let valueLabel = UILabel()
+    private let iconView = UIImageView()
+    private let chevronView = UIImageView()
+
+    init(title: String, icon: String, chevron: String = "chevron.right") {
+        super.init(frame: .zero)
+        titleLabel.text = title
+        titleLabel.font = Utils.boldFont(size: DS.TextSize.body)
+        titleLabel.textColor = AuthV2Style.text
+        titleLabel.isAccessibilityElement = false
+
+        button.backgroundColor = AuthV2Style.fieldBackground
+        button.layer.cornerRadius = AuthV2Style.fieldRadius
+        button.layer.borderWidth = 1
+        button.layer.borderColor = AuthV2Style.fieldBorder.cgColor
+        button.accessibilityLabel = title
+
+        iconView.image = DS.symbol(icon, DS.Icon.md)
+        iconView.tintColor = AuthV2Style.fieldIcon
+        iconView.contentMode = .center
+        chevronView.image = DS.symbol(chevron, DS.Icon.sm)
+        chevronView.tintColor = AuthV2Style.fieldIcon
+        chevronView.contentMode = .center
+        valueLabel.font = Utils.regularFont(size: DS.TextSize.input)
+        valueLabel.textColor = AuthV2Style.text
+        valueLabel.adjustsFontSizeToFitWidth = true
+        valueLabel.minimumScaleFactor = 0.75
+        [iconView, valueLabel, chevronView].forEach {
+            $0.isUserInteractionEnabled = false
+            $0.isAccessibilityElement = false
+            button.addSubview($0)
+        }
+
+        let stack = UIStackView(arrangedSubviews: [titleLabel, button])
+        stack.axis = .vertical
+        stack.spacing = 6
+        addSubview(stack)
+        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
+        button.snp.makeConstraints { $0.height.equalTo(AuthV2Style.fieldHeight) }
+        iconView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(14)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(20)
+        }
+        chevronView.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(14)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(16)
+        }
+        valueLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(44)
+            make.trailing.equalTo(chevronView.snp.leading).offset(-6)
+            make.centerY.equalToSuperview()
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    var value: String? {
+        get { valueLabel.text }
+        set {
+            valueLabel.text = newValue
+            button.accessibilityValue = newValue
+        }
+    }
+}

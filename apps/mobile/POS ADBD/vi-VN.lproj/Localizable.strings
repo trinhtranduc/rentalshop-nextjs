@@ -3284,3 +3284,13 @@
 "order.reorder.empty" = "Không còn món nào để đặt lại";
 "order.reorder.limit" = "Đang mở 10 giỏ. Đóng bớt một giỏ rồi đặt lại.";
 "order.reorder.failed" = "Không đọc được đơn để đặt lại";
+/* #1539 (app): sign-up country / language / currency, email language in Store Information */
+"authv2.country" = "Quốc gia";
+"authv2.language" = "Ngôn ngữ";
+"authv2.currency" = "Tiền tệ";
+"authv2.localeHint" = "Ngôn ngữ dùng cho email và dữ liệu mẫu. Cả hai đổi được sau trong Cài đặt.";
+"authv2.country.search" = "Tìm quốc gia";
+"authv2.country.empty" = "Không có quốc gia phù hợp";
+"shopinfo.emailLanguage" = "Ngôn ngữ email";
+"shopinfo.emailLanguage.hint" = "Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.";
+"shopinfo.emailLanguage.failed" = "Không lưu được ngôn ngữ email. Vui lòng thử lại.";

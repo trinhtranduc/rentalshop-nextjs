@@ -365,6 +365,7 @@
 		A4770477B0000000000000A1 /* NotificationsLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4770477F0000000000000A1 /* NotificationsLogic.swift */; };
 		B298B580A0C9BA1614A0649B /* RentalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 730E16169321964B8996F08C /* RentalExtension.swift */; };
 		B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */; };
+		C15390000000000000000B01 /* CountryPickerV2ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15390000000000000000F01 /* CountryPickerV2ViewController.swift */; };
 		C18CA40B2858C40D991A0EFF /* OrderDetailRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C570B5BFF257469D22043D /* OrderDetailRouter.swift */; };
 		C2E7493E136407C5EA7E6D96 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5CE3E5F53EE1B4C04041E4 /* AppConfig.swift */; };
 		FEA7FDC2832C8EDB5E4523AC /* DepositPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6706E2463CE1CB252AE6E19 /* DepositPlan.swift */; };
@@ -696,6 +697,7 @@
 		16733093F5AD2CBACB593E6B /* CalendarV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarV2.swift; sourceTree = "<group>"; };
 		1E5F4F6D0749410668401E8C /* CustomersV2ViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ViewModel.swift; sourceTree = "<group>"; };
 		1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RegisterStoreV2ViewController.swift; sourceTree = "<group>"; };
+		C15390000000000000000F01 /* CountryPickerV2ViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CountryPickerV2ViewController.swift; sourceTree = "<group>"; };
 		286EED8E25240975FDF5D455 /* IconTokensTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IconTokensTests.swift; sourceTree = "<group>"; };
 		A424B0010000000000000002 /* TypeScaleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TypeScaleTests.swift; sourceTree = "<group>"; };
 		2CE94C9E2F100D5921C64A3F /* CustomersV2ListViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CustomersV2ListViewController.swift; sourceTree = "<group>"; };
@@ -1636,6 +1638,7 @@
 				AA079161E7EDA1E33FB3FA7C /* AuthV2Components.swift */,
 				8C72A84D0601936AF3BB9D6D /* LoginV2ViewController.swift */,
 				1FBA7908C3A8B8A2291BB80A /* RegisterStoreV2ViewController.swift */,
+				C15390000000000000000F01 /* CountryPickerV2ViewController.swift */,
 				EF8562CD68C7197E14A0D259 /* ForgotPasswordV2ViewController.swift */,
 				D1CF913D8798099106B290EC /* EmailSentV2ViewController.swift */,
 				D33C6EF64AF730F30B08FAA3 /* AuthV2Style.swift */,
@@ -2409,6 +2412,7 @@
 				00EA1C3CC705D62431D4591B /* AuthV2Components.swift in Sources */,
 				941EE608778FB58F374DFA0F /* LoginV2ViewController.swift in Sources */,
 				B7ACFF92BC9ACEBFB9C98032 /* RegisterStoreV2ViewController.swift in Sources */,
+				C15390000000000000000B01 /* CountryPickerV2ViewController.swift in Sources */,
 				CCC19E69BC435240A5E6710D /* ForgotPasswordV2ViewController.swift in Sources */,
 				3A8AC72E64C75AD2056EF604 /* EmailSentV2ViewController.swift in Sources */,
 				91B0133F9E391AD631E07179 /* AuthV2Style.swift in Sources */,

@@ -3286,3 +3286,13 @@
 "order.reorder.empty" = "No items left to reorder";
 "order.reorder.limit" = "10 carts are open. Close one before reordering.";
 "order.reorder.failed" = "Could not read the order to reorder";
+/* #1539 (app): sign-up country / language / currency, email language in Store Information */
+"authv2.country" = "Country";
+"authv2.language" = "Language";
+"authv2.currency" = "Currency";
+"authv2.localeHint" = "The language is used for emails and sample data. You can change both later in Settings.";
+"authv2.country.search" = "Search country";
+"authv2.country.empty" = "No matching country";
+"shopinfo.emailLanguage" = "Email language";
+"shopinfo.emailLanguage.hint" = "Verification, password reset and plan emails are sent in this language.";
+"shopinfo.emailLanguage.failed" = "Could not save the email language. Please try again.";
