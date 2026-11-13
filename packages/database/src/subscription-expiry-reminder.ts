@@ -26,6 +26,8 @@ export interface ExpiringSubscription {
     id: number;
     name: string;
     email: string;
+    /** #1539 shop language ('vi' | 'en'; null = Vietnamese) */
+    language?: string | null;
   };
   /** Active MERCHANT-role users of that merchant, for CC-ing owners */
   merchantUserEmails: string[];
@@ -76,6 +78,7 @@ export async function findSubscriptionsExpiringInDays(
           id: true,
           name: true,
           email: true,
+          language: true,
           users: {
             where: { role: USER_ROLE.MERCHANT, isActive: true, deletedAt: null },
             select: { email: true }
@@ -96,7 +99,8 @@ export async function findSubscriptionsExpiringInDays(
     merchant: {
       id: row.merchant.id,
       name: row.merchant.name,
-      email: row.merchant.email
+      email: row.merchant.email,
+      language: row.merchant.language ?? null
     },
     merchantUserEmails: (row.merchant.users || [])
       .map((user: { email: string }) => user.email)

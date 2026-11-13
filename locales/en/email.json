@@ -136,5 +136,26 @@
       "TRANSFER": "Bank Transfer",
       "CASH": "Cash"
     }
+  },
+  "accountEmail": {
+    "tagline": "Rental management system",
+    "hello": "Hello",
+    "linkHint": "If the button does not work, copy and paste this link into your browser:",
+    "noteLabel": "Note:",
+    "rights": "All rights reserved."
+  },
+  "verification": {
+    "subject": "Verify your email - AnyRent",
+    "title": "Verify your email",
+    "intro": "Thank you for signing up for AnyRent! To finish signing up and activate your account, please verify your email address with the button below:",
+    "button": "Verify email",
+    "note": "This link expires in 24 hours. If you did not create this account, you can ignore this email."
+  },
+  "passwordReset": {
+    "subject": "Reset your password - AnyRent",
+    "title": "Reset your password",
+    "intro": "We received a request to reset the password of your AnyRent account. To create a new password, click the button below:",
+    "button": "Reset password",
+    "note": "This link expires in 24 hours. If you did not ask to reset your password, ignore this email and your password stays the same."
   }
 }

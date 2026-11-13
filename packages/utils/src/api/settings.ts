@@ -19,6 +19,8 @@ export interface MerchantSettings {
   taxId?: string;
   website?: string;
   description?: string;
+  /** #1539 shop language for emails (owner only) */
+  language?: 'vi' | 'en';
 }
 
 export interface MerchantCurrencyUpdate {

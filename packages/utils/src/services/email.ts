@@ -28,12 +28,16 @@ export interface EmailVerificationData {
   name: string;
   email: string;
   verificationUrl: string;
+  /** #1539 the shop language (email.json locale); empty or unknown → Vietnamese */
+  locale?: string;
 }
 
 export interface PasswordResetData {
   name: string;
   email: string;
   resetUrl: string;
+  /** #1539 the shop language (email.json locale); empty or unknown → Vietnamese */
+  locale?: string;
 }
 
 export interface PlanChangeData {
@@ -268,7 +272,14 @@ type EmailTranslations = {
       CASH: string;
     };
   };
+  /** #1539 shared text of the verification and password reset emails */
+  accountEmail?: AccountEmailCommon;
+  verification?: AccountEmailCopy;
+  passwordReset?: AccountEmailCopy;
 };
+
+type AccountEmailCommon = { tagline: string; hello: string; linkHint: string; noteLabel: string; rights: string };
+type AccountEmailCopy = { subject: string; title: string; intro: string; button: string; note: string };
 
 // Import all locale files at build time
 import enEmailTranslations from '../../../../locales/en/email.json';
@@ -674,65 +685,90 @@ function stripHtml(html: string): string {
 /**
  * Generate email verification email HTML
  */
-export function generateVerificationEmail(data: EmailVerificationData): string {
-  const { name, email, verificationUrl } = data;
-  
+const ACCOUNT_EMAIL_LOCALES = ['en', 'vi', 'zh', 'ko', 'ja'];
+
+/** #1539 text of the verification / password reset email in `locale`; empty or unknown → Vietnamese (the email sent before). */
+function accountEmailCopy(locale: string | undefined, kind: 'verification' | 'passwordReset') {
+  const lang = locale && ACCOUNT_EMAIL_LOCALES.includes(locale) ? locale : 'vi';
+  const t = getEmailTranslations(lang);
+  const vi = getEmailTranslations('vi');
+  const common = t.accountEmail ?? vi.accountEmail;
+  const copy = t[kind] ?? vi[kind];
+  if (!common || !copy) throw new Error(`email.json: missing ${kind}`);
+  return { lang: t[kind] ? lang : 'vi', common, copy };
+}
+
+export function verificationEmailSubject(locale?: string): string {
+  return accountEmailCopy(locale, 'verification').copy.subject;
+}
+
+export function passwordResetEmailSubject(locale?: string): string {
+  return accountEmailCopy(locale, 'passwordReset').copy.subject;
+}
+
+function accountEmailHtml(
+  { lang, common, copy }: ReturnType<typeof accountEmailCopy>,
+  name: string,
+  url: string,
+): string {
   return `
 <!DOCTYPE html>
-<html>
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xác thực email của bạn</title>
+  <title>${copy.title}</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
   <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     <div style="text-align: center; margin-bottom: 30px;">
       <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
+      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">${common.tagline}</p>
     </div>
     
-    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">Xác thực email của bạn</h2>
+    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">${copy.title}</h2>
     
-    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${name}</strong>,</p>
+    <p style="color: #374151; font-size: 16px;">${common.hello} <strong>${name}</strong>,</p>
     
     <p style="color: #374151; font-size: 16px;">
-      Cảm ơn bạn đã đăng ký tài khoản tại AnyRent! Để hoàn tất quá trình đăng ký và kích hoạt tài khoản của bạn, 
-      vui lòng xác thực địa chỉ email của bạn bằng cách nhấp vào nút bên dưới:
+      ${copy.intro}
     </p>
     
     <div style="text-align: center; margin: 40px 0;">
-      <a href="${verificationUrl}" 
+      <a href="${url}" 
          style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; 
                 padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; 
                 box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
-        Xác thực email
+        ${copy.button}
       </a>
     </div>
     
     <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-      Nếu nút không hoạt động, bạn có thể sao chép và dán liên kết sau vào trình duyệt của mình:
+      ${common.linkHint}
     </p>
     
     <p style="color: #2563eb; font-size: 14px; word-break: break-all; background-color: #f3f4f6; 
               padding: 12px; border-radius: 4px; margin: 10px 0;">
-      ${verificationUrl}
+      ${url}
     </p>
     
     <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-      <strong>Lưu ý:</strong> Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không tạo tài khoản này, 
-      vui lòng bỏ qua email này.
+      <strong>${common.noteLabel}</strong> ${copy.note}
     </p>
     
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
     
     <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
+      © ${new Date().getFullYear()} AnyRent. ${common.rights}
     </p>
   </div>
 </body>
 </html>
   `.trim();
+}
+
+export function generateVerificationEmail(data: EmailVerificationData): string {
+  return accountEmailHtml(accountEmailCopy(data.locale, 'verification'), data.name, data.verificationUrl);
 }
 
 /**
@@ -741,7 +777,9 @@ export function generateVerificationEmail(data: EmailVerificationData): string {
 export async function sendVerificationEmail(
   email: string,
   name: string,
-  verificationToken: string
+  verificationToken: string,
+  /** #1539 the shop language; empty → Vietnamese */
+  locale?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
@@ -762,11 +800,12 @@ export async function sendVerificationEmail(
     name,
     email,
     verificationUrl,
+    locale,
   });
 
   return await sendEmail({
     to: email,
-    subject: 'Xác thực email của bạn - AnyRent',
+    subject: verificationEmailSubject(locale),
     html,
   });
 }
@@ -775,64 +814,7 @@ export async function sendVerificationEmail(
  * Generate password reset email HTML
  */
 export function generatePasswordResetEmail(data: PasswordResetData): string {
-  const { name, email, resetUrl } = data;
-  
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đặt lại mật khẩu của bạn</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
-  <div style="background-color: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h1 style="color: #2563eb; margin: 0; font-size: 28px;">AnyRent</h1>
-      <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Hệ thống quản lý cho thuê</p>
-    </div>
-    
-    <h2 style="color: #111827; margin-top: 0; font-size: 24px;">Đặt lại mật khẩu của bạn</h2>
-    
-    <p style="color: #374151; font-size: 16px;">Xin chào <strong>${name}</strong>,</p>
-    
-    <p style="color: #374151; font-size: 16px;">
-      Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại AnyRent. 
-      Để tạo mật khẩu mới, vui lòng nhấp vào nút bên dưới:
-    </p>
-    
-    <div style="text-align: center; margin: 40px 0;">
-      <a href="${resetUrl}" 
-         style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; 
-                padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; 
-                box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
-        Đặt lại mật khẩu
-      </a>
-    </div>
-    
-    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-      Nếu nút không hoạt động, bạn có thể sao chép và dán liên kết sau vào trình duyệt của mình:
-    </p>
-    
-    <p style="color: #2563eb; font-size: 14px; word-break: break-all; background-color: #f3f4f6; 
-              padding: 12px; border-radius: 4px; margin: 10px 0;">
-      ${resetUrl}
-    </p>
-    
-    <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-      <strong>Lưu ý:</strong> Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không yêu cầu đặt lại mật khẩu, 
-      vui lòng bỏ qua email này và mật khẩu của bạn sẽ không thay đổi.
-    </p>
-    
-    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 40px 0;">
-    
-    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-      © ${new Date().getFullYear()} AnyRent. Tất cả các quyền được bảo lưu.
-    </p>
-  </div>
-</body>
-</html>
-  `.trim();
+  return accountEmailHtml(accountEmailCopy(data.locale, 'passwordReset'), data.name, data.resetUrl);
 }
 
 /**
@@ -841,7 +823,9 @@ export function generatePasswordResetEmail(data: PasswordResetData): string {
 export async function sendPasswordResetEmail(
   email: string,
   name: string,
-  resetToken: string
+  resetToken: string,
+  /** #1539 the shop language; empty → Vietnamese */
+  locale?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Lazy load env to avoid initialization issues in browser
   const { env } = await import('@rentalshop/env');
@@ -854,11 +838,12 @@ export async function sendPasswordResetEmail(
     name,
     email,
     resetUrl,
+    locale,
   });
 
   return await sendEmail({
     to: email,
-    subject: 'Đặt lại mật khẩu của bạn - AnyRent',
+    subject: passwordResetEmailSubject(locale),
     html,
   });
 }

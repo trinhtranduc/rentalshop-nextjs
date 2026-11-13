@@ -45,6 +45,7 @@ import {
 import {
   SUBSCRIPTION_STATUS,
 } from '../../../../../../packages/constants/src/status';
+import { shopLanguage } from '../../../../../../packages/constants/src/shop-language';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -151,6 +152,8 @@ async function processDayBucket(
           daysRemaining: reminderDaysBefore,
           status: subscription.status,
           renewUrl,
+          // #1539 the shop language (unset: Vietnamese)
+          locale: shopLanguage(subscription.merchant.language),
         });
 
       const emailResult = await sendTo(primaryRecipient);

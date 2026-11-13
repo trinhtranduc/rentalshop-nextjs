@@ -18,7 +18,7 @@ import { buildSimpleCorsHeaders } from '@rentalshop/utils/server';
 import { verifyGoogleIdToken } from '../../../../../lib/verify-google-id-token';
 import { buildAuthLoginSuccessResponse } from '../../../../../lib/build-auth-login-response';
 import { registerTimeZone } from '../../../../../lib/shop-timezone';
-import { registrationCurrency } from '../../../../../lib/registration-currency';
+import { signupPrefs } from '../../../../../lib/signup-prefs';
 
 function parseName(name: string): { firstName: string; lastName: string } {
   const parts = name.trim().split(/\s+/);
@@ -179,7 +179,14 @@ export async function POST(request: NextRequest) {
         country: validated.country,
         acceptLanguage: request.headers.get('accept-language'),
       });
-      const localized = getLocalizedRegistrationDefaults(validated.businessName, onboardingLocale);
+      // #1539 the language / currency picked on the form; without them #1143 as before
+      const prefs = signupPrefs({
+        language: validated.language,
+        currency: validated.currency,
+        explicitLocale,
+        onboardingLocale,
+      });
+      const localized = getLocalizedRegistrationDefaults(validated.businessName, prefs.seedLocale);
 
       const merchant = await tx.merchant.create({
         data: {
@@ -199,8 +206,10 @@ export async function POST(request: NextRequest) {
           pricingConfig: buildPricingConfig(businessType, validated.pricingType),
           // #567 the registering device's zone; missing/invalid (old apps) → Asia/Ho_Chi_Minh, never a 400
           timezone: registerTimeZone(body),
-          // #1143 set once from the sign-up language (vi → VND, other → USD); Settings never changes it
-          currency: registrationCurrency(explicitLocale, onboardingLocale),
+          // #1143 / #1539 the currency picked on the form, else from the sign-up language (vi → VND, other → USD)
+          currency: prefs.currency,
+          // #1539 shop language (emails)
+          language: prefs.language,
         } as any,
       });
 

@@ -187,6 +187,9 @@ model Merchant {
   /// #567 Shop time zone (IANA id). Every "day" of this shop (today, calendar, availability, revenue by day)
   /// is a civil day in this zone. Existing shops and register calls without a zone: Asia/Ho_Chi_Minh.
   timezone             String               @default("Asia/Ho_Chi_Minh")
+  /// #1539 Shop language ('vi' | 'en'): emails to the shop and its users, picked at sign-up, changed in Settings.
+  /// Empty = Vietnamese (shops before #1539).
+  language             String?
   /// ID of merchant who referred this merchant (for referral tracking)
   referredByMerchantId Int?
   categories           Category[]

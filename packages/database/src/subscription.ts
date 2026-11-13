@@ -1354,7 +1354,8 @@ export const simplifiedSubscriptions = {
     return await prisma.subscription.findUnique({
       where: { id },
       include: {
-        merchant: { select: { id: true, name: true, email: true } },
+        // #1539 language: subscription emails go out in the shop language
+        merchant: { select: { id: true, name: true, email: true, language: true } },
         // basePrice + currency: renew / extend price from the plan (#779; was 0); limits: allowWebAccess change on plan change
         plan: { select: { id: true, name: true, basePrice: true, currency: true, limits: true } },
         payments: {

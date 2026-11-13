@@ -18,7 +18,7 @@ import {
   SHOP_TIMEZONE,
 } from '@rentalshop/utils';
 import { API, PAYMENT_METHOD, PAYMENT_STATUS, PAYMENT_TYPE, USER_ROLE } from '@rentalshop/constants';
-import { PLATFORM_OPS_ROLES } from '@rentalshop/constants';
+import { PLATFORM_OPS_ROLES, shopLanguage } from '@rentalshop/constants';
 import { manualExtensionBilling } from '../../../../../lib/plan-renewal';
 
 /**
@@ -269,7 +269,9 @@ async function handleExtendSubscription(
         newEndDate: endDate,
         extensionDays,
         method: method || 'MANUAL_EXTENSION',
-        description: description || undefined
+        description: description || undefined,
+        // #1539 the shop language (unset: Vietnamese)
+        locale: shopLanguage((subscriptionWithDetails.merchant as { language?: unknown }).language),
       })
         .then((emailResult) => {
           console.log('📬 [Subscription] Extension email result:', {
