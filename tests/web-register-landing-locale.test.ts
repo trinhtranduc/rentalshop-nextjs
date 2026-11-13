@@ -110,3 +110,15 @@ describe('middleware on the sign-up pages (#1551)', () => {
     expect(config.matcher).toEqual(expect.arrayContaining(['/register', '/register/:path*']));
   });
 });
+
+describe('language switch on app pages (#1551)', () => {
+  const { readFileSync } = require('fs') as typeof import('fs');
+  const { join } = require('path') as typeof import('path');
+  const switcher = readFileSync(join(__dirname, '../packages/ui/src/components/layout/LanguageSwitcher.tsx'), 'utf8');
+
+  it('日本語 / 한국어 / 中文 on an app page (login, sign-up) falls back to English, like the shop language', () => {
+    const effect = switcher.slice(switcher.indexOf("['zh', 'ko', 'ja'].includes(currentLocale)"));
+    expect(effect).toMatch(/const fallbackLocale: SupportedLocale = 'en';/);
+    expect(effect.slice(0, 400)).not.toMatch(/fallbackLocale: SupportedLocale = 'vi'/);
+  });
+});
