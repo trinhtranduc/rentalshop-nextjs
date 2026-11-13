@@ -26,7 +26,7 @@ class Issue1395ResourcesTest {
         "hand_over" to ("Giao đồ cho khách" to "Hand over to customer"),
         "return" to ("Nhận trả đồ" to "Take back items"),
         "extend" to ("Gia hạn đơn" to "Extend order"),
-        "collateral" to ("Giấy tờ & thế chân" to "Papers & collateral"),
+        "collateral" to ("Giấy tờ & thế chân" to "Papers & security deposit"),
         "collect" to ("Thu tiền cọc" to "Collect deposit"),
         "unpaid" to ("Đợt cọc chưa thu" to "Uncollected deposit stages"),
         "cancel" to ("Huỷ đơn" to "Cancel order"),

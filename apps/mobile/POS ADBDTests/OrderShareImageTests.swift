@@ -761,7 +761,7 @@ final class OrderShareMoneyOrderTests: XCTestCase {
 
     func testH_englishLabels() {
         XCTAssertEqual(flat(make(staged1M(), en)).suffix(3), [
-            "COLLECT Rental left, collect at hand-over|500.000đ", "Collateral, collect at hand-over|300.000đ",
+            "COLLECT Rental left, collect at hand-over|500.000đ", "Security deposit, collect at hand-over|300.000đ",
             "CASH Customer pays at hand-over|800.000đ",
         ])
     }
