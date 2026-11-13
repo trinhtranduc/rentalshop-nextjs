@@ -49,18 +49,18 @@
     "deposit": "Tiền cọc",
     "subtotal": "Tạm tính",
     "grandTotal": "Tổng cộng",
-    "securityDeposit": "Tiền thế chấp",
+    "securityDeposit": "Tiền thế chân",
     "damageFee": "Phụ phí",
-    "collateralType": "Loại thế chấp",
-    "collateralDetails": "Chi tiết thế chấp",
+    "collateralType": "Loại thế chân",
+    "collateralDetails": "Chi tiết thế chân",
     "collateralImage": "Hình ảnh giấy tờ bảo đảm",
     "uploadImage": "Tải lên hình ảnh giấy tờ",
     "collateralImageHint": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác. Định dạng hỗ trợ: JPEG, PNG, WebP. Kích thước tối đa: 5MB",
     "tooltips": {
       "damageFee": "Khoản thu thêm khi sản phẩm bị hư hỏng hoặc mất mát trong quá trình khách hàng thuê",
       "securityDeposit": "Số tiền cọc khách hàng phải đặt khi nhận hàng. Số tiền này sẽ được hoàn lại sau khi trả hàng, trừ đi phụ phí (nếu có)",
-      "collateralType": "Loại giấy tờ tùy thân khách hàng để lại làm thế chấp (CMND/CCCD/ID, Bằng lái xe/Driver License, Hộ chiếu/Passport, hoặc loại khác)",
-      "collateralDetails": "Thông tin chi tiết về giấy tờ thế chấp (số CMND/CCCD/ID, số bằng lái/Driver License, số hộ chiếu/Passport, hoặc thông tin khác tùy theo loại)",
+      "collateralType": "Loại giấy tờ tùy thân khách hàng để lại làm thế chân (CMND/CCCD/ID, Bằng lái xe/Driver License, Hộ chiếu/Passport, hoặc loại khác)",
+      "collateralDetails": "Thông tin chi tiết về giấy tờ thế chân (số CMND/CCCD/ID, số bằng lái/Driver License, số hộ chiếu/Passport, hoặc thông tin khác tùy theo loại)",
       "collateralImage": "Tải lên hình ảnh CMND/CCCD, hộ chiếu, hoặc giấy tờ bảo đảm khác để xác minh"
     }
   },
@@ -104,7 +104,7 @@
     "saleOrderRule": "Đơn BÁN: Chỉ có thể sửa khi trạng thái là",
     "status": "Trạng thái",
     "collectionAmount": "Số tiền thu",
-    "collateral": "Thế chấp",
+    "collateral": "Thế chân",
     "alreadyCollected": "Đã thu tiền",
     "noCollectionNeeded": "Không cần thu tiền",
     "pickupOrderTitle": "Lấy hàng - Chi tiết thu tiền",
@@ -122,7 +122,7 @@
     "returnNotes": "Ghi chú trả hàng",
     "damageNotes": "Ghi chú hư hỏng",
     "bailAmount": "Tiền bảo lãnh",
-    "material": "Vật thế chấp"
+    "material": "Vật thế chân"
   },
   "payment": {
     "subtotal": "Tạm tính",
@@ -199,8 +199,8 @@
     "useAddNewCustomerButton": "Sử dụng nút \"Thêm khách hàng mới\" ở trên để tạo một khách hàng",
     "orderNotes": "Ghi chú đơn hàng",
     "enterOrderNotes": "Nhập ghi chú đơn hàng...",
-    "enterCollateralDetails": "Nhập chi tiết thế chấp",
-    "selectCollateralType": "Chọn loại thế chấp",
+    "enterCollateralDetails": "Nhập chi tiết thế chân",
+    "selectCollateralType": "Chọn loại thế chân",
     "discount": "Giảm giá",
     "discountAmount": "Số tiền giảm giá...",
     "amount": "Số tiền",
@@ -483,10 +483,10 @@
       "done": "Không cần thu thêm"
     },
     "depositPaid": "Đã đặt cọc",
-    "securityDeposit": "Thế chấp",
+    "securityDeposit": "Thế chân",
     "damageFee": "Phụ phí",
     "lateFee": "Phí trễ hạn",
-    "securityBack": "Trả lại thế chấp",
+    "securityBack": "Trả lại thế chân",
     "holdCollateral": "Giữ thêm",
     "returnCollateral": "Trả lại"
   },
@@ -535,9 +535,9 @@
     "damage": "Hư hỏng"
   },
   "detailSettings": {
-    "title": "Thế chấp & phí",
-    "edit": "Sửa thế chấp & phí",
-    "empty": "Chưa giữ thế chấp, chưa có phí.",
+    "title": "Thế chân & phí",
+    "edit": "Sửa thế chân & phí",
+    "empty": "Chưa giữ thế chân, chưa có phí.",
     "holding": "Giữ",
     "notForThisState": "không áp dụng ở trạng thái này",
     "noteImages": "Ảnh ghi chú",
@@ -1003,8 +1003,8 @@
         "cancelKept": "Phụ thu"
       },
       "settings": {
-        "title": "Ghi chú, thế chấp và phí",
-        "edit": "Sửa thế chấp & phí",
+        "title": "Ghi chú, thế chân và phí",
+        "edit": "Sửa thế chân & phí",
         "photos": "Ảnh ghi chú",
         "addPhoto": "Thêm ảnh",
         "removePhoto": "Bỏ ảnh"

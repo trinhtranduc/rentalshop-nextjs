@@ -5083,7 +5083,7 @@ final class AnyRentE2ETests: XCTestCase {
             let texts = e2e.screenTexts()
             e2e.note("ROLE \(tag) overview | \(texts.prefix(40))")
             raw += e2e.rawKeys()
-            let revenue = ["Real income", "Thực thu", "New orders total", "Giá trị đơn mới", "Revenue", "Doanh thu", "Collateral", "Tiền cọc", "Still to collect", "Còn phải thu"]
+            let revenue = ["Real income", "Thực thu", "New orders total", "Giá trị đơn mới", "Revenue", "Doanh thu", "Security deposit", "Tiền cọc", "Still to collect", "Còn phải thu"]
             let shown = texts.filter { t in revenue.contains(where: { t.hasPrefix($0) }) }
             XCTAssertTrue(shown.isEmpty, "\(tag) must not see revenue figures on Tổng quan: \(shown)")
             e2e.soft(e2e.element(labelBeginsWith: ["Today's work", "Việc hôm nay", "Hôm nay", "Today"]).exists, "\(tag) sees the Hôm nay card (analytics.view.dashboard)")
@@ -5684,7 +5684,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(week.waitForExistence(timeout: 8), "7 ngày chip")
         week.tap()
         sleep(4)
-        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Collateral")).firstMatch
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Security deposit")).firstMatch
         XCTAssertTrue(tile.waitForExistence(timeout: 8), "Thế chân tile")
         e2e.note("TILE | \(tile.label)")
         if !tile.isHittable { app.swipeUp(); sleep(1) }
@@ -5714,7 +5714,7 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(4)
         let today = e2e.element(labelBeginsWith: ["Today", "Hôm nay"], type: .button)
         if today.waitForExistence(timeout: 8) { today.tap(); sleep(3) }
-        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Collateral")).firstMatch
+        let tile = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Thế chân", "Security deposit")).firstMatch
         XCTAssertTrue(tile.waitForExistence(timeout: 10), "Thế chân tile")
         if !tile.isHittable { app.swipeUp(); sleep(1) }
         tile.tap()
@@ -5845,7 +5845,7 @@ final class AnyRentE2ETests: XCTestCase {
         let collect = app.staticTexts.matching(NSPredicate(format: "label IN %@", ["Thu khi giao", "Collect at hand-over"])).firstMatch
         let cash = text(["Khách đưa lúc nhận đồ", "Customer pays at hand-over"])
         let oldLeft = text(["Tiền thuê còn lại, thu khi giao", "Rental left, collect at hand-over"])
-        let oldCollateral = text(["Thế chân, thu khi giao", "Collateral, collect at hand-over"])
+        let oldCollateral = text(["Thế chân, thu khi giao", "Security deposit, collect at hand-over"])
         let remaining = text(["Còn phải thu", "Still to collect"])
         let deposit = text(["Đã cọc", "Deposit paid"])
         let giveBack = text(["Khi nhận trả: trả khách", "At return: give back"])

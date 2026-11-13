@@ -120,7 +120,7 @@ final class PickupSheetNoItemsTests: XCTestCase {
             "order.sheetTitle.handOver": ("Giao đồ cho khách", "Hand over to customer"),
             "order.sheetTitle.return": ("Nhận trả đồ", "Take back items"),
             "order.sheetTitle.extend": ("Gia hạn đơn", "Extend order"),
-            "order.sheetTitle.collateral": ("Giấy tờ & thế chân", "Papers & collateral"),
+            "order.sheetTitle.collateral": ("Giấy tờ & thế chân", "Papers & security deposit"),
             "order.sheetTitle.collect": ("Thu tiền cọc", "Collect deposit"),
             "order.sheetTitle.unpaid": ("Đợt cọc chưa thu", "Uncollected deposit stages"),
             "order.sheetTitle.cancel": ("Huỷ đơn", "Cancel order"),
