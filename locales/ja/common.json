@@ -1,4 +1,17 @@
 {
+  "actions": {
+    "delete": "削除",
+    "edit": "編集",
+    "view": "表示",
+    "create": "新規作成",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "search": "検索",
+    "export": "エクスポート",
+    "import": "インポート",
+    "selectAll": "すべて選択"
+  },
   "buttons": {
     "save": "保存",
     "cancel": "キャンセル",
@@ -28,6 +41,8 @@
     "saving": "保存中...",
     "creating": "作成中...",
     "tryAgain": "再試行",
+    "viewMoreDetails": "詳細を表示",
+    "hideDetails": "詳細を隠す",
     "viewAll": "すべて表示"
   },
   "labels": {
@@ -118,6 +133,7 @@
     "authors": "著者",
     "outlets": "店舗",
     "categories": "カテゴリー",
+    "availabilityCheck": "空き状況確認",
     "reports": "レポート",
     "analytics": "分析"
   },
@@ -129,10 +145,10 @@
     "page": "ページ",
     "rowsPerPage": "ページあたりの行数",
     "pageSizeRange": "1ページあたり1〜{max}行",
+    "itemsPerPage": "1ページあたりの件数",
     "first": "最初",
     "last": "最後",
     "noData": "表示するデータがありません",
-    "itemsPerPage": "1ページあたりの件数",
     "apply": "適用",
     "items": {
       "items": "件",
@@ -181,13 +197,25 @@
   },
   "roles": {
     "ADMIN": "管理者",
+    "ARTICLE": "記事編集者",
     "MERCHANT": "事業者",
     "OUTLET_ADMIN": "店舗管理者",
     "OUTLET_STAFF": "店舗スタッフ",
     "OUTLET_INVENTORY": "在庫担当"
   },
-  "actions": {
-    "selectAll": "すべて選択"
+  "import": {
+    "preview": {
+      "total": "合計",
+      "valid": "有効",
+      "invalid": "無効",
+      "errors": "エラー",
+      "errorsPlural": "エラー",
+      "duplicates": "重複",
+      "duplicatesPlural": "重複",
+      "status": "ステータス",
+      "showing": "全{total}行のうち最初の{maxRows}行を表示しています",
+      "validStatus": "有効"
+    }
   },
   "shell": {
     "nav": {
@@ -269,6 +297,22 @@
     },
     "breadcrumb": "現在の場所",
     "searchOpen": "検索を開く"
+  },
+  "dateRange": {
+    "title": "期間を選択",
+    "placeholder": "日付を選択",
+    "weekdays": "日,月,火,水,木,金,土",
+    "month": "{year}年{month}月",
+    "prev": "前の月",
+    "next": "次の月",
+    "pickStart": "開始日をタップしてから、終了日をタップしてください",
+    "pickEnd": "終了日をタップしてください（1日だけの場合は開始日をもう一度タップ）",
+    "summary": "{from} → {to} · {days}日間",
+    "single": "{from} · 1日間",
+    "tooLong": "選択できるのは最長{days}日までです。",
+    "apply": "適用",
+    "cancel": "キャンセル",
+    "close": "閉じる"
   },
   "posts": {
     "language": "記事の言語",
