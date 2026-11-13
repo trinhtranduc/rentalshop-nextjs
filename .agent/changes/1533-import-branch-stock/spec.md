@@ -1,6 +1,6 @@
 # Spec — Nhập Excel chọn chi nhánh và số lượng theo từng chi nhánh
 
-Issue: #1533 · Status: in-progress · Intent: ./intent.md · Mockup: https://claude.ai/artifact/9b56KwErJWiGpiyFEfyEY4 (tab đầu)
+Issue: #1533 · Status: in-review (PR #1534) · Intent: ./intent.md · Mockup: https://claude.ai/artifact/9b56KwErJWiGpiyFEfyEY4 (tab đầu)
 
 ## Behavior
 

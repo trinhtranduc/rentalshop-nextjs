@@ -1,6 +1,6 @@
 # Plan — Nhập Excel chọn chi nhánh và số lượng theo từng chi nhánh
 
-Issue: #1533 · Status: in-progress · Spec: ./spec.md
+Issue: #1533 · Status: in-review (PR #1534) · Spec: ./spec.md
 
 Skill: `issue-first` (xong), `api-route-standard`, `api-compat-review` (bảng ở issue và PR, dòng LOG), `i18n-keys` (`products.web.import` chỉ có ở en, vi), `verify-change`, `review-pr`. Không `mobile-parity` (điện thoại không gọi route này), không `db-migration`.
 

@@ -1,6 +1,6 @@
 # Nhập Excel chọn chi nhánh và số lượng theo từng chi nhánh (web)
 
-Issue: #1533 · Author: Claude (chủ shop chốt mockup) · Status: in-progress · Created: 2026-11-13 · Parent: #1335 (phần c, PR 4)
+Issue: #1533 · Author: Claude (chủ shop chốt mockup) · Status: in-review (PR #1534) · Created: 2026-11-13 · Parent: #1335 (phần c, PR 4)
 
 ## Problem
 
