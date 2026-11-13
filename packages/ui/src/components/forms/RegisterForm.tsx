@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { Eye, EyeOff, Mail, Lock, User, Store, Phone, CheckCircle, MapPin, Gift, Globe } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Store, Phone, MapPin, Gift, Globe } from "lucide-react";
 import { authApi, isValidEmail, decodeGoogleCredentialPayload, storeAuthData } from "@rentalshop/utils";
 import { 
   BUSINESS_TYPE_OPTIONS,
@@ -682,26 +682,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                   {formik.errors.acceptTermsAndPrivacy && formik.touched.acceptTermsAndPrivacy && (
                     <p className="text-red-500 text-sm">{formik.errors.acceptTermsAndPrivacy}</p>
                   )}
-                </div>
-
-                {/* Trial Benefits */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-blue-900 mb-1">{t('register.freeTrialIncludes')}</h3>
-                  <div className="text-xs text-blue-700 mb-2">Dùng thử 14 ngày</div>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
-                      {t('register.fullAccessToAllFeatures')}
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
-                      {t('register.mobileAppAccess')}
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 text-blue-700 mr-2" />
-                      {t('register.noCreditCardRequired')}
-                    </li>
-                  </ul>
                 </div>
 
                 {/* Navigation Buttons for Step 2 */}
