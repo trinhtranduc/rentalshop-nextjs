@@ -2,7 +2,7 @@ import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAnyAuth } from '@rentalshop/auth/server';
 import { db, getDefaultBankAccount } from '@rentalshop/database';
-import {API, USER_ROLE} from '@rentalshop/constants';
+import { API, USER_ROLE, shopLanguage } from '@rentalshop/constants';
 import { toPublicUser } from '../../../../lib/user-scope';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { readShareOrderNote } from '../../../../lib/share-order-note-settings';
@@ -85,6 +85,8 @@ export const GET = withAnyAuth(async (request: NextRequest, { user, userScope })
         blockPricing: { oldApps: readOldAppsMode((userProfile.merchant as { settings?: unknown }).settings) },
         // #1344 "Hiện ghi chú đơn trên ảnh chia sẻ" (additive; false when unset, readable by every role)
         shareOrderNote: readShareOrderNote((userProfile.merchant as { settings?: unknown }).settings),
+        // #1539 shop language for emails (additive; 'vi' when unset)
+        language: shopLanguage((userProfile.merchant as { language?: unknown }).language),
         // #567 shop time zone (additive; missing = Asia/Ho_Chi_Minh for every client)
         ...merchantTimeZoneField(userProfile.merchant),
         // #1199 "Cách thu cọc" (additive)

@@ -3,7 +3,7 @@ import { db, prisma } from '@rentalshop/database';
 import { sendSubscriptionRenewalEmail } from '@rentalshop/utils';
 import { withAuthRoles } from '@rentalshop/auth/server';
 import { addonRenewalLines, calculateRenewalTotal, handleApiError, renewalIntervalForMonths, ResponseBuilder } from '@rentalshop/utils';
-import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, planPaymentState } from '@rentalshop/constants';
+import { API, PAYMENT_METHOD, PAYMENT_TYPE, PAYMENT_STATUS, SUBSCRIPTION_STATUS, USER_ROLE, PLATFORM_OPS_ROLES, planPaymentState, shopLanguage } from '@rentalshop/constants';
 import { manualExtensionBilling } from '../../../../../lib/plan-renewal';
 
 /**
@@ -144,6 +144,8 @@ export async function POST(
                 id: true,
                 name: true,
                 email: true,
+                // #1539 the renewal email goes out in the shop language
+                language: true,
               }
             },
             plan: true
@@ -182,7 +184,9 @@ export async function POST(
           periodStart: result.updatedSubscription.currentPeriodStart || new Date(),
           periodEnd: result.updatedSubscription.currentPeriodEnd || new Date(),
           paymentMethod: method,
-          transactionId: transactionId || undefined
+          transactionId: transactionId || undefined,
+          // #1539 the shop language (unset: Vietnamese)
+          locale: shopLanguage((result.updatedSubscription.merchant as { language?: unknown }).language),
         })
           .then((emailResult) => {
             console.log('📬 [Subscription] Renewal email result:', {

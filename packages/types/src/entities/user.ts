@@ -154,6 +154,10 @@ export interface RegisterData {
   /** Sign-up UI language (en, vi, ja…): onboarding seed copy and shop currency (#1143) */
   locale?: string;
   country?: string;
+  /** #1539 shop language picked on the form (emails, sample data) */
+  language?: 'vi' | 'en';
+  /** #1539 shop currency picked on the form */
+  currency?: 'VND' | 'USD';
   businessType?: string;
   pricingType?: string;
   address?: string;

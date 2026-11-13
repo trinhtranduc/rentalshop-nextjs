@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rentalshop/database';
 import { withPermissions } from '@rentalshop/auth/server';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
-import { API, USER_ROLE } from '@rentalshop/constants';
+import { API, USER_ROLE, isShopLanguage, shopLanguage } from '@rentalshop/constants';
 import { z } from 'zod';
 import { readOldAppsMode } from '../../../../lib/block-pricing-settings';
 import { readShareOrderNote } from '../../../../lib/share-order-note-settings';
@@ -33,6 +33,9 @@ const timezoneSchema = z.string().min(1).max(64).refine(isValidTimeZone, 'Unknow
  * - `timezone` (#567, IANA id): role MERCHANT only (ADMIN changes it via PUT /api/merchants/[id]; others
  *   403 INSUFFICIENT_PERMISSIONS). Unknown zone → 400 INVALID_TIMEZONE. A body with only the shop settings
  *   updates just those (no name required). A change is written to the audit log (entity Merchant).
+ * - `language` (#1539, 'vi' | 'en' "Ngôn ngữ email"): role MERCHANT only (403 INSUFFICIENT_PERMISSIONS otherwise,
+ *   ADMIN included); any other value → 400 INVALID_INPUT. A body with only that field updates just it. The answer and
+ *   GET /api/users/profile carry `language` (additive; 'vi' when unset).
  * - Single source of truth: ROLE_PERMISSIONS in packages/auth/src/core.ts
  */
 export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequest, { user, userScope }) => {
@@ -69,7 +72,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       showPublicPrice,
       timezone,
       blockPricing,
-      shareOrderNote
+      shareOrderNote,
+      language
     } = body;
 
     // #518 "Cho tạo đơn khi trùng lịch": boolean, and only the shop owner (or platform ADMIN) may change it,
@@ -170,11 +174,27 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
       }
     }
 
+    // #1539 shop language (emails): vi / en, the shop owner only.
+    if (language !== undefined) {
+      if (!isShopLanguage(language)) {
+        return NextResponse.json(
+          ResponseBuilder.error('INVALID_INPUT'),
+          { status: API.STATUS.BAD_REQUEST }
+        );
+      }
+      if (user.role !== USER_ROLE.MERCHANT) {
+        return NextResponse.json(
+          ResponseBuilder.error('INSUFFICIENT_PERMISSIONS'),
+          { status: API.STATUS.FORBIDDEN }
+        );
+      }
+    }
+
     // A body carrying only shop settings (new apps' toggle, the time zone picker) updates just those fields;
     // every other body is the business-info form as before and still needs a name.
     const BUSINESS_FIELDS = ['name', 'phone', 'address', 'city', 'state', 'zipCode', 'country', 'businessType', 'taxId', 'website', 'description', 'tenantKey'];
     const settingOnly =
-      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined || blockPricing !== undefined || shareOrderNote !== undefined) &&
+      (allowOverlappingOrders !== undefined || onlineBookingEnabled !== undefined || showPublicPrice !== undefined || timezone !== undefined || blockPricing !== undefined || shareOrderNote !== undefined || language !== undefined) &&
       BUSINESS_FIELDS.every((field) => body[field] === undefined);
 
     // Validate required fields
@@ -258,6 +278,9 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
     if (timezone !== undefined) {
       updateData.timezone = timezone;
     }
+    if (language !== undefined) {
+      updateData.language = language;
+    }
     if (blockPricing !== undefined || shareOrderNote !== undefined) {
       // Keep the other keys of `settings` (e.g. payment); only the key(s) sent change
       const stored = ((dbUser.merchant as { settings?: Record<string, unknown> | null }).settings ?? {}) as Record<string, unknown>;
@@ -312,6 +335,8 @@ export const PUT = withPermissions(['merchant.manage'])(async (request: NextRequ
         blockPricing: { oldApps: readOldAppsMode((updatedMerchant as { settings?: unknown }).settings) },
         // #1344 additive; false when unset
         shareOrderNote: readShareOrderNote((updatedMerchant as { settings?: unknown }).settings),
+        // #1539 additive; 'vi' when unset
+        language: shopLanguage((updatedMerchant as { language?: unknown }).language),
         ...merchantTimeZoneField(updatedMerchant),
         ...merchantDepositField(updatedMerchant),
         isActive: updatedMerchant.isActive,

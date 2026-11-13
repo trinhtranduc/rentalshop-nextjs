@@ -50,7 +50,9 @@
       "currencyHint": "Webとショップページでの価格の表示方法です。金額は換算されません。",
       "currencyConfirmTitle": "通貨を{code}に変更しますか？",
       "currencyConfirmBody": "Webとショップページのすべての価格が{code}で表示されます。金額はそのままで、換算されません（{example}）。",
-      "currencyConfirmOk": "{code}に変更"
+      "currencyConfirmOk": "{code}に変更",
+      "emailLanguage": "メールの言語",
+      "emailLanguageHint": "確認、パスワード再設定、プランのメールはこの言語で送信されます。"
     },
     "outlets": {
       "count": "{count}店舗",

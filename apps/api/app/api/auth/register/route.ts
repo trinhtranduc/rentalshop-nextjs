@@ -9,7 +9,7 @@ import { registerSchema, sendVerificationEmail, generateUniqueTenantKey } from '
 import { hashPassword } from '@rentalshop/auth/server';
 import { SUBSCRIPTION_STATUS, USER_ROLE } from '@rentalshop/constants';
 import { registerTimeZone } from '../../../../lib/shop-timezone';
-import { registrationCurrency } from '../../../../lib/registration-currency';
+import { signupPrefs } from '../../../../lib/signup-prefs';
 import { handleApiError, ResponseBuilder } from '@rentalshop/utils';
 import {
   getDefaultPricingConfig,
@@ -69,11 +69,18 @@ async function getOrCreateTrialPlan(tx: any) {
 /**
  * Send email verification (non-critical, don't fail registration if it fails)
  */
-async function sendVerificationEmailSafe(userId: number, email: string, firstName: string, lastName: string) {
+async function sendVerificationEmailSafe(
+  userId: number,
+  email: string,
+  firstName: string,
+  lastName: string,
+  language: 'vi' | 'en' = 'vi'
+) {
   try {
     const verification = await createEmailVerification(userId, email);
     const userName = `${firstName} ${lastName}`.trim() || email;
-    const result = await sendVerificationEmail(email, userName, verification.token);
+    // #1539 in the shop language (no shop: Vietnamese, as before)
+    const result = await sendVerificationEmail(email, userName, verification.token, language);
     
     if (!result.success) {
       console.warn('⚠️ Failed to send verification email:', result.error);
@@ -141,6 +148,13 @@ export async function POST(request: NextRequest) {
         country: validatedData.country,
         acceptLanguage: request.headers.get('accept-language'),
       });
+      // #1539 the language / currency picked on the form; without them (installed apps, old tabs) #1143 as before
+      const prefs = signupPrefs({
+        language: validatedData.language,
+        currency: validatedData.currency,
+        explicitLocale,
+        onboardingLocale,
+      });
       
       // Check merchant duplicate
       const existingMerchant = await db.merchants.checkDuplicate(
@@ -207,13 +221,15 @@ export async function POST(request: NextRequest) {
             pricingConfig: buildPricingConfig(businessType, validatedData.pricingType),
             // #567 the registering device's zone; missing/invalid (old apps) → Asia/Ho_Chi_Minh, never a 400
             timezone: registerTimeZone(body),
-            // #1143 set once from the sign-up language (vi → VND, other → USD); Settings never changes it
-            currency: registrationCurrency(explicitLocale, onboardingLocale),
+            // #1143 / #1539 the currency picked on the form, else from the sign-up language (vi → VND, other → USD)
+            currency: prefs.currency,
+            // #1539 shop language (emails)
+            language: prefs.language,
           } as any
         });
         
         // Create outlet
-        const localized = getLocalizedRegistrationDefaults(merchant.name, onboardingLocale);
+        const localized = getLocalizedRegistrationDefaults(merchant.name, prefs.seedLocale);
         const outlet = await tx.outlet.create({
           data: {
             name: localized.outletName,
@@ -285,7 +301,8 @@ export async function POST(request: NextRequest) {
         result.user.id,
         result.user.email,
         result.user.firstName,
-        result.user.lastName
+        result.user.lastName,
+        prefs.language
       );
       
       return NextResponse.json(

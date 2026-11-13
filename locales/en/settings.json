@@ -556,7 +556,9 @@
       "currencyHint": "How prices show on the web and the shop page. Amounts are not converted.",
       "currencyConfirmTitle": "Change currency to {code}?",
       "currencyConfirmBody": "Every price on the web and the shop page will show in {code}. Amounts stay the same, nothing is converted ({example}).",
-      "currencyConfirmOk": "Change to {code}"
+      "currencyConfirmOk": "Change to {code}",
+      "emailLanguage": "Email language",
+      "emailLanguageHint": "Verification, password reset and plan emails are sent in this language."
     },
     "outlets": {
       "title": "Outlets",
