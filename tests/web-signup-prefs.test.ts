@@ -118,6 +118,13 @@ describe('sign-up form asks only the country (#1545)', () => {
     expect(wrappers.some((l) => l.includes('lg:hidden'))).toBe(true);
   });
 
+  it('no "Free Trial Includes" box on step 2 (owner, #1545)', () => {
+    expect(form).not.toContain('freeTrialIncludes');
+    expect(form).not.toContain('Dùng thử 14 ngày');
+    expect(form).not.toContain('fullAccessToAllFeatures');
+    expect(form).not.toContain('mobileAppAccess');
+  });
+
   it.each(['vi', 'en', 'ja', 'ko', 'zh'])('%s: register.countryHint has {currency}; the removed keys are gone', (lang) => {
     const auth = JSON.parse(readFileSync(join(root, `locales/${lang}/auth.json`), 'utf8'));
     expect(auth.register.countryHint).toContain('{currency}');
