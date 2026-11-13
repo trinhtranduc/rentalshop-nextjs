@@ -1,6 +1,6 @@
 # Plan — #1553 thêm ngôn ngữ
 
-Status: draft (chờ anh trả lời 4 câu hỏi trong `intent.md`)
+Status: accepted (quyết định trong `intent.md`, decision log)
 
 Mỗi giai đoạn là một hoặc vài PR vào `dev`, mỗi PR có issue con. Ví dụ dưới đây dùng đợt 1 là `ja`, `ko`, `zh`.
 
@@ -15,11 +15,11 @@ Mỗi giai đoạn là một hoặc vài PR vào `dev`, mỗi PR có issue con. 
 
 | PR | Việc | File chính | Skill | Kiểm tra |
 |---|---|---|---|---|
-| 1.1 | `APP_LANGUAGES` một chỗ (mục A1). `i18n.ts` / `layout.tsx` / `LanguageSwitcher` / `appLocaleFor` đọc từ đây | `packages/constants/src/app-languages.ts`, `apps/client/i18n.ts`, `apps/client/app/layout.tsx`, `packages/ui/.../LanguageSwitcher.tsx` | i18n-keys | Jest, e2e đổi VI / EN như cũ |
-| 1.2 | Test `locales-complete` (mục A3) cho web, iOS, Android; ban đầu chỉ kiểm `vi` / `en` | `tests/locales-complete.test.ts` | verify-change | test xanh với vi / en |
+| 1.1 (#1554) | `APP_LANGUAGES` một chỗ (mục A1). `i18n.ts` / `layout.tsx` / `LanguageSwitcher` / `appLocaleFor` đọc từ đây | `packages/constants/src/app-languages.ts`, `apps/client/i18n.ts`, `apps/client/app/layout.tsx`, `packages/ui/.../LanguageSwitcher.tsx` | i18n-keys | Jest, e2e đổi VI / EN như cũ |
+| 1.2 (#1554) | Test `locales-complete` và test chặn chữ viết cứng mới (mức trần theo file) (mục A3) cho web, iOS, Android; ban đầu chỉ kiểm `vi` / `en` | `tests/locales-complete.test.ts` | verify-change | test xanh với vi / en |
 | 1.3 | Bảng thuật ngữ (mục A4), anh duyệt | `locales/GLOSSARY.md` | i18n-keys | anh duyệt |
 | 1.4–1.8 | Gom chữ viết cứng trên **web** vào khoá dịch (vi + en), mỗi PR một khu vực | Tích điểm, Nhập Excel (sản phẩm, khách hàng), Form đơn, In phiếu (`print-preview-model.ts`, `ReceiptPreviewModal`), còn lại | i18n-keys | test quét chữ cứng (A2), e2e các màn đó |
-| 1.9–1.12 | Như trên cho **iOS** (~800 dòng) và **Android** (~850 dòng), mỗi app 2 PR | `apps/mobile`, `apps/mobile-android` | mobile-parity | unit test, e2e Simulator / emulator có cửa sổ |
+| 1.9–1.12 | Như trên cho **iOS** (62 dòng) và **Android** (141 dòng), mỗi app 1 PR | `apps/mobile`, `apps/mobile-android` | mobile-parity | unit test, e2e Simulator / emulator có cửa sổ |
 | 1.13 | API: ngôn ngữ chưa bật → lỗi trả English (mục C11) | `packages/utils/src/api-messages.ts` | api-compat-review | `api-message-locale`, LOG.md |
 
 ## Giai đoạn 2 — Web cho từng ngôn ngữ (mỗi ngôn ngữ 2–3 PR)
@@ -57,12 +57,12 @@ Mỗi giai đoạn là một hoặc vài PR vào `dev`, mỗi PR có issue con. 
 | Phần | Số câu | Ghi chú |
 |---|---|---|
 | Web | ~7.070 khoá (ja / ko / zh còn ~5.000) | dịch máy theo bảng thuật ngữ + duyệt màn chính |
-| iOS | ~3.080 khoá | sau giai đoạn 1 có thêm ~800 câu từ chữ viết cứng |
-| Android | ~2.370 chuỗi | sau giai đoạn 1 có thêm ~850 câu |
+| iOS | ~3.080 khoá | sau giai đoạn 1 có thêm ~60 câu từ chữ viết cứng |
+| Android | ~2.370 chuỗi | sau giai đoạn 1 có thêm ~140 câu |
 | Lỗi API | 571 khoá | dùng chung web / API |
 | Email | 119 khoá | ja / ko / zh đã có |
 
-Làm **một lần** (không phụ thuộc số ngôn ngữ): giai đoạn 1 (~2.250 dòng chữ viết cứng, khoảng 15 PR).
+Làm **một lần** (không phụ thuộc số ngôn ngữ): giai đoạn 1 (~650 dòng chữ viết cứng, khoảng 8–10 PR).
 
 Mỗi ngôn ngữ sau đó: khoảng 8–10 PR (web 3, server 2, app 2–4, kiểm tra giao diện).
 

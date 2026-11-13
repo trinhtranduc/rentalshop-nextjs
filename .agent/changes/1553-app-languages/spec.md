@@ -1,6 +1,6 @@
 # Spec — #1553 thêm ngôn ngữ cho trang quản lý, app, email
 
-Status: draft
+Status: accepted
 
 `L` là một ngôn ngữ đang được thêm (ví dụ `ja`). Mỗi mục là một điều test kiểm được.
 

@@ -1,6 +1,6 @@
 # Dịch đầy đủ trang quản lý, app, email sang thêm ngôn ngữ
 
-Issue: #1553 · Author: agent · Status: draft · Created: 2026-11-13
+Issue: #1553 · Author: agent · Status: accepted · Created: 2026-11-13
 
 ## Problem
 
@@ -14,10 +14,11 @@ Tiếng Việt và English:
 - **Email:** đã có 5 ngôn ngữ (vi, en, ja, ko, zh), nhưng ngôn ngữ shop (`Merchant.language`) chỉ nhận `vi` / `en`.
 - **Lỗi từ API** (`errors.json`, #986): `Accept-Language` khác `en` → trả tiếng Việt.
 - **Dữ liệu mẫu khi đăng ký** (`onboarding-seed-i18n.ts`): chỉ `vi` / `en`.
-- **Chữ viết cứng trong code** (không qua file dịch) nên không dịch được:
-  - web ~600 dòng ở trang quản lý (Tích điểm, Nhập Excel, Form đơn, In phiếu…);
-  - iOS ~800 dòng;
-  - Android ~850 dòng.
+- **Chữ viết cứng trong code** (không qua file dịch) nên không dịch được. Đếm bằng `scripts/i18n/hardcoded-vi.js` (#1554), không tính chú thích:
+  - web ~445 dòng (`packages/ui` 311, `apps/client` 134);
+  - iOS 62 dòng;
+  - Android 141 dòng.
+  - Một phần là hợp lệ: bảng bỏ dấu để tìm, ký hiệu "đ", tên "Tiếng Việt".
 
 Khách ở thị trường khác đăng ký xong chỉ dùng được English. Trên điện thoại cài tiếng Nhật, app hiện English.
 
@@ -59,4 +60,8 @@ Khách ở thị trường khác đăng ký xong chỉ dùng được English. T
 
 ## Decision log
 
-- 2026-11-13 Chủ sản phẩm: "lên plan dịch đầy đủ giúp tôi". Kế hoạch này chờ anh trả lời 4 câu hỏi trên.
+- 2026-11-13 Chủ sản phẩm: "lên plan dịch đầy đủ giúp tôi", rồi "tiếp theo" (làm giai đoạn 1) và "bạn duyệt cho tôi".
+  - Câu 2: agent duyệt bản dịch. Một agent dịch theo bảng thuật ngữ; một agent khác duyệt độc lập (dịch ngược về tiếng Việt, soát thuật ngữ, độ dài). Không cần người bản xứ.
+  - Câu 1, 3, 4 theo đề xuất: đợt 1 là ja, ko, zh; email, dữ liệu mẫu, phiếu in theo ngôn ngữ mới; web trước, app sau trong cùng đợt.
+  - Anh có thể đổi bất cứ lúc nào.
+- 2026-11-13 Đếm lại chữ viết cứng bằng công cụ (bỏ chú thích): ~650 dòng, không phải ~2.250 như ước tính ban đầu bằng grep.
