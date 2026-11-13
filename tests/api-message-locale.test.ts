@@ -64,7 +64,8 @@ describe('#986 API message locale', () => {
       expect(await ask('en-US,en;q=0.9')).toBe(en.INVALID_CREDENTIALS);
       expect(await ask('vi-VN')).toBe(vi.INVALID_CREDENTIALS);
       expect(await ask()).toBe(vi.INVALID_CREDENTIALS);
-      expect(await ask('ja')).toBe(vi.INVALID_CREDENTIALS);
+      // #1556 a language with no catalog gets English
+      expect(await ask('ja')).toBe(en.INVALID_CREDENTIALS);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
