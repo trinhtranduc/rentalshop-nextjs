@@ -495,7 +495,7 @@ extension BaseViewControler {
 }
 
 /// #1539 (app): label above and a 52pt box like `AuthV2Field`, showing a value instead of a text field. The box is
-/// `button`: a tap target (Quốc gia) or a menu (Ngôn ngữ, Tiền tệ).
+/// `button`: a tap target (Quốc gia) or a menu.
 final class AuthV2SelectField: UIView {
     let button = UIButton(type: .custom)
     private let titleLabel = UILabel()

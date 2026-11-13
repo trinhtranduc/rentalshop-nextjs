@@ -2577,11 +2577,10 @@
     <string name="order_reorder_failed">Không đọc được đơn để đặt lại</string>
     <!-- #1539 (app) sign-up country / language / currency, Settings "Ngôn ngữ email" -->
     <string name="signup_country">Quốc gia</string>
-    <string name="signup_language">Ngôn ngữ</string>
-    <string name="signup_currency">Tiền tệ</string>
     <string name="signup_country_search">Tìm quốc gia</string>
     <string name="signup_country_empty">Không có quốc gia phù hợp</string>
-    <string name="signup_language_currency_hint">Ngôn ngữ dùng cho email và dữ liệu mẫu. Cả hai đổi được sau trong Cài đặt.</string>
+    <string name="signup_country_hint">Tiền tệ %1$s · Email tiếng Việt · đổi được trong Cài đặt.</string>
+    <string name="signup_app_language">vi</string>
     <string name="settings_email_language">Ngôn ngữ email</string>
     <string name="settings_email_language_hint">Email xác thực, đặt lại mật khẩu và thông báo gói gửi bằng ngôn ngữ này.</string>
 </resources>

@@ -144,13 +144,13 @@ class AuthFormsTest {
                 storeName = "Áo dài Minh Châu",
                 address = "12 Lê Lợi, Q1",
                 businessTags = listOf("AO_DAI", "WEDDING_DRESS"),
-                // #1539 (app): default Việt Nam / Tiếng Việt / VND and the device time zone
+                // #1539 (app): default Việt Nam / VND and the device time zone; #1545 language = the app language
                 country = "Vietnam",
                 language = "vi",
                 currency = "VND",
                 timezone = "Asia/Ho_Chi_Minh",
             ),
-            draft.request(timeZone = "Asia/Ho_Chi_Minh"),
+            draft.request(timeZone = "Asia/Ho_Chi_Minh", appLanguage = java.util.Locale.forLanguageTag("vi")),
         )
     }
 

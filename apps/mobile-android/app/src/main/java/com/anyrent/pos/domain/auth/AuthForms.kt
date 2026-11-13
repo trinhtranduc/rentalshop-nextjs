@@ -2,7 +2,7 @@ package com.anyrent.pos.domain.auth
 
 import com.anyrent.pos.R
 import com.anyrent.pos.domain.money.ShopCurrency
-import com.anyrent.pos.domain.settings.ShopLanguage
+import java.util.Locale
 import java.util.TimeZone
 
 /**
@@ -144,25 +144,26 @@ data class RegisterDraft(
     val password: String = "",
     val confirmPassword: String = "",
     val termsAccepted: Boolean = false,
-    // #1539 (app) Quốc gia, Ngôn ngữ, Tiền tệ
+    // #1539 (app) Quốc gia; #1545 the only question: language follows the app, currency the country
     val countryCode: String = SignupCountries.DEFAULT_CODE,
-    val language: ShopLanguage = SignupDefaults.forCountry(SignupCountries.DEFAULT_CODE).language,
-    val currency: ShopCurrency = SignupDefaults.forCountry(SignupCountries.DEFAULT_CODE).currency,
 ) {
+    /** #1545 Việt Nam → VND, any other country → USD (changed later in Settings) */
+    val currency: ShopCurrency get() = SignupCountries.currencyFor(countryCode)
+
     val storeErrors: AuthErrors get() = AuthValidation.storeStep(storeName, phone, address)
     val ownerErrors: AuthErrors
         get() = AuthValidation.ownerStep(fullName, email, password, confirmPassword, termsAccepted)
 
-    /** #1539 (app) another country resets language and currency to its defaults; the same one keeps a manual choice */
-    fun withCountry(code: String): RegisterDraft {
-        val upper = code.trim().uppercase(java.util.Locale.ROOT)
-        if (upper == countryCode) return this
-        val defaults = SignupDefaults.forCountry(upper)
-        return copy(countryCode = upper, language = defaults.language, currency = defaults.currency)
-    }
+    fun withCountry(code: String): RegisterDraft = copy(countryCode = code.trim().uppercase(Locale.ROOT))
 
-    /** Arguments of `ApiParity.registerMerchant`; [timeZone] is the device's (#1539 (app)) */
-    fun request(timeZone: String = TimeZone.getDefault().id): RegisterRequest = RegisterRequest(
+    /**
+     * Arguments of `ApiParity.registerMerchant`; [timeZone] is the device's (#1539 (app)).
+     * #1545 the shop language is the app language ([appLanguage]: Vietnamese → vi, any other → en).
+     */
+    fun request(
+        timeZone: String = TimeZone.getDefault().id,
+        appLanguage: Locale = Locale.getDefault(),
+    ): RegisterRequest = RegisterRequest(
         email = email.trim(),
         password = password,
         fullName = fullName.trim(),
@@ -171,7 +172,7 @@ data class RegisterDraft(
         address = address.trim(),
         businessTags = BusinessTagRules.payload(tags),
         country = SignupCountries.englishName(countryCode),
-        language = language.code,
+        language = SignupCountries.shopLanguage(appLanguage).code,
         currency = currency.code,
         timezone = timeZone,
     )
@@ -192,11 +193,14 @@ data class RegisterRequest(
     val timezone: String,
 )
 
-/** The draft as a saveable list (back from step 2, rotation); a list saved before #1539 (app) restores Việt Nam */
+/**
+ * The draft as a saveable list (back from step 2, rotation). A list saved before #1539 (app) restores Việt Nam;
+ * one saved by #1541 also has language and currency after the country, which are ignored (#1545).
+ */
 object RegisterDraftState {
     fun save(draft: RegisterDraft): List<Any> = listOf(
         draft.storeName, draft.phone, draft.address, ArrayList(draft.tags), draft.fullName, draft.email, draft.password,
-        draft.confirmPassword, draft.termsAccepted, draft.countryCode, draft.language.code, draft.currency.code,
+        draft.confirmPassword, draft.termsAccepted, draft.countryCode,
     )
 
     fun restore(saved: List<Any?>): RegisterDraft {
@@ -207,11 +211,7 @@ object RegisterDraftState {
             password = saved[6] as String, confirmPassword = saved[7] as String, termsAccepted = saved[8] as Boolean,
         )
         val country = saved.getOrNull(9) as? String ?: return base
-        return base.copy(
-            countryCode = country,
-            language = ShopLanguage.from(saved.getOrNull(10) as? String) ?: base.language,
-            currency = (saved.getOrNull(11) as? String)?.let(ShopCurrency::from) ?: base.currency,
-        )
+        return base.copy(countryCode = country)
     }
 }
 

@@ -151,19 +151,14 @@ struct RegisterDraft {
     var password = ""
     var confirmPassword = ""
     var termsAccepted = false
-    /// #1539 (app): Quốc gia, Ngôn ngữ, Tiền tệ of step 1
+    /// #1545: Quốc gia is the only locale question of step 1
     var countryCode = SignupCountries.defaultCode
-    var language: SignupLanguage = .vi
-    var currency: ShopCurrency = .vnd
 
-    /// #1539 (app): another country resets language and currency to its defaults; the same one keeps a manual choice
+    /// #1545: the currency follows the country (Việt Nam → VND, any other → USD)
+    var currency: ShopCurrency { SignupCountries.currency(for: countryCode) }
+
     mutating func selectCountry(_ code: String) {
-        let upper = code.uppercased()
-        guard upper != countryCode else { return }
-        countryCode = upper
-        let defaults = SignupCountries.defaults(for: upper)
-        language = defaults.language
-        currency = defaults.currency
+        countryCode = code.uppercased()
     }
 
     var storeErrors: AuthFieldErrors {
@@ -180,9 +175,11 @@ struct RegisterDraft {
         request(timezone: TimeZone.current.identifier)
     }
 
-    /// #1539 (app): `timezone` is the phone's zone; injectable for tests
-    func request(timezone: String) -> RegisterRequest {
-        RegisterRequest(
+    /// #1539 (app): `timezone` is the phone's zone. #1545: the shop language is the app language ("vi…" → `vi`,
+    /// anything else → `en`), not the country's. Both injectable for tests.
+    func request(timezone: String, appLanguage: String = SignupCountries.appLanguage) -> RegisterRequest {
+        let language: SignupLanguage = appLanguage.lowercased().hasPrefix("vi") ? .vi : .en
+        return RegisterRequest(
             loginName: AuthValidation.trimmed(email),
             password: password,
             storeName: AuthValidation.trimmed(storeName),
@@ -310,9 +307,9 @@ enum SignupCountries {
             .replacingOccurrences(of: "đ", with: "d")
     }
 
-    /// Việt Nam → Tiếng Việt + VND; any other country → English + USD
-    static func defaults(for code: String) -> (language: SignupLanguage, currency: ShopCurrency) {
-        code.uppercased() == defaultCode ? (.vi, .vnd) : (.en, .usd)
+    /// #1545: Việt Nam → VND; any other country → USD
+    static func currency(for code: String) -> ShopCurrency {
+        code.uppercased() == defaultCode ? .vnd : .usd
     }
 }
 
