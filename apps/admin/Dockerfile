@@ -33,14 +33,8 @@ COPY apps/client/package.json ./apps/client/
 # This includes tsup, typescript, etc. needed for package builds
 ENV NODE_ENV=development
 
-# Use yarn cache mount + turbo cache for faster builds (Docker BuildKit feature)
-# - Cache yarn packages between builds
-# - Increase network timeout for slow connections
-# - Use higher concurrency for parallel downloads
-# - Retry with exponential backoff
-RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
-    --mount=type=cache,target=/app/.turbo \
-    yarn install --frozen-lockfile \
+# #1529: no BuildKit cache mounts: Railway rejects a cache mount without its `s/<service-id>-` id
+RUN yarn install --frozen-lockfile \
       --network-timeout 600000 \
       --network-concurrency 8 \
       --prefer-offline \
@@ -57,6 +51,8 @@ WORKDIR /app
 # Declare build arguments for Railway environment variables
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_ENV
+# #1529: the admin also reads the shop web URL; unset keeps the code's fallback
+ARG NEXT_PUBLIC_CLIENT_URL
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -73,10 +69,9 @@ ENV SKIP_ENV_VALIDATION=true
 
 # Build admin app using Turbo filter (same as Vercel)
 # This ensures dependencies are built in correct order
-# Use turbo cache mount for faster incremental builds
 # Use yarn turbo to ensure it's available from node_modules
 # Use --output-logs=new-only to prevent repeated prefixes in logs
-RUN --mount=type=cache,target=/app/.turbo \
+RUN npx prisma generate --schema=./prisma/schema.prisma && \
     SKIP_ENV_VALIDATION=true yarn turbo run build --filter=@rentalshop/admin --output-logs=new-only
 
 # ===================================
@@ -105,8 +100,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/packages ./packages
 # Copy Admin build output
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/.next ./apps/admin/.next
 
-# Public folder is optional (may not exist)
-RUN mkdir -p ./apps/admin/public
+# #1529: logos and favicons live in public/
+COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/public ./apps/admin/public
 
 USER nextjs
 
@@ -114,7 +109,7 @@ EXPOSE 3001
 
 WORKDIR /app/apps/admin
 
-# Start Next.js server
-CMD ["../../node_modules/.bin/next", "start", "-p", "3001"]
+# Start Next.js server on Railway's PORT (#1529); 3001 when it is not set
+CMD ["sh", "-c", "exec ../../node_modules/.bin/next start -p ${PORT:-3001}"]
 
 

@@ -62,15 +62,24 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy entire source code (needed for monorepo build)
 COPY . .
 
-# Set environment variables for Next.js build (BUILD TIME)
-# These will be inlined into the JavaScript bundle
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
+# #1529: every NEXT_PUBLIC_* the web reads is inlined at build time. Railway passes a service variable to the
+# build only when the Dockerfile declares it as an ARG. An ARG is visible to RUN as an environment variable;
+# one that is not set stays unset, so the code's fallbacks (e.g. https://anyrent.shop) still apply.
+ARG NEXT_PUBLIC_CLIENT_URL
+ARG NEXT_PUBLIC_ADMIN_URL
+ARG NEXT_PUBLIC_MOBILE_URL
+ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
+ARG NEXT_PUBLIC_GOOGLE_VERIFICATION
+ARG NEXT_PUBLIC_YANDEX_VERIFICATION
+ARG NEXT_PUBLIC_YAHOO_VERIFICATION
+ARG NEXT_PUBLIC_ENABLE_THEME_SWITCH
+ARG NEXT_PUBLIC_ENABLE_ADD_OUTLET
 ENV SKIP_ENV_VALIDATION=true
 
-# Build packages using Turbo (respects dependency order)
+# #1529: build the client and the packages it needs only (as Vercel did), not the API and admin apps
 # Don't override NODE_ENV - let Railway control it
-RUN yarn build
+RUN npx prisma generate --schema=./prisma/schema.prisma && \
+    npx turbo run build --filter=@rentalshop/client
 
 # ===================================
 # STAGE 3: Production Runner
@@ -107,7 +116,7 @@ EXPOSE 3000
 
 WORKDIR /app/apps/client
 
-# Start Next.js server
-CMD ["../../node_modules/.bin/next", "start", "-p", "3000"]
+# Start Next.js server on Railway's PORT (#1529); 3000 when it is not set
+CMD ["sh", "-c", "exec ../../node_modules/.bin/next start -p ${PORT:-3000}"]
 
 
