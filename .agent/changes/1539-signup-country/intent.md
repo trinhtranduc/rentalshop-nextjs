@@ -1,6 +1,6 @@
 # Đăng ký chọn quốc gia, ngôn ngữ, tiền tệ; email theo ngôn ngữ shop
 
-Issue: #1539 · Author: Trinh Tran · Status: accepted · Created: 2026-11-13
+Issue: #1539 · Author: Trinh Tran · Status: in-review · Created: 2026-11-13
 
 ## Problem
 

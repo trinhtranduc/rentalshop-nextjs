@@ -1,6 +1,6 @@
 # Plan — #1539
 
-Status: accepted
+Status: in-review
 
 1. Test trước (fail):
    - `tests/api/register-signup-prefs.test.ts` (1-6): hai route đăng ký với / không `language`, `currency`, `country`;

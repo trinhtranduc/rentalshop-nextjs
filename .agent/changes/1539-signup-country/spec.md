@@ -1,6 +1,6 @@
 # Spec — #1539
 
-Status: accepted
+Status: in-review
 
 ## API — đăng ký (`POST /api/auth/register`, `POST /api/auth/register/merchant-google`)
 
