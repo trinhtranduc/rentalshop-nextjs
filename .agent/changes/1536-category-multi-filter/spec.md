@@ -1,6 +1,6 @@
 # Spec — #1536
 
-Status: in-progress
+Status: in-review
 
 ## API (`GET /api/products`)
 

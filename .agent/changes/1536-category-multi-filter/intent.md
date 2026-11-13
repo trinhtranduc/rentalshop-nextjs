@@ -1,6 +1,6 @@
 # Danh sách sản phẩm: lọc danh mục bằng ô chọn, chọn được nhiều (web)
 
-Issue: #1536 · Author: Claude (chủ shop yêu cầu 13/11, kèm ảnh) · Status: in-progress · Created: 2026-11-13
+Issue: #1536 · Author: Claude (chủ shop yêu cầu 13/11, kèm ảnh) · Status: in-review · Created: 2026-11-13
 
 ## Problem
 
@@ -27,6 +27,7 @@ Mọi vai trò xem danh sách sản phẩm trên web. `apps/client/app/products`
 - 2026-11-13 — Chủ shop: "chỗ category cho selection thôi có thể chọn nhiều" (ảnh: hàng chip danh mục ở danh sách sản phẩm).
 - 2026-11-13 — Chọn / bỏ một danh mục áp dụng ngay (như chip cũ), danh sách vẫn mở để chọn tiếp.
 - 2026-11-13 — Ô tìm danh mục chỉ hiện khi có hơn 8 danh mục.
+- 2026-11-13 — Ô tích đổi ngay trên màn hình, không chờ URL: e2e cho thấy tích nhanh hai danh mục liên tiếp có thể mất lần tích đầu nếu đọc lại từ URL.
 
 ## Open questions
 

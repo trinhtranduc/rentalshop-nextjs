@@ -1,6 +1,6 @@
 # Plan — #1536
 
-Status: in-progress
+Status: in-review
 
 1. Test trước (fail):
    - `tests/api/products-category-ids.test.ts`: route truyền `categoryIds` xuống `db.products.search` (1-4); `packages/database` `searchProducts` dựng `where.categoryId = { in }` (1-3).
