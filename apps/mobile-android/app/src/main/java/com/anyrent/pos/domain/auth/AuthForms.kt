@@ -1,6 +1,9 @@
 package com.anyrent.pos.domain.auth
 
 import com.anyrent.pos.R
+import com.anyrent.pos.domain.money.ShopCurrency
+import com.anyrent.pos.domain.settings.ShopLanguage
+import java.util.TimeZone
 
 /**
  * #386 — pure rules behind the new login, create-store and forgot-password screens (flag `newAuth`).
@@ -141,13 +144,25 @@ data class RegisterDraft(
     val password: String = "",
     val confirmPassword: String = "",
     val termsAccepted: Boolean = false,
+    // #1539 (app) Quốc gia, Ngôn ngữ, Tiền tệ
+    val countryCode: String = SignupCountries.DEFAULT_CODE,
+    val language: ShopLanguage = SignupDefaults.forCountry(SignupCountries.DEFAULT_CODE).language,
+    val currency: ShopCurrency = SignupDefaults.forCountry(SignupCountries.DEFAULT_CODE).currency,
 ) {
     val storeErrors: AuthErrors get() = AuthValidation.storeStep(storeName, phone, address)
     val ownerErrors: AuthErrors
         get() = AuthValidation.ownerStep(fullName, email, password, confirmPassword, termsAccepted)
 
-    /** Arguments of `ApiParity.registerMerchant` */
-    fun request(): RegisterRequest = RegisterRequest(
+    /** #1539 (app) another country resets language and currency to its defaults; the same one keeps a manual choice */
+    fun withCountry(code: String): RegisterDraft {
+        val upper = code.trim().uppercase(java.util.Locale.ROOT)
+        if (upper == countryCode) return this
+        val defaults = SignupDefaults.forCountry(upper)
+        return copy(countryCode = upper, language = defaults.language, currency = defaults.currency)
+    }
+
+    /** Arguments of `ApiParity.registerMerchant`; [timeZone] is the device's (#1539 (app)) */
+    fun request(timeZone: String = TimeZone.getDefault().id): RegisterRequest = RegisterRequest(
         email = email.trim(),
         password = password,
         fullName = fullName.trim(),
@@ -155,6 +170,10 @@ data class RegisterDraft(
         storeName = storeName.trim(),
         address = address.trim(),
         businessTags = BusinessTagRules.payload(tags),
+        country = SignupCountries.englishName(countryCode),
+        language = language.code,
+        currency = currency.code,
+        timezone = timeZone,
     )
 }
 
@@ -166,7 +185,35 @@ data class RegisterRequest(
     val storeName: String,
     val address: String,
     val businessTags: List<String>,
+    // #1539 (app): English country name, "vi" / "en", "VND" / "USD", IANA time zone
+    val country: String,
+    val language: String,
+    val currency: String,
+    val timezone: String,
 )
+
+/** The draft as a saveable list (back from step 2, rotation); a list saved before #1539 (app) restores Việt Nam */
+object RegisterDraftState {
+    fun save(draft: RegisterDraft): List<Any> = listOf(
+        draft.storeName, draft.phone, draft.address, ArrayList(draft.tags), draft.fullName, draft.email, draft.password,
+        draft.confirmPassword, draft.termsAccepted, draft.countryCode, draft.language.code, draft.currency.code,
+    )
+
+    fun restore(saved: List<Any?>): RegisterDraft {
+        @Suppress("UNCHECKED_CAST")
+        val base = RegisterDraft(
+            storeName = saved[0] as String, phone = saved[1] as String, address = saved[2] as String,
+            tags = (saved[3] as List<String>).toSet(), fullName = saved[4] as String, email = saved[5] as String,
+            password = saved[6] as String, confirmPassword = saved[7] as String, termsAccepted = saved[8] as Boolean,
+        )
+        val country = saved.getOrNull(9) as? String ?: return base
+        return base.copy(
+            countryCode = country,
+            language = ShopLanguage.from(saved.getOrNull(10) as? String) ?: base.language,
+            currency = (saved.getOrNull(11) as? String)?.let(ShopCurrency::from) ?: base.currency,
+        )
+    }
+}
 
 /** Where a failed call is shown, and with which text, from the API error `code` */
 object AuthErrorMapping {

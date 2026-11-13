@@ -7,6 +7,10 @@ import com.anyrent.pos.ui.common.AppIcon
 import com.anyrent.pos.domain.auth.EmailSentKind
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,12 +44,19 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Storefront
+import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -53,12 +64,17 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -71,7 +87,9 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
@@ -80,14 +98,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -100,6 +122,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -113,13 +136,20 @@ import com.anyrent.pos.domain.auth.AuthField
 import com.anyrent.pos.domain.auth.AuthValidation
 import com.anyrent.pos.domain.auth.BusinessTagRules
 import com.anyrent.pos.domain.auth.RegisterDraft
+import com.anyrent.pos.domain.auth.RegisterDraftState
+import com.anyrent.pos.domain.auth.SignupCountries
 import com.anyrent.pos.domain.auth.ResendCooldown
 import com.anyrent.pos.domain.error.AppError
+import com.anyrent.pos.domain.money.ShopCurrency
+import com.anyrent.pos.domain.money.ShopMoney
+import com.anyrent.pos.domain.settings.ShopLanguage
+import com.anyrent.pos.ui.home.v2.ThinDivider
 import com.anyrent.pos.push.PushRegistrar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 // #386 — boards Dang-nhap, Dang-ky, Dang-ky-2, Quen-mat-khau, Quen-mat-khau-da-gui (flag `newAuth`); style 4A (#466)
 
@@ -502,19 +532,10 @@ fun LoginV2Screen(
 
 // MARK: - Create store (Dang-ky, Dang-ky-2)
 
+/** Also keeps country, language and currency (#1539 (app)) */
 private val RegisterDraftSaver = listSaver<RegisterDraft, Any>(
-    save = {
-        listOf(it.storeName, it.phone, it.address, ArrayList(it.tags), it.fullName, it.email, it.password,
-            it.confirmPassword, it.termsAccepted)
-    },
-    restore = {
-        @Suppress("UNCHECKED_CAST")
-        RegisterDraft(
-            storeName = it[0] as String, phone = it[1] as String, address = it[2] as String,
-            tags = (it[3] as List<String>).toSet(), fullName = it[4] as String, email = it[5] as String,
-            password = it[6] as String, confirmPassword = it[7] as String, termsAccepted = it[8] as Boolean,
-        )
-    },
+    save = { RegisterDraftState.save(it) },
+    restore = { RegisterDraftState.restore(it) },
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -525,9 +546,11 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
     var errors by remember { mutableStateOf<Map<AuthField, String>>(emptyMap()) }
     var generalError by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
+    var countryPicker by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val errorText = rememberErrorText()
+    val appLocale = SignupCountries.appLocale(LocalConfiguration.current.locales[0])
 
     fun clear(field: AuthField) {
         if (field in errors) errors = errors - field
@@ -556,6 +579,8 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                 ApiParity.registerMerchant(
                     request.email, request.password, request.fullName, request.phone,
                     request.storeName, request.address, request.businessTags,
+                    country = request.country, language = request.language, currency = request.currency,
+                    timezone = request.timezone,
                 )
             }
             loading = false
@@ -622,6 +647,47 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
                 )
+                // #1539 (app) Quốc gia → Ngôn ngữ + Tiền tệ (Việt Nam → Tiếng Việt + VND, other → English + USD), both editable
+                AuthPickerField(
+                    label = stringResource(R.string.signup_country),
+                    value = remember(draft.countryCode, appLocale) { SignupCountries.displayName(draft.countryCode, appLocale) },
+                    icon = Icons.Outlined.Public,
+                    trailing = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    tag = "signupCountry",
+                    onClick = { countryPicker = true },
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AuthDropdownField(
+                            label = stringResource(R.string.signup_language),
+                            options = ShopLanguage.entries,
+                            selected = draft.language,
+                            optionLabel = { it.nativeName },
+                            optionTag = { "signupLanguage-${it.code}" },
+                            icon = Icons.Outlined.Translate,
+                            tag = "signupLanguage",
+                            modifier = Modifier.weight(1f),
+                            onPick = { draft = draft.copy(language = it) },
+                        )
+                        AuthDropdownField(
+                            label = stringResource(R.string.signup_currency),
+                            options = ShopCurrency.entries,
+                            selected = draft.currency,
+                            optionLabel = { ShopMoney.label(it) },
+                            optionTag = { "signupCurrency-${it.code}" },
+                            icon = Icons.Outlined.Payments,
+                            tag = "signupCurrency",
+                            modifier = Modifier.weight(1f),
+                            onPick = { draft = draft.copy(currency = it) },
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.signup_language_currency_hint),
+                        color = AuthV2Style.TextMuted,
+                        fontSize = DS.TextSize.Secondary,
+                        lineHeight = 18.sp,
+                    )
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         buildAnnotatedString {
@@ -694,6 +760,215 @@ fun RegisterStoreV2Screen(onBack: () -> Unit, onRegistered: (email: String) -> U
                         clear(AuthField.TERMS)
                     },
                 )
+            }
+        }
+    }
+
+    if (countryPicker) {
+        CountryPickerSheet(
+            appLocale = appLocale,
+            selected = draft.countryCode,
+            onDismiss = { countryPicker = false },
+            onPick = { code ->
+                countryPicker = false
+                draft = draft.withCountry(code)
+            },
+        )
+    }
+}
+
+// MARK: - #1539 (app) country, language and currency
+
+/** Looks like [AuthField] (label, 52dp white box, leading icon) but opens a list instead of typing */
+@Composable
+private fun AuthPickerField(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    trailing: ImageVector,
+    tag: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    menu: @Composable () -> Unit = {},
+) {
+    val shape = RoundedCornerShape(AuthV2Style.FieldRadius)
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, color = AuthV2Style.Text, fontSize = DS.TextSize.Body, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Box {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = AuthV2Style.FieldHeight)
+                    .clip(shape)
+                    .background(AuthV2Style.FieldBackground)
+                    .border(1.dp, FieldBorder, shape)
+                    .clickable(onClick = onClick)
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "$label: $value"
+                        role = Role.Button
+                    }
+                    .testTag(tag),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Same slots as the text fields: 48dp icon, text, 48dp icon
+                Box(Modifier.width(48.dp), contentAlignment = Alignment.Center) {
+                    AppIcon(icon, contentDescription = null, size = DS.Icon.Md, tint = AuthV2Style.FieldIcon)
+                }
+                Text(
+                    value,
+                    modifier = Modifier.weight(1f).padding(start = 4.dp),
+                    color = AuthV2Style.Text,
+                    fontSize = DS.TextSize.Input,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Box(Modifier.width(40.dp), contentAlignment = Alignment.Center) {
+                    AppIcon(trailing, contentDescription = null, size = DS.Icon.Md, tint = AuthV2Style.TextMuted)
+                }
+            }
+            menu()
+        }
+    }
+}
+
+/** Half-width field with a drop-down of [options] (Ngôn ngữ, Tiền tệ) */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun <T> AuthDropdownField(
+    label: String,
+    options: List<T>,
+    selected: T,
+    optionLabel: (T) -> String,
+    optionTag: (T) -> String,
+    icon: ImageVector,
+    tag: String,
+    modifier: Modifier = Modifier,
+    onPick: (T) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    AuthPickerField(
+        label = label,
+        value = optionLabel(selected),
+        icon = icon,
+        trailing = Icons.Outlined.KeyboardArrowDown,
+        tag = tag,
+        modifier = modifier,
+        onClick = { open = true },
+    ) {
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            containerColor = AuthV2Style.FieldBackground,
+            // A popup is its own semantics tree: tags reach uiautomator only when asked here too
+            modifier = Modifier.semantics { testTagsAsResourceId = true },
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            optionLabel(option),
+                            color = AuthV2Style.Text,
+                            fontSize = DS.TextSize.Input,
+                            fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                    },
+                    trailingIcon = if (option == selected) {
+                        { AppIcon(Icons.Outlined.Check, contentDescription = null, size = DS.Icon.Md, tint = AuthV2Style.Primary) }
+                    } else null,
+                    onClick = {
+                        open = false
+                        onPick(option)
+                    },
+                    modifier = Modifier.heightIn(min = 48.dp).testTag(optionTag(option)),
+                )
+            }
+        }
+    }
+}
+
+/** Country list: search (case and diacritics ignored), Việt Nam first, the rest by name; picking closes it */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@Composable
+private fun CountryPickerSheet(appLocale: Locale, selected: String, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    val options = remember(appLocale) { SignupCountries.options(appLocale) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val shown = remember(options, query) { SignupCountries.search(options, query) }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = AuthV2Style.PageBackground,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+                // A sheet is its own semantics tree: tags reach uiautomator only when asked here too
+                .semantics { testTagsAsResourceId = true },
+        ) {
+            Text(
+                stringResource(R.string.signup_country),
+                color = AuthV2Style.Text,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp).semantics { heading() },
+            )
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                singleLine = true,
+                placeholder = { Text(stringResource(R.string.signup_country_search), fontSize = DS.TextSize.Input, color = AuthV2Style.TextMuted) },
+                leadingIcon = { AppIcon(Icons.Outlined.Search, contentDescription = null, size = DS.Icon.Md) },
+                shape = RoundedCornerShape(AuthV2Style.FieldRadius),
+                textStyle = TextStyle(fontSize = DS.TextSize.Input, color = AuthV2Style.Text),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = AuthV2Style.FieldBackground,
+                    unfocusedContainerColor = AuthV2Style.FieldBackground,
+                    focusedBorderColor = AuthV2Style.Primary,
+                    unfocusedBorderColor = FieldBorder,
+                    focusedLeadingIconColor = AuthV2Style.Primary,
+                    unfocusedLeadingIconColor = AuthV2Style.FieldIcon,
+                    cursorColor = AuthV2Style.Primary,
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .heightIn(min = AuthV2Style.FieldHeight)
+                    .testTag("countrySearch"),
+            )
+            Spacer(Modifier.height(8.dp))
+            ThinDivider()
+            if (shown.isEmpty()) {
+                Text(
+                    stringResource(R.string.signup_country_empty),
+                    color = AuthV2Style.TextMuted,
+                    fontSize = DS.TextSize.Body,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
+                )
+            }
+            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 520.dp)) {
+                items(shown, key = { it.code }) { country ->
+                    val isSelected = country.code == selected
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 52.dp)
+                            .clickable(role = Role.Button) { onPick(country.code) }
+                            .testTag("country-${country.code}")
+                            .padding(horizontal = 20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            country.name,
+                            color = AuthV2Style.Text,
+                            fontSize = DS.TextSize.Body,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (isSelected) AppIcon(Icons.Outlined.Check, contentDescription = null, size = DS.Icon.Md, tint = AuthV2Style.Primary)
+                    }
+                    ThinDivider()
+                }
             }
         }
     }
