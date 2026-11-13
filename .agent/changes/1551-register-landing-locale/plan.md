@@ -1,6 +1,6 @@
 # Plan — #1551
 
-Status: in-progress
+Status: in-review
 
 1. Test trước (commit riêng, fail): `tests/web-register-landing-locale.test.ts` — hàm `registerLocaleFromLanding` và middleware
    (mock `next/server` như `web-landing-middleware.test.ts`), matcher.

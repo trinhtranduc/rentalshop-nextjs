@@ -1,6 +1,6 @@
 # Trang đăng ký mở theo ngôn ngữ khách đã chọn ở landing
 
-Issue: #1551 · Author: agent · Status: in-progress · Created: 2026-11-13
+Issue: #1551 · Author: agent · Status: in-review · Created: 2026-11-13
 
 ## Problem
 
@@ -26,3 +26,5 @@ Khách mới đăng ký trên web (`client`). Không đụng API, app, trang đ�
 ## Decision log
 
 - 2026-11-13 Chủ sản phẩm: "có, sửa phần trang đăng ký theo ngôn ngữ landing". Chưa mở thêm ngôn ngữ cho trang quản lý.
+- 2026-11-13 Thử trên production: đi bằng nút (landing → Login → Create a new shop) trang đã English nhờ chuyển trang không tải lại; lỗi xảy ra
+  khi tải lại / mở tab mới (ngôn ngữ chưa được lưu). Khách từ landing 日本語 bị nút đổi ngôn ngữ ghi `NEXT_LOCALE=vi` ở trang đăng nhập → đổi fallback sang English.
