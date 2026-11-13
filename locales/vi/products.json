@@ -521,6 +521,35 @@
         "show": "Hiện ở {name}, dòng {row}",
         "qty": "Số lượng ở {name}, dòng {row}",
         "outOfStock": "hết hàng"
+      },
+      "rows": {
+        "statsLabel": "Kết quả theo trạng thái",
+        "all": "Tất cả dòng",
+        "kind": {
+          "created": "Đã tạo",
+          "updated": "Thêm tồn",
+          "duplicate": "Trùng mã vạch",
+          "failed": "Lỗi",
+          "skipped": "Không nhập"
+        },
+        "noName": "(chưa có tên)",
+        "barcode": "Mã vạch {code}",
+        "qty": "Số lượng {count}",
+        "added": "Thêm tồn: {list}",
+        "keptBranches": "bỏ qua {names} (đã có hàng)",
+        "exists": "Đã có sản phẩm “{name}” dùng mã vạch này",
+        "existsNoName": "Mã vạch đã có trong cửa hàng",
+        "hasStockAt": "đã có hàng ở {names}",
+        "deleted": "Mã vạch của sản phẩm đã xoá “{name}”",
+        "deletedNoName": "Mã vạch của một sản phẩm đã xoá",
+        "unchosen": "Không chọn nhập",
+        "noBranch": "Chưa bật chi nhánh nào",
+        "blocked": "Chưa nhập vì có dòng khác bị lỗi",
+        "shortQty": "Tồn {count} · {branches} chi nhánh",
+        "shortAdded": "+{count} tồn ở chi nhánh chưa có hàng",
+        "shortExists": "Đã có: {name}",
+        "shortDeleted": "Mã của sản phẩm đã xoá",
+        "more": "Xem chi tiết dòng {row}"
       }
     },
     "form": {

@@ -521,6 +521,35 @@
         "show": "Show at {name}, row {row}",
         "qty": "Quantity at {name}, row {row}",
         "outOfStock": "out of stock"
+      },
+      "rows": {
+        "statsLabel": "Results by status",
+        "all": "All rows",
+        "kind": {
+          "created": "Created",
+          "updated": "Stock added",
+          "duplicate": "Duplicate barcode",
+          "failed": "Error",
+          "skipped": "Not imported"
+        },
+        "noName": "(no name)",
+        "barcode": "Barcode {code}",
+        "qty": "Quantity {count}",
+        "added": "Stock added: {list}",
+        "keptBranches": "skipped {names} (already in stock)",
+        "exists": "“{name}” already uses this barcode",
+        "existsNoName": "Barcode already in the shop",
+        "hasStockAt": "already in stock at {names}",
+        "deleted": "Barcode of a deleted product “{name}”",
+        "deletedNoName": "Barcode of a deleted product",
+        "unchosen": "Not selected",
+        "noBranch": "No branch turned on",
+        "blocked": "Not imported because another row has an error",
+        "shortQty": "Stock {count} · {branches} branches",
+        "shortAdded": "+{count} at branches without stock",
+        "shortExists": "Already exists: {name}",
+        "shortDeleted": "Barcode of a deleted product",
+        "more": "Details for row {row}"
       }
     },
     "form": {
