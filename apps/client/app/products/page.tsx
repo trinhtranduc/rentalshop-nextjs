@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Sản phẩm (#526). Reads GET /api/products (one page) and GET /api/categories (chips with counts).
+ * Sản phẩm (#526). Reads GET /api/products (one page) and GET /api/categories (the "Danh mục" menu with counts, #1536).
  * Row mapping and selection live in ./list/list-model (unit-tested). Every filter is kept in the URL.
  * Add / edit / detail are their own pages (/products/add, /products/[id]/edit, /products/[id]).
  */
@@ -17,12 +17,14 @@ import { AiScanIcon, ICONS, ShellIcon } from '../components/shell/Icon';
 import { FilterMenu, TableFooter, cardClass, outlineBtn, primaryBtn, type T } from '../orders/list/parts';
 import { Modal } from '../orders/create/parts';
 import { ProductsTable, SelectionBar } from './list/parts';
+import { CategoryFilter } from './list/CategoryFilter';
 import { BARCODE_ICON } from './labels/LabelSheet';
 import {
   EMPTY_SELECTION,
   SORT_KEYS,
   branchColumnsFor,
   buildRow,
+  categoryParam,
   filterKey,
   listedFilterFor,
   pageCheckState,
@@ -30,6 +32,7 @@ import {
   heldElsewhereParams,
   scopedOutletFor,
   selectedCount,
+  singleCategory,
   toApiFilters,
   toggleOne,
   togglePage,
@@ -182,7 +185,7 @@ export default function ProductsPage() {
   const apiFilters = useMemo(() => toApiFilters(query, { listed }) as unknown as ProductFilters, [query, listed]);
   const list = useProductsPage(apiFilters, nonce);
   const categories = useCategoryChips(nonce);
-  const unfiltered = !query.q && !query.categoryId;
+  const unfiltered = !query.q && query.categoryIds.length === 0;
   const catalogTotal = useCatalogTotal(!unfiltered, unfiltered && !list.loading && !list.failed ? list.total : null, nonce);
 
   // Photo search results replace the list until cleared
@@ -328,8 +331,6 @@ export default function ProductsPage() {
 
   const role = typedUser?.role;
   const showOutletFilter = (role === 'MERCHANT' || role === 'ADMIN') && outlets.length > 1;
-  const chip = (active: boolean) =>
-    `h-9 shrink-0 whitespace-nowrap rounded-full px-3 text-sm ${active ? 'bg-ar-ink font-semibold text-ar-page' : 'border border-ar-line bg-ar-surface text-ar-ink hover:bg-ar-subtle'}`;
 
   return (
     <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-4 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
@@ -434,21 +435,9 @@ export default function ProductsPage() {
             <AiScanIcon size={16} />
             {t('imageSearch.open')}
           </button>
-          <div role="group" aria-label={t('category.label')} className="flex min-w-0 max-w-full flex-1 gap-2 overflow-x-auto pr-6 [mask-image:linear-gradient(to_right,#000_calc(100%-32px),transparent)]">
-            <button type="button" aria-pressed={!query.categoryId} onClick={() => update({ category: null })} className={chip(!query.categoryId)}>
-              {t('category.all')}
-            </button>
-            {categories.list.map((c) => {
-              const active = query.categoryId === c.id;
-              return (
-                <button key={c.id} type="button" aria-pressed={active} onClick={() => update({ category: active ? null : c.id })} className={chip(active)}>
-                  {c.name}
-                  {c.count !== null && <span className={`ml-1 tabular-nums ${active ? 'opacity-80' : 'text-ar-muted'}`}>{c.count}</span>}
-                </button>
-              );
-            })}
-          </div>
+          {/* #1536 one "Danh mục" menu, several categories can be ticked (was a row of chips) */}
           <div className="flex flex-wrap gap-2">
+            <CategoryFilter value={query.categoryIds} options={categories.list} onChange={(ids) => update({ category: categoryParam(ids) })} t={t} />
             {showOutletFilter && (
               <FilterMenu<string>
                 label={t('outlet.label')}
@@ -545,7 +534,7 @@ export default function ProductsPage() {
         <ImageSearchDialog
           open={imageOpen}
           onOpenChange={setImageOpen}
-          categoryId={query.categoryId}
+          categoryId={singleCategory(query.categoryIds)}
           onSearchResult={(products: Product[]) => setImageResults(products as unknown as ProductLike[])}
           onViewProduct={(p: Product) => router.push(`/products/${p.id}`)}
           onEditProduct={canUpdateProducts ? (p: Product) => router.push(`/products/${p.id}/edit`) : undefined}

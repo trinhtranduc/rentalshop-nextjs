@@ -235,6 +235,8 @@ export const productUpdateSchema = productBaseSchema.partial().extend({
 export const productsQuerySchema = z.object({
   outletId: z.coerce.number().int().positive().optional(),
   categoryId: z.coerce.number().int().positive().optional(),
+  // #1536 several categories, ids separated by commas ("3,7"); read with parseIdList, junk ids are dropped
+  categoryIds: z.string().optional(),
   search: z.string().optional(),
   q: z.string().optional(), // Support 'q' parameter for search (alias for 'search')
   merchantId: z.coerce.number().int().positive().optional(),

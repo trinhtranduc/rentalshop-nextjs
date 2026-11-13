@@ -234,6 +234,7 @@ export async function searchProducts(filters: ProductSearchFilter) {
     merchantId,
     outletId,
     categoryId,
+    categoryIds,
     search,
     q, // Add q parameter support
     page = 1,
@@ -268,7 +269,10 @@ export async function searchProducts(filters: ProductSearchFilter) {
     }
   }
 
-  if (categoryId) {
+  if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+    // #1536 any of several categories (the merchant filter above keeps it inside the shop)
+    where.categoryId = { in: categoryIds };
+  } else if (categoryId) {
     // Find category by id
     const category = await prisma.category.findUnique({
       where: { id: categoryId },
@@ -1543,8 +1547,11 @@ export const simplifiedProducts = {
       }
     }
     
-    // Convert categoryId (public ID) to CUID
-    if (whereFilters.categoryId) {
+    // #1536 any of several categories (the merchant filter above keeps it inside the shop); wins over categoryId
+    if (Array.isArray(whereFilters.categoryIds) && whereFilters.categoryIds.length > 0) {
+      where.categoryId = { in: whereFilters.categoryIds };
+    } else if (whereFilters.categoryId) {
+      // Convert categoryId (public ID) to CUID
       const category = await prisma.category.findUnique({
         where: { id: whereFilters.categoryId },
         select: { id: true }
