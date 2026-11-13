@@ -446,7 +446,7 @@ final class OrderShareImageTests: XCTestCase {
         XCTAssertFalse(m.rows.contains { $0.value == OrderShareModel.money(300_000) }, "the single deposit row goes")
         XCTAssertFalse(m.rows.contains { $0.label == "Còn phải thu" || $0.label == "Đã thu" })
         // English uses the same keys in the other bundle
-        XCTAssertEqual(try XCTUnwrap(model(source, en).stageBlock).title, "Staged deposit")
+        XCTAssertEqual(try XCTUnwrap(model(source, en).stageBlock).title, "Staged booking deposit")
     }
 
     func testShareStaysTheSameWithoutAPlan() {
@@ -806,16 +806,16 @@ final class OrderShareMoneyOrderTests: XCTestCase {
     func testEnglishLabels() {
         XCTAssertEqual(flat(make(staged(), en)), [
             "TOTAL Rental total|1.150.000đ",
-            "STAGES Staged deposit",
+            "STAGES Staged booking deposit",
             "1. Cọc giữ chỗ|230.000đ|20% of order · 05/10 · Collected",
             "2. Cọc trước ngày lấy|345.000đ|30% of order · due 06/10 · Not collected",
             "COLLECT Collect at hand-over|575.000đ",
         ])
         XCTAssertEqual(flat(make(rent(), en)), [
-            "TOTAL Rental total|1.150.000đ", "Deposit|No deposit|muted", "COLLECT Collect at hand-over|1.150.000đ",
+            "TOTAL Rental total|1.150.000đ", "Booking deposit|No booking deposit|muted", "COLLECT Collect at hand-over|1.150.000đ",
         ])
         XCTAssertEqual(flat(make(rent(deposit: 300_000), en)), [
-            "TOTAL Rental total|1.150.000đ", "Deposit paid|300.000đ", "COLLECT Collect at hand-over|850.000đ",
+            "TOTAL Rental total|1.150.000đ", "Booking deposit paid|300.000đ", "COLLECT Collect at hand-over|850.000đ",
         ])
     }
 

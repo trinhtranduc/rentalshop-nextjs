@@ -900,7 +900,7 @@ final class AnyRentE2ETests: XCTestCase {
         sleep(3)
         e2e.shot("1231-a-todo-stages")
         // The stage rows sit among the late rows (most late first): scroll until both are seen
-        let stageTexts = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Cọc' OR label BEGINSWITH 'Deposit'"))
+        let stageTexts = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Cọc' OR label BEGINSWITH 'Booking deposit'"))
         var seen = Set<String>()
         for _ in 0..<8 {
             for index in 0..<stageTexts.count { seen.insert(stageTexts.element(boundBy: index).label) }
@@ -1464,7 +1464,7 @@ final class AnyRentE2ETests: XCTestCase {
         XCTAssertTrue(taken.waitForExistence(timeout: 8), "Nhận trả sheet has a confirm button")
         e2e.shot("5n-4-return-sheet")
         XCTAssertTrue(digits(taken.label).contains("700000"), "#1490 return gives back 700.000 (500.000 collateral + 200.000 excess deposit): \(taken.label)")
-        let excess = app.staticTexts.matching(NSPredicate(format: "label == 'Deposit above the rent' OR label == 'Cọc dư so với tiền thuê'")).firstMatch
+        let excess = app.staticTexts.matching(NSPredicate(format: "label == 'Booking deposit above the rent' OR label == 'Cọc dư so với tiền thuê'")).firstMatch
         XCTAssertTrue(excess.exists, "#1490 the sheet shows the excess deposit row")
         e2e.note("DEPOSIT OVER RENT DONE order #\(number)")
     }
@@ -2218,7 +2218,7 @@ final class AnyRentE2ETests: XCTestCase {
             let name = e2e.field(["Product name", "Tên sản phẩm"])
             XCTAssertTrue(name.waitForExistence(timeout: 8), "Add-product form opens")
             let priceLabels = ["Prices", "Giá", "Rental price", "Giá thuê", "Per rental", "Theo lần", "Per day", "Theo mỗi ngày",
-                               "Sale price", "Giá bán", "Deposit per item", "Cọc mỗi món"]
+                               "Sale price", "Giá bán", "Booking deposit per item", "Cọc mỗi món"]
             let price = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", priceLabels)).firstMatch
             XCTAssertFalse(price.exists, "OUTLET_STAFF must not see price fields in the add-product form")
             e2e.shot("91-staff-add-product")
@@ -3838,7 +3838,7 @@ final class AnyRentE2ETests: XCTestCase {
         try e2e.start()
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil); sleep(3)
         e2e.shot("sync-dep-1-settings-\(e2e.role)")
-        let deposit = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Deposit' OR label BEGINSWITH 'Cọc'")).firstMatch
+        let deposit = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Booking deposit' OR label BEGINSWITH 'Cọc'")).firstMatch
         for _ in 0..<3 where !deposit.exists { app.swipeUp() }
         e2e.shot("sync-dep-2-settings-scrolled-\(e2e.role)")
         if e2e.role == "merchant" { XCTAssertTrue(deposit.exists, "the owner sees the Cọc row") } else { XCTAssertFalse(deposit.exists, "\(e2e.role) does not see the Cọc row") }
@@ -4058,7 +4058,7 @@ final class AnyRentE2ETests: XCTestCase {
         let isManager = e2e.role == "manager"  // Quản lý chi nhánh
         // #1313: the owner's row is "Thông tin cửa hàng", every other role "Thông tin chi nhánh"
         let storeInfo = isOwner ? label(["Store Information", "Thông tin cửa hàng"]) : label(["Branch Information", "Thông tin chi nhánh"])
-        let collect = label(["Deposit", "Cọc"])
+        let collect = label(["Booking deposit", "Cọc"])
         let printing = label(["Print & receipts", "In & phiếu"])
         XCTAssertTrue(storeInfo.waitForExistence(timeout: 8), "Thông tin cửa hàng row")
         XCTAssertEqual(collect.exists, isOwner, "#1310: the Cọc row is the owner's only")
@@ -5416,7 +5416,7 @@ final class AnyRentE2ETests: XCTestCase {
         // 1. Settings → Cách thu cọc (mode 1 read-only text), then mode 2
         e2e.tapTab(["Settings", "Cài đặt", "Setting"], index: nil)
         // #1270: Cọc › holds Cách thu cọc, Mẫu giai đoạn cọc and Chính sách huỷ / dời ngày
-        let collect = text(["Cọc", "Deposit"])
+        let collect = text(["Cọc", "Booking deposit"])
         scrollTo(collect)
         e2e.shot("60a-settings-row")
         XCTAssertTrue(collect.exists, "Settings has the Cọc row")
@@ -5847,7 +5847,7 @@ final class AnyRentE2ETests: XCTestCase {
         let oldLeft = text(["Tiền thuê còn lại, thu khi giao", "Rental left, collect at hand-over"])
         let oldCollateral = text(["Thế chân, thu khi giao", "Security deposit, collect at hand-over"])
         let remaining = text(["Còn phải thu", "Still to collect"])
-        let deposit = text(["Đã cọc", "Deposit paid"])
+        let deposit = text(["Đã cọc", "Booking deposit paid"])
         let giveBack = text(["Khi nhận trả: trả khách", "At return: give back"])
         let stages = app.descendants(matching: .any)["deposit.card"]
 

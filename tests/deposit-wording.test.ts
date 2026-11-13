@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const root = join(__dirname, '..');
-const BARE = /(?<![Ss]ecurity )(?<![Bb]ooking )\b[Dd]eposits?\b/;
+const BARE = /(?<!security )(?<!booking )\bdeposits?\b/i;
 
 function flatJson(dir: string): Record<string, string> {
   const out: Record<string, string> = {};
