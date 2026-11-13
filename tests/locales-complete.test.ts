@@ -10,7 +10,7 @@ import { APP_LANGUAGES, enabledAppLanguages, isEnabledAppLanguage } from '../pac
 const root = join(__dirname, '..');
 const VI_CHARS = /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i;
 /** Vietnamese words a translation may keep: the garment "áo dài", the đồng sign, the language's own name */
-const KEEP = [/áo dài/gi, /(\d|\(|\s|^)đ(?=\b|\s|\/|\)|$)/g, /Tiếng Việt/g];
+const KEEP = [/áo dài/giu, /(\d|\(|\s|^)đ(?!\p{L})/gu, /Tiếng Việt/gu];
 const leftoverVietnamese = (text: string) => VI_CHARS.test(KEEP.reduce((t, re) => t.replace(re, '$1'), text));
 /** Web strings only Android reads (its error catalog) */
 const MOBILE_ONLY_FILES = ['errors-mobile.json'];
@@ -27,8 +27,11 @@ function flat(obj: unknown, prefix = ''): Flat {
 }
 /** ICU variable names: {count}, {count, plural, …} → count */
 const icuVars = (s: string) => [...s.matchAll(/\{\s*([A-Za-z_][\w]*)\s*[,}]/g)].map((m) => m[1]).sort();
-/** printf-style arguments: %@, %d, %1$@, %1$s, %.2f */
-const printfArgs = (s: string) => [...s.matchAll(/%(\d+\$)?[-+#0 ]*\d*(\.\d+)?(@|s|d|f|ld|lld|i)/g)].map((m) => m[0]).sort();
+/** printf-style arguments as a set: %@, %d, %1$@, %1$s, %.2f (a literal %% is not one; plural forms repeat them) */
+const printfArgs = (s: string) =>
+  [...new Set([...s.replace(/%%/g, '').matchAll(/%(\d+\$)?[-+#0]*\d*(\.\d+)?(@|s|d|f|ld|lld|i)/g)].map((m) => m[0]))].sort();
+/** Keys whose word order needs other arguments per language (English month name, Vietnamese month number) */
+const ARGS_MAY_DIFFER = ['v2_calendar_month'];
 
 describe('app languages (#1554)', () => {
   it('Tiếng Việt and English are on; 日本語, 한국어, 中文 are listed but off until translated', () => {
@@ -105,7 +108,11 @@ describe.each(enabledAppLanguages().filter((l) => l.code !== 'vi').map((l) => [l
       const vi = androidStrings('vi');
       const other = androidStrings(lang.android);
       expect(Object.keys(vi).filter((k) => !(k in other))).toEqual([]);
-      expect(Object.keys(vi).filter((k) => k in other && printfArgs(vi[k]).join() !== printfArgs(other[k]).join())).toEqual([]);
+      expect(
+        Object.keys(vi).filter(
+          (k) => k in other && !ARGS_MAY_DIFFER.includes(k) && printfArgs(vi[k]).join() !== printfArgs(other[k]).join()
+        )
+      ).toEqual([]);
       expect(Object.keys(other).filter((k) => leftoverVietnamese(other[k]))).toEqual([]);
     });
   }
