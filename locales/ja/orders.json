@@ -133,8 +133,8 @@
     },
     "installments": {
       "paidBadge": "{percent}% 入金済み",
-      "createTitle": "段階払いの保証金",
-      "template": "保証金テンプレート",
+      "createTitle": "段階払いの内金",
+      "template": "内金テンプレート",
       "today": "本日",
       "todayChip": "本日",
       "dueOn": "期限 {day}",
@@ -201,7 +201,7 @@
         "afterCreate": "注文の {days} 日後"
       },
       "restShort": "受け渡し時に残額",
-      "unpaidTitle": "未回収の保証金段階があります",
+      "unpaidTitle": "未回収の内金段階があります",
       "unpaidHint": "先にこれらの段階を回収してから商品を渡してください。",
       "unpaidTotal": "受け渡し前に回収する額：{amount}",
       "voidTitle": "この回収を取り消しますか？",

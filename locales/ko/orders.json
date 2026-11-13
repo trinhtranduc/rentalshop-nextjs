@@ -133,8 +133,8 @@
     },
     "installments": {
       "paidBadge": "{percent}% 수납",
-      "createTitle": "단계별 보증금",
-      "template": "보증금 템플릿",
+      "createTitle": "단계별 예약금",
+      "template": "예약금 템플릿",
       "today": "오늘",
       "todayChip": "오늘",
       "dueOn": "기한 {day}",
@@ -201,7 +201,7 @@
         "afterCreate": "주문 {days}일 후"
       },
       "restShort": "인도 시 잔액",
-      "unpaidTitle": "수납하지 않은 보증금 단계가 있습니다",
+      "unpaidTitle": "수납하지 않은 예약금 단계가 있습니다",
       "unpaidHint": "이 단계를 먼저 수납한 뒤 물품을 인도하세요.",
       "unpaidTotal": "인도 전 수납 금액: {amount}",
       "voidTitle": "이 수납을 취소할까요?",
