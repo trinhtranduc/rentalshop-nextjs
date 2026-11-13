@@ -4,10 +4,12 @@ import {
   WEB_OPT_OUT_COOKIE,
   WEB_OPT_OUT_MAX_AGE,
 } from './lib/store-redirect';
-import { isShopPath, shopLocale } from './lib/public-content/shop-locale';
+import { isShopPath, registerLocaleFromLanding, shopLocale } from './lib/public-content/shop-locale';
 
 const PUBLIC_LOCALE_COOKIE = 'NEXT_PUBLIC_LOCALE';
 const PUBLIC_LOCALE_MAX_AGE = 60 * 60 * 24 * 365;
+/** #1551 /register, /register/step-1, /register/step-2 */
+const REGISTER_PATH = /^\/register(\/step-[12])?\/?$/;
 
 function localeFromAcceptLanguage(header: string | null): PublicLocale {
   const supported: PublicLocale[] = ['vi', 'en', 'ja', 'ko', 'zh', 'ru', 'zh-TW', 'fr', 'de', 'th', 'id', 'es'];
@@ -71,6 +73,21 @@ export function middleware(request: NextRequest) {
     headers.set('x-anyrent-shop-page', '1');
     return NextResponse.next({ request: { headers } });
   }
+  // #1551 the sign-up pages open in the language picked on the landing page (vi → vi, other → en) when the visitor has
+  // no app language yet; the layout reads it on this load and later pages keep it (NEXT_LOCALE)
+  if (REGISTER_PATH.test(request.nextUrl.pathname)) {
+    const locale = registerLocaleFromLanding(
+      request.cookies.get('NEXT_LOCALE')?.value,
+      request.cookies.get(PUBLIC_LOCALE_COOKIE)?.value
+    );
+    if (!locale) return NextResponse.next();
+    const headers = new Headers(request.headers);
+    const cookie = headers.get('cookie');
+    headers.set('cookie', cookie ? `${cookie}; NEXT_LOCALE=${locale}` : `NEXT_LOCALE=${locale}`);
+    const response = NextResponse.next({ request: { headers } });
+    response.cookies.set('NEXT_LOCALE', locale, { maxAge: PUBLIC_LOCALE_MAX_AGE, path: '/', sameSite: 'lax' });
+    return response;
+  }
   const publicLocale = publicLocaleFromPath(request.nextUrl.pathname);
   // #1114: /vi/{page} goes to the Vietnamese URL of that page (image search has its own slug)
   const publicPage = publicPageFromPath(request.nextUrl.pathname);
@@ -127,5 +144,8 @@ export const config = {
     '/:tenantKey/products',
     // a bare trailing `:code` does not match in Next's matcher; the pattern makes it match
     '/:tenantKey/booking/:code([A-Za-z0-9]{5})',
+    // #1551 sign-up pages: the landing language
+    '/register',
+    '/register/:path*',
   ],
 };

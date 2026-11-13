@@ -12,6 +12,17 @@ export function appLocaleFor(value: unknown): AppLocale {
   return isPublicLocale(value) ? 'en' : 'vi';
 }
 
+/**
+ * #1551 the sign-up page language for a new visitor: the landing choice (`NEXT_PUBLIC_LOCALE`), Vietnamese → vi and any
+ * other → en (the shop app speaks VI / EN; #1545 the shop language follows the sign-up page). null = leave it: an app
+ * language is already picked (`NEXT_LOCALE`) or there is no landing choice (the page stays Vietnamese).
+ */
+export function registerLocaleFromLanding(appCookie?: string | null, publicCookie?: string | null): 'vi' | 'en' | null {
+  if (appCookie) return null;
+  if (!isPublicLocale(publicCookie)) return null;
+  return publicCookie === 'vi' ? 'vi' : 'en';
+}
+
 /** `/{tenantKey}/products` and `/{tenantKey}/booking/{code}`: the public shop pages */
 export function isShopPath(pathname: string): boolean {
   return /^\/[a-z0-9-]+\/products\/?$/i.test(pathname) || /^\/[a-z0-9-]+\/booking\/[a-z0-9]{5}\/?$/i.test(pathname);
