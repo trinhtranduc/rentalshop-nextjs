@@ -7,6 +7,8 @@
  * (unit-tested). Saves through `productsApi.bulkImport` (max 3000 rows, the API's cap).
  * #1533: with 2+ branches the shop picks the branch of the file's quantity and sets "Hiện" + quantity per branch
  * (./import-branches, unit-tested).
+ * #1535: the result lists every row of the file (created, stock added, duplicate, error, not imported) under counts that
+ * filter it (./import-results, unit-tested).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -44,14 +46,33 @@ import {
   type ImportOutlet,
   type OutletResult,
 } from './import-branches';
+import {
+  RESULT_KINDS,
+  buildResultRows,
+  countResults,
+  looseErrors,
+  readRowResults,
+  type ResultDetail,
+  type ResultKind,
+  type ResultRow,
+} from './import-results';
 
 type Step = 'choose' | 'check' | 'result';
 const STEPS: Step[] = ['choose', 'check', 'result'];
 const ROWS_STEP = 100;
+const INFO_ICON = 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01';
 const FILE_ICON = 'M6 3h9l4 4v14H6zM14 3v5h5M9 12l5 5M14 12l-5 5';
 const UPLOAD_ICON = 'M12 20V9M7 14l5-5 5 5M5 4h14';
 const th = 'px-2 py-2.5 text-xs font-bold uppercase tracking-[0.06em] text-ar-muted';
 const checkbox = 'h-[18px] w-[18px] cursor-pointer accent-ar-primary disabled:cursor-not-allowed';
+/** #1535 badge and number colour per result kind. */
+const KIND_TONE: Record<ResultKind, { badge: string; num: string }> = {
+  created: { badge: 'bg-ar-done-bg text-ar-done', num: 'text-ar-done' },
+  updated: { badge: 'bg-ar-done-bg text-ar-done', num: 'text-ar-done' },
+  duplicate: { badge: 'bg-ar-unprepared-bg text-ar-unprepared', num: 'text-ar-unprepared' },
+  failed: { badge: 'bg-ar-danger-soft text-ar-danger', num: 'text-ar-danger' },
+  skipped: { badge: 'bg-ar-subtle text-ar-ink-2', num: 'text-ar-ink' },
+};
 const clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false });
 
 /** First sheet as a cell matrix plus the Excel row number of its first row. */
@@ -168,6 +189,10 @@ export default function ImportProductsPage() {
   const [importing, setImporting] = useState(false);
   const [outcome, setOutcome] = useState<ImportOutcome | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const [resultRows, setResultRows] = useState<ResultRow[] | null>(null);
+  const [resultFilter, setResultFilter] = useState<ResultKind | 'all'>('all');
+  /** Rows whose full note is open (the note button). */
+  const [openNotes, setOpenNotes] = useState<Set<number>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -180,6 +205,9 @@ export default function ImportProductsPage() {
     setOutcome(null);
     setByOutlet(null);
     setUpdated(0);
+    setResultRows(null);
+    setResultFilter('all');
+    setOpenNotes(new Set());
     setRequestError(null);
     if (inputRef.current) inputRef.current.value = '';
   };
@@ -254,6 +282,10 @@ export default function ImportProductsPage() {
       if (res.success) {
         setOutcome(readOutcome(res.data, fileRows));
         setByOutlet(readByOutlet(res.data));
+        const apiRows = readRowResults(res.data);
+        setResultRows(apiRows ? buildResultRows({ rows: checked.rows, chosen, plan, api: apiRows }) : null);
+        setResultFilter('all');
+        setOpenNotes(new Set());
         const u = (res.data as { updated?: unknown } | undefined)?.updated;
         setUpdated(typeof u === 'number' && u > 0 ? u : 0);
       } else setRequestError(res.message || res.error || '');
@@ -265,7 +297,59 @@ export default function ImportProductsPage() {
     }
   };
 
-  const errorText = (r: CheckedRow) => r.errors.map((e) => (e.code === 'barcodeDuplicate' ? t('error.barcodeDuplicate', { row: e.ref ?? '' }) : t(`error.${e.code}`))).join(' · ');
+  const errorsText = (errors: CheckedRow['errors']) =>
+    errors.map((e) => (e.code === 'barcodeDuplicate' ? t('error.barcodeDuplicate', { row: e.ref ?? '' }) : t(`error.${e.code}`))).join(' · ');
+  const errorText = (r: CheckedRow) => errorsText(r.errors);
+
+  /** #1535 each result row: a short note on one line, and the full text behind the note button when there is more. */
+  const names = (outletIds: number[]) => outletIds.map(branchName).join(', ');
+  const qtyList = (list: Array<{ outletId: number; stock: number }>) =>
+    list.map((o) => `${branchName(o.outletId)} ${o.stock}${o.stock === 0 ? ` (${t('cell.outOfStock')})` : ''}`).join(' · ');
+  const sumQty = (list: Array<{ stock: number }>) => list.reduce((n, o) => n + o.stock, 0);
+  const noteOf = (d: ResultDetail): { short: string; full: string | null } => {
+    switch (d.code) {
+      case 'created':
+        return d.outlets
+          ? { short: t('rows.shortQty', { count: sumQty(d.outlets), branches: d.outlets.length }), full: qtyList(d.outlets) }
+          : { short: t('rows.qty', { count: d.stock ?? 0 }), full: null };
+      case 'updated':
+        return {
+          short: t('rows.shortAdded', { count: sumQty(d.outlets) }),
+          full: [t('rows.added', { list: qtyList(d.outlets) }), d.skippedOutlets.length > 0 ? t('rows.keptBranches', { names: names(d.skippedOutlets) }) : '']
+            .filter(Boolean)
+            .join(' · '),
+        };
+      case 'barcodeExists':
+        return {
+          short: d.name ? t('rows.shortExists', { name: d.name }) : t('rows.existsNoName'),
+          full: d.name || d.skippedOutlets.length > 0
+            ? [d.name ? t('rows.exists', { name: d.name }) : t('rows.existsNoName'), d.skippedOutlets.length > 0 ? t('rows.hasStockAt', { names: names(d.skippedOutlets) }) : '']
+                .filter(Boolean)
+                .join(' · ')
+            : null,
+        };
+      case 'barcodeDeleted':
+        return { short: t('rows.shortDeleted'), full: d.name ? t('rows.deleted', { name: d.name }) : null };
+      case 'barcodeInFile':
+        return { short: t('error.barcodeDuplicate', { row: d.ref }), full: null };
+      case 'checkErrors':
+        return { short: errorsText(d.errors), full: d.errors.length > 1 ? errorsText(d.errors) : null };
+      case 'apiError':
+        return { short: d.message, full: d.message.length > 40 ? d.message : null };
+      default:
+        return { short: t(`rows.${d.code}`), full: null };
+    }
+  };
+  const toggleNote = (row: number) =>
+    setOpenNotes((prev) => {
+      const next = new Set(prev);
+      if (next.has(row)) next.delete(row);
+      else next.add(row);
+      return next;
+    });
+  const counts = resultRows ? countResults(resultRows) : null;
+  const visibleResults = resultRows ? (resultFilter === 'all' ? resultRows : resultRows.filter((r) => r.kind === resultFilter)) : [];
+  const strayErrors = outcome && resultRows ? looseErrors(outcome.errors, resultRows) : [];
 
   // ------------------------------------------------------------------------
   // Render
@@ -634,10 +718,44 @@ export default function ImportProductsPage() {
             </div>
           )}
           {requestError && <p className="m-0 text-[15px] text-ar-danger">{requestError}</p>}
-          {outcome && outcome.imported > 0 && updated > 0 && <p className="m-0 text-[15px] text-ar-ink-2">{t('result.updated', { count: updated })}</p>}
-          {outcome && outcome.skipped > 0 && (
+          {counts && (
+            <div data-import-stats role="group" aria-label={t('rows.statsLabel')} className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {(['all', ...RESULT_KINDS] as Array<ResultKind | 'all'>)
+                .filter((k) => k !== 'updated' || byOutlet !== null || counts.updated > 0)
+                .map((k) => {
+                  const active = resultFilter === k;
+                  const n = counts[k];
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      data-result-filter={k}
+                      aria-pressed={active}
+                      disabled={n === 0 && k !== 'all'}
+                      onClick={() => setResultFilter(k)}
+                      className={`flex min-h-[64px] flex-col items-start justify-center rounded-xl border px-3 py-2 text-left disabled:cursor-default disabled:opacity-50 ${
+                        active ? 'border-ar-primary bg-ar-primary-soft' : 'border-ar-line-soft bg-ar-surface hover:bg-ar-subtle'
+                      }`}
+                    >
+                      <span className={`text-2xl font-bold tabular-nums leading-tight ${k === 'all' || n === 0 ? 'text-ar-ink' : KIND_TONE[k].num}`}>{n}</span>
+                      <span className="text-sm font-semibold text-ar-ink-2">{t(k === 'all' ? 'rows.all' : `rows.kind.${k}`)}</span>
+                    </button>
+                  );
+                })}
+            </div>
+          )}
+          {!resultRows && outcome && outcome.imported > 0 && updated > 0 && <p className="m-0 text-[15px] text-ar-ink-2">{t('result.updated', { count: updated })}</p>}
+          {!resultRows && outcome && outcome.skipped > 0 && (
             <p className="m-0 text-[15px] text-ar-ink-2">{t(byOutlet ? 'result.skippedBranch' : 'result.skipped', { count: outcome.skipped })}</p>
           )}
+          {outcome && outcome.imported === 0 && outcome.errors.length > 0 && (
+            <p className="m-0 text-[15px] text-ar-ink-2">{t('result.rejected', { count: outcome.errors.length })}</p>
+          )}
+          {strayErrors.map((e, i) => (
+            <p key={i} className="m-0 break-words text-[15px] text-ar-danger">
+              {e.message}
+            </p>
+          ))}
           {byOutlet && byOutlet.some((o) => o.listed > 0 || o.skipped > 0) && (
             <div data-import-by-outlet className="grid max-w-[720px] grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
               {byOutlet
@@ -654,10 +772,55 @@ export default function ImportProductsPage() {
                 ))}
             </div>
           )}
-          {outcome && outcome.imported === 0 && outcome.errors.length > 0 && (
-            <p className="m-0 text-[15px] text-ar-ink-2">{t('result.rejected', { count: outcome.errors.length })}</p>
+          {resultRows && resultRows.length > 0 && (
+            <ul data-import-rows className="m-0 flex max-h-[520px] list-none flex-col overflow-y-auto rounded-xl border border-ar-line-soft p-0">
+              {visibleResults.map((r) => {
+                const note = noteOf(r.detail);
+                const open = note.full !== null && openNotes.has(r.row);
+                return (
+                  <li
+                    key={r.row}
+                    data-result-row={r.row}
+                    data-kind={r.kind}
+                    className="flex flex-col gap-1 border-t border-ar-subtle px-4 py-2 text-sm first:border-t-0 sm:flex-row sm:items-start sm:gap-3"
+                  >
+                    <span className="flex-none font-semibold tabular-nums text-ar-ink sm:w-[72px]">{t('result.rowLabel', { row: r.row })}</span>
+                    <span className="flex min-w-0 flex-col sm:w-[38%] sm:flex-none">
+                      <span className="truncate font-semibold text-ar-ink">{r.name || t('rows.noName')}</span>
+                      {r.barcode && <span className="truncate text-[13px] text-ar-muted">{t('rows.barcode', { code: r.barcode })}</span>}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-1">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className={`flex-none rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${KIND_TONE[r.kind].badge}`}>{t(`rows.kind.${r.kind}`)}</span>
+                        <span data-result-note className={`min-w-0 truncate text-[13px] ${r.kind === 'failed' ? 'text-ar-danger' : 'text-ar-muted'}`} title={note.full ?? note.short}>
+                          {note.short}
+                        </span>
+                        {note.full !== null && (
+                          <button
+                            type="button"
+                            data-result-more
+                            aria-expanded={open}
+                            aria-label={t('rows.more', { row: r.row })}
+                            title={t('rows.more', { row: r.row })}
+                            onClick={() => toggleNote(r.row)}
+                            className={`flex h-7 w-7 flex-none items-center justify-center rounded-full ${open ? 'bg-ar-primary-soft text-ar-primary' : 'text-ar-muted hover:bg-ar-subtle'}`}
+                          >
+                            <ShellIcon d={INFO_ICON} size={16} />
+                          </button>
+                        )}
+                      </span>
+                      {open && (
+                        <span data-result-full className={`break-words rounded-lg bg-ar-subtle px-3 py-2 text-[13px] ${r.kind === 'failed' ? 'text-ar-danger' : 'text-ar-ink-2'}`}>
+                          {note.full}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           )}
-          {outcome && outcome.errors.length > 0 && (
+          {!resultRows && outcome && outcome.errors.length > 0 && (
             <div className="flex flex-col gap-2">
               <h3 className="m-0 text-sm font-bold uppercase tracking-[0.06em] text-ar-muted">{t('result.errorsTitle')}</h3>
               <ul className="m-0 flex max-h-[360px] list-none flex-col overflow-y-auto rounded-xl border border-ar-line-soft p-0">

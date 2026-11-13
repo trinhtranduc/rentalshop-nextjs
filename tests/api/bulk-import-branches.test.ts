@@ -82,13 +82,20 @@ describe('legacy call (no outletId, no outlets): unchanged', () => {
       { outletId: 1, stock: 2, available: 2, renting: 0, isListed: true },
       { outletId: 3, stock: 0, available: 0, renting: 0, isListed: false },
     ]);
-    expect(res.body.data).toEqual({ imported: 1, skipped: 0, failed: 0, total: 1, errors: [] });
+    expect(res.body.data).toEqual({ imported: 1, skipped: 0, failed: 0, total: 1, errors: [], rows: [{ row: 1, status: 'created' }] });
   });
 
   it('a product with the same barcode is skipped and nothing is written to it', async () => {
     mockPrisma.product.findFirst.mockResolvedValue({ id: 9, deletedAt: null, outletStock: [{ outletId: 3, stock: 0 }] });
     const res: any = await bulkImport(req({ products: [row()] }));
-    expect(res.body.data).toEqual({ imported: 0, skipped: 1, failed: 0, total: 1, errors: [] });
+    expect(res.body.data).toEqual({
+      imported: 0,
+      skipped: 1,
+      failed: 0,
+      total: 1,
+      errors: [],
+      rows: [{ row: 1, status: 'duplicate', reason: 'barcodeExists' }],
+    });
     expect(tx.outletStock.upsert).not.toHaveBeenCalled();
   });
 });
