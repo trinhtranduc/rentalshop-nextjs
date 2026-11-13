@@ -50,6 +50,15 @@ Status: accepted
     - Agent dịch theo bảng thuật ngữ ngay trong PR đó.
     - Test mục 3 chặn PR thiếu khoá (chạy ở máy khi GitHub Actions đang tắt).
 
+## F. Quy tắc theo thị trường (#1564)
+
+18. Chữ cho tiền theo `locales/GLOSSARY.md`: cọc = 内金 / 예약금 / 订金 / Booking deposit; thế chân = 保証金 / 보증금 / 押金 / Security deposit.
+    Không dùng 手付金, 계약금, 定金 (luật "mất cọc / trả gấp đôi"), không dùng 保证金 cho khách. Test `glossary-legal-words` chặn.
+19. **Giấy tờ thế chân ở Hàn và Trung:** giữ thẻ căn cước của khách là phạm luật. Khi bật `ko` hoặc `zh`:
+    - màn "giấy tờ thế chân" chỉ ghi loại và số giấy tờ, gọi là 신분증 확인 / 证件登记;
+    - không có chữ nào bảo nhân viên giữ thẻ.
+    Anh duyệt trước khi bật.
+
 ## Out of scope
 
 - Trang admin nội bộ (`apps/admin`).

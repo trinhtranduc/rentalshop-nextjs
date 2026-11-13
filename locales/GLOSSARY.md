@@ -3,7 +3,8 @@
 Every translation of the shop pages, the apps, the emails and the API messages uses these words. One idea, one word.
 The `en` column is what the English files say today; where they say two things, the first one is the one to use.
 The `vi` column lists the words the Vietnamese files use (separated by `/`).
-Reviewed on 2026-11-13 by a second agent (back-translation and terms used by rental / POS software in each market).
+Reviewed on 2026-11-13 by a second agent (back-translation and terms used by rental / POS software in each market),
+then checked against rental shop pages in each market (sources and legal notes under **Markets** at the end).
 `zh-TW` is not in wave 1; when it comes it gets its own words (訂單, 押金, 分店), not a character conversion of `zh`.
 
 Rules for every language:
@@ -32,14 +33,14 @@ Rules for every language:
 | Đã trả hàng (`RETURNED`) | Returned | 返却済み | 반납 완료 | 已归还 | |
 | Hoàn thành (`COMPLETED`) | Completed | 完了 | 완료 | 已完成 | a sale, or a closed order |
 | Đã hủy (`CANCELLED`) | Cancelled | キャンセル済み | 취소됨 | 已取消 | |
-| Giao đồ | Hand over | 貸出 | 대여 (button: 대여 처리) | 取货 (button: 确认取货) | the shop gives the items to the customer |
+| Giao đồ | Hand over | お渡し (status: 貸出中) | 대여 (button: 대여 처리) | 取货 (button: 确认取货; clothes: 取衣) | the shop gives the items to the customer |
 | Trả đồ | Return | 返却 | 반납 | 归还 | the customer brings the items back |
 | Ngày lấy | Pickup date | 受取日 | 수령일 | 取货日期 | |
 | Ngày trả | Return date | 返却日 | 반납일 | 归还日期 | |
-| Quá hạn / Trễ hạn | Overdue | 延滞 | 연체 | 逾期 | not returned on the return date |
+| Quá hạn / Trễ hạn | Overdue | 延滞 | 연체 | 超期 | not returned on the return date (not the same as an agreed extension, 延長 / 연장 / 续租) |
 | Gia hạn (đơn) | Extend | 延長 | 연장 | 续租 | push an order's return date |
 | Trùng lịch | Schedule overlap | 予約の重複 | 중복 예약 | 档期冲突 | the same item is booked twice on a day |
-| Có sẵn | Available | 空きあり | 이용 가능 | 可租 | free to rent on that day |
+| Có sẵn | Available | 空きあり | 예약 가능 | 有档期 | free to rent on that day |
 | Món | Item | 明細 (count: {count}点) | 품목 | 明细 (count: {count} 件) | one line of an order |
 | Ghi chú | Note | メモ | 메모 | 备注 | |
 
@@ -51,11 +52,15 @@ Rules for every language:
 | Giá thuê | Rental price | レンタル価格 | 대여 가격 | 租赁价格 | per rental or per day |
 | Giá bán | Sale price | 販売価格 | 판매 가격 | 售价 | |
 | theo lần / theo ngày | per rental / per day | 1回あたり / 1日あたり | 1회당 / 1일당 | 每次 / 每天 | |
-| Tiền cọc, đặt cọc | Deposit | 内金 | 예약금 | 定金 | paid in advance, **counts toward the rent** |
-| Thế chân, tiền thế chân | Security deposit | 保証金 | 보증금 | 保证金 | money held, **given back at return**. Owner (2026-11-13): other languages say "guarantee money" (tiền đảm bảo); Vietnamese always says **thế chân**, never "thế chấp" |
-| Giấy tờ thế chân (`collateralType`) | Security document | 預かり書類 | 보관 서류 | 押证件 | ID card, licence, passport held until the return |
-| Trả thế chân | Return security deposit | 保証金返却 | 보증금 반환 | 退还保证金 | |
+| Tiền cọc, đặt cọc | Booking deposit (files: Deposit, being renamed) | 内金 | 예약금 | 订金 | paid in advance, **counts toward the rent**. Never 手付金 (ja), 계약금 (ko), 定金 (zh): each carries a legal "lose it / pay back double" rule |
+| Thế chân, tiền thế chân | Security deposit | 保証金 (softer: 預かり金) | 보증금 | 押金 | money held, **given back at return**. Owner (2026-11-13): other languages say guarantee money (tiền đảm bảo); Vietnamese always says **thế chân**, never "thế chấp". zh: 押金, not 保证金 (on Chinese platforms 保证金 is the seller's own bond); owner agreed 2026-11-13 |
+| Giấy tờ thế chân (`collateralType`) | Security document | 身分証明書の確認 | 신분증 확인 | 证件登记 | Vietnam: papers held until the return. **Korea and China: keeping a customer's ID card is illegal** (see Markets); there the label means "ID checked and recorded". Japan / English: shops show ID, they do not keep it |
+| Trả thế chân | Return security deposit | 保証金返却 | 보증금 반환 | 退押金 | |
 | Phụ thu | Surcharge | 追加料金 | 추가 요금 | 附加费 | extra charge (late, damage…) |
+| Phí trễ hạn | Late fee | 延滞料 | 연체료 | 超期费 | |
+| Phí hư hỏng | Damage fee | 破損・汚損料 | 파손 배상 | 损坏赔偿 | |
+| Phí giặt | Cleaning fee | クリーニング代 | 세탁비 | 清洗费 | many Japanese shops include cleaning in the price |
+| Phí huỷ | Cancellation fee | キャンセル料 | 취소 수수료 | 取消费用 | |
 | Giảm giá | Discount | 割引 | 할인 | 折扣 | |
 | Còn lại | Amount due | 残金 | 잔금 | 尾款 | what the customer still owes |
 | Thanh toán | Payment | 支払い | 결제 | 付款 | |
@@ -110,3 +115,10 @@ Rules for every language:
 | Ngôn ngữ email | Email language | メールの言語 | 이메일 언어 | 邮件语言 |
 | Đăng nhập | Sign in | ログイン | 로그인 | 登录 |
 | Đăng ký / Tạo cửa hàng | Create a shop | ショップを作成 | 매장 만들기 | 创建店铺 |
+
+## Markets (checked 2026-11-13 against rental shop pages)
+
+- **Japan.** 内金 is normal for 振袖 and wedding dresses (weddingbox.co.jp/faq). A security deposit (保証金 / 預かり金) is uncommon: kimono shops use it for next-day returns (aiwafuku.com, okamoto-kimono.com); camera shops sell a protection fee instead. Shops check ID, they do not keep it. **Do not use 手付金**: Civil Code art. 557 makes it a cancellation deposit (lose it / pay double).
+- **Korea.** 예약금 counted toward the rent is common (aranghanbok.com); 보증금 for overnight hanbok and cameras (onedayhanbok.com). **Holding a 주민등록증 as security is a crime** for shop and customer (주민등록법 §37①2): record the ID type and number, never tell staff to keep the card. **Do not use 계약금** (Civil Act §565, pay back double).
+- **China.** 押金 is the customer word for the money given back (online camera rental often waives it, 免押). **Do not use 定金** (Civil Code arts. 586–587: capped at 20 %, lose it / pay double); 订金 or 预付款 avoid that rule. **Keeping a 居民身份证 is illegal** (居民身份证法 arts. 15, 16): label the papers 证件登记.
+- **English-speaking.** Booking deposits applied to the total are common for formalwear (promshoppe.net); security deposits at costume shops, often as a card hold (disguisescostumes.com). ID is shown, not kept ("Valid ID required", costumeworx.com).
