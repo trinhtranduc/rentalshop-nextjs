@@ -23,7 +23,7 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Globe } from 'lucide-react';
-import { enabledAppLanguages } from '@rentalshop/constants';
+import { webLanguages } from '@rentalshop/constants';
 
 type SupportedLocale = 'en' | 'vi' | 'zh' | 'ko' | 'ja';
 type PublicLocale = SupportedLocale | 'ru' | 'zh-TW' | 'fr' | 'de' | 'th' | 'id' | 'es';
