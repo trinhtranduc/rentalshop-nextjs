@@ -35,11 +35,11 @@ const printfArgs = (s: string) =>
 const ARGS_MAY_DIFFER = ['v2_calendar_month'];
 
 describe('app languages (#1554)', () => {
-  it('Tiếng Việt and English are on; 日本語, 한국어, 中文 are listed but off until translated', () => {
-    expect(enabledAppLanguages().map((l) => l.code)).toEqual(['vi', 'en']);
+  it('Tiếng Việt, English, 日本語, 한국어, 中文 are on in the apps (wired after review of the data)', () => {
+    expect(enabledAppLanguages().map((l) => l.code)).toEqual(['vi', 'en', 'ja', 'ko', 'zh']);
     for (const code of ['ja', 'ko', 'zh']) {
-      expect(APP_LANGUAGES.find((l) => l.code === code)?.enabled).toBe(false);
-      expect(isEnabledAppLanguage(code)).toBe(false);
+      expect(APP_LANGUAGES.find((l) => l.code === code)?.enabled).toBe(true);
+      expect(isEnabledAppLanguage(code)).toBe(true);
     }
     expect(new Set(APP_LANGUAGES.map((l) => l.code)).size).toBe(APP_LANGUAGES.length);
   });
