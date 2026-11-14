@@ -45,7 +45,7 @@
     "timeFormat": "Zeitformat",
     "numberFormat": "Zahlenformat",
     "changePasswordTitle": "Passwort ändern",
-    "changePasswordDesc": "Das Passwort Ihres Kontos aktualisieren",
+    "changePasswordDesc": "Ihr Kontopasswort aktualisieren",
     "changePasswordButton": "Passwort ändern",
     "sessionTitle": "Sitzungsverwaltung",
     "sessionDesc": "Von der aktuellen Sitzung abmelden",
@@ -158,7 +158,7 @@
     "nextBilling": "Nächste Abrechnung",
     "amount": "Betrag",
     "paymentMethod": "Zahlungsart",
-    "upgradePlan": "Tarif upgraden",
+    "upgradePlan": "Tarif hochstufen",
     "downgradePlan": "Tarif downgraden",
     "cancelSubscription": "Abonnement kündigen",
     "viewInvoices": "Rechnungen anzeigen",
@@ -408,7 +408,7 @@
       },
       "locked": {
         "title": "Treuekunden benötigen den Tarif Professional",
-        "body": "Diese Funktion gibt es nur im Tarif Professional. Nach dem Upgrade ist das Programm sofort aktivierbar und konfigurierbar.",
+        "body": "Diese Funktion gibt es nur im Tarif Professional. Nach der Hochstufung ist das Programm sofort aktivierbar und konfigurierbar.",
         "note": "Die Punktedaten der Kunden bleiben für später erhalten, aber Punktesammeln, Einlösen und die Synchronisierung des Verlaufs sind vorübergehend gesperrt."
       },
       "overview": {
@@ -564,7 +564,7 @@
       "title": "Filialen",
       "add": "Filiale hinzufügen",
       "edit": "Bearbeiten",
-      "main": "Haupt",
+      "main": "Hauptfiliale",
       "bank": "Bankkonten",
       "empty": "Noch keine Filialen vorhanden",
       "loadFailed": "Filialen konnten nicht geladen werden.",
@@ -642,7 +642,7 @@
       "expiredNote": "Der Tarif ist abgelaufen. Wenden Sie sich an AnyRent, um zu verlängern.",
       "loadFailed": "Die Tarifinformationen konnten nicht geladen werden.",
       "retry": "Erneut versuchen",
-      "upgrade": "Tarif upgraden",
+      "upgrade": "Tarif hochstufen",
       "extend": "Verlängern",
       "noSubscription": "Dieses Geschäft hat noch keinen Tarif.",
       "tag": {
@@ -683,7 +683,7 @@
       },
       "history": {
         "title": "Tarifverlauf",
-        "hint": "Upgrades, Verlängerungen und Zahlungen, neueste zuerst.",
+        "hint": "Hochstufungen, Verlängerungen und Zahlungen, neueste zuerst.",
         "empty": "Noch keine Änderungen.",
         "loadFailed": "Der Tarifverlauf konnte nicht geladen werden.",
         "until": "bis {day}",
@@ -691,7 +691,7 @@
         "trialStarted": "Testphase gestartet",
         "started": "Tarif {plan} gestartet",
         "startedPlain": "Tarif gestartet",
-        "upgraded": "Upgrade auf {plan}",
+        "upgraded": "Hochstufung auf {plan}",
         "downgraded": "Herabstufung auf {plan}",
         "planChanged": "Wechsel zu Tarif {plan}",
         "planChangedPlain": "Tarif gewechselt",

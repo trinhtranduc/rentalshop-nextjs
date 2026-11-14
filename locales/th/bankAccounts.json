@@ -1,0 +1,64 @@
+{
+  "title": "จัดการบัญชีธนาคาร",
+  "subtitle": "จัดการบัญชีธนาคารของสาขา",
+  "form": {
+    "title": "ข้อมูลบัญชีธนาคาร",
+    "addTitle": "เพิ่มบัญชีธนาคาร",
+    "editTitle": "แก้ไขบัญชีธนาคาร",
+    "accountHolderName": "ชื่อเจ้าของบัญชี",
+    "accountHolderNamePlaceholder": "กรอกชื่อเจ้าของบัญชี",
+    "accountNumber": "เลขที่บัญชี",
+    "accountNumberPlaceholder": "กรอกเลขที่บัญชี (6–16 หลัก)",
+    "bankName": "ชื่อธนาคาร",
+    "bankNamePlaceholder": "เลือกธนาคาร",
+    "bankCode": "รหัสธนาคาร",
+    "bankCodePlaceholder": "รหัสธนาคาร (กรอกอัตโนมัติ)",
+    "branch": "สาขาธนาคาร",
+    "branchPlaceholder": "กรอกสาขาธนาคาร (ไม่บังคับ)",
+    "isDefault": "ตั้งเป็นบัญชีเริ่มต้น",
+    "notes": "หมายเหตุ",
+    "notesPlaceholder": "หมายเหตุ (ไม่บังคับ)",
+    "submit": "บันทึกบัญชีธนาคาร",
+    "add": "เพิ่มบัญชี",
+    "update": "อัปเดต",
+    "cancel": "ยกเลิก",
+    "saving": "กำลังบันทึก...",
+    "errors": {
+      "accountHolderNameRequired": "จำเป็นต้องกรอกชื่อเจ้าของบัญชี",
+      "accountNumberRequired": "จำเป็นต้องกรอกเลขที่บัญชี",
+      "accountNumberInvalid": "เลขที่บัญชีต้องมี 6–16 หลัก",
+      "bankNameRequired": "จำเป็นต้องระบุชื่อธนาคาร"
+    }
+  },
+  "card": {
+    "default": "ค่าเริ่มต้น",
+    "accountHolderName": "ชื่อเจ้าของบัญชี",
+    "accountNumber": "เลขที่บัญชี",
+    "bank": "ธนาคาร",
+    "branch": "สาขา",
+    "notes": "หมายเหตุ",
+    "copyQRCode": "คัดลอกรหัส QR",
+    "scanQRHint": "สแกนรหัส QR เพื่อโอนเงินอย่างรวดเร็ว",
+    "copied": "คัดลอกแล้ว",
+    "accountNumberCopied": "คัดลอกเลขที่บัญชีไปยังคลิปบอร์ดแล้ว",
+    "qrCodeCopied": "คัดลอกรหัส QR ไปยังคลิปบอร์ดแล้ว"
+  },
+  "list": {
+    "emptyTitle": "ยังไม่มีบัญชีธนาคาร",
+    "emptyDescription": "เพิ่มบัญชีธนาคารเพื่อรับการชำระเงินโอน",
+    "addButton": "เพิ่มบัญชีธนาคาร"
+  },
+  "messages": {
+    "addSuccess": "เพิ่มบัญชีธนาคารแล้ว",
+    "addError": "ไม่สามารถเพิ่มบัญชีธนาคารได้",
+    "updateSuccess": "อัปเดตบัญชีธนาคารแล้ว",
+    "updateError": "ไม่สามารถอัปเดตบัญชีธนาคารได้",
+    "deleteSuccess": "ลบบัญชีธนาคารแล้ว",
+    "deleteError": "ไม่สามารถลบบัญชีธนาคารได้",
+    "loadError": "ไม่สามารถโหลดรายการบัญชีธนาคารได้",
+    "deleteConfirm": "ต้องการลบบัญชีธนาคาร \"{name}\" ใช่ไหม?",
+    "deleteConfirmTitle": "ลบบัญชีธนาคาร",
+    "noOutlet": "คุณยังไม่ได้ถูกกำหนดให้อยู่ในสาขาใด โปรดติดต่อผู้ดูแลระบบ",
+    "noPermission": "คุณไม่มีสิทธิ์ดูบัญชีธนาคาร"
+  }
+}

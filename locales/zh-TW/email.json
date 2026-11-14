@@ -10,7 +10,7 @@
     "periodEnd": "結束日期",
     "footer": "© {year} AnyRent. 版權所有。",
     "systemName": "AnyRent",
-    "systemTagline": "租賃管理系統"
+    "systemTagline": "租借管理系統"
   },
   "subscriptionRenewal": {
     "title": "訂閱續約成功",
@@ -23,7 +23,7 @@
     "periodEnd": "結束日期",
     "footer": "© {year} AnyRent. 版權所有。",
     "systemName": "AnyRent",
-    "systemTagline": "租賃管理系統"
+    "systemTagline": "租借管理系統"
   },
   "subscriptionExtension": {
     "title": "訂閱續約",
@@ -37,13 +37,13 @@
     "description": "說明",
     "footer": "© {year} AnyRent. 版權所有。",
     "systemName": "AnyRent",
-    "systemTagline": "租賃管理系統"
+    "systemTagline": "租借管理系統"
   },
   "subscriptionExpiryReminder": {
     "title": "訂閱方案即將到期",
     "subject": "訂閱方案將於 {days} {unit} 後到期 - {planName}",
     "greeting": "您好",
-    "message": "您的訂閱方案將於 {days} {unit} 後到期。請聯繫 AnyRent 辦理續約，讓店鋪持續營運。",
+    "message": "您的訂閱方案將於 {days} {unit} 後到期。請聯繫 AnyRent 辦理續約，讓店家持續營運。",
     "trialMessage": "您的免費試用將於 {days} {unit} 後結束。請聯繫 AnyRent 選擇訂閱方案，以保留資料並繼續使用。",
     "planName": "訂閱方案",
     "expiryDate": "到期日",
@@ -54,7 +54,7 @@
     "alreadyRenewed": "若您已完成續約，請忽略此郵件。",
     "footer": "© {year} AnyRent. 版權所有。",
     "systemName": "AnyRent",
-    "systemTagline": "租賃管理系統"
+    "systemTagline": "租借管理系統"
   },
   "subscriptionStatusChange": {
     "cancelled": {
@@ -79,11 +79,11 @@
     "reason": "原因",
     "footer": "© {year} AnyRent. 版權所有。",
     "systemName": "AnyRent",
-    "systemTagline": "租賃管理系統"
+    "systemTagline": "租借管理系統"
   },
   "addonChange": {
     "created": {
-      "title": "已新增加購方案",
+      "title": "加購方案已新增",
       "message": "您的帳號已新增一個加購方案，使用上限已提高。",
       "action": "已新增"
     },
@@ -122,7 +122,7 @@
     "updatedMessage": "變更已套用至您的帳號。",
     "footer": "© {year} AnyRent. 版權所有。",
     "systemName": "AnyRent",
-    "systemTagline": "租賃管理系統"
+    "systemTagline": "租借管理系統"
   },
   "common": {
     "billingIntervals": {
@@ -138,7 +138,7 @@
     }
   },
   "accountEmail": {
-    "tagline": "租賃管理系統",
+    "tagline": "租借管理系統",
     "hello": "您好",
     "linkHint": "若按鈕無法使用，請複製以下連結並貼到瀏覽器中：",
     "noteLabel": "注意：",

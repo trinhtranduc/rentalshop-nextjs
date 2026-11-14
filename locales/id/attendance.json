@@ -1,0 +1,418 @@
+{
+  "title": "Absensi",
+  "weekday": {
+    "1": "Sen",
+    "2": "Sel",
+    "3": "Rab",
+    "4": "Kam",
+    "5": "Jum",
+    "6": "Sab",
+    "7": "Min"
+  },
+  "common": {
+    "cancel": "Batal",
+    "close": "Tutup",
+    "save": "Simpan",
+    "working": "Menyimpan…",
+    "loading": "Memuat…",
+    "loadFailed": "Tidak dapat memuat data.",
+    "retry": "Coba lagi",
+    "outlet": "Cabang",
+    "prevMonth": "Bulan sebelumnya",
+    "nextMonth": "Bulan berikutnya",
+    "month": "Bulan {month}",
+    "hours": "{hours} jam",
+    "exportXlsx": "Ekspor Excel",
+    "notAvailable": "Toko belum mengaktifkan modul Absensi. Hubungi AnyRent untuk mengaktifkannya.",
+    "noAccess": "Hanya pemilik toko dan manajer cabang yang dapat menggunakan layar ini.",
+    "noOutlet": "Belum ada cabang."
+  },
+  "timesheet": {
+    "title": "Rekap absensi · Bulan {month}",
+    "subtitle": "{count} staf · {lock}",
+    "unlocked": "bulan belum dikunci",
+    "locked": "bulan sudah dikunci",
+    "lock": "Kunci bulan",
+    "unlock": "Buka kunci bulan",
+    "absent": "Tidak hadir",
+    "empty": "Cabang ini belum memiliki staf atau catatan absensi pada bulan ini.",
+    "kpi": {
+      "totalHours": "Total jam",
+      "pairs": "Pasangan masuk–keluar",
+      "missingOut": "Jam keluar belum dicatat",
+      "suspected": "Kemungkinan curang"
+    },
+    "col": {
+      "staff": "Staf",
+      "hours": "Jam",
+      "days": "Hari"
+    },
+    "legend": {
+      "ok": "sesuai shift",
+      "late": "terlambat / pulang awal",
+      "ot": "lembur",
+      "miss": "jam keluar belum dicatat",
+      "fake": "kemungkinan curang",
+      "absent": "dijadwalkan, tidak hadir",
+      "sunday": "Minggu",
+      "hint": "Ketuk nama → detail sebulan penuh · ketuk sel → detail hari itu"
+    }
+  },
+  "export": {
+    "title": "Ekspor rekap absensi ke Excel",
+    "month": "Bulan",
+    "parts": "Sertakan",
+    "grid": "Tabel bulanan (jam per hari, total jam, jumlah hari)",
+    "scans": "Detail setiap pemindaian (waktu, hasil, jarak, koordinat)",
+    "edits": "Riwayat perubahan absensi",
+    "download": "Unduh file .xlsx",
+    "failed": "Tidak dapat mengekspor file Excel."
+  },
+  "lock": {
+    "title": "Kunci bulan {month}?",
+    "body": "Setelah dikunci, manajer cabang tidak dapat lagi mengubah absensi bulan ini. Hanya pemilik toko yang dapat membuka kunci (tercatat dalam riwayat). Modul Penggajian nanti akan menggunakan bulan yang sudah dikunci.",
+    "confirm": "Kunci bulan",
+    "locked": "Bulan {month} sudah dikunci",
+    "unlockTitle": "Buka kunci bulan {month}?",
+    "unlockBody": "Setelah dibuka, absensi bulan ini dapat diubah kembali. Perubahan tercatat dalam riwayat.",
+    "unlockConfirm": "Buka kunci",
+    "unlocked": "Bulan {month} sudah dibuka kuncinya"
+  },
+  "person": {
+    "back": "‹ Rekap absensi bulan {month}",
+    "title": "Absensi per orang",
+    "pick": "Pilih staf",
+    "add": "+ Tambah catatan",
+    "map": "Peta",
+    "edit": "Ubah",
+    "empty": "Tidak ada pemindaian.",
+    "noStaff": "Cabang ini belum memiliki staf.",
+    "forgotOut": "Lupa absen keluar",
+    "suspected": "Kemungkinan curang",
+    "late": "Terlambat {n}′",
+    "early": "Pulang awal {n}′",
+    "overtime": "Lembur {n}′",
+    "filter": {
+      "label": "Filter pemindaian",
+      "all": "Semua pemindaian",
+      "rejected": "Ditolak",
+      "suspected": "Kemungkinan curang"
+    },
+    "kpi": {
+      "days": "Hari kerja",
+      "hours": "Total jam",
+      "lateEarly": "Terlambat / pulang awal",
+      "overtime": "Lembur",
+      "missingOut": "Jam keluar belum dicatat",
+      "suspected": "Kemungkinan curang"
+    },
+    "col": {
+      "day": "Hari",
+      "time": "Waktu pindai",
+      "kind": "Jenis",
+      "result": "Hasil",
+      "distance": "Jarak dari cabang",
+      "gps": "GPS",
+      "coords": "Koordinat",
+      "shift": "Shift",
+      "note": "Catatan"
+    },
+    "kind": {
+      "IN": "Masuk",
+      "OUT": "Keluar",
+      "EDIT": "Ubah"
+    },
+    "result": {
+      "ACCEPTED": "Tercatat",
+      "REJECTED": "Ditolak",
+      "AUTO_CLOSED": "Ditutup otomatis",
+      "EDITED": "Diubah"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "koordinat sama persis dengan sebelumnya",
+      "SPEED": "pergerakan cepat yang tidak wajar"
+    },
+    "error": {
+      "OUT_OF_RANGE": "Di luar area {radius} m",
+      "GPS_INACCURATE": "GPS belum akurat",
+      "MOCK_LOCATION": "Lokasi palsu",
+      "QR_EXPIRED": "Kode QR sudah tidak berlaku",
+      "QR_WRONG_OUTLET": "Kode QR milik cabang lain",
+      "ATTENDANCE_NOT_CONFIGURED": "Lokasi cabang belum diatur",
+      "ATTENDANCE_LOCATION_NOT_SET": "Cabang belum memiliki lokasi (jarak belum diperiksa)",
+      "other": "Ditolak"
+    },
+    "editIn": "masuk {time}",
+    "editOut": "keluar {time}",
+    "nextDay": "(hari berikutnya)"
+  },
+  "edit": {
+    "title": "Ubah absensi · {name} · {date}",
+    "current": "Catatan saat ini: masuk {in}, {out}",
+    "outAt": "keluar {time}",
+    "noOut": "belum ada jam keluar (ditutup otomatis di akhir hari)",
+    "checkIn": "Jam masuk",
+    "checkOut": "Jam keluar",
+    "reason": "Alasan (wajib)",
+    "reasonPlaceholder": "Lupa absen keluar, dikonfirmasi manajer",
+    "note": "Riwayat disimpan: siapa yang mengubah, apa yang diubah, dan kapan. Bulan yang sudah dikunci tidak dapat diubah.",
+    "addOther": "+ Tambah catatan lain",
+    "saved": "Absensi diperbarui"
+  },
+  "add": {
+    "title": "Tambah catatan absensi · {name}",
+    "sub": "Digunakan saat staf bekerja tetapi tidak dapat melakukan pemindaian.",
+    "date": "Hari",
+    "reasonPlaceholder": "Baterai ponsel habis",
+    "confirm": "Tambah catatan",
+    "added": "Catatan absensi ditambahkan"
+  },
+  "map": {
+    "title": "Lokasi pemindaian · {name} · {when}",
+    "label": "Peta lokasi pemindaian dan area absensi",
+    "distance": "{m} m dari cabang",
+    "gps": "GPS ±{m} m",
+    "accepted": "Tercatat",
+    "rejected": "Ditolak: {reason}"
+  },
+  "shifts": {
+    "title": "Atur shift",
+    "subtitle": "Minggu {from} – {to} · hari ini {today}",
+    "prevWeek": "‹ Minggu sebelumnya",
+    "nextWeek": "Minggu berikutnya ›",
+    "assign": "Tetapkan shift",
+    "addShift": "Tambah shift",
+    "legendRepeat": "↻ Jadwal berulang setiap minggu",
+    "legendLock": "🔒 shift sudah dimulai / hari sudah lewat: tidak dapat diubah",
+    "legendEdited": "✎ diubah khusus untuk hari itu",
+    "empty": "Cabang ini belum memiliki staf.",
+    "rules": "Jadwal mingguan yang berlaku",
+    "rulesHint": "Ubah / hentikan / hapus hanya memengaruhi hari yang belum dikerjakan",
+    "rulesEmpty": "Belum ada jadwal mingguan.",
+    "noEnd": "Tanpa akhir",
+    "edit": "Ubah",
+    "stop": "Hentikan mulai…",
+    "delete": "Hapus",
+    "col": {
+      "staff": "Staf",
+      "shift": "Shift",
+      "weekdays": "Hari",
+      "from": "Dari",
+      "to": "Sampai"
+    },
+    "lockedToday": "Sudah masuk shift hari ini"
+  },
+  "day": {
+    "lockedBody": "🔒 Shift ini sudah dimulai atau harinya sudah lewat sehingga tidak dapat diubah. Untuk memperbaiki jam kerja, buka Rekap absensi.",
+    "current": "Saat ini: {shift} ({source})",
+    "sourceRule": "sesuai jadwal mingguan",
+    "sourceDay": "diubah khusus untuk hari ini",
+    "none": "Belum ada shift",
+    "editable": "belum dimulai, dapat diubah",
+    "pick": "Shift hari ini",
+    "custom": "Jam khusus",
+    "customStart": "Jam khusus: mulai",
+    "customEnd": "Selesai",
+    "note": "Hanya mengubah hari ini. Minggu-minggu berikutnya tetap mengikuti jadwal mingguan. Aplikasi memberi tahu {name}.",
+    "clear": "Hapus shift hari ini",
+    "saved": "Shift tanggal {date} telah diubah"
+  },
+  "assign": {
+    "title": "Tetapkan shift (berulang mingguan)",
+    "sub": "Tetapkan sekali, berulang setiap minggu sampai diubah.",
+    "shift": "1. Shift",
+    "staff": "2. Staf",
+    "weekdays": "3. Hari dalam minggu",
+    "from": "Mulai dari",
+    "to": "Selesai (opsional)",
+    "toPlaceholder": "Tanpa akhir",
+    "preview": "↻ Berulang setiap minggu",
+    "previewLine": "{names} · {shift} · {days} · mulai {from}",
+    "previewTo": " sampai {to}",
+    "conflict": "{name} sudah memiliki jadwal {shift} {days}.",
+    "keep": "Hari yang sudah dikerjakan atau diubah khusus tetap dipertahankan.",
+    "confirm": "Tetapkan shift · beri tahu staf",
+    "noTemplates": "Belum ada templat shift. Buat dulu di tab Templat shift.",
+    "saved": "Shift telah ditetapkan"
+  },
+  "ruleEdit": {
+    "title": "Ubah jadwal mingguan · {name}",
+    "shift": "Shift",
+    "weekdays": "Hari",
+    "from": "Berlaku mulai",
+    "note": "Hari yang sudah dikerjakan atau sudah lewat tetap dipertahankan.",
+    "saved": "Jadwal mingguan diperbarui"
+  },
+  "ruleStop": {
+    "title": "Hentikan jadwal mingguan · {name}",
+    "last": "Berhenti setelah tanggal",
+    "note": "Mulai {next} {name} tidak lagi memiliki shift {shift}. Contoh penggunaan: saat staf berhenti kerja atau pindah jadwal.",
+    "confirm": "Hentikan jadwal",
+    "saved": "Jadwal mingguan dihentikan"
+  },
+  "ruleDelete": {
+    "title": "Hapus jadwal mingguan · {name}?",
+    "note": "Hari yang belum dikerjakan tidak lagi memiliki shift {shift}. Hari yang sudah dikerjakan tetap ada di rekap absensi.",
+    "confirm": "Hapus jadwal",
+    "saved": "Jadwal mingguan dihapus"
+  },
+  "templates": {
+    "title": "Templat shift",
+    "subtitle": "{outlet} · digunakan saat menetapkan shift",
+    "add": "+ Templat baru",
+    "minutes": "{n} menit",
+    "used": "Ya",
+    "unused": "Belum",
+    "hidden": "Disembunyikan",
+    "edit": "Ubah",
+    "hide": "Sembunyikan",
+    "delete": "Hapus",
+    "show": "Tampilkan lagi",
+    "shown": "Templat shift ditampilkan lagi",
+    "empty": "Belum ada templat shift.",
+    "hint": "Templat yang sudah dipakai hanya dapat disembunyikan (riwayat tetap disimpan); templat yang belum dipakai dapat dihapus. Perubahan jam hanya berlaku untuk hari yang belum dikerjakan.",
+    "col": {
+      "shift": "Shift",
+      "time": "Jam",
+      "break": "Istirahat",
+      "used": "Sedang dipakai"
+    }
+  },
+  "templateForm": {
+    "newTitle": "Templat shift baru",
+    "editTitle": "Ubah templat shift",
+    "name": "Nama shift",
+    "start": "Mulai",
+    "end": "Selesai",
+    "break": "Istirahat di tengah shift (menit)",
+    "color": "Warna",
+    "colors": {
+      "blue": "Biru",
+      "purple": "Ungu",
+      "green": "Hijau",
+      "orange": "Oranye"
+    },
+    "overnight": "Jam selesai lebih awal dari jam mulai (contoh 22:00–02:00) berarti shift lintas malam, dihitung pada hari mulainya.",
+    "editNote": "Perubahan jam hanya berlaku untuk hari yang belum dikerjakan; hari yang sudah lewat tetap memakai jam lama.",
+    "create": "Buat templat",
+    "saved": "Templat shift disimpan"
+  },
+  "templateHide": {
+    "title": "Sembunyikan templat shift \"{name}\"?",
+    "sub": "Shift ini sudah pernah dipakai sehingga tidak dapat dihapus.",
+    "note": "Disembunyikan: tidak dapat dipilih lagi saat menetapkan shift. Jadwal mingguan yang memakai shift ini tetap berjalan; hari yang sudah dikerjakan tetap dipertahankan.",
+    "confirm": "Sembunyikan templat",
+    "saved": "Templat shift disembunyikan"
+  },
+  "templateDelete": {
+    "title": "Hapus templat shift \"{name}\"?",
+    "sub": "Shift ini belum pernah dipakai.",
+    "confirm": "Hapus",
+    "saved": "Templat shift dihapus"
+  },
+  "outlets": {
+    "qrDaily": "Ada kode QR · berubah setiap hari",
+    "qrFixed": "Ada kode QR · tetap",
+    "noQr": "Belum ada kode",
+    "open": "Buka ›"
+  },
+  "locations": {
+    "locationSet": "Lokasi sudah diatur",
+    "title": "Kode QR & lokasi absensi",
+    "subtitle": "Setiap cabang memiliki satu kode QR, lokasi, dan daftar orang yang perlu absen.",
+    "col": {
+      "outlet": "Cabang",
+      "address": "Alamat",
+      "qr": "Kode QR",
+      "radius": "Radius"
+    },
+    "radius": "{radius} m",
+    "back": "‹ QR & lokasi"
+  },
+  "outlet": {
+    "notFound": "Tidak dapat membuka cabang ini.",
+    "section": "⏱ Absensi",
+    "location": "Lokasi absensi",
+    "noLocation": "Lokasi belum diatur",
+    "current": "📍 Lokasi saat ini",
+    "pick": "Pilih di peta",
+    "picking": "Ketuk peta untuk mengatur lokasi cabang.",
+    "geoFailed": "Tidak dapat memperoleh lokasi saat ini. Periksa izin lokasi peramban.",
+    "ownerOnly": "Hanya pemilik toko yang dapat mengubah lokasi dan radius.",
+    "radius": "Radius yang diizinkan:",
+    "radiusHint": "50–500 m. GPS di dalam ruangan sering meleset 10–50 m.",
+    "checks": "Diperiksa saat pemindaian: kode cabang ini benar dan masih berlaku · di dalam radius · GPS ≤ 100 m · lokasi palsu diblokir · waktu server. Lupa absen keluar: ditutup otomatis di akhir hari, 0 jam sampai manajer memperbaiki.",
+    "qrTitle": "Kode QR {name}",
+    "qrMode": "Jenis kode",
+    "daily": "Berubah setiap hari (disarankan)",
+    "fixed": "Tetap",
+    "dailyHint": "Kode baru pukul 00:00 waktu Vietnam. Tampilkan di layar kasir atau cetak ulang setiap pagi.",
+    "fixedHint": "Cetak sekali, tempel di dinding. Foto kode tetap dapat digunakan; hanya GPS dan pemblokiran lokasi palsu yang melindungi.",
+    "todayCaption": "Kode hari ini · {date} · berganti otomatis pukul 00:00",
+    "fixedCaption": "Kode tetap · dibuat {date}",
+    "noQr": "Cabang ini belum memiliki kode QR.",
+    "createQr": "Buat kode QR",
+    "qrCreated": "Kode QR dibuat",
+    "print": "Cetak QR",
+    "kiosk": "Tautan layar kasir",
+    "newCode": "Buat kode baru",
+    "modeSaved": "Jenis kode diubah",
+    "saved": "Lokasi absensi disimpan",
+    "saveRadiusTitle": "Ubah radius?",
+    "saveRadiusSub": "Dari {from} m menjadi {to} m",
+    "saveLocationTitle": "Ubah lokasi absensi?",
+    "saveLocationSub": "Koordinat baru: {coords}",
+    "saveNote": "Langsung berlaku untuk pemindaian berikutnya."
+  },
+  "members": {
+    "title": "Siapa yang perlu absen di cabang ini",
+    "hint": "Hanya orang yang dipilih yang melihat kartu Absensi di aplikasi, dan muncul di Atur shift dan Rekap absensi",
+    "note": "Default: staf dan staf gudang dipilih; manajer cabang dan pemilik toko tidak. Jika tidak dipilih: orang tersebut tidak melihat apa pun tentang absensi dan tidak dapat diberi shift baru; catatan lama tetap disimpan.",
+    "toggle": "{name} perlu absen",
+    "on": "{name}: perlu absen",
+    "off": "{name}: tidak perlu absen",
+    "ownerOnly": "Hanya pemilik toko yang dapat mengubah",
+    "empty": "Belum ada orang di cabang ini."
+  },
+  "newCode": {
+    "title": "Buat kode QR baru?",
+    "body": "Kode yang sedang dipakai langsung tidak berlaku. Jika cabang memakai QR tetap, cetak dan tempel ulang kode baru. Layar kasir berganti sendiri.",
+    "confirm": "Buat kode baru",
+    "done": "Kode baru dibuat, kode lama sudah tidak berlaku"
+  },
+  "print": {
+    "title": "Cetak kode QR · {name}",
+    "body": "Ukuran A5, nama cabang, dan petunjuk \"Buka aplikasi AnyRent → Pengaturan → Absensi → pindai kode\".",
+    "dailyNote": "Jenis Berubah setiap hari: hasil cetak hanya dapat digunakan pada {date}.",
+    "confirm": "Cetak",
+    "howTo": "Buka aplikasi AnyRent → Pengaturan → Absensi → pindai kode",
+    "validOn": "Hanya berlaku pada {date}"
+  },
+  "kioskLink": {
+    "title": "Tautan layar QR untuk layar kasir",
+    "none": "Cabang ini belum memiliki tautan layar kasir.",
+    "note": "Buka tautan ini di tablet atau ponsel lama di kasir. Tidak perlu masuk, dan tidak memengaruhi akun siapa pun. Layar berganti kode otomatis pukul 00:00.",
+    "copy": "Salin",
+    "copied": "Tautan disalin",
+    "copyFailed": "Tidak dapat menyalin. Pilih dan salin tautannya.",
+    "newLink": "Buat tautan baru",
+    "create": "Buat tautan",
+    "created": "Tautan baru dibuat; tautan lama sudah tidak berlaku"
+  },
+  "kiosk": {
+    "title": "Absensi",
+    "help": "Buka aplikasi AnyRent → Pengaturan → Absensi → pindai kode ini",
+    "daily": "Kode hari ini · berganti otomatis pukul 00:00",
+    "fixed": "Kode tetap",
+    "recent": "Terbaru",
+    "none": "Hari ini belum ada yang absen.",
+    "in": "Masuk",
+    "out": "Keluar",
+    "loading": "Memuat…",
+    "invalid": "Tautan layar kasir sudah tidak berlaku. Minta tautan baru kepada pemilik toko.",
+    "moduleOff": "Toko belum mengaktifkan modul Absensi.",
+    "notConfigured": "Cabang ini belum memiliki lokasi atau kode QR.",
+    "failed": "Tidak dapat memuat kode. Sedang mencoba lagi…"
+  }
+}

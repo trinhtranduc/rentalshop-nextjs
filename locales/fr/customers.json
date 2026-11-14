@@ -200,7 +200,7 @@
     "cancel": "Annuler",
     "exportDialog": {
       "title": "Exporter la liste des clients",
-      "hint": "Aucun client sélectionné. Exporter les clients ajoutés au point de vente pendant :",
+      "hint": "Aucun client sélectionné. Exporter les clients ajoutés au point de location pendant :",
       "tip": "Vous voulez exporter quelques clients précis ? Cochez-les dans le tableau, puis cliquez sur Exporter vers Excel.",
       "period": {
         "1month": "30 derniers jours",

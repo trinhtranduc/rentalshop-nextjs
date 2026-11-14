@@ -200,7 +200,7 @@
     "cancel": "Abbrechen",
     "exportDialog": {
       "title": "Kundenliste exportieren",
-      "hint": "Kein Kunde ausgewählt. Kunden exportieren, die im Geschäft hinzugefügt wurden in:",
+      "hint": "Keine Kunden ausgewählt. Exportiert werden Kunden, die im Geschäft hinzugefügt wurden, im folgenden Zeitraum:",
       "tip": "Nur bestimmte Kunden exportieren? Markieren Sie sie in der Tabelle und klicken Sie auf Excel exportieren.",
       "period": {
         "1month": "Letzte 30 Tage",
@@ -362,8 +362,8 @@
       "errors": {
         "nameRequired": "Bitte den Namen des Kunden eingeben.",
         "nameShort": "Der Name braucht mindestens 2 Zeichen.",
-        "phoneRequired": "Der Kunde hat eine Telefonnummer; sie darf nicht leer sein.",
-        "phoneInvalid": "Nur Ziffern sowie + - ( ) verwenden.",
+        "phoneRequired": "Die Telefonnummer darf nicht leer sein.",
+        "phoneInvalid": "Die Telefonnummer darf nur Ziffern sowie + - ( ) enthalten.",
         "phoneShort": "Die Telefonnummer braucht mindestens 8 Ziffern.",
         "emailInvalid": "Die E-Mail-Adresse ist ungültig."
       },

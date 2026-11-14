@@ -1,6 +1,6 @@
 {
   "title": "檢查商品是否可租",
-  "subtitle": "選擇日期與商品，查看店鋪是否有足夠庫存。",
+  "subtitle": "選擇日期與商品，查看店家是否有足夠庫存。",
   "breadcrumb": "可租檢查",
   "sections": {
     "product": "選擇商品",

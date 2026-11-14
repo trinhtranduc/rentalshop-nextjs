@@ -1,0 +1,191 @@
+{
+  "title": "ตรวจสอบสินค้าว่างให้เช่า",
+  "subtitle": "เลือกวันและสินค้าเพื่อดูว่าร้านมีสินค้าเพียงพอหรือไม่",
+  "breadcrumb": "ตรวจสอบสินค้าว่าง",
+  "sections": {
+    "product": "เลือกสินค้า",
+    "period": "ช่วงเช่า"
+  },
+  "pickupDate": "วันที่ส่งมอบ",
+  "returnDate": "วันที่คืนสินค้า",
+  "quantity": "จำนวน",
+  "outlet": "สาขา",
+  "selectOutlet": "เลือกสาขา",
+  "searchPlaceholder": "ค้นหาชื่อหรือบาร์โค้ด",
+  "changeProduct": "เปลี่ยนสินค้า",
+  "noProductsFound": "ไม่พบสินค้า",
+  "maxProductsReached": "เลือกสินค้าได้สูงสุด 20 รายการ",
+  "idle": {
+    "title": "เลือกสินค้าและวันที่เช่า",
+    "description": "เลือกช่วงเช่าและสินค้าทางด้านซ้าย ผลลัพธ์จะแสดงทางด้านขวา",
+    "pickDates": "เลือกวันที่เช่าเพื่อตรวจสอบ"
+  },
+  "product": {
+    "rentPrice": "ราคาเช่า",
+    "deposit": "เงินมัดจำ",
+    "category": "หมวดหมู่"
+  },
+  "checking": "กำลังตรวจสอบ…",
+  "missingOutlet": "เลือกสาขาเพื่อตรวจสอบสต็อกว่าง",
+  "invalidDates": "วันที่คืนสินค้าต้องไม่ก่อนวันที่ส่งมอบ",
+  "status": {
+    "available": "ว่าง",
+    "unavailable": "หมด",
+    "warning": "ว่าง"
+  },
+  "result": {
+    "canRent": "ให้เช่าได้ {count} ชุด",
+    "cannotRent": "สินค้าไม่เพียงพอ",
+    "insufficient": "ต้องการ {need} ชุด แต่เหลือว่าง {have} ชุด"
+  },
+  "availableUnits": "เหลือ {count} ชุด",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "ต้องการ {need} ชุด ว่าง {have} ชุดในช่วงนี้",
+  "conflictsCount": "มี {count} คำสั่งซื้อซ้อนทับช่วงเวลา",
+  "stock": {
+    "total": "สต็อกทั้งหมด",
+    "renting": "กำลังเช่า",
+    "freeInPeriod": "ว่างในช่วงเวลา",
+    "bookedInPeriod": "จองแล้วในช่วงเวลา"
+  },
+  "orders": {
+    "title": "คำสั่งซื้อของสินค้านี้",
+    "noActiveOrders": "ไม่มีคำสั่งซื้อที่กำลังดำเนินการ",
+    "viewAll": "ดูคำสั่งซื้อ ({count})",
+    "ordersLabel": "คำสั่ง",
+    "conflicts": "ซ้อนทับช่วงเวลา",
+    "conflictBadge": "ซ้อนทับช่วงเวลา",
+    "conflictNote": "{count} คำสั่งซื้อซ้อนทับกับช่วงเวลาที่กำลังตรวจสอบ",
+    "dialogTitle": "คำสั่งซื้อ: {name}",
+    "page": "หน้า {current}/{total}",
+    "conflictsCount": "{count} คำสั่งซื้อซ้อนทับช่วงเวลา",
+    "orderNumber": "เลขที่คำสั่งซื้อ",
+    "customer": "ลูกค้า",
+    "period": "ช่วงเช่า",
+    "qty": "จำนวน",
+    "status": "สถานะ",
+    "statusReserved": "จองแล้ว",
+    "statusPickuped": "กำลังเช่า"
+  },
+  "timeline": {
+    "title": "ตารางการเช่า",
+    "today": "วันนี้",
+    "noOrders": "ยังไม่มีคำสั่งซื้อ"
+  },
+  "conflicts": {
+    "title": "คำสั่งซื้อที่ซ้อนทับช่วงเวลา",
+    "orderNumber": "เลขที่คำสั่งซื้อ",
+    "customer": "ลูกค้า",
+    "period": "ช่วงเช่า",
+    "quantity": "จำนวน"
+  },
+  "actions": {
+    "retry": "ลองอีกครั้ง",
+    "checkAgain": "ตรวจสอบอีกครั้ง"
+  },
+  "copy": {
+    "available": "{name} ว่างให้เช่า {count} ชุด ตั้งแต่ {pickup} ถึง {return}",
+    "unavailable": "{name} หมดในช่วง {pickup} – {return} (ต้องการ {need} ชุด ว่าง {have} ชุด)"
+  },
+  "errors": {
+    "checkFailed": "ไม่สามารถตรวจสอบสต็อกว่างได้",
+    "loadProductFailed": "ไม่สามารถโหลดข้อมูลสินค้าได้"
+  },
+  "productsTitle": "สินค้าที่ต้องตรวจสอบ",
+  "quick": {
+    "today": "วันนี้",
+    "tomorrow": "พรุ่งนี้",
+    "weekend": "สุดสัปดาห์",
+    "threeDays": "3 วัน"
+  },
+  "summary": {
+    "allOk": "มีสินค้าเพียงพอทั้ง {count} รายการ",
+    "someShort": "{count} รายการสินค้าไม่เพียงพอ",
+    "pickDates": "เลือกวันที่เช่าเพื่อดูสต็อกว่าง"
+  },
+  "badge": {
+    "free": "ว่าง {free}/{total}",
+    "short": "ขาด {count}",
+    "error": "ผิดพลาด"
+  },
+  "search": {
+    "price": "ราคา {price}",
+    "stock": "ว่าง {available}/{total}"
+  },
+  "empty": {
+    "title": "ยังไม่ได้เลือกสินค้า",
+    "description": "ค้นหาสินค้าด้วยชื่อ รหัส หรือบาร์โค้ด และตรวจสอบหลายรายการพร้อมกันได้"
+  },
+  "detail": {
+    "freeHeadline": "ว่างให้เช่า {count} ชุด",
+    "free": "ว่าง",
+    "busy": "ไม่ว่าง",
+    "need": "ต้องการ",
+    "barLabel": "ว่าง {free} ไม่ว่าง {busy} ต้องการ {need} สต็อกทั้งหมด {total}",
+    "days": "จำนวนชุดว่างรายวัน",
+    "dayHint": "กดที่วันเพื่อตรวจสอบตั้งแต่วันนั้น",
+    "dayLabel": "{date}: เหลือ {free} ชุด",
+    "conflicts": "คำสั่งซื้อที่ซ้อนทับช่วงเวลา ({count})",
+    "noConflicts": "ไม่มีคำสั่งซื้อที่ซ้อนทับช่วงเวลานี้"
+  },
+  "remove": "นำ {name}ออก",
+  "decrease": "ลดจำนวน",
+  "increase": "เพิ่มจำนวน",
+  "web": {
+    "title": "ตรวจสอบสินค้าคงเหลือ",
+    "outlet": "สาขา",
+    "product": "สินค้า",
+    "productPlaceholder": "ค้นหาชื่อหรือรหัสสินค้า",
+    "noProducts": "ไม่พบสินค้า",
+    "searching": "กำลังค้นหา…",
+    "pickup": "วันที่ส่งมอบ",
+    "return": "วันที่คืนสินค้า",
+    "quantity": "จำนวน",
+    "check": "ตรวจสอบ",
+    "quick": {
+      "today": "วันนี้",
+      "tomorrow": "พรุ่งนี้",
+      "weekend": "สุดสัปดาห์",
+      "threeDays": "3 วัน"
+    },
+    "reversed": "วันที่คืนสินค้าต้องอยู่หลังวันที่ส่งมอบ",
+    "pickProduct": "เลือกสินค้าเพื่อดูว่ามีกี่ชิ้นในปฏิทินนี้",
+    "pickOutlet": "เลือกสาขาเพื่อตรวจสอบ",
+    "has": "มี {total} ชิ้น · {from} → {to}",
+    "free": "ว่าง {free}/{total} ตลอดช่วงนี้",
+    "short": "ขาด {missing} · ว่าง {free}/{total}",
+    "none": "หมดในช่วงนี้",
+    "checking": "กำลังตรวจสอบ…",
+    "checkFailed": "ไม่สามารถตรวจสอบได้",
+    "retry": "ลองอีกครั้ง",
+    "createOrder": "สร้างคำสั่งซื้อด้วยช่วงเวลานี้",
+    "dayLeft": "เหลือในวัน",
+    "dayAria": "{day}: เหลือ {count} กดเพื่อเริ่มช่วงเช่าจากวันนี้",
+    "note": "หนึ่งวันนับทั้งวันส่งมอบและวันคืนสินค้า แม้จะส่งมอบและคืนในวันเดียวกัน พื้นที่สีฟ้าอ่อนคือช่วงที่กำลังตรวจสอบ กดที่วันเพื่อย้ายช่วงไปยังวันนั้น",
+    "status": {
+      "RESERVED": "จองแล้ว",
+      "PICKUPED": "กำลังเช่า"
+    },
+    "bar": {
+      "returnOn": "คืน {day}",
+      "range": "{from} → {to}"
+    },
+    "holders": "คำสั่งซื้อที่ถือสินค้านี้อยู่",
+    "noHolders": "ยังไม่มีคำสั่งซื้อที่ถือสินค้านี้",
+    "holdersFailed": "โหลดคำสั่งซื้อที่ถือสินค้าไม่สำเร็จ",
+    "units": "{count} ชิ้น",
+    "walkIn": "ลูกค้าหน้าร้าน",
+    "similar": "หมวดหมู่เดียวกัน ว่างในช่วงนี้",
+    "similarFree": "เหลือ {count}",
+    "similarEmpty": "ไม่มีสินค้าในหมวดหมู่เดียวกันที่ว่างเพียงพอในช่วงนี้",
+    "priceSuffix": {
+      "DAILY": "{price}/วัน",
+      "HOURLY": "{price}/ชั่วโมง",
+      "FIXED": "{price}/ครั้ง",
+      "WEEKLY": "{price}/สัปดาห์",
+      "MONTHLY": "{price}/เดือน"
+    },
+    "change": "เปลี่ยนสินค้า",
+    "weekdays": "อา,จ,อ,พ,พฤ,ศ,ส"
+  }
+}

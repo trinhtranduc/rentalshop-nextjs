@@ -1,0 +1,191 @@
+{
+  "title": "สาขา",
+  "addOutlet": "เพิ่มสาขา",
+  "editOutlet": "แก้ไขสาขา",
+  "outletDetails": "รายละเอียดสาขา",
+  "fields": {
+    "name": "ชื่อสาขา",
+    "address": "ที่อยู่",
+    "city": "เมือง",
+    "state": "จังหวัด/เมือง",
+    "zipCode": "รหัสไปรษณีย์",
+    "country": "ประเทศ",
+    "phone": "เบอร์โทรศัพท์",
+    "description": "คำอธิบาย",
+    "printNote": "หมายเหตุสำหรับการพิมพ์ใบเสร็จ",
+    "printNoteHint": "พิมพ์ที่ท้ายใบเช่า เช่น เตือนให้นำบัตรประชาชนมา หรือนโยบายคืนหรือเปลี่ยนสินค้า สูงสุด 500 ตัวอักษร",
+    "status": "สถานะ",
+    "manager": "ผู้จัดการ",
+    "notAvailable": "ไม่มี"
+  },
+  "labels": {
+    "default": "ค่าเริ่มต้น"
+  },
+  "actions": {
+    "export": "ส่งออกรายการ",
+    "viewDetails": "ดูรายละเอียด",
+    "editOutlet": "แก้ไขสาขา",
+    "deleteOutlet": "ลบสาขา",
+    "addOutlet": "เพิ่มสาขา",
+    "backToOutlets": "กลับไปรายการสาขา",
+    "disableOutlet": "ปิดใช้งานสาขา",
+    "enableOutlet": "เปิดใช้งานสาขา",
+    "manageBankAccounts": "จัดการบัญชีธนาคาร"
+  },
+  "stats": {
+    "totalOutlets": "จำนวนสาขาทั้งหมด",
+    "activeOutlets": "กำลังเปิดใช้งาน",
+    "totalUsers": "จำนวนผู้ใช้ทั้งหมด",
+    "totalProducts": "จำนวนสินค้าทั้งหมด"
+  },
+  "search": {
+    "placeholder": "ค้นหาตามชื่อ เมือง หรือเบอร์โทร..."
+  },
+  "dialogs": {
+    "addOutletTitle": "เพิ่มสาขาใหม่",
+    "addOutletDescription": "สร้างสาขาใหม่สำหรับธุรกิจของคุณ",
+    "editOutletTitle": "แก้ไขสาขา",
+    "deleteOutletTitle": "ลบสาขา",
+    "outletDetails": "รายละเอียดสาขา",
+    "editOutletName": "แก้ไขสาขา: {name}"
+  },
+  "messages": {
+    "createSuccess": "สร้างสาขาสำเร็จ",
+    "createFailed": "สร้างสาขาไม่สำเร็จ",
+    "updateSuccess": "อัปเดตสาขาสำเร็จ",
+    "updateFailed": "อัปเดตสาขาไม่สำเร็จ",
+    "deleteSuccess": "ลบสาขาสำเร็จ",
+    "deleteFailed": "ลบสาขาไม่สำเร็จ",
+    "enableSuccess": "เปิดใช้งานสาขาสำเร็จ",
+    "enableFailed": "เปิดใช้งานสาขาไม่สำเร็จ",
+    "disableSuccess": "ปิดใช้งานสาขาสำเร็จ",
+    "disableFailed": "ปิดใช้งานสาขาไม่สำเร็จ",
+    "confirmDelete": "คุณแน่ใจหรือไม่ว่าต้องการลบสาขานี้?",
+    "noOutlets": "ไม่พบสาขา",
+    "tryAdjustingSearch": "ลองปรับการค้นหา",
+    "getStarted": "เริ่มต้นด้วยการเพิ่มสาขาแรกของคุณ",
+    "loadingOutlets": "กำลังโหลดรายการสาขา..."
+  },
+  "placeholders": {
+    "enterOutletName": "กรอกชื่อสาขา",
+    "enterStreetAddress": "กรอกที่อยู่",
+    "enterCity": "กรอกชื่อเมือง",
+    "enterState": "กรอกจังหวัด/เมือง",
+    "enterZipCode": "กรอกรหัสไปรษณีย์",
+    "enterCountry": "กรอกประเทศ",
+    "enterOutletPhone": "กรอกเบอร์โทรศัพท์ของสาขา",
+    "enterOutletDescription": "กรอกคำอธิบายสาขา",
+    "enterPrintNote": "เช่น: *** โปรดนำบัตรประชาชน/ใบขับขี่มาด้วยเมื่อรับของ"
+  },
+  "web": {
+    "title": "สาขา",
+    "add": "เพิ่มสาขา",
+    "searchLabel": "ค้นหาสาขา",
+    "searchPlaceholder": "ค้นหาจากชื่อ เมือง หรือเบอร์โทร",
+    "cols": {
+      "name": "สาขา",
+      "address": "ที่อยู่",
+      "phone": "โทร",
+      "status": "สถานะ",
+      "createdAt": "วันที่สร้าง",
+      "actions": "การดำเนินการ"
+    },
+    "sortBy": "เรียงตาม {column}",
+    "default": "ค่าเริ่มต้น",
+    "status": {
+      "active": "เปิดอยู่",
+      "inactive": "หยุดชั่วคราว"
+    },
+    "staffCount": "{count} พนักงาน",
+    "edit": "แก้ไข",
+    "viewDetails": "ดูรายละเอียด",
+    "bankAccounts": "บัญชีธนาคาร",
+    "disable": "หยุดชั่วคราว",
+    "enable": "เปิดอีกครั้ง",
+    "more": "การดำเนินการอื่นสำหรับ {name}",
+    "empty": "ยังไม่มีสาขา",
+    "emptySearch": "ไม่มีสาขาที่ตรงกับการค้นหา",
+    "loadFailed": "โหลดรายการสาขาไม่สำเร็จ",
+    "retry": "ลองอีกครั้ง",
+    "noSession": "เซสชันหมดอายุ โปรดเข้าสู่ระบบอีกครั้ง",
+    "noAccess": "เฉพาะเจ้าของร้านเท่านั้นที่ดูและแก้ไขรายการสาขาได้",
+    "form": {
+      "addTitle": "เพิ่มสาขา",
+      "editTitle": "แก้ไขสาขา",
+      "name": "ชื่อสาขา",
+      "namePlaceholder": "เช่น: สาขาเขต 1",
+      "required": "จำเป็น",
+      "nameRequired": "กรอกชื่อสาขา",
+      "phone": "เบอร์โทรศัพท์",
+      "address": "บ้านเลขที่ ถนน",
+      "city": "เมือง",
+      "state": "จังหวัด / เมือง",
+      "zipCode": "รหัสไปรษณีย์",
+      "country": "ประเทศ",
+      "optional": "ไม่บังคับ",
+      "addressGroup": "ที่อยู่",
+      "description": "คำอธิบาย",
+      "printNote": "หมายเหตุที่พิมพ์บนใบเช่า",
+      "printNoteHint": "พิมพ์ที่ท้ายใบเช่า เช่น เตือนให้นำบัตรประชาชนมา หรือนโยบายคืนหรือเปลี่ยนสินค้า",
+      "printNotePlaceholder": "เช่น: โปรดนำบัตรประชาชนมาด้วยเมื่อรับของ",
+      "printNoteTooLong": "สูงสุด {max} ตัวอักษร",
+      "count": "{count}/{max}",
+      "cancel": "ยกเลิก",
+      "create": "เพิ่มสาขา",
+      "save": "บันทึก",
+      "saving": "กำลังบันทึก…",
+      "close": "ปิด"
+    },
+    "detail": {
+      "title": "รายละเอียดสาขา",
+      "none": "ยังไม่มี"
+    },
+    "confirm": {
+      "disableTitle": "ปิดใช้งานสาขา",
+      "disableBody": "ปิดใช้งานสาขา “{name}” ใช่ไหม? คุณสามารถเปิดใช้งานอีกครั้งได้ภายหลัง",
+      "cancel": "เก็บไว้",
+      "disable": "หยุดชั่วคราว",
+      "working": "กำลังบันทึก…"
+    },
+    "toast": {
+      "created": "เพิ่มสาขาแล้ว",
+      "updated": "บันทึกสาขาแล้ว",
+      "disabled": "หยุดสาขาชั่วคราวแล้ว",
+      "enabled": "เปิดสาขาอีกครั้งแล้ว"
+    },
+    "footer": {
+      "show": "แสดง",
+      "perPage": "รายการต่อหน้า",
+      "perPageLabel": "จำนวนรายการต่อหน้า",
+      "pages": "แบ่งหน้า",
+      "range": "{from}–{to} จากทั้งหมด {total} สาขา",
+      "prev": "หน้าก่อนหน้า",
+      "next": "หน้าถัดไป"
+    },
+    "bank": {
+      "back": "สาขา",
+      "title": "บัญชีธนาคาร",
+      "subtitle": "สาขา {name}",
+      "add": "เพิ่มบัญชี",
+      "cols": {
+        "holder": "เจ้าของบัญชี",
+        "number": "เลขที่บัญชี",
+        "bank": "ธนาคาร",
+        "branch": "สาขาของธนาคาร",
+        "status": "สถานะ",
+        "actions": "การดำเนินการ"
+      },
+      "active": "ใช้งานอยู่",
+      "inactive": "หยุดชั่วคราว",
+      "copy": "คัดลอกเลขที่บัญชี {number}",
+      "edit": "แก้ไข",
+      "delete": "ลบ",
+      "loadFailed": "โหลดบัญชีธนาคารไม่สำเร็จ",
+      "retry": "ลองอีกครั้ง",
+      "noAccess": "คุณไม่มีสิทธิ์ดูบัญชีธนาคาร",
+      "confirmCancel": "เก็บไว้",
+      "deleting": "กำลังลบ…",
+      "close": "ปิด"
+    }
+  }
+}
