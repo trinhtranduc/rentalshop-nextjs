@@ -1,0 +1,144 @@
+{
+  "title": "หมวดหมู่",
+  "addCategory": "เพิ่มหมวดหมู่",
+  "editCategory": "แก้ไขหมวดหมู่",
+  "categoryDetails": "รายละเอียดหมวดหมู่",
+  "fields": {
+    "name": "ชื่อหมวดหมู่",
+    "description": "คำอธิบาย",
+    "status": "สถานะ",
+    "productCount": "จำนวนสินค้า",
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน"
+  },
+  "labels": {
+    "default": "ค่าเริ่มต้น"
+  },
+  "status": {
+    "active": "เปิดใช้งาน",
+    "inactive": "ไม่เปิดใช้งาน"
+  },
+  "filters": {
+    "all": "หมวดหมู่ทั้งหมด",
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน"
+  },
+  "actions": {
+    "viewDetails": "ดูรายละเอียด",
+    "edit": "แก้ไขหมวดหมู่",
+    "activate": "เปิดใช้งาน",
+    "deactivate": "ปิดใช้งาน",
+    "delete": "ลบ",
+    "create": "สร้างหมวดหมู่",
+    "update": "อัปเดตหมวดหมู่",
+    "addCategory": "เพิ่มหมวดหมู่",
+    "editCategory": "แก้ไขหมวดหมู่",
+    "deleteCategory": "ลบหมวดหมู่",
+    "viewProducts": "ดูสินค้า",
+    "backToCategories": "กลับไปรายการหมวดหมู่"
+  },
+  "messages": {
+    "createSuccess": "สร้างหมวดหมู่สำเร็จ",
+    "createFailed": "สร้างหมวดหมู่ไม่สำเร็จ",
+    "updateSuccess": "อัปเดตหมวดหมู่สำเร็จ",
+    "updateFailed": "อัปเดตหมวดหมู่ไม่สำเร็จ",
+    "deleteSuccess": "ลบหมวดหมู่สำเร็จ",
+    "deleteFailed": "ลบหมวดหมู่ไม่สำเร็จ",
+    "confirmDelete": "คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่นี้?",
+    "noCategories": "ไม่พบหมวดหมู่",
+    "noCategoriesDescription": "ลองปรับคำค้นหา หรือเพิ่มหมวดหมู่เพื่อเริ่มต้น",
+    "loadingCategories": "กำลังโหลดรายการหมวดหมู่...",
+    "tryAdjustingSearch": "ลองปรับการค้นหาของคุณ",
+    "getStarted": "เริ่มต้นด้วยการเพิ่มหมวดหมู่แรกของคุณ"
+  },
+  "search": {
+    "placeholder": "ค้นหาหมวดหมู่..."
+  },
+  "stats": {
+    "totalCategories": "จำนวนหมวดหมู่ทั้งหมด",
+    "activeCategories": "เปิดใช้งาน",
+    "totalProducts": "จำนวนสินค้าทั้งหมด"
+  },
+  "dialogs": {
+    "addCategoryTitle": "เพิ่มหมวดหมู่ใหม่",
+    "editCategoryTitle": "แก้ไขหมวดหมู่",
+    "deleteCategoryTitle": "ลบหมวดหมู่"
+  },
+  "dialog": {
+    "addNew": "เพิ่มหมวดหมู่ใหม่",
+    "addNewDescription": "สร้างหมวดหมู่ใหม่เพื่อจัดระเบียบสินค้า",
+    "edit": "แก้ไขหมวดหมู่",
+    "editDescription": "อัปเดตข้อมูลหมวดหมู่",
+    "viewDetails": "รายละเอียดหมวดหมู่",
+    "viewDescription": "ดูข้อมูลและรายละเอียดของหมวดหมู่",
+    "deleteTitle": "ลบหมวดหมู่",
+    "deleteConfirmation": "คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่",
+    "deleteWarning": "การดำเนินการนี้ไม่สามารถยกเลิกได้ สินค้าทั้งหมดในหมวดหมู่นี้จะได้รับผลกระทบ",
+    "neverUpdated": "ยังไม่เคยอัปเดต"
+  },
+  "validation": {
+    "nameRequired": "จำเป็นต้องระบุชื่อหมวดหมู่",
+    "nameMinLength": "ชื่อหมวดหมู่ต้องมีอย่างน้อย 2 ตัวอักษร",
+    "nameMaxLength": "ชื่อหมวดหมู่ต้องน้อยกว่า 50 ตัวอักษร",
+    "descriptionMaxLength": "คำอธิบายต้องน้อยกว่า 200 ตัวอักษร",
+    "characters": "ตัวอักษร"
+  },
+  "web": {
+    "title": "หมวดหมู่",
+    "add": "เพิ่มหมวดหมู่",
+    "searchLabel": "ค้นหาหมวดหมู่",
+    "searchPlaceholder": "พิมพ์ชื่อหมวดหมู่",
+    "cols": {
+      "name": "ชื่อ",
+      "description": "คำอธิบาย",
+      "createdAt": "วันที่สร้าง",
+      "actions": "การดำเนินการ"
+    },
+    "sortBy": "เรียงตาม {column}",
+    "default": "ค่าเริ่มต้น",
+    "view": "ดู",
+    "edit": "แก้ไข",
+    "delete": "ลบ",
+    "viewDetails": "ดูรายละเอียด",
+    "more": "การดำเนินการอื่นสำหรับ {name}",
+    "empty": "ยังไม่มีหมวดหมู่ เพิ่มหมวดหมู่เพื่อจัดกลุ่มสินค้า",
+    "emptySearch": "ไม่มีหมวดหมู่ที่ตรงกับการค้นหา",
+    "loadFailed": "โหลดหมวดหมู่ไม่สำเร็จ",
+    "retry": "ลองอีกครั้ง",
+    "form": {
+      "addTitle": "เพิ่มหมวดหมู่",
+      "editTitle": "แก้ไขหมวดหมู่",
+      "name": "ชื่อหมวดหมู่",
+      "namePlaceholder": "เช่น: ชุดอ่าวหย่าย",
+      "required": "จำเป็น",
+      "description": "คำอธิบาย",
+      "descriptionPlaceholder": "ไม่บังคับ",
+      "count": "{count}/{max}",
+      "cancel": "ยกเลิก",
+      "create": "เพิ่ม",
+      "save": "บันทึก",
+      "saving": "กำลังบันทึก…",
+      "close": "ปิด"
+    },
+    "detail": {
+      "title": "รายละเอียดหมวดหมู่",
+      "noDescription": "ยังไม่มีคำอธิบาย"
+    },
+    "confirm": {
+      "deleteTitle": "ลบหมวดหมู่",
+      "deleteBody": "ลบหมวดหมู่ “{name}”? ไม่สามารถยกเลิกได้",
+      "cancel": "เก็บไว้",
+      "delete": "ลบหมวดหมู่",
+      "deleting": "กำลังลบ…"
+    },
+    "footer": {
+      "show": "แสดง",
+      "perPage": "รายการต่อหน้า",
+      "perPageLabel": "จำนวนรายการต่อหน้า",
+      "pages": "แบ่งหน้า",
+      "range": "{from}–{to} จากทั้งหมด {total} หมวดหมู่",
+      "prev": "หน้าก่อนหน้า",
+      "next": "หน้าถัดไป"
+    }
+  }
+}

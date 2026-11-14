@@ -1,0 +1,64 @@
+{
+  "title": "Gestión de cuentas bancarias",
+  "subtitle": "Gestione las cuentas bancarias de la sucursal",
+  "form": {
+    "title": "Datos de la cuenta bancaria",
+    "addTitle": "Agregar cuenta bancaria",
+    "editTitle": "Editar cuenta bancaria",
+    "accountHolderName": "Titular de la cuenta",
+    "accountHolderNamePlaceholder": "Introduzca el nombre del titular",
+    "accountNumber": "Número de cuenta",
+    "accountNumberPlaceholder": "Introduzca el número de cuenta (6-16 dígitos)",
+    "bankName": "Nombre del banco",
+    "bankNamePlaceholder": "Seleccione el banco",
+    "bankCode": "Código del banco",
+    "bankCodePlaceholder": "Código del banco (se completa automáticamente)",
+    "branch": "Sucursal bancaria",
+    "branchPlaceholder": "Introduzca la sucursal (opcional)",
+    "isDefault": "Establecer como cuenta predeterminada",
+    "notes": "Notas",
+    "notesPlaceholder": "Notas (opcional)",
+    "submit": "Guardar cuenta bancaria",
+    "add": "Agregar cuenta",
+    "update": "Actualizar",
+    "cancel": "Cancelar",
+    "saving": "Guardando...",
+    "errors": {
+      "accountHolderNameRequired": "El titular de la cuenta es obligatorio",
+      "accountNumberRequired": "El número de cuenta es obligatorio",
+      "accountNumberInvalid": "El número de cuenta debe tener entre 6 y 16 dígitos",
+      "bankNameRequired": "El nombre del banco es obligatorio"
+    }
+  },
+  "card": {
+    "default": "Predeterminada",
+    "accountHolderName": "Titular de la cuenta",
+    "accountNumber": "Número de cuenta",
+    "bank": "Banco",
+    "branch": "Sucursal bancaria",
+    "notes": "Notas",
+    "copyQRCode": "Copiar código QR",
+    "scanQRHint": "Escanee el código QR para transferir rápidamente",
+    "copied": "Copiado",
+    "accountNumberCopied": "El número de cuenta se ha copiado al portapapeles",
+    "qrCodeCopied": "El código QR se ha copiado al portapapeles"
+  },
+  "list": {
+    "emptyTitle": "Aún no hay cuentas bancarias",
+    "emptyDescription": "Agregue una cuenta bancaria para recibir pagos por transferencia",
+    "addButton": "Agregar cuenta bancaria"
+  },
+  "messages": {
+    "addSuccess": "Cuenta bancaria agregada",
+    "addError": "No se pudo agregar la cuenta bancaria",
+    "updateSuccess": "Cuenta bancaria actualizada",
+    "updateError": "No se pudo actualizar la cuenta bancaria",
+    "deleteSuccess": "Cuenta bancaria eliminada",
+    "deleteError": "No se pudo eliminar la cuenta bancaria",
+    "loadError": "No se pudo cargar la lista de cuentas bancarias",
+    "deleteConfirm": "¿Está seguro de que desea eliminar la cuenta bancaria \"{name}\"?",
+    "deleteConfirmTitle": "Eliminar cuenta bancaria",
+    "noOutlet": "Aún no se le ha asignado ninguna sucursal. Contacte con el administrador.",
+    "noPermission": "No tiene permiso para ver las cuentas bancarias."
+  }
+}

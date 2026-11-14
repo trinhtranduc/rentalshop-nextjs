@@ -1,0 +1,161 @@
+{
+  "planChange": {
+    "title": "El plan de suscripción fue cambiado",
+    "greeting": "Hola",
+    "message": "El plan de su suscripción fue cambiado correctamente. A continuación, los detalles:",
+    "oldPlan": "Plan anterior",
+    "newPlan": "Plan nuevo",
+    "billingCycle": "Ciclo de facturación",
+    "periodStart": "Fecha de inicio",
+    "periodEnd": "Fecha de fin",
+    "footer": "© {year} AnyRent. Todos los derechos reservados.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistema de gestión de alquileres"
+  },
+  "subscriptionRenewal": {
+    "title": "Renovación de suscripción exitosa",
+    "greeting": "Hola",
+    "message": "Su suscripción fue renovada correctamente. ¡Gracias por seguir utilizando nuestro servicio!",
+    "planName": "Plan de suscripción",
+    "paymentMethod": "Método de pago",
+    "transactionId": "ID de transacción",
+    "periodStart": "Fecha de inicio",
+    "periodEnd": "Fecha de fin",
+    "footer": "© {year} AnyRent. Todos los derechos reservados.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistema de gestión de alquileres"
+  },
+  "subscriptionExtension": {
+    "title": "Renovación de suscripción",
+    "greeting": "Hola",
+    "message": "Su suscripción fue renovada. El período de la suscripción fue actualizado.",
+    "planName": "Plan de suscripción",
+    "oldEndDate": "Fecha de fin anterior",
+    "newEndDate": "Nueva fecha de fin",
+    "extensionDays": "Período de renovación",
+    "method": "Método de renovación",
+    "description": "Descripción",
+    "footer": "© {year} AnyRent. Todos los derechos reservados.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistema de gestión de alquileres"
+  },
+  "subscriptionExpiryReminder": {
+    "title": "Su suscripción vence pronto",
+    "subject": "Su suscripción vence en {days} {unit} - {planName}",
+    "greeting": "Hola",
+    "message": "Su suscripción vence en {days} {unit}. Le pedimos que se comunique con AnyRent para renovarla y mantener su tienda funcionando sin interrupciones.",
+    "trialMessage": "Su prueba gratuita termina en {days} {unit}. Comuníquese con AnyRent para elegir un plan, conservar sus datos y seguir trabajando sin interrupciones.",
+    "planName": "Plan de suscripción",
+    "expiryDate": "Fecha de vencimiento",
+    "daysRemaining": "Tiempo restante",
+    "dayUnit": "día",
+    "daysUnit": "días",
+    "cta": "Contáctenos para renovar",
+    "alreadyRenewed": "Si ya renovó, ignore este email.",
+    "footer": "© {year} AnyRent. Todos los derechos reservados.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistema de gestión de alquileres"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "Suscripción cancelada",
+      "message": "Su suscripción fue cancelada. Si desea seguir utilizando nuestro servicio, comuníquese con nosotros para reactivar su suscripción.",
+      "status": "Cancelada"
+    },
+    "paused": {
+      "title": "Suscripción pausada",
+      "message": "Su suscripción fue pausada. Puede reactivarla en cualquier momento desde la página de gestión de suscripciones.",
+      "status": "Pausada"
+    },
+    "resumed": {
+      "title": "Suscripción reactivada",
+      "message": "Su suscripción fue reactivada. Ya puede seguir usando todas las funciones de su plan de suscripción.",
+      "status": "Reactivada"
+    },
+    "greeting": "Hola",
+    "planName": "Plan",
+    "status": "Estado",
+    "periodEnd": "Fecha de fin",
+    "reason": "Motivo",
+    "footer": "© {year} AnyRent. Todos los derechos reservados.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistema de gestión de alquileres"
+  },
+  "addonChange": {
+    "created": {
+      "title": "Se agregó un paquete complementario",
+      "message": "Se agregó un nuevo paquete complementario a su cuenta. Sus límites fueron aumentados.",
+      "action": "Agregado"
+    },
+    "updated": {
+      "title": "Paquete complementario actualizado",
+      "message": "Su paquete complementario fue actualizado. Los límites fueron ajustados.",
+      "action": "Actualizado"
+    },
+    "deleted": {
+      "title": "Paquete complementario eliminado",
+      "message": "Se eliminó un paquete complementario de su cuenta. Sus límites fueron reducidos.",
+      "action": "Eliminado"
+    },
+    "activated": {
+      "title": "Paquete complementario activado",
+      "message": "Su paquete complementario fue activado. Los límites fueron aplicados.",
+      "action": "Activado"
+    },
+    "deactivated": {
+      "title": "Paquete complementario desactivado",
+      "message": "Su paquete complementario fue desactivado. Los límites fueron quitados.",
+      "action": "Desactivado"
+    },
+    "greeting": "Hola",
+    "action": "Acción",
+    "addonLimits": "Límites del complemento",
+    "notes": "Notas",
+    "noSpecificLimits": "Sin límites específicos",
+    "outlets": "{count} sucursales",
+    "users": "{count} usuarios",
+    "products": "{count} productos",
+    "customers": "{count} clientes",
+    "orders": "{count} pedidos",
+    "createdMessage": "Ya puede usar estos límites adicionales.",
+    "deletedMessage": "Asegúrese de que sus cantidades actuales no superen los nuevos límites.",
+    "updatedMessage": "Los cambios fueron aplicados a su cuenta.",
+    "footer": "© {year} AnyRent. Todos los derechos reservados.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistema de gestión de alquileres"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "1 mes",
+      "quarterly": "3 meses",
+      "semi_annual": "6 meses",
+      "annual": "1 año"
+    },
+    "paymentMethods": {
+      "STRIPE": "Tarjeta de crédito/débito",
+      "TRANSFER": "Transferencia bancaria",
+      "CASH": "Efectivo"
+    }
+  },
+  "accountEmail": {
+    "tagline": "Sistema de gestión de alquileres",
+    "hello": "Hola",
+    "linkHint": "Si el botón no funciona, copie y pegue este enlace en su navegador:",
+    "noteLabel": "Nota:",
+    "rights": "Todos los derechos reservados."
+  },
+  "verification": {
+    "subject": "Verifique su email - AnyRent",
+    "title": "Verifique su email",
+    "intro": "¡Gracias por registrarse en AnyRent! Para completar el registro y activar su cuenta, verifique su dirección de email haciendo clic en el botón de abajo:",
+    "button": "Verificar email",
+    "note": "Este enlace vence en 24 horas. Si usted no creó esta cuenta, puede ignorar este email."
+  },
+  "passwordReset": {
+    "subject": "Restablezca su contraseña - AnyRent",
+    "title": "Restablezca su contraseña",
+    "intro": "Recibimos una solicitud para restablecer la contraseña de su cuenta en AnyRent. Para crear una nueva contraseña, haga clic en el botón de abajo:",
+    "button": "Restablecer contraseña",
+    "note": "Este enlace vence en 24 horas. Si usted no solicitó restablecer la contraseña, ignore este email y su contraseña no cambiará."
+  }
+}

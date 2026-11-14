@@ -1,0 +1,191 @@
+{
+  "title": "Verificar disponibilidad de alquiler",
+  "subtitle": "Elija fechas y productos para ver si la tienda tiene suficiente stock.",
+  "breadcrumb": "Verificar disponibilidad",
+  "sections": {
+    "product": "Seleccionar productos",
+    "period": "Período de alquiler"
+  },
+  "pickupDate": "Fecha de entrega",
+  "returnDate": "Fecha de devolución",
+  "quantity": "Cantidad",
+  "outlet": "Sucursal",
+  "selectOutlet": "Seleccione una sucursal",
+  "searchPlaceholder": "Buscar por nombre o código de barras",
+  "changeProduct": "Cambiar producto",
+  "noProductsFound": "No se encontraron productos",
+  "maxProductsReached": "Se alcanzó el máximo de 20 productos",
+  "idle": {
+    "title": "Seleccione productos y fechas de alquiler",
+    "description": "Elija el período y los productos a la izquierda: los resultados aparecen a la derecha",
+    "pickDates": "Seleccione fechas de alquiler para verificar"
+  },
+  "product": {
+    "rentPrice": "Precio de alquiler",
+    "deposit": "Anticipo",
+    "category": "Categoría"
+  },
+  "checking": "Verificando disponibilidad…",
+  "missingOutlet": "Seleccione una sucursal para verificar la disponibilidad",
+  "invalidDates": "La fecha de devolución no puede ser anterior a la fecha de entrega",
+  "status": {
+    "available": "Disponible",
+    "unavailable": "Agotado",
+    "warning": "Disponible"
+  },
+  "result": {
+    "canRent": "Se pueden alquilar {count} unidad(es)",
+    "cannotRent": "Stock insuficiente",
+    "insufficient": "Se necesitan {need}, solo quedan {have} disponibles"
+  },
+  "availableUnits": "Quedan {count} unidad(es)",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "Se necesitan {need}, disponibles {have} en este período",
+  "conflictsCount": "Hay {count} pedido(s) que coinciden en el período",
+  "stock": {
+    "total": "Stock total",
+    "renting": "En alquiler",
+    "freeInPeriod": "Libre en el período",
+    "bookedInPeriod": "Reservado en el período"
+  },
+  "orders": {
+    "title": "Pedidos de este producto",
+    "noActiveOrders": "No hay pedidos activos",
+    "viewAll": "Ver pedidos ({count})",
+    "ordersLabel": "pedidos",
+    "conflicts": "coincidencias",
+    "conflictBadge": "Coincidencia",
+    "conflictNote": "{count} pedido(s) coinciden con el período verificado",
+    "dialogTitle": "Pedidos: {name}",
+    "page": "Página {current}/{total}",
+    "conflictsCount": "{count} coincidencia(s) de período",
+    "orderNumber": "N.º de pedido",
+    "customer": "Cliente",
+    "period": "Período de alquiler",
+    "qty": "Cant.",
+    "status": "Estado",
+    "statusReserved": "Reservado",
+    "statusPickuped": "En alquiler"
+  },
+  "timeline": {
+    "title": "Calendario de alquiler",
+    "today": "Hoy",
+    "noOrders": "Aún no hay pedidos"
+  },
+  "conflicts": {
+    "title": "Pedidos que coinciden",
+    "orderNumber": "N.º de pedido",
+    "customer": "Cliente",
+    "period": "Período de alquiler",
+    "quantity": "Cant."
+  },
+  "actions": {
+    "retry": "Reintentar",
+    "checkAgain": "Verificar de nuevo"
+  },
+  "copy": {
+    "available": "{name} tiene {count} unidad(es) disponibles desde {pickup} hasta {return}.",
+    "unavailable": "{name} no está disponible en el período {pickup} – {return} (se necesitan {need}, disponibles {have})."
+  },
+  "errors": {
+    "checkFailed": "No se pudo verificar la disponibilidad",
+    "loadProductFailed": "No se pudo cargar el producto"
+  },
+  "productsTitle": "Productos a verificar",
+  "quick": {
+    "today": "Hoy",
+    "tomorrow": "Mañana",
+    "weekend": "Fin de semana",
+    "threeDays": "3 días"
+  },
+  "summary": {
+    "allOk": "Hay stock suficiente para los {count} productos",
+    "someShort": "{count} producto(s) sin stock suficiente",
+    "pickDates": "Seleccione fechas de alquiler para ver qué está libre"
+  },
+  "badge": {
+    "free": "Libres {free}/{total}",
+    "short": "Faltan {count}",
+    "error": "Error"
+  },
+  "search": {
+    "price": "Precio {price}",
+    "stock": "Disponibles {available}/{total}"
+  },
+  "empty": {
+    "title": "Aún no hay productos seleccionados",
+    "description": "Busque productos por nombre, código o código de barras. Puede verificar varios productos a la vez."
+  },
+  "detail": {
+    "freeHeadline": "{count} unidades libres",
+    "free": "Libre",
+    "busy": "Ocupado",
+    "need": "Necesita",
+    "barLabel": "Libre {free}, ocupado {busy}, necesita {need}, stock total {total}",
+    "days": "Unidades libres por día",
+    "dayHint": "Toque un día para verificar desde ese día",
+    "dayLabel": "{date}: quedan {free} unidades",
+    "conflicts": "Pedidos del período ({count})",
+    "noConflicts": "No hay pedidos que coincidan en este período."
+  },
+  "remove": "Quitar {name}",
+  "decrease": "Reducir cantidad",
+  "increase": "Aumentar cantidad",
+  "web": {
+    "title": "Verificar disponibilidad",
+    "outlet": "Sucursal",
+    "product": "Producto",
+    "productPlaceholder": "Buscar nombre o código del producto",
+    "noProducts": "No se encontraron productos",
+    "searching": "Buscando…",
+    "pickup": "Día de entrega",
+    "return": "Día de devolución",
+    "quantity": "Cantidad",
+    "check": "Verificar",
+    "quick": {
+      "today": "Hoy",
+      "tomorrow": "Mañana",
+      "weekend": "Fin de semana",
+      "threeDays": "3 días"
+    },
+    "reversed": "El día de devolución debe ser igual o posterior al día de entrega.",
+    "pickProduct": "Elija un producto para ver cuántas unidades están libres en este calendario.",
+    "pickOutlet": "Elija una sucursal para verificar.",
+    "has": "Hay {total} unidades · {from} → {to}",
+    "free": "Quedan {free}/{total} para todo este calendario",
+    "short": "Faltan {missing} · quedan {free}/{total}",
+    "none": "Ninguna libre en este calendario",
+    "checking": "Verificando…",
+    "checkFailed": "No se pudo verificar.",
+    "retry": "Reintentar",
+    "createOrder": "Crear pedido para este calendario",
+    "dayLeft": "Libres en el día",
+    "dayAria": "{day}: quedan {count}. Haga clic para iniciar el período en este día",
+    "note": "Un día cuenta tanto el día de entrega como el de devolución, incluso si ambos son el mismo día. El área celeste claro es el período que se verifica. Haga clic en un día para mover el período hasta allí.",
+    "status": {
+      "RESERVED": "Reservado",
+      "PICKUPED": "En alquiler"
+    },
+    "bar": {
+      "returnOn": "devuelve {day}",
+      "range": "{from} → {to}"
+    },
+    "holders": "Pedidos que retienen este producto",
+    "noHolders": "Ningún pedido retiene este producto.",
+    "holdersFailed": "No se pudieron cargar los pedidos que retienen este producto.",
+    "units": "{count} unidades",
+    "walkIn": "Cliente sin reserva",
+    "similar": "Misma categoría, libres en este calendario",
+    "similarFree": "Quedan {count}",
+    "similarEmpty": "No hay productos de esta categoría libres en este calendario.",
+    "priceSuffix": {
+      "DAILY": "{price}/día",
+      "HOURLY": "{price}/hora",
+      "FIXED": "{price}/vez",
+      "WEEKLY": "{price}/semana",
+      "MONTHLY": "{price}/mes"
+    },
+    "change": "Cambiar producto",
+    "weekdays": "Dom,Lun,Mar,Mié,Jue,Vie,Sáb"
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "title": "Cabang",
+  "addOutlet": "Tambah cabang",
+  "editOutlet": "Ubah cabang",
+  "outletDetails": "Detail cabang",
+  "fields": {
+    "name": "Nama cabang",
+    "address": "Alamat",
+    "city": "Kota",
+    "state": "Provinsi",
+    "zipCode": "Kode pos",
+    "country": "Negara",
+    "phone": "Nomor telepon",
+    "description": "Deskripsi",
+    "printNote": "Catatan cetak struk",
+    "printNoteHint": "Dicetak di bagian bawah struk sewa, misalnya pengingat membawa KTP atau kebijakan pengembalian. Maksimal 500 karakter.",
+    "status": "Status",
+    "manager": "Manajer",
+    "notAvailable": "Tidak ada"
+  },
+  "labels": {
+    "default": "Default"
+  },
+  "actions": {
+    "export": "Ekspor daftar cabang",
+    "viewDetails": "Lihat detail",
+    "editOutlet": "Ubah cabang",
+    "deleteOutlet": "Hapus cabang",
+    "addOutlet": "Tambah cabang",
+    "backToOutlets": "Kembali ke daftar",
+    "disableOutlet": "Nonaktifkan cabang",
+    "enableOutlet": "Aktifkan cabang",
+    "manageBankAccounts": "Kelola rekening bank"
+  },
+  "stats": {
+    "totalOutlets": "Total cabang",
+    "activeOutlets": "Cabang aktif",
+    "totalUsers": "Total pengguna",
+    "totalProducts": "Total produk"
+  },
+  "search": {
+    "placeholder": "Cari cabang berdasarkan nama, kota, atau telepon..."
+  },
+  "dialogs": {
+    "addOutletTitle": "Tambah cabang baru",
+    "addOutletDescription": "Buat cabang baru untuk usaha Anda",
+    "editOutletTitle": "Ubah cabang",
+    "deleteOutletTitle": "Hapus cabang",
+    "outletDetails": "Detail cabang",
+    "editOutletName": "Ubah cabang: {name}"
+  },
+  "messages": {
+    "createSuccess": "Cabang berhasil dibuat",
+    "createFailed": "Gagal membuat cabang",
+    "updateSuccess": "Cabang berhasil diperbarui",
+    "updateFailed": "Gagal memperbarui cabang",
+    "deleteSuccess": "Cabang berhasil dihapus",
+    "deleteFailed": "Gagal menghapus cabang",
+    "enableSuccess": "Cabang berhasil diaktifkan",
+    "enableFailed": "Gagal mengaktifkan cabang",
+    "disableSuccess": "Cabang berhasil dinonaktifkan",
+    "disableFailed": "Gagal menonaktifkan cabang",
+    "confirmDelete": "Anda yakin ingin menghapus cabang ini?",
+    "noOutlets": "Cabang tidak ditemukan",
+    "tryAdjustingSearch": "Coba ubah pencarian",
+    "getStarted": "Mulai dengan menambahkan cabang pertama Anda",
+    "loadingOutlets": "Memuat daftar cabang..."
+  },
+  "placeholders": {
+    "enterOutletName": "Masukkan nama cabang",
+    "enterStreetAddress": "Masukkan alamat jalan",
+    "enterCity": "Masukkan kota",
+    "enterState": "Masukkan provinsi",
+    "enterZipCode": "Masukkan kode pos",
+    "enterCountry": "Masukkan negara",
+    "enterOutletPhone": "Masukkan nomor telepon cabang",
+    "enterOutletDescription": "Masukkan deskripsi cabang",
+    "enterPrintNote": "Contoh: *** Harap membawa KTP saat mengambil barang"
+  },
+  "web": {
+    "title": "Cabang",
+    "add": "Tambah cabang",
+    "searchLabel": "Cari cabang",
+    "searchPlaceholder": "Cari nama, kota, telp",
+    "cols": {
+      "name": "Cabang",
+      "address": "Alamat",
+      "phone": "Telp",
+      "status": "Status",
+      "createdAt": "Tanggal dibuat",
+      "actions": "Tindakan"
+    },
+    "sortBy": "Urutkan berdasarkan {column}",
+    "default": "Default",
+    "status": {
+      "active": "Buka",
+      "inactive": "Dijeda"
+    },
+    "staffCount": "{count} staf",
+    "edit": "Ubah",
+    "viewDetails": "Lihat detail",
+    "bankAccounts": "Rekening bank",
+    "disable": "Jeda",
+    "enable": "Buka lagi",
+    "more": "Tindakan lain untuk {name}",
+    "empty": "Belum ada cabang.",
+    "emptySearch": "Tidak ada cabang yang cocok dengan pencarian.",
+    "loadFailed": "Gagal memuat daftar cabang.",
+    "retry": "Coba lagi",
+    "noSession": "Sesi Anda telah berakhir. Silakan masuk kembali.",
+    "noAccess": "Hanya pemilik toko yang dapat melihat dan mengubah daftar cabang.",
+    "form": {
+      "addTitle": "Tambah cabang",
+      "editTitle": "Ubah cabang",
+      "name": "Nama cabang",
+      "namePlaceholder": "Contoh: Cabang Distrik 1",
+      "required": "wajib",
+      "nameRequired": "Masukkan nama cabang",
+      "phone": "Telp",
+      "address": "Alamat jalan",
+      "city": "Kota",
+      "state": "Provinsi",
+      "zipCode": "Kode pos",
+      "country": "Negara",
+      "optional": "Opsional",
+      "addressGroup": "Alamat",
+      "description": "Deskripsi",
+      "printNote": "Catatan yang dicetak pada struk sewa",
+      "printNoteHint": "Dicetak di bagian bawah struk sewa, misalnya pengingat membawa KTP atau kebijakan pengembalian.",
+      "printNotePlaceholder": "Contoh: Harap membawa KTP saat mengambil barang",
+      "printNoteTooLong": "Maksimal {max} karakter",
+      "count": "{count}/{max}",
+      "cancel": "Batal",
+      "create": "Tambah cabang",
+      "save": "Simpan",
+      "saving": "Menyimpan…",
+      "close": "Tutup"
+    },
+    "detail": {
+      "title": "Detail cabang",
+      "none": "Belum diatur"
+    },
+    "confirm": {
+      "disableTitle": "Jeda cabang",
+      "disableBody": "Jeda cabang “{name}”? Anda dapat membukanya lagi nanti.",
+      "cancel": "Pertahankan",
+      "disable": "Jeda",
+      "working": "Menyimpan…"
+    },
+    "toast": {
+      "created": "Cabang ditambahkan",
+      "updated": "Cabang disimpan",
+      "disabled": "Cabang dijeda",
+      "enabled": "Cabang dibuka kembali"
+    },
+    "footer": {
+      "show": "Tampilkan",
+      "perPage": "baris per halaman",
+      "perPageLabel": "Jumlah baris per halaman",
+      "pages": "Halaman",
+      "range": "{from}–{to} dari {total} cabang",
+      "prev": "Halaman sebelumnya",
+      "next": "Halaman berikutnya"
+    },
+    "bank": {
+      "back": "Cabang",
+      "title": "Rekening bank",
+      "subtitle": "Cabang {name}",
+      "add": "Tambah rekening",
+      "cols": {
+        "holder": "Pemilik rekening",
+        "number": "Nomor rekening",
+        "bank": "Bank",
+        "branch": "Cabang bank",
+        "status": "Status",
+        "actions": "Tindakan"
+      },
+      "active": "Digunakan",
+      "inactive": "Dijeda",
+      "copy": "Salin nomor rekening {number}",
+      "edit": "Ubah",
+      "delete": "Hapus",
+      "loadFailed": "Gagal memuat rekening bank.",
+      "retry": "Coba lagi",
+      "noAccess": "Anda tidak memiliki akses untuk melihat rekening bank.",
+      "confirmCancel": "Pertahankan",
+      "deleting": "Menghapus…",
+      "close": "Tutup"
+    }
+  }
+}

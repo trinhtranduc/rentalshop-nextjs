@@ -1,0 +1,190 @@
+{
+  "required": "Este campo es obligatorio",
+  "email": "Por favor, ingrese una dirección de correo electrónico válida",
+  "phone": "Por favor, ingrese un número de teléfono válido",
+  "min": "El valor mínimo es {min}",
+  "max": "El valor máximo es {max}",
+  "minLength": "La longitud mínima es {min} caracteres",
+  "maxLength": "La longitud máxima es {max} caracteres",
+  "pattern": "Formato no válido",
+  "url": "Por favor, ingrese una URL válida",
+  "number": "Por favor, ingrese un número válido",
+  "integer": "Por favor, ingrese un número entero",
+  "positive": "Por favor, ingrese un número positivo",
+  "negative": "Por favor, ingrese un número negativo",
+  "date": "Por favor, ingrese una fecha válida",
+  "dateRange": "El rango de fechas no es válido",
+  "time": "Por favor, ingrese una hora válida",
+  "password": {
+    "minLength": "La contraseña debe tener al menos {min} caracteres",
+    "uppercase": "La contraseña debe contener al menos una letra mayúscula",
+    "lowercase": "La contraseña debe contener al menos una letra minúscula",
+    "number": "La contraseña debe contener al menos un número",
+    "special": "La contraseña debe contener al menos un carácter especial",
+    "match": "Las contraseñas no coinciden"
+  },
+  "file": {
+    "size": "El tamaño del archivo debe ser menor que {max}",
+    "type": "Tipo de archivo no válido. Tipos permitidos: {types}",
+    "required": "Por favor, seleccione un archivo"
+  },
+  "unique": "Este valor ya existe",
+  "exists": "Este valor no existe",
+  "custom": {
+    "invalidBarcode": "Código de barras no válido",
+    "invalidSKU": "SKU no válido",
+    "stockNotAvailable": "No hay suficiente stock",
+    "invalidDateRange": "La fecha de fin debe ser posterior a la fecha de inicio",
+    "priceGreaterThanZero": "El precio debe ser mayor que 0",
+    "quantityGreaterThanZero": "La cantidad debe ser mayor que 0"
+  },
+  "fields": {
+    "firstName": {
+      "required": "El nombre es obligatorio"
+    },
+    "lastName": {
+      "required": "El apellido es obligatorio"
+    },
+    "name": {
+      "required": "El nombre es obligatorio",
+      "minLength": "El nombre debe tener al menos {min} caracteres"
+    },
+    "productName": {
+      "required": "El nombre del producto es obligatorio"
+    },
+    "outletName": {
+      "required": "El nombre de la sucursal es obligatorio"
+    },
+    "planName": {
+      "required": "El nombre del plan es obligatorio"
+    },
+    "planDescription": {
+      "required": "La descripción del plan es obligatoria"
+    },
+    "variantName": {
+      "required": "El nombre de la variante es obligatorio"
+    },
+    "phone": {
+      "required": "El teléfono es obligatorio"
+    },
+    "email": {
+      "invalid": "La dirección de correo electrónico no es válida",
+      "invalidFormat": "El formato del correo electrónico no es válido"
+    },
+    "password": {
+      "minLength6": "La contraseña debe tener al menos 6 caracteres",
+      "required": "La contraseña es obligatoria"
+    },
+    "confirmPassword": {
+      "required": "Confirmar la contraseña es obligatorio",
+      "match": "Las contraseñas no coinciden"
+    },
+    "outletId": {
+      "required": "La sucursal es obligatoria",
+      "requiredForRole": "La sucursal es obligatoria para este rol",
+      "shouldNotBeSelected": "No se debe seleccionar una sucursal para el rol de negocio"
+    },
+    "country": {
+      "invalid": "Por favor, seleccione un país válido"
+    },
+    "tenantKey": {
+      "invalid": "La clave del tenant debe contener solo números y letras"
+    },
+    "product": {
+      "required": "El producto es obligatorio"
+    },
+    "category": {
+      "required": "La categoría es obligatoria"
+    },
+    "outlet": {
+      "required": "La sucursal es obligatoria",
+      "requiredForRole": "La sucursal es obligatoria para este rol"
+    },
+    "merchant": {
+      "required": "El negocio es obligatorio",
+      "requiredForRole": "El negocio es obligatorio para este rol"
+    },
+    "role": {
+      "required": "El rol es obligatorio"
+    },
+    "deposit": {
+      "nonNegative": "El anticipo no puede ser negativo",
+      "cannotBeNegative": "El anticipo no puede ser un número negativo"
+    },
+    "merchantId": {
+      "required": "El ID del negocio es obligatorio"
+    },
+    "planId": {
+      "required": "El ID del plan es obligatorio"
+    },
+    "planVariantId": {
+      "required": "El ID de la variante del plan es obligatorio"
+    },
+    "rentPrice": {
+      "required": "El precio de alquiler es obligatorio y debe ser mayor que 0",
+      "nonNegative": "El precio de alquiler no puede ser negativo",
+      "greaterThanZero": "El precio de alquiler debe ser mayor que 0"
+    },
+    "salePrice": {
+      "required": "El precio de venta es obligatorio y debe ser mayor que 0",
+      "nonNegative": "El precio de venta no puede ser negativo",
+      "greaterThanZero": "El precio de venta debe ser mayor que 0"
+    },
+    "costPrice": {
+      "nonNegative": "El precio de costo no puede ser negativo"
+    },
+    "stock": {
+      "nonNegative": "El stock no puede ser negativo"
+    },
+    "totalStock": {
+      "required": "El stock es obligatorio y debe ser mayor que 0",
+      "nonNegative": "El stock total no puede ser negativo",
+      "greaterThanZero": "El stock debe ser mayor que 0"
+    },
+    "basePrice": {
+      "nonNegative": "El precio base no puede ser negativo"
+    },
+    "price": {
+      "nonNegative": "El precio no puede ser negativo"
+    },
+    "amount": {
+      "nonNegative": "El monto no puede ser negativo"
+    },
+    "duration": {
+      "positive": "La duración debe ser un número positivo"
+    },
+    "trialDays": {
+      "nonNegative": "Los días de prueba no pueden ser negativos"
+    },
+    "discount": {
+      "range": "El descuento debe estar entre 0 y 100"
+    },
+    "durationConfig": {
+      "required": "La configuración de duración es obligatoria y debe ser un JSON válido para los tipos de precio POR HORA y POR DÍA",
+      "requiredForPricingType": "La configuración de duración es obligatoria para los tipos de precio POR HORA y POR DÍA",
+      "minDurationRequired": "La duración mínima es obligatoria y debe ser mayor que 0",
+      "maxDurationRequired": "La duración máxima es obligatoria y debe ser mayor que 0",
+      "minMustBeLessThanMax": "La duración mínima debe ser menor o igual que la duración máxima",
+      "defaultDurationRequired": "La duración predeterminada es obligatoria y debe ser mayor que 0",
+      "defaultMustBeAtLeastMin": "La duración predeterminada debe ser al menos igual a la duración mínima",
+      "defaultMustNotExceedMax": "La duración predeterminada no puede superar la duración máxima"
+    },
+    "outletStock": {
+      "required": "El stock por sucursal es obligatorio. Por favor, indique el nivel de stock para al menos una sucursal.",
+      "noOutletsAvailable": "No hay sucursales. Por favor, contacte al administrador para configurar las sucursales.",
+      "cannotBeNegative": "El stock por sucursal no puede ser un número negativo"
+    },
+    "endDate": {
+      "afterStart": "La fecha de fin debe ser posterior a la fecha de inicio"
+    },
+    "nameOrFullName": {
+      "required": "Se requiere 'name' o bien 'firstName' y 'lastName'"
+    },
+    "businessTypePricingType": {
+      "required": "El tipo de negocio y el tipo de precio son obligatorios para el registro de negocio"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "El precio predeterminado por día requiere un precio de alquiler por día."
+    }
+  }
+}

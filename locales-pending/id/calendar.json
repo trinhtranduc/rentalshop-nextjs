@@ -1,0 +1,139 @@
+{
+  "title": "Kalender pengambilan",
+  "navigation": {
+    "today": "Hari ini",
+    "previousMonth": "Bulan sebelumnya",
+    "nextMonth": "Bulan berikutnya",
+    "goToToday": "Ke hari ini"
+  },
+  "labels": {
+    "pickups": "Pengambilan",
+    "returns": "Pengembalian",
+    "totalOrders": "Total pesanan",
+    "pickupOrders": "Pesanan pengambilan",
+    "returnOrders": "Pesanan pengembalian",
+    "pickup": "Pengambilan",
+    "return": "Pengembalian",
+    "order": "Pesanan",
+    "customer": "Pelanggan",
+    "product": "Produk",
+    "type": "Jenis",
+    "status": "Status",
+    "amount": "Jumlah",
+    "returnDate": "Tanggal kembali",
+    "overdue": "Terlambat",
+    "month": "Bulan",
+    "noOrders": "Tidak ada pesanan",
+    "more": "Lainnya...",
+    "filterByStatus": "Filter berdasarkan status"
+  },
+  "stats": {
+    "ordersToday": "Pesanan hari ini",
+    "ordersThisWeek": "Pesanan minggu ini",
+    "ordersThisMonth": "Pesanan bulan ini",
+    "pickupsToday": "Pengambilan hari ini",
+    "returnsToday": "Pengembalian hari ini",
+    "monthlyStatistics": "Statistik bulan",
+    "activeDays": "Hari aktif",
+    "daysWithScheduledOrders": "hari dengan pesanan terjadwal",
+    "dateRange": "Rentang tanggal",
+    "to": "sampai"
+  },
+  "modal": {
+    "ordersFor": "Pesanan tanggal {date}",
+    "pickupOrders": "Pesanan pengambilan",
+    "returnOrders": "Pesanan pengembalian",
+    "viewDetails": "Lihat detail",
+    "close": "Tutup",
+    "loading": "Memuat pesanan...",
+    "ordersFound": "pesanan ditemukan",
+    "ordersFoundPlural": "pesanan ditemukan",
+    "orders": "pesanan",
+    "noOrders": "Tidak ada pesanan",
+    "noPickupReturnOrders": "Tidak ada pesanan pengambilan atau pengembalian yang dijadwalkan untuk tanggal ini.",
+    "items": "produk"
+  },
+  "empty": {
+    "noOrders": "Tidak ada pesanan terjadwal",
+    "noPickups": "Tidak ada pengambilan terjadwal",
+    "noReturns": "Tidak ada pengembalian terjadwal",
+    "selectDate": "Pilih tanggal untuk melihat pesanan"
+  },
+  "loading": {
+    "loadingCalendar": "Memuat kalender...",
+    "loadingOrders": "Memuat pesanan..."
+  },
+  "days": {
+    "sunday": "Min",
+    "monday": "Sen",
+    "tuesday": "Sel",
+    "wednesday": "Rab",
+    "thursday": "Kam",
+    "friday": "Jum",
+    "saturday": "Sab"
+  },
+  "months": {
+    "january": "Januari",
+    "february": "Februari",
+    "march": "Maret",
+    "april": "April",
+    "may": "Mei",
+    "june": "Juni",
+    "july": "Juli",
+    "august": "Agustus",
+    "september": "September",
+    "october": "Oktober",
+    "november": "November",
+    "december": "Desember"
+  },
+  "web": {
+    "title": "Kalender serah terima & pengembalian",
+    "monthNames": "Januari,Februari,Maret,April,Mei,Juni,Juli,Agustus,September,Oktober,November,Desember",
+    "monthTitle": "{month} {year}",
+    "weekdays": "Min,Sen,Sel,Rab,Kam,Jum,Sab",
+    "prevMonth": "Bulan sebelumnya",
+    "nextMonth": "Bulan berikutnya",
+    "today": "Hari ini",
+    "monthLabel": "Kalender bulanan",
+    "dayPanel": "Kegiatan hari ini",
+    "legend": {
+      "pickups": "Serah terima",
+      "returns": "Pengembalian",
+      "late": "Pengembalian terlambat"
+    },
+    "cell": {
+      "pickups": "Serah terima {count}",
+      "returns": "Pengembalian {count}",
+      "late": "Terlambat {count}"
+    },
+    "aria": {
+      "pickups": "serah terima",
+      "returns": "pengembalian",
+      "late": "terlambat"
+    },
+    "dayTitleToday": "{day} · hari ini",
+    "sections": {
+      "pickups": "Perlu diserahkan · {count}",
+      "returns": "Perlu diterima pengembaliannya · {count}"
+    },
+    "sub": {
+      "returnOn": "kembali {day}",
+      "sameDay": "serah terima dan kembali di hari yang sama",
+      "pickedOn": "diserahkan {day}",
+      "late": "jatuh tempo {day} · terlambat {days} hari",
+      "notPrepared": "belum disiapkan"
+    },
+    "money": {
+      "collect": "masih harus ditagih {amount}",
+      "refund": "kembalikan uang muka {amount}",
+      "fee": "tagih tambahan {amount}"
+    },
+    "emptyPickups": "Tidak ada yang perlu diserahkan.",
+    "emptyReturns": "Tidak ada yang perlu diterima pengembaliannya.",
+    "walkIn": "Pelanggan umum",
+    "loadFailed": "Tidak dapat memuat pesanan bulan ini.",
+    "dayFailed": "Tidak dapat memuat pesanan hari ini.",
+    "retry": "Coba lagi",
+    "more": "Lihat selengkapnya"
+  }
+}

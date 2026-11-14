@@ -1,0 +1,148 @@
+{
+  "title": "Guía del enlace de referido (afiliado)",
+  "subtitle": "Aprenda a usar el enlace de afiliado para hacer crecer su negocio",
+  "lastUpdated": "Última actualización: enero de 2025",
+  "sections": {
+    "whatIs": {
+      "title": "¿Qué es el enlace de afiliado?",
+      "content": "El enlace de afiliado (también llamado enlace de referido) es una URL especial que contiene su código de referido único. Cuando alguien se registra en AnyRent con su enlace de afiliado, pasa a ser un referido suyo y usted puede recibir beneficios o recompensas."
+    },
+    "howToGet": {
+      "title": "Cómo obtener su enlace de afiliado",
+      "content": "El enlace de referido se genera a partir de la URL de su tienda. Lo encontrará en Configuración de la tienda, en la sección \"Compartir tienda\"."
+    },
+    "howToUse": {
+      "title": "Cómo usar el enlace de afiliado",
+      "content": "Comparta su enlace de afiliado con otras personas por distintos canales:"
+    },
+    "howItWorks": {
+      "title": "Cómo funciona",
+      "content": "Cuando alguien hace clic en su enlace de afiliado:"
+    },
+    "benefits": {
+      "title": "Beneficios de usar el enlace de afiliado",
+      "content": "Usar el enlace de afiliado le ayuda a:"
+    },
+    "bestPractices": {
+      "title": "Buenas prácticas",
+      "content": "Para maximizar la eficacia de su enlace de afiliado:"
+    },
+    "importantNotes": {
+      "title": "Notas importantes",
+      "content": "Tenga en cuenta lo siguiente:"
+    },
+    "troubleshooting": {
+      "title": "Solución de problemas",
+      "content": "Si tiene problemas con el enlace de afiliado:"
+    }
+  },
+  "banner": {
+    "title": "Conozca los enlaces de afiliado",
+    "description": "Descubra cómo usar el enlace de afiliado para hacer crecer su negocio",
+    "promo": "10% de descuento por referido",
+    "button": "Ver guía",
+    "viewDetails": "Ver detalles",
+    "dismiss": "Cerrar"
+  },
+  "navigation": {
+    "title": "Afiliados"
+  },
+  "guide": {
+    "title": "Recomiende AnyRent y gane comisiones",
+    "subtitle": "Comparta su enlace de referido con otros dueños de tiendas y reciba una comisión cuando paguen su plan.",
+    "login": "Iniciar sesión",
+    "yourLink": "Su enlace de referido",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "overview": {
+      "commission": "Comisión",
+      "autoPayment": "Automático",
+      "payment": "Pago",
+      "unlimitedLabel": "Sin límite",
+      "unlimited": "Cantidad de referidos"
+    },
+    "howItWorks": {
+      "title": "Cómo funciona",
+      "step1": {
+        "title": "Comparta el enlace",
+        "description": "Copie y comparta su enlace de afiliado con amigos, socios o posibles clientes"
+      },
+      "step2": {
+        "title": "Se registran",
+        "description": "La persona referida usa su enlace para crear una cuenta nueva en AnyRent"
+      },
+      "step3": {
+        "title": "Reciba su comisión",
+        "description": "Cuando paguen su plan, usted recibirá automáticamente el 10% de comisión en su cuenta"
+      }
+    },
+    "commissionDetails": {
+      "title": "Detalles de la comisión",
+      "rate": {
+        "label": "Porcentaje de comisión",
+        "description": "Recibirá el 10% de comisión por cada suscripción confirmada"
+      },
+      "payment": {
+        "label": "Pago",
+        "description": "La comisión se paga automáticamente en su cuenta en cuanto la persona referida realiza el pago"
+      },
+      "tracking": {
+        "label": "Seguimiento",
+        "description": "Consulte en tiempo real la cantidad de referidos y sus comisiones",
+        "badge": "Tiempo real"
+      }
+    },
+    "examples": {
+      "title": "Ejemplos de cálculo",
+      "example1": {
+        "title": "Ejemplo 1: Plan básico",
+        "label1": "Precio del plan",
+        "label2": "Estado",
+        "confirmed": "Confirmado",
+        "label3": "Su comisión"
+      },
+      "example2": {
+        "title": "Ejemplo 2: Plan avanzado",
+        "label1": "Precio del plan",
+        "label2": "Estado",
+        "confirmed": "Confirmado",
+        "label3": "Su comisión"
+      },
+      "note": "Nota: La comisión solo se calcula cuando la persona referida <strong>paga el plan</strong> con éxito. La comisión se paga automáticamente en su cuenta."
+    },
+    "tips": {
+      "title": "Consejos para maximizar sus comisiones",
+      "tip1": {
+        "title": "Comparta con las personas adecuadas",
+        "description": "Céntrese en quienes realmente necesitan un software de gestión para tiendas de alquiler"
+      },
+      "tip2": {
+        "title": "Explique los beneficios",
+        "description": "Comparta los beneficios de AnyRent al recomendarlo para aumentar las tasas de registro"
+      },
+      "tip3": {
+        "title": "Haga seguimiento",
+        "description": "Use el panel para seguir la cantidad de referidos y sus comisiones"
+      },
+      "tip4": {
+        "title": "Comparta con frecuencia",
+        "description": "Comparta su enlace por distintos canales para llegar a más personas"
+      }
+    },
+    "cta": {
+      "title": "¿Listo para empezar?",
+      "description": "Regístrese ahora para obtener su enlace de afiliado y empezar a ganar comisiones",
+      "register": "Regístrese ahora",
+      "login": "¿Ya tiene una cuenta? Inicie sesión"
+    },
+    "eyebrow": "AnyRent · Referidos",
+    "linkHint": "Quien se registre con este enlace se contará como su referido."
+  },
+  "page": {
+    "eyebrow": "AnyRent · Referidos",
+    "ctaTitle": "¿Listo para empezar?",
+    "ctaBody": "Abra Configuración de la tienda para copiar su enlace de referido ahora mismo.",
+    "ctaButton": "Abrir Configuración de la tienda",
+    "guideLink": "Ver comisiones y ejemplos"
+  }
+}
