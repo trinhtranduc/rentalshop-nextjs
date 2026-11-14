@@ -1,0 +1,191 @@
+{
+  "title": "空き状況の確認",
+  "subtitle": "日付と商品を選ぶと、在庫が足りるか確認できます。",
+  "breadcrumb": "空き状況の確認",
+  "sections": {
+    "product": "商品を選択",
+    "period": "レンタル期間"
+  },
+  "pickupDate": "受取日",
+  "returnDate": "返却日",
+  "quantity": "数量",
+  "outlet": "店舗",
+  "selectOutlet": "店舗を選択",
+  "searchPlaceholder": "商品名またはバーコードで検索",
+  "changeProduct": "商品を変更",
+  "noProductsFound": "商品が見つかりません",
+  "maxProductsReached": "商品は最大20点までです",
+  "idle": {
+    "title": "商品と日付を選択",
+    "description": "左でレンタル期間と商品を選ぶと、結果が右に表示されます。",
+    "pickDates": "空き状況を確認するには日付を選択してください"
+  },
+  "product": {
+    "rentPrice": "レンタル価格",
+    "deposit": "内金",
+    "category": "カテゴリ"
+  },
+  "checking": "確認中…",
+  "missingOutlet": "空き状況を確認するには店舗を選択してください。",
+  "invalidDates": "返却日は受取日より前にできません。",
+  "status": {
+    "available": "空きあり",
+    "unavailable": "空きなし",
+    "warning": "空きあり"
+  },
+  "result": {
+    "canRent": "{count}点レンタルできます",
+    "cannotRent": "在庫が足りません",
+    "insufficient": "{need}点必要ですが、空きは{have}点のみです"
+  },
+  "availableUnits": "空き{count}点",
+  "periodRange": "{pickup} ～ {return}",
+  "needVsHave": "この期間は{need}点必要で、空きは{have}点です",
+  "conflictsCount": "期間が重複する注文が{count}件あります",
+  "stock": {
+    "total": "在庫合計",
+    "renting": "貸出中",
+    "freeInPeriod": "期間中の空き",
+    "bookedInPeriod": "期間中の予約"
+  },
+  "orders": {
+    "title": "この商品の注文",
+    "noActiveOrders": "進行中の注文はありません",
+    "viewAll": "注文を見る（{count}件）",
+    "ordersLabel": "件",
+    "conflicts": "重複",
+    "conflictBadge": "期間重複",
+    "conflictNote": "確認中の期間と重複する注文が{count}件あります",
+    "dialogTitle": "注文: {name}",
+    "page": "{current}/{total}ページ",
+    "conflictsCount": "期間重複 {count}件",
+    "orderNumber": "注文番号",
+    "customer": "顧客",
+    "period": "レンタル期間",
+    "qty": "数量",
+    "status": "状態",
+    "statusReserved": "予約済み",
+    "statusPickuped": "貸出中"
+  },
+  "timeline": {
+    "title": "レンタルスケジュール",
+    "today": "今日",
+    "noOrders": "注文はまだありません"
+  },
+  "conflicts": {
+    "title": "期間が重複する注文",
+    "orderNumber": "注文番号",
+    "customer": "顧客",
+    "period": "レンタル期間",
+    "quantity": "数量"
+  },
+  "actions": {
+    "retry": "再試行",
+    "checkAgain": "再確認"
+  },
+  "copy": {
+    "available": "{name}は{pickup}から{return}まで{count}点空きがあります。",
+    "unavailable": "{name}は{pickup}～{return}の期間に空きがありません（必要{need}点、空き{have}点）。"
+  },
+  "errors": {
+    "checkFailed": "空き状況を確認できませんでした。",
+    "loadProductFailed": "商品情報を読み込めませんでした。"
+  },
+  "productsTitle": "確認する商品",
+  "quick": {
+    "today": "今日",
+    "tomorrow": "明日",
+    "weekend": "週末",
+    "threeDays": "3日間"
+  },
+  "summary": {
+    "allOk": "{count}点すべて在庫が足ります",
+    "someShort": "{count}点の在庫が不足しています",
+    "pickDates": "レンタル期間を選ぶと空き状況を表示します"
+  },
+  "badge": {
+    "free": "空き {free}/{total}",
+    "short": "不足 {count}",
+    "error": "エラー"
+  },
+  "search": {
+    "price": "価格 {price}",
+    "stock": "空き {available}/{total}"
+  },
+  "empty": {
+    "title": "商品が未選択です",
+    "description": "商品名、コード、バーコードで検索できます。複数の商品を同時に確認できます。"
+  },
+  "detail": {
+    "freeHeadline": "空き {count}点",
+    "free": "空き",
+    "busy": "予約済み",
+    "need": "必要数",
+    "barLabel": "空き {free}、予約済み {busy}、必要 {need}、在庫合計 {total}",
+    "days": "日ごとの空き数",
+    "dayHint": "日付をタップすると、その日からの空きを確認できます",
+    "dayLabel": "{date}: 空き{free}点",
+    "conflicts": "期間が重複する注文（{count}件）",
+    "noConflicts": "この期間に重複する注文はありません。"
+  },
+  "remove": "{name}を外す",
+  "decrease": "数量を減らす",
+  "increase": "数量を増やす",
+  "web": {
+    "title": "空き状況の確認",
+    "outlet": "店舗",
+    "product": "商品",
+    "productPlaceholder": "商品名またはコードで検索",
+    "noProducts": "商品が見つかりません",
+    "searching": "検索中…",
+    "pickup": "受取日",
+    "return": "返却日",
+    "quantity": "数量",
+    "check": "確認",
+    "quick": {
+      "today": "今日",
+      "tomorrow": "明日",
+      "weekend": "週末",
+      "threeDays": "3日間"
+    },
+    "reversed": "返却日は受取日以降にしてください。",
+    "pickProduct": "商品を選ぶと、この期間の空き数を表示します。",
+    "pickOutlet": "店舗を選ぶと確認できます。",
+    "has": "{total}点 · {from} → {to}",
+    "free": "この期間の空き {free}/{total}",
+    "short": "{missing}点不足 · 空き {free}/{total}",
+    "none": "この期間は空きなし",
+    "checking": "確認中…",
+    "checkFailed": "確認できませんでした。",
+    "retry": "再試行",
+    "createOrder": "この期間で注文を作成",
+    "dayLeft": "その日の空き",
+    "dayAria": "{day}: 空き{count}点。クリックしてこの日から期間を設定",
+    "note": "1日は受取日と返却日の両方を数えます（同日の場合も）。薄い青の部分が確認中の期間です。日付をクリックすると期間をその日に移動します。",
+    "status": {
+      "RESERVED": "予約済み",
+      "PICKUPED": "貸出中"
+    },
+    "bar": {
+      "returnOn": "{day}返却",
+      "range": "{from} → {to}"
+    },
+    "holders": "この商品を押さえている注文",
+    "noHolders": "この商品を押さえている注文はありません。",
+    "holdersFailed": "この商品を押さえている注文を読み込めませんでした。",
+    "units": "{count}点",
+    "walkIn": "一般客",
+    "similar": "同じカテゴリで、この期間に空きあり",
+    "similarFree": "空き{count}点",
+    "similarEmpty": "同じカテゴリで、この期間に空きのある商品はありません。",
+    "priceSuffix": {
+      "DAILY": "{price}/日",
+      "HOURLY": "{price}/時間",
+      "FIXED": "{price}/回",
+      "WEEKLY": "{price}/週",
+      "MONTHLY": "{price}/月"
+    },
+    "change": "商品を変更",
+    "weekdays": "日,月,火,水,木,金,土"
+  }
+}

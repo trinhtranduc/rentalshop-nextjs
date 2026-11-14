@@ -1,0 +1,191 @@
+{
+  "title": "店舗",
+  "addOutlet": "店舗を追加",
+  "editOutlet": "店舗を編集",
+  "outletDetails": "店舗の詳細",
+  "fields": {
+    "name": "店舗名",
+    "address": "住所",
+    "city": "市区町村",
+    "state": "都道府県",
+    "zipCode": "郵便番号",
+    "country": "国",
+    "phone": "電話番号",
+    "description": "説明",
+    "printNote": "伝票の注記",
+    "printNoteHint": "レンタル伝票の下部に印刷されます。例: 身分証の持参や返品ポリシーの案内。500文字以内。",
+    "status": "状態",
+    "manager": "責任者",
+    "notAvailable": "なし"
+  },
+  "labels": {
+    "default": "基本"
+  },
+  "actions": {
+    "export": "店舗一覧を書き出し",
+    "viewDetails": "詳細を見る",
+    "editOutlet": "店舗を編集",
+    "deleteOutlet": "店舗を削除",
+    "addOutlet": "店舗を追加",
+    "backToOutlets": "店舗一覧に戻る",
+    "disableOutlet": "店舗を無効にする",
+    "enableOutlet": "店舗を有効にする",
+    "manageBankAccounts": "銀行口座を管理"
+  },
+  "stats": {
+    "totalOutlets": "店舗数",
+    "activeOutlets": "営業中の店舗",
+    "totalUsers": "ユーザー数",
+    "totalProducts": "商品数"
+  },
+  "search": {
+    "placeholder": "名前、市区町村、電話番号で店舗を検索..."
+  },
+  "dialogs": {
+    "addOutletTitle": "新しい店舗を追加",
+    "addOutletDescription": "事業の新しい店舗を作成します",
+    "editOutletTitle": "店舗を編集",
+    "deleteOutletTitle": "店舗を削除",
+    "outletDetails": "店舗の詳細",
+    "editOutletName": "店舗を編集: {name}"
+  },
+  "messages": {
+    "createSuccess": "店舗を作成しました",
+    "createFailed": "店舗の作成に失敗しました。もう一度お試しください。",
+    "updateSuccess": "店舗を更新しました",
+    "updateFailed": "店舗の更新に失敗しました。もう一度お試しください。",
+    "deleteSuccess": "店舗を削除しました",
+    "deleteFailed": "店舗の削除に失敗しました。もう一度お試しください。",
+    "enableSuccess": "店舗を有効にしました",
+    "enableFailed": "店舗の有効化に失敗しました。もう一度お試しください。",
+    "disableSuccess": "店舗を無効にしました",
+    "disableFailed": "店舗の無効化に失敗しました。もう一度お試しください。",
+    "confirmDelete": "この店舗を削除してもよろしいですか？",
+    "noOutlets": "店舗が見つかりません",
+    "tryAdjustingSearch": "検索条件を変えてお試しください",
+    "getStarted": "最初の店舗を追加して始めましょう",
+    "loadingOutlets": "店舗一覧を読み込んでいます..."
+  },
+  "placeholders": {
+    "enterOutletName": "店舗名を入力",
+    "enterStreetAddress": "番地・通り名を入力",
+    "enterCity": "市区町村を入力",
+    "enterState": "都道府県を入力",
+    "enterZipCode": "郵便番号を入力",
+    "enterCountry": "国を入力",
+    "enterOutletPhone": "店舗の電話番号を入力",
+    "enterOutletDescription": "店舗の説明を入力",
+    "enterPrintNote": "例: *** 商品お渡し時は身分証をお持ちください"
+  },
+  "web": {
+    "title": "店舗",
+    "add": "店舗を追加",
+    "searchLabel": "店舗を検索",
+    "searchPlaceholder": "名前、市区町村、電話番号",
+    "cols": {
+      "name": "店舗",
+      "address": "住所",
+      "phone": "電話",
+      "status": "状態",
+      "createdAt": "作成日",
+      "actions": "操作"
+    },
+    "sortBy": "{column}順に並べ替え",
+    "default": "基本",
+    "status": {
+      "active": "営業中",
+      "inactive": "一時休止"
+    },
+    "staffCount": "スタッフ{count}名",
+    "edit": "編集",
+    "viewDetails": "詳細を見る",
+    "bankAccounts": "銀行口座",
+    "disable": "一時休止",
+    "enable": "再開",
+    "more": "{name}のその他の操作",
+    "empty": "店舗はまだありません。",
+    "emptySearch": "検索に一致する店舗はありません。",
+    "loadFailed": "店舗一覧を読み込めませんでした。",
+    "retry": "再試行",
+    "noSession": "セッションが終了しました。もう一度ログインしてください。",
+    "noAccess": "店舗一覧を閲覧・編集できるのはショップのオーナーのみです。",
+    "form": {
+      "addTitle": "店舗を追加",
+      "editTitle": "店舗を編集",
+      "name": "店舗名",
+      "namePlaceholder": "例: 1区店",
+      "required": "必須",
+      "nameRequired": "店舗名を入力してください",
+      "phone": "電話番号",
+      "address": "番地・通り",
+      "city": "市区町村",
+      "state": "都道府県",
+      "zipCode": "郵便番号",
+      "country": "国",
+      "optional": "任意",
+      "addressGroup": "住所",
+      "description": "説明",
+      "printNote": "レンタル伝票に印刷する注記",
+      "printNoteHint": "レンタル伝票の下部に印刷されます。例: 身分証の持参や返品ポリシーなど。",
+      "printNotePlaceholder": "例: 商品お渡し時は身分証をお持ちください",
+      "printNoteTooLong": "最大{max}文字",
+      "count": "{count}/{max}",
+      "cancel": "キャンセル",
+      "create": "店舗を追加",
+      "save": "保存",
+      "saving": "保存中…",
+      "close": "閉じる"
+    },
+    "detail": {
+      "title": "店舗の詳細",
+      "none": "未設定"
+    },
+    "confirm": {
+      "disableTitle": "店舗を一時休止",
+      "disableBody": "店舗「{name}」を一時休止しますか？後で再開できます。",
+      "cancel": "残す",
+      "disable": "一時休止",
+      "working": "保存中…"
+    },
+    "toast": {
+      "created": "店舗を追加しました",
+      "updated": "店舗を保存しました",
+      "disabled": "店舗を一時休止しました",
+      "enabled": "店舗を再開しました"
+    },
+    "footer": {
+      "show": "表示",
+      "perPage": "件/ページ",
+      "perPageLabel": "1ページの表示件数",
+      "pages": "ページ",
+      "range": "{total}店舗中 {from}–{to}",
+      "prev": "前のページ",
+      "next": "次のページ"
+    },
+    "bank": {
+      "back": "店舗",
+      "title": "銀行口座",
+      "subtitle": "店舗 {name}",
+      "add": "口座を追加",
+      "cols": {
+        "holder": "口座名義",
+        "number": "口座番号",
+        "bank": "銀行",
+        "branch": "支店",
+        "status": "状態",
+        "actions": "操作"
+      },
+      "active": "使用中",
+      "inactive": "一時停止",
+      "copy": "口座番号{number}をコピー",
+      "edit": "編集",
+      "delete": "削除",
+      "loadFailed": "銀行口座を読み込めませんでした。",
+      "retry": "再試行",
+      "noAccess": "銀行口座を閲覧する権限がありません。",
+      "confirmCancel": "残す",
+      "deleting": "削除中…",
+      "close": "閉じる"
+    }
+  }
+}
