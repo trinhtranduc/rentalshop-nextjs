@@ -147,7 +147,7 @@
     "accountHolderName": "戶名",
     "accountNumber": "帳號",
     "amount": "金額",
-    "content": "內容",
+    "content": "附言",
     "transferDescription": "付款訂單 {orderNumber}",
     "transferDescriptionDeposit": "收取訂單 {orderNumber} 的訂金",
     "transferDescriptionRemaining": "收取訂單 {orderNumber} 的尾款",

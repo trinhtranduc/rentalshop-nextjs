@@ -30,9 +30,9 @@
     "enterprise": "Unternehmen"
   },
   "descriptions": {
-    "basic": "Ideal für kleine Vermietungsgeschäfte",
-    "professional": "Ideal für wachsende Vermietungsgeschäfte mit Web-Zugang",
-    "enterprise": "Für große Vermietungsbetriebe mit mehreren Filialen"
+    "basic": "Ideal für kleine Verleihgeschäfte",
+    "professional": "Ideal für wachsende Verleihgeschäfte mit Web-Zugang",
+    "enterprise": "Für große Verleihbetriebe mit mehreren Filialen"
   },
   "billingCycle": {
     "monthly": "Monatlich",
@@ -125,7 +125,7 @@
     "confirmDowngrade": "Möchten Sie wirklich auf diesen Tarif herabstufen?",
     "confirmCancel": "Möchten Sie das Abonnement wirklich kündigen?",
     "noPlans": "Keine Tarife gefunden",
-    "getStarted": "Legen Sie zuerst ein Abonnement mit einem Tarif an"
+    "getStarted": "Legen Sie zuerst Ihr erstes Abonnement an"
   },
   "status": {
     "active": "Aktiv",
@@ -230,7 +230,7 @@
     "faq1q": "Was ist der öffentliche Produktkatalog?",
     "faq1a": "Mit dem öffentlichen Produktkatalog teilen Sie Ihr Sortiment über öffentliche Links mit Kunden. Sie sehen Artikel und Preise ohne Anmeldung oder Konto. Ideal für Marketing, Social Media und Kundengewinnung.",
     "faq2q": "Kann ich meinen Tarif später wechseln?",
-    "faq2a": "Ja, Sie können jederzeit upgraden. Die Abrechnung erfolgt anteilig, und höhere Grenzen und Funktionen stehen sofort bereit.",
+    "faq2a": "Ja, Sie können jederzeit hochstufen. Die Abrechnung erfolgt anteilig, und höhere Grenzen und Funktionen stehen sofort bereit.",
     "faq3q": "Was passiert, wenn ich die Tarifgrenzen überschreite?",
     "faq3a": "Wenn Sie die Grenzen überschreiten, müssen Sie in einen höheren Tarif wechseln. Wir benachrichtigen Sie rechtzeitig, damit Sie planen können.",
     "faq4q": "Gibt es eine kostenlose Testphase?",

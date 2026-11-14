@@ -59,7 +59,7 @@
     "stockEntries": "分配數量",
     "stockRequired": "必須填寫庫存數量",
     "needOutletMessage": "新增商品前，您至少需要先建立一間分店。商品必須分配到特定分店才能管理庫存。",
-    "contactAdmin": "請聯絡管理員，為您的企業設定分店。",
+    "contactAdmin": "請聯絡管理員，為您的店家設定分店。",
     "creating": "建立中...",
     "listRollupHint": "合計 {count} 間分店"
   },
@@ -876,6 +876,6 @@
       "errorNetwork": "沒有網路連線。請檢查網路後再試。",
       "errorGeneric": "目前無法搜尋，請再試一次。"
     },
-    "priceHidden": "聯絡商家"
+    "priceHidden": "聯絡店家"
   }
 }

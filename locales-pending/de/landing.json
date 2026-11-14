@@ -174,7 +174,7 @@
         "role": "Inhaberin eines Brautkleid-Verleihs"
       },
       "camera": {
-        "quote": "Die Verwaltung von Kamera- und Zubehörverleih ist jetzt einfach. Die Prüfung des Gerätezustands und der Wartungsplan sind sehr nützlich.",
+        "quote": "Die Verwaltung des Kamera- und Zubehörverleihs ist jetzt ganz einfach. Die Prüfung des Gerätezustands und die Wartungspläne sind sehr nützlich.",
         "name": "Tran Van Hung",
         "role": "Inhaber eines Kameraverleihs"
       }
@@ -286,7 +286,7 @@
     "additionalPricingSr": "Informationen zu zusätzlichen Preisen für Konten und Paketerweiterungen"
   },
   "footer": {
-    "description": "AnyRent – führende Verwaltungssoftware für Verleihgeschäfte und Verleih-Managementsystem in Vietnam. Professionelle Lösung für die Verwaltung von Ao-Dai-, Brautkleid-, Ausrüstungs-, Fahrzeug-, Bühnenkostüm- und Druckerverleih. Effiziente Verwaltung von Mietaufträgen, Verleihlager und Kunden.",
+    "description": "AnyRent – führende Verwaltungssoftware für Verleihgeschäfte in Vietnam. Professionelle Lösung für Ao-Dai-, Brautkleid-, Ausrüstungs-, Fahrzeug-, Bühnenkostüm- und Druckerverleih. Effiziente Verwaltung von Mietaufträgen, Verleihlager und Kunden.",
     "product": {
       "title": "Produkt",
       "features": "Funktionen",

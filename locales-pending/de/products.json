@@ -371,14 +371,14 @@
     },
     "stock": {
       "left": "{available}/{total} frei",
-      "out": "Keiner frei",
+      "out": "Ausverkauft",
       "renting": "{count} vermietet",
       "otherOutlets": "Andere Filialen: {count} frei"
     },
     "price": {
       "perHour": "{price}/Stunde",
-      "blockFrom": "ab {price}/Tag · nach Block",
-      "blockTag": "nach Block"
+      "blockFrom": "ab {price}/Tag · nach Tagesblock",
+      "blockTag": "nach Tagesblock"
     },
     "row": {
       "edit": "Bearbeiten",
@@ -570,7 +570,7 @@
         "stockListing": "Bestand und Anzeige in der Filiale"
       },
       "name": "Artikelname",
-      "namePlaceholder": "z. B. rotes Seidenkleid",
+      "namePlaceholder": "z. B. Áo Dài aus roter Seide",
       "description": "Beschreibung",
       "descriptionPlaceholder": "Material, Größe, Hinweise zur Vermietung…",
       "category": "Kategorie",
@@ -792,7 +792,7 @@
     "rentDaily": "Pro Tag",
     "deposit": "Anzahlung",
     "buy": "Kaufen",
-    "askNote": "Schreiben Sie dem Geschäft Ihre Daten, um die Verfügbarkeit zu prüfen.",
+    "askNote": "Teilen Sie dem Geschäft die gewünschten Tage mit, um die Verfügbarkeit zu prüfen.",
     "footer": "Über Zalo oder per Anruf buchen · Erstellt mit AnyRent",
     "close": "Schließen",
     "noPhoto": "Kein Foto",
@@ -827,7 +827,7 @@
       "notOrderYet": "Das ist noch keine Bestellung. Das Geschäft ruft Sie an oder schreibt Ihnen zur Bestätigung. Keine Zahlung im Web.",
       "nameRequired": "Geben Sie Ihren Namen ein.",
       "phoneRequired": "Geben Sie Ihre Telefonnummer ein.",
-      "phoneInvalid": "Diese Telefonnummer scheint falsch zu sein.",
+      "phoneInvalid": "Die Telefonnummer ist ungültig.",
       "noteTooLong": "Die Notiz darf höchstens 1000 Zeichen haben.",
       "errorFull": "„{name}“ ist am {date} ausgebucht. Ändern Sie die Tage oder entfernen Sie den Artikel.",
       "errorFullNoName": "Ein Artikel ist am {date} ausgebucht. Ändern Sie die Tage oder die Menge.",

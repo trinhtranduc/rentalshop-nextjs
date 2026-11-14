@@ -82,7 +82,7 @@
     "outletId": {
       "required": "Le point de location est obligatoire",
       "requiredForRole": "Le point de location est obligatoire pour ce rôle",
-      "shouldNotBeSelected": "Le point de location ne doit pas être sélectionné pour le rôle commerçant"
+      "shouldNotBeSelected": "Le point de location ne doit pas être sélectionné pour le rôle Propriétaire"
     },
     "country": {
       "invalid": "Veuillez choisir un pays valide"

@@ -222,7 +222,7 @@
     "cancelledAction": "請聯絡客服重新啟用訂閱，或選擇新方案。",
     "pastDue": "付款已逾期。請更新付款方式。",
     "pastDueAction": "請更新付款資訊，以免服務中斷。",
-    "merchantAccount": "您的商家帳號目前為「{status}」。請聯絡客服。",
+    "merchantAccount": "您的店家帳號目前為「{status}」。請聯絡客服。",
     "merchantAccountAction": "請聯絡客服處理帳號問題。",
     "generic": "訂閱發生錯誤"
   },

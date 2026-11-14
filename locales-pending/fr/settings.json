@@ -94,7 +94,7 @@
     "selectCurrency": "Choisir la devise",
     "savingCurrency": "Mise à jour de la devise...",
     "referralCode": "Code de parrainage",
-    "referralCodeDesc": "Partagez ce code avec d'autres personnes pour les inviter sur notre plateforme. Vous recevrez une commission pour chaque parrainage réussi.",
+    "referralCodeDesc": "Partagez ce code avec d'autres personnes pour les inviter sur notre plateforme. Vous recevrez une commission pour chaque parrainage réussi.. Vous recevrez une commission pour chaque parrainage réussi.",
     "registrationLink": "Lien d'inscription",
     "registrationLinkDesc": "Envoyez ce lien à une boutique pour qu'elle s'inscrive avec votre code de parrainage",
     "tenantKey": "Identifiant d'URL de la boutique",
@@ -570,7 +570,7 @@
       "loadFailed": "Impossible de charger la liste des points de location.",
       "retry": "Réessayer",
       "count": "{count} point(s) de location",
-      "open": "Ouvrir les Points de location"
+      "open": "Ouvrir les points de location"
     },
     "links": {
       "title": "Partager la boutique",
@@ -836,7 +836,7 @@
       "newTemplateName": "Nouveau modèle",
       "newStageName": "Réservation d'acompte",
       "policy": "Politique d'annulation / de report",
-      "policyPlaceholder": "Ex. : annulation plus de 7 jours avant la prise, acompte remboursé intégralement ; moins de 7 jours, acompte conservé par la boutique.",
+      "policyPlaceholder": "Ex. : annulation plus de 7 jours avant la date de remise, acompte remboursé intégralement ; moins de 7 jours, acompte conservé par la boutique.",
       "policyHint": "Affichée lors de l'annulation d'une commande. 1000 caractères maximum.",
       "cancel": "Annuler",
       "save": "Enregistrer",
@@ -846,7 +846,7 @@
       "loadFailed": "Impossible de charger les paramètres d'encaissement de l'acompte.",
       "due": {
         "onCreate": "Lors de la réservation",
-        "beforePickup": "{days} jours avant la prise",
+        "beforePickup": "{days} jours avant la date de remise",
         "afterCreate": "{days} jours après la réservation"
       },
       "restShort": "Solde à la remise"

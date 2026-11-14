@@ -5,7 +5,7 @@
   "tabs": {
     "profile": "個人資料",
     "account": "帳號",
-    "merchant": "企業",
+    "merchant": "店家",
     "outlet": "分店",
     "security": "安全",
     "subscription": "訂閱",
@@ -57,13 +57,13 @@
     "deleteAccountWarning": "此操作無法復原"
   },
   "merchant": {
-    "title": "企業設定",
-    "subtitle": "管理企業資訊",
-    "businessInformation": "企業資訊",
-    "name": "企業名稱",
-    "email": "企業 Email",
-    "phone": "企業電話",
-    "address": "企業地址",
+    "title": "店家設定",
+    "subtitle": "管理店家資訊",
+    "businessInformation": "店家資訊",
+    "name": "店家名稱",
+    "email": "店家 Email",
+    "phone": "店家電話",
+    "address": "店家地址",
     "city": "城市",
     "state": "省／市",
     "zipCode": "郵遞區號",
@@ -72,13 +72,13 @@
     "businessType": "營業類型",
     "pricingType": "計價方式",
     "registrationNumber": "營業登記號碼",
-    "logo": "企業標誌",
+    "logo": "店家標誌",
     "edit": "編輯",
     "save": "儲存",
     "cancel": "取消",
     "saving": "儲存中...",
     "notProvided": "尚未提供",
-    "enterBusinessName": "請輸入企業名稱",
+    "enterBusinessName": "請輸入店家名稱",
     "enterTaxId": "請輸入稅務識別碼",
     "enterPhone": "請輸入電話號碼",
     "enterAddress": "請輸入地址",
@@ -173,7 +173,7 @@
     "autoRenewalEnabled": "已啟用自動續約",
     "expiresIn": "您的訂閱將於以下時間到期：",
     "considerRenewing": "建議儘早續約，以免服務中斷。",
-    "contactMerchant": "請聯絡企業管理員以管理訂閱設定。",
+    "contactMerchant": "請聯絡店家管理員以管理訂閱設定。",
     "comingSoon": "訂閱管理功能即將推出。",
     "noSubscription": "尚無訂閱方案",
     "noSubscriptionDesc": "您尚未訂閱任何方案。",
@@ -299,8 +299,8 @@
       "description": "管理您的個人資訊"
     },
     "merchant": {
-      "label": "企業",
-      "description": "管理企業資訊、定價與幣別"
+      "label": "店家",
+      "description": "管理店家資訊、定價與幣別"
     },
     "outlet": {
       "label": "分店",
@@ -338,8 +338,8 @@
     "deleteFailed": "刪除帳號失敗",
     "personalProfileUpdated": "個人資料已更新！",
     "personalProfileUpdateFailed": "無法更新個人資料",
-    "businessInfoUpdated": "企業資訊已更新！",
-    "businessInfoUpdateFailed": "無法更新企業資訊",
+    "businessInfoUpdated": "店家資訊已更新！",
+    "businessInfoUpdateFailed": "無法更新店家資訊",
     "outletInfoUpdated": "分店資訊已更新！",
     "outletInfoUpdateFailed": "無法更新分店資訊",
     "currencyUpdated": "幣別已成功更新！",
@@ -776,7 +776,7 @@
     },
     "publicPage": {
       "showPrice": "在店家頁面顯示價格",
-      "showPriceHint": "關閉時，訪客會看到「聯絡商家」，不會看到金額。",
+      "showPriceHint": "關閉時，訪客會看到「聯絡店家」，不會看到金額。",
       "ownerOnly": "只有店主可以開啟或關閉。"
     },
     "groups": {

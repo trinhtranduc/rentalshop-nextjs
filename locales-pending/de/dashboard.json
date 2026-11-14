@@ -21,7 +21,7 @@
     "realTimeData": "Echtzeitdaten",
     "bookedRevenue": "Gebuchter Umsatz",
     "expectedRevenue": "Erwarteter Umsatz aus kommenden und laufenden Aufträgen",
-    "todayPickups": "Heutige Übergaben",
+    "todayPickups": "Heutige Ausgaben",
     "todayReturns": "Heutige Rückgaben",
     "productUtilization": "Artikelauslastung",
     "revenueGrowth": "Umsatzwachstum",
@@ -368,11 +368,11 @@
       "note": {
         "created": "Im Zeitraum erstellt",
         "cancelled": "Storniert, nicht eingerechnet",
+        "event": "",
         "owes": "Wird bei Abholung durch den Kunden kassiert",
         "collateralIn": "Kaution bei Ausgabe erhalten",
         "collateralOut": "Kaution bei Rückgabe zurückgegeben",
-        "held": "Kaution gehalten",
-        "event": ""
+        "held": "Kaution gehalten"
       },
       "event": {
         "saleCreated": "Verkaufsauftrag erstellt",

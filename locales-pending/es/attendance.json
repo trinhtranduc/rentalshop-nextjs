@@ -130,7 +130,7 @@
     },
     "reason": {
       "ZERO_ACCURACY": "GPS ±0 m",
-      "SAME_COORDS": "coordenadas idénticas a la vez anterior",
+      "SAME_COORDS": "mismas coordenadas que la vez anterior",
       "SPEED": "desplazamiento inusualmente rápido"
     },
     "error": {

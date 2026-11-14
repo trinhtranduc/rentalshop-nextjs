@@ -12,7 +12,7 @@
     "active": "Aktiv",
     "trialing": "Testphase",
     "trial": "Testphase",
-    "past_due": "überfällig",
+    "past_due": "Überfällig",
     "canceled": "Gekündigt",
     "cancelled": "Gekündigt",
     "unpaid": "Unbezahlt",
@@ -66,8 +66,8 @@
     "limited": "Eingeschränkt"
   },
   "actions": {
-    "upgrade": "Tarif upgraden",
-    "downgrade": "Tarif downgraden",
+    "upgrade": "Tarif hochstufen",
+    "downgrade": "Tarif herabstufen",
     "cancel": "Abonnement kündigen",
     "resume": "Abonnement fortsetzen",
     "renew": "Abonnement verlängern",
@@ -78,14 +78,14 @@
     "contactSupport": "Support kontaktieren",
     "renewNow": "Jetzt verlängern",
     "extendPlan": "Tarif verlängern",
-    "upgradeNow": "Jetzt upgraden",
+    "upgradeNow": "Jetzt hochstufen",
     "exportData": "Daten exportieren"
   },
   "modals": {
     "upgrade": {
-      "title": "Abonnement upgraden",
-      "description": "Wählen Sie den Tarif für das Upgrade",
-      "confirm": "Upgrade bestätigen",
+      "title": "Abonnement hochstufen",
+      "description": "Wählen Sie den Tarif für die Hochstufung",
+      "confirm": "Hochstufung bestätigen",
       "cancel": "Abbrechen"
     },
     "cancel": {
@@ -104,8 +104,8 @@
     }
   },
   "messages": {
-    "upgradeSuccess": "Abonnement erfolgreich upgegradet",
-    "upgradeFailed": "Upgrade des Abonnements fehlgeschlagen",
+    "upgradeSuccess": "Abonnement erfolgreich hochgestuft",
+    "upgradeFailed": "Hochstufung des Abonnements fehlgeschlagen",
     "cancelSuccess": "Abonnement erfolgreich gekündigt",
     "cancelFailed": "Kündigung des Abonnements fehlgeschlagen",
     "resumeSuccess": "Abonnement erfolgreich fortgesetzt",
@@ -237,7 +237,7 @@
     "viewHistory": "Verlauf anzeigen",
     "historyModalDescription": "Frühere Abonnements und Zahlungstransaktionen.",
     "billingSettings": "Zahlungseinstellungen",
-    "upgradePlan": "Tarif upgraden",
+    "upgradePlan": "Tarif hochstufen",
     "renewExtend": "Verlängern / Erweitern",
     "alertExpiredTitle": "Abonnement abgelaufen",
     "alertExpiringTitle": "Abonnement läuft bald ab",
@@ -270,9 +270,9 @@
     "historyPeriodStart": "Zeitraumbeginn",
     "historyPeriodEnd": "Zeitraumende",
     "historyInterval": "Zyklus",
-    "upgradeModalTitle": "Tarif upgraden",
+    "upgradeModalTitle": "Tarif hochstufen",
     "upgradeModalDescription": "Wählen Sie einen Tarif, der besser zu Ihrem Geschäft passt.",
-    "upgradeModalBody": "Sie werden zur Tarifauswahl weitergeleitet, um Tarife zu vergleichen und zu upgraden.",
+    "upgradeModalBody": "Sie werden zur Tarifauswahl weitergeleitet, um Tarife zu vergleichen und hochzustufen.",
     "viewPlans": "Tarife ansehen",
     "renewModalTitle": "Abonnement verlängern / erweitern",
     "renewModalDescription": "Online über Lemon Squeezy bezahlen oder einen Beleg einreichen, wenn Sie per Überweisung bezahlt haben.",
@@ -284,7 +284,7 @@
     "renewLemonButton": "{amount} über Lemon Squeezy bezahlen",
     "renewOpenLemon": "Lemon-Squeezy-Kasse öffnen",
     "checkoutSuccessTitle": "Bezahlt",
-    "checkoutSuccessBody": "Vielen Dank. Ihr Abonnement kann einige Minuten zur Aktualisierung brauchen — bei Bedarf auf Aktualisieren tippen.",
+    "checkoutSuccessBody": "Vielen Dank. Ihr Abonnement kann einige Minuten zur Aktualisierung brauchen – klicken Sie bei Bedarf auf Aktualisieren.",
     "checkoutCancelTitle": "Zahlung geschlossen",
     "checkoutCancelBody": "Es wurde nichts abgebucht. Sie können es jederzeit erneut versuchen.",
     "duration": "Laufzeit",

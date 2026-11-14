@@ -10,7 +10,7 @@
   "hero": {
     "title": "Logiciel de gestion de boutique de location",
     "subtitle": "Professionnel",
-    "description": "Logiciel de gestion de boutique de location n°1 au Vietnam. Système complet de gestion de location adapté à de nombreux métiers : location d'ao dai, de robes de mariée, de matériel, de véhicules, de costumes de spectacle et d'imprimantes. Une solution moderne et facile à utiliser, compatible iOS et web.",
+    "description": "Logiciel de gestion de boutique de location de référence au Vietnam. Système complet de gestion de location adapté à de nombreux métiers : location d'ao dai, de robes de mariée, de matériel, de véhicules, de costumes de spectacle et d'imprimantes. Une solution moderne et facile à utiliser, compatible iOS et web.",
     "downloadApp": "Télécharger l'application",
     "tryWebPortal": "Essayer le Web Portal",
     "tagline": "Gérez commandes de location, calendrier et produits dans une seule application — essai gratuit.",
@@ -120,7 +120,7 @@
   },
   "whyChoose": {
     "title": "Pourquoi choisir le logiciel de gestion de boutique de location AnyRent ?",
-    "description": "Rejoignez des centaines d'entreprises de location qui font confiance à notre système de gestion de location. Le logiciel de gestion de boutique de location n°1 au Vietnam.",
+    "description": "Rejoignez des centaines d'entreprises de location qui font confiance à notre système de gestion de location. Le logiciel de gestion de boutique de location de référence au Vietnam.",
     "easyToUse": "Facile à utiliser",
     "easyToUseDesc": "L'interface intuitive de notre logiciel de gestion de boutique de location est conçue pour les propriétaires de boutiques de location, sans compétences techniques requises. Un système de gestion de location simple et convivial.",
     "timeSaving": "Gain de temps",
@@ -192,7 +192,7 @@
   },
   "faq": {
     "title": "Questions fréquentes sur le logiciel de gestion de boutique de location",
-    "description": "Tout ce qu'il faut savoir sur le système de gestion de location AnyRent, le logiciel de gestion de boutique de location n°1",
+    "description": "Tout ce qu'il faut savoir sur le système de gestion de location AnyRent, le logiciel de gestion de boutique de location de référence",
     "items": {
       "freeUse": {
         "question": "Le logiciel de gestion de boutique de location AnyRent est-il gratuit ?",
@@ -286,7 +286,7 @@
     "additionalPricingSr": "Informations sur les tarifs supplémentaires pour les comptes et les extensions de forfait"
   },
   "footer": {
-    "description": "AnyRent - Logiciel de gestion de boutique de location et système de gestion de location n°1 au Vietnam. Solution professionnelle pour la location d'ao dai, de robes de mariée, de matériel, de véhicules, de costumes de spectacle et d'imprimantes. Gestion efficace des commandes de location, du stock et des clients.",
+    "description": "AnyRent - Logiciel de gestion de boutique de location et système de gestion de location de référence au Vietnam. Solution professionnelle pour la location d'ao dai, de robes de mariée, de matériel, de véhicules, de costumes de spectacle et d'imprimantes. Gestion efficace des commandes de location, du stock et des clients.",
     "product": {
       "title": "Produit",
       "features": "Fonctionnalités",

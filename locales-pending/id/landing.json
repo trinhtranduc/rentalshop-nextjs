@@ -17,7 +17,7 @@
     "trustStores": "500+ toko sudah menggunakan",
     "trustRating": "Penilaian 4,9/5",
     "trustSecure": "Aman & stabil",
-    "imageAlt": "Manajemen toko sewa dengan AnyRent di ponsel, di dalam toko"
+    "imageAlt": "Manajemen toko sewa dengan AnyRent di ponsel saat berada di toko"
   },
   "download": {
     "title": "Tersedia di semua platform",
@@ -50,7 +50,7 @@
     "learnMore": "Pelajari pencarian produk dengan gambar AI →"
   },
   "duplicatePrevention": {
-    "badge": "Anti jadwal bentrok",
+    "badge": "Cegah jadwal bentrok",
     "title": "Cegah pesanan ganda",
     "description": "AnyRent otomatis memeriksa jadwal sewa sebelum pesanan dibuat. Produk yang sama tidak bisa dipesan pada tanggal yang sama — menghindari kekecewaan pelanggan dan kehilangan pendapatan.",
     "feature1Title": "Pemeriksaan jadwal otomatis",
@@ -325,7 +325,7 @@
     },
     "weddingDress": {
       "title": "Sewa Gaun Pengantin",
-      "desc": "Koleksi, jadwal fitting, dan paket pernikahan lengkap."
+      "desc": "Koleksi, jadwal coba, dan paket pernikahan lengkap."
     },
     "equipment": {
       "title": "Sewa Peralatan",
