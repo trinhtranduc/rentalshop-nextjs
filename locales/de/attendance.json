@@ -1,0 +1,418 @@
+{
+  "title": "Zeiterfassung",
+  "weekday": {
+    "1": "Mo",
+    "2": "Di",
+    "3": "Mi",
+    "4": "Do",
+    "5": "Fr",
+    "6": "Sa",
+    "7": "So"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "save": "Speichern",
+    "working": "Wird gespeichert…",
+    "loading": "Wird geladen…",
+    "loadFailed": "Daten konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "outlet": "Filiale",
+    "prevMonth": "Vormonat",
+    "nextMonth": "Nächster Monat",
+    "month": "Monat {month}",
+    "hours": "{hours} Std.",
+    "exportXlsx": "Excel exportieren",
+    "notAvailable": "Das Geschäft hat das Modul Zeiterfassung nicht aktiviert. Wenden Sie sich an AnyRent, um es zu aktivieren.",
+    "noAccess": "Nur Geschäftsinhaber und Filialleiter können diese Seite nutzen.",
+    "noOutlet": "Noch keine Filiale vorhanden."
+  },
+  "timesheet": {
+    "title": "Stundenübersicht · Monat {month}",
+    "subtitle": "{count} Mitarbeiter · {lock}",
+    "unlocked": "Monat nicht gesperrt",
+    "locked": "Monat gesperrt",
+    "lock": "Monat sperren",
+    "unlock": "Monat entsperren",
+    "absent": "Abwesend",
+    "empty": "Die Filiale hat in diesem Monat noch keine Mitarbeiter oder Stempelungen.",
+    "kpi": {
+      "totalHours": "Stunden gesamt",
+      "pairs": "Ein-/Ausstempelungen",
+      "missingOut": "Fehlende Ausstempelung",
+      "suspected": "Verdacht auf Betrug"
+    },
+    "col": {
+      "staff": "Mitarbeiter",
+      "hours": "Std.",
+      "days": "Tage"
+    },
+    "legend": {
+      "ok": "passt zur Schicht",
+      "late": "zu spät / zu früh",
+      "ot": "über die Zeit",
+      "miss": "Ausstempelung fehlt",
+      "fake": "Verdacht auf Betrug",
+      "absent": "Schicht, aber nicht eingestempelt",
+      "sunday": "Sonntag",
+      "hint": "Auf Namen klicken → Monatsdetails · auf Zelle klicken → Details dieses Tages"
+    }
+  },
+  "export": {
+    "title": "Stundenübersicht als Excel exportieren",
+    "month": "Monat",
+    "parts": "Enthält",
+    "grid": "Monatstabelle (Stunden pro Tag, Gesamtstunden, Anzahl Tage)",
+    "scans": "Details jeder Stempelung (Stunden, Ergebnis, Entfernung, Koordinaten)",
+    "edits": "Änderungsverlauf der Zeiterfassung",
+    "download": ".xlsx-Datei herunterladen",
+    "failed": "Excel-Datei konnte nicht exportiert werden."
+  },
+  "lock": {
+    "title": "Monat {month} sperren?",
+    "body": "Nach dem Sperren kann der Filialleiter die Zeiten dieses Monats nicht mehr ändern. Nur der Geschäftsinhaber kann entsperren (mit Protokoll). Das spätere Modul Gehaltsabrechnung verwendet gesperrte Monate.",
+    "confirm": "Monat sperren",
+    "locked": "Monat {month} gesperrt",
+    "unlockTitle": "Monat {month} entsperren?",
+    "unlockBody": "Nach dem Entsperren können die Zeiten dieses Monats wieder geändert werden. Wird protokolliert.",
+    "unlockConfirm": "Entsperren",
+    "unlocked": "Monat {month} entsperrt"
+  },
+  "person": {
+    "back": "‹ Stundenübersicht Monat {month}",
+    "title": "Zeiterfassung pro Person",
+    "pick": "Mitarbeiter wählen",
+    "add": "+ Stempelung hinzufügen",
+    "map": "Karte",
+    "edit": "Bearbeiten",
+    "empty": "Keine Stempelungen.",
+    "noStaff": "Die Filiale hat noch keine Mitarbeiter.",
+    "forgotOut": "Ausstempelung vergessen",
+    "suspected": "Verdacht auf Betrug",
+    "late": "{n}′ zu spät",
+    "early": "{n}′ zu früh",
+    "overtime": "{n}′ über die Zeit",
+    "filter": {
+      "label": "Stempelungen filtern",
+      "all": "Alle Stempelungen",
+      "rejected": "Abgelehnt",
+      "suspected": "Verdacht auf Betrug"
+    },
+    "kpi": {
+      "days": "Arbeitstage",
+      "hours": "Stunden gesamt",
+      "lateEarly": "Zu spät / zu früh",
+      "overtime": "Über die Zeit",
+      "missingOut": "Fehlende Ausstempelung",
+      "suspected": "Verdacht auf Betrug"
+    },
+    "col": {
+      "day": "Tag",
+      "time": "Stempelzeit",
+      "kind": "Art",
+      "result": "Ergebnis",
+      "distance": "Entfernung zur Filiale",
+      "gps": "GPS",
+      "coords": "Koordinaten",
+      "shift": "Schicht",
+      "note": "Notiz"
+    },
+    "kind": {
+      "IN": "Ein",
+      "OUT": "Aus",
+      "EDIT": "Bearbeitet"
+    },
+    "result": {
+      "ACCEPTED": "Erfasst",
+      "REJECTED": "Abgelehnt",
+      "AUTO_CLOSED": "Automatisch geschlossen",
+      "EDITED": "Bearbeitet"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "Koordinaten identisch mit der letzten Stempelung",
+      "SPEED": "ungewöhnlich schnelle Bewegung"
+    },
+    "error": {
+      "OUT_OF_RANGE": "Außerhalb des Bereichs von {radius} m",
+      "GPS_INACCURATE": "GPS noch nicht genau",
+      "MOCK_LOCATION": "Gefälschter Standort",
+      "QR_EXPIRED": "QR-Code abgelaufen",
+      "QR_WRONG_OUTLET": "QR-Code gehört zu einer anderen Filiale",
+      "ATTENDANCE_NOT_CONFIGURED": "Filiale hat keinen Standort eingerichtet",
+      "ATTENDANCE_LOCATION_NOT_SET": "Filiale hat keinen Standort festgelegt (Entfernung nicht gemessen)",
+      "other": "Abgelehnt"
+    },
+    "editIn": "ein {time}",
+    "editOut": "aus {time}",
+    "nextDay": "(am Folgetag)"
+  },
+  "edit": {
+    "title": "Zeit bearbeiten · {name} · {date}",
+    "current": "Aktuelle Stempelung: ein {in}, aus {out}",
+    "outAt": "aus {time}",
+    "noOut": "keine Ausstempelung (wird am Tagesende automatisch geschlossen)",
+    "checkIn": "Einstempeln",
+    "checkOut": "Ausstempeln",
+    "reason": "Grund (Pflicht)",
+    "reasonPlaceholder": "Ausstempelung vergessen, vom Manager bestätigt",
+    "note": "Speichert den Verlauf: wer, was, wann geändert wurde. Gesperrte Monate können nicht geändert werden.",
+    "addOther": "+ Weitere Stempelung hinzufügen",
+    "saved": "Zeit bearbeitet"
+  },
+  "add": {
+    "title": "Stempelung hinzufügen · {name}",
+    "sub": "Verwenden, wenn der Mitarbeiter gearbeitet hat, aber nicht stempeln konnte.",
+    "date": "Datum",
+    "reasonPlaceholder": "Handy-Akku leer",
+    "confirm": "Stempelung hinzufügen",
+    "added": "Stempelung hinzugefügt"
+  },
+  "map": {
+    "title": "Standort bei Stempelung · {name} · {when}",
+    "label": "Karte mit Standort der Stempelung und Zeiterfassungsbereich",
+    "distance": "{m} m von der Filiale entfernt",
+    "gps": "GPS ±{m} m",
+    "accepted": "Erfasst",
+    "rejected": "Abgelehnt: {reason}"
+  },
+  "shifts": {
+    "title": "Schichtplanung",
+    "subtitle": "Woche {from} – {to} · heute {today}",
+    "prevWeek": "‹ Vorherige Woche",
+    "nextWeek": "Nächste Woche ›",
+    "assign": "Schicht zuweisen",
+    "addShift": "Schicht hinzufügen",
+    "legendRepeat": "↻ Plan wiederholt sich wöchentlich",
+    "legendLock": "🔒 Schicht begonnen / Tag vorbei: nicht änderbar",
+    "legendEdited": "✎ Tag separat bearbeitet",
+    "empty": "Die Filiale hat noch keine Mitarbeiter.",
+    "rules": "Aktive wiederkehrende Pläne",
+    "rulesHint": "Ändern, beenden oder löschen wirkt nur auf noch nicht gearbeitete Tage",
+    "rulesEmpty": "Noch keine wiederkehrenden Pläne.",
+    "noEnd": "Kein Enddatum",
+    "edit": "Bearbeiten",
+    "stop": "Beenden ab…",
+    "delete": "Löschen",
+    "col": {
+      "staff": "Mitarbeiter",
+      "shift": "Schicht",
+      "weekdays": "Wochentage",
+      "from": "Von",
+      "to": "Bis"
+    },
+    "lockedToday": "Heute bereits eingestempelt"
+  },
+  "day": {
+    "lockedBody": "🔒 Diese Schicht hat bereits begonnen oder der Tag ist vorbei, daher nicht änderbar. Um Arbeitszeiten zu ändern, die Stundenübersicht öffnen.",
+    "current": "Aktuell: {shift} ({source})",
+    "sourceRule": "nach wiederkehrendem Plan",
+    "sourceDay": "separat bearbeitet",
+    "none": "Keine Schicht",
+    "editable": "noch nicht eingestempelt, änderbar",
+    "pick": "Schicht für diesen Tag",
+    "custom": "Individuelle Zeit",
+    "customStart": "Individuelle Zeit: Beginn",
+    "customEnd": "Ende",
+    "note": "Ändert nur diesen Tag. Die Folgewochen bleiben beim wiederkehrenden Plan. Die App benachrichtigt {name}.",
+    "clear": "Schicht für diesen Tag löschen",
+    "saved": "Schicht für {date} geändert"
+  },
+  "assign": {
+    "title": "Schicht zuweisen (wöchentlich wiederholt)",
+    "sub": "Einmal zuweisen, wöchentlich wiederholt bis zur Änderung.",
+    "shift": "1. Schicht",
+    "staff": "2. Mitarbeiter",
+    "weekdays": "3. Wochentage",
+    "from": "Beginnen am",
+    "to": "Enden am (optional)",
+    "toPlaceholder": "Kein Enddatum",
+    "preview": "↻ Wöchentlich wiederholt",
+    "previewLine": "{names} · {shift} · {days} · ab {from}",
+    "previewTo": " bis {to}",
+    "conflict": "{name} hat bereits einen Plan {shift} {days}.",
+    "keep": "Bereits gearbeitete oder separat bearbeitete Tage bleiben unverändert.",
+    "confirm": "Schicht zuweisen · Mitarbeiter benachrichtigen",
+    "noTemplates": "Noch keine Schichtvorlage. Zuerst im Reiter Schichtvorlagen anlegen.",
+    "saved": "Schicht zugewiesen"
+  },
+  "ruleEdit": {
+    "title": "Wiederkehrenden Plan bearbeiten · {name}",
+    "shift": "Schicht",
+    "weekdays": "Wochentage",
+    "from": "Gültig ab",
+    "note": "Bereits gearbeitete oder vergangene Tage bleiben unverändert.",
+    "saved": "Wiederkehrenden Plan bearbeitet"
+  },
+  "ruleStop": {
+    "title": "Wiederkehrenden Plan beenden · {name}",
+    "last": "Enden nach dem Tag",
+    "note": "Ab {next} hat {name} keine Schicht {shift} mehr. Beispiel: wenn ein Mitarbeiter kündigt oder der Plan wechselt.",
+    "confirm": "Plan beenden",
+    "saved": "Wiederkehrenden Plan beendet"
+  },
+  "ruleDelete": {
+    "title": "Wiederkehrenden Plan löschen · {name}?",
+    "note": "Nicht gearbeitete Tage haben dann keine Schicht {shift} mehr. Bereits gearbeitete Tage bleiben in der Stundenübersicht erhalten.",
+    "confirm": "Plan löschen",
+    "saved": "Wiederkehrenden Plan gelöscht"
+  },
+  "templates": {
+    "title": "Schichtvorlagen",
+    "subtitle": "{outlet} · für die Schichtzuweisung",
+    "add": "+ Neue Schichtvorlage",
+    "minutes": "{n} Min.",
+    "used": "Ja",
+    "unused": "Nein",
+    "hidden": "Ausgeblendet",
+    "edit": "Bearbeiten",
+    "hide": "Ausblenden",
+    "delete": "Löschen",
+    "show": "Wieder anzeigen",
+    "shown": "Schichtvorlage wieder angezeigt",
+    "empty": "Noch keine Schichtvorlagen.",
+    "hint": "Verwendete Schichtvorlagen können nur ausgeblendet werden (Verlauf bleibt erhalten); ungenutzte können gelöscht werden. Zeitänderungen gelten nur für noch nicht gearbeitete Tage.",
+    "col": {
+      "shift": "Schicht",
+      "time": "Zeit",
+      "break": "Pause",
+      "used": "In Verwendung"
+    }
+  },
+  "templateForm": {
+    "newTitle": "Neue Schichtvorlage",
+    "editTitle": "Schichtvorlage bearbeiten",
+    "name": "Schichtname",
+    "start": "Beginn",
+    "end": "Ende",
+    "break": "Pause während der Schicht (Min.)",
+    "color": "Farbe",
+    "colors": {
+      "blue": "Blau",
+      "purple": "Lila",
+      "green": "Grün",
+      "orange": "Orange"
+    },
+    "overnight": "Ende vor Beginn (z. B. 22:00–02:00) = Nachtschicht, wird dem Starttag zugerechnet.",
+    "editNote": "Zeitänderungen gelten nur für noch nicht gearbeitete Tage; vergangene Tage behalten die alte Zeit.",
+    "create": "Schichtvorlage anlegen",
+    "saved": "Schichtvorlage gespeichert"
+  },
+  "templateHide": {
+    "title": "Schichtvorlage \"{name}\" ausblenden?",
+    "sub": "Diese Schicht wurde bereits verwendet und kann nicht gelöscht werden.",
+    "note": "Ausgeblendet: Sie kann beim Zuweisen nicht mehr gewählt werden. Laufende Pläne mit dieser Schicht bleiben aktiv; bereits gearbeitete Tage bleiben unverändert.",
+    "confirm": "Schichtvorlage ausblenden",
+    "saved": "Schichtvorlage ausgeblendet"
+  },
+  "templateDelete": {
+    "title": "Schichtvorlage \"{name}\" löschen?",
+    "sub": "Diese Schicht wurde noch nie verwendet.",
+    "confirm": "Löschen",
+    "saved": "Schichtvorlage gelöscht"
+  },
+  "outlets": {
+    "qrDaily": "QR-Code vorhanden · wechselt täglich",
+    "qrFixed": "QR-Code vorhanden · fest",
+    "noQr": "Kein Code erstellt",
+    "open": "Öffnen ›"
+  },
+  "locations": {
+    "locationSet": "Standort festgelegt",
+    "title": "QR-Code & Standort der Zeiterfassung",
+    "subtitle": "Pro Filiale ein QR-Code, Standort und Liste der Personen, die sich erfassen müssen.",
+    "col": {
+      "outlet": "Filiale",
+      "address": "Adresse",
+      "qr": "QR-Code",
+      "radius": "Radius"
+    },
+    "radius": "{radius} m",
+    "back": "‹ QR-Code & Standort"
+  },
+  "outlet": {
+    "notFound": "Diese Filiale konnte nicht geöffnet werden.",
+    "section": "⏱ Zeiterfassung",
+    "location": "Standort der Zeiterfassung",
+    "noLocation": "Kein Standort festgelegt",
+    "current": "📍 Aktueller Standort",
+    "pick": "Auf der Karte wählen",
+    "picking": "Auf die Karte klicken, um den Filialstandort festzulegen.",
+    "geoFailed": "Aktueller Standort konnte nicht ermittelt werden. Standortberechtigung des Browsers prüfen.",
+    "ownerOnly": "Nur der Geschäftsinhaber kann Standort und Radius ändern.",
+    "radius": "Erlaubter Radius:",
+    "radiusHint": "50–500 m. GPS in Gebäuden weicht meist 10–50 m ab.",
+    "checks": "Prüfung beim Scannen: richtiger Filial-Code, gültig · im Radius · GPS ≤ 100 m · gefälschter Standort blockiert · Serverzeit. Ausstempelung vergessen: wird am Tagesende automatisch geschlossen, 0 Stunden bis der Admin bearbeitet.",
+    "qrTitle": "QR-Code von {name}",
+    "qrMode": "Code-Typ",
+    "daily": "Wechselt täglich (empfohlen)",
+    "fixed": "Fest",
+    "dailyHint": "Neuer Code um 00:00 Uhr (vietnamesische Zeit). Auf dem Kassengerät anzeigen oder jeden Morgen neu drucken.",
+    "fixedHint": "Einmal drucken und an die Wand kleben. Fotos bleiben gültig; Schutz durch GPS und Erkennung gefälschter Standorte.",
+    "todayCaption": "Heutiger Code · {date} · wechselt automatisch um 00:00",
+    "fixedCaption": "Fester Code · erstellt {date}",
+    "noQr": "Die Filiale hat noch keinen QR-Code.",
+    "createQr": "QR-Code erstellen",
+    "qrCreated": "QR-Code erstellt",
+    "print": "QR drucken",
+    "kiosk": "Link für Kassengerät",
+    "newCode": "Neuen Code erstellen",
+    "modeSaved": "Code-Typ geändert",
+    "saved": "Standort der Zeiterfassung gespeichert",
+    "saveRadiusTitle": "Radius ändern?",
+    "saveRadiusSub": "Von {from} m auf {to} m",
+    "saveLocationTitle": "Standort der Zeiterfassung ändern?",
+    "saveLocationSub": "Neue Koordinaten: {coords}",
+    "saveNote": "Gilt sofort für die nächsten Scans."
+  },
+  "members": {
+    "title": "Wer sich in dieser Filiale erfassen muss",
+    "hint": "Nur ausgewählte Personen sehen die Karte Zeiterfassung in der App und erscheinen in Schichtplanung und Stundenübersicht",
+    "note": "Standard: ausgewählte Mitarbeiter und Lagerpersonal; Filialleiter und Geschäftsinhaber nicht. Abwählen: Die Person sieht nichts zur Zeiterfassung und kann keine neuen Schichten erhalten; alte Stunden bleiben erhalten.",
+    "toggle": "{name} muss sich erfassen",
+    "on": "{name}: muss sich erfassen",
+    "off": "{name}: muss sich nicht erfassen",
+    "ownerOnly": "Nur der Geschäftsinhaber kann ändern",
+    "empty": "Die Filiale hat noch niemanden."
+  },
+  "newCode": {
+    "title": "Neuen QR-Code erstellen?",
+    "body": "Der aktuelle Code wird sofort ungültig. Nutzt die Filiale einen festen QR-Code, muss der neue Code gedruckt und erneut aufgeklebt werden. Kassengeräte wechseln automatisch.",
+    "confirm": "Neuen Code erstellen",
+    "done": "Neuer Code erstellt, alter Code ungültig"
+  },
+  "print": {
+    "title": "QR-Code drucken · {name}",
+    "body": "Format A5, Filialname und Anleitung \"AnyRent-App öffnen → Einstellungen → Zeiterfassung → Code scannen\".",
+    "dailyNote": "Typ Wechselt täglich: Ausdruck ist nur am {date} gültig.",
+    "confirm": "Drucken",
+    "howTo": "AnyRent-App öffnen → Einstellungen → Zeiterfassung → Code scannen",
+    "validOn": "Nur gültig am {date}"
+  },
+  "kioskLink": {
+    "title": "Link zur QR-Anzeige für das Kassengerät",
+    "none": "Die Filiale hat noch keinen Link für ein Kassengerät.",
+    "note": "Diesen Link auf einem Tablet oder einem alten Handy an der Kasse öffnen. Keine Anmeldung nötig, keine Auswirkung auf Konten. Die Anzeige wechselt den Code um 00:00 Uhr.",
+    "copy": "Kopieren",
+    "copied": "Link kopiert",
+    "copyFailed": "Kopieren nicht möglich. Bitte den Link markieren und kopieren.",
+    "newLink": "Neuen Link erstellen",
+    "create": "Link erstellen",
+    "created": "Neuer Link erstellt; alter Link ist ungültig"
+  },
+  "kiosk": {
+    "title": "Zeiterfassung",
+    "help": "AnyRent-App öffnen → Einstellungen → Zeiterfassung → diesen Code scannen",
+    "daily": "Heutiger Code · wechselt automatisch um 00:00",
+    "fixed": "Fester Code",
+    "recent": "Zuletzt",
+    "none": "Heute hat sich noch niemand erfasst.",
+    "in": "Ein",
+    "out": "Aus",
+    "loading": "Wird geladen…",
+    "invalid": "Dieser Link zum Kassengerät ist nicht mehr gültig. Bitte beim Geschäftsinhaber einen neuen Link anfordern.",
+    "moduleOff": "Das Geschäft hat das Modul Zeiterfassung nicht aktiviert.",
+    "notConfigured": "Die Filiale hat noch keinen Standort eingerichtet oder keinen QR-Code erstellt.",
+    "failed": "Code konnte nicht geladen werden. Neuer Versuch läuft…"
+  }
+}

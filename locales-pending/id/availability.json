@@ -1,0 +1,191 @@
+{
+  "title": "Cek ketersediaan produk sewa",
+  "subtitle": "Pilih tanggal dan produk untuk melihat apakah toko masih cukup stok.",
+  "breadcrumb": "Cek ketersediaan",
+  "sections": {
+    "product": "Pilih produk",
+    "period": "Periode sewa"
+  },
+  "pickupDate": "Tanggal ambil",
+  "returnDate": "Tanggal kembali",
+  "quantity": "Jumlah",
+  "outlet": "Cabang",
+  "selectOutlet": "Pilih cabang",
+  "searchPlaceholder": "Cari nama atau barcode",
+  "changeProduct": "Ganti produk",
+  "noProductsFound": "Produk tidak ditemukan",
+  "maxProductsReached": "Sudah mencapai maksimal 20 produk",
+  "idle": {
+    "title": "Pilih produk dan tanggal sewa",
+    "description": "Pilih periode sewa dan produk di sebelah kiri — hasil tampil di sebelah kanan",
+    "pickDates": "Pilih tanggal sewa untuk dicek"
+  },
+  "product": {
+    "rentPrice": "Harga sewa",
+    "deposit": "Uang muka",
+    "category": "Kategori"
+  },
+  "checking": "Sedang memeriksa…",
+  "missingOutlet": "Pilih cabang untuk memeriksa ketersediaan",
+  "invalidDates": "Tanggal kembali tidak boleh sebelum tanggal ambil",
+  "status": {
+    "available": "Tersedia",
+    "unavailable": "Habis",
+    "warning": "Tersedia"
+  },
+  "result": {
+    "canRent": "Dapat disewakan {count} unit",
+    "cannotRent": "Stok tidak cukup",
+    "insufficient": "Butuh {need} unit, hanya {have} unit kosong"
+  },
+  "availableUnits": "Tersisa {count} unit",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "Butuh {need} unit, kosong {have} unit pada periode ini",
+  "conflictsCount": "Ada {count} pesanan bentrok pada periode ini",
+  "stock": {
+    "total": "Total stok",
+    "renting": "Sedang disewa",
+    "freeInPeriod": "Kosong pada periode",
+    "bookedInPeriod": "Dipesan pada periode"
+  },
+  "orders": {
+    "title": "Pesanan untuk produk ini",
+    "noActiveOrders": "Tidak ada pesanan aktif",
+    "viewAll": "Lihat pesanan ({count})",
+    "ordersLabel": "pesanan",
+    "conflicts": "bentrok",
+    "conflictBadge": "Bentrok",
+    "conflictNote": "{count} pesanan bentrok dengan periode yang dicek",
+    "dialogTitle": "Pesanan: {name}",
+    "page": "Halaman {current}/{total}",
+    "conflictsCount": "{count} pesanan bentrok",
+    "orderNumber": "Pesanan",
+    "customer": "Pelanggan",
+    "period": "Periode sewa",
+    "qty": "Jml",
+    "status": "Status",
+    "statusReserved": "Dipesan",
+    "statusPickuped": "Disewa"
+  },
+  "timeline": {
+    "title": "Jadwal sewa",
+    "today": "Hari ini",
+    "noOrders": "Belum ada pesanan"
+  },
+  "conflicts": {
+    "title": "Pesanan bentrok",
+    "orderNumber": "Pesanan",
+    "customer": "Pelanggan",
+    "period": "Periode sewa",
+    "quantity": "Jml"
+  },
+  "actions": {
+    "retry": "Coba lagi",
+    "checkAgain": "Periksa lagi"
+  },
+  "copy": {
+    "available": "{name} tersedia {count} unit dari {pickup} sampai {return}.",
+    "unavailable": "{name} habis pada periode {pickup} – {return} (butuh {need}, kosong {have})."
+  },
+  "errors": {
+    "checkFailed": "Tidak dapat memeriksa ketersediaan",
+    "loadProductFailed": "Tidak dapat memuat produk"
+  },
+  "productsTitle": "Produk yang akan dicek",
+  "quick": {
+    "today": "Hari ini",
+    "tomorrow": "Besok",
+    "weekend": "Akhir pekan",
+    "threeDays": "3 hari"
+  },
+  "summary": {
+    "allOk": "Stok cukup untuk {count} produk",
+    "someShort": "{count} produk stoknya tidak cukup",
+    "pickDates": "Pilih tanggal sewa untuk melihat yang tersedia"
+  },
+  "badge": {
+    "free": "Tersisa {free}/{total}",
+    "short": "Kurang {count}",
+    "error": "Galat"
+  },
+  "search": {
+    "price": "Harga {price}",
+    "stock": "Tersisa {available}/{total}"
+  },
+  "empty": {
+    "title": "Belum ada produk",
+    "description": "Cari produk berdasarkan nama, kode, atau barcode. Anda dapat memeriksa beberapa produk sekaligus."
+  },
+  "detail": {
+    "freeHeadline": "Tersisa {count} unit",
+    "free": "Kosong",
+    "busy": "Terpakai",
+    "need": "Dibutuhkan",
+    "barLabel": "Kosong {free}, terpakai {busy}, dibutuhkan {need}, total stok {total}",
+    "days": "Jumlah unit kosong per hari",
+    "dayHint": "Ketuk satu hari untuk dicek mulai dari hari itu",
+    "dayLabel": "{date}: tersisa {free} unit",
+    "conflicts": "Pesanan bentrok ({count})",
+    "noConflicts": "Tidak ada pesanan yang bentrok pada periode ini."
+  },
+  "remove": "Hapus {name}",
+  "decrease": "Kurangi jumlah",
+  "increase": "Tambah jumlah",
+  "web": {
+    "title": "Cek ketersediaan",
+    "outlet": "Cabang",
+    "product": "Produk",
+    "productPlaceholder": "Cari nama atau kode produk",
+    "noProducts": "Produk tidak ditemukan",
+    "searching": "Mencari…",
+    "pickup": "Hari serah terima",
+    "return": "Hari pengembalian",
+    "quantity": "Jumlah",
+    "check": "Cek",
+    "quick": {
+      "today": "Hari ini",
+      "tomorrow": "Besok",
+      "weekend": "Akhir pekan",
+      "threeDays": "3 hari"
+    },
+    "reversed": "Hari pengembalian harus sama dengan atau setelah hari serah terima.",
+    "pickProduct": "Pilih produk untuk melihat berapa unit yang tersedia pada jadwal ini.",
+    "pickOutlet": "Pilih cabang untuk dicek.",
+    "has": "{total} unit · {from} → {to}",
+    "free": "Tersisa {free}/{total} untuk jadwal ini",
+    "short": "Kurang {missing} · tersisa {free}/{total}",
+    "none": "Habis pada jadwal ini",
+    "checking": "Sedang memeriksa…",
+    "checkFailed": "Tidak dapat memeriksa.",
+    "retry": "Coba lagi",
+    "createOrder": "Buat pesanan dengan jadwal ini",
+    "dayLeft": "Tersisa pada hari itu",
+    "dayAria": "{day}: tersisa {count}. Ketuk untuk mulai jadwal dari hari ini",
+    "note": "Satu hari dihitung sebagai hari serah terima dan hari pengembalian, termasuk saat keduanya di hari yang sama. Area biru muda adalah jadwal yang sedang dicek. Klik satu hari untuk memindahkan jadwal ke hari tersebut.",
+    "status": {
+      "RESERVED": "Dipesan",
+      "PICKUPED": "Disewa"
+    },
+    "bar": {
+      "returnOn": "kembali {day}",
+      "range": "{from} → {to}"
+    },
+    "holders": "Pesanan yang memegang produk ini",
+    "noHolders": "Belum ada pesanan yang memegang produk ini.",
+    "holdersFailed": "Tidak dapat memuat pesanan yang memegang produk ini.",
+    "units": "{count} unit",
+    "walkIn": "Pelanggan umum",
+    "similar": "Kategori sama, tersedia pada jadwal ini",
+    "similarFree": "Tersisa {count}",
+    "similarEmpty": "Tidak ada produk dari kategori yang sama yang tersedia pada jadwal ini.",
+    "priceSuffix": {
+      "DAILY": "{price}/hari",
+      "HOURLY": "{price}/jam",
+      "FIXED": "{price}/sewa",
+      "WEEKLY": "{price}/minggu",
+      "MONTHLY": "{price}/bulan"
+    },
+    "change": "Ganti produk",
+    "weekdays": "Min,Sen,Sel,Rab,Kam,Jum,Sab"
+  }
+}

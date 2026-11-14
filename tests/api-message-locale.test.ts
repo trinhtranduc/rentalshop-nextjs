@@ -13,6 +13,7 @@ import { ResponseBuilder } from '../packages/utils/src/api/response-builder';
 const root = path.resolve(__dirname, '..');
 const en = JSON.parse(fs.readFileSync(path.join(root, 'locales/en/errors.json'), 'utf8'));
 const vi = JSON.parse(fs.readFileSync(path.join(root, 'locales/vi/errors.json'), 'utf8'));
+const ja = JSON.parse(fs.readFileSync(path.join(root, 'locales/ja/errors.json'), 'utf8'));
 
 describe('#986 API message locale', () => {
   it('picks English or Vietnamese from the first language tag', () => {
@@ -25,8 +26,13 @@ describe('#986 API message locale', () => {
     expect(resolveApiMessageLocale('vi-VN,en;q=0.5')).toBe('vi');
   });
 
+  it('ja → Japanese catalog (#1553 phase 3)', () => {
+    expect(resolveApiMessageLocale('ja')).toBe('ja');
+    expect(resolveApiMessageLocale('ja-JP,en;q=0.5')).toBe('ja');
+  });
+
   // #1556 (#1553): a language the API has no catalog for gets English, like the shop pages (#1551), not Vietnamese
-  it.each(['ja', 'ko-KR,en;q=0.8', 'zh-CN', 'ru', 'fr-FR,fr;q=0.9', 'zh-TW', 'th'])('%s → English', (header) => {
+  it.each(['ko-KR,en;q=0.8', 'zh-CN', 'ru', 'fr-FR,fr;q=0.9', 'zh-TW', 'th'])('%s → English', (header) => {
     expect(resolveApiMessageLocale(header)).toBe('en');
   });
 
@@ -65,7 +71,7 @@ describe('#986 API message locale', () => {
       expect(await ask('vi-VN')).toBe(vi.INVALID_CREDENTIALS);
       expect(await ask()).toBe(vi.INVALID_CREDENTIALS);
       // #1556 a language with no catalog gets English
-      expect(await ask('ja')).toBe(en.INVALID_CREDENTIALS);
+      expect(await ask('ja')).toBe(ja.INVALID_CREDENTIALS);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

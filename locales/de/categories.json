@@ -1,0 +1,144 @@
+{
+  "title": "Kategorien",
+  "addCategory": "Kategorie hinzufügen",
+  "editCategory": "Kategorie bearbeiten",
+  "categoryDetails": "Kategoriedetails",
+  "fields": {
+    "name": "Kategoriename",
+    "description": "Beschreibung",
+    "status": "Status",
+    "productCount": "Anzahl Artikel",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "labels": {
+    "default": "Standard"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "filters": {
+    "all": "Alle Kategorien",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "actions": {
+    "viewDetails": "Details anzeigen",
+    "edit": "Kategorie bearbeiten",
+    "activate": "Aktivieren",
+    "deactivate": "Deaktivieren",
+    "delete": "Löschen",
+    "create": "Kategorie erstellen",
+    "update": "Kategorie aktualisieren",
+    "addCategory": "Kategorie hinzufügen",
+    "editCategory": "Kategorie bearbeiten",
+    "deleteCategory": "Kategorie löschen",
+    "viewProducts": "Artikel anzeigen",
+    "backToCategories": "Zurück zu den Kategorien"
+  },
+  "messages": {
+    "createSuccess": "Kategorie erfolgreich erstellt",
+    "createFailed": "Kategorie konnte nicht erstellt werden",
+    "updateSuccess": "Kategorie erfolgreich aktualisiert",
+    "updateFailed": "Kategorie konnte nicht aktualisiert werden",
+    "deleteSuccess": "Kategorie erfolgreich gelöscht",
+    "deleteFailed": "Kategorie konnte nicht gelöscht werden",
+    "confirmDelete": "Möchten Sie diese Kategorie wirklich löschen?",
+    "noCategories": "Keine Kategorien gefunden",
+    "noCategoriesDescription": "Passen Sie die Suche an oder fügen Sie Kategorien hinzu, um zu beginnen.",
+    "loadingCategories": "Kategorien werden geladen...",
+    "tryAdjustingSearch": "Passen Sie Ihre Suche an",
+    "getStarted": "Fügen Sie Ihre erste Kategorie hinzu, um zu beginnen"
+  },
+  "search": {
+    "placeholder": "Kategorien suchen..."
+  },
+  "stats": {
+    "totalCategories": "Kategorien gesamt",
+    "activeCategories": "Aktiv",
+    "totalProducts": "Artikel gesamt"
+  },
+  "dialogs": {
+    "addCategoryTitle": "Neue Kategorie hinzufügen",
+    "editCategoryTitle": "Kategorie bearbeiten",
+    "deleteCategoryTitle": "Kategorie löschen"
+  },
+  "dialog": {
+    "addNew": "Neue Kategorie hinzufügen",
+    "addNewDescription": "Neue Kategorie zur Organisation der Artikel erstellen",
+    "edit": "Kategorie bearbeiten",
+    "editDescription": "Kategorieinformationen aktualisieren",
+    "viewDetails": "Kategoriedetails",
+    "viewDescription": "Informationen und Details der Kategorie ansehen",
+    "deleteTitle": "Kategorie löschen",
+    "deleteConfirmation": "Möchten Sie die Kategorie wirklich löschen",
+    "deleteWarning": "Diese Aktion kann nicht rückgängig gemacht werden. Alle Artikel in dieser Kategorie sind betroffen.",
+    "neverUpdated": "Noch nie aktualisiert"
+  },
+  "validation": {
+    "nameRequired": "Kategoriename ist erforderlich",
+    "nameMinLength": "Der Kategoriename muss mindestens 2 Zeichen lang sein",
+    "nameMaxLength": "Der Kategoriename muss weniger als 50 Zeichen lang sein",
+    "descriptionMaxLength": "Die Beschreibung muss weniger als 200 Zeichen lang sein",
+    "characters": "Zeichen"
+  },
+  "web": {
+    "title": "Kategorien",
+    "add": "Kategorie hinzufügen",
+    "searchLabel": "Kategorien suchen",
+    "searchPlaceholder": "Kategoriename suchen",
+    "cols": {
+      "name": "Name",
+      "description": "Beschreibung",
+      "createdAt": "Erstellt",
+      "actions": "Aktionen"
+    },
+    "sortBy": "Sortieren nach {column}",
+    "default": "Standard",
+    "view": "Ansehen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "viewDetails": "Details anzeigen",
+    "more": "Weitere Aktionen für {name}",
+    "empty": "Noch keine Kategorien vorhanden. Legen Sie eine Kategorie an, um Ihre Artikel zu gruppieren.",
+    "emptySearch": "Keine Kategorie entspricht Ihrer Suche.",
+    "loadFailed": "Kategorien konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "form": {
+      "addTitle": "Kategorie hinzufügen",
+      "editTitle": "Kategorie bearbeiten",
+      "name": "Kategoriename",
+      "namePlaceholder": "Z. B.: Kleider",
+      "required": "erforderlich",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Optional",
+      "count": "{count}/{max}",
+      "cancel": "Abbrechen",
+      "create": "Hinzufügen",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "close": "Schließen"
+    },
+    "detail": {
+      "title": "Kategoriedetails",
+      "noDescription": "Keine Beschreibung vorhanden"
+    },
+    "confirm": {
+      "deleteTitle": "Kategorie löschen",
+      "deleteBody": "Kategorie „{name}“ löschen? Dies kann nicht rückgängig gemacht werden.",
+      "cancel": "Behalten",
+      "delete": "Kategorie löschen",
+      "deleting": "Wird gelöscht…"
+    },
+    "footer": {
+      "show": "Anzeigen",
+      "perPage": "Zeilen pro Seite",
+      "perPageLabel": "Zeilen pro Seite",
+      "pages": "Seiten",
+      "range": "{from}–{to} von {total} Kategorien",
+      "prev": "Vorherige Seite",
+      "next": "Nächste Seite"
+    }
+  }
+}

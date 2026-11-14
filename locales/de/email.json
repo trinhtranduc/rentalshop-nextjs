@@ -1,0 +1,161 @@
+{
+  "planChange": {
+    "title": "Tarif wurde geändert",
+    "greeting": "Guten Tag",
+    "message": "Ihr Abonnement-Tarif wurde erfolgreich geändert. Details:",
+    "oldPlan": "Bisheriger Tarif",
+    "newPlan": "Neuer Tarif",
+    "billingCycle": "Abrechnungszeitraum",
+    "periodStart": "Startdatum",
+    "periodEnd": "Enddatum",
+    "footer": "© {year} AnyRent. Alle Rechte vorbehalten.",
+    "systemName": "AnyRent",
+    "systemTagline": "Verwaltungssystem für Vermietung"
+  },
+  "subscriptionRenewal": {
+    "title": "Abonnement erfolgreich verlängert",
+    "greeting": "Guten Tag",
+    "message": "Ihr Abonnement-Tarif wurde erfolgreich verlängert. Vielen Dank, dass Sie unseren Service weiter nutzen!",
+    "planName": "Abonnement-Tarif",
+    "paymentMethod": "Zahlungsmethode",
+    "transactionId": "Transaktionsnummer",
+    "periodStart": "Startdatum",
+    "periodEnd": "Enddatum",
+    "footer": "© {year} AnyRent. Alle Rechte vorbehalten.",
+    "systemName": "AnyRent",
+    "systemTagline": "Verwaltungssystem für Vermietung"
+  },
+  "subscriptionExtension": {
+    "title": "Abonnement verlängert",
+    "greeting": "Guten Tag",
+    "message": "Ihr Abonnement-Tarif wurde verlängert. Die Laufzeit wurde aktualisiert.",
+    "planName": "Abonnement-Tarif",
+    "oldEndDate": "Bisheriges Enddatum",
+    "newEndDate": "Neues Enddatum",
+    "extensionDays": "Verlängerungszeitraum",
+    "method": "Verlängerungsart",
+    "description": "Beschreibung",
+    "footer": "© {year} AnyRent. Alle Rechte vorbehalten.",
+    "systemName": "AnyRent",
+    "systemTagline": "Verwaltungssystem für Vermietung"
+  },
+  "subscriptionExpiryReminder": {
+    "title": "Abonnement läuft bald ab",
+    "subject": "Abonnement läuft in {days} {unit} ab - {planName}",
+    "greeting": "Guten Tag",
+    "message": "Ihr Abonnement läuft in {days} {unit} ab. Bitte kontaktieren Sie AnyRent, um zu verlängern und Ihren Shop dauerhaft aktiv zu halten.",
+    "trialMessage": "Ihre kostenlose Testphase endet in {days} {unit}. Kontaktieren Sie AnyRent, um einen Tarif zu wählen, Ihre Daten zu behalten und weiterzuarbeiten.",
+    "planName": "Abonnement-Tarif",
+    "expiryDate": "Ablaufdatum",
+    "daysRemaining": "Verbleibende Zeit",
+    "dayUnit": "Tag",
+    "daysUnit": "Tage",
+    "cta": "Zur Verlängerung kontaktieren",
+    "alreadyRenewed": "Falls Sie bereits verlängert haben, können Sie diese E-Mail ignorieren.",
+    "footer": "© {year} AnyRent. Alle Rechte vorbehalten.",
+    "systemName": "AnyRent",
+    "systemTagline": "Verwaltungssystem für Vermietung"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "Abonnement wurde gekündigt",
+      "message": "Ihr Abonnement wurde gekündigt. Wenn Sie den Service weiter nutzen möchten, kontaktieren Sie uns bitte, um das Abonnement wieder zu aktivieren.",
+      "status": "Gekündigt"
+    },
+    "paused": {
+      "title": "Abonnement pausiert",
+      "message": "Ihr Abonnement wurde pausiert. Sie können es jederzeit über Ihre Abonnementverwaltung wieder aktivieren.",
+      "status": "Pausiert"
+    },
+    "resumed": {
+      "title": "Abonnement wieder aktiviert",
+      "message": "Ihr Abonnement wurde wieder aktiviert. Sie können ab sofort alle Funktionen Ihres Tarifs wieder nutzen.",
+      "status": "Wieder aktiviert"
+    },
+    "greeting": "Guten Tag",
+    "planName": "Tarif",
+    "status": "Status",
+    "periodEnd": "Enddatum",
+    "reason": "Grund",
+    "footer": "© {year} AnyRent. Alle Rechte vorbehalten.",
+    "systemName": "AnyRent",
+    "systemTagline": "Verwaltungssystem für Vermietung"
+  },
+  "addonChange": {
+    "created": {
+      "title": "Zusatzpaket hinzugefügt",
+      "message": "Ein neues Zusatzpaket wurde Ihrem Konto hinzugefügt. Ihre Limits wurden erhöht.",
+      "action": "Hinzugefügt"
+    },
+    "updated": {
+      "title": "Zusatzpaket aktualisiert",
+      "message": "Ihr Zusatzpaket wurde aktualisiert. Die Limits wurden angepasst.",
+      "action": "Aktualisiert"
+    },
+    "deleted": {
+      "title": "Zusatzpaket gelöscht",
+      "message": "Ein Zusatzpaket wurde von Ihrem Konto entfernt. Ihre Limits wurden reduziert.",
+      "action": "Gelöscht"
+    },
+    "activated": {
+      "title": "Zusatzpaket aktiviert",
+      "message": "Ihr Zusatzpaket wurde aktiviert. Die Limits wurden angewendet.",
+      "action": "Aktiviert"
+    },
+    "deactivated": {
+      "title": "Zusatzpaket deaktiviert",
+      "message": "Ihr Zusatzpaket wurde deaktiviert. Die zusätzlichen Limits wurden entfernt.",
+      "action": "Deaktiviert"
+    },
+    "greeting": "Guten Tag",
+    "action": "Aktion",
+    "addonLimits": "Zusatzlimits",
+    "notes": "Hinweise",
+    "noSpecificLimits": "Keine bestimmten Limits",
+    "outlets": "{count} Filialen",
+    "users": "{count} Benutzer",
+    "products": "{count} Artikel",
+    "customers": "{count} Kunden",
+    "orders": "{count} Aufträge",
+    "createdMessage": "Sie können diese zusätzlichen Limits ab sofort nutzen.",
+    "deletedMessage": "Bitte stellen Sie sicher, dass Ihre aktuelle Anzahl das neue Limit nicht überschreitet.",
+    "updatedMessage": "Die Änderungen wurden für Ihr Konto übernommen.",
+    "footer": "© {year} AnyRent. Alle Rechte vorbehalten.",
+    "systemName": "AnyRent",
+    "systemTagline": "Verwaltungssystem für Vermietung"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "1 Monat",
+      "quarterly": "3 Monate",
+      "semi_annual": "6 Monate",
+      "annual": "1 Jahr"
+    },
+    "paymentMethods": {
+      "STRIPE": "Kredit-/Debitkarte",
+      "TRANSFER": "Banküberweisung",
+      "CASH": "Bargeld"
+    }
+  },
+  "accountEmail": {
+    "tagline": "Verwaltungssystem für Vermietung",
+    "hello": "Guten Tag",
+    "linkHint": "Falls die Schaltfläche nicht funktioniert, kopieren Sie den folgenden Link in Ihren Browser:",
+    "noteLabel": "Hinweis:",
+    "rights": "Alle Rechte vorbehalten."
+  },
+  "verification": {
+    "subject": "Bestätigen Sie Ihre E-Mail-Adresse - AnyRent",
+    "title": "Bestätigen Sie Ihre E-Mail-Adresse",
+    "intro": "Vielen Dank für Ihre Registrierung bei AnyRent! Um die Registrierung abzuschließen und Ihr Konto zu aktivieren, bestätigen Sie bitte Ihre E-Mail-Adresse über die Schaltfläche unten:",
+    "button": "E-Mail bestätigen",
+    "note": "Dieser Link läuft in 24 Stunden ab. Haben Sie dieses Konto nicht angelegt, ignorieren Sie diese E-Mail bitte."
+  },
+  "passwordReset": {
+    "subject": "Passwort zurücksetzen - AnyRent",
+    "title": "Passwort zurücksetzen",
+    "intro": "Wir haben eine Anfrage zum Zurücksetzen des Passworts für Ihr AnyRent-Konto erhalten. Um ein neues Passwort festzulegen, klicken Sie bitte auf die Schaltfläche unten:",
+    "button": "Passwort zurücksetzen",
+    "note": "Dieser Link läuft in 24 Stunden ab. Haben Sie das Zurücksetzen nicht angefordert, ignorieren Sie diese E-Mail bitte; Ihr Passwort bleibt unverändert."
+  }
+}

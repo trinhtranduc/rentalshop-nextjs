@@ -1,0 +1,139 @@
+{
+  "title": "Календарь выдачи",
+  "navigation": {
+    "today": "Сегодня",
+    "previousMonth": "Предыдущий месяц",
+    "nextMonth": "Следующий месяц",
+    "goToToday": "К сегодняшнему дню"
+  },
+  "labels": {
+    "pickups": "Выдачи",
+    "returns": "Возвраты",
+    "totalOrders": "Всего заказов",
+    "pickupOrders": "Заказы на выдачу",
+    "returnOrders": "Заказы на возврат",
+    "pickup": "Выдача",
+    "return": "Возврат",
+    "order": "Заказ",
+    "customer": "Клиент",
+    "product": "Товар",
+    "type": "Тип",
+    "status": "Статус",
+    "amount": "Сумма",
+    "returnDate": "Дата возврата",
+    "overdue": "Просрочено",
+    "month": "Месяц",
+    "noOrders": "Нет заказов",
+    "more": "Ещё...",
+    "filterByStatus": "Фильтр по статусу"
+  },
+  "stats": {
+    "ordersToday": "Заказы сегодня",
+    "ordersThisWeek": "Заказы за неделю",
+    "ordersThisMonth": "Заказы за месяц",
+    "pickupsToday": "Выдачи сегодня",
+    "returnsToday": "Возвраты сегодня",
+    "monthlyStatistics": "Статистика за месяц",
+    "activeDays": "Рабочие дни",
+    "daysWithScheduledOrders": "дней с запланированными заказами",
+    "dateRange": "Период",
+    "to": "по"
+  },
+  "modal": {
+    "ordersFor": "Заказы на {date}",
+    "pickupOrders": "Заказы на выдачу",
+    "returnOrders": "Заказы на возврат",
+    "viewDetails": "Подробнее",
+    "close": "Закрыть",
+    "loading": "Загрузка заказов...",
+    "ordersFound": "заказы",
+    "ordersFoundPlural": "заказы",
+    "orders": "заказы",
+    "noOrders": "Нет заказов",
+    "noPickupReturnOrders": "На этот день не запланировано ни одной выдачи или возврата.",
+    "items": "товары"
+  },
+  "empty": {
+    "noOrders": "Нет заказов",
+    "noPickups": "Нет заказов на выдачу",
+    "noReturns": "Нет заказов на возврат",
+    "selectDate": "Выберите дату, чтобы увидеть заказы"
+  },
+  "loading": {
+    "loadingCalendar": "Загрузка календаря...",
+    "loadingOrders": "Загрузка заказов..."
+  },
+  "days": {
+    "sunday": "ВС",
+    "monday": "Пн",
+    "tuesday": "Вт",
+    "wednesday": "Ср",
+    "thursday": "Чт",
+    "friday": "Пт",
+    "saturday": "Сб"
+  },
+  "months": {
+    "january": "Январь",
+    "february": "Февраль",
+    "march": "Март",
+    "april": "Апрель",
+    "may": "Май",
+    "june": "Июнь",
+    "july": "Июль",
+    "august": "Август",
+    "september": "Сентябрь",
+    "october": "Октябрь",
+    "november": "Ноябрь",
+    "december": "Декабрь"
+  },
+  "web": {
+    "title": "Календарь выдачи и возвратов",
+    "monthNames": "Январь,Февраль,Март,Апрель,Май,Июнь,Июль,Август,Сентябрь,Октябрь,Ноябрь,Декабрь",
+    "monthTitle": "{month}, {year}",
+    "weekdays": "ВС,Пн,Вт,Ср,Чт,Пт,Сб",
+    "prevMonth": "Предыдущий месяц",
+    "nextMonth": "Следующий месяц",
+    "today": "Сегодня",
+    "monthLabel": "Календарь на месяц",
+    "dayPanel": "Дела на день",
+    "legend": {
+      "pickups": "Выдача",
+      "returns": "Возврат",
+      "late": "Просрочен возврат"
+    },
+    "cell": {
+      "pickups": "Выдач: {count}",
+      "returns": "Возвратов: {count}",
+      "late": "Просрочено: {count}"
+    },
+    "aria": {
+      "pickups": "выдач",
+      "returns": "возвратов",
+      "late": "просрочено"
+    },
+    "dayTitleToday": "{day} · сегодня",
+    "sections": {
+      "pickups": "Выдать · {count}",
+      "returns": "Принять возврат · {count}"
+    },
+    "sub": {
+      "returnOn": "возврат {day}",
+      "sameDay": "выдача и возврат в один день",
+      "pickedOn": "выдача {day}",
+      "late": "срок возврата {day} · просрочка {days} дн.",
+      "notPrepared": "не собран"
+    },
+    "money": {
+      "collect": "осталось получить {amount}",
+      "refund": "возврат предоплаты {amount}",
+      "fee": "доплата {amount}"
+    },
+    "emptyPickups": "Нет заказов на выдачу.",
+    "emptyReturns": "Нет заказов на приём возврата.",
+    "walkIn": "Клиент без брони",
+    "loadFailed": "Не удалось загрузить заказы за месяц.",
+    "dayFailed": "Не удалось загрузить заказы за этот день.",
+    "retry": "Повторить",
+    "more": "Показать ещё"
+  }
+}

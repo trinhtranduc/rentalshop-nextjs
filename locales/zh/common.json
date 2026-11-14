@@ -1,4 +1,17 @@
 {
+  "actions": {
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "create": "新建",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "search": "搜索",
+    "export": "导出",
+    "import": "导入",
+    "selectAll": "全选"
+  },
   "buttons": {
     "save": "保存",
     "cancel": "取消",
@@ -28,6 +41,8 @@
     "saving": "保存中...",
     "creating": "创建中...",
     "tryAgain": "重试",
+    "viewMoreDetails": "查看更多详情",
+    "hideDetails": "收起详情",
     "viewAll": "查看全部"
   },
   "labels": {
@@ -118,6 +133,7 @@
     "authors": "作者",
     "outlets": "门店",
     "categories": "类别",
+    "availabilityCheck": "检查档期",
     "reports": "报告",
     "analytics": "分析"
   },
@@ -129,10 +145,10 @@
     "page": "页",
     "rowsPerPage": "每页行数",
     "pageSizeRange": "每页 1 到 {max} 行",
+    "itemsPerPage": "每页条数",
     "first": "首页",
     "last": "末页",
     "noData": "无数据可显示",
-    "itemsPerPage": "每页条数",
     "apply": "应用",
     "items": {
       "items": "项",
@@ -181,13 +197,25 @@
   },
   "roles": {
     "ADMIN": "管理员",
+    "ARTICLE": "文章编辑",
     "MERCHANT": "商户",
     "OUTLET_ADMIN": "门店管理员",
     "OUTLET_STAFF": "门店员工",
     "OUTLET_INVENTORY": "库存员"
   },
-  "actions": {
-    "selectAll": "全选"
+  "import": {
+    "preview": {
+      "total": "合计",
+      "valid": "有效",
+      "invalid": "无效",
+      "errors": "错误",
+      "errorsPlural": "错误",
+      "duplicates": "重复",
+      "duplicatesPlural": "重复",
+      "status": "状态",
+      "showing": "显示前 {maxRows} 行，共 {total} 行",
+      "validStatus": "有效"
+    }
   },
   "shell": {
     "nav": {
@@ -269,6 +297,22 @@
     },
     "breadcrumb": "当前位置",
     "searchOpen": "打开搜索"
+  },
+  "dateRange": {
+    "title": "选择日期范围",
+    "placeholder": "选择日期",
+    "weekdays": "日,一,二,三,四,五,六",
+    "month": "{year}年{month}月",
+    "prev": "上个月",
+    "next": "下个月",
+    "pickStart": "先点开始日期，再点结束日期",
+    "pickEnd": "点结束日期（只选一天则再点一次开始日期）",
+    "summary": "{from} → {to} · {days, plural, other {# 天}}",
+    "single": "{from} · 1 天",
+    "tooLong": "最多 {days} 天。",
+    "apply": "应用",
+    "cancel": "取消",
+    "close": "关闭"
   },
   "posts": {
     "language": "文章语言",

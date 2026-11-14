@@ -1,0 +1,139 @@
+{
+  "title": "取貨行事曆",
+  "navigation": {
+    "today": "今天",
+    "previousMonth": "上個月",
+    "nextMonth": "下個月",
+    "goToToday": "回到今天"
+  },
+  "labels": {
+    "pickups": "取貨",
+    "returns": "歸還",
+    "totalOrders": "訂單總數",
+    "pickupOrders": "取貨訂單",
+    "returnOrders": "歸還訂單",
+    "pickup": "取貨",
+    "return": "歸還",
+    "order": "訂單",
+    "customer": "客戶",
+    "product": "商品",
+    "type": "類型",
+    "status": "狀態",
+    "amount": "金額",
+    "returnDate": "歸還日",
+    "overdue": "逾期",
+    "month": "月份",
+    "noOrders": "沒有訂單",
+    "more": "更多…",
+    "filterByStatus": "依狀態篩選"
+  },
+  "stats": {
+    "ordersToday": "今日訂單",
+    "ordersThisWeek": "本週訂單",
+    "ordersThisMonth": "本月訂單",
+    "pickupsToday": "今日取貨",
+    "returnsToday": "今日歸還",
+    "monthlyStatistics": "月度統計",
+    "activeDays": "有活動的日子",
+    "daysWithScheduledOrders": "已排定訂單的日數",
+    "dateRange": "日期範圍",
+    "to": "至"
+  },
+  "modal": {
+    "ordersFor": "{date} 的訂單",
+    "pickupOrders": "取貨訂單",
+    "returnOrders": "歸還訂單",
+    "viewDetails": "查看詳情",
+    "close": "關閉",
+    "loading": "正在載入訂單...",
+    "ordersFound": "筆訂單",
+    "ordersFoundPlural": "筆訂單",
+    "orders": "訂單",
+    "noOrders": "沒有訂單",
+    "noPickupReturnOrders": "此日期沒有排定的取貨或歸還訂單。",
+    "items": "件商品"
+  },
+  "empty": {
+    "noOrders": "沒有訂單",
+    "noPickups": "沒有取貨訂單",
+    "noReturns": "沒有歸還訂單",
+    "selectDate": "選擇日期以查看訂單"
+  },
+  "loading": {
+    "loadingCalendar": "正在載入行事曆...",
+    "loadingOrders": "正在載入訂單..."
+  },
+  "days": {
+    "sunday": "日",
+    "monday": "一",
+    "tuesday": "二",
+    "wednesday": "三",
+    "thursday": "四",
+    "friday": "五",
+    "saturday": "六"
+  },
+  "months": {
+    "january": "1 月",
+    "february": "2 月",
+    "march": "3 月",
+    "april": "4 月",
+    "may": "5 月",
+    "june": "6 月",
+    "july": "7 月",
+    "august": "8 月",
+    "september": "9 月",
+    "october": "10 月",
+    "november": "11 月",
+    "december": "12 月"
+  },
+  "web": {
+    "title": "交付與歸還行事曆",
+    "monthNames": "1 月,2 月,3 月,4 月,5 月,6 月,7 月,8 月,9 月,10 月,11 月,12 月",
+    "monthTitle": "{year} 年 {month}",
+    "weekdays": "日,一,二,三,四,五,六",
+    "prevMonth": "上個月",
+    "nextMonth": "下個月",
+    "today": "今天",
+    "monthLabel": "月曆",
+    "dayPanel": "當日待辦",
+    "legend": {
+      "pickups": "交付",
+      "returns": "歸還",
+      "late": "逾期未還"
+    },
+    "cell": {
+      "pickups": "交付 {count}",
+      "returns": "歸還 {count}",
+      "late": "逾期 {count}"
+    },
+    "aria": {
+      "pickups": "交付",
+      "returns": "歸還",
+      "late": "逾期"
+    },
+    "dayTitleToday": "{day} · 今天",
+    "sections": {
+      "pickups": "待交付 · {count}",
+      "returns": "待收回 · {count}"
+    },
+    "sub": {
+      "returnOn": "{day} 歸還",
+      "sameDay": "當天交付並歸還",
+      "pickedOn": "{day} 交付",
+      "late": "歸還期限 {day} · 逾期 {days} 天",
+      "notPrepared": "尚未備貨"
+    },
+    "money": {
+      "collect": "尚收 {amount}",
+      "refund": "退還訂金 {amount}",
+      "fee": "加收 {amount}"
+    },
+    "emptyPickups": "沒有待交付的訂單。",
+    "emptyReturns": "沒有待收回的訂單。",
+    "walkIn": "現場客",
+    "loadFailed": "無法載入本月訂單數量。",
+    "dayFailed": "無法載入此日訂單。",
+    "retry": "重試",
+    "more": "查看更多"
+  }
+}

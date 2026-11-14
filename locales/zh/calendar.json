@@ -1,0 +1,139 @@
+{
+  "title": "取货日历",
+  "navigation": {
+    "today": "今天",
+    "previousMonth": "上月",
+    "nextMonth": "下月",
+    "goToToday": "回到今天"
+  },
+  "labels": {
+    "pickups": "取货",
+    "returns": "还货",
+    "totalOrders": "订单总数",
+    "pickupOrders": "取货订单",
+    "returnOrders": "还货订单",
+    "pickup": "取货",
+    "return": "还货",
+    "order": "订单",
+    "customer": "客户",
+    "product": "商品",
+    "type": "类型",
+    "status": "状态",
+    "amount": "金额",
+    "returnDate": "还货日期",
+    "overdue": "超期",
+    "month": "月份",
+    "noOrders": "暂无订单",
+    "more": "更多...",
+    "filterByStatus": "按状态筛选"
+  },
+  "stats": {
+    "ordersToday": "今日订单",
+    "ordersThisWeek": "本周订单",
+    "ordersThisMonth": "本月订单",
+    "pickupsToday": "今日取货",
+    "returnsToday": "今日还货",
+    "monthlyStatistics": "月度统计",
+    "activeDays": "活跃天数",
+    "daysWithScheduledOrders": "天有已排期订单",
+    "dateRange": "日期范围",
+    "to": "至"
+  },
+  "modal": {
+    "ordersFor": "{date} 的订单",
+    "pickupOrders": "取货订单",
+    "returnOrders": "还货订单",
+    "viewDetails": "查看详情",
+    "close": "关闭",
+    "loading": "正在加载订单...",
+    "ordersFound": "个订单",
+    "ordersFoundPlural": "个订单",
+    "orders": "订单",
+    "noOrders": "暂无订单",
+    "noPickupReturnOrders": "该日期没有安排取货或还货订单。",
+    "items": "件商品"
+  },
+  "empty": {
+    "noOrders": "暂无已排期订单",
+    "noPickups": "暂无取货安排",
+    "noReturns": "暂无还货安排",
+    "selectDate": "选择日期以查看订单"
+  },
+  "loading": {
+    "loadingCalendar": "正在加载日历...",
+    "loadingOrders": "正在加载订单..."
+  },
+  "days": {
+    "sunday": "周日",
+    "monday": "周一",
+    "tuesday": "周二",
+    "wednesday": "周三",
+    "thursday": "周四",
+    "friday": "周五",
+    "saturday": "周六"
+  },
+  "months": {
+    "january": "1月",
+    "february": "2月",
+    "march": "3月",
+    "april": "4月",
+    "may": "5月",
+    "june": "6月",
+    "july": "7月",
+    "august": "8月",
+    "september": "9月",
+    "october": "10月",
+    "november": "11月",
+    "december": "12月"
+  },
+  "web": {
+    "title": "取还日历",
+    "monthNames": "1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月",
+    "monthTitle": "{year}年{month}",
+    "weekdays": "周日,周一,周二,周三,周四,周五,周六",
+    "prevMonth": "上月",
+    "nextMonth": "下月",
+    "today": "今天",
+    "monthLabel": "月历",
+    "dayPanel": "当日事项",
+    "legend": {
+      "pickups": "交货",
+      "returns": "还货",
+      "late": "超期未还"
+    },
+    "cell": {
+      "pickups": "交货 {count}",
+      "returns": "还货 {count}",
+      "late": "超期 {count}"
+    },
+    "aria": {
+      "pickups": "交货",
+      "returns": "还货",
+      "late": "超期"
+    },
+    "dayTitleToday": "{day} · 今天",
+    "sections": {
+      "pickups": "待交货 · {count}",
+      "returns": "待收货 · {count}"
+    },
+    "sub": {
+      "returnOn": "{day} 还货",
+      "sameDay": "当日交货并还货",
+      "pickedOn": "{day} 交货",
+      "late": "应还 {day} · 超期 {days} 天",
+      "notPrepared": "未备货"
+    },
+    "money": {
+      "collect": "还需收取 {amount}",
+      "refund": "退订金 {amount}",
+      "fee": "另收 {amount}"
+    },
+    "emptyPickups": "没有需交货的订单。",
+    "emptyReturns": "没有需收货的订单。",
+    "walkIn": "散客",
+    "loadFailed": "无法加载本月数据。",
+    "dayFailed": "无法加载当日订单。",
+    "retry": "重试",
+    "more": "查看更多"
+  }
+}

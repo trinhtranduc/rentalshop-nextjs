@@ -1,0 +1,161 @@
+{
+  "planChange": {
+    "title": "Le forfait d'abonnement a été modifié",
+    "greeting": "Bonjour",
+    "message": "Votre forfait d'abonnement a bien été modifié. Voici les détails :",
+    "oldPlan": "Ancien forfait",
+    "newPlan": "Nouveau forfait",
+    "billingCycle": "Cycle de facturation",
+    "periodStart": "Date de début",
+    "periodEnd": "Date de fin",
+    "footer": "© {year} AnyRent. Tous droits réservés.",
+    "systemName": "AnyRent",
+    "systemTagline": "Système de gestion de location"
+  },
+  "subscriptionRenewal": {
+    "title": "Renouvellement de l'abonnement réussi",
+    "greeting": "Bonjour",
+    "message": "Votre forfait d'abonnement a bien été renouvelé. Merci de continuer à utiliser nos services !",
+    "planName": "Forfait d'abonnement",
+    "paymentMethod": "Mode de paiement",
+    "transactionId": "Numéro de transaction",
+    "periodStart": "Date de début",
+    "periodEnd": "Date de fin",
+    "footer": "© {year} AnyRent. Tous droits réservés.",
+    "systemName": "AnyRent",
+    "systemTagline": "Système de gestion de location"
+  },
+  "subscriptionExtension": {
+    "title": "Prolongation de l'abonnement",
+    "greeting": "Bonjour",
+    "message": "Votre forfait d'abonnement a été prolongé. La durée de votre abonnement a été mise à jour.",
+    "planName": "Forfait d'abonnement",
+    "oldEndDate": "Ancienne date de fin",
+    "newEndDate": "Nouvelle date de fin",
+    "extensionDays": "Durée de la prolongation",
+    "method": "Mode de prolongation",
+    "description": "Description",
+    "footer": "© {year} AnyRent. Tous droits réservés.",
+    "systemName": "AnyRent",
+    "systemTagline": "Système de gestion de location"
+  },
+  "subscriptionExpiryReminder": {
+    "title": "Votre abonnement arrive à échéance",
+    "subject": "Votre forfait d'abonnement expire dans {days} {unit} - {planName}",
+    "greeting": "Bonjour",
+    "message": "Votre forfait d'abonnement expire dans {days} {unit}. Veuillez contacter AnyRent pour le renouveler afin que votre boutique reste opérationnelle sans interruption.",
+    "trialMessage": "Votre période d'essai gratuite se termine dans {days} {unit}. Contactez AnyRent pour choisir un forfait d'abonnement, conserver vos données et continuer à utiliser le service.",
+    "planName": "Forfait d'abonnement",
+    "expiryDate": "Date d'expiration",
+    "daysRemaining": "Temps restant",
+    "dayUnit": "jour",
+    "daysUnit": "jours",
+    "cta": "Contacter pour renouveler",
+    "alreadyRenewed": "Si vous avez déjà renouvelé, vous pouvez ignorer cet e-mail.",
+    "footer": "© {year} AnyRent. Tous droits réservés.",
+    "systemName": "AnyRent",
+    "systemTagline": "Système de gestion de location"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "Le forfait d'abonnement a été annulé",
+      "message": "Votre forfait d'abonnement a été annulé. Si vous souhaitez continuer à utiliser le service, veuillez nous contacter pour réactiver votre forfait d'abonnement.",
+      "status": "Annulé"
+    },
+    "paused": {
+      "title": "Le forfait d'abonnement a été suspendu",
+      "message": "Votre forfait d'abonnement a été suspendu. Vous pouvez le réactiver à tout moment depuis la page de gestion de vos abonnements.",
+      "status": "Suspendu"
+    },
+    "resumed": {
+      "title": "Le forfait d'abonnement a été réactivé",
+      "message": "Votre forfait d'abonnement a été réactivé. Vous pouvez dès maintenant utiliser toutes les fonctionnalités de votre forfait.",
+      "status": "Réactivé"
+    },
+    "greeting": "Bonjour",
+    "planName": "Forfait",
+    "status": "Statut",
+    "periodEnd": "Date de fin",
+    "reason": "Motif",
+    "footer": "© {year} AnyRent. Tous droits réservés.",
+    "systemName": "AnyRent",
+    "systemTagline": "Système de gestion de location"
+  },
+  "addonChange": {
+    "created": {
+      "title": "Une option complémentaire a été ajoutée",
+      "message": "Une nouvelle option complémentaire a été ajoutée à votre compte. Vos limites ont été augmentées.",
+      "action": "Ajoutée"
+    },
+    "updated": {
+      "title": "Une option complémentaire a été mise à jour",
+      "message": "Votre option complémentaire a été mise à jour. Les limites ont été ajustées.",
+      "action": "Mise à jour"
+    },
+    "deleted": {
+      "title": "Une option complémentaire a été supprimée",
+      "message": "Une option complémentaire a été supprimée de votre compte. Vos limites ont été réduites.",
+      "action": "Supprimée"
+    },
+    "activated": {
+      "title": "Une option complémentaire a été activée",
+      "message": "Votre option complémentaire a été activée. Les limites ont été appliquées.",
+      "action": "Activée"
+    },
+    "deactivated": {
+      "title": "Une option complémentaire a été désactivée",
+      "message": "Votre option complémentaire a été désactivée. Les limites correspondantes ont été retirées.",
+      "action": "Désactivée"
+    },
+    "greeting": "Bonjour",
+    "action": "Action",
+    "addonLimits": "Limites de l'option complémentaire",
+    "notes": "Remarques",
+    "noSpecificLimits": "Aucune limite spécifique",
+    "outlets": "{count} point(s) de vente",
+    "users": "{count} utilisateur(s)",
+    "products": "{count} produit(s)",
+    "customers": "{count} client(s)",
+    "orders": "{count} commande(s)",
+    "createdMessage": "Vous pouvez utiliser ces limites supplémentaires dès maintenant.",
+    "deletedMessage": "Veuillez vous assurer que votre nombre actuel ne dépasse pas les nouvelles limites.",
+    "updatedMessage": "Les modifications ont été appliquées à votre compte.",
+    "footer": "© {year} AnyRent. Tous droits réservés.",
+    "systemName": "AnyRent",
+    "systemTagline": "Système de gestion de location"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "1 mois",
+      "quarterly": "3 mois",
+      "semi_annual": "6 mois",
+      "annual": "1 an"
+    },
+    "paymentMethods": {
+      "STRIPE": "Carte bancaire",
+      "TRANSFER": "Virement bancaire",
+      "CASH": "Espèces"
+    }
+  },
+  "accountEmail": {
+    "tagline": "Système de gestion de location",
+    "hello": "Bonjour",
+    "linkHint": "Si le bouton ne fonctionne pas, vous pouvez copier le lien suivant et le coller dans votre navigateur :",
+    "noteLabel": "Remarque :",
+    "rights": "Tous droits réservés."
+  },
+  "verification": {
+    "subject": "Vérifiez votre adresse e-mail - AnyRent",
+    "title": "Vérifiez votre adresse e-mail",
+    "intro": "Merci de vous être inscrit sur AnyRent ! Pour finaliser votre inscription et activer votre compte, veuillez vérifier votre adresse e-mail en cliquant sur le bouton ci-dessous :",
+    "button": "Vérifier l'e-mail",
+    "note": "Ce lien expire dans 24 heures. Si vous n'avez pas créé ce compte, veuillez ignorer cet e-mail."
+  },
+  "passwordReset": {
+    "subject": "Réinitialisation de votre mot de passe - AnyRent",
+    "title": "Réinitialisez votre mot de passe",
+    "intro": "Nous avons reçu une demande de réinitialisation du mot de passe de votre compte AnyRent. Pour créer un nouveau mot de passe, veuillez cliquer sur le bouton ci-dessous :",
+    "button": "Réinitialiser le mot de passe",
+    "note": "Ce lien expire dans 24 heures. Si vous n'avez pas demandé de réinitialisation, veuillez ignorer cet e-mail : votre mot de passe ne sera pas modifié."
+  }
+}

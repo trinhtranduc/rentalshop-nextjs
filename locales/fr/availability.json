@@ -1,0 +1,191 @@
+{
+  "title": "Vérifier la disponibilité des produits",
+  "subtitle": "Choisissez les dates et les produits pour vérifier si la boutique dispose de stock suffisant.",
+  "breadcrumb": "Vérification de disponibilité",
+  "sections": {
+    "product": "Choisir le produit",
+    "period": "Période de location"
+  },
+  "pickupDate": "Date de remise",
+  "returnDate": "Date de retour",
+  "quantity": "Quantité",
+  "outlet": "Point de vente",
+  "selectOutlet": "Choisir le point de vente",
+  "searchPlaceholder": "Rechercher un nom ou un code-barres",
+  "changeProduct": "Changer de produit",
+  "noProductsFound": "Aucun produit trouvé",
+  "maxProductsReached": "Limite de 20 produits atteinte",
+  "idle": {
+    "title": "Choisir le produit et les dates de location",
+    "description": "Choisissez la période de location et le produit à gauche. Le résultat s'affiche à droite.",
+    "pickDates": "Choisissez les dates de location pour vérifier"
+  },
+  "product": {
+    "rentPrice": "Prix de location",
+    "deposit": "Acompte",
+    "category": "Catégorie"
+  },
+  "checking": "Vérification en cours…",
+  "missingOutlet": "Choisissez un point de vente pour vérifier la disponibilité",
+  "invalidDates": "La date de retour ne peut pas être antérieure à la date de remise",
+  "status": {
+    "available": "Disponible",
+    "unavailable": "Épuisé",
+    "warning": "Disponible"
+  },
+  "result": {
+    "canRent": "Location possible pour {count} unité(s)",
+    "cannotRent": "Stock insuffisant",
+    "insufficient": "{need} unité(s) nécessaires, seulement {have} disponible(s)"
+  },
+  "availableUnits": "{count} unité(s) disponible(s)",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "{need} unité(s) nécessaires, {have} disponible(s) sur cette période",
+  "conflictsCount": "{count} commande(s) sur la même période",
+  "stock": {
+    "total": "Stock total",
+    "renting": "En location",
+    "freeInPeriod": "Disponibles sur la période",
+    "bookedInPeriod": "Réservées sur la période"
+  },
+  "orders": {
+    "title": "Commandes de ce produit",
+    "noActiveOrders": "Aucune commande en cours",
+    "viewAll": "Voir les commandes ({count})",
+    "ordersLabel": "commande(s)",
+    "conflicts": "sur la même période",
+    "conflictBadge": "Même période",
+    "conflictNote": "{count} commande(s) sur la période vérifiée",
+    "dialogTitle": "Commandes : {name}",
+    "page": "Page {current}/{total}",
+    "conflictsCount": "{count} commande(s) sur la même période",
+    "orderNumber": "N° de commande",
+    "customer": "Client",
+    "period": "Période de location",
+    "qty": "Qté",
+    "status": "Statut",
+    "statusReserved": "Réservée",
+    "statusPickuped": "En location"
+  },
+  "timeline": {
+    "title": "Planning de location",
+    "today": "Aujourd'hui",
+    "noOrders": "Aucune commande pour l'instant"
+  },
+  "conflicts": {
+    "title": "Commandes sur la même période",
+    "orderNumber": "N° de commande",
+    "customer": "Client",
+    "period": "Période de location",
+    "quantity": "Qté"
+  },
+  "actions": {
+    "retry": "Réessayer",
+    "checkAgain": "Vérifier à nouveau"
+  },
+  "copy": {
+    "available": "{name} : {count} unité(s) disponible(s) du {pickup} au {return}.",
+    "unavailable": "{name} : épuisé pour la période du {pickup} au {return} ({need} nécessaires, {have} disponibles)."
+  },
+  "errors": {
+    "checkFailed": "Impossible de vérifier la disponibilité",
+    "loadProductFailed": "Impossible de charger les informations du produit"
+  },
+  "productsTitle": "Produits à vérifier",
+  "quick": {
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "weekend": "Week-end",
+    "threeDays": "3 jours"
+  },
+  "summary": {
+    "allOk": "Stock suffisant pour les {count} produits",
+    "someShort": "{count} produit(s) en stock insuffisant",
+    "pickDates": "Choisissez les dates de location pour voir la disponibilité"
+  },
+  "badge": {
+    "free": "Disponible {free}/{total}",
+    "short": "Manque {count}",
+    "error": "Erreur"
+  },
+  "search": {
+    "price": "Prix {price}",
+    "stock": "Disponible {available}/{total}"
+  },
+  "empty": {
+    "title": "Aucun produit choisi",
+    "description": "Recherchez un produit par nom, code ou code-barres. Vous pouvez vérifier plusieurs produits à la fois."
+  },
+  "detail": {
+    "freeHeadline": "{count} unité(s) disponible(s)",
+    "free": "Disponible",
+    "busy": "Occupé",
+    "need": "Nécessaire",
+    "barLabel": "Disponible {free}, occupé {busy}, nécessaire {need}, stock total {total}",
+    "days": "Unités disponibles par jour",
+    "dayHint": "Cliquez sur un jour pour vérifier à partir de ce jour",
+    "dayLabel": "{date} : {free} unité(s) disponible(s)",
+    "conflicts": "Commandes sur la même période ({count})",
+    "noConflicts": "Aucune commande sur cette période."
+  },
+  "remove": "Retirer {name}",
+  "decrease": "Diminuer la quantité",
+  "increase": "Augmenter la quantité",
+  "web": {
+    "title": "Vérifier la disponibilité",
+    "outlet": "Point de vente",
+    "product": "Produit",
+    "productPlaceholder": "Rechercher un nom ou un code produit",
+    "noProducts": "Aucun produit trouvé",
+    "searching": "Recherche…",
+    "pickup": "Date de remise",
+    "return": "Date de retour",
+    "quantity": "Quantité",
+    "check": "Vérifier",
+    "quick": {
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "weekend": "Week-end",
+      "threeDays": "3 jours"
+    },
+    "reversed": "La date de retour doit être égale ou postérieure à la date de remise.",
+    "pickProduct": "Choisissez un produit pour voir combien d'unités sont disponibles sur ce planning.",
+    "pickOutlet": "Choisissez un point de vente pour vérifier.",
+    "has": "{total} unité(s) · {from} → {to}",
+    "free": "{free}/{total} disponible(s) sur tout le planning",
+    "short": "Manque {missing} · {free}/{total} disponible(s)",
+    "none": "Épuisé sur tout ce planning",
+    "checking": "Vérification en cours…",
+    "checkFailed": "Impossible de vérifier.",
+    "retry": "Réessayer",
+    "createOrder": "Créer une commande pour ce planning",
+    "dayLeft": "Restant dans la journée",
+    "dayAria": "{day} : {count} disponible(s). Cliquez pour commencer le planning à ce jour",
+    "note": "Un jour compte la date de remise et la date de retour, y compris lorsque la remise et le retour ont lieu le même jour. La zone bleu clair correspond au planning vérifié. Cliquez sur un jour pour déplacer le planning à cette date.",
+    "status": {
+      "RESERVED": "Réservée",
+      "PICKUPED": "En location"
+    },
+    "bar": {
+      "returnOn": "retour le {day}",
+      "range": "{from} → {to}"
+    },
+    "holders": "Commandes qui retiennent le produit",
+    "noHolders": "Aucune commande ne retient ce produit.",
+    "holdersFailed": "Impossible de charger les commandes qui retiennent le produit.",
+    "units": "{count} unité(s)",
+    "walkIn": "Client de passage",
+    "similar": "Même catégorie, disponible sur ce planning",
+    "similarFree": "{count} disponible(s)",
+    "similarEmpty": "Aucun autre produit de la même catégorie n'est disponible sur ce planning.",
+    "priceSuffix": {
+      "DAILY": "{price}/jour",
+      "HOURLY": "{price}/heure",
+      "FIXED": "{price}/fois",
+      "WEEKLY": "{price}/semaine",
+      "MONTHLY": "{price}/mois"
+    },
+    "change": "Changer de produit",
+    "weekdays": "Di,Lu,Ma,Me,Je,Ve,Sa"
+  }
+}

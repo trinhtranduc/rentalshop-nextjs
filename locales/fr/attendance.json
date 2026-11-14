@@ -1,0 +1,418 @@
+{
+  "title": "Pointage",
+  "weekday": {
+    "1": "Lu",
+    "2": "Ma",
+    "3": "Me",
+    "4": "Je",
+    "5": "Ve",
+    "6": "Sa",
+    "7": "Di"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "working": "Enregistrement…",
+    "loading": "Chargement…",
+    "loadFailed": "Impossible de charger les données.",
+    "retry": "Réessayer",
+    "outlet": "Point de vente",
+    "prevMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "month": "Mois {month}",
+    "hours": "{hours} h",
+    "exportXlsx": "Exporter en Excel",
+    "notAvailable": "La boutique n'a pas activé le module Pointage. Contactez AnyRent pour l'activer.",
+    "noAccess": "Seuls le propriétaire de la boutique et les responsables de point de vente peuvent utiliser cet écran.",
+    "noOutlet": "Aucun point de vente pour l'instant."
+  },
+  "timesheet": {
+    "title": "Feuille de pointage · Mois {month}",
+    "subtitle": "{count} membre(s) du personnel · {lock}",
+    "unlocked": "mois non verrouillé",
+    "locked": "mois verrouillé",
+    "lock": "Verrouiller le mois",
+    "unlock": "Déverrouiller le mois",
+    "absent": "Absent",
+    "empty": "Aucun membre du personnel ni aucun pointage pour ce mois dans ce point de vente.",
+    "kpi": {
+      "totalHours": "Total des heures",
+      "pairs": "Entrées–sorties",
+      "missingOut": "Sortie manquante",
+      "suspected": "Fraude suspectée"
+    },
+    "col": {
+      "staff": "Personnel",
+      "hours": "Heures",
+      "days": "Jours"
+    },
+    "legend": {
+      "ok": "créneau respecté",
+      "late": "retard / départ anticipé",
+      "ot": "heures supplémentaires",
+      "miss": "sortie manquante",
+      "fake": "fraude suspectée",
+      "absent": "créneau prévu, pas de pointage",
+      "sunday": "Dimanche",
+      "hint": "Cliquez sur le nom → détail du mois · cliquez sur une case → détail de ce jour"
+    }
+  },
+  "export": {
+    "title": "Exporter la feuille de pointage en Excel",
+    "month": "Mois",
+    "parts": "Contenu",
+    "grid": "Tableau du mois (heures par jour, total des heures, nombre de jours)",
+    "scans": "Détail de chaque pointage (heure, résultat, distance, coordonnées)",
+    "edits": "Historique des modifications de pointage",
+    "download": "Télécharger le fichier .xlsx",
+    "failed": "Impossible d'exporter le fichier Excel."
+  },
+  "lock": {
+    "title": "Verrouiller le mois {month} ?",
+    "body": "Une fois verrouillé, le responsable de point de vente ne pourra plus modifier le pointage de ce mois. Seul le propriétaire de la boutique peut le déverrouiller (l'historique est conservé). Le module Calcul de paie utilisera à l'avenir les mois verrouillés.",
+    "confirm": "Verrouiller le mois",
+    "locked": "Mois {month} verrouillé",
+    "unlockTitle": "Déverrouiller le mois {month} ?",
+    "unlockBody": "Une fois déverrouillé, le pointage de ce mois pourra à nouveau être modifié. L'action est enregistrée dans l'historique.",
+    "unlockConfirm": "Déverrouiller",
+    "unlocked": "Mois {month} déverrouillé"
+  },
+  "person": {
+    "back": "‹ Feuille de pointage du mois {month}",
+    "title": "Détail du pointage par personne",
+    "pick": "Choisir un membre du personnel",
+    "add": "+ Ajouter un pointage",
+    "map": "Carte",
+    "edit": "Modifier",
+    "empty": "Aucun pointage enregistré.",
+    "noStaff": "Aucun membre du personnel dans ce point de vente.",
+    "forgotOut": "Sortie non pointée",
+    "suspected": "Fraude suspectée",
+    "late": "Retard {n}′",
+    "early": "Départ anticipé {n}′",
+    "overtime": "Heures sup. {n}′",
+    "filter": {
+      "label": "Filtrer les pointages",
+      "all": "Tous les pointages",
+      "rejected": "Refusés",
+      "suspected": "Fraude suspectée"
+    },
+    "kpi": {
+      "days": "Jours travaillés",
+      "hours": "Total des heures",
+      "lateEarly": "Retards / départs anticipés",
+      "overtime": "Heures sup.",
+      "missingOut": "Sorties manquantes",
+      "suspected": "Fraude suspectée"
+    },
+    "col": {
+      "day": "Jour",
+      "time": "Heure du pointage",
+      "kind": "Type",
+      "result": "Résultat",
+      "distance": "Distance du point de vente",
+      "gps": "GPS",
+      "coords": "Coordonnées",
+      "shift": "Créneau",
+      "note": "Note"
+    },
+    "kind": {
+      "IN": "Entrée",
+      "OUT": "Sortie",
+      "EDIT": "Modification"
+    },
+    "result": {
+      "ACCEPTED": "Enregistré",
+      "REJECTED": "Refusé",
+      "AUTO_CLOSED": "Fermé automatiquement",
+      "EDITED": "Modifié"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "coordonnées identiques au pointage précédent",
+      "SPEED": "déplacement anormalement rapide"
+    },
+    "error": {
+      "OUT_OF_RANGE": "Hors de la zone de {radius} m",
+      "GPS_INACCURATE": "GPS pas assez précis",
+      "MOCK_LOCATION": "Position simulée",
+      "QR_EXPIRED": "Code QR expiré",
+      "QR_WRONG_OUTLET": "Code QR d'un autre point de vente",
+      "ATTENDANCE_NOT_CONFIGURED": "Le point de vente n'a pas configuré le pointage",
+      "ATTENDANCE_LOCATION_NOT_SET": "Position du point de vente non définie (distance non mesurée)",
+      "other": "Refusé"
+    },
+    "editIn": "entrée à {time}",
+    "editOut": "sortie à {time}",
+    "nextDay": "(lendemain)"
+  },
+  "edit": {
+    "title": "Modifier le pointage · {name} · {date}",
+    "current": "Pointage actuel : entrée à {in}, {out}",
+    "outAt": "sortie à {time}",
+    "noOut": "pas d'heure de sortie (fermé automatiquement en fin de journée)",
+    "checkIn": "Heure d'entrée",
+    "checkOut": "Heure de sortie",
+    "reason": "Motif (obligatoire)",
+    "reasonPlaceholder": "Sortie non pointée, confirmée par le responsable",
+    "note": "L'historique enregistre qui a modifié, quoi et quand. Impossible de modifier un mois verrouillé.",
+    "addOther": "+ Ajouter un autre pointage",
+    "saved": "Pointage modifié"
+  },
+  "add": {
+    "title": "Ajouter un pointage · {name}",
+    "sub": "À utiliser lorsque le membre du personnel a travaillé mais n'a pas pu pointer.",
+    "date": "Date",
+    "reasonPlaceholder": "Téléphone déchargé",
+    "confirm": "Ajouter le pointage",
+    "added": "Pointage ajouté"
+  },
+  "map": {
+    "title": "Position au moment du pointage · {name} · {when}",
+    "label": "Carte de la position du pointage et de la zone de pointage",
+    "distance": "à {m} m du point de vente",
+    "gps": "GPS ±{m} m",
+    "accepted": "Enregistré",
+    "rejected": "Refusé : {reason}"
+  },
+  "shifts": {
+    "title": "Planification des créneaux",
+    "subtitle": "Semaine du {from} au {to} · aujourd'hui {today}",
+    "prevWeek": "‹ Semaine précédente",
+    "nextWeek": "Semaine suivante ›",
+    "assign": "Attribuer un créneau",
+    "addShift": "Ajouter un créneau",
+    "legendRepeat": "↻ Planning répété chaque semaine",
+    "legendLock": "🔒 créneau pointé / jour passé : non modifiable",
+    "legendEdited": "✎ jour modifié individuellement",
+    "empty": "Aucun membre du personnel dans ce point de vente.",
+    "rules": "Plannings répétés en vigueur",
+    "rulesHint": "Modifier, arrêter ou supprimer n'affecte que les jours non travaillés",
+    "rulesEmpty": "Aucun planning répété pour l'instant.",
+    "noEnd": "Sans fin",
+    "edit": "Modifier",
+    "stop": "Arrêter à partir de…",
+    "delete": "Supprimer",
+    "col": {
+      "staff": "Personnel",
+      "shift": "Créneau",
+      "weekdays": "Jours",
+      "from": "Du",
+      "to": "Au"
+    },
+    "lockedToday": "Créneau déjà pointé aujourd'hui"
+  },
+  "day": {
+    "lockedBody": "🔒 Ce créneau a déjà été pointé ou le jour est passé, il ne peut donc pas être modifié. Pour corriger les heures, utilisez la Feuille de pointage.",
+    "current": "Actuellement : {shift} ({source})",
+    "sourceRule": "selon le planning répété",
+    "sourceDay": "modifié individuellement",
+    "none": "Aucun créneau",
+    "editable": "pas encore pointé, modifiable",
+    "pick": "Créneau de ce jour",
+    "custom": "Horaires personnalisés",
+    "customStart": "Horaires personnalisés : début",
+    "customEnd": "Fin",
+    "note": "Ne modifie que ce jour. Les semaines suivantes suivent toujours le planning répété. L'application en informe {name}.",
+    "clear": "Supprimer le créneau de ce jour",
+    "saved": "Créneau du {date} modifié"
+  },
+  "assign": {
+    "title": "Attribuer un créneau (répété chaque semaine)",
+    "sub": "Attribution unique, répétée chaque semaine jusqu'à modification.",
+    "shift": "1. Créneau",
+    "staff": "2. Personnel",
+    "weekdays": "3. Jours de la semaine",
+    "from": "À partir du",
+    "to": "Jusqu'au (facultatif)",
+    "toPlaceholder": "Sans fin",
+    "preview": "↻ Répété chaque semaine",
+    "previewLine": "{names} · {shift} · {days} · à partir du {from}",
+    "previewTo": " jusqu'au {to}",
+    "conflict": "{name} a déjà un planning {shift} {days}.",
+    "keep": "Les jours déjà travaillés ou modifiés individuellement sont conservés.",
+    "confirm": "Attribuer le créneau · prévenir le personnel",
+    "noTemplates": "Aucun modèle de créneau. Créez-en un dans l'onglet Modèles de créneau.",
+    "saved": "Créneau attribué"
+  },
+  "ruleEdit": {
+    "title": "Modifier le planning répété · {name}",
+    "shift": "Créneau",
+    "weekdays": "Jours",
+    "from": "Applicable à partir du",
+    "note": "Les jours déjà travaillés ou passés sont conservés.",
+    "saved": "Planning répété modifié"
+  },
+  "ruleStop": {
+    "title": "Arrêter le planning répété · {name}",
+    "last": "Dernier jour",
+    "note": "À partir du {next}, {name} n'aura plus le créneau {shift}. Exemple d'usage : départ d'un membre du personnel ou changement de planning.",
+    "confirm": "Arrêter le planning",
+    "saved": "Planning répété arrêté"
+  },
+  "ruleDelete": {
+    "title": "Supprimer le planning répété · {name} ?",
+    "note": "Les jours non travaillés n'auront plus le créneau {shift}. Les jours déjà travaillés restent dans la feuille de pointage.",
+    "confirm": "Supprimer le planning",
+    "saved": "Planning répété supprimé"
+  },
+  "templates": {
+    "title": "Modèles de créneau",
+    "subtitle": "{outlet} · utilisés pour attribuer un créneau",
+    "add": "+ Nouveau modèle de créneau",
+    "minutes": "{n} min",
+    "used": "Oui",
+    "unused": "Non",
+    "hidden": "Masqué",
+    "edit": "Modifier",
+    "hide": "Masquer",
+    "delete": "Supprimer",
+    "show": "Réafficher",
+    "shown": "Modèle de créneau réaffiché",
+    "empty": "Aucun modèle de créneau pour l'instant.",
+    "hint": "Un modèle déjà utilisé ne peut être que masqué (l'historique est conservé) ; un modèle non utilisé peut être supprimé. Modifier les horaires ne s'applique qu'aux jours non travaillés.",
+    "col": {
+      "shift": "Créneau",
+      "time": "Horaires",
+      "break": "Pause",
+      "used": "En usage"
+    }
+  },
+  "templateForm": {
+    "newTitle": "Nouveau modèle de créneau",
+    "editTitle": "Modifier le modèle de créneau",
+    "name": "Nom du créneau",
+    "start": "Début",
+    "end": "Fin",
+    "break": "Pause pendant le créneau (minutes)",
+    "color": "Couleur",
+    "colors": {
+      "blue": "Bleu",
+      "purple": "Violet",
+      "green": "Vert",
+      "orange": "Orange"
+    },
+    "overnight": "Une fin plus tôt que le début (par ex. 22:00–02:00) désigne un créneau de nuit, rattaché au jour de début.",
+    "editNote": "Modifier les horaires ne s'applique qu'aux jours non travaillés ; les jours passés gardent les anciens horaires.",
+    "create": "Créer le modèle",
+    "saved": "Modèle de créneau enregistré"
+  },
+  "templateHide": {
+    "title": "Masquer le modèle de créneau \"{name}\" ?",
+    "sub": "Ce créneau est déjà utilisé, il ne peut donc pas être supprimé.",
+    "note": "Masqué : il ne pourra plus être choisi pour attribuer un créneau. Les plannings répétés qui l'utilisent restent actifs ; les jours déjà travaillés sont conservés.",
+    "confirm": "Masquer le modèle",
+    "saved": "Modèle de créneau masqué"
+  },
+  "templateDelete": {
+    "title": "Supprimer le modèle de créneau \"{name}\" ?",
+    "sub": "Ce créneau n'a jamais été utilisé.",
+    "confirm": "Supprimer",
+    "saved": "Modèle de créneau supprimé"
+  },
+  "outlets": {
+    "qrDaily": "Code QR · change chaque jour",
+    "qrFixed": "Code QR · fixe",
+    "noQr": "Aucun code créé",
+    "open": "Ouvrir ›"
+  },
+  "locations": {
+    "locationSet": "Position définie",
+    "title": "Codes QR et positions de pointage",
+    "subtitle": "Un code QR, une position et une liste de personnes à pointer par point de vente.",
+    "col": {
+      "outlet": "Point de vente",
+      "address": "Adresse",
+      "qr": "Code QR",
+      "radius": "Rayon"
+    },
+    "radius": "{radius} m",
+    "back": "‹ Codes QR et positions"
+  },
+  "outlet": {
+    "notFound": "Impossible d'ouvrir ce point de vente.",
+    "section": "⏱ Pointage",
+    "location": "Position de pointage",
+    "noLocation": "Position non définie",
+    "current": "📍 Position actuelle",
+    "pick": "Choisir sur la carte",
+    "picking": "Cliquez sur la carte pour définir la position du point de vente.",
+    "geoFailed": "Impossible d'obtenir la position actuelle. Vérifiez l'autorisation de localisation du navigateur.",
+    "ownerOnly": "Seul le propriétaire de la boutique peut modifier la position et le rayon.",
+    "radius": "Rayon autorisé :",
+    "radiusHint": "50–500 m. Le GPS en intérieur est souvent imprécis de 10 à 50 m.",
+    "checks": "Contrôles lors du scan : bon code de ce point de vente, encore valide · dans le rayon · GPS ≤ 100 m · blocage des positions simulées · heure du serveur. Sortie oubliée : fermée automatiquement en fin de journée, 0 heure jusqu'à correction par l'admin.",
+    "qrTitle": "Code QR de {name}",
+    "qrMode": "Type de code",
+    "daily": "Change chaque jour (recommandé)",
+    "fixed": "Fixe",
+    "dailyHint": "Nouveau code chaque jour à 00h00 (heure du Vietnam). Affichez-le sur la tablette de caisse ou réimprimez-le chaque matin.",
+    "fixedHint": "Imprimez une fois, collez-le au mur. La photo reste utilisable ; seuls le GPS et le blocage des positions simulées assurent la sécurité.",
+    "todayCaption": "Code du jour · {date} · change à 00h00",
+    "fixedCaption": "Code fixe · créé le {date}",
+    "noQr": "Ce point de vente n'a pas encore de code QR.",
+    "createQr": "Créer le code QR",
+    "qrCreated": "Code QR créé",
+    "print": "Imprimer le QR",
+    "kiosk": "Lien de la tablette de caisse",
+    "newCode": "Créer un nouveau code",
+    "modeSaved": "Type de code modifié",
+    "saved": "Position de pointage enregistrée",
+    "saveRadiusTitle": "Modifier le rayon ?",
+    "saveRadiusSub": "De {from} m à {to} m",
+    "saveLocationTitle": "Modifier la position de pointage ?",
+    "saveLocationSub": "Nouvelles coordonnées : {coords}",
+    "saveNote": "Appliqué immédiatement aux prochains scans."
+  },
+  "members": {
+    "title": "Qui doit pointer dans ce point de vente",
+    "hint": "Seules les personnes sélectionnées voient la carte Pointage dans l'application et figurent dans la Planification et la Feuille de pointage",
+    "note": "Par défaut : le personnel et le stock sont sélectionnés ; le responsable de point de vente et le propriétaire ne le sont pas. Désélectionner : la personne ne voit plus rien du pointage et ne peut plus recevoir de nouveau créneau ; l'historique reste conservé.",
+    "toggle": "{name} doit pointer",
+    "on": "{name} : doit pointer",
+    "off": "{name} : ne doit pas pointer",
+    "ownerOnly": "Seul le propriétaire de la boutique peut modifier ce réglage",
+    "empty": "Aucune personne dans ce point de vente."
+  },
+  "newCode": {
+    "title": "Créer un nouveau code QR ?",
+    "body": "Le code actuel cesse immédiatement d'être valable. Si le point de vente utilise un QR fixe, vous devez imprimer et coller le nouveau code. La tablette de caisse se met à jour automatiquement.",
+    "confirm": "Créer un nouveau code",
+    "done": "Nouveau code créé, l'ancien n'est plus valable"
+  },
+  "print": {
+    "title": "Imprimer le code QR · {name}",
+    "body": "Format A5, avec le nom du point de vente et la consigne « Ouvrez l'application AnyRent → Paramètres → Pointage → scannez le code ».",
+    "dailyNote": "Type « Change chaque jour » : l'impression n'est valable que pour la journée du {date}.",
+    "confirm": "Imprimer",
+    "howTo": "Ouvrez l'application AnyRent → Paramètres → Pointage → scannez le code",
+    "validOn": "Valable uniquement le {date}"
+  },
+  "kioskLink": {
+    "title": "Lien de l'écran QR pour la tablette de caisse",
+    "none": "Ce point de vente n'a pas de lien de tablette de caisse.",
+    "note": "Ouvrez ce lien sur une tablette ou un ancien téléphone à la caisse. Aucune connexion requise, aucun compte concerné. L'écran change de code à 00h00.",
+    "copy": "Copier",
+    "copied": "Lien copié",
+    "copyFailed": "Impossible de copier. Sélectionnez et copiez le lien.",
+    "newLink": "Créer un nouveau lien",
+    "create": "Créer le lien",
+    "created": "Nouveau lien créé ; l'ancien n'est plus valable"
+  },
+  "kiosk": {
+    "title": "Pointage",
+    "help": "Ouvrez l'application AnyRent → Paramètres → Pointage → scannez ce code",
+    "daily": "Code du jour · change à 00h00",
+    "fixed": "Code fixe",
+    "recent": "Derniers pointages",
+    "none": "Personne n'a encore pointé aujourd'hui.",
+    "in": "Entrée",
+    "out": "Sortie",
+    "loading": "Chargement…",
+    "invalid": "Ce lien de tablette de caisse n'est plus valable. Demandez un nouveau lien au propriétaire de la boutique.",
+    "moduleOff": "La boutique n'a pas activé le module Pointage.",
+    "notConfigured": "Le point de vente n'a pas défini de position ou n'a pas créé de code QR.",
+    "failed": "Impossible de charger le code. Nouvelle tentative…"
+  }
+}

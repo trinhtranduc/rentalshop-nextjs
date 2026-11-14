@@ -199,7 +199,7 @@
     "ADMIN": "管理者",
     "ARTICLE": "記事編集者",
     "MERCHANT": "事業者",
-    "OUTLET_ADMIN": "店舗管理者",
+    "OUTLET_ADMIN": "店長",
     "OUTLET_STAFF": "店舗スタッフ",
     "OUTLET_INVENTORY": "在庫担当"
   },

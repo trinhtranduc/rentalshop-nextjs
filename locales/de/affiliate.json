@@ -1,0 +1,148 @@
+{
+  "title": "Anleitung zum Empfehlungslink (Affiliate)",
+  "subtitle": "Erfahren Sie, wie Sie Ihren Affiliate-Link nutzen, um Ihr Geschäft auszubauen",
+  "lastUpdated": "Zuletzt aktualisiert: Januar 2025",
+  "sections": {
+    "whatIs": {
+      "title": "Was ist ein Affiliate-Link?",
+      "content": "Ein Affiliate-Link (auch Referral-Link genannt) ist eine spezielle URL mit Ihrem eindeutigen Empfehlungscode. Wenn sich jemand mit Ihrem Affiliate-Link bei AnyRent registriert, wird diese Person zu Ihrer Empfehlung und Sie können Vorteile oder Prämien erhalten."
+    },
+    "howToGet": {
+      "title": "So erhalten Sie Ihren Affiliate-Link",
+      "content": "Der Empfehlungslink wird aus der URL-Kennung Ihres Geschäfts erstellt. Sie finden ihn in den Geschäftseinstellungen unter „Ihr Geschäft teilen“."
+    },
+    "howToUse": {
+      "title": "So verwenden Sie Ihren Affiliate-Link",
+      "content": "Teilen Sie Ihren Affiliate-Link über verschiedene Kanäle mit anderen:"
+    },
+    "howItWorks": {
+      "title": "So funktioniert es",
+      "content": "Wenn jemand auf Ihren Affiliate-Link klickt:"
+    },
+    "benefits": {
+      "title": "Vorteile des Affiliate-Links",
+      "content": "Mit Affiliate-Links können Sie:"
+    },
+    "bestPractices": {
+      "title": "Bewährte Vorgehensweisen",
+      "content": "So holen Sie das Beste aus Ihrem Affiliate-Link heraus:"
+    },
+    "importantNotes": {
+      "title": "Wichtige Hinweise",
+      "content": "Bitte beachten Sie:"
+    },
+    "troubleshooting": {
+      "title": "Fehlerbehebung",
+      "content": "Falls Sie Probleme mit Ihrem Affiliate-Link haben:"
+    }
+  },
+  "banner": {
+    "title": "Mehr über Affiliate-Links erfahren",
+    "description": "Entdecken Sie, wie Sie Ihren Affiliate-Link nutzen, um Ihr Geschäft auszubauen",
+    "promo": "10 % Rabatt bei Empfehlung",
+    "button": "Anleitung ansehen",
+    "viewDetails": "Details anzeigen",
+    "dismiss": "Schließen"
+  },
+  "navigation": {
+    "title": "Affiliate"
+  },
+  "guide": {
+    "title": "AnyRent weiterempfehlen und Provision verdienen",
+    "subtitle": "Teilen Sie Ihren Empfehlungslink mit anderen Geschäftsinhabern und erhalten Sie eine Provision, wenn diese einen Tarif bezahlen.",
+    "login": "Anmelden",
+    "yourLink": "Ihr Empfehlungslink",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "overview": {
+      "commission": "Provision",
+      "autoPayment": "Automatisch",
+      "payment": "Zahlung",
+      "unlimitedLabel": "Unbegrenzt",
+      "unlimited": "Empfehlungen"
+    },
+    "howItWorks": {
+      "title": "So funktioniert es",
+      "step1": {
+        "title": "Link teilen",
+        "description": "Kopieren Sie Ihren Affiliate-Link und teilen Sie ihn mit Freunden, Partnern oder potenziellen Kunden"
+      },
+      "step2": {
+        "title": "Registrierung",
+        "description": "Empfohlene Personen nutzen Ihren Link, um ein neues AnyRent-Konto zu registrieren"
+      },
+      "step3": {
+        "title": "Provision erhalten",
+        "description": "Wenn sie ein Abonnement bezahlen, erhalten Sie automatisch 10 % Provision auf Ihr Konto"
+      }
+    },
+    "commissionDetails": {
+      "title": "Provisionsdetails",
+      "rate": {
+        "label": "Provisionssatz",
+        "description": "Sie erhalten 10 % Provision für jede erfolgreiche Registrierung"
+      },
+      "payment": {
+        "label": "Zahlung",
+        "description": "Die Provision wird unmittelbar nach der Zahlung der Empfehlung automatisch auf Ihr Konto überwiesen"
+      },
+      "tracking": {
+        "label": "Nachverfolgung",
+        "description": "Verfolgen Sie Ihre Empfehlungen und Provisionen in Echtzeit",
+        "badge": "Echtzeit"
+      }
+    },
+    "examples": {
+      "title": "Berechnungsbeispiele",
+      "example1": {
+        "title": "Beispiel 1: Basic-Tarif",
+        "label1": "Abonnementpreis",
+        "label2": "Status",
+        "confirmed": "Bestätigt",
+        "label3": "Ihre Provision"
+      },
+      "example2": {
+        "title": "Beispiel 2: Premium-Tarif",
+        "label1": "Abonnementpreis",
+        "label2": "Status",
+        "confirmed": "Bestätigt",
+        "label3": "Ihre Provision"
+      },
+      "note": "Hinweis: Die Provision wird nur berechnet, wenn die empfohlene Person das Abonnement <strong>erfolgreich bezahlt</strong>. Die Provision wird automatisch auf Ihr Konto überwiesen."
+    },
+    "tips": {
+      "title": "Tipps für mehr Provision",
+      "tip1": {
+        "title": "Die richtige Zielgruppe ansprechen",
+        "description": "Konzentrieren Sie sich auf Personen, die tatsächlich eine Software zur Verwaltung ihres Vermietungsgeschäfts benötigen"
+      },
+      "tip2": {
+        "title": "Vorteile erklären",
+        "description": "Teilen Sie beim Weiterempfehlen die Vorteile von AnyRent mit, um die Registrierungsquote zu erhöhen"
+      },
+      "tip3": {
+        "title": "Erfolg verfolgen",
+        "description": "Nutzen Sie die Übersicht, um Ihre Empfehlungen und Provisionen zu verfolgen"
+      },
+      "tip4": {
+        "title": "Regelmäßig teilen",
+        "description": "Teilen Sie Ihren Link über mehrere Kanäle, um mehr Menschen zu erreichen"
+      }
+    },
+    "cta": {
+      "title": "Bereit loszulegen?",
+      "description": "Registrieren Sie sich jetzt, um Ihren Affiliate-Link zu erhalten und Provisionen zu verdienen",
+      "register": "Jetzt registrieren",
+      "login": "Bereits ein Konto? Anmelden"
+    },
+    "eyebrow": "AnyRent · Empfehlung",
+    "linkHint": "Wer sich über diesen Link registriert, wird als Ihre Empfehlung gezählt."
+  },
+  "page": {
+    "eyebrow": "AnyRent · Empfehlung",
+    "ctaTitle": "Bereit loszulegen?",
+    "ctaBody": "Öffnen Sie die Geschäftseinstellungen, um Ihren Empfehlungslink direkt zu kopieren.",
+    "ctaButton": "Geschäftseinstellungen öffnen",
+    "guideLink": "Provisionen und Beispiele ansehen"
+  }
+}

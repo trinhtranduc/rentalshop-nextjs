@@ -1,0 +1,190 @@
+{
+  "required": "此欄位為必填",
+  "email": "請輸入有效的電子郵件地址",
+  "phone": "請輸入有效的電話號碼",
+  "min": "最小值為 {min}",
+  "max": "最大值為 {max}",
+  "minLength": "最少需要 {min} 個字元",
+  "maxLength": "最多 {max} 個字元",
+  "pattern": "格式不正確",
+  "url": "請輸入有效的網址",
+  "number": "請輸入有效的數字",
+  "integer": "請輸入整數",
+  "positive": "請輸入正數",
+  "negative": "請輸入負數",
+  "date": "請輸入有效的日期",
+  "dateRange": "日期範圍無效",
+  "time": "請輸入有效的時間",
+  "password": {
+    "minLength": "密碼至少需要 {min} 個字元",
+    "uppercase": "密碼需包含至少一個大寫字母",
+    "lowercase": "密碼需包含至少一個小寫字母",
+    "number": "密碼需包含至少一個數字",
+    "special": "密碼需包含至少一個特殊字元",
+    "match": "密碼不一致"
+  },
+  "file": {
+    "size": "檔案大小必須小於 {max}",
+    "type": "檔案類型無效。允許的類型：{types}",
+    "required": "請選擇檔案"
+  },
+  "unique": "此值已存在",
+  "exists": "此值不存在",
+  "custom": {
+    "invalidBarcode": "條碼無效",
+    "invalidSKU": "SKU 無效",
+    "stockNotAvailable": "庫存不足",
+    "invalidDateRange": "結束日期必須晚於開始日期",
+    "priceGreaterThanZero": "價格必須大於 0",
+    "quantityGreaterThanZero": "數量必須大於 0"
+  },
+  "fields": {
+    "firstName": {
+      "required": "請輸入名"
+    },
+    "lastName": {
+      "required": "請輸入姓"
+    },
+    "name": {
+      "required": "請輸入名稱",
+      "minLength": "名稱至少需要 {min} 個字元"
+    },
+    "productName": {
+      "required": "請輸入商品名稱"
+    },
+    "outletName": {
+      "required": "請輸入分店名稱"
+    },
+    "planName": {
+      "required": "請輸入方案名稱"
+    },
+    "planDescription": {
+      "required": "請輸入方案描述"
+    },
+    "variantName": {
+      "required": "請輸入版本名稱"
+    },
+    "phone": {
+      "required": "請輸入電話號碼"
+    },
+    "email": {
+      "invalid": "電子郵件地址無效",
+      "invalidFormat": "電子郵件格式不正確"
+    },
+    "password": {
+      "minLength6": "密碼至少需要 6 個字元",
+      "required": "請輸入密碼"
+    },
+    "confirmPassword": {
+      "required": "請確認密碼",
+      "match": "密碼不一致"
+    },
+    "outletId": {
+      "required": "請選擇分店",
+      "requiredForRole": "此角色必須選擇分店",
+      "shouldNotBeSelected": "商家角色不應選擇分店"
+    },
+    "country": {
+      "invalid": "請選擇有效的國家"
+    },
+    "tenantKey": {
+      "invalid": "Tenant key 只能包含英文字母與數字"
+    },
+    "product": {
+      "required": "請選擇商品"
+    },
+    "category": {
+      "required": "請選擇分類"
+    },
+    "outlet": {
+      "required": "請選擇分店",
+      "requiredForRole": "此角色必須選擇分店"
+    },
+    "merchant": {
+      "required": "請選擇商家",
+      "requiredForRole": "此角色必須選擇商家"
+    },
+    "role": {
+      "required": "請選擇角色"
+    },
+    "deposit": {
+      "nonNegative": "訂金不能為負數",
+      "cannotBeNegative": "訂金不能為負數"
+    },
+    "merchantId": {
+      "required": "商家 ID 為必填"
+    },
+    "planId": {
+      "required": "方案 ID 為必填"
+    },
+    "planVariantId": {
+      "required": "方案版本 ID 為必填"
+    },
+    "rentPrice": {
+      "required": "租借價格為必填，且必須大於 0",
+      "nonNegative": "租借價格不能為負數",
+      "greaterThanZero": "租借價格必須大於 0"
+    },
+    "salePrice": {
+      "required": "售價為必填，且必須大於 0",
+      "nonNegative": "售價不能為負數",
+      "greaterThanZero": "售價必須大於 0"
+    },
+    "costPrice": {
+      "nonNegative": "成本不能為負數"
+    },
+    "stock": {
+      "nonNegative": "庫存不能為負數"
+    },
+    "totalStock": {
+      "required": "總庫存為必填，且必須大於 0",
+      "nonNegative": "總庫存不能為負數",
+      "greaterThanZero": "庫存必須大於 0"
+    },
+    "basePrice": {
+      "nonNegative": "基本價格不能為負數"
+    },
+    "price": {
+      "nonNegative": "價格不能為負數"
+    },
+    "amount": {
+      "nonNegative": "金額不能為負數"
+    },
+    "duration": {
+      "positive": "時長必須為正數"
+    },
+    "trialDays": {
+      "nonNegative": "試用天數不能為負數"
+    },
+    "discount": {
+      "range": "折扣必須介於 0 到 100 之間"
+    },
+    "durationConfig": {
+      "required": "時長設定為必填，且必須為有效的 JSON（適用於按時與按日計價）",
+      "requiredForPricingType": "按時與按日計價須填寫時長設定",
+      "minDurationRequired": "最短時長為必填，且必須大於 0",
+      "maxDurationRequired": "最長時長為必填，且必須大於 0",
+      "minMustBeLessThanMax": "最短時長必須小於或等於最長時長",
+      "defaultDurationRequired": "預設時長為必填，且必須大於 0",
+      "defaultMustBeAtLeastMin": "預設時長至少要等於最短時長",
+      "defaultMustNotExceedMax": "預設時長不能超過最長時長"
+    },
+    "outletStock": {
+      "required": "分店庫存為必填，請至少為一間分店設定庫存。",
+      "noOutletsAvailable": "目前沒有分店，請聯絡管理員建立分店。",
+      "cannotBeNegative": "分店庫存不能為負數"
+    },
+    "endDate": {
+      "afterStart": "結束日期必須晚於開始日期"
+    },
+    "nameOrFullName": {
+      "required": "必須提供「name」，或同時提供「firstName」與「lastName」"
+    },
+    "businessTypePricingType": {
+      "required": "商家註冊必須填寫營業類型與計價方式"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "預設按日計價需要設定按日租借價格。"
+    }
+  }
+}

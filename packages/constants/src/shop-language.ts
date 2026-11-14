@@ -3,17 +3,17 @@
 // ============================================================================
 
 /** The shop language: emails to the shop and its users, sample data at sign-up, the web language after sign-up. */
-export type ShopLanguage = 'vi' | 'en';
+export type ShopLanguage = 'vi' | 'en' | 'ja';
 
-export const SHOP_LANGUAGES: readonly ShopLanguage[] = ['vi', 'en'];
+export const SHOP_LANGUAGES: readonly ShopLanguage[] = ['vi', 'en', 'ja'];
 
 export function isShopLanguage(value: unknown): value is ShopLanguage {
-  return value === 'vi' || value === 'en';
+  return value === 'vi' || value === 'en' || value === 'ja';
 }
 
 /** A stored `Merchant.language` as the language to use: 'en' stays 'en'; empty or anything else is Vietnamese (shops before #1539). */
 export function shopLanguage(value: unknown): ShopLanguage {
-  return value === 'en' ? 'en' : 'vi';
+  return value === 'en' ? 'en' : value === 'ja' ? 'ja' : 'vi';
 }
 
 /**
@@ -27,7 +27,7 @@ export function signupShopPrefs(
   const page = (pageLocale ?? '').trim().toLowerCase();
   const code = (countryCode ?? '').trim().toUpperCase();
   return {
-    language: page === '' || page === 'vi' || page.startsWith('vi-') ? 'vi' : 'en',
+    language: page === '' || page === 'vi' || page.startsWith('vi-') ? 'vi' : page === 'ja' || page.startsWith('ja-') ? 'ja' : 'en',
     currency: code === '' || code === 'VN' ? 'VND' : 'USD',
   };
 }

@@ -1,0 +1,469 @@
+{
+  "title": "Pengguna",
+  "subtitle": "Kelola pengguna dalam sistem",
+  "pageTitle": "Manajemen pengguna",
+  "addUser": "Tambah pengguna",
+  "addNewUser": "Tambah pengguna baru",
+  "addNewUserDescription": "Buat akun pengguna baru untuk organisasi Anda",
+  "editUser": "Ubah pengguna",
+  "userDetails": "Detail pengguna",
+  "viewUserInfo": "Lihat informasi dan detail pengguna",
+  "userInformation": "Informasi pengguna",
+  "accountInformation": "Informasi akun",
+  "outletInformation": "Informasi cabang",
+  "accountActions": "Tindakan akun",
+  "passwordManagement": "Manajemen kata sandi",
+  "passwordSettings": "Pengaturan kata sandi",
+  "organizationAssignment": "Penugasan organisasi",
+  "accountSettings": "Pengaturan akun",
+  "accountStatus": "Status akun",
+  "dangerZone": "Zona berbahaya",
+  "activeAccount": "Akun aktif",
+  "currentUserInformation": "Informasi pengguna saat ini",
+  "activeUsersInfo": "Pengguna aktif dapat masuk dan mengakses sistem. Pengguna nonaktif ditangguhkan.",
+  "created": "Tanggal dibuat",
+  "label": {
+    "loading": "Memuat..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "Nama",
+    "firstName": "Nama depan",
+    "lastName": "Nama belakang",
+    "fullName": "Nama lengkap",
+    "email": "Email",
+    "phone": "Nomor telepon",
+    "role": "Peran",
+    "outlet": "Cabang",
+    "outletName": "Nama cabang",
+    "outletId": "ID cabang",
+    "merchant": "Usaha",
+    "merchantName": "Nama usaha",
+    "merchantId": "ID usaha",
+    "status": "Status",
+    "password": "Kata sandi",
+    "confirmPassword": "Konfirmasi kata sandi",
+    "active": "Aktif",
+    "inactive": "Nonaktif",
+    "createdAt": "Tanggal dibuat",
+    "lastLogin": "Login terakhir",
+    "actions": "Tindakan",
+    "basicInformation": "Informasi dasar",
+    "personalInformation": "Informasi pribadi",
+    "roleAndPermissions": "Peran & Izin",
+    "readOnly": "Hanya baca",
+    "emailStatus": "Status email"
+  },
+  "roles": {
+    "ADMIN": "Administrator sistem",
+    "MERCHANT": "Pemilik merek",
+    "OUTLET_ADMIN": "Manajer cabang",
+    "OUTLET_STAFF": "Staf",
+    "ARTICLE": "Editor artikel",
+    "OUTLET_INVENTORY": "Staf gudang"
+  },
+  "actions": {
+    "activate": "Aktifkan pengguna",
+    "activateAccount": "Aktifkan akun",
+    "activating": "Mengaktifkan...",
+    "deactivate": "Nonaktifkan pengguna",
+    "deactivateAccount": "Nonaktifkan akun",
+    "deactivating": "Menonaktifkan...",
+    "delete": "Hapus pengguna",
+    "deleteAccount": "Hapus akun",
+    "deleting": "Menghapus...",
+    "changePassword": "Ubah kata sandi",
+    "changingPassword": "Mengubah...",
+    "viewDetails": "Lihat detail",
+    "edit": "Ubah",
+    "editUser": "Ubah pengguna",
+    "updateUser": "Perbarui pengguna",
+    "createUser": "Buat pengguna",
+    "updating": "Memperbarui...",
+    "creating": "Membuat...",
+    "addUser": "Tambah pengguna",
+    "backToUsers": "Kembali ke daftar",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "close": "Tutup",
+    "showPassword": "Tampilkan kata sandi",
+    "hidePassword": "Sembunyikan kata sandi"
+  },
+  "messages": {
+    "createSuccess": "Pengguna berhasil dibuat",
+    "createFailed": "Gagal membuat pengguna",
+    "updateSuccess": "Pengguna berhasil diperbarui",
+    "updateFailed": "Gagal memperbarui pengguna",
+    "deleteSuccess": "Pengguna berhasil dihapus",
+    "deleteFailed": "Gagal menghapus pengguna",
+    "activateSuccess": "Pengguna berhasil diaktifkan",
+    "activateFailed": "Gagal mengaktifkan pengguna",
+    "deactivateSuccess": "Pengguna berhasil dinonaktifkan",
+    "deactivateFailed": "Gagal menonaktifkan pengguna",
+    "passwordChangeSuccess": "Kata sandi berhasil diubah",
+    "passwordChangeFailed": "Gagal mengubah kata sandi",
+    "passwordMinLength": "Kata sandi harus terdiri dari minimal 6 karakter",
+    "newPasswordRequired": "Kata sandi baru wajib diisi",
+    "confirmPasswordRequired": "Silakan konfirmasi kata sandi baru Anda",
+    "passwordsDoNotMatch": "Kata sandi tidak cocok",
+    "confirmDelete": "Anda yakin ingin menghapus pengguna ini?",
+    "confirmDeleteAccount": "Hapus akun pengguna",
+    "confirmDeleteDetails": "Anda yakin ingin menghapus akun pengguna ini secara permanen? Tindakan ini tidak dapat dibatalkan.",
+    "confirmDeactivate": "Anda yakin ingin menonaktifkan",
+    "confirmDeactivateAccount": "Nonaktifkan pengguna",
+    "confirmDeactivateDetails": "Tindakan ini akan mencegah mereka mengakses sistem.",
+    "confirmActivate": "Anda yakin ingin mengaktifkan pengguna ini?",
+    "confirmActivateAccount": "Aktifkan akun pengguna",
+    "confirmActivateDetails": "Anda yakin ingin mengaktifkan akun pengguna ini? Pengguna akan dapat mengakses sistem kembali.",
+    "allowChangePassword": "Izinkan pengguna mengubah kata sandi mereka dengan aman",
+    "suspendAccess": "Sementara tangguhkan akses sistem pengguna",
+    "deactivateToPrevent": "Nonaktifkan untuk mencegah akses masuk",
+    "activateToRestore": "Aktifkan untuk memulihkan akses masuk",
+    "permanentlyDelete": "Hapus permanen akun pengguna ini beserta semua data terkait",
+    "permanentlyDeleteShort": "Hapus permanen akun pengguna ini",
+    "cannotDeactivateAdmin": "Administrator sistem tidak dapat dinonaktifkan",
+    "cannotDeactivateAdminShort": "Akun Admin tidak dapat dinonaktifkan",
+    "cannotDeleteAdmin": "Akun Admin tidak dapat dihapus",
+    "validationErrors": "Silakan perbaiki kesalahan validasi berikut:",
+    "noUsers": "Pengguna tidak ditemukan",
+    "loadingUsers": "Memuat daftar pengguna...",
+    "noDataAvailable": "Tidak ada data pengguna",
+    "na": "Tidak ada",
+    "error": "Terjadi kesalahan",
+    "tryAdjustingSearch": "Coba ubah pencarian atau filter Anda",
+    "getStarted": "Mulai dengan menambahkan pengguna pertama Anda"
+  },
+  "search": {
+    "placeholder": "Cari pengguna berdasarkan nama, email, atau telepon..."
+  },
+  "filters": {
+    "all": "Semua pengguna",
+    "byRole": "Filter berdasarkan peran",
+    "byOutlet": "Filter berdasarkan cabang",
+    "active": "Pengguna aktif",
+    "inactive": "Pengguna tidak aktif",
+    "allRoles": "Semua peran"
+  },
+  "stats": {
+    "totalUsers": "Total pengguna",
+    "activeUsers": "Pengguna aktif",
+    "adminUsers": "Administrator",
+    "staffUsers": "Staf"
+  },
+  "dialogs": {
+    "changePasswordTitle": "Ubah kata sandi",
+    "changePasswordDescription": "Ubah kata sandi untuk pengguna",
+    "newPassword": "Kata sandi baru",
+    "confirmNewPassword": "Konfirmasi kata sandi baru"
+  },
+  "placeholders": {
+    "enterName": "Masukkan nama",
+    "enterFirstName": "Masukkan nama depan",
+    "enterLastName": "Masukkan nama belakang",
+    "enterFullName": "Masukkan nama lengkap",
+    "enterEmail": "Masukkan alamat email",
+    "enterPhone": "Masukkan nomor telepon (hanya angka)",
+    "selectRole": "Pilih peran",
+    "selectOutlet": "Pilih cabang",
+    "enterPassword": "Masukkan kata sandi",
+    "confirmPassword": "Konfirmasi kata sandi",
+    "enterNewPassword": "Masukkan kata sandi baru",
+    "confirmNewPassword": "Konfirmasi kata sandi baru",
+    "loadingMerchants": "Memuat daftar merek...",
+    "searchAndSelectMerchant": "Cari dan pilih merek",
+    "currentMerchant": "Merek saat ini",
+    "loadingOutlets": "Memuat daftar cabang...",
+    "selectMerchantFirst": "Pilih merek terlebih dahulu",
+    "searchAndSelectOutlet": "Cari dan pilih cabang",
+    "currentOutlet": "Cabang saat ini",
+    "searchMerchants": "Cari merek...",
+    "noMerchantsFound": "Merek tidak ditemukan",
+    "searchOutlets": "Cari cabang...",
+    "noOutletsFound": "Cabang tidak ditemukan",
+    "searchUsers": "Cari pengguna..."
+  },
+  "labels": {
+    "loading": "Memuat..."
+  },
+  "status": {
+    "verified": "Terverifikasi",
+    "notVerified": "Belum terverifikasi"
+  },
+  "roleHelp": {
+    "title": "Peran",
+    "OUTLET_ADMIN": "Mengelola satu cabang: pesanan, produk, pelanggan, dan staf cabang tersebut.",
+    "OUTLET_STAFF": "Membuat dan memproses pesanan. Tidak dapat mengubah harga produk.",
+    "loginNote": "Pengguna baru masuk menggunakan email dan kata sandi ini, lalu dapat mengubah kata sandinya sendiri nanti.",
+    "OUTLET_INVENTORY": "Menjual seperti staf, dan juga mengelola produk dan kategori (tambah, ubah harga, hapus, impor dan ekspor Excel). Tidak melihat pendapatan."
+  },
+  "web": {
+    "title": "Staf",
+    "add": "Tambah staf",
+    "searchPlaceholder": "Cari nama, telp, email",
+    "searchLabel": "Cari staf",
+    "allOutlets": "Semua cabang",
+    "outletFilter": "Filter berdasarkan cabang",
+    "allOutletsValue": "Semua",
+    "filters": {
+      "role": "Peran:",
+      "status": "Status:",
+      "all": "Semua",
+      "active": "Aktif",
+      "inactive": "Terkunci"
+    },
+    "cols": {
+      "staff": "Staf",
+      "role": "Peran",
+      "outlet": "Cabang",
+      "lastLogin": "Masuk terakhir",
+      "actions": "Tindakan"
+    },
+    "roles": {
+      "owner": "Pemilik toko",
+      "admin": "Manajer cabang",
+      "staff": "Staf",
+      "other": "Lainnya",
+      "inventory": "Staf gudang"
+    },
+    "lastSeen": {
+      "current": "Sedang digunakan",
+      "never": "—",
+      "today": "{time} hari ini",
+      "yesterday": "{time} kemarin",
+      "locked": "Terkunci"
+    },
+    "edit": "Ubah",
+    "more": "Tindakan lain untuk {name}",
+    "activate": "Buka kunci akun",
+    "deactivate": "Kunci akun",
+    "delete": "Hapus staf",
+    "confirm": {
+      "activateTitle": "Buka kunci akun?",
+      "activateBody": "{name} akan dapat masuk kembali.",
+      "deactivateTitle": "Kunci akun?",
+      "deactivateBody": "{name} tidak dapat masuk sampai akun dibuka kuncinya.",
+      "deleteTitle": "Hapus staf?",
+      "deleteBody": "Hapus {name} dari toko. Tindakan ini tidak dapat dibatalkan.",
+      "cancel": "Batal",
+      "close": "Tutup"
+    },
+    "rolesCard": {
+      "title": "Apa yang bisa dilakukan setiap peran",
+      "owner": "Semua cabang, uang, laporan, staf, paket langganan.",
+      "admin": "Satu cabang: pesanan, produk, harga, pelanggan, uang hari itu, staf cabang tersebut.",
+      "staff": "Membuat pesanan, serah terima, menerima pengembalian, menambah pelanggan. Tidak dapat mengubah harga produk atau melihat laporan uang.",
+      "rolePermissions": "Lihat izin tiap peran",
+      "permissions": "Beri izin tambahan untuk staf",
+      "inventory": "Menjual seperti staf, dan juga mengelola produk dan kategori (tambah, ubah harga, hapus, impor dan ekspor Excel). Tidak melihat pendapatan."
+    },
+    "permissions": {
+      "title": "Izin tambahan staf",
+      "hint": "Aktifkan izin tambahan untuk tiap staf, di luar izin default peran.",
+      "noAccess": "Akun staf tidak dapat mengatur izin.",
+      "pickTitle": "Pilih staf",
+      "picked": "dipilih {count}",
+      "pickAll": "Pilih semua",
+      "pickNone": "Hapus pilihan",
+      "noStaff": "Belum ada staf (peran Staf)",
+      "switchTitle": "Izin tambahan",
+      "pickFirst": "Pilih minimal satu staf di sebelah kiri.",
+      "forOne": "Sedang mengubah izin {name}.",
+      "forMany": "Sedang mengubah {count} staf: mulai dari semua mati, Simpan akan diterapkan ke {count} orang.",
+      "allOn": "Aktifkan semua",
+      "allOff": "Nonaktifkan semua",
+      "cancel": "Hapus pilihan",
+      "save": "Simpan izin",
+      "saving": "Menyimpan…",
+      "savedTitle": "Tersimpan",
+      "saved": "Izin tersimpan untuk {count} staf",
+      "errorTitle": "Galat",
+      "saveFailed": "Izin tidak dapat disimpan. Coba lagi.",
+      "readFailed": "Tidak dapat membaca izin tersimpan staf ini. Simpan akan menulis ulang setiap izin tambahan sesuai sakelar di bawah.",
+      "groups": {
+        "outlet": "Cabang",
+        "orders": "Pesanan",
+        "products": "Produk",
+        "customers": "Pelanggan",
+        "users": "Staf",
+        "dashboard": "Ringkasan"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "Lihat cabang",
+        "desc": "Lihat informasi cabang"
+      },
+      "outlet_manage": {
+        "label": "Kelola cabang",
+        "desc": "Ubah informasi dan pengaturan cabang"
+      },
+      "users_view": {
+        "label": "Lihat staf",
+        "desc": "Lihat daftar dan detail staf"
+      },
+      "users_manage": {
+        "label": "Kelola staf",
+        "desc": "Tambah, ubah, kunci, dan hapus staf"
+      },
+      "products_view": {
+        "label": "Lihat produk",
+        "desc": "Lihat daftar dan detail produk"
+      },
+      "products_create": {
+        "label": "Tambah produk",
+        "desc": "Tambah produk baru"
+      },
+      "products_update": {
+        "label": "Ubah produk",
+        "desc": "Ubah produk yang sudah ada, termasuk harga"
+      },
+      "products_manage": {
+        "label": "Kelola produk",
+        "desc": "Akses penuh: hapus, impor Excel, harga modal"
+      },
+      "products_export": {
+        "label": "Ekspor produk",
+        "desc": "Unduh daftar produk ke Excel / CSV"
+      },
+      "orders_create": {
+        "label": "Buat pesanan",
+        "desc": "Buat pesanan sewa dan penjualan"
+      },
+      "orders_view": {
+        "label": "Lihat pesanan",
+        "desc": "Lihat daftar dan detail pesanan"
+      },
+      "orders_update": {
+        "label": "Ubah pesanan",
+        "desc": "Ubah pesanan, serah terima, terima pengembalian"
+      },
+      "orders_delete": {
+        "label": "Hapus pesanan",
+        "desc": "Hapus pesanan"
+      },
+      "orders_export": {
+        "label": "Ekspor pesanan",
+        "desc": "Unduh daftar pesanan ke Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "Kelola pesanan",
+        "desc": "Akses penuh ke pesanan"
+      },
+      "customers_view": {
+        "label": "Lihat pelanggan",
+        "desc": "Lihat daftar dan detail pelanggan"
+      },
+      "customers_manage": {
+        "label": "Kelola pelanggan",
+        "desc": "Tambah, ubah, dan hapus pelanggan"
+      },
+      "customers_export": {
+        "label": "Ekspor pelanggan",
+        "desc": "Unduh daftar pelanggan ke Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "Lihat ringkasan",
+        "desc": "Lihat halaman Ringkasan dan angka-angkanya"
+      }
+    },
+    "rolePermissions": {
+      "title": "Izin menurut peran",
+      "hint": "Izin default tiap peran. Hanya untuk dilihat.",
+      "roleLabel": "Peran",
+      "count": "{count} izin",
+      "granted": "Diizinkan",
+      "notGranted": "Tidak diizinkan",
+      "note": "Ini adalah izin default peran. Untuk mengaktifkan lebih banyak bagi tiap orang, gunakan Izin tambahan staf."
+    },
+    "empty": "Belum ada staf",
+    "emptySearch": "Tidak ada staf yang cocok dengan filter ini",
+    "loadFailed": "Tidak dapat memuat daftar staf.",
+    "retry": "Coba lagi",
+    "noAccess": "Akun staf tidak dapat melihat daftar staf.",
+    "weekdays": "Min,Sen,Sel,Rab,Kam,Jum,Sab",
+    "footer": {
+      "show": "Tampilkan",
+      "perPage": "baris per halaman",
+      "perPageLabel": "Jumlah baris per halaman",
+      "pages": "Halaman",
+      "range": "{from}–{to} dari {total} staf",
+      "prev": "Halaman sebelumnya",
+      "next": "Halaman berikutnya"
+    },
+    "form": {
+      "addTitle": "Tambah staf",
+      "infoTitle": "Detail",
+      "name": "Nama lengkap",
+      "namePlaceholder": "Contoh: Tran Thi Lan",
+      "phone": "Nomor telepon",
+      "optional": "Opsional",
+      "email": "Email masuk",
+      "emailPlaceholder": "nama@contoh.com",
+      "emailHint": "Staf masuk menggunakan email ini.",
+      "required": "wajib",
+      "roleTitle": "Peran dan cabang",
+      "role": "Peran",
+      "outlet": "Cabang",
+      "outletFixed": "Staf baru termasuk cabang Anda.",
+      "outletsLoading": "Memuat cabang…",
+      "noOutlets": "Belum ada cabang",
+      "passwordTitle": "Kata sandi masuk",
+      "password": "Kata sandi",
+      "confirmPassword": "Ketik ulang kata sandi",
+      "passwordHint": "Minimal 6 karakter.",
+      "loginNote": "Staf masuk menggunakan email dan kata sandi ini, lalu dapat mengubah kata sandinya sendiri.",
+      "show": "Tampilkan",
+      "hide": "Sembunyikan",
+      "showPassword": "Tampilkan kata sandi",
+      "hidePassword": "Sembunyikan kata sandi",
+      "cancel": "Batal",
+      "create": "Tambah staf",
+      "creating": "Menambahkan…",
+      "save": "Simpan",
+      "saving": "Menyimpan…",
+      "errors": {
+        "nameShort": "Nama harus terdiri dari minimal 2 karakter.",
+        "emailRequired": "Masukkan email masuk.",
+        "emailInvalid": "Format email tidak valid.",
+        "phoneShort": "Nomor telepon harus minimal 8 digit.",
+        "phoneLong": "Nomor telepon maksimal 15 digit.",
+        "phoneChars": "Nomor telepon hanya boleh berisi angka, spasi, + - ( ).",
+        "roleRequired": "Pilih peran.",
+        "outletRequired": "Pilih cabang.",
+        "passwordRequired": "Masukkan kata sandi.",
+        "passwordShort": "Kata sandi harus terdiri dari minimal 6 karakter.",
+        "confirmRequired": "Ketik ulang kata sandi.",
+        "passwordMismatch": "Kedua kata sandi tidak cocok.",
+        "newRequired": "Masukkan kata sandi baru."
+      }
+    },
+    "detail": {
+      "info": "Detail",
+      "merchant": "Toko",
+      "account": "Akun",
+      "statusActive": "Aktif",
+      "statusLocked": "Terkunci",
+      "activeHint": "Kunci akun agar staf ini tidak dapat masuk lagi.",
+      "lockedHint": "Akun sedang terkunci. Buka kunci agar staf dapat masuk kembali.",
+      "emailStatus": "Email",
+      "verified": "Terverifikasi",
+      "notVerified": "Belum terverifikasi",
+      "createdAt": "Dibuat",
+      "deleteHint": "Hapus akun ini secara permanen. Tindakan ini tidak dapat dibatalkan.",
+      "changePassword": "Ubah kata sandi",
+      "editTitle": "Ubah staf",
+      "emailFixed": "Email masuk tidak dapat diubah.",
+      "roleFixed": "Peran tidak diubah di sini.",
+      "notFound": "Staf ini tidak ditemukan.",
+      "backToList": "Kembali ke daftar staf"
+    },
+    "password": {
+      "title": "Ubah kata sandi",
+      "hint": "Tetapkan kata sandi baru untuk {name}. Kata sandi lama tidak berlaku lagi.",
+      "new": "Kata sandi baru",
+      "confirm": "Ketik ulang kata sandi baru",
+      "submit": "Ubah kata sandi",
+      "changing": "Mengubah…"
+    }
+  }
+}
