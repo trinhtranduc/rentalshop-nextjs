@@ -1,0 +1,190 @@
+{
+  "required": "この項目は必須です",
+  "email": "有効なメールアドレスを入力してください",
+  "phone": "有効な電話番号を入力してください",
+  "min": "最小値は{min}です",
+  "max": "最大値は{max}です",
+  "minLength": "{min}文字以上で入力してください",
+  "maxLength": "{max}文字以内で入力してください",
+  "pattern": "形式が正しくありません",
+  "url": "有効なURLを入力してください",
+  "number": "有効な数値を入力してください",
+  "integer": "整数を入力してください",
+  "positive": "正の数を入力してください",
+  "negative": "負の数を入力してください",
+  "date": "有効な日付を入力してください",
+  "dateRange": "期間が正しくありません",
+  "time": "有効な時刻を入力してください",
+  "password": {
+    "minLength": "パスワードは{min}文字以上にしてください",
+    "uppercase": "パスワードには大文字を1文字以上含めてください",
+    "lowercase": "パスワードには小文字を1文字以上含めてください",
+    "number": "パスワードには数字を1文字以上含めてください",
+    "special": "パスワードには記号を1文字以上含めてください",
+    "match": "パスワードが一致しません"
+  },
+  "file": {
+    "size": "ファイルサイズは{max}未満にしてください",
+    "type": "ファイル形式が正しくありません。使用できる形式: {types}",
+    "required": "ファイルを選択してください"
+  },
+  "unique": "この値はすでに使用されています",
+  "exists": "この値は存在しません",
+  "custom": {
+    "invalidBarcode": "バーコードが正しくありません",
+    "invalidSKU": "SKUが正しくありません",
+    "stockNotAvailable": "在庫が足りません",
+    "invalidDateRange": "終了日は開始日より後にしてください",
+    "priceGreaterThanZero": "価格は0より大きくしてください",
+    "quantityGreaterThanZero": "数量は0より大きくしてください"
+  },
+  "fields": {
+    "firstName": {
+      "required": "名は必須です"
+    },
+    "lastName": {
+      "required": "姓は必須です"
+    },
+    "name": {
+      "required": "名前は必須です",
+      "minLength": "名前は{min}文字以上にしてください"
+    },
+    "productName": {
+      "required": "商品名は必須です"
+    },
+    "outletName": {
+      "required": "店舗名は必須です"
+    },
+    "planName": {
+      "required": "プラン名は必須です"
+    },
+    "planDescription": {
+      "required": "プランの説明は必須です"
+    },
+    "variantName": {
+      "required": "バリエーション名は必須です"
+    },
+    "phone": {
+      "required": "電話番号は必須です"
+    },
+    "email": {
+      "invalid": "メールアドレスが正しくありません",
+      "invalidFormat": "メールアドレスの形式が正しくありません"
+    },
+    "password": {
+      "minLength6": "パスワードは6文字以上にしてください",
+      "required": "パスワードは必須です"
+    },
+    "confirmPassword": {
+      "required": "確認用パスワードは必須です",
+      "match": "パスワードが一致しません"
+    },
+    "outletId": {
+      "required": "店舗は必須です",
+      "requiredForRole": "この役割では店舗の指定が必要です",
+      "shouldNotBeSelected": "オーナーの役割では店舗を選択しないでください"
+    },
+    "country": {
+      "invalid": "有効な国を選択してください"
+    },
+    "tenantKey": {
+      "invalid": "テナントキーは英数字で入力してください"
+    },
+    "product": {
+      "required": "商品は必須です"
+    },
+    "category": {
+      "required": "カテゴリは必須です"
+    },
+    "outlet": {
+      "required": "店舗は必須です",
+      "requiredForRole": "この役割では店舗の指定が必要です"
+    },
+    "merchant": {
+      "required": "ショップは必須です",
+      "requiredForRole": "この役割ではショップの指定が必要です"
+    },
+    "role": {
+      "required": "役割は必須です"
+    },
+    "deposit": {
+      "nonNegative": "内金は0以上にしてください",
+      "cannotBeNegative": "内金にマイナスの値は入力できません"
+    },
+    "merchantId": {
+      "required": "ショップIDは必須です"
+    },
+    "planId": {
+      "required": "プランIDは必須です"
+    },
+    "planVariantId": {
+      "required": "プランバリエーションIDは必須です"
+    },
+    "rentPrice": {
+      "required": "レンタル価格は必須です。0より大きい値を入力してください",
+      "nonNegative": "レンタル価格は0以上にしてください",
+      "greaterThanZero": "レンタル価格は0より大きくしてください"
+    },
+    "salePrice": {
+      "required": "販売価格は必須です。0より大きい値を入力してください",
+      "nonNegative": "販売価格は0以上にしてください",
+      "greaterThanZero": "販売価格は0より大きくしてください"
+    },
+    "costPrice": {
+      "nonNegative": "原価は0以上にしてください"
+    },
+    "stock": {
+      "nonNegative": "在庫は0以上にしてください"
+    },
+    "totalStock": {
+      "required": "在庫数は必須です。0より大きい値を入力してください",
+      "nonNegative": "在庫の合計は0以上にしてください",
+      "greaterThanZero": "在庫数は0より大きくしてください"
+    },
+    "basePrice": {
+      "nonNegative": "基本価格は0以上にしてください"
+    },
+    "price": {
+      "nonNegative": "価格は0以上にしてください"
+    },
+    "amount": {
+      "nonNegative": "金額は0以上にしてください"
+    },
+    "duration": {
+      "positive": "期間は正の数にしてください"
+    },
+    "trialDays": {
+      "nonNegative": "無料体験の日数は0以上にしてください"
+    },
+    "discount": {
+      "range": "割引は0〜100の範囲で入力してください"
+    },
+    "durationConfig": {
+      "required": "価格タイプがHOURLYまたはDAILYの場合、期間設定は必須で、有効なJSONである必要があります",
+      "requiredForPricingType": "価格タイプがHOURLYまたはDAILYの場合、期間設定は必須です",
+      "minDurationRequired": "最短期間は必須です。0より大きい値を入力してください",
+      "maxDurationRequired": "最長期間は必須です。0より大きい値を入力してください",
+      "minMustBeLessThanMax": "最短期間は最長期間以下にしてください",
+      "defaultDurationRequired": "既定の期間は必須です。0より大きい値を入力してください",
+      "defaultMustBeAtLeastMin": "既定の期間は最短期間以上にしてください",
+      "defaultMustNotExceedMax": "既定の期間は最長期間以下にしてください"
+    },
+    "outletStock": {
+      "required": "店舗の在庫は必須です。少なくとも1つの店舗の在庫数を指定してください。",
+      "noOutletsAvailable": "店舗がありません。店舗の設定について管理者にお問い合わせください。",
+      "cannotBeNegative": "店舗の在庫数にマイナスの値は入力できません"
+    },
+    "endDate": {
+      "afterStart": "終了日は開始日より後にしてください"
+    },
+    "nameOrFullName": {
+      "required": "'name'、または'firstName'と'lastName'の両方を指定してください"
+    },
+    "businessTypePricingType": {
+      "required": "ショップの登録には業種と価格タイプが必須です"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "既定で1日あたりの料金にするには、1日あたりのレンタル価格が必要です。"
+    }
+  }
+}
