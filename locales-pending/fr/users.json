@@ -10,7 +10,7 @@
   "viewUserInfo": "Voir les informations et le détail de l'utilisateur",
   "userInformation": "Informations de l'utilisateur",
   "accountInformation": "Informations du compte",
-  "outletInformation": "Informations du point de vente",
+  "outletInformation": "Informations du point de location",
   "accountActions": "Actions sur le compte",
   "passwordManagement": "Gestion du mot de passe",
   "passwordSettings": "Paramètres du mot de passe",
@@ -34,9 +34,9 @@
     "email": "E-mail",
     "phone": "Téléphone",
     "role": "Rôle",
-    "outlet": "Point de vente",
-    "outletName": "Nom du point de vente",
-    "outletId": "N° du point de vente",
+    "outlet": "Point de location",
+    "outletName": "Nom du point de location",
+    "outletId": "N° du point de location",
     "merchant": "Enseigne",
     "merchantName": "Nom de l'enseigne",
     "merchantId": "N° de l'enseigne",
@@ -57,7 +57,7 @@
   "roles": {
     "ADMIN": "Administrateur système",
     "MERCHANT": "Propriétaire de l'enseigne",
-    "OUTLET_ADMIN": "Responsable de point de vente",
+    "OUTLET_ADMIN": "Responsable de point de location",
     "OUTLET_STAFF": "Personnel",
     "ARTICLE": "Rédacteur d'articles",
     "OUTLET_INVENTORY": "Personnel de stock"
@@ -139,7 +139,7 @@
   "filters": {
     "all": "Tous les utilisateurs",
     "byRole": "Filtrer par rôle",
-    "byOutlet": "Filtrer par point de vente",
+    "byOutlet": "Filtrer par point de location",
     "active": "Actif",
     "inactive": "Inactif",
     "allRoles": "Tous les rôles"
@@ -164,7 +164,7 @@
     "enterEmail": "Saisir l'adresse e-mail",
     "enterPhone": "Saisir le numéro de téléphone (chiffres uniquement)",
     "selectRole": "Choisir un rôle",
-    "selectOutlet": "Choisir un point de vente",
+    "selectOutlet": "Choisir un point de location",
     "enterPassword": "Saisir le mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
     "enterNewPassword": "Saisir le nouveau mot de passe",
@@ -172,14 +172,14 @@
     "loadingMerchants": "Chargement de la liste des enseignes...",
     "searchAndSelectMerchant": "Rechercher et choisir une enseigne",
     "currentMerchant": "Enseigne actuelle",
-    "loadingOutlets": "Chargement de la liste des points de vente...",
+    "loadingOutlets": "Chargement de la liste des points de location...",
     "selectMerchantFirst": "Veuillez d'abord choisir une enseigne",
-    "searchAndSelectOutlet": "Rechercher et choisir un point de vente",
-    "currentOutlet": "Point de vente actuel",
+    "searchAndSelectOutlet": "Rechercher et choisir un point de location",
+    "currentOutlet": "Point de location actuel",
     "searchMerchants": "Rechercher une enseigne...",
     "noMerchantsFound": "Aucune enseigne trouvée",
-    "searchOutlets": "Rechercher un point de vente...",
-    "noOutletsFound": "Aucun point de vente trouvé",
+    "searchOutlets": "Rechercher un point de location...",
+    "noOutletsFound": "Aucun point de location trouvé",
     "searchUsers": "Rechercher un utilisateur..."
   },
   "labels": {
@@ -191,7 +191,7 @@
   },
   "roleHelp": {
     "title": "Rôles",
-    "OUTLET_ADMIN": "Gère un point de vente : commandes, produits, clients et personnel de ce point de vente.",
+    "OUTLET_ADMIN": "Gère un point de location : commandes, produits, clients et personnel de ce point de location.",
     "OUTLET_STAFF": "Crée et traite les commandes. Ne peut pas modifier le prix des produits.",
     "loginNote": "Le nouvel utilisateur se connecte avec cet e-mail et ce mot de passe, puis peut changer son mot de passe lui-même.",
     "OUTLET_INVENTORY": "Vend comme le personnel et gère les produits et catégories (ajouter, modifier le prix, supprimer, importer et exporter Excel). Ne consulte pas le chiffre d'affaires."
@@ -201,8 +201,8 @@
     "add": "Ajouter du personnel",
     "searchPlaceholder": "Rechercher nom, tél., e-mail",
     "searchLabel": "Rechercher du personnel",
-    "allOutlets": "Tous les points de vente",
-    "outletFilter": "Filtrer par point de vente",
+    "allOutlets": "Tous les points de location",
+    "outletFilter": "Filtrer par point de location",
     "allOutletsValue": "Tous",
     "filters": {
       "role": "Rôle :",
@@ -214,13 +214,13 @@
     "cols": {
       "staff": "Personnel",
       "role": "Rôle",
-      "outlet": "Point de vente",
+      "outlet": "Point de location",
       "lastLogin": "Dernière connexion",
       "actions": "Actions"
     },
     "roles": {
       "owner": "Propriétaire de la boutique",
-      "admin": "Responsable de point de vente",
+      "admin": "Responsable de point de location",
       "staff": "Personnel",
       "other": "Autre",
       "inventory": "Personnel de stock"
@@ -249,8 +249,8 @@
     },
     "rolesCard": {
       "title": "Ce que peut faire chaque rôle",
-      "owner": "Tous les points de vente, la caisse, les rapports, le personnel et les forfaits.",
-      "admin": "Un point de vente : commandes, produits, prix, clients, caisse du jour, personnel du point de vente.",
+      "owner": "Tous les points de location, la caisse, les rapports, le personnel et les forfaits.",
+      "admin": "Un point de location : commandes, produits, prix, clients, caisse du jour, personnel du point de location.",
       "staff": "Créer des commandes, remettre les articles, enregistrer les retours, ajouter des clients. Ne peut pas modifier le prix des produits ni consulter les rapports financiers.",
       "rolePermissions": "Voir les autorisations de chaque rôle",
       "permissions": "Autorisations supplémentaires du personnel",
@@ -280,7 +280,7 @@
       "saveFailed": "Impossible d'enregistrer les autorisations. Réessayez.",
       "readFailed": "Impossible de lire les autorisations enregistrées de ce membre du personnel. Enregistrer réécrira toutes les autorisations supplémentaires exactement selon les interrupteurs ci-dessous.",
       "groups": {
-        "outlet": "Point de vente",
+        "outlet": "Point de location",
         "orders": "Commandes",
         "products": "Produits",
         "customers": "Clients",
@@ -290,12 +290,12 @@
     },
     "permissionKeys": {
       "outlet_view": {
-        "label": "Voir le point de vente",
-        "desc": "Consulter les informations du point de vente"
+        "label": "Voir le point de location",
+        "desc": "Consulter les informations du point de location"
       },
       "outlet_manage": {
-        "label": "Gérer le point de vente",
-        "desc": "Modifier les informations et les paramètres du point de vente"
+        "label": "Gérer le point de location",
+        "desc": "Modifier les informations et les paramètres du point de location"
       },
       "users_view": {
         "label": "Voir le personnel",
@@ -394,19 +394,19 @@
       "addTitle": "Ajouter du personnel",
       "infoTitle": "Informations",
       "name": "Nom complet",
-      "namePlaceholder": "Exemple : Tran Thi Lan",
+      "namePlaceholder": "Ex. : Trần Thị Lan",
       "phone": "Numéro de téléphone",
       "optional": "Facultatif",
       "email": "E-mail de connexion",
       "emailPlaceholder": "nom@exemple.com",
       "emailHint": "Le personnel se connecte avec cette adresse e-mail.",
       "required": "obligatoire",
-      "roleTitle": "Rôle et point de vente",
+      "roleTitle": "Rôle et point de location",
       "role": "Rôle",
-      "outlet": "Point de vente",
-      "outletFixed": "Le nouveau membre du personnel appartient à votre point de vente.",
-      "outletsLoading": "Chargement des points de vente…",
-      "noOutlets": "Aucun point de vente pour l'instant",
+      "outlet": "Point de location",
+      "outletFixed": "Le nouveau membre du personnel appartient à votre point de location.",
+      "outletsLoading": "Chargement des points de location…",
+      "noOutlets": "Aucun point de location pour l'instant",
       "passwordTitle": "Mot de passe de connexion",
       "password": "Mot de passe",
       "confirmPassword": "Ressaisir le mot de passe",
@@ -429,7 +429,7 @@
         "phoneLong": "Le numéro de téléphone ne doit pas dépasser 15 chiffres.",
         "phoneChars": "Le numéro de téléphone ne peut contenir que des chiffres, espaces, + - ( ).",
         "roleRequired": "Choisissez un rôle.",
-        "outletRequired": "Choisissez un point de vente.",
+        "outletRequired": "Choisissez un point de location.",
         "passwordRequired": "Saisissez le mot de passe.",
         "passwordShort": "Le mot de passe doit comporter au moins 6 caractères.",
         "confirmRequired": "Ressaisissez le mot de passe.",

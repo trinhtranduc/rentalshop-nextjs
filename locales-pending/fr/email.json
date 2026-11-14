@@ -112,7 +112,7 @@
     "addonLimits": "Limites de l'option complémentaire",
     "notes": "Remarques",
     "noSpecificLimits": "Aucune limite spécifique",
-    "outlets": "{count} point(s) de vente",
+    "outlets": "{count} point(s) de location",
     "users": "{count} utilisateur(s)",
     "products": "{count} produit(s)",
     "customers": "{count} client(s)",

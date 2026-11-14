@@ -227,7 +227,7 @@
       "customers": "Клиенты",
       "staff": "Сотрудники",
       "attendance": "Учёт рабочего времени",
-      "outlets": "Точки",
+      "outlets": "Филиалы",
       "categories": "Категории",
       "loyalty": "Постоянные клиенты",
       "settings": "Настройки магазина",
@@ -239,7 +239,7 @@
       }
     },
     "createOrder": "Создать заказ",
-    "allOutlets": "Все точки",
+    "allOutlets": "Все филиалы",
     "mainMenu": "Главное меню",
     "openMenu": "Открыть меню",
     "closeMenu": "Закрыть меню",
@@ -269,8 +269,8 @@
       "loadMore": "Показать ещё",
       "unreadCount": "Непрочитанных: {count}"
     },
-    "allOutletsCount": "Все точки ({count})",
-    "someOutlets": "Точек: {count}",
+    "allOutletsCount": "Все филиалы ({count})",
+    "someOutlets": "Филиалов: {count}",
     "groups": {
       "sales": "Продажа и аренда",
       "goods": "Товары",

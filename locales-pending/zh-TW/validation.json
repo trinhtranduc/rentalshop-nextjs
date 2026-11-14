@@ -88,7 +88,7 @@
       "invalid": "請選擇有效的國家"
     },
     "tenantKey": {
-      "invalid": "Tenant key 只能包含英文字母與數字"
+      "invalid": "店家網址代碼只能包含英文字母與數字"
     },
     "product": {
       "required": "請選擇商品"

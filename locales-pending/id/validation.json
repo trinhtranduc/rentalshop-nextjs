@@ -181,7 +181,7 @@
       "required": "Harus ada 'name' atau 'firstName' dan 'lastName'"
     },
     "businessTypePricingType": {
-      "required": "Jenis usaha dan jenis harga wajib diisi untuk pendaftaran bisnis"
+      "required": "Jenis bisnis dan jenis harga wajib diisi untuk pendaftaran bisnis"
     },
     "pricingDefault": {
       "dailyNeedsPrice": "Default harga per hari memerlukan harga sewa per hari."

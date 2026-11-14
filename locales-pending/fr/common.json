@@ -131,7 +131,7 @@
     "calendar": "Calendrier des remises",
     "users": "Utilisateurs",
     "authors": "Auteurs",
-    "outlets": "Points de vente",
+    "outlets": "Points de location",
     "categories": "Catégories",
     "availabilityCheck": "Vérifier les disponibilités",
     "reports": "Rapports",
@@ -156,7 +156,7 @@
       "products": "produits",
       "customers": "clients",
       "users": "utilisateurs",
-      "outlets": "points de vente",
+      "outlets": "points de location",
       "categories": "catégories",
       "merchants": "marques",
       "posts": "articles",
@@ -199,8 +199,8 @@
     "ADMIN": "Administrateur",
     "ARTICLE": "Éditeur d'articles",
     "MERCHANT": "Propriétaire",
-    "OUTLET_ADMIN": "Responsable de point de vente",
-    "OUTLET_STAFF": "Personnel de point de vente",
+    "OUTLET_ADMIN": "Responsable de point de location",
+    "OUTLET_STAFF": "Personnel de point de location",
     "OUTLET_INVENTORY": "Personnel de stock"
   },
   "import": {
@@ -221,25 +221,25 @@
     "nav": {
       "overview": "Vue d'ensemble",
       "orders": "Commandes",
-      "calendar": "Calendrier remises et retours",
+      "calendar": "Calendrier des remises et retours",
       "availability": "Disponibilités",
       "products": "Produits",
       "customers": "Clients",
       "staff": "Personnel",
       "attendance": "Pointage",
-      "outlets": "Points de vente",
+      "outlets": "Points de location",
       "categories": "Catégories",
       "loyalty": "Clients fidèles",
       "settings": "Paramètres de la boutique",
       "attendanceSub": {
-        "timesheet": "Feuille de présence",
-        "shifts": "Planning des équipes",
-        "templates": "Modèles de shift",
-        "locations": "Codes QR et lieux"
+        "timesheet": "Feuille de pointage",
+        "shifts": "Planification des créneaux",
+        "templates": "Modèles de créneau",
+        "locations": "Codes QR et positions"
       }
     },
     "createOrder": "Créer une commande",
-    "allOutlets": "Tous les points de vente",
+    "allOutlets": "Tous les points de location",
     "mainMenu": "Menu principal",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
@@ -269,8 +269,8 @@
       "loadMore": "Voir plus",
       "unreadCount": "{count} non lues"
     },
-    "allOutletsCount": "Tous les points de vente ({count})",
-    "someOutlets": "{count} points de vente",
+    "allOutletsCount": "Tous les points de location ({count})",
+    "someOutlets": "{count} points de location",
     "groups": {
       "sales": "Ventes et locations",
       "goods": "Marchandises",

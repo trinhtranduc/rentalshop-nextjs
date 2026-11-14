@@ -114,7 +114,7 @@
     "dayTitleToday": "{day} · hari ini",
     "sections": {
       "pickups": "Perlu diserahkan · {count}",
-      "returns": "Perlu diterima pengembaliannya · {count}"
+      "returns": "Perlu pengembalian · {count}"
     },
     "sub": {
       "returnOn": "kembali {day}",

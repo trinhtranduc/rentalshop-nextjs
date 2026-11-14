@@ -75,7 +75,7 @@
     "enterCountry": "Introduzca el país",
     "enterOutletPhone": "Introduzca el teléfono de la sucursal",
     "enterOutletDescription": "Introduzca la descripción de la sucursal",
-    "enterPrintNote": "Ej.: *** Traiga su documento de identidad al recoger"
+    "enterPrintNote": "Ej.: *** Traiga su documento de identidad al entregar"
   },
   "web": {
     "title": "Sucursales",
@@ -127,7 +127,7 @@
       "description": "Descripción",
       "printNote": "Nota para imprimir en el comprobante de alquiler",
       "printNoteHint": "Se imprime al final del comprobante de alquiler, por ejemplo, para recordar traer el documento de identidad o indicar la política de devoluciones.",
-      "printNotePlaceholder": "Ej.: Por favor, traiga su documento de identidad al recoger",
+      "printNotePlaceholder": "Ej.: Por favor, traiga su documento de identidad al entregar",
       "printNoteTooLong": "Máximo {max} caracteres",
       "count": "{count}/{max}",
       "cancel": "Cancelar",

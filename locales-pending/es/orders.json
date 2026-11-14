@@ -752,8 +752,8 @@
           "FIXED": "/alquiler",
           "DAILY": "/día",
           "HOURLY": "/hora",
-          "BLOCK": "por todo el alquiler",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "por todo el alquiler"
         },
         "note": "Solo se aplica a este pedido; el precio del producto no cambia.",
         "done": "Listo",
@@ -803,7 +803,7 @@
       "label": "Listas de pedidos",
       "todo": "Por hacer",
       "all": "Todos los pedidos",
-      "noshow": "Sin recoger"
+      "noshow": "Sin entregar"
     },
     "status": {
       "label": "Filtrar por estado",
@@ -1182,7 +1182,7 @@
       "todayChip": "Hoy",
       "dueOn": "vence {day}",
       "stageMeta": "{percent} % del pedido · {day}",
-      "restTitle": "Saldo, se cobra al recoger",
+      "restTitle": "Saldo, se cobra al entregar",
       "restMeta": "Saldo · {day}",
       "percentOf": "Porcentaje de la etapa {n}",
       "overHundred": "Las etapas no pueden sumar más de 100 %.",
@@ -1212,7 +1212,7 @@
       "close": "Cerrar",
       "collectConfirm": "Cobrar {amount}",
       "amount": "Monto",
-      "amountHint": "Quedan {amount} por cobrar en esta etapa. Si ingresa menos, la diferencia pasa al saldo que se cobra al recoger.",
+      "amountHint": "Quedan {amount} por cobrar en esta etapa. Si ingresa menos, la diferencia pasa al saldo que se cobra al entregar.",
       "overStage": "No puede cobrar más de {amount} en esta etapa.",
       "method": "Forma de pago",
       "cash": "Efectivo",
@@ -1230,7 +1230,7 @@
       "percentOfOrder": "% del pedido",
       "dueLabel": "Vencimiento",
       "keepDue": "Mantener {day}",
-      "restLocked": "Saldo, se cobra al recoger · vence {day} · automático, no editable",
+      "restLocked": "Saldo, se cobra al entregar · vence {day} · automático, no editable",
       "total": "Total",
       "totalLine": "{percent} % = {amount}",
       "editProblem": {

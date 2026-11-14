@@ -297,7 +297,7 @@
       "filter": {
         "label": "Filter baris",
         "all": "Semua {count}",
-        "errors": "Error dulu · {count}"
+        "errors": "Galat dulu · {count}"
       },
       "cols": {
         "row": "Baris",

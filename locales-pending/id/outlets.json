@@ -43,7 +43,7 @@
   },
   "dialogs": {
     "addOutletTitle": "Tambah cabang baru",
-    "addOutletDescription": "Buat cabang baru untuk usaha Anda",
+    "addOutletDescription": "Buat cabang baru untuk bisnis Anda",
     "editOutletTitle": "Ubah cabang",
     "deleteOutletTitle": "Hapus cabang",
     "outletDetails": "Detail cabang",
@@ -116,7 +116,7 @@
       "namePlaceholder": "Contoh: Cabang Distrik 1",
       "required": "wajib",
       "nameRequired": "Masukkan nama cabang",
-      "phone": "Telp",
+      "phone": "Nomor telepon",
       "address": "Alamat jalan",
       "city": "Kota",
       "state": "Provinsi",

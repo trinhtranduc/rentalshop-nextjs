@@ -53,7 +53,7 @@
       "required": "Le nom du produit est obligatoire"
     },
     "outletName": {
-      "required": "Le nom du point de vente est obligatoire"
+      "required": "Le nom du point de location est obligatoire"
     },
     "planName": {
       "required": "Le nom du forfait est obligatoire"
@@ -80,9 +80,9 @@
       "match": "Les mots de passe ne correspondent pas"
     },
     "outletId": {
-      "required": "Le point de vente est obligatoire",
-      "requiredForRole": "Le point de vente est obligatoire pour ce rôle",
-      "shouldNotBeSelected": "Le point de vente ne doit pas être sélectionné pour le rôle commerçant"
+      "required": "Le point de location est obligatoire",
+      "requiredForRole": "Le point de location est obligatoire pour ce rôle",
+      "shouldNotBeSelected": "Le point de location ne doit pas être sélectionné pour le rôle commerçant"
     },
     "country": {
       "invalid": "Veuillez choisir un pays valide"
@@ -97,8 +97,8 @@
       "required": "La catégorie est obligatoire"
     },
     "outlet": {
-      "required": "Le point de vente est obligatoire",
-      "requiredForRole": "Le point de vente est obligatoire pour ce rôle"
+      "required": "Le point de location est obligatoire",
+      "requiredForRole": "Le point de location est obligatoire pour ce rôle"
     },
     "merchant": {
       "required": "L'entreprise est obligatoire",
@@ -170,9 +170,9 @@
       "defaultMustNotExceedMax": "La durée par défaut ne doit pas dépasser la durée maximale"
     },
     "outletStock": {
-      "required": "Le stock par point de vente est obligatoire. Veuillez indiquer un niveau de stock pour au moins un point de vente.",
-      "noOutletsAvailable": "Aucun point de vente disponible. Veuillez contacter l'administrateur pour configurer un point de vente.",
-      "cannotBeNegative": "La valeur du stock par point de vente ne peut pas être négative"
+      "required": "Le stock par point de location est obligatoire. Veuillez indiquer un niveau de stock pour au moins un point de location.",
+      "noOutletsAvailable": "Aucun point de location disponible. Veuillez contacter l'administrateur pour configurer un point de location.",
+      "cannotBeNegative": "La valeur du stock par point de location ne peut pas être négative"
     },
     "endDate": {
       "afterStart": "La date de fin doit être postérieure à la date de début"

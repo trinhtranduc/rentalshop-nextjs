@@ -30,8 +30,8 @@
     "enterprise": "企業方案"
   },
   "descriptions": {
-    "basic": "適合小型租賃店鋪",
-    "professional": "適合有網頁存取需求的成長中租賃店鋪",
+    "basic": "適合小型租賃店家",
+    "professional": "適合有網頁存取需求的成長中租賃店家",
     "enterprise": "適合擁有多間分店的大型租賃業者"
   },
   "billingCycle": {
@@ -152,8 +152,8 @@
   },
   "web": {
     "title": "服務方案",
-    "subtitle": "選擇適合您店鋪的方案。",
-    "currentLine": "店鋪目前使用 {plan} 方案。",
+    "subtitle": "選擇適合您店家的方案。",
+    "currentLine": "店家目前使用 {plan} 方案。",
     "trialNote": "試用方案即將結束。",
     "current": "使用中",
     "popular": "熱門",
@@ -201,7 +201,7 @@
     "subtitle": "簡單的訂閱價格，限制與功能一目了然。沒有隱藏費用，也沒有複雜的計算。",
     "publicCheckTitle": "商品公開查看",
     "publicCheckIntro": "所有方案都能把商品目錄公開分享給客人。傳送分享連結，客人不必登入就能查看商品與價格。",
-    "publicCheck1": "透過 WhatsApp、電子郵件或社群媒體分享商品連結",
+    "publicCheck1": "透過 Zalo、電子郵件或社群媒體分享商品連結",
     "publicCheck2": "客人能立即看到價格與供應狀態",
     "publicCheck3": "客人不需要登入",
     "publicCheck4": "非常適合行銷與接觸客人",
@@ -211,7 +211,7 @@
     "products": "商品",
     "customers": "客戶",
     "users": "使用者",
-    "outlets": "門市",
+    "outlets": "分店",
     "orders": "訂單",
     "unlimited": "無限制",
     "getStarted": "立即開始",
@@ -246,7 +246,7 @@
     "descTrial": "免費試用，採入門方案上限",
     "descBasic": "適合小型租賃店",
     "descProfessional": "適合成長中的租賃店，含網頁版",
-    "descEnterprise": "適合擁有多間門市的大型租賃業者",
+    "descEnterprise": "適合擁有多間分店的大型租賃業者",
     "badgeFreeTrial": "免費試用",
     "badgeMostPopular": "最受歡迎",
     "badgePremium": "Premium"

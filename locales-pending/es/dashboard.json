@@ -47,17 +47,17 @@
     "customerGrowth": "Tasa de crecimiento de la cantidad de clientes nuevos. Se compara con el período anterior.",
     "revenueGrowth": "Tasa de crecimiento de los ingresos. Se compara con el período anterior para evaluar el rendimiento del negocio.",
     "productUtilization": "Tasa de uso de productos. Porcentaje de productos que están alquilados en comparación con el total de productos disponibles.",
-    "totalCollateral": "Total de depósitos de garantía de los pedidos ya entregados (PICKUPED). Solo se calcula para los pedidos de alquiler que el cliente ya retiró."
+    "totalCollateral": "Total de depósitos de garantía de los pedidos ya entregados (PICKUPED). Solo se calcula para los pedidos de alquiler ya entregados al cliente."
   },
   "charts": {
     "revenueOverTime": "Ingresos en el tiempo",
     "ordersByStatus": "Pedidos por estado",
     "topProducts": "Productos más vendidos",
-    "topShops": "Principales tiendas",
+    "topShops": "Principales sucursales",
     "sortByRevenue": "Por ingresos",
     "sortByQuantity": "Por cantidad",
     "quantityCount": "vendidos",
-    "shopName": "Tienda",
+    "shopName": "Sucursal",
     "customerActivity": "Actividad de clientes",
     "rentalTrends": "Tendencias de alquiler",
     "noData": "No hay datos para este período",
@@ -127,13 +127,13 @@
       "pickupsToday": "Entregar hoy",
       "returnsToday": "Recibir devoluciones hoy",
       "overdueReturns": "Devoluciones vencidas",
-      "noShows": "Cliente no retiró"
+      "noShows": "Cliente no se presentó"
     },
     "empty": {
       "pickupsToday": "Hoy no hay pedidos para entregar.",
       "returnsToday": "Hoy no hay devoluciones pendientes.",
       "overdueReturns": "No hay alquileres vencidos.",
-      "noShows": "Todas las reservas ya fueron retiradas.",
+      "noShows": "Todas las reservas ya fueron entregadas.",
       "all": "Hoy no queda nada por atender."
     },
     "ready": "Preparado",
@@ -181,7 +181,7 @@
       "overdueReturns": "Vencidos",
       "pickupsToday": "Entregar",
       "returnsToday": "Recibir",
-      "noShows": "No retirado"
+      "noShows": "No entregado"
     },
     "progress": {
       "pickups": "Entregados",
@@ -196,7 +196,7 @@
     "row": {
       "pickupAt": "Entrega {time}",
       "returnAt": "Devolución {time}",
-      "noShow": "Debía retirarse el {date}"
+      "noShow": "Debía entregarse el {date}"
     },
     "call": "Llamar a {name}",
     "showMore": "Ver {count} pedidos más",
@@ -259,7 +259,7 @@
       "pickups": "Por entregar",
       "returns": "Por recibir en devolución",
       "overdue": "Devoluciones vencidas",
-      "noShows": "Pasó la fecha de retiro",
+      "noShows": "Pasó la fecha de entrega",
       "pickupsDone": "Entregados {done}/{total}",
       "returnsDone": "Recibidos {done}/{total}",
       "tomorrow": "Mañana · {day}",
@@ -271,8 +271,8 @@
       "fees": "Cargos adicionales y por retraso",
       "refunds": "Reembolsos de pedidos cancelados",
       "collectedTotal": "Cobrado",
-      "atPickup": "Se cobra cuando el cliente retira",
-      "overduePickup": "Pasó la fecha de retiro, sin cobrar",
+      "atPickup": "Se cobra al entregar",
+      "overduePickup": "Pasó la fecha de entrega, sin cobrar",
       "orders": "{count} pedidos",
       "collateralNet": "Depósitos de garantía recibidos − devueltos"
     },
@@ -313,7 +313,7 @@
       "up": "▲ {value}%",
       "down": "▼ {value}%",
       "overdue": "{count} pedidos pasados de fecha",
-      "waiting": "{count} pedidos esperando retiro",
+      "waiting": "{count} pedidos esperando entrega",
       "held": "reteniendo {count} pedidos",
       "newOrders": "{count} pedidos nuevos",
       "open": "{label}: {value}. Ver detalles",
@@ -368,24 +368,24 @@
       "note": {
         "created": "Pedido creado en el período",
         "cancelled": "Cancelado, no incluido",
-        "owes": "Por cobrar al retirar",
+        "event": "",
+        "owes": "Por cobrar al entregar",
         "collateralIn": "Depósito de garantía recibido al entregar",
         "collateralOut": "Depósito de garantía devuelto",
-        "held": "Depósito de garantía retenido ahora",
-        "event": ""
+        "held": "Depósito de garantía retenido ahora"
       },
       "event": {
         "saleCreated": "Venta creada",
         "saleCancelled": "Venta cancelada, reembolsada",
         "deposit": "Anticipo cobrado",
-        "pickup": "Cobrado al retirar",
+        "pickup": "Cobrado al entregar",
         "sameDay": "Alquilado y devuelto el mismo día",
         "damageFee": "Cargo adicional cobrado",
         "depositRefund": "Anticipo reembolsado",
         "nothing": "Sin movimientos",
         "rentCancelled": "Pedido cancelado, reembolsado",
         "returnCollected": "Cobrado al devolver",
-        "futurePickup": "Ingreso previsto al retirar",
+        "futurePickup": "Ingreso previsto al entregar",
         "futureDamageFee": "Cargo adicional previsto al devolver",
         "futureRefund": "Reembolso de anticipo previsto al devolver",
         "futureNothing": "Sin movimientos previstos al devolver"
@@ -457,7 +457,7 @@
       "OTHER": "Otro"
     },
     "total": "Total",
-    "channelNote": "Solo se cuentan los pagos en VND recibidos, incluidas las renovaciones manuales y los complementos (un pago reembolsado después queda en el mes en que se recibió).",
+    "channelNote": "Solo se cuentan los pagos en VND recibidos, incluidas las renovaciones manuales y los add-ons (un pago reembolsado después queda en el mes en que se recibió).",
     "monthsTitle": "Meses de {year}",
     "exportCsv": "Exportar CSV",
     "csvDone": "Descargado {file}",
@@ -475,7 +475,7 @@
     "payments": "Pagos",
     "newShops": "Nuevos",
     "renewals": "Renovaciones",
-    "monthsNote": "Nuevo = primer pago de la tienda. Renovación = los pagos siguientes. Solo VND. Incluye renovaciones manuales y complementos.",
+    "monthsNote": "Nuevo = primer pago de la tienda. Renovación = los pagos siguientes. Solo VND. Incluye renovaciones manuales y add-ons.",
     "latestTitle": "Últimos pagos",
     "viewAll": "Ver todos",
     "noPayments": "Aún no hay pagos.",

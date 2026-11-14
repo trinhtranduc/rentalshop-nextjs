@@ -43,7 +43,7 @@
     "title": "訂閱方案即將到期",
     "subject": "訂閱方案將於 {days} {unit} 後到期 - {planName}",
     "greeting": "您好",
-    "message": "您的訂閱方案將於 {days} {unit} 後到期。請聯繫 AnyRent 辦理續約，讓店鋪持續營運。",
+    "message": "您的訂閱方案將於 {days} {unit} 後到期。請聯繫 AnyRent 辦理續約，讓店家持續營運。",
     "trialMessage": "您的免費試用將於 {days} {unit} 後結束。請聯繫 AnyRent 選擇訂閱方案，以保留資料並繼續使用。",
     "planName": "訂閱方案",
     "expiryDate": "到期日",

@@ -836,7 +836,7 @@
       "newTemplateName": "Plantilla nueva",
       "newStageName": "Anticipo de reserva",
       "policy": "Política de cancelación / cambio de fecha",
-      "policyPlaceholder": "Ej.: si cancela 7 días antes de la fecha de recogida, se devuelve todo el anticipo; si cancela con menos de 7 días, la tienda retiene el anticipo.",
+      "policyPlaceholder": "Ej.: si cancela 7 días antes de la fecha de entrega, se devuelve todo el anticipo; si cancela con menos de 7 días, la tienda retiene el anticipo.",
       "policyHint": "Se muestra al cancelar un pedido. Máximo 1000 caracteres.",
       "cancel": "Cancelar",
       "save": "Guardar",
@@ -846,7 +846,7 @@
       "loadFailed": "No se pudo cargar la configuración del cobro del anticipo.",
       "due": {
         "onCreate": "Al crear el pedido",
-        "beforePickup": "{days} días antes de la recogida",
+        "beforePickup": "{days} días antes de la entrega",
         "afterCreate": "{days} días después de crear el pedido"
       },
       "restShort": "Resto al entregar"

@@ -168,7 +168,7 @@
   "INVALID_REQUEST": "Ungültiges Anfrageformat",
   "INVALID_TENANT_KEY": "Ungültiger Tenant-Key",
   "INVALID_TIMEZONE": "Ungültige Zeitzone. Wählen Sie eine Zeitzone aus der Liste (z. B. Asia/Ho_Chi_Minh).",
-  "TENANT_KEY_ALREADY_EXISTS": "Diese Shop-URL ist bereits vergeben. Bitte wählen Sie eine andere.",
+  "TENANT_KEY_ALREADY_EXISTS": "Diese Adresse des Geschäfts ist bereits vergeben. Bitte wählen Sie eine andere.",
   "MISSING_ENDPOINT_OR_TOKEN": "Endpunkt oder Token fehlt in der Anfrage",
   "PAYMENT_METHOD_AND_TRANSACTION_ID_REQUIRED": "Zahlungsmethode und Transaktions-ID sind erforderlich",
   "INVALID_DATE_RANGE": "Ungültiger Zeitraum",

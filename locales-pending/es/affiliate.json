@@ -9,31 +9,78 @@
     },
     "howToGet": {
       "title": "Cómo obtener su enlace de afiliado",
-      "content": "El enlace de referido se genera a partir de la URL de su tienda. Lo encontrará en Configuración de la tienda, en la sección \"Compartir tienda\"."
+      "content": "El enlace de referido se genera a partir de la URL de su tienda. Lo encontrará en Configuración de la tienda, en la sección \"Compartir tienda\".",
+      "steps": [
+        "Abra Configuración de la tienda",
+        "Elija la pestaña Información de la tienda (o Información de la sucursal)",
+        "Busque \"Compartir tienda\" → \"Enlace de referido\"",
+        "Pulse Copiar para copiar su enlace de registro",
+        "Envíelo a otros dueños de tiendas"
+      ]
     },
     "howToUse": {
       "title": "Cómo usar el enlace de afiliado",
-      "content": "Comparta su enlace de afiliado con otras personas por distintos canales:"
+      "content": "Comparta su enlace de afiliado con otras personas por distintos canales:",
+      "methods": [
+        "Compartir en redes sociales (Facebook, Instagram, Twitter, etc.)",
+        "Enviar por correo electrónico o apps de mensajería (WhatsApp, Telegram, etc.)",
+        "Añadirlo a su sitio web o blog de negocios",
+        "Compartir con amigos, familiares o socios comerciales",
+        "Añadirlo a tarjetas de presentación o material publicitario"
+      ]
     },
     "howItWorks": {
       "title": "Cómo funciona",
-      "content": "Cuando alguien hace clic en su enlace de afiliado:"
+      "content": "Cuando alguien hace clic en su enlace de afiliado:",
+      "steps": [
+        "Son dirigidos a la página de registro de AnyRent",
+        "Su código de referido se añade automáticamente al formulario de registro",
+        "Cuando completan el registro, el sistema registra que llegaron desde su enlace",
+        "Puede recibir beneficios o recompensas según el programa de referidos"
+      ]
     },
     "benefits": {
       "title": "Beneficios de usar el enlace de afiliado",
-      "content": "Usar el enlace de afiliado le ayuda a:"
+      "content": "Usar el enlace de afiliado le ayuda a:",
+      "items": [
+        "Hacer seguimiento de los referidos y de sus esfuerzos de marketing",
+        "Construir una red de usuarios de AnyRent",
+        "Puede ganar recompensas o beneficios (consulte su plan)",
+        "Compartir AnyRent con quienes pueden beneficiarse",
+        "Hacer crecer su ecosistema de negocio"
+      ]
     },
     "bestPractices": {
       "title": "Buenas prácticas",
-      "content": "Para maximizar la eficacia de su enlace de afiliado:"
+      "content": "Para maximizar la eficacia de su enlace de afiliado:",
+      "tips": [
+        "Comparta el enlace de forma natural en conversaciones sobre gestión de negocios",
+        "Explique los beneficios de AnyRent al compartir el enlace",
+        "Comparta solo con quienes realmente puedan beneficiarse de AnyRent",
+        "Tenga su enlace de afiliado a mano para compartirlo rápidamente",
+        "Cumpla los términos de uso y las normas de la comunidad de AnyRent"
+      ]
     },
     "importantNotes": {
       "title": "Notas importantes",
-      "content": "Tenga en cuenta lo siguiente:"
+      "content": "Tenga en cuenta lo siguiente:",
+      "notes": [
+        "Su enlace de afiliado es único para su cuenta de comerciante",
+        "No modifique ni falsifique el código de referido en su enlace",
+        "Los beneficios y recompensas de afiliado pueden variar según el plan",
+        "AnyRent se reserva el derecho de verificar a los referidos y de eliminar los referidos fraudulentos",
+        "Respete la privacidad y comparta el enlace solo con personas interesadas"
+      ]
     },
     "troubleshooting": {
       "title": "Solución de problemas",
-      "content": "Si tiene problemas con el enlace de afiliado:"
+      "content": "Si tiene problemas con el enlace de afiliado:",
+      "solutions": [
+        "Asegúrese de haber copiado el enlace completo, incluido el código de referido",
+        "Verifique que su cuenta de tienda esté activa",
+        "Si el enlace de referido está vacío, primero configure el código de URL de la tienda en Configuración de la tienda",
+        "Contacte con soporte si el error persiste"
+      ]
     }
   },
   "banner": {
