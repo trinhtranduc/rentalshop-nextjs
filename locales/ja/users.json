@@ -57,8 +57,8 @@
   "roles": {
     "ADMIN": "システム管理者",
     "MERCHANT": "オーナー",
-    "OUTLET_ADMIN": "店舗管理者",
-    "OUTLET_STAFF": "従業員",
+    "OUTLET_ADMIN": "店長",
+    "OUTLET_STAFF": "スタッフ",
     "ARTICLE": "記事編集者",
     "OUTLET_INVENTORY": "在庫担当"
   },
@@ -148,7 +148,7 @@
     "totalUsers": "ユーザー数合計",
     "activeUsers": "有効なユーザー",
     "adminUsers": "管理者",
-    "staffUsers": "従業員"
+    "staffUsers": "スタッフ"
   },
   "dialogs": {
     "changePasswordTitle": "パスワードを変更",
@@ -191,16 +191,16 @@
   },
   "roleHelp": {
     "title": "役割",
-    "OUTLET_ADMIN": "1つの店舗を管理します。その店舗の注文、商品、顧客、従業員を扱います。",
+    "OUTLET_ADMIN": "1つの店舗を管理します。その店舗の注文、商品、顧客、スタッフを扱います。",
     "OUTLET_STAFF": "注文を作成して処理します。商品の価格は変更できません。",
     "loginNote": "新しいユーザーはこのメールアドレスとパスワードでログインし、後からパスワードを変更できます。",
-    "OUTLET_INVENTORY": "従業員と同じ販売業務に加え、商品とカテゴリを管理します（追加、価格変更、削除、Excelの取込・出力）。売上は閲覧できません。"
+    "OUTLET_INVENTORY": "スタッフと同じ販売業務に加え、商品とカテゴリを管理します（追加、価格変更、削除、Excelの取込・出力）。売上は閲覧できません。"
   },
   "web": {
-    "title": "従業員",
-    "add": "従業員を追加",
+    "title": "スタッフ",
+    "add": "スタッフを追加",
     "searchPlaceholder": "名前、電話番号、メールで検索",
-    "searchLabel": "従業員を検索",
+    "searchLabel": "スタッフを検索",
     "allOutlets": "すべての店舗",
     "outletFilter": "店舗で絞り込み",
     "allOutletsValue": "すべて",
@@ -212,7 +212,7 @@
       "inactive": "ロック中"
     },
     "cols": {
-      "staff": "従業員",
+      "staff": "スタッフ",
       "role": "役割",
       "outlet": "店舗",
       "lastLogin": "最終ログイン",
@@ -220,8 +220,8 @@
     },
     "roles": {
       "owner": "オーナー",
-      "admin": "店舗管理者",
-      "staff": "従業員",
+      "admin": "店長",
+      "staff": "スタッフ",
       "other": "その他",
       "inventory": "在庫担当"
     },
@@ -236,55 +236,55 @@
     "more": "{name}の操作をさらに表示",
     "activate": "アカウントのロックを解除",
     "deactivate": "アカウントをロック",
-    "delete": "従業員を削除",
+    "delete": "スタッフを削除",
     "confirm": {
       "activateTitle": "アカウントのロックを解除しますか？",
       "activateBody": "{name}は再びログインできるようになります。",
       "deactivateTitle": "アカウントをロックしますか？",
       "deactivateBody": "ロックを解除するまで、{name}はログインできません。",
-      "deleteTitle": "従業員を削除しますか？",
+      "deleteTitle": "スタッフを削除しますか？",
       "deleteBody": "{name}を店舗から削除します。この操作は元に戻せません。",
       "cancel": "キャンセル",
       "close": "閉じる"
     },
     "rolesCard": {
       "title": "役割ごとにできること",
-      "owner": "すべての店舗、売上、レポート、従業員、プラン契約を管理できます。",
-      "admin": "1つの店舗の注文、商品、価格、顧客、当日の売上、その店舗の従業員を管理できます。",
+      "owner": "すべての店舗、売上、レポート、スタッフ、プラン契約を管理できます。",
+      "admin": "1つの店舗の注文、商品、価格、顧客、当日の売上、その店舗のスタッフを管理できます。",
       "staff": "注文作成、商品の受け渡し、返却の受付、顧客の追加ができます。商品価格の変更や売上レポートの閲覧はできません。",
       "rolePermissions": "役割ごとの権限を見る",
-      "permissions": "従業員に追加の権限を付与",
-      "inventory": "従業員と同じ販売業務に加え、商品とカテゴリを管理します（追加、価格変更、削除、Excelの取込・出力）。売上は閲覧できません。"
+      "permissions": "スタッフに追加の権限を付与",
+      "inventory": "スタッフと同じ販売業務に加え、商品とカテゴリを管理します（追加、価格変更、削除、Excelの取込・出力）。売上は閲覧できません。"
     },
     "permissions": {
-      "title": "従業員の追加権限",
-      "hint": "役割の初期権限に加えて、従業員ごとに権限を有効にできます。",
-      "noAccess": "従業員アカウントでは権限を管理できません。",
-      "pickTitle": "従業員を選択",
+      "title": "スタッフの追加権限",
+      "hint": "役割の初期権限に加えて、スタッフごとに権限を有効にできます。",
+      "noAccess": "スタッフアカウントでは権限を管理できません。",
+      "pickTitle": "スタッフを選択",
       "picked": "{count}名選択中",
       "pickAll": "すべて選択",
       "pickNone": "選択解除",
-      "noStaff": "従業員（従業員の役割）がまだいません",
+      "noStaff": "スタッフ（スタッフの役割）がまだいません",
       "switchTitle": "追加権限",
-      "pickFirst": "左側で従業員を1名以上選択してください。",
+      "pickFirst": "左側でスタッフを1名以上選択してください。",
       "forOne": "{name}の権限を編集中です。",
-      "forMany": "{count}名の従業員を編集中です。すべてオフの状態から始まり、保存すると{count}名全員に適用されます。",
+      "forMany": "{count}名のスタッフを編集中です。すべてオフの状態から始まり、保存すると{count}名全員に適用されます。",
       "allOn": "すべてオン",
       "allOff": "すべてオフ",
       "cancel": "選択解除",
       "save": "権限を保存",
       "saving": "保存中…",
       "savedTitle": "保存しました",
-      "saved": "{count}名の従業員の権限を保存しました",
+      "saved": "{count}名のスタッフの権限を保存しました",
       "errorTitle": "エラー",
       "saveFailed": "権限を保存できませんでした。もう一度お試しください。",
-      "readFailed": "この従業員の保存済み権限を読み込めませんでした。保存すると、下のスイッチの内容がそのまま書き込まれます。",
+      "readFailed": "このスタッフの保存済み権限を読み込めませんでした。保存すると、下のスイッチの内容がそのまま書き込まれます。",
       "groups": {
         "outlet": "店舗",
         "orders": "注文",
         "products": "商品",
         "customers": "顧客",
-        "users": "従業員",
+        "users": "スタッフ",
         "dashboard": "概要"
       }
     },
@@ -298,12 +298,12 @@
         "desc": "店舗情報と設定を編集します"
       },
       "users_view": {
-        "label": "従業員を閲覧",
-        "desc": "従業員の一覧と詳細を閲覧します"
+        "label": "スタッフを閲覧",
+        "desc": "スタッフの一覧と詳細を閲覧します"
       },
       "users_manage": {
-        "label": "従業員を管理",
-        "desc": "従業員の追加、編集、ロック、削除を行います"
+        "label": "スタッフを管理",
+        "desc": "スタッフの追加、編集、ロック、削除を行います"
       },
       "products_view": {
         "label": "商品を閲覧",
@@ -373,25 +373,25 @@
       "count": "権限 {count}件",
       "granted": "付与あり",
       "notGranted": "付与なし",
-      "note": "これは役割の初期権限です。特定の従業員に追加で権限を付与するには、「従業員の追加権限」を使用してください。"
+      "note": "これは役割の初期権限です。特定のスタッフに追加で権限を付与するには、「スタッフの追加権限」を使用してください。"
     },
-    "empty": "従業員がまだいません",
-    "emptySearch": "条件に一致する従業員がいません",
-    "loadFailed": "従業員一覧を読み込めませんでした。",
+    "empty": "スタッフがまだいません",
+    "emptySearch": "条件に一致するスタッフがいません",
+    "loadFailed": "スタッフ一覧を読み込めませんでした。",
     "retry": "再試行",
-    "noAccess": "従業員アカウントでは従業員一覧を閲覧できません。",
+    "noAccess": "スタッフアカウントではスタッフ一覧を閲覧できません。",
     "weekdays": "日,月,火,水,木,金,土",
     "footer": {
       "show": "表示",
       "perPage": "件/ページ",
       "perPageLabel": "1ページの表示件数",
       "pages": "ページ",
-      "range": "従業員 {total}名中 {from}–{to}",
+      "range": "スタッフ {total}名中 {from}–{to}",
       "prev": "前のページ",
       "next": "次のページ"
     },
     "form": {
-      "addTitle": "従業員を追加",
+      "addTitle": "スタッフを追加",
       "infoTitle": "基本情報",
       "name": "氏名",
       "namePlaceholder": "例: 田中 花子",
@@ -399,25 +399,25 @@
       "optional": "任意",
       "email": "ログイン用メール",
       "emailPlaceholder": "name@example.com",
-      "emailHint": "従業員はこのメールアドレスでログインします。",
+      "emailHint": "スタッフはこのメールアドレスでログインします。",
       "required": "必須",
       "roleTitle": "役割と店舗",
       "role": "役割",
       "outlet": "店舗",
-      "outletFixed": "新しい従業員はあなたの店舗に所属します。",
+      "outletFixed": "新しいスタッフはあなたの店舗に所属します。",
       "outletsLoading": "店舗を読み込み中…",
       "noOutlets": "店舗がまだありません",
       "passwordTitle": "ログイン用パスワード",
       "password": "パスワード",
       "confirmPassword": "パスワードを再入力",
       "passwordHint": "6文字以上で入力してください。",
-      "loginNote": "従業員はこのメールアドレスとパスワードでログインし、後から自分でパスワードを変更できます。",
+      "loginNote": "スタッフはこのメールアドレスとパスワードでログインし、後から自分でパスワードを変更できます。",
       "show": "表示",
       "hide": "非表示",
       "showPassword": "パスワードを表示",
       "hidePassword": "パスワードを隠す",
       "cancel": "キャンセル",
-      "create": "従業員を追加",
+      "create": "スタッフを追加",
       "creating": "追加中…",
       "save": "保存",
       "saving": "保存中…",
@@ -443,19 +443,19 @@
       "account": "アカウント",
       "statusActive": "有効",
       "statusLocked": "ロック中",
-      "activeHint": "アカウントをロックすると、この従業員はログインできなくなります。",
-      "lockedHint": "アカウントはロックされています。ロックを解除すると、従業員は再びログインできます。",
+      "activeHint": "アカウントをロックすると、このスタッフはログインできなくなります。",
+      "lockedHint": "アカウントはロックされています。ロックを解除すると、スタッフは再びログインできます。",
       "emailStatus": "メール",
       "verified": "認証済み",
       "notVerified": "未認証",
       "createdAt": "作成日",
       "deleteHint": "このアカウントを完全に削除します。この操作は元に戻せません。",
       "changePassword": "パスワードを変更",
-      "editTitle": "従業員を編集",
+      "editTitle": "スタッフを編集",
       "emailFixed": "ログイン用メールは変更できません。",
       "roleFixed": "ここでは役割を変更できません。",
-      "notFound": "この従業員は見つかりませんでした。",
-      "backToList": "従業員一覧に戻る"
+      "notFound": "このスタッフは見つかりませんでした。",
+      "backToList": "スタッフ一覧に戻る"
     },
     "password": {
       "title": "パスワードを変更",

@@ -368,6 +368,7 @@
       "note": {
         "created": "期間中に作成",
         "cancelled": "キャンセル済み・集計外",
+        "event": "",
         "owes": "お渡し時に受け取り予定",
         "collateralIn": "お渡し時に保証金を受け取り",
         "collateralOut": "保証金を返還",
