@@ -1,5 +1,5 @@
 {
-  "title": "カレンダー",
+  "title": "受取カレンダー",
   "navigation": {
     "today": "今日",
     "previousMonth": "前月",
@@ -34,7 +34,7 @@
     "pickupsToday": "本日の受取",
     "returnsToday": "本日の返却",
     "monthlyStatistics": "月間統計",
-    "activeDays": "稼働日",
+    "activeDays": "注文のある日",
     "daysWithScheduledOrders": "予定の注文がある日",
     "dateRange": "期間",
     "to": "〜"
@@ -99,7 +99,7 @@
     "legend": {
       "pickups": "お渡し",
       "returns": "返却",
-      "late": "返却遅延"
+      "late": "返却延滞"
     },
     "cell": {
       "pickups": "お渡し {count}",

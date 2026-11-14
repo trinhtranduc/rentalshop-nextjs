@@ -119,9 +119,9 @@
   "detail": {
     "freeHeadline": "空き {count}点",
     "free": "空き",
-    "busy": "予約済み",
+    "busy": "使用中",
     "need": "必要数",
-    "barLabel": "空き {free}、予約済み {busy}、必要 {need}、在庫合計 {total}",
+    "barLabel": "空き {free}、使用中 {busy}、必要 {need}、在庫合計 {total}",
     "days": "日ごとの空き数",
     "dayHint": "日付をタップすると、その日からの空きを確認できます",
     "dayLabel": "{date}: 空き{free}点",
