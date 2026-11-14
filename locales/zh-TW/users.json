@@ -1,0 +1,469 @@
+{
+  "title": "使用者",
+  "subtitle": "管理系統中的使用者",
+  "pageTitle": "使用者管理",
+  "addUser": "新增使用者",
+  "addNewUser": "新增使用者",
+  "addNewUserDescription": "為您的組織建立新的使用者帳號",
+  "editUser": "編輯使用者",
+  "userDetails": "使用者詳情",
+  "viewUserInfo": "查看使用者資訊與詳情",
+  "userInformation": "使用者資訊",
+  "accountInformation": "帳號資訊",
+  "outletInformation": "分店資訊",
+  "accountActions": "帳號操作",
+  "passwordManagement": "密碼管理",
+  "passwordSettings": "密碼設定",
+  "organizationAssignment": "組織指派",
+  "accountSettings": "帳號設定",
+  "accountStatus": "帳號狀態",
+  "dangerZone": "危險操作區",
+  "activeAccount": "啟用帳號",
+  "currentUserInformation": "目前使用者資訊",
+  "activeUsersInfo": "啟用中的使用者可以登入並存取系統。停用的使用者將被暫停權限。",
+  "created": "建立日期",
+  "label": {
+    "loading": "載入中..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "名稱",
+    "firstName": "名字",
+    "lastName": "姓",
+    "fullName": "全名",
+    "email": "Email",
+    "phone": "電話",
+    "role": "角色",
+    "outlet": "分店",
+    "outletName": "分店名稱",
+    "outletId": "分店代碼",
+    "merchant": "商家",
+    "merchantName": "商家名稱",
+    "merchantId": "商家代碼",
+    "status": "狀態",
+    "password": "密碼",
+    "confirmPassword": "確認密碼",
+    "active": "啟用",
+    "inactive": "停用",
+    "createdAt": "建立日期",
+    "lastLogin": "上次登入",
+    "actions": "操作",
+    "basicInformation": "基本資訊",
+    "personalInformation": "個人資訊",
+    "roleAndPermissions": "角色與權限",
+    "readOnly": "唯讀",
+    "emailStatus": "電子郵件驗證"
+  },
+  "roles": {
+    "ADMIN": "系統管理員",
+    "MERCHANT": "品牌擁有者",
+    "OUTLET_ADMIN": "分店經理",
+    "OUTLET_STAFF": "員工",
+    "ARTICLE": "文章編輯",
+    "OUTLET_INVENTORY": "庫存員工"
+  },
+  "actions": {
+    "activate": "啟用使用者",
+    "activateAccount": "啟用帳號",
+    "activating": "啟用中...",
+    "deactivate": "停用使用者",
+    "deactivateAccount": "停用帳號",
+    "deactivating": "停用中...",
+    "delete": "刪除使用者",
+    "deleteAccount": "刪除帳號",
+    "deleting": "刪除中...",
+    "changePassword": "變更密碼",
+    "changingPassword": "變更中...",
+    "viewDetails": "查看詳情",
+    "edit": "編輯",
+    "editUser": "編輯使用者",
+    "updateUser": "更新使用者",
+    "createUser": "建立使用者",
+    "updating": "更新中...",
+    "creating": "建立中...",
+    "addUser": "新增使用者",
+    "backToUsers": "返回列表",
+    "save": "儲存",
+    "cancel": "取消",
+    "close": "關閉",
+    "showPassword": "顯示密碼",
+    "hidePassword": "隱藏密碼"
+  },
+  "messages": {
+    "createSuccess": "已成功建立使用者",
+    "createFailed": "建立使用者失敗",
+    "updateSuccess": "已成功更新使用者",
+    "updateFailed": "更新使用者失敗",
+    "deleteSuccess": "已成功刪除使用者",
+    "deleteFailed": "刪除使用者失敗",
+    "activateSuccess": "已成功啟用使用者",
+    "activateFailed": "啟用使用者失敗",
+    "deactivateSuccess": "已成功停用使用者",
+    "deactivateFailed": "停用使用者失敗",
+    "passwordChangeSuccess": "已成功變更密碼",
+    "passwordChangeFailed": "變更密碼失敗",
+    "passwordMinLength": "密碼至少需要 6 個字元",
+    "newPasswordRequired": "請輸入新密碼",
+    "confirmPasswordRequired": "請確認您的新密碼",
+    "passwordsDoNotMatch": "密碼不一致",
+    "confirmDelete": "確定要刪除此使用者嗎？",
+    "confirmDeleteAccount": "刪除使用者帳號",
+    "confirmDeleteDetails": "確定要永久刪除此使用者帳號嗎？此操作無法復原。",
+    "confirmDeactivate": "確定要停用",
+    "confirmDeactivateAccount": "停用使用者",
+    "confirmDeactivateDetails": "此操作會阻止對方存取系統。",
+    "confirmActivate": "確定要啟用此使用者嗎？",
+    "confirmActivateAccount": "啟用使用者帳號",
+    "confirmActivateDetails": "確定要啟用此使用者帳號嗎？使用者將可以重新存取系統。",
+    "allowChangePassword": "讓使用者安全地變更密碼",
+    "suspendAccess": "暫時停止使用者存取系統的權限",
+    "deactivateToPrevent": "停用以阻止登入",
+    "activateToRestore": "啟用以恢復登入權限",
+    "permanentlyDelete": "永久刪除此使用者帳號及所有相關資料",
+    "permanentlyDeleteShort": "永久刪除此使用者帳號",
+    "cannotDeactivateAdmin": "無法停用系統管理員",
+    "cannotDeactivateAdminShort": "無法停用管理員帳號",
+    "cannotDeleteAdmin": "無法刪除管理員帳號",
+    "validationErrors": "請修正以下驗證錯誤：",
+    "noUsers": "找不到使用者",
+    "loadingUsers": "正在載入使用者列表...",
+    "noDataAvailable": "沒有使用者資料",
+    "na": "無",
+    "error": "發生錯誤",
+    "tryAdjustingSearch": "請調整搜尋或篩選條件",
+    "getStarted": "從新增第一位使用者開始"
+  },
+  "search": {
+    "placeholder": "依姓名、電子郵件或電話搜尋..."
+  },
+  "filters": {
+    "all": "所有使用者",
+    "byRole": "依角色篩選",
+    "byOutlet": "依分店篩選",
+    "active": "使用中",
+    "inactive": "未使用",
+    "allRoles": "所有角色"
+  },
+  "stats": {
+    "totalUsers": "使用者總數",
+    "activeUsers": "使用中",
+    "adminUsers": "管理員",
+    "staffUsers": "員工"
+  },
+  "dialogs": {
+    "changePasswordTitle": "變更密碼",
+    "changePasswordDescription": "為使用者變更密碼",
+    "newPassword": "新密碼",
+    "confirmNewPassword": "確認新密碼"
+  },
+  "placeholders": {
+    "enterName": "輸入名稱",
+    "enterFirstName": "輸入名字",
+    "enterLastName": "輸入姓氏",
+    "enterFullName": "輸入全名",
+    "enterEmail": "輸入電子郵件地址",
+    "enterPhone": "輸入電話號碼（僅數字）",
+    "selectRole": "選擇角色",
+    "selectOutlet": "選擇分店",
+    "enterPassword": "輸入密碼",
+    "confirmPassword": "確認密碼",
+    "enterNewPassword": "輸入新密碼",
+    "confirmNewPassword": "確認新密碼",
+    "loadingMerchants": "正在載入品牌列表...",
+    "searchAndSelectMerchant": "搜尋並選擇品牌",
+    "currentMerchant": "目前品牌",
+    "loadingOutlets": "正在載入分店列表...",
+    "selectMerchantFirst": "請先選擇品牌",
+    "searchAndSelectOutlet": "搜尋並選擇分店",
+    "currentOutlet": "目前分店",
+    "searchMerchants": "搜尋品牌...",
+    "noMerchantsFound": "找不到品牌",
+    "searchOutlets": "搜尋分店...",
+    "noOutletsFound": "找不到分店",
+    "searchUsers": "搜尋使用者..."
+  },
+  "labels": {
+    "loading": "載入中..."
+  },
+  "status": {
+    "verified": "已驗證",
+    "notVerified": "未驗證"
+  },
+  "roleHelp": {
+    "title": "角色",
+    "OUTLET_ADMIN": "管理一家分店：該分店的訂單、商品、客戶與員工。",
+    "OUTLET_STAFF": "建立與處理訂單。無法修改商品價格。",
+    "loginNote": "新使用者會以此電子郵件和密碼登入，之後可自行變更密碼。",
+    "OUTLET_INVENTORY": "與員工相同可銷售，並可新增與管理商品及分類（新增、編輯價格、刪除、以 Excel 匯入與匯出）。無法查看營收。"
+  },
+  "web": {
+    "title": "員工",
+    "add": "新增員工",
+    "searchPlaceholder": "搜尋姓名、電話、電子郵件",
+    "searchLabel": "搜尋員工",
+    "allOutlets": "所有分店",
+    "outletFilter": "依分店篩選",
+    "allOutletsValue": "全部",
+    "filters": {
+      "role": "角色：",
+      "status": "狀態：",
+      "all": "全部",
+      "active": "使用中",
+      "inactive": "已鎖定"
+    },
+    "cols": {
+      "staff": "員工",
+      "role": "角色",
+      "outlet": "分店",
+      "lastLogin": "最近登入",
+      "actions": "操作"
+    },
+    "roles": {
+      "owner": "店主",
+      "admin": "分店經理",
+      "staff": "員工",
+      "other": "其他",
+      "inventory": "庫存員工"
+    },
+    "lastSeen": {
+      "current": "使用中",
+      "never": "—",
+      "today": "今天 {time}",
+      "yesterday": "昨天 {time}",
+      "locked": "已鎖定"
+    },
+    "edit": "編輯",
+    "more": "為 {name} 開啟更多操作",
+    "activate": "解除帳號鎖定",
+    "deactivate": "鎖定帳號",
+    "delete": "刪除員工",
+    "confirm": {
+      "activateTitle": "解除帳號鎖定？",
+      "activateBody": "{name} 將可以再次登入。",
+      "deactivateTitle": "鎖定帳號？",
+      "deactivateBody": "在解除鎖定前，{name} 將無法登入。",
+      "deleteTitle": "刪除員工？",
+      "deleteBody": "將 {name} 從分店移除。此操作無法復原。",
+      "cancel": "取消",
+      "close": "關閉"
+    },
+    "rolesCard": {
+      "title": "各角色的權限",
+      "owner": "所有分店、金流、報表、員工與方案。",
+      "admin": "單一分店：訂單、商品、價格、客戶、當日金流與分店員工。",
+      "staff": "建立訂單、交付商品、接收歸還、新增客戶。無法修改商品價格，也無法查看金流報表。",
+      "rolePermissions": "查看各角色權限",
+      "permissions": "為員工額外授權",
+      "inventory": "與員工相同可銷售，並可新增與管理商品及分類（新增、編輯價格、刪除、以 Excel 匯入與匯出）。無法查看營收。"
+    },
+    "permissions": {
+      "title": "為員工額外授權",
+      "hint": "在角色預設權限之外，為每位員工額外開啟權限。",
+      "noAccess": "員工帳號無法設定權限。",
+      "pickTitle": "選擇員工",
+      "picked": "已選 {count} 位",
+      "pickAll": "全選",
+      "pickNone": "取消選取",
+      "noStaff": "尚無員工（角色：員工）",
+      "switchTitle": "額外權限",
+      "pickFirst": "請先在左側選擇至少一位員工。",
+      "forOne": "正在編輯 {name} 的權限。",
+      "forMany": "正在編輯 {count} 位員工：預設全部關閉，儲存後將套用到全部 {count} 位。",
+      "allOn": "全部開啟",
+      "allOff": "全部關閉",
+      "cancel": "取消選取",
+      "save": "儲存權限",
+      "saving": "儲存中…",
+      "savedTitle": "已儲存",
+      "saved": "已為 {count} 位員工儲存權限",
+      "errorTitle": "錯誤",
+      "saveFailed": "無法儲存權限，請再試一次。",
+      "readFailed": "無法讀取此員工已儲存的權限。儲存時會依下方開關完整寫入所有額外權限。",
+      "groups": {
+        "outlet": "分店",
+        "orders": "訂單",
+        "products": "商品",
+        "customers": "客戶",
+        "users": "員工",
+        "dashboard": "總覽"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "查看分店",
+        "desc": "查看分店資訊"
+      },
+      "outlet_manage": {
+        "label": "管理分店",
+        "desc": "編輯分店資訊與設定"
+      },
+      "users_view": {
+        "label": "查看員工",
+        "desc": "查看員工列表與資訊"
+      },
+      "users_manage": {
+        "label": "管理員工",
+        "desc": "新增、編輯、鎖定與刪除員工"
+      },
+      "products_view": {
+        "label": "查看商品",
+        "desc": "查看商品列表與詳情"
+      },
+      "products_create": {
+        "label": "新增商品",
+        "desc": "新增商品"
+      },
+      "products_update": {
+        "label": "編輯商品",
+        "desc": "編輯現有商品，包括價格"
+      },
+      "products_manage": {
+        "label": "管理商品",
+        "desc": "完整權限：刪除、以 Excel 匯入、成本價"
+      },
+      "products_export": {
+        "label": "匯出商品",
+        "desc": "將商品列表下載為 Excel / CSV"
+      },
+      "orders_create": {
+        "label": "建立訂單",
+        "desc": "建立租借訂單與銷售訂單"
+      },
+      "orders_view": {
+        "label": "查看訂單",
+        "desc": "查看訂單列表與詳情"
+      },
+      "orders_update": {
+        "label": "編輯訂單",
+        "desc": "編輯訂單、交付商品、接收歸還"
+      },
+      "orders_delete": {
+        "label": "刪除訂單",
+        "desc": "刪除訂單"
+      },
+      "orders_export": {
+        "label": "匯出訂單",
+        "desc": "將訂單列表下載為 Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "管理訂單",
+        "desc": "訂單完整權限"
+      },
+      "customers_view": {
+        "label": "查看客戶",
+        "desc": "查看客戶列表與資訊"
+      },
+      "customers_manage": {
+        "label": "管理客戶",
+        "desc": "新增、編輯與刪除客戶"
+      },
+      "customers_export": {
+        "label": "匯出客戶",
+        "desc": "將客戶列表下載為 Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "查看總覽",
+        "desc": "查看總覽頁面與數據"
+      }
+    },
+    "rolePermissions": {
+      "title": "依角色的權限",
+      "hint": "各角色的預設權限，僅供查看。",
+      "roleLabel": "角色",
+      "count": "{count} 項權限",
+      "granted": "有權限",
+      "notGranted": "無權限",
+      "note": "這是角色的預設權限。若要為個別人員額外開啟，請使用「為員工額外授權」。"
+    },
+    "empty": "尚無員工",
+    "emptySearch": "沒有符合篩選條件的員工",
+    "loadFailed": "無法載入員工列表。",
+    "retry": "重試",
+    "noAccess": "員工帳號無法查看員工列表。",
+    "weekdays": "日,一,二,三,四,五,六",
+    "footer": {
+      "show": "顯示",
+      "perPage": "筆／頁",
+      "perPageLabel": "每頁筆數",
+      "pages": "分頁",
+      "range": "第 {from}–{to} 筆，共 {total} 位員工",
+      "prev": "上一頁",
+      "next": "下一頁"
+    },
+    "form": {
+      "addTitle": "新增員工",
+      "infoTitle": "基本資料",
+      "name": "姓名",
+      "namePlaceholder": "例如：王小美",
+      "phone": "電話號碼",
+      "optional": "選填",
+      "email": "登入電子郵件",
+      "emailPlaceholder": "name@example.com",
+      "emailHint": "員工將使用此電子郵件登入。",
+      "required": "必填",
+      "roleTitle": "角色與分店",
+      "role": "角色",
+      "outlet": "分店",
+      "outletFixed": "新員工將屬於您的分店。",
+      "outletsLoading": "正在載入分店…",
+      "noOutlets": "尚無分店",
+      "passwordTitle": "登入密碼",
+      "password": "密碼",
+      "confirmPassword": "再次輸入密碼",
+      "passwordHint": "至少 6 個字元。",
+      "loginNote": "員工將使用此電子郵件與密碼登入，之後可自行變更密碼。",
+      "show": "顯示",
+      "hide": "隱藏",
+      "showPassword": "顯示密碼",
+      "hidePassword": "隱藏密碼",
+      "cancel": "取消",
+      "create": "新增員工",
+      "creating": "新增中…",
+      "save": "儲存",
+      "saving": "儲存中…",
+      "errors": {
+        "nameShort": "姓名至少需要 2 個字元。",
+        "emailRequired": "請輸入登入電子郵件。",
+        "emailInvalid": "電子郵件格式不正確。",
+        "phoneShort": "電話號碼至少需要 8 位數字。",
+        "phoneLong": "電話號碼最多 15 位數字。",
+        "phoneChars": "電話號碼只能包含數字、空格、+ - ( )。",
+        "roleRequired": "請選擇角色。",
+        "outletRequired": "請選擇分店。",
+        "passwordRequired": "請輸入密碼。",
+        "passwordShort": "密碼至少需要 6 個字元。",
+        "confirmRequired": "請再次輸入密碼。",
+        "passwordMismatch": "兩次輸入的密碼不一致。",
+        "newRequired": "請輸入新密碼。"
+      }
+    },
+    "detail": {
+      "info": "資訊",
+      "merchant": "店鋪",
+      "account": "帳號",
+      "statusActive": "使用中",
+      "statusLocked": "已鎖定",
+      "activeHint": "鎖定帳號後，員工將無法再登入。",
+      "lockedHint": "帳號已鎖定。解除鎖定後，員工即可再次登入。",
+      "emailStatus": "電子郵件",
+      "verified": "已驗證",
+      "notVerified": "未驗證",
+      "createdAt": "建立日期",
+      "deleteHint": "永久刪除此帳號，無法復原。",
+      "changePassword": "變更密碼",
+      "editTitle": "編輯員工",
+      "emailFixed": "無法變更登入電子郵件。",
+      "roleFixed": "此處無法變更角色。",
+      "notFound": "找不到此員工。",
+      "backToList": "返回員工列表"
+    },
+    "password": {
+      "title": "變更密碼",
+      "hint": "為 {name} 設定新密碼，舊密碼將無法再使用。",
+      "new": "新密碼",
+      "confirm": "再次輸入新密碼",
+      "submit": "變更密碼",
+      "changing": "變更中…"
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "title": "Guide du lien de parrainage (affiliation)",
+  "subtitle": "Découvrez comment utiliser votre lien d'affiliation pour développer votre activité",
+  "lastUpdated": "Dernière mise à jour : janvier 2025",
+  "sections": {
+    "whatIs": {
+      "title": "Qu'est-ce qu'un lien d'affiliation ?",
+      "content": "Le lien d'affiliation (appelé aussi lien de parrainage) est une URL spéciale contenant votre code de parrainage unique. Lorsqu'une personne s'inscrit à AnyRent avec votre lien d'affiliation, elle devient votre filleul et vous pouvez recevoir un avantage ou une récompense."
+    },
+    "howToGet": {
+      "title": "Comment obtenir votre lien d'affiliation",
+      "content": "Le lien de parrainage est créé à partir de l'URL de votre boutique. Vous le trouverez dans Paramètres de la boutique, section « Partager la boutique »."
+    },
+    "howToUse": {
+      "title": "Comment utiliser votre lien d'affiliation",
+      "content": "Partagez votre lien d'affiliation avec d'autres personnes via plusieurs canaux :"
+    },
+    "howItWorks": {
+      "title": "Fonctionnement",
+      "content": "Lorsqu'une personne clique sur votre lien d'affiliation :"
+    },
+    "benefits": {
+      "title": "Avantages du lien d'affiliation",
+      "content": "Utiliser le lien d'affiliation vous permet de :"
+    },
+    "bestPractices": {
+      "title": "Bonnes pratiques",
+      "content": "Pour maximiser l'efficacité de votre lien d'affiliation :"
+    },
+    "importantNotes": {
+      "title": "Remarques importantes",
+      "content": "Veuillez noter :"
+    },
+    "troubleshooting": {
+      "title": "Résolution des problèmes",
+      "content": "Si vous rencontrez un problème avec votre lien d'affiliation :"
+    }
+  },
+  "banner": {
+    "title": "En savoir plus sur les liens d'affiliation",
+    "description": "Découvrez comment utiliser votre lien d'affiliation pour développer votre activité",
+    "promo": "10 % de réduction en cas de parrainage",
+    "button": "Voir le guide",
+    "viewDetails": "Voir les détails",
+    "dismiss": "Fermer"
+  },
+  "navigation": {
+    "title": "Affiliation"
+  },
+  "guide": {
+    "title": "Présentez AnyRent et touchez une commission",
+    "subtitle": "Partagez votre lien de parrainage avec d'autres gérants de boutique et recevez une commission lorsqu'ils règlent un forfait.",
+    "login": "Se connecter",
+    "yourLink": "Votre lien de parrainage",
+    "copy": "Copier",
+    "copied": "Copié",
+    "overview": {
+      "commission": "Commission",
+      "autoPayment": "Automatique",
+      "payment": "Paiement",
+      "unlimitedLabel": "Illimité",
+      "unlimited": "Nombre de parrainages"
+    },
+    "howItWorks": {
+      "title": "Fonctionnement",
+      "step1": {
+        "title": "Partagez le lien",
+        "description": "Copiez et partagez votre lien d'affiliation avec vos proches, partenaires ou prospects"
+      },
+      "step2": {
+        "title": "Ils s'inscrivent",
+        "description": "La personne parrainée utilise votre lien pour créer un nouveau compte AnyRent"
+      },
+      "step3": {
+        "title": "Touchez la commission",
+        "description": "Lorsqu'elle règle son forfait d'abonnement, vous recevez automatiquement 10 % de commission sur votre compte"
+      }
+    },
+    "commissionDetails": {
+      "title": "Détails de la commission",
+      "rate": {
+        "label": "Taux de commission",
+        "description": "Vous recevez 10 % de commission sur chaque abonnement réussi"
+      },
+      "payment": {
+        "label": "Paiement",
+        "description": "La commission est versée automatiquement sur votre compte dès que le filleul a réglé"
+      },
+      "tracking": {
+        "label": "Suivi",
+        "description": "Suivez en temps réel le nombre de parrainages et vos commissions",
+        "badge": "Temps réel"
+      }
+    },
+    "examples": {
+      "title": "Exemples de calcul",
+      "example1": {
+        "title": "Exemple 1 : forfait Basic",
+        "label1": "Prix du forfait",
+        "label2": "Statut",
+        "confirmed": "Confirmé",
+        "label3": "Votre commission"
+      },
+      "example2": {
+        "title": "Exemple 2 : forfait avancé",
+        "label1": "Prix du forfait",
+        "label2": "Statut",
+        "confirmed": "Confirmé",
+        "label3": "Votre commission"
+      },
+      "note": "Remarque : la commission n'est calculée que lorsque le filleul <strong>règle avec succès</strong> son forfait. La commission est versée automatiquement sur votre compte."
+    },
+    "tips": {
+      "title": "Conseils pour maximiser vos commissions",
+      "tip1": {
+        "title": "Partagez avec les bonnes personnes",
+        "description": "Visez les personnes qui ont réellement besoin d'un logiciel de gestion de boutique de location"
+      },
+      "tip2": {
+        "title": "Expliquez les avantages",
+        "description": "Présentez les avantages d'AnyRent pour augmenter le taux d'inscription"
+      },
+      "tip3": {
+        "title": "Suivez vos résultats",
+        "description": "Utilisez le tableau de bord pour suivre le nombre de parrainages et vos commissions"
+      },
+      "tip4": {
+        "title": "Partagez régulièrement",
+        "description": "Partagez votre lien sur différents canaux pour toucher davantage de personnes"
+      }
+    },
+    "cta": {
+      "title": "Prêt à commencer ?",
+      "description": "Inscrivez-vous dès maintenant pour obtenir votre lien d'affiliation et commencer à gagner des commissions",
+      "register": "Inscrivez-vous maintenant",
+      "login": "Vous avez déjà un compte ? Connectez-vous"
+    },
+    "eyebrow": "AnyRent · Parrainage",
+    "linkHint": "Toute personne qui s'inscrit avec ce lien sera comptée comme votre filleul."
+  },
+  "page": {
+    "eyebrow": "AnyRent · Parrainage",
+    "ctaTitle": "Prêt à commencer ?",
+    "ctaBody": "Ouvrez les Paramètres de la boutique pour copier immédiatement votre lien de parrainage.",
+    "ctaButton": "Ouvrir les Paramètres de la boutique",
+    "guideLink": "Voir les commissions et des exemples"
+  }
+}

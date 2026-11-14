@@ -1,0 +1,148 @@
+{
+  "title": "推薦連結使用指南",
+  "subtitle": "了解如何使用您的推薦連結拓展業務",
+  "lastUpdated": "最後更新：2025 年 1 月",
+  "sections": {
+    "whatIs": {
+      "title": "什麼是推薦連結？",
+      "content": "推薦連結（也稱為 affiliate link）是一個特別的網址，內含您專屬的推薦碼。當有人使用您的推薦連結註冊 AnyRent，他們就會成為您的被推薦人，您可能因此獲得優惠或獎勵。"
+    },
+    "howToGet": {
+      "title": "如何取得您的推薦連結",
+      "content": "推薦連結由您的店鋪網址代碼產生。您可以在「店鋪設定」中的「分享您的店鋪」找到它。"
+    },
+    "howToUse": {
+      "title": "如何使用您的推薦連結",
+      "content": "透過多種管道與他人分享您的推薦連結："
+    },
+    "howItWorks": {
+      "title": "運作方式",
+      "content": "當有人點擊您的推薦連結："
+    },
+    "benefits": {
+      "title": "使用推薦連結的好處",
+      "content": "使用推薦連結可以幫助您："
+    },
+    "bestPractices": {
+      "title": "最佳做法",
+      "content": "為了讓推薦連結發揮最大效果："
+    },
+    "importantNotes": {
+      "title": "重要注意事項",
+      "content": "請注意："
+    },
+    "troubleshooting": {
+      "title": "疑難排解",
+      "content": "如果您的推薦連結遇到問題："
+    }
+  },
+  "banner": {
+    "title": "了解推薦連結",
+    "description": "探索如何使用推薦連結拓展業務",
+    "promo": "推薦他人可享 9 折優惠",
+    "button": "查看指南",
+    "viewDetails": "查看詳情",
+    "dismiss": "關閉"
+  },
+  "navigation": {
+    "title": "推薦"
+  },
+  "guide": {
+    "title": "推薦 AnyRent，賺取佣金",
+    "subtitle": "將您的推薦連結分享給其他店主，當他們付費訂閱方案時，即可獲得佣金。",
+    "login": "登入",
+    "yourLink": "您的推薦連結",
+    "copy": "複製",
+    "copied": "已複製",
+    "overview": {
+      "commission": "佣金",
+      "autoPayment": "自動",
+      "payment": "付款",
+      "unlimitedLabel": "不限",
+      "unlimited": "推薦人數"
+    },
+    "howItWorks": {
+      "title": "運作方式",
+      "step1": {
+        "title": "分享連結",
+        "description": "將您的推薦連結複製並分享給朋友、合作夥伴或潛在客戶"
+      },
+      "step2": {
+        "title": "對方註冊",
+        "description": "被推薦人使用您的連結註冊全新的 AnyRent 帳號"
+      },
+      "step3": {
+        "title": "獲得佣金",
+        "description": "當對方付費訂閱方案，您將自動獲得 10% 佣金，直接存入您的帳戶"
+      }
+    },
+    "commissionDetails": {
+      "title": "佣金明細",
+      "rate": {
+        "label": "佣金比例",
+        "description": "每筆成功註冊的交易，您可獲得 10% 佣金"
+      },
+      "payment": {
+        "label": "付款",
+        "description": "被推薦人付款後，佣金將立即自動存入您的帳戶"
+      },
+      "tracking": {
+        "label": "追蹤",
+        "description": "即時追蹤您的推薦人數與佣金",
+        "badge": "即時"
+      }
+    },
+    "examples": {
+      "title": "計算範例",
+      "example1": {
+        "title": "範例 1：基本方案",
+        "label1": "訂閱金額",
+        "label2": "狀態",
+        "confirmed": "已確認",
+        "label3": "您的佣金"
+      },
+      "example2": {
+        "title": "範例 2：進階方案",
+        "label1": "訂閱金額",
+        "label2": "狀態",
+        "confirmed": "已確認",
+        "label3": "您的佣金"
+      },
+      "note": "注意：只有當被推薦人<strong>成功付款</strong>訂閱方案時，才會計算佣金。佣金會自動存入您的帳戶。"
+    },
+    "tips": {
+      "title": "提高佣金的小技巧",
+      "tip1": {
+        "title": "向對的對象分享",
+        "description": "鎖定真正需要租借店鋪管理軟體的人"
+      },
+      "tip2": {
+        "title": "說明好處",
+        "description": "推薦時分享 AnyRent 的優點，提高註冊率"
+      },
+      "tip3": {
+        "title": "追蹤成效",
+        "description": "使用儀表板追蹤您的推薦人數與佣金"
+      },
+      "tip4": {
+        "title": "經常分享",
+        "description": "透過多種管道分享您的連結，觸及更多人"
+      }
+    },
+    "cta": {
+      "title": "準備好開始了嗎？",
+      "description": "立即註冊，取得您的推薦連結並開始賺取佣金",
+      "register": "立即註冊",
+      "login": "已有帳號？登入"
+    },
+    "eyebrow": "AnyRent · 推薦",
+    "linkHint": "使用此連結註冊的人，會被計為您的被推薦人。"
+  },
+  "page": {
+    "eyebrow": "AnyRent · 推薦",
+    "ctaTitle": "準備好開始了嗎？",
+    "ctaBody": "開啟「店鋪設定」即可立即複製您的推薦連結。",
+    "ctaButton": "開啟店鋪設定",
+    "guideLink": "查看佣金與範例"
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "title": "Abhol- und Rückgabekalender",
+  "navigation": {
+    "today": "Heute",
+    "previousMonth": "Vormonat",
+    "nextMonth": "Nächster Monat",
+    "goToToday": "Zu heute"
+  },
+  "labels": {
+    "pickups": "Ausgabe",
+    "returns": "Rückgabe",
+    "totalOrders": "Aufträge gesamt",
+    "pickupOrders": "Abholaufträge",
+    "returnOrders": "Rückgabeaufträge",
+    "pickup": "Ausgabe",
+    "return": "Rückgabe",
+    "order": "Auftrag",
+    "customer": "Kunde",
+    "product": "Artikel",
+    "type": "Art",
+    "status": "Status",
+    "amount": "Betrag",
+    "returnDate": "Rückgabedatum",
+    "overdue": "Überfällig",
+    "month": "Monat",
+    "noOrders": "Keine Aufträge",
+    "more": "Mehr...",
+    "filterByStatus": "Nach Status filtern"
+  },
+  "stats": {
+    "ordersToday": "Aufträge heute",
+    "ordersThisWeek": "Aufträge diese Woche",
+    "ordersThisMonth": "Aufträge diesen Monat",
+    "pickupsToday": "Ausgaben heute",
+    "returnsToday": "Rückgaben heute",
+    "monthlyStatistics": "Monatsstatistik",
+    "activeDays": "Aktive Tage",
+    "daysWithScheduledOrders": "Tage mit geplanten Aufträgen",
+    "dateRange": "Zeitraum",
+    "to": "bis"
+  },
+  "modal": {
+    "ordersFor": "Aufträge am {date}",
+    "pickupOrders": "Abholaufträge",
+    "returnOrders": "Rückgabeaufträge",
+    "viewDetails": "Details anzeigen",
+    "close": "Schließen",
+    "loading": "Aufträge werden geladen...",
+    "ordersFound": "Auftrag",
+    "ordersFoundPlural": "Aufträge",
+    "orders": "Aufträge",
+    "noOrders": "Keine Aufträge",
+    "noPickupReturnOrders": "Für diesen Tag sind keine Ausgabe- oder Rückgabeaufträge geplant.",
+    "items": "Artikel"
+  },
+  "empty": {
+    "noOrders": "Keine Aufträge",
+    "noPickups": "Keine Ausgabeaufträge",
+    "noReturns": "Keine Rückgabeaufträge",
+    "selectDate": "Datum wählen, um Aufträge zu sehen"
+  },
+  "loading": {
+    "loadingCalendar": "Kalender wird geladen...",
+    "loadingOrders": "Aufträge werden geladen..."
+  },
+  "days": {
+    "sunday": "So",
+    "monday": "Mo",
+    "tuesday": "Di",
+    "wednesday": "Mi",
+    "thursday": "Do",
+    "friday": "Fr",
+    "saturday": "Sa"
+  },
+  "months": {
+    "january": "Januar",
+    "february": "Februar",
+    "march": "März",
+    "april": "April",
+    "may": "Mai",
+    "june": "Juni",
+    "july": "Juli",
+    "august": "August",
+    "september": "September",
+    "october": "Oktober",
+    "november": "November",
+    "december": "Dezember"
+  },
+  "web": {
+    "title": "Abhol- und Rückgabeplan",
+    "monthNames": "Januar,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember",
+    "monthTitle": "{month} {year}",
+    "weekdays": "So,Mo,Di,Mi,Do,Fr,Sa",
+    "prevMonth": "Vormonat",
+    "nextMonth": "Nächster Monat",
+    "today": "Heute",
+    "monthLabel": "Monatskalender",
+    "dayPanel": "Aufgaben des Tages",
+    "legend": {
+      "pickups": "Ausgabe",
+      "returns": "Rückgabe",
+      "late": "Rückgabe überfällig"
+    },
+    "cell": {
+      "pickups": "Ausgabe {count}",
+      "returns": "Rückgabe {count}",
+      "late": "Überfällig {count}"
+    },
+    "aria": {
+      "pickups": "Ausgabe",
+      "returns": "Rückgabe",
+      "late": "überfällig"
+    },
+    "dayTitleToday": "{day} · heute",
+    "sections": {
+      "pickups": "Auszugeben · {count}",
+      "returns": "Zurückzunehmen · {count}"
+    },
+    "sub": {
+      "returnOn": "Rückgabe {day}",
+      "sameDay": "Ausgabe und Rückgabe am selben Tag",
+      "pickedOn": "Ausgabe {day}",
+      "late": "Rückgabe fällig {day} · überfällig seit {days} Tagen",
+      "notPrepared": "noch nicht vorbereitet"
+    },
+    "money": {
+      "collect": "noch zu kassieren {amount}",
+      "refund": "Anzahlung erstatten {amount}",
+      "fee": "zusätzlich kassieren {amount}"
+    },
+    "emptyPickups": "Keine Aufträge zur Ausgabe.",
+    "emptyReturns": "Keine Rückgaben zu erwarten.",
+    "walkIn": "Laufkunde",
+    "loadFailed": "Anzahl der Aufträge für den Monat konnte nicht geladen werden.",
+    "dayFailed": "Aufträge dieses Tages konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "more": "Mehr anzeigen"
+  }
+}

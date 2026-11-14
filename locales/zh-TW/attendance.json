@@ -1,0 +1,418 @@
+{
+  "title": "考勤",
+  "weekday": {
+    "1": "一",
+    "2": "二",
+    "3": "三",
+    "4": "四",
+    "5": "五",
+    "6": "六",
+    "7": "日"
+  },
+  "common": {
+    "cancel": "取消",
+    "close": "關閉",
+    "save": "儲存",
+    "working": "儲存中…",
+    "loading": "載入中…",
+    "loadFailed": "無法載入資料。",
+    "retry": "重試",
+    "outlet": "分店",
+    "prevMonth": "上個月",
+    "nextMonth": "下個月",
+    "month": "{month} 月",
+    "hours": "{hours} 小時",
+    "exportXlsx": "匯出 Excel",
+    "notAvailable": "店鋪尚未啟用考勤模組。請聯繫 AnyRent 開通。",
+    "noAccess": "只有店主與分店管理員可以使用此畫面。",
+    "noOutlet": "尚無分店。"
+  },
+  "timesheet": {
+    "title": "考勤表 · {month} 月",
+    "subtitle": "{count} 位員工 · {lock}",
+    "unlocked": "本月未鎖定",
+    "locked": "本月已鎖定",
+    "lock": "鎖定月份",
+    "unlock": "解除鎖定月份",
+    "absent": "缺勤",
+    "empty": "本月分店尚無員工或考勤紀錄。",
+    "kpi": {
+      "totalHours": "總時數",
+      "pairs": "進出次數",
+      "missingOut": "缺離開紀錄",
+      "suspected": "可能作弊"
+    },
+    "col": {
+      "staff": "員工",
+      "hours": "時數",
+      "days": "出勤天數"
+    },
+    "legend": {
+      "ok": "準時上班",
+      "late": "遲到／早退",
+      "ot": "加班",
+      "miss": "缺離開紀錄",
+      "fake": "可能作弊",
+      "absent": "有班別，未打卡",
+      "sunday": "週日",
+      "hint": "點選姓名 → 查看整月明細 · 點選格子 → 查看當日明細"
+    }
+  },
+  "export": {
+    "title": "匯出考勤表 Excel",
+    "month": "月份",
+    "parts": "包含",
+    "grid": "月度表（每日時數、總時數、天數）",
+    "scans": "每次掃描明細（時間、結果、距離、座標）",
+    "edits": "考勤修改紀錄",
+    "download": "下載 .xlsx 檔案",
+    "failed": "無法匯出 Excel 檔案。"
+  },
+  "lock": {
+    "title": "鎖定 {month} 月？",
+    "body": "鎖定後，分店管理員將無法再修改本月考勤。只有店主可以解除鎖定（會保留紀錄）。之後的薪資計算模組將使用已鎖定的月份。",
+    "confirm": "鎖定月份",
+    "locked": "已鎖定 {month} 月",
+    "unlockTitle": "解除 {month} 月的鎖定？",
+    "unlockBody": "解除鎖定後，本月考勤可再次修改。會保留紀錄。",
+    "unlockConfirm": "解除鎖定",
+    "unlocked": "已解除 {month} 月的鎖定"
+  },
+  "person": {
+    "back": "‹ {month} 月考勤表",
+    "title": "依人員查看考勤明細",
+    "pick": "選擇員工",
+    "add": "+ 新增紀錄",
+    "map": "地圖",
+    "edit": "修改",
+    "empty": "沒有掃描紀錄。",
+    "noStaff": "分店尚無員工。",
+    "forgotOut": "忘記掃描離開",
+    "suspected": "可能作弊",
+    "late": "遲到 {n} 分",
+    "early": "早退 {n} 分",
+    "overtime": "加班 {n} 分",
+    "filter": {
+      "label": "篩選掃描紀錄",
+      "all": "全部紀錄",
+      "rejected": "已拒絕",
+      "suspected": "可能作弊"
+    },
+    "kpi": {
+      "days": "出勤天數",
+      "hours": "總時數",
+      "lateEarly": "遲到／早退",
+      "overtime": "加班",
+      "missingOut": "缺離開紀錄",
+      "suspected": "可能作弊"
+    },
+    "col": {
+      "day": "日期",
+      "time": "掃描時間",
+      "kind": "類型",
+      "result": "結果",
+      "distance": "與分店距離",
+      "gps": "GPS",
+      "coords": "座標",
+      "shift": "班別",
+      "note": "備註"
+    },
+    "kind": {
+      "IN": "進",
+      "OUT": "出",
+      "EDIT": "修改"
+    },
+    "result": {
+      "ACCEPTED": "已記錄",
+      "REJECTED": "已拒絕",
+      "AUTO_CLOSED": "自動結算",
+      "EDITED": "已修改"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "座標與上次完全相同",
+      "SPEED": "移動速度異常"
+    },
+    "error": {
+      "OUT_OF_RANGE": "超出 {radius} m 範圍",
+      "GPS_INACCURATE": "GPS 不夠精確",
+      "MOCK_LOCATION": "虛假位置",
+      "QR_EXPIRED": "QR 碼已失效",
+      "QR_WRONG_OUTLET": "此為其他分店的 QR 碼",
+      "ATTENDANCE_NOT_CONFIGURED": "分店尚未設定考勤位置",
+      "ATTENDANCE_LOCATION_NOT_SET": "分店尚未設定位置（無法計算距離）",
+      "other": "已拒絕"
+    },
+    "editIn": "進 {time}",
+    "editOut": "出 {time}",
+    "nextDay": "（次日）"
+  },
+  "edit": {
+    "title": "修改考勤 · {name} · {date}",
+    "current": "目前紀錄：進 {in}，{out}",
+    "outAt": "出 {time}",
+    "noOut": "尚無離開時間（當日結束時自動結算）",
+    "checkIn": "進入時間",
+    "checkOut": "離開時間",
+    "reason": "原因（必填）",
+    "reasonPlaceholder": "忘記掃描離開，已由主管確認",
+    "note": "會保留修改紀錄：誰修改、修改了什麼、何時修改。已鎖定的月份無法修改。",
+    "addOther": "+ 新增其他紀錄",
+    "saved": "已修改考勤"
+  },
+  "add": {
+    "title": "新增考勤紀錄 · {name}",
+    "sub": "員工有上班但無法掃描時使用。",
+    "date": "日期",
+    "reasonPlaceholder": "手機沒電",
+    "confirm": "新增紀錄",
+    "added": "已新增考勤紀錄"
+  },
+  "map": {
+    "title": "掃描時的位置 · {name} · {when}",
+    "label": "掃描位置與考勤範圍地圖",
+    "distance": "距分店 {m} m",
+    "gps": "GPS ±{m} m",
+    "accepted": "已記錄",
+    "rejected": "已拒絕：{reason}"
+  },
+  "shifts": {
+    "title": "排班",
+    "subtitle": "本週 {from} – {to} · 今天 {today}",
+    "prevWeek": "‹ 上週",
+    "nextWeek": "下週 ›",
+    "assign": "指派班別",
+    "addShift": "新增班別",
+    "legendRepeat": "↻ 每週自動重複的排班",
+    "legendLock": "🔒 已開始的班別／已過去的日子：不可修改",
+    "legendEdited": "✎ 該日單獨修改過",
+    "empty": "分店尚無員工。",
+    "rules": "目前套用的重複排班",
+    "rulesHint": "修改／停止／刪除僅影響尚未上班的日子",
+    "rulesEmpty": "尚無重複排班。",
+    "noEnd": "不設結束",
+    "edit": "修改",
+    "stop": "停止從…",
+    "delete": "刪除",
+    "col": {
+      "staff": "員工",
+      "shift": "班別",
+      "weekdays": "星期",
+      "from": "開始",
+      "to": "結束"
+    },
+    "lockedToday": "今天已開始上班"
+  },
+  "day": {
+    "lockedBody": "🔒 此班別已開始上班或日期已過，無法修改。如需修改工時，請前往考勤表。",
+    "current": "目前：{shift}（{source}）",
+    "sourceRule": "依重複排班",
+    "sourceDay": "已單獨修改",
+    "none": "尚無班別",
+    "editable": "尚未開始上班，可修改",
+    "pick": "當日班別",
+    "custom": "自訂時間",
+    "customStart": "自訂時間：開始",
+    "customEnd": "結束",
+    "note": "僅變更此日。之後幾週仍依重複排班。App 會通知 {name}。",
+    "clear": "刪除此日班別",
+    "saved": "已變更 {date} 的班別"
+  },
+  "assign": {
+    "title": "指派班別（每週重複）",
+    "sub": "指派一次，之後每週自動重複，直到變更為止。",
+    "shift": "1. 班別",
+    "staff": "2. 員工",
+    "weekdays": "3. 每週的星期",
+    "from": "開始日期",
+    "to": "結束日期（選填）",
+    "toPlaceholder": "不設結束",
+    "preview": "↻ 每週重複",
+    "previewLine": "{names} · {shift} · {days} · 自 {from} 起",
+    "previewTo": " 至 {to}",
+    "conflict": "{name} 已排有 {shift} 班（{days}）。",
+    "keep": "已上班或已單獨修改的日子維持不變。",
+    "confirm": "指派班別 · 通知員工",
+    "noTemplates": "尚無班別範本。請先在「班別範本」分頁建立。",
+    "saved": "已指派班別"
+  },
+  "ruleEdit": {
+    "title": "修改重複排班 · {name}",
+    "shift": "班別",
+    "weekdays": "星期",
+    "from": "套用起始日",
+    "note": "已上班或已過去的日子維持不變。",
+    "saved": "已修改重複排班"
+  },
+  "ruleStop": {
+    "title": "停止重複排班 · {name}",
+    "last": "停止於此日之後",
+    "note": "從 {next} 起，{name} 不再排 {shift} 班。例如員工離職或調整班表時使用。",
+    "confirm": "停止排班",
+    "saved": "已停止重複排班"
+  },
+  "ruleDelete": {
+    "title": "刪除重複排班 · {name}？",
+    "note": "尚未上班的日子將不再排 {shift} 班。已上班的日子保留在考勤表中。",
+    "confirm": "刪除排班",
+    "saved": "已刪除重複排班"
+  },
+  "templates": {
+    "title": "班別範本",
+    "subtitle": "{outlet} · 指派班別時使用",
+    "add": "+ 新增班別範本",
+    "minutes": "{n} 分鐘",
+    "used": "是",
+    "unused": "否",
+    "hidden": "已隱藏",
+    "edit": "編輯",
+    "hide": "隱藏",
+    "delete": "刪除",
+    "show": "重新顯示",
+    "shown": "已重新顯示班別範本",
+    "empty": "尚無班別範本。",
+    "hint": "已使用過的班別範本只能隱藏（保留紀錄）；未使用的可以刪除。修改時間僅套用於尚未上班的日子。",
+    "col": {
+      "shift": "班別",
+      "time": "時間",
+      "break": "休息",
+      "used": "使用中"
+    }
+  },
+  "templateForm": {
+    "newTitle": "新增班別範本",
+    "editTitle": "編輯班別範本",
+    "name": "班別名稱",
+    "start": "開始",
+    "end": "結束",
+    "break": "中途休息（分鐘）",
+    "color": "顏色",
+    "colors": {
+      "blue": "藍色",
+      "purple": "紫色",
+      "green": "綠色",
+      "orange": "橘色"
+    },
+    "overnight": "結束時間早於開始時間（例如 22:00–02:00）即為跨夜班，計入開始當日。",
+    "editNote": "修改時間僅套用於尚未上班的日子；已過去的日子保留舊時間。",
+    "create": "建立班別範本",
+    "saved": "已儲存班別範本"
+  },
+  "templateHide": {
+    "title": "隱藏班別範本「{name}」？",
+    "sub": "此班別已被使用，無法刪除。",
+    "note": "隱藏後指派班別時將無法選取。使用此班別的重複排班仍會持續；已上班的日子維持不變。",
+    "confirm": "隱藏範本",
+    "saved": "已隱藏班別範本"
+  },
+  "templateDelete": {
+    "title": "刪除班別範本「{name}」？",
+    "sub": "此班別從未被使用。",
+    "confirm": "刪除",
+    "saved": "已刪除班別範本"
+  },
+  "outlets": {
+    "qrDaily": "已有 QR 碼 · 每日更換",
+    "qrFixed": "已有 QR 碼 · 固定",
+    "noQr": "尚未建立碼",
+    "open": "開啟 ›"
+  },
+  "locations": {
+    "locationSet": "已設定位置",
+    "title": "QR 碼與考勤位置",
+    "subtitle": "每間分店各有一組 QR 碼、位置及需考勤人員名單。",
+    "col": {
+      "outlet": "分店",
+      "address": "地址",
+      "qr": "QR 碼",
+      "radius": "範圍半徑"
+    },
+    "radius": "{radius} m",
+    "back": "‹ QR 碼與位置"
+  },
+  "outlet": {
+    "notFound": "無法開啟此分店。",
+    "section": "⏱ 考勤",
+    "location": "考勤位置",
+    "noLocation": "尚未設定位置",
+    "current": "📍 目前位置",
+    "pick": "在地圖上選擇",
+    "picking": "點擊地圖以設定分店位置。",
+    "geoFailed": "無法取得目前位置。請檢查瀏覽器的位置權限。",
+    "ownerOnly": "只有店主可以修改位置與範圍半徑。",
+    "radius": "允許範圍半徑：",
+    "radiusHint": "50–500 m。室內 GPS 通常會有 10–50 m 誤差。",
+    "checks": "掃描時檢查：是否為此分店的有效碼 · 是否在範圍內 · GPS ≤ 100 m · 攔截虛假位置 · 以伺服器時間為準。忘記打離開卡：當日結束時自動結算，在管理員修改前計為 0 小時。",
+    "qrTitle": "{name} 的 QR 碼",
+    "qrMode": "碼型",
+    "daily": "每日更換（建議）",
+    "fixed": "固定",
+    "dailyHint": "每天 00:00（越南時間）換新碼。可顯示在櫃台機，或每天早上重新列印。",
+    "fixedHint": "列印一次後貼在牆上。拍下的照片仍可使用；此時僅靠 GPS 與虛假位置攔截來防護。",
+    "todayCaption": "今日碼 · {date} · 00:00 自動更換",
+    "fixedCaption": "固定碼 · 建立於 {date}",
+    "noQr": "分店尚無 QR 碼。",
+    "createQr": "建立 QR 碼",
+    "qrCreated": "已建立 QR 碼",
+    "print": "列印 QR",
+    "kiosk": "櫃台機連結",
+    "newCode": "建立新碼",
+    "modeSaved": "已變更碼型",
+    "saved": "已儲存考勤位置",
+    "saveRadiusTitle": "變更範圍半徑？",
+    "saveRadiusSub": "從 {from} m 變更為 {to} m",
+    "saveLocationTitle": "變更考勤位置？",
+    "saveLocationSub": "新座標：{coords}",
+    "saveNote": "將立即套用於之後的掃描。"
+  },
+  "members": {
+    "title": "此分店需要考勤的人員",
+    "hint": "只有被選取的人員能在 App 上看到「考勤」分頁，並會出現在排班與考勤表中",
+    "note": "預設：已勾選的員工與庫存人員；分店管理員與店主不需要。取消勾選後，該人員將看不到任何考勤內容，也不能再被排班；既有考勤紀錄保留。",
+    "toggle": "{name} 需要考勤",
+    "on": "{name}：需要考勤",
+    "off": "{name}：不需要考勤",
+    "ownerOnly": "只有店主可以變更",
+    "empty": "分店尚無人員。"
+  },
+  "newCode": {
+    "title": "建立新的 QR 碼？",
+    "body": "目前的碼會立即失效。若分店使用固定 QR 碼，須重新列印並張貼新碼。櫃台機會自動更新。",
+    "confirm": "建立新碼",
+    "done": "已建立新碼，舊碼已失效"
+  },
+  "print": {
+    "title": "列印 QR 碼 · {name}",
+    "body": "A5 尺寸，包含分店名稱與說明「開啟 AnyRent App → 設定 → 考勤 → 掃描碼」。",
+    "dailyNote": "「每日更換」模式：此列印本僅能於 {date} 當天使用。",
+    "confirm": "列印",
+    "howTo": "開啟 AnyRent App → 設定 → 考勤 → 掃描碼",
+    "validOn": "僅限 {date} 當日使用"
+  },
+  "kioskLink": {
+    "title": "櫃台機 QR 畫面連結",
+    "none": "分店尚無櫃台機連結。",
+    "note": "請在櫃台的平板或舊手機上開啟此連結。無需登入，也不會影響任何人的帳號。畫面會在 00:00 自動更換碼。",
+    "copy": "複製",
+    "copied": "已複製連結",
+    "copyFailed": "無法複製。請選取並複製連結。",
+    "newLink": "建立新連結",
+    "create": "建立連結",
+    "created": "已建立新連結；舊連結已失效"
+  },
+  "kiosk": {
+    "title": "考勤",
+    "help": "開啟 AnyRent App → 設定 → 考勤 → 掃描此碼",
+    "daily": "今日碼 · 00:00 自動更換",
+    "fixed": "固定碼",
+    "recent": "最近紀錄",
+    "none": "今天尚無人打卡。",
+    "in": "進",
+    "out": "出",
+    "loading": "載入中…",
+    "invalid": "櫃台機連結已失效，請向店主索取新連結。",
+    "moduleOff": "店鋪尚未啟用考勤模組。",
+    "notConfigured": "分店尚未設定位置或尚未建立 QR 碼。",
+    "failed": "無法載入碼，正在重試…"
+  }
+}
