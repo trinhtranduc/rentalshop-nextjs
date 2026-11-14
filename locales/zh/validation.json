@@ -1,0 +1,190 @@
+{
+  "required": "此项为必填项",
+  "email": "请输入有效的邮箱地址",
+  "phone": "请输入有效的手机号码",
+  "min": "最小值为 {min}",
+  "max": "最大值为 {max}",
+  "minLength": "最少 {min} 个字符",
+  "maxLength": "最多 {max} 个字符",
+  "pattern": "格式不正确",
+  "url": "请输入有效的网址",
+  "number": "请输入有效的数字",
+  "integer": "请输入整数",
+  "positive": "请输入大于 0 的数字",
+  "negative": "请输入负数",
+  "date": "请输入有效的日期",
+  "dateRange": "日期范围无效",
+  "time": "请输入有效的时间",
+  "password": {
+    "minLength": "密码至少 {min} 个字符",
+    "uppercase": "密码须包含至少一个大写字母",
+    "lowercase": "密码须包含至少一个小写字母",
+    "number": "密码须包含至少一个数字",
+    "special": "密码须包含至少一个特殊字符",
+    "match": "两次输入的密码不一致"
+  },
+  "file": {
+    "size": "文件大小须小于 {max}",
+    "type": "文件类型不正确。允许的类型：{types}",
+    "required": "请选择文件"
+  },
+  "unique": "该值已存在",
+  "exists": "该值不存在",
+  "custom": {
+    "invalidBarcode": "条形码格式不正确",
+    "invalidSKU": "SKU 格式不正确",
+    "stockNotAvailable": "库存不足",
+    "invalidDateRange": "结束日期须晚于开始日期",
+    "priceGreaterThanZero": "价格须大于 0",
+    "quantityGreaterThanZero": "数量须大于 0"
+  },
+  "fields": {
+    "firstName": {
+      "required": "名字为必填项"
+    },
+    "lastName": {
+      "required": "姓氏为必填项"
+    },
+    "name": {
+      "required": "名称为必填项",
+      "minLength": "名称至少 {min} 个字符"
+    },
+    "productName": {
+      "required": "商品名称为必填项"
+    },
+    "outletName": {
+      "required": "分店名称为必填项"
+    },
+    "planName": {
+      "required": "套餐名称为必填项"
+    },
+    "planDescription": {
+      "required": "套餐描述为必填项"
+    },
+    "variantName": {
+      "required": "规格名称为必填项"
+    },
+    "phone": {
+      "required": "手机号码为必填项"
+    },
+    "email": {
+      "invalid": "邮箱地址无效",
+      "invalidFormat": "邮箱格式不正确"
+    },
+    "password": {
+      "minLength6": "密码至少 6 个字符",
+      "required": "密码为必填项"
+    },
+    "confirmPassword": {
+      "required": "请确认密码",
+      "match": "两次输入的密码不一致"
+    },
+    "outletId": {
+      "required": "分店为必填项",
+      "requiredForRole": "该角色必须选择分店",
+      "shouldNotBeSelected": "店铺角色不应选择分店"
+    },
+    "country": {
+      "invalid": "请选择有效的国家"
+    },
+    "tenantKey": {
+      "invalid": "店铺网址标识只能包含字母和数字"
+    },
+    "product": {
+      "required": "商品为必填项"
+    },
+    "category": {
+      "required": "分类为必填项"
+    },
+    "outlet": {
+      "required": "分店为必填项",
+      "requiredForRole": "该角色必须选择分店"
+    },
+    "merchant": {
+      "required": "店铺为必填项",
+      "requiredForRole": "该角色必须选择店铺"
+    },
+    "role": {
+      "required": "角色为必填项"
+    },
+    "deposit": {
+      "nonNegative": "订金不能为负数",
+      "cannotBeNegative": "订金不能为负数"
+    },
+    "merchantId": {
+      "required": "店铺 ID 为必填项"
+    },
+    "planId": {
+      "required": "套餐 ID 为必填项"
+    },
+    "planVariantId": {
+      "required": "套餐规格 ID 为必填项"
+    },
+    "rentPrice": {
+      "required": "租赁价格为必填项，且须大于 0",
+      "nonNegative": "租赁价格不能为负数",
+      "greaterThanZero": "租赁价格须大于 0"
+    },
+    "salePrice": {
+      "required": "售价为必填项，且须大于 0",
+      "nonNegative": "售价不能为负数",
+      "greaterThanZero": "售价须大于 0"
+    },
+    "costPrice": {
+      "nonNegative": "成本价不能为负数"
+    },
+    "stock": {
+      "nonNegative": "库存不能为负数"
+    },
+    "totalStock": {
+      "required": "总库存为必填项，且须大于 0",
+      "nonNegative": "总库存不能为负数",
+      "greaterThanZero": "总库存须大于 0"
+    },
+    "basePrice": {
+      "nonNegative": "基础价格不能为负数"
+    },
+    "price": {
+      "nonNegative": "价格不能为负数"
+    },
+    "amount": {
+      "nonNegative": "金额不能为负数"
+    },
+    "duration": {
+      "positive": "时长必须为正数"
+    },
+    "trialDays": {
+      "nonNegative": "试用天数不能为负数"
+    },
+    "discount": {
+      "range": "折扣须在 0 到 100 之间"
+    },
+    "durationConfig": {
+      "required": "按小时（HOURLY）和按天（DAILY）计价时，时长配置为必填项，且须为有效的 JSON",
+      "requiredForPricingType": "按小时（HOURLY）和按天（DAILY）计价时，需填写时长配置",
+      "minDurationRequired": "最短时长为必填项，且须大于 0",
+      "maxDurationRequired": "最长时长为必填项，且须大于 0",
+      "minMustBeLessThanMax": "最短时长须小于或等于最长时长",
+      "defaultDurationRequired": "默认时长为必填项，且须大于 0",
+      "defaultMustBeAtLeastMin": "默认时长不能短于最短时长",
+      "defaultMustNotExceedMax": "默认时长不能超过最长时长"
+    },
+    "outletStock": {
+      "required": "分店库存为必填项。请至少为一家分店设置库存。",
+      "noOutletsAvailable": "暂无分店。请联系管理员设置分店。",
+      "cannotBeNegative": "分店库存数量不能为负数"
+    },
+    "endDate": {
+      "afterStart": "结束日期须晚于开始日期"
+    },
+    "nameOrFullName": {
+      "required": "请填写名称，或同时填写名字和姓氏"
+    },
+    "businessTypePricingType": {
+      "required": "注册店铺时须填写经营类型和计价方式"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "按天的默认设置需要按天租赁价格。"
+    }
+  }
+}

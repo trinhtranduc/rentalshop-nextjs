@@ -1,0 +1,191 @@
+{
+  "title": "分店",
+  "addOutlet": "添加分店",
+  "editOutlet": "编辑分店",
+  "outletDetails": "分店详情",
+  "fields": {
+    "name": "分店名称",
+    "address": "地址",
+    "city": "城市",
+    "state": "省/市",
+    "zipCode": "邮编",
+    "country": "国家",
+    "phone": "电话",
+    "description": "描述",
+    "printNote": "小票备注",
+    "printNoteHint": "打印在租赁小票底部，例如提醒携带身份证或退换政策。最多 500 个字符。",
+    "status": "状态",
+    "manager": "负责人",
+    "notAvailable": "无"
+  },
+  "labels": {
+    "default": "默认"
+  },
+  "actions": {
+    "export": "导出分店列表",
+    "viewDetails": "查看详情",
+    "editOutlet": "编辑分店",
+    "deleteOutlet": "删除分店",
+    "addOutlet": "添加分店",
+    "backToOutlets": "返回分店列表",
+    "disableOutlet": "停用分店",
+    "enableOutlet": "启用分店",
+    "manageBankAccounts": "管理银行账户"
+  },
+  "stats": {
+    "totalOutlets": "分店总数",
+    "activeOutlets": "营业中的分店",
+    "totalUsers": "用户总数",
+    "totalProducts": "商品总数"
+  },
+  "search": {
+    "placeholder": "按名称、城市或电话搜索分店..."
+  },
+  "dialogs": {
+    "addOutletTitle": "添加新分店",
+    "addOutletDescription": "为您的店铺新建一个分店",
+    "editOutletTitle": "编辑分店",
+    "deleteOutletTitle": "删除分店",
+    "outletDetails": "分店详情",
+    "editOutletName": "编辑分店：{name}"
+  },
+  "messages": {
+    "createSuccess": "分店创建成功",
+    "createFailed": "创建分店失败",
+    "updateSuccess": "分店更新成功",
+    "updateFailed": "更新分店失败",
+    "deleteSuccess": "分店删除成功",
+    "deleteFailed": "删除分店失败",
+    "enableSuccess": "分店已启用",
+    "enableFailed": "启用分店失败",
+    "disableSuccess": "分店已停用",
+    "disableFailed": "停用分店失败",
+    "confirmDelete": "确定要删除此分店吗？",
+    "noOutlets": "未找到分店",
+    "tryAdjustingSearch": "请调整搜索条件",
+    "getStarted": "请先添加第一个分店",
+    "loadingOutlets": "正在加载分店列表..."
+  },
+  "placeholders": {
+    "enterOutletName": "请输入分店名称",
+    "enterStreetAddress": "请输入街道地址",
+    "enterCity": "请输入城市",
+    "enterState": "请输入省/市",
+    "enterZipCode": "请输入邮编",
+    "enterCountry": "请输入国家",
+    "enterOutletPhone": "请输入分店电话",
+    "enterOutletDescription": "请输入分店描述",
+    "enterPrintNote": "例如：*** 取货时请携带身份证/驾照"
+  },
+  "web": {
+    "title": "分店",
+    "add": "添加分店",
+    "searchLabel": "搜索分店",
+    "searchPlaceholder": "搜索名称、城市、电话",
+    "cols": {
+      "name": "分店",
+      "address": "地址",
+      "phone": "电话",
+      "status": "状态",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "sortBy": "按{column}排序",
+    "default": "默认",
+    "status": {
+      "active": "营业中",
+      "inactive": "已暂停"
+    },
+    "staffCount": "{count} 名员工",
+    "edit": "编辑",
+    "viewDetails": "查看详情",
+    "bankAccounts": "银行账户",
+    "disable": "暂停",
+    "enable": "重新开放",
+    "more": "{name}的更多操作",
+    "empty": "暂无分店。",
+    "emptySearch": "没有符合搜索条件的分店。",
+    "loadFailed": "无法加载分店列表。",
+    "retry": "重试",
+    "noSession": "登录已过期，请重新登录。",
+    "noAccess": "只有店主可以查看和编辑分店列表。",
+    "form": {
+      "addTitle": "添加分店",
+      "editTitle": "编辑分店",
+      "name": "分店名称",
+      "namePlaceholder": "例如：一区分店",
+      "required": "必填",
+      "nameRequired": "请输入分店名称",
+      "phone": "电话",
+      "address": "门牌号、街道",
+      "city": "城市",
+      "state": "省/市",
+      "zipCode": "邮编",
+      "country": "国家",
+      "optional": "选填",
+      "addressGroup": "地址",
+      "description": "描述",
+      "printNote": "小票备注",
+      "printNoteHint": "打印在租赁小票底部，例如提醒携带身份证或退换政策。",
+      "printNotePlaceholder": "例如：取货时请携带身份证",
+      "printNoteTooLong": "最多 {max} 个字符",
+      "count": "{count}/{max}",
+      "cancel": "取消",
+      "create": "添加分店",
+      "save": "保存",
+      "saving": "保存中…",
+      "close": "关闭"
+    },
+    "detail": {
+      "title": "分店详情",
+      "none": "未设置"
+    },
+    "confirm": {
+      "disableTitle": "暂停分店",
+      "disableBody": "暂停分店“{name}”？之后可以重新开放。",
+      "cancel": "保留",
+      "disable": "暂停",
+      "working": "保存中…"
+    },
+    "toast": {
+      "created": "已添加分店",
+      "updated": "分店已保存",
+      "disabled": "分店已暂停",
+      "enabled": "分店已重新开放"
+    },
+    "footer": {
+      "show": "显示",
+      "perPage": "条/页",
+      "perPageLabel": "每页条数",
+      "pages": "分页",
+      "range": "{from}–{to}，共 {total} 家分店",
+      "prev": "上一页",
+      "next": "下一页"
+    },
+    "bank": {
+      "back": "分店",
+      "title": "银行账户",
+      "subtitle": "分店 {name}",
+      "add": "添加账户",
+      "cols": {
+        "holder": "账户名",
+        "number": "账号",
+        "bank": "银行",
+        "branch": "开户支行",
+        "status": "状态",
+        "actions": "操作"
+      },
+      "active": "使用中",
+      "inactive": "已暂停",
+      "copy": "复制账号 {number}",
+      "edit": "编辑",
+      "delete": "删除",
+      "loadFailed": "无法加载银行账户。",
+      "retry": "重试",
+      "noAccess": "您没有查看银行账户的权限。",
+      "confirmCancel": "保留",
+      "deleting": "删除中…",
+      "close": "关闭"
+    }
+  }
+}

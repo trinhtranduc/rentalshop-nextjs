@@ -1,0 +1,139 @@
+{
+  "title": "수령 캘린더",
+  "navigation": {
+    "today": "오늘",
+    "previousMonth": "지난달",
+    "nextMonth": "다음 달",
+    "goToToday": "오늘로 이동"
+  },
+  "labels": {
+    "pickups": "수령",
+    "returns": "반납",
+    "totalOrders": "전체 주문",
+    "pickupOrders": "수령 주문",
+    "returnOrders": "반납 주문",
+    "pickup": "수령",
+    "return": "반납",
+    "order": "주문",
+    "customer": "고객",
+    "product": "상품",
+    "type": "유형",
+    "status": "상태",
+    "amount": "금액",
+    "returnDate": "반납일",
+    "overdue": "연체",
+    "month": "월",
+    "noOrders": "주문 없음",
+    "more": "더보기…",
+    "filterByStatus": "상태별 필터"
+  },
+  "stats": {
+    "ordersToday": "오늘 주문",
+    "ordersThisWeek": "이번 주 주문",
+    "ordersThisMonth": "이번 달 주문",
+    "pickupsToday": "오늘 수령",
+    "returnsToday": "오늘 반납",
+    "monthlyStatistics": "월별 통계",
+    "activeDays": "활동 일수",
+    "daysWithScheduledOrders": "예정된 주문이 있는 날",
+    "dateRange": "기간",
+    "to": "~"
+  },
+  "modal": {
+    "ordersFor": "{date} 주문",
+    "pickupOrders": "수령 주문",
+    "returnOrders": "반납 주문",
+    "viewDetails": "상세 보기",
+    "close": "닫기",
+    "loading": "주문을 불러오는 중...",
+    "ordersFound": "건",
+    "ordersFoundPlural": "건",
+    "orders": "주문",
+    "noOrders": "주문 없음",
+    "noPickupReturnOrders": "이 날짜에 예정된 수령 또는 반납 주문이 없습니다.",
+    "items": "상품"
+  },
+  "empty": {
+    "noOrders": "예정된 주문이 없습니다",
+    "noPickups": "예정된 수령 주문이 없습니다",
+    "noReturns": "예정된 반납 주문이 없습니다",
+    "selectDate": "날짜를 선택하면 주문을 볼 수 있습니다"
+  },
+  "loading": {
+    "loadingCalendar": "캘린더를 불러오는 중...",
+    "loadingOrders": "주문을 불러오는 중..."
+  },
+  "days": {
+    "sunday": "일",
+    "monday": "월",
+    "tuesday": "화",
+    "wednesday": "수",
+    "thursday": "목",
+    "friday": "금",
+    "saturday": "토"
+  },
+  "months": {
+    "january": "1월",
+    "february": "2월",
+    "march": "3월",
+    "april": "4월",
+    "may": "5월",
+    "june": "6월",
+    "july": "7월",
+    "august": "8월",
+    "september": "9월",
+    "october": "10월",
+    "november": "11월",
+    "december": "12월"
+  },
+  "web": {
+    "title": "수령·반납 캘린더",
+    "monthNames": "1월,2월,3월,4월,5월,6월,7월,8월,9월,10월,11월,12월",
+    "monthTitle": "{year}년 {month}",
+    "weekdays": "일,월,화,수,목,금,토",
+    "prevMonth": "지난달",
+    "nextMonth": "다음 달",
+    "today": "오늘",
+    "monthLabel": "월간 캘린더",
+    "dayPanel": "그날의 할 일",
+    "legend": {
+      "pickups": "수령",
+      "returns": "반납",
+      "late": "반납 연체"
+    },
+    "cell": {
+      "pickups": "수령 {count}",
+      "returns": "반납 {count}",
+      "late": "연체 {count}"
+    },
+    "aria": {
+      "pickups": "수령",
+      "returns": "반납",
+      "late": "연체"
+    },
+    "dayTitleToday": "{day} · 오늘",
+    "sections": {
+      "pickups": "수령 필요 · {count}",
+      "returns": "반납 접수 필요 · {count}"
+    },
+    "sub": {
+      "returnOn": "{day} 반납",
+      "sameDay": "당일 수령 및 반납",
+      "pickedOn": "{day} 수령",
+      "late": "반납 기한 {day} · {days}일 연체",
+      "notPrepared": "준비 안 됨"
+    },
+    "money": {
+      "collect": "{amount} 수금 필요",
+      "refund": "예약금 {amount} 환불",
+      "fee": "{amount} 추가 수금"
+    },
+    "emptyPickups": "수령할 주문이 없습니다.",
+    "emptyReturns": "반납 접수할 주문이 없습니다.",
+    "walkIn": "방문 고객",
+    "loadFailed": "이번 달 주문 수를 불러오지 못했습니다.",
+    "dayFailed": "이 날짜의 주문을 불러오지 못했습니다.",
+    "retry": "다시 시도",
+    "more": "더 보기"
+  }
+}

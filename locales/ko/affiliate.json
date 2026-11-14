@@ -1,0 +1,148 @@
+{
+  "title": "추천 링크(제휴) 안내",
+  "subtitle": "제휴 링크를 활용해 사업을 키우는 방법을 알아보세요",
+  "lastUpdated": "마지막 업데이트: 2025년 1월",
+  "sections": {
+    "whatIs": {
+      "title": "제휴 링크란 무엇인가요?",
+      "content": "제휴 링크(추천 링크라고도 함)는 고유한 추천 코드가 포함된 특별한 URL입니다. 누군가 내 제휴 링크로 AnyRent에 가입하면 그 사람은 내가 추천한 고객이 되며, 나는 혜택이나 보상을 받을 수 있습니다."
+    },
+    "howToGet": {
+      "title": "내 제휴 링크 받는 방법",
+      "content": "제휴 링크는 매장 URL 키로 만들어집니다. 매장 설정의 “매장 공유” 항목에서 확인할 수 있습니다."
+    },
+    "howToUse": {
+      "title": "제휴 링크 사용 방법",
+      "content": "여러 채널을 통해 제휴 링크를 다른 사람에게 공유하세요:"
+    },
+    "howItWorks": {
+      "title": "작동 방식",
+      "content": "누군가 내 제휴 링크를 클릭하면:"
+    },
+    "benefits": {
+      "title": "제휴 링크 사용의 이점",
+      "content": "제휴 링크를 사용하면 다음과 같은 이점이 있습니다:"
+    },
+    "bestPractices": {
+      "title": "모범 사례",
+      "content": "제휴 링크의 효과를 극대화하려면:"
+    },
+    "importantNotes": {
+      "title": "중요 사항",
+      "content": "참고해 주세요:"
+    },
+    "troubleshooting": {
+      "title": "문제 해결",
+      "content": "제휴 링크에 문제가 있다면:"
+    }
+  },
+  "banner": {
+    "title": "제휴 링크 알아보기",
+    "description": "제휴 링크로 사업을 키우는 방법을 알아보세요",
+    "promo": "추천하면 10% 할인",
+    "button": "안내 보기",
+    "viewDetails": "자세히 보기",
+    "dismiss": "닫기"
+  },
+  "navigation": {
+    "title": "제휴"
+  },
+  "guide": {
+    "title": "AnyRent를 추천하고 수수료 받기",
+    "subtitle": "추천 링크를 다른 매장 대표에게 공유하세요. 그 매장이 요금제 결제를 하면 수수료를 받습니다.",
+    "login": "로그인",
+    "yourLink": "내 추천 링크",
+    "copy": "복사",
+    "copied": "복사되었습니다",
+    "overview": {
+      "commission": "수수료",
+      "autoPayment": "자동",
+      "payment": "지급",
+      "unlimitedLabel": "무제한",
+      "unlimited": "추천 인원"
+    },
+    "howItWorks": {
+      "title": "작동 방식",
+      "step1": {
+        "title": "링크 공유",
+        "description": "제휴 링크를 복사해 친구, 파트너 또는 잠재 고객에게 공유하세요"
+      },
+      "step2": {
+        "title": "가입",
+        "description": "추천받은 사람이 내 링크로 새 AnyRent 계정에 가입합니다"
+      },
+      "step3": {
+        "title": "수수료 받기",
+        "description": "추천받은 사람이 구독 요금을 결제하면 수수료 10%가 자동으로 내 계정에 입금됩니다"
+      }
+    },
+    "commissionDetails": {
+      "title": "수수료 상세",
+      "rate": {
+        "label": "수수료율",
+        "description": "가입 결제가 성공할 때마다 10% 수수료를 받습니다"
+      },
+      "payment": {
+        "label": "지급",
+        "description": "추천받은 사람이 결제하면 수수료가 곧바로 내 계정에 자동 지급됩니다"
+      },
+      "tracking": {
+        "label": "추적",
+        "description": "추천 인원과 수수료를 실시간으로 확인하세요",
+        "badge": "실시간"
+      }
+    },
+    "examples": {
+      "title": "계산 예시",
+      "example1": {
+        "title": "예 1: 베이직 요금제",
+        "label1": "구독 요금",
+        "label2": "상태",
+        "confirmed": "확인됨",
+        "label3": "내 수수료"
+      },
+      "example2": {
+        "title": "예 2: 프리미엄 요금제",
+        "label1": "구독 요금",
+        "label2": "상태",
+        "confirmed": "확인됨",
+        "label3": "내 수수료"
+      },
+      "note": "참고: 수수료는 추천받은 사람이 구독 요금을 <strong>결제에 성공해야만</strong> 계산됩니다. 수수료는 내 계정에 자동으로 지급됩니다."
+    },
+    "tips": {
+      "title": "수수료를 극대화하는 팁",
+      "tip1": {
+        "title": "적합한 대상과 공유하기",
+        "description": "실제로 대여 매장 관리 소프트웨어가 필요한 사람에게 집중하세요"
+      },
+      "tip2": {
+        "title": "혜택 설명하기",
+        "description": "추천할 때 AnyRent의 혜택을 설명하면 가입률이 높아집니다"
+      },
+      "tip3": {
+        "title": "성과 확인하기",
+        "description": "대시보드에서 추천 인원과 수수료를 확인하세요"
+      },
+      "tip4": {
+        "title": "자주 공유하기",
+        "description": "여러 채널에 링크를 공유해 더 많은 사람에게 닿으세요"
+      }
+    },
+    "cta": {
+      "title": "시작할 준비가 되셨나요?",
+      "description": "지금 가입하고 제휴 링크를 받아 수수료를 받아 보세요",
+      "register": "지금 가입",
+      "login": "이미 계정이 있나요? 로그인"
+    },
+    "eyebrow": "AnyRent · 제휴",
+    "linkHint": "이 링크로 가입한 사람은 내가 추천한 사람으로 집계됩니다."
+  },
+  "page": {
+    "eyebrow": "AnyRent · 제휴",
+    "ctaTitle": "시작할 준비가 되셨나요?",
+    "ctaBody": "매장 설정을 열어 내 제휴 링크를 바로 복사하세요.",
+    "ctaButton": "매장 설정 열기",
+    "guideLink": "수수료와 예시 보기"
+  }
+}

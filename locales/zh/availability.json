@@ -1,0 +1,191 @@
+{
+  "title": "检查商品档期",
+  "subtitle": "选择日期和商品，查看店铺库存是否足够。",
+  "breadcrumb": "档期检查",
+  "sections": {
+    "product": "选择商品",
+    "period": "租期"
+  },
+  "pickupDate": "取货日期",
+  "returnDate": "还货日期",
+  "quantity": "数量",
+  "outlet": "店铺",
+  "selectOutlet": "选择店铺",
+  "searchPlaceholder": "搜索名称或条形码",
+  "changeProduct": "更换商品",
+  "noProductsFound": "未找到商品",
+  "maxProductsReached": "最多可选 20 个商品",
+  "idle": {
+    "title": "选择商品和租期",
+    "description": "请在左侧选择租期和商品，结果显示在右侧",
+    "pickDates": "选择租期以检查档期"
+  },
+  "product": {
+    "rentPrice": "租赁价格",
+    "deposit": "订金",
+    "category": "分类"
+  },
+  "checking": "检查中…",
+  "missingOutlet": "请先选择店铺再检查档期",
+  "invalidDates": "还货日期不能早于取货日期",
+  "status": {
+    "available": "有档期",
+    "unavailable": "无档期",
+    "warning": "有档期"
+  },
+  "result": {
+    "canRent": "可出租 {count} 套",
+    "cannotRent": "库存不足",
+    "insufficient": "需要 {need} 套，仅剩 {have} 套有档期"
+  },
+  "availableUnits": "剩余 {count} 套",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "需要 {need} 套，本期有档期 {have} 套",
+  "conflictsCount": "本期有 {count} 个档期冲突订单",
+  "stock": {
+    "total": "总库存",
+    "renting": "租赁中",
+    "freeInPeriod": "本期有档期",
+    "bookedInPeriod": "本期已预订"
+  },
+  "orders": {
+    "title": "该商品的订单",
+    "noActiveOrders": "暂无进行中的订单",
+    "viewAll": "查看订单（{count}）",
+    "ordersLabel": "单",
+    "conflicts": "档期冲突",
+    "conflictBadge": "档期冲突",
+    "conflictNote": "{count} 个订单与所查档期重叠",
+    "dialogTitle": "订单：{name}",
+    "page": "第 {current}/{total} 页",
+    "conflictsCount": "{count} 个档期冲突订单",
+    "orderNumber": "订单号",
+    "customer": "客户",
+    "period": "租期",
+    "qty": "数量",
+    "status": "状态",
+    "statusReserved": "已预订",
+    "statusPickuped": "已取货"
+  },
+  "timeline": {
+    "title": "租赁日程",
+    "today": "今天",
+    "noOrders": "暂无订单"
+  },
+  "conflicts": {
+    "title": "档期冲突订单",
+    "orderNumber": "订单号",
+    "customer": "客户",
+    "period": "租期",
+    "quantity": "数量"
+  },
+  "actions": {
+    "retry": "重试",
+    "checkAgain": "重新检查"
+  },
+  "copy": {
+    "available": "{name} 在 {pickup} 至 {return} 期间有档期（{count} 套）。",
+    "unavailable": "{name} 在 {pickup} – {return} 期间无档期（需要 {need}，有档期 {have}）。"
+  },
+  "errors": {
+    "checkFailed": "无法检查档期",
+    "loadProductFailed": "无法加载商品信息"
+  },
+  "productsTitle": "待检查商品",
+  "quick": {
+    "today": "今天",
+    "tomorrow": "明天",
+    "weekend": "周末",
+    "threeDays": "3 天"
+  },
+  "summary": {
+    "allOk": "所有 {count} 个商品库存充足",
+    "someShort": "{count} 个商品库存不足",
+    "pickDates": "选择租期以查看有档期的商品"
+  },
+  "badge": {
+    "free": "有档期 {free}/{total}",
+    "short": "缺 {count}",
+    "error": "出错"
+  },
+  "search": {
+    "price": "价格 {price}",
+    "stock": "有档期 {available}/{total}"
+  },
+  "empty": {
+    "title": "尚未选择商品",
+    "description": "按名称、编号或条形码搜索商品，可同时检查多个商品。"
+  },
+  "detail": {
+    "freeHeadline": "剩余 {count} 套有档期",
+    "free": "有档期",
+    "busy": "占用中",
+    "need": "您需要",
+    "barLabel": "有档期 {free}，占用 {busy}，需要 {need}，总库存 {total}",
+    "days": "每日有档期数量",
+    "dayHint": "点击某一天，从该日开始检查",
+    "dayLabel": "{date}：剩余 {free} 套",
+    "conflicts": "本期档期冲突订单（{count}）",
+    "noConflicts": "本期没有冲突订单。"
+  },
+  "remove": "移除 {name}",
+  "decrease": "减少数量",
+  "increase": "增加数量",
+  "web": {
+    "title": "检查库存",
+    "outlet": "店铺",
+    "product": "商品",
+    "productPlaceholder": "搜索商品名称或编号",
+    "noProducts": "未找到商品",
+    "searching": "搜索中…",
+    "pickup": "取货日",
+    "return": "还货日",
+    "quantity": "数量",
+    "check": "检查",
+    "quick": {
+      "today": "今天",
+      "tomorrow": "明天",
+      "weekend": "周末",
+      "threeDays": "3 天"
+    },
+    "reversed": "还货日不能早于取货日。",
+    "pickProduct": "请选择商品，查看这段时间有多少件可用。",
+    "pickOutlet": "请选择店铺进行检查。",
+    "has": "共 {total} 件 · {from} → {to}",
+    "free": "这段时间有 {free}/{total} 件可用",
+    "short": "缺 {missing} 件 · 可用 {free}/{total}",
+    "none": "这段时间没有可用商品",
+    "checking": "检查中…",
+    "checkFailed": "无法检查。",
+    "retry": "重试",
+    "createOrder": "按此时间创建订单",
+    "dayLeft": "当日剩余",
+    "dayAria": "{day}：剩余 {count}。点击从此日开始选择租期",
+    "note": "一天同时计入取货日和还货日，即使当天取货并还货。浅蓝色区域为所查租期。点击某一天可将租期移至该日。",
+    "status": {
+      "RESERVED": "已预订",
+      "PICKUPED": "已取货"
+    },
+    "bar": {
+      "returnOn": "{day} 还货",
+      "range": "{from} → {to}"
+    },
+    "holders": "占用该商品的订单",
+    "noHolders": "暂无订单占用该商品。",
+    "holdersFailed": "无法加载占用该商品的订单。",
+    "units": "{count} 件",
+    "walkIn": "散客",
+    "similar": "同分类且这段时间可用",
+    "similarFree": "剩余 {count}",
+    "similarEmpty": "这段时间没有同分类的可用商品。",
+    "priceSuffix": {
+      "DAILY": "{price}/天",
+      "HOURLY": "{price}/小时",
+      "FIXED": "{price}/次",
+      "WEEKLY": "{price}/周",
+      "MONTHLY": "{price}/月"
+    },
+    "change": "更换商品",
+    "weekdays": "周日,周一,周二,周三,周四,周五,周六"
+  }
+}

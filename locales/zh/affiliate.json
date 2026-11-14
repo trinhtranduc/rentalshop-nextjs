@@ -1,0 +1,148 @@
+{
+  "title": "推荐链接指南",
+  "subtitle": "了解如何使用推荐链接拓展您的业务",
+  "lastUpdated": "最后更新：2025 年 1 月",
+  "sections": {
+    "whatIs": {
+      "title": "什么是推荐链接？",
+      "content": "推荐链接（也称为联盟链接）是一个包含您专属推荐码的特殊网址。有人使用您的推荐链接注册 AnyRent 后，即成为您推荐的用户，您可能获得奖励。"
+    },
+    "howToGet": {
+      "title": "如何获取您的推荐链接",
+      "content": "推荐链接由您的店铺网址标识生成。您可以在“店铺设置”的“分享店铺”中找到它。"
+    },
+    "howToUse": {
+      "title": "如何使用推荐链接",
+      "content": "通过以下渠道与他人分享您的推荐链接："
+    },
+    "howItWorks": {
+      "title": "运作方式",
+      "content": "当有人点击您的推荐链接时："
+    },
+    "benefits": {
+      "title": "使用推荐链接的好处",
+      "content": "使用推荐链接可以帮助您："
+    },
+    "bestPractices": {
+      "title": "最佳实践",
+      "content": "为了让推荐链接发挥最大效果："
+    },
+    "importantNotes": {
+      "title": "重要说明",
+      "content": "请注意："
+    },
+    "troubleshooting": {
+      "title": "故障排除",
+      "content": "如果您的推荐链接遇到问题："
+    }
+  },
+  "banner": {
+    "title": "了解推荐链接",
+    "description": "探索如何使用推荐链接拓展业务",
+    "promo": "推荐他人可享 10% 优惠",
+    "button": "查看指南",
+    "viewDetails": "查看详情",
+    "dismiss": "关闭"
+  },
+  "navigation": {
+    "title": "推荐"
+  },
+  "guide": {
+    "title": "推荐 AnyRent，赚取佣金",
+    "subtitle": "将您的推荐链接分享给其他店主，对方购买套餐后您即可获得佣金。",
+    "login": "登录",
+    "yourLink": "您的推荐链接",
+    "copy": "复制",
+    "copied": "已复制",
+    "overview": {
+      "commission": "佣金",
+      "autoPayment": "自动",
+      "payment": "付款",
+      "unlimitedLabel": "不限",
+      "unlimited": "推荐人数"
+    },
+    "howItWorks": {
+      "title": "运作方式",
+      "step1": {
+        "title": "分享链接",
+        "description": "复制您的推荐链接，分享给朋友、合作伙伴或潜在客户"
+      },
+      "step2": {
+        "title": "对方注册",
+        "description": "被推荐人使用您的链接注册新的 AnyRent 账户"
+      },
+      "step3": {
+        "title": "赚取佣金",
+        "description": "对方购买订阅套餐后，您将自动获得 10% 佣金，并存入您的账户"
+      }
+    },
+    "commissionDetails": {
+      "title": "佣金详情",
+      "rate": {
+        "label": "佣金比例",
+        "description": "每笔注册成功的交易，您可获得 10% 佣金"
+      },
+      "payment": {
+        "label": "付款",
+        "description": "被推荐人付款成功后，佣金将立即自动存入您的账户"
+      },
+      "tracking": {
+        "label": "追踪",
+        "description": "实时查看您的推荐人数和佣金",
+        "badge": "实时"
+      }
+    },
+    "examples": {
+      "title": "计算示例",
+      "example1": {
+        "title": "示例 1：基础套餐",
+        "label1": "套餐价格",
+        "label2": "状态",
+        "confirmed": "已确认",
+        "label3": "您的佣金"
+      },
+      "example2": {
+        "title": "示例 2：高级套餐",
+        "label1": "套餐价格",
+        "label2": "状态",
+        "confirmed": "已确认",
+        "label3": "您的佣金"
+      },
+      "note": "注意：只有被推荐人<strong>付款成功</strong>后才会计算佣金。佣金会自动存入您的账户。"
+    },
+    "tips": {
+      "title": "提高佣金的技巧",
+      "tip1": {
+        "title": "精准分享",
+        "description": "聚焦真正需要租赁店管理软件的人群"
+      },
+      "tip2": {
+        "title": "讲清好处",
+        "description": "推荐时介绍 AnyRent 的优势，以提高注册率"
+      },
+      "tip3": {
+        "title": "跟踪效果",
+        "description": "使用仪表盘查看您的推荐人数和佣金"
+      },
+      "tip4": {
+        "title": "经常分享",
+        "description": "通过多个渠道分享您的链接，触达更多人"
+      }
+    },
+    "cta": {
+      "title": "准备好开始了吗？",
+      "description": "立即注册，获取您的推荐链接并开始赚取佣金",
+      "register": "立即注册",
+      "login": "已有账户？登录"
+    },
+    "eyebrow": "AnyRent · 推荐",
+    "linkHint": "使用此链接注册的用户将计入您的推荐。"
+  },
+  "page": {
+    "eyebrow": "AnyRent · 推荐",
+    "ctaTitle": "准备好开始了吗？",
+    "ctaBody": "打开店铺设置，立即复制您的推荐链接。",
+    "ctaButton": "打开店铺设置",
+    "guideLink": "查看佣金和示例"
+  }
+}
