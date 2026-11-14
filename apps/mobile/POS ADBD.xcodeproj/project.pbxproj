@@ -855,6 +855,9 @@
 		C9BB81CB22E8C80600F03F0E /* beep-07.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "beep-07.wav"; sourceTree = "<group>"; };
 		C9D2ABB324B0D53C0028EAAC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C9D2ABB524B0D5410028EAAC /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		7EB21A314B59F3F85304D23E /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		034C8D78AED4D0746EC9103A /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "ko.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		E00045A865F640E4B9E67838 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		9700A0052E9F000100970001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		9700A0062E9F000100970001 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		C9ECAD4624AC813C0090FAC4 /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
@@ -1913,6 +1916,9 @@
 				en,
 				Base,
 				"vi-VN",
+				ja,
+				ko,
+				zh-Hans,
 			);
 			mainGroup = 88E4146D21A99B3B00BAF4A1;
 			packageReferences = (
@@ -2508,6 +2514,9 @@
 			children = (
 				C9D2ABB324B0D53C0028EAAC /* en */,
 				C9D2ABB524B0D5410028EAAC /* vi-VN */,
+				7EB21A314B59F3F85304D23E /* ja */,
+				034C8D78AED4D0746EC9103A /* ko */,
+				E00045A865F640E4B9E67838 /* zh-Hans */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";

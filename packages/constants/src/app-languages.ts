@@ -30,9 +30,9 @@ export interface AppLanguage {
 export const APP_LANGUAGES: readonly AppLanguage[] = [
   { code: 'vi', label: 'VI', flag: '🇻🇳', name: 'Tiếng Việt', enabled: true, webEnabled: true, web: 'vi', ios: 'vi-VN', android: 'vi' },
   { code: 'en', label: 'EN', flag: '🇺🇸', name: 'English', enabled: true, webEnabled: true, web: 'en', ios: 'en', android: '' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵', name: '日本語', enabled: false, webEnabled: true, web: 'ja', ios: 'ja', android: 'ja' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷', name: '한국어', enabled: false, webEnabled: true, web: 'ko', ios: 'ko', android: 'ko' },
-  { code: 'zh', label: '中文', flag: '🇨🇳', name: '中文', enabled: false, webEnabled: true, web: 'zh', ios: 'zh-Hans', android: 'zh' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵', name: '日本語', enabled: true, webEnabled: true, web: 'ja', ios: 'ja', android: 'ja' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷', name: '한국어', enabled: true, webEnabled: true, web: 'ko', ios: 'ko', android: 'ko' },
+  { code: 'zh', label: '中文', flag: '🇨🇳', name: '中文', enabled: true, webEnabled: true, web: 'zh', ios: 'zh-Hans', android: 'zh' },
   { code: 'zh-TW', label: 'ZH-TW', flag: '🇹🇼', name: '繁體中文', enabled: false, webEnabled: true, web: 'zh-TW', ios: 'zh-Hant', android: 'zh-rTW' },
   { code: 'fr', label: 'FR', flag: '🇫🇷', name: 'Français', enabled: false, webEnabled: true, web: 'fr', ios: 'fr', android: 'fr' },
   { code: 'de', label: 'DE', flag: '🇩🇪', name: 'Deutsch', enabled: false, webEnabled: true, web: 'de', ios: 'de', android: 'de' },
