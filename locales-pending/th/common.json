@@ -138,13 +138,18 @@
     "analytics": "การวิเคราะห์"
   },
   "pagination": {
+    "showing": "แสดง",
+    "to": "ถึง",
+    "of": "จาก",
     "results": "รายการ",
     "page": "หน้า",
     "rowsPerPage": "จำนวนแถวต่อหน้า",
     "pageSizeRange": "ตั้งแต่ 1 ถึง {max} แถวต่อหน้า",
+    "itemsPerPage": "จำนวนรายการต่อหน้า",
     "first": "หน้าแรก",
     "last": "หน้าสุดท้าย",
     "noData": "ไม่มีข้อมูลให้แสดง",
+    "apply": "นำไปใช้",
     "items": {
       "items": "รายการ",
       "orders": "คำสั่งซื้อ",

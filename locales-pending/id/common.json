@@ -138,13 +138,18 @@
     "analytics": "Analitik"
   },
   "pagination": {
+    "showing": "Menampilkan",
+    "to": "sampai",
+    "of": "dari",
     "results": "hasil",
     "page": "Halaman",
     "rowsPerPage": "Baris per halaman",
     "pageSizeRange": "1 sampai {max} baris per halaman",
+    "itemsPerPage": "Jumlah item per halaman",
     "first": "Pertama",
     "last": "Terakhir",
     "noData": "Tidak ada data untuk ditampilkan",
+    "apply": "Terapkan",
     "items": {
       "items": "item",
       "orders": "pesanan",
