@@ -7,12 +7,12 @@
     "goToToday": "Zu heute"
   },
   "labels": {
-    "pickups": "Ausgabe",
+    "pickups": "Abholungen",
     "returns": "Rückgabe",
     "totalOrders": "Aufträge gesamt",
     "pickupOrders": "Abholaufträge",
     "returnOrders": "Rückgabeaufträge",
-    "pickup": "Ausgabe",
+    "pickup": "Abholung",
     "return": "Rückgabe",
     "order": "Auftrag",
     "customer": "Kunde",
@@ -31,7 +31,7 @@
     "ordersToday": "Aufträge heute",
     "ordersThisWeek": "Aufträge diese Woche",
     "ordersThisMonth": "Aufträge diesen Monat",
-    "pickupsToday": "Ausgaben heute",
+    "pickupsToday": "Abholungen heute",
     "returnsToday": "Rückgaben heute",
     "monthlyStatistics": "Monatsstatistik",
     "activeDays": "Aktive Tage",
@@ -50,12 +50,12 @@
     "ordersFoundPlural": "Aufträge",
     "orders": "Aufträge",
     "noOrders": "Keine Aufträge",
-    "noPickupReturnOrders": "Für diesen Tag sind keine Ausgabe- oder Rückgabeaufträge geplant.",
+    "noPickupReturnOrders": "Für diesen Tag sind keine Abhol- oder Rückgabeaufträge geplant.",
     "items": "Artikel"
   },
   "empty": {
     "noOrders": "Keine Aufträge",
-    "noPickups": "Keine Ausgabeaufträge",
+    "noPickups": "Keine Abholaufträge",
     "noReturns": "Keine Rückgabeaufträge",
     "selectDate": "Datum wählen, um Aufträge zu sehen"
   },
@@ -97,29 +97,29 @@
     "monthLabel": "Monatskalender",
     "dayPanel": "Aufgaben des Tages",
     "legend": {
-      "pickups": "Ausgabe",
+      "pickups": "Abholung",
       "returns": "Rückgabe",
       "late": "Rückgabe überfällig"
     },
     "cell": {
-      "pickups": "Ausgabe {count}",
+      "pickups": "Abholung {count}",
       "returns": "Rückgabe {count}",
       "late": "Überfällig {count}"
     },
     "aria": {
-      "pickups": "Ausgabe",
+      "pickups": "Abholung",
       "returns": "Rückgabe",
       "late": "überfällig"
     },
     "dayTitleToday": "{day} · heute",
     "sections": {
-      "pickups": "Auszugeben · {count}",
+      "pickups": "Zur Abholung · {count}",
       "returns": "Zurückzunehmen · {count}"
     },
     "sub": {
       "returnOn": "Rückgabe {day}",
       "sameDay": "Ausgabe und Rückgabe am selben Tag",
-      "pickedOn": "Ausgabe {day}",
+      "pickedOn": "Abholung {day}",
       "late": "Rückgabe fällig {day} · überfällig seit {days} Tagen",
       "notPrepared": "noch nicht vorbereitet"
     },
@@ -128,7 +128,7 @@
       "refund": "Anzahlung erstatten {amount}",
       "fee": "zusätzlich kassieren {amount}"
     },
-    "emptyPickups": "Keine Aufträge zur Ausgabe.",
+    "emptyPickups": "Keine Aufträge zur Abholung.",
     "emptyReturns": "Keine Rückgaben zu erwarten.",
     "walkIn": "Laufkunde",
     "loadFailed": "Anzahl der Aufträge für den Monat konnte nicht geladen werden.",

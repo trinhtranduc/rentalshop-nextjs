@@ -109,7 +109,7 @@
     },
     "deposit": {
       "nonNegative": "Die Anzahlung darf nicht negativ sein",
-      "cannotBeNegative": "Die Anzahlung ist erforderlich und darf nicht negativ sein"
+      "cannotBeNegative": "Die Anzahlung darf nicht negativ sein"
     },
     "merchantId": {
       "required": "Händler-ID ist erforderlich"
@@ -184,7 +184,7 @@
       "required": "Geschäftsart und Preismodell sind für die Händlerregistrierung erforderlich"
     },
     "pricingDefault": {
-      "dailyNeedsPrice": "Ein Standardwert pro Tag benötigt einen Mietpreis pro Tag."
+      "dailyNeedsPrice": "Die Preisart „pro Tag“ als Standard benötigt einen Mietpreis pro Tag."
     }
   }
 }

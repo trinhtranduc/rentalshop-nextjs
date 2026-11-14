@@ -169,8 +169,8 @@
     "tomorrow": "Morgen",
     "thisWeek": "Diese Woche",
     "thisMonth": "Dieser Monat",
-    "last7Days": "7 Tage",
-    "last30Days": "30 Tage",
+    "last7Days": "Letzte 7 Tage",
+    "last30Days": "Letzte 30 Tage",
     "lastMonth": "Letzter Monat",
     "thisYear": "Dieses Jahr",
     "lastYear": "Letztes Jahr",
@@ -200,7 +200,7 @@
     "ARTICLE": "Beitragsredakteur",
     "MERCHANT": "Händler",
     "OUTLET_ADMIN": "Filialleiter",
-    "OUTLET_STAFF": "Filial-Mitarbeiter",
+    "OUTLET_STAFF": "Filialmitarbeiter",
     "OUTLET_INVENTORY": "Lagermitarbeiter"
   },
   "import": {

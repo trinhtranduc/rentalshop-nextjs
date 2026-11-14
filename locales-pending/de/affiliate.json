@@ -131,7 +131,7 @@
       },
       "payment": {
         "label": "Zahlung",
-        "description": "Die Provision wird unmittelbar nach der Zahlung der Empfehlung automatisch auf Ihr Konto überwiesen"
+        "description": "Die Provision wird automatisch auf Ihr Konto überwiesen, sobald die empfohlene Person bezahlt hat"
       },
       "tracking": {
         "label": "Nachverfolgung",

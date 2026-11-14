@@ -171,7 +171,7 @@
       "range": "{from} → {to}"
     },
     "holders": "Pedidos que retienen este producto",
-    "noHolders": "Ningún pedido retiene este producto.",
+    "noHolders": "Ningún pedido tiene reservado este producto.",
     "holdersFailed": "No se pudieron cargar los pedidos que retienen este producto.",
     "units": "{count} unidades",
     "walkIn": "Cliente sin reserva",

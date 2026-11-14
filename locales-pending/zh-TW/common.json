@@ -60,7 +60,7 @@
     "status": "狀態",
     "type": "類型",
     "category": "分類",
-    "merchant": "商家",
+    "merchant": "店家",
     "price": "價格",
     "quantity": "數量",
     "total": "總計",
@@ -158,7 +158,7 @@
       "users": "位使用者",
       "outlets": "家分店",
       "categories": "個分類",
-      "merchants": "家商家",
+      "merchants": "間店家",
       "posts": "篇文章",
       "subscriptions": "筆訂閱"
     }
@@ -198,7 +198,7 @@
   "roles": {
     "ADMIN": "管理員",
     "ARTICLE": "文章編輯",
-    "MERCHANT": "商家負責人",
+    "MERCHANT": "店家負責人",
     "OUTLET_ADMIN": "分店管理員",
     "OUTLET_STAFF": "分店員工",
     "OUTLET_INVENTORY": "倉管員工"

@@ -54,14 +54,14 @@
     "collateralType": "Type de dépôt de garantie",
     "collateralDetails": "Détails du dépôt de garantie",
     "collateralImage": "Photo du document de garantie",
-    "uploadImage": "Télécharger la photo du document",
-    "collateralImageHint": "Téléchargez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie. Formats acceptés : JPEG, PNG, WebP. Taille maximale : 5 Mo",
+    "uploadImage": "Importer la photo du document",
+    "collateralImageHint": "Importez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie. Formats acceptés : JPEG, PNG, WebP. Taille maximale : 5 Mo",
     "tooltips": {
       "damageFee": "Montant supplémentaire facturé si le produit est endommagé ou perdu pendant la location",
       "securityDeposit": "Somme que le client doit verser à la remise de l'article. Elle est restituée après le retour, déduction faite des frais de dommages éventuels",
       "collateralType": "Type de pièce d'identité laissée par le client en dépôt de garantie (CMND/CCCD/ID, permis de conduire, passeport ou autre)",
       "collateralDetails": "Informations sur la pièce remise en garantie (numéro de CMND/CCCD/ID, de permis de conduire, de passeport ou autres informations selon le type)",
-      "collateralImage": "Téléchargez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie pour vérification"
+      "collateralImage": "Importez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie pour vérification"
     }
   },
   "detail": {
@@ -121,7 +121,7 @@
     "pickupNotes": "Remarques sur la remise",
     "returnNotes": "Remarques sur le retour",
     "damageNotes": "Remarques sur les dommages",
-    "bailAmount": "Montant de la caution",
+    "bailAmount": "Montant de la garantie",
     "material": "Objet remis en garantie"
   },
   "payment": {
@@ -415,7 +415,7 @@
     },
     "timesDays": "× {days} jours",
     "pricingMethod": "Mode de calcul du prix",
-    "depositPerUnit": "Acompte / lot",
+    "depositPerUnit": "Acompte / ensemble",
     "itemNote": "Remarque sur l'article",
     "moreOptions": "Options de {name}",
     "remove": "Retirer {name}",
@@ -592,8 +592,8 @@
       },
       "reorder": {
         "skipped": "{count} articles ne sont plus vendus, retirés du panier",
-        "empty": "Aucun article à recommander",
-        "limit": "10 paniers sont ouverts. Fermez-en un puis recommandez.",
+        "empty": "Aucun article à commander à nouveau",
+        "limit": "10 paniers sont ouverts. Fermez-en un puis commandez à nouveau.",
         "failed": "Impossible de lire la commande à recommander"
       },
       "title": "Créer une commande",
@@ -786,7 +786,7 @@
         "label": "Note",
         "edit": "Modifier",
         "title": "Note sur l'article",
-        "placeholder": "Exemple : reprendre la taille de 2 cm, livrer avec la voile",
+        "placeholder": "Exemple : reprendre la taille de 2 cm, livrer avec le tulle",
         "hint": "Uniquement pour cet article dans la commande. La note générale se trouve dans la section Notes ci-dessous.",
         "clear": "Supprimer la note",
         "done": "Terminé",
@@ -890,7 +890,7 @@
     "empty": {
       "all": "Aucune commande ne correspond aux filtres.",
       "todo": "Aucune remise ni retour prévu aujourd'hui.",
-      "noshow": "Aucune commande dépassant la date de retrait."
+      "noshow": "Aucune commande dépassant la date de remise."
     },
     "footer": {
       "show": "Afficher",
@@ -912,7 +912,7 @@
       "by": "par {name}",
       "print": "Imprimer le bon",
       "edit": "Modifier la commande",
-      "reorder": "Recommander",
+      "reorder": "Commander à nouveau",
       "more": "Autres actions",
       "cancel": "Annuler la commande",
       "delete": "Supprimer la commande",

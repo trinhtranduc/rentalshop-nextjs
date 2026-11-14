@@ -854,7 +854,7 @@
   },
   "embeddingBackfill": {
     "title": "Pencarian gambar",
-    "description": "Produk yang memiliki foto perlu embedding agar dapat ditemukan dengan pencarian gambar. Periksa semua toko, lalu antrekan yang belum ada.",
+    "description": "Produk yang memiliki foto perlu embedding agar dapat ditemukan dengan pencarian gambar. Periksa semua toko, lalu buat embedding untuk produk yang belum ada.",
     "withImages": "Produk berfoto",
     "missingEmbedding": "Belum ada vektor",
     "withEmbedding": "Sudah ada vektor",
