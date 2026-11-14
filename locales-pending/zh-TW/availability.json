@@ -1,0 +1,191 @@
+{
+  "title": "檢查商品是否可租",
+  "subtitle": "選擇日期與商品，查看店鋪是否有足夠庫存。",
+  "breadcrumb": "可租檢查",
+  "sections": {
+    "product": "選擇商品",
+    "period": "租借期間"
+  },
+  "pickupDate": "取貨日",
+  "returnDate": "歸還日",
+  "quantity": "數量",
+  "outlet": "分店",
+  "selectOutlet": "選擇分店",
+  "searchPlaceholder": "搜尋名稱或條碼",
+  "changeProduct": "更換商品",
+  "noProductsFound": "找不到商品",
+  "maxProductsReached": "已達上限 20 件商品",
+  "idle": {
+    "title": "選擇商品與租借日期",
+    "description": "在左側選擇租借期間與商品，結果會顯示在右側",
+    "pickDates": "選擇租借日期以進行檢查"
+  },
+  "product": {
+    "rentPrice": "租金",
+    "deposit": "訂金",
+    "category": "分類"
+  },
+  "checking": "檢查中…",
+  "missingOutlet": "請選擇分店以檢查可用庫存",
+  "invalidDates": "歸還日不能早於取貨日",
+  "status": {
+    "available": "可租",
+    "unavailable": "無庫存",
+    "warning": "可租"
+  },
+  "result": {
+    "canRent": "可租 {count} 套",
+    "cannotRent": "庫存不足",
+    "insufficient": "需要 {need} 套，目前僅剩 {have} 套可用"
+  },
+  "availableUnits": "剩餘 {count} 套",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "需要 {need} 套，本期間可用 {have} 套",
+  "conflictsCount": "有 {count} 筆期間重疊的訂單",
+  "stock": {
+    "total": "庫存總量",
+    "renting": "租借中",
+    "freeInPeriod": "期間可用",
+    "bookedInPeriod": "期間已預訂"
+  },
+  "orders": {
+    "title": "此商品的訂單",
+    "noActiveOrders": "沒有進行中的訂單",
+    "viewAll": "查看訂單（{count}）",
+    "ordersLabel": "筆",
+    "conflicts": "期間重疊",
+    "conflictBadge": "期間重疊",
+    "conflictNote": "{count} 筆訂單與目前查詢的期間重疊",
+    "dialogTitle": "訂單：{name}",
+    "page": "第 {current}/{total} 頁",
+    "conflictsCount": "{count} 筆期間重疊的訂單",
+    "orderNumber": "訂單編號",
+    "customer": "客戶",
+    "period": "租借期間",
+    "qty": "數量",
+    "status": "狀態",
+    "statusReserved": "已預訂",
+    "statusPickuped": "租借中"
+  },
+  "timeline": {
+    "title": "租借時程",
+    "today": "今天",
+    "noOrders": "尚無訂單"
+  },
+  "conflicts": {
+    "title": "期間重疊的訂單",
+    "orderNumber": "訂單編號",
+    "customer": "客戶",
+    "period": "租借期間",
+    "quantity": "數量"
+  },
+  "actions": {
+    "retry": "重試",
+    "checkAgain": "重新檢查"
+  },
+  "copy": {
+    "available": "{name} 從 {pickup} 到 {return} 可租 {count} 套。",
+    "unavailable": "{name} 在 {pickup} – {return} 期間無庫存（需要 {need}，可用 {have}）。"
+  },
+  "errors": {
+    "checkFailed": "無法檢查可用庫存",
+    "loadProductFailed": "無法載入商品資訊"
+  },
+  "productsTitle": "待檢查商品",
+  "quick": {
+    "today": "今天",
+    "tomorrow": "明天",
+    "weekend": "週末",
+    "threeDays": "3 天"
+  },
+  "summary": {
+    "allOk": "全部 {count} 件商品庫存充足",
+    "someShort": "{count} 件商品庫存不足",
+    "pickDates": "選擇租借日期以查看可用庫存"
+  },
+  "badge": {
+    "free": "可用 {free}/{total}",
+    "short": "缺 {count}",
+    "error": "錯誤"
+  },
+  "search": {
+    "price": "價格 {price}",
+    "stock": "可用 {available}/{total}"
+  },
+  "empty": {
+    "title": "尚未選擇商品",
+    "description": "可依名稱、編號或條碼搜尋商品，並可同時檢查多件商品。"
+  },
+  "detail": {
+    "freeHeadline": "可租 {count} 套",
+    "free": "可用",
+    "busy": "使用中",
+    "need": "需求",
+    "barLabel": "可用 {free}，使用中 {busy}，需求 {need}，庫存總量 {total}",
+    "days": "每日可用套數",
+    "dayHint": "點選某日即可從該日開始檢查",
+    "dayLabel": "{date}：可用 {free} 套",
+    "conflicts": "期間重疊的訂單（{count}）",
+    "noConflicts": "沒有與此期間重疊的訂單。"
+  },
+  "remove": "移除 {name}",
+  "decrease": "減少數量",
+  "increase": "增加數量",
+  "web": {
+    "title": "檢查庫存",
+    "outlet": "分店",
+    "product": "商品",
+    "productPlaceholder": "搜尋名稱或商品編號",
+    "noProducts": "找不到商品",
+    "searching": "搜尋中…",
+    "pickup": "取貨日",
+    "return": "歸還日",
+    "quantity": "數量",
+    "check": "檢查",
+    "quick": {
+      "today": "今天",
+      "tomorrow": "明天",
+      "weekend": "週末",
+      "threeDays": "3 天"
+    },
+    "reversed": "歸還日必須是取貨日當天或之後。",
+    "pickProduct": "選擇商品，查看此期間的可用數量。",
+    "pickOutlet": "請選擇分店以進行檢查。",
+    "has": "共 {total} 套 · {from} → {to}",
+    "free": "此期間可用 {free}/{total}",
+    "short": "缺 {missing} · 可用 {free}/{total}",
+    "none": "此期間無庫存",
+    "checking": "檢查中…",
+    "checkFailed": "無法完成檢查。",
+    "retry": "重試",
+    "createOrder": "依此期間建立訂單",
+    "dayLeft": "當日剩餘",
+    "dayAria": "{day}：剩餘 {count}。點選即可從此日開始設定期間",
+    "note": "一天同時計入取貨日與歸還日，即使當天取貨並歸還也一樣。淺藍色區域為目前查詢的期間。點選某一天即可將期間移至該日。",
+    "status": {
+      "RESERVED": "已預訂",
+      "PICKUPED": "租借中"
+    },
+    "bar": {
+      "returnOn": "{day} 歸還",
+      "range": "{from} → {to}"
+    },
+    "holders": "佔用商品的訂單",
+    "noHolders": "沒有訂單佔用此商品。",
+    "holdersFailed": "無法載入佔用此商品的訂單。",
+    "units": "{count} 套",
+    "walkIn": "現場客",
+    "similar": "同分類，此期間可用",
+    "similarFree": "剩餘 {count}",
+    "similarEmpty": "此期間沒有同分類且數量足夠的商品。",
+    "priceSuffix": {
+      "DAILY": "{price}/天",
+      "HOURLY": "{price}/小時",
+      "FIXED": "{price}/次",
+      "WEEKLY": "{price}/週",
+      "MONTHLY": "{price}/月"
+    },
+    "change": "更換商品",
+    "weekdays": "日,一,二,三,四,五,六"
+  }
+}

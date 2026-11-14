@@ -1,0 +1,469 @@
+{
+  "title": "Utilisateurs",
+  "subtitle": "Gérer les utilisateurs du système",
+  "pageTitle": "Gestion des utilisateurs",
+  "addUser": "Ajouter un utilisateur",
+  "addNewUser": "Ajouter un nouvel utilisateur",
+  "addNewUserDescription": "Créer un nouveau compte utilisateur pour votre organisation",
+  "editUser": "Modifier l'utilisateur",
+  "userDetails": "Détails de l'utilisateur",
+  "viewUserInfo": "Voir les informations et le détail de l'utilisateur",
+  "userInformation": "Informations de l'utilisateur",
+  "accountInformation": "Informations du compte",
+  "outletInformation": "Informations du point de vente",
+  "accountActions": "Actions sur le compte",
+  "passwordManagement": "Gestion du mot de passe",
+  "passwordSettings": "Paramètres du mot de passe",
+  "organizationAssignment": "Affectation à l'organisation",
+  "accountSettings": "Paramètres du compte",
+  "accountStatus": "Statut du compte",
+  "dangerZone": "Zone à risque",
+  "activeAccount": "Compte actif",
+  "currentUserInformation": "Informations de l'utilisateur actuel",
+  "activeUsersInfo": "Les utilisateurs actifs peuvent se connecter et accéder au système. Les utilisateurs inactifs sont suspendus.",
+  "created": "Date de création",
+  "label": {
+    "loading": "Chargement..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "Nom",
+    "firstName": "Prénom",
+    "lastName": "Nom de famille",
+    "fullName": "Nom complet",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "role": "Rôle",
+    "outlet": "Point de vente",
+    "outletName": "Nom du point de vente",
+    "outletId": "N° du point de vente",
+    "merchant": "Enseigne",
+    "merchantName": "Nom de l'enseigne",
+    "merchantId": "N° de l'enseigne",
+    "status": "Statut",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "createdAt": "Date de création",
+    "lastLogin": "Dernière connexion",
+    "actions": "Actions",
+    "basicInformation": "Informations de base",
+    "personalInformation": "Informations personnelles",
+    "roleAndPermissions": "Rôle et autorisations",
+    "readOnly": "Lecture seule",
+    "emailStatus": "Vérification de l'e-mail"
+  },
+  "roles": {
+    "ADMIN": "Administrateur système",
+    "MERCHANT": "Propriétaire de l'enseigne",
+    "OUTLET_ADMIN": "Responsable de point de vente",
+    "OUTLET_STAFF": "Personnel",
+    "ARTICLE": "Rédacteur d'articles",
+    "OUTLET_INVENTORY": "Personnel de stock"
+  },
+  "actions": {
+    "activate": "Activer l'utilisateur",
+    "activateAccount": "Activer le compte",
+    "activating": "Activation...",
+    "deactivate": "Désactiver l'utilisateur",
+    "deactivateAccount": "Désactiver le compte",
+    "deactivating": "Désactivation...",
+    "delete": "Supprimer l'utilisateur",
+    "deleteAccount": "Supprimer le compte",
+    "deleting": "Suppression...",
+    "changePassword": "Changer le mot de passe",
+    "changingPassword": "Modification...",
+    "viewDetails": "Voir les détails",
+    "edit": "Modifier",
+    "editUser": "Modifier l'utilisateur",
+    "updateUser": "Mettre à jour l'utilisateur",
+    "createUser": "Créer un utilisateur",
+    "updating": "Mise à jour...",
+    "creating": "Création...",
+    "addUser": "Ajouter un utilisateur",
+    "backToUsers": "Retour à la liste",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
+  },
+  "messages": {
+    "createSuccess": "Utilisateur créé avec succès",
+    "createFailed": "Échec de la création de l'utilisateur",
+    "updateSuccess": "Utilisateur mis à jour avec succès",
+    "updateFailed": "Échec de la mise à jour de l'utilisateur",
+    "deleteSuccess": "Utilisateur supprimé avec succès",
+    "deleteFailed": "Échec de la suppression de l'utilisateur",
+    "activateSuccess": "Utilisateur activé avec succès",
+    "activateFailed": "Échec de l'activation de l'utilisateur",
+    "deactivateSuccess": "Utilisateur désactivé avec succès",
+    "deactivateFailed": "Échec de la désactivation de l'utilisateur",
+    "passwordChangeSuccess": "Mot de passe modifié avec succès",
+    "passwordChangeFailed": "Échec de la modification du mot de passe",
+    "passwordMinLength": "Le mot de passe doit comporter au moins 6 caractères",
+    "newPasswordRequired": "Le nouveau mot de passe est obligatoire",
+    "confirmPasswordRequired": "Veuillez confirmer votre nouveau mot de passe",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "confirmDelete": "Voulez-vous vraiment supprimer cet utilisateur ?",
+    "confirmDeleteAccount": "Supprimer le compte utilisateur",
+    "confirmDeleteDetails": "Voulez-vous vraiment supprimer définitivement ce compte utilisateur ? Cette action est irréversible.",
+    "confirmDeactivate": "Voulez-vous vraiment désactiver",
+    "confirmDeactivateAccount": "Désactiver l'utilisateur",
+    "confirmDeactivateDetails": "Cette action empêchera cette personne d'accéder au système.",
+    "confirmActivate": "Voulez-vous vraiment activer cet utilisateur ?",
+    "confirmActivateAccount": "Activer le compte utilisateur",
+    "confirmActivateDetails": "Voulez-vous vraiment activer ce compte utilisateur ? L'utilisateur pourra à nouveau accéder au système.",
+    "allowChangePassword": "Permettre à l'utilisateur de changer son mot de passe en toute sécurité",
+    "suspendAccess": "Suspendre temporairement l'accès au système de l'utilisateur",
+    "deactivateToPrevent": "Désactiver pour empêcher la connexion",
+    "activateToRestore": "Activer pour rétablir la connexion",
+    "permanentlyDelete": "Supprimer définitivement ce compte utilisateur et toutes les données associées",
+    "permanentlyDeleteShort": "Supprimer définitivement ce compte utilisateur",
+    "cannotDeactivateAdmin": "Impossible de désactiver un administrateur système",
+    "cannotDeactivateAdminShort": "Impossible de désactiver un compte Admin",
+    "cannotDeleteAdmin": "Impossible de supprimer un compte Admin",
+    "validationErrors": "Veuillez corriger les erreurs de validation suivantes :",
+    "noUsers": "Aucun utilisateur trouvé",
+    "loadingUsers": "Chargement de la liste des utilisateurs...",
+    "noDataAvailable": "Aucune donnée utilisateur disponible",
+    "na": "Aucun",
+    "error": "Une erreur s'est produite",
+    "tryAdjustingSearch": "Essayez de modifier votre recherche ou vos filtres",
+    "getStarted": "Commencez par ajouter votre premier utilisateur"
+  },
+  "search": {
+    "placeholder": "Rechercher par nom, e-mail ou téléphone..."
+  },
+  "filters": {
+    "all": "Tous les utilisateurs",
+    "byRole": "Filtrer par rôle",
+    "byOutlet": "Filtrer par point de vente",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "allRoles": "Tous les rôles"
+  },
+  "stats": {
+    "totalUsers": "Nombre total d'utilisateurs",
+    "activeUsers": "Actifs",
+    "adminUsers": "Administrateurs",
+    "staffUsers": "Personnel"
+  },
+  "dialogs": {
+    "changePasswordTitle": "Changer le mot de passe",
+    "changePasswordDescription": "Changer le mot de passe de l'utilisateur",
+    "newPassword": "Nouveau mot de passe",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe"
+  },
+  "placeholders": {
+    "enterName": "Saisir le nom",
+    "enterFirstName": "Saisir le prénom",
+    "enterLastName": "Saisir le nom de famille",
+    "enterFullName": "Saisir le nom complet",
+    "enterEmail": "Saisir l'adresse e-mail",
+    "enterPhone": "Saisir le numéro de téléphone (chiffres uniquement)",
+    "selectRole": "Choisir un rôle",
+    "selectOutlet": "Choisir un point de vente",
+    "enterPassword": "Saisir le mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "enterNewPassword": "Saisir le nouveau mot de passe",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe",
+    "loadingMerchants": "Chargement de la liste des enseignes...",
+    "searchAndSelectMerchant": "Rechercher et choisir une enseigne",
+    "currentMerchant": "Enseigne actuelle",
+    "loadingOutlets": "Chargement de la liste des points de vente...",
+    "selectMerchantFirst": "Veuillez d'abord choisir une enseigne",
+    "searchAndSelectOutlet": "Rechercher et choisir un point de vente",
+    "currentOutlet": "Point de vente actuel",
+    "searchMerchants": "Rechercher une enseigne...",
+    "noMerchantsFound": "Aucune enseigne trouvée",
+    "searchOutlets": "Rechercher un point de vente...",
+    "noOutletsFound": "Aucun point de vente trouvé",
+    "searchUsers": "Rechercher un utilisateur..."
+  },
+  "labels": {
+    "loading": "Chargement..."
+  },
+  "status": {
+    "verified": "Vérifié",
+    "notVerified": "Non vérifié"
+  },
+  "roleHelp": {
+    "title": "Rôles",
+    "OUTLET_ADMIN": "Gère un point de vente : commandes, produits, clients et personnel de ce point de vente.",
+    "OUTLET_STAFF": "Crée et traite les commandes. Ne peut pas modifier le prix des produits.",
+    "loginNote": "Le nouvel utilisateur se connecte avec cet e-mail et ce mot de passe, puis peut changer son mot de passe lui-même.",
+    "OUTLET_INVENTORY": "Vend comme le personnel et gère les produits et catégories (ajouter, modifier le prix, supprimer, importer et exporter Excel). Ne consulte pas le chiffre d'affaires."
+  },
+  "web": {
+    "title": "Personnel",
+    "add": "Ajouter du personnel",
+    "searchPlaceholder": "Rechercher nom, tél., e-mail",
+    "searchLabel": "Rechercher du personnel",
+    "allOutlets": "Tous les points de vente",
+    "outletFilter": "Filtrer par point de vente",
+    "allOutletsValue": "Tous",
+    "filters": {
+      "role": "Rôle :",
+      "status": "Statut :",
+      "all": "Tous",
+      "active": "Actif",
+      "inactive": "Verrouillé"
+    },
+    "cols": {
+      "staff": "Personnel",
+      "role": "Rôle",
+      "outlet": "Point de vente",
+      "lastLogin": "Dernière connexion",
+      "actions": "Actions"
+    },
+    "roles": {
+      "owner": "Propriétaire de la boutique",
+      "admin": "Responsable de point de vente",
+      "staff": "Personnel",
+      "other": "Autre",
+      "inventory": "Personnel de stock"
+    },
+    "lastSeen": {
+      "current": "En cours d'utilisation",
+      "never": "—",
+      "today": "{time} aujourd'hui",
+      "yesterday": "{time} hier",
+      "locked": "Verrouillé"
+    },
+    "edit": "Modifier",
+    "more": "Autres actions pour {name}",
+    "activate": "Déverrouiller le compte",
+    "deactivate": "Verrouiller le compte",
+    "delete": "Supprimer le personnel",
+    "confirm": {
+      "activateTitle": "Déverrouiller le compte ?",
+      "activateBody": "{name} pourra à nouveau se connecter.",
+      "deactivateTitle": "Verrouiller le compte ?",
+      "deactivateBody": "{name} ne pourra plus se connecter tant que le compte n'est pas déverrouillé.",
+      "deleteTitle": "Supprimer le personnel ?",
+      "deleteBody": "Supprimer {name} de la boutique. Action irréversible.",
+      "cancel": "Annuler",
+      "close": "Fermer"
+    },
+    "rolesCard": {
+      "title": "Ce que peut faire chaque rôle",
+      "owner": "Tous les points de vente, la caisse, les rapports, le personnel et les forfaits.",
+      "admin": "Un point de vente : commandes, produits, prix, clients, caisse du jour, personnel du point de vente.",
+      "staff": "Créer des commandes, remettre les articles, enregistrer les retours, ajouter des clients. Ne peut pas modifier le prix des produits ni consulter les rapports financiers.",
+      "rolePermissions": "Voir les autorisations de chaque rôle",
+      "permissions": "Autorisations supplémentaires du personnel",
+      "inventory": "Vend comme le personnel et gère les produits et catégories (ajouter, modifier le prix, supprimer, importer et exporter Excel). Ne consulte pas le chiffre d'affaires."
+    },
+    "permissions": {
+      "title": "Autorisations supplémentaires du personnel",
+      "hint": "Activez des autorisations supplémentaires pour chaque membre du personnel, en plus des autorisations par défaut de son rôle.",
+      "noAccess": "Le compte du personnel ne peut pas gérer les autorisations.",
+      "pickTitle": "Choisir le personnel",
+      "picked": "{count} sélectionné(s)",
+      "pickAll": "Tout sélectionner",
+      "pickNone": "Tout désélectionner",
+      "noStaff": "Aucun membre du personnel pour l'instant (rôle Personnel)",
+      "switchTitle": "Autorisations",
+      "pickFirst": "Sélectionnez au moins un membre du personnel à gauche.",
+      "forOne": "Modification des autorisations de {name}.",
+      "forMany": "Modification de {count} membres du personnel : tout est d'abord désactivé, Enregistrer s'appliquera aux {count} personnes.",
+      "allOn": "Tout activer",
+      "allOff": "Tout désactiver",
+      "cancel": "Désélectionner",
+      "save": "Enregistrer les autorisations",
+      "saving": "Enregistrement…",
+      "savedTitle": "Enregistré",
+      "saved": "Autorisations enregistrées pour {count} membre(s) du personnel",
+      "errorTitle": "Erreur",
+      "saveFailed": "Impossible d'enregistrer les autorisations. Réessayez.",
+      "readFailed": "Impossible de lire les autorisations enregistrées de ce membre du personnel. Enregistrer réécrira toutes les autorisations supplémentaires exactement selon les interrupteurs ci-dessous.",
+      "groups": {
+        "outlet": "Point de vente",
+        "orders": "Commandes",
+        "products": "Produits",
+        "customers": "Clients",
+        "users": "Personnel",
+        "dashboard": "Tableau de bord"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "Voir le point de vente",
+        "desc": "Consulter les informations du point de vente"
+      },
+      "outlet_manage": {
+        "label": "Gérer le point de vente",
+        "desc": "Modifier les informations et les paramètres du point de vente"
+      },
+      "users_view": {
+        "label": "Voir le personnel",
+        "desc": "Consulter la liste et les informations du personnel"
+      },
+      "users_manage": {
+        "label": "Gérer le personnel",
+        "desc": "Ajouter, modifier, verrouiller et supprimer du personnel"
+      },
+      "products_view": {
+        "label": "Voir les produits",
+        "desc": "Consulter la liste et le détail des produits"
+      },
+      "products_create": {
+        "label": "Ajouter un produit",
+        "desc": "Ajouter de nouveaux produits"
+      },
+      "products_update": {
+        "label": "Modifier un produit",
+        "desc": "Modifier les produits existants, y compris le prix"
+      },
+      "products_manage": {
+        "label": "Gérer les produits",
+        "desc": "Accès complet : supprimer, importer Excel, coût d'achat"
+      },
+      "products_export": {
+        "label": "Exporter les produits",
+        "desc": "Télécharger la liste des produits au format Excel / CSV"
+      },
+      "orders_create": {
+        "label": "Créer une commande",
+        "desc": "Créer des commandes de location et de vente"
+      },
+      "orders_view": {
+        "label": "Voir les commandes",
+        "desc": "Consulter la liste et le détail des commandes"
+      },
+      "orders_update": {
+        "label": "Modifier une commande",
+        "desc": "Modifier les commandes, remettre les articles, enregistrer les retours"
+      },
+      "orders_delete": {
+        "label": "Supprimer une commande",
+        "desc": "Supprimer des commandes"
+      },
+      "orders_export": {
+        "label": "Exporter les commandes",
+        "desc": "Télécharger la liste des commandes au format Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "Gérer les commandes",
+        "desc": "Accès complet aux commandes"
+      },
+      "customers_view": {
+        "label": "Voir les clients",
+        "desc": "Consulter la liste et les informations des clients"
+      },
+      "customers_manage": {
+        "label": "Gérer les clients",
+        "desc": "Ajouter, modifier et supprimer des clients"
+      },
+      "customers_export": {
+        "label": "Exporter les clients",
+        "desc": "Télécharger la liste des clients au format Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "Voir le tableau de bord",
+        "desc": "Consulter la page Tableau de bord et les chiffres"
+      }
+    },
+    "rolePermissions": {
+      "title": "Autorisations par rôle",
+      "hint": "Autorisations par défaut de chaque rôle. Consultation uniquement.",
+      "roleLabel": "Rôle",
+      "count": "{count} autorisation(s)",
+      "granted": "Autorisé",
+      "notGranted": "Non autorisé",
+      "note": "Ce sont les autorisations par défaut du rôle. Pour en activer davantage pour une personne, utilisez Autorisations supplémentaires du personnel."
+    },
+    "empty": "Aucun membre du personnel pour l'instant",
+    "emptySearch": "Aucun membre du personnel ne correspond aux filtres",
+    "loadFailed": "Impossible de charger la liste du personnel.",
+    "retry": "Réessayer",
+    "noAccess": "Le compte du personnel ne peut pas consulter la liste du personnel.",
+    "weekdays": "Di,Lu,Ma,Me,Je,Ve,Sa",
+    "footer": {
+      "show": "Afficher",
+      "perPage": "lignes par page",
+      "perPageLabel": "Nombre de lignes par page",
+      "pages": "Pagination",
+      "range": "{from} à {to} sur {total} membre(s) du personnel",
+      "prev": "Page précédente",
+      "next": "Page suivante"
+    },
+    "form": {
+      "addTitle": "Ajouter du personnel",
+      "infoTitle": "Informations",
+      "name": "Nom complet",
+      "namePlaceholder": "Exemple : Tran Thi Lan",
+      "phone": "Numéro de téléphone",
+      "optional": "Facultatif",
+      "email": "E-mail de connexion",
+      "emailPlaceholder": "nom@exemple.com",
+      "emailHint": "Le personnel se connecte avec cette adresse e-mail.",
+      "required": "obligatoire",
+      "roleTitle": "Rôle et point de vente",
+      "role": "Rôle",
+      "outlet": "Point de vente",
+      "outletFixed": "Le nouveau membre du personnel appartient à votre point de vente.",
+      "outletsLoading": "Chargement des points de vente…",
+      "noOutlets": "Aucun point de vente pour l'instant",
+      "passwordTitle": "Mot de passe de connexion",
+      "password": "Mot de passe",
+      "confirmPassword": "Ressaisir le mot de passe",
+      "passwordHint": "6 caractères minimum.",
+      "loginNote": "Le personnel se connecte avec cette adresse e-mail et ce mot de passe, puis peut le changer lui-même.",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "cancel": "Annuler",
+      "create": "Ajouter du personnel",
+      "creating": "Ajout en cours…",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "errors": {
+        "nameShort": "Le nom doit comporter au moins 2 caractères.",
+        "emailRequired": "Saisissez l'e-mail de connexion.",
+        "emailInvalid": "Le format de l'e-mail n'est pas valide.",
+        "phoneShort": "Le numéro de téléphone doit comporter au moins 8 chiffres.",
+        "phoneLong": "Le numéro de téléphone ne doit pas dépasser 15 chiffres.",
+        "phoneChars": "Le numéro de téléphone ne peut contenir que des chiffres, espaces, + - ( ).",
+        "roleRequired": "Choisissez un rôle.",
+        "outletRequired": "Choisissez un point de vente.",
+        "passwordRequired": "Saisissez le mot de passe.",
+        "passwordShort": "Le mot de passe doit comporter au moins 6 caractères.",
+        "confirmRequired": "Ressaisissez le mot de passe.",
+        "passwordMismatch": "Les deux mots de passe ne correspondent pas.",
+        "newRequired": "Saisissez le nouveau mot de passe."
+      }
+    },
+    "detail": {
+      "info": "Informations",
+      "merchant": "Boutique",
+      "account": "Compte",
+      "statusActive": "Actif",
+      "statusLocked": "Verrouillé",
+      "activeHint": "Verrouillez le compte pour empêcher le membre du personnel de se connecter.",
+      "lockedHint": "Le compte est verrouillé. Déverrouillez-le pour permettre au personnel de se reconnecter.",
+      "emailStatus": "E-mail",
+      "verified": "Vérifié",
+      "notVerified": "Non vérifié",
+      "createdAt": "Date de création",
+      "deleteHint": "Supprimer définitivement ce compte. Action irréversible.",
+      "changePassword": "Changer le mot de passe",
+      "editTitle": "Modifier le personnel",
+      "emailFixed": "L'e-mail de connexion ne peut pas être modifié.",
+      "roleFixed": "Le rôle ne peut pas être modifié ici.",
+      "notFound": "Membre du personnel introuvable.",
+      "backToList": "Retour à la liste du personnel"
+    },
+    "password": {
+      "title": "Changer le mot de passe",
+      "hint": "Définissez un nouveau mot de passe pour {name}. L'ancien mot de passe ne fonctionnera plus.",
+      "new": "Nouveau mot de passe",
+      "confirm": "Ressaisir le nouveau mot de passe",
+      "submit": "Changer le mot de passe",
+      "changing": "Modification en cours…"
+    }
+  }
+}

@@ -1,0 +1,469 @@
+{
+  "title": "Benutzer",
+  "subtitle": "Benutzer im System verwalten",
+  "pageTitle": "Benutzerverwaltung",
+  "addUser": "Benutzer hinzufügen",
+  "addNewUser": "Neuen Benutzer hinzufügen",
+  "addNewUserDescription": "Ein neues Benutzerkonto für Ihre Organisation erstellen",
+  "editUser": "Benutzer bearbeiten",
+  "userDetails": "Benutzerdetails",
+  "viewUserInfo": "Benutzerinformationen und Details ansehen",
+  "userInformation": "Benutzerinformationen",
+  "accountInformation": "Kontoinformationen",
+  "outletInformation": "Filialinformationen",
+  "accountActions": "Kontoaktionen",
+  "passwordManagement": "Passwortverwaltung",
+  "passwordSettings": "Passworteinstellungen",
+  "organizationAssignment": "Zuordnung zur Organisation",
+  "accountSettings": "Kontoeinstellungen",
+  "accountStatus": "Kontostatus",
+  "dangerZone": "Gefahrenbereich",
+  "activeAccount": "Aktives Konto",
+  "currentUserInformation": "Informationen zum aktuellen Benutzer",
+  "activeUsersInfo": "Aktive Benutzer können sich anmelden und auf das System zugreifen. Inaktive Benutzer sind gesperrt.",
+  "created": "Erstellt am",
+  "label": {
+    "loading": "Wird geladen..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "Name",
+    "firstName": "Vorname",
+    "lastName": "Nachname",
+    "fullName": "Vollständiger Name",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "role": "Rolle",
+    "outlet": "Filiale",
+    "outletName": "Filialname",
+    "outletId": "Filial-ID",
+    "merchant": "Händler",
+    "merchantName": "Händlername",
+    "merchantId": "Händler-ID",
+    "status": "Status",
+    "password": "Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "createdAt": "Erstellt am",
+    "lastLogin": "Letzte Anmeldung",
+    "actions": "Aktionen",
+    "basicInformation": "Grunddaten",
+    "personalInformation": "Persönliche Daten",
+    "roleAndPermissions": "Rolle & Berechtigungen",
+    "readOnly": "Nur lesen",
+    "emailStatus": "E-Mail-Bestätigung"
+  },
+  "roles": {
+    "ADMIN": "Systemadministrator",
+    "MERCHANT": "Inhaber der Marke",
+    "OUTLET_ADMIN": "Filialleiter",
+    "OUTLET_STAFF": "Mitarbeiter",
+    "ARTICLE": "Redakteur",
+    "OUTLET_INVENTORY": "Lagermitarbeiter"
+  },
+  "actions": {
+    "activate": "Benutzer aktivieren",
+    "activateAccount": "Konto aktivieren",
+    "activating": "Wird aktiviert...",
+    "deactivate": "Benutzer deaktivieren",
+    "deactivateAccount": "Konto deaktivieren",
+    "deactivating": "Wird deaktiviert...",
+    "delete": "Benutzer löschen",
+    "deleteAccount": "Konto löschen",
+    "deleting": "Wird gelöscht...",
+    "changePassword": "Passwort ändern",
+    "changingPassword": "Wird geändert...",
+    "viewDetails": "Details anzeigen",
+    "edit": "Bearbeiten",
+    "editUser": "Benutzer bearbeiten",
+    "updateUser": "Benutzer aktualisieren",
+    "createUser": "Benutzer anlegen",
+    "updating": "Wird aktualisiert...",
+    "creating": "Wird angelegt...",
+    "addUser": "Benutzer hinzufügen",
+    "backToUsers": "Zurück zur Liste",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen"
+  },
+  "messages": {
+    "createSuccess": "Benutzer erfolgreich angelegt",
+    "createFailed": "Benutzer konnte nicht angelegt werden",
+    "updateSuccess": "Benutzer erfolgreich aktualisiert",
+    "updateFailed": "Benutzer konnte nicht aktualisiert werden",
+    "deleteSuccess": "Benutzer erfolgreich gelöscht",
+    "deleteFailed": "Benutzer konnte nicht gelöscht werden",
+    "activateSuccess": "Benutzer erfolgreich aktiviert",
+    "activateFailed": "Benutzer konnte nicht aktiviert werden",
+    "deactivateSuccess": "Benutzer erfolgreich deaktiviert",
+    "deactivateFailed": "Benutzer konnte nicht deaktiviert werden",
+    "passwordChangeSuccess": "Passwort erfolgreich geändert",
+    "passwordChangeFailed": "Passwort konnte nicht geändert werden",
+    "passwordMinLength": "Das Passwort muss mindestens 6 Zeichen lang sein",
+    "newPasswordRequired": "Neues Passwort ist erforderlich",
+    "confirmPasswordRequired": "Bitte bestätigen Sie Ihr neues Passwort",
+    "passwordsDoNotMatch": "Passwörter stimmen nicht überein",
+    "confirmDelete": "Möchten Sie diesen Benutzer wirklich löschen?",
+    "confirmDeleteAccount": "Benutzerkonto löschen",
+    "confirmDeleteDetails": "Möchten Sie dieses Benutzerkonto wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "confirmDeactivate": "Möchten Sie wirklich deaktivieren",
+    "confirmDeactivateAccount": "Benutzer deaktivieren",
+    "confirmDeactivateDetails": "Diese Aktion verhindert den Zugriff auf das System.",
+    "confirmActivate": "Möchten Sie diesen Benutzer wirklich aktivieren?",
+    "confirmActivateAccount": "Benutzerkonto aktivieren",
+    "confirmActivateDetails": "Möchten Sie dieses Benutzerkonto wirklich aktivieren? Der Benutzer kann danach wieder auf das System zugreifen.",
+    "allowChangePassword": "Ermöglicht dem Benutzer, sein Passwort sicher zu ändern",
+    "suspendAccess": "Zugriff auf das System vorübergehend sperren",
+    "deactivateToPrevent": "Deaktivieren, um die Anmeldung zu verhindern",
+    "activateToRestore": "Aktivieren, um die Anmeldung wiederherzustellen",
+    "permanentlyDelete": "Dieses Benutzerkonto und alle zugehörigen Daten dauerhaft löschen",
+    "permanentlyDeleteShort": "Dieses Benutzerkonto dauerhaft löschen",
+    "cannotDeactivateAdmin": "Der Systemadministrator kann nicht deaktiviert werden",
+    "cannotDeactivateAdminShort": "Admin-Konto kann nicht deaktiviert werden",
+    "cannotDeleteAdmin": "Admin-Konto kann nicht gelöscht werden",
+    "validationErrors": "Bitte korrigieren Sie die folgenden Fehler:",
+    "noUsers": "Keine Benutzer gefunden",
+    "loadingUsers": "Benutzerliste wird geladen...",
+    "noDataAvailable": "Keine Benutzerdaten verfügbar",
+    "na": "Keine Angabe",
+    "error": "Ein Fehler ist aufgetreten",
+    "tryAdjustingSearch": "Passen Sie Suche oder Filter an",
+    "getStarted": "Legen Sie zuerst einen Benutzer an"
+  },
+  "search": {
+    "placeholder": "Nach Name, E-Mail oder Telefonnummer suchen..."
+  },
+  "filters": {
+    "all": "Alle Benutzer",
+    "byRole": "Nach Rolle filtern",
+    "byOutlet": "Nach Filiale filtern",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "allRoles": "Alle Rollen"
+  },
+  "stats": {
+    "totalUsers": "Benutzer gesamt",
+    "activeUsers": "Aktiv",
+    "adminUsers": "Administratoren",
+    "staffUsers": "Mitarbeiter"
+  },
+  "dialogs": {
+    "changePasswordTitle": "Passwort ändern",
+    "changePasswordDescription": "Passwort für den Benutzer ändern",
+    "newPassword": "Neues Passwort",
+    "confirmNewPassword": "Neues Passwort bestätigen"
+  },
+  "placeholders": {
+    "enterName": "Name eingeben",
+    "enterFirstName": "Vorname eingeben",
+    "enterLastName": "Nachname eingeben",
+    "enterFullName": "Vollständigen Namen eingeben",
+    "enterEmail": "E-Mail-Adresse eingeben",
+    "enterPhone": "Telefonnummer eingeben (nur Ziffern)",
+    "selectRole": "Rolle auswählen",
+    "selectOutlet": "Filiale auswählen",
+    "enterPassword": "Passwort eingeben",
+    "confirmPassword": "Passwort bestätigen",
+    "enterNewPassword": "Neues Passwort eingeben",
+    "confirmNewPassword": "Neues Passwort bestätigen",
+    "loadingMerchants": "Marken werden geladen...",
+    "searchAndSelectMerchant": "Marke suchen und auswählen",
+    "currentMerchant": "Aktuelle Marke",
+    "loadingOutlets": "Filialen werden geladen...",
+    "selectMerchantFirst": "Bitte zuerst eine Marke auswählen",
+    "searchAndSelectOutlet": "Filiale suchen und auswählen",
+    "currentOutlet": "Aktuelle Filiale",
+    "searchMerchants": "Marken suchen...",
+    "noMerchantsFound": "Keine Marke gefunden",
+    "searchOutlets": "Filialen suchen...",
+    "noOutletsFound": "Keine Filiale gefunden",
+    "searchUsers": "Benutzer suchen..."
+  },
+  "labels": {
+    "loading": "Wird geladen..."
+  },
+  "status": {
+    "verified": "Bestätigt",
+    "notVerified": "Nicht bestätigt"
+  },
+  "roleHelp": {
+    "title": "Rollen",
+    "OUTLET_ADMIN": "Leitet eine Filiale: Aufträge, Artikel, Kunden und Mitarbeiter dieser Filiale.",
+    "OUTLET_STAFF": "Erstellt und bearbeitet Aufträge. Kann Artikelpreise nicht ändern.",
+    "loginNote": "Neue Benutzer melden sich mit dieser E-Mail und diesem Passwort an und können danach ihr Passwort selbst ändern.",
+    "OUTLET_INVENTORY": "Verkauft wie ein Mitarbeiter und verwaltet Artikel und Kategorien (hinzufügen, Preis ändern, löschen, per Excel importieren und exportieren). Sieht keine Umsätze."
+  },
+  "web": {
+    "title": "Mitarbeiter",
+    "add": "Mitarbeiter hinzufügen",
+    "searchPlaceholder": "Name, Telefon, E-Mail suchen",
+    "searchLabel": "Mitarbeiter suchen",
+    "allOutlets": "Alle Filialen",
+    "outletFilter": "Nach Filiale filtern",
+    "allOutletsValue": "Alle",
+    "filters": {
+      "role": "Rolle:",
+      "status": "Status:",
+      "all": "Alle",
+      "active": "Aktiv",
+      "inactive": "Gesperrt"
+    },
+    "cols": {
+      "staff": "Mitarbeiter",
+      "role": "Rolle",
+      "outlet": "Filiale",
+      "lastLogin": "Letzte Anmeldung",
+      "actions": "Aktionen"
+    },
+    "roles": {
+      "owner": "Geschäftsinhaber",
+      "admin": "Filialleiter",
+      "staff": "Mitarbeiter",
+      "other": "Sonstige",
+      "inventory": "Lagermitarbeiter"
+    },
+    "lastSeen": {
+      "current": "Aktiv jetzt",
+      "never": "—",
+      "today": "{time} heute",
+      "yesterday": "{time} gestern",
+      "locked": "Gesperrt"
+    },
+    "edit": "Bearbeiten",
+    "more": "Weitere Aktionen für {name}",
+    "activate": "Konto entsperren",
+    "deactivate": "Konto sperren",
+    "delete": "Mitarbeiter löschen",
+    "confirm": {
+      "activateTitle": "Konto entsperren?",
+      "activateBody": "{name} kann sich danach wieder anmelden.",
+      "deactivateTitle": "Konto sperren?",
+      "deactivateBody": "{name} kann sich nicht anmelden, bis das Konto wieder entsperrt wird.",
+      "deleteTitle": "Mitarbeiter löschen?",
+      "deleteBody": "{name} wird aus der Filiale entfernt. Dies kann nicht rückgängig gemacht werden.",
+      "cancel": "Abbrechen",
+      "close": "Schließen"
+    },
+    "rolesCard": {
+      "title": "Was die Rollen dürfen",
+      "owner": "Alle Filialen, Umsatz, Berichte, Mitarbeiter, Tarif.",
+      "admin": "Eine Filiale: Aufträge, Artikel, Preise, Kunden, Tagesumsatz, Mitarbeiter der Filiale.",
+      "staff": "Aufträge erstellen, ausgeben, Rückgaben annehmen, Kunden hinzufügen. Keine Artikelpreise ändern, keine Umsatzberichte einsehen.",
+      "rolePermissions": "Berechtigungen je Rolle anzeigen",
+      "permissions": "Zusätzliche Berechtigungen für Mitarbeiter",
+      "inventory": "Verkauft wie ein Mitarbeiter und verwaltet Artikel und Kategorien (hinzufügen, Preis ändern, löschen, per Excel importieren und exportieren). Sieht keine Umsätze."
+    },
+    "permissions": {
+      "title": "Zusätzliche Berechtigungen für Mitarbeiter",
+      "hint": "Zusätzliche Berechtigungen für einzelne Mitarbeiter aktivieren, zusätzlich zu den Standardrechten der Rolle.",
+      "noAccess": "Mitarbeiterkonten können keine Berechtigungen verwalten.",
+      "pickTitle": "Mitarbeiter auswählen",
+      "picked": "{count} ausgewählt",
+      "pickAll": "Alle auswählen",
+      "pickNone": "Auswahl aufheben",
+      "noStaff": "Noch keine Mitarbeiter (Rolle Mitarbeiter)",
+      "switchTitle": "Berechtigungen",
+      "pickFirst": "Wählen Sie links mindestens einen Mitarbeiter aus.",
+      "forOne": "Berechtigungen von {name} werden bearbeitet.",
+      "forMany": "{count} Mitarbeiter werden bearbeitet: Start mit allen ausgeschalteten Rechten, Speichern gilt für alle {count} Personen.",
+      "allOn": "Alle aktivieren",
+      "allOff": "Alle deaktivieren",
+      "cancel": "Auswahl aufheben",
+      "save": "Berechtigungen speichern",
+      "saving": "Wird gespeichert…",
+      "savedTitle": "Gespeichert",
+      "saved": "Berechtigungen für {count} Mitarbeiter gespeichert",
+      "errorTitle": "Fehler",
+      "saveFailed": "Berechtigungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
+      "readFailed": "Die gespeicherten Berechtigungen dieses Mitarbeiters konnten nicht geladen werden. Beim Speichern werden alle zusätzlichen Berechtigungen so geschrieben, wie die Schalter unten stehen.",
+      "groups": {
+        "outlet": "Filiale",
+        "orders": "Aufträge",
+        "products": "Artikel",
+        "customers": "Kunden",
+        "users": "Mitarbeiter",
+        "dashboard": "Übersicht"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "Filiale ansehen",
+        "desc": "Filialinformationen ansehen"
+      },
+      "outlet_manage": {
+        "label": "Filiale verwalten",
+        "desc": "Filialinformationen und Einstellungen bearbeiten"
+      },
+      "users_view": {
+        "label": "Mitarbeiter ansehen",
+        "desc": "Mitarbeiterliste und -daten ansehen"
+      },
+      "users_manage": {
+        "label": "Mitarbeiter verwalten",
+        "desc": "Mitarbeiter anlegen, bearbeiten, sperren und löschen"
+      },
+      "products_view": {
+        "label": "Artikel ansehen",
+        "desc": "Artikelliste und Details ansehen"
+      },
+      "products_create": {
+        "label": "Artikel anlegen",
+        "desc": "Neue Artikel anlegen"
+      },
+      "products_update": {
+        "label": "Artikel bearbeiten",
+        "desc": "Vorhandene Artikel bearbeiten, auch Preise"
+      },
+      "products_manage": {
+        "label": "Artikel verwalten",
+        "desc": "Volle Berechtigung: löschen, per Excel importieren, Einkaufspreis"
+      },
+      "products_export": {
+        "label": "Artikel exportieren",
+        "desc": "Artikelliste als Excel / CSV herunterladen"
+      },
+      "orders_create": {
+        "label": "Auftrag anlegen",
+        "desc": "Vermietungs- und Verkaufsaufträge anlegen"
+      },
+      "orders_view": {
+        "label": "Aufträge ansehen",
+        "desc": "Auftragsliste und Details ansehen"
+      },
+      "orders_update": {
+        "label": "Auftrag bearbeiten",
+        "desc": "Aufträge bearbeiten, Übergabe und Rückgabe"
+      },
+      "orders_delete": {
+        "label": "Auftrag löschen",
+        "desc": "Aufträge löschen"
+      },
+      "orders_export": {
+        "label": "Aufträge exportieren",
+        "desc": "Auftragsliste als Excel / CSV herunterladen"
+      },
+      "orders_manage": {
+        "label": "Aufträge verwalten",
+        "desc": "Volle Berechtigung für Aufträge"
+      },
+      "customers_view": {
+        "label": "Kunden ansehen",
+        "desc": "Kundenliste und Kundendaten ansehen"
+      },
+      "customers_manage": {
+        "label": "Kunden verwalten",
+        "desc": "Kunden anlegen, bearbeiten und löschen"
+      },
+      "customers_export": {
+        "label": "Kunden exportieren",
+        "desc": "Kundenliste als Excel / CSV herunterladen"
+      },
+      "analytics_view": {
+        "label": "Übersicht ansehen",
+        "desc": "Übersichtsseite und Kennzahlen ansehen"
+      }
+    },
+    "rolePermissions": {
+      "title": "Berechtigungen je Rolle",
+      "hint": "Standardberechtigungen jeder Rolle. Nur zur Ansicht.",
+      "roleLabel": "Rolle",
+      "count": "{count} Berechtigungen",
+      "granted": "Berechtigt",
+      "notGranted": "Nicht berechtigt",
+      "note": "Dies sind die Standardberechtigungen der Rolle. Um einzelnen Personen zusätzliche Rechte zu geben, nutzen Sie Zusätzliche Berechtigungen für Mitarbeiter."
+    },
+    "empty": "Noch keine Mitarbeiter",
+    "emptySearch": "Keine Mitarbeiter entsprechen dem Filter",
+    "loadFailed": "Mitarbeiterliste konnte nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "noAccess": "Ihr Mitarbeiterkonto kann die Mitarbeiterliste nicht einsehen.",
+    "weekdays": "So,Mo,Di,Mi,Do,Fr,Sa",
+    "footer": {
+      "show": "Anzeigen",
+      "perPage": "Zeilen pro Seite",
+      "perPageLabel": "Zeilen pro Seite",
+      "pages": "Seitennavigation",
+      "range": "{from}–{to} von {total} Mitarbeitern",
+      "prev": "Vorherige Seite",
+      "next": "Nächste Seite"
+    },
+    "form": {
+      "addTitle": "Mitarbeiter hinzufügen",
+      "infoTitle": "Angaben",
+      "name": "Vor- und Nachname",
+      "namePlaceholder": "Z. B.: Anna Müller",
+      "phone": "Telefonnummer",
+      "optional": "Optional",
+      "email": "Anmelde-E-Mail",
+      "emailPlaceholder": "name@beispiel.de",
+      "emailHint": "Der Mitarbeiter meldet sich mit dieser E-Mail-Adresse an.",
+      "required": "Pflicht",
+      "roleTitle": "Rolle und Filiale",
+      "role": "Rolle",
+      "outlet": "Filiale",
+      "outletFixed": "Neue Mitarbeiter gehören zu Ihrer Filiale.",
+      "outletsLoading": "Filialen werden geladen…",
+      "noOutlets": "Noch keine Filiale vorhanden",
+      "passwordTitle": "Anmeldepasswort",
+      "password": "Passwort",
+      "confirmPassword": "Passwort wiederholen",
+      "passwordHint": "Mindestens 6 Zeichen.",
+      "loginNote": "Der Mitarbeiter meldet sich mit dieser E-Mail und diesem Passwort an und kann danach sein Passwort selbst ändern.",
+      "show": "Anzeigen",
+      "hide": "Verbergen",
+      "showPassword": "Passwort anzeigen",
+      "hidePassword": "Passwort verbergen",
+      "cancel": "Abbrechen",
+      "create": "Mitarbeiter hinzufügen",
+      "creating": "Wird hinzugefügt…",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "errors": {
+        "nameShort": "Der Name muss mindestens 2 Zeichen lang sein.",
+        "emailRequired": "Bitte E-Mail-Adresse eingeben.",
+        "emailInvalid": "E-Mail-Adresse hat kein gültiges Format.",
+        "phoneShort": "Die Telefonnummer braucht mindestens 8 Ziffern.",
+        "phoneLong": "Die Telefonnummer darf höchstens 15 Ziffern haben.",
+        "phoneChars": "Die Telefonnummer darf nur Ziffern, Leerzeichen sowie + - ( ) enthalten.",
+        "roleRequired": "Bitte Rolle auswählen.",
+        "outletRequired": "Bitte Filiale auswählen.",
+        "passwordRequired": "Bitte Passwort eingeben.",
+        "passwordShort": "Das Passwort braucht mindestens 6 Zeichen.",
+        "confirmRequired": "Bitte Passwort wiederholen.",
+        "passwordMismatch": "Die beiden Passwörter stimmen nicht überein.",
+        "newRequired": "Bitte neues Passwort eingeben."
+      }
+    },
+    "detail": {
+      "info": "Angaben",
+      "merchant": "Geschäft",
+      "account": "Konto",
+      "statusActive": "Aktiv",
+      "statusLocked": "Gesperrt",
+      "activeHint": "Konto sperren, damit sich der Mitarbeiter nicht mehr anmelden kann.",
+      "lockedHint": "Das Konto ist gesperrt. Zum Entsperren kann sich der Mitarbeiter wieder anmelden.",
+      "emailStatus": "E-Mail",
+      "verified": "Bestätigt",
+      "notVerified": "Nicht bestätigt",
+      "createdAt": "Angelegt am",
+      "deleteHint": "Dieses Konto dauerhaft löschen. Dies kann nicht rückgängig gemacht werden.",
+      "changePassword": "Passwort ändern",
+      "editTitle": "Mitarbeiter bearbeiten",
+      "emailFixed": "Die Anmelde-E-Mail kann nicht geändert werden.",
+      "roleFixed": "Die Rolle kann hier nicht geändert werden.",
+      "notFound": "Dieser Mitarbeiter wurde nicht gefunden.",
+      "backToList": "Zurück zur Mitarbeiterliste"
+    },
+    "password": {
+      "title": "Passwort ändern",
+      "hint": "Neues Passwort für {name} festlegen. Das alte Passwort ist nicht mehr gültig.",
+      "new": "Neues Passwort",
+      "confirm": "Neues Passwort wiederholen",
+      "submit": "Passwort ändern",
+      "changing": "Wird geändert…"
+    }
+  }
+}

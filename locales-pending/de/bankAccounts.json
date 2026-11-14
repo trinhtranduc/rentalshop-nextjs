@@ -1,0 +1,64 @@
+{
+  "title": "Verwaltung der Bankkonten",
+  "subtitle": "Bankkonten für die Filiale verwalten",
+  "form": {
+    "title": "Angaben zum Bankkonto",
+    "addTitle": "Bankkonto hinzufügen",
+    "editTitle": "Bankkonto bearbeiten",
+    "accountHolderName": "Kontoinhaber",
+    "accountHolderNamePlaceholder": "Name des Kontoinhabers eingeben",
+    "accountNumber": "Kontonummer",
+    "accountNumberPlaceholder": "Kontonummer eingeben (6–16 Ziffern)",
+    "bankName": "Bankname",
+    "bankNamePlaceholder": "Bank auswählen",
+    "bankCode": "Bankleitzahl",
+    "bankCodePlaceholder": "Bankleitzahl (wird automatisch ausgefüllt)",
+    "branch": "Bankfiliale",
+    "branchPlaceholder": "Bankfiliale eingeben (optional)",
+    "isDefault": "Als Standardkonto festlegen",
+    "notes": "Notizen",
+    "notesPlaceholder": "Notizen (optional)",
+    "submit": "Bankkonto speichern",
+    "add": "Konto hinzufügen",
+    "update": "Aktualisieren",
+    "cancel": "Abbrechen",
+    "saving": "Wird gespeichert...",
+    "errors": {
+      "accountHolderNameRequired": "Der Kontoinhaber ist erforderlich",
+      "accountNumberRequired": "Die Kontonummer ist erforderlich",
+      "accountNumberInvalid": "Die Kontonummer muss 6–16 Ziffern haben",
+      "bankNameRequired": "Der Bankname ist erforderlich"
+    }
+  },
+  "card": {
+    "default": "Standard",
+    "accountHolderName": "Kontoinhaber",
+    "accountNumber": "Kontonummer",
+    "bank": "Bank",
+    "branch": "Bankfiliale",
+    "notes": "Notizen",
+    "copyQRCode": "QR-Code kopieren",
+    "scanQRHint": "QR-Code scannen für schnelle Überweisung",
+    "copied": "Kopiert",
+    "accountNumberCopied": "Kontonummer in die Zwischenablage kopiert",
+    "qrCodeCopied": "QR-Code in die Zwischenablage kopiert"
+  },
+  "list": {
+    "emptyTitle": "Noch keine Bankkonten vorhanden",
+    "emptyDescription": "Fügen Sie Bankkonten hinzu, um Zahlungen per Überweisung zu erhalten",
+    "addButton": "Bankkonto hinzufügen"
+  },
+  "messages": {
+    "addSuccess": "Bankkonto erfolgreich hinzugefügt",
+    "addError": "Bankkonto konnte nicht hinzugefügt werden",
+    "updateSuccess": "Bankkonto erfolgreich aktualisiert",
+    "updateError": "Bankkonto konnte nicht aktualisiert werden",
+    "deleteSuccess": "Bankkonto erfolgreich gelöscht",
+    "deleteError": "Bankkonto konnte nicht gelöscht werden",
+    "loadError": "Bankkonten konnten nicht geladen werden",
+    "deleteConfirm": "Möchten Sie das Bankkonto „{name}“ wirklich löschen?",
+    "deleteConfirmTitle": "Bankkonto löschen",
+    "noOutlet": "Sie sind keiner Filiale zugewiesen. Bitte wenden Sie sich an Ihren Administrator.",
+    "noPermission": "Sie haben keine Berechtigung, die Bankkonten anzusehen."
+  }
+}

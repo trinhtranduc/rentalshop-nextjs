@@ -1,0 +1,64 @@
+{
+  "title": "銀行帳戶管理",
+  "subtitle": "管理分店的銀行帳戶",
+  "form": {
+    "title": "銀行帳戶資訊",
+    "addTitle": "新增銀行帳戶",
+    "editTitle": "編輯銀行帳戶",
+    "accountHolderName": "戶名",
+    "accountHolderNamePlaceholder": "請輸入戶名",
+    "accountNumber": "帳號",
+    "accountNumberPlaceholder": "請輸入帳號（6–16 位數字）",
+    "bankName": "銀行名稱",
+    "bankNamePlaceholder": "請選擇銀行",
+    "bankCode": "銀行代碼",
+    "bankCodePlaceholder": "銀行代碼（自動填入）",
+    "branch": "分行",
+    "branchPlaceholder": "請輸入分行（選填）",
+    "isDefault": "設為預設帳戶",
+    "notes": "備註",
+    "notesPlaceholder": "備註（選填）",
+    "submit": "儲存銀行帳戶",
+    "add": "新增帳戶",
+    "update": "更新",
+    "cancel": "取消",
+    "saving": "儲存中...",
+    "errors": {
+      "accountHolderNameRequired": "戶名為必填",
+      "accountNumberRequired": "帳號為必填",
+      "accountNumberInvalid": "帳號必須為 6–16 位數字",
+      "bankNameRequired": "銀行名稱為必填"
+    }
+  },
+  "card": {
+    "default": "預設",
+    "accountHolderName": "戶名",
+    "accountNumber": "帳號",
+    "bank": "銀行",
+    "branch": "分行",
+    "notes": "備註",
+    "copyQRCode": "複製 QR Code",
+    "scanQRHint": "掃描 QR Code 快速轉帳",
+    "copied": "已複製",
+    "accountNumberCopied": "帳號已複製到剪貼簿",
+    "qrCodeCopied": "QR Code 已複製到剪貼簿"
+  },
+  "list": {
+    "emptyTitle": "尚無銀行帳戶",
+    "emptyDescription": "新增銀行帳戶以接收轉帳付款",
+    "addButton": "新增銀行帳戶"
+  },
+  "messages": {
+    "addSuccess": "已新增銀行帳戶",
+    "addError": "無法新增銀行帳戶",
+    "updateSuccess": "已更新銀行帳戶",
+    "updateError": "無法更新銀行帳戶",
+    "deleteSuccess": "已刪除銀行帳戶",
+    "deleteError": "無法刪除銀行帳戶",
+    "loadError": "無法載入銀行帳戶列表",
+    "deleteConfirm": "確定要刪除銀行帳戶「{name}」嗎？",
+    "deleteConfirmTitle": "刪除銀行帳戶",
+    "noOutlet": "您尚未被指派至任何分店。請聯絡管理員。",
+    "noPermission": "您沒有權限檢視銀行帳戶。"
+  }
+}

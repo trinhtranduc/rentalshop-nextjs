@@ -1,0 +1,190 @@
+{
+  "required": "Dieses Feld ist erforderlich",
+  "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+  "phone": "Bitte geben Sie eine gültige Telefonnummer ein",
+  "min": "Der Mindestwert ist {min}",
+  "max": "Der Höchstwert ist {max}",
+  "minLength": "Die Mindestlänge beträgt {min} Zeichen",
+  "maxLength": "Die Höchstlänge beträgt {max} Zeichen",
+  "pattern": "Ungültiges Format",
+  "url": "Bitte geben Sie eine gültige URL ein",
+  "number": "Bitte geben Sie eine gültige Zahl ein",
+  "integer": "Bitte geben Sie eine ganze Zahl ein",
+  "positive": "Bitte geben Sie eine positive Zahl ein",
+  "negative": "Bitte geben Sie eine negative Zahl ein",
+  "date": "Bitte geben Sie ein gültiges Datum ein",
+  "dateRange": "Ungültiger Zeitraum",
+  "time": "Bitte geben Sie eine gültige Uhrzeit ein",
+  "password": {
+    "minLength": "Das Passwort muss mindestens {min} Zeichen lang sein",
+    "uppercase": "Das Passwort muss mindestens einen Großbuchstaben enthalten",
+    "lowercase": "Das Passwort muss mindestens einen Kleinbuchstaben enthalten",
+    "number": "Das Passwort muss mindestens eine Ziffer enthalten",
+    "special": "Das Passwort muss mindestens ein Sonderzeichen enthalten",
+    "match": "Die Passwörter stimmen nicht überein"
+  },
+  "file": {
+    "size": "Die Dateigröße muss kleiner als {max} sein",
+    "type": "Ungültiger Dateityp. Zulässige Typen: {types}",
+    "required": "Bitte wählen Sie eine Datei aus"
+  },
+  "unique": "Dieser Wert ist bereits vorhanden",
+  "exists": "Dieser Wert existiert nicht",
+  "custom": {
+    "invalidBarcode": "Ungültiger Barcode",
+    "invalidSKU": "Ungültige SKU",
+    "stockNotAvailable": "Nicht genügend Bestand verfügbar",
+    "invalidDateRange": "Das Enddatum muss nach dem Startdatum liegen",
+    "priceGreaterThanZero": "Der Preis muss größer als 0 sein",
+    "quantityGreaterThanZero": "Die Menge muss größer als 0 sein"
+  },
+  "fields": {
+    "firstName": {
+      "required": "Vorname ist erforderlich"
+    },
+    "lastName": {
+      "required": "Nachname ist erforderlich"
+    },
+    "name": {
+      "required": "Name ist erforderlich",
+      "minLength": "Der Name muss mindestens {min} Zeichen lang sein"
+    },
+    "productName": {
+      "required": "Artikelname ist erforderlich"
+    },
+    "outletName": {
+      "required": "Filialname ist erforderlich"
+    },
+    "planName": {
+      "required": "Tarifname ist erforderlich"
+    },
+    "planDescription": {
+      "required": "Tarifbeschreibung ist erforderlich"
+    },
+    "variantName": {
+      "required": "Variantenname ist erforderlich"
+    },
+    "phone": {
+      "required": "Telefonnummer ist erforderlich"
+    },
+    "email": {
+      "invalid": "Ungültige E-Mail-Adresse",
+      "invalidFormat": "Ungültiges E-Mail-Format"
+    },
+    "password": {
+      "minLength6": "Das Passwort muss mindestens 6 Zeichen lang sein",
+      "required": "Passwort ist erforderlich"
+    },
+    "confirmPassword": {
+      "required": "Passwortbestätigung ist erforderlich",
+      "match": "Die Passwörter stimmen nicht überein"
+    },
+    "outletId": {
+      "required": "Filiale ist erforderlich",
+      "requiredForRole": "Für diese Rolle ist eine Filiale erforderlich",
+      "shouldNotBeSelected": "Für die Rolle Händler darf keine Filiale ausgewählt werden"
+    },
+    "country": {
+      "invalid": "Bitte wählen Sie ein gültiges Land aus"
+    },
+    "tenantKey": {
+      "invalid": "Der Tenant-Key darf nur Buchstaben und Ziffern enthalten"
+    },
+    "product": {
+      "required": "Artikel ist erforderlich"
+    },
+    "category": {
+      "required": "Kategorie ist erforderlich"
+    },
+    "outlet": {
+      "required": "Filiale ist erforderlich",
+      "requiredForRole": "Für diese Rolle ist eine Filiale erforderlich"
+    },
+    "merchant": {
+      "required": "Händler ist erforderlich",
+      "requiredForRole": "Für diese Rolle ist ein Händler erforderlich"
+    },
+    "role": {
+      "required": "Rolle ist erforderlich"
+    },
+    "deposit": {
+      "nonNegative": "Die Anzahlung darf nicht negativ sein",
+      "cannotBeNegative": "Die Anzahlung ist erforderlich und darf nicht negativ sein"
+    },
+    "merchantId": {
+      "required": "Händler-ID ist erforderlich"
+    },
+    "planId": {
+      "required": "Tarif-ID ist erforderlich"
+    },
+    "planVariantId": {
+      "required": "Tarifvarianten-ID ist erforderlich"
+    },
+    "rentPrice": {
+      "required": "Mietpreis ist erforderlich und muss größer als 0 sein",
+      "nonNegative": "Der Mietpreis darf nicht negativ sein",
+      "greaterThanZero": "Der Mietpreis muss größer als 0 sein"
+    },
+    "salePrice": {
+      "required": "Verkaufspreis ist erforderlich und muss größer als 0 sein",
+      "nonNegative": "Der Verkaufspreis darf nicht negativ sein",
+      "greaterThanZero": "Der Verkaufspreis muss größer als 0 sein"
+    },
+    "costPrice": {
+      "nonNegative": "Der Einkaufspreis darf nicht negativ sein"
+    },
+    "stock": {
+      "nonNegative": "Der Bestand darf nicht negativ sein"
+    },
+    "totalStock": {
+      "required": "Gesamtbestand ist erforderlich und muss größer als 0 sein",
+      "nonNegative": "Der Gesamtbestand darf nicht negativ sein",
+      "greaterThanZero": "Der Bestand muss größer als 0 sein"
+    },
+    "basePrice": {
+      "nonNegative": "Der Grundpreis darf nicht negativ sein"
+    },
+    "price": {
+      "nonNegative": "Der Preis darf nicht negativ sein"
+    },
+    "amount": {
+      "nonNegative": "Der Betrag darf nicht negativ sein"
+    },
+    "duration": {
+      "positive": "Die Dauer muss positiv sein"
+    },
+    "trialDays": {
+      "nonNegative": "Die Anzahl der Testtage darf nicht negativ sein"
+    },
+    "discount": {
+      "range": "Der Rabatt muss zwischen 0 und 100 liegen"
+    },
+    "durationConfig": {
+      "required": "Die Zeitkonfiguration ist erforderlich und muss für die Preismodelle HOURLY und DAILY gültiges JSON sein",
+      "requiredForPricingType": "Die Zeitkonfiguration ist für die Preismodelle HOURLY und DAILY erforderlich",
+      "minDurationRequired": "Die Mindestdauer ist erforderlich und muss größer als 0 sein",
+      "maxDurationRequired": "Die Höchstdauer ist erforderlich und muss größer als 0 sein",
+      "minMustBeLessThanMax": "Die Mindestdauer muss kleiner oder gleich der Höchstdauer sein",
+      "defaultDurationRequired": "Die Standarddauer ist erforderlich und muss größer als 0 sein",
+      "defaultMustBeAtLeastMin": "Die Standarddauer muss mindestens der Mindestdauer entsprechen",
+      "defaultMustNotExceedMax": "Die Standarddauer darf die Höchstdauer nicht überschreiten"
+    },
+    "outletStock": {
+      "required": "Der Filialbestand ist erforderlich. Bitte geben Sie für mindestens eine Filiale einen Bestand an.",
+      "noOutletsAvailable": "Keine Filialen vorhanden. Bitte wenden Sie sich an Ihren Administrator, um Filialen einzurichten.",
+      "cannotBeNegative": "Der Filialbestand darf nicht negativ sein"
+    },
+    "endDate": {
+      "afterStart": "Das Enddatum muss nach dem Startdatum liegen"
+    },
+    "nameOrFullName": {
+      "required": "Es müssen entweder „name“ oder sowohl „firstName“ als auch „lastName“ angegeben werden"
+    },
+    "businessTypePricingType": {
+      "required": "Geschäftsart und Preismodell sind für die Händlerregistrierung erforderlich"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "Ein Standardwert pro Tag benötigt einen Mietpreis pro Tag."
+    }
+  }
+}

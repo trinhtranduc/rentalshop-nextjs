@@ -1,0 +1,161 @@
+{
+  "planChange": {
+    "title": "訂閱方案已變更",
+    "greeting": "您好",
+    "message": "您的訂閱方案已成功變更。以下為詳細資訊：",
+    "oldPlan": "原方案",
+    "newPlan": "新方案",
+    "billingCycle": "計費週期",
+    "periodStart": "開始日期",
+    "periodEnd": "結束日期",
+    "footer": "© {year} AnyRent. 版權所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "租賃管理系統"
+  },
+  "subscriptionRenewal": {
+    "title": "訂閱續約成功",
+    "greeting": "您好",
+    "message": "您的訂閱方案已成功續約。感謝您繼續使用我們的服務！",
+    "planName": "訂閱方案",
+    "paymentMethod": "付款方式",
+    "transactionId": "交易編號",
+    "periodStart": "開始日期",
+    "periodEnd": "結束日期",
+    "footer": "© {year} AnyRent. 版權所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "租賃管理系統"
+  },
+  "subscriptionExtension": {
+    "title": "訂閱續約",
+    "greeting": "您好",
+    "message": "您的訂閱方案已完成續約，訂閱期限已更新。",
+    "planName": "訂閱方案",
+    "oldEndDate": "原到期日",
+    "newEndDate": "新到期日",
+    "extensionDays": "續約時長",
+    "method": "續約方式",
+    "description": "說明",
+    "footer": "© {year} AnyRent. 版權所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "租賃管理系統"
+  },
+  "subscriptionExpiryReminder": {
+    "title": "訂閱方案即將到期",
+    "subject": "訂閱方案將於 {days} {unit} 後到期 - {planName}",
+    "greeting": "您好",
+    "message": "您的訂閱方案將於 {days} {unit} 後到期。請聯繫 AnyRent 辦理續約，讓店鋪持續營運。",
+    "trialMessage": "您的免費試用將於 {days} {unit} 後結束。請聯繫 AnyRent 選擇訂閱方案，以保留資料並繼續使用。",
+    "planName": "訂閱方案",
+    "expiryDate": "到期日",
+    "daysRemaining": "剩餘時間",
+    "dayUnit": "天",
+    "daysUnit": "天",
+    "cta": "聯繫辦理續約",
+    "alreadyRenewed": "若您已完成續約，請忽略此郵件。",
+    "footer": "© {year} AnyRent. 版權所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "租賃管理系統"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "訂閱方案已取消",
+      "message": "您的訂閱方案已取消。若您想繼續使用服務，請聯繫我們重新啟用訂閱方案。",
+      "status": "已取消"
+    },
+    "paused": {
+      "title": "訂閱方案已暫停",
+      "message": "您的訂閱方案已暫停。您可以隨時從訂閱管理頁面重新啟用。",
+      "status": "已暫停"
+    },
+    "resumed": {
+      "title": "訂閱方案已重新啟用",
+      "message": "您的訂閱方案已重新啟用。現在即可使用方案內的所有功能。",
+      "status": "已重新啟用"
+    },
+    "greeting": "您好",
+    "planName": "方案",
+    "status": "狀態",
+    "periodEnd": "結束日期",
+    "reason": "原因",
+    "footer": "© {year} AnyRent. 版權所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "租賃管理系統"
+  },
+  "addonChange": {
+    "created": {
+      "title": "已新增加購方案",
+      "message": "您的帳號已新增一個加購方案，使用上限已提高。",
+      "action": "已新增"
+    },
+    "updated": {
+      "title": "加購方案已更新",
+      "message": "您的加購方案已更新，使用上限已調整。",
+      "action": "已更新"
+    },
+    "deleted": {
+      "title": "加購方案已刪除",
+      "message": "您的帳號已移除一個加購方案，使用上限已降低。",
+      "action": "已刪除"
+    },
+    "activated": {
+      "title": "加購方案已啟用",
+      "message": "您的加購方案已啟用，使用上限已套用。",
+      "action": "已啟用"
+    },
+    "deactivated": {
+      "title": "加購方案已停用",
+      "message": "您的加購方案已停用，相關使用上限已移除。",
+      "action": "已停用"
+    },
+    "greeting": "您好",
+    "action": "操作",
+    "addonLimits": "加購上限",
+    "notes": "備註",
+    "noSpecificLimits": "無特定上限",
+    "outlets": "{count} 間分店",
+    "users": "{count} 位使用者",
+    "products": "{count} 件商品",
+    "customers": "{count} 位客戶",
+    "orders": "{count} 筆訂單",
+    "createdMessage": "您現在即可使用這些加購上限。",
+    "deletedMessage": "請確認您目前的數量未超過新的上限。",
+    "updatedMessage": "變更已套用至您的帳號。",
+    "footer": "© {year} AnyRent. 版權所有。",
+    "systemName": "AnyRent",
+    "systemTagline": "租賃管理系統"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "1 個月",
+      "quarterly": "3 個月",
+      "semi_annual": "6 個月",
+      "annual": "1 年"
+    },
+    "paymentMethods": {
+      "STRIPE": "信用卡／金融卡",
+      "TRANSFER": "銀行轉帳",
+      "CASH": "現金"
+    }
+  },
+  "accountEmail": {
+    "tagline": "租賃管理系統",
+    "hello": "您好",
+    "linkHint": "若按鈕無法使用，請複製以下連結並貼到瀏覽器中：",
+    "noteLabel": "注意：",
+    "rights": "版權所有。"
+  },
+  "verification": {
+    "subject": "驗證您的電子郵件 - AnyRent",
+    "title": "驗證您的電子郵件",
+    "intro": "感謝您註冊 AnyRent 帳號！請點擊下方按鈕驗證您的電子郵件地址，以完成註冊並啟用帳號：",
+    "button": "驗證電子郵件",
+    "note": "此連結將於 24 小時後失效。若您並未建立此帳號，請忽略此郵件。"
+  },
+  "passwordReset": {
+    "subject": "重設您的密碼 - AnyRent",
+    "title": "重設您的密碼",
+    "intro": "我們收到了您在 AnyRent 帳號的密碼重設請求。請點擊下方按鈕設定新密碼：",
+    "button": "重設密碼",
+    "note": "此連結將於 24 小時後失效。若您並未要求重設密碼，請忽略此郵件，您的密碼不會變更。"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "title": "Gestion des comptes bancaires",
+  "subtitle": "Gérer les comptes bancaires du point de vente",
+  "form": {
+    "title": "Informations du compte bancaire",
+    "addTitle": "Ajouter un compte bancaire",
+    "editTitle": "Modifier le compte bancaire",
+    "accountHolderName": "Titulaire du compte",
+    "accountHolderNamePlaceholder": "Saisissez le nom du titulaire",
+    "accountNumber": "Numéro de compte",
+    "accountNumberPlaceholder": "Saisissez le numéro de compte (6 à 16 chiffres)",
+    "bankName": "Nom de la banque",
+    "bankNamePlaceholder": "Choisissez la banque",
+    "bankCode": "Code banque",
+    "bankCodePlaceholder": "Code banque (rempli automatiquement)",
+    "branch": "Agence",
+    "branchPlaceholder": "Saisissez l'agence (facultatif)",
+    "isDefault": "Définir comme compte par défaut",
+    "notes": "Remarques",
+    "notesPlaceholder": "Remarques (facultatif)",
+    "submit": "Enregistrer le compte bancaire",
+    "add": "Ajouter le compte",
+    "update": "Mettre à jour",
+    "cancel": "Annuler",
+    "saving": "Enregistrement...",
+    "errors": {
+      "accountHolderNameRequired": "Le nom du titulaire est obligatoire",
+      "accountNumberRequired": "Le numéro de compte est obligatoire",
+      "accountNumberInvalid": "Le numéro de compte doit comporter entre 6 et 16 chiffres",
+      "bankNameRequired": "Le nom de la banque est obligatoire"
+    }
+  },
+  "card": {
+    "default": "Par défaut",
+    "accountHolderName": "Titulaire du compte",
+    "accountNumber": "Numéro de compte",
+    "bank": "Banque",
+    "branch": "Agence",
+    "notes": "Remarques",
+    "copyQRCode": "Copier le code QR",
+    "scanQRHint": "Scannez le code QR pour un virement rapide",
+    "copied": "Copié",
+    "accountNumberCopied": "Numéro de compte copié dans le presse-papiers",
+    "qrCodeCopied": "Code QR copié dans le presse-papiers"
+  },
+  "list": {
+    "emptyTitle": "Aucun compte bancaire",
+    "emptyDescription": "Ajoutez un compte bancaire pour recevoir les paiements par virement",
+    "addButton": "Ajouter un compte bancaire"
+  },
+  "messages": {
+    "addSuccess": "Compte bancaire ajouté",
+    "addError": "Impossible d'ajouter le compte bancaire",
+    "updateSuccess": "Compte bancaire mis à jour",
+    "updateError": "Impossible de mettre à jour le compte bancaire",
+    "deleteSuccess": "Compte bancaire supprimé",
+    "deleteError": "Impossible de supprimer le compte bancaire",
+    "loadError": "Impossible de charger la liste des comptes bancaires",
+    "deleteConfirm": "Voulez-vous vraiment supprimer le compte bancaire « {name} » ?",
+    "deleteConfirmTitle": "Supprimer le compte bancaire",
+    "noOutlet": "Vous n'êtes rattaché à aucun point de vente. Veuillez contacter l'administrateur.",
+    "noPermission": "Vous n'êtes pas autorisé à consulter les comptes bancaires."
+  }
+}

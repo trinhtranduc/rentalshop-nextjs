@@ -1,0 +1,144 @@
+{
+  "title": "Catégories",
+  "addCategory": "Ajouter une catégorie",
+  "editCategory": "Modifier la catégorie",
+  "categoryDetails": "Détails de la catégorie",
+  "fields": {
+    "name": "Nom de la catégorie",
+    "description": "Description",
+    "status": "Statut",
+    "productCount": "Nombre de produits",
+    "active": "Actif",
+    "inactive": "Inactif"
+  },
+  "labels": {
+    "default": "Par défaut"
+  },
+  "status": {
+    "active": "Actif",
+    "inactive": "Désactivée"
+  },
+  "filters": {
+    "all": "Toutes les catégories",
+    "active": "Actives",
+    "inactive": "Inactives"
+  },
+  "actions": {
+    "viewDetails": "Voir les détails",
+    "edit": "Modifier la catégorie",
+    "activate": "Activer",
+    "deactivate": "Désactiver",
+    "delete": "Supprimer",
+    "create": "Créer la catégorie",
+    "update": "Mettre à jour la catégorie",
+    "addCategory": "Ajouter une catégorie",
+    "editCategory": "Modifier la catégorie",
+    "deleteCategory": "Supprimer la catégorie",
+    "viewProducts": "Voir les produits",
+    "backToCategories": "Retour à la liste"
+  },
+  "messages": {
+    "createSuccess": "Catégorie créée avec succès",
+    "createFailed": "Échec de la création de la catégorie",
+    "updateSuccess": "Catégorie mise à jour avec succès",
+    "updateFailed": "Échec de la mise à jour de la catégorie",
+    "deleteSuccess": "Catégorie supprimée avec succès",
+    "deleteFailed": "Échec de la suppression de la catégorie",
+    "confirmDelete": "Voulez-vous vraiment supprimer cette catégorie ?",
+    "noCategories": "Aucune catégorie trouvée",
+    "noCategoriesDescription": "Essayez de modifier la recherche ou ajoutez une catégorie pour commencer.",
+    "loadingCategories": "Chargement de la liste des catégories...",
+    "tryAdjustingSearch": "Essayez de modifier votre recherche",
+    "getStarted": "Commencez par ajouter votre première catégorie"
+  },
+  "search": {
+    "placeholder": "Rechercher une catégorie..."
+  },
+  "stats": {
+    "totalCategories": "Total des catégories",
+    "activeCategories": "Actives",
+    "totalProducts": "Total des produits"
+  },
+  "dialogs": {
+    "addCategoryTitle": "Nouvelle catégorie",
+    "editCategoryTitle": "Modifier la catégorie",
+    "deleteCategoryTitle": "Supprimer la catégorie"
+  },
+  "dialog": {
+    "addNew": "Nouvelle catégorie",
+    "addNewDescription": "Créez une nouvelle catégorie pour organiser vos produits",
+    "edit": "Modifier la catégorie",
+    "editDescription": "Mettre à jour les informations de la catégorie",
+    "viewDetails": "Détails de la catégorie",
+    "viewDescription": "Voir les informations et le détail de la catégorie",
+    "deleteTitle": "Supprimer la catégorie",
+    "deleteConfirmation": "Voulez-vous vraiment supprimer la catégorie",
+    "deleteWarning": "Cette action est irréversible. Tous les produits de cette catégorie seront affectés.",
+    "neverUpdated": "Jamais mise à jour"
+  },
+  "validation": {
+    "nameRequired": "Le nom de la catégorie est obligatoire",
+    "nameMinLength": "Le nom de la catégorie doit contenir au moins 2 caractères",
+    "nameMaxLength": "Le nom de la catégorie doit contenir moins de 50 caractères",
+    "descriptionMaxLength": "La description doit contenir moins de 200 caractères",
+    "characters": "caractères"
+  },
+  "web": {
+    "title": "Catégories",
+    "add": "Ajouter une catégorie",
+    "searchLabel": "Rechercher une catégorie",
+    "searchPlaceholder": "Rechercher par nom de catégorie",
+    "cols": {
+      "name": "Nom",
+      "description": "Description",
+      "createdAt": "Date de création",
+      "actions": "Actions"
+    },
+    "sortBy": "Trier par {column}",
+    "default": "Par défaut",
+    "view": "Voir",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "viewDetails": "Voir les détails",
+    "more": "Autres actions pour {name}",
+    "empty": "Aucune catégorie pour l'instant. Ajoutez une catégorie pour regrouper vos produits.",
+    "emptySearch": "Aucune catégorie ne correspond à la recherche.",
+    "loadFailed": "Impossible de charger les catégories.",
+    "retry": "Réessayer",
+    "form": {
+      "addTitle": "Ajouter une catégorie",
+      "editTitle": "Modifier la catégorie",
+      "name": "Nom de la catégorie",
+      "namePlaceholder": "Ex. : Ao dai",
+      "required": "obligatoire",
+      "description": "Description",
+      "descriptionPlaceholder": "Facultatif",
+      "count": "{count}/{max}",
+      "cancel": "Annuler",
+      "create": "Ajouter",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "close": "Fermer"
+    },
+    "detail": {
+      "title": "Détails de la catégorie",
+      "noDescription": "Aucune description"
+    },
+    "confirm": {
+      "deleteTitle": "Supprimer la catégorie",
+      "deleteBody": "Supprimer la catégorie « {name} » ? Cette action est irréversible.",
+      "cancel": "Conserver",
+      "delete": "Supprimer la catégorie",
+      "deleting": "Suppression…"
+    },
+    "footer": {
+      "show": "Afficher",
+      "perPage": "lignes par page",
+      "perPageLabel": "Nombre de lignes par page",
+      "pages": "Pagination",
+      "range": "{from}–{to} sur {total} catégories",
+      "prev": "Page précédente",
+      "next": "Page suivante"
+    }
+  }
+}
