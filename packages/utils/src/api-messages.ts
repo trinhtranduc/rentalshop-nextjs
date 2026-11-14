@@ -1,17 +1,20 @@
 import englishMessages from '../../../locales/en/errors.json';
 import vietnameseMessages from '../../../locales/vi/errors.json';
+import japaneseMessages from '../../../locales/ja/errors.json';
 
 const catalogs = {
   en: englishMessages as Readonly<Record<string, string>>,
   vi: vietnameseMessages as Readonly<Record<string, string>>,
+  ja: japaneseMessages as Readonly<Record<string, string>>,
 };
 
-export type ApiMessageLocale = 'en' | 'vi';
+export type ApiMessageLocale = 'en' | 'vi' | 'ja';
 export type ApiMessageValues = Readonly<Record<string, string | number | boolean | null | undefined>>;
 
 const friendlyFallback: Record<ApiMessageLocale, string> = {
   en: 'Something went wrong. Please try again.',
   vi: 'Đã có lỗi. Vui lòng thử lại.',
+  ja: 'エラーが発生しました。もう一度お試しください。',
 };
 
 /**
@@ -23,6 +26,7 @@ export function resolveApiMessageLocale(header: string | null | undefined): ApiM
   const first = (header ?? '').split(',')[0]?.split(';')[0]?.trim().toLowerCase() ?? '';
   if (!first) return 'vi';
   if (first === 'vi' || first.startsWith('vi-')) return 'vi';
+  if (first === 'ja' || first.startsWith('ja-')) return 'ja';
   return 'en';
 }
 
@@ -86,6 +90,7 @@ export function getApiMessage(
 const successFallback: Record<ApiMessageLocale, string> = {
   en: 'Success',
   vi: 'Thành công',
+  ja: '成功しました',
 };
 
 /**

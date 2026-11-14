@@ -7,15 +7,15 @@
  */
 import { registrationCurrency, type RegistrationCurrency } from './registration-currency';
 
-export type SignupLanguage = 'vi' | 'en';
+export type SignupLanguage = 'vi' | 'en' | 'ja';
 
 export interface SignupPrefs {
   /** `Merchant.language` */
   language: SignupLanguage;
   /** `Merchant.currency` */
   currency: RegistrationCurrency;
-  /** language of the sample outlet / category names */
-  seedLocale: SignupLanguage;
+  /** language of the sample outlet / category names (the seed copy has vi and en; ja uses en until its seed copy exists) */
+  seedLocale: 'vi' | 'en';
 }
 
 export function signupPrefs(input: {
@@ -26,7 +26,7 @@ export function signupPrefs(input: {
 }): SignupPrefs {
   const { language, currency, explicitLocale, onboardingLocale } = input;
   if (language) {
-    return { language, currency: currency ?? (language === 'vi' ? 'VND' : 'USD'), seedLocale: language };
+    return { language, currency: currency ?? (language === 'vi' ? 'VND' : 'USD'), seedLocale: language === 'vi' ? 'vi' : 'en' };
   }
   const oldCurrency = registrationCurrency(explicitLocale, onboardingLocale);
   return {
