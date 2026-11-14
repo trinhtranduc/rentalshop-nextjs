@@ -35,9 +35,9 @@ const printfArgs = (s: string) =>
 const ARGS_MAY_DIFFER = ['v2_calendar_month'];
 
 describe('app languages (#1554)', () => {
-  it('Tiếng Việt, English, 日本語, 한국어, 中文 are on in the apps (wired after review of the data)', () => {
-    expect(enabledAppLanguages().map((l) => l.code)).toEqual(['vi', 'en', 'ja', 'ko', 'zh']);
-    for (const code of ['ja', 'ko', 'zh']) {
+  it('the twelve public languages are on in the apps (wired after review of the data)', () => {
+    expect(enabledAppLanguages().map((l) => l.code).sort()).toEqual(['de', 'en', 'es', 'fr', 'id', 'ja', 'ko', 'ru', 'th', 'vi', 'zh', 'zh-TW'].sort());
+    for (const code of ['ja', 'ko', 'zh', 'zh-TW', 'fr', 'de', 'ru', 'th', 'id', 'es']) {
       expect(APP_LANGUAGES.find((l) => l.code === code)?.enabled).toBe(true);
       expect(isEnabledAppLanguage(code)).toBe(true);
     }

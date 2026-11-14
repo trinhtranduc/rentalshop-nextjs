@@ -855,6 +855,13 @@
 		C9BB81CB22E8C80600F03F0E /* beep-07.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "beep-07.wav"; sourceTree = "<group>"; };
 		C9D2ABB324B0D53C0028EAAC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C9D2ABB524B0D5410028EAAC /* vi-VN */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "vi-VN"; path = "vi-VN.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		59E2C5C34F9FC79B9136F67C /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		DE481AC6EF865778B4E33023 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "fr"; path = "fr.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C702676119CAB5D6694648D2 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "de"; path = "de.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		D947A4244BF93E5B6B21BC9B /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ru"; path = "ru.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		B68D29D52BEBFF721B256FC3 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "th"; path = "th.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C373761AFCF4BCB80C3E7251 /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "id"; path = "id.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		2142E2F53816E76FB86768E0 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es"; path = "es.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		7EB21A314B59F3F85304D23E /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		034C8D78AED4D0746EC9103A /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "ko.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		E00045A865F640E4B9E67838 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -1916,6 +1923,13 @@
 				en,
 				Base,
 				"vi-VN",
+				zh-Hant,
+				fr,
+				de,
+				ru,
+				th,
+				id,
+				es,
 				ja,
 				ko,
 				zh-Hans,
@@ -2514,6 +2528,13 @@
 			children = (
 				C9D2ABB324B0D53C0028EAAC /* en */,
 				C9D2ABB524B0D5410028EAAC /* vi-VN */,
+				59E2C5C34F9FC79B9136F67C /* zh-Hant */,
+				DE481AC6EF865778B4E33023 /* fr */,
+				C702676119CAB5D6694648D2 /* de */,
+				D947A4244BF93E5B6B21BC9B /* ru */,
+				B68D29D52BEBFF721B256FC3 /* th */,
+				C373761AFCF4BCB80C3E7251 /* id */,
+				2142E2F53816E76FB86768E0 /* es */,
 				7EB21A314B59F3F85304D23E /* ja */,
 				034C8D78AED4D0746EC9103A /* ko */,
 				E00045A865F640E4B9E67838 /* zh-Hans */,

@@ -2433,4 +2433,83 @@
     <string name="signup_app_language">vi</string>
     <string name="settings_email_language">이메일 언어</string>
     <string name="settings_email_language_hint">인증, 비밀번호 재설정, 요금제 알림 이메일은 이 언어로 발송됩니다.</string>
+    <string-array name="history_kinds">
+        <item>ORDER_CREATED|주문 생성</item>
+        <item>ORDER_EDITED|주문 수정</item>
+        <item>ORDER_ITEMS|품목 수정</item>
+        <item>ORDER_ITEM_PRICE|주문 내 가격 수정</item>
+        <item>ORDER_DEPOSIT|예약금 받음</item>
+        <item>ORDER_PAYMENT|결제 받음</item>
+        <item>ORDER_NOTE|메모 수정</item>
+        <item>ORDER_PICKED_UP|물품 인도</item>
+        <item>ORDER_RETURNED|반납 접수</item>
+        <item>ORDER_COMPLETED|완료</item>
+        <item>ORDER_CANCELLED|주문 취소</item>
+        <item>ORDER_RESTORED|복구</item>
+        <item>ORDER_DELETED|주문 삭제</item>
+        <item>PRODUCT_CREATED|상품 생성</item>
+        <item>PRODUCT_EDITED|정보 수정</item>
+        <item>PRODUCT_PRICE|가격 수정</item>
+        <item>PRODUCT_STOCK|재고 수정</item>
+        <item>PRODUCT_IMAGES|사진 변경</item>
+        <item>PRODUCT_DELETED|상품 삭제</item>
+        <item>PRODUCT_RESTORED|복구</item>
+        <item>OTHER|업데이트</item>
+    </string-array>
+    <string-array name="history_fields">
+        <item>status|상태</item>
+        <item>orderType|주문 유형</item>
+        <item>pickupPlanAt|인도 예정일</item>
+        <item>returnPlanAt|반납 예정일</item>
+        <item>pickedUpAt|인도일</item>
+        <item>returnedAt|반납일</item>
+        <item>totalAmount|주문 합계</item>
+        <item>depositAmount|선결제 예약금</item>
+        <item>securityDeposit|보증금</item>
+        <item>discountType|할인 유형</item>
+        <item>discountValue|할인 값</item>
+        <item>discountAmount|할인 금액</item>
+        <item>damageFee|추가 요금</item>
+        <item>lateFee|연체료</item>
+        <item>collateralType|보증금 유형</item>
+        <item>collateralDetails|보증금 정보</item>
+        <item>pickupNotes|인도 메모</item>
+        <item>returnNotes|반납 메모</item>
+        <item>damageNotes|파손 메모</item>
+        <item>isReadyToDeliver|출고 준비 완료</item>
+        <item>paymentCollected|수금액</item>
+        <item>paymentRefunded|환불액</item>
+        <item>paymentMethod|결제 방식</item>
+        <item>notes|메모</item>
+        <item>name|이름</item>
+        <item>barcode|바코드</item>
+        <item>category|카테고리</item>
+        <item>isActive|판매 중</item>
+        <item>deposit|예약금</item>
+        <item>rentPrice|대여 가격</item>
+        <item>salePrice|판매 가격</item>
+        <item>pricingType|가격 계산 방식</item>
+        <item>pricing.DAILY|일 단위 대여</item>
+        <item>pricing.FIXED|회당 대여</item>
+        <item>pricing.HOURLY|시간 단위 대여</item>
+        <item>images|사진</item>
+    </string-array>
+    <string-array name="history_values">
+        <item>status.RESERVED|예약됨</item>
+        <item>status.PICKUPED|대여 중</item>
+        <item>status.RETURNED|반납됨</item>
+        <item>status.COMPLETED|완료</item>
+        <item>status.CANCELLED|취소됨</item>
+        <item>orderType.RENT|대여</item>
+        <item>orderType.SALE|판매</item>
+        <item>pricingType.DAILY|일 단위</item>
+        <item>pricingType.FIXED|회당</item>
+        <item>pricingType.HOURLY|시간 단위</item>
+        <item>discountType.AMOUNT|금액</item>
+        <item>discountType.PERCENTAGE|비율</item>
+        <item>paymentMethod.CASH|현금</item>
+        <item>paymentMethod.BANK_TRANSFER|계좌이체</item>
+        <item>bool.true|예</item>
+        <item>bool.false|아니요</item>
+    </string-array>
 </resources>
