@@ -9,7 +9,7 @@
  */
 export interface AppLanguage {
   /** BCP 47 code, also the web folder under locales/ */
-  code: 'vi' | 'en' | 'ja' | 'ko' | 'zh';
+  code: 'vi' | 'en' | 'ja' | 'ko' | 'zh' | 'zh-TW' | 'fr' | 'de' | 'ru' | 'th' | 'id' | 'es';
   /** Short label of the language switch */
   label: string;
   flag: string;
@@ -33,6 +33,13 @@ export const APP_LANGUAGES: readonly AppLanguage[] = [
   { code: 'ja', label: '日本語', flag: '🇯🇵', name: '日本語', enabled: false, webEnabled: true, web: 'ja', ios: 'ja', android: 'ja' },
   { code: 'ko', label: '한국어', flag: '🇰🇷', name: '한국어', enabled: false, webEnabled: true, web: 'ko', ios: 'ko', android: 'ko' },
   { code: 'zh', label: '中文', flag: '🇨🇳', name: '中文', enabled: false, webEnabled: true, web: 'zh', ios: 'zh-Hans', android: 'zh' },
+  { code: 'zh-TW', label: 'ZH-TW', flag: '🇹🇼', name: '繁體中文', enabled: false, webEnabled: true, web: 'zh-TW', ios: 'zh-Hant', android: 'zh-rTW' },
+  { code: 'fr', label: 'FR', flag: '🇫🇷', name: 'Français', enabled: false, webEnabled: true, web: 'fr', ios: 'fr', android: 'fr' },
+  { code: 'de', label: 'DE', flag: '🇩🇪', name: 'Deutsch', enabled: false, webEnabled: true, web: 'de', ios: 'de', android: 'de' },
+  { code: 'ru', label: 'RU', flag: '🇷🇺', name: 'Русский', enabled: false, webEnabled: true, web: 'ru', ios: 'ru', android: 'ru' },
+  { code: 'th', label: 'TH', flag: '🇹🇭', name: 'ไทย', enabled: false, webEnabled: true, web: 'th', ios: 'th', android: 'th' },
+  { code: 'id', label: 'ID', flag: '🇮🇩', name: 'Bahasa Indonesia', enabled: false, webEnabled: true, web: 'id', ios: 'id', android: 'in' },
+  { code: 'es', label: 'ES', flag: '🇪🇸', name: 'Español', enabled: false, webEnabled: true, web: 'es', ios: 'es', android: 'es' },
 ];
 
 /** The languages that are on, in list order (Tiếng Việt first) */

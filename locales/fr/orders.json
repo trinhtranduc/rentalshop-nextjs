@@ -49,19 +49,19 @@
     "deposit": "Acompte",
     "subtotal": "Sous-total",
     "grandTotal": "Total général",
-    "securityDeposit": "Caution",
+    "securityDeposit": "Dépôt de garantie",
     "damageFee": "Frais de dommages",
-    "collateralType": "Type de caution",
-    "collateralDetails": "Détails de la caution",
+    "collateralType": "Type de dépôt de garantie",
+    "collateralDetails": "Détails du dépôt de garantie",
     "collateralImage": "Photo du document de garantie",
-    "uploadImage": "Télécharger la photo du document",
-    "collateralImageHint": "Téléchargez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie. Formats acceptés : JPEG, PNG, WebP. Taille maximale : 5 Mo",
+    "uploadImage": "Importer la photo du document",
+    "collateralImageHint": "Importez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie. Formats acceptés : JPEG, PNG, WebP. Taille maximale : 5 Mo",
     "tooltips": {
       "damageFee": "Montant supplémentaire facturé si le produit est endommagé ou perdu pendant la location",
       "securityDeposit": "Somme que le client doit verser à la remise de l'article. Elle est restituée après le retour, déduction faite des frais de dommages éventuels",
-      "collateralType": "Type de pièce d'identité laissée par le client en caution (CMND/CCCD/ID, permis de conduire, passeport ou autre)",
-      "collateralDetails": "Informations sur la pièce de caution (numéro de CMND/CCCD/ID, de permis de conduire, de passeport ou autres informations selon le type)",
-      "collateralImage": "Téléchargez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie pour vérification"
+      "collateralType": "Type de pièce d'identité laissée par le client en dépôt de garantie (CMND/CCCD/ID, permis de conduire, passeport ou autre)",
+      "collateralDetails": "Informations sur la pièce remise en garantie (numéro de CMND/CCCD/ID, de permis de conduire, de passeport ou autres informations selon le type)",
+      "collateralImage": "Importez une photo de CMND/CCCD, de passeport ou d'un autre document de garantie pour vérification"
     }
   },
   "detail": {
@@ -72,7 +72,7 @@
     "orderSettings": "Paramètres de la commande",
     "orderActions": "Actions",
     "viewAndManage": "Consulter et gérer les informations de la commande",
-    "seller": "Point de vente",
+    "seller": "Point de location",
     "orderDate": "Date de commande",
     "editSettings": "Modifier les paramètres",
     "saveChanges": "Enregistrer les modifications",
@@ -104,7 +104,7 @@
     "saleOrderRule": "Commande de VENTE : modification possible uniquement lorsque le statut est",
     "status": "Statut",
     "collectionAmount": "Montant à encaisser",
-    "collateral": "Caution",
+    "collateral": "Dépôt de garantie",
     "alreadyCollected": "Paiement encaissé",
     "noCollectionNeeded": "Aucun encaissement nécessaire",
     "pickupOrderTitle": "Remise - Détail de l'encaissement",
@@ -121,8 +121,8 @@
     "pickupNotes": "Remarques sur la remise",
     "returnNotes": "Remarques sur le retour",
     "damageNotes": "Remarques sur les dommages",
-    "bailAmount": "Montant de la caution",
-    "material": "Objet donné en caution"
+    "bailAmount": "Montant de la garantie",
+    "material": "Objet remis en garantie"
   },
   "payment": {
     "subtotal": "Sous-total",
@@ -151,7 +151,7 @@
     "transferDescription": "Paiement de la commande {orderNumber}",
     "transferDescriptionDeposit": "Encaissement de l'acompte pour la commande {orderNumber}",
     "transferDescriptionRemaining": "Encaissement du solde pour la commande {orderNumber}",
-    "transferDescriptionRemainingAndCollateral": "Encaissement du solde et de la caution pour la commande {orderNumber}",
+    "transferDescriptionRemainingAndCollateral": "Encaissement du solde et du dépôt de garantie pour la commande {orderNumber}",
     "showQRCode": "Afficher le QR code",
     "transfer": "Virement",
     "other": "Autre"
@@ -189,7 +189,7 @@
     "rentalPeriodDaily": "Durée de location (par jour)",
     "rentalPeriodWeekly": "Durée de location (par semaine)",
     "orderType": "Type de commande",
-    "outlet": "Point de vente",
+    "outlet": "Point de location",
     "customer": "Client",
     "searchCustomers": "Rechercher un client par nom ou numéro de téléphone...",
     "searchProducts": "Rechercher un produit par nom, code-barres ou description...",
@@ -199,8 +199,8 @@
     "useAddNewCustomerButton": "Utilisez le bouton « Ajouter un nouveau client » ci-dessus pour créer un client",
     "orderNotes": "Remarques sur la commande",
     "enterOrderNotes": "Saisissez les remarques de la commande...",
-    "enterCollateralDetails": "Saisissez les détails de la caution",
-    "selectCollateralType": "Choisissez le type de caution",
+    "enterCollateralDetails": "Saisissez les détails du dépôt de garantie",
+    "selectCollateralType": "Choisissez le type de dépôt de garantie",
     "discount": "Remise",
     "discountAmount": "Montant de la remise...",
     "amount": "Montant",
@@ -267,7 +267,7 @@
     "rentalPeriodHourly": "Durée de location (par heure)",
     "pickupHour": "Heure de remise",
     "returnHour": "Heure de retour",
-    "selectOutlet": "Choisir un point de vente",
+    "selectOutlet": "Choisir un point de location",
     "createNewOrder": "Créer une nouvelle commande",
     "confirmOrder": "Confirmer la commande",
     "orderPreview": "Aperçu de la commande",
@@ -312,13 +312,13 @@
     "all": "Toutes les commandes",
     "allStatus": "Tous les statuts",
     "allTypes": "Tous les types",
-    "allOutlets": "Tous les points de vente",
+    "allOutlets": "Tous les points de location",
     "statusLabel": "Statut",
     "typeLabel": "Type",
-    "outletLabel": "Point de vente",
+    "outletLabel": "Point de location",
     "loading": "Chargement...",
     "error": "Erreur",
-    "noOutlets": "Aucun point de vente",
+    "noOutlets": "Aucun point de location",
     "clear": "Effacer",
     "active": "En cours",
     "completed": "Terminée",
@@ -379,7 +379,7 @@
     "selected": "sélectionné(s)",
     "customerInformationRequired": "Informations client obligatoires",
     "rentalPeriodRequired": "Durée de location obligatoire (dates de remise et de retour)",
-    "outletSelectionRequired": "Choix du point de vente obligatoire"
+    "outletSelectionRequired": "Choix du point de location obligatoire"
   },
   "receipt": {
     "previewTitle": "Aperçu de la facture",
@@ -399,7 +399,7 @@
     "total": "TOTAL GÉNÉRAL",
     "note": "Remarque",
     "customerSignature": "Signature du client",
-    "storeSignature": "Signature du point de vente",
+    "storeSignature": "Signature de la boutique",
     "thankYou": "MERCI DE VOTRE CONFIANCE",
     "downloadApp": "Téléchargez AnyRent sur l'App Store",
     "loyaltyDiscount": "Remise fidélité"
@@ -415,7 +415,7 @@
     },
     "timesDays": "× {days} jours",
     "pricingMethod": "Mode de calcul du prix",
-    "depositPerUnit": "Acompte / lot",
+    "depositPerUnit": "Acompte / ensemble",
     "itemNote": "Remarque sur l'article",
     "moreOptions": "Options de {name}",
     "remove": "Retirer {name}",
@@ -448,7 +448,7 @@
       "customer": "le client",
       "dates": "les dates de location",
       "items": "les articles",
-      "outlet": "le point de vente"
+      "outlet": "le point de location"
     },
     "shortWarning": "Stock insuffisant sur la période : {names}",
     "reset": "Réinitialiser",
@@ -483,10 +483,10 @@
       "done": "Rien d'autre à encaisser"
     },
     "depositPaid": "Acompte versé",
-    "securityDeposit": "Caution",
+    "securityDeposit": "Dépôt de garantie",
     "damageFee": "Frais supplémentaires",
     "lateFee": "Frais de retard",
-    "securityBack": "Restitution de la caution",
+    "securityBack": "Restitution du dépôt de garantie",
     "holdCollateral": "Garder en plus",
     "returnCollateral": "Restituer"
   },
@@ -535,9 +535,9 @@
     "damage": "Dommages"
   },
   "detailSettings": {
-    "title": "Caution et frais",
-    "edit": "Modifier la caution et les frais",
-    "empty": "Aucune caution retenue, aucun frais.",
+    "title": "Dépôt de garantie et frais",
+    "edit": "Modifier le dépôt de garantie et les frais",
+    "empty": "Aucun dépôt de garantie retenu, aucun frais.",
     "holding": "Retenue",
     "notForThisState": "non applicable à ce statut",
     "noteImages": "Photos des notes",
@@ -592,15 +592,15 @@
       },
       "reorder": {
         "skipped": "{count} articles ne sont plus vendus, retirés du panier",
-        "empty": "Aucun article à recommander",
-        "limit": "10 paniers sont ouverts. Fermez-en un puis recommandez.",
+        "empty": "Aucun article à commander à nouveau",
+        "limit": "10 paniers sont ouverts. Fermez-en un puis commandez à nouveau.",
         "failed": "Impossible de lire la commande à recommander"
       },
       "title": "Créer une commande",
       "editTitle": "Modifier la commande n° {number}",
       "backToOrder": "Retour à la commande n° {number}",
       "notEditable": "Cette commande ne peut plus être modifiée. Seules les commandes de location réservées ou les ventes terminées peuvent être modifiées.",
-      "outlet": "Point de vente",
+      "outlet": "Point de location",
       "pickDays": "Choisir les dates de remise et de retour",
       "daysButton": "Remise {from} → Retour {to} · {days} jours",
       "bar": "Voir la commande · {count} articles",
@@ -681,7 +681,7 @@
         "noneLeft": "Épuisé sur cette période",
         "fits": "{free} ensembles disponibles sur cette période",
         "inStock": "{free} en stock",
-        "othersHave": "Autres points de vente disponibles : {list}"
+        "othersHave": "Autres points de location disponibles : {list}"
       },
       "loyalty": {
         "use": "Utiliser les points de fidélité (le client a {points} points)",
@@ -708,16 +708,16 @@
         "loyalty": "Déduction des points de fidélité",
         "total": "Total de la commande",
         "deposit": "Encaisser l'acompte maintenant",
-        "security": "Caution à la remise",
+        "security": "Dépôt de garantie à la remise",
         "dueAtPickup": "Reste à encaisser à la remise",
-        "includesSecurity": "Dont caution {amount}",
+        "includesSecurity": "Dont dépôt de garantie {amount}",
         "discountTooHigh": "La remise ne peut pas dépasser le total de la commande ({limit})"
       },
       "missing": {
         "days": "Choisissez les dates de remise et de retour pour créer la commande.",
         "items": "Ajoutez au moins un article.",
         "customer": "Choisissez un client pour la commande.",
-        "outlet": "Aucun point de vente pour la commande.",
+        "outlet": "Aucun point de location pour la commande.",
         "price": "Saisissez le prix de {name}."
       },
       "customer": {
@@ -752,8 +752,8 @@
           "FIXED": "/fois",
           "DAILY": "/jour",
           "HOURLY": "/heure",
-          "BLOCK": "pour toute la période",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "pour toute la période"
         },
         "note": "Valable uniquement pour cette commande, ne modifie pas le prix du produit.",
         "done": "Terminé",
@@ -786,7 +786,7 @@
         "label": "Note",
         "edit": "Modifier",
         "title": "Note sur l'article",
-        "placeholder": "Exemple : reprendre la taille de 2 cm, livrer avec la voile",
+        "placeholder": "Exemple : reprendre la taille de 2 cm, livrer avec le tulle",
         "hint": "Uniquement pour cet article dans la commande. La note générale se trouve dans la section Notes ci-dessous.",
         "clear": "Supprimer la note",
         "done": "Terminé",
@@ -797,7 +797,7 @@
         "labelExtra": "Tranche de {n} jours + {m} jours en plus",
         "days": "{n} jours"
       },
-      "notListed": "Ce point de vente ne propose pas encore cet article"
+      "notListed": "Ce point de location ne propose pas encore cet article"
     },
     "tabs": {
       "label": "Liste des commandes",
@@ -883,14 +883,14 @@
     "pay": {
       "due": "reste à encaisser {amount}",
       "fee": "+ frais de retard {amount}",
-      "refund": "remboursement de la caution {amount}",
+      "refund": "remboursement de l'acompte {amount}",
       "noRevenue": "hors chiffre d'affaires",
       "kept": "conservé {amount}"
     },
     "empty": {
       "all": "Aucune commande ne correspond aux filtres.",
       "todo": "Aucune remise ni retour prévu aujourd'hui.",
-      "noshow": "Aucune commande dépassant la date de retrait."
+      "noshow": "Aucune commande dépassant la date de remise."
     },
     "footer": {
       "show": "Afficher",
@@ -912,7 +912,7 @@
       "by": "par {name}",
       "print": "Imprimer le bon",
       "edit": "Modifier la commande",
-      "reorder": "Recommander",
+      "reorder": "Commander à nouveau",
       "more": "Autres actions",
       "cancel": "Annuler la commande",
       "delete": "Supprimer la commande",
@@ -974,7 +974,7 @@
         "returnBtn": "Retour · encaisser {amount}",
         "returnBtnRefund": "Retour · rembourser {amount}",
         "returnBtnFree": "Retour",
-        "pickupHelp": "Ouvre la fenêtre de confirmation : montant à encaisser et caution à recevoir.",
+        "pickupHelp": "Ouvre la fenêtre de confirmation : montant à encaisser et dépôt de garantie à recevoir.",
         "returnHelp": "Ouvre la fenêtre de confirmation : frais supplémentaires, montant à encaisser ou à rembourser.",
         "lateHelp": "Mieux vaut appeler le client d'abord."
       },
@@ -985,9 +985,9 @@
         "goodsTotal": "Montant des articles",
         "discount": "Remise",
         "depositPaid": "Acompte versé à la réservation",
-        "collateralMoney": "Caution encaissée en plus",
-        "collateralHeld": "Caution retenue",
-        "collateral": "Montant de la caution",
+        "collateralMoney": "Dépôt de garantie encaissé en plus",
+        "collateralHeld": "Dépôt de garantie retenu",
+        "collateral": "Montant du dépôt de garantie",
         "paidBefore": "Déjà encaissé",
         "settledBefore": "Déjà réglé",
         "excessDeposit": "Acompte supérieur au montant de la location",
@@ -1003,8 +1003,8 @@
         "cancelKept": "Supplément"
       },
       "settings": {
-        "title": "Notes, caution et frais",
-        "edit": "Modifier la caution et les frais",
+        "title": "Notes, dépôt de garantie et frais",
+        "edit": "Modifier le dépôt de garantie et les frais",
         "photos": "Photos des notes",
         "addPhoto": "Ajouter une photo",
         "removePhoto": "Retirer la photo"
@@ -1039,10 +1039,10 @@
         "rows": {
           "orderTotal": "Total de la commande",
           "depositPaid": "Acompte versé à la réservation",
-          "collateralMoney": "Caution encaissée en plus",
+          "collateralMoney": "Dépôt de garantie encaissé en plus",
           "paidBefore": "Déjà encaissé",
           "fees": "Suppléments",
-          "collateralHeld": "Caution retenue",
+          "collateralHeld": "Dépôt de garantie retenu",
           "settledBefore": "Déjà réglé",
           "excessDeposit": "Acompte supérieur au montant de la location"
         },
@@ -1092,8 +1092,8 @@
       "rows": {
         "deposit": "Acompte",
         "noDeposit": "Sans acompte",
-        "securityDeposit": "Caution",
-        "collateral": "Papiers de caution",
+        "securityDeposit": "Dépôt de garantie",
+        "collateral": "Papiers remis en garantie",
         "damageFee": "Supplément",
         "rentDate": "Date de location",
         "returnDate": "Date de retour",
@@ -1134,7 +1134,7 @@
       "items": "{count} articles",
       "hoursLeft": "encore {hours} heures",
       "phone": "Numéro de téléphone",
-      "outlet": "Point de vente",
+      "outlet": "Point de location",
       "days": "Période de location",
       "customer": "Client",
       "customerKnown": "Client existant de la boutique",
@@ -1223,7 +1223,7 @@
       "editTitle": "Modifier l'échéancier de paiement",
       "viewTitle": "Échéancier de paiement",
       "editNote": "Vous ne pouvez modifier que le pourcentage ou l'échéance des étapes non encaissées. Les étapes suivantes sont recalculées automatiquement.",
-      "staffNote": "Seuls le propriétaire de la boutique et le responsable du point de vente peuvent modifier l'échéancier. Vous pouvez seulement le consulter.",
+      "staffNote": "Seuls le propriétaire de la boutique et le responsable du point de location peuvent modifier l'échéancier. Vous pouvez seulement le consulter.",
       "savePlan": "Enregistrer l'échéancier",
       "stageTitle": "Étape {n} · {label}",
       "paidLocked": "Encaissé, non modifiable · {percent} %",
@@ -1255,7 +1255,7 @@
       "cancelKept": "Retenu par la boutique",
       "cancelRefund": "À rembourser au client",
       "cancelHint": "Montant à rembourser = montant versé par le client, moins les frais retenus. Les frais retenus sont la part de l'acompte conservée par la boutique.",
-      "cancelHintStaff": "Le personnel rembourse la totalité du montant versé par le client. Le propriétaire de la boutique ou le responsable du point de vente décide des frais retenus.",
+      "cancelHintStaff": "Le personnel rembourse la totalité du montant versé par le client. Le propriétaire de la boutique ou le responsable du point de location décide des frais retenus.",
       "policyLine": "Politique de la boutique : {policy}",
       "dueTodayTitle": "À encaisser aujourd'hui",
       "dueSoonTitle": "Échéances proches",

@@ -9,31 +9,78 @@
     },
     "howToGet": {
       "title": "So erhalten Sie Ihren Affiliate-Link",
-      "content": "Der Empfehlungslink wird aus der URL-Kennung Ihres Geschäfts erstellt. Sie finden ihn in den Geschäftseinstellungen unter „Ihr Geschäft teilen“."
+      "content": "Der Empfehlungslink wird aus der URL-Kennung Ihres Geschäfts erstellt. Sie finden ihn in den Geschäftseinstellungen unter „Ihr Geschäft teilen“.",
+      "steps": [
+        "Öffnen Sie die Geschäftseinstellungen",
+        "Wählen Sie den Reiter Geschäftsinformationen (oder Filialinformationen)",
+        "Suchen Sie „Ihr Geschäft teilen“ → „Empfehlungslink“",
+        "Klicken Sie auf Kopieren, um Ihren Registrierungslink zu kopieren",
+        "Senden Sie ihn an andere Geschäftsinhaber"
+      ]
     },
     "howToUse": {
       "title": "So verwenden Sie Ihren Affiliate-Link",
-      "content": "Teilen Sie Ihren Affiliate-Link über verschiedene Kanäle mit anderen:"
+      "content": "Teilen Sie Ihren Affiliate-Link über verschiedene Kanäle mit anderen:",
+      "methods": [
+        "Teilen Sie ihn in sozialen Netzwerken (Facebook, Instagram, X usw.)",
+        "Senden Sie ihn per E-Mail oder über Messenger-Apps (WhatsApp, Telegram usw.)",
+        "Fügen Sie ihn auf Ihrer Website oder in Ihrem Geschäftsblog ein",
+        "Teilen Sie ihn mit Freunden, Familie oder Geschäftspartnern",
+        "Fügen Sie ihn auf Visitenkarten oder Werbematerial hinzu"
+      ]
     },
     "howItWorks": {
       "title": "So funktioniert es",
-      "content": "Wenn jemand auf Ihren Affiliate-Link klickt:"
+      "content": "Wenn jemand auf Ihren Affiliate-Link klickt:",
+      "steps": [
+        "Die Person wird zur AnyRent-Registrierung weitergeleitet",
+        "Ihr Empfehlungscode wird automatisch in das Registrierungsformular eingetragen",
+        "Nach Abschluss der Registrierung wird erfasst, dass die Person über Ihren Link kam",
+        "Je nach Empfehlungsprogramm können Sie Vorteile oder Prämien erhalten"
+      ]
     },
     "benefits": {
       "title": "Vorteile des Affiliate-Links",
-      "content": "Mit Affiliate-Links können Sie:"
+      "content": "Mit Affiliate-Links können Sie:",
+      "items": [
+        "Empfohlene Personen und Marketingaufwand nachverfolgen",
+        "Ein Netzwerk von AnyRent-Nutzern aufbauen",
+        "Prämien oder Vorteile erhalten (prüfen Sie Ihren Tarif)",
+        "AnyRent mit Personen teilen, die davon profitieren können",
+        "Ihr Geschäftsnetzwerk ausbauen"
+      ]
     },
     "bestPractices": {
       "title": "Bewährte Vorgehensweisen",
-      "content": "So holen Sie das Beste aus Ihrem Affiliate-Link heraus:"
+      "content": "So holen Sie das Beste aus Ihrem Affiliate-Link heraus:",
+      "tips": [
+        "Teilen Sie den Link beiläufig in Gesprächen über Geschäftsführung",
+        "Erklären Sie beim Teilen des Links den Nutzen von AnyRent",
+        "Teilen Sie den Link nur mit Personen, die von AnyRent wirklich profitieren können",
+        "Bewahren Sie Ihren Affiliate-Link dort auf, wo Sie ihn schnell teilen können",
+        "Beachten Sie die Nutzungsbedingungen und Community-Regeln von AnyRent"
+      ]
     },
     "importantNotes": {
       "title": "Wichtige Hinweise",
-      "content": "Bitte beachten Sie:"
+      "content": "Bitte beachten Sie:",
+      "notes": [
+        "Ihr Affiliate-Link ist für Ihr Händlerkonto einmalig",
+        "Der Empfehlungscode im Link darf nicht verändert oder gefälscht werden",
+        "Affiliate-Vorteile und Prämien können je nach Tarif unterschiedlich sein",
+        "AnyRent behält sich vor, empfohlene Personen zu prüfen und betrügerische Empfehlungen zu entfernen",
+        "Respektieren Sie die Privatsphäre und teilen Sie den Link nur mit Interessierten"
+      ]
     },
     "troubleshooting": {
       "title": "Fehlerbehebung",
-      "content": "Falls Sie Probleme mit Ihrem Affiliate-Link haben:"
+      "content": "Falls Sie Probleme mit Ihrem Affiliate-Link haben:",
+      "solutions": [
+        "Prüfen Sie, ob Sie den vollständigen Link kopiert haben, einschließlich des Empfehlungscodes",
+        "Prüfen Sie, ob Ihr Geschäftskonto aktiv ist",
+        "Wenn der Empfehlungslink leer ist, legen Sie zuerst die Geschäfts-URL in den Geschäftseinstellungen fest",
+        "Wenden Sie sich an den Support, wenn der Fehler weiterhin besteht"
+      ]
     }
   },
   "banner": {
@@ -84,7 +131,7 @@
       },
       "payment": {
         "label": "Zahlung",
-        "description": "Die Provision wird unmittelbar nach der Zahlung der Empfehlung automatisch auf Ihr Konto überwiesen"
+        "description": "Die Provision wird automatisch auf Ihr Konto überwiesen, sobald die empfohlene Person bezahlt hat"
       },
       "tracking": {
         "label": "Nachverfolgung",

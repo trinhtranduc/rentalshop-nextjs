@@ -1,0 +1,144 @@
+{
+  "title": "Categorías",
+  "addCategory": "Agregar categoría",
+  "editCategory": "Editar categoría",
+  "categoryDetails": "Detalles de la categoría",
+  "fields": {
+    "name": "Nombre de la categoría",
+    "description": "Descripción",
+    "status": "Estado",
+    "productCount": "Cantidad de productos",
+    "active": "Activa",
+    "inactive": "Inactiva"
+  },
+  "labels": {
+    "default": "Predeterminada"
+  },
+  "status": {
+    "active": "Activa",
+    "inactive": "Inactiva"
+  },
+  "filters": {
+    "all": "Todas las categorías",
+    "active": "Activas",
+    "inactive": "Inactivas"
+  },
+  "actions": {
+    "viewDetails": "Ver detalles",
+    "edit": "Editar categoría",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "delete": "Eliminar",
+    "create": "Crear categoría",
+    "update": "Actualizar categoría",
+    "addCategory": "Agregar categoría",
+    "editCategory": "Editar categoría",
+    "deleteCategory": "Eliminar categoría",
+    "viewProducts": "Ver productos",
+    "backToCategories": "Volver a la lista"
+  },
+  "messages": {
+    "createSuccess": "Categoría creada correctamente",
+    "createFailed": "No se pudo crear la categoría",
+    "updateSuccess": "Categoría actualizada correctamente",
+    "updateFailed": "No se pudo actualizar la categoría",
+    "deleteSuccess": "Categoría eliminada correctamente",
+    "deleteFailed": "No se pudo eliminar la categoría",
+    "confirmDelete": "¿Está seguro de que desea eliminar esta categoría?",
+    "noCategories": "No se encontraron categorías",
+    "noCategoriesDescription": "Pruebe a ajustar la búsqueda o agregue una categoría para empezar.",
+    "loadingCategories": "Cargando lista de categorías...",
+    "tryAdjustingSearch": "Pruebe a ajustar su búsqueda",
+    "getStarted": "Empiece agregando su primera categoría"
+  },
+  "search": {
+    "placeholder": "Buscar categorías..."
+  },
+  "stats": {
+    "totalCategories": "Total de categorías",
+    "activeCategories": "Activas",
+    "totalProducts": "Total de productos"
+  },
+  "dialogs": {
+    "addCategoryTitle": "Agregar nueva categoría",
+    "editCategoryTitle": "Editar categoría",
+    "deleteCategoryTitle": "Eliminar categoría"
+  },
+  "dialog": {
+    "addNew": "Agregar nueva categoría",
+    "addNewDescription": "Cree una nueva categoría para organizar sus productos",
+    "edit": "Editar categoría",
+    "editDescription": "Actualice la información de la categoría",
+    "viewDetails": "Detalles de la categoría",
+    "viewDescription": "Vea la información y los detalles de la categoría",
+    "deleteTitle": "Eliminar categoría",
+    "deleteConfirmation": "¿Está seguro de que desea eliminar la categoría",
+    "deleteWarning": "Esta acción no se puede deshacer. Todos los productos de esta categoría se verán afectados.",
+    "neverUpdated": "Sin actualizar"
+  },
+  "validation": {
+    "nameRequired": "El nombre de la categoría es obligatorio",
+    "nameMinLength": "El nombre de la categoría debe tener al menos 2 caracteres",
+    "nameMaxLength": "El nombre de la categoría debe tener menos de 50 caracteres",
+    "descriptionMaxLength": "La descripción debe tener menos de 200 caracteres",
+    "characters": "caracteres"
+  },
+  "web": {
+    "title": "Categorías",
+    "add": "Agregar categoría",
+    "searchLabel": "Buscar categoría",
+    "searchPlaceholder": "Buscar por nombre de categoría",
+    "cols": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "createdAt": "Fecha de creación",
+      "actions": "Acciones"
+    },
+    "sortBy": "Ordenar por {column}",
+    "default": "Predeterminada",
+    "view": "Ver",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "viewDetails": "Ver detalles",
+    "more": "Más acciones para {name}",
+    "empty": "Aún no hay categorías. Agregue una categoría para agrupar los productos.",
+    "emptySearch": "No hay categorías que coincidan con la búsqueda.",
+    "loadFailed": "No se pudieron cargar las categorías.",
+    "retry": "Reintentar",
+    "form": {
+      "addTitle": "Agregar categoría",
+      "editTitle": "Editar categoría",
+      "name": "Nombre de la categoría",
+      "namePlaceholder": "Ej.: Ao dai",
+      "required": "obligatorio",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Opcional",
+      "count": "{count}/{max}",
+      "cancel": "Cancelar",
+      "create": "Agregar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "close": "Cerrar"
+    },
+    "detail": {
+      "title": "Detalles de la categoría",
+      "noDescription": "Sin descripción"
+    },
+    "confirm": {
+      "deleteTitle": "Eliminar categoría",
+      "deleteBody": "¿Eliminar la categoría “{name}”? No se puede deshacer.",
+      "cancel": "Conservar",
+      "delete": "Eliminar categoría",
+      "deleting": "Eliminando…"
+    },
+    "footer": {
+      "show": "Mostrar",
+      "perPage": "filas por página",
+      "perPageLabel": "Filas por página",
+      "pages": "Paginación",
+      "range": "{from}–{to} de {total} categorías",
+      "prev": "Página anterior",
+      "next": "Página siguiente"
+    }
+  }
+}

@@ -56,7 +56,7 @@
   },
   "stats": {
     "totalCategories": "Kategorien gesamt",
-    "activeCategories": "Aktiv",
+    "activeCategories": "Aktive Kategorien",
     "totalProducts": "Artikel gesamt"
   },
   "dialogs": {
@@ -109,7 +109,7 @@
       "addTitle": "Kategorie hinzufügen",
       "editTitle": "Kategorie bearbeiten",
       "name": "Kategoriename",
-      "namePlaceholder": "Z. B.: Kleider",
+      "namePlaceholder": "Z. B.: Áo dài",
       "required": "erforderlich",
       "description": "Beschreibung",
       "descriptionPlaceholder": "Optional",

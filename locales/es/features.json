@@ -1,81 +1,182 @@
 {
-  "navigation": { "home": "Inicio", "pricing": "Precios", "login": "Iniciar sesión" },
+  "navigation": {
+    "home": "Inicio",
+    "pricing": "Precios",
+    "login": "Iniciar sesión"
+  },
   "hero": {
-    "badge": "Funciones",
-    "title": "Descubre todo lo que hace AnyRent",
-    "description": "Un software completo de gestión para tiendas de alquiler, con todas las funciones en la app móvil y en el portal web. Gestiona tu negocio de forma eficiente desde cualquier lugar.",
+    "badge": "Funciones destacadas",
+    "title": "Descubra el poder de AnyRent",
+    "description": "Software completo de gestión para tiendas de alquiler, con todas las funciones para la app móvil y el web portal. Gestione su negocio de forma eficiente desde cualquier lugar.",
     "downloadApp": "Descargar la app",
-    "tryWebPortal": "Probar el portal web"
+    "tryWebPortal": "Probar el Web Portal"
   },
   "platforms": {
-    "title": "Varias plataformas",
-    "description": "Accede a tu tienda de alquiler y gestiónala desde cualquier dispositivo",
+    "title": "Plataformas diversas",
+    "description": "Acceda y gestione su tienda de alquiler en cualquier dispositivo",
     "mobile": {
       "title": "App móvil",
-      "description": "Gestiona tu tienda de alquiler en cualquier momento y lugar con las apps de iOS y Android",
-      "features": { "ios": "Compatibilidad total con iOS", "android": "Compatible con Android", "offline": "Modo sin conexión", "sync": "Sincronización automática" }
+      "description": "Gestione su tienda de alquiler en todo momento y lugar con las apps móviles para iOS y Android",
+      "features": {
+        "ios": "Compatibilidad total con iOS",
+        "android": "Compatible con Android",
+        "offline": "Funciona sin conexión",
+        "sync": "Sincronización automática de datos"
+      }
     },
     "web": {
-      "title": "Portal web",
-      "description": "Todas las funciones en el navegador, con un diseño moderno y adaptable",
-      "features": { "responsive": "Diseño adaptable", "fullFeatures": "Todas las funciones", "reports": "Informes detallados", "multiUser": "Varios usuarios" }
+      "title": "Web Portal",
+      "description": "Acceso a todas las funciones desde el navegador, con una interfaz moderna y adaptable",
+      "features": {
+        "responsive": "Diseño adaptable",
+        "fullFeatures": "Todas las funciones",
+        "reports": "Informes detallados",
+        "multiUser": "Compatible con varios usuarios"
+      }
     }
   },
   "mobile": {
     "badge": "App móvil",
     "title": "Funciones de la app móvil",
-    "description": "Gestiona tu tienda de alquiler directamente desde el móvil",
-    "screenshotPlaceholder": "Captura de la app móvil",
+    "description": "Gestione su tienda de alquiler directamente desde el teléfono con funciones potentes",
+    "screenshotPlaceholder": "Imagen de la app móvil",
     "features": {
-      "orderManagement": { "title": "Gestión de pedidos", "description": "Crea, consulta y gestiona pedidos de alquiler desde el móvil. Sigue el estado de los pedidos y el historial de operaciones." },
-      "customerManagement": { "title": "Gestión de clientes", "description": "Guarda los datos de los clientes y su historial de alquileres y cuida la relación con ellos fácilmente." },
-      "inventoryManagement": { "title": "Gestión de inventario", "description": "Controla las cantidades y la disponibilidad de los artículos y gestiona el inventario de forma eficiente." },
-      "scheduling": { "title": "Calendario y agenda", "description": "Consulta el calendario de alquileres y devoluciones y organiza la agenda de un vistazo." },
-      "quickSearch": { "title": "Búsqueda rápida", "description": "Encuentra rápidamente pedidos, clientes y artículos con la búsqueda inteligente." },
-      "notifications": { "title": "Notificaciones", "description": "Recibe avisos de nuevos pedidos, recordatorios de devolución y eventos importantes." }
+      "orderManagement": {
+        "title": "Gestión de pedidos",
+        "description": "Cree, consulte y gestione pedidos de alquiler directamente desde el teléfono. Siga el estado de los pedidos y el historial de transacciones."
+      },
+      "customerManagement": {
+        "title": "Gestión de clientes",
+        "description": "Guarde los datos de sus clientes, su historial de alquiler y gestione la relación con ellos fácilmente."
+      },
+      "inventoryManagement": {
+        "title": "Gestión de stock",
+        "description": "Controle las cantidades de productos, la disponibilidad y gestione el almacén de forma eficaz."
+      },
+      "scheduling": {
+        "title": "Calendario y programación",
+        "description": "Vea el calendario de alquileres y devoluciones y gestione su agenda de forma visual."
+      },
+      "quickSearch": {
+        "title": "Búsqueda rápida",
+        "description": "Busque pedidos, clientes y productos con rapidez gracias a la búsqueda inteligente."
+      },
+      "notifications": {
+        "title": "Notificaciones",
+        "description": "Reciba avisos de nuevos pedidos, recordatorios de devolución y eventos importantes."
+      }
     },
     "details": {
       "viewDetails": "Ver detalles",
       "benefits": {
-        "accessAnywhere": { "title": "Acceso en cualquier momento y lugar", "description": "Gestión desde tu dispositivo móvil" },
-        "autoSync": { "title": "Sincronización automática", "description": "Datos siempre al día" }
+        "accessAnywhere": {
+          "title": "Acceso en todo momento y lugar",
+          "description": "Gestione desde su teléfono móvil"
+        },
+        "autoSync": {
+          "title": "Sincronización automática",
+          "description": "Los datos siempre están actualizados"
+        }
       }
     }
   },
   "web": {
-    "badge": "Portal web",
-    "title": "Funciones del portal web",
-    "description": "Gestión completa de la tienda de alquiler desde el navegador",
-    "screenshotPlaceholder": "Captura del portal web",
+    "badge": "Web Portal",
+    "title": "Funciones del Web Portal",
+    "description": "Gestión completa de su tienda de alquiler desde el navegador, con todas las funciones",
+    "screenshotPlaceholder": "Imagen del web portal",
     "features": {
-      "analytics": { "title": "Análisis e informes", "description": "Consulta informes detallados de ingresos y analiza el rendimiento del negocio y las tendencias de venta." },
-      "reports": { "title": "Informes financieros", "description": "Crea y exporta informes financieros, de ingresos y generales." },
-      "settings": { "title": "Ajustes y configuración", "description": "Gestiona los ajustes del sistema y de la tienda y adáptalos a tus necesidades." },
-      "userManagement": { "title": "Gestión de usuarios", "description": "Añade, edita y gestiona usuarios, permisos y roles." },
-      "payments": { "title": "Gestión de pagos", "description": "Controla pagos y facturas y gestiona las finanzas al detalle." },
-      "security": { "title": "Seguridad", "description": "Protege los datos con cifrado, copias de seguridad automáticas y control de acceso." }
+      "analytics": {
+        "title": "Análisis e informes",
+        "description": "Consulte informes de ingresos detallados, análisis del rendimiento del negocio y tendencias de venta."
+      },
+      "reports": {
+        "title": "Informes financieros",
+        "description": "Genere y exporte informes financieros, de ingresos y resúmenes generales."
+      },
+      "settings": {
+        "title": "Configuración",
+        "description": "Gestione la configuración del sistema y de la tienda, y personalícela según sus necesidades."
+      },
+      "userManagement": {
+        "title": "Gestión de usuarios",
+        "description": "Añada, edite y gestione usuarios, permisos y roles."
+      },
+      "payments": {
+        "title": "Gestión de pagos",
+        "description": "Controle pagos, facturas y finanzas con todo detalle."
+      },
+      "security": {
+        "title": "Seguridad",
+        "description": "Proteja sus datos con cifrado, copias de seguridad automáticas y control de acceso."
+      }
     },
     "details": {
       "viewDetails": "Ver detalles",
       "benefits": {
-        "fullInterface": { "title": "Interfaz completa", "description": "Todas las funciones en la web" },
-        "detailedReports": { "title": "Informes detallados", "description": "Exporta y analiza los datos" }
+        "fullInterface": {
+          "title": "Interfaz completa",
+          "description": "Todas las funciones en la web"
+        },
+        "detailedReports": {
+          "title": "Informes detallados",
+          "description": "Exporte y analice los datos"
+        }
       }
     }
   },
-  "details": { "title": "Detalle de funciones", "description": "Conoce más a fondo las funciones de AnyRent", "mobileApp": "App móvil", "webPortal": "Portal web" },
+  "details": {
+    "title": "Detalle de funciones",
+    "description": "Descubra en profundidad las potentes funciones de AnyRent",
+    "mobileApp": "App móvil",
+    "webPortal": "Web Portal"
+  },
   "shared": {
     "badge": "Funciones comunes",
-    "title": "Funciones comunes",
-    "description": "Disponibles tanto en la app móvil como en el portal web",
+    "title": "Funciones compartidas",
+    "description": "Funciones disponibles tanto en la app móvil como en el web portal",
     "features": {
-      "cloudSync": { "title": "Sincronización en la nube", "description": "Los datos se sincronizan automáticamente en todos los dispositivos. Un cambio en uno aparece al instante en los demás." },
-      "dataSecurity": { "title": "Seguridad de los datos", "description": "Tus datos se cifran y se guardan de forma segura en la nube. Las copias automáticas evitan que se pierdan." },
-      "realTime": { "title": "Actualización en tiempo real", "description": "Cada cambio se refleja al momento en todos los dispositivos. Tu equipo trabaja siempre con datos sincronizados." },
-      "scalable": { "title": "Escalable", "description": "El sistema crece con tu negocio, desde una tienda pequeña hasta una gran cadena." }
+      "cloudSync": {
+        "title": "Sincronización en la nube",
+        "description": "Los datos se sincronizan automáticamente entre todos los dispositivos. Un cambio en un dispositivo se actualiza al instante en los demás."
+      },
+      "dataSecurity": {
+        "title": "Seguridad de datos",
+        "description": "Sus datos se cifran y se almacenan de forma segura en la nube. La copia de seguridad automática evita la pérdida de información."
+      },
+      "realTime": {
+        "title": "Actualizaciones en tiempo real",
+        "description": "Todos los cambios se actualizan al instante en todos los dispositivos. Trabaje en equipo de forma eficaz con datos siempre sincronizados."
+      },
+      "scalable": {
+        "title": "Escalabilidad flexible",
+        "description": "El sistema puede crecer según las necesidades de su negocio, desde una tienda pequeña hasta una cadena grande."
+      }
     }
   },
-  "cta": { "title": "¿Listo para empezar?", "description": "Únete a las tiendas de alquiler que ya usan AnyRent", "downloadApp": "Descargar la app", "tryWebPortal": "Probar el portal web" },
-  "footer": { "description": "AnyRent - software de gestión para tiendas de alquiler", "home": "Inicio", "pricing": "Precios", "login": "Iniciar sesión", "copyright": "© 2024 AnyRent. Todos los derechos reservados." },
-  "screens": { "order": "Gestión de pedidos", "product": "Gestión de artículos", "calendar": "Calendario y agenda", "users": "Gestión de usuarios", "webCalendar": "Calendario de pedidos", "webOrderDetail": "Detalle del pedido", "webOrder": "Gestión de pedidos", "prev": "Captura anterior", "next": "Captura siguiente", "goTo": "Ver captura {index}" }
+  "cta": {
+    "title": "¿Listo para empezar?",
+    "description": "Únase a miles de negocios de alquiler que ya usan AnyRent",
+    "downloadApp": "Descargar la app",
+    "tryWebPortal": "Probar el Web Portal"
+  },
+  "footer": {
+    "description": "AnyRent: el software de gestión de tiendas de alquiler líder en Vietnam",
+    "home": "Inicio",
+    "pricing": "Precios",
+    "login": "Iniciar sesión",
+    "copyright": "© 2024 AnyRent. Todos los derechos reservados."
+  },
+  "screens": {
+    "order": "Gestión de pedidos",
+    "product": "Gestión de productos",
+    "calendar": "Calendario y programación",
+    "users": "Gestión de usuarios",
+    "webCalendar": "Calendario de pedidos",
+    "webOrderDetail": "Detalle del pedido",
+    "webOrder": "Gestión de pedidos",
+    "prev": "Foto anterior",
+    "next": "Foto siguiente",
+    "goTo": "Ver foto {index}"
+  }
 }

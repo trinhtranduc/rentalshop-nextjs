@@ -58,7 +58,7 @@
     "collateralImageHint": "Laden Sie ein Bild des Personalausweises, Reisepasses oder eines anderen Sicherheitsdokuments hoch. Unterstützte Formate: JPEG, PNG, WebP. Maximale Größe: 5 MB",
     "tooltips": {
       "damageFee": "Zusätzlicher Betrag, wenn Artikel während der Miete beschädigt werden oder verloren gehen",
-      "securityDeposit": "Kaution, die der Kunde bei der Übergabe hinterlegen muss. Sie wird nach der Rückgabe abzüglich einer etwaigen Zusatzgebühr erstattet",
+      "securityDeposit": "Kaution, die der Kunde bei der Übergabe hinterlegen muss. Sie wird nach der Rückgabe abzüglich einer etwaigen Zusatzgebühr erstattet.",
       "collateralType": "Art des Ausweisdokuments, das der Kunde als Kaution hinterlegt (Personalausweis/CCCD/ID, Führerschein/Driver License, Reisepass/Passport oder andere)",
       "collateralDetails": "Detaillierte Angaben zum Sicherheitsdokument (Nummer des Ausweises/CCCD/ID, Führerscheinnummer, Passnummer oder andere Angaben je nach Art)",
       "collateralImage": "Bild des Personalausweises, Reisepasses oder eines anderen Sicherheitsdokuments zur Überprüfung hochladen"
@@ -341,7 +341,7 @@
       "cancel": "Abbrechen",
       "applyRange": "Zeitraum anwenden",
       "tip": "💡 <strong>Tipp:</strong> Bei großen Zeiträumen empfiehlt sich die Exportfunktion, statt alle Daten in der Tabelle anzusehen.",
-      "viewingAllOrdersWarning": "Alle {count} Aufträge werden angezeigt, dies kann langsam sein"
+      "viewingAllOrdersWarning": "Alle {count} Aufträge werden angezeigt. Das kann langsam sein."
     }
   },
   "search": {
@@ -402,7 +402,7 @@
     "storeSignature": "Unterschrift Filiale",
     "thankYou": "VIELEN DANK FÜR IHREN EINKAUF",
     "downloadApp": "AnyRent im App Store herunterladen",
-    "loyaltyDiscount": "Rabatt durch Treuepunkte"
+    "loyaltyDiscount": "Bonuspunkte-Rabatt"
   },
   "form": {
     "itemsTitle": "Artikel im Auftrag",
@@ -652,7 +652,7 @@
         "HOURLY": "{price}/Stunde",
         "FIXED": "{price}/Vermietung",
         "SALE": "{price}",
-        "BLOCK": "ab {price}/Tag · nach Block"
+        "BLOCK": "ab {price}/Tag · nach Tagesblock"
       },
       "option": {
         "DAILY": "Pro Tag · {price}/Tag",
@@ -672,7 +672,7 @@
         "choose": "Wählen",
         "rentItems": "Mietartikel · {count} Stück",
         "saleItems": "Verkaufsartikel · {count} Stück",
-        "empty": "Drücken Sie bei einem Produkt auf +, um es hinzuzufügen.",
+        "empty": "Tippen Sie bei einem Artikel auf +, um ihn hinzuzufügen.",
         "priceFor": "Preisberechnung für {name}",
         "less": "Eins weniger: {name}",
         "more": "Eins mehr: {name}",
@@ -752,8 +752,8 @@
           "FIXED": "/Vermietung",
           "DAILY": "/Tag",
           "HOURLY": "/Std.",
-          "BLOCK": "ganze Mietdauer",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "ganze Mietdauer"
         },
         "note": "Gilt nur für diesen Auftrag; der Produktpreis bleibt unverändert.",
         "done": "Fertig",
@@ -883,7 +883,7 @@
     "pay": {
       "due": "noch einzuziehen {amount}",
       "fee": "+ Verspätungsgebühr {amount}",
-      "refund": "Kaution erstatten {amount}",
+      "refund": "Anzahlung erstatten {amount}",
       "noRevenue": "kein Umsatz",
       "kept": "einbehalten {amount}"
     },
@@ -1106,7 +1106,7 @@
       "loyaltyDiscount": "Bonuspunkte-Rabatt",
       "total": "Gesamtsumme",
       "customerSignature": "Unterschrift Kunde",
-      "storeSignature": "Unterschrift Geschäft",
+      "storeSignature": "Unterschrift Filiale",
       "thankYou": "Vielen Dank!",
       "downloadApp": "AnyRent im App Store herunterladen",
       "units": {
@@ -1125,7 +1125,7 @@
     "online": {
       "button": "Online-Buchungen",
       "title": "Online-Buchungen",
-      "subtitle": "Anfragen von Kunden über Ihre Shopseite. Bestätigen Sie, um einen Auftrag zu erstellen, oder lehnen Sie ab.",
+      "subtitle": "Anfragen von Kunden über die Seite Ihres Geschäfts. Bestätigen Sie, um einen Auftrag zu erstellen, oder lehnen Sie ab.",
       "backToOrders": "Aufträge",
       "settings": "Einstellungen für Online-Buchungen",
       "noAccess": "Sie dürfen Online-Buchungen nicht einsehen.",

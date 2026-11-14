@@ -1,0 +1,191 @@
+{
+  "title": "Sucursales",
+  "addOutlet": "Agregar sucursal",
+  "editOutlet": "Editar sucursal",
+  "outletDetails": "Detalles de la sucursal",
+  "fields": {
+    "name": "Nombre de la sucursal",
+    "address": "Dirección",
+    "city": "Ciudad",
+    "state": "Provincia/Estado",
+    "zipCode": "Código postal",
+    "country": "País",
+    "phone": "Teléfono",
+    "description": "Descripción",
+    "printNote": "Nota para imprimir en la factura",
+    "printNoteHint": "Se imprime al final de la factura de alquiler, por ejemplo, para recordar traer el documento de identidad o indicar la política de devoluciones. Máximo 500 caracteres.",
+    "status": "Estado",
+    "manager": "Gerente",
+    "notAvailable": "No disponible"
+  },
+  "labels": {
+    "default": "Predeterminada"
+  },
+  "actions": {
+    "export": "Exportar lista",
+    "viewDetails": "Ver detalles",
+    "editOutlet": "Editar sucursal",
+    "deleteOutlet": "Eliminar sucursal",
+    "addOutlet": "Agregar sucursal",
+    "backToOutlets": "Volver a la lista",
+    "disableOutlet": "Desactivar sucursal",
+    "enableOutlet": "Activar sucursal",
+    "manageBankAccounts": "Gestionar cuentas bancarias"
+  },
+  "stats": {
+    "totalOutlets": "Total de sucursales",
+    "activeOutlets": "En funcionamiento",
+    "totalUsers": "Total de usuarios",
+    "totalProducts": "Total de productos"
+  },
+  "search": {
+    "placeholder": "Buscar por nombre, ciudad o teléfono..."
+  },
+  "dialogs": {
+    "addOutletTitle": "Agregar nueva sucursal",
+    "addOutletDescription": "Cree una nueva sucursal para su negocio",
+    "editOutletTitle": "Editar sucursal",
+    "deleteOutletTitle": "Eliminar sucursal",
+    "outletDetails": "Detalles de la sucursal",
+    "editOutletName": "Editar sucursal: {name}"
+  },
+  "messages": {
+    "createSuccess": "Sucursal creada correctamente",
+    "createFailed": "No se pudo crear la sucursal",
+    "updateSuccess": "Sucursal actualizada correctamente",
+    "updateFailed": "No se pudo actualizar la sucursal",
+    "deleteSuccess": "Sucursal eliminada correctamente",
+    "deleteFailed": "No se pudo eliminar la sucursal",
+    "enableSuccess": "Sucursal activada correctamente",
+    "enableFailed": "No se pudo activar la sucursal",
+    "disableSuccess": "Sucursal desactivada correctamente",
+    "disableFailed": "No se pudo desactivar la sucursal",
+    "confirmDelete": "¿Está seguro de que desea eliminar esta sucursal?",
+    "noOutlets": "No se encontraron sucursales",
+    "tryAdjustingSearch": "Pruebe a ajustar la búsqueda",
+    "getStarted": "Empiece agregando su primera sucursal",
+    "loadingOutlets": "Cargando lista de sucursales..."
+  },
+  "placeholders": {
+    "enterOutletName": "Introduzca el nombre de la sucursal",
+    "enterStreetAddress": "Introduzca la calle y el número",
+    "enterCity": "Introduzca la ciudad",
+    "enterState": "Introduzca la provincia/estado",
+    "enterZipCode": "Introduzca el código postal",
+    "enterCountry": "Introduzca el país",
+    "enterOutletPhone": "Introduzca el teléfono de la sucursal",
+    "enterOutletDescription": "Introduzca la descripción de la sucursal",
+    "enterPrintNote": "Ej.: *** Traiga su documento de identidad al entregar"
+  },
+  "web": {
+    "title": "Sucursales",
+    "add": "Agregar sucursal",
+    "searchLabel": "Buscar sucursal",
+    "searchPlaceholder": "Buscar por nombre, ciudad o teléfono",
+    "cols": {
+      "name": "Sucursal",
+      "address": "Dirección",
+      "phone": "Teléfono",
+      "status": "Estado",
+      "createdAt": "Fecha de creación",
+      "actions": "Acciones"
+    },
+    "sortBy": "Ordenar por {column}",
+    "default": "Predeterminada",
+    "status": {
+      "active": "Abierta",
+      "inactive": "Pausada"
+    },
+    "staffCount": "{count} empleados",
+    "edit": "Editar",
+    "viewDetails": "Ver detalles",
+    "bankAccounts": "Cuentas bancarias",
+    "disable": "Pausar",
+    "enable": "Reactivar",
+    "more": "Más acciones para {name}",
+    "empty": "Aún no hay sucursales.",
+    "emptySearch": "No hay sucursales que coincidan con la búsqueda.",
+    "loadFailed": "No se pudo cargar la lista de sucursales.",
+    "retry": "Reintentar",
+    "noSession": "La sesión ha caducado. Inicie sesión de nuevo.",
+    "noAccess": "Solo el titular de la tienda puede ver y editar la lista de sucursales.",
+    "form": {
+      "addTitle": "Agregar sucursal",
+      "editTitle": "Editar sucursal",
+      "name": "Nombre de la sucursal",
+      "namePlaceholder": "Ej.: Sucursal Distrito 1",
+      "required": "obligatorio",
+      "nameRequired": "Introduzca el nombre de la sucursal",
+      "phone": "Teléfono",
+      "address": "Número y calle",
+      "city": "Ciudad",
+      "state": "Provincia / estado",
+      "zipCode": "Código postal",
+      "country": "País",
+      "optional": "Opcional",
+      "addressGroup": "Dirección",
+      "description": "Descripción",
+      "printNote": "Nota para imprimir en el comprobante de alquiler",
+      "printNoteHint": "Se imprime al final del comprobante de alquiler, por ejemplo, para recordar traer el documento de identidad o indicar la política de devoluciones.",
+      "printNotePlaceholder": "Ej.: Por favor, traiga su documento de identidad al entregar",
+      "printNoteTooLong": "Máximo {max} caracteres",
+      "count": "{count}/{max}",
+      "cancel": "Cancelar",
+      "create": "Agregar sucursal",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "close": "Cerrar"
+    },
+    "detail": {
+      "title": "Detalles de la sucursal",
+      "none": "Sin datos"
+    },
+    "confirm": {
+      "disableTitle": "Pausar sucursal",
+      "disableBody": "¿Pausar la sucursal “{name}”? Podrá reactivarla más tarde.",
+      "cancel": "Conservar",
+      "disable": "Pausar",
+      "working": "Guardando…"
+    },
+    "toast": {
+      "created": "Sucursal agregada",
+      "updated": "Sucursal guardada",
+      "disabled": "Sucursal pausada",
+      "enabled": "Sucursal reactivada"
+    },
+    "footer": {
+      "show": "Mostrar",
+      "perPage": "filas por página",
+      "perPageLabel": "Filas por página",
+      "pages": "Paginación",
+      "range": "{from}–{to} de {total} sucursales",
+      "prev": "Página anterior",
+      "next": "Página siguiente"
+    },
+    "bank": {
+      "back": "Sucursales",
+      "title": "Cuentas bancarias",
+      "subtitle": "Sucursal {name}",
+      "add": "Agregar cuenta",
+      "cols": {
+        "holder": "Titular de la cuenta",
+        "number": "Número de cuenta",
+        "bank": "Banco",
+        "branch": "Sucursal bancaria",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "active": "En uso",
+      "inactive": "Pausada",
+      "copy": "Copiar número de cuenta {number}",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "loadFailed": "No se pudieron cargar las cuentas bancarias.",
+      "retry": "Reintentar",
+      "noAccess": "No tiene permiso para ver las cuentas bancarias.",
+      "confirmCancel": "Conservar",
+      "deleting": "Eliminando…",
+      "close": "Cerrar"
+    }
+  }
+}

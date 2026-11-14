@@ -82,13 +82,13 @@
     "outletId": {
       "required": "請選擇分店",
       "requiredForRole": "此角色必須選擇分店",
-      "shouldNotBeSelected": "商家角色不應選擇分店"
+      "shouldNotBeSelected": "店家角色不應選擇分店"
     },
     "country": {
       "invalid": "請選擇有效的國家"
     },
     "tenantKey": {
-      "invalid": "Tenant key 只能包含英文字母與數字"
+      "invalid": "店家網址代碼只能包含英文字母與數字"
     },
     "product": {
       "required": "請選擇商品"
@@ -101,8 +101,8 @@
       "requiredForRole": "此角色必須選擇分店"
     },
     "merchant": {
-      "required": "請選擇商家",
-      "requiredForRole": "此角色必須選擇商家"
+      "required": "請選擇店家",
+      "requiredForRole": "此角色必須選擇店家"
     },
     "role": {
       "required": "請選擇角色"
@@ -112,7 +112,7 @@
       "cannotBeNegative": "訂金不能為負數"
     },
     "merchantId": {
-      "required": "商家 ID 為必填"
+      "required": "店家 ID 為必填"
     },
     "planId": {
       "required": "方案 ID 為必填"
@@ -181,7 +181,7 @@
       "required": "必須提供「name」，或同時提供「firstName」與「lastName」"
     },
     "businessTypePricingType": {
-      "required": "商家註冊必須填寫營業類型與計價方式"
+      "required": "店家註冊必須填寫營業類型與計價方式"
     },
     "pricingDefault": {
       "dailyNeedsPrice": "預設按日計價需要設定按日租借價格。"

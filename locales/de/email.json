@@ -43,7 +43,7 @@
     "title": "Abonnement läuft bald ab",
     "subject": "Abonnement läuft in {days} {unit} ab - {planName}",
     "greeting": "Guten Tag",
-    "message": "Ihr Abonnement läuft in {days} {unit} ab. Bitte kontaktieren Sie AnyRent, um zu verlängern und Ihren Shop dauerhaft aktiv zu halten.",
+    "message": "Ihr Abonnement läuft in {days} {unit} ab. Bitte kontaktieren Sie AnyRent, um zu verlängern und Ihr Geschäft dauerhaft aktiv zu halten.",
     "trialMessage": "Ihre kostenlose Testphase endet in {days} {unit}. Kontaktieren Sie AnyRent, um einen Tarif zu wählen, Ihre Daten zu behalten und weiterzuarbeiten.",
     "planName": "Abonnement-Tarif",
     "expiryDate": "Ablaufdatum",

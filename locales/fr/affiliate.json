@@ -9,31 +9,78 @@
     },
     "howToGet": {
       "title": "Comment obtenir votre lien d'affiliation",
-      "content": "Le lien de parrainage est créé à partir de l'URL de votre boutique. Vous le trouverez dans Paramètres de la boutique, section « Partager la boutique »."
+      "content": "Le lien de parrainage est créé à partir de l'URL de votre boutique. Vous le trouverez dans Paramètres de la boutique, section « Partager la boutique ».",
+      "steps": [
+        "Ouvrez les Paramètres de la boutique",
+        "Sélectionnez l'onglet Informations de la boutique (ou Informations de la succursale)",
+        "Repérez « Partager votre boutique » → « Lien de parrainage »",
+        "Cliquez sur Copier pour copier votre lien d'inscription",
+        "Envoyez-le à d'autres propriétaires de boutique"
+      ]
     },
     "howToUse": {
       "title": "Comment utiliser votre lien d'affiliation",
-      "content": "Partagez votre lien d'affiliation avec d'autres personnes via plusieurs canaux :"
+      "content": "Partagez votre lien d'affiliation avec d'autres personnes via plusieurs canaux :",
+      "methods": [
+        "Partagez sur les réseaux sociaux (Facebook, Instagram, Twitter, etc.)",
+        "Envoyez par e-mail ou via des applications de messagerie (WhatsApp, Telegram, etc.)",
+        "Ajoutez-le à votre site web ou à votre blog professionnel",
+        "Partagez avec vos amis, votre famille ou vos partenaires commerciaux",
+        "Ajoutez-le à vos cartes de visite ou à vos supports publicitaires"
+      ]
     },
     "howItWorks": {
       "title": "Fonctionnement",
-      "content": "Lorsqu'une personne clique sur votre lien d'affiliation :"
+      "content": "Lorsqu'une personne clique sur votre lien d'affiliation :",
+      "steps": [
+        "Ils sont redirigés vers la page d'inscription AnyRent",
+        "Votre code de parrainage est automatiquement inclus dans le formulaire d'inscription",
+        "Lorsqu'ils finalisent leur inscription, le système enregistre qu'ils viennent de votre lien",
+        "Vous pouvez recevoir des avantages ou des récompenses selon votre programme de parrainage"
+      ]
     },
     "benefits": {
       "title": "Avantages du lien d'affiliation",
-      "content": "Utiliser le lien d'affiliation vous permet de :"
+      "content": "Utiliser le lien d'affiliation vous permet de :",
+      "items": [
+        "Suivez vos filleuls et vos efforts marketing",
+        "Développez votre réseau d'utilisateurs AnyRent",
+        "Vous pouvez gagner des récompenses ou des avantages (consultez votre forfait d'abonnement)",
+        "Faites connaître AnyRent à ceux qui pourraient en bénéficier",
+        "Développez votre écosystème professionnel"
+      ]
     },
     "bestPractices": {
       "title": "Bonnes pratiques",
-      "content": "Pour maximiser l'efficacité de votre lien d'affiliation :"
+      "content": "Pour maximiser l'efficacité de votre lien d'affiliation :",
+      "tips": [
+        "Partagez votre lien naturellement lors de discussions sur la gestion d'entreprise",
+        "Expliquez les avantages d'AnyRent lorsque vous partagez votre lien",
+        "Ne partagez qu'avec les personnes susceptibles de réellement bénéficier d'AnyRent",
+        "Gardez votre lien d'affiliation à portée de main pour le partager facilement",
+        "Respectez les conditions d'utilisation et les règles de la communauté d'AnyRent"
+      ]
     },
     "importantNotes": {
       "title": "Remarques importantes",
-      "content": "Veuillez noter :"
+      "content": "Veuillez noter :",
+      "notes": [
+        "Votre lien d'affiliation est unique à votre compte marchand",
+        "Ne modifiez pas et ne falsifiez pas le code de parrainage dans votre lien",
+        "Les avantages et récompenses d'affiliation peuvent varier selon votre forfait d'abonnement",
+        "AnyRent se réserve le droit de vérifier les parrainages et peut invalider les parrainages frauduleux",
+        "Respectez la vie privée et ne partagez votre lien qu'avec les personnes intéressées"
+      ]
     },
     "troubleshooting": {
       "title": "Résolution des problèmes",
-      "content": "Si vous rencontrez un problème avec votre lien d'affiliation :"
+      "content": "Si vous rencontrez un problème avec votre lien d'affiliation :",
+      "solutions": [
+        "Assurez-vous d'avoir copié le lien en entier, y compris le code de parrainage",
+        "Vérifiez que votre compte boutique est actif",
+        "Si le lien de parrainage est vide, définissez d'abord une URL de boutique dans les Paramètres de la boutique",
+        "Contactez le support si le problème persiste"
+      ]
     }
   },
   "banner": {

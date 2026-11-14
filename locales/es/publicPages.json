@@ -1,81 +1,109 @@
 {
-  "common": { "home": "Inicio" },
+  "common": {
+    "home": "Inicio"
+  },
   "meta": {
     "pricing": {
-      "title": "Precios del software de gestión de alquiler | AnyRent",
-      "description": "Precios de AnyRent para tiendas de alquiler: planes Basic, Professional y Enterprise. Prueba gratis de 14 días. Planes mensuales asequibles.",
-      "ogDescription": "Planes Basic, Professional y Enterprise. Prueba gratis de 14 días. Planes mensuales asequibles.",
-      "name": "Precios de AnyRent - software de gestión de alquiler",
+      "title": "Precios del software de gestión de alquileres | AnyRent",
+      "description": "Precios de AnyRent: software de gestión de tiendas de alquiler. Planes Basic, Professional y Enterprise. Prueba gratuita de 14 días. Precios desde 99.000 VND/mes.",
+      "ogDescription": "Planes Basic, Professional y Enterprise. Prueba gratuita de 14 días. Precios desde 99.000 VND/mes.",
+      "name": "Precios de AnyRent - Software de gestión de alquileres",
       "breadcrumb": "Precios"
     },
     "features": {
-      "title": "Funciones del software de gestión de alquiler | AnyRent",
-      "description": "Descubre las funciones de AnyRent: pedidos de alquiler, inventario, clientes, calendario de reservas e informes de ingresos. En iOS, Android y la web.",
-      "ogDescription": "Pedidos, inventario, clientes, calendario de reservas e informes de ingresos en el móvil y en la web.",
-      "name": "Funciones de AnyRent - software de gestión de alquiler",
+      "title": "Funciones del software de gestión de alquileres | AnyRent",
+      "description": "Descubra las funciones del software de gestión de tiendas de alquiler AnyRent: gestión de pedidos, stock, clientes, calendario de reservas e informes de ingresos. Compatible con iOS y web.",
+      "ogDescription": "Gestión de pedidos, stock, clientes, calendario de reservas e informes de ingresos en iOS y web.",
+      "name": "Funciones de AnyRent - Software de gestión de alquileres",
       "breadcrumb": "Funciones"
     },
     "download": {
-      "title": "Descarga la app AnyRent — iOS y Android | Software de alquiler",
-      "description": "Descarga AnyRent en App Store y Google Play. Gestiona tu tienda de alquiler desde el móvil o el portal web: pedidos, inventario, calendario y clientes.",
-      "ogDescription": "Gestiona tu tienda de alquiler en cualquier momento desde iPhone, Android y el portal web.",
+      "title": "Descargue la app AnyRent: iOS y Android | Software de gestión de alquileres",
+      "description": "Descargue AnyRent en App Store y Google Play. Gestione su tienda de alquiler desde el teléfono o el Web Portal: pedidos, stock, calendario y clientes.",
+      "ogDescription": "Gestione su tienda de alquiler en cualquier momento desde iPhone, Android y el Web Portal.",
       "name": "Descargar la app AnyRent",
-      "breadcrumb": "Descargar"
+      "breadcrumb": "Descargar la app"
     },
     "imageSearch": {
-      "title": "Encuentra artículos de alquiler por foto con IA | AnyRent",
-      "description": "Búsqueda por imagen con IA de AnyRent: haz una foto de un áo dài, un vestido de novia o un equipo y encuentra al instante artículos parecidos en tu inventario, con disponibilidad y precio de alquiler.",
-      "ogDescription": "Haz una foto y la IA busca artículos parecidos en tu inventario. La disponibilidad y el precio de alquiler aparecen al momento.",
-      "name": "Encuentra artículos de alquiler por foto con IA",
-      "breadcrumb": "Búsqueda por imagen con IA"
+      "title": "Buscar productos de alquiler por imagen con IA | AnyRent",
+      "description": "Búsqueda por imagen con IA de AnyRent: fotografíe un vestido tradicional, un vestido de novia o un equipo y encuentre al instante productos similares en el stock, con disponibilidad y precio de alquiler.",
+      "ogDescription": "Foto → la IA busca productos similares en el stock. Disponibilidad y precio de alquiler al instante.",
+      "name": "Búsqueda de productos de alquiler por imagen con IA",
+      "breadcrumb": "Búsqueda de productos por imagen con IA"
     }
   },
   "pricingFaq": {
-    "q1": "¿Es gratis el software de gestión de alquiler AnyRent?",
-    "a1": "AnyRent incluye una prueba gratis de 14 días con todas las funciones. Después puedes elegir el plan mensual que mejor se adapte a tu tienda.",
+    "q1": "¿Es gratuito el software de gestión de alquileres AnyRent?",
+    "a1": "AnyRent ofrece 14 días de prueba gratuita con todas las funciones. Después puede elegir el plan adecuado desde 99.000 VND/mes.",
     "q2": "¿Puedo cambiar de plan más adelante?",
-    "a2": "Sí, puedes subir de plan cuando quieras. El cobro se prorratea y tienes acceso inmediato a las funciones del plan superior.",
-    "q3": "¿Qué pasa si supero los límites de mi plan?",
-    "a3": "Si superas los límites, tendrás que pasar a un plan superior. Te avisamos cuando estés cerca de un límite."
+    "a2": "Sí, puede cambiar de plan en cualquier momento. El pago se calculará de forma proporcional y tendrá acceso inmediato a las funciones superiores.",
+    "q3": "¿Qué pasa si supero los límites del plan?",
+    "a3": "Si supera los límites del plan, deberá cambiar a un plan superior. Le avisaremos cuando esté cerca del límite."
   },
   "download": {
     "eyebrow": "AnyRent · Multiplataforma",
-    "title": "Descarga la app AnyRent",
-    "intro": "Gestiona tu tienda de alquiler en iPhone, Android o en el navegador. Pedidos, inventario y calendario de alquiler se sincronizan en tiempo real.",
-    "getTitle": "Descárgala ahora",
-    "getSubtitle": "Elige la tienda de aplicaciones de tu dispositivo.",
-    "webPrefix": "O prueba el",
-    "webPortal": "portal web",
-    "webSuffix": "directamente en el navegador, sin instalar ninguna app.",
+    "title": "Descargue la app AnyRent",
+    "intro": "Gestione su tienda de alquiler desde iPhone, Android o el navegador. Sincronice pedidos, stock y calendario de alquiler en tiempo real.",
+    "getTitle": "Descargue ya",
+    "getSubtitle": "Elija la tienda de aplicaciones que corresponda a su dispositivo.",
+    "webPrefix": "O pruebe",
+    "webPortal": "Web Portal",
+    "webSuffix": "directamente en el navegador, sin instalar nada.",
     "cards": {
-      "mobile": { "title": "App móvil", "desc": "Crea pedidos y consulta el inventario y el calendario de alquiler en el mostrador o fuera de la tienda." },
-      "web": { "title": "Portal web", "desc": "Informes completos, ajustes de la tienda y gestión del equipo desde el ordenador." },
-      "sync": { "title": "Sincronizado en todas partes", "desc": "Una sola cuenta, con los datos sincronizados entre las apps de iOS y Android y la web." }
+      "mobile": {
+        "title": "App móvil",
+        "desc": "Cree pedidos, consulte el stock y el calendario de alquiler en la tienda o mientras se desplaza."
+      },
+      "web": {
+        "title": "Web Portal",
+        "desc": "Informes completos, configuración de la tienda y gestión del equipo desde el ordenador."
+      },
+      "sync": {
+        "title": "Sincronización en todas partes",
+        "desc": "Una sola cuenta: los datos se sincronizan entre la app de iOS, la de Android y la web."
+      }
     },
-    "links": { "pricing": "Ver precios →", "features": "Funciones →", "imageSearch": "Busca artículos por foto con IA →" }
+    "links": {
+      "pricing": "Ver precios →",
+      "features": "Funciones →",
+      "imageSearch": "Búsqueda de productos por imagen con IA →"
+    }
   },
   "imageSearch": {
     "eyebrow": "Inteligencia artificial · Búsqueda por imagen con IA",
-    "title": "Encuentra artículos de alquiler por foto con IA",
-    "intro": "A tu cliente le basta con una foto. AnyRent encuentra artículos parecidos en tu inventario, con su disponibilidad y su precio de alquiler. Sin memorizar referencias ni escribir palabras clave.",
-    "tryFree": "Prueba gratis",
+    "title": "Busque productos de alquiler por imagen con IA",
+    "intro": "Al cliente le basta con una foto: AnyRent encuentra productos similares en el stock, con disponibilidad y precio de alquiler. No hace falta recordar códigos ni escribir palabras clave.",
+    "tryFree": "Probar gratis",
     "download": "Descargar la app",
-    "imageAlt": "Pantalla de AnyRent con resultados de la búsqueda por imagen con IA",
+    "imageAlt": "Pantalla de AnyRent mostrando los resultados de búsqueda por imagen con IA",
     "steps": {
-      "snap": { "title": "Haz una foto para buscar", "desc": "Haz o sube una foto de muestra de un áo dài, un vestido de novia o un disfraz, sin nombre ni código de barras." },
-      "match": { "title": "Reconocimiento inteligente con IA", "desc": "Los embeddings vectoriales comparan color, corte y material para sugerir los artículos más parecidos de tu inventario." },
-      "instant": { "title": "Resultados al instante", "desc": "En segundos tienes la lista de coincidencias con stock y precio de alquiler, lista para crear el pedido." }
+      "snap": {
+        "title": "Fotografíe el producto",
+        "desc": "Fotografíe o suba una imagen de referencia de un vestido tradicional, un vestido de novia o un traje, sin necesidad de recordar el nombre ni el código de barras."
+      },
+      "match": {
+        "title": "Reconocimiento inteligente con IA",
+        "desc": "Los embeddings vectoriales analizan el color, el diseño y el material para sugerir el producto más cercano del stock."
+      },
+      "instant": {
+        "title": "Resultados instantáneos",
+        "desc": "En segundos obtiene una lista de coincidencias con disponibilidad y precio de alquiler, lista para crear el pedido."
+      }
     },
     "whyTitle": "¿Por qué una tienda de alquiler necesita la búsqueda por imagen con IA?",
-    "why1": "Los clientes recuerdan el estilo y el color, no la referencia.",
-    "why2": "El equipo encuentra los artículos más rápido cuando la tienda está llena.",
-    "why3": "Menos errores de talla o modelo con un inventario grande (áo dài, vestidos de novia, disfraces).",
-    "links": { "features": "Todas las funciones →", "pricing": "Precios →", "aoDai": "Alquiler de áo dài →" },
+    "why1": "El cliente recuerda el estilo y el color, no el código del producto.",
+    "why2": "El personal encuentra los artículos más rápido cuando la tienda está llena.",
+    "why3": "Menos errores de talla o modelo cuando el stock es grande (vestidos tradicionales, vestidos de novia, vestuario).",
+    "links": {
+      "features": "Todas las funciones →",
+      "pricing": "Precios →",
+      "aoDai": "Alquiler de vestidos tradicionales →"
+    },
     "faq": {
-      "q1": "¿Cómo funciona la búsqueda por imagen con IA?",
-      "a1": "El cliente o un empleado hace o sube una foto de muestra. AnyRent la compara con las fotos de los artículos del inventario mediante embeddings de IA y devuelve artículos parecidos con disponibilidad y precio de alquiler.",
-      "q2": "¿Para qué tipos de alquiler sirve la búsqueda por imagen con IA?",
-      "a2": "Funciona especialmente bien en el alquiler de áo dài, vestidos de novia, disfraces y equipos, cuando los clientes recuerdan el aspecto mejor que la referencia."
+      "q1": "¿Cómo funciona la búsqueda de productos por imagen con IA?",
+      "a1": "El cliente o el personal fotografía o sube una imagen de referencia. AnyRent usa embeddings de IA para compararla con las fotos de los productos del stock y devuelve los artículos similares con su disponibilidad y precio de alquiler.",
+      "q2": "¿Para qué sectores es adecuada la búsqueda por imagen con IA?",
+      "a2": "Es especialmente eficaz para el alquiler de vestidos tradicionales, vestidos de novia, vestuario y equipos, cuando el cliente recuerda el estilo mejor que el nombre del producto."
     }
   }
 }

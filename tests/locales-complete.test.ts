@@ -8,7 +8,8 @@ import { join } from 'path';
 import { APP_LANGUAGES, enabledAppLanguages, isEnabledAppLanguage, webLanguages } from '../packages/constants/src/app-languages';
 
 const root = join(__dirname, '..');
-const VI_CHARS = /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i;
+// Only letters Vietnamese has and French/Spanish/German do not (ă đ ơ ư and the tone marks), so é, ñ, ü… do not count
+const VI_CHARS = /[ăđơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/i;
 /** Vietnamese words a translation may keep: the garment "áo dài", the đồng sign, the language's own name */
 const KEEP = [/áo dài/giu, /(\d|\(|\s|^)đ(?!\p{L})/gu, /Tiếng Việt/gu];
 const leftoverVietnamese = (text: string) => VI_CHARS.test(KEEP.reduce((t, re) => t.replace(re, '$1'), text));

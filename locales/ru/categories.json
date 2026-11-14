@@ -1,0 +1,144 @@
+{
+  "title": "Категории",
+  "addCategory": "Добавить категорию",
+  "editCategory": "Изменить категорию",
+  "categoryDetails": "Сведения о категории",
+  "fields": {
+    "name": "Название категории",
+    "description": "Описание",
+    "status": "Статус",
+    "productCount": "Количество товаров",
+    "active": "Активна",
+    "inactive": "Неактивна"
+  },
+  "labels": {
+    "default": "По умолчанию"
+  },
+  "status": {
+    "active": "Активна",
+    "inactive": "Неактивна"
+  },
+  "filters": {
+    "all": "Все категории",
+    "active": "Активные",
+    "inactive": "Неактивные"
+  },
+  "actions": {
+    "viewDetails": "Подробнее",
+    "edit": "Изменить категорию",
+    "activate": "Активировать",
+    "deactivate": "Деактивировать",
+    "delete": "Удалить",
+    "create": "Создать категорию",
+    "update": "Обновить категорию",
+    "addCategory": "Добавить категорию",
+    "editCategory": "Изменить категорию",
+    "deleteCategory": "Удалить категорию",
+    "viewProducts": "Показать товары",
+    "backToCategories": "Назад к списку"
+  },
+  "messages": {
+    "createSuccess": "Категория создана",
+    "createFailed": "Не удалось создать категорию",
+    "updateSuccess": "Категория обновлена",
+    "updateFailed": "Не удалось обновить категорию",
+    "deleteSuccess": "Категория удалена",
+    "deleteFailed": "Не удалось удалить категорию",
+    "confirmDelete": "Вы уверены, что хотите удалить эту категорию?",
+    "noCategories": "Категории не найдены",
+    "noCategoriesDescription": "Попробуйте изменить поиск или добавьте категорию, чтобы начать.",
+    "loadingCategories": "Загрузка списка категорий...",
+    "tryAdjustingSearch": "Попробуйте изменить поисковый запрос",
+    "getStarted": "Начните с добавления первой категории"
+  },
+  "search": {
+    "placeholder": "Поиск категорий..."
+  },
+  "stats": {
+    "totalCategories": "Всего категорий",
+    "activeCategories": "Активных",
+    "totalProducts": "Всего товаров"
+  },
+  "dialogs": {
+    "addCategoryTitle": "Новая категория",
+    "editCategoryTitle": "Изменить категорию",
+    "deleteCategoryTitle": "Удалить категорию"
+  },
+  "dialog": {
+    "addNew": "Новая категория",
+    "addNewDescription": "Создайте категорию, чтобы упорядочить товары",
+    "edit": "Изменить категорию",
+    "editDescription": "Обновите данные категории",
+    "viewDetails": "Сведения о категории",
+    "viewDescription": "Просмотр данных и сведений категории",
+    "deleteTitle": "Удалить категорию",
+    "deleteConfirmation": "Вы уверены, что хотите удалить категорию",
+    "deleteWarning": "Это действие нельзя отменить. Все товары в этой категории будут затронуты.",
+    "neverUpdated": "Не обновлялась"
+  },
+  "validation": {
+    "nameRequired": "Название категории обязательно",
+    "nameMinLength": "Название категории должно содержать не менее 2 симв.",
+    "nameMaxLength": "Название категории должно содержать менее 50 симв.",
+    "descriptionMaxLength": "Описание должно содержать менее 200 симв.",
+    "characters": "симв."
+  },
+  "web": {
+    "title": "Категории",
+    "add": "Добавить категорию",
+    "searchLabel": "Поиск категории",
+    "searchPlaceholder": "Введите название категории",
+    "cols": {
+      "name": "Название",
+      "description": "Описание",
+      "createdAt": "Дата создания",
+      "actions": "Действия"
+    },
+    "sortBy": "Сортировать по: {column}",
+    "default": "По умолчанию",
+    "view": "Просмотр",
+    "edit": "Изменить",
+    "delete": "Удалить",
+    "viewDetails": "Подробнее",
+    "more": "Другие действия для {name}",
+    "empty": "Категорий пока нет. Добавьте категорию, чтобы группировать товары.",
+    "emptySearch": "Нет категорий, подходящих под поиск.",
+    "loadFailed": "Не удалось загрузить категории.",
+    "retry": "Повторить",
+    "form": {
+      "addTitle": "Добавить категорию",
+      "editTitle": "Изменить категорию",
+      "name": "Название категории",
+      "namePlaceholder": "Например: Áo dài",
+      "required": "обязательно",
+      "description": "Описание",
+      "descriptionPlaceholder": "Необязательно",
+      "count": "{count}/{max}",
+      "cancel": "Отмена",
+      "create": "Добавить",
+      "save": "Сохранить",
+      "saving": "Сохранение…",
+      "close": "Закрыть"
+    },
+    "detail": {
+      "title": "Сведения о категории",
+      "noDescription": "Описание не добавлено"
+    },
+    "confirm": {
+      "deleteTitle": "Удалить категорию",
+      "deleteBody": "Удалить категорию «{name}»? Это действие нельзя отменить.",
+      "cancel": "Оставить",
+      "delete": "Удалить категорию",
+      "deleting": "Удаление…"
+    },
+    "footer": {
+      "show": "Показывать",
+      "perPage": "строк на странице",
+      "perPageLabel": "Строк на странице",
+      "pages": "Страницы",
+      "range": "{from}–{to} из {total} категорий",
+      "prev": "Предыдущая страница",
+      "next": "Следующая страница"
+    }
+  }
+}

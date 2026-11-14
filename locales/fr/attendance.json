@@ -17,15 +17,15 @@
     "loading": "Chargement…",
     "loadFailed": "Impossible de charger les données.",
     "retry": "Réessayer",
-    "outlet": "Point de vente",
+    "outlet": "Point de location",
     "prevMonth": "Mois précédent",
     "nextMonth": "Mois suivant",
     "month": "Mois {month}",
     "hours": "{hours} h",
     "exportXlsx": "Exporter en Excel",
     "notAvailable": "La boutique n'a pas activé le module Pointage. Contactez AnyRent pour l'activer.",
-    "noAccess": "Seuls le propriétaire de la boutique et les responsables de point de vente peuvent utiliser cet écran.",
-    "noOutlet": "Aucun point de vente pour l'instant."
+    "noAccess": "Seuls le propriétaire de la boutique et les responsables des points de location peuvent utiliser cet écran.",
+    "noOutlet": "Aucun point de location pour l'instant."
   },
   "timesheet": {
     "title": "Feuille de pointage · Mois {month}",
@@ -35,7 +35,7 @@
     "lock": "Verrouiller le mois",
     "unlock": "Déverrouiller le mois",
     "absent": "Absent",
-    "empty": "Aucun membre du personnel ni aucun pointage pour ce mois dans ce point de vente.",
+    "empty": "Aucun membre du personnel ni aucun pointage pour ce mois dans ce point de location.",
     "kpi": {
       "totalHours": "Total des heures",
       "pairs": "Entrées–sorties",
@@ -70,7 +70,7 @@
   },
   "lock": {
     "title": "Verrouiller le mois {month} ?",
-    "body": "Une fois verrouillé, le responsable de point de vente ne pourra plus modifier le pointage de ce mois. Seul le propriétaire de la boutique peut le déverrouiller (l'historique est conservé). Le module Calcul de paie utilisera à l'avenir les mois verrouillés.",
+    "body": "Une fois verrouillé, le responsable du point de location ne pourra plus modifier le pointage de ce mois. Seul le propriétaire de la boutique peut le déverrouiller (l'historique est conservé). Le module Calcul de paie utilisera à l'avenir les mois verrouillés.",
     "confirm": "Verrouiller le mois",
     "locked": "Mois {month} verrouillé",
     "unlockTitle": "Déverrouiller le mois {month} ?",
@@ -86,7 +86,7 @@
     "map": "Carte",
     "edit": "Modifier",
     "empty": "Aucun pointage enregistré.",
-    "noStaff": "Aucun membre du personnel dans ce point de vente.",
+    "noStaff": "Aucun membre du personnel dans ce point de location.",
     "forgotOut": "Sortie non pointée",
     "suspected": "Fraude suspectée",
     "late": "Retard {n}′",
@@ -111,7 +111,7 @@
       "time": "Heure du pointage",
       "kind": "Type",
       "result": "Résultat",
-      "distance": "Distance du point de vente",
+      "distance": "Distance du point de location",
       "gps": "GPS",
       "coords": "Coordonnées",
       "shift": "Créneau",
@@ -138,9 +138,9 @@
       "GPS_INACCURATE": "GPS pas assez précis",
       "MOCK_LOCATION": "Position simulée",
       "QR_EXPIRED": "Code QR expiré",
-      "QR_WRONG_OUTLET": "Code QR d'un autre point de vente",
-      "ATTENDANCE_NOT_CONFIGURED": "Le point de vente n'a pas configuré le pointage",
-      "ATTENDANCE_LOCATION_NOT_SET": "Position du point de vente non définie (distance non mesurée)",
+      "QR_WRONG_OUTLET": "Code QR d'un autre point de location",
+      "ATTENDANCE_NOT_CONFIGURED": "Le point de location n'a pas configuré le pointage",
+      "ATTENDANCE_LOCATION_NOT_SET": "Position du point de location non définie (distance non mesurée)",
       "other": "Refusé"
     },
     "editIn": "entrée à {time}",
@@ -171,7 +171,7 @@
   "map": {
     "title": "Position au moment du pointage · {name} · {when}",
     "label": "Carte de la position du pointage et de la zone de pointage",
-    "distance": "à {m} m du point de vente",
+    "distance": "à {m} m du point de location",
     "gps": "GPS ±{m} m",
     "accepted": "Enregistré",
     "rejected": "Refusé : {reason}"
@@ -186,7 +186,7 @@
     "legendRepeat": "↻ Planning répété chaque semaine",
     "legendLock": "🔒 créneau pointé / jour passé : non modifiable",
     "legendEdited": "✎ jour modifié individuellement",
-    "empty": "Aucun membre du personnel dans ce point de vente.",
+    "empty": "Aucun membre du personnel dans ce point de location.",
     "rules": "Plannings répétés en vigueur",
     "rulesHint": "Modifier, arrêter ou supprimer n'affecte que les jours non travaillés",
     "rulesEmpty": "Aucun planning répété pour l'instant.",
@@ -320,9 +320,9 @@
   "locations": {
     "locationSet": "Position définie",
     "title": "Codes QR et positions de pointage",
-    "subtitle": "Un code QR, une position et une liste de personnes à pointer par point de vente.",
+    "subtitle": "Un code QR, une position et une liste de personnes à pointer par point de location.",
     "col": {
-      "outlet": "Point de vente",
+      "outlet": "Point de location",
       "address": "Adresse",
       "qr": "Code QR",
       "radius": "Rayon"
@@ -331,18 +331,18 @@
     "back": "‹ Codes QR et positions"
   },
   "outlet": {
-    "notFound": "Impossible d'ouvrir ce point de vente.",
+    "notFound": "Impossible d'ouvrir ce point de location.",
     "section": "⏱ Pointage",
     "location": "Position de pointage",
     "noLocation": "Position non définie",
     "current": "📍 Position actuelle",
     "pick": "Choisir sur la carte",
-    "picking": "Cliquez sur la carte pour définir la position du point de vente.",
+    "picking": "Cliquez sur la carte pour définir la position du point de location.",
     "geoFailed": "Impossible d'obtenir la position actuelle. Vérifiez l'autorisation de localisation du navigateur.",
     "ownerOnly": "Seul le propriétaire de la boutique peut modifier la position et le rayon.",
     "radius": "Rayon autorisé :",
     "radiusHint": "50–500 m. Le GPS en intérieur est souvent imprécis de 10 à 50 m.",
-    "checks": "Contrôles lors du scan : bon code de ce point de vente, encore valide · dans le rayon · GPS ≤ 100 m · blocage des positions simulées · heure du serveur. Sortie oubliée : fermée automatiquement en fin de journée, 0 heure jusqu'à correction par l'admin.",
+    "checks": "Contrôles lors du scan : bon code de ce point de location, encore valide · dans le rayon · GPS ≤ 100 m · blocage des positions simulées · heure du serveur. Sortie oubliée : fermée automatiquement en fin de journée, 0 heure jusqu'à correction par l'admin.",
     "qrTitle": "Code QR de {name}",
     "qrMode": "Type de code",
     "daily": "Change chaque jour (recommandé)",
@@ -351,7 +351,7 @@
     "fixedHint": "Imprimez une fois, collez-le au mur. La photo reste utilisable ; seuls le GPS et le blocage des positions simulées assurent la sécurité.",
     "todayCaption": "Code du jour · {date} · change à 00h00",
     "fixedCaption": "Code fixe · créé le {date}",
-    "noQr": "Ce point de vente n'a pas encore de code QR.",
+    "noQr": "Ce point de location n'a pas encore de code QR.",
     "createQr": "Créer le code QR",
     "qrCreated": "Code QR créé",
     "print": "Imprimer le QR",
@@ -366,24 +366,24 @@
     "saveNote": "Appliqué immédiatement aux prochains scans."
   },
   "members": {
-    "title": "Qui doit pointer dans ce point de vente",
+    "title": "Qui doit pointer dans ce point de location",
     "hint": "Seules les personnes sélectionnées voient la carte Pointage dans l'application et figurent dans la Planification et la Feuille de pointage",
-    "note": "Par défaut : le personnel et le stock sont sélectionnés ; le responsable de point de vente et le propriétaire ne le sont pas. Désélectionner : la personne ne voit plus rien du pointage et ne peut plus recevoir de nouveau créneau ; l'historique reste conservé.",
+    "note": "Par défaut : le personnel et le stock sont sélectionnés ; le responsable du point de location et le propriétaire ne le sont pas. Désélectionner : la personne ne voit plus rien du pointage et ne peut plus recevoir de nouveau créneau ; l'historique reste conservé.",
     "toggle": "{name} doit pointer",
     "on": "{name} : doit pointer",
     "off": "{name} : ne doit pas pointer",
     "ownerOnly": "Seul le propriétaire de la boutique peut modifier ce réglage",
-    "empty": "Aucune personne dans ce point de vente."
+    "empty": "Aucune personne dans ce point de location."
   },
   "newCode": {
     "title": "Créer un nouveau code QR ?",
-    "body": "Le code actuel cesse immédiatement d'être valable. Si le point de vente utilise un QR fixe, vous devez imprimer et coller le nouveau code. La tablette de caisse se met à jour automatiquement.",
+    "body": "Le code actuel cesse immédiatement d'être valable. Si le point de location utilise un QR fixe, vous devez imprimer et coller le nouveau code. La tablette de caisse se met à jour automatiquement.",
     "confirm": "Créer un nouveau code",
     "done": "Nouveau code créé, l'ancien n'est plus valable"
   },
   "print": {
     "title": "Imprimer le code QR · {name}",
-    "body": "Format A5, avec le nom du point de vente et la consigne « Ouvrez l'application AnyRent → Paramètres → Pointage → scannez le code ».",
+    "body": "Format A5, avec le nom du point de location et la consigne « Ouvrez l'application AnyRent → Paramètres → Pointage → scannez le code ».",
     "dailyNote": "Type « Change chaque jour » : l'impression n'est valable que pour la journée du {date}.",
     "confirm": "Imprimer",
     "howTo": "Ouvrez l'application AnyRent → Paramètres → Pointage → scannez le code",
@@ -391,7 +391,7 @@
   },
   "kioskLink": {
     "title": "Lien de l'écran QR pour la tablette de caisse",
-    "none": "Ce point de vente n'a pas de lien de tablette de caisse.",
+    "none": "Ce point de location n'a pas de lien de tablette de caisse.",
     "note": "Ouvrez ce lien sur une tablette ou un ancien téléphone à la caisse. Aucune connexion requise, aucun compte concerné. L'écran change de code à 00h00.",
     "copy": "Copier",
     "copied": "Lien copié",
@@ -412,7 +412,7 @@
     "loading": "Chargement…",
     "invalid": "Ce lien de tablette de caisse n'est plus valable. Demandez un nouveau lien au propriétaire de la boutique.",
     "moduleOff": "La boutique n'a pas activé le module Pointage.",
-    "notConfigured": "Le point de vente n'a pas défini de position ou n'a pas créé de code QR.",
+    "notConfigured": "Le point de location n'a pas défini de position ou n'a pas créé de code QR.",
     "failed": "Impossible de charger le code. Nouvelle tentative…"
   }
 }

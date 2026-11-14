@@ -1,0 +1,144 @@
+{
+  "title": "Kategori",
+  "addCategory": "Tambah kategori",
+  "editCategory": "Ubah kategori",
+  "categoryDetails": "Detail kategori",
+  "fields": {
+    "name": "Nama kategori",
+    "description": "Deskripsi",
+    "status": "Status",
+    "productCount": "Jumlah produk",
+    "active": "Aktif",
+    "inactive": "Nonaktif"
+  },
+  "labels": {
+    "default": "Default"
+  },
+  "status": {
+    "active": "Aktif",
+    "inactive": "Nonaktif"
+  },
+  "filters": {
+    "all": "Semua kategori",
+    "active": "Aktif",
+    "inactive": "Nonaktif"
+  },
+  "actions": {
+    "viewDetails": "Lihat detail",
+    "edit": "Ubah kategori",
+    "activate": "Aktifkan",
+    "deactivate": "Nonaktifkan",
+    "delete": "Hapus",
+    "create": "Buat kategori",
+    "update": "Perbarui kategori",
+    "addCategory": "Tambah kategori",
+    "editCategory": "Ubah kategori",
+    "deleteCategory": "Hapus kategori",
+    "viewProducts": "Lihat produk",
+    "backToCategories": "Kembali ke daftar"
+  },
+  "messages": {
+    "createSuccess": "Kategori berhasil dibuat",
+    "createFailed": "Gagal membuat kategori",
+    "updateSuccess": "Kategori berhasil diperbarui",
+    "updateFailed": "Gagal memperbarui kategori",
+    "deleteSuccess": "Kategori berhasil dihapus",
+    "deleteFailed": "Gagal menghapus kategori",
+    "confirmDelete": "Anda yakin ingin menghapus kategori ini?",
+    "noCategories": "Kategori tidak ditemukan",
+    "noCategoriesDescription": "Coba ubah pencarian atau tambahkan kategori untuk memulai.",
+    "loadingCategories": "Memuat daftar kategori...",
+    "tryAdjustingSearch": "Coba ubah pencarian Anda",
+    "getStarted": "Mulai dengan menambahkan kategori pertama Anda"
+  },
+  "search": {
+    "placeholder": "Cari kategori..."
+  },
+  "stats": {
+    "totalCategories": "Total kategori",
+    "activeCategories": "Aktif",
+    "totalProducts": "Total produk"
+  },
+  "dialogs": {
+    "addCategoryTitle": "Tambah kategori baru",
+    "editCategoryTitle": "Ubah kategori",
+    "deleteCategoryTitle": "Hapus kategori"
+  },
+  "dialog": {
+    "addNew": "Tambah kategori baru",
+    "addNewDescription": "Buat kategori baru untuk mengelompokkan produk",
+    "edit": "Ubah kategori",
+    "editDescription": "Perbarui informasi kategori",
+    "viewDetails": "Detail kategori",
+    "viewDescription": "Lihat informasi dan detail kategori",
+    "deleteTitle": "Hapus kategori",
+    "deleteConfirmation": "Anda yakin ingin menghapus kategori",
+    "deleteWarning": "Tindakan ini tidak dapat dibatalkan. Semua produk dalam kategori ini akan terpengaruh.",
+    "neverUpdated": "Belum pernah diperbarui"
+  },
+  "validation": {
+    "nameRequired": "Nama kategori wajib diisi",
+    "nameMinLength": "Nama kategori minimal 2 karakter",
+    "nameMaxLength": "Nama kategori harus kurang dari 50 karakter",
+    "descriptionMaxLength": "Deskripsi harus kurang dari 200 karakter",
+    "characters": "karakter"
+  },
+  "web": {
+    "title": "Kategori",
+    "add": "Tambah kategori",
+    "searchLabel": "Cari kategori",
+    "searchPlaceholder": "Cari nama kategori",
+    "cols": {
+      "name": "Nama",
+      "description": "Deskripsi",
+      "createdAt": "Tanggal dibuat",
+      "actions": "Tindakan"
+    },
+    "sortBy": "Urutkan berdasarkan {column}",
+    "default": "Default",
+    "view": "Lihat",
+    "edit": "Ubah",
+    "delete": "Hapus",
+    "viewDetails": "Lihat detail",
+    "more": "Tindakan lain untuk {name}",
+    "empty": "Belum ada kategori. Tambahkan kategori untuk mengelompokkan produk Anda.",
+    "emptySearch": "Tidak ada kategori yang cocok dengan pencarian.",
+    "loadFailed": "Gagal memuat kategori.",
+    "retry": "Coba lagi",
+    "form": {
+      "addTitle": "Tambah kategori",
+      "editTitle": "Ubah kategori",
+      "name": "Nama kategori",
+      "namePlaceholder": "Contoh: Ao dai",
+      "required": "wajib",
+      "description": "Deskripsi",
+      "descriptionPlaceholder": "Opsional",
+      "count": "{count}/{max}",
+      "cancel": "Batal",
+      "create": "Tambah",
+      "save": "Simpan",
+      "saving": "Menyimpan…",
+      "close": "Tutup"
+    },
+    "detail": {
+      "title": "Detail kategori",
+      "noDescription": "Belum ada deskripsi"
+    },
+    "confirm": {
+      "deleteTitle": "Hapus kategori",
+      "deleteBody": "Hapus kategori “{name}”? Tindakan ini tidak dapat dibatalkan.",
+      "cancel": "Pertahankan",
+      "delete": "Hapus kategori",
+      "deleting": "Menghapus…"
+    },
+    "footer": {
+      "show": "Tampilkan",
+      "perPage": "baris per halaman",
+      "perPageLabel": "Jumlah baris per halaman",
+      "pages": "Halaman",
+      "range": "{from}–{to} dari {total} kategori",
+      "prev": "Halaman sebelumnya",
+      "next": "Halaman berikutnya"
+    }
+  }
+}

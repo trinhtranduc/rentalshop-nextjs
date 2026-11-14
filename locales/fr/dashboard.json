@@ -26,7 +26,7 @@
     "productUtilization": "Taux d'utilisation des produits",
     "revenueGrowth": "Croissance du chiffre d'affaires",
     "customerGrowth": "Croissance de la clientèle",
-    "totalCollateral": "Total des cautions"
+    "totalCollateral": "Total des dépôts de garantie"
   },
   "tooltips": {
     "todayRevenue": "Chiffre d'affaires réel des commandes créées aujourd'hui. Inclut les locations et les ventes.",
@@ -47,25 +47,25 @@
     "customerGrowth": "Taux de croissance du nombre de nouveaux clients. Comparé à la période précédente.",
     "revenueGrowth": "Taux de croissance du chiffre d'affaires. Comparé à la période précédente pour évaluer la performance commerciale.",
     "productUtilization": "Taux d'utilisation des produits. Pourcentage des produits loués par rapport au total des produits disponibles.",
-    "totalCollateral": "Total des cautions des commandes déjà remises (PICKUPED). Calculé uniquement pour les locations dont les articles ont été remis au client."
+    "totalCollateral": "Total des dépôts de garantie des commandes déjà remises (PICKUPED). Calculé uniquement pour les locations dont les articles ont été remis au client."
   },
   "charts": {
     "revenueOverTime": "Chiffre d'affaires dans le temps",
     "ordersByStatus": "Commandes par statut",
     "topProducts": "Produits les plus vendus",
-    "topShops": "Meilleures boutiques",
+    "topShops": "Meilleurs points de location",
     "sortByRevenue": "Par chiffre d'affaires",
     "sortByQuantity": "Par quantité",
     "quantityCount": "vendus",
-    "shopName": "Boutique",
+    "shopName": "Point de location",
     "customerActivity": "Activité des clients",
     "rentalTrends": "Tendances de location",
     "noData": "Aucune donnée pour cette période",
-    "compareOutlets": "Comparer les points de vente",
-    "selectOutletsToCompare": "Choisir les points de vente à comparer",
-    "allOutlets": "Tous les points de vente",
-    "compareRevenue": "Comparaison du chiffre d'affaires mensuel par point de vente",
-    "compareOrders": "Comparaison des commandes mensuelles par point de vente",
+    "compareOutlets": "Comparer les points de location",
+    "selectOutletsToCompare": "Choisir les points de location à comparer",
+    "allOutlets": "Tous les points de location",
+    "compareRevenue": "Comparaison du chiffre d'affaires mensuel par point de location",
+    "compareOrders": "Comparaison des commandes mensuelles par point de location",
     "actualRevenue": "Chiffre d'affaires réel",
     "projectedRevenue": "Chiffre d'affaires prévu",
     "rentalOrders": "Locations",
@@ -146,14 +146,14 @@
     "deposit": "Acompte",
     "more": "{count} autre(s) commande(s) dans la section Commandes",
     "cash": {
-      "title": "Cautions et frais",
+      "title": "Dépôts de garantie et frais",
       "feesToday": "Frais encaissés aujourd'hui",
       "orders": "{count} commande(s)",
       "feesBreakdown": "Retard {late} · Frais supplémentaires {damage}",
-      "held": "Cautions détenues",
-      "heldHint": "Pour {count} commande(s) en location, restituées au retour des articles",
-      "backToday": "Cautions à restituer aujourd'hui",
-      "backTodayHint": "Cautions de {count} commande(s) de retour prévu aujourd'hui"
+      "held": "Dépôts de garantie détenus",
+      "heldHint": "Dépôts de garantie de {count} commande(s) en location, restitués au retour des articles",
+      "backToday": "Dépôts de garantie à restituer aujourd'hui",
+      "backTodayHint": "Dépôts de garantie de {count} commande(s) dont le retour est prévu aujourd'hui"
     },
     "newOrders": "Nouvelles commandes aujourd'hui",
     "viewDetails": "Voir les détails",
@@ -174,7 +174,7 @@
       "netRevenueTooltip": "Montants encaissés sur la période, déduction faite des remboursements des commandes annulées et des acomptes restitués. Peut être négatif.",
       "ordersTrend": "Nouvelles commandes sur 7 jours : {values}",
       "netCashToday": "Encaissements nets du jour",
-      "netCashTodayTooltip": "Acomptes des nouvelles commandes, solde et cautions à la remise, frais au retour ; déduction faite des cautions restituées et des remboursements des commandes annulées."
+      "netCashTodayTooltip": "Acomptes des nouvelles commandes, solde et dépôts de garantie à la remise, frais au retour ; déduction faite des dépôts de garantie restitués et des remboursements des commandes annulées."
     },
     "chips": {
       "all": "Tout",
@@ -237,7 +237,7 @@
       "orderValue": "Valeur des nouvelles commandes",
       "collected": "Encaissé",
       "outstanding": "Reste à encaisser",
-      "collateral": "Cautions",
+      "collateral": "Dépôts de garantie",
       "new": "Nouveau"
     },
     "chart": {
@@ -274,7 +274,7 @@
       "atPickup": "À encaisser à la remise des articles",
       "overduePickup": "Date de retrait dépassée, non encaissé",
       "orders": "{count} commande(s)",
-      "collateralNet": "Cautions reçues − restituées"
+      "collateralNet": "Dépôts de garantie reçus − restitués"
     },
     "orders": {
       "title": "Commandes à traiter aujourd'hui",
@@ -335,9 +335,9 @@
       "hatchNote": "Hachures : à venir, non inclus dans les chiffres affichés.",
       "rule": {
         "orderValue": "Montant total des commandes créées sur la période, selon la date de création. Commandes annulées exclues.",
-        "collected": "Argent réellement encaissé sur la période : acomptes, location à la remise, ventes, frais supplémentaires, déduction faite des remboursements, plus les cautions reçues moins les cautions restituées.",
+        "collected": "Argent réellement encaissé sur la période : acomptes, location à la remise, ventes, frais supplémentaires, déduction faite des remboursements, plus les dépôts de garantie reçus moins les dépôts de garantie restitués.",
         "outstanding": "Montant non encaissé des commandes créées sur la période : pour les locations réservées, total moins acompte ; pour les ventes non finalisées, le total complet.",
-        "collateral": "Cautions reçues à la remise des articles, moins les cautions restituées au retour des articles, sur la période."
+        "collateral": "Dépôts de garantie reçus à la remise des articles, moins les dépôts de garantie restitués au retour des articles, sur la période."
       }
     },
     "related": {
@@ -346,16 +346,16 @@
       "totalHint": "Identique au chiffre de la carte",
       "sectionNote": "Une même commande peut apparaître dans les deux parties : la partie supérieure indique le montant encore détenu, la partie inférieure le montant encaissé ou restitué aujourd'hui. Les deux montants ne s'additionnent pas.",
       "sectionNotePeriod": "Une même commande peut apparaître dans les deux parties : la partie supérieure indique le montant encore détenu, la partie inférieure le montant encaissé ou restitué sur la période. Les deux montants ne s'additionnent pas.",
-      "heldTitle": "Cautions détenues",
+      "heldTitle": "Dépôts de garantie détenus",
       "heldRow": "Commandes dont les articles ne sont pas encore retournés",
-      "heldHint": "Cautions détenues par la boutique pour les commandes dont les articles ne sont pas encore retournés.",
+      "heldHint": "Dépôts de garantie détenus par la boutique pour les commandes dont les articles ne sont pas encore retournés.",
       "heldTotal": "Total détenu : {total} · {count} commande(s)",
       "flowTitle": "Mouvements du jour ({day})",
       "flowTitlePeriod": "Mouvements de la période ({range})",
-      "flowHint": "Cautions entrées ou sorties ce jour-là. + reçue à la remise des articles, − restituée au retour des articles.",
-      "flowHintPeriod": "Cautions entrées ou sorties sur cette période. + reçue à la remise des articles, − restituée au retour des articles.",
-      "flowIn": "Reçues à la remise : {amount} ({count} commande(s))",
-      "flowOut": "Restituées au retour : {amount} ({count} commande(s))",
+      "flowHint": "Dépôts de garantie entrés ou sortis ce jour-là. + reçu à la remise des articles, − restitué au retour des articles.",
+      "flowHintPeriod": "Dépôts de garantie entrés ou sortis sur cette période. + reçu à la remise des articles, − restitué au retour des articles.",
+      "flowIn": "Reçus à la remise : {amount} ({count} commande(s))",
+      "flowOut": "Restitués au retour : {amount} ({count} commande(s))",
       "flowNet": "Aujourd'hui, la boutique conserve en plus : {amount}",
       "flowNetPeriod": "Sur la période, la boutique conserve en plus : {amount}",
       "empty": "Aucune commande sur cette période.",
@@ -368,11 +368,11 @@
       "note": {
         "created": "Commande créée sur la période",
         "cancelled": "Annulée, non comptabilisée",
+        "event": "",
         "owes": "À encaisser à la remise des articles",
-        "collateralIn": "Caution reçue à la remise",
-        "collateralOut": "Caution restituée au retour",
-        "held": "Caution détenue",
-        "event": ""
+        "collateralIn": "Dépôt de garantie reçu à la remise",
+        "collateralOut": "Dépôt de garantie restitué au retour",
+        "held": "Dépôt de garantie détenu"
       },
       "event": {
         "saleCreated": "Vente créée",
@@ -392,24 +392,24 @@
       }
     },
     "branches": {
-      "label": "Points de vente",
-      "prefix": "Point de vente : {label}",
+      "label": "Points de location",
+      "prefix": "Point de location : {label}",
       "all": "Tous ({count})",
-      "some": "{count} point(s) de vente",
-      "allBranches": "Tous les points de vente",
+      "some": "{count} point(s) de location",
+      "allBranches": "Tous les points de location",
       "default": "par défaut",
       "inactive": "Désactivé",
-      "sheetTitle": "Choisir les points de vente",
-      "apply": "Voir {count} point(s) de vente",
+      "sheetTitle": "Choisir les points de location",
+      "apply": "Voir {count} point(s) de location",
       "close": "Fermer"
     },
     "compare": {
-      "title": "Comparaison des points de vente",
-      "branch": "Point de vente",
+      "title": "Comparaison des points de location",
+      "branch": "Point de location",
       "newOrders": "Nouvelles commandes",
-      "held": "Cautions détenues",
+      "held": "Dépôts de garantie détenus",
       "heldValue": "{count} commande(s)",
-      "total": "Total de {count} point(s) de vente",
+      "total": "Total de {count} point(s) de location",
       "sortBy": "Trier par {column}",
       "onlyThis": "Voir uniquement {name}"
     }
