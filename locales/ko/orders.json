@@ -12,7 +12,7 @@
   },
   "status": {
     "label": "상태",
-    "RESERVED": "예약 확정",
+    "RESERVED": "예약됨",
     "PICKUPED": "대여 중",
     "RETURNED": "반납 완료",
     "COMPLETED": "완료",
@@ -111,7 +111,7 @@
     "returnOrderTitle": "반납 처리 - 환불 상세",
     "confirmPickup": "대여 처리 및 수금 확인",
     "confirmReturn": "반납 처리 및 환불 확인",
-    "collectFromCustomer": "고객에게 수금",
+    "collectFromCustomer": "고객에게서 수금",
     "returnToCustomer": "고객에게 환불",
     "orderNumberLabel": "주문",
     "customerLabel": "고객",
@@ -224,7 +224,7 @@
     "noOrdersForProductDescription": "이 상품은 아직 주문되지 않았습니다.",
     "noOrdersForCustomer": "이 고객의 주문을 찾을 수 없습니다",
     "viewingAllOrders": "전체 보기 중",
-    "mayBeSlow": "주문 수가 많아 느려질 수 있습니다",
+    "mayBeSlow": "주문 조회가 느려질 수 있습니다",
     "cannotEditOrder": "RESERVED 상태의 주문만 수정할 수 있습니다",
     "errorLoadingOrders": "주문을 불러오는 중 오류가 발생했습니다",
     "errorLoadingOrder": "주문을 불러오는 중 오류가 발생했습니다",
@@ -299,7 +299,7 @@
     "backToProducts": "상품 목록으로",
     "totalQuantity": "총 수량",
     "totalSales": "총 매출",
-    "reservedOrders": "예약 확정 주문",
+    "reservedOrders": "예약된 주문",
     "totalStock": "총 재고",
     "availableInventory": "예약 가능 재고",
     "currentlyRented": "대여 중",
@@ -498,14 +498,14 @@
     "pickup": "대여 처리",
     "return": "반납 처리",
     "status": {
-      "RESERVED": "예약 확정",
+      "RESERVED": "예약됨",
       "PICKUPED": "대여 중",
       "RETURNED": "반납 완료",
       "COMPLETED": "완료",
       "CANCELLED": "취소됨"
     },
     "steps": {
-      "RESERVED": "예약 확정",
+      "RESERVED": "예약됨",
       "PICKUPED": "대여 처리됨",
       "RETURNED": "반납 완료"
     }
@@ -553,13 +553,13 @@
   },
   "dialogs": {
     "handover": {
-      "title": "고객에게 상품 대여",
-      "collect": "고객에게 수금",
+      "title": "고객에게 상품 인도",
+      "collect": "고객에게서 수금",
       "confirm": "대여 처리 확인"
     },
     "takeBack": {
       "title": "반납 처리",
-      "collectMore": "고객에게 추가 수금",
+      "collectMore": "고객에게서 추가 수금",
       "refund": "고객에게 환불",
       "nothing": "금액 변동 없음",
       "confirm": "반납 처리 확인"
@@ -752,8 +752,8 @@
           "FIXED": "/회",
           "DAILY": "/일",
           "HOURLY": "/시간",
-          "BLOCK": "대여 전체",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "대여 전체"
         },
         "note": "이 주문에만 적용되며 상품 가격은 변경되지 않습니다.",
         "done": "완료",
@@ -808,7 +808,7 @@
     "status": {
       "label": "상태별 필터",
       "all": "전체",
-      "RESERVED": "예약 확정",
+      "RESERVED": "예약됨",
       "PICKUPED": "대여 중",
       "RETURNED": "반납 완료",
       "COMPLETED": "완료",
@@ -918,7 +918,7 @@
       "delete": "주문 삭제",
       "progress": {
         "label": "진행 상황",
-        "RESERVED": "예약 확정",
+        "RESERVED": "예약됨",
         "PICKUP": "대여 처리",
         "RETURN": "반납 처리",
         "today": "오늘 · {day}",
@@ -957,7 +957,7 @@
         "createdNoBy": "주문 생성",
         "payment": "결제 기록 {amount}",
         "refund": "{amount} 환불",
-        "pickedUp": "고객에게 상품 대여 처리",
+        "pickedUp": "고객에게 상품 인도 처리",
         "returned": "상품 반납 처리",
         "cancelled": "주문 취소됨"
       },
@@ -1022,7 +1022,7 @@
         "close": "닫기",
         "lateDays": "{days}일 지연 반납",
         "handover": {
-          "title": "고객에게 상품 대여",
+          "title": "고객에게 상품 인도",
           "confirm": "대여 처리 · {amount} 수금",
           "confirmFree": "대여 처리 확인"
         },

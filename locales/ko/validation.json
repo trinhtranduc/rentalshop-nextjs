@@ -56,10 +56,10 @@
       "required": "지점명은 필수입니다"
     },
     "planName": {
-      "required": "구독 이름은 필수입니다"
+      "required": "요금제 이름은 필수입니다"
     },
     "planDescription": {
-      "required": "구독 설명은 필수입니다"
+      "required": "요금제 설명은 필수입니다"
     },
     "variantName": {
       "required": "옵션 이름은 필수입니다"
@@ -82,7 +82,7 @@
     "outletId": {
       "required": "지점은 필수입니다",
       "requiredForRole": "이 역할에는 지점이 필수입니다",
-      "shouldNotBeSelected": "사업자 역할에서는 지점을 선택하지 마세요"
+      "shouldNotBeSelected": "대표 역할에서는 지점을 선택하지 마세요"
     },
     "country": {
       "invalid": "올바른 국가를 선택해 주세요"
@@ -109,16 +109,16 @@
     },
     "deposit": {
       "nonNegative": "예약금은 0 이상이어야 합니다",
-      "cannotBeNegative": "예약금은 필수이며 음수일 수 없습니다"
+      "cannotBeNegative": "예약금은 음수일 수 없습니다"
     },
     "merchantId": {
       "required": "매장 ID는 필수입니다"
     },
     "planId": {
-      "required": "구독 ID는 필수입니다"
+      "required": "요금제 ID는 필수입니다"
     },
     "planVariantId": {
-      "required": "구독 옵션 ID는 필수입니다"
+      "required": "요금제 옵션 ID는 필수입니다"
     },
     "rentPrice": {
       "required": "대여 가격은 필수이며 0보다 커야 합니다",
@@ -160,8 +160,8 @@
       "range": "할인율은 0에서 100 사이여야 합니다"
     },
     "durationConfig": {
-      "required": "기간 설정은 필수이며 시간 및 일 단위 요금제에 대해 올바른 JSON이어야 합니다",
-      "requiredForPricingType": "시간 및 일 단위 요금제에는 기간 설정이 필요합니다",
+      "required": "기간 설정은 필수이며 시간 및 일 단위 요금 방식에 대해 올바른 JSON이어야 합니다",
+      "requiredForPricingType": "시간 및 일 단위 요금 방식에는 기간 설정이 필요합니다",
       "minDurationRequired": "최소 기간은 필수이며 0보다 커야 합니다",
       "maxDurationRequired": "최대 기간은 필수이며 0보다 커야 합니다",
       "minMustBeLessThanMax": "최소 기간은 최대 기간 이하여야 합니다",

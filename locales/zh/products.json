@@ -56,10 +56,10 @@
     "noOutletStock": "暂无分店库存信息",
     "notAssignedToOutlets": "该商品可能尚未分配到任何分店。",
     "totalOutlets": "分店总数",
-    "stockEntries": "分店库存记录",
+    "stockEntries": "分配数量",
     "stockRequired": "请填写库存数量",
     "needOutletMessage": "添加商品前，请先创建至少一个分店。商品需分配到具体分店才能管理库存。",
-    "contactAdmin": "请联系管理员为您的店铺设置分店。",
+    "contactAdmin": "请联系管理员为您的企业设置店铺。",
     "creating": "创建中...",
     "listRollupHint": "合计 {count} 个分店"
   },

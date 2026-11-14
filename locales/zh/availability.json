@@ -9,8 +9,8 @@
   "pickupDate": "取货日期",
   "returnDate": "还货日期",
   "quantity": "数量",
-  "outlet": "店铺",
-  "selectOutlet": "选择店铺",
+  "outlet": "分店",
+  "selectOutlet": "选择分店",
   "searchPlaceholder": "搜索名称或条形码",
   "changeProduct": "更换商品",
   "noProductsFound": "未找到商品",
@@ -26,7 +26,7 @@
     "category": "分类"
   },
   "checking": "检查中…",
-  "missingOutlet": "请先选择店铺再检查档期",
+  "missingOutlet": "请先选择分店再检查档期",
   "invalidDates": "还货日期不能早于取货日期",
   "status": {
     "available": "有档期",
@@ -133,7 +133,7 @@
   "increase": "增加数量",
   "web": {
     "title": "检查库存",
-    "outlet": "店铺",
+    "outlet": "分店",
     "product": "商品",
     "productPlaceholder": "搜索商品名称或编号",
     "noProducts": "未找到商品",
@@ -150,7 +150,7 @@
     },
     "reversed": "还货日不能早于取货日。",
     "pickProduct": "请选择商品，查看这段时间有多少件可用。",
-    "pickOutlet": "请选择店铺进行检查。",
+    "pickOutlet": "请选择分店进行检查。",
     "has": "共 {total} 件 · {from} → {to}",
     "free": "这段时间有 {free}/{total} 件可用",
     "short": "缺 {missing} 件 · 可用 {free}/{total}",

@@ -9,8 +9,8 @@
   "pickupDate": "수령일",
   "returnDate": "반납일",
   "quantity": "수량",
-  "outlet": "매장",
-  "selectOutlet": "매장 선택",
+  "outlet": "지점",
+  "selectOutlet": "지점 선택",
   "searchPlaceholder": "이름 또는 바코드로 검색",
   "changeProduct": "상품 변경",
   "noProductsFound": "상품을 찾을 수 없습니다",
@@ -26,7 +26,7 @@
     "category": "카테고리"
   },
   "checking": "재고 확인 중…",
-  "missingOutlet": "재고를 확인하려면 매장을 선택하세요",
+  "missingOutlet": "재고를 확인하려면 지점을 선택하세요",
   "invalidDates": "반납일은 수령일보다 빠를 수 없습니다.",
   "status": {
     "available": "재고 있음",
@@ -45,7 +45,7 @@
   "stock": {
     "total": "전체 재고",
     "renting": "대여 중",
-    "freeInPeriod": "기간 내 재고",
+    "freeInPeriod": "기간 내 남은 수량",
     "bookedInPeriod": "기간 내 예약"
   },
   "orders": {
@@ -133,7 +133,7 @@
   "increase": "수량 늘리기",
   "web": {
     "title": "재고 확인",
-    "outlet": "매장",
+    "outlet": "지점",
     "product": "상품",
     "productPlaceholder": "상품명 또는 코드 검색",
     "noProducts": "상품을 찾을 수 없습니다",
@@ -150,7 +150,7 @@
     },
     "reversed": "반납일은 수령일 이후여야 합니다.",
     "pickProduct": "상품을 선택하면 이 기간에 남은 수량을 볼 수 있습니다.",
-    "pickOutlet": "확인할 매장을 선택하세요.",
+    "pickOutlet": "확인할 지점을 선택하세요.",
     "has": "{total}개 · {from} → {to}",
     "free": "이 기간 남은 수량 {free}/{total}",
     "short": "{missing} 부족 · 남은 수량 {free}/{total}",

@@ -184,7 +184,7 @@
       "required": "注册店铺时须填写经营类型和计价方式"
     },
     "pricingDefault": {
-      "dailyNeedsPrice": "按天的默认设置需要按天租赁价格。"
+      "dailyNeedsPrice": "按天计价的默认设置需要填写按天的租赁价格。"
     }
   }
 }

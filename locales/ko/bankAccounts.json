@@ -24,10 +24,10 @@
     "cancel": "취소",
     "saving": "저장 중...",
     "errors": {
-      "accountHolderNameRequired": "예금주 이름을 입력해 주세요",
-      "accountNumberRequired": "계좌번호를 입력해 주세요",
+      "accountHolderNameRequired": "예금주 이름을 입력해야 합니다",
+      "accountNumberRequired": "계좌번호를 입력해야 합니다",
       "accountNumberInvalid": "계좌번호는 숫자 6–16자리여야 합니다",
-      "bankNameRequired": "은행 이름을 입력해 주세요"
+      "bankNameRequired": "은행 이름을 입력해야 합니다"
     }
   },
   "card": {
@@ -38,7 +38,7 @@
     "branch": "지점",
     "notes": "메모",
     "copyQRCode": "QR 코드 복사",
-    "scanQRHint": "QR 코드를 스캔해 빠르게 이체하세요",
+    "scanQRHint": "QR 코드를 스캔해 빠르게 이체할 수 있습니다",
     "copied": "복사됨",
     "accountNumberCopied": "계좌번호가 클립보드에 복사되었습니다",
     "qrCodeCopied": "QR 코드가 클립보드에 복사되었습니다"
@@ -58,7 +58,7 @@
     "loadError": "은행 계좌 목록을 불러오지 못했습니다",
     "deleteConfirm": "은행 계좌 “{name}”을(를) 삭제하시겠습니까?",
     "deleteConfirmTitle": "은행 계좌 삭제",
-    "noOutlet": "어느 지점에도 배정되어 있지 않습니다. 관리자에게 문의해 주세요.",
+    "noOutlet": "어느 지점에도 배정되어 있지 않습니다. 관리자에게 문의하시기 바랍니다.",
     "noPermission": "은행 계좌를 조회할 권한이 없습니다."
   }
 }

@@ -72,7 +72,7 @@
     "orderSettings": "订单设置",
     "orderActions": "操作",
     "viewAndManage": "查看和管理订单信息",
-    "seller": "店铺",
+    "seller": "分店",
     "orderDate": "下单日期",
     "editSettings": "编辑设置",
     "saveChanges": "保存更改",
@@ -243,7 +243,7 @@
     "noBarcode": "无条形码",
     "noCategory": "无分类",
     "outOfStock": "缺货",
-    "lowStockLabel": "库存不足",
+    "lowStockLabel": "库存紧张",
     "inStock": "有货",
     "error": "错误",
     "duplicateCustomer": "客户重复",
@@ -655,9 +655,9 @@
         "BLOCK": "每天 {price} 起 · 按档计价"
       },
       "option": {
-        "DAILY": "按天 · {price}/天",
-        "HOURLY": "按小时 · {price}/小时",
-        "FIXED": "按次 · {price}/次",
+        "DAILY": "每天 · {price}/天",
+        "HOURLY": "每小时 · {price}/小时",
+        "FIXED": "每次 · {price}/次",
         "SALE": "售价 · {price}",
         "BLOCK": "按天数档位 · {price}"
       },
@@ -740,9 +740,9 @@
       "pricing": {
         "title": "计价方式",
         "mode": {
-          "FIXED": "按次",
-          "DAILY": "按天",
-          "HOURLY": "按小时",
+          "FIXED": "每次",
+          "DAILY": "每天",
+          "HOURLY": "每小时",
           "OTHER": "{type}",
           "BLOCK": "按天数档位"
         },
@@ -752,8 +752,8 @@
           "FIXED": "/次",
           "DAILY": "/天",
           "HOURLY": "/小时",
-          "BLOCK": "整个租期",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "整个租期"
         },
         "note": "仅对本订单生效，不会更改商品价格。",
         "done": "完成",
@@ -767,7 +767,7 @@
         "lineNoOrders": "{name} 在 {days} 缺 {count} 件。",
         "createAnyway": "仍然创建订单",
         "saveAnyway": "仍然保存更改",
-        "blocked": "分店不允许创建档期冲突的订单。请更换日期、减少数量或移除缺货商品。"
+        "blocked": "店铺不允许创建档期冲突的订单。请更换日期、减少数量或移除缺货商品。"
       },
       "confirm": {
         "rentTitle": "创建租赁订单？",
@@ -876,7 +876,7 @@
     },
     "note": {
       "late": "超期 {days} 天",
-      "overduePickup": "逾期 {days} 天未取货 · 建议联系客户",
+      "overduePickup": "超期 {days} 天未取货 · 建议联系客户",
       "unprepared": "未备货",
       "sale": "销售订单"
     },
@@ -930,7 +930,7 @@
         "ready": "已备货",
         "qty": "数量 {count}",
         "code": "编号 {code}",
-        "daily": "按天",
+        "daily": "每天",
         "fixed": "固定价格",
         "perDay": "{amount}/天 × {days} 天",
         "empty": "订单中还没有商品。",

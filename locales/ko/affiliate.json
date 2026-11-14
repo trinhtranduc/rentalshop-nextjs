@@ -29,7 +29,7 @@
     },
     "importantNotes": {
       "title": "중요 사항",
-      "content": "참고해 주세요:"
+      "content": "다음 사항을 참고하십시오:"
     },
     "troubleshooting": {
       "title": "문제 해결",
@@ -80,7 +80,7 @@
       "title": "수수료 상세",
       "rate": {
         "label": "수수료율",
-        "description": "가입 결제가 성공할 때마다 10% 수수료를 받습니다"
+        "description": "구독 결제가 성공할 때마다 10% 수수료를 받습니다"
       },
       "payment": {
         "label": "지급",
@@ -131,7 +131,7 @@
     },
     "cta": {
       "title": "시작할 준비가 되셨나요?",
-      "description": "지금 가입하고 제휴 링크를 받아 수수료를 받아 보세요",
+      "description": "지금 가입하고 제휴 링크를 받아 수수료를 벌어 보세요",
       "register": "지금 가입",
       "login": "이미 계정이 있나요? 로그인"
     },

@@ -48,7 +48,7 @@
     "availableStock": "예약 가능",
     "stockSummary": "재고 요약",
     "rentedOut": "대여 중",
-    "reserved": "예약 확정",
+    "reserved": "예약됨",
     "updateStock": "재고 수정",
     "stockHistory": "재고 이력",
     "outletStockDistribution": "지점별 재고 배분",

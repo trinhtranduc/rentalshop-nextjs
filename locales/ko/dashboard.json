@@ -34,7 +34,7 @@
     "activeRentals": "현재 진행 중인 대여 주문의 총 수입니다. PICKUPED 상태(대여 중)이고 아직 반납되지 않은 모든 주문을 포함합니다.",
     "overdueReturns": "반납 기한이 지났지만 아직 반납되지 않은 대여 주문 수입니다. 예정된 반납일이 지났는데도 상품이 돌아오지 않은 주문입니다.",
     "totalRevenue": "시스템의 모든 주문에서 발생한 총 매출입니다. 처음부터 지금까지의 대여 주문과 판매 주문을 모두 포함합니다.",
-    "totalOrders": "시스템에 생성된 총 주문 수입니다. 대여, 판매, 렌트투오운(rent-to-own) 등 모든 유형의 주문을 포함합니다.",
+    "totalOrders": "시스템에 생성된 총 주문 수입니다. 대여, 판매, 렌트 투 오운 등 모든 유형의 주문을 포함합니다.",
     "totalCustomers": "시스템에 등록된 총 고객 수입니다. 개인 고객과 법인 고객을 모두 포함합니다.",
     "totalProducts": "재고에 있는 총 상품 수입니다. 시스템에 추가된 모든 상품을 포함합니다.",
     "availableProducts": "현재 대여할 수 있는 상품 수입니다. 대여 중이거나 판매된 상품은 제외됩니다.",
@@ -61,11 +61,11 @@
     "customerActivity": "고객 활동",
     "rentalTrends": "대여 추이",
     "noData": "이 기간에는 데이터가 없습니다",
-    "compareOutlets": "매장 비교",
-    "selectOutletsToCompare": "비교할 매장을 선택하세요",
-    "allOutlets": "전체 매장",
-    "compareRevenue": "매장별 월 매출 비교",
-    "compareOrders": "매장별 월 주문 비교",
+    "compareOutlets": "지점 비교",
+    "selectOutletsToCompare": "비교할 지점을 선택하세요",
+    "allOutlets": "전체 지점",
+    "compareRevenue": "지점별 월 매출 비교",
+    "compareOrders": "지점별 월 주문 비교",
     "actualRevenue": "실제 매출",
     "projectedRevenue": "예상 매출",
     "rentalOrders": "대여 주문",
@@ -113,8 +113,8 @@
   },
   "orderStatuses": {
     "reserved": "예약됨",
-    "pickup": "수령",
-    "return": "반납",
+    "pickup": "대여 중",
+    "return": "반납 완료",
     "completed": "완료",
     "cancelled": "취소됨",
     "ordersCount": "주문"
@@ -147,7 +147,7 @@
     "more": "주문 메뉴에 {count}건 더 있습니다",
     "cash": {
       "title": "보증금과 수수료",
-      "feesToday": "오늘 받은 수수료",
+      "feesToday": "오늘 받은 요금",
       "orders": "{count, plural, other {#건}}",
       "feesBreakdown": "연체료 {late} · 추가 요금 {damage}",
       "held": "보관 중인 보증금",
@@ -286,7 +286,7 @@
       "late": "{days}일 연체",
       "collect": "{amount}",
       "refund": "예약금 {amount} 환불",
-      "fee": "+ 수수료 {amount}",
+      "fee": "+ 요금 {amount}",
       "empty": "오늘 대여 처리나 반납 접수할 주문이 없습니다.",
       "more": "+{count}건 더",
       "moreNotes": "메모 있음 {count}건",
@@ -368,11 +368,11 @@
       "note": {
         "created": "기간 내 생성된 주문",
         "cancelled": "취소됨, 집계 제외",
+        "event": "",
         "owes": "수령 시 받을 금액",
         "collateralIn": "수령 시 보증금 받음",
         "collateralOut": "보증금 돌려줌",
-        "held": "현재 보관 중인 보증금",
-        "event": ""
+        "held": "현재 보관 중인 보증금"
       },
       "event": {
         "saleCreated": "판매 주문 생성됨",
@@ -415,14 +415,14 @@
     }
   },
   "revenue": {
-    "title": "구독 매출",
+    "title": "요금제 매출",
     "pickMonth": "월 선택",
     "prevMonth": "지난달",
     "nextMonth": "다음 달",
     "wholeYear": "연간 전체",
     "monthLabel": "{month}/{year}",
     "yearLabel": "{year}년",
-    "receivedMonth": "{month}/{year} 월 수금액",
+    "receivedMonth": "{year}년 {month}월 수금액",
     "receivedYear": "{year}년 수금액",
     "compare": {
       "yearFull": "{year}년 전체.",
@@ -481,14 +481,14 @@
     "noPayments": "결제 내역이 없습니다.",
     "date": "날짜",
     "shop": "매장",
-    "plan": "구독",
+    "plan": "요금제",
     "status": "상태",
     "statusCompleted": "완료",
     "statusRefunded": "환불됨",
-    "error": "구독 매출을 불러오지 못했습니다.",
+    "error": "매출을 불러오지 못했습니다.",
     "retry": "다시 시도",
     "estimateTitle": "예상: {amount}",
-    "estimateDetail": "{count, plural, other {수동 연장, 구독 변경, 신규 수동 구독 #건}}은 결제 내역 없이 발생했으며, 발생일 기준으로 집계합니다. 위 합계에는 포함되지 않습니다.",
+    "estimateDetail": "{count, plural, other {수동 연장, 요금제 변경, 수동 요금제 생성 #건}}은 결제 내역 없이 발생했으며, 발생일 기준으로 집계합니다. 위 합계에는 포함되지 않습니다.",
     "estimateColumn": "예상"
   }
 }
