@@ -110,6 +110,7 @@
     "confirmDeleteAccount": "Deactivate User Account",
     "confirmDeleteDetails": "Are you sure you want to permanently delete this user account? This action cannot be undone.",
     "confirmDeactivate": "Are you sure you want to deactivate",
+    "confirmDeactivateNamed": "Are you sure you want to deactivate {name}?",
     "confirmDeactivateAccount": "Deactivate User",
     "confirmDeactivateDetails": "This action will prevent them from accessing the system.",
     "confirmActivate": "Are you sure you want to activate this user?",

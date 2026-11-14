@@ -110,6 +110,7 @@
     "confirmDeleteAccount": "ユーザーアカウントを削除",
     "confirmDeleteDetails": "このユーザーアカウントを完全に削除してもよろしいですか？この操作は元に戻せません。",
     "confirmDeactivate": "次のユーザーを無効化しますか:",
+    "confirmDeactivateNamed": "{name}を無効化しますか？",
     "confirmDeactivateAccount": "ユーザーを無効化",
     "confirmDeactivateDetails": "この操作により、このユーザーはシステムにアクセスできなくなります。",
     "confirmActivate": "このユーザーを有効化してもよろしいですか？",

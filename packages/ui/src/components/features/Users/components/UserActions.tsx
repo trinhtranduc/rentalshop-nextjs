@@ -138,7 +138,7 @@ export function UserActions({
         onOpenChange={setIsDeactivateDialogOpen}
         type="warning"
         title={t('messages.confirmDeactivateAccount')}
-        description={`${t('messages.confirmDeactivate')} ${userToDeactivate?.name}? ${t('messages.confirmDeactivateDetails')}`}
+        description={`${t('messages.confirmDeactivateNamed', { name: userToDeactivate?.name })} ${t('messages.confirmDeactivateDetails')}`}
         confirmText={t('actions.deactivate')}
         cancelText={tc('buttons.cancel')}
         onConfirm={handleConfirmDeactivate}

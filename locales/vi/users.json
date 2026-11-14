@@ -110,6 +110,7 @@
     "confirmDeleteAccount": "Xóa tài khoản người dùng",
     "confirmDeleteDetails": "Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản người dùng này? Hành động này không thể hoàn tác.",
     "confirmDeactivate": "Bạn có chắc chắn muốn vô hiệu hóa",
+    "confirmDeactivateNamed": "Bạn có chắc chắn muốn vô hiệu hóa {name}?",
     "confirmDeactivateAccount": "Vô hiệu hóa người dùng",
     "confirmDeactivateDetails": "Hành động này sẽ ngăn họ truy cập hệ thống.",
     "confirmActivate": "Bạn có chắc chắn muốn kích hoạt người dùng này?",
