@@ -138,13 +138,18 @@
     "analytics": "Análisis"
   },
   "pagination": {
+    "showing": "Mostrando",
+    "to": "a",
+    "of": "de",
     "results": "resultados",
     "page": "Página",
     "rowsPerPage": "Filas por página",
     "pageSizeRange": "De 1 a {max} filas por página",
+    "itemsPerPage": "Elementos por página",
     "first": "Primera",
     "last": "Última",
     "noData": "No hay datos para mostrar",
+    "apply": "Aplicar",
     "items": {
       "items": "elementos",
       "orders": "pedidos",

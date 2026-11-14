@@ -1,0 +1,367 @@
+{
+  "navigation": {
+    "home": "Beranda",
+    "features": "Fitur",
+    "pricing": "Harga",
+    "faq": "Pertanyaan umum",
+    "contact": "Kontak",
+    "login": "Masuk"
+  },
+  "hero": {
+    "title": "Perangkat Lunak Manajemen Toko Sewa",
+    "subtitle": "Profesional",
+    "description": "Perangkat lunak manajemen toko sewa terdepan di Vietnam. Sistem manajemen sewa yang lengkap untuk banyak bidang usaha: manajemen sewa ao dai, sewa gaun pengantin, sewa peralatan, sewa mobil, sewa kostum pertunjukan, dan sewa printer. Solusi manajemen toko sewa yang modern dan mudah digunakan, dengan dukungan multiplatform untuk iOS dan Web.",
+    "downloadApp": "Unduh aplikasi",
+    "tryWebPortal": "Coba Web Portal",
+    "tagline": "Kelola pesanan sewa, jadwal, dan produk dalam satu aplikasi — coba gratis.",
+    "trustStores": "500+ toko sudah menggunakan",
+    "trustRating": "Penilaian 4,9/5",
+    "trustSecure": "Aman & stabil",
+    "imageAlt": "Manajemen toko sewa dengan AnyRent di ponsel, di dalam toko"
+  },
+  "download": {
+    "title": "Tersedia di semua platform",
+    "description": "Akses manajemen toko sewa Anda dari mana saja, kapan saja",
+    "mobileApp": "Aplikasi seluler",
+    "mobileAppDesc": "Kelola toko sewa Anda saat bepergian dengan aplikasi iOS dan Android kami",
+    "webPortal": "Web Portal",
+    "webPortalDesc": "Akses fitur lengkap lewat peramban web apa pun dengan desain responsif",
+    "analytics": "Dasbor analitik",
+    "analyticsDesc": "Dapatkan wawasan rinci tentang kinerja bisnis Anda dengan laporan yang lengkap",
+    "downloadOnAppStore": "Unduh di App Store",
+    "downloadOnGooglePlay": "Unduh di Google Play"
+  },
+  "aiSearch": {
+    "badge": "Kecerdasan Buatan",
+    "title": "Cari produk sewa dengan gambar menggunakan AI",
+    "description": "Teknologi AI canggih memungkinkan pelanggan memotret atau mengunggah gambar untuk langsung menemukan produk sewa yang cocok. Tidak perlu ingat nama, tidak perlu mengetik kata kunci — cukup satu foto. Fitur eksklusif yang membuat AnyRent unggul dibanding perangkat lunak manajemen sewa lain di pasaran.",
+    "feature1Title": "Foto untuk mencari produk",
+    "feature1Desc": "Pelanggan cukup memotret contoh ao dai, gaun pengantin, atau kostum — AI akan mengenali dan merekomendasikan produk serupa di stok.",
+    "feature2Title": "Pengenalan cerdas dengan AI",
+    "feature2Desc": "Menggunakan teknologi vector embedding dan jaringan neural untuk menganalisis gambar, mengenali warna, model, dan bahan dengan akurasi tinggi.",
+    "feature3Title": "Hasil seketika",
+    "feature3Desc": "Menampilkan hasil dalam hitungan detik dengan daftar produk paling cocok, disertai info ketersediaan stok dan harga sewa.",
+    "matchFound": "Ditemukan 3 produk yang cocok",
+    "videoAlt": "Demo pencarian produk sewa dengan gambar AI di AnyRent",
+    "queryAlt": "Contoh foto ao dai untuk pencarian dengan gambar",
+    "matchesAlt": "Tiga kostum sewa serupa yang direkomendasikan oleh AI",
+    "phoneAlt": "Layar ponsel AnyRent menampilkan hasil pencarian gambar AI",
+    "snap": "Foto",
+    "learnMore": "Pelajari pencarian produk dengan gambar AI →"
+  },
+  "duplicatePrevention": {
+    "badge": "Anti jadwal bentrok",
+    "title": "Cegah pesanan ganda",
+    "description": "AnyRent otomatis memeriksa jadwal sewa sebelum pesanan dibuat. Produk yang sama tidak bisa dipesan pada tanggal yang sama — menghindari kekecewaan pelanggan dan kehilangan pendapatan.",
+    "feature1Title": "Pemeriksaan jadwal otomatis",
+    "feature1Desc": "Saat memilih produk dan tanggal sewa, sistem langsung mencocokkannya dengan pesanan yang ditahan, sudah diambil, atau akan dikembalikan.",
+    "feature2Title": "Peringatan konflik yang jelas",
+    "feature2Desc": "Jika rentang waktu bertabrakan, Anda langsung melihat peringatan di layar — tanpa perlu mengingat jadwal secara manual.",
+    "feature3Title": "Stok selalu akurat",
+    "feature3Desc": "Setiap produk hanya disewa sekali dalam rentang waktu yang sama, sehingga pengelolaan ukuran dan kondisi stok lebih dapat diandalkan.",
+    "blockedLabel": "Jadwal bentrok — pesanan tidak dibuat",
+    "calendarAlt": "Jadwal sewa yang menampilkan konflik pesanan produk yang sama",
+    "alertAlt": "Peringatan produk sudah dipesan pada rentang tanggal yang sama"
+  },
+  "orderWorkflow": {
+    "badge": "Alur pesanan sewa",
+    "title": "Kelola pesanan sewa dengan mudah dan praktis",
+    "description": "Pantau seluruh siklus pesanan sewa dalam satu alur yang jelas: dipesan → diambil → dikembalikan. Staf bekerja lebih cepat, dan pelanggan langsung memahami status pesanan.",
+    "feature1Title": "Buat pesanan & tahan slot dengan cepat",
+    "feature1Desc": "Pilih pelanggan, produk, serta tanggal ambil dan kembali — buat pesanan RESERVED hanya dalam beberapa langkah di aplikasi atau web.",
+    "feature2Title": "Pengambilan & pengembalian yang jelas",
+    "feature2Desc": "Ubah status PICKUPED / RETURNED tepat waktu, terhubung dengan jadwal dan stok yang sebenarnya.",
+    "feature3Title": "Pantau setiap langkah dalam satu layar",
+    "feature3Desc": "Lihat riwayat pesanan, pembayaran, dan catatan langsung di detail pesanan — mengurangi langkah yang terlewat dan pertanyaan berulang.",
+    "flowLabel": "Dipesan → Sedang disewa → Dikembalikan",
+    "phoneAlt": "Layar detail pesanan sewa di AnyRent",
+    "flowAlt": "Tiga status pesanan sewa: dipesan, sudah diambil, dan sudah dikembalikan"
+  },
+  "features": {
+    "title": "Fitur Manajemen Toko Sewa",
+    "description": "Sistem manajemen sewa dengan fitur lengkap untuk mengelola bisnis sewa Anda secara efektif. Perangkat lunak ini cocok untuk banyak bidang: sewa ao dai, gaun pengantin, peralatan, mobil, kostum pertunjukan, dan printer. Terintegrasi dengan manajemen pesanan, manajemen stok, dan manajemen pelanggan.",
+    "aiImageSearch": "Pencarian Produk dengan Gambar AI",
+    "aiImageSearchDesc": "Foto atau unggah gambar untuk langsung menemukan produk sewa yang cocok. Teknologi AI mengenali warna, model, dan bahan, lalu merekomendasikan produk serupa di stok Anda.",
+    "orderManagement": "Manajemen Pesanan Sewa",
+    "orderManagementDesc": "Sistem manajemen pesanan sewa yang profesional. Buat, lacak, dan kelola pesanan sewa dengan mudah. Pantau status dan riwayat pesanan sewa dengan perangkat lunak manajemen toko sewa.",
+    "customerManagement": "Manajemen Pelanggan",
+    "customerManagementDesc": "Kelola pelanggan secara efektif dengan sistem manajemen sewa. Simpan data pelanggan, lacak riwayat sewa, dan kelola hubungan pelanggan dalam perangkat lunak manajemen toko sewa.",
+    "calendarScheduling": "Jadwal & Penjadwalan Sewa",
+    "calendarSchedulingDesc": "Jadwal visual dalam sistem manajemen sewa untuk memantau sewa, pengembalian, dan ketersediaan produk. Kelola stok sewa secara efektif dengan perangkat lunak manajemen toko sewa.",
+    "financialReports": "Laporan Keuangan",
+    "financialReportsDesc": "Buat laporan keuangan yang rinci dengan sistem manajemen sewa. Pantau pendapatan dan analisis kinerja bisnis dengan perangkat lunak manajemen toko sewa yang profesional.",
+    "duplicatePrevention": "Pencegahan Pesanan Ganda",
+    "duplicatePreventionDesc": "Sistem cerdas dalam perangkat lunak manajemen toko sewa mencegah pesanan ganda dan memastikan pengelolaan stok yang akurat. Kelola stok sewa secara efektif dengan sistem manajemen sewa.",
+    "multiPlatform": "Dukungan Multiplatform",
+    "multiPlatformDesc": "Sistem manajemen sewa multiplatform. Akses data toko sewa dari iOS, Android, dan platform web dengan lancar menggunakan perangkat lunak manajemen toko sewa.",
+    "viewAllFeatures": "Lihat detail semua fitur",
+    "badge": "Fitur"
+  },
+  "customSolution": {
+    "title": "Butuh Solusi Sewa yang Disesuaikan?",
+    "description": "Punya kebutuhan khusus untuk bisnis sewa Anda? Kami menyediakan solusi manajemen sewa yang dirancang khusus sesuai kebutuhan Anda. Dari sewa ao dai, gaun pengantin, peralatan, mobil, hingga bidang khusus lainnya — kami bisa membuat solusi yang tepat untuk Anda.",
+    "benefits": {
+      "title": "Keuntungan Solusi Kustom",
+      "customized": "Solusi disesuaikan sepenuhnya dengan kebutuhan bisnis Anda",
+      "dedicated": "Dukungan khusus dan konsultasi dari tim ahli",
+      "scalable": "Sistem dapat berkembang seiring pertumbuhan bisnis Anda",
+      "integration": "Terintegrasi dengan sistem yang sudah Anda miliki dengan mudah"
+    },
+    "contact": {
+      "title": "Hubungi Kami",
+      "description": "Hubungi kami untuk mendiskusikan solusi kustom bagi bisnis sewa Anda",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "Permintaan Solusi Sewa Kustom",
+      "emailBody": "Halo,\n\nSaya tertarik dengan solusi manajemen sewa kustom untuk bisnis saya.\n\nMohon hubungi saya untuk mendiskusikan detailnya.\n\nHormat saya,",
+      "whatsappMessage": "Halo, saya tertarik dengan solusi manajemen sewa kustom. Mohon hubungi saya.",
+      "responseTime": "Kami akan membalas dalam waktu 24 jam"
+    }
+  },
+  "whyChoose": {
+    "title": "Mengapa memilih Perangkat Lunak Manajemen Toko Sewa AnyRent?",
+    "description": "Bergabunglah dengan ratusan bisnis sewa yang mempercayai sistem manajemen sewa kami. Perangkat lunak manajemen toko sewa terdepan di Vietnam.",
+    "easyToUse": "Mudah digunakan",
+    "easyToUseDesc": "Antarmuka perangkat lunak manajemen toko sewa yang intuitif dirancang untuk pemilik toko sewa, tanpa perlu keahlian teknis. Sistem manajemen sewa yang mudah dan ramah digunakan.",
+    "timeSaving": "Hemat waktu",
+    "timeSavingDesc": "Sistem manajemen sewa mengotomatisasi tugas rutin sehingga Anda bisa fokus mengembangkan bisnis, bukan mengurus dokumen. Perangkat lunak manajemen toko sewa membantu menghemat waktu.",
+    "increaseRevenue": "Tingkatkan pendapatan",
+    "increaseRevenueDesc": "Pengelolaan stok dan pelanggan yang lebih baik dengan sistem manajemen sewa berarti penjualan meningkat. Perangkat lunak manajemen toko sewa membantu mengoptimalkan pendapatan.",
+    "support": "Dukungan 24/7",
+    "supportDesc": "Dapatkan bantuan kapan pun Anda membutuhkannya dari tim dukungan pelanggan khusus perangkat lunak manajemen toko sewa. Sistem manajemen sewa dengan dukungan 24/7.",
+    "activeStores": "Toko aktif",
+    "rating": "Penilaian 4,9/5",
+    "badge": "Mengapa memilih AnyRent"
+  },
+  "stats": {
+    "activeStores": "Toko aktif",
+    "ordersProcessed": "Pesanan yang diproses",
+    "customerRating": "Penilaian pelanggan",
+    "supportAvailable": "Dukungan tersedia"
+  },
+  "testimonials": {
+    "title": "Apa kata pelanggan tentang kami",
+    "description": "Bergabunglah bersama ratusan pemilik toko sewa yang puas",
+    "items": {
+      "john": {
+        "quote": "AnyRent membantu saya mengelola toko sewa dengan efektif. Antarmukanya mudah digunakan dan fiturnya lengkap.",
+        "name": "Nguyen Van An",
+        "role": "Pemilik toko sewa"
+      },
+      "sarah": {
+        "quote": "Fitur manajemen pesanan sangat praktis. Saya bisa melacak semua pesanan dengan mudah dan mengelola stok dengan efektif.",
+        "name": "Tran Thi Binh",
+        "role": "Manajer toko"
+      },
+      "mike": {
+        "quote": "Aplikasi seluler sangat praktis. Saya bisa mengelola toko dari mana saja dan antarmukanya intuitif.",
+        "name": "Le Van Cuong",
+        "role": "Pemilik usaha"
+      },
+      "aoDai": {
+        "quote": "AnyRent membantu saya mengelola toko sewa ao dai dengan sangat efektif. Fitur jadwal ao dai dan pengelolaan ukuran sangat praktis.",
+        "name": "Pham Thi Lan",
+        "role": "Pemilik toko sewa ao dai"
+      },
+      "equipment": {
+        "quote": "Pengelolaan stok peralatan kini lebih mudah dari sebelumnya. Saya bisa melacak kondisi peralatan dan jadwal sewa dengan akurat.",
+        "name": "Hoang Van Duc",
+        "role": "Pemilik toko sewa peralatan"
+      },
+      "weddingDress": {
+        "quote": "Sistem manajemen pesanan sewa gaun pengantin ini sangat profesional. Saya bisa mengelola banyak set gaun sekaligus dan melacak riwayat pelanggan.",
+        "name": "Nguyen Thi Mai",
+        "role": "Pemilik toko sewa gaun pengantin"
+      },
+      "camera": {
+        "quote": "Mengelola sewa kamera dan aksesorinya jadi sederhana. Fitur pengecekan kondisi perangkat dan jadwal perawatan sangat membantu.",
+        "name": "Tran Van Hung",
+        "role": "Pemilik toko sewa kamera"
+      }
+    },
+    "badge": "Apa kata pelanggan"
+  },
+  "cta": {
+    "title": "Siap memulai?",
+    "description": "Bergabunglah bersama ribuan bisnis sewa yang mempercayai platform kami"
+  },
+  "blog": {
+    "title": "Artikel terbaru",
+    "subtitle": "Temukan pengetahuan dan tips bermanfaat untuk bisnis sewa Anda",
+    "badge": "Artikel"
+  },
+  "faq": {
+    "title": "Pertanyaan umum tentang Perangkat Lunak Manajemen Toko Sewa",
+    "description": "Semua yang perlu Anda ketahui tentang sistem manajemen sewa AnyRent — perangkat lunak manajemen toko sewa terdepan",
+    "items": {
+      "freeUse": {
+        "question": "Apakah perangkat lunak manajemen toko sewa AnyRent gratis?",
+        "answer": "Sistem manajemen sewa AnyRent menyediakan versi uji coba gratis. Anda bisa mendaftar dan menggunakan fitur dasar perangkat lunak manajemen toko sewa tanpa biaya. Coba manajemen pesanan sewa, manajemen stok, dan manajemen pelanggan secara gratis."
+      },
+      "multipleDevices": {
+        "question": "Bisakah saya menggunakan perangkat lunak manajemen toko sewa di banyak perangkat?",
+        "answer": "Ya, sistem manajemen sewa AnyRent mendukung banyak platform. Anda bisa menggunakan perangkat lunak manajemen toko sewa di iOS, Android, dan peramban web. Kelola toko sewa Anda dari mana saja dengan sistem manajemen sewa multiplatform."
+      },
+      "dataSecure": {
+        "question": "Apakah data manajemen toko sewa saya aman?",
+        "answer": "Kami berkomitmen melindungi data Anda dalam sistem manajemen sewa. Semua informasi pesanan, stok, dan pelanggan dienkripsi serta disimpan aman di cloud. Perangkat lunak manajemen toko sewa AnyRent menjamin keamanan data."
+      },
+      "support": {
+        "question": "Apakah Anda menyediakan dukungan pelanggan untuk sistem manajemen sewa?",
+        "answer": "Ya, kami menyediakan dukungan pelanggan 24/7 untuk perangkat lunak manajemen toko sewa AnyRent. Tim dukungan profesional siap membantu Anda mengatasi masalah apa pun melalui chat, email, dan telepon."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Harga sederhana",
+    "description": "Pilih paket yang sesuai dengan kebutuhan bisnis Anda",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
+    "months": {
+      "three": "3 bulan",
+      "six": "6 bulan",
+      "twelve": "12 bulan"
+    },
+    "loading": "Memuat paket...",
+    "error": "Paket tidak dapat dimuat",
+    "errorHint": "Silakan coba lagi beberapa menit lagi atau hubungi AnyRent untuk mendapatkan penawaran harga.",
+    "retry": "Coba lagi",
+    "noPlans": "Saat ini tidak ada paket.",
+    "buttonText": "Mulai",
+    "plans": {
+      "freeTrial": {
+        "name": "Uji coba gratis",
+        "subtitle": "Sempurna untuk memulai",
+        "period": "7 hari",
+        "description": "Coba semua fitur secara gratis",
+        "buttonText": "Mulai uji coba"
+      },
+      "basic": {
+        "name": "Paket Dasar",
+        "subtitle": "Untuk bisnis sewa kecil",
+        "period": "per bulan",
+        "description": "Sempurna untuk toko sewa kecil",
+        "buttonText": "Mulai",
+        "mostPopular": "Paling populer"
+      },
+      "premium": {
+        "name": "Paket Premium",
+        "subtitle": "Untuk bisnis yang sedang berkembang",
+        "period": "per bulan",
+        "description": "Fitur lanjutan untuk operasi berskala lebih besar",
+        "buttonText": "Mulai"
+      }
+    },
+    "features": {
+      "orderManagement": "Manajemen pesanan",
+      "productManagement": "Manajemen produk",
+      "customerManagement": "Manajemen pelanggan",
+      "revenueReports": "Laporan pendapatan",
+      "singleAccount": "Satu akun",
+      "twoAccounts": "Dua akun",
+      "fiveAccounts": "Lima akun",
+      "webPortal": "Web Portal",
+      "additionalAccounts": "Akun tambahan",
+      "freeUpdates": "Pembaruan gratis",
+      "mobileApp": "Aplikasi seluler"
+    },
+    "allPlansInclude": "Semua paket sudah termasuk",
+    "support24": "Dukungan 24/7",
+    "dataBackup": "Cadangan data",
+    "freeUpdates": "Pembaruan gratis",
+    "training": "Pelatihan",
+    "additionalPricingTitle": "Informasi harga tambahan",
+    "additionalAccountPrice": "Harga akun tambahan",
+    "additionalAccountDescription": "Harga untuk setiap akun pengguna tambahan di atas batas paket",
+    "additionalAccountPriceValue": "30.000 VND/bulan",
+    "addonPrice": "Harga add-on",
+    "addonDescription": "Harga add-on paket untuk menambah batas (toko, pengguna, produk, pelanggan, pesanan)",
+    "addonPriceValue": "Hubungi kami untuk harga",
+    "close": "Tutup",
+    "additionalPricingNote": "Pelajari lebih lanjut tentang harga akun tambahan dan add-on",
+    "priceLabel": "Harga:",
+    "additionalPricingSr": "Informasi harga tambahan untuk akun dan paket perluasan"
+  },
+  "footer": {
+    "description": "AnyRent - Perangkat lunak manajemen toko sewa dan sistem manajemen sewa terdepan di Vietnam. Solusi profesional untuk pengelolaan sewa ao dai, gaun pengantin, peralatan, mobil, kostum pertunjukan, dan printer. Kelola pesanan, stok, dan pelanggan sewa secara efektif.",
+    "product": {
+      "title": "Produk",
+      "features": "Fitur",
+      "pricing": "Harga",
+      "downloadApp": "Unduh aplikasi"
+    },
+    "support": {
+      "title": "Dukungan",
+      "faq": "Pertanyaan umum",
+      "documentation": "Dokumentasi",
+      "contact": "Kontak"
+    },
+    "company": {
+      "title": "Perusahaan",
+      "aboutUs": "Tentang kami",
+      "terms": "Ketentuan",
+      "privacy": "Privasi"
+    },
+    "emailAddress": "support@anyrent.shop",
+    "copyright": "© 2024 AnyRent. Hak cipta dilindungi.",
+    "imageSearch": "Pencarian gambar AI",
+    "industries": {
+      "title": "Bidang usaha",
+      "aoDai": "Sewa ao dai",
+      "weddingDress": "Sewa gaun pengantin",
+      "equipment": "Sewa peralatan",
+      "costume": "Sewa kostum"
+    }
+  },
+  "industries": {
+    "title": "Solusi per bidang usaha",
+    "subtitle": "Perangkat lunak yang dioptimalkan untuk setiap jenis bisnis sewa",
+    "aoDai": {
+      "title": "Sewa Ao Dai",
+      "desc": "Kelola stok per ukuran dan warna. Jadwal mencegah pesanan bentrok."
+    },
+    "weddingDress": {
+      "title": "Sewa Gaun Pengantin",
+      "desc": "Koleksi, jadwal fitting, dan paket pernikahan lengkap."
+    },
+    "equipment": {
+      "title": "Sewa Peralatan",
+      "desc": "Pantau kondisi, jadwal perawatan, dan kontrak sewa."
+    },
+    "costume": {
+      "title": "Sewa Kostum",
+      "desc": "Pertunjukan, cosplay, dan acara. Kelola ukuran dan aksesori."
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "Hubungi Zalo",
+    "whatsappTitle": "Hubungi WhatsApp",
+    "telegramTitle": "Hubungi Telegram",
+    "zaloQrTitle": "Pindai kode QR untuk menghubungi Zalo",
+    "zaloQrHint": "Buka aplikasi Zalo dan pindai kode QR di atas untuk terhubung dengan kami",
+    "openZalo": "Buka Zalo",
+    "close": "Tutup",
+    "zaloQrAlt": "Kode QR Zalo",
+    "greeting": "Halo! Saya ingin tahu lebih banyak tentang AnyRent."
+  },
+  "sections": {
+    "hero": "Pembuka",
+    "aiSearch": "Fitur pencarian gambar AI",
+    "duplicatePrevention": "Fitur pencegahan pesanan ganda",
+    "orderWorkflow": "Fitur alur pesanan sewa",
+    "features": "Fitur",
+    "customSolution": "Kontak solusi khusus",
+    "stats": "Statistik",
+    "testimonials": "Apa kata pelanggan",
+    "cta": "Mulai",
+    "faq": "Pertanyaan umum",
+    "pricing": "Harga",
+    "blog": "Artikel"
+  }
+}
