@@ -5,7 +5,7 @@
  */
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
-import { APP_LANGUAGES, enabledAppLanguages, isEnabledAppLanguage } from '../packages/constants/src/app-languages';
+import { APP_LANGUAGES, enabledAppLanguages, isEnabledAppLanguage, webLanguages } from '../packages/constants/src/app-languages';
 
 const root = join(__dirname, '..');
 const VI_CHARS = /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i;
@@ -55,12 +55,12 @@ describe('app languages (#1554)', () => {
 
   it('the language switch of the shop pages lists the languages that are on', () => {
     const switcher = readFileSync(join(root, 'packages/ui/src/components/layout/LanguageSwitcher.tsx'), 'utf8');
-    expect(switcher).toContain('enabledAppLanguages()');
+    expect(switcher).toContain('webLanguages()');
     expect(switcher).not.toMatch(/const basicLanguages[^=]*=\s*\[\s*\{ code: 'vi'/);
   });
 });
 
-describe.each(enabledAppLanguages().filter((l) => l.code !== 'vi').map((l) => [l.code, l] as const))(
+describe.each(webLanguages().filter((l) => l.code !== 'vi').map((l) => [l.code, l] as const))(
   'web strings complete: %s (#1554)',
   (_code, lang) => {
     const files = readdirSync(join(root, 'locales/vi')).filter((f) => f.endsWith('.json') && !MOBILE_ONLY_FILES.includes(f));

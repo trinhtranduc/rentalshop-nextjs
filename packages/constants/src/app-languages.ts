@@ -15,7 +15,10 @@ export interface AppLanguage {
   flag: string;
   /** The language's own name */
   name: string;
+  /** Turned on for the app (iOS and Android) */
   enabled: boolean;
+  /** Turned on for the shop pages on the web only (#1553 web first) */
+  webEnabled: boolean;
   /** locales/<web>/ */
   web: string;
   /** apps/mobile/POS ADBD/<ios>.lproj */
@@ -25,16 +28,21 @@ export interface AppLanguage {
 }
 
 export const APP_LANGUAGES: readonly AppLanguage[] = [
-  { code: 'vi', label: 'VI', flag: '🇻🇳', name: 'Tiếng Việt', enabled: true, web: 'vi', ios: 'vi-VN', android: 'vi' },
-  { code: 'en', label: 'EN', flag: '🇺🇸', name: 'English', enabled: true, web: 'en', ios: 'en', android: '' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵', name: '日本語', enabled: false, web: 'ja', ios: 'ja', android: 'ja' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷', name: '한국어', enabled: false, web: 'ko', ios: 'ko', android: 'ko' },
-  { code: 'zh', label: '中文', flag: '🇨🇳', name: '中文', enabled: false, web: 'zh', ios: 'zh-Hans', android: 'zh' },
+  { code: 'vi', label: 'VI', flag: '🇻🇳', name: 'Tiếng Việt', enabled: true, webEnabled: true, web: 'vi', ios: 'vi-VN', android: 'vi' },
+  { code: 'en', label: 'EN', flag: '🇺🇸', name: 'English', enabled: true, webEnabled: true, web: 'en', ios: 'en', android: '' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵', name: '日本語', enabled: false, webEnabled: true, web: 'ja', ios: 'ja', android: 'ja' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷', name: '한국어', enabled: false, webEnabled: true, web: 'ko', ios: 'ko', android: 'ko' },
+  { code: 'zh', label: '中文', flag: '🇨🇳', name: '中文', enabled: false, webEnabled: true, web: 'zh', ios: 'zh-Hans', android: 'zh' },
 ];
 
 /** The languages that are on, in list order (Tiếng Việt first) */
 export function enabledAppLanguages(): AppLanguage[] {
   return APP_LANGUAGES.filter((l) => l.enabled);
+}
+
+/** The languages the shop pages (web) list in the language switch */
+export function webLanguages(): AppLanguage[] {
+  return APP_LANGUAGES.filter((l) => l.webEnabled);
 }
 
 export function isEnabledAppLanguage(code: unknown): boolean {

@@ -355,7 +355,7 @@
       "idNumberHint": "レンタル時に顧客が提出する身分証（CCCD、パスポート、運転免許証など）の番号です。",
       "notes": "メモ",
       "required": "必須",
-      "namePlaceholder": "例：Nguyễn Thị Mai",
+      "namePlaceholder": "例：グエン・ティ・マイ",
       "phonePlaceholder": "例：0912 555 018",
       "emailPlaceholder": "name@example.com",
       "notesPlaceholder": "サイズ、好み、受け渡し時の注意など…",

@@ -49,7 +49,7 @@ const publicLanguages: Array<{ code: PublicLocale; label: string; flag: string }
 ];
 
 // #1554 the shop pages list the app languages that are on (packages/constants app-languages; today VI / EN)
-const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = enabledAppLanguages().map(
+const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = webLanguages().map(
   ({ code, label, flag }) => ({ code, label, flag })
 );
 
