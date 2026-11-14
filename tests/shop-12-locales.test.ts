@@ -134,10 +134,12 @@ describe.each(NEW)('%s pagination and files (#1146)', (locale) => {
     }
   });
 
-  it('the shop messages keep the other English keys', () => {
+  it('the shop messages use the translated keys (public shop, #1553 web-first)', () => {
     const { products, common } = shopMessages(locale, { products: enProducts, common: enCommon });
-    expect((products as typeof enProducts).title).toBe(enProducts.title);
-    expect((common as typeof enCommon).pagination.first).toBe(enCommon.pagination.first);
+    const localeProducts = read(`locales/${locale}/products.json`);
+    const localeCommon = read(`locales/${locale}/common.json`);
+    expect((products as typeof enProducts).title).toBe(localeProducts.title);
+    expect((common as typeof enCommon).pagination.first).toBe(localeCommon.pagination.first);
   });
 });
 
