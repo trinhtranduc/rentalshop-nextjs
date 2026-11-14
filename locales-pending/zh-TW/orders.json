@@ -600,7 +600,7 @@
       "editTitle": "編輯訂單 #{number}",
       "backToOrder": "返回訂單 #{number}",
       "notEditable": "此訂單已無法編輯。只能編輯已預訂的租借訂單或已完成的銷售訂單。",
-      "outlet": "店鋪",
+      "outlet": "分店",
       "pickDays": "選擇交付與歸還日期",
       "daysButton": "交付 {from} → 歸還 {to} · {days} 天",
       "bar": "查看訂單 · {count} 件",
@@ -717,7 +717,7 @@
         "days": "請先選擇交付與歸還日期，才能建立訂單。",
         "items": "至少新增一件商品。",
         "customer": "請為訂單選擇客戶。",
-        "outlet": "訂單尚未指定店鋪。",
+        "outlet": "訂單尚未指定分店。",
         "price": "請輸入 {name} 的價格。"
       },
       "customer": {
@@ -752,8 +752,8 @@
           "FIXED": "/次",
           "DAILY": "/天",
           "HOURLY": "/小時",
-          "BLOCK": "整段租期",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "整段租期"
         },
         "note": "僅適用於此訂單，不會變更商品價格。",
         "done": "完成",
@@ -767,7 +767,7 @@
         "lineNoOrders": "{name} 缺 {count} 組（{days}）。",
         "createAnyway": "仍要建立訂單",
         "saveAnyway": "仍要儲存變更",
-        "blocked": "店鋪不允許建立日期衝突的訂單。請更改日期、減少數量，或移除缺貨商品。"
+        "blocked": "分店不允許建立日期衝突的訂單。請更改日期、減少數量，或移除缺貨商品。"
       },
       "confirm": {
         "rentTitle": "建立租借訂單？",
@@ -1106,7 +1106,7 @@
       "loyaltyDiscount": "點數折抵",
       "total": "總計",
       "customerSignature": "客戶簽名",
-      "storeSignature": "店鋪簽章",
+      "storeSignature": "店家簽章",
       "thankYou": "感謝您的惠顧！",
       "downloadApp": "在 App Store 下載 AnyRent",
       "units": {
@@ -1137,7 +1137,7 @@
       "outlet": "分店",
       "days": "租借日期",
       "customer": "客戶",
-      "customerKnown": "店鋪的舊客戶",
+      "customerKnown": "店家的舊客戶",
       "customerNew": "新客戶（確認時建立）",
       "note": "備註",
       "free": "庫存充足",
@@ -1177,7 +1177,7 @@
     "installments": {
       "paidBadge": "已收 {percent}%",
       "createTitle": "分期收取訂金",
-      "template": "收款範本",
+      "template": "訂金收款範本",
       "today": "今天",
       "todayChip": "今天",
       "dueOn": "到期 {day}",
@@ -1252,11 +1252,11 @@
       "voidConfirm": "取消收款",
       "cancelTitle": "取消訂單",
       "cancelPaid": "客戶已付",
-      "cancelKept": "店鋪保留",
+      "cancelKept": "店家保留",
       "cancelRefund": "退還客戶",
-      "cancelHint": "退款金額 = 客戶已付 − 額外費用。額外費用為店鋪從訂金中保留的部分。",
+      "cancelHint": "退款金額 = 客戶已付 − 額外費用。額外費用為店家從訂金中保留的部分。",
       "cancelHintStaff": "員工可全額退還客戶已付金額。額外費用由店主或分店主管決定。",
-      "policyLine": "店鋪政策：{policy}",
+      "policyLine": "店家政策：{policy}",
       "dueTodayTitle": "今天需收取",
       "dueSoonTitle": "即將到期",
       "reminderEmpty": "沒有款項。",

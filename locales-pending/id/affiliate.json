@@ -9,31 +9,78 @@
     },
     "howToGet": {
       "title": "Cara mendapatkan tautan affiliate Anda",
-      "content": "Tautan referral dibuat dari kode URL toko Anda. Anda dapat menemukannya di Pengaturan toko, pada bagian \"Bagikan toko Anda\"."
+      "content": "Tautan referral dibuat dari kode URL toko Anda. Anda dapat menemukannya di Pengaturan toko, pada bagian \"Bagikan toko Anda\".",
+      "steps": [
+        "Buka Pengaturan toko",
+        "Pilih tab Informasi toko (atau Informasi cabang)",
+        "Cari \"Bagikan toko Anda\" → \"Tautan referral\"",
+        "Klik Salin untuk menyalin tautan pendaftaran Anda",
+        "Kirim ke pemilik toko lain"
+      ]
     },
     "howToUse": {
       "title": "Cara menggunakan tautan affiliate Anda",
-      "content": "Bagikan tautan affiliate Anda kepada orang lain melalui berbagai saluran:"
+      "content": "Bagikan tautan affiliate Anda kepada orang lain melalui berbagai saluran:",
+      "methods": [
+        "Bagikan melalui media sosial (Facebook, Instagram, Twitter, dll.)",
+        "Kirim lewat email atau aplikasi pesan (WhatsApp, Telegram, dll.)",
+        "Tambahkan ke situs web atau blog usaha Anda",
+        "Bagikan kepada teman, keluarga, atau mitra bisnis",
+        "Tambahkan ke kartu nama atau materi promosi"
+      ]
     },
     "howItWorks": {
       "title": "Cara kerjanya",
-      "content": "Saat seseorang mengklik tautan affiliate Anda:"
+      "content": "Saat seseorang mengklik tautan affiliate Anda:",
+      "steps": [
+        "Mereka diarahkan ke halaman pendaftaran AnyRent",
+        "Kode referral Anda otomatis disertakan di formulir pendaftaran",
+        "Saat mereka menyelesaikan pendaftaran, sistem mencatat bahwa mereka datang dari tautan Anda",
+        "Anda dapat memperoleh manfaat atau hadiah sesuai program referral"
+      ]
     },
     "benefits": {
       "title": "Manfaat menggunakan tautan affiliate",
-      "content": "Menggunakan tautan affiliate membantu Anda:"
+      "content": "Menggunakan tautan affiliate membantu Anda:",
+      "items": [
+        "Melacak referral dan upaya pemasaran Anda",
+        "Membangun jaringan pengguna AnyRent",
+        "Berpotensi mendapatkan hadiah atau manfaat (cek paket langganan Anda)",
+        "Memperkenalkan AnyRent kepada pihak yang bisa terbantu",
+        "Mengembangkan ekosistem bisnis Anda"
+      ]
     },
     "bestPractices": {
       "title": "Praktik terbaik",
-      "content": "Untuk memaksimalkan efektivitas tautan affiliate Anda:"
+      "content": "Untuk memaksimalkan efektivitas tautan affiliate Anda:",
+      "tips": [
+        "Bagikan tautan secara alami dalam percakapan tentang manajemen bisnis",
+        "Jelaskan manfaat AnyRent saat membagikan tautan",
+        "Hanya bagikan kepada orang yang benar-benar dapat terbantu oleh AnyRent",
+        "Simpan affiliate link Anda di tempat yang mudah diakses agar bisa dibagikan dengan cepat",
+        "Patuhi syarat penggunaan dan aturan komunitas AnyRent"
+      ]
     },
     "importantNotes": {
       "title": "Catatan penting",
-      "content": "Harap perhatikan:"
+      "content": "Harap perhatikan:",
+      "notes": [
+        "Affiliate link Anda unik untuk akun merchant Anda",
+        "Dilarang mengubah atau memalsukan kode referral dalam tautan Anda",
+        "Manfaat dan hadiah affiliate dapat berbeda tergantung paket langganan",
+        "AnyRent berhak memverifikasi referral dan dapat menghapus referral yang curang",
+        "Hormati privasi dan hanya bagikan tautan kepada pihak yang berkepentingan"
+      ]
     },
     "troubleshooting": {
       "title": "Pemecahan masalah",
-      "content": "Jika Anda mengalami masalah dengan tautan affiliate Anda:"
+      "content": "Jika Anda mengalami masalah dengan tautan affiliate Anda:",
+      "solutions": [
+        "Pastikan Anda sudah menyalin seluruh tautan, termasuk kode referral",
+        "Pastikan akun toko Anda aktif",
+        "Jika tautan referral kosong, atur kode URL toko di Pengaturan toko terlebih dahulu",
+        "Hubungi dukungan jika masalah masih terjadi"
+      ]
     }
   },
   "banner": {

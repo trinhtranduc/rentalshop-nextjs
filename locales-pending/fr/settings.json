@@ -6,7 +6,7 @@
     "profile": "Profil",
     "account": "Compte",
     "merchant": "Entreprise",
-    "outlet": "Point de vente",
+    "outlet": "Point de location",
     "security": "Sécurité",
     "subscription": "Forfait",
     "currency": "Devise",
@@ -108,12 +108,12 @@
     "viewPublicPage": "Voir la page publique"
   },
   "outlet": {
-    "title": "Paramètres du point de vente",
-    "subtitle": "Gérer les informations du point de vente",
-    "outletInformation": "Informations du point de vente",
-    "name": "Nom du point de vente",
-    "address": "Adresse du point de vente",
-    "phone": "Téléphone du point de vente",
+    "title": "Paramètres du point de location",
+    "subtitle": "Gérer les informations du point de location",
+    "outletInformation": "Informations du point de location",
+    "name": "Nom du point de location",
+    "address": "Adresse du point de location",
+    "phone": "Téléphone du point de location",
     "description": "Description",
     "workingHours": "Horaires d'ouverture",
     "contactPerson": "Personne de contact",
@@ -126,11 +126,11 @@
     "cancel": "Annuler",
     "saving": "Enregistrement...",
     "notProvided": "Non renseigné",
-    "noOutletInfo": "Aucune information sur le point de vente",
-    "enterOutletName": "Saisissez le nom du point de vente",
-    "enterOutletPhone": "Saisissez le téléphone du point de vente",
-    "enterOutletAddress": "Saisissez l'adresse du point de vente",
-    "enterDescription": "Saisissez la description du point de vente",
+    "noOutletInfo": "Aucune information sur le point de location",
+    "enterOutletName": "Saisissez le nom du point de location",
+    "enterOutletPhone": "Saisissez le téléphone du point de location",
+    "enterOutletAddress": "Saisissez l'adresse du point de location",
+    "enterDescription": "Saisissez la description du point de location",
     "enterCity": "Saisissez la ville",
     "enterState": "Saisissez la province / région",
     "enterZipCode": "Saisissez le code postal",
@@ -303,8 +303,8 @@
       "description": "Gérer les informations de l'entreprise, les prix et la devise"
     },
     "outlet": {
-      "label": "Point de vente",
-      "description": "Gérer les informations du point de vente"
+      "label": "Point de location",
+      "description": "Gérer les informations du point de location"
     },
     "bankAccounts": {
       "label": "Comptes bancaires",
@@ -340,8 +340,8 @@
     "personalProfileUpdateFailed": "Impossible de mettre à jour le profil personnel",
     "businessInfoUpdated": "Informations de l'entreprise mises à jour avec succès !",
     "businessInfoUpdateFailed": "Impossible de mettre à jour les informations de l'entreprise",
-    "outletInfoUpdated": "Informations du point de vente mises à jour avec succès !",
-    "outletInfoUpdateFailed": "Impossible de mettre à jour les informations du point de vente",
+    "outletInfoUpdated": "Informations du point de location mises à jour avec succès !",
+    "outletInfoUpdateFailed": "Impossible de mettre à jour les informations du point de location",
     "currencyUpdated": "Devise mise à jour avec succès !",
     "currencyUpdateFailed": "Impossible de mettre à jour la devise",
     "accountDeleted": "Votre compte a été supprimé avec succès.",
@@ -515,7 +515,7 @@
     },
     "nav": {
       "merchant": "Informations de la boutique",
-      "outlet": "Points de vente",
+      "outlet": "Points de location",
       "bank-accounts": "Banque",
       "receipt": "Impression et tickets",
       "subscription": "Forfait de service",
@@ -538,7 +538,7 @@
       "zip": "Code postal",
       "description": "Description",
       "shopName": "Nom de la boutique",
-      "outletName": "Nom du point de vente",
+      "outletName": "Nom du point de location",
       "phone": "Téléphone",
       "email": "E-mail",
       "taxId": "N° d'identification fiscale",
@@ -561,16 +561,16 @@
       "emailLanguageHint": "Les e-mails de vérification, de réinitialisation du mot de passe et les notifications de forfait sont envoyés dans cette langue."
     },
     "outlets": {
-      "title": "Points de vente",
-      "add": "Ajouter un point de vente",
+      "title": "Points de location",
+      "add": "Ajouter un point de location",
       "edit": "Modifier",
       "main": "Principal",
       "bank": "Compte bancaire",
-      "empty": "Aucun point de vente pour l'instant",
-      "loadFailed": "Impossible de charger la liste des points de vente.",
+      "empty": "Aucun point de location pour l'instant",
+      "loadFailed": "Impossible de charger la liste des points de location.",
       "retry": "Réessayer",
-      "count": "{count} point(s) de vente",
-      "open": "Ouvrir les Points de vente"
+      "count": "{count} point(s) de location",
+      "open": "Ouvrir les Points de location"
     },
     "links": {
       "title": "Partager la boutique",
@@ -585,7 +585,7 @@
     },
     "receipt": {
       "title": "Tickets imprimés",
-      "empty": "Aucun point de vente pour l'instant",
+      "empty": "Aucun point de location pour l'instant",
       "loadFailed": "Impossible de charger la note des tickets imprimés.",
       "retry": "Réessayer"
     },
@@ -663,7 +663,7 @@
       "usedUnlimited": "{used} · illimité",
       "upTo": "Jusqu'à {limit}",
       "usage": {
-        "outlets": "Points de vente",
+        "outlets": "Points de location",
         "users": "Personnel",
         "products": "Produits",
         "customers": "Clients",
@@ -747,16 +747,16 @@
       "billSection": "Ticket",
       "labelSection": "Étiquette",
       "preview": "Aperçu",
-      "previewOutlet": "Point de vente pour l'aperçu",
+      "previewOutlet": "Point de location pour l'aperçu",
       "testPrint": "Impression test",
       "sample": "Commande fictive pour l'aperçu, pas une vraie commande.",
       "labelTip": "À l'impression : choisissez l'imprimante d'étiquettes, le format du papier correspondant à l'étiquette, une échelle de 100 %, marges « Aucune ».",
       "bankQr": "Afficher le QR de virement sur le ticket",
-      "bankQrHint": "Imprime le compte bancaire par défaut du point de vente et le code VietQR (sans montant) au-dessus du message de remerciement. Enregistré par point de vente ; l'application utilise aussi ce réglage.",
-      "bankQrNoAccount": "Le point de vente n'a pas encore de compte bancaire",
+      "bankQrHint": "Imprime le compte bancaire par défaut du point de location et le code VietQR (sans montant) au-dessus du message de remerciement. Enregistré par point de location ; l'application utilise aussi ce réglage.",
+      "bankQrNoAccount": "Le point de location n'a pas encore de compte bancaire",
       "bankQrAddAccount": "Ajouter un compte bancaire",
       "bankQrReadOnly": "Seul le propriétaire de la boutique peut modifier ce réglage.",
-      "noteReadOnly": "Seul le propriétaire de la boutique peut modifier la note et le QR. Appliqué à tous les points de vente.",
+      "noteReadOnly": "Seul le propriétaire de la boutique peut modifier la note et le QR. Appliqué à tous les points de location.",
       "noteEmpty": "Aucune note pour l'instant",
       "shareNote": "Afficher la note de commande sur l'image partagée",
       "shareNoteHint": "La note de la commande apparaît en bas de l'image envoyée au client, y compris la note interne. Appliqué à toute la boutique.",
@@ -767,8 +767,8 @@
       "title": "Réservations en ligne",
       "hint": "Les clients réservent depuis la page de la boutique, et vous confirmez avant que la réservation devienne une commande.",
       "ownerOnly": "Seul le propriétaire de la boutique peut activer ou désactiver cette option.",
-      "outlets": "Points de vente acceptant les réservations",
-      "outletsHint": "Désactivez-la pour un point de vente qui ne souhaite pas accepter de réservations en ligne."
+      "outlets": "Points de location acceptant les réservations",
+      "outletsHint": "Désactivez-la pour un point de location qui ne souhaite pas accepter de réservations en ligne."
     },
     "overlap": {
       "title": "Autoriser la création de commande en cas de chevauchement de dates",

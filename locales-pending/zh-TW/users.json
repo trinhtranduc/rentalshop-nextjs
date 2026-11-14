@@ -141,7 +141,7 @@
     "byRole": "依角色篩選",
     "byOutlet": "依分店篩選",
     "active": "使用中",
-    "inactive": "未使用",
+    "inactive": "停用",
     "allRoles": "所有角色"
   },
   "stats": {
@@ -439,7 +439,7 @@
     },
     "detail": {
       "info": "資訊",
-      "merchant": "店鋪",
+      "merchant": "店家",
       "account": "帳號",
       "statusActive": "使用中",
       "statusLocked": "已鎖定",

@@ -200,7 +200,7 @@
     "cancel": "Annuler",
     "exportDialog": {
       "title": "Exporter la liste des clients",
-      "hint": "Aucun client sélectionné. Exporter les clients ajoutés au point de vente pendant :",
+      "hint": "Aucun client sélectionné. Exporter les clients ajoutés au point de location pendant :",
       "tip": "Vous voulez exporter quelques clients précis ? Cochez-les dans le tableau, puis cliquez sur Exporter vers Excel.",
       "period": {
         "1month": "30 derniers jours",
@@ -355,7 +355,7 @@
       "idNumberHint": "CNI, passeport ou permis de conduire laissé par le client lors de la location.",
       "notes": "Notes",
       "required": "obligatoire",
-      "namePlaceholder": "Ex. : Nguyen Thi Mai",
+      "namePlaceholder": "Ex. : Nguyễn Thị Mai",
       "phonePlaceholder": "Ex. : 0912 555 018",
       "emailPlaceholder": "nom@exemple.com",
       "notesPlaceholder": "Mensurations, préférences, consignes de remise…",

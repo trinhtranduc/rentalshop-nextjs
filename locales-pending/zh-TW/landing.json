@@ -1,0 +1,367 @@
+{
+  "navigation": {
+    "home": "首頁",
+    "features": "功能",
+    "pricing": "價格方案",
+    "faq": "常見問題",
+    "contact": "聯絡我們",
+    "login": "登入"
+  },
+  "hero": {
+    "title": "租借店家管理軟體",
+    "subtitle": "專業軟體與系統",
+    "description": "越南領先的租借店家管理軟體。全方位租借管理系統，適用多種行業：奧黛租借、婚紗租借、器材設備租借、車輛租借、表演服裝租借、印表機租借。現代化、易上手的租借店家管理方案，支援 iOS 與 Web 多平台。",
+    "downloadApp": "下載應用程式",
+    "tryWebPortal": "試用網頁入口",
+    "tagline": "在一個應用程式中管理租借訂單、行事曆與商品，免費試用。",
+    "trustStores": "500+ 家店家使用中",
+    "trustRating": "評分 4.9/5",
+    "trustSecure": "安全穩定",
+    "imageAlt": "在店內以手機透過 AnyRent 管理租借店家"
+  },
+  "download": {
+    "title": "支援所有平台",
+    "description": "隨時隨地，從任何地方管理您的租借店家",
+    "mobileApp": "行動應用程式",
+    "mobileAppDesc": "無論身在何處，都能透過我們的 iOS 與 Android 應用程式管理租借店家",
+    "webPortal": "網頁入口",
+    "webPortalDesc": "透過任何網頁瀏覽器使用完整功能，採響應式設計",
+    "analytics": "分析儀表板",
+    "analyticsDesc": "透過詳細報表，掌握您的經營績效",
+    "downloadOnAppStore": "在 App Store 下載",
+    "downloadOnGooglePlay": "在 Google Play 下載"
+  },
+  "aiSearch": {
+    "badge": "人工智慧",
+    "title": "以 AI 圖片搜尋租借商品",
+    "description": "先進的 AI 技術讓客戶只需拍照或上傳圖片，即可立即找到合適的租借商品。不需記住名稱，也不必輸入關鍵字，一張照片就足夠。這項獨家功能讓 AnyRent 在眾多租借管理軟體中脫穎而出。",
+    "feature1Title": "拍照找商品",
+    "feature1Desc": "客戶只要拍下奧黛、婚紗或服裝的照片，AI 就會辨識並推薦庫存中的類似商品。",
+    "feature2Title": "智慧 AI 辨識",
+    "feature2Desc": "運用向量嵌入與神經網路分析圖片，高精準度辨識顏色、款式與材質。",
+    "feature3Title": "即時結果",
+    "feature3Desc": "數秒內回傳最符合的商品清單，並附上可用狀態與租借價格。",
+    "matchFound": "找到 3 件符合的商品",
+    "videoAlt": "AnyRent 以 AI 圖片搜尋租借商品的示範影片",
+    "queryAlt": "用於圖片搜尋的奧黛樣品照片",
+    "matchesAlt": "AI 以圖片搜尋推薦的三件類似租借服裝",
+    "phoneAlt": "AnyRent 手機畫面顯示 AI 圖片搜尋結果",
+    "snap": "拍照",
+    "learnMore": "了解 AI 以圖找商品 →"
+  },
+  "duplicatePrevention": {
+    "badge": "防止日程衝突",
+    "title": "防止租借訂單重複",
+    "description": "AnyRent 會在建立訂單前自動檢查租借日程。同一商品無法重複預訂相同日期，保障您的信譽與營收。",
+    "feature1Title": "自動檢查日程",
+    "feature1Desc": "選擇商品與租借日期時，系統會立即比對已預訂、已取件與即將歸還的訂單。",
+    "feature2Title": "清楚的衝突提醒",
+    "feature2Desc": "若日期重疊，您會立即在畫面上看到提醒，不必再手動比對行事曆。",
+    "feature3Title": "每次都確保庫存準確",
+    "feature3Desc": "同一商品在同一時段只能租借一次，讓尺寸與庫存狀態更可靠。",
+    "blockedLabel": "日程衝突，無法建立訂單",
+    "calendarAlt": "租借行事曆顯示商品訂單重疊的衝突",
+    "alertAlt": "提醒：該商品在相同日期已被預訂"
+  },
+  "orderWorkflow": {
+    "badge": "租借流程",
+    "title": "租借訂單管理，輕鬆便利",
+    "description": "在清楚的流程中追蹤整個租借生命週期：預訂 → 取件 → 歸還。員工操作更快，客戶也能隨時掌握訂單狀態。",
+    "feature1Title": "快速建單與保留",
+    "feature1Desc": "選擇客戶、商品與取件、歸還日期，在應用程式或網頁上幾個步驟即可建立 RESERVED 訂單。",
+    "feature2Title": "取件與歸還一目了然",
+    "feature2Desc": "適時切換 PICKUPED / RETURNED 狀態，並與行事曆及實際庫存同步。",
+    "feature3Title": "一個畫面追蹤每個步驟",
+    "feature3Desc": "在訂單詳情頁直接查看歷史紀錄、付款與備註，減少遺漏步驟與重複詢問。",
+    "flowLabel": "已預訂 → 租借中 → 已歸還",
+    "phoneAlt": "AnyRent 租借訂單詳情畫面",
+    "flowAlt": "租借訂單的三種狀態：已預訂、已取件、已歸還"
+  },
+  "features": {
+    "title": "租借店家管理功能",
+    "description": "租借管理系統具備經營租借事業所需的完整功能，有效管理您的生意。適用多種行業的租借店家管理軟體：奧黛租借、婚紗租借、器材設備租借、車輛租借、表演服裝租借、印表機租借。整合訂單管理、庫存管理與客戶管理。",
+    "aiImageSearch": "AI 以圖找商品",
+    "aiImageSearchDesc": "拍照或上傳圖片，立即找到合適的租借商品。AI 辨識顏色、款式與材質，從您的庫存中推薦類似商品。",
+    "orderManagement": "租借訂單管理",
+    "orderManagementDesc": "專業的租借訂單管理系統，輕鬆建立、追蹤與管理租借訂單。透過租借店家管理軟體掌握訂單狀態與歷史紀錄。",
+    "customerManagement": "客戶管理",
+    "customerManagementDesc": "以租借管理系統高效管理客戶。在租借店家管理軟體中儲存客戶資料、追蹤租借紀錄，並維護客戶關係。",
+    "calendarScheduling": "租借行事曆與排程",
+    "calendarSchedulingDesc": "租借管理系統內的視覺化行事曆，可追蹤租借、歸還與商品可用狀態。透過租借店家管理軟體有效管理租借庫存。",
+    "financialReports": "財務報表",
+    "financialReportsDesc": "以租借管理系統產生詳細財務報表。透過專業的租借店家管理軟體追蹤營收並分析經營績效。",
+    "duplicatePrevention": "防止重複訂單",
+    "duplicatePreventionDesc": "租借店家管理軟體的智慧系統可防止重複訂單，確保庫存管理準確。以租借管理系統有效管理租借庫存。",
+    "multiPlatform": "多平台支援",
+    "multiPlatformDesc": "多平台租借管理系統，透過租借店家管理軟體，從 iOS、Android 與網頁平台無縫存取資料。",
+    "viewAllFeatures": "查看所有功能詳情",
+    "badge": "功能"
+  },
+  "customSolution": {
+    "title": "需要客製化租借方案嗎？",
+    "description": "您的租借事業有特殊需求嗎？我們提供專為您具體需求設計的客製化租借管理方案。無論是奧黛、婚紗、器材設備或車輛租借，或其他特殊行業，我們都能為您量身打造合適的解決方案。",
+    "benefits": {
+      "title": "客製化方案的優勢",
+      "customized": "方案完全依照您的經營需求量身打造",
+      "dedicated": "由專家團隊提供專屬支援與諮詢",
+      "scalable": "系統可隨您的事業成長而擴充",
+      "integration": "輕鬆與現有系統整合"
+    },
+    "contact": {
+      "title": "聯絡我們",
+      "description": "歡迎與我們聯繫，討論適合您租借事業的客製化方案",
+      "email": "電子郵件",
+      "whatsapp": "WhatsApp",
+      "emailSubject": "客製化租借方案諮詢",
+      "emailBody": "您好，\n\n我有興趣為我的事業取得客製化的租借管理方案。\n\n請與我聯繫，討論詳細內容。\n\n謝謝，",
+      "whatsappMessage": "您好，我對客製化租借管理方案有興趣，請與我聯繫。",
+      "responseTime": "我們將於 24 小時內回覆"
+    }
+  },
+  "whyChoose": {
+    "title": "為何選擇 AnyRent 租借店家管理軟體？",
+    "description": "數百家租借事業信賴我們的租借管理系統。越南領先的租借店家管理軟體。",
+    "easyToUse": "操作簡單",
+    "easyToUseDesc": "租借店家管理軟體的直覺式介面專為租借店家老闆設計，不需具備技術背景。租借管理系統簡單易用、親切友善。",
+    "timeSaving": "節省時間",
+    "timeSavingDesc": "租借管理系統自動處理例行工作，讓您專注於拓展事業，而非處理紙本文件。租借店家管理軟體幫您節省時間。",
+    "increaseRevenue": "提升營收",
+    "increaseRevenueDesc": "透過租借管理系統更有效地管理庫存與客戶，帶動銷售成長。租借店家管理軟體協助優化營收。",
+    "support": "24/7 支援",
+    "supportDesc": "租借店家管理軟體提供專屬客服團隊，需要時隨時協助。租借管理系統提供 24/7 支援。",
+    "activeStores": "使用中的店家",
+    "rating": "評分 4.9/5",
+    "badge": "為何選擇 AnyRent"
+  },
+  "stats": {
+    "activeStores": "使用中的店家",
+    "ordersProcessed": "已處理訂單",
+    "customerRating": "客戶評分",
+    "supportAvailable": "可用支援"
+  },
+  "testimonials": {
+    "title": "客戶怎麼說",
+    "description": "數百位滿意的租借店家老闆一同推薦",
+    "items": {
+      "john": {
+        "quote": "AnyRent 幫助我有效經營租借店家。介面容易上手，功能也很完整。",
+        "name": "阮文安",
+        "role": "租借店家老闆"
+      },
+      "sarah": {
+        "quote": "訂單管理功能非常方便。我能輕鬆追蹤所有訂單，也能有效管理庫存。",
+        "name": "陳氏平",
+        "role": "店長"
+      },
+      "mike": {
+        "quote": "行動應用程式非常方便。我隨時隨地都能管理店家，介面也很直覺。",
+        "name": "黎文強",
+        "role": "企業主"
+      },
+      "aoDai": {
+        "quote": "AnyRent 幫助我非常有效地管理奧黛租借店家。奧黛的預約行事曆與尺寸管理功能都很方便。",
+        "name": "范氏蘭",
+        "role": "奧黛租借店家老闆"
+      },
+      "equipment": {
+        "quote": "器材設備的庫存管理變得前所未有的輕鬆。我能準確追蹤設備狀態與租借行程。",
+        "name": "黃文德",
+        "role": "器材設備租借店家老闆"
+      },
+      "weddingDress": {
+        "quote": "婚紗租借訂單管理系統非常專業。我能同時管理多套婚紗，也能追蹤客戶歷史紀錄。",
+        "name": "阮氏梅",
+        "role": "婚紗租借店家老闆"
+      },
+      "camera": {
+        "quote": "相機與配件租借管理變得簡單許多。設備狀態檢查與保養排程功能非常實用。",
+        "name": "陳文雄",
+        "role": "相機租借店家老闆"
+      }
+    },
+    "badge": "客戶評價"
+  },
+  "cta": {
+    "title": "準備好開始了嗎？",
+    "description": "信賴我們平台的數千家租借事業都在這裡"
+  },
+  "blog": {
+    "title": "最新文章",
+    "subtitle": "探索對您租借事業實用的知識與小技巧",
+    "badge": "文章"
+  },
+  "faq": {
+    "title": "關於租借店家管理軟體的常見問題",
+    "description": "關於 AnyRent 租借管理系統，您需要知道的一切，領先的租借店家管理軟體",
+    "items": {
+      "freeUse": {
+        "question": "AnyRent 租借店家管理軟體免費嗎？",
+        "answer": "AnyRent 租借管理系統提供免費試用版。您可以註冊並免費使用租借店家管理軟體的基本功能，免費體驗租借訂單管理、租借庫存管理與客戶管理。"
+      },
+      "multipleDevices": {
+        "question": "我可以在多個裝置上使用租借店家管理軟體嗎？",
+        "answer": "可以，AnyRent 租借管理系統支援多個平台。您可以在 iOS、Android 與網頁瀏覽器上使用租借店家管理軟體，透過多平台租借管理系統，隨時隨地管理您的租借店家。"
+      },
+      "dataSecure": {
+        "question": "我的租借店家管理資料安全嗎？",
+        "answer": "我們承諾在租借管理系統中保護您的資料。所有租借訂單、租借庫存與客戶管理資訊均經過加密，並安全儲存於雲端。AnyRent 租借店家管理軟體確保資料安全。"
+      },
+      "support": {
+        "question": "租借管理系統提供客戶支援嗎？",
+        "answer": "有的，我們為 AnyRent 租借店家管理軟體提供 24/7 客戶支援。專業支援團隊隨時準備透過即時聊天、電子郵件與電話，協助您解決租借管理系統的任何問題。"
+      }
+    }
+  },
+  "pricing": {
+    "title": "簡單的價格方案",
+    "description": "選擇符合您經營需求的方案",
+    "discounts": {
+      "three": "0%",
+      "six": "-5%",
+      "twelve": "-10%"
+    },
+    "months": {
+      "three": "3 個月",
+      "six": "6 個月",
+      "twelve": "12 個月"
+    },
+    "loading": "正在載入方案...",
+    "error": "無法載入方案",
+    "errorHint": "請稍後再試，或聯絡 AnyRent 取得報價。",
+    "retry": "重試",
+    "noPlans": "目前沒有可用的方案。",
+    "buttonText": "開始使用",
+    "plans": {
+      "freeTrial": {
+        "name": "免費試用",
+        "subtitle": "最適合剛開始使用",
+        "period": "14 天",
+        "description": "免費試用所有功能",
+        "buttonText": "開始免費試用"
+      },
+      "basic": {
+        "name": "基本方案",
+        "subtitle": "適合小型租借事業",
+        "period": "每月",
+        "description": "非常適合小型租借店家",
+        "buttonText": "開始使用",
+        "mostPopular": "最受歡迎"
+      },
+      "premium": {
+        "name": "進階方案",
+        "subtitle": "適合成長中的事業",
+        "period": "每月",
+        "description": "為更大規模的營運提供進階功能",
+        "buttonText": "開始使用"
+      }
+    },
+    "features": {
+      "orderManagement": "訂單管理",
+      "productManagement": "商品管理",
+      "customerManagement": "客戶管理",
+      "revenueReports": "營收報表",
+      "singleAccount": "單一帳號",
+      "twoAccounts": "兩個帳號",
+      "fiveAccounts": "五個帳號",
+      "webPortal": "網頁入口",
+      "additionalAccounts": "額外帳號",
+      "freeUpdates": "免費更新",
+      "mobileApp": "行動應用程式"
+    },
+    "allPlansInclude": "所有方案皆包含",
+    "support24": "24/7 支援",
+    "dataBackup": "資料備份",
+    "freeUpdates": "免費更新",
+    "training": "教育訓練",
+    "additionalPricingTitle": "額外價格資訊",
+    "additionalAccountPrice": "額外帳號價格",
+    "additionalAccountDescription": "超過方案上限的每個額外使用者帳號之價格",
+    "additionalAccountPriceValue": "每月 30,000 VND",
+    "addonPrice": "附加功能價格",
+    "addonDescription": "用於提高上限的方案附加功能價格（店家、使用者、商品、客戶、訂單）",
+    "addonPriceValue": "請洽詢價格",
+    "close": "關閉",
+    "additionalPricingNote": "進一步了解額外帳號與附加功能的價格",
+    "priceLabel": "價格：",
+    "additionalPricingSr": "帳號與擴充方案的額外價格資訊"
+  },
+  "footer": {
+    "description": "AnyRent - 越南領先的租借店家管理軟體與租借管理系統。為奧黛租借、婚紗租借、器材設備租借、車輛租借、表演服裝租借與印表機租借提供專業解決方案，高效管理租借訂單、租借庫存與客戶。",
+    "product": {
+      "title": "商品",
+      "features": "功能",
+      "pricing": "價格方案",
+      "downloadApp": "下載應用程式"
+    },
+    "support": {
+      "title": "支援",
+      "faq": "常見問題",
+      "documentation": "文件",
+      "contact": "聯絡我們"
+    },
+    "company": {
+      "title": "公司",
+      "aboutUs": "關於我們",
+      "terms": "服務條款",
+      "privacy": "隱私權"
+    },
+    "emailAddress": "support@anyrent.shop",
+    "copyright": "© 2024 AnyRent. 版權所有。",
+    "imageSearch": "AI 以圖找商品",
+    "industries": {
+      "title": "行業",
+      "aoDai": "奧黛租借",
+      "weddingDress": "婚紗租借",
+      "equipment": "器材租借",
+      "costume": "服裝租借"
+    }
+  },
+  "industries": {
+    "title": "依行業提供的解決方案",
+    "subtitle": "針對各類租借事業優化的軟體",
+    "aoDai": {
+      "title": "奧黛租借",
+      "desc": "依尺寸與顏色管理庫存，預約行事曆可避免重複訂單。"
+    },
+    "weddingDress": {
+      "title": "婚紗租借",
+      "desc": "作品集、試穿預約與完整的婚禮套裝服務。"
+    },
+    "equipment": {
+      "title": "器材租借",
+      "desc": "追蹤設備狀態、保養排程與租賃合約。"
+    },
+    "costume": {
+      "title": "服裝租借",
+      "desc": "表演、角色扮演與活動服裝，並管理尺寸與配件。"
+    }
+  },
+  "contactButtons": {
+    "zalo": "Zalo",
+    "whatsapp": "WhatsApp",
+    "telegram": "Telegram",
+    "zaloTitle": "聯絡 Zalo",
+    "whatsappTitle": "聯絡 WhatsApp",
+    "telegramTitle": "聯絡 Telegram",
+    "zaloQrTitle": "掃描 QR Code 聯絡 Zalo",
+    "zaloQrHint": "開啟 Zalo 應用程式，掃描上方的 QR Code 即可與我們連繫",
+    "openZalo": "開啟 Zalo",
+    "close": "關閉",
+    "zaloQrAlt": "Zalo QR Code",
+    "greeting": "您好！我想了解 AnyRent。"
+  },
+  "sections": {
+    "hero": "首頁橫幅",
+    "aiSearch": "AI 以圖找商品功能",
+    "duplicatePrevention": "防止重複訂單功能",
+    "orderWorkflow": "租借訂單流程功能",
+    "features": "功能",
+    "customSolution": "客製化方案聯絡區塊",
+    "stats": "統計數據",
+    "testimonials": "客戶評價",
+    "cta": "開始使用",
+    "faq": "常見問題",
+    "pricing": "價格方案",
+    "blog": "文章"
+  }
+}

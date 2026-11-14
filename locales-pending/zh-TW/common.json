@@ -230,7 +230,7 @@
       "outlets": "分店",
       "categories": "分類",
       "loyalty": "熟客",
-      "settings": "店鋪設定",
+      "settings": "店家設定",
       "attendanceSub": {
         "timesheet": "出勤表",
         "shifts": "排班",
@@ -276,7 +276,7 @@
       "goods": "貨品",
       "customers": "客戶",
       "people": "人事",
-      "shop": "店鋪"
+      "shop": "店家"
     },
     "crumbs": {
       "create": "新增",

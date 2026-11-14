@@ -34,13 +34,13 @@
     "warning": "Tersedia"
   },
   "result": {
-    "canRent": "Dapat disewakan {count} unit",
+    "canRent": "Dapat disewakan {count} set",
     "cannotRent": "Stok tidak cukup",
-    "insufficient": "Butuh {need} unit, hanya {have} unit kosong"
+    "insufficient": "Butuh {need} set, hanya {have} set kosong"
   },
-  "availableUnits": "Tersisa {count} unit",
+  "availableUnits": "Tersisa {count} set",
   "periodRange": "{pickup} – {return}",
-  "needVsHave": "Butuh {need} unit, kosong {have} unit pada periode ini",
+  "needVsHave": "Butuh {need} set, kosong {have} set pada periode ini",
   "conflictsCount": "Ada {count} pesanan bentrok pada periode ini",
   "stock": {
     "total": "Total stok",
@@ -84,7 +84,7 @@
     "checkAgain": "Periksa lagi"
   },
   "copy": {
-    "available": "{name} tersedia {count} unit dari {pickup} sampai {return}.",
+    "available": "{name} tersedia {count} set dari {pickup} sampai {return}.",
     "unavailable": "{name} habis pada periode {pickup} – {return} (butuh {need}, kosong {have})."
   },
   "errors": {
@@ -117,14 +117,14 @@
     "description": "Cari produk berdasarkan nama, kode, atau barcode. Anda dapat memeriksa beberapa produk sekaligus."
   },
   "detail": {
-    "freeHeadline": "Tersisa {count} unit",
+    "freeHeadline": "Tersisa {count} set",
     "free": "Kosong",
     "busy": "Terpakai",
     "need": "Dibutuhkan",
     "barLabel": "Kosong {free}, terpakai {busy}, dibutuhkan {need}, total stok {total}",
-    "days": "Jumlah unit kosong per hari",
+    "days": "Jumlah set kosong per hari",
     "dayHint": "Ketuk satu hari untuk dicek mulai dari hari itu",
-    "dayLabel": "{date}: tersisa {free} unit",
+    "dayLabel": "{date}: tersisa {free} set",
     "conflicts": "Pesanan bentrok ({count})",
     "noConflicts": "Tidak ada pesanan yang bentrok pada periode ini."
   },

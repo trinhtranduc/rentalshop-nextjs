@@ -1,6 +1,6 @@
 {
   "title": "Gestion des comptes bancaires",
-  "subtitle": "Gérer les comptes bancaires du point de vente",
+  "subtitle": "Gérer les comptes bancaires du point de location",
   "form": {
     "title": "Informations du compte bancaire",
     "addTitle": "Ajouter un compte bancaire",
@@ -58,7 +58,7 @@
     "loadError": "Impossible de charger la liste des comptes bancaires",
     "deleteConfirm": "Voulez-vous vraiment supprimer le compte bancaire « {name} » ?",
     "deleteConfirmTitle": "Supprimer le compte bancaire",
-    "noOutlet": "Vous n'êtes rattaché à aucun point de vente. Veuillez contacter l'administrateur.",
+    "noOutlet": "Vous n'êtes rattaché à aucun point de location. Veuillez contacter l'administrateur.",
     "noPermission": "Vous n'êtes pas autorisé à consulter les comptes bancaires."
   }
 }

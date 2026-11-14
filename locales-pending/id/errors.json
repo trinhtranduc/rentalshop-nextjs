@@ -406,7 +406,7 @@
   "EMAIL_PROVIDER_NOT_CONFIGURED": "Layanan email belum dikonfigurasi.",
   "INVALID_EXTENSION_DURATION": "Durasi perpanjangan tidak valid.",
   "NEW_END_DATE_REQUIRED": "Silakan pilih tanggal berakhir yang baru.",
-  "CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT": "Anda tidak dapat membuat pesanan untuk cabang toko lain.",
+  "CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT": "Anda tidak dapat membuat pesanan untuk cabang milik toko lain.",
   "CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET": "Anda hanya dapat membuat pesanan untuk cabang Anda.",
   "CANNOT_CREATE_PRODUCT_AT_OTHER_OUTLET": "Anda hanya dapat menambahkan produk ke cabang Anda.",
   "CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT": "Anda tidak dapat mengubah pesanan milik toko lain.",

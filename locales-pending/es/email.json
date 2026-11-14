@@ -83,33 +83,33 @@
   },
   "addonChange": {
     "created": {
-      "title": "Se agregó un paquete complementario",
-      "message": "Se agregó un nuevo paquete complementario a su cuenta. Sus límites fueron aumentados.",
+      "title": "Se agregó un add-on",
+      "message": "Se agregó un nuevo add-on a su cuenta. Sus límites fueron aumentados.",
       "action": "Agregado"
     },
     "updated": {
-      "title": "Paquete complementario actualizado",
-      "message": "Su paquete complementario fue actualizado. Los límites fueron ajustados.",
+      "title": "Add-on actualizado",
+      "message": "Su add-on fue actualizado. Los límites fueron ajustados.",
       "action": "Actualizado"
     },
     "deleted": {
-      "title": "Paquete complementario eliminado",
-      "message": "Se eliminó un paquete complementario de su cuenta. Sus límites fueron reducidos.",
+      "title": "Add-on eliminado",
+      "message": "Se eliminó un add-on de su cuenta. Sus límites fueron reducidos.",
       "action": "Eliminado"
     },
     "activated": {
-      "title": "Paquete complementario activado",
-      "message": "Su paquete complementario fue activado. Los límites fueron aplicados.",
+      "title": "Add-on activado",
+      "message": "Su add-on fue activado. Los límites fueron aplicados.",
       "action": "Activado"
     },
     "deactivated": {
-      "title": "Paquete complementario desactivado",
-      "message": "Su paquete complementario fue desactivado. Los límites fueron quitados.",
+      "title": "Add-on desactivado",
+      "message": "Su add-on fue desactivado. Los límites fueron quitados.",
       "action": "Desactivado"
     },
     "greeting": "Hola",
     "action": "Acción",
-    "addonLimits": "Límites del complemento",
+    "addonLimits": "Límites del add-on",
     "notes": "Notas",
     "noSpecificLimits": "Sin límites específicos",
     "outlets": "{count} sucursales",

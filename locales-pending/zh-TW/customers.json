@@ -27,7 +27,7 @@
     "address": "地址",
     "streetAddress": "街道地址",
     "city": "城市",
-    "state": "省／州",
+    "state": "省／市",
     "country": "國家",
     "zipCode": "郵遞區號",
     "location": "位置",
@@ -151,7 +151,7 @@
     "enterCompanyName": "請輸入公司名稱（選填）",
     "enterStreetAddress": "請輸入街道地址（選填）",
     "enterCity": "請輸入城市（選填）",
-    "enterState": "請輸入省／州（選填）",
+    "enterState": "請輸入省／市（選填）",
     "enterZipCode": "請輸入郵遞區號（選填）",
     "enterCountry": "請輸入國家（選填）"
   },
@@ -254,7 +254,7 @@
       "noOrders": "此客戶尚無訂單。",
       "ordersFailed": "無法載入客戶訂單。",
       "allOrders": "此客戶的所有訂單",
-      "profile": "查看檔案",
+      "profile": "查看客戶資料",
       "delete": "刪除客戶"
     },
     "delete": {
@@ -349,7 +349,7 @@
       "email": "電子郵件",
       "address": "門牌號碼、街道",
       "city": "區／城市",
-      "state": "省／州",
+      "state": "省／市",
       "zipCode": "郵遞區號",
       "idNumber": "證件號碼",
       "idNumberHint": "客戶租借時留下的身分證、護照或駕照。",

@@ -23,7 +23,7 @@
     "month": "{month} 月",
     "hours": "{hours} 小時",
     "exportXlsx": "匯出 Excel",
-    "notAvailable": "店鋪尚未啟用考勤模組。請聯繫 AnyRent 開通。",
+    "notAvailable": "店家尚未啟用考勤模組。請聯繫 AnyRent 開通。",
     "noAccess": "只有店主與分店管理員可以使用此畫面。",
     "noOutlet": "尚無分店。"
   },
@@ -411,7 +411,7 @@
     "out": "出",
     "loading": "載入中…",
     "invalid": "櫃台機連結已失效，請向店主索取新連結。",
-    "moduleOff": "店鋪尚未啟用考勤模組。",
+    "moduleOff": "店家尚未啟用考勤模組。",
     "notConfigured": "分店尚未設定位置或尚未建立 QR 碼。",
     "failed": "無法載入碼，正在重試…"
   }

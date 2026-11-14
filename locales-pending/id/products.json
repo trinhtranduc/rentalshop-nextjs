@@ -455,7 +455,7 @@
       "filter": {
         "label": "Filter baris",
         "all": "Semua {count}",
-        "errorsFirst": "Error dulu · {count}"
+        "errorsFirst": "Galat dulu · {count}"
       },
       "cols": {
         "row": "Baris",
@@ -476,7 +476,7 @@
         "priceInvalid": "Harga tidak valid",
         "stockInvalid": "Jumlah tidak valid",
         "categoryUnknown": "Kategori belum ada",
-        "barcodeDuplicate": "Barcode sama dengan baris {row}",
+        "barcodeDuplicate": "Barcode duplikat dengan baris {row}",
         "noBranch": "Aktifkan minimal satu cabang"
       },
       "categoryHint": "Kategori belum ada: buat dulu di halaman Kategori, atau kosongkan untuk memakai kategori default.",
@@ -533,7 +533,7 @@
           "created": "Dibuat",
           "updated": "Tambah stok",
           "duplicate": "Barcode duplikat",
-          "failed": "Error",
+          "failed": "Galat",
           "skipped": "Tidak diimpor"
         },
         "noName": "(belum ada nama)",

@@ -58,7 +58,7 @@
     "collateralImageHint": "Laden Sie ein Bild des Personalausweises, Reisepasses oder eines anderen Sicherheitsdokuments hoch. Unterstützte Formate: JPEG, PNG, WebP. Maximale Größe: 5 MB",
     "tooltips": {
       "damageFee": "Zusätzlicher Betrag, wenn Artikel während der Miete beschädigt werden oder verloren gehen",
-      "securityDeposit": "Kaution, die der Kunde bei der Übergabe hinterlegen muss. Sie wird nach der Rückgabe abzüglich einer etwaigen Zusatzgebühr erstattet",
+      "securityDeposit": "Kaution, die der Kunde bei der Übergabe hinterlegen muss. Sie wird nach der Rückgabe abzüglich einer etwaigen Zusatzgebühr erstattet.",
       "collateralType": "Art des Ausweisdokuments, das der Kunde als Kaution hinterlegt (Personalausweis/CCCD/ID, Führerschein/Driver License, Reisepass/Passport oder andere)",
       "collateralDetails": "Detaillierte Angaben zum Sicherheitsdokument (Nummer des Ausweises/CCCD/ID, Führerscheinnummer, Passnummer oder andere Angaben je nach Art)",
       "collateralImage": "Bild des Personalausweises, Reisepasses oder eines anderen Sicherheitsdokuments zur Überprüfung hochladen"
@@ -752,8 +752,8 @@
           "FIXED": "/Vermietung",
           "DAILY": "/Tag",
           "HOURLY": "/Std.",
-          "BLOCK": "ganze Mietdauer",
-          "OTHER": ""
+          "OTHER": "",
+          "BLOCK": "ganze Mietdauer"
         },
         "note": "Gilt nur für diesen Auftrag; der Produktpreis bleibt unverändert.",
         "done": "Fertig",
@@ -883,7 +883,7 @@
     "pay": {
       "due": "noch einzuziehen {amount}",
       "fee": "+ Verspätungsgebühr {amount}",
-      "refund": "Kaution erstatten {amount}",
+      "refund": "Anzahlung erstatten {amount}",
       "noRevenue": "kein Umsatz",
       "kept": "einbehalten {amount}"
     },

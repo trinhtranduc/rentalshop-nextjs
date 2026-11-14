@@ -32,7 +32,7 @@
   "descriptions": {
     "basic": "Idéal pour les petites boutiques de location",
     "professional": "Idéal pour les boutiques de location en croissance avec accès web",
-    "enterprise": "Pour les activités de location de grande envergure avec plusieurs points de vente"
+    "enterprise": "Pour les activités de location de grande envergure avec plusieurs points de location"
   },
   "billingCycle": {
     "monthly": "Mensuel",
@@ -62,7 +62,7 @@
     "selectPlan": "Choisir le forfait"
   },
   "features": {
-    "outletsLimit": "Points de vente",
+    "outletsLimit": "Points de location",
     "usersLimit": "Utilisateurs",
     "productsLimit": "Produits",
     "ordersLimit": "Commandes par mois",
@@ -88,7 +88,7 @@
     "customBranding": "Personnalisation de la marque",
     "prioritySupport": "Assistance prioritaire",
     "apiIntegration": "Intégration API",
-    "multiOutletManagement": "Gestion de plusieurs points de vente",
+    "multiOutletManagement": "Gestion de plusieurs points de location",
     "advancedAnalytics": "Analyses avancées",
     "whiteLabel": "Marque blanche",
     "white-label": "Marque blanche",
@@ -97,7 +97,7 @@
     "webDashboardAccess": "Accès au tableau de bord web",
     "advancedReportingAnalytics": "Rapports et analyses avancés",
     "allProfessionalFeatures": "Toutes les fonctionnalités professionnelles",
-    "multipleOutlets": "Plusieurs points de vente",
+    "multipleOutlets": "Plusieurs points de location",
     "advancedTeamManagement": "Gestion d'équipe avancée",
     "dedicatedAccountManager": "Responsable de compte dédié",
     "customReporting": "Rapports personnalisés",
@@ -141,11 +141,11 @@
     "getStarted": "Commencer"
   },
   "limits": {
-    "outlets": "{count} point(s) de vente",
+    "outlets": "{count} point(s) de location",
     "users": "{count} utilisateur(s)",
     "products": "{count} produit(s)",
     "customers": "{count} client(s)",
-    "unlimitedOutlets": "Points de vente illimités",
+    "unlimitedOutlets": "Points de location illimités",
     "unlimitedUsers": "Utilisateurs illimités",
     "unlimitedProducts": "Produits illimités",
     "unlimitedCustomers": "Clients illimités"
@@ -189,7 +189,7 @@
       "yearly": "Annuel"
     },
     "limit": {
-      "outlets": "Points de vente",
+      "outlets": "Points de location",
       "users": "Personnel",
       "products": "Produits",
       "customers": "Clients",
@@ -211,7 +211,7 @@
     "products": "Articles",
     "customers": "Clients",
     "users": "Utilisateurs",
-    "outlets": "Points de vente",
+    "outlets": "Points de location",
     "orders": "Commandes",
     "unlimited": "Illimité",
     "getStarted": "Commencer",
@@ -224,7 +224,7 @@
     "addonTitle": "Options",
     "addonIntro": "Au-delà des plafonds du forfait, ces éléments sont facturés en plus chaque mois.",
     "addonUser": "Utilisateur supplémentaire — 30 000 VND/mois",
-    "addonOutlet": "Point de vente supplémentaire — supplément mensuel",
+    "addonOutlet": "Point de location supplémentaire — supplément mensuel",
     "addonAttendance": "Pointage — supplément mensuel",
     "faqTitle": "Questions fréquentes",
     "faq1q": "Qu'est-ce que le catalogue public des articles ?",
@@ -246,7 +246,7 @@
     "descTrial": "Essai gratuit avec les limites de la formule de base",
     "descBasic": "Idéal pour les petits magasins de location",
     "descProfessional": "Pour les loueurs en croissance, avec accès web",
-    "descEnterprise": "Pour les grands loueurs avec plusieurs points de vente",
+    "descEnterprise": "Pour les grands loueurs avec plusieurs points de location",
     "badgeFreeTrial": "Essai gratuit",
     "badgeMostPopular": "La plus choisie",
     "badgePremium": "Premium"

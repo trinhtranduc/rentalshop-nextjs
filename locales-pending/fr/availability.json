@@ -9,8 +9,8 @@
   "pickupDate": "Date de remise",
   "returnDate": "Date de retour",
   "quantity": "Quantité",
-  "outlet": "Point de vente",
-  "selectOutlet": "Choisir le point de vente",
+  "outlet": "Point de location",
+  "selectOutlet": "Choisir le point de location",
   "searchPlaceholder": "Rechercher un nom ou un code-barres",
   "changeProduct": "Changer de produit",
   "noProductsFound": "Aucun produit trouvé",
@@ -26,7 +26,7 @@
     "category": "Catégorie"
   },
   "checking": "Vérification en cours…",
-  "missingOutlet": "Choisissez un point de vente pour vérifier la disponibilité",
+  "missingOutlet": "Choisissez un point de location pour vérifier la disponibilité",
   "invalidDates": "La date de retour ne peut pas être antérieure à la date de remise",
   "status": {
     "available": "Disponible",
@@ -133,7 +133,7 @@
   "increase": "Augmenter la quantité",
   "web": {
     "title": "Vérifier la disponibilité",
-    "outlet": "Point de vente",
+    "outlet": "Point de location",
     "product": "Produit",
     "productPlaceholder": "Rechercher un nom ou un code produit",
     "noProducts": "Aucun produit trouvé",
@@ -150,7 +150,7 @@
     },
     "reversed": "La date de retour doit être égale ou postérieure à la date de remise.",
     "pickProduct": "Choisissez un produit pour voir combien d'unités sont disponibles sur ce planning.",
-    "pickOutlet": "Choisissez un point de vente pour vérifier.",
+    "pickOutlet": "Choisissez un point de location pour vérifier.",
     "has": "{total} unité(s) · {from} → {to}",
     "free": "{free}/{total} disponible(s) sur tout le planning",
     "short": "Manque {missing} · {free}/{total} disponible(s)",

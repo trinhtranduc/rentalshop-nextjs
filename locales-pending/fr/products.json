@@ -51,17 +51,17 @@
     "reserved": "Réservés",
     "updateStock": "Mettre à jour le stock",
     "stockHistory": "Historique du stock",
-    "outletStockDistribution": "Répartition du stock par point de vente",
-    "stockAllocation": "Répartition du stock entre les différents points de vente",
-    "noOutletStock": "Aucune information de stock par point de vente",
-    "notAssignedToOutlets": "Ce produit n'est peut-être affecté à aucun point de vente.",
-    "totalOutlets": "Nombre total de points de vente",
+    "outletStockDistribution": "Répartition du stock par point de location",
+    "stockAllocation": "Répartition du stock entre les différents points de location",
+    "noOutletStock": "Aucune information de stock par point de location",
+    "notAssignedToOutlets": "Ce produit n'est peut-être affecté à aucun point de location.",
+    "totalOutlets": "Nombre total de points de location",
     "stockEntries": "Nombre de répartitions",
     "stockRequired": "La valeur du stock est obligatoire",
-    "needOutletMessage": "Vous devez créer au moins un point de vente avant de pouvoir ajouter des produits. Les produits doivent être affectés à des points de vente précis pour gérer le stock.",
-    "contactAdmin": "Veuillez contacter l'administrateur pour configurer les points de vente de votre entreprise.",
+    "needOutletMessage": "Vous devez créer au moins un point de location avant de pouvoir ajouter des produits. Les produits doivent être affectés à des points de location précis pour gérer le stock.",
+    "contactAdmin": "Veuillez contacter l'administrateur pour configurer les points de location de votre entreprise.",
     "creating": "Création…",
-    "listRollupHint": "Total sur {count} points de vente"
+    "listRollupHint": "Total sur {count} points de location"
   },
   "availability": {
     "title": "Disponibilité",
@@ -157,7 +157,7 @@
     "autoSaved": "Enregistrement automatique effectué",
     "autoSaveFailed": "Échec de l'enregistrement automatique",
     "saving": "Enregistrement…",
-    "unknownOutlet": "Point de vente inconnu",
+    "unknownOutlet": "Point de location inconnu",
     "imagesSelected": "photo(s) sélectionnée(s)"
   },
   "filters": {
@@ -166,8 +166,8 @@
     "available": "Disponibles",
     "rented": "En location",
     "outOfStock": "Épuisés",
-    "outletLabel": "Point de vente",
-    "allOutlets": "Tous les points de vente",
+    "outletLabel": "Point de location",
+    "allOutlets": "Tous les points de location",
     "categoryLabel": "Catégorie",
     "allCategories": "Toutes les catégories",
     "priceRange": "Fourchette de prix",
@@ -238,7 +238,7 @@
   "allCategories": "Toutes les catégories",
   "noCategories": "Aucune catégorie",
   "uncategorized": "Sans catégorie",
-  "store": "Point de vente",
+  "store": "Point de location",
   "productsPlural": "articles",
   "storeNotFound": "Boutique introuvable",
   "storeNotFoundMessage": "La boutique recherchée est introuvable. Vérifiez l’adresse ou contactez le propriétaire.",
@@ -292,22 +292,22 @@
     "stock": "Stock"
   },
   "form": {
-    "stockIsSum": "Calculé automatiquement à partir du stock des points de vente ci-dessous",
+    "stockIsSum": "Calculé automatiquement à partir du stock des points de location ci-dessous",
     "sectionInfo": "Informations produit",
     "editTitle": "Modifier le produit",
     "sectionOrganise": "Classement et codes",
     "stockTotal": "Stock total : {count}",
-    "singleOutletNote": "Point de vente par défaut : {name}. Le produit y sera ajouté.",
+    "singleOutletNote": "Point de location par défaut : {name}. Le produit y sera ajouté.",
     "createTitle": "Nouveau produit"
   },
   "view": {
     "noImage": "Aucune photo",
     "updated": "Créé {created} · mis à jour {updated}",
-    "stockTitle": "Stock par point de vente",
+    "stockTitle": "Stock par point de location",
     "dailyPrice": "Prix à la journée",
     "perDay": "/jour",
     "depositHint": "Le client paie d'avance, déduit du montant de la location",
-    "outlet": "Point de vente"
+    "outlet": "Point de location"
   },
   "web": {
     "title": "Produits",
@@ -341,7 +341,7 @@
       "none": "Aucune catégorie correspondante"
     },
     "outlet": {
-      "label": "Point de vente",
+      "label": "Point de location",
       "all": "Tous"
     },
     "sort": {
@@ -373,7 +373,7 @@
       "left": "Disponible {available}/{total}",
       "out": "Épuisé",
       "renting": "{count} en location",
-      "otherOutlets": "Autres points de vente : {count} disponibles"
+      "otherOutlets": "Autres points de location : {count} disponibles"
     },
     "price": {
       "perHour": "{price}/heure",
@@ -477,7 +477,7 @@
         "stockInvalid": "Quantité invalide",
         "categoryUnknown": "Catégorie inexistante",
         "barcodeDuplicate": "Code-barres en double avec la ligne {row}",
-        "noBranch": "Activez au moins un point de vente"
+        "noBranch": "Activez au moins un point de location"
       },
       "categoryHint": "Catégorie inexistante : créez-la d'abord dans la page Catégories, ou laissez vide pour utiliser la catégorie par défaut.",
       "openCategories": "Ouvrir la page Catégories",
@@ -490,7 +490,7 @@
       "noPermission": "Ce compte n'est pas autorisé à importer des produits.",
       "result": {
         "done": "{count} produits importés",
-        "skipped": "{count} lignes ignorées car le code-barres existe déjà dans le point de vente",
+        "skipped": "{count} lignes ignorées car le code-barres existe déjà dans le point de location",
         "none": "Aucun produit importé",
         "rejected": "{count} lignes non valides : aucune ligne n'a été importée. Corrigez le fichier puis réimportez-le.",
         "errorsTitle": "Lignes refusées",
@@ -498,21 +498,21 @@
         "failed": "Échec de l'import",
         "toList": "Voir la liste des produits",
         "again": "Importer un autre fichier",
-        "updated": "{count} produits ont reçu du stock dans les points de vente qui n'en avaient pas",
+        "updated": "{count} produits ont reçu du stock dans les points de location qui n'en avaient pas",
         "updatedOnly": "Stock ajouté pour {count} produits existants",
-        "skippedBranch": "{count} lignes ignorées car le produit est déjà en stock dans le point de vente choisi",
-        "branchListed": "{count} produits affichés dans le point de vente",
+        "skippedBranch": "{count} lignes ignorées car le produit est déjà en stock dans le point de location choisi",
+        "branchListed": "{count} produits affichés dans le point de location",
         "branchOutOfStock": "{count} épuisés",
         "branchSkipped": "{count} ignorés car déjà en stock"
       },
       "branch": {
         "label": "La quantité du fichier correspond à",
-        "hint": "Le nouvel article n'est affiché que dans {name}. Pour le vendre aussi dans un autre point de vente, cochez la case Affiché dans la colonne de ce point de vente et saisissez la quantité.",
-        "locked": "{name} (votre point de vente)",
-        "lockedHint": "Impossible de choisir un autre point de vente."
+        "hint": "Le nouvel article n'est affiché que dans {name}. Pour le vendre aussi dans un autre point de location, cochez la case Affiché dans la colonne de ce point de location et saisissez la quantité.",
+        "locked": "{name} (votre point de location)",
+        "lockedHint": "Impossible de choisir un autre point de location."
       },
       "legend": {
-        "on": "Affiché dans le point de vente",
+        "on": "Affiché dans le point de location",
         "off": "Non affiché",
         "zero": "Quantité 0 = en vente, actuellement épuisé"
       },
@@ -542,15 +542,15 @@
         "added": "Stock ajouté : {list}",
         "keptBranches": "ignoré : {names} (déjà en stock)",
         "exists": "Le produit « {name} » utilise déjà ce code-barres",
-        "existsNoName": "Le code-barres existe déjà dans le point de vente",
+        "existsNoName": "Le code-barres existe déjà dans le point de location",
         "hasStockAt": "déjà en stock à {names}",
         "deleted": "Code-barres du produit supprimé « {name} »",
         "deletedNoName": "Code-barres d'un produit supprimé",
         "unchosen": "Non sélectionné pour l'import",
-        "noBranch": "Aucun point de vente activé",
+        "noBranch": "Aucun point de location activé",
         "blocked": "Non importé, car une autre ligne contient une erreur",
-        "shortQty": "Stock {count} · {branches} points de vente",
-        "shortAdded": "+{count} en stock dans les points de vente sans stock",
+        "shortQty": "Stock {count} · {branches} points de location",
+        "shortAdded": "+{count} en stock dans les points de location sans stock",
         "shortExists": "Existe déjà : {name}",
         "shortDeleted": "Code d'un produit supprimé",
         "more": "Voir le détail de la ligne {row}"
@@ -567,7 +567,7 @@
         "pricing": "Prix de location et acompte",
         "stock": "Quantité",
         "organise": "Classement et codes",
-        "stockListing": "Stock et affichage par point de vente"
+        "stockListing": "Stock et affichage par point de location"
       },
       "name": "Nom du produit",
       "namePlaceholder": "Ex. : robe en soie rouge",
@@ -598,11 +598,11 @@
       "costPrice": "Prix de revient",
       "costHint": "Visible uniquement par le propriétaire et les responsables.",
       "staffPrices": "Les prix de location et de vente sont fixés par le propriétaire de la boutique.",
-      "branchLocked": "Le personnel ne peut pas modifier le nom, les photos, les prix, la catégorie ni le code. Vous ne mettez à jour que la quantité de votre point de vente.",
-      "branchNotHeld": "Votre point de vente ne propose pas encore ce produit : ici, vous ne pouvez modifier que la quantité de votre point de vente.",
+      "branchLocked": "Le personnel ne peut pas modifier le nom, les photos, les prix, la catégorie ni le code. Vous ne mettez à jour que la quantité de votre point de location.",
+      "branchNotHeld": "Votre point de location ne propose pas encore ce produit : ici, vous ne pouvez modifier que la quantité de votre point de location.",
       "quantity": "Quantité",
       "quantityAt": "À {outlet}",
-      "perOutlet": "Quantité dans chaque point de vente",
+      "perOutlet": "Quantité dans chaque point de location",
       "quantityOf": "Quantité dans {outlet}",
       "sum": "Total : {count}",
       "imageSearch": {
@@ -641,8 +641,8 @@
       "retry": "Réessayer",
       "needCategory": "Créez au moins une catégorie avant d'ajouter un produit.",
       "goCategories": "Ouvrir Catégories",
-      "needOutlet": "Créez au moins un point de vente avant d'ajouter un produit.",
-      "goOutlets": "Ouvrir Points de vente",
+      "needOutlet": "Créez au moins un point de location avant d'ajouter un produit.",
+      "goOutlets": "Ouvrir Points de location",
       "blockRow": "Par tranche de jours",
       "blockNotSet": "Non configuré",
       "unitOnce": "VND / fois",
@@ -663,15 +663,15 @@
         "incomplete": "Saisissez le prix de chaque jour et le montant ajouté par jour, ou choisissez de maintenir le prix du dernier palier."
       },
       "listing": {
-        "branch": "Point de vente",
+        "branch": "Point de location",
         "stock": "Stock",
-        "column": "Affiché dans le point de vente",
-        "tickOf": "Affiché dans le point de vente {outlet}",
+        "column": "Affiché dans le point de location",
+        "tickOf": "Affiché dans le point de location {outlet}",
         "ownerOnly": "Seul le propriétaire peut activer ou désactiver",
         "current": "sélectionné",
-        "reminder": "Il reste {stock} unités dans ce point de vente ({renting} en location). Elles restent comptées dans le total mais n'apparaissent pas lors de la création d'une commande.",
-        "reminderNoRent": "Il reste {stock} unités dans ce point de vente. Elles restent comptées dans le total mais n'apparaissent pas lors de la création d'une commande.",
-        "saveFailed": "Produit enregistré, mais la case Affiché dans le point de vente n'a pas pu être sauvegardée. Réessayez."
+        "reminder": "Il reste {stock} unités dans ce point de location ({renting} en location). Elles restent comptées dans le total mais n'apparaissent pas lors de la création d'une commande.",
+        "reminderNoRent": "Il reste {stock} unités dans ce point de location. Elles restent comptées dans le total mais n'apparaissent pas lors de la création d'une commande.",
+        "saveFailed": "Produit enregistré, mais la case Affiché dans le point de location n'a pas pu être sauvegardée. Réessayez."
       }
     },
     "detail": {
@@ -696,13 +696,13 @@
       "cost": "Prix de revient",
       "description": "Description",
       "noDescription": "Aucune description.",
-      "stock": "Stock par point de vente",
-      "outlet": "Point de vente",
+      "stock": "Stock par point de location",
+      "outlet": "Point de location",
       "total": "Total",
       "available": "Disponible",
       "renting": "En location",
       "sum": "Total",
-      "noStock": "Aucune quantité enregistrée dans les points de vente.",
+      "noStock": "Aucune quantité enregistrée dans les points de location.",
       "organise": "Classement et codes",
       "category": "Catégorie",
       "barcode": "Code-barres",
@@ -711,7 +711,7 @@
       "notFound": "Produit introuvable.",
       "loadFailed": "Impossible de charger le produit.",
       "retry": "Réessayer",
-      "otherOutletsTitle": "Stock des autres points de vente",
+      "otherOutletsTitle": "Stock des autres points de location",
       "otherOutletsHint": "Consultation seule. Disponible = total moins les quantités en location.",
       "block": {
         "title": "Grille tarifaire par jour",
@@ -779,7 +779,7 @@
   "public": {
     "searchPlaceholder": "Rechercher un article…",
     "all": "Tout",
-    "count": "{count, plural, one {# article} other {# articles}}",
+    "count": "{count} article(s)",
     "call": "Appeler",
     "callShop": "Appeler la boutique",
     "zalo": "Écrire sur Zalo",
@@ -790,7 +790,7 @@
     "sale": "Acheter {price}",
     "rentFixed": "Par location",
     "rentDaily": "Par jour",
-    "deposit": "Caution",
+    "deposit": "Acompte",
     "buy": "Acheter",
     "askNote": "Écrivez vos dates à la boutique pour vérifier la disponibilité.",
     "footer": "Réservez sur Zalo ou par téléphone · Créé avec AnyRent",
@@ -807,14 +807,14 @@
       "daysError": "Impossible de charger le calendrier. Réessayez.",
       "rangeFull": "Certains jours de cette période sont complets. Choisissez d’autres dates.",
       "quantity": "Quantité",
-      "days": "{count, plural, one {# jour} other {# jours}}",
+      "days": "{count} jour(s)",
       "estimate": "Estimation",
       "addToRequest": "Ajouter à la demande",
       "added": "Ajouté à votre demande",
       "sameRange": "Même boutique et mêmes dates que votre demande. Un changement ici s’applique à toute la demande.",
       "prevMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
-      "requestBar": "Demande de réservation · {count, plural, one {# article} other {# articles}}",
+      "requestBar": "Demande de réservation · {count} article(s)",
       "viewRequest": "Vérifier et envoyer",
       "requestTitle": "Demande de réservation",
       "remove": "Retirer",
@@ -863,7 +863,7 @@
       "cameraButton": "Recherche par photo",
       "yourPhoto": "Votre photo",
       "searching": "Recherche d’articles similaires…",
-      "resultsTitle": "Les plus proches de votre photo · {count, plural, one {# article} other {# articles}}",
+      "resultsTitle": "Les plus proches de votre photo · {count} article(s)",
       "similar": "Similaire à {percent} %",
       "inStockToday": "Disponible aujourd’hui",
       "outToday": "Indisponible aujourd’hui",
