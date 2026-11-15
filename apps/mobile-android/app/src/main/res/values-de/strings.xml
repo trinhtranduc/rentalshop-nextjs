@@ -2316,7 +2316,7 @@
     <string name="order_sheet_title_collect">Anzahlung kassieren</string>
     <string name="order_sheet_title_unpaid">Offene Anzahlungsstufen</string>
     <string name="order_sheet_title_cancel">Auftrag stornieren</string>
-    <string name="first_run_guide_title">Los geht's: 3 Schritte</string>
+    <string name="first_run_guide_title">Los geht\'s: 3 Schritte</string>
     <string name="first_run_guide_step_product">Erstes Produkt hinzufügen</string>
     <string name="first_run_guide_step_customer">Kunden hinzufügen</string>
     <string name="first_run_guide_step_order">Ersten Auftrag erstellen</string>
