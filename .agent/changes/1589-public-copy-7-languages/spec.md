@@ -9,6 +9,7 @@ Issue: #1589 · Status: in-progress · Intent: ./intent.md
 2. `plans.json`: the keys production has (public pricing page) equal production; the management keys stay as on `dev`.
 3. `phu-phi-wording`: ja, ko, zh have their own text for every fee label English has, not the English or Vietnamese one.
 4. `landing-i18n`, `public-pages-i18n`, `public-pages-price-copy`, `phu-phi-wording` pass.
+5. `yarn type-check` has no error that `main-real` does not have: the web language list in `LanguageSwitcher` is typed with the 12 public locales (type only, no behavior change).
 
 ## Out of scope
 
