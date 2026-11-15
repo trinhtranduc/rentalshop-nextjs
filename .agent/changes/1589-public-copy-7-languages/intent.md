@@ -26,3 +26,5 @@ Visitors of the public pages in 7 languages (`apps/client`). No API, iOS or Andr
 ## Decision log
 
 - 2026-11-15: owner: release with the web languages tonight; restore production copy rather than retranslate.
+- 2026-11-15: release review also found one new type-check error (`LanguageSwitcher.tsx:52`, the 12-code web list typed
+  with the 5 app locales since #1579). Type-only fix added here, same release-blocker scope (spec 5).
