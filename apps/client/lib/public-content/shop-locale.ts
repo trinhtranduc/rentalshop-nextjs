@@ -1,14 +1,13 @@
-import { isPublicLocale, type PublicLocale } from '@rentalshop/constants';
+import { isPublicLocale, webLanguages, type PublicLocale } from '@rentalshop/constants';
 
-/** #1146: the logged-in app has 5 languages; the public pages (landing, shop) have the 12 `PUBLIC_LOCALES` */
-export const APP_LOCALES = ['vi', 'en', 'ja', 'ko', 'zh'] as const;
-export type AppLocale = typeof APP_LOCALES[number];
+/** #1597 the logged-in app speaks the web languages that are on (`webLanguages()`); the public pages the 12 `PUBLIC_LOCALES` */
+export type AppLocale = PublicLocale;
+export const APP_LOCALES: readonly AppLocale[] = webLanguages().map((l) => l.code);
 
-/** App language for a `NEXT_LOCALE` value: a public-only language (picked on a public page) falls back to English */
+/** App language for a `NEXT_LOCALE` value: a public language that is not on for the web falls back to English */
 export function appLocaleFor(value: unknown): AppLocale {
   if (typeof value !== 'string') return 'vi';
   if ((APP_LOCALES as readonly string[]).includes(value)) return value as AppLocale;
-  if (value === 'zh-TW') return 'zh';
   return isPublicLocale(value) ? 'en' : 'vi';
 }
 

@@ -9,7 +9,7 @@ import React, { useEffect, useId, useMemo, useState, useTransition } from 'react
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { COUNTRIES, SHOP_LANGUAGES, type ShopLanguage } from '@rentalshop/constants';
+import { COUNTRIES, SHOP_LANGUAGES, webLanguages, type ShopLanguage } from '@rentalshop/constants';
 
 /** #1553 the name of each shop language, in that language */
 const SHOP_LANGUAGE_LABEL: Record<ShopLanguage, string> = { vi: 'Tiếng Việt', en: 'English', ja: '日本語' };
@@ -1257,10 +1257,8 @@ export function AccountSection({ userId, onSignOut, t }: { userId?: number | nul
 // Ngôn ngữ
 // ----------------------------------------------------------------------------
 
-export const LANGUAGES = [
-  { value: 'vi', label: 'Tiếng Việt' },
-  { value: 'en', label: 'English' },
-] as const;
+// #1597 the web languages that are on, each by its own name
+export const LANGUAGES = webLanguages().map((l) => ({ value: l.code, label: l.name }));
 
 export function LanguageSection({ t }: { t: T }) {
   const current = useLocale();
@@ -1282,7 +1280,7 @@ export function LanguageSection({ t }: { t: T }) {
   return (
     <SectionCard title={t('language.title')}>
       <p className="-mt-2 mb-0 text-sm text-ar-muted">{t('language.hint')}</p>
-      <div role="radiogroup" aria-label={t('language.title')} className="flex flex-col gap-2">
+      <div role="radiogroup" aria-label={t('language.title')} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {LANGUAGES.map((l) => (
           <label
             key={l.value}

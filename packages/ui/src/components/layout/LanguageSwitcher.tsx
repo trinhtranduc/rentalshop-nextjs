@@ -18,7 +18,7 @@
  * - Both: Ensures consistency
  */
 
-import React, { useTransition, useMemo, useEffect } from 'react';
+import React, { useTransition, useMemo } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
@@ -66,7 +66,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   publicLocale,
   publicPath,
 }) => {
-  const currentLocale = useLocale() as SupportedLocale;
+  const currentLocale = useLocale() as PublicLocale;
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
@@ -82,23 +82,9 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     if (isLandingPage) {
       return allLanguages;
     }
-    // For non-landing pages, only show vi and en
+    // #1597 other pages: the web languages that are on, which the logged-in app also speaks
     return basicLanguages;
   }, [isLandingPage, publicLocale]);
-
-  // Auto-fallback to vi/en if on non-landing page with zh/ko/ja locale
-  useEffect(() => {
-    if (publicLocale) return;
-    if (!isLandingPage && ['zh', 'ko', 'ja'].includes(currentLocale)) {
-      // #1551 English, like any other non-Vietnamese language (appLocaleFor, the shop language at sign-up, #1545)
-      const fallbackLocale: SupportedLocale = 'en';
-      document.cookie = `NEXT_LOCALE=${fallbackLocale};path=/;max-age=31536000;SameSite=Lax`;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user_language_preference', fallbackLocale);
-      }
-      router.refresh();
-    }
-  }, [isLandingPage, currentLocale, router, publicLocale]);
 
   const handleLanguageChange = (newLocale: SupportedLocale | PublicLocale) => {
     if (publicLocale) {
@@ -109,18 +95,6 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     }
 
     if (newLocale === currentLocale) return; // Already selected
-
-    // If switching to zh/ko/ja on non-landing page, redirect to landing page
-    if (!isLandingPage && ['zh', 'ko', 'ja'].includes(newLocale)) {
-      startTransition(() => {
-        document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user_language_preference', newLocale);
-        }
-        router.push('/');
-      });
-      return;
-    }
 
     startTransition(() => {
       // Set cookie for server-side access
