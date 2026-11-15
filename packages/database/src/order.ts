@@ -699,19 +699,23 @@ export async function updateOrder(
 
   console.log('✅ Order updated successfully');
 
-  // #504: the lines or the outlet of a rented-out order changed while it stays PICKUPED:
-  // renting/available follow the difference (nothing moves on a RESERVED order).
+  // The lines or the outlet of an order that holds stock changed while its status stays the same (nothing moves on a
+  // RESERVED order). #504: a rented-out RENT (PICKUPED) moves renting/available by the difference.
+  // A COMPLETED SALE moves stock by the difference (khách báo bán nhưng kho không giảm: the edit moved nothing).
   const editedItems = inputOrderItems && inputOrderItems.length > 0 ? inputOrderItems : null;
   const outletChanged = inputOutletId !== undefined && oldOutletId !== undefined && inputOutletId !== oldOutletId;
+  const heldStatus =
+    orderType === ORDER_TYPE.RENT ? ORDER_STATUS.PICKUPED : orderType === ORDER_TYPE.SALE ? ORDER_STATUS.COMPLETED : null;
   if (
-    orderType === ORDER_TYPE.RENT &&
-    oldStatus === ORDER_STATUS.PICKUPED &&
-    (!newStatus || newStatus === ORDER_STATUS.PICKUPED) &&
+    heldStatus &&
+    oldStatus === heldStatus &&
+    (!newStatus || newStatus === heldStatus) &&
     oldOutletId &&
     (editedItems || outletChanged)
   ) {
     try {
-      const { adjustOutletStockForEditedOrderItems } = await import('./product');
+      const { adjustOutletStockForEditedOrderItems, adjustOutletStockForEditedSaleItems } = await import('./product');
+      const adjust = orderType === ORDER_TYPE.SALE ? adjustOutletStockForEditedSaleItems : adjustOutletStockForEditedOrderItems;
       const before = oldOrderItems
         .filter((item) => item.productId)
         .map((item) => ({ productId: item.productId as number, quantity: item.quantity }));
@@ -719,12 +723,12 @@ export async function updateOrder(
         ? editedItems.filter((item) => item.productId).map((item) => ({ productId: item.productId, quantity: item.quantity }))
         : before;
       if (outletChanged) {
-        await adjustOutletStockForEditedOrderItems(oldOutletId, before, []);
-        await adjustOutletStockForEditedOrderItems(inputOutletId as number, [], after);
+        await adjust(oldOutletId, before, []);
+        await adjust(inputOutletId as number, [], after);
       } else {
-        await adjustOutletStockForEditedOrderItems(oldOutletId, before, after);
+        await adjust(oldOutletId, before, after);
       }
-      console.log('✅ Outlet stock adjusted for edited PICKUPED order');
+      console.log(`✅ Outlet stock adjusted for edited ${heldStatus} order`);
     } catch (error) {
       console.error('❌ Error adjusting outlet stock for edited order:', error);
     }

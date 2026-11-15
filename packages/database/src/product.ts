@@ -1116,17 +1116,7 @@ export async function adjustOutletStockForEditedOrderItems(
   oldItems: Array<{ productId: number; quantity: number }>,
   newItems: Array<{ productId: number; quantity: number }>
 ): Promise<void> {
-  const delta = new Map<number, number>();
-  for (const item of oldItems) {
-    if (!item.productId) continue;
-    delta.set(item.productId, (delta.get(item.productId) || 0) - item.quantity);
-  }
-  for (const item of newItems) {
-    if (!item.productId) continue;
-    delta.set(item.productId, (delta.get(item.productId) || 0) + item.quantity);
-  }
-
-  for (const [productId, change] of delta) {
+  for (const [productId, change] of editedLineDelta(oldItems, newItems)) {
     if (change === 0) continue;
     const outletStock = await prisma.outletStock.findUnique({
       where: { productId_outletId: { productId, outletId } },
@@ -1146,6 +1136,52 @@ export async function adjustOutletStockForEditedOrderItems(
         available: Math.max(0, outletStock.stock - newRenting),
       },
     });
+  }
+}
+
+/** Units per product the new lines hold minus the old lines (a removed line is negative, an added one positive). */
+function editedLineDelta(
+  oldItems: Array<{ productId: number; quantity: number }>,
+  newItems: Array<{ productId: number; quantity: number }>
+): Map<number, number> {
+  const delta = new Map<number, number>();
+  for (const item of oldItems) {
+    if (!item.productId) continue;
+    delta.set(item.productId, (delta.get(item.productId) || 0) - item.quantity);
+  }
+  for (const item of newItems) {
+    if (!item.productId) continue;
+    delta.set(item.productId, (delta.get(item.productId) || 0) + item.quantity);
+  }
+  return delta;
+}
+
+/**
+ * The lines (or the outlet) of a COMPLETED SALE were edited: the units are sold, so `stock` follows the difference
+ * between the old and the new lines, `available = stock - renting`, and Product.totalStock is synced. Same rules as
+ * the sale itself in updateOutletStockForOrder: a missing row is created and stock may go below 0.
+ */
+export async function adjustOutletStockForEditedSaleItems(
+  outletId: number,
+  oldItems: Array<{ productId: number; quantity: number }>,
+  newItems: Array<{ productId: number; quantity: number }>
+): Promise<void> {
+  for (const [productId, change] of editedLineDelta(oldItems, newItems)) {
+    if (change === 0) continue;
+    const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true } });
+    if (!product) continue;
+    const outletStock =
+      (await prisma.outletStock.findUnique({ where: { productId_outletId: { productId, outletId } } })) ??
+      (await prisma.outletStock.create({ data: { productId, outletId, stock: 0, available: 0, renting: 0 } }));
+    const newStock = outletStock.stock - change;
+    await prisma.outletStock.update({
+      where: { id: outletStock.id },
+      data: {
+        stock: { increment: -change },
+        available: Math.max(0, newStock - outletStock.renting),
+      },
+    });
+    await syncProductTotalStock(productId);
   }
 }
 
