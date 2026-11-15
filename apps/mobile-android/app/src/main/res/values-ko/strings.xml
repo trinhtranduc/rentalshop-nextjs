@@ -2220,7 +2220,7 @@
     <string name="products_listing_stock_rent">재고 %1$d · 대여 중 %2$d</string>
     <string name="products_listing_reminder">이 지점에 %1$d개가 있습니다(대여 중 %2$d개). 총수량에는 포함되지만 주문 생성 시에는 표시되지 않습니다.</string>
     <string name="products_listing_reminder_no_rent">이 지점에 %1$d개가 있습니다. 총수량에는 포함되지만 주문 생성 시에는 표시되지 않습니다.</string>
-    <string name="products_listing_save_failed">상품은 저장되었지만 '지점에 표시' 설정은 저장하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="products_listing_save_failed">상품은 저장되었지만 \'지점에 표시\' 설정은 저장하지 못했습니다. 다시 시도해 주세요.</string>
     <string name="products_listing_not_shown">이 지점에는 표시되지 않음</string>
     <string name="v2_scan_not_listed">이 지점에는 이 상품이 표시되지 않습니다</string>
     <string name="share_order_note_title">메모</string>
@@ -2337,7 +2337,7 @@
     <string name="first_run_guide_bubble_product_price">대여 가격을 입력하세요. 회당 또는 일당입니다.</string>
     <string name="first_run_guide_bubble_product_save">다 입력했어요. 상품 저장을 누르세요.</string>
     <string name="first_run_guide_bubble_cart_customer">주문에는 고객이 필요합니다. 눌러서 선택하거나 새로 추가하세요.</string>
-    <string name="first_run_guide_bubble_new_customer">'신규 고객'을 누르고 전화번호와 이름을 입력하세요</string>
+    <string name="first_run_guide_bubble_new_customer">\'신규 고객\'을 누르고 전화번호와 이름을 입력하세요</string>
     <string name="first_run_guide_bubble_new_customer_save">저장 후 선택을 누르세요.</string>
     <string name="first_run_guide_bubble_cart_dates">인도일과 반납일을 선택하세요.</string>
     <string name="first_run_guide_bubble_cart_create">다 입력했어요. 주문 생성을 누르세요.</string>

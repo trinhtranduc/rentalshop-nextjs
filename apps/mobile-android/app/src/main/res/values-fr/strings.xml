@@ -2438,7 +2438,7 @@
         <item>ORDER_EDITED|Modifier la commande</item>
         <item>ORDER_ITEMS|Modifier les articles</item>
         <item>ORDER_ITEM_PRICE|Modifier le prix dans la commande</item>
-        <item>ORDER_DEPOSIT|Encaisser l'acompte</item>
+        <item>ORDER_DEPOSIT|Encaisser l\'acompte</item>
         <item>ORDER_PAYMENT|Encaisser le paiement</item>
         <item>ORDER_NOTE|Modifier la note</item>
         <item>ORDER_PICKED_UP|Remise du matériel</item>
