@@ -65,7 +65,8 @@ describe.each(WEB)('#1597 %s messages', (code) => {
     const got = flat((await appMessages(code))[ns]);
     const own = flat(read(`locales/${code}/${ns}.json`));
     const en = flat(read(`locales/en/${ns}.json`));
-    expect(Object.keys(own).filter((k) => got[k] !== own[k])).toEqual([]);
+    // by value: a list (affiliate steps) must stay a list, not become an object with keys 0, 1, 2…
+    expect(Object.keys(own).filter((k) => JSON.stringify(got[k]) !== JSON.stringify(own[k]))).toEqual([]);
     expect(Object.keys(en).filter((k) => !(k in got))).toEqual([]);
   });
 });
