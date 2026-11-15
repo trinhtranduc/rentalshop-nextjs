@@ -1108,7 +1108,7 @@
       "customerSignature": "Chữ ký khách hàng",
       "storeSignature": "Chữ ký cửa hàng",
       "thankYou": "Cảm ơn quý khách!",
-      "downloadApp": "Tải AnyRent trên App Store",
+      "generatedBy": "Hóa đơn được tạo bằng ứng dụng AnyRent",
       "units": {
         "perDay": "/ngày",
         "days": "{n} ngày",

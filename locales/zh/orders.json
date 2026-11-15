@@ -1108,7 +1108,7 @@
       "customerSignature": "客户签名",
       "storeSignature": "店铺签名",
       "thankYou": "感谢惠顾！",
-      "downloadApp": "在 App Store 下载 AnyRent",
+      "generatedBy": "本账单由 AnyRent 软件生成",
       "units": {
         "perDay": "/天",
         "days": "{n} 天",
