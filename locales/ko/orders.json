@@ -1108,7 +1108,7 @@
       "customerSignature": "고객 서명",
       "storeSignature": "매장 서명",
       "thankYou": "이용해 주셔서 감사합니다!",
-      "downloadApp": "App Store에서 AnyRent 다운로드",
+      "generatedBy": "이 영수증은 AnyRent 소프트웨어로 생성되었습니다",
       "units": {
         "perDay": "/일",
         "days": "{n}일",

@@ -230,7 +230,7 @@ export function ReceiptSlip({
 
       <hr className="rc-rule" />
       <div className="rc-foot rc-strong">{t('thankYou')}</div>
-      <div className="rc-foot rc-soft">{t('downloadApp')}</div>
+      <div className="rc-foot rc-soft">{t('generatedBy')}</div>
     </div>
   );
 }

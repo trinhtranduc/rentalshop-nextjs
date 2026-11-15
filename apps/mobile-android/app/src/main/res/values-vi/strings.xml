@@ -446,7 +446,7 @@
     <string name="receipt_thanks_rent">Cảm ơn quý khách đã sử dụng dịch vụ!</string>
     <string name="receipt_thanks_sale">Cảm ơn quý khách đã mua hàng!</string>
     <string name="receipt_generated_on">Tạo vào %1$s</string>
-    <string name="receipt_generated_by">Hóa đơn được sinh ra từ phần mềm AnyRent</string>
+    <string name="receipt_generated_by">Hóa đơn được tạo bằng ứng dụng AnyRent</string>
     <string name="edit">Sửa</string>
     <string name="new_password">Mật khẩu mới</string>
     <string name="confirm_password">Xác nhận mật khẩu</string>

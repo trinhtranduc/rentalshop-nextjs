@@ -1108,7 +1108,7 @@
       "customerSignature": "お客様署名",
       "storeSignature": "店舗署名",
       "thankYou": "ご利用ありがとうございました。",
-      "downloadApp": "App StoreでAnyRentをダウンロード",
+      "generatedBy": "この伝票はAnyRentで作成されました",
       "units": {
         "perDay": "/日",
         "days": "{n}日",
