@@ -1,0 +1,144 @@
+{
+  "title": "分类",
+  "addCategory": "添加分类",
+  "editCategory": "编辑分类",
+  "categoryDetails": "分类详情",
+  "fields": {
+    "name": "分类名称",
+    "description": "描述",
+    "status": "状态",
+    "productCount": "商品数量",
+    "active": "启用",
+    "inactive": "未启用"
+  },
+  "labels": {
+    "default": "默认"
+  },
+  "status": {
+    "active": "启用",
+    "inactive": "已停用"
+  },
+  "filters": {
+    "all": "全部分类",
+    "active": "启用",
+    "inactive": "未启用"
+  },
+  "actions": {
+    "viewDetails": "查看详情",
+    "edit": "编辑分类",
+    "activate": "启用",
+    "deactivate": "停用",
+    "delete": "删除",
+    "create": "创建分类",
+    "update": "更新分类",
+    "addCategory": "添加分类",
+    "editCategory": "编辑分类",
+    "deleteCategory": "删除分类",
+    "viewProducts": "查看商品",
+    "backToCategories": "返回分类列表"
+  },
+  "messages": {
+    "createSuccess": "分类创建成功",
+    "createFailed": "创建分类失败",
+    "updateSuccess": "分类更新成功",
+    "updateFailed": "更新分类失败",
+    "deleteSuccess": "分类删除成功",
+    "deleteFailed": "删除分类失败",
+    "confirmDelete": "确定要删除此分类吗？",
+    "noCategories": "未找到分类",
+    "noCategoriesDescription": "请调整搜索条件，或添加分类以开始使用。",
+    "loadingCategories": "正在加载分类列表...",
+    "tryAdjustingSearch": "请调整搜索条件",
+    "getStarted": "请先添加第一个分类"
+  },
+  "search": {
+    "placeholder": "搜索分类..."
+  },
+  "stats": {
+    "totalCategories": "分类总数",
+    "activeCategories": "启用",
+    "totalProducts": "商品总数"
+  },
+  "dialogs": {
+    "addCategoryTitle": "添加新分类",
+    "editCategoryTitle": "编辑分类",
+    "deleteCategoryTitle": "删除分类"
+  },
+  "dialog": {
+    "addNew": "添加新分类",
+    "addNewDescription": "新建分类，用于整理商品",
+    "edit": "编辑分类",
+    "editDescription": "更新分类信息",
+    "viewDetails": "分类详情",
+    "viewDescription": "查看分类信息和详情",
+    "deleteTitle": "删除分类",
+    "deleteConfirmation": "您确定要删除分类",
+    "deleteWarning": "此操作无法撤销。该分类下的所有商品都会受到影响。",
+    "neverUpdated": "从未更新"
+  },
+  "validation": {
+    "nameRequired": "请输入分类名称",
+    "nameMinLength": "分类名称至少需要 2 个字符",
+    "nameMaxLength": "分类名称不能超过 50 个字符",
+    "descriptionMaxLength": "描述不能超过 200 个字符",
+    "characters": "字符"
+  },
+  "web": {
+    "title": "分类",
+    "add": "添加分类",
+    "searchLabel": "搜索分类",
+    "searchPlaceholder": "搜索分类名称",
+    "cols": {
+      "name": "名称",
+      "description": "描述",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "sortBy": "按{column}排序",
+    "default": "默认",
+    "view": "查看",
+    "edit": "编辑",
+    "delete": "删除",
+    "viewDetails": "查看详情",
+    "more": "{name}的更多操作",
+    "empty": "暂无分类。添加分类，方便按组整理商品。",
+    "emptySearch": "没有符合搜索条件的分类。",
+    "loadFailed": "无法加载分类。",
+    "retry": "重试",
+    "form": {
+      "addTitle": "添加分类",
+      "editTitle": "编辑分类",
+      "name": "分类名称",
+      "namePlaceholder": "例如：奥黛",
+      "required": "必填",
+      "description": "描述",
+      "descriptionPlaceholder": "选填",
+      "count": "{count}/{max}",
+      "cancel": "取消",
+      "create": "添加",
+      "save": "保存",
+      "saving": "保存中…",
+      "close": "关闭"
+    },
+    "detail": {
+      "title": "分类详情",
+      "noDescription": "暂无描述"
+    },
+    "confirm": {
+      "deleteTitle": "删除分类",
+      "deleteBody": "删除分类“{name}”？此操作无法撤销。",
+      "cancel": "保留",
+      "delete": "删除分类",
+      "deleting": "删除中…"
+    },
+    "footer": {
+      "show": "显示",
+      "perPage": "条/页",
+      "perPageLabel": "每页条数",
+      "pages": "分页",
+      "range": "{from}–{to}，共 {total} 个分类",
+      "prev": "上一页",
+      "next": "下一页"
+    }
+  }
+}

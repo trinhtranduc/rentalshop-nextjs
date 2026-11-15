@@ -1,0 +1,191 @@
+{
+  "title": "대여 가능 여부 확인",
+  "subtitle": "날짜와 상품을 선택해 매장에 재고가 충분한지 확인하세요.",
+  "breadcrumb": "재고 확인",
+  "sections": {
+    "product": "상품 선택",
+    "period": "대여 기간"
+  },
+  "pickupDate": "수령일",
+  "returnDate": "반납일",
+  "quantity": "수량",
+  "outlet": "지점",
+  "selectOutlet": "지점 선택",
+  "searchPlaceholder": "이름 또는 바코드로 검색",
+  "changeProduct": "상품 변경",
+  "noProductsFound": "상품을 찾을 수 없습니다",
+  "maxProductsReached": "상품은 최대 20개까지 선택할 수 있습니다.",
+  "idle": {
+    "title": "상품과 대여 날짜 선택",
+    "description": "왼쪽에서 대여 기간과 상품을 선택하세요. 결과는 오른쪽에 표시됩니다.",
+    "pickDates": "대여 날짜를 선택해 재고를 확인하세요"
+  },
+  "product": {
+    "rentPrice": "대여 가격",
+    "deposit": "예약금",
+    "category": "카테고리"
+  },
+  "checking": "재고 확인 중…",
+  "missingOutlet": "재고를 확인하려면 지점을 선택하세요",
+  "invalidDates": "반납일은 수령일보다 빠를 수 없습니다.",
+  "status": {
+    "available": "재고 있음",
+    "unavailable": "재고 없음",
+    "warning": "재고 있음"
+  },
+  "result": {
+    "canRent": "{count}벌 대여 가능",
+    "cannotRent": "재고 부족",
+    "insufficient": "{need}벌 필요, 남은 수량 {have}벌"
+  },
+  "availableUnits": "{count}벌 남음",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "이 기간에 {need}벌 필요, 재고 {have}벌",
+  "conflictsCount": "이 기간에 대여 기간이 겹치는 주문 {count}건",
+  "stock": {
+    "total": "전체 재고",
+    "renting": "대여 중",
+    "freeInPeriod": "기간 내 남은 수량",
+    "bookedInPeriod": "기간 내 예약"
+  },
+  "orders": {
+    "title": "이 상품의 주문",
+    "noActiveOrders": "진행 중인 주문이 없습니다",
+    "viewAll": "주문 보기 ({count})",
+    "ordersLabel": "주문",
+    "conflicts": "기간 겹침",
+    "conflictBadge": "기간 겹침",
+    "conflictNote": "확인 중인 기간과 겹치는 주문 {count}건",
+    "dialogTitle": "주문: {name}",
+    "page": "{current}/{total} 페이지",
+    "conflictsCount": "기간 겹침 {count}건",
+    "orderNumber": "주문 번호",
+    "customer": "고객",
+    "period": "대여 기간",
+    "qty": "수량",
+    "status": "상태",
+    "statusReserved": "예약됨",
+    "statusPickuped": "대여 중"
+  },
+  "timeline": {
+    "title": "대여 일정",
+    "today": "오늘",
+    "noOrders": "주문이 없습니다"
+  },
+  "conflicts": {
+    "title": "기간 겹침 주문",
+    "orderNumber": "주문 번호",
+    "customer": "고객",
+    "period": "대여 기간",
+    "quantity": "수량"
+  },
+  "actions": {
+    "retry": "다시 시도",
+    "checkAgain": "다시 확인"
+  },
+  "copy": {
+    "available": "{name}, {pickup}부터 {return}까지 재고 {count}벌이 있습니다.",
+    "unavailable": "{name}, {pickup} – {return} 기간에는 재고가 부족합니다(필요 {need}벌, 남은 수량 {have}벌)."
+  },
+  "errors": {
+    "checkFailed": "재고를 확인할 수 없습니다",
+    "loadProductFailed": "상품 정보를 불러올 수 없습니다"
+  },
+  "productsTitle": "확인할 상품",
+  "quick": {
+    "today": "오늘",
+    "tomorrow": "내일",
+    "weekend": "주말",
+    "threeDays": "3일"
+  },
+  "summary": {
+    "allOk": "{count}개 상품 모두 재고가 충분합니다.",
+    "someShort": "{count}개 상품의 재고가 부족합니다.",
+    "pickDates": "대여 날짜를 선택하면 재고 현황을 볼 수 있습니다"
+  },
+  "badge": {
+    "free": "{free}/{total} 남음",
+    "short": "{count}개 부족",
+    "error": "오류"
+  },
+  "search": {
+    "price": "가격 {price}",
+    "stock": "{available}/{total} 남음"
+  },
+  "empty": {
+    "title": "선택된 상품이 없습니다",
+    "description": "이름, 코드 또는 바코드로 상품을 찾으세요. 여러 상품을 한 번에 확인할 수 있습니다."
+  },
+  "detail": {
+    "freeHeadline": "{count}벌 남음",
+    "free": "남음",
+    "busy": "사용 중",
+    "need": "필요",
+    "barLabel": "남음 {free}, 사용 중 {busy}, 필요 {need}, 전체 재고 {total}",
+    "days": "날짜별 남은 수량",
+    "dayHint": "날짜를 누르면 그날부터 확인합니다",
+    "dayLabel": "{date}: {free}벌 남음",
+    "conflicts": "이 기간의 주문 ({count})",
+    "noConflicts": "이 기간과 겹치는 주문이 없습니다."
+  },
+  "remove": "{name} 제거",
+  "decrease": "수량 줄이기",
+  "increase": "수량 늘리기",
+  "web": {
+    "title": "재고 확인",
+    "outlet": "지점",
+    "product": "상품",
+    "productPlaceholder": "상품명 또는 코드 검색",
+    "noProducts": "상품을 찾을 수 없습니다",
+    "searching": "검색 중…",
+    "pickup": "수령일",
+    "return": "반납일",
+    "quantity": "수량",
+    "check": "확인",
+    "quick": {
+      "today": "오늘",
+      "tomorrow": "내일",
+      "weekend": "주말",
+      "threeDays": "3일"
+    },
+    "reversed": "반납일은 수령일 이후여야 합니다.",
+    "pickProduct": "상품을 선택하면 이 기간에 남은 수량을 볼 수 있습니다.",
+    "pickOutlet": "확인할 지점을 선택하세요.",
+    "has": "{total}개 · {from} → {to}",
+    "free": "이 기간 남은 수량 {free}/{total}",
+    "short": "{missing} 부족 · 남은 수량 {free}/{total}",
+    "none": "이 기간에 남은 수량이 없습니다",
+    "checking": "확인 중…",
+    "checkFailed": "확인하지 못했습니다.",
+    "retry": "다시 시도",
+    "createOrder": "이 기간으로 주문 생성",
+    "dayLeft": "당일 남은 수량",
+    "dayAria": "{day}: {count}개 남음. 클릭하면 이 날부터 기간을 시작합니다",
+    "note": "하루는 수령일과 반납일을 모두 포함하며, 같은 날 수령하고 반납하는 경우도 포함합니다. 연한 파란색 영역이 확인 중인 기간입니다. 날짜를 클릭하면 기간을 그 날짜로 옮깁니다.",
+    "status": {
+      "RESERVED": "예약됨",
+      "PICKUPED": "대여 중"
+    },
+    "bar": {
+      "returnOn": "{day} 반납",
+      "range": "{from} → {to}"
+    },
+    "holders": "이 상품을 보유 중인 주문",
+    "noHolders": "이 상품을 보유 중인 주문이 없습니다.",
+    "holdersFailed": "이 상품을 보유 중인 주문을 불러오지 못했습니다.",
+    "units": "{count}개",
+    "walkIn": "방문 고객",
+    "similar": "같은 카테고리, 이 기간에 남은 상품",
+    "similarFree": "{count}개 남음",
+    "similarEmpty": "이 기간에 재고가 충분한 같은 카테고리 상품이 없습니다.",
+    "priceSuffix": {
+      "DAILY": "{price}/일",
+      "HOURLY": "{price}/시간",
+      "FIXED": "{price}/회",
+      "WEEKLY": "{price}/주",
+      "MONTHLY": "{price}/월"
+    },
+    "change": "상품 변경",
+    "weekdays": "일,월,화,수,목,금,토"
+  }
+}

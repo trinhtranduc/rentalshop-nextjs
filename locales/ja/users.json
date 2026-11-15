@@ -1,0 +1,469 @@
+{
+  "title": "ユーザー",
+  "subtitle": "システム内のユーザーを管理します",
+  "pageTitle": "ユーザー管理",
+  "addUser": "ユーザーを追加",
+  "addNewUser": "新規ユーザーを追加",
+  "addNewUserDescription": "組織の新しいユーザーアカウントを作成します",
+  "editUser": "ユーザーを編集",
+  "userDetails": "ユーザー詳細",
+  "viewUserInfo": "ユーザーの情報と詳細を確認します",
+  "userInformation": "ユーザー情報",
+  "accountInformation": "アカウント情報",
+  "outletInformation": "店舗情報",
+  "accountActions": "アカウント操作",
+  "passwordManagement": "パスワード管理",
+  "passwordSettings": "パスワード設定",
+  "organizationAssignment": "所属設定",
+  "accountSettings": "アカウント設定",
+  "accountStatus": "アカウント状態",
+  "dangerZone": "危険な操作",
+  "activeAccount": "有効なアカウント",
+  "currentUserInformation": "現在のユーザー情報",
+  "activeUsersInfo": "有効なユーザーはログインしてシステムを利用できます。無効なユーザーは停止されています。",
+  "created": "作成日",
+  "label": {
+    "loading": "読み込み中..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "名前",
+    "firstName": "名",
+    "lastName": "姓",
+    "fullName": "氏名",
+    "email": "メール",
+    "phone": "電話番号",
+    "role": "役割",
+    "outlet": "店舗",
+    "outletName": "店舗名",
+    "outletId": "店舗ID",
+    "merchant": "ショップ",
+    "merchantName": "ショップ名",
+    "merchantId": "ショップID",
+    "status": "状態",
+    "password": "パスワード",
+    "confirmPassword": "パスワード（確認）",
+    "active": "有効",
+    "inactive": "無効",
+    "createdAt": "作成日",
+    "lastLogin": "最終ログイン",
+    "actions": "操作",
+    "basicInformation": "基本情報",
+    "personalInformation": "個人情報",
+    "roleAndPermissions": "役割と権限",
+    "readOnly": "閲覧のみ",
+    "emailStatus": "メールの認証状態"
+  },
+  "roles": {
+    "ADMIN": "システム管理者",
+    "MERCHANT": "オーナー",
+    "OUTLET_ADMIN": "店長",
+    "OUTLET_STAFF": "スタッフ",
+    "ARTICLE": "記事編集者",
+    "OUTLET_INVENTORY": "在庫担当"
+  },
+  "actions": {
+    "activate": "ユーザーを有効化",
+    "activateAccount": "アカウントを有効化",
+    "activating": "有効化中...",
+    "deactivate": "ユーザーを無効化",
+    "deactivateAccount": "アカウントを無効化",
+    "deactivating": "無効化中...",
+    "delete": "ユーザーを削除",
+    "deleteAccount": "アカウントを削除",
+    "deleting": "削除中...",
+    "changePassword": "パスワードを変更",
+    "changingPassword": "変更中...",
+    "viewDetails": "詳細を見る",
+    "edit": "編集",
+    "editUser": "ユーザーを編集",
+    "updateUser": "ユーザーを更新",
+    "createUser": "ユーザーを作成",
+    "updating": "更新中...",
+    "creating": "作成中...",
+    "addUser": "ユーザーを追加",
+    "backToUsers": "一覧に戻る",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "showPassword": "パスワードを表示",
+    "hidePassword": "パスワードを隠す"
+  },
+  "messages": {
+    "createSuccess": "ユーザーを作成しました",
+    "createFailed": "ユーザーの作成に失敗しました。もう一度お試しください。",
+    "updateSuccess": "ユーザーを更新しました",
+    "updateFailed": "ユーザーの更新に失敗しました。もう一度お試しください。",
+    "deleteSuccess": "ユーザーを削除しました",
+    "deleteFailed": "ユーザーの削除に失敗しました。もう一度お試しください。",
+    "activateSuccess": "ユーザーを有効化しました",
+    "activateFailed": "ユーザーの有効化に失敗しました。もう一度お試しください。",
+    "deactivateSuccess": "ユーザーを無効化しました",
+    "deactivateFailed": "ユーザーの無効化に失敗しました。もう一度お試しください。",
+    "passwordChangeSuccess": "パスワードを変更しました",
+    "passwordChangeFailed": "パスワードの変更に失敗しました。もう一度お試しください。",
+    "passwordMinLength": "パスワードは6文字以上で入力してください",
+    "newPasswordRequired": "新しいパスワードを入力してください",
+    "confirmPasswordRequired": "新しいパスワードをもう一度入力してください",
+    "passwordsDoNotMatch": "パスワードが一致しません",
+    "confirmDelete": "このユーザーを削除してもよろしいですか？",
+    "confirmDeleteAccount": "ユーザーアカウントを削除",
+    "confirmDeleteDetails": "このユーザーアカウントを完全に削除してもよろしいですか？この操作は元に戻せません。",
+    "confirmDeactivate": "次のユーザーを無効化しますか:",
+    "confirmDeactivateAccount": "ユーザーを無効化",
+    "confirmDeactivateDetails": "この操作により、このユーザーはシステムにアクセスできなくなります。",
+    "confirmActivate": "このユーザーを有効化してもよろしいですか？",
+    "confirmActivateAccount": "ユーザーアカウントを有効化",
+    "confirmActivateDetails": "このユーザーアカウントを有効化してもよろしいですか？ユーザーは再びシステムにアクセスできるようになります。",
+    "allowChangePassword": "ユーザーが安全にパスワードを変更できるようにします",
+    "suspendAccess": "ユーザーのシステムへのアクセスを一時的に停止します",
+    "deactivateToPrevent": "ログインを防ぐため無効化します",
+    "activateToRestore": "ログインを再び許可するため有効化します",
+    "permanentlyDelete": "このユーザーアカウントと関連するすべてのデータを完全に削除します",
+    "permanentlyDeleteShort": "このユーザーアカウントを完全に削除します",
+    "cannotDeactivateAdmin": "システム管理者は無効化できません",
+    "cannotDeactivateAdminShort": "管理者アカウントは無効化できません",
+    "cannotDeleteAdmin": "管理者アカウントは削除できません",
+    "validationErrors": "次の入力エラーを修正してください:",
+    "noUsers": "ユーザーが見つかりません",
+    "loadingUsers": "ユーザー一覧を読み込み中...",
+    "noDataAvailable": "ユーザーデータがありません",
+    "na": "なし",
+    "error": "エラーが発生しました",
+    "tryAdjustingSearch": "検索条件またはフィルターを変更してください",
+    "getStarted": "最初のユーザーを追加してください"
+  },
+  "search": {
+    "placeholder": "名前、メール、電話番号で検索..."
+  },
+  "filters": {
+    "all": "すべてのユーザー",
+    "byRole": "役割で絞り込み",
+    "byOutlet": "店舗で絞り込み",
+    "active": "有効なユーザー",
+    "inactive": "無効なユーザー",
+    "allRoles": "すべての役割"
+  },
+  "stats": {
+    "totalUsers": "ユーザー数合計",
+    "activeUsers": "有効なユーザー",
+    "adminUsers": "管理者",
+    "staffUsers": "スタッフ"
+  },
+  "dialogs": {
+    "changePasswordTitle": "パスワードを変更",
+    "changePasswordDescription": "このユーザーのパスワードを変更します",
+    "newPassword": "新しいパスワード",
+    "confirmNewPassword": "新しいパスワード（確認）"
+  },
+  "placeholders": {
+    "enterName": "名前を入力",
+    "enterFirstName": "名を入力",
+    "enterLastName": "姓を入力",
+    "enterFullName": "氏名を入力",
+    "enterEmail": "メールアドレスを入力",
+    "enterPhone": "電話番号を入力（数字のみ）",
+    "selectRole": "役割を選択",
+    "selectOutlet": "店舗を選択",
+    "enterPassword": "パスワードを入力",
+    "confirmPassword": "パスワードを再入力",
+    "enterNewPassword": "新しいパスワードを入力",
+    "confirmNewPassword": "新しいパスワードを再入力",
+    "loadingMerchants": "ショップ一覧を読み込み中...",
+    "searchAndSelectMerchant": "ショップを検索して選択",
+    "currentMerchant": "現在のショップ",
+    "loadingOutlets": "店舗一覧を読み込み中...",
+    "selectMerchantFirst": "先にショップを選択してください",
+    "searchAndSelectOutlet": "店舗を検索して選択",
+    "currentOutlet": "現在の店舗",
+    "searchMerchants": "ショップを検索...",
+    "noMerchantsFound": "ショップが見つかりません",
+    "searchOutlets": "店舗を検索...",
+    "noOutletsFound": "店舗が見つかりません",
+    "searchUsers": "ユーザーを検索..."
+  },
+  "labels": {
+    "loading": "読み込み中..."
+  },
+  "status": {
+    "verified": "認証済み",
+    "notVerified": "未認証"
+  },
+  "roleHelp": {
+    "title": "役割",
+    "OUTLET_ADMIN": "1つの店舗を管理します。その店舗の注文、商品、顧客、スタッフを扱います。",
+    "OUTLET_STAFF": "注文を作成して処理します。商品の価格は変更できません。",
+    "loginNote": "新しいユーザーはこのメールアドレスとパスワードでログインし、後からパスワードを変更できます。",
+    "OUTLET_INVENTORY": "スタッフと同じ販売業務に加え、商品とカテゴリを管理します（追加、価格変更、削除、Excelの取込・出力）。売上は閲覧できません。"
+  },
+  "web": {
+    "title": "スタッフ",
+    "add": "スタッフを追加",
+    "searchPlaceholder": "名前、電話番号、メールで検索",
+    "searchLabel": "スタッフを検索",
+    "allOutlets": "すべての店舗",
+    "outletFilter": "店舗で絞り込み",
+    "allOutletsValue": "すべて",
+    "filters": {
+      "role": "役割:",
+      "status": "状態:",
+      "all": "すべて",
+      "active": "有効",
+      "inactive": "ロック中"
+    },
+    "cols": {
+      "staff": "スタッフ",
+      "role": "役割",
+      "outlet": "店舗",
+      "lastLogin": "最終ログイン",
+      "actions": "操作"
+    },
+    "roles": {
+      "owner": "オーナー",
+      "admin": "店長",
+      "staff": "スタッフ",
+      "other": "その他",
+      "inventory": "在庫担当"
+    },
+    "lastSeen": {
+      "current": "使用中",
+      "never": "—",
+      "today": "今日 {time}",
+      "yesterday": "昨日 {time}",
+      "locked": "ロック中"
+    },
+    "edit": "編集",
+    "more": "{name}の操作をさらに表示",
+    "activate": "アカウントのロックを解除",
+    "deactivate": "アカウントをロック",
+    "delete": "スタッフを削除",
+    "confirm": {
+      "activateTitle": "アカウントのロックを解除しますか？",
+      "activateBody": "{name}は再びログインできるようになります。",
+      "deactivateTitle": "アカウントをロックしますか？",
+      "deactivateBody": "ロックを解除するまで、{name}はログインできません。",
+      "deleteTitle": "スタッフを削除しますか？",
+      "deleteBody": "{name}を店舗から削除します。この操作は元に戻せません。",
+      "cancel": "キャンセル",
+      "close": "閉じる"
+    },
+    "rolesCard": {
+      "title": "役割ごとにできること",
+      "owner": "すべての店舗、売上、レポート、スタッフ、プラン契約を管理できます。",
+      "admin": "1つの店舗の注文、商品、価格、顧客、当日の売上、その店舗のスタッフを管理できます。",
+      "staff": "注文作成、商品の受け渡し、返却の受付、顧客の追加ができます。商品価格の変更や売上レポートの閲覧はできません。",
+      "rolePermissions": "役割ごとの権限を見る",
+      "permissions": "スタッフに追加の権限を付与",
+      "inventory": "スタッフと同じ販売業務に加え、商品とカテゴリを管理します（追加、価格変更、削除、Excelの取込・出力）。売上は閲覧できません。"
+    },
+    "permissions": {
+      "title": "スタッフの追加権限",
+      "hint": "役割の初期権限に加えて、スタッフごとに権限を有効にできます。",
+      "noAccess": "スタッフアカウントでは権限を管理できません。",
+      "pickTitle": "スタッフを選択",
+      "picked": "{count}名選択中",
+      "pickAll": "すべて選択",
+      "pickNone": "選択解除",
+      "noStaff": "役割がスタッフのユーザーがまだいません",
+      "switchTitle": "追加権限",
+      "pickFirst": "左側でスタッフを1名以上選択してください。",
+      "forOne": "{name}の権限を編集中です。",
+      "forMany": "{count}名のスタッフを編集中です。すべてオフの状態から始まり、保存すると{count}名全員に適用されます。",
+      "allOn": "すべてオン",
+      "allOff": "すべてオフ",
+      "cancel": "選択解除",
+      "save": "権限を保存",
+      "saving": "保存中…",
+      "savedTitle": "保存しました",
+      "saved": "{count}名のスタッフの権限を保存しました",
+      "errorTitle": "エラー",
+      "saveFailed": "権限を保存できませんでした。もう一度お試しください。",
+      "readFailed": "このスタッフの保存済み権限を読み込めませんでした。保存すると、下のスイッチの内容がそのまま書き込まれます。",
+      "groups": {
+        "outlet": "店舗",
+        "orders": "注文",
+        "products": "商品",
+        "customers": "顧客",
+        "users": "スタッフ",
+        "dashboard": "概要"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "店舗を閲覧",
+        "desc": "店舗情報を閲覧します"
+      },
+      "outlet_manage": {
+        "label": "店舗を管理",
+        "desc": "店舗情報と設定を編集します"
+      },
+      "users_view": {
+        "label": "スタッフを閲覧",
+        "desc": "スタッフの一覧と詳細を閲覧します"
+      },
+      "users_manage": {
+        "label": "スタッフを管理",
+        "desc": "スタッフの追加、編集、ロック、削除を行います"
+      },
+      "products_view": {
+        "label": "商品を閲覧",
+        "desc": "商品の一覧と詳細を閲覧します"
+      },
+      "products_create": {
+        "label": "商品を追加",
+        "desc": "新しい商品を追加します"
+      },
+      "products_update": {
+        "label": "商品を編集",
+        "desc": "既存の商品を編集します（価格を含む）"
+      },
+      "products_manage": {
+        "label": "商品を管理",
+        "desc": "すべての操作（削除、Excel取込、原価）"
+      },
+      "products_export": {
+        "label": "商品を出力",
+        "desc": "商品一覧をExcel / CSVでダウンロードします"
+      },
+      "orders_create": {
+        "label": "注文を作成",
+        "desc": "レンタル注文と販売注文を作成します"
+      },
+      "orders_view": {
+        "label": "注文を閲覧",
+        "desc": "注文の一覧と詳細を閲覧します"
+      },
+      "orders_update": {
+        "label": "注文を編集",
+        "desc": "注文の編集、商品の受け渡し、返却の受付を行います"
+      },
+      "orders_delete": {
+        "label": "注文を削除",
+        "desc": "注文を削除します"
+      },
+      "orders_export": {
+        "label": "注文を出力",
+        "desc": "注文一覧をExcel / CSVでダウンロードします"
+      },
+      "orders_manage": {
+        "label": "注文を管理",
+        "desc": "注文のすべての操作"
+      },
+      "customers_view": {
+        "label": "顧客を閲覧",
+        "desc": "顧客の一覧と情報を閲覧します"
+      },
+      "customers_manage": {
+        "label": "顧客を管理",
+        "desc": "顧客の追加、編集、削除を行います"
+      },
+      "customers_export": {
+        "label": "顧客を出力",
+        "desc": "顧客一覧をExcel / CSVでダウンロードします"
+      },
+      "analytics_view": {
+        "label": "概要を閲覧",
+        "desc": "概要ページと数値を閲覧します"
+      }
+    },
+    "rolePermissions": {
+      "title": "役割ごとの権限",
+      "hint": "各役割の初期権限です。閲覧専用です。",
+      "roleLabel": "役割",
+      "count": "権限 {count}件",
+      "granted": "付与あり",
+      "notGranted": "付与なし",
+      "note": "これは役割の初期権限です。特定のスタッフに追加で権限を付与するには、「スタッフの追加権限」を使用してください。"
+    },
+    "empty": "スタッフがまだいません",
+    "emptySearch": "条件に一致するスタッフがいません",
+    "loadFailed": "スタッフ一覧を読み込めませんでした。",
+    "retry": "再試行",
+    "noAccess": "スタッフアカウントではスタッフ一覧を閲覧できません。",
+    "weekdays": "日,月,火,水,木,金,土",
+    "footer": {
+      "show": "表示",
+      "perPage": "件/ページ",
+      "perPageLabel": "1ページの表示件数",
+      "pages": "ページ",
+      "range": "スタッフ {total}名中 {from}–{to}",
+      "prev": "前のページ",
+      "next": "次のページ"
+    },
+    "form": {
+      "addTitle": "スタッフを追加",
+      "infoTitle": "基本情報",
+      "name": "氏名",
+      "namePlaceholder": "例: 田中 花子",
+      "phone": "電話番号",
+      "optional": "任意",
+      "email": "ログイン用メール",
+      "emailPlaceholder": "name@example.com",
+      "emailHint": "スタッフはこのメールアドレスでログインします。",
+      "required": "必須",
+      "roleTitle": "役割と店舗",
+      "role": "役割",
+      "outlet": "店舗",
+      "outletFixed": "新しいスタッフはあなたの店舗に所属します。",
+      "outletsLoading": "店舗を読み込み中…",
+      "noOutlets": "店舗がまだありません",
+      "passwordTitle": "ログイン用パスワード",
+      "password": "パスワード",
+      "confirmPassword": "パスワードを再入力",
+      "passwordHint": "6文字以上で入力してください。",
+      "loginNote": "スタッフはこのメールアドレスとパスワードでログインし、後から自分でパスワードを変更できます。",
+      "show": "表示",
+      "hide": "非表示",
+      "showPassword": "パスワードを表示",
+      "hidePassword": "パスワードを隠す",
+      "cancel": "キャンセル",
+      "create": "スタッフを追加",
+      "creating": "追加中…",
+      "save": "保存",
+      "saving": "保存中…",
+      "errors": {
+        "nameShort": "名前は2文字以上で入力してください。",
+        "emailRequired": "ログイン用メールを入力してください。",
+        "emailInvalid": "メールアドレスの形式が正しくありません。",
+        "phoneShort": "電話番号は8桁以上で入力してください。",
+        "phoneLong": "電話番号は15桁以内で入力してください。",
+        "phoneChars": "電話番号には数字、スペース、+ - ( ) のみ使用できます。",
+        "roleRequired": "役割を選択してください。",
+        "outletRequired": "店舗を選択してください。",
+        "passwordRequired": "パスワードを入力してください。",
+        "passwordShort": "パスワードは6文字以上で入力してください。",
+        "confirmRequired": "パスワードをもう一度入力してください。",
+        "passwordMismatch": "2つのパスワードが一致しません。",
+        "newRequired": "新しいパスワードを入力してください。"
+      }
+    },
+    "detail": {
+      "info": "基本情報",
+      "merchant": "ショップ",
+      "account": "アカウント",
+      "statusActive": "有効",
+      "statusLocked": "ロック中",
+      "activeHint": "アカウントをロックすると、このスタッフはログインできなくなります。",
+      "lockedHint": "アカウントはロックされています。ロックを解除すると、スタッフは再びログインできます。",
+      "emailStatus": "メール",
+      "verified": "認証済み",
+      "notVerified": "未認証",
+      "createdAt": "作成日",
+      "deleteHint": "このアカウントを完全に削除します。この操作は元に戻せません。",
+      "changePassword": "パスワードを変更",
+      "editTitle": "スタッフを編集",
+      "emailFixed": "ログイン用メールは変更できません。",
+      "roleFixed": "ここでは役割を変更できません。",
+      "notFound": "このスタッフは見つかりませんでした。",
+      "backToList": "スタッフ一覧に戻る"
+    },
+    "password": {
+      "title": "パスワードを変更",
+      "hint": "{name}の新しいパスワードを設定します。古いパスワードは使えなくなります。",
+      "new": "新しいパスワード",
+      "confirm": "新しいパスワードを再入力",
+      "submit": "パスワードを変更",
+      "changing": "変更中…"
+    }
+  }
+}

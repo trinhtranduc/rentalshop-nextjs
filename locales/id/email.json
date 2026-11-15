@@ -1,0 +1,161 @@
+{
+  "planChange": {
+    "title": "Paket langganan telah diubah",
+    "greeting": "Halo",
+    "message": "Paket langganan Anda telah berhasil diubah. Berikut detailnya:",
+    "oldPlan": "Paket lama",
+    "newPlan": "Paket baru",
+    "billingCycle": "Siklus penagihan",
+    "periodStart": "Tanggal mulai",
+    "periodEnd": "Tanggal berakhir",
+    "footer": "© {year} AnyRent. Hak cipta dilindungi.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistem manajemen penyewaan"
+  },
+  "subscriptionRenewal": {
+    "title": "Perpanjangan langganan berhasil",
+    "greeting": "Halo",
+    "message": "Langganan Anda telah berhasil diperpanjang. Terima kasih telah terus menggunakan layanan kami!",
+    "planName": "Paket langganan",
+    "paymentMethod": "Metode pembayaran",
+    "transactionId": "ID transaksi",
+    "periodStart": "Tanggal mulai",
+    "periodEnd": "Tanggal berakhir",
+    "footer": "© {year} AnyRent. Hak cipta dilindungi.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistem manajemen penyewaan"
+  },
+  "subscriptionExtension": {
+    "title": "Langganan diperpanjang",
+    "greeting": "Halo",
+    "message": "Langganan Anda telah diperpanjang. Masa berlaku langganan telah diperbarui.",
+    "planName": "Paket langganan",
+    "oldEndDate": "Tanggal berakhir lama",
+    "newEndDate": "Tanggal berakhir baru",
+    "extensionDays": "Durasi perpanjangan",
+    "method": "Metode perpanjangan",
+    "description": "Deskripsi",
+    "footer": "© {year} AnyRent. Hak cipta dilindungi.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistem manajemen penyewaan"
+  },
+  "subscriptionExpiryReminder": {
+    "title": "Langganan Anda akan segera berakhir",
+    "subject": "Langganan akan berakhir dalam {days} {unit} - {planName}",
+    "greeting": "Halo",
+    "message": "Langganan Anda akan berakhir dalam {days} {unit}. Silakan hubungi AnyRent untuk memperpanjang dan menjaga toko Anda tetap berjalan tanpa gangguan.",
+    "trialMessage": "Masa uji coba gratis Anda akan berakhir dalam {days} {unit}. Silakan hubungi AnyRent untuk memilih paket langganan, menyimpan data Anda, dan melanjutkan penggunaan.",
+    "planName": "Paket langganan",
+    "expiryDate": "Tanggal berakhir",
+    "daysRemaining": "Sisa waktu",
+    "dayUnit": "hari",
+    "daysUnit": "hari",
+    "cta": "Hubungi kami untuk memperpanjang",
+    "alreadyRenewed": "Jika Anda sudah memperpanjang, silakan abaikan email ini.",
+    "footer": "© {year} AnyRent. Hak cipta dilindungi.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistem manajemen penyewaan"
+  },
+  "subscriptionStatusChange": {
+    "cancelled": {
+      "title": "Langganan dibatalkan",
+      "message": "Langganan Anda telah dibatalkan. Jika ingin melanjutkan menggunakan layanan, silakan hubungi kami untuk mengaktifkan kembali langganan.",
+      "status": "Dibatalkan"
+    },
+    "paused": {
+      "title": "Langganan dijeda",
+      "message": "Langganan Anda telah dijeda. Anda dapat mengaktifkan kembali langganan kapan saja dari halaman pengelolaan langganan Anda.",
+      "status": "Dijeda"
+    },
+    "resumed": {
+      "title": "Langganan diaktifkan kembali",
+      "message": "Langganan Anda telah diaktifkan kembali. Anda sekarang dapat terus menggunakan semua fitur paket langganan.",
+      "status": "Diaktifkan kembali"
+    },
+    "greeting": "Halo",
+    "planName": "Paket",
+    "status": "Status",
+    "periodEnd": "Tanggal berakhir",
+    "reason": "Alasan",
+    "footer": "© {year} AnyRent. Hak cipta dilindungi.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistem manajemen penyewaan"
+  },
+  "addonChange": {
+    "created": {
+      "title": "Paket tambahan telah ditambahkan",
+      "message": "Paket tambahan baru telah ditambahkan ke akun Anda. Batas penggunaan Anda telah ditingkatkan.",
+      "action": "Ditambahkan"
+    },
+    "updated": {
+      "title": "Paket tambahan diperbarui",
+      "message": "Paket tambahan Anda telah diperbarui. Batas penggunaan telah disesuaikan.",
+      "action": "Diperbarui"
+    },
+    "deleted": {
+      "title": "Paket tambahan dihapus",
+      "message": "Sebuah paket tambahan telah dihapus dari akun Anda. Batas penggunaan Anda telah dikurangi.",
+      "action": "Dihapus"
+    },
+    "activated": {
+      "title": "Paket tambahan diaktifkan",
+      "message": "Paket tambahan Anda telah diaktifkan. Batas penggunaan telah diterapkan.",
+      "action": "Diaktifkan"
+    },
+    "deactivated": {
+      "title": "Paket tambahan dinonaktifkan",
+      "message": "Paket tambahan Anda telah dinonaktifkan. Batas penggunaan telah dihapus.",
+      "action": "Dinonaktifkan"
+    },
+    "greeting": "Halo",
+    "action": "Tindakan",
+    "addonLimits": "Batas paket tambahan",
+    "notes": "Catatan",
+    "noSpecificLimits": "Tidak ada batas khusus",
+    "outlets": "{count} cabang",
+    "users": "{count} pengguna",
+    "products": "{count} produk",
+    "customers": "{count} pelanggan",
+    "orders": "{count} pesanan",
+    "createdMessage": "Anda sekarang dapat menggunakan batas tambahan ini.",
+    "deletedMessage": "Pastikan jumlah saat ini tidak melebihi batas baru.",
+    "updatedMessage": "Perubahan telah diterapkan ke akun Anda.",
+    "footer": "© {year} AnyRent. Hak cipta dilindungi.",
+    "systemName": "AnyRent",
+    "systemTagline": "Sistem manajemen penyewaan"
+  },
+  "common": {
+    "billingIntervals": {
+      "monthly": "1 bulan",
+      "quarterly": "3 bulan",
+      "semi_annual": "6 bulan",
+      "annual": "1 tahun"
+    },
+    "paymentMethods": {
+      "STRIPE": "Kartu kredit/debit",
+      "TRANSFER": "Transfer bank",
+      "CASH": "Tunai"
+    }
+  },
+  "accountEmail": {
+    "tagline": "Sistem manajemen penyewaan",
+    "hello": "Halo",
+    "linkHint": "Jika tombol tidak berfungsi, salin dan tempel tautan berikut ke peramban Anda:",
+    "noteLabel": "Catatan:",
+    "rights": "Hak cipta dilindungi."
+  },
+  "verification": {
+    "subject": "Verifikasi email Anda - AnyRent",
+    "title": "Verifikasi email Anda",
+    "intro": "Terima kasih telah mendaftar di AnyRent! Untuk menyelesaikan pendaftaran dan mengaktifkan akun Anda, silakan verifikasi alamat email Anda dengan mengklik tombol di bawah:",
+    "button": "Verifikasi email",
+    "note": "Tautan ini akan kedaluwarsa dalam 24 jam. Jika Anda tidak membuat akun ini, abaikan email ini."
+  },
+  "passwordReset": {
+    "subject": "Atur ulang kata sandi Anda - AnyRent",
+    "title": "Atur ulang kata sandi Anda",
+    "intro": "Kami menerima permintaan untuk mengatur ulang kata sandi akun AnyRent Anda. Untuk membuat kata sandi baru, silakan klik tombol di bawah:",
+    "button": "Atur ulang kata sandi",
+    "note": "Tautan ini akan kedaluwarsa dalam 24 jam. Jika Anda tidak meminta pengaturan ulang kata sandi, abaikan email ini dan kata sandi Anda tidak akan berubah."
+  }
+}

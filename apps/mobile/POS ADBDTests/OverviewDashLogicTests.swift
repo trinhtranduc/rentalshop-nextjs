@@ -256,7 +256,7 @@ final class OverviewDashLogicTests: XCTestCase {
         let english = RelatedEventReason.text(revenueType: "MULTIPLE", description: "Thu tiền cọc + Thu tiền khi lấy hàng", revenue: 1) {
             en.localizedString(forKey: $0, value: nil, table: nil)
         }
-        XCTAssertEqual(english, "Deposit collected + Collected at pickup")
+        XCTAssertEqual(english, "Booking deposit collected + Collected at pickup")
         XCTAssertEqual(RelatedEventReason.text(revenueType: "NEW_TYPE", description: "Văn bản", revenue: 1), "Văn bản")
     }
 

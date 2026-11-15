@@ -941,7 +941,7 @@ final class OrderMoneyBlockTests: XCTestCase {
 
     /// The sub-line of "Khách đưa lúc nhận đồ"
     func testBreakdownStringInBothLanguages() {
-        for (language, expected) in [("vi-VN", "tiền thuê 575.000 + thế chân 300.000"), ("en", "rental 575.000 + collateral 300.000")] {
+        for (language, expected) in [("vi-VN", "tiền thuê 575.000 + thế chân 300.000"), ("en", "rental 575.000 + security deposit 300.000")] {
             let bundle = Bundle(path: Bundle.main.path(forResource: language, ofType: "lproj") ?? "")
             let format = bundle?.localizedString(forKey: "order.detail.cashBreakdown", value: nil, table: nil) ?? ""
             XCTAssertEqual(String(format: format, "575.000", "300.000"), expected)

@@ -59,16 +59,24 @@ describe('#1433 label on web', () => {
     expect(en.d.home.related.event.futureDamageFee).toBe('Expected extra fee at return');
   });
 
-  // #1442: the late fee is its own line, so "trả muộn" does not belong in this tooltip (ja, ko, zh: no key, next test)
+  // #1442: the late fee is its own line, so "trả muộn" does not belong in this tooltip
   it('the tooltip of the fee does not talk about returning late', () => {
     expect(json('locales/vi/orders.json').amount.tooltips.damageFee).toBe('Khoản thu thêm khi sản phẩm bị hư hỏng hoặc mất mát trong quá trình khách hàng thuê');
     expect(json('locales/en/orders.json').amount.tooltips.damageFee).toBe('Extra charge when products are damaged or lost during rental');
   });
 
-  it('ja, ko and zh have no text of their own for it, so they show the English label', () => {
+  // #1571: ja, ko and zh got their own text (追加料金 / 추가 요금 / 附加费); before that they showed the English label
+  it('ja, ko and zh name the fee in their own words, not the English or Vietnamese label', () => {
+    const labels = (lang: string) =>
+      Object.fromEntries(scalars(json(`locales/${lang}/orders.json`)).filter(([key]) => /damageFee|\.fees$/.test(key)));
+    const en = labels('en');
+    const vi = labels('vi');
     for (const lang of ['ja', 'ko', 'zh']) {
-      expect(scalars(json(`locales/${lang}/orders.json`)).filter(([key]) => /damageFee|\.fees$/.test(key))).toEqual([]);
-      expect(fs.existsSync(path.join(root, `locales/${lang}/dashboard.json`))).toBe(false);
+      const own = labels(lang);
+      expect(Object.keys(own).sort()).toEqual(Object.keys(en).sort());
+      for (const [key, text] of Object.entries(own)) {
+        expect({ lang, key, same: text === en[key] || text === vi[key] || !text.trim() }).toEqual({ lang, key, same: false });
+      }
     }
   });
 });

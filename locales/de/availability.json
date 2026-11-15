@@ -1,0 +1,191 @@
+{
+  "title": "Verfügbarkeit prüfen",
+  "subtitle": "Datum und Artikel wählen, um zu sehen, ob genug Bestand vorhanden ist.",
+  "breadcrumb": "Verfügbarkeit",
+  "sections": {
+    "product": "Artikel wählen",
+    "period": "Mietzeitraum"
+  },
+  "pickupDate": "Abholdatum",
+  "returnDate": "Rückgabedatum",
+  "quantity": "Menge",
+  "outlet": "Filiale",
+  "selectOutlet": "Filiale auswählen",
+  "searchPlaceholder": "Name oder Barcode suchen",
+  "changeProduct": "Artikel ändern",
+  "noProductsFound": "Kein Artikel gefunden",
+  "maxProductsReached": "Maximum von 20 Artikeln erreicht",
+  "idle": {
+    "title": "Artikel und Mietdatum wählen",
+    "description": "Mietzeitraum und Artikel links wählen — das Ergebnis erscheint rechts",
+    "pickDates": "Mietdatum zur Prüfung wählen"
+  },
+  "product": {
+    "rentPrice": "Mietpreis",
+    "deposit": "Anzahlung",
+    "category": "Kategorie"
+  },
+  "checking": "Wird geprüft…",
+  "missingOutlet": "Filiale wählen, um die Verfügbarkeit zu prüfen",
+  "invalidDates": "Rückgabedatum darf nicht vor dem Abholdatum liegen",
+  "status": {
+    "available": "Verfügbar",
+    "unavailable": "Ausverkauft",
+    "warning": "Verfügbar"
+  },
+  "result": {
+    "canRent": "Vermietung von {count} Sets möglich",
+    "cannotRent": "Nicht genug Bestand",
+    "insufficient": "Benötigt {need} Sets, nur {have} frei"
+  },
+  "availableUnits": "{count} Sets frei",
+  "periodRange": "{pickup} – {return}",
+  "needVsHave": "Benötigt {need} Sets, {have} frei in diesem Zeitraum",
+  "conflictsCount": "{count} sich überschneidende Aufträge",
+  "stock": {
+    "total": "Gesamtbestand",
+    "renting": "Vermietet",
+    "freeInPeriod": "Frei im Zeitraum",
+    "bookedInPeriod": "Gebucht im Zeitraum"
+  },
+  "orders": {
+    "title": "Aufträge zu diesem Artikel",
+    "noActiveOrders": "Keine laufenden Aufträge",
+    "viewAll": "Aufträge anzeigen ({count})",
+    "ordersLabel": "Aufträge",
+    "conflicts": "überschneidend",
+    "conflictBadge": "Überschneidung",
+    "conflictNote": "{count} Aufträge überschneiden sich mit dem geprüften Zeitraum",
+    "dialogTitle": "Aufträge: {name}",
+    "page": "Seite {current}/{total}",
+    "conflictsCount": "{count} überschneidende Aufträge",
+    "orderNumber": "Auftragsnummer",
+    "customer": "Kunde",
+    "period": "Mietzeitraum",
+    "qty": "Menge",
+    "status": "Status",
+    "statusReserved": "Gebucht",
+    "statusPickuped": "Vermietet"
+  },
+  "timeline": {
+    "title": "Mietkalender",
+    "today": "Heute",
+    "noOrders": "Noch keine Aufträge"
+  },
+  "conflicts": {
+    "title": "Überschneidende Aufträge",
+    "orderNumber": "Auftragsnummer",
+    "customer": "Kunde",
+    "period": "Mietzeitraum",
+    "quantity": "Menge"
+  },
+  "actions": {
+    "retry": "Erneut versuchen",
+    "checkAgain": "Erneut prüfen"
+  },
+  "copy": {
+    "available": "{name}: {count} Sets frei von {pickup} bis {return}.",
+    "unavailable": "{name} ausverkauft im Zeitraum {pickup} – {return} (benötigt {need}, frei {have})."
+  },
+  "errors": {
+    "checkFailed": "Verfügbarkeit kann nicht geprüft werden",
+    "loadProductFailed": "Artikeldaten können nicht geladen werden"
+  },
+  "productsTitle": "Zu prüfende Artikel",
+  "quick": {
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "weekend": "Wochenende",
+    "threeDays": "3 Tage"
+  },
+  "summary": {
+    "allOk": "Genug Bestand für alle {count} Artikel",
+    "someShort": "{count} Artikel nicht genügend auf Lager",
+    "pickDates": "Mietdatum wählen, um die Verfügbarkeit zu sehen"
+  },
+  "badge": {
+    "free": "Frei {free}/{total}",
+    "short": "Fehlt {count}",
+    "error": "Fehler"
+  },
+  "search": {
+    "price": "Preis {price}",
+    "stock": "Frei {available}/{total}"
+  },
+  "empty": {
+    "title": "Noch kein Artikel gewählt",
+    "description": "Nach Name, Code oder Barcode suchen. Mehrere Artikel können gleichzeitig geprüft werden."
+  },
+  "detail": {
+    "freeHeadline": "{count} Sets frei",
+    "free": "Frei",
+    "busy": "Belegt",
+    "need": "Benötigt",
+    "barLabel": "Frei {free}, belegt {busy}, benötigt {need}, Gesamtbestand {total}",
+    "days": "Freie Sets pro Tag",
+    "dayHint": "Auf einen Tag klicken, um ab diesem Tag zu prüfen",
+    "dayLabel": "{date}: {free} Sets frei",
+    "conflicts": "Überschneidende Aufträge ({count})",
+    "noConflicts": "Keine Aufträge überschneiden sich in diesem Zeitraum."
+  },
+  "remove": "{name} entfernen",
+  "decrease": "Menge verringern",
+  "increase": "Menge erhöhen",
+  "web": {
+    "title": "Verfügbarkeit prüfen",
+    "outlet": "Filiale",
+    "product": "Artikel",
+    "productPlaceholder": "Name oder Artikelnummer suchen",
+    "noProducts": "Kein Artikel gefunden",
+    "searching": "Suche läuft…",
+    "pickup": "Abholdatum",
+    "return": "Rückgabedatum",
+    "quantity": "Menge",
+    "check": "Prüfen",
+    "quick": {
+      "today": "Heute",
+      "tomorrow": "Morgen",
+      "weekend": "Wochenende",
+      "threeDays": "3 Tage"
+    },
+    "reversed": "Das Rückgabedatum muss am oder nach dem Abholdatum liegen.",
+    "pickProduct": "Artikel wählen, um zu sehen, wie viele in diesem Zeitraum frei sind.",
+    "pickOutlet": "Filiale wählen, um zu prüfen.",
+    "has": "{total} Stück · {from} → {to}",
+    "free": "{free}/{total} für diesen Zeitraum frei",
+    "short": "Fehlt {missing} · frei {free}/{total}",
+    "none": "In diesem Zeitraum ausverkauft",
+    "checking": "Wird geprüft…",
+    "checkFailed": "Prüfung nicht möglich.",
+    "retry": "Erneut versuchen",
+    "createOrder": "Auftrag mit diesem Zeitraum erstellen",
+    "dayLeft": "Verbleibend am Tag",
+    "dayAria": "{day}: {count} frei. Klicken, um den Zeitraum ab diesem Tag zu starten",
+    "note": "Ein Tag zählt als Abhol- und Rückgabetag, auch wenn beide am selben Tag liegen. Der hellblaue Bereich ist der geprüfte Zeitraum. Auf einen Tag klicken, um den Zeitraum dorthin zu verschieben.",
+    "status": {
+      "RESERVED": "Gebucht",
+      "PICKUPED": "Vermietet"
+    },
+    "bar": {
+      "returnOn": "Rückgabe {day}",
+      "range": "{from} → {to}"
+    },
+    "holders": "Aufträge mit diesem Artikel",
+    "noHolders": "Noch keine Aufträge mit diesem Artikel.",
+    "holdersFailed": "Aufträge mit diesem Artikel konnten nicht geladen werden.",
+    "units": "{count} Stück",
+    "walkIn": "Laufkunde",
+    "similar": "Gleiche Kategorie, im Zeitraum verfügbar",
+    "similarFree": "{count} frei",
+    "similarEmpty": "Keine Artikel derselben Kategorie mit ausreichend Bestand im Zeitraum.",
+    "priceSuffix": {
+      "DAILY": "{price}/Tag",
+      "HOURLY": "{price}/Stunde",
+      "FIXED": "{price}/Mal",
+      "WEEKLY": "{price}/Woche",
+      "MONTHLY": "{price}/Monat"
+    },
+    "change": "Artikel ändern",
+    "weekdays": "So,Mo,Di,Mi,Do,Fr,Sa"
+  }
+}

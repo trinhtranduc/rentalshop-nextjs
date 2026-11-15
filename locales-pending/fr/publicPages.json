@@ -1,0 +1,109 @@
+{
+  "common": {
+    "home": "Accueil"
+  },
+  "meta": {
+    "pricing": {
+      "title": "Tarifs du logiciel de gestion de location | AnyRent",
+      "description": "Tarifs AnyRent, logiciel de gestion de boutique de location : forfaits Basic, Professional et Enterprise. Essai gratuit de 14 jours. À partir de 99 000 VND/mois.",
+      "ogDescription": "Forfaits Basic, Professional et Enterprise. Essai gratuit de 14 jours. À partir de 99 000 VND/mois.",
+      "name": "Tarifs AnyRent - Logiciel de gestion de location",
+      "breadcrumb": "Tarifs"
+    },
+    "features": {
+      "title": "Fonctionnalités du logiciel de gestion de location | AnyRent",
+      "description": "Découvrez les fonctionnalités du logiciel AnyRent pour boutiques de location : gestion des commandes, du stock et des clients, calendrier de réservation et rapports de chiffre d'affaires. Compatible iOS et web.",
+      "ogDescription": "Commandes, stock, clients, calendrier de réservation et rapports de chiffre d'affaires sur iOS et le web.",
+      "name": "Fonctionnalités AnyRent - Logiciel de gestion de location",
+      "breadcrumb": "Fonctionnalités"
+    },
+    "download": {
+      "title": "Télécharger l'application AnyRent — iOS et Android | Logiciel de gestion de location",
+      "description": "Téléchargez AnyRent sur l'App Store et Google Play. Gérez votre boutique de location sur votre téléphone ou le Web Portal : commandes, stock, calendrier et clients.",
+      "ogDescription": "Gérez votre boutique de location à tout moment sur iPhone, Android et le Web Portal.",
+      "name": "Télécharger l'application AnyRent",
+      "breadcrumb": "Télécharger l'application"
+    },
+    "imageSearch": {
+      "title": "Trouvez des produits de location par image grâce à l'IA | AnyRent",
+      "description": "AI Image Search d'AnyRent : prenez en photo une robe ao dai, une robe de mariée ou un appareil, et trouvez instantanément les articles similaires en stock, avec disponibilité et prix de location.",
+      "ogDescription": "Prenez une photo, l'IA trouve les articles similaires en stock. Disponibilité et prix de location affichés immédiatement.",
+      "name": "Recherche de produits de location par image IA",
+      "breadcrumb": "Recherche de produits par image IA"
+    }
+  },
+  "pricingFaq": {
+    "q1": "Le logiciel de location AnyRent est-il gratuit ?",
+    "a1": "AnyRent propose un essai gratuit de 14 jours avec toutes les fonctionnalités. Ensuite, vous pouvez choisir le forfait mensuel qui convient à votre boutique, à partir de 99 000 VND/mois.",
+    "q2": "Puis-je passer à un forfait supérieur plus tard ?",
+    "a2": "Oui, vous pouvez passer à un forfait supérieur à tout moment. Le paiement est calculé au prorata et vous accédez immédiatement aux fonctionnalités du forfait supérieur.",
+    "q3": "Que se passe-t-il si je dépasse les limites de mon forfait ?",
+    "a3": "Si vous dépassez les limites de votre forfait, vous devrez passer à un forfait supérieur. Nous vous préviendrons lorsque vous approcherez de la limite."
+  },
+  "download": {
+    "eyebrow": "AnyRent · Multiplateforme",
+    "title": "Télécharger l'application AnyRent",
+    "intro": "Gérez votre boutique de location sur iPhone, Android ou dans le navigateur. Commandes, stock et calendrier de location restent synchronisés en temps réel.",
+    "getTitle": "Télécharger maintenant",
+    "getSubtitle": "Choisissez la boutique adaptée à votre appareil.",
+    "webPrefix": "Ou essayez le",
+    "webPortal": "Web Portal",
+    "webSuffix": "directement dans votre navigateur, sans application à installer.",
+    "cards": {
+      "mobile": {
+        "title": "Application mobile",
+        "desc": "Créez des commandes et consultez le stock et le calendrier de location au comptoir ou en déplacement."
+      },
+      "web": {
+        "title": "Web Portal",
+        "desc": "Rapports complets, paramètres de boutique et gestion de l'équipe sur votre ordinateur."
+      },
+      "sync": {
+        "title": "Synchronisé partout",
+        "desc": "Un seul compte, des données synchronisées entre les applications iOS, Android et le web."
+      }
+    },
+    "links": {
+      "pricing": "Voir les tarifs →",
+      "features": "Fonctionnalités →",
+      "imageSearch": "Trouver des produits par image IA →"
+    }
+  },
+  "imageSearch": {
+    "eyebrow": "Intelligence artificielle · AI Image Search",
+    "title": "Trouvez des produits de location par image grâce à l'IA",
+    "intro": "Un client n'a besoin que d'une photo : AnyRent trouve les articles similaires en stock, avec disponibilité et prix de location. Pas besoin de se souvenir des codes produits ni de taper des mots-clés.",
+    "tryFree": "Essai gratuit",
+    "download": "Télécharger l'application",
+    "imageAlt": "Écran AnyRent affichant les résultats de la recherche par photo IA",
+    "steps": {
+      "snap": {
+        "title": "Prenez une photo pour rechercher",
+        "desc": "Prenez ou importez une photo d'un ao dai, d'une robe de mariée ou d'une tenue. Ni nom ni code-barres nécessaires."
+      },
+      "match": {
+        "title": "Reconnaissance intelligente par IA",
+        "desc": "Les embeddings vectoriels comparent couleur, coupe et matière pour suggérer les articles les plus proches en stock."
+      },
+      "instant": {
+        "title": "Résultats instantanés",
+        "desc": "En quelques secondes, vous obtenez les articles correspondants avec stock et prix de location, prêts pour créer une commande."
+      }
+    },
+    "whyTitle": "Pourquoi les boutiques de location ont-elles besoin de l'AI Image Search ?",
+    "why1": "Les clients se souviennent du style et de la couleur, pas du code produit.",
+    "why2": "Le personnel retrouve les articles plus vite quand la boutique est pleine.",
+    "why3": "Moins d'erreurs de taille ou de modèle avec un grand stock (ao dai, robes de mariée, costumes).",
+    "links": {
+      "features": "Toutes les fonctionnalités →",
+      "pricing": "Tarifs →",
+      "aoDai": "Location d'ao dai →"
+    },
+    "faq": {
+      "q1": "Comment fonctionne la recherche d'image par IA ?",
+      "a1": "Un client ou un membre du personnel prend ou importe une photo de référence. AnyRent utilise des embeddings IA pour la comparer aux photos des produits en stock et renvoie les articles similaires, avec leur disponibilité et leur prix de location.",
+      "q2": "Pour quels métiers l'AI Image Search est-il adapté ?",
+      "a2": "Particulièrement efficace pour la location d'ao dai, de robes de mariée, de costumes et de matériel, lorsque les clients se souviennent davantage du style que du code produit."
+    }
+  }
+}

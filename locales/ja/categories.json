@@ -1,0 +1,144 @@
+{
+  "title": "カテゴリ",
+  "addCategory": "カテゴリを追加",
+  "editCategory": "カテゴリを編集",
+  "categoryDetails": "カテゴリの詳細",
+  "fields": {
+    "name": "カテゴリ名",
+    "description": "説明",
+    "status": "状態",
+    "productCount": "商品数",
+    "active": "有効",
+    "inactive": "無効"
+  },
+  "labels": {
+    "default": "デフォルト"
+  },
+  "status": {
+    "active": "有効",
+    "inactive": "無効"
+  },
+  "filters": {
+    "all": "すべてのカテゴリ",
+    "active": "有効",
+    "inactive": "無効"
+  },
+  "actions": {
+    "viewDetails": "詳細を見る",
+    "edit": "カテゴリを編集",
+    "activate": "有効にする",
+    "deactivate": "無効にする",
+    "delete": "削除",
+    "create": "カテゴリを作成",
+    "update": "カテゴリを更新",
+    "addCategory": "カテゴリを追加",
+    "editCategory": "カテゴリを編集",
+    "deleteCategory": "カテゴリを削除",
+    "viewProducts": "商品を見る",
+    "backToCategories": "一覧に戻る"
+  },
+  "messages": {
+    "createSuccess": "カテゴリを作成しました。",
+    "createFailed": "カテゴリの作成に失敗しました。",
+    "updateSuccess": "カテゴリを更新しました。",
+    "updateFailed": "カテゴリの更新に失敗しました。",
+    "deleteSuccess": "カテゴリを削除しました。",
+    "deleteFailed": "カテゴリの削除に失敗しました。",
+    "confirmDelete": "このカテゴリを削除しますか？",
+    "noCategories": "カテゴリが見つかりません",
+    "noCategoriesDescription": "検索条件を変えるか、カテゴリを追加して始めてください。",
+    "loadingCategories": "カテゴリを読み込み中…",
+    "tryAdjustingSearch": "検索条件を変更してください",
+    "getStarted": "最初のカテゴリを追加して始めましょう"
+  },
+  "search": {
+    "placeholder": "カテゴリを検索…"
+  },
+  "stats": {
+    "totalCategories": "カテゴリ総数",
+    "activeCategories": "有効",
+    "totalProducts": "商品総数"
+  },
+  "dialogs": {
+    "addCategoryTitle": "新しいカテゴリを追加",
+    "editCategoryTitle": "カテゴリを編集",
+    "deleteCategoryTitle": "カテゴリを削除"
+  },
+  "dialog": {
+    "addNew": "新しいカテゴリを追加",
+    "addNewDescription": "商品を分類するための新しいカテゴリを作成します",
+    "edit": "カテゴリを編集",
+    "editDescription": "カテゴリ情報を更新します",
+    "viewDetails": "カテゴリの詳細",
+    "viewDescription": "カテゴリの情報と詳細を表示します",
+    "deleteTitle": "カテゴリを削除",
+    "deleteConfirmation": "このカテゴリを削除してもよろしいですか",
+    "deleteWarning": "この操作は取り消せません。このカテゴリのすべての商品に影響します。",
+    "neverUpdated": "未更新"
+  },
+  "validation": {
+    "nameRequired": "カテゴリ名は必須です",
+    "nameMinLength": "カテゴリ名は2文字以上で入力してください",
+    "nameMaxLength": "カテゴリ名は50文字未満で入力してください",
+    "descriptionMaxLength": "説明は200文字未満で入力してください",
+    "characters": "文字"
+  },
+  "web": {
+    "title": "カテゴリ",
+    "add": "カテゴリを追加",
+    "searchLabel": "カテゴリを検索",
+    "searchPlaceholder": "カテゴリ名を検索",
+    "cols": {
+      "name": "名前",
+      "description": "説明",
+      "createdAt": "作成日",
+      "actions": "操作"
+    },
+    "sortBy": "{column}で並べ替え",
+    "default": "デフォルト",
+    "view": "表示",
+    "edit": "編集",
+    "delete": "削除",
+    "viewDetails": "詳細を表示",
+    "more": "{name}のその他の操作",
+    "empty": "カテゴリはまだありません。カテゴリを追加して商品をグループ分けしてください。",
+    "emptySearch": "検索に一致するカテゴリはありません。",
+    "loadFailed": "カテゴリを読み込めませんでした。",
+    "retry": "再試行",
+    "form": {
+      "addTitle": "カテゴリを追加",
+      "editTitle": "カテゴリを編集",
+      "name": "カテゴリ名",
+      "namePlaceholder": "例: アオザイ",
+      "required": "必須",
+      "description": "説明",
+      "descriptionPlaceholder": "任意",
+      "count": "{count}/{max}",
+      "cancel": "キャンセル",
+      "create": "追加",
+      "save": "保存",
+      "saving": "保存中…",
+      "close": "閉じる"
+    },
+    "detail": {
+      "title": "カテゴリの詳細",
+      "noDescription": "説明はありません"
+    },
+    "confirm": {
+      "deleteTitle": "カテゴリを削除",
+      "deleteBody": "カテゴリ「{name}」を削除しますか？この操作は取り消せません。",
+      "cancel": "残す",
+      "delete": "カテゴリを削除",
+      "deleting": "削除中…"
+    },
+    "footer": {
+      "show": "表示",
+      "perPage": "件/ページ",
+      "perPageLabel": "1ページあたりの件数",
+      "pages": "ページ送り",
+      "range": "{from}–{to} / 全{total}件",
+      "prev": "前のページ",
+      "next": "次のページ"
+    }
+  }
+}

@@ -1,29 +1,33 @@
 import englishMessages from '../../../locales/en/errors.json';
 import vietnameseMessages from '../../../locales/vi/errors.json';
+import japaneseMessages from '../../../locales/ja/errors.json';
 
 const catalogs = {
   en: englishMessages as Readonly<Record<string, string>>,
   vi: vietnameseMessages as Readonly<Record<string, string>>,
+  ja: japaneseMessages as Readonly<Record<string, string>>,
 };
 
-export type ApiMessageLocale = 'en' | 'vi';
+export type ApiMessageLocale = 'en' | 'vi' | 'ja';
 export type ApiMessageValues = Readonly<Record<string, string | number | boolean | null | undefined>>;
 
 const friendlyFallback: Record<ApiMessageLocale, string> = {
   en: 'Something went wrong. Please try again.',
   vi: 'Đã có lỗi. Vui lòng thử lại.',
+  ja: 'エラーが発生しました。もう一度お試しください。',
 };
 
 /**
- * First language range only. `en` / `en-US` → English. `vi` / `vi-VN` → Vietnamese.
- * Missing, empty, or any other language (ja, ko, zh) stays Vietnamese.
+ * First language range only. `vi` / `vi-VN` → Vietnamese. Missing or empty → Vietnamese (the default market).
+ * `en` and #1556 any other language (ja, ko, zh, ru, …) → English, like the shop pages (#1551). The installed
+ * apps only send `vi` or `en`.
  */
 export function resolveApiMessageLocale(header: string | null | undefined): ApiMessageLocale {
-  if (!header) return 'vi';
-  const first = header.split(',')[0]?.split(';')[0]?.trim().toLowerCase() ?? '';
-  if (first === 'en' || first.startsWith('en-')) return 'en';
+  const first = (header ?? '').split(',')[0]?.split(';')[0]?.trim().toLowerCase() ?? '';
+  if (!first) return 'vi';
   if (first === 'vi' || first.startsWith('vi-')) return 'vi';
-  return 'vi';
+  if (first === 'ja' || first.startsWith('ja-')) return 'ja';
+  return 'en';
 }
 
 const REQUEST_STORE = Symbol.for('rentalshop.apiMessageRequest');
@@ -86,6 +90,7 @@ export function getApiMessage(
 const successFallback: Record<ApiMessageLocale, string> = {
   en: 'Success',
   vi: 'Thành công',
+  ja: '成功しました',
 };
 
 /**

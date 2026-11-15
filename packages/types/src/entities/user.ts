@@ -155,7 +155,7 @@ export interface RegisterData {
   locale?: string;
   country?: string;
   /** #1539 shop language picked on the form (emails, sample data) */
-  language?: 'vi' | 'en';
+  language?: 'vi' | 'en' | 'ja';
   /** #1539 shop currency picked on the form */
   currency?: 'VND' | 'USD';
   businessType?: string;

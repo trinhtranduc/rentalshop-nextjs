@@ -1,0 +1,190 @@
+{
+  "required": "Kolom ini wajib diisi",
+  "email": "Silakan masukkan alamat email yang valid",
+  "phone": "Silakan masukkan nomor telepon yang valid",
+  "min": "Nilai minimum adalah {min}",
+  "max": "Nilai maksimum adalah {max}",
+  "minLength": "Panjang minimum adalah {min} karakter",
+  "maxLength": "Panjang maksimum adalah {max} karakter",
+  "pattern": "Format tidak valid",
+  "url": "Silakan masukkan URL yang valid",
+  "number": "Silakan masukkan angka yang valid",
+  "integer": "Silakan masukkan bilangan bulat",
+  "positive": "Silakan masukkan angka positif",
+  "negative": "Silakan masukkan angka negatif",
+  "date": "Silakan masukkan tanggal yang valid",
+  "dateRange": "Rentang waktu tidak valid",
+  "time": "Silakan masukkan waktu yang valid",
+  "password": {
+    "minLength": "Kata sandi harus terdiri dari minimal {min} karakter",
+    "uppercase": "Kata sandi harus mengandung minimal satu huruf kapital",
+    "lowercase": "Kata sandi harus mengandung minimal satu huruf kecil",
+    "number": "Kata sandi harus mengandung minimal satu angka",
+    "special": "Kata sandi harus mengandung minimal satu karakter khusus",
+    "match": "Kata sandi tidak cocok"
+  },
+  "file": {
+    "size": "Ukuran file harus kurang dari {max}",
+    "type": "Jenis file tidak valid. Jenis yang diizinkan: {types}",
+    "required": "Silakan pilih file"
+  },
+  "unique": "Nilai ini sudah ada",
+  "exists": "Nilai ini tidak ada",
+  "custom": {
+    "invalidBarcode": "Barcode tidak valid",
+    "invalidSKU": "SKU tidak valid",
+    "stockNotAvailable": "Stok tidak mencukupi",
+    "invalidDateRange": "Tanggal akhir harus setelah tanggal mulai",
+    "priceGreaterThanZero": "Harga harus lebih dari 0",
+    "quantityGreaterThanZero": "Jumlah harus lebih dari 0"
+  },
+  "fields": {
+    "firstName": {
+      "required": "Nama depan wajib diisi"
+    },
+    "lastName": {
+      "required": "Nama belakang wajib diisi"
+    },
+    "name": {
+      "required": "Nama wajib diisi",
+      "minLength": "Nama harus terdiri dari minimal {min} karakter"
+    },
+    "productName": {
+      "required": "Nama produk wajib diisi"
+    },
+    "outletName": {
+      "required": "Nama cabang wajib diisi"
+    },
+    "planName": {
+      "required": "Nama paket wajib diisi"
+    },
+    "planDescription": {
+      "required": "Deskripsi paket wajib diisi"
+    },
+    "variantName": {
+      "required": "Nama varian wajib diisi"
+    },
+    "phone": {
+      "required": "Nomor telepon wajib diisi"
+    },
+    "email": {
+      "invalid": "Alamat email tidak valid",
+      "invalidFormat": "Format email tidak valid"
+    },
+    "password": {
+      "minLength6": "Kata sandi harus terdiri dari minimal 6 karakter",
+      "required": "Kata sandi wajib diisi"
+    },
+    "confirmPassword": {
+      "required": "Konfirmasi kata sandi wajib diisi",
+      "match": "Kata sandi tidak cocok"
+    },
+    "outletId": {
+      "required": "Cabang wajib diisi",
+      "requiredForRole": "Cabang wajib diisi untuk peran ini",
+      "shouldNotBeSelected": "Cabang tidak perlu dipilih untuk peran merchant"
+    },
+    "country": {
+      "invalid": "Silakan pilih negara yang valid"
+    },
+    "tenantKey": {
+      "invalid": "Kunci tenant hanya boleh berisi huruf dan angka"
+    },
+    "product": {
+      "required": "Produk wajib diisi"
+    },
+    "category": {
+      "required": "Kategori wajib diisi"
+    },
+    "outlet": {
+      "required": "Cabang wajib diisi",
+      "requiredForRole": "Cabang wajib diisi untuk peran ini"
+    },
+    "merchant": {
+      "required": "Bisnis wajib diisi",
+      "requiredForRole": "Bisnis wajib diisi untuk peran ini"
+    },
+    "role": {
+      "required": "Peran wajib diisi"
+    },
+    "deposit": {
+      "nonNegative": "Uang muka tidak boleh negatif",
+      "cannotBeNegative": "Uang muka tidak boleh bernilai negatif"
+    },
+    "merchantId": {
+      "required": "ID bisnis wajib diisi"
+    },
+    "planId": {
+      "required": "ID paket wajib diisi"
+    },
+    "planVariantId": {
+      "required": "ID varian paket wajib diisi"
+    },
+    "rentPrice": {
+      "required": "Harga sewa wajib diisi dan harus lebih dari 0",
+      "nonNegative": "Harga sewa tidak boleh negatif",
+      "greaterThanZero": "Harga sewa harus lebih dari 0"
+    },
+    "salePrice": {
+      "required": "Harga jual wajib diisi dan harus lebih dari 0",
+      "nonNegative": "Harga jual tidak boleh negatif",
+      "greaterThanZero": "Harga jual harus lebih dari 0"
+    },
+    "costPrice": {
+      "nonNegative": "Harga pokok tidak boleh negatif"
+    },
+    "stock": {
+      "nonNegative": "Stok tidak boleh negatif"
+    },
+    "totalStock": {
+      "required": "Stok wajib diisi dan harus lebih dari 0",
+      "nonNegative": "Total stok tidak boleh negatif",
+      "greaterThanZero": "Stok harus lebih dari 0"
+    },
+    "basePrice": {
+      "nonNegative": "Harga dasar tidak boleh negatif"
+    },
+    "price": {
+      "nonNegative": "Harga tidak boleh negatif"
+    },
+    "amount": {
+      "nonNegative": "Jumlah uang tidak boleh negatif"
+    },
+    "duration": {
+      "positive": "Durasi harus berupa angka positif"
+    },
+    "trialDays": {
+      "nonNegative": "Jumlah hari uji coba tidak boleh negatif"
+    },
+    "discount": {
+      "range": "Diskon harus berada di antara 0 dan 100"
+    },
+    "durationConfig": {
+      "required": "Konfigurasi durasi wajib diisi dan harus berupa JSON yang valid untuk jenis harga HOURLY dan DAILY",
+      "requiredForPricingType": "Konfigurasi durasi wajib diisi untuk jenis harga HOURLY dan DAILY",
+      "minDurationRequired": "Durasi minimum wajib diisi dan harus lebih dari 0",
+      "maxDurationRequired": "Durasi maksimum wajib diisi dan harus lebih dari 0",
+      "minMustBeLessThanMax": "Durasi minimum harus kurang dari atau sama dengan durasi maksimum",
+      "defaultDurationRequired": "Durasi default wajib diisi dan harus lebih dari 0",
+      "defaultMustBeAtLeastMin": "Durasi default harus minimal sama dengan durasi minimum",
+      "defaultMustNotExceedMax": "Durasi default tidak boleh melebihi durasi maksimum"
+    },
+    "outletStock": {
+      "required": "Stok cabang wajib diisi. Silakan tentukan jumlah stok untuk minimal satu cabang.",
+      "noOutletsAvailable": "Tidak ada cabang. Silakan hubungi administrator untuk mengatur cabang.",
+      "cannotBeNegative": "Nilai stok cabang tidak boleh negatif"
+    },
+    "endDate": {
+      "afterStart": "Tanggal akhir harus setelah tanggal mulai"
+    },
+    "nameOrFullName": {
+      "required": "Harus ada 'name' atau 'firstName' dan 'lastName'"
+    },
+    "businessTypePricingType": {
+      "required": "Jenis bisnis dan jenis harga wajib diisi untuk pendaftaran bisnis"
+    },
+    "pricingDefault": {
+      "dailyNeedsPrice": "Default harga per hari memerlukan harga sewa per hari."
+    }
+  }
+}

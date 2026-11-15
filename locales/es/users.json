@@ -1,0 +1,469 @@
+{
+  "title": "Usuarios",
+  "subtitle": "Gestione los usuarios del sistema",
+  "pageTitle": "Gestión de usuarios",
+  "addUser": "Agregar usuario",
+  "addNewUser": "Agregar nuevo usuario",
+  "addNewUserDescription": "Cree una cuenta de usuario nueva para su organización",
+  "editUser": "Editar usuario",
+  "userDetails": "Detalles del usuario",
+  "viewUserInfo": "Vea la información y los detalles del usuario",
+  "userInformation": "Información del usuario",
+  "accountInformation": "Información de la cuenta",
+  "outletInformation": "Información de la sucursal",
+  "accountActions": "Acciones de la cuenta",
+  "passwordManagement": "Gestión de contraseñas",
+  "passwordSettings": "Configuración de contraseña",
+  "organizationAssignment": "Asignación a la organización",
+  "accountSettings": "Configuración de la cuenta",
+  "accountStatus": "Estado de la cuenta",
+  "dangerZone": "Zona de peligro",
+  "activeAccount": "Cuenta activa",
+  "currentUserInformation": "Información del usuario actual",
+  "activeUsersInfo": "Los usuarios activos pueden iniciar sesión y acceder al sistema. Los usuarios inactivos están suspendidos.",
+  "created": "Fecha de creación",
+  "label": {
+    "loading": "Cargando..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "Nombre",
+    "firstName": "Nombre",
+    "lastName": "Apellidos",
+    "fullName": "Nombre completo",
+    "email": "Email",
+    "phone": "Teléfono",
+    "role": "Rol",
+    "outlet": "Sucursal",
+    "outletName": "Nombre de la sucursal",
+    "outletId": "ID de la sucursal",
+    "merchant": "Comercio",
+    "merchantName": "Nombre del comercio",
+    "merchantId": "ID del comercio",
+    "status": "Estado",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "createdAt": "Fecha de creación",
+    "lastLogin": "Último inicio de sesión",
+    "actions": "Acciones",
+    "basicInformation": "Información básica",
+    "personalInformation": "Información personal",
+    "roleAndPermissions": "Rol y permisos",
+    "readOnly": "Solo lectura",
+    "emailStatus": "Verificación de email"
+  },
+  "roles": {
+    "ADMIN": "Administrador del sistema",
+    "MERCHANT": "Propietario de la marca",
+    "OUTLET_ADMIN": "Gerente de sucursal",
+    "OUTLET_STAFF": "Personal de sucursal",
+    "ARTICLE": "Editor de artículos",
+    "OUTLET_INVENTORY": "Personal de almacén"
+  },
+  "actions": {
+    "activate": "Activar usuario",
+    "activateAccount": "Activar cuenta",
+    "activating": "Activando...",
+    "deactivate": "Desactivar usuario",
+    "deactivateAccount": "Desactivar cuenta",
+    "deactivating": "Desactivando...",
+    "delete": "Eliminar usuario",
+    "deleteAccount": "Eliminar cuenta",
+    "deleting": "Eliminando...",
+    "changePassword": "Cambiar contraseña",
+    "changingPassword": "Cambiando...",
+    "viewDetails": "Ver detalles",
+    "edit": "Editar",
+    "editUser": "Editar usuario",
+    "updateUser": "Actualizar usuario",
+    "createUser": "Crear usuario",
+    "updating": "Actualizando...",
+    "creating": "Creando...",
+    "addUser": "Agregar usuario",
+    "backToUsers": "Volver a la lista",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña"
+  },
+  "messages": {
+    "createSuccess": "Usuario creado correctamente",
+    "createFailed": "Error al crear el usuario",
+    "updateSuccess": "Usuario actualizado correctamente",
+    "updateFailed": "Error al actualizar el usuario",
+    "deleteSuccess": "Usuario eliminado correctamente",
+    "deleteFailed": "Error al eliminar el usuario",
+    "activateSuccess": "Usuario activado correctamente",
+    "activateFailed": "Error al activar el usuario",
+    "deactivateSuccess": "Usuario desactivado correctamente",
+    "deactivateFailed": "Error al desactivar el usuario",
+    "passwordChangeSuccess": "Contraseña cambiada correctamente",
+    "passwordChangeFailed": "Error al cambiar la contraseña",
+    "passwordMinLength": "La contraseña debe tener al menos 6 caracteres",
+    "newPasswordRequired": "La nueva contraseña es obligatoria",
+    "confirmPasswordRequired": "Por favor, confirme su nueva contraseña",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "confirmDelete": "¿Está seguro de que desea eliminar este usuario?",
+    "confirmDeleteAccount": "Eliminar cuenta de usuario",
+    "confirmDeleteDetails": "¿Está seguro de que desea eliminar permanentemente esta cuenta de usuario? Esta acción no se puede deshacer.",
+    "confirmDeactivate": "¿Está seguro de que desea desactivar",
+    "confirmDeactivateAccount": "Desactivar usuario",
+    "confirmDeactivateDetails": "Esta acción impedirá que acceda al sistema.",
+    "confirmActivate": "¿Está seguro de que desea activar este usuario?",
+    "confirmActivateAccount": "Activar cuenta de usuario",
+    "confirmActivateDetails": "¿Está seguro de que desea activar esta cuenta de usuario? El usuario podrá volver a acceder al sistema.",
+    "allowChangePassword": "Permitir al usuario cambiar su contraseña de forma segura",
+    "suspendAccess": "Suspender temporalmente el acceso del usuario al sistema",
+    "deactivateToPrevent": "Desactivar para impedir el acceso con inicio de sesión",
+    "activateToRestore": "Activar para restaurar el acceso con inicio de sesión",
+    "permanentlyDelete": "Eliminar permanentemente esta cuenta de usuario y todos sus datos relacionados",
+    "permanentlyDeleteShort": "Eliminar permanentemente esta cuenta de usuario",
+    "cannotDeactivateAdmin": "No se puede desactivar al administrador del sistema",
+    "cannotDeactivateAdminShort": "No se pueden desactivar las cuentas de administrador",
+    "cannotDeleteAdmin": "No se pueden eliminar las cuentas de administrador",
+    "validationErrors": "Por favor, corrija los siguientes errores de validación:",
+    "noUsers": "No se encontraron usuarios",
+    "loadingUsers": "Cargando usuarios...",
+    "noDataAvailable": "No hay datos de usuarios disponibles",
+    "na": "N/D",
+    "error": "Se produjo un error",
+    "tryAdjustingSearch": "Pruebe a ajustar su búsqueda o filtros",
+    "getStarted": "Comience agregando su primer usuario"
+  },
+  "search": {
+    "placeholder": "Buscar usuarios por nombre, email o teléfono..."
+  },
+  "filters": {
+    "all": "Todos los usuarios",
+    "byRole": "Filtrar por rol",
+    "byOutlet": "Filtrar por sucursal",
+    "active": "Usuarios activos",
+    "inactive": "Usuarios inactivos",
+    "allRoles": "Todos los roles"
+  },
+  "stats": {
+    "totalUsers": "Total de usuarios",
+    "activeUsers": "Usuarios activos",
+    "adminUsers": "Administradores",
+    "staffUsers": "Personal"
+  },
+  "dialogs": {
+    "changePasswordTitle": "Cambiar contraseña",
+    "changePasswordDescription": "Cambiar la contraseña del usuario",
+    "newPassword": "Nueva contraseña",
+    "confirmNewPassword": "Confirmar nueva contraseña"
+  },
+  "placeholders": {
+    "enterName": "Ingrese el nombre",
+    "enterFirstName": "Ingrese el nombre",
+    "enterLastName": "Ingrese el apellido",
+    "enterFullName": "Ingrese el nombre completo",
+    "enterEmail": "Ingrese la dirección de email",
+    "enterPhone": "Ingrese el teléfono (solo números)",
+    "selectRole": "Seleccione un rol",
+    "selectOutlet": "Seleccione una sucursal",
+    "enterPassword": "Ingrese la contraseña",
+    "confirmPassword": "Confirme la contraseña",
+    "enterNewPassword": "Ingrese la nueva contraseña",
+    "confirmNewPassword": "Confirme la nueva contraseña",
+    "loadingMerchants": "Cargando marcas...",
+    "searchAndSelectMerchant": "Buscar y seleccionar marca",
+    "currentMerchant": "Marca actual",
+    "loadingOutlets": "Cargando sucursales...",
+    "selectMerchantFirst": "Seleccione primero una marca",
+    "searchAndSelectOutlet": "Buscar y seleccionar sucursal",
+    "currentOutlet": "Sucursal actual",
+    "searchMerchants": "Buscar marcas...",
+    "noMerchantsFound": "No se encontraron marcas",
+    "searchOutlets": "Buscar sucursales...",
+    "noOutletsFound": "No se encontraron sucursales",
+    "searchUsers": "Buscar usuarios..."
+  },
+  "labels": {
+    "loading": "Cargando..."
+  },
+  "status": {
+    "verified": "Verificado",
+    "notVerified": "No verificado"
+  },
+  "roleHelp": {
+    "title": "Roles",
+    "OUTLET_ADMIN": "Gestiona una sucursal: pedidos, productos, clientes y personal de esa sucursal.",
+    "OUTLET_STAFF": "Crea y gestiona pedidos. No puede cambiar los precios de los productos.",
+    "loginNote": "El nuevo usuario inicia sesión con este email y contraseña, y después puede cambiar la contraseña.",
+    "OUTLET_INVENTORY": "Vende como el personal y además gestiona productos y categorías (agregar, editar precios, eliminar, importar y exportar Excel). No ve ingresos."
+  },
+  "web": {
+    "title": "Personal",
+    "add": "Agregar personal",
+    "searchPlaceholder": "Buscar nombre, teléfono, email",
+    "searchLabel": "Buscar personal",
+    "allOutlets": "Todas las sucursales",
+    "outletFilter": "Filtrar por sucursal",
+    "allOutletsValue": "Todas",
+    "filters": {
+      "role": "Rol:",
+      "status": "Estado:",
+      "all": "Todos",
+      "active": "Activo",
+      "inactive": "Bloqueado"
+    },
+    "cols": {
+      "staff": "Personal",
+      "role": "Rol",
+      "outlet": "Sucursal",
+      "lastLogin": "Último inicio de sesión",
+      "actions": "Acciones"
+    },
+    "roles": {
+      "owner": "Propietario de la tienda",
+      "admin": "Gerente de sucursal",
+      "staff": "Personal",
+      "other": "Otro",
+      "inventory": "Personal de almacén"
+    },
+    "lastSeen": {
+      "current": "En uso ahora",
+      "never": "—",
+      "today": "{time} hoy",
+      "yesterday": "{time} ayer",
+      "locked": "Bloqueado"
+    },
+    "edit": "Editar",
+    "more": "Más acciones para {name}",
+    "activate": "Desbloquear cuenta",
+    "deactivate": "Bloquear cuenta",
+    "delete": "Eliminar personal",
+    "confirm": {
+      "activateTitle": "¿Desbloquear cuenta?",
+      "activateBody": "{name} podrá volver a iniciar sesión.",
+      "deactivateTitle": "¿Bloquear cuenta?",
+      "deactivateBody": "{name} no podrá iniciar sesión hasta que la cuenta sea desbloqueada.",
+      "deleteTitle": "¿Eliminar personal?",
+      "deleteBody": "Eliminar a {name} de la tienda. No se puede deshacer.",
+      "cancel": "Cancelar",
+      "close": "Cerrar"
+    },
+    "rolesCard": {
+      "title": "Qué puede hacer cada rol",
+      "owner": "Todas las sucursales, dinero, informes, personal y plan.",
+      "admin": "Una sucursal: pedidos, productos, precios, clientes, el dinero del día y el personal de la sucursal.",
+      "staff": "Crear pedidos, entregar, recibir devoluciones y agregar clientes. No puede cambiar precios de productos ni ver informes de dinero.",
+      "rolePermissions": "Ver permisos por rol",
+      "permissions": "Asignar permisos adicionales",
+      "inventory": "Vende como el personal y además gestiona productos y categorías (agregar, editar precios, eliminar, importar y exportar Excel). No ve ingresos."
+    },
+    "permissions": {
+      "title": "Permisos adicionales del personal",
+      "hint": "Active permisos adicionales para cada miembro del personal, además de los permisos predeterminados de su rol.",
+      "noAccess": "Las cuentas del personal no pueden gestionar permisos.",
+      "pickTitle": "Seleccionar personal",
+      "picked": "{count} seleccionados",
+      "pickAll": "Seleccionar todos",
+      "pickNone": "Quitar selección",
+      "noStaff": "Aún no hay personal (rol Personal)",
+      "switchTitle": "Permisos adicionales",
+      "pickFirst": "Seleccione al menos un miembro del personal a la izquierda.",
+      "forOne": "Editando los permisos de {name}.",
+      "forMany": "Editando {count} miembros del personal: se empieza con todo desactivado y Guardar se aplicará a los {count}.",
+      "allOn": "Activar todos",
+      "allOff": "Desactivar todos",
+      "cancel": "Quitar selección",
+      "save": "Guardar permisos",
+      "saving": "Guardando…",
+      "savedTitle": "Guardado",
+      "saved": "Permisos guardados para {count} miembros del personal",
+      "errorTitle": "Error",
+      "saveFailed": "No se pudieron guardar los permisos. Inténtelo de nuevo.",
+      "readFailed": "No se pudieron leer los permisos guardados de este miembro del personal. Al guardar se registrará cada permiso adicional exactamente como está en los interruptores de abajo.",
+      "groups": {
+        "outlet": "Sucursal",
+        "orders": "Pedidos",
+        "products": "Productos",
+        "customers": "Clientes",
+        "users": "Personal",
+        "dashboard": "Panel"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "Ver sucursal",
+        "desc": "Ver la información de la sucursal"
+      },
+      "outlet_manage": {
+        "label": "Gestionar sucursal",
+        "desc": "Editar la información y la configuración de la sucursal"
+      },
+      "users_view": {
+        "label": "Ver personal",
+        "desc": "Ver la lista y los datos del personal"
+      },
+      "users_manage": {
+        "label": "Gestionar personal",
+        "desc": "Agregar, editar, bloquear y eliminar personal"
+      },
+      "products_view": {
+        "label": "Ver productos",
+        "desc": "Ver la lista y los detalles de los productos"
+      },
+      "products_create": {
+        "label": "Agregar productos",
+        "desc": "Agregar productos nuevos"
+      },
+      "products_update": {
+        "label": "Editar productos",
+        "desc": "Editar productos existentes, incluidos los precios"
+      },
+      "products_manage": {
+        "label": "Gestionar productos",
+        "desc": "Acceso total: eliminar, importar Excel, precio de costo"
+      },
+      "products_export": {
+        "label": "Exportar productos",
+        "desc": "Descargar la lista de productos en Excel / CSV"
+      },
+      "orders_create": {
+        "label": "Crear pedidos",
+        "desc": "Crear pedidos de alquiler y de venta"
+      },
+      "orders_view": {
+        "label": "Ver pedidos",
+        "desc": "Ver la lista y los detalles de los pedidos"
+      },
+      "orders_update": {
+        "label": "Editar pedidos",
+        "desc": "Editar pedidos, entregar, recibir devoluciones"
+      },
+      "orders_delete": {
+        "label": "Eliminar pedidos",
+        "desc": "Eliminar pedidos"
+      },
+      "orders_export": {
+        "label": "Exportar pedidos",
+        "desc": "Descargar la lista de pedidos en Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "Gestionar pedidos",
+        "desc": "Acceso total a los pedidos"
+      },
+      "customers_view": {
+        "label": "Ver clientes",
+        "desc": "Ver la lista y la información de los clientes"
+      },
+      "customers_manage": {
+        "label": "Gestionar clientes",
+        "desc": "Agregar, editar y eliminar clientes"
+      },
+      "customers_export": {
+        "label": "Exportar clientes",
+        "desc": "Descargar la lista de clientes en Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "Ver panel",
+        "desc": "Ver la página Panel y las cifras"
+      }
+    },
+    "rolePermissions": {
+      "title": "Permisos por rol",
+      "hint": "Permisos predeterminados de cada rol. Solo lectura.",
+      "roleLabel": "Rol",
+      "count": "{count} permisos",
+      "granted": "Con permiso",
+      "notGranted": "Sin permiso",
+      "note": "Estos son los permisos predeterminados de cada rol. Para activar más permisos a una persona, use Permisos adicionales del personal."
+    },
+    "empty": "Aún no hay personal",
+    "emptySearch": "Ningún miembro del personal coincide con estos filtros",
+    "loadFailed": "No se pudo cargar el personal.",
+    "retry": "Reintentar",
+    "noAccess": "Las cuentas del personal no pueden ver la lista de personal.",
+    "weekdays": "Dom,Lun,Mar,Mié,Jue,Vie,Sáb",
+    "footer": {
+      "show": "Mostrar",
+      "perPage": "filas por página",
+      "perPageLabel": "Filas por página",
+      "pages": "Paginación",
+      "range": "{from}–{to} de {total} miembros del personal",
+      "prev": "Página anterior",
+      "next": "Página siguiente"
+    },
+    "form": {
+      "addTitle": "Agregar personal",
+      "infoTitle": "Información",
+      "name": "Nombre completo",
+      "namePlaceholder": "Ej.: Ana López",
+      "phone": "Teléfono",
+      "optional": "Opcional",
+      "email": "Email de inicio de sesión",
+      "emailPlaceholder": "nombre@ejemplo.com",
+      "emailHint": "El personal inicia sesión con este email.",
+      "required": "obligatorio",
+      "roleTitle": "Rol y sucursal",
+      "role": "Rol",
+      "outlet": "Sucursal",
+      "outletFixed": "El nuevo personal pertenece a su sucursal.",
+      "outletsLoading": "Cargando sucursales…",
+      "noOutlets": "Aún no hay sucursales",
+      "passwordTitle": "Contraseña de inicio de sesión",
+      "password": "Contraseña",
+      "confirmPassword": "Repita la contraseña",
+      "passwordHint": "Al menos 6 caracteres.",
+      "loginNote": "El personal inicia sesión con este email y contraseña, y luego puede cambiar la contraseña por su cuenta.",
+      "show": "Mostrar",
+      "hide": "Ocultar",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña",
+      "cancel": "Cancelar",
+      "create": "Agregar personal",
+      "creating": "Agregando…",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "errors": {
+        "nameShort": "El nombre debe tener al menos 2 caracteres.",
+        "emailRequired": "Ingrese el email de inicio de sesión.",
+        "emailInvalid": "El email no tiene un formato válido.",
+        "phoneShort": "El teléfono necesita al menos 8 dígitos.",
+        "phoneLong": "El teléfono puede tener como máximo 15 dígitos.",
+        "phoneChars": "El teléfono solo puede contener dígitos, espacios y + - ( ).",
+        "roleRequired": "Seleccione un rol.",
+        "outletRequired": "Seleccione una sucursal.",
+        "passwordRequired": "Ingrese una contraseña.",
+        "passwordShort": "La contraseña necesita al menos 6 caracteres.",
+        "confirmRequired": "Repita la contraseña.",
+        "passwordMismatch": "Las dos contraseñas no coinciden.",
+        "newRequired": "Ingrese la nueva contraseña."
+      }
+    },
+    "detail": {
+      "info": "Información",
+      "merchant": "Tienda",
+      "account": "Cuenta",
+      "statusActive": "Activo",
+      "statusLocked": "Bloqueado",
+      "activeHint": "Bloquee la cuenta para que esta persona no pueda volver a iniciar sesión.",
+      "lockedHint": "La cuenta está bloqueada. Desbloquéela para que el personal pueda volver a iniciar sesión.",
+      "emailStatus": "Email",
+      "verified": "Verificado",
+      "notVerified": "No verificado",
+      "createdAt": "Fecha de creación",
+      "deleteHint": "Eliminar esta cuenta de forma permanente. No se puede deshacer.",
+      "changePassword": "Cambiar contraseña",
+      "editTitle": "Editar personal",
+      "emailFixed": "El email de inicio de sesión no se puede cambiar.",
+      "roleFixed": "Aquí no se cambia el rol.",
+      "notFound": "No se encontró este miembro del personal.",
+      "backToList": "Volver a la lista de personal"
+    },
+    "password": {
+      "title": "Cambiar contraseña",
+      "hint": "Establezca una nueva contraseña para {name}. La contraseña anterior dejará de funcionar.",
+      "new": "Nueva contraseña",
+      "confirm": "Repita la nueva contraseña",
+      "submit": "Cambiar contraseña",
+      "changing": "Cambiando…"
+    }
+  }
+}

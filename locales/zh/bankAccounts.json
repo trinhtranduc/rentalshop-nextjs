@@ -1,0 +1,64 @@
+{
+  "title": "银行账户管理",
+  "subtitle": "为分店管理银行账户",
+  "form": {
+    "title": "银行账户信息",
+    "addTitle": "添加银行账户",
+    "editTitle": "编辑银行账户",
+    "accountHolderName": "账户持有人姓名",
+    "accountHolderNamePlaceholder": "请输入账户持有人姓名",
+    "accountNumber": "账号",
+    "accountNumberPlaceholder": "请输入账号（6-16 位数字）",
+    "bankName": "银行名称",
+    "bankNamePlaceholder": "选择银行",
+    "bankCode": "银行代码",
+    "bankCodePlaceholder": "银行代码（自动填入）",
+    "branch": "支行",
+    "branchPlaceholder": "请输入支行（可选）",
+    "isDefault": "设为默认账户",
+    "notes": "备注",
+    "notesPlaceholder": "备注（可选）",
+    "submit": "保存银行账户",
+    "add": "添加账户",
+    "update": "更新",
+    "cancel": "取消",
+    "saving": "保存中...",
+    "errors": {
+      "accountHolderNameRequired": "请输入账户持有人姓名",
+      "accountNumberRequired": "请输入账号",
+      "accountNumberInvalid": "账号必须为 6-16 位数字",
+      "bankNameRequired": "请输入银行名称"
+    }
+  },
+  "card": {
+    "default": "默认",
+    "accountHolderName": "账户持有人姓名",
+    "accountNumber": "账号",
+    "bank": "银行",
+    "branch": "支行",
+    "notes": "备注",
+    "copyQRCode": "复制 QR 码",
+    "scanQRHint": "扫描 QR 码快速转账",
+    "copied": "已复制",
+    "accountNumberCopied": "账号已复制到剪贴板",
+    "qrCodeCopied": "QR 码已复制到剪贴板"
+  },
+  "list": {
+    "emptyTitle": "还没有银行账户",
+    "emptyDescription": "添加银行账户以接收转账付款",
+    "addButton": "添加银行账户"
+  },
+  "messages": {
+    "addSuccess": "已添加银行账户",
+    "addError": "无法添加银行账户",
+    "updateSuccess": "已更新银行账户",
+    "updateError": "无法更新银行账户",
+    "deleteSuccess": "已删除银行账户",
+    "deleteError": "无法删除银行账户",
+    "loadError": "无法加载银行账户列表",
+    "deleteConfirm": "确定要删除银行账户“{name}”吗？",
+    "deleteConfirmTitle": "删除银行账户",
+    "noOutlet": "您尚未被分配到任何分店，请联系管理员。",
+    "noPermission": "您没有查看银行账户的权限。"
+  }
+}

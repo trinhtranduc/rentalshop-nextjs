@@ -1,0 +1,64 @@
+{
+  "title": "銀行口座の管理",
+  "subtitle": "店舗の銀行口座を管理します",
+  "form": {
+    "title": "銀行口座情報",
+    "addTitle": "銀行口座を追加",
+    "editTitle": "銀行口座を編集",
+    "accountHolderName": "口座名義",
+    "accountHolderNamePlaceholder": "口座名義を入力",
+    "accountNumber": "口座番号",
+    "accountNumberPlaceholder": "口座番号を入力（6-16桁）",
+    "bankName": "銀行名",
+    "bankNamePlaceholder": "銀行を選択",
+    "bankCode": "銀行コード",
+    "bankCodePlaceholder": "銀行コード（自動入力）",
+    "branch": "支店",
+    "branchPlaceholder": "支店を入力（任意）",
+    "isDefault": "デフォルトの口座に設定",
+    "notes": "メモ",
+    "notesPlaceholder": "メモ（任意）",
+    "submit": "銀行口座を保存",
+    "add": "口座を追加",
+    "update": "更新",
+    "cancel": "キャンセル",
+    "saving": "保存中...",
+    "errors": {
+      "accountHolderNameRequired": "口座名義は必須です",
+      "accountNumberRequired": "口座番号は必須です",
+      "accountNumberInvalid": "口座番号は6-16桁で入力してください",
+      "bankNameRequired": "銀行名は必須です"
+    }
+  },
+  "card": {
+    "default": "デフォルト",
+    "accountHolderName": "口座名義",
+    "accountNumber": "口座番号",
+    "bank": "銀行",
+    "branch": "支店",
+    "notes": "メモ",
+    "copyQRCode": "QRコードをコピー",
+    "scanQRHint": "QRコードを読み取ると、すぐに振込できます",
+    "copied": "コピーしました",
+    "accountNumberCopied": "口座番号をクリップボードにコピーしました",
+    "qrCodeCopied": "QRコードをクリップボードにコピーしました"
+  },
+  "list": {
+    "emptyTitle": "銀行口座はまだありません",
+    "emptyDescription": "銀行振込の入金を受け取るために、銀行口座を追加してください",
+    "addButton": "銀行口座を追加"
+  },
+  "messages": {
+    "addSuccess": "銀行口座を追加しました",
+    "addError": "銀行口座を追加できませんでした。",
+    "updateSuccess": "銀行口座を更新しました",
+    "updateError": "銀行口座を更新できませんでした。",
+    "deleteSuccess": "銀行口座を削除しました",
+    "deleteError": "銀行口座を削除できませんでした。",
+    "loadError": "銀行口座の一覧を読み込めませんでした。",
+    "deleteConfirm": "銀行口座「{name}」を削除しますか？",
+    "deleteConfirmTitle": "銀行口座を削除",
+    "noOutlet": "どの店舗にも割り当てられていません。管理者にお問い合わせください。",
+    "noPermission": "銀行口座を閲覧する権限がありません。"
+  }
+}

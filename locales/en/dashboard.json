@@ -26,7 +26,7 @@
     "productUtilization": "Product Utilization",
     "revenueGrowth": "Revenue Growth",
     "customerGrowth": "Customer Growth",
-    "totalCollateral": "Total Collateral"
+    "totalCollateral": "Total Security Deposit"
   },
   "tooltips": {
     "todayRevenue": "Total actual revenue from orders created today. Includes both rental and sales orders.",
@@ -47,7 +47,7 @@
     "customerGrowth": "Growth rate of new customers. Compared to the previous period.",
     "revenueGrowth": "Revenue growth rate. Compared to the previous period to assess business performance.",
     "productUtilization": "Product utilization rate. Percentage of products currently being rented compared to total available products.",
-    "totalCollateral": "Total collateral amount from orders that have been picked up (PICKUPED). Only calculated for rental orders that have been picked up by customers."
+    "totalCollateral": "Total security deposit amount from orders that have been picked up (PICKUPED). Only calculated for rental orders that have been picked up by customers."
   },
   "charts": {
     "revenueOverTime": "Revenue Over Time",
@@ -143,7 +143,7 @@
     "items": "{count, plural, one {# item} other {# items}}",
     "pickup": "Pickup",
     "return": "Return",
-    "deposit": "Deposit",
+    "deposit": "Booking deposit",
     "more": "+{count} more in Orders",
     "cash": {
       "title": "Security deposits & fees",
@@ -166,15 +166,15 @@
       "new": "New",
       "revenue": "Revenue",
       "newOrders": "New orders",
-      "depositRefund": "Deposits refunded",
-      "depositRefundTooltip": "Deposits returned to customers in the period. Shown as negative bars on the revenue chart.",
+      "depositRefund": "Booking deposits refunded",
+      "depositRefundTooltip": "Booking deposits returned to customers in the period. Shown as negative bars on the revenue chart.",
       "cancelled": "Cancelled orders",
       "cancelledTooltip": "Orders moved to cancelled during the period",
       "netRevenue": "Net cash in",
-      "netRevenueTooltip": "Money collected in the period after refunds for cancelled orders and returned deposits. Can be negative.",
+      "netRevenueTooltip": "Money collected in the period after refunds for cancelled orders and returned booking deposits. Can be negative.",
       "ordersTrend": "New orders, last 7 days: {values}",
       "netCashToday": "Net cash in today",
-      "netCashTodayTooltip": "Deposits on new orders, balance and security deposit at hand-over, fees at return; minus deposits given back and refunds."
+      "netCashTodayTooltip": "Booking deposits on new orders, balance and security deposit at hand-over, fees at return; minus security deposits given back and refunds for cancelled orders."
     },
     "chips": {
       "all": "All",
@@ -237,7 +237,7 @@
       "orderValue": "New order value",
       "collected": "Collected",
       "outstanding": "Still to collect",
-      "collateral": "Collateral",
+      "collateral": "Security deposit",
       "new": "New"
     },
     "chart": {
@@ -252,7 +252,7 @@
       "tip": "{day}: {value}",
       "tipForecast": "{day}: {value} · {forecast} more expected",
       "total": "Total",
-      "upcomingInstallments": "Staged deposits coming up: {amount} ({count})"
+      "upcomingInstallments": "Staged booking deposits coming up: {amount} ({count})"
     },
     "today": {
       "title": "Today",
@@ -266,7 +266,7 @@
       "tomorrowCounts": "Hand over {pickups} · Return {returns}"
     },
     "money": {
-      "deposits": "Deposits at order",
+      "deposits": "Booking deposits at order",
       "pickupAndSale": "Paid at pickup, sales",
       "fees": "Extra and late fees",
       "refunds": "Refunds on cancelled",
@@ -274,15 +274,15 @@
       "atPickup": "Due when the customer picks up",
       "overduePickup": "Past pickup date, unpaid",
       "orders": "{count} orders",
-      "collateralNet": "Collateral in − out"
+      "collateralNet": "Security deposit in − out"
     },
     "orders": {
       "title": "Orders to handle today",
       "viewAll": "View all",
       "pickupTag": "Hand over",
       "returnTag": "Take back",
-      "installmentTag": "Deposit due",
-      "stage": "Deposit {n}",
+      "installmentTag": "Booking deposit due",
+      "stage": "Booking deposit {n}",
       "late": "{days} days late",
       "collect": "{amount}",
       "refund": "refund {amount}",
@@ -335,9 +335,9 @@
       "hatchNote": "Hatched bars: upcoming, not in the numbers above.",
       "rule": {
         "orderValue": "Total of the orders created in the period, by creation day. Cancelled orders are not counted.",
-        "collected": "Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.",
-        "outstanding": "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.",
-        "collateral": "Collateral received at hand-over minus collateral handed back at return, in the period."
+        "collected": "Money held from the period: booking deposits, rent on hand-over, sales, extra fees, minus refunds, plus security deposit received minus security deposit returned.",
+        "outstanding": "Part of the period's orders not collected yet: a booked rental is its total minus the booking deposit; an unfinished sale is its whole total.",
+        "collateral": "Security deposit received at hand-over minus security deposit handed back at return, in the period."
       }
     },
     "related": {
@@ -346,14 +346,14 @@
       "totalHint": "Equals the tile",
       "sectionNote": "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.",
       "sectionNotePeriod": "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.",
-      "heldTitle": "Collateral held",
+      "heldTitle": "Security deposit held",
       "heldRow": "Of an order not yet returned",
-      "heldHint": "Collateral the shop holds for orders not yet returned.",
+      "heldHint": "Security deposit the shop holds for orders not yet returned.",
       "heldTotal": "Total held: {total} · {count} orders",
       "flowTitle": "Moved today ({day})",
       "flowTitlePeriod": "Moved in the period ({range})",
-      "flowHint": "Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.",
-      "flowHintPeriod": "Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.",
+      "flowHint": "Security deposit that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.",
+      "flowHintPeriod": "Security deposit that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.",
       "flowIn": "Received at hand-over: {amount} ({count} orders)",
       "flowOut": "Returned at return: {amount} ({count} orders)",
       "flowNet": "Shop holds more today: {amount}",
@@ -370,24 +370,24 @@
         "cancelled": "Cancelled, not counted",
         "event": "",
         "owes": "To collect at pickup",
-        "collateralIn": "Collateral received at hand-over",
-        "collateralOut": "Collateral returned",
-        "held": "Collateral held now"
+        "collateralIn": "Security deposit received at hand-over",
+        "collateralOut": "Security deposit returned",
+        "held": "Security deposit held now"
       },
       "event": {
         "saleCreated": "Sale created",
         "saleCancelled": "Sale cancelled, refunded",
-        "deposit": "Deposit collected",
+        "deposit": "Booking deposit collected",
         "pickup": "Collected at pickup",
         "sameDay": "Rented and returned the same day",
         "damageFee": "Extra fee collected",
-        "depositRefund": "Deposit refunded",
+        "depositRefund": "Booking deposit refunded",
         "nothing": "Nothing to settle",
         "rentCancelled": "Order cancelled, refunded",
         "returnCollected": "Collected at return",
         "futurePickup": "Expected at pickup",
         "futureDamageFee": "Expected extra fee at return",
-        "futureRefund": "Expected deposit refund at return",
+        "futureRefund": "Expected booking deposit refund at return",
         "futureNothing": "Nothing expected at return"
       }
     },
@@ -407,7 +407,7 @@
       "title": "Branch comparison",
       "branch": "Branch",
       "newOrders": "New orders",
-      "held": "Collateral held",
+      "held": "Security deposit held",
       "heldValue": "{count} orders",
       "total": "Total {count} branches",
       "sortBy": "Sort by {column}",

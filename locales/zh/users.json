@@ -1,0 +1,469 @@
+{
+  "title": "用户",
+  "subtitle": "管理系统中的用户",
+  "pageTitle": "用户管理",
+  "addUser": "添加用户",
+  "addNewUser": "添加新用户",
+  "addNewUserDescription": "为您的组织创建新的用户账户",
+  "editUser": "编辑用户",
+  "userDetails": "用户详情",
+  "viewUserInfo": "查看用户信息和详情",
+  "userInformation": "用户信息",
+  "accountInformation": "账户信息",
+  "outletInformation": "分店信息",
+  "accountActions": "账户操作",
+  "passwordManagement": "密码管理",
+  "passwordSettings": "密码设置",
+  "organizationAssignment": "组织分配",
+  "accountSettings": "账户设置",
+  "accountStatus": "账户状态",
+  "dangerZone": "危险操作区",
+  "activeAccount": "启用账户",
+  "currentUserInformation": "当前用户信息",
+  "activeUsersInfo": "启用的用户可以登录并访问系统，停用的用户将被暂停。",
+  "created": "创建时间",
+  "label": {
+    "loading": "加载中..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "名称",
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "fullName": "全名",
+    "email": "邮箱",
+    "phone": "电话",
+    "role": "角色",
+    "outlet": "分店",
+    "outletName": "分店名称",
+    "outletId": "分店 ID",
+    "merchant": "店铺",
+    "merchantName": "店铺名称",
+    "merchantId": "店铺 ID",
+    "status": "状态",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "active": "启用",
+    "inactive": "停用",
+    "createdAt": "创建时间",
+    "lastLogin": "最后登录",
+    "actions": "操作",
+    "basicInformation": "基本信息",
+    "personalInformation": "个人信息",
+    "roleAndPermissions": "角色与权限",
+    "readOnly": "只读",
+    "emailStatus": "邮箱验证"
+  },
+  "roles": {
+    "ADMIN": "系统管理员",
+    "MERCHANT": "店主",
+    "OUTLET_ADMIN": "店长",
+    "OUTLET_STAFF": "员工",
+    "ARTICLE": "文章编辑",
+    "OUTLET_INVENTORY": "库管员"
+  },
+  "actions": {
+    "activate": "启用用户",
+    "activateAccount": "启用账户",
+    "activating": "启用中...",
+    "deactivate": "停用用户",
+    "deactivateAccount": "停用账户",
+    "deactivating": "停用中...",
+    "delete": "删除用户",
+    "deleteAccount": "删除账户",
+    "deleting": "删除中...",
+    "changePassword": "修改密码",
+    "changingPassword": "修改中...",
+    "viewDetails": "查看详情",
+    "edit": "编辑",
+    "editUser": "编辑用户",
+    "updateUser": "更新用户",
+    "createUser": "创建用户",
+    "updating": "更新中...",
+    "creating": "创建中...",
+    "addUser": "添加用户",
+    "backToUsers": "返回用户列表",
+    "save": "保存",
+    "cancel": "取消",
+    "close": "关闭",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码"
+  },
+  "messages": {
+    "createSuccess": "用户创建成功",
+    "createFailed": "用户创建失败",
+    "updateSuccess": "用户更新成功",
+    "updateFailed": "用户更新失败",
+    "deleteSuccess": "用户删除成功",
+    "deleteFailed": "用户删除失败",
+    "activateSuccess": "用户已启用",
+    "activateFailed": "用户启用失败",
+    "deactivateSuccess": "用户已停用",
+    "deactivateFailed": "用户停用失败",
+    "passwordChangeSuccess": "密码修改成功",
+    "passwordChangeFailed": "密码修改失败",
+    "passwordMinLength": "密码至少需要 6 个字符",
+    "newPasswordRequired": "请输入新密码",
+    "confirmPasswordRequired": "请确认您的新密码",
+    "passwordsDoNotMatch": "两次输入的密码不一致",
+    "confirmDelete": "确定要删除此用户吗？",
+    "confirmDeleteAccount": "删除用户账户",
+    "confirmDeleteDetails": "确定要永久删除此用户账户吗？此操作无法撤销。",
+    "confirmDeactivate": "确定要停用",
+    "confirmDeactivateAccount": "停用用户",
+    "confirmDeactivateDetails": "此操作将阻止其访问系统。",
+    "confirmActivate": "确定要启用此用户吗？",
+    "confirmActivateAccount": "启用用户账户",
+    "confirmActivateDetails": "确定要启用此用户账户吗？用户将可以重新访问系统。",
+    "allowChangePassword": "允许用户安全地修改密码",
+    "suspendAccess": "暂时暂停用户的系统访问权限",
+    "deactivateToPrevent": "停用以阻止登录",
+    "activateToRestore": "启用以恢复登录权限",
+    "permanentlyDelete": "永久删除此用户账户及所有相关数据",
+    "permanentlyDeleteShort": "永久删除此用户账户",
+    "cannotDeactivateAdmin": "无法停用系统管理员",
+    "cannotDeactivateAdminShort": "无法停用管理员账户",
+    "cannotDeleteAdmin": "无法删除管理员账户",
+    "validationErrors": "请修正以下验证错误：",
+    "noUsers": "未找到用户",
+    "loadingUsers": "加载用户列表中...",
+    "noDataAvailable": "暂无用户数据",
+    "na": "无",
+    "error": "发生错误",
+    "tryAdjustingSearch": "请尝试调整搜索或筛选条件",
+    "getStarted": "请先添加您的第一位用户"
+  },
+  "search": {
+    "placeholder": "按姓名、邮箱或电话搜索用户..."
+  },
+  "filters": {
+    "all": "全部用户",
+    "byRole": "按角色筛选",
+    "byOutlet": "按分店筛选",
+    "active": "启用中的用户",
+    "inactive": "停用的用户",
+    "allRoles": "全部角色"
+  },
+  "stats": {
+    "totalUsers": "用户总数",
+    "activeUsers": "启用中的用户",
+    "adminUsers": "管理员",
+    "staffUsers": "员工"
+  },
+  "dialogs": {
+    "changePasswordTitle": "修改密码",
+    "changePasswordDescription": "修改该用户的密码",
+    "newPassword": "新密码",
+    "confirmNewPassword": "确认新密码"
+  },
+  "placeholders": {
+    "enterName": "请输入名称",
+    "enterFirstName": "请输入名字",
+    "enterLastName": "请输入姓氏",
+    "enterFullName": "请输入全名",
+    "enterEmail": "请输入邮箱地址",
+    "enterPhone": "请输入电话号码（仅数字）",
+    "selectRole": "选择角色",
+    "selectOutlet": "选择分店",
+    "enterPassword": "请输入密码",
+    "confirmPassword": "确认密码",
+    "enterNewPassword": "请输入新密码",
+    "confirmNewPassword": "确认新密码",
+    "loadingMerchants": "加载店铺列表中...",
+    "searchAndSelectMerchant": "搜索并选择店铺",
+    "currentMerchant": "当前店铺",
+    "loadingOutlets": "加载分店列表中...",
+    "selectMerchantFirst": "请先选择店铺",
+    "searchAndSelectOutlet": "搜索并选择分店",
+    "currentOutlet": "当前分店",
+    "searchMerchants": "搜索店铺...",
+    "noMerchantsFound": "未找到店铺",
+    "searchOutlets": "搜索分店...",
+    "noOutletsFound": "未找到分店",
+    "searchUsers": "搜索用户..."
+  },
+  "labels": {
+    "loading": "加载中..."
+  },
+  "status": {
+    "verified": "已验证",
+    "notVerified": "未验证"
+  },
+  "roleHelp": {
+    "title": "角色",
+    "OUTLET_ADMIN": "管理一家分店：该分店的订单、商品、客户和员工。",
+    "OUTLET_STAFF": "创建和处理订单，无法修改商品价格。",
+    "loginNote": "新用户使用此邮箱和密码登录，之后可自行修改密码。",
+    "OUTLET_INVENTORY": "与员工一样办理销售，并可管理商品和分类（添加、编辑价格、删除、Excel 导入导出）。不可查看营业额。"
+  },
+  "web": {
+    "title": "员工",
+    "add": "添加员工",
+    "searchPlaceholder": "搜索姓名、电话、邮箱",
+    "searchLabel": "搜索员工",
+    "allOutlets": "全部分店",
+    "outletFilter": "按分店筛选",
+    "allOutletsValue": "全部",
+    "filters": {
+      "role": "角色：",
+      "status": "状态：",
+      "all": "全部",
+      "active": "启用中",
+      "inactive": "已锁定"
+    },
+    "cols": {
+      "staff": "员工",
+      "role": "角色",
+      "outlet": "分店",
+      "lastLogin": "最近登录",
+      "actions": "操作"
+    },
+    "roles": {
+      "owner": "店主",
+      "admin": "店长",
+      "staff": "员工",
+      "other": "其他",
+      "inventory": "库管员"
+    },
+    "lastSeen": {
+      "current": "正在使用",
+      "never": "—",
+      "today": "{time} 今天",
+      "yesterday": "{time} 昨天",
+      "locked": "已锁定"
+    },
+    "edit": "编辑",
+    "more": "为 {name} 更多操作",
+    "activate": "解锁账户",
+    "deactivate": "锁定账户",
+    "delete": "删除员工",
+    "confirm": {
+      "activateTitle": "解锁账户？",
+      "activateBody": "{name} 将可以重新登录。",
+      "deactivateTitle": "锁定账户？",
+      "deactivateBody": "{name} 在解锁前将无法登录。",
+      "deleteTitle": "删除员工？",
+      "deleteBody": "将 {name} 从分店中移除。此操作无法撤销。",
+      "cancel": "取消",
+      "close": "关闭"
+    },
+    "rolesCard": {
+      "title": "各角色可以做什么",
+      "owner": "所有分店、资金、报表、员工和套餐。",
+      "admin": "一家分店：订单、商品、价格、客户、当日资金，以及本店员工。",
+      "staff": "创建订单、交货、接收归还、添加客户。不能修改商品价格，不能查看资金报表。",
+      "rolePermissions": "查看各角色权限",
+      "permissions": "为员工添加权限",
+      "inventory": "与员工一样售卖，并可管理商品和分类（添加、修改价格、删除、Excel 导入和导出）。不能查看营业额。"
+    },
+    "permissions": {
+      "title": "为员工添加权限",
+      "hint": "在角色默认权限之外，为每位员工单独开启更多权限。",
+      "noAccess": "员工账号无法管理权限。",
+      "pickTitle": "选择员工",
+      "picked": "已选 {count}",
+      "pickAll": "全选",
+      "pickNone": "取消选择",
+      "noStaff": "暂无员工（员工角色）",
+      "switchTitle": "额外权限",
+      "pickFirst": "请先在左侧选择至少一名员工。",
+      "forOne": "正在修改 {name} 的权限。",
+      "forMany": "正在修改 {count} 名员工：从全部关闭开始，保存后将应用于全部 {count} 人。",
+      "allOn": "全部开启",
+      "allOff": "全部关闭",
+      "cancel": "取消选择",
+      "save": "保存权限",
+      "saving": "保存中…",
+      "savedTitle": "已保存",
+      "saved": "已为 {count} 名员工保存权限",
+      "errorTitle": "错误",
+      "saveFailed": "无法保存权限，请重试。",
+      "readFailed": "无法读取该员工已保存的权限。保存时将按下方开关的状态写入所有额外权限。",
+      "groups": {
+        "outlet": "分店",
+        "orders": "订单",
+        "products": "商品",
+        "customers": "客户",
+        "users": "员工",
+        "dashboard": "概览"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "查看分店",
+        "desc": "查看分店信息"
+      },
+      "outlet_manage": {
+        "label": "管理分店",
+        "desc": "修改分店信息和设置"
+      },
+      "users_view": {
+        "label": "查看员工",
+        "desc": "查看员工列表和详情"
+      },
+      "users_manage": {
+        "label": "管理员工",
+        "desc": "添加、修改、锁定和删除员工"
+      },
+      "products_view": {
+        "label": "查看商品",
+        "desc": "查看商品列表和详情"
+      },
+      "products_create": {
+        "label": "添加商品",
+        "desc": "添加新商品"
+      },
+      "products_update": {
+        "label": "修改商品",
+        "desc": "修改已有商品，包括价格"
+      },
+      "products_manage": {
+        "label": "管理商品",
+        "desc": "全部权限：删除、Excel 导入、成本价"
+      },
+      "products_export": {
+        "label": "导出商品",
+        "desc": "将商品列表下载为 Excel / CSV"
+      },
+      "orders_create": {
+        "label": "创建订单",
+        "desc": "创建租赁订单和销售订单"
+      },
+      "orders_view": {
+        "label": "查看订单",
+        "desc": "查看订单列表和详情"
+      },
+      "orders_update": {
+        "label": "修改订单",
+        "desc": "修改订单、交货、接收归还"
+      },
+      "orders_delete": {
+        "label": "删除订单",
+        "desc": "删除订单"
+      },
+      "orders_export": {
+        "label": "导出订单",
+        "desc": "将订单列表下载为 Excel / CSV"
+      },
+      "orders_manage": {
+        "label": "管理订单",
+        "desc": "订单的全部权限"
+      },
+      "customers_view": {
+        "label": "查看客户",
+        "desc": "查看客户列表和信息"
+      },
+      "customers_manage": {
+        "label": "管理客户",
+        "desc": "添加、修改和删除客户"
+      },
+      "customers_export": {
+        "label": "导出客户",
+        "desc": "将客户列表下载为 Excel / CSV"
+      },
+      "analytics_view": {
+        "label": "查看概览",
+        "desc": "查看概览页面和数据"
+      }
+    },
+    "rolePermissions": {
+      "title": "各角色默认权限",
+      "hint": "每个角色的默认权限，仅供查看。",
+      "roleLabel": "角色",
+      "count": "{count} 项权限",
+      "granted": "有权限",
+      "notGranted": "无权限",
+      "note": "这些是角色的默认权限。如需为某人额外开启权限，请使用“为员工添加权限”。"
+    },
+    "empty": "暂无员工",
+    "emptySearch": "没有符合筛选条件的员工",
+    "loadFailed": "无法加载员工列表。",
+    "retry": "重试",
+    "noAccess": "员工账号无法查看员工列表。",
+    "weekdays": "周日,周一,周二,周三,周四,周五,周六",
+    "footer": {
+      "show": "显示",
+      "perPage": "条/页",
+      "perPageLabel": "每页条数",
+      "pages": "分页",
+      "range": "第 {from}–{to} 条，共 {total} 名员工",
+      "prev": "上一页",
+      "next": "下一页"
+    },
+    "form": {
+      "addTitle": "添加员工",
+      "infoTitle": "基本信息",
+      "name": "姓名",
+      "namePlaceholder": "例如：Lan Tran",
+      "phone": "电话",
+      "optional": "选填",
+      "email": "登录邮箱",
+      "emailPlaceholder": "name@example.com",
+      "emailHint": "员工使用此邮箱登录。",
+      "required": "必填",
+      "roleTitle": "角色和分店",
+      "role": "角色",
+      "outlet": "分店",
+      "outletFixed": "新员工属于您的分店。",
+      "outletsLoading": "正在加载分店…",
+      "noOutlets": "暂无分店",
+      "passwordTitle": "登录密码",
+      "password": "密码",
+      "confirmPassword": "再次输入密码",
+      "passwordHint": "至少 6 个字符。",
+      "loginNote": "员工使用此邮箱和密码登录，之后可自行修改密码。",
+      "show": "显示",
+      "hide": "隐藏",
+      "showPassword": "显示密码",
+      "hidePassword": "隐藏密码",
+      "cancel": "取消",
+      "create": "添加员工",
+      "creating": "添加中…",
+      "save": "保存",
+      "saving": "保存中…",
+      "errors": {
+        "nameShort": "姓名至少需要 2 个字符。",
+        "emailRequired": "请输入登录邮箱。",
+        "emailInvalid": "邮箱格式不正确。",
+        "phoneShort": "电话至少需要 8 位数字。",
+        "phoneLong": "电话最多 15 位数字。",
+        "phoneChars": "电话只能包含数字、空格和 + - ( )。",
+        "roleRequired": "请选择角色。",
+        "outletRequired": "请选择分店。",
+        "passwordRequired": "请输入密码。",
+        "passwordShort": "密码至少需要 6 个字符。",
+        "confirmRequired": "请再次输入密码。",
+        "passwordMismatch": "两次输入的密码不一致。",
+        "newRequired": "请输入新密码。"
+      }
+    },
+    "detail": {
+      "info": "基本信息",
+      "merchant": "店铺",
+      "account": "账号",
+      "statusActive": "使用中",
+      "statusLocked": "已锁定",
+      "activeHint": "锁定账号后，该员工将无法再登录。",
+      "lockedHint": "账号已锁定。解锁后该员工可重新登录。",
+      "emailStatus": "邮箱",
+      "verified": "已验证",
+      "notVerified": "未验证",
+      "createdAt": "创建日期",
+      "deleteHint": "永久删除此账号，无法撤销。",
+      "changePassword": "修改密码",
+      "editTitle": "编辑员工",
+      "emailFixed": "登录邮箱不可更改。",
+      "roleFixed": "此处不能更改角色。",
+      "notFound": "未找到该员工。",
+      "backToList": "返回员工列表"
+    },
+    "password": {
+      "title": "修改密码",
+      "hint": "为 {name} 设置新密码，旧密码将失效。",
+      "new": "新密码",
+      "confirm": "再次输入新密码",
+      "submit": "修改密码",
+      "changing": "修改中…"
+    }
+  }
+}

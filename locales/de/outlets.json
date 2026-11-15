@@ -1,0 +1,191 @@
+{
+  "title": "Filialen",
+  "addOutlet": "Filiale hinzufügen",
+  "editOutlet": "Filiale bearbeiten",
+  "outletDetails": "Filialdetails",
+  "fields": {
+    "name": "Filialname",
+    "address": "Adresse",
+    "city": "Stadt",
+    "state": "Bundesland / Provinz",
+    "zipCode": "Postleitzahl",
+    "country": "Land",
+    "phone": "Telefonnummer",
+    "description": "Beschreibung",
+    "printNote": "Hinweis auf dem Beleg",
+    "printNoteHint": "Wird unten auf Mietbelegen gedruckt, z. B. Erinnerung an den Ausweis oder Rückgaberichtlinie. Maximal 500 Zeichen.",
+    "status": "Status",
+    "manager": "Leitung",
+    "notAvailable": "k. A."
+  },
+  "labels": {
+    "default": "Standard"
+  },
+  "actions": {
+    "export": "Filialliste exportieren",
+    "viewDetails": "Details anzeigen",
+    "editOutlet": "Filiale bearbeiten",
+    "deleteOutlet": "Filiale löschen",
+    "addOutlet": "Filiale hinzufügen",
+    "backToOutlets": "Zurück zu den Filialen",
+    "disableOutlet": "Filiale deaktivieren",
+    "enableOutlet": "Filiale aktivieren",
+    "manageBankAccounts": "Bankkonten verwalten"
+  },
+  "stats": {
+    "totalOutlets": "Filialen gesamt",
+    "activeOutlets": "Aktive Filialen",
+    "totalUsers": "Benutzer gesamt",
+    "totalProducts": "Artikel gesamt"
+  },
+  "search": {
+    "placeholder": "Nach Name, Stadt oder Telefonnummer suchen..."
+  },
+  "dialogs": {
+    "addOutletTitle": "Neue Filiale hinzufügen",
+    "addOutletDescription": "Eine neue Filiale für Ihr Unternehmen erstellen",
+    "editOutletTitle": "Filiale bearbeiten",
+    "deleteOutletTitle": "Filiale löschen",
+    "outletDetails": "Filialdetails",
+    "editOutletName": "Filiale bearbeiten: {name}"
+  },
+  "messages": {
+    "createSuccess": "Filiale erfolgreich erstellt",
+    "createFailed": "Filiale konnte nicht erstellt werden",
+    "updateSuccess": "Filiale erfolgreich aktualisiert",
+    "updateFailed": "Filiale konnte nicht aktualisiert werden",
+    "deleteSuccess": "Filiale erfolgreich gelöscht",
+    "deleteFailed": "Filiale konnte nicht gelöscht werden",
+    "enableSuccess": "Filiale erfolgreich aktiviert",
+    "enableFailed": "Filiale konnte nicht aktiviert werden",
+    "disableSuccess": "Filiale erfolgreich deaktiviert",
+    "disableFailed": "Filiale konnte nicht deaktiviert werden",
+    "confirmDelete": "Möchten Sie diese Filiale wirklich löschen?",
+    "noOutlets": "Keine Filialen gefunden",
+    "tryAdjustingSearch": "Passen Sie Ihre Suche an",
+    "getStarted": "Fügen Sie Ihre erste Filiale hinzu, um zu beginnen",
+    "loadingOutlets": "Filialen werden geladen..."
+  },
+  "placeholders": {
+    "enterOutletName": "Filialnamen eingeben",
+    "enterStreetAddress": "Straße und Hausnummer eingeben",
+    "enterCity": "Stadt eingeben",
+    "enterState": "Bundesland / Provinz eingeben",
+    "enterZipCode": "Postleitzahl eingeben",
+    "enterCountry": "Land eingeben",
+    "enterOutletPhone": "Telefonnummer der Filiale eingeben",
+    "enterOutletDescription": "Beschreibung der Filiale eingeben",
+    "enterPrintNote": "Z. B.: *** Bitte bringen Sie beim Abholen Ihren Ausweis mit"
+  },
+  "web": {
+    "title": "Filialen",
+    "add": "Filiale hinzufügen",
+    "searchLabel": "Filialen suchen",
+    "searchPlaceholder": "Name, Stadt, Telefon suchen",
+    "cols": {
+      "name": "Filiale",
+      "address": "Adresse",
+      "phone": "Telefon",
+      "status": "Status",
+      "createdAt": "Erstellt",
+      "actions": "Aktionen"
+    },
+    "sortBy": "Sortieren nach {column}",
+    "default": "Standard",
+    "status": {
+      "active": "Geöffnet",
+      "inactive": "Pausiert"
+    },
+    "staffCount": "{count} Mitarbeiter",
+    "edit": "Bearbeiten",
+    "viewDetails": "Details anzeigen",
+    "bankAccounts": "Bankkonten",
+    "disable": "Pausieren",
+    "enable": "Wieder öffnen",
+    "more": "Weitere Aktionen für {name}",
+    "empty": "Noch keine Filialen vorhanden.",
+    "emptySearch": "Keine Filiale entspricht Ihrer Suche.",
+    "loadFailed": "Filialen konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "noSession": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "noAccess": "Nur der Geschäftsinhaber kann die Filialliste ansehen und bearbeiten.",
+    "form": {
+      "addTitle": "Filiale hinzufügen",
+      "editTitle": "Filiale bearbeiten",
+      "name": "Filialname",
+      "namePlaceholder": "Z. B.: Filiale Bezirk 1",
+      "required": "erforderlich",
+      "nameRequired": "Bitte einen Filialnamen eingeben",
+      "phone": "Telefon",
+      "address": "Hausnummer, Straße",
+      "city": "Stadt",
+      "state": "Bundesland / Provinz",
+      "zipCode": "Postleitzahl",
+      "country": "Land",
+      "optional": "Optional",
+      "addressGroup": "Adresse",
+      "description": "Beschreibung",
+      "printNote": "Hinweis auf Mietbelegen",
+      "printNoteHint": "Wird unten auf Mietbelegen gedruckt, z. B. Erinnerung an den Ausweis oder Rückgaberichtlinie.",
+      "printNotePlaceholder": "Z. B.: Bitte bringen Sie beim Abholen Ihren Ausweis mit",
+      "printNoteTooLong": "Maximal {max} Zeichen",
+      "count": "{count}/{max}",
+      "cancel": "Abbrechen",
+      "create": "Filiale hinzufügen",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "close": "Schließen"
+    },
+    "detail": {
+      "title": "Filialdetails",
+      "none": "Nicht festgelegt"
+    },
+    "confirm": {
+      "disableTitle": "Filiale pausieren",
+      "disableBody": "Filiale „{name}“ pausieren? Sie können sie später wieder öffnen.",
+      "cancel": "Behalten",
+      "disable": "Pausieren",
+      "working": "Wird gespeichert…"
+    },
+    "toast": {
+      "created": "Filiale hinzugefügt",
+      "updated": "Filiale gespeichert",
+      "disabled": "Filiale pausiert",
+      "enabled": "Filiale wieder geöffnet"
+    },
+    "footer": {
+      "show": "Anzeigen",
+      "perPage": "Zeilen pro Seite",
+      "perPageLabel": "Zeilen pro Seite",
+      "pages": "Seiten",
+      "range": "{from}–{to} von {total} Filialen",
+      "prev": "Vorherige Seite",
+      "next": "Nächste Seite"
+    },
+    "bank": {
+      "back": "Filialen",
+      "title": "Bankkonten",
+      "subtitle": "Filiale {name}",
+      "add": "Konto hinzufügen",
+      "cols": {
+        "holder": "Kontoinhaber",
+        "number": "Kontonummer",
+        "bank": "Bank",
+        "branch": "Bankfiliale",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "active": "In Verwendung",
+      "inactive": "Pausiert",
+      "copy": "Kontonummer {number} kopieren",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "loadFailed": "Bankkonten konnten nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "noAccess": "Sie haben keinen Zugriff auf die Bankkonten.",
+      "confirmCancel": "Behalten",
+      "deleting": "Wird gelöscht…",
+      "close": "Schließen"
+    }
+  }
+}

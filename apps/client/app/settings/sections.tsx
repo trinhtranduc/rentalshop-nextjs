@@ -10,6 +10,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { COUNTRIES, SHOP_LANGUAGES, type ShopLanguage } from '@rentalshop/constants';
+
+/** #1553 the name of each shop language, in that language */
+const SHOP_LANGUAGE_LABEL: Record<ShopLanguage, string> = { vi: 'Tiếng Việt', en: 'English', ja: '日本語' };
 import { useToast } from '@rentalshop/ui';
 import { authApi, bookingRequestsApi, outletsApi, usersApi } from '@rentalshop/utils';
 import { cardClass, outlineBtn, primaryBtn, Skeleton, type T } from '../orders/list/parts';
@@ -223,7 +226,7 @@ export function ShopInfoSection({
                         form.language === l ? 'bg-ar-surface text-ar-primary-ink shadow-sm ring-1 ring-ar-primary' : 'text-ar-ink-2 hover:bg-ar-subtle'
                       }`}
                     >
-                      {l === 'vi' ? 'Tiếng Việt' : 'English'}
+                      {SHOP_LANGUAGE_LABEL[l]}
                     </button>
                   ))}
                 </div>

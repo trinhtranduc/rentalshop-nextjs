@@ -23,6 +23,7 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rentalshop/ui';
 import { Globe } from 'lucide-react';
+import { webLanguages } from '@rentalshop/constants';
 
 type SupportedLocale = 'en' | 'vi' | 'zh' | 'ko' | 'ja';
 type PublicLocale = SupportedLocale | 'ru' | 'zh-TW' | 'fr' | 'de' | 'th' | 'id' | 'es';
@@ -47,11 +48,10 @@ const publicLanguages: Array<{ code: PublicLocale; label: string; flag: string }
   { code: 'es', label: 'ES', flag: '🇪🇸' },
 ];
 
-// Basic languages (for other pages)
-const basicLanguages: Array<{ code: SupportedLocale; label: string; flag: string }> = [
-  { code: 'vi', label: 'VI', flag: '🇻🇳' },
-  { code: 'en', label: 'EN', flag: '🇺🇸' },
-];
+// #1554 the shop pages list the web languages that are on (packages/constants app-languages `webEnabled`)
+const basicLanguages: Array<{ code: PublicLocale; label: string; flag: string }> = webLanguages().map(
+  ({ code, label, flag }) => ({ code, label, flag })
+);
 
 interface LanguageSwitcherProps {
   variant?: 'default' | 'compact';
@@ -90,8 +90,8 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   useEffect(() => {
     if (publicLocale) return;
     if (!isLandingPage && ['zh', 'ko', 'ja'].includes(currentLocale)) {
-      // Auto-switch to Vietnamese (default) when on non-landing page
-      const fallbackLocale: SupportedLocale = 'vi';
+      // #1551 English, like any other non-Vietnamese language (appLocaleFor, the shop language at sign-up, #1545)
+      const fallbackLocale: SupportedLocale = 'en';
       document.cookie = `NEXT_LOCALE=${fallbackLocale};path=/;max-age=31536000;SameSite=Lax`;
       if (typeof window !== 'undefined') {
         localStorage.setItem('user_language_preference', fallbackLocale);

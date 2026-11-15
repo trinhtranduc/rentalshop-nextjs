@@ -1,0 +1,139 @@
+{
+  "title": "Calendrier des remises",
+  "navigation": {
+    "today": "Aujourd'hui",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "goToToday": "Aller à aujourd'hui"
+  },
+  "labels": {
+    "pickups": "Remises",
+    "returns": "Retours",
+    "totalOrders": "Total des commandes",
+    "pickupOrders": "Commandes à remettre",
+    "returnOrders": "Commandes à retourner",
+    "pickup": "Remise",
+    "return": "Retour",
+    "order": "Commande",
+    "customer": "Client",
+    "product": "Produit",
+    "type": "Type",
+    "status": "Statut",
+    "amount": "Montant",
+    "returnDate": "Date de retour",
+    "overdue": "En retard",
+    "month": "Mois",
+    "noOrders": "Aucune commande",
+    "more": "Plus...",
+    "filterByStatus": "Filtrer par statut"
+  },
+  "stats": {
+    "ordersToday": "Commandes du jour",
+    "ordersThisWeek": "Commandes de la semaine",
+    "ordersThisMonth": "Commandes du mois",
+    "pickupsToday": "Remises du jour",
+    "returnsToday": "Retours du jour",
+    "monthlyStatistics": "Statistiques du mois",
+    "activeDays": "Jours actifs",
+    "daysWithScheduledOrders": "jours avec des commandes planifiées",
+    "dateRange": "Période",
+    "to": "au"
+  },
+  "modal": {
+    "ordersFor": "Commandes du {date}",
+    "pickupOrders": "Commandes à remettre",
+    "returnOrders": "Commandes à retourner",
+    "viewDetails": "Voir les détails",
+    "close": "Fermer",
+    "loading": "Chargement des commandes...",
+    "ordersFound": "commande(s)",
+    "ordersFoundPlural": "commandes",
+    "orders": "commandes",
+    "noOrders": "Aucune commande",
+    "noPickupReturnOrders": "Aucune remise ni aucun retour n'est planifié pour ce jour.",
+    "items": "produits"
+  },
+  "empty": {
+    "noOrders": "Aucune commande",
+    "noPickups": "Aucune commande à remettre",
+    "noReturns": "Aucune commande à retourner",
+    "selectDate": "Choisissez une date pour voir les commandes"
+  },
+  "loading": {
+    "loadingCalendar": "Chargement du calendrier...",
+    "loadingOrders": "Chargement des commandes..."
+  },
+  "days": {
+    "sunday": "Di",
+    "monday": "Lu",
+    "tuesday": "Ma",
+    "wednesday": "Me",
+    "thursday": "Je",
+    "friday": "Ve",
+    "saturday": "Sa"
+  },
+  "months": {
+    "january": "Janvier",
+    "february": "Février",
+    "march": "Mars",
+    "april": "Avril",
+    "may": "Mai",
+    "june": "Juin",
+    "july": "Juillet",
+    "august": "Août",
+    "september": "Septembre",
+    "october": "Octobre",
+    "november": "Novembre",
+    "december": "Décembre"
+  },
+  "web": {
+    "title": "Calendrier des remises et retours",
+    "monthNames": "Janvier,Février,Mars,Avril,Mai,Juin,Juillet,Août,Septembre,Octobre,Novembre,Décembre",
+    "monthTitle": "{month} {year}",
+    "weekdays": "Di,Lu,Ma,Me,Je,Ve,Sa",
+    "prevMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "today": "Aujourd'hui",
+    "monthLabel": "Calendrier du mois",
+    "dayPanel": "Tâches du jour",
+    "legend": {
+      "pickups": "Remises",
+      "returns": "Retours",
+      "late": "Retour en retard"
+    },
+    "cell": {
+      "pickups": "Remises {count}",
+      "returns": "Retours {count}",
+      "late": "Retards {count}"
+    },
+    "aria": {
+      "pickups": "remises",
+      "returns": "retours",
+      "late": "retards"
+    },
+    "dayTitleToday": "{day} · aujourd'hui",
+    "sections": {
+      "pickups": "À remettre · {count}",
+      "returns": "À récupérer · {count}"
+    },
+    "sub": {
+      "returnOn": "retour le {day}",
+      "sameDay": "remise et retour le même jour",
+      "pickedOn": "remise le {day}",
+      "late": "retour prévu le {day} · en retard de {days} jour(s)",
+      "notPrepared": "articles non préparés"
+    },
+    "money": {
+      "collect": "reste à encaisser {amount}",
+      "refund": "acompte à rembourser {amount}",
+      "fee": "frais supplémentaires à encaisser {amount}"
+    },
+    "emptyPickups": "Aucune commande à remettre.",
+    "emptyReturns": "Aucune commande à récupérer.",
+    "walkIn": "Client de passage",
+    "loadFailed": "Impossible de charger le nombre de commandes du mois.",
+    "dayFailed": "Impossible de charger les commandes de ce jour.",
+    "retry": "Réessayer",
+    "more": "Voir plus"
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "title": "ปฏิทินการส่งมอบ",
+  "navigation": {
+    "today": "วันนี้",
+    "previousMonth": "เดือนก่อนหน้า",
+    "nextMonth": "เดือนถัดไป",
+    "goToToday": "กลับไปวันนี้"
+  },
+  "labels": {
+    "pickups": "ส่งมอบ",
+    "returns": "คืนสินค้า",
+    "totalOrders": "คำสั่งซื้อทั้งหมด",
+    "pickupOrders": "คำสั่งส่งมอบ",
+    "returnOrders": "คำสั่งคืนสินค้า",
+    "pickup": "ส่งมอบ",
+    "return": "คืนสินค้า",
+    "order": "คำสั่งซื้อ",
+    "customer": "ลูกค้า",
+    "product": "สินค้า",
+    "type": "ประเภท",
+    "status": "สถานะ",
+    "amount": "จำนวนเงิน",
+    "returnDate": "วันที่คืนสินค้า",
+    "overdue": "เกินกำหนด",
+    "month": "เดือน",
+    "noOrders": "ไม่มีคำสั่งซื้อ",
+    "more": "เพิ่มเติม...",
+    "filterByStatus": "กรองตามสถานะ"
+  },
+  "stats": {
+    "ordersToday": "คำสั่งซื้อวันนี้",
+    "ordersThisWeek": "คำสั่งซื้อสัปดาห์นี้",
+    "ordersThisMonth": "คำสั่งซื้อเดือนนี้",
+    "pickupsToday": "ส่งมอบวันนี้",
+    "returnsToday": "คืนสินค้าวันนี้",
+    "monthlyStatistics": "สถิติรายเดือน",
+    "activeDays": "วันที่มีการดำเนินการ",
+    "daysWithScheduledOrders": "วันที่มีคำสั่งซื้อที่กำหนดไว้",
+    "dateRange": "ช่วงเวลา",
+    "to": "ถึง"
+  },
+  "modal": {
+    "ordersFor": "คำสั่งซื้อวันที่ {date}",
+    "pickupOrders": "คำสั่งส่งมอบ",
+    "returnOrders": "คำสั่งคืนสินค้า",
+    "viewDetails": "ดูรายละเอียด",
+    "close": "ปิด",
+    "loading": "กำลังโหลดคำสั่งซื้อ...",
+    "ordersFound": "คำสั่งซื้อ",
+    "ordersFoundPlural": "คำสั่งซื้อ",
+    "orders": "คำสั่งซื้อ",
+    "noOrders": "ไม่มีคำสั่งซื้อ",
+    "noPickupReturnOrders": "ไม่มีคำสั่งส่งมอบหรือคืนสินค้าที่กำหนดไว้สำหรับวันนี้",
+    "items": "สินค้า"
+  },
+  "empty": {
+    "noOrders": "ไม่มีคำสั่งซื้อ",
+    "noPickups": "ไม่มีคำสั่งส่งมอบ",
+    "noReturns": "ไม่มีคำสั่งคืนสินค้า",
+    "selectDate": "เลือกวันที่เพื่อดูคำสั่งซื้อ"
+  },
+  "loading": {
+    "loadingCalendar": "กำลังโหลดปฏิทิน...",
+    "loadingOrders": "กำลังโหลดคำสั่งซื้อ..."
+  },
+  "days": {
+    "sunday": "อา",
+    "monday": "จ",
+    "tuesday": "อ",
+    "wednesday": "พ",
+    "thursday": "พฤ",
+    "friday": "ศ",
+    "saturday": "ส"
+  },
+  "months": {
+    "january": "มกราคม",
+    "february": "กุมภาพันธ์",
+    "march": "มีนาคม",
+    "april": "เมษายน",
+    "may": "พฤษภาคม",
+    "june": "มิถุนายน",
+    "july": "กรกฎาคม",
+    "august": "สิงหาคม",
+    "september": "กันยายน",
+    "october": "ตุลาคม",
+    "november": "พฤศจิกายน",
+    "december": "ธันวาคม"
+  },
+  "web": {
+    "title": "ปฏิทินส่งมอบและคืนสินค้า",
+    "monthNames": "มกราคม,กุมภาพันธ์,มีนาคม,เมษายน,พฤษภาคม,มิถุนายน,กรกฎาคม,สิงหาคม,กันยายน,ตุลาคม,พฤศจิกายน,ธันวาคม",
+    "monthTitle": "{month} {year}",
+    "weekdays": "อา,จ,อ,พ,พฤ,ศ,ส",
+    "prevMonth": "เดือนก่อนหน้า",
+    "nextMonth": "เดือนถัดไป",
+    "today": "วันนี้",
+    "monthLabel": "ปฏิทินรายเดือน",
+    "dayPanel": "งานประจำวัน",
+    "legend": {
+      "pickups": "ส่งมอบ",
+      "returns": "คืน",
+      "late": "เกินกำหนดคืน"
+    },
+    "cell": {
+      "pickups": "ส่งมอบ {count}",
+      "returns": "คืน {count}",
+      "late": "เกินกำหนด {count}"
+    },
+    "aria": {
+      "pickups": "ส่งมอบ",
+      "returns": "คืน",
+      "late": "เกินกำหนด"
+    },
+    "dayTitleToday": "{day} · วันนี้",
+    "sections": {
+      "pickups": "ต้องส่งมอบ · {count}",
+      "returns": "ต้องรับคืนสินค้า · {count}"
+    },
+    "sub": {
+      "returnOn": "คืน {day}",
+      "sameDay": "ส่งมอบและคืนในวันเดียวกัน",
+      "pickedOn": "ส่งมอบ {day}",
+      "late": "กำหนดคืน {day} · เกินกำหนด {days} วัน",
+      "notPrepared": "ยังไม่จัดสินค้า"
+    },
+    "money": {
+      "collect": "ยังต้องรับ {amount}",
+      "refund": "คืนมัดจำ {amount}",
+      "fee": "รับค่าธรรมเนียมเพิ่ม {amount}"
+    },
+    "emptyPickups": "ไม่มีคำสั่งที่ต้องส่งมอบ",
+    "emptyReturns": "ไม่มีคำสั่งที่ต้องรับคืนสินค้า",
+    "walkIn": "ลูกค้าหน้าร้าน",
+    "loadFailed": "โหลดจำนวนคำสั่งซื้อของเดือนไม่สำเร็จ",
+    "dayFailed": "โหลดคำสั่งซื้อของวันนี้ไม่สำเร็จ",
+    "retry": "ลองอีกครั้ง",
+    "more": "ดูเพิ่มเติม"
+  }
+}

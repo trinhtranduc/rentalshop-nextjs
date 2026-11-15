@@ -1,0 +1,139 @@
+{
+  "title": "Calendario de entregas",
+  "navigation": {
+    "today": "Hoy",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "goToToday": "Ir a hoy"
+  },
+  "labels": {
+    "pickups": "Entregas",
+    "returns": "Devoluciones",
+    "totalOrders": "Total de pedidos",
+    "pickupOrders": "Pedidos de entrega",
+    "returnOrders": "Pedidos de devolución",
+    "pickup": "Entrega",
+    "return": "Devolución",
+    "order": "Pedido",
+    "customer": "Cliente",
+    "product": "Producto",
+    "type": "Tipo",
+    "status": "Estado",
+    "amount": "Importe",
+    "returnDate": "Fecha de devolución",
+    "overdue": "Vencido",
+    "month": "Mes",
+    "noOrders": "No hay pedidos",
+    "more": "Más...",
+    "filterByStatus": "Filtrar por estado"
+  },
+  "stats": {
+    "ordersToday": "Pedidos de hoy",
+    "ordersThisWeek": "Pedidos de esta semana",
+    "ordersThisMonth": "Pedidos de este mes",
+    "pickupsToday": "Entregas de hoy",
+    "returnsToday": "Devoluciones de hoy",
+    "monthlyStatistics": "Estadísticas del mes",
+    "activeDays": "Días activos",
+    "daysWithScheduledOrders": "días con pedidos programados",
+    "dateRange": "Rango de fechas",
+    "to": "a"
+  },
+  "modal": {
+    "ordersFor": "Pedidos del {date}",
+    "pickupOrders": "Pedidos de entrega",
+    "returnOrders": "Pedidos de devolución",
+    "viewDetails": "Ver detalles",
+    "close": "Cerrar",
+    "loading": "Cargando pedidos...",
+    "ordersFound": "pedido encontrado",
+    "ordersFoundPlural": "pedidos encontrados",
+    "orders": "pedidos",
+    "noOrders": "No hay pedidos",
+    "noPickupReturnOrders": "No hay pedidos de entrega ni de devolución programados para esta fecha.",
+    "items": "artículos"
+  },
+  "empty": {
+    "noOrders": "No hay pedidos programados",
+    "noPickups": "No hay entregas programadas",
+    "noReturns": "No hay devoluciones programadas",
+    "selectDate": "Seleccione una fecha para ver los pedidos"
+  },
+  "loading": {
+    "loadingCalendar": "Cargando calendario...",
+    "loadingOrders": "Cargando pedidos..."
+  },
+  "days": {
+    "sunday": "Dom",
+    "monday": "Lun",
+    "tuesday": "Mar",
+    "wednesday": "Mié",
+    "thursday": "Jue",
+    "friday": "Vie",
+    "saturday": "Sáb"
+  },
+  "months": {
+    "january": "Enero",
+    "february": "Febrero",
+    "march": "Marzo",
+    "april": "Abril",
+    "may": "Mayo",
+    "june": "Junio",
+    "july": "Julio",
+    "august": "Agosto",
+    "september": "Septiembre",
+    "october": "Octubre",
+    "november": "Noviembre",
+    "december": "Diciembre"
+  },
+  "web": {
+    "title": "Calendario de entregas y devoluciones",
+    "monthNames": "Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre",
+    "monthTitle": "{month} de {year}",
+    "weekdays": "Dom,Lun,Mar,Mié,Jue,Vie,Sáb",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "today": "Hoy",
+    "monthLabel": "Calendario mensual",
+    "dayPanel": "Tareas del día",
+    "legend": {
+      "pickups": "Entrega",
+      "returns": "Devolución",
+      "late": "Devolución vencida"
+    },
+    "cell": {
+      "pickups": "Entregar {count}",
+      "returns": "Devolver {count}",
+      "late": "Vencidos {count}"
+    },
+    "aria": {
+      "pickups": "entregas",
+      "returns": "devoluciones",
+      "late": "vencidos"
+    },
+    "dayTitleToday": "{day} · hoy",
+    "sections": {
+      "pickups": "Por entregar · {count}",
+      "returns": "Por recibir en devolución · {count}"
+    },
+    "sub": {
+      "returnOn": "devuelve el {day}",
+      "sameDay": "entrega y devolución el mismo día",
+      "pickedOn": "entregado el {day}",
+      "late": "vence el {day} · {days} días de retraso",
+      "notPrepared": "sin preparar"
+    },
+    "money": {
+      "collect": "por cobrar {amount}",
+      "refund": "reembolso de anticipo {amount}",
+      "fee": "cobrar {amount} adicionales"
+    },
+    "emptyPickups": "No hay pedidos para entregar.",
+    "emptyReturns": "No hay pedidos para recibir en devolución.",
+    "walkIn": "Cliente sin reserva",
+    "loadFailed": "No se pudieron cargar los pedidos del mes.",
+    "dayFailed": "No se pudieron cargar los pedidos de este día.",
+    "retry": "Intentar de nuevo",
+    "more": "Ver más"
+  }
+}

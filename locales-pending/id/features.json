@@ -1,0 +1,182 @@
+{
+  "navigation": {
+    "home": "Beranda",
+    "pricing": "Harga",
+    "login": "Masuk"
+  },
+  "hero": {
+    "badge": "Fitur unggulan",
+    "title": "Temukan Kekuatan AnyRent",
+    "description": "Perangkat lunak manajemen toko sewa yang lengkap, dengan semua fitur untuk aplikasi seluler dan web portal. Kelola bisnis Anda dengan efisien dari mana saja.",
+    "downloadApp": "Unduh aplikasi",
+    "tryWebPortal": "Coba Web Portal"
+  },
+  "platforms": {
+    "title": "Berbagai platform",
+    "description": "Akses dan kelola toko sewa Anda di semua perangkat",
+    "mobile": {
+      "title": "Aplikasi Seluler",
+      "description": "Kelola toko sewa Anda kapan saja, di mana saja, dengan aplikasi seluler iOS dan Android",
+      "features": {
+        "ios": "Dukungan iOS lengkap",
+        "android": "Dukungan Android",
+        "offline": "Mode offline",
+        "sync": "Sinkronisasi data otomatis"
+      }
+    },
+    "web": {
+      "title": "Web Portal",
+      "description": "Akses fitur lengkap lewat peramban web dengan antarmuka responsif modern",
+      "features": {
+        "responsive": "Desain responsif",
+        "fullFeatures": "Fitur lengkap",
+        "reports": "Laporan rinci",
+        "multiUser": "Dukungan banyak pengguna"
+      }
+    }
+  },
+  "mobile": {
+    "badge": "Aplikasi Seluler",
+    "title": "Fitur Aplikasi Seluler",
+    "description": "Kelola toko sewa Anda langsung dari ponsel dengan fitur yang andal",
+    "screenshotPlaceholder": "Gambar aplikasi seluler",
+    "features": {
+      "orderManagement": {
+        "title": "Manajemen Pesanan",
+        "description": "Buat, lihat, dan kelola pesanan sewa langsung dari ponsel. Pantau status pesanan dan riwayat transaksi."
+      },
+      "customerManagement": {
+        "title": "Manajemen Pelanggan",
+        "description": "Simpan data pelanggan, riwayat sewa, dan kelola hubungan dengan pelanggan dengan mudah."
+      },
+      "inventoryManagement": {
+        "title": "Manajemen Stok",
+        "description": "Pantau jumlah produk, ketersediaan, dan kelola stok gudang secara efektif."
+      },
+      "scheduling": {
+        "title": "Jadwal & Penjadwalan",
+        "description": "Lihat jadwal sewa dan pengembalian, serta atur agenda Anda secara visual."
+      },
+      "quickSearch": {
+        "title": "Pencarian Cepat",
+        "description": "Cari pesanan, pelanggan, dan produk dengan cepat menggunakan pencarian cerdas."
+      },
+      "notifications": {
+        "title": "Notifikasi",
+        "description": "Terima notifikasi tentang pesanan baru, pengingat pengembalian, dan kejadian penting lainnya."
+      }
+    },
+    "details": {
+      "viewDetails": "Lihat detail",
+      "benefits": {
+        "accessAnywhere": {
+          "title": "Akses kapan saja, di mana saja",
+          "description": "Kelola dari ponsel Anda"
+        },
+        "autoSync": {
+          "title": "Sinkronisasi otomatis",
+          "description": "Data selalu diperbarui"
+        }
+      }
+    }
+  },
+  "web": {
+    "badge": "Web Portal",
+    "title": "Fitur Web Portal",
+    "description": "Kelola toko sewa secara menyeluruh lewat peramban web dengan fitur lengkap",
+    "screenshotPlaceholder": "Gambar web portal",
+    "features": {
+      "analytics": {
+        "title": "Analitik & Laporan",
+        "description": "Lihat laporan pendapatan rinci, analisis kinerja bisnis, dan tren penjualan."
+      },
+      "reports": {
+        "title": "Laporan Keuangan",
+        "description": "Buat dan ekspor laporan keuangan, laporan pendapatan, dan laporan ringkasan."
+      },
+      "settings": {
+        "title": "Pengaturan & Konfigurasi",
+        "description": "Kelola pengaturan sistem, konfigurasi toko, dan sesuaikan dengan kebutuhan Anda."
+      },
+      "userManagement": {
+        "title": "Manajemen Pengguna",
+        "description": "Tambah, ubah, dan kelola pengguna, termasuk izin dan peran."
+      },
+      "payments": {
+        "title": "Manajemen Pembayaran",
+        "description": "Pantau pembayaran, faktur, dan kelola keuangan secara rinci."
+      },
+      "security": {
+        "title": "Keamanan",
+        "description": "Lindungi data dengan enkripsi, cadangan otomatis, dan kontrol akses."
+      }
+    },
+    "details": {
+      "viewDetails": "Lihat detail",
+      "benefits": {
+        "fullInterface": {
+          "title": "Antarmuka lengkap",
+          "description": "Semua fitur di web"
+        },
+        "detailedReports": {
+          "title": "Laporan rinci",
+          "description": "Ekspor dan analisis data"
+        }
+      }
+    }
+  },
+  "details": {
+    "title": "Detail Fitur",
+    "description": "Pelajari lebih dalam fitur AnyRent yang andal",
+    "mobileApp": "Aplikasi Seluler",
+    "webPortal": "Web Portal"
+  },
+  "shared": {
+    "badge": "Fitur Bersama",
+    "title": "Fitur Bersama",
+    "description": "Fitur yang tersedia di aplikasi seluler dan web portal",
+    "features": {
+      "cloudSync": {
+        "title": "Sinkronisasi Cloud",
+        "description": "Data disinkronkan otomatis di semua perangkat. Perubahan di satu perangkat langsung diperbarui di perangkat lain."
+      },
+      "dataSecurity": {
+        "title": "Keamanan Data",
+        "description": "Data Anda dienkripsi dan disimpan aman di cloud. Cadangan otomatis memastikan data tidak hilang."
+      },
+      "realTime": {
+        "title": "Pembaruan Real-Time",
+        "description": "Semua perubahan langsung diperbarui di semua perangkat. Kerja tim lebih efektif dengan data yang selalu sinkron."
+      },
+      "scalable": {
+        "title": "Skalabilitas Fleksibel",
+        "description": "Sistem dapat berkembang mengikuti kebutuhan bisnis Anda, dari toko kecil hingga jaringan toko besar."
+      }
+    }
+  },
+  "cta": {
+    "title": "Siap memulai?",
+    "description": "Bergabunglah dengan ribuan bisnis sewa yang menggunakan AnyRent",
+    "downloadApp": "Unduh aplikasi",
+    "tryWebPortal": "Coba Web Portal"
+  },
+  "footer": {
+    "description": "AnyRent - Perangkat lunak manajemen toko sewa terdepan di Vietnam",
+    "home": "Beranda",
+    "pricing": "Harga",
+    "login": "Masuk",
+    "copyright": "© 2024 AnyRent. Hak cipta dilindungi."
+  },
+  "screens": {
+    "order": "Manajemen Pesanan",
+    "product": "Manajemen Produk",
+    "calendar": "Jadwal & Penjadwalan",
+    "users": "Manajemen Pengguna",
+    "webCalendar": "Jadwal Pesanan",
+    "webOrderDetail": "Detail Pesanan",
+    "webOrder": "Manajemen Pesanan",
+    "prev": "Foto sebelumnya",
+    "next": "Foto berikutnya",
+    "goTo": "Lihat foto {index}"
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "title": "카테고리",
+  "addCategory": "카테고리 추가",
+  "editCategory": "카테고리 수정",
+  "categoryDetails": "카테고리 상세",
+  "fields": {
+    "name": "카테고리 이름",
+    "description": "설명",
+    "status": "상태",
+    "productCount": "상품 수",
+    "active": "사용 중",
+    "inactive": "사용 안 함"
+  },
+  "labels": {
+    "default": "기본"
+  },
+  "status": {
+    "active": "사용 중",
+    "inactive": "중지됨"
+  },
+  "filters": {
+    "all": "전체 카테고리",
+    "active": "사용 중",
+    "inactive": "사용 안 함"
+  },
+  "actions": {
+    "viewDetails": "상세 보기",
+    "edit": "카테고리 수정",
+    "activate": "활성화",
+    "deactivate": "비활성화",
+    "delete": "삭제",
+    "create": "카테고리 만들기",
+    "update": "카테고리 업데이트",
+    "addCategory": "카테고리 추가",
+    "editCategory": "카테고리 수정",
+    "deleteCategory": "카테고리 삭제",
+    "viewProducts": "상품 보기",
+    "backToCategories": "목록으로 돌아가기"
+  },
+  "messages": {
+    "createSuccess": "카테고리를 만들었습니다.",
+    "createFailed": "카테고리 만들기에 실패했습니다.",
+    "updateSuccess": "카테고리를 업데이트했습니다.",
+    "updateFailed": "카테고리 업데이트에 실패했습니다.",
+    "deleteSuccess": "카테고리를 삭제했습니다.",
+    "deleteFailed": "카테고리 삭제에 실패했습니다.",
+    "confirmDelete": "이 카테고리를 삭제하시겠습니까?",
+    "noCategories": "카테고리를 찾을 수 없습니다.",
+    "noCategoriesDescription": "검색어를 바꾸거나 카테고리를 추가해 시작하세요.",
+    "loadingCategories": "카테고리 목록을 불러오는 중...",
+    "tryAdjustingSearch": "검색어를 바꿔 보세요.",
+    "getStarted": "첫 번째 카테고리를 추가해 시작하세요."
+  },
+  "search": {
+    "placeholder": "카테고리 검색..."
+  },
+  "stats": {
+    "totalCategories": "전체 카테고리 수",
+    "activeCategories": "사용 중",
+    "totalProducts": "전체 상품 수"
+  },
+  "dialogs": {
+    "addCategoryTitle": "새 카테고리 추가",
+    "editCategoryTitle": "카테고리 수정",
+    "deleteCategoryTitle": "카테고리 삭제"
+  },
+  "dialog": {
+    "addNew": "새 카테고리 추가",
+    "addNewDescription": "상품을 분류할 새 카테고리를 만듭니다.",
+    "edit": "카테고리 수정",
+    "editDescription": "카테고리 정보를 업데이트합니다.",
+    "viewDetails": "카테고리 상세",
+    "viewDescription": "카테고리 정보와 상세를 확인합니다.",
+    "deleteTitle": "카테고리 삭제",
+    "deleteConfirmation": "이 카테고리를 삭제하시겠습니까?",
+    "deleteWarning": "이 작업은 되돌릴 수 없습니다. 이 카테고리의 모든 상품이 영향을 받습니다.",
+    "neverUpdated": "업데이트된 적 없음"
+  },
+  "validation": {
+    "nameRequired": "카테고리 이름을 입력해 주세요.",
+    "nameMinLength": "카테고리 이름은 2자 이상이어야 합니다.",
+    "nameMaxLength": "카테고리 이름은 50자 미만이어야 합니다.",
+    "descriptionMaxLength": "설명은 200자 미만이어야 합니다.",
+    "characters": "자"
+  },
+  "web": {
+    "title": "카테고리",
+    "add": "카테고리 추가",
+    "searchLabel": "카테고리 검색",
+    "searchPlaceholder": "카테고리 이름 검색",
+    "cols": {
+      "name": "이름",
+      "description": "설명",
+      "createdAt": "생성일",
+      "actions": "작업"
+    },
+    "sortBy": "{column} 기준 정렬",
+    "default": "기본",
+    "view": "보기",
+    "edit": "수정",
+    "delete": "삭제",
+    "viewDetails": "상세 보기",
+    "more": "{name} 기타 작업",
+    "empty": "카테고리가 없습니다. 카테고리를 추가해 상품을 그룹별로 정리하세요.",
+    "emptySearch": "검색과 일치하는 카테고리가 없습니다.",
+    "loadFailed": "카테고리를 불러오지 못했습니다.",
+    "retry": "다시 시도",
+    "form": {
+      "addTitle": "카테고리 추가",
+      "editTitle": "카테고리 수정",
+      "name": "카테고리 이름",
+      "namePlaceholder": "예: 아오자이",
+      "required": "필수",
+      "description": "설명",
+      "descriptionPlaceholder": "선택 사항",
+      "count": "{count}/{max}",
+      "cancel": "취소",
+      "create": "추가",
+      "save": "저장",
+      "saving": "저장 중…",
+      "close": "닫기"
+    },
+    "detail": {
+      "title": "카테고리 상세",
+      "noDescription": "설명이 없습니다."
+    },
+    "confirm": {
+      "deleteTitle": "카테고리 삭제",
+      "deleteBody": "“{name}” 카테고리를 삭제하시겠습니까? 되돌릴 수 없습니다.",
+      "cancel": "유지",
+      "delete": "카테고리 삭제",
+      "deleting": "삭제 중…"
+    },
+    "footer": {
+      "show": "표시",
+      "perPage": "행씩 보기",
+      "perPageLabel": "페이지당 행 수",
+      "pages": "페이지 나누기",
+      "range": "전체 {total}개 중 {from}–{to}",
+      "prev": "이전 페이지",
+      "next": "다음 페이지"
+    }
+  }
+}

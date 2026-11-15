@@ -1,0 +1,469 @@
+{
+  "title": "사용자",
+  "subtitle": "시스템의 사용자를 관리합니다",
+  "pageTitle": "사용자 관리",
+  "addUser": "사용자 추가",
+  "addNewUser": "새 사용자 추가",
+  "addNewUserDescription": "조직을 위한 새 사용자 계정을 만듭니다",
+  "editUser": "사용자 수정",
+  "userDetails": "사용자 상세",
+  "viewUserInfo": "사용자 정보와 상세 내용을 확인합니다",
+  "userInformation": "사용자 정보",
+  "accountInformation": "계정 정보",
+  "outletInformation": "지점 정보",
+  "accountActions": "계정 작업",
+  "passwordManagement": "비밀번호 관리",
+  "passwordSettings": "비밀번호 설정",
+  "organizationAssignment": "조직 배정",
+  "accountSettings": "계정 설정",
+  "accountStatus": "계정 상태",
+  "dangerZone": "위험 영역",
+  "activeAccount": "활성 계정",
+  "currentUserInformation": "현재 사용자 정보",
+  "activeUsersInfo": "활성 사용자는 로그인하여 시스템에 접근할 수 있습니다. 비활성 사용자는 이용이 정지됩니다.",
+  "created": "생성일",
+  "label": {
+    "loading": "불러오는 중..."
+  },
+  "fields": {
+    "id": "ID",
+    "name": "이름",
+    "firstName": "이름",
+    "lastName": "성",
+    "fullName": "성명",
+    "email": "이메일",
+    "phone": "전화번호",
+    "role": "역할",
+    "outlet": "지점",
+    "outletName": "지점 이름",
+    "outletId": "지점 ID",
+    "merchant": "브랜드",
+    "merchantName": "브랜드 이름",
+    "merchantId": "브랜드 ID",
+    "status": "상태",
+    "password": "비밀번호",
+    "confirmPassword": "비밀번호 확인",
+    "active": "활성",
+    "inactive": "비활성",
+    "createdAt": "생성일",
+    "lastLogin": "마지막 로그인",
+    "actions": "작업",
+    "basicInformation": "기본 정보",
+    "personalInformation": "개인 정보",
+    "roleAndPermissions": "역할 및 권한",
+    "readOnly": "읽기 전용",
+    "emailStatus": "이메일 인증"
+  },
+  "roles": {
+    "ADMIN": "시스템 관리자",
+    "MERCHANT": "브랜드 대표",
+    "OUTLET_ADMIN": "지점장",
+    "OUTLET_STAFF": "직원",
+    "ARTICLE": "글 편집자",
+    "OUTLET_INVENTORY": "재고 담당"
+  },
+  "actions": {
+    "activate": "사용자 활성화",
+    "activateAccount": "계정 활성화",
+    "activating": "활성화 중...",
+    "deactivate": "사용자 비활성화",
+    "deactivateAccount": "계정 비활성화",
+    "deactivating": "비활성화 중...",
+    "delete": "사용자 삭제",
+    "deleteAccount": "계정 삭제",
+    "deleting": "삭제 중...",
+    "changePassword": "비밀번호 변경",
+    "changingPassword": "변경 중...",
+    "viewDetails": "상세 보기",
+    "edit": "수정",
+    "editUser": "사용자 수정",
+    "updateUser": "사용자 업데이트",
+    "createUser": "사용자 만들기",
+    "updating": "업데이트 중...",
+    "creating": "만드는 중...",
+    "addUser": "사용자 추가",
+    "backToUsers": "목록으로",
+    "save": "저장",
+    "cancel": "취소",
+    "close": "닫기",
+    "showPassword": "비밀번호 표시",
+    "hidePassword": "비밀번호 숨기기"
+  },
+  "messages": {
+    "createSuccess": "사용자가 생성되었습니다.",
+    "createFailed": "사용자를 생성하지 못했습니다.",
+    "updateSuccess": "사용자 정보가 업데이트되었습니다.",
+    "updateFailed": "사용자 정보를 업데이트하지 못했습니다.",
+    "deleteSuccess": "사용자가 삭제되었습니다.",
+    "deleteFailed": "사용자를 삭제하지 못했습니다.",
+    "activateSuccess": "사용자가 활성화되었습니다.",
+    "activateFailed": "사용자를 활성화하지 못했습니다.",
+    "deactivateSuccess": "사용자가 비활성화되었습니다.",
+    "deactivateFailed": "사용자를 비활성화하지 못했습니다.",
+    "passwordChangeSuccess": "비밀번호가 변경되었습니다.",
+    "passwordChangeFailed": "비밀번호를 변경하지 못했습니다.",
+    "passwordMinLength": "비밀번호는 6자 이상이어야 합니다.",
+    "newPasswordRequired": "새 비밀번호를 입력해야 합니다.",
+    "confirmPasswordRequired": "새 비밀번호를 한 번 더 입력해야 합니다.",
+    "passwordsDoNotMatch": "비밀번호가 일치하지 않습니다.",
+    "confirmDelete": "이 사용자를 삭제하시겠습니까?",
+    "confirmDeleteAccount": "사용자 계정 삭제",
+    "confirmDeleteDetails": "이 사용자 계정을 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "confirmDeactivate": "정말 비활성화하시겠습니까",
+    "confirmDeactivateAccount": "사용자 비활성화",
+    "confirmDeactivateDetails": "이 작업으로 해당 사용자는 시스템에 접근할 수 없게 됩니다.",
+    "confirmActivate": "이 사용자를 활성화하시겠습니까?",
+    "confirmActivateAccount": "사용자 계정 활성화",
+    "confirmActivateDetails": "이 사용자 계정을 활성화하시겠습니까? 사용자는 다시 시스템에 접근할 수 있습니다.",
+    "allowChangePassword": "사용자가 안전하게 비밀번호를 변경할 수 있도록 허용합니다",
+    "suspendAccess": "사용자의 시스템 접근을 일시적으로 정지합니다",
+    "deactivateToPrevent": "로그인을 차단하려면 비활성화합니다",
+    "activateToRestore": "로그인 권한을 복구하려면 활성화합니다",
+    "permanentlyDelete": "이 사용자 계정과 관련된 모든 데이터를 영구적으로 삭제합니다",
+    "permanentlyDeleteShort": "이 사용자 계정을 영구적으로 삭제합니다",
+    "cannotDeactivateAdmin": "시스템 관리자는 비활성화할 수 없습니다",
+    "cannotDeactivateAdminShort": "관리자 계정은 비활성화할 수 없습니다",
+    "cannotDeleteAdmin": "관리자 계정은 삭제할 수 없습니다",
+    "validationErrors": "다음 입력 오류를 수정해야 합니다:",
+    "noUsers": "사용자를 찾을 수 없습니다",
+    "loadingUsers": "사용자 목록을 불러오는 중...",
+    "noDataAvailable": "사용자 데이터가 없습니다",
+    "na": "없음",
+    "error": "오류가 발생했습니다",
+    "tryAdjustingSearch": "검색어나 필터를 바꿔 보십시오",
+    "getStarted": "첫 번째 사용자를 추가해 시작하십시오"
+  },
+  "search": {
+    "placeholder": "이름, 이메일 또는 전화번호로 검색..."
+  },
+  "filters": {
+    "all": "모든 사용자",
+    "byRole": "역할별 필터",
+    "byOutlet": "지점별 필터",
+    "active": "활성 사용자",
+    "inactive": "비활성 사용자",
+    "allRoles": "모든 역할"
+  },
+  "stats": {
+    "totalUsers": "전체 사용자 수",
+    "activeUsers": "활성 사용자",
+    "adminUsers": "관리자",
+    "staffUsers": "직원"
+  },
+  "dialogs": {
+    "changePasswordTitle": "비밀번호 변경",
+    "changePasswordDescription": "사용자의 비밀번호를 변경합니다",
+    "newPassword": "새 비밀번호",
+    "confirmNewPassword": "새 비밀번호 확인"
+  },
+  "placeholders": {
+    "enterName": "이름을 입력하세요",
+    "enterFirstName": "이름을 입력하세요",
+    "enterLastName": "성을 입력하세요",
+    "enterFullName": "성명을 입력하세요",
+    "enterEmail": "이메일 주소를 입력하세요",
+    "enterPhone": "전화번호를 입력하세요 (숫자만)",
+    "selectRole": "역할을 선택하세요",
+    "selectOutlet": "지점을 선택하세요",
+    "enterPassword": "비밀번호를 입력하세요",
+    "confirmPassword": "비밀번호를 확인하세요",
+    "enterNewPassword": "새 비밀번호를 입력하세요",
+    "confirmNewPassword": "새 비밀번호를 확인하세요",
+    "loadingMerchants": "브랜드 목록을 불러오는 중...",
+    "searchAndSelectMerchant": "브랜드를 검색해서 선택하세요",
+    "currentMerchant": "현재 브랜드",
+    "loadingOutlets": "지점 목록을 불러오는 중...",
+    "selectMerchantFirst": "먼저 브랜드를 선택하세요",
+    "searchAndSelectOutlet": "지점을 검색해서 선택하세요",
+    "currentOutlet": "현재 지점",
+    "searchMerchants": "브랜드 검색...",
+    "noMerchantsFound": "브랜드를 찾을 수 없습니다",
+    "searchOutlets": "지점 검색...",
+    "noOutletsFound": "지점을 찾을 수 없습니다",
+    "searchUsers": "사용자 검색..."
+  },
+  "labels": {
+    "loading": "불러오는 중..."
+  },
+  "status": {
+    "verified": "인증됨",
+    "notVerified": "미인증"
+  },
+  "roleHelp": {
+    "title": "역할",
+    "OUTLET_ADMIN": "한 지점을 운영합니다: 해당 지점의 주문, 상품, 고객 및 직원을 관리합니다.",
+    "OUTLET_STAFF": "주문을 만들고 처리합니다. 상품 가격은 변경할 수 없습니다.",
+    "loginNote": "새 사용자는 이 이메일과 비밀번호로 로그인하며, 나중에 직접 비밀번호를 변경할 수 있습니다.",
+    "OUTLET_INVENTORY": "직원처럼 판매하고, 상품과 카테고리를 관리합니다(추가, 가격 수정, 삭제, Excel 가져오기 및 내보내기). 매출은 볼 수 없습니다."
+  },
+  "web": {
+    "title": "직원",
+    "add": "직원 추가",
+    "searchPlaceholder": "이름, 전화번호, 이메일 검색",
+    "searchLabel": "직원 검색",
+    "allOutlets": "모든 지점",
+    "outletFilter": "지점별 필터",
+    "allOutletsValue": "전체",
+    "filters": {
+      "role": "역할:",
+      "status": "상태:",
+      "all": "전체",
+      "active": "활성",
+      "inactive": "잠김"
+    },
+    "cols": {
+      "staff": "직원",
+      "role": "역할",
+      "outlet": "지점",
+      "lastLogin": "최근 로그인",
+      "actions": "작업"
+    },
+    "roles": {
+      "owner": "매장 대표",
+      "admin": "지점장",
+      "staff": "직원",
+      "other": "기타",
+      "inventory": "재고 담당"
+    },
+    "lastSeen": {
+      "current": "사용 중",
+      "never": "—",
+      "today": "오늘 {time}",
+      "yesterday": "어제 {time}",
+      "locked": "잠김"
+    },
+    "edit": "수정",
+    "more": "{name} 추가 작업",
+    "activate": "계정 잠금 해제",
+    "deactivate": "계정 잠그기",
+    "delete": "직원 삭제",
+    "confirm": {
+      "activateTitle": "계정 잠금을 해제하시겠습니까?",
+      "activateBody": "{name} 계정으로 다시 로그인할 수 있습니다.",
+      "deactivateTitle": "계정을 잠그시겠습니까?",
+      "deactivateBody": "{name} 계정은 잠금을 해제할 때까지 로그인할 수 없습니다.",
+      "deleteTitle": "직원을 삭제하시겠습니까?",
+      "deleteBody": "{name} 직원을 지점에서 삭제합니다. 되돌릴 수 없습니다.",
+      "cancel": "취소",
+      "close": "닫기"
+    },
+    "rolesCard": {
+      "title": "역할별 권한",
+      "owner": "모든 지점, 금액, 보고서, 직원, 요금제를 관리합니다.",
+      "admin": "한 지점의 주문, 상품, 가격, 고객, 당일 금액, 그 지점 직원을 관리합니다.",
+      "staff": "주문 생성, 대여 처리, 반납 접수, 고객 추가가 가능합니다. 상품 가격 수정과 금액 보고서 보기는 할 수 없습니다.",
+      "rolePermissions": "역할별 권한 보기",
+      "permissions": "직원에게 권한 추가",
+      "inventory": "직원처럼 판매하고, 상품과 카테고리도 관리합니다(추가, 가격 수정, 삭제, Excel 가져오기와 내보내기). 매출은 볼 수 없습니다."
+    },
+    "permissions": {
+      "title": "직원 추가 권한",
+      "hint": "역할 기본 권한 외에 직원마다 권한을 추가로 켭니다.",
+      "noAccess": "직원 계정은 권한을 관리할 수 없습니다.",
+      "pickTitle": "직원 선택",
+      "picked": "{count}명 선택됨",
+      "pickAll": "전체 선택",
+      "pickNone": "선택 해제",
+      "noStaff": "아직 직원이 없습니다(직원 역할)",
+      "switchTitle": "추가 권한",
+      "pickFirst": "왼쪽에서 직원을 한 명 이상 선택하세요.",
+      "forOne": "{name}님의 권한을 수정하는 중입니다.",
+      "forMany": "{count}명의 직원을 수정하는 중입니다. 모두 꺼진 상태에서 시작하며, 저장하면 {count}명 모두에게 적용됩니다.",
+      "allOn": "모두 켜기",
+      "allOff": "모두 끄기",
+      "cancel": "선택 해제",
+      "save": "권한 저장",
+      "saving": "저장 중…",
+      "savedTitle": "저장됨",
+      "saved": "{count}명의 직원 권한을 저장했습니다.",
+      "errorTitle": "오류",
+      "saveFailed": "권한을 저장하지 못했습니다. 다시 시도하세요.",
+      "readFailed": "이 직원의 저장된 권한을 읽지 못했습니다. 저장하면 아래 스위치 설정대로 모든 추가 권한이 기록됩니다.",
+      "groups": {
+        "outlet": "지점",
+        "orders": "주문",
+        "products": "상품",
+        "customers": "고객",
+        "users": "직원",
+        "dashboard": "개요"
+      }
+    },
+    "permissionKeys": {
+      "outlet_view": {
+        "label": "지점 보기",
+        "desc": "지점 정보를 봅니다."
+      },
+      "outlet_manage": {
+        "label": "지점 관리",
+        "desc": "지점 정보와 설정을 수정합니다."
+      },
+      "users_view": {
+        "label": "직원 보기",
+        "desc": "직원 목록과 정보를 봅니다."
+      },
+      "users_manage": {
+        "label": "직원 관리",
+        "desc": "직원을 추가, 수정, 잠금, 삭제합니다."
+      },
+      "products_view": {
+        "label": "상품 보기",
+        "desc": "상품 목록과 상세 정보를 봅니다."
+      },
+      "products_create": {
+        "label": "상품 추가",
+        "desc": "새 상품을 추가합니다."
+      },
+      "products_update": {
+        "label": "상품 수정",
+        "desc": "기존 상품을 수정합니다(가격 포함)."
+      },
+      "products_manage": {
+        "label": "상품 관리",
+        "desc": "전체 권한: 삭제, Excel 가져오기, 원가."
+      },
+      "products_export": {
+        "label": "상품 내보내기",
+        "desc": "상품 목록을 Excel / CSV로 내려받습니다."
+      },
+      "orders_create": {
+        "label": "주문 생성",
+        "desc": "대여 주문과 판매 주문을 만듭니다."
+      },
+      "orders_view": {
+        "label": "주문 보기",
+        "desc": "주문 목록과 상세 정보를 봅니다."
+      },
+      "orders_update": {
+        "label": "주문 수정",
+        "desc": "주문을 수정하고 대여 처리와 반납 접수를 합니다."
+      },
+      "orders_delete": {
+        "label": "주문 삭제",
+        "desc": "주문을 삭제합니다."
+      },
+      "orders_export": {
+        "label": "주문 내보내기",
+        "desc": "주문 목록을 Excel / CSV로 내려받습니다."
+      },
+      "orders_manage": {
+        "label": "주문 관리",
+        "desc": "주문 전체 권한."
+      },
+      "customers_view": {
+        "label": "고객 보기",
+        "desc": "고객 목록과 정보를 봅니다."
+      },
+      "customers_manage": {
+        "label": "고객 관리",
+        "desc": "고객을 추가, 수정, 삭제합니다."
+      },
+      "customers_export": {
+        "label": "고객 내보내기",
+        "desc": "고객 목록을 Excel / CSV로 내려받습니다."
+      },
+      "analytics_view": {
+        "label": "개요 보기",
+        "desc": "개요 페이지와 수치를 봅니다."
+      }
+    },
+    "rolePermissions": {
+      "title": "역할별 권한",
+      "hint": "역할마다 기본으로 주어지는 권한입니다. 보기 전용입니다.",
+      "roleLabel": "역할",
+      "count": "{count}개 권한",
+      "granted": "권한 있음",
+      "notGranted": "권한 없음",
+      "note": "역할 기본 권한입니다. 특정 직원에게 권한을 더 주려면 직원 추가 권한을 사용하세요."
+    },
+    "empty": "아직 직원이 없습니다",
+    "emptySearch": "필터와 맞는 직원이 없습니다",
+    "loadFailed": "직원 목록을 불러오지 못했습니다.",
+    "retry": "다시 시도",
+    "noAccess": "직원 계정은 직원 목록을 볼 수 없습니다.",
+    "weekdays": "일,월,화,수,목,금,토",
+    "footer": {
+      "show": "표시",
+      "perPage": "개씩 보기",
+      "perPageLabel": "페이지당 행 수",
+      "pages": "페이지",
+      "range": "{total}명 중 {from}–{to}",
+      "prev": "이전 페이지",
+      "next": "다음 페이지"
+    },
+    "form": {
+      "addTitle": "직원 추가",
+      "infoTitle": "정보",
+      "name": "이름",
+      "namePlaceholder": "예: Lan Tran",
+      "phone": "전화번호",
+      "optional": "선택 사항",
+      "email": "로그인 이메일",
+      "emailPlaceholder": "name@example.com",
+      "emailHint": "직원은 이 이메일로 로그인합니다.",
+      "required": "필수",
+      "roleTitle": "역할과 지점",
+      "role": "역할",
+      "outlet": "지점",
+      "outletFixed": "새 직원은 내 지점에 속합니다.",
+      "outletsLoading": "지점을 불러오는 중…",
+      "noOutlets": "아직 지점이 없습니다",
+      "passwordTitle": "로그인 비밀번호",
+      "password": "비밀번호",
+      "confirmPassword": "비밀번호 다시 입력",
+      "passwordHint": "6자 이상이어야 합니다.",
+      "loginNote": "직원은 이 이메일과 비밀번호로 로그인한 뒤 직접 비밀번호를 바꿀 수 있습니다.",
+      "show": "보기",
+      "hide": "숨기기",
+      "showPassword": "비밀번호 보기",
+      "hidePassword": "비밀번호 숨기기",
+      "cancel": "취소",
+      "create": "직원 추가",
+      "creating": "추가하는 중…",
+      "save": "저장",
+      "saving": "저장 중…",
+      "errors": {
+        "nameShort": "이름은 2자 이상이어야 합니다.",
+        "emailRequired": "로그인 이메일을 입력하세요.",
+        "emailInvalid": "이메일 형식이 올바르지 않습니다.",
+        "phoneShort": "전화번호는 8자리 이상이어야 합니다.",
+        "phoneLong": "전화번호는 최대 15자리까지 입력할 수 있습니다.",
+        "phoneChars": "전화번호에는 숫자, 띄어쓰기, + - ( )만 입력할 수 있습니다.",
+        "roleRequired": "역할을 선택하세요.",
+        "outletRequired": "지점을 선택하세요.",
+        "passwordRequired": "비밀번호를 입력하세요.",
+        "passwordShort": "비밀번호는 6자 이상이어야 합니다.",
+        "confirmRequired": "비밀번호를 다시 입력하세요.",
+        "passwordMismatch": "두 비밀번호가 일치하지 않습니다.",
+        "newRequired": "새 비밀번호를 입력하세요."
+      }
+    },
+    "detail": {
+      "info": "정보",
+      "merchant": "매장",
+      "account": "계정",
+      "statusActive": "사용 중",
+      "statusLocked": "잠김",
+      "activeHint": "계정을 잠그면 이 직원은 더 이상 로그인할 수 없습니다.",
+      "lockedHint": "계정이 잠겨 있습니다. 잠금을 해제하면 직원이 다시 로그인할 수 있습니다.",
+      "emailStatus": "이메일",
+      "verified": "인증됨",
+      "notVerified": "미인증",
+      "createdAt": "생성일",
+      "deleteHint": "이 계정을 영구히 삭제합니다. 되돌릴 수 없습니다.",
+      "changePassword": "비밀번호 변경",
+      "editTitle": "직원 수정",
+      "emailFixed": "로그인 이메일은 변경할 수 없습니다.",
+      "roleFixed": "여기서는 역할을 변경할 수 없습니다.",
+      "notFound": "이 직원을 찾을 수 없습니다.",
+      "backToList": "직원 목록으로"
+    },
+    "password": {
+      "title": "비밀번호 변경",
+      "hint": "{name}님의 새 비밀번호를 설정합니다. 기존 비밀번호는 더 이상 사용할 수 없습니다.",
+      "new": "새 비밀번호",
+      "confirm": "새 비밀번호 다시 입력",
+      "submit": "비밀번호 변경",
+      "changing": "변경 중…"
+    }
+  }
+}

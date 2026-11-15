@@ -28,3 +28,10 @@ and are imported explicitly in `apps/client/i18n.ts` and `apps/admin/i18n.ts`.
    in `res/values/strings.xml` and `res/values-vi/strings.xml`. Add new codes on both when the apps can hit them.
 6. **Never hardcode** user-facing text in components; use `useTranslations('<ns>')`. Dates and money go
    through the formatters in `@rentalshop/utils` (dates: see `timezone-dates`).
+7. **App languages and the two tests (#1553, #1554).** The shop-page and app languages, with their on/off switch, are in
+   `packages/constants/src/app-languages.ts` (on: `vi`, `en`; off until translated: `ja`, `ko`, `zh`).
+   - `tests/locales-complete.test.ts`: every language that is on has every `vi` key on the web, iOS and Android, the
+     same variables, and no leftover Vietnamese. A new key goes into every language that is on, in the same PR.
+   - `tests/hardcoded-vietnamese.test.ts`: no file may gain Vietnamese text written straight into code
+     (ceiling per file in `tests/fixtures/hardcoded-vi-baseline.json`). Move the text into the language files. After
+     a clean-up lowers a count, run `node scripts/i18n/hardcoded-vi.js --write` and commit the new ceiling.

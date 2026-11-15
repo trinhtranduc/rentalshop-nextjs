@@ -1,0 +1,182 @@
+{
+  "navigation": {
+    "home": "Accueil",
+    "pricing": "Tarifs",
+    "login": "Connexion"
+  },
+  "hero": {
+    "badge": "Fonctionnalités phares",
+    "title": "Découvrez la puissance d'AnyRent",
+    "description": "Logiciel complet de gestion de boutique de location, avec toutes les fonctionnalités pour l'application mobile et le web portal. Gérez votre entreprise efficacement, où que vous soyez.",
+    "downloadApp": "Télécharger l'application",
+    "tryWebPortal": "Essayer le Web Portal"
+  },
+  "platforms": {
+    "title": "Plateformes multiples",
+    "description": "Accédez à votre boutique de location et gérez-la sur tous vos appareils",
+    "mobile": {
+      "title": "Application mobile",
+      "description": "Gérez votre boutique de location à tout moment, n'importe où, avec les applications mobiles iOS et Android",
+      "features": {
+        "ios": "Prise en charge complète d'iOS",
+        "android": "Prise en charge d'Android",
+        "offline": "Mode hors ligne",
+        "sync": "Synchronisation automatique des données"
+      }
+    },
+    "web": {
+      "title": "Web Portal",
+      "description": "Accédez à toutes les fonctionnalités depuis votre navigateur, avec une interface moderne et adaptative",
+      "features": {
+        "responsive": "Design adaptatif",
+        "fullFeatures": "Toutes les fonctionnalités",
+        "reports": "Rapports détaillés",
+        "multiUser": "Prise en charge de plusieurs utilisateurs"
+      }
+    }
+  },
+  "mobile": {
+    "badge": "Application mobile",
+    "title": "Fonctionnalités de l'application mobile",
+    "description": "Gérez votre boutique de location directement depuis votre téléphone grâce à des fonctionnalités puissantes",
+    "screenshotPlaceholder": "Capture d'écran de l'application mobile",
+    "features": {
+      "orderManagement": {
+        "title": "Gestion des commandes",
+        "description": "Créez, consultez et gérez vos commandes de location directement sur votre téléphone. Suivez le statut des commandes et l'historique des transactions."
+      },
+      "customerManagement": {
+        "title": "Gestion des clients",
+        "description": "Enregistrez les informations clients, l'historique de location et gérez facilement la relation client."
+      },
+      "inventoryManagement": {
+        "title": "Gestion du stock",
+        "description": "Suivez les quantités de produits, leur disponibilité et gérez efficacement votre stock."
+      },
+      "scheduling": {
+        "title": "Calendrier et planification",
+        "description": "Consultez le calendrier des locations et des retours, et gérez vos plannings de façon visuelle."
+      },
+      "quickSearch": {
+        "title": "Recherche rapide",
+        "description": "Recherchez rapidement commandes, clients et produits grâce à une recherche intelligente."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Recevez des notifications pour les nouvelles commandes, les rappels de retour et les événements importants."
+      }
+    },
+    "details": {
+      "viewDetails": "Voir le détail",
+      "benefits": {
+        "accessAnywhere": {
+          "title": "Accès partout, à tout moment",
+          "description": "Gérez depuis votre appareil mobile"
+        },
+        "autoSync": {
+          "title": "Synchronisation automatique",
+          "description": "Données toujours à jour"
+        }
+      }
+    }
+  },
+  "web": {
+    "badge": "Web Portal",
+    "title": "Fonctionnalités du Web Portal",
+    "description": "Gérez toute votre boutique de location depuis votre navigateur, avec toutes les fonctionnalités",
+    "screenshotPlaceholder": "Capture d'écran du web portal",
+    "features": {
+      "analytics": {
+        "title": "Analyses et rapports",
+        "description": "Consultez des rapports de chiffre d'affaires détaillés, analysez les performances commerciales et les tendances de vente."
+      },
+      "reports": {
+        "title": "Rapports financiers",
+        "description": "Créez et exportez des rapports financiers, des rapports de chiffre d'affaires et des rapports de synthèse."
+      },
+      "settings": {
+        "title": "Paramètres et configuration",
+        "description": "Gérez les paramètres du système, la configuration de la boutique et personnalisez selon vos besoins."
+      },
+      "userManagement": {
+        "title": "Gestion des utilisateurs",
+        "description": "Ajoutez, modifiez et gérez les utilisateurs, les autorisations et les rôles."
+      },
+      "payments": {
+        "title": "Gestion des paiements",
+        "description": "Suivez les paiements, les factures et gérez vos finances en détail."
+      },
+      "security": {
+        "title": "Sécurité",
+        "description": "Protégez vos données grâce au chiffrement, aux sauvegardes automatiques et au contrôle d'accès."
+      }
+    },
+    "details": {
+      "viewDetails": "Voir le détail",
+      "benefits": {
+        "fullInterface": {
+          "title": "Interface complète",
+          "description": "Toutes les fonctionnalités sur le web"
+        },
+        "detailedReports": {
+          "title": "Rapports détaillés",
+          "description": "Exportez et analysez vos données"
+        }
+      }
+    }
+  },
+  "details": {
+    "title": "Détail des fonctionnalités",
+    "description": "Découvrez plus en détail les puissantes fonctionnalités d'AnyRent",
+    "mobileApp": "Application mobile",
+    "webPortal": "Web Portal"
+  },
+  "shared": {
+    "badge": "Fonctionnalités communes",
+    "title": "Fonctionnalités partagées",
+    "description": "Fonctionnalités disponibles à la fois sur l'application mobile et le web portal",
+    "features": {
+      "cloudSync": {
+        "title": "Synchronisation cloud",
+        "description": "Les données sont synchronisées automatiquement entre tous les appareils. Une modification sur un appareil est immédiatement mise à jour sur les autres."
+      },
+      "dataSecurity": {
+        "title": "Sécurité des données",
+        "description": "Vos données sont chiffrées et stockées en toute sécurité dans le cloud. Les sauvegardes automatiques garantissent l'absence de perte de données."
+      },
+      "realTime": {
+        "title": "Mises à jour en temps réel",
+        "description": "Toutes les modifications sont mises à jour instantanément sur tous les appareils. Travaillez efficacement en équipe avec des données toujours synchronisées."
+      },
+      "scalable": {
+        "title": "Évolutivité souple",
+        "description": "Le système peut évoluer selon les besoins de votre activité, de la petite boutique à la grande chaîne."
+      }
+    }
+  },
+  "cta": {
+    "title": "Prêt à commencer ?",
+    "description": "Rejoignez des milliers d'entreprises de location qui utilisent AnyRent",
+    "downloadApp": "Télécharger l'application",
+    "tryWebPortal": "Essayer le Web Portal"
+  },
+  "footer": {
+    "description": "AnyRent - Logiciel de gestion de boutique de location n°1 au Vietnam",
+    "home": "Accueil",
+    "pricing": "Tarifs",
+    "login": "Connexion",
+    "copyright": "© 2024 AnyRent. Tous droits réservés."
+  },
+  "screens": {
+    "order": "Gestion des commandes",
+    "product": "Gestion des produits",
+    "calendar": "Calendrier et planification",
+    "users": "Gestion des utilisateurs",
+    "webCalendar": "Calendrier des commandes",
+    "webOrderDetail": "Détail de la commande",
+    "webOrder": "Gestion des commandes",
+    "prev": "Capture précédente",
+    "next": "Capture suivante",
+    "goTo": "Voir la capture {index}"
+  }
+}

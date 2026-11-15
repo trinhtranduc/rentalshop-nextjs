@@ -34,7 +34,7 @@ export interface RegisterMerchantGoogleBody {
   /** Sign-up UI language (#1143) */
   locale?: string;
   /** #1539 shop language and currency picked on the form */
-  language?: 'vi' | 'en';
+  language?: 'vi' | 'en' | 'ja';
   currency?: 'VND' | 'USD';
 }
 

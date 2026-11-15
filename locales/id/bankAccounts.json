@@ -1,0 +1,64 @@
+{
+  "title": "Pengelolaan rekening bank",
+  "subtitle": "Kelola rekening bank untuk cabang",
+  "form": {
+    "title": "Informasi rekening bank",
+    "addTitle": "Tambah rekening bank",
+    "editTitle": "Ubah rekening bank",
+    "accountHolderName": "Nama pemilik rekening",
+    "accountHolderNamePlaceholder": "Masukkan nama pemilik rekening",
+    "accountNumber": "Nomor rekening",
+    "accountNumberPlaceholder": "Masukkan nomor rekening (6–16 digit)",
+    "bankName": "Nama bank",
+    "bankNamePlaceholder": "Pilih bank",
+    "bankCode": "Kode bank",
+    "bankCodePlaceholder": "Kode bank (terisi otomatis)",
+    "branch": "Cabang bank",
+    "branchPlaceholder": "Masukkan cabang bank (opsional)",
+    "isDefault": "Jadikan rekening default",
+    "notes": "Catatan",
+    "notesPlaceholder": "Catatan (opsional)",
+    "submit": "Simpan rekening bank",
+    "add": "Tambah rekening",
+    "update": "Perbarui",
+    "cancel": "Batal",
+    "saving": "Menyimpan...",
+    "errors": {
+      "accountHolderNameRequired": "Nama pemilik rekening wajib diisi",
+      "accountNumberRequired": "Nomor rekening wajib diisi",
+      "accountNumberInvalid": "Nomor rekening harus 6–16 digit",
+      "bankNameRequired": "Nama bank wajib diisi"
+    }
+  },
+  "card": {
+    "default": "Default",
+    "accountHolderName": "Nama pemilik rekening",
+    "accountNumber": "Nomor rekening",
+    "bank": "Bank",
+    "branch": "Cabang bank",
+    "notes": "Catatan",
+    "copyQRCode": "Salin kode QR",
+    "scanQRHint": "Pindai kode QR untuk transfer cepat",
+    "copied": "Tersalin",
+    "accountNumberCopied": "Nomor rekening telah disalin ke clipboard",
+    "qrCodeCopied": "Kode QR telah disalin ke clipboard"
+  },
+  "list": {
+    "emptyTitle": "Belum ada rekening bank",
+    "emptyDescription": "Tambahkan rekening bank untuk menerima pembayaran transfer",
+    "addButton": "Tambah rekening bank"
+  },
+  "messages": {
+    "addSuccess": "Rekening bank berhasil ditambahkan",
+    "addError": "Gagal menambahkan rekening bank",
+    "updateSuccess": "Rekening bank berhasil diperbarui",
+    "updateError": "Gagal memperbarui rekening bank",
+    "deleteSuccess": "Rekening bank berhasil dihapus",
+    "deleteError": "Gagal menghapus rekening bank",
+    "loadError": "Gagal memuat daftar rekening bank",
+    "deleteConfirm": "Anda yakin ingin menghapus rekening bank \"{name}\"?",
+    "deleteConfirmTitle": "Hapus rekening bank",
+    "noOutlet": "Anda belum ditetapkan ke cabang mana pun. Silakan hubungi admin Anda.",
+    "noPermission": "Anda tidak memiliki izin untuk melihat rekening bank."
+  }
+}

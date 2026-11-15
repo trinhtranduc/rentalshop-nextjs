@@ -20,7 +20,7 @@ export interface MerchantSettings {
   website?: string;
   description?: string;
   /** #1539 shop language for emails (owner only) */
-  language?: 'vi' | 'en';
+  language?: 'vi' | 'en' | 'ja';
 }
 
 export interface MerchantCurrencyUpdate {

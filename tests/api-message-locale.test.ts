@@ -1,6 +1,6 @@
 /**
  * #986: server `message` / `error` are catalog sentences.
- * Accept-Language `en` / `vi` picks the catalog. Anything else is Vietnamese.
+ * Accept-Language `en` / `vi` picks the catalog. No header stays Vietnamese; any other language is English (#1556).
  * Exception text is not copied into the response.
  */
 import * as fs from 'fs';
@@ -13,18 +13,27 @@ import { ResponseBuilder } from '../packages/utils/src/api/response-builder';
 const root = path.resolve(__dirname, '..');
 const en = JSON.parse(fs.readFileSync(path.join(root, 'locales/en/errors.json'), 'utf8'));
 const vi = JSON.parse(fs.readFileSync(path.join(root, 'locales/vi/errors.json'), 'utf8'));
+const ja = JSON.parse(fs.readFileSync(path.join(root, 'locales/ja/errors.json'), 'utf8'));
 
 describe('#986 API message locale', () => {
   it('picks English or Vietnamese from the first language tag', () => {
     expect(resolveApiMessageLocale(null)).toBe('vi');
     expect(resolveApiMessageLocale('')).toBe('vi');
-    expect(resolveApiMessageLocale('ja')).toBe('vi');
-    expect(resolveApiMessageLocale('ko-KR,en;q=0.8')).toBe('vi');
-    expect(resolveApiMessageLocale('zh-CN')).toBe('vi');
+    expect(resolveApiMessageLocale('   ')).toBe('vi');
     expect(resolveApiMessageLocale('en')).toBe('en');
     expect(resolveApiMessageLocale('en-US,en;q=0.9,vi;q=0.8')).toBe('en');
     expect(resolveApiMessageLocale('vi')).toBe('vi');
     expect(resolveApiMessageLocale('vi-VN,en;q=0.5')).toBe('vi');
+  });
+
+  it('ja → Japanese catalog (#1553 phase 3)', () => {
+    expect(resolveApiMessageLocale('ja')).toBe('ja');
+    expect(resolveApiMessageLocale('ja-JP,en;q=0.5')).toBe('ja');
+  });
+
+  // #1556 (#1553): a language the API has no catalog for gets English, like the shop pages (#1551), not Vietnamese
+  it.each(['ko-KR,en;q=0.8', 'zh-CN', 'ru', 'fr-FR,fr;q=0.9', 'zh-TW', 'th'])('%s → English', (header) => {
+    expect(resolveApiMessageLocale(header)).toBe('en');
   });
 
   it('uses the Accept-Language of the Node request that is running', async () => {
@@ -61,7 +70,8 @@ describe('#986 API message locale', () => {
       expect(await ask('en-US,en;q=0.9')).toBe(en.INVALID_CREDENTIALS);
       expect(await ask('vi-VN')).toBe(vi.INVALID_CREDENTIALS);
       expect(await ask()).toBe(vi.INVALID_CREDENTIALS);
-      expect(await ask('ja')).toBe(vi.INVALID_CREDENTIALS);
+      // #1556 a language with no catalog gets English
+      expect(await ask('ja')).toBe(ja.INVALID_CREDENTIALS);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

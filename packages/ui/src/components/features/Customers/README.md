@@ -5,7 +5,6 @@ This directory contains the essential customer management components for the ren
 ## 🗂️ Component Structure
 
 ### Core Customer Components
-- **`CustomerInfoCard.tsx`** - Main customer information display with actions
 - **`CustomerTable.tsx`** - Customer listing table with sorting and actions
 - **`CustomerDetailDialog.tsx`** - Detailed customer view dialog
 
@@ -29,10 +28,11 @@ This directory contains the essential customer management components for the ren
 ### Removed Redundant Components
 - ❌ `CustomerInfoExample.tsx` - Example component (not needed in production)
 - ❌ `CustomerInfoUsage.tsx` - Another example component
-- ❌ `CustomerReadOnlyInfo.tsx` - Functionality covered by CustomerInfoCard
-- ❌ `CustomerManagementCard.tsx` - Functionality covered by CustomerInfoCard
+- ❌ `CustomerReadOnlyInfo.tsx` - Removed
+- ❌ `CustomerManagementCard.tsx` - Removed
 - ❌ `CustomerPageHeader.tsx` - Duplicated CustomerHeader functionality
 - ❌ `CustomerFormDialog.tsx` - Redundant with AddCustomerForm/EditCustomerForm
+- ❌ `CustomerInfoCard.tsx` - Not used by the shop web or admin (#1562)
 
 ### Benefits of Cleanup
 - ✅ **Reduced confusion** - Clear component hierarchy
@@ -42,18 +42,6 @@ This directory contains the essential customer management components for the ren
 - ✅ **DRY principle** - No duplicate functionality
 
 ## 📱 Component Usage
-
-### CustomerInfoCard (Main Display Component)
-```tsx
-<CustomerInfoCard
-  customer={customerData}
-  onEdit={() => handleEdit(customer.id)}
-  onViewOrders={() => handleViewOrders(customer.id)}
-  onDelete={() => handleDelete(customer.id)}
-  showActions={true}
-  isLoading={false}
-/>
-```
 
 ### CustomerTable (Listing Component)
 ```tsx

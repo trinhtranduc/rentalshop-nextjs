@@ -17,7 +17,7 @@ describe('signupShopPrefs (#1545): language = page language, currency = country'
     ['en', 'VN', 'en', 'VND'],
     ['vi', 'US', 'vi', 'USD'],
     ['en', 'US', 'en', 'USD'],
-    ['ja', 'JP', 'en', 'USD'],
+    ['ja', 'JP', 'ja', 'USD'],
     ['zh', 'VN', 'en', 'VND'],
   ])('page %s + country %s → %s + %s', (page, country, language, currency) => {
     expect(signupShopPrefs(page, country)).toEqual({ language, currency });

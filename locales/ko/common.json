@@ -1,4 +1,17 @@
 {
+  "actions": {
+    "delete": "삭제",
+    "edit": "수정",
+    "view": "보기",
+    "create": "생성",
+    "save": "저장",
+    "cancel": "취소",
+    "confirm": "확인",
+    "search": "검색",
+    "export": "내보내기",
+    "import": "가져오기",
+    "selectAll": "모두 선택"
+  },
   "buttons": {
     "save": "저장",
     "cancel": "취소",
@@ -28,6 +41,8 @@
     "saving": "저장 중...",
     "creating": "생성 중...",
     "tryAgain": "다시 시도",
+    "viewMoreDetails": "자세히 보기",
+    "hideDetails": "상세 숨기기",
     "viewAll": "전체 보기"
   },
   "labels": {
@@ -118,6 +133,7 @@
     "authors": "작성자",
     "outlets": "매장",
     "categories": "카테고리",
+    "availabilityCheck": "예약 가능 확인",
     "reports": "보고서",
     "analytics": "분석"
   },
@@ -129,10 +145,10 @@
     "page": "페이지",
     "rowsPerPage": "페이지당 행 수",
     "pageSizeRange": "페이지당 1~{max}행",
+    "itemsPerPage": "페이지당 항목 수",
     "first": "첫 페이지",
     "last": "마지막 페이지",
     "noData": "표시할 데이터 없음",
-    "itemsPerPage": "페이지당 항목 수",
     "apply": "적용",
     "items": {
       "items": "개 항목",
@@ -181,13 +197,25 @@
   },
   "roles": {
     "ADMIN": "관리자",
+    "ARTICLE": "글 편집자",
     "MERCHANT": "상인",
     "OUTLET_ADMIN": "매장 관리자",
     "OUTLET_STAFF": "매장 직원",
     "OUTLET_INVENTORY": "재고 담당"
   },
-  "actions": {
-    "selectAll": "모두 선택"
+  "import": {
+    "preview": {
+      "total": "합계",
+      "valid": "유효",
+      "invalid": "유효하지 않음",
+      "errors": "오류",
+      "errorsPlural": "오류",
+      "duplicates": "중복",
+      "duplicatesPlural": "중복",
+      "status": "상태",
+      "showing": "전체 {total}행 중 처음 {maxRows}행을 표시합니다",
+      "validStatus": "유효"
+    }
   },
   "shell": {
     "nav": {
@@ -269,6 +297,22 @@
     },
     "breadcrumb": "현재 위치",
     "searchOpen": "검색 열기"
+  },
+  "dateRange": {
+    "title": "날짜 범위 선택",
+    "placeholder": "날짜 선택",
+    "weekdays": "일,월,화,수,목,금,토",
+    "month": "{year}년 {month}월",
+    "prev": "이전 달",
+    "next": "다음 달",
+    "pickStart": "시작일을 누른 뒤 종료일을 누르세요",
+    "pickEnd": "종료일을 누르세요 (하루만이면 시작일을 다시 누르세요)",
+    "summary": "{from} → {to} · {days}일",
+    "single": "{from} · 1일",
+    "tooLong": "최대 {days}일입니다.",
+    "apply": "적용",
+    "cancel": "취소",
+    "close": "닫기"
   },
   "posts": {
     "language": "게시글 언어",

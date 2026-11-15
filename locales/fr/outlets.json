@@ -1,0 +1,191 @@
+{
+  "title": "Points de location",
+  "addOutlet": "Ajouter un point de location",
+  "editOutlet": "Modifier le point de location",
+  "outletDetails": "Détails du point de location",
+  "fields": {
+    "name": "Nom du point de location",
+    "address": "Adresse",
+    "city": "Ville",
+    "state": "Province / région",
+    "zipCode": "Code postal",
+    "country": "Pays",
+    "phone": "Téléphone",
+    "description": "Description",
+    "printNote": "Note sur la facture",
+    "printNoteHint": "Imprimée en bas de la facture de location, par exemple pour rappeler d'apporter une pièce d'identité ou la politique de retour. 500 caractères maximum.",
+    "status": "Statut",
+    "manager": "Responsable",
+    "notAvailable": "Aucun"
+  },
+  "labels": {
+    "default": "Par défaut"
+  },
+  "actions": {
+    "export": "Exporter la liste",
+    "viewDetails": "Voir les détails",
+    "editOutlet": "Modifier le point de location",
+    "deleteOutlet": "Supprimer le point de location",
+    "addOutlet": "Ajouter un point de location",
+    "backToOutlets": "Retour à la liste",
+    "disableOutlet": "Désactiver le point de location",
+    "enableOutlet": "Activer le point de location",
+    "manageBankAccounts": "Gérer les comptes bancaires"
+  },
+  "stats": {
+    "totalOutlets": "Total des points de location",
+    "activeOutlets": "Actifs",
+    "totalUsers": "Total des utilisateurs",
+    "totalProducts": "Total des produits"
+  },
+  "search": {
+    "placeholder": "Rechercher par nom, ville ou téléphone..."
+  },
+  "dialogs": {
+    "addOutletTitle": "Nouveau point de location",
+    "addOutletDescription": "Créer un nouveau point de location pour votre entreprise",
+    "editOutletTitle": "Modifier le point de location",
+    "deleteOutletTitle": "Supprimer le point de location",
+    "outletDetails": "Détails du point de location",
+    "editOutletName": "Modifier le point de location : {name}"
+  },
+  "messages": {
+    "createSuccess": "Point de location créé avec succès",
+    "createFailed": "Échec de la création du point de location",
+    "updateSuccess": "Point de location mis à jour avec succès",
+    "updateFailed": "Échec de la mise à jour du point de location",
+    "deleteSuccess": "Point de location supprimé avec succès",
+    "deleteFailed": "Échec de la suppression du point de location",
+    "enableSuccess": "Point de location activé avec succès",
+    "enableFailed": "Échec de l'activation du point de location",
+    "disableSuccess": "Point de location désactivé avec succès",
+    "disableFailed": "Échec de la désactivation du point de location",
+    "confirmDelete": "Voulez-vous vraiment supprimer ce point de location ?",
+    "noOutlets": "Aucun point de location trouvé",
+    "tryAdjustingSearch": "Essayez de modifier la recherche",
+    "getStarted": "Commencez par ajouter votre premier point de location",
+    "loadingOutlets": "Chargement de la liste des points de location..."
+  },
+  "placeholders": {
+    "enterOutletName": "Saisissez le nom du point de location",
+    "enterStreetAddress": "Saisissez l'adresse",
+    "enterCity": "Saisissez la ville",
+    "enterState": "Saisissez la province / région",
+    "enterZipCode": "Saisissez le code postal",
+    "enterCountry": "Saisissez le pays",
+    "enterOutletPhone": "Saisissez le numéro du point de location",
+    "enterOutletDescription": "Saisissez la description du point de location",
+    "enterPrintNote": "Ex. : *** Veuillez apporter votre pièce d'identité au retrait"
+  },
+  "web": {
+    "title": "Points de location",
+    "add": "Ajouter un point de location",
+    "searchLabel": "Rechercher un point de location",
+    "searchPlaceholder": "Rechercher nom, ville, tél.",
+    "cols": {
+      "name": "Point de location",
+      "address": "Adresse",
+      "phone": "Tél.",
+      "status": "Statut",
+      "createdAt": "Date de création",
+      "actions": "Actions"
+    },
+    "sortBy": "Trier par {column}",
+    "default": "Par défaut",
+    "status": {
+      "active": "Ouvert",
+      "inactive": "Suspendu"
+    },
+    "staffCount": "{count} membres du personnel",
+    "edit": "Modifier",
+    "viewDetails": "Voir les détails",
+    "bankAccounts": "Comptes bancaires",
+    "disable": "Suspendre",
+    "enable": "Rouvrir",
+    "more": "Autres actions pour {name}",
+    "empty": "Aucun point de location pour l'instant.",
+    "emptySearch": "Aucun point de location ne correspond à la recherche.",
+    "loadFailed": "Impossible de charger la liste des points de location.",
+    "retry": "Réessayer",
+    "noSession": "Votre session a expiré. Veuillez vous reconnecter.",
+    "noAccess": "Seul le propriétaire de la boutique peut consulter et modifier la liste des points de location.",
+    "form": {
+      "addTitle": "Ajouter un point de location",
+      "editTitle": "Modifier le point de location",
+      "name": "Nom du point de location",
+      "namePlaceholder": "Ex. : Point de location District 1",
+      "required": "obligatoire",
+      "nameRequired": "Saisissez le nom du point de location",
+      "phone": "Téléphone",
+      "address": "N° et rue",
+      "city": "Ville",
+      "state": "Province / région",
+      "zipCode": "Code postal",
+      "country": "Pays",
+      "optional": "Facultatif",
+      "addressGroup": "Adresse",
+      "description": "Description",
+      "printNote": "Note imprimée sur le contrat de location",
+      "printNoteHint": "Imprimée en bas du contrat, par exemple pour rappeler d'apporter une pièce d'identité ou la politique de retour.",
+      "printNotePlaceholder": "Ex. : Veuillez apporter votre pièce d'identité au retrait",
+      "printNoteTooLong": "{max} caractères maximum",
+      "count": "{count}/{max}",
+      "cancel": "Annuler",
+      "create": "Ajouter le point de location",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "close": "Fermer"
+    },
+    "detail": {
+      "title": "Détails du point de location",
+      "none": "Aucun"
+    },
+    "confirm": {
+      "disableTitle": "Suspendre le point de location",
+      "disableBody": "Suspendre le point de location « {name} » ? Vous pourrez le rouvrir plus tard.",
+      "cancel": "Conserver",
+      "disable": "Suspendre",
+      "working": "Enregistrement…"
+    },
+    "toast": {
+      "created": "Point de location ajouté",
+      "updated": "Point de location enregistré",
+      "disabled": "Point de location suspendu",
+      "enabled": "Point de location rouvert"
+    },
+    "footer": {
+      "show": "Afficher",
+      "perPage": "lignes par page",
+      "perPageLabel": "Nombre de lignes par page",
+      "pages": "Pagination",
+      "range": "{from}–{to} sur {total} points de location",
+      "prev": "Page précédente",
+      "next": "Page suivante"
+    },
+    "bank": {
+      "back": "Points de location",
+      "title": "Comptes bancaires",
+      "subtitle": "Point de location {name}",
+      "add": "Ajouter un compte",
+      "cols": {
+        "holder": "Titulaire du compte",
+        "number": "N° de compte",
+        "bank": "Banque",
+        "branch": "Agence bancaire",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "active": "En service",
+      "inactive": "Suspendu",
+      "copy": "Copier le numéro de compte {number}",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "loadFailed": "Impossible de charger les comptes bancaires.",
+      "retry": "Réessayer",
+      "noAccess": "Vous n'êtes pas autorisé à consulter les comptes bancaires.",
+      "confirmCancel": "Conserver",
+      "deleting": "Suppression…",
+      "close": "Fermer"
+    }
+  }
+}

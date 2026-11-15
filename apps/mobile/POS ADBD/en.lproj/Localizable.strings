@@ -489,13 +489,13 @@
 "Discount:" = "Discount:";
 "Discount (%d%%):" = "Discount (%d%%):";
 "Grand Total" = "Grand Total";
-"Deposit" = "Deposit";
+"Deposit" = "Booking deposit";
 "Collect" = "Collect";
-"Document" = "Collateral Details";
+"Document" = "Security Document Details";
 "Security Deposit" = "Security Deposit";
 "Damage Fee" = "Extra Fee";
-"Collect Deposit" = "Collect Deposit";
-"Please collect the deposit amount from the customer." = "Please collect the deposit amount from the customer.";
+"Collect Deposit" = "Collect Booking Deposit";
+"Please collect the deposit amount from the customer." = "Please collect the booking deposit amount from the customer.";
 "Collect Remaining Payment" = "Collect Remaining Payment";
 "Please collect the remaining payment from the customer." = "Please collect the remaining payment from the customer.";
 "Refund Payment" = "Refund Payment";
@@ -553,7 +553,7 @@
 "Extra Charges" = "Extra Charges";
 "Notes" = "Notes";
 "Add notes here..." = "Add notes here...";
-"You can make a deposit using identification documents (ID card, driver's license, or vehicle registration) or pay a cash deposit." = "You can make a deposit using identification documents (ID card, driver's license, or vehicle registration) or pay a cash deposit.";
+"You can make a deposit using identification documents (ID card, driver's license, or vehicle registration) or pay a cash deposit." = "You can make a booking deposit using identification documents (ID card, driver's license, or vehicle registration) or pay a cash booking deposit.";
 "Retrive of customer:" = "Collected from customer:";
 "Return to customer:" = "Refund to customer:";
 "You are cancel the order. Are you sure?" = "Cancel this order?";
@@ -624,12 +624,12 @@
 "Enter cost price" = "Enter cost price";
 "Enter cost price (optional)" = "Enter cost price (optional)";
 "Cost price must be greater than or equal to 0" = "Cost price must be greater than or equal to 0";
-"Deposit Price" = "Deposit Price";
-"Deposit Price *" = "Deposit Price *";
+"Deposit Price" = "Booking Deposit Price";
+"Deposit Price *" = "Booking Deposit Price *";
 
-"Enter deposit price" = "Enter deposit price";
-"Enter deposit price (optional)" = "Enter deposit price (optional)";
-"Deposit price must be greater than or equal to 0" = "Deposit price must be greater than or equal to 0";
+"Enter deposit price" = "Enter booking deposit price";
+"Enter deposit price (optional)" = "Enter booking deposit price (optional)";
+"Deposit price must be greater than or equal to 0" = "Booking deposit price must be greater than or equal to 0";
 "Tồn" = "Stock";
 "Quantity" = "Quantity";
 "Quantity *" = "Quantity *";
@@ -643,7 +643,7 @@
 "Additional rental prices" = "Additional rental prices";
 "Add pricing by day, hour or month" = "Add pricing by day, hour or month";
 "Optional details" = "Optional details";
-"Sale price, cost price and deposit" = "Sale price, cost price and deposit";
+"Sale price, cost price and deposit" = "Sale price, cost price and booking deposit";
 "Product image" = "Product image";
 "Choose a product image" = "Choose a product image";
 "Product image is required" = "Product image is required";
@@ -781,7 +781,7 @@
 "Address" = "Address";
 "ORDER" = "ORDER";
 "Customer" = "Customer";
-"NO DEPOSIT" = "NO DEPOSIT";
+"NO DEPOSIT" = "NO BOOKING DEPOSIT";
 "Rent Date" = "Rent Date";
 "Customer Signature" = "Customer Signature";
 "Store Signature" = "Store Signature";
@@ -797,20 +797,20 @@
 "Select Year" = "Select Year";
 "Total Days" = "Total Days";
 "New Orders" = "New Orders";
-"Deposit Refund" = "Deposit Refund";
-"Total Collateral" = "Total Collateral";
-"Collateral Plan" = "Collateral Plan";
-"Collateral (received)" = "Collateral (received)";
-"Collateral (return)" = "Collateral (return)";
+"Deposit Refund" = "Booking Deposit Refund";
+"Total Collateral" = "Total Security Deposit";
+"Collateral Plan" = "Security Deposit Plan";
+"Collateral (received)" = "Security deposit (received)";
+"Collateral (return)" = "Security deposit (return)";
 "No orders for this day" = "No orders for this day";
 "Try another date" = "Try another date";
 "orders_unit" = "orders";
 "currency_VND" = "VND";
 "Overview_Info_Title" = "Overview";
-"Overview_Info_TotalRevenue" = "Total cash collected in the period (after deducting refunds). Includes: order deposits, rental on pickup, sales, extra fees. Excludes: refunds on cancellation, deposit refund when customer returns. Can be negative if refunds in the period exceed collections (e.g. many cancellations or returns).";
+"Overview_Info_TotalRevenue" = "Total cash collected in the period (after deducting refunds). Includes: order booking deposits, rental on pickup, sales, extra fees. Excludes: refunds on cancellation, booking deposit refund when customer returns. Can be negative if refunds in the period exceed collections (e.g. many cancellations or returns).";
 "Overview_Info_TotalOrders" = "(Daily only) Total number of rows in the order list — each row is one order or one revenue transaction; one order can have multiple rows if multiple transactions in the period.";
-"Overview_Info_CollateralReceived" = "Collateral (security deposit) currently held — total deposit for rental orders that are picked up and not yet returned. Only counts orders picked up in the period (by pickup date). Shows how much customer deposit you are holding (liability to refund when they return).";
-"Overview_Info_CollateralExpected" = "Expected collateral to refund — Amount of deposit you will refund to customers in the period. Only counts rental orders currently out (customer has picked up, you are holding the deposit) with return plan date in the period. When customers return in that period, you refund each securityDeposit. Helps with liquidity planning (how much deposit you need to pay back in the period).";
+"Overview_Info_CollateralReceived" = "Security deposit currently held — total security deposit for rental orders that are picked up and not yet returned. Only counts orders picked up in the period (by pickup date). Shows how much customer security deposit you are holding (to give back when they return).";
+"Overview_Info_CollateralExpected" = "Expected security deposit to refund — Amount of security deposit you will give back to customers in the period. Only counts rental orders currently out (picked up, you hold the security deposit) with a return date in the period. When customers return in that period, you give back each security deposit. Helps you plan cash (how much security deposit you need to pay back in the period).";
 "Overview_Mode_Daily" = "Daily";
 "Overview_Mode_Yearly" = "Yearly";
 "Report_Period_Today" = "Today";
@@ -827,16 +827,16 @@
 "Report_DateRange_To" = "To";
 "Report_Summary_Revenue" = "Revenue";
 "Report_Summary_Orders" = "Orders";
-"Report_Summary_DepositHeld" = "Deposit held";
-"Report_Summary_DepositDue" = "Deposit due";
+"Report_Summary_DepositHeld" = "Security deposit held";
+"Report_Summary_DepositDue" = "Security deposit due";
 "Report_Summary_Reserved" = "New rentals";
 "Report_Summary_AveragePerDay" = "Avg/day";
 "Report_Summary_Change" = "Change";
 "Overview_Orders_Count" = "orders";
-"Collateral (received)_Short" = "Deposit held";
-"Collateral (return)_Short" = "Deposit due";
+"Collateral (received)_Short" = "Security deposit held";
+"Collateral (return)_Short" = "Security deposit due";
 "Operational Snapshot" = "Operational Snapshot";
-"Status and deposit flow for this period" = "Status and deposit flow for this period";
+"Status and deposit flow for this period" = "Status and booking deposit flow for this period";
 "Orders by status for this period" = "Orders by status for this period";
 "In Progress" = "In Progress";
 "Top Products" = "Top Products";
@@ -886,7 +886,7 @@
 "Customer Information" = "Customer Information";
 "Outlet & Staff Information" = "Outlet & Staff Information";
 "Date Information" = "Date Information";
-"Deposit & Collateral Details" = "Deposit & Collateral Details";
+"Deposit & Collateral Details" = "Booking Deposit & Security Document Details";
 "Summary" = "Summary";
 "Information" = "Information";
 
@@ -1033,7 +1033,7 @@
 "Return Date:" = "Return Date:";
 "Paid:" = "Paid:";
 "Balance:" = "Balance:";
-"Deposit:" = "Deposit:";
+"Deposit:" = "Booking deposit:";
 "Security Deposit:" = "Security Deposit:";
 "To Collect:" = "To Collect:";
 "Damage Fee:" = "Extra Fee:";
@@ -1488,7 +1488,7 @@
 "product.section.inventory.title" = "Inventory";
 "product.section.inventory.subtitle" = "Barcode is optional; quantity is required";
 "product.section.pricing.title" = "Pricing";
-"product.section.pricing.subtitle" = "Set rental, sale, cost and deposit prices";
+"product.section.pricing.subtitle" = "Set rental, sale, cost and booking deposit prices";
 "product.section.rentalPricing.title" = "Rental pricing";
 "product.section.rentalPricing.subtitle" = "Set the required rental price";
 "product.section.dailyPricing.title" = "Daily rental price";
@@ -1496,7 +1496,7 @@
 "product.section.additionalPricing.title" = "Additional pricing";
 "product.section.additionalPricing.subtitle" = "Sale price, cost and security deposit";
 "product.section.moreOptions.title" = "More options";
-"product.section.moreOptions.subtitle" = "Barcode, sale price, cost and deposit";
+"product.section.moreOptions.subtitle" = "Barcode, sale price, cost and booking deposit";
 "order.cancel.title" = "Cancel order";
 "order.cancel.confirmation" = "Cancel this order?";
 "order.number.format" = "Order number: %@";
@@ -1556,7 +1556,7 @@
 "products.stepper.plus" = "One more";
 "products.stepper.enter" = "Enter quantity";
 "products.detail.edit" = "Edit";
-"products.detail.deposit" = "deposit %@";
+"products.detail.deposit" = "booking deposit %@";
 "products.detail.orders" = "Orders of this product";
 "products.detail.ordersCount" = "All %d ›";
 "products.detail.noOrders" = "No orders yet";
@@ -1583,14 +1583,14 @@
 "products.form.defaultPricing" = "New orders charge by default";
 "products.form.salePrice" = "Sale price";
 "products.form.notForSale" = "Not for sale";
-"products.form.deposit" = "Deposit per item";
+"products.form.deposit" = "Booking deposit per item";
 "products.form.stock" = "Stock";
 "products.form.quantity" = "Quantity";
 "products.form.stockNote" = "On rent %d · free %d";
 "products.form.save" = "Save product";
 "products.form.saveChanges" = "Save changes";
 "products.form.error.name" = "Enter the product name.";
-"products.form.error.negative" = "Prices and deposit cannot be negative.";
+"products.form.error.negative" = "Prices and booking deposit cannot be negative.";
 "products.form.error.dailyDefault" = "Charging per day by default needs a per-day price.";
 "products.form.error.quantity" = "Quantity cannot be negative.";
 "products.form.error.belowRented" = "Quantity cannot be lower than the %d units on rent.";
@@ -1624,10 +1624,10 @@
 "products.cart.discountAmount" = "Amount";
 "products.cart.discount" = "Discount";
 "products.cart.total" = "Order total";
-"products.cart.deposit" = "Deposit paid now";
+"products.cart.deposit" = "Booking deposit paid now";
 "products.cart.note" = "Note";
 "products.cart.addNote" = "Add";
-"products.cart.collectDeposit" = "Collect now · deposit";
+"products.cart.collectDeposit" = "Collect now · booking deposit";
 "products.cart.customerPays" = "Customer pays";
 "products.cart.create" = "Create order";
 "products.cart.sellAndCollect" = "Sell & collect";
@@ -1640,10 +1640,10 @@
 "products.cart.confirm.customer" = "Customer";
 "products.cart.confirm.dates" = "Rental dates";
 "products.cart.confirm.items" = "Items";
-"products.cart.confirm.collectDeposit" = "Collect deposit now";
+"products.cart.confirm.collectDeposit" = "Collect booking deposit now";
 "products.cart.confirm.collectSale" = "Collect now";
 "products.cart.created.title" = "Order #%@ created";
-"products.cart.created.paidDeposit" = "Deposit collected %@";
+"products.cart.created.paidDeposit" = "Booking deposit collected %@";
 "products.cart.created.paidSale" = "Collected %@";
 "products.cart.created.newOrder" = "New order";
 "products.cart.created.viewOrder" = "View order";
@@ -1709,7 +1709,7 @@
 "%d days" = "%d days";
 "%d days.one" = "%d day";
 "Handed over" = "Picked up";
-"Collateral" = "Collateral";
+"Collateral" = "Security deposit";
 "Sale date" = "Sale date";
 "Sale price %@" = "Sale price %@";
 "%@/day × %d days" = "%@/day × %d days";
@@ -1718,8 +1718,8 @@
 "Collected" = "Collected";
 "To collect" = "To collect";
 "Total (discount %@)" = "Total (discount %@)";
-"Deposit paid at booking" = "Deposit paid at booking";
-"Collateral money" = "Collateral money";
+"Deposit paid at booking" = "Booking deposit paid at booking";
+"Collateral money" = "Security deposit";
 "Already collected" = "Already collected";
 "Collect at hand-over" = "Collect at hand-over";
 "Late fee" = "Late fee";
@@ -1735,11 +1735,11 @@
 "Cancel order" = "Cancel order";
 "Late fee (%d days)" = "Late fee (%d days)";
 "Late fee (%d days).one" = "Late fee (%d day)";
-"Keep collateral: %@" = "Keep collateral: %@";
+"Keep collateral: %@" = "Keep security deposit: %@";
 "Collect now" = "Collect now";
 "Handed over · collect %@" = "Picked up · collect %@";
 "Late + damage fees" = "Late + extra fees";
-"Collateral money held" = "Collateral money held";
+"Collateral money held" = "Security deposit held";
 "Already settled" = "Already settled";
 "Give back to customer" = "Give back to customer";
 "Taken back · give back %@" = "Taken back · give back %@";
@@ -1803,7 +1803,7 @@
 "overview.v2.barOrders" = "%d orders";
 "overview.v2.barOrders.one" = "%d order";
 "overview.v2.topRentedByValue" = "Most rented · by order value";
-"overview.v2.depositsAtOrder" = "Deposits at order";
+"overview.v2.depositsAtOrder" = "Booking deposits at order";
 "overview.v2.newOrderValue" = "New order value";
 "overview.v2.vsPreviousPeriod" = "vs previous period";
 "overview.v2.outstandingNote" = "From new orders";
@@ -1815,15 +1815,15 @@
 "overview.v2.detail.collateralNote" = "Not in real income because it goes back to the customer.";
 "overview.v2.detail.note" = "Total order value is the money of the orders created in the period, including the unpaid part; Still to collect is that unpaid part.";
 "overview.v2.detail.close" = "Close";
-"overview.v2.excludesCollateral" = "Excludes collateral";
-"overview.v2.collateral" = "Collateral";
+"overview.v2.excludesCollateral" = "Excludes security deposit";
+"overview.v2.collateral" = "Security deposit";
 "overview.v2.received.title" = "Money received";
-"overview.v2.received.caption" = "All money received, collateral included";
+"overview.v2.received.caption" = "All money received, security deposit included";
 "overview.v2.received.collectedNote" = "The store's money";
 "overview.v2.received.collateralNote" = "Held for the customer, to be handed back";
 "overview.v2.received.collateralIn" = "Received at hand-over";
 "overview.v2.received.collateralOut" = "Handed back when returned";
-"overview.v2.received.upcoming" = "UPCOMING COLLATERAL";
+"overview.v2.received.upcoming" = "UPCOMING SECURITY DEPOSIT";
 "overview.v2.received.upcomingNote" = "not counted in any figure";
 "overview.v2.received.toReturn" = "To hand back";
 "overview.v2.received.toReturnOrders" = "%d orders rented out";
@@ -1831,7 +1831,7 @@
 "overview.v2.received.toCollect" = "To receive at hand-over";
 "overview.v2.received.toCollectOrders" = "%d orders not picked up";
 "overview.v2.received.toCollectOrders.one" = "%d order not picked up";
-"overview.v2.outstandingDetail.body" = "The unpaid part of the orders created in the period. Collateral is not counted here.";
+"overview.v2.outstandingDetail.body" = "The unpaid part of the orders created in the period. Security deposit is not counted here.";
 "overview.v2.outstandingDetail.atPickup" = "To collect at pickup";
 "overview.v2.outstandingDetail.atPickupOrders" = "%d orders · pickup from today";
 "overview.v2.outstandingDetail.atPickupOrders.one" = "%d order · pickup from today";
@@ -1919,7 +1919,7 @@
 "orders.v2.yesterday" = "Yesterday";
 "orders.v2.tag.handOver" = "To hand over";
 "orders.v2.tag.takeBack" = "To take back";
-"orders.v2.tag.collect" = "Deposit due";
+"orders.v2.tag.collect" = "Booking deposit due";
 "orders.v2.band.collect" = " · collect %d";
 "orders.v2.tag.sale" = "Sale · %@";
 "orders.v2.status.all" = "All";
@@ -1931,7 +1931,7 @@
 "orders.v2.notPrepared" = "Not prepared";
 "order.readyToDeliver.subtitle" = "All items packed for this order";
 "orders.v2.pay.due" = "to collect %@";
-"orders.v2.pay.refund" = "refund deposit %@";
+"orders.v2.pay.refund" = "refund booking deposit %@";
 "orders.row.created" = "created %@";
 "orders.row.pickup" = "Pickup %@";
 "orders.row.returnAfter" = "return %@";
@@ -2143,7 +2143,7 @@
 "order.sheet.notes.textPhotos.one" = "1 note · %d photo";
 "order.sheet.history" = "Change history";
 "order.sheet.cancel" = "Cancel order";
-"order.sheet.cancel.subtitle" = "Cancel the order, handle the deposit if any";
+"order.sheet.cancel.subtitle" = "Cancel the order, handle the booking deposit if any";
 "order.sheet.delete" = "Delete order";
 "order.sheet.delete.subtitle" = "Removes the cancelled order for good";
 /* #519 Lịch sử thay đổi (boards LS-don, LS-san-pham) */
@@ -2164,7 +2164,7 @@
 "history.kind.ORDER_EDITED" = "Order edited";
 "history.kind.ORDER_ITEMS" = "Items changed";
 "history.kind.ORDER_ITEM_PRICE" = "Item price changed";
-"history.kind.ORDER_DEPOSIT" = "Deposit";
+"history.kind.ORDER_DEPOSIT" = "Booking deposit";
 "history.kind.ORDER_PAYMENT" = "Payment";
 "history.kind.ORDER_REFUND" = "Refund";
 "history.kind.ORDER_NOTE" = "Note changed";
@@ -2189,15 +2189,15 @@
 "history.field.pickedUpAt" = "Handed over";
 "history.field.returnedAt" = "Returned";
 "history.field.totalAmount" = "Order total";
-"history.field.depositAmount" = "Prepaid deposit";
-"history.field.securityDeposit" = "Collateral money";
+"history.field.depositAmount" = "Prepaid booking deposit";
+"history.field.securityDeposit" = "Security deposit";
 "history.field.discountType" = "Discount type";
 "history.field.discountValue" = "Discount";
 "history.field.discountAmount" = "Discount amount";
 "history.field.damageFee" = "Extra fee";
 "history.field.lateFee" = "Late fee";
-"history.field.collateralType" = "Collateral type";
-"history.field.collateralDetails" = "Collateral";
+"history.field.collateralType" = "Security document type";
+"history.field.collateralDetails" = "Security document details";
 "history.field.pickupNotes" = "Hand-over note";
 "history.field.returnNotes" = "Return note";
 "history.field.damageNotes" = "Damage note";
@@ -2209,7 +2209,7 @@
 "history.field.barcode" = "Code";
 "history.field.category" = "Category";
 "history.field.isActive" = "Active";
-"history.field.deposit" = "Deposit";
+"history.field.deposit" = "Booking deposit";
 "history.field.rentPrice" = "Rent price";
 "history.field.salePrice" = "Sale price";
 "history.field.pricingType" = "Pricing";
@@ -2244,7 +2244,7 @@
 "overview.dash.kpi.orderValue" = "New order value";
 "overview.dash.kpi.collected" = "Collected";
 "overview.dash.kpi.outstanding" = "Still to collect";
-"overview.dash.kpi.collateral" = "Collateral";
+"overview.dash.kpi.collateral" = "Security deposit";
 "overview.dash.chip.new" = "New";
 "overview.dash.chip.up" = "▲ %d%%";
 "overview.dash.chip.down" = "▼ %d%%";
@@ -2270,7 +2270,7 @@
 "overview.dash.detail.newOrders" = "New orders";
 "overview.dash.detail.rent" = "Rentals";
 "overview.dash.detail.sale" = "Sales";
-"overview.dash.money.deposits" = "Deposits at order";
+"overview.dash.money.deposits" = "Booking deposits at order";
 "overview.dash.money.pickupAndSale" = "Paid at pickup, sales";
 "overview.dash.money.fees" = "Extra and late fees";
 "overview.dash.money.refunds" = "Refunds on cancelled";
@@ -2381,8 +2381,8 @@
 "share.items.rent" = "Rental items · %d";
 "share.items.sale" = "Items bought · %d";
 "share.rent.total" = "Rental total";
-"share.deposit.paid" = "Deposit paid";
-"share.collateral" = "Collateral at pickup";
+"share.deposit.paid" = "Booking deposit paid";
+"share.collateral" = "Security deposit at pickup";
 "share.amountDue" = "Amount due";
 "share.subtotal" = "Subtotal";
 "share.discount" = "Discount";
@@ -2413,18 +2413,18 @@
 "imageSearch.empty.tip.photo" = "The product needs a photo in your list";
 "order.detail.navTitle" = "Order %@";
 "order.detail.goods" = "Goods";
-"order.detail.deposit" = "Deposit";
+"order.detail.deposit" = "Booking deposit";
 "overview.related.created" = "Created in the period";
 "overview.related.cancelled" = "Cancelled, not counted";
-"overview.related.collateralIn" = "Collateral received at hand-over";
-"overview.related.collateralOut" = "Collateral returned";
+"overview.related.collateralIn" = "Security deposit received at hand-over";
+"overview.related.collateralOut" = "Security deposit returned";
 "overview.related.total" = "Total of the rows";
 "overview.related.empty" = "No orders in this period.";
-"overview.dash.money.collateralNet" = "Collateral in − out";
+"overview.dash.money.collateralNet" = "Security deposit in − out";
 "overview.dash.rule.orderValue" = "Total of the orders created in the period, by creation day. Cancelled orders are not counted.";
-"overview.dash.rule.collected" = "Money held from the period: deposits, rent on hand-over, sales, extra fees, minus refunds, plus collateral received minus collateral returned.";
-"overview.dash.rule.outstanding" = "Part of the period's orders not collected yet: a booked rental is its total minus the deposit; an unfinished sale is its whole total.";
-"overview.dash.rule.collateral" = "Collateral received at hand-over minus collateral handed back at return, in the period.";
+"overview.dash.rule.collected" = "Money held from the period: booking deposits, rent on hand-over, sales, extra fees, minus refunds, plus security deposit received minus security deposit returned.";
+"overview.dash.rule.outstanding" = "Part of the period's orders not collected yet: a booked rental is its total minus the booking deposit; an unfinished sale is its whole total.";
+"overview.dash.rule.collateral" = "Security deposit received at hand-over minus security deposit handed back at return, in the period.";
 "overview.related.owes" = "To collect at pickup";
 "overview.dash.chip.newOrders" = "%d new orders";
 "SUBSCRIPTION_EXPIRED" = "Subscription has expired";
@@ -2440,17 +2440,17 @@
 "SUBSCRIPTION_GENERIC" = "There is a problem with your subscription. Please contact support.";
 "overview.related.event.saleCreated" = "Sale created";
 "overview.related.event.saleCancelled" = "Sale cancelled, refunded";
-"overview.related.event.deposit" = "Deposit collected";
+"overview.related.event.deposit" = "Booking deposit collected";
 "overview.related.event.pickup" = "Collected at pickup";
 "overview.related.event.sameDay" = "Rented and returned the same day";
 "overview.related.event.damageFee" = "Extra fee collected";
-"overview.related.event.depositRefund" = "Deposit refunded";
+"overview.related.event.depositRefund" = "Booking deposit refunded";
 "overview.related.event.nothing" = "Nothing to settle";
 "overview.related.event.rentCancelled" = "Order cancelled, refunded";
 "overview.related.event.returnCollected" = "Collected at return";
 "overview.related.event.futurePickup" = "Expected at pickup";
 "overview.related.event.futureDamageFee" = "Expected extra fee at return";
-"overview.related.event.futureRefund" = "Expected deposit refund at return";
+"overview.related.event.futureRefund" = "Expected booking deposit refund at return";
 "overview.related.event.futureNothing" = "Nothing expected at return";
 
 /* #828 Branch picker (header button, sheet, cart confirm) */
@@ -2562,7 +2562,7 @@
 "attendance.error.notRequired.title" = "You do not need to clock in";
 "attendance.error.notRequired.message" = "The shop has not picked you to clock in at this branch. Ask the shop owner if needed.";
 /* #938 Thế chân related list: an order whose collateral is held now */
-"overview.related.collateralHeld" = "Collateral held now";
+"overview.related.collateralHeld" = "Security deposit held now";
 /* #949 QR of another outlet: %1$@ = the code's outlet, %2$@ = the person's outlets */
 "attendance.error.wrongOutlet.messageDetail" = "This code is for %1$@. You clock in at %2$@.";
 
@@ -2595,7 +2595,7 @@
 "CANNOT_CREATE_ORDER_FOR_OTHER_MERCHANT" = "You cannot create an order for a branch of another shop.";
 "CANNOT_CREATE_ORDER_FOR_OTHER_OUTLET" = "You can only create orders for your own branch.";
 "CANNOT_DELETE_ADDON_LIMIT_EXCEEDED" = "This add-on cannot be deleted because your current usage would exceed the limit.";
-"CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED" = "The deposit cannot be changed after the order is created.";
+"CANNOT_EDIT_DEPOSIT_AFTER_ORDER_CREATED" = "The booking deposit cannot be changed after the order is created.";
 "CANNOT_TRANSFER_LAST_MERCHANT_OWNER" = "Assign another active merchant owner before changing this account";
 "CANNOT_UPDATE_ORDER_FROM_OTHER_MERCHANT" = "You cannot update an order of another shop.";
 "CATEGORY_NOT_FOUND" = "Category not found";
@@ -2610,12 +2610,12 @@
 "DELETE_OWN_ACCOUNT_ONLY" = "You can only delete your own account";
 "DELETE_USER_FAILED" = "Failed to delete user";
 "DELETE_USER_OUT_OF_SCOPE" = "Cannot delete user outside your scope";
-"DEPOSIT_AMOUNT_REQUIRED" = "Enter a deposit amount.";
-"DEPOSIT_AMOUNT_UPDATED" = "Deposit amount updated.";
-"DEPOSIT_AUTO_CALCULATED" = "The deposit was calculated from the products.";
-"DEPOSIT_EDIT_FAILED" = "Could not save the deposit. Please try again.";
-"DEPOSIT_EDIT_SUCCESS" = "Deposit saved.";
-"DEPOSIT_MANUALLY_OVERRIDDEN" = "The deposit was entered by hand.";
+"DEPOSIT_AMOUNT_REQUIRED" = "Enter a booking deposit amount.";
+"DEPOSIT_AMOUNT_UPDATED" = "Booking deposit amount updated.";
+"DEPOSIT_AUTO_CALCULATED" = "The booking deposit was calculated from the products.";
+"DEPOSIT_EDIT_FAILED" = "Could not save the booking deposit. Please try again.";
+"DEPOSIT_EDIT_SUCCESS" = "Booking deposit saved.";
+"DEPOSIT_MANUALLY_OVERRIDDEN" = "The booking deposit was entered by hand.";
 "DEVICE_INFO_REQUIRED" = "Missing required fields: deviceId, pushToken, platform";
 "DUPLICATE_ENTRY" = "Record already exists";
 "EMAIL_ALREADY_EXISTS" = "Email already exists";
@@ -2641,7 +2641,7 @@
 "INVALID_CREDENTIALS" = "Invalid email or password";
 "INVALID_CUSTOMER_ID_FORMAT" = "Invalid customer ID format";
 "INVALID_DATE_FORMAT" = "Invalid date format";
-"INVALID_DEPOSIT_AMOUNT" = "The deposit must be zero or more.";
+"INVALID_DEPOSIT_AMOUNT" = "The booking deposit must be zero or more.";
 "INVALID_END_DATE" = "End date must be in the future";
 "INVALID_FILE_TYPE" = "Invalid file type";
 "INVALID_INPUT" = "Invalid input provided";
@@ -2815,22 +2815,22 @@
 "currency.usd.unitDaily" = "$/day";
 
 // #1199 Thu cọc theo giai đoạn
-"deposit.settings.title" = "Deposit collection";
-"deposit.settings.header" = "Deposit collection";
-"deposit.mode.oneTime" = "One-time deposit";
-"deposit.mode.oneTime.detail" = "One deposit when ordering, the sum of each product's deposit. The rest is collected at hand-over.";
-"deposit.mode.staged" = "Staged deposit";
-"deposit.mode.staged.detail" = "Split the deposit into stages as a % of the order. The rest is collected at hand-over.";
-"deposit.ownerOnly" = "Only the shop owner can change how deposits are collected.";
+"deposit.settings.title" = "Booking deposit collection";
+"deposit.settings.header" = "Booking deposit collection";
+"deposit.mode.oneTime" = "One-time booking deposit";
+"deposit.mode.oneTime.detail" = "One booking deposit when ordering, the sum of each product's booking deposit. The rest is collected at hand-over.";
+"deposit.mode.staged" = "Staged booking deposit";
+"deposit.mode.staged.detail" = "Split the booking deposit into stages as a % of the order. The rest is collected at hand-over.";
+"deposit.ownerOnly" = "Only the shop owner can change how booking deposits are collected.";
 "deposit.footnote.newOrdersOnly" = "Only affects orders created after the change. Existing orders stay as they are.";
 "deposit.oneTime.readOnly" = "Two collection steps (read only)";
-"deposit.oneTime.stage1" = "Deposit";
-"deposit.oneTime.stage1.detail" = "The sum of each product's deposit (\"Deposit per item\" × quantity). Collected when ordering.";
+"deposit.oneTime.stage1" = "Booking deposit";
+"deposit.oneTime.stage1.detail" = "The sum of each product's booking deposit (\"Booking deposit per item\" × quantity). Collected when ordering.";
 "deposit.oneTime.stage2" = "The rest";
-"deposit.oneTime.stage2.detail" = "Order total minus the deposit. Collected at hand-over.";
+"deposit.oneTime.stage2.detail" = "Order total minus the booking deposit. Collected at hand-over.";
 "deposit.oneTime.footnote" = "How deposits work today, nothing more to set.";
-"deposit.templates.row" = "Deposit stage templates";
-"deposit.templates.title" = "Deposit stage templates";
+"deposit.templates.row" = "Booking deposit stage templates";
+"deposit.templates.title" = "Booking deposit stage templates";
 "deposit.templates.count" = "%d templates";
 "deposit.templates.hint" = "Picked when creating an order, editable per order.";
 "deposit.templates.add" = "+ New template";
@@ -2840,7 +2840,7 @@
 "deposit.policy.hint" = "Printed on the receipt and shown when cancelling.";
 "deposit.policy.save" = "Save policy";
 "deposit.policy.saved" = "Policy saved.";
-"deposit.template.title" = "Deposit template";
+"deposit.template.title" = "Booking deposit template";
 "deposit.template.name" = "Template name";
 "deposit.template.name.placeholder" = "e.g. Wedding dress · 3 stages";
 "deposit.template.stages" = "Stages";
@@ -2858,7 +2858,7 @@
 "deposit.template.error.stage" = "Each stage needs a name and a percentage from 1 to 100.";
 "deposit.template.error.total" = "The percentages cannot add up to more than 100.";
 "deposit.stage.default1" = "Booking deposit";
-"deposit.stage.default2" = "Deposit before pickup";
+"deposit.stage.default2" = "Booking deposit before pickup";
 "deposit.due.onCreate" = "When ordering";
 "deposit.due.beforePickup" = "%d days before pickup";
 "deposit.due.afterCreate" = "%d days after ordering";
@@ -2868,13 +2868,13 @@
 "deposit.method.transfer" = "Bank transfer";
 "deposit.method.check" = "Check";
 "deposit.method.manual" = "Other";
-"deposit.cart.title" = "Staged deposit";
+"deposit.cart.title" = "Staged booking deposit";
 "deposit.cart.stageDetail" = "%@%% of order · due: %@";
 "deposit.cart.restDetail" = "At hand-over · %@";
 "deposit.cart.collectFirst" = "Collect stage %d now";
 "deposit.cart.collectNone.short" = "Do not collect now";
 "deposit.cart.collectNow" = "Collect now · stage 1";
-"deposit.cart.collectNone" = "No deposit collected";
+"deposit.cart.collectNone" = "No booking deposit collected";
 "deposit.cart.createAndCollect" = "Create · collect";
 "deposit.cart.exceeds" = "The stages add up to more than the order total. Lower one stage.";
 "deposit.cart.exceeds.short" = "Over the order total";
@@ -2887,7 +2887,7 @@
 "deposit.status.due" = "Due";
 "deposit.status.late" = "%d days late";
 "deposit.status.void" = "Cancelled";
-"deposit.card.title" = "Staged deposit";
+"deposit.card.title" = "Staged booking deposit";
 "deposit.card.edit" = "Edit";
 "deposit.card.view" = "View";
 "deposit.card.collected" = "Collected";
@@ -2906,7 +2906,7 @@
 "deposit.cancel.paid" = "Customer paid";
 "deposit.cancel.kept" = "Surcharge";
 "deposit.cancel.refund" = "Refund to customer";
-"deposit.cancel.hint" = "The surcharge is what the shop keeps from the deposit; the rest is refunded to the customer.";
+"deposit.cancel.hint" = "The surcharge is what the shop keeps from the booking deposit; the rest is refunded to the customer.";
 "deposit.cancel.staffHint" = "When staff cancel, everything collected is refunded.";
 "deposit.cancel.note" = "Note (optional)";
 "deposit.cancel.confirm" = "Confirm cancel";
@@ -2925,17 +2925,17 @@
 "overview.installments.count" = "%d payments";
 "overview.installments.row" = "%@ · #%@";
 "overview.installments.note" = "A reminder for staff only; customers are not messaged.";
-"overview.installments.upcoming" = "Staged deposits coming up: %@ (%d)";
-"overview.related.event.installment" = "Deposit stage collected";
-"INSTALLMENT_EXCEEDS_TOTAL" = "The deposit stages add up to more than the order total.";
+"overview.installments.upcoming" = "Staged booking deposits coming up: %@ (%d)";
+"overview.related.event.installment" = "Booking deposit stage collected";
+"INSTALLMENT_EXCEEDS_TOTAL" = "The booking deposit stages add up to more than the order total.";
 "INSTALLMENT_OVERPAID" = "This amount is more than the stage allows, or the new total is lower than what was already collected.";
-"INSTALLMENT_ALREADY_PAID" = "This deposit stage was already collected.";
-"INSTALLMENT_FORBIDDEN_ROLE" = "Your role cannot do this with deposit stages.";
-"INSTALLMENT_UNPAID_AT_PICKUP" = "This order still has a deposit stage that was not collected. Collect it on the web or update the app.";
-"INSTALLMENT_NOT_FOUND" = "Deposit stage not found.";
-"INSTALLMENT_NO_PLAN" = "This order has no deposit plan.";
-"INSTALLMENT_LOYALTY_UNSUPPORTED" = "Loyalty points cannot be used on an order with staged deposits.";
-"DEPOSIT_SETTINGS_INVALID" = "The deposit settings are not valid. Use 1 to 3 stages per template, percentages that add up to 100 or less, and at most 10 templates.";
+"INSTALLMENT_ALREADY_PAID" = "This booking deposit stage was already collected.";
+"INSTALLMENT_FORBIDDEN_ROLE" = "Your role cannot do this with booking deposit stages.";
+"INSTALLMENT_UNPAID_AT_PICKUP" = "This order still has a booking deposit stage that was not collected. Collect it on the web or update the app.";
+"INSTALLMENT_NOT_FOUND" = "Booking deposit stage not found.";
+"INSTALLMENT_NO_PLAN" = "This order has no booking deposit plan.";
+"INSTALLMENT_LOYALTY_UNSUPPORTED" = "Loyalty points cannot be used on an order with staged booking deposits.";
+"DEPOSIT_SETTINGS_INVALID" = "The booking deposit settings are not valid. Use 1 to 3 stages per template, percentages that add up to 100 or less, and at most 10 templates.";
 "CANCEL_AMOUNTS_MISMATCH" = "The amount kept is more than what was collected, or is not a valid amount.";
 "CANCELLED_ORDER_KEEPS_AMOUNT" = "A cancelled order that kept money stays in the history and cannot be deleted.";
 // #1189 day-block pricing
@@ -2968,10 +2968,10 @@
 /* #1259 compact Settings */
 "settings.v2.collect" = "Payments";
 "settings.v2.collect.group.bank" = "Bank";
-"settings.v2.collect.group.deposit" = "Deposit";
+"settings.v2.collect.group.deposit" = "Booking deposit";
 "settings.v2.collect.accounts" = "%d accounts";
 "settings.v2.collect.banks" = "%d banks";
-"settings.v2.collect.oneTime" = "One-time deposit";
+"settings.v2.collect.oneTime" = "One-time booking deposit";
 "settings.v2.collect.staged" = "Staged";
 "settings.v2.collect.policy.set" = "Set";
 "settings.v2.collect.policy.unset" = "Not set";
@@ -2991,8 +2991,8 @@
 "block.copy.empty" = "No product has a day-block price table yet.";
 "block.error.nothing" = "Enter a price for at least 1 day.";
 /* #1270 Settings plan B */
-"settings.v2.deposit" = "Deposit";
-"settings.v2.deposit.group.mode" = "Deposit collection";
+"settings.v2.deposit" = "Booking deposit";
+"settings.v2.deposit.group.mode" = "Booking deposit collection";
 "settings.v2.deposit.group.stages" = "Stages & policy";
 "settings.v2.printing.noPrinter" = "no printer chosen";
 "settings.v2.printing.group.slip" = "Slip";
@@ -3001,22 +3001,22 @@
 /* #1273 Thế chân: two sections */
 "overview.related.collateral.note" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out today. The two numbers do not add up.";
 "overview.related.collateral.note.period" = "The same order can show in both parts: the top part is how much you hold now, the bottom part is how much came in or went out in this period. The two numbers do not add up.";
-"overview.related.collateral.held.title" = "Collateral held";
-"overview.related.collateral.held.hint" = "Collateral the shop holds for orders not yet returned.";
+"overview.related.collateral.held.title" = "Security deposit held";
+"overview.related.collateral.held.hint" = "Security deposit the shop holds for orders not yet returned.";
 "overview.related.collateral.held.total" = "Total held: %@ · %d orders";
 "overview.related.collateral.flow.title" = "Moved today (%@)";
 "overview.related.collateral.flow.title.period" = "Moved in the period (%@)";
-"overview.related.collateral.flow.hint" = "Collateral that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.";
-"overview.related.collateral.flow.hint.period" = "Collateral that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.hint" = "Security deposit that came in or went out on this day. + is received at hand-over, − is returned when the customer brings the items back.";
+"overview.related.collateral.flow.hint.period" = "Security deposit that came in or went out in this period. + is received at hand-over, − is returned when the customer brings the items back.";
 "overview.related.collateral.flow.in" = "Received at hand-over: %@ (%d orders)";
 "overview.related.collateral.flow.out" = "Returned at return: %@ (%d orders)";
 "overview.related.collateral.flow.net" = "Shop holds more today: %@";
 "overview.related.collateral.flow.net.period" = "Shop holds more in the period: %@";
 "overview.related.collateral.held.row" = "Of an order not yet returned";
-"order.collateral.card" = "Papers & collateral";
+"order.collateral.card" = "Papers & security deposit";
 "order.collateral.edit" = "Edit";
 "order.collateral.none" = "Not entered";
-"order.collateral.editWarning" = "Changing the collateral changes the amount to give back at return";
+"order.collateral.editWarning" = "Changing the security deposit changes the amount to give back at return";
 "order.collateral.papersRow" = "Papers";
 "order.detail.section.payment" = "PAYMENT";
 "order.detail.rentTotal" = "Rental total";
@@ -3061,8 +3061,8 @@
 "products.listing.notShown" = "Not shown at this branch";
 "products.scan.notListed" = "This branch does not show this product";
 "share.collect" = "Collect at hand-over";
-"share.deposit.label" = "Deposit";
-"share.deposit.none" = "No deposit";
+"share.deposit.label" = "Booking deposit";
+"share.deposit.none" = "No booking deposit";
 "share.stage.paid" = "Collected";
 "share.stage.unpaid" = "Not collected";
 "share.stage.partial" = "Part collected";
@@ -3076,7 +3076,7 @@
 // #1353: under a short cart line, the other branches that still have the product on the order's days
 "products.cart.othersHave" = "Other branches have: %@";
 "share.collect.rentalLeft" = "Rental left, collect at hand-over";
-"share.collateral.collect" = "Collateral, collect at hand-over";
+"share.collateral.collect" = "Security deposit, collect at hand-over";
 "share.cashAtHandover" = "Customer pays at hand-over";
 
 // #1375: "To do" home-screen widget
@@ -3161,9 +3161,9 @@
 "order.sheetTitle.handOver" = "Hand over to customer";
 "order.sheetTitle.return" = "Take back items";
 "order.sheetTitle.extend" = "Extend order";
-"order.sheetTitle.collateral" = "Papers & collateral";
-"order.sheetTitle.collect" = "Collect deposit";
-"order.sheetTitle.unpaid" = "Uncollected deposit stages";
+"order.sheetTitle.collateral" = "Papers & security deposit";
+"order.sheetTitle.collect" = "Collect booking deposit";
+"order.sheetTitle.unpaid" = "Uncollected booking deposit stages";
 "order.sheetTitle.cancel" = "Cancel order";
 "firstRunGuide.title" = "Get started: 3 steps";
 "firstRunGuide.step.product" = "Add your first product";
@@ -3211,7 +3211,7 @@
 "order.photos.openSettings" = "Open Settings";
 
 /* #1435 sub-line of "Khách đưa lúc nhận đồ" on the order detail */
-"order.detail.cashBreakdown" = "rental %@ + collateral %@";
+"order.detail.cashBreakdown" = "rental %@ + security deposit %@";
 
 /* #1459 Gói dịch vụ: renew / upgrade in the app, expired screen, Home line */
 "plan.title" = "Subscription";
@@ -3272,7 +3272,7 @@
 "plan.storeHasPlan" = "This Apple ID already has a plan. The new period starts at the next renewal.";
 "plan.restoreShort" = "Restore";
 
-"Deposit above the rent" = "Deposit above the rent";
+"Deposit above the rent" = "Booking deposit above the rent";
 "Give back %@" = "Give back %@";
 "Collect more %@" = "Collect more %@";
 "Surcharge" = "Surcharge";

@@ -1,0 +1,139 @@
+{
+  "title": "受取カレンダー",
+  "navigation": {
+    "today": "今日",
+    "previousMonth": "前月",
+    "nextMonth": "翌月",
+    "goToToday": "今日に戻る"
+  },
+  "labels": {
+    "pickups": "受取",
+    "returns": "返却",
+    "totalOrders": "注文合計",
+    "pickupOrders": "受取の注文",
+    "returnOrders": "返却の注文",
+    "pickup": "受取",
+    "return": "返却",
+    "order": "注文",
+    "customer": "顧客",
+    "product": "商品",
+    "type": "種類",
+    "status": "状態",
+    "amount": "金額",
+    "returnDate": "返却日",
+    "overdue": "延滞",
+    "month": "月",
+    "noOrders": "注文はありません",
+    "more": "もっと見る...",
+    "filterByStatus": "状態で絞り込み"
+  },
+  "stats": {
+    "ordersToday": "本日の注文",
+    "ordersThisWeek": "今週の注文",
+    "ordersThisMonth": "今月の注文",
+    "pickupsToday": "本日の受取",
+    "returnsToday": "本日の返却",
+    "monthlyStatistics": "月間統計",
+    "activeDays": "注文のある日",
+    "daysWithScheduledOrders": "予定の注文がある日",
+    "dateRange": "期間",
+    "to": "〜"
+  },
+  "modal": {
+    "ordersFor": "{date}の注文",
+    "pickupOrders": "受取の注文",
+    "returnOrders": "返却の注文",
+    "viewDetails": "詳細を見る",
+    "close": "閉じる",
+    "loading": "注文を読み込み中...",
+    "ordersFound": "件",
+    "ordersFoundPlural": "件",
+    "orders": "件",
+    "noOrders": "注文はありません",
+    "noPickupReturnOrders": "この日に予定された受取・返却の注文はありません。",
+    "items": "商品"
+  },
+  "empty": {
+    "noOrders": "予定された注文はありません",
+    "noPickups": "受取の予定はありません",
+    "noReturns": "返却の予定はありません",
+    "selectDate": "日付を選択すると注文を表示します"
+  },
+  "loading": {
+    "loadingCalendar": "カレンダーを読み込み中...",
+    "loadingOrders": "注文を読み込み中..."
+  },
+  "days": {
+    "sunday": "日",
+    "monday": "月",
+    "tuesday": "火",
+    "wednesday": "水",
+    "thursday": "木",
+    "friday": "金",
+    "saturday": "土"
+  },
+  "months": {
+    "january": "1月",
+    "february": "2月",
+    "march": "3月",
+    "april": "4月",
+    "may": "5月",
+    "june": "6月",
+    "july": "7月",
+    "august": "8月",
+    "september": "9月",
+    "october": "10月",
+    "november": "11月",
+    "december": "12月"
+  },
+  "web": {
+    "title": "お渡し・返却カレンダー",
+    "monthNames": "1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月",
+    "monthTitle": "{year}年{month}",
+    "weekdays": "日,月,火,水,木,金,土",
+    "prevMonth": "前月",
+    "nextMonth": "翌月",
+    "today": "今日",
+    "monthLabel": "月間カレンダー",
+    "dayPanel": "その日の予定",
+    "legend": {
+      "pickups": "お渡し",
+      "returns": "返却",
+      "late": "返却延滞"
+    },
+    "cell": {
+      "pickups": "お渡し {count}",
+      "returns": "返却 {count}",
+      "late": "延滞 {count}"
+    },
+    "aria": {
+      "pickups": "お渡し",
+      "returns": "返却",
+      "late": "延滞"
+    },
+    "dayTitleToday": "{day}・今日",
+    "sections": {
+      "pickups": "お渡し予定・{count}",
+      "returns": "返却予定・{count}"
+    },
+    "sub": {
+      "returnOn": "{day}返却",
+      "sameDay": "当日お渡し・当日返却",
+      "pickedOn": "{day}お渡し",
+      "late": "返却期限 {day}・{days}日延滞",
+      "notPrepared": "準備未完了"
+    },
+    "money": {
+      "collect": "残金 {amount}",
+      "refund": "保証金返却 {amount}",
+      "fee": "追加 {amount}を徴収"
+    },
+    "emptyPickups": "お渡しが必要な注文はありません。",
+    "emptyReturns": "返却が必要な注文はありません。",
+    "walkIn": "一般客",
+    "loadFailed": "今月の注文数を読み込めませんでした。",
+    "dayFailed": "この日の注文を読み込めませんでした。",
+    "retry": "再試行",
+    "more": "もっと見る"
+  }
+}

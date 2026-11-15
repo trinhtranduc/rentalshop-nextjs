@@ -76,7 +76,7 @@ export const registerSchema = z.object({
   // Sign-up UI language (en, vi, ja, zh-TW…): onboarding seed copy (en* → en, else vi) and shop currency (#1143)
   locale: z.string().trim().max(20).optional(),
   // #1539 shop language picked on the form (emails, seed copy); wins over `locale`
-  language: z.enum(['vi', 'en']).optional(),
+  language: z.enum(['vi', 'en', 'ja']).optional(),
   // #1539 shop currency picked on the form; unset → from `language`, else #1143
   currency: z.enum(['VND', 'USD']).optional(),
   // For outlet staff registration
@@ -133,7 +133,7 @@ export const merchantGoogleRegisterSchema = z.object({
   // Sign-up UI language, as in registerSchema (#1143)
   locale: z.string().trim().max(20).optional(),
   // #1539 as in registerSchema
-  language: z.enum(['vi', 'en']).optional(),
+  language: z.enum(['vi', 'en', 'ja']).optional(),
   currency: z.enum(['VND', 'USD']).optional(),
 });
 

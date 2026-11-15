@@ -1,0 +1,418 @@
+{
+  "title": "Asistencia",
+  "weekday": {
+    "1": "Lun",
+    "2": "Mar",
+    "3": "Mié",
+    "4": "Jue",
+    "5": "Vie",
+    "6": "Sáb",
+    "7": "Dom"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "working": "Guardando…",
+    "loading": "Cargando…",
+    "loadFailed": "No se pudieron cargar los datos.",
+    "retry": "Intentar de nuevo",
+    "outlet": "Sucursal",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "month": "Mes {month}",
+    "hours": "{hours} h",
+    "exportXlsx": "Exportar Excel",
+    "notAvailable": "La tienda aún no tiene activado el módulo de Asistencia. Contacte a AnyRent para activarlo.",
+    "noAccess": "Solo el propietario de la tienda y los administradores de sucursal usan esta pantalla.",
+    "noOutlet": "Aún no hay sucursales."
+  },
+  "timesheet": {
+    "title": "Planilla de asistencia · Mes {month}",
+    "subtitle": "{count} miembros del personal · {lock}",
+    "unlocked": "mes sin bloquear",
+    "locked": "mes bloqueado",
+    "lock": "Bloquear mes",
+    "unlock": "Desbloquear mes",
+    "absent": "Ausente",
+    "empty": "La sucursal no tiene personal ni registros de asistencia este mes.",
+    "kpi": {
+      "totalHours": "Total de horas",
+      "pairs": "Pares entrada–salida",
+      "missingOut": "Falta salida",
+      "suspected": "Posible fraude"
+    },
+    "col": {
+      "staff": "Personal",
+      "hours": "Horas",
+      "days": "Días"
+    },
+    "legend": {
+      "ok": "en turno",
+      "late": "tarde / salida anticipada",
+      "ot": "horas extra",
+      "miss": "falta salida",
+      "fake": "posible fraude",
+      "absent": "con turno, no llegó",
+      "sunday": "Domingo",
+      "hint": "Clic en el nombre → detalle de todo el mes · clic en la celda → detalle de ese día"
+    }
+  },
+  "export": {
+    "title": "Exportar planilla a Excel",
+    "month": "Mes",
+    "parts": "Incluir",
+    "grid": "Cuadro mensual (horas por día, total de horas, días)",
+    "scans": "Detalle de cada registro (hora, resultado, distancia, coordenadas)",
+    "edits": "Historial de ediciones",
+    "download": "Descargar .xlsx",
+    "failed": "No se pudo exportar el archivo Excel."
+  },
+  "lock": {
+    "title": "¿Bloquear el mes {month}?",
+    "body": "Una vez bloqueado, el administrador de sucursal ya no podrá editar la asistencia de este mes. Solo el propietario de la tienda puede desbloquearlo (queda registrado). El módulo de Nómina usará en el futuro los meses bloqueados.",
+    "confirm": "Bloquear mes",
+    "locked": "Mes {month} bloqueado",
+    "unlockTitle": "¿Desbloquear el mes {month}?",
+    "unlockBody": "Después de desbloquear, la asistencia de este mes podrá volver a editarse. El cambio queda registrado.",
+    "unlockConfirm": "Desbloquear",
+    "unlocked": "Mes {month} desbloqueado"
+  },
+  "person": {
+    "back": "‹ Planilla del mes {month}",
+    "title": "Detalle de asistencia por persona",
+    "pick": "Elegir personal",
+    "add": "+ Agregar registro",
+    "map": "Mapa",
+    "edit": "Editar",
+    "empty": "No hay registros de escaneo.",
+    "noStaff": "La sucursal no tiene personal.",
+    "forgotOut": "Olvidó marcar la salida",
+    "suspected": "Posible fraude",
+    "late": "Tarde {n}′",
+    "early": "Temprano {n}′",
+    "overtime": "Horas extra {n}′",
+    "filter": {
+      "label": "Filtrar registros",
+      "all": "Todos los registros",
+      "rejected": "Rechazados",
+      "suspected": "Posible fraude"
+    },
+    "kpi": {
+      "days": "Días trabajados",
+      "hours": "Total de horas",
+      "lateEarly": "Tarde / temprano",
+      "overtime": "Horas extra",
+      "missingOut": "Falta salida",
+      "suspected": "Posible fraude"
+    },
+    "col": {
+      "day": "Día",
+      "time": "Hora de escaneo",
+      "kind": "Tipo",
+      "result": "Resultado",
+      "distance": "Distancia a la sucursal",
+      "gps": "GPS",
+      "coords": "Coordenadas",
+      "shift": "Turno",
+      "note": "Nota"
+    },
+    "kind": {
+      "IN": "Entrada",
+      "OUT": "Salida",
+      "EDIT": "Edición"
+    },
+    "result": {
+      "ACCEPTED": "Registrado",
+      "REJECTED": "Rechazado",
+      "AUTO_CLOSED": "Cierre automático",
+      "EDITED": "Editado"
+    },
+    "reason": {
+      "ZERO_ACCURACY": "GPS ±0 m",
+      "SAME_COORDS": "mismas coordenadas que la vez anterior",
+      "SPEED": "desplazamiento inusualmente rápido"
+    },
+    "error": {
+      "OUT_OF_RANGE": "Fuera del área de {radius} m",
+      "GPS_INACCURATE": "GPS poco preciso",
+      "MOCK_LOCATION": "Ubicación falsa",
+      "QR_EXPIRED": "El código QR venció",
+      "QR_WRONG_OUTLET": "Código QR de otra sucursal",
+      "ATTENDANCE_NOT_CONFIGURED": "La sucursal no tiene configurada la ubicación",
+      "ATTENDANCE_LOCATION_NOT_SET": "La sucursal no tiene ubicación (no se verificó la distancia)",
+      "other": "Rechazado"
+    },
+    "editIn": "entrada {time}",
+    "editOut": "salida {time}",
+    "nextDay": "(día siguiente)"
+  },
+  "edit": {
+    "title": "Editar asistencia · {name} · {date}",
+    "current": "Registro actual: entrada {in}, {out}",
+    "outAt": "salida {time}",
+    "noOut": "sin hora de salida (cierre al final del día)",
+    "checkIn": "Hora de entrada",
+    "checkOut": "Hora de salida",
+    "reason": "Motivo (obligatorio)",
+    "reasonPlaceholder": "Olvidó marcar la salida, confirmado por el encargado",
+    "note": "Se guarda el historial: quién editó, qué y cuándo. Un mes bloqueado no se puede editar.",
+    "addOther": "+ Agregar otro registro",
+    "saved": "Asistencia editada"
+  },
+  "add": {
+    "title": "Agregar registro de asistencia · {name}",
+    "sub": "Para cuando el personal trabajó pero no pudo escanear.",
+    "date": "Día",
+    "reasonPlaceholder": "El teléfono se quedó sin batería",
+    "confirm": "Agregar registro",
+    "added": "Registro de asistencia agregado"
+  },
+  "map": {
+    "title": "Ubicación del escaneo · {name} · {when}",
+    "label": "Mapa de la ubicación del escaneo y del área de asistencia",
+    "distance": "a {m} m de la sucursal",
+    "gps": "GPS ±{m} m",
+    "accepted": "Registrado",
+    "rejected": "Rechazado: {reason}"
+  },
+  "shifts": {
+    "title": "Asignar turnos",
+    "subtitle": "Semana {from} – {to} · hoy {today}",
+    "prevWeek": "‹ Semana anterior",
+    "nextWeek": "Semana siguiente ›",
+    "assign": "Asignar turno",
+    "addShift": "Agregar turno",
+    "legendRepeat": "↻ Horario que se repite cada semana",
+    "legendLock": "🔒 turno ya iniciado / día pasado: no se puede editar",
+    "legendEdited": "✎ cambiado solo para ese día",
+    "empty": "La sucursal no tiene personal.",
+    "rules": "Horarios semanales vigentes",
+    "rulesHint": "Editar / detener / eliminar solo afecta a los días aún no trabajados",
+    "rulesEmpty": "Aún no hay horarios semanales.",
+    "noEnd": "Sin fin",
+    "edit": "Editar",
+    "stop": "Detener desde…",
+    "delete": "Eliminar",
+    "col": {
+      "staff": "Personal",
+      "shift": "Turno",
+      "weekdays": "Días de la semana",
+      "from": "Desde",
+      "to": "Hasta"
+    },
+    "lockedToday": "Ya marcó entrada hoy"
+  },
+  "day": {
+    "lockedBody": "🔒 Este turno ya inició o el día ya pasó, así que no se puede cambiar. Para corregir las horas trabajadas, use la Planilla de asistencia.",
+    "current": "Actual: {shift} ({source})",
+    "sourceRule": "según el horario semanal",
+    "sourceDay": "cambiado solo para este día",
+    "none": "Sin turno",
+    "editable": "no ha iniciado el turno, se puede cambiar",
+    "pick": "Turno de este día",
+    "custom": "Horario personalizado",
+    "customStart": "Horario personalizado: inicio",
+    "customEnd": "Fin",
+    "note": "Cambia solo este día. Las semanas siguientes siguen el horario semanal. La app avisa a {name}.",
+    "clear": "Quitar turno de este día",
+    "saved": "Turno del {date} cambiado"
+  },
+  "assign": {
+    "title": "Asignar turno (cada semana)",
+    "sub": "Se asigna una vez y se repite cada semana hasta que se cambie.",
+    "shift": "1. Turno",
+    "staff": "2. Personal",
+    "weekdays": "3. Días de la semana",
+    "from": "Comienza el",
+    "to": "Termina el (opcional)",
+    "toPlaceholder": "Sin fin",
+    "preview": "↻ Se repite cada semana",
+    "previewLine": "{names} · {shift} · {days} · desde {from}",
+    "previewTo": " hasta {to}",
+    "conflict": "{name} ya tiene el turno {shift} los {days}.",
+    "keep": "Los días trabajados o cambiados para un día se mantienen.",
+    "confirm": "Asignar turno · avisar al personal",
+    "noTemplates": "Aún no hay plantillas de turno. Cree una primero en la pestaña Plantillas de turno.",
+    "saved": "Turno asignado"
+  },
+  "ruleEdit": {
+    "title": "Editar horario semanal · {name}",
+    "shift": "Turno",
+    "weekdays": "Días de la semana",
+    "from": "Se aplica desde",
+    "note": "Los días trabajados o pasados se mantienen.",
+    "saved": "Horario semanal actualizado"
+  },
+  "ruleStop": {
+    "title": "Detener horario semanal · {name}",
+    "last": "Detener después del día",
+    "note": "Desde {next}, {name} ya no tiene el turno {shift}. Úselo cuando alguien deja el trabajo o cambia de horario.",
+    "confirm": "Detener horario",
+    "saved": "Horario semanal detenido"
+  },
+  "ruleDelete": {
+    "title": "¿Eliminar horario semanal · {name}?",
+    "note": "Los días aún no trabajados dejarán de tener el turno {shift}. Los días trabajados se mantienen en la planilla.",
+    "confirm": "Eliminar horario",
+    "saved": "Horario semanal eliminado"
+  },
+  "templates": {
+    "title": "Plantillas de turno",
+    "subtitle": "{outlet} · se usan al asignar turnos",
+    "add": "+ Nueva plantilla",
+    "minutes": "{n} min",
+    "used": "Sí",
+    "unused": "Todavía no",
+    "hidden": "Oculta",
+    "edit": "Editar",
+    "hide": "Ocultar",
+    "delete": "Eliminar",
+    "show": "Mostrar de nuevo",
+    "shown": "Plantilla de turno visible de nuevo",
+    "empty": "Aún no hay plantillas de turno.",
+    "hint": "Una plantilla ya usada solo se puede ocultar (se conserva el historial); una sin usar se puede eliminar. Los cambios de horario solo se aplican a los días no trabajados.",
+    "col": {
+      "shift": "Turno",
+      "time": "Horario",
+      "break": "Descanso",
+      "used": "En uso"
+    }
+  },
+  "templateForm": {
+    "newTitle": "Nueva plantilla de turno",
+    "editTitle": "Editar plantilla de turno",
+    "name": "Nombre del turno",
+    "start": "Inicio",
+    "end": "Fin",
+    "break": "Descanso durante el turno (minutos)",
+    "color": "Color",
+    "colors": {
+      "blue": "Azul",
+      "purple": "Morado",
+      "green": "Verde",
+      "orange": "Naranja"
+    },
+    "overnight": "Si el fin es anterior al inicio (ej. 22:00–02:00) es un turno nocturno, contado en el día de inicio.",
+    "editNote": "Los cambios de horario solo se aplican a los días no trabajados; los días pasados conservan el horario anterior.",
+    "create": "Crear plantilla",
+    "saved": "Plantilla de turno guardada"
+  },
+  "templateHide": {
+    "title": "¿Ocultar plantilla “{name}”?",
+    "sub": "Este turno ya se usó, así que no se puede eliminar.",
+    "note": "Oculta: ya no se puede elegir al asignar turnos. Los horarios semanales que usan este turno siguen vigentes; los días trabajados se mantienen.",
+    "confirm": "Ocultar plantilla",
+    "saved": "Plantilla ocultada"
+  },
+  "templateDelete": {
+    "title": "¿Eliminar plantilla “{name}”?",
+    "sub": "Este turno nunca se ha usado.",
+    "confirm": "Eliminar",
+    "saved": "Plantilla eliminada"
+  },
+  "outlets": {
+    "qrDaily": "Código QR · cambia cada día",
+    "qrFixed": "Código QR · fijo",
+    "noQr": "Sin código aún",
+    "open": "Abrir ›"
+  },
+  "locations": {
+    "locationSet": "Ubicación configurada",
+    "title": "Código QR y ubicación de asistencia",
+    "subtitle": "Cada sucursal tiene su propio código QR, ubicación y lista de personas que registran asistencia.",
+    "col": {
+      "outlet": "Sucursal",
+      "address": "Dirección",
+      "qr": "Código QR",
+      "radius": "Radio"
+    },
+    "radius": "{radius} m",
+    "back": "‹ QR y ubicación"
+  },
+  "outlet": {
+    "notFound": "No se pudo abrir esta sucursal.",
+    "section": "⏱ Asistencia",
+    "location": "Ubicación de asistencia",
+    "noLocation": "Ubicación no configurada",
+    "current": "📍 Ubicación actual",
+    "pick": "Elegir en el mapa",
+    "picking": "Haga clic en el mapa para fijar la ubicación de la sucursal.",
+    "geoFailed": "No se pudo obtener la ubicación actual. Revise el permiso de ubicación del navegador.",
+    "ownerOnly": "Solo el propietario de la tienda puede cambiar la ubicación y el radio.",
+    "radius": "Radio permitido:",
+    "radiusHint": "50–500 m. El GPS en interiores suele tener un error de 10–50 m.",
+    "checks": "Se verifica en cada escaneo: que sea el código de esta sucursal y esté vigente · dentro del radio · GPS ≤ 100 m · se bloquea la ubicación falsa · hora del servidor. Si olvidó marcar la salida: se cierra al final del día, con 0 horas hasta que un administrador lo corrija.",
+    "qrTitle": "Código QR de {name}",
+    "qrMode": "Tipo de código",
+    "daily": "Cambia cada día (recomendado)",
+    "fixed": "Fijo",
+    "dailyHint": "Código nuevo a las 00:00 hora de Vietnam. Muéstrelo en la pantalla del mostrador o imprímalo de nuevo cada mañana.",
+    "fixedHint": "Imprima una vez y péguelo en la pared. Una foto sigue funcionando; solo el GPS y la verificación de ubicación falsa protegen el registro.",
+    "todayCaption": "Código de hoy · {date} · cambia a las 00:00",
+    "fixedCaption": "Código fijo · creado el {date}",
+    "noQr": "Esta sucursal aún no tiene código QR.",
+    "createQr": "Crear código QR",
+    "qrCreated": "Código QR creado",
+    "print": "Imprimir QR",
+    "kiosk": "Enlace de pantalla de mostrador",
+    "newCode": "Crear código nuevo",
+    "modeSaved": "Tipo de código cambiado",
+    "saved": "Ubicación de asistencia guardada",
+    "saveRadiusTitle": "¿Cambiar el radio?",
+    "saveRadiusSub": "De {from} m a {to} m",
+    "saveLocationTitle": "¿Cambiar la ubicación de asistencia?",
+    "saveLocationSub": "Nuevas coordenadas: {coords}",
+    "saveNote": "Se aplica de inmediato a los siguientes escaneos."
+  },
+  "members": {
+    "title": "Quiénes deben registrar asistencia en esta sucursal",
+    "hint": "Solo las personas elegidas ven la tarjeta de Asistencia en la app y aparecen en Asignar turnos y Planilla",
+    "note": "Por defecto: el personal y el de almacén están seleccionados; los administradores de sucursal y el propietario no. Si no se selecciona: la persona no ve nada de asistencia y no puede recibir turnos nuevos; los registros anteriores se conservan.",
+    "toggle": "{name} debe registrar asistencia",
+    "on": "{name}: debe registrar asistencia",
+    "off": "{name}: no necesita registrar asistencia",
+    "ownerOnly": "Solo el propietario de la tienda puede cambiarlo",
+    "empty": "Aún no hay nadie en esta sucursal."
+  },
+  "newCode": {
+    "title": "¿Crear código QR nuevo?",
+    "body": "El código actual deja de funcionar de inmediato. Si la sucursal usa un código QR fijo, debe imprimir y pegar el nuevo. La pantalla del mostrador se actualiza sola.",
+    "confirm": "Crear código nuevo",
+    "done": "Código nuevo creado; el anterior ya no funciona"
+  },
+  "print": {
+    "title": "Imprimir código QR · {name}",
+    "body": "Hoja A5, con el nombre de la sucursal y la instrucción “Abra la app AnyRent → Configuración → Asistencia → escanee el código”.",
+    "dailyNote": "Tipo que cambia cada día: la impresión solo funciona el día {date}.",
+    "confirm": "Imprimir",
+    "howTo": "Abra la app AnyRent → Configuración → Asistencia → escanee el código",
+    "validOn": "Válido solo el día {date}"
+  },
+  "kioskLink": {
+    "title": "Enlace de la pantalla QR para el mostrador",
+    "none": "Esta sucursal aún no tiene enlace de pantalla de mostrador.",
+    "note": "Abra este enlace en una tableta o en un teléfono antiguo del mostrador. No requiere inicio de sesión y no afecta la cuenta de nadie. La pantalla cambia el código a las 00:00.",
+    "copy": "Copiar",
+    "copied": "Enlace copiado",
+    "copyFailed": "No se pudo copiar. Seleccione el enlace y cópielo.",
+    "newLink": "Crear enlace nuevo",
+    "create": "Crear enlace",
+    "created": "Enlace nuevo creado; el anterior ya no funciona"
+  },
+  "kiosk": {
+    "title": "Asistencia",
+    "help": "Abra la app AnyRent → Configuración → Asistencia → escanee este código",
+    "daily": "Código de hoy · cambia a las 00:00",
+    "fixed": "Código fijo",
+    "recent": "Últimos",
+    "none": "Hoy nadie ha registrado asistencia.",
+    "in": "Entrada",
+    "out": "Salida",
+    "loading": "Cargando…",
+    "invalid": "Este enlace de mostrador ya no es válido. Pida un enlace nuevo al propietario de la tienda.",
+    "moduleOff": "La tienda no tiene activado el módulo de Asistencia.",
+    "notConfigured": "Esta sucursal aún no tiene ubicación ni código QR.",
+    "failed": "No se pudo cargar el código. Reintentando…"
+  }
+}

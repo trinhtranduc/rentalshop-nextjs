@@ -1,0 +1,195 @@
+{
+  "title": "Panduan tautan referral (affiliate)",
+  "subtitle": "Pelajari cara menggunakan tautan affiliate Anda untuk mengembangkan usaha",
+  "lastUpdated": "Terakhir diperbarui: Januari 2025",
+  "sections": {
+    "whatIs": {
+      "title": "Apa itu tautan affiliate?",
+      "content": "Tautan affiliate (disebut juga tautan referral) adalah URL khusus yang berisi kode referral unik Anda. Saat seseorang mendaftar ke AnyRent menggunakan tautan affiliate Anda, mereka menjadi referral Anda dan Anda dapat memperoleh manfaat atau hadiah."
+    },
+    "howToGet": {
+      "title": "Cara mendapatkan tautan affiliate Anda",
+      "content": "Tautan referral dibuat dari kode URL toko Anda. Anda dapat menemukannya di Pengaturan toko, pada bagian \"Bagikan toko Anda\".",
+      "steps": [
+        "Buka Pengaturan toko",
+        "Pilih tab Informasi toko (atau Informasi cabang)",
+        "Cari \"Bagikan toko Anda\" → \"Tautan referral\"",
+        "Klik Salin untuk menyalin tautan pendaftaran Anda",
+        "Kirim ke pemilik toko lain"
+      ]
+    },
+    "howToUse": {
+      "title": "Cara menggunakan tautan affiliate Anda",
+      "content": "Bagikan tautan affiliate Anda kepada orang lain melalui berbagai saluran:",
+      "methods": [
+        "Bagikan melalui media sosial (Facebook, Instagram, Twitter, dll.)",
+        "Kirim lewat email atau aplikasi pesan (WhatsApp, Telegram, dll.)",
+        "Tambahkan ke situs web atau blog usaha Anda",
+        "Bagikan kepada teman, keluarga, atau mitra bisnis",
+        "Tambahkan ke kartu nama atau materi promosi"
+      ]
+    },
+    "howItWorks": {
+      "title": "Cara kerjanya",
+      "content": "Saat seseorang mengklik tautan affiliate Anda:",
+      "steps": [
+        "Mereka diarahkan ke halaman pendaftaran AnyRent",
+        "Kode referral Anda otomatis disertakan di formulir pendaftaran",
+        "Saat mereka menyelesaikan pendaftaran, sistem mencatat bahwa mereka datang dari tautan Anda",
+        "Anda dapat memperoleh manfaat atau hadiah sesuai program referral"
+      ]
+    },
+    "benefits": {
+      "title": "Manfaat menggunakan tautan affiliate",
+      "content": "Menggunakan tautan affiliate membantu Anda:",
+      "items": [
+        "Melacak referral dan upaya pemasaran Anda",
+        "Membangun jaringan pengguna AnyRent",
+        "Berpotensi mendapatkan hadiah atau manfaat (cek paket langganan Anda)",
+        "Memperkenalkan AnyRent kepada pihak yang bisa terbantu",
+        "Mengembangkan ekosistem bisnis Anda"
+      ]
+    },
+    "bestPractices": {
+      "title": "Praktik terbaik",
+      "content": "Untuk memaksimalkan efektivitas tautan affiliate Anda:",
+      "tips": [
+        "Bagikan tautan secara alami dalam percakapan tentang manajemen bisnis",
+        "Jelaskan manfaat AnyRent saat membagikan tautan",
+        "Hanya bagikan kepada orang yang benar-benar dapat terbantu oleh AnyRent",
+        "Simpan affiliate link Anda di tempat yang mudah diakses agar bisa dibagikan dengan cepat",
+        "Patuhi syarat penggunaan dan aturan komunitas AnyRent"
+      ]
+    },
+    "importantNotes": {
+      "title": "Catatan penting",
+      "content": "Harap perhatikan:",
+      "notes": [
+        "Affiliate link Anda unik untuk akun merchant Anda",
+        "Dilarang mengubah atau memalsukan kode referral dalam tautan Anda",
+        "Manfaat dan hadiah affiliate dapat berbeda tergantung paket langganan",
+        "AnyRent berhak memverifikasi referral dan dapat menghapus referral yang curang",
+        "Hormati privasi dan hanya bagikan tautan kepada pihak yang berkepentingan"
+      ]
+    },
+    "troubleshooting": {
+      "title": "Pemecahan masalah",
+      "content": "Jika Anda mengalami masalah dengan tautan affiliate Anda:",
+      "solutions": [
+        "Pastikan Anda sudah menyalin seluruh tautan, termasuk kode referral",
+        "Pastikan akun toko Anda aktif",
+        "Jika tautan referral kosong, atur kode URL toko di Pengaturan toko terlebih dahulu",
+        "Hubungi dukungan jika masalah masih terjadi"
+      ]
+    }
+  },
+  "banner": {
+    "title": "Pelajari tentang tautan affiliate",
+    "description": "Temukan cara menggunakan tautan affiliate Anda untuk mengembangkan usaha",
+    "promo": "Diskon 10% jika Anda merekomendasikan",
+    "button": "Lihat panduan",
+    "viewDetails": "Lihat detail",
+    "dismiss": "Tutup"
+  },
+  "navigation": {
+    "title": "Affiliate"
+  },
+  "guide": {
+    "title": "Rekomendasikan AnyRent, dapatkan komisi",
+    "subtitle": "Bagikan tautan referral Anda kepada pemilik toko lain dan dapatkan komisi saat mereka membayar paket layanan.",
+    "login": "Masuk",
+    "yourLink": "Tautan referral Anda",
+    "copy": "Salin",
+    "copied": "Tersalin",
+    "overview": {
+      "commission": "Komisi",
+      "autoPayment": "Otomatis",
+      "payment": "Pembayaran",
+      "unlimitedLabel": "Tidak terbatas",
+      "unlimited": "Jumlah referral"
+    },
+    "howItWorks": {
+      "title": "Cara kerjanya",
+      "step1": {
+        "title": "Bagikan tautan Anda",
+        "description": "Salin dan bagikan tautan affiliate Anda kepada teman, mitra, atau calon pelanggan"
+      },
+      "step2": {
+        "title": "Mereka mendaftar",
+        "description": "Referral menggunakan tautan Anda untuk mendaftar akun AnyRent baru"
+      },
+      "step3": {
+        "title": "Dapatkan komisi",
+        "description": "Saat mereka membayar langganan, Anda otomatis menerima komisi 10% ke akun Anda"
+      }
+    },
+    "commissionDetails": {
+      "title": "Detail komisi",
+      "rate": {
+        "label": "Tarif komisi",
+        "description": "Anda menerima komisi 10% dari setiap transaksi pendaftaran yang berhasil"
+      },
+      "payment": {
+        "label": "Pembayaran",
+        "description": "Komisi dibayarkan otomatis ke akun Anda segera setelah referral melakukan pembayaran"
+      },
+      "tracking": {
+        "label": "Pelacakan",
+        "description": "Pantau referral dan komisi Anda secara real-time",
+        "badge": "Real-time"
+      }
+    },
+    "examples": {
+      "title": "Contoh perhitungan",
+      "example1": {
+        "title": "Contoh 1: Paket dasar",
+        "label1": "Harga langganan",
+        "label2": "Status",
+        "confirmed": "Terkonfirmasi",
+        "label3": "Komisi Anda"
+      },
+      "example2": {
+        "title": "Contoh 2: Paket premium",
+        "label1": "Harga langganan",
+        "label2": "Status",
+        "confirmed": "Terkonfirmasi",
+        "label3": "Komisi Anda"
+      },
+      "note": "Catatan: Komisi hanya dihitung saat referral <strong>berhasil membayar</strong> langganan. Komisi dibayarkan otomatis ke akun Anda."
+    },
+    "tips": {
+      "title": "Tips memaksimalkan komisi",
+      "tip1": {
+        "title": "Bagikan kepada audiens yang tepat",
+        "description": "Fokus pada orang yang benar-benar membutuhkan perangkat lunak manajemen toko sewa"
+      },
+      "tip2": {
+        "title": "Jelaskan manfaatnya",
+        "description": "Bagikan manfaat AnyRent saat merekomendasikan untuk meningkatkan tingkat pendaftaran"
+      },
+      "tip3": {
+        "title": "Pantau kinerja",
+        "description": "Gunakan dasbor untuk memantau referral dan komisi Anda"
+      },
+      "tip4": {
+        "title": "Bagikan secara rutin",
+        "description": "Bagikan tautan Anda di berbagai saluran untuk menjangkau lebih banyak orang"
+      }
+    },
+    "cta": {
+      "title": "Siap memulai?",
+      "description": "Daftar sekarang untuk mendapatkan tautan affiliate Anda dan mulai menghasilkan komisi",
+      "register": "Daftar sekarang",
+      "login": "Sudah punya akun? Masuk"
+    },
+    "eyebrow": "AnyRent · Referral",
+    "linkHint": "Siapa pun yang mendaftar melalui tautan ini akan tercatat sebagai referral Anda."
+  },
+  "page": {
+    "eyebrow": "AnyRent · Referral",
+    "ctaTitle": "Siap memulai?",
+    "ctaBody": "Buka Pengaturan toko untuk langsung menyalin tautan referral Anda.",
+    "ctaButton": "Buka Pengaturan toko",
+    "guideLink": "Lihat komisi dan contoh"
+  }
+}
