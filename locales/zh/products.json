@@ -632,7 +632,8 @@
         "saleRequired": "请输入售价",
         "depositNegative": "订金不能为负数",
         "stockRequired": "数量必须大于 0",
-        "outletStockNegative": "数量不能为负数"
+        "outletStockNegative": "数量不能为负数",
+        "branchRequired": "请至少勾选一个显示商品的门店"
       },
       "noCreate": "您没有添加商品的权限。",
       "noEdit": "您没有编辑商品的权限。",

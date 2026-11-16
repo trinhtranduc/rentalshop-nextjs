@@ -9,7 +9,7 @@ import { compressImageTo1MB } from '../../../lib/image-compression';
 import { buildProductAuditSnapshot, safeAudit } from '../../../lib/change-timeline';
 import { searchRateLimiter } from '@rentalshop/middleware';
 import { API, USER_ROLE, VALIDATION, isOutletRole } from '@rentalshop/constants';
-import { listedOutletForList, listedRowsForCreate, ownerAppListedOutlet, parseListedParam, shopHasSingleActiveOutlet } from '../../../lib/product-listing';
+import { createShowsAtABranch, listedOutletForList, listedRowsForCreate, ownerAppListedOutlet, parseListedParam, shopHasSingleActiveOutlet } from '../../../lib/product-listing';
 import { otherActiveOutletsFor, otherOutletStock } from '../../../lib/other-outlet-stock';
 import { z } from 'zod';
 import { productForClient } from '../../../lib/block-pricing-legacy';
@@ -674,7 +674,12 @@ export const POST = withPermissions(['products.manage', 'products.create'])(asyn
       where: { merchantId, isActive: true },
       select: { id: true },
     });
-    const stockRows = listedRowsForCreate(outletStock, activeOutlets.map((o: { id: number }) => o.id), user.role);
+    const activeOutletIds = activeOutlets.map((o: { id: number }) => o.id);
+    const stockRows = listedRowsForCreate(outletStock, activeOutletIds, user.role);
+    // #1603 every product is shown at one open branch at least
+    if (!createShowsAtABranch(stockRows, activeOutletIds)) {
+      return NextResponse.json(ResponseBuilder.error('PRODUCT_NEEDS_ONE_BRANCH'), { status: 400 });
+    }
 
     // Commit images to production
     // Use productData.images (after combine) instead of parsed.data.images

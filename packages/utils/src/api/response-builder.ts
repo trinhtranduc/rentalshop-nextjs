@@ -140,6 +140,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'CATEGORY_NAME_EXISTS': 'Category with this name already exists',
   'PRODUCT_NAME_EXISTS': 'A product with this name already exists. Please choose a different name.',
   'STOCK_BELOW_RENTED': 'Stock cannot be lower than the number of units currently rented out.',
+  // #1603 every product is shown at one open branch at least
+  'PRODUCT_NEEDS_ONE_BRANCH': 'A product must be shown at one branch at least. To move it to another branch, tick the new branch and save first, then untick the old one.',
   
   // Business Rules
   'PRODUCT_NO_STOCK_ENTRY': 'Product must have at least one outlet stock entry',

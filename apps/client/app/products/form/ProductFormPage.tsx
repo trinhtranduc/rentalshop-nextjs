@@ -511,11 +511,15 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const found = validateForm(form, { canEditPricing });
+    // #1603 the owner keeps one open branch ticked at least
+    const openOutletIds = data.outlets.filter((o) => o.isActive !== false).map((o) => o.id);
+    const requireBranchAmong = showTicks && canTick && branchOutletId == null ? openOutletIds : undefined;
+    const found = validateForm(form, { canEditPricing, requireBranchAmong });
     setErrors(found);
     const first = firstError(found);
     if (first) {
-      (document.getElementById(`pf-${first}`) || document.getElementById('pf-totalStock'))?.focus();
+      const target = first === 'listed' ? `pf-listed-${openOutletIds[0]}` : `pf-${first}`;
+      (document.getElementById(target) || document.getElementById('pf-totalStock'))?.focus();
       return;
     }
     setSaving(true);
@@ -701,7 +705,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                                     checked={ticked}
                                     disabled={!canTick}
                                     aria-label={t('form.listing.tickOf', { outlet: o.name })}
-                                    onChange={(e) => patch((f) => setOutletListed(f, o.id, e.target.checked))}
+                                    onChange={(e) => patch((f) => setOutletListed(f, o.id, e.target.checked), ['listed'])}
                                     className="h-[18px] w-[18px] cursor-pointer accent-ar-primary disabled:cursor-not-allowed"
                                   />
                                   {!isEdit && ticked && o.id === currentOutletId ? <span className="text-xs text-ar-muted">{t('form.listing.current')}</span> : null}
@@ -725,6 +729,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                   })}
                 </ul>
                 {(errors.totalStock || errors.outletStock) && <span className="text-sm text-ar-danger">{err('totalStock') || err('outletStock')}</span>}
+                {errors.listed && <span role="alert" data-testid="pf-listed-error" className="text-sm text-ar-danger">{err('listed')}</span>}
               </div>
             ) : (
               <Field id="pf-totalStock" label={t('form.quantity')} required={t('form.required')} hint={t('form.quantityAt', { outlet: data.outlets[0].name })} error={err('totalStock') || err('outletStock')}>

@@ -632,7 +632,8 @@
         "saleRequired": "Enter the sale price",
         "depositNegative": "Booking deposit cannot be negative",
         "stockRequired": "Quantity must be more than 0",
-        "outletStockNegative": "Quantity cannot be negative"
+        "outletStockNegative": "Quantity cannot be negative",
+        "branchRequired": "Tick at least one branch to show the product"
       },
       "noCreate": "You do not have permission to add products.",
       "noEdit": "You do not have permission to edit products.",

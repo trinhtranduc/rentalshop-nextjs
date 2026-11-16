@@ -98,6 +98,21 @@ export function listedRowsForCreate(
 }
 
 /**
+ * #1603 every product is shown at one open branch at least: the products being unticked that are listed at no other open
+ * branch (`listedElsewhere` = products with a listed row at another open branch). Empty = the untick may go ahead.
+ */
+export function productsLeftWithoutBranch(unticking: number[], listedElsewhere: number[]): number[] {
+  const elsewhere = new Set(listedElsewhere);
+  return Array.from(new Set(unticking)).filter((id) => !elsewhere.has(id));
+}
+
+/** #1603 the rows of a new product show it at one open branch at least. */
+export function createShowsAtABranch(rows: ListedRow[], activeOutletIds: number[]): boolean {
+  const open = new Set(activeOutletIds);
+  return rows.some((r) => r.isListed && open.has(r.outletId));
+}
+
+/**
  * PUT /api/products/[id] from an old app: the branches whose stock goes UP above 0 while the row is not listed. The same
  * stock sent back (an app saves the whole product) lists nothing, so it never undoes the owner's untick.
  */
