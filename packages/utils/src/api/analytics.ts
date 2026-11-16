@@ -457,6 +457,18 @@ export const analyticsApi = {
     return await parseApiResponse<any>(response);
   },
 
+  /** #1612 AI summary of last week for Tổng quan: never calls AI (status NONE = not opened yet this week) */
+  async getWeeklySummary(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(`${apiUrls.analytics.weeklySummary}?t=${Date.now()}`);
+    return await parseApiResponse<any>(response);
+  },
+
+  /** #1612 the stored summary of last week, or write it now (one AI call per shop or branch per week) */
+  async writeWeeklySummary(): Promise<ApiResponse<any>> {
+    const response = await authenticatedFetch(apiUrls.analytics.weeklySummary, { method: 'POST' });
+    return await parseApiResponse<any>(response);
+  },
+
   /**
    * Get enhanced dashboard summary with all metrics
    */

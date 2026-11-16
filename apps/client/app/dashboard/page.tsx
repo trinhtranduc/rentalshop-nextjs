@@ -58,6 +58,8 @@ import {
   type StorageLike,
 } from './branch-model';
 import { TopDrawer } from './overview/TopDrawer';
+import { useWeeklySummary, WeeklySummaryButton, WeeklySummaryDrawer } from './overview/WeeklySummary';
+import { showsSummaryButton } from './weekly-summary-model';
 import { useBranchOptions } from './useBranchOptions';
 
 interface Loadable<V> {
@@ -192,6 +194,10 @@ export default function DashboardPage() {
   const series = (sameRange ? report.data : chartReport.data)?.series ?? null;
   const chartState = sameRange ? report : chartReport;
 
+  // #1612 AI summary of last week: owner (whole shop) and branch manager (own branch); others get 403 → no button
+  const weekly = useWeeklySummary(ready && canViewRevenue, nonce);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+
   const ops = useOutletOperations(outletIds, branchesReady);
   // "Việc hôm nay" is the API's day: load it again when the Vietnam day turns with the tab open (#589)
   const opsDay = useRef(todayKey);
@@ -317,8 +323,10 @@ export default function DashboardPage() {
     <div className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-5 px-4 pb-12 pt-6 text-ar-ink sm:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="m-0 text-[26px] font-bold text-ar-ink">{t('home.title')}</h1>
-        {(picker || periods.length > 1) && (
+        {(picker || periods.length > 1 || showsSummaryButton(weekly.data)) && (
           <div data-overview-controls className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            {/* #1612 AI summary of last week, same row as the branch and period controls */}
+            <WeeklySummaryButton data={weekly.data} onOpen={() => setSummaryOpen(true)} t={t} />
             {picker && <BranchPicker options={options} selection={selection} onChange={setSelection} t={t} />}
             {periods.length > 1 && (
               <PeriodMenu periods={periods} active={activeTab} label={periodButtonLabel} shortLabel={periodName} onSelect={selectPeriod} t={t} />
@@ -435,6 +443,18 @@ export default function DashboardPage() {
           onClose={() => setDetail(null)}
           t={t}
           money={money}
+        />
+      )}
+
+      {summaryOpen && weekly.data && (
+        <WeeklySummaryDrawer
+          initial={weekly.data}
+          onLoaded={weekly.setData}
+          onClose={() => setSummaryOpen(false)}
+          t={t}
+          money={money}
+          weekdays={weekdays}
+          locale={locale}
         />
       )}
     </div>
