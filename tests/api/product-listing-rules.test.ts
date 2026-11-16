@@ -13,6 +13,7 @@ import {
   isOldListingClient,
   listedOutletForList,
   listedRowsForCreate,
+  ownerAppListedOutlet,
   parseListedParam,
   shopHasSingleActiveOutlet,
 } from '../../apps/api/lib/product-listing';
@@ -78,6 +79,29 @@ describe('listedOutletForList', () => {
   });
   it('a branch role without an outlet gets no filter (the route refuses such a user elsewhere)', () => {
     expect(listedOutletForList({ listed: true, role: 'OUTLET_STAFF', userOutletId: null })).toBeUndefined();
+  });
+});
+
+describe('ownerAppListedOutlet (#1601 the owner on the iOS / Android app)', () => {
+  const owner = { role: 'MERCHANT', isMobile: true, listedRaw: undefined as string | undefined };
+  it('without listed: the branch the app sends, else the shop default, else no filter', () => {
+    expect(ownerAppListedOutlet({ ...owner, queryOutletId: 4, defaultOutletId: 2 })).toBe(4);
+    expect(ownerAppListedOutlet({ ...owner, queryOutletId: null, defaultOutletId: 2 })).toBe(2);
+    expect(ownerAppListedOutlet({ ...owner })).toBeUndefined();
+    expect(ownerAppListedOutlet({ ...owner, listedRaw: '' , defaultOutletId: 2 })).toBe(2);
+  });
+  it('listed sent on purpose: true stays on the #1341 path, false / 0 means no filter', () => {
+    for (const listedRaw of ['true', '1', 'false', '0', 'FALSE']) {
+      expect(ownerAppListedOutlet({ ...owner, listedRaw, queryOutletId: 4, defaultOutletId: 2 })).toBeUndefined();
+    }
+  });
+  it('the web (no mobile platform header) is unchanged', () => {
+    expect(ownerAppListedOutlet({ ...owner, isMobile: false, queryOutletId: 4, defaultOutletId: 2 })).toBeUndefined();
+  });
+  it('only the owner: branch roles keep listed=true, ADMIN and others are unchanged', () => {
+    for (const role of ['OUTLET_ADMIN', 'OUTLET_INVENTORY', 'OUTLET_STAFF', 'ADMIN', 'OPS', '', null, undefined]) {
+      expect(ownerAppListedOutlet({ ...owner, role: role as string, queryOutletId: 4, defaultOutletId: 2 })).toBeUndefined();
+    }
   });
 });
 
