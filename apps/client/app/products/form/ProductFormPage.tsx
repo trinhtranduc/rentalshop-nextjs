@@ -667,6 +667,11 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                 <span className={labelText}>
                   {t('form.perOutlet')} <span className="font-normal text-ar-danger">{t('form.required')}</span>
                 </span>
+                {errors.listed && (
+                  <p role="alert" data-testid="pf-listed-error" className="m-0 rounded-lg border border-ar-danger px-3 py-2 text-sm text-ar-danger">
+                    {err('listed')}
+                  </p>
+                )}
                 {showTicks && (
                   <div aria-hidden className="grid grid-cols-[minmax(0,1fr)_7rem_8.5rem] items-center gap-x-4 text-xs font-bold uppercase tracking-[0.06em] text-ar-muted max-sm:hidden">
                     <span>{t('form.listing.branch')}</span>
@@ -728,9 +733,7 @@ export function ProductFormPage({ productId }: { productId: number | null }) {
                     );
                   })}
                 </ul>
-                {(errors.totalStock || errors.outletStock) && <span className="text-sm text-ar-danger">{err('totalStock') || err('outletStock')}</span>}
-                {errors.listed && <span role="alert" data-testid="pf-listed-error" className="text-sm text-ar-danger">{err('listed')}</span>}
-              </div>
+                {(errors.totalStock || errors.outletStock) && <span className="text-sm text-ar-danger">{err('totalStock') || err('outletStock')}</span>}              </div>
             ) : (
               <Field id="pf-totalStock" label={t('form.quantity')} required={t('form.required')} hint={t('form.quantityAt', { outlet: data.outlets[0].name })} error={err('totalStock') || err('outletStock')}>
                 <CountInput id="pf-totalStock" value={form.totalStock} invalid={!!errors.totalStock} onChange={(n) => patch((f) => setTotalStock(f, n), ['totalStock', 'outletStock'])} />
