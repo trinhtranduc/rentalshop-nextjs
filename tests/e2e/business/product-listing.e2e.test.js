@@ -8,7 +8,9 @@
  *  - #1601 the owner on the iOS / Android app (`x-client-platform: mobile`) without `listed` gets only the products
  *    listed at the outletId it sends (else the shop default branch); `listed=false` turns that off; the web is unchanged;
  *  - only the owner ticks / unticks (PUT /api/products/listing); OUTLET_ADMIN, kho and staff get 403 INSUFFICIENT_PERMISSIONS;
- *  - unticking is never blocked (stock, units on rent, open orders); orders already on the book still work;
+ *  - unticking is never blocked by stock, units on rent or open orders; orders already on the book still work;
+ *  - #1603 every product stays shown at one open branch: unticking the last one, or creating a product shown nowhere, is
+ *    400 PRODUCT_NEEDS_ONE_BRANCH; a data migration lists the products shown nowhere at the default branch;
  *  - an order from an OLD app (no `X-Client-Capabilities: branch-listing`) lists the product again; the web / new apps do not;
  *  - a shop with one active branch ignores `listed`;
  *  - the backfill of the migration 20261031090000_outlet_stock_is_listed, run in a rolled-back transaction.
@@ -24,6 +26,7 @@ const S = require('../helpers/subscription');
 const describeList = S.hasDb ? describeE2E : describe.skip;
 const OPEN = { outlets: 3, users: -1, products: -1, customers: -1, orders: -1 };
 const MIGRATION = path.resolve(__dirname, '../../../prisma/migrations/20261031090000_outlet_stock_is_listed/migration.sql');
+const ONE_BRANCH_MIGRATION = path.resolve(__dirname, '../../../prisma/migrations/20261116120000_products_listed_at_one_branch/migration.sql');
 const OLD_APP = { ...S.MOBILE_HEADERS };
 const NEW_APP = { ...S.MOBILE_HEADERS, 'x-client-capabilities': 'branch-listing' };
 
@@ -191,7 +194,7 @@ describeList('BF-LIST ticks: create, list, tick, roles (#1341)', () => {
   });
 });
 
-describeList('BF-LIST unticking is never blocked; orders on the book go on (#1341)', () => {
+describeList('BF-LIST unticking is never blocked by stock, rent or orders (only by the last-branch rule, #1603); orders on the book go on (#1341)', () => {
   let w;
   let m;
   let b;
@@ -216,6 +219,8 @@ describeList('BF-LIST unticking is never blocked; orders on the book go on (#134
     const orderId = (made.body.data.order || made.body.data).id;
     expect(orderId).toBeTruthy();
 
+    // #1603 the product stays shown somewhere (B), so unticking A is not refused for the last-branch rule
+    expect((await tick(m, b.id, [prod.id], true)).status).toBe(200);
     const r = await tick(m, w.outletId, [prod.id], false);
     expect([r.status, r.body.success]).toEqual([200, true]);
     const row = rowsOf(prod.id)[w.outletId];
@@ -231,6 +236,7 @@ describeList('BF-LIST unticking is never blocked; orders on the book go on (#134
 
   test('BF-LIST-11 an app WITHOUT the token lists the product again when it puts it on an order; one WITH the token does not', async () => {
     const prod = await m.createProduct({ stock: 5, outletId: w.outletId });
+    expect((await tick(m, b.id, [prod.id], true)).status).toBe(200); // #1603 shown at B, so A can be unticked
     expect((await tick(m, w.outletId, [prod.id], false)).status).toBe(200);
     expect(rowsOf(prod.id)[w.outletId].startsWith('f/')).toBe(true);
     const win = futureWindow(3);
@@ -318,6 +324,116 @@ describeList('BF-LIST the owner on the app sees only what the branch in use list
     // shown again (tick at A): back in A's list
     expect((await tick(m, w.outletId, [atB.id], true)).status).toBe(200);
     expect(await listIds(m, `outletId=${w.outletId}`)).toContain(atB.id);
+  });
+});
+
+describeList('BF-LIST every product is shown at one open branch at least (#1603)', () => {
+  let w;
+  let m;
+  let b;
+  let c; // closed later
+  beforeAll(async () => {
+    w = world('one-branch', { outlets: -1 });
+    m = await login(w.merchant);
+    b = await outlet(m, `CN B ${w.id}`);
+    c = await outlet(m, `CN C ${w.id}`);
+  });
+  const code = (r) => ({ status: r.status, code: r.body && r.body.code });
+
+  test('BF-LIST-16 the last open branch cannot be unticked; ticking first then unticking moves it; bulk is all or nothing', async () => {
+    const p = await product(m, [[w.outletId, 2]]);
+    expect(rowsOf(p.id)).toEqual({ [w.outletId]: 't/2/0', [b.id]: 'f/0/0', [c.id]: 'f/0/0' });
+
+    // the only branch: refused, nothing written
+    const r = await tick(m, w.outletId, [p.id], false);
+    expect(code(r)).toEqual({ status: 400, code: 'PRODUCT_NEEDS_ONE_BRANCH' });
+    expect(r.body.data).toEqual(expect.objectContaining({ productIds: [p.id] }));
+    expect(rowsOf(p.id)[w.outletId]).toBe('t/2/0');
+
+    // an installed app moving A -> B sends the untick first: refused; tick B first, then untick A: both fine
+    expect(code(await tick(m, w.outletId, [p.id], false)).status).toBe(400);
+    expect((await tick(m, b.id, [p.id], true)).status).toBe(200);
+    expect((await tick(m, w.outletId, [p.id], false)).status).toBe(200);
+    expect(rowsOf(p.id)).toEqual({ [w.outletId]: 'f/2/0', [b.id]: 't/0/0', [c.id]: 'f/0/0' });
+
+    // bulk: one product would be left without a branch -> the whole call is refused
+    const both = await product(m, [[w.outletId, 1], [b.id, 1]]);
+    const onlyB = await product(m, [[b.id, 1], [w.outletId, 0, false]]);
+    const bulk = await tick(m, b.id, [both.id, onlyB.id], false);
+    expect(code(bulk)).toEqual({ status: 400, code: 'PRODUCT_NEEDS_ONE_BRANCH' });
+    expect(bulk.body.data.productIds).toEqual([onlyB.id]);
+    expect(rowsOf(both.id)[b.id]).toBe('t/1/0');
+    expect(rowsOf(onlyB.id)[b.id]).toBe('t/1/0');
+
+    // a listed row at a closed branch does not count
+    const atC = await product(m, [[w.outletId, 1], [c.id, 1]]);
+    S.sql(`UPDATE "Outlet" SET "isActive" = false WHERE id = ${c.id}`);
+    try {
+      expect(code(await tick(m, w.outletId, [atC.id], false))).toEqual({ status: 400, code: 'PRODUCT_NEEDS_ONE_BRANCH' });
+    } finally {
+      S.sql(`UPDATE "Outlet" SET "isActive" = true WHERE id = ${c.id}`);
+    }
+    // ticking is never refused
+    expect((await tick(m, c.id, [p.id], true)).status).toBe(200);
+  });
+
+  test('BF-LIST-17 creating a product listed at no open branch is refused and creates nothing', async () => {
+    const name = uniqueName('SP no branch');
+    const body = {
+      name,
+      rentPrice: 100000,
+      deposit: 0,
+      totalStock: 1,
+      outletStock: [{ outletId: w.outletId, stock: 1, isListed: false }, { outletId: b.id, stock: 0, isListed: false }],
+      pricingOptions: [{ type: 'FIXED', price: 100000, isDefault: true }],
+    };
+    const r = await m.postForm('/api/products', body);
+    expect(code(r)).toEqual({ status: 400, code: 'PRODUCT_NEEDS_ONE_BRANCH' });
+    expect(Number(S.sql(`SELECT count(*) FROM "Product" WHERE name = '${name.replace(/'/g, "''")}'`))).toBe(0);
+    // one ticked branch is enough
+    const ok = await product(m, [[w.outletId, 1, false], [b.id, 0, true]]);
+    expect(rowsOf(ok.id)[b.id]).toBe('t/0/0');
+  });
+
+  test('BF-LIST-18 the migration lists a product listed nowhere at the default open branch; others, deleted ones and a second run untouched', async () => {
+    const nowhere = await product(m, [[w.outletId, 3]]);
+    const onlyClosed = await product(m, [[w.outletId, 1]]);
+    const atB = await product(m, [[b.id, 1], [w.outletId, 0, false]]);
+    const gone = await product(m, [[w.outletId, 0]]);
+    expect((await m.delete(`/api/products/${gone.id}`)).status).toBe(200);
+    S.sql(`UPDATE "OutletStock" SET "isListed" = false WHERE "productId" IN (${nowhere.id}, ${gone.id})`);
+    S.sql(`UPDATE "OutletStock" SET "isListed" = ("outletId" = ${c.id}) WHERE "productId" = ${onlyClosed.id}`);
+    // no row at all at the default branch for `nowhere`: the migration inserts it
+    S.sql(`DELETE FROM "OutletStock" WHERE "productId" = ${nowhere.id} AND "outletId" = ${w.outletId}`);
+
+    const migration = fs.readFileSync(ONE_BRANCH_MIGRATION, 'utf8');
+    const show = (id) =>
+      `(SELECT coalesce(string_agg("outletId" || '=' || "isListed", ',' ORDER BY "outletId"), '') FROM "OutletStock" WHERE "productId" = ${id})`;
+    const ids = [nowhere.id, onlyClosed.id, atB.id, gone.id];
+    const script = `BEGIN;
+UPDATE "Outlet" SET "isActive" = false WHERE id = ${c.id};
+${migration}
+CREATE TEMP TABLE bf_one AS SELECT ${ids.map((id, i) => `${show(id)} AS p${i}`).join(', ')};
+${migration}
+SELECT ${ids.map((id) => show(id)).join(" || ' | ' || ")} || ' | ' || (SELECT ${ids.map((_, i) => `p${i}`).join(" || ' | ' || ")} FROM bf_one);
+ROLLBACK;`;
+    S.assertLocalDb();
+    const out = execFileSync('psql', [process.env.E2E_DATABASE_URL, '-X', '-q', '-tA', '-v', 'ON_ERROR_STOP=1', '-f', '-'], { input: script, encoding: 'utf8' }).trim();
+    const parts = out.split(' | ');
+    const [nowhereRows, closedRows, atBRows, goneRows] = parts;
+    const f = (...pairs) => pairs.sort((x, y) => x[0] - y[0]).map(([k, v]) => `${k}=${v}`).join(',');
+    // listed nowhere: the default branch (A) row is inserted, listed
+    expect(nowhereRows).toBe(f([w.outletId, 'true'], [b.id, 'false'], [c.id, 'false']));
+    // listed only at the closed branch C: A is listed too
+    expect(closedRows).toBe(f([w.outletId, 'true'], [b.id, 'false'], [c.id, 'true']));
+    // listed at B (open): untouched
+    expect(atBRows).toBe(f([w.outletId, 'false'], [b.id, 'true'], [c.id, 'false']));
+    // deleted: untouched
+    expect(goneRows).toBe(f([w.outletId, 'false'], [b.id, 'false'], [c.id, 'false']));
+    // the second run changes nothing
+    expect(parts.slice(0, 4)).toEqual(parts.slice(4));
+    // rolled back
+    expect(rowsOf(nowhere.id)[w.outletId]).toBeUndefined();
   });
 });
 

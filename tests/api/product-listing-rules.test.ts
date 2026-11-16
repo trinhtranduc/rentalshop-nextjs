@@ -10,13 +10,17 @@
 import {
   autoListOutletIdsForStockWrite,
   canSetBranchListing,
+  createShowsAtABranch,
   isOldListingClient,
   listedOutletForList,
   listedRowsForCreate,
   ownerAppListedOutlet,
   parseListedParam,
+  productsLeftWithoutBranch,
   shopHasSingleActiveOutlet,
 } from '../../apps/api/lib/product-listing';
+import * as fs from 'fs';
+import * as path from 'path';
 import { holdsOrListsAt, holdsStockAt } from '../../apps/api/lib/product-branch-rules';
 
 const req = (value?: string) => ({ headers: { get: (k: string) => (k.toLowerCase() === 'x-client-capabilities' ? value ?? null : null) } });
@@ -191,5 +195,35 @@ describe('holdsOrListsAt (shared-field edit by OUTLET_ADMIN / kho; spec rule 15)
   it('delete keeps its rule: holdsStockAt is unchanged (a listed empty row does not count)', () => {
     expect(holdsStockAt(rows, 3)).toBe(false);
     expect(holdsStockAt(rows, 1)).toBe(true);
+  });
+});
+
+describe('#1603 every product is shown at one open branch at least', () => {
+  it('productsLeftWithoutBranch: the unticked products listed at no other open branch', () => {
+    expect(productsLeftWithoutBranch([1, 2, 3], [2])).toEqual([1, 3]);
+    expect(productsLeftWithoutBranch([1, 2], [1, 2, 9])).toEqual([]);
+    expect(productsLeftWithoutBranch([], [])).toEqual([]);
+    expect(productsLeftWithoutBranch([4, 4], [])).toEqual([4]);
+  });
+  it('createShowsAtABranch: a listed row at an open branch', () => {
+    const rows = (...r: Array<[number, boolean]>) => r.map(([outletId, isListed]) => ({ outletId, stock: 0, isListed }));
+    expect(createShowsAtABranch(rows([1, true], [2, false]), [1, 2])).toBe(true);
+    expect(createShowsAtABranch(rows([1, false], [2, true]), [1, 2])).toBe(true);
+    expect(createShowsAtABranch(rows([1, false], [2, false]), [1, 2])).toBe(false);
+    // a listed row at a branch that is not open does not count
+    expect(createShowsAtABranch(rows([9, true], [1, false]), [1, 2])).toBe(false);
+    expect(createShowsAtABranch([], [1])).toBe(false);
+  });
+  it('PRODUCT_NEEDS_ONE_BRANCH has a sentence in every locale and in the English fallback', () => {
+    const root = path.resolve(__dirname, '../../locales');
+    const langs = ['vi', 'en', 'ja', 'ko', 'zh', 'zh-TW', 'fr', 'de', 'ru', 'th', 'id', 'es'];
+    for (const lang of langs) {
+      const errors = JSON.parse(fs.readFileSync(path.join(root, lang, 'errors.json'), 'utf8'));
+      expect({ lang, ok: typeof errors.PRODUCT_NEEDS_ONE_BRANCH === 'string' && errors.PRODUCT_NEEDS_ONE_BRANCH.length > 20 }).toEqual({ lang, ok: true });
+    }
+    const vi = JSON.parse(fs.readFileSync(path.join(root, 'vi', 'errors.json'), 'utf8'));
+    expect(vi.PRODUCT_NEEDS_ONE_BRANCH).toMatch(/ít nhất 1 chi nhánh/);
+    const builder = fs.readFileSync(path.resolve(__dirname, '../../packages/utils/src/api/response-builder.ts'), 'utf8');
+    expect(builder).toMatch(/'PRODUCT_NEEDS_ONE_BRANCH':/);
   });
 });
