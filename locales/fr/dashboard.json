@@ -221,7 +221,7 @@
       "loadingHint": "Quelques secondes",
       "actions": "À faire cette semaine",
       "revenue": "Chiffre d’affaires",
-      "fees": "Frais de retard et de dégâts",
+      "fees": "Frais de retard + supplémentaires",
       "branchOrders": "{count} commandes",
       "orders": "Commandes, locations et retours",
       "newOrders": "Nouvelles commandes",

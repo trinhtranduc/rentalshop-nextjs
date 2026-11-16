@@ -221,7 +221,7 @@
       "loadingHint": "Beberapa detik",
       "actions": "Yang perlu dilakukan minggu ini",
       "revenue": "Pendapatan",
-      "fees": "Denda terlambat dan kerusakan",
+      "fees": "Biaya keterlambatan + tambahan",
       "branchOrders": "{count} pesanan",
       "orders": "Pesanan, sewa, dan pengembalian",
       "newOrders": "Pesanan baru",
