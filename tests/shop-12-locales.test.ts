@@ -1,6 +1,6 @@
 /**
  * #1146: the public shop page (catalog, booking sheet, image search, tracking page) speaks the 12 public languages.
- * The logged-in app keeps its 5; a public-only language in NEXT_LOCALE falls back to an app one.
+ * The logged-in app speaks the web languages (#1597, `webLanguages()`); another public language in NEXT_LOCALE → English.
  */
 import { describe, expect, it, jest } from '@jest/globals';
 import * as fs from 'fs';
@@ -51,10 +51,8 @@ const productsFor = (locale: string) =>
     : shopMessages(locale as never, { products: enProducts, common: enCommon }).products;
 
 describe('#1146 locale helpers', () => {
-  it('app locale: the 5 app languages stay, zh-TW → zh, other public languages → en, anything else → vi', () => {
-    for (const l of APP) expect(appLocaleFor(l)).toBe(l);
-    expect(appLocaleFor('zh-TW')).toBe('zh');
-    for (const l of ['ru', 'fr', 'de', 'th', 'id', 'es']) expect(appLocaleFor(l)).toBe('en');
+  it('app locale: every web language stays (#1597), anything else → vi', () => {
+    for (const l of PUBLIC_LOCALES) expect(appLocaleFor(l)).toBe(l);
     expect(appLocaleFor(undefined)).toBe('vi');
     expect(appLocaleFor('')).toBe('vi');
     expect(appLocaleFor('xx')).toBe('vi');

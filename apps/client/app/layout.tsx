@@ -15,6 +15,7 @@ import { publicFeaturesMessages, publicPlansMessages } from '../lib/public-conte
 import { headers } from 'next/headers';
 import { appLocaleFor, type AppLocale } from '../lib/public-content/shop-locale';
 import { shopMessages } from '../lib/public-content/shop-messages';
+import { appMessages } from '../lib/app-messages';
 import { isPublicLocale, type PublicLocale } from '@rentalshop/constants';
 import type { Metadata, Viewport } from 'next'
 import { Inter, Be_Vietnam_Pro } from 'next/font/google'
@@ -832,7 +833,8 @@ export default async function RootLayout({
   const publicLocale = isPublicLocale(publicLanguage) ? publicLanguage : null;
   const documentLocale = publicLocale || locale;
   const providerLocale = publicLocale || locale;
-  const providerMessages = publicLocale ? getPublicContentMessages(publicLocale) : messages[locale];
+  // #1597 the logged-in pages: every namespace in the picked language, over English
+  const providerMessages = publicLocale ? getPublicContentMessages(publicLocale) : await appMessages(locale);
 
   return (
     <html lang={documentLocale} className="overflow-x-hidden" suppressHydrationWarning>

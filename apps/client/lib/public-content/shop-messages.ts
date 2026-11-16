@@ -17,15 +17,14 @@ import esCommon from '../../../../locales/es/common.json';
 
 type Messages = Record<string, unknown>;
 
-/** Deep merge: keys of `partial` win, the rest stays from `base` */
+const isTree = (v: unknown): v is Messages => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/** Deep merge: keys of `partial` win, the rest stays from `base`; a list is one value (#1597 affiliate steps) */
 export function mergeMessages(base: Messages, partial: Messages): Messages {
   const out: Messages = { ...base };
   for (const [key, value] of Object.entries(partial)) {
     const current = out[key];
-    out[key] =
-      value && typeof value === 'object' && current && typeof current === 'object'
-        ? mergeMessages(current as Messages, value as Messages)
-        : value;
+    out[key] = isTree(value) && isTree(current) ? mergeMessages(current, value) : value;
   }
   return out;
 }
