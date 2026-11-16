@@ -216,6 +216,7 @@
   "CATEGORY_NAME_EXISTS": "Category with this name already exists",
   "PRODUCT_NAME_EXISTS": "A product with this name already exists. Please choose a different name.",
   "STOCK_BELOW_RENTED": "Stock cannot be lower than the number of units currently rented out.",
+  "PRODUCT_NEEDS_ONE_BRANCH": "A product must be shown at one branch at least. To move it to another branch, tick the new branch and save first, then untick the old one.",
   "PLAN_NAME_EXISTS": "A plan with this name already exists",
   "MERCHANT_DUPLICATE": "A merchant with this email or phone already exists. Please use a different email or phone number.",
   "EMAIL_ALREADY_EXISTS": "Email already exists",

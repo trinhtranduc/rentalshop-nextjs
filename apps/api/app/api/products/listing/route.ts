@@ -6,7 +6,7 @@ import { ResponseBuilder, handleApiError } from '@rentalshop/utils';
 import { createAuditHelper } from '@rentalshop/utils/server';
 import { API, USER_ROLE } from '@rentalshop/constants';
 import { safeAudit } from '../../../../lib/change-timeline';
-import { canSetBranchListing } from '../../../../lib/product-listing';
+import { canSetBranchListing, productsLeftWithoutBranch } from '../../../../lib/product-listing';
 
 export const runtime = 'nodejs';
 
@@ -25,8 +25,9 @@ const bodySchema = z.object({
  * OUTLET_STAFF get 403 INSUFFICIENT_PERMISSIONS, for their own branch too. MERCHANT: branches and products of the own
  * shop only (404 OUTLET_NOT_FOUND / PRODUCT_NOT_FOUND otherwise); a closed branch is 404.
  *
- * Unticking has no condition: stock, units on rent and open orders do not matter, and stock, renting and available are
- * never written. The tick only changes the product list of the branch and which products can be put on a NEW order.
+ * Unticking does not look at stock, units on rent or open orders, and stock, renting and available are never written.
+ * #1603: it is refused (400 PRODUCT_NEEDS_ONE_BRANCH, data.productIds, nothing written) when a product would be left
+ * shown at no open branch; tick the new branch first, then untick the old one. The tick only changes the product list of the branch and which products can be put on a NEW order.
  * Sending the value a row already has is not a change. A product without a row at the branch gets one (ticking only).
  * Indexed: OutletStock (productId, outletId) unique, (outletId, isListed).
  */
@@ -78,6 +79,21 @@ export const PUT = withPermissions(['products.view'])(async (request, { user, us
     const rowOf = new Map<number, boolean>(rows.map((r: { productId: number; isListed: boolean }) => [r.productId, r.isListed]));
     const toChange = productIds.filter((id) => rowOf.has(id) && rowOf.get(id) !== isListed);
     const missing = isListed ? productIds.filter((id) => !rowOf.has(id)) : [];
+
+    // #1603 every product stays shown at one open branch: an untick that would leave none is refused, nothing written
+    if (!isListed && toChange.length > 0) {
+      const elsewhere = await prisma.outletStock.findMany({
+        where: { productId: { in: toChange }, outletId: { not: outletId }, isListed: true, outlet: { isActive: true } },
+        select: { productId: true },
+      });
+      const left = productsLeftWithoutBranch(toChange, elsewhere.map((r: { productId: number }) => r.productId));
+      if (left.length > 0) {
+        return NextResponse.json(
+          { ...ResponseBuilder.error('PRODUCT_NEEDS_ONE_BRANCH'), data: { outletId, productIds: left } },
+          { status: 400 }
+        );
+      }
+    }
 
     const writes: Array<Promise<unknown>> = [];
     if (toChange.length > 0) {

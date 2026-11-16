@@ -49,6 +49,23 @@ export function listedOutletForList(input: {
   return input.queryOutletId ? input.queryOutletId : undefined;
 }
 
+/**
+ * #1601 the owner on the iOS / Android app, which never sends `listed`: the list keeps only what the branch in use lists
+ * (the `outletId` the app sends, else the shop's default branch). `listed` sent on purpose wins: `true` goes through
+ * `listedOutletForList`, `false` means no filter. The web and the other roles are unchanged. undefined = no filter.
+ */
+export function ownerAppListedOutlet(input: {
+  role: string | null | undefined;
+  isMobile: boolean;
+  listedRaw: string | null | undefined;
+  queryOutletId?: number | null;
+  defaultOutletId?: number | null;
+}): number | undefined {
+  if (input.role !== 'MERCHANT' || !input.isMobile) return undefined;
+  if ((input.listedRaw ?? '').trim() !== '') return undefined;
+  return input.queryOutletId || input.defaultOutletId || undefined;
+}
+
 export interface ListedRow {
   outletId: number;
   stock: number;
@@ -78,6 +95,21 @@ export function listedRowsForCreate(
     out.push({ outletId: id, stock: 0, isListed: false });
   }
   return out;
+}
+
+/**
+ * #1603 every product is shown at one open branch at least: the products being unticked that are listed at no other open
+ * branch (`listedElsewhere` = products with a listed row at another open branch). Empty = the untick may go ahead.
+ */
+export function productsLeftWithoutBranch(unticking: number[], listedElsewhere: number[]): number[] {
+  const elsewhere = new Set(listedElsewhere);
+  return Array.from(new Set(unticking)).filter((id) => !elsewhere.has(id));
+}
+
+/** #1603 the rows of a new product show it at one open branch at least. */
+export function createShowsAtABranch(rows: ListedRow[], activeOutletIds: number[]): boolean {
+  const open = new Set(activeOutletIds);
+  return rows.some((r) => r.isListed && open.has(r.outletId));
 }
 
 /**

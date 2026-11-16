@@ -632,7 +632,8 @@
         "saleRequired": "Nhập giá bán",
         "depositNegative": "Tiền cọc không được âm",
         "stockRequired": "Số lượng phải lớn hơn 0",
-        "outletStockNegative": "Số lượng không được âm"
+        "outletStockNegative": "Số lượng không được âm",
+        "branchRequired": "Chọn ít nhất 1 chi nhánh để hiện sản phẩm"
       },
       "noCreate": "Bạn không có quyền thêm sản phẩm.",
       "noEdit": "Bạn không có quyền sửa sản phẩm.",

@@ -204,6 +204,7 @@
   "CATEGORY_NAME_EXISTS": "已有同名分類",
   "PRODUCT_NAME_EXISTS": "已有同名商品，請使用其他名稱。",
   "STOCK_BELOW_RENTED": "庫存不可低於目前租借中的數量。",
+  "PRODUCT_NEEDS_ONE_BRANCH": "商品必須至少在一間分店上架。若要移到其他分店，請先勾選新分店並儲存，再取消勾選原分店。",
   "PLAN_NAME_EXISTS": "已有同名方案",
   "MERCHANT_DUPLICATE": "已有使用此電子郵件或電話號碼的店家，請使用其他電子郵件或電話號碼。",
   "EMAIL_ALREADY_EXISTS": "電子郵件已存在",
