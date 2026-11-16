@@ -2855,8 +2855,12 @@
 "shopinfo.addressRequired" = "Masukkan alamat.";
 "products.listing.title" = "Tampil di cabang";
 "products.listing.ownerOnly" = "Hanya pemilik toko yang dapat menyalakan/mematikan";
-"products.listing.current" = "Dipilih";
+"products.listing.current" = "Cabang yang dipakai";
 "products.listing.branchMain" = "%@ (utama)";
+"products.listing.boxTitle" = "Stok dan tampil di cabang";
+"products.listing.tip" = "Produk tampil di cabang yang dicentang. Isi jumlah untuk setiap cabang.";
+"products.listing.total" = "Total %d";
+"products.listing.needOne" = "Centang minimal 1 cabang untuk menampilkan produk";
 "products.listing.stock" = "Stok %d";
 "products.listing.stockRent" = "Stok %d · disewa %d";
 "products.listing.reminder" = "Sisa %d unit di cabang ini (%d disewa), tetap dihitung dalam total tetapi tidak ditawarkan saat membuat pesanan.";

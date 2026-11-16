@@ -2214,7 +2214,11 @@
     <string name="shopinfo_address_label">Адрес</string>
     <string name="products_listing_title">Показ в филиале</string>
     <string name="products_listing_owner_only">Включать и выключать может только владелец магазина</string>
-    <string name="products_listing_current">Выбрано</string>
+    <string name="products_listing_current">Текущий филиал</string>
+    <string name="products_listing_box_title">Остаток и показ по филиалам</string>
+    <string name="products_listing_tip">Товар показывается в отмеченных филиалах. Количество указывается для каждого филиала.</string>
+    <string name="products_listing_total">Всего %1$d</string>
+    <string name="products_listing_need_one">Отметьте хотя бы один филиал, где показывать товар</string>
     <string name="products_listing_branch_main">%1$s (основной)</string>
     <string name="products_listing_stock">Остаток %1$d</string>
     <string name="products_listing_stock_rent">Остаток %1$d · в аренде %2$d</string>

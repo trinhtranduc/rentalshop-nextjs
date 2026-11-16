@@ -3051,8 +3051,12 @@
 // #1346 "Hiện ở chi nhánh"
 "products.listing.title" = "Shown at branch";
 "products.listing.ownerOnly" = "Only the shop owner can turn this on or off";
-"products.listing.current" = "Selected";
+"products.listing.current" = "Branch in use";
 "products.listing.branchMain" = "%@ (main)";
+"products.listing.boxTitle" = "Stock and shown at branch";
+"products.listing.tip" = "A ticked branch shows the product. Enter the quantity for each branch.";
+"products.listing.total" = "Total %d";
+"products.listing.needOne" = "Tick at least one branch to show the product";
 "products.listing.stock" = "Stock %d";
 "products.listing.stockRent" = "Stock %d · on rent %d";
 "products.listing.reminder" = "%d left at this branch (%d on rent). They still count in the total but are not offered when creating an order.";

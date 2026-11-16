@@ -78,8 +78,12 @@ final class ProductFormViewController: BaseViewControler {
     /// #1346 "Hiện ở chi nhánh": the owner's tick per branch, or the branch role's own dimmed row
     private var tickRows: [BranchTickRow] = []
     private var tickOriginal: [BranchTickRow] = []
-    private let tickBox = UIStackView()
-    private let tickReminder = V2.label(size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+    /// #1607: "Tồn và hiện ở chi nhánh" with a tick and a quantity per branch, or the single "Số lượng" (one-branch shop,
+    /// a branch role creating a product)
+    private let stockSection = UIStackView()
+    private let stockTotal = V2.label(size: DS.TextSize.secondary, weight: .bold, color: DS.Color.text)
+    /// #1607 (#1603): Save was tapped with no branch ticked; the box says so until a branch is ticked
+    private var showsBranchError = false
     private var isOwner: Bool { BranchListing.canSet(role: ProductAccess.currentRole) }
 
     private var userOutletId: Int? { CurrentOutlet.shared.id }
@@ -268,19 +272,9 @@ final class ProductFormViewController: BaseViewControler {
             form.addArrangedSubview(field(title: "product.form.costPrice".localized(), required: false, input: costField))
         }
 
-        // Stock
-        form.addArrangedSubview(V2.sectionHeader("products.form.stock".localized()))
-        let quantityTitle = V2.label("products.form.quantity".localized(), size: DS.TextSize.body)
-        let quantityTexts = UIStackView(arrangedSubviews: [quantityTitle, stockNote])
-        quantityTexts.axis = .vertical
-        let quantityRow = UIStackView(arrangedSubviews: [quantityTexts, UIView(), quantityStepper])
-        quantityRow.alignment = .center
-        form.addArrangedSubview(padded(quantityRow, top: 8, bottom: 8))
-
-        // #1346: "Hiện ở chi nhánh" (hidden for a one-branch shop and while there is nothing to show)
-        tickBox.axis = .vertical
-        tickBox.isHidden = true
-        form.addArrangedSubview(tickBox)
+        // Stock: #1607 one box "Tồn và hiện ở chi nhánh", or the single quantity (renderStockSection)
+        stockSection.axis = .vertical
+        form.addArrangedSubview(stockSection)
         form.addArrangedSubview(UIView())
     }
 
@@ -304,71 +298,117 @@ final class ProductFormViewController: BaseViewControler {
     private func loadTickRows() {
         tickRows = makeTickRows()
         tickOriginal = tickRows
-        renderTicks()
+        renderStockSection()
     }
 
-    private func renderTicks() {
-        tickBox.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        tickBox.isHidden = tickRows.isEmpty
-        guard !tickRows.isEmpty else { return }
-        tickBox.addArrangedSubview(V2.sectionHeader("products.listing.title".localized()))
-        for (index, row) in tickRows.enumerated() {
-            tickBox.addArrangedSubview(tickRowView(row, index: index))
+    /// #1607: the box "Tồn và hiện ở chi nhánh" when there are rows (owner of a shop with 2+ branches; a branch role editing a
+    /// product held at 2+ branches), else the single "Số lượng" as before
+    private func renderStockSection() {
+        stockSection.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        guard !tickRows.isEmpty else {
+            stockSection.addArrangedSubview(V2.sectionHeader("products.form.stock".localized()))
+            let quantityTitle = V2.label("products.form.quantity".localized(), size: DS.TextSize.body)
+            let quantityTexts = UIStackView(arrangedSubviews: [quantityTitle, stockNote])
+            quantityTexts.axis = .vertical
+            let quantityRow = UIStackView(arrangedSubviews: [quantityTexts, UIView(), quantityStepper])
+            quantityRow.alignment = .center
+            stockSection.addArrangedSubview(padded(quantityRow, top: 8, bottom: 8))
+            return
         }
-        let lines = tickRows.compactMap { row in BranchListing.reminder(for: row).map { (row.name, $0.text) } }
-        tickReminder.text = lines.count > 1 ? lines.map { "\($0.0): \($0.1)" }.joined(separator: "\n") : lines.first?.1
-        tickReminder.isHidden = lines.isEmpty
-        tickReminder.accessibilityIdentifier = "product.form.listing.reminder"
-        tickBox.addArrangedSubview(padded(tickReminder, top: 2, bottom: 8))
+        stockTotal.text = String(format: "products.listing.total".localized(), BranchListing.total(tickRows))
+        stockTotal.accessibilityIdentifier = "product.form.stock.total"
+        stockSection.addArrangedSubview(V2.sectionHeader("products.listing.boxTitle".localized(), trailing: stockTotal))
+        if isOwner {
+            let tip = V2.label("products.listing.tip".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+            stockSection.addArrangedSubview(padded(tip, top: 8, bottom: 2))
+        }
+        if showsBranchError {
+            let error = V2.label("products.listing.needOne".localized(), size: DS.TextSize.secondary, weight: .bold, color: V2.danger, lines: 0)
+            error.accessibilityIdentifier = "product.form.listing.error"
+            let frame = UIView()
+            frame.layer.cornerRadius = 8
+            frame.layer.borderWidth = 1
+            frame.layer.borderColor = V2.danger.cgColor
+            frame.backgroundColor = V2.danger.withAlphaComponent(0.06)
+            frame.addSubview(error)
+            error.snp.makeConstraints { make in make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)) }
+            stockSection.addArrangedSubview(padded(frame, top: 8, bottom: 2))
+        }
+        for (index, row) in tickRows.enumerated() {
+            stockSection.addArrangedSubview(branchRowView(row, index: index))
+            if let reminder = BranchListing.reminder(for: row) {
+                let label = V2.label(reminder.text, size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
+                label.accessibilityIdentifier = "product.form.listing.reminder"
+                let wrap = padded(label, top: 0, bottom: 8)
+                wrap.layoutMargins.left = DS.Spacing.lg + 34
+                stockSection.addArrangedSubview(wrap)
+            }
+        }
         if !isOwner {
             let note = V2.label("products.listing.ownerOnly".localized(), size: DS.TextSize.secondary, color: DS.Color.textMuted, lines: 0)
-            tickBox.addArrangedSubview(padded(note, top: 0, bottom: 16))
+            stockSection.addArrangedSubview(padded(note, top: 0, bottom: 16))
         }
     }
 
-    private func tickRowView(_ row: BranchTickRow, index: Int) -> UIView {
-        let button = UIButton(type: .custom)
-        button.tag = index
-        button.isEnabled = isOwner
-        button.alpha = isOwner ? 1 : 0.5
-        let symbol = row.listed ? "checkmark.square.fill" : "square"
-        let box = UIImageView(image: DS.symbol(symbol, DS.Icon.lg))
-        box.tintColor = row.listed ? DS.Color.primary : DS.Color.textMuted
+    /// One branch: the tick (owner only) with the name and a caption, then the branch's own quantity
+    private func branchRowView(_ row: BranchTickRow, index: Int) -> UIView {
+        let tick = UIButton(type: .custom)
+        tick.tag = index
+        tick.isEnabled = isOwner
+        tick.alpha = isOwner ? 1 : 0.5
+        let box = UIImageView(image: DS.symbol(row.listed ? "checkmark.square.fill" : "square", DS.Icon.lg))
+        box.tintColor = row.listed ? DS.Color.primary : (showsBranchError ? V2.danger : DS.Color.textMuted)
         box.setContentHuggingPriority(.required, for: .horizontal)
         let title = row.isDefault && tickRows.count > 1
             ? String(format: "products.listing.branchMain".localized(), row.name) : row.name
         let name = V2.label(title, size: DS.TextSize.body, weight: row.listed ? .bold : .regular, lines: 0)
         var caption = ""
-        if product != nil {
-            caption = row.renting > 0
-                ? String(format: "products.listing.stockRent".localized(), row.stock, row.renting)
-                : String(format: "products.listing.stock".localized(), row.stock)
+        if isEdit {
+            caption = String(format: "products.form.stockNote".localized(), row.renting, max(0, row.stock - row.renting))
         } else if row.outletId == userOutletId {
             caption = "products.listing.current".localized()
         }
-        let captionLabel = V2.label(caption, size: DS.TextSize.secondary, color: DS.Color.textMuted)
-        captionLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let stack = UIStackView(arrangedSubviews: [box, name, UIView(), captionLabel])
-        stack.alignment = .center
-        stack.spacing = 10
-        stack.isUserInteractionEnabled = false
-        button.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: DS.Spacing.lg, bottom: 0, right: DS.Spacing.lg))
+        let captionLabel = V2.label(caption, size: DS.TextSize.secondary, weight: isEdit ? .regular : .bold,
+                                    color: isEdit ? DS.Color.textMuted : DS.Color.primary, lines: 0)
+        captionLabel.isHidden = caption.isEmpty
+        let texts = UIStackView(arrangedSubviews: [name, captionLabel])
+        texts.axis = .vertical
+        texts.spacing = 2
+        let inner = UIStackView(arrangedSubviews: [box, texts])
+        inner.alignment = .center
+        inner.spacing = 10
+        inner.isUserInteractionEnabled = false
+        tick.addSubview(inner)
+        inner.snp.makeConstraints { make in make.edges.equalToSuperview() }
+        tick.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
+        tick.addTarget(self, action: #selector(tickTapped(_:)), for: .touchUpInside)
+        tick.accessibilityIdentifier = "product.form.listing.\(row.outletId)"
+        tick.accessibilityLabel = "\("products.listing.title".localized()) \(row.name)"
+        tick.accessibilityValue = row.listed ? "1" : "0"
+        tick.accessibilityTraits = isOwner ? UIAccessibilityTraitButton : UIAccessibilityTraitNotEnabled
+
+        let stepper = V2Stepper(compact: true)
+        stepper.minimum = row.renting
+        stepper.value = row.stock
+        stepper.accessibilityIdentifier = "product.form.stock.\(row.outletId)"
+        stepper.setContentHuggingPriority(.required, for: .horizontal)
+        stepper.setContentCompressionResistancePriority(.required, for: .horizontal)
+        stepper.onChange = { [weak self] value in
+            guard let self, index < self.tickRows.count else { return }
+            self.tickRows[index].stock = value
+            self.renderStockSection()
         }
-        button.snp.makeConstraints { make in make.height.greaterThanOrEqualTo(DS.touchTarget) }
-        button.addTarget(self, action: #selector(tickTapped(_:)), for: .touchUpInside)
-        button.accessibilityIdentifier = "product.form.listing.\(row.outletId)"
-        button.accessibilityLabel = "\("products.listing.title".localized()) \(row.name)"
-        button.accessibilityValue = row.listed ? "1" : "0"
-        button.accessibilityTraits = isOwner ? UIAccessibilityTraitButton : UIAccessibilityTraitNotEnabled
-        return button
+        let line = UIStackView(arrangedSubviews: [tick, stepper])
+        line.alignment = .center
+        line.spacing = 10
+        return padded(line, top: 4, bottom: 4)
     }
 
     @objc private func tickTapped(_ sender: UIButton) {
         guard isOwner, sender.tag < tickRows.count else { return }
         tickRows[sender.tag].listed.toggle()
-        renderTicks()
+        if !BranchListing.needsBranch(tickRows) { showsBranchError = false }
+        renderStockSection()
     }
 
     private func configure(_ field: UITextField, placeholder: String, numeric: Bool) {
@@ -768,6 +808,8 @@ final class ProductFormViewController: BaseViewControler {
         view.endEditing(true)
         let rented = stockCounts?.rented ?? 0
         syncDraftFromBoxes()
+        // #1607: with the box, the quantity is the sum of the branches and each branch checks its own units on rent
+        let boxed = !tickRows.isEmpty
         let input = ProductFormInput(
             name: nameField.text ?? "",
             perRental: priceDraft.perRental,
@@ -776,14 +818,23 @@ final class ProductFormViewController: BaseViewControler {
             block: priceDraft.block,
             salePrice: MoneyInput.parse(saleField.text),
             deposit: MoneyInput.parse(depositField.text),
-            quantity: quantityStepper.value,
-            rented: isEdit ? rented : 0,
+            quantity: boxed ? BranchListing.total(tickRows) : quantityStepper.value,
+            rented: boxed ? 0 : (isEdit ? rented : 0),
             photoCount: photos.count,
             showsPrices: showsPrices
         )
-        let issues = ProductFormValidator.validate(input)
+        var issues = ProductFormValidator.validate(input)
+        if boxed, let low = BranchListing.belowRented(tickRows) { issues.append(.quantityBelowRented(low.renting)) }
         guard issues.isEmpty else {
             UIAlertController.alert(parent: self, title: "Error".localized(), message: issues.map { $0.message }.joined(separator: "\n"))
+            return
+        }
+        // #1607 (#1603): the owner keeps one branch ticked; the box says so and nothing is sent
+        if boxed && isOwner && BranchListing.needsBranch(tickRows) {
+            showsBranchError = true
+            renderStockSection()
+            scroll.layoutIfNeeded()
+            scroll.scrollRectToVisible(stockSection.convert(stockSection.bounds, to: scroll), animated: true)
             return
         }
         guard let outletId = ProductOutletChoice.outletId(userOutletId: userOutletId, product: product, merchantOutlets: merchantOutlets) else {
@@ -847,6 +898,10 @@ final class ProductFormViewController: BaseViewControler {
                     return
                 }
                 guard let saved else { self.hideProgress(); return }
+                // #1607: the quantities are saved; a retry after a tick failure does not send them again
+                for index in self.tickOriginal.indices where index < self.tickRows.count {
+                    self.tickOriginal[index].stock = self.tickRows[index].stock
+                }
                 // #1346: the owner's moved ticks go to PUT /api/products/listing after the product is saved
                 let moved = (self.isEdit && self.isOwner) ? BranchListing.changes(from: self.tickOriginal, to: self.tickRows) : []
                 if moved.isEmpty {
@@ -874,7 +929,9 @@ final class ProductFormViewController: BaseViewControler {
                 totalStock: nil,
                 categoryId: categoryId,
                 merchantId: nil,
-                outletStock: [OutletStockItem(outletId: outletId, stock: input.quantity)],
+                // #1607: the box sends only the branches whose quantity changed (nil: none); else the one quantity as before
+                outletStock: tickRows.isEmpty ? [OutletStockItem(outletId: outletId, stock: input.quantity)]
+                    : { let writes = BranchListing.stockWrites(from: tickOriginal, to: tickRows); return writes.isEmpty ? nil : writes }(),
                 images: keptUrls,
                 isActive: nil,
                 pricingType: nil,
@@ -899,8 +956,8 @@ final class ProductFormViewController: BaseViewControler {
                 images: keptUrls.isEmpty ? nil : keptUrls,
                 pricingOptions: (options?.isEmpty ?? true) ? nil : options,
                 pricingSchemaVersion: showsPrices ? ProductPricingSchema.version : nil,
-                // #1346: the owner's ticks; a branch role sends one row and the API ticks its branch
-                outletStock: (isOwner && !tickRows.isEmpty) ? BranchListing.createStock(rows: tickRows, quantity: input.quantity, at: outletId) : nil
+                // #1607: the owner's box sends every branch with its own quantity and tick; a branch role sends one row
+                outletStock: (isOwner && !tickRows.isEmpty) ? BranchListing.createStock(rows: tickRows) : nil
             )
             ProductService.shared.createProduct(request: request, images: newImages, completion: completion)
         }

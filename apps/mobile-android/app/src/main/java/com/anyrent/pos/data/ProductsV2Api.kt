@@ -95,8 +95,10 @@ object ProductsV2Api {
         val prices: Prices?,
         val outletId: Int,
         val quantity: Int,
-        /** #1346: the owner's ticks on a NEW product (`outletStock[]` with `isListed`); null = one row, the server ticks it */
+        /** #1346, #1607: the owner's box on a NEW product (every branch: quantity + `isListed`); null = one row, the server ticks it */
         val createStock: List<BranchOutletStockItem>? = null,
+        /** #1607: the box on an EDIT: only the branches whose quantity changed (empty = no stock sent); null = one row as before */
+        val editStock: List<BranchOutletStockItem>? = null,
     )
 
     data class Prices(
@@ -117,13 +119,13 @@ object ProductsV2Api {
      * uploaded as `images` files and the API adds them after the kept ones.
      */
     fun saveProduct(id: Int?, fields: ProductFields, keptUrls: List<String>, newFiles: List<File>): Result<Product> = runCatching {
-        val data = JSONObject()
-            .put("name", fields.name)
-            .put(
-                "outletStock",
-                if (id == null && fields.createStock != null) JSONArray(fields.createStock.map { it.toJson() })
-                else JSONArray().put(JSONObject().put("outletId", fields.outletId).put("stock", fields.quantity)),
-            )
+        val data = JSONObject().put("name", fields.name)
+        val stockRows: JSONArray? = when {
+            id == null && fields.createStock != null -> JSONArray(fields.createStock.map { it.toJson() })
+            id != null && fields.editStock != null -> fields.editStock.takeIf { it.isNotEmpty() }?.let { rows -> JSONArray(rows.map { it.toJson() }) }
+            else -> JSONArray().put(JSONObject().put("outletId", fields.outletId).put("stock", fields.quantity))
+        }
+        stockRows?.let { data.put("outletStock", it) }
         if (id == null) {
             data.put("totalStock", fields.quantity)
             // Create requires `rentPrice`; without price rights it is 0 (as iOS sends)
